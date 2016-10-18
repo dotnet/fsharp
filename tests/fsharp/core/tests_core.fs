@@ -24,21 +24,21 @@ let attributes p = singleTestBuildAndRun p
 [<Test; FSharpSuiteScriptPermutations("core/byrefs")>]
 let byrefs _ = check  (attempt {
 
-        let cfg = FSharpTestSuite.testConfig ()
+    let cfg = FSharpTestSuite.testConfig ()
 
-        use testOkFile = fileguard cfg "test.ok"
+    use testOkFile = fileguard cfg "test.ok"
 
-        do! fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
+    do! fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
 
-        do! exec cfg ("."/"test.exe") ""
+    do! exec cfg ("."/"test.exe") ""
 
-        do! testOkFile |> NUnitConf.checkGuardExists
+    do! testOkFile |> NUnitConf.checkGuardExists
 
-        do! fsi cfg "" ["test.fsx"]
+    do! fsi cfg "" ["test.fsx"]
 
-        do! testOkFile |> NUnitConf.checkGuardExists
+    do! testOkFile |> NUnitConf.checkGuardExists
 
-        })
+    })
 
 [<Test; FSharpSuiteScriptPermutations("core/comprehensions")>]
 let comprehensions p = singleTestBuildAndRun p
@@ -51,33 +51,33 @@ let control p = singleTestBuildAndRun p
 
 [<Test; FSharpSuiteFscCodePermutation("core/control")>]
 let ``control --tailcalls`` p = check  (attempt {
-        let cfg = FSharpTestSuite.testConfig ()
+    let cfg = FSharpTestSuite.testConfig ()
         
-        do! singleTestBuild cfg p
+    do! singleTestBuild cfg p
         
-        do! singleTestRun {cfg with fsi_flags = " --tailcalls" } p
-        })
+    do! singleTestRun {cfg with fsi_flags = " --tailcalls" } p
+    })
 
 [<Test; FSharpSuiteFscCodePermutation("core/controlChamenos")>]
 let controlChamenos p = check  (attempt {
-        let cfg = FSharpTestSuite.testConfig ()
+    let cfg = FSharpTestSuite.testConfig ()
         
-        do! singleTestBuild cfg p
+    do! singleTestBuild cfg p
         
-        do! singleTestRun { cfg with fsi_flags = " --tailcalls" } p
-        })
+    do! singleTestRun { cfg with fsi_flags = " --tailcalls" } p
+    })
 
 [<Test; FSharpSuiteFscCodePermutation("core/controlMailbox")>]
 let controlMailbox p = singleTestBuildAndRun p
 
 [<Test; FSharpSuiteFscCodePermutation("core/controlMailbox")>]
 let ``controlMailbox --tailcalls`` p = check  (attempt {
-        let cfg = FSharpTestSuite.testConfig ()
+    let cfg = FSharpTestSuite.testConfig ()
         
-        do! singleTestBuild cfg p
+    do! singleTestBuild cfg p
         
-        do! singleTestRun { cfg with fsi_flags = " --tailcalls" } p
-        })
+    do! singleTestRun { cfg with fsi_flags = " --tailcalls" } p
+    })
 
 [<Test; FSharpSuiteFscCodePermutation("core/controlwpf")>]
 let controlWpf p = singleTestBuildAndRun p
@@ -88,33 +88,28 @@ let csext p = singleTestBuildAndRun p
 
 [<Test; FSharpSuiteTest("core/events")>]
 let events () = check  (attempt {
-        let cfg = FSharpTestSuite.testConfig ()
+    let cfg = FSharpTestSuite.testConfig ()
 
-        // "%FSC%" %fsc_flags% -a -o:test.dll -g test.fs
-        do! fsc cfg "%s -a -o:test.dll -g" cfg.fsc_flags ["test.fs"]
+    // "%FSC%" %fsc_flags% -a -o:test.dll -g test.fs
+    do! fsc cfg "%s -a -o:test.dll -g" cfg.fsc_flags ["test.fs"]
 
-        do! peverify cfg "test.dll"
+    do! peverify cfg "test.dll"
 
-        // %CSC% /r:"%FSCOREDLLPATH%" /reference:test.dll /debug+ testcs.cs
-        do! csc cfg """/r:"%s" /reference:test.dll /debug+""" cfg.FSCOREDLLPATH ["testcs.cs"]
+    // %CSC% /r:"%FSCOREDLLPATH%" /reference:test.dll /debug+ testcs.cs
+    do! csc cfg """/r:"%s" /reference:test.dll /debug+""" cfg.FSCOREDLLPATH ["testcs.cs"]
 
-        do! peverify cfg "testcs.exe"
+    do! peverify cfg "testcs.exe"
         
-        use testOkFile = fileguard cfg "test.ok"
+    use testOkFile = fileguard cfg "test.ok"
 
-        // "%FSI%" test.fs && (
-        do! fsi cfg "" ["test.fs"]
+    // "%FSI%" test.fs && (
+    do! fsi cfg "" ["test.fs"]
 
-        // dir test.ok > NUL 2>&1 ) || (
-        // @echo :FSI failed;
-        // goto Error
-        // set ERRORMSG=%ERRORMSG% FSI failed;
-        // )
-        do! testOkFile |> NUnitConf.checkGuardExists
+    do! testOkFile |> NUnitConf.checkGuardExists
 
-        // .\testcs.exe
-        do! exec cfg ("."/"testcs.exe") ""
-        })
+    // .\testcs.exe
+    do! exec cfg ("."/"testcs.exe") ""
+    })
 
 //
 // Shadowcopy does not work for public signed assemblies
@@ -287,37 +282,35 @@ let ``fsi-reload`` () = check (attempt {
         /////// run.bat  ////////
 
         do! attempt {
-            // if exist test.ok (del /f /q test.ok)
+
             use testOkFile = fileguard cfg "test.ok"
             // "%FSI%" %fsi_flags%  --maxerrors:1 < test1.ml
             do! ``fsi <`` cfg "%s  --maxerrors:1" cfg.fsi_flags "test1.ml"
-            // if NOT EXIST test.ok goto SetError
+    
             do! testOkFile |> NUnitConf.checkGuardExists
             }
                 
         do! attempt {
-            // if exist test.ok (del /f /q test.ok)
+
             use testOkFile = fileguard cfg "test.ok"
             // "%FSI%" %fsi_flags%  --maxerrors:1 load1.fsx
             do! fsi cfg "%s  --maxerrors:1" cfg.fsi_flags ["load1.fsx"]
-            // if NOT EXIST test.ok goto SetError
+    
             do! testOkFile |> NUnitConf.checkGuardExists
             }
 
         do! attempt {
-            // if exist test.ok (del /f /q test.ok)
+
             use testOkFile = fileguard cfg "test.ok"
             // "%FSI%" %fsi_flags%  --maxerrors:1 load2.fsx
             do! fsi cfg "%s  --maxerrors:1" cfg.fsi_flags ["load2.fsx"]
-            // if NOT EXIST test.ok goto SetError
+    
             do! testOkFile |> NUnitConf.checkGuardExists
             }
 
-        // REM Check we can also compile, for sanity's sake
         // "%FSC%" load1.fsx
         do! fsc cfg "" ["load1.fsx"]
 
-        // REM Check we can also compile, for sanity's sake
         // "%FSC%" load2.fsx
         do! fsc cfg "" ["load2.fsx"]
 
@@ -328,28 +321,17 @@ let ``fsi-reload`` () = check (attempt {
 let fsiAndModifiers () = check (attempt {
         let cfg = FSharpTestSuite.testConfig ()
 
-
-
-        let del = Commands.rm cfg.Directory
-        let exist = Commands.fileExists cfg.Directory >> Option.isSome
-
         // if exist TestLibrary.dll (del /f /q TestLibrary.dll)
-        do if exist "TestLibrary.dll" then del "TestLibrary.dll"
+        do if fileExists cfg "TestLibrary.dll" then rm cfg "TestLibrary.dll"
 
         // "%FSI%" %fsi_flags%  --maxerrors:1 < prepare.fsx
         do! ``fsi <`` cfg "%s  --maxerrors:1" cfg.fsi_flags "prepare.fsx"
 
-
-
-
-
-        // if exist test.ok (del /f /q test.ok)
         use testOkFile = fileguard cfg "test.ok"
         
         // "%FSI%" %fsi_flags%  --maxerrors:1 < test.fsx
         do! ``fsi <`` cfg "%s  --maxerrors:1" cfg.fsi_flags "test.fsx"
 
-        // if NOT EXIST test.ok goto SetError
         do! testOkFile |> NUnitConf.checkGuardExists
                 
         })
@@ -382,10 +364,8 @@ let hiding () = check (attempt {
 [<Test; FSharpSuiteCodeAndSignaturePermutations("core/innerpoly")>]
 let innerpoly p = singleTestBuildAndRun p
         
-        
 [<Test; FSharpSuiteScriptPermutations("core/int32")>]
 let ``test int32`` p = singleTestBuildAndRun p
-
 
 [<Test; FSharpSuiteTest("core/queriesCustomQueryOps")>]
 let queriesCustomQueryOps () = check (attempt {
@@ -401,39 +381,29 @@ let queriesCustomQueryOps () = check (attempt {
 
     do! peverify cfg "test--optimize.exe"
 
-    // call ..\..\single-neg-test.bat negativetest
     do! singleNegTest cfg "negativetest"
 
     do! attempt {
-        // if exist test.ok (del /f /q test.ok)
         use testOkFile = fileguard cfg "test.ok"
 
-        // "%FSI%" %fsi_flags% test.fsx
         do! fsi cfg "%s" cfg.fsi_flags ["test.fsx"]
 
-        // if NOT EXIST test.ok goto SetError
         do! testOkFile |> NUnitConf.checkGuardExists
     }
 
     do! attempt {
-        // if exist test.ok (del /f /q test.ok)
         use testOkFile = fileguard cfg "test.ok"
 
-        // test.exe
         do! exec cfg ("."/"test.exe") ""
 
-        // if NOT EXIST test.ok goto SetError
         do! testOkFile |> NUnitConf.checkGuardExists
         }
 
     do! attempt {
-        // if exist test.ok (del /f /q test.ok)
         use testOkFile = fileguard cfg "test.ok"
 
-        // test--optimize.exe
         do! exec cfg ("."/"test--optimize.exe") ""
 
-        // if NOT EXIST test.ok goto SetError
         do! testOkFile |> NUnitConf.checkGuardExists
         }
                 
@@ -451,8 +421,6 @@ let printing flag diffFileOut expectedFileOut diffFileErr expectedFileErr = chec
     do! requireENCulture ()
 
     let copy from' = Commands.copy_y cfg.Directory from' >> checkResult
-    let fileExists = Commands.fileExists cfg.Directory >> Option.isSome
-
 
     let ``fsi <a >b 2>c`` =
         // "%FSI%" %fsc_flags_errors_ok%  --nologo                                    <test.fsx >z.raw.output.test.default.txt 2>&1
@@ -487,16 +455,11 @@ let printing flag diffFileOut expectedFileOut diffFileErr expectedFileErr = chec
     let removeCDandHelp from' to' =
         File.ReadLines from' |> (``findstr /v`` cfg.Directory) |> (``findstr /v`` "--help' for options") |> (fun lines -> File.WriteAllLines(getfullpath cfg to', lines))
 
-    // findstr /v "%CD%" z.raw.output.test.default.txt | findstr /v -C:"--help' for options" > z.output.test.default.txt
-    // findstr /v "%CD%" z.raw.output.test.1000.txt    | findstr /v -C:"--help' for options" > z.output.test.1000.txt
-    // findstr /v "%CD%" z.raw.output.test.200.txt     | findstr /v -C:"--help' for options" > z.output.test.200.txt
-    // findstr /v "%CD%" z.raw.output.test.off.txt     | findstr /v -C:"--help' for options" > z.output.test.off.txt
-    // findstr /v "%CD%" z.raw.output.test.quiet.txt   | findstr /v -C:"--help' for options" > z.output.test.quiet.txt
     removeCDandHelp rawFileOut diffFileOut
     removeCDandHelp rawFileErr diffFileErr
 
     let withDefault default' to' =
-        if not (fileExists to') then Some (copy default' to') else None
+        if not (fileExists cfg to') then Some (copy default' to') else None
 
     do! expectedFileOut |> withDefault diffFileOut
     do! expectedFileErr |> withDefault diffFileErr
@@ -562,7 +525,6 @@ let signedtest args bslfile = attempt {
 let quotes () = check (attempt {
     let cfg = FSharpTestSuite.testConfig ()
 
-    //missing csc
     do! csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
 
     // "%FSC%" %fsc_flags% -o:test.exe -r cslib.dll -g test.fsx
@@ -581,46 +543,45 @@ let quotes () = check (attempt {
     do! peverify cfg "test--optimize.exe"
 
     do! attempt {
-        // if exist test.ok (del /f /q test.ok)
         use testOkFile = fileguard cfg "test.ok"
 
         // "%FSI%" %fsi_flags% -r cslib.dll test.fsx
         do! fsi cfg "%s -r cslib.dll" cfg.fsi_flags ["test.fsx"]
             
-        // if NOT EXIST test.ok goto SetError
+
         do! testOkFile |> NUnitConf.checkGuardExists
         }
 
     do! attempt {
-        // if exist test.ok (del /f /q test.ok)
+
         use testOkFile = fileguard cfg "test.ok"
 
-        // test.exe
+    
         do! exec cfg ("."/"test.exe") ""
 
-        // if NOT EXIST test.ok goto SetError
+
         do! testOkFile |> NUnitConf.checkGuardExists
         }
 
     do! attempt {
-        // if exist test.ok (del /f /q test.ok)
+
         use testOkFile = fileguard cfg "test.ok"
 
         // test-with-debug-data.exe
         do! exec cfg ("."/"test-with-debug-data.exe") ""
 
-        // if NOT EXIST test.ok goto SetError
+
         do! testOkFile |> NUnitConf.checkGuardExists
         }
 
     do! attempt {
-        // if exist test.ok (del /f /q test.ok)
+
         use testOkFile = fileguard cfg "test.ok"
 
         // test--optimize.exe
         do! exec cfg ("."/"test--optimize.exe") ""
 
-        // if NOT EXIST test.ok goto SetError
+
         do! testOkFile |> NUnitConf.checkGuardExists
         }
                 
@@ -793,20 +754,17 @@ module ``Load-Script`` =
         let stderrBaseline = "out.stderr.bsl" |> getfullpath cfg 
         let stdoutBaseline = "out.stdout.bsl" |> getfullpath cfg 
 
-
         let type_append_tofile from = Commands.type_append_tofile cfg.Directory from stdoutPath
         let echo text = Commands.echo_append_tofile cfg.Directory text stdoutPath
-
-        let fileExists = Commands.fileExists cfg.Directory >> Option.isSome
 
         File.WriteAllText(stdoutPath, "")
         File.WriteAllText(stderrPath, "")
 
         // del 3.exe 2>nul 1>nul
-        do if fileExists "3.exe" then getfullpath cfg "3.exe" |> File.Delete
+        do if fileExists cfg "3.exe" then getfullpath cfg "3.exe" |> File.Delete
         // type 1.fsx 2.fsx 3.fsx
         ["1.fsx"; "2.fsx"; "3.fsx"] |> List.iter type_append_tofile
-        // echo Test 1=================================================
+
         echo "Test 1================================================="
         // "%FSC%" 3.fsx --nologo
         do! fscToOutIgnoreExitCode cfg stdoutPath stderrPath "--nologo" ["3.fsx"]
@@ -814,44 +772,44 @@ module ``Load-Script`` =
         do! execToOutAndIgnoreExitCode cfg stdoutPath stderrPath ("."/"3.exe") ""
         // del 3.exe
         rm cfg "3.exe"
-        // echo Test 2=================================================
+
         echo "Test 2================================================="
         // "%FSI%" 3.fsx
         do! fsiToOutIgnoreExitCode cfg stdoutPath stderrPath "" ["3.fsx"]
-        // echo Test 3=================================================
+
         echo "Test 3================================================="
         // "%FSI%" --nologo < pipescr
         do! fsiFromInToOutIgnoreExitCode cfg stdoutPath stderrPath "--nologo" "pipescr"
         // echo.
-        // echo Test 4=================================================
+
         echo "Test 4================================================="
         // "%FSI%" usesfsi.fsx
         do! fsiToOutIgnoreExitCode cfg stdoutPath stderrPath "" ["usesfsi.fsx"]
-        // echo Test 5=================================================
+
         echo "Test 5================================================="
         // "%FSC%" usesfsi.fsx --nologo
         do! fscToOutIgnoreExitCode cfg stdoutPath stderrPath "--nologo" ["usesfsi.fsx"]
-        // echo Test 6=================================================
+
         echo "Test 6================================================="
         // "%FSC%" usesfsi.fsx --nologo -r FSharp.Compiler.Interactive.Settings
         do! fscToOutIgnoreExitCode cfg stdoutPath stderrPath "--nologo -r FSharp.Compiler.Interactive.Settings" ["usesfsi.fsx"]
-        // echo Test 7=================================================
+
         echo "Test 7================================================="
         // "%FSI%" 1.fsx 2.fsx 3.fsx
         do! fsiToOutIgnoreExitCode cfg stdoutPath stderrPath "" ["1.fsx";"2.fsx";"3.fsx"]
-        // echo Test 8=================================================
+
         echo "Test 8================================================="
         // "%FSI%" 3.fsx 2.fsx 1.fsx
         do! fsiToOutIgnoreExitCode cfg stdoutPath stderrPath "" ["3.fsx";"2.fsx";"1.fsx"]
-        // echo Test 9=================================================
+
         echo "Test 9================================================="
         // "%FSI%" multiple-load-1.fsx
         do! fsiToOutIgnoreExitCode cfg stdoutPath stderrPath "" ["multiple-load-1.fsx"]
-        // echo Test 10=================================================
+
         echo "Test 10================================================="
         // "%FSI%" multiple-load-2.fsx
         do! fsiToOutIgnoreExitCode cfg stdoutPath stderrPath "" ["multiple-load-2.fsx"]
-        // echo Test 11=================================================
+
         echo "Test 11================================================="
         // "%FSC%" FlagCheck.fs --nologo
         do! fscToOutIgnoreExitCode cfg stdoutPath stderrPath "--nologo" ["FlagCheck.fs"]
@@ -859,7 +817,7 @@ module ``Load-Script`` =
         do! execToOutAndIgnoreExitCode cfg stdoutPath stderrPath ("."/"FlagCheck.exe") ""
         // rm cfg FlagCheck.exe
         rm cfg "FlagCheck.exe"
-        // echo Test 12=================================================
+
         echo "Test 12================================================="
         // "%FSC%" FlagCheck.fsx  --nologo
         do! fscToOutIgnoreExitCode cfg stdoutPath stderrPath "-o FlagCheckScript.exe --nologo" ["FlagCheck.fsx"]
@@ -867,31 +825,31 @@ module ``Load-Script`` =
         do! execToOutAndIgnoreExitCode cfg stdoutPath stderrPath ("."/"FlagCheckScript.exe") ""
         // rm cfg FlagCheck.exe
         rm cfg "FlagCheckScript.exe"
-        // echo Test 13=================================================
+
         echo "Test 13================================================="
         // "%FSI%" load-FlagCheckFs.fsx
         do! fsiToOutIgnoreExitCode cfg stdoutPath stderrPath "" ["load-FlagCheckFs.fsx"]
-        // echo Test 14=================================================
+
         echo "Test 14================================================="
         // "%FSI%" FlagCheck.fsx
         do! fsiToOutIgnoreExitCode cfg stdoutPath stderrPath "" ["FlagCheck.fsx"]
-        // echo Test 15=================================================
+
         echo "Test 15================================================="
         // "%FSI%" ProjectDriver.fsx
         do! fsiToOutIgnoreExitCode cfg stdoutPath stderrPath "" ["ProjectDriver.fsx"]
-        // echo Test 16=================================================
+
         echo "Test 16================================================="
         // "%FSC%" ProjectDriver.fsx --nologo
         do! fscToOutIgnoreExitCode cfg stdoutPath stderrPath "--nologo" ["ProjectDriver.fsx"]
-        // ProjectDriver.exe
+
         do! execToOutAndIgnoreExitCode cfg stdoutPath stderrPath ("."/"ProjectDriver.exe") ""
-        // rm cfg ProjectDriver.exe
+
         rm cfg "ProjectDriver.exe"
-        // echo Test 17=================================================
+
         echo "Test 17================================================="
         // "%FSI%" load-IncludeNoWarn211.fsx
         do! fsiToOutIgnoreExitCode cfg stdoutPath stderrPath "" ["load-IncludeNoWarn211.fsx"]
-        // echo Done ==================================================
+
         echo "Done =================================================="
 
         // if NOT EXIST out.bsl COPY out.txt
@@ -1103,36 +1061,22 @@ let queriesLeafExpressionConvert () = check (attempt {
 
     do! peverify cfg "test--optimize.exe"
 
-    // REM fsi.exe testing
-    // echo TestC
-    log "TestC"
-
-    // if exist test.ok (del /f /q test.ok)
     use testOkFile = fileguard cfg "test.ok"
     // "%FSI%" %fsi_flags% test.fsx
     do! fsi cfg "%s" cfg.fsi_flags ["test.fsx"]
-    // if NOT EXIST test.ok goto SetError
+
     do! testOkFile |> NUnitConf.checkGuardExists
 
-    // REM fsc.exe testing
-
-    // echo TestD
-    log "TestD"
-
-    // if exist test.ok (del /f /q test.ok)
     use testOkFile2 = fileguard cfg "test.ok"
-    // test.exe
+
     do! exec cfg ("."/"test.exe") ""
-    // if NOT EXIST test.ok goto SetError
+
     do! testOkFile2 |> NUnitConf.checkGuardExists
 
-
-
-    // if exist test.ok (del /f /q test.ok)
     use testOkFile3 = fileguard cfg "test.ok"
     // test--optimize.exe
     do! exec cfg ("."/"test--optimize.exe") ""
-    // if NOT EXIST test.ok goto SetError
+
     do! testOkFile3 |> NUnitConf.checkGuardExists
                 
     })
@@ -1152,32 +1096,16 @@ let queriesNullableOperators () = check (attempt {
 
     do! peverify cfg "test--optimize.exe"
 
-    // REM fsi.exe testing
-    // echo TestC
-    log "TestC"
-
     use testOkFile = fileguard cfg "test.ok"
-    // "%FSI%" %fsi_flags% test.fsx
     do! fsi cfg "%s" cfg.fsi_flags ["test.fsx"]
-    // if NOT EXIST test.ok goto SetError
     do! testOkFile |> NUnitConf.checkGuardExists
 
-    // REM fsc.exe testing
-    // echo TestD
-    log "TestD"
-
-    // if exist test.ok (del /f /q test.ok)
     use testOkFile2 = fileguard cfg "test.ok"
-    // test.exe
     do! exec cfg ("."/"test.exe") ""
-    // if NOT EXIST test.ok goto SetError
     do! testOkFile2 |> NUnitConf.checkGuardExists
 
-    // if exist test.ok (del /f /q test.ok)
     use testOkFile3 = fileguard cfg "test.ok"
-    // test--optimize.exe
     do! exec cfg ("."/"test--optimize.exe") ""
-    // if NOT EXIST test.ok goto SetError
     do! testOkFile3 |> NUnitConf.checkGuardExists
                 
     })
@@ -1196,35 +1124,24 @@ let queriesOverIEnumerable () = check (attempt {
 
     do! peverify cfg "test--optimize.exe"
 
-    // REM fsi.exe testing
-    //echo TestC
-    log "TestC"
-
-    // if exist test.ok (del /f /q test.ok)
     use testOkFile = fileguard cfg "test.ok"
     // "%FSI%" %fsi_flags% test.fsx
     do! fsi cfg "%s" cfg.fsi_flags ["test.fsx"]
-    // if NOT EXIST test.ok goto SetError
+
     do! testOkFile |> NUnitConf.checkGuardExists
 
-
-    // REM fsc.exe testing
-    // echo TestD
-    log "TestD"
-
-    // if exist test.ok (del /f /q test.ok)
     use testOkFile2 = fileguard cfg "test.ok"
-    // test.exe
+
     do! exec cfg ("."/"test.exe") ""
-    // if NOT EXIST test.ok goto SetError
+
     do! testOkFile2 |> NUnitConf.checkGuardExists
 
 
-    // if exist test.ok (del /f /q test.ok)
+
     use testOkFile3 = fileguard cfg "test.ok"
     // test--optimize.exe
     do! exec cfg ("."/"test--optimize.exe") ""
-    // if NOT EXIST test.ok goto SetError
+
     do! testOkFile3 |> NUnitConf.checkGuardExists
                 
     })
@@ -1243,25 +1160,25 @@ let queriesOverIQueryable () = check (attempt {
 
     do! peverify cfg "test--optimize.exe"
 
-    // if exist test.ok (del /f /q test.ok)
+
     use testOkFile = fileguard cfg "test.ok"
     // "%FSI%" %fsi_flags% test.fsx
     do! fsi cfg "%s" cfg.fsi_flags ["test.fsx"]
-    // if NOT EXIST test.ok goto SetError
+
     do! testOkFile |> NUnitConf.checkGuardExists
 
-    // if exist test.ok (del /f /q test.ok)
+
     use testOkFile2 = fileguard cfg "test.ok"
-    // test.exe
+
     do! exec cfg ("."/"test.exe") ""
-    // if NOT EXIST test.ok goto SetError
+
     do! testOkFile2 |> NUnitConf.checkGuardExists
 
-    // if exist test.ok (del /f /q test.ok)
+
     use testOkFile3 = fileguard cfg "test.ok"
     // test--optimize.exe
     do! exec cfg ("."/"test--optimize.exe") ""
-    // if NOT EXIST test.ok goto SetError
+
     do! testOkFile3 |> NUnitConf.checkGuardExists
                 
     })
@@ -1281,26 +1198,26 @@ let quotesDebugInfo () = check (attempt {
 
     do! peverify cfg "test--optimize.exe"
 
-    // if exist test.ok (del /f /q test.ok)
+
     use testOkFile = fileguard cfg "test.ok"
     // "%FSI%" %fsi_flags% --quotations-debug+ test.fsx
     do! fsi cfg "%s --quotations-debug+" cfg.fsi_flags ["test.fsx"]
-    // if NOT EXIST test.ok goto SetError
+
     do! testOkFile |> NUnitConf.checkGuardExists
 
-    // if exist test.ok (del /f /q test.ok)
+
     use testOkFile2 = fileguard cfg "test.ok"
-    // test.exe
+
     do! exec cfg ("."/"test.exe") ""
-    // if NOT EXIST test.ok goto SetError
+
     do! testOkFile2 |> NUnitConf.checkGuardExists
 
 
-    // if exist test.ok (del /f /q test.ok)
+
     use testOkFile3 = fileguard cfg "test.ok"
     // test--optimize.exe
     do! exec cfg ("."/"test--optimize.exe") ""
-    // if NOT EXIST test.ok goto SetError
+
     do! testOkFile3 |> NUnitConf.checkGuardExists
                 
     })
@@ -1334,32 +1251,32 @@ let quotesInMultipleModules () = check (attempt {
 
     do! peverify cfg "module2-opt.exe"
 
-    // if exist test.ok (del /f /q test.ok)
+
     use testOkFile = fileguard cfg "test.ok"
     // "%FSI%" %fsi_flags% -r module1.dll module2.fsx
     do! fsi cfg "%s -r module1.dll" cfg.fsi_flags ["module2.fsx"]
-    // if NOT EXIST test.ok goto SetError
+
     do! testOkFile |> NUnitConf.checkGuardExists
 
-    // if exist test.ok (del /f /q test.ok)
+
     use testOkFile = fileguard cfg "test.ok"
     // module2.exe
     do! exec cfg ("."/"module2.exe") ""
-    // if NOT EXIST test.ok goto SetError
+
     do! testOkFile |> NUnitConf.checkGuardExists
 
-    // if exist test.ok (del /f /q test.ok)
+
     use testOkFile = fileguard cfg "test.ok"
     // module2-opt.exe
     do! exec cfg ("."/"module2-opt.exe") ""
-    // if NOT EXIST test.ok goto SetError
+
     do! testOkFile |> NUnitConf.checkGuardExists
 
-    // if exist test.ok (del /f /q test.ok)
+
     use testOkFile = fileguard cfg "test.ok"
     // module2-staticlink.exe
     do! exec cfg ("."/"module2-staticlink.exe") ""
-    // if NOT EXIST test.ok goto SetError
+
     do! testOkFile |> NUnitConf.checkGuardExists
                 
     })
