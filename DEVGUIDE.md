@@ -51,8 +51,8 @@ There are various qualifiers:
     build.cmd all test        -- build all, run all tests
 
     build.cmd test-smoke      -- build, run smoke tests
-    build.cmd test-net40-fsharp-suite     -- build, run tests\fsharp suite for .NET Framework
-    build.cmd test-net40-fsharpqa-suite   -- build, run tests\fsharpqa suite for .NET Framework
+    build.cmd test-net40-fsharp     -- build, run tests\fsharp suite for .NET Framework
+    build.cmd test-net40-fsharpqa   -- build, run tests\fsharpqa suite for .NET Framework
 
 **Notes**
 To build and test Visual F# IDE Tools, you must use [Visual Studio "vNext" (aka "Dev15")](https://www.visualstudio.com/en-us/downloads/visual-studio-next-downloads-vs.aspx). This is the one after Visual Studio 2015 (aka "Dev 14").  You must also install Visual Studio SDK (also called _Visual Studio Extensibility SDK_ on the Visual Studio installer) before building Visual F# IDE Tools.
