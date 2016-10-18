@@ -27,10 +27,6 @@ type private FSLibPaths =
 // REM === Find paths to shipped F# libraries referenced by clients
 // REM ===
 let private GetFSLibPaths env osArch fscBinPath =
-    // REM == Find out OS architecture, no matter what cmd prompt
-    // SET OSARCH=%PROCESSOR_ARCHITECTURE%
-    // IF NOT "%PROCESSOR_ARCHITEW6432%"=="" SET OSARCH=%PROCESSOR_ARCHITEW6432%
-    ignore (osArch, "param")
 
     // REM == Find out path to native 'Program Files 32bit', no matter what
     // REM == architecture we are running on and no matter what command
@@ -131,8 +127,7 @@ let private SetFSCBinPath45 () =
     | Some (:? string as d) when directoryExists d -> Some d
     | Some _ | None -> None
 
-let private attendedLog envVars x86_ProgramFiles corDir corDir40 =
-    let getMsbuildPath =
+let private getMsbuildPath envVars x86_ProgramFiles corDir corDir40 =
         // rem first see if we have got msbuild installed
         let mutable MSBuildToolsPath = envVars |> Map.tryFind "MSBuildToolsPath"
         let VS150COMNTOOLS = match envVars |> Map.tryFind "VS150COMNTOOLS" with | Some x -> x | None -> ""
@@ -166,33 +161,18 @@ let private attendedLog envVars x86_ProgramFiles corDir corDir40 =
             MSBuildToolsPath
         // :done_MsBuildToolsPath
 
-    // exit /b 0
-    getMsbuildPath, (WindowsPlatform.visualStudioVersion ())
 
 
 let config envVars =
-    // set _SCRIPT_DRIVE=%~d0
-    ignore "unused"
-    // set _SCRIPT_PATH=%~p0
-    ignore "unused"
     // set SCRIPT_ROOT=%_SCRIPT_DRIVE%%_SCRIPT_PATH%
     let SCRIPT_ROOT = __SOURCE_DIRECTORY__ |> Path.GetFullPath
 
     let env key = envVars |> Map.tryFind key
-    let envOrDefault key def = env key |> Option.fold (fun s t -> t) def
+    let envOrDefault key def = defaultArg (env key) def
     let envOrFail key = env key |> function Some x -> x | None -> failwithf "environment variable '%s' required " key
     let where = Commands.where envVars
 
     let PROCESSOR_ARCHITECTURE = WindowsPlatform.processorArchitecture envVars
-    // set REG_SOFTWARE=HKLM\SOFTWARE
-    // IF /I "%PROCESSOR_ARCHITECTURE%"=="AMD64" (set REG_SOFTWARE=%REG_SOFTWARE%\Wow6432Node)
-    ignore "unused, using .net bcl to query RegistryView.Registry32"
-
-    // if not defined FSHARP_HOME set FSHARP_HOME=%SCRIPT_ROOT%..\..
-    // for /f %%i in ("%FSHARP_HOME%") do set FSHARP_HOME=%%~fi
-    let FSHARP_HOME =
-        envOrDefault "FSHARP_HOME" (SCRIPT_ROOT/".."/"..")
-        |> Path.GetFullPath
 
     // REM Do we know where fsc.exe is?
     // IF DEFINED FSCBinPath goto :FSCBinPathFound
@@ -207,9 +187,6 @@ let config envVars =
     if not (FSCBinPath |> Option.map (fun dir -> dir/"fsc.exe") |> Option.exists fileExists)
     then FSCBinPath <- SetFSCBinPath45 ()
 
-    // if not exist "%FSCBinPath%\fsc.exe" echo %FSCBinPath%\fsc.exe still not found. Assume that user has added it to path somewhere
-    ignore "smoke test check fsc.exe"
-
     // REM add %FSCBinPath% to path only if not already there. Otherwise, the path keeps growing.
     // echo %path%; | find /i "%FSCBinPath%;" > NUL
     // if ERRORLEVEL 1    set PATH=%PATH%;%FSCBinPath%
@@ -217,8 +194,6 @@ let config envVars =
 
     // if "%FSDIFF%"=="" set FSDIFF=%SCRIPT_ROOT%fsharpqa\testenv\bin\diff.exe
     let FSDIFF = envOrDefault "FSDIFF" (SCRIPT_ROOT/"fsharpqa"/"testenv"/"bin"/"diff.exe")
-    // if not exist "%FSDIFF%" echo FSDIFF not found at expected path of %fsdiff% && exit /b 1
-    ignore "check exists diff.exe"
 
     // rem check if we're already configured, if not use the configuration from the last line of the config file
     // if "%fsc%"=="" ( 
@@ -233,33 +208,20 @@ let config envVars =
 
     // if not defined ALINK  set ALINK=al.exe
     let mutable ALINK = (envOrDefault "ALINK" "al.exe")
-    // if not defined CSC    set CSC=csc.exe %csc_flags%
-    let CSC = envOrDefault "CSC" "csc.exe"
     let BUILD_CONFIG = envOrDefault "BUILD_CONFIG" "release"
 
     // REM SDK Dependencires.
     // if not defined ILDASM   set ILDASM=ildasm.exe
     let mutable ILDASM = envOrDefault "ILDASM" "ildasm.exe"
     let mutable SN = envOrDefault "SN" "sn.exe"
-    // if not defined GACUTIL   set GACUTIL=gacutil.exe
-    let mutable GACUTIL = envOrDefault "GACUTIL" "gacutil.exe"
     // if not defined PEVERIFY set PEVERIFY=peverify.exe
     let mutable PEVERIFY = envOrDefault "PEVERIFY" "peverify.exe"
     // if not defined RESGEN   set RESGEN=resgen.exe
     let mutable RESGEN = envOrDefault "RESGEN" "resgen.exe"
 
     // if "%fsiroot%" == "" ( set fsiroot=fsi)
-    if fsiroot |> Option.isNone 
-    then fsiroot <- Some "fsi"
-
-    // REM == Test strategy: if we are on a 32bit OS => use fsi.exe
-    // REM ==                if we are on a 64bit OS => use fsiAnyCPU.exe
-    // REM == This way we get coverage of both binaries without having to
-    // REM == double the test matrix. Note that our nightly automation
-    // REM == always cover x86 and x64... so we won't miss much. There
-    // REM == is an implicit assumption that the CLR will do it's job
-    // REM == to make an FSIAnyCPU.exe behave as FSI.exe on a 32bit OS.
-    // REM == On 64 bit machines ensure that we run the 64 bit versions of tests too.
+    if fsiroot |> Option.isNone then 
+        fsiroot <- Some "fsi"
 
     // SET OSARCH=%PROCESSOR_ARCHITECTURE%
     // IF NOT "%PROCESSOR_ARCHITEW6432%"=="" SET OSARCH=%PROCESSOR_ARCHITEW6432%
@@ -272,44 +234,15 @@ let config envVars =
     let mutable FSC_BASIC_64 = env "FSC_BASIC_64"
     match fsiroot, OSARCH with
     | Some "fsi", X86 -> ()
-    | Some "fsi", arc ->
+    | Some "fsi", _ ->
         fsiroot <- Some "fsiAnyCPU"
         FSC_BASIC_64 <- Some "FSC_BASIC_64"
     | _ -> ()
 
 
-    // REM ---------------------------------------------------------------
-    // REM If we set a "--cli-version" flag anywhere in the flags then assume its v1.x
-    // REM and generate a config file, so we end up running the test on the right version
-    // REM of the CLR.  Also modify the CORSDK used.
-    // REM
-    // REM Use CLR 1.1 at a minimum since 1.0 is not installed on most of my machines
-    // REM otherwise assume v2.0
-    // REM TODO: we need to update this to be v2.0 or v3.5 and nothing else.
-
     // set fsc_flags=%fsc_flags% 
     let mutable fsc_flags = env "fsc_flags"
 
-    // set CLR_SUPPORTS_GENERICS=true
-    let CLR_SUPPORTS_GENERICS = true
-    // set ILDASM=%ILDASM%
-    ignore "env var not needed, ildasm is invoked with Commands.ildasm"
-    // set GACUTIL=%GACUTIL%
-    ignore "env var not needed, gacutil is invoked with Commads.gacutil"
-    // set CLR_SUPPORTS_WINFORMS=true
-    let CLR_SUPPORTS_WINFORMS = true
-    // set CLR_SUPPORTS_SYSTEM_WEB=true
-    let CLR_SUPPORTS_SYSTEM_WEB = true
-
-    // REM ==
-    // REM == F# v1.0 targets NetFx3.5 (i.e. NDP2.0)
-    // REM == It is ok to hardcode the location, since this is not going to
-    // REM == change ever. Well, if/when we target a different runtime we'll have
-    // REM == to come and update this, but for now we MUST make sure we use the 2.0 stuff.
-    // REM ==
-    // REM == If we run on a 64bit machine (from a 64bit command prompt!), we use the 64bit
-    // REM == CLR, but tweaking 'Framework' to 'Framework64'.
-    // REM ==
     // set CORDIR=%SystemRoot%\Microsoft.NET\Framework\v2.0.50727\
     let SystemRoot = envOrFail "SystemRoot"
     let mutable CORDIR = SystemRoot/"Microsoft.NET"/"Framework"/"v2.0.50727" |> Commands.pathAddBackslash
@@ -365,30 +298,20 @@ let config envVars =
     // echo %fsc_flags% | find /i "powerpack"
     // if ERRORLEVEL 1 set fsc_flags=%fsc_flags% -r:System.Core.dll --nowarn:20
     if fsc_flags |> Option.exists (fun flags -> flags.ToLower().Contains("powerpack")) then ()
-    else fsc_flags <- Some (sprintf "%s -r:System.Core.dll --nowarn:20" (fsc_flags |> Option.fold (fun s t -> t) ""))
+    else fsc_flags <- Some (sprintf "%s -r:System.Core.dll --nowarn:20" (defaultArg fsc_flags ""))
 
     // if not defined fsi_flags set fsi_flags=%fsc_flags:--define:COMPILED=% --define:INTERACTIVE --maxerrors:1 --abortonerror
     let mutable fsi_flags = env "fsi_flags"
     if fsi_flags |> Option.isNone then (
-        let fsc_flags_no_compiled = fsc_flags |> Option.fold (fun s flags -> flags.Replace("--define:COMPILED", "")) ""
+        let fsc_flags_no_compiled = fsc_flags |> Option.fold (fun _ flags -> flags.Replace("--define:COMPILED", "")) ""
         fsi_flags <- Some (sprintf "%s --define:INTERACTIVE --maxerrors:1 --abortonerror" fsc_flags_no_compiled)
     )
 
     // echo %fsc_flags%; | find "--define:COMPILED" > NUL || (
     //     set fsc_flags=%fsc_flags% --define:COMPILED
     // )
-    if not (fsc_flags |> Option.exists (fun flags -> flags.Contains("--define:COMPILED")))
-    then fsc_flags <- Some (sprintf "%s --define:COMPILED" (fsc_flags |> Option.fold (fun s t -> t) ""))
-
-    // if NOT "%fsc_flags:generate-config-file=X%"=="%fsc_flags%" ( 
-    //     if NOT "%fsc_flags:clr-root=X%"=="%fsc_flags%" ( 
-    //         set fsc_flags=%fsc_flags% --clr-root:%CORDIR%
-    //     )
-    // )
-    //  --clr-root non e' un flag valido di fsc
-    //    if not <| (fsc_flags |> Option.exists (fun flags -> flags.Contains("generate-config-file")))  then
-    //        if not <| (fsc_flags |> Option.exists (fun flags -> flags.Contains("clr-root"))) then 
-    //            fsc_flags <- Some (sprintf "%s --clr-root:%s" (fsc_flags |> Option.fold (fun s t -> t) "") (!CORDIR))
+    if not (fsc_flags |> Option.exists (fun flags -> flags.Contains("--define:COMPILED"))) then
+        fsc_flags <- Some (sprintf "%s --define:COMPILED" (defaultArg fsc_flags ""))
 
     // if "%CORDIR%"=="unknown" set CORDIR=
     if CORDIR = "unknown" then CORDIR <- ""
@@ -404,22 +327,11 @@ let config envVars =
     // set NGEN=
     let mutable NGEN = None
 
-    // REM ==
-    // REM == Set path to C# compiler. If we are NOT on NetFx4.0, try we prefer C# 3.5 to C# 2.0 
-    // REM == This is because we have tests that reference System.Core.dll from C# code!
-    // REM == (e.g. fsharp\core\fsfromcs)
-    // REM ==
     // IF NOT "%CORDIR%"=="" IF EXIST "%CORDIR%\csc.exe" SET CSC="%CORDIR%\csc.exe" %csc_flags%
     let mutable CSC = None
     if not (CORDIR = "") then
         if CORDIR/"csc.exe" |> fileExists 
         then CSC <- Some (CORDIR/"csc.exe")
-
-    // IF     "%CORDIR40%"=="" IF NOT "%CORDIR%"=="" IF EXIST "%CORDIR%\..\V3.5\csc.exe" SET CSC="%CORDIR%\..\v3.5\csc.exe" %csc_flags%
-    if CORDIR40 |> Option.isNone then
-        if not (CORDIR = "") then
-            if CORDIR/".."/"V3.5"/"csc.exe" |> fileExists
-            then CSC <- Some (CORDIR/".."/"V3.5"/"csc.exe")
 
     // IF NOT "%CORDIR%"=="" IF EXIST "%CORDIR%\ngen.exe"            SET NGEN=%CORDIR%\ngen.exe
     if not (CORDIR = "") then 
@@ -431,11 +343,6 @@ let config envVars =
         if CORDIR/"al.exe" |> fileExists 
         then ALINK <- CORDIR/"al.exe"
 
-    // REM ==
-    // REM == The logic here is: pick the latest msbuild
-    // REM == If we are testing against NDP4.0, then don't try msbuild 3.5
-    // REM ==
-
     // IF NOT "%CORSDK%"=="" IF EXIST "%CORSDK%\ildasm.exe"          SET ILDASM=%CORSDK%\ildasm.exe
     match CORSDK |> Option.map (fun d -> d/"ildasm.exe") with
     | Some p when fileExists p -> ILDASM <- p
@@ -445,11 +352,6 @@ let config envVars =
     | Some p when fileExists p -> SN <- p
     | Some _ | None -> ()
         
-    // IF NOT "%CORSDK%"=="" IF EXIST "%CORSDK%\gacutil.exe"         SET GACUTIL=%CORSDK%\gacutil.exe
-    match CORSDK |> Option.map (fun d -> d/"gacutil.exe") with
-    | Some p when fileExists p -> GACUTIL <- p
-    | Some _ | None -> ()
-
     // IF NOT "%CORSDK%"=="" IF EXIST "%CORSDK%\peverify.exe"        SET PEVERIFY=%CORSDK%\peverify.exe
     match CORSDK |> Option.map (fun d -> d/"peverify.exe") with
     | Some p when fileExists p -> PEVERIFY <- p
@@ -459,10 +361,8 @@ let config envVars =
     // IF NOT "%CORSDK%"=="" IF NOT EXIST "%RESGEN%" IF EXIST "%CORSDK%\..\resgen.exe"       SET RESGEN=%CORSDK%\..\resgen.exe
     match CORSDK with
     | Some sdk ->
-        if sdk/"resgen.exe" |> fileExists 
-        then RESGEN <- sdk/"resgen.exe"
-        elif sdk/".."/"resgen.exe" |> fileExists
-        then RESGEN <- sdk/".."/"resgen.exe"
+        if sdk/"resgen.exe" |> fileExists then RESGEN <- sdk/"resgen.exe"
+        elif sdk/".."/"resgen.exe" |> fileExists then RESGEN <- sdk/".."/"resgen.exe"
     | None -> ()
 
     // IF NOT "%CORSDK%"=="" IF EXIST "%CORSDK%\al.exe"              SET ALINK=%CORSDK%\al.exe
@@ -489,62 +389,39 @@ let config envVars =
     // call :GetFSLibPaths
     let X86_PROGRAMFILES, libs = GetFSLibPaths envVars OSARCH FSCBinPath
 
-    // REM == Set standard flags for invoking powershell scripts
-    // IF NOT DEFINED PSH_FLAGS SET PSH_FLAGS=-nologo -noprofile -executionpolicy bypass
-    let PSH_FLAGS = envOrDefault "PSH_FLAGS" "-nologo -noprofile -executionpolicy bypass"
-    ignore "unused, cross platform requirement and powershell is not used in tests"
-
-    //add to environment variables, only if needed (an example is ILDASM, cfg.ILDASM should be used instead inside tests)
-    let environment =
-        envVars
-        |> Map.add "CLR_SUPPORTS_GENERICS" (sprintf "%A" CLR_SUPPORTS_GENERICS)
-        |> Map.add "CLR_SUPPORTS_WINFORMS" (sprintf "%A" CLR_SUPPORTS_WINFORMS)
-        |> Map.add "CLR_SUPPORTS_SYSTEM_WEB" (sprintf "%A" CLR_SUPPORTS_SYSTEM_WEB)
-
     let orBlank = Option.fold (fun _ x -> x) ""
+    let msbuildToolsPath = getMsbuildPath envVars X86_PROGRAMFILES CORDIR CORDIR40
 
-    let cfg = {
-      EnvironmentVariables = environment;
-      ALINK = ALINK;
-      CORDIR = CORDIR |> Commands.pathAddBackslash;
-      CORSDK = CORSDK |> orBlank |> Commands.pathAddBackslash;
-      FSCBinPath = FSCBinPath |> orBlank |> Commands.pathAddBackslash;
-      FSCOREDLL20PATH = libs.FSCOREDLL20PATH;
-      FSCOREDLLPATH = libs.FSCOREDLLPATH;
-      FSCOREDLLPORTABLEPATH = libs.FSCOREDLLPORTABLEPATH;
-      FSCOREDLLNETCOREPATH = libs.FSCOREDLLNETCOREPATH;
-      FSCOREDLLNETCORE78PATH = libs.FSCOREDLLNETCORE78PATH;
-      FSCOREDLLNETCORE259PATH = libs.FSCOREDLLNETCORE259PATH;
-      FSDATATPPATH = libs.FSDATATPPATH;
-      FSCOREDLLVPREVPATH = libs.FSCOREDLLVPREVPATH;
-      FSDIFF = FSDIFF;
-      GACUTIL = GACUTIL;
-      ILDASM = ILDASM;
+    {
+      EnvironmentVariables = envVars
+      ALINK = ALINK
+      CORDIR = CORDIR |> Commands.pathAddBackslash
+      CORSDK = CORSDK |> orBlank |> Commands.pathAddBackslash
+      FSCBinPath = FSCBinPath |> orBlank |> Commands.pathAddBackslash
+      FSCOREDLL20PATH = libs.FSCOREDLL20PATH
+      FSCOREDLLPATH = libs.FSCOREDLLPATH
+      FSCOREDLLPORTABLEPATH = libs.FSCOREDLLPORTABLEPATH
+      FSCOREDLLNETCOREPATH = libs.FSCOREDLLNETCOREPATH
+      FSCOREDLLNETCORE78PATH = libs.FSCOREDLLNETCORE78PATH
+      FSCOREDLLNETCORE259PATH = libs.FSCOREDLLNETCORE259PATH
+      FSDATATPPATH = libs.FSDATATPPATH
+      FSCOREDLLVPREVPATH = libs.FSCOREDLLVPREVPATH
+      FSDIFF = FSDIFF
+      ILDASM = ILDASM
       SN = SN
-      INSTALL_SKU = None;
-      MSBUILDTOOLSPATH = None;
-      MSBUILD = None;
-      NGEN = NGEN |> orBlank;
-      PEVERIFY = PEVERIFY;
-      RESGEN = RESGEN;
-      CSC = CSC |> orBlank;
-      BUILD_CONFIG = BUILD_CONFIG;
-      FSC = FSC;
-      FSI = FSI;
-      csc_flags = csc_flags;
-      fsc_flags = fsc_flags |> orBlank;
-      fsi_flags = fsi_flags |> orBlank;
-    }
-
-    // if DEFINED _UNATTENDEDLOG exit /b 0
-    match env "_UNATTENDEDLOG" with
-    | Some _ -> cfg
-    | None ->
-        let msbuildToolsPath, installSku = attendedLog envVars X86_PROGRAMFILES CORDIR CORDIR40
-        { cfg with 
-            MSBUILDTOOLSPATH = msbuildToolsPath |> Option.map (Commands.pathAddBackslash); 
-            MSBUILD = msbuildToolsPath |> Option.map (fun d -> d/"msbuild.exe");
-            INSTALL_SKU = installSku }
+      NGEN = NGEN |> orBlank
+      PEVERIFY = PEVERIFY
+      RESGEN = RESGEN
+      CSC = CSC |> orBlank
+      BUILD_CONFIG = BUILD_CONFIG
+      FSC = FSC
+      FSI = FSI
+      csc_flags = csc_flags
+      fsc_flags = fsc_flags |> orBlank
+      fsi_flags = fsi_flags |> orBlank
+      Directory=""
+      MSBUILDTOOLSPATH = msbuildToolsPath |> Option.map (Commands.pathAddBackslash)
+      MSBUILD = msbuildToolsPath |> Option.map (fun d -> d/"msbuild.exe") }
     
 
 
@@ -572,9 +449,7 @@ let logConfig (cfg: TestConfig) =
     log "FSDIFF              =%s" cfg.FSDIFF
     log "FSI                 =%s" cfg.FSI
     log "fsi_flags           =%s" cfg.fsi_flags
-    log "GACUTIL             =%s" cfg.GACUTIL
     log "ILDASM              =%s" cfg.ILDASM
-    log "INSTALL_SKU         =%A" cfg.INSTALL_SKU
     log "MSBUILDTOOLSPATH    =%A" cfg.MSBUILDTOOLSPATH
     log "MSBUILD             =%A" cfg.MSBUILD
     log "NGEN                =%s" cfg.NGEN

@@ -8,7 +8,7 @@ open NUnitConf
 open PlatformHelpers
 open FSharpTestSuiteTypes
 
-let testContext = FSharpTestSuite.testContext
+let testConfig = FSharpTestSuite.testConfig
 
 module Analyses = 
 
@@ -30,7 +30,8 @@ module Analyses =
 
     [<Test; FSharpSuiteTest("optimize/analyses")>]
     let functionSizes () = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
+        let cfg = testConfig ()
+        let dir = cfg.Directory
 
         let getfullpath = Commands.getfullpath dir
         let ``fsc >a 2>&1`` = ``fsc >a 2>&1`` cfg dir  
@@ -50,13 +51,14 @@ module Analyses =
 
         do! match diff with
             | [] -> Success
-            | l ->
+            | _ ->
                 NUnitConf.genericError (sprintf "'%s' and '%s' differ; %A" (getfullpath outFile) (getfullpath expectedFile) diff)
         })
 
     [<Test; FSharpSuiteTest("optimize/analyses")>]
     let totalSizes () = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
+        let cfg = testConfig ()
+        let dir = cfg.Directory
 
         let ``fsc >a 2>&1`` = ``fsc >a 2>&1`` cfg dir  
         let fsdiff = fsdiff cfg dir
@@ -76,13 +78,14 @@ module Analyses =
 
         do! match diff with
             | [] -> Success
-            | l ->
+            | _ ->
                 NUnitConf.genericError (sprintf "'%s' and '%s' differ; %A" (getfullpath outFile) (getfullpath expectedFile) diff)
         })
 
     [<Test; FSharpSuiteTest("optimize/analyses")>]
     let hasEffect () = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
+        let cfg = testConfig ()
+        let dir = cfg.Directory
 
         let ``fsc >a 2>&1`` = ``fsc >a 2>&1`` cfg dir  
         let fsdiff = fsdiff cfg dir
@@ -102,13 +105,14 @@ module Analyses =
 
         do! match diff with
             | [] -> Success
-            | l ->
+            | _ ->
                 NUnitConf.genericError (sprintf "'%s' and '%s' differ; %A" (getfullpath outFile) (getfullpath expectedFile) diff)
         })
 
     [<Test; FSharpSuiteTest("optimize/analyses")>]
     let noNeedToTailcall () = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
+        let cfg = testConfig ()
+        let dir = cfg.Directory
 
         let ``fsc >a 2>&1`` = ``fsc >a 2>&1`` cfg dir  
         let fsdiff = fsdiff cfg dir
@@ -128,7 +132,7 @@ module Analyses =
 
         do! match diff with
             | [] -> Success
-            | l ->
+            | _ ->
                 NUnitConf.genericError (sprintf "'%s' and '%s' differ; %A" (getfullpath outFile) (getfullpath expectedFile) diff)
         })
 
@@ -212,7 +216,8 @@ module Inline =
 
     [<Test; FSharpSuiteTest("optimize/inline")>]
     let ``inline`` () = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
+        let cfg = testConfig ()
+        let dir = cfg.Directory
 
         do! build cfg dir
 
@@ -224,7 +229,8 @@ module Stats =
 
     [<Test; FSharpSuiteTest("optimize/stats")>]
     let stats () = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
+        let cfg = testConfig ()
+        let dir = cfg.Directory
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let ildasm = Commands.ildasm exec cfg.ILDASM

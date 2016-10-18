@@ -4,8 +4,7 @@ module Core_quotes
 #endif
 #light
 
-#if Portable
-#else
+#if !Portable
 #r "cslib.dll"
 #endif
 
@@ -24,8 +23,7 @@ let check s v1 v2 =
        report_failure s
 
 
-#if NetCore
-#else
+#if !NetCore
 let argv = System.Environment.GetCommandLineArgs() 
 let SetCulture() = 
     if argv.Length > 2 && argv.[1] = "--culture" then  
@@ -107,8 +105,7 @@ module TypedTest = begin
     test "check ~UInt64"  ((<@  "1"  @> |> (function UInt64 _ ->   false | _ -> true))) 
     test "check ~String"  ((<@  1    @> |> (function String "1" -> false | _ -> true))) 
 
-#if FSHARP_CORE_31
-#else
+#if !FSHARP_CORE_31
     test "check Decimal"  ((<@  1M   @> |> (function Decimal 1M -> true | _ -> false))) 
     test "check ~Decimal" ((<@  "1"  @> |> (function Decimal _ ->  false | _ -> true))) 
     test "check ~Decimal neither" ((<@ 1M + 1M @> |> (function Decimal _ ->  false | _ -> true))) 
@@ -531,7 +528,7 @@ module TypedTest = begin
             |   _ -> false
         end
 
-#if FSHARP_CORE_31
+#if FSHARP_CORE_31 || Portable
 #else
     test "check accesses to readonly fields in ReflectedDefinitions" 
         begin
@@ -1906,8 +1903,7 @@ module TestQuotationOfCOnstructors =
                 
         | _ -> false)
 
-#if NetCore
-#else
+#if !NetCore
     // Also test getting the reflected definition for private members implied by "let f() = ..." bindings
     let fMethod = (typeof<MyClassWithAsLetMethod>.GetMethod("f", Reflection.BindingFlags.Instance ||| Reflection.BindingFlags.Public ||| Reflection.BindingFlags.NonPublic))
 
@@ -2237,8 +2233,7 @@ module ReflectedDefinitionOnTypesWithImplicitCodeGen =
 #endif
           check "celnwer35" (Quotations.Expr.TryGetReflectedDefinition(m).IsNone) true
 
-#if Portable
-#else
+#if !Portable
 module BasicUsingTEsts = 
     let q1() = 
       let a = ResizeArray<_>()
@@ -2410,8 +2405,7 @@ module QuotationOfResizeArrayIteration =
         
 
 
-#if FSHARP_CORE_31
-#else
+#if !FSHARP_CORE_31
 module TestAutoQuoteAtStaticMethodCalls = 
     open Microsoft.FSharp.Quotations
 
@@ -2727,8 +2721,10 @@ module PartialApplicationLeadToInvalidCodeWhenOptimized =
 
     f ()
 
+#if !NetCore
 module TestAssemblyAttributes = 
     let attributes = System.Reflection.Assembly.GetExecutingAssembly().GetCustomAttributes(false)
+#endif
 
 let aa =
   if not failures.IsEmpty then (printfn "Test Failed, failures = %A" failures; exit 1) 

@@ -515,7 +515,7 @@ if '%BUILD_PHASE%' == '1' (
 
 echo ---------------- Done with build, starting update/prepare ---------------
 
-if 'BUILD_NET40' == '1' (
+if '%BUILD_NET40%' == '1' (
     call src\update.cmd %BUILD_CONFIG% -ngen
 )
 

@@ -8,7 +8,7 @@ open NUnitConf
 open PlatformHelpers
 open FSharpTestSuiteTypes
 
-let testContext = FSharpTestSuite.testContext
+let testConfig = FSharpTestSuite.testConfig
 
 open System.Reflection
 
@@ -16,7 +16,8 @@ module FS2003 =
 
     [<Test; FSharpSuiteTest()>]
     let ``should be raised if AssemblyInformationalVersion has invalid version`` () = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
+        let cfg = testConfig ()
+        let dir = cfg.Directory
 
         let fscToLibrary = Printf.ksprintf (FscCommand.fscToLibrary dir (Command.exec dir cfg.EnvironmentVariables) cfg.FSC)
 
@@ -45,7 +46,7 @@ open System.Reflection
         let w =
             result.StderrText
             |> FscCommand.parseFscOut
-            |> List.tryFind (function FscCommand.FscOutputLine.Warning ("FS2003", desc) -> true | _ -> false)
+            |> List.tryFind (function FscCommand.FscOutputLine.Warning ("FS2003", _desc) -> true | _ -> false)
         
         match w with
         | None -> 
