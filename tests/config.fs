@@ -23,20 +23,18 @@ type private FSLibPaths =
       FSDATATPPATH : string
       FSCOREDLLVPREVPATH : string }
 
-// REM ===
-// REM === Find paths to shipped F# libraries referenced by clients
-// REM ===
+// === Find paths to shipped F# libraries referenced by clients
 let private GetFSLibPaths env osArch fscBinPath =
 
-    // REM == Find out path to native 'Program Files 32bit', no matter what
-    // REM == architecture we are running on and no matter what command
-    // REM == prompt we came from.
+    // == Find out path to native 'Program Files 32bit', no matter what
+    // == architecture we are running on and no matter what command
+    // == prompt we came from.
     // IF /I "%OSARCH%"=="x86"   set X86_PROGRAMFILES=%ProgramFiles%
     // IF /I "%OSARCH%"=="IA64"  set X86_PROGRAMFILES=%ProgramFiles(x86)%
     // IF /I "%OSARCH%"=="AMD64" set X86_PROGRAMFILES=%ProgramFiles(x86)%
     let X86_PROGRAMFILES = WindowsPlatform.x86ProgramFilesDirectory env osArch
 
-    // REM == Default VS install locations
+    // == Default VS install locations
     // set FSCOREDLLPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.1.0
     let mutable FSCOREDLLPATH = X86_PROGRAMFILES/"Reference Assemblies"/"Microsoft"/"FSharp"/".NETFramework"/"v4.0"/"4.4.1.0"
     // set FSCOREDLL20PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v2.0\2.3.0.0
@@ -54,7 +52,7 @@ let private GetFSLibPaths env osArch fscBinPath =
     // set FSCOREDLLVPREVPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.0.0
     let mutable FSCOREDLLVPREVPATH = X86_PROGRAMFILES/"Reference Assemblies"/"Microsoft"/"FSharp"/".NETFramework"/"v4.0"/"4.4.0.0"
 
-    // REM == Check if using open build instead
+    // == Check if using open build instead
 
     // IF EXIST "%FSCBinPath%\FSharp.Core.dll" set FSCOREDLLPATH=%FSCBinPath%
     match fscBinPath with
@@ -111,13 +109,13 @@ let private GetFSLibPaths env osArch fscBinPath =
         FSDATATPPATH = FSDATATPPATH;
         FSCOREDLLVPREVPATH = FSCOREDLLVPREVPATH }
 
-// REM ===
-// REM === Find path to FSC/FSI looking up the registry
-// REM === Will set the FSCBinPath env variable.
-// REM === This if for Dev11+/NDP4.5
-// REM === Works on both XP and Vista and hopefully everything else
-// REM === Works on 32bit and 64 bit, no matter what cmd prompt it is invoked from
-// REM === 
+// ===
+// === Find path to FSC/FSI looking up the registry
+// === Will set the FSCBinPath env variable.
+// === This if for Dev11+/NDP4.5
+// === Works on both XP and Vista and hopefully everything else
+// === Works on 32bit and 64 bit, no matter what cmd prompt it is invoked from
+// === 
 let private SetFSCBinPath45 () =
     // FOR /F "tokens=1-2*" %%a IN ('reg query "%REG_SOFTWARE%\Microsoft\FSharp\4.1\Runtime\v4.0" /ve') DO set FSCBinPath=%%c
     // FOR /F "tokens=1-3*" %%a IN ('reg query "%REG_SOFTWARE%\Microsoft\FSharp\4.1\Runtime\v4.0" /ve') DO set FSCBinPath=%%d
@@ -174,7 +172,7 @@ let config envVars =
 
     let PROCESSOR_ARCHITECTURE = WindowsPlatform.processorArchitecture envVars
 
-    // REM Do we know where fsc.exe is?
+    // Do we know where fsc.exe is?
     // IF DEFINED FSCBinPath goto :FSCBinPathFound
     // FOR /F "delims=" %%i IN ('where fsc.exe') DO SET FSCBinPath=%%~dpi
     // :FSCBinPathFound
@@ -187,7 +185,7 @@ let config envVars =
     if not (FSCBinPath |> Option.map (fun dir -> dir/"fsc.exe") |> Option.exists fileExists)
     then FSCBinPath <- SetFSCBinPath45 ()
 
-    // REM add %FSCBinPath% to path only if not already there. Otherwise, the path keeps growing.
+    // add %FSCBinPath% to path only if not already there. Otherwise, the path keeps growing.
     // echo %path%; | find /i "%FSCBinPath%;" > NUL
     // if ERRORLEVEL 1    set PATH=%PATH%;%FSCBinPath%
     //REVIEW add it? or better use only env var?
@@ -210,7 +208,7 @@ let config envVars =
     let mutable ALINK = (envOrDefault "ALINK" "al.exe")
     let BUILD_CONFIG = envOrDefault "BUILD_CONFIG" "release"
 
-    // REM SDK Dependencires.
+    // SDK Dependencires.
     // if not defined ILDASM   set ILDASM=ildasm.exe
     let mutable ILDASM = envOrDefault "ILDASM" "ildasm.exe"
     let mutable SN = envOrDefault "SN" "sn.exe"
@@ -258,8 +256,8 @@ let config envVars =
     | None -> ()
     | Some d -> CORDIR <- d
 
-    // REM == Use the same runtime as our architecture
-    // REM == ASSUMPTION: This could be a good or bad thing.
+    // == Use the same runtime as our architecture
+    // == ASSUMPTION: This could be a good or bad thing.
     // IF /I NOT "%PROCESSOR_ARCHITECTURE%"=="x86" set CORDIR=%CORDIR:Framework=Framework64%
     match PROCESSOR_ARCHITECTURE with 
     | X86 -> () 
@@ -286,7 +284,7 @@ let config envVars =
 
     let mutable CORSDK = allSDK |> Seq.tryPick id
 
-    // REM == Fix up CORSDK for 64bit platforms...
+    // == Fix up CORSDK for 64bit platforms...
     // IF /I "%PROCESSOR_ARCHITECTURE%"=="AMD64" SET CORSDK=%CORSDK%\x64
     // IF /I "%PROCESSOR_ARCHITECTURE%"=="IA64"  SET CORSDK=%CORSDK%\IA64
     match PROCESSOR_ARCHITECTURE with
@@ -294,7 +292,7 @@ let config envVars =
     | IA64 -> CORSDK <- CORSDK |> Option.map (fun dir -> dir/"IA64")
     | _ -> ()
 
-    // REM add powerpack to flags only if not already there. Otherwise, the variable can keep growing.
+    // add powerpack to flags only if not already there. Otherwise, the variable can keep growing.
     // echo %fsc_flags% | find /i "powerpack"
     // if ERRORLEVEL 1 set fsc_flags=%fsc_flags% -r:System.Core.dll --nowarn:20
     if fsc_flags |> Option.exists (fun flags -> flags.ToLower().Contains("powerpack")) then ()
@@ -316,7 +314,7 @@ let config envVars =
     // if "%CORDIR%"=="unknown" set CORDIR=
     if CORDIR = "unknown" then CORDIR <- ""
 
-    // REM use short names in the path so you don't have to deal with the space in things like "Program Files"
+    // use short names in the path so you don't have to deal with the space in things like "Program Files"
     // for /f "delims=" %%I in ("%CORSDK%") do set CORSDK=%%~dfsI%
     CORSDK <- CORSDK |> Option.map Commands.convertToShortPath
 
@@ -385,7 +383,7 @@ let config envVars =
     | Some dir, Some fsiExe when fileExists (dir/(fsiExe+".exe")) -> FSI <- dir/(fsiExe+".exe")
     | _ -> ()
 
-    // REM == Located F# library DLLs in either open or Visual Studio contexts
+    // == Located F# library DLLs in either open or Visual Studio contexts
     // call :GetFSLibPaths
     let X86_PROGRAMFILES, libs = GetFSLibPaths envVars OSARCH FSCBinPath
 
@@ -423,8 +421,6 @@ let config envVars =
       MSBUILDTOOLSPATH = msbuildToolsPath |> Option.map (Commands.pathAddBackslash)
       MSBUILD = msbuildToolsPath |> Option.map (fun d -> d/"msbuild.exe") }
     
-
-
 let logConfig (cfg: TestConfig) =
     log "---------------------------------------------------------------"
     log "Executables"
