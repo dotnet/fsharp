@@ -9,126 +9,82 @@ open PlatformHelpers
 open NUnitConf
 open FSharpTestSuiteTypes
 
+let skipIfExists cfg file = attempt {
+    if fileExists cfg file then 
+        return! NUnitConf.skip (sprintf "file '%s' found" file)
+    }
+
+
+let skipIfNotExists cfg file = attempt {
+    if not (fileExists cfg file) then 
+        return! NUnitConf.skip (sprintf "file '%s' not found" file)
+    }
+
 
 let singleTestBuild (cfg:TestConfig) = 
 
     let testDir = cfg.Directory
-    let fileExists = Commands.fileExists testDir >> Option.isSome
-    let del = Commands.rm testDir
 
-    //if EXIST build.ok DEL /f /q build.ok
-    do if fileExists "build.ok" then del "build.ok"
+    do if fileExists cfg "build.ok" then rm cfg "build.ok"
 
     //remove FSharp.Core.dll from the target directory to ensure that compiler uses the correct FSharp.Core.dll
-    do if fileExists "FSharp.Core.dll" then del "FSharp.Core.dll"
+    do if fileExists cfg "FSharp.Core.dll" then rm cfg "FSharp.Core.dll"
 
-    //set source1=
-    //if exist test.ml (set source1=test.ml)
-    //if exist test.fs (set source1=test.fs)
     let source1 = 
         ["test.ml"; "test.fs"] 
         |> List.rev
-        |> List.tryFind fileExists
+        |> List.tryFind (fileExists cfg)
 
     let sources =
         ["testlib.fsi";"testlib.fs";"test.mli";"test.ml";"test.fsi";"test.fs";"test2.fsi";"test2.fs";"test.fsx";"test2.fsx"]
-        |> List.filter fileExists
-
-    let exec p = Command.exec testDir cfg.EnvironmentVariables { Output = Inherit; Input = None } p >> checkResult
+        |> List.filter (fileExists cfg)
 
     let copy_y f = Commands.copy_y testDir f >> checkResult
-    let fsi = Printf.ksprintf (fun flags l -> Commands.fsi exec cfg.FSI flags l)
-    let fsi_flags = cfg.fsi_flags
-    let fsc = Printf.ksprintf (fun flags -> Commands.fsc exec cfg.FSC flags)
-    let fsc_flags = cfg.fsc_flags
-    let peverify = Commands.peverify exec cfg.PEVERIFY "/nologo"
     let ``echo._tofile`` = Commands.``echo._tofile`` testDir
 
-    //:Ok
     let doneOk x =
-        //echo Built fsharp %~f0 ok.
         log "Built fsharp %s ok." testDir
-        //echo. > build.ok
         ``echo._tofile`` " " "build.ok"
-        //endlocal
-        //exit /b 0
         Success x
 
-    //:Skip
     let doneSkipped msg x =
-        //echo Skipped %~f0
         log "Skipped build '%s' reason: %s" testDir msg
-        //endlocal
         ``echo._tofile`` " " "build.ok"
-        //exit /b 0
         Success x
 
-    //:Error
     let doneError err msg =
-        //echo Test Script Failed (perhaps test did not emit test.ok signal file?)
         log "%s" msg
-        //endlocal
-        //exit /b %ERRORLEVEL%
         Failure (err)
 
-    //:SETERROR
-    //set NonexistentErrorLevel 2> nul
-    //goto Error
-
-    let skipIfExists file = attempt {
-        if fileExists file
-        then return! NUnitConf.skip (sprintf "file '%s' found" file)
-        }
-
-    let skipIfNotExists file = attempt {
-        if not (fileExists file)
-        then return! NUnitConf.skip (sprintf "file '%s' not found" file)
-        }
-    
-    /// <summary>
-    /// if NOT EXIST dont.run.peverify (    <para/>
-    ///    "%PEVERIFY%" test.exe            <para/>
-    ///    @if ERRORLEVEL 1 goto Error      <para/>
-    /// )                                   <para/>
-    /// </summary>
     let doPeverify cmd = attempt {
-        do! skipIfExists "dont.run.peverify"
+        do! skipIfExists cfg "dont.run.peverify"
         
-        do! peverify cmd
+        do! peverify cfg cmd
         }
 
     let doNOOP () = attempt {
-        //@echo No build action to take for this permutation
         log "No build action to take for this permutation"
         }
 
     let doBasic () = attempt { 
         // FSC %fsc_flags% --define:BASIC_TEST -o:test.exe -g %sources%
-        //if ERRORLEVEL 1 goto Error
-        do! fsc "%s --define:BASIC_TEST -o:test.exe -g" fsc_flags sources 
+        do! fsc cfg "%s --define:BASIC_TEST -o:test.exe -g" cfg.fsc_flags sources 
 
-        //if NOT EXIST dont.run.peverify (
-        //    "%PEVERIFY%" test.exe
-        //    @if ERRORLEVEL 1 goto Error
-        //)
         do! doPeverify "test.exe"
         }
 
     let doBasic64 () = attempt {
         // "%FSC%" %fsc_flags% --define:BASIC_TEST --platform:x64 -o:testX64.exe -g %sources%
-        do! fsc "%s --define:BASIC_TEST --platform:x64 -o:testX64.exe -g" fsc_flags sources
+        do! fsc cfg "%s --define:BASIC_TEST --platform:x64 -o:testX64.exe -g" cfg.fsc_flags sources
 
-        // if NOT EXIST dont.run.peverify (
-        //     "%PEVERIFY%" testX64.exe
-        // )
         do! doPeverify "testX64.exe"
         }
 
     let doBasicCoreCLR () = attempt {
         let platform = "win7-x64"
         //let For %%A in ("%cd%") do (Set TestCaseName=%%~nxA)
-        do! fsi """%s --targetPlatformName:.NETStandard,Version=v1.6/%s --source:"coreclr_utilities.fs" --source:"%s" --packagesDir:..\..\packages --projectJsonLock:%s --fsharpCore:%s --define:CoreClr --define:NetCore --compilerPath:%s --copyCompiler:yes --verbose:verbose --exec """
-               fsi_flags
+        do! fsi cfg """%s --targetPlatformName:.NETStandard,Version=v1.6/%s --source:"coreclr_utilities.fs" --source:"%s" --packagesDir:..\..\packages --projectJsonLock:%s --fsharpCore:%s --define:CoreClr --define:NetCore --compilerPath:%s --copyCompiler:yes --verbose:verbose --exec """
+               cfg.fsi_flags
                platform
                (String.concat " " sources)
                (__SOURCE_DIRECTORY__ ++ "project.lock.json")
@@ -140,66 +96,55 @@ let singleTestBuild (cfg:TestConfig) =
 
     let doGeneratedSignature () = attempt {
         //if NOT EXIST dont.use.generated.signature (
-        do! skipIfExists "dont.use.generated.signature"
+        do! skipIfExists cfg "dont.use.generated.signature"
 
-        // if exist test.ml (
-        do! skipIfNotExists "test.fs"
+        do! skipIfNotExists cfg "test.fs"
 
         //  echo Generating interface file...
         log "Generating interface file..."
-        //  copy /y %source1% tmptest.ml
+
         do! source1 |> Option.map (fun from -> copy_y from "tmptest.fs")
-        //  REM NOTE: use --generate-interface-file since results may be in Unicode
-        //  "%FSC%" %fsc_flags% --sig:tmptest.mli tmptest.ml
-        do! fsc "%s --sig:tmptest.fsi" fsc_flags ["tmptest.fs"]
+
+        // NOTE: use --generate-interface-file since results may be in Unicode
+        do! fsc cfg "%s --sig:tmptest.fsi" cfg.fsc_flags ["tmptest.fs"]
 
         //  echo Compiling against generated interface file...
         log "Compiling against generated interface file..."
         //  "%FSC%" %fsc_flags% -o:tmptest1.exe tmptest.fsi tmptest.fs
-        do! fsc "%s -o:tmptest1.exe" fsc_flags ["tmptest.fsi";"tmptest.fs"]
+        do! fsc cfg "%s -o:tmptest1.exe" cfg.fsc_flags ["tmptest.fsi";"tmptest.fs"]
 
         do! doPeverify "tmptest1.exe"
         }
 
     let doOptFscMinusDebug () = attempt {
         // "%FSC%" %fsc_flags% --optimize- --debug -o:test--optminus--debug.exe -g %sources%
-        do! fsc "%s --optimize- --debug -o:test--optminus--debug.exe -g" fsc_flags sources
+        do! fsc cfg "%s --optimize- --debug -o:test--optminus--debug.exe -g" cfg.fsc_flags sources
 
         do! doPeverify "test--optminus--debug.exe"
         }
 
     let doOptFscPlusDebug () = attempt {
         // "%FSC%" %fsc_flags% --optimize+ --debug -o:test--optplus--debug.exe -g %sources%
-        do! fsc "%s --optimize+ --debug -o:test--optplus--debug.exe -g" fsc_flags sources
+        do! fsc cfg "%s --optimize+ --debug -o:test--optplus--debug.exe -g" cfg.fsc_flags sources
 
-        // if NOT EXIST dont.run.peverify (
-        //     "%PEVERIFY%" test--optplus--debug.exe
-        // )
         do! doPeverify "test--optplus--debug.exe"
         }
 
     let doAsDLL () = attempt {
-        //REM Compile as a DLL to exercise pickling of interface data, then recompile the original source file referencing this DLL
-        //REM THe second compilation will not utilize the information from the first in any meaningful way, but the
-        //REM compiler will unpickle the interface and optimization data, so we test unpickling as well.
+        // Compile as a DLL to exercise pickling of interface data, then recompile the original source file referencing this DLL
+        // THe second compilation will not utilize the information from the first in any meaningful way, but the
+        // compiler will unpickle the interface and optimization data, so we test unpickling as well.
 
-        //if NOT EXIST dont.compile.test.as.dll (
-        do! skipIfExists "dont.compile.test.as.dll"
+        do! skipIfExists cfg "dont.compile.test.as.dll"
 
         // "%FSC%" %fsc_flags% --optimize -a -o:test--optimize-lib.dll -g %sources%
-        do! fsc "%s --optimize -a -o:test--optimize-lib.dll -g" fsc_flags sources
+        do! fsc cfg "%s --optimize -a -o:test--optimize-lib.dll -g" cfg.fsc_flags sources
 
         // "%FSC%" %fsc_flags% --optimize -r:test--optimize-lib.dll -o:test--optimize-client-of-lib.exe -g %sources%
-        do! fsc "%s --optimize -r:test--optimize-lib.dll -o:test--optimize-client-of-lib.exe -g" fsc_flags sources
+        do! fsc cfg "%s --optimize -r:test--optimize-lib.dll -o:test--optimize-client-of-lib.exe -g" cfg.fsc_flags sources
 
-        // if NOT EXIST dont.run.peverify (
-        //     "%PEVERIFY%" test--optimize-lib.dll
-        // )
         do! doPeverify "test--optimize-lib.dll"
 
-        // if NOT EXIST dont.run.peverify (
-        //     "%PEVERIFY%" test--optimize-client-of-lib.exe
-        // )
         do! doPeverify "test--optimize-client-of-lib.exe"
         }
 
@@ -228,96 +173,21 @@ let singleTestBuild (cfg:TestConfig) =
     
     flow
 
-let private singleTestRun' cfg testDir =
+let singleTestRunAux cfg =
 
-    let getfullpath = Commands.getfullpath testDir
-    let fileExists = Commands.fileExists testDir >> Option.isSome
-
-    // set sources=
-    // if exist testlib.fsi (set sources=%sources% testlib.fsi)
-    // if exist testlib.fs (set sources=%sources% testlib.fs)
-    // if exist test.mli (set sources=%sources% test.mli)
-    // if exist test.ml (set sources=%sources% test.ml)
-    // if exist test.fsi (set sources=%sources% test.fsi)
-    // if exist test.fs (set sources=%sources% test.fs)
-    // if exist test2.fsi (set sources=%sources% test2.fsi)
-    // if exist test2.fs (set sources=%sources% test2.fs)
-    // if exist test.fsx (set sources=%sources% test.fsx)
-    // if exist test2.fsx (set sources=%sources% test2.fsx)
     let sources =
         ["testlib.fsi";"testlib.fs";"test.mli";"test.ml";"test.fsi";"test.fs";"test2.fsi";"test2.fs";"test.fsx";"test2.fsx"]
-        |> List.filter fileExists
+        |> List.filter (fileExists cfg)
 
-    // :START
+    let createTestOkFile () = NUnitConf.FileGuard.create (getfullpath cfg "test.ok")
 
-    // set PERMUTATIONS_LIST=FSI_FILE FSI_STDIN FSI_STDIN_OPT FSI_STDIN_GUI FSC_BASIC %FSC_BASIC_64% FSC_HW FSC_O3 GENERATED_SIGNATURE FSC_OPT_MINUS_DEBUG FSC_OPT_PLUS_DEBUG SPANISH AS_DLL 
-    // 
-    // if "%REDUCED_RUNTIME%"=="1" (
-    //     echo REDUCED_RUNTIME set
-    //     
-    //     if not defined PERMUTATIONS (
-    //         powershell.exe %PSH_FLAGS% -command "&{& '%~d0%~p0\PickPermutations.ps1' '%cd%' '%FSC%' '%PERMUTATIONS_LIST%'}" > _perm.txt
-    //         if errorlevel 1 (
-    //             set ERRORMSG=%ERRORMSG% PickPermutations.ps1 failed;
-    //             goto :ERROR
-    //         )
-    //         set /p PERMUTATIONS=<_perm.txt
-    //     )
-    // )
-    ignore "test is parametrized"
-
-    // if not defined PERMUTATIONS (
-    //     echo "PERMUTATIONS not defined. Running everything."
-    //     set PERMUTATIONS=%PERMUTATIONS_LIST%
-    // )
-    ignore "test is parametrized"
-
-    // for %%A in (%PERMUTATIONS%) do (
-    //     call :%%A
-    //     IF ERRORLEVEL 1 EXIT /B 1
-    // )
-    ignore "test is parametrized"
-
-    // if "%ERRORMSG%"==""  goto Ok
-
-    // set NonexistentErrorLevel 2> nul
-    // goto :ERROR
-
-    // :END
-
-    // :EXIT_PATHS
-
-    // REM =========================================
-    // REM THE TESTS
-    // REM =========================================
-
-    let ``exec <`` l p = Command.exec testDir cfg.EnvironmentVariables { Output = Inherit; Input = Some(RedirectInput(l)) } p >> checkResult
-    let ``fsi <`` = Printf.ksprintf (fun flags l -> Commands.fsi (``exec <`` l) cfg.FSI flags [])
-
-    let fsi_flags = cfg.fsi_flags
-
-    let createTestOkFile () = NUnitConf.FileGuard.create (getfullpath "test.ok")
-
-    let skipIfExists file = attempt {
-        if fileExists file then 
-            return! NUnitConf.skip (sprintf "file '%s' found" file)
-        }
-
-    let skipIfNotExists file = attempt {
-        if not (fileExists file) then 
-            return! NUnitConf.skip (sprintf "file '%s' not found" file)
-        }
-
-
-    // :FSI_STDIN
-    // @echo do :FSI_STDIN
     let runFSI_STDIN () = attempt {
         // if NOT EXIST dont.pipe.to.stdin (
-        do! skipIfExists "dont.pipe.to.stdin"
+        do! skipIfExists cfg "dont.pipe.to.stdin"
 
         use testOkFile = createTestOkFile () 
 
-        do! ``fsi <`` "%s" fsi_flags (sources |> List.rev |> List.head) //use last file, because `cmd < a.txt b.txt` redirect b.txt only
+        do! ``fsi <`` cfg "%s" cfg.fsi_flags (sources |> List.rev |> List.head) //use last file, because `cmd < a.txt b.txt` redirect b.txt only
 
         do! testOkFile |> NUnitConf.checkGuardExists
         }
@@ -326,12 +196,12 @@ let private singleTestRun' cfg testDir =
     // @echo do :FSI_STDIN_OPT
     let runFSI_STDIN_OPT () = attempt {
         // if NOT EXIST dont.pipe.to.stdin (
-        do! skipIfExists "dont.pipe.to.stdin"
+        do! skipIfExists cfg "dont.pipe.to.stdin"
 
-        // if exist test.ok (del /f /q test.ok)
+
         use testOkFile = createTestOkFile () 
         // "%FSI%" %fsi_flags% --optimize < %sources% && (
-        do! ``fsi <`` "%s --optimize" fsi_flags (sources |> List.rev |> List.head) //use last file, because `cmd < a.txt b.txt` redirect b.txt only
+        do! ``fsi <`` cfg "%s --optimize" cfg.fsi_flags (sources |> List.rev |> List.head) //use last file, because `cmd < a.txt b.txt` redirect b.txt only
         // dir test.ok > NUL 2>&1 ) || (
         // @echo FSI_STDIN_OPT failed
         // set ERRORMSG=%ERRORMSG% FSI_STDIN_OPT failed;
@@ -340,30 +210,23 @@ let private singleTestRun' cfg testDir =
         // )
         }
 
-    // :FSI_STDIN_GUI
-    // @echo do :FSI_STDIN_GUI
     let runFSI_STDIN_GUI () = attempt {
-        // if NOT EXIST dont.pipe.to.stdin (
-        do! skipIfExists "dont.pipe.to.stdin"
 
-        // if exist test.ok (del /f /q test.ok)
+        do! skipIfExists cfg "dont.pipe.to.stdin"
+
         use testOkFile = createTestOkFile () 
         // "%FSI%" %fsi_flags% --gui < %sources% && (
-        do! ``fsi <`` "%s --gui" fsi_flags (sources |> List.rev |> List.head) //use last file, because `cmd < a.txt b.txt` redirect b.txt only
-        // dir test.ok > NUL 2>&1 ) || (
-        // @echo FSI_STDIN_GUI failed;
-        // set ERRORMSG=%ERRORMSG% FSI_STDIN_GUI failed;
-        // )
+        do! ``fsi <`` cfg "%s --gui" cfg.fsi_flags (sources |> List.rev |> List.head) //use last file, because `cmd < a.txt b.txt` redirect b.txt only
+
         do! testOkFile |> NUnitConf.checkGuardExists
-        // )
         }
 
     let runFSI_FILE () = attempt {
-        do! skipIfExists "dont.run.as.script"
+        do! skipIfExists cfg "dont.run.as.script"
 
         use testOkFile = createTestOkFile () 
 
-        do! fsi cfg "%s" fsi_flags sources
+        do! fsi cfg "%s" cfg.fsi_flags sources
 
         do! testOkFile |> NUnitConf.checkGuardExists
         }
@@ -417,9 +280,9 @@ let private singleTestRun' cfg testDir =
         }
 
     let runGENERATED_SIGNATURE () = attempt {
-        do! skipIfExists "dont.use.generated.signature"
+        do! skipIfExists cfg "dont.use.generated.signature"
 
-        do! skipIfNotExists "test.fs"
+        do! skipIfNotExists cfg "test.fs"
 
         use testOkFile = createTestOkFile () 
 
@@ -439,7 +302,7 @@ let private singleTestRun' cfg testDir =
         }
 
     let runAS_DLL () = attempt {
-        do! skipIfExists "dont.compile.test.as.dll"
+        do! skipIfExists cfg "dont.compile.test.as.dll"
 
         use testOkFile = createTestOkFile () 
 
@@ -466,38 +329,23 @@ let private singleTestRun' cfg testDir =
 
 let singleTestRun (cfg:TestConfig) = 
     let testDir = cfg.Directory
-    let fileExists = Commands.fileExists testDir >> Option.isSome
 
-    //:Ok
     let doneOK x =
-        //echo Ran fsharp %~f0 ok.
         log "Ran fsharp %s ok." testDir
-        //exit /b 0
         Success x
 
-    //:Skip
     let doneSkipped msg =
-        //echo Skipped %~f0
         log "Skipped run '%s' reason: %s" testDir msg
-        //exit /b 0
         Failure (Skipped msg)
 
-    //:Error
     let doneError err msg =
-        //echo %ERRORMSG%
         log "%s" msg
-        //exit /b %ERRORLEVEL% 
         Failure (err)
 
-    let skipIfNotExists file = attempt {
-        if not (fileExists file)
-        then return! NUnitConf.skip (sprintf "file '%s' not found" file)
-        }
-
     let tests cfg p = attempt {
-        do! skipIfNotExists "build.ok"
+        do! skipIfNotExists cfg "build.ok"
 
-        do! singleTestRun' cfg testDir p ()
+        do! singleTestRunAux cfg p ()
         }
 
     let flow p () =    
@@ -515,14 +363,11 @@ let singleTestRun (cfg:TestConfig) =
 
 let private singleNegTestAux (cfg: TestConfig) testname = attempt {
 
-    let fullpath = Commands.getfullpath cfg.Directory
-    let fileExists = fullpath >> Commands.fileExists cfg.Directory >> Option.isSome
-
     // REM == Set baseline (fsc vs vs, in case the vs baseline exists)
     let VSBSLFILE = 
         // IF     EXIST %testname%.vsbsl (set BSLFILE=%testname%.vsbsl)
         // IF NOT EXIST %testname%.vsbsl (set BSLFILE=%testname%.bsl)
-        if (sprintf "%s.vsbsl" testname) |> fileExists 
+        if (sprintf "%s.vsbsl" testname) |> (fileExists cfg)
         then sprintf "%s.vsbsl" testname
         else sprintf "%s.bsl" testname
 
@@ -531,17 +376,17 @@ let private singleNegTestAux (cfg: TestConfig) testname = attempt {
                     testname + "a.mli"; testname + "a.fsi"; testname + "a.ml"; testname + "a.fs"; 
                     testname + "b.mli"; testname + "b.fsi"; testname + "b.ml"; testname + "b.fs"; ]
 
-        yield! src |> List.filter fileExists
+        yield! src |> List.filter (fileExists cfg)
     
-        if fileExists "helloWorldProvider.dll" then 
+        if fileExists cfg "helloWorldProvider.dll" then 
             yield "-r:helloWorldProvider.dll"
 
-        if fileExists (testname + "-pre.fs") then 
+        if fileExists cfg (testname + "-pre.fs") then 
             yield (sprintf "-r:%s-pre.dll" testname)
 
         ]
 
-    do! if fileExists (testname + "-pre.fs")
+    do! if fileExists cfg (testname + "-pre.fs")
     //     "%FSC%" %fsc_flags% -a -o:%testname%-pre.dll  "%testname%-pre.fs" 
         then fsc cfg "%s -a -o:%s-pre.dll" cfg.fsc_flags testname [testname + "-pre.fs"] 
         else Success ()

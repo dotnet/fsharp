@@ -390,17 +390,18 @@ let exec cfg p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = 
 let execIn cfg workDir p = Command.exec workDir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
 
 
-let inline fsc cfg arg = Printf.ksprintf (Commands.fsc (exec cfg) cfg.FSC) arg
-let inline fscIn cfg workDir arg = Printf.ksprintf (Commands.fsc (execIn cfg workDir) cfg.FSC) arg
-let inline fscToOutIgnoreExitCode cfg stdoutPath stderrPath arg = Printf.ksprintf (Commands.fsc (execToOutAndIgnoreExitCode cfg stdoutPath stderrPath) cfg.FSC) arg
-let inline csc cfg arg = Printf.ksprintf (Commands.csc (exec cfg) cfg.CSC) arg
-let inline peverify cfg = Commands.peverify (exec cfg) cfg.PEVERIFY "/nologo"
-let inline peverifyWithArgs cfg args = Commands.peverify (exec cfg) cfg.PEVERIFY args
-let inline fsi cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI)
-let inline fsiToOutIgnoreExitCode cfg stdoutPath stderrPath = Printf.ksprintf (Commands.fsi (execToOutAndIgnoreExitCode cfg stdoutPath stderrPath) cfg.FSI)
-let inline fileguard cfg = (Commands.getfullpath cfg.Directory) >> FileGuard.create
-let inline getfullpath cfg = Commands.getfullpath cfg.Directory
-let inline resgen cfg = Printf.ksprintf (Commands.resgen (exec cfg) cfg.RESGEN)
+let fsc cfg arg = Printf.ksprintf (Commands.fsc (exec cfg) cfg.FSC) arg
+let fscIn cfg workDir arg = Printf.ksprintf (Commands.fsc (execIn cfg workDir) cfg.FSC) arg
+let fscToOutIgnoreExitCode cfg stdoutPath stderrPath arg = Printf.ksprintf (Commands.fsc (execToOutAndIgnoreExitCode cfg stdoutPath stderrPath) cfg.FSC) arg
+let csc cfg arg = Printf.ksprintf (Commands.csc (exec cfg) cfg.CSC) arg
+let peverify cfg = Commands.peverify (exec cfg) cfg.PEVERIFY "/nologo"
+let peverifyWithArgs cfg args = Commands.peverify (exec cfg) cfg.PEVERIFY args
+let fsi cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI)
+let fsiToOutIgnoreExitCode cfg stdoutPath stderrPath = Printf.ksprintf (Commands.fsi (execToOutAndIgnoreExitCode cfg stdoutPath stderrPath) cfg.FSI)
+let fileguard cfg = (Commands.getfullpath cfg.Directory) >> FileGuard.create
+let getfullpath cfg = Commands.getfullpath cfg.Directory
+let resgen cfg = Printf.ksprintf (Commands.resgen (exec cfg) cfg.RESGEN)
+let fileExists cfg = Commands.fileExists cfg.Directory >> Option.isSome
 let msbuild cfg = Printf.ksprintf (Commands.msbuild (exec cfg) (cfg.MSBUILD.Value))
 let ``exec <`` cfg l p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = Inherit; Input = Some(RedirectInput(l)) } p >> checkResult
 let ``fsi <`` cfg = Printf.ksprintf (fun flags l -> Commands.fsi (``exec <`` cfg l) cfg.FSI flags [])
