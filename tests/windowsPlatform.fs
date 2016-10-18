@@ -35,11 +35,9 @@ let processorArchitecture envVars =
     | Some x -> x 
     | None -> failwithf "environment variable '%s' required " "PROCESSOR_ARCHITECTURE"
 
-///<summary>
 /// Return real processor architecture (ignore WOW64)
 /// more info: http://blogs.msdn.com/b/david.wang/archive/2006/03/26/howto-detect-process-bitness.aspx
 /// use PROCESSOR_ARCHITEW6432 and PROCESSOR_ARCHITECTURE environment variables
-///</summary>
 let osArch envVars =
     // SET OSARCH=%PROCESSOR_ARCHITECTURE%
     // IF NOT "%PROCESSOR_ARCHITEW6432%"=="" SET OSARCH=%PROCESSOR_ARCHITEW6432%
