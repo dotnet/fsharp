@@ -34,30 +34,6 @@
     <Compile Include="TestLib.Salsa.fs" />
     <Compile Include="TestLib.LanguageService.fs" />
     <Compile Include="TestLib.ProjectSystem.fs" />
-    <Compile Include="ColorizationServiceTests.fs">
-      <Link>Roslyn\Classification\ColorizationServiceTests.fs</Link>
-    </Compile>
-    <Compile Include="BraceMatchingServiceTests.fs">
-      <Link>Roslyn\Utilities\BraceMatchingServiceTests.fs</Link>
-    </Compile>
-    <Compile Include="IndentationServiceTests.fs">
-      <Link>Roslyn\Utilities\IndentationServiceTests.fs</Link>
-    </Compile>
-    <Compile Include="BreakpointResolutionService.fs">
-      <Link>Roslyn\Debugging\BreakpointResolutionService.fs</Link>
-    </Compile>
-    <Compile Include="LanguageDebugInfoServiceTests.fs">
-      <Link>Roslyn\Debugging\LanguageDebugInfoServiceTests.fs</Link>
-    </Compile>
-    <Compile Include="DocumentDiagnosticAnalyzerTests.fs">
-      <Link>Roslyn\Diagnostics\DocumentDiagnosticAnalyzerTests.fs</Link>
-    </Compile>
-    <Compile Include="CompletionProviderTests.fs">
-      <Link>Roslyn\Completion\CompletionProviderTests.fs</Link>
-    </Compile>
-    <Compile Include="GoToDefinitionServiceTests.fs">
-      <Link>Roslyn\GoToDefinition\GoToDefinitionServiceTests.fs</Link>
-    </Compile>
     <Compile Include="Tests.InternalCollections.fs" />
     <Compile Include="Tests.Build.fs" />
     <Compile Include="Tests.TaskReporter.fs" />
@@ -104,6 +80,33 @@
     </Compile>
     <Compile Include="..\..\..\tests\service\ProjectOptionsTests.fs">
       <Link>ProjectOptionsTests.fs</Link>
+    </Compile>
+    <Compile Include="ColorizationServiceTests.fs">
+      <Link>Roslyn\Classification\ColorizationServiceTests.fs</Link>
+    </Compile>
+    <Compile Include="BraceMatchingServiceTests.fs">
+      <Link>Roslyn\Utilities\BraceMatchingServiceTests.fs</Link>
+    </Compile>
+    <Compile Include="IndentationServiceTests.fs">
+      <Link>Roslyn\Utilities\IndentationServiceTests.fs</Link>
+    </Compile>
+    <Compile Include="BreakpointResolutionService.fs">
+      <Link>Roslyn\Debugging\BreakpointResolutionService.fs</Link>
+    </Compile>
+    <Compile Include="LanguageDebugInfoServiceTests.fs">
+      <Link>Roslyn\Debugging\LanguageDebugInfoServiceTests.fs</Link>
+    </Compile>
+    <Compile Include="DocumentDiagnosticAnalyzerTests.fs">
+      <Link>Roslyn\Diagnostics\DocumentDiagnosticAnalyzerTests.fs</Link>
+    </Compile>
+    <Compile Include="ProjectDiagnosticAnalyzerTests.fs">
+      <Link>Roslyn\Diagnostics\ProjectDiagnosticAnalyzerTests.fs</Link>
+    </Compile>
+    <Compile Include="CompletionProviderTests.fs">
+      <Link>Roslyn\Completion\CompletionProviderTests.fs</Link>
+    </Compile>
+    <Compile Include="GoToDefinitionServiceTests.fs">
+      <Link>Roslyn\GoToDefinition\GoToDefinitionServiceTests.fs</Link>
     </Compile>
     <CustomCopyLocal Include="app.config">
       <TargetFilename>VisualFSharp.Unittests.dll.config</TargetFilename>

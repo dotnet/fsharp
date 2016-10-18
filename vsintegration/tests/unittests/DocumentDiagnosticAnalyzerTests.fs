@@ -33,8 +33,12 @@ type DocumentDiagnosticAnalyzerTests()  =
         UnresolvedReferences = None
     }
 
-    member private this.VerifyNoErrors(fileContents: string) =
-        let errors = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(filePath, SourceText.From(fileContents), 0, options, true)
+    member private this.VerifyNoErrors(fileContents: string, ?additionalFlags: string[]) =
+        let additionalOptions = match additionalFlags with
+                                | None -> options
+                                | Some(flags) -> {options with OtherOptions = Array.append options.OtherOptions flags}
+
+        let errors = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(filePath, SourceText.From(fileContents), 0, additionalOptions, true)
         Assert.AreEqual(0, errors.Length, "There should be no errors generated")
 
     member private this.VerifyErrorAtMarker(fileContents: string, expectedMarker: string, ?expectedMessage: string) =
@@ -372,3 +376,13 @@ type T =
 
 let g (t : T) = t.Count()
             """)
+            
+    [<Test>]
+    member public this.DocumentDiagnosticsDontReportProjectErrors_Bug1596() =
+        // https://github.com/Microsoft/visualfsharp/issues/1596
+        this.VerifyNoErrors(
+            fileContents = """
+let x = 3
+printf "%d" x
+            """,
+            additionalFlags = [| "--times" |])
