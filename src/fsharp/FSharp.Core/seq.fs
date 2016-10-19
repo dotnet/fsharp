@@ -543,6 +543,8 @@ namespace Microsoft.FSharp.Collections
                 override __.Create<'V> (_result:ISeqPipeline) (next:SeqConsumer<'T,'V>) : SeqConsumer<'T,'V> = upcast Identity (next)
                 override __.IsIdentity = true
 
+                static member IdentityFactory = IdentityFactory<'T>()
+
             and MapFactory<'T,'U> (map:'T->'U) =
                 inherit SeqComponentFactory<'T,'U> ()
                 override __.Create<'V> (_result:ISeqPipeline) (next:SeqConsumer<'U,'V>) : SeqConsumer<'T,'V> =
@@ -1169,10 +1171,10 @@ namespace Microsoft.FSharp.Collections
                     createDelayed (fun () -> array) current
 
                 let createDelayedId (delayedArray:unit -> array<'T>) =
-                    createDelayed delayedArray (IdentityFactory ())
+                    createDelayed delayedArray IdentityFactory.IdentityFactory
 
                 let createId (array:array<'T>) =
-                    create array (IdentityFactory ())
+                    create array IdentityFactory.IdentityFactory
 
             module List =
                 type Enumerator<'T,'U>(alist:list<'T>, seqComponent:SeqConsumer<'T,'U>, result:Result<'U>) =
@@ -1483,7 +1485,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Unfold")>]
         let unfold (generator:'State->option<'T * 'State>) (state:'State) : seq<'T> =
-            SeqComposer.Helpers.upcastEnumerable (new SeqComposer.Unfold.Enumerable<'T,'T,'State>(generator, state, SeqComposer.IdentityFactory ()))
+            SeqComposer.Helpers.upcastEnumerable (new SeqComposer.Unfold.Enumerable<'T,'T,'State>(generator, state, SeqComposer.IdentityFactory.IdentityFactory))
 
         [<CompiledName("Empty")>]
         let empty<'T> = (EmptyEnumerable :> seq<'T>)
@@ -2173,10 +2175,10 @@ namespace Microsoft.FSharp.Collections
         let toComposer (source:seq<'T>): SeqComposer.SeqEnumerable<'T> = 
             checkNonNull "source" source
             match source with
-            | :? SeqComposer.Enumerable.EnumerableBase<'T> as s -> upcast SeqComposer.Enumerable.Enumerable<'T,'T>(s, (SeqComposer.IdentityFactory()))
-            | :? array<'T> as a -> upcast SeqComposer.Array.Enumerable((fun () -> a), (SeqComposer.IdentityFactory()))
-            | :? list<'T> as a -> upcast SeqComposer.List.Enumerable(a, (SeqComposer.IdentityFactory()))
-            | _ -> upcast SeqComposer.Enumerable.Enumerable<'T,'T>(source, (SeqComposer.IdentityFactory()))
+            | :? SeqComposer.Enumerable.EnumerableBase<'T> as s -> upcast SeqComposer.Enumerable.Enumerable<'T,'T>(s, SeqComposer.IdentityFactory.IdentityFactory)
+            | :? array<'T> as a -> upcast SeqComposer.Array.Enumerable((fun () -> a), SeqComposer.IdentityFactory.IdentityFactory)
+            | :? list<'T> as a -> upcast SeqComposer.List.Enumerable(a, SeqComposer.IdentityFactory.IdentityFactory)
+            | _ -> upcast SeqComposer.Enumerable.Enumerable<'T,'T>(source, SeqComposer.IdentityFactory.IdentityFactory)
 
         [<CompiledName("Sum")>]
         let inline sum (source:seq<'a>) : 'a =
