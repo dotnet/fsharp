@@ -2168,24 +2168,26 @@ namespace Microsoft.FSharp.Collections
 #endif
                 then mkDelayedSeq (fun () -> countByValueType keyf source)
                 else mkDelayedSeq (fun () -> countByRefType   keyf source)
+        
+        [<CompiledName("ToComposer")>]
+        let toComposer (source:seq<'T>): SeqComposer.SeqEnumerable<'T> = 
+            checkNonNull "source" source
+            match source with
+            | :? SeqComposer.Enumerable.EnumerableBase<'T> as s -> upcast SeqComposer.Enumerable.Enumerable<'T,'T>(s, (SeqComposer.IdentityFactory()))
+            | :? array<'T> as a -> upcast SeqComposer.Array.Enumerable((fun () -> a), (SeqComposer.IdentityFactory()))
+            | :? list<'T> as a -> upcast SeqComposer.List.Enumerable(a, (SeqComposer.IdentityFactory()))
+            | _ -> upcast SeqComposer.Enumerable.Enumerable<'T,'T>(source, (SeqComposer.IdentityFactory()))
 
         [<CompiledName("Sum")>]
         let inline sum (source:seq<'a>) : 'a =
-            match source with
-            | :? SeqComposer.SeqEnumerable<'a> as s ->
-                let total =
-                    s.ForEach (fun _ ->
+            let newSource = toComposer source
+            let total =
+                    newSource.ForEach (fun _ ->
                         { new SeqComposer.AccumulatingConsumer<'a,'a> (LanguagePrimitives.GenericZero) with
                             override this.ProcessNext value =
                                 this.Accumulator <- Checked.(+) this.Accumulator value
                                 true })
-                total.Accumulator
-            | _ -> 
-                use e = source.GetEnumerator()
-                let mutable acc = LanguagePrimitives.GenericZero< ^a>
-                while e.MoveNext() do
-                    acc <- Checked.(+) acc e.Current
-                acc
+            total.Accumulator
 
         [<CompiledName("SumBy")>]
         let inline sumBy (f : 'T -> ^U) (source: seq<'T>) : ^U =
