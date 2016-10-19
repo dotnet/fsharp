@@ -2243,13 +2243,15 @@ namespace Microsoft.FSharp.Collections
         let inline min (source: seq<_>) =
             let composedSource = toComposer source
 
-            let mutable first = false
+            let mutable first = true
             let min =
                 composedSource.ForEach (fun _ ->
                     { new SeqComposer.AccumulatingConsumer<'T,'T> (Unchecked.defaultof<'T>) with
                         override this.ProcessNext value =
-                            first <- false
-                            if value < this.Accumulator then
+                            if first then
+                                first <- false
+                                this.Accumulator <- value
+                            elif value < this.Accumulator then
                                 this.Accumulator <- value
                             true 
                        interface SeqComposer.ISeqComponent with
@@ -2263,18 +2265,22 @@ namespace Microsoft.FSharp.Collections
         let inline minBy (f : 'T -> 'U) (source: seq<'T>) : 'T =
             let composedSource = toComposer source
 
-            let mutable first = false
+            let mutable first = true
             let mutable acc = Unchecked.defaultof<'U>
             let min =
                 composedSource.ForEach (fun _ ->
                     { new SeqComposer.AccumulatingConsumer<'T,'T> (Unchecked.defaultof<'T>) with
                         override this.ProcessNext value =
-                            first <- false
-                            let currValue = value
-                            let curr = f currValue
-                            if curr < acc then
-                                acc <- curr
+                            if first then
+                                first <- false
                                 this.Accumulator <- value
+                            else
+                                first <- false
+                                let currValue = value
+                                let curr = f currValue
+                                if curr < acc then
+                                    acc <- curr
+                                    this.Accumulator <- value
                             true 
                        interface SeqComposer.ISeqComponent with
                          member __.OnComplete() = 
@@ -2303,14 +2309,17 @@ namespace Microsoft.FSharp.Collections
         let inline max (source: seq<_>) =
             let composedSource = toComposer source
 
-            let mutable first = false
+            let mutable first = true
             let max =
                 composedSource.ForEach (fun _ ->
                     { new SeqComposer.AccumulatingConsumer<'T,'T> (Unchecked.defaultof<'T>) with
                         override this.ProcessNext value =
-                            first <- false
-                            if value > this.Accumulator then
-                                this.Accumulator <- value
+                            if first then
+                                    first <- false
+                                    this.Accumulator <- value
+                            else
+                                if value > this.Accumulator then
+                                    this.Accumulator <- value
                             true 
                        interface SeqComposer.ISeqComponent with
                           member __.OnComplete() = 
@@ -2323,18 +2332,21 @@ namespace Microsoft.FSharp.Collections
         let inline maxBy (f : 'T -> 'U) (source: seq<'T>) : 'T =
             let composedSource = toComposer source
 
-            let mutable first = false
+            let mutable first = true
             let mutable acc = Unchecked.defaultof<'U>
             let min =
                 composedSource.ForEach (fun _ ->
                     { new SeqComposer.AccumulatingConsumer<'T,'T> (Unchecked.defaultof<'T>) with
                         override this.ProcessNext value =
-                            first <- false
-                            let currValue = value
-                            let curr = f currValue
-                            if curr > acc then
-                                acc <- curr
+                            if first then
+                                first <- false
                                 this.Accumulator <- value
+                            else
+                                let currValue = value
+                                let curr = f currValue
+                                if curr > acc then
+                                    acc <- curr
+                                    this.Accumulator <- value
                             true 
                        interface SeqComposer.ISeqComponent with
                           member __.OnComplete() = 
