@@ -9266,7 +9266,7 @@ and TcMethodApplication
                   (unnamedCurriedCallerArgs |> List.collectSquared  (fun callerArg -> freeInTypeLeftToRight cenv.g false callerArg.Type)))
 
         let result, errors = 
-            ResolveOverloading csenv NoTrace methodName 0 false callerArgCounts ad postArgumentTypeCheckingCalledMethGroup true (Some returnTy) 
+            ResolveOverloading csenv NoTrace methodName 0 None callerArgCounts ad postArgumentTypeCheckingCalledMethGroup true (Some returnTy) 
 
         match afterTcOverloadResolution with
         |   AfterTcOverloadResolution.DoNothing -> ()
