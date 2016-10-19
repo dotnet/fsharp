@@ -566,7 +566,9 @@ echo ---------------- Done with update, starting tests -----------------------
 pushd tests
 
 
-setlocal DISABLEDELAYEDEXPANSION
+rem Turn off delayed expansion when manipulating variables where a ! may appear in the argument text (CMD batch file oddity)
+rem Note: each setlocal must be matched by an executed endlocal
+setlocal disableDelayedExpansion
 if "%INCLUDE_TEST_SPEC_NUNIT%" == "" (
     if NOT "%EXCLUDE_TEST_SPEC_NUNIT%" == "" (
         set WHERE_ARG_NUNIT=--where "!(%EXCLUDE_TEST_SPEC_NUNIT%)"
@@ -587,7 +589,9 @@ if NOT "%EXCLUDE_TEST_TAGS%" == "" (
     set EXCLUDE_ARG_RUNALL=-nottags:%EXCLUDE_TEST_TAGS%
 )
 echo WHERE_ARG_NUNIT=%WHERE_ARG_NUNIT%
-setlocal ENABLEDELAYEDEXPANSION
+rem Re-enable delayed expansion. We can't use endlocal here since we want to keep the variables we've computed.
+rem Note: each setlocal must be matched by an executed endlocal
+setlocal enableDelayedExpansion
 
 
 set NUNITPATH=%~dp0tests\fsharpqa\testenv\bin\nunit\
@@ -620,7 +624,8 @@ set ERRORFILE=%RESULTSDIR%\test-net40-fsharp-errors.log
 set command="%NUNIT3_CONSOLE%" --verbose "%FSCBINPATH%\FSharp.Tests.FSharp.dll" --framework:V4.0 --work:"%FSCBINPATH%"  --output:"!OUTPUTFILE!" --err:"!ERRORFILE!" --result:"!XMLFILE!;format=nunit2" 
 
 if '%TEST_NET40_FSHARP_SUITE%' == '1' (
-    rem Turn off delayed expansion because a ! may appear in the argument text (!!!!!)
+	rem Turn off delayed expansion when manipulating variables where a ! may appear in the argument text (CMD batch file oddity)
+	rem Note: each setlocal must be matched by an executed endlocal
 	setlocal disableDelayedExpansion
     echo %command% %WHERE_ARG_NUNIT%
          %command%  %WHERE_ARG_NUNIT%
@@ -736,7 +741,8 @@ set ERRORFILE=%RESULTSDIR%\test-net40-compilerunit-errors.log
 set command="%NUNIT3_CONSOLE%" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit2" --output:"!OUTPUTFILE!" --err:"!ERRORFILE!" --work:"%FSCBINPATH%" "%FSCBINPATH%\..\..\net40\bin\FSharp.Compiler.Unittests.dll"
 if '%TEST_NET40_COMPILERUNIT_SUITE%' == '1' (
 
-    rem Turn off delayed expansion because a ! may appear in the argument text (!!!!!)
+	rem Turn off delayed expansion when manipulating variables where a ! may appear in the argument text (CMD batch file oddity)
+	rem Note: each setlocal must be matched by an executed endlocal
 	setlocal disableDelayedExpansion
     echo %command% %WHERE_ARG_NUNIT%
          %command%  %WHERE_ARG_NUNIT%
@@ -759,7 +765,8 @@ set ERRORFILE=%RESULTSDIR%\test-net40-coreunit-errors.log
 set command="%NUNIT3_CONSOLE%" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit2" --output:"!OUTPUTFILE!" --err:"!ERRORFILE!" --work:"%FSCBINPATH%" "%FSCBINPATH%\FSharp.Core.Unittests.dll"
 if '%TEST_NET40_COREUNIT_SUITE%' == '1' (
 
-    rem Turn off delayed expansion because a ! may appear in the argument text (!!!!!)
+	rem Turn off delayed expansion when manipulating variables where a ! may appear in the argument text (CMD batch file oddity)
+	rem Note: each setlocal must be matched by an executed endlocal
 	setlocal disableDelayedExpansion
     echo %command% %WHERE_ARG_NUNIT%
          %command%  %WHERE_ARG_NUNIT%
@@ -782,7 +789,8 @@ set ERRORFILE=%RESULTSDIR%\test-portable-coreunit-errors.log
 set command="%NUNIT3_CONSOLE%" /framework:V4.0 /result="!XMLFILE!;format=nunit2" /output="!OUTPUTFILE!" /err="!ERRORFILE!" /work="%FSCBINPATH%" "%FSCBINPATH%\..\..\portable7\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable47\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable78\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable259\bin\FSharp.Core.Unittests.dll"
 
 if '%TEST_PORTABLE_COREUNIT_SUITE%' == '1' (
-    rem Turn off delayed expansion because a ! may appear in the argument text (!!!!!)
+	rem Turn off delayed expansion when manipulating variables where a ! may appear in the argument text (CMD batch file oddity)
+	rem Note: each setlocal must be matched by an executed endlocal
 	setlocal disableDelayedExpansion
     echo %command% %WHERE_ARG_NUNIT%
          %command%  %WHERE_ARG_NUNIT%
@@ -810,7 +818,8 @@ set CORERUNPATH=%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\!architecture!
 set command="!CORERUNPATH!\corerun.exe" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\fsharp.core.unittests\FSharp.Core.Unittests.exe"
 if '%TEST_CORECLR_COREUNIT_SUITE%' == '1' (
 
-    rem Turn off delayed expansion because a ! may appear in the argument text (!!!!!)
+	rem Turn off delayed expansion when manipulating variables where a ! may appear in the argument text (CMD batch file oddity)
+	rem Note: each setlocal must be matched by an executed endlocal
 	setlocal disableDelayedExpansion
     echo %command% %WHERE_ARG_NUNIT%
          %command%  %WHERE_ARG_NUNIT%
@@ -837,7 +846,8 @@ set ERRORFILE=%RESULTSDIR%\test-coreclr-fsharp-errors.log
 set command="%NUNIT3_CONSOLE%" --verbose "%FSCBINPATH%\..\..\coreclr\bin\FSharp.Tests.FSharp.dll" --framework:V4.0 --work:"%FSCBINPATH%"  --output:"!OUTPUTFILE!" --err:"!ERRORFILE!" --result:"!XMLFILE!;format=nunit2" 
 
 if '%TEST_CORECLR_FSHARP_SUITE%' == '1' (
-    rem Turn off delayed expansion because a ! may appear in the argument text (!!!!!)
+	rem Turn off delayed expansion when manipulating variables where a ! may appear in the argument text (CMD batch file oddity)
+	rem Note: each setlocal must be matched by an executed endlocal
 	setlocal disableDelayedExpansion
     echo %command% %WHERE_ARG_NUNIT%
          %command%  %WHERE_ARG_NUNIT%
@@ -861,7 +871,8 @@ set ERRORFILE=%RESULTSDIR%\test-vs-ideunit-errors.log
 
 set command="%NUNIT3_CONSOLE%" --verbose --x86 --framework:V4.0 --result:"!XMLFILE!;format=nunit2" --output:"!OUTPUTFILE!" --err:"!ERRORFILE!" --work:"%FSCBINPATH%"  --workers=1 --agents=1 --full "%FSCBINPATH%\VisualFSharp.Unittests.dll"
 if '%TEST_VS_IDEUNIT_SUITE%' == '1' (
-    rem Turn off delayed expansion because a ! may appear in the argument text (!!!!!)
+	rem Turn off delayed expansion when manipulating variables where a ! may appear in the argument text (CMD batch file oddity)
+	rem Note: each setlocal must be matched by an executed endlocal
 	pushd %FSCBINPATH%
 	setlocal disableDelayedExpansion
     echo %command% %WHERE_ARG_NUNIT%
