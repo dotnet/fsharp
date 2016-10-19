@@ -1146,6 +1146,16 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("SortByDescending")>]
         val inline sortByDescending : projection:('T -> 'Key) -> source:seq<'T> -> seq<'T> when 'Key : comparison
 
+        /// <summary>Builds an SeqEnumerable from the given collection.</summary>
+        ///
+        /// <param name="source">The input sequence.</param>
+        ///
+        /// <returns>The result SeqEnumerable.</returns>
+        ///
+        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        [<CompiledName("ToComposer")>]
+        val toComposer   : source:seq<'T> -> SeqComposer.SeqEnumerable<'T>
+
         /// <summary>Returns the sum of the elements in the sequence.</summary>
         ///
         /// <remarks>The elements are summed using the <c>+</c> operator and <c>Zero</c> property associated with the generated type.</remarks>
