@@ -41,7 +41,7 @@ value simpleLibraryCall9 at line 63 does not make a critical tailcall
 value simpleLibraryCall10 at line 65 may make a critical tailcall
 value simpleLibraryCall11 at line 66 does not make a critical tailcall
 value simpleLibraryCall12 at line 67 does not make a critical tailcall
-value simpleLibraryCall13 at line 68 may make a critical tailcall
+value simpleLibraryCall13 at line 68 does not make a critical tailcall
 value simpleLibraryUse14 at line 69 does not make a critical tailcall
 value simpleLibraryUse15 at line 70 does not make a critical tailcall
 value simpleLibraryUse16 at line 71 does not make a critical tailcall
