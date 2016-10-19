@@ -196,8 +196,9 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
         // BaseAddress
         builder.AppendSwitchIfNotNull("--baseaddress:", baseAddress)
         // DefineConstants
-        for item in defineConstants do
-            builder.AppendSwitchIfNotNull("--define:", item.ItemSpec)          
+        if defineConstants <> null then 
+            for item in defineConstants do
+                builder.AppendSwitchIfNotNull("--define:", item.ItemSpec)          
         // DocumentationFile
         builder.AppendSwitchIfNotNull("--doc:", documentationFile)
         // GenerateInterfaceFile
@@ -225,13 +226,15 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
                 | "ITANIUM", _, _  -> "Itanium"
                 | _         -> null)
         // Resources
-        for item in resources do
-            builder.AppendSwitchIfNotNull("--resource:", item.ItemSpec)
+        if resources <> null then 
+            for item in resources do
+                builder.AppendSwitchIfNotNull("--resource:", item.ItemSpec)
         // VersionFile
         builder.AppendSwitchIfNotNull("--versionfile:", versionFile)
         // References
-        for item in references do
-            builder.AppendSwitchIfNotNull("-r:", item.ItemSpec)
+        if references <> null then 
+            for item in references do
+                builder.AppendSwitchIfNotNull("-r:", item.ItemSpec)
         // ReferencePath
         let referencePathArray = // create a array of strings
             match referencePath with
