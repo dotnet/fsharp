@@ -44,6 +44,9 @@ exit /b 1
 
 :ARGUMENTS_OK
 
+rem disable setup build by setting FSC_BUILD_SETUP=0
+if /i '%FSC_BUILD_SETUP%' == '' (set FSC_BUILD_SETUP=1) 
+
 set BUILD_PROTO_WITH_CORECLR_LKG=0
 
 set BUILD_PROTO=0
@@ -110,8 +113,6 @@ if /i '%_autoselect_tests%' == '1' (
 setlocal disableDelayedExpansion
 echo.
 
-rem disable setup build by setting FSC_BUILD_SETUP=0
-if /i '%FSC_BUILD_SETUP%' == '' (set FSC_BUILD_SETUP=1) 
 goto :MAIN
 
 REM ------------------ Procedure to parse one argument -----------------------
