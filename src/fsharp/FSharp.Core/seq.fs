@@ -488,8 +488,6 @@ namespace Microsoft.FSharp.Collections
                 let inline upcastEnumerator (t:#IEnumerator<'T>) : IEnumerator<'T> = (# "" t : IEnumerator<'T> #)
                 let inline upcastEnumeratorNonGeneric (t:#IEnumerator) : IEnumerator = (# "" t : IEnumerator #)
                 let inline upcastISeqComponent (t:#ISeqComponent) : ISeqComponent = (# "" t : ISeqComponent #)
-                let inline upcastSeqConsumer (t:#SeqConsumer<'a,'b>) : SeqConsumer<'a,'b> = (# "" t : SeqConsumer<'a,'b> #)
-
 
             let seqComponentTail =
                 { new ISeqComponent with
@@ -1087,7 +1085,7 @@ namespace Microsoft.FSharp.Collections
                             { new ISeqPipeline with member x.StopFurtherProcessing() = halted <- true }
 
                         let result = f pipeline
-                        let consumer = Helpers.upcastSeqConsumer result
+                        let consumer : SeqConsumer<'T,'T> = upcast result
     
                         let enumerable = Helpers.upcastEnumerable (AppendEnumerable sources)
                         use enumerator = enumerable.GetEnumerator ()
@@ -1459,7 +1457,7 @@ namespace Microsoft.FSharp.Collections
                             { new ISeqPipeline with member x.StopFurtherProcessing() = halted <- true }
 
                         let result = f pipeline
-                        let consumer = Helpers.upcastSeqConsumer result
+                        let consumer : SeqConsumer<'T,'T> = upcast result
     
                         use enumerator = (Helpers.upcastEnumerable this).GetEnumerator ()
     
