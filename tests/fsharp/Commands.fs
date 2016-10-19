@@ -65,26 +65,7 @@ let type_append_tofile workDir source p =
     let contents = File.ReadAllText(from)
     File.AppendAllText(to', contents)
 
-// %GACUTIL% /if %BINDIR%\FSharp.Core.dll
-let gacutil exec exeName flags assembly =
-    exec exeName (sprintf """%s "%s" """ flags assembly)
-
-// "%NGEN32%" install "%BINDIR%\fsc.exe" /queue:1
-// "%NGEN32%" install "%BINDIR%\fsi.exe" /queue:1
-// "%NGEN32%" install "%BINDIR%\FSharp.Build.dll" /queue:1
-// "%NGEN32%" executeQueuedItems 1
-let ngen exec (ngenExe: FilePath) assemblies =
-    let queue = assemblies |> List.map (fun a -> (sprintf "install \"%s\" /queue:1" a))
-
-    List.concat [ queue; ["executeQueuedItems 1"] ]
-    |> Seq.ofList
-    |> Seq.map (fun args -> exec ngenExe args)
-    |> Seq.skipWhile (function ErrorLevel _ -> false | CmdResult.Success -> true)
-    |> Seq.tryHead
-    |> function None -> CmdResult.Success | Some res -> res
-
 let fsc exec (fscExe: FilePath) flags srcFiles =
-    // "%FSC%" %fsc_flags% --define:COMPILING_WITH_EMPTY_SIGNATURE -o:tmptest2.exe tmptest2.mli tmptest2.ml
     exec fscExe (sprintf "%s %s" flags (srcFiles |> Seq.ofList |> String.concat " "))
 
 let csc exec cscExe flags srcFiles =
@@ -93,11 +74,9 @@ let csc exec cscExe flags srcFiles =
 let fsi exec fsiExe flags sources =
     exec fsiExe (sprintf "%s %s" flags (sources |> Seq.ofList |> String.concat " "))
 
-// "%MSBUILDTOOLSPATH%\msbuild.exe" PCL.fsproj
 let msbuild exec msbuildExe flags srcFiles =
     exec msbuildExe (sprintf "%s %s"  flags (srcFiles |> Seq.ofList |> String.concat " "))
 
-// "%RESGEN%" /compile Resources.resx
 let resgen exec resgenExe flags sources =
     exec resgenExe (sprintf "%s %s" flags (sources |> Seq.ofList |> String.concat " "))
 
