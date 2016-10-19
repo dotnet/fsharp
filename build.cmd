@@ -1,5 +1,7 @@
 @if "%_echo%"=="" echo off
 
+setlocal enableDelayedExpansion
+
 :ARGUMENTS_VALIDATION
 
 if /I "%1" == "--help"   (goto :USAGE)
@@ -19,7 +21,8 @@ echo           ^<proto^|protofx^>
 echo           ^<ci^|ci_part1^|ci_part2^|microbuild^>
 echo           ^<debug^|release^>
 echo           ^<diag^|publicsign^>
-echo           ^<test^|test-smoke^|test-net40-coreunit-suite^|test-coreclr-coreunit-suite^|test-compiler-unit-suite^|test-pcl-coreunit-suite^|test-net40-fsharp-suite^|test-net40-fsharpqa-suite^>
+echo           ^<test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-pcl-coreunit^|test-net40-fsharp^|test-net40-fsharpqa^>
+echo           ^<include tag^|exclude tag^>
 echo.
 echo No arguments default to 'default', meaning this (no testing)
 echo.
@@ -27,20 +30,19 @@ echo     build.cmd net40
 echo.
 echo.Other examples:
 echo.
-echo.    build net40            (build compiler for .NET Framework)
-echo.    build coreclr          (build compiler for .NET Core)
-echo.    build vs               (build Visual Studio IDE Tools)
-echo.    build all              (build everything)
-echo.    build test             (build and test default targets)
-echo.    build net40 test       (build and test net40)
-echo.    build coreclr test     (build and test net40)
-echo.    build vs test          (build and test net40)
-echo.    build all test         (build and test net40)
+echo.    build.cmd net40            (build compiler for .NET Framework)
+echo.    build.cmd coreclr          (build compiler for .NET Core)
+echo.    build.cmd vs               (build Visual Studio IDE Tools)
+echo.    build.cmd all              (build everything)
+echo.    build.cmd test             (build and test default targets)
+echo.    build.cmd net40 test       (build and test net40)
+echo.    build.cmd coreclr test     (build and test net40)
+echo.    build.cmd vs test          (build and test net40)
+echo.    build.cmd all test         (build and test net40)
+echo.    build.cmd nobuild test include Conformance (tests marked with Conformance tag)
+echo.    build.cmd nobuild test exclude Slow (no tests marked with Slow tag)
 echo.
-echo The example below run pcls, vs and qa:
-echo.
-echo     build.cmd pcls vs debug
-exit /b 1
+goto :success
 
 :ARGUMENTS_OK
 
@@ -50,6 +52,7 @@ if /i '%FSC_BUILD_SETUP%' == '' (set FSC_BUILD_SETUP=1)
 set BUILD_PROTO_WITH_CORECLR_LKG=0
 
 set BUILD_PROTO=0
+set BUILD_PHASE=1
 set BUILD_NET40=0
 set BUILD_CORECLR=0
 set BUILD_PORTABLE=0
@@ -67,21 +70,23 @@ set TEST_CORECLR_COREUNIT_SUITE=0
 set TEST_CORECLR_FSHARP_SUITE=0
 set TEST_PORTABLE_COREUNIT_SUITE=0
 set TEST_VS_IDEUNIT_SUITE=0
-set TEST_TAGS=
-set SKIP_EXPENSIVE_TESTS=1
+set INCLUDE_TEST_SPEC_NUNIT=
+set EXCLUDE_TEST_SPEC_NUNIT=cat == Expensive
+set INCLUDE_TEST_TAGS=
+set EXCLUDE_TEST_TAGS=Expensive
+
 
 REM ------------------ Parse all arguments -----------------------
-
-setlocal enableDelayedExpansion
 
 set _autoselect=1
 set _autoselect_tests=0
 set /a counter=0
 for /l %%x in (1 1 9) do (
     set /a counter=!counter!+1
-    call :SET_CONFIG %%!counter! "!counter!"
+    set /a nextcounter=!counter!+1
+    call :PROCESS_ARG %%!counter! %%!nextcounter! "!counter!"
 )
-for %%i in (%BUILD_FSC_DEFAULT%) do ( call :SET_CONFIG %%i )
+for %%i in (%BUILD_FSC_DEFAULT%) do ( call :PROCESS_ARG %%i )
 
 REM apply defaults
 
@@ -110,20 +115,15 @@ if /i '%_autoselect_tests%' == '1' (
     )
 )
 
-setlocal disableDelayedExpansion
-echo.
-
 goto :MAIN
 
 REM ------------------ Procedure to parse one argument -----------------------
 
-:SET_CONFIG
+:PROCESS_ARG
 set ARG=%~1
+set ARG2=%~2
 if "%ARG%" == "1" if "%2" == "" (set ARG=default)
 if "%2" == "" if not "%ARG%" == "default" goto :EOF
-
-echo Parse argument %ARG%
-
 
 if /i '%ARG%' == 'net40' (
     set _autoselect=0
@@ -139,7 +139,6 @@ if /i '%ARG%' == 'coreclr' (
 if /i '%ARG%' == 'pcls' (
     set _autoselect=0
     set BUILD_PORTABLE=1
-    set TEST_PORTABLE_COREUNIT_SUITE=1
 )
 
 if /i '%ARG%' == 'vs' (
@@ -148,6 +147,9 @@ if /i '%ARG%' == 'vs' (
     set BUILD_VS=1
 )
 
+if /i '%ARG%' == 'nobuild' (
+    set BUILD_PHASE=0
+)
 if /i '%ARG%' == 'all' (
     set _autoselect=0
     set BUILD_PROTO=1
@@ -200,8 +202,8 @@ if /i '%ARG%' == 'ci_part2' (
 
     REM what we do
     set BUILD_PROTO_WITH_CORECLR_LKG=1
-	set BUILD_PROTO=1
-	set BUILD_NET40=1
+    set BUILD_PROTO=1
+    set BUILD_NET40=1
     set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
 
@@ -233,6 +235,22 @@ if /i '%ARG%' == 'test' (
     set _autoselect_tests=1
 )
 
+if /i '%ARG%' == 'include' (
+    set /a counter=!counter!+1
+	if '!INCLUDE_TEST_SPEC_NUNIT!' == '' ( set INCLUDE_TEST_SPEC_NUNIT=cat == %ARG2% ) else (set INCLUDE_TEST_SPEC_NUNIT=cat == %ARG2% or !INCLUDE_TEST_SPEC_NUNIT! )
+	if '!INCLUDE_TEST_TAGS!' == '' ( set INCLUDE_TEST_TAGS=%ARG2% ) else (set INCLUDE_TEST_TAGS=%ARG2%;!INCLUDE_TEST_TAGS! )
+)
+if /i '%ARG%' == 'exclude' (
+    set /a counter=!counter!+1
+	if '!EXCLUDE_TEST_SPEC_NUNIT!' == '' ( set EXCLUDE_TEST_SPEC_NUNIT=cat == %ARG2% ) else (set EXCLUDE_TEST_SPEC_NUNIT=cat == %ARG2% or !EXCLUDE_TEST_SPEC_NUNIT! )
+	if '!EXCLUDE_TEST_TAGS!' == '' ( set EXCLUDE_TEST_TAGS=%ARG2% ) else (set EXCLUDE_TEST_TAGS=%ARG2%;!EXCLUDE_TEST_TAGS! )
+)
+if /i '%ARG%' == 'noskip' (
+	set EXCLUDE_TEST_SPEC_NUNIT=
+	set EXCLUDE_TEST_TAGS=
+)
+
+
 if /i '%ARG%' == 'test-all' (
     set _autoselect=0
     set BUILD_PROTO=1
@@ -250,56 +268,47 @@ if /i '%ARG%' == 'test-all' (
     set TEST_CORECLR_COREUNIT_SUITE=1
     set TEST_VS_IDEUNIT_SUITE=1
 
-    set SKIP_EXPENSIVE_TESTS=0
+    set EXCLUDE_TEST_TAGS=
 )
 
-if /i '%ARG%' == 'test-smoke' (
-    REM Smoke tests are a very small quick subset of tests
-
-    REM what we do
-    set TEST_NET40_FSHARP_SUITE=1
-    set TEST_TAGS=Smoke
-
-)
-
-if /i '%ARG%' == 'test-net40-fsharpqa-suite' (
+if /i '%ARG%' == 'test-net40-fsharpqa' (
     set BUILD_NET40=1
     set BUILD_PORTABLE=1
     set TEST_NET40_FSHARPQA_SUITE=1
 )
 
-if /i '%ARG%' == 'test-compiler-unit-suite' (
+if /i '%ARG%' == 'test-compiler-unit' (
     set BUILD_NET40=1
     set TEST_NET40_COMPILERUNIT_SUITE=1
 )
 
-if /i '%ARG%' == 'test-net40-coreunit-suite' (
+if /i '%ARG%' == 'test-net40-coreunit' (
     set BUILD_NET40=1
     set TEST_NET40_COREUNIT_SUITE=1
 )
 
 
-if /i '%ARG%' == 'test-coreclr-coreunit-suite' (
+if /i '%ARG%' == 'test-coreclr-coreunit' (
     set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_CORECLR=1
     set TEST_CORECLR_COREUNIT_SUITE=1
 )
 
 
-if /i '%ARG%' == 'test-pcl-coreunit-suite' (
+if /i '%ARG%' == 'test-pcl-coreunit' (
     set BUILD_NET40=1
     set BUILD_PORTABLE=1
     set TEST_PORTABLE_COREUNIT_SUITE=1
 )
 
 
-if /i '%ARG%' == 'test-net40-fsharp-suite' (
+if /i '%ARG%' == 'test-net40-fsharp' (
     set BUILD_NET40=1
     set BUILD_PORTABLE=1
     set TEST_NET40_FSHARP_SUITE=1
 )
 
-if /i '%ARG%' == 'test-coreclr-fsharp-suite' (
+if /i '%ARG%' == 'test-coreclr-fsharp' (
     set BUILD_CORECLR=1
     set TEST_CORECLR_FSHARP_SUITE=1
 )
@@ -309,6 +318,11 @@ if /i '%ARG%' == 'publicsign' (
 )
 
 goto :EOF
+:: Note: "goto :EOF" returns from an in-batchfile "call" command
+:: in preference to returning from the entire batch file.
+
+
+REM ------------------ Report config -----------------------
 
 :MAIN
 
@@ -334,8 +348,11 @@ echo TEST_CORECLR_COREUNIT_SUITE=%TEST_CORECLR_COREUNIT_SUITE%
 echo TEST_CORECLR_FSHARP_SUITE=%TEST_CORECLR_FSHARP_SUITE%
 echo TEST_PORTABLE_COREUNIT_SUITE=%TEST_PORTABLE_COREUNIT_SUITE%
 echo TEST_VS_IDEUNIT_SUITE=%TEST_VS_IDEUNIT_SUITE%
-echo TEST_TAGS=%TEST_TAGS%
-echo SKIP_EXPENSIVE_TESTS=%SKIP_EXPENSIVE_TESTS%
+echo INCLUDE_TEST_SPEC_NUNIT=%INCLUDE_TEST_SPEC_NUNIT%
+echo EXCLUDE_TEST_SPEC_NUNIT=%EXCLUDE_TEST_SPEC_NUNIT%
+echo EXCLUDE_TEST_TAGS=%EXCLUDE_TEST_TAGS%
+echo INCLUDE_TEST_TAGS=%INCLUDE_TEST_TAGS%
+
 echo.
 
 echo ---------------- Done with arguments, starting preparation -----------------
@@ -399,7 +416,8 @@ if defined APPVEYOR (
    set _msbuildexe=%_msbuildexe% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
    )
 )
-set msbuildflags=/maxcpucount %_nrswitch% /nologo
+REM set msbuildflags=/maxcpucount %_nrswitch% /nologo
+set msbuildflags=%_nrswitch% /nologo
 set _ngenexe="%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\ngen.exe"
 if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 
@@ -495,13 +513,14 @@ if '%BUILD_PROTO%' == '1' (
 
 echo ---------------- Done with proto, starting build ------------------------
 
-%_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
-@if ERRORLEVEL 1 echo Error: '%_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG%  /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%' failed && goto :failure
-
+if '%BUILD_PHASE%' == '1' (
+   %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
+   @if ERRORLEVEL 1 echo Error: '%_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG%  /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%' failed && goto :failure
+)
 
 echo ---------------- Done with build, starting update/prepare ---------------
 
-if 'BUILD_NET40' == '1' (
+if '%BUILD_NET40%' == '1' (
     call src\update.cmd %BUILD_CONFIG% -ngen
 )
 
@@ -539,107 +558,375 @@ if '%BUILD_CORECLR%' == '1' (
 )
 
 
-if 'TEST_NET40_COMPILERUNIT_SUITE' == '0' and 'TEST_PORTABLE_COREUNIT_SUITE' == '0' and 'TEST_CORECLR_COREUNIT_SUITE' == '0' and 'TEST_VS_IDEUNIT_SUITE' == '0' and 'TEST_NET40_FSHARP_SUITE' == '0' and 'TEST_NET40_FSHARPQA_SUITE' == '0' goto :finished
+if 'TEST_NET40_COMPILERUNIT_SUITE' == '0' and 'TEST_PORTABLE_COREUNIT_SUITE' == '0' and 'TEST_CORECLR_COREUNIT_SUITE' == '0' and 'TEST_VS_IDEUNIT_SUITE' == '0' and 'TEST_NET40_FSHARP_SUITE' == '0' and 'TEST_NET40_FSHARPQA_SUITE' == '0' goto :success
 
 echo ---------------- Done with update, starting tests -----------------------
 
 
 pushd tests
 
+
+rem Turn off delayed expansion when manipulating variables where a ! may appear in the argument text (CMD batch file oddity)
+rem Note: each setlocal must be matched by an executed endlocal
+setlocal disableDelayedExpansion
+if "%INCLUDE_TEST_SPEC_NUNIT%" == "" (
+    if NOT "%EXCLUDE_TEST_SPEC_NUNIT%" == "" (
+        set WHERE_ARG_NUNIT=--where "!(%EXCLUDE_TEST_SPEC_NUNIT%)"
+	)
+)
+if NOT "%INCLUDE_TEST_SPEC_NUNIT%" == "" (
+    if "%EXCLUDE_TEST_SPEC_NUNIT%" == "" (
+        set WHERE_ARG_NUNIT=--where "%INCLUDE_TEST_SPEC_NUNIT%"
+	)
+    if NOT "%EXCLUDE_TEST_SPEC_NUNIT%" == "" (
+		set WHERE_ARG_NUNIT=--where "%INCLUDE_TEST_SPEC_NUNIT% and !(%EXCLUDE_TEST_SPEC_NUNIT%)"
+	)
+)
+if NOT "%INCLUDE_TEST_TAGS%" == "" (
+    set INCLUDE_ARG_RUNALL=-ttags:%INCLUDE_TEST_TAGS%
+)
+if NOT "%EXCLUDE_TEST_TAGS%" == "" (
+    set EXCLUDE_ARG_RUNALL=-nottags:%EXCLUDE_TEST_TAGS%
+)
+echo WHERE_ARG_NUNIT=%WHERE_ARG_NUNIT%
+rem Re-enable delayed expansion. We can't use endlocal here since we want to keep the variables we've computed.
+rem Note: each setlocal must be matched by an executed endlocal
+setlocal enableDelayedExpansion
+
+
+set NUNITPATH=%~dp0tests\fsharpqa\testenv\bin\nunit\
+set NUNIT3_CONSOLE=%~dp0packages\NUnit.Console.3.0.0\tools\nunit3-console.exe
+set link_exe=%~dp0packages\VisualCppTools.14.0.24519-Pre\lib\native\bin\link.exe
+if not exist "%link_exe%" (
+    echo Error: failed to find '%link_exe%' use nuget to restore the VisualCppTools package
+    goto :failed_tests
+)
+
+if /I not '%single_threaded%' == 'true' (set PARALLEL_ARG=-procs:%NUMBER_OF_PROCESSORS%) else set PARALLEL_ARG=-procs:0
+
+set FSCBINPATH=%~dp0%BUILD_CONFIG%\net40\bin
+set RESULTSDIR=%~dp0tests\TestResults
+if not exist "%RESULTSDIR%" (mkdir "%RESULTSDIR%")
+
+ECHO FSCBINPATH=%FSCBINPATH%
+ECHO RESULTSDIR=%RESULTSDIR%
+ECHO link_exe=%link_exe%
+ECHO NUNIT3_CONSOLE=%NUNIT3_CONSOLE%
+ECHO NUNITPATH=%NUNITPATH%
+
+REM ---------------- net40-fsharp  -----------------------
+
+
+set XMLFILE=%RESULTSDIR%\test-net40-fsharp-results.xml
+set OUTPUTFILE=%RESULTSDIR%\test-net40-fsharp-output.log
+set ERRORFILE=%RESULTSDIR%\test-net40-fsharp-errors.log
+
+set command="%NUNIT3_CONSOLE%" --verbose "%FSCBINPATH%\FSharp.Tests.FSharp.dll" --framework:V4.0 --work:"%FSCBINPATH%"  --output:"!OUTPUTFILE!" --err:"!ERRORFILE!" --result:"!XMLFILE!;format=nunit2" 
+
 if '%TEST_NET40_FSHARP_SUITE%' == '1' (
-    echo call RunTests.cmd %BUILD_CONFIG% net40-fsharp-suite %TEST_TAGS% 
-         call RunTests.cmd %BUILD_CONFIG% net40-fsharp-suite %TEST_TAGS% 
-    @if ERRORLEVEL 1 (
-        type testresults\net40-fsharp-suite-errors.log
-        echo Error: 'Running tests net40-fsharp-suite %TEST_TAGS%' failed
+	rem Turn off delayed expansion when manipulating variables where a ! may appear in the argument text (CMD batch file oddity)
+	rem Note: each setlocal must be matched by an executed endlocal
+	setlocal disableDelayedExpansion
+    echo %command% %WHERE_ARG_NUNIT%
+         %command%  %WHERE_ARG_NUNIT%
+    endlocal 
+
+    call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
+
+    if NOT '!saved_errorlevel!' == '0' (
+        type "!ERRORFILE!"
+        echo Error: 'Running tests net40-fsharp' failed
         goto :failed_tests
     )
 )
+
+
+REM ---------------- net40-fsharpqa  -----------------------
+
+set OSARCH=%PROCESSOR_ARCHITECTURE%
+
+rem Set this to 1 in order to use an external compiler host process
+rem    This only has an effect when running the FSHARPQA tests, but can
+rem    greatly speed up execution since fsc.exe does not need to be spawned thousands of times
+set HOSTED_COMPILER=1
+
+set X86_PROGRAMFILES=%ProgramFiles%
+if "%OSARCH%"=="AMD64" set X86_PROGRAMFILES=%ProgramFiles(x86)%
+
+set SYSWOW64=.
+if "%OSARCH%"=="AMD64" set SYSWOW64=SysWoW64
+
+if not "%OSARCH%"=="x86" set REGEXE32BIT=%WINDIR%\syswow64\reg.exe
+
+							FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
+if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v8.1A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
+if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v8.0A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
+if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.1\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
+if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.0A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
+
+set PATH=%PATH%;%WINSDKNETFXTOOLS%
+for /d %%i in (%WINDIR%\Microsoft.NET\Framework\v4.0.?????) do set CORDIR=%%i
+set PATH=%PATH%;%CORDIR%
+
+set REGEXE32BIT=reg.exe
+
+IF NOT DEFINED SNEXE32  IF EXIST "%WINSDKNETFXTOOLS%sn.exe"               set SNEXE32=%WINSDKNETFXTOOLS%sn.exe
+IF NOT DEFINED SNEXE64  IF EXIST "%WINSDKNETFXTOOLS%x64\sn.exe"           set SNEXE64=%WINSDKNETFXTOOLS%x64\sn.exe
+IF NOT DEFINED ildasm   IF EXIST "%WINSDKNETFXTOOLS%ildasm.exe"           set ildasm=%WINSDKNETFXTOOLS%ildasm.exe
+
 
 if '%TEST_NET40_FSHARPQA_SUITE%' == '1' (
-    echo call RunTests.cmd %BUILD_CONFIG% net40-fsharpqa-suite %TEST_TAGS% 
-         call RunTests.cmd %BUILD_CONFIG% net40-fsharpqa-suite %TEST_TAGS% 
-    @if ERRORLEVEL 1 (
-        echo type testresults\net40-fsharpqa-suite-results.log
-             type testresults\net40-fsharpqa-suite-results.log
-        echo type testresults\net40-fsharpqa-suite-errors.log
-             type testresults\net40-fsharpqa-suite-errors.log
-        echo Error: 'Running tests net40-fsharpqa-suite %TEST_TAGS%' failed
+
+	set FSC=!FSCBINPATH!\fsc.exe
+	set PATH=!FSCBINPATH!;!PATH!
+
+	set FSCVPREVBINPATH=!X86_PROGRAMFILES!\Microsoft SDKs\F#\4.0\Framework\v4.0
+	set FSCVPREV=!FSCVPREVBINPATH!\fsc.exe
+
+	REM == VS-installed paths to FSharp.Core.dll
+	set FSCOREDLLPATH=!X86_PROGRAMFILES!\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.1.0
+	set FSCOREDLL20PATH=!X86_PROGRAMFILES!\Reference Assemblies\Microsoft\FSharp\.NETFramework\v2.0\2.3.0.0
+	set FSCOREDLLPORTABLEPATH=!X86_PROGRAMFILES!\Reference Assemblies\Microsoft\FSharp\.NETPortable\3.47.41.0
+	set FSCOREDLLNETCOREPATH=!X86_PROGRAMFILES!\Reference Assemblies\Microsoft\FSharp\.NETCore\3.7.41.0
+	set FSCOREDLLNETCORE78PATH=!X86_PROGRAMFILES!\Reference Assemblies\Microsoft\FSharp\.NETCore\3.78.41.0
+	set FSCOREDLLNETCORE259PATH=!X86_PROGRAMFILES!\Reference Assemblies\Microsoft\FSharp\.NETCore\3.259.41.0
+	set FSDATATPPATH=!X86_PROGRAMFILES!\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.0.0\Type Providers
+	set FSCOREDLLVPREVPATH=!X86_PROGRAMFILES!\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.0.0
+
+	REM == open source logic
+	if exist "!FSCBinPath!\FSharp.Core.dll" set FSCOREDLLPATH=!FSCBinPath!
+	if exist "!FSCBinPath!\..\..\net20\bin\FSharp.Core.dll" set FSCOREDLL20PATH=!FSCBinPath!\..\..\net20\bin
+	if exist "!FSCBinPath!\..\..\portable47\bin\FSharp.Core.dll" set FSCOREDLLPORTABLEPATH=!FSCBinPath!\..\..\portable47\bin
+	if exist "!FSCBinPath!\..\..\portable7\bin\FSharp.Core.dll" set FSCOREDLLNETCOREPATH=!FSCBinPath!\..\..\portable7\bin
+	IF exist "!FSCBinPath!\..\..\portable78\bin\FSharp.Core.dll" set FSCOREDLLNETCORE78PATH=!FSCBinPath!\..\..\portable78\bin
+	IF exist "!FSCBinPath!\..\..\portable259\bin\FSharp.Core.dll" set FSCOREDLLNETCORE259PATH=!FSCBinPath!\..\..\portable259\bin
+
+	set FSCOREDLLPATH=!FSCOREDLLPATH!\FSharp.Core.dll
+	set FSCOREDLL20PATH=!FSCOREDLL20PATH!\FSharp.Core.dll
+	set FSCOREDLLPORTABLEPATH=!FSCOREDLLPORTABLEPATH!\FSharp.Core.dll
+	set FSCOREDLLNETCOREPATH=!FSCOREDLLNETCOREPATH!\FSharp.Core.dll
+	set FSCOREDLLNETCORE78PATH=!FSCOREDLLNETCORE78PATH!\FSharp.Core.dll
+	set FSCOREDLLNETCORE259PATH=!FSCOREDLLNETCORE259PATH!\FSharp.Core.dll
+	set FSCOREDLLVPREVPATH=!FSCOREDLLVPREVPATH!\FSharp.Core.dll
+
+	where.exe perl > NUL 2> NUL
+	if errorlevel 1 (
+		echo Error: perl is not in the PATH, it is required for the net40-fsharpqa test suite
+		goto :failed_tests
+	)
+
+	set OUTPUTFILE=test-net40-fsharpqa-results.log
+	set ERRORFILE=test-net40-fsharpqa-errors.log
+	set FAILENV=test-net40-fsharpqa-errors
+
+
+	pushd %~dp0tests\fsharpqa\source
+	echo perl %~dp0tests\fsharpqa\testenv\bin\runall.pl -resultsroot %RESULTSDIR% -results !OUTPUTFILE! -log !ERRORFILE! -fail !FAILENV! -cleanup:no %INCLUDE_ARG_RUNALL% %EXCLUDE_ARG_RUNALL% %PARALLEL_ARG%
+		 perl %~dp0tests\fsharpqa\testenv\bin\runall.pl -resultsroot %RESULTSDIR% -results !OUTPUTFILE! -log !ERRORFILE! -fail !FAILENV! -cleanup:no %INCLUDE_ARG_RUNALL% %EXCLUDE_ARG_RUNALL% %PARALLEL_ARG%
+
+	popd
+    if ERRORLEVEL 1 (
+        type "%RESULTSDIR%\!OUTPUTFILE!"
+        type "%RESULTSDIR%\!ERRORFILE!"
+        echo Error: 'Running tests net40-fsharpqa' failed
         goto :failed_tests
     )
 )
 
+REM ---------------- net40-compilerunit  -----------------------
+
+set XMLFILE=%RESULTSDIR%\test-net40-compilerunit-results.xml
+set OUTPUTFILE=%RESULTSDIR%\test-net40-compilerunit-output.log
+set ERRORFILE=%RESULTSDIR%\test-net40-compilerunit-errors.log
+set command="%NUNIT3_CONSOLE%" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit2" --output:"!OUTPUTFILE!" --err:"!ERRORFILE!" --work:"%FSCBINPATH%" "%FSCBINPATH%\..\..\net40\bin\FSharp.Compiler.Unittests.dll"
 if '%TEST_NET40_COMPILERUNIT_SUITE%' == '1' (
-    echo call RunTests.cmd %BUILD_CONFIG% net40-compilerunit-suite %TEST_TAGS% 
-         call RunTests.cmd %BUILD_CONFIG% net40-compilerunit-suite %TEST_TAGS% 
-    @if ERRORLEVEL 1 (
-        type testresults\net40-compilerunit-suite-output.log
-        type testresults\net40-compilerunit-suite-errors.log
-        echo Error: 'Running tests net40-compilerunit-suite' failed
+
+	rem Turn off delayed expansion when manipulating variables where a ! may appear in the argument text (CMD batch file oddity)
+	rem Note: each setlocal must be matched by an executed endlocal
+	setlocal disableDelayedExpansion
+    echo %command% %WHERE_ARG_NUNIT%
+         %command%  %WHERE_ARG_NUNIT%
+    endlocal 
+
+	call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
+    if NOT '!saved_errorlevel!' == '0' (
+        type "!OUTPUTFILE!"
+        type "!ERRORFILE!"
+        echo Error: 'Running tests net40-compilerunit' failed
         goto :failed_tests
     )
 )
+
+REM ---------------- net40-coreunit  -----------------------
+
+set XMLFILE=%RESULTSDIR%\test-net40-coreunit-results.xml
+set OUTPUTFILE=%RESULTSDIR%\test-net40-coreunit-output.log
+set ERRORFILE=%RESULTSDIR%\test-net40-coreunit-errors.log
+set command="%NUNIT3_CONSOLE%" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit2" --output:"!OUTPUTFILE!" --err:"!ERRORFILE!" --work:"%FSCBINPATH%" "%FSCBINPATH%\FSharp.Core.Unittests.dll"
 if '%TEST_NET40_COREUNIT_SUITE%' == '1' (
-    echo call RunTests.cmd %BUILD_CONFIG% net40-coreunit-suite %TEST_TAGS% 
-         call RunTests.cmd %BUILD_CONFIG% net40-coreunit-suite %TEST_TAGS% 
-    @if ERRORLEVEL 1 (
-        type testresults\net40-coreunit-suite-output.log
-        type testresults\net40-coreunit-suite-errors.log
-        echo Error: 'Running tests net40-coreunit-suite' failed 
+
+	rem Turn off delayed expansion when manipulating variables where a ! may appear in the argument text (CMD batch file oddity)
+	rem Note: each setlocal must be matched by an executed endlocal
+	setlocal disableDelayedExpansion
+    echo %command% %WHERE_ARG_NUNIT%
+         %command%  %WHERE_ARG_NUNIT%
+    endlocal 
+
+	call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
+    if NOT '!saved_errorlevel!' == '0' (
+        type "!OUTPUTFILE!"
+        type "!ERRORFILE!"
+        echo Error: 'Running tests net40-coreunit' failed 
         goto :failed_tests
     )
 )
+
+REM  ---------------- portable-coreunit  -----------------------
+
+set XMLFILE=%RESULTSDIR%\test-portable-coreunit-results.xml
+set OUTPUTFILE=%RESULTSDIR%\test-portable-coreunit-output.log
+set ERRORFILE=%RESULTSDIR%\test-portable-coreunit-errors.log
+set command="%NUNIT3_CONSOLE%" /framework:V4.0 /result="!XMLFILE!;format=nunit2" /output="!OUTPUTFILE!" /err="!ERRORFILE!" /work="%FSCBINPATH%" "%FSCBINPATH%\..\..\portable7\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable47\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable78\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable259\bin\FSharp.Core.Unittests.dll"
+
 if '%TEST_PORTABLE_COREUNIT_SUITE%' == '1' (
-    echo call RunTests.cmd %BUILD_CONFIG% portable-coreunit-suite %TEST_TAGS% 
-         call RunTests.cmd %BUILD_CONFIG% portable-coreunit-suite %TEST_TAGS% 
-    @if ERRORLEVEL 1 (
-        @echo "type testresults\portable-coreunit-suite-output.log "
-        @echo "type testresults\portable-coreunit-suite-errors.log "
-        type testresults\portable-coreunit-suite-errors.log 
-        echo Error: 'Running tests portable-coreunit-suite' failed 
+	rem Turn off delayed expansion when manipulating variables where a ! may appear in the argument text (CMD batch file oddity)
+	rem Note: each setlocal must be matched by an executed endlocal
+	setlocal disableDelayedExpansion
+    echo %command% %WHERE_ARG_NUNIT%
+         %command%  %WHERE_ARG_NUNIT%
+    endlocal 
+
+
+	call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
+    if NOT '!saved_errorlevel!' == '0' (
+        type "!OUTPUTFILE!"
+        type "!ERRORFILE!"
+        echo Error: 'Running tests portable-coreunit' failed 
         goto :failed_tests
     )
 )
 
+REM  ---------------- coreclr-coreunit  -----------------------
+
+set XMLFILE=%RESULTSDIR%\test-coreclr-coreunit-results.xml
+set OUTPUTFILE=%RESULTSDIR%\test-coreclr-coreunit-output.log
+set ERRORFILE=%RESULTSDIR%\test-coreclr-coreunit-errors.log
+
+set architecture=win7-x64
+set CORERUNPATH=%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\!architecture!
+
+set command="!CORERUNPATH!\corerun.exe" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\fsharp.core.unittests\FSharp.Core.Unittests.exe"
 if '%TEST_CORECLR_COREUNIT_SUITE%' == '1' (
-    echo call RunTests.cmd %BUILD_CONFIG% coreclr-coreunit-suite %TEST_TAGS% 
-         call RunTests.cmd %BUILD_CONFIG% coreclr-coreunit-suite %TEST_TAGS% 
-    @if ERRORLEVEL 1 (
-        type testresults\coreclr-coreunit-suite-output.log
-        type testresults\coreclr-coreunit-suite-errors.log
-        echo Error: 'Running tests coreclr-coreunit-suite %TEST_TAGS%' failed 
+
+	rem Turn off delayed expansion when manipulating variables where a ! may appear in the argument text (CMD batch file oddity)
+	rem Note: each setlocal must be matched by an executed endlocal
+	setlocal disableDelayedExpansion
+    echo %command% %WHERE_ARG_NUNIT%
+         %command%  %WHERE_ARG_NUNIT%
+    endlocal 
+
+	rem call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
+
+    if ERRORLEVEL 1 (
+        rem type "!OUTPUTFILE!"
+        rem type "!ERRORFILE!"
+        echo Error: 'Running tests coreclr-coreunit' failed 
         goto :failed_tests
     )
 )
+
+REM ---------------- coreclr-fsharp  -----------------------
+
+set single_threaded=true
+set permutations=FSC_CORECLR
+set XMLFILE=%RESULTSDIR%\test-coreclr-fsharp-results.xml
+set OUTPUTFILE=%RESULTSDIR%\test-coreclr-fsharp-output.log
+set ERRORFILE=%RESULTSDIR%\test-coreclr-fsharp-errors.log
+
+set command="%NUNIT3_CONSOLE%" --verbose "%FSCBINPATH%\..\..\coreclr\bin\FSharp.Tests.FSharp.dll" --framework:V4.0 --work:"%FSCBINPATH%"  --output:"!OUTPUTFILE!" --err:"!ERRORFILE!" --result:"!XMLFILE!;format=nunit2" 
+
 if '%TEST_CORECLR_FSHARP_SUITE%' == '1' (
-    echo call RunTests.cmd %BUILD_CONFIG% coreclr-fsharp-suite %TEST_TAGS% 
-         call RunTests.cmd %BUILD_CONFIG% coreclr-fsharp-suite %TEST_TAGS% 
-    @if ERRORLEVEL 1 (
-        type testresults\coreclr-fsharp-suite-output.log
-        type testresults\coreclr-fsharp-suite-errors.log
-        echo Error: 'Running tests coreclr-fsharp-suite %TEST_TAGS%' failed 
+	rem Turn off delayed expansion when manipulating variables where a ! may appear in the argument text (CMD batch file oddity)
+	rem Note: each setlocal must be matched by an executed endlocal
+	setlocal disableDelayedExpansion
+    echo %command% %WHERE_ARG_NUNIT%
+         %command%  %WHERE_ARG_NUNIT%
+    endlocal 
+
+	call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
+    if NOT '!saved_errorlevel!' == '0' (
+        type "!OUTPUTFILE!"
+        type "!ERRORFILE!"
+        echo Error: 'Running tests coreclr-fsharp' failed 
         goto :failed_tests
     )
 )
+
+
+REM ---------------- vs-ideunit  -----------------------
+
+set XMLFILE=%RESULTSDIR%\test-vs-ideunit-results.xml
+set OUTPUTFILE=%RESULTSDIR%\test-vs-ideunit-output.log
+set ERRORFILE=%RESULTSDIR%\test-vs-ideunit-errors.log
+
+set command="%NUNIT3_CONSOLE%" --verbose --x86 --framework:V4.0 --result:"!XMLFILE!;format=nunit2" --output:"!OUTPUTFILE!" --err:"!ERRORFILE!" --work:"%FSCBINPATH%"  --workers=1 --agents=1 --full "%FSCBINPATH%\VisualFSharp.Unittests.dll"
 if '%TEST_VS_IDEUNIT_SUITE%' == '1' (
-    echo call RunTests.cmd %BUILD_CONFIG% vs-ideunit-suite %TEST_TAGS% 
-         call RunTests.cmd %BUILD_CONFIG% vs-ideunit-suite %TEST_TAGS% 
-    @if ERRORLEVEL 1 (
-        type testresults\vs-ideunit-suite-output.log
-        type testresults\vs-ideunit-suite-errors.log
-        echo Error: 'Running tests vs-ideunit-suite %TEST_TAGS%' failed 
+	rem Turn off delayed expansion when manipulating variables where a ! may appear in the argument text (CMD batch file oddity)
+	rem Note: each setlocal must be matched by an executed endlocal
+	pushd %FSCBINPATH%
+	setlocal disableDelayedExpansion
+    echo %command% %WHERE_ARG_NUNIT%
+         %command%  %WHERE_ARG_NUNIT%
+    endlocal 
+	popd
+	call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
+    if NOT '!saved_errorlevel!' == '0' (
+        type "!OUTPUTFILE!"
+        type "!ERRORFILE!"
+        echo Error: 'Running tests vs-ideunit' failed 
         goto :failed_tests
     )
 )
 
 
-:finished
-@echo "Finished"
+:successful_tests
 popd
-goto :eof
+endlocal
+endlocal
+goto :success
 
 :failed_tests
 popd
+endlocal
+endlocal
+goto :failure
+
+REM ------ upload test results procedure -------------------------------------
+
+:UPLOAD_TEST_RESULTS
+
+set saved_errorlevel=%errorlevel%
+echo Saved errorlevel %saved_errorlevel%
+
+rem See <http://www.appveyor.com/docs/environment-variables>
+if not defined APPVEYOR goto :SKIP_APPVEYOR_UPLOAD
+
+echo powershell -File Upload-Results.ps1 "%~1"
+     powershell -File Upload-Results.ps1 "%~1"
+
+:SKIP_APPVEYOR_UPLOAD
+
+goto :EOF
+:: Note: "goto :EOF" returns from an in-batchfile "call" command
+:: in preference to returning from the entire batch file.
+
+REM ------ exit -------------------------------------
+
 
 :failure
+endlocal
 exit /b 1
+
+:success
+endlocal
+exit /b 0

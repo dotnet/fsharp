@@ -157,7 +157,7 @@
         }
         
         var fileContents = stringBuilder.ToString();
-        AssemblyFileVersionPath = Path.Combine(Path.GetTempPath(), string.Join(".", AssemblyName, "AssemblyFileVersion", Language));
+        AssemblyFileVersionPath = Path.Combine(Path.GetTempPath(), string.Join(".", AssemblyName, ProductVersion, "AssemblyFileVersion", Language));
         
         if (File.Exists(AssemblyFileVersionPath) && File.ReadAllText(AssemblyFileVersionPath) == fileContents)
         {

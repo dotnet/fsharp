@@ -4,7 +4,6 @@ open System
 open System.IO
 open NUnit.Framework
 
-open UpdateCmd
 open TestConfig
 open PlatformHelpers
 open FSharpTestSuiteTypes

@@ -18,12 +18,12 @@ CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\MethodImplAttribute
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\Misc
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\Mutation
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\Operators
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\QueryExpressionStepping
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\SeqExpressionStepping
+Retry,CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\QueryExpressionStepping
+Retry,CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\SeqExpressionStepping
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\SeqExpressionTailCalls
 CodeGen01,NoMT,CodeGen,NoHostedCompiler,SerializableAttribute				CodeGen\EmittedIL\SerializableAttribute
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\StaticInit
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\SteppingMatch
+Retry,CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\SteppingMatch
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\TailCalls
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\TestFunctions
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\Tuples

@@ -4,7 +4,6 @@ open System
 open System.IO
 open NUnit.Framework
 
-open UpdateCmd
 open TestConfig
 open PlatformHelpers
 open FSharpTestSuiteTypes
@@ -30,27 +29,16 @@ let envVars () =
     |> Seq.map (fun d -> d.Key :?> string, d.Value :?> string)
     |> Map.ofSeq
 
-let defaultConfigurationName =
-#if DEBUG
-    DEBUG
-#else
-    RELEASE
-#endif
-
-let parseConfigurationName (name: string) =
-    match name.ToUpper() with
-    | "RELEASE" -> RELEASE
-    | "DEBUG" -> DEBUG
-    | s -> failwithf "invalid env var FSHARP_TEST_SUITE_CONFIGURATION '%s'" s
-    
-
 let initializeSuite () =
 
-    let configurationName = defaultConfigurationName
+#if DEBUG
+    let configurationName = "DEBUG"
+#else
+    let configurationName = "RELEASE"
+#endif
 
-    let doNgen = true;
 
-    let FSCBinPath = __SOURCE_DIRECTORY__/".."/".."/(sprintf "%O" configurationName)/"net40"/"bin"
+    let FSCBinPath = __SOURCE_DIRECTORY__/".."/".."/configurationName/"net40"/"bin"
 
     let mapWithDefaults defaults m =
         Seq.concat [ (Map.toSeq defaults) ; (Map.toSeq m) ] |> Map.ofSeq
@@ -59,15 +47,7 @@ let initializeSuite () =
         envVars ()
         |> mapWithDefaults ( [ "FSCBINPATH", FSCBinPath ] |> Map.ofList )
 
-    let configurationName =
-        match env |> Map.tryFind "FSHARP_TEST_SUITE_CONFIGURATION" |> Option.map parseConfigurationName with
-        | Some confName -> confName
-        | None -> configurationName
-
     attempt {
-        do! updateCmd env { Configuration = configurationName; Ngen = doNgen; }
-            |> Attempt.Run
-            |> function Success () -> Success () | Failure msg -> genericError msg ()
 
         let cfg =
             let c = config env
@@ -90,27 +70,7 @@ let initializeSuite () =
                 | Some dir -> genericError (sprintf "environment variable 'FSCBinPath' is required to be a valid directory, but is '%s'" dir)
             }
 
-        let smokeTest () = attempt {
-            let tempFile ext = 
-                let p = Path.ChangeExtension( Path.GetTempFileName(), ext)
-                File.AppendAllText (p, """printfn "ciao"; exit 0""")
-                p
-
-            let tempDir = Commands.createTempDir ()
-            let exec exe args =
-                log "%s %s" exe args
-                use toLog = redirectToLog ()
-                Process.exec { RedirectError = Some toLog.Post; RedirectOutput = Some toLog.Post; RedirectInput = None } tempDir cfg.EnvironmentVariables exe args
-
-            do! Commands.fsc exec cfg.FSC "" [ tempFile ".fs" ] |> checkResult
-
-            do! Commands.fsi exec cfg.FSI "" [ tempFile ".fsx" ] |> checkResult
-        
-            }
-    
         do! checkfscBinPath ()
-
-        do! smokeTest ()
 
         return cfg
     } 
@@ -130,7 +90,7 @@ type public InitializeSuiteAttribute () =
         if details.IsSuite 
         then suiteHelpers.Force() |> ignore
 
-    override x.AfterTest details =
+    override x.AfterTest _details =
         ()
 
     override x.Targets with get() = ActionTargets.Test ||| ActionTargets.Suite
@@ -142,6 +102,8 @@ type public InitializeSuiteAttribute () =
 
 module FSharpTestSuite =
 
+    /// Get the tags from the first few lines of a file, e.g. the line
+    ///    #Conformance #Constants #Recursion #LetBindings #MemberDefinitions #Mutable 
     let getTagsOfFile path =
         match File.ReadLines(path) |> Seq.truncate 5 |> Seq.tryFind (fun s -> s.StartsWith("// #")) with
         | None -> []
@@ -152,6 +114,7 @@ module FSharpTestSuite =
             |> Seq.distinct
             |> Seq.toList
 
+    /// Get the tags from a directory of files
     let getTestFileMetadata dir =
         Directory.EnumerateFiles(dir, "*.fs*")
         |> Seq.toList
@@ -175,6 +138,7 @@ module FSharpTestSuite =
         parseTestLst ( __SOURCE_DIRECTORY__/".."/"test.lst" ) 
         )
 
+    /// Get the tags from a test.lst file
     let getTestLstTags db dir =
         let normalizePath path =
             Uri(path).LocalPath
@@ -182,7 +146,6 @@ module FSharpTestSuite =
             |> (fun s -> s.ToUpperInvariant())
 
         let sameDir a = (normalizePath dir) = (normalizePath a)
-        let normalizedPath = normalizePath dir
         db
         |> List.choose (fun (tag, d) -> if sameDir d then Some tag else None)
 
@@ -198,10 +161,11 @@ module FSharpTestSuite =
 
         props.Set("DIRECTORY", testDir)
 
-    let testContext () =
+    let testConfig () =
         let test = NUnit.Framework.TestContext.CurrentContext.Test
-        { Directory = test.Properties.Get("DIRECTORY") :?> string;
-          Config = suiteHelpers.Value }
+        let cfg = suiteHelpers.Value
+        let testDir = test.Properties.Get("DIRECTORY") :?> string
+        { cfg with Directory = testDir }
 
 // parametrized test cases does not inherits properties of test ( see https://github.com/nunit/nunit/issues/548 )
 // and properties is where the custom context data is saved
@@ -220,25 +184,17 @@ type FSharpSuiteTestAttribute(dir: string) =
                 test.Properties.Set(NUnit.Framework.Internal.PropertyNames.SkipReason, NUnit.Framework.Internal.ExceptionHelper.BuildMessage(ex))
                 test.Properties.Set(NUnit.Framework.Internal.PropertyNames.ProviderStackTrace, NUnit.Framework.Internal.ExceptionHelper.BuildStackTrace(ex))
 
-type FSharpSuiteTestCaseData =
-    inherit TestCaseData
-
-    new (dir: string, [<ParamArray>] arguments: Object array) as this = 
-        { inherit TestCaseData(arguments) }
-        then
-            this.Properties |> FSharpTestSuite.setProps dir
-            arguments
+type FSharpSuiteTestCaseData (dir: string, [<ParamArray>] arguments: Object[]) as this = 
+     inherit TestCaseData(arguments) 
+     do this.Properties |> FSharpTestSuite.setProps dir
+        arguments
             |> Array.choose (fun a -> match a with :? Permutation as p -> Some p | _ -> None)
             |> Array.iter (fun p -> this.SetCategory(sprintf "%A" p) |> ignore)
 
 [<AttributeUsage(AttributeTargets.Method, AllowMultiple = true, Inherited = false)>]
-type FSharpSuiteTestCaseAttribute =
-    inherit TestCaseAttribute
-
-    new (dir: string, [<ParamArray>] arguments: Object array) as this = 
-        { inherit TestCaseAttribute(arguments) }
-        then
-            this.Properties |> FSharpTestSuite.setProps dir
+type FSharpSuiteTestCaseAttribute(dir: string, [<ParamArray>] arguments: Object[]) as this = 
+     inherit TestCaseAttribute(arguments)
+     do this.Properties |> FSharpTestSuite.setProps dir
 
 
 let allPermutations = 
@@ -349,7 +305,7 @@ and RedirectFrom =
 
 module Command =
 
-    let logExec dir path args redirect =
+    let logExec _dir path args redirect =
         let inF =
             function
             | None -> ""
@@ -378,7 +334,7 @@ module Command =
                     do! ms.CopyToAsync(writer.BaseStream) |> (Async.AwaitIAsyncResult >> Async.Ignore)
                     do! writer.FlushAsync() |> (Async.AwaitIAsyncResult >> Async.Ignore)
                 with
-                | :? System.IO.IOException as ex -> //input closed is ok if process is closed
+                | :? System.IO.IOException -> //input closed is ok if process is closed
                     ()
                 }
             sources |> pipeFile |> Async.RunSynchronously
@@ -427,6 +383,49 @@ module Command =
         { RedirectOutput = None; RedirectError = None; RedirectInput = None }
         |> (outF (inF exec))
 
+let alwaysSuccess _ = Success ()
+
+let execToOutAndIgnoreExitCode cfg stdoutPath stderrPath p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = OutputAndError(Append(stdoutPath), Append(stderrPath)); Input = None; } p >> alwaysSuccess
+let exec cfg p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
+let execIn cfg workDir p = Command.exec workDir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
+
+
+let fsc cfg arg = Printf.ksprintf (Commands.fsc (exec cfg) cfg.FSC) arg
+let fscIn cfg workDir arg = Printf.ksprintf (Commands.fsc (execIn cfg workDir) cfg.FSC) arg
+let fscToOutIgnoreExitCode cfg stdoutPath stderrPath arg = Printf.ksprintf (Commands.fsc (execToOutAndIgnoreExitCode cfg stdoutPath stderrPath) cfg.FSC) arg
+let csc cfg arg = Printf.ksprintf (Commands.csc (exec cfg) cfg.CSC) arg
+let peverify cfg = Commands.peverify (exec cfg) cfg.PEVERIFY "/nologo"
+let peverifyWithArgs cfg args = Commands.peverify (exec cfg) cfg.PEVERIFY args
+let fsi cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI)
+let fsiToOutIgnoreExitCode cfg stdoutPath stderrPath = Printf.ksprintf (Commands.fsi (execToOutAndIgnoreExitCode cfg stdoutPath stderrPath) cfg.FSI)
+let fileguard cfg = (Commands.getfullpath cfg.Directory) >> FileGuard.create
+let getfullpath cfg = Commands.getfullpath cfg.Directory
+let resgen cfg = Printf.ksprintf (Commands.resgen (exec cfg) cfg.RESGEN)
+let fileExists cfg = Commands.fileExists cfg.Directory >> Option.isSome
+let msbuild cfg = Printf.ksprintf (Commands.msbuild (exec cfg) (cfg.MSBUILD.Value))
+let ``exec <`` cfg l p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = Inherit; Input = Some(RedirectInput(l)) } p >> checkResult
+let ``fsi <`` cfg = Printf.ksprintf (fun flags l -> Commands.fsi (``exec <`` cfg l) cfg.FSI flags [])
+let ``exec < success`` cfg stdoutPath stderrPath  l p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = OutputAndError(Append(stdoutPath), Append(stderrPath)); Input = Some(RedirectInput(l)) } p >> alwaysSuccess
+let fsiFromInToOutIgnoreExitCode cfg stdoutPath stderrPath = Printf.ksprintf (fun flags l -> Commands.fsi (``exec < success`` cfg stdoutPath stderrPath l) cfg.FSI flags [])
+let rm cfg x = Commands.rm cfg.Directory x
+let mkdir cfg = Commands.mkdir_p cfg.Directory
+
+
+let fsdiff cfg a b = attempt {
+    let out = new ResizeArray<string>()
+    let redirectOutputToFile path args =
+        log "%s %s" path args
+        use toLog = redirectToLog ()
+        Process.exec { RedirectOutput = Some (function null -> () | s -> out.Add(s)); RedirectError = Some toLog.Post; RedirectInput = None; } cfg.Directory cfg.EnvironmentVariables path args
+    do! (Commands.fsdiff redirectOutputToFile cfg.FSDIFF a b) |> (fun _ -> Success ())
+    return out.ToArray() |> List.ofArray
+    }
+
+let requireENCulture () = attempt {
+    do! match System.Threading.Thread.CurrentThread.CurrentCulture.TwoLetterISOLanguageName with
+        | "en" -> Success
+        | c -> skip (sprintf "Test not supported except en Culture, was %s" c)
+    }
 
 [<AutoOpen>]
 module CommandTypes =
@@ -461,7 +460,7 @@ module FscCommand =
         match line with
         | RegexFsc "error" (code, descr) -> FscOutputLine.Error(code, descr)
         | RegexFsc "warning" (code, descr) -> FscOutputLine.Warning(code, descr)
-        | l -> FscOutputLine.Text(line)
+        | _ -> FscOutputLine.Text(line)
 
     let parseFscOut = List.map parseFscOutLine
 

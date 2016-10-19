@@ -1,5 +1,8 @@
 module PlatformHelpers
 
+open System.IO
+open System.Diagnostics
+
 type ProcessorArchitecture = 
     | X86
     | IA64
@@ -11,8 +14,6 @@ type ProcessorArchitecture =
         | IA64 -> "IA64"
         | AMD64 -> "AMD64"
         | Unknown arc -> arc
-
-open System.IO
 
 type FilePath = string
 
@@ -26,8 +27,6 @@ type CmdArguments =
       RedirectInput : (StreamWriter -> unit) option }
 
 module Process =
-
-    open System.Diagnostics
 
     let processExePath baseDir exe =
         if Path.IsPathRooted(exe) then exe
@@ -94,8 +93,6 @@ type Result<'S,'F> =
     | Failure of 'F
 
 type Attempt<'S,'F> = (unit -> Result<'S,'F>)
-
-open System.Diagnostics
 
 [<DebuggerStepThrough>]
 let internal succeed x = (fun () -> Success x)
@@ -170,7 +167,6 @@ let attempt = new AttemptBuilder()
 
 let log format = Printf.ksprintf (printfn "%s") format
 
-
 type OutPipe (writer: TextWriter) =
     member x.Post (msg:string) = lock writer (fun () -> writer.WriteLine(msg))
     interface System.IDisposable with 
@@ -181,7 +177,7 @@ let redirectTo (writer: TextWriter) = new OutPipe (writer)
 let redirectToLog () = redirectTo System.Console.Out
 
 let inline (++) a (b: string) = System.IO.Path.Combine(a,b)
-let inline (/) a b = a ++ b  //TODO deprecated
+let inline (/) a b = a ++ b  
 
 let splitAtFirst (c: char -> bool) (s: string) =
     let rec helper x (rest: string) =

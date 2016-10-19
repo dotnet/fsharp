@@ -18,13 +18,15 @@ namespace PortableTestEntry
         {
             SetHooks();
 
-            Run("Core_access", () => { var x = Core_access.aa; });
-            Run("Core_apporder", () => { var x = Core_apporder.aa; });
-            Run("Core_array", () => { var x = Core_array.aa; });
-            Run("Core_attributes", () => { var x = Core_attributes.aa; });
-            Run("Core_comprehensions", () => { var x = Core_comprehensions.aa; });
+            /*            Run("Core_access", () => { var x = Core_access.aa; });
+                        Run("Core_apporder", () => { var x = Core_apporder.aa; });
+                        Run("Core_array", () => { var x = Core_array.aa; });
+                        Run("Core_attributes", () => { var x = Core_attributes.aa; });
+                        Run("Core_comprehensions", () => { var x = Core_comprehensions.aa; });
+            */
             Run("Core_control", () => { var x = Core_control.aa; });
-            Run("Core_controlChamenos", () => { var x = Core_controlChamenos.aa; });
+            /*
+             * Run("Core_controlChamenos", () => { var x = Core_controlChamenos.aa; });
             Run("Core_controlMailBox", () => { var x = Core_controlMailBox.aa; });
             Run("Core_controlStackOverflow", () => { var x = Core_controlStackOverflow.aa; });
             Run("Core_csext", () => { var x = Core_csext.aa; });
@@ -53,7 +55,7 @@ namespace PortableTestEntry
             Run("Core_syntax", () => { var x = Core_syntax.aa; });
             Run("Core_tlr", () => { var x = Core_tlr.aa; });
             Run("Core_unicode", () => { var x = Core_unicode.aa; });
-
+            */
             return returnCode;
         }
 
