@@ -2200,25 +2200,50 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("SumBy")>]
         let inline sumBy (f : 'T -> ^U) (source: seq<'T>) : ^U =
-            source
-            |> foreach (fun _ ->
-                { new Composer.Core.Folder<'T,'U> (LanguagePrimitives.GenericZero< ^U>) with
-                    override this.ProcessNext value =
-                        this.Value <- Checked.(+) this.Value (f value)
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun sum -> sum.Value
+            match source with
+            | :? SeqComposer.SeqEnumerable<'T> as s ->
+                let total =
+                    s.ForEach (fun _ ->
+                        { new SeqComposer.AccumulatingConsumer<'T,'U> (LanguagePrimitives.GenericZero< ^U>) with
+                            override this.ProcessNext value =
+                                this.Accumulator <- Checked.(+) this.Accumulator (f value)
+                                true })
+                total.Accumulator
+            | _ -> 
+                use e = source.GetEnumerator()
+                let mutable acc = LanguagePrimitives.GenericZero< ^U>
+                while e.MoveNext() do
+                    acc <- Checked.(+) acc (f e.Current)
+                acc
 
         [<CompiledName("Average")>]
         let inline average (source: seq< ^a>) : ^a =
-            checkNonNull "source" source
-            let mutable acc = LanguagePrimitives.GenericZero< ^a>
-            let mutable count = 0
-            source |> iter (fun current ->
-                acc <- Checked.(+) acc current
-                count <- count + 1)
-            if count = 0 then
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-            LanguagePrimitives.DivideByInt< ^a> acc count
+            match source with
+            | :? SeqComposer.SeqEnumerable<'a> as s ->
+                let mutable count = 0
+                let total =
+                    s.ForEach (fun _ ->
+                        { new SeqComposer.AccumulatingConsumer<'a,'a> (LanguagePrimitives.GenericZero) with
+                            override this.ProcessNext value =
+                                this.Accumulator <- Checked.(+) this.Accumulator value
+                                count <- count + 1
+                                true 
+                          interface SeqComposer.ISeqComponent with
+                            member __.OnComplete() = 
+                                if count = 0 then
+                                    invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                        })
+                LanguagePrimitives.DivideByInt< ^a> total.Accumulator count
+            | _ -> 
+                checkNonNull "source" source
+                let mutable acc = LanguagePrimitives.GenericZero< ^a>
+                let mutable count = 0
+                source |> iter (fun current ->
+                    acc <- Checked.(+) acc current
+                    count <- count + 1)
+                if count = 0 then
+                    invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                LanguagePrimitives.DivideByInt< ^a> acc count
 
                     member this.OnComplete _ = 
                         if this.Value._2 = 0 then
@@ -2227,13 +2252,33 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("AverageBy")>]
         let inline averageBy (f : 'T -> ^U) (source: seq< 'T >) : ^U =
-            source
-            |> foreach (fun _ ->
-                { new Composer.Core.Folder<'T,Composer.Core.Values<'U, int>> (Composer.Core.Values<_,_>(LanguagePrimitives.GenericZero, 0)) with
-                    override this.ProcessNext value =
-                        this.Value._1 <- Checked.(+) this.Value._1 (f value)
-                        this.Value._2 <- this.Value._2 + 1
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
+            match source with
+            | :? SeqComposer.SeqEnumerable<'T> as s ->
+                let mutable count = 0
+                let total =
+                    s.ForEach (fun _ ->
+                        { new SeqComposer.AccumulatingConsumer<'T,'U> (LanguagePrimitives.GenericZero< ^U>) with
+                            override this.ProcessNext value =
+                                this.Accumulator <- Checked.(+) this.Accumulator (f value)
+                                count <- count + 1
+                                true 
+                          interface SeqComposer.ISeqComponent with
+                            member __.OnComplete() = 
+                                if count = 0 then
+                                    invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                        })
+                LanguagePrimitives.DivideByInt< ^U> total.Accumulator count
+            | _ -> 
+                checkNonNull "source" source
+                use e = source.GetEnumerator()
+                let mutable acc = LanguagePrimitives.GenericZero< ^U>
+                let mutable count = 0
+                while e.MoveNext() do
+                    acc <- Checked.(+) acc (f e.Current)
+                    count <- count + 1
+                if count = 0 then
+                    invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                LanguagePrimitives.DivideByInt< ^U> acc count
 
                     member this.OnComplete _ = 
                         if this.Value._2 = 0 then
@@ -2242,16 +2287,34 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Min")>]
         let inline min (source: seq<_>) =
-            source
-            |> foreach (fun _ ->
-                { new Composer.Core.Folder<'T,Composer.Core.Values<bool,'T>> (Composer.Core.Values<_,_>(true, Unchecked.defaultof<'T>)) with
-                    override this.ProcessNext value =
-                        if this.Value._1 then
-                            this.Value._1 <- false
-                            this.Value._2 <- value
-                        elif value < this.Value._2 then
-                            this.Value._2 <- value
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
+            match source with
+            | :? SeqComposer.SeqEnumerable<'T> as s ->
+                let mutable first = false
+                let min =
+                    s.ForEach (fun _ ->
+                        { new SeqComposer.AccumulatingConsumer<'T,'T> (Unchecked.defaultof<'T>) with
+                            override this.ProcessNext value =
+                                first <- false
+                                if value < this.Accumulator then
+                                    this.Accumulator <- value
+                                true 
+                          interface SeqComposer.ISeqComponent with
+                            member __.OnComplete() = 
+                                if first then
+                                    invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                        })
+                min.Accumulator
+            | _ -> 
+                checkNonNull "source" source
+                use e = source.GetEnumerator()
+                if not (e.MoveNext()) then
+                    invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                let mutable acc = e.Current
+                while e.MoveNext() do
+                    let curr = e.Current
+                    if curr < acc then
+                        acc <- curr
+                acc
 
                     member this.OnComplete _ = 
                         if this.Value._1 then
@@ -2261,20 +2324,42 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("MinBy")>]
         let inline minBy (f : 'T -> 'U) (source: seq<'T>) : 'T =
-            source
-            |> foreach (fun _ ->
-                { new Composer.Core.Folder<'T,Composer.Core.Values<bool,'U,'T>> (Composer.Core.Values<_,_,_>(true,Unchecked.defaultof<'U>,Unchecked.defaultof<'T>)) with
-                    override this.ProcessNext value =
-                        match this.Value._1, f value with
-                        | true, valueU ->
-                            this.Value._1 <- false
-                            this.Value._2 <- valueU
-                            this.Value._3 <- value
-                        | false, valueU when valueU < this.Value._2 ->
-                            this.Value._2 <- valueU
-                            this.Value._3 <- value
-                        | _ -> ()
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
+            match source with
+            | :? SeqComposer.SeqEnumerable<'T> as s ->
+                let mutable first = false
+                let mutable acc = Unchecked.defaultof<'U>
+                let min =
+                    s.ForEach (fun _ ->
+                        { new SeqComposer.AccumulatingConsumer<'T,'T> (Unchecked.defaultof<'T>) with
+                            override this.ProcessNext value =
+                                first <- false
+                                let currValue = value
+                                let curr = f currValue
+                                if curr < acc then
+                                    acc <- curr
+                                    this.Accumulator <- value
+                                true 
+                          interface SeqComposer.ISeqComponent with
+                            member __.OnComplete() = 
+                                if first then
+                                    invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                        })
+                min.Accumulator
+            | _ -> 
+                checkNonNull "source" source
+                use e = source.GetEnumerator()
+                if not (e.MoveNext()) then
+                    invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                let first = e.Current
+                let mutable acc = f first
+                let mutable accv = first
+                while e.MoveNext() do
+                    let currv = e.Current
+                    let curr = f currv
+                    if curr < acc then
+                        acc <- curr
+                        accv <- currv
+                accv
 
                     member this.OnComplete _ = 
                         if this.Value._1 then
@@ -2300,16 +2385,34 @@ namespace Microsoft.FSharp.Collections
 *)
         [<CompiledName("Max")>]
         let inline max (source: seq<_>) =
-            source
-            |> foreach (fun _ ->
-                { new Composer.Core.Folder<'T,Composer.Core.Values<bool,'T>> (Composer.Core.Values<_,_>(true, Unchecked.defaultof<'T>)) with
-                    override this.ProcessNext value =
-                        if this.Value._1 then
-                            this.Value._1 <- false
-                            this.Value._2 <- value
-                        elif value > this.Value._2 then
-                            this.Value._2 <- value
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
+            match source with
+            | :? SeqComposer.SeqEnumerable<'T> as s ->
+                let mutable first = false
+                let max =
+                    s.ForEach (fun _ ->
+                        { new SeqComposer.AccumulatingConsumer<'T,'T> (Unchecked.defaultof<'T>) with
+                            override this.ProcessNext value =
+                                first <- false
+                                if value > this.Accumulator then
+                                    this.Accumulator <- value
+                                true 
+                          interface SeqComposer.ISeqComponent with
+                            member __.OnComplete() = 
+                                if first then
+                                    invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                        })
+                max.Accumulator
+            | _ -> 
+                checkNonNull "source" source
+                use e = source.GetEnumerator()
+                if not (e.MoveNext()) then
+                    invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                let mutable acc = e.Current
+                while e.MoveNext() do
+                    let curr = e.Current
+                    if curr > acc then
+                        acc <- curr
+                acc
 
                     member this.OnComplete _ = 
                         if this.Value._1 then
@@ -2319,20 +2422,42 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("MaxBy")>]
         let inline maxBy (f : 'T -> 'U) (source: seq<'T>) : 'T =
-            source
-            |> foreach (fun _ ->
-                { new Composer.Core.Folder<'T,Composer.Core.Values<bool,'U,'T>> (Composer.Core.Values<_,_,_>(true,Unchecked.defaultof<'U>,Unchecked.defaultof<'T>)) with
-                    override this.ProcessNext value =
-                        match this.Value._1, f value with
-                        | true, valueU ->
-                            this.Value._1 <- false
-                            this.Value._2 <- valueU
-                            this.Value._3 <- value
-                        | false, valueU when valueU > this.Value._2 ->
-                            this.Value._2 <- valueU
-                            this.Value._3 <- value
-                        | _ -> ()
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
+            match source with
+            | :? SeqComposer.SeqEnumerable<'T> as s ->
+                let mutable first = false
+                let mutable acc = Unchecked.defaultof<'U>
+                let min =
+                    s.ForEach (fun _ ->
+                        { new SeqComposer.AccumulatingConsumer<'T,'T> (Unchecked.defaultof<'T>) with
+                            override this.ProcessNext value =
+                                first <- false
+                                let currValue = value
+                                let curr = f currValue
+                                if curr > acc then
+                                    acc <- curr
+                                    this.Accumulator <- value
+                                true 
+                          interface SeqComposer.ISeqComponent with
+                            member __.OnComplete() = 
+                                if first then
+                                    invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                        })
+                min.Accumulator
+            | _ -> 
+                checkNonNull "source" source
+                use e = source.GetEnumerator()
+                if not (e.MoveNext()) then
+                    invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                let first = e.Current
+                let mutable acc = f first
+                let mutable accv = first
+                while e.MoveNext() do
+                    let currv = e.Current
+                    let curr = f currv
+                    if curr > acc then
+                        acc <- curr
+                        accv <- currv
+                accv
 
                     member this.OnComplete _ = 
                         if this.Value._1 then
