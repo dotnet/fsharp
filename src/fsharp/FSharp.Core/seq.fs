@@ -466,11 +466,26 @@ namespace Microsoft.FSharp.Collections
                     member __.OnComplete() = ()
                     member __.OnDispose() = ()
 
-            [<AbstractClass>]
-            type AccumulatingConsumer<'T, 'U>(initialState:'U) =
-                inherit SeqConsumer<'T,'T>()
+            [<Struct; NoComparison; NoEquality>]
+            type MutableData<'a,'b> =
+                val mutable _1 : 'a
+                val mutable _2 : 'b
 
-                member val Accumulator = initialState with get, set
+                new (a:'a, b: 'b) = {
+                    _1 = a
+                    _2 = b
+                }
+
+            [<AbstractClass>]
+            type AccumulatingConsumer<'T, 'U> =
+                inherit SeqConsumer<'T,'T>
+
+                val mutable Accumulator : 'U
+
+                new (initialState) = {
+                    inherit SeqConsumer<'T,'T>()
+                    Accumulator = initialState
+                }
 
             [<AbstractClass>]
             type SeqEnumerable<'T>() =
@@ -2153,6 +2168,8 @@ namespace Microsoft.FSharp.Collections
             | :? list<'T> as a -> upcast SeqComposer.List.Enumerable(a, SeqComposer.IdentityFactory.IdentityFactory)
             | _ -> upcast SeqComposer.Enumerable.Enumerable<'T,'T>(source, SeqComposer.IdentityFactory.IdentityFactory)
 
+        let inline foreach f (source:SeqComposer.SeqEnumerable<_>) = source.ForEach f
+
         [<CompiledName("Sum")>]
         let inline sum (source:seq<'a>) : 'a =
             let composedSource = toComposer source
@@ -2177,22 +2194,22 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Average")>]
         let inline average (source: seq< ^a>) : ^a =
-            let composedSource = toComposer source
-
-            let mutable count = 0
             let total =
-                composedSource.ForEach (fun _ ->
-                    { new SeqComposer.AccumulatingConsumer<'a,'a> (LanguagePrimitives.GenericZero) with
+                source
+                |> toComposer
+                |> foreach (fun _ ->
+                    { new SeqComposer.AccumulatingConsumer<'a, SeqComposer.MutableData<'a, int>> (SeqComposer.MutableData(LanguagePrimitives.GenericZero, 0)) with
                         override this.ProcessNext value =
-                            this.Accumulator <- Checked.(+) this.Accumulator value
-                            count <- count + 1
+                            this.Accumulator._1 <- Checked.(+) this.Accumulator._1 value
+                            this.Accumulator._2 <- this.Accumulator._2 + 1
                             true 
+
                        interface SeqComposer.ISeqComponent with
-                          member __.OnComplete() = 
-                            if count = 0 then
+                          member this.OnComplete() = 
+                            if (this:?>SeqComposer.AccumulatingConsumer<'a, SeqComposer.MutableData<'a, int>>).Accumulator._2 = 0 then
                                 invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
                     })
-            LanguagePrimitives.DivideByInt< ^a> total.Accumulator count
+            LanguagePrimitives.DivideByInt< ^a> total.Accumulator._1 total.Accumulator._2
 
         [<CompiledName("AverageBy")>]
         let inline averageBy (f : 'T -> ^U) (source: seq< 'T >) : ^U =
