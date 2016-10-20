@@ -1242,9 +1242,10 @@ namespace Microsoft.FSharp.Collections
                     let mutable current = state
 
                     let rec moveNext () =
-                        match generator current with
-                        | None -> false
-                        | Some (item, nextState) ->
+                        match signal.Halted, generator current with
+                        | true, _
+                        | false, None -> false
+                        | false, Some (item, nextState) ->
                             current <- nextState
                             if seqComponent.ProcessNext item then
                                 true
