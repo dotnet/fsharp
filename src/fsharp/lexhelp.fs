@@ -42,12 +42,13 @@ type LightSyntaxStatus(initial:bool,warn:bool) =
 [<Sealed>]
 type LexResourceManager() =
     let strings = new System.Collections.Generic.Dictionary<string,Parser.token>(100)
-    member x.InternIdentifierToken(s) = 
-        let mutable res = Unchecked.defaultof<_> 
-        let ok = strings.TryGetValue(s,&res)  
-        if ok then res  else 
-        let res = IDENT s
-        (strings.[s] <- res; res)
+    member x.InternIdentifierToken(s) =
+        let mutable res = Unchecked.defaultof<_>
+        lock strings <| fun () ->
+            let ok = strings.TryGetValue(s,&res)  
+            if ok then res  else 
+            let res = IDENT s
+            (strings.[s] <- res; res)
               
 /// Lexer parameters 
 type lexargs =  

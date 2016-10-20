@@ -410,15 +410,19 @@ let GetTcImportsFromCommandLine
     use unwindParsePhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parse)            
     let inputs =
         try
-            let isLastCompiland, isExe = sourceFiles |> tcConfig.ComputeCanContainEntryPoint 
-            isLastCompiland |> List.zip sourceFiles
+            let (isLastCompiland : bool list), (isExe : bool) = sourceFiles |> tcConfig.ComputeCanContainEntryPoint 
+            List.zip sourceFiles isLastCompiland
             // PERF: consider making this parallel, once uses of global state relevant to parsing are cleaned up 
-            |> List.choose (fun (filename:string, isLastCompiland) -> 
+            |> List.map (fun (filename:string, isLastCompiland) -> async {
                 let pathOfMetaCommandSource = Path.GetDirectoryName(filename)
-                match ParseOneInputFile(tcConfig,lexResourceManager,["COMPILED"],filename,(isLastCompiland, isExe),errorLogger,(*retryLocked*)false) with
-                | Some(input)->Some(input,pathOfMetaCommandSource)
-                | None -> None
-                ) 
+                return
+                    match ParseOneInputFile(tcConfig,lexResourceManager,["COMPILED"],filename,(isLastCompiland, isExe),errorLogger,(*retryLocked*)false) with
+                    | Some(input)->Some(input,pathOfMetaCommandSource)
+                    | None -> None
+                })
+            |> Async.Parallel
+            |> Async.RunSynchronously
+            |> Array.choose id
         with e -> 
             errorRecoveryNoRange e
             SqmLoggerWithConfig tcConfig errorLogger.ErrorNumbers errorLogger.WarningNumbers
@@ -429,9 +433,9 @@ let GetTcImportsFromCommandLine
         AbortOnError(errorLogger, tcConfig, exiter)
 
     if tcConfig.printAst then                
-        inputs |> List.iter (fun (input,_filename) -> printf "AST:\n"; printfn "%+A" input; printf "\n") 
+        inputs |> Array.iter (fun (input,_filename) -> printf "AST:\n"; printfn "%+A" input; printf "\n") 
 
-    let tcConfig = (tcConfig,inputs) ||> List.fold ApplyMetaCommandsFromInputToTcConfig 
+    let tcConfig = (tcConfig,inputs) ||> Array.fold ApplyMetaCommandsFromInputToTcConfig 
     let tcConfigP = TcConfigProvider.Constant(tcConfig)
 
     ReportTime tcConfig "Import non-system references"
@@ -452,7 +456,7 @@ let GetTcImportsFromCommandLine
     let tcEnv0 = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
 
     // typecheck 
-    let inputs = inputs |> List.map fst
+    let inputs = inputs |> Array.map fst |> List.ofArray
     let tcState,topAttrs,typedAssembly,_tcEnvAtEnd = 
         TypeCheck(tcConfig,tcImports,tcGlobals,errorLogger,assemblyName,NiceNameGenerator(),tcEnv0,inputs,exiter)
 
