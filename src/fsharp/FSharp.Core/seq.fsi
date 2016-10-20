@@ -27,12 +27,21 @@ namespace Microsoft.FSharp.Collections
                 abstract ProcessNext : input:'T -> bool
                 interface ISeqComponent
 
+            [<Struct; NoComparison; NoEquality>]
+            type MutableData<'a,'b> =
+              struct
+                new : a:'a * b:'b -> MutableData<'a,'b>
+                val mutable _1: 'a
+                val mutable _2: 'b
+              end
+
             [<AbstractClass>]
             type AccumulatingConsumer<'T,'U> =
+              class
                 inherit SeqConsumer<'T,'T>
                 new : initialState:'U -> AccumulatingConsumer<'T,'U>
-                member Accumulator : 'U
-                member Accumulator : 'U with set
+                val mutable Accumulator: 'U
+              end
 
             [<AbstractClass>]
             type SeqEnumerable<'T> =
