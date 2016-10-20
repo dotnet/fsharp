@@ -1584,9 +1584,10 @@ namespace Microsoft.FSharp.Collections
                         override this.ProcessNext value =
                             if this.Accumulator then
                                 pipeline.StopFurtherProcessing()
+                                false
                             else
                                 this.Accumulator <- f value
-                            true 
+                                true 
                        })
             exists.Accumulator
 
@@ -1600,9 +1601,10 @@ namespace Microsoft.FSharp.Collections
                         override this.ProcessNext value =
                             if this.Accumulator then
                                 pipeline.StopFurtherProcessing()
+                                false
                             else
                                 this.Accumulator <- element = value
-                            true 
+                                true 
                        })
             contains.Accumulator
 
@@ -1616,9 +1618,10 @@ namespace Microsoft.FSharp.Collections
                         override this.ProcessNext value =
                             if this.Accumulator then
                                 this.Accumulator <- f value
+                                false
                             else
                                 pipeline.StopFurtherProcessing()
-                            true 
+                                true 
                        })
             forall.Accumulator
 
@@ -1744,9 +1747,10 @@ namespace Microsoft.FSharp.Collections
                         override this.ProcessNext value =
                             if this.Accumulator.IsNone then
                                 this.Accumulator <- f value
+                                true
                             else
                                 pipeline.StopFurtherProcessing()
-                            true 
+                                false
                        })
             pick.Accumulator
 
@@ -1767,9 +1771,10 @@ namespace Microsoft.FSharp.Collections
                             if this.Accumulator.IsNone then
                                 if f value then
                                     this.Accumulator <- Some(value)
+                                true
                             else
                                 pipeline.StopFurtherProcessing()
-                            true 
+                                false
                        })
             find.Accumulator
 
