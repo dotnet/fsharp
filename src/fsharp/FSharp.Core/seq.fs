@@ -2276,13 +2276,13 @@ namespace Microsoft.FSharp.Collections
                 composedSource.ForEach (fun _ ->
                     { new SeqComposer.AccumulatingConsumer<'T,'T> (Unchecked.defaultof<'T>) with
                         override this.ProcessNext value =
+                            let currValue = value
+                            let curr = f currValue
                             if first then
                                 first <- false
+                                acc <- curr 
                                 this.Accumulator <- value
                             else
-                                first <- false
-                                let currValue = value
-                                let curr = f currValue
                                 if curr < acc then
                                     acc <- curr
                                     this.Accumulator <- value
@@ -2320,8 +2320,8 @@ namespace Microsoft.FSharp.Collections
                     { new SeqComposer.AccumulatingConsumer<'T,'T> (Unchecked.defaultof<'T>) with
                         override this.ProcessNext value =
                             if first then
-                                    first <- false
-                                    this.Accumulator <- value
+                                first <- false
+                                this.Accumulator <- value
                             else
                                 if value > this.Accumulator then
                                     this.Accumulator <- value
@@ -2343,12 +2343,13 @@ namespace Microsoft.FSharp.Collections
                 composedSource.ForEach (fun _ ->
                     { new SeqComposer.AccumulatingConsumer<'T,'T> (Unchecked.defaultof<'T>) with
                         override this.ProcessNext value =
+                            let currValue = value
+                            let curr = f currValue
                             if first then
                                 first <- false
+                                acc <- curr
                                 this.Accumulator <- value
                             else
-                                let currValue = value
-                                let curr = f currValue
                                 if curr > acc then
                                     acc <- curr
                                     this.Accumulator <- value
