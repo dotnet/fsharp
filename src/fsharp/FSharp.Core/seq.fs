@@ -2170,7 +2170,7 @@ namespace Microsoft.FSharp.Collections
         let toComposer (source:seq<'T>): SeqComposer.SeqEnumerable<'T> = 
             checkNonNull "source" source
             match source with
-            | :? SeqComposer.Enumerable.EnumerableBase<'T> as s -> upcast SeqComposer.Enumerable.Enumerable<'T,'T>(s, SeqComposer.IdentityFactory.IdentityFactory)
+            | :? SeqComposer.Enumerable.EnumerableBase<'T> as s -> upcast s
             | :? array<'T> as a -> upcast SeqComposer.Array.Enumerable((fun () -> a), SeqComposer.IdentityFactory.IdentityFactory)
             | :? list<'T> as a -> upcast SeqComposer.List.Enumerable(a, SeqComposer.IdentityFactory.IdentityFactory)
             | _ -> upcast SeqComposer.Enumerable.Enumerable<'T,'T>(source, SeqComposer.IdentityFactory.IdentityFactory)
