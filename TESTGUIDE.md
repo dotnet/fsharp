@@ -63,9 +63,9 @@ For the FSharp and FSharpQA suites, the list of test areas and their associated 
     tests\test.lst                   // FSharp suite
     tests\fsharpqa\source\test.lst   // FSharpQA suite
 
-Tags are in the left column, paths to to corresponding test folders are in the right column.  If no tags are specified to `RunTests.cmd`, all tests will be run.
+Tags are in the left column, paths to to corresponding test folders are in the right column.  If no tags are specifie, all tests will be run.
 
-If you want to re-run a particular test area, the easiest way to do so is to set a temporary tag for that area in test.lst (e.g. "RERUN"), then call `RunTests.cmd <debug|release> <fsharp|fsharpqa> RERUN`.
+If you want to re-run a particular test area, the easiest way to do so is to set a temporary tag for that area in test.lst (e.g. "RERUN").
 
 ### Logs and output
 
@@ -83,5 +83,5 @@ All test execution logs and result files will be dropped into the `tests\TestRes
 
 * Making the tests run faster
   * NGen-ing the F# bits (fsc, fsi, FSharp.Core, etc) will result in tests executing much faster. Make sure you run `src\update.cmd` with the `-ngen` flag before running tests.
-  * The FSharp and FSharpQA suites will run test cases in parallel by default. You can comment out the relevant line in `RunTests.cmd` (look for `PARALLEL_ARG`) to disable this.
-  * By default, tests from the FSharpQA suite are run using a persistent, hosted version of the compiler. This speeds up test execution, as there is no need for the `fsc.exe` process to spin up repeatedly. To disable this, uncomment the relevant line in `RunTests.cmd` (look for `HOSTED_COMPILER`).
+  * The FSharp and FSharpQA suites will run test cases in parallel by default. You can comment out the relevant line (look for `PARALLEL_ARG`) to disable this.
+  * By default, tests from the FSharpQA suite are run using a persistent, hosted version of the compiler. This speeds up test execution, as there is no need for the `fsc.exe` process to spin up repeatedly. To disable this, uncomment the relevant line (look for `HOSTED_COMPILER`).

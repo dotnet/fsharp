@@ -8,7 +8,7 @@ open NUnitConf
 open PlatformHelpers
 open FSharpTestSuiteTypes
 
-let testContext = FSharpTestSuite.testContext
+let testConfig = FSharpTestSuite.testConfig
 
 open System.Reflection
 
@@ -16,7 +16,8 @@ module FileVersionInfoTest =
 
     [<Test; FSharpSuiteTest()>]
     let ``should set file version info on generated file`` () = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
+        let cfg = testConfig ()
+        let dir = cfg.Directory
 
         let fscToLibrary = Printf.ksprintf (FscCommand.fscToLibrary dir (Command.exec dir cfg.EnvironmentVariables) cfg.FSC)
 
@@ -61,7 +62,7 @@ open System.Runtime.InteropServices
         
         result.StderrText
         |> FscCommand.parseFscOut 
-        |> List.choose (function FscCommand.FscOutputLine.Warning(w,e) -> Some w | _ -> None)
+        |> List.choose (function FscCommand.FscOutputLine.Warning(w,_) -> Some w | _ -> None)
         |> Assert.areEqual []
     
         })

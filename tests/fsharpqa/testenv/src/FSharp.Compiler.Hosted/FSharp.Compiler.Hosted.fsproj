@@ -71,5 +71,6 @@
     </ItemGroup>
 
     <Copy SourceFiles="@(FSharpCoreOptSigFiles)" DestinationFolder="$(OutputPath)" />
+    <Copy SourceFiles="@(FSharpCoreOptSigFiles)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
   </Target>
 </Project>
