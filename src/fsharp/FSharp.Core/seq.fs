@@ -1481,8 +1481,15 @@ namespace Microsoft.FSharp.Collections
         let inline indexNotFound() = raise (new System.Collections.Generic.KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))
         
         [<CompiledName("ToComposer")>]
-        let toComposer (source:seq<'T>): Composer.Core.ISeq<'T> = 
-            Composer.Seq.toComposer source
+        let toComposer (source:seq<'T>): SeqComposer.SeqEnumerable<'T> = 
+            checkNonNull "source" source
+            match source with
+            | :? SeqComposer.Enumerable.EnumerableBase<'T> as s -> upcast s
+            | :? array<'T> as a -> upcast SeqComposer.Array.Enumerable((fun () -> a), SeqComposer.IdentityFactory.IdentityFactory)
+            | :? list<'T> as a -> upcast SeqComposer.List.Enumerable(a, SeqComposer.IdentityFactory.IdentityFactory)
+            | _ -> upcast SeqComposer.Enumerable.Enumerable<'T,'T>(source, SeqComposer.IdentityFactory.IdentityFactory)
+        
+        let inline foreach f (source:SeqComposer.SeqEnumerable<_>) = source.ForEach f
 
         let inline foreach f (source:seq<_>) =
             Composer.Seq.foreach f (toComposer source)
@@ -1517,17 +1524,13 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Iterate")>]
         let iter f (source : seq<'T>) =
-            checkNonNull "source" source
-            match source with
-            | :? SeqComposer.Enumerable.EnumerableBase<'T> as s ->
-                s.ForEach (fun _ ->
+            source
+            |> toComposer
+            |> foreach (fun _ ->
                     { new SeqComposer.SeqConsumer<'T,'T> () with
                         override this.ProcessNext value =
-                            f value; true }) |> ignore
-            | _ ->
-                use e = source.GetEnumerator()
-                while e.MoveNext() do
-                    f e.Current
+                            f value; true })
+            |> ignore
 
         [<CompiledName("TryHead")>]
         let tryHead (source : seq<_>) =
@@ -1557,20 +1560,67 @@ namespace Microsoft.FSharp.Collections
         let nth i (source : seq<'T>) = item i source
 
         [<CompiledName("IterateIndexed")>]
-        let iteri f (source:seq<'T>) =
-            Composer.Seq.iteri f (toComposer source)
+        let iteri f (source : seq<'T>) =
+            let composedSource = toComposer source
+
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
+            let mutable i = 0
+
+            composedSource.ForEach (fun _ ->
+                    { new SeqComposer.SeqConsumer<'T,'T> () with
+                        override this.ProcessNext value =
+                            f.Invoke(i, value)
+                            i <- i + 1
+                            true })
+            |> ignore
 
         [<CompiledName("Exists")>]
-        let exists f (source:seq<'T>) =
-            Composer.Seq.exists f (toComposer source)
+        let exists f (source : seq<'T>) =
+            let exists =
+                source
+                |> toComposer
+                |> foreach (fun pipeline ->
+                    { new SeqComposer.AccumulatingConsumer<'T, bool> (false) with
+                        override this.ProcessNext value =
+                            if this.Accumulator then
+                                pipeline.StopFurtherProcessing()
+                            else
+                                this.Accumulator <- f value
+                            true 
+                       })
+            exists.Accumulator
 
         [<CompiledName("Contains")>]
-        let inline contains element (source:seq<'T>) =
-            Composer.Seq.contains element (toComposer source)
+        let inline contains element (source : seq<'T>) =
+            let contains =
+                source
+                |> toComposer
+                |> foreach (fun pipeline ->
+                    { new SeqComposer.AccumulatingConsumer<'T, bool> (false) with
+                        override this.ProcessNext value =
+                            if this.Accumulator then
+                                pipeline.StopFurtherProcessing()
+                            else
+                                this.Accumulator <- element = value
+                            true 
+                       })
+            contains.Accumulator
 
         [<CompiledName("ForAll")>]
-        let forall f (source:seq<'T>) =
-            Composer.Seq.forall f (toComposer source)
+        let forall f (source : seq<'T>) =
+            let forall =
+                source
+                |> toComposer
+                |> foreach (fun pipeline ->
+                    { new SeqComposer.AccumulatingConsumer<'T, bool> (true) with
+                        override this.ProcessNext value =
+                            if this.Accumulator then
+                                this.Accumulator <- f value
+                            else
+                                pipeline.StopFurtherProcessing()
+                            true 
+                       })
+            forall.Accumulator
 
         [<CompiledName("Iterate2")>]
         let iter2 f (source1 : seq<_>) (source2 : seq<_>)    =
@@ -1686,7 +1736,19 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("TryPick")>]
         let tryPick f (source : seq<'T>)  =
-            Composer.Seq.tryPick f (toComposer source)
+            let pick =
+                source
+                |> toComposer
+                |> foreach (fun pipeline ->
+                    { new SeqComposer.AccumulatingConsumer<'T, Option<'U>> (None) with
+                        override this.ProcessNext value =
+                            if this.Accumulator.IsNone then
+                                this.Accumulator <- f value
+                            else
+                                pipeline.StopFurtherProcessing()
+                            true 
+                       })
+            pick.Accumulator
 
         [<CompiledName("Pick")>]
         let pick f source  =
@@ -1696,7 +1758,20 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("TryFind")>]
         let tryFind f (source : seq<'T>)  =
-            Composer.Seq.tryFind f (toComposer source)
+            let find =
+                source 
+                |> toComposer
+                |> foreach (fun pipeline ->
+                    { new SeqComposer.AccumulatingConsumer<'T, Option<'T>> (None) with
+                        override this.ProcessNext value =
+                            if this.Accumulator.IsNone then
+                                if f value then
+                                    this.Accumulator <- Some(value)
+                            else
+                                pipeline.StopFurtherProcessing()
+                            true 
+                       })
+            find.Accumulator
 
         [<CompiledName("Find")>]
         let find f source =
@@ -1743,24 +1818,15 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Fold")>]
         let fold<'T,'State> f (x:'State) (source:seq<'T>) =
-            checkNonNull "source" source
-            match source with
-            | :? SeqComposer.Enumerable.EnumerableBase<'T> as s ->
-                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-                let total =
-                    s.ForEach (fun _ ->
+            let composedSource = toComposer source
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
+
+            let total = composedSource.ForEach (fun _ ->
                         { new SeqComposer.AccumulatingConsumer<'T,'State> (x) with
                             override this.ProcessNext value =
                                 this.Accumulator <- f.Invoke (this.Accumulator, value)
                                 true })
-                total.Accumulator
-            | _ ->
-                use e = source.GetEnumerator()
-                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-                let mutable state = x
-                while e.MoveNext() do
-                    state <- f.Invoke(state, e.Current)
-                state
+            total.Accumulator
 
             source
             |> foreach (fun _ ->
@@ -1790,24 +1856,25 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Reduce")>]
         let reduce f (source : seq<'T>)  =
+            let composedSource = toComposer source
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
+            let mutable first = true
 
-            source
-            |> foreach (fun _ ->
-                { new Composer.Core.Folder<'T, Composer.Core.Values<bool,'T>> (Composer.Core.Values<_,_>(true, Unchecked.defaultof<'T>)) with
-                    override this.ProcessNext value =
-                        if this.Value._1 then
-                            this.Value._1 <- false
-                            this.Value._2 <- value
-                        else
-                            this.Value._2 <- f.Invoke (this.Value._2, value)
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
-
-                    member this.OnComplete _ = 
-                        if this.Value._1 then
-                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-                })
-            |> fun reduced -> reduced.Value._2
+            let total = composedSource.ForEach (fun _ ->
+                        { new SeqComposer.AccumulatingConsumer<'T,'T> (Unchecked.defaultof<'T>) with
+                            override this.ProcessNext value =
+                                if first then
+                                    first <- false
+                                    this.Accumulator <- value
+                                else
+                                    this.Accumulator <- f.Invoke (this.Accumulator, value)
+                                true 
+                           interface SeqComposer.ISeqComponent with
+                              member this.OnComplete() = 
+                                if first then
+                                    invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                        })
+            total.Accumulator
 
         [<CompiledName("Replicate")>]
         let replicate count x =
@@ -2178,17 +2245,6 @@ namespace Microsoft.FSharp.Collections
                 then mkDelayedSeq (fun () -> countByValueType keyf source)
                 else mkDelayedSeq (fun () -> countByRefType   keyf source)
         
-        [<CompiledName("ToComposer")>]
-        let toComposer (source:seq<'T>): SeqComposer.SeqEnumerable<'T> = 
-            checkNonNull "source" source
-            match source with
-            | :? SeqComposer.Enumerable.EnumerableBase<'T> as s -> upcast s
-            | :? array<'T> as a -> upcast SeqComposer.Array.Enumerable((fun () -> a), SeqComposer.IdentityFactory.IdentityFactory)
-            | :? list<'T> as a -> upcast SeqComposer.List.Enumerable(a, SeqComposer.IdentityFactory.IdentityFactory)
-            | _ -> upcast SeqComposer.Enumerable.Enumerable<'T,'T>(source, SeqComposer.IdentityFactory.IdentityFactory)
-
-        let inline foreach f (source:SeqComposer.SeqEnumerable<_>) = source.ForEach f
-
         [<CompiledName("Sum")>]
         let inline sum (source:seq<'a>) : 'a =
             let composedSource = toComposer source
@@ -2444,6 +2500,24 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Tail")>]
         let tail (source: seq<'T>) =
             source |> seqFactory (SeqComposer.TailFactory ())
+        
+        [<CompiledName("TryLast")>]
+        let tryLast (source : seq<_>) =
+            let composedSource = toComposer source
+            let mutable first = true
+
+            let last = 
+                composedSource.ForEach (fun _ ->
+                        { new SeqComposer.AccumulatingConsumer<'T, 'T> (Unchecked.defaultof<'T>) with
+                            override this.ProcessNext value =
+                                if first then
+                                    first <- false
+                                this.Accumulator <- value
+                                true })
+            if first then
+                None
+            else
+                Some(last.Accumulator)
 
         [<CompiledName("Last")>]
         let last (source : seq<_>) =
