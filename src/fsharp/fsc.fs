@@ -410,7 +410,7 @@ let GetTcImportsFromCommandLine
     use unwindParsePhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parse)            
     let inputs =
         try
-            let (isLastCompiland : bool list), (isExe : bool) = sourceFiles |> tcConfig.ComputeCanContainEntryPoint 
+            let isLastCompiland, isExe = sourceFiles |> tcConfig.ComputeCanContainEntryPoint 
             List.zip sourceFiles isLastCompiland
             |> List.map (fun (filename:string, isLastCompiland) -> async {
                 let pathOfMetaCommandSource = Path.GetDirectoryName(filename)
