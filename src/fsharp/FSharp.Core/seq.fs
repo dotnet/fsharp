@@ -495,9 +495,6 @@ namespace Microsoft.FSharp.Collections
 
             type [<AbstractClass>] SeqComponentFactory<'T,'U> () =
                 abstract Create<'V> : ISeqPipeline -> SeqConsumer<'U,'V> -> SeqConsumer<'T,'V>
-                abstract IsIdentity : bool
-
-                default __.IsIdentity = false
 
             and ComposedFactory<'T,'U,'V> private (first:SeqComponentFactory<'T,'U>, second:SeqComponentFactory<'U,'V>) =
                 inherit SeqComponentFactory<'T,'V> ()
@@ -505,14 +502,7 @@ namespace Microsoft.FSharp.Collections
                     first.Create result (second.Create result next)
 
                 static member Combine (first:SeqComponentFactory<'T,'U>) (second:SeqComponentFactory<'U,'V>) : SeqComponentFactory<'T,'V> =
-                    let castToTV (factory:obj) = 
-                        match factory with
-                        | :? SeqComponentFactory<'T,'V> as result -> result
-                        | _ -> failwith "library implementation error: they types must match when paired with identity"
-
-                    if   first.IsIdentity  then castToTV second
-                    elif second.IsIdentity then castToTV first
-                    else upcast ComposedFactory(first, second)
+                    upcast ComposedFactory(first, second)
 
             and ChooseFactory<'T,'U> (filter:'T->option<'U>) =
                 inherit SeqComponentFactory<'T,'U> ()
@@ -539,10 +529,9 @@ namespace Microsoft.FSharp.Collections
 
             and IdentityFactory<'T> () =
                 inherit SeqComponentFactory<'T,'T> ()
-                override __.Create<'V> (_result:ISeqPipeline) (next:SeqConsumer<'T,'V>) : SeqConsumer<'T,'V> = upcast Identity (next)
-                override __.IsIdentity = true
-
-                static member IdentityFactory = IdentityFactory<'T>()
+                static let singleton = IdentityFactory<'T>()
+                override __.Create<'V> (_result:ISeqPipeline) (next:SeqConsumer<'T,'V>) : SeqConsumer<'T,'V> = next
+                static member IdentityFactory = singleton
 
             and MapFactory<'T,'U> (map:'T->'U) =
                 inherit SeqComponentFactory<'T,'U> ()
@@ -678,12 +667,6 @@ namespace Microsoft.FSharp.Collections
                         Helpers.avoidTailCall (next.ProcessNext (map input))
                     else
                         false
-
-            and Identity<'T,'V> (next:SeqConsumer<'T,'V>) =
-                inherit SeqComponent<'T,'V>(next)
-
-                override __.ProcessNext (input:'T) : bool = 
-                    Helpers.avoidTailCall (next.ProcessNext input)
 
             and Map<'T,'U,'V> (map:'T->'U, next:SeqConsumer<'U,'V>) =
                 inherit SeqComponent<'T,'V>(next)
