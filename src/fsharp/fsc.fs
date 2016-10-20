@@ -412,7 +412,6 @@ let GetTcImportsFromCommandLine
         try
             let (isLastCompiland : bool list), (isExe : bool) = sourceFiles |> tcConfig.ComputeCanContainEntryPoint 
             List.zip sourceFiles isLastCompiland
-            // PERF: consider making this parallel, once uses of global state relevant to parsing are cleaned up 
             |> List.map (fun (filename:string, isLastCompiland) -> async {
                 let pathOfMetaCommandSource = Path.GetDirectoryName(filename)
                 return
