@@ -7,29 +7,12 @@ open NUnit.Framework
 open FSharpTestSuiteTypes
 open NUnitConf
 open PlatformHelpers
+open SingleTest
 
-let testContext = FSharpTestSuite.testContext
+let testConfig = FSharpTestSuite.testConfig
 
+[<Test; FSharpSuiteScriptPermutations("perf/graph")>]
+let graph p = singleTestBuildAndRun p
 
-module Graph = 
-
-    [<Test; FSharpSuiteScriptPermutations("perf/graph")>]
-    let graph p = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-        
-        do! SingleTestBuild.singleTestBuild cfg dir p
-        
-        do! SingleTestRun.singleTestRun cfg dir p
-        })
-
-
-module Nbody = 
-
-    [<Test; FSharpSuiteScriptPermutations("perf/nbody")>]
-    let nbody p = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-        
-        do! SingleTestBuild.singleTestBuild cfg dir p
-        
-        do! SingleTestRun.singleTestRun cfg dir p
-        })
+[<Test; FSharpSuiteScriptPermutations("perf/nbody")>]
+let nbody p = singleTestBuildAndRun p

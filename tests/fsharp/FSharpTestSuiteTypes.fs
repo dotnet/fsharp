@@ -12,6 +12,7 @@ type Permutation =
     | FSI_STDIN
     | FSI_STDIN_OPT
     | FSI_STDIN_GUI
+    | FSC_CORECLR
     | FSC_BASIC
     | FSC_BASIC_64
     | GENERATED_SIGNATURE
@@ -28,6 +29,7 @@ type TestConfig =
       CORSDK : string
       CSC : string
       csc_flags : string
+      BUILD_CONFIG : string
       FSC : string
       fsc_flags : string
       FSCBinPath : string
@@ -42,21 +44,11 @@ type TestConfig =
       FSDIFF : string
       FSI : string
       fsi_flags : string
-      GACUTIL : string
       ILDASM : string
-      INSTALL_SKU : INSTALL_SKU option
+      SN : string
       MSBUILDTOOLSPATH : string option
       NGEN : string
       PEVERIFY : string
       RESGEN : string
-      MSBUILD : string option }
-
-and INSTALL_SKU = 
-    | Clean
-    | DesktopExpress
-    | WebExpress
-    | Ultimate
-
-type TestRunContext = 
-    { Directory: string; 
-      Config: TestConfig }
+      MSBUILD : string option 
+      Directory: string }
