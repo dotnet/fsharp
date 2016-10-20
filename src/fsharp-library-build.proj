@@ -9,7 +9,7 @@
   <!-- Core library: all frameworks -->
   <ItemGroup>
     <ProjectFiles Include="fsharp\FSharp.Core\FSharp.Core.fsproj" />
-    <ProjectFiles Include="fsharp\fsharp.core.netcore.nuget\FSharp.Core.netcore.nuget.proj" Condition="'$(TargetFramework)' == 'coreclr'" />
+    <ProjectFiles Include="fsharp\FSharp.Core.netcore.nuget\FSharp.Core.netcore.nuget.proj" Condition="'$(TargetFramework)' == 'coreclr'" />
   </ItemGroup>
 
   <Import Project="root.traversal.targets"/>

@@ -8,11 +8,14 @@ open System.Runtime.InteropServices
 open System.Linq
 open System.IO
 
+open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Editor.Options
 open Microsoft.VisualStudio
+open Microsoft.VisualStudio.Editor
+open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.LanguageServices.Implementation.LanguageService
 open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
@@ -62,46 +65,71 @@ type internal FSharpLanguageService(package : FSharpPackage) =
 
     override this.CreateContext(_,_,_,_,_) = raise(System.NotImplementedException())
 
-    override this.SetupNewTextView(view) =
-        base.SetupNewTextView(view)
-        let workspace = this.Package.ComponentModel.GetService<VisualStudioWorkspaceImpl>();
+    override this.SetupNewTextView(textView) =
+        base.SetupNewTextView(textView)
+        let workspace = this.Package.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
 
         // FSROSLYNTODO: Hide navigation bars for now. Enable after adding tests
         workspace.Options <- workspace.Options.WithChangedOption(NavigationBarOptions.ShowNavigationBar, FSharpCommonConstants.FSharpLanguageName, false)
 
-        let (_, buffer) = view.GetBuffer()
-        let filename = VsTextLines.GetFilename buffer
-        let result = VsRunningDocumentTable.FindDocumentWithoutLocking(package.RunningDocumentTable,filename)
-        match result with
-        | Some (hier, _) ->
-            match hier with
-            | :? IProvideProjectSite as siteProvider ->
-                let site = siteProvider.GetProjectSite()
-                let projectGuid = Guid(site.ProjectGuid)
-                let projectFileName = site.ProjectFileName()
-                let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectFileName)
-
-                let options = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(site, site.ProjectFileName())
-                if not (optionsCache.ContainsKey(projectId)) then
-                    optionsCache.Add(projectId, options)
-
-                if obj.ReferenceEquals(workspace.ProjectTracker.GetProject(projectId), null) then
-                    let projectContextFactory = this.Package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
-                    let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
-                    let outputFlag = site.CompilerFlags() |> Seq.pick(fun flag ->
-                        if flag.StartsWith("-o:") then Some(flag.Substring(3))
-                        else if flag.StartsWith("--out:") then Some(flag.Substring(6))
-                        else None)
-                    let outputPath = if Path.IsPathRooted(outputFlag) then outputFlag else Path.Combine(Path.GetDirectoryName(projectFileName), outputFlag)
-
-                    let projectContext = projectContextFactory.CreateProjectContext(FSharpCommonConstants.FSharpLanguageName, projectFileName, projectFileName, projectGuid, hier, outputPath, errorReporter)
-                    let project = projectContext :?> AbstractProject
-
-                    this.SyncProject(project, projectContext, site)
-                    site.AdviseProjectSiteChanges(FSharpCommonConstants.FSharpLanguageServiceCallbackName, AdviseProjectSiteChanges(fun () -> this.SyncProject(project, projectContext, site)))
-                    site.AdviseProjectSiteClosed(FSharpCommonConstants.FSharpLanguageServiceCallbackName, AdviseProjectSiteChanges(fun () -> project.Disconnect()))
+        match textView.GetBuffer() with
+        | (VSConstants.S_OK, textLines) ->
+            let filename = VsTextLines.GetFilename textLines
+            match VsRunningDocumentTable.FindDocumentWithoutLocking(package.RunningDocumentTable,filename) with
+            | Some (hier, _) ->
+                if IsScript(filename) then
+                    let editorAdapterFactoryService = this.Package.ComponentModel.GetService<IVsEditorAdaptersFactoryService>()
+                    let fileContents = VsTextLines.GetFileContents(textLines, editorAdapterFactoryService)
+                    this.SetupStandAloneFile(filename, fileContents, workspace, hier)
+                else
+                    match hier with
+                    | :? IProvideProjectSite as siteProvider -> this.SetupProjectFile(siteProvider, workspace)
+                    | _ -> ()
             | _ -> ()
         | _ -> ()
+
+    member this.SetupProjectFile(siteProvider: IProvideProjectSite, workspace: VisualStudioWorkspaceImpl) =
+        let site = siteProvider.GetProjectSite()
+        let projectGuid = Guid(site.ProjectGuid)
+        let projectFileName = site.ProjectFileName()
+        let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectFileName)
+
+        let options = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(site, site.ProjectFileName())
+        if not (optionsCache.ContainsKey(projectId)) then
+            optionsCache.Add(projectId, options)
+
+        match workspace.ProjectTracker.GetProject(projectId) with
+        | null ->
+            let projectContextFactory = this.Package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
+            let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
+
+            let projectContext = projectContextFactory.CreateProjectContext(FSharpCommonConstants.FSharpLanguageName, projectFileName, projectFileName, projectGuid, siteProvider, null, errorReporter)
+            let project = projectContext :?> AbstractProject
+
+            this.SyncProject(project, projectContext, site)
+            site.AdviseProjectSiteChanges(FSharpCommonConstants.FSharpLanguageServiceCallbackName, AdviseProjectSiteChanges(fun () -> this.SyncProject(project, projectContext, site)))
+            site.AdviseProjectSiteClosed(FSharpCommonConstants.FSharpLanguageServiceCallbackName, AdviseProjectSiteChanges(fun () -> project.Disconnect()))
+        | _ -> ()
+
+    member this.SetupStandAloneFile(fileName: string, fileContents: string, workspace: VisualStudioWorkspaceImpl, hier: IVsHierarchy) =
+        let options = FSharpChecker.Instance.GetProjectOptionsFromScript(fileName, fileContents, DateTime.Now, [| |]) |> Async.RunSynchronously
+        let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(options.ProjectFileName, options.ProjectFileName)
+
+        if not(optionsCache.ContainsKey(projectId)) then
+            optionsCache.Add(projectId, options)
+
+        if obj.ReferenceEquals(workspace.ProjectTracker.GetProject(projectId), null) then
+            let projectContextFactory = this.Package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
+            let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
+
+            let projectContext = projectContextFactory.CreateProjectContext(FSharpCommonConstants.FSharpLanguageName, options.ProjectFileName, options.ProjectFileName, projectId.Id, hier, null, errorReporter)
+            projectContext.AddSourceFile(fileName)
+            
+            let project = projectContext :?> AbstractProject
+            let document = project.GetCurrentDocumentFromPath(fileName)
+
+            document.Closing.Add(fun _ -> project.Disconnect())
+
 
 and [<Guid(FSharpCommonConstants.packageGuidString)>]
     [<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".fs", 97)>]

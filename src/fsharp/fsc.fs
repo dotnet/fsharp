@@ -268,9 +268,16 @@ let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder,setProcessThreadLocals,a
         else
             inputFilesRef := name :: !inputFilesRef
     let abbrevArgs = GetAbbrevFlagSet tcConfigB true
-    
+
     // This is where flags are interpreted by the command line fsc.exe.
     ParseCompilerOptions (collect, GetCoreFscCompilerOptions tcConfigB, List.tail (PostProcessCompilerArgs abbrevArgs argv))
+
+    if not (tcConfigB.portablePDB || tcConfigB.embeddedPDB) then
+        if tcConfigB.embedAllSource || (tcConfigB.embedSourceList |> List.length <> 0) then
+            error(Error(FSComp.SR.optsEmbeddedSourceRequirePortablePDBs(), rangeCmdArgs))
+        if not (String.IsNullOrEmpty(tcConfigB.sourceLink)) then
+            error(Error(FSComp.SR.optsSourceLinkRequirePortablePDBs(),rangeCmdArgs))
+
     let inputFiles = List.rev !inputFilesRef
 
 #if FX_LCIDFROMCODEPAGE
@@ -335,12 +342,12 @@ let GetTcImportsFromCommandLine
         // Rather than start processing, just collect names, then process them. 
         try 
             let sourceFiles = 
-                let files = ProcessCommandLineFlags (tcConfigB, setProcessThreadLocals, 
+                let files = ProcessCommandLineFlags (tcConfigB, setProcessThreadLocals,
 #if FX_LCIDFROMCODEPAGE
                                                      lcidFromCodePage, 
 #endif
                                                      argv)
-                AdjustForScriptCompile(tcConfigB,files,lexResourceManager)                     
+                AdjustForScriptCompile(tcConfigB,files,lexResourceManager)
             sourceFiles
 
         with e -> 
@@ -1744,6 +1751,9 @@ module FileWriter =
                     showTimes = tcConfig.showTimes
                     portablePDB = tcConfig.portablePDB
                     embeddedPDB = tcConfig.embeddedPDB
+                    embedAllSource = tcConfig.embedAllSource
+                    embedSourceList = tcConfig.embedSourceList
+                    sourceLink = tcConfig.sourceLink
                     signer = GetSigner signingInfo
                     fixupOverlappingSequencePoints = false
                     dumpDebugInfo = tcConfig.dumpDebugInfo },
@@ -2024,6 +2034,8 @@ let main2b(Args(tcConfig: TcConfig, tcImports, tcGlobals, errorLogger, generated
 
 let main3(Args(tcConfig, errorLogger: ErrorLogger, staticLinker, ilGlobals, outfile, pdbfile, ilxMainModule, signingInfo, exiter:Exiter)) = 
         
+    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Output)    
+
     let ilxMainModule =  
         try  staticLinker ilxMainModule
         with e -> 
@@ -2045,7 +2057,7 @@ let main4 (Args (tcConfig, errorLogger: ErrorLogger, ilGlobals, ilxMainModule, o
 
     AbortOnError(errorLogger, tcConfig, exiter)
 
-    // Don't copy referenced fharp.core.dll if we are building fsharp.core.dll
+    // Don't copy referenced FSharp.core.dll if we are building FSharp.Core.dll
     if tcConfig.copyFSharpCore && not tcConfig.compilingFslib && not tcConfig.standalone then
         copyFSharpCore(outfile, tcConfig.referencedDLLs)
 

@@ -1605,7 +1605,7 @@ let GetFSharpCoreReferenceUsedByCompiler(useSimpleResolution) =
     let fsCoreName = GetFSharpCoreLibraryName()
 #if FX_RESHAPED_REFLECTION
     // RESHAPED_REFLECTION does not have Assembly.GetReferencedAssemblies()
-    // So use the fsharp.core.dll from alongside the fsc compiler.
+    // So use the FSharp.Core.dll from alongside the fsc compiler.
     // This can also be used for the out of gac work on DEV15
     let fscCoreLocation = 
         let fscLocation = typeof<TypeInThisAssembly>.Assembly.Location
@@ -2070,6 +2070,10 @@ type TcConfigBuilder =
       mutable jitTracking : bool
       mutable portablePDB : bool
       mutable embeddedPDB : bool
+      mutable embedAllSource : bool
+      mutable embedSourceList : string list 
+      mutable sourceLink : string
+
       mutable ignoreSymbolStoreSequencePoints : bool
       mutable internConstantStrings : bool
       mutable extraOptimizationIterations : int
@@ -2237,7 +2241,10 @@ type TcConfigBuilder =
           useSignatureDataFile = false
           jitTracking = true
           portablePDB = true
-          embeddedPDB = true
+          embeddedPDB = false
+          embedAllSource = false
+          embedSourceList = []
+          sourceLink = ""
           ignoreSymbolStoreSequencePoints = false
           internConstantStrings = true
           extraOptimizationIterations = 0
@@ -2367,7 +2374,7 @@ type TcConfigBuilder =
             | None -> false
         if ok && not (List.contains absolutePath tcConfigB.includes) then 
            tcConfigB.includes <- tcConfigB.includes ++ absolutePath
-           
+
     member tcConfigB.AddLoadedSource(m,path,pathLoadedFrom) =
         if FileSystem.IsInvalidPathShim(path) then
             warning(Error(FSComp.SR.buildInvalidFilename(path),m))    
@@ -2380,7 +2387,9 @@ type TcConfigBuilder =
                     ComputeMakePathAbsolute pathLoadedFrom path
             if not (List.contains path (List.map snd tcConfigB.loadedSources)) then 
                 tcConfigB.loadedSources <- tcConfigB.loadedSources ++ (m,path)
-                
+
+    member tcConfigB.AddEmbeddedSourceFile (file) = 
+        tcConfigB.embedSourceList <- tcConfigB.embedSourceList ++ file
 
     member tcConfigB.AddEmbeddedResource filename =
         tcConfigB.embedResources <- tcConfigB.embedResources ++ filename
@@ -2553,7 +2562,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
         | _ -> res
     let primaryAssemblyCcuInitializer = getSystemRuntimeInitializer data.primaryAssembly (computeKnownDllReference >> fst)
 
-    // If either mscorlib.dll/System.Runtime.dll or fsharp.core.dll are explicitly specified then we require the --noframework flag.
+    // If either mscorlib.dll/System.Runtime.dll or FSharp.Core.dll are explicitly specified then we require the --noframework flag.
     // The reason is that some non-default frameworks may not have the default dlls. For example, Client profile does
     // not have System.Web.dll.
     do if ((primaryAssemblyExplicitFilenameOpt.IsSome || fslibExplicitFilenameOpt.IsSome) && data.framework) then
@@ -2723,6 +2732,9 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     member x.jitTracking  = data.jitTracking
     member x.portablePDB  = data.portablePDB
     member x.embeddedPDB  = data.embeddedPDB
+    member x.embedAllSource  = data.embedAllSource
+    member x.embedSourceList  = data.embedSourceList
+    member x.sourceLink  = data.sourceLink
     member x.ignoreSymbolStoreSequencePoints  = data.ignoreSymbolStoreSequencePoints
     member x.internConstantStrings  = data.internConstantStrings
     member x.extraOptimizationIterations  = data.extraOptimizationIterations
@@ -2787,7 +2799,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
         (sourceFiles |> List.mapi (fun i _ -> (i = n-1)),  tcConfig.target.IsExe)
             
     // This call can fail if no CLR is found (this is the path to mscorlib)
-    member tcConfig.ClrRoot = 
+    member tcConfig.TargetFrameworkDirectories = 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parameter)
         match tcConfig.clrRoot with 
         | Some x -> 
@@ -2802,7 +2814,9 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
 #endif
                 try 
                     match tcConfig.resolutionEnvironment with
-#if FX_MSBUILDRESOLVER_RUNTIMELIKE
+#if TODO_REWORK_ASSEMBLY_LOAD
+                // "RuntimeLike" assembly resolution for F# Interactive is not yet properly figured out on .NET Core
+#else
                     | ReferenceResolver.RuntimeLike ->
                         [System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()] 
 #endif
@@ -2844,7 +2858,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     member tcConfig.IsSystemAssembly (filename:string) =  
         try 
             FileSystem.SafeExists filename && 
-            ((tcConfig.ClrRoot |> List.exists (fun clrRoot -> clrRoot = Path.GetDirectoryName filename)) ||
+            ((tcConfig.TargetFrameworkDirectories |> List.exists (fun clrRoot -> clrRoot = Path.GetDirectoryName filename)) ||
              (systemAssemblies |> List.exists (fun sysFile -> sysFile = fileNameWithoutExtension filename)))
         with _ ->
             false    
@@ -2852,7 +2866,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     // This is not the complete set of search paths, it is just the set 
     // that is special to F# (as compared to MSBuild resolution)
     member tcConfig.SearchPathsForLibraryFiles = 
-        [ yield! tcConfig.ClrRoot 
+        [ yield! tcConfig.TargetFrameworkDirectories 
           yield! List.map (tcConfig.MakePathAbsolute) tcConfig.includes
           yield tcConfig.implicitIncludeDir 
           yield tcConfig.fsharpBinariesDir ]
@@ -2977,13 +2991,16 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                     assemblyName, highestPosition, assemblyGroup)
                 |> Array.ofSeq
 
-            let logmessage showMessages  = 
+            let logMessage showMessages  = 
                 if showMessages && tcConfig.showReferenceResolutions then (fun (message:string)->dprintf "%s\n" message)
                 else ignore
 
-            let logwarning showMessages = 
-                (fun code message->
+            let logErrorOrWarning showMessages = 
+                (fun isError code message->
                     if showMessages && mode = ReportErrors then 
+                      if isError then
+                        errorR(MSBuildReferenceResolutionError(code,message,errorAndWarningRange))
+                      else
                         match code with 
                         // These are warnings that mean 'not resolved' for some assembly.
                         // Note that we don't get to know the name of the assembly that couldn't be resolved.
@@ -2992,15 +3009,10 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                         | "MSB3106"  
                             -> ()
                         | _ -> 
-                            (if code = "MSB3245" then errorR else warning)
-                                (MSBuildReferenceResolutionWarning(code,message,errorAndWarningRange)))
-
-            let logerror showMessages = 
-                (fun code message ->
-                    if showMessages && mode = ReportErrors then 
-                        errorR(MSBuildReferenceResolutionError(code,message,errorAndWarningRange)))
-
-            let targetFrameworkVersion = tcConfig.targetFrameworkVersion
+                            if code = "MSB3245" then 
+                                errorR(MSBuildReferenceResolutionWarning(code,message,errorAndWarningRange))
+                            else
+                                warning(MSBuildReferenceResolutionWarning(code,message,errorAndWarningRange)))
 
             let targetProcessorArchitecture = 
                     match tcConfig.platform with
@@ -3009,13 +3021,6 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                     | Some(AMD64) -> "amd64"
                     | Some(IA64) -> "ia64"
 
-            let outputDirectory = 
-                match tcConfig.outputFile with 
-                | Some(outputFile) -> tcConfig.MakePathAbsolute outputFile
-                | None -> tcConfig.implicitIncludeDir
-
-            let targetFrameworkDirectories = tcConfig.ClrRoot 
-                             
             // First, try to resolve everything as a file using simple resolution
             let resolvedAsFile = 
                 groupedReferences 
@@ -3031,14 +3036,13 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                     tcConfig.referenceResolver.Resolve
                        (tcConfig.resolutionEnvironment,
                         references,
-                        targetFrameworkVersion,
-                        targetFrameworkDirectories, 
+                        tcConfig.targetFrameworkVersion,
+                        tcConfig.TargetFrameworkDirectories, 
                         targetProcessorArchitecture, 
-                        Path.GetDirectoryName(outputDirectory),
                         tcConfig.fsharpBinariesDir, // FSharp binaries directory
                         tcConfig.includes, // Explicit include directories
                         tcConfig.implicitIncludeDir, // Implicit include directory (likely the project directory)
-                        logmessage showMessages, logwarning showMessages, logerror showMessages)
+                        logMessage showMessages, logErrorOrWarning showMessages)
                 with 
                     ReferenceResolver.ResolutionFailure -> error(Error(FSComp.SR.buildAssemblyResolutionFailed(),errorAndWarningRange))
             
@@ -4237,38 +4241,25 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                 let invalidateCcu = new Event<_>()
 #endif
 
-                // Adjust where the code for known F# libraries live relative to the installation of F#
-                let codeDir = 
-                    let dir = minfo.compileTimeWorkingDir
-                    let knownLibraryLocation = @"src\fsharp\" // Help highlighting... " 
-                    let knownLibarySuffixes = 
-                        [ @"FSharp.Core"
-                          @"FSharp.PowerPack" 
-                          @"FSharp.PowerPack.Linq" 
-                          @"FSharp.PowerPack.Metadata"  ]
-                    match knownLibarySuffixes |> List.tryFind (fun x -> dir.EndsWith(knownLibraryLocation + x,StringComparison.OrdinalIgnoreCase)) with
-                    | None -> 
-                        dir
-                    | Some libSuffix -> 
-                        // add "..\lib\FSharp.Core" to the F# binaries directory
-                        Path.Combine(Path.Combine(tcConfig.fsharpBinariesDir,@"..\lib"),libSuffix)
-
-                let ccu = 
-                   CcuThunk.Create(ccuName, { ILScopeRef=ilScopeRef
-                                              Stamp = newStamp()
-                                              FileName = Some filename 
-                                              QualifiedName= Some(ilScopeRef.QualifiedName)
-                                              SourceCodeDirectory = codeDir  (* note: in some cases we fix up this information later *)
-                                              IsFSharp=true
-                                              Contents = mspec 
+                let codeDir = minfo.compileTimeWorkingDir
+                let ccuData : CcuData = 
+                    { ILScopeRef=ilScopeRef
+                      Stamp = newStamp()
+                      FileName = Some filename 
+                      QualifiedName= Some(ilScopeRef.QualifiedName)
+                      SourceCodeDirectory = codeDir  (* note: in some cases we fix up this information later *)
+                      IsFSharp=true
+                      Contents = mspec 
 #if EXTENSIONTYPING
-                                              InvalidateEvent=invalidateCcu.Publish
-                                              IsProviderGenerated = false
-                                              ImportProvidedType = (fun ty -> Import.ImportProvidedType (tcImports.GetImportMap()) m ty)
+                      InvalidateEvent=invalidateCcu.Publish
+                      IsProviderGenerated = false
+                      ImportProvidedType = (fun ty -> Import.ImportProvidedType (tcImports.GetImportMap()) m ty)
 #endif
-                                              UsesFSharp20PlusQuotations = minfo.usesQuotations
-                                              MemberSignatureEquality= (fun ty1 ty2 -> Tastops.typeEquivAux EraseAll (tcImports.GetTcGlobals()) ty1 ty2)
-                                              TypeForwarders = ImportILAssemblyTypeForwarders(tcImports.GetImportMap,m, ilModule.GetRawTypeForwarders()) })
+                      UsesFSharp20PlusQuotations = minfo.usesQuotations
+                      MemberSignatureEquality= (fun ty1 ty2 -> Tastops.typeEquivAux EraseAll (tcImports.GetTcGlobals()) ty1 ty2)
+                      TypeForwarders = ImportILAssemblyTypeForwarders(tcImports.GetImportMap,m, ilModule.GetRawTypeForwarders()) }
+
+                let ccu = CcuThunk.Create(ccuName, ccuData)
 
                 let optdata = 
                     lazy 
@@ -4283,15 +4274,15 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                             Some res)
                 let ilg = defaultArg ilGlobalsOpt EcmaILGlobals
                 let ccuinfo = 
-                     { FSharpViewOfMetadata=ccu 
-                       AssemblyAutoOpenAttributes = ilModule.GetAutoOpenAttributes(ilg)
-                       AssemblyInternalsVisibleToAttributes = ilModule.GetInternalsVisibleToAttributes(ilg)
-                       FSharpOptimizationData=optdata 
+                    { FSharpViewOfMetadata=ccu 
+                      AssemblyAutoOpenAttributes = ilModule.GetAutoOpenAttributes(ilg)
+                      AssemblyInternalsVisibleToAttributes = ilModule.GetInternalsVisibleToAttributes(ilg)
+                      FSharpOptimizationData=optdata 
 #if EXTENSIONTYPING
-                       IsProviderGenerated = false
-                       TypeProviders = []
+                      IsProviderGenerated = false
+                      TypeProviders = []
 #endif
-                       ILScopeRef = ilScopeRef }  
+                      ILScopeRef = ilScopeRef }  
                 let phase2() = 
 #if EXTENSIONTYPING
                      match ilModule.TryGetRawILModule() with 
@@ -4340,15 +4331,16 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
             let phase2() = [tcImports.FindCcuInfo(m,ilShortAssemName,lookupOnly=true)] 
             dllinfo,phase2
         else 
-            let dllinfo = {RawMetadata=assemblyData 
-                           FileName=filename
+            let dllinfo = 
+                { RawMetadata=assemblyData 
+                  FileName=filename
 #if EXTENSIONTYPING
-                           ProviderGeneratedAssembly=None
-                           IsProviderGenerated=false
-                           ProviderGeneratedStaticLinkMap = None
+                  ProviderGeneratedAssembly=None
+                  IsProviderGenerated=false
+                  ProviderGeneratedStaticLinkMap = None
 #endif
-                           ILScopeRef = ilScopeRef
-                           ILAssemblyRefs = assemblyData.ILAssemblyRefs }
+                  ILScopeRef = ilScopeRef
+                  ILAssemblyRefs = assemblyData.ILAssemblyRefs }
             tcImports.RegisterDll(dllinfo)
             let ilg = defaultArg ilGlobalsOpt EcmaILGlobals
             let phase2 = 
@@ -4867,10 +4859,11 @@ module private ScriptPreprocessClosure =
         tcConfigB.resolutionEnvironment <-
             match codeContext with 
             | CodeContext.Editing -> ReferenceResolver.DesignTimeLike
-#if FX_MSBUILDRESOLVER_RUNTIMELIKE
-            | CodeContext.Compilation | CodeContext.Evaluation -> ReferenceResolver.RuntimeLike
-#else
+#if TODO_REWORK_ASSEMBLY_LOAD
+            // "RuntimeLike" assembly resolution for F# Interactive is not yet properly figured out on .NET Core
             | CodeContext.Compilation | CodeContext.Evaluation -> ReferenceResolver.CompileTimeLike
+#else
+            | CodeContext.Compilation | CodeContext.Evaluation -> ReferenceResolver.RuntimeLike
 #endif
         tcConfigB.framework <- false 
         // Indicates that there are some references not in BasicReferencesForScriptLoadClosure which should
@@ -5150,26 +5143,31 @@ type TcState =
                  tcsTcImplEnv = tcEnvAtEndOfLastInput } 
 
  
+/// Create the initial type checking state for compiling an assembly
 let GetInitialTcState(m,ccuName,tcConfig:TcConfig,tcGlobals,tcImports:TcImports,niceNameGen,tcEnv0) =
     ignore tcImports
+
     // Create a ccu to hold all the results of compilation 
     let ccuType = NewCcuContents ILScopeRef.Local m ccuName (NewEmptyModuleOrNamespaceType Namespace)
-    let ccu = 
-      CcuThunk.Create(ccuName,{IsFSharp=true
-                               UsesFSharp20PlusQuotations=false
+
+    let ccuData : CcuData = 
+        { IsFSharp=true
+          UsesFSharp20PlusQuotations=false
 #if EXTENSIONTYPING
-                               InvalidateEvent=(new Event<_>()).Publish
-                               IsProviderGenerated = false
-                               ImportProvidedType = (fun ty -> Import.ImportProvidedType (tcImports.GetImportMap()) m ty)
+          InvalidateEvent=(new Event<_>()).Publish
+          IsProviderGenerated = false
+          ImportProvidedType = (fun ty -> Import.ImportProvidedType (tcImports.GetImportMap()) m ty)
 #endif
-                               FileName=None 
-                               Stamp = newStamp()
-                               QualifiedName= None
-                               SourceCodeDirectory = tcConfig.implicitIncludeDir 
-                               ILScopeRef=ILScopeRef.Local
-                               Contents=ccuType
-                               MemberSignatureEquality= (Tastops.typeEquivAux EraseAll tcGlobals)
-                               TypeForwarders=Map.empty })
+          FileName=None 
+          Stamp = newStamp()
+          QualifiedName= None
+          SourceCodeDirectory = tcConfig.implicitIncludeDir 
+          ILScopeRef=ILScopeRef.Local
+          Contents=ccuType
+          MemberSignatureEquality= (Tastops.typeEquivAux EraseAll tcGlobals)
+          TypeForwarders=Map.empty }
+
+    let ccu = CcuThunk.Create(ccuName,ccuData)
 
     // OK, is this is the FSharp.Core CCU then fix it up. 
     if tcConfig.compilingFslib then 
@@ -5187,7 +5185,7 @@ let GetInitialTcState(m,ccuName,tcConfig:TcConfig,tcGlobals,tcImports:TcImports,
       tcsRootSigsAndImpls = RootSigsAndImpls (rootSigs, rootImpls, allSigModulTyp, allImplementedSigModulTyp) }
 
 
-/// Typecheck a single file or interactive entry into F# Interactive 
+/// Typecheck a single file (or interactive entry into F# Interactive)
 let TypeCheckOneInputEventually
       (checkForErrors , tcConfig:TcConfig, tcImports:TcImports,  
        tcGlobals, prefixPathOpt, tcSink, tcState: TcState, inp: ParsedInput) =
@@ -5298,12 +5296,14 @@ let TypeCheckOneInputEventually
       return (tcState.TcEnvFromSignatures,EmptyTopAttrs,[]),tcState
  }
 
+/// Typecheck a single file (or interactive entry into F# Interactive)
 let TypeCheckOneInput (checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt) tcState  inp =
     // 'use' ensures that the warning handler is restored at the end
     use unwindEL = PushErrorLoggerPhaseUntilUnwind(fun oldLogger -> GetErrorLoggerFilteringByScopedPragmas(false,GetScopedPragmasForInput(inp),oldLogger) )
     use unwindBP = PushThreadBuildPhaseUntilUnwind (BuildPhase.TypeCheck)
     TypeCheckOneInputEventually (checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, TcResultsSink.NoSink, tcState, inp) |> Eventually.force
 
+/// Finish checking multiple files (or one interactive entry into F# Interactive)
 let TypeCheckMultipleInputsFinish(results,tcState: TcState) =
     let tcEnvsAtEndFile,topAttrs,mimpls = List.unzip3 results
     
@@ -5314,11 +5314,12 @@ let TypeCheckMultipleInputsFinish(results,tcState: TcState) =
     
     (tcEnvAtEndOfLastFile,topAttrs,mimpls),tcState
 
+/// Check multiple files (or one interactive entry into F# Interactive)
 let TypeCheckMultipleInputs (checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs) =
     let results,tcState =  (tcState, inputs) ||> List.mapFold (TypeCheckOneInput (checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt)) 
     TypeCheckMultipleInputsFinish(results,tcState)
 
-let TypeCheckSingleInputAndFinishEventually(checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input) =
+let TypeCheckOneInputAndFinishEventually(checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input) =
     eventually {
         let! results,tcState =  TypeCheckOneInputEventually(checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input)
         return TypeCheckMultipleInputsFinish([results],tcState)

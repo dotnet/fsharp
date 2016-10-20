@@ -19,6 +19,31 @@ open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Range
 
+
+type BlobBuildingStream () =
+    inherit Stream()
+
+    static let chunkSize = 32 * 1024
+    let builder = new BlobBuilder(chunkSize)
+
+    override this.CanWrite = true
+    override this.CanRead  = false
+    override this.CanSeek  = false
+    override this.Length   = int64(builder.Count)
+
+    override this.Write(buffer:byte array, offset:int, count:int) = builder.WriteBytes(buffer, offset, count)
+    override this.WriteByte(value:byte) = builder.WriteByte(value)
+    member   this.WriteInt32(value:int) = builder.WriteInt32(value)
+    member   this.ToImmutableArray() = builder.ToImmutableArray()
+    member   this.TryWriteBytes(stream:Stream, length:int) = builder.TryWriteBytes(stream, length)
+
+    override this.Flush() = ()
+    override this.Dispose(_disposing:bool) = ()
+    override this.Seek(_offset:int64, _origin:SeekOrigin) = raise (new NotSupportedException())
+    override this.Read(_buffer:byte array, _offset:int, _count:int) = raise (new NotSupportedException())
+    override this.SetLength(_value:int64) = raise (new NotSupportedException())
+    override val Position = 0L with get, set
+
 // -------------------------------------------------------------------- 
 // PDB types
 // --------------------------------------------------------------------  
@@ -227,7 +252,7 @@ let fixupOverlappingSequencePoints fixupSPs showTimes methods =
         Array.sortInPlaceBy fst allSps
     spCounts, allSps
 
-let generatePortablePdb fixupSPs showTimes (info:PdbData) = 
+let generatePortablePdb fixupSPs (embedAllSource:bool) (embedSourceList:string list) (sourceLink:string) showTimes (info:PdbData) = 
     sortMethods showTimes info
     let _spCounts, _allSps = fixupOverlappingSequencePoints fixupSPs showTimes info.Methods
     let externalRowCounts = getRowCounts info.TableRowCounts
@@ -252,25 +277,82 @@ let generatePortablePdb fixupSPs showTimes (info:PdbData) =
 
         metadata.GetOrAddBlob(writer)
 
-    let corSymLanguageTypeFSharp = System.Guid(0xAB4F38C9u, 0xB6E6us, 0x43baus, 0xBEuy, 0x3Buy, 0x58uy, 0x08uy, 0x0Buy, 0x2Cuy, 0xCCuy, 0xE3uy)
+    let corSymLanguageTypeId = System.Guid(0xAB4F38C9u, 0xB6E6us, 0x43baus, 0xBEuy, 0x3Buy, 0x58uy, 0x08uy, 0x0Buy, 0x2Cuy, 0xCCuy, 0xE3uy)
+    let embeddedSourceId     = System.Guid(0x0e8a571bu, 0x6926us, 0x466eus, 0xb4uy, 0xaduy, 0x8auy, 0xb0uy, 0x46uy, 0x11uy, 0xf5uy, 0xfeuy)
+    let sourceLinkId         = System.Guid(0xcc110556u, 0xa091us, 0x4d38us, 0x9fuy, 0xecuy, 0x25uy, 0xabuy, 0x9auy, 0x35uy, 0x1auy, 0x6auy)
+
+    /// <summary>
+    /// The maximum number of bytes in to write out uncompressed.
+    ///
+    /// This prevents wasting resources on compressing tiny files with little to negative gain
+    /// in PDB file size.
+    ///
+    /// Chosen as the point at which we start to see > 10% blob size reduction using all
+    /// current source files in corefx and roslyn as sample data. 
+    /// </summary>
+    let sourceCompressionThreshold = 200
+
     let documentIndex =
+        let includeSource file =
+            let isInList =
+                if embedSourceList.Length = 0 then false
+                else
+                    embedSourceList |> List.tryFind(fun f -> String.Compare(file, f, StringComparison.OrdinalIgnoreCase ) = 0) |> Option.isSome
+
+            if not embedAllSource && not isInList || not (File.Exists(file)) then
+                None
+            else
+                let stream = File.OpenRead(file)
+                let length64 = stream.Length
+                if length64 > int64(Int32.MaxValue) then raise (new IOException("File is too long"))
+
+                let builder = new BlobBuildingStream()
+                let length = int(length64)
+                if length < sourceCompressionThreshold then
+                    builder.WriteInt32(0)
+                    builder.TryWriteBytes(stream, length) |> ignore
+                else
+                    builder.WriteInt32(length) |>ignore
+                    use deflater = new DeflateStream(builder, CompressionMode.Compress, true)
+                    stream.CopyTo(deflater) |> ignore
+                Some (builder.ToImmutableArray())
+
         let mutable index = new Dictionary<string, DocumentHandle>(docs.Length)
-        metadata.SetCapacity(TableIndex.Document, docs.Length)
+        let docLength = docs.Length + if String.IsNullOrEmpty(sourceLink) then 1 else 0
+        metadata.SetCapacity(TableIndex.Document, docLength)
         for doc in docs do
             let handle =
                 match checkSum doc.File with
                 | Some (hashAlg, checkSum) ->
-                    serializeDocumentName doc.File,
-                    metadata.GetOrAddGuid(hashAlg),
-                    metadata.GetOrAddBlob(checkSum.ToImmutableArray()),
-                    metadata.GetOrAddGuid(corSymLanguageTypeFSharp)
+                    let dbgInfo = 
+                        (serializeDocumentName doc.File,
+                         metadata.GetOrAddGuid(hashAlg),
+                         metadata.GetOrAddBlob(checkSum.ToImmutableArray()),
+                         metadata.GetOrAddGuid(corSymLanguageTypeId)) |> metadata.AddDocument
+                    match includeSource doc.File with
+                    | None -> ()
+                    | Some blob ->
+                        metadata.AddCustomDebugInformation(DocumentHandle.op_Implicit(dbgInfo),
+                                                           metadata.GetOrAddGuid(embeddedSourceId),
+                                                           metadata.GetOrAddBlob(blob)) |> ignore
+                    dbgInfo
                 | None ->
-                    serializeDocumentName doc.File,
-                    metadata.GetOrAddGuid(System.Guid.Empty),
-                    metadata.GetOrAddBlob(ImmutableArray<byte>.Empty),
-                    metadata.GetOrAddGuid(corSymLanguageTypeFSharp)
-                |> metadata.AddDocument
+                    let dbgInfo = 
+                        (serializeDocumentName doc.File,
+                         metadata.GetOrAddGuid(System.Guid.Empty),
+                         metadata.GetOrAddBlob(ImmutableArray<byte>.Empty),
+                         metadata.GetOrAddGuid(corSymLanguageTypeId)) |> metadata.AddDocument
+                    dbgInfo
             index.Add(doc.File, handle)
+
+        if not (String.IsNullOrEmpty(sourceLink)) then
+            let fs = File.OpenRead(sourceLink)
+            let ms = new MemoryStream()
+            fs.CopyTo(ms)
+            metadata.AddCustomDebugInformation(
+                ModuleDefinitionHandle.op_Implicit(EntityHandle.ModuleDefinition),
+                metadata.GetOrAddGuid(sourceLinkId),
+                metadata.GetOrAddBlob(ms.ToArray())) |> ignore
         index
 
     let mutable lastLocalVariableHandle = Unchecked.defaultof<LocalVariableHandle>
@@ -291,7 +373,7 @@ let generatePortablePdb fixupSPs showTimes (info:PdbData) =
                 else 
                     match documentIndex.TryGetValue(docs.[d].File) with
                     | false, _ -> Unchecked.defaultof<DocumentHandle>
-                    | true, f  -> f
+                    | true, h -> h
 
             if sps.Length = 0 then
                 Unchecked.defaultof<DocumentHandle>, Unchecked.defaultof<BlobHandle>
@@ -306,7 +388,6 @@ let generatePortablePdb fixupSPs showTimes (info:PdbData) =
                     singleDocumentIndex
 
                 let builder = new BlobBuilder()
-
                 builder.WriteCompressedInteger(minfo.LocalSignatureToken)
 
                 // Initial document:  When sp's spread over more than one document we put the initial document here.
