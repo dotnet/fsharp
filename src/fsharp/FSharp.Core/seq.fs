@@ -1717,21 +1717,18 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("TryFind")>]
         let tryFind f (source : seq<'T>)  =
-            let find =
-                source 
-                |> toComposer
-                |> foreach (fun pipeline ->
-                    { new SeqComposer.Folder<'T, Option<'T>> (None) with
-                        override this.ProcessNext value =
-                            if this.Value.IsNone then
-                                if f value then
-                                    this.Value <- Some(value)
-                                true
-                            else
-                                pipeline.StopFurtherProcessing()
-                                false
-                       })
-            find.Value
+            source 
+            |> toComposer
+            |> foreach (fun pipeline ->
+                { new SeqComposer.Folder<'T, Option<'T>> (None) with
+                    override this.ProcessNext value =
+                        if f value then
+                            this.Value <- Some value
+                            pipeline.StopFurtherProcessing()
+                            true
+                        else
+                            false })
+            |> fun find -> find.Value
 
         [<CompiledName("Find")>]
         let find f source =
