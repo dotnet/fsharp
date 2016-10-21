@@ -476,6 +476,18 @@ namespace Microsoft.FSharp.Collections
                     _2 = b
                 }
 
+            [<Struct; NoComparison; NoEquality>]
+            type Values<'a,'b,'c> =
+                val mutable _1 : 'a
+                val mutable _2 : 'b
+                val mutable _3 : 'c
+
+                new (a:'a, b:'b, c:'c) = {
+                    _1 = a
+                    _2 = b
+                    _3 = c
+                }
+
             [<AbstractClass>]
             type Folder<'T, 'U> =
                 inherit SeqConsumer<'T,'T>
@@ -2218,112 +2230,104 @@ namespace Microsoft.FSharp.Collections
         
         [<CompiledName("Sum")>]
         let inline sum (source:seq<'a>) : 'a =
-            let composedSource = toComposer source
-            let total =
-                    composedSource.ForEach (fun _ ->
-                        { new SeqComposer.Folder<'a,'a> (LanguagePrimitives.GenericZero) with
-                            override this.ProcessNext value =
-                                this.Value <- Checked.(+) this.Value value
-                                true })
-            total.Value
+            source
+            |> toComposer 
+            |> foreach (fun _ ->
+                { new SeqComposer.Folder<'a,'a> (LanguagePrimitives.GenericZero) with
+                    override this.ProcessNext value =
+                        this.Value <- Checked.(+) this.Value value
+                        true })
+            |> fun sum -> sum.Value
 
         [<CompiledName("SumBy")>]
         let inline sumBy (f : 'T -> ^U) (source: seq<'T>) : ^U =
-            let composedSource = toComposer source
-            let total =
-                composedSource.ForEach (fun _ ->
-                    { new SeqComposer.Folder<'T,'U> (LanguagePrimitives.GenericZero< ^U>) with
-                        override this.ProcessNext value =
-                            this.Value <- Checked.(+) this.Value (f value)
-                            true })
-            total.Value
+            source
+            |> toComposer
+            |> foreach (fun _ ->
+                { new SeqComposer.Folder<'T,'U> (LanguagePrimitives.GenericZero< ^U>) with
+                    override this.ProcessNext value =
+                        this.Value <- Checked.(+) this.Value (f value)
+                        true })
+            |> fun sum -> sum.Value
 
         [<CompiledName("Average")>]
         let inline average (source: seq< ^a>) : ^a =
-            let total =
-                source
-                |> toComposer
-                |> foreach (fun _ ->
-                    { new SeqComposer.Folder<'a, SeqComposer.Values<'a, int>> (SeqComposer.Values(LanguagePrimitives.GenericZero, 0)) with
-                        override this.ProcessNext value =
-                            this.Value._1 <- Checked.(+) this.Value._1 value
-                            this.Value._2 <- this.Value._2 + 1
-                            true 
+            source
+            |> toComposer
+            |> foreach (fun _ ->
+                { new SeqComposer.Folder<'a, SeqComposer.Values<'a, int>> (SeqComposer.Values<_,_>(LanguagePrimitives.GenericZero, 0)) with
+                    override this.ProcessNext value =
+                        this.Value._1 <- Checked.(+) this.Value._1 value
+                        this.Value._2 <- this.Value._2 + 1
+                        true 
 
-                       interface SeqComposer.ISeqComponent with
-                          member this.OnComplete() = 
-                            if (this:?>SeqComposer.Folder<'a, SeqComposer.Values<'a, int>>).Value._2 = 0 then
-                                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-                    })
-            LanguagePrimitives.DivideByInt< ^a> total.Value._1 total.Value._2
+                  interface SeqComposer.ISeqComponent with
+                    member this.OnComplete() = 
+                        if (this:?>SeqComposer.Folder<'a, SeqComposer.Values<'a, int>>).Value._2 = 0 then
+                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString })
+            |> fun total -> LanguagePrimitives.DivideByInt< ^a> total.Value._1 total.Value._2
 
         [<CompiledName("AverageBy")>]
         let inline averageBy (f : 'T -> ^U) (source: seq< 'T >) : ^U =
-            let composedSource = toComposer source
-            let mutable count = 0
-            let total =
-                composedSource.ForEach (fun _ ->
-                    { new SeqComposer.Folder<'T,'U> (LanguagePrimitives.GenericZero< ^U>) with
-                        override this.ProcessNext value =
-                            this.Value <- Checked.(+) this.Value (f value)
-                            count <- count + 1
-                            true 
-                       interface SeqComposer.ISeqComponent with
-                          member __.OnComplete() = 
-                            if count = 0 then
-                                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-                    })
-            LanguagePrimitives.DivideByInt< ^U> total.Value count
+            source
+            |> toComposer 
+            |> foreach (fun _ ->
+                { new SeqComposer.Folder<'T,SeqComposer.Values<'U, int>> (SeqComposer.Values<_,_>(LanguagePrimitives.GenericZero, 0)) with
+                    override this.ProcessNext value =
+                        this.Value._1 <- Checked.(+) this.Value._1 (f value)
+                        this.Value._2 <- this.Value._2 + 1
+                        true 
+                  interface SeqComposer.ISeqComponent with
+                    member this.OnComplete() = 
+                        if (this:?>SeqComposer.Folder<'T,SeqComposer.Values<'U, int>>).Value._2 = 0 then
+                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString })
+            |> fun total -> LanguagePrimitives.DivideByInt< ^U> total.Value._1 total.Value._2
 
         [<CompiledName("Min")>]
         let inline min (source: seq<_>) =
-            let composedSource = toComposer source
+            source
+            |> toComposer 
+            |> foreach (fun _ ->
+                { new SeqComposer.Folder<'T,SeqComposer.Values<bool,'T>> (SeqComposer.Values<_,_>(true, Unchecked.defaultof<'T>)) with
+                    override this.ProcessNext value =
+                        if this.Value._1 then
+                            this.Value._1 <- false
+                            this.Value._2 <- value
+                        elif value < this.Value._2 then
+                            this.Value._2 <- value
+                        true 
 
-            let mutable first = true
-            let min =
-                composedSource.ForEach (fun _ ->
-                    { new SeqComposer.Folder<'T,'T> (Unchecked.defaultof<'T>) with
-                        override this.ProcessNext value =
-                            if first then
-                                first <- false
-                                this.Value <- value
-                            elif value < this.Value then
-                                this.Value <- value
-                            true 
-                       interface SeqComposer.ISeqComponent with
-                          member __.OnComplete() = 
-                            if first then
-                                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-                    })
-            min.Value
+                  interface SeqComposer.ISeqComponent with
+                    member this.OnComplete() = 
+                        if (this:?>SeqComposer.Folder<'T,SeqComposer.Values<bool,'T>>).Value._1 then
+                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                })
+            |> fun min -> min.Value._2
 
         [<CompiledName("MinBy")>]
         let inline minBy (f : 'T -> 'U) (source: seq<'T>) : 'T =
-            let composedSource = toComposer source
+            source
+            |> toComposer 
+            |> foreach (fun _ ->
+                { new SeqComposer.Folder<'T,SeqComposer.Values<bool,'U,'T>> (SeqComposer.Values<_,_,_>(true,Unchecked.defaultof<'U>,Unchecked.defaultof<'T>)) with
+                    override this.ProcessNext value =
+                        match this.Value._1, f value with
+                        | true, valueU ->
+                            this.Value._1 <- false
+                            this.Value._2 <- valueU
+                            this.Value._3 <- value
+                        | false, valueU when valueU < this.Value._2 ->
+                            this.Value._2 <- valueU
+                            this.Value._3 <- value
+                        | _ -> ()
+                        true
 
-            let mutable first = true
-            let mutable acc = Unchecked.defaultof<'U>
-            let min =
-                composedSource.ForEach (fun _ ->
-                    { new SeqComposer.Folder<'T,'T> (Unchecked.defaultof<'T>) with
-                        override this.ProcessNext value =
-                            let currValue = value
-                            let curr = f currValue
-                            if first then
-                                first <- false
-                                acc <- curr 
-                                this.Value <- value
-                            else
-                                if curr < acc then
-                                    acc <- curr
-                                    this.Value <- value
-                            true 
-                       interface SeqComposer.ISeqComponent with
-                         member __.OnComplete() = 
-                            if first then
-                                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-                    })
-            min.Value
+                  interface SeqComposer.ISeqComponent with
+                    member this.OnComplete() = 
+                        if (this:?>SeqComposer.Folder<'T,SeqComposer.Values<bool,'U,'T>>).Value._1 then
+                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                })
+            |> fun min -> min.Value._3
 (*
         [<CompiledName("MinValueBy")>]
         let inline minValBy (f : 'T -> 'U) (source: seq<'T>) : 'U =
@@ -2343,54 +2347,49 @@ namespace Microsoft.FSharp.Collections
 *)
         [<CompiledName("Max")>]
         let inline max (source: seq<_>) =
-            let composedSource = toComposer source
+            source
+            |> toComposer 
+            |> foreach (fun _ ->
+                { new SeqComposer.Folder<'T,SeqComposer.Values<bool,'T>> (SeqComposer.Values<_,_>(true, Unchecked.defaultof<'T>)) with
+                    override this.ProcessNext value =
+                        if this.Value._1 then
+                            this.Value._1 <- false
+                            this.Value._2 <- value
+                        elif value > this.Value._2 then
+                            this.Value._2 <- value
+                        true 
 
-            let mutable first = true
-            let max =
-                composedSource.ForEach (fun _ ->
-                    { new SeqComposer.Folder<'T,'T> (Unchecked.defaultof<'T>) with
-                        override this.ProcessNext value =
-                            if first then
-                                first <- false
-                                this.Value <- value
-                            else
-                                if value > this.Value then
-                                    this.Value <- value
-                            true 
-                       interface SeqComposer.ISeqComponent with
-                          member __.OnComplete() = 
-                            if first then
-                                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-                    })
-            max.Value
+                  interface SeqComposer.ISeqComponent with
+                    member this.OnComplete() = 
+                        if (this:?>SeqComposer.Folder<'T,SeqComposer.Values<bool,'T>>).Value._1 then
+                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                })
+            |> fun max -> max.Value._2
 
         [<CompiledName("MaxBy")>]
         let inline maxBy (f : 'T -> 'U) (source: seq<'T>) : 'T =
-            let composedSource = toComposer source
+            source
+            |> toComposer 
+            |> foreach (fun _ ->
+                { new SeqComposer.Folder<'T,SeqComposer.Values<bool,'U,'T>> (SeqComposer.Values<_,_,_>(true,Unchecked.defaultof<'U>,Unchecked.defaultof<'T>)) with
+                    override this.ProcessNext value =
+                        match this.Value._1, f value with
+                        | true, valueU ->
+                            this.Value._1 <- false
+                            this.Value._2 <- valueU
+                            this.Value._3 <- value
+                        | false, valueU when valueU > this.Value._2 ->
+                            this.Value._2 <- valueU
+                            this.Value._3 <- value
+                        | _ -> ()
+                        true
 
-            let mutable first = true
-            let mutable acc = Unchecked.defaultof<'U>
-            let min =
-                composedSource.ForEach (fun _ ->
-                    { new SeqComposer.Folder<'T,'T> (Unchecked.defaultof<'T>) with
-                        override this.ProcessNext value =
-                            let currValue = value
-                            let curr = f currValue
-                            if first then
-                                first <- false
-                                acc <- curr
-                                this.Value <- value
-                            else
-                                if curr > acc then
-                                    acc <- curr
-                                    this.Value <- value
-                            true 
-                       interface SeqComposer.ISeqComponent with
-                          member __.OnComplete() = 
-                            if first then
-                                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-                    })
-            min.Value
+                  interface SeqComposer.ISeqComponent with
+                    member this.OnComplete() = 
+                        if (this:?>SeqComposer.Folder<'T,SeqComposer.Values<bool,'U,'T>>).Value._1 then
+                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                })
+            |> fun min -> min.Value._3
 
 (*
         [<CompiledName("MaxValueBy")>]
