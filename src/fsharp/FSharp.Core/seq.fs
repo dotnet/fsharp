@@ -1695,20 +1695,18 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("TryPick")>]
         let tryPick f (source : seq<'T>)  =
-            let pick =
-                source
-                |> toComposer
-                |> foreach (fun pipeline ->
-                    { new SeqComposer.Folder<'T, Option<'U>> (None) with
-                        override this.ProcessNext value =
-                            if this.Value.IsNone then
-                                this.Value <- f value
-                                true
-                            else
-                                pipeline.StopFurtherProcessing()
-                                false
-                       })
-            pick.Value
+            source
+            |> toComposer
+            |> foreach (fun pipeline ->
+                { new SeqComposer.Folder<'T, Option<'U>> (None) with
+                    override this.ProcessNext value =
+                        match f value with
+                        | None -> false
+                        | (Some _) as some ->
+                            this.Value <- some
+                            pipeline.StopFurtherProcessing()
+                            true })
+            |> fun pick -> pick.Value
 
         [<CompiledName("Pick")>]
         let pick f source  =
