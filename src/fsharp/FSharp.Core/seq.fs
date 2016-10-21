@@ -1827,6 +1827,7 @@ namespace Microsoft.FSharp.Collections
                         else
                             this.Value._2 <- f.Invoke (this.Value._2, value)
                         true 
+
                   interface SeqComposer.ISeqComponent with
                     member this.OnComplete() = 
                         if (this:?>SeqComposer.Folder<'T, SeqComposer.Values<bool,'T>>).Value._1 then
@@ -2463,21 +2464,20 @@ namespace Microsoft.FSharp.Collections
         
         [<CompiledName("TryLast")>]
         let tryLast (source : seq<_>) =
-            let composedSource = toComposer source
-            let mutable first = true
-
-            let last = 
-                composedSource.ForEach (fun _ ->
-                        { new SeqComposer.Folder<'T, 'T> (Unchecked.defaultof<'T>) with
-                            override this.ProcessNext value =
-                                if first then
-                                    first <- false
-                                this.Value <- value
-                                true })
-            if first then
-                None
-            else
-                Some(last.Value)
+            source
+            |> toComposer
+            |> foreach (fun _ ->
+                { new SeqComposer.Folder<'T, SeqComposer.Values<bool,'T>> (SeqComposer.Values<bool,'T>(true, Unchecked.defaultof<'T>)) with
+                    override this.ProcessNext value =
+                        if this.Value._1 then
+                            this.Value._1 <- false
+                        this.Value._2 <- value
+                        true })
+            |> fun tried -> 
+                if tried.Value._1 then
+                    None
+                else
+                    Some tried.Value._2
 
         [<CompiledName("Last")>]
         let last (source : seq<_>) =
