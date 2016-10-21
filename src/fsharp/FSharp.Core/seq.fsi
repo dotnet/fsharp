@@ -28,19 +28,28 @@ namespace Microsoft.FSharp.Collections
                 interface ISeqComponent
 
             [<Struct; NoComparison; NoEquality>]
-            type MutableData<'a,'b> =
+            type Values<'a,'b> =
               struct
-                new : a:'a * b:'b -> MutableData<'a,'b>
+                new : a:'a * b:'b -> Values<'a,'b>
                 val mutable _1: 'a
                 val mutable _2: 'b
               end
 
+            [<Struct; NoComparison; NoEquality>]
+            type Values<'a,'b,'c> =
+              struct
+                new : a:'a * b:'b * c:'c -> Values<'a,'b,'c>
+                val mutable _1: 'a
+                val mutable _2: 'b
+                val mutable _3: 'c
+              end
+
             [<AbstractClass>]
-            type AccumulatingConsumer<'T,'U> =
+            type Folder<'T,'U> =
               class
                 inherit SeqConsumer<'T,'T>
-                new : initialState:'U -> AccumulatingConsumer<'T,'U>
-                val mutable Accumulator: 'U
+                new : init:'U -> Folder<'T,'U>
+                val mutable Value: 'U
               end
 
             [<AbstractClass>]
