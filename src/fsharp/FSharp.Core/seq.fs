@@ -1785,15 +1785,16 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Fold")>]
         let fold<'T,'State> f (x:'State) (source:seq<'T>) =
-            let composedSource = toComposer source
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
 
-            let total = composedSource.ForEach (fun _ ->
-                        { new SeqComposer.Folder<'T,'State> (x) with
-                            override this.ProcessNext value =
-                                this.Value <- f.Invoke (this.Value, value)
-                                true })
-            total.Value
+            source
+            |> toComposer 
+            |> foreach (fun _ ->
+                { new SeqComposer.Folder<'T,'State> (x) with
+                    override this.ProcessNext value =
+                        this.Value <- f.Invoke (this.Value, value)
+                        true })
+            |> fun folded -> folded.Value
 
         [<CompiledName("Fold2")>]
         let fold2<'T1,'T2,'State> f (state:'State) (source1: seq<'T1>) (source2: seq<'T2>) =
@@ -1813,25 +1814,25 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Reduce")>]
         let reduce f (source : seq<'T>)  =
-            let composedSource = toComposer source
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-            let mutable first = true
 
-            let total = composedSource.ForEach (fun _ ->
-                        { new SeqComposer.Folder<'T,'T> (Unchecked.defaultof<'T>) with
-                            override this.ProcessNext value =
-                                if first then
-                                    first <- false
-                                    this.Value <- value
-                                else
-                                    this.Value <- f.Invoke (this.Value, value)
-                                true 
-                           interface SeqComposer.ISeqComponent with
-                              member this.OnComplete() = 
-                                if first then
-                                    invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-                        })
-            total.Value
+            source
+            |> toComposer 
+            |> foreach (fun _ ->
+                { new SeqComposer.Folder<'T, SeqComposer.Values<bool,'T>> (SeqComposer.Values<_,_>(true, Unchecked.defaultof<'T>)) with
+                    override this.ProcessNext value =
+                        if this.Value._1 then
+                            this.Value._1 <- false
+                            this.Value._2 <- value
+                        else
+                            this.Value._2 <- f.Invoke (this.Value._2, value)
+                        true 
+                  interface SeqComposer.ISeqComponent with
+                    member this.OnComplete() = 
+                        if (this:?>SeqComposer.Folder<'T, SeqComposer.Values<bool,'T>>).Value._1 then
+                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                })
+            |> fun reduced -> reduced.Value._2
 
         [<CompiledName("Replicate")>]
         let replicate count x =
