@@ -35,6 +35,15 @@ namespace Microsoft.FSharp.Collections
                 val mutable _2: 'b
               end
 
+            [<Struct; NoComparison; NoEquality>]
+            type Values<'a,'b,'c> =
+              struct
+                new : a:'a * b:'b * c:'c -> Values<'a,'b,'c>
+                val mutable _1: 'a
+                val mutable _2: 'b
+                val mutable _3: 'c
+              end
+
             [<AbstractClass>]
             type Folder<'T,'U> =
               class
