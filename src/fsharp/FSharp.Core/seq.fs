@@ -1565,54 +1565,51 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Exists")>]
         let exists f (source : seq<'T>) =
-            let exists =
-                source
-                |> toComposer
-                |> foreach (fun pipeline ->
-                    { new SeqComposer.Folder<'T, bool> (false) with
-                        override this.ProcessNext value =
-                            if this.Value then
-                                pipeline.StopFurtherProcessing()
-                                false
-                            else
-                                this.Value <- f value
-                                true 
-                       })
-            exists.Value
+            source
+            |> toComposer
+            |> foreach (fun pipeline ->
+                { new SeqComposer.Folder<'T, bool> (false) with
+                    override this.ProcessNext value =
+                        if f value then
+                            this.Value <- true
+                            pipeline.StopFurtherProcessing ()
+                            false
+                        else
+                            true 
+                    })
+            |> fun exists -> exists.Value
 
         [<CompiledName("Contains")>]
         let inline contains element (source : seq<'T>) =
-            let contains =
-                source
-                |> toComposer
-                |> foreach (fun pipeline ->
-                    { new SeqComposer.Folder<'T, bool> (false) with
-                        override this.ProcessNext value =
-                            if this.Value then
-                                pipeline.StopFurtherProcessing()
-                                false
-                            else
-                                this.Value <- element = value
-                                true 
-                       })
-            contains.Value
+            source
+            |> toComposer
+            |> foreach (fun pipeline ->
+                { new SeqComposer.Folder<'T, bool> (false) with
+                    override this.ProcessNext value =
+                        if element = value then
+                            this.Value <- true
+                            pipeline.StopFurtherProcessing()
+                            false
+                        else
+                            true 
+                    })
+            |> fun contains -> contains.Value
 
         [<CompiledName("ForAll")>]
         let forall f (source : seq<'T>) =
-            let forall =
-                source
-                |> toComposer
-                |> foreach (fun pipeline ->
-                    { new SeqComposer.Folder<'T, bool> (true) with
-                        override this.ProcessNext value =
-                            if this.Value then
-                                this.Value <- f value
-                                false
-                            else
-                                pipeline.StopFurtherProcessing()
-                                true 
-                       })
-            forall.Value
+            source
+            |> toComposer
+            |> foreach (fun pipeline ->
+                { new SeqComposer.Folder<'T, bool> (true) with
+                    override this.ProcessNext value =
+                        if f value then
+                            false
+                        else
+                            this.Value <- false
+                            pipeline.StopFurtherProcessing()
+                            true 
+                    })
+            |> fun forall -> forall.Value
 
         [<CompiledName("Iterate2")>]
         let iter2 f (source1 : seq<_>) (source2 : seq<_>)    =
