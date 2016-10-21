@@ -1499,7 +1499,10 @@ namespace Microsoft.FSharp.Collections
             | :? list<'T> as a -> upcast SeqComposer.List.Enumerable(a, SeqComposer.IdentityFactory.IdentityFactory)
             | _ -> upcast SeqComposer.Enumerable.Enumerable<'T,'T>(source, SeqComposer.IdentityFactory.IdentityFactory)
         
-        let inline foreach f (source:SeqComposer.SeqEnumerable<_>) = source.ForEach f
+        let inline foreach f (source:seq<_>) =
+            source
+            |> toComposer
+            |> fun composer -> composer.ForEach f
 
         [<CompiledName("Delay")>]
         let delay f = mkDelayedSeq f
@@ -1524,7 +1527,6 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Iterate")>]
         let iter f (source : seq<'T>) =
             source
-            |> toComposer
             |> foreach (fun _ ->
                     { new SeqComposer.SeqConsumer<'T,'T> () with
                         override this.ProcessNext value =
@@ -1566,7 +1568,6 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Exists")>]
         let exists f (source : seq<'T>) =
             source
-            |> toComposer
             |> foreach (fun pipeline ->
                 { new SeqComposer.Folder<'T, bool> (false) with
                     override this.ProcessNext value =
@@ -1582,7 +1583,6 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Contains")>]
         let inline contains element (source : seq<'T>) =
             source
-            |> toComposer
             |> foreach (fun pipeline ->
                 { new SeqComposer.Folder<'T, bool> (false) with
                     override this.ProcessNext value =
@@ -1598,7 +1598,6 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("ForAll")>]
         let forall f (source : seq<'T>) =
             source
-            |> toComposer
             |> foreach (fun pipeline ->
                 { new SeqComposer.Folder<'T, bool> (true) with
                     override this.ProcessNext value =
@@ -1705,7 +1704,6 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("TryPick")>]
         let tryPick f (source : seq<'T>)  =
             source
-            |> toComposer
             |> foreach (fun pipeline ->
                 { new SeqComposer.Folder<'T, Option<'U>> (None) with
                     override this.ProcessNext value =
@@ -1726,7 +1724,6 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("TryFind")>]
         let tryFind f (source : seq<'T>)  =
             source 
-            |> toComposer
             |> foreach (fun pipeline ->
                 { new SeqComposer.Folder<'T, Option<'T>> (None) with
                     override this.ProcessNext value =
@@ -1787,7 +1784,6 @@ namespace Microsoft.FSharp.Collections
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
 
             source
-            |> toComposer 
             |> foreach (fun _ ->
                 { new SeqComposer.Folder<'T,'State> (x) with
                     override this.ProcessNext value =
@@ -1816,7 +1812,6 @@ namespace Microsoft.FSharp.Collections
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
 
             source
-            |> toComposer 
             |> foreach (fun _ ->
                 { new SeqComposer.Folder<'T, SeqComposer.Values<bool,'T>> (SeqComposer.Values<_,_>(true, Unchecked.defaultof<'T>)) with
                     override this.ProcessNext value =
@@ -2235,7 +2230,6 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Sum")>]
         let inline sum (source:seq<'a>) : 'a =
             source
-            |> toComposer 
             |> foreach (fun _ ->
                 { new SeqComposer.Folder<'a,'a> (LanguagePrimitives.GenericZero) with
                     override this.ProcessNext value =
@@ -2246,7 +2240,6 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("SumBy")>]
         let inline sumBy (f : 'T -> ^U) (source: seq<'T>) : ^U =
             source
-            |> toComposer
             |> foreach (fun _ ->
                 { new SeqComposer.Folder<'T,'U> (LanguagePrimitives.GenericZero< ^U>) with
                     override this.ProcessNext value =
@@ -2257,7 +2250,6 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Average")>]
         let inline average (source: seq< ^a>) : ^a =
             source
-            |> toComposer
             |> foreach (fun _ ->
                 { new SeqComposer.Folder<'a, SeqComposer.Values<'a, int>> (SeqComposer.Values<_,_>(LanguagePrimitives.GenericZero, 0)) with
                     override this.ProcessNext value =
@@ -2274,7 +2266,6 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("AverageBy")>]
         let inline averageBy (f : 'T -> ^U) (source: seq< 'T >) : ^U =
             source
-            |> toComposer 
             |> foreach (fun _ ->
                 { new SeqComposer.Folder<'T,SeqComposer.Values<'U, int>> (SeqComposer.Values<_,_>(LanguagePrimitives.GenericZero, 0)) with
                     override this.ProcessNext value =
@@ -2290,7 +2281,6 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Min")>]
         let inline min (source: seq<_>) =
             source
-            |> toComposer 
             |> foreach (fun _ ->
                 { new SeqComposer.Folder<'T,SeqComposer.Values<bool,'T>> (SeqComposer.Values<_,_>(true, Unchecked.defaultof<'T>)) with
                     override this.ProcessNext value =
@@ -2311,7 +2301,6 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("MinBy")>]
         let inline minBy (f : 'T -> 'U) (source: seq<'T>) : 'T =
             source
-            |> toComposer 
             |> foreach (fun _ ->
                 { new SeqComposer.Folder<'T,SeqComposer.Values<bool,'U,'T>> (SeqComposer.Values<_,_,_>(true,Unchecked.defaultof<'U>,Unchecked.defaultof<'T>)) with
                     override this.ProcessNext value =
@@ -2352,7 +2341,6 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Max")>]
         let inline max (source: seq<_>) =
             source
-            |> toComposer 
             |> foreach (fun _ ->
                 { new SeqComposer.Folder<'T,SeqComposer.Values<bool,'T>> (SeqComposer.Values<_,_>(true, Unchecked.defaultof<'T>)) with
                     override this.ProcessNext value =
@@ -2373,7 +2361,6 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("MaxBy")>]
         let inline maxBy (f : 'T -> 'U) (source: seq<'T>) : 'T =
             source
-            |> toComposer 
             |> foreach (fun _ ->
                 { new SeqComposer.Folder<'T,SeqComposer.Values<bool,'U,'T>> (SeqComposer.Values<_,_,_>(true,Unchecked.defaultof<'U>,Unchecked.defaultof<'T>)) with
                     override this.ProcessNext value =
@@ -2470,7 +2457,6 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("TryLast")>]
         let tryLast (source : seq<_>) =
             source
-            |> toComposer
             |> foreach (fun _ ->
                 { new SeqComposer.Folder<'T, SeqComposer.Values<bool,'T>> (SeqComposer.Values<bool,'T>(true, Unchecked.defaultof<'T>)) with
                     override this.ProcessNext value =
