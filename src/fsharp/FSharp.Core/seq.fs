@@ -521,9 +521,6 @@ namespace Microsoft.FSharp.Collections
                 let inline upcastEnumeratorNonGeneric (t:#IEnumerator) : IEnumerator = (# "" t : IEnumerator #)
                 let inline upcastISeqComponent (t:#ISeqComponent) : ISeqComponent = (# "" t : ISeqComponent #)
 
-                // within a foreach, the value returned by ProcessNext is ignored
-                let processNextInForeach = true
-
             let seqComponentTail =
                 { new ISeqComponent with
                     member __.OnComplete() = ()
@@ -1548,7 +1545,7 @@ namespace Microsoft.FSharp.Collections
                     { new SeqComposer.SeqConsumer<'T,'T> () with
                         override this.ProcessNext value =
                             f value
-                            SeqComposer.Helpers.processNextInForeach })
+                            Unchecked.defaultof<bool> })
             |> ignore
 
         [<CompiledName("TryHead")>]
@@ -1587,7 +1584,7 @@ namespace Microsoft.FSharp.Collections
                     override this.ProcessNext value =
                         f.Invoke(this.Value, value)
                         this.Value <- this.Value + 1
-                        SeqComposer.Helpers.processNextInForeach })
+                        Unchecked.defaultof<bool> })
             |> ignore
 
         [<CompiledName("Exists")>]
@@ -1599,7 +1596,7 @@ namespace Microsoft.FSharp.Collections
                         if f value then
                             this.Value <- true
                             pipeline.StopFurtherProcessing ()
-                        SeqComposer.Helpers.processNextInForeach 
+                        Unchecked.defaultof<bool> 
                     })
             |> fun exists -> exists.Value
 
@@ -1612,7 +1609,7 @@ namespace Microsoft.FSharp.Collections
                         if element = value then
                             this.Value <- true
                             pipeline.StopFurtherProcessing()
-                        SeqComposer.Helpers.processNextInForeach
+                        Unchecked.defaultof<bool>
                     })
             |> fun contains -> contains.Value
 
@@ -1625,7 +1622,7 @@ namespace Microsoft.FSharp.Collections
                         if not (f value) then
                             this.Value <- false
                             pipeline.StopFurtherProcessing()
-                        SeqComposer.Helpers.processNextInForeach
+                        Unchecked.defaultof<bool>
                     })
             |> fun forall -> forall.Value
 
@@ -1752,7 +1749,7 @@ namespace Microsoft.FSharp.Collections
                             this.Value <- some
                             pipeline.StopFurtherProcessing()
                         | None -> ()
-                        SeqComposer.Helpers.processNextInForeach })
+                        Unchecked.defaultof<bool> })
             |> fun pick -> pick.Value
 
         [<CompiledName("Pick")>]
@@ -1770,7 +1767,7 @@ namespace Microsoft.FSharp.Collections
                         if f value then
                             this.Value <- Some value
                             pipeline.StopFurtherProcessing()
-                        SeqComposer.Helpers.processNextInForeach })
+                        Unchecked.defaultof<bool> })
             |> fun find -> find.Value
 
         [<CompiledName("Find")>]
@@ -1825,7 +1822,7 @@ namespace Microsoft.FSharp.Collections
                 { new SeqComposer.Folder<'T,'State> (x) with
                     override this.ProcessNext value =
                         this.Value <- f.Invoke (this.Value, value)
-                        SeqComposer.Helpers.processNextInForeach })
+                        Unchecked.defaultof<bool> })
             |> fun folded -> folded.Value
 
             source
@@ -1867,7 +1864,7 @@ namespace Microsoft.FSharp.Collections
                             this.Value._2 <- value
                         else
                             this.Value._2 <- f.Invoke (this.Value._2, value)
-                        SeqComposer.Helpers.processNextInForeach
+                        Unchecked.defaultof<bool>
 
                   interface SeqComposer.ISeqComponent with
                     member this.OnComplete() = 
@@ -2252,7 +2249,7 @@ namespace Microsoft.FSharp.Collections
                 { new SeqComposer.Folder<'a,'a> (LanguagePrimitives.GenericZero) with
                     override this.ProcessNext value =
                         this.Value <- Checked.(+) this.Value value
-                        SeqComposer.Helpers.processNextInForeach })
+                        Unchecked.defaultof<bool> })
             |> fun sum -> sum.Value
 
         [<CompiledName("SumBy")>]
@@ -2262,7 +2259,7 @@ namespace Microsoft.FSharp.Collections
                 { new SeqComposer.Folder<'T,'U> (LanguagePrimitives.GenericZero< ^U>) with
                     override this.ProcessNext value =
                         this.Value <- Checked.(+) this.Value (f value)
-                        SeqComposer.Helpers.processNextInForeach })
+                        Unchecked.defaultof<bool> })
             |> fun sum -> sum.Value
 
         [<CompiledName("Average")>]
@@ -2273,7 +2270,7 @@ namespace Microsoft.FSharp.Collections
                     override this.ProcessNext value =
                         this.Value._1 <- Checked.(+) this.Value._1 value
                         this.Value._2 <- this.Value._2 + 1
-                        SeqComposer.Helpers.processNextInForeach
+                        Unchecked.defaultof<bool>
 
                   interface SeqComposer.ISeqComponent with
                     member this.OnComplete() = 
@@ -2289,7 +2286,7 @@ namespace Microsoft.FSharp.Collections
                     override this.ProcessNext value =
                         this.Value._1 <- Checked.(+) this.Value._1 (f value)
                         this.Value._2 <- this.Value._2 + 1
-                        SeqComposer.Helpers.processNextInForeach
+                        Unchecked.defaultof<bool>
                   interface SeqComposer.ISeqComponent with
                     member this.OnComplete() = 
                         if (this:?>SeqComposer.Folder<'T,SeqComposer.Values<'U, int>>).Value._2 = 0 then
@@ -2312,7 +2309,7 @@ namespace Microsoft.FSharp.Collections
                             this.Value._2 <- value
                         elif value < this.Value._2 then
                             this.Value._2 <- value
-                        SeqComposer.Helpers.processNextInForeach
+                        Unchecked.defaultof<bool>
 
                   interface SeqComposer.ISeqComponent with
                     member this.OnComplete() = 
@@ -2336,7 +2333,7 @@ namespace Microsoft.FSharp.Collections
                             this.Value._2 <- valueU
                             this.Value._3 <- value
                         | _ -> ()
-                        SeqComposer.Helpers.processNextInForeach
+                        Unchecked.defaultof<bool>
 
                   interface SeqComposer.ISeqComponent with
                     member this.OnComplete() = 
@@ -2372,7 +2369,7 @@ namespace Microsoft.FSharp.Collections
                             this.Value._2 <- value
                         elif value > this.Value._2 then
                             this.Value._2 <- value
-                        SeqComposer.Helpers.processNextInForeach
+                        Unchecked.defaultof<bool>
 
                   interface SeqComposer.ISeqComponent with
                     member this.OnComplete() = 
@@ -2396,7 +2393,7 @@ namespace Microsoft.FSharp.Collections
                             this.Value._2 <- valueU
                             this.Value._3 <- value
                         | _ -> ()
-                        SeqComposer.Helpers.processNextInForeach
+                        Unchecked.defaultof<bool>
 
                   interface SeqComposer.ISeqComponent with
                     member this.OnComplete() = 
@@ -2489,7 +2486,7 @@ namespace Microsoft.FSharp.Collections
                         if this.Value._1 then
                             this.Value._1 <- false
                         this.Value._2 <- value
-                        SeqComposer.Helpers.processNextInForeach })
+                        Unchecked.defaultof<bool> })
             |> fun tried -> 
                 if tried.Value._1 then
                     None
