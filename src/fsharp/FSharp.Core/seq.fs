@@ -1117,10 +1117,7 @@ namespace Microsoft.FSharp.Collections
                     let mutable state = SeqProcessNextStates.NotStarted
                     let main = sources.GetEnumerator ()
 
-                    let mutable active =
-                        if main.MoveNext ()
-                        then main.Current.GetEnumerator ()
-                        else EmptyEnumerators.Element
+                    let mutable active = EmptyEnumerators.Element
 
                     let rec moveNext () =
                         if active.MoveNext () then
@@ -1989,15 +1986,16 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("TryFindIndex")>]
         let tryFindIndex p (source:seq<_>) =
             source
-            |> foreach (fun halt ->
-                { new Composer.Core.Folder<'T, Composer.Core.Values<Option<int>, int>> (Composer.Core.Values<_,_>(None, 0)) with
+            |> foreach (fun pipeline ->
+                { new SeqComposer.Folder<'T, SeqComposer.Values<Option<int>, int>> (SeqComposer.Values<_,_>(None, 0)) with
                     override this.ProcessNext value =
                         if p value then
                             this.Value._1 <- Some(this.Value._2)
-                            halt ()
+                            pipeline.StopFurtherProcessing()
                         else
                             this.Value._2 <- this.Value._2 + 1
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
+                        Unchecked.defaultof<bool>
+                })
             |> fun tried -> tried.Value._1
 
         [<CompiledName("FindIndex")>]
