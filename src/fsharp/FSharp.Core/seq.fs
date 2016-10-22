@@ -592,6 +592,10 @@ namespace Microsoft.FSharp.Collections
                 inherit SeqComponentFactory<'T,'T*'T> ()
                 override __.Create<'V> (_result:ISeqPipeline) (next:SeqConsumer<'T*'T,'V>) (haltingIdx:int) : SeqConsumer<'T,'V> = upcast Pairwise (next, haltingIdx)
 
+            and ScanFactory<'T,'State> (folder:'State->'T->'State, initialState:'State) =
+                inherit SeqComponentFactory<'T,'State> ()
+                override __.Create<'V> (_result:ISeqPipeline) (next:SeqConsumer<'State,'V>) (haltingIdx:int) : SeqConsumer<'T,'V> = upcast Scan<_,_,_> (folder, initialState, next, haltingIdx)
+
             and SkipFactory<'T> (count:int) =
                 inherit SeqComponentFactory<'T,'T> ()
                 override __.Create<'V> (_result:ISeqPipeline) (next:SeqConsumer<'T,'V>) (haltingIdx:int) : SeqConsumer<'T,'V> = upcast Skip (count, next, haltingIdx) 
@@ -827,6 +831,16 @@ namespace Microsoft.FSharp.Collections
                         let currentPair = lastValue, input
                         lastValue <- input
                         Helpers.avoidTailCall (next.ProcessNext currentPair)
+
+            and Scan<'T,'State,'V> (folder:'State->'T->'State, initialState: 'State, next:SeqConsumer<'State,'V>, haltingIdx:int) =
+                inherit SeqComponent<'T,'V>(next, haltingIdx)
+
+                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
+                let mutable foldResult = initialState
+
+                override __.ProcessNext (input:'T) : bool =
+                    foldResult <- f.Invoke(foldResult, input)
+                    Helpers.avoidTailCall (next.ProcessNext foldResult)
 
             and Skip<'T,'V> (skipCount:int, next:SeqConsumer<'T,'V>, haltingIdx:int) =
                 inherit SeqComponent<'T,'V>(next, haltingIdx)
@@ -1515,10 +1529,18 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("TryItem")>]
         let tryItem i (source : seq<'T>) =
-            checkNonNull "source" source
             if i < 0 then None else
-            use e = source.GetEnumerator()
-            IEnumerator.tryItem i e
+            source 
+            |> foreach (fun pipeline ->
+                { new SeqComposer.Folder<'T, SeqComposer.Values<int, Option<'T>>> (SeqComposer.Values<_, _> (0, None)) with
+                    override this.ProcessNext value =
+                        if this.Value._1 = i then
+                            this.Value._2 <- Some value
+                            pipeline.StopFurtherProcessing 1
+                        else
+                            this.Value._1 <- this.Value._1 + 1
+                        Unchecked.defaultof<bool> })
+            |> fun item -> item.Value._2
 
         [<CompiledName("Get")>]
         let nth i (source : seq<'T>) = item i source
@@ -1899,15 +1921,10 @@ namespace Microsoft.FSharp.Collections
             source |> seqFactory (SeqComposer.PairwiseFactory ())
 
         [<CompiledName("Scan")>]
-        let scan<'T,'State> f (z:'State) (source : seq<'T>) =
-            checkNonNull "source" source
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-            seq { let zref = ref z
-                  yield !zref
-                  use ie = source.GetEnumerator()
-                  while ie.MoveNext() do
-                      zref := f.Invoke(!zref, ie.Current)
-                      yield !zref }
+        let scan<'T,'State> f (z:'State) (source : seq<'T>): seq<'State> =
+            let first = [|z|] :> IEnumerable<'State>
+            let rest = source |> seqFactory (SeqComposer.ScanFactory (f, z))
+            upcast SeqComposer.Enumerable.ConcatEnumerable [|first; rest;|]
 
         [<CompiledName("TryFindBack")>]
         let tryFindBack f (source : seq<'T>) =
@@ -2373,7 +2390,6 @@ namespace Microsoft.FSharp.Collections
                 ok <- p.Invoke(e1.Current, e2.Current)
             ok
 
-
         [<CompiledName("Exists2")>]
         let exists2 p (source1: seq<_>) (source2: seq<_>) =
             checkNonNull "source1" source1
@@ -2385,20 +2401,23 @@ namespace Microsoft.FSharp.Collections
             while (not ok && e1.MoveNext() && e2.MoveNext()) do
                 ok <- p.Invoke(e1.Current, e2.Current)
             ok
+        
+        [<CompiledName("TryHead")>]
+        let tryHead (source : seq<_>) =
+            source
+            |> foreach (fun pipeline ->
+                { new SeqComposer.Folder<'T, Option<'T>> (None) with
+                    override this.ProcessNext value =
+                        this.Value <- Some value
+                        pipeline.StopFurtherProcessing 1
+                        Unchecked.defaultof<bool> })
+            |> fun head -> head.Value
 
         [<CompiledName("Head")>]
         let head (source : seq<_>) =
-            checkNonNull "source" source
-            use e = source.GetEnumerator()
-            if (e.MoveNext()) then e.Current
-            else invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-
-        [<CompiledName("TryHead")>]
-        let tryHead (source : seq<_>) =
-            checkNonNull "source" source
-            use e = source.GetEnumerator()
-            if (e.MoveNext()) then Some e.Current
-            else None
+            match tryHead source with
+            | None -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+            | Some x -> x
 
         [<CompiledName("Tail")>]
         let tail (source: seq<'T>) =
@@ -2428,16 +2447,26 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("ExactlyOne")>]
         let exactlyOne (source : seq<_>) =
-            checkNonNull "source" source
-            use e = source.GetEnumerator()
-            if e.MoveNext() then
-                let v = e.Current
-                if e.MoveNext() then
-                    invalidArg "source" (SR.GetString(SR.inputSequenceTooLong))
-                else
-                    v
-            else
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+            source
+            |> foreach (fun pipeline ->
+                { new SeqComposer.Folder<'T, SeqComposer.Values<bool,'T, bool>> (SeqComposer.Values<bool,'T, bool>(true, Unchecked.defaultof<'T>, false)) with
+                    override this.ProcessNext value =
+                        if this.Value._1 then
+                            this.Value._1 <- false
+                            this.Value._2 <- value
+                        else
+                            this.Value._3 <- true
+                            pipeline.StopFurtherProcessing 1
+                        Unchecked.defaultof<bool> 
+                   interface SeqComposer.ISeqComponent with
+                      member this.OnComplete _ = 
+                        let value =  (this:?>SeqComposer.Folder<'T,SeqComposer.Values<bool,'T, bool>>)
+                        if value.Value._1 then
+                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                        elif value.Value._3 then
+                            invalidArg "source" (SR.GetString(SR.inputSequenceTooLong))
+                            })
+            |> fun one -> one.Value._2
 
         [<CompiledName("Reverse")>]
         let rev source =
