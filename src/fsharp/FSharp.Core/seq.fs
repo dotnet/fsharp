@@ -1111,10 +1111,7 @@ namespace Microsoft.FSharp.Collections
                     let mutable state = SeqProcessNextStates.NotStarted
                     let main = sources.GetEnumerator ()
 
-                    let mutable active =
-                        if main.MoveNext ()
-                        then main.Current.GetEnumerator ()
-                        else EmptyEnumerators.Element
+                    let mutable active = EmptyEnumerators.Element
 
                     let rec moveNext () =
                         if active.MoveNext () then
