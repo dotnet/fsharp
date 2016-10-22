@@ -164,7 +164,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
                 member x.GetEnumerator() = f()
               interface IEnumerable with
                 member x.GetEnumerator() = (f() :> IEnumerator) }
-
+                
         [<NoEquality; NoComparison>]
         type EmptyEnumerable<'T> =
             | EmptyEnumerable
@@ -1014,6 +1014,21 @@ namespace Microsoft.FSharp.Collections
                         (Helpers.upcastISeqComponent consumer).OnDispose ()
 
             module Enumerable =
+                type Empty<'T>() =
+                    let current () = failwith "library implementation error: Current should never be called"
+                    interface IEnumerator<'T> with
+                        member __.Current = current ()
+                    interface IEnumerator with
+                        member __.Current = current ()
+                        member __.MoveNext () = false
+                        member __.Reset (): unit = noReset ()
+                    interface IDisposable with
+                        member __.Dispose () = ()
+
+                type EmptyEnumerators<'T>() = 
+                    static let element : IEnumerator<'T> = upcast (new Empty<'T> ())
+                    static member Element = element
+
                 [<AbstractClass>]
                 type EnumeratorBase<'T>(result:Result<'T>, seqComponent:ISeqComponent) =
                     interface IDisposable with
@@ -1092,24 +1107,25 @@ namespace Microsoft.FSharp.Collections
                     override this.ForEach (f:ISeqPipeline->#SeqConsumer<'U,'U>) =
                         ForEach.execute f current (ForEach.enumerable enumerable)
 
-                and AppendEnumerator<'T> (sources:list<seq<'T>>) =
-                    let sources = sources |> List.rev 
-
+                and ConcatEnumerator<'T, 'Collection when 'Collection :> seq<'T>> (sources:seq<'Collection>) =
                     let mutable state = SeqProcessNextStates.NotStarted
-                    let mutable remaining = sources.Tail
-                    let mutable active = sources.Head.GetEnumerator ()
+                    let main = sources.GetEnumerator ()
+
+                    let mutable active =
+                        if main.MoveNext ()
+                        then main.Current.GetEnumerator ()
+                        else EmptyEnumerators.Element
 
                     let rec moveNext () =
-                        if active.MoveNext () then true
+                        if active.MoveNext () then
+                            true
+                        elif main.MoveNext () then
+                            active.Dispose ()
+                            active <- main.Current.GetEnumerator ()
+                            moveNext ()
                         else
-                            match remaining with
-                            | [] -> false
-                            | hd :: tl ->
-                                active.Dispose ()
-                                active <- hd.GetEnumerator ()
-                                remaining <- tl
-                                
-                                moveNext ()
+                            state <- SeqProcessNextStates.Finished
+                            false
 
                     interface IEnumerator<'T> with
                         member __.Current =
@@ -1129,6 +1145,7 @@ namespace Microsoft.FSharp.Collections
 
                     interface IDisposable with
                         member __.Dispose() =
+                            main.Dispose ()
                             active.Dispose ()
 
                 and AppendEnumerable<'T> (sources:list<seq<'T>>) =
@@ -1136,7 +1153,7 @@ namespace Microsoft.FSharp.Collections
 
                     interface IEnumerable<'T> with
                         member this.GetEnumerator () : IEnumerator<'T> =
-                            Helpers.upcastEnumerator (new AppendEnumerator<_> (sources))
+                            Helpers.upcastEnumerator (new ConcatEnumerator<_,_> (sources |> List.rev))
 
                     override this.Compose (next:SeqComponentFactory<'T,'U>) : IEnumerable<'U> =
                         Helpers.upcastEnumerable (Enumerable<'T,'V>(this, next))
@@ -1145,8 +1162,20 @@ namespace Microsoft.FSharp.Collections
                         Helpers.upcastEnumerable (AppendEnumerable (source :: sources))
 
                     override this.ForEach (f:ISeqPipeline->#SeqConsumer<'T,'T>) =
-                        let enumerable = Helpers.upcastEnumerable (AppendEnumerable sources)
-                        ForEach.execute f IdentityFactory.IdentityFactory (ForEach.enumerable enumerable)
+                        ForEach.execute f IdentityFactory.IdentityFactory (ForEach.enumerable this)
+
+                and ConcatEnumerable<'T, 'Collection when 'Collection :> seq<'T>> (sources:seq<'Collection>) =
+                    inherit EnumerableBase<'T>()
+
+                    interface IEnumerable<'T> with
+                        member this.GetEnumerator () : IEnumerator<'T> =
+                            Helpers.upcastEnumerator (new ConcatEnumerator<_,_> (sources))
+
+                    override this.Compose (next:SeqComponentFactory<'T,'U>) : IEnumerable<'U> =
+                        Helpers.upcastEnumerable (Enumerable<'T,'V>(this, next))
+
+                    override this.ForEach (f:ISeqPipeline->#SeqConsumer<'T,'T>) =
+                        ForEach.execute f IdentityFactory.IdentityFactory (ForEach.enumerable this)
 
                 let create enumerable current =
                     Helpers.upcastEnumerable (Enumerable(enumerable, current))
@@ -1695,11 +1724,10 @@ namespace Microsoft.FSharp.Collections
                 use ie = source.GetEnumerator()
                 not (ie.MoveNext())
 
-
         [<CompiledName("Concat")>]
-        let concat sources =
+        let concat (sources:seq<#seq<'T>>) : seq<'T> =
             checkNonNull "sources" sources
-            mkConcatSeq sources
+            upcast SeqComposer.Enumerable.ConcatEnumerable sources
 
         [<CompiledName("Length")>]
         let length (source : seq<'T>)    =
