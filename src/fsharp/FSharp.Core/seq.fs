@@ -592,6 +592,10 @@ namespace Microsoft.FSharp.Collections
                 inherit SeqComponentFactory<'T,'T*'T> ()
                 override __.Create<'V> (_result:ISeqPipeline) (next:SeqConsumer<'T*'T,'V>) (haltingIdx:int) : SeqConsumer<'T,'V> = upcast Pairwise (next, haltingIdx)
 
+            and ScanFactory<'T,'State> (folder:'State->'T->'State, initialState:'State) =
+                inherit SeqComponentFactory<'T,'State> ()
+                override __.Create<'V> (_result:ISeqPipeline) (next:SeqConsumer<'State,'V>) (haltingIdx:int) : SeqConsumer<'T,'V> = upcast Scan<_,_,_> (folder, initialState, next, haltingIdx)
+
             and SkipFactory<'T> (count:int) =
                 inherit SeqComponentFactory<'T,'T> ()
                 override __.Create<'V> (_result:ISeqPipeline) (next:SeqConsumer<'T,'V>) (haltingIdx:int) : SeqConsumer<'T,'V> = upcast Skip (count, next, haltingIdx) 
@@ -827,6 +831,16 @@ namespace Microsoft.FSharp.Collections
                         let currentPair = lastValue, input
                         lastValue <- input
                         Helpers.avoidTailCall (next.ProcessNext currentPair)
+
+            and Scan<'T,'State,'V> (folder:'State->'T->'State, initialState: 'State, next:SeqConsumer<'State,'V>, haltingIdx:int) =
+                inherit SeqComponent<'T,'V>(next, haltingIdx)
+
+                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
+                let mutable foldResult = initialState
+
+                override __.ProcessNext (input:'T) : bool =
+                    foldResult <- f.Invoke(foldResult, input)
+                    Helpers.avoidTailCall (next.ProcessNext foldResult)
 
             and Skip<'T,'V> (skipCount:int, next:SeqConsumer<'T,'V>, haltingIdx:int) =
                 inherit SeqComponent<'T,'V>(next, haltingIdx)
@@ -1899,15 +1913,10 @@ namespace Microsoft.FSharp.Collections
             source |> seqFactory (SeqComposer.PairwiseFactory ())
 
         [<CompiledName("Scan")>]
-        let scan<'T,'State> f (z:'State) (source : seq<'T>) =
-            checkNonNull "source" source
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-            seq { let zref = ref z
-                  yield !zref
-                  use ie = source.GetEnumerator()
-                  while ie.MoveNext() do
-                      zref := f.Invoke(!zref, ie.Current)
-                      yield !zref }
+        let scan<'T,'State> f (z:'State) (source : seq<'T>): seq<'State> =
+            let first = [|z|] :> IEnumerable<'State>
+            let rest = source |> seqFactory (SeqComposer.ScanFactory (f, z))
+            upcast SeqComposer.Enumerable.ConcatEnumerable [|first; rest;|]
 
         [<CompiledName("TryFindBack")>]
         let tryFindBack f (source : seq<'T>) =
