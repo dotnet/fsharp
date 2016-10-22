@@ -1936,31 +1936,26 @@ namespace Microsoft.FSharp.Collections
                 let res = Array.scanSubRight f arr 0 (arr.Length - 1) acc
                 res :> seq<_>)
 
-        [<CompiledName("FindIndex")>]
-        let findIndex p (source:seq<_>) =
-            checkNonNull "source" source
-            use ie = source.GetEnumerator()
-            let rec loop i =
-                if ie.MoveNext() then
-                    if p ie.Current then
-                        i
-                    else loop (i+1)
-                else
-                    indexNotFound()
-            loop 0
-
         [<CompiledName("TryFindIndex")>]
         let tryFindIndex p (source:seq<_>) =
-            checkNonNull "source" source
-            use ie = source.GetEnumerator()
-            let rec loop i =
-                if ie.MoveNext() then
-                    if p ie.Current then
-                        Some i
-                    else loop (i+1)
-                else
-                    None
-            loop 0
+            source
+            |> foreach (fun pipeline ->
+                { new SeqComposer.Folder<'T, SeqComposer.Values<Option<int>, int>> (SeqComposer.Values<_,_>(None, 0)) with
+                    override this.ProcessNext value =
+                        if p value then
+                            this.Value._1 <- Some(this.Value._2)
+                            pipeline.StopFurtherProcessing()
+                        else
+                            this.Value._2 <- this.Value._2 + 1
+                        Unchecked.defaultof<bool>
+                })
+            |> fun tried -> tried.Value._1
+
+        [<CompiledName("FindIndex")>]
+        let findIndex p (source:seq<_>) =
+            match tryFindIndex p source with
+            | None -> indexNotFound()
+            | Some x -> x
 
         [<CompiledName("TryFindIndexBack")>]
         let tryFindIndexBack f (source : seq<'T>) =
