@@ -1528,10 +1528,18 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("TryItem")>]
         let tryItem i (source : seq<'T>) =
-            checkNonNull "source" source
             if i < 0 then None else
-            use e = source.GetEnumerator()
-            IEnumerator.tryItem i e
+            source 
+            |> foreach (fun pipeline ->
+                { new SeqComposer.Folder<'T, SeqComposer.Values<int, Option<'T>>> (SeqComposer.Values<_, _> (0, None)) with
+                    override this.ProcessNext value =
+                        if this.Value._1 = i then
+                            this.Value._2 <- Some value
+                            pipeline.StopFurtherProcessing 1
+                        else
+                            this.Value._1 <- this.Value._1 + 1
+                        Unchecked.defaultof<bool> })
+            |> fun item -> item.Value._2
 
         [<CompiledName("Get")>]
         let nth i (source : seq<'T>) = item i source
@@ -2387,7 +2395,6 @@ namespace Microsoft.FSharp.Collections
                 ok <- p.Invoke(e1.Current, e2.Current)
             ok
 
-
         [<CompiledName("Exists2")>]
         let exists2 p (source1: seq<_>) (source2: seq<_>) =
             checkNonNull "source1" source1
@@ -2399,20 +2406,23 @@ namespace Microsoft.FSharp.Collections
             while (not ok && e1.MoveNext() && e2.MoveNext()) do
                 ok <- p.Invoke(e1.Current, e2.Current)
             ok
+        
+        [<CompiledName("TryHead")>]
+        let tryHead (source : seq<_>) =
+            source
+            |> foreach (fun pipeline ->
+                { new SeqComposer.Folder<'T, Option<'T>> (None) with
+                    override this.ProcessNext value =
+                        this.Value <- Some value
+                        pipeline.StopFurtherProcessing 1
+                        Unchecked.defaultof<bool> })
+            |> fun head -> head.Value
 
         [<CompiledName("Head")>]
         let head (source : seq<_>) =
-            checkNonNull "source" source
-            use e = source.GetEnumerator()
-            if (e.MoveNext()) then e.Current
-            else invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-
-        [<CompiledName("TryHead")>]
-        let tryHead (source : seq<_>) =
-            checkNonNull "source" source
-            use e = source.GetEnumerator()
-            if (e.MoveNext()) then Some e.Current
-            else None
+            match tryHead source with
+            | None -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+            | Some x -> x
 
         [<CompiledName("Tail")>]
         let tail (source: seq<'T>) =
@@ -2442,16 +2452,26 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("ExactlyOne")>]
         let exactlyOne (source : seq<_>) =
-            checkNonNull "source" source
-            use e = source.GetEnumerator()
-            if e.MoveNext() then
-                let v = e.Current
-                if e.MoveNext() then
-                    invalidArg "source" (SR.GetString(SR.inputSequenceTooLong))
-                else
-                    v
-            else
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+            source
+            |> foreach (fun pipeline ->
+                { new SeqComposer.Folder<'T, SeqComposer.Values<bool,'T, bool>> (SeqComposer.Values<bool,'T, bool>(true, Unchecked.defaultof<'T>, false)) with
+                    override this.ProcessNext value =
+                        if this.Value._1 then
+                            this.Value._1 <- false
+                            this.Value._2 <- value
+                        else
+                            this.Value._3 <- true
+                            pipeline.StopFurtherProcessing 1
+                        Unchecked.defaultof<bool> 
+                   interface SeqComposer.ISeqComponent with
+                      member this.OnComplete _ = 
+                        let value =  (this:?>SeqComposer.Folder<'T,SeqComposer.Values<bool,'T, bool>>)
+                        if value.Value._1 then
+                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                        elif value.Value._3 then
+                            invalidArg "source" (SR.GetString(SR.inputSequenceTooLong))
+                            })
+            |> fun one -> one.Value._2
 
         [<CompiledName("Reverse")>]
         let rev source =
