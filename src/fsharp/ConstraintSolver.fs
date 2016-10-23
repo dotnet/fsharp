@@ -340,6 +340,7 @@ let ShowAccessDomain ad =
 // Solve
 
 exception NonRigidTypar of DisplayEnv * string option * range * TType * TType * range
+exception LocallyAbortOperationThatFailsToResolveOverload
 exception LocallyAbortOperationThatLosesAbbrevs 
 let localAbortD = ErrorD LocallyAbortOperationThatLosesAbbrevs
 
@@ -732,13 +733,14 @@ and SolveTypEqualsTyp (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace
     let ndeep = ndeep + 1
     let aenv = csenv.EquivEnv
     let g = csenv.g
-    if ty1 === ty2 then CompleteD else
 
     match cxsln with
     | Some (traitInfo, traitSln) when traitInfo.Solution.IsNone -> 
         // If this is an overload resolution at this point it's safe to assume the candidate member being evaluated solves this member constraint.
         TransactMemberConstraintSolution traitInfo trace traitSln
     | _ -> ()
+
+    if ty1 === ty2 then CompleteD else
 
     let canShortcut = not trace.HasTrace
     let sty1 = stripTyEqnsA csenv.g canShortcut ty1
@@ -1280,7 +1282,10 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) permitWeakResolution ndeep
                   // If there's nothing left to learn then raise the errors 
                   (if (permitWeakResolution && List.isEmpty support) || List.isEmpty frees then errors  
                   // Otherwise re-record the trait waiting for canonicalization 
-                   else AddMemberConstraint csenv ndeep m2 trace traitInfo support frees) ++ (fun () -> ResultD TTraitUnsolved)
+                   else AddMemberConstraint csenv ndeep m2 trace traitInfo support frees) ++ (fun () -> 
+                       match errors with
+                       | ErrorResult (_,UnresolvedOverloading _) when not permitWeakResolution && (not (nm = "op_Explicit" || nm = "op_Implicit")) -> ErrorD LocallyAbortOperationThatFailsToResolveOverload
+                       | _ -> ResultD TTraitUnsolved)
     ) 
     ++ 
     (fun res -> RecordMemberConstraintSolution csenv.SolverState m trace traitInfo res))
@@ -1952,7 +1957,9 @@ and private SolveTypSubsumesTypWithReport (csenv:ConstraintSolverEnv) ndeep m tr
 
 and private SolveTypEqualsTypWithReport contextInfo (csenv:ConstraintSolverEnv) ndeep  m trace cxsln ty1 ty2 = 
     TryD (fun () -> SolveTypEqualsTypKeepAbbrevsWithCxsln csenv ndeep m trace cxsln ty1 ty2)
-         (fun res -> ErrorD (ErrorFromAddingTypeEquation(csenv.g,csenv.DisplayEnv,ty1,ty2,res,contextInfo,m)))
+         (function
+            | LocallyAbortOperationThatFailsToResolveOverload -> CompleteD
+            | res -> ErrorD (ErrorFromAddingTypeEquation(csenv.g,csenv.DisplayEnv,ty1,ty2,res,contextInfo,m)))
   
 and ArgsMustSubsumeOrConvert 
         (csenv:ConstraintSolverEnv)
