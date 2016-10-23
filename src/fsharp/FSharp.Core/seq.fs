@@ -1554,8 +1554,19 @@ namespace Microsoft.FSharp.Collections
                     | Some value -> value
 
         [<CompiledName("TryItem")>]
-        let tryItem i (source:seq<'T>) =
-            Composer.Seq.tryItem i (toComposer source)
+        let tryItem i (source : seq<'T>) =
+            if i < 0 then None else
+            source 
+            |> foreach (fun pipeline ->
+                { new SeqComposer.Folder<'T, SeqComposer.Values<int, Option<'T>>> (SeqComposer.Values<_, _> (0, None)) with
+                    override this.ProcessNext value =
+                        if this.Value._1 = i then
+                            this.Value._2 <- Some value
+                            pipeline.StopFurtherProcessing 1
+                        else
+                            this.Value._1 <- this.Value._1 + 1
+                        Unchecked.defaultof<bool> })
+            |> fun item -> item.Value._2
 
         [<CompiledName("Get")>]
         let nth i (source : seq<'T>) = item i source
@@ -2420,25 +2431,23 @@ namespace Microsoft.FSharp.Collections
             use e2 = source2.GetEnumerator()
             let p = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(p)
 
-            source1
-            |> foreach (fun halt ->
-                { new Composer.Core.Folder<_,bool> (true) with
-                    override this.ProcessNext value =
-                        if (e2.MoveNext()) then
-                            if not (p.Invoke(value, e2.Current)) then
-                                this.Value <- false
-                                halt()
-                        else
-                            halt()
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun all -> all.Value
-
         [<CompiledName("Exists2")>]
         let exists2 p (source1: seq<_>) (source2: seq<_>) =
             checkNonNull "source2" source2
 
             use e2 = source2.GetEnumerator()
             let p = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(p)
+        
+        [<CompiledName("TryHead")>]
+        let tryHead (source : seq<_>) =
+            source
+            |> foreach (fun pipeline ->
+                { new SeqComposer.Folder<'T, Option<'T>> (None) with
+                    override this.ProcessNext value =
+                        this.Value <- Some value
+                        pipeline.StopFurtherProcessing 1
+                        Unchecked.defaultof<bool> })
+            |> fun head -> head.Value
 
             source1
             |> foreach (fun halt ->
@@ -2488,16 +2497,25 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("ExactlyOne")>]
         let exactlyOne (source : seq<_>) =
             source
-            |> foreach (fun halt ->
-                { new Composer.Core.Folder<'T, Composer.Core.Values<bool,'T, bool>> (Composer.Core.Values<bool,'T, bool>(true, Unchecked.defaultof<'T>, false)) with
+            |> foreach (fun pipeline ->
+                { new SeqComposer.Folder<'T, SeqComposer.Values<bool,'T, bool>> (SeqComposer.Values<bool,'T, bool>(true, Unchecked.defaultof<'T>, false)) with
                     override this.ProcessNext value =
                         if this.Value._1 then
                             this.Value._1 <- false
                             this.Value._2 <- value
                         else
                             this.Value._3 <- true
-                            halt ()
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) 
+                            pipeline.StopFurtherProcessing 1
+                        Unchecked.defaultof<bool> 
+                   interface SeqComposer.ISeqComponent with
+                      member this.OnComplete _ = 
+                        let value =  (this:?>SeqComposer.Folder<'T,SeqComposer.Values<bool,'T, bool>>)
+                        if value.Value._1 then
+                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                        elif value.Value._3 then
+                            invalidArg "source" (SR.GetString(SR.inputSequenceTooLong))
+                            })
+            |> fun one -> one.Value._2
 
                       member this.OnComplete _ = 
                         if this.Value._1 then
