@@ -15,11 +15,11 @@ namespace Microsoft.FSharp.Collections
     module Seq = 
         module SeqComposer =
             type ISeqComponent =
-                abstract OnComplete : unit -> unit
+                abstract OnComplete : int -> unit
                 abstract OnDispose : unit -> unit
 
             type ISeqPipeline =
-                abstract StopFurtherProcessing : unit -> unit
+                abstract StopFurtherProcessing : int -> unit
 
             [<AbstractClass>]
             type SeqConsumer<'T,'U> =
