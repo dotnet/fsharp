@@ -18,9 +18,6 @@ namespace Microsoft.FSharp.Collections
                 abstract OnComplete : int -> unit
                 abstract OnDispose : unit -> unit
 
-            type ISeqPipeline =
-                abstract StopFurtherProcessing : int -> unit
-
             [<AbstractClass>]
             type SeqConsumer<'T,'U> =
                 new : unit -> SeqConsumer<'T,'U>
@@ -54,7 +51,7 @@ namespace Microsoft.FSharp.Collections
 
             [<AbstractClass>]
             type SeqEnumerable<'T> =
-                abstract member ForEach<'a when 'a :> SeqConsumer<'T,'T>> : f:(ISeqPipeline->'a) -> 'a
+                abstract member ForEach<'a when 'a :> SeqConsumer<'T,'T>> : f:((unit->unit)->'a) -> 'a
 
         /// <summary>Returns a new sequence that contains the cartesian product of the two input sequences.</summary>
         /// <param name="source1">The first sequence.</param>
