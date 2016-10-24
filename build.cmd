@@ -52,7 +52,6 @@ if /i '%FSC_BUILD_SETUP%' == '' (set FSC_BUILD_SETUP=1)
 rem by default don't build coreclr lkg.  However allow configuration by setting an environment variable : set BUILD_PROTO_WITH_CORECLR_LKG = 1
 if '%BUILD_PROTO_WITH_CORECLR_LKG%' =='' (set BUILD_PROTO_WITH_CORECLR_LKG=0) 
 
-if %%
 set BUILD_PROTO=0
 set BUILD_PHASE=1
 set BUILD_NET40=0
