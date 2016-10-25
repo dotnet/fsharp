@@ -14,8 +14,10 @@ namespace Microsoft.FSharp.Collections
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module Seq = 
         module SeqComposer =
+            type PipeIdx = int
+
             type ISeqComponent =
-                abstract OnComplete : int -> unit
+                abstract OnComplete : PipeIdx -> unit
                 abstract OnDispose : unit -> unit
 
             [<AbstractClass>]
