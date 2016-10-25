@@ -1,6 +1,23 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- If Configuration is empty that means we are not being built in VS and so folks need to explicitly pass the different
+      values for $(ConfigurationGroup), $(TargetGroup), or $(OSGroup) or accept the defaults for them.
+  -->
+  <PropertyGroup Condition="'$(Configuration)'==''">
+    <ConfigurationGroup Condition="'$(ConfigurationGroup)'==''">Debug</ConfigurationGroup>
+    <Configuration>$(ConfigurationGroup)</Configuration>
+    <Configuration Condition="'$(TargetGroup)'!=''">$(TargetGroup)_$(Configuration)</Configuration>
+    <Configuration Condition="'$(OSGroup)'!='' and '$(OSGroup)'!='AnyOS'">$(OSGroup)_$(Configuration)</Configuration>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'!=''">
+    <ConfigurationGroup Condition="'$(ConfigurationGroup)'=='' and $(Configuration.ToLower().EndsWith('debug'))">Debug</ConfigurationGroup>
+    <ConfigurationGroup Condition="'$(ConfigurationGroup)'=='' and $(Configuration.ToLower().EndsWith('release'))">Release</ConfigurationGroup>
+    <ConfigurationGroup Condition="'$(ConfigurationGroup)'==''">Debug</ConfigurationGroup>
+  </PropertyGroup>
+
   <PropertyGroup>
     <!-- Tail calls on, even in debug -->
     <Tailcalls>true</Tailcalls>
