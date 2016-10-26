@@ -104,3 +104,5 @@ tests/fsharp/typecheck/sigs/neg94-pre.dll
 times
 /tests/fsharpqa/testenv/bin/System.ValueTuple.dll
 source_link.json
+/.vs
+/VSRelease/net40/bin
