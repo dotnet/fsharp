@@ -543,7 +543,7 @@
   </Target>
 
   <Target Name="dotnetrestore" BeforeTargets="Build" Condition=" '$(TargetFramework)' == 'coreclr' ">
-    <Exec Command="$(MSBuildThisFileDirectory)..\tools\dotnetcli\dotnet.exe restore --configfile $(MSBuildThisFileDirectory)..\.nuget\NuGet.Config project.json"/>
+    <Exec Command="$(MSBuildThisFileDirectory)..\tools\dotnetcli\dotnet.exe restore --packages $(MSBuildThisFileDirectory)..\packages --configfile $(MSBuildThisFileDirectory)..\.nuget\NuGet.Config project.json"/>
   </Target>
 
   <Target Name="GenerateSourceLink" BeforeTargets="CoreCompile">
