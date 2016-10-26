@@ -525,8 +525,8 @@ if '%BUILD_NET40%' == '1' (
     call src\update.cmd %BUILD_CONFIG% -ngen
 )
 
-@echo set NUNITPATH=packages\NUnit.ConsoleRunner.3.5.0\tools\
-set NUNITPATH=packages\NUnit.ConsoleRunner.3.5.0\tools\
+@echo set NUNITPATH=packages\NUnit.Console.3.0.0\tools\
+set NUNITPATH=packages\NUnit.Console.3.0.0\tools\
 if not exist %NUNITPATH% echo Error: Could not find %NUNITPATH% && goto :failure
 
 @echo xcopy "%NUNITPATH%*.*"  "%~dp0tests\fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
@@ -596,7 +596,7 @@ setlocal enableDelayedExpansion
 
 
 set NUNITPATH=%~dp0tests\fsharpqa\testenv\bin\nunit\
-set NUNIT3_CONSOLE=%~dp0packages\NUnit.ConsoleRunner.3.5.0\tools\nunit3-console.exe
+set NUNIT3_CONSOLE=%~dp0packages\NUnit.Console.3.0.0\tools\nunit3-console.exe
 set link_exe=%~dp0packages\VisualCppTools.14.0.24519-Pre\lib\native\bin\link.exe
 if not exist "%link_exe%" (
     echo Error: failed to find '%link_exe%' use nuget to restore the VisualCppTools package
