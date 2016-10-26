@@ -22,34 +22,30 @@ namespace Microsoft.FSharp.Collections
 
             [<AbstractClass>]
             type SeqConsumer<'T,'U> =
-                new : unit -> SeqConsumer<'T,'U>
-                abstract ProcessNext : input:'T -> bool
                 interface ISeqComponent
+                new : unit -> SeqConsumer<'T,'U>
+                abstract member ProcessNext : input:'T -> bool
+                abstract member OnComplete : PipeIdx -> unit
+                abstract member OnDispose : unit -> unit
 
             [<Struct; NoComparison; NoEquality>]
             type Values<'a,'b> =
-              struct
                 new : a:'a * b:'b -> Values<'a,'b>
                 val mutable _1: 'a
                 val mutable _2: 'b
-              end
 
             [<Struct; NoComparison; NoEquality>]
             type Values<'a,'b,'c> =
-              struct
                 new : a:'a * b:'b * c:'c -> Values<'a,'b,'c>
                 val mutable _1: 'a
                 val mutable _2: 'b
                 val mutable _3: 'c
-              end
 
             [<AbstractClass>]
             type Folder<'T,'U> =
-              class
                 inherit SeqConsumer<'T,'T>
                 new : init:'U -> Folder<'T,'U>
                 val mutable Value: 'U
-              end
 
             [<AbstractClass>]
             type SeqEnumerable<'T> =

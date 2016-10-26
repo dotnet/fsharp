@@ -473,9 +473,17 @@ namespace Microsoft.FSharp.Collections
             type SeqConsumer<'T,'U> () =
                 abstract ProcessNext : input:'T -> bool
 
+                abstract OnComplete : PipeIdx -> unit
+                abstract OnDispose : unit -> unit
+
+                default __.OnComplete _ = ()
+                default __.OnDispose () = ()
+
                 interface ISeqComponent with
-                    member __.OnComplete _ = ()
-                    member __.OnDispose() = ()
+                    member this.OnComplete terminatingIdx = this.OnComplete terminatingIdx
+                    member this.OnDispose () = 
+                        try this.OnDispose ()
+                        finally ()
 
             [<Struct; NoComparison; NoEquality>]
             type Values<'a,'b> =
@@ -526,11 +534,6 @@ namespace Microsoft.FSharp.Collections
                 let inline upcastEnumerator (t:#IEnumerator<'T>) : IEnumerator<'T> = (# "" t : IEnumerator<'T> #)
                 let inline upcastEnumeratorNonGeneric (t:#IEnumerator) : IEnumerator = (# "" t : IEnumerator #)
                 let inline upcastISeqComponent (t:#ISeqComponent) : ISeqComponent = (# "" t : ISeqComponent #)
-
-            let seqComponentTail =
-                { new ISeqComponent with
-                    member __.OnComplete _ = ()
-                    member __.OnDispose()  = () }
 
             type [<AbstractClass>] SeqComponentFactory<'T,'U> (pipeIdx:``PipeIdx?``) =
                 abstract Create<'V> : ISeqPipeline -> ``PipeIdx?`` -> SeqConsumer<'U,'V> -> SeqConsumer<'T,'V>
@@ -647,8 +650,12 @@ namespace Microsoft.FSharp.Collections
                 abstract CreateFilter  : filter:('T->bool) -> SeqComponent<'T,'U>
 
                 interface ISeqComponent with
-                    member __.OnComplete terminatingIdx = next.OnComplete terminatingIdx
-                    member __.OnDispose ()  = next.OnDispose ()
+                    member this.OnComplete terminatingIdx =
+                        this.OnComplete terminatingIdx
+                        next.OnComplete terminatingIdx
+                    member this.OnDispose () =
+                        try     this.OnDispose ()
+                        finally next.OnDispose ()
 
                 default __.Skipping () = false
 
@@ -737,12 +744,8 @@ namespace Microsoft.FSharp.Collections
                         result.StopFurtherProcessing pipeIdx
                         false
 
-                interface ISeqComponent with
-                    override __.OnDispose () =
-                        try
-                            input2.Dispose ()
-                        finally
-                            (Helpers.upcastISeqComponent next).OnDispose ()
+                override __.OnDispose () =
+                    input2.Dispose ()
 
             and Map2Second<'First,'Second,'U,'V> (map:'First->'Second->'U, enumerable1:IEnumerable<'First>, result:ISeqPipeline, next:SeqConsumer<'U,'V>, pipeIdx:int) =
                 inherit SeqComponent<'Second,'V>(next)
@@ -757,12 +760,8 @@ namespace Microsoft.FSharp.Collections
                         result.StopFurtherProcessing pipeIdx
                         false
 
-                interface ISeqComponent with
-                    override __.OnDispose () =
-                        try
-                            input1.Dispose ()
-                        finally
-                            (Helpers.upcastISeqComponent next).OnDispose ()
+                override __.OnDispose () =
+                    input1.Dispose ()
 
             and Map3<'First,'Second,'Third,'U,'V> (map:'First->'Second->'Third->'U, enumerable2:IEnumerable<'Second>, enumerable3:IEnumerable<'Third>, result:ISeqPipeline, next:SeqConsumer<'U,'V>, pipeIdx:int) =
                 inherit SeqComponent<'First,'V>(next)
@@ -778,15 +777,9 @@ namespace Microsoft.FSharp.Collections
                         result.StopFurtherProcessing pipeIdx
                         false
 
-                interface ISeqComponent with
-                    override __.OnDispose () =
-                        try
-                            input2.Dispose ()
-                        finally
-                            try
-                                input3.Dispose ()
-                            finally
-                                (Helpers.upcastISeqComponent next).OnDispose ()
+                override __.OnDispose () =
+                    try     input2.Dispose ()
+                    finally input3.Dispose ()
 
             and MapThenFilter<'T,'U,'V> (map:'T->'U, filter:'U->bool, next:SeqConsumer<'U,'V>) =
                 inherit SeqComponent<'T,'V>(next)
@@ -823,12 +816,8 @@ namespace Microsoft.FSharp.Collections
                         result.StopFurtherProcessing pipeIdx
                         false
 
-                interface ISeqComponent with
-                    override __.OnDispose () =
-                        try
-                            input2.Dispose ()
-                        finally
-                            (Helpers.upcastISeqComponent next).OnDispose ()
+                override __.OnDispose () =
+                    input2.Dispose ()
 
             and Pairwise<'T,'V> (next:SeqConsumer<'T*'T,'V>) =
                 inherit SeqComponent<'T,'V>(next)
@@ -875,13 +864,11 @@ namespace Microsoft.FSharp.Collections
                     else
                         Helpers.avoidTailCall (next.ProcessNext input)
 
-                interface ISeqComponent with
-                    override __.OnComplete terminatingIdx =
-                        if count < skipCount then
-                            let x = skipCount - count
-                            invalidOpFmt "tried to skip {0} {1} past the end of the seq"
-                              [|SR.GetString SR.notEnoughElements; x; (if x=1 then "element" else "elements")|]
-                        (Helpers.upcastISeqComponent next).OnComplete terminatingIdx
+                override __.OnComplete _ =
+                    if count < skipCount then
+                        let x = skipCount - count
+                        invalidOpFmt "tried to skip {0} {1} past the end of the seq"
+                            [|SR.GetString SR.notEnoughElements; x; (if x=1 then "element" else "elements")|]
 
             and SkipWhile<'T,'V> (predicate:'T->bool, next:SeqConsumer<'T,'V>) =
                 inherit SeqComponent<'T,'V>(next)
@@ -901,13 +888,11 @@ namespace Microsoft.FSharp.Collections
             and Take<'T,'V> (takeCount:int, result:ISeqPipeline, next:SeqConsumer<'T,'V>, pipelineIdx:int) =
                 inherit Truncate<'T, 'V>(takeCount, result, next, pipelineIdx)
 
-                interface ISeqComponent with
-                    override this.OnComplete terminatingIdx =
-                        if terminatingIdx < pipelineIdx && this.Count < takeCount then
-                            let x = takeCount - this.Count
-                            invalidOpFmt "tried to take {0} {1} past the end of the seq"
-                                [|SR.GetString SR.notEnoughElements; x; (if x=1 then "element" else "elements")|]
-                        (Helpers.upcastISeqComponent next).OnComplete terminatingIdx
+                override this.OnComplete terminatingIdx =
+                    if terminatingIdx < pipelineIdx && this.Count < takeCount then
+                        let x = takeCount - this.Count
+                        invalidOpFmt "tried to take {0} {1} past the end of the seq"
+                            [|SR.GetString SR.notEnoughElements; x; (if x=1 then "element" else "elements")|]
 
             and TakeWhile<'T,'V> (predicate:'T->bool, result:ISeqPipeline, next:SeqConsumer<'T,'V>, pipeIdx:int) =
                 inherit SeqComponent<'T,'V>(next)
@@ -931,11 +916,9 @@ namespace Microsoft.FSharp.Collections
                     else
                         Helpers.avoidTailCall (next.ProcessNext input)
 
-                interface ISeqComponent with
-                    override this.OnComplete terminatingIdx =
-                        if first then
-                            invalidArg "source" (SR.GetString(SR.notEnoughElements))
-                        (Helpers.upcastISeqComponent next).OnComplete terminatingIdx
+                override this.OnComplete _ =
+                    if first then
+                        invalidArg "source" (SR.GetString(SR.notEnoughElements))
 
             and Truncate<'T,'V> (truncateCount:int, result:ISeqPipeline, next:SeqConsumer<'T,'V>, pipeIdx:int) =
                 inherit SeqComponent<'T,'V>(next)
@@ -1871,9 +1854,8 @@ namespace Microsoft.FSharp.Collections
                             this.Value._2 <- f.Invoke (this.Value._2, value)
                         Unchecked.defaultof<bool>
 
-                  interface SeqComposer.ISeqComponent with
                     member this.OnComplete _ = 
-                        if (this:?>SeqComposer.Folder<'T, SeqComposer.Values<bool,'T>>).Value._1 then
+                        if this.Value._1 then
                             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
                 })
             |> fun reduced -> reduced.Value._2
@@ -2278,9 +2260,8 @@ namespace Microsoft.FSharp.Collections
                         this.Value._2 <- this.Value._2 + 1
                         Unchecked.defaultof<bool>
 
-                  interface SeqComposer.ISeqComponent with
                     member this.OnComplete _ = 
-                        if (this:?>SeqComposer.Folder<'a, SeqComposer.Values<'a, int>>).Value._2 = 0 then
+                        if this.Value._2 = 0 then
                             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString })
             |> fun total -> LanguagePrimitives.DivideByInt< ^a> total.Value._1 total.Value._2
 
@@ -2293,9 +2274,9 @@ namespace Microsoft.FSharp.Collections
                         this.Value._1 <- Checked.(+) this.Value._1 (f value)
                         this.Value._2 <- this.Value._2 + 1
                         Unchecked.defaultof<bool>
-                  interface SeqComposer.ISeqComponent with
+
                     member this.OnComplete _ = 
-                        if (this:?>SeqComposer.Folder<'T,SeqComposer.Values<'U, int>>).Value._2 = 0 then
+                        if this.Value._2 = 0 then
                             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString })
             |> fun total -> LanguagePrimitives.DivideByInt< ^U> total.Value._1 total.Value._2
 
@@ -2317,9 +2298,8 @@ namespace Microsoft.FSharp.Collections
                             this.Value._2 <- value
                         Unchecked.defaultof<bool>
 
-                  interface SeqComposer.ISeqComponent with
                     member this.OnComplete _ = 
-                        if (this:?>SeqComposer.Folder<'T,SeqComposer.Values<bool,'T>>).Value._1 then
+                        if this.Value._1 then
                             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
                 })
             |> fun min -> min.Value._2
@@ -2341,9 +2321,8 @@ namespace Microsoft.FSharp.Collections
                         | _ -> ()
                         Unchecked.defaultof<bool>
 
-                  interface SeqComposer.ISeqComponent with
                     member this.OnComplete _ = 
-                        if (this:?>SeqComposer.Folder<'T,SeqComposer.Values<bool,'U,'T>>).Value._1 then
+                        if this.Value._1 then
                             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
                 })
             |> fun min -> min.Value._3
@@ -2377,9 +2356,8 @@ namespace Microsoft.FSharp.Collections
                             this.Value._2 <- value
                         Unchecked.defaultof<bool>
 
-                  interface SeqComposer.ISeqComponent with
                     member this.OnComplete _ = 
-                        if (this:?>SeqComposer.Folder<'T,SeqComposer.Values<bool,'T>>).Value._1 then
+                        if this.Value._1 then
                             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
                 })
             |> fun max -> max.Value._2
@@ -2401,9 +2379,8 @@ namespace Microsoft.FSharp.Collections
                         | _ -> ()
                         Unchecked.defaultof<bool>
 
-                  interface SeqComposer.ISeqComponent with
                     member this.OnComplete _ = 
-                        if (this:?>SeqComposer.Folder<'T,SeqComposer.Values<bool,'U,'T>>).Value._1 then
+                        if this.Value._1 then
                             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
                 })
             |> fun min -> min.Value._3
@@ -2516,14 +2493,12 @@ namespace Microsoft.FSharp.Collections
                             this.Value._3 <- true
                             halt ()
                         Unchecked.defaultof<bool> 
-                   interface SeqComposer.ISeqComponent with
+
                       member this.OnComplete _ = 
-                        let value =  (this:?>SeqComposer.Folder<'T,SeqComposer.Values<bool,'T, bool>>)
-                        if value.Value._1 then
+                        if this.Value._1 then
                             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-                        elif value.Value._3 then
-                            invalidArg "source" (SR.GetString(SR.inputSequenceTooLong))
-                            })
+                        elif this.Value._3 then
+                            invalidArg "source" (SR.GetString(SR.inputSequenceTooLong)) })
             |> fun one -> one.Value._2
 
                       member this.OnComplete _ = 
