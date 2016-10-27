@@ -17,7 +17,7 @@ script:
   - cp src/fsharp/FSharp.Build/Microsoft.FSharp.targets tools
   - cp src/fsharp/FSharp.Build/Microsoft.Portable.FSharp.targets tools
   - xbuild build-everything.proj /p:Configuration=debug /p:BUILD_PUBLICSIGN=0
-  - (cd tests/fsharp; mono ../../.nuget/NuGet.exe restore  project.json -PackagesDirectory ../../packages -ConfigFile ../../.nuget/NuGet.Config
+  - (cd tests/fsharp; mono ../../.nuget/NuGet.exe restore  project.json -PackagesDirectory ../../packages -ConfigFile ../../.nuget/NuGet.Config)
 
 
   
