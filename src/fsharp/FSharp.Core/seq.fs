@@ -1831,22 +1831,38 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("CompareWith")>]
         let compareWith (f:'T -> 'T -> int) (source1 : seq<'T>) (source2: seq<'T>) =
-            checkNonNull "source1" source1
             checkNonNull "source2" source2
-            use e1 = source1.GetEnumerator()
+
             use e2 = source2.GetEnumerator()
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-            let rec go () =
-                let e1ok = e1.MoveNext()
-                let e2ok = e2.MoveNext()
-                let c = if e1ok = e2ok then 0 else if e1ok then 1 else -1
-                if c <> 0 then c else
-                if not e1ok || not e2ok then 0
-                else
-                    let c = f.Invoke(e1.Current, e2.Current)
-                    if c <> 0 then c else
-                    go ()
-            go()
+            let mutable e2ok = Unchecked.defaultof<bool>
+
+            source1
+            |> foreach (fun halt ->
+                { new Composer.Internal.Folder<'T, Composer.Internal.Values<bool, int>> (Composer.Internal.Values<_,_>(false, 0)) with
+                    override this.ProcessNext value =
+                        e2ok <- e2.MoveNext()
+                        if not e2ok then
+                            this.Value._1 <- true
+                            this.Value._2 <- 1
+                            halt ()
+                        else
+                            let c = f.Invoke(value, e2.Current)
+                            if c <> 0 then
+                                this.Value._1 <- true
+                                this.Value._2 <- c
+                                halt ()
+                        Unchecked.defaultof<bool>
+                    member this.OnComplete _ = 
+                        if not this.Value._1 then
+                            e2ok <- e2.MoveNext()
+                            if e2ok then
+                                this.Value._2 <- -1
+                            else
+                                this.Value._2 <- 0
+                
+             })
+            |> fun compare -> compare.Value._2
 
         [<CompiledName("OfList")>]
         let ofList (source : 'T list) =
