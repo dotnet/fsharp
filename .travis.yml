@@ -12,7 +12,15 @@ before_install:
 
 script:
   - mono .nuget/NuGet.exe restore packages.config -PackagesDirectory packages
-  - (cd lkg;  dotnet restore --packages ../packaages && dotnet publish project.json -o ../Tools/lkg -r ubuntu.14.04-x64)
+  - (cd lkg;  dotnet restore --packages ../packages && dotnet publish project.json -o ../tools/lkg -r ubuntu.14.04-x64)
+  - xbuild src/fsharp-proto-build.proj
+  - cp src/fsharp/FSharp.Build/Microsoft.FSharp.targets tools
+  - cp src/fsharp/FSharp.Build/Microsoft.Portable.FSharp.targets tools
+  - xbuild build-everything.proj /p:Configuration=debug /p:BUILD_PUBLICSIGN=0
+  - mono .nuget/NuGet.exe restore  ./tests/fsharp/project.json -PackagesDirectory packages
+
+
+  
 
 
 
