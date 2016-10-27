@@ -15,29 +15,17 @@ let illegalPathChars =
     let chars = Path.GetInvalidPathChars ()
     chars
 
-type PathState =
-    | Legal
-    | Illegal of path: string * illegalChar: char
-
-let checkPathForIllegalChars =
-    let cache = System.Collections.Concurrent.ConcurrentDictionary<string, PathState>()
-    fun (path: string) ->
-        match cache.TryGetValue path with
-        | true, Legal -> () 
-        | true, Illegal (path, c) -> raise(IllegalFileNameChar(path, c))
-        | _ ->
-            let len = path.Length
-            for i = 0 to len - 1 do
-                let c = path.[i]
+let checkPathForIllegalChars (path:string) =
+    let len = path.Length
+    for i = 0 to len - 1 do
+        let c = path.[i]
         
-                // Determine if this character is disallowed within a path by
-                // attempting to find it in the array of illegal path characters.
-                for badChar in illegalPathChars do
-                    if c = badChar then
-                        cache.[path] <- Illegal(path, c)
-                        raise(IllegalFileNameChar(path, c))
-            cache.[path] <- Legal
-            
+        // Determine if this character is disallowed within a path by
+        // attempting to find it in the array of illegal path characters.
+        for badChar in illegalPathChars do
+            if c = badChar then
+                raise(IllegalFileNameChar(path, c))
+
 // Case sensitive (original behaviour preserved).
 let checkSuffix (x:string) (y:string) = x.EndsWith(y,System.StringComparison.Ordinal) 
 
