@@ -1881,24 +1881,34 @@ namespace Microsoft.FSharp.Collections
 
             use e2 = source2.GetEnumerator()
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
+            let mutable e2ok = Unchecked.defaultof<bool>
 
             source1
             |> foreach (fun halt ->
-                { new Composer.Core.Folder<'T,int> (0) with
+                { new Composer.Internal.Folder<'T, Composer.Internal.Values<bool, int>> (Composer.Internal.Values<_,_>(false, 0)) with
                     override this.ProcessNext value =
-                        if not (e2.MoveNext()) then
-                            this.Value <- 1
+                        e2ok <- e2.MoveNext()
+                        if not e2ok then
+                            this.Value._1 <- true
+                            this.Value._2 <- 1
                             halt ()
                         else
-                            let c = f.Invoke (value, e2.Current)
+                            let c = f.Invoke(value, e2.Current)
                             if c <> 0 then
-                                this.Value <- c
+                                this.Value._1 <- true
+                                this.Value._2 <- c
                                 halt ()
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
+                        Unchecked.defaultof<bool>
                     member this.OnComplete _ = 
-                        if this.Value = 0 && e2.MoveNext() then
-                            this.Value <- -1 })
-            |> fun compare -> compare.Value
+                        if not this.Value._1 then
+                            e2ok <- e2.MoveNext()
+                            if e2ok then
+                                this.Value._2 <- -1
+                            else
+                                this.Value._2 <- 0
+                
+             })
+            |> fun compare -> compare.Value._2
 
         [<CompiledName("OfList")>]
         let ofList (source : 'T list) =
