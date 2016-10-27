@@ -1833,7 +1833,7 @@ namespace Microsoft.FSharp.Collections
 
             source1
             |> foreach (fun halt ->
-                { new Composer.Internal.Folder<'T,bool> (0) with
+                { new Composer.Internal.Folder<'T,int> (0) with
                     override this.ProcessNext value =
                         if not (e2.MoveNext()) then
                             this.Value <- 1
