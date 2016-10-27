@@ -8,6 +8,7 @@ https://github.com/Microsoft/visualfsharp master                      1ce06f8a8e
 https://github.com/Microsoft/visualfsharp master                      1ce06f8a8e44e81e1b51ce1a4743514afda5848a 1ce06f8a8e44e81e1b51ce1a4743514afda5848a 213.58 11.23                32.03                47.61                62.34                51.25               
 https://github.com/Microsoft/visualfsharp master                      536cfeb1cc3d74cd29ccd760715caac2cd2826e6 536cfeb1cc3d74cd29ccd760715caac2cd2826e6 202.52 11.59                31.16                48.09                61.13                51.83               
 https://github.com/Microsoft/visualfsharp master                      983330c28ef5c06edbfd46b061c651f61fb851e1 983330c28ef5c06edbfd46b061c651f61fb851e1 197.77 11.27                32.00                45.83                63.09                52.52               
+https://github.com/Microsoft/visualfsharp master                      4a275618b8976c5100c2054e07c3e153a70d00bf 4a275618b8976c5100c2054e07c3e153a70d00bf 201.81 11.58                30.85                46.67                56.16                46.84               
 
 https://github.com/forki/visualfsharp.git foreach_optimization        d0ab5fec77482e1280578f47e3257cf660d7f1b2 0247247d480340c27ce7f7de9b2fbc3b7c598b03 206.56 11.02                30.55                47.72                62.52                52.96               
 https://github.com/forki/visualfsharp.git foreach_optimization        d0ab5fec77482e1280578f47e3257cf660d7f1b2 0247247d480340c27ce7f7de9b2fbc3b7c598b03 206.41 10.72                31.05                48.59                61.88                53.13               
@@ -23,3 +24,4 @@ https://github.com/dsyme/visualfsharp.git no-casts                    53d633d6db
 
 https://github.com/neoeinstein/visualfsharp.git parallel-file-parsing bc2f0098ee51dcfc9419eb8fa4e86b275cb4d7c4 536cfeb1cc3d74cd29ccd760715caac2cd2826e6 215.41 12.00                31.41                47.30                63.73                51.89               
 https://github.com/neoeinstein/visualfsharp.git parallel-file-parsing bc2f0098ee51dcfc9419eb8fa4e86b275cb4d7c4 983330c28ef5c06edbfd46b061c651f61fb851e1 203.39 12.73                30.36                46.97                63.55                53.19               
+https://github.com/neoeinstein/visualfsharp.git parallel-file-parsing bc2f0098ee51dcfc9419eb8fa4e86b275cb4d7c4 4a275618b8976c5100c2054e07c3e153a70d00bf 214.69 16.57                26.18                47.37                54.83                61.20               
