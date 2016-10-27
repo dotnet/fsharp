@@ -1,0 +1,18 @@
+
+language: csharp
+
+sudo: required
+dist: trusty
+
+before_install:
+  - sh -c 'echo "deb [arch=amd64] https://apt-mo.trafficmanager.net/repos/dotnet-release/ trusty main" > /etc/apt/sources.list.d/dotnetdev.list'
+  - apt-key adv --keyserver apt-mo.trafficmanager.net --recv-keys 417A0893
+  - apt-get update
+  - apt-get install dotnet-dev-1.0.0-preview2-003131
+
+script:
+  - mono .nuget/NuGet.exe restore packages.config -PackagesDirectory packages
+  - (cd lkg;  dotnet restore --packages ../packaages && dotnet publish project.json -o ../Tools/lkg -r ubuntu.14.04-x64)
+
+
+
