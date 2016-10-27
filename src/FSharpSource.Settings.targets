@@ -103,10 +103,10 @@
   </PropertyGroup> 
 
   <PropertyGroup>
-    <FsSrGenToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FsSrGenToolPath>
-    <FsLexToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FsLexToolPath>
-    <FsYaccToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FsYaccToolPath>
-    <FsiToolExe>fsi.exe</FsiToolExe>
+    <FsSrGenToolPath>$(FSharpSourcesRoot)\..\packages\fssrgen.3.0.0\ib\net46</FsSrGenToolPath>
+    <FsLexToolPath>$(FSharpSourcesRoot)\..\packages\FsLexYacc.6.1.0\build</FsLexToolPath>
+    <FsYaccToolPath>$(FSharpSourcesRoot)\..\packages\FsLexYacc.6.1.0\build</FsYaccToolPath>
+    <FsiToolExe>Fsi.exe</FsiToolExe>
     <FsLexToolExe>fslex.exe</FsLexToolExe>
     <FsYaccToolExe>fsyacc.exe</FsYaccToolExe>
     <RoslynVersion>2.0.0-beta6-61005-05</RoslynVersion>
