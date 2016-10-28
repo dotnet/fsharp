@@ -374,6 +374,7 @@
     <When Condition="'$(BuildWith)' == 'LKG'">
       <Choose>
         <When Condition="Exists('$(FSharpSourcesRoot)\..\Tools\lkg\fsc.exe')">
+          <!-- Use .NET Core to bootstrap -->
           <PropertyGroup >
             <!-- When using coreclr to bootstrap, we get the FSharp.Core LKG, targets LKG, the FSharp.Build LKG from the .NET Framework compiler tools LKG package -->
             <FSharpNetFxLkgPath>$(MSBuildThisFileDirectory)..\packages\FSharp.Compiler.Tools.4.0.1.10\tools</FSharpNetFxLkgPath>
@@ -386,6 +387,7 @@
           </PropertyGroup>
         </When>
         <Otherwise>
+          <!-- Use .NET Framework to bootstrap -->
           <PropertyGroup >
             <FSharpNetFxLkgPath>$(MSBuildThisFileDirectory)..\packages\FSharp.Compiler.Tools.4.0.1.10\tools</FSharpNetFxLkgPath>
             <FscToolPath>$(FSharpNetFxLkgPath)</FscToolPath>
@@ -395,16 +397,23 @@
         </Otherwise>
       </Choose>
     </When>
-    <When Condition="'$(TargetFramework)'=='portable47' OR '$(TargetFramework)'=='portable7' OR '$(TargetFramework)'=='portable78' OR '$(TargetFramework)'=='portable259' OR '$(TargetFramework)'=='coreclr'">
-      <PropertyGroup>
-        <FSharpTargetsPath>..\Proto\$(protoCLIDir)\bin\Microsoft.Portable.FSharp-proto.targets</FSharpTargetsPath>
-      </PropertyGroup>
-    </When>
-    <When Condition="'$(BuildWith)' == '' AND '$(ProjectLanguage)' == 'FSharp'">
-      <PropertyGroup>
-        <FSharpTargetsPath>..\Proto\$(protoCLIDir)\bin\Microsoft.FSharp-proto.targets</FSharpTargetsPath>
-      </PropertyGroup>
-    </When>
+	<Otherwise>
+      <!-- Compiling with Proto -->
+      <Choose>
+        <When Condition="'$(TargetFramework)'=='portable47' OR '$(TargetFramework)'=='portable7' OR '$(TargetFramework)'=='portable78' OR '$(TargetFramework)'=='portable259' OR '$(TargetFramework)'=='coreclr'">
+           <!-- Compiling portable/coreclr with Proto -->
+          <PropertyGroup>
+            <FSharpTargetsPath>..\Proto\$(protoCLIDir)\bin\Microsoft.Portable.FSharp-proto.Targets</FSharpTargetsPath>
+          </PropertyGroup>
+        </When>
+	    <Otherwise>
+           <!-- Compiling net40 with Proto -->
+          <PropertyGroup>
+            <FSharpTargetsPath>..\Proto\$(protoCLIDir)\bin\Microsoft.FSharp-proto.targets</FSharpTargetsPath>
+          </PropertyGroup>
+	    </Otherwise>
+      </Choose>
+    </Otherwise>
   </Choose>
   <Import Condition="'$(ProjectLanguage)' == 'FSharp'" Project="$(FSharpTargetsPath)"/>
 

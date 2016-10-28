@@ -444,7 +444,7 @@ if '%RestorePackages%' == 'true' (
 )
 
 if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
-    :: Restore the Tools directory
+    :: Restore the tools directory
     call %~dp0init-tools.cmd
 )
 
@@ -461,7 +461,7 @@ echo ---------------- Done with package restore, starting proto ----------------
 
 rem Decide if Proto need building
 if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
-  if NOT EXIST Tools\lkg\fsc.exe (
+  if NOT EXIST tools\lkg\fsc.exe (
     set BUILD_PROTO=1
   )
 )
@@ -480,7 +480,7 @@ if '%BUILD_PROTO%' == '1' (
     pushd .\lkg & %_dotnetexe% restore --packages %~dp0\packages &popd
     @if ERRORLEVEL 1 echo Error: dotnet restore failed  && goto :failure
 
-    pushd .\lkg & %_dotnetexe% publish project.json -o %~dp0\Tools\lkg -r win7-x64 &popd
+    pushd .\lkg & %_dotnetexe% publish project.json -o %~dp0\tools\lkg -r win7-x64 &popd
     @if ERRORLEVEL 1 echo Error: dotnet publish failed  && goto :failure
 
     echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
@@ -488,11 +488,11 @@ if '%BUILD_PROTO%' == '1' (
     @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
 
     rem copy targestfile into tools directory ... temporary fix until packaging complete.
-    echo copy src\fsharp\FSharp.Build\Microsoft.FSharp.targets Tools\Microsoft.FSharp.targets
-         copy src\fsharp\FSharp.Build\Microsoft.FSharp.targets Tools\Microsoft.FSharp.targets
+    echo copy src\fsharp\FSharp.Build\Microsoft.FSharp.targets tools\Microsoft.FSharp.targets
+         copy src\fsharp\FSharp.Build\Microsoft.FSharp.targets tools\Microsoft.FSharp.targets
 
-    echo copy src\fsharp\FSharp.Build\Microsoft.Portable.FSharp.targets Tools\Microsoft.Portable.FSharp.targets
-         copy src\fsharp\FSharp.Build\Microsoft.Portable.FSharp.targets Tools\Microsoft.Portable.FSharp.targets
+    echo copy src\fsharp\FSharp.Build\Microsoft.Portable.FSharp.targets tools\Microsoft.Portable.FSharp.targets
+         copy src\fsharp\FSharp.Build\Microsoft.Portable.FSharp.targets tools\Microsoft.Portable.FSharp.targets
   )
 
   if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '0' (
@@ -508,7 +508,7 @@ if '%BUILD_PROTO%' == '1' (
          %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
     @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
 
-    rmdir /s /q %~dp0\Tools\lkg
+    rmdir /s /q %~dp0\tools\lkg
   )
 )
 
