@@ -30,7 +30,7 @@ let checkPathForIllegalChars (path:string) =
 let checkSuffix (x:string) (y:string) = x.EndsWith(y,System.StringComparison.Ordinal) 
 
 let hasExtensionWithValidate (validate:bool) (s:string) = 
-    if validate then  (checkPathForIllegalChars s) |> ignore
+    if validate then (checkPathForIllegalChars s) |> ignore
     let sLen = s.Length
     (sLen >= 1 && s.[sLen - 1] = '.' && s <> ".." && s <> ".") 
     || Path.HasExtension(s)
@@ -56,9 +56,11 @@ let fileNameOfPath s =
     checkPathForIllegalChars s
     Path.GetFileName(s)
 
-let fileNameWithoutExtension s = 
-    checkPathForIllegalChars s
+let fileNameWithoutExtensionWithValidate (validate:bool) s = 
+    if validate then checkPathForIllegalChars s |> ignore
     Path.GetFileNameWithoutExtension(s)
+
+let fileNameWithoutExtension s = fileNameWithoutExtensionWithValidate true s
 
 let trimQuotes (s:string) =
     s.Trim( [|' '; '\"'|] )
