@@ -103,7 +103,7 @@
   </PropertyGroup> 
 
   <PropertyGroup>
-    <FsSrGenToolPath>$(FSharpSourcesRoot)\..\packages\fssrgen.3.0.0\ib\net46</FsSrGenToolPath>
+    <FsSrGenToolPath>$(FSharpSourcesRoot)\..\packages\fssrgen.3.1.0\lib\net46</FsSrGenToolPath>
     <FsLexToolPath>$(FSharpSourcesRoot)\..\packages\FsLexYacc.6.1.0\build</FsLexToolPath>
     <FsYaccToolPath>$(FSharpSourcesRoot)\..\packages\FsLexYacc.6.1.0\build</FsYaccToolPath>
     <FsiToolExe>Fsi.exe</FsiToolExe>
