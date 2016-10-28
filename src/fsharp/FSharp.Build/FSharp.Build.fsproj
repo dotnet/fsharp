@@ -39,17 +39,11 @@
     <Compile Include="Fsc.fs" />
     <Compile Include="CreateFSharpManifestResourceName.fsi" />
     <Compile Include="CreateFSharpManifestResourceName.fs" />
-    <CustomCopyLocal Include="Microsoft.FSharp.targets">
-      <TargetFilename>Microsoft.FSharp.targets</TargetFilename>
-    </CustomCopyLocal>
-    <Content Include="Microsoft.FSharp.targets">
-      <SubType>Content</SubType>
+    <Content Include="Microsoft.FSharp.Targets">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <CustomCopyLocal Include="Microsoft.Portable.FSharp.targets">
-      <TargetFilename>Microsoft.Portable.FSharp.targets</TargetFilename>
-    </CustomCopyLocal>
-    <Content Include="Microsoft.Portable.FSharp.targets">
-      <SubType>Content</SubType>
+    <Content Include="Microsoft.Portable.FSharp.Targets">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' != 'coreclr' ">

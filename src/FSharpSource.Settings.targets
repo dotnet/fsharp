@@ -23,15 +23,12 @@
     <Tailcalls>true</Tailcalls>
     <TargetFramework Condition="'$(TargetFramework)'==''">net40</TargetFramework>
 
-    <!-- Use a net40 proto compiler -->
     <protoCLIDir Condition="'$(protoCLIDir)' == ''">net40</protoCLIDir>
     <LkgVersion>14.0.23413.0</LkgVersion>
     <FsLexUnicode>true</FsLexUnicode>
     <ProjectLanguage Condition="'$(ProjectLanguage)' == ''">FSharp</ProjectLanguage>
     <DebugSymbols>true</DebugSymbols>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <ToolsDir>$(MSBuildThisFileDirectory)..\Tools\</ToolsDir>
-    <BuildToolsTaskDir>$(ToolsDir)net45\</BuildToolsTaskDir>
     <WarningsAsErrors />
 
     <FX_NO_LOADER Condition=" '$(FX_NO_LOADER)'==''">false</FX_NO_LOADER>
@@ -53,7 +50,7 @@
     <ErrorReport Condition=" '$(ErrorReport)' == '' ">prompt</ErrorReport>
     <OtherFlags>$(OtherFlags) --no-jit-optimize</OtherFlags>
     <EmbedAllSource Condition=" '$(DebugType)' == 'portable' or '$(DebugType)' == 'embedded' ">true</EmbedAllSource>
-    <SourceLink     Condition=" '$(OS)' != 'Unix' AND ($(DebugType)' == 'portable' or '$(DebugType)' == 'embedded') ">$(IntermediateOutputPath)source_link.json</SourceLink>
+    <SourceLink     Condition=" '$(OS)' != 'Unix' AND ($(DebugType)' == 'portable' or '$(DebugType)' == 'embedded')) ">$(IntermediateOutputPath)source_link.json</SourceLink>
     <DefineConstants Condition=" '$(ProjectLanguage)' != 'VisualBasic' ">DEBUG;TRACE;CODE_ANALYSIS;$(DefineConstants)</DefineConstants>
     <DefineConstants Condition=" '$(ProjectLanguage)' == 'VisualBasic' ">DEBUG=True,TRACE=True,CODE_ANALYSIS=True,$(DefineConstants)</DefineConstants>
     <SIGN_WITH_MSFT_KEY Condition=" '$(SIGN_WITH_MSFT_KEY)' == '' ">false</SIGN_WITH_MSFT_KEY>

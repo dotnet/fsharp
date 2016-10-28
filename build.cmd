@@ -488,11 +488,11 @@ if '%BUILD_PROTO%' == '1' (
     @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
 
     rem copy targestfile into tools directory ... temporary fix until packaging complete.
-    echo copy src\fsharp\FSharp.Build\Microsoft.FSharp.targets tools\Microsoft.FSharp.targets
-         copy src\fsharp\FSharp.Build\Microsoft.FSharp.targets tools\Microsoft.FSharp.targets
+    echo copy src\fsharp\FSharp.Build\Microsoft.FSharp.targets Tools\Microsoft.FSharp.targets
+         copy src\fsharp\FSharp.Build\Microsoft.FSharp.targets Tools\Microsoft.FSharp.targets
 
-    echo copy src\fsharp\FSharp.Build\Microsoft.Portable.FSharp.targets tools\Microsoft.Portable.FSharp.targets
-         copy src\fsharp\FSharp.Build\Microsoft.Portable.FSharp.targets tools\Microsoft.Portable.FSharp.targets
+    echo copy src\fsharp\FSharp.Build\Microsoft.Portable.FSharp.targets Tools\Microsoft.Portable.FSharp.targets
+         copy src\fsharp\FSharp.Build\Microsoft.Portable.FSharp.targets Tools\Microsoft.Portable.FSharp.targets
   )
 
   if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '0' (

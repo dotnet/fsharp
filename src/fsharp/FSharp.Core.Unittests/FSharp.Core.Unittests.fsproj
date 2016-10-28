@@ -139,9 +139,9 @@
     <Compile Include="StructTuples.fs" Condition="'$(TargetFramework)' != 'portable47'" />
     <Compile Include="SurfaceArea.$(TargetFramework).fs" />
     <Compile Include="Program.fs" Condition="'$(TargetFramework)' == 'coreclr'" />
-    <CustomCopyLocal Include="FSharp.Core.Unittests.dll.config">
-      <TargetFilename>FSharp.Core.Unittests.dll.config</TargetFilename>
-    </CustomCopyLocal>
+    <Content Include="FSharp.Core.Unittests.dll.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
 </Project>
