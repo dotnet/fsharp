@@ -497,6 +497,9 @@ if '%BUILD_PROTO%' == '1' (
 
   if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '0' (
 
+    echo %_ngenexe% install packages\FSharp.Compiler.Tools.4.0.1.10\tools\fsc.exe /nologo 
+         %_ngenexe% install packages\FSharp.Compiler.Tools.4.0.1.10\tools\fsc.exe /nologo 
+
     echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
          %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
     @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
