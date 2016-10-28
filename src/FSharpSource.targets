@@ -549,7 +549,7 @@
     <Exec Command="$(MSBuildThisFileDirectory)..\.nuget\nuget.exe restore -PackagesDirectory $(MSBuildThisFileDirectory)..\packages -Config $(MSBuildThisFileDirectory)..\.nuget\NuGet.Config project.json"/>
   </Target>
 
-  <Target Name="GenerateSourceLink" BeforeTargets="CoreCompile">
+  <Target Name="GenerateSourceLink" BeforeTargets="CoreCompile" Condition="'$(OS)' != 'Unix'">
     <PropertyGroup>
       <SrcRootDirectory>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory.TrimEnd("\"))))</SrcRootDirectory>
     </PropertyGroup>

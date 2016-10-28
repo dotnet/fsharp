@@ -53,7 +53,7 @@
     <ErrorReport Condition=" '$(ErrorReport)' == '' ">prompt</ErrorReport>
     <OtherFlags>$(OtherFlags) --no-jit-optimize</OtherFlags>
     <EmbedAllSource Condition=" '$(DebugType)' == 'portable' or '$(DebugType)' == 'embedded' ">true</EmbedAllSource>
-    <SourceLink     Condition=" '$(DebugType)' == 'portable' or '$(DebugType)' == 'embedded' ">$(IntermediateOutputPath)source_link.json</SourceLink>
+    <SourceLink     Condition=" '$(OS)' != 'Unix' AND ($(DebugType)' == 'portable' or '$(DebugType)' == 'embedded') ">$(IntermediateOutputPath)source_link.json</SourceLink>
     <DefineConstants Condition=" '$(ProjectLanguage)' != 'VisualBasic' ">DEBUG;TRACE;CODE_ANALYSIS;$(DefineConstants)</DefineConstants>
     <DefineConstants Condition=" '$(ProjectLanguage)' == 'VisualBasic' ">DEBUG=True,TRACE=True,CODE_ANALYSIS=True,$(DefineConstants)</DefineConstants>
     <SIGN_WITH_MSFT_KEY Condition=" '$(SIGN_WITH_MSFT_KEY)' == '' ">false</SIGN_WITH_MSFT_KEY>
