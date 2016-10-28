@@ -5,7 +5,7 @@ sudo: required
 dist: trusty
 
 env:
-  - BUILD_CORECLR=1 TEST_CORECLR_COREUNIT_SUITE=1
+  - BUILD_CORECLR=0 TEST_CORECLR_COREUNIT_SUITE=0
 
 before_install:
   - sudo sh -c 'echo "deb [arch=amd64] https://apt-mo.trafficmanager.net/repos/dotnet-release/ trusty main" > /etc/apt/sources.list.d/dotnetdev.list'
@@ -15,14 +15,15 @@ before_install:
 
 script:
   - mono .nuget/NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .nuget/NuGet.Config
-  - ./init-tools.sh
-  - (cd lkg;  dotnet restore --packages ../packages && dotnet publish project.json -o ../tools/lkg -r ubuntu.14.04-x64)
   - xbuild src/fsharp-proto-build.proj
-  - cp src/fsharp/FSharp.Build/Microsoft.FSharp.targets tools
-  - cp src/fsharp/FSharp.Build/Microsoft.Portable.FSharp.targets tools
   - xbuild build-everything.proj /p:Configuration=debug /p:BUILD_PUBLICSIGN=0
 
+#  - BUILD_CORECLR=1 TEST_CORECLR_COREUNIT_SUITE=1
+#  - ./init-tools.sh
+#  - (cd lkg;  dotnet restore --packages ../packages && dotnet publish project.json -o ../tools/lkg -r ubuntu.14.04-x64)
 #  - (cd tests/fsharp; mono ../../.nuget/NuGet.exe restore  project.json -PackagesDirectory ../../packages -ConfigFile ../../.nuget/NuGet.Config)
+#  - cp src/fsharp/FSharp.Build/Microsoft.FSharp.targets tools
+#  - cp src/fsharp/FSharp.Build/Microsoft.Portable.FSharp.targets tools
 
 
   

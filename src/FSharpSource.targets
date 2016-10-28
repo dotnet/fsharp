@@ -373,15 +373,15 @@
   <Choose>
     <When Condition="'$(BuildWith)' == 'LKG'">
       <Choose>
-        <When Condition="Exists('$(FSharpSourcesRoot)\..\Tools\lkg\fsc.exe')">
+        <When Condition="Exists('$(FSharpSourcesRoot)\..\tools\lkg\fsc.exe')">
           <!-- Use .NET Core to bootstrap -->
           <PropertyGroup >
             <!-- When using coreclr to bootstrap, we get the FSharp.Core LKG, targets LKG, the FSharp.Build LKG from the .NET Framework compiler tools LKG package -->
             <FSharpNetFxLkgPath>$(MSBuildThisFileDirectory)..\packages\FSharp.Compiler.Tools.4.0.1.10\tools</FSharpNetFxLkgPath>
-            <FSharpNetCoreLkgPath>$(MSBuildThisFileDirectory)..\Tools\lkg</FSharpNetCoreLkgPath>
-            <FSharpTargetsPath>$(FSharpNetFxLkgPath)\Microsoft.FSharp.Targets</FSharpTargetsPath>
+            <FSharpNetCoreLkgPath>$(MSBuildThisFileDirectory)..\tools\lkg</FSharpNetCoreLkgPath>
+            <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools.4.0.1.10\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
             <!-- When using coreclr to bootstrap, the compiler binary comes from the coreclr LKG -->
-            <FscToolPath>$(MSBuildThisFileDirectory)..\Tools\dotnetcli</FscToolPath>
+            <FscToolPath>$(MSBuildThisFileDirectory)..\tools\dotnetcli</FscToolPath>
             <FscToolExe>dotnet.exe</FscToolExe>
             <DotnetFscCompilerPath>$(FSharpNetCoreLkgPath)\fsc.exe</DotnetFscCompilerPath>
           </PropertyGroup>
@@ -391,7 +391,7 @@
           <PropertyGroup >
             <FSharpNetFxLkgPath>$(MSBuildThisFileDirectory)..\packages\FSharp.Compiler.Tools.4.0.1.10\tools</FSharpNetFxLkgPath>
             <FscToolPath>$(FSharpNetFxLkgPath)</FscToolPath>
-            <FSharpTargetsPath>$(FSharpNetFxLkgPath)\Microsoft.FSharp.Targets</FSharpTargetsPath>
+            <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools.4.0.1.10\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
             <DotnetFscCompilerPath></DotnetFscCompilerPath>
           </PropertyGroup>
         </Otherwise>
@@ -436,7 +436,7 @@
          so we ignore the pre-calculation in the lock file and calculate asset applicability in the build task -->
     <NuGetIngoreLockFile>true</NuGetIngoreLockFile>
   </PropertyGroup>
-  <Import  Condition="'$(TargetFramework)'=='coreclr'" Project="$(MSBuildThisFileDirectory)..\Tools\Build.Common.Targets" />
+  <Import  Condition="'$(TargetFramework)'=='coreclr'" Project="$(MSBuildThisFileDirectory)..\tools\Build.Common.Targets" />
 
   <PropertyGroup>
     <RootNamespace></RootNamespace>
