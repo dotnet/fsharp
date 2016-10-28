@@ -477,5 +477,5 @@
     <Reference Include="System.ValueTuple"><HintPath>..\..\..\packages\System.ValueTuple.4.0.0-rc3-24212-01\lib\netstandard1.1\System.ValueTuple.dll</HintPath></Reference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
-  <Import Project="$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin\FSharp.PowerPack.targets" />
+  <Import Project="$(FSharpSourcesRoot)\..\packages\FsLexYacc.6.1.0\build\FsLexYacc.targets" />
 </Project>
