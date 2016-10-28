@@ -13,9 +13,8 @@ before_install:
 script:
   - mono .nuget/NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .nuget/NuGet.Config
   - (cd lkg;  dotnet restore --packages ../packages && dotnet publish project.json -o ../tools/lkg -r ubuntu.14.04-x64)
-  - (cd src/fsharp/FSharp.Build-proto; mono ../../../packages/fssrgen.3.1.0/lib/net46/fssrgen.exe ../../../src/fsharp/FSharp.Build/FSBuild.txt  obj/Proto/net40/FSBuild.fs  obj/Proto/net40/FSBuild.resx)
   - (cd src/fsharp/FSharp.Build-proto; mkdir -p obj/Proto/net40)
-  - (cd src/fsharp/FSharp.Build-proto; mono ../../../packages/fssrgen.3.1.0/lib/net46/fssrgen.exe ../../../src/fsharp/FSharp.Build/FSBuild.txt  obj/Proto/net40/FSBuild.fs  obj/Proto/net40/FSBuild.resx)
+  - (cd src/fsharp/FSharp.Compiler-proto; mkdir -p obj/Proto/net40)
   - xbuild src/fsharp-proto-build.proj
   - cp src/fsharp/FSharp.Build/Microsoft.FSharp.targets tools
   - cp src/fsharp/FSharp.Build/Microsoft.Portable.FSharp.targets tools
