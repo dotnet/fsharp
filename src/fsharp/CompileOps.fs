@@ -1849,7 +1849,7 @@ type AssemblyReference =
     member x.Text = (let (AssemblyReference(_,text,_)) = x in text)
     member x.ProjectReference = (let (AssemblyReference(_,_,contents)) = x in contents)
     member x.SimpleAssemblyNameIs(name) = 
-        (String.Compare(fileNameWithoutExtension x.Text, name, StringComparison.OrdinalIgnoreCase) = 0) ||
+        (String.Compare(fileNameWithoutExtensionWithValidate false x.Text, name, StringComparison.OrdinalIgnoreCase) = 0) ||
         (let text = x.Text.ToLowerInvariant()
          not (text.Contains "/") && not (text.Contains "\\") && not (text.Contains ".dll") && not (text.Contains ".exe") &&
            try let aname = System.Reflection.AssemblyName(x.Text) in aname.Name = name 
