@@ -111,7 +111,7 @@
       </Component>
 
       <Component Id="Compiler_Redist_RegistryKeys_CompilerLocation" Guid="$(fsharp.guid(Compiler_Redist_RegistryKeys_CompilerLocation, $(var.LocaleCode)))">
-        <Environment Id="Compiler_Redist_FSHARPINSTALLDIR_Environment_Variable" Name="FSHARPINSTALLDIR" Value="[MicrosoftSDKs_FS_4.1_Framework_v4.0]" />
+        <Environment Id="Compiler_Redist_FSHARPINSTALLDIR_Environment_Variable" Name="FSHARPINSTALLDIR" Value="[MicrosoftSDKs_FS_4.1_Framework_v4.0]" Action="create" System="yes" />
         <RegistryKey Root="HKLM" Key="Software\Microsoft\FSharp\4.1\Runtime\v4.0" ForceCreateOnInstall="yes" ForceDeleteOnUninstall="yes">
           <RegistryValue Value="[MicrosoftSDKs_FS_4.1_Framework_v4.0]" Type="string" />
         </RegistryKey>
