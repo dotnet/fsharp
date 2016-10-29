@@ -99,22 +99,9 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
         | _ -> []
 
     let GetPathToDotNetFrameworkReferenceAssembliesFor40Plus(version) = 
-        // starting with .Net 4.0, the runtime dirs (WindowsFramework) are never used by MSBuild RAR
-        let v =
-            match version with
-            | Net40 -> Some TargetDotNetFrameworkVersion.Version40
-            | Net45 -> Some TargetDotNetFrameworkVersion.Version45
-            | Net451 -> Some TargetDotNetFrameworkVersion.Version451
-            //| Net452 -> Some TargetDotNetFrameworkVersion.Version452 // not available in Dev15 MSBuild version
-            | Net46 -> Some TargetDotNetFrameworkVersion.Version46
-            | Net461 -> Some TargetDotNetFrameworkVersion.Version461
-            | _ -> assert false; None // unknown version - some parts in the code are not synced
-        match v with
-        | Some v -> 
-            match ToolLocationHelper.GetPathToDotNetFrameworkReferenceAssemblies v with
-            | null -> []
-            | x -> [x]
-        | None -> []        
+        match ToolLocationHelper.GetPathToStandardLibraries(".NETFramework",version,"") with
+        | null | "" -> []
+        | x -> [x]
 
     /// Use MSBuild to determine the version of the highest installed framework.
     let HighestInstalledNetFrameworkVersion() =
