@@ -535,6 +535,7 @@ namespace Microsoft.FSharp.Collections
                 // The f# compiler outputs unnecessary unbox.any calls in upcasts. If this functionality
                 // is fixed with the compiler then these functions can be removed.
                 let inline upcastSeq (t:#ISeq<'T>) : ISeq<'T> = (# "" t : ISeq<'T> #)
+                let inline upcastFactory (t:#ISeqFactory<'T,'U>) : ISeqFactory<'T,'U> = (# "" t : ISeqFactory<'T,'U> #)
                 let inline upcastEnumerable (t:#IEnumerable<'T>) : IEnumerable<'T> = (# "" t : IEnumerable<'T> #)
                 let inline upcastEnumerator (t:#IEnumerator<'T>) : IEnumerator<'T> = (# "" t : IEnumerator<'T> #)
                 let inline upcastEnumeratorNonGeneric (t:#IEnumerator) : IEnumerator = (# "" t : IEnumerator #)
@@ -555,7 +556,7 @@ namespace Microsoft.FSharp.Collections
                         first.Create outOfBand pipeIdx (second.Create outOfBand (makePipeIdx secondPipeIdx) next)
 
                 static member Combine (first:ISeqFactory<'T,'U>) (second:ISeqFactory<'U,'V>) : ISeqFactory<'T,'V> =
-                    upcast ComposedFactory(first, second, first.PipeIdx+1)
+                    ComposedFactory(first, second, first.PipeIdx+1) |> Helpers.upcastFactory
 
             and ChooseFactory<'T,'U> (filter:'T->option<'U>) =
                 inherit SeqComponentFactory<'T,'U> ()
@@ -590,7 +591,7 @@ namespace Microsoft.FSharp.Collections
                 static let singleton = IdentityFactory<'T>()
                 interface ISeqFactory<'T,'T> with
                     member __.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = next
-                static member IdentityFactory = singleton
+                static member Instance = singleton
 
             and MapFactory<'T,'U> (map:'T->'U) =
                 inherit SeqComponentFactory<'T,'U> ()
@@ -1202,7 +1203,7 @@ namespace Microsoft.FSharp.Collections
                             Helpers.upcastSeq (Enumerable<'T,'V>(this, next))
 
                         member this.ForEach (f:(unit->unit)->#Consumer<'T,'T>) =
-                            ForEach.execute f IdentityFactory.IdentityFactory (ForEach.enumerable this)
+                            ForEach.execute f IdentityFactory.Instance (ForEach.enumerable this)
 
                 and ConcatEnumerable<'T, 'Collection when 'Collection :> seq<'T>> (sources:seq<'Collection>) =
                     inherit EnumerableBase<'T>()
@@ -1216,10 +1217,32 @@ namespace Microsoft.FSharp.Collections
                             Helpers.upcastSeq (Enumerable<'T,'V>(this, next))
 
                         member this.ForEach (f:(unit->unit)->#Consumer<'T,'T>) =
-                            ForEach.execute f IdentityFactory.IdentityFactory (ForEach.enumerable this)
+                            ForEach.execute f IdentityFactory.Instance (ForEach.enumerable this)
 
                 let create enumerable current =
                     Helpers.upcastSeq (Enumerable(enumerable, current))
+
+            module EmptyEnumerable =
+                type Enumerable<'T> () =
+                    inherit Enumerable.EnumerableBase<'T>()
+
+                    static let singleton = Enumerable<'T>() :> ISeq<'T>
+                    static member Instance = singleton
+
+                    interface IEnumerable<'T> with
+                        member this.GetEnumerator () : IEnumerator<'T> = IEnumerator.Empty<'T>()
+
+                    override this.Append source =
+                        Helpers.upcastEnumerable (Enumerable.Enumerable<'T,'T> (source, IdentityFactory.Instance))
+
+                    interface ISeq<'T> with
+                        member this.Compose (next:ISeqFactory<'T,'U>) : ISeq<'U> =
+                            Helpers.upcastSeq (Enumerable.Enumerable<'T,'V>(this, next))
+
+                        member this.ForEach (f:(unit->unit)->#Consumer<'T,'T>) =
+                            ForEach.execute f IdentityFactory.Instance (ForEach.enumerable this)
+
+
 
             module Array =
                 type Enumerator<'T,'U>(delayedArray:unit->array<'T>, seqComponent:Consumer<'T,'U>, result:Result<'U>) =
@@ -1275,10 +1298,10 @@ namespace Microsoft.FSharp.Collections
                     createDelayed (fun () -> array) current
 
                 let createDelayedId (delayedArray:unit -> array<'T>) =
-                    createDelayed delayedArray IdentityFactory.IdentityFactory
+                    createDelayed delayedArray IdentityFactory.Instance
 
                 let createId (array:array<'T>) =
-                    create array IdentityFactory.IdentityFactory
+                    create array IdentityFactory.Instance
 
             module List =
                 type Enumerator<'T,'U>(alist:list<'T>, seqComponent:Consumer<'T,'U>, result:Result<'U>) =
@@ -1498,7 +1521,167 @@ namespace Microsoft.FSharp.Collections
                             Helpers.upcastSeq (Enumerable<'T,'V>(count, f, next))
 
                         member this.ForEach (f:(unit->unit)->#Consumer<'T,'T>) =
-                            ForEach.execute f IdentityFactory.IdentityFactory (ForEach.enumerable (Helpers.upcastEnumerable this))
+                            ForEach.execute f IdentityFactory.Instance (ForEach.enumerable (Helpers.upcastEnumerable this))
+
+            open RuntimeHelpers
+
+            [<CompiledName("ToComposer")>]
+            let toComposer (source:seq<'T>) : ISeq<'T> = 
+                checkNonNull "source" source
+                match source with
+                | :? ISeq<'T> as s -> s
+                | :? array<'T> as a -> Helpers.upcastSeq (Array.Enumerable((fun () -> a), IdentityFactory.Instance))
+                | :? list<'T> as a -> Helpers.upcastSeq (List.Enumerable(a, IdentityFactory.Instance))
+                | _ -> Helpers.upcastSeq (Enumerable.Enumerable<'T,'T>(source, IdentityFactory.Instance))
+
+            let inline foreach f (source:ISeq<_>) =
+                source.ForEach f
+
+            let inline compose factory (source:ISeq<'T>) =
+                source.Compose factory
+
+            [<CompiledName("Empty")>]
+            let empty<'T> = EmptyEnumerable.Enumerable<'T>.Instance
+
+            [<CompiledName("Unfold")>]
+            let unfold (generator:'State->option<'T * 'State>) (state:'State) : ISeq<'T> =
+                Helpers.upcastSeq (new Unfold.Enumerable<'T,'T,'State>(generator, state, IdentityFactory.Instance))
+
+            [<CompiledName("InitializeInfinite")>]
+            let initInfinite<'T> (f:int->'T) : ISeq<'T> =
+                Helpers.upcastSeq (new Init.EnumerableDecider<'T>(Nullable (), f))
+
+            [<CompiledName("Initialize")>]
+            let init<'T> (count:int) (f:int->'T) : ISeq<'T> =
+                if count < 0 then invalidArgInputMustBeNonNegative "count" count
+                elif count = 0 then empty else
+                Helpers.upcastSeq (new Init.EnumerableDecider<'T>(Nullable count, f))
+
+            [<CompiledName("Iterate")>]
+            let iter f (source:ISeq<'T>) =
+                source
+                |> foreach (fun _ ->
+                    { new Consumer<'T,'T> () with
+                        override this.ProcessNext value =
+                            f value
+                            Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
+                |> ignore
+
+            [<CompiledName("TryItem")>]
+            let tryItem i (source:ISeq<'T>) =
+                if i < 0 then None else
+                source 
+                |> foreach (fun halt ->
+                    { new Folder<'T, Values<int, Option<'T>>> (Values<_,_> (0, None)) with
+                        override this.ProcessNext value =
+                            if this.Value._1 = i then
+                                this.Value._2 <- Some value
+                                halt ()
+                            else
+                                this.Value._1 <- this.Value._1 + 1
+                            Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
+                |> fun item -> item.Value._2
+
+            [<CompiledName("IterateIndexed")>]
+            let iteri f (source:ISeq<'T>) =
+                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt f
+
+                source
+                |> foreach (fun _ ->
+                    { new Folder<'T, int> (0) with
+                        override this.ProcessNext value =
+                            f.Invoke(this.Value, value)
+                            this.Value <- this.Value + 1
+                            Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
+                |> ignore
+
+            [<CompiledName("Exists")>]
+            let exists f (source:ISeq<'T>) =
+                source
+                |> foreach (fun halt ->
+                    { new Folder<'T, bool> (false) with
+                        override this.ProcessNext value =
+                            if f value then
+                                this.Value <- true
+                                halt ()
+                            Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
+                |> fun exists -> exists.Value
+
+            [<CompiledName("Contains")>]
+            let inline contains element (source:ISeq<'T>) =
+                source
+                |> foreach (fun halt ->
+                    { new Folder<'T, bool> (false) with
+                        override this.ProcessNext value =
+                            if element = value then
+                                this.Value <- true
+                                halt ()
+                            Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
+                |> fun contains -> contains.Value
+
+            [<CompiledName("ForAll")>]
+            let forall f (source:ISeq<'T>) =
+                source
+                |> foreach (fun halt ->
+                    { new Folder<'T, bool> (true) with
+                        override this.ProcessNext value =
+                            if not (f value) then
+                                this.Value <- false
+                                halt ()
+                            Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
+                |> fun forall -> forall.Value
+
+            [<CompiledName("Filter")>]
+            let filter<'T> (f:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
+                source
+                |> compose (FilterFactory f)
+
+            [<CompiledName("Map")>]
+            let map<'T,'U> (f:'T->'U) (source:ISeq<'T>) : ISeq<'U> =
+                source
+                |> compose (MapFactory f)
+
+            [<CompiledName("MapIndexed")>]
+            let mapi f source =
+                source
+                |> compose (MapiFactory f)
+
+            [<CompiledName("Choose")>]
+            let choose f source =
+                source
+                |> compose (ChooseFactory f)
+
+            [<CompiledName("Indexed")>]
+            let indexed source =
+                source
+                |> compose (MapiFactory (fun i x -> i,x))
+
+            [<CompiledName("TryPick")>]
+            let tryPick f (source:ISeq<'T>)  =
+                source
+                |> foreach (fun halt ->
+                    { new Folder<'T, Option<'U>> (None) with
+                        override this.ProcessNext value =
+                            match f value with
+                            | (Some _) as some ->
+                                this.Value <- some
+                                halt ()
+                            | None -> ()
+                            Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
+                |> fun pick -> pick.Value
+
+            [<CompiledName("TryFind")>]
+            let tryFind f (source:ISeq<'T>)  =
+                source 
+                |> foreach (fun halt ->
+                    { new Folder<'T, Option<'T>> (None) with
+                        override this.ProcessNext value =
+                            if f value then
+                                this.Value <- Some value
+                                halt ()
+                            Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
+                |> fun find -> find.Value
+
 
 #if FX_NO_ICLONEABLE
         open Microsoft.FSharp.Core.ICloneableExtensions
@@ -1512,47 +1695,35 @@ namespace Microsoft.FSharp.Collections
         
         [<CompiledName("ToComposer")>]
         let toComposer (source:seq<'T>): Composer.Internal.ISeq<'T> = 
-            checkNonNull "source" source
-            match source with
-            | :? Composer.Enumerable.EnumerableBase<'T> as s -> upcast s
-            | :? array<'T> as a -> upcast Composer.Array.Enumerable((fun () -> a), Composer.IdentityFactory.IdentityFactory)
-            | :? list<'T> as a -> upcast Composer.List.Enumerable(a, Composer.IdentityFactory.IdentityFactory)
-            | _ -> upcast Composer.Enumerable.Enumerable<'T,'T>(source, Composer.IdentityFactory.IdentityFactory)
+            Composer.toComposer source
         
         let inline foreach f (source:seq<_>) =
-            source
-            |> toComposer
-            |> fun composer -> composer.ForEach f
+            Composer.foreach f (toComposer source)
 
         [<CompiledName("Delay")>]
         let delay f = mkDelayedSeq f
 
         [<CompiledName("Unfold")>]
         let unfold (generator:'State->option<'T * 'State>) (state:'State) : seq<'T> =
-            Composer.Helpers.upcastEnumerable (new Composer.Unfold.Enumerable<'T,'T,'State>(generator, state, Composer.IdentityFactory.IdentityFactory))
+            Composer.unfold generator state
+            |> Composer.Helpers.upcastEnumerable
 
         [<CompiledName("Empty")>]
         let empty<'T> = (EmptyEnumerable :> seq<'T>)
 
         [<CompiledName("InitializeInfinite")>]
         let initInfinite<'T> (f:int->'T) : IEnumerable<'T> =
-            Composer.Helpers.upcastEnumerable (new Composer.Init.EnumerableDecider<'T>(Nullable (), f))
+            Composer.initInfinite f
+            |> Composer.Helpers.upcastEnumerable
 
         [<CompiledName("Initialize")>]
         let init<'T> (count:int) (f:int->'T) : IEnumerable<'T> =
-            if count < 0 then invalidArgInputMustBeNonNegative "count" count
-            elif count = 0 then empty else
-            Composer.Helpers.upcastEnumerable (new Composer.Init.EnumerableDecider<'T>(Nullable count, f))
+            Composer.init count f
+            |> Composer.Helpers.upcastEnumerable
 
         [<CompiledName("Iterate")>]
         let iter f (source : seq<'T>) =
-            source
-            |> foreach (fun _ ->
-                    { new Composer.Internal.Consumer<'T,'T> () with
-                        override this.ProcessNext value =
-                            f value
-                            Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> ignore
+            Composer.iter f (toComposer source)
 
         [<CompiledName("Item")>]
         let item i (source : seq<'T>) =
@@ -1562,73 +1733,27 @@ namespace Microsoft.FSharp.Collections
             IEnumerator.nth i e
 
         [<CompiledName("TryItem")>]
-        let tryItem i (source : seq<'T>) =
-            if i < 0 then None else
-            source 
-            |> foreach (fun halt ->
-                { new Composer.Internal.Folder<'T, Composer.Internal.Values<int, Option<'T>>> (Composer.Internal.Values<_, _> (0, None)) with
-                    override this.ProcessNext value =
-                        if this.Value._1 = i then
-                            this.Value._2 <- Some value
-                            halt ()
-                        else
-                            this.Value._1 <- this.Value._1 + 1
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun item -> item.Value._2
+        let tryItem i (source:seq<'T>) =
+            Composer.tryItem i (toComposer source)
 
         [<CompiledName("Get")>]
         let nth i (source : seq<'T>) = item i source
 
         [<CompiledName("IterateIndexed")>]
-        let iteri f (source : seq<'T>) =
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-            source
-            |> foreach (fun _ ->
-                { new Composer.Internal.Folder<'T, int> (0) with
-                    override this.ProcessNext value =
-                        f.Invoke(this.Value, value)
-                        this.Value <- this.Value + 1
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> ignore
+        let iteri f (source:seq<'T>) =
+            Composer.iteri f (toComposer source)
 
         [<CompiledName("Exists")>]
-        let exists f (source : seq<'T>) =
-            source
-            |> foreach (fun halt ->
-                { new Composer.Internal.Folder<'T, bool> (false) with
-                    override this.ProcessNext value =
-                        if f value then
-                            this.Value <- true
-                            halt ()
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) 
-                    })
-            |> fun exists -> exists.Value
+        let exists f (source:seq<'T>) =
+            Composer.exists f (toComposer source)
 
         [<CompiledName("Contains")>]
-        let inline contains element (source : seq<'T>) =
-            source
-            |> foreach (fun halt ->
-                { new Composer.Internal.Folder<'T, bool> (false) with
-                    override this.ProcessNext value =
-                        if element = value then
-                            this.Value <- true
-                            halt ()
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
-                    })
-            |> fun contains -> contains.Value
+        let inline contains element (source:seq<'T>) =
+            Composer.contains element (toComposer source)
 
         [<CompiledName("ForAll")>]
-        let forall f (source : seq<'T>) =
-            source
-            |> foreach (fun halt ->
-                { new Composer.Internal.Folder<'T, bool> (true) with
-                    override this.ProcessNext value =
-                        if not (f value) then
-                            this.Value <- false
-                            halt ()
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
-                    })
-            |> fun forall -> forall.Value
+        let forall f (source:seq<'T>) =
+            Composer.forall f (toComposer source)
 
         [<CompiledName("Iterate2")>]
         let iter2 f (source1 : seq<_>) (source2 : seq<_>)    =
@@ -1669,18 +1794,21 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Filter")>]
         let filter<'T> (f:'T->bool) (source:seq<'T>) : seq<'T> =
-            source |> seqFactory (Composer.FilterFactory f)
+            Composer.filter f (toComposer source)
+            |> Composer.Helpers.upcastEnumerable
 
         [<CompiledName("Where")>]
         let where f source = filter f source
 
         [<CompiledName("Map")>]
         let map<'T,'U> (f:'T->'U) (source:seq<'T>) : seq<'U> =
-            source |> seqFactory (Composer.MapFactory f)
+            Composer.map f (toComposer source)
+            |> Composer.Helpers.upcastEnumerable
 
         [<CompiledName("MapIndexed")>]
         let mapi f source      =
-            source |> seqFactory (Composer.MapiFactory f)
+            Composer.mapi f (toComposer source)
+            |> Composer.Helpers.upcastEnumerable
 
         [<CompiledName("MapIndexed2")>]
         let mapi2 f source1 source2 =
@@ -1701,12 +1829,14 @@ namespace Microsoft.FSharp.Collections
             source1 |> seqFactory (Composer.Map3Factory (f, source2, source3))
 
         [<CompiledName("Choose")>]
-        let choose f source      =
-            source |> seqFactory (Composer.ChooseFactory f)
+        let choose f source =
+            Composer.choose f (toComposer source)
+            |> Composer.Helpers.upcastEnumerable
 
         [<CompiledName("Indexed")>]
         let indexed source =
-            source |> seqFactory (Composer.MapiFactory (fun i x -> i,x) )
+            Composer.indexed (toComposer source)
+            |> Composer.Helpers.upcastEnumerable
 
         [<CompiledName("Zip")>]
         let zip source1 source2  =
@@ -1723,17 +1853,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("TryPick")>]
         let tryPick f (source : seq<'T>)  =
-            source
-            |> foreach (fun halt ->
-                { new Composer.Internal.Folder<'T, Option<'U>> (None) with
-                    override this.ProcessNext value =
-                        match f value with
-                        | (Some _) as some ->
-                            this.Value <- some
-                            halt ()
-                        | None -> ()
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun pick -> pick.Value
+            Composer.tryPick f (toComposer source)
 
         [<CompiledName("Pick")>]
         let pick f source  =
@@ -1743,15 +1863,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("TryFind")>]
         let tryFind f (source : seq<'T>)  =
-            source 
-            |> foreach (fun halt ->
-                { new Composer.Internal.Folder<'T, Option<'T>> (None) with
-                    override this.ProcessNext value =
-                        if f value then
-                            this.Value <- Some value
-                            halt ()
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun find -> find.Value
+            Composer.tryFind f (toComposer source)
 
         [<CompiledName("Find")>]
         let find f source =
