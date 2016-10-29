@@ -1246,8 +1246,12 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) permitWeakResolution ndeep
                           let objtys = minfo.GetObjArgTypes(amap, m, minst)
                           Some(CalledMeth<Expr>(csenv.InfoReader,None,false,FreshenMethInfo,m,AccessibleFromEverywhere,minfo,minst,minst,None,objtys,[(callerArgs,[])],false,false,None)))
 
-              let methOverloadResult,errors = 
-                  CollectThenUndo (fun trace -> ResolveOverloading csenv (WithTrace(trace)) nm ndeep (Some traitInfo) (0,0) AccessibleFromEverywhere calledMethGroup false (Some rty))  
+              let methOverloadTrace = Trace.New()
+              let methOverloadResult,errors = ResolveOverloading csenv (WithTrace methOverloadTrace) nm ndeep (Some traitInfo) (0,0) AccessibleFromEverywhere calledMethGroup false (Some rty)  
+              match methOverloadResult, trace with
+              | None, _           -> methOverloadTrace.Undo()                           // Rollback inference equations
+              | _   , WithTrace t -> t.actions <- methOverloadTrace.actions @ t.actions // Commit inference equations
+              | _                 -> ()                                                 // No trace where to commit
 
               match recdPropSearch, methOverloadResult with 
               | Some (rfinfo, isSetProp), None -> 
@@ -1257,9 +1261,8 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) permitWeakResolution ndeep
                   ResultD (TTraitSolvedRecdProp(rfinfo, isSetProp)))
               | None, Some (calledMeth:CalledMeth<_>) -> 
                   // OK, the constraint is solved. 
-                  // Re-run without undo to commit the inference equations. Throw errors away 
+                  
                   let minfo = calledMeth.Method
-                  let _,errors = ResolveOverloading csenv trace nm ndeep (Some traitInfo) (0,0) AccessibleFromEverywhere calledMethGroup false (Some rty)
 
                   errors ++ (fun () -> 
                       let isInstance = minfo.IsInstance
