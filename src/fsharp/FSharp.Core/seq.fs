@@ -462,7 +462,7 @@ namespace Microsoft.FSharp.Collections
                     abstract OnComplete : PipeIdx -> unit
                     abstract OnDispose : unit -> unit
 
-                type IPipeline =
+                type IOutOfBand =
                     abstract StopFurtherProcessing : PipeIdx -> unit
 
                 [<AbstractClass>]
@@ -518,7 +518,7 @@ namespace Microsoft.FSharp.Collections
 
                 type ISeqFactory<'T,'U> =
                     abstract PipeIdx : PipeIdx
-                    abstract Create<'V> : IPipeline -> ``PipeIdx?`` -> Consumer<'U,'V> -> Consumer<'T,'V>
+                    abstract Create<'V> : IOutOfBand -> ``PipeIdx?`` -> Consumer<'U,'V> -> Consumer<'T,'V>
 
                 type ISeq<'T> =
                     inherit IEnumerable<'T>
@@ -539,7 +539,7 @@ namespace Microsoft.FSharp.Collections
                 let inline upcastEnumerable (t:#IEnumerable<'T>) : IEnumerable<'T> = (# "" t : IEnumerable<'T> #)
                 let inline upcastEnumerator (t:#IEnumerator<'T>) : IEnumerator<'T> = (# "" t : IEnumerator<'T> #)
                 let inline upcastEnumeratorNonGeneric (t:#IEnumerator) : IEnumerator = (# "" t : IEnumerator #)
-                let inline upcastISeqComponent (t:#ICompletionChaining) : ICompletionChaining = (# "" t : ICompletionChaining #)
+                let inline upcastICompletionChaining (t:#ICompletionChaining) : ICompletionChaining = (# "" t : ICompletionChaining #)
 
             type [<AbstractClass>] SeqComponentFactory<'T,'U> (pipeIdx:``PipeIdx?``) =
                 new() = SeqComponentFactory<'T,'U> (emptyPipeIdx)
@@ -552,8 +552,8 @@ namespace Microsoft.FSharp.Collections
                 inherit SeqComponentFactory<'T,'V> (makePipeIdx secondPipeIdx)
 
                 interface ISeqFactory<'T,'V> with
-                    member this.Create<'W> (result:IPipeline) (pipeIdx:``PipeIdx?``) (next:Consumer<'V,'W>) : Consumer<'T,'W> =
-                        first.Create result pipeIdx (second.Create result (makePipeIdx secondPipeIdx) next)
+                    member this.Create<'W> (outOfBand:IOutOfBand) (pipeIdx:``PipeIdx?``) (next:Consumer<'V,'W>) : Consumer<'T,'W> =
+                        first.Create outOfBand pipeIdx (second.Create outOfBand (makePipeIdx secondPipeIdx) next)
 
                 static member Combine (first:ISeqFactory<'T,'U>) (second:ISeqFactory<'U,'V>) : ISeqFactory<'T,'V> =
                     upcast ComposedFactory(first, second, first.PipeIdx+1)
@@ -561,27 +561,27 @@ namespace Microsoft.FSharp.Collections
             and ChooseFactory<'T,'U> (filter:'T->option<'U>) =
                 inherit SeqComponentFactory<'T,'U> ()
                 interface ISeqFactory<'T,'U> with
-                    member this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'U,'V>) : Consumer<'T,'V> = upcast Choose (filter, next) 
+                    member this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:``PipeIdx?``) (next:Consumer<'U,'V>) : Consumer<'T,'V> = upcast Choose (filter, next) 
             
             and DistinctFactory<'T when 'T: equality> () =
                 inherit SeqComponentFactory<'T,'T> ()
                 interface ISeqFactory<'T,'T> with
-                    member this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Distinct (next) 
+                    member this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Distinct (next) 
 
             and DistinctByFactory<'T,'Key when 'Key: equality> (keyFunction:'T-> 'Key) =
                 inherit SeqComponentFactory<'T,'T> ()
                 interface ISeqFactory<'T,'T> with
-                    member this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast DistinctBy (keyFunction, next) 
+                    member this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast DistinctBy (keyFunction, next) 
             
             and ExceptFactory<'T when 'T: equality> (itemsToExclude: seq<'T>) =
                 inherit SeqComponentFactory<'T,'T> ()
                 interface ISeqFactory<'T,'T> with
-                    member this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Except (itemsToExclude, next) 
+                    member this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Except (itemsToExclude, next) 
 
             and FilterFactory<'T> (filter:'T->bool) =
                 inherit SeqComponentFactory<'T,'T> ()
                 interface ISeqFactory<'T,'T> with
-                    member this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> =
+                    member this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> =
                         match next with
                         | :? SeqComponent<'T,'V> as next -> upcast next.CreateFilter filter
                         | _ -> upcast Filter (filter, next)
@@ -590,13 +590,13 @@ namespace Microsoft.FSharp.Collections
                 inherit SeqComponentFactory<'T,'T> ()
                 static let singleton = IdentityFactory<'T>()
                 interface ISeqFactory<'T,'T> with
-                    member __.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = next
+                    member __.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = next
                 static member IdentityFactory = singleton
 
             and MapFactory<'T,'U> (map:'T->'U) =
                 inherit SeqComponentFactory<'T,'U> ()
                 interface ISeqFactory<'T,'U> with
-                    member this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'U,'V>) : Consumer<'T,'V> =
+                    member this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:``PipeIdx?``) (next:Consumer<'U,'V>) : Consumer<'T,'V> =
                         match next with
                         | :? SeqComponent<'U,'V> as next -> upcast next.CreateMap map
                         | _ -> upcast Map<_,_,_> (map, next)
@@ -604,67 +604,67 @@ namespace Microsoft.FSharp.Collections
             and Map2FirstFactory<'First,'Second,'U> (map:'First->'Second->'U, input2:IEnumerable<'Second>) =
                 inherit SeqComponentFactory<'First,'U> ()
                 interface ISeqFactory<'First,'U> with
-                    member this.Create<'V> (result:IPipeline) (pipeIdx:``PipeIdx?``) (next:Consumer<'U,'V>) : Consumer<'First,'V> = upcast Map2First (map, input2, result, next, getPipeIdx pipeIdx)
+                    member this.Create<'V> (outOfBand:IOutOfBand) (pipeIdx:``PipeIdx?``) (next:Consumer<'U,'V>) : Consumer<'First,'V> = upcast Map2First (map, input2, outOfBand, next, getPipeIdx pipeIdx)
 
             and Map2SecondFactory<'First,'Second,'U> (map:'First->'Second->'U, input1:IEnumerable<'First>) =
                 inherit SeqComponentFactory<'Second,'U> ()
                 interface ISeqFactory<'Second,'U> with
-                    member this.Create<'V> (result:IPipeline) (pipeIdx:``PipeIdx?``) (next:Consumer<'U,'V>) : Consumer<'Second,'V> = upcast Map2Second (map, input1, result, next, getPipeIdx pipeIdx)
+                    member this.Create<'V> (outOfBand:IOutOfBand) (pipeIdx:``PipeIdx?``) (next:Consumer<'U,'V>) : Consumer<'Second,'V> = upcast Map2Second (map, input1, outOfBand, next, getPipeIdx pipeIdx)
 
             and Map3Factory<'First,'Second,'Third,'U> (map:'First->'Second->'Third->'U, input2:IEnumerable<'Second>, input3:IEnumerable<'Third>) =
                 inherit SeqComponentFactory<'First,'U> ()
                 interface ISeqFactory<'First,'U> with
-                    member this.Create<'V> (result:IPipeline) (pipeIdx:``PipeIdx?``) (next:Consumer<'U,'V>) : Consumer<'First,'V> = upcast Map3 (map, input2, input3, result, next, getPipeIdx pipeIdx)
+                    member this.Create<'V> (outOfBand:IOutOfBand) (pipeIdx:``PipeIdx?``) (next:Consumer<'U,'V>) : Consumer<'First,'V> = upcast Map3 (map, input2, input3, outOfBand, next, getPipeIdx pipeIdx)
 
             and MapiFactory<'T,'U> (mapi:int->'T->'U) =
                 inherit SeqComponentFactory<'T,'U> ()
                 interface ISeqFactory<'T,'U> with
-                    member this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'U,'V>) : Consumer<'T,'V> = upcast Mapi (mapi, next) 
+                    member this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:``PipeIdx?``) (next:Consumer<'U,'V>) : Consumer<'T,'V> = upcast Mapi (mapi, next) 
 
             and Mapi2Factory<'First,'Second,'U> (map:int->'First->'Second->'U, input2:IEnumerable<'Second>) =
                 inherit SeqComponentFactory<'First,'U> ()
                 interface ISeqFactory<'First,'U> with
-                    member this.Create<'V> (result:IPipeline) (pipeIdx:``PipeIdx?``) (next:Consumer<'U,'V>) : Consumer<'First,'V> = upcast Mapi2 (map, input2, result, next, getPipeIdx pipeIdx)
+                    member this.Create<'V> (outOfBand:IOutOfBand) (pipeIdx:``PipeIdx?``) (next:Consumer<'U,'V>) : Consumer<'First,'V> = upcast Mapi2 (map, input2, outOfBand, next, getPipeIdx pipeIdx)
 
             and PairwiseFactory<'T> () =
                 inherit SeqComponentFactory<'T,'T*'T> ()
                 interface ISeqFactory<'T,'T*'T> with
-                    member this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T*'T,'V>) : Consumer<'T,'V> = upcast Pairwise (next)
+                    member this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T*'T,'V>) : Consumer<'T,'V> = upcast Pairwise (next)
 
             and ScanFactory<'T,'State> (folder:'State->'T->'State, initialState:'State) =
                 inherit SeqComponentFactory<'T,'State> ()
                 interface ISeqFactory<'T,'State> with
-                    member this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'State,'V>) : Consumer<'T,'V> = upcast Scan<_,_,_> (folder, initialState, next)
+                    member this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:``PipeIdx?``) (next:Consumer<'State,'V>) : Consumer<'T,'V> = upcast Scan<_,_,_> (folder, initialState, next)
 
             and SkipFactory<'T> (count:int) =
                 inherit SeqComponentFactory<'T,'T> ()
                 interface ISeqFactory<'T,'T> with
-                    member this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Skip (count, next) 
+                    member this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Skip (count, next) 
 
             and SkipWhileFactory<'T> (predicate:'T->bool) =
                 inherit SeqComponentFactory<'T,'T> ()
                 interface ISeqFactory<'T,'T> with
-                    member  this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast SkipWhile (predicate, next) 
+                    member  this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast SkipWhile (predicate, next) 
 
             and TakeWhileFactory<'T> (predicate:'T->bool) =
                 inherit SeqComponentFactory<'T,'T> ()
                 interface ISeqFactory<'T,'T> with
-                    member this.Create<'V> (result:IPipeline) (pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast TakeWhile (predicate, result, next, getPipeIdx pipeIdx) 
+                    member this.Create<'V> (outOfBand:IOutOfBand) (pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast TakeWhile (predicate, outOfBand, next, getPipeIdx pipeIdx) 
 
             and TakeFactory<'T> (count:int) =
                 inherit SeqComponentFactory<'T,'T> ()
                 interface ISeqFactory<'T,'T> with
-                    member this.Create<'V> (result:IPipeline) (pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Take (count, result, next, getPipeIdx pipeIdx) 
+                    member this.Create<'V> (outOfBand:IOutOfBand) (pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Take (count, outOfBand, next, getPipeIdx pipeIdx) 
             
             and TailFactory<'T> () =
                 inherit SeqComponentFactory<'T,'T> ()
                 interface ISeqFactory<'T,'T> with
-                    member  this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Tail<'T,'V> (next) 
+                    member  this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Tail<'T,'V> (next) 
 
             and TruncateFactory<'T> (count:int) =
                 inherit SeqComponentFactory<'T,'T> ()
                 interface ISeqFactory<'T,'T> with
-                    member this.Create<'V> (result:IPipeline) (pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Truncate (count, result, next, getPipeIdx pipeIdx) 
+                    member this.Create<'V> (outOfBand:IOutOfBand) (pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Truncate (count, outOfBand, next, getPipeIdx pipeIdx) 
 
             and [<AbstractClass>] SeqComponent<'T,'U> (next:ICompletionChaining) =
                 inherit Consumer<'T,'U>()
@@ -758,7 +758,7 @@ namespace Microsoft.FSharp.Collections
                 override __.ProcessNext (input:'T) : bool = 
                     Helpers.avoidTailCall (next.ProcessNext (map input))
 
-            and Map2First<'First,'Second,'U,'V> (map:'First->'Second->'U, enumerable2:IEnumerable<'Second>, result:IPipeline, next:Consumer<'U,'V>, pipeIdx:int) =
+            and Map2First<'First,'Second,'U,'V> (map:'First->'Second->'U, enumerable2:IEnumerable<'Second>, outOfBand:IOutOfBand, next:Consumer<'U,'V>, pipeIdx:int) =
                 inherit SeqComponent<'First,'V>(next)
 
                 let input2 = enumerable2.GetEnumerator ()
@@ -768,13 +768,13 @@ namespace Microsoft.FSharp.Collections
                     if input2.MoveNext () then
                         Helpers.avoidTailCall (next.ProcessNext (map'.Invoke (input, input2.Current)))
                     else
-                        result.StopFurtherProcessing pipeIdx
+                        outOfBand.StopFurtherProcessing pipeIdx
                         false
 
                 override __.OnDispose () =
                     input2.Dispose ()
 
-            and Map2Second<'First,'Second,'U,'V> (map:'First->'Second->'U, enumerable1:IEnumerable<'First>, result:IPipeline, next:Consumer<'U,'V>, pipeIdx:int) =
+            and Map2Second<'First,'Second,'U,'V> (map:'First->'Second->'U, enumerable1:IEnumerable<'First>, outOfBand:IOutOfBand, next:Consumer<'U,'V>, pipeIdx:int) =
                 inherit SeqComponent<'Second,'V>(next)
 
                 let input1 = enumerable1.GetEnumerator ()
@@ -784,13 +784,13 @@ namespace Microsoft.FSharp.Collections
                     if input1.MoveNext () then
                         Helpers.avoidTailCall (next.ProcessNext (map'.Invoke (input1.Current, input)))
                     else
-                        result.StopFurtherProcessing pipeIdx
+                        outOfBand.StopFurtherProcessing pipeIdx
                         false
 
                 override __.OnDispose () =
                     input1.Dispose ()
 
-            and Map3<'First,'Second,'Third,'U,'V> (map:'First->'Second->'Third->'U, enumerable2:IEnumerable<'Second>, enumerable3:IEnumerable<'Third>, result:IPipeline, next:Consumer<'U,'V>, pipeIdx:int) =
+            and Map3<'First,'Second,'Third,'U,'V> (map:'First->'Second->'Third->'U, enumerable2:IEnumerable<'Second>, enumerable3:IEnumerable<'Third>, outOfBand:IOutOfBand, next:Consumer<'U,'V>, pipeIdx:int) =
                 inherit SeqComponent<'First,'V>(next)
 
                 let input2 = enumerable2.GetEnumerator ()
@@ -801,7 +801,7 @@ namespace Microsoft.FSharp.Collections
                     if input2.MoveNext () && input3.MoveNext () then
                         Helpers.avoidTailCall (next.ProcessNext (map'.Invoke (input, input2.Current, input3.Current)))
                     else
-                        result.StopFurtherProcessing pipeIdx
+                        outOfBand.StopFurtherProcessing pipeIdx
                         false
 
                 override __.OnDispose () =
@@ -828,7 +828,7 @@ namespace Microsoft.FSharp.Collections
                     idx <- idx + 1
                     Helpers.avoidTailCall (next.ProcessNext (mapi'.Invoke (idx-1, input)))
 
-            and Mapi2<'First,'Second,'U,'V> (map:int->'First->'Second->'U, enumerable2:IEnumerable<'Second>, result:IPipeline, next:Consumer<'U,'V>, pipeIdx:int) =
+            and Mapi2<'First,'Second,'U,'V> (map:int->'First->'Second->'U, enumerable2:IEnumerable<'Second>, outOfBand:IOutOfBand, next:Consumer<'U,'V>, pipeIdx:int) =
                 inherit SeqComponent<'First,'V>(next)
 
                 let mutable idx = 0
@@ -840,7 +840,7 @@ namespace Microsoft.FSharp.Collections
                         idx <- idx + 1
                         Helpers.avoidTailCall (next.ProcessNext (mapi2'.Invoke (idx-1, input, input2.Current)))
                     else
-                        result.StopFurtherProcessing pipeIdx
+                        outOfBand.StopFurtherProcessing pipeIdx
                         false
 
                 override __.OnDispose () =
@@ -912,8 +912,8 @@ namespace Microsoft.FSharp.Collections
                     else
                         Helpers.avoidTailCall (next.ProcessNext input)
 
-            and Take<'T,'V> (takeCount:int, result:IPipeline, next:Consumer<'T,'V>, pipelineIdx:int) =
-                inherit Truncate<'T, 'V>(takeCount, result, next, pipelineIdx)
+            and Take<'T,'V> (takeCount:int, outOfBand:IOutOfBand, next:Consumer<'T,'V>, pipelineIdx:int) =
+                inherit Truncate<'T, 'V>(takeCount, outOfBand, next, pipelineIdx)
 
                 override this.OnComplete terminatingIdx =
                     if terminatingIdx < pipelineIdx && this.Count < takeCount then
@@ -921,14 +921,14 @@ namespace Microsoft.FSharp.Collections
                         invalidOpFmt "tried to take {0} {1} past the end of the seq"
                             [|SR.GetString SR.notEnoughElements; x; (if x=1 then "element" else "elements")|]
 
-            and TakeWhile<'T,'V> (predicate:'T->bool, result:IPipeline, next:Consumer<'T,'V>, pipeIdx:int) =
+            and TakeWhile<'T,'V> (predicate:'T->bool, outOfBand:IOutOfBand, next:Consumer<'T,'V>, pipeIdx:int) =
                 inherit SeqComponent<'T,'V>(next)
 
                 override __.ProcessNext (input:'T) : bool = 
                     if predicate input then
                         Helpers.avoidTailCall (next.ProcessNext input)
                     else
-                        result.StopFurtherProcessing pipeIdx
+                        outOfBand.StopFurtherProcessing pipeIdx
                         false
 
             and Tail<'T, 'V> (next:Consumer<'T,'V>) =
@@ -947,7 +947,7 @@ namespace Microsoft.FSharp.Collections
                     if first then
                         invalidArg "source" (SR.GetString(SR.notEnoughElements))
 
-            and Truncate<'T,'V> (truncateCount:int, result:IPipeline, next:Consumer<'T,'V>, pipeIdx:int) =
+            and Truncate<'T,'V> (truncateCount:int, outOfBand:IOutOfBand, next:Consumer<'T,'V>, pipeIdx:int) =
                 inherit SeqComponent<'T,'V>(next)
 
                 let mutable count = 0
@@ -958,10 +958,10 @@ namespace Microsoft.FSharp.Collections
                     if count < truncateCount then
                         count <- count + 1
                         if count = truncateCount then
-                            result.StopFurtherProcessing pipeIdx
+                            outOfBand.StopFurtherProcessing pipeIdx
                         next.ProcessNext input
                     else
-                        result.StopFurtherProcessing pipeIdx
+                        outOfBand.StopFurtherProcessing pipeIdx
                         false
 
             type SeqProcessNextStates =
@@ -976,7 +976,7 @@ namespace Microsoft.FSharp.Collections
                 member val SeqState = SeqProcessNextStates.NotStarted with get, set
                 member __.HaltedIdx = haltedIdx
 
-                interface IPipeline with
+                interface IOutOfBand with
                     member __.StopFurtherProcessing pipeIdx = haltedIdx <- pipeIdx
 
             // SetResult<> is used at the end of the chain of SeqComponents to assign the final value
@@ -987,35 +987,35 @@ namespace Microsoft.FSharp.Collections
                     result.Current <- input
                     true
 
-            type Pipeline() =
+            type OutOfBand() =
                 let mutable haltedIdx = 0
-                interface IPipeline with member x.StopFurtherProcessing pipeIdx = haltedIdx <- pipeIdx
+                interface IOutOfBand with member __.StopFurtherProcessing pipeIdx = haltedIdx <- pipeIdx
                 member __.HaltedIdx = haltedIdx
 
             module ForEach =
-                let enumerable (enumerable:IEnumerable<'T>) (pipeline:Pipeline) (consumer:Consumer<'T,'U>) =
+                let enumerable (enumerable:IEnumerable<'T>) (outOfBand:OutOfBand) (consumer:Consumer<'T,'U>) =
                     use enumerator = enumerable.GetEnumerator ()
-                    while (pipeline.HaltedIdx = 0) && (enumerator.MoveNext ()) do
+                    while (outOfBand.HaltedIdx = 0) && (enumerator.MoveNext ()) do
                         consumer.ProcessNext enumerator.Current |> ignore
 
-                let array (array:array<'T>) (pipeline:Pipeline) (consumer:Consumer<'T,'U>) =
+                let array (array:array<'T>) (outOfBand:OutOfBand) (consumer:Consumer<'T,'U>) =
                     let mutable idx = 0
-                    while (pipeline.HaltedIdx = 0) && (idx < array.Length) do
+                    while (outOfBand.HaltedIdx = 0) && (idx < array.Length) do
                         consumer.ProcessNext array.[idx] |> ignore
                         idx <- idx + 1
 
-                let list (alist:list<'T>) (pipeline:Pipeline) (consumer:Consumer<'T,'U>) =
+                let list (alist:list<'T>) (outOfBand:OutOfBand) (consumer:Consumer<'T,'U>) =
                     let rec iterate lst =
-                        match pipeline.HaltedIdx, lst with
+                        match outOfBand.HaltedIdx, lst with
                         | 0, hd :: tl ->
                             consumer.ProcessNext hd |> ignore
                             iterate tl
                         | _ -> ()
                     iterate alist
 
-                let unfold (generator:'S->option<'T*'S>) state (pipeline:Pipeline) (consumer:Consumer<'T,'U>) = 
+                let unfold (generator:'S->option<'T*'S>) state (outOfBand:OutOfBand) (consumer:Consumer<'T,'U>) = 
                     let rec iterate current =
-                        match pipeline.HaltedIdx, generator current with
+                        match outOfBand.HaltedIdx, generator current with
                         | 0, Some (item, next) ->
                             consumer.ProcessNext item |> ignore
                             iterate next
@@ -1028,11 +1028,11 @@ namespace Microsoft.FSharp.Collections
                     | :? SeqComponent<'T,'U> as c -> c.Skipping
                     | _ -> fun () -> false
 
-                let init f (terminatingIdx:int) (pipeline:Pipeline) (consumer:Consumer<'T,'U>) =
+                let init f (terminatingIdx:int) (outOfBand:OutOfBand) (consumer:Consumer<'T,'U>) =
                     let mutable idx = -1
                     let isSkipping = makeIsSkipping consumer
                     let mutable maybeSkipping = true
-                    while (pipeline.HaltedIdx = 0) && (idx < terminatingIdx) do
+                    while (outOfBand.HaltedIdx = 0) && (idx < terminatingIdx) do
                         if maybeSkipping then
                             maybeSkipping <- isSkipping ()
 
@@ -1042,15 +1042,15 @@ namespace Microsoft.FSharp.Collections
                         idx <- idx + 1
 
                 let execute (f:(unit->unit)->#Consumer<'U,'U>) (current:ISeqFactory<'T,'U>) executeOn =
-                    let pipeline = Pipeline()
-                    let result = f (fun () -> (pipeline:>IPipeline).StopFurtherProcessing (current.PipeIdx+1))
+                    let pipeline = OutOfBand()
+                    let result = f (fun () -> (pipeline:>IOutOfBand).StopFurtherProcessing (current.PipeIdx+1))
                     let consumer = current.Create pipeline emptyPipeIdx result
                     try
                         executeOn pipeline consumer
-                        (Helpers.upcastISeqComponent consumer).OnComplete pipeline.HaltedIdx
+                        (Helpers.upcastICompletionChaining consumer).OnComplete pipeline.HaltedIdx
                         result
                     finally
-                        (Helpers.upcastISeqComponent consumer).OnDispose ()
+                        (Helpers.upcastICompletionChaining consumer).OnDispose ()
 
             module Enumerable =
                 type Empty<'T>() =
@@ -1120,7 +1120,7 @@ namespace Microsoft.FSharp.Collections
                                 moveNext ()
                         else
                             result.SeqState <- SeqProcessNextStates.Finished
-                            (Helpers.upcastISeqComponent seqComponent).OnComplete result.HaltedIdx
+                            (Helpers.upcastICompletionChaining seqComponent).OnComplete result.HaltedIdx
                             false
 
                     interface IEnumerator with
@@ -1133,7 +1133,7 @@ namespace Microsoft.FSharp.Collections
                             try
                                 source.Dispose ()
                             finally
-                                (Helpers.upcastISeqComponent seqComponent).OnDispose ()
+                                (Helpers.upcastICompletionChaining seqComponent).OnDispose ()
 
                 and Enumerable<'T,'U>(enumerable:IEnumerable<'T>, current:ISeqFactory<'T,'U>) =
                     inherit EnumerableBase<'U>()
@@ -1246,7 +1246,7 @@ namespace Microsoft.FSharp.Collections
                                 moveNext ()
                         else
                             result.SeqState <- SeqProcessNextStates.Finished
-                            (Helpers.upcastISeqComponent seqComponent).OnComplete result.HaltedIdx
+                            (Helpers.upcastICompletionChaining seqComponent).OnComplete result.HaltedIdx
                             false
 
                     interface IEnumerator with
@@ -1297,7 +1297,7 @@ namespace Microsoft.FSharp.Collections
                                 moveNext tail
                         | _ ->
                             result.SeqState <- SeqProcessNextStates.Finished
-                            (Helpers.upcastISeqComponent seqComponent).OnComplete result.HaltedIdx
+                            (Helpers.upcastICompletionChaining seqComponent).OnComplete result.HaltedIdx
                             false
 
                     interface IEnumerator with
@@ -1324,13 +1324,13 @@ namespace Microsoft.FSharp.Collections
                     Helpers.upcastSeq (Enumerable(alist, current))
 
             module Unfold =
-                type Enumerator<'T,'U,'State>(generator:'State->option<'T*'State>, state:'State, seqComponent:Consumer<'T,'U>, signal:Result<'U>) =
-                    inherit Enumerable.EnumeratorBase<'U>(signal, seqComponent)
+                type Enumerator<'T,'U,'State>(generator:'State->option<'T*'State>, state:'State, seqComponent:Consumer<'T,'U>, result:Result<'U>) =
+                    inherit Enumerable.EnumeratorBase<'U>(result, seqComponent)
 
                     let mutable current = state
 
                     let rec moveNext () =
-                        match signal.HaltedIdx, generator current with
+                        match result.HaltedIdx, generator current with
                         | 0, Some (item, nextState) ->
                             current <- nextState
                             if seqComponent.ProcessNext item then
@@ -1341,7 +1341,7 @@ namespace Microsoft.FSharp.Collections
 
                     interface IEnumerator with
                         member __.MoveNext () =
-                            signal.SeqState <- SeqProcessNextStates.InProcess
+                            result.SeqState <- SeqProcessNextStates.InProcess
                             moveNext ()
 
                 type Enumerable<'T,'U,'GeneratorState>(generator:'GeneratorState->option<'T*'GeneratorState>, state:'GeneratorState, current:ISeqFactory<'T,'U>) =
@@ -1379,8 +1379,8 @@ namespace Microsoft.FSharp.Collections
                     else
                         System.Int32.MaxValue
 
-                type Enumerator<'T,'U>(count:Nullable<int>, f:int->'T, seqComponent:Consumer<'T,'U>, signal:Result<'U>) =
-                    inherit Enumerable.EnumeratorBase<'U>(signal, seqComponent)
+                type Enumerator<'T,'U>(count:Nullable<int>, f:int->'T, seqComponent:Consumer<'T,'U>, result:Result<'U>) =
+                    inherit Enumerable.EnumeratorBase<'U>(result, seqComponent)
 
                     let isSkipping =
                         ForEach.makeIsSkipping seqComponent
@@ -1392,7 +1392,7 @@ namespace Microsoft.FSharp.Collections
                     let mutable idx = -1
 
                     let rec moveNext () =
-                        if (signal.HaltedIdx = 0) && idx < terminatingIdx then
+                        if (result.HaltedIdx = 0) && idx < terminatingIdx then
                             idx <- idx + 1
 
                             if maybeSkipping then
@@ -1406,16 +1406,16 @@ namespace Microsoft.FSharp.Collections
                                 true
                             else
                                 moveNext ()
-                        elif (signal.HaltedIdx = 0) && idx = System.Int32.MaxValue then
+                        elif (result.HaltedIdx = 0) && idx = System.Int32.MaxValue then
                             raise <| System.InvalidOperationException (SR.GetString(SR.enumerationPastIntMaxValue))
                         else
-                            signal.SeqState <- SeqProcessNextStates.Finished
-                            (Helpers.upcastISeqComponent seqComponent).OnComplete signal.HaltedIdx
+                            result.SeqState <- SeqProcessNextStates.Finished
+                            (Helpers.upcastICompletionChaining seqComponent).OnComplete result.HaltedIdx
                             false
 
                     interface IEnumerator with
                         member __.MoveNext () =
-                            signal.SeqState <- SeqProcessNextStates.InProcess
+                            result.SeqState <- SeqProcessNextStates.InProcess
                             moveNext ()
 
                 type Enumerable<'T,'U>(count:Nullable<int>, f:int->'T, current:ISeqFactory<'T,'U>) =

@@ -35,7 +35,7 @@ namespace Microsoft.FSharp.Collections
                     /// after the enumeration has completed.</summary>
                     abstract OnDispose : unit -> unit
 
-                type IPipeline =
+                type IOutOfBand =
                     abstract StopFurtherProcessing : PipeIdx -> unit
 
                 /// <summary>Consumer is the base class of all elements within the pipeline</summary>
@@ -74,7 +74,7 @@ namespace Microsoft.FSharp.Collections
                     val mutable Value: 'U
 
                 type ISeqFactory<'T,'U> =
-                    abstract member Create : IPipeline -> ``PipeIdx?`` -> Consumer<'U,'V> -> Consumer<'T,'V>
+                    abstract member Create : IOutOfBand -> ``PipeIdx?`` -> Consumer<'U,'V> -> Consumer<'T,'V>
                     abstract member PipeIdx : PipeIdx
 
                 type ISeq<'T> =
