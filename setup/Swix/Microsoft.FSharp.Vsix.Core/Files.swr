@@ -11,3 +11,6 @@ vs.dependencies
 
 vs.payloads
   vs.payload source="$(BinariesFolder)\net40\bin\VisualFSharp$(VSSku).vsix"
+
+vs.projectClassifier extension=.fsproj
+  factoryGuid={F2A71F9B-5D33-465A-A702-920D77279786}
