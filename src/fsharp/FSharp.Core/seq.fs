@@ -516,9 +516,14 @@ namespace Microsoft.FSharp.Collections
                         Value = init
                     }
 
-                [<AbstractClass>]
-                type SeqEnumerable<'T>() =
-                    abstract member ForEach<'a when 'a :> Consumer<'T,'T>> : f:((unit->unit)->'a) -> 'a
+                type ISeqFactory<'T,'U> =
+                    abstract PipeIdx : PipeIdx
+                    abstract Create<'V> : IPipeline -> ``PipeIdx?`` -> Consumer<'U,'V> -> Consumer<'T,'V>
+
+                type ISeq<'T> =
+                    inherit IEnumerable<'T>
+                    abstract member Compose<'U> : (ISeqFactory<'T,'U>) -> ISeq<'U>
+                    abstract member ForEach<'consumer when 'consumer :> Consumer<'T,'T>> : f:((unit->unit)->'consumer) -> 'consumer
 
             open Internal
 
@@ -530,114 +535,136 @@ namespace Microsoft.FSharp.Collections
 
                 // The f# compiler outputs unnecessary unbox.any calls in upcasts. If this functionality
                 // is fixed with the compiler then these functions can be removed.
+                let inline upcastSeq (t:#ISeq<'T>) : ISeq<'T> = (# "" t : ISeq<'T> #)
                 let inline upcastEnumerable (t:#IEnumerable<'T>) : IEnumerable<'T> = (# "" t : IEnumerable<'T> #)
                 let inline upcastEnumerator (t:#IEnumerator<'T>) : IEnumerator<'T> = (# "" t : IEnumerator<'T> #)
                 let inline upcastEnumeratorNonGeneric (t:#IEnumerator) : IEnumerator = (# "" t : IEnumerator #)
                 let inline upcastISeqComponent (t:#ICompletionChaining) : ICompletionChaining = (# "" t : ICompletionChaining #)
 
             type [<AbstractClass>] SeqComponentFactory<'T,'U> (pipeIdx:``PipeIdx?``) =
-                abstract Create<'V> : IPipeline -> ``PipeIdx?`` -> Consumer<'U,'V> -> Consumer<'T,'V>
-
                 new() = SeqComponentFactory<'T,'U> (emptyPipeIdx)
                 
-                member __.PipeIdx = getPipeIdx pipeIdx
+                interface ISeqFactory<'T,'U> with
+                    member __.PipeIdx = getPipeIdx pipeIdx
+                    member __.Create _ _ _ = failwith "library implementation error: Create on base factory should not be called"
 
-            and ComposedFactory<'T,'U,'V> private (first:SeqComponentFactory<'T,'U>, second:SeqComponentFactory<'U,'V>, secondPipeIdx:PipeIdx) =
+            and ComposedFactory<'T,'U,'V> private (first:ISeqFactory<'T,'U>, second:ISeqFactory<'U,'V>, secondPipeIdx:PipeIdx) =
                 inherit SeqComponentFactory<'T,'V> (makePipeIdx secondPipeIdx)
 
-                override this.Create<'W> (result:IPipeline) (pipeIdx:``PipeIdx?``) (next:Consumer<'V,'W>) : Consumer<'T,'W> =
-                    first.Create result pipeIdx (second.Create result (makePipeIdx secondPipeIdx) next)
+                interface ISeqFactory<'T,'V> with
+                    member this.Create<'W> (result:IPipeline) (pipeIdx:``PipeIdx?``) (next:Consumer<'V,'W>) : Consumer<'T,'W> =
+                        first.Create result pipeIdx (second.Create result (makePipeIdx secondPipeIdx) next)
 
-                static member Combine (first:SeqComponentFactory<'T,'U>) (second:SeqComponentFactory<'U,'V>) : SeqComponentFactory<'T,'V> =
+                static member Combine (first:ISeqFactory<'T,'U>) (second:ISeqFactory<'U,'V>) : ISeqFactory<'T,'V> =
                     upcast ComposedFactory(first, second, first.PipeIdx+1)
 
             and ChooseFactory<'T,'U> (filter:'T->option<'U>) =
                 inherit SeqComponentFactory<'T,'U> ()
-                override this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'U,'V>) : Consumer<'T,'V> = upcast Choose (filter, next) 
+                interface ISeqFactory<'T,'U> with
+                    member this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'U,'V>) : Consumer<'T,'V> = upcast Choose (filter, next) 
             
             and DistinctFactory<'T when 'T: equality> () =
                 inherit SeqComponentFactory<'T,'T> ()
-                override this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Distinct (next) 
+                interface ISeqFactory<'T,'T> with
+                    member this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Distinct (next) 
 
             and DistinctByFactory<'T,'Key when 'Key: equality> (keyFunction:'T-> 'Key) =
                 inherit SeqComponentFactory<'T,'T> ()
-                override this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast DistinctBy (keyFunction, next) 
+                interface ISeqFactory<'T,'T> with
+                    member this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast DistinctBy (keyFunction, next) 
             
             and ExceptFactory<'T when 'T: equality> (itemsToExclude: seq<'T>) =
                 inherit SeqComponentFactory<'T,'T> ()
-                override this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Except (itemsToExclude, next) 
+                interface ISeqFactory<'T,'T> with
+                    member this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Except (itemsToExclude, next) 
 
             and FilterFactory<'T> (filter:'T->bool) =
                 inherit SeqComponentFactory<'T,'T> ()
-                override this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> =
-                    match next with
-                    | :? SeqComponent<'T,'V> as next -> upcast next.CreateFilter filter
-                    | _ -> upcast Filter (filter, next)
+                interface ISeqFactory<'T,'T> with
+                    member this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> =
+                        match next with
+                        | :? SeqComponent<'T,'V> as next -> upcast next.CreateFilter filter
+                        | _ -> upcast Filter (filter, next)
 
             and IdentityFactory<'T> () =
                 inherit SeqComponentFactory<'T,'T> ()
                 static let singleton = IdentityFactory<'T>()
-                override __.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = next
+                interface ISeqFactory<'T,'T> with
+                    member __.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = next
                 static member IdentityFactory = singleton
 
             and MapFactory<'T,'U> (map:'T->'U) =
                 inherit SeqComponentFactory<'T,'U> ()
-                override this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'U,'V>) : Consumer<'T,'V> =
-                    match next with
-                    | :? SeqComponent<'U,'V> as next -> upcast next.CreateMap map
-                    | _ -> upcast Map<_,_,_> (map, next)
+                interface ISeqFactory<'T,'U> with
+                    member this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'U,'V>) : Consumer<'T,'V> =
+                        match next with
+                        | :? SeqComponent<'U,'V> as next -> upcast next.CreateMap map
+                        | _ -> upcast Map<_,_,_> (map, next)
 
             and Map2FirstFactory<'First,'Second,'U> (map:'First->'Second->'U, input2:IEnumerable<'Second>) =
                 inherit SeqComponentFactory<'First,'U> ()
-                override this.Create<'V> (result:IPipeline) (pipeIdx:``PipeIdx?``) (next:Consumer<'U,'V>) : Consumer<'First,'V> = upcast Map2First (map, input2, result, next, getPipeIdx pipeIdx)
+                interface ISeqFactory<'First,'U> with
+                    member this.Create<'V> (result:IPipeline) (pipeIdx:``PipeIdx?``) (next:Consumer<'U,'V>) : Consumer<'First,'V> = upcast Map2First (map, input2, result, next, getPipeIdx pipeIdx)
 
             and Map2SecondFactory<'First,'Second,'U> (map:'First->'Second->'U, input1:IEnumerable<'First>) =
                 inherit SeqComponentFactory<'Second,'U> ()
-                override this.Create<'V> (result:IPipeline) (pipeIdx:``PipeIdx?``) (next:Consumer<'U,'V>) : Consumer<'Second,'V> = upcast Map2Second (map, input1, result, next, getPipeIdx pipeIdx)
+                interface ISeqFactory<'Second,'U> with
+                    member this.Create<'V> (result:IPipeline) (pipeIdx:``PipeIdx?``) (next:Consumer<'U,'V>) : Consumer<'Second,'V> = upcast Map2Second (map, input1, result, next, getPipeIdx pipeIdx)
 
             and Map3Factory<'First,'Second,'Third,'U> (map:'First->'Second->'Third->'U, input2:IEnumerable<'Second>, input3:IEnumerable<'Third>) =
                 inherit SeqComponentFactory<'First,'U> ()
-                override this.Create<'V> (result:IPipeline) (pipeIdx:``PipeIdx?``) (next:Consumer<'U,'V>) : Consumer<'First,'V> = upcast Map3 (map, input2, input3, result, next, getPipeIdx pipeIdx)
+                interface ISeqFactory<'First,'U> with
+                    member this.Create<'V> (result:IPipeline) (pipeIdx:``PipeIdx?``) (next:Consumer<'U,'V>) : Consumer<'First,'V> = upcast Map3 (map, input2, input3, result, next, getPipeIdx pipeIdx)
 
             and MapiFactory<'T,'U> (mapi:int->'T->'U) =
                 inherit SeqComponentFactory<'T,'U> ()
-                override this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'U,'V>) : Consumer<'T,'V> = upcast Mapi (mapi, next) 
+                interface ISeqFactory<'T,'U> with
+                    member this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'U,'V>) : Consumer<'T,'V> = upcast Mapi (mapi, next) 
 
             and Mapi2Factory<'First,'Second,'U> (map:int->'First->'Second->'U, input2:IEnumerable<'Second>) =
                 inherit SeqComponentFactory<'First,'U> ()
-                override this.Create<'V> (result:IPipeline) (pipeIdx:``PipeIdx?``) (next:Consumer<'U,'V>) : Consumer<'First,'V> = upcast Mapi2 (map, input2, result, next, getPipeIdx pipeIdx)
+                interface ISeqFactory<'First,'U> with
+                    member this.Create<'V> (result:IPipeline) (pipeIdx:``PipeIdx?``) (next:Consumer<'U,'V>) : Consumer<'First,'V> = upcast Mapi2 (map, input2, result, next, getPipeIdx pipeIdx)
 
             and PairwiseFactory<'T> () =
                 inherit SeqComponentFactory<'T,'T*'T> ()
-                override this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T*'T,'V>) : Consumer<'T,'V> = upcast Pairwise (next)
+                interface ISeqFactory<'T,'T*'T> with
+                    member this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T*'T,'V>) : Consumer<'T,'V> = upcast Pairwise (next)
 
             and ScanFactory<'T,'State> (folder:'State->'T->'State, initialState:'State) =
                 inherit SeqComponentFactory<'T,'State> ()
-                override this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'State,'V>) : Consumer<'T,'V> = upcast Scan<_,_,_> (folder, initialState, next)
+                interface ISeqFactory<'T,'State> with
+                    member this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'State,'V>) : Consumer<'T,'V> = upcast Scan<_,_,_> (folder, initialState, next)
 
             and SkipFactory<'T> (count:int) =
                 inherit SeqComponentFactory<'T,'T> ()
-                override this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Skip (count, next) 
+                interface ISeqFactory<'T,'T> with
+                    member this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Skip (count, next) 
 
             and SkipWhileFactory<'T> (predicate:'T->bool) =
                 inherit SeqComponentFactory<'T,'T> ()
-                override this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast SkipWhile (predicate, next) 
+                interface ISeqFactory<'T,'T> with
+                    member  this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast SkipWhile (predicate, next) 
 
             and TakeWhileFactory<'T> (predicate:'T->bool) =
                 inherit SeqComponentFactory<'T,'T> ()
-                override this.Create<'V> (result:IPipeline) (pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast TakeWhile (predicate, result, next, getPipeIdx pipeIdx) 
+                interface ISeqFactory<'T,'T> with
+                    member this.Create<'V> (result:IPipeline) (pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast TakeWhile (predicate, result, next, getPipeIdx pipeIdx) 
 
             and TakeFactory<'T> (count:int) =
                 inherit SeqComponentFactory<'T,'T> ()
-                override this.Create<'V> (result:IPipeline) (pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Take (count, result, next, getPipeIdx pipeIdx) 
+                interface ISeqFactory<'T,'T> with
+                    member this.Create<'V> (result:IPipeline) (pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Take (count, result, next, getPipeIdx pipeIdx) 
             
             and TailFactory<'T> () =
                 inherit SeqComponentFactory<'T,'T> ()
-                override this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Tail<'T,'V> (next) 
+                interface ISeqFactory<'T,'T> with
+                    member  this.Create<'V> (_result:IPipeline) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Tail<'T,'V> (next) 
 
             and TruncateFactory<'T> (count:int) =
                 inherit SeqComponentFactory<'T,'T> ()
-                override this.Create<'V> (result:IPipeline) (pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Truncate (count, result, next, getPipeIdx pipeIdx) 
+                interface ISeqFactory<'T,'T> with
+                    member this.Create<'V> (result:IPipeline) (pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Truncate (count, result, next, getPipeIdx pipeIdx) 
 
             and [<AbstractClass>] SeqComponent<'T,'U> (next:ICompletionChaining) =
                 inherit Consumer<'T,'U>()
@@ -1014,7 +1041,7 @@ namespace Microsoft.FSharp.Collections
 
                         idx <- idx + 1
 
-                let execute (f:(unit->unit)->#Consumer<'U,'U>) (current:SeqComponentFactory<'T,'U>) executeOn =
+                let execute (f:(unit->unit)->#Consumer<'U,'U>) (current:ISeqFactory<'T,'U>) executeOn =
                     let pipeline = Pipeline()
                     let result = f (fun () -> (pipeline:>IPipeline).StopFurtherProcessing (current.PipeIdx+1))
                     let consumer = current.Create pipeline emptyPipeIdx result
@@ -1062,9 +1089,9 @@ namespace Microsoft.FSharp.Collections
                                 | _ -> failwith "library implementation error: all states should have been handled"
 
                 and [<AbstractClass>] EnumerableBase<'T> () =
-                    inherit SeqEnumerable<'T>()
+                    let derivedClassShouldImplement () =
+                        failwith "library implementation error: derived class should implement (should be abstract)"
 
-                    abstract member Compose<'U>  : (SeqComponentFactory<'T,'U>) -> IEnumerable<'U>
                     abstract member Append<'T>   : (seq<'T>) -> IEnumerable<'T>
 
                     default this.Append source = Helpers.upcastEnumerable (AppendEnumerable [this; source])
@@ -1076,8 +1103,11 @@ namespace Microsoft.FSharp.Collections
                             Helpers.upcastEnumeratorNonGeneric genericEnumerator
 
                     interface IEnumerable<'T> with
-                        member this.GetEnumerator () : IEnumerator<'T> = failwith "library implementation error: derived class should implement (should be abstract)"
+                        member this.GetEnumerator () : IEnumerator<'T> = derivedClassShouldImplement ()
 
+                    interface ISeq<'T> with
+                        member __.Compose _ = derivedClassShouldImplement ()
+                        member __.ForEach _ = derivedClassShouldImplement ()
 
                 and Enumerator<'T,'U>(source:IEnumerator<'T>, seqComponent:Consumer<'T,'U>, result:Result<'U>) =
                     inherit EnumeratorBase<'U>(result, seqComponent)
@@ -1105,7 +1135,7 @@ namespace Microsoft.FSharp.Collections
                             finally
                                 (Helpers.upcastISeqComponent seqComponent).OnDispose ()
 
-                and Enumerable<'T,'U>(enumerable:IEnumerable<'T>, current:SeqComponentFactory<'T,'U>) =
+                and Enumerable<'T,'U>(enumerable:IEnumerable<'T>, current:ISeqFactory<'T,'U>) =
                     inherit EnumerableBase<'U>()
 
                     interface IEnumerable<'U> with
@@ -1113,11 +1143,12 @@ namespace Microsoft.FSharp.Collections
                             let result = Result<'U> ()
                             Helpers.upcastEnumerator (new Enumerator<'T,'U>(enumerable.GetEnumerator(), current.Create result emptyPipeIdx (SetResult<'U> result), result))
 
-                    override __.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
-                        Helpers.upcastEnumerable (new Enumerable<'T,'V>(enumerable, ComposedFactory.Combine current next))
+                    interface ISeq<'U> with
+                        member __.Compose (next:ISeqFactory<'U,'V>) : ISeq<'V> =
+                            Helpers.upcastSeq (new Enumerable<'T,'V>(enumerable, ComposedFactory.Combine current next))
 
-                    override this.ForEach (f:(unit->unit)->#Consumer<'U,'U>) =
-                        ForEach.execute f current (ForEach.enumerable enumerable)
+                        member this.ForEach (f:(unit->unit)->#Consumer<'U,'U>) =
+                            ForEach.execute f current (ForEach.enumerable enumerable)
 
                 and ConcatEnumerator<'T, 'Collection when 'Collection :> seq<'T>> (sources:seq<'Collection>) =
                     let mutable state = SeqProcessNextStates.NotStarted
@@ -1164,14 +1195,15 @@ namespace Microsoft.FSharp.Collections
                         member this.GetEnumerator () : IEnumerator<'T> =
                             Helpers.upcastEnumerator (new ConcatEnumerator<_,_> (sources |> List.rev))
 
-                    override this.Compose (next:SeqComponentFactory<'T,'U>) : IEnumerable<'U> =
-                        Helpers.upcastEnumerable (Enumerable<'T,'V>(this, next))
-
                     override this.Append source =
                         Helpers.upcastEnumerable (AppendEnumerable (source :: sources))
 
-                    override this.ForEach (f:(unit->unit)->#Consumer<'T,'T>) =
-                        ForEach.execute f IdentityFactory.IdentityFactory (ForEach.enumerable this)
+                    interface ISeq<'T> with
+                        member this.Compose (next:ISeqFactory<'T,'U>) : ISeq<'U> =
+                            Helpers.upcastSeq (Enumerable<'T,'V>(this, next))
+
+                        member this.ForEach (f:(unit->unit)->#Consumer<'T,'T>) =
+                            ForEach.execute f IdentityFactory.IdentityFactory (ForEach.enumerable this)
 
                 and ConcatEnumerable<'T, 'Collection when 'Collection :> seq<'T>> (sources:seq<'Collection>) =
                     inherit EnumerableBase<'T>()
@@ -1180,14 +1212,15 @@ namespace Microsoft.FSharp.Collections
                         member this.GetEnumerator () : IEnumerator<'T> =
                             Helpers.upcastEnumerator (new ConcatEnumerator<_,_> (sources))
 
-                    override this.Compose (next:SeqComponentFactory<'T,'U>) : IEnumerable<'U> =
-                        Helpers.upcastEnumerable (Enumerable<'T,'V>(this, next))
+                    interface ISeq<'T> with
+                        member this.Compose (next:ISeqFactory<'T,'U>) : ISeq<'U> =
+                            Helpers.upcastSeq (Enumerable<'T,'V>(this, next))
 
-                    override this.ForEach (f:(unit->unit)->#Consumer<'T,'T>) =
-                        ForEach.execute f IdentityFactory.IdentityFactory (ForEach.enumerable this)
+                        member this.ForEach (f:(unit->unit)->#Consumer<'T,'T>) =
+                            ForEach.execute f IdentityFactory.IdentityFactory (ForEach.enumerable this)
 
                 let create enumerable current =
-                    Helpers.upcastEnumerable (Enumerable(enumerable, current))
+                    Helpers.upcastSeq (Enumerable(enumerable, current))
 
             module Array =
                 type Enumerator<'T,'U>(delayedArray:unit->array<'T>, seqComponent:Consumer<'T,'U>, result:Result<'U>) =
@@ -1221,7 +1254,7 @@ namespace Microsoft.FSharp.Collections
                             initMoveNext ()
                             moveNext ()
 
-                type Enumerable<'T,'U>(delayedArray:unit->array<'T>, current:SeqComponentFactory<'T,'U>) =
+                type Enumerable<'T,'U>(delayedArray:unit->array<'T>, current:ISeqFactory<'T,'U>) =
                     inherit Enumerable.EnumerableBase<'U>()
 
                     interface IEnumerable<'U> with
@@ -1229,16 +1262,17 @@ namespace Microsoft.FSharp.Collections
                             let result = Result<'U> ()
                             Helpers.upcastEnumerator (new Enumerator<'T,'U>(delayedArray, current.Create result emptyPipeIdx (SetResult<'U> result), result))
 
-                    override __.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
-                        Helpers.upcastEnumerable (new Enumerable<'T,'V>(delayedArray, ComposedFactory.Combine current next))
+                    interface ISeq<'U> with
+                        member __.Compose (next:ISeqFactory<'U,'V>) : ISeq<'V> =
+                            Helpers.upcastSeq (new Enumerable<'T,'V>(delayedArray, ComposedFactory.Combine current next))
 
-                    override this.ForEach (f:(unit->unit)->#Consumer<'U,'U>) =
-                        ForEach.execute f current (ForEach.array (delayedArray ()))
+                        member this.ForEach (f:(unit->unit)->#Consumer<'U,'U>) =
+                            ForEach.execute f current (ForEach.array (delayedArray ()))
 
-                let createDelayed (delayedArray:unit->array<'T>) (current:SeqComponentFactory<'T,'U>) =
-                    Helpers.upcastEnumerable (Enumerable(delayedArray, current))
+                let createDelayed (delayedArray:unit->array<'T>) (current:ISeqFactory<'T,'U>) =
+                    Helpers.upcastSeq (Enumerable(delayedArray, current))
 
-                let create (array:array<'T>) (current:SeqComponentFactory<'T,'U>) =
+                let create (array:array<'T>) (current:ISeqFactory<'T,'U>) =
                     createDelayed (fun () -> array) current
 
                 let createDelayedId (delayedArray:unit -> array<'T>) =
@@ -1271,7 +1305,7 @@ namespace Microsoft.FSharp.Collections
                             result.SeqState <- SeqProcessNextStates.InProcess
                             moveNext list
 
-                type Enumerable<'T,'U>(alist:list<'T>, current:SeqComponentFactory<'T,'U>) =
+                type Enumerable<'T,'U>(alist:list<'T>, current:ISeqFactory<'T,'U>) =
                     inherit Enumerable.EnumerableBase<'U>()
 
                     interface IEnumerable<'U> with
@@ -1279,14 +1313,15 @@ namespace Microsoft.FSharp.Collections
                             let result = Result<'U> ()
                             Helpers.upcastEnumerator (new Enumerator<'T,'U>(alist, current.Create result emptyPipeIdx (SetResult<'U> result), result))
 
-                    override __.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
-                        Helpers.upcastEnumerable (new Enumerable<'T,'V>(alist, ComposedFactory.Combine current next))
+                    interface ISeq<'U> with
+                        member __.Compose (next:ISeqFactory<'U,'V>) : ISeq<'V> =
+                            Helpers.upcastSeq (new Enumerable<'T,'V>(alist, ComposedFactory.Combine current next))
 
-                    override this.ForEach (f:(unit->unit)->#Consumer<'U,'U>) =
-                        ForEach.execute f current (ForEach.list alist)
+                        member this.ForEach (f:(unit->unit)->#Consumer<'U,'U>) =
+                            ForEach.execute f current (ForEach.list alist)
 
                 let create alist current =
-                    Helpers.upcastEnumerable (Enumerable(alist, current))
+                    Helpers.upcastSeq (Enumerable(alist, current))
 
             module Unfold =
                 type Enumerator<'T,'U,'State>(generator:'State->option<'T*'State>, state:'State, seqComponent:Consumer<'T,'U>, signal:Result<'U>) =
@@ -1309,7 +1344,7 @@ namespace Microsoft.FSharp.Collections
                             signal.SeqState <- SeqProcessNextStates.InProcess
                             moveNext ()
 
-                type Enumerable<'T,'U,'GeneratorState>(generator:'GeneratorState->option<'T*'GeneratorState>, state:'GeneratorState, current:SeqComponentFactory<'T,'U>) =
+                type Enumerable<'T,'U,'GeneratorState>(generator:'GeneratorState->option<'T*'GeneratorState>, state:'GeneratorState, current:ISeqFactory<'T,'U>) =
                     inherit Enumerable.EnumerableBase<'U>()
 
                     interface IEnumerable<'U> with
@@ -1317,11 +1352,12 @@ namespace Microsoft.FSharp.Collections
                             let result = Result<'U> ()
                             Helpers.upcastEnumerator (new Enumerator<'T,'U,'GeneratorState>(generator, state, current.Create result emptyPipeIdx (SetResult<'U> result), result))
 
-                    override this.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
-                        Helpers.upcastEnumerable (new Enumerable<'T,'V,'GeneratorState>(generator, state, ComposedFactory.Combine current next))
+                    interface ISeq<'U> with
+                        member this.Compose (next:ISeqFactory<'U,'V>) : ISeq<'V> =
+                            Helpers.upcastSeq (new Enumerable<'T,'V,'GeneratorState>(generator, state, ComposedFactory.Combine current next))
 
-                    override this.ForEach (f:(unit->unit)->#Consumer<'U,'U>) =
-                        ForEach.execute f current (ForEach.unfold generator state)
+                        member this.ForEach (f:(unit->unit)->#Consumer<'U,'U>) =
+                            ForEach.execute f current (ForEach.unfold generator state)
 
             module Init =
                 // The original implementation of "init" delayed the calculation of Current, and so it was possible
@@ -1382,7 +1418,7 @@ namespace Microsoft.FSharp.Collections
                             signal.SeqState <- SeqProcessNextStates.InProcess
                             moveNext ()
 
-                type Enumerable<'T,'U>(count:Nullable<int>, f:int->'T, current:SeqComponentFactory<'T,'U>) =
+                type Enumerable<'T,'U>(count:Nullable<int>, f:int->'T, current:ISeqFactory<'T,'U>) =
                     inherit Enumerable.EnumerableBase<'U>()
 
                     interface IEnumerable<'U> with
@@ -1390,12 +1426,13 @@ namespace Microsoft.FSharp.Collections
                             let result = Result<'U> ()
                             Helpers.upcastEnumerator (new Enumerator<'T,'U>(count, f, current.Create result emptyPipeIdx (SetResult<'U> result), result))
 
-                    override this.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
-                        Helpers.upcastEnumerable (new Enumerable<'T,'V>(count, f, ComposedFactory.Combine current next))
+                    interface ISeq<'U> with
+                        member this.Compose (next:ISeqFactory<'U,'V>) : ISeq<'V> =
+                            Helpers.upcastSeq (new Enumerable<'T,'V>(count, f, ComposedFactory.Combine current next))
 
-                    override this.ForEach (createResult:(unit->unit)->#Consumer<'U,'U>) =
-                        let terminatingIdx = getTerminatingIdx count
-                        ForEach.execute createResult current (ForEach.init f terminatingIdx)
+                        member this.ForEach (createResult:(unit->unit)->#Consumer<'U,'U>) =
+                            let terminatingIdx = getTerminatingIdx count
+                            ForEach.execute createResult current (ForEach.init f terminatingIdx)
 
                 let upto lastOption f =
                     match lastOption with
@@ -1457,11 +1494,12 @@ namespace Microsoft.FSharp.Collections
                             // in the way presented, but it's possible.
                             upto (if count.HasValue then Some (count.Value-1) else None) f
 
-                    override this.Compose (next:SeqComponentFactory<'T,'U>) : IEnumerable<'U> =
-                        Helpers.upcastEnumerable (Enumerable<'T,'V>(count, f, next))
+                    interface ISeq<'T> with
+                        member this.Compose (next:ISeqFactory<'T,'U>) : ISeq<'U> =
+                            Helpers.upcastSeq (Enumerable<'T,'V>(count, f, next))
 
-                    override this.ForEach (f:(unit->unit)->#Consumer<'T,'T>) =
-                        ForEach.execute f IdentityFactory.IdentityFactory (ForEach.enumerable (Helpers.upcastEnumerable this))
+                        member this.ForEach (f:(unit->unit)->#Consumer<'T,'T>) =
+                            ForEach.execute f IdentityFactory.IdentityFactory (ForEach.enumerable (Helpers.upcastEnumerable this))
 
 #if FX_NO_ICLONEABLE
         open Microsoft.FSharp.Core.ICloneableExtensions
@@ -1474,7 +1512,7 @@ namespace Microsoft.FSharp.Collections
         let inline indexNotFound() = raise (new System.Collections.Generic.KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))
         
         [<CompiledName("ToComposer")>]
-        let toComposer (source:seq<'T>): Composer.Internal.SeqEnumerable<'T> = 
+        let toComposer (source:seq<'T>): Composer.Internal.ISeq<'T> = 
             checkNonNull "source" source
             match source with
             | :? Composer.Enumerable.EnumerableBase<'T> as s -> upcast s
@@ -1625,10 +1663,10 @@ namespace Microsoft.FSharp.Collections
         let private seqFactory createSeqComponent (source:seq<'T>) =
             checkNonNull "source" source
             match source with
-            | :? Composer.Enumerable.EnumerableBase<'T> as s -> s.Compose createSeqComponent
-            | :? array<'T> as a -> Composer.Array.create a createSeqComponent
-            | :? list<'T> as a -> Composer.List.create a createSeqComponent
-            | _ -> Composer.Enumerable.create source createSeqComponent
+            | :? Composer.Internal.ISeq<'T> as s -> Composer.Helpers.upcastEnumerable (s.Compose createSeqComponent)
+            | :? array<'T> as a -> Composer.Helpers.upcastEnumerable (Composer.Array.create a createSeqComponent)
+            | :? list<'T> as a -> Composer.Helpers.upcastEnumerable (Composer.List.create a createSeqComponent)
+            | _ -> Composer.Helpers.upcastEnumerable (Composer.Enumerable.create source createSeqComponent)
 
         [<CompiledName("Filter")>]
         let filter<'T> (f:'T->bool) (source:seq<'T>) : seq<'T> =
@@ -1654,7 +1692,7 @@ namespace Microsoft.FSharp.Collections
         let map2<'T,'U,'V> (f:'T->'U->'V) (source1:seq<'T>) (source2:seq<'U>) : seq<'V> =
             checkNonNull "source1" source1
             match source1 with
-            | :? Composer.Enumerable.EnumerableBase<'T> as s -> s.Compose (Composer.Map2FirstFactory (f, source2))
+            | :? Composer.Internal.ISeq<'T> as s -> Composer.Helpers.upcastEnumerable (s.Compose (Composer.Map2FirstFactory (f, source2)))
             | _ -> source2 |> seqFactory (Composer.Map2SecondFactory (f, source1))
 
         [<CompiledName("Map3")>]
@@ -1862,7 +1900,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("OfArray")>]
         let ofArray (source : 'T array) =
             checkNonNull "source" source
-            Composer.Array.createId source
+            Composer.Helpers.upcastEnumerable (Composer.Array.createId source)
 
         [<CompiledName("ToArray")>]
         let toArray (source : seq<'T>)  =
@@ -2131,7 +2169,7 @@ namespace Microsoft.FSharp.Collections
                 let array = source |> toArray
                 Array.stableSortInPlaceBy keyf array
                 array
-            Composer.Array.createDelayedId delayedSort
+            Composer.Helpers.upcastEnumerable (Composer.Array.createDelayedId delayedSort)
 
         [<CompiledName("Sort")>]
         let sort source =
@@ -2140,7 +2178,7 @@ namespace Microsoft.FSharp.Collections
                 let array = source |> toArray
                 Array.stableSortInPlace array
                 array
-            Composer.Array.createDelayedId delayedSort
+            Composer.Helpers.upcastEnumerable (Composer.Array.createDelayedId delayedSort)
 
         [<CompiledName("SortWith")>]
         let sortWith f source =
@@ -2149,7 +2187,7 @@ namespace Microsoft.FSharp.Collections
                 let array = source |> toArray
                 Array.stableSortInPlaceWith f array
                 array
-            Composer.Array.createDelayedId delayedSort
+            Composer.Helpers.upcastEnumerable (Composer.Array.createDelayedId delayedSort)
 
         [<CompiledName("SortByDescending")>]
         let inline sortByDescending keyf source =
@@ -2470,7 +2508,7 @@ namespace Microsoft.FSharp.Collections
                 let array = source |> toArray 
                 Array.Reverse array
                 array
-            Composer.Array.createDelayedId delayedReverse
+            Composer.Helpers.upcastEnumerable (Composer.Array.createDelayedId delayedReverse)
 
         [<CompiledName("Permute")>]
         let permute f (source:seq<_>) =
@@ -2479,7 +2517,7 @@ namespace Microsoft.FSharp.Collections
                 source
                 |> toArray
                 |> Array.permute f
-            Composer.Array.createDelayedId delayedPermute
+            Composer.Helpers.upcastEnumerable (Composer.Array.createDelayedId delayedPermute)
 
         [<CompiledName("MapFold")>]
         let mapFold<'T,'State,'Result> (f: 'State -> 'T -> 'Result * 'State) acc source =

@@ -18,6 +18,7 @@ namespace Microsoft.FSharp.Collections
                 /// <summary>PipeIdx denotes the index of the element within the pipeline. 0 denotes the
                 /// source of the chain.</summary>
                 type PipeIdx = int
+                type ``PipeIdx?`` = Nullable<PipeIdx>
 
                 /// <summary>ICompletionChaining is used to correctly handle cleaning up of the pipeline. A
                 /// base implementation is provided in Consumer, and should not be overwritten. Consumer
@@ -33,6 +34,9 @@ namespace Microsoft.FSharp.Collections
                     /// <summary>OnDispose is used to cleanup the stream. It is always called at the last operation
                     /// after the enumeration has completed.</summary>
                     abstract OnDispose : unit -> unit
+
+                type IPipeline =
+                    abstract StopFurtherProcessing : PipeIdx -> unit
 
                 /// <summary>Consumer is the base class of all elements within the pipeline</summary>
                 [<AbstractClass>]
@@ -69,10 +73,14 @@ namespace Microsoft.FSharp.Collections
                     new : init:'U -> Folder<'T,'U>
                     val mutable Value: 'U
 
-                /// <summary>SeqEnumerable functions provide the enhance seq experience</summary>
-                [<AbstractClass>]
-                type SeqEnumerable<'T> =
-                    abstract member ForEach<'a when 'a :> Consumer<'T,'T>> : f:((unit->unit)->'a) -> 'a
+                type ISeqFactory<'T,'U> =
+                    abstract member Create : IPipeline -> ``PipeIdx?`` -> Consumer<'U,'V> -> Consumer<'T,'V>
+                    abstract member PipeIdx : PipeIdx
+
+                type ISeq<'T> =
+                    inherit System.Collections.Generic.IEnumerable<'T>
+                    abstract member Compose : ISeqFactory<'T,'U> -> ISeq<'U>
+                    abstract member ForEach : f:((unit -> unit) -> 'a) -> 'a when 'a :> Consumer<'T,'T>
 
         /// <summary>Returns a new sequence that contains the cartesian product of the two input sequences.</summary>
         /// <param name="source1">The first sequence.</param>
@@ -1265,7 +1273,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("ToComposer")>]
-        val toComposer   : source:seq<'T> -> Composer.Internal.SeqEnumerable<'T>
+        val toComposer   : source:seq<'T> -> Composer.Internal.ISeq<'T>
 
         /// <summary>Builds a list from the given collection.</summary>
         ///
