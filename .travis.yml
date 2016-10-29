@@ -15,8 +15,7 @@ before_install:
 
 script:
   - mono .nuget/NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .nuget/NuGet.Config
-  - xbuild src/fsharp-proto-build.proj
-  - xbuild build-everything.proj /p:Configuration=debug /p:BUILD_PUBLICSIGN=0
+  - xbuild src/fsharp-proto-build.proj && xbuild build-everything.proj /p:Configuration=debug /p:BUILD_PUBLICSIGN=0
 
 #  - BUILD_CORECLR=1 TEST_CORECLR_COREUNIT_SUITE=1
 #  - ./init-tools.sh
