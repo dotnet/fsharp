@@ -14,8 +14,9 @@ before_install:
   - sudo apt-get install dotnet-dev-1.0.0-preview2-003131
 
 script:
-  - mono .nuget/NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .nuget/NuGet.Config
-  - xbuild src/fsharp-proto-build.proj && xbuild build-everything.proj /p:Configuration=debug /p:BUILD_PUBLICSIGN=0
+  - (mono .nuget/NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .nuget/NuGet.Config || true)
+  - xbuild src/fsharp-proto-build.proj
+  - xbuild build-everything.proj /p:Configuration=debug /p:BUILD_PUBLICSIGN=0
 
 #  - BUILD_CORECLR=1 TEST_CORECLR_COREUNIT_SUITE=1
 #  - ./init-tools.sh
