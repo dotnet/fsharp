@@ -85,13 +85,11 @@
     <DefineConstants Condition="'$(VisualStudioVersion)'=='14.0' AND '$(ProjectLanguage)' != 'VisualBasic'">$(DefineConstants);VS_VERSION_DEV14</DefineConstants>
     <DefineConstants Condition="'$(VisualStudioVersion)'=='15.0' AND '$(ProjectLanguage)' == 'VisualBasic'">$(DefineConstants),VS_VERSION_DEV15=True</DefineConstants>
     <DefineConstants Condition="'$(VisualStudioVersion)'=='15.0' AND '$(ProjectLanguage)' != 'VisualBasic'">$(DefineConstants);VS_VERSION_DEV15</DefineConstants>
+	<!-- VisualStudioVersion is not defined when using xbuild on Mono. Assume 14.0, the last shipped in-the-box with Mono -->
+    <DefineConstants Condition="'$(VisualStudioVersion)'=='' AND '$(ProjectLanguage)' == 'VisualBasic'">$(DefineConstants),VS_VERSION_DEV14=True</DefineConstants>
+    <DefineConstants Condition="'$(VisualStudioVersion)'=='' AND '$(ProjectLanguage)' != 'VisualBasic'">$(DefineConstants);VS_VERSION_DEV14</DefineConstants>
   </PropertyGroup>
   
-  <PropertyGroup>
-    <MSBuildVersionSuffix>core</MSBuildVersionSuffix>
-    <MSBuildVersionSuffix Condition="'$(VisualStudioVersion)' == '12.0'">V12.0</MSBuildVersionSuffix>
-  </PropertyGroup>
-
   <PropertyGroup> 
     <BuildRevision>$([System.DateTime]::Now.ToString(`yyMMdd`))</BuildRevision>
     <NuGetReleaseVersion>1.0.0</NuGetReleaseVersion> 
