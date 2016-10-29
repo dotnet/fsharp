@@ -1551,7 +1551,7 @@ namespace Microsoft.FSharp.Collections
                     { new Composer.Internal.Consumer<'T,'T> () with
                         override this.ProcessNext value =
                             f value
-                            Unchecked.defaultof<bool> })
+                            Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
             |> ignore
 
         [<CompiledName("Item")>]
@@ -1573,7 +1573,7 @@ namespace Microsoft.FSharp.Collections
                             halt ()
                         else
                             this.Value._1 <- this.Value._1 + 1
-                        Unchecked.defaultof<bool> })
+                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
             |> fun item -> item.Value._2
 
         [<CompiledName("Get")>]
@@ -1588,7 +1588,7 @@ namespace Microsoft.FSharp.Collections
                     override this.ProcessNext value =
                         f.Invoke(this.Value, value)
                         this.Value <- this.Value + 1
-                        Unchecked.defaultof<bool> })
+                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
             |> ignore
 
         [<CompiledName("Exists")>]
@@ -1600,7 +1600,7 @@ namespace Microsoft.FSharp.Collections
                         if f value then
                             this.Value <- true
                             halt ()
-                        Unchecked.defaultof<bool> 
+                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) 
                     })
             |> fun exists -> exists.Value
 
@@ -1613,7 +1613,7 @@ namespace Microsoft.FSharp.Collections
                         if element = value then
                             this.Value <- true
                             halt ()
-                        Unchecked.defaultof<bool>
+                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
                     })
             |> fun contains -> contains.Value
 
@@ -1626,7 +1626,7 @@ namespace Microsoft.FSharp.Collections
                         if not (f value) then
                             this.Value <- false
                             halt ()
-                        Unchecked.defaultof<bool>
+                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
                     })
             |> fun forall -> forall.Value
 
@@ -1732,7 +1732,7 @@ namespace Microsoft.FSharp.Collections
                             this.Value <- some
                             halt ()
                         | None -> ()
-                        Unchecked.defaultof<bool> })
+                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
             |> fun pick -> pick.Value
 
         [<CompiledName("Pick")>]
@@ -1750,7 +1750,7 @@ namespace Microsoft.FSharp.Collections
                         if f value then
                             this.Value <- Some value
                             halt ()
-                        Unchecked.defaultof<bool> })
+                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
             |> fun find -> find.Value
 
         [<CompiledName("Find")>]
@@ -1805,7 +1805,7 @@ namespace Microsoft.FSharp.Collections
                 { new Composer.Internal.Folder<'T,'State> (x) with
                     override this.ProcessNext value =
                         this.Value <- f.Invoke (this.Value, value)
-                        Unchecked.defaultof<bool> })
+                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
             |> fun folded -> folded.Value
 
         [<CompiledName("Fold2")>]
@@ -1837,7 +1837,7 @@ namespace Microsoft.FSharp.Collections
                             this.Value._2 <- value
                         else
                             this.Value._2 <- f.Invoke (this.Value._2, value)
-                        Unchecked.defaultof<bool>
+                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
                     member this.OnComplete _ = 
                         if this.Value._1 then
@@ -1886,7 +1886,7 @@ namespace Microsoft.FSharp.Collections
                             if c <> 0 then
                                 this.Value <- c
                                 halt ()
-                        Unchecked.defaultof<bool>
+                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
                     member this.OnComplete _ = 
                         if this.Value = 0 && e2.MoveNext() then
                             this.Value <- -1 })
@@ -2000,8 +2000,7 @@ namespace Microsoft.FSharp.Collections
                             halt ()
                         else
                             this.Value._2 <- this.Value._2 + 1
-                        Unchecked.defaultof<bool>
-                })
+                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
             |> fun tried -> tried.Value._1
 
         [<CompiledName("FindIndex")>]
@@ -2246,7 +2245,7 @@ namespace Microsoft.FSharp.Collections
                 { new Composer.Internal.Folder<'a,'a> (LanguagePrimitives.GenericZero) with
                     override this.ProcessNext value =
                         this.Value <- Checked.(+) this.Value value
-                        Unchecked.defaultof<bool> })
+                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
             |> fun sum -> sum.Value
 
         [<CompiledName("SumBy")>]
@@ -2256,7 +2255,7 @@ namespace Microsoft.FSharp.Collections
                 { new Composer.Internal.Folder<'T,'U> (LanguagePrimitives.GenericZero< ^U>) with
                     override this.ProcessNext value =
                         this.Value <- Checked.(+) this.Value (f value)
-                        Unchecked.defaultof<bool> })
+                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
             |> fun sum -> sum.Value
 
         [<CompiledName("Average")>]
@@ -2267,7 +2266,7 @@ namespace Microsoft.FSharp.Collections
                     override this.ProcessNext value =
                         this.Value._1 <- Checked.(+) this.Value._1 value
                         this.Value._2 <- this.Value._2 + 1
-                        Unchecked.defaultof<bool>
+                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
                     member this.OnComplete _ = 
                         if this.Value._2 = 0 then
@@ -2282,7 +2281,7 @@ namespace Microsoft.FSharp.Collections
                     override this.ProcessNext value =
                         this.Value._1 <- Checked.(+) this.Value._1 (f value)
                         this.Value._2 <- this.Value._2 + 1
-                        Unchecked.defaultof<bool>
+                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
                     member this.OnComplete _ = 
                         if this.Value._2 = 0 then
@@ -2300,7 +2299,7 @@ namespace Microsoft.FSharp.Collections
                             this.Value._2 <- value
                         elif value < this.Value._2 then
                             this.Value._2 <- value
-                        Unchecked.defaultof<bool>
+                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
                     member this.OnComplete _ = 
                         if this.Value._1 then
@@ -2323,7 +2322,7 @@ namespace Microsoft.FSharp.Collections
                             this.Value._2 <- valueU
                             this.Value._3 <- value
                         | _ -> ()
-                        Unchecked.defaultof<bool>
+                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
                     member this.OnComplete _ = 
                         if this.Value._1 then
@@ -2358,7 +2357,7 @@ namespace Microsoft.FSharp.Collections
                             this.Value._2 <- value
                         elif value > this.Value._2 then
                             this.Value._2 <- value
-                        Unchecked.defaultof<bool>
+                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
                     member this.OnComplete _ = 
                         if this.Value._1 then
@@ -2381,7 +2380,7 @@ namespace Microsoft.FSharp.Collections
                             this.Value._2 <- valueU
                             this.Value._3 <- value
                         | _ -> ()
-                        Unchecked.defaultof<bool>
+                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
                     member this.OnComplete _ = 
                         if this.Value._1 then
@@ -2450,7 +2449,7 @@ namespace Microsoft.FSharp.Collections
                     override this.ProcessNext value =
                         this.Value <- Some value
                         halt ()
-                        Unchecked.defaultof<bool> })
+                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
             |> fun head -> head.Value
 
         [<CompiledName("Head")>]
@@ -2472,7 +2471,7 @@ namespace Microsoft.FSharp.Collections
                         if this.Value._1 then
                             this.Value._1 <- false
                         this.Value._2 <- value
-                        Unchecked.defaultof<bool> })
+                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
             |> fun tried -> 
                 if tried.Value._1 then
                     None
@@ -2497,7 +2496,7 @@ namespace Microsoft.FSharp.Collections
                         else
                             this.Value._3 <- true
                             halt ()
-                        Unchecked.defaultof<bool> 
+                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) 
 
                       member this.OnComplete _ = 
                         if this.Value._1 then
