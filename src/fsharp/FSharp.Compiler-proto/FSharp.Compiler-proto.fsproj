@@ -86,11 +86,11 @@
     <Compile Include="..\..\utils\prim-parsing.fs">
       <Link>prim-parsing.fs</Link>
     </Compile>
-    <Compile Include="..\..\utils\resizearray.fsi">
-      <Link>resizearray.fsi</Link>
+    <Compile Include="..\..\utils\ResizeArray.fsi">
+      <Link>ResizeArray.fsi</Link>
     </Compile>
-    <Compile Include="..\..\utils\resizearray.fs">
-      <Link>resizearray.fs</Link>
+    <Compile Include="..\..\utils\ResizeArray.fs">
+      <Link>ResizeArray.fs</Link>
     </Compile>
     <Compile Include="..\..\utils\HashMultiMap.fsi">
       <Link>HashMultiMap.fsi</Link>
