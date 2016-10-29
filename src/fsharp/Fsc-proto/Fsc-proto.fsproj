@@ -2,7 +2,7 @@
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <FSharpSourcesRoot>..\..</FSharpSourcesRoot>
+    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
     <Configuration Condition=" '$(Configuration)' == '' ">Proto</Configuration>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
@@ -33,7 +33,7 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
-    <Reference Include="$(FSharpNetFxLkgPath)\FSharp.Core.dll" />
+    <Reference Include="$(FSharpCoreLkgPath)\FSharp.Core.dll" />
     <Reference Include="System" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Runtime.Remoting" />
@@ -47,10 +47,10 @@
   
   <Target Name="CopyFSharpCoreOptSigFiles" AfterTargets="Build">
     <ItemGroup>
-        <FSharpCoreOptSigFiles Include="$(FSharpNetFxLkgPath)\FSharp.Core.dll" />
-        <FSharpCoreOptSigFiles Include="$(FSharpNetFxLkgPath)\FSharp.Core.optdata" />
-        <FSharpCoreOptSigFiles Include="$(FSharpNetFxLkgPath)\FSharp.Core.sigdata" />
-        <FSharpCoreOptSigFiles Include="$(FSharpNetFxLkgPath)\FSharp.Core.xml" />
+        <FSharpCoreOptSigFiles Include="$(FSharpCoreLkgPath)\FSharp.Core.dll" />
+        <FSharpCoreOptSigFiles Include="$(FSharpCoreLkgPath)\FSharp.Core.optdata" />
+        <FSharpCoreOptSigFiles Include="$(FSharpCoreLkgPath)\FSharp.Core.sigdata" />
+        <FSharpCoreOptSigFiles Include="$(FSharpCoreLkgPath)\FSharp.Core.xml" />
     </ItemGroup>
     
     <Copy SourceFiles="@(FSharpCoreOptSigFiles)" DestinationFolder="$(OutputPath)" />
