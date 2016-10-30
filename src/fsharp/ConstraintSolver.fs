@@ -304,15 +304,19 @@ let BakedInTraitConstraintNames =
 // Run the constraint solver with undo (used during method overload resolution)
 
 type Trace = 
-    { mutable actions: (unit -> unit) list  }
+    { mutable actions:  ((unit -> unit) * (unit -> unit)) list }
     static member New () =  { actions = [] }
-    member t.Undo () = List.iter (fun a -> a ()) t.actions
-    member t.Push f = t.actions <- f :: t.actions
+    member t.Undo () = List.iter (fun (_, a) -> a ()) t.actions
+    member t.Push f undo = t.actions <- (f, undo) :: t.actions
 
 type OptionalTrace = 
     | NoTrace
     | WithTrace of Trace
     member x.HasTrace = match x with NoTrace -> false | WithTrace _ -> true
+    member t.Exec f undo = 
+        match t with        
+        | WithTrace trace -> trace.Push f undo; f()
+        | NoTrace -> f()
 
 
 let CollectThenUndo f = 
@@ -411,16 +415,13 @@ let SubstMeasure (r:Typar) ms =
     | None -> tp.typar_solution <- Some (TType_measure ms)
     | Some _ -> error(InternalError("already solved",r.Range));
 
-let rec TransactStaticReq (csenv:ConstraintSolverEnv) trace (tpr:Typar) req = 
+let rec TransactStaticReq (csenv:ConstraintSolverEnv) (trace:OptionalTrace) (tpr:Typar) req = 
     let m = csenv.m
     if (tpr.Rigidity.ErrorIfUnified && tpr.StaticReq <> req) then 
         ErrorD(ConstraintSolverError(FSComp.SR.csTypeCannotBeResolvedAtCompileTime(tpr.Name),m,m)) 
     else
         let orig = tpr.StaticReq
-        match trace with 
-        | NoTrace -> () 
-        | WithTrace trace -> trace.Push (fun () -> tpr.SetStaticReq orig) 
-        tpr.SetStaticReq req;
+        trace.Exec (fun () -> tpr.SetStaticReq req) (fun () -> tpr.SetStaticReq orig)
         CompleteD
 
 and SolveTypStaticReqTypar (csenv:ConstraintSolverEnv) trace req (tpr:Typar) =
@@ -444,12 +445,9 @@ and SolveTypStaticReq (csenv:ConstraintSolverEnv) trace req ty =
             SolveTypStaticReqTypar csenv trace req tpr
           else CompleteD
       
-let rec TransactDynamicReq trace (tpr:Typar) req = 
+let rec TransactDynamicReq (trace:OptionalTrace) (tpr:Typar) req = 
     let orig = tpr.DynamicReq
-    match trace with 
-    | NoTrace -> () 
-    | WithTrace trace -> trace.Push (fun () -> tpr.SetDynamicReq orig) 
-    tpr.SetDynamicReq req;
+    trace.Exec (fun () -> tpr.SetDynamicReq req) (fun () -> tpr.SetDynamicReq orig)
     CompleteD
 
 and SolveTypDynamicReq (csenv:ConstraintSolverEnv) trace req ty =
@@ -654,7 +652,7 @@ let CheckWarnIfRigid (csenv:ConstraintSolverEnv) ty1 (r:Typar) ty =
 
 /// Add the constraint "ty1 = ty" to the constraint problem, where ty1 is a type variable. 
 /// Propagate all effects of adding this constraint, e.g. to solve other variables 
-let rec SolveTyparEqualsTyp (csenv:ConstraintSolverEnv) ndeep m2 trace ty1 ty =
+let rec SolveTyparEqualsTyp (csenv:ConstraintSolverEnv) ndeep m2 (trace:OptionalTrace) ty1 ty =
     let m = csenv.m
     
     DepthCheck ndeep m  ++ (fun () -> 
@@ -673,10 +671,7 @@ let rec SolveTyparEqualsTyp (csenv:ConstraintSolverEnv) ndeep m2 trace ty1 ty =
       // We may need to make use of the equation when solving the constraints. 
       // Record a entry in the undo trace if one is provided 
       let tpdata = r.Data
-      match trace with 
-      | NoTrace -> () 
-      | WithTrace trace -> trace.Push (fun () -> tpdata.typar_solution <- None) 
-      tpdata.typar_solution <- Some ty;
+      trace.Exec (fun () -> tpdata.typar_solution <- Some ty) (fun () -> tpdata.typar_solution <- None)
       
   (*   dprintf "setting typar %d to type %s at %a\n" r.Stamp ((DebugPrint.showType ty)) outputRange m; *)
 
@@ -1354,12 +1349,9 @@ and MemberConstraintSolutionOfRecdFieldInfo rfinfo isSet =
     FSRecdFieldSln(rfinfo.TypeInst,rfinfo.RecdFieldRef,isSet)
 
 /// Write into the reference cell stored in the TAST and add to the undo trace if necessary
-and TransactMemberConstraintSolution traitInfo trace sln  =
+and TransactMemberConstraintSolution traitInfo (trace:OptionalTrace) sln  =
     let prev = traitInfo.Solution 
-    traitInfo.Solution <- Some sln
-    match trace with 
-    | NoTrace -> () 
-    | WithTrace trace -> trace.Push (fun () -> traitInfo.Solution <- prev) 
+    trace.Exec (fun () -> traitInfo.Solution <- Some sln) (fun () -> traitInfo.Solution <- prev)
 
 /// Only consider overload resolution if canonicalizing or all the types are now nominal. 
 /// That is, don't perform resolution if more nominal information may influence the set of available overloads 
@@ -1414,19 +1406,14 @@ and SolveRelevantMemberConstraints (csenv:ConstraintSolverEnv) ndeep permitWeakR
                 else
                     ResultD false)) 
 
-and SolveRelevantMemberConstraintsForTypar (csenv:ConstraintSolverEnv) ndeep permitWeakResolution trace tp =
+and SolveRelevantMemberConstraintsForTypar (csenv:ConstraintSolverEnv) ndeep permitWeakResolution (trace:OptionalTrace) tp =
     let cxst = csenv.SolverState.ExtraCxs
     let tpn = tp.Stamp
     let cxs = cxst.FindAll tpn
     if List.isEmpty cxs then ResultD false else
     
-    cxs |> List.iter (fun _ -> cxst.Remove tpn);
-
-    assert (List.isEmpty (cxst.FindAll tpn))
-
-    match trace with 
-    | NoTrace -> () 
-    | WithTrace trace -> trace.Push (fun () -> cxs |> List.iter (fun cx -> cxst.Add(tpn,cx))) 
+    trace.Exec (fun () -> cxs |> List.iter (fun _ -> cxst.Remove tpn)) (fun () -> cxs |> List.iter (fun cx -> cxst.Add(tpn,cx)))
+    assert (List.isEmpty (cxst.FindAll tpn)) 
 
     cxs |> AtLeastOneD (fun (traitInfo,m2) -> 
         let csenv = { csenv with m = m2 }
@@ -1451,10 +1438,7 @@ and AddMemberConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace traitInfo sup
 
         // check the constraint is not already listed for this type variable
         if not (cxs |> List.exists (fun (traitInfo2,_) -> traitsAEquiv g aenv traitInfo traitInfo2)) then 
-            match trace with 
-            | NoTrace -> () 
-            | WithTrace trace -> trace.Push (fun () -> csenv.SolverState.ExtraCxs.Remove tpn) 
-            csenv.SolverState.ExtraCxs.Add (tpn,(traitInfo,m2))
+            trace.Exec (fun () -> csenv.SolverState.ExtraCxs.Add (tpn,(traitInfo,m2))) (fun () -> csenv.SolverState.ExtraCxs.Remove tpn)
     );
 
     // Associate the constraint with each type variable in the support, so if the type variable
@@ -1627,10 +1611,7 @@ and AddConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace tp newConstraint  =
         // Record a entry in the undo trace if one is provided 
         let d = tp.Data
         let orig = d.typar_constraints
-        match trace with 
-        | NoTrace -> () 
-        | WithTrace trace -> trace.Push (fun () -> d.typar_constraints <- orig) 
-        d.typar_constraints <- newConstraints
+        trace.Exec (fun () -> d.typar_constraints <- newConstraints) (fun () -> d.typar_constraints <- orig)
 
         CompleteD)))
 
@@ -2425,17 +2406,13 @@ let UnifyUniqueOverloading
     | _ -> 
         ResultD false
 
-let EliminateConstraintsForGeneralizedTypars csenv trace (generalizedTypars: Typars) =
+let EliminateConstraintsForGeneralizedTypars csenv (trace:OptionalTrace) (generalizedTypars: Typars) =
     // Remove the global constraints where this type variable appears in the support of the constraint 
     generalizedTypars |> List.iter (fun tp -> 
         let tpn = tp.Stamp
         let cxst = csenv.SolverState.ExtraCxs
         let cxs = cxst.FindAll tpn
-        cxs |> List.iter (fun cx -> 
-            cxst.Remove tpn
-            match trace with 
-            | NoTrace -> () 
-            | WithTrace trace -> trace.Push (fun () -> (csenv.SolverState.ExtraCxs.Add (tpn,cx))))
+        cxs |> List.iter (fun cx -> trace.Exec (fun () -> cxst.Remove tpn) (fun () -> (csenv.SolverState.ExtraCxs.Add (tpn,cx))))
     )
 
 
