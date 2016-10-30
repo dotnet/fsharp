@@ -325,13 +325,14 @@ let CollectThenUndo f =
     trace.Undo(); 
     res
 
-let CheckThenUndo f = CollectThenUndo f |> CheckNoErrorsAndGetWarnings 
-
 let FilterEachThenUndo f meths = 
     meths |> List.choose (fun calledMeth -> 
-        match CheckThenUndo (fun trace -> f trace calledMeth) with 
+        let trace = Trace.New()        
+        let res = f trace calledMeth
+        trace.Undo()
+        match res |> CheckNoErrorsAndGetWarnings with 
         | None -> None 
-        | Some warns -> Some (calledMeth,warns.Length))
+        | Some warns -> Some (calledMeth,warns.Length,trace))
 
 let ShowAccessDomain ad =
     match ad with 
@@ -2104,17 +2105,17 @@ and ResolveOverloading
     let isOpConversion = (methodName = "op_Explicit" || methodName = "op_Implicit")
     // See what candidates we have based on name and arity 
     let candidates = calledMethGroup |> List.filter (fun cmeth -> cmeth.IsCandidate(m,ad))
-    let calledMethOpt, errors = 
+    let calledMethOpt, errors, calledMethTrace = 
 
         match calledMethGroup,candidates with 
         | _,[calledMeth] when not isOpConversion -> 
-            Some calledMeth, CompleteD
+            Some calledMeth, CompleteD, NoTrace
 
         | [],_ when not isOpConversion -> 
-            None, ErrorD (Error (FSComp.SR.csMethodNotFound(methodName),m))
+            None, ErrorD (Error (FSComp.SR.csMethodNotFound(methodName),m)), NoTrace
 
         | _,[] when not isOpConversion -> 
-            None, ReportNoCandidatesError csenv callerArgCounts methodName ad calledMethGroup
+            None, ReportNoCandidatesError csenv callerArgCounts methodName ad calledMethGroup, NoTrace
             
         | _,_ -> 
 
@@ -2138,8 +2139,8 @@ and ResolveOverloading
                          (ArgsEquivInsideUndo csenv cx.IsSome) 
                          reqdRetTyOpt 
                          calledMeth) with
-          | [(calledMeth,_)] -> 
-              Some calledMeth, CompleteD
+          | [(calledMeth,_,_)] -> 
+              Some calledMeth, CompleteD, NoTrace
 
           | _ -> 
             // Now determine the applicable methods.
@@ -2196,10 +2197,10 @@ and ResolveOverloading
                             | OkResult _ -> None
                             | ErrorResult(_,exn) -> Some (calledMeth, exn)))
 
-                None,ErrorD (failOverloading (FSComp.SR.csNoOverloadsFound methodName) errors)
+                None,ErrorD (failOverloading (FSComp.SR.csNoOverloadsFound methodName) errors), NoTrace
 
-            | [(calledMeth,_)] -> 
-                Some calledMeth, CompleteD
+            | [(calledMeth,_,t)] -> 
+                Some calledMeth, CompleteD, WithTrace t
 
             | applicableMeths -> 
                 
@@ -2235,7 +2236,7 @@ and ResolveOverloading
                     if c <> 0 then c else
                     0
 
-                let better (candidate:CalledMeth<_>, candidateWarnCount) (other:CalledMeth<_>, otherWarnCount) = 
+                let better (candidate:CalledMeth<_>, candidateWarnCount, _) (other:CalledMeth<_>, otherWarnCount, _) = 
                     // Prefer methods that don't give "this code is less generic" warnings
                     // Note: Relies on 'compare' respecting true > false
                     let c = compare (candidateWarnCount = 0) (otherWarnCount = 0)
@@ -2326,7 +2327,7 @@ and ResolveOverloading
                         else 
                            None) 
                 match bestMethods with 
-                | [(calledMeth,_)] -> Some(calledMeth), CompleteD
+                | [(calledMeth,_,t)] -> Some(calledMeth), CompleteD, WithTrace t
                 | bestMethods -> 
                     let methodNames =
                         let methods = 
@@ -2337,8 +2338,8 @@ and ResolveOverloading
                             | [] -> 
                                 match applicableMeths with
                                 | [] -> candidates
-                                | m -> m |> List.map fst
-                            | m -> m |> List.map fst
+                                | m -> m |> List.map (fun (x,_,_) -> x)
+                            | m -> m |> List.map (fun (x,_,_) -> x)
                         methods
                         |> List.map (fun cmeth -> NicePrint.stringOfMethInfo amap m denv cmeth.Method)
                         |> List.sort
@@ -2347,7 +2348,7 @@ and ResolveOverloading
                         match methodNames with
                         | [] -> msg
                         | names -> sprintf "%s %s" msg (FSComp.SR.csCandidates (String.concat ", " names))
-                    None, ErrorD (failOverloading msg [])
+                    None, ErrorD (failOverloading msg []), NoTrace
 
     // If we've got a candidate solution: make the final checks - no undo here! 
     // Allow subsumption on arguments. Include the return type.
@@ -2356,7 +2357,11 @@ and ResolveOverloading
     | Some(calledMeth) -> 
         calledMethOpt,
         errors ++ (fun () -> 
-                            let cxsln = Option.map (fun traitInfo -> (traitInfo, MemberConstraintSolutionOfMethInfo csenv.SolverState m calledMeth.Method calledMeth.CalledTyArgs)) cx
+                        let cxsln = Option.map (fun traitInfo -> (traitInfo, MemberConstraintSolutionOfMethInfo csenv.SolverState m calledMeth.Method calledMeth.CalledTyArgs)) cx
+                        match calledMethTrace with
+                        | NoTrace ->
+
+                            // No trace available for CanMemberSigsMatchUpToCheck with ArgsMustSubsumeOrConvert
                             CanMemberSigsMatchUpToCheck 
                                  csenv 
                                  permitOptArgs
@@ -2365,7 +2370,25 @@ and ResolveOverloading
                                  (TypesMustSubsumeOrConvertInsideUndo csenv ndeep trace cxsln m)// REVIEW: this should not be an "InsideUndo" operation
                                  (ArgsMustSubsumeOrConvert csenv ndeep trace cxsln cx.IsSome) 
                                  reqdRetTyOpt 
-                                 calledMeth)
+                                 calledMeth
+                        | WithTrace calledMethTrc ->
+
+                            // Re-play existing trace
+                            calledMethTrc.actions |> List.rev |> List.iter (fun (action, undo) -> trace.Exec action undo)
+
+                            // Unify return type
+                            match reqdRetTyOpt with 
+                            | None -> CompleteD 
+                            | Some _  when calledMeth.Method.IsConstructor -> CompleteD 
+                            | Some reqdRetTy ->
+                                let methodRetTy = 
+                                    if List.isEmpty calledMeth.UnnamedCalledOutArgs then 
+                                        calledMeth.ReturnType 
+                                    else 
+                                        let outArgTys = calledMeth.UnnamedCalledOutArgs |> List.map (fun calledArg -> destByrefTy g calledArg.CalledArgumentType) 
+                                        if isUnitTy g calledMeth.ReturnType then mkRefTupledTy g outArgTys
+                                        else mkRefTupledTy g (calledMeth.ReturnType :: outArgTys)
+                                MustUnify csenv ndeep trace cxsln reqdRetTy methodRetTy)
 
     | None -> 
         None, errors        
