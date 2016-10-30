@@ -528,6 +528,8 @@ namespace Microsoft.FSharp.Collections
                 let inline upcastEnumeratorNonGeneric (t:#IEnumerator) : IEnumerator = (# "" t : IEnumerator #)
                 let inline upcastICompletionChaining (t:#ICompletionChaining) : ICompletionChaining = (# "" t : ICompletionChaining #)
 
+            open Helpers
+
             type [<AbstractClass>] SeqComponentFactory<'T,'U> (pipeIdx:``PipeIdx?``) =
                 new() = SeqComponentFactory<'T,'U> (emptyPipeIdx)
                 
@@ -543,7 +545,7 @@ namespace Microsoft.FSharp.Collections
                         first.Create outOfBand pipeIdx (second.Create outOfBand (makePipeIdx secondPipeIdx) next)
 
                 static member Combine (first:ISeqFactory<'T,'U>) (second:ISeqFactory<'U,'V>) : ISeqFactory<'T,'V> =
-                    ComposedFactory(first, second, first.PipeIdx+1) |> Helpers.upcastFactory
+                    ComposedFactory(first, second, first.PipeIdx+1) |> upcastFactory
 
             and ChooseFactory<'T,'U> (filter:'T->option<'U>) =
                 inherit SeqComponentFactory<'T,'U> ()
@@ -681,7 +683,7 @@ namespace Microsoft.FSharp.Collections
 
                 override __.ProcessNext (input:'T) : bool =
                     match choose input with
-                    | Some value -> Helpers.avoidTailCall (next.ProcessNext value)
+                    | Some value -> avoidTailCall (next.ProcessNext value)
                     | None -> false
 
             and Distinct<'T,'V when 'T: equality> (next:Consumer<'T,'V>) =
@@ -691,7 +693,7 @@ namespace Microsoft.FSharp.Collections
 
                 override __.ProcessNext (input:'T) : bool = 
                     if hashSet.Add input then
-                        Helpers.avoidTailCall (next.ProcessNext input)
+                        avoidTailCall (next.ProcessNext input)
                     else
                         false
 
@@ -702,7 +704,7 @@ namespace Microsoft.FSharp.Collections
 
                 override __.ProcessNext (input:'T) : bool = 
                     if hashSet.Add(keyFunction input) then
-                        Helpers.avoidTailCall (next.ProcessNext input)
+                        avoidTailCall (next.ProcessNext input)
                     else
                         false
 
@@ -713,7 +715,7 @@ namespace Microsoft.FSharp.Collections
 
                 override __.ProcessNext (input:'T) : bool = 
                     if cached.Value.Add input then
-                        Helpers.avoidTailCall (next.ProcessNext input)
+                        avoidTailCall (next.ProcessNext input)
                     else
                         false
 
@@ -724,7 +726,7 @@ namespace Microsoft.FSharp.Collections
 
                 override __.ProcessNext (input:'T) : bool = 
                     if filter input then
-                        Helpers.avoidTailCall (next.ProcessNext input)
+                        avoidTailCall (next.ProcessNext input)
                     else
                         false
 
@@ -733,7 +735,7 @@ namespace Microsoft.FSharp.Collections
 
                 override __.ProcessNext (input:'T) : bool = 
                     if filter input then
-                        Helpers.avoidTailCall (next.ProcessNext (map input))
+                        avoidTailCall (next.ProcessNext (map input))
                     else
                         false
 
@@ -743,7 +745,7 @@ namespace Microsoft.FSharp.Collections
                 override this.CreateFilter (filter:'T->bool) = upcast FilterThenMap (filter, map, next) 
 
                 override __.ProcessNext (input:'T) : bool = 
-                    Helpers.avoidTailCall (next.ProcessNext (map input))
+                    avoidTailCall (next.ProcessNext (map input))
 
             and Map2First<'First,'Second,'U,'V> (map:'First->'Second->'U, enumerable2:IEnumerable<'Second>, outOfBand:IOutOfBand, next:Consumer<'U,'V>, pipeIdx:int) =
                 inherit SeqComponent<'First,'V>(next)
@@ -753,7 +755,7 @@ namespace Microsoft.FSharp.Collections
 
                 override __.ProcessNext (input:'First) : bool =
                     if input2.MoveNext () then
-                        Helpers.avoidTailCall (next.ProcessNext (map'.Invoke (input, input2.Current)))
+                        avoidTailCall (next.ProcessNext (map'.Invoke (input, input2.Current)))
                     else
                         outOfBand.StopFurtherProcessing pipeIdx
                         false
@@ -769,7 +771,7 @@ namespace Microsoft.FSharp.Collections
 
                 override __.ProcessNext (input:'Second) : bool =
                     if input1.MoveNext () then
-                        Helpers.avoidTailCall (next.ProcessNext (map'.Invoke (input1.Current, input)))
+                        avoidTailCall (next.ProcessNext (map'.Invoke (input1.Current, input)))
                     else
                         outOfBand.StopFurtherProcessing pipeIdx
                         false
@@ -786,7 +788,7 @@ namespace Microsoft.FSharp.Collections
 
                 override __.ProcessNext (input:'First) : bool =
                     if input2.MoveNext () && input3.MoveNext () then
-                        Helpers.avoidTailCall (next.ProcessNext (map'.Invoke (input, input2.Current, input3.Current)))
+                        avoidTailCall (next.ProcessNext (map'.Invoke (input, input2.Current, input3.Current)))
                     else
                         outOfBand.StopFurtherProcessing pipeIdx
                         false
@@ -801,7 +803,7 @@ namespace Microsoft.FSharp.Collections
                 override __.ProcessNext (input:'T) : bool = 
                     let u = map input
                     if filter u then
-                        Helpers.avoidTailCall (next.ProcessNext u)
+                        avoidTailCall (next.ProcessNext u)
                     else
                         false
 
@@ -813,7 +815,7 @@ namespace Microsoft.FSharp.Collections
 
                 override __.ProcessNext (input:'T) : bool = 
                     idx <- idx + 1
-                    Helpers.avoidTailCall (next.ProcessNext (mapi'.Invoke (idx-1, input)))
+                    avoidTailCall (next.ProcessNext (mapi'.Invoke (idx-1, input)))
 
             and Mapi2<'First,'Second,'U,'V> (map:int->'First->'Second->'U, enumerable2:IEnumerable<'Second>, outOfBand:IOutOfBand, next:Consumer<'U,'V>, pipeIdx:int) =
                 inherit SeqComponent<'First,'V>(next)
@@ -825,7 +827,7 @@ namespace Microsoft.FSharp.Collections
                 override __.ProcessNext (input:'First) : bool =
                     if input2.MoveNext () then
                         idx <- idx + 1
-                        Helpers.avoidTailCall (next.ProcessNext (mapi2'.Invoke (idx-1, input, input2.Current)))
+                        avoidTailCall (next.ProcessNext (mapi2'.Invoke (idx-1, input, input2.Current)))
                     else
                         outOfBand.StopFurtherProcessing pipeIdx
                         false
@@ -847,7 +849,7 @@ namespace Microsoft.FSharp.Collections
                     else
                         let currentPair = lastValue, input
                         lastValue <- input
-                        Helpers.avoidTailCall (next.ProcessNext currentPair)
+                        avoidTailCall (next.ProcessNext currentPair)
 
             and Scan<'T,'State,'V> (folder:'State->'T->'State, initialState: 'State, next:Consumer<'State,'V>) =
                 inherit SeqComponent<'T,'V>(next)
@@ -857,7 +859,7 @@ namespace Microsoft.FSharp.Collections
 
                 override __.ProcessNext (input:'T) : bool =
                     foldResult <- f.Invoke(foldResult, input)
-                    Helpers.avoidTailCall (next.ProcessNext foldResult)
+                    avoidTailCall (next.ProcessNext foldResult)
 
             and Skip<'T,'V> (skipCount:int, next:Consumer<'T,'V>) =
                 inherit SeqComponent<'T,'V>(next)
@@ -876,7 +878,7 @@ namespace Microsoft.FSharp.Collections
                         count <- count + 1
                         false
                     else
-                        Helpers.avoidTailCall (next.ProcessNext input)
+                        avoidTailCall (next.ProcessNext input)
 
                 override __.OnComplete _ =
                     if count < skipCount then
@@ -895,9 +897,9 @@ namespace Microsoft.FSharp.Collections
                         if skip then
                             false
                         else
-                            Helpers.avoidTailCall (next.ProcessNext input)
+                            avoidTailCall (next.ProcessNext input)
                     else
-                        Helpers.avoidTailCall (next.ProcessNext input)
+                        avoidTailCall (next.ProcessNext input)
 
             and Take<'T,'V> (takeCount:int, outOfBand:IOutOfBand, next:Consumer<'T,'V>, pipelineIdx:int) =
                 inherit Truncate<'T, 'V>(takeCount, outOfBand, next, pipelineIdx)
@@ -913,7 +915,7 @@ namespace Microsoft.FSharp.Collections
 
                 override __.ProcessNext (input:'T) : bool = 
                     if predicate input then
-                        Helpers.avoidTailCall (next.ProcessNext input)
+                        avoidTailCall (next.ProcessNext input)
                     else
                         outOfBand.StopFurtherProcessing pipeIdx
                         false
@@ -928,7 +930,7 @@ namespace Microsoft.FSharp.Collections
                         first <- false
                         false
                     else
-                        Helpers.avoidTailCall (next.ProcessNext input)
+                        avoidTailCall (next.ProcessNext input)
 
                 override this.OnComplete _ =
                     if first then
@@ -946,7 +948,7 @@ namespace Microsoft.FSharp.Collections
                         count <- count + 1
                         if count = truncateCount then
                             outOfBand.StopFurtherProcessing pipeIdx
-                        next.ProcessNext input
+                        avoidTailCall (next.ProcessNext input)
                     else
                         outOfBand.StopFurtherProcessing pipeIdx
                         false
@@ -1034,10 +1036,10 @@ namespace Microsoft.FSharp.Collections
                     let consumer = current.Create pipeline emptyPipeIdx result
                     try
                         executeOn pipeline consumer
-                        (Helpers.upcastICompletionChaining consumer).OnComplete pipeline.HaltedIdx
+                        (upcastICompletionChaining consumer).OnComplete pipeline.HaltedIdx
                         result
                     finally
-                        (Helpers.upcastICompletionChaining consumer).OnDispose ()
+                        (upcastICompletionChaining consumer).OnDispose ()
 
             module Enumerable =
                 type Empty<'T>() =
@@ -1062,7 +1064,7 @@ namespace Microsoft.FSharp.Collections
                             seqComponent.OnDispose ()
 
                     interface IEnumerator with
-                        member this.Current : obj = box ((Helpers.upcastEnumerator this)).Current
+                        member this.Current : obj = box ((upcastEnumerator this)).Current
                         member __.MoveNext () = failwith "library implementation error: derived class should implement (should be abstract)"
                         member __.Reset () : unit = noReset ()
 
@@ -1081,13 +1083,13 @@ namespace Microsoft.FSharp.Collections
 
                     abstract member Append<'T>   : (seq<'T>) -> IEnumerable<'T>
 
-                    default this.Append source = Helpers.upcastEnumerable (AppendEnumerable [this; source])
+                    default this.Append source = upcastEnumerable (AppendEnumerable [this; source])
 
                     interface IEnumerable with
                         member this.GetEnumerator () : IEnumerator =
-                            let genericEnumerable = Helpers.upcastEnumerable this
+                            let genericEnumerable = upcastEnumerable this
                             let genericEnumerator = genericEnumerable.GetEnumerator ()
-                            Helpers.upcastEnumeratorNonGeneric genericEnumerator
+                            upcastEnumeratorNonGeneric genericEnumerator
 
                     interface IEnumerable<'T> with
                         member this.GetEnumerator () : IEnumerator<'T> = derivedClassShouldImplement ()
@@ -1107,7 +1109,7 @@ namespace Microsoft.FSharp.Collections
                                 moveNext ()
                         else
                             result.SeqState <- SeqProcessNextStates.Finished
-                            (Helpers.upcastICompletionChaining seqComponent).OnComplete result.HaltedIdx
+                            (upcastICompletionChaining seqComponent).OnComplete result.HaltedIdx
                             false
 
                     interface IEnumerator with
@@ -1120,7 +1122,7 @@ namespace Microsoft.FSharp.Collections
                             try
                                 source.Dispose ()
                             finally
-                                (Helpers.upcastICompletionChaining seqComponent).OnDispose ()
+                                (upcastICompletionChaining seqComponent).OnDispose ()
 
                 and Enumerable<'T,'U>(enumerable:IEnumerable<'T>, current:ISeqFactory<'T,'U>) =
                     inherit EnumerableBase<'U>()
@@ -1128,11 +1130,11 @@ namespace Microsoft.FSharp.Collections
                     interface IEnumerable<'U> with
                         member this.GetEnumerator () : IEnumerator<'U> =
                             let result = Result<'U> ()
-                            Helpers.upcastEnumerator (new Enumerator<'T,'U>(enumerable.GetEnumerator(), current.Create result emptyPipeIdx (SetResult<'U> result), result))
+                            upcastEnumerator (new Enumerator<'T,'U>(enumerable.GetEnumerator(), current.Create result emptyPipeIdx (SetResult<'U> result), result))
 
                     interface ISeq<'U> with
                         member __.Compose (next:ISeqFactory<'U,'V>) : ISeq<'V> =
-                            Helpers.upcastSeq (new Enumerable<'T,'V>(enumerable, ComposedFactory.Combine current next))
+                            upcastSeq (new Enumerable<'T,'V>(enumerable, ComposedFactory.Combine current next))
 
                         member this.ForEach (f:(unit->unit)->#Consumer<'U,'U>) =
                             ForEach.execute f current (ForEach.enumerable enumerable)
@@ -1164,7 +1166,7 @@ namespace Microsoft.FSharp.Collections
                                 | _ -> failwith "library implementation error: all states should have been handled"
 
                     interface IEnumerator with
-                        member this.Current = box ((Helpers.upcastEnumerator this)).Current
+                        member this.Current = box ((upcastEnumerator this)).Current
                         member __.MoveNext () =
                             state <- SeqProcessNextStates.InProcess
                             moveNext ()
@@ -1180,14 +1182,14 @@ namespace Microsoft.FSharp.Collections
 
                     interface IEnumerable<'T> with
                         member this.GetEnumerator () : IEnumerator<'T> =
-                            Helpers.upcastEnumerator (new ConcatEnumerator<_,_> (sources |> List.rev))
+                            upcastEnumerator (new ConcatEnumerator<_,_> (sources |> List.rev))
 
                     override this.Append source =
-                        Helpers.upcastEnumerable (AppendEnumerable (source :: sources))
+                        upcastEnumerable (AppendEnumerable (source :: sources))
 
                     interface ISeq<'T> with
                         member this.Compose (next:ISeqFactory<'T,'U>) : ISeq<'U> =
-                            Helpers.upcastSeq (Enumerable<'T,'V>(this, next))
+                            upcastSeq (Enumerable<'T,'V>(this, next))
 
                         member this.ForEach (f:(unit->unit)->#Consumer<'T,'T>) =
                             ForEach.execute f IdentityFactory.Instance (ForEach.enumerable this)
@@ -1197,17 +1199,17 @@ namespace Microsoft.FSharp.Collections
 
                     interface IEnumerable<'T> with
                         member this.GetEnumerator () : IEnumerator<'T> =
-                            Helpers.upcastEnumerator (new ConcatEnumerator<_,_> (sources))
+                            upcastEnumerator (new ConcatEnumerator<_,_> (sources))
 
                     interface ISeq<'T> with
                         member this.Compose (next:ISeqFactory<'T,'U>) : ISeq<'U> =
-                            Helpers.upcastSeq (Enumerable<'T,'V>(this, next))
+                            upcastSeq (Enumerable<'T,'V>(this, next))
 
                         member this.ForEach (f:(unit->unit)->#Consumer<'T,'T>) =
                             ForEach.execute f IdentityFactory.Instance (ForEach.enumerable this)
 
                 let create enumerable current =
-                    Helpers.upcastSeq (Enumerable(enumerable, current))
+                    upcastSeq (Enumerable(enumerable, current))
 
             module EmptyEnumerable =
                 type Enumerable<'T> () =
@@ -1220,11 +1222,11 @@ namespace Microsoft.FSharp.Collections
                         member this.GetEnumerator () : IEnumerator<'T> = IEnumerator.Empty<'T>()
 
                     override this.Append source =
-                        Helpers.upcastEnumerable (Enumerable.Enumerable<'T,'T> (source, IdentityFactory.Instance))
+                        upcastEnumerable (Enumerable.Enumerable<'T,'T> (source, IdentityFactory.Instance))
 
                     interface ISeq<'T> with
                         member this.Compose (next:ISeqFactory<'T,'U>) : ISeq<'U> =
-                            Helpers.upcastSeq (Enumerable.Enumerable<'T,'V>(this, next))
+                            upcastSeq (Enumerable.Enumerable<'T,'V>(this, next))
 
                         member this.ForEach (f:(unit->unit)->#Consumer<'T,'T>) =
                             ForEach.execute f IdentityFactory.Instance (ForEach.enumerable this)
@@ -1255,7 +1257,7 @@ namespace Microsoft.FSharp.Collections
                                 moveNext ()
                         else
                             result.SeqState <- SeqProcessNextStates.Finished
-                            (Helpers.upcastICompletionChaining seqComponent).OnComplete result.HaltedIdx
+                            (upcastICompletionChaining seqComponent).OnComplete result.HaltedIdx
                             false
 
                     interface IEnumerator with
@@ -1269,17 +1271,17 @@ namespace Microsoft.FSharp.Collections
                     interface IEnumerable<'U> with
                         member this.GetEnumerator () : IEnumerator<'U> =
                             let result = Result<'U> ()
-                            Helpers.upcastEnumerator (new Enumerator<'T,'U>(delayedArray, current.Create result emptyPipeIdx (SetResult<'U> result), result))
+                            upcastEnumerator (new Enumerator<'T,'U>(delayedArray, current.Create result emptyPipeIdx (SetResult<'U> result), result))
 
                     interface ISeq<'U> with
                         member __.Compose (next:ISeqFactory<'U,'V>) : ISeq<'V> =
-                            Helpers.upcastSeq (new Enumerable<'T,'V>(delayedArray, ComposedFactory.Combine current next))
+                            upcastSeq (new Enumerable<'T,'V>(delayedArray, ComposedFactory.Combine current next))
 
                         member this.ForEach (f:(unit->unit)->#Consumer<'U,'U>) =
                             ForEach.execute f current (ForEach.array (delayedArray ()))
 
                 let createDelayed (delayedArray:unit->array<'T>) (current:ISeqFactory<'T,'U>) =
-                    Helpers.upcastSeq (Enumerable(delayedArray, current))
+                    upcastSeq (Enumerable(delayedArray, current))
 
                 let create (array:array<'T>) (current:ISeqFactory<'T,'U>) =
                     createDelayed (fun () -> array) current
@@ -1306,7 +1308,7 @@ namespace Microsoft.FSharp.Collections
                                 moveNext tail
                         | _ ->
                             result.SeqState <- SeqProcessNextStates.Finished
-                            (Helpers.upcastICompletionChaining seqComponent).OnComplete result.HaltedIdx
+                            (upcastICompletionChaining seqComponent).OnComplete result.HaltedIdx
                             false
 
                     interface IEnumerator with
@@ -1320,17 +1322,17 @@ namespace Microsoft.FSharp.Collections
                     interface IEnumerable<'U> with
                         member this.GetEnumerator () : IEnumerator<'U> =
                             let result = Result<'U> ()
-                            Helpers.upcastEnumerator (new Enumerator<'T,'U>(alist, current.Create result emptyPipeIdx (SetResult<'U> result), result))
+                            upcastEnumerator (new Enumerator<'T,'U>(alist, current.Create result emptyPipeIdx (SetResult<'U> result), result))
 
                     interface ISeq<'U> with
                         member __.Compose (next:ISeqFactory<'U,'V>) : ISeq<'V> =
-                            Helpers.upcastSeq (new Enumerable<'T,'V>(alist, ComposedFactory.Combine current next))
+                            upcastSeq (new Enumerable<'T,'V>(alist, ComposedFactory.Combine current next))
 
                         member this.ForEach (f:(unit->unit)->#Consumer<'U,'U>) =
                             ForEach.execute f current (ForEach.list alist)
 
                 let create alist current =
-                    Helpers.upcastSeq (Enumerable(alist, current))
+                    upcastSeq (Enumerable(alist, current))
 
             module Unfold =
                 type Enumerator<'T,'U,'State>(generator:'State->option<'T*'State>, state:'State, seqComponent:Consumer<'T,'U>, result:Result<'U>) =
@@ -1359,11 +1361,11 @@ namespace Microsoft.FSharp.Collections
                     interface IEnumerable<'U> with
                         member this.GetEnumerator () : IEnumerator<'U> =
                             let result = Result<'U> ()
-                            Helpers.upcastEnumerator (new Enumerator<'T,'U,'GeneratorState>(generator, state, current.Create result emptyPipeIdx (SetResult<'U> result), result))
+                            upcastEnumerator (new Enumerator<'T,'U,'GeneratorState>(generator, state, current.Create result emptyPipeIdx (SetResult<'U> result), result))
 
                     interface ISeq<'U> with
                         member this.Compose (next:ISeqFactory<'U,'V>) : ISeq<'V> =
-                            Helpers.upcastSeq (new Enumerable<'T,'V,'GeneratorState>(generator, state, ComposedFactory.Combine current next))
+                            upcastSeq (new Enumerable<'T,'V,'GeneratorState>(generator, state, ComposedFactory.Combine current next))
 
                         member this.ForEach (f:(unit->unit)->#Consumer<'U,'U>) =
                             ForEach.execute f current (ForEach.unfold generator state)
@@ -1419,7 +1421,7 @@ namespace Microsoft.FSharp.Collections
                             raise <| System.InvalidOperationException (SR.GetString(SR.enumerationPastIntMaxValue))
                         else
                             result.SeqState <- SeqProcessNextStates.Finished
-                            (Helpers.upcastICompletionChaining seqComponent).OnComplete result.HaltedIdx
+                            (upcastICompletionChaining seqComponent).OnComplete result.HaltedIdx
                             false
 
                     interface IEnumerator with
@@ -1433,11 +1435,11 @@ namespace Microsoft.FSharp.Collections
                     interface IEnumerable<'U> with
                         member this.GetEnumerator () : IEnumerator<'U> =
                             let result = Result<'U> ()
-                            Helpers.upcastEnumerator (new Enumerator<'T,'U>(count, f, current.Create result emptyPipeIdx (SetResult<'U> result), result))
+                            upcastEnumerator (new Enumerator<'T,'U>(count, f, current.Create result emptyPipeIdx (SetResult<'U> result), result))
 
                     interface ISeq<'U> with
                         member this.Compose (next:ISeqFactory<'U,'V>) : ISeq<'V> =
-                            Helpers.upcastSeq (new Enumerable<'T,'V>(count, f, ComposedFactory.Combine current next))
+                            upcastSeq (new Enumerable<'T,'V>(count, f, ComposedFactory.Combine current next))
 
                         member this.ForEach (createResult:(unit->unit)->#Consumer<'U,'U>) =
                             let terminatingIdx = getTerminatingIdx count
@@ -1505,10 +1507,10 @@ namespace Microsoft.FSharp.Collections
 
                     interface ISeq<'T> with
                         member this.Compose (next:ISeqFactory<'T,'U>) : ISeq<'U> =
-                            Helpers.upcastSeq (Enumerable<'T,'V>(count, f, next))
+                            upcastSeq (Enumerable<'T,'V>(count, f, next))
 
                         member this.ForEach (f:(unit->unit)->#Consumer<'T,'T>) =
-                            ForEach.execute f IdentityFactory.Instance (ForEach.enumerable (Helpers.upcastEnumerable this))
+                            ForEach.execute f IdentityFactory.Instance (ForEach.enumerable (upcastEnumerable this))
 
             open RuntimeHelpers
 
@@ -1517,9 +1519,9 @@ namespace Microsoft.FSharp.Collections
                 checkNonNull "source" source
                 match source with
                 | :? ISeq<'T> as s -> s
-                | :? array<'T> as a -> Helpers.upcastSeq (Array.Enumerable((fun () -> a), IdentityFactory.Instance))
-                | :? list<'T> as a -> Helpers.upcastSeq (List.Enumerable(a, IdentityFactory.Instance))
-                | _ -> Helpers.upcastSeq (Enumerable.Enumerable<'T,'T>(source, IdentityFactory.Instance))
+                | :? array<'T> as a -> upcastSeq (Array.Enumerable((fun () -> a), IdentityFactory.Instance))
+                | :? list<'T> as a -> upcastSeq (List.Enumerable(a, IdentityFactory.Instance))
+                | _ -> upcastSeq (Enumerable.Enumerable<'T,'T>(source, IdentityFactory.Instance))
 
             let inline foreach f (source:ISeq<_>) =
                 source.ForEach f
@@ -1532,17 +1534,17 @@ namespace Microsoft.FSharp.Collections
 
             [<CompiledName("Unfold")>]
             let unfold (generator:'State->option<'T * 'State>) (state:'State) : ISeq<'T> =
-                Helpers.upcastSeq (new Unfold.Enumerable<'T,'T,'State>(generator, state, IdentityFactory.Instance))
+                upcastSeq (new Unfold.Enumerable<'T,'T,'State>(generator, state, IdentityFactory.Instance))
 
             [<CompiledName("InitializeInfinite")>]
             let initInfinite<'T> (f:int->'T) : ISeq<'T> =
-                Helpers.upcastSeq (new Init.EnumerableDecider<'T>(Nullable (), f))
+                upcastSeq (new Init.EnumerableDecider<'T>(Nullable (), f))
 
             [<CompiledName("Initialize")>]
             let init<'T> (count:int) (f:int->'T) : ISeq<'T> =
                 if count < 0 then invalidArgInputMustBeNonNegative "count" count
                 elif count = 0 then empty else
-                Helpers.upcastSeq (new Init.EnumerableDecider<'T>(Nullable count, f))
+                upcastSeq (new Init.EnumerableDecider<'T>(Nullable count, f))
 
             [<CompiledName("Iterate")>]
             let iter f (source:ISeq<'T>) =
