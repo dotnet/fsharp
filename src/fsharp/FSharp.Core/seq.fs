@@ -1752,12 +1752,25 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Item")>]
         let item i (source : seq<'T>) =
             if i < 0 then invalidArgInputMustBeNonNegative "index" i else
-                source
-                |> seqFactory (Composer.Seq.SkipFactory (i, invalidArgumnetIndex))
-                |> tryHead
-                |> function
-                    | None -> invalidArgFmt "index" "{0}\nseq was short by 1 element"  [|SR.GetString SR.notEnoughElements|]
-                    | Some value -> value
+                source 
+                |> foreach (fun halt ->
+                    { new Composer.Internal.Folder<'T, Composer.Internal.Values<int, bool, 'T>> (Composer.Internal.Values<_,_,_> (0, false, Unchecked.defaultof<'T>)) with
+                        override this.ProcessNext value =
+                            if this.Value._1 = i then
+                                this.Value._2 <- true
+                                this.Value._3 <- value
+                                halt ()
+                            else
+                                this.Value._1 <- this.Value._1 + 1
+                            Unchecked.defaultof<_> (* return value unsed in ForEach context *) 
+                        override this.OnComplete _ = 
+                            if not this.Value._2 then
+                                let index = i - this.Value._1 + 1
+                                invalidArgFmt "index" 
+                                    "{0}\nseq was short by {1} {2}" 
+                                    [|SR.GetString SR.notEnoughElements; index; (if index=1 then "element" else "elements")|]
+                                })
+                |> fun item -> item.Value._3
 
         [<CompiledName("TryItem")>]
         let tryItem i (source:seq<'T>) =
@@ -1791,7 +1804,7 @@ namespace Microsoft.FSharp.Collections
 
             source1
             |> foreach (fun halt ->
-                { new Composer.Core.Folder<_,_> () with
+                { new Composer.Internal.Folder<_,_> () with
                     override this.ProcessNext value =
                         if (e2.MoveNext()) then
                             f.Invoke(value, e2.Current)
@@ -1809,7 +1822,7 @@ namespace Microsoft.FSharp.Collections
 
             source1
             |> foreach (fun halt ->
-                { new Composer.Core.Folder<_,int> (0) with
+                { new Composer.Internal.Folder<_,int> (0) with
                     override this.ProcessNext value =
                         if (e2.MoveNext()) then
                             f.Invoke(this.Value, value, e2.Current)
@@ -1979,7 +1992,7 @@ namespace Microsoft.FSharp.Collections
 
             source1
             |> foreach (fun halt ->
-                { new Composer.Core.Folder<_,'State> (state) with
+                { new Composer.Internal.Folder<_,'State> (state) with
                     override this.ProcessNext value =
                         if (e2.MoveNext()) then
                             this.Value <- f.Invoke(this.Value, value, e2.Current)
@@ -2011,7 +2024,13 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Replicate")>]
         let replicate count x =
+            #if FX_ATLEAST_40
             System.Linq.Enumerable.Repeat(x,count)
+            #else
+            if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
+            seq { for _ in 1 .. count -> x }
+            #endif
+
 
         [<CompiledName("Append")>]
         let append (source1: seq<'T>) (source2: seq<'T>) =
@@ -2569,12 +2588,38 @@ namespace Microsoft.FSharp.Collections
             use e2 = source2.GetEnumerator()
             let p = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(p)
 
+            source1
+            |> foreach (fun halt ->
+                { new Composer.Internal.Folder<_,bool> (true) with
+                    override this.ProcessNext value =
+                        if (e2.MoveNext()) then
+                            if not (p.Invoke(value, e2.Current)) then
+                                this.Value <- false
+                                halt()
+                        else
+                            halt()
+                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
+            |> fun all -> all.Value
+
         [<CompiledName("Exists2")>]
         let exists2 p (source1: seq<_>) (source2: seq<_>) =
             checkNonNull "source2" source2
 
             use e2 = source2.GetEnumerator()
             let p = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(p)
+
+            source1
+            |> foreach (fun halt ->
+                { new Composer.Internal.Folder<_,bool> (false) with
+                    override this.ProcessNext value =
+                        if (e2.MoveNext()) then
+                            if p.Invoke(value, e2.Current) then
+                                this.Value <- true
+                                halt()
+                        else
+                            halt()
+                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
+            |> fun exists -> exists.Value
         
         [<CompiledName("TryHead")>]
         let tryHead (source : seq<_>) =
