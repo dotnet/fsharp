@@ -56,19 +56,6 @@ namespace Microsoft.FSharp.Collections
 
       let Empty<'T> () = (new EmptyEnumerator<'T>() :> IEnumerator<'T>)
 
-      let rec tryItem index (e : IEnumerator<'T>) =
-          if not (e.MoveNext()) then None
-          elif index = 0 then Some(e.Current)
-          else tryItem (index-1) e
-
-      let rec nth index (e : IEnumerator<'T>) =
-          if not (e.MoveNext()) then
-            invalidArgFmt "index"
-                "{0}\nseq was short by {1} {2}"
-                [|SR.GetString SR.notEnoughElements; index; (if index=1 then "element" else "elements")|]
-          if index = 0 then e.Current
-          else nth (index-1) e
-
       let readAndClear r =
           lock r (fun () -> match !r with None -> None | Some _ as res -> r := None; res)
 
@@ -1727,10 +1714,26 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Item")>]
         let item i (source : seq<'T>) =
-            checkNonNull "source" source
-            if i < 0 then invalidArgInputMustBeNonNegative "index" i
-            use e = source.GetEnumerator()
-            IEnumerator.nth i e
+            if i < 0 then invalidArgInputMustBeNonNegative "index" i else
+                source 
+                |> foreach (fun halt ->
+                    { new Composer.Internal.Folder<'T, Composer.Internal.Values<int, bool, 'T>> (Composer.Internal.Values<_,_,_> (0, false, Unchecked.defaultof<'T>)) with
+                        override this.ProcessNext value =
+                            if this.Value._1 = i then
+                                this.Value._2 <- true
+                                this.Value._3 <- value
+                                halt ()
+                            else
+                                this.Value._1 <- this.Value._1 + 1
+                            Unchecked.defaultof<_> (* return value unsed in ForEach context *) 
+                        override this.OnComplete _ = 
+                            if not this.Value._2 then
+                                let index = i - this.Value._1 + 1
+                                invalidArgFmt "index" 
+                                    "{0}\nseq was short by {1} {2}" 
+                                    [|SR.GetString SR.notEnoughElements; index; (if index=1 then "element" else "elements")|]
+                                })
+                |> fun item -> item.Value._3
 
         [<CompiledName("TryItem")>]
         let tryItem i (source:seq<'T>) =
@@ -1757,25 +1760,40 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Iterate2")>]
         let iter2 f (source1 : seq<_>) (source2 : seq<_>)    =
-            checkNonNull "source1" source1
             checkNonNull "source2" source2
-            use e1 = source1.GetEnumerator()
+
             use e2 = source2.GetEnumerator()
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-            while (e1.MoveNext() && e2.MoveNext()) do
-                f.Invoke(e1.Current, e2.Current)
+
+            source1
+            |> foreach (fun halt ->
+                { new Composer.Internal.Folder<_,_> () with
+                    override this.ProcessNext value =
+                        if (e2.MoveNext()) then
+                            f.Invoke(value, e2.Current)
+                        else
+                            halt()
+                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
+            |> ignore
 
         [<CompiledName("IterateIndexed2")>]
         let iteri2 f (source1 : seq<_>) (source2 : seq<_>) =
-            checkNonNull "source1" source1
             checkNonNull "source2" source2
-            use e1 = source1.GetEnumerator()
+
             use e2 = source2.GetEnumerator()
             let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
-            let mutable i = 0
-            while (e1.MoveNext() && e2.MoveNext()) do
-                f.Invoke(i, e1.Current, e2.Current)
-                i <- i + 1
+
+            source1
+            |> foreach (fun halt ->
+                { new Composer.Internal.Folder<_,int> (0) with
+                    override this.ProcessNext value =
+                        if (e2.MoveNext()) then
+                            f.Invoke(this.Value, value, e2.Current)
+                            this.Value <- this.Value + 1
+                        else
+                            halt()
+                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
+            |> ignore
 
         // Build an IEnumerble by wrapping/transforming iterators as they get generated.
         let revamp f (ie : seq<_>) = mkSeq (fun () -> f (ie.GetEnumerator()))
@@ -1922,19 +1940,21 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Fold2")>]
         let fold2<'T1,'T2,'State> f (state:'State) (source1: seq<'T1>) (source2: seq<'T2>) =
-            checkNonNull "source1" source1
             checkNonNull "source2" source2
 
-            use e1 = source1.GetEnumerator()
             use e2 = source2.GetEnumerator()
-
             let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
 
-            let mutable state = state
-            while e1.MoveNext() && e2.MoveNext() do
-                state <- f.Invoke(state, e1.Current, e2.Current)
-
-            state
+            source1
+            |> foreach (fun halt ->
+                { new Composer.Internal.Folder<_,'State> (state) with
+                    override this.ProcessNext value =
+                        if (e2.MoveNext()) then
+                            this.Value <- f.Invoke(this.Value, value, e2.Current)
+                        else
+                            halt()
+                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
+            |> fun fold -> fold.Value
 
         [<CompiledName("Reduce")>]
         let reduce f (source : seq<'T>)  =
@@ -2531,27 +2551,43 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("ForAll2")>]
         let forall2 p (source1: seq<_>) (source2: seq<_>) =
-            checkNonNull "source1" source1
             checkNonNull "source2" source2
-            use e1 = source1.GetEnumerator()
+
             use e2 = source2.GetEnumerator()
             let p = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(p)
-            let mutable ok = true
-            while (ok && e1.MoveNext() && e2.MoveNext()) do
-                ok <- p.Invoke(e1.Current, e2.Current)
-            ok
+
+            source1
+            |> foreach (fun halt ->
+                { new Composer.Internal.Folder<_,bool> (true) with
+                    override this.ProcessNext value =
+                        if (e2.MoveNext()) then
+                            if not (p.Invoke(value, e2.Current)) then
+                                this.Value <- false
+                                halt()
+                        else
+                            halt()
+                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
+            |> fun all -> all.Value
 
         [<CompiledName("Exists2")>]
         let exists2 p (source1: seq<_>) (source2: seq<_>) =
-            checkNonNull "source1" source1
             checkNonNull "source2" source2
-            use e1 = source1.GetEnumerator()
+
             use e2 = source2.GetEnumerator()
             let p = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(p)
-            let mutable ok = false
-            while (not ok && e1.MoveNext() && e2.MoveNext()) do
-                ok <- p.Invoke(e1.Current, e2.Current)
-            ok
+
+            source1
+            |> foreach (fun halt ->
+                { new Composer.Internal.Folder<_,bool> (false) with
+                    override this.ProcessNext value =
+                        if (e2.MoveNext()) then
+                            if p.Invoke(value, e2.Current) then
+                                this.Value <- true
+                                halt()
+                        else
+                            halt()
+                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
+            |> fun exists -> exists.Value
         
         [<CompiledName("TryHead")>]
         let tryHead (source : seq<_>) =
