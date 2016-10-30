@@ -549,7 +549,7 @@ namespace Microsoft.FSharp.Collections
                 
                 interface ISeqFactory<'T,'U> with
                     member __.PipeIdx = getPipeIdx pipeIdx
-                    member __.Create _ _ _ = failwith "library implementation error: Create on base factory should not be called"
+                    member __.Create<'V> (_:IOutOfBand) (_:``PipeIdx?``) (_:Consumer<'U,'V>) : Consumer<'T,'V> = failwith "library implementation error: Create on base factory should not be called"
 
             and ComposedFactory<'T,'U,'V> private (first:ISeqFactory<'T,'U>, second:ISeqFactory<'U,'V>, secondPipeIdx:PipeIdx) =
                 inherit SeqComponentFactory<'T,'V> (makePipeIdx secondPipeIdx)
