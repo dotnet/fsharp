@@ -54,7 +54,7 @@
     <Reference Include="System.Net" Condition="'$(TargetFramework)' == 'sl5' " />
     <Reference Include="System.Observable" Condition="'$(TargetFramework)' == 'sl3-wp' " />
     <Reference Include="System.ValueTuple">
-        <HintPath>..\..\..\packages\System.ValueTuple.4.0.0-rc3-24212-01\lib\netstandard1.1\System.ValueTuple.dll</HintPath>
+      <HintPath>..\..\..\packages\System.ValueTuple.4.0.0-rc3-24212-01\lib\netstandard1.1\System.ValueTuple.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -62,6 +62,7 @@
     <Compile Include="NunitHelpers.fs" />
     <Compile Include="CompilerTestHelpers.fs" />
     <Compile Include="ManglingNameOfProvidedTypes.fs" />
+    <Compile Include="SeqFusion.fs" />
     <Compile Include="HashIfExpression.fs" />
     <Compile Include="ProductVersion.fs" />
     <Compile Include="EditDistance.fs" />

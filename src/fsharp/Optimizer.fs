@@ -1685,7 +1685,6 @@ let TryDetectQueryQuoteAndRun cenv (expr:Expr) =
 //------------------------------------------------------------------------- 
 
 let rec OptimizeExpr cenv (env:IncrementalOptimizationEnv) expr =
-
     // Eliminate subsumption coercions for functions. This must be done post-typechecking because we need
     // complete inference types.
     let expr = NormalizeAndAdjustPossibleSubsumptionExprs cenv.g expr
@@ -1694,7 +1693,7 @@ let rec OptimizeExpr cenv (env:IncrementalOptimizationEnv) expr =
 
     match expr with
     // treat the common linear cases to avoid stack overflows, using an explicit continuation 
-    | Expr.Sequential _ | Expr.Let _ ->  OptimizeLinearExpr cenv env expr (fun x -> x)
+    | Expr.Sequential _ | Expr.Let _ ->  OptimizeLinearExpr cenv env expr id
 
     | Expr.Const (c,m,ty) -> OptimizeConst cenv env expr (c,m,ty)
     | Expr.Val (v,_vFlags,m) -> OptimizeVal cenv env expr (v,m)
@@ -2613,6 +2612,25 @@ and OptimizeApplication cenv env (f0,f0ty,tyargs,args,m) =
        // we beta-reduced, hence reoptimize 
         OptimizeExpr cenv env newExpr
     | _ -> 
+        match expr' with
+        // Rewrite Seq.map f (Seq.map g) xs into Seq.map (fun x -> f(g x)) xs
+        | Expr.App(Expr.Val(outerValRef,_,_) as outerSeqMap,ttype1,[_;fOutType],
+                    [(Expr.Lambda(_,None,None,_,_,m1,fRetType) as f)
+                     Expr.App(Expr.Val(innerValRef,_,_),_,[gInType;_],
+                                [Expr.Lambda(_,None,None,gVals,g,_,gRetType)
+                                 rest],_)],m2) when
+            valRefEq cenv.g innerValRef cenv.g.seq_map_vref &&
+            valRefEq cenv.g outerValRef cenv.g.seq_map_vref -> 
+            let newApp = Expr.App(f,TType_fun(gRetType, fRetType),[],[g],m2)
+            
+            let reduced =
+               Expr.App(outerSeqMap,ttype1,[gInType;fOutType],
+                         [Expr.Lambda (newUnique(), None, None, gVals, newApp, m1, gRetType)
+                          rest],m2)
+
+            OptimizeExpr cenv env reduced
+        | _ ->
+
         // regular
 
         // Determine if this application is a critical tailcall
