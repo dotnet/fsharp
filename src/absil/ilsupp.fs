@@ -1448,6 +1448,11 @@ let getICLRStrongName () =
     | Some(sn) -> sn
 
 let signerGetPublicKeyForKeyPair kp =
+ if IL.runningOnMono then 
+    let snt = System.Type.GetType("Mono.Security.StrongName") 
+    let sn = System.Activator.CreateInstance(snt, [| box kp |])
+    snt.InvokeMember("PublicKey", (BindingFlags.GetProperty ||| BindingFlags.Instance ||| BindingFlags.Public), null, sn, [| |], Globalization.CultureInfo.InvariantCulture) :?> byte[] 
+ else
     let mutable pSize = 0u
     let mutable pBuffer : nativeint = (nativeint)0
     let iclrSN = getICLRStrongName()
@@ -1475,12 +1480,22 @@ let signerCloseKeyContainer kc =
     iclrSN.StrongNameKeyDelete(kc) |> ignore
 
 let signerSignatureSize pk = 
+ if IL.runningOnMono then
+   if pk.Length > 32 then pk.Length - 32 else 128
+ else
     let mutable pSize =  0u
     let iclrSN = getICLRStrongName()
     iclrSN.StrongNameSignatureSize(pk, uint32 pk.Length, &pSize) |> ignore
     int pSize
 
 let signerSignFileWithKeyPair fileName kp = 
+ if IL.runningOnMono then 
+    let snt = System.Type.GetType("Mono.Security.StrongName") 
+    let sn = System.Activator.CreateInstance(snt, [| box kp |])
+    let conv (x:obj) = if (unbox x : bool) then 0 else -1
+    snt.InvokeMember("Sign", (BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public), null, sn, [| box fileName |], Globalization.CultureInfo.InvariantCulture) |> conv |> check "Sign"
+    snt.InvokeMember("Verify", (BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public), null, sn, [| box fileName |], Globalization.CultureInfo.InvariantCulture) |> conv |> check "Verify"
+ else
     let mutable pcb = 0u
     let mutable ppb = (nativeint)0
     let mutable ok = false
