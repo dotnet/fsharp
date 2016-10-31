@@ -101,11 +101,7 @@
     <FsSrGenToolPath>$(FSharpSourcesRoot)\..\packages\fssrgen.3.1.0\lib\net46</FsSrGenToolPath>
     <FsLexToolPath>$(FSharpSourcesRoot)\..\packages\FsLexYacc.6.1.0\build</FsLexToolPath>
     <FsYaccToolPath>$(FSharpSourcesRoot)\..\packages\FsLexYacc.6.1.0\build</FsYaccToolPath>
-<<<<<<< HEAD
     <FsiToolExe>fsi.exe</FsiToolExe>
-=======
-    <FsiToolExe>Fsi.exe</FsiToolExe>
->>>>>>> 7bc2f2446dec1fb48bd8adfc47d1cb0cba179235
     <FsLexToolExe>fslex.exe</FsLexToolExe>
     <FsYaccToolExe>fsyacc.exe</FsYaccToolExe>
     <RoslynVersion>2.0.0-beta6-61005-05</RoslynVersion>

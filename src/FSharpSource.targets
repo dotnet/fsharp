@@ -443,46 +443,8 @@
     <DocumentationFile>$(OutputPath)$(AssemblyName).xml</DocumentationFile>
   </PropertyGroup>
 
-<<<<<<< HEAD
   <Import Project="..\packages\FSharp.SRGen.Build.Tasks.3.1.0\content\FSharp.SRGen.targets" />
   <Import Project="Microbuild.Settings.targets" Condition="'$(OS)' != 'Unix'"/>
-=======
-  <Target Name="ValidateConfiguration">
-    <Error
-            Text="Configuration '$(Configuration)' is not one of the supported configurations: Debug, Release, Proto"
-            Condition="'$(Configuration)'!='Release' and '$(Configuration)'!='Debug' and '$(Configuration)'!='VSRelease' and '$(Configuration)'!='VSDebug' and '$(Configuration)'!='Proto'"/>
-    <Error
-            Text="TargetFramework '$(TargetFramework)' is not one of the supported configurations: 'empty', net20, net40, coreclr, sl3-wp, sl5, sl5-compiler, portable47, portable7, portable78, portable259"
-            Condition="! ('$(TargetFramework)' == 'net40' or 
-                          '$(TargetFramework)' == 'coreclr' or 
-                          '$(TargetFramework)' == 'portable47' or
-                          '$(TargetFramework)' == 'portable7' or
-                          '$(TargetFramework)' == 'portable78' or 
-                          '$(TargetFramework)' == 'portable259')"/>
-    <Error
-        Text="TargetFramework '$(TargetFramework)' is only supported when building FSharp.Core.dll and FSharp.Core.Unittests.dll. All other components must be built with TargetFramework=net40"
-        Condition="'$(AssemblyName)' != 'FSharp.Core' and '$(AssemblyName)' != 'FSharp.Core.Unittests' and '$(TargetFramework)' != 'net40' and '$(TargetFramework)' != 'coreclr'"/>
-
-  </Target>
-
-  <!-- This build step copies files to the output folder while replacing build variables in the text of
-             those file. -->
-  <Target
-          Name="CustomCopyLocalFiles"
-          Inputs="@(CustomCopyLocal)"
-          Outputs="@(CustomCopyLocal->'$(OutDir)%(TargetFilename)')"
-          Condition="'$(targetCLIDir)'!='Silverlight/4.0/'"
-                >
-    <Exec Command="$(FSharpSourcesRoot)\fsharp\FSharp.Build\subst.exe &quot;%(CustomCopyLocal.FullPath)&quot; {VisualStudioVersion} $(VisualStudioVersion) {FinalDir} &quot;$([System.IO.Path]::GetFullPath('$(OutputPath)'))\&quot; {LkgVersion} $(LkgVersion) {BuildSuffix} &quot;$(FsBuildSuffix)&quot; {FSharpTargetsDir} &quot;%24(MSBuildThisFileDirectory)&quot; {FSCoreVersion} &quot;$(FSCoreVersion)&quot; &gt; $(OutDir)%(CustomCopyLocal.TargetFilename)  "/>
-    <!-- Make sure it will get cleaned  -->
-    <CreateItem Include="$(OutDir)%(CustomCopyLocal.TargetFilename)">
-      <Output TaskParameter="Include" ItemName="FileWrites"/>
-    </CreateItem>
-  </Target>
-
-  <Import Project="..\packages\FSharp.SRGen.Build.Tasks.3.1.0\content\FSharp.SRGen.targets" />
-  <Import Project="Microbuild.Settings.targets" />
->>>>>>> 7bc2f2446dec1fb48bd8adfc47d1cb0cba179235
 
   <Target Name="ReorderCompileItems"
       BeforeTargets="CoreCompile"
