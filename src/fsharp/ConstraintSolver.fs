@@ -317,7 +317,11 @@ type OptionalTrace =
         match t with        
         | WithTrace trace -> trace.Push f undo; f()
         | NoTrace -> f()
-
+    member t.AddFromReplay source =
+        source.actions |> List.rev |>
+            match t with        
+            | WithTrace trace -> List.iter (fun (action, undo) -> trace.Push action undo; action())
+            | NoTrace         -> List.iter (fun (action, _   ) -> action())
 
 let CollectThenUndo f = 
     let trace = Trace.New()
@@ -2140,7 +2144,7 @@ and ResolveOverloading
                          reqdRetTyOpt 
                          calledMeth) with
           | [(calledMeth,_,_)] -> 
-              Some calledMeth, CompleteD, NoTrace
+              Some calledMeth, CompleteD, NoTrace // Can't re-play the trace since ArgsEquivInsideUndo was used
 
           | _ -> 
             // Now determine the applicable methods.
@@ -2374,7 +2378,7 @@ and ResolveOverloading
                         | WithTrace calledMethTrc ->
 
                             // Re-play existing trace
-                            calledMethTrc.actions |> List.rev |> List.iter (fun (action, undo) -> trace.Exec action undo)
+                            trace.AddFromReplay calledMethTrc
 
                             // Unify return type
                             match reqdRetTyOpt with 
