@@ -313,6 +313,14 @@ type OptionalTrace =
     | NoTrace
     | WithTrace of Trace
     member x.HasTrace = match x with NoTrace -> false | WithTrace _ -> true
+    member t.CollectThenUndoOrCommit predicate f =
+        let newTrace = Trace.New()
+        let res = f newTrace
+        match predicate res, t with
+        | false, _           -> newTrace.Undo()
+        | true , WithTrace t -> t.actions <- newTrace.actions @ t.actions
+        | true , NoTrace     -> ()
+        res
 
 
 let CollectThenUndo f = 
@@ -1245,13 +1253,9 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) permitWeakResolution ndeep
                           let minst = FreshenMethInfo m minfo
                           let objtys = minfo.GetObjArgTypes(amap, m, minst)
                           Some(CalledMeth<Expr>(csenv.InfoReader,None,false,FreshenMethInfo,m,AccessibleFromEverywhere,minfo,minst,minst,None,objtys,[(callerArgs,[])],false,false,None)))
-
-              let methOverloadTrace = Trace.New()
-              let methOverloadResult,errors = ResolveOverloading csenv (WithTrace methOverloadTrace) nm ndeep (Some traitInfo) (0,0) AccessibleFromEverywhere calledMethGroup false (Some rty)  
-              match methOverloadResult, trace with
-              | None, _           -> methOverloadTrace.Undo()                           // Rollback inference equations
-              | _   , WithTrace t -> t.actions <- methOverloadTrace.actions @ t.actions // Commit inference equations
-              | _                 -> ()                                                 // No trace where to commit
+              
+              let methOverloadResult,errors = 
+                  trace.CollectThenUndoOrCommit (fun (a, _) -> Option.isSome a) (fun trace -> ResolveOverloading csenv (WithTrace trace) nm ndeep (Some traitInfo) (0,0) AccessibleFromEverywhere calledMethGroup false (Some rty))
 
               match recdPropSearch, methOverloadResult with 
               | Some (rfinfo, isSetProp), None -> 
