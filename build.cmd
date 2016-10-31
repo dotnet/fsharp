@@ -154,6 +154,7 @@ if /i '%ARG%' == 'nobuild' (
 if /i '%ARG%' == 'all' (
     set _autoselect=0
     set BUILD_PROTO=1
+    set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_NET40=1
     set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
@@ -255,6 +256,7 @@ if /i '%ARG%' == 'noskip' (
 if /i '%ARG%' == 'test-all' (
     set _autoselect=0
     set BUILD_PROTO=1
+    set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_NET40=1
     set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
@@ -487,12 +489,6 @@ if '%BUILD_PROTO%' == '1' (
          %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
     @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
 
-    rem copy targestfile into tools directory ... temporary fix until packaging complete.
-    echo copy src\fsharp\FSharp.Build\Microsoft.FSharp.targets tools\Microsoft.FSharp.targets
-         copy src\fsharp\FSharp.Build\Microsoft.FSharp.targets tools\Microsoft.FSharp.targets
-
-    echo copy src\fsharp\FSharp.Build\Microsoft.Portable.FSharp.targets tools\Microsoft.Portable.FSharp.targets
-         copy src\fsharp\FSharp.Build\Microsoft.Portable.FSharp.targets tools\Microsoft.Portable.FSharp.targets
   )
 
   if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '0' (

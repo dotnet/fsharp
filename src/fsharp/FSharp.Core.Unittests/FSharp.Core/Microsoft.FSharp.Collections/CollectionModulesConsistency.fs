@@ -416,9 +416,9 @@ let ``indexed is consistent`` () =
     Check.QuickThrowOnFailure indexed<NormalFloat>
 
 let init<'a when 'a : equality> count f =
-    let s = run (fun () -> Seq.init count f |> Seq.toArray)
-    let l = run (fun () -> List.init count f |> Seq.toArray)
-    let a = run (fun () -> Array.init count f)
+    let s = runAndCheckErrorType (fun () -> Seq.init count f |> Seq.toArray)
+    let l = runAndCheckErrorType (fun () -> List.init count f |> Seq.toArray)
+    let a = runAndCheckErrorType (fun () -> Array.init count f)
     consistency "init" s l a
 
 [<Test>]
