@@ -673,6 +673,11 @@ namespace Microsoft.FSharp.Collections
                 inherit SeqComponentFactory<'T,'T> ()
                 interface ISeqFactory<'T,'T> with
                     member this.Create<'V> (outOfBand:IOutOfBand) (pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Truncate (count, outOfBand, next, getPipeIdx pipeIdx) 
+            
+            and WindowedFactory<'T> (windowSize:int) =
+                inherit SeqComponentFactory<'T, 'T[]> ()
+                interface ISeqFactory<'T, 'T[]> with
+                    member this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T[],'V>) : Consumer<'T,'V> = upcast Windowed (windowSize, next) 
 
             and [<AbstractClass>] SeqComponent<'T,'U> (next:ICompletionChaining) =
                 inherit Consumer<'T,'U>()
@@ -971,6 +976,34 @@ namespace Microsoft.FSharp.Collections
                     else
                         outOfBand.StopFurtherProcessing pipeIdx
                         false
+
+            and Windowed<'T,'V> (windowSize: int, next:Consumer<'T[],'V>) =
+                inherit SeqComponent<'T,'V>(next)
+
+                let arr = Array.zeroCreateUnchecked windowSize
+                let r = ref (windowSize - 1)
+                let i = ref 0
+
+                let arrWindow innerDerefI j = arr.[(innerDerefI+j) % windowSize]
+
+                override __.ProcessNext (input:'T) : bool =
+                    let derefI = !i
+                    arr.[derefI] <- input
+                    i := (derefI + 1) % windowSize
+                    let derefR = !r
+                    if derefR = 0 then
+                        let innerDerefI = !i
+                        if windowSize < 32 then
+                            let window = Array.init windowSize (arrWindow innerDerefI)
+                            avoidTailCall (next.ProcessNext window)
+                        else
+                            let window = Array.zeroCreateUnchecked windowSize 
+                            Array.Copy(arr, innerDerefI, window, 0, windowSize - innerDerefI)
+                            Array.Copy(arr, 0, window, windowSize - innerDerefI, innerDerefI)
+                            avoidTailCall (next.ProcessNext window)
+                    else 
+                        r := (derefR - 1)
+                        false                        
 
             type SeqProcessNextStates =
             | InProcess  = 0
@@ -2203,7 +2236,7 @@ namespace Microsoft.FSharp.Collections
         let windowed windowSize (source: seq<_>) =
             if windowSize <= 0 then invalidArgFmt "windowSize" "{0}\nwindowSize = {1}"
                                         [|SR.GetString SR.inputMustBePositive; windowSize|]
-            source |> seqFactory (Composer.Seq.WindowedFactory (windowSize))            
+            source |> seqFactory (Composer.WindowedFactory (windowSize))            
 
         [<CompiledName("Cache")>]
         let cache (source : seq<'T>) =
