@@ -959,7 +959,11 @@ let createMscorlibExportList tcGlobals =
 
 let createSystemNumericsExportList tcGlobals =
     let sysAssemblyRef = tcGlobals.sysCcu.ILScopeRef.AssemblyRef
-    let systemNumericsAssemblyRef = ILAssemblyRef.Create("System.Numerics", sysAssemblyRef.Hash, sysAssemblyRef.PublicKey, sysAssemblyRef.Retargetable, sysAssemblyRef.Version, sysAssemblyRef.Locale)
+    let systemNumericsAssemblyRef =  
+        let refNumericsDllName =  
+            if  tcGlobals.usesMscorlib then "System.Numerics"
+            else "System.Runtime.Numerics"  
+        ILAssemblyRef.Create(refNumericsDllName, sysAssemblyRef.Hash, sysAssemblyRef.PublicKey, sysAssemblyRef.Retargetable, sysAssemblyRef.Version, sysAssemblyRef.Locale)  
     typesForwardedToSystemNumerics |>
         Seq.map (fun t ->
                     {   ScopeRef = ILScopeRef.Assembly(systemNumericsAssemblyRef)
