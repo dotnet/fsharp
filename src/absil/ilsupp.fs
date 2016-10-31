@@ -1479,7 +1479,7 @@ let signerCloseKeyContainer kc =
     let iclrSN = getICLRStrongName()
     iclrSN.StrongNameKeyDelete(kc) |> ignore
 
-let signerSignatureSize pk = 
+let signerSignatureSize (pk:byte[]) = 
  if IL.runningOnMono then
    if pk.Length > 32 then pk.Length - 32 else 128
  else
