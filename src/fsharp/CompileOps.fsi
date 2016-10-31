@@ -219,7 +219,6 @@ type VersionFlag =
     member GetVersionInfo : implicitIncludeDir:string -> ILVersionInfo
     member GetVersionString : implicitIncludeDir:string -> string
 
-     
 type TcConfigBuilder =
     { mutable primaryAssembly : PrimaryAssembly
       mutable autoResolveOpenDirectivesToDlls: bool
@@ -232,6 +231,7 @@ type TcConfigBuilder =
       mutable compilingFslib: bool
       mutable compilingFslib20: string option
       mutable compilingFslib40: bool
+      mutable compilingFslibNoBigInt: bool
       mutable useIncrementalBuilder: bool
       mutable includes: string list
       mutable implicitOpens: string list
@@ -396,6 +396,7 @@ type TcConfig =
     member compilingFslib: bool
     member compilingFslib20: string option
     member compilingFslib40: bool
+    member compilingFslibNoBigInt: bool
     member useIncrementalBuilder: bool
     member includes: string list
     member implicitOpens: string list
