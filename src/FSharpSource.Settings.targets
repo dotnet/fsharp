@@ -19,7 +19,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <!-- Tail calls on, even in debug -->
+    <!-- Settings used all the time -->
     <Tailcalls>true</Tailcalls>
     <TargetFramework Condition="'$(TargetFramework)'==''">net40</TargetFramework>
     <!-- Currently always use .NET Framwork proto compiler -->
@@ -32,24 +32,28 @@
 
     <FX_NO_LOADER Condition=" '$(FX_NO_LOADER)'==''">false</FX_NO_LOADER>
 	  
-	<UseMicroBuild Condition="'$(OS)' != 'Unix'">true</UseMicroBuild>
-	<UseSourceLink Condition="'$(OS)' != 'Unix'">true</UseSourceLink>
-	<UseGatherBinaries Condition="'$(OS)' != 'Unix'">true</UseGatherBinaries>
-	<AddVsSdkAttributesToSomeCoreComponents Condition="'$(OS)' != 'Unix'">true</AddVsSdkAttributesToSomeCoreComponents>
-	<DefineConstants Condition="'$(OS)' != 'Unix'">WINDOWS_ONLY_COMPILER;$(DefineConstants)</DefineConstants>
-
-  <!-- Always qualify the IntermediateOutputPath by the TargetFramework if any exists -->
+    <!-- Always qualify the IntermediateOutputPath by the TargetFramework if any exists -->
     <IntermediateOutputPath>obj\$(Configuration)\$(TargetFramework)\</IntermediateOutputPath>
 	<SIGN_WITH_MSFT_KEY Condition=" '$(SIGN_WITH_MSFT_KEY)' == '' ">false</SIGN_WITH_MSFT_KEY>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(OS)' != 'Unix'">
+    <!-- Things we do only on Windows right now -->
+	<UseMicroBuild>true</UseMicroBuild>
+	<UseSourceLink>true</UseSourceLink>
+	<UseGatherBinaries>true</UseGatherBinaries>
+	<AddVsSdkAttributesToSomeCoreComponents>true</AddVsSdkAttributesToSomeCoreComponents>
+	<DefineConstants>WINDOWS_ONLY_COMPILER;$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
+
   <PropertyGroup Condition=" '$(ProjectLanguage)' == 'FSharp' ">
+    <!-- Things we do only for F# projects -->
     <OtherFlags>$(OtherFlags) --times</OtherFlags>
     <NoWarn>$(NoWarn);69;65;54;61;75</NoWarn>
   </PropertyGroup>
 
-  <!-- Standard interpretations of Debug and Release configurations -->
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <!-- Settings for Debug mode.		-->
     <DebugType Condition=" '$(DebugType)' == '' and  '$(TargetFramework)' != 'coreclr' ">full</DebugType>
     <DebugType Condition=" '$(DebugType)' == '' and  '$(TargetFramework)' == 'coreclr' ">portable</DebugType>
     <Optimize Condition=" '$(Optimize)' == '' ">false</Optimize>
@@ -62,6 +66,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <!-- Flags used for Release mode.		-->
     <DebugType Condition=" '$(DebugType)' == '' ">pdbonly</DebugType>
     <Optimize Condition=" '$(Optimize)' == '' ">true</Optimize>
     <EmbedAllSource>false</EmbedAllSource>
@@ -70,8 +75,8 @@
     <DefineConstants Condition=" '$(ProjectLanguage)' == 'VisualBasic' ">TRACE=True,$(DefineConstants)</DefineConstants>
   </PropertyGroup>
 
-  <!-- Flags used to build the bootstrap compiler.		-->
   <PropertyGroup Condition="'$(Configuration)'=='Proto'">
+    <!-- Flags used when running the Proto compiler.		-->
     <Optimize>true</Optimize>
     <DefineConstants>DEBUG;NO_STRONG_NAMES;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
@@ -102,6 +107,7 @@
   </PropertyGroup> 
 
   <PropertyGroup>
+    <!-- Compiler tool locations.		-->
     <FsSrGenToolPath>$(FSharpSourcesRoot)\..\packages\fssrgen.3.1.0\lib\net46</FsSrGenToolPath>
     <FsLexToolPath>$(FSharpSourcesRoot)\..\packages\FsLexYacc.6.1.0\build</FsLexToolPath>
     <FsYaccToolPath>$(FSharpSourcesRoot)\..\packages\FsLexYacc.6.1.0\build</FsYaccToolPath>
