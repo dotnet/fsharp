@@ -961,30 +961,30 @@ namespace Microsoft.FSharp.Collections
             and Windowed<'T,'V> (windowSize: int, next:Consumer<'T[],'V>) =
                 inherit SeqComponent<'T,'V>(next)
 
-                let arr = Array.zeroCreateUnchecked windowSize
-                let r = ref (windowSize - 1)
-                let i = ref 0
+                let circularBuffer = Array.zeroCreateUnchecked windowSize
+                let mutable idx = 0
 
-                let arrWindow innerDerefI j = arr.[(innerDerefI+j) % windowSize]
+                let mutable priming = windowSize - 1
 
                 override __.ProcessNext (input:'T) : bool =
-                    let derefI = !i
-                    arr.[derefI] <- input
-                    i := (derefI + 1) % windowSize
-                    let derefR = !r
-                    if derefR = 0 then
-                        let innerDerefI = !i
+                    circularBuffer.[idx] <- input
+                    
+                    idx <- idx + 1
+                    if idx = windowSize then
+                        idx <- 0
+
+                    if priming > 0 then
+                        priming <- priming - 1
+                        false
+                    else
                         if windowSize < 32 then
-                            let window = Array.init windowSize (arrWindow innerDerefI)
+                            let window = Array.init windowSize (fun i -> circularBuffer.[(idx+i) % windowSize])
                             avoidTailCall (next.ProcessNext window)
                         else
                             let window = Array.zeroCreateUnchecked windowSize 
-                            Array.Copy(arr, innerDerefI, window, 0, windowSize - innerDerefI)
-                            Array.Copy(arr, 0, window, windowSize - innerDerefI, innerDerefI)
+                            Array.Copy(circularBuffer, idx, window, 0, windowSize - idx)
+                            Array.Copy(circularBuffer, 0, window, windowSize - idx, idx)
                             avoidTailCall (next.ProcessNext window)
-                    else 
-                        r := (derefR - 1)
-                        false                        
 
             type SeqProcessNextStates =
             | InProcess  = 0
