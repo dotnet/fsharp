@@ -483,10 +483,10 @@
   <Target Name="ValidateFscExe">
     <Error
             Text="Expect $(FSharpSourcesRoot)\..\tools\lkg\fsc.exe to exist when BUILD_PROTO_WITH_CORECLR_LKG==1"
-            Condition="!Exists('$(FSharpSourcesRoot)\..\tools\lkg\fsc.exe')" />
+            Condition="'$(BUILD_PROTO_WITH_CORECLR_LKG)' == 1 AND !Exists('$(FSharpSourcesRoot)\..\tools\lkg\fsc.exe')" />
     <Error
             Text="Expect $(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.0.1.10\tools\fsc.exe to exist when BUILD_PROTO_WITH_CORECLR_LKG==0"
-            Condition="!Exists('$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.0.1.10\tools\fsc.exe')" />
+            Condition="'$(BUILD_PROTO_WITH_CORECLR_LKG)' == 0 AND !Exists('$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.0.1.10\tools\fsc.exe')" />
 
   </Target>
 </Project>
