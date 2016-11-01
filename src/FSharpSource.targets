@@ -370,10 +370,10 @@
           <PropertyGroup >
             <!-- When using coreclr to bootstrap, we get the FSharp.Core LKG, targets LKG, the FSharp.Build LKG from the .NET Framework compiler tools LKG package -->
             <FSharpCoreLkgPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.0.1.10\tools</FSharpCoreLkgPath>
-            <FSharpNetCoreLkgPath>$(FSharpSourcesRoot)\..\tools\lkg</FSharpNetCoreLkgPath>
+            <FSharpNetCoreLkgPath>$(FSharpSourcesRoot)\..\Tools\lkg</FSharpNetCoreLkgPath>
             <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools.4.0.1.10\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
             <!-- When using coreclr to bootstrap, the compiler binary comes from the coreclr LKG -->
-            <FscToolPath>$(FSharpSourcesRoot)\..\tools\dotnetcli</FscToolPath>
+            <FscToolPath>$(FSharpSourcesRoot)\..\Tools\dotnetcli</FscToolPath>
             <FscToolExe>dotnet.exe</FscToolExe>
             <DotnetFscCompilerPath>$(FSharpNetCoreLkgPath)\fsc.exe</DotnetFscCompilerPath>
           </PropertyGroup>
@@ -432,7 +432,7 @@
          so we ignore the pre-calculation in the lock file and calculate asset applicability in the build task -->
     <NuGetIngoreLockFile>true</NuGetIngoreLockFile>
   </PropertyGroup>
-  <Import  Condition="'$(TargetFramework)'=='coreclr'" Project="..\tools\Build.Common.Targets" />
+  <Import  Condition="'$(TargetFramework)'=='coreclr'" Project="..\Tools\Build.Common.Targets" />
 
   <PropertyGroup>
     <RootNamespace></RootNamespace>
@@ -476,7 +476,7 @@
   </PropertyGroup>
 
   <Target Name="ValidateBuildTools">
-    <Error Text="Expect $(FSharpSourcesRoot)\..\tools\lkg\fsc.exe to exist when BUILD_PROTO_WITH_CORECLR_LKG==1" Condition="'$(BUILD_PROTO_WITH_CORECLR_LKG)' == 1 AND !Exists('$(FSharpSourcesRoot)\..\tools\lkg\fsc.exe')" />
+    <Error Text="Expect $(FSharpSourcesRoot)\..\Tools\lkg\fsc.exe to exist when BUILD_PROTO_WITH_CORECLR_LKG==1" Condition="'$(BUILD_PROTO_WITH_CORECLR_LKG)' == 1 AND !Exists('$(FSharpSourcesRoot)\..\Tools\lkg\fsc.exe')" />
     <Error Text="Expect $(FscToolPath)\$(FscToolExe) to exist" Condition="!Exists('$(FscToolPath)\$(FscToolExe)')" />
     <Error Text="Expect $(FsSrGenToolPath)\fssrgen.exe to exist" Condition="!Exists('$(FsSrGenToolPath)\fssrgen.exe')" />
     <Error Text="Expect $(FsiToolPath)\$(FsiToolExe) to exist" Condition="!Exists('$(FsiToolPath)\$(FsiToolExe)')" />
