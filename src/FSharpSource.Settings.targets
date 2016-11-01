@@ -23,11 +23,13 @@
     <Tailcalls>true</Tailcalls>
     <TargetFramework Condition="'$(TargetFramework)'==''">net40</TargetFramework>
     <!-- Currently always use .NET Framwork proto compiler -->
-	<ProtoFlavour Condition="'$(ProtoFlavour)' == ''">net40</ProtoFlavour>
+    <ProtoFlavour Condition="'$(ProtoFlavour)' == ''">net40</ProtoFlavour>
     <FsLexUnicode>true</FsLexUnicode>
     <ProjectLanguage Condition="'$(ProjectLanguage)' == ''">FSharp</ProjectLanguage>
     <DebugSymbols>true</DebugSymbols>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <ToolsDir>$(MSBuildThisFileDirectory)..\Tools\</ToolsDir>
+    <BuildToolsTaskDir>$(ToolsDir)net45\</BuildToolsTaskDir>
     <WarningsAsErrors />
 
     <FX_NO_LOADER Condition=" '$(FX_NO_LOADER)'==''">false</FX_NO_LOADER>
