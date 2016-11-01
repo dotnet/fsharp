@@ -452,7 +452,7 @@ if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
 
 set _dotnetexe=%~dp0Tools\dotnetcli\dotnet.exe
 
-set _fsiexe="packages\FSharp.Compiler.Tools.4.0.1.10\tools\fsi.exe"
+set _fsiexe="packages\FSharp.Compiler.Tools.4.0.1.19\tools\fsi.exe"
 if not exist %_fsiexe% echo Error: Could not find %_fsiexe% && goto :failure
 %_ngenexe% install %_fsiexe% /nologo 
 
@@ -462,16 +462,8 @@ if not exist %_nugetexe% echo Error: Could not find %_nugetexe% && goto :failure
 echo ---------------- Done with package restore, starting proto ------------------------
 
 rem Decide if Proto need building
-if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
-  if NOT EXIST tools\lkg\fsc.exe (
-    set BUILD_PROTO=1
-  )
-)
-
-if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '0' (
-  if NOT EXIST Proto\net40\bin\fsc-proto.exe (
-    set BUILD_PROTO=1
-  )
+if NOT EXIST Proto\net40\bin\fsc-proto.exe (
+  set BUILD_PROTO=1
 )
 
 
@@ -489,12 +481,16 @@ if '%BUILD_PROTO%' == '1' (
          %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
     @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
 
+    echo %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
+         %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
+    @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
+
   )
 
   if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '0' (
 
-    echo %_ngenexe% install packages\FSharp.Compiler.Tools.4.0.1.10\tools\fsc.exe /nologo 
-         %_ngenexe% install packages\FSharp.Compiler.Tools.4.0.1.10\tools\fsc.exe /nologo 
+    echo %_ngenexe% install packages\FSharp.Compiler.Tools.4.0.1.19\tools\fsc.exe /nologo 
+         %_ngenexe% install packages\FSharp.Compiler.Tools.4.0.1.19\tools\fsc.exe /nologo 
 
     echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
          %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj

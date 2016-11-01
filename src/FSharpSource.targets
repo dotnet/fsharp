@@ -369,9 +369,9 @@
 			<!-- Use .NET Core to bootstrap -->
           <PropertyGroup >
             <!-- When using coreclr to bootstrap, we get the FSharp.Core LKG, targets LKG, the FSharp.Build LKG from the .NET Framework compiler tools LKG package -->
-            <FSharpCoreLkgPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.0.1.10\tools</FSharpCoreLkgPath>
+            <FSharpCoreLkgPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.0.1.19\tools</FSharpCoreLkgPath>
             <FSharpNetCoreLkgPath>$(FSharpSourcesRoot)\..\Tools\lkg</FSharpNetCoreLkgPath>
-            <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools.4.0.1.10\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
+            <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools.4.0.1.19\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
             <!-- When using coreclr to bootstrap, the compiler binary comes from the coreclr LKG -->
             <FscToolPath>$(FSharpSourcesRoot)\..\Tools\dotnetcli</FscToolPath>
             <FscToolExe>dotnet.exe</FscToolExe>
@@ -381,8 +381,8 @@
         <Otherwise>
           <!-- Use .NET Framework to bootstrap -->
           <PropertyGroup >
-            <FSharpCoreLkgPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.0.1.10\tools</FSharpCoreLkgPath>
-            <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools.4.0.1.10\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
+            <FSharpCoreLkgPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.0.1.19\tools</FSharpCoreLkgPath>
+            <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools.4.0.1.19\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
           </PropertyGroup>
         </Otherwise>
       </Choose>
