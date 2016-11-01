@@ -399,7 +399,7 @@
         <When Condition="'$(TargetFramework)'=='portable47' OR '$(TargetFramework)'=='portable7' OR '$(TargetFramework)'=='portable78' OR '$(TargetFramework)'=='portable259' OR '$(TargetFramework)'=='coreclr'">
            <!-- Compiling portable/coreclr with Proto -->
           <PropertyGroup>
-            <FSharpTargetsPath>..\Proto\$(ProtoFlavour)\bin\Microsoft.Portable.FSharp-proto.Targets</FSharpTargetsPath>
+            <FSharpTargetsPath>..\Proto\$(ProtoFlavour)\bin\Microsoft.Portable.FSharp-proto.targets</FSharpTargetsPath>
           </PropertyGroup>
         </When>
 	    <Otherwise>

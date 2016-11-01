@@ -33,7 +33,7 @@
     </FilesToLocalize>
   </ItemGroup>
   <ItemGroup>
-    <CustomAdditionalCompileInputs Include="$(FSharpSourcesRoot)\..\Proto\$(protoCLIDir)\bin\fsc-proto.exe">
+    <CustomAdditionalCompileInputs Include="$(FSharpSourcesRoot)\..\Proto\$(ProtoFlavour)\bin\fsc-proto.exe">
       <Visible>false</Visible>
     </CustomAdditionalCompileInputs>
     <EmbeddedResource Include="FSCore.resx">

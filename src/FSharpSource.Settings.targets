@@ -35,6 +35,7 @@
 	<UseMicroBuild Condition="'$(OS)' != 'Unix'">true</UseMicroBuild>
 	<UseSourceLink Condition="'$(OS)' != 'Unix'">true</UseSourceLink>
 	<UseGatherBinaries Condition="'$(OS)' != 'Unix'">true</UseGatherBinaries>
+	<AddVsSdkAttributesToSomeCoreComponents Condition="'$(OS)' != 'Unix'">true</AddVsSdkAttributesToSomeCoreComponents>
 	<DefineConstants Condition="'$(OS)' != 'Unix'">WINDOWS_ONLY_COMPILER;$(DefineConstants)</DefineConstants>
 
   <!-- Always qualify the IntermediateOutputPath by the TargetFramework if any exists -->
