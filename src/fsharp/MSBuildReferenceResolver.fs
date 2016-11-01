@@ -100,9 +100,31 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
         | _ -> []
 
     let GetPathToDotNetFrameworkReferenceAssembliesFor40Plus(version) = 
-        match ToolLocationHelper.GetPathToStandardLibraries(".NETFramework",version,"") with
-        | null | "" -> []
-        | x -> [x]
+#if WINDOWS_ONLY_COMPILER 
+// FUTURE CLEANUP: This is the old implementation, equivalent to calling GetPathToStandardLibraries
+// FUTURE CLEANUP: on .NET Framework.  But reshapedmsbuild.fs doesn't have an implementation of GetPathToStandardLibraries
+// FUTURE CLEANUP: When we remove reshapedmsbuild.fs we can just call GetPathToStandardLibraries directly.
+       // starting with .Net 4.0, the runtime dirs (WindowsFramework) are never used by MSBuild RAR
+       let v =
+           match version with
+           | Net40 -> Some TargetDotNetFrameworkVersion.Version40
+           | Net45 -> Some TargetDotNetFrameworkVersion.Version45
+           | Net451 -> Some TargetDotNetFrameworkVersion.Version451
+           //| Net452 -> Some TargetDotNetFrameworkVersion.Version452 // not available in Dev15 MSBuild version
+           | Net46 -> Some TargetDotNetFrameworkVersion.Version46
+           | Net461 -> Some TargetDotNetFrameworkVersion.Version461
+           | _ -> assert false; None // unknown version - some parts in the code are not synced
+       match v with
+       | Some v -> 
+           match ToolLocationHelper.GetPathToDotNetFrameworkReferenceAssemblies v with
+           | null -> []
+           | x -> [x]
+       | None -> []
+#else
+      match ToolLocationHelper.GetPathToStandardLibraries(".NETFramework",version,"") with
+      | null | "" -> []
+      | x -> [x]
+#endif
 
     /// Use MSBuild to determine the version of the highest installed framework.
     let HighestInstalledNetFrameworkVersion() =
@@ -291,10 +313,8 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
                                      FindSerializationAssemblies=false, Assemblies=assemblies, 
                                      SearchPaths=searchPaths, 
                                      AllowedAssemblyExtensions= [| ".dll" ; ".exe" |])
-#if BUILDING_WITH_LKG
-        ignore targetProcessorArchitecture
-#else       
 #if FX_RESHAPED_REFLECTION
+        ignore targetProcessorArchitecture // Not implemented in reshapedmsbuild.fs
 #else
         rar.TargetProcessorArchitecture <- targetProcessorArchitecture
         let targetedRuntimeVersionValue = typeof<obj>.Assembly.ImageRuntimeVersion
@@ -309,7 +329,6 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
             typeof<ResolveAssemblyReference>.InvokeMember("CopyLocalDependenciesWhenParentReferenceInGac",(BindingFlags.Instance ||| BindingFlags.SetProperty ||| BindingFlags.Public),null,rar,[| box true |])  |> ignore 
 #endif
 #endif        
-#endif
         
         let succeeded = rar.Execute()
         
