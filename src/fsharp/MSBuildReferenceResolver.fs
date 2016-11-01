@@ -4,6 +4,7 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
 
     open System
     open System.IO
+    open System.Reflection
 
 #if FX_RESHAPED_REFLECTION
     open Microsoft.FSharp.Core.ReflectionAdapters

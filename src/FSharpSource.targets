@@ -371,8 +371,9 @@
   <Choose>
     <When Condition="'$(BuildWith)' == 'LKG'">
       <Choose>
-        <When Condition="Exists('$(FSharpSourcesRoot)\..\tools\lkg\fsc.exe')">
-          <!-- Use .NET Core to bootstrap -->
+        <When Condition="'$(BUILD_PROTO_WITH_CORECLR_LKG)' == '1'">
+
+			<!-- Use .NET Core to bootstrap -->
           <PropertyGroup >
             <!-- When using coreclr to bootstrap, we get the FSharp.Core LKG, targets LKG, the FSharp.Build LKG from the .NET Framework compiler tools LKG package -->
             <FSharpCoreLkgPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.0.1.10\tools</FSharpCoreLkgPath>
@@ -475,4 +476,17 @@
     <WriteLinesToFile File="$(IntermediateOutputPath)source_link.json" Overwrite="true" Lines='{"documents": { "$(SrcRootDirectory)/*" : "$(RemoteUri.Replace(".git", "").Replace("github.com", "raw.githubusercontent.com"))/$(LatestCommit)/*" }}' />
   </Target>
 
+  <PropertyGroup>
+    <CompileDependsOn>ValidateFscExe;$(CompileDependsOn)</CompileDependsOn>
+  </PropertyGroup>
+
+  <Target Name="ValidateFscExe">
+    <Error
+            Text="Expect $(FSharpSourcesRoot)\..\tools\lkg\fsc.exe to exist when BUILD_PROTO_WITH_CORECLR_LKG==1"
+            Condition="!Exists('$(FSharpSourcesRoot)\..\tools\lkg\fsc.exe')" />
+    <Error
+            Text="Expect $(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.0.1.10\tools\fsc.exe to exist when BUILD_PROTO_WITH_CORECLR_LKG==0"
+            Condition="!Exists('$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.0.1.10\tools\fsc.exe')" />
+
+  </Target>
 </Project>
