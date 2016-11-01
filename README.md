@@ -36,7 +36,18 @@ Quickstart guides for build and test can be found [here](https://github.com/Micr
 
 ####Development tools
 
-For F# 4.1 development
+For F# Compiler on Windows (``build net40``)
+
+- [.NET 4.5.1](http://www.microsoft.com/en-us/download/details.aspx?id=40779)
+- [MSBuild 12.0](http://www.microsoft.com/en-us/download/details.aspx?id=40760)
+
+For F# Compiler on OSX and Linux (see .travis.yml for build steps)
+
+- [Mono latest](http://www.mono-project.com/download/#download-lin)
+- If building for .NET Core, then .NET Core will be downloaded from Linux packages
+
+
+For Visual F# IDE Tools 4.1 development (Windows)
 
 - [Visual Studio 15](https://www.visualstudio.com/en-us/downloads/visual-studio-next-downloads-vs.aspx)
   - Select Visual C++ / Common Tools For Visual C++
@@ -60,10 +71,9 @@ For F# 4.1 development
 
 ####Contributing
 
-Guidelines for contributions to the Visual F# compiler, library, and tools can be found [here](CONTRIBUTING.md).
+Guidelines for contributions to the F# compiler, library, and Visual F# IDE tools can be found [here](CONTRIBUTING.md).
 
 How we label issues and PRs:  https://github.com/dotnet/roslyn/wiki/Labels-used-for-issues  
-
 
 This project has adopted the code of conduct defined by the [Contributor Covenant](http://contributor-covenant.org/) to clarify expected behavior in our community. This code of conduct has been [adopted by many other projects](http://contributor-covenant.org/adopters/). For more information see the [Code of conduct](https://github.com/Microsoft/visualfsharp/wiki/Code-of-Conduct).
 
@@ -77,7 +87,9 @@ To download the bits for the latest CI builds see [these instructions](https://g
 
 ###Code Flow to Other Platforms
 
-Currently, this repository only enables development and testing on the Windows platform. If you are using Linux, OSX, Android, or iOS, and would like to contribute, please see the instructions provided at the [Open Edition repo](https://github.com/fsharp/fsharp/#the-open-edition-of-the-f-compiler-core-library--tools).
+This repository enables development on Windows, Linux and OSX.  It enables automated CI testing primarily on Windows.
+
+If using Android, or iOS, and would like to contribute, please see the instructions provided at the [Open Edition repo](https://github.com/fsharp/fsharp/#the-open-edition-of-the-f-compiler-core-library--tools).
 
 Although the primary focus of this repo is F# for Windows and the Visual Studio F# tools, contributions here flow directly to the F# Open Edition repo.  More details can be found [here](https://github.com/Microsoft/visualfsharp/wiki/Code-Flow-to-Open-Edition).
 

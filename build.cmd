@@ -425,8 +425,8 @@ set _ngenexe="%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\ngen.exe"
 if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 
 echo ---------------- Done with prepare, starting package restore ----------------
-set _nugetexe="%~dp0.nuget\nuget.exe"
-set _nugetconfig="%~dp0.nuget\nuget.config"
+set _nugetexe="%~dp0.nuget\NuGet.exe"
+set _nugetconfig="%~dp0.nuget\NuGet.Config"
 
 if '%RestorePackages%' == 'true' (
     %_ngenexe% install %_nugetexe%  /nologo 
@@ -446,13 +446,13 @@ if '%RestorePackages%' == 'true' (
 )
 
 if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
-    :: Restore the Tools directory
+    :: Restore the tools directory
     call %~dp0init-tools.cmd
 )
 
 set _dotnetexe=%~dp0Tools\dotnetcli\dotnet.exe
 
-set _fsiexe="packages\FSharp.Compiler.Tools.4.0.1.10\tools\fsi.exe"
+set _fsiexe="packages\FSharp.Compiler.Tools.4.0.1.19\tools\fsi.exe"
 if not exist %_fsiexe% echo Error: Could not find %_fsiexe% && goto :failure
 %_ngenexe% install %_fsiexe% /nologo 
 
@@ -462,16 +462,8 @@ if not exist %_nugetexe% echo Error: Could not find %_nugetexe% && goto :failure
 echo ---------------- Done with package restore, starting proto ------------------------
 
 rem Decide if Proto need building
-if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
-  if NOT EXIST Tools\lkg\fsc.exe (
-    set BUILD_PROTO=1
-  )
-)
-
-if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '0' (
-  if NOT EXIST Proto\net40\bin\fsc-proto.exe (
-    set BUILD_PROTO=1
-  )
+if NOT EXIST Proto\net40\bin\fsc-proto.exe (
+  set BUILD_PROTO=1
 )
 
 
@@ -482,22 +474,8 @@ if '%BUILD_PROTO%' == '1' (
     pushd .\lkg & %_dotnetexe% restore --packages %~dp0\packages &popd
     @if ERRORLEVEL 1 echo Error: dotnet restore failed  && goto :failure
 
-    pushd .\lkg & %_dotnetexe% publish project.json -o %~dp0\Tools\lkg -r win7-x64 &popd
+    pushd .\lkg & %_dotnetexe% publish project.json -o %~dp0\tools\lkg -r win7-x64 &popd
     @if ERRORLEVEL 1 echo Error: dotnet publish failed  && goto :failure
-
-    echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
-         %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
-    @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
-
-    rem copy targestfile into tools directory ... temporary fix until packaging complete.
-    echo copy src\fsharp\FSharp.Build\Microsoft.FSharp.targets tools\Microsoft.FSharp.targets
-         copy src\fsharp\FSharp.Build\Microsoft.FSharp.targets tools\Microsoft.FSharp.targets
-
-    echo copy src\fsharp\FSharp.Build\Microsoft.Portable.FSharp.targets tools\Microsoft.Portable.FSharp.targets
-         copy src\fsharp\FSharp.Build\Microsoft.Portable.FSharp.targets tools\Microsoft.Portable.FSharp.targets
-  )
-
-  if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '0' (
 
     echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
          %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
@@ -507,7 +485,22 @@ if '%BUILD_PROTO%' == '1' (
          %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
     @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
 
-    rmdir /s /q %~dp0\Tools\lkg
+  )
+
+  if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '0' (
+
+    echo %_ngenexe% install packages\FSharp.Compiler.Tools.4.0.1.19\tools\fsc.exe /nologo 
+         %_ngenexe% install packages\FSharp.Compiler.Tools.4.0.1.19\tools\fsc.exe /nologo 
+
+    echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
+         %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
+    @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
+
+    echo %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
+         %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
+    @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
+
+    rmdir /s /q %~dp0\tools\lkg
   )
 )
 
@@ -516,7 +509,8 @@ if '%BUILD_PROTO%' == '1' (
 echo ---------------- Done with proto, starting build ------------------------
 
 if '%BUILD_PHASE%' == '1' (
-   %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
+   echo %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
+        %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
    @if ERRORLEVEL 1 echo Error: '%_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG%  /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%' failed && goto :failure
 )
 

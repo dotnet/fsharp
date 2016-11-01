@@ -3,7 +3,8 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\v4.0\Microsoft.Portable.Common.targets" />
-  <Import Project=".\Microsoft.FSharp{BuildSuffix}.Targets" />
+  <Import Project=".\Microsoft.FSharp.Targets" Condition="Exists('.\Microsoft.FSharp.Targets') AND !Exists('.\Microsoft.FSharp.targets')"/>
+  <Import Project=".\Microsoft.FSharp.targets" Condition="Exists('.\Microsoft.FSharp.targets')"/>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\Microsoft.Portable.Core.targets" />
   
 </Project>
