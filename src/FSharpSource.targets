@@ -359,57 +359,45 @@
   </PropertyGroup>
 
   <Choose>
-    <When Condition="'$(BuildWith)' == 'LKG'">
-      <PropertyGroup>
+    <When Condition="'$(BuildWith)' == 'LKG' AND '$(BUILD_PROTO_WITH_CORECLR_LKG)' == '1'">
+      <PropertyGroup >
         <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(ProtoFlavour)\bin</OutputPath>
+        <!-- When using coreclr to bootstrap to proto. We acquire the FSharp.Core LKG, targets LKG, the FSharp.Build LKG from the .NET Framework compiler tools LKG package. -->
+        <FSharpCoreLkgPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.0.1.19\tools</FSharpCoreLkgPath>
+        <FSharpNetCoreLkgPath>$(FSharpSourcesRoot)\..\Tools\lkg</FSharpNetCoreLkgPath>
+        <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools.4.0.1.19\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
+        <!-- When using coreclr to bootstrap, the compiler binary comes from the coreclr LKG, invoked using dotnet.exe -->
+        <FscToolPath>$(FSharpSourcesRoot)\..\Tools\dotnetcli</FscToolPath>
+        <FscToolExe>dotnet.exe</FscToolExe>
+        <DotnetFscCompilerPath>$(FSharpNetCoreLkgPath)\fsc.exe</DotnetFscCompilerPath>
       </PropertyGroup>
-      <Choose>
-        <When Condition="'$(BUILD_PROTO_WITH_CORECLR_LKG)' == '1'">
-
-			<!-- Use .NET Core to bootstrap -->
-          <PropertyGroup >
-            <!-- When using coreclr to bootstrap, we get the FSharp.Core LKG, targets LKG, the FSharp.Build LKG from the .NET Framework compiler tools LKG package -->
-            <FSharpCoreLkgPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.0.1.19\tools</FSharpCoreLkgPath>
-            <FSharpNetCoreLkgPath>$(FSharpSourcesRoot)\..\Tools\lkg</FSharpNetCoreLkgPath>
-            <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools.4.0.1.19\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
-            <!-- When using coreclr to bootstrap, the compiler binary comes from the coreclr LKG -->
-            <FscToolPath>$(FSharpSourcesRoot)\..\Tools\dotnetcli</FscToolPath>
-            <FscToolExe>dotnet.exe</FscToolExe>
-            <DotnetFscCompilerPath>$(FSharpNetCoreLkgPath)\fsc.exe</DotnetFscCompilerPath>
-          </PropertyGroup>
-        </When>
-        <Otherwise>
-          <!-- Use .NET Framework to bootstrap -->
-          <PropertyGroup >
-            <FSharpCoreLkgPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.0.1.19\tools</FSharpCoreLkgPath>
-            <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools.4.0.1.19\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
-          </PropertyGroup>
-        </Otherwise>
-      </Choose>
     </When>
-
-	<Otherwise>
-      <!-- Compiling with Proto, currently always use a .NET Framework/Mono proto -->
+    <When Condition="'$(BuildWith)' == 'LKG' AND '$(BUILD_PROTO_WITH_CORECLR_LKG)' != '1'">
+       <!-- Use .NET Framework to bootstrap to proto -->
+      <PropertyGroup >
+        <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(ProtoFlavour)\bin</OutputPath>
+        <FSharpCoreLkgPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.0.1.19\tools</FSharpCoreLkgPath>
+        <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools.4.0.1.19\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
+      </PropertyGroup>
+    </When>
+    <When Condition="'$(BuildWith)' == '' AND ('$(TargetFramework)'=='portable47' OR '$(TargetFramework)'=='portable7' OR '$(TargetFramework)'=='portable78' OR '$(TargetFramework)'=='portable259' OR '$(TargetFramework)'=='coreclr')">
+      <!-- Compiling portable/coreclr with Proto, currently always use a .NET Framework/Mono proto -->
       <PropertyGroup>
         <OutputPath Condition=" '$(CustomOutputPath)' != 'true' ">$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin</OutputPath>
         <FscToolPath>$(FSharpSourcesRoot)\..\Proto\$(ProtoFlavour)\bin</FscToolPath>
         <FscToolExe>fsc-proto.exe</FscToolExe>
+        <FSharpTargetsPath>..\Proto\$(ProtoFlavour)\bin\Microsoft.Portable.FSharp-proto.targets</FSharpTargetsPath>
       </PropertyGroup>
-      <Choose>
-        <When Condition="'$(TargetFramework)'=='portable47' OR '$(TargetFramework)'=='portable7' OR '$(TargetFramework)'=='portable78' OR '$(TargetFramework)'=='portable259' OR '$(TargetFramework)'=='coreclr'">
-           <!-- Compiling portable/coreclr with Proto -->
-          <PropertyGroup>
-            <FSharpTargetsPath>..\Proto\$(ProtoFlavour)\bin\Microsoft.Portable.FSharp-proto.targets</FSharpTargetsPath>
-          </PropertyGroup>
-        </When>
-	    <Otherwise>
-           <!-- Compiling net40 with Proto -->
-          <PropertyGroup>
-            <FSharpTargetsPath>..\Proto\$(ProtoFlavour)\bin\Microsoft.FSharp-proto.targets</FSharpTargetsPath>
-          </PropertyGroup>
-	    </Otherwise>
-      </Choose>
-    </Otherwise>
+    </When>
+	<Otherwise>
+      <!-- Compiling net40 with Proto -->
+      <PropertyGroup>
+        <OutputPath Condition=" '$(CustomOutputPath)' != 'true' ">$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin</OutputPath>
+        <FscToolPath>$(FSharpSourcesRoot)\..\Proto\$(ProtoFlavour)\bin</FscToolPath>
+        <FscToolExe>fsc-proto.exe</FscToolExe>
+        <FSharpTargetsPath>..\Proto\$(ProtoFlavour)\bin\Microsoft.FSharp-proto.targets</FSharpTargetsPath>
+      </PropertyGroup>
+	</Otherwise>
   </Choose>
   <Import Condition="'$(ProjectLanguage)' == 'FSharp'" Project="$(FSharpTargetsPath)"/>
 
