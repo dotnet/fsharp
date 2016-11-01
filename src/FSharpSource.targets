@@ -358,18 +358,11 @@
     <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == ''">v4.5</TargetFrameworkVersion>
   </PropertyGroup>
 
-  <!-- Build with LKG compiler (location is determined by Microsoft.FSharp.targets). The output compiler has suffix "-proto" -->
-  <PropertyGroup Condition=" '$(BuildWith)' == 'LKG' And '$(ProjectLanguage)' == 'FSharp' AND '$(STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY)' != 'true'">
-    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(protoCLIDir)\bin</OutputPath>
-  </PropertyGroup>
-
-  <!-- Build with prototype compiler -->
-  <PropertyGroup Condition=" '$(BuildWith)' == ''">
-    <OutputPath Condition=" '$(CustomOutputPath)' != 'true' ">$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin</OutputPath>
-  </PropertyGroup>
-
   <Choose>
     <When Condition="'$(BuildWith)' == 'LKG'">
+      <PropertyGroup>
+        <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(ProtoFlavour)\bin</OutputPath>
+      </PropertyGroup>
       <Choose>
         <When Condition="'$(BUILD_PROTO_WITH_CORECLR_LKG)' == '1'">
 
@@ -394,23 +387,25 @@
         </Otherwise>
       </Choose>
     </When>
+
 	<Otherwise>
-      <!-- Compiling with Proto -->
+      <!-- Compiling with Proto, currently always use a .NET Framework/Mono proto -->
       <PropertyGroup>
-        <FscToolPath>$(FSharpSourcesRoot)\..\Proto\$(protoCLIDir)\bin</FscToolPath>
+        <OutputPath Condition=" '$(CustomOutputPath)' != 'true' ">$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin</OutputPath>
+        <FscToolPath>$(FSharpSourcesRoot)\..\Proto\$(ProtoFlavour)\bin</FscToolPath>
         <FscToolExe>fsc-proto.exe</FscToolExe>
       </PropertyGroup>
       <Choose>
         <When Condition="'$(TargetFramework)'=='portable47' OR '$(TargetFramework)'=='portable7' OR '$(TargetFramework)'=='portable78' OR '$(TargetFramework)'=='portable259' OR '$(TargetFramework)'=='coreclr'">
            <!-- Compiling portable/coreclr with Proto -->
           <PropertyGroup>
-            <FSharpTargetsPath>..\Proto\$(protoCLIDir)\bin\Microsoft.Portable.FSharp-proto.Targets</FSharpTargetsPath>
+            <FSharpTargetsPath>..\Proto\$(ProtoFlavour)\bin\Microsoft.Portable.FSharp-proto.Targets</FSharpTargetsPath>
           </PropertyGroup>
         </When>
 	    <Otherwise>
            <!-- Compiling net40 with Proto -->
           <PropertyGroup>
-            <FSharpTargetsPath>..\Proto\$(protoCLIDir)\bin\Microsoft.FSharp-proto.targets</FSharpTargetsPath>
+            <FSharpTargetsPath>..\Proto\$(ProtoFlavour)\bin\Microsoft.FSharp-proto.targets</FSharpTargetsPath>
           </PropertyGroup>
 	    </Otherwise>
       </Choose>
@@ -418,7 +413,7 @@
   </Choose>
   <Import Condition="'$(ProjectLanguage)' == 'FSharp'" Project="$(FSharpTargetsPath)"/>
 
-  <!-- Hook up DNX to enable solution refresh of packages -->
+  <!-- Hook up .NET Core to enable solution refresh of packages -->
   <PropertyGroup Condition="'$(TargetFramework)'=='coreclr'">
     
     <NuGetPackagesPath Condition="'$(NuGetPackagesPath)' == ''">$(FSharpSourcesRoot)\..\packages</NuGetPackagesPath>
@@ -433,7 +428,7 @@
 
     <DnuRestoreCommand>"$(NuGetToolPath)NuGet.exe" restore -OutputDirectory "$(NuGetPackagesPath)" -Config "$(NuGetToolPath)NuGet.Config"</DnuRestoreCommand>
 
-    <!-- Current version of DNX does not support all semantics used in our packages, 
+    <!-- Current version of .NET Core does not support all semantics used in our packages, 
          so we ignore the pre-calculation in the lock file and calculate asset applicability in the build task -->
     <NuGetIngoreLockFile>true</NuGetIngoreLockFile>
   </PropertyGroup>
@@ -445,7 +440,7 @@
   </PropertyGroup>
 
   <Import Project="..\packages\FSharp.SRGen.Build.Tasks.3.1.0\content\FSharp.SRGen.targets" />
-  <Import Project="Microbuild.Settings.targets" Condition="'$(OS)' != 'Unix'"/>
+  <Import Project="Microbuild.Settings.targets" Condition="'$(UseMicroBuild)' == 'true'"/>
 
   <Target Name="ReorderCompileItems"
       BeforeTargets="CoreCompile"
@@ -461,7 +456,7 @@
     <Exec Command="$(MSBuildThisFileDirectory)..\.nuget\nuget.exe restore -PackagesDirectory $(MSBuildThisFileDirectory)..\packages -Config $(MSBuildThisFileDirectory)..\.nuget\NuGet.Config project.json"/>
   </Target>
 
-  <Target Name="GenerateSourceLink" BeforeTargets="CoreCompile" Condition="'$(OS)' != 'Unix'">
+  <Target Name="GenerateSourceLink" BeforeTargets="CoreCompile" Condition="'$(UseSourceLink)' == 'true'">
     <PropertyGroup>
       <SrcRootDirectory>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory.TrimEnd("\"))))</SrcRootDirectory>
     </PropertyGroup>
@@ -477,16 +472,15 @@
   </Target>
 
   <PropertyGroup>
-    <CompileDependsOn>ValidateFscExe;$(CompileDependsOn)</CompileDependsOn>
+    <CompileDependsOn>ValidateBuildTools;$(CompileDependsOn)</CompileDependsOn>
   </PropertyGroup>
 
-  <Target Name="ValidateFscExe">
+  <Target Name="ValidateBuildTools">
     <Error Text="Expect $(FSharpSourcesRoot)\..\tools\lkg\fsc.exe to exist when BUILD_PROTO_WITH_CORECLR_LKG==1" Condition="'$(BUILD_PROTO_WITH_CORECLR_LKG)' == 1 AND !Exists('$(FSharpSourcesRoot)\..\tools\lkg\fsc.exe')" />
     <Error Text="Expect $(FscToolPath)\$(FscToolExe) to exist" Condition="!Exists('$(FscToolPath)\$(FscToolExe)')" />
     <Error Text="Expect $(FsSrGenToolPath)\fssrgen.exe to exist" Condition="!Exists('$(FsSrGenToolPath)\fssrgen.exe')" />
     <Error Text="Expect $(FsiToolPath)\$(FsiToolExe) to exist" Condition="!Exists('$(FsiToolPath)\$(FsiToolExe)')" />
     <Error Text="Expect $(FsLexToolPath)\$(FsLexToolExe) to exist" Condition="!Exists('$(FsLexToolPath)\$(FsLexToolExe)')" />
     <Error Text="Expect $(FsYaccToolPath)\$(FsYaccToolExe) to exist" Condition="!Exists('$(FsYaccToolPath)\$(FsYaccToolExe)')" />
-
   </Target>
 </Project>

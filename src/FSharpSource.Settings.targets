@@ -22,9 +22,8 @@
     <!-- Tail calls on, even in debug -->
     <Tailcalls>true</Tailcalls>
     <TargetFramework Condition="'$(TargetFramework)'==''">net40</TargetFramework>
-
-    <protoCLIDir Condition="'$(protoCLIDir)' == ''">net40</protoCLIDir>
-    <LkgVersion>14.0.23413.0</LkgVersion>
+    <!-- Currently always use .NET Framwork proto compiler -->
+	<ProtoFlavour Condition="'$(ProtoFlavour)' == ''">net40</ProtoFlavour>
     <FsLexUnicode>true</FsLexUnicode>
     <ProjectLanguage Condition="'$(ProjectLanguage)' == ''">FSharp</ProjectLanguage>
     <DebugSymbols>true</DebugSymbols>
@@ -32,9 +31,15 @@
     <WarningsAsErrors />
 
     <FX_NO_LOADER Condition=" '$(FX_NO_LOADER)'==''">false</FX_NO_LOADER>
+	  
+	<UseMicroBuild Condition="'$(OS)' != 'Unix'">true</UseMicroBuild>
+	<UseSourceLink Condition="'$(OS)' != 'Unix'">true</UseSourceLink>
+	<UseGatherBinaries Condition="'$(OS)' != 'Unix'">true</UseGatherBinaries>
+	<DefineConstants Condition="'$(OS)' != 'Unix'">WINDOWS_ONLY_COMPILER;$(DefineConstants)</DefineConstants>
 
   <!-- Always qualify the IntermediateOutputPath by the TargetFramework if any exists -->
     <IntermediateOutputPath>obj\$(Configuration)\$(TargetFramework)\</IntermediateOutputPath>
+	<SIGN_WITH_MSFT_KEY Condition=" '$(SIGN_WITH_MSFT_KEY)' == '' ">false</SIGN_WITH_MSFT_KEY>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(ProjectLanguage)' == 'FSharp' ">
@@ -50,10 +55,9 @@
     <ErrorReport Condition=" '$(ErrorReport)' == '' ">prompt</ErrorReport>
     <OtherFlags>$(OtherFlags) --no-jit-optimize</OtherFlags>
     <EmbedAllSource Condition=" '$(DebugType)' == 'portable' or '$(DebugType)' == 'embedded' ">true</EmbedAllSource>
-    <SourceLink     Condition=" '$(OS)' != 'Unix' AND ('$(DebugType)' == 'portable' or '$(DebugType)' == 'embedded') ">$(IntermediateOutputPath)source_link.json</SourceLink>
+    <SourceLink     Condition=" '$(UseSourceLink)' == 'true' AND ('$(DebugType)' == 'portable' or '$(DebugType)' == 'embedded') ">$(IntermediateOutputPath)source_link.json</SourceLink>
     <DefineConstants Condition=" '$(ProjectLanguage)' != 'VisualBasic' ">DEBUG;TRACE;CODE_ANALYSIS;$(DefineConstants)</DefineConstants>
     <DefineConstants Condition=" '$(ProjectLanguage)' == 'VisualBasic' ">DEBUG=True,TRACE=True,CODE_ANALYSIS=True,$(DefineConstants)</DefineConstants>
-    <SIGN_WITH_MSFT_KEY Condition=" '$(SIGN_WITH_MSFT_KEY)' == '' ">false</SIGN_WITH_MSFT_KEY>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
@@ -63,7 +67,6 @@
     <ErrorReport Condition=" '$(ErrorReport)' == '' ">prompt</ErrorReport>
     <DefineConstants Condition=" '$(ProjectLanguage)' != 'VisualBasic' ">TRACE;$(DefineConstants)</DefineConstants>
     <DefineConstants Condition=" '$(ProjectLanguage)' == 'VisualBasic' ">TRACE=True,$(DefineConstants)</DefineConstants>
-    <SIGN_WITH_MSFT_KEY Condition=" '$(SIGN_WITH_MSFT_KEY)' == '' ">false</SIGN_WITH_MSFT_KEY>
   </PropertyGroup>
 
   <!-- Flags used to build the bootstrap compiler.		-->
