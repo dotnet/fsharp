@@ -469,6 +469,8 @@ if NOT EXIST Proto\net40\bin\fsc-proto.exe (
 
 rem Build Proto
 if '%BUILD_PROTO%' == '1' (
+  rmdir /s /q Proto
+
   if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
 
     pushd .\lkg & %_dotnetexe% restore --packages %~dp0\packages &popd
@@ -500,7 +502,7 @@ if '%BUILD_PROTO%' == '1' (
          %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
     @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
 
-    rmdir /s /q %~dp0\tools\lkg
+    rmdir /s /q %~dp0\Tools\lkg
   )
 )
 
