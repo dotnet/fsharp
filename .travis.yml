@@ -18,9 +18,14 @@ before_install:
 script:
   - (mono .nuget/NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .nuget/NuGet.Config || true)
   - (cd tests/fsharp; mono ../../.nuget/NuGet.exe restore  project.json -PackagesDirectory ../../packages -ConfigFile ../../.nuget/NuGet.Config)
-  - (if test x-$BUILD_CORECLR = x-1; then ./init-tools.sh;  echo "------ start log"; cat ./init-tools.log; echo "------ end log"; ls -RFlas Tools; fi)
-  - (if test x-$BUILD_PROTO_WITH_CORECLR_LKG = x-1; then cd lkg &&  dotnet restore --packages ../packages && dotnet publish project.json -o ../Tools/lkg -r ubuntu.14.04-x64 && ls -RFlas ../Tools  && ls -RFlas ../packages; fi)
+  - (if test x-$BUILD_CORECLR = x-1; then ./init-tools.sh;  echo "------ start log"; cat ./init-tools.log; echo "------ end log"; fi)
+  - (if test x-$BUILD_PROTO_WITH_CORECLR_LKG = x-1; then cd lkg &&  dotnet restore --packages ../packages && dotnet publish project.json -o ../Tools/lkg -r ubuntu.14.04-x64; fi)
+  - ls -RFlas Tools
+  - ls -RFlas packages
+  - chmod u+x packages/FSharp.Compiler.Tools.4.0.1.19/tools/fsi.exe 
+  - chmod u+x .nuget/NuGet.exe
   - xbuild src/fsharp-proto-build.proj /v:d
+  - ls -RFlas Proto
   - xbuild build-everything.proj /p:Configuration=debug /p:BUILD_PUBLICSIGN=0 /v:d
 
 
