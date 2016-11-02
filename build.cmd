@@ -476,7 +476,7 @@ if '%BUILD_PROTO%' == '1' (
     pushd .\lkg & %_dotnetexe% restore --packages %~dp0\packages &popd
     @if ERRORLEVEL 1 echo Error: dotnet restore failed  && goto :failure
 
-    pushd .\lkg & %_dotnetexe% publish project.json -o %~dp0\tools\lkg -r win7-x64 &popd
+    pushd .\lkg & %_dotnetexe% publish project.json -o %~dp0\Tools\lkg -r win7-x64 &popd
     @if ERRORLEVEL 1 echo Error: dotnet publish failed  && goto :failure
 
     echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
@@ -502,7 +502,6 @@ if '%BUILD_PROTO%' == '1' (
          %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
     @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
 
-    rmdir /s /q %~dp0\Tools\lkg
   )
 )
 
