@@ -3,8 +3,10 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\v4.0\Microsoft.Portable.Common.targets" />
-  <Import Project="Microsoft.FSharp.Targets" Condition="Exists('Microsoft.FSharp.Targets') AND !Exists('Microsoft.FSharp.targets')"/>
-  <Import Project="Microsoft.FSharp.targets" Condition="Exists('Microsoft.FSharp.targets')"/>
+  <!-- Cope with both .targets and .Targets on case-sensitive file-systems -->
+  <!-- .targets is used by F# .NET Core SDKs, .Targets is used by F# .NET Framework SDKs -->
+  <Import Project="$(MSBuildThisFileDirectory)Microsoft.FSharp.Targets" Condition="Exists('$(MSBuildThisFileDirectory)Microsoft.FSharp.Targets') AND !Exists('$(MSBuildThisFileDirectory)Microsoft.FSharp.targets')"/>
+  <Import Project="$(MSBuildThisFileDirectory)Microsoft.FSharp.targets" Condition="Exists('$(MSBuildThisFileDirectory)Microsoft.FSharp.targets')"/>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\Microsoft.Portable.Core.targets" />
   
 </Project>
