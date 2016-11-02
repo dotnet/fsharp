@@ -221,6 +221,7 @@ module internal ToolLocationHelper =
 #if NO_WIN_REGISTRY
 #else
         let findRegistryValueUnderKey registryBaseKeyName registryKeyName registryView =
+         try
             use baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, registryView)
             use subKey = baseKey.OpenSubKey(registryBaseKeyName)
             match subKey with
@@ -230,6 +231,7 @@ module internal ToolLocationHelper =
                 match keyValue with
                 | null -> None
                 | _ as x -> Some (x.ToString())
+         with _ -> None
 #endif
 
         let findRegistryValueUnderKey registryBaseKeyName registryKeyName =
