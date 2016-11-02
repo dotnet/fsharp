@@ -368,7 +368,8 @@
         <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools.4.0.1.19\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
         <!-- When using coreclr to bootstrap, the compiler binary comes from the coreclr LKG, invoked using dotnet.exe -->
         <FscToolPath>$(FSharpSourcesRoot)\..\Tools\dotnetcli</FscToolPath>
-        <FscToolExe>dotnet.exe</FscToolExe>
+        <FscToolExe Condition="'$(OS)' != 'Unix'">dotnet.exe</FscToolExe>
+        <FscToolExe Condition="'$(OS)' == 'Unix'">dotnet</FscToolExe>
         <DotnetFscCompilerPath>$(FSharpNetCoreLkgPath)\fsc.exe</DotnetFscCompilerPath>
       </PropertyGroup>
     </When>
@@ -415,6 +416,7 @@
     <Error Text="Expect $(FSharpTargetsPath) to exist" Condition="'!Exists('$(FSharpTargetsPath)')" />
     <Error Text="Expect $(FSharpSourcesRoot)\..\Tools\lkg\fsc.exe to exist when BUILD_PROTO_WITH_CORECLR_LKG==1" Condition="'$(BUILD_PROTO_WITH_CORECLR_LKG)' == 1 AND !Exists('$(FSharpSourcesRoot)\..\Tools\lkg\fsc.exe')" />
     <Error Text="Expect $(FscToolPath)\$(FscToolExe) to exist" Condition="!Exists('$(FscToolPath)\$(FscToolExe)')" />
+    <Error Text="Expect $(DotnetFscCompilerPath) to exist if non-empty" Condition="'$(DotnetFscCompilerPath)' != '' AND !Exists('$(DotnetFscCompilerPath)')" />
     <Error Text="Expect $(FsSrGenToolPath)\fssrgen.exe to exist" Condition="!Exists('$(FsSrGenToolPath)\fssrgen.exe')" />
     <Error Text="Expect $(FsiToolPath)\$(FsiToolExe) to exist" Condition="!Exists('$(FsiToolPath)\$(FsiToolExe)')" />
     <Error Text="Expect $(FsLexToolPath)\$(FsLexToolExe) to exist" Condition="!Exists('$(FsLexToolPath)\$(FsLexToolExe)')" />
