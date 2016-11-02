@@ -28,12 +28,11 @@
     <ProjectLanguage Condition="'$(ProjectLanguage)' == ''">FSharp</ProjectLanguage>
     <DebugSymbols>true</DebugSymbols>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <ToolsDir>$(MSBuildThisFileDirectory)..\Tools\</ToolsDir>
-    <BuildToolsTaskDir>$(ToolsDir)net45\</BuildToolsTaskDir>
+    <BuildToolsTargets45>true</BuildToolsTargets45>
     <WarningsAsErrors />
 
     <FX_NO_LOADER Condition=" '$(FX_NO_LOADER)'==''">false</FX_NO_LOADER>
-	  
+
     <!-- Always qualify the IntermediateOutputPath by the TargetFramework if any exists -->
     <IntermediateOutputPath>obj\$(Configuration)\$(TargetFramework)\</IntermediateOutputPath>
   </PropertyGroup>
@@ -125,5 +124,6 @@
     <!-- The LKG FSI.EXE requires MSBuild 15 to be installed, which is painful -->
     <FsiToolPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.0.1.19\tools</FsiToolPath>
   </PropertyGroup>
+  <Import Project="../Tools/Build.Common.props" Condition="'$(TargetFramework)'=='coreclr'"/>
 
 </Project>

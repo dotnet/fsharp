@@ -3,8 +3,6 @@
 // This file is compiled 3(!) times in the codebase
 //    - as the internal implementation of printf '%A' formatting 
 //           defines: RUNTIME
-//    - as the internal implementation of structured formatting in the FSharp.Compiler-proto.dll 
-//           defines: COMPILER + BUILDING_WITH_LKG
 //    - as the internal implementation of structured formatting in FSharp.Compiler.dll 
 //           defines: COMPILER 
 //           NOTE: this implementation is used by fsi.exe. This is very important.

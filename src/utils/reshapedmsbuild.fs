@@ -821,7 +821,6 @@ module internal ToolLocationHelper =
             with get ():bool = (instance.GetPropertyValue("FindSerializationAssemblies") :?> bool)
             and set (value:bool) = (instance.SetPropertyValue("FindSerializationAssemblies", value)); ()
 
-#if !BUILDING_WITH_LKG
         member this.TargetedRuntimeVersion
             with get ():string = (instance.GetPropertyValue("TargetedRuntimeVersion") :?> string)
             and set (value:string) = (instance.SetPropertyValue("TargetedRuntimeVersion", value)); ()
@@ -833,30 +832,33 @@ module internal ToolLocationHelper =
         member this.CopyLocalDependenciesWhenParentReferenceInGac
             with get ():bool = (instance.GetPropertyValue("CopyLocalDependenciesWhenParentReferenceInGac") :?> bool)
             and set (value:bool) = (instance.SetPropertyValue("CopyLocalDependenciesWhenParentReferenceInGac", value)); ()
-#endif
+
         member this.AllowedAssemblyExtensions
             with get () :string[] = (instance.GetPropertyValue("AllowedAssemblyExtensions") :?> string[])
             and set (value:string[]) =  (instance.SetPropertyValue("AllowedAssemblyExtensions", value)); ()
+
         member this.Assemblies
             with get ():ITaskItem[] = (instance.GetPropertyValue("Assemblies") :?> ITaskItem[])
             and set (value:ITaskItem[]) = (instance.SetPropertyValue("Assemblies", value)); ()
-        member this.CopyLocalFiles
-            with get ():ITaskItem[] = (instance.GetPropertyValue("CopyLocalFiles") :?> ITaskItem[])
-        member this.RelatedFiles
-            with get ():ITaskItem[] = (instance.GetPropertyValue("RelatedFiles") :?> ITaskItem[])
-        member this.ResolvedFiles
-            with get ():ITaskItem[] = (instance.GetPropertyValue("ResolvedFiles") :?> ITaskItem[])
-        member this.ResolvedDependencyFiles
-            with get ():ITaskItem[] = (instance.GetPropertyValue("ResolvedDependencyFiles") :?> ITaskItem[])
-        member this.SatelliteFiles
-            with get ():ITaskItem[] = (instance.GetPropertyValue("SatelliteFiles") :?> ITaskItem[])
-        member this.ScatterFiles
-            with get ():ITaskItem[] = (instance.GetPropertyValue("ScatterFiles") :?> ITaskItem[])
-        member this.SuggestedRedirects
-            with get ():ITaskItem[] = (instance.GetPropertyValue("SuggestedRedirects") :?> ITaskItem[])
+
+        member this.CopyLocalFiles = (instance.GetPropertyValue("CopyLocalFiles") :?> ITaskItem[])
+
+        member this.RelatedFiles = (instance.GetPropertyValue("RelatedFiles") :?> ITaskItem[])
+
+        member this.ResolvedFiles = (instance.GetPropertyValue("ResolvedFiles") :?> ITaskItem[])
+
+        member this.ResolvedDependencyFiles = (instance.GetPropertyValue("ResolvedDependencyFiles") :?> ITaskItem[])
+
+        member this.SatelliteFiles = (instance.GetPropertyValue("SatelliteFiles") :?> ITaskItem[])
+
+        member this.ScatterFiles = (instance.GetPropertyValue("ScatterFiles") :?> ITaskItem[])
+
+        member this.SuggestedRedirects = (instance.GetPropertyValue("SuggestedRedirects") :?> ITaskItem[])
+
         member this.SearchPaths
             with get () :string[] = (instance.GetPropertyValue("SearchPaths") :?> string[])
             and set (value:string[]) =  (instance.SetPropertyValue("SearchPaths", value)); ()
+
         member this.Execute () =
             let m = instance.GetType().GetMethod("Execute", [| |])
             m.Invoke(instance, [||]) :?> bool
