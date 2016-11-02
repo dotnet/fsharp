@@ -490,6 +490,9 @@ rule token args skip = parse
  | '`' '`' ([^'`' '\n' '\r' '\t'] | '`' [^'`''\n' '\r' '\t']) + '`' '`' 
      { Keywords.IdentifierToken args lexbuf (lexemeTrimBoth lexbuf 2 2) }
 
+ | '`' ([^'`' '\n' '\r' '\t'] | '`' [^'`''\n' '\r' '\t']) + '`' 
+     { Keywords.IdentifierToken args lexbuf (lexemeTrimBoth lexbuf 1 1) }
+
  | ('#' anywhite* | "#line" anywhite+ ) digit+ anywhite* ('@'? "\"" [^'\n''\r''"']+ '"')? anywhite* newline
      {  let pos = lexbuf.EndPos 
         if skip then 
