@@ -8,7 +8,7 @@ set DOTNET_PATH=%TOOLRUNTIME_DIR%\dotnetcli\
 set DOTNET_CMD=%DOTNET_PATH%dotnet.exe
 if [%BUILDTOOLS_SOURCE%]==[] set BUILDTOOLS_SOURCE=https://dotnet.myget.org/F/dotnet-buildtools/api/v3/index.json
 set /P BUILDTOOLS_VERSION=< "%~dp0BuildToolsVersion.txt"
-set BUILD_TOOLS_PATH=%PACKAGES_DIR%Microsoft.DotNet.BuildTools\%BUILDTOOLS_VERSION%\lib\
+set BUILD_TOOLS_PATH=%PACKAGES_DIR%microsoft.dotnet.buildtools\%BUILDTOOLS_VERSION%\lib\
 set PROJECT_JSON_PATH=%TOOLRUNTIME_DIR%\%BUILDTOOLS_VERSION%
 set PROJECT_JSON_FILE=%PROJECT_JSON_PATH%\project.json
 set PROJECT_JSON_CONTENTS={ "dependencies": { "Microsoft.DotNet.BuildTools": "%BUILDTOOLS_VERSION%" , "Microsoft.DotNet.BuildTools.Coreclr": "1.0.4-prerelease"}, "frameworks": { "dnxcore50": { } } }
@@ -18,7 +18,7 @@ set TOOLS_INIT_RETURN_CODE=0
 :: if force option is specified then clean the tool runtime and build tools package directory to force it to get recreated
 if [%1]==[force] (
   if exist "%TOOLRUNTIME_DIR%" rmdir /S /Q "%TOOLRUNTIME_DIR%"
-  if exist "%PACKAGES_DIR%Microsoft.DotNet.BuildTools" rmdir /S /Q "%PACKAGES_DIR%Microsoft.DotNet.BuildTools"
+  if exist "%PACKAGES_DIR%microsoft.dotnet.buildtools" rmdir /S /Q "%PACKAGES_DIR%microsoft.dotnet.buildtools"
 )
 
 :: If sempahore exists do nothing
