@@ -367,9 +367,9 @@
         <FSharpNetCoreLkgPath>$(FSharpSourcesRoot)\..\Tools\lkg</FSharpNetCoreLkgPath>
         <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools.4.0.1.19\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
         <!-- When using coreclr to bootstrap, the compiler binary comes from the coreclr LKG, invoked using corehost.exe -->
-        <FscToolPath>$(FSharpSourcesRoot)\..\Tools\dotnetcli\sdk\1.0.0-preview3-003886</FscToolPath>
-        <FscToolExe Condition="'$(OS)' != 'Unix'">corehost.exe</FscToolExe>
-        <FscToolExe Condition="'$(OS)' == 'Unix'">corehost</FscToolExe>
+        <FscToolPath>$(FSharpSourcesRoot)\..\Tools\dotnetcli</FscToolPath>
+        <FscToolExe Condition="'$(OS)' != 'Unix'">dotnet.exe</FscToolExe>
+        <FscToolExe Condition="'$(OS)' == 'Unix'">dotnet</FscToolExe>
         <DotnetFscCompilerPath>$(FSharpNetCoreLkgPath)\fsc.exe</DotnetFscCompilerPath>
       </PropertyGroup>
     </When>
