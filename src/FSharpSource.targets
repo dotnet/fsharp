@@ -399,6 +399,28 @@
       </PropertyGroup>
 	</Otherwise>
   </Choose>
+  <PropertyGroup>
+    <CompileDependsOn>ValidateBuildTools;$(CompileDependsOn)</CompileDependsOn>
+  </PropertyGroup>
+
+  <Target Name="ValidateBuildTools" Condition="'$(ProjectLanguage)' == 'FSharp'" >
+    <Message Text="FSharpTargetsPath = $(FSharpTargetsPath)" />
+    <Message Text="FSharpSourcesRoot = $(FSharpSourcesRoot)" />
+    <Message Text="FscToolPath = $(FscToolPath)" />
+    <Message Text="FsSrGenToolPath = $(FsSrGenToolPath)" />
+    <Message Text="FsiToolPath = $(FsiToolPath)" />
+    <Message Text="FsLexToolPath = $(FsLexToolPath)" />
+    <Message Text="FsYaccToolPath = $(FsYaccToolPath)" />
+    <Message Text="ToolsDir = $(ToolsDir)" />
+    <Error Text="Expect $(FSharpTargetsPath) to exist" Condition="'!Exists('$(FSharpTargetsPath)')" />
+    <Error Text="Expect $(FSharpSourcesRoot)\..\Tools\lkg\fsc.exe to exist when BUILD_PROTO_WITH_CORECLR_LKG==1" Condition="'$(BUILD_PROTO_WITH_CORECLR_LKG)' == 1 AND !Exists('$(FSharpSourcesRoot)\..\Tools\lkg\fsc.exe')" />
+    <Error Text="Expect $(FscToolPath)\$(FscToolExe) to exist" Condition="!Exists('$(FscToolPath)\$(FscToolExe)')" />
+    <Error Text="Expect $(FsSrGenToolPath)\fssrgen.exe to exist" Condition="!Exists('$(FsSrGenToolPath)\fssrgen.exe')" />
+    <Error Text="Expect $(FsiToolPath)\$(FsiToolExe) to exist" Condition="!Exists('$(FsiToolPath)\$(FsiToolExe)')" />
+    <Error Text="Expect $(FsLexToolPath)\$(FsLexToolExe) to exist" Condition="!Exists('$(FsLexToolPath)\$(FsLexToolExe)')" />
+    <Error Text="Expect $(FsYaccToolPath)\$(FsYaccToolExe) to exist" Condition="!Exists('$(FsYaccToolPath)\$(FsYaccToolExe)')" />
+  </Target>
+
   <Import Condition="'$(ProjectLanguage)' == 'FSharp'" Project="$(FSharpTargetsPath)"/>
 
   <!-- Hook up .NET Core to enable solution refresh of packages -->
@@ -459,16 +481,4 @@
     <WriteLinesToFile File="$(IntermediateOutputPath)source_link.json" Overwrite="true" Lines='{"documents": { "$(SrcRootDirectory)/*" : "$(RemoteUri.Replace(".git", "").Replace("github.com", "raw.githubusercontent.com"))/$(LatestCommit)/*" }}' />
   </Target>
 
-  <PropertyGroup>
-    <CompileDependsOn>ValidateBuildTools;$(CompileDependsOn)</CompileDependsOn>
-  </PropertyGroup>
-
-  <Target Name="ValidateBuildTools">
-    <Error Text="Expect $(FSharpSourcesRoot)\..\Tools\lkg\fsc.exe to exist when BUILD_PROTO_WITH_CORECLR_LKG==1" Condition="'$(BUILD_PROTO_WITH_CORECLR_LKG)' == 1 AND !Exists('$(FSharpSourcesRoot)\..\Tools\lkg\fsc.exe')" />
-    <Error Text="Expect $(FscToolPath)\$(FscToolExe) to exist" Condition="!Exists('$(FscToolPath)\$(FscToolExe)')" />
-    <Error Text="Expect $(FsSrGenToolPath)\fssrgen.exe to exist" Condition="!Exists('$(FsSrGenToolPath)\fssrgen.exe')" />
-    <Error Text="Expect $(FsiToolPath)\$(FsiToolExe) to exist" Condition="!Exists('$(FsiToolPath)\$(FsiToolExe)')" />
-    <Error Text="Expect $(FsLexToolPath)\$(FsLexToolExe) to exist" Condition="!Exists('$(FsLexToolPath)\$(FsLexToolExe)')" />
-    <Error Text="Expect $(FsYaccToolPath)\$(FsYaccToolExe) to exist" Condition="!Exists('$(FsYaccToolPath)\$(FsYaccToolExe)')" />
-  </Target>
 </Project>
