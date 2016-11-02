@@ -29,16 +29,18 @@ let checkPathForIllegalChars (path:string) =
 // Case sensitive (original behaviour preserved).
 let checkSuffix (x:string) (y:string) = x.EndsWith(y,System.StringComparison.Ordinal) 
 
-let hasExtension (s:string) = 
-    checkPathForIllegalChars s
+let hasExtensionWithValidate (validate:bool) (s:string) = 
+    if validate then (checkPathForIllegalChars s) |> ignore
     let sLen = s.Length
     (sLen >= 1 && s.[sLen - 1] = '.' && s <> ".." && s <> ".") 
     || Path.HasExtension(s)
 
+let hasExtension (s:string) = hasExtensionWithValidate true s
+
 let chopExtension (s:string) =
     checkPathForIllegalChars s
     if s = "." then "" else // for OCaml compatibility
-    if not (hasExtension s) then 
+    if not (hasExtensionWithValidate false s) then 
         raise (System.ArgumentException("chopExtension")) // message has to be precisely this, for OCaml compatibility, and no argument name can be set
     Path.Combine (Path.GetDirectoryName s,Path.GetFileNameWithoutExtension(s))
 
@@ -54,9 +56,11 @@ let fileNameOfPath s =
     checkPathForIllegalChars s
     Path.GetFileName(s)
 
-let fileNameWithoutExtension s = 
-    checkPathForIllegalChars s
+let fileNameWithoutExtensionWithValidate (validate:bool) s = 
+    if validate then checkPathForIllegalChars s |> ignore
     Path.GetFileNameWithoutExtension(s)
+
+let fileNameWithoutExtension s = fileNameWithoutExtensionWithValidate true s
 
 let trimQuotes (s:string) =
     s.Trim( [|' '; '\"'|] )

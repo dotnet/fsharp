@@ -41,7 +41,7 @@
 
       <Component Id="Compiler_Redist_FSharp.Core.dll" Guid="$(fsharp.guid(Compiler_Redist_FSharp.Core.dll, $(var.LocaleCode)))">
         <File Id="Compiler_Redist_FSharp.Core.dll" Source="$(var.BinariesDir)\net40\bin\FSharp.Core.dll" KeyPath="yes">
-          <NetFx:NativeImage Id="Compiler_Redist_FSharp.Core.Native.dll" Priority="0" Dependencies="no" Platform="all" />
+          <NetFx:NativeImage Id="Compiler_Redist_FSharp.Core.Native.dll" Priority="0" Dependencies="no" Platform="all" AssemblyApplication="Compiler_Redist_fsc.exe" />
         </File>
         <File Id="FSharp_Core_Sigdata_File" Source="$(var.BinariesDir)\net40\bin\FSharp.Core.sigdata" />
         <File Id="FSharp_Core_Optdata_File" Source="$(var.BinariesDir)\net40\bin\FSharp.Core.optdata" />
@@ -49,52 +49,52 @@
 
       <Component Id="Compiler_Redist_FSharp.Build.dll" Guid="$(fsharp.guid(Compiler_Redist_FSharp.Build.dll, $(var.LocaleCode)))">
         <File Id="Compiler_Redist_FSharp.Build.dll" Source="$(var.BinariesDir)\net40\bin\FSharp.Build.dll" KeyPath="yes">
-          <NetFx:NativeImage Id="Compiler_Redist_FSharp.Build.Native.dll" Priority="0" Dependencies="no" Platform="all" />
+          <NetFx:NativeImage Id="Compiler_Redist_FSharp.Build.Native.dll" Priority="0" Dependencies="no" Platform="all" AssemblyApplication="Compiler_Redist_fsc.exe" />
         </File>
       </Component>
 
       <Component Id="Compiler_Redist_FSharp.Compiler.dll" Guid="$(fsharp.guid(Compiler_Redist_FSharp.Compiler.dll, $(var.LocaleCode)))">
         <File Id="Compiler_Redist_FSharp.Compiler.dll" Source="$(var.BinariesDir)\net40\bin\FSharp.Compiler.dll" KeyPath="yes">
-          <NetFx:NativeImage Id="Compiler_Redist_FSharp.Compiler.Native.dll" Priority="0" Dependencies="no" Platform="all" />
+          <NetFx:NativeImage Id="Compiler_Redist_FSharp.Compiler.Native.dll" Priority="0" Dependencies="no" Platform="all" AssemblyApplication="Compiler_Redist_fsc.exe" />
         </File>
       </Component>
 
       <Component Id="Compiler_Redist_FSharp.Compiler.Interactive.Settings.dll" Guid="$(fsharp.guid(Compiler_Redist_FSharp.Compiler.Interactive.Settings.dll, $(var.LocaleCode)))">
         <File Id="Compiler_Redist_FSharp.Compiler.Interactive.Settings.dll" Source="$(var.BinariesDir)\net40\bin\FSharp.Compiler.Interactive.Settings.dll" KeyPath="yes">
-           <NetFx:NativeImage Id="Compiler_Redist_FSharp.Compiler.Interactive.Settings.Native.dll" Priority="0" Dependencies="no" Platform="all" />
+           <NetFx:NativeImage Id="Compiler_Redist_FSharp.Compiler.Interactive.Settings.Native.dll" Priority="0" Dependencies="no" Platform="all" AssemblyApplication="Compiler_Redist_fsc.exe" />
         </File>
       </Component>
 
       <Component Id="Compiler_Redist_FSharp.Data.TypeProviders.dll" Guid="$(fsharp.guid(Compiler_Redist_FSharp.Data.TypeProviders.dll, $(var.LocaleCode)))">
         <File Id="Compiler_Redist_FSharp.Data.TypeProviders.dll" Source="$(var.NugetPackagesDir)\Microsoft.VisualFSharp.Type.Providers.Redist.1.0.0\content\4.3.0.0\FSharp.Data.TypeProviders.dll" KeyPath="yes">
-          <NetFx:NativeImage Id="Compiler_Redist_FSharp.Data.TypeProviders.Native.dll" Priority="0" Dependencies="no" Platform="all" />
+          <NetFx:NativeImage Id="Compiler_Redist_FSharp.Data.TypeProviders.Native.dll" Priority="0" Dependencies="no" Platform="all" AssemblyApplication="Compiler_Redist_fsc.exe" />
         </File>
       </Component>
 
       <Component Id="Compiler_Redist_fsc.exe" Guid="$(fsharp.guid(Compiler_Redist_fsc.exe, $(var.LocaleCode)))">
         <File Id="Compiler_Redist_fsc.exe" Source="$(var.BinariesDir)\net40\bin\fsc.exe" KeyPath="yes">
-          <NetFx:NativeImage Id="Compiler_Redist_fsc.Native.exe" Priority="0" Dependencies="no" Platform="all" />
+          <NetFx:NativeImage Id="Compiler_Redist_fsc.Native.exe" Priority="0" Dependencies="no" Platform="32bit" AssemblyApplication="Compiler_Redist_fsc.exe" />
         </File>
         <File Id="Compiler_Redist_fsc.exe.config" Source="$(var.BinariesDir)\net40\bin\fsc.exe.config" />
       </Component>
 
       <Component Id="Compiler_Redist_fsi.exe" Guid="$(fsharp.guid(Compiler_Redist_fsi.exe, $(var.LocaleCode)))">
         <File Id="Compiler_Redist_fsi.exe" Source="$(var.BinariesDir)\net40\bin\fsi.exe" KeyPath="yes">
-          <NetFx:NativeImage Id="Compiler_Redist_fsi.Native.exe" Priority="0" Dependencies="no" Platform="all" />
+          <NetFx:NativeImage Id="Compiler_Redist_fsi.Native.exe" Priority="0" Dependencies="no" Platform="32bit" AssemblyApplication="Compiler_Redist_fsc.exe" />
         </File>
         <File Id="Compiler_Redist_fsi.exe.config" Source="$(var.BinariesDir)\net40\bin\fsi.exe.config" />
       </Component>
 
       <Component Id="Compiler_Redist_fsiAnyCPU.exe" Guid="$(fsharp.guid(Compiler_Redist_fsiAnyCPU.exe, $(var.LocaleCode)))">
         <File Id="Compiler_Redist_fsiAnyCPU.exe" Source="$(var.BinariesDir)\net40\bin\fsiAnyCPU.exe" KeyPath="yes">
-          <NetFx:NativeImage Id="Compiler_Redist_fsiAnyCPU.Native.exe" Priority="0" Dependencies="no" Platform="all" />
+          <NetFx:NativeImage Id="Compiler_Redist_fsiAnyCPU.Native.exe" Priority="0" Dependencies="no" Platform="32bit" AssemblyApplication="Compiler_Redist_fsc.exe" />
         </File>
         <File Id="Compiler_Redist_fsianycpu.exe.config" Source="$(var.BinariesDir)\net40\bin\fsiAnyCPU.exe.config" />
       </Component>
 
       <Component Id="Compiler_Redist_FSharp.Compiler.Server.Shared.dll" Guid="$(fsharp.guid(Compiler_Redist_FSharp.Compiler.Server.Shared.dll, $(var.LocaleCode)))">
         <File Id="Compiler_Redist_FSharp.Compiler.Server.Shared.dll" Source="$(var.BinariesDir)\net40\bin\FSharp.Compiler.Server.Shared.dll" KeyPath="yes">
-          <NetFx:NativeImage Id="Compiler_Redist_FSharp.Compiler.Server.Shared.Native.dll" Priority="0" Dependencies="no" Platform="all" />
+          <NetFx:NativeImage Id="Compiler_Redist_FSharp.Compiler.Server.Shared.Native.dll" Priority="0" Dependencies="no" Platform="all" AssemblyApplication="Compiler_Redist_fsc.exe" />
         </File>
       </Component>      
 
@@ -111,7 +111,7 @@
       </Component>
 
       <Component Id="Compiler_Redist_RegistryKeys_CompilerLocation" Guid="$(fsharp.guid(Compiler_Redist_RegistryKeys_CompilerLocation, $(var.LocaleCode)))">
-        <Environment Id="Compiler_Redist_FSHARPINSTALLDIR_Environment_Variable" Name="FSHARPINSTALLDIR" Value="[MicrosoftSDKs_FS_4.1_Framework_v4.0]" />
+        <Environment Id="Compiler_Redist_FSHARPINSTALLDIR_Environment_Variable" Name="FSHARPINSTALLDIR" Value="[MicrosoftSDKs_FS_4.1_Framework_v4.0]" Action="create" System="yes" />
         <RegistryKey Root="HKLM" Key="Software\Microsoft\FSharp\4.1\Runtime\v4.0" ForceCreateOnInstall="yes" ForceDeleteOnUninstall="yes">
           <RegistryValue Value="[MicrosoftSDKs_FS_4.1_Framework_v4.0]" Type="string" />
         </RegistryKey>
@@ -165,7 +165,7 @@
       </Component>
 
       <Component Id="Compiler_Redist_System.ValueTuple.dll" Guid="$(fsharp.guid(Compiler_Redist_System.ValueTuple.dll, $(var.LocaleCode)))">
-        <File Id="Compiler_Redist_System.ValueTuple.dll" Source="$(var.NugetPackagesDir)\System.ValueTuple.4.0.0-rc3-24212-01\lib\netstandard1.1\System.ValueTuple.dll" />
+        <File Id="Compiler_Redist_System.ValueTuple.dll" Source="$(var.NugetPackagesDir)\System.ValueTuple.4.4.0-beta-24631-01\lib\netstandard1.0\System.ValueTuple.dll" />
       </Component>
     </DirectoryRef>
 

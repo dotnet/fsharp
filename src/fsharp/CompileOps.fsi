@@ -219,7 +219,6 @@ type VersionFlag =
     member GetVersionInfo : implicitIncludeDir:string -> ILVersionInfo
     member GetVersionString : implicitIncludeDir:string -> string
 
-     
 type TcConfigBuilder =
     { mutable primaryAssembly : PrimaryAssembly
       mutable autoResolveOpenDirectivesToDlls: bool
@@ -232,6 +231,7 @@ type TcConfigBuilder =
       mutable compilingFslib: bool
       mutable compilingFslib20: string option
       mutable compilingFslib40: bool
+      mutable compilingFslibNoBigInt: bool
       mutable useIncrementalBuilder: bool
       mutable includes: string list
       mutable implicitOpens: string list
@@ -302,6 +302,7 @@ type TcConfigBuilder =
       mutable embeddedPDB : bool
       mutable embedAllSource : bool
       mutable embedSourceList : string list
+      mutable sourceLink : string
       mutable ignoreSymbolStoreSequencePoints : bool
       mutable internConstantStrings : bool
       mutable extraOptimizationIterations : int
@@ -395,6 +396,7 @@ type TcConfig =
     member compilingFslib: bool
     member compilingFslib20: string option
     member compilingFslib40: bool
+    member compilingFslibNoBigInt: bool
     member useIncrementalBuilder: bool
     member includes: string list
     member implicitOpens: string list
@@ -458,6 +460,7 @@ type TcConfig =
     member embeddedPDB : bool
     member embedAllSource : bool
     member embedSourceList : string list
+    member sourceLink : string
     member ignoreSymbolStoreSequencePoints : bool
     member internConstantStrings : bool
     member extraOptimizationIterations : int
@@ -507,7 +510,7 @@ type TcConfig =
 
 
     member ComputeLightSyntaxInitialStatus : string -> bool
-    member ClrRoot : string list
+    member TargetFrameworkDirectories : string list
     
     /// Get the loaded sources that exist and issue a warning for the ones that don't
     member GetAvailableLoadedSources : unit -> (range*string) list
@@ -728,7 +731,7 @@ val TypeCheckClosedInputSetFinish : TypedImplFile list * TcState -> TcState * Ty
 val TypeCheckClosedInputSet :(unit -> bool) * TcConfig * TcImports * TcGlobals * Ast.LongIdent option * TcState * Ast.ParsedInput  list  -> TcState * TopAttribs * TypedImplFile list * TcEnv
 
 /// Check a single input and finish the checking
-val TypeCheckSingleInputAndFinishEventually :
+val TypeCheckOneInputAndFinishEventually :
     (unit -> bool) * TcConfig * TcImports * TcGlobals * Ast.LongIdent option * NameResolution.TcResultsSink * TcState * Ast.ParsedInput 
         -> Eventually<(TcEnv * TopAttribs * TypedImplFile list) * TcState>
 

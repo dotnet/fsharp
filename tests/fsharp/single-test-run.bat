@@ -178,6 +178,7 @@ goto :EOF
   set platform=win7-x64
   set packagesDir=%~d0%~p0..\..\packages
   For %%A in ("%cd%") do ( Set TestCaseName=%%~nxA)
+  echo   %~d0%~p0..\testbin\%flavor%\coreclr\%platform%\corerun.exe %~d0%~p0..\testbin\%flavor%\coreclr\fsharp\core\%TestCaseName%\output\test.exe > coreclr.run.cmd
   %CLIX% %~d0%~p0..\testbin\%flavor%\coreclr\%platform%\corerun.exe %~d0%~p0..\testbin\%flavor%\coreclr\fsharp\core\%TestCaseName%\output\test.exe
   dir test.ok > NUL 2>&1 ) || (
   @echo :FSC_CORECLR failed

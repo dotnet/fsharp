@@ -17,6 +17,7 @@
     <!-- Prevent compiler from inlining calls to FSharp.Core to improve code coverage accuracy -->
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
+    <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
   </PropertyGroup>
   <PropertyGroup>
     <DefineConstants>$(DefineConstants);EXTENSIONTYPING</DefineConstants>
@@ -38,20 +39,10 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>3</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Proto|AnyCPU' ">
+    <WarningLevel>3</WarningLevel>
+  </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
-  <ItemGroup>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
-      <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
-      <Name>FSharp.Core</Name>
-    </ProjectReference>
-    <Reference Include="mscorlib" />
-    <Reference Include="nunit.framework">
-      <HintPath>..\..\packages\NUnit.3.0.0\lib\net45\nunit.framework.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-  </ItemGroup>
   <ItemGroup>
     <Compile Include="PlatformHelpers.fs" />
     <Compile Include="Commands.fs" />
@@ -62,41 +53,33 @@
     <Compile Include="..\config.fs">
       <Link>config.fs</Link>
     </Compile>
-    <Compile Include="..\..\src\update.fs">
-      <Link>update.fs</Link>
+    <Compile Include="..\..\src\fsharp\FSharp.Compiler.Unittests\NunitHelpers.fs">
+      <Link>NunitHelpers.fs</Link>
     </Compile>
-    <Compile Include="..\..\src\fsharp\FSharp.Compiler.Unittests\NunitHelpers.fs" />
     <Compile Include="nunitConf.fs" />
-    <Compile Include="FSharpTestSuiteAsserts.fs" />
-    <Compile Include="single-test-build.fs" />
-    <Compile Include="single-test-run.fs" />
-    <Compile Include="single-neg-test.fs" />
-  </ItemGroup>
-  <ItemGroup>
+    <Compile Include="single-test.fs" />
     <Compile Include="core\tests_core.fs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="optimize\tests_optimize.fs" /> 
-  </ItemGroup>
-  <ItemGroup>
+    <Compile Include="optimize\tests_optimize.fs" />
     <Compile Include="perf\tests_perf.fs" />
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="regression\tests_regression.fs" />
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="tools\tests_tools.fs" />
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="typecheck\tests_typecheck.fs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="typeProviders\build-typeprovider-test.fs" />
-    <Compile Include="typeProviders\tests_typeProviders.fs" /> 
-  </ItemGroup>
-  <ItemGroup>
+    <Compile Include="typeProviders\tests_typeProviders.fs" />
     <Compile Include="fsc\ProductVersion.fs" />
     <Compile Include="fsc\FileVersionInfo.fs" />
     <Compile Include="fsc\warnings\FS2003\Warning_FS2003.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
+      <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
+      <Name>FSharp.Core</Name>
+    </ProjectReference>
+    <Reference Include="mscorlib" />
+    <Reference Include="nunit.framework">
+      <HintPath>..\..\packages\NUnit.3.5.0\lib\net45\nunit.framework.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
   </ItemGroup>
 </Project>

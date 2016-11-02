@@ -48,7 +48,7 @@
     </ProjectReference>
     <Reference Include="mscorlib" />
     <Reference Include="nunit.framework">
-      <HintPath>..\..\..\packages\NUnit.3.0.0\lib\net45\nunit.framework.dll</HintPath>
+      <HintPath>..\..\..\packages\NUnit.3.5.0\lib\net45\nunit.framework.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -71,9 +71,6 @@
     </Compile>
     <Compile Include="$(FSharpTestsRoot)\config.fs">
       <Link>config.fs</Link>
-    </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\update.fs">
-      <Link>update.fs</Link>
     </Compile>
     <Compile Include="EnvLst.fs" />
     <Compile Include="nunitConf.fs" />

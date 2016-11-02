@@ -48,11 +48,9 @@ module internal ReferenceResolver =
            targetFrameworkVersion:string *
            targetFrameworkDirectories:string list *
            targetProcessorArchitecture:string *
-           outputDirectory: string * 
            fsharpCoreDir:string *
            explicitIncludeDirs:string list *
            implicitIncludeDir:string *
-           logmessage:(string->unit) *
-           logwarning:(string->string->unit) *
-           logerror:(string->string->unit)
+           logMessage:(string->unit) *
+           logErrorOrWarning:(bool -> string -> string -> unit)
              -> ResolvedFile[]

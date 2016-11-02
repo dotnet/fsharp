@@ -21,7 +21,7 @@
     <Tailcalls>false</Tailcalls>
     <TargetProfile Condition=" '$(TargetFramework)' == 'portable7' or '$(TargetFramework)' == 'portable78' or '$(TargetFramework)' == 'portable259' or '$(TargetFramework)' == 'coreclr' ">netcore</TargetProfile>
     <NoWarn>$(NoWarn);217</NoWarn>
-    <OutputPath Condition="'$(TargetFramework)' == 'coreclr'">$(FSharpSourcesRoot)\..\tests\testbin\$(Configuration)\coreclr\fsharp.core.unittests</OutputPath>
+    <OutputPath Condition="'$(TargetFramework)' == 'coreclr'">$(FSharpSourcesRoot)\..\tests\testbin\$(Configuration)\coreclr\FSharp.Core.unittests</OutputPath>
     <CustomOutputPath Condition="'$(TargetFramework)' == 'coreclr'">true</CustomOutputPath>
   </PropertyGroup>
   <PropertyGroup>
@@ -30,14 +30,12 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <DefineConstants>$(DefineConstants);DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>3</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <DefineConstants>$(DefineConstants);TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
@@ -63,7 +61,7 @@
       <Name>FSharp.Core</Name>
     </ProjectReference>
     <Reference Include="System.ValueTuple" Condition="'$(TargetFramework)' != 'portable47'">
-        <HintPath>..\..\..\packages\System.ValueTuple.4.0.0-rc3-24212-01\lib\netstandard1.1\System.ValueTuple.dll</HintPath>
+        <HintPath>..\..\..\packages\System.ValueTuple.4.4.0-beta-24631-01\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
     </Reference>
     <Reference Include="TupleSample" Condition="'$(TargetFramework)' != 'portable47'">
         <Private>True</Private>
@@ -71,15 +69,15 @@
     </Reference>
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
-    <Reference Include="nunit.framework, Version=3.0.5797.27550, Culture=neutral, PublicKeyToken=2638cd05610744eb">
+    <Reference Include="nunit.framework, Version=3.5.0.0, Culture=neutral, PublicKeyToken=2638cd05610744eb">
         <SpecificVersion>true</SpecificVersion>
         <Private>True</Private>
-        <HintPath>..\..\..\packages\NUnit.3.0.0\lib\portable-net45+win8+wp8+wpa81+Xamarin.Mac+MonoAndroid10+MonoTouch10+Xamarin.iOS10\nunit.framework.dll</HintPath>
+        <HintPath>..\..\..\packages\NUnit.3.5.0\lib\portable-net45+win8+wp8+wpa81+Xamarin.Mac+MonoAndroid10+MonoTouch10+Xamarin.iOS10\nunit.framework.dll</HintPath>
     </Reference>
-    <Reference Include="nunitlite, Version=3.0.5797.27550, Culture=neutral, PublicKeyToken=2638cd05610744eb">
+    <Reference Include="nunitlite, Version=3.5.0.0, Culture=neutral, PublicKeyToken=2638cd05610744eb">
         <SpecificVersion>true</SpecificVersion>
         <Private>True</Private>
-        <HintPath>..\..\..\packages\NUnitLite.3.0.0\lib\portable-net45+win8+wp8+wpa81+Xamarin.Mac\nunitlite.dll</HintPath>
+        <HintPath>..\..\..\packages\NUnitLite.3.5.0\lib\portable-net45+win8+wp8+wpa81+Xamarin.Mac\nunitlite.dll</HintPath>
     </Reference>
     <None Include="project.json" />
   </ItemGroup>

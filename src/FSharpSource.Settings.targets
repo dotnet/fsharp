@@ -1,11 +1,29 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- If Configuration is empty that means we are not being built in VS and so folks need to explicitly pass the different
+      values for $(ConfigurationGroup), $(TargetGroup), or $(OSGroup) or accept the defaults for them.
+  -->
+  <PropertyGroup Condition="'$(Configuration)'==''">
+    <ConfigurationGroup Condition="'$(ConfigurationGroup)'==''">Debug</ConfigurationGroup>
+    <Configuration>$(ConfigurationGroup)</Configuration>
+    <Configuration Condition="'$(TargetGroup)'!=''">$(TargetGroup)_$(Configuration)</Configuration>
+    <Configuration Condition="'$(OSGroup)'!='' and '$(OSGroup)'!='AnyOS'">$(OSGroup)_$(Configuration)</Configuration>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'!=''">
+    <ConfigurationGroup Condition="'$(ConfigurationGroup)'=='' and $(Configuration.ToLower().EndsWith('debug'))">Debug</ConfigurationGroup>
+    <ConfigurationGroup Condition="'$(ConfigurationGroup)'=='' and $(Configuration.ToLower().EndsWith('release'))">Release</ConfigurationGroup>
+    <ConfigurationGroup Condition="'$(ConfigurationGroup)'==''">Debug</ConfigurationGroup>
+  </PropertyGroup>
+
   <PropertyGroup>
     <!-- Tail calls on, even in debug -->
     <Tailcalls>true</Tailcalls>
     <TargetFramework Condition="'$(TargetFramework)'==''">net40</TargetFramework>
-    <!-- For .NET 2.0 use a 2.0 proto compiler, otherwise use a 4.0 proto compiler -->
+
+    <!-- Use a net40 proto compiler -->
     <protoCLIDir Condition="'$(protoCLIDir)' == ''">net40</protoCLIDir>
     <LkgVersion>14.0.23413.0</LkgVersion>
     <FsLexUnicode>true</FsLexUnicode>
@@ -15,7 +33,11 @@
     <ToolsDir>$(MSBuildThisFileDirectory)..\Tools\</ToolsDir>
     <BuildToolsTaskDir>$(ToolsDir)net45\</BuildToolsTaskDir>
     <WarningsAsErrors />
+
     <FX_NO_LOADER Condition=" '$(FX_NO_LOADER)'==''">false</FX_NO_LOADER>
+
+  <!-- Always qualify the IntermediateOutputPath by the TargetFramework if any exists -->
+    <IntermediateOutputPath>obj\$(Configuration)\$(TargetFramework)\</IntermediateOutputPath>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(ProjectLanguage)' == 'FSharp' ">
@@ -26,11 +48,12 @@
   <!-- Standard interpretations of Debug and Release configurations -->
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugType Condition=" '$(DebugType)' == '' and  '$(TargetFramework)' != 'coreclr' ">full</DebugType>
-    <DebugType Condition=" '$(DebugType)' == '' and  '$(TargetFramework)' == 'coreclr' ">embedded</DebugType>
+    <DebugType Condition=" '$(DebugType)' == '' and  '$(TargetFramework)' == 'coreclr' ">portable</DebugType>
     <Optimize Condition=" '$(Optimize)' == '' ">false</Optimize>
     <ErrorReport Condition=" '$(ErrorReport)' == '' ">prompt</ErrorReport>
-    <OtherFlags Condition=" '$(DebugType)' == '' and  '$(TargetFramework)' != 'coreclr' ">$(OtherFlags) --no-jit-optimize</OtherFlags>
-    <OtherFlags Condition=" '$(DebugType)' == '' and  '$(TargetFramework)' == 'coreclr' ">$(OtherFlags) --no-jit-optimize --embed</OtherFlags>
+    <OtherFlags>$(OtherFlags) --no-jit-optimize</OtherFlags>
+    <EmbedAllSource Condition=" '$(DebugType)' == 'portable' or '$(DebugType)' == 'embedded' ">true</EmbedAllSource>
+    <SourceLink     Condition=" '$(DebugType)' == 'portable' or '$(DebugType)' == 'embedded' ">$(IntermediateOutputPath)source_link.json</SourceLink>
     <DefineConstants Condition=" '$(ProjectLanguage)' != 'VisualBasic' ">DEBUG;TRACE;CODE_ANALYSIS;$(DefineConstants)</DefineConstants>
     <DefineConstants Condition=" '$(ProjectLanguage)' == 'VisualBasic' ">DEBUG=True,TRACE=True,CODE_ANALYSIS=True,$(DefineConstants)</DefineConstants>
     <SIGN_WITH_MSFT_KEY Condition=" '$(SIGN_WITH_MSFT_KEY)' == '' ">false</SIGN_WITH_MSFT_KEY>
@@ -39,6 +62,7 @@
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <DebugType Condition=" '$(DebugType)' == '' ">pdbonly</DebugType>
     <Optimize Condition=" '$(Optimize)' == '' ">true</Optimize>
+    <EmbedAllSource>false</EmbedAllSource>
     <ErrorReport Condition=" '$(ErrorReport)' == '' ">prompt</ErrorReport>
     <DefineConstants Condition=" '$(ProjectLanguage)' != 'VisualBasic' ">TRACE;$(DefineConstants)</DefineConstants>
     <DefineConstants Condition=" '$(ProjectLanguage)' == 'VisualBasic' ">TRACE=True,$(DefineConstants)</DefineConstants>
@@ -55,11 +79,6 @@
     <!-- Standard defaults for output path and warning level -->
     <OutputPath Condition="'$(OutputPath)' == ''">bin\$(Configuration)</OutputPath>
     <WarningLevel Condition=" '$(WarningLevel)' == '' ">3</WarningLevel>
-  </PropertyGroup>
-
-  <!-- Always qualify the IntermediateOutputPath by the TargetFramework if any exists -->
-  <PropertyGroup>
-    <IntermediateOutputPath>obj\$(Configuration)\$(TargetFramework)\</IntermediateOutputPath>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -84,16 +103,19 @@
   </PropertyGroup> 
 
   <PropertyGroup>
-    <FsiToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FsiToolPath>
-    <FsSrGenToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FsSrGenToolPath>
-    <FsLexToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FsLexToolPath>
-    <FsYaccToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FsYaccToolPath>
-    <FsiToolExe>fsi.exe</FsiToolExe>
+    <FsSrGenToolPath>$(FSharpSourcesRoot)\..\packages\fssrgen.3.1.0\lib\net46</FsSrGenToolPath>
+    <FsLexToolPath>$(FSharpSourcesRoot)\..\packages\FsLexYacc.6.1.0\build</FsLexToolPath>
+    <FsYaccToolPath>$(FSharpSourcesRoot)\..\packages\FsLexYacc.6.1.0\build</FsYaccToolPath>
+    <FsiToolExe>Fsi.exe</FsiToolExe>
     <FsLexToolExe>fslex.exe</FsLexToolExe>
     <FsYaccToolExe>fsyacc.exe</FsYaccToolExe>
     <RoslynVersion>2.0.0-beta6-61005-05</RoslynVersion>
     <RoslynVSBinariesVersion>14.0</RoslynVSBinariesVersion>
     <RoslynVSPackagesVersion>14.3.25407</RoslynVSPackagesVersion>
+
+    <!-- FSharp.Compiler.Tools is currently only used to get a working FSI.EXE to execute some scripts during the build -->
+    <!-- The LKG FSI.EXE requires MSBuild 15 to be installed, which is painful -->
+    <FsiToolPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.0.1.10\tools</FsiToolPath>
   </PropertyGroup>
 
 </Project>

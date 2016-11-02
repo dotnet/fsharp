@@ -525,6 +525,7 @@ let PrintOptionInfo (tcConfigB:TcConfigBuilder) =
     printfn "  embeddedPDB. . . . . . : %+A" tcConfigB.embeddedPDB
     printfn "  embedAllSource . . . . : %+A" tcConfigB.embedAllSource
     printfn "  embedSourceList. . . . : %+A" tcConfigB.embedSourceList
+    printfn "  sourceLink . . . . . . : %+A" tcConfigB.sourceLink
     printfn "  debuginfo  . . . . . . : %+A" tcConfigB.debuginfo
     printfn "  resolutionEnvironment  : %+A" tcConfigB.resolutionEnvironment
     printfn "  product  . . . . . . . : %+A" tcConfigB.productNameForBannerText
@@ -672,6 +673,8 @@ let codeGenerationFlags isFsi (tcConfigB : TcConfigBuilder) =
                         Some (FSComp.SR.optsEmbedAllSource()))
          CompilerOption("embed", tagFileList, OptionStringList (fun f -> tcConfigB.AddEmbeddedSourceFile f), None, 
                         Some ( FSComp.SR.optsEmbedSource())); 
+         CompilerOption("sourcelink", tagFile, OptionString (fun f -> tcConfigB.sourceLink <- f), None, 
+                        Some ( FSComp.SR.optsSourceLink())); 
         ]
     let codegen =
         [CompilerOption("optimize", tagNone, OptionSwitch (SetOptimizeSwitch tcConfigB) , None, 
@@ -897,6 +900,9 @@ let compilingFsLib20Flag (tcConfigB : TcConfigBuilder) =
         CompilerOption("compiling-fslib-20", tagNone, OptionString (fun s -> tcConfigB.compilingFslib20 <- Some s ), Some(InternalCommandLineOption("--compiling-fslib-20", rangeCmdArgs)), None)
 let compilingFsLib40Flag (tcConfigB : TcConfigBuilder) = 
         CompilerOption("compiling-fslib-40", tagNone, OptionUnit (fun () -> tcConfigB.compilingFslib40 <- true ), Some(InternalCommandLineOption("--compiling-fslib-40", rangeCmdArgs)), None)
+let compilingFsLibNoBigIntFlag (tcConfigB : TcConfigBuilder) = 
+        CompilerOption("compiling-fslib-nobigint", tagNone, OptionUnit (fun () -> tcConfigB.compilingFslibNoBigInt <- true ), Some(InternalCommandLineOption("--compiling-fslib-nobigint", rangeCmdArgs)), None)
+
 let mlKeywordsFlag = 
         CompilerOption("ml-keywords", tagNone, OptionUnit (fun () -> ()), Some(DeprecatedCommandLineOptionNoDescription("--ml-keywords", rangeCmdArgs)), None)
 
@@ -923,6 +929,7 @@ let deprecatedFlagsFsc tcConfigB =
     (compilingFsLibFlag tcConfigB) 
     (compilingFsLib20Flag tcConfigB) 
     (compilingFsLib40Flag tcConfigB) 
+    (compilingFsLibNoBigIntFlag tcConfigB) 
     CompilerOption("version", tagString, OptionString (fun s -> tcConfigB.version <- VersionString s), Some(DeprecatedCommandLineOptionNoDescription("--version", rangeCmdArgs)), None)
 //  "--clr-mscorlib", OptionString (fun s -> warning(Some(DeprecatedCommandLineOptionNoDescription("--clr-mscorlib", rangeCmdArgs)))    tcConfigB.Build.mscorlib_assembly_name <- s), "\n\tThe name of mscorlib on the target CLR" 
     CompilerOption("local-optimize", tagNone, OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with localOptUser = Some true }), Some(DeprecatedCommandLineOptionNoDescription("--local-optimize", rangeCmdArgs)), None)

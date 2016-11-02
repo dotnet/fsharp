@@ -102,10 +102,10 @@
   </PropertyGroup>  
 
   <PropertyGroup>
-    <NUnitVersion>3.0.0</NUnitVersion>
-    <NUnitFullVersion>3.0.5797.27534</NUnitFullVersion>
+    <NUnitVersion>3.5.0</NUnitVersion>
+    <NUnitFullVersion>3.5.0.0</NUnitFullVersion>
     <NUnitLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.$(NUnitVersion)\lib\net45</NUnitLibDir>
-    <NUnitToolsLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.Console.$(NUnitVersion)\tools\</NUnitToolsLibDir>
+    <NUnitToolsLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.ConsoleRunner\$(NUnitVersion)\tools\</NUnitToolsLibDir>
     <FsCheckVersion>2.0.3</FsCheckVersion>
     <FsCheckFullVersion>2.0.3.0</FsCheckFullVersion>
     <FsCheckLibDir>$(FSharpSourcesRoot)\..\packages\FsCheck.$(FsCheckVersion)\lib\</FsCheckLibDir>
@@ -121,7 +121,6 @@
     <DefineConstants>$(DefineConstants);PUT_TYPE_PROVIDERS_IN_FSCORE;</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_LINQ</DefineConstants>
     <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_MSBUILDRESOLVER_RUNTIMELIKE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_LCIDFROMCODEPAGE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_RESX_RESOURCE_READER</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_RESIDENT_COMPILER</DefineConstants>
@@ -182,11 +181,14 @@
     <DefineConstants>$(DefineConstants);TODO_REWORK_SERVER</DefineConstants>
     <DefineConstants>$(DefineConstants);NO_LOADER_OPTIMIZATION</DefineConstants>
     <DefineConstants>$(DefineConstants);SILVERLIGHT_COMPILER_FSHARP_CORE</DefineConstants>
-    <DefineConstants>$(DefineConstants);I_DONT_KNOW_HOW_TO_DO_THIS_YET</DefineConstants>
+    <DefineConstants>$(DefineConstants);NETSTANDARD1_5</DefineConstants>
+    <DefineConstants>$(DefineConstants);NETSTANDARD1_6</DefineConstants>
+    <DefineConstants>$(DefineConstants);NETCOREAPP1_0</DefineConstants>
     <OtherFlags>$(OtherFlags) --simpleresolution</OtherFlags>
     <TargetFrameworkProfile></TargetFrameworkProfile>                                   <!-- We are currently directly referencing corefx assemblies, so profile7 is not really true -->
     <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == ''">v5.0</TargetFrameworkVersion>
     <ImplicitlyExpandTargetFramework>false</ImplicitlyExpandTargetFramework>            <!-- To stop msbuild being helpfull and referencing the dlls for the profile -->
+    <NuGetTargetMoniker>.NETStandard,Version=v1.6</NuGetTargetMoniker>
     <PortableNuGetMode>true</PortableNuGetMode>
   </PropertyGroup>
 
@@ -530,7 +532,7 @@
     </CreateItem>
   </Target>
 
-  <Import Project="..\lkg\FSharp-$(LkgVersion)\bin\FSharp.SRGen.targets" />
+  <Import Project="..\packages\FSharp.SRGen.Build.Tasks.3.1.0\content\FSharp.SRGen.targets" />
   <Import Project="Microbuild.Settings.targets" />
 
   <Target Name="ReorderCompileItems"
@@ -542,8 +544,24 @@
         <CompileBefore Remove="@(CompileBefore)"/>   
     </ItemGroup>
   </Target>
-  <Target Name="BeforeBuild" BeforeTargets="Build" Condition="'$(RestorePackages)' == ''">
-    <Exec Command=".\.nuget\NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .\.nuget\NuGet.Config" WorkingDirectory="$(FSharpSourcesRoot)\.."/>
-    <Exec Command=".\.nuget\NuGet.exe restore .\tests\fsharp\project.json -PackagesDirectory packages -ConfigFile .\.nuget\NuGet.Config" WorkingDirectory="$(FSharpSourcesRoot)\.." Condition="'$(TargetFramework)' == 'coreclr'"/>
+
+  <Target Name="dotnetrestore" BeforeTargets="Build" Condition=" '$(TargetFramework)' == 'coreclr' ">
+    <Exec Command="$(MSBuildThisFileDirectory)..\.nuget\nuget.exe restore -PackagesDirectory $(MSBuildThisFileDirectory)..\packages -Config $(MSBuildThisFileDirectory)..\.nuget\NuGet.Config project.json"/>
   </Target>
+
+  <Target Name="GenerateSourceLink" BeforeTargets="CoreCompile">
+    <PropertyGroup>
+      <SrcRootDirectory>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory.TrimEnd("\"))))</SrcRootDirectory>
+    </PropertyGroup>
+    <Exec Command="git config --get remote.origin.url" ConsoleToMsBuild="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="RemoteUri" />
+    </Exec>
+
+    <!-- https://raw.githubusercontent.com/KevinRansom/visualfsharp/98e8c9a2ca09a36ebd024eb424fc050a831053cd/build.cmd  -->
+    <Exec Command="git rev-parse HEAD" ConsoleToMsBuild="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="LatestCommit" />
+    </Exec>
+    <WriteLinesToFile File="$(IntermediateOutputPath)source_link.json" Overwrite="true" Lines='{"documents": { "$(SrcRootDirectory)/*" : "$(RemoteUri.Replace(".git", "").Replace("github.com", "raw.githubusercontent.com"))/$(LatestCommit)/*" }}' />
+  </Target>
+
 </Project>
