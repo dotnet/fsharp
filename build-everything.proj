@@ -11,7 +11,7 @@
     <ProjectsWithNet40 Include="src/fsharp/FSharp.Compiler.Interactive.Settings/FSharp.Compiler.Interactive.Settings.fsproj" />
     <ProjectsWithNet40 Include="src/fsharp/Fsc/Fsc.fsproj" />
     <ProjectsWithNet40 Include="src/fsharp/fsi/Fsi.fsproj" />
-    <ProjectsWithNet40 Include="src/fsharp/fsiAnyCpu/FsiAnyCpu.fsproj"/>
+    <ProjectsWithNet40 Include="src/fsharp/fsiAnyCpu/FsiAnyCPU.fsproj"/>
   </ItemGroup>
 
   <ItemGroup Condition="'$(BUILD_CORECLR)'=='1'">
