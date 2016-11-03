@@ -6,19 +6,15 @@ dist: trusty
 
 env:
   - BUILD_NET40=1 TEST_NET40_COREUNIT_SUITE=1 
-  - BUILD_CORECLR=1 TEST_CORECLR_COREUNIT_SUITE=1
-  - BUILD_CORECLR=1 TEST_CORECLR_COREUNIT_SUITE=1 BUILD_PROTO_WITH_CORECLR_LKG=1
+#  - BUILD_CORECLR=1 TEST_CORECLR_COREUNIT_SUITE=1
+#  - BUILD_CORECLR=1 TEST_CORECLR_COREUNIT_SUITE=1 BUILD_PROTO_WITH_CORECLR_LKG=1
 
 before_install:
   - ./before_install.sh
 
 script:
-  - ./build-linux-coreclr.sh
-  - ls -RFlas Tools
-  - ls -RFlas packages
   - xbuild src/fsharp-proto-build.proj /v:d
-  - ls -RFlas Proto
-  - xbuild build-everything.proj /p:Configuration=debug /p:BUILD_PUBLICSIGN=0 /v:d
+  - xbuild build-everything.proj /p:Configuration=debug
 
 
   
