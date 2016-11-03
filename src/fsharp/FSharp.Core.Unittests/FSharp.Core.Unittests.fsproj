@@ -95,12 +95,14 @@
   <ItemGroup>
     <Compile Include="LibraryTestFx.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Utils.fs" Condition=" '$(TargetFramework)' != 'portable47' " />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Utils.fs" Condition="'$(TargetFramework)' != 'portable47'" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayModule2.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Array2Module.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Array3Module.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Array4Module.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayProperties.fs" Condition=" '$(TargetFramework)' != 'portable47' " />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayProperties.fs" Condition="'$(TargetFramework)' != 'portable47'" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ComparisonIdentityModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\HashIdentityModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ListModule.fs" />
@@ -108,6 +110,7 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ObsoleteListFunctions.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ListType.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ListProperties.fs" Condition=" '$(TargetFramework)' != 'portable47' " />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ListProperties.fs" Condition="'$(TargetFramework)' != 'portable47'" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\MapModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\MapType.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SetModule.fs" />
@@ -117,6 +120,8 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ObsoleteSeqFunctions.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SeqProperties.fs" Condition=" '$(TargetFramework)' != 'portable47' " />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\CollectionModulesConsistency.fs" Condition=" '$(TargetFramework)' != 'portable47' " />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SeqProperties.fs" Condition="'$(TargetFramework)' != 'portable47'" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\CollectionModulesConsistency.fs" Condition="'$(TargetFramework)' != 'portable47'" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\StringModule.fs" />
     <Compile Include="FSharp.Core\PrimTypes.fs" />
     <Compile Include="FSharp.Core\ComparersRegression.fs" />
