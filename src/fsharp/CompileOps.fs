@@ -1849,7 +1849,7 @@ type AssemblyReference =
     member x.Text = (let (AssemblyReference(_,text,_)) = x in text)
     member x.ProjectReference = (let (AssemblyReference(_,_,contents)) = x in contents)
     member x.SimpleAssemblyNameIs(name) = 
-        (String.Compare(fileNameWithoutExtension x.Text, name, StringComparison.OrdinalIgnoreCase) = 0) ||
+        (String.Compare(fileNameWithoutExtensionWithValidate false x.Text, name, StringComparison.OrdinalIgnoreCase) = 0) ||
         (let text = x.Text.ToLowerInvariant()
          not (text.Contains "/") && not (text.Contains "\\") && not (text.Contains ".dll") && not (text.Contains ".exe") &&
            try let aname = System.Reflection.AssemblyName(x.Text) in aname.Name = name 
@@ -2002,6 +2002,7 @@ type TcConfigBuilder =
       mutable compilingFslib: bool
       mutable compilingFslib20: string option
       mutable compilingFslib40: bool
+      mutable compilingFslibNoBigInt: bool
       mutable useIncrementalBuilder: bool
       mutable includes: string list
       mutable implicitOpens: string list
@@ -2172,6 +2173,7 @@ type TcConfigBuilder =
           compilingFslib=false
           compilingFslib20=None
           compilingFslib40=false
+          compilingFslibNoBigInt=false
           useIncrementalBuilder=false
           useFsiAuxLib=false
           implicitOpens=[]
@@ -2666,6 +2668,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     member x.compilingFslib = data.compilingFslib
     member x.compilingFslib20 = data.compilingFslib20
     member x.compilingFslib40 = data.compilingFslib40
+    member x.compilingFslibNoBigInt = data.compilingFslibNoBigInt
     member x.useIncrementalBuilder = data.useIncrementalBuilder
     member x.includes = data.includes
     member x.implicitOpens = data.implicitOpens
@@ -4567,7 +4570,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         // OK, now we have both mscorlib.dll and FSharp.Core.dll we can create TcGlobals
         let tcGlobals = mkTcGlobals(tcConfig.compilingFslib,sysCcu.FSharpViewOfMetadata,ilGlobals,fslibCcu,
                                     tcConfig.implicitIncludeDir,tcConfig.mlCompatibility,using40environment,
-                                    tcConfig.isInteractive,getTypeCcu, tcConfig.emitDebugInfoInQuotations) 
+                                    tcConfig.isInteractive,getTypeCcu, tcConfig.emitDebugInfoInQuotations, (tcConfig.primaryAssembly.Name = "mscorlib") )
 
 #if DEBUG
         // the global_g reference cell is used only for debug printing
@@ -5172,7 +5175,7 @@ let GetInitialTcState(m,ccuName,tcConfig:TcConfig,tcGlobals,tcImports:TcImports,
     // OK, is this is the FSharp.Core CCU then fix it up. 
     if tcConfig.compilingFslib then 
         tcGlobals.fslibCcu.Fixup(ccu)
-      
+
     let rootSigs = Zmap.empty qnameOrder
     let rootImpls = Zset.empty qnameOrder
     let allSigModulTyp = NewEmptyModuleOrNamespaceType Namespace

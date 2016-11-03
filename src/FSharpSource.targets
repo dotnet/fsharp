@@ -181,6 +181,9 @@
     <DefineConstants>$(DefineConstants);TODO_REWORK_SERVER</DefineConstants>
     <DefineConstants>$(DefineConstants);NO_LOADER_OPTIMIZATION</DefineConstants>
     <DefineConstants>$(DefineConstants);SILVERLIGHT_COMPILER_FSHARP_CORE</DefineConstants>
+    <DefineConstants>$(DefineConstants);NETSTANDARD1_5</DefineConstants>
+    <DefineConstants>$(DefineConstants);NETSTANDARD1_6</DefineConstants>
+    <DefineConstants>$(DefineConstants);NETCOREAPP1_0</DefineConstants>
     <OtherFlags>$(OtherFlags) --simpleresolution</OtherFlags>
     <TargetProfile>netcore</TargetProfile>
     <TargetFrameworkProfile></TargetFrameworkProfile>                                   <!-- We are currently directly referencing corefx assemblies, so profile7 is not really true -->
@@ -532,7 +535,7 @@
     </CreateItem>
   </Target>
 
-  <Import Project="..\lkg\FSharp-$(LkgVersion)\bin\FSharp.SRGen.targets" />
+  <Import Project="..\packages\FSharp.SRGen.Build.Tasks.3.1.0\content\FSharp.SRGen.targets" />
   <Import Project="Microbuild.Settings.targets" />
 
   <Target Name="ReorderCompileItems"

@@ -111,7 +111,7 @@
       </Component>
 
       <Component Id="Compiler_Redist_RegistryKeys_CompilerLocation" Guid="$(fsharp.guid(Compiler_Redist_RegistryKeys_CompilerLocation, $(var.LocaleCode)))">
-        <Environment Id="Compiler_Redist_FSHARPINSTALLDIR_Environment_Variable" Name="FSHARPINSTALLDIR" Value="[MicrosoftSDKs_FS_4.1_Framework_v4.0]" />
+        <Environment Id="Compiler_Redist_FSHARPINSTALLDIR_Environment_Variable" Name="FSHARPINSTALLDIR" Value="[MicrosoftSDKs_FS_4.1_Framework_v4.0]" Action="create" System="yes" />
         <RegistryKey Root="HKLM" Key="Software\Microsoft\FSharp\4.1\Runtime\v4.0" ForceCreateOnInstall="yes" ForceDeleteOnUninstall="yes">
           <RegistryValue Value="[MicrosoftSDKs_FS_4.1_Framework_v4.0]" Type="string" />
         </RegistryKey>
@@ -165,7 +165,7 @@
       </Component>
 
       <Component Id="Compiler_Redist_System.ValueTuple.dll" Guid="$(fsharp.guid(Compiler_Redist_System.ValueTuple.dll, $(var.LocaleCode)))">
-        <File Id="Compiler_Redist_System.ValueTuple.dll" Source="$(var.NugetPackagesDir)\System.ValueTuple.4.0.0-rc3-24212-01\lib\netstandard1.1\System.ValueTuple.dll" />
+        <File Id="Compiler_Redist_System.ValueTuple.dll" Source="$(var.NugetPackagesDir)\System.ValueTuple.4.4.0-beta-24631-01\lib\netstandard1.0\System.ValueTuple.dll" />
       </Component>
     </DirectoryRef>
 
