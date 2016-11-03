@@ -446,7 +446,7 @@ if '%RestorePackages%' == 'true' (
 )
 
 if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
-    :: Restore the tools directory
+    :: Restore the Tools directory
     call %~dp0init-tools.cmd
 )
 
