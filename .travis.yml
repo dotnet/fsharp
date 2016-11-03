@@ -13,7 +13,7 @@ before_install:
   - ./before_install.sh
 
 script:
-  - ./build.sh
+  - ./build-linux-coreclr.sh
   - ls -RFlas Tools
   - ls -RFlas packages
   - xbuild src/fsharp-proto-build.proj /v:d
