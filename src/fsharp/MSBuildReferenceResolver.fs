@@ -4,6 +4,7 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
 
     open System
     open System.IO
+    open System.Reflection
 
 #if FX_RESHAPED_REFLECTION
     open Microsoft.FSharp.Core.ReflectionAdapters
@@ -99,22 +100,9 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
         | _ -> []
 
     let GetPathToDotNetFrameworkReferenceAssembliesFor40Plus(version) = 
-        // starting with .Net 4.0, the runtime dirs (WindowsFramework) are never used by MSBuild RAR
-        let v =
-            match version with
-            | Net40 -> Some TargetDotNetFrameworkVersion.Version40
-            | Net45 -> Some TargetDotNetFrameworkVersion.Version45
-            | Net451 -> Some TargetDotNetFrameworkVersion.Version451
-            //| Net452 -> Some TargetDotNetFrameworkVersion.Version452 // not available in Dev15 MSBuild version
-            | Net46 -> Some TargetDotNetFrameworkVersion.Version46
-            | Net461 -> Some TargetDotNetFrameworkVersion.Version461
-            | _ -> assert false; None // unknown version - some parts in the code are not synced
-        match v with
-        | Some v -> 
-            match ToolLocationHelper.GetPathToDotNetFrameworkReferenceAssemblies v with
-            | null -> []
-            | x -> [x]
-        | None -> []        
+        match ToolLocationHelper.GetPathToStandardLibraries(".NETFramework",version,"") with
+        | null | "" -> []
+        | x -> [x]
 
     /// Use MSBuild to determine the version of the highest installed framework.
     let HighestInstalledNetFrameworkVersion() =
@@ -308,11 +296,20 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
 #else       
 #if FX_RESHAPED_REFLECTION
 #else
-        rar.TargetedRuntimeVersion <- typeof<obj>.Assembly.ImageRuntimeVersion
-#endif
         rar.TargetProcessorArchitecture <- targetProcessorArchitecture
+        let targetedRuntimeVersionValue = typeof<obj>.Assembly.ImageRuntimeVersion
+#if WINDOWS_ONLY_COMPILER
+        rar.TargetedRuntimeVersion <- targetedRuntimeVersionValue
         rar.CopyLocalDependenciesWhenParentReferenceInGac <- true
+#else
+        // The properties TargetedRuntimeVersion and CopyLocalDependenciesWhenParentReferenceInGac 
+        // are not available on Mono. So we only set them if available (to avoid a compile-time dependency). 
+        if not Microsoft.FSharp.Compiler.AbstractIL.IL.runningOnMono then  
+            typeof<ResolveAssemblyReference>.InvokeMember("TargetedRuntimeVersion",(BindingFlags.Instance ||| BindingFlags.SetProperty ||| BindingFlags.Public),null,rar,[| box targetedRuntimeVersionValue |])  |> ignore 
+            typeof<ResolveAssemblyReference>.InvokeMember("CopyLocalDependenciesWhenParentReferenceInGac",(BindingFlags.Instance ||| BindingFlags.SetProperty ||| BindingFlags.Public),null,rar,[| box true |])  |> ignore 
+#endif
 #endif        
+#endif
         
         let succeeded = rar.Execute()
         

@@ -134,13 +134,13 @@ let pdbGetCvDebugInfo (mvid:byte[]) (timestamp:int32) (filepath:string) (cvChunk
         // Debug directory entry
         let path = (System.Text.Encoding.UTF8.GetBytes filepath)
         let buffer = Array.zeroCreate (sizeof<int32> + mvid.Length + sizeof<int32> + path.Length + 1)
-        let struct (offset, size) = struct(0, sizeof<int32>)                    // Magic Number RSDS dword: 0x53445352L
+        let (offset, size) = (0, sizeof<int32>)                    // Magic Number RSDS dword: 0x53445352L
         Buffer.BlockCopy(BitConverter.GetBytes(cvMagicNumber), 0, buffer, offset, size)
-        let struct (offset, size) = struct (offset + size, mvid.Length)         // mvid Guid
+        let (offset, size) = (offset + size, mvid.Length)         // mvid Guid
         Buffer.BlockCopy(mvid, 0, buffer, offset, size)
-        let struct (offset, size) = struct (offset + size, sizeof<int32>)       // # of pdb files generated (1)
+        let (offset, size) = (offset + size, sizeof<int32>)       // # of pdb files generated (1)
         Buffer.BlockCopy(BitConverter.GetBytes(1), 0, buffer, offset, size)
-        let struct (offset, size) = struct (offset + size, path.Length)         // Path to pdb string
+        let (offset, size) = (offset + size, path.Length)         // Path to pdb string
         Buffer.BlockCopy(path, 0, buffer, offset, size)
         buffer
     { iddCharacteristics = 0;                                                   // Reserved
@@ -156,11 +156,11 @@ let pdbMagicNumber= 0x4244504dL
 let pdbGetPdbDebugInfo (embeddedPDBChunk:BinaryChunk) (uncompressedLength:int64) (stream:MemoryStream) =
     let iddPdbBuffer =
         let buffer = Array.zeroCreate (sizeof<int32> + sizeof<int32> + int(stream.Length))
-        let struct (offset, size) = struct(0, sizeof<int32>)                    // Magic Number dword: 0x4244504dL
+        let (offset, size) = (0, sizeof<int32>)                    // Magic Number dword: 0x4244504dL
         Buffer.BlockCopy(BitConverter.GetBytes(pdbMagicNumber), 0, buffer, offset, size)
-        let struct (offset, size) = struct(offset + size, sizeof<int32>)        // Uncompressed size
+        let (offset, size) = (offset + size, sizeof<int32>)        // Uncompressed size
         Buffer.BlockCopy(BitConverter.GetBytes((int uncompressedLength)), 0, buffer, offset, size)
-        let struct (offset, size) = struct(offset + size, int(stream.Length))   // Uncompressed size
+        let (offset, size) = (offset + size, int(stream.Length))   // Uncompressed size
         Buffer.BlockCopy(stream.ToArray(), 0, buffer, offset, size)
         buffer
     { iddCharacteristics = 0;                                                   // Reserved
@@ -488,13 +488,13 @@ let generatePortablePdb fixupSPs (embedAllSource:bool) (embedSourceList:string l
     let portablePdbStream = new MemoryStream()
     blobBuilder.WriteContentTo(portablePdbStream)
     reportTime showTimes "PDB: Created"
-    struct (portablePdbStream.Length, contentId, portablePdbStream)
+    (portablePdbStream.Length, contentId, portablePdbStream)
 
 let compressPortablePdbStream (uncompressedLength:int64) (contentId:BlobContentId) (stream:MemoryStream) =
     let compressedStream = new MemoryStream()
     use compressionStream = new DeflateStream(compressedStream, CompressionMode.Compress,true)
     stream.WriteTo(compressionStream)
-    struct (uncompressedLength, contentId, compressedStream)
+    (uncompressedLength, contentId, compressedStream)
 
 let writePortablePdbInfo (contentId:BlobContentId) (stream:MemoryStream) showTimes fpdb cvChunk =
     try FileSystem.FileDelete fpdb with _ -> ()

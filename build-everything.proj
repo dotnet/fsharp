@@ -27,7 +27,7 @@
  </ItemGroup>
 
   <ItemGroup Condition="'$(BUILD_PORTABLE)'=='1'">
-    <ProjectsWithPortableFrameworks Include="src/fsharp-library-build.proj" />
+    <ProjectsWithPortableFrameworks Include="src/fsharp/FSharp.Core/FSharp.Core.fsproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(BUILD_VS)'=='1'">
