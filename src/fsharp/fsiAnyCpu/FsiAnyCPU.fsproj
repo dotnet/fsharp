@@ -11,10 +11,9 @@
     <ProjectGuid>{8b3e283d-b5fe-4055-9d80-7e3a32f3967b}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <NoWarn>$(NoWarn);62</NoWarn>
-    <AssemblyName>FsiAnyCPU</AssemblyName>
+    <AssemblyName>fsiAnyCPU</AssemblyName>
     <BaseAddress>0x0A000000</BaseAddress>
     <DefineConstants>EXTENSIONTYPING;COMPILER;$(DefineConstants)</DefineConstants>
-    <DefineConstants Condition=" '$(TargetFramework)'=='coreclr'">$(DefineConstants);PREFERRED_UI_LANG</DefineConstants>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <Win32Resource>..\fsi\fsi.res</Win32Resource>

@@ -735,7 +735,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 			StringBuilder fileRef = new StringBuilder();
 
             // JAF:
-            // Even if Fsc.exe returns a canonical message with no file at all, MSBuild will set the file to the name 
+            // Even if fsc.exe returns a canonical message with no file at all, MSBuild will set the file to the name 
             // of the task (FSC). In principle, e.FileName will not be null or empty but handle this case anyway. 
             bool thereIsAFile = !string.IsNullOrEmpty(e.FileName);
             bool thereIsASpan = e.Line!=0 || e.Column!=0 || e.EndLine!=0 || e.EndColumn!=0;

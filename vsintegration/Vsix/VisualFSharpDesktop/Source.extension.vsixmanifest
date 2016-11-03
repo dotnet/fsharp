@@ -12,8 +12,8 @@
   </Installation>
   <Installer>
     <Actions>
-      <Action Type="Ngen" Path="FsiAnyCPU.exe" />
-      <Action Type="Ngen" Path="Fsi.exe" />
+      <Action Type="Ngen" Path="fsiAnyCPU.exe" />
+      <Action Type="Ngen" Path="fsi.exe" />
       <Action Type="Ngen" Path="FSharp.Compiler.dll" />
       <Action Type="Ngen" Path="FSharp.Compiler.Interactive.Settings.dll" />
       <Action Type="Ngen" Path="FSharp.Compiler.Server.Shared.dll" />
