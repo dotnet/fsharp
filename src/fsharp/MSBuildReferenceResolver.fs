@@ -100,7 +100,11 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
         | _ -> []
 
     let GetPathToDotNetFrameworkReferenceAssembliesFor40Plus(version) = 
-#if WINDOWS_ONLY_COMPILER 
+#if CROSS_PLATFORM_COMPILER // || !RESHAPED_MSBUILD
+      match ToolLocationHelper.GetPathToStandardLibraries(".NETFramework",version,"") with
+      | null | "" -> []
+      | x -> [x]
+#else
 // FUTURE CLEANUP: This is the old implementation, equivalent to calling GetPathToStandardLibraries
 // FUTURE CLEANUP: on .NET Framework.  But reshapedmsbuild.fs doesn't have an implementation of GetPathToStandardLibraries
 // FUTURE CLEANUP: When we remove reshapedmsbuild.fs we can just call GetPathToStandardLibraries directly.
@@ -120,10 +124,6 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
            | null -> []
            | x -> [x]
        | None -> []
-#else
-      match ToolLocationHelper.GetPathToStandardLibraries(".NETFramework",version,"") with
-      | null | "" -> []
-      | x -> [x]
 #endif
 
     /// Use MSBuild to determine the version of the highest installed framework.
@@ -318,15 +318,14 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
 #else
         rar.TargetProcessorArchitecture <- targetProcessorArchitecture
         let targetedRuntimeVersionValue = typeof<obj>.Assembly.ImageRuntimeVersion
-#if WINDOWS_ONLY_COMPILER
-        rar.TargetedRuntimeVersion <- targetedRuntimeVersionValue
-        rar.CopyLocalDependenciesWhenParentReferenceInGac <- true
-#else
+#if CROSS_PLATFORM_COMPILER
         // The properties TargetedRuntimeVersion and CopyLocalDependenciesWhenParentReferenceInGac 
         // are not available on Mono. So we only set them if available (to avoid a compile-time dependency). 
-        if not Microsoft.FSharp.Compiler.AbstractIL.IL.runningOnMono then  
-            typeof<ResolveAssemblyReference>.InvokeMember("TargetedRuntimeVersion",(BindingFlags.Instance ||| BindingFlags.SetProperty ||| BindingFlags.Public),null,rar,[| box targetedRuntimeVersionValue |])  |> ignore 
-            typeof<ResolveAssemblyReference>.InvokeMember("CopyLocalDependenciesWhenParentReferenceInGac",(BindingFlags.Instance ||| BindingFlags.SetProperty ||| BindingFlags.Public),null,rar,[| box true |])  |> ignore 
+        typeof<ResolveAssemblyReference>.InvokeMember("TargetedRuntimeVersion",(BindingFlags.Instance ||| BindingFlags.SetProperty ||| BindingFlags.Public),null,rar,[| box targetedRuntimeVersionValue |])  |> ignore 
+        typeof<ResolveAssemblyReference>.InvokeMember("CopyLocalDependenciesWhenParentReferenceInGac",(BindingFlags.Instance ||| BindingFlags.SetProperty ||| BindingFlags.Public),null,rar,[| box true |])  |> ignore 
+#else
+        rar.TargetedRuntimeVersion <- targetedRuntimeVersionValue
+        rar.CopyLocalDependenciesWhenParentReferenceInGac <- true
 #endif
 #endif        
         
