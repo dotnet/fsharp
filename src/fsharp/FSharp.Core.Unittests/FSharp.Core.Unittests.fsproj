@@ -95,7 +95,6 @@
   <ItemGroup>
     <Compile Include="LibraryTestFx.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Utils.fs" Condition=" '$(TargetFramework)' != 'portable47' " />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Utils.fs" Condition="'$(TargetFramework)' != 'portable47'" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayModule2.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Array2Module.fs" />
