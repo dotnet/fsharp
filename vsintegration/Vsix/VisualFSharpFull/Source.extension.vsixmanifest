@@ -12,7 +12,7 @@
   </Installation>
   <Installer>
     <Actions>
-      <Action Type="Ngen" Path="fsiAnyCPU.exe" />
+      <Action Type="Ngen" Path="fsiAnyCpu.exe" />
       <Action Type="Ngen" Path="fsi.exe" />
       <Action Type="Ngen" Path="FSharp.Compiler.dll" />
       <Action Type="Ngen" Path="FSharp.Compiler.Interactive.Settings.dll" />

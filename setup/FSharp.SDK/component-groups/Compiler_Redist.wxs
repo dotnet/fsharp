@@ -86,10 +86,10 @@
       </Component>
 
       <Component Id="Compiler_Redist_fsiAnyCPU.exe" Guid="$(fsharp.guid(Compiler_Redist_fsiAnyCPU.exe, $(var.LocaleCode)))">
-        <File Id="Compiler_Redist_fsiAnyCPU.exe" Source="$(var.BinariesDir)\net40\bin\fsiAnyCPU.exe" KeyPath="yes">
+        <File Id="Compiler_Redist_fsiAnyCPU.exe" Source="$(var.BinariesDir)\net40\bin\fsiAnyCpu.exe" KeyPath="yes">
           <NetFx:NativeImage Id="Compiler_Redist_fsiAnyCPU.Native.exe" Priority="0" Dependencies="no" Platform="32bit" AssemblyApplication="Compiler_Redist_fsc.exe" />
         </File>
-        <File Id="Compiler_Redist_fsianycpu.exe.config" Source="$(var.BinariesDir)\net40\bin\fsiAnyCPU.exe.config" />
+        <File Id="Compiler_Redist_fsianycpu.exe.config" Source="$(var.BinariesDir)\net40\bin\fsiAnyCpu.exe.config" />
       </Component>
 
       <Component Id="Compiler_Redist_FSharp.Compiler.Server.Shared.dll" Guid="$(fsharp.guid(Compiler_Redist_FSharp.Compiler.Server.Shared.dll, $(var.LocaleCode)))">

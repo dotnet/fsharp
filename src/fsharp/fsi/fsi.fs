@@ -2236,7 +2236,7 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
     do SetTailcallSwitch tcConfigB OptionSwitch.On    
 
     // set platform depending on whether the current process is a 64-bit process.
-    // BUG 429882 : FsiAnyCPU.exe issues warnings (x64 v MSIL) when referencing 64-bit assemblies
+    // BUG 429882 : fsiAnyCpu.exe issues warnings (x64 v MSIL) when referencing 64-bit assemblies
     do tcConfigB.platform <- if IntPtr.Size = 8 then Some AMD64 else Some X86
 
     let fsiStdinSyphon = new FsiStdinSyphon(errorWriter)
@@ -2367,7 +2367,7 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
                     try 
                         errorLogger.AbortOnError() 
                     with StopProcessing ->
-                        // BUG 664864: Watson Clr20r3 across buckets with: Application FSIAnyCPU.exe from Dev11 RTM; Exception AE251Y0L0P2WC0QSWDZ0E2IDRYQTDSVB; FSIANYCPU.NI.EXE!Microsoft.FSharp.Compiler.Interactive.Shell+threadException
+                        // BUG 664864: Watson Clr20r3 across buckets with: Application fsiAnyCpu.exe from Dev11 RTM; Exception AE251Y0L0P2WC0QSWDZ0E2IDRYQTDSVB; FSIANYCPU.NI.EXE!Microsoft.FSharp.Compiler.Interactive.Shell+threadException
                         // reason: some window that use System.Windows.Forms.DataVisualization types (possible FSCharts) was created in FSI.
                         // at some moment one chart has raised InvalidArgumentException from OnPaint, this exception was intercepted by the code in higher layer and 
                         // passed to Application.OnThreadException. FSI has already attached its own ThreadException handler, inside it will log the original error

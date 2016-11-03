@@ -11,7 +11,7 @@
     <ProjectGuid>{8b3e283d-b5fe-4055-9d80-7e3a32f3967b}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <NoWarn>$(NoWarn);62</NoWarn>
-    <AssemblyName>fsiAnyCPU</AssemblyName>
+    <AssemblyName>fsiAnyCpu</AssemblyName>
     <BaseAddress>0x0A000000</BaseAddress>
     <DefineConstants>EXTENSIONTYPING;COMPILER;$(DefineConstants)</DefineConstants>
     <AllowCrossTargeting>true</AllowCrossTargeting>
