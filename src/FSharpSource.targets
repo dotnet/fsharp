@@ -182,6 +182,7 @@
     <DefineConstants>$(DefineConstants);NO_LOADER_OPTIMIZATION</DefineConstants>
     <DefineConstants>$(DefineConstants);SILVERLIGHT_COMPILER_FSHARP_CORE</DefineConstants>
     <OtherFlags>$(OtherFlags) --simpleresolution</OtherFlags>
+    <TargetProfile>netcore</TargetProfile>
     <TargetFrameworkProfile></TargetFrameworkProfile>                                   <!-- We are currently directly referencing corefx assemblies, so profile7 is not really true -->
     <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == ''">v5.0</TargetFrameworkVersion>
     <ImplicitlyExpandTargetFramework>false</ImplicitlyExpandTargetFramework>            <!-- To stop msbuild being helpfull and referencing the dlls for the profile -->
@@ -275,8 +276,8 @@
     <DefineConstants>$(DefineConstants);FX_NO_MISSINGMETHODEXCEPTION</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_RESHAPED_REFLECTION</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_EXIT_CONTEXT_FLAGS</DefineConstants> 
-    <DefineConstants>$(DefineConstants);FX_EVENTWAITHANDLE_NO_IDISPOSABLE</DefineConstants> 
-    <TargetingNetCorePortable>true</TargetingNetCorePortable>
+    <DefineConstants>$(DefineConstants);FX_EVENTWAITHANDLE_NO_IDISPOSABLE</DefineConstants>
+    <TargetProfile>netcore</TargetProfile>
     <TargetFrameworkProfile>Profile7</TargetFrameworkProfile>
     <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == ''">v4.5</TargetFrameworkVersion>    
   </PropertyGroup>
@@ -314,6 +315,7 @@
     <DefineConstants>$(DefineConstants);FX_NO_MISSINGMETHODEXCEPTION</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CONCURRENT_DICTIONARY</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_LINQ</DefineConstants>
+    <TargetProfile>netcore</TargetProfile>
     <TargetFrameworkProfile>Profile78</TargetFrameworkProfile>
     <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == ''">v4.5</TargetFrameworkVersion>
   </PropertyGroup>
@@ -351,6 +353,7 @@
     <DefineConstants>$(DefineConstants);FX_NO_MISSINGMETHODEXCEPTION</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CONCURRENT_DICTIONARY</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_LINQ</DefineConstants>
+    <TargetProfile>netcore</TargetProfile>
     <TargetFrameworkProfile>Profile259</TargetFrameworkProfile>
     <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == ''">v4.5</TargetFrameworkVersion>
   </PropertyGroup>
