@@ -13,7 +13,6 @@
     <DefineConstants>EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
     <AssemblyName>FSharp.Compiler.Interactive.Settings</AssemblyName>
     <FileAlignment>512</FileAlignment>
-    <OtherFlags Condition=" '$(TargetFramework)'=='coreclr'">$(OtherFlags) --targetprofile:netcore</OtherFlags>
   </PropertyGroup>
   <ItemGroup>
     <FsSrGen Include="..\FSInteractiveSettings.txt">
