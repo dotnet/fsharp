@@ -12,7 +12,6 @@
     <AssemblyName>FSharp.Build</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <ProjectGuid>{702A7979-BCF9-4C41-853E-3ADFC9897890}</ProjectGuid>
-    <OtherFlags Condition=" '$(TargetFramework)'=='coreclr'">$(OtherFlags) --targetprofile:netcore</OtherFlags>
     <FX_NOLOADER>true</FX_NOLOADER>
   </PropertyGroup>
   <ItemGroup>
