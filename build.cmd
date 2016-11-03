@@ -154,6 +154,7 @@ if /i '%ARG%' == 'nobuild' (
 if /i '%ARG%' == 'all' (
     set _autoselect=0
     set BUILD_PROTO=1
+    set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_NET40=1
     set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
@@ -255,6 +256,7 @@ if /i '%ARG%' == 'noskip' (
 if /i '%ARG%' == 'test-all' (
     set _autoselect=0
     set BUILD_PROTO=1
+    set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_NET40=1
     set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
@@ -477,7 +479,7 @@ rem Build Proto
 if '%BUILD_PROTO%' == '1' (
   if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
 
-    pushd .\lkg & %_dotnetexe% restore --packages %~dp0\packages &popd
+    pushd .\lkg & %_dotnetexe% restore &popd
     @if ERRORLEVEL 1 echo Error: dotnet restore failed  && goto :failure
 
     pushd .\lkg & %_dotnetexe% publish project.json -o %~dp0\Tools\lkg -r win7-x64 &popd

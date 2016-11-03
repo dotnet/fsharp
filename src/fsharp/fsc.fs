@@ -933,43 +933,55 @@ let injectedCompatTypes =
         "System.Collections.IStructuralEquatable" ]
 
 let typesForwardedToMscorlib = 
-    set [   "System.AggregateException"
-            "System.Threading.CancellationTokenRegistration"
-            "System.Threading.CancellationToken"
-            "System.Threading.CancellationTokenSource"
-            "System.Lazy`1"
-            "System.IObservable`1"
-            "System.IObserver`1"
-        ]
-let typesForwardedToSystemNumerics =
-    set [ "System.Numerics.BigInteger" ]
-      
-let createMscorlibExportList tcGlobals =
-    // We want to write forwarders out for all injected types except for System.ITuple, which is internal
-    // Forwarding System.ITuple will cause FxCop failures on 4.0
-    Set.union (Set.filter (fun t -> t <> "System.ITuple") injectedCompatTypes) typesForwardedToMscorlib |>
-        Seq.map (fun t -> 
-                    {   ScopeRef = tcGlobals.sysCcu.ILScopeRef  
-                        Name = t  
-                        IsForwarder = true  
-                        Access = ILTypeDefAccess.Public  
-                        Nested = mkILNestedExportedTypes List.empty<ILNestedExportedType>  
-                        CustomAttrs = mkILCustomAttrs List.empty<ILAttribute>  }) |> 
-        Seq.toList
+  set [ "System.AggregateException"
+        "System.Threading.CancellationTokenRegistration"
+        "System.Threading.CancellationToken"
+        "System.Threading.CancellationTokenSource"
+        "System.Lazy`1"
+        "System.IObservable`1"
+        "System.IObserver`1" ]
 
-let createSystemNumericsExportList tcGlobals =
-    let sysAssemblyRef = tcGlobals.sysCcu.ILScopeRef.AssemblyRef
-    let systemNumericsAssemblyRef = ILAssemblyRef.Create("System.Numerics", sysAssemblyRef.Hash, sysAssemblyRef.PublicKey, sysAssemblyRef.Retargetable, sysAssemblyRef.Version, sysAssemblyRef.Locale)
-    typesForwardedToSystemNumerics |>
-        Seq.map (fun t ->
-                    {   ScopeRef = ILScopeRef.Assembly(systemNumericsAssemblyRef)
-                        Name = t
-                        IsForwarder = true 
-                        Access = ILTypeDefAccess.Public 
-                        Nested = mkILNestedExportedTypes List.empty<ILNestedExportedType> 
-                        CustomAttrs = mkILCustomAttrs List.empty<ILAttribute> }) |>
-        Seq.toList
-            
+let typesForwardedToSystemNumerics =
+  set [ "System.Numerics.BigInteger" ]
+
+let createMscorlibExportList tcGlobals =
+  // We want to write forwarders out for all injected types except for System.ITuple, which is internal
+  // Forwarding System.ITuple will cause FxCop failures on 4.0
+  Set.union (Set.filter (fun t -> t <> "System.ITuple") injectedCompatTypes) typesForwardedToMscorlib |>
+      Seq.map (fun t -> 
+                  {   ScopeRef = tcGlobals.sysCcu.ILScopeRef  
+                      Name = t  
+                      IsForwarder = true  
+                      Access = ILTypeDefAccess.Public  
+                      Nested = mkILNestedExportedTypes List.empty<ILNestedExportedType>  
+                      CustomAttrs = mkILCustomAttrs List.empty<ILAttribute>  }) |> 
+      Seq.toList
+
+let createSystemNumericsExportList tcGlobals (tcImports:TcImports) =
+    let refNumericsDllName =
+        if tcGlobals.usesMscorlib then "System.Numerics"
+        else "System.Runtime.Numerics"
+    let numericsAssemblyRef =
+        match tcImports.GetImportedAssemblies() |> List.tryFind<ImportedAssembly>(fun a -> a.FSharpViewOfMetadata.AssemblyName = refNumericsDllName) with
+        | Some asm ->
+            match asm.ILScopeRef with 
+            | ILScopeRef.Assembly aref -> Some aref
+            | _ -> None
+        | None -> None
+    match numericsAssemblyRef with
+    | Some aref ->
+        let systemNumericsAssemblyRef = ILAssemblyRef.Create(refNumericsDllName, aref.Hash, aref.PublicKey, aref.Retargetable, aref.Version, aref.Locale)
+        typesForwardedToSystemNumerics |>
+            Seq.map (fun t ->
+                        {   ScopeRef = ILScopeRef.Assembly(systemNumericsAssemblyRef)
+                            Name = t
+                            IsForwarder = true 
+                            Access = ILTypeDefAccess.Public 
+                            Nested = mkILNestedExportedTypes List.empty<ILNestedExportedType> 
+                            CustomAttrs = mkILCustomAttrs List.empty<ILAttribute> }) |>
+            Seq.toList
+    | None -> []
+
 module MainModuleBuilder = 
 
     let fileVersion warn findStringAttr (assemblyVersion: ILVersionInfo) =
@@ -1005,7 +1017,7 @@ module MainModuleBuilder =
 
 
     let CreateMainModule  
-            (tcConfig:TcConfig,tcGlobals,
+            (tcConfig:TcConfig,tcGlobals,tcImports:TcImports,
              pdbfile,assemblyName,outfile,topAttrs,
              (iattrs,intfDataResources),optDataResources,
              codegenResults,assemVerFromAttrib,metadataVersion,secDecls) =
@@ -1020,20 +1032,26 @@ module MainModuleBuilder =
             let hashAlg = AttributeHelpers.TryFindIntAttribute tcGlobals "System.Reflection.AssemblyAlgorithmIdAttribute" topAttrs.assemblyAttrs
             let locale = AttributeHelpers.TryFindStringAttribute tcGlobals "System.Reflection.AssemblyCultureAttribute" topAttrs.assemblyAttrs
             let flags =  match AttributeHelpers.TryFindIntAttribute tcGlobals "System.Reflection.AssemblyFlagsAttribute" topAttrs.assemblyAttrs with | Some(f) -> f | _ -> 0x0
-            
+
             // You're only allowed to set a locale if the assembly is a library
             if (locale <> None && locale.Value <> "") && tcConfig.target <> Dll then
               error(Error(FSComp.SR.fscAssemblyCultureAttributeError(),rangeCmdArgs))
-            
+
             // Add the type forwarders to any .NET DLL post-.NET-2.0, to give binary compatibility
-            let exportedTypesList = if (tcConfig.compilingFslib && tcConfig.compilingFslib40) then (List.append (createMscorlibExportList tcGlobals) (createSystemNumericsExportList tcGlobals)) else []
-            
+            let exportedTypesList = 
+                if (tcConfig.compilingFslib && tcConfig.compilingFslib40) then 
+                   (List.append (createMscorlibExportList tcGlobals)
+                                (if tcConfig.compilingFslibNoBigInt then [] else (createSystemNumericsExportList tcGlobals tcImports))
+                   )
+                else
+                    []
+
             mkILSimpleModule assemblyName (GetGeneratedILModuleName tcConfig.target assemblyName) (tcConfig.target = Dll || tcConfig.target = Module) tcConfig.subsystemVersion tcConfig.useHighEntropyVA ilTypeDefs hashAlg locale flags (mkILExportedTypes exportedTypesList) metadataVersion
 
         let disableJitOptimizations = not (tcConfig.optSettings.jitOpt())
-                       
+
         let tcVersion = tcConfig.version.GetVersionInfo(tcConfig.implicitIncludeDir)
-                  
+
         let reflectedDefinitionAttrs, reflectedDefinitionResources = 
             codegenResults.quotationResourceInfo 
             |> List.map (fun (referencedTypeDefs, reflectedDefinitionBytes) -> 
@@ -2002,7 +2020,7 @@ let main2(Args(tcConfig, tcImports, frameworkTcImports: TcImports, tcGlobals, er
     Args(tcConfig,tcImports,tcGlobals,errorLogger,generatedCcu,outfile,optimizedImpls,topAttrs,pdbfile,assemblyName, (sigDataAttributes, sigDataResources), optDataResources,assemVerFromAttrib,signingInfo,metadataVersion,exiter)
 
 let main2b(Args(tcConfig: TcConfig, tcImports, tcGlobals, errorLogger, generatedCcu: CcuThunk, outfile, optimizedImpls, topAttrs, pdbfile, assemblyName, idata, optDataResources, assemVerFromAttrib, signingInfo, metadataVersion, exiter: Exiter)) = 
-  
+
     // Compute a static linker. 
     let ilGlobals = tcGlobals.ilg
     if tcConfig.standalone && generatedCcu.UsesFSharp20PlusQuotations then    
@@ -2025,8 +2043,7 @@ let main2b(Args(tcConfig: TcConfig, tcImports, tcGlobals, errorLogger, generated
     let permissionSets = ilxGenerator.CreatePermissionSets securityAttrs
     let secDecls = if securityAttrs.Length > 0 then mkILSecurityDecls permissionSets else emptyILSecurityDecls
 
-
-    let ilxMainModule = MainModuleBuilder.CreateMainModule (tcConfig,tcGlobals,pdbfile,assemblyName,outfile,topAttrs,idata,optDataResources,codegenResults,assemVerFromAttrib,metadataVersion,secDecls)
+    let ilxMainModule = MainModuleBuilder.CreateMainModule (tcConfig,tcGlobals,tcImports,pdbfile,assemblyName,outfile,topAttrs,idata,optDataResources,codegenResults,assemVerFromAttrib,metadataVersion,secDecls)
 
     AbortOnError(errorLogger,tcConfig,exiter)
     
