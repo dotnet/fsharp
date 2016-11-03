@@ -168,7 +168,9 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
 #if CROSS_PLATFORM_COMPILER
     // The property YieldDuringToolExecution is not available on Mono.
     // So we only set it if available (to avoid a compile-time dependency). 
-    do  typeof<ToolTask>.InvokeMember("YieldDuringToolExecution",(BindingFlags.Instance ||| BindingFlags.SetProperty ||| BindingFlags.Public),null,this,[| box true |])  |> ignore 
+    let runningOnMono = try System.Type.GetType("Mono.Runtime") <> null with e-> false         
+    do if not runningOnMono then  
+        typeof<ToolTask>.InvokeMember("YieldDuringToolExecution",(BindingFlags.Instance ||| BindingFlags.SetProperty ||| BindingFlags.Public),null,this,[| box true |])  |> ignore 
 #else
     do this.YieldDuringToolExecution <- true  // See bug 6483; this makes parallel build faster, and is fine to set unconditionally
 #endif
