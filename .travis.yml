@@ -9,12 +9,8 @@ env:
 #  - BUILD_CORECLR=1 TEST_CORECLR_COREUNIT_SUITE=1
 #  - BUILD_CORECLR=1 TEST_CORECLR_COREUNIT_SUITE=1 BUILD_PROTO_WITH_CORECLR_LKG=1
 
-before_install:
-  - ./before_install.sh
-
 script:
-  - xbuild src/fsharp-proto-build.proj /v:d
-  - xbuild build-everything.proj /p:Configuration=debug
+  - build.sh
 
 
   

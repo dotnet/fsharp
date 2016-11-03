@@ -27,6 +27,10 @@ You can build the F# compiler for .NET Framework as follows:
 
     build.cmd
 
+On Linux/Mono you use
+
+    ./build.sh
+
 This is the same as
 
     build.cmd net40
