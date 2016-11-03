@@ -61,8 +61,8 @@
       <Name>FSharp.Core</Name>
     </ProjectReference>
     <Reference Include="System.ValueTuple" Condition="'$(TargetFramework)' != 'portable47'">
-        <HintPath Condition=" '$(TargetFramework)' == 'coreclr' ">packages\System.ValueTuple.4.0.0-rc3-24212-01\lib\netstandard1.1\System.ValueTuple.dll</HintPath>
-        <HintPath Condition=" '$(TargetFramework)' != 'coreclr' ">packages\System.ValueTuple.4.4.0-beta-24631-01\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+        <HintPath Condition=" '$(TargetFramework)' == 'coreclr' ">..\..\..\packages\System.ValueTuple.4.0.0-rc3-24212-01\lib\netstandard1.1\System.ValueTuple.dll</HintPath>
+        <HintPath Condition=" '$(TargetFramework)' != 'coreclr' ">..\..\..\packages\System.ValueTuple.4.4.0-beta-24631-01\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
         <Private>True</Private>
     </Reference>
     <Reference Include="TupleSample" Condition="'$(TargetFramework)' != 'portable47'">
