@@ -957,22 +957,30 @@ let createMscorlibExportList tcGlobals =
                       CustomAttrs = mkILCustomAttrs List.empty<ILAttribute>  }) |> 
       Seq.toList
 
-let createSystemNumericsExportList tcGlobals =
-    let sysAssemblyRef = tcGlobals.sysCcu.ILScopeRef.AssemblyRef
-    let systemNumericsAssemblyRef =  
-        let refNumericsDllName =  
-            if  tcGlobals.usesMscorlib then "System.Numerics"
-            else "System.Runtime.Numerics"  
-        ILAssemblyRef.Create(refNumericsDllName, sysAssemblyRef.Hash, sysAssemblyRef.PublicKey, sysAssemblyRef.Retargetable, sysAssemblyRef.Version, sysAssemblyRef.Locale)  
-    typesForwardedToSystemNumerics |>
-        Seq.map (fun t ->
-                    {   ScopeRef = ILScopeRef.Assembly(systemNumericsAssemblyRef)
-                        Name = t
-                        IsForwarder = true 
-                        Access = ILTypeDefAccess.Public 
-                        Nested = mkILNestedExportedTypes List.empty<ILNestedExportedType> 
-                        CustomAttrs = mkILCustomAttrs List.empty<ILAttribute> }) |>
-        Seq.toList
+let createSystemNumericsExportList tcGlobals (tcImports:TcImports) =
+    let refNumericsDllName =
+        if tcGlobals.usesMscorlib then "System.Numerics"
+        else "System.Runtime.Numerics"
+    let numericsAssemblyRef =
+        match tcImports.GetImportedAssemblies() |> List.tryFind<ImportedAssembly>(fun a -> a.FSharpViewOfMetadata.AssemblyName = refNumericsDllName) with
+        | Some asm ->
+            match asm.ILScopeRef with 
+            | ILScopeRef.Assembly aref -> Some aref
+            | _ -> None
+        | None -> None
+    match numericsAssemblyRef with
+    | Some aref ->
+        let systemNumericsAssemblyRef = ILAssemblyRef.Create(refNumericsDllName, aref.Hash, aref.PublicKey, aref.Retargetable, aref.Version, aref.Locale)
+        typesForwardedToSystemNumerics |>
+            Seq.map (fun t ->
+                        {   ScopeRef = ILScopeRef.Assembly(systemNumericsAssemblyRef)
+                            Name = t
+                            IsForwarder = true 
+                            Access = ILTypeDefAccess.Public 
+                            Nested = mkILNestedExportedTypes List.empty<ILNestedExportedType> 
+                            CustomAttrs = mkILCustomAttrs List.empty<ILAttribute> }) |>
+            Seq.toList
+    | None -> []
 
 module MainModuleBuilder = 
 
@@ -1009,7 +1017,7 @@ module MainModuleBuilder =
 
 
     let CreateMainModule  
-            (tcConfig:TcConfig,tcGlobals,
+            (tcConfig:TcConfig,tcGlobals,tcImports:TcImports,
              pdbfile,assemblyName,outfile,topAttrs,
              (iattrs,intfDataResources),optDataResources,
              codegenResults,assemVerFromAttrib,metadataVersion,secDecls) =
@@ -1033,7 +1041,7 @@ module MainModuleBuilder =
             let exportedTypesList = 
                 if (tcConfig.compilingFslib && tcConfig.compilingFslib40) then 
                    (List.append (createMscorlibExportList tcGlobals)
-                                (if tcConfig.compilingFslibNoBigInt then [] else (createSystemNumericsExportList tcGlobals))
+                                (if tcConfig.compilingFslibNoBigInt then [] else (createSystemNumericsExportList tcGlobals tcImports))
                    )
                 else
                     []
@@ -2012,7 +2020,7 @@ let main2(Args(tcConfig, tcImports, frameworkTcImports: TcImports, tcGlobals, er
     Args(tcConfig,tcImports,tcGlobals,errorLogger,generatedCcu,outfile,optimizedImpls,topAttrs,pdbfile,assemblyName, (sigDataAttributes, sigDataResources), optDataResources,assemVerFromAttrib,signingInfo,metadataVersion,exiter)
 
 let main2b(Args(tcConfig: TcConfig, tcImports, tcGlobals, errorLogger, generatedCcu: CcuThunk, outfile, optimizedImpls, topAttrs, pdbfile, assemblyName, idata, optDataResources, assemVerFromAttrib, signingInfo, metadataVersion, exiter: Exiter)) = 
-  
+
     // Compute a static linker. 
     let ilGlobals = tcGlobals.ilg
     if tcConfig.standalone && generatedCcu.UsesFSharp20PlusQuotations then    
@@ -2035,8 +2043,7 @@ let main2b(Args(tcConfig: TcConfig, tcImports, tcGlobals, errorLogger, generated
     let permissionSets = ilxGenerator.CreatePermissionSets securityAttrs
     let secDecls = if securityAttrs.Length > 0 then mkILSecurityDecls permissionSets else emptyILSecurityDecls
 
-
-    let ilxMainModule = MainModuleBuilder.CreateMainModule (tcConfig,tcGlobals,pdbfile,assemblyName,outfile,topAttrs,idata,optDataResources,codegenResults,assemVerFromAttrib,metadataVersion,secDecls)
+    let ilxMainModule = MainModuleBuilder.CreateMainModule (tcConfig,tcGlobals,tcImports,pdbfile,assemblyName,outfile,topAttrs,idata,optDataResources,codegenResults,assemVerFromAttrib,metadataVersion,secDecls)
 
     AbortOnError(errorLogger,tcConfig,exiter)
     
