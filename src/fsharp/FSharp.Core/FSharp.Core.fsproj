@@ -19,10 +19,10 @@
     <OtherFlags>$(OtherFlags) --warnon:1182 --compiling-fslib --maxerrors:20   --extraoptimizationloops:1 </OtherFlags>
     <OtherFlags Condition=" '$(TargetFramework)'=='net20'">$(OtherFlags)       --compiling-fslib-20:"$(SystemRoot)\Microsoft.NET\Framework\v4.0.30319\mscorlib.dll" </OtherFlags>
     <OtherFlags Condition=" '$(TargetFramework)'=='net40'">$(OtherFlags)       --compiling-fslib-40</OtherFlags>
-    <OtherFlags Condition=" '$(TargetFramework)'=='coreclr'">$(OtherFlags)     --compiling-fslib-40 --targetprofile:netcore</OtherFlags>
-    <OtherFlags Condition=" '$(TargetFramework)'=='portable7'">$(OtherFlags)   --compiling-fslib-40 --targetprofile:netcore</OtherFlags>
-    <OtherFlags Condition=" '$(TargetFramework)'=='portable78'">$(OtherFlags)  --compiling-fslib-40 --compiling-fslib-nobigint --targetprofile:netcore</OtherFlags>
-    <OtherFlags Condition=" '$(TargetFramework)'=='portable259'">$(OtherFlags) --compiling-fslib-40 --compiling-fslib-nobigint --targetprofile:netcore</OtherFlags>
+    <OtherFlags Condition=" '$(TargetFramework)'=='coreclr'">$(OtherFlags)     --compiling-fslib-40</OtherFlags>
+    <OtherFlags Condition=" '$(TargetFramework)'=='portable7'">$(OtherFlags)   --compiling-fslib-40</OtherFlags>
+    <OtherFlags Condition=" '$(TargetFramework)'=='portable78'">$(OtherFlags)  --compiling-fslib-40 --compiling-fslib-nobigint</OtherFlags>
+    <OtherFlags Condition=" '$(TargetFramework)'=='portable259'">$(OtherFlags) --compiling-fslib-40 --compiling-fslib-nobigint</OtherFlags>
   </PropertyGroup>
   <ItemGroup>
     <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
