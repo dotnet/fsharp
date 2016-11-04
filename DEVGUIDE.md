@@ -25,7 +25,7 @@ The primary technical documents for the F# compiler code are
 
 ### F# Compiler (Linux)
 
-Currently you can do on Linux a bootstrap of the Mono version of the compiler.  Full testig is not enabled,
+Currently you can do on Linux a bootstrap of the Mono version of the compiler.  Full testing is not enabled,
 nor is a .NET Core build of the compiler.
 
 First [install Mono](http://www.mono-project.com/docs/getting-started/install/linux/).  
