@@ -238,107 +238,107 @@ open Printf
 let StringBoilerPlate filename =
 
     @"
-// BEGIN BOILERPLATE        
+    // BEGIN BOILERPLATE        
     
-static let getCurrentAssembly () =
-#if DNXCORE50 || NETSTANDARD1_5 || NETSTANDARD1_6 || NETCOREAPP1_0
-    typeof<SR>.GetTypeInfo().Assembly
-#else
-    System.Reflection.Assembly.GetExecutingAssembly()
-#endif
+    static let getCurrentAssembly () =
+    #if DNXCORE50 || NETSTANDARD1_5 || NETSTANDARD1_6 || NETCOREAPP1_0
+        typeof<SR>.GetTypeInfo().Assembly
+    #else
+        System.Reflection.Assembly.GetExecutingAssembly()
+    #endif
         
-static let getTypeInfo (t: System.Type) =
-#if DNXCORE50 || NETSTANDARD1_5 || NETSTANDARD1_6 || NETCOREAPP1_0
-    t.GetTypeInfo()
-#else
-    t
-#endif
+    static let getTypeInfo (t: System.Type) =
+    #if DNXCORE50 || NETSTANDARD1_5 || NETSTANDARD1_6 || NETCOREAPP1_0
+        t.GetTypeInfo()
+    #else
+        t
+    #endif
     
-static let resources = lazy (new System.Resources.ResourceManager(""" + filename + @""", getCurrentAssembly()))
+    static let resources = lazy (new System.Resources.ResourceManager(""" + filename + @""", getCurrentAssembly()))
 
-static let GetString(name:string) =        
-    let s = resources.Value.GetString(name, System.Globalization.CultureInfo.CurrentUICulture)
-#if DEBUG
-    if null = s then
-        System.Diagnostics.Debug.Assert(false, sprintf ""**RESOURCE ERROR**: Resource token %s does not exist!"" name)
-#endif
-    s
+    static let GetString(name:string) =        
+        let s = resources.Value.GetString(name, System.Globalization.CultureInfo.CurrentUICulture)
+    #if DEBUG
+        if null = s then
+            System.Diagnostics.Debug.Assert(false, sprintf ""**RESOURCE ERROR**: Resource token %s does not exist!"" name)
+    #endif
+        s
 
-static let mkFunctionValue (tys: System.Type[]) (impl:obj->obj) = 
-    FSharpValue.MakeFunction(FSharpType.MakeFunctionType(tys.[0],tys.[1]), impl)
+    static let mkFunctionValue (tys: System.Type[]) (impl:obj->obj) = 
+        FSharpValue.MakeFunction(FSharpType.MakeFunctionType(tys.[0],tys.[1]), impl)
         
-static let funTyC = typeof<(obj -> obj)>.GetGenericTypeDefinition()  
+    static let funTyC = typeof<(obj -> obj)>.GetGenericTypeDefinition()  
 
-static let isNamedType(ty:System.Type) = not (ty.IsArray ||  ty.IsByRef ||  ty.IsPointer)
-static let isFunctionType (ty1:System.Type)  = 
-    isNamedType(ty1) && getTypeInfo(ty1).IsGenericType && (ty1.GetGenericTypeDefinition()).Equals(funTyC)
+    static let isNamedType(ty:System.Type) = not (ty.IsArray ||  ty.IsByRef ||  ty.IsPointer)
+    static let isFunctionType (ty1:System.Type)  = 
+        isNamedType(ty1) && getTypeInfo(ty1).IsGenericType && (ty1.GetGenericTypeDefinition()).Equals(funTyC)
 
-static let rec destFunTy (ty:System.Type) =
-    if isFunctionType ty then 
-        ty, ty.GetGenericArguments() 
-    else
-        match getTypeInfo(ty).BaseType with 
-        | null -> failwith ""destFunTy: not a function type"" 
-        | b -> destFunTy b 
-
-static let buildFunctionForOneArgPat (ty: System.Type) impl = 
-    let _,tys = destFunTy ty 
-    let rty = tys.[1]
-    // PERF: this technique is a bit slow (e.g. in simple cases, like 'sprintf ""%x""') 
-    mkFunctionValue tys (fun inp -> impl rty inp)
-                
-static let capture1 (fmt:string) i args ty (go : obj list -> System.Type -> int -> obj) : obj = 
-    match fmt.[i] with
-    | '%' -> go args ty (i+1) 
-    | 'd'
-    | 'f'
-    | 's' -> buildFunctionForOneArgPat ty (fun rty n -> go (n::args) rty (i+1))
-    | _ -> failwith ""bad format specifier""
-        
-// newlines and tabs get converted to strings when read from a resource file
-// this will preserve their original intention    
-static let postProcessString (s : string) =
-    s.Replace(""\\n"",""\n"").Replace(""\\t"",""\t"").Replace(""\\r"",""\r"").Replace(""\\\"""", ""\"""")
-        
-static let createMessageString (messageString : string) (fmt : Printf.StringFormat<'T>) : 'T = 
-    let fmt = fmt.Value // here, we use the actual error string, as opposed to the one stored as fmt
-    let len = fmt.Length 
-
-    /// Function to capture the arguments and then run.
-    let rec capture args ty i = 
-        if i >= len ||  (fmt.[i] = '%' && i+1 >= len) then 
-            let b = new System.Text.StringBuilder()    
-            b.AppendFormat(messageString, [| for x in List.rev args -> x |]) |> ignore
-            box(b.ToString())
-        // REVIEW: For these purposes, this should be a nop, but I'm leaving it
-        // in incase we ever decide to support labels for the error format string
-        // E.g., ""<name>%s<foo>%d""
-        elif System.Char.IsSurrogatePair(fmt,i) then 
-            capture args ty (i+2)
+    static let rec destFunTy (ty:System.Type) =
+        if isFunctionType ty then 
+            ty, ty.GetGenericArguments() 
         else
-            match fmt.[i] with
-            | '%' ->
-                let i = i+1 
-                capture1 fmt i args ty capture
-            | _ ->
-                capture args ty (i+1) 
+            match getTypeInfo(ty).BaseType with 
+            | null -> failwith ""destFunTy: not a function type"" 
+            | b -> destFunTy b 
 
-    (unbox (capture [] (typeof<'T>) 0) : 'T)
-
-static let mutable swallowResourceText = false
-    
-static let GetStringFunc((messageID : string),(fmt : Printf.StringFormat<'T>)) : 'T =
-    if swallowResourceText then
-        sprintf fmt
-    else
-        let mutable messageString = GetString(messageID)
-        messageString <- postProcessString messageString                            
-        createMessageString messageString fmt
+    static let buildFunctionForOneArgPat (ty: System.Type) impl = 
+        let _,tys = destFunTy ty 
+        let rty = tys.[1]
+        // PERF: this technique is a bit slow (e.g. in simple cases, like 'sprintf ""%x""') 
+        mkFunctionValue tys (fun inp -> impl rty inp)
+                
+    static let capture1 (fmt:string) i args ty (go : obj list -> System.Type -> int -> obj) : obj = 
+        match fmt.[i] with
+        | '%' -> go args ty (i+1) 
+        | 'd'
+        | 'f'
+        | 's' -> buildFunctionForOneArgPat ty (fun rty n -> go (n::args) rty (i+1))
+        | _ -> failwith ""bad format specifier""
         
-/// If set to true, then all error messages will just return the filled 'holes' delimited by ',,,'s - this is for language-neutral testing (e.g. localization-invariant baselines).
-static member SwallowResourceText with get () = swallowResourceText
-                                    and set (b) = swallowResourceText <- b
-// END BOILERPLATE        
+    // newlines and tabs get converted to strings when read from a resource file
+    // this will preserve their original intention    
+    static let postProcessString (s : string) =
+        s.Replace(""\\n"",""\n"").Replace(""\\t"",""\t"").Replace(""\\r"",""\r"").Replace(""\\\"""", ""\"""")
+        
+    static let createMessageString (messageString : string) (fmt : Printf.StringFormat<'T>) : 'T = 
+        let fmt = fmt.Value // here, we use the actual error string, as opposed to the one stored as fmt
+        let len = fmt.Length 
+
+        /// Function to capture the arguments and then run.
+        let rec capture args ty i = 
+            if i >= len ||  (fmt.[i] = '%' && i+1 >= len) then 
+                let b = new System.Text.StringBuilder()    
+                b.AppendFormat(messageString, [| for x in List.rev args -> x |]) |> ignore
+                box(b.ToString())
+            // REVIEW: For these purposes, this should be a nop, but I'm leaving it
+            // in incase we ever decide to support labels for the error format string
+            // E.g., ""<name>%s<foo>%d""
+            elif System.Char.IsSurrogatePair(fmt,i) then 
+                capture args ty (i+2)
+            else
+                match fmt.[i] with
+                | '%' ->
+                    let i = i+1 
+                    capture1 fmt i args ty capture
+                | _ ->
+                    capture args ty (i+1) 
+
+        (unbox (capture [] (typeof<'T>) 0) : 'T)
+
+    static let mutable swallowResourceText = false
+    
+    static let GetStringFunc((messageID : string),(fmt : Printf.StringFormat<'T>)) : 'T =
+        if swallowResourceText then
+            sprintf fmt
+        else
+            let mutable messageString = GetString(messageID)
+            messageString <- postProcessString messageString                            
+            createMessageString messageString fmt
+        
+    /// If set to true, then all error messages will just return the filled 'holes' delimited by ',,,'s - this is for language-neutral testing (e.g. localization-invariant baselines).
+    static member SwallowResourceText with get () = swallowResourceText
+                                        and set (b) = swallowResourceText <- b
+    // END BOILERPLATE        
 "            
 
 let RunMain(filename, outFilename, outXmlFilenameOpt, projectNameOpt) =
@@ -446,20 +446,20 @@ let RunMain(filename, outFilename, outXmlFilenameOpt, projectNameOpt) =
 let Main args = 
 
     match args |> List.ofArray with
-    | [ inputFile; outFile; ] ->
+    | [ _; inputFile; outFile; ] ->
         let filename = System.IO.Path.GetFullPath(inputFile)
         let outFilename = System.IO.Path.GetFullPath(outFile)
 
         RunMain(filename, outFilename, None, None)
 
-    | [ inputFile; outFile; outXml ] ->
+    | [ _; inputFile; outFile; outXml ] ->
         let filename = System.IO.Path.GetFullPath inputFile
         let outFilename = System.IO.Path.GetFullPath outFile
         let outXmlFilename = System.IO.Path.GetFullPath outXml
 
         RunMain(filename, outFilename, Some outXmlFilename, None)
 
-    | [ inputFile; outFile; outXml; projectName ] ->
+    | [ _; inputFile; outFile; outXml; projectName ] ->
         let filename = System.IO.Path.GetFullPath inputFile
         let outFilename = System.IO.Path.GetFullPath outFile
         let outXmlFilename = System.IO.Path.GetFullPath outXml
@@ -471,3 +471,5 @@ let Main args =
         printfn "Usage: <INPUTFILE> <OUTPUTFILE> <OUTXMLFILE> <PROJECTNAME>"
         1
 
+printfn "args = %A" fsi.CommandLineArgs
+Main fsi.CommandLineArgs
