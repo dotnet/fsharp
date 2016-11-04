@@ -64,12 +64,12 @@
   <Target Name="AfterBuild">
     <ReplaceFileText
       InputFilename="../FSharp.Build/Microsoft.FSharp.targets"
-      OutputFilename="$(OutputPath)Microsoft.FSharp.targets"
+      OutputFilename="$(OutputPath)Microsoft.FSharp-proto.targets"
       MatchExpression="{BuildSuffix}"
       ReplacementText="-proto" />
     <ReplaceFileText
       InputFilename="../FSharp.Build/Microsoft.Portable.FSharp.targets"
-      OutputFilename="$(OutputPath)Microsoft.Portable.FSharp.targets"
+      OutputFilename="$(OutputPath)Microsoft.Portable.FSharp-proto.targets"
       MatchExpression="{BuildSuffix}"
       ReplacementText="-proto" />
   </Target>
