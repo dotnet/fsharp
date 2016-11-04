@@ -18,4 +18,4 @@ folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp\$(LocaleParentC
   file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\FSharp.ProjectSystem.PropertyPages.resources.dll" vs.file.ngen=yes
   file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\FSharp.VS.FSI.resources.dll" vs.file.ngen=yes
   file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\fsi.resources.dll" vs.file.ngen=yes
-  file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\FsiAnyCPU.resources.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\fsiAnyCpu.resources.dll" vs.file.ngen=yes

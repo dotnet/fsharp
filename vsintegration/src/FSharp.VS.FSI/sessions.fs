@@ -155,7 +155,7 @@ let catchAll (ie: IEvent<_,_>) : IEvent<_> =
     e
 
 let fsiExeName () = 
-    if SessionsProperties.useAnyCpuVersion then "fsiAnyCPU.exe" else "fsi.exe"
+    if SessionsProperties.useAnyCpuVersion then "fsiAnyCpu.exe" else "fsi.exe"
 
 // Use the VS-extension-installed development path if available, relative to the location of this assembly
 let determineFsiRelativePath1 () =

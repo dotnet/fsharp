@@ -143,14 +143,14 @@
     </ProjectReference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\fsiAnyCpu\FsiAnyCPU.fsproj">
       <Project>{8B3E283D-B5FE-4055-9D80-7E3A32F3967B}</Project>
-      <Name>FsiAnyCPU</Name>
+      <Name>fsiAnyCpu</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
       <Private>True</Private>
     </ProjectReference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\fsi\Fsi.fsproj">
       <Project>{D0E98C0D-490B-4C61-9329-0862F6E87645}</Project>
-      <Name>Fsi</Name>
+      <Name>fsi</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
       <Private>True</Private>
