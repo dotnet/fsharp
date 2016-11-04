@@ -478,12 +478,11 @@ if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '0' (
 rem Build Proto
 if '%BUILD_PROTO%' == '1' (
   if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
-
-    pushd .\lkg & %_dotnetexe% restore &popd
-    @if ERRORLEVEL 1 echo Error: dotnet restore failed  && goto :failure
-
-    pushd .\lkg & %_dotnetexe% publish project.json -o %~dp0\Tools\lkg -r win7-x64 &popd
-    @if ERRORLEVEL 1 echo Error: dotnet publish failed  && goto :failure
+echo on
+    pushd .\lkg\fsc & %_dotnetexe% restore & popd & if ERRORLEVEL 1 echo Error:%errorlevel% dotnet restore failed & goto :failure
+    pushd .\lkg\fsi & %_dotnetexe% restore & popd & if ERRORLEVEL 1 echo Error:%errorlevel% dotnet restore failed & goto :failure
+    pushd .\lkg\fsc & %_dotnetexe% publish project.json --no-build -o %~dp0\Tools\lkg -r win7-x64 & popd & if ERRORLEVEL 1 echo Error: dotnet publish failed  & goto :failure
+    pushd .\lkg\fsi & %_dotnetexe% publish project.json --no-build -o %~dp0\Tools\lkg -r win7-x64 & popd & if ERRORLEVEL 1 echo Error: dotnet publish failed  & goto :failure
 
     echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
          %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
@@ -510,7 +509,6 @@ if '%BUILD_PROTO%' == '1' (
     rmdir /s /q %~dp0\Tools\lkg
   )
 )
-
 
 
 echo ---------------- Done with proto, starting build ------------------------
@@ -573,15 +571,15 @@ setlocal disableDelayedExpansion
 if "%INCLUDE_TEST_SPEC_NUNIT%" == "" (
     if NOT "%EXCLUDE_TEST_SPEC_NUNIT%" == "" (
         set WHERE_ARG_NUNIT=--where "!(%EXCLUDE_TEST_SPEC_NUNIT%)"
-	)
+    )
 )
 if NOT "%INCLUDE_TEST_SPEC_NUNIT%" == "" (
     if "%EXCLUDE_TEST_SPEC_NUNIT%" == "" (
         set WHERE_ARG_NUNIT=--where "%INCLUDE_TEST_SPEC_NUNIT%"
-	)
+    )
     if NOT "%EXCLUDE_TEST_SPEC_NUNIT%" == "" (
-		set WHERE_ARG_NUNIT=--where "%INCLUDE_TEST_SPEC_NUNIT% and !(%EXCLUDE_TEST_SPEC_NUNIT%)"
-	)
+        set WHERE_ARG_NUNIT=--where "%INCLUDE_TEST_SPEC_NUNIT% and !(%EXCLUDE_TEST_SPEC_NUNIT%)"
+    )
 )
 if NOT "%INCLUDE_TEST_TAGS%" == "" (
     set INCLUDE_ARG_RUNALL=-ttags:%INCLUDE_TEST_TAGS%

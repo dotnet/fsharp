@@ -1,13 +1,12 @@
 {
+  "version": "1.0.0-*",
+  "name": "fsi",
+  "buildOptions": {
+    "debugType": "portable",
+    "emitEntryPoint": true
+  },
   "dependencies": {
-<<<<<<< Updated upstream
-    "Microsoft.FSharp.Compiler.Host.netcore": "1.0.0-alpha-161102",
-     "Microsoft.NETCore.Runtime.CoreCLR": "1.0.2",
-     "Microsoft.NETCore.DotNetHostPolicy":  "1.0.1",
-     "Microsoft.NETCore.DotNetHost": "1.0.1"
-=======
     "Microsoft.FSharp.Compiler.netcore": "1.0.0-alpha-161102",
->>>>>>> Stashed changes
   },
   "runtimes": {
     "win7-x86": { },
@@ -24,9 +23,9 @@
         }
       },
       "imports": "dnxcore50"
-    },
+    }
   },
   "scripts": {
-    "postpublish": [ "cmd /c copy %publish:OutputPath%\\runtimes\\any\\native\\* %publish:OutputPath%" ]
-  },
+    "postpublish": [ "cmd /c copy %publish:OutputPath%\\runtimes\\any\\native\\* %publish:OutputPath%" ] 
+  }
 }
