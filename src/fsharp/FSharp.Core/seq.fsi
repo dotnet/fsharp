@@ -13,75 +13,6 @@ namespace Microsoft.FSharp.Collections
     [<RequireQualifiedAccess>]
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module Seq = 
-        module Composer =
-            module Internal =
-                /// <summary>PipeIdx denotes the index of the element within the pipeline. 0 denotes the
-                /// source of the chain.</summary>
-                type PipeIdx = int
-                type ``PipeIdx?`` = Nullable<PipeIdx>
-
-                /// <summary>ICompletionChaining is used to correctly handle cleaning up of the pipeline. A
-                /// base implementation is provided in Consumer, and should not be overwritten. Consumer
-                /// provides it's own OnComplete and OnDispose function which should be used to handle
-                /// a particular consumers cleanup.</summary>
-                type ICompletionChaining =
-                    /// <summary>OnComplete is used to determine if the object has been processed correctly, 
-                    /// and possibly throw exceptions to denote incorrect application (i.e. such as a Take
-                    /// operation which didn't have a source at least as large as was required). It is
-                    /// not called in the case of an exception being thrown whilst the stream is still
-                    /// being processed.</summary>
-                    abstract OnComplete : PipeIdx -> unit
-                    /// <summary>OnDispose is used to cleanup the stream. It is always called at the last operation
-                    /// after the enumeration has completed.</summary>
-                    abstract OnDispose : unit -> unit
-
-                type IOutOfBand =
-                    abstract StopFurtherProcessing : PipeIdx -> unit
-
-                /// <summary>Consumer is the base class of all elements within the pipeline</summary>
-                [<AbstractClass>]
-                type Consumer<'T,'U> =
-                    interface ICompletionChaining
-                    new : unit -> Consumer<'T,'U>
-                    abstract member ProcessNext : input:'T -> bool
-                    abstract member OnComplete : PipeIdx -> unit
-                    abstract member OnDispose : unit -> unit
-
-                /// <summary>Values is a mutable struct. It can be embedded within the folder type
-                /// if two values are required for the calculation.</summary>
-                [<Struct; NoComparison; NoEquality>]
-                type Values<'a,'b> =
-                    new : a:'a * b:'b -> Values<'a,'b>
-                    val mutable _1: 'a
-                    val mutable _2: 'b
-
-                /// <summary>Values is a mutable struct. It can be embedded within the folder type
-                /// if three values are required for the calculation.</summary>
-                [<Struct; NoComparison; NoEquality>]
-                type Values<'a,'b,'c> =
-                    new : a:'a * b:'b * c:'c -> Values<'a,'b,'c>
-                    val mutable _1: 'a
-                    val mutable _2: 'b
-                    val mutable _3: 'c
-
-                /// <summary>Folder is a base class to assist with fold-like operations. It's intended usage
-                /// is as a base class for an object expression that will be used from within
-                /// the ForEach function.</summary>
-                [<AbstractClass>]
-                type Folder<'T,'U> =
-                    inherit Consumer<'T,'T>
-                    new : init:'U -> Folder<'T,'U>
-                    val mutable Value: 'U
-
-                type ISeqFactory<'T,'U> =
-                    abstract member Create : IOutOfBand -> ``PipeIdx?`` -> Consumer<'U,'V> -> Consumer<'T,'V>
-                    abstract member PipeIdx : PipeIdx
-
-                type ISeq<'T> =
-                    inherit System.Collections.Generic.IEnumerable<'T>
-                    abstract member Compose : ISeqFactory<'T,'U> -> ISeq<'U>
-                    abstract member ForEach : f:((unit -> unit) -> 'a) -> 'a when 'a :> Consumer<'T,'T>
-
         /// <summary>Returns a new sequence that contains the cartesian product of the two input sequences.</summary>
         /// <param name="source1">The first sequence.</param>
         /// <param name="source2">The second sequence.</param>
@@ -1273,7 +1204,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("ToComposer")>]
-        val toComposer   : source:seq<'T> -> Composer.Internal.ISeq<'T>
+        val toComposer   : source:seq<'T> -> Composer.Core.ISeq<'T>
 
         /// <summary>Builds a list from the given collection.</summary>
         ///
@@ -1420,97 +1351,3 @@ namespace Microsoft.FSharp.Collections
         /// <exception cref="System.ArgumentNullException">Thrown when any of the input sequences is null.</exception>
         [<CompiledName("Zip3")>]
         val zip3: source1:seq<'T1> -> source2:seq<'T2> -> source3:seq<'T3> -> seq<'T1 * 'T2 * 'T3>
-
-namespace Microsoft.FSharp.Core.CompilerServices
-
-    open System
-    open System.Collections
-    open System.Collections.Generic
-    open Microsoft.FSharp.Core
-    open Microsoft.FSharp.Collections
-        
-        
-    [<RequireQualifiedAccess>]
-    /// <summary>A group of functions used as part of the compiled representation of F# sequence expressions.</summary>
-    module RuntimeHelpers = 
-
-        [<Struct; NoComparison; NoEquality>]
-        type internal StructBox<'T when 'T : equality> = 
-            new : value:'T -> StructBox<'T>
-            member Value : 'T
-            static member Comparer : IEqualityComparer<StructBox<'T>>
-
-        /// <summary>The F# compiler emits calls to this function to 
-        /// implement the <c>while</c> operator for F# sequence expressions.</summary>
-        ///
-        /// <param name="guard">A function that indicates whether iteration should continue.</param>
-        /// <param name="source">The input sequence.</param>
-        ///
-        /// <returns>The result sequence.</returns>
-        val EnumerateWhile   : guard:(unit -> bool) -> source:seq<'T> -> seq<'T>
-
-        /// <summary>The F# compiler emits calls to this function to 
-        /// implement the <c>try/finally</c> operator for F# sequence expressions.</summary>
-        ///
-        /// <param name="source">The input sequence.</param>
-        /// <param name="compensation">A computation to be included in an enumerator's Dispose method.</param>
-        ///
-        /// <returns>The result sequence.</returns>
-        val EnumerateThenFinally :  source:seq<'T> -> compensation:(unit -> unit) -> seq<'T>
-        
-        /// <summary>The F# compiler emits calls to this function to implement the compiler-intrinsic
-        /// conversions from untyped System.Collections.IEnumerable sequences to typed sequences.</summary>
-        ///
-        /// <param name="create">An initializer function.</param>
-        /// <param name="moveNext">A function to iterate and test if end of sequence is reached.</param>
-        /// <param name="current">A function to retrieve the current element.</param>
-        ///
-        /// <returns>The resulting typed sequence.</returns>
-        val EnumerateFromFunctions: create:(unit -> 'T) -> moveNext:('T -> bool) -> current:('T -> 'U) -> seq<'U>
-
-        /// <summary>The F# compiler emits calls to this function to implement the <c>use</c> operator for F# sequence
-        /// expressions.</summary>
-        ///
-        /// <param name="resource">The resource to be used and disposed.</param>
-        /// <param name="source">The input sequence.</param>
-        ///
-        /// <returns>The result sequence.</returns>
-        val EnumerateUsing : resource:'T -> source:('T -> 'Collection) -> seq<'U> when 'T :> IDisposable and 'Collection :> seq<'U>
-
-        /// <summary>Creates an anonymous event with the given handlers.</summary>
-        ///
-        /// <param name="addHandler">A function to handle adding a delegate for the event to trigger.</param>
-        /// <param name="removeHandler">A function to handle removing a delegate that the event triggers.</param>
-        /// <param name="createHandler">A function to produce the delegate type the event can trigger.</param>
-        ///
-        /// <returns>The initialized event.</returns>
-        val CreateEvent : addHandler : ('Delegate -> unit) -> removeHandler : ('Delegate -> unit) -> createHandler : ((obj -> 'Args -> unit) -> 'Delegate) -> Microsoft.FSharp.Control.IEvent<'Delegate,'Args>
-
-    [<AbstractClass>]
-    /// <summary>The F# compiler emits implementations of this type for compiled sequence expressions.</summary>
-    type GeneratedSequenceBase<'T> =
-        /// <summary>The F# compiler emits implementations of this type for compiled sequence expressions.</summary>
-        ///
-        /// <returns>A new sequence generator for the expression.</returns>
-        new : unit -> GeneratedSequenceBase<'T>
-        /// <summary>The F# compiler emits implementations of this type for compiled sequence expressions.</summary>
-        ///
-        /// <returns>A new enumerator for the sequence.</returns>
-        abstract GetFreshEnumerator : unit -> IEnumerator<'T>
-        /// <summary>The F# compiler emits implementations of this type for compiled sequence expressions.</summary>
-        ///
-        /// <param name="result">A reference to the sequence.</param>
-        ///
-        /// <returns>A 0, 1, and 2 respectively indicate Stop, Yield, and Goto conditions for the sequence generator.</returns>
-        abstract GenerateNext : result:byref<IEnumerable<'T>> -> int
-        /// <summary>The F# compiler emits implementations of this type for compiled sequence expressions.</summary>
-        abstract Close: unit -> unit
-        /// <summary>The F# compiler emits implementations of this type for compiled sequence expressions.</summary>
-        abstract CheckClose: bool
-        /// <summary>The F# compiler emits implementations of this type for compiled sequence expressions.</summary>
-        abstract LastGenerated : 'T
-        interface IEnumerable<'T> 
-        interface IEnumerable
-        interface IEnumerator<'T> 
-        interface IEnumerator 
-
