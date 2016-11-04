@@ -78,4 +78,16 @@
       </FilesToSign>
     </ItemGroup>
   </Target>
+  <Target Name="AfterBuild">
+    <ReplaceFileText
+      InputFilename="Microsoft.FSharp.targets"
+      OutputFilename="$(OutputPath)Microsoft.FSharp.targets"
+      MatchExpression="{BuildSuffix}"
+      ReplacementText="" />
+    <ReplaceFileText
+      InputFilename="Microsoft.Portable.FSharp.targets"
+      OutputFilename="$(OutputPath)Microsoft.Portable.FSharp.targets"
+      MatchExpression="{BuildSuffix}"
+      ReplacementText="" />
+  </Target>
 </Project>

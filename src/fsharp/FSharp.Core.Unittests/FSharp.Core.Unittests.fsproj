@@ -141,9 +141,14 @@
     <Compile Include="StructTuples.fs" Condition="'$(TargetFramework)' != 'portable47'" />
     <Compile Include="SurfaceArea.$(TargetFramework).fs" />
     <Compile Include="Program.fs" Condition="'$(TargetFramework)' == 'coreclr'" />
-    <Content Include="FSharp.Core.Unittests.dll.config">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <None Include="FSharp.Core.Unittests.dll.config" />
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+  <Target Name="AfterBuild">
+    <ReplaceFileText
+      InputFilename="FSharp.Core.Unittests.dll.config"
+      OutputFilename="$(OutputPath)FSharp.Core.Unittests.dll.config"
+      MatchExpression="FSCoreVersion"
+      ReplacementText="$(FSCoreVersion)" />
+  </Target>
 </Project>

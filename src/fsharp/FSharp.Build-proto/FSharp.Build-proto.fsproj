@@ -35,12 +35,12 @@
     <Compile Include="..\FSharp.Build\Fsc.fs">
       <Link>Fsc.fs</Link>
     </Compile>
-    <Content Include="Microsoft.FSharp-proto.targets">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Microsoft.Portable.FSharp-proto.targets">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <None Include="../FSharp.Build/Microsoft.FSharp.targets">
+      <Link>Microsoft.FSharp-proto.targets</Link>
+    </None>
+    <None Include="../FSharp.Build/Microsoft.Portable.FSharp.targets">
+      <Link>Microsoft.Portable.FSharp-proto.targets</Link>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
@@ -61,4 +61,16 @@
     </Reference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+  <Target Name="AfterBuild">
+    <ReplaceFileText
+      InputFilename="../FSharp.Build/Microsoft.FSharp.targets"
+      OutputFilename="$(OutputPath)Microsoft.FSharp.targets"
+      MatchExpression="{BuildSuffix}"
+      ReplacementText="-proto" />
+    <ReplaceFileText
+      InputFilename="../FSharp.Build/Microsoft.Portable.FSharp.targets"
+      OutputFilename="$(OutputPath)Microsoft.Portable.FSharp.targets"
+      MatchExpression="{BuildSuffix}"
+      ReplacementText="-proto" />
+  </Target>
 </Project>
