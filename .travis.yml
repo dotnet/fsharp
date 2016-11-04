@@ -6,7 +6,6 @@ dist: trusty
 
 os:
   - linux
-  - osx
 
 mono:
   - latest
