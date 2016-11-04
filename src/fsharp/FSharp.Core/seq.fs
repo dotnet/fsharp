@@ -16,6 +16,11 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Primitives.Basics
     open Microsoft.FSharp.Collections.IEnumerator
 
+    module Upcast =
+        // The f# compiler outputs unnecessary unbox.any calls in upcasts. If this functionality
+        // is fixed with the compiler then these functions can be removed.
+        let inline enumerable (t:#IEnumerable<'T>) : IEnumerable<'T> = (# "" t : IEnumerable<'T> #)
+
     [<Sealed>]
     type CachedSeq<'T>(cleanup,res:seq<'T>) =
         interface System.IDisposable with
@@ -34,7 +39,6 @@ namespace Microsoft.FSharp.Collections
         open Microsoft.FSharp.Core.ICloneableExtensions
 #else
 #endif
-
         let mkDelayedSeq (f: unit -> IEnumerable<'T>) = mkSeq (fun () -> f().GetEnumerator())
         let inline indexNotFound() = raise (new System.Collections.Generic.KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))
         
@@ -51,7 +55,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Unfold")>]
         let unfold (generator:'State->option<'T * 'State>) (state:'State) : seq<'T> =
             Composer.Seq.unfold generator state
-            |> Composer.Helpers.upcastEnumerable
+            |> Upcast.enumerable
 
         [<CompiledName("Empty")>]
         let empty<'T> = (EmptyEnumerable :> seq<'T>)
@@ -59,12 +63,12 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("InitializeInfinite")>]
         let initInfinite<'T> (f:int->'T) : IEnumerable<'T> =
             Composer.Seq.initInfinite f
-            |> Composer.Helpers.upcastEnumerable
+            |> Upcast.enumerable
 
         [<CompiledName("Initialize")>]
         let init<'T> (count:int) (f:int->'T) : IEnumerable<'T> =
             Composer.Seq.init count f
-            |> Composer.Helpers.upcastEnumerable
+            |> Upcast.enumerable
 
         [<CompiledName("Iterate")>]
         let iter f (source : seq<'T>) =
@@ -164,15 +168,15 @@ namespace Microsoft.FSharp.Collections
         let private seqFactory createSeqComponent (source:seq<'T>) =
             checkNonNull "source" source
             match source with
-            | :? Composer.Core.ISeq<'T> as s -> Composer.Helpers.upcastEnumerable (s.Compose createSeqComponent)
-            | :? array<'T> as a -> Composer.Helpers.upcastEnumerable (Composer.Seq.Array.create a createSeqComponent)
-            | :? list<'T> as a -> Composer.Helpers.upcastEnumerable (Composer.Seq.List.create a createSeqComponent)
-            | _ -> Composer.Helpers.upcastEnumerable (Composer.Seq.Enumerable.create source createSeqComponent)
+            | :? Composer.Core.ISeq<'T> as s -> Upcast.enumerable (s.Compose createSeqComponent)
+            | :? array<'T> as a -> Upcast.enumerable (Composer.Seq.Array.create a createSeqComponent)
+            | :? list<'T> as a -> Upcast.enumerable (Composer.Seq.List.create a createSeqComponent)
+            | _ -> Upcast.enumerable (Composer.Seq.Enumerable.create source createSeqComponent)
 
         [<CompiledName("Filter")>]
         let filter<'T> (f:'T->bool) (source:seq<'T>) : seq<'T> =
             Composer.Seq.filter f (toComposer source)
-            |> Composer.Helpers.upcastEnumerable
+            |> Upcast.enumerable
 
         [<CompiledName("Where")>]
         let where f source = filter f source
@@ -180,12 +184,12 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Map")>]
         let map<'T,'U> (f:'T->'U) (source:seq<'T>) : seq<'U> =
             Composer.Seq.map f (toComposer source)
-            |> Composer.Helpers.upcastEnumerable
+            |> Upcast.enumerable
 
         [<CompiledName("MapIndexed")>]
         let mapi f source      =
             Composer.Seq.mapi f (toComposer source)
-            |> Composer.Helpers.upcastEnumerable
+            |> Upcast.enumerable
 
         [<CompiledName("MapIndexed2")>]
         let mapi2 f source1 source2 =
@@ -196,7 +200,7 @@ namespace Microsoft.FSharp.Collections
         let map2<'T,'U,'V> (f:'T->'U->'V) (source1:seq<'T>) (source2:seq<'U>) : seq<'V> =
             checkNonNull "source1" source1
             match source1 with
-            | :? Composer.Core.ISeq<'T> as s -> Composer.Helpers.upcastEnumerable (s.Compose (Composer.Seq.Map2FirstFactory (f, source2)))
+            | :? Composer.Core.ISeq<'T> as s -> Upcast.enumerable (s.Compose (Composer.Seq.Map2FirstFactory (f, source2)))
             | _ -> source2 |> seqFactory (Composer.Seq.Map2SecondFactory (f, source1))
 
         [<CompiledName("Map3")>]
@@ -208,12 +212,12 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Choose")>]
         let choose f source =
             Composer.Seq.choose f (toComposer source)
-            |> Composer.Helpers.upcastEnumerable
+            |> Upcast.enumerable
 
         [<CompiledName("Indexed")>]
         let indexed source =
             Composer.Seq.indexed (toComposer source)
-            |> Composer.Helpers.upcastEnumerable
+            |> Upcast.enumerable
 
         [<CompiledName("Zip")>]
         let zip source1 source2  =
@@ -353,7 +357,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source2" source2
             match source1 with
             | :? Composer.Seq.Enumerable.EnumerableBase<'T> as s -> s.Append source2
-            | _ -> Composer.Helpers.upcastEnumerable (new Composer.Seq.Enumerable.AppendEnumerable<_>([source2; source1]))
+            | _ -> Upcast.enumerable (new Composer.Seq.Enumerable.AppendEnumerable<_>([source2; source1]))
 
 
         [<CompiledName("Collect")>]
@@ -397,7 +401,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("OfArray")>]
         let ofArray (source : 'T array) =
             checkNonNull "source" source
-            Composer.Helpers.upcastEnumerable (Composer.Seq.Array.createId source)
+            Upcast.enumerable (Composer.Seq.Array.createId source)
 
         [<CompiledName("ToArray")>]
         let toArray (source : seq<'T>)  =
@@ -647,7 +651,7 @@ namespace Microsoft.FSharp.Collections
                 let array = source |> toArray
                 Array.stableSortInPlaceBy keyf array
                 array
-            Composer.Helpers.upcastEnumerable (Composer.Seq.Array.createDelayedId delayedSort)
+            Upcast.enumerable (Composer.Seq.Array.createDelayedId delayedSort)
 
         [<CompiledName("Sort")>]
         let sort source =
@@ -656,7 +660,7 @@ namespace Microsoft.FSharp.Collections
                 let array = source |> toArray
                 Array.stableSortInPlace array
                 array
-            Composer.Helpers.upcastEnumerable (Composer.Seq.Array.createDelayedId delayedSort)
+            Upcast.enumerable (Composer.Seq.Array.createDelayedId delayedSort)
 
         [<CompiledName("SortWith")>]
         let sortWith f source =
@@ -665,7 +669,7 @@ namespace Microsoft.FSharp.Collections
                 let array = source |> toArray
                 Array.stableSortInPlaceWith f array
                 array
-            Composer.Helpers.upcastEnumerable (Composer.Seq.Array.createDelayedId delayedSort)
+            Upcast.enumerable (Composer.Seq.Array.createDelayedId delayedSort)
 
         [<CompiledName("SortByDescending")>]
         let inline sortByDescending keyf source =
@@ -1003,7 +1007,7 @@ namespace Microsoft.FSharp.Collections
                 let array = source |> toArray 
                 Array.Reverse array
                 array
-            Composer.Helpers.upcastEnumerable (Composer.Seq.Array.createDelayedId delayedReverse)
+            Upcast.enumerable (Composer.Seq.Array.createDelayedId delayedReverse)
 
         [<CompiledName("Permute")>]
         let permute f (source:seq<_>) =
@@ -1012,7 +1016,7 @@ namespace Microsoft.FSharp.Collections
                 source
                 |> toArray
                 |> Array.permute f
-            Composer.Helpers.upcastEnumerable (Composer.Seq.Array.createDelayedId delayedPermute)
+            Upcast.enumerable (Composer.Seq.Array.createDelayedId delayedPermute)
 
         [<CompiledName("MapFold")>]
         let mapFold<'T,'State,'Result> (f: 'State -> 'T -> 'Result * 'State) acc source =
