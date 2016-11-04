@@ -10,7 +10,6 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OutputType>Library</OutputType>
     <AssemblyName>FSharp.Compiler</AssemblyName>
-    <DefineConstants Condition="'$(TargetFramework)'=='coreclr'">$(DefineConstants);PREFERRED_UI_LANG</DefineConstants>
     <DefineConstants>EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
     <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
     <DefineConstants>INCLUDE_METADATA_READER;$(DefineConstants)</DefineConstants>

@@ -18,7 +18,7 @@
       <Choose>
         <When Condition="'$(ProjectLanguage)' == 'FSharp'">
           <Choose>
-            <When Condition="'$(AssemblyName)' == 'FSharp.Core' or '$(AssemblyName)' == 'FSharp.Build' or '$(AssemblyName)' == 'FSharp.Compiler' or '$(AssemblyName)' == 'FSharp.Compiler.Interactive.Settings' or '$(AssemblyName)' == 'FSharp.Compiler.Server.Shared' or '$(AssemblyName)' == 'fsc' or '$(AssemblyName)' == 'fsi' or '$(AssemblyName)' == 'FsiAnyCPU' or '$(AssemblyName)' == 'FSharp.Compiler.Unittests'" >
+            <When Condition="'$(AssemblyName)' == 'FSharp.Core' or '$(AssemblyName)' == 'FSharp.Build' or '$(AssemblyName)' == 'FSharp.Compiler' or '$(AssemblyName)' == 'FSharp.Compiler.Interactive.Settings' or '$(AssemblyName)' == 'FSharp.Compiler.Server.Shared' or '$(AssemblyName)' == 'fsc' or '$(AssemblyName)' == 'fsi' or '$(AssemblyName)' == 'fsiAnyCpu' or '$(AssemblyName)' == 'FSharp.Compiler.Unittests'" >
               <PropertyGroup Condition="'$(AssemblyName)' == 'FSharp.Core' and ('$(TargetFramework)' == 'portable47' or '$(TargetFramework)' == 'portable7' or '$(TargetFramework)' == 'portable78' or '$(TargetFramework)' == 'portable259' or '$(TargetFramework)' == 'coreclr')">
                  <IsPortableProfile>true</IsPortableProfile>
               </PropertyGroup>
@@ -131,6 +131,7 @@
 
   <PropertyGroup Condition="'$(TargetFramework)'=='coreclr'">
     <DefineConstants>$(DefineConstants);FSHARP_CORE_4_5</DefineConstants>
+    <DefineConstants>$(DefineConstants);PREFERRED_UI_LANG</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_BEGINEND_READWRITE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_45</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_40</DefineConstants>
