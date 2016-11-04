@@ -36,6 +36,7 @@ Then:
 results will be in ``Debug\net40\bin\...``.  This doesn't do any testing (beyond the bootstrap). You can
 run the compiler ``fsc.exe`` and F# Interactive ``fsi.exe`` by hand to test it.
 
+These steps are tested under the Linux/Mono configuration(s) in ``.travis.yml`` (Ubuntu).
 
 ### F# Compiler (Windows)
 
@@ -47,7 +48,7 @@ This is the same as
 
     build.cmd net40
 
-There are various qualifiers you can do to do more:
+There are various qualifiers:
 
     build.cmd release         -- build release (the default)
     build.cmd debug           -- build debug instead of release
