@@ -82,18 +82,6 @@ namespace Microsoft.FSharp.Collections
 
     open Core
 
-    module internal Helpers =
-      val inline avoidTailCall : boolean:bool -> bool
-      val inline upcastSeq : t: #ISeq<'T> ->  ISeq<'T>
-      val inline upcastFactory :
-        t: #ISeqFactory<'T,'U> ->  ISeqFactory<'T,'U>
-      val inline upcastEnumerable : t:#IEnumerable<'T> -> IEnumerable<'T>
-      val inline upcastEnumerator : t:#IEnumerator<'T> ->IEnumerator<'T>
-      val inline upcastEnumeratorNonGeneric :
-        t:#IEnumerator -> IEnumerator
-      val inline upcastICompletionChaining :
-        t: #ICompletionChaining ->  ICompletionChaining
-
     module internal Seq =
         [<AbstractClass>]
         type SeqComponentFactory<'T,'U> =
