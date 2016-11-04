@@ -10,9 +10,10 @@
     <RootNamespace>TupleSample</RootNamespace>
     <AssemblyName>TupleSample</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
-    <TargetFrameworkProfile>Profile7</TargetFrameworkProfile>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkProfile>Profile47</TargetFrameworkProfile>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <ProjectGuid>{224C7102-CD32-4B92-AEA7-9147F8E70E44}</ProjectGuid>
   </PropertyGroup>
   <PropertyGroup>
     <DebugType>pdbonly</DebugType>
@@ -24,7 +25,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System.ValueTuple">
-      <HintPath>..\..\..\..\..\packages\System.ValueTuple.4.0.0-rc3-24212-01\lib\netstandard1.1\System.ValueTuple.dll</HintPath>
+      <HintPath>..\..\..\..\..\packages\System.ValueTuple.4.4.0-beta-24631-01\lib\portable-net40+sl4+win8+wp8\System.ValueTuple.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
