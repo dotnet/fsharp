@@ -145,10 +145,6 @@
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <Target Name="AfterBuild">
-    <ReplaceFileText
-      InputFilename="FSharp.Core.Unittests.dll.config"
-      OutputFilename="$(OutputPath)FSharp.Core.Unittests.dll.config"
-      MatchExpression="FSCoreVersion"
-      ReplacementText="$(FSCoreVersion)" />
+	  <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec ../../buildtools/subst.fsx --in:FSharp.Core.Unittests.dll.config --out:&quot;$(OutputPath)FSharp.Core.Unittests.dll.config&quot; --pattern:&quot;FSCoreVersion&quot; --replacement:&quot;$(FSCoreVersion)&quot;" />
   </Target>
 </Project>

@@ -36,9 +36,14 @@ module Scripting =
     let argv = fsi.CommandLineArgs |> Seq.skip 1
 
     let getCmdLineArg switchName defaultValue = 
-        match argv |> Seq.filter(fun t -> t.StartsWith(switchName)) |> Seq.map(fun t -> t.Remove(0, switchName.Length).Trim()) |> Seq.tryHead with
+        match argv |> Seq.filter(fun t -> t.StartsWith(switchName)) |> Seq.map(fun t -> t.Remove(0, switchName.Length).Trim('\"').Trim()) |> Seq.tryHead with
         | Some(file) -> if file.Length <> 0 then file else defaultValue
         | _ -> defaultValue
+
+    let getCmdLineArgReqd switchName = 
+        match getCmdLineArg switchName null with 
+        | null -> failwith (sprintf "The argument %s is required" switchName)
+        | x -> x
 
     let makeDirectory output =
         if not (Directory.Exists(output)) then 

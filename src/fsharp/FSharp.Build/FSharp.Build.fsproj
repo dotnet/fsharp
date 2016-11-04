@@ -79,15 +79,8 @@
     </ItemGroup>
   </Target>
   <Target Name="AfterBuild">
-    <ReplaceFileText
-      InputFilename="Microsoft.FSharp.targets"
-      OutputFilename="$(OutputPath)Microsoft.FSharp.targets"
-      MatchExpression="{BuildSuffix}."
-      ReplacementText="." />
-    <ReplaceFileText
-      InputFilename="Microsoft.Portable.FSharp.targets"
-      OutputFilename="$(OutputPath)Microsoft.Portable.FSharp.targets"
-      MatchExpression="{BuildSuffix}."
-      ReplacementText="." />
+	  <MakeDir Directories="$(OutputPath)"/>
+	  <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec ../../buildtools/subst.fsx --in:Microsoft.FSharp.targets --out:&quot;$(OutputPath)Microsoft.FSharp.targets&quot; --pattern:&quot;{BuildSuffix}&quot; --replacement:&quot;&quot;" />
+	  <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec ../../buildtools/subst.fsx --in:Microsoft.Portable.FSharp.targets --out:&quot;$(OutputPath)Microsoft.Portable.FSharp.targets&quot; --pattern:&quot;{BuildSuffix}&quot; --replacement:&quot;&quot;" />
   </Target>
 </Project>
