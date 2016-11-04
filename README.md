@@ -30,7 +30,6 @@ This project is subject to the Apache Licence, Version 2.0. A copy of the licens
 ###Development and Testing
 
 See [DEVGUIDE.md](DEVGUIDE.md) and [TESTGUIDE.md](TESTGUIDE.md) in the root of the repo for details on build, development, and testing.
-Quickstart guides for build and test can be found [here](https://github.com/Microsoft/visualfsharp/wiki/Build-Quickstart) and [here](https://github.com/Microsoft/visualfsharp/wiki/Test-Quickstart), respectively.
  
 ###Required Tools for Windows Development and Testing
 
