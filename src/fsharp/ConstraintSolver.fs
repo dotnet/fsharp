@@ -723,7 +723,7 @@ and solveTypMeetsTyparConstraints (csenv:ConstraintSolverEnv) ndeep m2 trace ty 
       | TyparConstraint.SimpleChoice(tys,m2)          -> SolveTypChoice                     csenv ndeep m2 trace ty tys
       | TyparConstraint.CoercesTo(ty2,m2)         -> SolveTypSubsumesTypKeepAbbrevs     csenv ndeep m2 trace None ty2 ty
       | TyparConstraint.MayResolveMember(traitInfo,m2) -> 
-          SolveMemberConstraint csenv false ndeep m2 trace traitInfo ++ (fun _ -> CompleteD) 
+          SolveMemberConstraint csenv false false ndeep m2 trace traitInfo ++ (fun _ -> CompleteD) 
     )))
 
         
@@ -919,7 +919,7 @@ and SolveDimensionlessNumericType (csenv:ConstraintSolverEnv) ndeep m2 trace ty 
 /// We pretend int and other types support a number of operators.  In the actual IL for mscorlib they 
 /// don't, however the type-directed static optimization rules in the library code that makes use of this 
 /// will deal with the problem. 
-and SolveMemberConstraint (csenv:ConstraintSolverEnv) permitWeakResolution ndeep m2 trace (TTrait(tys,nm,memFlags,argtys,rty,sln)) :  OperationResult<bool> =
+and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload permitWeakResolution ndeep m2 trace (TTrait(tys,nm,memFlags,argtys,rty,sln)) :  OperationResult<bool> =
     // Do not re-solve if already solved
     if sln.Value.IsSome then ResultD true else
     let g = csenv.g
@@ -1284,7 +1284,7 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) permitWeakResolution ndeep
                   // Otherwise re-record the trait waiting for canonicalization 
                    else AddMemberConstraint csenv ndeep m2 trace traitInfo support frees) ++ (fun () -> 
                        match errors with
-                       | ErrorResult (_,UnresolvedOverloading _) when not permitWeakResolution && (not (nm = "op_Explicit" || nm = "op_Implicit")) -> ErrorD LocallyAbortOperationThatFailsToResolveOverload
+                       | ErrorResult (_,UnresolvedOverloading _) when not ignoreUnresolvedOverload && (not (nm = "op_Explicit" || nm = "op_Implicit")) -> ErrorD LocallyAbortOperationThatFailsToResolveOverload
                        | _ -> ResultD TTraitUnsolved)
     ) 
     ++ 
@@ -1435,7 +1435,7 @@ and SolveRelevantMemberConstraintsForTypar (csenv:ConstraintSolverEnv) ndeep per
 
     cxs |> AtLeastOneD (fun (traitInfo,m2) -> 
         let csenv = { csenv with m = m2 }
-        SolveMemberConstraint csenv permitWeakResolution (ndeep+1) m2 trace traitInfo)
+        SolveMemberConstraint csenv true permitWeakResolution (ndeep+1) m2 trace traitInfo)
 
 and CanonicalizeRelevantMemberConstraints (csenv:ConstraintSolverEnv) ndeep trace tps =
     SolveRelevantMemberConstraints csenv ndeep true trace tps 
@@ -2491,7 +2491,7 @@ let AddCxTypeMustSubsumeType contextInfo denv css m trace ty1 ty2 =
     |> RaiseOperationResult
 
 let AddCxMethodConstraint denv css m trace traitInfo  =
-    TryD (fun () -> SolveMemberConstraint (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) false 0 m trace traitInfo ++ (fun _ -> CompleteD))
+    TryD (fun () -> SolveMemberConstraint (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) true false 0 m trace traitInfo ++ (fun _ -> CompleteD))
          (fun res -> ErrorD (ErrorFromAddingConstraint(denv,res,m)))
     |> RaiseOperationResult
 
@@ -2546,7 +2546,7 @@ let CodegenWitnessThatTypSupportsTraitConstraint tcVal g amap m (traitInfo:Trait
                 ExtraCxs=HashMultiMap(10, HashIdentity.Structural)
                 InfoReader=new InfoReader(g,amap) }
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
-    SolveMemberConstraint csenv true 0 m NoTrace traitInfo ++ (fun _res -> 
+    SolveMemberConstraint csenv true true 0 m NoTrace traitInfo ++ (fun _res -> 
         let sln = 
               match traitInfo.Solution with 
               | None -> Choice4Of4()
