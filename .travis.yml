@@ -10,7 +10,7 @@ os:
 
 mono:
   - latest
-  - 4.4.2
+  - 4.6.1
 
 env:
   - BUILD_NET40=1 TEST_NET40_COREUNIT_SUITE=1 
