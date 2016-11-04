@@ -643,7 +643,9 @@ if '%TEST_NET40_FSHARP_SUITE%' == '1' (
 
     if NOT '!saved_errorlevel!' == '0' (
         type "!ERRORFILE!"
-        echo Error: 'Running tests net40-fsharp' failed
+        echo -----------------------------------------------------------------
+        echo Error: Running tests net40-fsharp failed, see log above -- FAILED
+        echo -----------------------------------------------------------------
         goto :failed_tests
     )
 )
@@ -735,8 +737,11 @@ if '%TEST_NET40_FSHARPQA_SUITE%' == '1' (
 	popd
     if ERRORLEVEL 1 (
         type "%RESULTSDIR%\!OUTPUTFILE!"
+        echo -----------------------------------------------------------------
         type "%RESULTSDIR%\!ERRORFILE!"
-        echo Error: 'Running tests net40-fsharpqa' failed
+        echo -----------------------------------------------------------------
+        echo Error: Running tests net40-fsharpqa failed, see logs above -- FAILED
+        echo -----------------------------------------------------------------
         goto :failed_tests
     )
 )
@@ -758,9 +763,13 @@ if '%TEST_NET40_COMPILERUNIT_SUITE%' == '1' (
 
     call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
     if NOT '!saved_errorlevel!' == '0' (
+        echo -----------------------------------------------------------------
         type "!OUTPUTFILE!"
+        echo -----------------------------------------------------------------
         type "!ERRORFILE!"
-        echo Error: 'Running tests net40-compilerunit' failed
+        echo -----------------------------------------------------------------
+        echo Error: Running tests net40-compilerunit failed, see logs above -- FAILED
+        echo -----------------------------------------------------------------
         goto :failed_tests
     )
 )
@@ -782,9 +791,13 @@ if '%TEST_NET40_COREUNIT_SUITE%' == '1' (
 
 	call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
     if NOT '!saved_errorlevel!' == '0' (
+        echo -----------------------------------------------------------------
         type "!OUTPUTFILE!"
+        echo -----------------------------------------------------------------
         type "!ERRORFILE!"
-        echo Error: 'Running tests net40-coreunit' failed 
+        echo -----------------------------------------------------------------
+        echo Error: Running tests net40-coreunit failed, see logs above -- FAILED
+        echo -----------------------------------------------------------------
         goto :failed_tests
     )
 )
@@ -807,9 +820,13 @@ if '%TEST_PORTABLE_COREUNIT_SUITE%' == '1' (
 
 	call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
     if NOT '!saved_errorlevel!' == '0' (
+        echo -----------------------------------------------------------------
         type "!OUTPUTFILE!"
+        echo -----------------------------------------------------------------
         type "!ERRORFILE!"
-        echo Error: 'Running tests portable-coreunit' failed 
+        echo -----------------------------------------------------------------
+        echo Error: Running tests portable-coreunit failed, see logs above -- FAILED
+        echo -----------------------------------------------------------------
         goto :failed_tests
     )
 )
@@ -836,9 +853,13 @@ if '%TEST_CORECLR_COREUNIT_SUITE%' == '1' (
 	rem call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
 
     if ERRORLEVEL 1 (
+        echo -----------------------------------------------------------------
         rem type "!OUTPUTFILE!"
+        echo -----------------------------------------------------------------
         rem type "!ERRORFILE!"
-        echo Error: 'Running tests coreclr-coreunit' failed 
+        echo -----------------------------------------------------------------
+        echo Error: Running tests coreclr-coreunit failed, see logs above-- FAILED
+        echo -----------------------------------------------------------------
         goto :failed_tests
     )
 )
@@ -863,9 +884,13 @@ if '%TEST_CORECLR_FSHARP_SUITE%' == '1' (
 
 	call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
     if NOT '!saved_errorlevel!' == '0' (
+        echo -----------------------------------------------------------------
         type "!OUTPUTFILE!"
+        echo -----------------------------------------------------------------
         type "!ERRORFILE!"
-        echo Error: 'Running tests coreclr-fsharp' failed 
+        echo -----------------------------------------------------------------
+        echo Error: Running tests coreclr-fsharp failed , see logs abvoe -- FAILED
+        echo -----------------------------------------------------------------
         goto :failed_tests
     )
 )
@@ -889,9 +914,13 @@ if '%TEST_VS_IDEUNIT_SUITE%' == '1' (
 	popd
 	call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
     if NOT '!saved_errorlevel!' == '0' (
+        echo -----------------------------------------------------------------
         type "!OUTPUTFILE!"
+        echo -----------------------------------------------------------------
         type "!ERRORFILE!"
-        echo Error: 'Running tests vs-ideunit' failed 
+        echo -----------------------------------------------------------------
+        echo Error: Running tests vs-ideunit failed, see logs above  -- FAILED
+        echo -----------------------------------------------------------------
         goto :failed_tests
     )
 )
