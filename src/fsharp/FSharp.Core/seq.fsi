@@ -13,75 +13,6 @@ namespace Microsoft.FSharp.Collections
     [<RequireQualifiedAccess>]
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module Seq = 
-        module Composer =
-            module Internal =
-                /// <summary>PipeIdx denotes the index of the element within the pipeline. 0 denotes the
-                /// source of the chain.</summary>
-                type PipeIdx = int
-                type ``PipeIdx?`` = Nullable<PipeIdx>
-
-                /// <summary>ICompletionChaining is used to correctly handle cleaning up of the pipeline. A
-                /// base implementation is provided in Consumer, and should not be overwritten. Consumer
-                /// provides it's own OnComplete and OnDispose function which should be used to handle
-                /// a particular consumers cleanup.</summary>
-                type ICompletionChaining =
-                    /// <summary>OnComplete is used to determine if the object has been processed correctly, 
-                    /// and possibly throw exceptions to denote incorrect application (i.e. such as a Take
-                    /// operation which didn't have a source at least as large as was required). It is
-                    /// not called in the case of an exception being thrown whilst the stream is still
-                    /// being processed.</summary>
-                    abstract OnComplete : PipeIdx -> unit
-                    /// <summary>OnDispose is used to cleanup the stream. It is always called at the last operation
-                    /// after the enumeration has completed.</summary>
-                    abstract OnDispose : unit -> unit
-
-                type IOutOfBand =
-                    abstract StopFurtherProcessing : PipeIdx -> unit
-
-                /// <summary>Consumer is the base class of all elements within the pipeline</summary>
-                [<AbstractClass>]
-                type Consumer<'T,'U> =
-                    interface ICompletionChaining
-                    new : unit -> Consumer<'T,'U>
-                    abstract member ProcessNext : input:'T -> bool
-                    abstract member OnComplete : PipeIdx -> unit
-                    abstract member OnDispose : unit -> unit
-
-                /// <summary>Values is a mutable struct. It can be embedded within the folder type
-                /// if two values are required for the calculation.</summary>
-                [<Struct; NoComparison; NoEquality>]
-                type Values<'a,'b> =
-                    new : a:'a * b:'b -> Values<'a,'b>
-                    val mutable _1: 'a
-                    val mutable _2: 'b
-
-                /// <summary>Values is a mutable struct. It can be embedded within the folder type
-                /// if three values are required for the calculation.</summary>
-                [<Struct; NoComparison; NoEquality>]
-                type Values<'a,'b,'c> =
-                    new : a:'a * b:'b * c:'c -> Values<'a,'b,'c>
-                    val mutable _1: 'a
-                    val mutable _2: 'b
-                    val mutable _3: 'c
-
-                /// <summary>Folder is a base class to assist with fold-like operations. It's intended usage
-                /// is as a base class for an object expression that will be used from within
-                /// the ForEach function.</summary>
-                [<AbstractClass>]
-                type Folder<'T,'U> =
-                    inherit Consumer<'T,'T>
-                    new : init:'U -> Folder<'T,'U>
-                    val mutable Value: 'U
-
-                type ISeqFactory<'T,'U> =
-                    abstract member Create : IOutOfBand -> ``PipeIdx?`` -> Consumer<'U,'V> -> Consumer<'T,'V>
-                    abstract member PipeIdx : PipeIdx
-
-                type ISeq<'T> =
-                    inherit System.Collections.Generic.IEnumerable<'T>
-                    abstract member Compose : ISeqFactory<'T,'U> -> ISeq<'U>
-                    abstract member ForEach : f:((unit -> unit) -> 'a) -> 'a when 'a :> Consumer<'T,'T>
-
         /// <summary>Returns a new sequence that contains the cartesian product of the two input sequences.</summary>
         /// <param name="source1">The first sequence.</param>
         /// <param name="source2">The second sequence.</param>
@@ -1273,7 +1204,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("ToComposer")>]
-        val toComposer   : source:seq<'T> -> Composer.Internal.ISeq<'T>
+        val toComposer   : source:seq<'T> -> Composer.Core.ISeq<'T>
 
         /// <summary>Builds a list from the given collection.</summary>
         ///
