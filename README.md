@@ -7,7 +7,7 @@
 
 |            |Debug (Build only)|Release (Tests Part 1)|Release (Tests Part 2)|
 |:----------:|:----------------:|:------------------:|:-----------------------:|
-|**master**  |[![Build Status](http://dotnet-ci.cloudapp.net/buildStatus/icon?job=Microsoft_visualfsharp/master/debug_windows_nt)](http://dotnet-ci.cloudapp.net/job/Microsoft_visualfsharp/job/master/job/debug_windows_nt/)|[![Build Status](http://dotnet-ci.cloudapp.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ci_part1_windows_nt)](http://dotnet-ci.cloudapp.net/job/Microsoft_visualfsharp/job/master/job/release_ci_part1_windows_nt/)|[![Build Status](http://dotnet-ci.cloudapp.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ci_part2_windows_nt)](http://dotnet-ci.cloudapp.net/job/Microsoft_visualfsharp/job/master/job/release_ci_part2_windows_nt/)|
+|**master**  |[![Build Status](https://ci.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/debug_windows_nt)](https://ci.dot.net/job/Microsoft_visualfsharp/job/master/job/debug_windows_nt/)|[![Build Status](https://ci.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ci_part1_windows_nt)](https://ci.dot.net/job/Microsoft_visualfsharp/job/master/job/release_ci_part1_windows_nt/)|[![Build Status](https://ci.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ci_part2_windows_nt)](https://ci.dot.net/job/Microsoft_visualfsharp/job/master/job/release_ci_part2_windows_nt/)|
 
 ###Contributing to the F# Language, Library, and Tools
 
