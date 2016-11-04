@@ -14,7 +14,6 @@ namespace Microsoft.FSharp.Collections
         /// <summary>PipeIdx denotes the index of the element within the pipeline. 0 denotes the
         /// source of the chain.</summary>
         type PipeIdx = int
-        type ``PipeIdx?`` = Nullable<PipeIdx>
 
         /// <summary>ICompletionChaining is used to correctly handle cleaning up of the pipeline. A
         /// base implementation is provided in Consumer, and should not be overwritten. Consumer
@@ -26,10 +25,10 @@ namespace Microsoft.FSharp.Collections
             /// operation which didn't have a source at least as large as was required). It is
             /// not called in the case of an exception being thrown whilst the stream is still
             /// being processed.</summary>
-            abstract OnComplete : PipeIdx -> unit
+            abstract OnComplete : stopTailCall:byref<unit>*PipeIdx -> unit
             /// <summary>OnDispose is used to cleanup the stream. It is always called at the last operation
             /// after the enumeration has completed.</summary>
-            abstract OnDispose : unit -> unit
+            abstract OnDispose : stopTailCall:byref<unit> -> unit
 
         type IOutOfBand =
             abstract StopFurtherProcessing : PipeIdx -> unit
@@ -71,204 +70,160 @@ namespace Microsoft.FSharp.Collections
             new : init:'U -> Folder<'T,'U>
             val mutable Value: 'U
 
-        type ISeqFactory<'T,'U> =
-            abstract member Create : IOutOfBand -> ``PipeIdx?`` -> Consumer<'U,'V> -> Consumer<'T,'V>
-            abstract member PipeIdx : PipeIdx
+        [<AbstractClass>]
+        type SeqFactory<'T,'U> =
+            new : unit -> SeqFactory<'T,'U>
+            abstract PipeIdx : PipeIdx
+            abstract member Create : IOutOfBand -> PipeIdx -> Consumer<'U,'V> -> Consumer<'T,'V>
 
         type ISeq<'T> =
             inherit System.Collections.Generic.IEnumerable<'T>
-            abstract member Compose : ISeqFactory<'T,'U> -> ISeq<'U>
+            abstract member Compose : SeqFactory<'T,'U> -> ISeq<'U>
             abstract member ForEach : f:((unit -> unit) -> 'a) -> 'a when 'a :> Consumer<'T,'T>
 
     open Core
 
-    module internal Helpers =
-      val inline avoidTailCall : boolean:bool -> bool
-      val inline upcastSeq : t: #ISeq<'T> ->  ISeq<'T>
-      val inline upcastFactory :
-        t: #ISeqFactory<'T,'U> ->  ISeqFactory<'T,'U>
-      val inline upcastEnumerable : t:#IEnumerable<'T> -> IEnumerable<'T>
-      val inline upcastEnumerator : t:#IEnumerator<'T> ->IEnumerator<'T>
-      val inline upcastEnumeratorNonGeneric :
-        t:#IEnumerator -> IEnumerator
-      val inline upcastICompletionChaining :
-        t: #ICompletionChaining ->  ICompletionChaining
-
     module internal Seq =
-        [<AbstractClass>]
-        type SeqComponentFactory<'T,'U> =
+        type ComposedFactory<'T,'U,'V> =
           class
-            interface  ISeqFactory<'T,'U>
-            new : unit ->  SeqComponentFactory<'T,'U>
-            new : pipeIdx: ``PipeIdx?`` ->
-                     SeqComponentFactory<'T,'U>
-          end
-        and ComposedFactory<'T,'U,'V> =
-          class
-            inherit  SeqComponentFactory<'T,'V>
-            interface  ISeqFactory<'T,'V>
-            private new : first: ISeqFactory<'T,'U> *
-                          second: ISeqFactory<'U,'V> *
+            inherit  SeqFactory<'T,'V>
+            private new : first: SeqFactory<'T,'U> *
+                          second: SeqFactory<'U,'V> *
                           secondPipeIdx: PipeIdx ->
                              ComposedFactory<'T,'U,'V>
             static member
-              Combine : first: ISeqFactory<'T,'U> ->
-                          second: ISeqFactory<'U,'V> ->
-                             ISeqFactory<'T,'V>
+              Combine : first: SeqFactory<'T,'U> ->
+                          second: SeqFactory<'U,'V> ->
+                             SeqFactory<'T,'V>
           end
         and ChooseFactory<'T,'U> =
           class
-            inherit  SeqComponentFactory<'T,'U>
-            interface  ISeqFactory<'T,'U>
+            inherit  SeqFactory<'T,'U>
             new : filter:('T -> 'U option) ->  ChooseFactory<'T,'U>
           end
         and DistinctFactory<'T when 'T : equality> =
           class
-            inherit  SeqComponentFactory<'T,'T>
-            interface  ISeqFactory<'T,'T>
+            inherit  SeqFactory<'T,'T>
             new : unit ->  DistinctFactory<'T>
           end
         and DistinctByFactory<'T,'Key when 'Key : equality> =
           class
-            inherit  SeqComponentFactory<'T,'T>
-            interface  ISeqFactory<'T,'T>
+            inherit  SeqFactory<'T,'T>
             new : keyFunction:('T -> 'Key) ->  DistinctByFactory<'T,'Key>
           end
         and ExceptFactory<'T when 'T : equality> =
           class
-            inherit  SeqComponentFactory<'T,'T>
-            interface  ISeqFactory<'T,'T>
+            inherit  SeqFactory<'T,'T>
             new : itemsToExclude:seq<'T> ->  ExceptFactory<'T>
-          end
-        and FilterFactory<'T> =
-          class
-            inherit  SeqComponentFactory<'T,'T>
-            interface  ISeqFactory<'T,'T>
-            new : filter:('T -> bool) ->  FilterFactory<'T>
           end
         and IdentityFactory<'T> =
           class
-            inherit  SeqComponentFactory<'T,'T>
-            interface  ISeqFactory<'T,'T>
+            inherit  SeqFactory<'T,'T>
             new : unit ->  IdentityFactory<'T>
-            static member Instance :  IdentityFactory<'T>
-          end
-        and MapFactory<'T,'U> =
-          class
-            inherit  SeqComponentFactory<'T,'U>
-            interface  ISeqFactory<'T,'U>
-            new : map:('T -> 'U) ->  MapFactory<'T,'U>
+            static member Instance :  SeqFactory<'T,'T>
           end
         and Map2FirstFactory<'First,'Second,'U> =
           class
-            inherit  SeqComponentFactory<'First,'U>
-            interface  ISeqFactory<'First,'U>
+            inherit  SeqFactory<'First,'U>
             new : map:('First -> 'Second -> 'U) *
                   input2:IEnumerable<'Second> ->
                      Map2FirstFactory<'First,'Second,'U>
           end
         and Map2SecondFactory<'First,'Second,'U> =
           class
-            inherit  SeqComponentFactory<'Second,'U>
-            interface  ISeqFactory<'Second,'U>
+            inherit  SeqFactory<'Second,'U>
             new : map:('First -> 'Second -> 'U) *
                   input1:IEnumerable<'First> ->
                      Map2SecondFactory<'First,'Second,'U>
           end
         and Map3Factory<'First,'Second,'Third,'U> =
           class
-            inherit  SeqComponentFactory<'First,'U>
-            interface  ISeqFactory<'First,'U>
+            inherit  SeqFactory<'First,'U>
             new : map:('First -> 'Second -> 'Third -> 'U) *
                   input2:IEnumerable<'Second> *
                   input3:IEnumerable<'Third> ->
                      Map3Factory<'First,'Second,'Third,'U>
           end
-        and MapiFactory<'T,'U> =
-          class
-            inherit  SeqComponentFactory<'T,'U>
-            interface  ISeqFactory<'T,'U>
-            new : mapi:(int -> 'T -> 'U) ->  MapiFactory<'T,'U>
-          end
         and Mapi2Factory<'First,'Second,'U> =
           class
-            inherit  SeqComponentFactory<'First,'U>
-            interface  ISeqFactory<'First,'U>
+            inherit  SeqFactory<'First,'U>
             new : map:(int -> 'First -> 'Second -> 'U) *
                   input2:IEnumerable<'Second> ->
                      Mapi2Factory<'First,'Second,'U>
           end
         and PairwiseFactory<'T> =
           class
-            inherit  SeqComponentFactory<'T,('T * 'T)>
-            interface  ISeqFactory<'T,('T * 'T)>
+            inherit  SeqFactory<'T,('T * 'T)>
             new : unit ->  PairwiseFactory<'T>
           end
         and ScanFactory<'T,'State> =
           class
-            inherit  SeqComponentFactory<'T,'State>
-            interface  ISeqFactory<'T,'State>
+            inherit  SeqFactory<'T,'State>
             new : folder:('State -> 'T -> 'State) * initialState:'State ->
                      ScanFactory<'T,'State>
           end
         and SkipFactory<'T> =
           class
-            inherit  SeqComponentFactory<'T,'T>
-            interface  ISeqFactory<'T,'T>
-            new : count:int ->  SkipFactory<'T>
+            inherit  SeqFactory<'T,'T>
+            new : count:int * notEnoughElements:(string->array<obj>->unit) -> SkipFactory<'T>
           end
         and SkipWhileFactory<'T> =
           class
-            inherit  SeqComponentFactory<'T,'T>
-            interface  ISeqFactory<'T,'T>
+            inherit  SeqFactory<'T,'T>
             new : predicate:('T -> bool) ->  SkipWhileFactory<'T>
           end
         and TakeWhileFactory<'T> =
           class
-            inherit  SeqComponentFactory<'T,'T>
-            interface  ISeqFactory<'T,'T>
+            inherit  SeqFactory<'T,'T>
             new : predicate:('T -> bool) ->  TakeWhileFactory<'T>
           end
         and TakeFactory<'T> =
           class
-            inherit  SeqComponentFactory<'T,'T>
-            interface  ISeqFactory<'T,'T>
+            inherit  SeqFactory<'T,'T>
             new : count:int ->  TakeFactory<'T>
           end
         and TailFactory<'T> =
           class
-            inherit  SeqComponentFactory<'T,'T>
-            interface  ISeqFactory<'T,'T>
+            inherit  SeqFactory<'T,'T>
             new : unit ->  TailFactory<'T>
           end
         and TruncateFactory<'T> =
           class
-            inherit  SeqComponentFactory<'T,'T>
-            interface  ISeqFactory<'T,'T>
+            inherit  SeqFactory<'T,'T>
             new : count:int ->  TruncateFactory<'T>
           end
         and WindowedFactory<'T> =
           class
-            inherit  SeqComponentFactory<'T,'T []>
-            interface  ISeqFactory<'T,'T []>
+            inherit  SeqFactory<'T,'T []>
             new : windowSize:int ->  WindowedFactory<'T>
           end
+        and ISkipping =
+          interface
+            abstract member Skipping : unit -> bool
+          end
+
+        and [<AbstractClass>] SeqComponentSimple<'T,'U> =
+          class
+            inherit Consumer<'T,'U>
+            interface ICompletionChaining
+            new : next:ICompletionChaining -> SeqComponentSimple<'T,'U>
+          end
+
+        and [<AbstractClass>] SeqComponentSimpleValue<'T,'U,'Value> =
+          class
+            inherit SeqComponentSimple<'T,'U>
+            val mutable Value : 'Value
+            new : next:ICompletionChaining*value:'Value -> SeqComponentSimpleValue<'T,'U,'Value>
+          end
+
         and [<AbstractClass>] SeqComponent<'T,'U> =
           class
-            inherit  Consumer<'T,'U>
-            interface  ICompletionChaining
-            new : next: ICompletionChaining ->
-                     SeqComponent<'T,'U>
-            abstract member
-              CreateFilter : filter:('T -> bool) ->  SeqComponent<'T,'U>
-            abstract member
-              CreateMap : map:('S -> 'T) ->  SeqComponent<'S,'U>
-            abstract member Skipping : unit -> bool
-            override
-              CreateFilter : filter:('T -> bool) ->  SeqComponent<'T,'U>
-            override CreateMap : map:('S -> 'T) ->  SeqComponent<'S,'U>
-            override Skipping : unit -> bool
+            inherit Consumer<'T,'U>
+            interface ICompletionChaining
+            new : next:ICompletionChaining ->
+                    SeqComponent<'T,'U>
           end
+
         and Choose<'T,'U,'V> =
           class
             inherit  SeqComponent<'T,'V>
@@ -294,31 +249,6 @@ namespace Microsoft.FSharp.Collections
             inherit  SeqComponent<'T,'V>
             new : itemsToExclude:seq<'T> * next: Consumer<'T,'V> ->
                      Except<'T,'V>
-            override ProcessNext : input:'T -> bool
-          end
-        and Filter<'T,'V> =
-          class
-            inherit  SeqComponent<'T,'V>
-            new : filter:('T -> bool) * next: Consumer<'T,'V> ->
-                     Filter<'T,'V>
-            override CreateMap : map:('S -> 'T) ->  SeqComponent<'S,'V>
-            override ProcessNext : input:'T -> bool
-          end
-        and FilterThenMap<'T,'U,'V> =
-          class
-            inherit  SeqComponent<'T,'V>
-            new : filter:('T -> bool) * map:('T -> 'U) *
-                  next: Consumer<'U,'V> ->
-                     FilterThenMap<'T,'U,'V>
-            override ProcessNext : input:'T -> bool
-          end
-        and Map<'T,'U,'V> =
-          class
-            inherit  SeqComponent<'T,'V>
-            new : map:('T -> 'U) * next: Consumer<'U,'V> ->
-                     Map<'T,'U,'V>
-            override
-              CreateFilter : filter:('T -> bool) ->  SeqComponent<'T,'V>
             override ProcessNext : input:'T -> bool
           end
         and Map2First<'First,'Second,'U,'V> =
@@ -355,21 +285,6 @@ namespace Microsoft.FSharp.Collections
             override OnDispose : unit -> unit
             override ProcessNext : input:'First -> bool
           end
-        and MapThenFilter<'T,'U,'V> =
-          class
-            inherit  SeqComponent<'T,'V>
-            new : map:('T -> 'U) * filter:('U -> bool) *
-                  next: Consumer<'U,'V> ->
-                     MapThenFilter<'T,'U,'V>
-            override ProcessNext : input:'T -> bool
-          end
-        and Mapi<'T,'U,'V> =
-          class
-            inherit  SeqComponent<'T,'V>
-            new : mapi:(int -> 'T -> 'U) * next: Consumer<'U,'V> ->
-                     Mapi<'T,'U,'V>
-            override ProcessNext : input:'T -> bool
-          end
         and Mapi2<'First,'Second,'U,'V> =
           class
             inherit  SeqComponent<'First,'V>
@@ -399,11 +314,11 @@ namespace Microsoft.FSharp.Collections
         and Skip<'T,'V> =
           class
             inherit  SeqComponent<'T,'V>
-            new : skipCount:int * next: Consumer<'T,'V> ->
+            interface ISkipping
+            new : skipCount:int * exceptionOnNotEnoughElements:(string->array<obj>->unit) * next: Consumer<'T,'V> ->
                      Skip<'T,'V>
             override OnComplete :  PipeIdx -> unit
             override ProcessNext : input:'T -> bool
-            override Skipping : unit -> bool
           end
         and SkipWhile<'T,'V> =
           class
@@ -504,7 +419,7 @@ namespace Microsoft.FSharp.Collections
                   consumer: Consumer<'T,'U> -> unit
           val execute :
             f:((unit -> unit) -> 'a) ->
-              current: ISeqFactory<'T,'U> ->
+              current: SeqFactory<'T,'U> ->
                 executeOn:( OutOfBand ->  Consumer<'T,'U> ->
                              unit) -> 'a when 'a :>  Consumer<'U,'U>
         end
@@ -558,7 +473,7 @@ namespace Microsoft.FSharp.Collections
               interface  ISeq<'U>
               interface IEnumerable<'U>
               new : enumerable:IEnumerable<'T> *
-                    current: ISeqFactory<'T,'U> ->
+                    current: SeqFactory<'T,'U> ->
                        Enumerable<'T,'U>
             end
           and ConcatEnumerator<'T,'Collection when 'Collection :> seq<'T>> =
@@ -589,7 +504,7 @@ namespace Microsoft.FSharp.Collections
             end
           val create :
             enumerable:IEnumerable<'a> ->
-              current: ISeqFactory<'a,'b> ->  ISeq<'b>
+              current: SeqFactory<'a,'b> ->  ISeq<'b>
         end
         module EmptyEnumerable = begin
           type Enumerable<'T> =
@@ -618,15 +533,15 @@ namespace Microsoft.FSharp.Collections
               interface  ISeq<'U>
               interface IEnumerable<'U>
               new : delayedArray:(unit -> 'T array) *
-                    current: ISeqFactory<'T,'U> ->
+                    current: SeqFactory<'T,'U> ->
                        Enumerable<'T,'U>
             end
           val createDelayed :
             delayedArray:(unit -> 'T array) ->
-              current: ISeqFactory<'T,'U> ->  ISeq<'U>
+              current: SeqFactory<'T,'U> ->  ISeq<'U>
           val create :
             array:'T array ->
-              current: ISeqFactory<'T,'U> ->  ISeq<'U>
+              current: SeqFactory<'T,'U> ->  ISeq<'U>
           val createDelayedId :
             delayedArray:(unit -> 'T array) ->  ISeq<'T>
           val createId : array:'T array ->  ISeq<'T>
@@ -644,12 +559,12 @@ namespace Microsoft.FSharp.Collections
               inherit  Enumerable.EnumerableBase<'U>
               interface  ISeq<'U>
               interface IEnumerable<'U>
-              new : alist:'T list * current: ISeqFactory<'T,'U> ->
+              new : alist:'T list * current: SeqFactory<'T,'U> ->
                        Enumerable<'T,'U>
             end
           val create :
             alist:'a list ->
-              current: ISeqFactory<'a,'b> ->  ISeq<'b>
+              current: SeqFactory<'a,'b> ->  ISeq<'b>
         end
         module Unfold = begin
           type Enumerator<'T,'U,'State> =
@@ -667,7 +582,7 @@ namespace Microsoft.FSharp.Collections
               interface  ISeq<'U>
               interface IEnumerable<'U>
               new : generator:('GeneratorState -> ('T * 'GeneratorState) option) *
-                    state:'GeneratorState * current: ISeqFactory<'T,'U> ->
+                    state:'GeneratorState * current: SeqFactory<'T,'U> ->
                        Enumerable<'T,'U,'GeneratorState>
             end
         end
@@ -687,7 +602,7 @@ namespace Microsoft.FSharp.Collections
               interface  ISeq<'U>
               interface IEnumerable<'U>
               new : count:Nullable<int> * f:(int -> 'T) *
-                    current: ISeqFactory<'T,'U> ->
+                    current: SeqFactory<'T,'U> ->
                        Enumerable<'T,'U>
             end
           val upto :
@@ -707,9 +622,6 @@ namespace Microsoft.FSharp.Collections
         val inline foreach :
           f:((unit -> unit) -> 'a) -> source: ISeq<'b> -> 'a
             when 'a :>  Consumer<'b,'b>
-        val inline compose :
-          factory: ISeqFactory<'T,'a> ->
-            source: ISeq<'T> ->  ISeq<'a>
         [<CompiledNameAttribute ("Empty")>]
         val empty<'T> :  ISeq<'T>
         [<CompiledNameAttribute ("Unfold")>]
@@ -722,6 +634,8 @@ namespace Microsoft.FSharp.Collections
         val init : count:int -> f:(int -> 'T) ->  ISeq<'T>
         [<CompiledNameAttribute ("Iterate")>]
         val iter : f:('T -> unit) -> source: ISeq<'T> -> unit
+        [<CompiledNameAttribute ("TryHead")>]
+        val tryHead : source: ISeq<'T> -> 'T option
         [<CompiledNameAttribute ("TryItem")>]
         val tryItem : i:int -> source: ISeq<'T> -> 'T option
         [<CompiledNameAttribute ("IterateIndexed")>]
@@ -733,22 +647,24 @@ namespace Microsoft.FSharp.Collections
           element:'T -> source: ISeq<'T> -> bool when 'T : equality
         [<CompiledNameAttribute ("ForAll")>]
         val forall : f:('T -> bool) -> source: ISeq<'T> -> bool
-        [<CompiledNameAttribute ("Filter")>]
-        val filter :
-          f:('T -> bool) -> source: ISeq<'T> ->  ISeq<'T>
-        [<CompiledNameAttribute ("Map")>]
-        val map :
-          f:('T -> 'U) -> source: ISeq<'T> ->  ISeq<'U>
+        
+        [<CompiledName "Filter">]
+        val inline filter : f:('T -> bool) -> source: ISeq<'T> ->  ISeq<'T>
+
+        [<CompiledName "Map">]
+        val inline map : f:('T -> 'U) -> source: ISeq<'T> ->  ISeq<'U>
+          
         [<CompiledNameAttribute ("MapIndexed")>]
-        val mapi :
-          f:(int -> 'a -> 'b) ->
-            source: ISeq<'a> ->  ISeq<'b>
+        val inline mapi : f:(int->'a->'b) -> source: ISeq<'a> -> ISeq<'b>
+
+        val mapi_adapt : f:OptimizedClosures.FSharpFunc<int,'a,'b> -> source: ISeq<'a> -> ISeq<'b>
+
         [<CompiledNameAttribute ("Choose")>]
-        val choose :
-          f:('a -> 'b option) ->
-            source: ISeq<'a> ->  ISeq<'b>
+        val choose : f:('a->option<'b>) -> source: ISeq<'a> -> ISeq<'b>
+
         [<CompiledNameAttribute ("Indexed")>]
-        val indexed : source: ISeq<'a> ->  ISeq<int * 'a>
+        val inline indexed : source: ISeq<'a> -> ISeq<int * 'a>
+
         [<CompiledNameAttribute ("TryPick")>]
         val tryPick :
           f:('T -> 'U option) -> source: ISeq<'T> -> Option<'U>
