@@ -744,6 +744,12 @@ and SolveTypEqualsTyp (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace
     let sty1 = stripTyEqnsA csenv.g canShortcut ty1
     let sty2 = stripTyEqnsA csenv.g canShortcut ty2
 
+    match cxsln with
+    | Some (traitInfo, traitSln) when traitInfo.Solution.IsNone -> 
+        // If this is an overload resolution at this point it's safe to assume the candidate member being evaluated solves this member constraint.
+        TransactMemberConstraintSolution traitInfo trace traitSln
+    | _ -> ()
+
     match sty1, sty2 with 
     // type vars inside forall-types may be alpha-equivalent 
     | TType_var tp1, TType_var tp2 when  typarEq tp1 tp2 || (aenv.EquivTypars.ContainsKey tp1  && typeEquiv g aenv.EquivTypars.[tp1] ty2) -> CompleteD
