@@ -11,8 +11,10 @@ mono .nuget/NuGet.exe restore packages.config -PackagesDirectory packages -Confi
 (if test x-$BUILD_PROTO_WITH_CORECLR_LKG = x-1; then cd lkg/fsc &&  dotnet restore --packages ../packages && dotnet publish project.json -o ../Tools/lkg -r ubuntu.14.04-x64; fi)
 (if test x-$BUILD_PROTO_WITH_CORECLR_LKG = x-1; then cd lkg/fsi &&  dotnet restore --packages ../packages && dotnet publish project.json -o ../Tools/lkg -r ubuntu.14.04-x64; fi)
 
-#TODO: check if this is needed
+#TODO: work out how to avoid the need for this
 chmod u+x packages/FSharp.Compiler.Tools.4.0.1.19/tools/fsi.exe 
+chmod u+x packages/FsLexYacc.7.0.1/build/fslex.exe
+chmod u+x packages/FsLexYacc.7.0.1/build/fsyacc.exe
 
 # The FSharp.Compiler.Tools package doesn't work correctly unless a proper install of F# has been done on the machine
 sudo apt-get install fsharp

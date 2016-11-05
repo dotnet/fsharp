@@ -137,16 +137,15 @@ let xmlBoilerPlateString = @"<?xml version=""1.0"" encoding=""utf-8""?>
 
 // The kinds of 'holes' we can do
 type HoleType =
-    | Int = 0     // %d
-    | String = 1  // %s
-    | Float = 2   // %f
+    | Int      // %d
+    | String   // %s
+    | Float    // %f
 
 let HoleTypeToString this =    
     match this with
     | HoleType.Int -> "System.Int32"
     | HoleType.String -> "System.String"
     | HoleType.Float -> "System.Double"
-    | _ -> failwith "impossible"
         
 let ComputeHoles filename lineNum (txt:string) : HoleType[] * string =
     // takes in a %d%s kind of string, returns array of HoleType and {0}{1} kind of string
@@ -411,8 +410,7 @@ let RunMain(filename, outFilename, outXmlFilenameOpt, projectNameOpt) =
                     acc + match holeType with 
                             | HoleType.Int -> ",,,%d" 
                             | HoleType.Float -> ",,,%f" 
-                            | HoleType.String -> ",,,%s"
-                            | _ -> failwith "Impossible HoleType") "") + ",,,"
+                            | HoleType.String -> ",,,%s") "") + ",,,"
             let errPrefix = match optErrNum with
                             | None -> ""
                             | Some n -> sprintf "%d, " n
@@ -480,5 +478,5 @@ let Main args =
         printfn "Usage: <INPUTFILE> <OUTPUTFILE> <OUTXMLFILE> <PROJECTNAME>"
         1
 
-printfn "args = %A" fsi.CommandLineArgs
+printfn "fssrgen: args = %A" fsi.CommandLineArgs
 Main fsi.CommandLineArgs
