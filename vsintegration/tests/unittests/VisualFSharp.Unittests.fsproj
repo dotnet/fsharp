@@ -108,9 +108,13 @@
     <Compile Include="GoToDefinitionServiceTests.fs">
       <Link>Roslyn\GoToDefinition\GoToDefinitionServiceTests.fs</Link>
     </Compile>
-    <Content Include="VisualFSharp.Unittests.dll.config">
-		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <CopyAndSubstituteText Include="VisualFSharp.Unittests.dll.config">
+		<TargetFilename>VisualFSharp.Unittests.dll.config</TargetFilename>
+		<Pattern1>{VisualStudioVersion}</Pattern1>
+		<Replacement1>$(VisualStudioVersion)</Replacement1>
+		<Patttern2>{FinalDir}</Patttern2>
+		<Replacement2>$([System.IO.Path]::GetFullPath('$(OutputPath)'))\</Replacement2>
+	</CopyAndSubstituteText>
     <None Include="app.runsettings" />
   </ItemGroup>
   <ItemGroup>
@@ -279,10 +283,4 @@
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <Import Project="$(FSharpSourcesRoot)\..\vsintegration\vsintegration.targets" />
-  <Target Name="CopyToBuiltBin" BeforeTargets="BuiltProjectOutputGroup" AfterTargets="CoreCompile" >
-	<!-- Replace {VisuaStudioVersion} in the generated file -->
-	<Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec ../../scripts/subst.fsx --in:&quot;$(OutputPath)VisualFSharp.Unittests.dll.config&quot; --out:&quot;$(OutputPath)VisualFSharp.Unittests.dll.config&quot; --pattern:{VisualStudioVersion} --replacement:$(VisualStudioVersion) " />
-	<!-- Replace {FinalDir} -->
-	<Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec ../../scripts/subst.fsx --in:&quot;$(OutputPath)VisualFSharp.Unittests.dll.config&quot;--out:&quot;$(OutputPath)VisualFSharp.Unittests.dll.config&quot; --pattern:{FinalDir} --replacement:&quot;$([System.IO.Path]::GetFullPath('$(OutputPath)'))\&quot; " />
-  </Target>
 </Project>

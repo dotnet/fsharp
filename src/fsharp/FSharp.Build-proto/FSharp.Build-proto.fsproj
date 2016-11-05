@@ -35,12 +35,18 @@
     <Compile Include="..\FSharp.Build\Fsc.fs">
       <Link>Fsc.fs</Link>
     </Compile>
-    <None Include="../FSharp.Build/Microsoft.FSharp.targets">
-      <Link>Microsoft.FSharp-proto.targets</Link>
-    </None>
-    <None Include="../FSharp.Build/Microsoft.Portable.FSharp.targets">
-      <Link>Microsoft.Portable.FSharp-proto.targets</Link>
-    </None>
+    <CopyAndSubstituteText Include="..\FSharp.Build\Microsoft.FSharp.targets">
+		<Link>Microsoft.FSharp-proto.targets</Link>
+		<TargetFilename>Microsoft.FSharp-proto.targets</TargetFilename>
+		<Pattern1>{BuildSuffix}</Pattern1>
+		<Replacement1>-proto</Replacement1>
+	</CopyAndSubstituteText>
+	<CopyAndSubstituteText Include="..\FSharp.Build\Microsoft.Portable.FSharp.targets">
+		<Link>Microsoft.Portable.FSharp-proto.targets</Link>
+		<TargetFilename>Microsoft.Portable.FSharp-proto.targets</TargetFilename>
+		<Pattern1>{BuildSuffix}</Pattern1>
+		<Replacement1>-proto</Replacement1>
+    </CopyAndSubstituteText>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
@@ -61,10 +67,4 @@
     </Reference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
-  <Target Name="CopyToBuiltBin" BeforeTargets="BuiltProjectOutputGroup" AfterTargets="CoreCompile" >
-	  <!-- Replace {BuildSuffix}, add -proto suffix to filename -->
-	  <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec ../../scripts/subst.fsx --in:../FSharp.Build/Microsoft.FSharp.targets --out:&quot;$(OutputPath)Microsoft.FSharp-proto.targets&quot; --pattern:&quot;{BuildSuffix}&quot; --replacement:&quot;-proto&quot;" />
-	  <!-- Replace {BuildSuffix}, add -proto suffix to filename -->
-	  <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec ../../scripts/subst.fsx --in:../FSharp.Build/Microsoft.Portable.FSharp.targets --out:&quot;$(OutputPath)Microsoft.Portable.FSharp-proto.targets&quot; --pattern:&quot;{BuildSuffix}&quot; --replacement:&quot;-proto&quot;" />
-  </Target>
 </Project>
