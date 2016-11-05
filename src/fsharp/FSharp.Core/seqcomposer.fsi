@@ -203,7 +203,7 @@ namespace Microsoft.FSharp.Collections
           class
             inherit  SeqComponentFactory<'T,'T>
             interface  ISeqFactory<'T,'T>
-            new : count:int ->  SkipFactory<'T>
+            new : count:int * notEnoughElements:(string->array<obj>->unit) -> SkipFactory<'T>
           end
         and SkipWhileFactory<'T> =
           class
@@ -387,7 +387,7 @@ namespace Microsoft.FSharp.Collections
         and Skip<'T,'V> =
           class
             inherit  SeqComponent<'T,'V>
-            new : skipCount:int * next: Consumer<'T,'V> ->
+            new : skipCount:int * exceptionOnNotEnoughElements:(string->array<obj>->unit) * next: Consumer<'T,'V> ->
                      Skip<'T,'V>
             override OnComplete :  PipeIdx -> unit
             override ProcessNext : input:'T -> bool
@@ -710,6 +710,8 @@ namespace Microsoft.FSharp.Collections
         val init : count:int -> f:(int -> 'T) ->  ISeq<'T>
         [<CompiledNameAttribute ("Iterate")>]
         val iter : f:('T -> unit) -> source: ISeq<'T> -> unit
+        [<CompiledNameAttribute ("TryHead")>]
+        val tryHead : source: ISeq<'T> -> 'T option
         [<CompiledNameAttribute ("TryItem")>]
         val tryItem : i:int -> source: ISeq<'T> -> 'T option
         [<CompiledNameAttribute ("IterateIndexed")>]
