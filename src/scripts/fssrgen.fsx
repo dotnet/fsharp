@@ -1,11 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-let JustPrintErr(filename, line, msg) =
+let PrintErr(filename, line, msg) =
     printfn "%s(%d): error : %s" filename line msg
         
-/// Err(filename, line, msg)
 let Err(filename, line, msg) =
-    JustPrintErr(filename, line, msg)
+    PrintErr(filename, line, msg)
     printfn "Note that the syntax of each line is one of these three alternatives:"
     printfn "# comment"
     printfn "ident,\"string\""
@@ -347,12 +346,16 @@ let RunMain(filename, outFilename, outXmlFilenameOpt, projectNameOpt) =
         if justfilename |> Seq.exists (fun c -> not(System.Char.IsLetterOrDigit(c))) then
             Err(filename, 0, sprintf "The filename '%s' is not allowed; only letters and digits can be used, as the filename also becomes the namespace for the SR class" justfilename)
 
+        printfn "fssrgen.fsx: Reading %s" filename 
         let lines = System.IO.File.ReadAllLines(filename) 
                     |> Array.mapi (fun i s -> i,s) // keep line numbers
                     |> Array.filter (fun (i,s) -> not(s.StartsWith "#"))  // filter out comments
+
+        printfn "fssrgen.fsx: Parsing %s" filename 
         let stringInfos = lines |> Array.map (fun (i,s) -> ParseLine filename i s)
         // now we have array of (lineNum, ident, str, holes, netFormatString)  // str has %d, netFormatString has {0}
             
+        printfn "fssrgen.fsx: Validating %s" filename 
         // validate that all the idents are unique
         let allIdents = new System.Collections.Generic.Dictionary<string,int>()
         for (line,(_,ident),_,_,_) in stringInfos do
@@ -360,6 +363,7 @@ let RunMain(filename, outFilename, outXmlFilenameOpt, projectNameOpt) =
                 Err(filename,line,sprintf "Identifier '%s' is already used previously on line %d - each identifier must be unique" ident allIdents.[ident])
             allIdents.Add(ident,line)
             
+        printfn "fssrgen.fsx: Validating uniqueness of %s" filename 
         // validate that all the strings themselves are unique
         let allStrs = new System.Collections.Generic.Dictionary<string,(int*string)>()
         for (line,(_,ident),str,_,_) in stringInfos do
@@ -368,6 +372,7 @@ let RunMain(filename, outFilename, outXmlFilenameOpt, projectNameOpt) =
                 Err(filename,line,sprintf "String '%s' already appears on line %d with identifier '%s' - each string must be unique" str prevLine prevIdent)
             allStrs.Add(str,(line,ident))
             
+        printfn "fssrgen.fsx: Generating %s" outFilename
         use outStream = System.IO.File.Create outFilename
         use out = new System.IO.StreamWriter(outStream)
         fprintfn out "// This is a generated file; the original input is '%s'" filename
@@ -380,6 +385,7 @@ let RunMain(filename, outFilename, outXmlFilenameOpt, projectNameOpt) =
             let theResourceName = match projectNameOpt with Some p -> sprintf "%s.%s" p justfilename | None -> justfilename
             fprintfn out "%s" (StringBoilerPlate theResourceName)
 
+        printfn "fssrgen.fsx: Generating resource methods for %s" outFilename
         // gen each resource method
         stringInfos |> Seq.iter (fun (lineNum, (optErrNum,ident), str, holes, netFormatString) ->
             let formalArgs = new System.Text.StringBuilder()
@@ -416,6 +422,7 @@ let RunMain(filename, outFilename, outXmlFilenameOpt, projectNameOpt) =
             )
 
         if Option.isSome outXmlFilenameOpt then
+            printfn "fssrgen.fsx: Generating .resx for %s" outFilename
             fprintfn out ""
             // gen validation method
             fprintfn out "    /// Call this method once to validate that all known resources are valid; throws if not"
@@ -438,9 +445,10 @@ let RunMain(filename, outFilename, outXmlFilenameOpt, projectNameOpt) =
             )
             use outXmlStream = System.IO.File.Create outXmlFilenameOpt.Value
             xd.Save outXmlStream
+        printfn "fssrgen.fsx: Done %s" outFilename
         0
     with e -> 
-        JustPrintErr(filename, 0, sprintf "An exception occurred when processing '%s': %s" filename e.Message)
+        PrintErr(filename, 0, sprintf "An exception occurred when processing '%s'\n%s" filename (e.ToString()))
         1
 
 let Main args = 
