@@ -35,9 +35,12 @@ module Scripting =
 
     let argv = fsi.CommandLineArgs |> Array.skip 1
 
+    let getCmdLineArgOptional switchName = 
+        argv |> Array.filter(fun t -> t.StartsWith(switchName)) |> Array.map(fun t -> t.Remove(0, switchName.Length).Trim()) |> Array.tryHead 
+
     let getCmdLineArg switchName defaultValue = 
-        match argv |> Array.filter(fun t -> t.StartsWith(switchName)) |> Array.map(fun t -> t.Remove(0, switchName.Length).Trim()) |> Array.tryHead with
-        | Some(file) -> if file.Length <> 0 then file.Trim('\"') else defaultValue
+        match getCmdLineArgOptional switchName with
+        | Some file -> file
         | _ -> defaultValue
 
     let getCmdLineArgReqd switchName = 
