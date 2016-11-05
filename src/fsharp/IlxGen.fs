@@ -3462,7 +3462,7 @@ and GenMethodImpl cenv eenv (useMethodImpl,(TSlotSig(nameOfOverridenMethod,_,_,_
         let eenvForOverrideBy = AddTyparsToEnv methTyparsOfOverridingMethod eenv 
         let ilParamsOfOverridingMethod,ilReturnOfOverridingMethod = GenActualSlotsig m cenv eenvForOverrideBy slotsig methTyparsOfOverridingMethod
         let ilOverrideMethGenericParams = GenGenericParams cenv eenvForOverrideBy methTyparsOfOverridingMethod 
-        let ilOverrideMethGenericArgs = mkILFormalGenericArgs ilOverrideMethGenericParams
+        let ilOverrideMethGenericArgs = mkILFormalGenericArgs 0 ilOverrideMethGenericParams
         let ilOverrideBy = mkILInstanceMethSpecInTy(ilTyForOverriding, nameOfOverridingMethod, typesOfILParams ilParamsOfOverridingMethod, ilReturnOfOverridingMethod.Type, ilOverrideMethGenericArgs)
         { Overrides = OverridesSpec(ilOverrideMethRef,ilOverrideTy)
           OverrideBy = ilOverrideBy })
@@ -3607,7 +3607,7 @@ and GenSequenceExpr cenv (cgbuf:CodeGenBuffer) eenvouter (nextEnumeratorValRef:V
     let ilCloLambdas = Lambdas_return ilCloRetTyInner 
     let cloref = IlxClosureRef(ilCloTypeRef, ilCloLambdas, ilCloFreeVars)
     let ilxCloSpec = IlxClosureSpec.Create(cloref, GenGenericArgs m eenvouter.tyenv cloFreeTyvars)
-    let formalClospec = IlxClosureSpec.Create(cloref, mkILFormalGenericArgs ilCloGenericParams)
+    let formalClospec = IlxClosureSpec.Create(cloref, mkILFormalGenericArgs 0 ilCloGenericParams)
 
     let getFreshMethod = 
         let _,mbody =
@@ -4080,7 +4080,7 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod((TSlotSig(_,delega
     let takenNames = List.map nameOfVal tmvs
     let (cloAttribs,_,_,cloFreeTyvars,cloFreeVars,ilDelegeeTypeRef,ilCloFreeVars,eenvinner) = GetIlxClosureFreeVars cenv m None eenvouter takenNames expr
     let ilDelegeeGenericParams = GenGenericParams cenv eenvinner cloFreeTyvars
-    let ilDelegeeGenericActualsInner = mkILFormalGenericArgs ilDelegeeGenericParams
+    let ilDelegeeGenericActualsInner = mkILFormalGenericArgs 0 ilDelegeeGenericParams
 
     // Create a new closure class with a single "delegee" method that implements the delegate. 
     let delegeeMethName = "Invoke"

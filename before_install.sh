@@ -8,7 +8,8 @@ fi)
 mono .nuget/NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .nuget/NuGet.Config
 (cd tests/fsharp; mono ../../.nuget/NuGet.exe restore  project.json -PackagesDirectory ../../packages -ConfigFile ../../.nuget/NuGet.Config)
 (if test x-$BUILD_CORECLR = x-1; then ./init-tools.sh;  echo "------ start log"; cat ./init-tools.log; echo "------ end log"; fi)
-(if test x-$BUILD_PROTO_WITH_CORECLR_LKG = x-1; then cd lkg &&  dotnet restore --packages ../packages && dotnet publish project.json -o ../Tools/lkg -r ubuntu.14.04-x64; fi)
+(if test x-$BUILD_PROTO_WITH_CORECLR_LKG = x-1; then cd lkg/fsc &&  dotnet restore --packages ../packages && dotnet publish project.json -o ../Tools/lkg -r ubuntu.14.04-x64; fi)
+(if test x-$BUILD_PROTO_WITH_CORECLR_LKG = x-1; then cd lkg/fsi &&  dotnet restore --packages ../packages && dotnet publish project.json -o ../Tools/lkg -r ubuntu.14.04-x64; fi)
 
 #TODO: check if this is needed
 chmod u+x packages/FSharp.Compiler.Tools.4.0.1.19/tools/fsi.exe 

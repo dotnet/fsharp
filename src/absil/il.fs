@@ -1908,12 +1908,12 @@ let gparam_of_gactual (_ga:ILType) = mkILSimpleTypar "T"
 
 let mkILFormalTypars (x: ILGenericArgsList) = List.map gparam_of_gactual x
 
-let mkILFormalGenericArgs (gparams:ILGenericParameterDefs)  =
-    List.mapi (fun n _gf -> mkILTyvarTy (uint16 n)) gparams
+let mkILFormalGenericArgs numtypars (gparams:ILGenericParameterDefs)  =
+    List.mapi (fun n _gf -> mkILTyvarTy (uint16 (numtypars + n))) gparams
  
-let mkILFormalBoxedTy tref gparams = mkILBoxedTy tref (mkILFormalGenericArgs gparams)
+let mkILFormalBoxedTy tref gparams = mkILBoxedTy tref (mkILFormalGenericArgs 0 gparams)
 
-let mkILFormalNamedTy bx tref gparams = mkILNamedTy bx tref (mkILFormalGenericArgs gparams)
+let mkILFormalNamedTy bx tref gparams = mkILNamedTy bx tref (mkILFormalGenericArgs 0 gparams)
 
 // -------------------------------------------------------------------- 
 // Operations on class etc. defs.

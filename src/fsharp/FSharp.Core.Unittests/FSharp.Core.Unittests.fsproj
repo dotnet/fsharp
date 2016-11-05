@@ -59,12 +59,13 @@
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
       <Name>FSharp.Core</Name>
     </ProjectReference>
-    <Reference Include="System.ValueTuple" Condition="'$(TargetFramework)' != 'portable47'">
+    <Reference Include="System.ValueTuple">
         <HintPath Condition=" '$(TargetFramework)' == 'coreclr' ">..\..\..\packages\System.ValueTuple.4.0.0-rc3-24212-01\lib\netstandard1.1\System.ValueTuple.dll</HintPath>
-        <HintPath Condition=" '$(TargetFramework)' != 'coreclr' ">..\..\..\packages\System.ValueTuple.4.4.0-beta-24631-01\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+        <HintPath Condition=" '$(TargetFramework)' == 'profile47' ">..\..\..\packages\System.ValueTuple.4.4.0-beta-24631-01\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+        <HintPath Condition=" '$(TargetFramework)' != 'coreclr'  and  '$(TargetFramework)' != 'profile47' ">..\..\..\packages\System.ValueTuple.4.4.0-beta-24631-01\lib\portable-net40+sl4+win8+wp8\System.ValueTuple.dll</HintPath>
         <Private>True</Private>
     </Reference>
-    <Reference Include="TupleSample" Condition="'$(TargetFramework)' != 'portable47'">
+    <Reference Include="TupleSample">
         <HintPath Condition=" '$(TargetFramework)' == 'coreclr' ">FSharp.Core\SampleTuples\4.0.0-rc3-24212-01\TupleSample.dll</HintPath>
         <HintPath Condition=" '$(TargetFramework)' != 'coreclr' ">FSharp.Core\SampleTuples\4.4.0-beta-24631-01\TupleSample.dll</HintPath>
         <Private>True</Private>
@@ -93,20 +94,20 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="LibraryTestFx.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Utils.fs" Condition="'$(TargetFramework)' != 'portable47'" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Utils.fs" Condition=" '$(TargetFramework)' != 'portable47' " />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayModule2.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Array2Module.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Array3Module.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Array4Module.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayProperties.fs" Condition="'$(TargetFramework)' != 'portable47'" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayProperties.fs" Condition=" '$(TargetFramework)' != 'portable47' " />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ComparisonIdentityModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\HashIdentityModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ListModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ListModule2.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ObsoleteListFunctions.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ListType.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ListProperties.fs" Condition="'$(TargetFramework)' != 'portable47'" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ListProperties.fs" Condition=" '$(TargetFramework)' != 'portable47' " />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\MapModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\MapType.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SetModule.fs" />
@@ -114,8 +115,8 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SeqModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SeqModule2.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ObsoleteSeqFunctions.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SeqProperties.fs" Condition="'$(TargetFramework)' != 'portable47'" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\CollectionModulesConsistency.fs" Condition="'$(TargetFramework)' != 'portable47'" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SeqProperties.fs" Condition=" '$(TargetFramework)' != 'portable47' " />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\CollectionModulesConsistency.fs" Condition=" '$(TargetFramework)' != 'portable47' " />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\StringModule.fs" />
     <Compile Include="FSharp.Core\PrimTypes.fs" />
     <Compile Include="FSharp.Core\ComparersRegression.fs" />
@@ -138,7 +139,7 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Reflection\FSharpReflection.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Quotations\FSharpQuotations.fs" />
     <Compile Include="TypeForwarding.fs" />
-    <Compile Include="StructTuples.fs" Condition="'$(TargetFramework)' != 'portable47'" />
+    <Compile Include="StructTuples.fs" />
     <Compile Include="SurfaceArea.$(TargetFramework).fs" />
     <Compile Include="Program.fs" Condition="'$(TargetFramework)' == 'coreclr'" />
     <None Include="FSharp.Core.Unittests.dll.config" />
