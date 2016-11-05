@@ -175,7 +175,7 @@ let ComputeHoles filename lineNum (txt:string) : HoleType[] * string =
             | '{' -> sb.Append "{{" |> ignore
             | '}' -> sb.Append "}}" |> ignore
             | c -> sb.Append c |> ignore
-        i <- i + 1
+            i <- i + 1
     printfn "holes.Length = %d" holes.Length
     (holes |> List.rev |> List.toArray, sb.ToString())
 
