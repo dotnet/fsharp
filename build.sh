@@ -1,4 +1,6 @@
 
+export BUILD_NET40=1
+
 ./before_install.sh
 
 # This is a very, very limited build script for Mono which bootstraps the compiler
