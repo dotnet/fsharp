@@ -151,12 +151,12 @@ let HoleTypeToString this =
 let ComputeHoles filename lineNum (txt:string) : HoleType[] * string =
     // takes in a %d%s kind of string, returns array of HoleType and {0}{1} kind of string
     let mutable i = 0
-    let holeNumber = ref 0
+    let mutable holeNumber = 0
     let mutable holes = []  // reverse order
     let sb = new System.Text.StringBuilder()
     let AddHole holeType =
-        sb.Append(sprintf "{%d}" !holeNumber) |> ignore
-        holeNumber := !holeNumber + 1
+        sb.Append(sprintf "{%d}" holeNumber) |> ignore
+        holeNumber <- holeNumber + 1
         holes <- holeType :: holes
     while i < txt.Length do
         if txt.[i] = '%' then
@@ -176,7 +176,7 @@ let ComputeHoles filename lineNum (txt:string) : HoleType[] * string =
             | '}' -> sb.Append "}}" |> ignore
             | c -> sb.Append c |> ignore
             i <- i + 1
-    printfn "holes.Length = %d" holes.Length
+    printfn "holes.Length = %d, lineNum = %d, text = '%s'" holes.Length lineNum txt
     (holes |> List.rev |> List.toArray, sb.ToString())
 
 let Unquote (s : string) =
