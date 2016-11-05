@@ -142,10 +142,13 @@
     <Compile Include="StructTuples.fs" />
     <Compile Include="SurfaceArea.$(TargetFramework).fs" />
     <Compile Include="Program.fs" Condition="'$(TargetFramework)' == 'coreclr'" />
-    <None Include="FSharp.Core.Unittests.dll.config" />
+    <Content Include="FSharp.Core.Unittests.dll.config">
+		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
-  <Target Name="AfterBuild">
-	  <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec ../../scripts/subst.fsx --in:FSharp.Core.Unittests.dll.config --out:&quot;$(OutputPath)FSharp.Core.Unittests.dll.config&quot; --pattern:&quot;FSCoreVersion&quot; --replacement:&quot;$(FSCoreVersion)&quot;" />
+  <Target Name="CopyToBuiltBin" BeforeTargets="BuiltProjectOutputGroup" AfterTargets="CoreCompile" >
+	  <!-- Replace FSCoreVersion in the generated file -->
+      <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec ../../scripts/subst.fsx --in:&quot;$(OutputPath)FSharp.Core.Unittests.dll.config&quot; --out:&quot;$(OutputPath)FSharp.Core.Unittests.dll.config&quot; --pattern:&quot;FSCoreVersion&quot; --replacement:&quot;$(FSCoreVersion)&quot;" />
   </Target>
 </Project>

@@ -61,8 +61,10 @@
     </Reference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
-  <Target Name="AfterBuild">
+  <Target Name="CopyToBuiltBin" BeforeTargets="BuiltProjectOutputGroup" AfterTargets="CoreCompile" >
+	  <!-- Replace {BuildSuffix}, add -proto suffix to filename -->
 	  <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec ../../scripts/subst.fsx --in:../FSharp.Build/Microsoft.FSharp.targets --out:&quot;$(OutputPath)Microsoft.FSharp-proto.targets&quot; --pattern:&quot;{BuildSuffix}&quot; --replacement:&quot;-proto&quot;" />
+	  <!-- Replace {BuildSuffix}, add -proto suffix to filename -->
 	  <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec ../../scripts/subst.fsx --in:../FSharp.Build/Microsoft.Portable.FSharp.targets --out:&quot;$(OutputPath)Microsoft.Portable.FSharp-proto.targets&quot; --pattern:&quot;{BuildSuffix}&quot; --replacement:&quot;-proto&quot;" />
   </Target>
 </Project>

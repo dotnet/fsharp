@@ -78,9 +78,10 @@
       </FilesToSign>
     </ItemGroup>
   </Target>
-  <Target Name="AfterBuild">
-	  <MakeDir Directories="$(OutputPath)"/>
-	  <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec ../../scripts/subst.fsx --in:Microsoft.FSharp.targets --out:&quot;$(OutputPath)Microsoft.FSharp.targets&quot; --pattern:&quot;{BuildSuffix}&quot; --replacement:&quot;&quot;" />
-	  <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec ../../scripts/subst.fsx --in:Microsoft.Portable.FSharp.targets --out:&quot;$(OutputPath)Microsoft.Portable.FSharp.targets&quot; --pattern:&quot;{BuildSuffix}&quot; --replacement:&quot;&quot;" />
+  <Target Name="CopyToBuiltBin" BeforeTargets="BuiltProjectOutputGroup" AfterTargets="CoreCompile" >
+	  <!-- Replace {BuildSuffix} -->
+      <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec ../../scripts/subst.fsx --in:&quot;$(OutputPath)Microsoft.FSharp.targets&quot; --out:&quot;$(OutputPath)Microsoft.FSharp.targets&quot; --pattern:&quot;{BuildSuffix}&quot; --replacement:&quot;&quot;" />
+	  <!-- Replace {BuildSuffix} -->
+	  <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec ../../scripts/subst.fsx --in:&quot;$(OutputPath)Microsoft.Portable.FSharp.targets&quot; --out:&quot;$(OutputPath)Microsoft.Portable.FSharp.targets&quot; --pattern:&quot;{BuildSuffix}&quot; --replacement:&quot;&quot;" />
   </Target>
 </Project>
