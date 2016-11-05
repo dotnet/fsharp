@@ -62,7 +62,7 @@
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <Target Name="AfterBuild">
-	  <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec ../../buildtools/subst.fsx --in:../FSharp.Build/Microsoft.FSharp.targets --out:&quot;$(OutputPath)Microsoft.FSharp-proto.targets&quot; --pattern:&quot;{BuildSuffix}&quot; --replacement:&quot;-proto&quot;" />
-	  <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec ../../buildtools/subst.fsx --in:../FSharp.Build/Microsoft.Portable.FSharp.targets --out:&quot;$(OutputPath)Microsoft.Portable.FSharp-proto.targets&quot; --pattern:&quot;{BuildSuffix}&quot; --replacement:&quot;-proto&quot;" />
+	  <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec ../../scripts/subst.fsx --in:../FSharp.Build/Microsoft.FSharp.targets --out:&quot;$(OutputPath)Microsoft.FSharp-proto.targets&quot; --pattern:&quot;{BuildSuffix}&quot; --replacement:&quot;-proto&quot;" />
+	  <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec ../../scripts/subst.fsx --in:../FSharp.Build/Microsoft.Portable.FSharp.targets --out:&quot;$(OutputPath)Microsoft.Portable.FSharp-proto.targets&quot; --pattern:&quot;{BuildSuffix}&quot; --replacement:&quot;-proto&quot;" />
   </Target>
 </Project>

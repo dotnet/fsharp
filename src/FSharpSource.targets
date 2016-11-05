@@ -454,7 +454,7 @@
     <DocumentationFile>$(OutputPath)$(AssemblyName).xml</DocumentationFile>
   </PropertyGroup>
 
-  <Import Project="buildtools\fssrgen.targets" />
+  <Import Project="scripts\fssrgen.targets" />
   <Import Project="Microbuild.Settings.targets" Condition="'$(UseMicroBuild)' == 'true'"/>
 
   <Target Name="ReorderCompileItems"

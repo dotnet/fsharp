@@ -80,7 +80,7 @@
   </Target>
   <Target Name="AfterBuild">
 	  <MakeDir Directories="$(OutputPath)"/>
-	  <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec ../../buildtools/subst.fsx --in:Microsoft.FSharp.targets --out:&quot;$(OutputPath)Microsoft.FSharp.targets&quot; --pattern:&quot;{BuildSuffix}&quot; --replacement:&quot;&quot;" />
-	  <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec ../../buildtools/subst.fsx --in:Microsoft.Portable.FSharp.targets --out:&quot;$(OutputPath)Microsoft.Portable.FSharp.targets&quot; --pattern:&quot;{BuildSuffix}&quot; --replacement:&quot;&quot;" />
+	  <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec ../../scripts/subst.fsx --in:Microsoft.FSharp.targets --out:&quot;$(OutputPath)Microsoft.FSharp.targets&quot; --pattern:&quot;{BuildSuffix}&quot; --replacement:&quot;&quot;" />
+	  <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec ../../scripts/subst.fsx --in:Microsoft.Portable.FSharp.targets --out:&quot;$(OutputPath)Microsoft.Portable.FSharp.targets&quot; --pattern:&quot;{BuildSuffix}&quot; --replacement:&quot;&quot;" />
   </Target>
 </Project>

@@ -146,6 +146,6 @@
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <Target Name="AfterBuild">
-	  <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec ../../buildtools/subst.fsx --in:FSharp.Core.Unittests.dll.config --out:&quot;$(OutputPath)FSharp.Core.Unittests.dll.config&quot; --pattern:&quot;FSCoreVersion&quot; --replacement:&quot;$(FSCoreVersion)&quot;" />
+	  <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec ../../scripts/subst.fsx --in:FSharp.Core.Unittests.dll.config --out:&quot;$(OutputPath)FSharp.Core.Unittests.dll.config&quot; --pattern:&quot;FSCoreVersion&quot; --replacement:&quot;$(FSCoreVersion)&quot;" />
   </Target>
 </Project>

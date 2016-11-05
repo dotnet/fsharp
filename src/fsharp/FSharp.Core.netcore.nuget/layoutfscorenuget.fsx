@@ -3,7 +3,7 @@
 // Layout the nuget package for the fsharp compiler
 //=========================================================================================
 
-#load "../../buildtools/scriptlib.fsx"
+#load "../../scripts/scriptlib.fsx"
 
 try
 
