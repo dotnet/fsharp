@@ -15,7 +15,7 @@ mono .nuget/NuGet.exe restore packages.config -PackagesDirectory packages -Confi
 chmod u+x packages/FSharp.Compiler.Tools.4.0.1.19/tools/fsi.exe 
 
 # "access to the path /etc/mono/registry/last-time is denied"
-mkdir /etc/mono/registry
+sudo mkdir /etc/mono/registry
 sudo chmod uog+rw /etc/mono/registry
 
 
