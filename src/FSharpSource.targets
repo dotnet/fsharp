@@ -548,7 +548,7 @@
     </ItemGroup>
   </Target>
 
-  <Target Name="nugetrestore" BeforeTargets="Build" Condition=" '$(TargetFramework)' == 'coreclr'  and '$(DOTNET_PUBLISH_PATH)' != 'true' ">
+  <Target Name="nugetrestore" BeforeTargets="Build" Condition=" '$(TargetFramework)' == 'coreclr'  and '$(DOTNET_PUBLISH)' != 'true' ">
     <Exec Command="$(MSBuildThisFileDirectory)..\.nuget\nuget.exe restore -PackagesDirectory $(MSBuildThisFileDirectory)..\packages -Config $(MSBuildThisFileDirectory)..\.nuget\NuGet.Config project.json"/>
   </Target>
 
