@@ -207,10 +207,10 @@ namespace Microsoft.FSharp.Collections
                 interface ISeqFactory<'T,'State> with
                     member this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:``PipeIdx?``) (next:Consumer<'State,'V>) : Consumer<'T,'V> = upcast Scan<_,_,_> (folder, initialState, next)
 
-            and SkipFactory<'T> (count:int) =
+            and SkipFactory<'T> (count:int, onNotEnoughElements) =
                 inherit SeqComponentFactory<'T,'T> ()
                 interface ISeqFactory<'T,'T> with
-                    member this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Skip (count, next) 
+                    member this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:``PipeIdx?``) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Skip (count, onNotEnoughElements, next) 
 
             and SkipWhileFactory<'T> (predicate:'T->bool) =
                 inherit SeqComponentFactory<'T,'T> ()
@@ -448,7 +448,7 @@ namespace Microsoft.FSharp.Collections
                     foldResult <- f.Invoke(foldResult, input)
                     TailCall.avoid (next.ProcessNext foldResult)
 
-            and Skip<'T,'V> (skipCount:int, next:Consumer<'T,'V>) =
+            and Skip<'T,'V> (skipCount:int, notEnoughElements:string->array<obj>->unit, next:Consumer<'T,'V>) =
                 inherit SeqComponent<'T,'V>(next)
 
                 let mutable count = 0
@@ -470,7 +470,7 @@ namespace Microsoft.FSharp.Collections
                 override __.OnComplete _ =
                     if count < skipCount then
                         let x = skipCount - count
-                        invalidOpFmt "tried to skip {0} {1} past the end of the seq"
+                        notEnoughElements "{0}\ntried to skip {1} {2} past the end of the seq"
                             [|SR.GetString SR.notEnoughElements; x; (if x=1 then "element" else "elements")|]
 
             and SkipWhile<'T,'V> (predicate:'T->bool, next:Consumer<'T,'V>) =
@@ -640,7 +640,7 @@ namespace Microsoft.FSharp.Collections
                         if maybeSkipping then
                             maybeSkipping <- isSkipping ()
 
-                        if (not maybeSkipping) then
+                        if not maybeSkipping then
                             consumer.ProcessNext (f (idx+1)) |> ignore
 
                         idx <- idx + 1
@@ -1169,20 +1169,22 @@ namespace Microsoft.FSharp.Collections
                             Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
                 |> ignore
 
+            [<CompiledName("TryHead")>]
+            let tryHead (source:ISeq<'T>) =
+                source
+                |> foreach (fun halt ->
+                    { new Folder<'T, Option<'T>> (None) with
+                        override this.ProcessNext value =
+                            this.Value <- Some value
+                            halt ()
+                            Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
+                |> fun head -> head.Value
+
             [<CompiledName("TryItem")>]
             let tryItem i (source:ISeq<'T>) =
                 if i < 0 then None else
-                source 
-                |> foreach (fun halt ->
-                    { new Folder<'T, Values<int, Option<'T>>> (Values<_,_> (0, None)) with
-                        override this.ProcessNext value =
-                            if this.Value._1 = i then
-                                this.Value._2 <- Some value
-                                halt ()
-                            else
-                                this.Value._1 <- this.Value._1 + 1
-                            Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-                |> fun item -> item.Value._2
+                source.Compose (SkipFactory(i, fun _ _ -> ()))
+                |> tryHead 
 
             [<CompiledName("IterateIndexed")>]
             let iteri f (source:ISeq<'T>) =

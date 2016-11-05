@@ -45,10 +45,18 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("ToComposer")>]
         let toComposer (source:seq<'T>): Composer.Core.ISeq<'T> = 
             Composer.Seq.toComposer source
-        
+
         let inline foreach f (source:seq<_>) =
             Composer.Seq.foreach f (toComposer source)
 
+        let private seqFactory createSeqComponent (source:seq<'T>) =
+            checkNonNull "source" source
+            match source with
+            | :? Composer.Core.ISeq<'T> as s -> Upcast.enumerable (s.Compose createSeqComponent)
+            | :? array<'T> as a -> Upcast.enumerable (Composer.Seq.Array.create a createSeqComponent)
+            | :? list<'T> as a -> Upcast.enumerable (Composer.Seq.List.create a createSeqComponent)
+            | _ -> Upcast.enumerable (Composer.Seq.Enumerable.create source createSeqComponent)
+        
         [<CompiledName("Delay")>]
         let delay f = mkDelayedSeq f
 
@@ -74,28 +82,25 @@ namespace Microsoft.FSharp.Collections
         let iter f (source : seq<'T>) =
             Composer.Seq.iter f (toComposer source)
 
+        [<CompiledName("TryHead")>]
+        let tryHead (source : seq<_>) =
+            Composer.Seq.tryHead (toComposer source)
+
+        [<CompiledName("Skip")>]
+        let skip count (source: seq<_>) =
+            source |> seqFactory (Composer.Seq.SkipFactory (count, invalidOpFmt))
+
+        let invalidArgumnetIndex = invalidArgFmt "index"
+
         [<CompiledName("Item")>]
         let item i (source : seq<'T>) =
             if i < 0 then invalidArgInputMustBeNonNegative "index" i else
-                source 
-                |> foreach (fun halt ->
-                    { new Composer.Core.Folder<'T, Composer.Core.Values<int, bool, 'T>> (Composer.Core.Values<_,_,_> (0, false, Unchecked.defaultof<'T>)) with
-                        override this.ProcessNext value =
-                            if this.Value._1 = i then
-                                this.Value._2 <- true
-                                this.Value._3 <- value
-                                halt ()
-                            else
-                                this.Value._1 <- this.Value._1 + 1
-                            Unchecked.defaultof<_> (* return value unsed in ForEach context *) 
-                        override this.OnComplete _ = 
-                            if not this.Value._2 then
-                                let index = i - this.Value._1 + 1
-                                invalidArgFmt "index" 
-                                    "{0}\nseq was short by {1} {2}" 
-                                    [|SR.GetString SR.notEnoughElements; index; (if index=1 then "element" else "elements")|]
-                                })
-                |> fun item -> item.Value._3
+                source
+                |> seqFactory (Composer.Seq.SkipFactory (i, invalidArgumnetIndex))
+                |> tryHead
+                |> function
+                    | None -> invalidArgFmt "index" "{0}\nseq was short by 1 element"  [|SR.GetString SR.notEnoughElements|]
+                    | Some value -> value
 
         [<CompiledName("TryItem")>]
         let tryItem i (source:seq<'T>) =
@@ -164,14 +169,6 @@ namespace Microsoft.FSharp.Collections
             mkSeq (fun () -> f (ie1.GetEnumerator()) (source2.GetEnumerator()))
         let revamp3 f (ie1 : seq<_>) (source2 : seq<_>) (source3 : seq<_>) =
             mkSeq (fun () -> f (ie1.GetEnumerator()) (source2.GetEnumerator()) (source3.GetEnumerator()))
-
-        let private seqFactory createSeqComponent (source:seq<'T>) =
-            checkNonNull "source" source
-            match source with
-            | :? Composer.Core.ISeq<'T> as s -> Upcast.enumerable (s.Compose createSeqComponent)
-            | :? array<'T> as a -> Upcast.enumerable (Composer.Seq.Array.create a createSeqComponent)
-            | :? list<'T> as a -> Upcast.enumerable (Composer.Seq.List.create a createSeqComponent)
-            | _ -> Upcast.enumerable (Composer.Seq.Enumerable.create source createSeqComponent)
 
         [<CompiledName("Filter")>]
         let filter<'T> (f:'T->bool) (source:seq<'T>) : seq<'T> =
@@ -887,10 +884,6 @@ namespace Microsoft.FSharp.Collections
         let takeWhile p (source: seq<_>) =
             source |> seqFactory (Composer.Seq.TakeWhileFactory p)
 
-        [<CompiledName("Skip")>]
-        let skip count (source: seq<_>) =
-            source |> seqFactory (Composer.Seq.SkipFactory count)
-
         [<CompiledName("SkipWhile")>]
         let skipWhile p (source: seq<_>) =
             source |> seqFactory (Composer.Seq.SkipWhileFactory p)
@@ -936,17 +929,6 @@ namespace Microsoft.FSharp.Collections
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
             |> fun exists -> exists.Value
         
-        [<CompiledName("TryHead")>]
-        let tryHead (source : seq<_>) =
-            source
-            |> foreach (fun halt ->
-                { new Composer.Core.Folder<'T, Option<'T>> (None) with
-                    override this.ProcessNext value =
-                        this.Value <- Some value
-                        halt ()
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun head -> head.Value
-
         [<CompiledName("Head")>]
         let head (source : seq<_>) =
             match tryHead source with
