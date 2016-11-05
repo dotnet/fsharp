@@ -176,7 +176,7 @@ let ComputeHoles filename lineNum (txt:string) : HoleType[] * string =
             | '}' -> sb.Append "}}" |> ignore
             | c -> sb.Append c |> ignore
             i <- i + 1
-    printfn "holes.Length = %d, lineNum = %d, text = '%s'" holes.Length lineNum txt
+    //printfn "holes.Length = %d, lineNum = %d" holes.Length //lineNum txt
     (holes |> List.rev |> List.toArray, sb.ToString())
 
 let Unquote (s : string) =
