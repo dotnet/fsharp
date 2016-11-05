@@ -400,7 +400,8 @@ let RunMain(filename, outFilename, outXmlFilenameOpt, projectNameOpt) =
                     acc + match holeType with 
                             | "System.Int32" -> ",,,%d" 
                             | "System.Double" -> ",,,%f" 
-                            | "System.String" -> ",,,%s") "") + ",,,"
+                            | "System.String" -> ",,,%s"
+                            | _ -> failwith "unreachable") "") + ",,,"
             let errPrefix = match optErrNum with
                             | None -> ""
                             | Some n -> sprintf "%d, " n
