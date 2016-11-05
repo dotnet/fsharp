@@ -13,9 +13,7 @@ mono .nuget/NuGet.exe restore packages.config -PackagesDirectory packages -Confi
 
 #TODO: check if this is needed
 chmod u+x packages/FSharp.Compiler.Tools.4.0.1.19/tools/fsi.exe 
-
-# The FSharp.Compiler.Tools package doesn't work correctly unless a proper install of F# has been done on the machine
-sudo apt-get install fsharp
+chmod u+x packages/FsLexYacc.7.0.1/build/fslex.exe
 
 # "access to the path /etc/mono/registry/last-time is denied"
 sudo mkdir /etc/mono/registry
