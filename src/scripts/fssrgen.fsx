@@ -133,40 +133,29 @@ let xmlBoilerPlateString = @"<?xml version=""1.0"" encoding=""utf-8""?>
 </root>"
 
 
+type HoleType = string
 
 
 // The kinds of 'holes' we can do
-type HoleType =
-    | Int = 0     // %d
-    | String = 1  // %s
-    | Float = 2   // %f
-
-let HoleTypeToString this =    
-    match this with
-    | HoleType.Int -> "System.Int32"
-    | HoleType.String -> "System.String"
-    | HoleType.Float -> "System.Double"
-    | _ -> failwith "impossible"
-        
-let ComputeHoles filename lineNum (txt:string) : HoleType[] * string =
+let ComputeHoles filename lineNum (txt:string) : ResizeArray<HoleType> * string =
     // takes in a %d%s kind of string, returns array of HoleType and {0}{1} kind of string
     let mutable i = 0
     let mutable holeNumber = 0
-    let mutable holes = []  // reverse order
+    let mutable holes = ResizeArray()  //  order
     let sb = new System.Text.StringBuilder()
     let AddHole holeType =
         sb.Append(sprintf "{%d}" holeNumber) |> ignore
         holeNumber <- holeNumber + 1
-        holes <- holeType :: holes
+        holes.Add(holeType)
     while i < txt.Length do
         if txt.[i] = '%' then
             if i+1 = txt.Length then
                 Err(filename, lineNum, "(at end of string) % must be followed by d, f, s, or %")
             else
                 match txt.[i+1] with
-                | 'd' -> AddHole HoleType.Int
-                | 'f' -> AddHole HoleType.Float
-                | 's' -> AddHole HoleType.String
+                | 'd' -> AddHole "System.Int32"
+                | 'f' -> AddHole "System.Double"
+                | 's' -> AddHole "System.String"
                 | '%' -> sb.Append('%') |> ignore
                 | c -> Err(filename, lineNum, sprintf "'%%%c' is not a valid sequence, only %%d %%f %%s or %%%%" c)
             i <- i + 2
@@ -177,7 +166,7 @@ let ComputeHoles filename lineNum (txt:string) : HoleType[] * string =
             | c -> sb.Append c |> ignore
             i <- i + 1
     //printfn "holes.Length = %d, lineNum = %d" holes.Length //lineNum txt
-    (holes |> List.rev |> List.toArray, sb.ToString())
+    (holes, sb.ToString())
 
 let Unquote (s : string) =
     if s.StartsWith "\"" && s.EndsWith "\"" then s.Substring(1, s.Length - 2)
@@ -222,7 +211,7 @@ let ParseLine filename lineNum (txt:string) =
                     with 
                         e -> Err(filename, lineNum, sprintf "Error calling System.String.Format (note that curly braces must be escaped, and there cannot be trailing space on the line): >>>%s<<< -- %s" (txt.Substring i) e.Message)
                 let holes, netFormatString = ComputeHoles filename lineNum str
-                (lineNum, (errNum,ident), str, holes, netFormatString)
+                (lineNum, (errNum,ident), str, holes.ToArray(), netFormatString)
 
 let stringBoilerPlatePrefix = @"            
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
@@ -400,7 +389,7 @@ let RunMain(filename, outFilename, outXmlFilenameOpt, projectNameOpt) =
                 else
                     formalArgs.Append ", " |> ignore
                     actualArgs.Append " " |> ignore
-                formalArgs.Append(sprintf "a%d : %s" !n (HoleTypeToString hole)) |> ignore
+                formalArgs.Append(sprintf "a%d : %s" !n hole) |> ignore
                 actualArgs.Append(sprintf "a%d" !n) |> ignore
                 n := !n + 1
             formalArgs.Append ")" |> ignore
@@ -409,10 +398,9 @@ let RunMain(filename, outFilename, outXmlFilenameOpt, projectNameOpt) =
             let justPercentsFromFormatString = 
                 (holes |> Array.fold (fun acc holeType -> 
                     acc + match holeType with 
-                            | HoleType.Int -> ",,,%d" 
-                            | HoleType.Float -> ",,,%f" 
-                            | HoleType.String -> ",,,%s"
-                            | _ -> failwith "Impossible HoleType") "") + ",,,"
+                            | "System.Int32" -> ",,,%d" 
+                            | "System.Double" -> ",,,%f" 
+                            | "System.String" -> ",,,%s") "") + ",,,"
             let errPrefix = match optErrNum with
                             | None -> ""
                             | Some n -> sprintf "%d, " n
@@ -480,5 +468,5 @@ let Main args =
         printfn "Usage: <INPUTFILE> <OUTPUTFILE> <OUTXMLFILE> <PROJECTNAME>"
         1
 
-printfn "args = %A" fsi.CommandLineArgs
+printfn "fssrgen: args = %A" fsi.CommandLineArgs
 Main fsi.CommandLineArgs
