@@ -163,6 +163,63 @@ Microsoft.FSharp.Collections.ComparisonIdentity: System.Collections.Generic.ICom
 Microsoft.FSharp.Collections.ComparisonIdentity: System.Collections.Generic.IComparer`1[T] Structural[T]()
 Microsoft.FSharp.Collections.ComparisonIdentity: System.String ToString()
 Microsoft.FSharp.Collections.ComparisonIdentity: System.Type GetType()
+Microsoft.FSharp.Collections.ComposerModule+Core+Consumer`2[T,TResult]: Boolean Equals(System.Object)
+Microsoft.FSharp.Collections.ComposerModule+Core+Consumer`2[T,TResult]: Boolean ProcessNext(T)
+Microsoft.FSharp.Collections.ComposerModule+Core+Consumer`2[T,TResult]: Int32 GetHashCode()
+Microsoft.FSharp.Collections.ComposerModule+Core+Consumer`2[T,TResult]: System.String ToString()
+Microsoft.FSharp.Collections.ComposerModule+Core+Consumer`2[T,TResult]: System.Type GetType()
+Microsoft.FSharp.Collections.ComposerModule+Core+Consumer`2[T,TResult]: Void .ctor()
+Microsoft.FSharp.Collections.ComposerModule+Core+Consumer`2[T,TResult]: Void OnComplete(Int32)
+Microsoft.FSharp.Collections.ComposerModule+Core+Consumer`2[T,TResult]: Void OnDispose()
+Microsoft.FSharp.Collections.ComposerModule+Core+Folder`2[T,TResult]: Boolean Equals(System.Object)
+Microsoft.FSharp.Collections.ComposerModule+Core+Folder`2[T,TResult]: Boolean ProcessNext(T)
+Microsoft.FSharp.Collections.ComposerModule+Core+Folder`2[T,TResult]: Int32 GetHashCode()
+Microsoft.FSharp.Collections.ComposerModule+Core+Folder`2[T,TResult]: System.String ToString()
+Microsoft.FSharp.Collections.ComposerModule+Core+Folder`2[T,TResult]: System.Type GetType()
+Microsoft.FSharp.Collections.ComposerModule+Core+Folder`2[T,TResult]: TResult Value
+Microsoft.FSharp.Collections.ComposerModule+Core+Folder`2[T,TResult]: Void .ctor(TResult)
+Microsoft.FSharp.Collections.ComposerModule+Core+Folder`2[T,TResult]: Void OnComplete(Int32)
+Microsoft.FSharp.Collections.ComposerModule+Core+Folder`2[T,TResult]: Void OnDispose()
+Microsoft.FSharp.Collections.ComposerModule+Core+ICompletionChaining: Void OnComplete(Int32)
+Microsoft.FSharp.Collections.ComposerModule+Core+ICompletionChaining: Void OnDispose()
+Microsoft.FSharp.Collections.ComposerModule+Core+IOutOfBand: Void StopFurtherProcessing(Int32)
+Microsoft.FSharp.Collections.ComposerModule+Core+ISeqFactory`2[T,TResult]: Consumer`2 Create[V](IOutOfBand, System.Nullable`1[System.Int32], Consumer`2)
+Microsoft.FSharp.Collections.ComposerModule+Core+ISeqFactory`2[T,TResult]: Int32 PipeIdx
+Microsoft.FSharp.Collections.ComposerModule+Core+ISeqFactory`2[T,TResult]: Int32 get_PipeIdx()
+Microsoft.FSharp.Collections.ComposerModule+Core+ISeq`1[T]: ISeq`1 Compose[TResult](ISeqFactory`2)
+Microsoft.FSharp.Collections.ComposerModule+Core+ISeq`1[T]: a ForEach[a](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit],a])
+Microsoft.FSharp.Collections.ComposerModule+Core+Values`2[a,b]: Boolean Equals(System.Object)
+Microsoft.FSharp.Collections.ComposerModule+Core+Values`2[a,b]: Int32 GetHashCode()
+Microsoft.FSharp.Collections.ComposerModule+Core+Values`2[a,b]: System.String ToString()
+Microsoft.FSharp.Collections.ComposerModule+Core+Values`2[a,b]: System.Type GetType()
+Microsoft.FSharp.Collections.ComposerModule+Core+Values`2[a,b]: Void .ctor(a, b)
+Microsoft.FSharp.Collections.ComposerModule+Core+Values`2[a,b]: a _1
+Microsoft.FSharp.Collections.ComposerModule+Core+Values`2[a,b]: b _2
+Microsoft.FSharp.Collections.ComposerModule+Core+Values`3[a,b,c]: Boolean Equals(System.Object)
+Microsoft.FSharp.Collections.ComposerModule+Core+Values`3[a,b,c]: Int32 GetHashCode()
+Microsoft.FSharp.Collections.ComposerModule+Core+Values`3[a,b,c]: System.String ToString()
+Microsoft.FSharp.Collections.ComposerModule+Core+Values`3[a,b,c]: System.Type GetType()
+Microsoft.FSharp.Collections.ComposerModule+Core+Values`3[a,b,c]: Void .ctor(a, b, c)
+Microsoft.FSharp.Collections.ComposerModule+Core+Values`3[a,b,c]: a _1
+Microsoft.FSharp.Collections.ComposerModule+Core+Values`3[a,b,c]: b _2
+Microsoft.FSharp.Collections.ComposerModule+Core+Values`3[a,b,c]: c _3
+Microsoft.FSharp.Collections.ComposerModule+Core: Boolean Equals(System.Object)
+Microsoft.FSharp.Collections.ComposerModule+Core: Int32 GetHashCode()
+Microsoft.FSharp.Collections.ComposerModule+Core: Microsoft.FSharp.Collections.ComposerModule+Core+Consumer`2[T,TResult]
+Microsoft.FSharp.Collections.ComposerModule+Core: Microsoft.FSharp.Collections.ComposerModule+Core+Folder`2[T,TResult]
+Microsoft.FSharp.Collections.ComposerModule+Core: Microsoft.FSharp.Collections.ComposerModule+Core+ICompletionChaining
+Microsoft.FSharp.Collections.ComposerModule+Core: Microsoft.FSharp.Collections.ComposerModule+Core+IOutOfBand
+Microsoft.FSharp.Collections.ComposerModule+Core: Microsoft.FSharp.Collections.ComposerModule+Core+ISeqFactory`2[T,TResult]
+Microsoft.FSharp.Collections.ComposerModule+Core: Microsoft.FSharp.Collections.ComposerModule+Core+ISeq`1[T]
+Microsoft.FSharp.Collections.ComposerModule+Core: Microsoft.FSharp.Collections.ComposerModule+Core+Values`2[a,b]
+Microsoft.FSharp.Collections.ComposerModule+Core: Microsoft.FSharp.Collections.ComposerModule+Core+Values`3[a,b,c]
+Microsoft.FSharp.Collections.ComposerModule+Core: System.String ToString()
+Microsoft.FSharp.Collections.ComposerModule+Core: System.Type GetType()
+Microsoft.FSharp.Collections.ComposerModule: Boolean Equals(System.Object)
+Microsoft.FSharp.Collections.ComposerModule: Int32 GetHashCode()
+Microsoft.FSharp.Collections.ComposerModule: Microsoft.FSharp.Collections.ComposerModule+Core
+Microsoft.FSharp.Collections.ComposerModule: System.String ToString()
+Microsoft.FSharp.Collections.ComposerModule: System.Type GetType()
 Microsoft.FSharp.Collections.FSharpList`1+Tags[T]: Boolean Equals(System.Object)
 Microsoft.FSharp.Collections.FSharpList`1+Tags[T]: Int32 Cons
 Microsoft.FSharp.Collections.FSharpList`1+Tags[T]: Int32 Empty
@@ -348,6 +405,7 @@ Microsoft.FSharp.Collections.SeqModule: Boolean Exists[T](Microsoft.FSharp.Core.
 Microsoft.FSharp.Collections.SeqModule: Boolean ForAll2[T1,T2](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,System.Boolean]], System.Collections.Generic.IEnumerable`1[T1], System.Collections.Generic.IEnumerable`1[T2])
 Microsoft.FSharp.Collections.SeqModule: Boolean ForAll[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], System.Collections.Generic.IEnumerable`1[T])
 Microsoft.FSharp.Collections.SeqModule: Boolean IsEmpty[T](System.Collections.Generic.IEnumerable`1[T])
+Microsoft.FSharp.Collections.SeqModule: ISeq`1 ToComposer[T](System.Collections.Generic.IEnumerable`1[T])
 Microsoft.FSharp.Collections.SeqModule: Int32 CompareWith[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Int32]], System.Collections.Generic.IEnumerable`1[T], System.Collections.Generic.IEnumerable`1[T])
 Microsoft.FSharp.Collections.SeqModule: Int32 FindIndex[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], System.Collections.Generic.IEnumerable`1[T])
 Microsoft.FSharp.Collections.SeqModule: Int32 GetHashCode()
