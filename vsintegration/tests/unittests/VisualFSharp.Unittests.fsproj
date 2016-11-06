@@ -112,7 +112,7 @@
 		<TargetFilename>VisualFSharp.Unittests.dll.config</TargetFilename>
 		<Pattern1>{VisualStudioVersion}</Pattern1>
 		<Replacement1>$(VisualStudioVersion)</Replacement1>
-		<Patttern2>{FinalDir}</Patttern2>
+		<Pattern2>{FinalDir}</Pattern2>
 		<Replacement2>$([System.IO.Path]::GetFullPath('$(OutputPath)'))\</Replacement2>
 	</CopyAndSubstituteText>
     <None Include="app.runsettings" />
