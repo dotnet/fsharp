@@ -2,7 +2,7 @@
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.-->
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
+    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\..\src</FSharpSourcesRoot>
     <ProjectLanguage>FSharp</ProjectLanguage>
     <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
     <Name>VisualFSharp.Unittests</Name>
@@ -108,9 +108,13 @@
     <Compile Include="GoToDefinitionServiceTests.fs">
       <Link>Roslyn\GoToDefinition\GoToDefinitionServiceTests.fs</Link>
     </Compile>
-    <CustomCopyLocal Include="app.config">
-      <TargetFilename>VisualFSharp.Unittests.dll.config</TargetFilename>
-    </CustomCopyLocal>
+    <CopyAndSubstituteText Include="VisualFSharp.Unittests.dll.config">
+		<TargetFilename>VisualFSharp.Unittests.dll.config</TargetFilename>
+		<Pattern1>{VisualStudioVersion}</Pattern1>
+		<Replacement1>$(VisualStudioVersion)</Replacement1>
+		<Pattern2>{FinalDir}</Pattern2>
+		<Replacement2>$([System.IO.Path]::GetFullPath('$(OutputPath)'))\</Replacement2>
+	</CopyAndSubstituteText>
     <None Include="app.runsettings" />
   </ItemGroup>
   <ItemGroup>
