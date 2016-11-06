@@ -882,12 +882,12 @@ if '%TEST_CORECLR_FSHARP_SUITE%' == '1' (
 
 	call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
     if NOT '!saved_errorlevel!' == '0' (
-        echo --------------begin coreclr-fsharp test output (!OUTPUTFILE!)-------------------
+        echo --------------begin coreclr-fsharp test output -------------------
         type "!OUTPUTFILE!"
-        echo --------------end coreclr-fsharp test output (!OUTPUTFILE!)-------------------
-        echo --------------begin coreclr-fsharp test errors (!ERRORFILE!)-------------------
+        echo --------------end coreclr-fsharp test output -------------------
+        echo --------------begin coreclr-fsharp test errors -------------------
         type "!ERRORFILE!"
-        echo --------------end coreclr-fsharp test errors (!ERRORFILE!)-------------------
+        echo --------------end coreclr-fsharp test errors -------------------
         echo -----------------------------------------------------------------
         echo Error: Running tests coreclr-fsharp failed , see logs abvoe -- FAILED
         echo -----------------------------------------------------------------
@@ -914,12 +914,12 @@ if '%TEST_VS_IDEUNIT_SUITE%' == '1' (
 	popd
 	call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
     if NOT '!saved_errorlevel!' == '0' (
-        echo --------begin vs-ide-unit output (!OUTPUTFILE!)---------------------
+        echo --------begin vs-ide-unit output ---------------------
         type "!OUTPUTFILE!"
-        echo --------end vs-ide-unit output (!OUTPUTFILE!)---------------------
-        echo -------begin vs-ide-unit errors (!ERRORFILE!)---------------------
+        echo --------end vs-ide-unit output -----------------------
+        echo -------begin vs-ide-unit errors ----------------------
         type "!ERRORFILE!"
-        echo -------end vs-ide-unit errors (!ERRORFILE!)---------------------
+        echo -------end vs-ide-unit errors ------------------------
         echo Error: Running tests vs-ideunit failed, see logs above, search for "Errors and Failures"  -- FAILED
         echo ----------------------------------------------------------------------------------------------------
         goto :failed_tests
