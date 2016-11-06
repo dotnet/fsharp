@@ -2,7 +2,7 @@
 sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
 echo "deb http://download.mono-project.com/repo/debian wheezy main" | sudo tee /etc/apt/sources.list.d/mono-xamarin.list
 sudo apt-get update
-sudo apt-get install mono-devel
+sudo apt-get -y install mono-devel
 
 mono .nuget/NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .nuget/NuGet.Config
 
@@ -10,7 +10,7 @@ mono .nuget/NuGet.exe restore packages.config -PackagesDirectory packages -Confi
   sudo sh -c 'echo "deb [arch=amd64] https://apt-mo.trafficmanager.net/repos/dotnet-release/ trusty main" > /etc/apt/sources.list.d/dotnetdev.list'; \
   sudo apt-key adv --keyserver apt-mo.trafficmanager.net --recv-keys 417A0893; \
   sudo apt-get update; \
-  sudo apt-get install dotnet-dev-1.0.0-preview2-003131; \
+  sudo apt-get -y install dotnet-dev-1.0.0-preview2-003131; \
   (cd tests/fsharp; mono ../../.nuget/NuGet.exe restore  project.json -PackagesDirectory ../../packages -ConfigFile ../../.nuget/NuGet.Config); \
   ./init-tools.sh;   \
   echo "------ start log";  \
@@ -28,7 +28,7 @@ chmod u+x packages/FsLexYacc.7.0.1/build/fslex.exe
 chmod u+x packages/FsLexYacc.7.0.1/build/fsyacc.exe
 
 # The FSharp.Compiler.Tools package doesn't work correctly unless a proper install of F# has been done on the machine
-sudo apt-get install fsharp
+sudo apt-get -y install fsharp
 
 # "access to the path /etc/mono/registry/last-time is denied"
 sudo mkdir /etc/mono/registry
