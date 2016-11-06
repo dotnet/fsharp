@@ -5,10 +5,7 @@ VisualStudioVersion = 12.0.30110.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D78E3B57-DAD1-4FE1-9DC8-84F7847B0C77}"
 	ProjectSection(SolutionItems) = preProject
-		fsharp-compiler-build.proj = fsharp-compiler-build.proj
 		fsharp-proto-build.proj = fsharp-proto-build.proj
-		fsharp-typeproviders-build.proj = fsharp-typeproviders-build.proj
-		root.traversal.targets = root.traversal.targets
 	EndProjectSection
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Fsc", "fsharp\Fsc\Fsc.fsproj", "{C94C257C-3C0A-4858-B5D8-D746498D1F08}"

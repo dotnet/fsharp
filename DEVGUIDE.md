@@ -23,7 +23,24 @@ The primary technical documents for the F# compiler code are
 
 ## Quick Start: Build, Test, Develop
 
-You can build the F# compiler for .NET Framework as follows:
+### F# Compiler (Linux)
+
+Currently you can do on Linux a bootstrap of the Mono version of the compiler.  Full testing is not enabled,
+nor is a .NET Core build of the compiler.
+
+First [install Mono](http://www.mono-project.com/docs/getting-started/install/linux/).  
+Then:
+    
+    ./build.sh
+
+results will be in ``Debug\net40\bin\...``.  This doesn't do any testing (beyond the bootstrap). You can
+run the compiler ``fsc.exe`` and F# Interactive ``fsi.exe`` by hand to test it.
+
+These steps are tested under the Linux/Mono configuration(s) in ``.travis.yml`` (Ubuntu).
+
+### F# Compiler (Windows)
+
+On Windows you can build the F# compiler for .NET Framework as follows:
 
     build.cmd
 
@@ -70,7 +87,7 @@ Building ``VisualFSharp.sln`` builds _nearly_ everything. However building porta
 FSharp.Core.dll is not included.  If you are just developing the core compiler, library
 and Visual F# Tools then building the solution will be enough.
 
-### [Optional] Install the Visual F# IDE Tools 
+## [Optional] Install the Visual F# IDE Tools  (Windows Only)
 
 At time of writing, the Visual F# IDE Tools can only be installed into Visual Studio "Next" (aka "Dev15") releases.
 The new builds of the Visual F# IDE Tools can no longer be installed into Visual Studio 2015.

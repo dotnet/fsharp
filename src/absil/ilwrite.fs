@@ -3690,7 +3690,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           let pdbOpt =
             match portablePDB with
             | true  -> 
-                let struct (uncompressedLength, contentId, stream) as pdbStream = generatePortablePdb fixupOverlappingSequencePoints embedAllSource embedSourceList sourceLink showTimes pdbData 
+                let (uncompressedLength, contentId, stream) as pdbStream = generatePortablePdb fixupOverlappingSequencePoints embedAllSource embedSourceList sourceLink showTimes pdbData 
                 if embeddedPDB then Some (compressPortablePdbStream uncompressedLength contentId stream)
                 else Some (pdbStream)
             | _ -> None
@@ -3717,7 +3717,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           let debugEmbeddedPdbChunk,next = 
               let streamLength = 
                     match pdbOpt with
-                    | Some struct (_,_,stream) -> int(stream.Length)
+                    | Some (_,_,stream) -> int(stream.Length)
                     | None -> 0
               chunk (align 0x4 (match embeddedPDB with 
                                 | true -> 8 + streamLength
@@ -4190,7 +4190,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
         try 
             let idd = 
                 match pdbOpt with 
-                | Some struct(originalLength, contentId, stream) ->
+                | Some (originalLength, contentId, stream) ->
                     if embeddedPDB then
                         embedPortablePdbInfo originalLength contentId stream showTimes fpdb debugDataChunk debugEmbeddedPdbChunk
                     else

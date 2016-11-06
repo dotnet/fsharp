@@ -1,15 +1,11 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-// This file is compiled 4(!) times in the codebase
+// This file is compiled 2(!) times in the codebase
 //    - as the internal implementation of printf '%A' formatting 
 //           defines: RUNTIME
-//    - as the internal implementation of structured formatting in the FSharp.Compiler-proto.dll 
-//           defines: COMPILER + BUILDING_WITH_LKG
 //    - as the internal implementation of structured formatting in FSharp.Compiler.dll 
 //           defines: COMPILER 
 //           NOTE: this implementation is used by fsi.exe. This is very important.
-//    - as the public implementation of structured formatting in the FSharp.PowerPack.dll  
-//           defines: <none> 
 //
 // The one implementation file is used because we very much want to keep the implementations of
 // structured formatting the same for fsi.exe and '%A' printing. However fsi.exe may have

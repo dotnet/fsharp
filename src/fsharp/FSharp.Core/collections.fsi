@@ -15,11 +15,8 @@ namespace Microsoft.FSharp.Collections
         /// <summary>Structural comparison.  Compare using Operators.compare.</summary>
         val inline Structural<'T> : IComparer<'T> when 'T : comparison 
 
-#if BUILDING_WITH_LKG
-#else
         /// <summary>Non-structural comparison.  Compare using NonStructuralComparison.compare.</summary>
         val inline NonStructural< ^T > : IComparer< ^T > when ^T : (static member ( < ) : ^T * ^T    -> bool) and ^T : (static member ( > ) : ^T * ^T    -> bool) 
-#endif
 
         /// <summary>Compare using the given comparer function.</summary>
         /// <param name="comparer">A function to compare two values.</param>

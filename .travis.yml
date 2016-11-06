@@ -1,0 +1,28 @@
+
+language: csharp
+
+sudo: required
+dist: trusty
+
+os:
+  - linux
+
+mono:
+  - latest
+  - 4.6.1
+
+env:
+  - BUILD_NET40=1 TEST_NET40_COREUNIT_SUITE=1 
+
+# These are not yet enabled
+#  - BUILD_CORECLR=1 TEST_CORECLR_COREUNIT_SUITE=1
+#  - BUILD_CORECLR=1 TEST_CORECLR_COREUNIT_SUITE=1 BUILD_PROTO_WITH_CORECLR_LKG=1
+
+script:
+  - ./build.sh
+
+
+  
+
+
+

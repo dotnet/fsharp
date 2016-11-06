@@ -39,12 +39,9 @@ namespace Microsoft.FSharp.Collections
         let inline Structural<'T when 'T : comparison > : IComparer<'T> = 
             LanguagePrimitives.FastGenericComparer<'T>
 
-#if BUILDING_WITH_LKG
-#else
         let inline NonStructural< 'T when 'T : (static member ( < ) : 'T * 'T    -> bool) and 'T : (static member ( > ) : 'T * 'T    -> bool) > : IComparer< 'T > = 
             { new IComparer<'T> with
                   member __.Compare(x,y) = NonStructuralComparison.compare x y } 
-#endif
 
         let FromFunction comparer = 
             let comparer = OptimizedClosures.FSharpFunc<'T,'T,int>.Adapt(comparer)
