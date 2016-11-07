@@ -20,8 +20,14 @@
     <Tailcalls>false</Tailcalls>
     <TargetProfile Condition=" '$(TargetFramework)' == 'portable7' or '$(TargetFramework)' == 'portable78' or '$(TargetFramework)' == 'portable259' or '$(TargetFramework)' == 'coreclr' ">netcore</TargetProfile>
     <NoWarn>$(NoWarn);217</NoWarn>
-    <OutputPath Condition="'$(TargetFramework)' == 'coreclr'">$(FSharpSourcesRoot)\..\tests\testbin\$(Configuration)\coreclr\FSharp.Core.unittests</OutputPath>
-    <CustomOutputPath Condition="'$(TargetFramework)' == 'coreclr'">true</CustomOutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'coreclr' ">
+    <OutputPath>bin\$(Configuration)\netcoreapp1.0</OutputPath>
+    <CustomOutputPath>true</CustomOutputPath>
+    <DOTNET_PUBLISH>true</DOTNET_PUBLISH>
+    <DOTNET_PUBLISH_PLATFORM>win7-x64</DOTNET_PUBLISH_PLATFORM>
+    <DOTNET_PUBLISH_PATH>$(FSharpSourcesRoot)\..\tests\testbin\$(Configuration)\coreclr\FSharp.Core.unittests</DOTNET_PUBLISH_PATH>
+    <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <PropertyGroup>
     <DefineConstants Condition=" '$(TargetFramework)' == 'sl5' ">$(DefineConstants);SILVERLIGHT</DefineConstants>
