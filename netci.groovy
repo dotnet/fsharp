@@ -4,15 +4,20 @@ import jobs.generation.JobReport;
 def project = GithubProject
 def branch = GithubBranchName
 
-def osList = ['Windows_NT'] //'Ubuntu', 'OSX', 'CentOS7.1'
+def osList = ['Windows_NT', 'Ubuntu14.04'] //, 'OSX', 'CentOS7.1'
 
 def static getBuildJobName(def configuration, def os) {
     return configuration.toLowerCase() + '_' + os.toLowerCase()
 }
 
 [true, false].each { isPullRequest ->
-    ['Debug', 'Release_ci_part1', 'Release_ci_part2'].each { configuration ->
-        osList.each { os ->
+    osList.each { os ->
+        def configurations = ['Debug', 'Release_ci_part1', 'Release_ci_part2'];
+        if (os != 'Windows_NT') {
+            // Only build one configuration on Linux/... so far
+            configurations = ['Release'];
+        }
+        configurations.each { configuration ->
 
             def lowerConfiguration = configuration.toLowerCase()
 
@@ -31,8 +36,11 @@ def static getBuildJobName(def configuration, def os) {
                 if (configuration == "Release_ci_part1") {
                     build_args = "ci_part1"
                 }
-                else {
+                else if (configuration == "Release_ci_part2") {
                     build_args = "ci_part2"
+                }
+                else {
+                    build_args = "ci"
                 }
             }
 

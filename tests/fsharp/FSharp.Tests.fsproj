@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <FSharpSourcesRoot>..\..\src</FSharpSourcesRoot>
+    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\src</FSharpSourcesRoot>
     <ProjectGuid>{C163E892-5BF7-4B59-AA99-B0E8079C67C4}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
