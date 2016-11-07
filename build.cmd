@@ -466,13 +466,14 @@ if NOT EXIST Proto\net40\bin\fsc-proto.exe (
   set BUILD_PROTO=1
 )
 
+set _dotnetexe=%~dp0Tools\dotnetcli\dotnet.exe
 
 rem Build Proto
 if '%BUILD_PROTO%' == '1' (
   rmdir /s /q Proto
 
   if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
-echo on
+
     pushd .\lkg\fsc & %_dotnetexe% restore & popd & if ERRORLEVEL 1 echo Error:%errorlevel% dotnet restore failed & goto :failure
     pushd .\lkg\fsi & %_dotnetexe% restore & popd & if ERRORLEVEL 1 echo Error:%errorlevel% dotnet restore failed & goto :failure
     pushd .\lkg\fsc & %_dotnetexe% publish project.json --no-build -o %~dp0Tools\lkg -r win7-x64 & popd & if ERRORLEVEL 1 echo Error: dotnet publish failed  & goto :failure
@@ -529,17 +530,15 @@ if not exist %NUNITPATH% echo Error: Could not find %NUNITPATH% && goto :failure
 @echo xcopy "%~dp0tests\fsharpqa\testenv\src\nunit*.*" "%~dp0tests\fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
       xcopy "%~dp0tests\fsharpqa\testenv\src\nunit*.*" "%~dp0tests\fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
 
+
 if '%BUILD_CORECLR%' == '1' (
   echo Restoring CoreCLR packages and runtimes necessary for actually running and testing
   echo  %_nugetexe% restore .\tests\fsharp\project.json -PackagesDirectory packages -ConfigFile %_nugetconfig%
   %_nugetexe% restore .\tests\fsharp\project.json -PackagesDirectory packages -ConfigFile %_nugetconfig%
   
-  echo Deploy x86 compiler to tests\testbin\%BUILD_CONFIG%\coreclr\fsc\win7-x86, ready for testing
-  echo %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/win7-x86 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\win7-x86 --copyCompiler:yes --v:quiet
-       %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/win7-x86 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\win7-x86 --copyCompiler:yes --v:quiet
-  echo Deploy x86 runtime and FSharp.Core library to tests\testbin\%BUILD_CONFIG%\coreclr\win7-x86, ready for testing
-  echo %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/win7-x86 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\win7-x86 --copyCompiler:no --v:quiet
-       %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/win7-x86 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\win7-x86 --copyCompiler:no --v:quiet
+  echo Deploy x86 version of compiler and dependencies, ready for testing
+  %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/win7-x86 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\win7-x86 --copyCompiler:yes --v:quiet
+  %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/win7-x86 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\win7-x86 --copyCompiler:no --v:quiet
 
   echo Deploy x64 compiler to tests\testbin\%BUILD_CONFIG%\coreclr\fsc\win7-x64, ready for testing
   echo %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/win7-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\win7-x64 --copyCompiler:yes --v:quiet
@@ -666,7 +665,7 @@ if "%OSARCH%"=="AMD64" set SYSWOW64=SysWoW64
 
 if not "%OSARCH%"=="x86" set REGEXE32BIT=%WINDIR%\syswow64\reg.exe
 
-							FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
+                            FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
 if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v8.1A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
 if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v8.0A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
 if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.1\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
@@ -732,7 +731,7 @@ if '%TEST_NET40_FSHARPQA_SUITE%' == '1' (
 	echo perl %~dp0tests\fsharpqa\testenv\bin\runall.pl -resultsroot %RESULTSDIR% -results !OUTPUTFILE! -log !ERRORFILE! -fail !FAILENV! -cleanup:no %INCLUDE_ARG_RUNALL% %EXCLUDE_ARG_RUNALL% %PARALLEL_ARG%
 		 perl %~dp0tests\fsharpqa\testenv\bin\runall.pl -resultsroot %RESULTSDIR% -results !OUTPUTFILE! -log !ERRORFILE! -fail !FAILENV! -cleanup:no %INCLUDE_ARG_RUNALL% %EXCLUDE_ARG_RUNALL% %PARALLEL_ARG%
 
-	popd
+    popd
     if ERRORLEVEL 1 (
         type "%RESULTSDIR%\!OUTPUTFILE!"
         echo -----------------------------------------------------------------
@@ -780,14 +779,14 @@ set ERRORFILE=%RESULTSDIR%\test-net40-coreunit-errors.log
 set command="%NUNIT3_CONSOLE%" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" --output:"!OUTPUTFILE!" --err:"!ERRORFILE!" --work:"%FSCBINPATH%" "%FSCBINPATH%\FSharp.Core.Unittests.dll"
 if '%TEST_NET40_COREUNIT_SUITE%' == '1' (
 
-	rem Turn off delayed expansion when manipulating variables where a ! may appear in the argument text (CMD batch file oddity)
-	rem Note: each setlocal must be matched by an executed endlocal
-	setlocal disableDelayedExpansion
+    rem Turn off delayed expansion when manipulating variables where a ! may appear in the argument text (CMD batch file oddity)
+    rem Note: each setlocal must be matched by an executed endlocal
+    setlocal disableDelayedExpansion
     echo %command% %WHERE_ARG_NUNIT%
          %command%  %WHERE_ARG_NUNIT%
     endlocal 
 
-	call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
+    call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
     if NOT '!saved_errorlevel!' == '0' (
         echo -----------------------------------------------------------------
         type "!OUTPUTFILE!"
@@ -836,20 +835,18 @@ set OUTPUTFILE=%RESULTSDIR%\test-coreclr-coreunit-output.log
 set ERRORFILE=%RESULTSDIR%\test-coreclr-coreunit-errors.log
 
 set architecture=win7-x64
-set CORERUNPATH=%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\!architecture!
 
-set command="!CORERUNPATH!\corerun.exe" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\fsharp.core.unittests\FSharp.Core.Unittests.exe"
+set command="%_dotnetexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\fsharp.core.unittests\FSharp.Core.Unittests.dll"
 if '%TEST_CORECLR_COREUNIT_SUITE%' == '1' (
 
-	rem Turn off delayed expansion when manipulating variables where a ! may appear in the argument text (CMD batch file oddity)
-	rem Note: each setlocal must be matched by an executed endlocal
-	setlocal disableDelayedExpansion
+    rem Turn off delayed expansion when manipulating variables where a ! may appear in the argument text (CMD batch file oddity)
+    rem Note: each setlocal must be matched by an executed endlocal
+    setlocal disableDelayedExpansion
     echo %command% %WHERE_ARG_NUNIT%
          %command%  %WHERE_ARG_NUNIT%
     endlocal 
 
-	rem call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
-
+    rem call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
     if ERRORLEVEL 1 (
         echo -----------------------------------------------------------------
         rem type "!OUTPUTFILE!"
