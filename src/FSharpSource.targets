@@ -480,8 +480,16 @@
     </ItemGroup>
   </Target>
 
-  <Target Name="dotnetrestore" BeforeTargets="Build" Condition=" '$(TargetFramework)' == 'coreclr' ">
+  <Target Name="nugetrestore" BeforeTargets="Build" Condition=" '$(TargetFramework)' == 'coreclr'  and '$(DOTNET_PUBLISH)' != 'true' ">
     <Exec Command="$(MSBuildThisFileDirectory)..\.nuget\nuget.exe restore -PackagesDirectory $(MSBuildThisFileDirectory)..\packages -Config $(MSBuildThisFileDirectory)..\.nuget\NuGet.Config project.json"/>
+  </Target>
+
+  <Target Name="dotnetrestore" BeforeTargets="Build" Condition=" '$(TargetFramework)' == 'coreclr' and '$(DOTNET_PUBLISH)' == 'true' ">
+    <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe restore --configfile $(MSBuildThisFileDirectory)..\.nuget\NuGet.Config project.json"/>
+  </Target>
+
+  <Target Name="dotnetpublish" BeforeTargets="Build" Condition=" '$(TargetFramework)' == 'coreclr' and '$(DOTNET_PUBLISH)' == 'true' ">
+    <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe publish --no-build project.json -r $(DOTNET_PUBLISH_PLATFORM) -c $(Configuration) -o $(DOTNET_PUBLISH_PATH)"/>
   </Target>
 
   <Target Name="GenerateSourceLink" BeforeTargets="CoreCompile" Condition="'$(UseSourceLink)' == 'true'">
