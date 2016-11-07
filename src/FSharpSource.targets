@@ -462,9 +462,7 @@
     <PackageTags       Condition="'$(PackageTags)' == ''"      >Visual F# Compiler FSharp coreclr functional programming</PackageTags>
   </PropertyGroup>
 
-  <!-- This build step copies files to the output folder while replacing build variables in the text of
-             those file. -->
-
+  <!-- This build step copies files to the output folder while replacing build variables in the text of those file. -->
   <PropertyGroup>
     <CompileDependsOn>$(CompileDependsOn);CopyAndSubstituteTextFiles</CompileDependsOn>
   </PropertyGroup>
