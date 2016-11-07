@@ -24,8 +24,8 @@
     <OtherFlags Condition=" '$(TargetFramework)'=='portable259'">$(OtherFlags) --compiling-fslib-40 --compiling-fslib-nobigint</OtherFlags>
   </PropertyGroup>
   <ItemGroup>
-    <PackageNuspec Include="Microsoft.FSharp.Core.netcore.nuspec" />
-    <None Include="FSharp.Core.runtimeconfig.json"><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></None>
+    <PackageNuspec Include="Microsoft.FSharp.Core.netcore.nuspec" Condition="'$(TargetFramework)' == 'coreclr'" />
+    <None Include="FSharp.Core.runtimeconfig.json"                Condition="'$(TargetFramework)' == 'coreclr'" ><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></None>
   </ItemGroup>
   <ItemGroup>
     <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
