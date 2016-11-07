@@ -322,6 +322,14 @@ type OptionalTrace =
             match t with        
             | WithTrace trace -> List.iter (fun (action, undo) -> trace.Push action undo; action())
             | NoTrace         -> List.iter (fun (action, _   ) -> action())
+    member t.CollectThenUndoOrCommit predicate f =
+        let newTrace = Trace.New()
+        let res = f newTrace
+        match predicate res, t with
+        | false, _           -> newTrace.Undo()
+        | true , WithTrace t -> t.actions <- newTrace.actions @ t.actions
+        | true , NoTrace     -> ()
+        res
 
 let CollectThenUndo f = 
     let trace = Trace.New()
@@ -1245,9 +1253,9 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) permitWeakResolution ndeep
                           let minst = FreshenMethInfo m minfo
                           let objtys = minfo.GetObjArgTypes(amap, m, minst)
                           Some(CalledMeth<Expr>(csenv.InfoReader,None,false,FreshenMethInfo,m,AccessibleFromEverywhere,minfo,minst,minst,None,objtys,[(callerArgs,[])],false,false,None)))
-
+              
               let methOverloadResult,errors = 
-                  CollectThenUndo (fun trace -> ResolveOverloading csenv (WithTrace(trace)) nm ndeep (Some traitInfo) (0,0) AccessibleFromEverywhere calledMethGroup false (Some rty))  
+                  trace.CollectThenUndoOrCommit (fun (a, _) -> Option.isSome a) (fun trace -> ResolveOverloading csenv (WithTrace trace) nm ndeep (Some traitInfo) (0,0) AccessibleFromEverywhere calledMethGroup false (Some rty))
 
               match recdPropSearch, methOverloadResult with 
               | Some (rfinfo, isSetProp), None -> 
@@ -1257,9 +1265,8 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) permitWeakResolution ndeep
                   ResultD (TTraitSolvedRecdProp(rfinfo, isSetProp)))
               | None, Some (calledMeth:CalledMeth<_>) -> 
                   // OK, the constraint is solved. 
-                  // Re-run without undo to commit the inference equations. Throw errors away 
+                  
                   let minfo = calledMeth.Method
-                  let _,errors = ResolveOverloading csenv trace nm ndeep (Some traitInfo) (0,0) AccessibleFromEverywhere calledMethGroup false (Some rty)
 
                   errors ++ (fun () -> 
                       let isInstance = minfo.IsInstance
