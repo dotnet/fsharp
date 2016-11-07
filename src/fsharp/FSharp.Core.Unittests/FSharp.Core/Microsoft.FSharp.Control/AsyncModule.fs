@@ -446,7 +446,7 @@ type AsyncModule() =
     [<Test; Category("Expensive")>] // takes 3 minutes!
     member this.``Async.Choice specification test``() =
         ThreadPool.SetMinThreads(100,100) |> ignore
-        Check.QuickThrowOnFailure (normalize >> runChoice)
+        Check.One ({Config.QuickThrowOnFailure with EndSize = 20}, normalize >> runChoice)
 #endif
 
     [<Test>]
