@@ -462,27 +462,9 @@
     <PackageTags       Condition="'$(PackageTags)' == ''"      >Visual F# Compiler FSharp coreclr functional programming</PackageTags>
   </PropertyGroup>
 
-  <Target Name="ValidateConfiguration">
-    <Error
-            Text="Configuration '$(Configuration)' is not one of the supported configurations: Debug, Release, Proto"
-            Condition="'$(Configuration)'!='Release' and '$(Configuration)'!='Debug' and '$(Configuration)'!='VSRelease' and '$(Configuration)'!='VSDebug' and '$(Configuration)'!='Proto'"/>
-    <Error
-            Text="TargetFramework '$(TargetFramework)' is not one of the supported configurations: 'empty', net20, net40, coreclr, sl3-wp, sl5, sl5-compiler, portable47, portable7, portable78, portable259"
-            Condition="! ('$(TargetFramework)' == 'net40' or 
-                          '$(TargetFramework)' == 'coreclr' or 
-                          '$(TargetFramework)' == 'portable47' or
-                          '$(TargetFramework)' == 'portable7' or
-                          '$(TargetFramework)' == 'portable78' or 
-                          '$(TargetFramework)' == 'portable259')"/>
-    <Error
-        Text="TargetFramework '$(TargetFramework)' is only supported when building FSharp.Core.dll and FSharp.Core.Unittests.dll. All other components must be built with TargetFramework=net40"
-        Condition="'$(AssemblyName)' != 'FSharp.Core' and '$(AssemblyName)' != 'FSharp.Core.Unittests' and '$(TargetFramework)' != 'net40' and '$(TargetFramework)' != 'coreclr'"/>
-
-  </Target>
-
   <!-- This build step copies files to the output folder while replacing build variables in the text of
              those file. -->
-	
+
   <PropertyGroup>
     <CompileDependsOn>$(CompileDependsOn);CopyAndSubstituteTextFiles</CompileDependsOn>
   </PropertyGroup>
@@ -491,7 +473,7 @@
           Name="CopyAndSubstituteTextFiles"
           Inputs="@(CopyAndSubstituteText)"
           Outputs="@(CopyAndSubstituteText->'$(OutDir)%(TargetFilename)')"  >
-	<Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec $(MSBuildThisFileDirectory)scripts/subst.fsx --in:&quot;%(CopyAndSubstituteText.FullPath)&quot; --out:&quot;$(OutDir)%(CopyAndSubstituteText.TargetFilename)&quot; --pattern1:&quot;%(CopyAndSubstituteText.Pattern1)&quot; --replacement1:&quot;%(CopyAndSubstituteText.Replacement1)&quot; --pattern2:&quot;%(CopyAndSubstituteText.Pattern2)&quot; --replacement2:&quot;%(CopyAndSubstituteText.Replacement2)&quot; " />
+    <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec $(MSBuildThisFileDirectory)scripts/subst.fsx --in:&quot;%(CopyAndSubstituteText.FullPath)&quot; --out:&quot;$(OutDir)%(CopyAndSubstituteText.TargetFilename)&quot; --pattern1:&quot;%(CopyAndSubstituteText.Pattern1)&quot; --replacement1:&quot;%(CopyAndSubstituteText.Replacement1)&quot; --pattern2:&quot;%(CopyAndSubstituteText.Pattern2)&quot; --replacement2:&quot;%(CopyAndSubstituteText.Replacement2)&quot; " />
     <!-- Make sure it will get cleaned  -->
     <CreateItem Include="$(OutDir)%(CopyAndSubstituteText.TargetFilename)">
       <Output TaskParameter="Include" ItemName="FileWrites"/>
