@@ -18,6 +18,7 @@
     <ConfigurationGroup Condition="'$(ConfigurationGroup)'==''">Debug</ConfigurationGroup>
   </PropertyGroup>
 
+  <!-- Nuget Package properties -->
   <PropertyGroup>
     <!-- Tail calls on, even in debug -->
     <Tailcalls>true</Tailcalls>

@@ -502,6 +502,14 @@
     <EnsureThereAreNoUnusedFsSrGenResources>false</EnsureThereAreNoUnusedFsSrGenResources>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <PackageLicenceUrl Condition="'$(PackageLicenceUrl)' == ''">https://github.com/Microsoft/visualfsharp/blob/master/License.txt</PackageLicenceUrl>
+    <PackageProjectUrl Condition="'$(PackageProjectUrl)' == ''">https://github.com/Microsoft/visualfsharp</PackageProjectUrl>
+    <PackageVersion    Condition="'$(PackageVersion)' == ''"   >$(NuGetPerBuildPreReleaseVersion)</PackageVersion>
+    <PackageAuthors    Condition="'$(PackageAuthors)' == ''"   >Microsoft</PackageAuthors>
+    <PackageTags       Condition="'$(PackageTags)' == ''"      >Visual F# Compiler FSharp coreclr functional programming</PackageTags>
+  </PropertyGroup>
+
   <Target Name="ValidateConfiguration">
     <Error
             Text="Configuration '$(Configuration)' is not one of the supported configurations: Debug, Release, Proto"
@@ -549,7 +557,15 @@
   </Target>
 
   <Target Name="dotnetrestore" BeforeTargets="Build" Condition=" '$(TargetFramework)' == 'coreclr' ">
-    <Exec Command="$(MSBuildThisFileDirectory)..\.nuget\nuget.exe restore -PackagesDirectory $(MSBuildThisFileDirectory)..\packages -Config $(MSBuildThisFileDirectory)..\.nuget\NuGet.Config project.json"/>
+    <Exec Command="$(MSBuildThisFileDirectory)..\.nuget\nuget.exe restore -PackagesDirectory $(MSBuildThisFileDirectory)..\packages -Config $(MSBuildThisFileDirectory)..\.nuget\NuGet.Config project.json" />
+  </Target>
+
+  <Target Name="nugetpack" AfterTargets="Build" Condition="'$(TargetFramework)' == 'coreclr' "
+          Inputs="@(PackageNuspec)" Outputs='$(OutputPath.TrimEnd("\"))\nuget\"%(PackageNuspec.Filename)).nupkg'>
+    <PropertyGroup>
+      <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)"</PackageProperties>
+    </PropertyGroup>
+    <Exec Command='$(MSBuildThisFileDirectory)..\.nuget\nuget.exe pack %(PackageNuspec.Filename)%(PackageNuspec.Extension) -BasePath "$(OutputPath.TrimEnd("\"))" -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory "$(OutputPath.TrimEnd("\"))"' />
   </Target>
 
   <Target Name="GenerateSourceLink" BeforeTargets="CoreCompile">
