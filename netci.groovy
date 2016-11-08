@@ -4,7 +4,7 @@ import jobs.generation.JobReport;
 def project = GithubProject
 def branch = GithubBranchName
 
-def osList = ['Windows_NT', 'Ubuntu14.04'] //, 'OSX', 'CentOS7.1'
+def osList = ['Windows_NT', 'Ubuntu14.04' ] //, 'OSX', 'CentOS7.1'
 
 def static getBuildJobName(def configuration, def os) {
     return configuration.toLowerCase() + '_' + os.toLowerCase()
@@ -12,7 +12,7 @@ def static getBuildJobName(def configuration, def os) {
 
 [true, false].each { isPullRequest ->
     osList.each { os ->
-        def configurations = ['Debug', 'Release_ci_part1', 'Release_ci_part2'];
+        def configurations = ['Debug', 'Release_ci_part1', 'Release_ci_part2', 'Release_net40_no_vs', ];
         if (os != 'Windows_NT') {
             // Only build one configuration on Linux/... so far
             configurations = ['Release'];
@@ -38,6 +38,9 @@ def static getBuildJobName(def configuration, def os) {
                 }
                 else if (configuration == "Release_ci_part2") {
                     build_args = "ci_part2"
+                }
+                else if (configuration == "Release_net40_no_vs") {
+                    build_args = "net40"
                 }
                 else {
                     build_args = "ci"
@@ -68,7 +71,8 @@ def static getBuildJobName(def configuration, def os) {
             // TODO: set to false after tests are fully enabled
             def skipIfNoTestFiles = true
 
-            Utilities.setMachineAffinity(newJob, os, os == 'Windows_NT' ? 'latest-dev15' : 'latest-or-auto')
+            def affinity = configuration == 'Release_net40_no_vs' ? 'latest-or-auto' : (os == 'Windows_NT' ? 'latest-dev15' : 'latest-or-auto')
+            Utilities.setMachineAffinity(newJob, os, affinity)
             Utilities.standardJobSetup(newJob, project, isPullRequest, "*/${branch}")
             Utilities.addArchival(newJob, "tests/TestResults/*.*", "", skipIfNoTestFiles, false)
             Utilities.addArchival(newJob, "${buildFlavor}/**")
