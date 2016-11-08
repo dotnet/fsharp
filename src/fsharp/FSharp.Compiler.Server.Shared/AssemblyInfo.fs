@@ -11,8 +11,7 @@ do()
 
 #if !CROSS_PLATFORM_COMPILER
 // This Visual Studio-specific attribute is needed on this DLL because for historical reasons it shipped as part of the Visual F# IDE Tools rather than this F# SDK
-open Microsoft.VisualStudio.Shell
-[<assembly: ProvideCodeBase(CodeBase = @"$PackageFolder$\FSharp.Compiler.Server.Shared.dll")>]
+[<assembly: Microsoft.VisualStudio.Shell.ProvideCodeBase(CodeBase = @"$PackageFolder$\FSharp.Compiler.Server.Shared.dll")>]
 #endif
 
 do()
