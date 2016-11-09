@@ -16,13 +16,11 @@
 
   <ItemGroup Condition="'$(BUILD_CORECLR)'=='1'">
     <ProjectsWithCoreClr Include="src/fsharp/FSharp.Core/FSharp.Core.fsproj" />
-    <ProjectsWithCoreClr Include="src/fsharp/FSharp.Core.netcore.nuget/FSharp.Core.netcore.nuget.proj" />
     <ProjectsWithCoreClr Include="src/fsharp/FSharp.Build/FSharp.Build.fsproj" />
     <ProjectsWithCoreClr Include="src/fsharp/FSharp.Compiler/FSharp.Compiler.fsproj" />
     <ProjectsWithCoreClr Include="src/fsharp/FSharp.Compiler.Interactive.Settings/FSharp.Compiler.Interactive.Settings.fsproj" />
     <ProjectsWithCoreClr Include="src/fsharp/Fsc/Fsc.fsproj" />
     <ProjectsWithCoreClr Include="src/fsharp/fsi/Fsi.fsproj" />
-    <ProjectsWithCoreClr Include="src/fsharp/FSharp.Compiler.netcore.nuget/FSharp.Compiler.nuget.proj" />
     <ProjectsWithCoreClr Include="src/fsharp/FSharp.Compiler.Host.netcore.nuget/FSharp.Compiler.Host.proj" />
  </ItemGroup>
 

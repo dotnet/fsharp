@@ -453,15 +453,25 @@
     <RootNamespace></RootNamespace>
     <DocumentationFile>$(OutputPath)$(AssemblyName).xml</DocumentationFile>
   </PropertyGroup>
-	
+
+  <PropertyGroup>
+    <PackageLicenceUrl Condition="'$(PackageLicenceUrl)' == ''">https://github.com/Microsoft/visualfsharp/blob/master/License.txt</PackageLicenceUrl>
+    <PackageProjectUrl Condition="'$(PackageProjectUrl)' == ''">https://github.com/Microsoft/visualfsharp</PackageProjectUrl>
+    <PackageVersion    Condition="'$(PackageVersion)' == ''"   >$(NuGetPerBuildPreReleaseVersion)</PackageVersion>
+    <PackageAuthors    Condition="'$(PackageAuthors)' == ''"   >Microsoft</PackageAuthors>
+    <PackageTags       Condition="'$(PackageTags)' == ''"      >Visual F# Compiler FSharp coreclr functional programming</PackageTags>
+  </PropertyGroup>
+
+  <!-- This build step copies files to the output folder while replacing build variables in the text of those file. -->
   <PropertyGroup>
     <CompileDependsOn>$(CompileDependsOn);CopyAndSubstituteTextFiles</CompileDependsOn>
   </PropertyGroup>
+
   <Target
           Name="CopyAndSubstituteTextFiles"
           Inputs="@(CopyAndSubstituteText)"
           Outputs="@(CopyAndSubstituteText->'$(OutDir)%(TargetFilename)')"  >
-	<Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec $(MSBuildThisFileDirectory)scripts/subst.fsx --in:&quot;%(CopyAndSubstituteText.FullPath)&quot; --out:&quot;$(OutDir)%(CopyAndSubstituteText.TargetFilename)&quot; --pattern1:&quot;%(CopyAndSubstituteText.Pattern1)&quot; --replacement1:&quot;%(CopyAndSubstituteText.Replacement1)&quot; --pattern2:&quot;%(CopyAndSubstituteText.Pattern2)&quot; --replacement2:&quot;%(CopyAndSubstituteText.Replacement2)&quot; " />
+    <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec $(MSBuildThisFileDirectory)scripts/subst.fsx --in:&quot;%(CopyAndSubstituteText.FullPath)&quot; --out:&quot;$(OutDir)%(CopyAndSubstituteText.TargetFilename)&quot; --pattern1:&quot;%(CopyAndSubstituteText.Pattern1)&quot; --replacement1:&quot;%(CopyAndSubstituteText.Replacement1)&quot; --pattern2:&quot;%(CopyAndSubstituteText.Pattern2)&quot; --replacement2:&quot;%(CopyAndSubstituteText.Replacement2)&quot; " />
     <!-- Make sure it will get cleaned  -->
     <CreateItem Include="$(OutDir)%(CopyAndSubstituteText.TargetFilename)">
       <Output TaskParameter="Include" ItemName="FileWrites"/>
@@ -480,8 +490,16 @@
     </ItemGroup>
   </Target>
 
-  <Target Name="nugetrestore" BeforeTargets="Build" Condition=" '$(TargetFramework)' == 'coreclr'  and '$(DOTNET_PUBLISH)' != 'true' ">
-    <Exec Command="$(MSBuildThisFileDirectory)..\.nuget\nuget.exe restore -PackagesDirectory $(MSBuildThisFileDirectory)..\packages -Config $(MSBuildThisFileDirectory)..\.nuget\NuGet.Config project.json"/>
+  <Target Name="dotnetrestore" BeforeTargets="Build" Condition=" '$(TargetFramework)' == 'coreclr' ">
+    <Exec Command="$(MSBuildThisFileDirectory)..\.nuget\nuget.exe restore -PackagesDirectory $(MSBuildThisFileDirectory)..\packages -Config $(MSBuildThisFileDirectory)..\.nuget\NuGet.Config project.json" />
+  </Target>
+
+  <Target Name="nugetpack" AfterTargets="Build" Condition="'$(TargetFramework)' == 'coreclr' "
+          Inputs="@(PackageNuspec)" Outputs='$(OutputPath.TrimEnd("\"))\nuget\"%(PackageNuspec.Filename)).nupkg'>
+    <PropertyGroup>
+      <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)"</PackageProperties>
+    </PropertyGroup>
+    <Exec Command='$(MSBuildThisFileDirectory)..\.nuget\nuget.exe pack %(PackageNuspec.Filename)%(PackageNuspec.Extension) -BasePath "$(OutputPath.TrimEnd("\"))" -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory "$(OutputPath.TrimEnd("\"))"' />
   </Target>
 
   <Target Name="dotnetrestore" BeforeTargets="Build" Condition=" '$(TargetFramework)' == 'coreclr' and '$(DOTNET_PUBLISH)' == 'true' ">
