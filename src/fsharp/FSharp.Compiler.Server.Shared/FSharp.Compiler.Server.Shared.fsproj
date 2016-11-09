@@ -22,12 +22,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Server.Shared.dll.fs">
-      <Link>assemblyinfo.FSharp.Compiler.Server.Shared.dll.fs</Link>
-    </Compile>
-    <Compile Include="..\fsiserver\fsiserver.fs">
-      <Link>fsiserver.fs</Link>
-    </Compile>
+    <Compile Include="FSharpInteractiveServer.fs" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
       <None Include="project.json" />
