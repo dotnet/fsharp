@@ -1103,7 +1103,7 @@ lexIndentOffForML,"Consider using a file with extension '.ml' or '.mli' instead"
 1308,ilSignInvalidSignatureSize,"Invalid signature size"
 1309,ilSignNoSignatureDirectory,"No signature directory"
 1310,ilSignInvalidPKBlob,"Invalid Public Key blob"
-# Fsc.exe resource strings
+# fsc.exe resource strings
 fscTooManyErrors,"Exiting - too many errors"
 2001,docfileNoXmlSuffix,"The documentation file has no .xml suffix"
 2002,fscNoImplementationFiles,"No implementation files specified"

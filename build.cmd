@@ -1,4 +1,4 @@
-@if "%_echo%"=="" echo off
+@if "%_echo%"=="" echo off 
 
 setlocal enableDelayedExpansion
 
@@ -425,8 +425,8 @@ set _ngenexe="%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\ngen.exe"
 if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 
 echo ---------------- Done with prepare, starting package restore ----------------
-set _nugetexe="%~dp0.nuget\nuget.exe"
-set _nugetconfig="%~dp0.nuget\nuget.config"
+set _nugetexe="%~dp0.nuget\NuGet.exe"
+set _nugetconfig="%~dp0.nuget\NuGet.Config"
 
 if '%RestorePackages%' == 'true' (
     %_ngenexe% install %_nugetexe%  /nologo 
@@ -452,7 +452,7 @@ if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
 
 set _dotnetexe=%~dp0Tools\dotnetcli\dotnet.exe
 
-set _fsiexe="packages\FSharp.Compiler.Tools.4.0.1.10\tools\fsi.exe"
+set _fsiexe="packages\FSharp.Compiler.Tools.4.0.1.19\tools\fsi.exe"
 if not exist %_fsiexe% echo Error: Could not find %_fsiexe% && goto :failure
 %_ngenexe% install %_fsiexe% /nologo 
 
@@ -462,42 +462,22 @@ if not exist %_nugetexe% echo Error: Could not find %_nugetexe% && goto :failure
 echo ---------------- Done with package restore, starting proto ------------------------
 
 rem Decide if Proto need building
-if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
-  if NOT EXIST Tools\lkg\fsc.exe (
-    set BUILD_PROTO=1
-  )
+if NOT EXIST Proto\net40\bin\fsc-proto.exe (
+  set BUILD_PROTO=1
 )
 
-if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '0' (
-  if NOT EXIST Proto\net40\bin\fsc-proto.exe (
-    set BUILD_PROTO=1
-  )
-)
-
+set _dotnetexe=%~dp0Tools\dotnetcli\dotnet.exe
 
 rem Build Proto
 if '%BUILD_PROTO%' == '1' (
+  rmdir /s /q Proto
+
   if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
 
-    pushd .\lkg & %_dotnetexe% restore --packages %~dp0\packages &popd
-    @if ERRORLEVEL 1 echo Error: dotnet restore failed  && goto :failure
-
-    pushd .\lkg & %_dotnetexe% publish project.json -o %~dp0\Tools\lkg -r win7-x64 &popd
-    @if ERRORLEVEL 1 echo Error: dotnet publish failed  && goto :failure
-
-    echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
-         %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
-    @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
-
-    rem copy targestfile into tools directory ... temporary fix until packaging complete.
-    echo copy src\fsharp\FSharp.Build\Microsoft.FSharp.targets tools\Microsoft.FSharp.targets
-         copy src\fsharp\FSharp.Build\Microsoft.FSharp.targets tools\Microsoft.FSharp.targets
-
-    echo copy src\fsharp\FSharp.Build\Microsoft.Portable.FSharp.targets tools\Microsoft.Portable.FSharp.targets
-         copy src\fsharp\FSharp.Build\Microsoft.Portable.FSharp.targets tools\Microsoft.Portable.FSharp.targets
-  )
-
-  if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '0' (
+    pushd .\lkg\fsc & %_dotnetexe% restore & popd & if ERRORLEVEL 1 echo Error:%errorlevel% dotnet restore failed & goto :failure
+    pushd .\lkg\fsi & %_dotnetexe% restore & popd & if ERRORLEVEL 1 echo Error:%errorlevel% dotnet restore failed & goto :failure
+    pushd .\lkg\fsc & %_dotnetexe% publish project.json --no-build -o %~dp0\Tools\lkg -r win7-x64 & popd & if ERRORLEVEL 1 echo Error: dotnet publish failed  & goto :failure
+    pushd .\lkg\fsi & %_dotnetexe% publish project.json --no-build -o %~dp0\Tools\lkg -r win7-x64 & popd & if ERRORLEVEL 1 echo Error: dotnet publish failed  & goto :failure
 
     echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
          %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
@@ -507,16 +487,30 @@ if '%BUILD_PROTO%' == '1' (
          %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
     @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
 
-    rmdir /s /q %~dp0\Tools\lkg
+  )
+
+  if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '0' (
+
+    echo %_ngenexe% install packages\FSharp.Compiler.Tools.4.0.1.19\tools\fsc.exe /nologo 
+         %_ngenexe% install packages\FSharp.Compiler.Tools.4.0.1.19\tools\fsc.exe /nologo 
+
+    echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
+         %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
+    @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
+
+    echo %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
+         %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
+    @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
+
   )
 )
-
 
 
 echo ---------------- Done with proto, starting build ------------------------
 
 if '%BUILD_PHASE%' == '1' (
-   %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
+   echo %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
+        %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
    @if ERRORLEVEL 1 echo Error: '%_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG%  /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%' failed && goto :failure
 )
 
@@ -536,6 +530,7 @@ if not exist %NUNITPATH% echo Error: Could not find %NUNITPATH% && goto :failure
 @echo xcopy "%~dp0tests\fsharpqa\testenv\src\nunit*.*" "%~dp0tests\fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
       xcopy "%~dp0tests\fsharpqa\testenv\src\nunit*.*" "%~dp0tests\fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
 
+
 if '%BUILD_CORECLR%' == '1' (
   echo Restoring CoreCLR packages and runtimes necessary for actually running and testing
   echo  %_nugetexe% restore .\tests\fsharp\project.json -PackagesDirectory packages -ConfigFile %_nugetconfig%
@@ -545,17 +540,26 @@ if '%BUILD_CORECLR%' == '1' (
   %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/win7-x86 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\win7-x86 --copyCompiler:yes --v:quiet
   %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/win7-x86 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\win7-x86 --copyCompiler:no --v:quiet
 
-  echo Deploy x64 version of compiler, ready for testing
-  %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/win7-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\win7-x64 --copyCompiler:yes --v:quiet
-  %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/win7-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\win7-x64 --copyCompiler:no --v:quiet
+  echo Deploy x64 compiler to tests\testbin\%BUILD_CONFIG%\coreclr\fsc\win7-x64, ready for testing
+  echo %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/win7-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\win7-x64 --copyCompiler:yes --v:quiet
+       %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/win7-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\win7-x64 --copyCompiler:yes --v:quiet
+  echo Deploy x64 runtime and FSharp.Core library to tests\testbin\%BUILD_CONFIG%\coreclr\win7-x64, ready for testing
+  echo %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/win7-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\win7-x64 --copyCompiler:no --v:quiet
+       %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/win7-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\win7-x64 --copyCompiler:no --v:quiet
 
-  echo Deploy linux version of built compiler, ready for testing
-  %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/ubuntu.14.04-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\ubuntu.14.04-x64 --copyCompiler:yes --v:quiet
-  %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/ubuntu.14.04-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\ubuntu.14.04-x64 --copyCompiler:no --v:quiet
+  echo Deploy linux compiler to tests\testbin\%BUILD_CONFIG%\coreclr\fsc\ubuntu.14.04-x64, ready for testing
+  echo %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/ubuntu.14.04-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\ubuntu.14.04-x64 --copyCompiler:yes --v:quiet
+       %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/ubuntu.14.04-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\ubuntu.14.04-x64 --copyCompiler:yes --v:quiet
+  REM echo Deploy linux runtime and FSharp.Core library to tests\testbin\%BUILD_CONFIG%\coreclr\ubuntu.14.04-x64, ready for testing
+  echo %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/ubuntu.14.04-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\ubuntu.14.04-x64 --copyCompiler:no --v:quiet
+       %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/ubuntu.14.04-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\ubuntu.14.04-x64 --copyCompiler:no --v:quiet
 
-  echo Deploy osx version of built compiler, ready for testing
-  %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/osx.10.10-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\osx.10.10-x64 --copyCompiler:yes --v:quiet
-  %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/osx.10.10-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\osx.10.10-x64 --copyCompiler:no --v:quiet
+  echo Deploy OSX compiler to tests\testbin\%BUILD_CONFIG%\coreclr\fsc\osx.10.10-x64, ready for testing
+  echo %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/osx.10.10-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\osx.10.10-x64 --copyCompiler:yes --v:quiet
+       %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/osx.10.10-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\osx.10.10-x64 --copyCompiler:yes --v:quiet
+  echo Deploy OSX runtime and FSharp.Core library to tests\testbin\%BUILD_CONFIG%\coreclr\osx.10.10-x64, ready for testing
+  echo %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/osx.10.10-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\osx.10.10-x64 --copyCompiler:no --v:quiet
+       %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/osx.10.10-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\osx.10.10-x64 --copyCompiler:no --v:quiet
 )
 
 
@@ -573,15 +577,15 @@ setlocal disableDelayedExpansion
 if "%INCLUDE_TEST_SPEC_NUNIT%" == "" (
     if NOT "%EXCLUDE_TEST_SPEC_NUNIT%" == "" (
         set WHERE_ARG_NUNIT=--where "!(%EXCLUDE_TEST_SPEC_NUNIT%)"
-	)
+    )
 )
 if NOT "%INCLUDE_TEST_SPEC_NUNIT%" == "" (
     if "%EXCLUDE_TEST_SPEC_NUNIT%" == "" (
         set WHERE_ARG_NUNIT=--where "%INCLUDE_TEST_SPEC_NUNIT%"
-	)
+    )
     if NOT "%EXCLUDE_TEST_SPEC_NUNIT%" == "" (
-		set WHERE_ARG_NUNIT=--where "%INCLUDE_TEST_SPEC_NUNIT% and !(%EXCLUDE_TEST_SPEC_NUNIT%)"
-	)
+        set WHERE_ARG_NUNIT=--where "%INCLUDE_TEST_SPEC_NUNIT% and !(%EXCLUDE_TEST_SPEC_NUNIT%)"
+    )
 )
 if NOT "%INCLUDE_TEST_TAGS%" == "" (
     set INCLUDE_ARG_RUNALL=-ttags:%INCLUDE_TEST_TAGS%
@@ -636,7 +640,9 @@ if '%TEST_NET40_FSHARP_SUITE%' == '1' (
 
     if NOT '!saved_errorlevel!' == '0' (
         type "!ERRORFILE!"
-        echo Error: 'Running tests net40-fsharp' failed
+        echo -----------------------------------------------------------------
+        echo Error: Running tests net40-fsharp failed, see log above -- FAILED
+        echo -----------------------------------------------------------------
         goto :failed_tests
     )
 )
@@ -659,7 +665,7 @@ if "%OSARCH%"=="AMD64" set SYSWOW64=SysWoW64
 
 if not "%OSARCH%"=="x86" set REGEXE32BIT=%WINDIR%\syswow64\reg.exe
 
-							FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
+                            FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
 if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v8.1A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
 if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v8.0A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
 if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.1\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
@@ -725,11 +731,14 @@ if '%TEST_NET40_FSHARPQA_SUITE%' == '1' (
 	echo perl %~dp0tests\fsharpqa\testenv\bin\runall.pl -resultsroot %RESULTSDIR% -results !OUTPUTFILE! -log !ERRORFILE! -fail !FAILENV! -cleanup:no %INCLUDE_ARG_RUNALL% %EXCLUDE_ARG_RUNALL% %PARALLEL_ARG%
 		 perl %~dp0tests\fsharpqa\testenv\bin\runall.pl -resultsroot %RESULTSDIR% -results !OUTPUTFILE! -log !ERRORFILE! -fail !FAILENV! -cleanup:no %INCLUDE_ARG_RUNALL% %EXCLUDE_ARG_RUNALL% %PARALLEL_ARG%
 
-	popd
+    popd
     if ERRORLEVEL 1 (
         type "%RESULTSDIR%\!OUTPUTFILE!"
+        echo -----------------------------------------------------------------
         type "%RESULTSDIR%\!ERRORFILE!"
-        echo Error: 'Running tests net40-fsharpqa' failed
+        echo -----------------------------------------------------------------
+        echo Error: Running tests net40-fsharpqa failed, see logs above -- FAILED
+        echo -----------------------------------------------------------------
         goto :failed_tests
     )
 )
@@ -751,9 +760,13 @@ if '%TEST_NET40_COMPILERUNIT_SUITE%' == '1' (
 
     call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
     if NOT '!saved_errorlevel!' == '0' (
+        echo -----------------------------------------------------------------
         type "!OUTPUTFILE!"
+        echo -----------------------------------------------------------------
         type "!ERRORFILE!"
-        echo Error: 'Running tests net40-compilerunit' failed
+        echo -----------------------------------------------------------------
+        echo Error: Running tests net40-compilerunit failed, see logs above -- FAILED
+        echo -----------------------------------------------------------------
         goto :failed_tests
     )
 )
@@ -766,18 +779,22 @@ set ERRORFILE=%RESULTSDIR%\test-net40-coreunit-errors.log
 set command="%NUNIT3_CONSOLE%" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" --output:"!OUTPUTFILE!" --err:"!ERRORFILE!" --work:"%FSCBINPATH%" "%FSCBINPATH%\FSharp.Core.Unittests.dll"
 if '%TEST_NET40_COREUNIT_SUITE%' == '1' (
 
-	rem Turn off delayed expansion when manipulating variables where a ! may appear in the argument text (CMD batch file oddity)
-	rem Note: each setlocal must be matched by an executed endlocal
-	setlocal disableDelayedExpansion
+    rem Turn off delayed expansion when manipulating variables where a ! may appear in the argument text (CMD batch file oddity)
+    rem Note: each setlocal must be matched by an executed endlocal
+    setlocal disableDelayedExpansion
     echo %command% %WHERE_ARG_NUNIT%
          %command%  %WHERE_ARG_NUNIT%
     endlocal 
 
-	call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
+    call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
     if NOT '!saved_errorlevel!' == '0' (
+        echo -----------------------------------------------------------------
         type "!OUTPUTFILE!"
+        echo -----------------------------------------------------------------
         type "!ERRORFILE!"
-        echo Error: 'Running tests net40-coreunit' failed 
+        echo -----------------------------------------------------------------
+        echo Error: Running tests net40-coreunit failed, see logs above -- FAILED
+        echo -----------------------------------------------------------------
         goto :failed_tests
     )
 )
@@ -800,9 +817,13 @@ if '%TEST_PORTABLE_COREUNIT_SUITE%' == '1' (
 
 	call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
     if NOT '!saved_errorlevel!' == '0' (
+        echo -----------------------------------------------------------------
         type "!OUTPUTFILE!"
+        echo -----------------------------------------------------------------
         type "!ERRORFILE!"
-        echo Error: 'Running tests portable-coreunit' failed 
+        echo -----------------------------------------------------------------
+        echo Error: Running tests portable-coreunit failed, see logs above -- FAILED
+        echo -----------------------------------------------------------------
         goto :failed_tests
     )
 )
@@ -814,24 +835,26 @@ set OUTPUTFILE=%RESULTSDIR%\test-coreclr-coreunit-output.log
 set ERRORFILE=%RESULTSDIR%\test-coreclr-coreunit-errors.log
 
 set architecture=win7-x64
-set CORERUNPATH=%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\!architecture!
 
-set command="!CORERUNPATH!\corerun.exe" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\fsharp.core.unittests\FSharp.Core.Unittests.exe"
+set command="%_dotnetexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\fsharp.core.unittests\FSharp.Core.Unittests.dll"
 if '%TEST_CORECLR_COREUNIT_SUITE%' == '1' (
 
-	rem Turn off delayed expansion when manipulating variables where a ! may appear in the argument text (CMD batch file oddity)
-	rem Note: each setlocal must be matched by an executed endlocal
-	setlocal disableDelayedExpansion
+    rem Turn off delayed expansion when manipulating variables where a ! may appear in the argument text (CMD batch file oddity)
+    rem Note: each setlocal must be matched by an executed endlocal
+    setlocal disableDelayedExpansion
     echo %command% %WHERE_ARG_NUNIT%
          %command%  %WHERE_ARG_NUNIT%
     endlocal 
 
-	rem call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
-
+    rem call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
     if ERRORLEVEL 1 (
+        echo -----------------------------------------------------------------
         rem type "!OUTPUTFILE!"
+        echo -----------------------------------------------------------------
         rem type "!ERRORFILE!"
-        echo Error: 'Running tests coreclr-coreunit' failed 
+        echo -----------------------------------------------------------------
+        echo Error: Running tests coreclr-coreunit failed, see logs above-- FAILED
+        echo -----------------------------------------------------------------
         goto :failed_tests
     )
 )
@@ -856,9 +879,15 @@ if '%TEST_CORECLR_FSHARP_SUITE%' == '1' (
 
 	call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
     if NOT '!saved_errorlevel!' == '0' (
+        echo --------------begin coreclr-fsharp test output -------------------
         type "!OUTPUTFILE!"
+        echo --------------end coreclr-fsharp test output -------------------
+        echo --------------begin coreclr-fsharp test errors -------------------
         type "!ERRORFILE!"
-        echo Error: 'Running tests coreclr-fsharp' failed 
+        echo --------------end coreclr-fsharp test errors -------------------
+        echo -----------------------------------------------------------------
+        echo Error: Running tests coreclr-fsharp failed , see logs abvoe -- FAILED
+        echo -----------------------------------------------------------------
         goto :failed_tests
     )
 )
@@ -882,9 +911,14 @@ if '%TEST_VS_IDEUNIT_SUITE%' == '1' (
 	popd
 	call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
     if NOT '!saved_errorlevel!' == '0' (
+        echo --------begin vs-ide-unit output ---------------------
         type "!OUTPUTFILE!"
+        echo --------end vs-ide-unit output -----------------------
+        echo -------begin vs-ide-unit errors ----------------------
         type "!ERRORFILE!"
-        echo Error: 'Running tests vs-ideunit' failed 
+        echo -------end vs-ide-unit errors ------------------------
+        echo Error: Running tests vs-ideunit failed, see logs above, search for "Errors and Failures"  -- FAILED
+        echo ----------------------------------------------------------------------------------------------------
         goto :failed_tests
     )
 )

@@ -1,4 +1,4 @@
-﻿#load @"../../../../../src/buildtools/scriptlib.fsx"
+﻿#load @"../../../../../src/scripts/scriptlib.fsx"
 #load "crackProjectJson.fsx"
 
 open System

@@ -2,7 +2,7 @@
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <FSharpSourcesRoot>..\..</FSharpSourcesRoot>
+    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
   <PropertyGroup>
@@ -10,7 +10,6 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OutputType>Library</OutputType>
     <AssemblyName>FSharp.Compiler</AssemblyName>
-    <DefineConstants Condition="'$(TargetFramework)'=='coreclr'">$(DefineConstants);PREFERRED_UI_LANG</DefineConstants>
     <DefineConstants>EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
     <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
     <DefineConstants>INCLUDE_METADATA_READER;$(DefineConstants)</DefineConstants>
@@ -20,7 +19,6 @@
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <BaseAddress>0x06800000</BaseAddress>
     <OtherFlags>$(OtherFlags) /warnon:1182</OtherFlags>
-    <OtherFlags Condition=" '$(TargetFramework)'=='coreclr'">$(OtherFlags) --targetprofile:netcore</OtherFlags>
   </PropertyGroup>
   <!-- References -->
   <Import Project="$(FSharpSourcesRoot)\.nuget\NuGet.targets" Condition="Exists('$(FSharpSourcesRoot)\.nuget\NuGet.targets')" />
@@ -160,13 +158,11 @@
       <Link>ReferenceResolution\ReferenceResolver.fs</Link>
     </Compile>
     <FsLex Include="..\..\absil\illex.fsl">
-      <OtherFlags>--lexlib Internal.Utilities.Text.Lexing</OtherFlags>
+      <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
       <Link>AbsIL\illex.fsl</Link>
     </FsLex>
     <FsYacc Include="..\..\absil\ilpars.fsy">
-      <Module>Microsoft.FSharp.Compiler.AbstractIL.Internal.AsciiParser</Module>
-      <Open>Microsoft.FSharp.Compiler.AbstractIL</Open>
-      <OtherFlags>--internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <OtherFlags>--module Microsoft.FSharp.Compiler.AbstractIL.Internal.AsciiParser --open Microsoft.FSharp.Compiler.AbstractIL --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>AbsIL\ilpars.fsy</Link>
     </FsYacc>
     <Compile Include="..\..\absil\il.fsi">
@@ -263,23 +259,19 @@
       <Link>ILXErase\EraseUnions.fs</Link>
     </Compile>
     <FsLex Include="..\pplex.fsl">
-      <OtherFlags>--lexlib Internal.Utilities.Text.Lexing</OtherFlags>
+      <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
       <Link>ParserAndUntypedAST\pplex.fsl</Link>
     </FsLex>
     <FsYacc Include="..\pppars.fsy">
-      <Module>Microsoft.FSharp.Compiler.PPParser</Module>
-      <Open>Microsoft.FSharp.Compiler</Open>
-      <OtherFlags>--internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <OtherFlags>--module Microsoft.FSharp.Compiler.PPParser --open Microsoft.FSharp.Compiler --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>ParserAndUntypedAST\pppars.fsy</Link>
     </FsYacc>
     <FsLex Include="..\lex.fsl">
-      <OtherFlags>--lexlib Internal.Utilities.Text.Lexing</OtherFlags>
+      <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
       <Link>ParserAndUntypedAST\lex.fsl</Link>
     </FsLex>
     <FsYacc Include="..\pars.fsy">
-      <Module>Microsoft.FSharp.Compiler.Parser</Module>
-      <Open>Microsoft.FSharp.Compiler</Open>
-      <OtherFlags>--internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <OtherFlags>--module Microsoft.FSharp.Compiler.Parser --open Microsoft.FSharp.Compiler --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>ParserAndUntypedAST\pars.fsy</Link>
     </FsYacc>
     <Compile Include="..\UnicodeLexing.fsi">
@@ -529,8 +521,8 @@
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\.nuget\NuGet.targets" Condition="Exists('$(FSharpSourcesRoot)\.nuget\NuGet.targets')" />
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
-  <Import Project="$(FSharpSourcesRoot)\..\packages\FsLexYacc.6.1.0\build\FsLexYacc.targets" />
-  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize">
+  <Import Project="$(FSharpSourcesRoot)\..\packages\FsLexYacc.7.0.1\build\FsLexYacc.targets" />
+  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
     <ItemGroup>
       <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />
       <BinariesToBeSigned Include="$(OutDir)localize\**\$(AssemblyName).resources.dll" />
