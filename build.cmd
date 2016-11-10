@@ -555,9 +555,6 @@ if 'TEST_NET40_COMPILERUNIT_SUITE' == '0' and 'TEST_PORTABLE_COREUNIT_SUITE' == 
 echo ---------------- Done with update, starting tests -----------------------
 
 
-pushd tests
-
-
 if NOT "%INCLUDE_TEST_SPEC_NUNIT%" == "" (
     set WHERE_ARG_NUNIT=--where "%INCLUDE_TEST_SPEC_NUNIT%"
 )
@@ -788,8 +785,8 @@ if '%TEST_CORECLR_COREUNIT_SUITE%' == '1' (
     REM these copies should not be needed, see https://github.com/fsharp/fsharp/issues/642
     xcopy /S /Q /Y src\fsharp\FSharp.Core.Unittests\bin\!BUILD_CONFIG!\netcoreapp1.0\* "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\fsharp.core.unittests\"
 
-    echo "%_dotnetexe%" "tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.Unittests\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
-         "%_dotnetexe%" "tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.Unittests\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
+    echo "%_dotnetexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.Unittests\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
+         "%_dotnetexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.Unittests\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
 
     rem call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
     if ERRORLEVEL 1 (
