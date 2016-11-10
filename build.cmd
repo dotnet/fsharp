@@ -782,6 +782,9 @@ if '%TEST_CORECLR_COREUNIT_SUITE%' == '1' (
 	set OUTPUTFILE=!RESULTSDIR!\test-coreclr-coreunit-output.log
 	set ERRORFILE=!RESULTSDIR!\test-coreclr-coreunit-errors.log
 
+    REM these copies should not be needed, see https://github.com/fsharp/fsharp/issues/642		
+    xcopy /S /Q /Y src\fsharp\FSharp.Core.Unittests\bin\!BUILD_CONFIG!\netcoreapp1.0\* "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.Unittests\"
+ 
     echo "%_dotnetexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.Unittests\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
          "%_dotnetexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.Unittests\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
 
