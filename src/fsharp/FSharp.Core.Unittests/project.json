@@ -6,13 +6,16 @@
     "emitEntryPoint": true
   },
   "dependencies": {
-    "System.ValueTuple": "4.0.0-rc3-24212-01"
+    "System.ValueTuple": "4.0.0-rc3-24212-01",
+    "NUnitLite": "3.5.0",
+    "NUnit": "3.5.0",
+    "FsCheck": "2.6.2"
   },
   "runtimes": {
-    "win7-x86": { },
-    "win7-x64": { },
-    "osx.10.11-x64": { },
-    "ubuntu.14.04-x64": { }
+    "win7-x86": {},
+    "win7-x64": {},
+    "osx.10.11-x64": {},
+    "ubuntu.14.04-x64": {}
   },
   "frameworks": {
     "netcoreapp1.0": {
@@ -24,5 +27,5 @@
       },
       "imports": "dnxcore50"
     }
-  },
+  }
 }
