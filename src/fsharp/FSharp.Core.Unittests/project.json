@@ -24,12 +24,9 @@
           "type": "platform",
           "version": "1.0.1"
         },
-        "Microsoft.NETCore.Portable.Compatibility": {
-          "type": "platform",
-          "version": "1.0.1"
-        }
+        "Microsoft.NETCore.Portable.Compatibility": "1.0.1"
       },
-      "imports": "dnxcore50"
+      "imports": [ "netstandard1.6", "portable-net45+win8+wp8+wpa81" ]
     }
   }
 }
