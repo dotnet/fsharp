@@ -1202,7 +1202,7 @@ let unfold<'a,'b when 'b : equality> f (start:'a) =
 let ``unfold is consistent`` () =
     smallerSizeCheck unfold<int,int>
 
-[<Test; Category("Expensive")>]
+[<Test; Category("Expensive"); Explicit>]
 let ``unfold is consistent full`` () =
     smallerSizeCheck unfold<int,int>
     smallerSizeCheck unfold<string,string>

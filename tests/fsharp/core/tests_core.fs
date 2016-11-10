@@ -929,7 +929,7 @@ let opsMutrec p = singleTestBuildAndRun p
 [<Test; FSharpSuiteScriptPermutations("core/nested")>]
 let nested p = singleTestBuildAndRun p
 
-[<Test; Category("Expensive"); FSharpSuiteTest("core/netcore/netcore259")>]
+[<Test; Category("Expensive"); Explicit; FSharpSuiteTest("core/netcore/netcore259")>]
 let ``Run all tests using PCL profie 259 FSHarp.Core``() = check (attempt {
     let cfg = FSharpTestSuite.testConfig ()
 
@@ -954,7 +954,7 @@ let ``Run all tests using PCL profie 259 FSHarp.Core``() = check (attempt {
     })
 
 
-[<Test; Category("Expensive"); FSharpSuiteTest("core/netcore/netcore7")>]
+[<Test; Category("Expensive"); Explicit; FSharpSuiteTest("core/netcore/netcore7")>]
 let ``Run all tests using PCL profie 7 FSHarp.Core`` () = check (attempt {
     let cfg = FSharpTestSuite.testConfig ()
 
@@ -978,7 +978,7 @@ let ``Run all tests using PCL profie 7 FSHarp.Core`` () = check (attempt {
                 
     })
 
-[<Test; Category("Expensive"); FSharpSuiteTest("core/netcore/netcore78")>]
+[<Test; Category("Expensive"); Explicit; FSharpSuiteTest("core/netcore/netcore78")>]
 let ``Run all tests using PCL profie 78 FSHarp.Core``() = check (attempt {
     let cfg = FSharpTestSuite.testConfig ()
 
@@ -1002,7 +1002,7 @@ let ``Run all tests using PCL profie 78 FSHarp.Core``() = check (attempt {
                 
     })
 
-[<Test; Category("Expensive"); FSharpSuiteTest("core/portable")>]
+[<Test; Category("Expensive"); Explicit; FSharpSuiteTest("core/portable")>]
 let ``Run all tests using PCL profie 47 FSHarp.Core`` () = check (attempt {
     let cfg = FSharpTestSuite.testConfig ()
 
