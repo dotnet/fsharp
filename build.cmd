@@ -688,8 +688,8 @@ if '%TEST_NET40_FSHARPQA_SUITE%' == '1' (
 
 
 	pushd %~dp0tests\fsharpqa\source
-	echo perl %~dp0tests\fsharpqa\testenv\bin\runall.pl -resultsroot !RESULTSDIR! -results !OUTPUTFILE! -log !ERRORFILE! -fail !FAILENV! -cleanup:no !TTAGS_ARG_RUNALL! !_architecture! !PARALLEL_ARG!
-		 perl %~dp0tests\fsharpqa\testenv\bin\runall.pl -resultsroot !RESULTSDIR! -results !OUTPUTFILE! -log !ERRORFILE! -fail !FAILENV! -cleanup:no !TTAGS_ARG_RUNALL! !_architecture! !PARALLEL_ARG!
+	echo perl %~dp0tests\fsharpqa\testenv\bin\runall.pl -resultsroot !RESULTSDIR! -results !OUTPUTFILE! -log !ERRORFILE! -fail !FAILENV! -cleanup:no !TTAGS_ARG_RUNALL! !PARALLEL_ARG!
+		 perl %~dp0tests\fsharpqa\testenv\bin\runall.pl -resultsroot !RESULTSDIR! -results !OUTPUTFILE! -log !ERRORFILE! -fail !FAILENV! -cleanup:no !TTAGS_ARG_RUNALL! !PARALLEL_ARG!
 
     popd
     if ERRORLEVEL 1 (

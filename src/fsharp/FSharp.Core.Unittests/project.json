@@ -8,7 +8,8 @@
   "dependencies": {
     "System.ValueTuple": "4.0.0-rc3-24212-01",
     "NUnitLite": "3.5.0",
-    "NUnit": "3.5.0"
+    "NUnit": "3.5.0",
+    "FsCheck": "2.6.2"
   },
   "runtimes": {
     "win7-x86": {},
@@ -20,6 +21,10 @@
     "netcoreapp1.0": {
       "dependencies": {
         "Microsoft.NETCore.App": {
+          "type": "platform",
+          "version": "1.0.1"
+        },
+        "Microsoft.NETCore.Portable.Compatibility": {
           "type": "platform",
           "version": "1.0.1"
         }
