@@ -348,7 +348,7 @@ type AsyncModule() =
         for _i = 1 to 3 do test()
 
 
-    [<Test; Category("Expensive")>]
+    [<Test; Category("Expensive"); Explicit>]
     member this.``Async.AwaitWaitHandle does not leak memory`` () =
         // This test checks that AwaitWaitHandle does not leak continuations (described in #131),
         // We only test the worst case - when the AwaitWaitHandle is already set.
@@ -443,7 +443,7 @@ type AsyncModule() =
         testErrorAndCancelRace (Async.Sleep (-5))
 
 #if !(FSHARP_CORE_PORTABLE || FSHARP_CORE_NETCORE_PORTABLE || coreclr)
-    [<Test; Category("Expensive")>] // takes 3 minutes!
+    [<Test; Category("Expensive"); Explicit>] // takes 3 minutes!
     member this.``Async.Choice specification test``() =
         ThreadPool.SetMinThreads(100,100) |> ignore
         Check.One ({Config.QuickThrowOnFailure with EndSize = 20}, normalize >> runChoice)
