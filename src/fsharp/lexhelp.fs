@@ -41,14 +41,10 @@ type LightSyntaxStatus(initial:bool,warn:bool) =
 /// Manage lexer resources (string interning)
 [<Sealed>]
 type LexResourceManager() =
-    let strings = new System.Collections.Generic.Dictionary<string,Parser.token>(100)
-    member x.InternIdentifierToken(s) = 
-        let mutable res = Unchecked.defaultof<_> 
-        let ok = strings.TryGetValue(s,&res)  
-        if ok then res  else 
-        let res = IDENT s
-        (strings.[s] <- res; res)
-              
+    let strings = new System.Collections.Concurrent.ConcurrentDictionary<string,Parser.token>(4 * System.Environment.ProcessorCount, 101)
+    member x.InternIdentifierToken(s) =
+        strings.GetOrAdd(s, IDENT s)
+
 /// Lexer parameters 
 type lexargs =  
     { defines: string list
