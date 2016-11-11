@@ -362,7 +362,6 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
         End Function
 
         Function SetIconAndWin32ResourceFile() As Boolean
-#If FX_ATLEAST_45 Then
             If Not IsCurrentProjectDotNetPortable(DTEProject) Then  ' F# Portable projects don't do resources (same with C#)
                 EnableControl(Me.Win32ResourceFile, True)
                 EnableControl(Me.Win32ResourceFileBrowse, True)
@@ -370,11 +369,6 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
             Else
                 Return False
             End If
-#Else
-            EnableControl(Me.Win32ResourceFile, True)
-            EnableControl(Me.Win32ResourceFileBrowse, True)
-            Return True
-#End If
 
         End Function
 
@@ -442,7 +436,6 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
 
             Me.OutputType.Items.Clear()
             Me.OutputType.Items.AddRange(m_OutputTypeStringKeys)
-#If FX_ATLEAST_45 Then
             If IsCurrentProjectDotNetPortable(DTEProject) Then
                 ' F# Portable projects can only be 'Library', disable selection for this dropdown
                 Me.OutputType.Enabled = False
@@ -450,7 +443,6 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
                 Me.Win32ResourceFile.Enabled = False
                 Me.Win32ResourceFileBrowse.Enabled = False
             End If
-#End If
 
             'Populate the target framework combobox
             PopulateTargetFrameworkAssemblies()
@@ -566,7 +558,6 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
         ''' </summary>
         ''' <remarks></remarks>
 
-#If FX_ATLEAST_45 Then
         'REVIEW: Are the periods in my version strings culture-safe?
         Private Function ValidateTargetFrameworkMoniker(ByVal moniker As String) As Boolean
             If moniker = "" Or moniker = Nothing Then
@@ -687,38 +678,6 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
                 Me.TargetFramework.Enabled = False
             End If
         End Sub
-#Else
-        Private Sub PopulateTargetFrameworkAssemblies()
-            Dim targetFrameworkSupported As Boolean = False
-            Me.TargetFramework.Items.Clear()
-            Me.TargetFramework.SelectedIndex = INDEX_INVALID
-
-            Try
-
-                Dim siteServiceProvider As Microsoft.VisualStudio.OLE.Interop.IServiceProvider = Nothing
-                VSErrorHandler.ThrowOnFailure(MyBase.ProjectHierarchy.GetSite(siteServiceProvider))
-
-                Dim sp As New Shell.ServiceProvider(siteServiceProvider)
-                Dim vsTargetFrameworkAssemblies As IVsTargetFrameworkAssemblies = TryCast(sp.GetService(GetType(SVsTargetFrameworkAssemblies).GUID), IVsTargetFrameworkAssemblies)
-                If vsTargetFrameworkAssemblies IsNot Nothing Then
-                    Dim targetFrameworks As IEnumerable(Of Common.TargetFrameworkAssemblies.TargetFramework) _
-                        = Common.TargetFrameworkAssemblies.GetSupportedTargetFrameworkAssemblies(vsTargetFrameworkAssemblies)
-                    For Each target As Common.TargetFrameworkAssemblies.TargetFramework In targetFrameworks
-                        Me.TargetFramework.Items.Add(target)
-                    Next
-
-                    targetFrameworkSupported = True
-                End If
-            Catch ex As Exception
-                targetFrameworkSupported = False
-                Me.TargetFramework.Items.Clear()
-            End Try
-
-            If Not targetFrameworkSupported Then
-                Me.TargetFramework.Enabled = False
-            End If
-        End Sub
-#End If
         Private Function SetTargetFSharpCore(ByVal control As Control, ByVal prop As PropertyDescriptor, ByVal value As Object) As Boolean
             Dim combobox As ComboBox = CType(control, ComboBox)
             combobox.SelectedIndex = INDEX_INVALID
@@ -748,7 +707,6 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
             Return False
         End Function
 
-#If FX_ATLEAST_45 Then
         ''' <summary>
         ''' Takes the current value of the TargetFramework property (in UInt32 format), and sets
         '''   the current dropdown list to that value.
@@ -777,27 +735,6 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
             Return True
         End Function
 
-#Else
-
-        Private Function SetTargetFramework(ByVal control As Control, ByVal prop As PropertyDescriptor, ByVal value As Object) As Boolean
-            Dim combobox As ComboBox = CType(control, ComboBox)
-            combobox.SelectedIndex = INDEX_INVALID
-            If PropertyControlData.IsSpecialValue(value) Then 'Indeterminate or IsMissing
-                'Leave it unselected
-            Else
-                Dim uintValue As UInteger = DirectCast(value, UInteger)
-                For Each entry As Common.TargetFrameworkAssemblies.TargetFramework In combobox.Items
-                    If entry.Version = uintValue Then
-                        combobox.SelectedItem = entry
-                        Exit For
-                    End If
-                Next
-            End If
-
-            Return True
-        End Function
-
-#End If
 
         ''' <summary>
         ''' Retrieves the current value of the TargetFramework dropdown text and converts it into
@@ -810,7 +747,6 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
         ''' <returns></returns>
         ''' <remarks></remarks>
 
-#If FX_ATLEAST_45 Then
         Private Function GetTargetFramework(ByVal control As Control, ByVal prop As PropertyDescriptor, ByRef value As Object) As Boolean
             Dim currentTarget As TargetFrameworkMoniker = CType(CType(control, ComboBox).SelectedItem, TargetFrameworkMoniker)
             If currentTarget IsNot Nothing Then
@@ -822,20 +758,6 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
             Return False
         End Function
 
-#Else
-
-        Private Function GetTargetFramework(ByVal control As Control, ByVal prop As PropertyDescriptor, ByRef value As Object) As Boolean
-            Dim currentTarget As Common.TargetFrameworkAssemblies.TargetFramework = CType(CType(control, ComboBox).SelectedItem, Common.TargetFrameworkAssemblies.TargetFramework)
-            If currentTarget IsNot Nothing Then
-                value = currentTarget.Version
-                Return True
-            End If
-
-            Debug.Fail("The combobox should not have still been unselected yet be dirty")
-            Return False
-        End Function
-
-#End If
 
 #End Region
 

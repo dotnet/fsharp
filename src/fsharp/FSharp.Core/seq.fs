@@ -1146,7 +1146,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Replicate")>]
         let replicate count x =
-#if FX_ATLEAST_40
+#if FX_ATLEAST_45
             System.Linq.Enumerable.Repeat(x,count)
 #else
             if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))

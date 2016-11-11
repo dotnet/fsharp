@@ -34,13 +34,6 @@
     <CopyToSuiteBin>true</CopyToSuiteBin>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <DefineConstants>$(DefineConstants),FSHARP_CORE_4_5=True</DefineConstants>
-    <DefineConstants>$(DefineConstants),FX_ATLEAST_45=True</DefineConstants>
-    <DefineConstants>$(DefineConstants),FX_ATLEAST_40=True</DefineConstants>
-    <DefineConstants>$(DefineConstants),FX_ATLEAST_35=True</DefineConstants>
-    <DefineConstants>$(DefineConstants),BE_SECURITY_TRANSPARENT=True</DefineConstants>
-    <DefineConstants>$(DefineConstants),QUERIES_IN_FSLIB=True</DefineConstants>
-    <DefineConstants>$(DefineConstants),PUT_TYPE_PROVIDERS_IN_FSCORE=True</DefineConstants>
-    <DefineConstants>$(DefineConstants),FX_ATLEAST_LINQ=True</DefineConstants>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
     <VsSdkTargetsDir>$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\VSSDK</VsSdkTargetsDir>

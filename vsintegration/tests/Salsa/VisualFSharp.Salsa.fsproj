@@ -17,7 +17,6 @@
     <AssemblyName>VisualFSharp.Salsa</AssemblyName>
     <NoWarn>$(NoWarn);45;47;52;58;75</NoWarn>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
-    <DefineConstants>FX_ATLEAST_45;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(FSharpSourcesRoot)\utils\CompilerLocationUtils.fs">
