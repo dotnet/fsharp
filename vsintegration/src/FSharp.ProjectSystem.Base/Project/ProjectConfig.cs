@@ -1676,40 +1676,25 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     [CLSCompliant(false)]
     [ComVisible(true)]
     [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Buildable")]
-    public class BuildableProjectConfig : IVsBuildableProjectCfg
-#if FX_ATLEAST_45
-        , IVsBuildableProjectCfg2
-#endif
+    public class BuildableProjectConfig : IVsBuildableProjectCfg, IVsBuildableProjectCfg2
     {
 
-#if FX_ATLEAST_45
         private bool IsInProgress()
         {
             return buildManagerAccessor.IsInProgress();
         }
-#else
-        private bool IsInProgress()
-        {
-            return FSharpBuildStatus.IsInProgress;
-        }
-#endif
 
         ProjectConfig config = null;
         EventSinkCollection callbacks = new EventSinkCollection();
         string[] filesWeCalledHandsOff = null;
-#if FX_ATLEAST_45
         IVsBuildManagerAccessor buildManagerAccessor = null; 
-#endif
 
         internal BuildableProjectConfig(ProjectConfig config)
         {
             this.config = config;
-#if FX_ATLEAST_45
             this.buildManagerAccessor = this.config.ProjectMgr.GetService(typeof(SVsBuildManagerAccessor)) as IVsBuildManagerAccessor;
-#endif
         }
 
-#if FX_ATLEAST_45
         private const int VSBLDCFGPROPID_SupportsMTBuild = -16000;
 
         public int GetBuildCfgProperty(int propid, out object pvar)
@@ -1730,7 +1715,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             return this.StartBuild(pIVsOutputWindowPane, dwOptions);
         }
-#endif
 
         public virtual int AdviseBuildStatusCallback(IVsBuildStatusCallback callback, out uint cookie)
         {

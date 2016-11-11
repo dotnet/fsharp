@@ -785,7 +785,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 result = GetTargetFrameworkVersion();
             }
 
-#if FX_ATLEAST_45
             if (propId == (int)__VSHPROPID5.VSHPROPID_TargetRuntime)
             {
                 // Indicates what runtime the project targets
@@ -797,7 +796,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 // Indicates the target platform (e.g., Windows, Portable, or WindowsPhone)
                 result = this.ProjectMgr.GetProjectProperty("TargetPlatformIdentifier");
             }
-#endif
 
 #if DEBUG
             if (propId != LastTracedProperty)
@@ -3120,7 +3118,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             bool autoGenerateBindingRedirects;
             bool.TryParse(projectMgr.BuildProject.GetPropertyValue("AutoGenerateBindingRedirects"), out autoGenerateBindingRedirects);
 
-#if FX_ATLEAST_45
             // In reality for FSharp.Core compatibility with .NetFramework selection looks like this:
             // 2 is incompatible with 4
             // 4.0 is incompatible with 4.5
@@ -3174,7 +3171,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     }
                 }
             }
-#endif
 
             try
             {
