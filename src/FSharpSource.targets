@@ -44,7 +44,7 @@
               </PropertyGroup>
             </When>
             <!-- do not strong-name the runtime unit tests, as they have non-strong-named dependencies -->
-            <When Condition="'$(AssemblyName)' == 'FSharp.Core.Unittests'">
+            <When Condition="'$(UnitTestAssembly)' == 'true'">
               <PropertyGroup>
                 <SkipSigning>true</SkipSigning><!-- Skip using the ,net toolset to generate signing . -->
                 <UseOpenSourceSign>false</UseOpenSourceSign>
@@ -173,6 +173,17 @@
     <NuGetTargetMoniker>.NETStandard,Version=v1.6</NuGetTargetMoniker>
     <PortableNuGetMode>true</PortableNuGetMode>
   </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)'=='coreclr' AND '$(UnitTestAssembly)' == 'true' ">
+    <OutputPath>bin\$(Configuration)\netcoreapp1.0</OutputPath>
+    <CustomOutputPath>true</CustomOutputPath>
+    <DOTNET_PUBLISH>true</DOTNET_PUBLISH>
+    <DOTNET_PUBLISH_PLATFORM>win7-x64</DOTNET_PUBLISH_PLATFORM>
+    <DOTNET_PUBLISH_PATH>$(FSharpSourcesRoot)\..\tests\testbin\$(Configuration)\coreclr\$(AssemblyName)</DOTNET_PUBLISH_PATH>
+    <OutputType>Exe</OutputType>
+    <TargetExt>.dll</TargetExt>
+  </PropertyGroup>
+
 
   <!-- Target Portable Profile 47 -->
   <PropertyGroup Condition="'$(TargetFramework)'=='portable47'">

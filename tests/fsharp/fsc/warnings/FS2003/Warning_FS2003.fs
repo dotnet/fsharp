@@ -12,10 +12,9 @@ let testConfig = FSharpTestSuite.testConfig
 
 open System.Reflection
 
-module FS2003 =
-
-    [<Test>]
-    let ``should be raised if AssemblyInformationalVersion has invalid version`` () = check (attempt {
+#if !FX_PORTABLE_OR_NETSTANDARD
+[<Test>]
+let ``should be raised if AssemblyInformationalVersion has invalid version`` () = check (attempt {
         let cfg = testConfig (Commands.createTempDir())
 
         let code  =
@@ -40,3 +39,4 @@ open System.Reflection
 
         })
 
+#endif

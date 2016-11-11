@@ -12,8 +12,8 @@
     <SchemaVersion>2.0</SchemaVersion>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <ReferenceVsAssemblies>true</ReferenceVsAssemblies>
-    <OutputType Condition="'$(TargetFramework)' == 'coreclr'">Exe</OutputType>
-    <OutputType Condition="'$(TargetFramework)' != 'coreclr'">Library</OutputType>
+    <OutputType>Library</OutputType>
+    <UnitTestAssembly>true</UnitTestAssembly>
     <AssemblyName>FSharp.Core.Unittests</AssemblyName>
     <!-- Prevent compiler from inlining calls to FSharp.Core to improve code coverage accuracy -->
     <Optimize>false</Optimize>
@@ -21,16 +21,7 @@
     <TargetProfile Condition=" '$(TargetFramework)' == 'portable7' or '$(TargetFramework)' == 'portable78' or '$(TargetFramework)' == 'portable259' or '$(TargetFramework)' == 'coreclr' ">netcore</TargetProfile>
     <NoWarn>$(NoWarn);217</NoWarn>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'coreclr' ">
-    <OutputPath>bin\$(Configuration)\netcoreapp1.0</OutputPath>
-    <CustomOutputPath>true</CustomOutputPath>
-    <DOTNET_PUBLISH>true</DOTNET_PUBLISH>
-    <DOTNET_PUBLISH_PLATFORM>win7-x64</DOTNET_PUBLISH_PLATFORM>
-    <DOTNET_PUBLISH_PATH>$(FSharpSourcesRoot)\..\tests\testbin\$(Configuration)\coreclr\FSharp.Core.unittests</DOTNET_PUBLISH_PATH>
-    <TargetExt>.dll</TargetExt>
-  </PropertyGroup>
   <PropertyGroup>
-    <DefineConstants Condition=" '$(TargetFramework)' == 'sl5' ">$(DefineConstants);SILVERLIGHT</DefineConstants>
     <DefineConstants>$(DefineConstants);EXTENSIONTYPING;$(TargetFramework.ToLower())</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -95,8 +86,6 @@
     <Reference Include="System" />
     <Reference Include="System.Numerics" Condition="'$(TargetFramework)' == 'net40'" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Net" Condition="'$(TargetFramework)' == 'sl5' " />
-    <Reference Include="System.Observable" Condition="'$(TargetFramework)' == 'sl3-wp' " />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="LibraryTestFx.fs" />
