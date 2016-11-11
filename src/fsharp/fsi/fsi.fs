@@ -621,7 +621,7 @@ let internal InstallErrorLoggingOnThisThread errorLogger =
     SetThreadErrorLoggerNoUnwind(errorLogger)
     SetThreadBuildPhaseNoUnwind(BuildPhase.Interactive)
 
-#if !NO_SERVERCODEPAGES
+#if !FX_NO_SERVERCODEPAGES
 /// Set the input/output encoding. The use of a thread is due to a known bug on 
 /// on Vista where calls to Console.InputEncoding can block the process.
 let internal SetServerCodePages(fsiOptions: FsiCommandLineOptions) =     
@@ -2169,7 +2169,7 @@ let internal DriveFsiEventLoop (fsiConsoleOutput: FsiConsoleOutput) =
 /// The primary type, representing a full F# Interactive session, reading from the given
 /// text input, writing to the given text output and error writers.
 type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWriter:TextWriter, errorWriter: TextWriter) = 
-#if !NO_HEAPTERMINATION
+#if !FX_NO_HEAPTERMINATION
     do if not runningOnMono then Lib.UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption() (* SDL recommendation *)
 #endif
 #if FX_LCIDFROMCODEPAGE
@@ -2268,7 +2268,7 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
       | None -> ()
 #endif
 
-#if !NO_SERVERCODEPAGES
+#if !FX_NO_SERVERCODEPAGES
     do 
       try 
           SetServerCodePages fsiOptions 
@@ -2481,7 +2481,7 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
 // Mark the main thread as STAThread since it is a GUI thread
 [<EntryPoint>]
 [<STAThread()>]
-#if !NO_LOADER_OPTIMIZATION
+#if !FX_NO_LOADER_OPTIMIZATION
 [<LoaderOptimization(LoaderOptimization.MultiDomainHost)>]     
 #endif
 let MainMain argv = 

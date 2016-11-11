@@ -863,12 +863,7 @@ module Shim =
 
     type DefaultFileSystem() =
         interface IFileSystem with
-            member __.AssemblyLoadFrom(fileName:string) = 
-    #if FX_ATLEAST_40_COMPILER_LOCATION
-                System.Reflection.Assembly.UnsafeLoadFrom fileName
-    #else
-                System.Reflection.Assembly.LoadFrom fileName
-    #endif
+            member __.AssemblyLoadFrom(fileName:string) = System.Reflection.Assembly.LoadFrom fileName
             member __.AssemblyLoad(assemblyName:System.Reflection.AssemblyName) = System.Reflection.Assembly.Load assemblyName
 
             member __.ReadAllBytesShim (fileName:string) = File.ReadAllBytes fileName

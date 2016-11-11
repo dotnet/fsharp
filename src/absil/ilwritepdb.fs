@@ -508,8 +508,7 @@ let embedPortablePdbInfo (uncompressedLength:int64)  (contentId:BlobContentId) (
     let fn = Path.GetFileName(fpdb)
     pdbGetDebugInfo (contentId.Guid.ToByteArray()) (int32 (contentId.Stamp)) fn cvChunk (Some pdbChunk) uncompressedLength (Some stream)
 
-#if FX_NO_PDB_WRITER
-#else
+#if !FX_NO_PDB_WRITER
 //---------------------------------------------------------------------
 // PDB Writer.  The function [WritePdbInfo] abstracts the 
 // imperative calls to the Symbol Writer API.

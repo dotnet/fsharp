@@ -1,10 +1,10 @@
 ﻿// #Conformance #Quotations #Interop #Classes #ObjectConstructors #Attributes #Reflection 
-#if Portable
+#if TESTS_AS_APP
 module Core_quotes
 #endif
 #light
 
-#if !Portable
+#if !TESTS_AS_APP
 #r "cslib.dll"
 #endif
 
@@ -21,19 +21,6 @@ let check s v1 v2 =
    else
        eprintf " FAILED: got %A, expected %A" v1 v2 
        report_failure s
-
-
-#if !NetCore
-let argv = System.Environment.GetCommandLineArgs() 
-let SetCulture() = 
-    if argv.Length > 2 && argv.[1] = "--culture" then  
-        let cultureString = argv.[2] 
-        let culture = new System.Globalization.CultureInfo(cultureString) 
-        stdout.WriteLine ("Running under culture "+culture.ToString()+"...");
-        System.Threading.Thread.CurrentThread.CurrentCulture <-  culture
-  
-do SetCulture()    
-#endif
 
 
 open System
@@ -56,11 +43,9 @@ let (|TupleTy|_|) ty =
         Some (t1, t2)
     else None
 
-#if Portable
 [<Struct>]
 type S = 
     val mutable x : int
-#endif
 
 
 module TypedTest = begin 
@@ -528,8 +513,7 @@ module TypedTest = begin
             |   _ -> false
         end
 
-#if FSHARP_CORE_31 || Portable
-#else
+#if !FSHARP_CORE_31 && !TESTS_AS_APP
     test "check accesses to readonly fields in ReflectedDefinitions" 
         begin
             let c1 = Class1("a")
@@ -1903,7 +1887,7 @@ module TestQuotationOfCOnstructors =
                 
         | _ -> false)
 
-#if !NetCore
+#if !FX_RESHAPED_REFLECTION
     // Also test getting the reflected definition for private members implied by "let f() = ..." bindings
     let fMethod = (typeof<MyClassWithAsLetMethod>.GetMethod("f", Reflection.BindingFlags.Instance ||| Reflection.BindingFlags.Public ||| Reflection.BindingFlags.NonPublic))
 
@@ -2199,7 +2183,7 @@ module ReflectedDefinitionOnTypesWithImplicitCodeGen =
    module M = 
       // This type has an implicit IComparable implementation, it is not accessible as a reflected definition
       type R = { x:int; y:string; z:System.DateTime }
-#if NetCore
+#if FX_PORTABLE_OR_NETSTANDARD
       for m in typeof<R>.GetMethods() do 
 #else
       for m in typeof<R>.GetMethods(System.Reflection.BindingFlags.DeclaredOnly) do 
@@ -2208,7 +2192,7 @@ module ReflectedDefinitionOnTypesWithImplicitCodeGen =
 
       // This type has an implicit IComparable implementation, it is not accessible as a reflected definition
       type U = A of int | B of string | C of System.DateTime 
-#if NetCore
+#if FX_RESHAPED_REFLECTION
       for m in typeof<R>.GetMethods() do 
 #else
       for m in typeof<U>.GetMethods(System.Reflection.BindingFlags.DeclaredOnly) do 
@@ -2217,7 +2201,7 @@ module ReflectedDefinitionOnTypesWithImplicitCodeGen =
 
       // This type has some implicit codegen
       exception X of string * int
-#if NetCore
+#if FX_RESHAPED_REFLECTION
       for m in typeof<R>.GetMethods() do 
 #else
       for m in typeof<X>.GetMethods(System.Reflection.BindingFlags.DeclaredOnly) do 
@@ -2226,14 +2210,14 @@ module ReflectedDefinitionOnTypesWithImplicitCodeGen =
 
       // This type has an implicit IComparable implementation, it is not accessible as a reflected definition
       [<Struct>] type SR = { x:int; y:string; z:System.DateTime }
-#if NetCore
+#if FX_RESHAPED_REFLECTION
       for m in typeof<SR>.GetMethods() do 
 #else
       for m in typeof<SR>.GetMethods(System.Reflection.BindingFlags.DeclaredOnly) do 
 #endif
           check "celnwer35" (Quotations.Expr.TryGetReflectedDefinition(m).IsNone) true
 
-#if !Portable
+#if !FX_PORTABLE_OR_NETSTANDARD
 module BasicUsingTEsts = 
     let q1() = 
       let a = ResizeArray<_>()
@@ -2721,7 +2705,7 @@ module PartialApplicationLeadToInvalidCodeWhenOptimized =
 
     f ()
 
-#if !NetCore
+#if !FX_RESHAPED_REFLECTION
 module TestAssemblyAttributes = 
     let attributes = System.Reflection.Assembly.GetExecutingAssembly().GetCustomAttributes(false)
 #endif

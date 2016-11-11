@@ -1713,7 +1713,7 @@ and Construct =
                     provider.GetMemberCustomAttributesData(ty) 
 #else
                     ignore provider
-                    ty.GetCustomAttributesData()
+                    ty.CustomAttributes
 #endif
                         |> Seq.exists (findAttrib typeof<Microsoft.FSharp.Core.MeasureAttribute>)), m)
                   .PUntaintNoFailure(fun x -> x)

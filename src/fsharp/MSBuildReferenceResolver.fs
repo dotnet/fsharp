@@ -9,7 +9,7 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
 #if FX_RESHAPED_REFLECTION
     open Microsoft.FSharp.Core.ReflectionAdapters
 #endif
-#if RESHAPED_MSBUILD
+#if FX_RESHAPED_MSBUILD
     open Microsoft.FSharp.Compiler.MsBuildAdapters
     open Microsoft.FSharp.Compiler.ToolLocationHelper
 #endif
@@ -100,7 +100,7 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
         | _ -> []
 
     let GetPathToDotNetFrameworkReferenceAssembliesFor40Plus(version) = 
-#if CROSS_PLATFORM_COMPILER // || !RESHAPED_MSBUILD
+#if CROSS_PLATFORM_COMPILER // || !FX_RESHAPED_MSBUILD
       match ToolLocationHelper.GetPathToStandardLibraries(".NETFramework",version,"") with
       | null | "" -> []
       | x -> [x]
@@ -241,7 +241,7 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
         let engine = 
             { new IBuildEngine with 
               member __.BuildProjectFile(projectFileName, targetNames, globalProperties, targetOutputs) = true
-#if RESHAPED_MSBUILD 
+#if FX_RESHAPED_MSBUILD 
               member __.LogCustomEvent(e) =  protect (fun () -> logMessage ((e.GetPropertyValue("Message")) :?> string))
               member __.LogErrorEvent(e) =   protect (fun () -> logErrorOrWarning true ((e.GetPropertyValue("Code")) :?> string) ((e.GetPropertyValue("Message")) :?> string))
               member __.LogMessageEvent(e) = protect (fun () -> logMessage ((e.GetPropertyValue("Message")) :?> string))
@@ -298,7 +298,7 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
              |]    
             
         let assemblies = 
-#if RESHAPED_MSBUILD
+#if FX_RESHAPED_MSBUILD
             ignore references
             [||]
 #else

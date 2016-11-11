@@ -1,5 +1,5 @@
 // #Conformance #ComputationExpressions #Async 
-#if Portable
+#if TESTS_AS_APP
 module Core_controlChamenos
 #endif
 #light
@@ -27,8 +27,7 @@ let report_failure s =
      log (sprintf "FAILURE: %s failed" s)
   )
 
-#if Portable
-#else
+#if !FX_PORTABLE_OR_NETSTANDARD
 System.AppDomain.CurrentDomain.UnhandledException.AddHandler(
        fun _ (args:System.UnhandledExceptionEventArgs) ->
           lock syncObj (fun () ->
@@ -46,20 +45,6 @@ let checkQuiet s x1 x2 =
 let check s x1 x2 = 
     if x1 = x2 then test s true
     else (test s false; printfn "expected: %A, got %A" x2 x1)
-
-#if NetCore
-#else
-let argv = System.Environment.GetCommandLineArgs() 
-let SetCulture() = 
-  if argv.Length > 2 && argv.[1] = "--culture" then  begin
-    let cultureString = argv.[2] in 
-    let culture = new System.Globalization.CultureInfo(cultureString) in 
-    stdout.WriteLine ("Running under culture "+culture.ToString()+"...");
-    System.Threading.Thread.CurrentThread.CurrentCulture <-  culture
-  end 
-  
-do SetCulture()    
-#endif
 
 open Microsoft.FSharp.Control
 open Microsoft.FSharp.Control.WebExtensions
@@ -128,7 +113,7 @@ let () =
 
     check "Chamenos" (Seq.sum meets) (meetings*2)
 
-#if Portable
+#if TESTS_AS_APP
 let aa = 
     if not failures.IsEmpty then exit 1
     else 

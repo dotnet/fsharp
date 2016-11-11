@@ -4,17 +4,6 @@
   http://shootout.alioth.debian.org/benchmark.php?test=nbody&lang=all&sort=cpu
 *)
 
-let argv = System.Environment.GetCommandLineArgs() 
-let SetCulture() = 
-  if argv.Length > 2 && argv.[1] = "--culture" then  begin
-    let cultureString = argv.[2] in 
-    let culture = new System.Globalization.CultureInfo(cultureString) in 
-    System.Console.WriteLine ("Running under culture "+culture.ToString()+"...");
-    System.Threading.Thread.CurrentThread.CurrentCulture <-  culture
-  end 
-  
-do SetCulture()    
-
 let pi = 3.141592653589793
 let solar_mass = 4. * pi * pi
 let days_per_year = 365.24

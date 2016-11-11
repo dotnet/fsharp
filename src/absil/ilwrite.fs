@@ -4122,8 +4122,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           writePadding os "end of .text" (dataSectionPhysLoc - textSectionPhysLoc - textSectionSize)
           
           // DATA SECTION 
-#if FX_NO_LINKEDRESOURCES
-#else
+#if !FX_NO_LINKEDRESOURCES
           match nativeResources with
           | [||] -> ()
           | resources ->

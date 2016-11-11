@@ -1,5 +1,5 @@
 // #Conformance #Sequences #Regression #ControlFlow #SyntacticSugar #ComputationExpressions 
-#if Portable
+#if TESTS_AS_APP
 module Core_comprehensions
 #endif
 #light
@@ -8,21 +8,9 @@ let report_failure () =
   stderr.WriteLine " NO"; failures := true
 let test s b = stderr.Write(s:string);  if b then stderr.WriteLine " OK" else report_failure() 
 
-
-#if NetCore
-#else
-let argv = System.Environment.GetCommandLineArgs() 
-let SetCulture() = 
-  if argv.Length > 2 && argv.[1] = "--culture" then  begin
-    let cultureString = argv.[2] in 
-    let culture = new System.Globalization.CultureInfo(cultureString) in 
-    stdout.WriteLine ("Running under culture "+culture.ToString()+"...");
-    System.Threading.Thread.CurrentThread.CurrentCulture <-  culture
-  end 
-  
-do SetCulture()    
-#endif  
-
+#if FSCORE_PORTABLE_OLD
+let printfn s = printfn "%s" s
+#endif
 
 let _ = test "coic23a" (Seq.toList { 'a' .. 'c' } = ['a';'b';'c'])
 
@@ -527,14 +515,12 @@ module MaxIntMinIntBOundaryCases = begin
 
 end
  
+#if !FX_PORTABLE_OR_NETSTANDARD
 open System.IO
 open System.Xml
 
 let pickering() = 
-    #if Portable
-    ()
-    #else
-    let files = Directory.GetFiles(@"C:\Program Files\Microsoft Enterprise Library January 2006\", "*.csproj", SearchOption.AllDirectories) in
+    let files = Directory.GetFiles(@"C:\Program Files\Microsoft Enterprise Library January 2006\") in
     for file in files do
         let fileInfo = new FileInfo(file) in
         fileInfo.Attributes <- FileAttributes.Archive;
@@ -550,7 +536,7 @@ let pickering() =
         doc.Save(file);
     done;
     stdin.ReadLine()
-    #endif
+#endif
  
 (* Specification and discussion.
 
@@ -670,9 +656,6 @@ fails (fun () -> [0.0 .. 1.1 .. nan])                   |> check    "x .. y .. n
 
 
 module M = 
-    #if Portable
-    let printfn s = printfn "%s" s
-    #endif
     do printfn "hello"
 
 module M2 = begin 
@@ -733,9 +716,6 @@ module MoreSequenceSyntaxTests =
 
                 
     module SeqTests = 
-        #if Portable
-        let printfn s = printfn "%s" s
-        #endif
 
         let x0a0 : seq<int> = seq { do printfn "ello hello" }  
         let x0a0a = do ()
@@ -834,9 +814,6 @@ module MoreSequenceSyntaxTests =
                        if y % 2 = 0 then yield (x,y) }
 
     module AsyncTests = 
-        #if Portable
-        let printfn s = printfn "%s" s
-        #endif
 
         let x0a = async { return 1 }  
         let x0c = async { for x in 1..2 do return () }  
@@ -881,9 +858,6 @@ module MoreSequenceSyntaxTests =
         let x2 = [ 1;2;3 ] 
 
     module ExpressionTests = 
-        #if Portable
-        let printfn s = printfn "%s" s
-        #endif
 
         module M = 
            do printfn "hello" 
@@ -923,9 +897,6 @@ module SyncMonad =
 
 
     module SyncTests = 
-        #if Portable
-        let printfn s = printfn "%s" s
-        #endif
 
         let x0a : Sync<int> = sync { return 1 }  
         let x0c : Sync<unit>  = sync { for x in 1..2 do return () }  
@@ -977,9 +948,6 @@ module SyncMonad =
     let thread = new ThreadBuilder()
     
     module ThreadTests = 
-        #if Portable
-        let printfn s = printfn "%s" s
-        #endif
 
         let x0a : int = thread { return 1 }  
         let x0c : unit  = thread { for x in 1..2 do return () }  
@@ -1051,9 +1019,6 @@ module ContMonad =
 
 
     module ContTests = 
-        #if Portable
-        let printfn s = printfn "%s" s
-        #endif
 
         let x0a : Cont<int> = cont { return 1 }  
         let x0e  : Cont<int> = 
@@ -1195,11 +1160,7 @@ module ExistsMonad =
                    let z = ref 3
                    while !z < 10 do
                       if (x + y + !z = 2009) then 
-                          #if Portable 
-                          printfn "%s" "found it"
-                          #else
                           printfn "found it"
-                          #endif
                       incr z 
 
     exists { for x in 0..1000 do
@@ -1212,9 +1173,6 @@ module ExistsMonad =
 
                       
     module ExistsTests = 
-        #if Portable
-        let printfn s = printfn "%s" s
-        #endif
 
         let x0a : bool = exists.Run (exists.Delay(fun () -> exists.Yield(true)))
         let x0b : bool = exists { yield true }  
@@ -1497,9 +1455,6 @@ module SideEffectListMonad =
     let sideEffectListWithZero onZero = SideEffectListWithZeroBuilder(onZero)
 
     module SideEffectListTests =
-        #if Portable
-        let printfn s = printfn "%s" s
-        #endif
 
         let x0a : list<int> * int * int =
             let calledReturn = ref 0

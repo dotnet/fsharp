@@ -13,7 +13,7 @@ open Internal.Utilities
 /// Fixes to System.Console.ReadKey may break this code around, hence the option here.
 module internal ConsoleOptions =
 
-#if NO_WIN_REGISTRY
+#if FX_NO_WIN_REGISTRY
   let fixupRequired = false
 #else
   // Bug 4254 was fixed in Dev11 (Net4.5), so this flag tracks making this fix up version specific.
@@ -22,7 +22,7 @@ module internal ConsoleOptions =
 
   let fixNonUnicodeSystemConsoleReadKey = ref fixupRequired
   let readKeyFixup (c:char) =
-#if NO_SERVERCODEPAGES
+#if FX_NO_SERVERCODEPAGES
 #else
     if !fixNonUnicodeSystemConsoleReadKey then
       // Assumes the c:char is actually a byte in the System.Console.InputEncoding.

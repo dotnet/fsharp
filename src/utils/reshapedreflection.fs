@@ -51,7 +51,7 @@ module internal ReflectionAdapters =
     let exit (_n:int) = failwith "System.Environment.Exit does not exist!"
 #endif
 
-#if !FX_HAS_TYPECODE
+#if FX_NO_TYPECODE
     [<System.Flags>]
     type TypeCode = 
         | Int32     = 0

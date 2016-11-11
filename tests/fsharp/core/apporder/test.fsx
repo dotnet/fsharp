@@ -1,5 +1,5 @@
 // #Conformance #Constants #Recursion #LetBindings #MemberDefinitions #Mutable 
-#if Portable
+#if TESTS_AS_APP
 module Core_apporder
 #endif
 

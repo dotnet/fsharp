@@ -1,5 +1,5 @@
 // #Conformance #Regression #Collections 
-#if Portable
+#if TESTS_AS_APP
 module Core_map
 #endif
 
@@ -7,20 +7,6 @@ module Core_map
 let failures = ref false
 let report_failure () = failures := true
 let test s b = if b then stdout.WriteLine ("OK: "+s) else (stdout.WriteLine (" FAILED: "+s); report_failure() )
-
-#if NetCore
-#else
-let argv = System.Environment.GetCommandLineArgs() 
-let SetCulture() = 
-  if argv.Length > 2 && argv.[1] = "--culture" then  begin
-    let cultureString = argv.[2] in 
-    let culture = new System.Globalization.CultureInfo(cultureString) in 
-    stdout.WriteLine ("Running under culture "+culture.ToString()+"...");
-    System.Threading.Thread.CurrentThread.CurrentCulture <-  culture
-  end 
-  
-do SetCulture()    
-#endif
 
 (* TEST SUITE FOR STANDARD LIBRARY *)
   

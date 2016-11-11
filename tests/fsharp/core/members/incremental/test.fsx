@@ -1,32 +1,5 @@
 // #Conformance #MemberDefinitions #Mutable #ObjectOrientedTypes #Classes #InterfacesAndImplementations #Recursion 
 
-// CONTENTS-INDEX-REGEXP = FROM>^//! +<TO
-//----------------------------------------------------------------------------
-//CONTENTS-START-LINE: HERE=3 SEP=2
-// 30.    Setup
-// 38.    Address of incremental class local mutable
-// 49.    Address of mutable record field (related to above)
-// 59.    Minor test
-// 72.    Misc
-// 90.    Wire prevously
-// 114.   Wire variations
-// 224.   Area variations
-// 335.   Person
-// 393.   Forms
-// 456.   typar scoping
-// 475.   local let rec test
-// 506.   local let rec test
-// 532.   override test
-// 549.   abstract test
-// 568.   CC tests
-// 583.   interface
-// 591.   static expr test
-// 599.   ctor args stored in fields
-// 605.   Test cases:
-// 621.   Finish
-//CONTENTS-END-LINE:
-//--------------------------------------------------------------------------
-
 
 //! Setup
 

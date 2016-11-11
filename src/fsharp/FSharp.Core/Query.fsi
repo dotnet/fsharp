@@ -2,8 +2,6 @@
 
 namespace Microsoft.FSharp.Linq
 
-#if QUERIES_IN_FSLIB
-
     open Microsoft.FSharp
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Collections
@@ -372,5 +370,4 @@ namespace Microsoft.FSharp.Linq.QueryRunExtensions
 
 
 
-#endif
 

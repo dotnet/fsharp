@@ -16,8 +16,7 @@ namespace Microsoft.FSharp.Control
     type internal BindingFlags = ReflectionAdapters.BindingFlags
 #endif
 
-#if FX_NO_DELEGATE_DYNAMIC_METHOD 
-#else
+#if !FX_NO_DELEGATE_DYNAMIC_METHOD 
 
 #if FX_NO_DELEGATE_DYNAMIC_INVOKE 
     module Impl = 
@@ -75,8 +74,7 @@ namespace Microsoft.FSharp.Control
 
         let mutable multicast : 'Delegate = Unchecked.defaultof<_>     
 
-#if FX_NO_DELEGATE_CREATE_DELEGATE_FROM_STATIC_METHOD
-#else
+#if !FX_NO_DELEGATE_CREATE_DELEGATE_FROM_STATIC_METHOD
         static let mi, argTypes = 
             let instanceBindingFlags = BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.DeclaredOnly
             let mi = typeof<'Delegate>.GetMethod("Invoke",instanceBindingFlags)
@@ -113,15 +111,13 @@ namespace Microsoft.FSharp.Control
             match box multicast with 
             | null -> () 
             | _ -> 
-#if FX_NO_DELEGATE_CREATE_DELEGATE_FROM_STATIC_METHOD
-#else
+#if !FX_NO_DELEGATE_CREATE_DELEGATE_FROM_STATIC_METHOD
                 match invoker with 
                 | null ->  
 #endif
                     let args = Array.append [| sender |] (Microsoft.FSharp.Reflection.FSharpValue.GetTupleFields(box args))
                     multicast.DynamicInvoke(args) |> ignore
-#if FX_NO_DELEGATE_CREATE_DELEGATE_FROM_STATIC_METHOD
-#else
+#if !FX_NO_DELEGATE_CREATE_DELEGATE_FROM_STATIC_METHOD
                 | _ -> 
                     // For the one-argument case, use an optimization that allows a fast call. 
                     // CreateDelegate creates a delegate that is fast to invoke.

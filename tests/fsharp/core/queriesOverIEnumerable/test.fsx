@@ -1,5 +1,5 @@
 ﻿// #Quotations #Query
-#if Portable
+#if TESTS_AS_APP
 module Core_queriesOverIEnumerable
 #endif
 #nowarn "57"
@@ -14,19 +14,6 @@ module Infrastructure =
     let mutable failures = []
     let reportFailure s = 
         stderr.WriteLine " NO"; failures <- s :: failures
-
-#if NetCore
-#else
-    let argv = System.Environment.GetCommandLineArgs() 
-    let SetCulture() = 
-        if argv.Length > 2 && argv.[1] = "--culture" then  
-            let cultureString = argv.[2] 
-            let culture = new System.Globalization.CultureInfo(cultureString) 
-            stdout.WriteLine ("Running under culture "+culture.ToString()+"...");
-            System.Threading.Thread.CurrentThread.CurrentCulture <-  culture
-  
-    do SetCulture()    
-#endif
 
     let check  s v1 v2 = 
        if v1 = v2 then 
