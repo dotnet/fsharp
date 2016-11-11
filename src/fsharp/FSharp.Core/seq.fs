@@ -1146,13 +1146,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Replicate")>]
         let replicate count x =
-#if FX_ATLEAST_45
             System.Linq.Enumerable.Repeat(x,count)
-#else
-            if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
-            seq { for _ in 1 .. count -> x }
-#endif
-
 
         [<CompiledName("Append")>]
         let append (source1: seq<'T>) (source2: seq<'T>) =
