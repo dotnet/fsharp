@@ -4,15 +4,8 @@ open PlatformHelpers
 
 type ProcessorArchitecture = 
     | X86
-    | IA64
     | AMD64
-    | Unknown of string
-    override this.ToString() = 
-        match this with
-        | X86 -> "x86"
-        | IA64 -> "IA64"
-        | AMD64 -> "AMD64"
-        | Unknown arc -> arc
+    override this.ToString() = (sprintf "%A" this)
 
 type RunError = 
     | GenericError of string

@@ -12,6 +12,7 @@
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <ReferenceVsAssemblies>true</ReferenceVsAssemblies>
     <OutputType>Library</OutputType>
+    <UnitTestAssembly>true</UnitTestAssembly>
     <AssemblyName>FSharp.Tests.FSharpSuite</AssemblyName>
     <Name>FSharp.Tests.FSharpSuite</Name>
     <!-- Prevent compiler from inlining calls to FSharp.Core to improve code coverage accuracy -->
@@ -68,7 +69,7 @@
     <Compile Include="fsc\FileVersionInfo.fs" />
     <Compile Include="fsc\warnings\FS2003\Warning_FS2003.fs" />
   </ItemGroup>
-  <ItemGroup>
+  <ItemGroup Condition="(!$(TargetFramework.Contains('portable'))) and '$(TargetFramework)' != 'coreclr'">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -77,6 +78,22 @@
       <HintPath>..\..\packages\NUnit.3.5.0\lib\net45\nunit.framework.dll</HintPath>
       <Private>True</Private>
     </Reference>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
+    <Reference Include="nunit.framework, Version=3.5.0.0, Culture=neutral, PublicKeyToken=2638cd05610744eb">
+      <SpecificVersion>true</SpecificVersion>
+      <Private>True</Private>
+      <HintPath>..\..\packages\NUnit.3.5.0\lib\portable-net45+win8+wp8+wpa81+Xamarin.Mac+MonoAndroid10+MonoTouch10+Xamarin.iOS10\nunit.framework.dll</HintPath>
+    </Reference>
+    <Reference Include="nunitlite, Version=3.5.0.0, Culture=neutral, PublicKeyToken=2638cd05610744eb">
+      <SpecificVersion>true</SpecificVersion>
+      <Private>True</Private>
+      <HintPath>..\..\packages\NUnitLite.3.5.0\lib\portable-net45+win8+wp8+wpa81+Xamarin.Mac\nunitlite.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  
+  <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler\FSharp.Compiler.fsproj">
       <Project>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</Project>
       <Name>FSharp.Compiler</Name>

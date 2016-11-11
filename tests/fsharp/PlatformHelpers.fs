@@ -34,8 +34,12 @@ module Process =
         processInfo.UseShellExecute <- false
         processInfo.WorkingDirectory <- workDir
 
+#if FX_PORTABLE_OR_NETSTANDARD
+        ignore envs  // work out what to do about this
+#else
         envs
         |> Map.iter (fun k v -> processInfo.EnvironmentVariables.[k] <- v)
+#endif
 
         let p = new Process()
         p.EnableRaisingEvents <- true
@@ -65,7 +69,7 @@ module Process =
             do! inputWriter.FlushAsync () |> Async.AwaitIAsyncResult |> Async.Ignore
             input inputWriter
             do! inputWriter.FlushAsync () |> Async.AwaitIAsyncResult |> Async.Ignore
-            inputWriter.Close ()
+            inputWriter.Dispose ()
            } 
            |> Async.Start)
 

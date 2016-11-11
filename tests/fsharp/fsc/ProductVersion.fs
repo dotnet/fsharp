@@ -2,16 +2,14 @@
 
 open System
 open System.IO
+open System.Reflection
 open NUnit.Framework
-
 open NUnitConf
 open PlatformHelpers
 open FSharpTestSuiteTypes
 
-let testConfig = FSharpTestSuite.testConfig
 
-open System.Reflection
-
+#if !FX_PORTABLE_OR_NETSTANDARD
 module ProductVersionTest =
 
     let informationalVersionAttrName = typeof<System.Reflection.AssemblyInformationalVersionAttribute>.FullName
@@ -30,7 +28,7 @@ module ProductVersionTest =
     let ``should use correct fallback`` =
       check (attempt {
        for (assemblyVersion, fileVersion, infoVersion, expected) in fallbackTestData () do
-        let cfg = testConfig (Commands.createTempDir())
+        let cfg = FSharpTestSuite.testConfig (Commands.createTempDir())
         let dir = cfg.Directory
 
         printfn "Directory: %s" dir
@@ -60,3 +58,4 @@ namespace CST.RI.Anshun
         fileVersionInfo.ProductVersion |> Assert.areEqual expected
         })
 
+#endif

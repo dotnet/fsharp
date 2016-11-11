@@ -238,8 +238,8 @@ module Command =
         let openWrite rt =
             let fullpath = Commands.getfullpath dir
             match rt with 
-            | Append p -> new StreamWriter (p |> fullpath, true) 
-            | Overwrite p -> new StreamWriter (p |> fullpath, false)
+            | Append p -> File.AppendText( p |> fullpath)
+            | Overwrite p -> new StreamWriter(File.OpenWrite(p |> fullpath))
 
         let outF fCont cmdArgs =
             match o with
@@ -317,7 +317,7 @@ let fsdiff cfg a b = attempt {
     }
 
 let requireENCulture () = attempt {
-    do! match System.Threading.Thread.CurrentThread.CurrentCulture.TwoLetterISOLanguageName with
+    do! match System.Globalization.CultureInfo.CurrentCulture.TwoLetterISOLanguageName with
         | "en" -> Success
         | c -> skip (sprintf "Test not supported except en Culture, was %s" c)
     }

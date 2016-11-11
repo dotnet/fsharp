@@ -12,10 +12,10 @@ let testConfig = FSharpTestSuite.testConfig
 
 open System.Reflection
 
-module FileVersionInfoTest =
+#if !FX_PORTABLE_OR_NETSTANDARD
 
-    [<Test>]
-    let ``should set file version info on generated file`` () = check (attempt {
+[<Test>]
+let ``should set file version info on generated file`` () = check (attempt {
         let cfg = testConfig (Commands.createTempDir())
 
         let code =
@@ -56,3 +56,4 @@ open System.Runtime.InteropServices
         fv.LegalTrademarks |> Assert.areEqual "CST \u2122"
         
         })
+#endif
