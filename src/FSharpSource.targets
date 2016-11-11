@@ -115,7 +115,6 @@
     <DefineConstants>$(DefineConstants);BE_SECURITY_TRANSPARENT</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_LCIDFROMCODEPAGE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_RESX_RESOURCE_READER</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_RESIDENT_COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);SHADOW_COPY_REFERENCES</DefineConstants>
     <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == ''">v4.5</TargetFrameworkVersion>
     <TargetFrameworkProfile></TargetFrameworkProfile>
