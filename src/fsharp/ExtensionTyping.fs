@@ -316,16 +316,16 @@ module internal ExtensionTyping =
 #if FX_RESHAPED_REFLECTION
         inherit ProvidedMemberInfo(x.GetTypeInfo(),ctxt)
 #if FX_NO_CUSTOMATTRIBUTEDATA
-        let provide () = ProvidedCustomAttributeProvider.Create (fun provider -> provider.GetMemberCustomAttributesData(x.GetTypeInfo()))
+        let provide () = ProvidedCustomAttributeProvider.Create (fun provider -> provider.GetMemberCustomAttributesData(x.GetTypeInfo()) :> _)
 #else
-        let provide () = ProvidedCustomAttributeProvider.Create (fun _provider -> x.GetTypeInfo().GetCustomAttributesData())
+        let provide () = ProvidedCustomAttributeProvider.Create (fun _provider -> x.GetTypeInfo().CustomAttributes)
 #endif
 #else
         inherit ProvidedMemberInfo(x,ctxt)
 #if FX_NO_CUSTOMATTRIBUTEDATA
-        let provide () = ProvidedCustomAttributeProvider.Create (fun provider -> provider.GetMemberCustomAttributesData(x))
+        let provide () = ProvidedCustomAttributeProvider.Create (fun provider -> provider.GetMemberCustomAttributesData(x) :> _)
 #else
-        let provide () = ProvidedCustomAttributeProvider.Create (fun _provider -> x.GetCustomAttributesData())
+        let provide () = ProvidedCustomAttributeProvider.Create (fun _provider -> x.CustomAttributes)
 #endif
 #endif
         interface IProvidedCustomAttributeProvider with 
@@ -411,8 +411,8 @@ module internal ExtensionTyping =
         abstract GetAttributeConstructorArgs: provider:ITypeProvider * attribName:string -> (obj option list * (string * obj option) list) option
 
     and ProvidedCustomAttributeProvider =
-        static member Create (attributes :(ITypeProvider -> System.Collections.Generic.IList<CustomAttributeData>)) : IProvidedCustomAttributeProvider = 
-            let (|Member|_|) (s:string) (x: CustomAttributeNamedArgument) = if x.MemberInfo.Name = s then Some x.TypedValue else None
+        static member Create (attributes :(ITypeProvider -> seq<CustomAttributeData>)) : IProvidedCustomAttributeProvider = 
+            let (|Member|_|) (s:string) (x: CustomAttributeNamedArgument) = if x.MemberName = s then Some x.TypedValue else None
             let (|Arg|_|) (x: CustomAttributeTypedArgument) = match x.Value with null -> None | v -> Some v
             let findAttribByName tyFullName (a:CustomAttributeData) = (a.Constructor.DeclaringType.FullName = tyFullName)  
             let findAttrib (ty:System.Type) a = findAttribByName ty.FullName a
@@ -428,7 +428,7 @@ module internal ExtensionTyping =
                             let namedArgs = 
                                 a.NamedArguments 
                                 |> Seq.toList 
-                                |> List.map (fun arg -> arg.MemberInfo.Name, match arg.TypedValue with Arg null -> None | Arg obj -> Some obj | _ -> None)
+                                |> List.map (fun arg -> arg.MemberName, match arg.TypedValue with Arg null -> None | Arg obj -> Some obj | _ -> None)
                             ctorArgs, namedArgs)
 
                   member __.GetHasTypeProviderEditorHideMethodsAttribute provider = 
@@ -457,9 +457,9 @@ module internal ExtensionTyping =
     and [<AllowNullLiteral; AbstractClass>] 
         ProvidedMemberInfo (x: System.Reflection.MemberInfo, ctxt) = 
 #if FX_NO_CUSTOMATTRIBUTEDATA
-        let provide () = ProvidedCustomAttributeProvider.Create (fun provider -> provider.GetMemberCustomAttributesData(x))
+        let provide () = ProvidedCustomAttributeProvider.Create (fun provider -> provider.GetMemberCustomAttributesData(x) :> _)
 #else
-        let provide () = ProvidedCustomAttributeProvider.Create (fun _provider -> x.GetCustomAttributesData())
+        let provide () = ProvidedCustomAttributeProvider.Create (fun _provider -> x.CustomAttributes)
 #endif
 
         member __.Name = x.Name
@@ -474,9 +474,9 @@ module internal ExtensionTyping =
     and [<AllowNullLiteral; Sealed>] 
         ProvidedParameterInfo (x: System.Reflection.ParameterInfo, ctxt) = 
 #if FX_NO_CUSTOMATTRIBUTEDATA
-        let provide () = ProvidedCustomAttributeProvider.Create (fun provider -> provider.GetParameterCustomAttributesData(x))
+        let provide () = ProvidedCustomAttributeProvider.Create (fun provider -> provider.GetParameterCustomAttributesData(x) :> _)
 #else
-        let provide () = ProvidedCustomAttributeProvider.Create (fun _provider -> x.GetCustomAttributesData())
+        let provide () = ProvidedCustomAttributeProvider.Create (fun _provider -> x.CustomAttributes)
 #endif
         member __.Name = x.Name
         member __.IsOut = x.IsOut
@@ -613,8 +613,7 @@ module internal ExtensionTyping =
 
         static member CreateArray ctxt xs = match xs with null -> null | _ -> xs |> Array.map (ProvidedMethodInfo.Create ctxt)
         member __.Handle = x
-#if FX_NO_REFLECTION_METADATA_TOKENS
-#else
+#if !FX_NO_REFLECTION_METADATA_TOKENS
         member __.MetadataToken = x.MetadataToken
 #endif
         override __.Equals y = assert false; match y with :? ProvidedMethodInfo as y -> x.Equals y.Handle | _ -> false

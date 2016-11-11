@@ -1,5 +1,5 @@
 // #Conformance #Regression 
-#if Portable
+#if TESTS_AS_APP
 module Core_fileorder
 #endif
 

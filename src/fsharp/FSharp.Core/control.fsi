@@ -97,8 +97,7 @@ namespace Microsoft.FSharp.Control
     open Microsoft.FSharp.Control
     open Microsoft.FSharp.Collections
     open System.Threading
-#if FX_NO_TASK
-#else
+#if !FX_NO_TASK
     open System.Runtime.CompilerServices
     open System.Threading.Tasks
 #endif
@@ -163,8 +162,7 @@ namespace Microsoft.FSharp.Control
         /// If one is not supplied, the default cancellation token is used.</param>
         static member Start : computation:Async<unit> * ?cancellationToken:CancellationToken -> unit
 
-#if FX_NO_TASK
-#else
+#if !FX_NO_TASK
         /// <summary>Executes a computation in the thread pool.</summary>
         /// <remarks>If no cancellation token is provided then the default cancellation token is used.</remarks>
         /// <returns>A <c>System.Threading.Tasks.Task</c> that will be completed
@@ -293,8 +291,7 @@ namespace Microsoft.FSharp.Control
         /// <returns>A computation that generates a new work item in the thread pool.</returns>
         static member SwitchToThreadPool :  unit -> Async<unit> 
 
-#if FX_NO_SYNC_CONTEXT
-#else
+#if !FX_NO_SYNC_CONTEXT
         /// <summary>Creates an asynchronous computation that runs
         /// its continuation using syncContext.Post. If syncContext is null 
         /// then the asynchronous computation is equivalent to SwitchToThreadPool().</summary>
@@ -312,8 +309,7 @@ namespace Microsoft.FSharp.Control
         /// <returns>An asynchronous computation that provides the callback with the current continuations.</returns>
         static member FromContinuations : callback:(('T -> unit) * (exn -> unit) * (OperationCanceledException -> unit) -> unit) -> Async<'T>
 
-#if FX_NO_CREATE_DELEGATE
-#else
+#if !FX_NO_CREATE_DELEGATE
         /// <summary>Creates an asynchronous computation that waits for a single invocation of a CLI 
         /// event by adding a handler to the event. Once the computation completes or is 
         /// cancelled, the handler is removed from the event.</summary>
@@ -349,8 +345,7 @@ namespace Microsoft.FSharp.Control
         /// <returns>An asynchronous computation that waits on the given <c>IAsyncResult</c>.</returns>
         static member AwaitIAsyncResult: iar: System.IAsyncResult * ?millisecondsTimeout:int -> Async<bool>
 
-#if FX_NO_TASK
-#else
+#if !FX_NO_TASK
         /// Return an asynchronous computation that will wait for the given task to complete and return
         /// its result.
         static member AwaitTask: task: Task<'T> -> Async<'T>
@@ -722,8 +717,7 @@ namespace Microsoft.FSharp.Control
     module WebExtensions = 
      begin
 
-#if FX_NO_WEB_REQUESTS
-#else
+#if !FX_NO_WEB_REQUESTS
         type System.Net.WebRequest with 
             /// <summary>Returns an asynchronous computation that, when run, will wait for a response to the given WebRequest.</summary>
             /// <returns>An asynchronous computation that waits for response to the <c>WebRequest</c>.</returns>
@@ -731,8 +725,7 @@ namespace Microsoft.FSharp.Control
             member AsyncGetResponse : unit -> Async<System.Net.WebResponse>
 #endif
     
-#if FX_NO_WEB_CLIENT
-#else
+#if !FX_NO_WEB_CLIENT
         type System.Net.WebClient with
             /// <summary>Returns an asynchronous computation that, when run, will wait for the download of the given URI.</summary>
             /// <param name="address">The URI to retrieve.</param>

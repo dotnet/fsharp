@@ -140,10 +140,7 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     let mutable sources : ITaskItem[] = [||]
     let mutable sourceLink : string = null
     let mutable targetType : string = null 
-#if FX_ATLEAST_35   
-#else 
     let mutable toolExe : string = "fsc.exe"
-#endif    
     let mutable warningLevel : string = null
     let mutable treatWarningsAsErrors : bool = false
     let mutable warningsAsErrors : string = null
@@ -443,14 +440,6 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     member fsc.VersionFile
         with get() = versionFile
         and set(s) = versionFile <- s
-
-#if FX_ATLEAST_35
-#else
-    // Allow overriding to the executable name "fsc.exe"
-    member fsc.ToolExe
-        with get() = toolExe
-        and set(s) = toolExe<- s
-#endif
 
     // For targeting other folders for "fsc.exe" (or ToolExe if different)
     member fsc.ToolPath

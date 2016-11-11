@@ -58,7 +58,7 @@ let GetSuperTypeOfType g amap m typ =
 #if EXTENSIONTYPING
     let typ = (if isAppTy g typ && (tcrefOfAppTy g typ).IsProvided then stripTyEqns g typ else stripTyEqnsAndMeasureEqns g typ)
 #else
-    let typ = stripTyEqns g typ 
+    let typ = stripTyEqnsAndMeasureEqns g typ 
 #endif
 
     match metadataOfTy g typ with 

@@ -40,8 +40,7 @@ module Attributes =
     open System.Runtime.CompilerServices
 
     //[<assembly: System.Security.SecurityTransparent>]
-#if FX_NO_DEFAULT_DEPENDENCY_TYPE
-#else
+#if !FX_NO_DEFAULT_DEPENDENCY_TYPE
     [<Dependency("FSharp.Core",LoadHint.Always)>] 
 #endif
     do()

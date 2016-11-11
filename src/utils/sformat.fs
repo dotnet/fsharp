@@ -393,7 +393,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         let string_of_int (i:int) = i.ToString()
 
         let typeUsesSystemObjectToString (typ:System.Type) =
-#if FX_ATLEAST_PORTABLE
+#if FX_PORTABLE_OR_NETSTANDARD
             try 
 #if FX_RESHAPED_REFLECTION
                 let methInfo = typ.GetRuntimeMethod("ToString",[| |])
@@ -708,7 +708,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         // -------------------------------------------------------------------- 
 
         let getProperty (ty: Type) (obj: obj) name =
-#if FX_ATLEAST_PORTABLE
+#if FX_PORTABLE_OR_NETSTANDARD
             let prop = ty.GetProperty(name, (BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic))
             if isNotNull prop then prop.GetValue(obj,[||])
 #if FX_NO_MISSINGMETHODEXCEPTION
@@ -1096,7 +1096,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                                                             // If the leafFormatter was directly here, then layout leaves could store strings.
                            match obj with 
                            | _ when opts.ShowProperties ->
-#if FX_ATLEAST_PORTABLE
+#if FX_PORTABLE_OR_NETSTANDARD
                               let props = ty.GetProperties(BindingFlags.Instance ||| BindingFlags.Public)
 #else                           
                               let props = ty.GetProperties(BindingFlags.GetField ||| BindingFlags.Instance ||| BindingFlags.Public)
@@ -1115,7 +1115,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 
                               // massively reign in deep printing of properties 
                               let nDepth = depthLim/10
-#if FX_ATLEAST_PORTABLE
+#if FX_PORTABLE_OR_NETSTANDARD
                               Array.Sort((propsAndFields),{ new IComparer<MemberInfo> with member this.Compare(p1,p2) = compare (p1.Name) (p2.Name) } );
 #else                              
                               Array.Sort((propsAndFields :> Array),{ new System.Collections.IComparer with member this.Compare(p1,p2) = compare ((p1 :?> MemberInfo).Name) ((p2 :?> MemberInfo).Name) } );

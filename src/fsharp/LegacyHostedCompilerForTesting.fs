@@ -1,9 +1,12 @@
 namespace FSharp.Compiler.Hosted
+
 open System
+open System.IO
+open System.Text
 open System.Text.RegularExpressions
 
 /// build issue location
-type Location =
+type internal Location =
     {
         StartLine : int
         StartColumn : int
@@ -11,10 +14,10 @@ type Location =
         EndColumn : int
     }
 
-type CompilationIssueType = Warning | Error
+type internal CompilationIssueType = Warning | Error
 
 /// build issue details
-type CompilationIssue = 
+type internal CompilationIssue = 
     { 
         Location : Location
         Subcategory : string
@@ -25,18 +28,18 @@ type CompilationIssue =
     }
 
 /// combined warning and error details
-type FailureDetails = 
+type internal FailureDetails = 
     {
         Warnings : CompilationIssue list
         Errors : CompilationIssue list
     }
 
-type CompilationResult = 
+type internal CompilationResult = 
     | Success of CompilationIssue list
     | Failure of FailureDetails
 
 /// in-proc version of fsc.exe
-type FscCompiler() =
+type internal FscCompiler() =
     let referenceResolver = Microsoft.FSharp.Compiler.MSBuildReferenceResolver.Resolver 
     let compiler = Microsoft.FSharp.Compiler.Driver.InProcCompiler(referenceResolver)
 
@@ -132,3 +135,49 @@ type FscCompiler() =
                 )
             |> Array.ofSeq
         (exitCode, lines)
+
+module internal CompilerHelpers =
+    let fscCompiler = FscCompiler()
+
+    /// splits a provided command line string into argv array
+    /// currently handles quotes, but not escaped quotes
+    let parseCommandLine (commandLine : string) =
+        let folder (inQuote : bool, currArg : string, argLst : string list) ch =
+            match (ch, inQuote) with
+            | ('"', _) ->
+                (not inQuote, currArg, argLst)
+            | (' ', false) ->
+                if currArg.Length > 0 then (inQuote, "", currArg :: argLst)
+                else (inQuote, "", argLst)
+            | _ ->
+                (inQuote, currArg + (string ch), argLst)
+
+        seq { yield! commandLine.ToCharArray(); yield ' ' }
+        |> Seq.fold folder (false, "", [])
+        |> (fun (_, _, args) -> args)
+        |> List.rev
+        |> Array.ofList
+
+    /// runs in-proc fsc compilation, returns array consisting of exit code, then compiler output
+    let fscCompile directory args =
+        // in-proc compiler still prints banner to console, so need this to capture it
+        let origOut = Console.Out
+        let origError = Console.Error
+        let sw = new StringWriter()
+        Console.SetOut(sw)
+        let ew = new StringWriter()
+        Console.SetError(ew)
+        try
+            try
+                Directory.SetCurrentDirectory directory
+                let (exitCode, output) = fscCompiler.Compile(args)
+                let consoleOut = sw.ToString().Split([|'\r'; '\n'|], StringSplitOptions.RemoveEmptyEntries)
+                let consoleError = ew.ToString().Split([|'\r'; '\n'|], StringSplitOptions.RemoveEmptyEntries)
+                exitCode, [| yield! consoleOut; yield! output |], consoleError
+            with e ->
+                1, [| "Internal compiler error"; e.ToString().Replace('\n', ' ').Replace('\r', ' ') |], [| |]
+        finally
+            Console.SetOut(origOut)
+            Console.SetError(origError)
+    
+

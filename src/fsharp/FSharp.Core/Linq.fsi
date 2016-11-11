@@ -2,8 +2,6 @@
 
 namespace Microsoft.FSharp.Linq
 
-#if FX_ATLEAST_LINQ
-
     open System
     open System.Linq.Expressions
     open Microsoft.FSharp.Core
@@ -307,4 +305,3 @@ namespace Microsoft.FSharp.Linq.RuntimeHelpers
         val SubstHelperRaw : Expr * Var[] * obj[] -> Expr
 
         val internal (|SpecificCallToMethod|_|) : System.RuntimeMethodHandle -> (Expr -> (Expr option * Type list * Expr list) option)
-#endif

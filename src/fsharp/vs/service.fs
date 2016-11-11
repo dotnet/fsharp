@@ -312,7 +312,7 @@ type FSharpMethodGroupItem(description: FSharpToolTipText, typeText: string, par
 type FSharpMethodGroup( name: string, unsortedMethods: FSharpMethodGroupItem[] ) = 
     // BUG 413009 : [ParameterInfo] takes about 3 seconds to move from one overload parameter to another
     // cache allows to avoid recomputing parameterinfo for the same item
-#if FX_ATLEAST_40
+#if !FX_NO_WEAKTABLE
     static let methodOverloadsCache = System.Runtime.CompilerServices.ConditionalWeakTable()
 #endif
 
@@ -337,7 +337,7 @@ type FSharpMethodGroup( name: string, unsortedMethods: FSharpMethodGroupItem[] )
         if List.isEmpty items then new FSharpMethodGroup("", [| |]) else
         let name = items.Head.DisplayName 
         let getOverloadsForItem item =
-#if FX_ATLEAST_40
+#if !FX_NO_WEAKTABLE
             match methodOverloadsCache.TryGetValue item with
             | true, overloads -> overloads
             | false, _ ->
@@ -379,7 +379,7 @@ type FSharpMethodGroup( name: string, unsortedMethods: FSharpMethodGroupItem[] )
                           hasParameters = (match item with Params.ItemIsProvidedTypeWithStaticArguments m g _ -> false | _ -> true),
                           staticParameters = Params.StaticParamsOfItem infoReader m denv item
                         ))
-#if FX_ATLEAST_40
+#if !FX_NO_WEAKTABLE
                 methodOverloadsCache.Add(item, methods)
 #endif
                 methods
@@ -2076,12 +2076,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
 
             // Register the behaviour that responds to CCUs being invalidated because of type
             // provider Invalidate events. This invalidates the configuration in the build.
-            builder.ImportedCcusInvalidated.Add (fun msg -> 
-#if NO_DEBUG_LOG
-                ignore msg
-#else
-                System.Diagnostics.Debugger.Log(100, "service", sprintf "A build cache entry is being invalidated because of a : %s" msg)
-#endif
+            builder.ImportedCcusInvalidated.Add (fun _ -> 
                 self.InvalidateConfiguration options)
 
             // Register the callback called just before a file is typechecked by the background builder (without recording
