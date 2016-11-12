@@ -263,8 +263,7 @@ let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder,setProcessThreadLocals,a
     let collect name = 
         let lower = String.lowercase name
         if List.exists (Filename.checkSuffix lower) [".resx"]  then
-            warning(Error(FSComp.SR.fscResxSourceFileDeprecated name,rangeStartup))
-            tcConfigB.AddEmbeddedResource name
+            error(Error(FSComp.SR.fscResxSourceFileDeprecated name,rangeStartup))
         else
             inputFilesRef := name :: !inputFilesRef
     let abbrevArgs = GetAbbrevFlagSet tcConfigB true
@@ -1102,29 +1101,6 @@ module MainModuleBuilder =
           mkILResources 
             [ for file in tcConfig.embedResources do
                  let name,bytes,pub = 
-#if FX_RESX_RESOURCE_READER
-                     let lower = String.lowercase file
-                     if List.exists (Filename.checkSuffix lower) [".resx"]  then
-                         let file = tcConfig.ResolveSourceFile(rangeStartup,file,tcConfig.implicitIncludeDir)
-                         let outfile = (file |> Filename.chopExtension) + ".resources"
-                         
-                         let readResX(f:string) = 
-                             use rsxr = new System.Resources.ResXResourceReader(f)
-                             rsxr 
-                             |> Seq.cast 
-                             |> Seq.toList
-                             |> List.map (fun (d:System.Collections.DictionaryEntry) -> (d.Key :?> string), d.Value)
-                         let writeResources((r:(string * obj) list),(f:string)) = 
-                             use writer = new System.Resources.ResourceWriter(f)
-                             r |> List.iter (fun (k,v) -> writer.AddResource(k,v))
-                         writeResources(readResX(file),outfile)
-                         let file,name,pub = TcConfigBuilder.SplitCommandLineResourceInfo outfile
-                         let file = tcConfig.ResolveSourceFile(rangeStartup,file,tcConfig.implicitIncludeDir)
-                         let bytes = FileSystem.ReadAllBytesShim file
-                         FileSystem.FileDelete outfile
-                         name,bytes,pub
-                     else
-#endif
                          let file,name,pub = TcConfigBuilder.SplitCommandLineResourceInfo file
                          let file = tcConfig.ResolveSourceFile(rangeStartup,file,tcConfig.implicitIncludeDir)
                          let bytes = FileSystem.ReadAllBytesShim file
