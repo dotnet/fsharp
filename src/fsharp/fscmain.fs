@@ -1,4 +1,3 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.CommandLineMain
 
@@ -6,6 +5,7 @@ open System
 open System.Diagnostics
 open System.IO
 open System.Reflection
+open System.Runtime.CompilerServices
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.AbstractIL.IL // runningOnMono 
 open Microsoft.FSharp.Compiler.ErrorLogger
@@ -56,7 +56,7 @@ let main(argv) =
 #endif
 
     try 
-        Driver.main(Array.append [| "fsc.exe" |] argv); 
+        Driver.main(Array.append [| "fsc.exe" |] argv)
     with e -> 
-        errorRecovery e Microsoft.FSharp.Compiler.Range.range0; 
+        errorRecovery e Microsoft.FSharp.Compiler.Range.range0
         1
