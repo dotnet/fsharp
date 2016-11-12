@@ -20,6 +20,24 @@
     <PackageNuspec Include="Microsoft.FSharp.Compiler.Host.netcore.nuspec" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\fsi\Fsi.fsproj">
+      <Name>fsi</Name>
+      <Project>{d0e98c0d-490b-4c61-9329-0862f6e87645}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Fsc\Fsc.fsproj">
+      <Name>Fsc</Name>
+      <Project>{C94C257C-3C0A-4858-B5D8-D746498D1F08}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\fsiAnyCpu\FsiAnyCPU.fsproj">
+      <Name>FsiAnyCPU.fsproj</Name>
+      <Project>{8b3e283d-b5fe-4055-9d80-7e3a32f3967b}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+  </ItemGroup>
+
   <Target Name="Build" Outputs="$(TargetPath)"  DependsOnTargets="$(nugetpack)" />
   <Target Name="Rebuild"  DependsOnTargets="$(nugetpack)" />
 
