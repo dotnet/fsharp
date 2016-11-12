@@ -71,7 +71,7 @@
         <Private>True</Private>
     </Reference>
     <Reference Include="TupleSample">
-        <HintPath Condition=" '$(TargetFramework)' != 'coreclr' ">..\..\..\packages\Microsoft.FSharp.TupleSample.1.0.0-alpha-161111/lib/netstandard1.1/TupleSample.dll</HintPath>
+        <HintPath Condition=" '$(TargetFramework)' != 'coreclr' ">..\..\..\packages\Microsoft.FSharp.TupleSample.1.0.0-alpha-161112/lib/netstandard1.1/TupleSample.dll</HintPath>
         <Private>True</Private>
     </Reference>
   </ItemGroup>
