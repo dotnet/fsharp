@@ -14,10 +14,10 @@
     "Microsoft.FSharp.TupleSample": "1.0.0-alpha-161112",
   },
   "runtimes": {
-    "win7-x86": { },
-    "win7-x64": { },
-    "osx.10.11-x64": { },
-    "ubuntu.14.04-x64": { }
+    "win7-x86": {},
+    "win7-x64": {},
+    "osx.10.11-x64": {},
+    "ubuntu.14.04-x64": {}
   },
   "frameworks": {
     "netcoreapp1.0": {
