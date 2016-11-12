@@ -52,8 +52,6 @@
   <ItemGroup  Condition="'$(TargetFramework)' != 'coreclr'">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Runtime.Remoting" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\FSharp.Compiler\FSharp.Compiler.fsproj">
