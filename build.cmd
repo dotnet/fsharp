@@ -778,13 +778,10 @@ REM  ---------------- coreclr-coreunit  -----------------------
 
 if '%TEST_CORECLR_COREUNIT_SUITE%' == '1' (
 
-	set XMLFILE=!RESULTSDIR!\test-coreclr-coreunit-results.xml
-	set OUTPUTFILE=!RESULTSDIR!\test-coreclr-coreunit-output.log
-	set ERRORFILE=!RESULTSDIR!\test-coreclr-coreunit-errors.log
+    set XMLFILE=!RESULTSDIR!\test-coreclr-coreunit-results.xml
+    set OUTPUTFILE=!RESULTSDIR!\test-coreclr-coreunit-output.log
+    set ERRORFILE=!RESULTSDIR!\test-coreclr-coreunit-errors.log
 
-    REM these copies should not be needed, see https://github.com/fsharp/fsharp/issues/642		
-    xcopy /S /Q /Y src\fsharp\FSharp.Core.Unittests\bin\!BUILD_CONFIG!\netcoreapp1.0\* "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.Unittests\"
- 
     echo "%_dotnetexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.Unittests\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
          "%_dotnetexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.Unittests\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
 
@@ -806,15 +803,15 @@ REM ---------------- coreclr-fsharp  -----------------------
 
 if '%TEST_CORECLR_FSHARP_SUITE%' == '1' (
 
-	set single_threaded=true
-	set permutations=FSC_CORECLR
-	set XMLFILE=%RESULTSDIR!\test-coreclr-fsharp-results.xml
-	set OUTPUTFILE=!RESULTSDIR!\test-coreclr-fsharp-output.log
-	set ERRORFILE=!RESULTSDIR!\test-coreclr-fsharp-errors.log
+    set single_threaded=true
+    set permutations=FSC_CORECLR
+    set XMLFILE=%RESULTSDIR!\test-coreclr-fsharp-results.xml
+    set OUTPUTFILE=!RESULTSDIR!\test-coreclr-fsharp-output.log
+    set ERRORFILE=!RESULTSDIR!\test-coreclr-fsharp-errors.log
     echo "!NUNIT3_CONSOLE!" --verbose "!FSCBINPATH!\..\..\coreclr\bin\FSharp.Tests.FSharp.dll" --framework:V4.0 --work:"!FSCBINPATH!"  --output:"!OUTPUTFILE!" --err:"!ERRORFILE!" --result:"!XMLFILE!;format=nunit3" !WHERE_ARG_NUNIT!
          "!NUNIT3_CONSOLE!" --verbose "!FSCBINPATH!\..\..\coreclr\bin\FSharp.Tests.FSharp.dll" --framework:V4.0 --work:"!FSCBINPATH!"  --output:"!OUTPUTFILE!" --err:"!ERRORFILE!" --result:"!XMLFILE!;format=nunit3" !WHERE_ARG_NUNIT!
 
-	call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
+    call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
     if NOT '!saved_errorlevel!' == '0' (
         echo --------------begin coreclr-fsharp test output -------------------
         type "!OUTPUTFILE!"
