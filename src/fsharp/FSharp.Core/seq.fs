@@ -50,11 +50,11 @@ namespace Microsoft.FSharp.Collections
             Composer.Seq.foreach f (toComposer source)
 
         let private seqFactory createSeqComponent (source:seq<'T>) =
-            checkNonNull "source" source
             match source with
             | :? Composer.Core.ISeq<'T> as s -> Upcast.enumerable (s.Compose createSeqComponent)
             | :? array<'T> as a -> Upcast.enumerable (Composer.Seq.Array.create a createSeqComponent)
             | :? list<'T> as a -> Upcast.enumerable (Composer.Seq.List.create a createSeqComponent)
+            | null -> nullArg "source"
             | _ -> Upcast.enumerable (Composer.Seq.Enumerable.create source createSeqComponent)
         
         [<CompiledName("Delay")>]
