@@ -46,7 +46,7 @@
     <PropertyGroup>
       <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)"</PackageProperties>
     </PropertyGroup>
-    <Exec Command='$(MSBuildThisFileDirectory)..\..\..\.nuget\nuget.exe pack %(PackageNuspec.Filename)%(PackageNuspec.Extension) -BasePath "$(OutputPath.TrimEnd("\"))" -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory "$(OutputPath.TrimEnd("\"))"' />
+    <Exec Command='$(MSBuildThisFileDirectory)..\..\..\.nuget\nuget.exe pack %(PackageNuspec.Filename)%(PackageNuspec.Extension) -BasePath "$(OutputPath.TrimEnd("\"))" -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory "$(FSharpSourcesRoot.TrimEnd("\"))\..\artifacts"' />
   </Target>
 
 </Project>
