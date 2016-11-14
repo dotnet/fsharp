@@ -1281,6 +1281,14 @@ let quotesInMultipleModules () = check (attempt {
                 
     })
 
+[<Test; FSharpSuiteFscCodePermutation("core/recordResolution")>]
+let ``record resolution takes number of defined fields into account`` p = check  (attempt {
+    let cfg = FSharpTestSuite.testConfig ()
+        
+    do! singleTestBuild cfg p
+    })
+
+
 [<Test; FSharpSuiteScriptPermutations("core/reflect")>]
 let reflect p = singleTestBuildAndRun p
 
