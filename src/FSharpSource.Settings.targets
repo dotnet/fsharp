@@ -46,10 +46,6 @@
     <AddVsSdkAttributesToSomeCoreComponents>true</AddVsSdkAttributesToSomeCoreComponents>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(OS)' == 'Unix'">
-    <DefineConstants>CROSS_PLATFORM_COMPILER;$(DefineConstants)</DefineConstants>
-  </PropertyGroup>
-
   <PropertyGroup Condition=" '$(ProjectLanguage)' == 'FSharp' ">
     <!-- Things we do only for F# projects -->
     <OtherFlags>$(OtherFlags) --times</OtherFlags>

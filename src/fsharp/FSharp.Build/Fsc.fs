@@ -162,7 +162,7 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     let mutable capturedArguments : string list = []  // list of individual args, to pass to HostObject Compile()
     let mutable capturedFilenames : string list = []  // list of individual source filenames, to pass to HostObject Compile()
 
-#if CROSS_PLATFORM_COMPILER
+#if ENABLE_MONO_SUPPORT
     // The property YieldDuringToolExecution is not available on Mono.
     // So we only set it if available (to avoid a compile-time dependency). 
     let runningOnMono = try System.Type.GetType("Mono.Runtime") <> null with e-> false         

@@ -353,7 +353,7 @@ type TcConfigBuilder =
       mutable emitDebugInfoInQuotations : bool
       mutable exename : string option 
       mutable copyFSharpCore : bool
-#if SHADOW_COPY_REFERENCES
+#if FSI_SHADOW_COPY_REFERENCES
       mutable shadowCopyReferences : bool
 #endif
     }
@@ -521,7 +521,7 @@ type TcConfig =
     member sqmNumOfSourceFiles : int
     member sqmSessionStartedTime : int64
     member copyFSharpCore : bool
-#if SHADOW_COPY_REFERENCES
+#if FSI_SHADOW_COPY_REFERENCES
     member shadowCopyReferences : bool
 #endif
     static member Create : TcConfigBuilder * validate: bool -> TcConfig

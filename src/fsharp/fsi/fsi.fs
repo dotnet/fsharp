@@ -526,7 +526,7 @@ type internal FsiCommandLineOptions(argv: string[], tcConfigB, fsiConsoleOutput:
          (* Renamed --readline and --no-readline to --tabcompletion:+|- *)
          CompilerOption("readline",             tagNone, OptionSwitch(fun flag -> enableConsoleKeyProcessing <- (flag = OptionSwitch.On)),           None, Some(FSIstrings.SR.fsiReadline()));
          CompilerOption("quotations-debug",     tagNone, OptionSwitch(fun switch -> tcConfigB.emitDebugInfoInQuotations <- switch = OptionSwitch.On),None, Some(FSIstrings.SR.fsiEmitDebugInfoInQuotations()));
-#if SHADOW_COPY_REFERENCES
+#if FSI_SHADOW_COPY_REFERENCES
          CompilerOption("shadowcopyreferences", tagNone, OptionSwitch(fun flag -> tcConfigB.shadowCopyReferences <- flag = OptionSwitch.On),         None, Some(FSIstrings.SR.shadowCopyReferences()));
 #endif
         ]);
@@ -1633,7 +1633,7 @@ type internal FsiInteractionProcessor
                 let resolutions,istate = fsiDynamicCompiler.EvalRequireReference istate m path 
                 resolutions |> List.iter (fun ar -> 
                     let format = 
-#if SHADOW_COPY_REFERENCES
+#if FSI_SHADOW_COPY_REFERENCES
                         if tcConfig.shadowCopyReferences then
                             let resolvedPath = ar.resolvedPath.ToUpperInvariant()
                             let fileTime = File.GetLastWriteTimeUtc(resolvedPath)
@@ -1977,7 +1977,7 @@ let internal TrySetUnhandledExceptionMode() =
       decr i;decr i;decr i;decr i;()
 #endif
 
-#if !TODO_REWORK_SERVER
+#if FSI_SERVER
 //----------------------------------------------------------------------------
 // Server mode:
 //----------------------------------------------------------------------------
@@ -2334,14 +2334,12 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
             console.SetCompletionFunction(fun (s1,s2) -> fsiIntellisenseProvider.CompletionsForPartialLID !istateRef (match s1 with | Some s -> s + "." + s2 | None -> s2)  |> Seq.ofList)
         | _ -> ()
 
-#if !TODO_REWORK_SERVER
+#if FSI_SERVER
         if not runningOnMono && fsiOptions.IsInteractiveServer then 
             SpawnInteractiveServer (fsiOptions, fsiConsoleOutput, fsiInterruptController)
 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Interactive)
-#endif
 
-#if !TODO_REWORK_SERVER
         let threadException isFromThreadException exn = 
              fsi.EventLoop.Invoke (
                 fun () ->          
@@ -2494,7 +2492,7 @@ let MainMain argv =
         fsi.Run() 
 #endif
 
-#if SHADOW_COPY_REFERENCES
+#if FSI_SHADOW_COPY_REFERENCES
     let isShadowCopy x = (x = "/shadowcopyreferences" || x = "--shadowcopyreferences" || x = "/shadowcopyreferences+" || x = "--shadowcopyreferences+")
     if AppDomain.CurrentDomain.IsDefaultAppDomain() && argv |> Array.exists isShadowCopy then
         let setupInformation = AppDomain.CurrentDomain.SetupInformation

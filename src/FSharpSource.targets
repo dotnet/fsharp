@@ -80,8 +80,7 @@
     </When>
     <Otherwise>
       <PropertyGroup Condition="'$(StrongNames)' != 'true'">
-        <!-- For the proto build, portable and Silverlight framework implementations, we don't use strong names. -->
-        <!-- For Silverlight, there is no way to disable strong name verification, so using the Microsoft name is not possible -->
+        <!-- For the proto build we don't use strong names. -->
         <DefineConstants>NO_STRONG_NAMES;$(DefineConstants)</DefineConstants>
         <MicroBuildAssemblyVersion>$(FSCoreVersion)</MicroBuildAssemblyVersion>
         <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
@@ -89,8 +88,6 @@
     </Otherwise>
   </Choose>
 
-  <!-- For the proto build, portable and Silverlight framework implementations, we don't use strong names. -->
-  <!-- For Silverlight, there is no way to disable strong name verification, so using the Microsoft name is not possible -->
   <PropertyGroup Condition="'$(StrongNames)' != 'true'">
     <DefineConstants>NO_STRONG_NAMES;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
@@ -114,7 +111,8 @@
     <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
     <DefineConstants>$(DefineConstants);BE_SECURITY_TRANSPARENT</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_LCIDFROMCODEPAGE</DefineConstants>
-    <DefineConstants>$(DefineConstants);SHADOW_COPY_REFERENCES</DefineConstants>
+    <DefineConstants>$(DefineConstants);FSI_SHADOW_COPY_REFERENCES</DefineConstants>
+    <DefineConstants>$(DefineConstants);FSI_SERVER</DefineConstants>
     <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == ''">v4.5</TargetFrameworkVersion>
     <TargetFrameworkProfile></TargetFrameworkProfile>
     <!-- MSbuild works out the assembly references -->
@@ -162,7 +160,6 @@
     <DefineConstants Condition=" '$(FX_NO_LOADER)' != 'true' ">$(DefineConstants);FX_RESHAPED_REFLECTION_CORECLR</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_RESHAPED_MSBUILD</DefineConstants>
     <DefineConstants>$(DefineConstants);TODO_REWORK_ASSEMBLY_LOAD</DefineConstants>
-    <DefineConstants>$(DefineConstants);TODO_REWORK_SERVER</DefineConstants>
     <OtherFlags>$(OtherFlags) --simpleresolution</OtherFlags>
     <TargetProfile>netcore</TargetProfile>
     <TargetFrameworkProfile></TargetFrameworkProfile>                                   <!-- We are currently directly referencing corefx assemblies, so profile7 is not really true -->
