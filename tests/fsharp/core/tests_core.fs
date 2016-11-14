@@ -823,57 +823,57 @@ let ``load-script`` () = check (attempt {
 
     })
 
-[<Test; Category("longnames")>]
+[<Test>]
 let longnames () = singleTestBuildAndRun "core/longnames" FSC_OPT_PLUS_DEBUG
 
-[<Test; Category("map")>]
+[<Test>]
 let map () = singleTestBuildAndRun "core/map" FSC_OPT_PLUS_DEBUG
 
-[<Test; Category("numbers")>]
-let numbers () = singleTestBuildAndRun "core/math/numbers" FSC_OPT_PLUS_DEBUG
+[<Test>]
+let ``math-numbers`` () = singleTestBuildAndRun "core/math/numbers" FSC_OPT_PLUS_DEBUG
 
-[<Test; Category("numbersVS2008")>]
-let numbersVS2008 () = singleTestBuildAndRun "core/math/numbersVS2008" FSC_OPT_PLUS_DEBUG
+[<Test>]
+let ``math-numbersVS2008`` () = singleTestBuildAndRun "core/math/numbersVS2008" FSC_OPT_PLUS_DEBUG
 
-[<Test; Category("measures")>]
+[<Test>]
 let measures () = 
     for p in codeAndInferencePermutations do
         singleTestBuildAndRun "core/measures" p
 
-[<Test; Category("basics")>]
-let basics () = 
+[<Test>]
+let ``members-basics`` () = 
     for p in codeAndInferencePermutations do
         singleTestBuildAndRun "core/members/basics" p
 
 [<Test>]
-let ``basics-hw`` () = singleTestBuildAndRun "core/members/basics-hw" FSC_OPT_PLUS_DEBUG
+let ``members-basics-hw`` () = singleTestBuildAndRun "core/members/basics-hw" FSC_OPT_PLUS_DEBUG
 
 [<Test>]
-let BasicsHwMutrec () = singleTestBuildAndRun "core/members/basics-hw-mutrec" FSC_OPT_PLUS_DEBUG
+let ``members-basics-hw-mutrec`` () = singleTestBuildAndRun "core/members/basics-hw-mutrec" FSC_OPT_PLUS_DEBUG
 
 [<Test>]
-let ctree () = singleTestBuildAndRun "core/members/ctree" FSC_OPT_PLUS_DEBUG
+let ``members-ctree`` () = singleTestBuildAndRun "core/members/ctree" FSC_OPT_PLUS_DEBUG
 
 [<Test>]
-let factors () = singleTestBuildAndRun "core/members/factors" FSC_OPT_PLUS_DEBUG
+let ``members-factors`` () = singleTestBuildAndRun "core/members/factors" FSC_OPT_PLUS_DEBUG
 
 [<Test>]
-let factorsMutrec () = singleTestBuildAndRun "core/members/factors-mutrec" FSC_OPT_PLUS_DEBUG
+let ``members-factors-mutrec`` () = singleTestBuildAndRun "core/members/factors-mutrec" FSC_OPT_PLUS_DEBUG
 
 [<Test>]
-let incremental () = singleTestBuildAndRun "core/members/incremental" FSC_OPT_PLUS_DEBUG
+let ``members-incremental`` () = singleTestBuildAndRun "core/members/incremental" FSC_OPT_PLUS_DEBUG
 
 [<Test>]
-let incrementalHw () = singleTestBuildAndRun "core/members/incremental-hw" FSC_OPT_PLUS_DEBUG
+let ``members-incremental-hw`` () = singleTestBuildAndRun "core/members/incremental-hw" FSC_OPT_PLUS_DEBUG
 
 [<Test>]
-let incrementalHwMutrec () = singleTestBuildAndRun "core/members/incremental-hw-mutrec" FSC_OPT_PLUS_DEBUG
+let ``members-incremental-hw-mutrec`` () = singleTestBuildAndRun "core/members/incremental-hw-mutrec" FSC_OPT_PLUS_DEBUG
 
 [<Test>]
-let ops () = singleTestBuildAndRun "core/members/ops" FSC_OPT_PLUS_DEBUG
+let ``members-ops`` () = singleTestBuildAndRun "core/members/ops" FSC_OPT_PLUS_DEBUG
 
 [<Test>]
-let opsMutrec () = singleTestBuildAndRun "core/members/ops-mutrec" FSC_OPT_PLUS_DEBUG
+let ``members-ops-mutrec`` () = singleTestBuildAndRun "core/members/ops-mutrec" FSC_OPT_PLUS_DEBUG
 
 [<Test>]
 let nested () = singleTestBuildAndRun "core/nested" FSC_OPT_PLUS_DEBUG

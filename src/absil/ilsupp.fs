@@ -1171,7 +1171,7 @@ let pdbReadOpen (moduleName:string) (path:string) :  PdbReader =
     mdd.OpenScope(moduleName, 0, &IID_IMetaDataImport, &o) ;
     let importerPtr = Marshal.GetComInterfaceForObject(o, typeof<IMetadataImport>)
     try 
-#if CROSS_PLATFORM_COMPILER
+#if ENABLE_MONO_SUPPORT
         // ISymWrapper.dll is not available as a compile-time dependency for the cross-platform compiler, since it is Windows-only 
         // Access it via reflection instead.System.Diagnostics.SymbolStore.SymBinder 
         try  

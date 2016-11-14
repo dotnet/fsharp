@@ -100,7 +100,7 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
         | _ -> []
 
     let GetPathToDotNetFrameworkReferenceAssembliesFor40Plus(version) = 
-#if CROSS_PLATFORM_COMPILER // || !FX_RESHAPED_MSBUILD
+#if ENABLE_MONO_SUPPORT // || !FX_RESHAPED_MSBUILD
       match ToolLocationHelper.GetPathToStandardLibraries(".NETFramework",version,"") with
       | null | "" -> []
       | x -> [x]
@@ -318,7 +318,7 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
 #else
         rar.TargetProcessorArchitecture <- targetProcessorArchitecture
         let targetedRuntimeVersionValue = typeof<obj>.Assembly.ImageRuntimeVersion
-#if CROSS_PLATFORM_COMPILER
+#if ENABLE_MONO_SUPPORT
         // The properties TargetedRuntimeVersion and CopyLocalDependenciesWhenParentReferenceInGac 
         // are not available on Mono. So we only set them if available (to avoid a compile-time dependency). 
         if not Microsoft.FSharp.Compiler.AbstractIL.IL.runningOnMono then  
