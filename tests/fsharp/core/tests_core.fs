@@ -716,9 +716,9 @@ let ``load-script`` () = check (attempt {
 
     echo "Test 1================================================="
 
-    do! fscAppendIgnoreExitCode cfg stdoutPath stderrPath "--nologo" ["3.fsx"]
+    do! fscAppend cfg stdoutPath stderrPath "--nologo" ["3.fsx"]
 
-    do! execAppendOutIgnoreExitCode cfg stdoutPath stderrPath ("."/"3.exe") ""
+    do! execAppendIgnoreExitCode cfg stdoutPath stderrPath ("."/"3.exe") ""
 
     rm cfg "3.exe"
 
@@ -736,11 +736,11 @@ let ``load-script`` () = check (attempt {
 
     echo "Test 5================================================="
 
-    do! fscAppendIgnoreExitCode cfg stdoutPath stderrPath "--nologo" ["usesfsi.fsx"]
+    do! fscAppend cfg stdoutPath stderrPath "--nologo" ["usesfsi.fsx"]
 
     echo "Test 6================================================="
 
-    do! fscAppendIgnoreExitCode cfg stdoutPath stderrPath "--nologo -r FSharp.Compiler.Interactive.Settings" ["usesfsi.fsx"]
+    do! fscAppend cfg stdoutPath stderrPath "--nologo -r FSharp.Compiler.Interactive.Settings" ["usesfsi.fsx"]
 
     echo "Test 7================================================="
 
@@ -760,17 +760,17 @@ let ``load-script`` () = check (attempt {
 
     echo "Test 11================================================="
 
-    do! fscAppendIgnoreExitCode cfg stdoutPath stderrPath "--nologo" ["FlagCheck.fs"]
+    do! fscAppend cfg stdoutPath stderrPath "--nologo" ["FlagCheck.fs"]
 
-    do! execAppendOutIgnoreExitCode cfg stdoutPath stderrPath ("."/"FlagCheck.exe") ""
+    do! execAppendIgnoreExitCode cfg stdoutPath stderrPath ("."/"FlagCheck.exe") ""
 
     rm cfg "FlagCheck.exe"
 
     echo "Test 12================================================="
 
-    do! fscAppendIgnoreExitCode cfg stdoutPath stderrPath "-o FlagCheckScript.exe --nologo" ["FlagCheck.fsx"]
+    do! fscAppend cfg stdoutPath stderrPath "-o FlagCheckScript.exe --nologo" ["FlagCheck.fsx"]
 
-    do! execAppendOutIgnoreExitCode cfg stdoutPath stderrPath ("."/"FlagCheckScript.exe") ""
+    do! execAppendIgnoreExitCode cfg stdoutPath stderrPath ("."/"FlagCheckScript.exe") ""
 
     rm cfg "FlagCheckScript.exe"
 
@@ -788,9 +788,9 @@ let ``load-script`` () = check (attempt {
 
     echo "Test 16================================================="
 
-    do! fscAppendIgnoreExitCode cfg stdoutPath stderrPath "--nologo" ["ProjectDriver.fsx"]
+    do! fscAppend cfg stdoutPath stderrPath "--nologo" ["ProjectDriver.fsx"]
 
-    do! execAppendOutIgnoreExitCode cfg stdoutPath stderrPath ("."/"ProjectDriver.exe") ""
+    do! execAppendIgnoreExitCode cfg stdoutPath stderrPath ("."/"ProjectDriver.exe") ""
 
     rm cfg "ProjectDriver.exe"
 
