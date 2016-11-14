@@ -276,6 +276,7 @@ module Command =
 
 let alwaysSuccess _ = Success ()
 
+let execAppend cfg stdoutPath stderrPath p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = OutputAndError(Append(stdoutPath), Append(stderrPath)); Input = None; } p >> checkResult
 let execAppendIgnoreExitCode cfg stdoutPath stderrPath p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = OutputAndError(Append(stdoutPath), Append(stderrPath)); Input = None; } p >> alwaysSuccess
 let exec cfg p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
 let execIn cfg workDir p = Command.exec workDir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
@@ -285,7 +286,7 @@ let execAppendOutIgnoreExitCode cfg workDir outFile p = Command.exec workDir  cf
 
 let fsc cfg arg = Printf.ksprintf (Commands.fsc cfg.Directory (exec cfg) cfg.FSC) arg
 let fscIn cfg workDir arg = Printf.ksprintf (Commands.fsc workDir (execIn cfg workDir) cfg.FSC) arg
-let fscAppendIgnoreExitCode cfg stdoutPath stderrPath arg = Printf.ksprintf (Commands.fsc cfg.Directory (execAppendIgnoreExitCode cfg stdoutPath stderrPath) cfg.FSC) arg
+let fscAppend cfg stdoutPath stderrPath arg = Printf.ksprintf (Commands.fsc cfg.Directory (execAppend cfg stdoutPath stderrPath) cfg.FSC) arg
 let fscBothToOut cfg out arg = Printf.ksprintf (Commands.fsc cfg.Directory (execBothToOut cfg cfg.Directory out) cfg.FSC) arg
 
 let csc cfg arg = Printf.ksprintf (Commands.csc (exec cfg) cfg.CSC) arg
