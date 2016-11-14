@@ -1,5 +1,5 @@
 // #Conformance #Structs #Interop 
-#if Portable
+#if TESTS_AS_APP
 module Core_csext
 #endif
 

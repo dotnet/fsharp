@@ -407,7 +407,7 @@ module DispatchSlotChecking =
         // Check that, for each implemented type, at least one implemented type is implied. This is enough to capture
         // duplicates.
         for (_i, reqdTy, m, impliedTys) in reqdTyInfos do
-            if isInterfaceTy g reqdTy && List.isEmpty impliedTys then 
+            if isInterfaceTy g reqdTy && isNil impliedTys then 
                 errorR(Error(FSComp.SR.typrelDuplicateInterface(),m))
 
         // Check that no interface type is implied twice
@@ -418,7 +418,7 @@ module DispatchSlotChecking =
                 if i > j then  
                     let overlap = ListSet.intersect (TypesFeasiblyEquiv 0 g amap reqdTyRange) impliedTys impliedTys2
                     overlap |> List.iter (fun overlappingTy -> 
-                        if not (List.isEmpty (GetImmediateIntrinsicMethInfosOfType (None,AccessibleFromSomewhere) g amap reqdTyRange overlappingTy |> List.filter (fun minfo -> minfo.IsVirtual))) then
+                        if not (isNil (GetImmediateIntrinsicMethInfosOfType (None,AccessibleFromSomewhere) g amap reqdTyRange overlappingTy |> List.filter (fun minfo -> minfo.IsVirtual))) then
                             errorR(Error(FSComp.SR.typrelNeedExplicitImplementation(NicePrint.minimalStringOfType denv (List.head overlap)),reqdTyRange)))
 
         // Get the SlotImplSet for each implemented type

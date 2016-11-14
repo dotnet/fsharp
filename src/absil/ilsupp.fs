@@ -20,15 +20,13 @@ open System.IO
 open System.Text
 open System.Reflection
 
-#if FX_NO_SYMBOLSTORE
-#else
+#if !FX_NO_SYMBOLSTORE
 open System.Diagnostics.SymbolStore
 #endif
 open System.Runtime.InteropServices
 open System.Runtime.CompilerServices
 
-#if FX_NO_LINKEDRESOURCES
-#else
+#if !FX_NO_LINKEDRESOURCES
 // Force inline, so GetLastWin32Error calls are immediately after interop calls as seen by FxCop under Debug build.
 let inline ignore _x = ()
 
@@ -57,8 +55,7 @@ let bytesToQWord ((b0 : byte) , (b1 : byte) , (b2 : byte) , (b3 : byte) , (b4 : 
 let dwToBytes n = [| (byte)(n &&& 0xff) ; (byte)((n >>> 8) &&& 0xff) ; (byte)((n >>> 16) &&& 0xff) ; (byte)((n >>> 24) &&& 0xff) |], 4
 let wToBytes (n : int16) = [| (byte)(n &&& 0xffs) ; (byte)((n >>> 8) &&& 0xffs) |], 2
 
-#if FX_NO_LINKEDRESOURCES
-#else
+#if !FX_NO_LINKEDRESOURCES
 // REVIEW: factor these classes under one hierarchy, use reflection for creation from buffer and toBytes()
 // Though, everything I'd like to unify is static - metaclasses?
 type IMAGE_FILE_HEADER (m:int16, secs:int16, tds:int32, ptst:int32, nos:int32, soh:int16, c:int16) =
@@ -854,8 +851,7 @@ let unlinkResource (ulLinkedResourceBaseRVA:int32) (pbLinkedResource:byte[]) =
     pResBuffer
 #endif
 
-#if FX_NO_PDB_WRITER
-#else
+#if !FX_NO_PDB_WRITER
 // PDB Writing
 
 [<ComImport; Interface>]
@@ -1016,8 +1012,7 @@ type idd =
       iddData: byte[];}
 #endif
 
-#if FX_NO_PDB_WRITER
-#else
+#if !FX_NO_PDB_WRITER
 let pdbInitialize (binaryName:string) (pdbName:string) =
     // collect necessary COM types
     let CorMetaDataDispenser = System.Type.GetTypeFromProgID("CLRMetaData.CorMetaDataDispenser")
@@ -1152,8 +1147,7 @@ let pdbWriteDebugInfo (writer: PdbWriter) =
 #endif
 
 
-#if FX_NO_PDB_WRITER
-#else
+#if !FX_NO_PDB_WRITER
 // PDB reading
 type PdbReader  = { symReader: ISymbolReader }
 type PdbDocument  = { symDocument: ISymbolDocument }
@@ -1177,7 +1171,7 @@ let pdbReadOpen (moduleName:string) (path:string) :  PdbReader =
     mdd.OpenScope(moduleName, 0, &IID_IMetaDataImport, &o) ;
     let importerPtr = Marshal.GetComInterfaceForObject(o, typeof<IMetadataImport>)
     try 
-#if CROSS_PLATFORM_COMPILER
+#if ENABLE_MONO_SUPPORT
         // ISymWrapper.dll is not available as a compile-time dependency for the cross-platform compiler, since it is Windows-only 
         // Access it via reflection instead.System.Diagnostics.SymbolStore.SymBinder 
         try  

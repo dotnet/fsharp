@@ -1,6 +1,6 @@
 // #Regression #Conformance #Regression 
 
-#if CoreClr
+#if NETSTANDARD1_6
 open CoreClrUtilities
 #endif
 

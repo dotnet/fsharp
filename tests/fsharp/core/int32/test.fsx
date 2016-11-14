@@ -1,5 +1,5 @@
 // #Conformance #Constants 
-#if Portable 
+#if TESTS_AS_APP
 module Core_int32
 #endif
 
@@ -14,21 +14,6 @@ let test s b = if b then () else report_failure(s)
 
 
 
-#if NetCore
-#else
-let argv = System.Environment.GetCommandLineArgs() 
-let SetCulture() = 
-  if argv.Length > 2 && argv.[1] = "--culture" then  begin
-    let cultureString = argv.[2] in 
-    let culture = new System.Globalization.CultureInfo(cultureString) in 
-    stdout.WriteLine ("Running under culture "+culture.ToString()+"...");
-    System.Threading.Thread.CurrentThread.CurrentCulture <-  culture
-  end 
-
-do SetCulture()    
-#endif
-
-  
 do stdout.WriteLine "checking unchecked conversions"; 
 do test "testb3" (try nativeint 0.0 = 0n with _ -> false)
 do test "testnr6" (try int64 0.0 = 0L with _ -> false)

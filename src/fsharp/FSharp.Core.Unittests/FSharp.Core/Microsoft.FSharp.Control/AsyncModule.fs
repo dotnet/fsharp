@@ -9,7 +9,7 @@ open System
 open System.Threading
 open FSharp.Core.Unittests.LibraryTestFx
 open NUnit.Framework
-#if !(FSHARP_CORE_PORTABLE || FSHARP_CORE_NETCORE_PORTABLE)
+#if !(FSCORE_PORTABLE_OLD || FSCORE_PORTABLE_NEW)
 open FsCheck
 #endif
 
@@ -19,7 +19,7 @@ type [<Struct>] Dummy (x: int) =
     member this.Dispose () = ()
 
 
-#if !(FSHARP_CORE_PORTABLE || FSHARP_CORE_NETCORE_PORTABLE)
+#if !(FSCORE_PORTABLE_OLD || FSCORE_PORTABLE_NEW)
 [<AutoOpen>]
 module ChoiceUtils =
 
@@ -410,9 +410,7 @@ type AsyncModule() =
                 Assert.Fail("TimeoutException expected")
             with
                 :? System.TimeoutException -> ()
-#if FSHARP_CORE_PORTABLE
-// do nothing
-#else
+#if !FSCORE_PORTABLE_OLD
     [<Test>]
     member this.``RunSynchronously.NoThreadJumpsAndTimeout.DifferentSyncContexts``() = 
         let run syncContext =
@@ -442,7 +440,7 @@ type AsyncModule() =
     member this.``RaceBetweenCancellationAndError.Sleep``() =
         testErrorAndCancelRace (Async.Sleep (-5))
 
-#if !(FSHARP_CORE_PORTABLE || FSHARP_CORE_NETCORE_PORTABLE || coreclr)
+#if !(FSCORE_PORTABLE_OLD || FSCORE_PORTABLE_NEW || coreclr)
     [<Test; Category("Expensive"); Explicit>] // takes 3 minutes!
     member this.``Async.Choice specification test``() =
         ThreadPool.SetMinThreads(100,100) |> ignore
@@ -494,9 +492,7 @@ type AsyncModule() =
             }
         Async.RunSynchronously(test)
         
-#if FSHARP_CORE_NETCORE_PORTABLE
-// nothing
-#else
+#if !FSCORE_PORTABLE_NEW
     [<Test>]
     member this.``FromContinuationsCanTailCallCurrentThread``() = 
         let cnt = ref 0
@@ -574,12 +570,7 @@ type AsyncModule() =
         Assert.AreEqual("boom", !r)
 
 
-#if FSHARP_CORE_PORTABLE
-// nothing
-#else
-#if FSHARP_CORE_NETCORE_PORTABLE
-// nothing
-#else
+#if !FSCORE_PORTABLE_OLD && !FSCORE_PORTABLE_NEW
     [<Test>]
     member this.``SleepContinuations``() = 
         let okCount = ref 0
@@ -606,5 +597,4 @@ type AsyncModule() =
         for i = 1 to 3 do test()
         Assert.AreEqual(0, !okCount)
         Assert.AreEqual(0, !errCount)
-#endif
 #endif

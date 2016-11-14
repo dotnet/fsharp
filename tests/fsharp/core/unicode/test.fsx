@@ -1,5 +1,5 @@
 // #Conformance #Globalization 
-#if Portable
+#if TESTS_AS_APP
 module Core_unicode
 #endif
 
@@ -12,22 +12,7 @@ let reportFailure s  =
 (* TEST SUITE FOR UNICODE CHARS *)
 
 
-#if NetCore
-#else
-let argv = System.Environment.GetCommandLineArgs() 
-let SetCulture() = 
-  if argv.Length > 2 && argv.[1] = "--culture" then  begin
-    let cultureString = argv.[2] in 
-    let culture = new System.Globalization.CultureInfo(cultureString) in 
-    stdout.WriteLine ("Running under culture "+culture.ToString()+"...");
-    System.Threading.Thread.CurrentThread.CurrentCulture <-  culture
-  end 
-  
-do SetCulture()    
-#endif
-
-#if Portable
-#else
+#if !FX_PORTABLE_OR_NETSTANDARD
 let input_byte (x : System.IO.FileStream) = 
     let b = x.ReadByte() 
     if b = -1 then raise (System.IO.EndOfStreamException()) else b

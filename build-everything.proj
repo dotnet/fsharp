@@ -58,14 +58,17 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TEST_NET40_FSHARP_SUITE)'=='1'" >
-    <ProjectsWithNet40 Include="tests/fsharp/FSharp.Tests.fsproj" />
+    <ProjectsWithNet40 Include="tests/fsharp/FSharp.Tests.FSharpSuite.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TEST_CORECLR_FSHARP_SUITE)'=='1'" >
+    <ProjectsWithCoreClr Include="tests/fsharp/FSharp.Tests.FSharpSuite.fsproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TEST_NET40_FSHARPQA_SUITE)'=='1' OR '$(TEST_NET40_FSHARP_SUITE)'=='1'" >
     <ProjectsWithNet40 Include="tests/fsharpqa/testenv/src/ILComparer/ILComparer.fsproj" />
     <ProjectsWithNet40 Include="tests/fsharpqa/testenv/src/diff/diff.fsproj" />
     <ProjectsWithNet40 Include="tests/fsharpqa/testenv/src/HostedCompilerServer/HostedCompilerServer.fsproj" />
-    <ProjectsWithNet40 Include="tests/fsharpqa/testenv/src/FSharp.Compiler.Hosted/FSharp.Compiler.Hosted.fsproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TEST_VS_IDEUNIT_SUITE)'=='1'" >

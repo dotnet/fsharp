@@ -2,8 +2,6 @@
 
 namespace Microsoft.FSharp.Linq.RuntimeHelpers
 
-#if QUERIES_IN_FSLIB
-
 open System
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.Operators
@@ -314,4 +312,3 @@ module internal Adapters =
     let MakeSeqConv conv = match conv with NoConv -> NoConv | _ -> SeqConv conv
 
 
-#endif

@@ -5,7 +5,7 @@ namespace Microsoft.Build.Utilities
 namespace Microsoft.Build.Framework
 namespace Microsoft.Build.BuildEngine
 
-#if RESHAPED_MSBUILD
+#if FX_RESHAPED_MSBUILD
 
 namespace Microsoft.Build.Framework
 open System.Collections
@@ -218,7 +218,7 @@ module internal ToolLocationHelper =
         let dotNetFrameworkFolderPrefix = dotNetFrameworkVersionFolderPrefix
         let frameworkName = FrameworkName(dotNetFrameworkIdentifier, version)
 
-#if NO_WIN_REGISTRY
+#if FX_NO_WIN_REGISTRY
 #else
         let findRegistryValueUnderKey registryBaseKeyName registryKeyName registryView =
          try
@@ -235,7 +235,7 @@ module internal ToolLocationHelper =
 #endif
 
         let findRegistryValueUnderKey registryBaseKeyName registryKeyName =
-#if NO_WIN_REGISTRY
+#if FX_NO_WIN_REGISTRY
             ignore registryBaseKeyName 
             ignore registryKeyName 
             None

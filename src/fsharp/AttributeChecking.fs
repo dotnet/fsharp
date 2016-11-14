@@ -271,7 +271,7 @@ let private CheckILAttributes g cattrs m =
 /// Check F# attributes for 'ObsoleteAttribute', 'CompilerMessageAttribute' and 'ExperimentalAttribute',
 /// returning errors and warnings as data
 let CheckFSharpAttributes g attribs m = 
-    if List.isEmpty attribs then CompleteD 
+    if isNil attribs then CompleteD 
     else 
         (match TryFindFSharpAttribute g g.attrib_SystemObsolete attribs with
         | Some(Attrib(_,_,[ AttribStringArg s ],_,_,_,_)) ->
@@ -343,7 +343,7 @@ let CheckILAttributesForUnseen g cattrs _m =
 /// Checks the attributes for CompilerMessageAttribute, which has an IsHidden argument that allows
 /// items to be suppressed from intellisense.
 let CheckFSharpAttributesForHidden g attribs = 
-    not (List.isEmpty attribs) &&         
+    not (isNil attribs) &&         
     (match TryFindFSharpAttribute g g.attrib_CompilerMessageAttribute attribs with
         | Some(Attrib(_,_,[AttribStringArg _; AttribInt32Arg messageNumber],
                     ExtractAttribNamedArg "IsHidden" (AttribBoolArg v),_,_,_)) -> 
@@ -354,13 +354,13 @@ let CheckFSharpAttributesForHidden g attribs =
 
 /// Indicate if a list of F# attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.
 let CheckFSharpAttributesForObsolete g attribs = 
-    not (List.isEmpty attribs) && (HasFSharpAttribute g g.attrib_SystemObsolete attribs)
+    not (isNil attribs) && (HasFSharpAttribute g g.attrib_SystemObsolete attribs)
 
 /// Indicate if a list of F# attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.
 /// Also check the attributes for CompilerMessageAttribute, which has an IsHidden argument that allows
 /// items to be suppressed from intellisense.
 let CheckFSharpAttributesForUnseen g attribs _m = 
-    not (List.isEmpty attribs) &&         
+    not (isNil attribs) &&         
     (CheckFSharpAttributesForObsolete g attribs ||
         CheckFSharpAttributesForHidden g attribs)
       

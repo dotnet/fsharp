@@ -2,7 +2,7 @@
 //The shebang above should be treated like a line comment. #! is only allowed in the first byte of a file.
 
 // #Regression #Conformance #Operators #SyntacticSugar #Exceptions #ControlFlow #Arrays #Tuples #Lists #Classes #Constants #Records 
-#if Portable
+#if TESTS_AS_APP
 module Core_syntax
 #endif
 #light
@@ -36,21 +36,6 @@ test "line number test" (__LINE__ = "29")
 test "line number test" (__SOURCE_FILE__ = "original-test-file.fs")
 
 
-#if NetCore
-#else
-let argv = System.Environment.GetCommandLineArgs() 
-
-let SetCulture() = 
-  if argv.Length > 2 && argv.[1] = "--culture" then  
-    let cultureString = argv.[2] 
-    let culture = new System.Globalization.CultureInfo(cultureString) 
-    stdout.WriteLine ("Running under culture "+culture.ToString()+"...");
-    System.Threading.Thread.CurrentThread.CurrentCulture <-  culture
- 
-
-do SetCulture();;
-#endif
-  
 let SimpleArithmetic( )
     = let x = 10 + 12 - 3
        in let y = x * 2 + 1 in
@@ -797,19 +782,17 @@ let testTryFinallySyntaxOnOneLine () =
     try () finally ()
 
 
+#if !FX_PORTABLE_OR_NETSTANDARD
 type SampleForm = 
   class
-  #if Portable
-    inherit System.Object
-  #else
     inherit System.Windows.Forms.Form
-  #endif
     new () as this =
        { }
        
        then 
         ()
   end
+#endif
 
 (* check do introduces a #light block *)
 begin 

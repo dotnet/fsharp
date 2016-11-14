@@ -201,7 +201,7 @@ module Pass1_DetermineTLRAndArities =
             let nFormals    = vss.Length
             let nMaxApplied = GetMaxNumArgsAtUses xinfo f  
             let arity       = Operators.min nFormals nMaxApplied
-            if atTopLevel || arity<>0 || not (List.isEmpty tps) then Some (f,arity)
+            if atTopLevel || arity<>0 || not (isNil tps) then Some (f,arity)
             else None
 
     /// Check if f involves any value recursion (so can skip those).
@@ -310,7 +310,7 @@ type BindingGroupSharingSameReqdItems(bindings: Bindings) =
 
     member fclass.Contains (v: Val) = vset.Contains v
 
-    member fclass.IsEmpty = List.isEmpty vals
+    member fclass.IsEmpty = isNil vals
 
     member fclass.Pairs = vals |> List.map (fun f -> (f,fclass)) 
 
@@ -940,7 +940,7 @@ module Pass4_RewriteAssembly =
             !liftTLR &&             // lifting enabled 
             not z.rws_mustinline &&   // can't lift bindings in a mustinline context - they would become private an not inlined 
             z.rws_innerLevel>0 &&   // only collect Top* bindings when at inner levels (else will drop them!) 
-            not (List.isEmpty topBinds) // only collect topBinds if there are some! 
+            not (isNil topBinds) // only collect topBinds if there are some! 
         if liftTheseBindings then
             let LiftedDeclaration = isRec,topBinds                                           // LiftedDeclaration Top* decs 
             let z = {z with rws_preDecs = TreeNode [z.rws_preDecs;LeafNode LiftedDeclaration]}   // logged at end 
@@ -987,7 +987,7 @@ module Pass4_RewriteAssembly =
     //   let f<tps> vss = fHat<f_freeTypars> f_freeVars vss
     //   let fHat<tps> f_freeVars vss = f_body[<f_freeTypars>,f_freeVars]
     let TransTLRBindings penv (binds:Bindings) = 
-        if List.isEmpty binds then List.empty,List.empty else
+        if isNil binds then List.empty,List.empty else
         let fc   = BindingGroupSharingSameReqdItems binds
         let envp = Zmap.force fc penv.envPackM ("TransTLRBindings",string)
         
@@ -1085,7 +1085,7 @@ module Pass4_RewriteAssembly =
                    let args = aenvExprs @ args
                    mkApps penv.g ((exprForVal m fHat, fHat.Type),[tys],args,m) (* change, direct fHat call with closure (reqdTypars,aenvs) *)
         | _ -> 
-            if List.isEmpty tys && List.isEmpty args then 
+            if isNil tys && isNil args then 
                 fx 
             else Expr.App (fx,fty,tys,args,m)
                               (* no change, f is expr *)

@@ -365,10 +365,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
     type internal FSharpProjectNode(package:FSharpProjectPackage) as this = 
             inherit ProjectNode() 
 
-#if FX_ATLEAST_45  
-#else
-            let GUID_MruPage = new Guid("{BF42FC6C-1C43-487F-A524-C2E7BC707479}")
-#endif
             let mutable vsProject : VSLangProj.VSProject = null
             let mutable trackDocumentsHandle = 0u
             let mutable addFilesNotification : option<(array<string> -> unit)> = None  // this object is only used for helping re-order newly added files (VS defaults to alphabetical order)
@@ -933,8 +929,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                         ()
                     stripEndingSemicolon paths
 
-#if FX_ATLEAST_45  // Dev11 has a new dialog
-
                 let dialogTitle = 
                     let text = FSharpSR.GetString(FSharpSR.AddReferenceDialogTitleDev11)
                     String.Format(text, self.VSProject.Project.Name)
@@ -1204,90 +1198,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 finally
                     // Let the project know it can show itself in the Add Project Reference Dialog page
                     this.ShowProjectInSolutionPage <- true
-#else
-                let dialogTitle = FSharpSR.GetString(FSharpSR.AddReferenceDialogTitle)
-                
-                let browseFilter = String.Format("{0}{1}*.dll;*.exe{1}{1}", [| box(FSharpSR.GetString(FSharpSR.ComponentFileExtensionFilter)); box "\u0000"|])
-                let mutable tabInit0 = new VSCOMPONENTSELECTORTABINIT()
-                tabInit0.dwSize <-  Marshal.SizeOf(typeof<VSCOMPONENTSELECTORTABINIT>) |> uint32
-                tabInit0.varTabInitInfo <- paths.ToString()
-                tabInit0.guidTab <- VSConstants.GUID_COMPlusPage
-
-                //Add the COM page
-                let mutable tabInit1 = new VSCOMPONENTSELECTORTABINIT()
-                tabInit1.dwSize <- Marshal.SizeOf(typeof<VSCOMPONENTSELECTORTABINIT>) |> uint32
-                tabInit1.varTabInitInfo <- box 0
-                tabInit1.guidTab <- VSConstants.GUID_COMClassicPage
-
-                //Add the Project page
-                let mutable tabInit2 = new VSCOMPONENTSELECTORTABINIT()
-                tabInit2.dwSize <- Marshal.SizeOf(typeof<VSCOMPONENTSELECTORTABINIT>) |> uint32
-                // Tell the Add Reference dialog to call hierarchies GetProperty with the following
-                // propID to enablefiltering out ourself from the Project to Project reference
-                tabInit2.varTabInitInfo <- box (int32 __VSHPROPID.VSHPROPID_ShowProjInSolutionPage)
-                tabInit2.guidTab <- VSConstants.GUID_SolutionPage
-
-                // Add the Browse page                  
-                let mutable tabInit3 = new VSCOMPONENTSELECTORTABINIT()
-                tabInit3.dwSize <- Marshal.SizeOf(typeof<VSCOMPONENTSELECTORTABINIT>)  |> uint32
-                tabInit3.guidTab <- VSConstants.GUID_BrowseFilePage
-                tabInit3.varTabInitInfo <- box 0
-
-                //// Add the Recent page                        
-                let mutable tabInit4 = new VSCOMPONENTSELECTORTABINIT()
-                tabInit4.dwSize <- Marshal.SizeOf(typeof<VSCOMPONENTSELECTORTABINIT>)  |> uint32
-                tabInit4.guidTab <- GUID_MruPage
-                tabInit4.varTabInitInfo <- box 0
-
-                let tabInit = [| tabInit0; tabInit1; tabInit2; tabInit3; tabInit4; |] 
-
-                let o = this.GetService(typeof<SVsComponentSelectorDlg>)
-                let componentDialog = match o with
-                                      | :? IVsComponentSelectorDlg4 as x -> x
-                                      | _ -> null
-                begin
-                    try 
-                        try
-                            // call the container to open the add reference dialog.
-                            if (componentDialog <> null) then 
-                                // Let the project know not to show itself in the Add Project Reference Dialog page
-                                this.ShowProjectInSolutionPage <- false
-
-                                let mutable pX = 0u
-                                let mutable pY = 0u
-                                let mutable startingTabGuid = VSConstants.GUID_SolutionPage
-
-                                // call the container to open the add reference dialog.
-                                let strBrowseLocations = Path.GetDirectoryName(this.BaseURI.Uri.LocalPath)
-                                ErrorHandler.ThrowOnFailure
-                                   (componentDialog.ComponentSelectorDlg5
-                                        ((uint32) (__VSCOMPSELFLAGS.VSCOMSEL_MultiSelectMode ||| __VSCOMPSELFLAGS.VSCOMSEL_IgnoreMachineName),
-                                         (this :> IVsComponentUser),
-                                          0u,
-                                          null,
-                                          dialogTitle,   // Title
-                                          "VS.AddReference",         // Help topic
-                                          &pX,
-                                          &pY,
-                                          (uint32)tabInit.Length,
-                                          tabInit,
-                                          &startingTabGuid,
-                                          browseFilter,
-                                          ref strBrowseLocations, 
-                                          targetFrameworkMoniker))
-                            else
-                               VSConstants.S_OK
-
-                        with  (:? COMException as e) -> 
-#if DEBUG
-                            Trace.WriteLine("Exception : " + e.Message)
-#endif
-                            e.ErrorCode
-                    finally
-                        // Let the project know it can show itself in the Add Project Reference Dialog page
-                        this.ShowProjectInSolutionPage <- true
-                end
-#endif
 
             override x.CreateConfigProvider() = new ConfigProvider(this)
             
@@ -1355,11 +1265,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             override x.ComputeSourcesAndFlags() =
                 if x.IsInBatchUpdate || box x.BuildProject = null then ()
                 else
-#if FX_ATLEAST_45
                 if not(inMidstOfReloading) && not(VsBuildManagerAccessorExtensionMethods.IsInProgress(accessor)) then
-#else
-                if not(inMidstOfReloading) && not(FSharpBuildStatus.IsInProgress) then
-#endif
                     // REVIEW CompilerFlags will be stale since last 'save' of MSBuild .fsproj file - can we do better?
                     try
                         actuallyBuild <- false 
@@ -1809,7 +1715,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 let oldValue = this.TargetFrameworkMoniker
                 if not (String.Equals(oldValue, value, StringComparison.OrdinalIgnoreCase)) then
                     if not (Utilities.IsInAutomationFunction(node.Site)) then
-#if FX_ATLEAST_45
                         let newFrameworkName = System.Runtime.Versioning.FrameworkName(value)
                         // Silverlight projects in Dev11 support only Silverlight 5
                         if newFrameworkName.Identifier = "Silverlight" && newFrameworkName.Version.Major <> 5 then 
@@ -1821,7 +1726,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                                     OLEMSGICON.OLEMSGICON_INFO, OLEMSGBUTTON.OLEMSGBUTTON_OK, OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST
                                 ) |> ignore
                             Marshal.ThrowExceptionForHR(VSConstants.OLE_E_PROMPTSAVECANCELLED)
-#endif
                         let result =
                             VsShellUtilities.ShowMessageBox(node.Site, FSharpSR.GetStringWithCR(FSharpSR.NeedReloadToChangeTargetFx), 
                                                         null,
@@ -2167,7 +2071,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 Debug.Assert(x.ProjectMgr <> null, "The FSharpFileNode has no project manager")
 
                 let completeRenameIfNecessary() = 
-#if FX_ATLEAST_45
                     let tree = 
                         match UIHierarchyUtilities.GetUIHierarchyWindow(root.Site, HierarchyNode.SolutionExplorer) with
                         | :? Microsoft.VisualStudio.PlatformUI.SolutionNavigatorPane as snp ->
@@ -2196,9 +2099,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                         node
                     else
                         x
-#else
-                    x
-#endif
                 
                 if (x.ProjectMgr= null) then 
                     raise <| InvalidOperationException()
@@ -2251,12 +2151,8 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             /// Handles the menuitems
             override x.QueryStatusOnNode(guidCmdGroup:Guid, cmd:uint32, pCmdText:IntPtr, result:byref<QueryStatusResult>) =
             
-#if FX_ATLEAST_45
                 let accessor = x.ProjectMgr.Site.GetService(typeof<SVsBuildManagerAccessor>) :?> IVsBuildManagerAccessor
                 let noBuildInProgress = not(VsBuildManagerAccessorExtensionMethods.IsInProgress(accessor))
-#else
-                let noBuildInProgress = not FSharpBuildStatus.IsInProgress 
-#endif
                       
                 match (cmd |> int32 |> enum) with 
                 //| VsCommands.Delete   // REVIEW needs work to implement: see e.g. RemoveFromProjectFile() RemoveItem() CanRemoveItems() CanDeleteItem() DeleteFromStorage()

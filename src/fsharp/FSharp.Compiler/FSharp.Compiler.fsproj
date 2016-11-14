@@ -485,6 +485,10 @@
     <Compile Include="InternalsVisibleTo.fs" Condition="'$(TargetFramework)' != 'coreclr'">
       <Link>InternalsVisibleTo.fs</Link>
     </Compile>
+    <Compile Include="..\LegacyHostedCompilerForTesting.fs">
+      <Link>LegacyHostedCompilerForTesting.fs</Link>
+    </Compile>
+    
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
     <None Include="project.json" />
@@ -494,7 +498,6 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
-    <Reference Include="System.Windows.Forms" />
     <Reference Include="ISymWrapper, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Framework.dll</HintPath>

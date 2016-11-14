@@ -8,52 +8,19 @@ open System.Text
 open System.Threading
 open System.Linq
 open FSharp.Compiler.Hosted
+open FSharp.Compiler.Hosted.CompilerHelpers
 
+[<AutoOpen>]
 module Log =
     /// simple logger
     let log msg = printfn "%O - %s" (DateTime.Now.ToString("HH:mm:ss.fff")) msg
-open Log
 
-module CompilerHelpers =
+/// TCP server which listens for message from test code in other processes,
+/// and runs hosted compilers in response
+type HostedCompilerServer(port) =
+
+
     let MessageDelimiter = "|||"
-    let fscCompiler = FSharp.Compiler.Hosted.FscCompiler()
-
-    /// splits a provided command line string into argv array
-    /// currently handles quotes, but not escaped quotes
-    let parseCommandLine (commandLine : string) =
-        let folder (inQuote : bool, currArg : string, argLst : string list) ch =
-            match (ch, inQuote) with
-            | ('"', _) ->
-                (not inQuote, currArg, argLst)
-            | (' ', false) ->
-                if currArg.Length > 0 then (inQuote, "", currArg :: argLst)
-                else (inQuote, "", argLst)
-            | _ ->
-                (inQuote, currArg + (string ch), argLst)
-
-        seq { yield! commandLine.ToCharArray(); yield ' ' }
-        |> Seq.fold folder (false, "", [])
-        |> (fun (_, _, args) -> args)
-        |> List.rev
-        |> Array.ofList
-
-    /// runs in-proc fsc compilation, returns array consisting of exit code, then compiler output
-    let fscCompile directory args =
-        // in-proc compiler still prints banner to console, so need this to capture it
-        let origOut = Console.Out
-        let sw = new StringWriter()
-        Console.SetOut(sw)
-        try
-            try
-                Environment.CurrentDirectory <- directory
-                let (exitCode, output) = fscCompiler.Compile(args)
-                let consoleOut = sw.ToString().Split([|'\r'; '\n'|], StringSplitOptions.RemoveEmptyEntries)
-                [| yield exitCode.ToString(); yield! consoleOut; yield! output |]
-            with e ->
-                [| "1"; "Internal compiler error"; e.ToString().Replace('\n', ' ').Replace('\r', ' ') |]
-        finally
-            Console.SetOut(origOut)
-    
     // logic for processing raw message string into intended purpose       
     let (|FscCompile|Unknown|) (message : string) =
         match message.Split([|MessageDelimiter|], StringSplitOptions.RemoveEmptyEntries) with
@@ -67,11 +34,6 @@ module CompilerHelpers =
         | _ ->
             Unknown()
 
-open CompilerHelpers
-
-/// TCP server which listens for message from test code in other processes,
-/// and runs hosted compilers in response
-type HostedCompilerServer(port) =
     let Backlog = 10
 
     /// initializes sockets, sets up listener
@@ -100,7 +62,8 @@ type HostedCompilerServer(port) =
         log <| sprintf "Raw message: %s" message
         match message with
         | FscCompile(doCompile) ->
-            doCompile()
+            let exitCode, stdout, stderr = doCompile()
+            [| yield exitCode.ToString(); yield! stdout; yield! stderr |]
         | _ ->
             [|sprintf "Unknown how to process message [%s]" message|]       
 

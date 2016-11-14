@@ -414,12 +414,10 @@ namespace Microsoft.FSharp.Collections
 
 
 
-#if FX_NO_DEBUG_PROXIES
-#else
+#if !FX_NO_DEBUG_PROXIES
     [<System.Diagnostics.DebuggerTypeProxy(typedefof<MapDebugView<_,_>>)>]
 #endif
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
     [<System.Diagnostics.DebuggerDisplay("Count = {Count}")>]
 #endif
     [<Sealed>]
@@ -427,8 +425,7 @@ namespace Microsoft.FSharp.Collections
     [<CompiledName("FSharpMap`2")>]
     type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditionalOn>]'Value when 'Key : comparison >(comparer: IComparer<'Key>, tree: MapTree<'Key,'Value>) =
 
-#if FX_NO_BINARY_SERIALIZATION
-#else
+#if !FX_NO_BINARY_SERIALIZATION
         [<System.NonSerialized>]
         // This type is logically immutable. This field is only mutated during deserialization. 
         let mutable comparer = comparer 
@@ -450,8 +447,7 @@ namespace Microsoft.FSharp.Collections
             let comparer = LanguagePrimitives.FastGenericComparer<'Key> 
             new Map<'Key,'Value>(comparer,MapTree<_,_>.MapEmpty)
 
-#if FX_NO_BINARY_SERIALIZATION
-#else
+#if !FX_NO_BINARY_SERIALIZATION
         [<System.Runtime.Serialization.OnSerializingAttribute>]
         member __.OnSerializing(context: System.Runtime.Serialization.StreamingContext) =
             ignore(context)
@@ -482,8 +478,7 @@ namespace Microsoft.FSharp.Collections
            let comparer = LanguagePrimitives.FastGenericComparer<'Key> 
            new Map<_,_>(comparer,MapTree.ofSeq comparer ie)
     
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
 #endif
         member internal m.Comparer = comparer
@@ -500,8 +495,7 @@ namespace Microsoft.FSharp.Collections
                MapTree.largestMapStackTrace <- System.Diagnostics.StackTrace().ToString()
 #endif
             new Map<'Key,'Value>(comparer,MapTree.add comparer k v tree)
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
 #endif
         member m.IsEmpty = MapTree.isEmpty tree
@@ -634,8 +628,7 @@ namespace Microsoft.FSharp.Collections
            | KeyValue h1 :: KeyValue h2 :: KeyValue h3 :: _ -> System.Text.StringBuilder().Append("map [").Append(LanguagePrimitives.anyToStringShowingNull h1).Append("; ").Append(LanguagePrimitives.anyToStringShowingNull h2).Append("; ").Append(LanguagePrimitives.anyToStringShowingNull h3).Append("; ... ]").ToString() 
 
 
-#if FX_NO_DEBUG_PROXIES
-#else
+#if !FX_NO_DEBUG_PROXIES
     and 
         [<Sealed>]
         MapDebugView<'Key,'Value when 'Key : comparison>(v: Map<'Key,'Value>)  =  

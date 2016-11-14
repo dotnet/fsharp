@@ -177,8 +177,7 @@ module Printf =
     [<CompiledName("PrintFormatLineToTextWriter")>]
     val fprintfn : textWriter:TextWriter -> format:TextWriterFormat<'T> -> 'T
 
-#if FX_NO_SYSTEM_CONSOLE
-#else    
+#if !FX_NO_SYSTEM_CONSOLE
     /// <summary>Formatted printing to stderr</summary>
     /// <param name="format">The input formatter.</param>
     /// <returns>The return type and arguments of the formatter.</returns>

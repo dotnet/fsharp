@@ -58,7 +58,7 @@ let GetSuperTypeOfType g amap m typ =
 #if EXTENSIONTYPING
     let typ = (if isAppTy g typ && (tcrefOfAppTy g typ).IsProvided then stripTyEqns g typ else stripTyEqnsAndMeasureEqns g typ)
 #else
-    let typ = stripTyEqns g typ 
+    let typ = stripTyEqnsAndMeasureEqns g typ 
 #endif
 
     match metadataOfTy g typ with 
@@ -369,7 +369,7 @@ type ValRef with
     member vref.IsDefiniteFSharpOverrideMember = 
         let membInfo = vref.MemberInfo.Value   
         let flags = membInfo.MemberFlags
-        not flags.IsDispatchSlot && (flags.IsOverrideOrExplicitImpl || not (List.isEmpty membInfo.ImplementedSlotSigs))
+        not flags.IsDispatchSlot && (flags.IsOverrideOrExplicitImpl || not (isNil membInfo.ImplementedSlotSigs))
 
     /// Check if an F#-declared member value is an  explicit interface member implementation
     member vref.IsFSharpExplicitInterfaceImplementation g = 

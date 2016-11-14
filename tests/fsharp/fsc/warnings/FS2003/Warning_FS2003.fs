@@ -2,29 +2,19 @@
 
 open System
 open System.IO
+open System.Reflection
 open NUnit.Framework
-
 open NUnitConf
 open PlatformHelpers
 open FSharpTestSuiteTypes
 
-let testConfig = FSharpTestSuite.testConfig
 
-open System.Reflection
+[<Test>]
+let ``should be raised if AssemblyInformationalVersion has invalid version`` () = check (attempt {
+        let cfg = testConfig (Commands.createTempDir())
 
-module FS2003 =
-
-    [<Test; FSharpSuiteTest()>]
-    let ``should be raised if AssemblyInformationalVersion has invalid version`` () = check (attempt {
-        let cfg = testConfig ()
-        let dir = cfg.Directory
-
-        let fscToLibrary = Printf.ksprintf (FscCommand.fscToLibrary dir (Command.exec dir cfg.EnvironmentVariables) cfg.FSC)
-
-        printfn "Directory: %s" dir
-
-        let code _name file =
-            fprintf file "%s" """
+        let code  =
+            """
 namespace CST.RI.Anshun
 open System.Reflection
 [<assembly: AssemblyVersion("4.5.6.7")>]
@@ -32,30 +22,16 @@ open System.Reflection
 ()
             """
 
-        let! result = fscToLibrary "%s --nologo" cfg.fsc_flags { 
-            SourceFiles = [ SourceFile.Content("test.fs", code) ]
-            OutLibrary = "lib.dll" }
-        
-        let fv = Diagnostics.FileVersionInfo.GetVersionInfo(result.OutLibraryFullPath)
+        File.WriteAllText(cfg.Directory/"test.fs", code)
+
+        do! fsc cfg "%s --nologo -o:lib.dll --target:library" cfg.fsc_flags ["test.fs"]
+
+        let fv = Diagnostics.FileVersionInfo.GetVersionInfo(Commands.getfullpath cfg.Directory "lib.dll")
 
         fv.ProductVersion |> Assert.areEqual "45.2048.main1.2-hotfix (upgrade Second Chance security)"
 
         (fv.ProductMajorPart, fv.ProductMinorPart, fv.ProductBuildPart, fv.ProductPrivatePart) 
         |> Assert.areEqual (45,2048,0,0)
-
-        let w =
-            result.StderrText
-            |> FscCommand.parseFscOut
-            |> List.tryFind (function FscCommand.FscOutputLine.Warning ("FS2003", _desc) -> true | _ -> false)
-        
-        match w with
-        | None -> 
-            Assert.failf "expected warning FS2003"
-        | Some (FscCommand.FscOutputLine.Warning("FS2003", desc)) ->
-            StringAssert.Contains ("System.Reflection.AssemblyInformationalVersionAttribute", desc)
-            StringAssert.Contains ("45.2048.main1.2-hotfix (upgrade Second Chance security)", desc)
-        | Some warning -> 
-            Assert.failf "expected warning FS2003, but was %A" warning
 
         })
 

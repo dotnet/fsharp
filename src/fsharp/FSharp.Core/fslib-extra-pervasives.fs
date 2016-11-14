@@ -153,8 +153,7 @@ module ExtraTopLevelOperators =
     [<CompiledName("PrintFormatLineToTextWriter")>]
     let fprintfn (os:TextWriter) fp = Printf.fprintfn os fp 
     
-#if FX_NO_SYSTEM_CONSOLE
-#else    
+#if !FX_NO_SYSTEM_CONSOLE
     [<CompiledName("PrintFormat")>]
     let printf      fp = Printf.printf      fp 
 
@@ -209,29 +208,17 @@ module ExtraTopLevelOperators =
     [<assembly: AutoOpen("Microsoft.FSharp.Core")>]
     [<assembly: AutoOpen("Microsoft.FSharp.Collections")>]
     [<assembly: AutoOpen("Microsoft.FSharp.Control")>]
-#if QUERIES_IN_FSLIB
     [<assembly: AutoOpen("Microsoft.FSharp.Linq.QueryRunExtensions.LowPriority")>]
     [<assembly: AutoOpen("Microsoft.FSharp.Linq.QueryRunExtensions.HighPriority")>]
-#endif
     do()
 
     [<CompiledName("LazyPattern")>]
     let (|Lazy|) (x:Lazy<_>) = x.Force()
 
 
-#if QUERIES_IN_FSLIB
     let query = Microsoft.FSharp.Linq.QueryBuilder()
-#if EXTRA_DEBUG
-    let queryexpr = Microsoft.FSharp.Linq.QueryExprBuilder()
-    let queryexprpretrans = Microsoft.FSharp.Linq.QueryExprPreTransBuilder()
-    let queryexprpreelim = Microsoft.FSharp.Linq.QueryExprPreEliminateNestedBuilder()
-    let queryquote = Microsoft.FSharp.Linq.QueryQuoteBuilder()
-    let querylinqexpr = Microsoft.FSharp.Linq.QueryLinqExprBuilder()
-#endif
 
 
-#endif
-#if PUT_TYPE_PROVIDERS_IN_FSCORE
 namespace Microsoft.FSharp.Core.CompilerServices
 
     open System
@@ -304,22 +291,6 @@ namespace Microsoft.FSharp.Core.CompilerServices
         member this.SystemRuntimeAssemblyVersion  with get() = systemRuntimeAssemblyVersion and set v = systemRuntimeAssemblyVersion <- v
         member this.SystemRuntimeContainsType (typeName : string) = systemRuntimeContainsType typeName
 
-#if SILVERLIGHT_COMPILER_FSHARP_CORE
-    type IProvidedCustomAttributeTypedArgument =
-        abstract ArgumentType: System.Type
-        abstract Value: System.Object
-
-    type IProvidedCustomAttributeNamedArgument =
-        abstract ArgumentType: System.Type
-        abstract MemberInfo: System.Reflection.MemberInfo
-        abstract TypedValue: IProvidedCustomAttributeTypedArgument
-
-    type IProvidedCustomAttributeData =
-        abstract Constructor: System.Reflection.ConstructorInfo
-        abstract ConstructorArguments: System.Collections.Generic.IList<IProvidedCustomAttributeTypedArgument>
-        abstract NamedArguments: System.Collections.Generic.IList<IProvidedCustomAttributeNamedArgument>
-#endif
-
     type IProvidedNamespace =
         abstract NamespaceName : string
         abstract GetNestedNamespaces : unit -> IProvidedNamespace[] 
@@ -338,13 +309,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         abstract Invalidate : Microsoft.FSharp.Control.IEvent<System.EventHandler, System.EventArgs>
         abstract GetGeneratedAssemblyContents : assembly:System.Reflection.Assembly -> byte[]
 
-#if SILVERLIGHT_COMPILER_FSHARP_CORE
-        abstract GetMemberCustomAttributesData : assembly:System.Reflection.MemberInfo -> System.Collections.Generic.IList<IProvidedCustomAttributeData>
-        abstract GetParameterCustomAttributesData : assembly:System.Reflection.ParameterInfo -> System.Collections.Generic.IList<IProvidedCustomAttributeData>
-#endif
-
     type ITypeProvider2 =
         abstract GetStaticParametersForMethod : methodWithoutArguments:MethodBase -> ParameterInfo[] 
         abstract ApplyStaticArgumentsForMethod : methodWithoutArguments:MethodBase * methodNameWithArguments:string * staticArguments:obj[] -> MethodBase
 
-#endif

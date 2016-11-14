@@ -1,27 +1,11 @@
 // #Conformance #LetBindings #Recursion #TypeInference #ObjectConstructors #Classes #Records 
-#if Portable
+#if TESTS_AS_APP
 module Core_letrec
 #endif
 
 let failures = ref false
 let report_failure s = 
   stderr.WriteLine ("FAIL: "+s); failures := true
-
-
-
-#if NetCore
-#else
-let argv = System.Environment.GetCommandLineArgs() 
-let SetCulture() = 
-  if argv.Length > 2 && argv.[1] = "--culture" then  begin
-    let cultureString = argv.[2] in 
-    let culture = new System.Globalization.CultureInfo(cultureString) in 
-    stdout.WriteLine ("Running under culture "+culture.ToString()+"...");
-    System.Threading.Thread.CurrentThread.CurrentCulture <-  culture
-  end 
-  
-do SetCulture()    
-#endif
 
 let test t s1 s2 = 
   if s1 <> s2 then 
@@ -140,8 +124,7 @@ let WouldFailAtRuntimeTest2 () =
   and a3 = (fun x -> a2 + 2) 1 in 
   a2 + a3
 
-#if Portable
-#else
+#if !FX_PORTABLE_OR_NETSTANDARD
 open System
 open System.Windows.Forms
 
@@ -317,8 +300,7 @@ module RecursiveInterfaceObjectExpressions = begin
   
 end
 
-#if Portable
-#else
+#if !FX_PORTABLE_OR_NETSTANDARD
 module RecursiveInnerConstrainedGenerics = begin
 
     open System.Windows.Forms
@@ -641,7 +623,7 @@ module BasicPermutations =
           override x.Foo a = base.Foo(a)
 
 
-#if Portable
+#if TESTS_AS_APP
 let aa = 
     if !failures then (stdout.WriteLine "Test Failed"; exit 1) 
     else (stdout.WriteLine "Test Passed"; exit 0)

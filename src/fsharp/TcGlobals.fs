@@ -102,10 +102,7 @@ type public BuiltinAttribInfo =
 [<NoEquality; NoComparison>]
 type public TcGlobals = 
     { ilg : ILGlobals
-#if NO_COMPILER_BACKEND
-#else
       ilxPubCloEnv : EraseClosures.cenv
-#endif
       emitDebugInfoInQuotations : bool
       compilingFslib: bool
       mlCompatibility : bool
@@ -1015,10 +1012,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
   let quote_to_linq_lambda_info  = makeIntrinsicValRef(fslib_MFLinqRuntimeHelpersQuotationConverter_nleref,  "QuotationToLambdaExpression"          ,None                 ,None                          ,[vara],      ([[mkQuotedExprTy varaTy]], mkLinqExpressionTy varaTy))
     
   { ilg=ilg
-#if NO_COMPILER_BACKEND
-#else
     ilxPubCloEnv=EraseClosures.newIlxPubCloEnv(ilg)
-#endif
     knownIntrinsics                = knownIntrinsics
     knownFSharpCoreModules         = knownFSharpCoreModules
     compilingFslib                 = compilingFslib

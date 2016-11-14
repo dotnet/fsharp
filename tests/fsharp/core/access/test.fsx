@@ -1,5 +1,5 @@
 // #Regression #Conformance #Accessibility #SignatureFiles #Regression #Records #Unions 
-#if Portable
+#if TESTS_AS_APP
 module Core_access
 #endif
 

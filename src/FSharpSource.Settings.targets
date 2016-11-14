@@ -35,6 +35,7 @@
 
     <!-- Always qualify the IntermediateOutputPath by the TargetFramework if any exists -->
     <IntermediateOutputPath>obj\$(Configuration)\$(TargetFramework)\</IntermediateOutputPath>
+    <IntermediateOutputPath Condition="'$(PortableProfileBeingReferenced)' != ''">obj\$(Configuration)\$(TargetFramework)\$(PortableProfileBeingReferenced)\</IntermediateOutputPath>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(OS)' != 'Unix'">
@@ -43,10 +44,6 @@
     <UseSourceLink>true</UseSourceLink>
     <UseGatherBinaries>true</UseGatherBinaries>
     <AddVsSdkAttributesToSomeCoreComponents>true</AddVsSdkAttributesToSomeCoreComponents>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(OS)' == 'Unix'">
-    <DefineConstants>CROSS_PLATFORM_COMPILER;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(ProjectLanguage)' == 'FSharp' ">

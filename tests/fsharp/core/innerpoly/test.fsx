@@ -1,5 +1,5 @@
 // #Conformance #Regression #LetBindings #TypeInference 
-#if Portable
+#if TESTS_AS_APP
 module Core_innerpoly
 #endif
 
@@ -379,7 +379,7 @@ module InnerGenericBindingsInComputationExpressions = begin
     f()
 end
 
-#if Portable
+#if TESTS_AS_APP
 let aa = 
     if failures then (stdout.WriteLine "Test Failed"; exit 1) 
     else (stdout.WriteLine "Test Passed"; exit 0)

@@ -9,7 +9,7 @@ open System.Runtime.InteropServices
 [<assembly:AssemblyTitle("FSharp.Core.dll")>]
 [<assembly:AssemblyCopyright("\169 Microsoft Corporation.  Apache 2.0 License.")>]
 [<assembly:AssemblyProduct("Microsoft\174 F#")>]
-#if !FSHARP_CORE_PORTABLE
+#if !FSCORE_PORTABLE_OLD
 [<assembly:ComVisible(false)>]
 #endif
 
