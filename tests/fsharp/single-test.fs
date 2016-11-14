@@ -57,7 +57,7 @@ let singleTestBuildAndRunAux cfg p = attempt {
 
         use testOkFile = FileGuard.create (getfullpath cfg "test.ok")
 
-        do! ``fsi <`` cfg "%s" cfg.fsi_flags (sources |> List.rev |> List.head) //use last file, because `cmd < a.txt b.txt` redirect b.txt only
+        do! fsiStdin cfg "%s" cfg.fsi_flags (sources |> List.rev |> List.head) //use last file, because `cmd < a.txt b.txt` redirect b.txt only
 
         do! testOkFile |> NUnitConf.checkGuardExists
     | FSI_STDIN_OPT -> 
@@ -65,7 +65,7 @@ let singleTestBuildAndRunAux cfg p = attempt {
 
         use testOkFile = FileGuard.create (getfullpath cfg "test.ok")
 
-        do! ``fsi <`` cfg "%s --optimize" cfg.fsi_flags (sources |> List.rev |> List.head) //use last file, because `cmd < a.txt b.txt` redirect b.txt only
+        do! fsiStdin cfg "%s --optimize" cfg.fsi_flags (sources |> List.rev |> List.head) //use last file, because `cmd < a.txt b.txt` redirect b.txt only
 
         do! testOkFile |> NUnitConf.checkGuardExists
     | FSI_STDIN_GUI -> 
@@ -73,12 +73,12 @@ let singleTestBuildAndRunAux cfg p = attempt {
 
         use testOkFile = FileGuard.create (getfullpath cfg "test.ok")
 
-        do! ``fsi <`` cfg "%s --gui" cfg.fsi_flags (sources |> List.rev |> List.head) //use last file, because `cmd < a.txt b.txt` redirect b.txt only
+        do! fsiStdin cfg "%s --gui" cfg.fsi_flags (sources |> List.rev |> List.head) //use last file, because `cmd < a.txt b.txt` redirect b.txt only
 
         do! testOkFile |> NUnitConf.checkGuardExists
     | FSC_CORECLR -> 
         let platform = "win7-x64"
-        do! fsi cfg """%s --targetPlatformName:.NETStandard,Version=v1.6/%s --source:"coreclr_utilities.fs" --source:"%s" --packagesDir:..\..\packages --projectJsonLock:%s --fsharpCore:%s --define:CoreClr --define:PortableNew --compilerPath:%s --copyCompiler:yes --verbose:verbose --exec """
+        do! fsi cfg """%s --targetPlatformName:.NETStandard,Version=v1.6/%s --source:"coreclr_utilities.fs" --source:"%s" --packagesDir:..\..\packages --projectJsonLock:%s --fsharpCore:%s --define:NETSTANDARD1_6 --define:FSCORE_PORTABLE_NEW --define:FX_PORTABLE_OR_NETSTANDARD --compilerPath:%s --copyCompiler:yes --verbose:verbose --exec """
                cfg.fsi_flags
                platform
                (String.concat " " sources)
@@ -191,7 +191,7 @@ let singleTestBuildAndRunAux cfg p = attempt {
     }
 
 let singleTestBuildAndRun dir p = check (attempt {
-    let cfg = FSharpTestSuite.testConfig dir
+    let cfg = testConfig dir
         
     do! singleTestBuildAndRunAux cfg p
     })

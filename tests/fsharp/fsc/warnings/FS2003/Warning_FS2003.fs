@@ -2,17 +2,13 @@
 
 open System
 open System.IO
+open System.Reflection
 open NUnit.Framework
-
 open NUnitConf
 open PlatformHelpers
 open FSharpTestSuiteTypes
 
-let testConfig = FSharpTestSuite.testConfig
 
-open System.Reflection
-
-#if !FX_PORTABLE_OR_NETSTANDARD
 [<Test>]
 let ``should be raised if AssemblyInformationalVersion has invalid version`` () = check (attempt {
         let cfg = testConfig (Commands.createTempDir())
@@ -39,4 +35,3 @@ open System.Reflection
 
         })
 
-#endif

@@ -17,7 +17,7 @@ let ``321`` () = singleTestBuildAndRun "regression/321" FSC_OPT_PLUS_DEBUG
 
 [<Test>]
 let ``655`` () = check (attempt {
-    let cfg = FSharpTestSuite.testConfig "regression/655"
+    let cfg = testConfig "regression/655"
 
     do! fsc cfg "%s -a -o:pack.dll" cfg.fsc_flags ["xlibC.ml"]
 
@@ -38,7 +38,7 @@ let ``655`` () = check (attempt {
 
 [<Test >]
 let ``656`` () = check (attempt {
-    let cfg = FSharpTestSuite.testConfig "regression/656"
+    let cfg = testConfig "regression/656"
 
     do! fsc cfg "%s -o:pack.exe" cfg.fsc_flags ["misc.fs mathhelper.fs filehelper.fs formshelper.fs plot.fs traj.fs playerrecord.fs trackedplayers.fs form.fs"]
 
@@ -56,7 +56,7 @@ let ``84`` () = singleTestBuildAndRun "regression/84" FSC_OPT_PLUS_DEBUG
 
 [<Test >]
 let ``85`` () = check (attempt {
-    let cfg = FSharpTestSuite.testConfig "regression/85"
+    let cfg = testConfig "regression/85"
 
     do! fsc cfg "%s -r:Category.dll -a -o:petshop.dll" cfg.fsc_flags ["Category.ml"]
 

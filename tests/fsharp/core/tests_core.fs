@@ -27,7 +27,7 @@ let attributes () = singleTestBuildAndRun "core/attributes" FSC_OPT_PLUS_DEBUG
 [<Test>]
 let byrefs () = check  (attempt {
 
-    let cfg = FSharpTestSuite.testConfig "core/byrefs"
+    let cfg = testConfig "core/byrefs"
 
     use testOkFile = fileguard cfg "test.ok"
 
@@ -54,14 +54,14 @@ let control () = singleTestBuildAndRun "core/control" FSC_OPT_PLUS_DEBUG
 
 [<Test>]
 let ``control --tailcalls`` () = check  (attempt {
-    let cfg = FSharpTestSuite.testConfig "core/control"
+    let cfg = testConfig "core/control"
         
     do! singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSC_OPT_PLUS_DEBUG
     })
 
 [<Test>]
 let controlChamenos () = check  (attempt {
-    let cfg = FSharpTestSuite.testConfig "core/controlChamenos"
+    let cfg = testConfig "core/controlChamenos"
         
     do! singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSC_OPT_PLUS_DEBUG
     })
@@ -71,7 +71,7 @@ let controlMailbox () = singleTestBuildAndRun "core/controlMailbox" FSC_OPT_PLUS
 
 [<Test>]
 let ``controlMailbox --tailcalls`` () = check  (attempt {
-    let cfg = FSharpTestSuite.testConfig "core/controlMailbox"
+    let cfg = testConfig "core/controlMailbox"
         
     do! singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSC_OPT_PLUS_DEBUG
     })
@@ -85,7 +85,7 @@ let csext () = singleTestBuildAndRun "core/csext" FSC_OPT_PLUS_DEBUG
 
 [<Test>]
 let events () = check  (attempt {
-    let cfg = FSharpTestSuite.testConfig "core/events"
+    let cfg = testConfig "core/events"
 
     do! fsc cfg "%s -a -o:test.dll -g" cfg.fsc_flags ["test.fs"]
 
@@ -116,7 +116,7 @@ let events () = check  (attempt {
 //    // "%FSI%" %fsi_flags%  --shadowcopyreferences- < test1.fsx
 //    [<FSharpSuiteTestCase("core/fsi-shadowcopy", "--shadowcopyreferences-")
 //    let ``shadowcopy disabled`` (flags: string) = check  (attempt {
-//        let cfg = FSharpTestSuite.testConfig ()
+//        let cfg = testConfig ()
 //
 //
 //
@@ -125,7 +125,7 @@ let events () = check  (attempt {
 //        // if exist test1.ok (del /f /q test1.ok)
 //        use testOkFile = fileguard cfg "test1.ok"
 //
-//        do! ``fsi <`` cfg "%s %s" cfg.fsi_flags flags "test1.fsx"
+//        do! fsiStdin cfg "%s %s" cfg.fsi_flags flags "test1.fsx"
 //
 //        // if NOT EXIST test1.ok goto SetError
 //        do! testOkFile |> NUnitConf.checkGuardExists
@@ -137,7 +137,7 @@ let events () = check  (attempt {
 //    // "%FSI%" %fsi_flags%  --shadowcopyreferences  < test2.fsx
 //    [<FSharpSuiteTestCase("core/fsi-shadowcopy", "--shadowcopyreferences")
 //    let ``shadowcopy enabled`` (flags: string) = check (attempt {
-//        let cfg = FSharpTestSuite.testConfig ()
+//        let cfg = testConfig ()
 //
 //
 //
@@ -147,7 +147,7 @@ let events () = check  (attempt {
 //        use testOkFile = fileguard cfg "test2.ok"
 //
 //        // "%FSI%" %fsi_flags%  /shadowcopyreferences+  < test2.fsx
-//        do! ``fsi <`` cfg "%s %s" cfg.fsi_flags flags "test2.fsx"
+//        do! fsiStdin cfg "%s %s" cfg.fsi_flags flags "test2.fsx"
 //
 //        // if NOT EXIST test2.ok goto SetError
 //        do! testOkFile |> NUnitConf.checkGuardExists
@@ -157,7 +157,7 @@ let events () = check  (attempt {
 
 [<Test>]
 let forwarders () = check (attempt {
-    let cfg = FSharpTestSuite.testConfig "core/forwarders"
+    let cfg = testConfig "core/forwarders"
 
     mkdir cfg "orig"
     mkdir cfg "split"
@@ -196,7 +196,7 @@ let forwarders () = check (attempt {
 
 [<Test>]
 let fsfromcs () = check (attempt {
-    let cfg = FSharpTestSuite.testConfig "core/fsfromcs"
+    let cfg = testConfig "core/fsfromcs"
 
     do! fsc cfg "%s -a --doc:lib.xml -o:lib.dll -g" cfg.fsc_flags ["lib.fs"]
 
@@ -218,7 +218,7 @@ let fsfromcs () = check (attempt {
 
 [<Test>]
 let fsfromfsviacs () = check (attempt {
-    let cfg = FSharpTestSuite.testConfig "core/fsfromfsviacs"
+    let cfg = testConfig "core/fsfromfsviacs"
 
     do! fsc cfg "%s -a -o:lib.dll -g" cfg.fsc_flags ["lib.fs"]
 
@@ -244,13 +244,13 @@ let fsfromfsviacs () = check (attempt {
 
 [<Test>]
 let ``fsi-reload`` () = check (attempt {
-    let cfg = FSharpTestSuite.testConfig "core/fsi-reload"
+    let cfg = testConfig "core/fsi-reload"
 
     do! attempt {
 
         use testOkFile = fileguard cfg "test.ok"
 
-        do! ``fsi <`` cfg "%s  --maxerrors:1" cfg.fsi_flags "test1.ml"
+        do! fsiStdin cfg "%s  --maxerrors:1" cfg.fsi_flags "test1.ml"
     
         do! testOkFile |> NUnitConf.checkGuardExists
     }
@@ -282,15 +282,15 @@ let ``fsi-reload`` () = check (attempt {
 
 [<Test>]
 let fsiAndModifiers () = check (attempt {
-    let cfg = FSharpTestSuite.testConfig "core/fsiAndModifiers"
+    let cfg = testConfig "core/fsiAndModifiers"
 
     do if fileExists cfg "TestLibrary.dll" then rm cfg "TestLibrary.dll"
 
-    do! ``fsi <`` cfg "%s  --maxerrors:1" cfg.fsi_flags "prepare.fsx"
+    do! fsiStdin cfg "%s  --maxerrors:1" cfg.fsi_flags "prepare.fsx"
 
     use testOkFile = fileguard cfg "test.ok"
         
-    do! ``fsi <`` cfg "%s  --maxerrors:1" cfg.fsi_flags "test.fsx"
+    do! fsiStdin cfg "%s  --maxerrors:1" cfg.fsi_flags "test.fsx"
 
     do! testOkFile |> NUnitConf.checkGuardExists
                 
@@ -303,7 +303,7 @@ let genericmeasures () =
 
 [<Test>]
 let hiding () = check (attempt {
-    let cfg = FSharpTestSuite.testConfig "core/hiding"
+    let cfg = testConfig "core/hiding"
 
     do! fsc cfg "%s -a --optimize -o:lib.dll" cfg.fsc_flags ["lib.mli";"lib.ml";"libv.ml"]
 
@@ -330,7 +330,7 @@ let ``test int32`` () = singleTestBuildAndRun "core/int32" FSC_OPT_PLUS_DEBUG
 
 [<Test>]
 let queriesCustomQueryOps () = check (attempt {
-    let cfg = FSharpTestSuite.testConfig "core/queriesCustomQueryOps"
+    let cfg = testConfig "core/queriesCustomQueryOps"
 
     do! fsc cfg """%s -o:test.exe -g""" cfg.fsc_flags ["test.fsx"]
 
@@ -369,7 +369,7 @@ let queriesCustomQueryOps () = check (attempt {
     })
 
 let printing flag diffFileOut expectedFileOut diffFileErr expectedFileErr = check (attempt {
-    let cfg = FSharpTestSuite.testConfig "core/printing"
+    let cfg = testConfig "core/printing"
 
     do! requireENCulture ()
 
@@ -435,7 +435,7 @@ let ``printing-5`` () =
 
 let signedtest(args,bslfile) = check(attempt {
     
-    let cfg = FSharpTestSuite.testConfig "core/signedtests"
+    let cfg = testConfig "core/signedtests"
     let cfg = { cfg with fsc_flags=cfg.fsc_flags + " " + args }
 
     let outfile = Path.ChangeExtension(bslfile,"sn.out") 
@@ -514,7 +514,7 @@ let ``signedtest-17`` () = signedtest("--keyfile:sha1024delay.snk --publicsign",
 
 [<Test>]
 let quotes () = check (attempt {
-    let cfg = FSharpTestSuite.testConfig "core/quotes"
+    let cfg = testConfig "core/quotes"
 
     do! csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
 
@@ -579,7 +579,7 @@ let namespaceAttributes () =
 
 [<Test; Category("parsing")>]
 let parsing () = check  (attempt {
-    let cfg = FSharpTestSuite.testConfig "core/parsing"
+    let cfg = testConfig "core/parsing"
         
     do! fsc cfg "%s -a -o:crlf.dll -g" cfg.fsc_flags ["crlf.ml"]
 
@@ -591,7 +591,7 @@ let parsing () = check  (attempt {
 
 [<Test; Category("unicode")>]
 let unicode () = check  (attempt {
-    let cfg = FSharpTestSuite.testConfig "core/unicode"
+    let cfg = testConfig "core/unicode"
 
     do! fsc cfg "%s -a -o:kanji-unicode-utf8-nosig-codepage-65001.dll -g" cfg.fsc_flags ["kanji-unicode-utf8-nosig-codepage-65001.fs"]
 
@@ -623,7 +623,7 @@ let unicode2 () = singleTestBuildAndRun "core/unicode" FSC_OPT_PLUS_DEBUG
 
 [<Test; Category("internalsvisible")>]
 let internalsvisible () = check  (attempt {
-    let cfg = FSharpTestSuite.testConfig "core/internalsvisible"
+    let cfg = testConfig "core/internalsvisible"
 
     // Compiling F# Library
     do! fsc cfg "%s --version:1.2.3 --keyfile:key.snk -a --optimize -o:library.dll" cfg.fsc_flags ["library.fsi"; "library.fs"]
@@ -648,7 +648,7 @@ let internalsvisible () = check  (attempt {
 // Repro for https://github.com/Microsoft/visualfsharp/issues/1298
 [<Test; Category("fileorder")>]
 let fileorder () = check  (attempt {
-    let cfg = FSharpTestSuite.testConfig "core/fileorder"
+    let cfg = testConfig "core/fileorder"
 
     log "== Compiling F# Library and Code, when empty file libfile2.fs IS NOT included"
     do! fsc cfg "%s -a --optimize -o:lib.dll " cfg.fsc_flags ["libfile1.fs"]
@@ -697,7 +697,7 @@ let lift () = singleTestBuildAndRun "core/lift" FSC_OPT_PLUS_DEBUG
 
 [<Test>]
 let ``load-script`` () = check (attempt {
-    let cfg = FSharpTestSuite.testConfig "core/load-script"
+    let cfg = testConfig "core/load-script"
 
     let stdoutPath = "out.stdout.txt" |> getfullpath cfg
     let stderrPath = "out.stderr.txt" |> getfullpath cfg
@@ -728,7 +728,7 @@ let ``load-script`` () = check (attempt {
 
     echo "Test 3================================================="
 
-    do! fsiFromInToOutIgnoreExitCode cfg stdoutPath stderrPath "--nologo" "pipescr"
+    do! fsiStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath "--nologo" "pipescr"
 
     echo "Test 4================================================="
 
@@ -883,7 +883,7 @@ let patterns () = singleTestBuildAndRun "core/patterns" FSC_OPT_PLUS_DEBUG
 
 [<Test>]
 let pinvoke () = check (attempt {
-    let cfg = FSharpTestSuite.testConfig "core/pinvoke"
+    let cfg = testConfig "core/pinvoke"
 
     do! fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
    
@@ -898,7 +898,7 @@ let printf () = singleTestBuildAndRun "core/printf" FSC_BASIC
 
 [<Test>]
 let queriesLeafExpressionConvert () = check (attempt {
-    let cfg = FSharpTestSuite.testConfig "core/queriesLeafExpressionConvert"
+    let cfg = testConfig "core/queriesLeafExpressionConvert"
 
     do! fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
 
@@ -931,7 +931,7 @@ let queriesLeafExpressionConvert () = check (attempt {
 
 [<Test>]
 let queriesNullableOperators () = check (attempt {
-    let cfg = FSharpTestSuite.testConfig "core/queriesNullableOperators"
+    let cfg = testConfig "core/queriesNullableOperators"
 
     do! fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
 
@@ -957,7 +957,7 @@ let queriesNullableOperators () = check (attempt {
 
 [<Test>]
 let queriesOverIEnumerable () = check (attempt {
-    let cfg = FSharpTestSuite.testConfig "core/queriesOverIEnumerable"
+    let cfg = testConfig "core/queriesOverIEnumerable"
 
     do! fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
 
@@ -989,7 +989,7 @@ let queriesOverIEnumerable () = check (attempt {
 
 [<Test>]
 let queriesOverIQueryable () = check (attempt {
-    let cfg = FSharpTestSuite.testConfig "core/queriesOverIQueryable"
+    let cfg = testConfig "core/queriesOverIQueryable"
 
     do! fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
 
@@ -1022,7 +1022,7 @@ let queriesOverIQueryable () = check (attempt {
 
 [<Test>]
 let quotesDebugInfo () = check (attempt {
-    let cfg = FSharpTestSuite.testConfig "core/quotesDebugInfo"
+    let cfg = testConfig "core/quotesDebugInfo"
 
     do! fsc cfg "%s --quotations-debug+ --optimize -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
 
@@ -1054,7 +1054,7 @@ let quotesDebugInfo () = check (attempt {
 
 [<Test>]
 let quotesInMultipleModules () = check (attempt {
-    let cfg = FSharpTestSuite.testConfig "core/quotesInMultipleModules"
+    let cfg = testConfig "core/quotesInMultipleModules"
 
     do! fsc cfg "%s -o:module1.dll --target:library" cfg.fsc_flags ["module1.fsx"]
 
@@ -1108,7 +1108,7 @@ let reflect () = singleTestBuildAndRun "core/reflect" FSC_OPT_PLUS_DEBUG
 
 [<Test>]
 let testResources () = check (attempt {
-    let cfg = FSharpTestSuite.testConfig "core/resources"
+    let cfg = testConfig "core/resources"
 
     do! fsc cfg "%s  --resource:Resources.resources -o:test-embed.exe -g" cfg.fsc_flags ["test.fs"]
 
@@ -1152,7 +1152,7 @@ let tlr () = singleTestBuildAndRun "core/tlr" FSC_OPT_PLUS_DEBUG
 
 [<Test>]
 let topinit () = check (attempt {
-    let cfg = FSharpTestSuite.testConfig "core/topinit"
+    let cfg = testConfig "core/topinit"
 
     do! fsc cfg "%s --optimize -o both69514.exe -g" cfg.fsc_flags ["lib69514.fs"; "app69514.fs"]
 
@@ -1282,7 +1282,7 @@ let topinit () = check (attempt {
 
 [<Test>]
 let unitsOfMeasure () = check (attempt {
-    let cfg = FSharpTestSuite.testConfig "core/unitsOfMeasure"
+    let cfg = testConfig "core/unitsOfMeasure"
 
     do! fsc cfg "%s --optimize- -o:test.exe -g" cfg.fsc_flags ["test.fs"]
 
@@ -1299,7 +1299,7 @@ let unitsOfMeasure () = check (attempt {
 
 [<Test>]
 let verify () = check (attempt {
-    let cfg = FSharpTestSuite.testConfig "core/verify"
+    let cfg = testConfig "core/verify"
 
     do! peverifyWithArgs cfg "/nologo" (cfg.FSCBinPath/"FSharp.Build.dll")
 

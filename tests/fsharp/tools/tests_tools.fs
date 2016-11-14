@@ -11,7 +11,7 @@ open SingleTest
 
 [<Test>]
 let bundle () = check (attempt {
-    let cfg = FSharpTestSuite.testConfig "tools/bundle"
+    let cfg = testConfig "tools/bundle"
 
     do! fsc cfg "%s --progress --standalone -o:test-one-fsharp-module.exe -g" cfg.fsc_flags ["test-one-fsharp-module.fs"]
    

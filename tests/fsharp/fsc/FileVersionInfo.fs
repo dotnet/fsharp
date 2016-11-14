@@ -2,17 +2,12 @@
 
 open System
 open System.IO
+open System.Reflection
 open NUnit.Framework
-
 open NUnitConf
 open PlatformHelpers
 open FSharpTestSuiteTypes
 
-let testConfig = FSharpTestSuite.testConfig
-
-open System.Reflection
-
-#if !FX_PORTABLE_OR_NETSTANDARD
 
 [<Test>]
 let ``should set file version info on generated file`` () = check (attempt {
@@ -56,4 +51,3 @@ open System.Runtime.InteropServices
         fv.LegalTrademarks |> Assert.areEqual "CST \u2122"
         
         })
-#endif

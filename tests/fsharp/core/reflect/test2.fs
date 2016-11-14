@@ -23,7 +23,7 @@ module NewTests =
     let (|String|_|) (v:obj) = match v with :? string as s -> Some(s) | _ -> None
     let (|Int|_|) (v:obj) = match v with :? int as s -> Some(s) | _ -> None
     let showAll = 
-#if CoreClr
+#if NETSTANDARD1_6
         true
 #else
         System.Reflection.BindingFlags.Public ||| System.Reflection.BindingFlags.NonPublic 
