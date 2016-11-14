@@ -223,7 +223,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         ASYNC
     }
 
-#if FX_ATLEAST_45
     internal static class VsBuildManagerAccessorExtensionMethods
     {
         public static bool IsInProgress(this IVsBuildManagerAccessor buildManagerAccessor)
@@ -238,68 +237,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return batchBuildId != 0;
         }
     }
-#else
-    internal class BuildInProgressException : InvalidOperationException
-    {
-        public BuildInProgressException()
-            : base(SR.GetString(SR.CannotBuildWhenBuildInProgress))
-        {
-        }
-    }
-
-    internal class FSharpBuildStatus
-    {
-        private static BuildKind? currentBuild;
-
-        public static bool StartBuild(BuildKind kind)
-        {
-            if (!currentBuild.HasValue)
-            {
-                currentBuild = kind;
-                return true;
-            }
-            var currentBuildKind = currentBuild.Value;
-            switch (currentBuild)
-            {
-                case BuildKind.SYNC:
-                    // Attempt to start a build during sync build indicate reentrancy
-                    Debug.Fail("Message pumping during sync build");
-                    return false;
-                case BuildKind.ASYNC:
-                    if (kind == BuildKind.SYNC)
-                    {
-                        // if we need to do a sync build during async build, there is not much we can do:
-                        // - the async build is user-invoked build
-                        // - during that build UI thread is by design not blocked and messages are being pumped
-                        // - therefore it is legitimate for other code to call Project System APIs and query for stuff
-                        // In that case we just fail gracefully
-                        return false;
-                    }
-                    else
-                    {
-                        // Somebody attempted to start a build while build is in progress, perhaps and Addin via
-                        // the API. Inform them of an error in their ways.
-                        throw new BuildInProgressException();
-                    }
-                default:
-                    Debug.Fail("Unreachable");
-                    return false;
-
-            }
-        }
-
-        public static void EndBuild()
-        {
-            Debug.Assert(IsInProgress, "Attempt to end a build that is not started");
-            currentBuild = null;
-        }
-
-        public static bool IsInProgress
-        {
-            get { return currentBuild.HasValue; }
-        }
-    }
-#endif
 
     internal struct BuildResult
     {
@@ -3357,15 +3294,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             UIThread.MustBeCalledFromUIThread();
 
-#if FX_ATLEAST_45
-#else
-            if (!FSharpBuildStatus.StartBuild(buildKind))
-            {
-                if (uiThreadCallback != null) uiThreadCallback(MSBuildResult.Failed, projectInstance);
-                return null;
-            }
-#endif
-
             IVsBuildManagerAccessor accessor = null;
             Microsoft.Build.Framework.ILogger[] loggers;
             BuildSubmission submission;
@@ -3389,10 +3317,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 if (!ba.IsOk)
                 {
                     ba.Dispose();
-#if FX_ATLEAST_45
-#else
-                    FSharpBuildStatus.EndBuild();
-#endif
                     if (uiThreadCallback != null) uiThreadCallback(MSBuildResult.Failed, projectInstance);
                     return null;
                 }
@@ -3437,10 +3361,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             catch (Exception)
             {
-#if FX_ATLEAST_45
-#else
-                FSharpBuildStatus.EndBuild();
-#endif
                 if (buildAccessorAccess != null)
                 {
                     buildAccessorAccess.Dispose();
@@ -3501,10 +3421,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             finally
             {
-#if FX_ATLEAST_45
-#else
-                FSharpBuildStatus.EndBuild();
-#endif
                 buildAccessorAccess.Dispose();
             }
         }
@@ -3923,11 +3839,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         public virtual void SetCurrentConfiguration()
         {
-#if FX_ATLEAST_45
             if ((this.GetService(typeof(SVsBuildManagerAccessor)) as IVsBuildManagerAccessor).IsInProgress())
-#else
-            if (FSharpBuildStatus.IsInProgress)
-#endif
             {
                 // we are building so this should already be the current configuration
                 return;
@@ -3953,11 +3865,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             // We cannot change properties during the build so if the config
             // we want to se is the current, we do nothing otherwise we fail.
-#if FX_ATLEAST_45
             if ((this.GetService(typeof(SVsBuildManagerAccessor)) as IVsBuildManagerAccessor).IsInProgress())
-#else
-            if (FSharpBuildStatus.IsInProgress)
-#endif
             {
                 if (this.projectOpened)
                 {

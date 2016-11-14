@@ -21,7 +21,6 @@
     <UseVsVersion>true</UseVsVersion>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <OtherFlags>$(OtherFlags) --warnon:1182 --subsystemversion:6.00</OtherFlags>
-    <VSCTDefinitions>FX_ATLEAST_45</VSCTDefinitions>
     <Tailcalls Condition="'$(CodeCoverage)' != ''">false</Tailcalls>
     <RCResourceFile>ProjectResources.rc</RCResourceFile>
     <ImportVSSDKTargets>true</ImportVSSDKTargets>

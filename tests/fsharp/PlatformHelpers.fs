@@ -3,17 +3,8 @@ module PlatformHelpers
 open System.IO
 open System.Diagnostics
 
-type ProcessorArchitecture = 
-    | X86
-    | IA64
-    | AMD64
-    | Unknown of string
-    override this.ToString() = 
-        match this with
-        | X86 -> "x86"
-        | IA64 -> "IA64"
-        | AMD64 -> "AMD64"
-        | Unknown arc -> arc
+let log format = printfn format
+
 
 type FilePath = string
 
@@ -43,8 +34,12 @@ module Process =
         processInfo.UseShellExecute <- false
         processInfo.WorkingDirectory <- workDir
 
+#if FX_PORTABLE_OR_NETSTANDARD
+        ignore envs  // work out what to do about this
+#else
         envs
         |> Map.iter (fun k v -> processInfo.EnvironmentVariables.[k] <- v)
+#endif
 
         let p = new Process()
         p.EnableRaisingEvents <- true
@@ -74,7 +69,7 @@ module Process =
             do! inputWriter.FlushAsync () |> Async.AwaitIAsyncResult |> Async.Ignore
             input inputWriter
             do! inputWriter.FlushAsync () |> Async.AwaitIAsyncResult |> Async.Ignore
-            inputWriter.Close ()
+            inputWriter.Dispose ()
            } 
            |> Async.Start)
 
@@ -164,8 +159,6 @@ type AttemptBuilder() =
                 this.Delay(fun () -> body enum.Current)))
 
 let attempt = new AttemptBuilder()
-
-let log format = Printf.ksprintf (printfn "%s") format
 
 type OutPipe (writer: TextWriter) =
     member x.Post (msg:string) = lock writer (fun () -> writer.WriteLine(msg))

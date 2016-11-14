@@ -106,13 +106,8 @@ type UsingMSBuild() as this  =
         "distinct"; "exists"; "find"; "all"; "head"; "nth"; "skip"; "skipWhile"; "sumBy"; "take"
         "takeWhile"; "sortByNullable"; "sortByNullableDescending"; "thenByNullable"; "thenByNullableDescending"]
 
-#if FX_ATLEAST_45
     let AA l = Some(System.IO.Path.Combine(System.IO.Path.GetTempPath(), ".NETFramework,Version=v4.0.AssemblyAttributes.fs")), l
     let notAA l = None,l
-#else
-    let AA l = None, l
-    let notAA l = None,l
-#endif
     let stopWatch = new System.Diagnostics.Stopwatch()
     let ResetStopWatch() = stopWatch.Reset(); stopWatch.Start()
     let time1 op a message = 
