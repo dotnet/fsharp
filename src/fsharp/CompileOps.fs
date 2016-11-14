@@ -1101,12 +1101,12 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
                       | _ -> 
                           false)
                           
-        #if DEBUG
+#if DEBUG
               if not foundInContext then
                   Printf.bprintf os ". (no 'in' context found: %+A)" (List.map (List.map Parser.prodIdxToNonTerminal) ctxt.ReducibleProductions)
-        #else
+#else
               foundInContext |> ignore // suppress unused variable warning in RELEASE
-        #endif
+#endif
               let fix (s:string) = s.Replace(SR.GetString("FixKeyword"),"").Replace(SR.GetString("FixSymbol"),"").Replace(SR.GetString("FixReplace"),"")
               match (ctxt.ShiftTokens 
                            |> List.map Parser.tokenTagToTokenId 
@@ -1246,11 +1246,11 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
           | f when f = f1 -> os.Append(Failure3E().Format s) |> ignore
           | f when f = f2 -> os.Append(Failure3E().Format s) |> ignore
           | _ -> os.Append(Failure4E().Format s) |> ignore
-    #if DEBUG
+#if DEBUG
           Printf.bprintf os "\nStack Trace\n%s\n" (exn.ToString())
           if !showAssertForUnexpectedException then 
               System.Diagnostics.Debug.Assert(false,sprintf "Bug seen in compiler: %s" (exn.ToString()))
-    #endif
+#endif
       | FullAbstraction(s,_) -> os.Append(FullAbstractionE().Format s) |> ignore
       | WrappedError (exn,_) -> OutputExceptionR os exn
       | PatternMatchCompilation.MatchIncomplete (isComp,cexOpt,_) -> 
@@ -1377,11 +1377,11 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
 
       | e -> 
           os.Append(TargetInvocationExceptionWrapperE().Format e.Message) |> ignore
-    #if DEBUG
+#if DEBUG
           Printf.bprintf os "\nStack Trace\n%s\n" (e.ToString())
           if !showAssertForUnexpectedException then 
               System.Diagnostics.Debug.Assert(false,sprintf "Bug seen in compiler: %s" (e.ToString()))
-    #endif
+#endif
     OutputExceptionR os (err.Exception)
 
 
@@ -2093,7 +2093,6 @@ type TcConfigBuilder =
       mutable abortOnError : bool (* intended for fsi scripts that should exit on first error *)
       mutable baseAddress : int32 option
 #if DEBUG
-      mutable writeGeneratedILFiles : bool (* write il files? *)  
       mutable showOptimizationData : bool
 #endif
       mutable showTerms     : bool (* show terms between passes? *)
@@ -2106,9 +2105,8 @@ type TcConfigBuilder =
       mutable emitTailcalls : bool
 #if PREFERRED_UI_LANG
       mutable preferredUiLang: string option
-#else
-      mutable lcid          : int option
 #endif
+      mutable lcid          : int option
       mutable productNameForBannerText : string
       /// show the MS (c) notice, e.g. with help or fsi? 
       mutable showBanner  : bool
@@ -2261,7 +2259,6 @@ type TcConfigBuilder =
           flatErrors = false
 
  #if DEBUG
-          writeGeneratedILFiles       = false (* write il files? *)  
           showOptimizationData = false
  #endif
           showTerms     = false 
@@ -2275,9 +2272,8 @@ type TcConfigBuilder =
           emitTailcalls = true
 #if PREFERRED_UI_LANG
           preferredUiLang = None
-#else
-          lcid = None
 #endif
+          lcid = None
           // See bug 6071 for product banner spec
           productNameForBannerText = (FSComp.SR.buildProductName(FSharpEnvironment.FSharpBannerVersion))
           showBanner  = true 
@@ -2749,7 +2745,6 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     member x.maxErrors  = data.maxErrors
     member x.baseAddress  = data.baseAddress
  #if DEBUG
-    member x.writeGeneratedILFiles  = data.writeGeneratedILFiles
     member x.showOptimizationData  = data.showOptimizationData
 #endif
     member x.showTerms          = data.showTerms
@@ -2761,9 +2756,8 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     member x.emitTailcalls      = data.emitTailcalls
 #if PREFERRED_UI_LANG
     member x.preferredUiLang    = data.preferredUiLang
-#else
-    member x.lcid               = data.lcid
 #endif
+    member x.lcid               = data.lcid
     member x.optsOn             = data.optsOn
     member x.productNameForBannerText  = data.productNameForBannerText
     member x.showBanner   = data.showBanner
@@ -4114,9 +4108,11 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                 warning(Error(FSComp.SR.etHostingAssemblyFoundWithoutHosts(fileNameOfRuntimeAssembly,typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName),m)) 
             | _ -> 
 
+#if DEBUG
                 if typeProviderEnvironment.showResolutionMessages then
                     dprintfn "Found extension type hosting hosting assembly '%s' with the following extensions:" fileNameOfRuntimeAssembly
                     providers |> List.iter(fun provider ->dprintfn " %s" (ExtensionTyping.DisplayNameOfTypeProvider(provider.TypeProvider, m)))
+#endif
                     
                 for provider in providers do 
                     try
