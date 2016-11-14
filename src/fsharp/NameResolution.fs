@@ -1002,7 +1002,7 @@ let ResolveProvidedTypeNameInEntity (amap, m, typeName, modref: ModuleOrNamespac
     | TProvidedNamespaceExtensionPoint(resolutionEnvironment,resolvers) ->
         match modref.Deref.PublicPath with
         | Some(PubPath(path)) ->
-            let matches = resolvers |> List.map (fun r->ExtensionTyping.TryResolveProvidedType(resolutionEnvironment,r,m,path,typeName)) 
+            let matches = resolvers |> List.map (fun r->ExtensionTyping.TryResolveProvidedType(r,m,path,typeName)) 
             let tcrefs = 
                 [ for st in matches do 
                       match st with 
@@ -1017,8 +1017,10 @@ let ResolveProvidedTypeNameInEntity (amap, m, typeName, modref: ModuleOrNamespac
         let sty = info.ProvidedType
         let resolutionEnvironment = info.ResolutionEnvironment
             
+#if DEBUG
         if resolutionEnvironment.showResolutionMessages then
             dprintfn "resolving name '%s' in TProvidedTypeExtensionPoint '%s'" typeName (sty.PUntaint((fun sty -> sty.FullName), m))
+#endif
 
         match sty.PApply((fun sty -> sty.GetNestedType(typeName)), m) with
         | Tainted.Null -> 

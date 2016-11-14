@@ -610,6 +610,8 @@ let internal SetCurrentUICultureForThread (lcid : int option) =
     match lcid with
     | Some n -> Thread.CurrentThread.CurrentUICulture <- new CultureInfo(n)
     | None -> 
+#else
+    ignore lcid
 #endif
     ()
 
@@ -2153,17 +2155,19 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
 #if !FX_NO_HEAPTERMINATION
     do if not runningOnMono then Lib.UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption() (* SDL recommendation *)
 #endif
+
+#if FX_LCIDFROMCODEPAGE
     // See Bug 735819 
     let lcidFromCodePage = 
-#if FX_LCIDFROMCODEPAGE
         if (Console.OutputEncoding.CodePage <> 65001) &&
            (Console.OutputEncoding.CodePage <> Thread.CurrentThread.CurrentUICulture.TextInfo.OEMCodePage) &&
            (Console.OutputEncoding.CodePage <> Thread.CurrentThread.CurrentUICulture.TextInfo.ANSICodePage) then
                 Thread.CurrentThread.CurrentUICulture <- new CultureInfo("en-US")
                 Some 1033
         else
-#endif
             None
+#endif
+
     let timeReporter = FsiTimeReporter(outWriter)
 
 #if !FX_RESHAPED_CONSOLE

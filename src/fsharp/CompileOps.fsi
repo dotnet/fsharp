@@ -318,7 +318,6 @@ type TcConfigBuilder =
       mutable abortOnError : bool
       mutable baseAddress : int32 option
  #if DEBUG
-      mutable writeGeneratedILFiles : bool (* write il files? *)  
       mutable showOptimizationData : bool
 #endif
       mutable showTerms     : bool 
@@ -331,9 +330,8 @@ type TcConfigBuilder =
       mutable emitTailcalls : bool
 #if PREFERRED_UI_LANG
       mutable preferredUiLang: string option
-#else
-      mutable lcid         : int option
 #endif
+      mutable lcid         : int option
       mutable productNameForBannerText : string
       mutable showBanner  : bool
       mutable showTimes : bool
@@ -474,7 +472,6 @@ type TcConfig =
     member maxErrors : int
     member baseAddress : int32 option
 #if DEBUG
-    member writeGeneratedILFiles : bool (* write il files? *)  
     member showOptimizationData : bool
 #endif
     member showTerms     : bool 
