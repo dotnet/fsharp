@@ -2,29 +2,19 @@
 
 open System
 open System.IO
+open System.Reflection
 open NUnit.Framework
-
 open NUnitConf
 open PlatformHelpers
 open FSharpTestSuiteTypes
 
-let testConfig = FSharpTestSuite.testConfig
 
-open System.Reflection
+[<Test>]
+let ``should set file version info on generated file`` () = check (attempt {
+        let cfg = testConfig (Commands.createTempDir())
 
-module FileVersionInfoTest =
-
-    [<Test; FSharpSuiteTest()>]
-    let ``should set file version info on generated file`` () = check (attempt {
-        let cfg = testConfig ()
-        let dir = cfg.Directory
-
-        let fscToLibrary = Printf.ksprintf (FscCommand.fscToLibrary dir (Command.exec dir cfg.EnvironmentVariables) cfg.FSC)
-
-        printfn "Directory: %s" dir
-
-        let code _name file =
-            fprintf file "%s" """
+        let code =
+            """
 namespace CST.RI.Anshun
 open System.Reflection
 open System.Runtime.CompilerServices
@@ -42,11 +32,11 @@ open System.Runtime.InteropServices
 ()
             """
 
-        let! result = fscToLibrary "%s --nologo" cfg.fsc_flags { 
-            SourceFiles = [ SourceFile.Content("test.fs", code) ]
-            OutLibrary = "lib.dll" }
+        File.WriteAllText(cfg.Directory/"test.fs", code)
 
-        let fv = System.Diagnostics.FileVersionInfo.GetVersionInfo(result.OutLibraryFullPath)
+        do! fsc cfg "%s --nologo -o:lib.dll --target:library" cfg.fsc_flags ["test.fs"]
+
+        let fv = System.Diagnostics.FileVersionInfo.GetVersionInfo(Commands.getfullpath cfg.Directory "lib.dll")
         fv.CompanyName |> Assert.areEqual "Compressed Space Transport"
         fv.FileVersion |> Assert.areEqual "99.88.77.66"
         
@@ -60,9 +50,4 @@ open System.Runtime.InteropServices
         fv.LegalCopyright |> Assert.areEqual "Copyright \u00A9 Compressed Space Transport 2380"
         fv.LegalTrademarks |> Assert.areEqual "CST \u2122"
         
-        result.StderrText
-        |> FscCommand.parseFscOut 
-        |> List.choose (function FscCommand.FscOutputLine.Warning(w,_) -> Some w | _ -> None)
-        |> Assert.areEqual []
-    
         })

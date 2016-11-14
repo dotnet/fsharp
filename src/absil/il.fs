@@ -618,10 +618,10 @@ and
     member x.Name=x.TypeRef.Name
     member x.GenericArgs=x.tspecInst
     static member Create(tref,inst) = { tspecTypeRef =tref; tspecInst=inst }
-    override x.ToString() = x.TypeRef.ToString() + if List.isEmpty x.GenericArgs then "" else "<...>"
+    override x.ToString() = x.TypeRef.ToString() + if isNil x.GenericArgs then "" else "<...>"
     member x.BasicQualifiedName = 
         let tc = x.TypeRef.BasicQualifiedName
-        if List.isEmpty x.GenericArgs then
+        if isNil x.GenericArgs then
             tc
         else 
             tc + "[" + String.concat "," (x.GenericArgs |> List.map (fun arg -> "[" + arg.QualifiedNameWithNoShortPrimaryAssembly + "]")) + "]"
@@ -1613,6 +1613,11 @@ type ILResource =
       Location: ILResourceLocation;
       Access: ILResourceAccess;
       CustomAttrs: ILAttributes }
+    /// Read the bytes from a resource local to an assembly
+    member r.Bytes = 
+        match r.Location with 
+        | ILResourceLocation.Local b -> b()
+        | _ -> failwith "Bytes"
 
 type ILResources = 
     | ILResources of Lazy<ILResource list>
@@ -2500,7 +2505,7 @@ let rec rescopeILTypeSpecQuick scoref (tspec:ILTypeSpec) =
     let tref = tspec.TypeRef
     let tinst = tspec.GenericArgs
     let qtref = qrescope_tref scoref tref
-    if List.isEmpty tinst && Option.isNone qtref then 
+    if isNil tinst && Option.isNone qtref then 
         None (* avoid reallocation in the common case *)
     else
         match qtref with 
@@ -2530,7 +2535,7 @@ and rescopeILType scoref typ =
     | x -> x
 
 and rescopeILTypes scoref i = 
-    if List.isEmpty i then i
+    if isNil i then i
     else List.map (rescopeILType scoref) i
 
 and rescopeILCallSig scoref  csig = 
@@ -4130,7 +4135,7 @@ let resolveILMethodRefWithRescope r td (mref:ILMethodRef) =
     let nargs = args.Length
     let nm = mref.Name
     let possibles = td.Methods.FindByNameAndArity (nm,nargs)
-    if List.isEmpty possibles then failwith ("no method named " + nm + " found in type " + td.Name)
+    if isNil possibles then failwith ("no method named " + nm + " found in type " + td.Name)
     match 
       possibles |> List.filter (fun md -> 
           mref.CallingConv = md.CallingConv &&
