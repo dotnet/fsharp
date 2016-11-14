@@ -781,7 +781,13 @@ let advancedFlagsFsc tcConfigB =
                                              tcConfigB.implicitlyResolveAssemblies <- true), None,
                              Some (FSComp.SR.optsStandalone()))
 
-        yield CompilerOption("staticlink", tagFile, OptionString (fun s -> tcConfigB.extraStaticLinkRoots <- tcConfigB.extraStaticLinkRoots @ [s]), None,
+        yield CompilerOption("staticlink", tagFile, OptionString (fun s -> 
+                                             if s.StartsWith("-") then 
+                                                 let assName = s.[1..]
+                                                 tcConfigB.extraStaticLinkRoots <- tcConfigB.extraStaticLinkRoots @ [assName]
+                                                 tcConfigB.extraStaticLinkRenameRoots <- tcConfigB.extraStaticLinkRenameRoots @ [assName]
+                                             else
+                                                 tcConfigB.extraStaticLinkRoots <- tcConfigB.extraStaticLinkRoots @ [s]), None,
                              Some (FSComp.SR.optsStaticlink()))
 
 #if ENABLE_MONO_SUPPORT

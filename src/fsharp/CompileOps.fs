@@ -2064,6 +2064,7 @@ type TcConfigBuilder =
       mutable metadataVersion : string option
       mutable standalone : bool
       mutable extraStaticLinkRoots : string list 
+      mutable extraStaticLinkRenameRoots : string list 
       mutable noSignatureData : bool
       mutable onlyEssentialOptimizationData : bool
       mutable useOptimizationDataFile : bool
@@ -2237,6 +2238,7 @@ type TcConfigBuilder =
           metadataVersion = None
           standalone = false
           extraStaticLinkRoots = []
+          extraStaticLinkRenameRoots = []
           noSignatureData = false
           onlyEssentialOptimizationData = false
           useOptimizationDataFile = false
@@ -2728,6 +2730,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     member x.metadataVersion = data.metadataVersion
     member x.standalone  = data.standalone
     member x.extraStaticLinkRoots  = data.extraStaticLinkRoots
+    member x.extraStaticLinkRenameRoots  = data.extraStaticLinkRenameRoots
     member x.noSignatureData  = data.noSignatureData
     member x.onlyEssentialOptimizationData  = data.onlyEssentialOptimizationData
     member x.useOptimizationDataFile  = data.useOptimizationDataFile

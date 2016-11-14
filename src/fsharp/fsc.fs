@@ -1024,9 +1024,7 @@ module MainModuleBuilder =
 
 
         if !progress then dprintf "Creating main module...\n"
-        let ilTypeDefs = 
-            //let topTypeDef = mkILTypeDefForGlobalFunctions tcGlobals.ilg (mkILMethods [], emptyILFields)
-            mkILTypeDefs codegenResults.ilTypeDefs
+        let ilTypeDefs = mkILTypeDefs codegenResults.ilTypeDefs
 
         let mainModule = 
             let hashAlg = AttributeHelpers.TryFindIntAttribute tcGlobals "System.Reflection.AssemblyAlgorithmIdAttribute" topAttrs.assemblyAttrs
@@ -1453,7 +1451,7 @@ module StaticLinker =
     // Find all IL modules that are to be statically linked given the static linking roots.
     let FindDependentILModulesForStaticLinking (tcConfig:TcConfig, tcImports:TcImports,ilxMainModule) = 
         if not tcConfig.standalone && tcConfig.extraStaticLinkRoots.IsEmpty then 
-            []
+            [], []
         else
             // Recursively find all referenced modules and add them to a module graph 
             let depModuleTable = HashMultiMap(0, HashIdentity.Structural)
@@ -1529,8 +1527,9 @@ module StaticLinker =
                       | None -> error(Error(FSComp.SR.fscAssemblyNotFoundInDependencySet(n),rangeStartup)) 
                 ]
                               
-            let remaining = ref roots
-            [ while not (List.isEmpty !remaining) do
+            let all =
+              let remaining = ref roots
+              [ while not (List.isEmpty !remaining) do
                 let n = List.head !remaining
                 remaining := List.tail !remaining
                 if not n.visited then 
@@ -1538,6 +1537,13 @@ module StaticLinker =
                     n.visited <- true
                     remaining := n.edges @ !remaining
                     yield (n.ccu, n.data)  ]
+
+            let qual = 
+                [ for n in tcConfig.extraStaticLinkRenameRoots  do
+                      match depModuleTable.TryFind n with 
+                      | Some x -> yield x.name
+                      | None -> error(Error(FSComp.SR.fscAssemblyNotFoundInDependencySet(n),rangeStartup))  ]
+            all,qual
 
     // Add all provider-generated assemblies into the static linking set
     let FindProviderGeneratedILModules (tcImports:TcImports, providerGeneratedAssemblies: (ImportedBinary * _) list) = 
@@ -1583,7 +1589,7 @@ module StaticLinker =
             (fun ilxMainModule  ->
               ReportTime tcConfig "Find assembly references"
 
-              let dependentILModules = FindDependentILModulesForStaticLinking (tcConfig, tcImports,ilxMainModule)
+              let dependentILModules, qualifiedILModules = FindDependentILModulesForStaticLinking (tcConfig, tcImports,ilxMainModule)
 
               ReportTime tcConfig "Static link"
 
@@ -1715,20 +1721,38 @@ module StaticLinker =
               let providerGeneratedILModules = []
 #endif
 
+              let qualifiedILModulesSet = Set.ofList qualifiedILModules
+              let dependentILModulesNew =
+                  dependentILModules |> List.map (fun (ccu,ilModule) -> 
+                      let name = ilModule.ManifestOfAssembly.Name
+                      if ilModule.HasManifest && qualifiedILModulesSet.Contains ilModule.ManifestOfAssembly.Name then 
+                           let ilModuleNew =
+                               { ilModule with TypeDefs = ilModule.TypeDefs.AsList |> List.map (fun ilTypeDef -> { ilTypeDef with Name = name + "." + ilTypeDef.Name }) |> IL.mkILTypeDefs }
+                           let rewriteTypeRefs (typeRef : ILTypeRef) = 
+                              if typeRef.Scope.IsLocalRef then 
+                                  match typeRef.Enclosing with
+                                  | [] -> ILTypeRef.Create(typeRef.Scope, [], name + "." + typeRef.Name)
+                                  | h::t -> ILTypeRef.Create(typeRef.Scope, (name + "." + h) :: t, typeRef.Name)
+                              else
+                                  typeRef
+                           let ilModuleNew2 = ilModuleNew |> Morphs.morphILTypeRefsInILModuleMemoized ilGlobals rewriteTypeRefs 
+                           (ccu,ilModuleNew2)
+                      else
+                           (ccu,ilModule))
+                          
               // Glue all this stuff into ilxMainModule 
               let ilxMainModule,rewriteExternalRefsToLocalRefs = 
-                  StaticLinkILModules (tcConfig, ilGlobals, ilxMainModule, dependentILModules @ providerGeneratedILModules)
+                  StaticLinkILModules (tcConfig, ilGlobals, ilxMainModule, dependentILModulesNew @ providerGeneratedILModules)
               
               // Rewrite type and assembly references
               let ilxMainModule =
-                  let isMscorlib = ilGlobals.primaryAssemblyName = PrimaryAssembly.Mscorlib.Name
-                  let validateTargetPlatform (scopeRef : ILScopeRef) = 
-                      let name = getNameOfScopeRef scopeRef
-                      if (isMscorlib && name = PrimaryAssembly.DotNetCore.Name) || (not isMscorlib && name = PrimaryAssembly.Mscorlib.Name) then
-                          error (Error(FSComp.SR.fscStaticLinkingNoProfileMismatches(), rangeCmdArgs))
-                      scopeRef
                   let rewriteAssemblyRefsToMatchLibraries = NormalizeAssemblyRefs tcImports
-                  Morphs.morphILTypeRefsInILModuleMemoized ilGlobals (Morphs.morphILScopeRefsInILTypeRef (validateTargetPlatform >> rewriteExternalRefsToLocalRefs >> rewriteAssemblyRefsToMatchLibraries)) ilxMainModule
+                  let rewriteTypeRefs (typeRef : ILTypeRef) = 
+                      if typeRef.Scope.IsAssemblyRef && qualifiedILModulesSet.Contains(typeRef.Scope.AssemblyRef.Name) then 
+                          ILTypeRef.Create(typeRef.Scope, typeRef.Enclosing, typeRef.Scope.AssemblyRef.Name + "." + typeRef.Name)
+                      else
+                          typeRef
+                  Morphs.morphILTypeRefsInILModuleMemoized ilGlobals (rewriteTypeRefs >> Morphs.morphILScopeRefsInILTypeRef (rewriteExternalRefsToLocalRefs >> rewriteAssemblyRefsToMatchLibraries)) ilxMainModule
 
               ilxMainModule)
   
