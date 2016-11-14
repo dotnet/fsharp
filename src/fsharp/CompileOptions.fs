@@ -26,11 +26,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Lexhelp
-
-#if NO_COMPILER_BACKEND
-#else
 open Microsoft.FSharp.Compiler.IlxGen
-#endif
 
 #if FX_RESHAPED_REFLECTION
 open Microsoft.FSharp.Core.ReflectionAdapters
@@ -136,7 +132,7 @@ let PrintCompilerOption (CompilerOption(_s,_tag,_spec,_,help) as compilerOption)
     printfn "" (* newline *)
 
 let PrintPublicOptions (heading,opts) =
-  if not (List.isEmpty opts) then
+  if not (isNil opts) then
     printfn ""
     printfn ""      
     printfn "\t\t%s" heading
@@ -1198,8 +1194,6 @@ let ReportTime (tcConfig:TcConfig) descr =
 
     nPrev := Some descr
 
-#if NO_COMPILER_BACKEND
-#else  
 //----------------------------------------------------------------------------
 // OPTIMIZATION - support - addDllToOptEnv
 //----------------------------------------------------------------------------
@@ -1327,7 +1321,6 @@ let GenerateIlxCode (ilxBackend, isInteractiveItExpr, isInteractiveOnMono, tcCon
           alwaysCallVirt = tcConfig.alwaysCallVirt }
 
     ilxGenerator.GenerateCode (ilxGenOpts, optimizedImpls, topAttrs.assemblyAttrs,topAttrs.netModuleAttrs) 
-#endif // !NO_COMPILER_BACKEND
 
 //----------------------------------------------------------------------------
 // Assembly ref normalization: make sure all assemblies are referred to

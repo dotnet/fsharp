@@ -296,7 +296,6 @@ type TcConfigBuilder =
       mutable noSignatureData : bool
       mutable onlyEssentialOptimizationData : bool
       mutable useOptimizationDataFile : bool
-      mutable useSignatureDataFile : bool
       mutable jitTracking : bool
       mutable portablePDB : bool
       mutable embeddedPDB : bool
@@ -454,7 +453,6 @@ type TcConfig =
     member noSignatureData : bool
     member onlyEssentialOptimizationData : bool
     member useOptimizationDataFile : bool
-    member useSignatureDataFile : bool
     member jitTracking : bool
     member portablePDB : bool
     member embeddedPDB : bool
@@ -636,14 +634,11 @@ val IsOptimizationDataResource : ILResource -> bool
 val IsReflectedDefinitionsResource : ILResource -> bool
 val GetSignatureDataResourceName : ILResource -> string
 
-#if NO_COMPILER_BACKEND
-#else
 /// Write F# signature data as an IL resource
 val WriteSignatureData : TcConfig * TcGlobals * Tastops.Remap * CcuThunk * string -> ILResource
 
 /// Write F# optimization data as an IL resource
 val WriteOptimizationData :  TcGlobals * string * CcuThunk * Optimizer.LazyModuleInfo -> ILResource
-#endif
 
 
 //----------------------------------------------------------------------------

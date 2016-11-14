@@ -284,14 +284,14 @@ module private PrintIL =
         let nameL   = wordL name 
             
         let layoutGetterType (getterRef:ILMethodRef) =
-            if List.isEmpty getterRef.ArgTypes then
+            if isNil getterRef.ArgTypes then
                 layoutILType denv ilTyparSubst getterRef.ReturnType
             else
                 layoutILCallingSignature denv ilTyparSubst None getterRef.CallingSignature
                 
         let layoutSetterType (setterRef:ILMethodRef) =
             let argTypes = setterRef.ArgTypes
-            if List.isEmpty argTypes then
+            if isNil argTypes then
                 emptyL // shouldn't happen
             else
                 let frontArgs, lastArg = List.frontAndBack argTypes
@@ -1003,7 +1003,7 @@ module private PrintTypes =
         | _ -> 
             let tpcsL = layoutConstraintsWithInfo denv env tpcs
             let coreL = sepListL (sepL ",") (List.map (layoutTyparRefWithInfo denv env) typars)
-            (if prefix || not (List.isEmpty tpcs) then nmL ^^ angleL (coreL --- tpcsL) else bracketL coreL --- nmL)
+            (if prefix || not (isNil tpcs) then nmL ^^ angleL (coreL --- tpcsL) else bracketL coreL --- nmL)
 
 
     let layoutTyparConstraint denv typars = 
@@ -1038,7 +1038,7 @@ module private PrintTypes =
             PrettyTypes.NewPrettyTypars memberToParentInst methTypars methTyparNames
 
         let retTy = instType allTyparInst retTy
-        let argInfos = argInfos |> List.map (fun infos -> if List.isEmpty infos then [(denv.g.unit_ty,ValReprInfo.unnamedTopArg1)] else infos |> List.map (map1Of2 (instType allTyparInst))) 
+        let argInfos = argInfos |> List.map (fun infos -> if isNil infos then [(denv.g.unit_ty,ValReprInfo.unnamedTopArg1)] else infos |> List.map (map1Of2 (instType allTyparInst))) 
 
         // Also format dummy types corresponding to any type variables on the container to make sure they 
         // aren't chosen as names for displayed variables. 
@@ -1105,7 +1105,7 @@ module private PrintTastMemberOrVals =
             stat ++ newL ^^ wordL ":" ^^ tauL
         | MemberKind.PropertyGetSet -> stat
         | MemberKind.PropertyGet -> 
-            if List.isEmpty argInfos then 
+            if isNil argInfos then 
                 // use error recovery because intellisense on an incomplete file will show this
                 errorR(Error(FSComp.SR.tastInvalidFormForPropertyGetter(),v.Id.idRange));
                 stat --- wordL v.PropertyName --- wordL "with get"
@@ -1117,15 +1117,15 @@ module private PrintTastMemberOrVals =
 
                 let niceMethodTypars,tauL = layoutMemberType denv v argInfos rty
                 let nameL = mkNameL niceMethodTypars v.PropertyName
-                stat --- (nameL ^^ wordL ":" ^^ (if List.isEmpty argInfos then tauL else tauL --- wordL "with get"))
+                stat --- (nameL ^^ wordL ":" ^^ (if isNil argInfos then tauL else tauL --- wordL "with get"))
         | MemberKind.PropertySet -> 
-            if argInfos.Length <> 1 || List.isEmpty argInfos.Head then 
+            if argInfos.Length <> 1 || isNil argInfos.Head then 
                 // use error recovery because intellisense on an incomplete file will show this
                 errorR(Error(FSComp.SR.tastInvalidFormForPropertySetter(),v.Id.idRange));
                 stat --- wordL v.PropertyName --- wordL "with set"
             else 
                 let argInfos,valueInfo = List.frontAndBack argInfos.Head
-                let niceMethodTypars,tauL = layoutMemberType denv v (if List.isEmpty argInfos then [] else [argInfos]) (fst valueInfo)
+                let niceMethodTypars,tauL = layoutMemberType denv v (if isNil argInfos then [] else [argInfos]) (fst valueInfo)
                 let nameL = mkNameL niceMethodTypars v.PropertyName
                 stat --- (nameL ^^ wordL ":" ^^ (tauL --- wordL "with set"))
 
@@ -1538,7 +1538,7 @@ module private TastDefinitionPrinting =
 #endif
                 []
         let decls = inherits @ iimplsLs @ ctorLs @ membLs @ nestedTypeLs @ erasedL
-        if List.isEmpty decls then
+        if isNil decls then
             lhsL
         else
             let declsL = (inherits @ iimplsLs @ ctorLs @ membLs @ nestedTypeLs @ erasedL) |> applyMaxMembers denv.maxMembers |> aboveListL 
@@ -1606,7 +1606,7 @@ module private TastDefinitionPrinting =
           iimplsLs,adhocCtorsLs,adhocInstanceLs,adhocStaticLs
       let memberLs = memberImplementLs @ memberCtorLs @ memberInstanceLs @ memberStaticLs
       let addMembersAsWithEnd reprL = 
-          if List.isEmpty memberLs then reprL
+          if isNil memberLs then reprL
           elif simplified then reprL @@ aboveListL memberLs
           else reprL @@ (wordL "with" @@-- aboveListL memberLs) @@ wordL "end"
 
@@ -1619,7 +1619,7 @@ module private TastDefinitionPrinting =
           | TAsmRepr _         
           | TMeasureableRepr _
           | TILObjectRepr _ -> 
-              let brk  = not (List.isEmpty memberLs) || breakTypeDefnEqn repr
+              let brk  = not (isNil memberLs) || breakTypeDefnEqn repr
               let rhsL =                     
                   let addReprAccessL l = layoutAccessibility denv tycon.TypeReprAccessibility l 
                   let denv = denv.AddAccessibility tycon.TypeReprAccessibility 
@@ -1655,7 +1655,7 @@ module private TastDefinitionPrinting =
                                   | _ -> []
                               let vsprs = 
                                   tycon.MembersOfFSharpTyconSorted
-                                  |> List.filter (fun v -> List.isEmpty (Option.get v.MemberInfo).ImplementedSlotSigs) 
+                                  |> List.filter (fun v -> isNil (Option.get v.MemberInfo).ImplementedSlotSigs) 
                                   |> List.filter (fun v -> v.IsDispatchSlot)
                                   |> List.map (fun vref -> PrintTastMemberOrVals.layoutValOrMember denv vref.Deref)
                               let staticValsLs  = 
@@ -1667,11 +1667,11 @@ module private TastDefinitionPrinting =
                                   |> List.filter (fun f -> not f.IsStatic)
                                   |> List.map (fun f -> wordL "val" ^^ layoutRecdField true denv f)
                               let alldecls = inherits @ memberImplementLs @ memberCtorLs @ instanceValsLs @ vsprs @ memberInstanceLs @ staticValsLs @ memberStaticLs
-                              if List.isEmpty alldecls then
+                              if isNil alldecls then
                                   None
                               else
                                   let alldecls = applyMaxMembers denv.maxMembers alldecls
-                                  let emptyMeasure = match tycon.TypeOrMeasureKind with TyparKind.Measure -> List.isEmpty alldecls | _ -> false
+                                  let emptyMeasure = match tycon.TypeOrMeasureKind with TyparKind.Measure -> isNil alldecls | _ -> false
                                   if emptyMeasure then None else 
                                   let declsL = aboveListL alldecls
                                   let declsL = match start with Some s -> (wordL s @@-- declsL) @@ wordL "end" | None -> declsL
@@ -1745,7 +1745,7 @@ module private InferredSigPrinting =
         let rec isConcreteNamespace x = 
             match x with 
             | TMDefRec(_,tycons,mbinds,_) -> 
-                not (List.isEmpty tycons) || (mbinds |> List.exists (function ModuleOrNamespaceBinding.Binding _ -> true | ModuleOrNamespaceBinding.Module(x,_) -> not x.IsNamespace))
+                not (isNil tycons) || (mbinds |> List.exists (function ModuleOrNamespaceBinding.Binding _ -> true | ModuleOrNamespaceBinding.Module(x,_) -> not x.IsNamespace))
             | TMDefLet _  -> true
             | TMDefDo _  -> true
             | TMDefs defs -> defs |> List.exists isConcreteNamespace 
@@ -1797,7 +1797,7 @@ module private InferredSigPrinting =
                     if showHeader then 
                         // OK, we're not in F# Interactive
                         // Check if this is an outer module with no namespace
-                        if List.isEmpty outerPath then 
+                        if isNil outerPath then 
                             // If so print a "module" declaration
                             (wordL "module" ^^ nmL) @@ basic
                         else 
@@ -1836,7 +1836,7 @@ module private PrintData =
             elif denv.g.unionCaseRefEq c denv.g.cons_ucref then 
                 let rec strip = function (Expr.Op (TOp.UnionCase _,_,[h;t],_)) -> h::strip t | _ -> []
                 listL (dataExprL denv) (strip expr)
-            elif List.isEmpty args then 
+            elif isNil args then 
                 wordL c.CaseName 
             else 
                 (wordL c.CaseName ++ bracketL (commaListL (dataExprsL denv args)))

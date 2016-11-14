@@ -1513,7 +1513,7 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
                 let publicKey = 
                     try 
                         let signingInfo = Driver.ValidateKeySigningAttributes (tcConfig, tcGlobals, topAttrs)
-                        match Driver.GetSigner signingInfo with 
+                        match Driver.GetStrongNameSigner signingInfo with 
                         | None -> None
                         | Some s -> Some (PublicKey.KeyAsToken(s.PublicKey))
                     with e -> 
