@@ -1,9 +1,17 @@
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+
+// This component is used by the 'fsharpqa' tests for faster in-memory compilation.  It should be removed and the 
+// proper compiler service API used instead.
+
 namespace FSharp.Compiler.Hosted
 
 open System
 open System.IO
 open System.Text
 open System.Text.RegularExpressions
+open Microsoft.FSharp.Compiler.Driver
+open Microsoft.FSharp.Compiler.ErrorLogger
+open Microsoft.FSharp.Compiler.CompileOps
 
 /// build issue location
 type internal Location =
@@ -38,10 +46,34 @@ type internal CompilationResult =
     | Success of CompilationIssue list
     | Failure of FailureDetails
 
+[<RequireQualifiedAccess>]
+type internal CompilationOutput = 
+    { Errors : ErrorOrWarning[]
+      Warnings : ErrorOrWarning[]  }
+
+type internal InProcCompiler(referenceResolver) = 
+    member this.Compile(argv) = 
+
+        let loggerProvider = InProcErrorLoggerProvider()
+        let exitCode = ref 0
+        let exiter = 
+            { new Exiter with
+                 member this.Exit n = exitCode := n; raise StopProcessing }
+        try 
+            typecheckAndCompile(argv, referenceResolver, false, exiter, loggerProvider.Provider)
+        with 
+            | StopProcessing -> ()
+            | ReportedError _  | WrappedError(ReportedError _,_)  ->
+                exitCode := 1
+                ()
+
+        let output : CompilationOutput = { Warnings = loggerProvider.CapturedWarnings; Errors = loggerProvider.CapturedErrors }
+        !exitCode = 0, output
+
 /// in-proc version of fsc.exe
 type internal FscCompiler() =
     let referenceResolver = Microsoft.FSharp.Compiler.MSBuildReferenceResolver.Resolver 
-    let compiler = Microsoft.FSharp.Compiler.Driver.InProcCompiler(referenceResolver)
+    let compiler = InProcCompiler(referenceResolver)
 
     let emptyLocation = 
         { 

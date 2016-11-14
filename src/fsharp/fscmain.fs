@@ -6,14 +6,15 @@ open System.Diagnostics
 open System.IO
 open System.Reflection
 open System.Runtime.CompilerServices
+
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.AbstractIL.IL // runningOnMono 
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Driver
-open Internal.Utilities
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.CompileOps
+open Internal.Utilities
 
 #if FX_RESHAPED_REFLECTION
 open Microsoft.FSharp.Core.ReflectionAdapters

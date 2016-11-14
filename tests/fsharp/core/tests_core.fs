@@ -736,7 +736,7 @@ let ``load-script`` () = check (attempt {
 
     echo "Test 5================================================="
 
-    do! fscAppend cfg stdoutPath stderrPath "--nologo" ["usesfsi.fsx"]
+    do! fscAppendIgnoreExitCode cfg stdoutPath stderrPath "--nologo" ["usesfsi.fsx"]
 
     echo "Test 6================================================="
 

@@ -2067,7 +2067,6 @@ type TcConfigBuilder =
       mutable noSignatureData : bool
       mutable onlyEssentialOptimizationData : bool
       mutable useOptimizationDataFile : bool
-      mutable useSignatureDataFile : bool
       mutable jitTracking : bool
       mutable portablePDB : bool
       mutable embeddedPDB : bool
@@ -2240,7 +2239,6 @@ type TcConfigBuilder =
           noSignatureData = false
           onlyEssentialOptimizationData = false
           useOptimizationDataFile = false
-          useSignatureDataFile = false
           jitTracking = true
           portablePDB = true
           embeddedPDB = false
@@ -2731,7 +2729,6 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     member x.noSignatureData  = data.noSignatureData
     member x.onlyEssentialOptimizationData  = data.onlyEssentialOptimizationData
     member x.useOptimizationDataFile  = data.useOptimizationDataFile
-    member x.useSignatureDataFile = data.useSignatureDataFile
     member x.jitTracking  = data.jitTracking
     member x.portablePDB  = data.portablePDB
     member x.embeddedPDB  = data.embeddedPDB
@@ -3027,10 +3024,10 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
             // First, try to resolve everything as a file using simple resolution
             let resolvedAsFile = 
                 groupedReferences 
-                |>Array.map(fun (_filename,maxIndexOfReference,references)->
+                |> Array.map(fun (_filename,maxIndexOfReference,references)->
                                 let assemblyResolution = references |> List.choose tcConfig.TryResolveLibWithDirectories
                                 (maxIndexOfReference, assemblyResolution))  
-                |> Array.filter(fun (_,refs)->refs|>List.isEmpty|>not)
+                |> Array.filter(fun (_,refs)->refs |> isNil |> not)
                 
                                        
             // Whatever is left, pass to MSBuild.
@@ -3263,7 +3260,7 @@ let PostParseModuleImpl (_i,defaultNamespace,isLastCompiland,filename,impl) =
             | SynModuleDecl.NestedModule(_) :: _ -> errorR(Error(FSComp.SR.noEqualSignAfterModule(),trimRangeToLine m))
             | _ -> errorR(Error(FSComp.SR.buildMultiFileRequiresNamespaceOrModule(),trimRangeToLine m))
 
-        let modname = ComputeAnonModuleName (not (List.isEmpty defs)) defaultNamespace filename (trimRangeToLine m)
+        let modname = ComputeAnonModuleName (not (isNil defs)) defaultNamespace filename (trimRangeToLine m)
         SynModuleOrNamespace(modname,false,true,defs,PreXmlDoc.Empty,[],None,m)
 
     | ParsedImplFileFragment.NamespaceFragment (lid,a,b,c,d,e,m)-> 
@@ -3291,7 +3288,7 @@ let PostParseModuleSpec (_i,defaultNamespace,isLastCompiland,filename,intf) =
             | SynModuleSigDecl.NestedModule(_) :: _ -> errorR(Error(FSComp.SR.noEqualSignAfterModule(),m))
             | _ -> errorR(Error(FSComp.SR.buildMultiFileRequiresNamespaceOrModule(),m))
 
-        let modname = ComputeAnonModuleName (not (List.isEmpty defs)) defaultNamespace filename (trimRangeToLine m)
+        let modname = ComputeAnonModuleName (not (isNil defs)) defaultNamespace filename (trimRangeToLine m)
         SynModuleOrNamespaceSig(modname,false,true,defs,PreXmlDoc.Empty,[],None,m)
 
     | ParsedSigFileFragment.NamespaceFragment (lid,a,b,c,d,e,m)-> 
@@ -3561,20 +3558,15 @@ let MakeILResource rname bytes =
       Access = ILResourceAccess.Public
       CustomAttrs = emptyILCustomAttrs }
 
-#if NO_COMPILER_BACKEND
-#else
 let PickleToResource file g scope rname p x = 
     { Name = rname
       Location = (let bytes = pickleObjWithDanglingCcus file g scope p x in ILResourceLocation.Local (fun () -> bytes))
       Access = ILResourceAccess.Public
       CustomAttrs = emptyILCustomAttrs }
-#endif
 
 let GetSignatureData (file, ilScopeRef, ilModule, byteReader) : PickledDataWithReferences<PickledCcuInfo> = 
     unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleCcuInfo byteReader
 
-#if NO_COMPILER_BACKEND
-#else
 let WriteSignatureData (tcConfig:TcConfig,tcGlobals,exportRemapping,ccu:CcuThunk,file) : ILResource = 
     let mspec = ccu.Contents
     let mspec = ApplyExportRemappingToEntity tcGlobals exportRemapping mspec
@@ -3582,19 +3574,12 @@ let WriteSignatureData (tcConfig:TcConfig,tcGlobals,exportRemapping,ccu:CcuThunk
         { mspec=mspec 
           compileTimeWorkingDir=tcConfig.implicitIncludeDir
           usesQuotations = ccu.UsesFSharp20PlusQuotations }
-#endif // NO_COMPILER_BACKEND
 
 let GetOptimizationData (file, ilScopeRef, ilModule, byteReader) = 
     unpickleObjWithDanglingCcus file ilScopeRef ilModule Optimizer.u_CcuOptimizationInfo (byteReader())
 
-#if NO_COMPILER_BACKEND
-#else
 let WriteOptimizationData (tcGlobals, file, ccu,modulInfo) = 
-#if DEBUG
-    if verbose then  dprintf "Optimization data after remap:\n%s\n" (Layout.showL (Layout.squashTo 192 (Optimizer.moduleInfoL tcGlobals modulInfo)))
-#endif
     PickleToResource file tcGlobals ccu (FSharpOptimizationDataResourceName+"."+ccu.AssemblyName) Optimizer.p_CcuOptimizationInfo modulInfo
-#endif
 
 //----------------------------------------------------------------------------
 // Abstraction for project reference
@@ -4965,7 +4950,7 @@ module private ScriptPreprocessClosure =
     
         // Mark the last file as isLastCompiland. 
         let closureFiles =
-            if List.isEmpty closureFiles then  
+            if isNil closureFiles then  
                 closureFiles 
             else 
                 match List.frontAndBack closureFiles with

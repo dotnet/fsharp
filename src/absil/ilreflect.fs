@@ -517,7 +517,7 @@ let convCallConv (Callconv (hasThis,basic)) =
 let rec convTypeSpec cenv emEnv preferCreated (tspec:ILTypeSpec) =
     let typT   = convTypeRef cenv emEnv preferCreated tspec.TypeRef 
     let tyargs = List.map (convTypeAux cenv emEnv preferCreated) tspec.GenericArgs
-    match List.isEmpty tyargs,typT.IsGenericType with
+    match isNil tyargs,typT.IsGenericType with
     | _   ,true  -> typT.MakeGenericType(List.toArray tyargs)   |> nonNull "convTypeSpec: generic" 
     | true,false -> typT                                          |> nonNull "convTypeSpec: non generic" 
     | _   ,false -> failwithf "- convTypeSpec: non-generic type '%O' has type instance of length %d?" typT tyargs.Length 
@@ -1490,7 +1490,7 @@ let rec buildMethodPass3 cenv tref modB (typB:TypeBuilder) emEnv (mdef : ILMetho
     | ".cctor" | ".ctor" ->
           let consB = envGetConsB emEnv mref
           // Constructors can not have generic parameters
-          assert List.isEmpty mdef.GenericParams
+          assert isNil mdef.GenericParams
           // Value parameters       
           let defineParameter (i,attr,name) = consB.DefineParameterAndLog(i+1,attr,name)
           mdef.Parameters |> List.iteri (emitParameter cenv emEnv defineParameter);
