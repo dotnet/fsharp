@@ -76,59 +76,11 @@ type public InitializeSuiteAttribute () =
 [<assembly:InitializeSuite()>]
 ()
 
-module FSharpTestSuite =
+let fsharpSuiteDirectory = __SOURCE_DIRECTORY__
 
-    /// Get the tags from the first few lines of a file, e.g. the line
-    ///    #Conformance #Constants #Recursion #LetBindings #MemberDefinitions #Mutable 
-    let getTagsOfFile path =
-        match File.ReadLines(path) |> Seq.truncate 5 |> Seq.tryFind (fun s -> s.StartsWith("// #")) with
-        | None -> []
-        | Some line -> 
-            line.TrimStart('/').Split([| '#' |], StringSplitOptions.RemoveEmptyEntries)
-            |> Seq.map (fun s -> s.Trim())
-            |> Seq.filter (fun s -> s.Length > 0)
-            |> Seq.distinct
-            |> Seq.toList
-
-    /// Get the tags from a directory of files
-    let getTestFileMetadata dir =
-        Directory.EnumerateFiles(dir, "*.fs*")
-        |> Seq.toList
-        |> List.collect getTagsOfFile
-
-    let parseTestLst path =
-        let dir = Path.GetDirectoryName(path)
-        let commentLine (t: string) = t.StartsWith("#")
-        let lines =
-            File.ReadAllLines(path)
-            |> Array.filter (not << commentLine)
-            |> Array.filter (not << String.IsNullOrWhiteSpace)
-        let parse (t: string) =
-            let a = t.Split([| '\t'; '\t' |], StringSplitOptions.RemoveEmptyEntries)
-            let testDir = Commands.getfullpath dir a.[1]
-            [| for x in a.[0].Split(',') do yield (x, testDir) |]
-
-        lines |> Array.collect parse |> List.ofArray
-
-    let ``test.lst`` = lazy ( 
-        parseTestLst ( __SOURCE_DIRECTORY__/".."/"test.lst" ) 
-        )
-
-    /// Get the tags from a test.lst file
-    let getTestLstTags db dir =
-        let normalizePath path =
-            Uri(path).LocalPath
-            |> (fun s -> s.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))
-            |> (fun s -> s.ToUpperInvariant())
-
-        let sameDir a = (normalizePath dir) = (normalizePath a)
-        db |> List.choose (fun (tag, d) -> if sameDir d then Some tag else None)
-
-    let fsharpSuiteDirectory = __SOURCE_DIRECTORY__
-
-    let testConfig testDir =
-        let cfg = suiteHelpers.Value
-        { cfg with Directory = Path.GetFullPath(fsharpSuiteDirectory/testDir) }
+let testConfig testDir =
+    let cfg = suiteHelpers.Value
+    { cfg with Directory = Path.GetFullPath(fsharpSuiteDirectory/testDir) }
 
 
 let allPermutations = 
@@ -300,10 +252,10 @@ let fsiAppendIgnoreExitCode cfg stdoutPath stderrPath = Printf.ksprintf (Command
 let fileguard cfg = (Commands.getfullpath cfg.Directory) >> FileGuard.create
 let getfullpath cfg = Commands.getfullpath cfg.Directory
 let fileExists cfg = Commands.fileExists cfg.Directory >> Option.isSome
-let ``exec <`` cfg l p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = Inherit; Input = Some(RedirectInput(l)) } p >> checkResult
-let ``fsi <`` cfg = Printf.ksprintf (fun flags l -> Commands.fsi (``exec <`` cfg l) cfg.FSI flags [])
-let ``exec < success`` cfg stdoutPath stderrPath  l p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = OutputAndError(Append(stdoutPath), Append(stderrPath)); Input = Some(RedirectInput(l)) } p >> alwaysSuccess
-let fsiFromInToOutIgnoreExitCode cfg stdoutPath stderrPath = Printf.ksprintf (fun flags l -> Commands.fsi (``exec < success`` cfg stdoutPath stderrPath l) cfg.FSI flags [])
+let execStdin cfg l p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = Inherit; Input = Some(RedirectInput(l)) } p >> checkResult
+let fsiStdin cfg = Printf.ksprintf (fun flags l -> Commands.fsi (execStdin cfg l) cfg.FSI flags [])
+let execStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath  l p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = OutputAndError(Append(stdoutPath), Append(stderrPath)); Input = Some(RedirectInput(l)) } p >> alwaysSuccess
+let fsiStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath = Printf.ksprintf (fun flags l -> Commands.fsi (execStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath l) cfg.FSI flags [])
 let rm cfg x = Commands.rm cfg.Directory x
 let mkdir cfg = Commands.mkdir_p cfg.Directory
 let copy_y cfg f = Commands.copy_y cfg.Directory f >> checkResult

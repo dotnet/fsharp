@@ -15,7 +15,6 @@ let clrPaths envVars =
         | "AMD64" -> AMD64
         | _ -> AMD64
 
-#if !FX_PORTABLE_OR_NETSTANDARD
     let regQuery path value (baseKey: RegistryKey) =
         use regKey  = baseKey.OpenSubKey(path, false)
    
@@ -30,7 +29,6 @@ let clrPaths envVars =
         match hklm32 |> regQuery path value with
         | Some (:? string as d) -> Some d
         | Some _ | None -> None
-#endif
 
     /// current process architecture, using PROCESSOR_ARCHITECTURE environment variable
     let PROCESSOR_ARCHITECTURE = 
@@ -54,9 +52,6 @@ let clrPaths envVars =
     | X86 -> () 
     | _ -> CORDIR <- CORDIR.Replace("Framework", "Framework64")
 
-#if FX_PORTABLE_OR_NETSTANDARD
-    let CORSDK = @"c:\Program Files (x86)\Microsoft SDKs\Windows\v8.1A\bin\NETFX 4.5.1 Tools\x64"
-#else
     let allSDK = 
          [ regQueryREG_SOFTWARE @"Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6\WinSDK-NetFx40Tools" "InstallationFolder"
            regQueryREG_SOFTWARE @"Software\Microsoft\Microsoft SDKs\Windows\v8.1A\WinSDK-NetFx40Tools" "InstallationFolder"
@@ -70,7 +65,6 @@ let clrPaths envVars =
     match PROCESSOR_ARCHITECTURE with
     | AMD64 -> CORSDK <- CORSDK/"x64"
     | _ -> ()
-#endif
 
 
     /// Return real processor architecture (ignore WOW64)

@@ -28,7 +28,7 @@ module ProductVersionTest =
     let ``should use correct fallback`` =
       check (attempt {
        for (assemblyVersion, fileVersion, infoVersion, expected) in fallbackTestData () do
-        let cfg = FSharpTestSuite.testConfig (Commands.createTempDir())
+        let cfg = testConfig (Commands.createTempDir())
         let dir = cfg.Directory
 
         printfn "Directory: %s" dir

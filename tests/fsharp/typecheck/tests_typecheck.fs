@@ -12,7 +12,7 @@ open SingleTest
 
 [<Test>]
 let ``full-rank-arrays`` () = check (attempt {
-    let cfg = FSharpTestSuite.testConfig "typecheck/full-rank-arrays"
+    let cfg = testConfig "typecheck/full-rank-arrays"
 
     do! csc cfg "/target:library /out:HighRankArrayTests.dll" ["Class1.cs"]
 
@@ -25,14 +25,14 @@ let misc () = singleTestBuildAndRun "typecheck/misc" FSC_OPT_PLUS_DEBUG
 
 [<Test>]
 let ``sigs pos24`` () = check (attempt {
-        let cfg = FSharpTestSuite.testConfig "typecheck/sigs"
+        let cfg = testConfig "typecheck/sigs"
         do! fsc cfg "%s --target:exe -o:pos24.exe" cfg.fsc_flags ["pos24.fs"]
         do! peverify cfg "pos24.exe"
     })
 
 [<Test>]
 let ``sigs pos23`` () = check (attempt {
-        let cfg = FSharpTestSuite.testConfig "typecheck/sigs"
+        let cfg = testConfig "typecheck/sigs"
         do! fsc cfg "%s --target:exe -o:pos23.exe" cfg.fsc_flags ["pos23.fs"]
         do! peverify cfg "pos23.exe"
         do! exec cfg ("."/"pos23.exe") ""
@@ -41,7 +41,7 @@ let ``sigs pos23`` () = check (attempt {
 
 [<Test>]
 let ``sigs pos20`` () = check (attempt {
-        let cfg = FSharpTestSuite.testConfig "typecheck/sigs"
+        let cfg = testConfig "typecheck/sigs"
         do! fsc cfg "%s --target:exe -o:pos20.exe" cfg.fsc_flags ["pos20.fs"]
         do! peverify cfg "pos20.exe"
         do! exec cfg ("."/"pos20.exe") ""
@@ -50,7 +50,7 @@ let ``sigs pos20`` () = check (attempt {
 
 [<Test>]
 let ``sigs pos19`` () = check (attempt {
-        let cfg = FSharpTestSuite.testConfig "typecheck/sigs"
+        let cfg = testConfig "typecheck/sigs"
         do! fsc cfg "%s --target:exe -o:pos19.exe" cfg.fsc_flags ["pos19.fs"]
         do! peverify cfg "pos19.exe"
         do! exec cfg ("."/"pos19.exe") ""
@@ -59,7 +59,7 @@ let ``sigs pos19`` () = check (attempt {
 
 [<Test>]
 let ``sigs pos18`` () = check (attempt {
-        let cfg = FSharpTestSuite.testConfig "typecheck/sigs"
+        let cfg = testConfig "typecheck/sigs"
         do! fsc cfg "%s --target:exe -o:pos18.exe" cfg.fsc_flags ["pos18.fs"]
         do! peverify cfg "pos18.exe"
         do! exec cfg ("."/"pos18.exe") ""
@@ -68,7 +68,7 @@ let ``sigs pos18`` () = check (attempt {
 
 [<Test>]
 let ``sigs pos16`` () = check (attempt {
-        let cfg = FSharpTestSuite.testConfig "typecheck/sigs"
+        let cfg = testConfig "typecheck/sigs"
         do! fsc cfg "%s --target:exe -o:pos16.exe" cfg.fsc_flags ["pos16.fs"]
         do! peverify cfg "pos16.exe"
         do! exec cfg ("."/"pos16.exe") ""
@@ -77,7 +77,7 @@ let ``sigs pos16`` () = check (attempt {
 
 [<Test>]
 let ``sigs pos17`` () = check (attempt {
-        let cfg = FSharpTestSuite.testConfig "typecheck/sigs"
+        let cfg = testConfig "typecheck/sigs"
         do! fsc cfg "%s --target:exe -o:pos17.exe" cfg.fsc_flags ["pos17.fs"]
 
         do! peverify cfg "pos17.exe"
@@ -88,7 +88,7 @@ let ``sigs pos17`` () = check (attempt {
 
 [<Test>]
 let ``sigs pos15`` () = check (attempt {
-        let cfg = FSharpTestSuite.testConfig "typecheck/sigs"
+        let cfg = testConfig "typecheck/sigs"
         do! fsc cfg "%s --target:exe -o:pos15.exe" cfg.fsc_flags ["pos15.fs"]
 
         do! peverify cfg "pos15.exe"
@@ -99,7 +99,7 @@ let ``sigs pos15`` () = check (attempt {
 
 [<Test>]
 let ``sigs pos14`` () = check (attempt {
-        let cfg = FSharpTestSuite.testConfig "typecheck/sigs"
+        let cfg = testConfig "typecheck/sigs"
         do! fsc cfg "%s --target:exe -o:pos14.exe" cfg.fsc_flags ["pos14.fs"]
 
         do! peverify cfg "pos14.exe"
@@ -110,7 +110,7 @@ let ``sigs pos14`` () = check (attempt {
 
 [<Test>]
 let ``sigs pos13`` () = check (attempt {
-        let cfg = FSharpTestSuite.testConfig "typecheck/sigs"
+        let cfg = testConfig "typecheck/sigs"
         do! fsc cfg "%s --target:exe -o:pos13.exe" cfg.fsc_flags ["pos13.fs"]
 
         do! peverify cfg "pos13.exe"
@@ -121,21 +121,21 @@ let ``sigs pos13`` () = check (attempt {
 
 [<Test>]
 let ``sigs pos12 `` () = check (attempt {
-        let cfg = FSharpTestSuite.testConfig "typecheck/sigs"
+        let cfg = testConfig "typecheck/sigs"
         do! fsc cfg "%s -a -o:pos12.dll" cfg.fsc_flags ["pos12.fs"]
 
     })
 
 [<Test>]
 let ``sigs pos11`` () = check (attempt {
-        let cfg = FSharpTestSuite.testConfig "typecheck/sigs"
+        let cfg = testConfig "typecheck/sigs"
         do! fsc cfg "%s -a -o:pos11.dll" cfg.fsc_flags ["pos11.fs"]
 
     })
 
 [<Test>]
 let ``sigs pos10`` () = check (attempt {
-        let cfg = FSharpTestSuite.testConfig "typecheck/sigs"
+        let cfg = testConfig "typecheck/sigs"
         do! fsc cfg "%s -a -o:pos10.dll" cfg.fsc_flags ["pos10.fs"]
 
         do! peverify cfg "pos10.dll"
@@ -144,7 +144,7 @@ let ``sigs pos10`` () = check (attempt {
 
 [<Test>]
 let ``sigs pos09`` () = check (attempt {
-        let cfg = FSharpTestSuite.testConfig "typecheck/sigs"
+        let cfg = testConfig "typecheck/sigs"
         do! fsc cfg "%s -a -o:pos09.dll" cfg.fsc_flags ["pos09.fs"]
 
         do! peverify cfg "pos09.dll"
@@ -154,7 +154,7 @@ let ``sigs pos09`` () = check (attempt {
 
 [<Test>]
 let ``sigs pos07`` () = check (attempt {
-        let cfg = FSharpTestSuite.testConfig "typecheck/sigs"
+        let cfg = testConfig "typecheck/sigs"
         do! fsc cfg "%s -a -o:pos07.dll" cfg.fsc_flags ["pos07.fs"]
 
         do! peverify cfg "pos07.dll"
@@ -163,7 +163,7 @@ let ``sigs pos07`` () = check (attempt {
 
 [<Test>]
 let ``sigs pos08`` () = check (attempt {
-        let cfg = FSharpTestSuite.testConfig "typecheck/sigs"
+        let cfg = testConfig "typecheck/sigs"
         do! fsc cfg "%s -a -o:pos08.dll" cfg.fsc_flags ["pos08.fs"]
 
         do! peverify cfg "pos08.dll"
@@ -172,7 +172,7 @@ let ``sigs pos08`` () = check (attempt {
 
 [<Test>]
 let ``sigs pos06`` () = check (attempt {
-        let cfg = FSharpTestSuite.testConfig "typecheck/sigs"
+        let cfg = testConfig "typecheck/sigs"
         do! fsc cfg "%s -a -o:pos06.dll" cfg.fsc_flags ["pos06.fs"]
 
         do! peverify cfg "pos06.dll"
@@ -181,7 +181,7 @@ let ``sigs pos06`` () = check (attempt {
 
 [<Test>]
 let ``sigs pos03`` () = check (attempt {
-        let cfg = FSharpTestSuite.testConfig "typecheck/sigs"
+        let cfg = testConfig "typecheck/sigs"
         do! fsc cfg "%s -a -o:pos03.dll" cfg.fsc_flags ["pos03.fs"]
 
         do! peverify cfg "pos03.dll"
@@ -194,7 +194,7 @@ let ``sigs pos03`` () = check (attempt {
 
 [<Test>]
 let ``sigs pos01a`` () = check (attempt {
-        let cfg = FSharpTestSuite.testConfig "typecheck/sigs"
+        let cfg = testConfig "typecheck/sigs"
         do! fsc cfg "%s -a -o:pos01a.dll" cfg.fsc_flags ["pos01a.fsi"; "pos01a.fs"]
 
         do! peverify cfg "pos01a.dll"
@@ -203,7 +203,7 @@ let ``sigs pos01a`` () = check (attempt {
 
 [<Test>]
 let ``sigs pos02`` () = check (attempt {
-        let cfg = FSharpTestSuite.testConfig "typecheck/sigs"
+        let cfg = testConfig "typecheck/sigs"
         do! fsc cfg "%s -a -o:pos02.dll" cfg.fsc_flags ["pos02.fs"]
 
         do! peverify cfg "pos02.dll"
@@ -213,13 +213,13 @@ let ``sigs pos02`` () = check (attempt {
 
 [<Test>]
 let ``sigs pos05`` () = check (attempt {
-        let cfg = FSharpTestSuite.testConfig "typecheck/sigs"
+        let cfg = testConfig "typecheck/sigs"
         do! fsc cfg "%s -a -o:pos05.dll" cfg.fsc_flags ["pos05.fs"]
 
         })
 
 let negGroup negs = check (attempt {
-        let cfg = FSharpTestSuite.testConfig "typecheck/sigs"
+        let cfg = testConfig "typecheck/sigs"
         do! attempt.For (negs, singleNegTest cfg)
 
     })

@@ -10,7 +10,7 @@ open PlatformHelpers
 
 [<Test>]
 let diamondAssembly () = check (attempt {
-    let cfg = FSharpTestSuite.testConfig "typeProviders/diamondAssembly"
+    let cfg = testConfig "typeProviders/diamondAssembly"
 
     rm cfg "provider.dll"
 
@@ -48,7 +48,7 @@ let diamondAssembly () = check (attempt {
 
 [<Test>]
 let globalNamespace () = check (attempt {
-    let cfg = FSharpTestSuite.testConfig "typeProviders/globalNamespace"
+    let cfg = testConfig "typeProviders/globalNamespace"
 
     do! csc cfg """/out:globalNamespaceTP.dll /debug+ /target:library /r:"%s" """ cfg.FSCOREDLLPATH ["globalNamespaceTP.cs"]
 
@@ -58,7 +58,7 @@ let globalNamespace () = check (attempt {
 
 
 let helloWorld p = check (attempt {
-    let cfg = FSharpTestSuite.testConfig "typeProviders/helloWorld"
+    let cfg = testConfig "typeProviders/helloWorld"
 
     do! fsc cfg "%s" "--out:provided1.dll -g -a" [".."/"helloWorld"/"provided.fs"]
 
@@ -135,7 +135,7 @@ let ``helloWorld fsi`` () = helloWorld FSI_STDIN
 
 [<Test>]
 let helloWorldCSharp () = check (attempt {
-    let cfg = FSharpTestSuite.testConfig "typeProviders/helloWorldCSharp"
+    let cfg = testConfig "typeProviders/helloWorldCSharp"
 
     rm cfg "magic.dll"
 
@@ -184,7 +184,7 @@ let testsWithDefine = [
 [<Test>]
 let negTests () = check (attempt {
   for name in (testsSimple  @ testsWithDefine) do
-    let cfg = FSharpTestSuite.testConfig "typeProviders/negTests"
+    let cfg = testConfig "typeProviders/negTests"
     let dir = cfg.Directory
 
     do! requireENCulture ()
@@ -245,7 +245,7 @@ let negTests () = check (attempt {
 
 [<Test>]
 let splitAssembly () = check (attempt {
-    let cfg = FSharpTestSuite.testConfig "typeProviders/splitAssembly"
+    let cfg = testConfig "typeProviders/splitAssembly"
 
     do! fsc cfg "--out:provider.dll -a" ["provider.fs"]
 
@@ -259,7 +259,7 @@ let splitAssembly () = check (attempt {
 
 [<Test>]
 let wedgeAssembly () = check (attempt {
-    let cfg = FSharpTestSuite.testConfig "typeProviders/wedgeAssembly"
+    let cfg = testConfig "typeProviders/wedgeAssembly"
 
     rm cfg "provider.dll"
 
