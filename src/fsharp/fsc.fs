@@ -1538,14 +1538,8 @@ module StaticLinker =
               
               // Rewrite type and assembly references
               let ilxMainModule =
-                  let isMscorlib = ilGlobals.primaryAssemblyName = PrimaryAssembly.Mscorlib.Name
-                  let validateTargetPlatform (scopeRef : ILScopeRef) = 
-                      let name = getNameOfScopeRef scopeRef
-                      if (isMscorlib && name = PrimaryAssembly.DotNetCore.Name) || (not isMscorlib && name = PrimaryAssembly.Mscorlib.Name) then
-                          error (Error(FSComp.SR.fscStaticLinkingNoProfileMismatches(), rangeCmdArgs))
-                      scopeRef
                   let rewriteAssemblyRefsToMatchLibraries = NormalizeAssemblyRefs tcImports
-                  Morphs.morphILTypeRefsInILModuleMemoized ilGlobals (Morphs.morphILScopeRefsInILTypeRef (validateTargetPlatform >> rewriteExternalRefsToLocalRefs >> rewriteAssemblyRefsToMatchLibraries)) ilxMainModule
+                  Morphs.morphILTypeRefsInILModuleMemoized ilGlobals (Morphs.morphILScopeRefsInILTypeRef (rewriteExternalRefsToLocalRefs >> rewriteAssemblyRefsToMatchLibraries)) ilxMainModule
 
               ilxMainModule)
   
