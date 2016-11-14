@@ -695,7 +695,7 @@ let libtest () =
 let lift () = singleTestBuildAndRun "core/lift" FSC_OPT_PLUS_DEBUG
 
 
-[<Test; Category("load-script")>]
+[<Test>]
 let ``load-script`` () = check (attempt {
     let cfg = FSharpTestSuite.testConfig "core/load-script"
 
