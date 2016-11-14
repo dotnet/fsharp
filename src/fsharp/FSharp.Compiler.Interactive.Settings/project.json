@@ -1,6 +1,5 @@
 {
   "dependencies": {
-    "Microsoft.NETCore.Platforms": "1.0.1",
     "NETStandard.Library": "1.6.0",
     "System.Linq.Expressions": "4.1.0",
     "System.Reflection.TypeExtensions": "4.1.0",
