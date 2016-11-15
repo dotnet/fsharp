@@ -10,7 +10,7 @@ open FSharpTestSuiteTypes
 
 let checkResult result = 
     match result with
-    | CmdResult.ErrorLevel (msg1, err) -> Assert.Fail (sprintf "%s. ERRORLEVEL %i %s" msg1 err (sprintf "ERRORLEVEL %d" err))
+    | CmdResult.ErrorLevel (msg1, err) -> Assert.Fail (sprintf "%s. ERRORLEVEL %d" msg1 err)
     | CmdResult.Success -> ()
 
 let checkErrorLevel1 result = 
@@ -67,8 +67,10 @@ let fsharpSuiteDirectory = __SOURCE_DIRECTORY__
 
 let testConfig testDir =
     let cfg = suiteHelpers.Value
-    { cfg with Directory = Path.GetFullPath(fsharpSuiteDirectory/testDir) }
-
+    let dir = Path.GetFullPath(fsharpSuiteDirectory/testDir)
+    log "------------------ %s ---------------" dir
+    log "cd %s" dir
+    { cfg with Directory =  dir}
 
 let allPermutations = 
     [ FSI_FILE; 

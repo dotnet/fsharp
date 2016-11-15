@@ -1,5 +1,5 @@
 ﻿#if INTERACTIVE
-#r @"..\..\Debug\net40\bin\FSharp.Compiler.dll"
+#r @"..\..\release\net40\bin\FSharp.Compiler.dll"
 #r @"..\..\packages\NUnit.3.5.0\lib\net45\nunit.framework.dll"
 #load "PlatformHelpers.fs" "Commands.fs" "FSharpTestSuiteTypes.fs" "../windowsPlatform.fs" "../config.fs" "../../src/fsharp/FSharp.Compiler.Unittests/NunitHelpers.fs" "nunitConf.fs" "single-test.fs"
 #else
@@ -554,8 +554,7 @@ module CoreTests =
 
     [<Test; Category("namespaces")>]
     let namespaceAttributes () = 
-        for p in codeAndInferencePermutations do
-             singleTestBuildAndRun "core/namespaces" p
+        singleTestBuildAsndRun "core/namespaces" FSC_OPT_PLUS_DEBUG
 
     [<Test; Category("parsing")>]
     let parsing () = 
@@ -569,7 +568,7 @@ module CoreTests =
 
  
 
-    [<Test; Category("unicode")>]
+    [<Test>]
     let unicode () = 
         let cfg = testConfig "core/unicode"
 
@@ -594,10 +593,10 @@ module CoreTests =
         fsi cfg "%s --utf8output" cfg.fsi_flags ["kanji-unicode-utf16.fs"]
  
 
-    [<Test; Category("unicode")>]
+    [<Test>]
     let unicode2 () = singleTestBuildAndRun "core/unicode" FSC_OPT_PLUS_DEBUG
 
-    [<Test; Category("internalsvisible")>]
+    [<Test>]
     let internalsvisible () = 
         let cfg = testConfig "core/internalsvisible"
 
@@ -622,7 +621,7 @@ module CoreTests =
 
 
     // Repro for https://github.com/Microsoft/visualfsharp/issues/1298
-    [<Test; Category("fileorder")>]
+    [<Test>]
     let fileorder () = 
         let cfg = testConfig "core/fileorder"
 
@@ -774,11 +773,10 @@ module CoreTests =
 
         fsiAppendIgnoreExitCode cfg stdoutPath stderrPath "" ["load-IncludeNoWarn211.fsx"]
 
-        echo "Test 18================================================="
-
-        fsiExpectFail cfg "" ["loadfail3.fsx"]
-
         echo "Done =================================================="
+
+        // an extra case
+        fsiExpectFail cfg "" ["loadfail3.fsx"]
 
         let normalizePaths f =
             let text = File.ReadAllText(f)
@@ -2092,7 +2090,7 @@ module ProductVersionTest =
         |> List.map (fun (a,f,i,e) -> (a, f, i, e))
 
     [<Test>]
-    let ``should use correct fallback`` =
+    let ``should use correct fallback``() =
       
        for (assemblyVersion, fileVersion, infoVersion, expected) in fallbackTestData () do
         let cfg = testConfig (Commands.createTempDir())
@@ -2118,7 +2116,7 @@ namespace CST.RI.Anshun
 
         File.WriteAllText(cfg.Directory/"test.fs", code)
 
-        fsc cfg "%s --nologo -o:lib.dll -target:library" cfg.fsc_flags ["test.fs"]
+        fsc cfg "%s --nologo -o:lib.dll --target:library" cfg.fsc_flags ["test.fs"]
 
         let fileVersionInfo = Diagnostics.FileVersionInfo.GetVersionInfo(Commands.getfullpath cfg.Directory "lib.dll")
 
