@@ -1107,24 +1107,24 @@ let quotesDebugInfo () = check (attempt {
 let quotesInMultipleModules () = check (attempt {
     let cfg = testConfig "core/quotesInMultipleModules"
 
-    do! fsc cfg "%s -o:module1.dll --target:library -r:System.ValueTuple.dll " cfg.fsc_flags ["module1.fsx"]
+    do! fsc cfg "%s -o:module1.dll --target:library" cfg.fsc_flags ["module1.fsx"]
 
     do! peverify cfg "module1.dll"
 
-    do! fsc cfg "%s -o:module2.exe -r:module1.dll -r:System.ValueTuple.dll " cfg.fsc_flags ["module2.fsx"]
+    do! fsc cfg "%s -o:module2.exe -r:module1.dll" cfg.fsc_flags ["module2.fsx"]
 
     do! peverify cfg "module2.exe"
     
-    do! fsc cfg "%s --staticlink:module1 -o:module2-staticlink.exe -r:System.ValueTuple.dll  -r:module1.dll" cfg.fsc_flags ["module2.fsx"]
+    do! fsc cfg "%s --staticlink:module1 -o:module2-staticlink.exe  -r:module1.dll" cfg.fsc_flags ["module2.fsx"]
 
     do! peverify cfg "module2-staticlink.exe"
 
-    // A test case which statically links both a normal .NET 4.x library and a PCL library
-    do! fsc cfg "%s -o:module2-staticlink-pcl.exe -r:module1.dll -r:System.ValueTuple.dll --staticlink:module1  --staticlink:System.ValueTuple " cfg.fsc_flags ["module2.fsx"]
+    // A test case which statically links both a normal .NET 4.x library (module1.dll) and a PCL library (System.ValueTuple.dll)
+    do! fsc cfg "%s -o:module2-staticlink-pcl.exe --define:EXTRAS -r:module1.dll -r:System.ValueTuple.dll --staticlink:module1  --staticlink:System.ValueTuple " cfg.fsc_flags ["module2.fsx"]
 
     do! peverify cfg "module2-staticlink-pcl.exe"
 
-    do! fsc cfg "%s -o:module1-opt.dll --target:library --optimize -r:System.ValueTuple.dll " cfg.fsc_flags ["module1.fsx"]
+    do! fsc cfg "%s -o:module1-opt.dll --target:library --optimize " cfg.fsc_flags ["module1.fsx"]
 
     do! peverify cfg "module1-opt.dll"
 
