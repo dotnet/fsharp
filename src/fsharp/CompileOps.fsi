@@ -755,7 +755,7 @@ type LoadClosure =
       UnresolvedReferences : UnresolvedAssemblyReference list
 
       /// The list of all sources in the closure with inputs when available
-      Inputs: (string * ParsedInput option) list
+      Inputs: (string * ParsedInput option * PhasedError list * PhasedError list) list
 
       /// The #nowarns
       NoWarns: (string * range list) list

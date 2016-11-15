@@ -1057,7 +1057,7 @@ type internal FsiDynamicCompiler
           
           // Intent "[Loading %s]\n" (String.concat "\n     and " sourceFiles)
           fsiConsoleOutput.uprintf "[%s " (FSIstrings.SR.fsiLoadingFilesPrefixText())
-          closure.Inputs  |> List.iteri (fun i (sourceFile,_) -> 
+          closure.Inputs  |> List.iteri (fun i (sourceFile,_,_,_) -> 
               if i=0 then fsiConsoleOutput.uprintf  "%s" sourceFile
               else fsiConsoleOutput.uprintnf " %s %s" (FSIstrings.SR.fsiLoadingFilesPrefixText()) sourceFile)
           fsiConsoleOutput.uprintfn "]"
@@ -1071,11 +1071,13 @@ type internal FsiDynamicCompiler
           // Non-scripts will not have been parsed during #load closure so parse them now
           let sourceFiles,inputs = 
               closure.Inputs  
-              |> List.map (fun (filename, input)-> 
+              |> List.map (fun (filename, input, errs, warns)-> 
+                    errs |> List.iter errorSink
+                    warns |> List.iter warnSink
                     let parsedInput = 
                         match input with 
                         | None -> ParseOneInputFile(tcConfig,lexResourceManager,["INTERACTIVE"],filename,(true,false),errorLogger,(*retryLocked*)false)
-                        | _-> input
+                        | Some _ -> input
                     filename, parsedInput)
               |> List.unzip
           
