@@ -1107,15 +1107,15 @@ let quotesDebugInfo () = check (attempt {
 let quotesInMultipleModules () = check (attempt {
     let cfg = testConfig "core/quotesInMultipleModules"
 
-    do! fsc cfg "%s -o:module1.dll --target:library" cfg.fsc_flags ["module1.fsx"]
+    do! fsc cfg "%s -o:module1.dll --target:library -r:System.ValueTuple.dll " cfg.fsc_flags ["module1.fsx"]
 
     do! peverify cfg "module1.dll"
 
-    do! fsc cfg "%s -o:module2.exe -r:module1.dll" cfg.fsc_flags ["module2.fsx"]
+    do! fsc cfg "%s -o:module2.exe -r:module1.dll -r:System.ValueTuple.dll " cfg.fsc_flags ["module2.fsx"]
 
     do! peverify cfg "module2.exe"
     
-    do! fsc cfg "%s --staticlink:module1 -o:module2-staticlink.exe -r:module1.dll" cfg.fsc_flags ["module2.fsx"]
+    do! fsc cfg "%s --staticlink:module1 -o:module2-staticlink.exe -r:System.ValueTuple.dll  -r:module1.dll" cfg.fsc_flags ["module2.fsx"]
 
     do! peverify cfg "module2-staticlink.exe"
 
@@ -1124,17 +1124,17 @@ let quotesInMultipleModules () = check (attempt {
 
     do! peverify cfg "module2-staticlink-pcl.exe"
 
-    do! fsc cfg "%s -o:module1-opt.dll --target:library --optimize" cfg.fsc_flags ["module1.fsx"]
+    do! fsc cfg "%s -o:module1-opt.dll --target:library --optimize -r:System.ValueTuple.dll " cfg.fsc_flags ["module1.fsx"]
 
     do! peverify cfg "module1-opt.dll"
 
-    do! fsc cfg "%s -o:module2-opt.exe -r:module1-opt.dll --optimize" cfg.fsc_flags ["module2.fsx"]
+    do! fsc cfg "%s -o:module2-opt.exe -r:module1-opt.dll --optimize -r:System.ValueTuple.dll" cfg.fsc_flags ["module2.fsx"]
 
     do! peverify cfg "module2-opt.exe"
 
     use testOkFile = fileguard cfg "test.ok"
 
-    do! fsi cfg "%s -r module1.dll" cfg.fsi_flags ["module2.fsx"]
+    do! fsi cfg "%s -r module1.dll -r:System.ValueTuple.dll" cfg.fsi_flags ["module2.fsx"]
 
     do! testOkFile.CheckExists
 
