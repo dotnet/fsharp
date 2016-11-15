@@ -35,11 +35,11 @@ let byrefs () = check  (attempt {
 
     do! exec cfg ("."/"test.exe") ""
 
-    do! testOkFile |> NUnitConf.checkGuardExists
+    do! testOkFile.CheckExists
 
     do! fsi cfg "" ["test.fsx"]
 
-    do! testOkFile |> NUnitConf.checkGuardExists
+    do! testOkFile.CheckExists
 
     })
 
@@ -99,7 +99,7 @@ let events () = check  (attempt {
 
     do! fsi cfg "" ["test.fs"]
 
-    do! testOkFile |> NUnitConf.checkGuardExists
+    do! testOkFile.CheckExists
 
     do! exec cfg ("."/"testcs.exe") ""
     })
@@ -128,7 +128,7 @@ let events () = check  (attempt {
 //        do! fsiStdin cfg "%s %s" cfg.fsi_flags flags "test1.fsx"
 //
 //        // if NOT EXIST test1.ok goto SetError
-//        do! testOkFile |> NUnitConf.checkGuardExists
+//        do! testOkFile.CheckExists
 //        })
 //
 //    [<Test>]
@@ -150,7 +150,7 @@ let events () = check  (attempt {
 //        do! fsiStdin cfg "%s %s" cfg.fsi_flags flags "test2.fsx"
 //
 //        // if NOT EXIST test2.ok goto SetError
-//        do! testOkFile |> NUnitConf.checkGuardExists
+//        do! testOkFile.CheckExists
 //        })
 
     
@@ -252,7 +252,7 @@ let ``fsi-reload`` () = check (attempt {
 
         do! fsiStdin cfg "%s  --maxerrors:1" cfg.fsi_flags "test1.ml"
     
-        do! testOkFile |> NUnitConf.checkGuardExists
+        do! testOkFile.CheckExists
     }
                 
     do! attempt {
@@ -261,7 +261,7 @@ let ``fsi-reload`` () = check (attempt {
 
         do! fsi cfg "%s  --maxerrors:1" cfg.fsi_flags ["load1.fsx"]
     
-        do! testOkFile |> NUnitConf.checkGuardExists
+        do! testOkFile.CheckExists
         }
 
     do! attempt {
@@ -270,7 +270,7 @@ let ``fsi-reload`` () = check (attempt {
 
         do! fsi cfg "%s  --maxerrors:1" cfg.fsi_flags ["load2.fsx"]
     
-        do! testOkFile |> NUnitConf.checkGuardExists
+        do! testOkFile.CheckExists
     }
 
     do! fsc cfg "" ["load1.fsx"]
@@ -292,14 +292,22 @@ let fsiAndModifiers () = check (attempt {
         
     do! fsiStdin cfg "%s  --maxerrors:1" cfg.fsi_flags "test.fsx"
 
-    do! testOkFile |> NUnitConf.checkGuardExists
+    do! testOkFile.CheckExists
                 
     })
 
 [<Test>]
-let genericmeasures () = 
-    for p in codeAndInferencePermutations do
-        singleTestBuildAndRun "core/genericmeasures" p
+let ``genericmeasures-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/genericmeasures" GENERATED_SIGNATURE
+
+[<Test>]
+let ``genericmeasures-FSI_FILE`` () = singleTestBuildAndRun "core/genericmeasures" FSI_FILE
+
+[<Test>]
+let ``genericmeasures-FSC_OPT_PLUS_DEBUG`` () = singleTestBuildAndRun "core/genericmeasures" FSC_OPT_PLUS_DEBUG
+
+[<Test>]
+let ``genericmeasures-AS_DLL`` () = singleTestBuildAndRun "core/genericmeasures" AS_DLL
+
 
 [<Test>]
 let hiding () = check (attempt {
@@ -321,10 +329,17 @@ let hiding () = check (attempt {
 
 
 [<Test>]
-let innerpoly () = 
-    for p in codeAndInferencePermutations do
-        singleTestBuildAndRun "core/innerpoly" p
-        
+let ``innerpoly-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/innerpoly" GENERATED_SIGNATURE
+
+[<Test>]
+let ``innerpoly-FSI_FILE`` () = singleTestBuildAndRun "core/innerpoly" FSI_FILE
+
+[<Test>]
+let ``innerpoly-FSC_OPT_PLUS_DEBUG`` () = singleTestBuildAndRun "core/innerpoly" FSC_OPT_PLUS_DEBUG
+
+[<Test>]
+let ``innerpoly-AS_DLL`` () = singleTestBuildAndRun "core/innerpoly" AS_DLL
+
 [<Test>]
 let ``test int32`` () = singleTestBuildAndRun "core/int32" FSC_OPT_PLUS_DEBUG
 
@@ -347,7 +362,7 @@ let queriesCustomQueryOps () = check (attempt {
 
         do! fsi cfg "%s" cfg.fsi_flags ["test.fsx"]
 
-        do! testOkFile |> NUnitConf.checkGuardExists
+        do! testOkFile.CheckExists
     }
 
     do! attempt {
@@ -355,7 +370,7 @@ let queriesCustomQueryOps () = check (attempt {
 
         do! exec cfg ("."/"test.exe") ""
 
-        do! testOkFile |> NUnitConf.checkGuardExists
+        do! testOkFile.CheckExists
         }
 
     do! attempt {
@@ -363,7 +378,7 @@ let queriesCustomQueryOps () = check (attempt {
 
         do! exec cfg ("."/"test--optimize.exe") ""
 
-        do! testOkFile |> NUnitConf.checkGuardExists
+        do! testOkFile.CheckExists
         }
                 
     })
@@ -535,7 +550,7 @@ let quotes () = check (attempt {
 
         do! fsi cfg "%s -r cslib.dll" cfg.fsi_flags ["test.fsx"]
 
-        do! testOkFile |> NUnitConf.checkGuardExists
+        do! testOkFile.CheckExists
         }
 
     do! attempt {
@@ -546,7 +561,7 @@ let quotes () = check (attempt {
         do! exec cfg ("."/"test.exe") ""
 
 
-        do! testOkFile |> NUnitConf.checkGuardExists
+        do! testOkFile.CheckExists
         }
 
     do! attempt {
@@ -556,7 +571,7 @@ let quotes () = check (attempt {
         do! exec cfg ("."/"test-with-debug-data.exe") ""
 
 
-        do! testOkFile |> NUnitConf.checkGuardExists
+        do! testOkFile.CheckExists
         }
 
     do! attempt {
@@ -566,16 +581,15 @@ let quotes () = check (attempt {
         do! exec cfg ("."/"test--optimize.exe") ""
 
 
-        do! testOkFile |> NUnitConf.checkGuardExists
+        do! testOkFile.CheckExists
         }
                 
     })
 
 
 [<Test; Category("namespaces")>]
-let namespaceAttributes () = 
-    for p in codeAndInferencePermutations do
-         singleTestBuildAndRun "core/namespaces" p
+let namespaceAttributes () = singleTestBuildAndRun "core/namespaces" FSC_OPT_PLUS_DEBUG
+        
 
 [<Test; Category("parsing")>]
 let parsing () = check  (attempt {
@@ -686,10 +700,33 @@ let ``letrec (mutrec variations part one)`` () = singleTestBuildAndRun "core/let
 [<Test; Category("letrec")>]
 let ``letrec (mutrec variations part two)`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSC_OPT_PLUS_DEBUG
 
-[<Test; Category("libtest")>]
-let libtest () = 
-    for p in allPermutations do
-        singleTestBuildAndRun "core/libtest" p
+[<Test>]
+let ``libtest-FSI_FILE`` () = singleTestBuildAndRun "core/libtest" FSI_FILE
+
+[<Test>]
+let ``libtest-FSI_STDIN`` () = singleTestBuildAndRun "core/libtest" FSI_STDIN
+
+[<Test>]
+let ``libtest-FSI_STDIN_OPT`` () = singleTestBuildAndRun "core/libtest" FSI_STDIN_OPT
+
+[<Test>]
+let ``libtest-FSI_STDIN_GUI`` () = singleTestBuildAndRun "core/libtest" FSI_STDIN_GUI
+
+[<Test>]
+let ``libtest-FSC_BASIC`` () = singleTestBuildAndRun "core/libtest" FSC_BASIC
+
+[<Test>]
+let ``libtest-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/libtest" GENERATED_SIGNATURE
+
+[<Test>]
+let ``libtest-FSC_OPT_MINUS_DEBUG`` () = singleTestBuildAndRun "core/libtest" FSC_OPT_MINUS_DEBUG
+
+[<Test>]
+let ``libtest-FSC_OPT_PLUS_DEBUG`` () = singleTestBuildAndRun "core/libtest" FSC_OPT_PLUS_DEBUG
+
+[<Test>]
+let ``libtest-AS_DLL`` () = singleTestBuildAndRun "core/libtest" AS_DLL
+
 
 [<Test; Category("lift")>]
 let lift () = singleTestBuildAndRun "core/lift" FSC_OPT_PLUS_DEBUG
@@ -836,17 +873,31 @@ let ``math-numbers`` () = singleTestBuildAndRun "core/math/numbers" FSC_OPT_PLUS
 let ``math-numbersVS2008`` () = singleTestBuildAndRun "core/math/numbersVS2008" FSC_OPT_PLUS_DEBUG
 
 [<Test>]
-let measures () = 
-    for p in codeAndInferencePermutations do
-        singleTestBuildAndRun "core/measures" p
+let ``measures-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/measures" GENERATED_SIGNATURE
 
 [<Test>]
-let ``members-basics`` () = 
-    for p in codeAndInferencePermutations do
-        singleTestBuildAndRun "core/members/basics" p
+let ``measures-FSI_FILE`` () = singleTestBuildAndRun "core/measures" FSI_FILE
 
 [<Test>]
-let ``members-basics-hw`` () = singleTestBuildAndRun "core/members/basics-hw" FSC_OPT_PLUS_DEBUG
+let ``measures-FSC_OPT_PLUS_DEBUG`` () = singleTestBuildAndRun "core/measures" FSC_OPT_PLUS_DEBUG
+
+[<Test>]
+let ``measures-AS_DLL`` () = singleTestBuildAndRun "core/measures" AS_DLL
+
+[<Test>]
+let ``members-basics-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/members/basics" GENERATED_SIGNATURE
+
+[<Test>]
+let ``members-basics-FSI_FILE`` () = singleTestBuildAndRun "core/members/basics" FSI_FILE
+
+[<Test>]
+let ``members-basics-FSC_OPT_PLUS_DEBUG`` () = singleTestBuildAndRun "core/members/basics" FSC_OPT_PLUS_DEBUG
+
+[<Test>]
+let ``members-basics-AS_DLL`` () = singleTestBuildAndRun "core/members/basics" AS_DLL
+
+[<Test>]
+let ``members-basics-hw-FSC_OPT_PLUS_DEBUG`` () = singleTestBuildAndRun "core/members/basics-hw" FSC_OPT_PLUS_DEBUG
 
 [<Test>]
 let ``members-basics-hw-mutrec`` () = singleTestBuildAndRun "core/members/basics-hw-mutrec" FSC_OPT_PLUS_DEBUG
@@ -912,19 +963,19 @@ let queriesLeafExpressionConvert () = check (attempt {
 
     do! fsi cfg "%s" cfg.fsi_flags ["test.fsx"]
 
-    do! testOkFile |> NUnitConf.checkGuardExists
+    do! testOkFile.CheckExists
 
     use testOkFile2 = fileguard cfg "test.ok"
 
     do! exec cfg ("."/"test.exe") ""
 
-    do! testOkFile2 |> NUnitConf.checkGuardExists
+    do! testOkFile2.CheckExists
 
     use testOkFile3 = fileguard cfg "test.ok"
 
     do! exec cfg ("."/"test--optimize.exe") ""
 
-    do! testOkFile3 |> NUnitConf.checkGuardExists
+    do! testOkFile3.CheckExists
                 
     })
 
@@ -943,15 +994,15 @@ let queriesNullableOperators () = check (attempt {
 
     use testOkFile = fileguard cfg "test.ok"
     do! fsi cfg "%s" cfg.fsi_flags ["test.fsx"]
-    do! testOkFile |> NUnitConf.checkGuardExists
+    do! testOkFile.CheckExists
 
     use testOkFile2 = fileguard cfg "test.ok"
     do! exec cfg ("."/"test.exe") ""
-    do! testOkFile2 |> NUnitConf.checkGuardExists
+    do! testOkFile2.CheckExists
 
     use testOkFile3 = fileguard cfg "test.ok"
     do! exec cfg ("."/"test--optimize.exe") ""
-    do! testOkFile3 |> NUnitConf.checkGuardExists
+    do! testOkFile3.CheckExists
                 
     })
 
@@ -971,19 +1022,19 @@ let queriesOverIEnumerable () = check (attempt {
 
     do! fsi cfg "%s" cfg.fsi_flags ["test.fsx"]
 
-    do! testOkFile |> NUnitConf.checkGuardExists
+    do! testOkFile.CheckExists
 
     use testOkFile2 = fileguard cfg "test.ok"
 
     do! exec cfg ("."/"test.exe") ""
 
-    do! testOkFile2 |> NUnitConf.checkGuardExists
+    do! testOkFile2.CheckExists
 
     use testOkFile3 = fileguard cfg "test.ok"
 
     do! exec cfg ("."/"test--optimize.exe") ""
 
-    do! testOkFile3 |> NUnitConf.checkGuardExists
+    do! testOkFile3.CheckExists
                 
     })
 
@@ -1002,20 +1053,20 @@ let queriesOverIQueryable () = check (attempt {
     use testOkFile = fileguard cfg "test.ok"
     do! fsi cfg "%s" cfg.fsi_flags ["test.fsx"]
 
-    do! testOkFile |> NUnitConf.checkGuardExists
+    do! testOkFile.CheckExists
 
 
     use testOkFile2 = fileguard cfg "test.ok"
 
     do! exec cfg ("."/"test.exe") ""
 
-    do! testOkFile2 |> NUnitConf.checkGuardExists
+    do! testOkFile2.CheckExists
 
 
     use testOkFile3 = fileguard cfg "test.ok"
     do! exec cfg ("."/"test--optimize.exe") ""
 
-    do! testOkFile3 |> NUnitConf.checkGuardExists
+    do! testOkFile3.CheckExists
                 
     })
 
@@ -1035,20 +1086,20 @@ let quotesDebugInfo () = check (attempt {
     use testOkFile = fileguard cfg "test.ok"
     do! fsi cfg "%s --quotations-debug+" cfg.fsi_flags ["test.fsx"]
 
-    do! testOkFile |> NUnitConf.checkGuardExists
+    do! testOkFile.CheckExists
 
 
     use testOkFile2 = fileguard cfg "test.ok"
 
     do! exec cfg ("."/"test.exe") ""
 
-    do! testOkFile2 |> NUnitConf.checkGuardExists
+    do! testOkFile2.CheckExists
 
     use testOkFile3 = fileguard cfg "test.ok"
 
     do! exec cfg ("."/"test--optimize.exe") ""
 
-    do! testOkFile3 |> NUnitConf.checkGuardExists
+    do! testOkFile3.CheckExists
                 
     })
 
@@ -1068,6 +1119,11 @@ let quotesInMultipleModules () = check (attempt {
 
     do! peverify cfg "module2-staticlink.exe"
 
+    // A test case which statically links both a normal .NET 4.x library and a PCL library
+    do! fsc cfg "%s -o:module2-staticlink-pcl.exe -r:module1.dll -r:System.ValueTuple.dll --staticlink:module1  --staticlink:System.ValueTuple " cfg.fsc_flags ["module2.fsx"]
+
+    do! peverify cfg "module2-staticlink-pcl.exe"
+
     do! fsc cfg "%s -o:module1-opt.dll --target:library --optimize" cfg.fsc_flags ["module1.fsx"]
 
     do! peverify cfg "module1-opt.dll"
@@ -1080,26 +1136,26 @@ let quotesInMultipleModules () = check (attempt {
 
     do! fsi cfg "%s -r module1.dll" cfg.fsi_flags ["module2.fsx"]
 
-    do! testOkFile |> NUnitConf.checkGuardExists
+    do! testOkFile.CheckExists
 
 
     use testOkFile = fileguard cfg "test.ok"
 
     do! exec cfg ("."/"module2.exe") ""
 
-    do! testOkFile |> NUnitConf.checkGuardExists
+    do! testOkFile.CheckExists
 
     use testOkFile = fileguard cfg "test.ok"
 
     do! exec cfg ("."/"module2-opt.exe") ""
 
-    do! testOkFile |> NUnitConf.checkGuardExists
+    do! testOkFile.CheckExists
 
     use testOkFile = fileguard cfg "test.ok"
 
     do! exec cfg ("."/"module2-staticlink.exe") ""
 
-    do! testOkFile |> NUnitConf.checkGuardExists
+    do! testOkFile.CheckExists
                 
     })
 
@@ -1292,7 +1348,7 @@ let unitsOfMeasure () = check (attempt {
 
     do! exec cfg ("."/"test.exe") ""
 
-    do! testOkFile |> NUnitConf.checkGuardExists
+    do! testOkFile.CheckExists
                 
     })
 

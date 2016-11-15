@@ -46,36 +46,36 @@ let singleTestBuildAndRunAux cfg p = attempt {
     | FSI_FILE -> 
         do! skipIfExists cfg "dont.run.as.script"
 
-        use testOkFile = FileGuard.create (getfullpath cfg "test.ok")
+        use testOkFile = new FileGuard (getfullpath cfg "test.ok")
 
         do! fsi cfg "%s" cfg.fsi_flags sources
 
-        do! testOkFile |> NUnitConf.checkGuardExists
+        do! testOkFile.CheckExists
 
     | FSI_STDIN -> 
         do! skipIfExists cfg "dont.pipe.to.stdin"
 
-        use testOkFile = FileGuard.create (getfullpath cfg "test.ok")
+        use testOkFile = new FileGuard (getfullpath cfg "test.ok")
 
         do! fsiStdin cfg "%s" cfg.fsi_flags (sources |> List.rev |> List.head) //use last file, because `cmd < a.txt b.txt` redirect b.txt only
 
-        do! testOkFile |> NUnitConf.checkGuardExists
+        do! testOkFile.CheckExists
     | FSI_STDIN_OPT -> 
         do! skipIfExists cfg "dont.pipe.to.stdin"
 
-        use testOkFile = FileGuard.create (getfullpath cfg "test.ok")
+        use testOkFile = new FileGuard (getfullpath cfg "test.ok")
 
         do! fsiStdin cfg "%s --optimize" cfg.fsi_flags (sources |> List.rev |> List.head) //use last file, because `cmd < a.txt b.txt` redirect b.txt only
 
-        do! testOkFile |> NUnitConf.checkGuardExists
+        do! testOkFile.CheckExists
     | FSI_STDIN_GUI -> 
         do! skipIfExists cfg "dont.pipe.to.stdin"
 
-        use testOkFile = FileGuard.create (getfullpath cfg "test.ok")
+        use testOkFile = new FileGuard (getfullpath cfg "test.ok")
 
         do! fsiStdin cfg "%s --gui" cfg.fsi_flags (sources |> List.rev |> List.head) //use last file, because `cmd < a.txt b.txt` redirect b.txt only
 
-        do! testOkFile |> NUnitConf.checkGuardExists
+        do! testOkFile.CheckExists
     | FSC_CORECLR -> 
         let platform = "win7-x64"
         do! fsi cfg """%s --targetPlatformName:.NETStandard,Version=v1.6/%s --source:"coreclr_utilities.fs" --source:"%s" --packagesDir:..\..\packages --projectJsonLock:%s --fsharpCore:%s --define:NETSTANDARD1_6 --define:FSCORE_PORTABLE_NEW --define:FX_PORTABLE_OR_NETSTANDARD --compilerPath:%s --copyCompiler:yes --verbose:verbose --exec """
@@ -87,7 +87,7 @@ let singleTestBuildAndRunAux cfg p = attempt {
                (__SOURCE_DIRECTORY__ ++ sprintf @"..\testbin\%s\coreclr\fsc\%s" cfg.BUILD_CONFIG  platform)
                [__SOURCE_DIRECTORY__ ++ "..\fsharpqa\testenv\src\deployProj\CompileProj.fsx"]
 
-        use testOkFile = FileGuard.create (getfullpath cfg "test.ok")
+        use testOkFile = new FileGuard (getfullpath cfg "test.ok")
 (*
 :FSC_CORECLR
 @echo do :FSC_CORECLR
@@ -98,31 +98,30 @@ let singleTestBuildAndRunAux cfg p = attempt {
     %~d0%~p0..\testbin\%flavor%\coreclr\%platform%\corerun.exe %~d0%~p0..\testbin\%flavor%\coreclr\fsharp\core\%TestCaseName%\output\test.exe
     )
 *)
-        do! testOkFile |> NUnitConf.checkGuardExists
+        do! testOkFile.CheckExists
         return ()
 
     | FSC_BASIC -> 
         do! fsc cfg "%s --define:BASIC_TEST -o:test.exe -g" cfg.fsc_flags sources 
 
         do! doPeverify "test.exe"
-        use testOkFile = FileGuard.create (getfullpath cfg "test.ok")
+        use testOkFile = new FileGuard (getfullpath cfg "test.ok")
 
         do! exec cfg ("."/"test.exe") ""
 
-        do! testOkFile |> NUnitConf.checkGuardExists
+        do! testOkFile.CheckExists
 
     | FSC_BASIC_64 -> 
         do! fsc cfg "%s --define:BASIC_TEST --platform:x64 -o:testX64.exe -g" cfg.fsc_flags sources
 
         do! doPeverify "testX64.exe"
 
-        use testOkFile = FileGuard.create (getfullpath cfg "test.ok")
+        use testOkFile = new FileGuard (getfullpath cfg "test.ok")
 
         do! exec cfg ("."/"testX64.exe") ""
 
-        do! testOkFile |> NUnitConf.checkGuardExists
+        do! testOkFile.CheckExists
     | GENERATED_SIGNATURE -> 
-        do! skipIfExists cfg "dont.use.generated.signature"
 
         do! skipIfNotExists cfg "test.fs"
 
@@ -141,30 +140,30 @@ let singleTestBuildAndRunAux cfg p = attempt {
 
         do! skipIfNotExists cfg "test.fs"
 
-        use testOkFile = FileGuard.create (getfullpath cfg "test.ok")
+        use testOkFile = new FileGuard (getfullpath cfg "test.ok")
 
         do! exec cfg ("."/"tmptest1.exe") ""
 
-        do! testOkFile |> NUnitConf.checkGuardExists
+        do! testOkFile.CheckExists
     | FSC_OPT_MINUS_DEBUG -> 
         do! fsc cfg "%s --optimize- --debug -o:test--optminus--debug.exe -g" cfg.fsc_flags sources
 
         do! doPeverify "test--optminus--debug.exe"
-        use testOkFile = FileGuard.create (getfullpath cfg "test.ok")
+        use testOkFile = new FileGuard (getfullpath cfg "test.ok")
 
         do! exec cfg ("."/"test--optminus--debug.exe") ""
 
-        do! testOkFile |> NUnitConf.checkGuardExists
+        do! testOkFile.CheckExists
     | FSC_OPT_PLUS_DEBUG -> 
         do! fsc cfg "%s --optimize+ --debug -o:test--optplus--debug.exe -g" cfg.fsc_flags sources
 
         do! doPeverify "test--optplus--debug.exe"
 
-        use testOkFile = FileGuard.create (getfullpath cfg "test.ok")
+        use testOkFile = new FileGuard (getfullpath cfg "test.ok")
 
         do! exec cfg ("."/"test--optplus--debug.exe") ""
 
-        do! testOkFile |> NUnitConf.checkGuardExists
+        do! testOkFile.CheckExists
     | AS_DLL -> 
         // Compile as a DLL to exercise pickling of interface data, then recompile the original source file referencing this DLL
         // THe second compilation will not utilize the information from the first in any meaningful way, but the
@@ -180,11 +179,11 @@ let singleTestBuildAndRunAux cfg p = attempt {
 
         do! doPeverify "test--optimize-client-of-lib.exe"
 
-        use testOkFile = FileGuard.create (getfullpath cfg "test.ok")
+        use testOkFile = new FileGuard (getfullpath cfg "test.ok")
 
         do! exec cfg ("."/"test--optimize-client-of-lib.exe") ""
 
-        do! testOkFile |> NUnitConf.checkGuardExists
+        do! testOkFile.CheckExists
 
 
 

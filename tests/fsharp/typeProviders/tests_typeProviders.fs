@@ -40,7 +40,7 @@ let diamondAssembly () = check (attempt {
 
     do! fsi cfg "%s" cfg.fsi_flags ["test3.fsx"]
 
-    do! testOkFile |> NUnitConf.checkGuardExists
+    do! testOkFile.CheckExists
                 
     })
 

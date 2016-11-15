@@ -82,68 +82,42 @@ let testConfig testDir =
     let cfg = suiteHelpers.Value
     { cfg with Directory = Path.GetFullPath(fsharpSuiteDirectory/testDir) }
 
-
-let allPermutations = 
-    [ FSI_FILE; 
-      FSI_STDIN; 
-      FSI_STDIN_OPT; 
-      FSI_STDIN_GUI;
-      FSC_BASIC; 
-      GENERATED_SIGNATURE; 
-      FSC_OPT_MINUS_DEBUG; 
-      FSC_OPT_PLUS_DEBUG; 
-      AS_DLL]
-
-let codeAndInferencePermutations = 
-    [ GENERATED_SIGNATURE; 
-      FSI_FILE; 
-      FSC_OPT_PLUS_DEBUG;  
-      AS_DLL ]
-
-module FileGuard =
-    let private remove path = if File.Exists(path) then Commands.rm (Path.GetTempPath()) path
-
-    [<AllowNullLiteral>]
-    type T (path: string) =
-        member x.Path = path
-        interface IDisposable with
-            member x.Dispose () = remove path
-
-    let create path =
-        if not (Path.IsPathRooted(path)) then failwithf "path '%s' must be absolute" path
-        remove path
-        new T(path)
-    
-    let exists (guard: T) = guard.Path |> File.Exists
+[<AllowNullLiteral>]
+type FileGuard(path: string) =
+    let remove path = if File.Exists(path) then Commands.rm (Path.GetTempPath()) path
+    do if not (Path.IsPathRooted(path)) then failwithf "path '%s' must be absolute" path
+    do remove path
+    member x.Path = path
+    member x.Exists = x.Path |> File.Exists
+    member x.CheckExists = attempt {
+        if not x.Exists then 
+             return! genericError (sprintf "exit code 0 but %s file doesn't exists" (x.Path |> Path.GetFileName))
+        }
+    interface IDisposable with
+        member x.Dispose () = remove path
         
-
-let checkGuardExists guard = attempt {
-    if not <| (guard |> FileGuard.exists) then 
-         return! genericError (sprintf "exit code 0 but %s file doesn't exists" (guard.Path |> Path.GetFileName))
-    }
-
 
 let check (f: Attempt<_,_>) =
     f |> Attempt.Run |> checkTestResult
 
 
-type RedirectInfo = 
-    { Output : RedirectTo
-      Input : RedirectFrom option }
+type RedirectToType = 
+    | Overwrite of FilePath
+    | Append of FilePath
 
-and RedirectTo = 
+type RedirectTo = 
     | Inherit
     | Output of RedirectToType
     | OutputAndError of RedirectToType * RedirectToType
     | OutputAndErrorToSameFile of RedirectToType 
     | Error of RedirectToType
 
-and RedirectToType = 
-    | Overwrite of FilePath
-    | Append of FilePath
-
-and RedirectFrom = 
+type RedirectFrom = 
     | RedirectInput of FilePath
+
+type RedirectInfo = 
+    { Output : RedirectTo
+      Input : RedirectFrom option }
 
 
 module Command =
@@ -249,7 +223,7 @@ let sn cfg outfile arg = execAppendOutIgnoreExitCode cfg cfg.Directory outfile c
 let peverifyWithArgs cfg args = Commands.peverify (exec cfg) cfg.PEVERIFY args
 let fsi cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI)
 let fsiAppendIgnoreExitCode cfg stdoutPath stderrPath = Printf.ksprintf (Commands.fsi (execAppendIgnoreExitCode cfg stdoutPath stderrPath) cfg.FSI)
-let fileguard cfg = (Commands.getfullpath cfg.Directory) >> FileGuard.create
+let fileguard cfg = (Commands.getfullpath cfg.Directory) >> (fun x -> new FileGuard(x))
 let getfullpath cfg = Commands.getfullpath cfg.Directory
 let fileExists cfg = Commands.fileExists cfg.Directory >> Option.isSome
 let execStdin cfg l p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = Inherit; Input = Some(RedirectInput(l)) } p >> checkResult

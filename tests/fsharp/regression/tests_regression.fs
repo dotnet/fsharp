@@ -31,7 +31,7 @@ let ``655`` () = check (attempt {
 
     do! exec cfg ("."/"test.exe") ""
 
-    do! testOkFile |> NUnitConf.checkGuardExists
+    do! testOkFile.CheckExists
                 
     })
 

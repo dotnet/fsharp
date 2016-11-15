@@ -16,6 +16,10 @@ let z3 = Quotations.Expr.TryGetReflectedDefinition(typeof<D>.GetMethod("F"))
 let s3 = (sprintf "%2000A" z3) 
 let test3 = (s3 = "Some Lambda (x, NewTuple (NewObject (C), NewObject (D), PropertyGet (None, Now, [])))")
 
+// Add some references to System.ValueTuple, and add a test case which statically links this DLL
+let test4 = struct (3,4)
+let test5 = struct (z2,z3)
+
 if not test1 then 
     stdout.WriteLine "*** test1 FAILED"; 
     eprintf "FAILED, in-module result %s is different from out-module call %s" a b
