@@ -554,7 +554,7 @@ module CoreTests =
 
     [<Test; Category("namespaces")>]
     let namespaceAttributes () = 
-        singleTestBuildAsndRun "core/namespaces" FSC_OPT_PLUS_DEBUG
+        singleTestBuildAndRun "core/namespaces" FSC_OPT_PLUS_DEBUG
 
     [<Test; Category("parsing")>]
     let parsing () = 
