@@ -4779,6 +4779,10 @@ type LoadClosure =
       Inputs: (string * ParsedInput option * PhasedError list * PhasedError list) list
       /// The #nowarns
       NoWarns: (string * range list) list
+      /// Errors seen while processing resolutions
+      ResolutionErrors : PhasedError list
+      /// Warnings seen while processing resolutions
+      ResolutionWarnings : PhasedError list 
       /// Errors seen while parsing root of closure
       RootErrors : PhasedError list
       /// Warnings seen while parsing root of closure
@@ -4999,6 +5003,8 @@ module private ScriptPreprocessClosure =
               UnresolvedReferences = unresolvedReferences
               Inputs = sourceInputs
               NoWarns = List.groupByFirst globalNoWarns
+              ResolutionErrors = !resolutionErrors
+              ResolutionWarnings = !resolutionWarnings      
               RootErrors = rootErrors
               RootWarnings = rootWarnings}       
 

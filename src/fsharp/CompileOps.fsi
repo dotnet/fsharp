@@ -760,6 +760,12 @@ type LoadClosure =
       /// The #nowarns
       NoWarns: (string * range list) list
 
+      /// Errors seen while processing resolutions
+      ResolutionErrors : PhasedError list
+
+      /// Warnings seen while processing resolutions
+      ResolutionWarnings : PhasedError list 
+
       /// *Parse* errors seen while parsing root of closure
       RootErrors : PhasedError list
 

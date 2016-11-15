@@ -1064,9 +1064,9 @@ type internal FsiDynamicCompiler
 
           closure.NoWarns |> Seq.map (fun (n,ms) -> ms |> Seq.map (fun m -> m,n)) |> Seq.concat |> Seq.iter tcConfigB.TurnWarningOff
 
-          // Play errors and warnings from closures of the surface (root) script files.
-          closure.RootErrors |> List.iter errorSink
-          closure.RootWarnings |> List.iter warnSink
+          // Play errors and warnings from resolution
+          closure.ResolutionErrors |> List.iter errorSink
+          closure.ResolutionWarnings |> List.iter warnSink
                 
           // Non-scripts will not have been parsed during #load closure so parse them now
           let sourceFiles,inputs = 
