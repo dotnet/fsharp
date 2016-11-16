@@ -49,7 +49,8 @@ type private ProjectSiteOfSingleFile(sourceFile) =
     // CompilerFlags() gets called a lot, so pre-compute what we can
     static let compilerFlags = 
         let flags = ["--noframework";"--warn:3"]
-        let defaultReferences = CompilerEnvironment.DefaultReferencesForOrphanSources 
+        let assumeDotNetFramework = true
+        let defaultReferences = CompilerEnvironment.DefaultReferencesForOrphanSources(assumeDotNetFramework)
                                 |> List.map(fun r->sprintf "-r:%s.dll" r)
         (flags @ defaultReferences) |> List.toArray
 

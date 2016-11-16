@@ -1,7 +1,9 @@
 ﻿#if INTERACTIVE
-#r @"..\..\release\net40\bin\FSharp.Compiler.dll"
-#r @"..\..\packages\NUnit.3.5.0\lib\net45\nunit.framework.dll"
-#load "PlatformHelpers.fs" "Commands.fs" "FSharpTestSuiteTypes.fs" "../windowsPlatform.fs" "../config.fs" "../../src/fsharp/FSharp.Compiler.Unittests/NunitHelpers.fs" "nunitConf.fs" "single-test.fs"
+#r @"../../release/net40/bin/FSharp.Compiler.dll"
+#r @"../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
+#load "../../src/scripts/scriptlib.fsx" 
+#load "test-framework.fs" 
+#load "single-test.fs"
 #else
 module ``FSharp-Tests-Core``
 #endif
@@ -10,18 +12,23 @@ open System
 open System.IO
 open System.Reflection
 open NUnit.Framework
-open NUnitConf
-open PlatformHelpers
-open FSharpTestSuiteTypes
+open TestFramework
+open Scripting
 open SingleTest
 
 module CoreTests = 
 
     [<Test>]
-    let ``access fsi``() = singleTestBuildAndRun "core/access" FSI_FILE
+    let ``access-FSC_CORECLR``() = singleTestBuildAndRun "core/access" FSC_CORECLR
 
     [<Test>]
-    let ``access fsc optimized``() = singleTestBuildAndRun "core/access" FSC_OPT_PLUS_DEBUG
+    let ``access-FSI_FILE``() = singleTestBuildAndRun "core/access" FSI_FILE
+
+    [<Test>]
+    let ``access-FSC_OPT_PLUS_DEBUG``() = singleTestBuildAndRun "core/access" FSC_OPT_PLUS_DEBUG
+
+    [<Test>]
+    let ``access-GENERATED_SIGNATURE``() = singleTestBuildAndRun "core/access" GENERATED_SIGNATURE
 
     [<Test>]
     let apporder () = singleTestBuildAndRun "core/apporder" FSC_OPT_PLUS_DEBUG
@@ -41,7 +48,7 @@ module CoreTests =
 
         fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
 
-        exec cfg ("."/"test.exe") ""
+        exec cfg ("." ++ "test.exe") ""
 
         testOkFile.CheckExists()
 
@@ -107,7 +114,7 @@ module CoreTests =
 
         testOkFile.CheckExists()
 
-        exec cfg ("."/"testcs.exe") ""
+        exec cfg ("." ++ "testcs.exe") ""
 
 
     //
@@ -178,9 +185,9 @@ module CoreTests =
 
         csc cfg """/nologo  /target:library /r:split\a-part1.dll /out:split\a.dll /define:PART2;SPLIT""" ["a.cs"]
 
-        copy_y cfg ("orig"/"b.dll") ("split"/"b.dll")
+        copy_y cfg ("orig" ++ "b.dll") ("split" ++ "b.dll")
 
-        copy_y cfg ("orig"/"c.dll") ("split"/"c.dll")
+        copy_y cfg ("orig" ++ "c.dll") ("split" ++ "c.dll")
 
         fsc cfg """-o:orig\test.exe -r:orig\b.dll -r:orig\a.dll""" ["test.fs"]
 
@@ -188,15 +195,11 @@ module CoreTests =
 
         fsc cfg """-o:split\test-against-c.exe -r:split\c.dll -r:split\a-part1.dll -r:split\a.dll""" ["test.fs"]
 
-        peverify cfg ("split"/"a-part1.dll")
+        peverify cfg ("split" ++ "a-part1.dll")
 
-        peverify cfg ("split"/"b.dll")
+        peverify cfg ("split" ++ "b.dll")
 
-        peverify cfg ("split"/"c.dll")
-
-        peverify cfg ("split"/"test.exe")
-
-        peverify cfg ("split"/"test-against-c.exe")
+        peverify cfg ("split" ++ "c.dll")
 
     [<Test>]
     let fsfromcs () = 
@@ -214,9 +217,9 @@ module CoreTests =
 
         csc cfg """/nologo /r:"%s"  /r:System.Core.dll /r:lib--optimize.dll    /out:test--optimize.exe""" cfg.FSCOREDLLPATH ["test.cs"]
 
-        exec cfg ("."/"test.exe") ""
+        exec cfg ("." ++ "test.exe") ""
 
-        exec cfg ("."/"test--optimize.exe") ""
+        exec cfg ("." ++ "test--optimize.exe") ""
                 
     [<Test>]
     let fsfromfsviacs () = 
@@ -239,7 +242,7 @@ module CoreTests =
 
         peverify cfg "test.exe"
 
-        exec cfg ("."/"test.exe") ""
+        exec cfg ("." ++ "test.exe") ""
                 
     [<Test>]
     let ``fsi-reload`` () = 
@@ -284,7 +287,7 @@ module CoreTests =
                 
 
 
-    [<Test>]
+    [<Test; Ignore("incorrect signature file generated, test has been disabled a long time")>]
     let ``genericmeasures-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/genericmeasures" GENERATED_SIGNATURE
 
     [<Test>]
@@ -353,7 +356,7 @@ module CoreTests =
         begin
             use testOkFile = fileguard cfg "test.ok"
 
-            exec cfg ("."/"test.exe") ""
+            exec cfg ("." ++ "test.exe") ""
 
             testOkFile.CheckExists()
         end
@@ -361,7 +364,7 @@ module CoreTests =
         begin
             use testOkFile = fileguard cfg "test.ok"
 
-            exec cfg ("."/"test--optimize.exe") ""
+            exec cfg ("." ++ "test--optimize.exe") ""
 
             testOkFile.CheckExists()
         end
@@ -539,19 +542,19 @@ module CoreTests =
 
         begin
             use testOkFile = fileguard cfg "test.ok"
-            exec cfg ("."/"test.exe") ""
+            exec cfg ("." ++ "test.exe") ""
             testOkFile.CheckExists()
         end
 
         begin
             use testOkFile = fileguard cfg "test.ok"
-            exec cfg ("."/"test-with-debug-data.exe") ""
+            exec cfg ("." ++ "test-with-debug-data.exe") ""
             testOkFile.CheckExists()
         end
 
         begin
             use testOkFile = fileguard cfg "test.ok"
-            exec cfg ("."/"test--optimize.exe") ""
+            exec cfg ("." ++ "test--optimize.exe") ""
             testOkFile.CheckExists()
         end
 
@@ -617,7 +620,7 @@ module CoreTests =
         peverify cfg "main.exe"
 
         // Run F# main. Quick test!
-        exec cfg ("."/"main.exe") ""
+        exec cfg ("." ++ "main.exe") ""
  
 
 
@@ -635,7 +638,7 @@ module CoreTests =
 
         peverify cfg "test.exe"
 
-        exec cfg ("."/"test.exe") ""
+        exec cfg ("." ++ "test.exe") ""
 
         log "== Compiling F# Library and Code, when empty file libfile2.fs IS included"
         fsc cfg "%s -a --optimize -o:lib2.dll " cfg.fsc_flags ["libfile1.fs"; "libfile2.fs"]
@@ -646,7 +649,7 @@ module CoreTests =
 
         peverify cfg "test2.exe"
 
-        exec cfg ("."/"test2.exe") ""
+        exec cfg ("." ++ "test2.exe") ""
  
     [<Test; Category("lazy")>]
     let ``lazy test`` () = singleTestBuildAndRun "core/lazy" FSC_OPT_PLUS_DEBUG
@@ -666,16 +669,7 @@ module CoreTests =
     [<Test>]
     let ``libtest-FSI_STDIN`` () = singleTestBuildAndRun "core/libtest" FSI_STDIN
 
-    [<Test>]
-    let ``libtest-FSI_STDIN_OPT`` () = singleTestBuildAndRun "core/libtest" FSI_STDIN_OPT
-
-    [<Test>]
-    let ``libtest-FSI_STDIN_GUI`` () = singleTestBuildAndRun "core/libtest" FSI_STDIN_GUI
-
-    [<Test>]
-    let ``libtest-FSC_BASIC`` () = singleTestBuildAndRun "core/libtest" FSC_BASIC
-
-    [<Test>]
+    [<Test; Ignore("incorrect signature file generated, test has been disabled a long time")>]
     let ``libtest-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/libtest" GENERATED_SIGNATURE
 
     [<Test>]
@@ -714,7 +708,7 @@ module CoreTests =
 
         fscAppend cfg stdoutPath stderrPath "--nologo" ["3.fsx"]
 
-        execAppendIgnoreExitCode cfg stdoutPath stderrPath ("."/"3.exe") ""
+        execAppendIgnoreExitCode cfg stdoutPath stderrPath ("." ++ "3.exe") ""
 
         rm cfg "3.exe"
 
@@ -758,7 +752,7 @@ module CoreTests =
 
         fscAppend cfg stdoutPath stderrPath "--nologo" ["FlagCheck.fs"]
 
-        execAppendIgnoreExitCode cfg stdoutPath stderrPath ("."/"FlagCheck.exe") ""
+        execAppendIgnoreExitCode cfg stdoutPath stderrPath ("." ++ "FlagCheck.exe") ""
 
         rm cfg "FlagCheck.exe"
 
@@ -766,7 +760,7 @@ module CoreTests =
 
         fscAppend cfg stdoutPath stderrPath "-o FlagCheckScript.exe --nologo" ["FlagCheck.fsx"]
 
-        execAppendIgnoreExitCode cfg stdoutPath stderrPath ("."/"FlagCheckScript.exe") ""
+        execAppendIgnoreExitCode cfg stdoutPath stderrPath ("." ++ "FlagCheckScript.exe") ""
 
         rm cfg "FlagCheckScript.exe"
 
@@ -786,7 +780,7 @@ module CoreTests =
 
         fscAppend cfg stdoutPath stderrPath "--nologo" ["ProjectDriver.fsx"]
 
-        execAppendIgnoreExitCode cfg stdoutPath stderrPath ("."/"ProjectDriver.exe") ""
+        execAppendIgnoreExitCode cfg stdoutPath stderrPath ("." ++ "ProjectDriver.exe") ""
 
         rm cfg "ProjectDriver.exe"
 
@@ -903,7 +897,7 @@ module CoreTests =
         peverifyWithArgs cfg "/nologo /MD" "test.exe"
                 
     [<Test>]
-    let printf () = singleTestBuildAndRun "core/printf" FSC_BASIC
+    let printf () = singleTestBuildAndRun "core/printf" FSC_OPT_PLUS_DEBUG
 
     [<Test>]
     let queriesLeafExpressionConvert () = 
@@ -925,13 +919,13 @@ module CoreTests =
 
         use testOkFile2 = fileguard cfg "test.ok"
 
-        exec cfg ("."/"test.exe") ""
+        exec cfg ("." ++ "test.exe") ""
 
         testOkFile2.CheckExists()
 
         use testOkFile3 = fileguard cfg "test.ok"
 
-        exec cfg ("."/"test--optimize.exe") ""
+        exec cfg ("." ++ "test--optimize.exe") ""
 
         testOkFile3.CheckExists()
                 
@@ -953,11 +947,11 @@ module CoreTests =
         testOkFile.CheckExists()
 
         use testOkFile2 = fileguard cfg "test.ok"
-        exec cfg ("."/"test.exe") ""
+        exec cfg ("." ++ "test.exe") ""
         testOkFile2.CheckExists()
 
         use testOkFile3 = fileguard cfg "test.ok"
-        exec cfg ("."/"test--optimize.exe") ""
+        exec cfg ("." ++ "test--optimize.exe") ""
         testOkFile3.CheckExists()
                 
     [<Test>]
@@ -980,13 +974,13 @@ module CoreTests =
 
         use testOkFile2 = fileguard cfg "test.ok"
 
-        exec cfg ("."/"test.exe") ""
+        exec cfg ("." ++ "test.exe") ""
 
         testOkFile2.CheckExists()
 
         use testOkFile3 = fileguard cfg "test.ok"
 
-        exec cfg ("."/"test--optimize.exe") ""
+        exec cfg ("." ++ "test--optimize.exe") ""
 
         testOkFile3.CheckExists()
                 
@@ -1010,13 +1004,13 @@ module CoreTests =
 
         use testOkFile2 = fileguard cfg "test.ok"
 
-        exec cfg ("."/"test.exe") ""
+        exec cfg ("." ++ "test.exe") ""
 
         testOkFile2.CheckExists()
 
 
         use testOkFile3 = fileguard cfg "test.ok"
-        exec cfg ("."/"test--optimize.exe") ""
+        exec cfg ("." ++ "test--optimize.exe") ""
 
         testOkFile3.CheckExists()
                 
@@ -1043,13 +1037,13 @@ module CoreTests =
 
         use testOkFile2 = fileguard cfg "test.ok"
 
-        exec cfg ("."/"test.exe") ""
+        exec cfg ("." ++ "test.exe") ""
 
         testOkFile2.CheckExists()
 
         use testOkFile3 = fileguard cfg "test.ok"
 
-        exec cfg ("."/"test--optimize.exe") ""
+        exec cfg ("." ++ "test--optimize.exe") ""
 
         testOkFile3.CheckExists()
                 
@@ -1088,19 +1082,19 @@ module CoreTests =
 
         use testOkFile = fileguard cfg "test.ok"
 
-        exec cfg ("."/"module2.exe") ""
+        exec cfg ("." ++ "module2.exe") ""
 
         testOkFile.CheckExists()
 
         use testOkFile = fileguard cfg "test.ok"
 
-        exec cfg ("."/"module2-opt.exe") ""
+        exec cfg ("." ++ "module2-opt.exe") ""
 
         testOkFile.CheckExists()
 
         use testOkFile = fileguard cfg "test.ok"
 
-        exec cfg ("."/"module2-staticlink.exe") ""
+        exec cfg ("." ++ "module2-staticlink.exe") ""
 
         testOkFile.CheckExists()
                 
@@ -1127,13 +1121,13 @@ module CoreTests =
 
         peverify cfg "test-link-named.exe"
 
-        exec cfg ("."/"test-embed.exe") ""
+        exec cfg ("." ++ "test-embed.exe") ""
 
-        exec cfg ("."/"test-link.exe") ""
+        exec cfg ("." ++ "test-link.exe") ""
 
-        exec cfg ("."/"test-link-named.exe") "ResourceName"
+        exec cfg ("." ++ "test-link-named.exe") "ResourceName"
 
-        exec cfg ("."/"test-embed-named.exe") "ResourceName"
+        exec cfg ("." ++ "test-embed-named.exe") "ResourceName"
 
     [<Test>]
     let seq () = singleTestBuildAndRun "core/seq" FSC_OPT_PLUS_DEBUG
@@ -1255,25 +1249,25 @@ module CoreTests =
 
         peverify cfg "test_static_init_exe--optimize.exe"
 
-        exec cfg ("."/"test.exe") ""
+        exec cfg ("." ++ "test.exe") ""
 
-        exec cfg ("."/"test--optimize.exe") ""
+        exec cfg ("." ++ "test--optimize.exe") ""
 
-        exec cfg ("."/"test_deterministic_init.exe") ""
+        exec cfg ("." ++ "test_deterministic_init.exe") ""
 
-        exec cfg ("."/"test_deterministic_init--optimize.exe") ""
+        exec cfg ("." ++ "test_deterministic_init--optimize.exe") ""
 
-        exec cfg ("."/"test_deterministic_init_exe.exe") ""
+        exec cfg ("." ++ "test_deterministic_init_exe.exe") ""
 
-        exec cfg ("."/"test_deterministic_init_exe--optimize.exe") ""
+        exec cfg ("." ++ "test_deterministic_init_exe--optimize.exe") ""
 
-        exec cfg ("."/"test_static_init.exe") ""
+        exec cfg ("." ++ "test_static_init.exe") ""
 
-        exec cfg ("."/"test_static_init--optimize.exe") ""
+        exec cfg ("." ++ "test_static_init--optimize.exe") ""
 
-        exec cfg ("."/"test_static_init_exe.exe") ""
+        exec cfg ("." ++ "test_static_init_exe.exe") ""
 
-        exec cfg ("."/"test_static_init_exe--optimize.exe") ""
+        exec cfg ("." ++ "test_static_init_exe--optimize.exe") ""
                 
     [<Test>]
     let unitsOfMeasure () = 
@@ -1285,7 +1279,7 @@ module CoreTests =
 
         use testOkFile = fileguard cfg "test.ok"
 
-        exec cfg ("."/"test.exe") ""
+        exec cfg ("." ++ "test.exe") ""
 
         testOkFile.CheckExists()
                 
@@ -1293,13 +1287,13 @@ module CoreTests =
     let verify () = 
         let cfg = testConfig "core/verify"
 
-        peverifyWithArgs cfg "/nologo" (cfg.FSCBinPath/"FSharp.Build.dll")
+        peverifyWithArgs cfg "/nologo" (cfg.FSCBinPath ++ "FSharp.Build.dll")
 
-       // peverifyWithArgs cfg "/nologo /MD" (cfg.FSCBinPath/"FSharp.Compiler.dll")
+       // peverifyWithArgs cfg "/nologo /MD" (cfg.FSCBinPath ++ "FSharp.Compiler.dll")
 
-        peverifyWithArgs cfg "/nologo" (cfg.FSCBinPath/"fsi.exe")
+        peverifyWithArgs cfg "/nologo" (cfg.FSCBinPath ++ "fsi.exe")
 
-        peverifyWithArgs cfg "/nologo" (cfg.FSCBinPath/"FSharp.Compiler.Interactive.Settings.dll")
+        peverifyWithArgs cfg "/nologo" (cfg.FSCBinPath ++ "FSharp.Compiler.Interactive.Settings.dll")
 
         fsc cfg "%s -o:xmlverify.exe -g" cfg.fsc_flags ["xmlverify.fs"]
 
@@ -1358,7 +1352,7 @@ module RegressionTests =
 
         use testOkFile = fileguard cfg "test.ok"
 
-        exec cfg ("."/"test.exe") ""
+        exec cfg ("." ++ "test.exe") ""
 
         testOkFile.CheckExists()
                 
@@ -1545,63 +1539,63 @@ module TypecheckTests =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos23.exe" cfg.fsc_flags ["pos23.fs"]
         peverify cfg "pos23.exe"
-        exec cfg ("."/"pos23.exe") ""
+        exec cfg ("." ++ "pos23.exe") ""
 
     [<Test>]
     let ``sigs pos20`` () = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos20.exe" cfg.fsc_flags ["pos20.fs"]
         peverify cfg "pos20.exe"
-        exec cfg ("."/"pos20.exe") ""
+        exec cfg ("." ++ "pos20.exe") ""
 
     [<Test>]
     let ``sigs pos19`` () = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos19.exe" cfg.fsc_flags ["pos19.fs"]
         peverify cfg "pos19.exe"
-        exec cfg ("."/"pos19.exe") ""
+        exec cfg ("." ++ "pos19.exe") ""
 
     [<Test>]
     let ``sigs pos18`` () = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos18.exe" cfg.fsc_flags ["pos18.fs"]
         peverify cfg "pos18.exe"
-        exec cfg ("."/"pos18.exe") ""
+        exec cfg ("." ++ "pos18.exe") ""
 
     [<Test>]
     let ``sigs pos16`` () = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos16.exe" cfg.fsc_flags ["pos16.fs"]
         peverify cfg "pos16.exe"
-        exec cfg ("."/"pos16.exe") ""
+        exec cfg ("." ++ "pos16.exe") ""
 
     [<Test>]
     let ``sigs pos17`` () = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos17.exe" cfg.fsc_flags ["pos17.fs"]
         peverify cfg "pos17.exe"
-        exec cfg ("."/"pos17.exe") ""
+        exec cfg ("." ++ "pos17.exe") ""
 
     [<Test>]
     let ``sigs pos15`` () = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos15.exe" cfg.fsc_flags ["pos15.fs"]
         peverify cfg "pos15.exe"
-        exec cfg ("."/"pos15.exe") ""
+        exec cfg ("." ++ "pos15.exe") ""
 
     [<Test>]
     let ``sigs pos14`` () = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos14.exe" cfg.fsc_flags ["pos14.fs"]
         peverify cfg "pos14.exe"
-        exec cfg ("."/"pos14.exe") ""
+        exec cfg ("." ++ "pos14.exe") ""
 
     [<Test>]
     let ``sigs pos13`` () = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos13.exe" cfg.fsc_flags ["pos13.fs"]
         peverify cfg "pos13.exe"
-        exec cfg ("."/"pos13.exe") ""
+        exec cfg ("." ++ "pos13.exe") ""
 
     [<Test>]
     let ``sigs pos12 `` () = 
@@ -1718,9 +1712,9 @@ module TypeProviders =
 
         rm cfg "provider.dll"
 
-        fsc cfg "%s" "--out:provided.dll -a" [".."/"helloWorld"/"provided.fs"]
+        fsc cfg "%s" "--out:provided.dll -a" [".." ++ "helloWorld" ++ "provided.fs"]
 
-        fsc cfg "%s" "--out:provider.dll -a" [".."/"helloWorld"/"provider.fsx"]
+        fsc cfg "%s" "--out:provider.dll -a" [".." ++ "helloWorld" ++ "provider.fsx"]
 
         fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test1.dll -a" cfg.fsc_flags ["test1.fsx"]
 
@@ -1738,7 +1732,7 @@ module TypeProviders =
 
         peverify cfg "test3.exe"
 
-        exec cfg ("."/"test3.exe") ""
+        exec cfg ("." ++ "test3.exe") ""
 
         use testOkFile = fileguard cfg "test.ok"
 
@@ -1757,25 +1751,25 @@ module TypeProviders =
     let helloWorld p = 
         let cfg = testConfig "typeProviders/helloWorld"
 
-        fsc cfg "%s" "--out:provided1.dll -g -a" [".."/"helloWorld"/"provided.fs"]
+        fsc cfg "%s" "--out:provided1.dll -g -a" [".." ++ "helloWorld" ++ "provided.fs"]
 
-        fsc cfg "%s" "--out:provided2.dll -g -a" [".."/"helloWorld"/"provided.fs"]
+        fsc cfg "%s" "--out:provided2.dll -g -a" [".." ++ "helloWorld" ++ "provided.fs"]
 
-        fsc cfg "%s" "--out:provided3.dll -g -a" [".."/"helloWorld"/"provided.fs"]
+        fsc cfg "%s" "--out:provided3.dll -g -a" [".." ++ "helloWorld" ++ "provided.fs"]
 
-        fsc cfg "%s" "--out:provided4.dll -g -a" [".."/"helloWorld"/"provided.fs"]
+        fsc cfg "%s" "--out:provided4.dll -g -a" [".." ++ "helloWorld" ++ "provided.fs"]
 
-        fsc cfg "%s" "--out:providedJ.dll -g -a" [".."/"helloWorld"/"providedJ.fs"]
+        fsc cfg "%s" "--out:providedJ.dll -g -a" [".." ++ "helloWorld" ++ "providedJ.fs"]
 
-        fsc cfg "%s" "--out:providedK.dll -g -a" [".."/"helloWorld"/"providedK.fs"]
+        fsc cfg "%s" "--out:providedK.dll -g -a" [".." ++ "helloWorld" ++ "providedK.fs"]
 
-        fsc cfg "%s" "--out:providedNullAssemblyName.dll -g -a" [".."/"helloWorld"/"providedNullAssemblyName.fsx"]
+        fsc cfg "%s" "--out:providedNullAssemblyName.dll -g -a" [".." ++ "helloWorld" ++ "providedNullAssemblyName.fsx"]
 
-        fsc cfg "--out:provided.dll -a" [".."/"helloWorld"/"provided.fs"]
+        fsc cfg "--out:provided.dll -a" [".." ++ "helloWorld" ++ "provided.fs"]
 
-        fsc cfg "--out:providedJ.dll -a" [".."/"helloWorld"/"providedJ.fs"]
+        fsc cfg "--out:providedJ.dll -a" [".." ++ "helloWorld" ++ "providedJ.fs"]
 
-        fsc cfg "--out:providedK.dll -a" [".."/"helloWorld"/"providedK.fs"]
+        fsc cfg "--out:providedK.dll -a" [".." ++ "helloWorld" ++ "providedK.fs"]
 
         fsc cfg "--out:provider.dll -a" ["provider.fsx"]
 
@@ -1789,12 +1783,12 @@ module TypeProviders =
         log "pushd bincompat1"
         let bincompat1 = getfullpath cfg "bincompat1"
 
-        Directory.EnumerateFiles(bincompat1/"..", "*.dll")
-        |> Seq.iter (fun from -> Commands.copy_y bincompat1 from ("."/Path.GetFileName(from)) |> ignore)
+        Directory.EnumerateFiles(bincompat1 ++ "..", "*.dll")
+        |> Seq.iter (fun from -> Commands.copy_y bincompat1 from ("." ++ Path.GetFileName(from)) |> ignore)
 
-        fscIn cfg bincompat1 "%s" "-g -a -o:test_lib.dll -r:provider.dll" [".."/"test.fsx"]
+        fscIn cfg bincompat1 "%s" "-g -a -o:test_lib.dll -r:provider.dll" [".." ++ "test.fsx"]
 
-        fscIn cfg bincompat1 "%s" "-r:test_lib.dll -r:provider.dll" [".."/"testlib_client.fsx"]
+        fscIn cfg bincompat1 "%s" "-r:test_lib.dll -r:provider.dll" [".." ++ "testlib_client.fsx"]
 
         log "popd"
 
@@ -1803,22 +1797,22 @@ module TypeProviders =
         log "pushd bincompat2"
         let bincompat2 = getfullpath cfg "bincompat2"
 
-        Directory.EnumerateFiles(bincompat2/".."/"bincompat1", "*.dll")
-        |> Seq.iter (fun from -> Commands.copy_y bincompat2 from ("."/Path.GetFileName(from)) |> ignore)
+        Directory.EnumerateFiles(bincompat2 ++ ".." ++ "bincompat1", "*.dll")
+        |> Seq.iter (fun from -> Commands.copy_y bincompat2 from ("." ++ Path.GetFileName(from)) |> ignore)
 
-        fscIn cfg bincompat2 "%s" "--define:ADD_AN_OPTIONAL_STATIC_PARAMETER --define:USE_IMPLICIT_ITypeProvider2 --out:provider.dll -g -a" [".."/"provider.fsx"]
+        fscIn cfg bincompat2 "%s" "--define:ADD_AN_OPTIONAL_STATIC_PARAMETER --define:USE_IMPLICIT_ITypeProvider2 --out:provider.dll -g -a" [".." ++ "provider.fsx"]
 
-        fscIn cfg bincompat2 "-g -a -o:test_lib_recompiled.dll -r:provider.dll" [".."/"test.fsx"]
+        fscIn cfg bincompat2 "-g -a -o:test_lib_recompiled.dll -r:provider.dll" [".." ++ "test.fsx"]
 
-        fscIn cfg bincompat2 "%s" "--define:ADD_AN_OPTIONAL_STATIC_PARAMETER -r:test_lib.dll -r:provider.dll" [".."/"testlib_client.fsx"]
+        fscIn cfg bincompat2 "%s" "--define:ADD_AN_OPTIONAL_STATIC_PARAMETER -r:test_lib.dll -r:provider.dll" [".." ++ "testlib_client.fsx"]
 
-        peverify cfg (bincompat2/"provider.dll")
+        peverify cfg (bincompat2 ++ "provider.dll")
 
-        peverify cfg (bincompat2/"test_lib.dll")
+        peverify cfg (bincompat2 ++ "test_lib.dll")
 
-        peverify cfg (bincompat2/"test_lib_recompiled.dll")
+        peverify cfg (bincompat2 ++ "test_lib_recompiled.dll")
 
-        peverify cfg (bincompat2/"testlib_client.exe")
+        peverify cfg (bincompat2 ++ "testlib_client.exe")
 
     [<Test>]
     let ``helloWorld fsc`` () = helloWorld FSC_OPT_PLUS_DEBUG
@@ -1847,7 +1841,7 @@ module TypeProviders =
 
         peverify cfg "test.exe"
 
-        exec cfg ("."/"test.exe") ""
+        exec cfg ("." ++ "test.exe") ""
                 
 
 
@@ -1887,15 +1881,15 @@ module TypeProviders =
 
         rm cfg "provided.dll"
 
-        fsc cfg "--out:provided.dll -a" [".."/"helloWorld"/"provided.fs"]
+        fsc cfg "--out:provided.dll -a" [".." ++ "helloWorld" ++ "provided.fs"]
 
         rm cfg "providedJ.dll"
 
-        fsc cfg "--out:providedJ.dll -a" [".."/"helloWorld"/"providedJ.fs"]
+        fsc cfg "--out:providedJ.dll -a" [".." ++ "helloWorld" ++ "providedJ.fs"]
 
         rm cfg "providedK.dll"
 
-        fsc cfg "--out:providedK.dll -a" [".."/"helloWorld"/"providedK.fs"]
+        fsc cfg "--out:providedK.dll -a" [".." ++ "helloWorld" ++ "providedK.fs"]
 
         rm cfg "provider.dll"
 
@@ -1907,7 +1901,7 @@ module TypeProviders =
 
         rm cfg "helloWorldProvider.dll"
 
-        fsc cfg "--out:helloWorldProvider.dll -a" [".."/"helloWorld"/"provider.fsx"]
+        fsc cfg "--out:helloWorldProvider.dll -a" [".." ++ "helloWorld" ++ "provider.fsx"]
 
         rm cfg "MostBasicProvider.dll"
 
@@ -1948,17 +1942,17 @@ module TypeProviders =
 
         rm cfg "provided.dll"
 
-        fsc cfg "%s" "--out:provided.dll -a" [".."/"helloWorld"/"provided.fs"]
+        fsc cfg "%s" "--out:provided.dll -a" [".." ++ "helloWorld" ++ "provided.fs"]
 
         rm cfg "providedJ.dll"
 
-        fsc cfg "%s" "--out:providedJ.dll -a" [".."/"helloWorld"/"providedJ.fs"]
+        fsc cfg "%s" "--out:providedJ.dll -a" [".." ++ "helloWorld" ++ "providedJ.fs"]
 
         rm cfg "providedK.dll"
 
-        fsc cfg "%s" "--out:providedK.dll -a" [".."/"helloWorld"/"providedK.fs"]
+        fsc cfg "%s" "--out:providedK.dll -a" [".." ++ "helloWorld" ++ "providedK.fs"]
 
-        fsc cfg "%s" "--out:provider.dll -a" [".."/"helloWorld"/"provider.fsx"]
+        fsc cfg "%s" "--out:provider.dll -a" [".." ++ "helloWorld" ++ "provider.fsx"]
 
         fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test2a.dll -a" cfg.fsc_flags ["test2a.fs"]
 
@@ -1984,7 +1978,7 @@ module TypeProviders =
 
         peverify cfg "test3.exe"
 
-        exec cfg ("."/"test3.exe") ""
+        exec cfg ("." ++ "test3.exe") ""
 
 module FscTests =                 
     [<Test>]
@@ -2000,7 +1994,7 @@ open System.Reflection
 ()
             """
 
-        File.WriteAllText(cfg.Directory/"test.fs", code)
+        File.WriteAllText(cfg.Directory ++ "test.fs", code)
 
         fsc cfg "%s --nologo -o:lib.dll --target:library" cfg.fsc_flags ["test.fs"]
 
@@ -2035,7 +2029,7 @@ open System.Runtime.InteropServices
 ()
             """
 
-        File.WriteAllText(cfg.Directory/"test.fs", code)
+        File.WriteAllText(cfg.Directory ++ "test.fs", code)
 
         do fsc cfg "%s --nologo -o:lib.dll --target:library" cfg.fsc_flags ["test.fs"]
 
@@ -2093,7 +2087,7 @@ namespace CST.RI.Anshun
 ()
             """ (attrs |> String.concat Environment.NewLine)
 
-        File.WriteAllText(cfg.Directory/"test.fs", code)
+        File.WriteAllText(cfg.Directory ++ "test.fs", code)
 
         fsc cfg "%s --nologo -o:lib.dll --target:library" cfg.fsc_flags ["test.fs"]
 

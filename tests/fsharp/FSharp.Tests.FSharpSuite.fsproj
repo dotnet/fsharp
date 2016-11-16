@@ -45,23 +45,17 @@
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <ItemGroup>
-    <Compile Include="PlatformHelpers.fs" />
-    <Compile Include="Commands.fs" />
-    <Compile Include="FSharpTestSuiteTypes.fs" />
-    <Compile Include="..\windowsPlatform.fs">
-      <Link>windowsPlatform.fs</Link>
+    <Compile Include="..\..\src\scripts\scriptlib.fsx">
+      <Link>scriptlib.fsx</Link>
     </Compile>
-    <Compile Include="..\config.fs">
-      <Link>config.fs</Link>
-    </Compile>
+    <Compile Include="test-framework.fs" />
     <Compile Include="..\..\src\fsharp\FSharp.Compiler.Unittests\NunitHelpers.fs">
       <Link>NunitHelpers.fs</Link>
     </Compile>
-    <Compile Include="nunitConf.fs" />
     <Compile Include="single-test.fs" />
     <Compile Include="tests.fs" />
   </ItemGroup>
-  <ItemGroup Condition="(!$(TargetFramework.Contains('portable'))) and '$(TargetFramework)' != 'coreclr'">
+  <ItemGroup>
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -70,8 +64,6 @@
       <HintPath>..\..\packages\NUnit.3.5.0\lib\net45\nunit.framework.dll</HintPath>
       <Private>True</Private>
     </Reference>
-  </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
     <Reference Include="nunit.framework, Version=3.5.0.0, Culture=neutral, PublicKeyToken=2638cd05610744eb">
       <SpecificVersion>true</SpecificVersion>
       <Private>True</Private>
@@ -82,8 +74,6 @@
       <Private>True</Private>
       <HintPath>..\..\packages\NUnitLite.3.5.0\lib\portable-net45+win8+wp8+wpa81+Xamarin.Mac\nunitlite.dll</HintPath>
     </Reference>
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler\FSharp.Compiler.fsproj">
       <Project>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</Project>
       <Name>FSharp.Compiler</Name>

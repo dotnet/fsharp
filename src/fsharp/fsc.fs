@@ -244,7 +244,7 @@ let AdjustForScriptCompile(tcConfigB:TcConfigBuilder, commandLineSourceFiles, le
     
     let AppendClosureInformation(filename) =
         if IsScript filename then 
-            let closure = LoadClosure.ComputeClosureOfSourceFiles(tcConfig, [filename, rangeStartup], CodeContext.Compilation, lexResourceManager=lexResourceManager, useDefaultScriptingReferences=false)
+            let closure = LoadClosure.ComputeClosureOfSourceFiles(tcConfig, [filename, rangeStartup], CodeContext.Compilation, lexResourceManager=lexResourceManager)
             // Record the references from the analysis of the script. The full resolutions are recorded as the corresponding #I paths used to resolve them
             // are local to the scripts and not added to the tcConfigB (they are added to localized clones of the tcConfigB).
             let references = closure.References |> List.map snd |> List.concat |> List.filter (fun r->r.originalReference.Range<>range0 && r.originalReference.Range<>rangeStartup)

@@ -278,7 +278,7 @@ type internal FsiValuePrinter(ilGlobals, generateDebugInfo, resolvePath, outWrit
             None
     
     /// Fetch the saved value of an expression out of the 'it' register and show it.
-    member valuePrinter.InvokeExprPrinter (denv, vref) = 
+    member valuePrinter.InvokeExprPrinter (denv, vref: Val) = 
         let opts        = valuePrinter.GetFsiPrintOptions()
         let savedIt     = Microsoft.FSharp.Compiler.Interactive.RuntimeHelpers.GetSavedIt()
         let savedItType = Microsoft.FSharp.Compiler.Interactive.RuntimeHelpers.GetSavedItType()
@@ -1053,7 +1053,7 @@ type internal FsiDynamicCompiler
           let sourceFiles = sourceFiles |> List.map (fun nm -> tcConfig.ResolveSourceFile(m,nm,tcConfig.implicitIncludeDir),m) 
          
           // Close the #load graph on each file and gather the inputs from the scripts.
-          let closure = LoadClosure.ComputeClosureOfSourceFiles(TcConfig.Create(tcConfigB,validate=false),sourceFiles,CodeContext.Evaluation,lexResourceManager=lexResourceManager,useDefaultScriptingReferences=true)
+          let closure = LoadClosure.ComputeClosureOfSourceFiles(TcConfig.Create(tcConfigB,validate=false),sourceFiles,CodeContext.Evaluation,lexResourceManager=lexResourceManager)
           
           // Intent "[Loading %s]\n" (String.concat "\n     and " sourceFiles)
           fsiConsoleOutput.uprintf "[%s " (FSIstrings.SR.fsiLoadingFilesPrefixText())
@@ -1380,13 +1380,8 @@ module internal MagicAssemblyResolution =
 
         let rangeStdin = rangeN Lexhelp.stdinMockFilename 0
 
-#if TODO_REWORK_ASSEMBLY_LOAD
-        ignore tcConfigB
-        ignore tcImports
-        ignore fsiDynamicCompiler
-        ignore fsiConsoleOutput
-        ignore rangeStdin
-        ()
+#if FSI_TODO_NETCORE
+        ignore (tcConfigB, tcImports, fsiDynamicCompiler, fsiConsoleOutput, rangeStdin)
 #else
         AppDomain.CurrentDomain.add_AssemblyResolve(new ResolveEventHandler(fun _ args -> 
            try 
@@ -2204,16 +2199,14 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
                                   Directory.GetCurrentDirectory(),isInteractive=true, 
                                   isInvalidationSupported=false)
     let tcConfigP = TcConfigProvider.BasedOnMutableBuilder(tcConfigB)
-#if TODO_REWORK_ASSEMBLY_LOAD
-    // "RuntimeLike" assembly resolution for F# Interactive is not yet properly figured out on .NET Core
-    do tcConfigB.resolutionEnvironment <- ReferenceResolver.DesignTimeLike
-#else
     do tcConfigB.resolutionEnvironment <- ReferenceResolver.RuntimeLike // See Bug 3608
-#endif
     do tcConfigB.useFsiAuxLib <- true
 
-#if TODO_REWORK_ASSEMBLY_LOAD
-    do tcConfigB.useSimpleResolution<-true
+#if FSI_TODO_NETCORE
+    // "RuntimeLike" assembly resolution for F# Interactive is not yet properly figured out on .NET Core
+    do tcConfigB.resolutionEnvironment <- ReferenceResolver.DesignTimeLike
+    do tcConfigB.useSimpleResolution <- true
+    do SetTargetProfile tcConfigB "netcore" // always assume System.Runtime codegen
 #endif
 
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
@@ -2222,7 +2215,6 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
     do SetTailcallSwitch tcConfigB OptionSwitch.On    
 
     // set platform depending on whether the current process is a 64-bit process.
-    // BUG 429882 : fsiAnyCpu.exe issues warnings (x64 v MSIL) when referencing 64-bit assemblies
     do tcConfigB.platform <- if IntPtr.Size = 8 then Some AMD64 else Some X86
 
     let fsiStdinSyphon = new FsiStdinSyphon(errorWriter)

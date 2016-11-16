@@ -17,6 +17,14 @@
     "ubuntu.14.04-x64": { }
   },
   "frameworks": {
-    "netstandard1.6": { }
+    "netcoreapp1.0": {
+      "dependencies": {
+        "Microsoft.NETCore.App": {
+          "type": "platform",
+          "version": "1.0.1"
+        }
+      },
+      "imports": [ "netstandard1.1", "netstandard1.6", "portable-net45+win8+wp8+wpa81" ]
+    }
   }
 }

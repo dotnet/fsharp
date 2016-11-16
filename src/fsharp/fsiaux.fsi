@@ -63,6 +63,6 @@ module Settings =
 /// <summary>Hooks (test use only, may change without notice).</summary>
 module RuntimeHelpers = 
     val SaveIt : 'T -> unit
-    val internal GetSavedIt : unit -> obj
-    val internal GetSavedItType : unit -> System.Type
+    val (* internal *) GetSavedIt : unit -> obj
+    val (* internal *) GetSavedItType : unit -> System.Type
 (*    val openPaths : unit -> string[] *)
