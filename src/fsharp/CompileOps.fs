@@ -4776,9 +4776,13 @@ type LoadClosure =
       /// The list of references that were not resolved during load closure. These may still be extension references.
       UnresolvedReferences : UnresolvedAssemblyReference list
       /// The list of all sources in the closure with inputs when available
-      Inputs: (string * ParsedInput option) list
+      Inputs: (string * ParsedInput option * PhasedError list * PhasedError list) list
       /// The #nowarns
       NoWarns: (string * range list) list
+      /// Errors seen while processing resolutions
+      ResolutionErrors : PhasedError list
+      /// Warnings seen while processing resolutions
+      ResolutionWarnings : PhasedError list 
       /// Errors seen while parsing root of closure
       RootErrors : PhasedError list
       /// Warnings seen while parsing root of closure
@@ -4956,7 +4960,7 @@ module private ScriptPreprocessClosure =
 
         // Get all source files.
         let sourceFiles = [  for (ClosureFile(filename,m,_,_,_,_)) in closureFiles -> (filename,m) ]
-        let sourceInputs = [  for (ClosureFile(filename,_,input,_,_,_)) in closureFiles -> (filename,input) ]
+        let sourceInputs = [  for (ClosureFile(filename,_,input,errs,warns,_nowarns)) in closureFiles -> (filename,input,errs,warns) ]
         let globalNoWarns = closureFiles |> List.collect (fun (ClosureFile(_,_,_,_,_,noWarns)) -> noWarns)
 
         // Resolve all references.
@@ -4999,6 +5003,8 @@ module private ScriptPreprocessClosure =
               UnresolvedReferences = unresolvedReferences
               Inputs = sourceInputs
               NoWarns = List.groupByFirst globalNoWarns
+              ResolutionErrors = !resolutionErrors
+              ResolutionWarnings = !resolutionWarnings      
               RootErrors = rootErrors
               RootWarnings = rootWarnings}       
 

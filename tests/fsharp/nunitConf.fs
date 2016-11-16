@@ -8,20 +8,15 @@ open TestConfig
 open PlatformHelpers
 open FSharpTestSuiteTypes
 
-let checkTestResult result =
-    match result with
-    | Success () -> ()
-    | Failure (GenericError msg) -> Assert.Fail (msg)
-    | Failure (ProcessExecError (msg1, err, msg2)) -> Assert.Fail (sprintf "%s. ERRORLEVEL %i %s" msg1 err msg2)
-    | Failure (Skipped msg) -> Assert.Ignore(sprintf "skipped. Reason: %s" msg)
-
 let checkResult result = 
     match result with
-    | CmdResult.ErrorLevel (msg1, err) -> Failure (RunError.ProcessExecError (msg1, err, sprintf "ERRORLEVEL %d" err))
-    | CmdResult.Success -> Success ()
+    | CmdResult.ErrorLevel (msg1, err) -> Assert.Fail (sprintf "%s. ERRORLEVEL %d" msg1 err)
+    | CmdResult.Success -> ()
 
-let skip msg () = Failure (Skipped msg)
-let genericError msg () = Failure (GenericError msg)
+let checkErrorLevel1 result = 
+    match result with
+    | CmdResult.ErrorLevel (_,1) -> ()
+    | CmdResult.Success | CmdResult.ErrorLevel _ -> Assert.Fail  (sprintf "Command passed unexpectedly")
 
 let envVars () = 
     System.Environment.GetEnvironmentVariables () 
@@ -36,27 +31,19 @@ let initializeSuite () =
 #else
     let configurationName = "release"
 #endif
+    let env = envVars ()
+
+    let cfg =
+        let c = config configurationName env
+        let usedEnvVars = c.EnvironmentVariables  |> Map.add "FSC" c.FSC             
+        { c with EnvironmentVariables = usedEnvVars }
+
+    logConfig cfg
+
+    cfg
 
 
-    attempt {
-        let env = envVars ()
-
-        let cfg =
-            let c = config configurationName env
-            let usedEnvVars = c.EnvironmentVariables  |> Map.add "FSC" c.FSC             
-            { c with EnvironmentVariables = usedEnvVars }
-
-        logConfig cfg
-
-        return cfg
-    } 
-
-
-let suiteHelpers = lazy (
-    initializeSuite ()
-    |> Attempt.Run 
-    |> function Success x -> x | Failure err -> failwith (sprintf "Error %A" err)
-)
+let suiteHelpers = lazy (initializeSuite ())
 
 [<AttributeUsage(AttributeTargets.Assembly)>]
 type public InitializeSuiteAttribute () =
@@ -80,7 +67,10 @@ let fsharpSuiteDirectory = __SOURCE_DIRECTORY__
 
 let testConfig testDir =
     let cfg = suiteHelpers.Value
-    { cfg with Directory = Path.GetFullPath(fsharpSuiteDirectory/testDir) }
+    let dir = Path.GetFullPath(fsharpSuiteDirectory/testDir)
+    log "------------------ %s ---------------" dir
+    log "cd %s" dir
+    { cfg with Directory =  dir}
 
 [<AllowNullLiteral>]
 type FileGuard(path: string) =
@@ -89,10 +79,10 @@ type FileGuard(path: string) =
     do remove path
     member x.Path = path
     member x.Exists = x.Path |> File.Exists
-    member x.CheckExists = attempt {
+    member x.CheckExists() =
         if not x.Exists then 
-             return! genericError (sprintf "exit code 0 but %s file doesn't exists" (x.Path |> Path.GetFileName))
-        }
+             failwith (sprintf "exit code 0 but %s file doesn't exists" (x.Path |> Path.GetFileName))
+
     interface IDisposable with
         member x.Dispose () = remove path
         
@@ -200,15 +190,19 @@ module Command =
         { RedirectOutput = None; RedirectError = None; RedirectInput = None }
         |> (outF (inF exec))
 
-let alwaysSuccess _ = Success ()
+let alwaysSuccess _ = ()
 
-let execAppend cfg stdoutPath stderrPath p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = OutputAndError(Append(stdoutPath), Append(stderrPath)); Input = None; } p >> checkResult
-let execAppendIgnoreExitCode cfg stdoutPath stderrPath p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = OutputAndError(Append(stdoutPath), Append(stderrPath)); Input = None; } p >> alwaysSuccess
-let exec cfg p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
-let execIn cfg workDir p = Command.exec workDir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
-let execBothToOut cfg workDir outFile p = Command.exec workDir  cfg.EnvironmentVariables { Output = OutputAndErrorToSameFile(Overwrite(outFile)); Input = None; } p >> checkResult
-let execAppendOutIgnoreExitCode cfg workDir outFile p = Command.exec workDir  cfg.EnvironmentVariables { Output = Output(Append(outFile)); Input = None; } p >> alwaysSuccess
-
+let execArgs = { Output = Inherit; Input = None; }
+let execAppend cfg stdoutPath stderrPath p = Command.exec cfg.Directory cfg.EnvironmentVariables { execArgs with Output = OutputAndError(Append(stdoutPath), Append(stderrPath)) } p >> checkResult
+let execAppendIgnoreExitCode cfg stdoutPath stderrPath p = Command.exec cfg.Directory cfg.EnvironmentVariables { execArgs with Output = OutputAndError(Append(stdoutPath), Append(stderrPath)) } p >> alwaysSuccess
+let exec cfg p = Command.exec cfg.Directory cfg.EnvironmentVariables execArgs p >> checkResult
+let execExpectFail cfg p = Command.exec cfg.Directory cfg.EnvironmentVariables execArgs p >> checkErrorLevel1
+let execIn cfg workDir p = Command.exec workDir cfg.EnvironmentVariables execArgs p >> checkResult
+let execBothToOut cfg workDir outFile p = Command.exec workDir  cfg.EnvironmentVariables { execArgs with Output = OutputAndErrorToSameFile(Overwrite(outFile)) } p >> checkResult
+let execAppendOutIgnoreExitCode cfg workDir outFile p = Command.exec workDir  cfg.EnvironmentVariables { execArgs with Output = Output(Append(outFile)) } p >> alwaysSuccess
+let execAppendErrExpectFail cfg errPath p = Command.exec cfg.Directory cfg.EnvironmentVariables { execArgs with Output = Error(Overwrite(errPath)) } p
+let execStdin cfg l p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = Inherit; Input = Some(RedirectInput(l)) } p >> checkResult
+let execStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = OutputAndError(Append(stdoutPath), Append(stderrPath)); Input = Some(RedirectInput(stdinPath)) } p >> alwaysSuccess
 
 let fsc cfg arg = Printf.ksprintf (Commands.fsc cfg.Directory (exec cfg) cfg.FSC) arg
 let fscIn cfg workDir arg = Printf.ksprintf (Commands.fsc workDir (execIn cfg workDir) cfg.FSC) arg
@@ -216,36 +210,35 @@ let fscAppend cfg stdoutPath stderrPath arg = Printf.ksprintf (Commands.fsc cfg.
 let fscAppendIgnoreExitCode cfg stdoutPath stderrPath arg = Printf.ksprintf (Commands.fsc cfg.Directory (execAppendIgnoreExitCode cfg stdoutPath stderrPath) cfg.FSC) arg
 let fscBothToOut cfg out arg = Printf.ksprintf (Commands.fsc cfg.Directory (execBothToOut cfg cfg.Directory out) cfg.FSC) arg
 
+let fscAppendErrExpectFail cfg errPath arg = Printf.ksprintf (fun flags sources -> Commands.fsc cfg.Directory (execAppendErrExpectFail cfg errPath) cfg.FSC flags sources |> checkErrorLevel1) arg
+
 let csc cfg arg = Printf.ksprintf (Commands.csc (exec cfg) cfg.CSC) arg
 let ildasm cfg arg = Printf.ksprintf (Commands.ildasm (exec cfg) cfg.ILDASM) arg
 let peverify cfg = Commands.peverify (exec cfg) cfg.PEVERIFY "/nologo"
 let sn cfg outfile arg = execAppendOutIgnoreExitCode cfg cfg.Directory outfile cfg.SN arg
 let peverifyWithArgs cfg args = Commands.peverify (exec cfg) cfg.PEVERIFY args
 let fsi cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI)
+let fsiExpectFail cfg = Printf.ksprintf (Commands.fsi (execExpectFail cfg) cfg.FSI)
 let fsiAppendIgnoreExitCode cfg stdoutPath stderrPath = Printf.ksprintf (Commands.fsi (execAppendIgnoreExitCode cfg stdoutPath stderrPath) cfg.FSI)
 let fileguard cfg = (Commands.getfullpath cfg.Directory) >> (fun x -> new FileGuard(x))
 let getfullpath cfg = Commands.getfullpath cfg.Directory
 let fileExists cfg = Commands.fileExists cfg.Directory >> Option.isSome
-let execStdin cfg l p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = Inherit; Input = Some(RedirectInput(l)) } p >> checkResult
-let fsiStdin cfg = Printf.ksprintf (fun flags l -> Commands.fsi (execStdin cfg l) cfg.FSI flags [])
-let execStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath  l p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = OutputAndError(Append(stdoutPath), Append(stderrPath)); Input = Some(RedirectInput(l)) } p >> alwaysSuccess
-let fsiStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath = Printf.ksprintf (fun flags l -> Commands.fsi (execStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath l) cfg.FSI flags [])
+let fsiStdin cfg stdinPath = Printf.ksprintf (Commands.fsi (execStdin cfg stdinPath) cfg.FSI)
+let fsiStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath = Printf.ksprintf (Commands.fsi (execStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath) cfg.FSI)
 let rm cfg x = Commands.rm cfg.Directory x
 let mkdir cfg = Commands.mkdir_p cfg.Directory
 let copy_y cfg f = Commands.copy_y cfg.Directory f >> checkResult
 
-let fsdiff cfg a b = attempt {
+let fsdiff cfg a b = 
     let out = new ResizeArray<string>()
     let redirectOutputToFile path args =
         log "%s %s" path args
         use toLog = redirectToLog ()
         Process.exec { RedirectOutput = Some (function null -> () | s -> out.Add(s)); RedirectError = Some toLog.Post; RedirectInput = None; } cfg.Directory cfg.EnvironmentVariables path args
-    do! (Commands.fsdiff redirectOutputToFile cfg.FSDIFF a b) |> (fun _ -> Success ())
-    return out.ToArray() |> List.ofArray
-    }
+    do (Commands.fsdiff redirectOutputToFile cfg.FSDIFF a b) |> (fun _ -> ())
+    out.ToArray() |> List.ofArray
 
-let requireENCulture () = attempt {
-    do! match System.Globalization.CultureInfo.CurrentCulture.TwoLetterISOLanguageName with
-        | "en" -> Success
-        | c -> skip (sprintf "Test not supported except en Culture, was %s" c)
-    }
+let requireENCulture () = 
+    match System.Globalization.CultureInfo.CurrentCulture.TwoLetterISOLanguageName with
+        | "en" -> true
+        | _ -> false
