@@ -59,15 +59,7 @@
     </Compile>
     <Compile Include="nunitConf.fs" />
     <Compile Include="single-test.fs" />
-    <Compile Include="core\tests_core.fs" />
-    <Compile Include="optimize\tests_optimize.fs" />
-    <Compile Include="regression\tests_regression.fs" />
-    <Compile Include="tools\tests_tools.fs" />
-    <Compile Include="typecheck\tests_typecheck.fs" />
-    <Compile Include="typeProviders\tests_typeProviders.fs" />
-    <Compile Include="fsc\ProductVersion.fs" />
-    <Compile Include="fsc\FileVersionInfo.fs" />
-    <Compile Include="fsc\warnings\FS2003\Warning_FS2003.fs" />
+    <Compile Include="tests.fs" />
   </ItemGroup>
   <ItemGroup Condition="(!$(TargetFramework.Contains('portable'))) and '$(TargetFramework)' != 'coreclr'">
     <Reference Include="mscorlib" />
@@ -79,7 +71,6 @@
       <Private>True</Private>
     </Reference>
   </ItemGroup>
-
   <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
     <Reference Include="nunit.framework, Version=3.5.0.0, Culture=neutral, PublicKeyToken=2638cd05610744eb">
       <SpecificVersion>true</SpecificVersion>
@@ -92,7 +83,6 @@
       <HintPath>..\..\packages\NUnitLite.3.5.0\lib\portable-net45+win8+wp8+wpa81+Xamarin.Mac\nunitlite.dll</HintPath>
     </Reference>
   </ItemGroup>
-  
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler\FSharp.Compiler.fsproj">
       <Project>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</Project>
