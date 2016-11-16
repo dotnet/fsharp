@@ -20,7 +20,6 @@
     <ProjectGuid>{a437a6ec-5323-47c2-8f86-e2cac54ff152}</ProjectGuid>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <BaseAddress>0x06800000</BaseAddress>
-    <VsSdkTargetsDir>$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\VSSDK</VsSdkTargetsDir>
     <ImportVSSDKTargets>true</ImportVSSDKTargets>
     <CreateVsixContainer>false</CreateVsixContainer>
     <DeployExtension>false</DeployExtension>
@@ -599,7 +598,7 @@
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <Import Project="$(FSharpSourcesRoot)\..\packages\FsLexYacc.7.0.1\build\FsLexYacc.targets" />
-  <Import Project="$(VsSdkTargetsDir)\Microsoft.VsSDK.targets" Condition="'$(AddVsSdkAttributesToSomeCoreComponents)' == 'true'"/>
+  <Import Project="$(VsSDKInstall)\Microsoft.VsSDK.targets" Condition="'$(AddVsSdkAttributesToSomeCoreComponents)' == 'true'"/>
   <PropertyGroup>
     <OtherFlags>$(OtherFlags) /warnon:1182</OtherFlags>
   </PropertyGroup>

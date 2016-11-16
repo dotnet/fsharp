@@ -20,7 +20,6 @@
     <TargetType>LIBRARY</TargetType>
     <NoWarn>$(NoWarn);47;75</NoWarn>
     <OtherFlags>$(OtherFlags) --subsystemversion:6.00</OtherFlags>
-    <VsSdkTargetsDir>$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\VSSDK</VsSdkTargetsDir>
     <ImportVSSDKTargets>true</ImportVSSDKTargets>
     <CreateVsixContainer>false</CreateVsixContainer>
     <DeployExtension>false</DeployExtension>
@@ -147,7 +146,7 @@
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <Import Project="$(FSharpSourcesRoot)\..\vsintegration\vsintegration.targets" />
-  <Import Project="$(VsSdkTargetsDir)\Microsoft.VsSDK.targets" />
+  <Import Project="$(VsSDKInstall)\Microsoft.VsSDK.targets" />
   <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
     <ItemGroup>
       <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />
