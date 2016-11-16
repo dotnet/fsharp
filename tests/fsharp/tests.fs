@@ -323,7 +323,7 @@ module CoreTests =
     let ``innerpoly-FSC_OPT_PLUS_DEBUG`` () = singleTestBuildAndRun "core/innerpoly" FSC_OPT_PLUS_DEBUG
 
     [<Test>]
-    let ``innerpoly-AS_DLL`` () = singleTestBuildAndRun "core/innerpoly"         
+    let ``innerpoly-AS_DLL`` () = singleTestBuildAndRun "core/innerpoly"  AS_DLL       
 
     [<Test>]
     let ``test int32`` () = singleTestBuildAndRun "core/int32" FSC_OPT_PLUS_DEBUG
