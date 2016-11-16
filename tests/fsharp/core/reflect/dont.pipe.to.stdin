@@ -1,4 +1,0 @@
-
-
-
-This test contains a leading 'namespace' declaration, and these can't be piped into FSI.EXE

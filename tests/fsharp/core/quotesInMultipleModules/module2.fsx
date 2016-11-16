@@ -1,3 +1,4 @@
+
 let a = Module1.Test.bar()
 let b = sprintf "%A" (Module1.Test.run())
 
@@ -15,6 +16,12 @@ let test2 = (s2 = "Some Lambda (x, NewTuple (NewObject (C), PropertyGet (None, N
 let z3 = Quotations.Expr.TryGetReflectedDefinition(typeof<D>.GetMethod("F"))
 let s3 = (sprintf "%2000A" z3) 
 let test3 = (s3 = "Some Lambda (x, NewTuple (NewObject (C), NewObject (D), PropertyGet (None, Now, [])))")
+
+#if EXTRAS
+// Add some references to System.ValueTuple, and add a test case which statically links this DLL
+let test4 = struct (3,4)
+let test5 = struct (z2,z3)
+#endif
 
 if not test1 then 
     stdout.WriteLine "*** test1 FAILED"; 
