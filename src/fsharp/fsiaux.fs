@@ -114,12 +114,17 @@ module Settings =
    
     [<assembly: AutoOpen("Microsoft.FSharp.Compiler.Interactive.Settings")>]
     do()
+#nowarn "51"
+#nowarn "9"
 
 module RuntimeHelpers = 
     open System
     open System.Reflection
 
-    let internal savedIt = ref (typeof<int>,box 0)
-    let SaveIt (x:'T) = (savedIt := (typeof<'T>, box x))
-    let internal GetSavedIt () = snd !savedIt
-    let internal GetSavedItType () = fst !savedIt
+    let mutable savedX = 1
+    let savedIt = ref (typeof<int64>,box 0L)
+    let SaveIt (x:'T) = 
+       printfn "SaveIt called, ty = %A, x = %A" (typeof<'T>) x; (savedIt := (typeof<'T>, box x))
+       printfn "SaveIt called, savedIt = %A, addr = %d" (!savedIt) (NativeInterop.NativePtr.toNativeInt (&&savedX))
+    let GetSavedIt () = printfn "GetSavedIt called, savedIt = %A, addr = %d" (!savedIt) (NativeInterop.NativePtr.toNativeInt (&&savedX)); snd !savedIt
+    let GetSavedItType () = fst !savedIt
