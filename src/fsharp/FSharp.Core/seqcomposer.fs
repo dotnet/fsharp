@@ -87,6 +87,8 @@ namespace Microsoft.FSharp.Collections
 
                 default __.PipeIdx = 1
 
+                member this.Build outOfBand next = this.Create outOfBand 1 next
+
             type ISeq<'T> =
                 inherit IEnumerable<'T>
                 abstract member Compose<'U> : (SeqFactory<'T,'U>) -> ISeq<'U>
@@ -571,7 +573,7 @@ namespace Microsoft.FSharp.Collections
                 let execute (f:(unit->unit)->#Consumer<'U,'U>) (current:SeqFactory<'T,'U>) executeOn =
                     let pipeline = OutOfBand()
                     let result = f (fun () -> (pipeline:>IOutOfBand).StopFurtherProcessing (current.PipeIdx+1))
-                    let consumer = current.Create pipeline 0 result
+                    let consumer = current.Build pipeline result
                     try
                         executeOn pipeline consumer
                         (Upcast.iCompletionChaining consumer).OnComplete pipeline.HaltedIdx
@@ -668,7 +670,7 @@ namespace Microsoft.FSharp.Collections
                     interface IEnumerable<'U> with
                         member this.GetEnumerator () : IEnumerator<'U> =
                             let result = Result<'U> ()
-                            Upcast.enumerator (new Enumerator<'T,'U>(enumerable.GetEnumerator(), current.Create result 0 (SetResult<'U> result), result))
+                            Upcast.enumerator (new Enumerator<'T,'U>(enumerable.GetEnumerator(), current.Build result (SetResult<'U> result), result))
 
                     interface ISeq<'U> with
                         member __.Compose (next:SeqFactory<'U,'V>) : ISeq<'V> =
@@ -809,7 +811,7 @@ namespace Microsoft.FSharp.Collections
                     interface IEnumerable<'U> with
                         member this.GetEnumerator () : IEnumerator<'U> =
                             let result = Result<'U> ()
-                            Upcast.enumerator (new Enumerator<'T,'U>(delayedArray, current.Create result 0 (SetResult<'U> result), result))
+                            Upcast.enumerator (new Enumerator<'T,'U>(delayedArray, current.Build result (SetResult<'U> result), result))
 
                     interface ISeq<'U> with
                         member __.Compose (next:SeqFactory<'U,'V>) : ISeq<'V> =
@@ -860,7 +862,7 @@ namespace Microsoft.FSharp.Collections
                     interface IEnumerable<'U> with
                         member this.GetEnumerator () : IEnumerator<'U> =
                             let result = Result<'U> ()
-                            Upcast.enumerator (new Enumerator<'T,'U>(alist, current.Create result 0 (SetResult<'U> result), result))
+                            Upcast.enumerator (new Enumerator<'T,'U>(alist, current.Build result (SetResult<'U> result), result))
 
                     interface ISeq<'U> with
                         member __.Compose (next:SeqFactory<'U,'V>) : ISeq<'V> =
@@ -899,7 +901,7 @@ namespace Microsoft.FSharp.Collections
                     interface IEnumerable<'U> with
                         member this.GetEnumerator () : IEnumerator<'U> =
                             let result = Result<'U> ()
-                            Upcast.enumerator (new Enumerator<'T,'U,'GeneratorState>(generator, state, current.Create result 0 (SetResult<'U> result), result))
+                            Upcast.enumerator (new Enumerator<'T,'U,'GeneratorState>(generator, state, current.Build result (SetResult<'U> result), result))
 
                     interface ISeq<'U> with
                         member this.Compose (next:SeqFactory<'U,'V>) : ISeq<'V> =
@@ -973,7 +975,7 @@ namespace Microsoft.FSharp.Collections
                     interface IEnumerable<'U> with
                         member this.GetEnumerator () : IEnumerator<'U> =
                             let result = Result<'U> ()
-                            Upcast.enumerator (new Enumerator<'T,'U>(count, f, current.Create result 0 (SetResult<'U> result), result))
+                            Upcast.enumerator (new Enumerator<'T,'U>(count, f, current.Build result (SetResult<'U> result), result))
 
                     interface ISeq<'U> with
                         member this.Compose (next:SeqFactory<'U,'V>) : ISeq<'V> =
