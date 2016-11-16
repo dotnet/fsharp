@@ -18,18 +18,15 @@ let fileExists workDir path =
 let directoryExists workDir path = 
     if path |> getfullpath workDir |> Directory.Exists then Some path else None
 
-/// copy /y %source1% tmptest2.ml
 let copy_y workDir source dest = 
     log "copy /y %s %s" source dest
     File.Copy( source |> getfullpath workDir, dest |> getfullpath workDir, true)
     CmdResult.Success
 
-/// mkdir orig
 let mkdir_p workDir dir =
     log "mkdir %s" dir
     Directory.CreateDirectory ( Path.Combine(workDir, dir) ) |> ignore
 
-/// del test.txt
 let rm dir path =
     log "rm %s" path
     let p = path |> getfullpath dir
@@ -41,22 +38,10 @@ let pathAddBackslash (p: FilePath) =
         p.TrimEnd ([| Path.DirectorySeparatorChar; Path.AltDirectorySeparatorChar |]) 
         + Path.DirectorySeparatorChar.ToString()
 
-// echo. > build.ok
-let ``echo._tofile`` workDir text p =
-    log "echo.%s> %s" text p
-    let dest = p |> getfullpath workDir in File.WriteAllText(dest, text + Environment.NewLine)
-
-/// echo // empty file  > tmptest2.mli
-let echo_tofile workDir text p =
-    log "echo %s> %s" text p
-    let dest = p |> getfullpath workDir in File.WriteAllText(dest, text + Environment.NewLine)
-
-/// echo // empty file  >> tmptest2.mli
-let echo_append_tofile workDir text p =
+let echoAppendToFile workDir text p =
     log "echo %s> %s" text p
     let dest = p |> getfullpath workDir in File.AppendAllText(dest, text + Environment.NewLine)
 
-/// type %source1%  >> tmptest3.ml
 let appendToFile workDir source p =
     log "type %s >> %s" source p
     let from = source |> getfullpath workDir
