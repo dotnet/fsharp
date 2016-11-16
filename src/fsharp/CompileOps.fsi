@@ -296,7 +296,6 @@ type TcConfigBuilder =
       mutable noSignatureData : bool
       mutable onlyEssentialOptimizationData : bool
       mutable useOptimizationDataFile : bool
-      mutable useSignatureDataFile : bool
       mutable jitTracking : bool
       mutable portablePDB : bool
       mutable embeddedPDB : bool
@@ -319,7 +318,6 @@ type TcConfigBuilder =
       mutable abortOnError : bool
       mutable baseAddress : int32 option
  #if DEBUG
-      mutable writeGeneratedILFiles : bool (* write il files? *)  
       mutable showOptimizationData : bool
 #endif
       mutable showTerms     : bool 
@@ -332,9 +330,8 @@ type TcConfigBuilder =
       mutable emitTailcalls : bool
 #if PREFERRED_UI_LANG
       mutable preferredUiLang: string option
-#else
-      mutable lcid         : int option
 #endif
+      mutable lcid         : int option
       mutable productNameForBannerText : string
       mutable showBanner  : bool
       mutable showTimes : bool
@@ -356,7 +353,7 @@ type TcConfigBuilder =
       mutable emitDebugInfoInQuotations : bool
       mutable exename : string option 
       mutable copyFSharpCore : bool
-#if SHADOW_COPY_REFERENCES
+#if FSI_SHADOW_COPY_REFERENCES
       mutable shadowCopyReferences : bool
 #endif
     }
@@ -454,7 +451,6 @@ type TcConfig =
     member noSignatureData : bool
     member onlyEssentialOptimizationData : bool
     member useOptimizationDataFile : bool
-    member useSignatureDataFile : bool
     member jitTracking : bool
     member portablePDB : bool
     member embeddedPDB : bool
@@ -476,7 +472,6 @@ type TcConfig =
     member maxErrors : int
     member baseAddress : int32 option
 #if DEBUG
-    member writeGeneratedILFiles : bool (* write il files? *)  
     member showOptimizationData : bool
 #endif
     member showTerms     : bool 
@@ -526,7 +521,7 @@ type TcConfig =
     member sqmNumOfSourceFiles : int
     member sqmSessionStartedTime : int64
     member copyFSharpCore : bool
-#if SHADOW_COPY_REFERENCES
+#if FSI_SHADOW_COPY_REFERENCES
     member shadowCopyReferences : bool
 #endif
     static member Create : TcConfigBuilder * validate: bool -> TcConfig
@@ -636,14 +631,11 @@ val IsOptimizationDataResource : ILResource -> bool
 val IsReflectedDefinitionsResource : ILResource -> bool
 val GetSignatureDataResourceName : ILResource -> string
 
-#if NO_COMPILER_BACKEND
-#else
 /// Write F# signature data as an IL resource
 val WriteSignatureData : TcConfig * TcGlobals * Tastops.Remap * CcuThunk * string -> ILResource
 
 /// Write F# optimization data as an IL resource
 val WriteOptimizationData :  TcGlobals * string * CcuThunk * Optimizer.LazyModuleInfo -> ILResource
-#endif
 
 
 //----------------------------------------------------------------------------

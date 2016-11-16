@@ -1,6 +1,5 @@
 {
   "dependencies": {
-    "Microsoft.NETCore.Platforms": "1.0.1",
     "NETStandard.Library": "1.6.0",
     "System.Collections.Immutable":"1.2.0",
     "System.Diagnostics.Process": "4.1.0",

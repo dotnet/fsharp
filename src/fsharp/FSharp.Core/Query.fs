@@ -2,8 +2,6 @@
 
 namespace Microsoft.FSharp.Linq
 
-#if QUERIES_IN_FSLIB
-
 open System
 open System.Linq
 open System.Collections
@@ -236,8 +234,7 @@ open System.Collections
 open System.Collections.Generic
 open System.Linq.Expressions
 open System.Reflection
-#if FX_NO_REFLECTION_EMIT
-#else
+#if !FX_NO_REFLECTION_EMIT
 open System.Reflection.Emit
 #endif
 open Microsoft.FSharp
@@ -1664,8 +1661,7 @@ module Query =
         let linqQuery = TransInnerWithFinalConsume canElim queryProducingSequence
         let linqQueryAfterEliminatingNestedQueries = EliminateNestedQueries linqQuery 
 
-#if FX_NO_SYSTEM_CONSOLE
-#else    
+#if !FX_NO_SYSTEM_CONSOLE
 #if DEBUG
         let debug() = 
               Printf.printfn "----------------------queryProducingSequence-------------------------" 
@@ -1682,8 +1678,7 @@ module Query =
            try 
               LeafExpressionConverter.EvaluateQuotation linqQueryAfterEliminatingNestedQueries
            with e -> 
-#if FX_NO_SYSTEM_CONSOLE
-#else    
+#if !FX_NO_SYSTEM_CONSOLE
 #if DEBUG
               debug()
               Printf.printfn "--------------------------error--------------------------------------" 
@@ -1738,5 +1733,4 @@ module Query =
                 member this.EliminateNestedQueries(e) = EliminateNestedQueries e
         }
     
-#endif
 
