@@ -43,11 +43,11 @@ module CoreTests =
 
         exec cfg ("."/"test.exe") ""
 
-        testOkFile |> NUnitConf.checkGuardExists
+        testOkFile.CheckExists()
 
         fsi cfg "" ["test.fsx"]
 
-        testOkFile |> NUnitConf.checkGuardExists
+        testOkFile.CheckExists()
 
     [<Test>]
     let comprehensions () = singleTestBuildAndRun "core/comprehensions" FSC_OPT_PLUS_DEBUG
@@ -105,7 +105,7 @@ module CoreTests =
 
         fsi cfg "" ["test.fs"]
 
-        testOkFile |> NUnitConf.checkGuardExists
+        testOkFile.CheckExists()
 
         exec cfg ("."/"testcs.exe") ""
 
@@ -134,7 +134,7 @@ module CoreTests =
     //        fsiStdin cfg "%s %s" cfg.fsi_flags flags "test1.fsx"
     //
     //        // if NOT EXIST test1.ok goto SetError
-    //        testOkFile |> NUnitConf.checkGuardExists
+    //        testOkFile.CheckExists()
     //    
     //
     //    [<Test>]
@@ -156,7 +156,7 @@ module CoreTests =
     //        fsiStdin cfg "%s %s" cfg.fsi_flags flags "test2.fsx"
     //
     //        // if NOT EXIST test2.ok goto SetError
-    //        testOkFile |> NUnitConf.checkGuardExists
+    //        testOkFile.CheckExists()
     //    
 
     
@@ -198,8 +198,6 @@ module CoreTests =
 
         peverify cfg ("split"/"test-against-c.exe")
 
-
-
     [<Test>]
     let fsfromcs () = 
         let cfg = testConfig "core/fsfromcs"
@@ -220,8 +218,6 @@ module CoreTests =
 
         exec cfg ("."/"test--optimize.exe") ""
                 
-
-
     [<Test>]
     let fsfromfsviacs () = 
         let cfg = testConfig "core/fsfromfsviacs"
@@ -245,9 +241,6 @@ module CoreTests =
 
         exec cfg ("."/"test.exe") ""
                 
-
-
-
     [<Test>]
     let ``fsi-reload`` () = 
         let cfg = testConfig "core/fsi-reload"
@@ -255,26 +248,24 @@ module CoreTests =
         begin
             use testOkFile = fileguard cfg "test.ok"
             fsiStdin cfg "test1.ml"  "--maxerrors:1" []
-            testOkFile |> NUnitConf.checkGuardExists
+            testOkFile.CheckExists()
         end
                 
         begin
             use testOkFile = fileguard cfg "test.ok"
             fsi cfg "%s  --maxerrors:1" cfg.fsi_flags ["load1.fsx"]
-            testOkFile |> NUnitConf.checkGuardExists
+            testOkFile.CheckExists()
         end
 
         begin
             use testOkFile = fileguard cfg "test.ok"
             fsi cfg "%s  --maxerrors:1" cfg.fsi_flags ["load2.fsx"]
-            testOkFile |> NUnitConf.checkGuardExists
+            testOkFile.CheckExists()
         end
 
         fsc cfg "" ["load1.fsx"]
 
         fsc cfg "" ["load2.fsx"]
-
-
 
 
     [<Test>]
@@ -289,14 +280,22 @@ module CoreTests =
         
         fsiStdin cfg "test.fsx" "--maxerrors:1"  []
 
-        testOkFile |> NUnitConf.checkGuardExists
+        testOkFile.CheckExists()
                 
 
 
     [<Test>]
-    let genericmeasures () = 
-        for p in codeAndInferencePermutations do
-            singleTestBuildAndRun "core/genericmeasures" p
+    let ``genericmeasures-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/genericmeasures" GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``genericmeasures-FSI_FILE`` () = singleTestBuildAndRun "core/genericmeasures" FSI_FILE
+
+    [<Test>]
+    let ``genericmeasures-FSC_OPT_PLUS_DEBUG`` () = singleTestBuildAndRun "core/genericmeasures" FSC_OPT_PLUS_DEBUG
+
+    [<Test>]
+    let ``genericmeasures-AS_DLL`` () = singleTestBuildAndRun "core/genericmeasures" AS_DLL
+
 
     [<Test>]
     let hiding () = 
@@ -314,14 +313,18 @@ module CoreTests =
 
         peverify cfg "client.exe"
 
-
-
+    [<Test>]
+    let ``innerpoly-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/innerpoly" GENERATED_SIGNATURE
 
     [<Test>]
-    let innerpoly () = 
-        for p in codeAndInferencePermutations do
-            singleTestBuildAndRun "core/innerpoly" p
-        
+    let ``innerpoly-FSI_FILE`` () = singleTestBuildAndRun "core/innerpoly" FSI_FILE
+
+    [<Test>]
+    let ``innerpoly-FSC_OPT_PLUS_DEBUG`` () = singleTestBuildAndRun "core/innerpoly" FSC_OPT_PLUS_DEBUG
+
+    [<Test>]
+    let ``innerpoly-AS_DLL`` () = singleTestBuildAndRun "core/innerpoly"         
+
     [<Test>]
     let ``test int32`` () = singleTestBuildAndRun "core/int32" FSC_OPT_PLUS_DEBUG
 
@@ -344,7 +347,7 @@ module CoreTests =
 
             fsi cfg "%s" cfg.fsi_flags ["test.fsx"]
 
-            testOkFile |> NUnitConf.checkGuardExists
+            testOkFile.CheckExists()
         end
 
         begin
@@ -352,7 +355,7 @@ module CoreTests =
 
             exec cfg ("."/"test.exe") ""
 
-            testOkFile |> NUnitConf.checkGuardExists
+            testOkFile.CheckExists()
         end
 
         begin
@@ -360,7 +363,7 @@ module CoreTests =
 
             exec cfg ("."/"test--optimize.exe") ""
 
-            testOkFile |> NUnitConf.checkGuardExists
+            testOkFile.CheckExists()
         end
                 
 
@@ -531,25 +534,25 @@ module CoreTests =
 
             fsi cfg "%s -r cslib.dll" cfg.fsi_flags ["test.fsx"]
 
-            testOkFile |> NUnitConf.checkGuardExists
+            testOkFile.CheckExists()
         end
 
         begin
             use testOkFile = fileguard cfg "test.ok"
             exec cfg ("."/"test.exe") ""
-            testOkFile |> NUnitConf.checkGuardExists
+            testOkFile.CheckExists()
         end
 
         begin
             use testOkFile = fileguard cfg "test.ok"
             exec cfg ("."/"test-with-debug-data.exe") ""
-            testOkFile |> NUnitConf.checkGuardExists
+            testOkFile.CheckExists()
         end
 
         begin
             use testOkFile = fileguard cfg "test.ok"
             exec cfg ("."/"test--optimize.exe") ""
-            testOkFile |> NUnitConf.checkGuardExists
+            testOkFile.CheckExists()
         end
 
     [<Test; Category("namespaces")>]
@@ -565,8 +568,6 @@ module CoreTests =
         fsc cfg "%s -o:toplet.exe -g" cfg.fsc_flags ["toplet.ml"]
 
         peverify cfg "toplet.exe"
-
- 
 
     [<Test>]
     let unicode () = 
@@ -647,8 +648,6 @@ module CoreTests =
 
         exec cfg ("."/"test2.exe") ""
  
-
-
     [<Test; Category("lazy")>]
     let ``lazy test`` () = singleTestBuildAndRun "core/lazy" FSC_OPT_PLUS_DEBUG
 
@@ -661,10 +660,32 @@ module CoreTests =
     [<Test; Category("letrec")>]
     let ``letrec (mutrec variations part two)`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSC_OPT_PLUS_DEBUG
 
-    [<Test; Category("libtest")>]
-    let libtest () = 
-        for p in allPermutations do
-            singleTestBuildAndRun "core/libtest" p
+    [<Test>]
+    let ``libtest-FSI_FILE`` () = singleTestBuildAndRun "core/libtest" FSI_FILE
+
+    [<Test>]
+    let ``libtest-FSI_STDIN`` () = singleTestBuildAndRun "core/libtest" FSI_STDIN
+
+    [<Test>]
+    let ``libtest-FSI_STDIN_OPT`` () = singleTestBuildAndRun "core/libtest" FSI_STDIN_OPT
+
+    [<Test>]
+    let ``libtest-FSI_STDIN_GUI`` () = singleTestBuildAndRun "core/libtest" FSI_STDIN_GUI
+
+    [<Test>]
+    let ``libtest-FSC_BASIC`` () = singleTestBuildAndRun "core/libtest" FSC_BASIC
+
+    [<Test>]
+    let ``libtest-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/libtest" GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``libtest-FSC_OPT_MINUS_DEBUG`` () = singleTestBuildAndRun "core/libtest" FSC_OPT_MINUS_DEBUG
+
+    [<Test>]
+    let ``libtest-FSC_OPT_PLUS_DEBUG`` () = singleTestBuildAndRun "core/libtest" FSC_OPT_PLUS_DEBUG
+
+    [<Test>]
+    let ``libtest-AS_DLL`` () = singleTestBuildAndRun "core/libtest" AS_DLL
 
     [<Test; Category("lift")>]
     let lift () = singleTestBuildAndRun "core/lift" FSC_OPT_PLUS_DEBUG
@@ -814,14 +835,28 @@ module CoreTests =
     let ``math-numbersVS2008`` () = singleTestBuildAndRun "core/math/numbersVS2008" FSC_OPT_PLUS_DEBUG
 
     [<Test>]
-    let measures () = 
-        for p in codeAndInferencePermutations do
-            singleTestBuildAndRun "core/measures" p
+    let ``measures-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/measures" GENERATED_SIGNATURE
 
     [<Test>]
-    let ``members-basics`` () = 
-        for p in codeAndInferencePermutations do
-            singleTestBuildAndRun "core/members/basics" p
+    let ``measures-FSI_FILE`` () = singleTestBuildAndRun "core/measures" FSI_FILE
+
+    [<Test>]
+    let ``measures-FSC_OPT_PLUS_DEBUG`` () = singleTestBuildAndRun "core/measures" FSC_OPT_PLUS_DEBUG
+
+    [<Test>]
+    let ``measures-AS_DLL`` () = singleTestBuildAndRun "core/measures" AS_DLL
+
+    [<Test>]
+    let ``members-basics-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/members/basics" GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``members-basics-FSI_FILE`` () = singleTestBuildAndRun "core/members/basics" FSI_FILE
+
+    [<Test>]
+    let ``members-basics-FSC_OPT_PLUS_DEBUG`` () = singleTestBuildAndRun "core/members/basics" FSC_OPT_PLUS_DEBUG
+
+    [<Test>]
+    let ``members-basics-AS_DLL`` () = singleTestBuildAndRun "core/members/basics" AS_DLL
 
     [<Test>]
     let ``members-basics-hw`` () = singleTestBuildAndRun "core/members/basics-hw" FSC_OPT_PLUS_DEBUG
@@ -886,22 +921,20 @@ module CoreTests =
 
         fsi cfg "%s" cfg.fsi_flags ["test.fsx"]
 
-        testOkFile |> NUnitConf.checkGuardExists
+        testOkFile.CheckExists()
 
         use testOkFile2 = fileguard cfg "test.ok"
 
         exec cfg ("."/"test.exe") ""
 
-        testOkFile2 |> NUnitConf.checkGuardExists
+        testOkFile2.CheckExists()
 
         use testOkFile3 = fileguard cfg "test.ok"
 
         exec cfg ("."/"test--optimize.exe") ""
 
-        testOkFile3 |> NUnitConf.checkGuardExists
+        testOkFile3.CheckExists()
                 
-
-
 
     [<Test>]
     let queriesNullableOperators () = 
@@ -917,18 +950,16 @@ module CoreTests =
 
         use testOkFile = fileguard cfg "test.ok"
         fsi cfg "%s" cfg.fsi_flags ["test.fsx"]
-        testOkFile |> NUnitConf.checkGuardExists
+        testOkFile.CheckExists()
 
         use testOkFile2 = fileguard cfg "test.ok"
         exec cfg ("."/"test.exe") ""
-        testOkFile2 |> NUnitConf.checkGuardExists
+        testOkFile2.CheckExists()
 
         use testOkFile3 = fileguard cfg "test.ok"
         exec cfg ("."/"test--optimize.exe") ""
-        testOkFile3 |> NUnitConf.checkGuardExists
+        testOkFile3.CheckExists()
                 
-
-
     [<Test>]
     let queriesOverIEnumerable () = 
         let cfg = testConfig "core/queriesOverIEnumerable"
@@ -945,22 +976,20 @@ module CoreTests =
 
         fsi cfg "%s" cfg.fsi_flags ["test.fsx"]
 
-        testOkFile |> NUnitConf.checkGuardExists
+        testOkFile.CheckExists()
 
         use testOkFile2 = fileguard cfg "test.ok"
 
         exec cfg ("."/"test.exe") ""
 
-        testOkFile2 |> NUnitConf.checkGuardExists
+        testOkFile2.CheckExists()
 
         use testOkFile3 = fileguard cfg "test.ok"
 
         exec cfg ("."/"test--optimize.exe") ""
 
-        testOkFile3 |> NUnitConf.checkGuardExists
+        testOkFile3.CheckExists()
                 
-
-
     [<Test>]
     let queriesOverIQueryable () = 
         let cfg = testConfig "core/queriesOverIQueryable"
@@ -976,20 +1005,20 @@ module CoreTests =
         use testOkFile = fileguard cfg "test.ok"
         fsi cfg "%s" cfg.fsi_flags ["test.fsx"]
 
-        testOkFile |> NUnitConf.checkGuardExists
+        testOkFile.CheckExists()
 
 
         use testOkFile2 = fileguard cfg "test.ok"
 
         exec cfg ("."/"test.exe") ""
 
-        testOkFile2 |> NUnitConf.checkGuardExists
+        testOkFile2.CheckExists()
 
 
         use testOkFile3 = fileguard cfg "test.ok"
         exec cfg ("."/"test--optimize.exe") ""
 
-        testOkFile3 |> NUnitConf.checkGuardExists
+        testOkFile3.CheckExists()
                 
 
 
@@ -1009,20 +1038,20 @@ module CoreTests =
         use testOkFile = fileguard cfg "test.ok"
         fsi cfg "%s --quotations-debug+" cfg.fsi_flags ["test.fsx"]
 
-        testOkFile |> NUnitConf.checkGuardExists
+        testOkFile.CheckExists()
 
 
         use testOkFile2 = fileguard cfg "test.ok"
 
         exec cfg ("."/"test.exe") ""
 
-        testOkFile2 |> NUnitConf.checkGuardExists
+        testOkFile2.CheckExists()
 
         use testOkFile3 = fileguard cfg "test.ok"
 
         exec cfg ("."/"test--optimize.exe") ""
 
-        testOkFile3 |> NUnitConf.checkGuardExists
+        testOkFile3.CheckExists()
                 
 
 
@@ -1054,29 +1083,27 @@ module CoreTests =
 
         fsi cfg "%s -r module1.dll" cfg.fsi_flags ["module2.fsx"]
 
-        testOkFile |> NUnitConf.checkGuardExists
+        testOkFile.CheckExists()
 
 
         use testOkFile = fileguard cfg "test.ok"
 
         exec cfg ("."/"module2.exe") ""
 
-        testOkFile |> NUnitConf.checkGuardExists
+        testOkFile.CheckExists()
 
         use testOkFile = fileguard cfg "test.ok"
 
         exec cfg ("."/"module2-opt.exe") ""
 
-        testOkFile |> NUnitConf.checkGuardExists
+        testOkFile.CheckExists()
 
         use testOkFile = fileguard cfg "test.ok"
 
         exec cfg ("."/"module2-staticlink.exe") ""
 
-        testOkFile |> NUnitConf.checkGuardExists
+        testOkFile.CheckExists()
                 
-
-
     [<Test>]
     let reflect () = singleTestBuildAndRun "core/reflect" FSC_OPT_PLUS_DEBUG
 
@@ -1107,10 +1134,6 @@ module CoreTests =
         exec cfg ("."/"test-link-named.exe") "ResourceName"
 
         exec cfg ("."/"test-embed-named.exe") "ResourceName"
-
-                
-
-
 
     [<Test>]
     let seq () = singleTestBuildAndRun "core/seq" FSC_OPT_PLUS_DEBUG
@@ -1252,8 +1275,6 @@ module CoreTests =
 
         exec cfg ("."/"test_static_init_exe--optimize.exe") ""
                 
-
-
     [<Test>]
     let unitsOfMeasure () = 
         let cfg = testConfig "core/unitsOfMeasure"
@@ -1266,11 +1287,8 @@ module CoreTests =
 
         exec cfg ("."/"test.exe") ""
 
-        testOkFile |> NUnitConf.checkGuardExists
+        testOkFile.CheckExists()
                 
-
-
-
     [<Test>]
     let verify () = 
         let cfg = testConfig "core/verify"
@@ -1286,7 +1304,6 @@ module CoreTests =
         fsc cfg "%s -o:xmlverify.exe -g" cfg.fsc_flags ["xmlverify.fs"]
 
         peverifyWithArgs cfg "/nologo" "xmlverify.exe"
-
 
     [<Test>]
     let graph () = singleTestBuildAndRun "perf/graph" FSC_OPT_PLUS_DEBUG
@@ -1343,7 +1360,7 @@ module RegressionTests =
 
         exec cfg ("."/"test.exe") ""
 
-        testOkFile |> NUnitConf.checkGuardExists
+        testOkFile.CheckExists()
                 
     [<Test >]
     let ``656`` () = 
@@ -1444,9 +1461,6 @@ module OptimizationTests =
         | _ -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff)
 
 
-
-
-
     [<Test>]
     let ``inline`` () = 
         let cfg = testConfig "optimize/inline"
@@ -1484,8 +1498,6 @@ module OptimizationTests =
 
         log "Ran ok - optimizations removed %d textual occurrences of optimizable identifiers from target IL" numElim 
                 
-
-
     [<Test>]
     let stats () = 
         let cfg = testConfig "optimize/stats"
@@ -1598,19 +1610,14 @@ module TypecheckTests =
 
     [<Test>]
     let ``sigs pos11`` () = 
-            let cfg = testConfig "typecheck/sigs"
-            fsc cfg "%s -a -o:pos11.dll" cfg.fsc_flags ["pos11.fs"]
-
-
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s -a -o:pos11.dll" cfg.fsc_flags ["pos11.fs"]
 
     [<Test>]
     let ``sigs pos10`` () = 
-            let cfg = testConfig "typecheck/sigs"
-            fsc cfg "%s -a -o:pos10.dll" cfg.fsc_flags ["pos10.fs"]
-
-            peverify cfg "pos10.dll"
-
-
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s -a -o:pos10.dll" cfg.fsc_flags ["pos10.fs"]
+        peverify cfg "pos10.dll"
 
     [<Test>]
     let ``sigs pos09`` () = 
@@ -1640,28 +1647,20 @@ module TypecheckTests =
     let ``sigs pos03`` () = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s -a -o:pos03.dll" cfg.fsc_flags ["pos03.fs"]
-
         peverify cfg "pos03.dll"
-
         fsc cfg "%s -a -o:pos03a.dll" cfg.fsc_flags ["pos03a.fsi"; "pos03a.fs"]
-
         peverify cfg "pos03a.dll"
-
 
     [<Test>]
     let ``sigs pos01a`` () = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s -a -o:pos01a.dll" cfg.fsc_flags ["pos01a.fsi"; "pos01a.fs"]
-
         peverify cfg "pos01a.dll"
-
-
 
     [<Test>]
     let ``sigs pos02`` () = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s -a -o:pos02.dll" cfg.fsc_flags ["pos02.fs"]
-
         peverify cfg "pos02.dll"
 
     [<Test>]
@@ -1745,12 +1744,8 @@ module TypeProviders =
 
         fsi cfg "%s" cfg.fsi_flags ["test3.fsx"]
 
-        testOkFile |> NUnitConf.checkGuardExists
+        testOkFile.CheckExists()
                 
-
-
-
-
     [<Test>]
     let globalNamespace () = 
         let cfg = testConfig "typeProviders/globalNamespace"
@@ -1759,9 +1754,6 @@ module TypeProviders =
 
         fsc cfg "%s /debug+ /r:globalNamespaceTP.dll /optimize-" cfg.fsc_flags ["test.fsx"]
                 
-
-
-
     let helloWorld p = 
         let cfg = testConfig "typeProviders/helloWorld"
 
@@ -1827,9 +1819,6 @@ module TypeProviders =
         peverify cfg (bincompat2/"test_lib_recompiled.dll")
 
         peverify cfg (bincompat2/"testlib_client.exe")
-
-
-
 
     [<Test>]
     let ``helloWorld fsc`` () = helloWorld FSC_OPT_PLUS_DEBUG
@@ -1941,9 +1930,6 @@ module TypeProviders =
 
         SingleTest.singleNegTest cfg name
 
-
-
-
     [<Test>]
     let splitAssembly () = 
         let cfg = testConfig "typeProviders/splitAssembly"
@@ -1954,10 +1940,6 @@ module TypeProviders =
 
         SingleTest.singleTestBuildAndRunAux cfg FSC_OPT_PLUS_DEBUG
         
-
-
-
-
     [<Test>]
     let wedgeAssembly () = 
         let cfg = testConfig "typeProviders/wedgeAssembly"
@@ -2004,77 +1986,74 @@ module TypeProviders =
 
         exec cfg ("."/"test3.exe") ""
 
-                
-
-
 module FscTests =                 
     [<Test>]
     let ``should be raised if AssemblyInformationalVersion has invalid version`` () = 
-            let cfg = testConfig (Commands.createTempDir())
+        let cfg = testConfig (Commands.createTempDir())
 
-            let code  =
-                """
-    namespace CST.RI.Anshun
-    open System.Reflection
-    [<assembly: AssemblyVersion("4.5.6.7")>]
-    [<assembly: AssemblyInformationalVersion("45.2048.main1.2-hotfix (upgrade Second Chance security)")>]
-    ()
-                """
+        let code  =
+            """
+namespace CST.RI.Anshun
+open System.Reflection
+[<assembly: AssemblyVersion("4.5.6.7")>]
+[<assembly: AssemblyInformationalVersion("45.2048.main1.2-hotfix (upgrade Second Chance security)")>]
+()
+            """
 
-            File.WriteAllText(cfg.Directory/"test.fs", code)
+        File.WriteAllText(cfg.Directory/"test.fs", code)
 
-            fsc cfg "%s --nologo -o:lib.dll --target:library" cfg.fsc_flags ["test.fs"]
+        fsc cfg "%s --nologo -o:lib.dll --target:library" cfg.fsc_flags ["test.fs"]
 
-            let fv = Diagnostics.FileVersionInfo.GetVersionInfo(Commands.getfullpath cfg.Directory "lib.dll")
+        let fv = Diagnostics.FileVersionInfo.GetVersionInfo(Commands.getfullpath cfg.Directory "lib.dll")
 
-            fv.ProductVersion |> Assert.areEqual "45.2048.main1.2-hotfix (upgrade Second Chance security)"
+        fv.ProductVersion |> Assert.areEqual "45.2048.main1.2-hotfix (upgrade Second Chance security)"
 
-            (fv.ProductMajorPart, fv.ProductMinorPart, fv.ProductBuildPart, fv.ProductPrivatePart) 
-            |> Assert.areEqual (45,2048,0,0)
+        (fv.ProductMajorPart, fv.ProductMinorPart, fv.ProductBuildPart, fv.ProductPrivatePart) 
+        |> Assert.areEqual (45,2048,0,0)
 
 
     [<Test>]
     let ``should set file version info on generated file`` () = 
-            let cfg = testConfig (Commands.createTempDir())
+        let cfg = testConfig (Commands.createTempDir())
 
-            let code =
-                """
-    namespace CST.RI.Anshun
-    open System.Reflection
-    open System.Runtime.CompilerServices
-    open System.Runtime.InteropServices
-    [<assembly: AssemblyTitle("CST.RI.Anshun.TreloarStation")>]
-    [<assembly: AssemblyDescription("Assembly is a part of Restricted Intelligence of Anshun planet")>]
-    [<assembly: AssemblyConfiguration("RELEASE")>]
-    [<assembly: AssemblyCompany("Compressed Space Transport")>]
-    [<assembly: AssemblyProduct("CST.RI.Anshun")>]
-    [<assembly: AssemblyCopyright("Copyright \u00A9 Compressed Space Transport 2380")>]
-    [<assembly: AssemblyTrademark("CST \u2122")>]
-    [<assembly: AssemblyVersion("12.34.56.78")>]
-    [<assembly: AssemblyFileVersion("99.88.77.66")>]
-    [<assembly: AssemblyInformationalVersion("17.56.2912.14")>]
-    ()
-                """
+        let code =
+            """
+namespace CST.RI.Anshun
+open System.Reflection
+open System.Runtime.CompilerServices
+open System.Runtime.InteropServices
+[<assembly: AssemblyTitle("CST.RI.Anshun.TreloarStation")>]
+[<assembly: AssemblyDescription("Assembly is a part of Restricted Intelligence of Anshun planet")>]
+[<assembly: AssemblyConfiguration("RELEASE")>]
+[<assembly: AssemblyCompany("Compressed Space Transport")>]
+[<assembly: AssemblyProduct("CST.RI.Anshun")>]
+[<assembly: AssemblyCopyright("Copyright \u00A9 Compressed Space Transport 2380")>]
+[<assembly: AssemblyTrademark("CST \u2122")>]
+[<assembly: AssemblyVersion("12.34.56.78")>]
+[<assembly: AssemblyFileVersion("99.88.77.66")>]
+[<assembly: AssemblyInformationalVersion("17.56.2912.14")>]
+()
+            """
 
-            File.WriteAllText(cfg.Directory/"test.fs", code)
+        File.WriteAllText(cfg.Directory/"test.fs", code)
 
-            do fsc cfg "%s --nologo -o:lib.dll --target:library" cfg.fsc_flags ["test.fs"]
+        do fsc cfg "%s --nologo -o:lib.dll --target:library" cfg.fsc_flags ["test.fs"]
 
-            let fv = System.Diagnostics.FileVersionInfo.GetVersionInfo(Commands.getfullpath cfg.Directory "lib.dll")
-            fv.CompanyName |> Assert.areEqual "Compressed Space Transport"
-            fv.FileVersion |> Assert.areEqual "99.88.77.66"
+        let fv = System.Diagnostics.FileVersionInfo.GetVersionInfo(Commands.getfullpath cfg.Directory "lib.dll")
+        fv.CompanyName |> Assert.areEqual "Compressed Space Transport"
+        fv.FileVersion |> Assert.areEqual "99.88.77.66"
         
-            (fv.FileMajorPart, fv.FileMinorPart, fv.FileBuildPart, fv.FilePrivatePart)
-            |> Assert.areEqual (99,88,77,66)
+        (fv.FileMajorPart, fv.FileMinorPart, fv.FileBuildPart, fv.FilePrivatePart)
+        |> Assert.areEqual (99,88,77,66)
         
-            fv.ProductVersion |> Assert.areEqual "17.56.2912.14"
-            (fv.ProductMajorPart, fv.ProductMinorPart, fv.ProductBuildPart, fv.ProductPrivatePart) 
-            |> Assert.areEqual (17,56,2912,14)
+        fv.ProductVersion |> Assert.areEqual "17.56.2912.14"
+        (fv.ProductMajorPart, fv.ProductMinorPart, fv.ProductBuildPart, fv.ProductPrivatePart) 
+        |> Assert.areEqual (17,56,2912,14)
         
-            fv.LegalCopyright |> Assert.areEqual "Copyright \u00A9 Compressed Space Transport 2380"
-            fv.LegalTrademarks |> Assert.areEqual "CST \u2122"
+        fv.LegalCopyright |> Assert.areEqual "Copyright \u00A9 Compressed Space Transport 2380"
+        fv.LegalTrademarks |> Assert.areEqual "CST \u2122"
 
-            #if !FX_PORTABLE_OR_NETSTANDARD
+#if !FX_PORTABLE_OR_NETSTANDARD
 module ProductVersionTest =
 
     let informationalVersionAttrName = typeof<System.Reflection.AssemblyInformationalVersionAttribute>.FullName

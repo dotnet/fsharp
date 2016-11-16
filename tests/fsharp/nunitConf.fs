@@ -87,10 +87,6 @@ type FileGuard(path: string) =
         member x.Dispose () = remove path
         
 
-let check (f: Attempt<_,_>) =
-    f |> Attempt.Run |> checkTestResult
-
-
 type RedirectToType = 
     | Overwrite of FilePath
     | Append of FilePath
