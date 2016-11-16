@@ -240,8 +240,8 @@ if /i '%ARG%' == 'test' (
 
 if /i '%ARG%' == 'include' (
     set /a counter=!counter!+1
-	if '!INCLUDE_TEST_SPEC_NUNIT!' == '' ( set INCLUDE_TEST_SPEC_NUNIT=cat == %ARG2% ) else (set INCLUDE_TEST_SPEC_NUNIT=cat == %ARG2% or !INCLUDE_TEST_SPEC_NUNIT! )
-	if '!INCLUDE_TEST_TAGS!' == '' ( set INCLUDE_TEST_TAGS=%ARG2% ) else (set INCLUDE_TEST_TAGS=%ARG2%;!INCLUDE_TEST_TAGS! )
+    if '!INCLUDE_TEST_SPEC_NUNIT!' == '' ( set INCLUDE_TEST_SPEC_NUNIT=cat == %ARG2% ) else (set INCLUDE_TEST_SPEC_NUNIT=cat == %ARG2% or !INCLUDE_TEST_SPEC_NUNIT! )
+    if '!INCLUDE_TEST_TAGS!' == '' ( set INCLUDE_TEST_TAGS=%ARG2% ) else (set INCLUDE_TEST_TAGS=%ARG2%;!INCLUDE_TEST_TAGS! )
 )
 
 
@@ -346,13 +346,25 @@ echo INCLUDE_TEST_TAGS=%INCLUDE_TEST_TAGS%
 echo.
 
 echo ---------------- Done with arguments, starting preparation -----------------
+if '%VSSDKInstall%'=='' (
+     set VSSDKInstall=%~dp0packages\Microsoft.VSSDK.BuildTools.15.0.25907-RC2\tools\vssdk
+)
+if '%VSSDKToolsPath%'=='' (
+     set VSSDKToolsPath=%~dp0packages\Microsoft.VSSDK.BuildTools.15.0.25907-RC2\tools\vssdk\bin
+)
+if '%VSSDKIncludes%'=='' (
+     set VSSDKIncludes=%~dp0packages\Microsoft.VSSDK.BuildTools.15.0.25907-RC2\tools\vssdk\inc
+)
 
-if "%RestorePackages%"=="" ( 
+if '%RestorePackages%'=='' (
     set RestorePackages=true
 )
 
-@echo on
+@echo VSSDKInstall:   %VSSDKInstall%
+@echo VSSDKToolsPath: %VSSDKToolsPath%
+@echo VSSDKIncludes:  %VSSDKIncludes%
 
+@echo on
 @call src\update.cmd signonly
 
 :: Check prerequisites
@@ -397,7 +409,7 @@ set _nrswitch=/nr:false
 rem uncomment to use coreclr msbuild not ready yet!!!!
 rem set _msbuildexe=%~dp0Tools\CoreRun.exe %~dp0Tools\MSBuild.exe
 rem set _nrswitch=
-          
+
 :: See <http://www.appveyor.com/docs/environment-variables>
 if defined APPVEYOR (
    rem See <http://www.appveyor.com/docs/build-phase>
@@ -406,6 +418,7 @@ if defined APPVEYOR (
    set _msbuildexe=%_msbuildexe% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
    )
 )
+
 REM set msbuildflags=/maxcpucount %_nrswitch% /nologo
 set msbuildflags=%_nrswitch% /nologo
 set _ngenexe="%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\ngen.exe"
@@ -527,50 +540,47 @@ if '%BUILD_CORECLR%' == '1' (
        if ERRORLEVEL 1 ( goto :failure )
   
   echo Deploy x86 version of compiler and dependencies, ready for testing
-  echo %_fsiexe% --exec tests\scripts\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/win7-x86 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\win7-x86 --copyCompiler:yes --v:quiet
-       %_fsiexe% --exec tests\scripts\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/win7-x86 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\win7-x86 --copyCompiler:yes --v:quiet
+  echo %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/win7-x86 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\win7-x86 --copyCompiler:yes --v:quiet
+       %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/win7-x86 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\win7-x86 --copyCompiler:yes --v:quiet
        if ERRORLEVEL 1 ( goto :failure )
-
-  echo %_fsiexe% --exec tests\scripts\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/win7-x86 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\win7-x86 --copyCompiler:no --v:quiet
-       %_fsiexe% --exec tests\scripts\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/win7-x86 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\win7-x86 --copyCompiler:no --v:quiet
+  echo %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/win7-x86 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\win7-x86 --copyCompiler:no --v:quiet
+       %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/win7-x86 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\win7-x86 --copyCompiler:no --v:quiet
        if ERRORLEVEL 1 ( goto :failure )
 
   echo Deploy x64 compiler to tests\testbin\%BUILD_CONFIG%\coreclr\fsc\win7-x64, ready for testing
-  echo %_fsiexe% --exec tests\scripts\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/win7-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\win7-x64 --copyCompiler:yes --v:quiet
-       %_fsiexe% --exec tests\scripts\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/win7-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\win7-x64 --copyCompiler:yes --v:quiet
+  echo %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/win7-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\win7-x64 --copyCompiler:yes --v:quiet
+       %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/win7-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\win7-x64 --copyCompiler:yes --v:quiet
        if ERRORLEVEL 1 ( goto :failure )
 
   echo Deploy x64 runtime and FSharp.Core library to tests\testbin\%BUILD_CONFIG%\coreclr\win7-x64, ready for testing
-  echo %_fsiexe% --exec tests\scripts\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/win7-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\win7-x64 --copyCompiler:no --v:quiet
-       %_fsiexe% --exec tests\scripts\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/win7-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\win7-x64 --copyCompiler:no --v:quiet
+  echo %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/win7-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\win7-x64 --copyCompiler:no --v:quiet
+       %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/win7-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\win7-x64 --copyCompiler:no --v:quiet
        if ERRORLEVEL 1 ( goto :failure )
 
   echo Deploy linux compiler to tests\testbin\%BUILD_CONFIG%\coreclr\fsc\ubuntu.14.04-x64, ready for testing
-  echo %_fsiexe% --exec tests\scripts\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/ubuntu.14.04-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\ubuntu.14.04-x64 --copyCompiler:yes --v:quiet
-       %_fsiexe% --exec tests\scripts\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/ubuntu.14.04-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\ubuntu.14.04-x64 --copyCompiler:yes --v:quiet
+  echo %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/ubuntu.14.04-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\ubuntu.14.04-x64 --copyCompiler:yes --v:quiet
+       %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/ubuntu.14.04-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\ubuntu.14.04-x64 --copyCompiler:yes --v:quiet
        if ERRORLEVEL 1 ( goto :failure )
 
   echo Deploy linux runtime and FSharp.Core library to tests\testbin\%BUILD_CONFIG%\coreclr\ubuntu.14.04-x64, ready for testing
-  echo %_fsiexe% --exec tests\scripts\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/ubuntu.14.04-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\ubuntu.14.04-x64 --copyCompiler:no --v:quiet
-       %_fsiexe% --exec tests\scripts\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/ubuntu.14.04-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\ubuntu.14.04-x64 --copyCompiler:no --v:quiet
+  echo %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/ubuntu.14.04-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\ubuntu.14.04-x64 --copyCompiler:no --v:quiet
+       %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/ubuntu.14.04-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\ubuntu.14.04-x64 --copyCompiler:no --v:quiet
        if ERRORLEVEL 1 ( goto :failure )
 
   echo Deploy OSX compiler to tests\testbin\%BUILD_CONFIG%\coreclr\fsc\osx.10.10-x64, ready for testing
-  echo %_fsiexe% --exec tests\scripts\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/osx.10.10-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\osx.10.10-x64 --copyCompiler:yes --v:quiet
-       %_fsiexe% --exec tests\scripts\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/osx.10.10-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\osx.10.10-x64 --copyCompiler:yes --v:quiet
+  echo %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/osx.10.10-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\osx.10.10-x64 --copyCompiler:yes --v:quiet
+       %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/osx.10.10-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\osx.10.10-x64 --copyCompiler:yes --v:quiet
        if ERRORLEVEL 1 ( goto :failure )
 
   echo Deploy OSX runtime and FSharp.Core library to tests\testbin\%BUILD_CONFIG%\coreclr\osx.10.10-x64, ready for testing
-  echo %_fsiexe% --exec tests\scripts\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/osx.10.10-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\osx.10.10-x64 --copyCompiler:no --v:quiet
-       %_fsiexe% --exec tests\scripts\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/osx.10.10-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0\packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\osx.10.10-x64 --copyCompiler:no --v:quiet
+  echo %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/osx.10.10-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\osx.10.10-x64 --copyCompiler:no --v:quiet
+       %_fsiexe% --exec tests\fsharpqa\testenv\src\DeployProj\DeployProj.fsx --targetPlatformName:.NETStandard,Version=v1.6/osx.10.10-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\osx.10.10-x64 --copyCompiler:no --v:quiet
        if ERRORLEVEL 1 ( goto :failure )
 )
-
 
 if 'TEST_NET40_COMPILERUNIT_SUITE' == '0' and 'TEST_PORTABLE_COREUNIT_SUITE' == '0' and 'TEST_CORECLR_COREUNIT_SUITE' == '0' and 'TEST_VS_IDEUNIT_SUITE' == '0' and 'TEST_NET40_FSHARP_SUITE' == '0' and 'TEST_NET40_FSHARPQA_SUITE' == '0' goto :success
 
 echo ---------------- Done with update, starting tests -----------------------
-
 
 if NOT "%INCLUDE_TEST_SPEC_NUNIT%" == "" (
     set WHERE_ARG_NUNIT=--where "%INCLUDE_TEST_SPEC_NUNIT%"
@@ -579,7 +589,6 @@ if NOT "%INCLUDE_TEST_TAGS%" == "" (
     set TTAGS_ARG_RUNALL=-ttags:%INCLUDE_TEST_TAGS%
 )
 echo WHERE_ARG_NUNIT=!WHERE_ARG_NUNIT!
-
 
 set NUNITPATH=%~dp0tests\fsharpqa\testenv\bin\nunit\
 set NUNIT3_CONSOLE=%~dp0packages\NUnit.Console.3.0.0\tools\nunit3-console.exe
@@ -613,10 +622,10 @@ if '%TEST_NET40_FSHARP_SUITE%' == '1' (
     set XMLFILE=!RESULTSDIR!\test-net40-fsharp-results.xml
     if '%CI%' == '1' (
         set OUTPUTFILE=!RESULTSDIR!\test-net40-fsharp-output.log
-	    set OUTPUTARG=--output:"!OUTPUTFILE!" 
+        set OUTPUTARG=--output:"!OUTPUTFILE!" 
         set ERRORFILE=!RESULTSDIR!\test-net40-fsharp-errors.log
-	    set ERRORARG=--err:"!ERRORFILE!" 
-	)
+        set ERRORARG=--err:"!ERRORFILE!" 
+    )
 
     echo "!NUNIT3_CONSOLE!" --verbose "!FSCBINPATH!\FSharp.Tests.FSharpSuite.dll" --framework:V4.0 --work:"!FSCBINPATH!"  !OUTPUTARG! !ERRORARG! --result:"!XMLFILE!;format=nunit3" !WHERE_ARG_NUNIT!
          "!NUNIT3_CONSOLE!" --verbose "!FSCBINPATH!\FSharp.Tests.FSharpSuite.dll" --framework:V4.0 --work:"!FSCBINPATH!"  !OUTPUTARG! !ERRORARG! --result:"!XMLFILE!;format=nunit3" !WHERE_ARG_NUNIT!

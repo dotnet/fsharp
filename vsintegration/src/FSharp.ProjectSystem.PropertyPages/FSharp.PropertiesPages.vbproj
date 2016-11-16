@@ -36,7 +36,6 @@
     <DefineConstants>$(DefineConstants),FSHARP_CORE_4_5=True</DefineConstants>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
-    <VsSdkTargetsDir>$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\VSSDK</VsSdkTargetsDir>
     <ImportVSSDKTargets>true</ImportVSSDKTargets>
     <CreateVsixContainer>false</CreateVsixContainer>
     <DeployExtension>false</DeployExtension>
@@ -320,7 +319,7 @@
   </PropertyGroup>
   
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
-  <Import Project="$(VsSdkTargetsDir)\Microsoft.VsSDK.targets" />
+  <Import Project="$(VsSDKInstall)\Microsoft.VsSDK.targets" />
   
   <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
     <ItemGroup>

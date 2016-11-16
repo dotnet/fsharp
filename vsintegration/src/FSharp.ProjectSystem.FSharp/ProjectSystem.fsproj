@@ -5,7 +5,6 @@
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\..\src</FSharpSourcesRoot>
     <ProjectLanguage>FSharp</ProjectLanguage>
     <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
-    <VsSdkTargetsDir>$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\VSSDK</VsSdkTargetsDir>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
@@ -163,7 +162,7 @@
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <Import Project="$(FSharpSourcesRoot)\..\vsintegration\vsintegration.targets" />
-  <Import Project="$(VsSdkTargetsDir)\Microsoft.VsSDK.targets" />
+  <Import Project="$(VsSDKInstall)\Microsoft.VsSDK.targets" />
   <PropertyGroup>
     <BuildingProject>true</BuildingProject>
     <BuildDependsOn>VSCTCompile;CopyCtoFile;$(BuildDependsOn)</BuildDependsOn>

@@ -44,6 +44,10 @@
     <UseSourceLink>true</UseSourceLink>
     <UseGatherBinaries>true</UseGatherBinaries>
     <AddVsSdkAttributesToSomeCoreComponents>true</AddVsSdkAttributesToSomeCoreComponents>
+    <VsSDKInstall>$(MSBuildThisFileDirectory)..\packages\Microsoft.VSSDK.BuildTools.15.0.25907-RC2\tools\vssdk</VsSDKInstall>
+    <VsSDKToolPath>$(MSBuildThisFileDirectory)..\packages\Microsoft.VSSDK.BuildTools.15.0.25907-RC2\tools\vssdk\bin</VsSDKToolPath>
+    <VsSDKIncludes>$(MSBuildThisFileDirectory)..\packages\Microsoft.VSSDK.BuildTools.15.0.25907-RC2\tools\vssdk\inc</VsSDKIncludes>
+    <VsixSchemaPath>$(MSBuildThisFileDirectory)..\packages\Microsoft.VSSDK.BuildTools.15.0.25907-RC2\tools\vssdk\schemas\VSIXManifestSchema.xsd</VsixSchemaPath>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(ProjectLanguage)' == 'FSharp' ">
@@ -100,7 +104,7 @@
     <DefineConstants Condition="'$(VisualStudioVersion)'=='' AND '$(ProjectLanguage)' == 'VisualBasic'">$(DefineConstants),VS_VERSION_DEV14=True</DefineConstants>
     <DefineConstants Condition="'$(VisualStudioVersion)'=='' AND '$(ProjectLanguage)' != 'VisualBasic'">$(DefineConstants);VS_VERSION_DEV14</DefineConstants>
   </PropertyGroup>
-  
+
   <PropertyGroup> 
     <BuildRevision>$([System.DateTime]::Now.ToString(`yyMMdd`))</BuildRevision>
     <NuGetReleaseVersion>1.0.0</NuGetReleaseVersion> 
