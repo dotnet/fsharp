@@ -80,6 +80,7 @@
     </Content>
     <Content Include="$(FSharpSourcesRoot)\..\License.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>License.txt</Link>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
     <Content Include="$(FSharpSourcesRoot)\..\packages\System.ValueTuple.4.4.0-beta-24631-01\System.ValueTuple.4.4.0-beta-24631-01.nupkg">
