@@ -120,18 +120,8 @@ type TestConfig =
 
 
 module WindowsPlatform = 
-    type ProcessorArchitecture = 
-        | X86
-        | AMD64
-        override this.ToString() = (sprintf "%A" this)
 
     let clrPaths envVars =
-
-        let parseProcessorArchitecture (s : string) = 
-            match s.ToUpper() with
-            | "X86" -> X86
-            | "AMD64" -> AMD64
-            | _ -> AMD64
 
         let regQuery path value (baseKey: RegistryKey) =
             use regKey  = baseKey.OpenSubKey(path, false)
@@ -148,12 +138,6 @@ module WindowsPlatform =
             | Some (:? string as d) -> Some d
             | Some _ | None -> None
 
-        /// current process architecture, using PROCESSOR_ARCHITECTURE environment variable
-        let PROCESSOR_ARCHITECTURE = 
-            match envVars |> Map.tryFind "PROCESSOR_ARCHITECTURE" |> Option.map parseProcessorArchitecture with
-            | Some x -> x 
-            | None -> failwithf "environment variable '%s' required " "PROCESSOR_ARCHITECTURE"
-
         let windir = 
             match envVars |> Map.tryFind "windir" with
             | Some x -> x 
@@ -166,9 +150,8 @@ module WindowsPlatform =
 
         // == Use the same runtime as our architecture
         // == ASSUMPTION: This could be a good or bad thing.
-        match PROCESSOR_ARCHITECTURE with 
-        | X86 -> () 
-        | _ -> CORDIR <- CORDIR.Replace("Framework", "Framework64")
+        if Environment.Is64BitOperatingSystem then 
+            CORDIR <- CORDIR.Replace("Framework", "Framework64")
 
         let allSDK = 
              [ regQueryREG_SOFTWARE @"Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6\WinSDK-NetFx40Tools" "InstallationFolder"
@@ -179,22 +162,10 @@ module WindowsPlatform =
 
         let mutable CORSDK = allSDK |> Seq.tryPick id |> function None -> failwith "couldn't find CORSDK" | Some d -> d
 
-        // == Fix up CORSDK for 64bit platforms...
-        match PROCESSOR_ARCHITECTURE with
-        | AMD64 -> CORSDK <- CORSDK ++ "x64"
-        | _ -> ()
+        if Environment.Is64BitOperatingSystem then 
+            CORSDK <- CORSDK ++ "x64"
 
-
-        /// Return real processor architecture (ignore WOW64)
-        /// more info: http://blogs.msdn.com/b/david.wang/archive/2006/03/26/howto-detect-process-bitness.aspx
-        /// use PROCESSOR_ARCHITEW6432 and PROCESSOR_ARCHITECTURE environment variables
-        let OSARCH = 
-            match envVars |> Map.tryFind "PROCESSOR_ARCHITEW6432" |> Option.map parseProcessorArchitecture with
-            | Some arc -> arc
-            | None -> PROCESSOR_ARCHITECTURE
-
-
-        OSARCH, CORDIR, CORSDK
+        CORDIR, CORSDK
 
 type FSLibPaths = 
     { FSCOREDLLPATH : string }
@@ -212,12 +183,9 @@ let config configurationName envVars =
     let fsc_flags = "-r:System.Core.dll --nowarn:20 --define:COMPILED" 
     let fsi_flags = "-r:System.Core.dll --nowarn:20  --define:INTERACTIVE --maxerrors:1 --abortonerror" 
 
-    let OSARCH, CORDIR, CORSDK = WindowsPlatform.clrPaths envVars
+    let CORDIR, CORSDK = WindowsPlatform.clrPaths envVars
          
-    let fsiroot = 
-        match OSARCH with
-        | WindowsPlatform.X86 -> "fsi"
-        | _ -> "fsiAnyCpu"
+    let fsiroot = if Environment.Is64BitOperatingSystem then "fsiAnyCpu" else "fsi"
 
     let CSC = requireFile (CORDIR ++ "csc.exe")
     let NGEN = requireFile (CORDIR ++ "ngen.exe")

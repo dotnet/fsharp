@@ -9,12 +9,13 @@ let root = Path.GetFullPath(__SOURCE_DIRECTORY__ ++ ".." ++ "..")
 let Platform = getCmdLineArg "--platform:"    "win7-x64"
 let ProjectJsonLock    = getCmdLineArg "--projectJsonLock:"    (root ++ "tests" ++ "fsharp" ++ "project.lock.json")
 let PackagesDir        = getCmdLineArg "--packagesDir:"        (root ++ "packages")
-let FrameworkName      = getCmdLineArg "--frameworkName:"      ".NETCoreApp,Version=v1.0"
+let FrameworkName      = getCmdLineArg "--framework:"      ".NETCoreApp,Version=v1.0"
 let Verbosity          = getCmdLineArg "--v:"                  "quiet"
 let CompilerPathOpt    = getCmdLineArgOptional "--compilerPath:"       
-let ExtraArgs          = getCmdLineExtraArgs "--"       
+let Flavour            = getCmdLineArg "--flavour:"       "release"
+let ExtraArgs          = getCmdLineExtraArgs (fun x -> x.StartsWith "--")
 
-let CompilerPath       = defaultArg CompilerPathOpt (root ++ "tests" ++ "testbin" ++ "release" ++ "coreclr" ++ "fsc" ++ Platform)
+let CompilerPath       = defaultArg CompilerPathOpt (root ++ "tests" ++ "testbin" ++ Flavour ++ "coreclr" ++ "fsc" ++ Platform)
 let Win32Manifest = CompilerPath ++ "default.win32manifest"
 
 let isVerbose = Verbosity = "verbose"

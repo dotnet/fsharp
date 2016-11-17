@@ -1,15 +1,18 @@
 ﻿#load "../../src/scripts/scriptlib.fsx"
 #load "crackProjectJson.fsx"
 
+open System
 open System.IO
 open FSharp.Data
 open FSharp.Data.JsonExtensions 
+let root = Path.GetFullPath (__SOURCE_DIRECTORY__ ++ ".." ++ "..")
 
 try 
-    let ProjectJsonLock    = getCmdLineArg "--projectJsonLock:"    @"tests\fsharp\project.lock.json"
-    let PackagesDir        = getCmdLineArg "--packagesDir:"        @"packages"
-    let TargetPlatformName = getCmdLineArg "--targetPlatformName:" @".NETStandard,Version=v1.6/win7-x64"
-    let FSharpCore         = getCmdLineArg "--fsharpCore:"         @"release\coreclr\bin\FSharp.Core.dll"
+    let ProjectJsonLock    = getCmdLineArg "--projectJsonLock:"    (root ++ "tests" ++ "fsharp" ++ "project.lock.json")
+    let PackagesDir        = getCmdLineArg "--packagesDir:"        (root ++ "packages")
+    let Framework           = getCmdLineArg "--framework:"          ".NETCoreApp,Version=v1.0"
+    let Platform           = getCmdLineArg "--platform:"           defaultPlatform
+    let FSharpCore         = getCmdLineArg "--fsharpCore:"         @"release/coreclr/bin/FSharp.Core.dll"
     let Output             = getCmdLineArg "--output:"             @"."
     let Verbosity          = getCmdLineArg "--v:"                  @"quiet"
     let CopyCompiler       = getCmdLineArg "--copyCompiler:"       @"no"
@@ -26,7 +29,7 @@ try
 
     let isVerbose = Verbosity = "verbose"
 
-    let dependencies = CrackProjectJson.collectReferences (isVerbose, PackagesDir, TargetPlatformName, ProjectJsonLock, true)
+    let dependencies = CrackProjectJson.collectReferences (isVerbose, PackagesDir, Framework + "/" + Platform, ProjectJsonLock, true)
 
     //Okay copy everything
     makeDirectory Output
