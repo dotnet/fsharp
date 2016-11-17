@@ -13,9 +13,10 @@ let PackagesDir        = getCmdLineArg "--packagesDir:"        (root ++ "package
 let FrameworkName      = getCmdLineArg "--frameworkName:"      ".NETStandard,Version=v1.6"
 let Verbosity          = getCmdLineArg "--v:"                  "quiet"
 let CompilerPathOpt    = getCmdLineArgOptional "--compilerPath:"       
+let Flavour            = getCmdLineArg "--flavour:"       "release"
 let ExtraArgs          = getCmdLineExtraArgs "--"       
 
-let CompilerPath       = defaultArg CompilerPathOpt (root ++ "tests" ++ "testbin" ++ "release" ++ "coreclr" ++ "fsc" ++ Platform)
+let CompilerPath       = defaultArg CompilerPathOpt (root ++ "tests" ++ "testbin" ++ Flavour ++ "coreclr" ++ "fsc" ++ Platform)
 let Win32Manifest = CompilerPath ++ "default.win32manifest"
 
 let isVerbose = Verbosity = "verbose"
