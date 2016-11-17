@@ -9,7 +9,7 @@ let root = Path.GetFullPath(__SOURCE_DIRECTORY__ ++ ".." ++ "..")
 let Platform = getCmdLineArg "--platform:"    "win7-x64"
 let ProjectJsonLock    = getCmdLineArg "--projectJsonLock:"    (root ++ "tests" ++ "fsharp" ++ "project.lock.json")
 let PackagesDir        = getCmdLineArg "--packagesDir:"        (root ++ "packages")
-let FrameworkName      = getCmdLineArg "--framework:"      ".NETCoreApp,Version=v1.0"
+let FrameworkName      = getCmdLineArg "--framework:"      ".NETStandard,Version=v1.6"
 let Verbosity          = getCmdLineArg "--v:"                  "quiet"
 let CompilerPathOpt    = getCmdLineArgOptional "--compilerPath:"       
 let Flavour            = getCmdLineArg "--flavour:"       "release"

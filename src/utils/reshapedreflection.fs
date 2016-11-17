@@ -318,22 +318,12 @@ module internal ReflectionAdapters =
 
 #if FX_RESHAPED_REFLECTION_CORECLR
 
-//#if FSI_TODO_NETCORE
-    let globalLoadContext = System.Runtime.Loader.AssemblyLoadContext.Default
-//    type CustomAssemblyResolver() = class end
-//    let globalLoadContext = System.Runtime.Loader.AssemblyLoadContext.GetLoadContext(typeof<CustomAssemblyResolver>.GetTypeInfo().Assembly)
-//#else
-//    type CustomAssemblyResolver() =
-//        inherit AssemblyLoadContext()
-//        override this.Load (assemblyName:AssemblyName):Assembly =
-//            try 
-//               this.LoadFromAssemblyName(assemblyName)
-//            with _ -> 
-//               let exeAssemblyFolder = System.IO.Path.GetDirectoryName(typeof<CustomAssemblyResolver>.GetTypeInfo().Assembly.Location)
-//               this.LoadFromAssemblyPath(System.IO.Path.Combine(exeAssemblyFolder, assemblyName.Name + ".dll"))
-//
-//    let globalLoadContext = new CustomAssemblyResolver()
-//#endif
+    type CustomAssemblyResolver() =
+        inherit AssemblyLoadContext()
+        override this.Load (assemblyName:AssemblyName):Assembly =
+            this.LoadFromAssemblyName(assemblyName)
+
+    let globalLoadContext = new CustomAssemblyResolver()
 
 #endif
     type System.Reflection.Assembly with

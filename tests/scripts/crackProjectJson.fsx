@@ -54,7 +54,7 @@ let collectReferences (isVerbose, packagesDir, targetPlatformName, lockFile:stri
                             | None -> ()
                             | Some x -> yield! buildReferencePaths name version (getReferencedFiles value?native)
                     | _ -> ()
-            | _  -> ()
+            | None  -> failwith (sprintf "Target patform %s not found in %s" targetPlatformName lockFile)
         }
 
     if isVerbose then 

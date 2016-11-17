@@ -865,29 +865,7 @@ module Shim =
     type DefaultFileSystem() =
         interface IFileSystem with
             member __.AssemblyLoadFrom(fileName:string) = 
-#if FSI_TODO_NETCORE
-                let res = 
-                    try 
-                        //printfn "Loading %s via file" fileName
-                        globalLoadContext.LoadFromAssemblyPath(fileName)
-                    with _ -> 
-                        //printfn "Loading %s via name" fileName
-                        let name = System.Reflection.AssemblyName.GetAssemblyName(fileName)
-                        //printfn "Loading %s via name %A" fileName name
-                        try globalLoadContext.LoadFromAssemblyName(name)
-                        with _ -> 
-                           try 
-                             System.Reflection.Assembly.Load(name)
-                           with e -> 
-                             //printfn "FAILED: %s" (e.ToString())
-                             reraise ()
-
-                //printfn "Loaded %s" fileName
-                res
-
-#else
                 System.Reflection.Assembly.LoadFrom fileName
-#endif
             member __.AssemblyLoad(assemblyName:System.Reflection.AssemblyName) = 
                 System.Reflection.Assembly.Load assemblyName
 
