@@ -2,7 +2,7 @@
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\src</FSharpSourcesRoot>
-    <ProjectGuid>{C163E892-5BF7-4B59-AA99-B0E8079C67C4}</ProjectGuid>
+    <ProjectGuid>{bda4d411-6ad9-4b3e-a3b3-07bad6bef1ed}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
   <PropertyGroup>
@@ -14,9 +14,9 @@
     <OutputType>Library</OutputType>
     <UnitTestAssembly>true</UnitTestAssembly>
     <DefineConstants>$(DefineConstants);FSHARP_SUITE_DRIVES_CORECLR_TESTS</DefineConstants>
-	<AssemblyName>FSharp.Tests.FSharpSuite.DrivingCoreCLR</AssemblyName>
-	<Name>FSharp.Tests.FSharpSuite.DrivingCoreCLR</Name>
-	<!-- Prevent compiler from inlining calls to FSharp.Core to improve code coverage accuracy -->
+    <AssemblyName>FSharp.Tests.FSharpSuite.DrivingCoreCLR</AssemblyName>
+    <Name>FSharp.Tests.FSharpSuite.DrivingCoreCLR</Name>
+    <!-- Prevent compiler from inlining calls to FSharp.Core to improve code coverage accuracy -->
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
