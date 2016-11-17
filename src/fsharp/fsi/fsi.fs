@@ -2806,32 +2806,29 @@ let MainMain argv =
             Console.OutputEncoding <- System.Text.Encoding.UTF8
 #endif
 
-#if DEBUG  
+        let fsiObj = 
+            let defaultFSharpBinariesDir =
+#if FX_RESHAPED_REFLECTION
+                 System.AppContext.BaseDirectory
+#else
+                 System.AppDomain.CurrentDomain.BaseDirectory
+#endif
+            // We use LoadFrom to make sure we get the copy of this assembly from the right load context
+            let fsiAssemblyPath = Path.Combine(defaultFSharpBinariesDir,"FSharp.Compiler.Interactive.Settings.dll")
+            let fsiAssembly = FileSystem.AssemblyLoadFrom(fsiAssemblyPath)
+            if isNull fsiAssembly then failwith (sprintf "failed to load %s" fsiAssemblyPath)
+            let fsiTy = fsiAssembly.GetType("Microsoft.FSharp.Compiler.Interactive.Settings")
+            if isNull fsiAssembly then failwith "failed to find type Microsoft.FSharp.Compiler.Interactive.Settings in FSharp.Compiler.Interactive.Settings.dll"
+            callStaticMethod fsiTy "get_fsi" [  ]
+        let fsi = FsiEvaluationSession.GetDefaultConfiguration(fsiObj)
         if argv |> Array.exists  (fun x -> x = "/pause" || x = "--pause") then 
             Console.WriteLine("Press any key to continue...")
             Console.ReadKey() |> ignore
     
         try
           let session = new FsiEvaluationSession (fsi, argv, Console.In, Console.Out, Console.Error)
-          session 
+          session.Run()
         with e -> printf "Exception by fsi.exe:\n%+A\n" e
-#else
-        let defaultFSharpBinariesDir =
-#if FX_RESHAPED_REFLECTION
-             System.AppContext.BaseDirectory
-#else
-             System.AppDomain.CurrentDomain.BaseDirectory
-#endif
-        let fsiObj = 
-            // We use LoadFrom to make sure we get the copy of this assembly from the right load context
-            let fsiAssembly = Assembly.LoadFrom(Path.Combine(defaultFSharpBinariesDir,"FSharp.Compiler.Interactive.Settings.dll"))
-            if isNull fsiAssembly then failwith "failed to load FSharp.Compiler.Interactive.Settings.dll"
-            let fsiTy = fsiAssembly.GetType("Microsoft.FSharp.Compiler.Interactive.Settings")
-            if isNull fsiAssembly then failwith "failed to find type Microsoft.FSharp.Compiler.Interactive.Settings in FSharp.Compiler.Interactive.Settings.dll"
-            callStaticMethod fsiTy "get_fsi" [  ]
-        let session = new FsiEvaluationSession (FsiEvaluationSession.GetDefaultConfiguration(fsiObj), argv, Console.In, Console.Out, Console.Error)
-        session.Run() 
-#endif
 
 #if FSI_SHADOW_COPY_REFERENCES
     let isShadowCopy x = (x = "/shadowcopyreferences" || x = "--shadowcopyreferences" || x = "/shadowcopyreferences+" || x = "--shadowcopyreferences+")

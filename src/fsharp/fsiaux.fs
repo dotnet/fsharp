@@ -2,6 +2,9 @@
 
 namespace Microsoft.FSharp.Compiler.Interactive
 
+#nowarn "51"
+#nowarn "9"
+
 open System
 open System.Diagnostics
 open System.Threading
@@ -21,38 +24,38 @@ type internal SimpleEventLoop() =
     let runSignal = new AutoResetEvent(false)
     let exitSignal = new AutoResetEvent(false)
     let doneSignal = new AutoResetEvent(false)
-    let queue = ref ([] : (unit -> obj) list)
-    let result = ref (None : obj option)
+    let mutable queue = ([] : (unit -> obj) list)
+    let mutable result = (None : obj option)
     let setSignal(signal : AutoResetEvent) = while not (signal.Set()) do Thread.Sleep(1); done
     let waitSignal signal = WaitHandle.WaitAll([| (signal :> WaitHandle) |]) |> ignore
     let waitSignal2 signal1 signal2 = 
         WaitHandle.WaitAny([| (signal1 :> WaitHandle); (signal2 :> WaitHandle) |])
-    let running = ref false
-    let restart = ref false
+    let mutable running = false
+    let mutable restart = false
     interface IEventLoop with 
          member x.Run() =  
-             running := true
+             running <- true
              let rec run() = 
                  match waitSignal2 runSignal exitSignal with 
                  | 0 -> 
-                     !queue |> List.iter (fun f -> result := try Some(f()) with _ -> None) 
+                     queue |> List.iter (fun f -> result <- try Some(f()) with _ -> None) 
                      setSignal doneSignal
                      run()
                  | 1 -> 
-                     running := false
-                     !restart
+                     running <- false
+                     restart
                  | _ -> run()
              run()
          member x.Invoke(f : unit -> 'T) : 'T  = 
-             queue := [f >> box]
+             queue <- [f >> box]
              setSignal runSignal
              waitSignal doneSignal
-             !result |> Option.get |> unbox
+             result |> Option.get |> unbox
          member x.ScheduleRestart() = 
              // nb. very minor race condition here on running here, but totally 
              // unproblematic as ScheduleRestart and Exit are almost never called.
-             if !running then 
-                 restart := true 
+             if running then 
+                 restart <- true 
                  setSignal exitSignal
     interface System.IDisposable with 
          member x.Dispose() =
@@ -121,17 +124,4 @@ module Settings =
    
     [<assembly: AutoOpen("Microsoft.FSharp.Compiler.Interactive.Settings")>]
     do()
-#nowarn "51"
-#nowarn "9"
 
-module RuntimeHelpers = 
-    open System
-    open System.Reflection
-
-    let mutable savedX = 1
-    let savedIt = ref (typeof<int64>,box 0L)
-    let SaveIt (x:'T) = 
-       printfn "SaveIt called, ty = %A, x = %A" (typeof<'T>) x; (savedIt := (typeof<'T>, box x))
-       printfn "SaveIt called, savedIt = %A, addr = %d" (!savedIt) (NativeInterop.NativePtr.toNativeInt (&&savedX))
-    let GetSavedIt () = printfn "GetSavedIt called, savedIt = %A, addr = %d" (!savedIt) (NativeInterop.NativePtr.toNativeInt (&&savedX)); snd !savedIt
-    let GetSavedItType () = fst !savedIt
