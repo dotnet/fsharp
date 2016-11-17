@@ -31,13 +31,22 @@ module CoreTests =
     let ``access-GENERATED_SIGNATURE``() = singleTestBuildAndRun "core/access" GENERATED_SIGNATURE
 
     [<Test>]
-    let apporder () = singleTestBuildAndRun "core/apporder" FSC_OPT_PLUS_DEBUG
+    let ``apporder-FSC_OPT_PLUS_DEBUG`` () = singleTestBuildAndRun "core/apporder" FSC_OPT_PLUS_DEBUG
 
     [<Test>]
-    let array () = singleTestBuildAndRun "core/array" FSC_OPT_PLUS_DEBUG
+    let ``apporder-FSI_FILE`` () = singleTestBuildAndRun "core/apporder" FSI_FILE
 
     [<Test>]
-    let attributes () = singleTestBuildAndRun "core/attributes" FSC_OPT_PLUS_DEBUG
+    let ``array-FSC_OPT_PLUS_DEBUG`` () = singleTestBuildAndRun "core/array" FSC_OPT_PLUS_DEBUG
+
+    [<Test>]
+    let ``array-FSI_FILE`` () = singleTestBuildAndRun "core/array" FSI_FILE
+
+    [<Test>]
+    let ``attributes-FSC_OPT_PLUS_DEBUG`` () = singleTestBuildAndRun "core/attributes" FSC_OPT_PLUS_DEBUG
+
+    [<Test>]
+    let ``attributes-FSI_FILE`` () = singleTestBuildAndRun "core/attributes" FSI_FILE
 
     [<Test>]
     let byrefs () = 
@@ -57,10 +66,16 @@ module CoreTests =
         testOkFile.CheckExists()
 
     [<Test>]
-    let comprehensions () = singleTestBuildAndRun "core/comprehensions" FSC_OPT_PLUS_DEBUG
+    let ``comprehensions-FSC_OPT_PLUS_DEBUG`` () = singleTestBuildAndRun "core/comprehensions" FSC_OPT_PLUS_DEBUG
 
     [<Test>]
-    let comprehensionshw () = singleTestBuildAndRun "core/comprehensions-hw" FSC_OPT_PLUS_DEBUG
+    let ``comprehensions-FSI_FILE`` () = singleTestBuildAndRun "core/comprehensions" FSI_FILE
+
+    [<Test>]
+    let ``comprehensionshw-FSC_OPT_PLUS_DEBUG`` () = singleTestBuildAndRun "core/comprehensions-hw" FSC_OPT_PLUS_DEBUG
+
+    [<Test>]
+    let ``comprehensionshw-FSI_FILE`` () = singleTestBuildAndRun "core/comprehensions-hw" FSI_FILE
 
     [<Test>]
     let control () = singleTestBuildAndRun "core/control" FSC_OPT_PLUS_DEBUG
