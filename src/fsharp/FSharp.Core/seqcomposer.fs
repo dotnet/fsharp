@@ -23,8 +23,8 @@ namespace Microsoft.FSharp.Collections
             type PipeIdx      = int
 
             type ICompletionChaining =
-                abstract OnComplete : PipeIdx -> unit
-                abstract OnDispose : unit -> unit
+                abstract OnComplete : stopTailCall:byref<unit>*PipeIdx -> unit
+                abstract OnDispose : stopTailCall:byref<unit> -> unit
 
             type IOutOfBand =
                 abstract StopFurtherProcessing : PipeIdx -> unit
@@ -40,10 +40,10 @@ namespace Microsoft.FSharp.Collections
                 default __.OnDispose () = ()
 
                 interface ICompletionChaining with
-                    member this.OnComplete terminatingIdx =
+                    member this.OnComplete (_, terminatingIdx) =
                         this.OnComplete terminatingIdx
 
-                    member this.OnDispose () = 
+                    member this.OnDispose _ = 
                         try this.OnDispose ()
                         finally ()
 
@@ -211,21 +211,21 @@ namespace Microsoft.FSharp.Collections
                 inherit Consumer<'T,'U>()
 
                 interface ICompletionChaining with
-                    member this.OnComplete terminatingIdx =
-                        next.OnComplete terminatingIdx
-                    member this.OnDispose () =
-                        next.OnDispose ()
+                    member this.OnComplete (stopTailCall, terminatingIdx) =
+                        next.OnComplete (&stopTailCall, terminatingIdx)
+                    member this.OnDispose stopTailCall =
+                        next.OnDispose (&stopTailCall)
 
             and [<AbstractClass>] SeqComponent<'T,'U> (next:ICompletionChaining) =
                 inherit Consumer<'T,'U>()
 
                 interface ICompletionChaining with
-                    member this.OnComplete terminatingIdx =
+                    member this.OnComplete (stopTailCall, terminatingIdx) =
                         this.OnComplete terminatingIdx
-                        next.OnComplete terminatingIdx
-                    member this.OnDispose () =
+                        next.OnComplete (&stopTailCall, terminatingIdx)
+                    member this.OnDispose stopTailCall  =
                         try     this.OnDispose ()
-                        finally next.OnDispose ()
+                        finally next.OnDispose (&stopTailCall)
 
             and Choose<'T,'U,'V> (choose:'T->option<'U>, next:Consumer<'U,'V>) =
                 inherit SeqComponent<'T,'V>(Upcast.iCompletionChaining next)
@@ -576,10 +576,12 @@ namespace Microsoft.FSharp.Collections
                     let consumer = current.Build pipeline result
                     try
                         executeOn pipeline consumer
-                        (Upcast.iCompletionChaining consumer).OnComplete pipeline.HaltedIdx
+                        let mutable stopTailCall = ()
+                        (Upcast.iCompletionChaining consumer).OnComplete (&stopTailCall, pipeline.HaltedIdx)
                         result
                     finally
-                        (Upcast.iCompletionChaining consumer).OnDispose ()
+                        let mutable stopTailCall = ()
+                        (Upcast.iCompletionChaining consumer).OnDispose (&stopTailCall)
 
             module Enumerable =
                 type Empty<'T>() =
@@ -601,7 +603,8 @@ namespace Microsoft.FSharp.Collections
                 type EnumeratorBase<'T>(result:Result<'T>, seqComponent:ICompletionChaining) =
                     interface IDisposable with
                         member __.Dispose() : unit =
-                            seqComponent.OnDispose ()
+                            let mutable stopTailCall = ()
+                            seqComponent.OnDispose (&stopTailCall)
 
                     interface IEnumerator with
                         member this.Current : obj = box ((Upcast.enumerator this)).Current
@@ -649,7 +652,8 @@ namespace Microsoft.FSharp.Collections
                                 moveNext ()
                         else
                             result.SeqState <- SeqProcessNextStates.Finished
-                            (Upcast.iCompletionChaining seqComponent).OnComplete result.HaltedIdx
+                            let mutable stopTailCall = ()
+                            (Upcast.iCompletionChaining seqComponent).OnComplete (&stopTailCall, result.HaltedIdx)
                             false
 
                     interface IEnumerator with
@@ -662,7 +666,8 @@ namespace Microsoft.FSharp.Collections
                             try
                                 source.Dispose ()
                             finally
-                                (Upcast.iCompletionChaining seqComponent).OnDispose ()
+                                let mutable stopTailCall = ()
+                                (Upcast.iCompletionChaining seqComponent).OnDispose (&stopTailCall)
 
                 and Enumerable<'T,'U>(enumerable:IEnumerable<'T>, current:SeqFactory<'T,'U>) =
                     inherit EnumerableBase<'U>()
@@ -797,7 +802,8 @@ namespace Microsoft.FSharp.Collections
                                 moveNext ()
                         else
                             result.SeqState <- SeqProcessNextStates.Finished
-                            (Upcast.iCompletionChaining seqComponent).OnComplete result.HaltedIdx
+                            let mutable stopTailCall = ()
+                            (Upcast.iCompletionChaining seqComponent).OnComplete (&stopTailCall, result.HaltedIdx)
                             false
 
                     interface IEnumerator with
@@ -848,7 +854,8 @@ namespace Microsoft.FSharp.Collections
                                 moveNext tail
                         | _ ->
                             result.SeqState <- SeqProcessNextStates.Finished
-                            (Upcast.iCompletionChaining seqComponent).OnComplete result.HaltedIdx
+                            let mutable stopTailCall = ()
+                            (Upcast.iCompletionChaining seqComponent).OnComplete (&stopTailCall, result.HaltedIdx)
                             false
 
                     interface IEnumerator with
@@ -961,7 +968,8 @@ namespace Microsoft.FSharp.Collections
                             raise <| System.InvalidOperationException (SR.GetString(SR.enumerationPastIntMaxValue))
                         else
                             result.SeqState <- SeqProcessNextStates.Finished
-                            (Upcast.iCompletionChaining seqComponent).OnComplete result.HaltedIdx
+                            let mutable stopTailCall = ()
+                            (Upcast.iCompletionChaining seqComponent).OnComplete (&stopTailCall, result.HaltedIdx)
                             false
 
                     interface IEnumerator with
