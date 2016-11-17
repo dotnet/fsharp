@@ -20,6 +20,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Core.Printf
 
 open System
+open System.IO
 open System.Reflection
 open System.Reflection.Emit
 open System.Runtime.InteropServices
