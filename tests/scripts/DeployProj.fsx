@@ -29,7 +29,7 @@ try
 
     let isVerbose = Verbosity = "verbose"
 
-    let dependencies = CrackProjectJson.collectReferences (isVerbose, PackagesDir, Framework + "/" + Platform, ProjectJsonLock, true)
+    let dependencies = CrackProjectJson.collectReferences (isVerbose, PackagesDir, Framework + "/" + Platform, ProjectJsonLock, true, true)
 
     //Okay copy everything
     makeDirectory Output

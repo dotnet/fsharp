@@ -352,8 +352,7 @@ module Command =
             | Error r -> sprintf " 2%s" (redirectType r)
         sprintf "%s%s%s%s" path (match args with "" -> "" | x -> " " + x) (inF redirect.Input) (outF redirect.Output)
 
-    let exec dir envVars redirect path args =
-        let { Output = o; Input = i} = redirect
+    let exec dir envVars (redirect:RedirectInfo) path args =
 
         let inputWriter sources (writer: StreamWriter) =
             let pipeFile name = async {
@@ -372,7 +371,7 @@ module Command =
             sources |> pipeFile |> Async.RunSynchronously
 
         let inF fCont cmdArgs =
-            match i with
+            match redirect.Input with
             | None -> fCont cmdArgs
             | Some(RedirectInput l) -> fCont { cmdArgs with RedirectInput = Some (inputWriter l) }
 
@@ -383,7 +382,7 @@ module Command =
             | Overwrite p -> new StreamWriter(File.OpenWrite(p |> fullpath))
 
         let outF fCont cmdArgs =
-            match o with
+            match redirect.Output with
             | RedirectTo.Inherit ->  
                 use toLog = redirectToLog ()
                 fCont { cmdArgs with RedirectOutput = Some (toLog.Post); RedirectError = Some (toLog.Post) }

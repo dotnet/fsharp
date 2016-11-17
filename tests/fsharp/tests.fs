@@ -1,5 +1,5 @@
 ﻿#if INTERACTIVE
-#r @"../../release/net40/bin/FSharp.Compiler.dll"
+//#r @"../../release/net40/bin/FSharp.Compiler.dll"
 #r @"../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
 #load "../../src/scripts/scriptlib.fsx" 
 #load "test-framework.fs" 
@@ -18,8 +18,15 @@ open SingleTest
 
 module CoreTests = 
 
+#if FSHARP_SUITE_DRIVES_CORECLR_TESTS
+
+// These tests drive the .NET Core compiler directly (from a .NET Framework NUnit component)
+    [<Test>]
+    let ``access-FSC_CORECLR``() = singleTestBuildAndRun "core/access" FSC_CORECLR
+
     //[<Test>]
-    //let ``access-FSC_CORECLR``() = singleTestBuildAndRun "core/access" FSC_CORECLR
+    //let ``access-FSI_CORECLR``() = singleTestBuildAndRun "core/access" FSI_CORECLR
+#else
 
     [<Test>]
     let ``access-FSI_FILE``() = singleTestBuildAndRun "core/access" FSI_FILE
@@ -2110,4 +2117,5 @@ namespace CST.RI.Anshun
 
         fileVersionInfo.ProductVersion |> Assert.areEqual expected
 
+#endif
 #endif
