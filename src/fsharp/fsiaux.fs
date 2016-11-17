@@ -104,6 +104,13 @@ type InteractiveSession()  =
 
     member self.AddPrintTransformer(printer : 'T -> obj) =
       addedPrinters <- Choice2Of2 (typeof<'T>, (fun (x:obj) -> printer (unbox x))) :: addedPrinters
+
+    member internal self.SetEventLoop (run: (unit -> bool), invoke: ((unit -> obj) -> obj), restart: (unit -> unit)) =
+      evLoop.ScheduleRestart()
+      evLoop <- { new IEventLoop with 
+                     member __.Run() = run()
+                     member __.Invoke(f) = invoke((fun () -> f() |> box)) |> unbox
+                     member __.ScheduleRestart() = restart() }
     
 [<assembly: CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1009:DeclareEventHandlersCorrectly", Scope="member", Target="Microsoft.FSharp.Compiler.Interactive.InteractiveSession.#ThreadException")>]
 do()

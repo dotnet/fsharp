@@ -53,6 +53,7 @@ type InteractiveSession =
     /// <summary>Gets or sets a the current event loop being used to process interactions.</summary>
     member EventLoop: IEventLoop with get,set
     
+    member internal SetEventLoop: (unit -> bool) * ((unit -> obj) -> obj) * (unit -> unit) -> unit
     
 
 module Settings = 
