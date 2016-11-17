@@ -369,27 +369,27 @@ if '%RestorePackages%'=='' (
 
 :: Check prerequisites
 if not '%VisualStudioVersion%' == '' goto vsversionset
-if exist "%VS150COMNTOOLS%..\ide\devenv.exe" set VisualStudioVersion=15.0
+if exist "%VS150COMNTOOLS%\..\ide\devenv.exe" set VisualStudioVersion=15.0
 if not '%VisualStudioVersion%' == '' goto vsversionset
 
 if not '%VisualStudioVersion%' == '' goto vsversionset
-if exist "%VS150COMNTOOLS%..\..\ide\devenv.exe" set VisualStudioVersion=15.0
+if exist "%VS150COMNTOOLS%\..\..\ide\devenv.exe" set VisualStudioVersion=15.0
 if not '%VisualStudioVersion%' == '' goto vsversionset
 
-if exist "%VS140COMNTOOLS%..\ide\devenv.exe" set VisualStudioVersion=14.0
+if exist "%VS140COMNTOOLS%\..\ide\devenv.exe" set VisualStudioVersion=14.0
 if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe" set VisualStudioVersion=14.0
 if exist "%ProgramFiles%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe" set VisualStudioVersion=14.0
 if not '%VisualStudioVersion%' == '' goto vsversionset
 
-if exist "%VS120COMNTOOLS%..\ide\devenv.exe" set VisualStudioVersion=12.0
+if exist "%VS120COMNTOOLS%\..\ide\devenv.exe" set VisualStudioVersion=12.0
 if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" set VisualStudioVersion=12.0
 if exist "%ProgramFiles%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" set VisualStudioVersion=12.0
 
 :vsversionset
 if '%VisualStudioVersion%' == '' echo Error: Could not find an installation of Visual Studio && goto :failure
 
-if exist "%VS150COMNTOOLS%..\..\MSBuild\15.0\Bin\MSBuild.exe" (
-    set _msbuildexe="%VS150COMNTOOLS%..\..\MSBuild\15.0\Bin\MSBuild.exe"
+if exist "%VS150COMNTOOLS%\..\..\MSBuild\15.0\Bin\MSBuild.exe" (
+    set _msbuildexe="%VS150COMNTOOLS%\..\..\MSBuild\15.0\Bin\MSBuild.exe"
     goto :havemsbuild
 )
 if exist "%ProgramFiles(x86)%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe" (
@@ -657,9 +657,9 @@ set PATH=%PATH%;%CORDIR%
 
 set REGEXE32BIT=reg.exe
 
-IF NOT DEFINED SNEXE32  IF EXIST "%WINSDKNETFXTOOLS%sn.exe"               set SNEXE32=%WINSDKNETFXTOOLS%sn.exe
+IF NOT DEFINED SNEXE32  IF EXIST "%WINSDKNETFXTOOLS%\sn.exe"               set SNEXE32=%WINSDKNETFXTOOLS%sn.exe
 IF NOT DEFINED SNEXE64  IF EXIST "%WINSDKNETFXTOOLS%x64\sn.exe"           set SNEXE64=%WINSDKNETFXTOOLS%x64\sn.exe
-IF NOT DEFINED ildasm   IF EXIST "%WINSDKNETFXTOOLS%ildasm.exe"           set ildasm=%WINSDKNETFXTOOLS%ildasm.exe
+IF NOT DEFINED ildasm   IF EXIST "%WINSDKNETFXTOOLS%\ildasm.exe"           set ildasm=%WINSDKNETFXTOOLS%ildasm.exe
 
 
 if '%TEST_NET40_FSHARPQA_SUITE%' == '1' (
