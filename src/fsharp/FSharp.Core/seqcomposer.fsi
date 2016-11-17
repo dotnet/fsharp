@@ -25,10 +25,10 @@ namespace Microsoft.FSharp.Collections
             /// operation which didn't have a source at least as large as was required). It is
             /// not called in the case of an exception being thrown whilst the stream is still
             /// being processed.</summary>
-            abstract OnComplete : PipeIdx -> unit
+            abstract OnComplete : stopTail:byref<unit>*PipeIdx -> unit
             /// <summary>OnDispose is used to cleanup the stream. It is always called at the last operation
             /// after the enumeration has completed.</summary>
-            abstract OnDispose : unit -> unit
+            abstract OnDispose : stopTail:byref<unit> -> unit
 
         type IOutOfBand =
             abstract StopFurtherProcessing : PipeIdx -> unit
