@@ -1884,22 +1884,27 @@ let BuildFieldMap cenv env isPartial ty flds m =
         let allFields = flds |> List.map (fun ((_,ident),_) -> ident)
         flds |> List.map (fun (fld,fldExpr) -> 
             let frefSet = ResolveField cenv.tcSink cenv.nameResolver env.eNameResEnv ad ty fld allFields
-            fld,frefSet, fldExpr)
+            fld,frefSet,fldExpr)
     let relevantTypeSets = 
         frefSets |> List.map (fun (_,frefSet,_) -> frefSet |> List.choose (fun (FieldResolution(rfref,_)) -> Some rfref.TyconRef))
     
     let tcref = 
         match List.fold (ListSet.intersect (tyconRefEq cenv.g)) (List.head relevantTypeSets) (List.tail relevantTypeSets) with
         | [tcref] -> tcref
-        | _ -> 
+        | tcrefs -> 
             if isPartial then 
                 warning (Error(FSComp.SR.tcFieldsDoNotDetermineUniqueRecordType(),m))
-            // OK, there isn't a unique type dictated by the intersection for the field refs. 
-            // We're going to get an error of some kind below. 
-            // Just choose one field ref and let the error come later 
-            let (_,frefSet1,_) = List.head frefSets
-            let (FieldResolution(fref1,_))= List.head frefSet1
-            fref1.TyconRef
+
+            // try finding a record type with the same number of fields as the ones that are given.
+            match tcrefs |> List.tryFind (fun tc -> tc.TrueFieldsAsList.Length = flds.Length) with
+            | Some tcref -> tcref            
+            | _ -> 
+                // OK, there isn't a unique, good type dictated by the intersection for the field refs. 
+                // We're going to get an error of some kind below. 
+                // Just choose one field ref and let the error come later 
+                let (_,frefSet1,_) = List.head frefSets
+                let (FieldResolution(fref1,_))= List.head frefSet1
+                fref1.TyconRef
     
     let fldsmap,rfldsList = 
         ((Map.empty,[]), frefSets) ||> List.fold (fun (fs,rfldsList) (fld,frefs,fldExpr) -> 

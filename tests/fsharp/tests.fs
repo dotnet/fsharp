@@ -690,6 +690,8 @@ module CoreTests =
     [<Test; Category("lift")>]
     let lift () = singleTestBuildAndRun "core/lift" FSC_OPT_PLUS_DEBUG
 
+    [<Test>]
+    let recordResolution () = singleTestBuildAndRun "core/recordResolution" FSC_OPT_PLUS_DEBUG
 
     [<Test>]
     let ``load-script`` () = 
