@@ -18,8 +18,8 @@ open SingleTest
 
 module CoreTests = 
 
-    [<Test>]
-    let ``access-FSC_CORECLR``() = singleTestBuildAndRun "core/access" FSC_CORECLR
+    //[<Test>]
+    //let ``access-FSC_CORECLR``() = singleTestBuildAndRun "core/access" FSC_CORECLR
 
     [<Test>]
     let ``access-FSI_FILE``() = singleTestBuildAndRun "core/access" FSI_FILE

@@ -41,11 +41,10 @@ let singleTestBuildAndRunAux cfg p =
         testOkFile.CheckExists()
 
     | FSC_CORECLR -> 
-        let platform = "win7-x64"
         let testName = getBasename cfg.Directory
         let extraSource = (__SOURCE_DIRECTORY__  ++ "coreclr_utilities.fs")
         let outFile = (__SOURCE_DIRECTORY__ ++ sprintf @"../testbin/%s/coreclr/fsharp/core/%s/output/test.exe" cfg.BUILD_CONFIG testName)
-        let coreRunExe = (__SOURCE_DIRECTORY__ ++ sprintf @"../testbin/%s/coreclr/%s/corerun.exe" cfg.BUILD_CONFIG platform)
+        let coreRunExe = (__SOURCE_DIRECTORY__ ++ sprintf @"../testbin/%s/coreclr/%s/corerun.exe" cfg.BUILD_CONFIG defaultPlatform)
         makeDirectory (getDirectoryName outFile)
         let fscArgs = 
             sprintf """--debug:portable --debug+ --out:%s --define:BASIC_TEST --target:exe -g --define:NETSTANDARD1_6 --define:FSCORE_PORTABLE_NEW --define:FX_PORTABLE_OR_NETSTANDARD "%s" %s """
@@ -53,10 +52,9 @@ let singleTestBuildAndRunAux cfg p =
                extraSource
                (String.concat " " sources)
 
-        let fsccArgs = 
-            sprintf """--platform:%s -- %s"""
-               platform
-               fscArgs
+        let fsccArgs = fscArgs
+            //sprintf """--platform:%s -- %s"""
+            //   fscArgs
 
         fsi cfg "--exec %s %s %s"
                cfg.fsi_flags

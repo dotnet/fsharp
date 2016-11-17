@@ -49,11 +49,7 @@ module Scripting =
         | null -> failwith (sprintf "The argument %s is required" switchName)
         | x -> x
 
-    let getCmdLineExtraArgs switchName = 
-        if argv |> Array.contains switchName then 
-           argv |> Array.skipWhile (fun s -> s <> switchName) |> Array.skip 1
-        else
-            [| |]
+    let getCmdLineExtraArgs isSwitch = argv |> Array.skipWhile isSwitch 
 
 #endif
 
@@ -167,4 +163,11 @@ module Scripting =
 
     let redirectToLog () = redirectTo System.Console.Out
 
+
+    let defaultPlatform = 
+        match Environment.OSVersion.Platform, Environment.Is64BitOperatingSystem with 
+        | PlatformID.MacOSX, true -> "osx.10.10-x64"
+        | PlatformID.Unix,true -> "ubuntu.14.04-x64"
+        | _, true -> "win7-x64"
+        | _, false -> "win7-x86"
 
