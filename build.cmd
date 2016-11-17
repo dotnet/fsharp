@@ -102,6 +102,7 @@ if /i '%_autoselect_tests%' == '1' (
     )
 
     if /i '%BUILD_CORECLR%' == '1' (
+        set TEST_CORECLR_FSHARP_SUITE=1
         set TEST_CORECLR_COREUNIT_SUITE=1
     )
 
@@ -212,6 +213,7 @@ if /i '%ARG%' == 'ci_part2' (
     set TEST_NET40_COREUNIT_SUITE=1
     set TEST_NET40_FSHARP_SUITE=1
     set TEST_PORTABLE_COREUNIT_SUITE=1
+    set TEST_CORECLR_FSHARP_SUITE=1
     set TEST_CORECLR_COREUNIT_SUITE=1
     set CI=1
 
@@ -301,6 +303,7 @@ if /i '%ARG%' == 'test-net40-fsharp' (
 )
 
 if /i '%ARG%' == 'test-coreclr-fsharp' (
+    set BUILD_NET40=1
     set BUILD_CORECLR=1
     set TEST_CORECLR_FSHARP_SUITE=1
 )
@@ -831,11 +834,21 @@ if '%TEST_CORECLR_FSHARP_SUITE%' == '1' (
 
     set single_threaded=true
     set permutations=FSC_CORECLR
-    set XMLFILE=%RESULTSDIR!\test-coreclr-fsharp-results.xml
-    set OUTPUTFILE=!RESULTSDIR!\test-coreclr-fsharp-output.log
-    set ERRORFILE=!RESULTSDIR!\test-coreclr-fsharp-errors.log
-    echo "!NUNIT3_CONSOLE!" --verbose "!FSCBINPATH!\..\..\coreclr\bin\FSharp.Tests.FSharp.dll" --framework:V4.0 --work:"!FSCBINPATH!"  --output:"!OUTPUTFILE!" --err:"!ERRORFILE!" --result:"!XMLFILE!;format=nunit3" !WHERE_ARG_NUNIT!
-         "!NUNIT3_CONSOLE!" --verbose "!FSCBINPATH!\..\..\coreclr\bin\FSharp.Tests.FSharp.dll" --framework:V4.0 --work:"!FSCBINPATH!"  --output:"!OUTPUTFILE!" --err:"!ERRORFILE!" --result:"!XMLFILE!;format=nunit3" !WHERE_ARG_NUNIT!
+
+    set OUTPUTARG=
+    set ERRORARG=
+    set OUTPUTFILE=
+    set ERRORFILE=
+    set XMLFILE=!RESULTSDIR!\test-coreclr-fsharp-results.xml
+    if '%CI%' == '1' (
+        set OUTPUTFILE=!RESULTSDIR!\test-coreclr-fsharp-output.log
+        set ERRORFILE=!RESULTSDIR!\test-coreclr-fsharp-errors.log
+        set ERRORARG=--err:"!ERRORFILE!" 
+        set OUTPUTARG=--output:"!OUTPUTFILE!" 
+	)
+
+    echo "!NUNIT3_CONSOLE!" --verbose "!FSCBINPATH!\FSharp.Tests.FSharpSuite.DrivingCoreCLR.dll" --framework:V4.0 --work:"!FSCBINPATH!"  !OUTPUTARG! !ERRORARG! --result:"!XMLFILE!;format=nunit3" !WHERE_ARG_NUNIT!
+         "!NUNIT3_CONSOLE!" --verbose "!FSCBINPATH!\FSharp.Tests.FSharpSuite.DrivingCoreCLR.dll" --framework:V4.0 --work:"!FSCBINPATH!"  !OUTPUTARG! !ERRORARG! --result:"!XMLFILE!;format=nunit3" !WHERE_ARG_NUNIT!
 
     call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
     if NOT '!saved_errorlevel!' == '0' (

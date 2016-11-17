@@ -8,9 +8,10 @@ open TestFramework
 
 
 type Permutation = 
+    | FSC_CORECLR
+    | FSI_CORECLR
     | FSI_FILE
     | FSI_STDIN
-    | FSC_CORECLR
     | GENERATED_SIGNATURE
     | FSC_OPT_MINUS_DEBUG
     | FSC_OPT_PLUS_DEBUG
@@ -26,6 +27,50 @@ let singleTestBuildAndRunAux cfg p =
 
 
     match p with 
+    | FSC_CORECLR -> 
+        let testName = getBasename cfg.Directory
+        let extraSource = (__SOURCE_DIRECTORY__  ++ "coreclr_utilities.fs")
+        let outFile = (__SOURCE_DIRECTORY__ ++ sprintf @"../testbin/%s/coreclr/fsharp/core/%s/output/test.exe" cfg.BUILD_CONFIG testName)
+        let coreRunExe = (__SOURCE_DIRECTORY__ ++ sprintf @"../testbin/%s/coreclr/%s/corerun.exe" cfg.BUILD_CONFIG defaultPlatform)
+        makeDirectory (getDirectoryName outFile)
+        let fscArgs = 
+            sprintf """--debug:portable --debug+ --out:%s  --target:exe -g --define:NETSTANDARD1_6 --define:FSCORE_PORTABLE_NEW --define:FX_PORTABLE_OR_NETSTANDARD "%s" %s """
+               outFile
+               extraSource
+               (String.concat " " sources)
+
+        let fsccArgs = sprintf """--verbose:repro %s""" fscArgs
+
+        fsi cfg "--exec %s %s %s"
+               cfg.fsi_flags
+               (__SOURCE_DIRECTORY__ ++ @"../scripts/fscc.fsx")
+               fsccArgs
+               []
+               
+        use testOkFile = new FileGuard (getfullpath cfg "test.ok")
+        exec cfg  coreRunExe outFile
+
+        testOkFile.CheckExists()
+
+    | FSI_CORECLR -> 
+        let extraSource = (__SOURCE_DIRECTORY__  ++ "coreclr_utilities.fs")
+        let fsiArgs = 
+            sprintf """ --define:NETSTANDARD1_6 --define:FSCORE_PORTABLE_NEW --define:FX_PORTABLE_OR_NETSTANDARD "%s" %s """
+               extraSource
+               (String.concat " " sources)
+
+        let fsciArgs = sprintf """--verbose:repro %s""" fsiArgs
+
+        use testOkFile = new FileGuard (getfullpath cfg "test.ok")
+
+        fsi cfg "--exec %s %s %s"
+               cfg.fsi_flags
+               (__SOURCE_DIRECTORY__ ++ @"../scripts/fsci.fsx")
+               fsciArgs
+               []
+               
+        testOkFile.CheckExists()
+
     | FSI_FILE -> 
         use testOkFile = new FileGuard (getfullpath cfg "test.ok")
 
@@ -37,33 +82,6 @@ let singleTestBuildAndRunAux cfg p =
         use testOkFile = new FileGuard (getfullpath cfg "test.ok")
 
         fsiStdin cfg (sources |> List.rev |> List.head) "" [] //use last file, because `cmd < a.txt b.txt` redirect b.txt only
-
-        testOkFile.CheckExists()
-
-    | FSC_CORECLR -> 
-        let testName = getBasename cfg.Directory
-        let extraSource = (__SOURCE_DIRECTORY__  ++ "coreclr_utilities.fs")
-        let outFile = (__SOURCE_DIRECTORY__ ++ sprintf @"../testbin/%s/coreclr/fsharp/core/%s/output/test.exe" cfg.BUILD_CONFIG testName)
-        let coreRunExe = (__SOURCE_DIRECTORY__ ++ sprintf @"../testbin/%s/coreclr/%s/corerun.exe" cfg.BUILD_CONFIG defaultPlatform)
-        makeDirectory (getDirectoryName outFile)
-        let fscArgs = 
-            sprintf """--debug:portable --debug+ --out:%s --define:BASIC_TEST --target:exe -g --define:NETSTANDARD1_6 --define:FSCORE_PORTABLE_NEW --define:FX_PORTABLE_OR_NETSTANDARD "%s" %s """
-               outFile
-               extraSource
-               (String.concat " " sources)
-
-        let fsccArgs = fscArgs
-            //sprintf """--platform:%s -- %s"""
-            //   fscArgs
-
-        fsi cfg "--exec %s %s %s"
-               cfg.fsi_flags
-               (__SOURCE_DIRECTORY__ ++ @"../scripts/fscc.fsx")
-               fsccArgs
-               []
-               
-        use testOkFile = new FileGuard (getfullpath cfg "test.ok")
-        exec cfg  coreRunExe outFile
 
         testOkFile.CheckExists()
 

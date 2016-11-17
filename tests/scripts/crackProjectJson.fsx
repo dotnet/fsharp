@@ -7,7 +7,7 @@ open FSharp.Data
 open FSharp.Data.JsonExtensions 
 
 /// Collects references from project.json.lock
-let collectReferences (isVerbose, packagesDir, targetPlatformName, lockFile:string, isForExecute) = 
+let collectReferences (isVerbose, packagesDir, targetPlatformName, lockFile:string, isForExecute, collectNative) = 
     let setPathSeperators (path:string) = path.Replace('/', '\\')
 
     let splitNameAndVersion (ref:string) =
@@ -50,9 +50,10 @@ let collectReferences (isVerbose, packagesDir, targetPlatformName, lockFile:stri
                             match value.TryGetProperty("runtime") with
                             | None -> ()
                             | Some x -> yield! buildReferencePaths name version (getReferencedFiles value?runtime)
-                            match value.TryGetProperty("native") with
-                            | None -> ()
-                            | Some x -> yield! buildReferencePaths name version (getReferencedFiles value?native)
+                            if collectNative then 
+                                match value.TryGetProperty("native") with
+                                | None -> ()
+                                | Some x -> yield! buildReferencePaths name version (getReferencedFiles value?native)
                     | _ -> ()
             | None  -> failwith (sprintf "Target patform %s not found in %s" targetPlatformName lockFile)
         }

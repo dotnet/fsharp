@@ -20,28 +20,14 @@
     <Tailcalls>false</Tailcalls>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
   </PropertyGroup>
-  <PropertyGroup>
-    <DefineConstants>$(DefineConstants);EXTENSIONTYPING</DefineConstants>
+  <PropertyGroup Condition="'$(FSHARP_SUITE_DRIVES_CORECLR_TESTS)' == 'true'">
+    <DefineConstants>$(DefineConstants);FSHARP_SUITE_DRIVES_CORECLR_TESTS</DefineConstants>
+    <AssemblyName>FSharp.Tests.FSharpSuite.DrivingCoreCLR</AssemblyName>
+    <Name>FSharp.Tests.FSharpSuite.DrivingCoreCLR</Name>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>3</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>3</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Proto|AnyCPU' ">
-    <WarningLevel>3</WarningLevel>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <ItemGroup>
