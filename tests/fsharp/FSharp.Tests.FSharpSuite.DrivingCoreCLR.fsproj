@@ -13,16 +13,13 @@
     <ReferenceVsAssemblies>true</ReferenceVsAssemblies>
     <OutputType>Library</OutputType>
     <UnitTestAssembly>true</UnitTestAssembly>
-    <AssemblyName>FSharp.Tests.FSharpSuite</AssemblyName>
-    <Name>FSharp.Tests.FSharpSuite</Name>
-    <!-- Prevent compiler from inlining calls to FSharp.Core to improve code coverage accuracy -->
+    <DefineConstants>$(DefineConstants);FSHARP_SUITE_DRIVES_CORECLR_TESTS</DefineConstants>
+	<AssemblyName>FSharp.Tests.FSharpSuite.DrivingCoreCLR</AssemblyName>
+	<Name>FSharp.Tests.FSharpSuite.DrivingCoreCLR</Name>
+	<!-- Prevent compiler from inlining calls to FSharp.Core to improve code coverage accuracy -->
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <ItemGroup>
