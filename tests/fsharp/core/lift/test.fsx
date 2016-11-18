@@ -1,26 +1,11 @@
 // #Conformance #Regression 
-#if Portable
+#if TESTS_AS_APP
 module Core_lift
 #endif
 
 let failures = ref false
 let report_failure s  = 
   stderr.WriteLine ("NO: test "^s^" failed"); failures := true
-
-
-#if NetCore
-#else
-let argv = System.Environment.GetCommandLineArgs() 
-let SetCulture() = 
-  if argv.Length > 2 && argv.[1] = "--culture" then  begin
-    let cultureString = argv.[2] in 
-    let culture = new System.Globalization.CultureInfo(cultureString) in 
-    stdout.WriteLine ("Running under culture "+culture.ToString()+"...");
-    System.Threading.Thread.CurrentThread.CurrentCulture <-  culture
-  end 
-  
-do SetCulture()    
-#endif
 
 (* one lifted binding, one lifted expression *)
 let test2924 () = 

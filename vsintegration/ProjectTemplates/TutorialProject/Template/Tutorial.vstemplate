@@ -24,7 +24,7 @@
   </WizardExtension>
   <WizardData>
     <packages repository="extension" repositoryId="VisualFSharp">
-      <package id="System.ValueTuple" version="4.0.0-rc3-24212-01" targetFramework="net452" />
+      <package id="System.ValueTuple" version="4.4.0-beta-24631-01" targetFramework="net40" />
      </packages>
   </WizardData>
 </VSTemplate>

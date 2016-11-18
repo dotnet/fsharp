@@ -102,10 +102,7 @@ type public BuiltinAttribInfo =
 [<NoEquality; NoComparison>]
 type public TcGlobals = 
     { ilg : ILGlobals
-#if NO_COMPILER_BACKEND
-#else
       ilxPubCloEnv : EraseClosures.cenv
-#endif
       emitDebugInfoInQuotations : bool
       compilingFslib: bool
       mlCompatibility : bool
@@ -547,6 +544,7 @@ type public TcGlobals =
       splice_raw_expr_vref       : ValRef
       new_format_vref            : ValRef
       mkSysTyconRef : string list -> string -> TyconRef
+      usesMscorlib               : bool 
 
       // A list of types that are explicitly suppressed from the F# intellisense 
       // Note that the suppression checks for the precise name of the type
@@ -572,7 +570,7 @@ let global_g = ref (None : TcGlobals option)
 #endif
 
 let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePaths,mlCompatibility,
-                 using40environment,isInteractive,getTypeCcu, emitDebugInfoInQuotations) = 
+                 using40environment,isInteractive,getTypeCcu, emitDebugInfoInQuotations, usesMscorlib) =
 
   let vara = NewRigidTypar "a" envRange
   let varb = NewRigidTypar "b" envRange
@@ -1014,10 +1012,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
   let quote_to_linq_lambda_info  = makeIntrinsicValRef(fslib_MFLinqRuntimeHelpersQuotationConverter_nleref,  "QuotationToLambdaExpression"          ,None                 ,None                          ,[vara],      ([[mkQuotedExprTy varaTy]], mkLinqExpressionTy varaTy))
     
   { ilg=ilg
-#if NO_COMPILER_BACKEND
-#else
     ilxPubCloEnv=EraseClosures.newIlxPubCloEnv(ilg)
-#endif
     knownIntrinsics                = knownIntrinsics
     knownFSharpCoreModules         = knownFSharpCoreModules
     compilingFslib                 = compilingFslib
@@ -1545,6 +1540,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
     suppressed_types = suppressed_types
     isInteractive=isInteractive
     mkSysTyconRef=mkSysTyconRef
+    usesMscorlib = usesMscorlib
    }
      
 let public mkMscorlibAttrib g nm = 

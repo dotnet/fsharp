@@ -105,8 +105,7 @@ namespace Microsoft.FSharp.Control
 #endif
                 let access = match access with Some v -> v | None -> System.IO.FileAccess.ReadWrite
                 let share = match share with Some v -> v | None -> System.IO.FileShare.None
-#if FX_NO_FILE_OPTIONS
-#else
+#if !FX_NO_FILE_OPTIONS
                 let options = match options with Some v -> v | None -> System.IO.FileOptions.None
 #endif
                 let bufferSize = match bufferSize with Some v -> v | None -> 0x1000
@@ -136,8 +135,7 @@ namespace Microsoft.FSharp.Control
             member s.AsyncReadToEnd () = FileExtensions.UnblockViaNewThread (fun () -> s.ReadToEnd())
             member s.ReadToEndAsync () = s.AsyncReadToEnd ()
 
-#if FX_NO_WEB_REQUESTS
-#else
+#if !FX_NO_WEB_REQUESTS
     [<AutoOpen>]
     module WebRequestExtensions =
         open System
@@ -151,8 +149,7 @@ namespace Microsoft.FSharp.Control
             member req.GetResponseAsync() = callFSharpCoreAsyncGetResponse req // this calls the FSharp.Core method
 #endif
      
-#if FX_NO_WEB_CLIENT
-#else
+#if !FX_NO_WEB_CLIENT
     [<AutoOpen>]
     module WebClientExtensions =
         open System.Net

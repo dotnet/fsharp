@@ -1,6 +1,6 @@
 // #Conformance #Printing 
 
-#if Portable
+#if TESTS_AS_APP
 module Core_printf
 #endif
 
@@ -11,20 +11,6 @@ open Printf
 let failures = ref false
 let report_failure () = 
   stderr.WriteLine " NO"; failures := true
-
-#if NetCore
-#else
-let argv = System.Environment.GetCommandLineArgs() 
-let SetCulture() = 
-  if argv.Length > 2 && argv.[1] = "--culture" then  begin
-    let cultureString = argv.[2] in 
-    let culture = new System.Globalization.CultureInfo(cultureString) in 
-    stdout.WriteLine ("Running under culture "+culture.ToString()+"...");
-    System.Threading.Thread.CurrentThread.CurrentCulture <-  culture
-  end 
-  
-do SetCulture()    
-#endif
 
 // change this to true to run every test case
 // leave as false to randomly execute a subset of cases (this is a very expensive test area)
@@ -9306,7 +9292,7 @@ func6000()
 func7000()
 func8000()
 
-#if Portable
+#if TESTS_AS_APP
 let aa =
     if !failures then (printfn "Test Failed, failures = %A" failures; exit 1)
     else (stdout.WriteLine "Test Passed"; exit 0)

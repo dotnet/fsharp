@@ -772,7 +772,7 @@ and GetTypeDescAsTypeRefIdx cenv (scoref,enc,n) =
     GetTypeRefAsTypeRefIdx cenv (mkILNestedTyRef (scoref,enc,n))
 
 and GetResolutionScopeAsElem cenv (scoref,enc) = 
-    if List.isEmpty enc then 
+    if isNil enc then 
         match scoref with 
         | ILScopeRef.Local -> (rs_Module, 1) 
         | ILScopeRef.Assembly aref -> (rs_AssemblyRef, GetAssemblyRefAsIdx cenv aref)
@@ -828,7 +828,7 @@ let callconvToByte ntypars (Callconv (hasthis,bcc)) =
 
 // REVIEW: write into an accumuating buffer
 let rec EmitTypeSpec cenv env (bb: ByteBuffer) (et,tspec:ILTypeSpec) = 
-    if List.isEmpty tspec.GenericArgs then 
+    if isNil tspec.GenericArgs then 
         bb.EmitByte et
         emitTypeInfoAsTypeDefOrRefEncoded cenv bb (tspec.Scope,tspec.Enclosing,tspec.Name)
     else  
@@ -842,7 +842,7 @@ and GetTypeAsTypeDefOrRef cenv env (ty:ILType) =
     if isTypeLocal ty then 
         let tref = ty.TypeRef
         (tdor_TypeDef, GetIdxForTypeDef cenv (TdKey(tref.Enclosing,tref.Name)))
-    elif ty.IsNominal && List.isEmpty ty.GenericArgs then
+    elif ty.IsNominal && isNil ty.GenericArgs then
         (tdor_TypeRef, GetTypeRefAsTypeRefIdx cenv ty.TypeRef)
     else 
         (tdor_TypeSpec, GetTypeAsTypeSpecIdx cenv env ty)
@@ -929,7 +929,7 @@ and EmitCallsig cenv env bb (callconv,args:ILTypes,ret,varargs:ILVarArgs,genarit
     match varargs with 
      | None -> ()// no extra arg = no sentinel 
      | Some tys -> 
-         if List.isEmpty tys then () // no extra arg = no sentinel 
+         if isNil tys then () // no extra arg = no sentinel 
          else 
             bb.EmitByte et_SENTINEL
             List.iter (EmitType cenv env bb) tys
@@ -1205,16 +1205,16 @@ and GenTypeDefPass2 pidx enc cenv (td:ILTypeDef) =
 
       // Add entries to auxiliary mapping tables, e.g. Nested, PropertyMap etc. 
       // Note Nested is organised differntly to the others... 
-      if not (List.isEmpty enc) then
+      if not (isNil enc) then
           AddUnsharedRow cenv TableNames.Nested 
               (UnsharedRow 
                   [| SimpleIndex (TableNames.TypeDef, tidx) 
                      SimpleIndex (TableNames.TypeDef, pidx) |]) |> ignore
       let props = td.Properties.AsList
-      if not (List.isEmpty props) then 
+      if not (isNil props) then 
           AddUnsharedRow cenv TableNames.PropertyMap (GetTypeDefAsPropertyMapRow cenv tidx) |> ignore 
       let events = td.Events.AsList
-      if not (List.isEmpty events) then 
+      if not (isNil events) then 
           AddUnsharedRow cenv TableNames.EventMap (GetTypeDefAsEventMapRow cenv tidx) |> ignore
 
       // Now generate or assign index numbers for tables referenced by the maps. 
@@ -1623,7 +1623,7 @@ module Codebuf =
           let adjustments = ref []
 
           while (!remainingReqdFixups <> [] || not !doneLast) do
-              let doingLast = List.isEmpty !remainingReqdFixups  
+              let doingLast = isNil !remainingReqdFixups  
               let origStartOfNoBranchBlock = !origWhere
               let newStartOfNoBranchBlock = !newWhere
 
@@ -2076,7 +2076,7 @@ module Codebuf =
 
 
     let mkScopeNode cenv (localSigs: _[]) (startOffset,endOffset,ls: ILLocalDebugMapping list,childScopes) = 
-        if List.isEmpty ls || not cenv.generatePdb then childScopes
+        if isNil ls || not cenv.generatePdb then childScopes
         else
           [ { Children= Array.ofList childScopes
               StartOffset=startOffset
@@ -2253,7 +2253,7 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
     let codeSize = code.Length
     let methbuf = ByteBuffer.Create (codeSize * 3)
     // Do we use the tiny format? 
-    if List.isEmpty il.Locals && il.MaxStack <= 8 && List.isEmpty seh && codeSize < 64 then
+    if isNil il.Locals && il.MaxStack <= 8 && isNil seh && codeSize < 64 then
         // Use Tiny format 
         let alignedCodeSize = align 4 (codeSize + 1)
         let codePadding =  (alignedCodeSize - (codeSize + 1))
@@ -2270,7 +2270,7 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
             (if il.IsZeroInit then e_CorILMethod_InitLocals else 0x0uy)
 
         let localToken = 
-            if List.isEmpty il.Locals then 0x0 else 
+            if isNil il.Locals then 0x0 else 
             getUncodedToken TableNames.StandAloneSig
               (FindOrAddSharedRow cenv TableNames.StandAloneSig (GetLocalSigAsStandAloneSigIdx cenv env il.Locals))
 
@@ -2285,7 +2285,7 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
         methbuf.EmitBytes code
         methbuf.EmitPadding codePadding
 
-        if not (List.isEmpty seh) then 
+        if not (isNil seh) then 
             // Can we use the small exception handling table format? 
             let smallSize = (seh.Length * 12 + 4)
             let canUseSmall = 
@@ -2483,7 +2483,7 @@ let GenReturnAsParamRow (returnv : ILReturn) =
            StringE 0 |]  
 
 let GenReturnPass3 cenv (returnv: ILReturn) = 
-    if Option.isSome returnv.Marshal || not (List.isEmpty returnv.CustomAttrs.AsList) then
+    if Option.isSome returnv.Marshal || not (isNil returnv.CustomAttrs.AsList) then
         let pidx = AddUnsharedRow cenv TableNames.Param (GenReturnAsParamRow returnv)
         GenCustomAttrsPass3Or4 cenv (hca_ParamDef,pidx) returnv.CustomAttrs
         match returnv.Marshal with 
@@ -3690,7 +3690,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           let pdbOpt =
             match portablePDB with
             | true  -> 
-                let struct (uncompressedLength, contentId, stream) as pdbStream = generatePortablePdb fixupOverlappingSequencePoints embedAllSource embedSourceList sourceLink showTimes pdbData 
+                let (uncompressedLength, contentId, stream) as pdbStream = generatePortablePdb fixupOverlappingSequencePoints embedAllSource embedSourceList sourceLink showTimes pdbData 
                 if embeddedPDB then Some (compressPortablePdbStream uncompressedLength contentId stream)
                 else Some (pdbStream)
             | _ -> None
@@ -3717,7 +3717,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           let debugEmbeddedPdbChunk,next = 
               let streamLength = 
                     match pdbOpt with
-                    | Some struct (_,_,stream) -> int(stream.Length)
+                    | Some (_,_,stream) -> int(stream.Length)
                     | None -> 0
               chunk (align 0x4 (match embeddedPDB with 
                                 | true -> 8 + streamLength
@@ -4122,8 +4122,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           writePadding os "end of .text" (dataSectionPhysLoc - textSectionPhysLoc - textSectionSize)
           
           // DATA SECTION 
-#if FX_NO_LINKEDRESOURCES
-#else
+#if !FX_NO_LINKEDRESOURCES
           match nativeResources with
           | [||] -> ()
           | resources ->
@@ -4190,7 +4189,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
         try 
             let idd = 
                 match pdbOpt with 
-                | Some struct(originalLength, contentId, stream) ->
+                | Some (originalLength, contentId, stream) ->
                     if embeddedPDB then
                         embedPortablePdbInfo originalLength contentId stream showTimes fpdb debugDataChunk debugEmbeddedPdbChunk
                     else

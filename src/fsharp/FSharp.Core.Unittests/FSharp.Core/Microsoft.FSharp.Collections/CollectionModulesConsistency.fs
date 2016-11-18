@@ -8,6 +8,8 @@ open NUnit.Framework
 open FsCheck
 open Utils
 
+let smallerSizeCheck testable = Check.One({ Config.QuickThrowOnFailure with EndSize = 25 }, testable)
+
 /// helper function that creates labeled FsCheck properties for equality comparisons
 let consistency name sqs ls arr =
     (sqs = arr) |@ (sprintf  "Seq.%s = '%A', Array.%s = '%A'" name sqs name arr) .&. 
@@ -22,9 +24,9 @@ let allPairs<'a when 'a : equality> (xs : list<'a>) (xs2 : list<'a>) =
 
 [<Test>]
 let ``allPairs is consistent`` () =
-    Check.QuickThrowOnFailure allPairs<int>
-    Check.QuickThrowOnFailure allPairs<string>
-    Check.QuickThrowOnFailure allPairs<NormalFloat>
+    smallerSizeCheck allPairs<int>
+    smallerSizeCheck allPairs<string>
+    smallerSizeCheck allPairs<NormalFloat>
 
 let append<'a when 'a : equality> (xs : list<'a>) (xs2 : list<'a>) =
     let s = xs |> Seq.append xs2 |> Seq.toArray
@@ -35,9 +37,9 @@ let append<'a when 'a : equality> (xs : list<'a>) (xs2 : list<'a>) =
 
 [<Test>]
 let ``append is consistent`` () =
-    Check.QuickThrowOnFailure append<int>
-    Check.QuickThrowOnFailure append<string>
-    Check.QuickThrowOnFailure append<NormalFloat>
+    smallerSizeCheck append<int>
+    smallerSizeCheck append<string>
+    smallerSizeCheck append<NormalFloat>
 
 let averageFloat (xs : NormalFloat []) =
     let xs = xs |> Array.map float
@@ -48,7 +50,7 @@ let averageFloat (xs : NormalFloat []) =
 
 [<Test>]
 let ``average is consistent`` () =
-    Check.QuickThrowOnFailure averageFloat
+    smallerSizeCheck averageFloat
 
 let averageBy (xs : float []) f =
     let xs = xs |> Array.map float
@@ -61,7 +63,7 @@ let averageBy (xs : float []) f =
 
 [<Test>]
 let ``averageBy is consistent`` () =
-    Check.QuickThrowOnFailure averageBy
+    smallerSizeCheck averageBy
 
 let contains<'a when 'a : equality> (xs : 'a []) x  =
     let s = xs |> Seq.contains x
@@ -72,9 +74,9 @@ let contains<'a when 'a : equality> (xs : 'a []) x  =
 
 [<Test>]
 let ``contains is consistent`` () =
-    Check.QuickThrowOnFailure contains<int>
-    Check.QuickThrowOnFailure contains<string>
-    Check.QuickThrowOnFailure contains<float>
+    smallerSizeCheck contains<int>
+    smallerSizeCheck contains<string>
+    smallerSizeCheck contains<float>
 
 let choose<'a when 'a : equality> (xs : 'a []) f  =
     let s = xs |> Seq.choose f |> Seq.toArray
@@ -84,9 +86,9 @@ let choose<'a when 'a : equality> (xs : 'a []) f  =
 
 [<Test>]
 let ``choose is consistent`` () =
-    Check.QuickThrowOnFailure choose<int>
-    Check.QuickThrowOnFailure choose<string>
-    Check.QuickThrowOnFailure choose<float>
+    smallerSizeCheck choose<int>
+    smallerSizeCheck choose<string>
+    smallerSizeCheck choose<float>
 
 let chunkBySize<'a when 'a : equality> (xs : 'a []) size =
     let ls = List.ofArray xs
@@ -103,9 +105,9 @@ let chunkBySize<'a when 'a : equality> (xs : 'a []) size =
 
 [<Test>]
 let ``chunkBySize is consistent`` () =
-    Check.QuickThrowOnFailure chunkBySize<int>
-    Check.QuickThrowOnFailure chunkBySize<string>
-    Check.QuickThrowOnFailure chunkBySize<NormalFloat>
+    smallerSizeCheck chunkBySize<int>
+    smallerSizeCheck chunkBySize<string>
+    smallerSizeCheck chunkBySize<NormalFloat>
 
 let collect<'a> (xs : 'a []) f  =
     let s = xs |> Seq.collect f |> Seq.toArray
@@ -117,9 +119,9 @@ let collect<'a> (xs : 'a []) f  =
 
 [<Test>]
 let ``collect is consistent`` () =
-    Check.QuickThrowOnFailure collect<int>
-    Check.QuickThrowOnFailure collect<string>
-    Check.QuickThrowOnFailure collect<float>
+    smallerSizeCheck collect<int>
+    smallerSizeCheck collect<string>
+    smallerSizeCheck collect<float>
 
 let compareWith<'a>(xs : 'a []) (xs2 : 'a []) f  =
     let s = (xs, xs2) ||> Seq.compareWith f
@@ -131,9 +133,9 @@ let compareWith<'a>(xs : 'a []) (xs2 : 'a []) f  =
 
 [<Test>]
 let ``compareWith is consistent`` () =
-    Check.QuickThrowOnFailure compareWith<int>
-    Check.QuickThrowOnFailure compareWith<string>
-    Check.QuickThrowOnFailure compareWith<float>
+    smallerSizeCheck compareWith<int>
+    smallerSizeCheck compareWith<string>
+    smallerSizeCheck compareWith<float>
         
 let concat<'a when 'a : equality> (xs : 'a [][]) =
     let s = xs |> Seq.concat |> Seq.toArray
@@ -143,9 +145,9 @@ let concat<'a when 'a : equality> (xs : 'a [][]) =
 
 [<Test>]
 let ``concat is consistent`` () =
-    Check.QuickThrowOnFailure concat<int>
-    Check.QuickThrowOnFailure concat<string>
-    Check.QuickThrowOnFailure concat<NormalFloat>
+    smallerSizeCheck concat<int>
+    smallerSizeCheck concat<string>
+    smallerSizeCheck concat<NormalFloat>
 
 let countBy<'a> (xs : 'a []) f =
     let s = xs |> Seq.countBy f |> Seq.toArray
@@ -155,9 +157,9 @@ let countBy<'a> (xs : 'a []) f =
 
 [<Test>]
 let ``countBy is consistent`` () =
-    Check.QuickThrowOnFailure countBy<int>
-    Check.QuickThrowOnFailure countBy<string>
-    Check.QuickThrowOnFailure countBy<float>
+    smallerSizeCheck countBy<int>
+    smallerSizeCheck countBy<string>
+    smallerSizeCheck countBy<float>
 
 let distinct<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.distinct |> Seq.toArray
@@ -167,9 +169,9 @@ let distinct<'a when 'a : comparison> (xs : 'a []) =
 
 [<Test>]
 let ``distinct is consistent`` () =
-    Check.QuickThrowOnFailure distinct<int>
-    Check.QuickThrowOnFailure distinct<string>
-    Check.QuickThrowOnFailure distinct<NormalFloat>
+    smallerSizeCheck distinct<int>
+    smallerSizeCheck distinct<string>
+    smallerSizeCheck distinct<NormalFloat>
 
 let distinctBy<'a when 'a : equality> (xs : 'a []) f =
     let s = xs |> Seq.distinctBy f |> Seq.toArray
@@ -179,9 +181,9 @@ let distinctBy<'a when 'a : equality> (xs : 'a []) f =
 
 [<Test>]
 let ``distinctBy is consistent`` () =
-    Check.QuickThrowOnFailure distinctBy<int>
-    Check.QuickThrowOnFailure distinctBy<string>
-    Check.QuickThrowOnFailure distinctBy<NormalFloat>
+    smallerSizeCheck distinctBy<int>
+    smallerSizeCheck distinctBy<string>
+    smallerSizeCheck distinctBy<NormalFloat>
 
 let exactlyOne<'a when 'a : comparison> (xs : 'a []) =
     let s = runAndCheckErrorType (fun () -> xs |> Seq.exactlyOne)
@@ -191,9 +193,9 @@ let exactlyOne<'a when 'a : comparison> (xs : 'a []) =
 
 [<Test>]
 let ``exactlyOne is consistent`` () =
-    Check.QuickThrowOnFailure exactlyOne<int>
-    Check.QuickThrowOnFailure exactlyOne<string>
-    Check.QuickThrowOnFailure exactlyOne<NormalFloat>
+    smallerSizeCheck exactlyOne<int>
+    smallerSizeCheck exactlyOne<string>
+    smallerSizeCheck exactlyOne<NormalFloat>
 
 let except<'a when 'a : equality> (xs : 'a []) (itemsToExclude: 'a []) =
     let s = xs |> Seq.except itemsToExclude |> Seq.toArray
@@ -203,9 +205,9 @@ let except<'a when 'a : equality> (xs : 'a []) (itemsToExclude: 'a []) =
 
 [<Test>]
 let ``except is consistent`` () =
-    Check.QuickThrowOnFailure except<int>
-    Check.QuickThrowOnFailure except<string>
-    Check.QuickThrowOnFailure except<NormalFloat>
+    smallerSizeCheck except<int>
+    smallerSizeCheck except<string>
+    smallerSizeCheck except<NormalFloat>
 
 let exists<'a when 'a : equality> (xs : 'a []) f =
     let s = xs |> Seq.exists f
@@ -215,9 +217,9 @@ let exists<'a when 'a : equality> (xs : 'a []) f =
 
 [<Test>]
 let ``exists is consistent`` () =
-    Check.QuickThrowOnFailure exists<int>
-    Check.QuickThrowOnFailure exists<string>
-    Check.QuickThrowOnFailure exists<NormalFloat>
+    smallerSizeCheck exists<int>
+    smallerSizeCheck exists<string>
+    smallerSizeCheck exists<NormalFloat>
 
 let exists2<'a when 'a : equality> (xs':('a*'a) []) f =    
     let xs = Array.map fst xs'
@@ -229,9 +231,9 @@ let exists2<'a when 'a : equality> (xs':('a*'a) []) f =
     
 [<Test>]
 let ``exists2 is consistent for collections with equal length`` () =
-    Check.QuickThrowOnFailure exists2<int>
-    Check.QuickThrowOnFailure exists2<string>
-    Check.QuickThrowOnFailure exists2<NormalFloat>
+    smallerSizeCheck exists2<int>
+    smallerSizeCheck exists2<string>
+    smallerSizeCheck exists2<NormalFloat>
 
 let filter<'a when 'a : equality> (xs : 'a []) predicate =
     let s = xs |> Seq.filter predicate
@@ -241,9 +243,9 @@ let filter<'a when 'a : equality> (xs : 'a []) predicate =
 
 [<Test>]
 let ``filter is consistent`` () =
-    Check.QuickThrowOnFailure filter<int>
-    Check.QuickThrowOnFailure filter<string>
-    Check.QuickThrowOnFailure filter<NormalFloat>
+    smallerSizeCheck filter<int>
+    smallerSizeCheck filter<string>
+    smallerSizeCheck filter<NormalFloat>
 
 let find<'a when 'a : equality> (xs : 'a []) predicate =
     let s = run (fun () -> xs |> Seq.find predicate)
@@ -253,9 +255,9 @@ let find<'a when 'a : equality> (xs : 'a []) predicate =
 
 [<Test>]
 let ``find is consistent`` () =
-    Check.QuickThrowOnFailure find<int>
-    Check.QuickThrowOnFailure find<string>
-    Check.QuickThrowOnFailure find<NormalFloat>
+    smallerSizeCheck find<int>
+    smallerSizeCheck find<string>
+    smallerSizeCheck find<NormalFloat>
 
 let findBack<'a when 'a : equality> (xs : 'a []) predicate =
     let s = run (fun () -> xs |> Seq.findBack predicate)
@@ -265,9 +267,9 @@ let findBack<'a when 'a : equality> (xs : 'a []) predicate =
 
 [<Test>]
 let ``findBack is consistent`` () =
-    Check.QuickThrowOnFailure findBack<int>
-    Check.QuickThrowOnFailure findBack<string>
-    Check.QuickThrowOnFailure findBack<NormalFloat>
+    smallerSizeCheck findBack<int>
+    smallerSizeCheck findBack<string>
+    smallerSizeCheck findBack<NormalFloat>
 
 let findIndex<'a when 'a : equality> (xs : 'a []) predicate =
     let s = run (fun () -> xs |> Seq.findIndex predicate)
@@ -277,9 +279,9 @@ let findIndex<'a when 'a : equality> (xs : 'a []) predicate =
 
 [<Test>]
 let ``findIndex is consistent`` () =
-    Check.QuickThrowOnFailure findIndex<int>
-    Check.QuickThrowOnFailure findIndex<string>
-    Check.QuickThrowOnFailure findIndex<NormalFloat>
+    smallerSizeCheck findIndex<int>
+    smallerSizeCheck findIndex<string>
+    smallerSizeCheck findIndex<NormalFloat>
 
 let findIndexBack<'a when 'a : equality> (xs : 'a []) predicate =
     let s = run (fun () -> xs |> Seq.findIndexBack predicate)
@@ -289,9 +291,9 @@ let findIndexBack<'a when 'a : equality> (xs : 'a []) predicate =
 
 [<Test>]
 let ``findIndexBack is consistent`` () =
-    Check.QuickThrowOnFailure findIndexBack<int>
-    Check.QuickThrowOnFailure findIndexBack<string>
-    Check.QuickThrowOnFailure findIndexBack<NormalFloat>
+    smallerSizeCheck findIndexBack<int>
+    smallerSizeCheck findIndexBack<string>
+    smallerSizeCheck findIndexBack<NormalFloat>
 
 let fold<'a,'b when 'b : equality> (xs : 'a []) f (start:'b) =
     let s = run (fun () -> xs |> Seq.fold f start)
@@ -301,10 +303,10 @@ let fold<'a,'b when 'b : equality> (xs : 'a []) f (start:'b) =
 
 [<Test>]
 let ``fold is consistent`` () =
-    Check.QuickThrowOnFailure fold<int,int>
-    Check.QuickThrowOnFailure fold<string,string>
-    Check.QuickThrowOnFailure fold<float,int>
-    Check.QuickThrowOnFailure fold<float,string>
+    smallerSizeCheck fold<int,int>
+    smallerSizeCheck fold<string,string>
+    smallerSizeCheck fold<float,int>
+    smallerSizeCheck fold<float,string>
 
 let fold2<'a,'b,'c when 'c : equality> (xs': ('a*'b)[]) f (start:'c) =
     let xs = xs' |> Array.map fst
@@ -316,12 +318,12 @@ let fold2<'a,'b,'c when 'c : equality> (xs': ('a*'b)[]) f (start:'c) =
 
 [<Test>]
 let ``fold2 is consistent`` () =
-    Check.QuickThrowOnFailure fold2<int,int,int>
-    Check.QuickThrowOnFailure fold2<string,string,string>
-    Check.QuickThrowOnFailure fold2<string,int,string>
-    Check.QuickThrowOnFailure fold2<string,float,int>
-    Check.QuickThrowOnFailure fold2<float,float,int>
-    Check.QuickThrowOnFailure fold2<float,float,string>
+    smallerSizeCheck fold2<int,int,int>
+    smallerSizeCheck fold2<string,string,string>
+    smallerSizeCheck fold2<string,int,string>
+    smallerSizeCheck fold2<string,float,int>
+    smallerSizeCheck fold2<float,float,int>
+    smallerSizeCheck fold2<float,float,string>
 
 let foldBack<'a,'b when 'b : equality> (xs : 'a []) f (start:'b) =
     let s = run (fun () -> Seq.foldBack f xs start)
@@ -331,10 +333,10 @@ let foldBack<'a,'b when 'b : equality> (xs : 'a []) f (start:'b) =
 
 [<Test>]
 let ``foldBack is consistent`` () =
-    Check.QuickThrowOnFailure foldBack<int,int>
-    Check.QuickThrowOnFailure foldBack<string,string>
-    Check.QuickThrowOnFailure foldBack<float,int>
-    Check.QuickThrowOnFailure foldBack<float,string>
+    smallerSizeCheck foldBack<int,int>
+    smallerSizeCheck foldBack<string,string>
+    smallerSizeCheck foldBack<float,int>
+    smallerSizeCheck foldBack<float,string>
 
 let foldBack2<'a,'b,'c when 'c : equality> (xs': ('a*'b)[]) f (start:'c) =
     let xs = xs' |> Array.map fst
@@ -346,12 +348,12 @@ let foldBack2<'a,'b,'c when 'c : equality> (xs': ('a*'b)[]) f (start:'c) =
 
 [<Test>]
 let ``foldBack2 is consistent`` () =
-    Check.QuickThrowOnFailure foldBack2<int,int,int>
-    Check.QuickThrowOnFailure foldBack2<string,string,string>
-    Check.QuickThrowOnFailure foldBack2<string,int,string>
-    Check.QuickThrowOnFailure foldBack2<string,float,int>
-    Check.QuickThrowOnFailure foldBack2<float,float,int>
-    Check.QuickThrowOnFailure foldBack2<float,float,string>
+    smallerSizeCheck foldBack2<int,int,int>
+    smallerSizeCheck foldBack2<string,string,string>
+    smallerSizeCheck foldBack2<string,int,string>
+    smallerSizeCheck foldBack2<string,float,int>
+    smallerSizeCheck foldBack2<float,float,int>
+    smallerSizeCheck foldBack2<float,float,string>
 
 let forall<'a when 'a : equality> (xs : 'a []) f =
     let s = xs |> Seq.forall f
@@ -361,9 +363,9 @@ let forall<'a when 'a : equality> (xs : 'a []) f =
 
 [<Test>]
 let ``forall is consistent`` () =
-    Check.QuickThrowOnFailure forall<int>
-    Check.QuickThrowOnFailure forall<string>
-    Check.QuickThrowOnFailure forall<NormalFloat>
+    smallerSizeCheck forall<int>
+    smallerSizeCheck forall<string>
+    smallerSizeCheck forall<NormalFloat>
 
 let forall2<'a when 'a : equality> (xs':('a*'a) []) f =    
     let xs = Array.map fst xs'
@@ -375,9 +377,9 @@ let forall2<'a when 'a : equality> (xs':('a*'a) []) f =
     
 [<Test>]
 let ``forall2 is consistent for collections with equal length`` () =
-    Check.QuickThrowOnFailure forall2<int>
-    Check.QuickThrowOnFailure forall2<string>
-    Check.QuickThrowOnFailure forall2<NormalFloat>
+    smallerSizeCheck forall2<int>
+    smallerSizeCheck forall2<string>
+    smallerSizeCheck forall2<NormalFloat>
 
 let groupBy<'a when 'a : equality> (xs : 'a []) f =
     let s = run (fun () -> xs |> Seq.groupBy f |> Seq.toArray |> Array.map (fun (x,xs) -> x,xs |> Seq.toArray))
@@ -387,9 +389,9 @@ let groupBy<'a when 'a : equality> (xs : 'a []) f =
 
 [<Test>]
 let ``groupBy is consistent`` () =
-    Check.QuickThrowOnFailure groupBy<int>
-    Check.QuickThrowOnFailure groupBy<string>
-    Check.QuickThrowOnFailure groupBy<NormalFloat>
+    smallerSizeCheck groupBy<int>
+    smallerSizeCheck groupBy<string>
+    smallerSizeCheck groupBy<NormalFloat>
 
 let head<'a when 'a : equality> (xs : 'a []) =
     let s = runAndCheckIfAnyError (fun () -> xs |> Seq.head)
@@ -399,9 +401,9 @@ let head<'a when 'a : equality> (xs : 'a []) =
 
 [<Test>]
 let ``head is consistent`` () =
-    Check.QuickThrowOnFailure head<int>
-    Check.QuickThrowOnFailure head<string>
-    Check.QuickThrowOnFailure head<NormalFloat>
+    smallerSizeCheck head<int>
+    smallerSizeCheck head<string>
+    smallerSizeCheck head<NormalFloat>
 
 let indexed<'a when 'a : equality> (xs : 'a []) =
     let s = xs |> Seq.indexed |> Seq.toArray
@@ -411,21 +413,21 @@ let indexed<'a when 'a : equality> (xs : 'a []) =
 
 [<Test>]
 let ``indexed is consistent`` () =
-    Check.QuickThrowOnFailure indexed<int>
-    Check.QuickThrowOnFailure indexed<string>
-    Check.QuickThrowOnFailure indexed<NormalFloat>
+    smallerSizeCheck indexed<int>
+    smallerSizeCheck indexed<string>
+    smallerSizeCheck indexed<NormalFloat>
 
 let init<'a when 'a : equality> count f =
-    let s = run (fun () -> Seq.init count f |> Seq.toArray)
-    let l = run (fun () -> List.init count f |> Seq.toArray)
-    let a = run (fun () -> Array.init count f)
+    let s = runAndCheckErrorType (fun () -> Seq.init count f |> Seq.toArray)
+    let l = runAndCheckErrorType (fun () -> List.init count f |> Seq.toArray)
+    let a = runAndCheckErrorType (fun () -> Array.init count f)
     consistency "init" s l a
 
 [<Test>]
 let ``init is consistent`` () =
-    Check.QuickThrowOnFailure init<int>
-    Check.QuickThrowOnFailure init<string>
-    Check.QuickThrowOnFailure init<NormalFloat>
+    smallerSizeCheck init<int>
+    smallerSizeCheck init<string>
+    smallerSizeCheck init<NormalFloat>
 
 let isEmpty<'a when 'a : equality> (xs : 'a []) =
     let s = xs |> Seq.isEmpty
@@ -435,9 +437,9 @@ let isEmpty<'a when 'a : equality> (xs : 'a []) =
 
 [<Test>]
 let ``isEmpty is consistent`` () =
-    Check.QuickThrowOnFailure isEmpty<int>
-    Check.QuickThrowOnFailure isEmpty<string>
-    Check.QuickThrowOnFailure isEmpty<NormalFloat>
+    smallerSizeCheck isEmpty<int>
+    smallerSizeCheck isEmpty<string>
+    smallerSizeCheck isEmpty<NormalFloat>
 
 let item<'a when 'a : equality> (xs : 'a []) index =
     let s = runAndCheckIfAnyError (fun () -> xs |> Seq.item index)
@@ -447,9 +449,9 @@ let item<'a when 'a : equality> (xs : 'a []) index =
 
 [<Test>]
 let ``item is consistent`` () =
-    Check.QuickThrowOnFailure item<int>
-    Check.QuickThrowOnFailure item<string>
-    Check.QuickThrowOnFailure item<NormalFloat>
+    smallerSizeCheck item<int>
+    smallerSizeCheck item<string>
+    smallerSizeCheck item<NormalFloat>
 
 let iter<'a when 'a : equality> (xs : 'a []) f' =
     let list = System.Collections.Generic.List<'a>()
@@ -466,9 +468,9 @@ let iter<'a when 'a : equality> (xs : 'a []) f' =
 
 [<Test>]
 let ``iter looks at every element exactly once and in order - consistenly over all collections`` () =
-    Check.QuickThrowOnFailure iter<int>
-    Check.QuickThrowOnFailure iter<string>
-    Check.QuickThrowOnFailure iter<NormalFloat>
+    smallerSizeCheck iter<int>
+    smallerSizeCheck iter<string>
+    smallerSizeCheck iter<NormalFloat>
 
 let iter2<'a when 'a : equality> (xs' : ('a*'a) []) f' =
     let xs = xs' |> Array.map fst
@@ -487,9 +489,9 @@ let iter2<'a when 'a : equality> (xs' : ('a*'a) []) f' =
 
 [<Test>]
 let ``iter2 looks at every element exactly once and in order - consistenly over all collections when size is equal`` () =
-    Check.QuickThrowOnFailure iter2<int>
-    Check.QuickThrowOnFailure iter2<string>
-    Check.QuickThrowOnFailure iter2<NormalFloat>
+    smallerSizeCheck iter2<int>
+    smallerSizeCheck iter2<string>
+    smallerSizeCheck iter2<NormalFloat>
 
 let iteri<'a when 'a : equality> (xs : 'a []) f' =
     let list = System.Collections.Generic.List<'a>()
@@ -509,9 +511,9 @@ let iteri<'a when 'a : equality> (xs : 'a []) f' =
 
 [<Test>]
 let ``iteri looks at every element exactly once and in order - consistenly over all collections`` () =
-    Check.QuickThrowOnFailure iteri<int>
-    Check.QuickThrowOnFailure iteri<string>
-    Check.QuickThrowOnFailure iteri<NormalFloat>
+    smallerSizeCheck iteri<int>
+    smallerSizeCheck iteri<string>
+    smallerSizeCheck iteri<NormalFloat>
 
 let iteri2<'a when 'a : equality> (xs' : ('a*'a) []) f' =
     let xs = xs' |> Array.map fst
@@ -533,9 +535,9 @@ let iteri2<'a when 'a : equality> (xs' : ('a*'a) []) f' =
 
 [<Test>]
 let ``iteri2 looks at every element exactly once and in order - consistenly over all collections when size is equal`` () =
-    Check.QuickThrowOnFailure iteri2<int>
-    Check.QuickThrowOnFailure iteri2<string>
-    Check.QuickThrowOnFailure iteri2<NormalFloat>
+    smallerSizeCheck iteri2<int>
+    smallerSizeCheck iteri2<string>
+    smallerSizeCheck iteri2<NormalFloat>
 
 let last<'a when 'a : equality> (xs : 'a []) =
     let s = runAndCheckIfAnyError (fun () -> xs |> Seq.last)
@@ -545,9 +547,9 @@ let last<'a when 'a : equality> (xs : 'a []) =
 
 [<Test>]
 let ``last is consistent`` () =
-    Check.QuickThrowOnFailure last<int>
-    Check.QuickThrowOnFailure last<string>
-    Check.QuickThrowOnFailure last<NormalFloat>
+    smallerSizeCheck last<int>
+    smallerSizeCheck last<string>
+    smallerSizeCheck last<NormalFloat>
 
 let length<'a when 'a : equality> (xs : 'a []) =
     let s = xs |> Seq.length
@@ -557,9 +559,9 @@ let length<'a when 'a : equality> (xs : 'a []) =
 
 [<Test>]
 let ``length is consistent`` () =
-    Check.QuickThrowOnFailure length<int>
-    Check.QuickThrowOnFailure length<string>
-    Check.QuickThrowOnFailure length<float>
+    smallerSizeCheck length<int>
+    smallerSizeCheck length<string>
+    smallerSizeCheck length<float>
 
 let map<'a when 'a : equality> (xs : 'a []) f =
     let s = xs |> Seq.map f |> Seq.toArray
@@ -569,9 +571,9 @@ let map<'a when 'a : equality> (xs : 'a []) f =
 
 [<Test>]
 let ``map is consistent`` () =
-    Check.QuickThrowOnFailure map<int>
-    Check.QuickThrowOnFailure map<string>
-    Check.QuickThrowOnFailure map<float>
+    smallerSizeCheck map<int>
+    smallerSizeCheck map<string>
+    smallerSizeCheck map<float>
 
 let map2<'a when 'a : equality> (xs' : ('a*'a) []) f' =
     let xs = xs' |> Array.map fst
@@ -591,9 +593,9 @@ let map2<'a when 'a : equality> (xs' : ('a*'a) []) f' =
 
 [<Test>]
 let ``map2 looks at every element exactly once and in order - consistenly over all collections when size is equal`` () =
-    Check.QuickThrowOnFailure map2<int>
-    Check.QuickThrowOnFailure map2<string>
-    Check.QuickThrowOnFailure map2<NormalFloat>
+    smallerSizeCheck map2<int>
+    smallerSizeCheck map2<string>
+    smallerSizeCheck map2<NormalFloat>
 
 let map3<'a when 'a : equality> (xs' : ('a*'a*'a) []) f' =
     let xs = xs' |> Array.map  (fun (x,y,z) -> x)
@@ -614,9 +616,9 @@ let map3<'a when 'a : equality> (xs' : ('a*'a*'a) []) f' =
 
 [<Test>]
 let ``map3 looks at every element exactly once and in order - consistenly over all collections when size is equal`` () =
-    Check.QuickThrowOnFailure map3<int>
-    Check.QuickThrowOnFailure map3<string>
-    Check.QuickThrowOnFailure map3<NormalFloat>
+    smallerSizeCheck map3<int>
+    smallerSizeCheck map3<string>
+    smallerSizeCheck map3<NormalFloat>
 
 let mapFold<'a when 'a : equality> (xs : 'a []) f start =
     let s,sr = xs |> Seq.mapFold f start
@@ -627,9 +629,9 @@ let mapFold<'a when 'a : equality> (xs : 'a []) f start =
 
 [<Test>]
 let ``mapFold is consistent`` () =
-    Check.QuickThrowOnFailure mapFold<int>
-    Check.QuickThrowOnFailure mapFold<string>
-    Check.QuickThrowOnFailure mapFold<NormalFloat>
+    smallerSizeCheck mapFold<int>
+    smallerSizeCheck mapFold<string>
+    smallerSizeCheck mapFold<NormalFloat>
 
 let mapFoldBack<'a when 'a : equality> (xs : 'a []) f start =
     let s,sr = Seq.mapFoldBack f xs start
@@ -640,9 +642,9 @@ let mapFoldBack<'a when 'a : equality> (xs : 'a []) f start =
 
 [<Test>]
 let ``mapFold2 is consistent`` () =
-    Check.QuickThrowOnFailure mapFoldBack<int>
-    Check.QuickThrowOnFailure mapFoldBack<string>
-    Check.QuickThrowOnFailure mapFoldBack<NormalFloat>
+    smallerSizeCheck mapFoldBack<int>
+    smallerSizeCheck mapFoldBack<string>
+    smallerSizeCheck mapFoldBack<NormalFloat>
 
 let mapi<'a when 'a : equality> (xs : 'a []) f =
     let s = xs |> Seq.mapi f
@@ -652,9 +654,9 @@ let mapi<'a when 'a : equality> (xs : 'a []) f =
 
 [<Test>]
 let ``mapi is consistent`` () =
-    Check.QuickThrowOnFailure mapi<int>
-    Check.QuickThrowOnFailure mapi<string>
-    Check.QuickThrowOnFailure mapi<float>
+    smallerSizeCheck mapi<int>
+    smallerSizeCheck mapi<string>
+    smallerSizeCheck mapi<float>
 
 let mapi2<'a when 'a : equality> (xs' : ('a*'a) []) f' =
     let xs = xs' |> Array.map fst
@@ -677,9 +679,9 @@ let mapi2<'a when 'a : equality> (xs' : ('a*'a) []) f' =
 
 [<Test>]
 let ``mapi2 looks at every element exactly once and in order - consistenly over all collections when size is equal`` () =
-    Check.QuickThrowOnFailure mapi2<int>
-    Check.QuickThrowOnFailure mapi2<string>
-    Check.QuickThrowOnFailure mapi2<NormalFloat>
+    smallerSizeCheck mapi2<int>
+    smallerSizeCheck mapi2<string>
+    smallerSizeCheck mapi2<NormalFloat>
 
 let max<'a when 'a : comparison> (xs : 'a []) =
     let s = runAndCheckIfAnyError (fun () -> xs |> Seq.max)
@@ -689,9 +691,9 @@ let max<'a when 'a : comparison> (xs : 'a []) =
 
 [<Test>]
 let ``max is consistent`` () =
-    Check.QuickThrowOnFailure max<int>
-    Check.QuickThrowOnFailure max<string>
-    Check.QuickThrowOnFailure max<NormalFloat>
+    smallerSizeCheck max<int>
+    smallerSizeCheck max<string>
+    smallerSizeCheck max<NormalFloat>
 
 let maxBy<'a when 'a : comparison> (xs : 'a []) f =
     let s = runAndCheckIfAnyError (fun () -> xs |> Seq.maxBy f)
@@ -701,9 +703,9 @@ let maxBy<'a when 'a : comparison> (xs : 'a []) f =
 
 [<Test>]
 let ``maxBy is consistent`` () =
-    Check.QuickThrowOnFailure maxBy<int>
-    Check.QuickThrowOnFailure maxBy<string>
-    Check.QuickThrowOnFailure maxBy<NormalFloat>
+    smallerSizeCheck maxBy<int>
+    smallerSizeCheck maxBy<string>
+    smallerSizeCheck maxBy<NormalFloat>
  
 let min<'a when 'a : comparison> (xs : 'a []) =
     let s = runAndCheckIfAnyError (fun () -> xs |> Seq.min)
@@ -713,9 +715,9 @@ let min<'a when 'a : comparison> (xs : 'a []) =
 
 [<Test>]
 let ``min is consistent`` () =
-    Check.QuickThrowOnFailure min<int>
-    Check.QuickThrowOnFailure min<string>
-    Check.QuickThrowOnFailure min<NormalFloat>
+    smallerSizeCheck min<int>
+    smallerSizeCheck min<string>
+    smallerSizeCheck min<NormalFloat>
 
 let minBy<'a when 'a : comparison> (xs : 'a []) f =
     let s = runAndCheckIfAnyError (fun () -> xs |> Seq.minBy f)
@@ -725,9 +727,9 @@ let minBy<'a when 'a : comparison> (xs : 'a []) f =
 
 [<Test>]
 let ``minBy is consistent`` () =
-    Check.QuickThrowOnFailure minBy<int>
-    Check.QuickThrowOnFailure minBy<string>
-    Check.QuickThrowOnFailure minBy<NormalFloat>
+    smallerSizeCheck minBy<int>
+    smallerSizeCheck minBy<string>
+    smallerSizeCheck minBy<NormalFloat>
 
 let pairwise<'a when 'a : comparison> (xs : 'a []) =
     let s = run (fun () -> xs |> Seq.pairwise |> Seq.toArray)
@@ -737,9 +739,9 @@ let pairwise<'a when 'a : comparison> (xs : 'a []) =
 
 [<Test>]
 let ``pairwise is consistent`` () =
-    Check.QuickThrowOnFailure pairwise<int>
-    Check.QuickThrowOnFailure pairwise<string>
-    Check.QuickThrowOnFailure pairwise<NormalFloat>
+    smallerSizeCheck pairwise<int>
+    smallerSizeCheck pairwise<string>
+    smallerSizeCheck pairwise<NormalFloat>
 
 let partition<'a when 'a : comparison> (xs : 'a []) f =
     // no seq version
@@ -750,9 +752,9 @@ let partition<'a when 'a : comparison> (xs : 'a []) f =
 
 [<Test>]
 let ``partition is consistent`` () =
-    Check.QuickThrowOnFailure partition<int>
-    Check.QuickThrowOnFailure partition<string>
-    Check.QuickThrowOnFailure partition<NormalFloat>
+    smallerSizeCheck partition<int>
+    smallerSizeCheck partition<string>
+    smallerSizeCheck partition<NormalFloat>
 
 let permute<'a when 'a : comparison> (xs' : list<int*'a>) =
     let xs = List.map snd xs'
@@ -774,9 +776,9 @@ let permute<'a when 'a : comparison> (xs' : list<int*'a>) =
 
 [<Test>]
 let ``permute is consistent`` () =
-    Check.QuickThrowOnFailure permute<int>
-    Check.QuickThrowOnFailure permute<string>
-    Check.QuickThrowOnFailure permute<NormalFloat>
+    smallerSizeCheck permute<int>
+    smallerSizeCheck permute<string>
+    smallerSizeCheck permute<NormalFloat>
 
 let pick<'a when 'a : comparison> (xs : 'a []) f =
     let s = run (fun () -> xs |> Seq.pick f)
@@ -786,9 +788,9 @@ let pick<'a when 'a : comparison> (xs : 'a []) f =
 
 [<Test>]
 let ``pick is consistent`` () =
-    Check.QuickThrowOnFailure pick<int>
-    Check.QuickThrowOnFailure pick<string>
-    Check.QuickThrowOnFailure pick<NormalFloat>
+    smallerSizeCheck pick<int>
+    smallerSizeCheck pick<string>
+    smallerSizeCheck pick<NormalFloat>
 
 let reduce<'a when 'a : equality> (xs : 'a []) f =
     let s = runAndCheckErrorType (fun () -> xs |> Seq.reduce f)
@@ -798,9 +800,9 @@ let reduce<'a when 'a : equality> (xs : 'a []) f =
 
 [<Test>]
 let ``reduce is consistent`` () =
-    Check.QuickThrowOnFailure reduce<int>
-    Check.QuickThrowOnFailure reduce<string>
-    Check.QuickThrowOnFailure reduce<NormalFloat>
+    smallerSizeCheck reduce<int>
+    smallerSizeCheck reduce<string>
+    smallerSizeCheck reduce<NormalFloat>
 
 let reduceBack<'a when 'a : equality> (xs : 'a []) f =
     let s = runAndCheckErrorType (fun () -> xs |> Seq.reduceBack f)
@@ -810,9 +812,9 @@ let reduceBack<'a when 'a : equality> (xs : 'a []) f =
 
 [<Test>]
 let ``reduceBack is consistent`` () =
-    Check.QuickThrowOnFailure reduceBack<int>
-    Check.QuickThrowOnFailure reduceBack<string>
-    Check.QuickThrowOnFailure reduceBack<NormalFloat>
+    smallerSizeCheck reduceBack<int>
+    smallerSizeCheck reduceBack<string>
+    smallerSizeCheck reduceBack<NormalFloat>
 
 let replicate<'a when 'a : equality> x count =
     let s = runAndCheckIfAnyError (fun () -> Seq.replicate count x |> Seq.toArray)
@@ -822,9 +824,9 @@ let replicate<'a when 'a : equality> x count =
 
 [<Test>]
 let ``replicate is consistent`` () =
-    Check.QuickThrowOnFailure replicate<int>
-    Check.QuickThrowOnFailure replicate<string>
-    Check.QuickThrowOnFailure replicate<NormalFloat>
+    smallerSizeCheck replicate<int>
+    smallerSizeCheck replicate<string>
+    smallerSizeCheck replicate<NormalFloat>
 
 let rev<'a when 'a : equality> (xs : 'a []) =
     let s = Seq.rev xs |> Seq.toArray
@@ -834,9 +836,9 @@ let rev<'a when 'a : equality> (xs : 'a []) =
 
 [<Test>]
 let ``rev is consistent`` () =
-    Check.QuickThrowOnFailure rev<int>
-    Check.QuickThrowOnFailure rev<string>
-    Check.QuickThrowOnFailure rev<NormalFloat>
+    smallerSizeCheck rev<int>
+    smallerSizeCheck rev<string>
+    smallerSizeCheck rev<NormalFloat>
 
 let scan<'a,'b when 'b : equality> (xs : 'a []) f (start:'b) =
     let s = run (fun () -> xs |> Seq.scan f start |> Seq.toArray)
@@ -846,10 +848,10 @@ let scan<'a,'b when 'b : equality> (xs : 'a []) f (start:'b) =
 
 [<Test>]
 let ``scan is consistent`` () =
-    Check.QuickThrowOnFailure scan<int,int>
-    Check.QuickThrowOnFailure scan<string,string>
-    Check.QuickThrowOnFailure scan<float,int>
-    Check.QuickThrowOnFailure scan<float,string>
+    smallerSizeCheck scan<int,int>
+    smallerSizeCheck scan<string,string>
+    smallerSizeCheck scan<float,int>
+    smallerSizeCheck scan<float,string>
 
 let scanBack<'a,'b when 'b : equality> (xs : 'a []) f (start:'b) =
     let s = run (fun () -> Seq.scanBack f xs start |> Seq.toArray)
@@ -859,10 +861,10 @@ let scanBack<'a,'b when 'b : equality> (xs : 'a []) f (start:'b) =
 
 [<Test>]
 let ``scanBack is consistent`` () =
-    Check.QuickThrowOnFailure scanBack<int,int>
-    Check.QuickThrowOnFailure scanBack<string,string>
-    Check.QuickThrowOnFailure scanBack<float,int>
-    Check.QuickThrowOnFailure scanBack<float,string>
+    smallerSizeCheck scanBack<int,int>
+    smallerSizeCheck scanBack<string,string>
+    smallerSizeCheck scanBack<float,int>
+    smallerSizeCheck scanBack<float,string>
 
 let singleton<'a when 'a : equality> (x : 'a) =
     let s = Seq.singleton x |> Seq.toArray
@@ -872,9 +874,9 @@ let singleton<'a when 'a : equality> (x : 'a) =
 
 [<Test>]
 let ``singleton is consistent`` () =
-    Check.QuickThrowOnFailure singleton<int>
-    Check.QuickThrowOnFailure singleton<string>
-    Check.QuickThrowOnFailure singleton<NormalFloat>
+    smallerSizeCheck singleton<int>
+    smallerSizeCheck singleton<string>
+    smallerSizeCheck singleton<NormalFloat>
 
 let skip<'a when 'a : equality> (xs : 'a []) count =
     let s = runAndCheckIfAnyError (fun () -> Seq.skip count xs |> Seq.toArray)
@@ -884,9 +886,9 @@ let skip<'a when 'a : equality> (xs : 'a []) count =
 
 [<Test>]
 let ``skip is consistent`` () =
-    Check.QuickThrowOnFailure skip<int>
-    Check.QuickThrowOnFailure skip<string>
-    Check.QuickThrowOnFailure skip<NormalFloat>
+    smallerSizeCheck skip<int>
+    smallerSizeCheck skip<string>
+    smallerSizeCheck skip<NormalFloat>
 
 let skipWhile<'a when 'a : equality> (xs : 'a []) f =
     let s = runAndCheckIfAnyError (fun () -> Seq.skipWhile f xs |> Seq.toArray)
@@ -896,9 +898,9 @@ let skipWhile<'a when 'a : equality> (xs : 'a []) f =
 
 [<Test>]
 let ``skipWhile is consistent`` () =
-    Check.QuickThrowOnFailure skipWhile<int>
-    Check.QuickThrowOnFailure skipWhile<string>
-    Check.QuickThrowOnFailure skipWhile<NormalFloat>
+    smallerSizeCheck skipWhile<int>
+    smallerSizeCheck skipWhile<string>
+    smallerSizeCheck skipWhile<NormalFloat>
 
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort |> Seq.toArray
@@ -908,9 +910,9 @@ let sort<'a when 'a : comparison> (xs : 'a []) =
 
 [<Test>]
 let ``sort is consistent`` () =
-    Check.QuickThrowOnFailure sort<int>
-    Check.QuickThrowOnFailure sort<string>
-    Check.QuickThrowOnFailure sort<NormalFloat>
+    smallerSizeCheck sort<int>
+    smallerSizeCheck sort<string>
+    smallerSizeCheck sort<NormalFloat>
 
 let sortBy<'a,'b when 'a : comparison and 'b : comparison> (xs : 'a []) (f:'a -> 'b) =
     let s = xs |> Seq.sortBy f
@@ -922,20 +924,18 @@ let sortBy<'a,'b when 'a : comparison and 'b : comparison> (xs : 'a []) (f:'a ->
 
 [<Test>]
 let ``sortBy actually sorts (but is inconsistent in regards of stability)`` () =
-    Check.QuickThrowOnFailure sortBy<int,int>
-    Check.QuickThrowOnFailure sortBy<int,string>
-    Check.QuickThrowOnFailure sortBy<string,string>
-    Check.QuickThrowOnFailure sortBy<string,int>
-    Check.QuickThrowOnFailure sortBy<NormalFloat,int>
+    smallerSizeCheck sortBy<int,int>
+    smallerSizeCheck sortBy<int,string>
+    smallerSizeCheck sortBy<string,string>
+    smallerSizeCheck sortBy<string,int>
+    smallerSizeCheck sortBy<NormalFloat,int>
 
-let sortWith<'a,'b when 'a : comparison and 'b : comparison> (xs : 'a []) (f:'a -> 'a -> int) =
-    let dict = System.Collections.Generic.Dictionary<_,_>()
+let sortWith<'a,'b when 'a : comparison and 'b : comparison> (xs : 'a []) =
     let f x y = 
         if x = y then 0 else
         if x = Unchecked.defaultof<_> && y <> Unchecked.defaultof<_> then -1 else
         if y = Unchecked.defaultof<_> && x <> Unchecked.defaultof<_> then 1 else
-        let r = f x y |> sign // only use one side
-        if x < y then r else r * -1
+        if x < y then -1 else 1
 
     let s = xs |> Seq.sortWith f
     let l = xs |> List.ofArray |> List.sortWith f
@@ -947,11 +947,11 @@ let sortWith<'a,'b when 'a : comparison and 'b : comparison> (xs : 'a []) (f:'a 
 
 [<Test>]
 let ``sortWith actually sorts (but is inconsistent in regards of stability)`` () =
-    Check.QuickThrowOnFailure sortWith<int,int>
-    Check.QuickThrowOnFailure sortWith<int,string>
-    Check.QuickThrowOnFailure sortWith<string,string>
-    Check.QuickThrowOnFailure sortWith<string,int>
-    Check.QuickThrowOnFailure sortWith<NormalFloat,int>
+    smallerSizeCheck sortWith<int,int>
+    smallerSizeCheck sortWith<int,string>
+    smallerSizeCheck sortWith<string,string>
+    smallerSizeCheck sortWith<string,int>
+    smallerSizeCheck sortWith<NormalFloat,int>
 
 let sortDescending<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sortDescending |> Seq.toArray
@@ -961,9 +961,9 @@ let sortDescending<'a when 'a : comparison> (xs : 'a []) =
 
 [<Test>]
 let ``sortDescending is consistent`` () =
-    Check.QuickThrowOnFailure sortDescending<int>
-    Check.QuickThrowOnFailure sortDescending<string>
-    Check.QuickThrowOnFailure sortDescending<NormalFloat>
+    smallerSizeCheck sortDescending<int>
+    smallerSizeCheck sortDescending<string>
+    smallerSizeCheck sortDescending<NormalFloat>
 
 let sortByDescending<'a,'b when 'a : comparison and 'b : comparison> (xs : 'a []) (f:'a -> 'b) =
     let s = xs |> Seq.sortByDescending f
@@ -975,11 +975,11 @@ let sortByDescending<'a,'b when 'a : comparison and 'b : comparison> (xs : 'a []
 
 [<Test>]
 let ``sortByDescending actually sorts (but is inconsistent in regards of stability)`` () =
-    Check.QuickThrowOnFailure sortByDescending<int,int>
-    Check.QuickThrowOnFailure sortByDescending<int,string>
-    Check.QuickThrowOnFailure sortByDescending<string,string>
-    Check.QuickThrowOnFailure sortByDescending<string,int>
-    Check.QuickThrowOnFailure sortByDescending<NormalFloat,int>
+    smallerSizeCheck sortByDescending<int,int>
+    smallerSizeCheck sortByDescending<int,string>
+    smallerSizeCheck sortByDescending<string,string>
+    smallerSizeCheck sortByDescending<string,int>
+    smallerSizeCheck sortByDescending<NormalFloat,int>
 
 let sum (xs : int []) =
     let s = run (fun () -> xs |> Seq.sum)
@@ -989,7 +989,7 @@ let sum (xs : int []) =
 
 [<Test>]
 let ``sum is consistent`` () =
-    Check.QuickThrowOnFailure sum
+    smallerSizeCheck sum
 
 let sumBy<'a> (xs : 'a []) (f:'a -> int) =
     let s = run (fun () -> xs |> Seq.sumBy f)
@@ -999,9 +999,9 @@ let sumBy<'a> (xs : 'a []) (f:'a -> int) =
 
 [<Test>]
 let ``sumBy is consistent`` () =
-    Check.QuickThrowOnFailure sumBy<int>
-    Check.QuickThrowOnFailure sumBy<string>
-    Check.QuickThrowOnFailure sumBy<float>
+    smallerSizeCheck sumBy<int>
+    smallerSizeCheck sumBy<string>
+    smallerSizeCheck sumBy<float>
 
 let splitAt<'a when 'a : equality> (xs : 'a []) index =
     let ls = List.ofArray xs
@@ -1019,9 +1019,9 @@ let splitAt<'a when 'a : equality> (xs : 'a []) index =
 
 [<Test>]
 let ``splitAt is consistent`` () =
-    Check.QuickThrowOnFailure splitAt<int>
-    Check.QuickThrowOnFailure splitAt<string>
-    Check.QuickThrowOnFailure splitAt<NormalFloat>
+    smallerSizeCheck splitAt<int>
+    smallerSizeCheck splitAt<string>
+    smallerSizeCheck splitAt<NormalFloat>
 
 let splitInto<'a when 'a : equality> (xs : 'a []) count =
     let ls = List.ofArray xs
@@ -1037,9 +1037,9 @@ let splitInto<'a when 'a : equality> (xs : 'a []) count =
 
 [<Test>]
 let ``splitInto is consistent`` () =
-    Check.QuickThrowOnFailure splitInto<int>
-    Check.QuickThrowOnFailure splitInto<string>
-    Check.QuickThrowOnFailure splitInto<NormalFloat>
+    smallerSizeCheck splitInto<int>
+    smallerSizeCheck splitInto<string>
+    smallerSizeCheck splitInto<NormalFloat>
 
 let tail<'a when 'a : equality> (xs : 'a []) =
     let s = runAndCheckIfAnyError (fun () -> xs |> Seq.tail |> Seq.toArray)
@@ -1049,9 +1049,9 @@ let tail<'a when 'a : equality> (xs : 'a []) =
 
 [<Test>]
 let ``tail is consistent`` () =
-    Check.QuickThrowOnFailure tail<int>
-    Check.QuickThrowOnFailure tail<string>
-    Check.QuickThrowOnFailure tail<NormalFloat>
+    smallerSizeCheck tail<int>
+    smallerSizeCheck tail<string>
+    smallerSizeCheck tail<NormalFloat>
 
 let take<'a when 'a : equality> (xs : 'a []) count =
     let s = runAndCheckIfAnyError (fun () -> Seq.take count xs |> Seq.toArray)
@@ -1061,9 +1061,9 @@ let take<'a when 'a : equality> (xs : 'a []) count =
 
 [<Test>]
 let ``take is consistent`` () =
-    Check.QuickThrowOnFailure take<int>
-    Check.QuickThrowOnFailure take<string>
-    Check.QuickThrowOnFailure take<NormalFloat>
+    smallerSizeCheck take<int>
+    smallerSizeCheck take<string>
+    smallerSizeCheck take<NormalFloat>
 
 let takeWhile<'a when 'a : equality> (xs : 'a []) f =
     let s = runAndCheckIfAnyError (fun () -> Seq.takeWhile f xs |> Seq.toArray)
@@ -1073,9 +1073,9 @@ let takeWhile<'a when 'a : equality> (xs : 'a []) f =
 
 [<Test>]
 let ``takeWhile is consistent`` () =
-    Check.QuickThrowOnFailure takeWhile<int>
-    Check.QuickThrowOnFailure takeWhile<string>
-    Check.QuickThrowOnFailure takeWhile<NormalFloat>
+    smallerSizeCheck takeWhile<int>
+    smallerSizeCheck takeWhile<string>
+    smallerSizeCheck takeWhile<NormalFloat>
 
 let truncate<'a when 'a : equality> (xs : 'a []) count =
     let s = runAndCheckIfAnyError (fun () -> Seq.truncate count xs |> Seq.toArray)
@@ -1085,9 +1085,9 @@ let truncate<'a when 'a : equality> (xs : 'a []) count =
 
 [<Test>]
 let ``truncate is consistent`` () =
-    Check.QuickThrowOnFailure truncate<int>
-    Check.QuickThrowOnFailure truncate<string>
-    Check.QuickThrowOnFailure truncate<NormalFloat>
+    smallerSizeCheck truncate<int>
+    smallerSizeCheck truncate<string>
+    smallerSizeCheck truncate<NormalFloat>
 
 let tryFind<'a when 'a : equality> (xs : 'a []) predicate =
     let s = xs |> Seq.tryFind predicate
@@ -1097,9 +1097,9 @@ let tryFind<'a when 'a : equality> (xs : 'a []) predicate =
 
 [<Test>]
 let ``tryFind is consistent`` () =
-    Check.QuickThrowOnFailure tryFind<int>
-    Check.QuickThrowOnFailure tryFind<string>
-    Check.QuickThrowOnFailure tryFind<NormalFloat>
+    smallerSizeCheck tryFind<int>
+    smallerSizeCheck tryFind<string>
+    smallerSizeCheck tryFind<NormalFloat>
 
 let tryFindBack<'a when 'a : equality> (xs : 'a []) predicate =
     let s = xs |> Seq.tryFindBack predicate
@@ -1109,9 +1109,9 @@ let tryFindBack<'a when 'a : equality> (xs : 'a []) predicate =
 
 [<Test>]
 let ``tryFindBack is consistent`` () =
-    Check.QuickThrowOnFailure tryFindBack<int>
-    Check.QuickThrowOnFailure tryFindBack<string>
-    Check.QuickThrowOnFailure tryFindBack<NormalFloat>
+    smallerSizeCheck tryFindBack<int>
+    smallerSizeCheck tryFindBack<string>
+    smallerSizeCheck tryFindBack<NormalFloat>
 
 let tryFindIndex<'a when 'a : equality> (xs : 'a []) predicate =
     let s = xs |> Seq.tryFindIndex predicate
@@ -1121,9 +1121,9 @@ let tryFindIndex<'a when 'a : equality> (xs : 'a []) predicate =
 
 [<Test>]
 let ``tryFindIndex is consistent`` () =
-    Check.QuickThrowOnFailure tryFindIndex<int>
-    Check.QuickThrowOnFailure tryFindIndex<string>
-    Check.QuickThrowOnFailure tryFindIndex<NormalFloat>
+    smallerSizeCheck tryFindIndex<int>
+    smallerSizeCheck tryFindIndex<string>
+    smallerSizeCheck tryFindIndex<NormalFloat>
 
 let tryFindIndexBack<'a when 'a : equality> (xs : 'a []) predicate =
     let s = xs |> Seq.tryFindIndexBack predicate
@@ -1133,9 +1133,9 @@ let tryFindIndexBack<'a when 'a : equality> (xs : 'a []) predicate =
 
 [<Test>]
 let ``tryFindIndexBack is consistent`` () =
-    Check.QuickThrowOnFailure tryFindIndexBack<int>
-    Check.QuickThrowOnFailure tryFindIndexBack<string>
-    Check.QuickThrowOnFailure tryFindIndexBack<NormalFloat>
+    smallerSizeCheck tryFindIndexBack<int>
+    smallerSizeCheck tryFindIndexBack<string>
+    smallerSizeCheck tryFindIndexBack<NormalFloat>
 
 let tryHead<'a when 'a : equality> (xs : 'a []) =
     let s = xs |> Seq.tryHead
@@ -1145,9 +1145,9 @@ let tryHead<'a when 'a : equality> (xs : 'a []) =
 
 [<Test>]
 let ``tryHead is consistent`` () =
-    Check.QuickThrowOnFailure tryHead<int>
-    Check.QuickThrowOnFailure tryHead<string>
-    Check.QuickThrowOnFailure tryHead<NormalFloat>
+    smallerSizeCheck tryHead<int>
+    smallerSizeCheck tryHead<string>
+    smallerSizeCheck tryHead<NormalFloat>
 
 let tryItem<'a when 'a : equality> (xs : 'a []) index =
     let s = xs |> Seq.tryItem index
@@ -1157,9 +1157,9 @@ let tryItem<'a when 'a : equality> (xs : 'a []) index =
 
 [<Test>]
 let ``tryItem is consistent`` () =
-    Check.QuickThrowOnFailure tryItem<int>
-    Check.QuickThrowOnFailure tryItem<string>
-    Check.QuickThrowOnFailure tryItem<NormalFloat>
+    smallerSizeCheck tryItem<int>
+    smallerSizeCheck tryItem<string>
+    smallerSizeCheck tryItem<NormalFloat>
 
 let tryLast<'a when 'a : equality> (xs : 'a []) =
     let s = xs |> Seq.tryLast
@@ -1169,9 +1169,9 @@ let tryLast<'a when 'a : equality> (xs : 'a []) =
 
 [<Test>]
 let ``tryLast is consistent`` () =
-    Check.QuickThrowOnFailure tryLast<int>
-    Check.QuickThrowOnFailure tryLast<string>
-    Check.QuickThrowOnFailure tryLast<NormalFloat>
+    smallerSizeCheck tryLast<int>
+    smallerSizeCheck tryLast<string>
+    smallerSizeCheck tryLast<NormalFloat>
 
 let tryPick<'a when 'a : comparison> (xs : 'a []) f =
     let s = xs |> Seq.tryPick f
@@ -1181,9 +1181,9 @@ let tryPick<'a when 'a : comparison> (xs : 'a []) f =
 
 [<Test>]
 let ``tryPick is consistent`` () =
-    Check.QuickThrowOnFailure tryPick<int>
-    Check.QuickThrowOnFailure tryPick<string>
-    Check.QuickThrowOnFailure tryPick<NormalFloat>
+    smallerSizeCheck tryPick<int>
+    smallerSizeCheck tryPick<string>
+    smallerSizeCheck tryPick<NormalFloat>
 
 let unfold<'a,'b when 'b : equality> f (start:'a) =
     let f() =
@@ -1200,14 +1200,14 @@ let unfold<'a,'b when 'b : equality> f (start:'a) =
 
 [<Test>]
 let ``unfold is consistent`` () =
-    Check.QuickThrowOnFailure unfold<int,int>
+    smallerSizeCheck unfold<int,int>
 
-[<Test; Category("Expensive")>]
+[<Test; Category("Expensive"); Explicit>]
 let ``unfold is consistent full`` () =
-    Check.QuickThrowOnFailure unfold<int,int>
-    Check.QuickThrowOnFailure unfold<string,string>
-    Check.QuickThrowOnFailure unfold<float,int>
-    Check.QuickThrowOnFailure unfold<float,string>
+    smallerSizeCheck unfold<int,int>
+    smallerSizeCheck unfold<string,string>
+    smallerSizeCheck unfold<float,int>
+    smallerSizeCheck unfold<float,string>
 
 let unzip<'a when 'a : equality> (xs:('a*'a) []) =       
     // no seq version
@@ -1217,9 +1217,9 @@ let unzip<'a when 'a : equality> (xs:('a*'a) []) =
     
 [<Test>]
 let ``unzip is consistent`` () =
-    Check.QuickThrowOnFailure unzip<int>
-    Check.QuickThrowOnFailure unzip<string>
-    Check.QuickThrowOnFailure unzip<NormalFloat>
+    smallerSizeCheck unzip<int>
+    smallerSizeCheck unzip<string>
+    smallerSizeCheck unzip<NormalFloat>
 
 let unzip3<'a when 'a : equality> (xs:('a*'a*'a) []) =       
     // no seq version
@@ -1229,9 +1229,9 @@ let unzip3<'a when 'a : equality> (xs:('a*'a*'a) []) =
     
 [<Test>]
 let ``unzip3 is consistent`` () =
-    Check.QuickThrowOnFailure unzip3<int>
-    Check.QuickThrowOnFailure unzip3<string>
-    Check.QuickThrowOnFailure unzip3<NormalFloat>
+    smallerSizeCheck unzip3<int>
+    smallerSizeCheck unzip3<string>
+    smallerSizeCheck unzip3<NormalFloat>
 
 let where<'a when 'a : equality> (xs : 'a []) predicate =
     let s = xs |> Seq.where predicate |> Seq.toArray
@@ -1241,9 +1241,9 @@ let where<'a when 'a : equality> (xs : 'a []) predicate =
 
 [<Test>]
 let ``where is consistent`` () =
-    Check.QuickThrowOnFailure where<int>
-    Check.QuickThrowOnFailure where<string>
-    Check.QuickThrowOnFailure where<NormalFloat>
+    smallerSizeCheck where<int>
+    smallerSizeCheck where<string>
+    smallerSizeCheck where<NormalFloat>
 
 let windowed<'a when 'a : equality> (xs : 'a []) windowSize =
     let ls = List.ofArray xs
@@ -1259,9 +1259,9 @@ let windowed<'a when 'a : equality> (xs : 'a []) windowSize =
 
 [<Test>]
 let ``windowed is consistent`` () =
-    Check.QuickThrowOnFailure windowed<int>
-    Check.QuickThrowOnFailure windowed<string>
-    Check.QuickThrowOnFailure windowed<NormalFloat>
+    smallerSizeCheck windowed<int>
+    smallerSizeCheck windowed<string>
+    smallerSizeCheck windowed<NormalFloat>
 
 let zip<'a when 'a : equality> (xs':('a*'a) []) =    
     let xs = Array.map fst xs'
@@ -1273,9 +1273,9 @@ let zip<'a when 'a : equality> (xs':('a*'a) []) =
     
 [<Test>]
 let ``zip is consistent for collections with equal length`` () =
-    Check.QuickThrowOnFailure zip<int>
-    Check.QuickThrowOnFailure zip<string>
-    Check.QuickThrowOnFailure zip<NormalFloat>
+    smallerSizeCheck zip<int>
+    smallerSizeCheck zip<string>
+    smallerSizeCheck zip<NormalFloat>
 
 let zip3<'a when 'a : equality> (xs':('a*'a*'a) []) =    
     let xs = Array.map (fun (x,y,z) -> x) xs'
@@ -1288,6 +1288,6 @@ let zip3<'a when 'a : equality> (xs':('a*'a*'a) []) =
     
 [<Test>]
 let ``zip3 is consistent for collections with equal length`` () =
-    Check.QuickThrowOnFailure zip3<int>
-    Check.QuickThrowOnFailure zip3<string>
-    Check.QuickThrowOnFailure zip3<NormalFloat>
+    smallerSizeCheck zip3<int>
+    smallerSizeCheck zip3<string>
+    smallerSizeCheck zip3<NormalFloat>

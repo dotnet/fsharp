@@ -39,6 +39,12 @@ type internal SVsSettingsPersistenceManager = class end
 [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsscript")>]
 [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".ml")>]
 [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".mli")>]
+[<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".fs", 97)>]
+[<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".fsi", 97)>]
+[<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".fsx", 97)>]
+[<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".fsscript", 97)>]
+[<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".ml", 97)>]
+[<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".mli", 97)>]
 type internal FSharpLanguageService(package : FSharpPackage) = 
     inherit AbstractLanguageService<FSharpPackage, FSharpLanguageService>(package)
 
@@ -132,13 +138,22 @@ type internal FSharpLanguageService(package : FSharpPackage) =
 
 
 and [<Guid(FSharpCommonConstants.packageGuidString)>]
-    [<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".fs", 97)>]
-    [<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".fsi", 97)>]
-    [<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".fsx", 97)>]
-    [<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".fsscript", 97)>]
-    [<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".ml", 97)>]
-    [<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".mli", 97)>]
-    internal FSharpPackage() = 
+    [<ProvideLanguageService(languageService = typeof<FSharpLanguageService>,
+                             strLanguageName = FSharpCommonConstants.FSharpLanguageName,
+                             languageResourceID = 100,
+                             MatchBraces = true,
+                             MatchBracesAtCaret = true,
+                             ShowCompletion = true,
+                             ShowMatchingBrace = true,
+                             ShowSmartIndent = true,
+                             EnableAsyncCompletion = true,
+                             QuickInfo = true,
+                             DefaultToInsertSpaces  = true,
+                             CodeSense = true,
+                             DefaultToNonHotURLs = true,
+                             EnableCommenting = true,
+                             CodeSenseDelay = 100)>]
+        internal FSharpPackage() =
     inherit AbstractPackage<FSharpPackage, FSharpLanguageService>()
     
     override this.RoslynLanguageName = FSharpCommonConstants.FSharpLanguageName

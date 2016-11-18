@@ -1354,6 +1354,8 @@ type ILResource =
       Location: ILResourceLocation;
       Access: ILResourceAccess;
       CustomAttrs: ILAttributes }
+    /// Read the bytes from a resource local to an assembly
+    member Bytes : byte[]
 
 /// Table of resources in a module.
 [<NoEquality; NoComparison>]
@@ -1686,7 +1688,7 @@ val mkILFormalBoxedTy: ILTypeRef -> ILGenericParameterDef list -> ILType
 val mkILFormalNamedTy: ILBoxity -> ILTypeRef -> ILGenericParameterDef list -> ILType
 
 val mkILFormalTypars: ILType list -> ILGenericParameterDefs
-val mkILFormalGenericArgs: ILGenericParameterDefs -> ILGenericArgsList
+val mkILFormalGenericArgs: int -> ILGenericParameterDefs -> ILGenericArgsList
 val mkILSimpleTypar : string -> ILGenericParameterDef
 /// Make custom attributes.
 val mkILCustomAttribMethRef: 

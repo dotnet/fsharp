@@ -34,8 +34,6 @@ type LazyModuleInfo = Lazy<ModuleInfo>
 type ImplFileOptimizationInfo = LazyModuleInfo
 type CcuOptimizationInfo = LazyModuleInfo
 
-#if NO_COMPILER_BACKEND
-#else
 [<Sealed>]
 type IncrementalOptimizationEnv =
     static member Empty : IncrementalOptimizationEnv
@@ -65,6 +63,5 @@ val UnionOptimizationInfos: seq<ImplFileOptimizationInfo> -> CcuOptimizationInfo
 
 /// Check if an expression has an effect
 val ExprHasEffect: TcGlobals -> Expr -> bool
-#endif
 
 val internal u_CcuOptimizationInfo : TastPickle.ReaderState -> CcuOptimizationInfo
