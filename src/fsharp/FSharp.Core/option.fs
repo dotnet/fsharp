@@ -31,6 +31,9 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("ForAll")>]
         let forall p inp = match inp with None -> true | Some x -> p x
 
+        [<CompiledName("Contains")>]
+        let contains x inp = match inp with None -> false | Some v -> v = x
+
         [<CompiledName("Iterate")>]
         let iter f inp = match inp with None -> () | Some x -> f x
 
