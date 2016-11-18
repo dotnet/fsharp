@@ -154,6 +154,8 @@ namespace Microsoft.FSharp.Core.CompilerServices
     open System.Linq.Expressions
     open System.Collections.Generic
     open Microsoft.FSharp.Core
+    open Microsoft.FSharp.Control
+    open Microsoft.FSharp.Quotations
 
 
     /// <summary>Represents the product of two measure expressions when returned as a generic argument of a provided type.</summary>
@@ -307,18 +309,18 @@ namespace Microsoft.FSharp.Core.CompilerServices
         /// <param name="syntheticMethodBase">MethodBase that was given to the compiler by a type returned by a GetType(s) call.</param>
         /// <param name="parameters">Expressions that represent the parameters to this call.</param>
         /// <returns>An expression that the compiler will use in place of the given method base.</returns>
-        abstract GetInvokerExpression : syntheticMethodBase:MethodBase * parameters:Microsoft.FSharp.Quotations.Expr[] -> Microsoft.FSharp.Quotations.Expr
+        abstract GetInvokerExpression : syntheticMethodBase:MethodBase * parameters:Expr[] -> Expr
 
         /// <summary>
         /// Triggered when an assumption changes that invalidates the resolutions so far reported by the provider
         /// </summary>
         [<CLIEvent>]
-        abstract Invalidate : Microsoft.FSharp.Control.IEvent<System.EventHandler, System.EventArgs>
+        abstract Invalidate : IEvent<System.EventHandler, System.EventArgs>
 
         /// <summary>
         /// Get the physical contents of the given logical provided assembly.
         /// </summary>
-        abstract GetGeneratedAssemblyContents : assembly:System.Reflection.Assembly -> byte[]
+        abstract GetGeneratedAssemblyContents : assembly:Assembly -> byte[]
 
     /// Represents additional, optional information for a type provider component
     type ITypeProvider2 =

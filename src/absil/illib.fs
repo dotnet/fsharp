@@ -7,6 +7,7 @@ module internal Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open System
 open System.Collections
 open System.Collections.Generic
+open System.Reflection
 open Internal.Utilities
 open Internal.Utilities.Collections
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
@@ -864,8 +865,10 @@ module Shim =
 
     type DefaultFileSystem() =
         interface IFileSystem with
-            member __.AssemblyLoadFrom(fileName:string) = System.Reflection.Assembly.LoadFrom fileName
-            member __.AssemblyLoad(assemblyName:System.Reflection.AssemblyName) = System.Reflection.Assembly.Load assemblyName
+            member __.AssemblyLoadFrom(fileName:string) = 
+                Assembly.LoadFrom fileName
+            member __.AssemblyLoad(assemblyName:System.Reflection.AssemblyName) = 
+                Assembly.Load assemblyName
 
             member __.ReadAllBytesShim (fileName:string) = File.ReadAllBytes fileName
             member __.FileStreamReadShim (fileName:string) = new FileStream(fileName,FileMode.Open,FileAccess.Read,FileShare.ReadWrite)  :> Stream

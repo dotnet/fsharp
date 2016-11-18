@@ -1745,7 +1745,7 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
 
     /// CreateIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.
-    static member TryCreateBackgroundBuilderForProjectOptions (referenceResolver, frameworkTcImportsCache, scriptClosureOptions:LoadClosure option, sourceFiles:string list, commandLineArgs:string list, projectReferences, projectDirectory, useScriptResolutionRules, isIncompleteTypeCheckEnvironment, keepAssemblyContents, keepAllBackgroundResolutions) =
+    static member TryCreateBackgroundBuilderForProjectOptions (referenceResolver, frameworkTcImportsCache, scriptClosureOptions:LoadClosure option, sourceFiles:string list, commandLineArgs:string list, projectReferences, projectDirectory, useScriptResolutionRules, keepAssemblyContents, keepAllBackgroundResolutions) =
     
         // Trap and report warnings and errors from creation.
         use errorScope = new ErrorScope()
@@ -1810,10 +1810,6 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
                     tcConfigB.AddReferencedAssemblyByPath(dllReference.Range,dllReference.Text)
                 tcConfigB.knownUnresolvedReferences<-closure.UnresolvedReferences
             | None -> ()
-
-            // Make sure System.Numerics is referenced for out-of-project .fs files
-            if isIncompleteTypeCheckEnvironment then 
-                tcConfigB.addVersionSpecificFrameworkReferences <- true 
 
             let tcConfig = TcConfig.Create(tcConfigB,validate=true)
 

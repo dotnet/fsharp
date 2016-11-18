@@ -239,7 +239,6 @@ type TcConfigBuilder =
       mutable framework: bool
       mutable resolutionEnvironment : ReferenceResolver.ResolutionEnvironment
       mutable implicitlyResolveAssemblies : bool
-      mutable addVersionSpecificFrameworkReferences : bool
       /// Set if the user has explicitly turned indentation-aware syntax on/off
       mutable light: bool option
       mutable conditionalCompilationDefines: string list
@@ -669,7 +668,7 @@ val GetScopedPragmasForInput : Ast.ParsedInput -> ScopedPragma list
 val GetErrorLoggerFilteringByScopedPragmas : checkFile:bool * ScopedPragma list * ErrorLogger  -> ErrorLogger
 
 /// This list is the default set of references for "non-project" files. 
-val DefaultBasicReferencesForOutOfProjectSources : string list
+val DefaultReferencesForScriptsAndOutOfProjectSources : bool -> string list
 
 //----------------------------------------------------------------------------
 // Parsing
@@ -773,7 +772,7 @@ type LoadClosure =
       RootWarnings : PhasedError list }
 
     // Used from service.fs, when editing a script file
-    static member ComputeClosureOfSourceText : referenceResolver: ReferenceResolver.Resolver * filename: string * source: string * implicitDefines:CodeContext * useSimpleResolution: bool * useFsiAuxLib: bool * lexResourceManager: Lexhelp.LexResourceManager * applyCompilerOptions: (TcConfigBuilder -> unit) -> LoadClosure
+    static member ComputeClosureOfSourceText : referenceResolver: ReferenceResolver.Resolver * filename: string * source: string * implicitDefines:CodeContext * useSimpleResolution: bool * useFsiAuxLib: bool * lexResourceManager: Lexhelp.LexResourceManager * applyCompilerOptions: (TcConfigBuilder -> unit) * assumeDotNetFramework : bool -> LoadClosure
 
     /// Used from fsi.fs and fsc.fs, for #load and command line. The resulting references are then added to a TcConfig.
-    static member ComputeClosureOfSourceFiles : tcConfig:TcConfig * (string * range) list * implicitDefines:CodeContext * useDefaultScriptingReferences : bool * lexResourceManager : Lexhelp.LexResourceManager -> LoadClosure
+    static member ComputeClosureOfSourceFiles : tcConfig:TcConfig * (string * range) list * implicitDefines:CodeContext * lexResourceManager : Lexhelp.LexResourceManager -> LoadClosure

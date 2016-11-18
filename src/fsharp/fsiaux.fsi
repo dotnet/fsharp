@@ -53,6 +53,8 @@ type InteractiveSession =
     /// <summary>Gets or sets a the current event loop being used to process interactions.</summary>
     member EventLoop: IEventLoop with get,set
     
+    /// <summary>Sets the current event loop being used to process interactions.</summary>
+    member internal SetEventLoop: (unit -> bool) * ((unit -> obj) -> obj) * (unit -> unit) -> unit
     
 
 module Settings = 
@@ -60,9 +62,3 @@ module Settings =
   /// <summary>The settings associated with the interactive session.</summary>
   val fsi : InteractiveSession
 
-/// <summary>Hooks (test use only, may change without notice).</summary>
-module RuntimeHelpers = 
-    val SaveIt : 'T -> unit
-    val internal GetSavedIt : unit -> obj
-    val internal GetSavedItType : unit -> System.Type
-(*    val openPaths : unit -> string[] *)

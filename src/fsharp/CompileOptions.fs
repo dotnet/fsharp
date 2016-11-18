@@ -757,7 +757,7 @@ let noFrameworkFlag isFsc tcConfigB =
                            Some (FSComp.SR.optsNoframework()))
 
 let advancedFlagsFsi tcConfigB = advancedFlagsBoth tcConfigB  @ [noFrameworkFlag false tcConfigB]
-let setTargetProfile tcConfigB v = 
+let SetTargetProfile tcConfigB v = 
     tcConfigB.primaryAssembly <- 
         match v with
         | "mscorlib" -> PrimaryAssembly.Mscorlib
@@ -790,7 +790,7 @@ let advancedFlagsFsc tcConfigB =
                              Some (FSComp.SR.optsSimpleresolution()))
         yield CompilerOption("highentropyva", tagNone, OptionSwitch (useHighEntropyVASwitch tcConfigB), None, Some (FSComp.SR.optsUseHighEntropyVA()))
         yield CompilerOption("subsystemversion", tagString, OptionString (subSystemVersionSwitch tcConfigB), None, Some (FSComp.SR.optsSubSystemVersion()))
-        yield CompilerOption("targetprofile", tagString, OptionString (setTargetProfile tcConfigB), None, Some(FSComp.SR.optsTargetProfile()))
+        yield CompilerOption("targetprofile", tagString, OptionString (SetTargetProfile tcConfigB), None, Some(FSComp.SR.optsTargetProfile()))
         yield CompilerOption("quotations-debug", tagNone, OptionSwitch(fun switch -> tcConfigB.emitDebugInfoInQuotations <- switch = OptionSwitch.On), None, Some(FSComp.SR.optsEmitDebugInfoInQuotations()))
     ]
 
