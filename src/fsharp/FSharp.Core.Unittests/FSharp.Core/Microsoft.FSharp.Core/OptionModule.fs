@@ -69,6 +69,16 @@ type OptionModule() =
         Assert.AreEqual(Option.map mix3 (Some "asdwxf") |> Option.apply (Some 6) |> Option.apply (Some 6UL), Some 42)
 
     [<Test>]
+    member this.MapBindApplyEquivalenceProperties () =
+        let fn x = x + 3
+        Assert.AreEqual(Option.map fn None, Option.bind (fn >> Some) None)
+        Assert.AreEqual(Option.map fn (Some 5), Option.bind (fn >> Some) (Some 5))
+        Assert.AreEqual(Option.apply None None, (fun xOpt -> Option.bind (fun f -> Option.map f xOpt)) None None)
+        Assert.AreEqual(Option.apply (Some 5) None, (fun xOpt -> Option.bind (fun f -> Option.map f xOpt)) (Some 5) None)
+        Assert.AreEqual(Option.apply None (Some fn), (fun xOpt -> Option.bind (fun f -> Option.map f xOpt)) None (Some fn))
+        Assert.AreEqual(Option.apply (Some 5) (Some fn), (fun xOpt -> Option.bind (fun f -> Option.map f xOpt)) (Some 5) (Some fn))
+
+    [<Test>]
     member this.FilterSomeIntegerWhenPredicateReturnsTrue () =
         let test x =
             let actual = x |> Some |> Option.filter (fun _ -> true)
