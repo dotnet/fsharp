@@ -2065,7 +2065,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
             IncrementalBuilder.TryCreateBackgroundBuilderForProjectOptions
                   (referenceResolver, frameworkTcImportsCache, scriptClosureCache.TryGet options, Array.toList options.ProjectFileNames, 
                    Array.toList options.OtherOptions, projectReferences, options.ProjectDirectory, 
-                   options.UseScriptResolutionRules, options.IsIncompleteTypeCheckEnvironment, keepAssemblyContents, keepAllBackgroundResolutions)
+                   options.UseScriptResolutionRules, keepAssemblyContents, keepAllBackgroundResolutions)
 
         // We're putting the builder in the cache, so increment its count.
         let decrement = IncrementalBuilder.KeepBuilderAlive builderOpt
@@ -2416,11 +2416,12 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
     member bc.ParseAndCheckProject(options) =
         reactor.EnqueueAndAwaitOpAsync("ParseAndCheckProject " + options.ProjectFileName, fun _ct -> bc.ParseAndCheckProjectImpl(options))
 
-    member bc.GetProjectOptionsFromScript(filename, source, ?loadedTimeStamp, ?otherFlags, ?useFsiAuxLib) = 
+    member bc.GetProjectOptionsFromScript(filename, source, ?loadedTimeStamp, ?otherFlags, ?useFsiAuxLib, ?assumeDotNetFramework) = 
         reactor.EnqueueAndAwaitOpAsync ("GetProjectOptionsFromScript " + filename, fun _ct -> 
             // Do we add a reference to FSharp.Compiler.Interactive.Settings by default?
             let useFsiAuxLib = defaultArg useFsiAuxLib true
-            // Do we use a "FSharp.Core, 4.3.0.0" reference by default?
+            // Do we assume .NET Framework references for scripts?
+            let assumeDotNetFramework = defaultArg assumeDotNetFramework true
             let otherFlags = defaultArg otherFlags [| |]
             let useSimpleResolution = 
 #if ENABLE_MONO_SUPPORT
@@ -2433,7 +2434,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                 let collect _name = ()
                 let fsiCompilerOptions = CompileOptions.GetCoreFsiCompilerOptions tcConfigB 
                 CompileOptions.ParseCompilerOptions (collect, fsiCompilerOptions, Array.toList otherFlags)
-            let fas = LoadClosure.ComputeClosureOfSourceText(referenceResolver,filename, source, CodeContext.Editing, useSimpleResolution, useFsiAuxLib, new Lexhelp.LexResourceManager(), applyCompilerOptions)
+            let fas = LoadClosure.ComputeClosureOfSourceText(referenceResolver,filename, source, CodeContext.Editing, useSimpleResolution, useFsiAuxLib, new Lexhelp.LexResourceManager(), applyCompilerOptions, assumeDotNetFramework)
             let otherFlags = 
                 [| yield "--noframework"; yield "--warn:3"; 
                    yield! otherFlags 
@@ -2752,7 +2753,7 @@ type FsiInteractiveChecker(reactorOps: IReactorOperations, tcConfig, tcGlobals, 
 module CompilerEnvironment =
     /// These are the names of assemblies that should be referenced for .fs, .ml, .fsi, .mli files that
     /// are not asscociated with a project
-    let DefaultReferencesForOrphanSources = DefaultBasicReferencesForOutOfProjectSources
+    let DefaultReferencesForOrphanSources(assumeDotNetFramework) = DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework)
     
     /// Publish compiler-flags parsing logic. Must be fast because its used by the colorizer.
     let GetCompilationDefinesForEditing(filename:string, compilerFlags : string list) =

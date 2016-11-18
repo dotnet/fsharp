@@ -317,6 +317,7 @@ module internal ReflectionAdapters =
         member this.GetSetMethod() = this.SetMethod
 
 #if FX_RESHAPED_REFLECTION_CORECLR
+
     type CustomAssemblyResolver() =
         inherit AssemblyLoadContext()
         override this.Load (assemblyName:AssemblyName):Assembly =
