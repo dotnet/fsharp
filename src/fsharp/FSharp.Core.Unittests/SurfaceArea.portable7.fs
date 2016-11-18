@@ -2742,6 +2742,7 @@ Microsoft.FSharp.Core.OptionModule: Microsoft.FSharp.Collections.FSharpList`1[T]
 Microsoft.FSharp.Core.OptionModule: Microsoft.FSharp.Core.FSharpOption`1[TResult] Bind[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpOption`1[TResult]], Microsoft.FSharp.Core.FSharpOption`1[T])
 Microsoft.FSharp.Core.OptionModule: Microsoft.FSharp.Core.FSharpOption`1[TResult] Map[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,TResult], Microsoft.FSharp.Core.FSharpOption`1[T])
 Microsoft.FSharp.Core.OptionModule: Microsoft.FSharp.Core.FSharpOption`1[T] Filter[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[T])
+Microsoft.FSharp.Core.OptionModule: Microsoft.FSharp.Core.FSharpOption`1[T] Flatten[T](Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpOption`1[T]])
 Microsoft.FSharp.Core.OptionModule: Microsoft.FSharp.Core.FSharpOption`1[T] OfNullable[T](System.Nullable`1[T])
 Microsoft.FSharp.Core.OptionModule: Microsoft.FSharp.Core.FSharpOption`1[T] OfObj[T](T)
 Microsoft.FSharp.Core.OptionModule: System.Nullable`1[T] ToNullable[T](Microsoft.FSharp.Core.FSharpOption`1[T])
