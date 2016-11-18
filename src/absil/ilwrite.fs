@@ -549,8 +549,7 @@ type MetadataTable =
 
 [<NoEquality; NoComparison>]
 type cenv = 
-    { primaryAssembly: ILScopeRef
-      ilg: ILGlobals
+    { ilg: ILGlobals
       emitTailcalls: bool
       showTimes: bool
       desiredMetadataVersion: ILVersionInfo
@@ -2027,21 +2026,21 @@ module Codebuf =
             if (shape = ILArrayShape.SingleDimensional) then   
                 emitTypeInstr cenv codebuf env i_newarr ty
             else
-                let args = List.init shape.Rank (fun _ -> cenv.ilg.typ_int32)
+                let args = List.init shape.Rank (fun _ -> cenv.ilg.typ_Int32)
                 emitMethodSpecInfoInstr cenv codebuf env i_newobj (".ctor",mkILArrTy(ty,shape),ILCallingConv.Instance,args,ILType.Void,None,[])
 
         | I_stelem_any (shape,ty) -> 
             if (shape = ILArrayShape.SingleDimensional) then   
                 emitTypeInstr cenv codebuf env i_stelem_any ty  
             else 
-                let args = List.init (shape.Rank+1) (fun i -> if i < shape.Rank then  cenv.ilg.typ_int32 else ty)
+                let args = List.init (shape.Rank+1) (fun i -> if i < shape.Rank then  cenv.ilg.typ_Int32 else ty)
                 emitMethodSpecInfoInstr cenv codebuf env i_call ("Set",mkILArrTy(ty,shape),ILCallingConv.Instance,args,ILType.Void,None,[])
 
         | I_ldelem_any (shape,ty) -> 
             if (shape = ILArrayShape.SingleDimensional) then   
                 emitTypeInstr cenv codebuf env i_ldelem_any ty  
             else 
-                let args = List.init shape.Rank (fun _ -> cenv.ilg.typ_int32)
+                let args = List.init shape.Rank (fun _ -> cenv.ilg.typ_Int32)
                 emitMethodSpecInfoInstr cenv codebuf env i_call ("Get",mkILArrTy(ty,shape),ILCallingConv.Instance,args,ty,None,[])
 
         | I_ldelema  (ro,_isNativePtr,shape,ty) -> 
@@ -2050,7 +2049,7 @@ module Codebuf =
             if (shape = ILArrayShape.SingleDimensional) then   
                 emitTypeInstr cenv codebuf env i_ldelema ty
             else 
-                let args = List.init shape.Rank (fun _ -> cenv.ilg.typ_int32)
+                let args = List.init shape.Rank (fun _ -> cenv.ilg.typ_Int32)
                 emitMethodSpecInfoInstr cenv codebuf env i_call ("Address",mkILArrTy(ty,shape),ILCallingConv.Instance,args,ILType.Byref ty,None,[])
 
         | I_castclass  ty -> emitTypeInstr cenv codebuf env i_castclass ty
@@ -2070,7 +2069,7 @@ module Codebuf =
         | I_sizeof  ty -> emitTypeInstr cenv codebuf env i_sizeof ty
         | EI_ldlen_multi (_,m)    -> 
             emitShortInt32Instr codebuf (i_ldc_i4_s,i_ldc_i4) m
-            emitInstr cenv codebuf env (mkNormalCall(mkILNonGenericMethSpecInTy(cenv.ilg.typ_Array, ILCallingConv.Instance, "GetLength", [(cenv.ilg.typ_int32)], (cenv.ilg.typ_int32))))
+            emitInstr cenv codebuf env (mkNormalCall(mkILNonGenericMethSpecInTy(cenv.ilg.typ_Array, ILCallingConv.Instance, "GetLength", [(cenv.ilg.typ_Int32)], (cenv.ilg.typ_Int32))))
 
         |  _ -> failwith "an IL instruction cannot be emitted"
 
@@ -2946,14 +2945,13 @@ let GenModule (cenv : cenv) (modul: ILModuleDef) =
     GenTypeDefsPass4 [] cenv tds
     reportTime cenv.showTimes "Module Generation Pass 4"
 
-let generateIL requiredDataFixups (desiredMetadataVersion,generatePdb, ilg : ILGlobals, emitTailcalls,showTimes)  (m : ILModuleDef) noDebugData cilStartAddress =
+let generateIL requiredDataFixups (desiredMetadataVersion,generatePdb, ilg : ILGlobals, emitTailcalls,showTimes)  (m : ILModuleDef) cilStartAddress =
     let isDll = m.IsDLL
 
     let cenv = 
-        { primaryAssembly=ilg.traits.ScopeRef
-          emitTailcalls=emitTailcalls
+        { emitTailcalls=emitTailcalls
           showTimes=showTimes
-          ilg = mkILGlobals ilg.traits None noDebugData // assumes mscorlib is Scope_assembly _ ILScopeRef 
+          ilg = ilg
           desiredMetadataVersion=desiredMetadataVersion
           requiredDataFixups= requiredDataFixups
           requiredStringFixups = []
@@ -3086,7 +3084,7 @@ module FileSystemUtilites =
 #endif
         ()
 
-let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls,showTimes) modul noDebugData cilStartAddress = 
+let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls,showTimes) modul cilStartAddress = 
 
     // When we know the real RVAs of the data section we fixup the references for the FieldRVA table. 
     // These references are stored as offsets into the metadata we return from this function 
@@ -3095,7 +3093,7 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
     let next = cilStartAddress
 
     let strings,userStrings,blobs,guids,tables,entryPointToken,code,requiredStringFixups,data,resources,pdbData,mappings = 
-      generateIL requiredDataFixups (desiredMetadataVersion,generatePdb,ilg,emitTailcalls,showTimes) modul noDebugData cilStartAddress
+      generateIL requiredDataFixups (desiredMetadataVersion,generatePdb,ilg,emitTailcalls,showTimes) modul cilStartAddress
 
     reportTime showTimes "Generated Tables and Code"
     let tableSize (tab: TableName) = tables.[tab.Index].Count
@@ -3536,8 +3534,8 @@ let writeDirectory os dict =
 
 let writeBytes (os: BinaryWriter) (chunk:byte[]) = os.Write(chunk,0,chunk.Length)  
 
-let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: ILStrongNameSigner option, portablePDB, embeddedPDB, embedAllSource, embedSourceList,
-                                  sourceLink, fixupOverlappingSequencePoints, emitTailcalls, showTimes, dumpDebugInfo) modul noDebugData =
+let writeBinaryAndReportMappings (outfile, ilg: ILGlobals, pdbfile: string option, signer: ILStrongNameSigner option, portablePDB, embeddedPDB, embedAllSource, embedSourceList,
+                                  sourceLink, fixupOverlappingSequencePoints, emitTailcalls, showTimes, dumpDebugInfo) modul =
     // Store the public key from the signer into the manifest.  This means it will be written 
     // to the binary and also acts as an indicator to leave space for delay sign 
 
@@ -3644,7 +3642,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
             if modul.MetadataVersion <> "" then
                 parseILVersion modul.MetadataVersion
             else
-                match ilg.traits.ScopeRef with 
+                match ilg.primaryAssemblyScopeRef with 
                 | ILScopeRef.Local -> failwith "Expected mscorlib to be ILScopeRef.Assembly was ILScopeRef.Local" 
                 | ILScopeRef.Module(_) -> failwith "Expected mscorlib to be ILScopeRef.Assembly was ILScopeRef.Module"
                 | ILScopeRef.Assembly(aref) ->
@@ -3654,7 +3652,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
                     | None -> failwith "Expected msorlib to have a version number"
 
           let entryPointToken,code,codePadding,metadata,data,resources,requiredDataFixups,pdbData,mappings = 
-            writeILMetadataAndCode ((pdbfile <> None), desiredMetadataVersion, ilg,emitTailcalls,showTimes) modul noDebugData next
+            writeILMetadataAndCode ((pdbfile <> None), desiredMetadataVersion, ilg,emitTailcalls,showTimes) modul next
 
           reportTime showTimes "Generated IL and metadata";
           let _codeChunk,next = chunk code.Length next
@@ -4268,7 +4266,9 @@ type options =
      showTimes: bool
      dumpDebugInfo:bool }
 
-let WriteILBinary (outfile, (args: options), modul, noDebugData) =
-    ignore (writeBinaryAndReportMappings (outfile, args.ilg, args.pdbfile, args.signer, args.portablePDB, args.embeddedPDB, 
-                                          args.embedAllSource, args.embedSourceList, args.sourceLink, args.fixupOverlappingSequencePoints, 
-                                          args.emitTailcalls, args.showTimes, args.dumpDebugInfo) modul noDebugData)
+let WriteILBinary (outfile, (args: options), modul) =
+    writeBinaryAndReportMappings (outfile, args.ilg, args.pdbfile, args.signer, args.portablePDB, args.embeddedPDB, 
+                                  args.embedAllSource, args.embedSourceList, args.sourceLink, args.fixupOverlappingSequencePoints, 
+                                  args.emitTailcalls, args.showTimes, args.dumpDebugInfo) modul 
+    |> ignore
+

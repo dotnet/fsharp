@@ -5977,11 +5977,11 @@ let mkUnbox ty e m = mkAsmExpr ([ unbox ], [ty],[e], [ ty ], m)
 let mkBox ty e m = mkAsmExpr ([box],[],[e],[ty],m)
 let mkIsInst ty e m = mkAsmExpr ([ isinst ], [ty],[e], [ ty ], m)
 
-let mspec_Object_GetHashCode     ilg = IL.mkILNonGenericInstanceMethSpecInTy(ilg.typ_Object,"GetHashCode",[],ilg.typ_int32)
-let mspec_Type_GetTypeFromHandle ilg = IL.mkILNonGenericStaticMethSpecInTy(ilg.typ_Type,"GetTypeFromHandle",[ilg.typ_RuntimeTypeHandle],ilg.typ_Type)
-let mspec_String_Length          ilg = mkILNonGenericInstanceMethSpecInTy (ilg.typ_String, "get_Length", [], ilg.typ_int32)
+let mspec_Object_GetHashCode (ilg: ILGlobals) = IL.mkILNonGenericInstanceMethSpecInTy(ilg.typ_Object,"GetHashCode",[],ilg.typ_Int32)
+let mspec_Type_GetTypeFromHandle (ilg: ILGlobals) = IL.mkILNonGenericStaticMethSpecInTy(ilg.typ_Type,"GetTypeFromHandle",[ilg.typ_RuntimeTypeHandle],ilg.typ_Type)
+let mspec_String_Length (ilg: ILGlobals) = mkILNonGenericInstanceMethSpecInTy (ilg.typ_String, "get_Length", [], ilg.typ_Int32)
 
-let fspec_Missing_Value  ilg = IL.mkILFieldSpecInTy(ilg.typ_Missing.Value, "Value", ilg.typ_Missing.Value)
+let fspec_Missing_Value (ilg: ILGlobals) = IL.mkILFieldSpecInTy(ilg.typ_Missing, "Value", ilg.typ_Missing)
 
 
 let typedExprForIntrinsic _g m (IntrinsicValRef(_,_,_,ty,_) as i) =
@@ -6269,7 +6269,7 @@ let TryFindAutoOpenAttr (ilg : IL.ILGlobals) cattr =
         None
         
 let tref_InternalsVisibleToAttr (ilg : IL.ILGlobals) = 
-    mkILTyRef (ilg.traits.ScopeRef,"System.Runtime.CompilerServices.InternalsVisibleToAttribute")    
+    ilg.mkSysILTypeRef "System.Runtime.CompilerServices.InternalsVisibleToAttribute"
 
 let TryFindInternalsVisibleToAttr ilg cattr = 
     if isILAttrib (tref_InternalsVisibleToAttr ilg) cattr then 

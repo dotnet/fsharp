@@ -1828,8 +1828,8 @@ and OptimizeExprOp cenv env (op,tyargs,args,m) =
   
     | TOp.ILCall (_,_,_,_,_,_,_,mref,_enclTypeArgs,_methTypeArgs,_tys),_,[arg]
         when (mref.EnclosingTypeRef.Scope.IsAssemblyRef &&
-              mref.EnclosingTypeRef.Scope.AssemblyRef.Name = cenv.g.sysCcu.AssemblyName &&
-              mref.EnclosingTypeRef.Name = "System.Array" &&
+              mref.EnclosingTypeRef.Scope.AssemblyRef.Name = cenv.g.ilg.typ_Array.TypeRef.Scope.AssemblyRef.Name &&
+              mref.EnclosingTypeRef.Name = cenv.g.ilg.typ_Array.TypeRef.Name &&
               mref.Name = "get_Length" &&
               isArray1DTy cenv.g (tyOfExpr cenv.g arg)) -> 
          OptimizeExpr cenv env (Expr.Op(TOp.ILAsm(i_ldlen,[cenv.g.int_ty]),[],[arg],m))

@@ -445,7 +445,7 @@ and GenTypeAux amap m g (tyenv: TypeReprEnv) voidOK ptrsOK ty =
         if tps.IsEmpty then GenTypeAux amap m g tyenv VoidNotOK ptrsOK tau
         else EraseClosures.mkILTyFuncTy g.ilxPubCloEnv 
     | TType_var tp -> mkILTyvarTy tyenv.[tp,m]
-    | TType_measure _ -> g.ilg.typ_int32 
+    | TType_measure _ -> g.ilg.typ_Int32 
 
 //--------------------------------------------------------------------------
 // Generate ILX references to closures, classunions etc. given a tyenv
@@ -1889,13 +1889,13 @@ let rec GenExpr (cenv:cenv) (cgbuf:CodeGenBuffer) eenv sp expr sequel =
       | TOp.Array,elems,[elemTy] ->  GenNewArray cenv cgbuf eenv (elems,elemTy,m) sequel
       | TOp.Bytes bytes,[],[] -> 
           if cenv.opts.emitConstantArraysUsingStaticDataBlobs then 
-              GenConstArray cenv cgbuf eenv cenv.g.ilg.typ_uint8 bytes (fun buf b -> buf.EmitByte b)
+              GenConstArray cenv cgbuf eenv cenv.g.ilg.typ_Byte bytes (fun buf b -> buf.EmitByte b)
               GenSequel cenv eenv.cloc cgbuf sequel
           else
               GenNewArraySimple cenv cgbuf eenv (List.ofArray (Array.map (mkByte cenv.g m) bytes),cenv.g.byte_ty,m) sequel
       | TOp.UInt16s arr,[],[] -> 
           if cenv.opts.emitConstantArraysUsingStaticDataBlobs then 
-              GenConstArray cenv cgbuf eenv cenv.g.ilg.typ_uint16 arr (fun buf b -> buf.EmitUInt16 b)
+              GenConstArray cenv cgbuf eenv cenv.g.ilg.typ_UInt16 arr (fun buf b -> buf.EmitUInt16 b)
               GenSequel cenv eenv.cloc cgbuf sequel
           else
               GenNewArraySimple cenv cgbuf eenv (List.ofArray (Array.map (mkUInt16 cenv.g m) arr),cenv.g.uint16_ty,m) sequel
@@ -2028,7 +2028,7 @@ and GenConstant cenv cgbuf eenv (c,m,ty) sequel =
           GenExpr cenv cgbuf eenv SPSuppress e Continue
       | None ->
           match c with 
-          | Const.Bool b -> CG.EmitInstr cgbuf (pop 0) (Push [cenv.g.ilg.typ_bool]) (mkLdcInt32 (if b then 1 else 0))
+          | Const.Bool b -> CG.EmitInstr cgbuf (pop 0) (Push [cenv.g.ilg.typ_Bool]) (mkLdcInt32 (if b then 1 else 0))
           | Const.SByte i -> CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (mkLdcInt32 (int32 i))
           | Const.Int16 i -> CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (mkLdcInt32 (int32 i))
           | Const.Int32 i -> CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (mkLdcInt32 i)
@@ -2162,7 +2162,7 @@ and GenNewArraySimple cenv cgbuf eenv (elems,elemTy,m) sequel =
     
     CG.EmitInstrs cgbuf (pop 0) (Push [ilArrTy]) [ (AI_ldc (DT_I4,ILConst.I4 (elems.Length))); I_newarr (ILArrayShape.SingleDimensional,ilElemTy) ]
     elems |> List.iteri (fun i e ->             
-        CG.EmitInstrs cgbuf (pop 0) (Push [ilArrTy; cenv.g.ilg.typ_int32]) [ AI_dup; (AI_ldc (DT_I4,ILConst.I4  i)) ]
+        CG.EmitInstrs cgbuf (pop 0) (Push [ilArrTy; cenv.g.ilg.typ_Int32]) [ AI_dup; (AI_ldc (DT_I4,ILConst.I4  i)) ]
         GenExpr cenv cgbuf eenv SPSuppress e Continue          
         CG.EmitInstr cgbuf (pop 3) Push0  (I_stelem_any (ILArrayShape.SingleDimensional,ilElemTy))) 
       
@@ -2306,7 +2306,7 @@ and GenGetUnionCaseTag cenv cgbuf eenv (e,tcref,tyargs,m) sequel =
     let cuspec = GenUnionSpec cenv.amap m cenv.g eenv.tyenv tcref tyargs
     let avoidHelpers = entityRefInThisAssembly cenv.g.compilingFslib tcref
     EraseUnions.emitLdDataTag cenv.g.ilg (UnionCodeGen cgbuf) (avoidHelpers, cuspec)
-    CG.EmitInstrs cgbuf (pop 1) (Push [cenv.g.ilg.typ_int32]) [  ] // push/pop to match the line above
+    CG.EmitInstrs cgbuf (pop 1) (Push [cenv.g.ilg.typ_Int32]) [  ] // push/pop to match the line above
     GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenSetUnionCaseField cenv cgbuf eenv (e,ucref,tyargs,n,e2,m) sequel = 
@@ -2485,7 +2485,7 @@ and GenApp cenv cgbuf eenv (f,fty,tyargs,args,m) sequel =
         
       GenExpr cenv cgbuf eenv SPSuppress arg1 Continue
       GenExpr cenv cgbuf eenv SPSuppress arg2 Continue
-      CG.EmitInstr cgbuf (pop 2) (Push [cenv.g.ilg.typ_bool]) AI_ceq
+      CG.EmitInstr cgbuf (pop 2) (Push [cenv.g.ilg.typ_Bool]) AI_ceq
       GenSequel cenv eenv.cloc cgbuf sequel
 
   // Emit "methodhandleof" calls as ldtoken instructions
@@ -2925,7 +2925,7 @@ and GenForLoop cenv cgbuf eenv (spFor,v,e1,dir,e2,loopBody,m) sequel =
     
     let finishIdx,eenvinner = 
         if isFSharpStyle then 
-            let v,eenvinner = AllocLocal cenv cgbuf eenvinner true (ilxgenGlobalNng.FreshCompilerGeneratedName ("endLoop",m), cenv.g.ilg.typ_int32, false) (start,finish)
+            let v,eenvinner = AllocLocal cenv cgbuf eenvinner true (ilxgenGlobalNng.FreshCompilerGeneratedName ("endLoop",m), cenv.g.ilg.typ_Int32, false) (start,finish)
             v, eenvinner
         else
             -1,eenvinner
@@ -2940,7 +2940,7 @@ and GenForLoop cenv cgbuf eenv (spFor,v,e1,dir,e2,loopBody,m) sequel =
     if isFSharpStyle then 
         GenExpr cenv cgbuf eenvinner SPSuppress e2 Continue
         EmitSetLocal cgbuf finishIdx
-        EmitGetLocal cgbuf cenv.g.ilg.typ_int32 finishIdx
+        EmitGetLocal cgbuf cenv.g.ilg.typ_Int32 finishIdx
         GenGetLocalVal cenv cgbuf eenvinner e2.Range v None        
         CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp ((if isUp then BI_blt else BI_bgt),finish.CodeLabel))
     
@@ -2954,7 +2954,7 @@ and GenForLoop cenv cgbuf eenv (spFor,v,e1,dir,e2,loopBody,m) sequel =
     //    v++ or v--
     GenGetLocalVal cenv cgbuf eenvinner e2.Range v None
 
-    CG.EmitInstr cgbuf (pop 0) (Push [cenv.g.ilg.typ_int32]) (mkLdcInt32 1)
+    CG.EmitInstr cgbuf (pop 0) (Push [cenv.g.ilg.typ_Int32]) (mkLdcInt32 1)
     CG.EmitInstr cgbuf (pop 1) Push0 (if isUp then AI_add else AI_sub)
     GenStoreVal cgbuf eenvinner m v
 
@@ -2974,8 +2974,8 @@ and GenForLoop cenv cgbuf eenv (spFor,v,e1,dir,e2,loopBody,m) sequel =
     let e2Sequel =  (CmpThenBrOrContinue (pop 2, [ I_brcmp(cmp,inner.CodeLabel) ]))
 
     if isFSharpStyle then 
-        EmitGetLocal cgbuf cenv.g.ilg.typ_int32  finishIdx
-        CG.EmitInstr cgbuf (pop 0) (Push [cenv.g.ilg.typ_int32]) (mkLdcInt32 1)
+        EmitGetLocal cgbuf cenv.g.ilg.typ_Int32  finishIdx
+        CG.EmitInstr cgbuf (pop 0) (Push [cenv.g.ilg.typ_Int32]) (mkLdcInt32 1)
         CG.EmitInstr cgbuf (pop 1) Push0 (if isUp then AI_add else AI_sub)
         GenSequel cenv eenv.cloc cgbuf e2Sequel
     else
@@ -4365,7 +4365,7 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
       // // Remove a single test for a union case . Union case tests are always exa
       //| [ TCase(Test.UnionCase _, successTree) ] when (defaultTargetOpt.IsNone)  ->  
       //  GenDecisionTreeAndTargetsInner cenv cgbuf inplabOpt stackAtTargets eenv successTree targets repeatSP targetInfos sequel
-      //   //GenDecisionTree cenv eenv.cloc cgbuf stackAtTargets e (Some (pop 1, Push [cenv.g.ilg.typ_bool], Choice1Of2 (avoidHelpers, cuspec, idx))) eenv successTree failureTree targets repeatSP targetInfos sequel
+      //   //GenDecisionTree cenv eenv.cloc cgbuf stackAtTargets e (Some (pop 1, Push [cenv.g.ilg.typ_Bool], Choice1Of2 (avoidHelpers, cuspec, idx))) eenv successTree failureTree targets repeatSP targetInfos sequel
 
       // Optimize a single test for a union case to an "isdata" test - much 
       // more efficient code, and this case occurs in the generated equality testers where perf is important 
@@ -4377,7 +4377,7 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
         let cuspec = GenUnionSpec cenv.amap m cenv.g eenv.tyenv c.TyconRef tyargs
         let idx = c.Index
         let avoidHelpers = entityRefInThisAssembly cenv.g.compilingFslib c.TyconRef
-        GenDecisionTreeTest cenv eenv.cloc cgbuf stackAtTargets e (Some (pop 1, Push [cenv.g.ilg.typ_bool], Choice1Of2 (avoidHelpers, cuspec, idx))) eenv successTree failureTree targets repeatSP targetInfos sequel
+        GenDecisionTreeTest cenv eenv.cloc cgbuf stackAtTargets e (Some (pop 1, Push [cenv.g.ilg.typ_Bool], Choice1Of2 (avoidHelpers, cuspec, idx))) eenv successTree failureTree targets repeatSP targetInfos sequel
 
       | _ ->  
         let caseLabels = List.map (fun _ -> CG.GenerateDelayMark cgbuf "switch_case") cases
@@ -4462,7 +4462,7 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
                 if mx - mn = (List.length dests - 1) then
                     let destinationLabels = dests |> List.sortBy fst |> List.map snd 
                     if mn <> 0 then 
-                      CG.EmitInstrs cgbuf (pop 0) (Push [cenv.g.ilg.typ_int32]) [ mkLdcInt32 mn]
+                      CG.EmitInstrs cgbuf (pop 0) (Push [cenv.g.ilg.typ_Int32]) [ mkLdcInt32 mn]
                       CG.EmitInstrs cgbuf (pop 1) Push0 [ AI_sub ]
                     CG.EmitInstr cgbuf (pop 1) Push0 (I_switch destinationLabels)
                 else
@@ -4510,7 +4510,7 @@ and GenDecisionTreeTest cenv cloc cgbuf stackAtTargets e tester eenv successTree
                     | Choice2Of2 i -> CG.EmitInstr cgbuf pops pushes i
                  | _ -> ()
                  if not b1 then 
-                   CG.EmitInstrs cgbuf (pop 0) (Push [cenv.g.ilg.typ_bool]) [mkLdcInt32 (0) ]
+                   CG.EmitInstrs cgbuf (pop 0) (Push [cenv.g.ilg.typ_Bool]) [mkLdcInt32 (0) ]
                    CG.EmitInstrs cgbuf (pop 1) Push0 [AI_ceq]
                  GenSequel cenv cloc cgbuf sequel
                  targetInfos
@@ -5980,12 +5980,12 @@ and GenForceWholeFileInitializationAsPartOfCCtor cenv (mgbuf:AssemblyBuilder) (l
 
 /// Generate an Equals method.  
 and GenEqualsOverrideCallingIComparable cenv (tcref:TyconRef, ilThisTy, _ilThatTy) =
-    let mspec = mkILNonGenericInstanceMethSpecInTy (cenv.g.ilg.typ_IComparable, "CompareTo", [cenv.g.ilg.typ_Object], cenv.g.ilg.typ_int32)
+    let mspec = mkILNonGenericInstanceMethSpecInTy (cenv.g.ilg.typ_IComparable, "CompareTo", [cenv.g.ilg.typ_Object], cenv.g.ilg.typ_Int32)
     
     mkILNonGenericVirtualMethod
         ("Equals",ILMemberAccess.Public,
          [mkILParamNamed ("obj",cenv.g.ilg.typ_Object)], 
-         mkILReturn cenv.g.ilg.typ_bool,
+         mkILReturn cenv.g.ilg.typ_Bool,
          mkMethodBody(true,[],2,
                          nonBranchingInstrsToCode
                             [ yield mkLdarg0
@@ -6174,7 +6174,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                 | Some memberInfo -> 
                     match name, memberInfo.MemberFlags.MemberKind with 
                     | ("Item" | "op_IndexedLookup"), (MemberKind.PropertyGet  | MemberKind.PropertySet) when not (isNil (ArgInfosOfPropertyVal cenv.g vref.Deref)) ->
-                        Some( mkILCustomAttribute cenv.g.ilg (mkILTyRef (cenv.g.ilg.traits.ScopeRef,"System.Reflection.DefaultMemberAttribute"),[cenv.g.ilg.typ_String],[ILAttribElem.String(Some(name))],[]) ) 
+                        Some( mkILCustomAttribute cenv.g.ilg (cenv.g.ilg.mkSysILTypeRef "System.Reflection.DefaultMemberAttribute",[cenv.g.ilg.typ_String],[ILAttribElem.String(Some(name))],[]) ) 
                     | _ -> None)
             |> Option.toList
 
@@ -6306,7 +6306,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                         CustomAttrs   = mkILCustomAttrs (GenAttrs cenv eenv fattribs @ extraAttribs) } 
 
                if requiresExtraField then 
-                   yield mkILInstanceField("__dummy",cenv.g.ilg.typ_int32,None,ILMemberAccess.Assembly) ]
+                   yield mkILInstanceField("__dummy",cenv.g.ilg.typ_Int32,None,ILMemberAccess.Assembly) ]
          
         // Generate property definitions for the fields compiled as properties 
         let ilPropertyDefsForFields = 

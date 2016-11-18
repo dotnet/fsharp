@@ -904,7 +904,7 @@ and IsILTypeRefStaticLinkLocal cenv m (tr:ILTypeRef) =
 #if EXTENSIONTYPING
         | ILScopeRef.Assembly aref 
             when not cenv.g.isInteractive &&
-                 aref.Name <> cenv.g.sysCcu.AssemblyName && // optimization to avoid this check in the common case
+                 aref.Name <> cenv.g.ilg.primaryAssemblyName && // optimization to avoid this check in the common case
                  (match cenv.amap.assemblyLoader.LoadAssembly (m,aref) with 
                   | ResolvedCcu ccu -> ccu.IsProviderGenerated
                   | UnresolvedCcu _ -> false) 

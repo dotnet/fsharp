@@ -7,9 +7,11 @@ module internal Microsoft.FSharp.Compiler.AbstractIL.IL
 open Internal.Utilities
 open System.Collections.Generic
 
+[<RequireQualifiedAccess>]
 type PrimaryAssembly = 
     | Mscorlib
     | DotNetCore
+    | PrivateCoreLib
 
     member Name: string
 
@@ -1474,29 +1476,6 @@ val isTypeNameForGlobalFunctions: string -> bool
 
 val ungenericizeTypeName: string -> string (* e.g. List`1 --> List *)
 
-/// Represents the capabilities of target framework profile.
-/// Different profiles may omit some types or contain them in different assemblies.
-type IPrimaryAssemblyTraits = 
-    
-    abstract TypedReferenceTypeScopeRef : ILScopeRef option
-    abstract RuntimeArgumentHandleTypeScopeRef : ILScopeRef option
-    abstract SerializationInfoTypeScopeRef : ILScopeRef option
-    abstract SecurityPermissionAttributeTypeScopeRef : ILScopeRef option    
-    abstract IDispatchConstantAttributeScopeRef : ILScopeRef option
-    abstract IUnknownConstantAttributeScopeRef : ILScopeRef option
-    abstract ArgIteratorTypeScopeRef : ILScopeRef option
-    abstract MarshalByRefObjectScopeRef : ILScopeRef option
-    abstract ThreadStaticAttributeScopeRef : ILScopeRef option
-    abstract SpecialNameAttributeScopeRef : ILScopeRef option
-    abstract ContextStaticAttributeScopeRef : ILScopeRef option
-    abstract NonSerializedAttributeScopeRef : ILScopeRef option
-
-    abstract SystemRuntimeInteropServicesScopeRef   : Lazy<ILScopeRef option>
-    abstract SystemLinqExpressionsScopeRef          : Lazy<ILScopeRef>
-    abstract SystemCollectionsScopeRef              : Lazy<ILScopeRef>
-    abstract SystemReflectionScopeRef               : Lazy<ILScopeRef>
-    abstract SystemDiagnosticsDebugScopeRef         : Lazy<ILScopeRef>
-    abstract ScopeRef : ILScopeRef
 
 // ====================================================================
 // PART 2
@@ -1509,103 +1488,88 @@ type IPrimaryAssemblyTraits =
 /// A table of common references to items in primary assebly (System.Runtime or mscorlib).
 /// If a particular version of System.Runtime.dll has been loaded then you should 
 /// reference items from it via an ILGlobals for that specific version built using mkILGlobals. 
-[<NoEquality; NoComparison>]
+[<NoEquality; NoComparison; Class>]
 type ILGlobals = 
-    { 
-      traits : IPrimaryAssemblyTraits
-      primaryAssemblyName: string
-      noDebugData: bool
-      tref_Object: ILTypeRef
-      tspec_Object: ILTypeSpec
-      typ_Object: ILType
-      tref_String: ILTypeRef
-      typ_String: ILType
-      typ_StringBuilder: ILType
-      typ_AsyncCallback: ILType
-      typ_IAsyncResult: ILType
-      typ_IComparable: ILType
-      tref_Type: ILTypeRef
-      typ_Type: ILType
-      typ_Missing: Lazy<ILType>
-      typ_Activator: ILType
-      typ_Delegate: ILType
-      typ_ValueType: ILType
-      typ_Enum: ILType
-      tspec_TypedReference: ILTypeSpec option
-      typ_TypedReference: ILType option
-      typ_MulticastDelegate: ILType
-      typ_Array: ILType
-      tspec_Int64: ILTypeSpec
-      tspec_UInt64: ILTypeSpec
-      tspec_Int32: ILTypeSpec
-      tspec_UInt32: ILTypeSpec
-      tspec_Int16: ILTypeSpec
-      tspec_UInt16: ILTypeSpec
-      tspec_SByte: ILTypeSpec
-      tspec_Byte: ILTypeSpec
-      tspec_Single: ILTypeSpec
-      tspec_Double: ILTypeSpec
-      tspec_IntPtr: ILTypeSpec
-      tspec_UIntPtr: ILTypeSpec
-      tspec_Char: ILTypeSpec
-      tspec_Bool: ILTypeSpec
-      typ_int8: ILType
-      typ_int16: ILType
-      typ_int32: ILType
-      typ_int64: ILType
-      typ_uint8: ILType
-      typ_uint16: ILType
-      typ_uint32: ILType
-      typ_uint64: ILType
-      typ_float32: ILType
-      typ_float64: ILType
-      typ_bool: ILType
-      typ_char: ILType
-      typ_IntPtr: ILType
-      typ_UIntPtr: ILType
-      typ_RuntimeArgumentHandle: ILType option
-      typ_RuntimeTypeHandle: ILType
-      typ_RuntimeMethodHandle: ILType
-      typ_RuntimeFieldHandle: ILType
-      typ_Byte: ILType
-      typ_Int16: ILType
-      typ_Int32: ILType
-      typ_Int64: ILType
-      typ_SByte: ILType
-      typ_UInt16: ILType
-      typ_UInt32: ILType
-      typ_UInt64: ILType
-      typ_Single: ILType
-      typ_Double: ILType
-      typ_Bool: ILType
-      typ_Char: ILType
-      typ_SerializationInfo: ILType option
-      typ_StreamingContext: ILType
-      tref_SecurityPermissionAttribute : ILTypeRef option
-      tspec_Exception: ILTypeSpec
-      typ_Exception: ILType 
-      mutable generatedAttribsCache: ILAttribute list 
-      mutable debuggerBrowsableNeverAttributeCache : ILAttribute option 
-      mutable debuggerTypeProxyAttributeCache : ILAttribute option }
+    member primaryAssemblyScopeRef : ILScopeRef
+    member primaryAssemblyName : string
+    member noDebugData: bool;
+    member tref_Object: ILTypeRef 
+    member tspec_Object: ILTypeSpec
+    member typ_Object: ILType
+    member tref_String: ILTypeRef
+    member typ_String: ILType
+    member typ_StringBuilder: ILType
+    member typ_AsyncCallback: ILType
+    member typ_IAsyncResult: ILType
+    member typ_IComparable: ILType
+    member tref_Type: ILTypeRef
+    member typ_Type: ILType
+    member typ_Missing: ILType
+    member typ_Activator: ILType
+    member typ_Delegate: ILType
+    member typ_ValueType: ILType
+    member typ_Enum: ILType
+    member tspec_TypedReference: ILTypeSpec option
+    member typ_TypedReference: ILType option
+    member typ_MulticastDelegate: ILType
+    member typ_Array: ILType
+    member tspec_Int64: ILTypeSpec
+    member tspec_UInt64: ILTypeSpec
+    member tspec_Int32: ILTypeSpec
+    member tspec_UInt32: ILTypeSpec
+    member tspec_Int16: ILTypeSpec
+    member tspec_UInt16: ILTypeSpec
+    member tspec_SByte: ILTypeSpec
+    member tspec_Byte: ILTypeSpec
+    member tspec_Single: ILTypeSpec
+    member tspec_Double: ILTypeSpec
+    member tspec_IntPtr: ILTypeSpec
+    member tspec_UIntPtr: ILTypeSpec
+    member tspec_Char: ILTypeSpec
+    member tspec_Bool: ILTypeSpec
+    member typ_IntPtr: ILType
+    member typ_UIntPtr: ILType
+    member typ_RuntimeArgumentHandle: ILType option
+    member typ_RuntimeTypeHandle: ILType
+    member typ_RuntimeMethodHandle: ILType
+    member typ_RuntimeFieldHandle: ILType
+    member typ_Byte: ILType
+    member typ_Int16: ILType
+    member typ_Int32: ILType
+    member typ_Int64: ILType
+    member typ_SByte: ILType
+    member typ_UInt16: ILType
+    member typ_UInt32: ILType
+    member typ_UInt64: ILType
+    member typ_Single: ILType
+    member typ_Double: ILType
+    member typ_Bool: ILType
+    member typ_Char: ILType
+    member typ_SerializationInfo: ILType option
+    member typ_StreamingContext: ILType
+    member tref_SecurityPermissionAttribute: ILTypeRef option
+    member tspec_Exception: ILTypeSpec
+    member typ_Exception: ILType
+    member generatedAttribsCache: ILAttribute list with get,set
+    member debuggerBrowsableNeverAttributeCache : ILAttribute option with get,set
+    member mkSysILTypeRef : string -> ILTypeRef
+    member tryMkSysILTypeRef : string -> ILTypeRef option
 
-      with
-      member mkDebuggableAttribute: bool (* disable JIT optimizations *) -> ILAttribute
-      /// Some commonly used custom attibutes
-      member mkDebuggableAttributeV2               : bool (* jitTracking *) * bool (* ignoreSymbolStoreSequencePoints *) * bool (* disable JIT optimizations *) * bool (* enable EnC *) -> ILAttribute
-      member mkCompilerGeneratedAttribute          : unit -> ILAttribute
-      member mkDebuggerNonUserCodeAttribute        : unit -> ILAttribute
-      member mkDebuggerStepThroughAttribute        : unit -> ILAttribute
-      member mkDebuggerHiddenAttribute             : unit -> ILAttribute
-      member mkDebuggerDisplayAttribute            : string -> ILAttribute
-      member mkDebuggerTypeProxyAttribute          : ILType -> ILAttribute
-      member mkDebuggerBrowsableNeverAttribute     : unit -> ILAttribute
+    member mkDebuggableAttribute: bool (* disable JIT optimizations *) -> ILAttribute
+    /// Some commonly used custom attibutes
+    member mkDebuggableAttributeV2               : bool (* jitTracking *) * bool (* ignoreSymbolStoreSequencePoints *) * bool (* disable JIT optimizations *) * bool (* enable EnC *) -> ILAttribute
+    member mkCompilerGeneratedAttribute          : unit -> ILAttribute
+    member mkDebuggerNonUserCodeAttribute        : unit -> ILAttribute
+    member mkDebuggerStepThroughAttribute        : unit -> ILAttribute
+    member mkDebuggerHiddenAttribute             : unit -> ILAttribute
+    member mkDebuggerDisplayAttribute            : string -> ILAttribute
+    member mkDebuggerTypeProxyAttribute          : ILType -> ILAttribute
+    member mkDebuggerBrowsableNeverAttribute     : unit -> ILAttribute
 
-/// Build the table of commonly used references given an <c>ILScopeRef</c> for system runtime assembly. 
-val mkILGlobals : IPrimaryAssemblyTraits -> string option -> bool -> ILGlobals
+/// Build the table of commonly used references given functions to find types in system assemblies
+val mkILGlobals: bool * (string -> ILScopeRef) * (string -> ILScopeRef option) -> ILGlobals
 
-val mkMscorlibBasedTraits : ILScopeRef -> IPrimaryAssemblyTraits
-
-val EcmaILGlobals : ILGlobals
+val EcmaMscorlibILGlobals : ILGlobals
 
 /// When writing a binary the fake "toplevel" type definition (called <Module>)
 /// must come first. This function puts it first, and creates it in the returned 

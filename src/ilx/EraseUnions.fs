@@ -208,8 +208,8 @@ let tyForAlt cuspec alt = cuspecRepr.TypeForAlternative(cuspec,alt)
 
 let GetILTypeForAlternative cuspec alt = cuspecRepr.TypeForAlternative(cuspec,cuspec.Alternative alt) 
 
-let mkTagFieldType ilg _cuspec = ilg.typ_Int32
-let mkTagFieldFormalType ilg _cuspec = ilg.typ_Int32
+let mkTagFieldType (ilg: ILGlobals) _cuspec = ilg.typ_Int32
+let mkTagFieldFormalType (ilg: ILGlobals) _cuspec = ilg.typ_Int32
 let mkTagFieldId ilg cuspec = "_tag", mkTagFieldType ilg cuspec
 let mkTailOrNullId baseTy = "tail", constFormalFieldTy baseTy
 
@@ -227,7 +227,7 @@ let altOfUnionSpec (cuspec:IlxUnionSpec) cidx =
 let doesRuntimeTypeDiscriminateUseHelper avoidHelpers (cuspec: IlxUnionSpec) (alt: IlxUnionAlternative) = 
     not avoidHelpers && alt.IsNullary && cuspec.HasHelpers = IlxUnionHasHelpers.AllHelpers
 
-let mkRuntimeTypeDiscriminate ilg avoidHelpers cuspec alt altName altTy = 
+let mkRuntimeTypeDiscriminate (ilg: ILGlobals) avoidHelpers cuspec alt altName altTy = 
     let useHelper = doesRuntimeTypeDiscriminateUseHelper avoidHelpers cuspec alt
     if useHelper then 
         let baseTy = baseTyOfUnionSpec cuspec
@@ -668,7 +668,7 @@ let convAlternativeDef ilg num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (a
                     [ mkILNonGenericInstanceMethod
                          ("get_" + mkTesterName altName,
                           cud.cudHelpersAccess,[],
-                          mkILReturn ilg.typ_bool,
+                          mkILReturn ilg.typ_Bool,
                           mkMethodBody(true,[],2,nonBranchingInstrsToCode 
                                     ([ mkLdarg0 ] @ mkIsData ilg (true, cuspec, num)), attr))
                       |> addMethodGeneratedAttrs ilg ],
@@ -676,9 +676,9 @@ let convAlternativeDef ilg num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (a
                         IsRTSpecialName=false
                         IsSpecialName=false
                         SetMethod=None
-                        GetMethod = Some (mkILMethRef (baseTy.TypeRef, ILCallingConv.Instance, "get_" + mkTesterName altName, 0, [], ilg.typ_bool))
+                        GetMethod = Some (mkILMethRef (baseTy.TypeRef, ILCallingConv.Instance, "get_" + mkTesterName altName, 0, [], ilg.typ_Bool))
                         CallingConv=ILThisConvention.Instance
-                        Type=ilg.typ_bool          
+                        Type=ilg.typ_Bool          
                         Init=None
                         Args = []
                         CustomAttrs=emptyILCustomAttrs }

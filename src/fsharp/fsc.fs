@@ -732,17 +732,17 @@ module AttributeHelpers =
 
     /// Try to find an attribute that takes a string argument
     let TryFindStringAttribute tcGlobals attrib attribs =
-        match TryFindFSharpAttribute tcGlobals (mkMscorlibAttrib tcGlobals attrib) attribs with
+        match TryFindFSharpAttribute tcGlobals (mkSysAttrib tcGlobals attrib) attribs with
         | Some (Attrib(_, _, [ AttribStringArg(s) ], _, _, _, _))  -> Some (s)
         | _ -> None
         
     let TryFindIntAttribute tcGlobals attrib attribs =
-        match TryFindFSharpAttribute tcGlobals (mkMscorlibAttrib tcGlobals attrib) attribs with
+        match TryFindFSharpAttribute tcGlobals (mkSysAttrib tcGlobals attrib) attribs with
         | Some (Attrib(_, _, [ AttribInt32Arg(i) ], _, _, _, _)) -> Some (i)
         | _ -> None
         
     let TryFindBoolAttribute tcGlobals attrib attribs =
-        match TryFindFSharpAttribute tcGlobals (mkMscorlibAttrib tcGlobals attrib) attribs with
+        match TryFindFSharpAttribute tcGlobals (mkSysAttrib tcGlobals attrib) attribs with
         | Some (Attrib(_, _, [ AttribBoolArg(p) ], _, _, _, _)) -> Some (p)
         | _ -> None
 
@@ -798,7 +798,7 @@ module MainModuleBuilder =
       // Forwarding System.ITuple will cause FxCop failures on 4.0
       Set.union (Set.filter (fun t -> t <> "System.ITuple") injectedCompatTypes) typesForwardedToMscorlib |>
           Seq.map (fun t -> 
-                      {   ScopeRef = tcGlobals.sysCcu.ILScopeRef  
+                      {   ScopeRef = tcGlobals.ilg.primaryAssemblyScopeRef
                           Name = t  
                           IsForwarder = true  
                           Access = ILTypeDefAccess.Public  
@@ -921,7 +921,7 @@ module MainModuleBuilder =
             mkILCustomAttrs
                  [ if not tcConfig.internConstantStrings then 
                        yield mkILCustomAttribute tcGlobals.ilg
-                                 (mkILTyRef (tcGlobals.ilg.traits.ScopeRef, "System.Runtime.CompilerServices.CompilationRelaxationsAttribute"), 
+                                 (tcGlobals.ilg.mkSysILTypeRef "System.Runtime.CompilerServices.CompilationRelaxationsAttribute", 
                                   [tcGlobals.ilg.typ_Int32], [ILAttribElem.Int32( 8)], []) 
                    yield! iattrs
                    yield! codegenResults.ilAssemAttrs
@@ -1212,7 +1212,7 @@ module StaticLinker =
         let mscorlib40 = tcConfig.compilingFslib20.Value 
               
         let ilBinaryReader = 
-            let ilGlobals = mkILGlobals (IL.mkMscorlibBasedTraits ILScopeRef.Local) (Some ilGlobals.primaryAssemblyName) tcConfig.noDebugData
+            let ilGlobals = mkILGlobals (tcConfig.noDebugData, (fun _ -> ILScopeRef.Local), (fun _ -> Some ILScopeRef.Local))
             let opts = { ILBinaryReader.mkDefault (ilGlobals) with 
                             optimizeForMemory=tcConfig.optimizeForMemory
                             pdbPath = None } 
@@ -1234,7 +1234,7 @@ module StaticLinker =
                       elif tref.Name = "System.Environment" then 
                           ILTypeRef.Create(ILScopeRef.Local, [], "Microsoft.FSharp.Core.PrivateEnvironment")  //|> Morphs.morphILScopeRefsInILTypeRef (function ILScopeRef.Local -> ilGlobals.mscorlibScopeRef | x -> x) 
                       else 
-                          tref |> Morphs.morphILScopeRefsInILTypeRef (fun _ -> ilGlobals.traits.ScopeRef) )
+                          tref |> Morphs.morphILScopeRefsInILTypeRef (fun _ -> ilGlobals.primaryAssemblyScopeRef) )
                   
             // strip out System.Runtime.TargetedPatchingOptOutAttribute, which doesn't exist for 2.0
             let fakeModule = 
@@ -1985,8 +1985,7 @@ let main4 (Args (tcConfig, errorLogger: ErrorLogger, ilGlobals, ilxMainModule, o
                     signer = GetStrongNameSigner signingInfo
                     fixupOverlappingSequencePoints = false
                     dumpDebugInfo = tcConfig.dumpDebugInfo }, 
-                  ilxMainModule, 
-                  tcConfig.noDebugData)
+                  ilxMainModule)
             with Failure msg -> 
                 error(Error(FSComp.SR.fscProblemWritingBinary(outfile, msg), rangeCmdArgs))
         with e -> 

@@ -43,8 +43,8 @@ let mkEqualsSlotSig g =
     TSlotSig("Equals", g.obj_ty, [],[], [[TSlotParam(Some("obj"),g.obj_ty,false,false,false,[])]],Some  g.bool_ty)
 
 
-let mkILObjectGetTypeMethSpec ilg = IL.mkILNonGenericInstanceMethSpecInTy(ilg.typ_Object,"GetType",[],ilg.typ_Type)
-let mkILObjectToStringMethSpec ilg = IL.mkILNonGenericInstanceMethSpecInTy(ilg.typ_Object,"ToString",[],ilg.typ_String)
+let mkILObjectGetTypeMethSpec (ilg: ILGlobals) = IL.mkILNonGenericInstanceMethSpecInTy(ilg.typ_Object,"GetType",[],ilg.typ_Type)
+let mkILObjectToStringMethSpec (ilg: ILGlobals) = IL.mkILNonGenericInstanceMethSpecInTy(ilg.typ_Object,"ToString",[],ilg.typ_String)
 
 
 //-------------------------------------------------------------------------

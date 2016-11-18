@@ -9458,7 +9458,7 @@ and TcMethodApplication
                           | Constant fieldInit -> 
                                 match currCalledArgTy with
                                 | NullableTy cenv.g inst when fieldInit <> ILFieldInit.Null ->
-                                    let nullableTy = mkILNonGenericBoxedTy(mkILTyRef(cenv.g.ilg.traits.ScopeRef, "System.Nullable`1"))
+                                    let nullableTy = mkILNonGenericBoxedTy(cenv.g.mkSysILTypeRef "System.Nullable`1")
                                     let ctor = mkILCtorMethSpecForTy(nullableTy, [ILType.TypeVar 0us]).MethodRef
                                     let ctorArgs = [Expr.Const(TcFieldInit mMethExpr fieldInit,mMethExpr, inst)]
                                     emptyPreBinder,Expr.Op(TOp.ILCall(false, false, true, true, NormalValUse, false, false, ctor, [inst], [], [currCalledArgTy]), [], ctorArgs, mMethExpr)
@@ -9476,19 +9476,19 @@ and TcMethodApplication
                                         emptyPreBinder,Expr.Const(TcFieldInit mMethExpr fieldInit,mMethExpr,currCalledArgTy)
                                     
                           | WrapperForIDispatch ->
-                              match cenv.g.ilg.traits.SystemRuntimeInteropServicesScopeRef.Value with
+                              match cenv.g.ilg.tryMkSysILTypeRef "System.Runtime.InteropServices.DispatchWrapper" with
                               | None -> error(Error(FSComp.SR.fscSystemRuntimeInteropServicesIsRequired(), mMethExpr))
-                              | Some assemblyRef ->
-                                  let tref = mkILNonGenericBoxedTy(mkILTyRef(assemblyRef, "System.Runtime.InteropServices.DispatchWrapper"))
-                                  let mref = mkILCtorMethSpecForTy(tref,[cenv.g.ilg.typ_Object]).MethodRef
+                              | Some tref ->
+                                  let ty = mkILNonGenericBoxedTy tref
+                                  let mref = mkILCtorMethSpecForTy(ty,[cenv.g.ilg.typ_Object]).MethodRef
                                   let expr = Expr.Op(TOp.ILCall(false,false,false,true,NormalValUse,false,false,mref,[],[],[cenv.g.obj_ty]),[],[mkDefault(mMethExpr,currCalledArgTy)],mMethExpr)
                                   emptyPreBinder,expr
                           | WrapperForIUnknown ->
-                              match cenv.g.ilg.traits.SystemRuntimeInteropServicesScopeRef.Value with
+                              match cenv.g.ilg.tryMkSysILTypeRef "System.Runtime.InteropServices.UnknownWrapper" with
                               | None -> error(Error(FSComp.SR.fscSystemRuntimeInteropServicesIsRequired(), mMethExpr))
-                              | Some assemblyRef ->
-                                  let tref = mkILNonGenericBoxedTy(mkILTyRef(assemblyRef, "System.Runtime.InteropServices.UnknownWrapper"))
-                                  let mref = mkILCtorMethSpecForTy(tref,[cenv.g.ilg.typ_Object]).MethodRef
+                              | Some tref ->
+                                  let ty = mkILNonGenericBoxedTy tref
+                                  let mref = mkILCtorMethSpecForTy(ty,[cenv.g.ilg.typ_Object]).MethodRef
                                   let expr = Expr.Op(TOp.ILCall(false,false,false,true,NormalValUse,false,false,mref,[],[],[cenv.g.obj_ty]),[],[mkDefault(mMethExpr,currCalledArgTy)],mMethExpr)
                                   emptyPreBinder,expr
                           | PassByRef (ty, dfltVal2) ->

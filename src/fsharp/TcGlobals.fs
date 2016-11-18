@@ -108,7 +108,6 @@ type public TcGlobals =
       mlCompatibility : bool
       directoryToResolveRelativePaths : string
       fslibCcu: CcuThunk 
-      sysCcu: CcuThunk 
       using40environment: bool
       better_tcref_map: TyconRef -> TypeInst -> TType option
       refcell_tcr_canon: TyconRef
@@ -544,7 +543,10 @@ type public TcGlobals =
       splice_raw_expr_vref       : ValRef
       new_format_vref            : ValRef
       mkSysTyconRef : string list -> string -> TyconRef
+      tryMkSysTyconRef : string list -> string -> TyconRef option
+      mkSysILTypeRef : string -> ILTypeRef
       usesMscorlib               : bool 
+      mkSysAttrib : string -> BuiltinAttribInfo
 
       // A list of types that are explicitly suppressed from the F# intellisense 
       // Note that the suppression checks for the precise name of the type
@@ -569,8 +571,8 @@ type public TcGlobals =
 let global_g = ref (None : TcGlobals option)
 #endif
 
-let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePaths,mlCompatibility,
-                 using40environment,isInteractive,getTypeCcu, emitDebugInfoInQuotations, usesMscorlib) =
+let mkTcGlobals (compilingFslib,ilg,fslibCcu,directoryToResolveRelativePaths,mlCompatibility,
+                 using40environment,isInteractive,getTypeCcu,tryGetTypeCcu, emitDebugInfoInQuotations, usesMscorlib) =
 
   let vara = NewRigidTypar "a" envRange
   let varb = NewRigidTypar "b" envRange
@@ -617,11 +619,17 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
   let ilsigptr_tcr   = mk_MFCore_tcref fslibCcu "ilsigptr`1"
   let fastFunc_tcr   = mk_MFCore_tcref fslibCcu "FSharpFunc`2"
 
+  let tryMkSysTyconRef path nm = 
+      match tryGetTypeCcu path nm with 
+      | Some ccu -> Some (mkNonLocalTyconRef2 ccu (Array.ofList path) nm)
+      | None -> None
+
   let mkSysTyconRef path nm = 
-        let ccu = getTypeCcu path nm
-        mkNonLocalTyconRef2 ccu (Array.ofList path) nm
+      let ccu = getTypeCcu path nm 
+      mkNonLocalTyconRef2 ccu (Array.ofList path) nm
 
   let mkSysNonGenericTy path n = mkNonGenericTy(mkSysTyconRef path n)
+  let tryMkSysNonGenericTy path n = tryMkSysTyconRef path n |> Option.map mkNonGenericTy
 
   let sys = ["System"]
   let sysLinq = ["System";"Linq"]
@@ -848,17 +856,21 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
   let mk_MFCore_attrib nm : BuiltinAttribInfo = 
       AttribInfo(mkILTyRef(IlxSettings.ilxFsharpCoreLibScopeRef (), FSharpLib.Core + "." + nm),mk_MFCore_tcref fslibCcu nm) 
     
-  let mkAttrib (nm:string) scopeRef : BuiltinAttribInfo = 
+  let mkSysILTypeRef (nm:string) = 
       let path, typeName = splitILTypeName nm
-      AttribInfo(mkILTyRef (scopeRef, nm), mkSysTyconRef path typeName)
+      let scopeRef = (getTypeCcu path typeName).ILScopeRef
+      mkILTyRef (scopeRef, nm)
 
-   
-  let mkSystemRuntimeAttrib (nm:string) : BuiltinAttribInfo = mkAttrib nm ilg.traits.ScopeRef    
-  let mkSystemRuntimeInteropServicesAttribute nm = 
-      match ilg.traits.SystemRuntimeInteropServicesScopeRef.Value with 
-      | Some assemblyRef -> Some (mkAttrib nm assemblyRef)
+  let mkSysAttrib (nm:string) = 
+      let tref = mkSysILTypeRef nm
+      let path, typeName = splitILTypeName nm
+      AttribInfo(tref, mkSysTyconRef path typeName)
+
+  let tryMkSysAttrib nm = 
+      let path, typeName = splitILTypeName nm
+      match tryGetTypeCcu path typeName with 
+      | Some _ -> Some (mkSysAttrib nm)
       | None -> None
-  let mkSystemDiagnosticsDebugAttribute nm = mkAttrib nm (ilg.traits.SystemDiagnosticsDebugScopeRef.Value)
 
   let mk_doc filename = ILSourceDocument.Create(language=None, vendor=None, documentType=None, file=filename)
   // Build the memoization table for files
@@ -1023,7 +1035,6 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
     valRefEq                 = valRefEq
     fslibCcu                 = fslibCcu
     using40environment       = using40environment
-    sysCcu                   = sysCcu
     refcell_tcr_canon    = mk_MFCore_tcref     fslibCcu "Ref`1"
     option_tcr_canon     = mk_MFCore_tcref     fslibCcu "Option`1"
     list_tcr_canon       = mk_MFCollections_tcref   fslibCcu "List`1"
@@ -1135,9 +1146,9 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
     system_String_tcref  = mkSysTyconRef sys "String"
     system_Int32_typ     = mkSysNonGenericTy sys "Int32"
     system_Type_typ                  = system_Type_typ
-    system_TypedReference_tcref        = if ilg.traits.TypedReferenceTypeScopeRef.IsSome then Some(mkSysTyconRef sys "TypedReference") else None
-    system_ArgIterator_tcref           = if ilg.traits.ArgIteratorTypeScopeRef.IsSome then Some(mkSysTyconRef sys "ArgIterator") else None
-    system_RuntimeArgumentHandle_tcref =  if ilg.traits.RuntimeArgumentHandleTypeScopeRef.IsSome then Some (mkSysTyconRef sys "RuntimeArgumentHandle") else None
+    system_TypedReference_tcref        = tryMkSysTyconRef sys "TypedReference"
+    system_ArgIterator_tcref           = tryMkSysTyconRef sys "ArgIterator"
+    system_RuntimeArgumentHandle_tcref =  tryMkSysTyconRef sys "RuntimeArgumentHandle"
     system_SByte_tcref =  mkSysTyconRef sys "SByte"
     system_Decimal_tcref =  mkSysTyconRef sys "Decimal"
     system_Int16_tcref =  mkSysTyconRef sys "Int16"
@@ -1156,8 +1167,8 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
     system_RuntimeTypeHandle_typ = mkSysNonGenericTy sys "RuntimeTypeHandle"
     system_RuntimeMethodHandle_typ = system_RuntimeMethodHandle_typ
     
-    system_MarshalByRefObject_tcref =  if ilg.traits.MarshalByRefObjectScopeRef.IsSome then Some(mkSysTyconRef sys "MarshalByRefObject") else None
-    system_MarshalByRefObject_typ = if ilg.traits.MarshalByRefObjectScopeRef.IsSome then Some(mkSysNonGenericTy sys "MarshalByRefObject") else None
+    system_MarshalByRefObject_tcref =  tryMkSysTyconRef sys "MarshalByRefObject"
+    system_MarshalByRefObject_typ = tryMkSysNonGenericTy sys "MarshalByRefObject"
 
     system_Reflection_MethodInfo_typ = system_Reflection_MethodInfo_typ
     
@@ -1200,40 +1211,40 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
     
     tcref_System_Attribute = System_Attribute_tcr
 
-    attrib_AttributeUsageAttribute = mkSystemRuntimeAttrib "System.AttributeUsageAttribute"
-    attrib_ParamArrayAttribute     = mkSystemRuntimeAttrib "System.ParamArrayAttribute"
-    attrib_IDispatchConstantAttribute  = if ilg.traits.IDispatchConstantAttributeScopeRef.IsSome then Some(mkSystemRuntimeAttrib "System.Runtime.CompilerServices.IDispatchConstantAttribute") else None
-    attrib_IUnknownConstantAttribute  = if ilg.traits.IUnknownConstantAttributeScopeRef.IsSome then Some (mkSystemRuntimeAttrib "System.Runtime.CompilerServices.IUnknownConstantAttribute") else None
+    attrib_AttributeUsageAttribute = mkSysAttrib "System.AttributeUsageAttribute"
+    attrib_ParamArrayAttribute     = mkSysAttrib "System.ParamArrayAttribute"
+    attrib_IDispatchConstantAttribute  = tryMkSysAttrib "System.Runtime.CompilerServices.IDispatchConstantAttribute"
+    attrib_IUnknownConstantAttribute  = tryMkSysAttrib "System.Runtime.CompilerServices.IUnknownConstantAttribute"
     
-    attrib_SystemObsolete          = mkSystemRuntimeAttrib "System.ObsoleteAttribute"
-    attrib_DllImportAttribute      = mkSystemRuntimeInteropServicesAttribute "System.Runtime.InteropServices.DllImportAttribute"
-    attrib_StructLayoutAttribute   = mkSystemRuntimeAttrib "System.Runtime.InteropServices.StructLayoutAttribute"
-    attrib_TypeForwardedToAttribute   = mkSystemRuntimeAttrib "System.Runtime.CompilerServices.TypeForwardedToAttribute"
-    attrib_ComVisibleAttribute     = mkSystemRuntimeAttrib "System.Runtime.InteropServices.ComVisibleAttribute"
-    attrib_ComImportAttribute      = mkSystemRuntimeInteropServicesAttribute "System.Runtime.InteropServices.ComImportAttribute"
-    attrib_FieldOffsetAttribute    = mkSystemRuntimeAttrib "System.Runtime.InteropServices.FieldOffsetAttribute" 
-    attrib_MarshalAsAttribute      = mkSystemRuntimeInteropServicesAttribute "System.Runtime.InteropServices.MarshalAsAttribute"
-    attrib_InAttribute             = mkSystemRuntimeInteropServicesAttribute "System.Runtime.InteropServices.InAttribute" 
-    attrib_OutAttribute            = mkSystemRuntimeAttrib "System.Runtime.InteropServices.OutAttribute" 
-    attrib_OptionalAttribute       = mkSystemRuntimeInteropServicesAttribute "System.Runtime.InteropServices.OptionalAttribute" 
-    attrib_ThreadStaticAttribute   = if ilg.traits.ThreadStaticAttributeScopeRef.IsSome then Some(mkSystemRuntimeAttrib "System.ThreadStaticAttribute") else None
-    attrib_SpecialNameAttribute   = if ilg.traits.SpecialNameAttributeScopeRef.IsSome then Some(mkSystemRuntimeAttrib "System.Runtime.CompilerServices.SpecialNameAttribute") else None
+    attrib_SystemObsolete          = mkSysAttrib "System.ObsoleteAttribute"
+    attrib_DllImportAttribute      = tryMkSysAttrib "System.Runtime.InteropServices.DllImportAttribute"
+    attrib_StructLayoutAttribute   = mkSysAttrib "System.Runtime.InteropServices.StructLayoutAttribute"
+    attrib_TypeForwardedToAttribute   = mkSysAttrib "System.Runtime.CompilerServices.TypeForwardedToAttribute"
+    attrib_ComVisibleAttribute     = mkSysAttrib "System.Runtime.InteropServices.ComVisibleAttribute"
+    attrib_ComImportAttribute      = tryMkSysAttrib "System.Runtime.InteropServices.ComImportAttribute"
+    attrib_FieldOffsetAttribute    = mkSysAttrib "System.Runtime.InteropServices.FieldOffsetAttribute" 
+    attrib_MarshalAsAttribute      = tryMkSysAttrib "System.Runtime.InteropServices.MarshalAsAttribute"
+    attrib_InAttribute             = tryMkSysAttrib "System.Runtime.InteropServices.InAttribute" 
+    attrib_OutAttribute            = mkSysAttrib "System.Runtime.InteropServices.OutAttribute" 
+    attrib_OptionalAttribute       = tryMkSysAttrib "System.Runtime.InteropServices.OptionalAttribute" 
+    attrib_ThreadStaticAttribute   = tryMkSysAttrib "System.ThreadStaticAttribute"
+    attrib_SpecialNameAttribute   = tryMkSysAttrib "System.Runtime.CompilerServices.SpecialNameAttribute"
     attrib_VolatileFieldAttribute   = mk_MFCore_attrib "VolatileFieldAttribute"
-    attrib_ContextStaticAttribute  = if ilg.traits.ContextStaticAttributeScopeRef.IsSome then Some (mkSystemRuntimeAttrib "System.ContextStaticAttribute") else None
-    attrib_FlagsAttribute          = mkSystemRuntimeAttrib "System.FlagsAttribute"
-    attrib_DefaultMemberAttribute  = mkSystemRuntimeAttrib "System.Reflection.DefaultMemberAttribute"
-    attrib_DebuggerDisplayAttribute  = mkSystemDiagnosticsDebugAttribute "System.Diagnostics.DebuggerDisplayAttribute"
-    attrib_DebuggerTypeProxyAttribute  = mkSystemDiagnosticsDebugAttribute "System.Diagnostics.DebuggerTypeProxyAttribute"
-    attrib_PreserveSigAttribute    = mkSystemRuntimeInteropServicesAttribute "System.Runtime.InteropServices.PreserveSigAttribute"
-    attrib_MethodImplAttribute     = mkSystemRuntimeAttrib "System.Runtime.CompilerServices.MethodImplAttribute"
-    attrib_ExtensionAttribute     = mkSystemRuntimeAttrib "System.Runtime.CompilerServices.ExtensionAttribute"
-    attrib_CallerLineNumberAttribute = mkSystemRuntimeAttrib "System.Runtime.CompilerServices.CallerLineNumberAttribute"
-    attrib_CallerFilePathAttribute = mkSystemRuntimeAttrib "System.Runtime.CompilerServices.CallerFilePathAttribute"
-    attrib_CallerMemberNameAttribute = mkSystemRuntimeAttrib "System.Runtime.CompilerServices.CallerMemberNameAttribute"
+    attrib_ContextStaticAttribute  = tryMkSysAttrib "System.ContextStaticAttribute"
+    attrib_FlagsAttribute          = mkSysAttrib "System.FlagsAttribute"
+    attrib_DefaultMemberAttribute  = mkSysAttrib "System.Reflection.DefaultMemberAttribute"
+    attrib_DebuggerDisplayAttribute  = mkSysAttrib "System.Diagnostics.DebuggerDisplayAttribute"
+    attrib_DebuggerTypeProxyAttribute  = mkSysAttrib "System.Diagnostics.DebuggerTypeProxyAttribute"
+    attrib_PreserveSigAttribute    = tryMkSysAttrib "System.Runtime.InteropServices.PreserveSigAttribute"
+    attrib_MethodImplAttribute     = mkSysAttrib "System.Runtime.CompilerServices.MethodImplAttribute"
+    attrib_ExtensionAttribute     = mkSysAttrib "System.Runtime.CompilerServices.ExtensionAttribute"
+    attrib_CallerLineNumberAttribute = mkSysAttrib "System.Runtime.CompilerServices.CallerLineNumberAttribute"
+    attrib_CallerFilePathAttribute = mkSysAttrib "System.Runtime.CompilerServices.CallerFilePathAttribute"
+    attrib_CallerMemberNameAttribute = mkSysAttrib "System.Runtime.CompilerServices.CallerMemberNameAttribute"
 
     attrib_ProjectionParameterAttribute           = mk_MFCore_attrib "ProjectionParameterAttribute"
     attrib_CustomOperationAttribute               = mk_MFCore_attrib "CustomOperationAttribute"
-    attrib_NonSerializedAttribute                 = if ilg.traits.NonSerializedAttributeScopeRef.IsSome then Some(mkSystemRuntimeAttrib "System.NonSerializedAttribute") else None
+    attrib_NonSerializedAttribute                 = tryMkSysAttrib "System.NonSerializedAttribute"
     attrib_AutoSerializableAttribute              = mk_MFCore_attrib "AutoSerializableAttribute"
     attrib_RequireQualifiedAccessAttribute        = mk_MFCore_attrib "RequireQualifiedAccessAttribute"
     attrib_EntryPointAttribute                    = mk_MFCore_attrib "EntryPointAttribute"
@@ -1242,7 +1253,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
     attrib_ExperimentalAttribute                  = mk_MFCore_attrib "ExperimentalAttribute"
     attrib_UnverifiableAttribute                  = mk_MFCore_attrib "UnverifiableAttribute"
     attrib_LiteralAttribute                       = mk_MFCore_attrib "LiteralAttribute"
-    attrib_ConditionalAttribute                   = mkSystemRuntimeAttrib "System.Diagnostics.ConditionalAttribute"
+    attrib_ConditionalAttribute                   = mkSysAttrib "System.Diagnostics.ConditionalAttribute"
     attrib_OptionalArgumentAttribute              = mk_MFCore_attrib "OptionalArgumentAttribute"
     attrib_RequiresExplicitTypeArgumentsAttribute = mk_MFCore_attrib "RequiresExplicitTypeArgumentsAttribute"
     attrib_DefaultValueAttribute                  = mk_MFCore_attrib "DefaultValueAttribute"
@@ -1252,7 +1263,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
     attrib_ReflectedDefinitionAttribute           = mk_MFCore_attrib "ReflectedDefinitionAttribute"
     attrib_CompiledNameAttribute                  = mk_MFCore_attrib "CompiledNameAttribute"
     attrib_AutoOpenAttribute                      = mk_MFCore_attrib "AutoOpenAttribute"
-    attrib_InternalsVisibleToAttribute            = mkSystemRuntimeAttrib "System.Runtime.CompilerServices.InternalsVisibleToAttribute"
+    attrib_InternalsVisibleToAttribute            = mkSysAttrib "System.Runtime.CompilerServices.InternalsVisibleToAttribute"
     attrib_CompilationRepresentationAttribute     = mk_MFCore_attrib "CompilationRepresentationAttribute"
     attrib_CompilationArgumentCountsAttribute     = mk_MFCore_attrib "CompilationArgumentCountsAttribute"
     attrib_CompilationMappingAttribute            = mk_MFCore_attrib "CompilationMappingAttribute"
@@ -1274,9 +1285,9 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
     attrib_MeasureAttribute                       = mk_MFCore_attrib "MeasureAttribute"
     attrib_MeasureableAttribute                   = mk_MFCore_attrib "MeasureAnnotatedAbbreviationAttribute"
     attrib_NoDynamicInvocationAttribute           = mk_MFCore_attrib "NoDynamicInvocationAttribute"
-    attrib_SecurityAttribute                      = if ilg.traits.SecurityPermissionAttributeTypeScopeRef.IsSome then Some(mkSystemRuntimeAttrib"System.Security.Permissions.SecurityAttribute") else None
-    attrib_SecurityCriticalAttribute              = mkSystemRuntimeAttrib "System.Security.SecurityCriticalAttribute"
-    attrib_SecuritySafeCriticalAttribute          = mkSystemRuntimeAttrib "System.Security.SecuritySafeCriticalAttribute"
+    attrib_SecurityAttribute                      = tryMkSysAttrib "System.Security.Permissions.SecurityAttribute"
+    attrib_SecurityCriticalAttribute              = mkSysAttrib "System.Security.SecurityCriticalAttribute"
+    attrib_SecuritySafeCriticalAttribute          = mkSysAttrib "System.Security.SecuritySafeCriticalAttribute"
 
     // Build a map that uses the "canonical" F# type names and TyconRef's for these
     // in preference to the .NET type names. Doing this normalization is a fairly performance critical
@@ -1540,11 +1551,12 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
     suppressed_types = suppressed_types
     isInteractive=isInteractive
     mkSysTyconRef=mkSysTyconRef
+    tryMkSysTyconRef=tryMkSysTyconRef
+    mkSysILTypeRef=mkSysILTypeRef
     usesMscorlib = usesMscorlib
+    mkSysAttrib=mkSysAttrib
    }
      
-let public mkMscorlibAttrib g nm = 
-      let path, typeName = splitILTypeName nm
-      AttribInfo(mkILTyRef (g.ilg.traits.ScopeRef,nm), g.mkSysTyconRef path typeName)
+let public mkSysAttrib g nm = g.mkSysAttrib nm
 
 

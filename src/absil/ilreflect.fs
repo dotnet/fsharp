@@ -1192,7 +1192,7 @@ let rec emitInstr cenv (modB : ModuleBuilder) emEnv (ilG:ILGenerator) instr =
                                       ilG.EmitAndLog(OpCodes.Initblk)
     | EI_ldlen_multi (_,m) -> 
         emitInstr cenv modB emEnv ilG (mkLdcInt32 m);
-        emitInstr cenv modB emEnv ilG (mkNormalCall(mkILNonGenericMethSpecInTy(cenv.ilg.typ_Array, ILCallingConv.Instance, "GetLength", [cenv.ilg.typ_int32], cenv.ilg.typ_int32)))
+        emitInstr cenv modB emEnv ilG (mkNormalCall(mkILNonGenericMethSpecInTy(cenv.ilg.typ_Array, ILCallingConv.Instance, "GetLength", [cenv.ilg.typ_Int32], cenv.ilg.typ_Int32)))
     | i -> Printf.failwithf "the IL instruction %s cannot be emitted" (i.ToString())
 
 
@@ -1670,11 +1670,11 @@ let typeAttributesOfTypeLayout cenv emEnv x =
       else 
         Some(convCustomAttr cenv emEnv  
                (IL.mkILCustomAttribute cenv.ilg
-                  (mkILTyRef (cenv.ilg.traits.ScopeRef,"System.Runtime.InteropServices.StructLayoutAttribute"), 
-                   [mkILNonGenericValueTy (mkILTyRef (cenv.ilg.traits.ScopeRef,"System.Runtime.InteropServices.LayoutKind")) ],
+                  (cenv.ilg.mkSysILTypeRef "System.Runtime.InteropServices.StructLayoutAttribute", 
+                   [mkILNonGenericValueTy (cenv.ilg.mkSysILTypeRef "System.Runtime.InteropServices.LayoutKind") ],
                    [ ILAttribElem.Int32 x ],
-                   (p.Pack |> Option.toList |> List.map (fun x -> ("Pack", cenv.ilg.typ_int32, false, ILAttribElem.Int32 (int32 x))))  @
-                   (p.Size |> Option.toList |> List.map (fun x -> ("Size", cenv.ilg.typ_int32, false, ILAttribElem.Int32 x)))))) in
+                   (p.Pack |> Option.toList |> List.map (fun x -> ("Pack", cenv.ilg.typ_Int32, false, ILAttribElem.Int32 (int32 x))))  @
+                   (p.Size |> Option.toList |> List.map (fun x -> ("Size", cenv.ilg.typ_Int32, false, ILAttribElem.Int32 x)))))) in
     match x with 
     | ILTypeDefLayout.Auto         -> TypeAttributes.AutoLayout,None
     | ILTypeDefLayout.Explicit p   -> TypeAttributes.ExplicitLayout,(attr 0x02 p)
