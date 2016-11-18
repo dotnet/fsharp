@@ -2731,6 +2731,7 @@ Microsoft.FSharp.Core.OptimizedClosures: Microsoft.FSharp.Core.OptimizedClosures
 Microsoft.FSharp.Core.OptimizedClosures: Microsoft.FSharp.Core.OptimizedClosures+FSharpFunc`6[T1,T2,T3,T4,T5,TResult]
 Microsoft.FSharp.Core.OptimizedClosures: System.String ToString()
 Microsoft.FSharp.Core.OptimizedClosures: System.Type GetType()
+Microsoft.FSharp.Core.OptionModule: Boolean Contains[T](T, Microsoft.FSharp.Core.FSharpOption`1[T])
 Microsoft.FSharp.Core.OptionModule: Boolean Equals(System.Object)
 Microsoft.FSharp.Core.OptionModule: Boolean Exists[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[T])
 Microsoft.FSharp.Core.OptionModule: Boolean ForAll[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[T])

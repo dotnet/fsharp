@@ -100,7 +100,17 @@ type OptionModule() =
             let expected = None
             Assert.AreEqual(expected, actual)
         [""; "     "; "Baz Quux"; "Corge grault"] |> List.iter test
-        
+
+    [<Test>]
+    member this.Contains() =
+        Assert.IsFalse( Option.contains 1 None)
+        Assert.IsTrue( Option.contains 1 (Some 1))
+
+        Assert.IsFalse( Option.contains "" None)
+        Assert.IsTrue( Option.contains "" (Some ""))
+
+        Assert.IsFalse( Option.contains None None)
+        Assert.IsTrue( Option.contains None (Some None))
     [<Test>]
     member this.OfToNullable() =
         Assert.IsTrue( Option.ofNullable (System.Nullable<int>()) = None)
