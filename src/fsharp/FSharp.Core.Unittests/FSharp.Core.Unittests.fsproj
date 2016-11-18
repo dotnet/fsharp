@@ -2,7 +2,7 @@
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <FSharpSourcesRoot>..\..</FSharpSourcesRoot>
+    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
     <ProjectGuid>{88e2d422-6852-46e3-a740-83e391dc7973}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
@@ -12,20 +12,16 @@
     <SchemaVersion>2.0</SchemaVersion>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <ReferenceVsAssemblies>true</ReferenceVsAssemblies>
-    <OutputType Condition="'$(TargetFramework)' == 'coreclr'">Exe</OutputType>
-    <OutputType Condition="'$(TargetFramework)' != 'coreclr'">Library</OutputType>
+    <OutputType>Library</OutputType>
+    <UnitTestAssembly>true</UnitTestAssembly>
     <AssemblyName>FSharp.Core.Unittests</AssemblyName>
-    <TargetFrameworkVersion Condition=" '$(TargetFramework)' == 'net20' ">v3.5</TargetFrameworkVersion>
     <!-- Prevent compiler from inlining calls to FSharp.Core to improve code coverage accuracy -->
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
     <TargetProfile Condition=" '$(TargetFramework)' == 'portable7' or '$(TargetFramework)' == 'portable78' or '$(TargetFramework)' == 'portable259' or '$(TargetFramework)' == 'coreclr' ">netcore</TargetProfile>
     <NoWarn>$(NoWarn);217</NoWarn>
-    <OutputPath Condition="'$(TargetFramework)' == 'coreclr'">$(FSharpSourcesRoot)\..\tests\testbin\$(Configuration)\coreclr\FSharp.Core.unittests</OutputPath>
-    <CustomOutputPath Condition="'$(TargetFramework)' == 'coreclr'">true</CustomOutputPath>
   </PropertyGroup>
   <PropertyGroup>
-    <DefineConstants Condition=" '$(TargetFramework)' == 'sl5' ">$(DefineConstants);SILVERLIGHT</DefineConstants>
     <DefineConstants>$(DefineConstants);EXTENSIONTYPING;$(TargetFramework.ToLower())</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -41,70 +37,72 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>3</WarningLevel>
   </PropertyGroup>
-  <ItemGroup>
+  <ItemGroup  Condition=" '$(TargetFramework)' != 'coreclr' ">
     <!-- need full name and SpecificVersion = true in order to convince msbuild to allow this reference when targeting portable47 -->
-    <Reference Include="nunit.framework, Version=$(NUnitFullVersion), Culture=neutral, PublicKeyToken=2638cd05610744eb" Condition="'$(TargetFramework)' != 'coreclr'">
+    <Reference Include="nunit.framework, Version=$(NUnitFullVersion), Culture=neutral, PublicKeyToken=2638cd05610744eb">
       <SpecificVersion>true</SpecificVersion>
       <Private>True</Private>
       <HintPath>$(NUnitLibDir)\nunit.framework.dll</HintPath>
     </Reference>
-    <Reference Include="FsCheck, Version=$(FsCheckFullVersion)" Condition="'$(TargetFramework)' != 'portable47'">
+    <Reference Include="FsCheck, Version=$(FsCheckFullVersion)" Condition=" '$(TargetFramework)' != 'portable47' ">
       <SpecificVersion>true</SpecificVersion>
       <Private>True</Private>
       <HintPath Condition="'$(TargetFramework)' == 'net40'">$(FsCheckLibDir)\net45\FsCheck.dll</HintPath>
       <HintPath Condition="'$(TargetFramework)' == 'portable7'">$(FsCheckLibDir)\portable-net45+netcore45\FsCheck.dll</HintPath>
       <HintPath Condition="'$(TargetFramework)' == 'portable78'">$(FsCheckLibDir)\portable-net45+netcore45+wp8\FsCheck.dll</HintPath>
-      <HintPath Condition="'$(TargetFramework)' == 'portable259' OR '$(TargetFramework)' == 'coreclr'">$(FsCheckLibDir)\portable-net45+netcore45+wpa81+wp8\FsCheck.dll</HintPath>
+      <HintPath Condition="'$(TargetFramework)' == 'portable259'">$(FsCheckLibDir)\portable-net45+netcore45+wpa81+wp8\FsCheck.dll</HintPath>
     </Reference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
       <Name>FSharp.Core</Name>
     </ProjectReference>
-    <Reference Include="System.ValueTuple" Condition="'$(TargetFramework)' != 'portable47'">
-        <HintPath>..\..\..\packages\System.ValueTuple.4.0.0-rc3-24212-01\lib\netstandard1.1\System.ValueTuple.dll</HintPath>
-    </Reference>
-    <Reference Include="TupleSample" Condition="'$(TargetFramework)' != 'portable47'">
+    <Reference Include="System.ValueTuple">
+        <HintPath Condition=" '$(TargetFramework)' == 'profile47' ">..\..\..\packages\System.ValueTuple.4.4.0-beta-24631-01\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+        <HintPath Condition="'$(TargetFramework)' != 'profile47' ">..\..\..\packages\System.ValueTuple.4.4.0-beta-24631-01\lib\portable-net40+sl4+win8+wp8\System.ValueTuple.dll</HintPath>
         <Private>True</Private>
-        <HintPath>..\..\..\src\fsharp\FSharp.Core.Unittests\FSharp.Core\SampleTuples\TupleSample.dll</HintPath>
+    </Reference>
+    <Reference Include="TupleSample">
+        <HintPath>..\..\..\packages\Microsoft.FSharp.TupleSample.1.0.0-alpha-161112/lib/portable-net40+sl4+win8+wp8/TupleSample.dll</HintPath>
+        <Private>True</Private>
     </Reference>
   </ItemGroup>
+<!--
   <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
-    <Reference Include="nunit.framework, Version=3.0.5797.27550, Culture=neutral, PublicKeyToken=2638cd05610744eb">
+    <Reference Include="nunit.framework, Version=3.5.0.0, Culture=neutral, PublicKeyToken=2638cd05610744eb">
         <SpecificVersion>true</SpecificVersion>
         <Private>True</Private>
-        <HintPath>..\..\..\packages\NUnit.3.0.0\lib\portable-net45+win8+wp8+wpa81+Xamarin.Mac+MonoAndroid10+MonoTouch10+Xamarin.iOS10\nunit.framework.dll</HintPath>
+        <HintPath>..\..\..\packages\NUnit.3.5.0\lib\portable-net45+win8+wp8+wpa81+Xamarin.Mac+MonoAndroid10+MonoTouch10+Xamarin.iOS10\nunit.framework.dll</HintPath>
     </Reference>
-    <Reference Include="nunitlite, Version=3.0.5797.27550, Culture=neutral, PublicKeyToken=2638cd05610744eb">
+    <Reference Include="nunitlite, Version=3.5.0.0, Culture=neutral, PublicKeyToken=2638cd05610744eb">
         <SpecificVersion>true</SpecificVersion>
         <Private>True</Private>
-        <HintPath>..\..\..\packages\NUnitLite.3.0.0\lib\portable-net45+win8+wp8+wpa81+Xamarin.Mac\nunitlite.dll</HintPath>
+        <HintPath>..\..\..\packages\NUnitLite.3.5.0\lib\portable-net45+win8+wp8+wpa81+Xamarin.Mac\nunitlite.dll</HintPath>
     </Reference>
     <None Include="project.json" />
   </ItemGroup>
+-->
   <ItemGroup Condition="(!$(TargetFramework.Contains('portable'))) and '$(TargetFramework)' != 'coreclr'">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Numerics" Condition="'$(TargetFramework)' == 'net40'" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Net" Condition="'$(TargetFramework)' == 'sl5' " />
-    <Reference Include="System.Observable" Condition="'$(TargetFramework)' == 'sl3-wp' " />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="LibraryTestFx.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Utils.fs" Condition="'$(TargetFramework)' != 'portable47' AND '$(TargetFramework)' != 'net20'" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Utils.fs" Condition=" '$(TargetFramework)' != 'portable47' " />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayModule2.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Array2Module.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Array3Module.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Array4Module.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayProperties.fs" Condition="'$(TargetFramework)' != 'portable47' AND '$(TargetFramework)' != 'net20'" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayProperties.fs" Condition=" '$(TargetFramework)' != 'portable47' " />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ComparisonIdentityModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\HashIdentityModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ListModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ListModule2.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ObsoleteListFunctions.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ListType.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ListProperties.fs" Condition="'$(TargetFramework)' != 'portable47' AND '$(TargetFramework)' != 'net20'" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ListProperties.fs" Condition=" '$(TargetFramework)' != 'portable47' " />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\MapModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\MapType.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SetModule.fs" />
@@ -112,13 +110,13 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SeqModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SeqModule2.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ObsoleteSeqFunctions.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SeqProperties.fs" Condition="'$(TargetFramework)' != 'portable47' AND '$(TargetFramework)' != 'net20'" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\CollectionModulesConsistency.fs" Condition="'$(TargetFramework)' != 'portable47' AND '$(TargetFramework)' != 'net20'" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SeqProperties.fs" Condition=" '$(TargetFramework)' != 'portable47' " />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\CollectionModulesConsistency.fs" Condition=" '$(TargetFramework)' != 'portable47' " />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\StringModule.fs" />
     <Compile Include="FSharp.Core\PrimTypes.fs" />
     <Compile Include="FSharp.Core\ComparersRegression.fs" />
-    <Compile Include="FSharp.Core\DiscrimantedUnionType.fs"  Condition="'$(TargetFramework)' != 'portable47' AND '$(TargetFramework)' != 'net20' AND '$(TargetFramework)' != 'portable78' AND '$(TargetFramework)' != 'portable259'  AND '$(TargetFramework)' != 'portable7'"/>
-    <Compile Include="FSharp.Core\RecordTypes.fs" Condition="'$(TargetFramework)' != 'portable47' AND '$(TargetFramework)' != 'net20' AND '$(TargetFramework)' != 'portable78' AND '$(TargetFramework)' != 'portable259'  AND '$(TargetFramework)' != 'portable7'"/>
+    <Compile Include="FSharp.Core\DiscrimantedUnionType.fs"  Condition="'$(TargetFramework)' != 'portable47' AND '$(TargetFramework)' != 'portable78' AND '$(TargetFramework)' != 'portable259'  AND '$(TargetFramework)' != 'portable7'"/>
+    <Compile Include="FSharp.Core\RecordTypes.fs" Condition="'$(TargetFramework)' != 'portable47' AND '$(TargetFramework)' != 'portable78' AND '$(TargetFramework)' != 'portable259'  AND '$(TargetFramework)' != 'portable7'"/>
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\BigIntType.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\IntConversions.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\IntConversionsGenerated.fs" />
@@ -136,12 +134,14 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Reflection\FSharpReflection.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Quotations\FSharpQuotations.fs" />
     <Compile Include="TypeForwarding.fs" />
-    <Compile Include="StructTuples.fs" Condition="'$(TargetFramework)' != 'portable47'" />
+    <Compile Include="StructTuples.fs" />
     <Compile Include="SurfaceArea.$(TargetFramework).fs" />
     <Compile Include="Program.fs" Condition="'$(TargetFramework)' == 'coreclr'" />
-    <CustomCopyLocal Include="FSharp.Core.Unittests.dll.config">
-      <TargetFilename>FSharp.Core.Unittests.dll.config</TargetFilename>
-    </CustomCopyLocal>
+    <CopyAndSubstituteText Include="FSharp.Core.Unittests.dll.config">
+		<TargetFilename>FSharp.Core.Unittests.dll.config</TargetFilename>
+		<Pattern1>FSCoreVersion</Pattern1>
+		<Replacement1>$(FSCoreVersion)</Replacement1>
+	</CopyAndSubstituteText>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
 </Project>

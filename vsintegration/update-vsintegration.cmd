@@ -47,10 +47,10 @@ copy /y "%BINDIR%\fsc.exe.config" "%COMPILERSDKPATH%"
 copy /y "%BINDIR%\FSharp.Build.dll" "%COMPILERSDKPATH%"
 copy /y "%BINDIR%\FSharp.Compiler.dll" "%COMPILERSDKPATH%"
 copy /y "%BINDIR%\FSharp.Compiler.Interactive.Settings.dll" "%COMPILERSDKPATH%"
-copy /y "%BINDIR%\Fsi.exe" "%COMPILERSDKPATH%"
-copy /y "%BINDIR%\Fsi.exe.config" "%COMPILERSDKPATH%"
-copy /y "%BINDIR%\FsiAnyCPU.exe" "%COMPILERSDKPATH%"
-copy /y "%BINDIR%\FsiAnyCPU.exe.config" "%COMPILERSDKPATH%"
+copy /y "%BINDIR%\fsi.exe" "%COMPILERSDKPATH%"
+copy /y "%BINDIR%\fsi.exe.config" "%COMPILERSDKPATH%"
+copy /y "%BINDIR%\fsiAnyCpu.exe" "%COMPILERSDKPATH%"
+copy /y "%BINDIR%\fsiAnyCpu.exe.config" "%COMPILERSDKPATH%"
 copy /y "%BINDIR%\Microsoft.FSharp.targets" "%COMPILERSDKPATH%"
 copy /y "%BINDIR%\Microsoft.Portable.FSharp.targets" "%COMPILERSDKPATH%"
 copy /y "%TOPDIR%\vsintegration\src\SupportedRuntimes\SupportedRuntimes.xml" "%COMPILERSDKPATH%"
@@ -103,7 +103,7 @@ rem Disable strong-name validation for F# binaries built from open source that a
 %SN32% -Vr FSharp.Core,b03f5f7f11d50a3a
 %SN32% -Vr FSharp.Build,b03f5f7f11d50a3a
 %SN32% -Vr FSharp.Compiler.Interactive.Settings,b03f5f7f11d50a3a
-%SN32% -Vr FSharp.Compiler.Hosted,b03f5f7f11d50a3a
+%SN32% -Vr HostedCompilerServer,b03f5f7f11d50a3a
 
 %SN32% -Vr FSharp.Compiler,b03f5f7f11d50a3a
 %SN32% -Vr FSharp.Compiler.Server.Shared,b03f5f7f11d50a3a
@@ -122,7 +122,7 @@ if /i "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
     %SN64% -Vr FSharp.Core,b03f5f7f11d50a3a
     %SN64% -Vr FSharp.Build,b03f5f7f11d50a3a
     %SN64% -Vr FSharp.Compiler.Interactive.Settings,b03f5f7f11d50a3a
-    %SN64% -Vr FSharp.Compiler.Hosted,b03f5f7f11d50a3a
+    %SN64% -Vr HostedCompilerServer,b03f5f7f11d50a3a
 
     %SN64% -Vr FSharp.Compiler,b03f5f7f11d50a3a
     %SN64% -Vr FSharp.Compiler.Server.Shared,b03f5f7f11d50a3a

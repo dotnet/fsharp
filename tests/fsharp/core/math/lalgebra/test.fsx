@@ -2,13 +2,6 @@
 
 #light
 
-// CONTENTS-INDEX-REGEXP = FROM>^\//! <TO 
-//----------------------------------------------------------------------------
-//CONTENTS-START-LINE: HERE=2 SEP=2
-// 22.    TESTS HERE......
-// 26.    Finish
-//CONTENTS-END-LINE:
-//----------------------------------------------------------------------------
 
 let failures = ref false
 let report_failure () = 

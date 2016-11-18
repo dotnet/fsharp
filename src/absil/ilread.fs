@@ -16,8 +16,7 @@ open System.Collections.Generic
 open Internal.Utilities
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
-#if FX_NO_PDB_READER
-#else
+#if !FX_NO_PDB_READER
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Support 
 #endif
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
@@ -1484,7 +1483,7 @@ let dataEndPoints ctxtH =
                   let rva = ctxt.resourcesAddr + offset
                   res := ("manifest resource", rva) :: !res
             !res
-        if List.isEmpty dataStartPoints then [] 
+        if isNil dataStartPoints then [] 
         else
           let methodRVAs = 
               let res = ref []
@@ -2222,8 +2221,6 @@ and seekReadMethodDefAsMethodData ctxt idx =
    ctxt.seekReadMethodDefAsMethodData idx
 and seekReadMethodDefAsMethodDataUncached ctxtH idx =
    let ctxt = getHole ctxtH
-   let (_code_rva, _implflags, _flags, nameIdx, typeIdx, _paramIdx) = seekReadMethodRow ctxt idx
-   let nm = readStringHeap ctxt nameIdx
    // Look for the method def parent. 
    let tidx = 
      seekReadIndexedRow (ctxt.getNumRows TableNames.TypeDef,
@@ -2235,15 +2232,25 @@ and seekReadMethodDefAsMethodDataUncached ctxtH idx =
                                         elif methodsIdx <= idx && idx < endMethodsIdx then 0 
                                         else -1),
                             true,fst)
-   // Read the method def signature. 
-   let _generic,_genarity,cc,retty,argtys,varargs = readBlobHeapAsMethodSig ctxt 0 typeIdx
-   if varargs <> None then dprintf "ignoring sentinel and varargs in ILMethodDef token signature"
-   // Create a formal instantiation if needed 
-   let finst = mkILFormalGenericArgs (seekReadGenericParams ctxt 0 (tomd_TypeDef,tidx))
-   let minst = mkILFormalGenericArgs (seekReadGenericParams ctxt finst.Length (tomd_MethodDef,idx))
+   // Create a formal instantiation if needed
+   let typeGenericArgs = seekReadGenericParams ctxt 0 (tomd_TypeDef, tidx)
+   let typeGenericArgsCount = typeGenericArgs.Length
+
+   let methodGenericArgs = seekReadGenericParams ctxt typeGenericArgsCount (tomd_MethodDef, idx)
+    
+   let finst = mkILFormalGenericArgs 0 typeGenericArgs
+   let minst = mkILFormalGenericArgs typeGenericArgsCount methodGenericArgs
    // Read the method def parent. 
    let enclTyp = seekReadTypeDefAsType ctxt AsObject (* not ok: see note *) finst tidx
    // Return the constituent parts: put it together at the place where this is called. 
+
+   let (_code_rva, _implflags, _flags, nameIdx, typeIdx, _paramIdx) = seekReadMethodRow ctxt idx
+   let nm = readStringHeap ctxt nameIdx
+
+   // Read the method def signature. 
+   let _generic,_genarity,cc,retty,argtys,varargs = readBlobHeapAsMethodSig ctxt typeGenericArgsCount typeIdx
+   if varargs <> None then dprintf "ignoring sentinel and varargs in ILMethodDef token signature"
+
    MethodData(enclTyp, cc, nm, argtys, retty, minst)
 
 
@@ -2267,7 +2274,7 @@ and seekReadFieldDefAsFieldSpecUncached ctxtH idx =
    // Read the field signature. 
    let retty = readBlobHeapAsFieldSig ctxt 0 typeIdx
    // Create a formal instantiation if needed 
-   let finst = mkILFormalGenericArgs (seekReadGenericParams ctxt 0 (tomd_TypeDef,tidx))
+   let finst = mkILFormalGenericArgs 0 (seekReadGenericParams ctxt 0 (tomd_TypeDef,tidx))
    // Read the field def parent. 
    let enclTyp = seekReadTypeDefAsType ctxt AsObject (* not ok: see note *) finst tidx
    // Put it together. 
@@ -3242,8 +3249,7 @@ and seekReadTopExportedTypes ctxt () =
            done
            List.rev !res)
 
-#if FX_NO_PDB_READER
-#else         
+#if !FX_NO_PDB_READER
 let getPdbReader opts infile =  
     match opts.pdbPath with 
     | None -> None

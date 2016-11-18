@@ -29,9 +29,7 @@ open Microsoft.VisualStudio.Shell
 [<assembly:System.Runtime.CompilerServices.InternalsVisibleTo("FSharp.Compiler.Unittests")>]
 [<assembly:System.Runtime.CompilerServices.InternalsVisibleTo("VisualFSharp.Salsa")>]
 [<assembly:System.Runtime.CompilerServices.InternalsVisibleTo("VisualFSharp.Unittests")>]
-#if BUILDING_WITH_LKG
 [<assembly:System.Runtime.CompilerServices.InternalsVisibleTo("fsc-proto")>]
-#endif
 #endif
 #if STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY
 

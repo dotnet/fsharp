@@ -143,7 +143,7 @@ type IlxUnionInfo =
 
 let destTyFuncApp = function Apps_tyapp (b,c) -> b,c | _ -> failwith "destTyFuncApp"
 
-let mkILFormalCloRef gparams csig = IlxClosureSpec.Create(csig, mkILFormalGenericArgs gparams)
+let mkILFormalCloRef gparams csig = IlxClosureSpec.Create(csig, mkILFormalGenericArgs 0 gparams)
 
 let actualTypOfIlxUnionField (cuspec : IlxUnionSpec) idx fidx =
   instILType cuspec.GenericArgs (cuspec.FieldDef idx fidx).Type

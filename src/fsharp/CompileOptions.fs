@@ -26,11 +26,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Lexhelp
-
-#if NO_COMPILER_BACKEND
-#else
 open Microsoft.FSharp.Compiler.IlxGen
-#endif
 
 #if FX_RESHAPED_REFLECTION
 open Microsoft.FSharp.Core.ReflectionAdapters
@@ -40,8 +36,7 @@ module Attributes =
     open System.Runtime.CompilerServices
 
     //[<assembly: System.Security.SecurityTransparent>]
-#if FX_NO_DEFAULT_DEPENDENCY_TYPE
-#else
+#if !FX_NO_DEFAULT_DEPENDENCY_TYPE
     [<Dependency("FSharp.Core",LoadHint.Always)>] 
 #endif
     do()
@@ -137,7 +132,7 @@ let PrintCompilerOption (CompilerOption(_s,_tag,_spec,_,help) as compilerOption)
     printfn "" (* newline *)
 
 let PrintPublicOptions (heading,opts) =
-  if not (List.isEmpty opts) then
+  if not (isNil opts) then
     printfn ""
     printfn ""      
     printfn "\t\t%s" heading
@@ -843,7 +838,6 @@ let internalFlags (tcConfigB:TcConfigBuilder) =
     CompilerOption("termsfile" , tagNone, OptionUnit (fun () -> tcConfigB.writeTermsToFiles <- true), Some(InternalCommandLineOption("--termsfile", rangeCmdArgs)), None)
 #if DEBUG
     CompilerOption("debug-parse", tagNone, OptionUnit (fun () -> Internal.Utilities.Text.Parsing.Flags.debug <- true), Some(InternalCommandLineOption("--debug-parse", rangeCmdArgs)), None)
-    CompilerOption("ilfiles", tagNone, OptionUnit (fun () -> tcConfigB.writeGeneratedILFiles <- true), Some(InternalCommandLineOption("--ilfiles", rangeCmdArgs)), None)
 #endif
     CompilerOption("pause", tagNone, OptionUnit (fun () -> tcConfigB.pause <- true), Some(InternalCommandLineOption("--pause", rangeCmdArgs)), None)
     CompilerOption("detuple", tagNone, OptionInt (setFlag (fun v -> tcConfigB.doDetuple <- v)), Some(InternalCommandLineOption("--detuple", rangeCmdArgs)), None)
@@ -900,6 +894,9 @@ let compilingFsLib20Flag (tcConfigB : TcConfigBuilder) =
         CompilerOption("compiling-fslib-20", tagNone, OptionString (fun s -> tcConfigB.compilingFslib20 <- Some s ), Some(InternalCommandLineOption("--compiling-fslib-20", rangeCmdArgs)), None)
 let compilingFsLib40Flag (tcConfigB : TcConfigBuilder) = 
         CompilerOption("compiling-fslib-40", tagNone, OptionUnit (fun () -> tcConfigB.compilingFslib40 <- true ), Some(InternalCommandLineOption("--compiling-fslib-40", rangeCmdArgs)), None)
+let compilingFsLibNoBigIntFlag (tcConfigB : TcConfigBuilder) = 
+        CompilerOption("compiling-fslib-nobigint", tagNone, OptionUnit (fun () -> tcConfigB.compilingFslibNoBigInt <- true ), Some(InternalCommandLineOption("--compiling-fslib-nobigint", rangeCmdArgs)), None)
+
 let mlKeywordsFlag = 
         CompilerOption("ml-keywords", tagNone, OptionUnit (fun () -> ()), Some(DeprecatedCommandLineOptionNoDescription("--ml-keywords", rangeCmdArgs)), None)
 
@@ -926,6 +923,7 @@ let deprecatedFlagsFsc tcConfigB =
     (compilingFsLibFlag tcConfigB) 
     (compilingFsLib20Flag tcConfigB) 
     (compilingFsLib40Flag tcConfigB) 
+    (compilingFsLibNoBigIntFlag tcConfigB) 
     CompilerOption("version", tagString, OptionString (fun s -> tcConfigB.version <- VersionString s), Some(DeprecatedCommandLineOptionNoDescription("--version", rangeCmdArgs)), None)
 //  "--clr-mscorlib", OptionString (fun s -> warning(Some(DeprecatedCommandLineOptionNoDescription("--clr-mscorlib", rangeCmdArgs)))    tcConfigB.Build.mscorlib_assembly_name <- s), "\n\tThe name of mscorlib on the target CLR" 
     CompilerOption("local-optimize", tagNone, OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with localOptUser = Some true }), Some(DeprecatedCommandLineOptionNoDescription("--local-optimize", rangeCmdArgs)), None)
@@ -1195,8 +1193,6 @@ let ReportTime (tcConfig:TcConfig) descr =
 
     nPrev := Some descr
 
-#if NO_COMPILER_BACKEND
-#else  
 //----------------------------------------------------------------------------
 // OPTIMIZATION - support - addDllToOptEnv
 //----------------------------------------------------------------------------
@@ -1324,7 +1320,6 @@ let GenerateIlxCode (ilxBackend, isInteractiveItExpr, isInteractiveOnMono, tcCon
           alwaysCallVirt = tcConfig.alwaysCallVirt }
 
     ilxGenerator.GenerateCode (ilxGenOpts, optimizedImpls, topAttrs.assemblyAttrs,topAttrs.netModuleAttrs) 
-#endif // !NO_COMPILER_BACKEND
 
 //----------------------------------------------------------------------------
 // Assembly ref normalization: make sure all assemblies are referred to

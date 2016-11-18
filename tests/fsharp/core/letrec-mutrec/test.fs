@@ -195,7 +195,7 @@ module RecursiveInterfaceObjectExpressions =
   do if CosOp2.Name <> "abc" then report_failure "RecursiveInterfaceObjectExpressions: test 2"
 
 
-#if Portable
+#if TESTS_AS_APP
 let aa = 
     if !failures then (stdout.WriteLine "Test Failed"; exit 1) 
     else (stdout.WriteLine "Test Passed"; exit 0)

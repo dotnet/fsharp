@@ -9,7 +9,7 @@ open System
 open System.Threading
 open FSharp.Core.Unittests.LibraryTestFx
 open NUnit.Framework
-#if !(FSHARP_CORE_PORTABLE || FSHARP_CORE_NETCORE_PORTABLE)
+#if !(FSCORE_PORTABLE_OLD || FSCORE_PORTABLE_NEW)
 open FsCheck
 #endif
 
@@ -19,7 +19,7 @@ type [<Struct>] Dummy (x: int) =
     member this.Dispose () = ()
 
 
-#if !(FSHARP_CORE_PORTABLE || FSHARP_CORE_NETCORE_PORTABLE)
+#if !(FSCORE_PORTABLE_OLD || FSCORE_PORTABLE_NEW)
 [<AutoOpen>]
 module ChoiceUtils =
 
@@ -227,7 +227,7 @@ type AsyncModule() =
     [<Test>]
     member this.``AwaitWaitHandle.Timeout``() = 
         use waitHandle = new System.Threading.ManualResetEvent(false)
-        let startMs = DateTime.Now.Millisecond
+        let startTime = DateTime.Now
 
         let r = 
             Async.AwaitWaitHandle(waitHandle, 500)
@@ -235,9 +235,9 @@ type AsyncModule() =
 
         Assert.IsFalse(r, "Timeout expected")
 
-        let endMs = DateTime.Now.Millisecond
-        let delta = endMs - startMs
-        Assert.IsTrue(abs ((abs delta) - 500) < 400, sprintf "Delta is too big %d" delta)
+        let endTime = DateTime.Now
+        let delta = endTime - startTime
+        Assert.IsTrue(delta.TotalMilliseconds < 1100.0, sprintf "Expected faster timeout than %.0f ms" delta.TotalMilliseconds)
 
     [<Test>]
     member this.``AwaitWaitHandle.TimeoutWithCancellation``() = 
@@ -348,7 +348,7 @@ type AsyncModule() =
         for _i = 1 to 3 do test()
 
 
-    [<Test; Category("Expensive")>]
+    [<Test; Category("Expensive"); Explicit>]
     member this.``Async.AwaitWaitHandle does not leak memory`` () =
         // This test checks that AwaitWaitHandle does not leak continuations (described in #131),
         // We only test the worst case - when the AwaitWaitHandle is already set.
@@ -410,9 +410,7 @@ type AsyncModule() =
                 Assert.Fail("TimeoutException expected")
             with
                 :? System.TimeoutException -> ()
-#if FSHARP_CORE_PORTABLE
-// do nothing
-#else
+#if !FSCORE_PORTABLE_OLD
     [<Test>]
     member this.``RunSynchronously.NoThreadJumpsAndTimeout.DifferentSyncContexts``() = 
         let run syncContext =
@@ -442,11 +440,11 @@ type AsyncModule() =
     member this.``RaceBetweenCancellationAndError.Sleep``() =
         testErrorAndCancelRace (Async.Sleep (-5))
 
-#if !(FSHARP_CORE_PORTABLE || FSHARP_CORE_NETCORE_PORTABLE || coreclr)
-    [<Test; Category("Expensive")>] // takes 3 minutes!
+#if !(FSCORE_PORTABLE_OLD || FSCORE_PORTABLE_NEW || coreclr)
+    [<Test; Category("Expensive"); Explicit>] // takes 3 minutes!
     member this.``Async.Choice specification test``() =
         ThreadPool.SetMinThreads(100,100) |> ignore
-        Check.QuickThrowOnFailure (normalize >> runChoice)
+        Check.One ({Config.QuickThrowOnFailure with EndSize = 20}, normalize >> runChoice)
 #endif
 
     [<Test>]
@@ -494,9 +492,7 @@ type AsyncModule() =
             }
         Async.RunSynchronously(test)
         
-#if FSHARP_CORE_NETCORE_PORTABLE
-// nothing
-#else
+#if !FSCORE_PORTABLE_NEW
     [<Test>]
     member this.``FromContinuationsCanTailCallCurrentThread``() = 
         let cnt = ref 0
@@ -574,12 +570,7 @@ type AsyncModule() =
         Assert.AreEqual("boom", !r)
 
 
-#if FSHARP_CORE_PORTABLE
-// nothing
-#else
-#if FSHARP_CORE_NETCORE_PORTABLE
-// nothing
-#else
+#if !FSCORE_PORTABLE_OLD && !FSCORE_PORTABLE_NEW
     [<Test>]
     member this.``SleepContinuations``() = 
         let okCount = ref 0
@@ -606,5 +597,4 @@ type AsyncModule() =
         for i = 1 to 3 do test()
         Assert.AreEqual(0, !okCount)
         Assert.AreEqual(0, !errCount)
-#endif
 #endif

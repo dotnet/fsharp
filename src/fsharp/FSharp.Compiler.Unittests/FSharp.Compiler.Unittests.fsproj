@@ -2,26 +2,24 @@
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <FSharpSourcesRoot>..\..</FSharpSourcesRoot>
+    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
     <ProjectGuid>{a8d9641a-9170-4cf4-8fe0-6db8c134e1b5}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <ReferenceVsAssemblies>true</ReferenceVsAssemblies>
     <OutputType>Library</OutputType>
+    <UnitTestAssembly>true</UnitTestAssembly>
     <AssemblyName>FSharp.Compiler.Unittests</AssemblyName>
-    <TargetFrameworkVersion Condition=" '$(TargetFramework)' == 'net20' ">v3.5</TargetFrameworkVersion>
     <!-- Prevent compiler from inlining calls to FSharp.Core to improve code coverage accuracy -->
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
     <TargetProfile Condition=" '$(TargetFramework)' == 'portable7' or '$(TargetFramework)' == 'portable78' or '$(TargetFramework)' == 'portable259' ">netcore</TargetProfile>
   </PropertyGroup>
   <PropertyGroup>
-    <DefineConstants Condition=" '$(TargetFramework)' == 'sl5' ">$(DefineConstants);SILVERLIGHT</DefineConstants>
     <DefineConstants>$(DefineConstants);EXTENSIONTYPING</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -52,14 +50,11 @@
     <Reference Include="System" />
     <Reference Include="System.Numerics" Condition="'$(TargetFramework)' == 'net40'" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Net" Condition="'$(TargetFramework)' == 'sl5' " />
-    <Reference Include="System.Observable" Condition="'$(TargetFramework)' == 'sl3-wp' " />
     <Reference Include="System.ValueTuple">
-        <HintPath>..\..\..\packages\System.ValueTuple.4.0.0-rc3-24212-01\lib\netstandard1.1\System.ValueTuple.dll</HintPath>
+        <HintPath>..\..\..\packages\System.ValueTuple.4.4.0-beta-24631-01\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="NUnitFrameworkShims.fs" Condition="'$(TargetFramework)' == 'sl3-wp'" />
     <Compile Include="NunitHelpers.fs" />
     <Compile Include="CompilerTestHelpers.fs" />
     <Compile Include="ManglingNameOfProvidedTypes.fs" />

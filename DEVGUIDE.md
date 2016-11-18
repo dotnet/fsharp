@@ -23,7 +23,24 @@ The primary technical documents for the F# compiler code are
 
 ## Quick Start: Build, Test, Develop
 
-You can build the F# compiler for .NET Framework as follows:
+### F# Compiler (Linux)
+
+Currently you can do on Linux a bootstrap of the Mono version of the compiler.  Full testing is not enabled,
+nor is a .NET Core build of the compiler.
+
+First [install Mono](http://www.mono-project.com/docs/getting-started/install/linux/).  
+Then:
+    
+    ./build.sh
+
+results will be in ``Debug\net40\bin\...``.  This doesn't do any testing (beyond the bootstrap). You can
+run the compiler ``fsc.exe`` and F# Interactive ``fsi.exe`` by hand to test it.
+
+These steps are tested under the Linux/Mono configuration(s) in ``.travis.yml`` (Ubuntu).
+
+### F# Compiler (Windows)
+
+On Windows you can build the F# compiler for .NET Framework as follows:
 
     build.cmd
 
@@ -38,7 +55,7 @@ There are various qualifiers:
 
     build.cmd net40           -- build .NET Framework compiler (the default)
     build.cmd coreclr         -- build .NET Core compiler 
-    build.cmd vs              -- build the Visual F# IDE Tools
+    build.cmd vs              -- build the Visual F# IDE Tools (see below)
     build.cmd pcls            -- build the PCL FSharp.Core libraries
     build.cmd all             -- build all 
 
@@ -47,30 +64,50 @@ There are various qualifiers:
     build.cmd test            -- build default targets, run suitable tests
     build.cmd net40 test      -- build net40, run suitable tests
     build.cmd coreclr test    -- build coreclr, run suitable tests
-    build.cmd vs test         -- build Visual F# IDE Tools, run all tests
+    build.cmd vs test         -- build Visual F# IDE Tools, run all tests (see below)
     build.cmd all test        -- build all, run all tests
 
     build.cmd test-smoke      -- build, run smoke tests
     build.cmd test-net40-fsharp     -- build, run tests\fsharp suite for .NET Framework
     build.cmd test-net40-fsharpqa   -- build, run tests\fsharpqa suite for .NET Framework
 
-**Notes**
-To build and test Visual F# IDE Tools, you must use [Visual Studio "vNext" (aka "Dev15")](https://www.visualstudio.com/en-us/downloads/visual-studio-next-downloads-vs.aspx). This is the one after Visual Studio 2015 (aka "Dev 14").  You must also install Visual Studio SDK (also called _Visual Studio Extensibility SDK_ on the Visual Studio installer) before building Visual F# IDE Tools.
-Please ensure that the Visual Studio SDK version is matched with your current Visual Studio to ensure successful builds. For example: Visual Studio 2015 Update 1 requires Visual Studio 2015 SDK Update 1. Any installation of Visual Studio 2015 and later provides Visual Studio SDK as part of the installation of Visual Studio 2015 as feature installation. 
-
 After you build the first time you can open and use this solution:
 
-    .\VisualFSharp.sln
+    .\FSharp.sln
 
 or just build it directly:
 
-    msbuild VisualFSharp.sln 
+    msbuild FSharp.sln 
 
-Building ``VisualFSharp.sln`` builds _nearly_ everything. However building portable profiles of 
-FSharp.Core.dll is not included.  If you are just developing the core compiler, library
-and Visual F# Tools then building the solution will be enough.
+Building ``FSharp.sln`` builds nearly everything. However building portable profiles of 
+FSharp.Core.dll is not included.  If you are just developing the core compiler and library
+then building the solution will be enough.
 
-### [Optional] Install the Visual F# IDE Tools 
+### Notes on the .NET Framework build
+
+1. The `update.cmd` script adds required strong name validation skips, and NGens the compiler and libraries. This requires admin privileges.
+1. The compiler binaries produced are "private" and strong-named signed with a test key.
+1. Some additional tools are required to build the compiler, notably `fslex.exe`, `fsyacc.exe`, `FSharp.PowerPack.Build.Tasks.dll`, `FsSrGen.exe`, `FSharp.SRGen.Build.Tasks.dll`, and the other tools found in the `lkg` directory.
+1. The overall bootstrapping process executes as follows
+ - We first need an existing F# compiler. We use the one in the `lkg` directory. Let's assume this compiler has an `FSharp.Core.dll` with version X.
+ - We use this compiler to compile the source in this distribution, to produce a "proto" compiler, dropped to the `proto` directory. When run, this compiler still relies on `FSharp.Core.dll` with version X.
+ - We use the proto compiler to compile the source for `FSharp.Core.dll` in this distribution.
+ - We use the proto compiler to compile the source for `FSharp.Compiler.dll`, `fsc.exe`, `fsi.exe`, and other binaries found in this distribution.
+
+
+
+# The Visual F# IDE Tools (Windows Only)
+
+To build and test Visual F# IDE Tools, you must use [Visual Studio "vNext" (aka "Dev15")](https://www.visualstudio.com/en-us/downloads/visual-studio-next-downloads-vs.aspx). This is the one after Visual Studio 2015 (aka "Dev 14").  You must also install Visual Studio SDK (also called _Visual Studio Extensibility SDK_ on the Visual Studio installer) before building Visual F# IDE Tools.
+Please ensure that the Visual Studio SDK version is matched with your current Visual Studio to ensure successful builds. For example: Visual Studio 2015 Update 1 requires Visual Studio 2015 SDK Update 1. Any installation of Visual Studio 2015 and later provides Visual Studio SDK as part of the installation of Visual Studio 2015 as feature installation. 
+
+    build.cmd vs              -- build the Visual F# IDE Tools (see below)
+    build.cmd vs test         -- build Visual F# IDE Tools, run all tests (see below)
+
+Use ``VisualFSharp.sln`` if you're building the Visual F# IDE Tools.
+
+
+## [Optional] Install the Visual F# IDE Tools  (Windows Only)
 
 At time of writing, the Visual F# IDE Tools can only be installed into Visual Studio "Next" (aka "Dev15") releases.
 The new builds of the Visual F# IDE Tools can no longer be installed into Visual Studio 2015.
@@ -92,7 +129,7 @@ For **Release**:
 
 Restart Visual Studio, it should now be running your freshly-built Visual F# IDE Tools with updated F# Interactive. 
 
-### 5. [Optional] Clobber the F# SDK on the machine
+### [Optional] Clobber the F# SDK on the machine
 
 **Note:** Step #3 below will clobber the machine-wide installed F# SDK on your machine. This replaces the ``fsi.exe``/``fsiAnyCpu.exe`` used by Visual F# Interactive and the ``fsc.exe`` used by ``Microsoft.FSharp.targets``.  Repairing Visual Studio 15 is currently the only way to revert this step.  
 
@@ -103,17 +140,6 @@ For **Debug**:
 For **Release**:
 
 1. Run ``vsintegration\update-vsintegration.cmd release`` (clobbers the installed F# SDK)
-
-### Notes on the .NET Framework build
-
-1. The `update.cmd` script adds required strong name validation skips, and NGens the compiler and libraries. This requires admin privileges.
-1. The compiler binaries produced are "private" and strong-named signed with a test key.
-1. Some additional tools are required to build the compiler, notably `fslex.exe`, `fsyacc.exe`, `FSharp.PowerPack.Build.Tasks.dll`, `FsSrGen.exe`, `FSharp.SRGen.Build.Tasks.dll`, and the other tools found in the `lkg` directory.
-1. The overall bootstrapping process executes as follows
- - We first need an existing F# compiler. We use the one in the `lkg` directory. Let's assume this compiler has an `FSharp.Core.dll` with version X.
- - We use this compiler to compile the source in this distribution, to produce a "proto" compiler, dropped to the `proto` directory. When run, this compiler still relies on `FSharp.Core.dll` with version X.
- - We use the proto compiler to compile the source for `FSharp.Core.dll` in this distribution.
- - We use the proto compiler to compile the source for `FSharp.Compiler.dll`, `fsc.exe`, `fsi.exe`, and other binaries found in this distribution.
 
 
 

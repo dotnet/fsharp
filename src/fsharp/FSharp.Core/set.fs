@@ -512,19 +512,16 @@ namespace Microsoft.FSharp.Collections
 
     [<Sealed>]
     [<CompiledName("FSharpSet`1")>]
-#if FX_NO_DEBUG_PROXIES
-#else
+#if !FX_NO_DEBUG_PROXIES
     [<DebuggerTypeProxy(typedefof<SetDebugView<_>>)>]
 #endif
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
     [<DebuggerDisplay("Count = {Count}")>]
 #endif
     [<CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix")>]
     type Set<[<EqualityConditionalOn>]'T when 'T : comparison >(comparer:IComparer<'T>, tree: SetTree<'T>) = 
 
-#if FX_NO_BINARY_SERIALIZATION
-#else
+#if !FX_NO_BINARY_SERIALIZATION
         [<System.NonSerialized>]
         // NOTE: This type is logically immutable. This field is only mutated during deserialization. 
         let mutable comparer = comparer 
@@ -547,8 +544,7 @@ namespace Microsoft.FSharp.Collections
             let comparer = LanguagePrimitives.FastGenericComparer<'T> 
             new Set<'T>(comparer, SetEmpty)
 
-#if FX_NO_BINARY_SERIALIZATION
-#else
+#if !FX_NO_BINARY_SERIALIZATION
         [<System.Runtime.Serialization.OnSerializingAttribute>]
         member __.OnSerializing(context: System.Runtime.Serialization.StreamingContext) =
             ignore(context)
@@ -567,16 +563,14 @@ namespace Microsoft.FSharp.Collections
             serializedData <- null
 #endif
 
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
 #endif
         member internal set.Comparer = comparer
         //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
         member internal set.Tree : SetTree<'T> = tree
 
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
 #endif
         static member Empty : Set<'T> = empty
@@ -610,8 +604,7 @@ namespace Microsoft.FSharp.Collections
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             SetTree.fold (fun x z -> f.Invoke(z, x)) z s.Tree 
 
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
 #endif
         member s.IsEmpty  = SetTree.isEmpty s.Tree
@@ -674,20 +667,17 @@ namespace Microsoft.FSharp.Collections
 
         static member Compare(a: Set<'T>, b: Set<'T>) = SetTree.compare a.Comparer  a.Tree b.Tree
 
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
 #endif
         member x.Choose = SetTree.choose x.Tree
 
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
 #endif
         member x.MinimumElement = SetTree.minimumElement x.Tree
 
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
 #endif
         member x.MaximumElement = SetTree.maximumElement x.Tree
@@ -762,8 +752,7 @@ namespace Microsoft.FSharp.Collections
         [<Sealed>]
         SetDebugView<'T when 'T : comparison>(v: Set<'T>)  =  
 
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
              [<DebuggerBrowsable(DebuggerBrowsableState.RootHidden)>]
 #endif
              member x.Items = v |> Seq.truncate 1000 |> Seq.toArray 
