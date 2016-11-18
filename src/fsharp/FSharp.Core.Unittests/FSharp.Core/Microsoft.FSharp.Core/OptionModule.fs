@@ -18,6 +18,8 @@ Make sure each method works on:
 [<TestFixture>]
 type OptionModule() =
 
+    let assertWasNotCalledThunk () = raise (exn "Thunk should not have been called.")
+
     [<Test>]
     member this.FilterSomeIntegerWhenPredicateReturnsTrue () =
         let test x =
@@ -124,6 +126,70 @@ type OptionModule() =
         Assert.IsTrue( Option.ofObj<int[]> null = None)
 
     [<Test>]
-    member this.GetOrElse() =
-        Assert.AreEqual(Option.getOrElse 3 None, 3)
-        Assert.AreEqual(Option.getOrElse 3 (Some 42), 42)
+    member this.DefaultIfNone() =
+        Assert.AreEqual( Option.defaultIfNone 3 None, 3)
+        Assert.AreEqual( Option.defaultIfNone 3 (Some 42), 42)
+        Assert.AreEqual( Option.defaultIfNone "" None, "")
+        Assert.AreEqual( Option.defaultIfNone "" (Some "x"), "x")
+
+    [<Test>]
+    member this.DefaultIfNoneFrom() =
+        Assert.AreEqual( Option.defaultIfNoneFrom (fun () -> 3) None, 3)
+        Assert.AreEqual( Option.defaultIfNoneFrom (fun () -> "") None, "")
+
+        Assert.AreEqual( Option.defaultIfNoneFrom assertWasNotCalledThunk (Some 42), 42)
+        Assert.AreEqual( Option.defaultIfNoneFrom assertWasNotCalledThunk (Some ""), "")
+
+    [<Test>]
+    member this.OrElse() =
+        Assert.AreEqual( Option.orElse None None, None)
+        Assert.AreEqual( Option.orElse (Some 3) None, Some 3)
+        Assert.AreEqual( Option.orElse None (Some 42), Some 42)
+        Assert.AreEqual( Option.orElse (Some 3) (Some 42), Some 42)
+
+        Assert.AreEqual( Option.orElse (Some "") None, Some "")
+        Assert.AreEqual( Option.orElse None (Some "x"), Some "x")
+        Assert.AreEqual( Option.orElse (Some "") (Some "x"), Some "x")
+
+    [<Test>]
+    member this.OrElseFrom() =
+        Assert.AreEqual( Option.orElseFrom (fun () -> None) None, None)
+        Assert.AreEqual( Option.orElseFrom (fun () -> Some 3) None, Some 3)
+        Assert.AreEqual( Option.orElseFrom (fun () -> Some "") None, Some "")
+
+        Assert.AreEqual( Option.orElseFrom assertWasNotCalledThunk (Some 42), Some 42)
+        Assert.AreEqual( Option.orElseFrom assertWasNotCalledThunk (Some ""), Some "")
+
+    [<Test>]
+    member this.Map2() =
+        Assert.AreEqual( Option.map2 (-) None None, None)
+        Assert.AreEqual( Option.map2 (-) (Some 1) None, None)
+        Assert.AreEqual( Option.map2 (-) None (Some 2), None)
+        Assert.AreEqual( Option.map2 (-) (Some 1) (Some 2), Some -1)
+
+        Assert.AreEqual( Option.map2 (+) None None, None)
+        Assert.AreEqual( Option.map2 (+) (Some "x") None, None)
+        Assert.AreEqual( Option.map2 (+) None (Some "y"), None)
+        Assert.AreEqual( Option.map2 (+) (Some "x") (Some "y"), Some "xy")
+
+    [<Test>]
+    member this.Map3() =
+        let add3 x y z = string x + string y + string z
+        Assert.AreEqual( Option.map3 add3 None None None, None)
+        Assert.AreEqual( Option.map3 add3 (Some 1) None None, None)
+        Assert.AreEqual( Option.map3 add3 None (Some 2) None, None)
+        Assert.AreEqual( Option.map3 add3 (Some 1) (Some 2) None, None)
+        Assert.AreEqual( Option.map3 add3 None None (Some 3), None)
+        Assert.AreEqual( Option.map3 add3 (Some 1) None (Some 3), None)
+        Assert.AreEqual( Option.map3 add3 None (Some 2) (Some 3), None)
+        Assert.AreEqual( Option.map3 add3 (Some 1) (Some 2) (Some 3), Some "123")
+
+        let concat3 x y z = x + y + z
+        Assert.AreEqual( Option.map3 concat3 None None None, None)
+        Assert.AreEqual( Option.map3 concat3 (Some "x") None None, None)
+        Assert.AreEqual( Option.map3 concat3 None (Some "y") None, None)
+        Assert.AreEqual( Option.map3 concat3 (Some "x") (Some "y") None, None)
+        Assert.AreEqual( Option.map3 concat3 None None (Some "z"), None)
+        Assert.AreEqual( Option.map3 concat3 (Some "x") None (Some "z"), None)
+        Assert.AreEqual( Option.map3 concat3 None (Some "y") (Some "z"), None)
+        Assert.AreEqual( Option.map3 concat3 (Some "x") (Some "y") (Some "z"), Some "xyz")
