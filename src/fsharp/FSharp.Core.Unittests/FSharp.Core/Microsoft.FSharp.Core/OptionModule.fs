@@ -124,6 +124,29 @@ type OptionModule() =
         Assert.IsTrue( Option.ofObj<int[]> null = None)
 
     [<Test>]
-    member this.GetOrElse() =
-        Assert.AreEqual(Option.getOrElse 3 None, 3)
-        Assert.AreEqual(Option.getOrElse 3 (Some 42), 42)
+    member this.DefaultIfNone() =
+        Assert.AreEqual( Option.defaultIfNone 3 None, 3)
+        Assert.AreEqual( Option.defaultIfNone 3 (Some 42), 42)
+
+    [<Test>]
+    member this.DefaultIfNoneFrom() =
+        Assert.AreEqual( Option.defaultIfNoneFrom (fun () -> 3) None, 3)
+
+        let assertWasNotCalledThunk = fun () -> raise (exn "Thunk should not have been called.")
+        Assert.AreEqual( Option.defaultIfNoneFrom assertWasNotCalledThunk (Some 42), 42)
+
+    [<Test>]
+    member this.orElse() =
+        Assert.AreEqual( Option.orElse None None, None)
+        Assert.AreEqual( Option.orElse (Some 3) None, Some 3)
+        Assert.AreEqual( Option.orElse None (Some 42), Some 42)
+        Assert.AreEqual( Option.orElse (Some 3) (Some 42), Some 42)
+
+    [<Test>]
+    member this.orElseFrom() =
+        Assert.AreEqual( Option.orElseFrom (fun () -> None) None, None)
+        Assert.AreEqual( Option.orElseFrom (fun () -> Some 3) None, Some 3)
+
+        let assertWasNotCalledThunk = fun () -> raise (exn "Thunk should not have been called.")
+        Assert.AreEqual( Option.orElseFrom assertWasNotCalledThunk (Some 42), Some 42)
+
