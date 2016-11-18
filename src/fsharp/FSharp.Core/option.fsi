@@ -85,6 +85,13 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("Map")>]
         val map: mapping:('T -> 'U) -> option:'T option -> 'U option
 
+        /// <summary><c>apply inp fOpt</c> evaluates to <c>match inp, fOpt with Some x, f -> Some (f x) | _ -> None</c>.</summary>
+        /// <param name="option">The input option.</param>
+        /// <param name="mappingOpt">An optional function to apply to the option value.</param>
+        /// <returns>An option of the input value after applying the mapping function, or None if either the input or the mapping function is None.</returns>
+        [<CompiledName("Apply")>]
+        val apply: option:'T option -> mappingOpt:('T -> 'U) option -> 'U option
+
         /// <summary><c>bind f inp</c> evaluates to <c>match inp with None -> None | Some x -> f x</c></summary>
         /// <param name="binder">A function that takes the value of type T from an option and transforms it into
         /// an option containing a value of type U.</param>

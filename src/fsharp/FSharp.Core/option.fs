@@ -37,6 +37,12 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("Map")>]
         let map f inp = match inp with None -> None | Some x -> Some (f x)
 
+        [<CompiledName("Apply")>]
+        let apply inp fOpt =
+            match fOpt, inp with
+            | Some f, Some x -> Some (f x)
+            | _ -> None
+
         [<CompiledName("Bind")>]
         let bind f inp = match inp with None -> None | Some x -> f x
 

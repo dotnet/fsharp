@@ -19,6 +19,56 @@ Make sure each method works on:
 type OptionModule() =
 
     [<Test>]
+    member this.Apply () =
+        let oneMinus x = 1 - x
+        Assert.AreEqual(Option.apply None None, None)
+        Assert.AreEqual(Option.apply (Some 2) None, None)
+        Assert.AreEqual(Option.apply None (Some oneMinus), None)
+        Assert.AreEqual(Option.apply (Some 2) (Some oneMinus), Some -1)
+
+        let afterX x = "x" + x
+        Assert.AreEqual(Option.apply None None, None)
+        Assert.AreEqual(Option.apply (Some "y") None, None)
+        Assert.AreEqual(Option.apply None (Some afterX), None)
+        Assert.AreEqual(Option.apply (Some "y") (Some afterX), Some "xy")
+
+        let lengthPlus3 x = 3 + String.length x
+        Assert.AreEqual(Option.apply None (Some lengthPlus3), None)
+        Assert.AreEqual(Option.apply (Some "y") (Some lengthPlus3), Some 4)
+
+    [<Test>]
+    member this.MapPipeApply () =
+        let add3 x y z = string x + string y + string z
+        Assert.AreEqual(Option.map add3 None |> Option.apply None |> Option.apply None, None)
+        Assert.AreEqual(Option.map add3 None |> Option.apply (Some 2) |> Option.apply None, None)
+        Assert.AreEqual(Option.map add3 (Some 1) |> Option.apply None |> Option.apply None, None)
+        Assert.AreEqual(Option.map add3 (Some 1) |> Option.apply (Some 2) |> Option.apply None, None)
+        Assert.AreEqual(Option.map add3 None |> Option.apply None |> Option.apply (Some 3), None)
+        Assert.AreEqual(Option.map add3 None |> Option.apply (Some 2) |> Option.apply (Some 3), None)
+        Assert.AreEqual(Option.map add3 (Some 1) |> Option.apply None |> Option.apply (Some 3), None)
+        Assert.AreEqual(Option.map add3 (Some 1) |> Option.apply (Some 2) |> Option.apply (Some 3), Some "123")
+
+        let concat3 x y z = x + y + z
+        Assert.AreEqual(Option.map concat3 None |> Option.apply None |> Option.apply None, None)
+        Assert.AreEqual(Option.map concat3 None |> Option.apply (Some "y") |> Option.apply None, None)
+        Assert.AreEqual(Option.map concat3 (Some "x") |> Option.apply None |> Option.apply None, None)
+        Assert.AreEqual(Option.map concat3 (Some "x") |> Option.apply (Some "y") |> Option.apply None, None)
+        Assert.AreEqual(Option.map concat3 None |> Option.apply None |> Option.apply (Some "z"), None)
+        Assert.AreEqual(Option.map concat3 None |> Option.apply (Some "y") |> Option.apply (Some "z"), None)
+        Assert.AreEqual(Option.map concat3 (Some "x") |> Option.apply None |> Option.apply (Some "z"), None)
+        Assert.AreEqual(Option.map concat3 (Some "x") |> Option.apply (Some "y") |> Option.apply (Some "z"), Some "xyz")
+
+        let mix3 x y z = String.length x * y + int32 z
+        Assert.AreEqual(Option.map mix3 None |> Option.apply None |> Option.apply None, None)
+        Assert.AreEqual(Option.map mix3 None |> Option.apply (Some 6) |> Option.apply None, None)
+        Assert.AreEqual(Option.map mix3 (Some "asdwxf") |> Option.apply None |> Option.apply None, None)
+        Assert.AreEqual(Option.map mix3 (Some "asdwxf") |> Option.apply (Some 6) |> Option.apply None, None)
+        Assert.AreEqual(Option.map mix3 None |> Option.apply None |> Option.apply (Some 6UL), None)
+        Assert.AreEqual(Option.map mix3 None |> Option.apply (Some 6) |> Option.apply (Some 6UL), None)
+        Assert.AreEqual(Option.map mix3 (Some "asdwxf") |> Option.apply None |> Option.apply (Some 6UL), None)
+        Assert.AreEqual(Option.map mix3 (Some "asdwxf") |> Option.apply (Some 6) |> Option.apply (Some 6UL), Some 42)
+
+    [<Test>]
     member this.FilterSomeIntegerWhenPredicateReturnsTrue () =
         let test x =
             let actual = x |> Some |> Option.filter (fun _ -> true)
