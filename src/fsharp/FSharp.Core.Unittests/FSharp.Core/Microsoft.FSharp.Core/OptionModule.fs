@@ -21,6 +21,13 @@ type OptionModule() =
     let assertWasNotCalledThunk () = raise (exn "Thunk should not have been called.")
 
     [<Test>]
+    member this.Flatten () =
+        Assert.AreEqual( Option.flatten None, None)
+        Assert.AreEqual( Option.flatten (Some None), None)
+        Assert.AreEqual( Option.flatten (Some <| Some 1), Some 1)
+        Assert.AreEqual( Option.flatten (Some <| Some ""), Some "") 
+
+    [<Test>]
     member this.FilterSomeIntegerWhenPredicateReturnsTrue () =
         let test x =
             let actual = x |> Some |> Option.filter (fun _ -> true)

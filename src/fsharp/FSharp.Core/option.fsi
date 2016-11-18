@@ -148,6 +148,13 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("Bind")>]
         val bind: binder:('T -> 'U option) -> option:'T option -> 'U option
 
+        /// <summary><c>flatten inp</c> evaluates to <c>match inp with None -> None | Some x -> x</c></summary>
+        /// <param name="option">The input option.</param>
+        /// <returns>An option of the output type of the binder.</returns>
+        /// <remarks><c>flatten</c> is equivalent to <c>bind id</c>.</remarks>
+        [<CompiledName("Flatten")>]
+        val flatten: option:'T option option -> 'T option
+
         /// <summary><c>filter f inp</c> evaluates to <c>match inp with None -> None | Some x -> if f x then Some x else None</c>.</summary>
         /// <param name="predicate">A function that evaluates whether the value contained in the option should remain, or be filtered out.</param>
         /// <param name="option">The input option.</param>

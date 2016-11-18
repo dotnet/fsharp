@@ -67,6 +67,9 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("Bind")>]
         let bind f inp = match inp with None -> None | Some x -> f x
 
+        [<CompiledName("Flatten")>]
+        let flatten option = match option with None -> None | Some x -> x
+
         [<CompiledName("Filter")>]
         let filter f inp = match inp with None -> None | Some x -> if f x then Some x else None
 
