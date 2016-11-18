@@ -621,7 +621,7 @@ module VersionResourceFormat =
             [| for stringTable in stringTables do
                    yield StringTable(stringTable) |] 
         VersionInfoElement(wType, szKey, None, children, false)
-        
+
     let VarFileInfo(vars: #seq<int32 * int32>) = 
         let wType = 0x1 // Specifies the type of data in the version resource. This member is 1 if the version resource contains text data and 0 if the version resource contains binary data. 
         let szKey = Bytes.stringAsUnicodeNullTerminated "VarFileInfo" // Contains the Unicode string StringFileInfo
@@ -632,7 +632,7 @@ module VersionResourceFormat =
                    yield VersionInfoElement(0x0, szKey, Some([| yield! i16 lang
                                                                 yield! i16 codePage |]), [| |], false) |] 
         VersionInfoElement(wType, szKey, None, children, false)
-        
+
     let VS_FIXEDFILEINFO(fileVersion:ILVersionInfo, 
                          productVersion:ILVersionInfo, 
                          dwFileFlagsMask, 
@@ -999,6 +999,9 @@ module MainModuleBuilder =
                       [ ("000004b0", [ yield ("Assembly Version", (let v1, v2, v3, v4 = assemblyVersion in sprintf "%d.%d.%d.%d" v1 v2 v3 v4))
                                        yield ("FileVersion", (let v1, v2, v3, v4 = fileVersionInfo in sprintf "%d.%d.%d.%d" v1 v2 v3 v4))
                                        yield ("ProductVersion", productVersionString)
+                                       match tcConfig.outputFile with
+                                       | Some f -> yield ("OriginalFilename", Path.GetFileName(f))
+                                       | None -> ()
                                        yield! FindAttribute "Comments" "System.Reflection.AssemblyDescriptionAttribute" 
                                        yield! FindAttribute "FileDescription" "System.Reflection.AssemblyTitleAttribute" 
                                        yield! FindAttribute "ProductName" "System.Reflection.AssemblyProductAttribute" 
@@ -1006,15 +1009,12 @@ module MainModuleBuilder =
                                        yield! FindAttribute "LegalCopyright" "System.Reflection.AssemblyCopyrightAttribute" 
                                        yield! FindAttribute "LegalTrademarks" "System.Reflection.AssemblyTrademarkAttribute" ]) ]
 
-            
-            // These entries listed in the MSDN documentation as "standard" string entries are not yet settable
-            
-            // InternalName: The Value member identifies the file's internal name, if one exists. For example, this string could contain the module name for Windows dynamic-link libraries (DLLs), a virtual device name for Windows virtual devices, or a device name for MS-DOS device drivers. 
-            // OriginalFilename: The Value member identifies the original name of the file, not including a path. This enables an application to determine whether a file has been renamed by a user. This name may not be MS-DOS 8.3-format if the file is specific to a non-FAT file system. 
-            // PrivateBuild: The Value member describes by whom, where, and why this private version of the file was built. This string should only be present if the VS_FF_PRIVATEBUILD flag is set in the dwFileFlags member of the VS_FIXEDFILEINFO structure. For example, Value could be 'Built by OSCAR on \OSCAR2'. 
-            // SpecialBuild: The Value member describes how this version of the file differs from the normal version. This entry should only be present if the VS_FF_SPECIALBUILD flag is set in the dwFileFlags member of the VS_FIXEDFILEINFO structure. For example, Value could be 'Private build for Olivetti solving mouse problems on M250 and M250E computers'. 
+                // These entries listed in the MSDN documentation as "standard" string entries are not yet settable
 
-
+                // InternalName: The Value member identifies the file's internal name, if one exists. For example, this string could contain the module name for Windows dynamic-link libraries (DLLs), a virtual device name for Windows virtual devices, or a device name for MS-DOS device drivers. 
+                // OriginalFilename: The Value member identifies the original name of the file, not including a path. This enables an application to determine whether a file has been renamed by a user. This name may not be MS-DOS 8.3-format if the file is specific to a non-FAT file system. 
+                // PrivateBuild: The Value member describes by whom, where, and why this private version of the file was built. This string should only be present if the VS_FF_PRIVATEBUILD flag is set in the dwFileFlags member of the VS_FIXEDFILEINFO structure. For example, Value could be 'Built by OSCAR on \OSCAR2'. 
+                // SpecialBuild: The Value member describes how this version of the file differs from the normal version. This entry should only be present if the VS_FF_SPECIALBUILD flag is set in the dwFileFlags member of the VS_FIXEDFILEINFO structure. For example, Value could be 'Private build for Olivetti solving mouse problems on M250 and M250E computers'. 
 
                 // "If you use the Var structure to list the languages your application 
                 // or DLL supports instead of using multiple version resources, 
@@ -1038,18 +1038,17 @@ module MainModuleBuilder =
 
                 let vsVersionInfoResource = 
                     VersionResourceFormat.VS_VERSION_INFO_RESOURCE(fixedFileInfo, stringFileInfo, varFileInfo)
-                
-                
+
                 let resource = 
                     [| yield! ResFileFormat.ResFileHeader()
                        yield! vsVersionInfoResource |]
 
                 [ resource ]
-          
-        // a user cannot specify both win32res and win32manifest        
+
+        // a user cannot specify both win32res and win32manifest
         if not(tcConfig.win32manifest = "") && not(tcConfig.win32res = "") then
             error(Error(FSComp.SR.fscTwoResourceManifests(), rangeCmdArgs))
-                      
+
         let win32Manifest =
             // use custom manifest if provided
             if not(tcConfig.win32manifest = "") then tcConfig.win32manifest
