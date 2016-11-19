@@ -951,7 +951,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             and recdAtomicTupleL depthLim recd =
                 // tuples up args to UnionConstruction or ExceptionConstructor. no node count.
                 match recd with 
-                | [(_,x)] -> objL depthLim Precedence.BracketIfTupleOrNotAtomic (x, x.GetType()) 
+                | [(_,x)] -> objL depthLim Precedence.BracketIfTupleOrNotAtomic x 
                 | txs     -> leftL "(" ^^ compactCommaListL (List.map (snd >> objL depthLim Precedence.BracketIfTuple) txs) ^^ rightL ")" 
 
             and bracketIfL b basicL =
