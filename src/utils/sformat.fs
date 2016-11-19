@@ -1024,7 +1024,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                         wordL (formatString s)  
 #endif                        
                     | :? Array as arr -> 
-                        let ty = arr.GetType().GetGenericArguments().[0]
+                        let ty = arr.GetType().GetElementType()
                         match arr.Rank with
                         | 1 -> 
                              let n = arr.Length
