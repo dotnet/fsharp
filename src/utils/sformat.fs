@@ -324,6 +324,13 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 
                 if FSharpType.IsTuple reprty then 
                     let tyArgs = reprty.GetGenericArguments()
+                    let tyArgs = 
+                      if tyArgs.Length < 8 then 
+                        tyArgs 
+                      else
+                        let tyArgsWithoutLast = tyArgs.[0..tyArgs.Length-2]
+                        let lastTyArgs = tyArgs.[tyArgs.Length - 1].GetGenericArguments()
+                        Array.concat [tyArgsWithoutLast; lastTyArgs]
                     TupleValue (FSharpValue.GetTupleFields obj |> Array.mapi (fun i v -> (v, tyArgs.[i])) |> Array.toList)
                 elif FSharpType.IsFunction reprty then 
                     FunctionClosureValue reprty
