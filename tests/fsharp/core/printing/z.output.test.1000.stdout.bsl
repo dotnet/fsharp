@@ -257,9 +257,9 @@ end
 val opt1 : 'a option
 val opt1b : int option = None
 val opt4 : 'a option option option option
-val opt4b : int option option option option = Some (Some (Some null))
+val opt4b : int option option option option = Some (Some (Some None))
 val opt5 : int list option option option option option list =
-  [Some (Some (Some (Some null)));
+  [Some (Some (Some (Some None)));
    Some (Some (Some (Some (Some [1; 2; 3; 4; 5; 6]))));
    Some
      (Some
@@ -1081,10 +1081,10 @@ exception ExUnit of unit
 exception ExUnits of unit * unit
 exception ExUnitOption of unit option
 val ex0 : exn = Ex0
-val exU : exn = ExUnit null
-val exUs : exn = ExUnits (null,null)
-val exUSome : exn = ExUnitOption (Some null)
-val exUNone : exn = ExUnitOption null
+val exU : exn = ExUnit ()
+val exUs : exn = ExUnits ((),())
+val exUSome : exn = ExUnitOption (Some ())
+val exUNone : exn = ExUnitOption None
 type 'a T4063 = | AT4063 of 'a
 
 > 
