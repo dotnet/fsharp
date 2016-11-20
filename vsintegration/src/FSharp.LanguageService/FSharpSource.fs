@@ -262,10 +262,8 @@ type internal FSharpIntelliSenseToAppearAdornment(view: IWpfTextView, cursorPoin
                     let sp = new System.Windows.Controls.StackPanel(Orientation=System.Windows.Controls.Orientation.Horizontal)
                     System.Windows.Documents.TextElement.SetForeground(sp, excludedCodeForegroundColorBrush.GetAsFrozen() :?> System.Windows.Media.Brush)
                     sp.Margin <- System.Windows.Thickness(3.0)
-#if FX_ATLEAST_45
                     let sa = new Microsoft.Internal.VisualStudio.PlatformUI.SpinAnimationControl(Width=pointSize, Height=pointSize, IsSpinning=true)
                     sp.Children.Add(sa) |> ignore
-#endif
                     sp.Children.Add(new System.Windows.Controls.Canvas(Width=4.0)) |> ignore // spacing between
                     sp.Children.Add(tb) |> ignore
                     let border = new System.Windows.Controls.Border()

@@ -47,6 +47,7 @@
 /vsintegration/src/unittests/Unittests.fsi
 /tests/*FSharp_Failures.env
 /tests/*FSharp_Failures.lst
+/tests/fsharpqa/testenv/bin/
 /tests/fsharpqa/Source/CodeGen/EmittedIL/StaticInit/StaticInit_Module01.dll
 /tests/fsharpqa/Source/CodeGen/EmittedIL/StaticInit/StaticInit_Module01.pdb
 /tests/Xnet40-fsharpqa-suite-failures.log.*
@@ -104,5 +105,5 @@ tests/fsharp/typecheck/sigs/neg94-pre.dll
 times
 /tests/fsharpqa/testenv/bin/System.ValueTuple.dll
 source_link.json
-/.vs
+.vs/
 /VSRelease/net40/bin

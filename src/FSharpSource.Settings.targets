@@ -18,6 +18,7 @@
     <ConfigurationGroup Condition="'$(ConfigurationGroup)'==''">Debug</ConfigurationGroup>
   </PropertyGroup>
 
+  <!-- Nuget Package properties -->
   <PropertyGroup>
     <!-- Settings used all the time -->
     <Tailcalls>true</Tailcalls>
@@ -34,20 +35,21 @@
 
     <!-- Always qualify the IntermediateOutputPath by the TargetFramework if any exists -->
     <IntermediateOutputPath>obj\$(Configuration)\$(TargetFramework)\</IntermediateOutputPath>
+    <IntermediateOutputPath Condition="'$(PortableProfileBeingReferenced)' != ''">obj\$(Configuration)\$(TargetFramework)\$(PortableProfileBeingReferenced)\</IntermediateOutputPath>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(OS)' != 'Unix'">
     <!-- Things we do only on Windows right now -->
-	<UseMicroBuild>true</UseMicroBuild>
-	<UseSourceLink>true</UseSourceLink>
-	<UseGatherBinaries>true</UseGatherBinaries>
-	<AddVsSdkAttributesToSomeCoreComponents>true</AddVsSdkAttributesToSomeCoreComponents>
+    <UseMicroBuild>true</UseMicroBuild>
+    <UseSourceLink>true</UseSourceLink>
+    <UseGatherBinaries>true</UseGatherBinaries>
+    <AddVsSdkAttributesToSomeCoreComponents>true</AddVsSdkAttributesToSomeCoreComponents>
+    <VsSDKInstall>$(MSBuildThisFileDirectory)..\packages\Microsoft.VSSDK.BuildTools.15.0.25907-RC2\tools\vssdk</VsSDKInstall>
+    <VsSDKToolPath>$(MSBuildThisFileDirectory)..\packages\Microsoft.VSSDK.BuildTools.15.0.25907-RC2\tools\vssdk\bin</VsSDKToolPath>
+    <VsSDKIncludes>$(MSBuildThisFileDirectory)..\packages\Microsoft.VSSDK.BuildTools.15.0.25907-RC2\tools\vssdk\inc</VsSDKIncludes>
+    <VsixSchemaPath>$(MSBuildThisFileDirectory)..\packages\Microsoft.VSSDK.BuildTools.15.0.25907-RC2\tools\vssdk\schemas\VSIXManifestSchema.xsd</VsixSchemaPath>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(OS)' == 'Unix'">
-	<DefineConstants>CROSS_PLATFORM_COMPILER;$(DefineConstants)</DefineConstants>
-  </PropertyGroup>
-	
   <PropertyGroup Condition=" '$(ProjectLanguage)' == 'FSharp' ">
     <!-- Things we do only for F# projects -->
     <OtherFlags>$(OtherFlags) --times</OtherFlags>
@@ -76,7 +78,7 @@
     <ErrorReport Condition=" '$(ErrorReport)' == '' ">prompt</ErrorReport>
     <DefineConstants Condition=" '$(ProjectLanguage)' != 'VisualBasic' ">TRACE;$(DefineConstants)</DefineConstants>
     <DefineConstants Condition=" '$(ProjectLanguage)' == 'VisualBasic' ">TRACE=True,$(DefineConstants)</DefineConstants>
-	  <SIGN_WITH_MSFT_KEY Condition=" '$(SIGN_WITH_MSFT_KEY)' == '' ">false</SIGN_WITH_MSFT_KEY>
+    <SIGN_WITH_MSFT_KEY Condition=" '$(SIGN_WITH_MSFT_KEY)' == '' ">false</SIGN_WITH_MSFT_KEY>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)'=='Proto'">
@@ -98,11 +100,11 @@
     <DefineConstants Condition="'$(VisualStudioVersion)'=='14.0' AND '$(ProjectLanguage)' != 'VisualBasic'">$(DefineConstants);VS_VERSION_DEV14</DefineConstants>
     <DefineConstants Condition="'$(VisualStudioVersion)'=='15.0' AND '$(ProjectLanguage)' == 'VisualBasic'">$(DefineConstants),VS_VERSION_DEV15=True</DefineConstants>
     <DefineConstants Condition="'$(VisualStudioVersion)'=='15.0' AND '$(ProjectLanguage)' != 'VisualBasic'">$(DefineConstants);VS_VERSION_DEV15</DefineConstants>
-	<!-- VisualStudioVersion is not defined when using xbuild on Mono. Assume 14.0, the last shipped in-the-box with Mono -->
+    <!-- VisualStudioVersion is not defined when using xbuild on Mono. Assume 14.0, the last shipped in-the-box with Mono -->
     <DefineConstants Condition="'$(VisualStudioVersion)'=='' AND '$(ProjectLanguage)' == 'VisualBasic'">$(DefineConstants),VS_VERSION_DEV14=True</DefineConstants>
     <DefineConstants Condition="'$(VisualStudioVersion)'=='' AND '$(ProjectLanguage)' != 'VisualBasic'">$(DefineConstants);VS_VERSION_DEV14</DefineConstants>
   </PropertyGroup>
-  
+
   <PropertyGroup> 
     <BuildRevision>$([System.DateTime]::Now.ToString(`yyMMdd`))</BuildRevision>
     <NuGetReleaseVersion>1.0.0</NuGetReleaseVersion> 

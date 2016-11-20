@@ -14,6 +14,12 @@
         "System.Reflection.Primitives": "4.0.1",
         "System.Resources.ResourceManager": "4.0.1"
     },
+    "runtimes": {
+        "win7-x86": { },
+        "win7-x64": { },
+        "osx.10.11-x64": { },
+        "ubuntu.14.04-x64": { }
+    },
     "frameworks": {
         "netstandard1.6": {
             "imports": "portable-net45+win8"

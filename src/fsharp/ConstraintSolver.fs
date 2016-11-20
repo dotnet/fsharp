@@ -997,7 +997,7 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
                      //   - Neither type contributes any methods OR
                      //   - We have the special case "decimal<_> * decimal". In this case we have some 
                      //     possibly-relevant methods from "decimal" but we ignore them in this case.
-                     (List.isEmpty minfos || (Option.isSome (GetMeasureOfType g argty1) && isDecimalTy g argty2)) in
+                     (isNil minfos || (Option.isSome (GetMeasureOfType g argty1) && isDecimalTy g argty2)) in
 
                    checkRuleAppliesInPreferenceToMethods argty1 argty2 || 
                    checkRuleAppliesInPreferenceToMethods argty2 argty1) ->
@@ -1287,7 +1287,7 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
                   let frees =  GetFreeTyparsOfMemberConstraint csenv traitInfo
 
                   // If there's nothing left to learn then raise the errors 
-                  (if (permitWeakResolution && List.isEmpty support) || List.isEmpty frees then errors  
+                  (if (permitWeakResolution && isNil support) || isNil frees then errors  
                   // Otherwise re-record the trait waiting for canonicalization 
                    else AddMemberConstraint csenv ndeep m2 trace traitInfo support frees) ++ (fun () -> 
                        match errors with
@@ -1374,7 +1374,7 @@ and TransactMemberConstraintSolution traitInfo (trace:OptionalTrace) sln  =
 /// That is, don't perform resolution if more nominal information may influence the set of available overloads 
 and GetRelevantMethodsForTrait (csenv:ConstraintSolverEnv) permitWeakResolution nm (TTrait(tys,_,memFlags,argtys,rty,soln) as traitInfo) : MethInfo list =
     let results = 
-        if permitWeakResolution || List.isEmpty (GetSupportOfMemberConstraint csenv traitInfo) then
+        if permitWeakResolution || isNil (GetSupportOfMemberConstraint csenv traitInfo) then
             let m = csenv.m
             let minfos = 
                 match memFlags.MemberKind with
@@ -1427,10 +1427,10 @@ and SolveRelevantMemberConstraintsForTypar (csenv:ConstraintSolverEnv) ndeep per
     let cxst = csenv.SolverState.ExtraCxs
     let tpn = tp.Stamp
     let cxs = cxst.FindAll tpn
-    if List.isEmpty cxs then ResultD false else
+    if isNil cxs then ResultD false else
     
     trace.Exec (fun () -> cxs |> List.iter (fun _ -> cxst.Remove tpn)) (fun () -> cxs |> List.iter (fun cx -> cxst.Add(tpn,cx)))
-    assert (List.isEmpty (cxst.FindAll tpn)) 
+    assert (isNil (cxst.FindAll tpn)) 
 
     cxs |> AtLeastOneD (fun (traitInfo,m2) -> 
         let csenv = { csenv with m = m2 }
@@ -1863,7 +1863,7 @@ and CanMemberSigsMatchUpToCheck
     
     Iterate2D unifyTypes minst uminst ++ (fun () -> 
 
-    if not (permitOptArgs || List.isEmpty unnamedCalledOptArgs) then ErrorD(Error(FSComp.SR.csOptionalArgumentNotPermittedHere(),m)) else
+    if not (permitOptArgs || isNil unnamedCalledOptArgs) then ErrorD(Error(FSComp.SR.csOptionalArgumentNotPermittedHere(),m)) else
     
 
     let calledObjArgTys = minfo.GetObjArgTypes(amap, m, minst)
@@ -1917,10 +1917,10 @@ and CanMemberSigsMatchUpToCheck
         match reqdRetTyOpt with 
         | None -> CompleteD 
         | Some _  when minfo.IsConstructor -> CompleteD 
-        | Some _  when not alwaysCheckReturn && List.isEmpty unnamedCalledOutArgs -> CompleteD 
+        | Some _  when not alwaysCheckReturn && isNil unnamedCalledOutArgs -> CompleteD 
         | Some reqdRetTy -> 
             let methodRetTy = 
-                if List.isEmpty unnamedCalledOutArgs then 
+                if isNil unnamedCalledOutArgs then 
                     methodRetTy 
                 else 
                     let outArgTys = unnamedCalledOutArgs |> List.map (fun calledArg -> destByrefTy g calledArg.CalledArgumentType) 
@@ -2006,7 +2006,7 @@ and ReportNoCandidatesError (csenv:ConstraintSolverEnv) (nUnnamedCallerArgs,nNam
 
     // No version accessible 
     | ([],others),_,_,_,_ ->  
-        if List.isEmpty others then
+        if isNil others then
             ErrorD (Error (FSComp.SR.csMemberIsNotAccessible(methodName, (ShowAccessDomain ad)), m))
         else
             ErrorD (Error (FSComp.SR.csMemberIsNotAccessible2(methodName, (ShowAccessDomain ad)), m))
@@ -2193,7 +2193,7 @@ and ResolveOverloading
                     // Otherwise collect a list of possible overloads
                     let overloads = GetPossibleOverloads amap m denv errors
                     // if list of overloads is not empty - append line with "The available overloads are shown below..."
-                    let msg = if List.isEmpty overloads then msg else sprintf "%s %s" msg (FSComp.SR.csSeeAvailableOverloads ())
+                    let msg = if isNil overloads then msg else sprintf "%s %s" msg (FSComp.SR.csSeeAvailableOverloads ())
                     UnresolvedOverloading (denv, overloads, msg, m)
 
             match applicable with 
@@ -2400,7 +2400,7 @@ and ResolveOverloading
                             | Some _  when calledMeth.Method.IsConstructor -> CompleteD 
                             | Some reqdRetTy ->
                                 let methodRetTy = 
-                                    if List.isEmpty calledMeth.UnnamedCalledOutArgs then 
+                                    if isNil calledMeth.UnnamedCalledOutArgs then 
                                         calledMeth.ReturnType 
                                     else 
                                         let outArgTys = calledMeth.UnnamedCalledOutArgs |> List.map (fun calledArg -> destByrefTy g calledArg.CalledArgumentType) 

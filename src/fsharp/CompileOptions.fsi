@@ -74,11 +74,10 @@ val SetOptimizeSwitch : TcConfigBuilder -> OptionSwitch -> unit
 val SetTailcallSwitch : TcConfigBuilder -> OptionSwitch -> unit
 val SetDebugSwitch    : TcConfigBuilder -> string option -> OptionSwitch -> unit
 val PrintOptionInfo   : TcConfigBuilder -> unit
+val SetTargetProfile  : TcConfigBuilder -> string -> unit
 
 val GetGeneratedILModuleName : CompilerTarget -> string -> string
 
-#if NO_COMPILER_BACKEND
-#else
 val GetInitialOptimizationEnv : TcImports * TcGlobals -> IncrementalOptimizationEnv
 val AddExternalCcuToOpimizationEnv : TcGlobals -> IncrementalOptimizationEnv -> ImportedAssembly -> IncrementalOptimizationEnv
 val ApplyAllOptimizations : TcConfig * TcGlobals * ConstraintSolver.TcValF * string * ImportMap * bool * IncrementalOptimizationEnv * CcuThunk * TypedImplFile list -> TypedAssemblyAfterOptimization * Optimizer.LazyModuleInfo * IncrementalOptimizationEnv 
@@ -86,7 +85,6 @@ val ApplyAllOptimizations : TcConfig * TcGlobals * ConstraintSolver.TcValF * str
 val CreateIlxAssemblyGenerator : TcConfig * TcImports * TcGlobals * ConstraintSolver.TcValF * CcuThunk -> IlxGen.IlxAssemblyGenerator
 
 val GenerateIlxCode : IlxGen.IlxGenBackend * bool * bool * TcConfig * TypeChecker.TopAttribs * TypedAssemblyAfterOptimization * string * bool * IlxGen.IlxAssemblyGenerator -> IlxGen.IlxGenResults
-#endif
 
 // Used during static linking
 val NormalizeAssemblyRefs : TcImports -> (AbstractIL.IL.ILScopeRef -> AbstractIL.IL.ILScopeRef)

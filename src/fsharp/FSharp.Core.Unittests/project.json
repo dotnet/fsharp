@@ -6,13 +6,18 @@
     "emitEntryPoint": true
   },
   "dependencies": {
-    "System.ValueTuple": "4.0.0-rc3-24212-01"
+    "nunit": "3.5.0",
+    "nunitlite": "3.5.0",
+    "Microsoft.FSharp.Core.netcore": "1.0.0-alpha-*",
+    "System.ValueTuple": "4.0.0-rc3-24212-01",
+    "FsCheck": "2.6.2",
+    "Microsoft.FSharp.TupleSample": "1.0.0-alpha-161112",
   },
   "runtimes": {
-    "win7-x86": { },
-    "win7-x64": { },
-    "osx.10.11-x64": { },
-    "ubuntu.14.04-x64": { }
+    "win7-x86": {},
+    "win7-x64": {},
+    "osx.10.11-x64": {},
+    "ubuntu.14.04-x64": {}
   },
   "frameworks": {
     "netcoreapp1.0": {
@@ -22,7 +27,7 @@
           "version": "1.0.1"
         }
       },
-      "imports": "dnxcore50"
+      "imports": [ "netstandard1.1", "netstandard1.6", "portable-net45+win8+wp8+wpa81" ]
     }
   },
 }

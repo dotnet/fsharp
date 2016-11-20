@@ -16,13 +16,11 @@
 
   <ItemGroup Condition="'$(BUILD_CORECLR)'=='1'">
     <ProjectsWithCoreClr Include="src/fsharp/FSharp.Core/FSharp.Core.fsproj" />
-    <ProjectsWithCoreClr Include="src/fsharp/FSharp.Core.netcore.nuget/FSharp.Core.netcore.nuget.proj" />
     <ProjectsWithCoreClr Include="src/fsharp/FSharp.Build/FSharp.Build.fsproj" />
     <ProjectsWithCoreClr Include="src/fsharp/FSharp.Compiler/FSharp.Compiler.fsproj" />
     <ProjectsWithCoreClr Include="src/fsharp/FSharp.Compiler.Interactive.Settings/FSharp.Compiler.Interactive.Settings.fsproj" />
     <ProjectsWithCoreClr Include="src/fsharp/Fsc/Fsc.fsproj" />
     <ProjectsWithCoreClr Include="src/fsharp/fsi/Fsi.fsproj" />
-    <ProjectsWithCoreClr Include="src/fsharp/FSharp.Compiler.netcore.nuget/FSharp.Compiler.nuget.proj" />
     <ProjectsWithCoreClr Include="src/fsharp/FSharp.Compiler.Host.netcore.nuget/FSharp.Compiler.Host.proj" />
  </ItemGroup>
 
@@ -60,14 +58,17 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TEST_NET40_FSHARP_SUITE)'=='1'" >
-    <ProjectsWithNet40 Include="tests/fsharp/FSharp.Tests.fsproj" />
+    <ProjectsWithNet40 Include="tests/fsharp/FSharp.Tests.FSharpSuite.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TEST_CORECLR_FSHARP_SUITE)'=='1'" >
+    <ProjectsWithNet40 Include="tests/fsharp/FSharp.Tests.FSharpSuite.DrivingCoreCLR.fsproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TEST_NET40_FSHARPQA_SUITE)'=='1' OR '$(TEST_NET40_FSHARP_SUITE)'=='1'" >
     <ProjectsWithNet40 Include="tests/fsharpqa/testenv/src/ILComparer/ILComparer.fsproj" />
     <ProjectsWithNet40 Include="tests/fsharpqa/testenv/src/diff/diff.fsproj" />
     <ProjectsWithNet40 Include="tests/fsharpqa/testenv/src/HostedCompilerServer/HostedCompilerServer.fsproj" />
-    <ProjectsWithNet40 Include="tests/fsharpqa/testenv/src/FSharp.Compiler.Hosted/FSharp.Compiler.Hosted.fsproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TEST_VS_IDEUNIT_SUITE)'=='1'" >
@@ -88,6 +89,7 @@
 
   <Target Name="Rebuild">
     <MSBuild Projects="@(ProjectsWithNet40)"  Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
+    <MSBuild Projects="@(ProjectsWithNet40PlusDefine)"  Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);FSHARP_SUITE_DRIVES_CORECLR_TESTS=true" />
     <MSBuild Projects="@(ProjectsWithPortableFrameworks)" Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable7;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
     <MSBuild Projects="@(ProjectsWithPortableFrameworks)" Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable47;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
     <MSBuild Projects="@(ProjectsWithPortableFrameworks)" Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable78;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
@@ -98,6 +100,7 @@
 
   <Target Name="Clean">
     <MSBuild Projects="@(ProjectsWithNet40)"  Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
+    <MSBuild Projects="@(ProjectsWithNet40PlusDefine)"  Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);FSHARP_SUITE_DRIVES_CORECLR_TESTS=true" />
     <MSBuild Projects="@(ProjectsWithPortableFrameworks)" Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable7;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
     <MSBuild Projects="@(ProjectsWithPortableFrameworks)" Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable47;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
     <MSBuild Projects="@(ProjectsWithPortableFrameworks)" Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable78;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />

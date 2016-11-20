@@ -60,8 +60,7 @@ type Array2Module() =
         let resultInt = Array2D.base2 intArr
         if resultInt <> 0 then Assert.Fail()
         
-#if FX_NO_BASED_ARRAYS
-#else
+#if !FX_NO_BASED_ARRAYS
         // string array 
         let strArr = Array2D.createBased 0 0 2 3 "goodboy" 
         let resultStr = Array2D.base2 strArr
@@ -77,8 +76,7 @@ type Array2Module() =
         let nullArr = null:string[,]    
         CheckThrowsNullRefException (fun () -> Array2D.base2  nullArr |> ignore)   
 
-#if FX_NO_BASED_ARRAYS
-#else        
+#if !FX_NO_BASED_ARRAYS
         // Verify printing format of non-zero based arrays
         let v : int[,] = Array2D.createBased 10 1 3 4 2
         let actual = (sprintf "%A" v).Replace("\r","").Replace("\n","")
@@ -133,8 +131,7 @@ type Array2Module() =
         CheckThrowsArgumentException(fun () -> Array2D.blit  intArr 0 0 intArr2 0 10 2 2 |> ignore)  
         ()
 
-#if FX_NO_BASED_ARRAYS
-#else
+#if !FX_NO_BASED_ARRAYS
     [<Test>]
     member this.BlitWithNonZeroBase() =
         let a = Array2D.createBased 1 1 3 3 0
@@ -233,8 +230,7 @@ type Array2Module() =
   
         ()  
 
-#if FX_NO_BASED_ARRAYS
-#else
+#if !FX_NO_BASED_ARRAYS
     [<Test>]
     member this.createBased() =
         // integer array  
@@ -295,8 +291,7 @@ type Array2Module() =
         if strArr.[1,1] <> "1-1" then Assert.Fail()
         () 
         
-#if FX_NO_BASED_ARRAYS
-#else
+#if !FX_NO_BASED_ARRAYS
     [<Test>]
     member this.Init_Based() =
         // integer array  
@@ -336,8 +331,7 @@ type Array2Module() =
         CheckThrowsArgumentNullException (fun () -> Array2D.iter funStr nullArr |> ignore)   
         ()
 
-#if FX_NO_BASED_ARRAYS
-#else
+#if !FX_NO_BASED_ARRAYS
     [<Test>]
     member this.IterNonZeroBased() =
         let a = Array2D.createBased 1 5 10 10 1
@@ -476,8 +470,7 @@ type Array2Module() =
         
         () 
 
-#if FX_NO_BASED_ARRAYS
-#else
+#if !FX_NO_BASED_ARRAYS
     [<Test>]
     member this.Rebase() =
         // integer array  

@@ -23,16 +23,8 @@
     <AsmmetaDependsOnMSBuildInVS>true</AsmmetaDependsOnMSBuildInVS>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <DefineConstants>$(DefineConstants);FSHARP_CORE_4_5</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_ATLEAST_45</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_ATLEAST_40</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_ATLEAST_35</DefineConstants>
-    <DefineConstants>$(DefineConstants);BE_SECURITY_TRANSPARENT</DefineConstants>
-    <DefineConstants>$(DefineConstants);QUERIES_IN_FSLIB</DefineConstants>
-    <DefineConstants>$(DefineConstants);PUT_TYPE_PROVIDERS_IN_FSCORE;</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_ATLEAST_LINQ</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_PREFERRED_UI_LANG</DefineConstants>
     <TargetFrameworkProfile></TargetFrameworkProfile>
-    <VsSdkTargetsDir>$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\VSSDK</VsSdkTargetsDir>
     <ImportVSSDKTargets>true</ImportVSSDKTargets>
     <CreateVsixContainer>false</CreateVsixContainer>
     <DeployExtension>false</DeployExtension>
@@ -230,11 +222,11 @@
       <Name>FSharp.Core</Name>
     </ProjectReference>
   </ItemGroup>
-  
+
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
-  <Import Project="$(VsSdkTargetsDir)\Microsoft.VsSDK.targets" />
-  
+  <Import Project="$(VsSDKInstall)\Microsoft.VsSDK.targets" />
+
   <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
     <ItemGroup>
       <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />

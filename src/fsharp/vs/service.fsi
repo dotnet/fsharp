@@ -601,8 +601,8 @@ type internal FsiInteractiveChecker =
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]   
 module internal CompilerEnvironment =
     /// These are the names of assemblies that should be referenced for .fs or .fsi files that
-    /// are not asscociated with a project.
-    val DefaultReferencesForOrphanSources : string list
+    /// are not associated with a project.
+    val DefaultReferencesForOrphanSources : assumeDotNetFramework: bool -> string list
     /// Return the compilation defines that should be used when editing the given file.
     val GetCompilationDefinesForEditing : filename : string * compilerFlags : string list -> string list
     /// Return true if this is a subcategory of error or warning message that the language service can emit

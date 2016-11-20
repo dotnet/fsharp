@@ -42,10 +42,6 @@ type Fsc = class
              member SourceLink : string with get,set
              member Sources : Microsoft.Build.Framework.ITaskItem [] with get,set
              member TargetType : string with get,set
-#if FX_ATLEAST_35
-#else
-             member ToolExe : string with get,set
-#endif             
              member ToolPath : string with get,set
              member TreatWarningsAsErrors : bool with get,set
              member Utf8Output : bool with get,set
