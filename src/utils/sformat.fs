@@ -1079,10 +1079,10 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                          if showContent then
                            let word = "seq"
                            let it = ie.GetEnumerator() 
-                           let ty = ie.GetType().GetInterfaces() |> Array.filter (fun ty -> ty.IsGenericType && ty.Name = "IEnumerable`1") |> Array.item 0
-                           let ty = ty.GetGenericArguments().[0]
+                           let ty = ie.GetType().GetInterfaces() |> Array.filter (fun ty -> ty.IsGenericType && ty.Name = "IEnumerable`1") |> Array.tryItem 0
+                           let ty = Option.map (fun (typ:Type) -> typ.GetGenericArguments().[0]) ty
                            try 
-                             let itemLs = boundedUnfoldL (objL depthLim Precedence.BracketIfTuple) (fun () -> if it.MoveNext() then Some((it.Current, ty),()) else None) stopShort () (1+opts.PrintLength/30)
+                             let itemLs = boundedUnfoldL (objL depthLim Precedence.BracketIfTuple) (fun () -> if it.MoveNext() then Some((it.Current, match ty with | None -> it.Current.GetType() | Some ty -> ty),()) else None) stopShort () (1+opts.PrintLength/30)
                              (wordL word --- makeListL itemLs) |> bracketIfL (prec <= Precedence.BracketIfTupleOrNotAtomic)
                            finally 
                               match it with 
