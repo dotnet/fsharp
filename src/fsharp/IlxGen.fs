@@ -132,20 +132,6 @@ let CountMethodDef = NewCounter "IL method defintitions corresponding to values"
 let CountStaticFieldDef = NewCounter "IL field defintitions corresponding to values"
 let CountCallFuncInstructions = NewCounter "callfunc instructions (indirect calls)"
 
-//-------------------------------------------------------------------------
-// Part of the last-minute tranformation performed by this file
-// is to eliminate variables of static type "unit".  These are
-// utility functions related to this.
-//------------------------------------------------------------------------- 
-
-let BindUnitVars g (mvs:Val list, paramInfos, body) = 
-    match mvs,paramInfos with 
-    | [v],[] -> 
-        assert isUnitTy g v.Type
-        [], mkLet NoSequencePointAtInvisibleBinding v.Range v (mkUnit g v.Range) body 
-    | _ -> mvs,body
-
-
 /// Non-local information related to internals of code generation within an assembly
 type IlxGenIntraAssemblyInfo = 
     { /// A table recording the generated name of the static backing fields for each mutable top level value where 
@@ -155,7 +141,6 @@ type IlxGenIntraAssemblyInfo =
       /// that come from both the signature and the implementation.
       StaticFieldInfo : Dictionary<ILMethodRef, ILFieldSpec> }
 
-//--------------------------------------------------------------------------
 //-------------------------------------------------------------------------- 
 
 /// Indicates how the generated IL code is ultimately emitted 

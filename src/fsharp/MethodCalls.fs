@@ -802,7 +802,8 @@ let BuildNewDelegateExpr (eventInfoOpt:EventInfo option, g, amap, delegateTy, in
             
         | Some _ -> 
             let _,_,_,vsl,body,_ = IteratedAdjustArityOfLambda g amap topValInfo f
-            List.concat vsl, body
+            let vsl, body = BindUnitVars g (List.concat vsl, List.concat topValInfo.ArgInfos, body)
+            vsl, body
             
     let meth = TObjExprMethod(slotsig, [], [], [delArgVals], expr, m)
     mkObjExpr(delegateTy,None,BuildObjCtorCall g m,[meth],[],m)
