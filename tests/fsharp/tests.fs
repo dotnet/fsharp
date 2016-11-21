@@ -26,6 +26,20 @@ module CoreTests =
 
     [<Test>]
     let ``access-FSI_CORECLR``() = singleTestBuildAndRun "core/access" FSI_CORECLR
+
+    [<Test>]
+    let ``apporder-FSC_CORECLR`` () = singleTestBuildAndRun "core/apporder" FSC_CORECLR
+
+    [<Test>]
+    let ``apporder-FSI_CORECLR`` () = singleTestBuildAndRun "core/apporder" FSI_CORECLR
+
+    [<Test>]
+    let ``array-FSC_CORECLR`` () = singleTestBuildAndRun "core/array" FSC_CORECLR
+
+    [<Test>]
+    let ``array-FSI_CORECLR`` () = singleTestBuildAndRun "core/array" FSI_CORECLR
+
+
 #else
 
     [<Test>]
