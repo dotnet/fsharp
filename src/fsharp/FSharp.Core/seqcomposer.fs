@@ -20,11 +20,11 @@ namespace Microsoft.FSharp.Collections
         open IEnumerator
 
         module Core =
-            type PipeIdx      = int
+            type PipeIdx = int
 
             type ICompletionChaining =
-                abstract OnComplete : stopTailCall:byref<unit>*PipeIdx -> unit
-                abstract OnDispose : stopTailCall:byref<unit> -> unit
+                abstract OnComplete : stopTailCall:byref<unit> * PipeIdx -> unit
+                abstract OnDispose  : stopTailCall:byref<unit> -> unit
 
             type IOutOfBand =
                 abstract StopFurtherProcessing : PipeIdx -> unit
@@ -34,7 +34,7 @@ namespace Microsoft.FSharp.Collections
                 abstract ProcessNext : input:'T -> bool
 
                 abstract OnComplete : PipeIdx -> unit
-                abstract OnDispose : unit -> unit
+                abstract OnDispose  : unit -> unit
 
                 default __.OnComplete _ = ()
                 default __.OnDispose () = ()
@@ -158,10 +158,6 @@ namespace Microsoft.FSharp.Collections
                 inherit SeqFactory<'First,'U> ()
                 override this.Create<'V> (outOfBand:IOutOfBand) (pipeIdx:PipeIdx) (next:Consumer<'U,'V>) : Consumer<'First,'V> = upcast Map3 (map, input2, input3, outOfBand, next, pipeIdx)
 
-            and MapiFactory<'T,'U> (mapi:int->'T->'U) =
-                inherit SeqFactory<'T,'U> ()
-                override this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'U,'V>) : Consumer<'T,'V> = upcast Mapi (mapi, next) 
-
             and Mapi2Factory<'First,'Second,'U> (map:int->'First->'Second->'U, input2:IEnumerable<'Second>) =
                 inherit SeqFactory<'First,'U> ()
                 override this.Create<'V> (outOfBand:IOutOfBand) (pipeIdx:PipeIdx) (next:Consumer<'U,'V>) : Consumer<'First,'V> = upcast Mapi2 (map, input2, outOfBand, next, pipeIdx)
@@ -215,6 +211,16 @@ namespace Microsoft.FSharp.Collections
                         next.OnComplete (&stopTailCall, terminatingIdx)
                     member this.OnDispose stopTailCall =
                         next.OnDispose (&stopTailCall)
+
+            and [<AbstractClass>] SeqComponentSimpleValue<'T,'U,'Value>  =
+                inherit SeqComponentSimple<'T,'U>
+
+                val mutable Value : 'Value
+
+                new (next, init) = {
+                    inherit SeqComponentSimple<'T,'U>(next)
+                    Value = init
+                }
 
             and [<AbstractClass>] SeqComponent<'T,'U> (next:ICompletionChaining) =
                 inherit Consumer<'T,'U>()
@@ -317,16 +323,6 @@ namespace Microsoft.FSharp.Collections
                 override __.OnDispose () =
                     try     input2.Dispose ()
                     finally input3.Dispose ()
-
-            and Mapi<'T,'U,'V> (mapi:int->'T->'U, next:Consumer<'U,'V>) =
-                inherit SeqComponent<'T,'V>(Upcast.iCompletionChaining next)
-
-                let mutable idx = 0
-                let mapi' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt mapi
-
-                override __.ProcessNext (input:'T) : bool = 
-                    idx <- idx + 1
-                    TailCall.avoid (next.ProcessNext (mapi'.Invoke (idx-1, input)))
 
             and Mapi2<'First,'Second,'U,'V> (map:int->'First->'Second->'U, enumerable2:IEnumerable<'Second>, outOfBand:IOutOfBand, next:Consumer<'U,'V>, pipeIdx:int) =
                 inherit SeqComponent<'First,'V>(Upcast.iCompletionChaining next)
@@ -1186,9 +1182,21 @@ namespace Microsoft.FSharp.Collections
                                 TailCall.avoid (next.ProcessNext (f input)) } }
 
             [<CompiledName("MapIndexed")>]
-            let mapi f source =
-                source
-                |> compose (MapiFactory f)
+            let inline mapi f source =
+                source |> compose { new SeqFactory<'T,'U>() with
+                    member __.Create _ _ next =
+                        upcast { new SeqComponentSimpleValue<'T,'V,int>(Upcast.iCompletionChaining next, -1) with
+                            override this.ProcessNext (input:'T) : bool = 
+                                this.Value <- this.Value  + 1
+                                TailCall.avoid (next.ProcessNext (f this.Value input)) } }
+
+            let mapi_adapt (f:OptimizedClosures.FSharpFunc<_,_,_>) source =
+                source |> compose { new SeqFactory<'T,'U>() with
+                    member __.Create _ _ next =
+                        upcast { new SeqComponentSimpleValue<'T,'V,int>(Upcast.iCompletionChaining next, -1) with
+                            override this.ProcessNext (input:'T) : bool = 
+                                this.Value <- this.Value  + 1
+                                TailCall.avoid (next.ProcessNext (f.Invoke (this.Value, input))) } }
 
             [<CompiledName("Choose")>]
             let choose f source =
@@ -1196,9 +1204,8 @@ namespace Microsoft.FSharp.Collections
                 |> compose (ChooseFactory f)
 
             [<CompiledName("Indexed")>]
-            let indexed source =
-                source
-                |> compose (MapiFactory (fun i x -> i,x))
+            let inline indexed source =
+                mapi (fun i x -> i,x) source
 
             [<CompiledName("TryPick")>]
             let tryPick f (source:ISeq<'T>)  =
