@@ -323,7 +323,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                 // to 7.
 
                 if FSharpType.IsTuple reprty then 
-                    let tyArgs = Reflection.FSharpType.GetTupleElements(reprty)
+                    let tyArgs = FSharpType.GetTupleElements(reprty)
                     TupleValue (FSharpValue.GetTupleFields obj |> Array.mapi (fun i v -> (v, tyArgs.[i])) |> Array.toList)
                 elif FSharpType.IsFunction reprty then 
                     FunctionClosureValue reprty
@@ -372,9 +372,16 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             let GetValueInfo bindingFlags (x : 'a, typ : Type)  (* x could be null *) = 
                 let obj = (box x)
                 match obj with 
-                | null -> 
-                   if isOptionTy typ then  ConstructorValue("None", [])
-                   elif isUnitType typ then  UnitValue
+                | null ->
+                   let isNullaryUnion =
+                      match typ.GetCustomAttributes(typeof<CompilationRepresentationAttribute>, false) with
+                      | [|:? CompilationRepresentationAttribute as attr|] -> 
+                          (attr.Flags &&& CompilationRepresentationFlags.UseNullAsTrueValue) = CompilationRepresentationFlags.UseNullAsTrueValue
+                      | _ -> false
+                   if isNullaryUnion then
+                     let nullaryCase = FSharpType.GetUnionCases(typ, bindingFlags) |> Array.item 0
+                     ConstructorValue(nullaryCase.Name, [])
+                   elif isUnitType typ then UnitValue
                    else ObjectValue(obj)
                 | _ -> 
                   GetValueInfoOfObject bindingFlags (obj) 
