@@ -16059,10 +16059,11 @@ and TcSignatureElementsNonMutRec cenv parent endm env defs =
             [ for def in defs do 
                match def with 
                | SynModuleSigDecl.Types (typeSpecs,_) -> 
-                  for (TypeDefnSig(ComponentInfo(_,_,_,ids,_,_,_,_),trepr,extraMembers,_)) in typeSpecs do 
-                      match trepr with 
-                      | SynTypeDefnSigRepr.Simple((SynTypeDefnSimpleRepr.None _),_) when not (isNil extraMembers) -> ()
-                      | _ -> yield (List.last ids).idText
+                  for (TypeDefnSig(ComponentInfo(_,typars,_,ids,_,_,_,_),trepr,extraMembers,_)) in typeSpecs do 
+                      if isNil typars then
+                          match trepr with 
+                          | SynTypeDefnSigRepr.Simple((SynTypeDefnSimpleRepr.None _),_) when not (isNil extraMembers) -> ()
+                          | _ -> yield (List.last ids).idText
                | _ -> () ]
             |> set
 
@@ -16487,10 +16488,11 @@ and TcModuleOrNamespaceElements cenv parent endm env xml mutRecNSInfo defs =
             [ for def in defs do 
                 match def with 
                 | SynModuleDecl.Types (typeSpecs,_) -> 
-                    for (TypeDefn(ComponentInfo(_,_,_,ids,_,_,_,_),trepr,_,_)) in typeSpecs do 
-                        match trepr with 
-                        | SynTypeDefnRepr.ObjectModel(TyconAugmentation,_,_) -> ()
-                        | _ -> yield (List.last ids).idText
+                    for (TypeDefn(ComponentInfo(_,typars,_,ids,_,_,_,_),trepr,_,_)) in typeSpecs do 
+                        if isNil typars then
+                            match trepr with 
+                            | SynTypeDefnRepr.ObjectModel(TyconAugmentation,_,_) -> ()
+                            | _ -> yield (List.last ids).idText
                 | _ -> () ]
             |> set
 
