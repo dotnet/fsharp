@@ -25,10 +25,10 @@ namespace Microsoft.FSharp.Collections
             /// operation which didn't have a source at least as large as was required). It is
             /// not called in the case of an exception being thrown whilst the stream is still
             /// being processed.</summary>
-            abstract OnComplete : stopTail:byref<unit>*PipeIdx -> unit
+            abstract OnComplete : stopTailCall:byref<unit>*PipeIdx -> unit
             /// <summary>OnDispose is used to cleanup the stream. It is always called at the last operation
             /// after the enumeration has completed.</summary>
-            abstract OnDispose : stopTail:byref<unit> -> unit
+            abstract OnDispose : stopTailCall:byref<unit> -> unit
 
         type IOutOfBand =
             abstract StopFurtherProcessing : PipeIdx -> unit
@@ -144,11 +144,6 @@ namespace Microsoft.FSharp.Collections
                   input3:IEnumerable<'Third> ->
                      Map3Factory<'First,'Second,'Third,'U>
           end
-        and MapiFactory<'T,'U> =
-          class
-            inherit  SeqFactory<'T,'U>
-            new : mapi:(int -> 'T -> 'U) ->  MapiFactory<'T,'U>
-          end
         and Mapi2Factory<'First,'Second,'U> =
           class
             inherit  SeqFactory<'First,'U>
@@ -206,13 +201,21 @@ namespace Microsoft.FSharp.Collections
           interface
             abstract member Skipping : unit -> bool
           end
+
         and [<AbstractClass>] SeqComponentSimple<'T,'U> =
           class
             inherit Consumer<'T,'U>
             interface ICompletionChaining
-            new : next:ICompletionChaining ->
-                    SeqComponentSimple<'T,'U>
+            new : next:ICompletionChaining -> SeqComponentSimple<'T,'U>
           end
+
+        and [<AbstractClass>] SeqComponentSimpleValue<'T,'U,'Value> =
+          class
+            inherit SeqComponentSimple<'T,'U>
+            val mutable Value : 'Value
+            new : next:ICompletionChaining*value:'Value -> SeqComponentSimpleValue<'T,'U,'Value>
+          end
+
         and [<AbstractClass>] SeqComponent<'T,'U> =
           class
             inherit Consumer<'T,'U>
@@ -220,6 +223,7 @@ namespace Microsoft.FSharp.Collections
             new : next:ICompletionChaining ->
                     SeqComponent<'T,'U>
           end
+
         and Choose<'T,'U,'V> =
           class
             inherit  SeqComponent<'T,'V>
@@ -280,13 +284,6 @@ namespace Microsoft.FSharp.Collections
                      Map3<'First,'Second,'Third,'U,'V>
             override OnDispose : unit -> unit
             override ProcessNext : input:'First -> bool
-          end
-        and Mapi<'T,'U,'V> =
-          class
-            inherit  SeqComponent<'T,'V>
-            new : mapi:(int -> 'T -> 'U) * next: Consumer<'U,'V> ->
-                     Mapi<'T,'U,'V>
-            override ProcessNext : input:'T -> bool
           end
         and Mapi2<'First,'Second,'U,'V> =
           class
@@ -658,15 +655,16 @@ namespace Microsoft.FSharp.Collections
         val inline map : f:('T -> 'U) -> source: ISeq<'T> ->  ISeq<'U>
           
         [<CompiledNameAttribute ("MapIndexed")>]
-        val mapi :
-          f:(int -> 'a -> 'b) ->
-            source: ISeq<'a> ->  ISeq<'b>
+        val inline mapi : f:(int->'a->'b) -> source: ISeq<'a> -> ISeq<'b>
+
+        val mapi_adapt : f:OptimizedClosures.FSharpFunc<int,'a,'b> -> source: ISeq<'a> -> ISeq<'b>
+
         [<CompiledNameAttribute ("Choose")>]
-        val choose :
-          f:('a -> 'b option) ->
-            source: ISeq<'a> ->  ISeq<'b>
+        val choose : f:('a->option<'b>) -> source: ISeq<'a> -> ISeq<'b>
+
         [<CompiledNameAttribute ("Indexed")>]
-        val indexed : source: ISeq<'a> ->  ISeq<int * 'a>
+        val inline indexed : source: ISeq<'a> -> ISeq<int * 'a>
+
         [<CompiledNameAttribute ("TryPick")>]
         val tryPick :
           f:('T -> 'U option) -> source: ISeq<'T> -> Option<'U>
