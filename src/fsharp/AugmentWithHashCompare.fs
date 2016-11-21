@@ -18,34 +18,29 @@ open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Infos
 
-let mkIComparableCompareToSlotSig g = 
+let mkIComparableCompareToSlotSig (g: TcGlobals) = 
     TSlotSig("CompareTo",g.mk_IComparable_ty, [],[], [[TSlotParam(Some("obj"),g.obj_ty,false,false,false,[])]],Some g.int_ty)
     
-let mkGenericIComparableCompareToSlotSig g typ =
+let mkGenericIComparableCompareToSlotSig (g: TcGlobals) typ =
     TSlotSig("CompareTo",(mkAppTy g.system_GenericIComparable_tcref [typ]),[],[], [[TSlotParam(Some("obj"),typ,false,false,false,[])]],Some g.int_ty)
     
-let mkIStructuralComparableCompareToSlotSig g =
-    TSlotSig("CompareTo",g.mk_IStructuralComparable_ty,[],[],[[TSlotParam(None,(mkRefTupledTy g [g.obj_ty ; g.mk_IComparer_ty]),false,false,false,[])]], Some g.int_ty)
+let mkIStructuralComparableCompareToSlotSig (g: TcGlobals) =
+    TSlotSig("CompareTo",g.mk_IStructuralComparable_ty,[],[],[[TSlotParam(None,(mkRefTupledTy g [g.obj_ty ; g.IComparer_ty]),false,false,false,[])]], Some g.int_ty)
     
-let mkGenericIEquatableEqualsSlotSig g typ =
+let mkGenericIEquatableEqualsSlotSig (g: TcGlobals) typ =
     TSlotSig("Equals",(mkAppTy g.system_GenericIEquatable_tcref [typ]),[],[], [[TSlotParam(Some("obj"),typ,false,false,false,[])]],Some g.bool_ty)
     
-let mkIStructuralEquatableEqualsSlotSig g =
-    TSlotSig("Equals",g.mk_IStructuralEquatable_ty,[],[],[[TSlotParam(None,(mkRefTupledTy g [g.obj_ty ; g.mk_IEqualityComparer_ty]),false,false,false,[])]], Some g.bool_ty)
+let mkIStructuralEquatableEqualsSlotSig (g: TcGlobals) =
+    TSlotSig("Equals",g.mk_IStructuralEquatable_ty,[],[],[[TSlotParam(None,(mkRefTupledTy g [g.obj_ty ; g.IEqualityComparer_ty]),false,false,false,[])]], Some g.bool_ty)
 
-let mkIStructuralEquatableGetHashCodeSlotSig g =
-    TSlotSig("GetHashCode",g.mk_IStructuralEquatable_ty,[],[],[[TSlotParam(None,g.mk_IEqualityComparer_ty,false,false,false,[])]], Some g.int_ty)
+let mkIStructuralEquatableGetHashCodeSlotSig (g: TcGlobals) =
+    TSlotSig("GetHashCode",g.mk_IStructuralEquatable_ty,[],[],[[TSlotParam(None,g.IEqualityComparer_ty,false,false,false,[])]], Some g.int_ty)
  
-let mkGetHashCodeSlotSig g = 
+let mkGetHashCodeSlotSig (g: TcGlobals) = 
     TSlotSig("GetHashCode", g.obj_ty, [],[], [[]],Some  g.int_ty)
 
-let mkEqualsSlotSig g = 
+let mkEqualsSlotSig (g: TcGlobals) = 
     TSlotSig("Equals", g.obj_ty, [],[], [[TSlotParam(Some("obj"),g.obj_ty,false,false,false,[])]],Some  g.bool_ty)
-
-
-let mkILObjectGetTypeMethSpec (ilg: ILGlobals) = IL.mkILNonGenericInstanceMethSpecInTy(ilg.typ_Object,"GetType",[],ilg.typ_Type)
-let mkILObjectToStringMethSpec (ilg: ILGlobals) = IL.mkILNonGenericInstanceMethSpecInTy(ilg.typ_Object,"ToString",[],ilg.typ_String)
-
 
 //-------------------------------------------------------------------------
 // Helpers associated with code-generation of comparison/hash augmentations
@@ -55,20 +50,20 @@ let mkThisTy  g ty = if isStructTy g ty then mkByrefTy g ty else ty
 
 let mkCompareObjTy          g ty = (mkThisTy g ty) --> (g.obj_ty --> g.int_ty)
 let mkCompareTy             g ty = (mkThisTy g ty) --> (ty --> g.int_ty)
-let mkCompareWithComparerTy g ty = (mkThisTy g ty) --> ((mkRefTupledTy g [g.obj_ty ; g.mk_IComparer_ty]) --> g.int_ty)
+let mkCompareWithComparerTy g ty = (mkThisTy g ty) --> ((mkRefTupledTy g [g.obj_ty ; g.IComparer_ty]) --> g.int_ty)
 
 let mkEqualsObjTy          g ty = (mkThisTy g ty) --> (g.obj_ty --> g.bool_ty)
 let mkEqualsTy             g ty = (mkThisTy g ty) --> (ty --> g.bool_ty)
-let mkEqualsWithComparerTy g ty = (mkThisTy g ty) --> ((mkRefTupledTy g [g.obj_ty ; g.mk_IEqualityComparer_ty]) --> g.bool_ty)
+let mkEqualsWithComparerTy g ty = (mkThisTy g ty) --> ((mkRefTupledTy g [g.obj_ty ; g.IEqualityComparer_ty]) --> g.bool_ty)
 
 let mkHashTy             g ty = (mkThisTy g ty) --> (g.unit_ty --> g.int_ty)
-let mkHashWithComparerTy g ty = (mkThisTy g ty) --> (g.mk_IEqualityComparer_ty --> g.int_ty)
+let mkHashWithComparerTy g ty = (mkThisTy g ty) --> (g.IEqualityComparer_ty --> g.int_ty)
 
 //-------------------------------------------------------------------------
 // Polymorphic comparison
 //------------------------------------------------------------------------- 
 
-let mkRelBinOp g op m e1 e2 = mkAsmExpr ([ op  ],[],  [e1; e2],[g.bool_ty],m)
+let mkRelBinOp (g: TcGlobals) op m e1 e2 = mkAsmExpr ([ op  ],[],  [e1; e2],[g.bool_ty],m)
 let mkClt g m e1 e2 = mkRelBinOp g IL.AI_clt m e1 e2 
 let mkCgt g m e1 e2 = mkRelBinOp g IL.AI_cgt m e1 e2
 
@@ -79,23 +74,23 @@ let mkCgt g m e1 e2 = mkRelBinOp g IL.AI_cgt m e1 e2
 // for creating and using GenericComparer objects and for creating and using 
 // IStructuralComparable objects (Eg, Calling CompareTo(obj o, IComparer comp))
 
-let mkILLangPrimTy g = mkILNonGenericBoxedTy g.tcref_LanguagePrimitives.CompiledRepresentationForNamedType
+let mkILLangPrimTy (g: TcGlobals) = mkILNonGenericBoxedTy g.tcref_LanguagePrimitives.CompiledRepresentationForNamedType
 
-let mkILCallGetComparer g m = 
+let mkILCallGetComparer (g: TcGlobals) m = 
     let ty = mkILNonGenericBoxedTy g.tcref_System_Collections_IComparer.CompiledRepresentationForNamedType
     let mspec = mkILNonGenericStaticMethSpecInTy (mkILLangPrimTy g, "get_GenericComparer",[],ty)
-    mkAsmExpr([IL.mkNormalCall mspec], [], [], [g.mk_IComparer_ty], m)
+    mkAsmExpr([IL.mkNormalCall mspec], [], [], [g.IComparer_ty], m)
 
-let mkILCallGetEqualityComparer g m = 
+let mkILCallGetEqualityComparer (g: TcGlobals) m = 
     let ty = mkILNonGenericBoxedTy g.tcref_System_Collections_IEqualityComparer.CompiledRepresentationForNamedType
     let mspec = mkILNonGenericStaticMethSpecInTy (mkILLangPrimTy g,"get_GenericEqualityComparer",[],ty)
-    mkAsmExpr([IL.mkNormalCall mspec], [], [], [g.mk_IEqualityComparer_ty], m)
+    mkAsmExpr([IL.mkNormalCall mspec], [], [], [g.IEqualityComparer_ty], m)
 
 let mkThisVar g m ty = mkCompGenLocal m "this" (mkThisTy g ty)  
 
 let mkShl g m acce n = mkAsmExpr([ IL.AI_shl ],[],[acce; mkInt g m n],[g.int_ty],m)
 let mkShr g m acce n = mkAsmExpr([ IL.AI_shr ],[],[acce; mkInt g m n],[g.int_ty],m)
-let mkAdd g m e1 e2 = mkAsmExpr([ IL.AI_add ],[],[e1;e2],[g.int_ty],m)
+let mkAdd (g: TcGlobals) m e1 e2 = mkAsmExpr([ IL.AI_add ],[],[e1;e2],[g.int_ty],m)
                    
 let mkAddToHashAcc g m e accv acce =
     mkValSet m accv (mkAdd g m (mkInt g m 0x9e3779b9) 
@@ -172,7 +167,7 @@ let mkEqualsTestConjuncts g m exprs =
         let a,b = List.frontAndBack l 
         List.foldBack (fun e acc -> mkCond NoSequencePointAtStickyBinding SuppressSequencePointAtTarget m g.bool_ty e acc (mkFalse g m)) a b
 
-let mkMinimalTy g (tcref:TyconRef) = 
+let mkMinimalTy (g: TcGlobals) (tcref:TyconRef) = 
     if tcref.Deref.IsExceptionDecl then [], g.exn_ty 
     else generalizeTyconRef tcref
 
@@ -290,7 +285,7 @@ let mkRecdEqualityWithComparer g tcref (tycon:Tycon) (_thisv,thise) thatobje (th
     expr
         
 /// Build the equality implementation for an exception definition
-let mkExnEquality g exnref (exnc:Tycon) = 
+let mkExnEquality (g: TcGlobals) exnref (exnc:Tycon) = 
     let m = exnc.Range 
     let thatv,thate = mkCompGenLocal m "obj" g.exn_ty  
     let thisv,thise = mkThisVar g m g.exn_ty  
@@ -813,7 +808,7 @@ let CheckAugmentationAttribs isImplementation g amap (tycon:Tycon)=
     | _ -> 
         ()
 
-let TyconIsCandidateForAugmentationWithCompare g (tycon:Tycon) = 
+let TyconIsCandidateForAugmentationWithCompare (g: TcGlobals) (tycon:Tycon) = 
     // This type gets defined in prim-types, before we can add attributes to F# type definitions
     let isUnit = g.compilingFslib && tycon.DisplayName = "Unit"
     not isUnit && 
@@ -828,7 +823,7 @@ let TyconIsCandidateForAugmentationWithCompare g (tycon:Tycon) =
     // other cases 
     | _ -> false
 
-let TyconIsCandidateForAugmentationWithEquals g (tycon:Tycon) = 
+let TyconIsCandidateForAugmentationWithEquals (g: TcGlobals) (tycon:Tycon) = 
     // This type gets defined in prim-types, before we can add attributes to F# type definitions
     let isUnit = g.compilingFslib && tycon.DisplayName = "Unit"
     not isUnit && 
@@ -962,7 +957,7 @@ let MakeBindingsForCompareWithComparerAugmentation g (tycon:Tycon) =
             let vspec = vref.Deref
             let _,ty = mkMinimalTy g tcref
 
-            let compv,compe = mkCompGenLocal m "comp" g.mk_IComparer_ty
+            let compv,compe = mkCompGenLocal m "comp" g.IComparer_ty
 
             let thisv,thise = mkThisVar g m ty
             let thatobjv,thatobje = mkCompGenLocal m "obj" g.obj_ty
@@ -977,7 +972,7 @@ let MakeBindingsForCompareWithComparerAugmentation g (tycon:Tycon) =
     elif tycon.IsRecordTycon || tycon.IsStructOrEnumTycon then mkCompare mkRecdCompareWithComparer
     else []    
     
-let MakeBindingsForEqualityWithComparerAugmentation g (tycon:Tycon) =
+let MakeBindingsForEqualityWithComparerAugmentation (g: TcGlobals) (tycon:Tycon) =
     let tcref = mkLocalTyconRef tycon
     let m = tycon.Range
     let tps = tycon.Typars(tycon.Range)
@@ -988,7 +983,7 @@ let MakeBindingsForEqualityWithComparerAugmentation g (tycon:Tycon) =
             
             // build the hash rhs
             let withcGetHashCodeExpr =
-                let compv,compe = mkCompGenLocal m "comp" g.mk_IEqualityComparer_ty
+                let compv,compe = mkCompGenLocal m "comp" g.IEqualityComparer_ty
                 let thisv,hashe = hashf g tcref tycon compe
                 mkLambdas m tps [thisv;compv] (hashe,g.int_ty)
                 
@@ -998,7 +993,7 @@ let MakeBindingsForEqualityWithComparerAugmentation g (tycon:Tycon) =
                 let thisv,thise = mkThisVar g m ty
                 let thatobjv,thatobje = mkCompGenLocal m "obj" g.obj_ty
                 let thatv,thate = mkCompGenLocal m "that" ty  
-                let compv,compe = mkCompGenLocal m "comp" g.mk_IEqualityComparer_ty
+                let compv,compe = mkCompGenLocal m "comp" g.IEqualityComparer_ty
                 let equalse = equalsf g tcref tycon (thisv,thise) thatobje (thatv,thate) compe
                 mkMultiLambdas m tps [[thisv];[thatobjv;compv]] (equalse,g.bool_ty)
 
@@ -1024,7 +1019,7 @@ let MakeBindingsForEqualityWithComparerAugmentation g (tycon:Tycon) =
     elif tycon.IsExceptionDecl then mkStructuralEquatable mkExnHashWithComparer mkExnEqualityWithComparer
     else []
 
-let MakeBindingsForEqualsAugmentation g (tycon:Tycon) = 
+let MakeBindingsForEqualsAugmentation (g: TcGlobals) (tycon:Tycon) = 
     let tcref = mkLocalTyconRef tycon 
     let m = tycon.Range 
     let tps = tycon.Typars(m)

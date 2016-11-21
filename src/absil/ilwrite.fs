@@ -2,6 +2,9 @@
 
 module internal Microsoft.FSharp.Compiler.AbstractIL.ILBinaryWriter 
 
+open System.Collections.Generic 
+open System.IO
+
 open Internal.Utilities
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.ILAsciiWriter 
@@ -13,17 +16,13 @@ open Microsoft.FSharp.Compiler.AbstractIL.Internal.BinaryConstants
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Support 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 open Microsoft.FSharp.Compiler.AbstractIL.ILPdbWriter
-
+open Microsoft.FSharp.Compiler.DiagnosticMessage
+open Microsoft.FSharp.Compiler.ErrorLogger
+open Microsoft.FSharp.Compiler.Range
 #if FX_NO_CORHOST_SIGNER
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.StrongNameSign
 #endif
 
-open Microsoft.FSharp.Compiler.DiagnosticMessage
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Range
-
-open System.Collections.Generic 
-open System.IO
 
 #if DEBUG
 let showEntryLookups = false

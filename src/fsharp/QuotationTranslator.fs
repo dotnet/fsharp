@@ -52,7 +52,7 @@ type QuotationGenerationScope =
       quotationFormat : QuotationSerializationFormat
       mutable emitDebugInfoInQuotations : bool }
 
-    static member Create (g, amap, scope, isReflectedDefinition) = 
+    static member Create (g: TcGlobals, amap, scope, isReflectedDefinition) = 
         { g = g
           scope=scope
           amap=amap

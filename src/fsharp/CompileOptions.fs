@@ -1303,7 +1303,7 @@ let CreateIlxAssemblyGenerator (_tcConfig:TcConfig,tcImports:TcImports,tcGlobals
     ilxGenerator.AddExternalCcus ccus
     ilxGenerator
 
-let GenerateIlxCode (ilxBackend, isInteractiveItExpr, isInteractiveOnMono, tcConfig:TcConfig, topAttrs, optimizedImpls, fragName, netFxHasSerializableAttribute, ilxGenerator : IlxAssemblyGenerator) =
+let GenerateIlxCode (ilxBackend, isInteractiveItExpr, isInteractiveOnMono, tcConfig:TcConfig, topAttrs, optimizedImpls, fragName, ilxGenerator : IlxAssemblyGenerator) =
     if !progress then dprintf "Generating ILX code...\n"
     let ilxGenOpts : IlxGenOptions = 
         { generateFilterBlocks = tcConfig.generateFilterBlocks
@@ -1317,7 +1317,6 @@ let GenerateIlxCode (ilxBackend, isInteractiveItExpr, isInteractiveOnMono, tcCon
           ilxBackend = ilxBackend
           isInteractive = tcConfig.isInteractive
           isInteractiveItExpr = isInteractiveItExpr
-          netFxHasSerializableAttribute = netFxHasSerializableAttribute
           alwaysCallVirt = tcConfig.alwaysCallVirt }
 
     ilxGenerator.GenerateCode (ilxGenOpts, optimizedImpls, topAttrs.assemblyAttrs,topAttrs.netModuleAttrs) 

@@ -1868,7 +1868,7 @@ and seekReadTypeDefOrRefAsTypeRef ctxt (TaggedIndex(tag,idx) ) =
     | tag when tag = tdor_TypeRef -> seekReadTypeRef ctxt idx
     | tag when tag = tdor_TypeSpec -> 
         dprintn ("type spec used where a type ref or def ctxt.is required")
-        ctxt.ilg.tref_Object
+        ctxt.ilg.typ_Object.TypeRef
     | _ -> failwith "seekReadTypeDefOrRefAsTypeRef_readTypeDefOrRefOrSpec"
 
 and seekReadMethodRefParent ctxt numtypars (TaggedIndex(tag,idx)) =
@@ -2043,9 +2043,8 @@ and sigptrGetTy ctxt numtypars bytes sigptr =
         
     elif b0 = et_VOID then ILType.Void, sigptr
     elif b0 = et_TYPEDBYREF then 
-        match ctxt.ilg.typ_TypedReference with
-        | Some t -> t, sigptr
-        | _ -> failwith "system runtime doesn't contain System.TypedReference"
+        let t = mkILNonGenericValueTy(mkILTyRef(ctxt.ilg.primaryAssemblyScopeRef,"System.TypedReference"))
+        t, sigptr
     elif b0 = et_CMOD_REQD || b0 = et_CMOD_OPT  then 
         let tdorIdx, sigptr = sigptrGetTypeDefOrRefOrSpecIdx bytes sigptr
         let typ, sigptr = sigptrGetTy ctxt numtypars bytes sigptr

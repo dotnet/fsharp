@@ -1986,39 +1986,9 @@ let tname_Object = "System.Object"
 [<Literal>]
 let tname_String = "System.String"
 [<Literal>]
-let tname_StringBuilder = "System.Text.StringBuilder"
-[<Literal>]
-let tname_AsyncCallback = "System.AsyncCallback"
-[<Literal>]
-let tname_IAsyncResult = "System.IAsyncResult"
-[<Literal>]
-let tname_IComparable = "System.IComparable"
-[<Literal>]
-let tname_Exception = "System.Exception"
+let tname_Array = "System.Array"
 [<Literal>]
 let tname_Type = "System.Type"
-[<Literal>]
-let tname_Missing = "System.Reflection.Missing"
-[<Literal>]
-let tname_Activator = "System.Activator"
-[<Literal>]
-let tname_SerializationInfo = "System.Runtime.Serialization.SerializationInfo"
-[<Literal>]
-let tname_StreamingContext = "System.Runtime.Serialization.StreamingContext"
-[<Literal>]
-let tname_SecurityPermissionAttribute = "System.Security.Permissions.SecurityPermissionAttribute"
-[<Literal>]
-let tname_Delegate = "System.Delegate"
-[<Literal>]
-let tname_ValueType = "System.ValueType"
-[<Literal>]
-let tname_TypedReference = "System.TypedReference"
-[<Literal>]
-let tname_Enum = "System.Enum"
-[<Literal>]
-let tname_MulticastDelegate = "System.MulticastDelegate"
-[<Literal>]
-let tname_Array = "System.Array"
 [<Literal>]
 let tname_Int64 = "System.Int64"
 [<Literal>]
@@ -2047,148 +2017,55 @@ let tname_Char = "System.Char"
 let tname_IntPtr = "System.IntPtr"
 [<Literal>]
 let tname_UIntPtr = "System.UIntPtr"
-[<Literal>]
-let tname_RuntimeArgumentHandle = "System.RuntimeArgumentHandle"
-[<Literal>]
-let tname_RuntimeTypeHandle = "System.RuntimeTypeHandle"
-[<Literal>]
-let tname_RuntimeMethodHandle = "System.RuntimeMethodHandle"
-[<Literal>]
-let tname_RuntimeFieldHandle = "System.RuntimeFieldHandle"
 
 [<NoEquality; NoComparison>]
 // This data structure needs an entirely delayed implementation
-type ILGlobals(noDebugData, getTypeILScopeRef, tryGetTypeILScopeRef) = 
+type ILGlobals(primaryScopeRef) = 
     
-    let m_mkSysILTypeRef nm = mkILTyRef(getTypeILScopeRef nm, nm)
-    let m_tryMkSysILTypeRef nm = match tryGetTypeILScopeRef nm with Some r -> Some(mkILTyRef(r, nm)) | _ -> None
+    let m_mkSysILTypeRef nm = mkILTyRef(primaryScopeRef, nm)
 
-    let m_typ_Object = lazy mkILBoxedType (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Object))
-    let m_typ_String = lazy mkILBoxedType (mkILNonGenericTySpec (m_mkSysILTypeRef tname_String))
-    let m_typ_StringBuilder = lazy mkILBoxedType (mkILNonGenericTySpec (m_mkSysILTypeRef tname_StringBuilder))
-    let m_typ_AsyncCallback = lazy mkILBoxedType (mkILNonGenericTySpec (m_mkSysILTypeRef tname_AsyncCallback))
-    let m_typ_IAsyncResult = lazy mkILBoxedType (mkILNonGenericTySpec (m_mkSysILTypeRef  tname_IAsyncResult))
-    let m_typ_IComparable = lazy mkILBoxedType (mkILNonGenericTySpec (m_mkSysILTypeRef tname_IComparable))
-    let m_typ_Exception = lazy mkILBoxedType (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Exception))
-    let m_typ_Type = lazy mkILBoxedType (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Type))
-    let m_typ_Missing = lazy mkILBoxedType (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Missing))
-    let m_typ_Activator = lazy mkILBoxedType (mkILNonGenericTySpec (m_mkSysILTypeRef  tname_Activator))
-    let m_typ_SerializationInfo =
-      lazy 
-        match tryGetTypeILScopeRef tname_SerializationInfo with
-        | Some scopeRef -> Some (mkILBoxedType (mkILNonGenericTySpec (mkILTyRef(scopeRef,tname_SerializationInfo))))
-        | None -> None
-    let m_typ_StreamingContext = lazy ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_StreamingContext))
-    let m_tref_SecurityPermissionAttribute = 
-      lazy 
-        match tryGetTypeILScopeRef tname_SecurityPermissionAttribute with
-        | Some scopeRef -> Some (mkILTyRef(scopeRef,tname_SecurityPermissionAttribute))
-        | None -> None
-    let m_typ_Delegate = lazy mkILBoxedType (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Delegate))
-    let m_typ_ValueType = lazy mkILBoxedType (mkILNonGenericTySpec (m_mkSysILTypeRef tname_ValueType))
-    let m_typ_TypedReference =
-      lazy 
-        match tryGetTypeILScopeRef tname_TypedReference with
-        | Some scopeRef -> Some(ILType.Value (mkILNonGenericTySpec (mkILTyRef (scopeRef,tname_TypedReference))))
-        | None -> None
-    let m_typ_Enum = lazy  mkILBoxedType (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Enum))
-    let m_typ_MulticastDelegate = lazy  mkILBoxedType (mkILNonGenericTySpec (m_mkSysILTypeRef tname_MulticastDelegate))
-    let m_typ_Array = lazy  mkILBoxedType (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Array))
-    let m_typ_SByte = lazy  ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_SByte))
-    let m_typ_Int16 = lazy  ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Int16))
-    let m_typ_Int32 = lazy  ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Int32))
-    let m_typ_Int64 = lazy  ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Int64))
-    let m_typ_Byte = lazy  ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Byte))
-    let m_typ_UInt16 = lazy  ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_UInt16))
-    let m_typ_UInt32 = lazy  ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_UInt32))
-    let m_typ_UInt64 = lazy  ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_UInt64))
-    let m_typ_Single = lazy  ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Single))
-    let m_typ_Double = lazy  ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Double))
-    let m_typ_Bool = lazy  ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Bool))
-    let m_typ_Char = lazy  ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Char))
-    let m_typ_IntPtr = lazy  ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_IntPtr))
-    let m_typ_UIntPtr = lazy  ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_UIntPtr))
+    let m_typ_Object = mkILBoxedType (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Object))
+    let m_typ_String = mkILBoxedType (mkILNonGenericTySpec (m_mkSysILTypeRef tname_String))
+    let m_typ_Array = mkILBoxedType (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Array))
+    let m_typ_Type = mkILBoxedType (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Type))
+    let m_typ_SByte = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_SByte))
+    let m_typ_Int16 = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Int16))
+    let m_typ_Int32 = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Int32))
+    let m_typ_Int64 = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Int64))
+    let m_typ_Byte = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Byte))
+    let m_typ_UInt16 = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_UInt16))
+    let m_typ_UInt32 = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_UInt32))
+    let m_typ_UInt64 = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_UInt64))
+    let m_typ_Single = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Single))
+    let m_typ_Double = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Double))
+    let m_typ_Bool = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Bool))
+    let m_typ_Char = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Char))
+    let m_typ_IntPtr = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_IntPtr))
+    let m_typ_UIntPtr = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_UIntPtr))
 
-    let m_typ_RuntimeArgumentHandle = 
-      lazy  
-        match tryGetTypeILScopeRef tname_RuntimeArgumentHandle with
-        | Some scopeRef -> Some(ILType.Value (mkILNonGenericTySpec (mkILTyRef (scopeRef,tname_RuntimeArgumentHandle))))
-        | None -> None
-
-    let m_typ_RuntimeTypeHandle = lazy ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_RuntimeTypeHandle))
-    let m_typ_RuntimeMethodHandle = lazy ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_RuntimeMethodHandle))
-    let m_typ_RuntimeFieldHandle = lazy ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_RuntimeFieldHandle))
-    let mutable m_generatedAttribsCache = []
-    let mutable m_debuggerBrowsableNeverAttributeCache = None                 
-    member x.primaryAssemblyScopeRef    = m_typ_Object.Value.TypeRef.Scope
-    member x.primaryAssemblyName        = m_typ_Object.Value.TypeRef.Scope.AssemblyRef.Name
-    member x.noDebugData                = noDebugData
-    member x.tref_Object                = m_typ_Object.Value.TypeRef
-    member x.tspec_Object               = m_typ_Object.Value.TypeSpec
-    member x.typ_Object                 = m_typ_Object.Value
-    member x.tref_String                = m_typ_String.Value.TypeRef
-    member x.typ_String                 = m_typ_String.Value
-    member x.typ_StringBuilder          = m_typ_StringBuilder.Value
-    member x.typ_AsyncCallback          = m_typ_AsyncCallback.Value
-    member x.typ_IAsyncResult           = m_typ_IAsyncResult.Value
-    member x.typ_IComparable            = m_typ_IComparable.Value
-    member x.typ_Activator              = m_typ_Activator.Value
-    member x.tref_Type                  = m_typ_Type.Value.TypeRef
-    member x.typ_Type                   = m_typ_Type.Value
-    member x.typ_Missing                = m_typ_Missing.Value
-    member x.typ_Delegate               = m_typ_Delegate.Value
-    member x.typ_ValueType              = m_typ_ValueType.Value
-    member x.typ_Enum                   = m_typ_Enum.Value
-    member x.tspec_TypedReference       = m_typ_TypedReference.Value |> Option.map (fun x -> x.TypeSpec)
-    member x.typ_TypedReference         = m_typ_TypedReference.Value
-    member x.typ_MulticastDelegate      = m_typ_MulticastDelegate.Value
-    member x.typ_Array                  = m_typ_Array.Value
-    member x.tspec_Int64                = m_typ_Int64.Value.TypeSpec
-    member x.tspec_UInt64               = m_typ_UInt64.Value.TypeSpec
-    member x.tspec_Int32                = m_typ_Int32.Value.TypeSpec
-    member x.tspec_UInt32               = m_typ_UInt32.Value.TypeSpec
-    member x.tspec_Int16                = m_typ_Int16.Value.TypeSpec
-    member x.tspec_UInt16               = m_typ_UInt16.Value.TypeSpec
-    member x.tspec_SByte                = m_typ_SByte.Value.TypeSpec
-    member x.tspec_Byte                 = m_typ_Byte.Value.TypeSpec
-    member x.tspec_Single               = m_typ_Single.Value.TypeSpec
-    member x.tspec_Double               = m_typ_Double.Value.TypeSpec
-    member x.tspec_IntPtr               = m_typ_IntPtr.Value.TypeSpec
-    member x.tspec_UIntPtr              = m_typ_UIntPtr.Value.TypeSpec
-    member x.tspec_Char                 = m_typ_Char.Value.TypeSpec
-    member x.tspec_Bool                 = m_typ_Bool.Value.TypeSpec
-    member x.typ_IntPtr                    = m_typ_IntPtr.Value                      
-    member x.typ_UIntPtr                   = m_typ_UIntPtr.Value
-    member x.typ_RuntimeArgumentHandle  = m_typ_RuntimeArgumentHandle.Value
-    member x.typ_RuntimeTypeHandle      = m_typ_RuntimeTypeHandle.Value
-    member x.typ_RuntimeMethodHandle    = m_typ_RuntimeMethodHandle.Value  
-    member x.typ_RuntimeFieldHandle     = m_typ_RuntimeFieldHandle.Value
-                                                                               
-    member x.typ_Byte                   = m_typ_Byte.Value                     
-    member x.typ_Int16                  = m_typ_Int16.Value                    
-    member x.typ_Int32                  = m_typ_Int32.Value                    
-    member x.typ_Int64                  = m_typ_Int64.Value                    
-    member x.typ_SByte                  = m_typ_SByte.Value                    
-    member x.typ_UInt16                 = m_typ_UInt16.Value                   
-    member x.typ_UInt32                 = m_typ_UInt32.Value                   
-    member x.typ_UInt64                 = m_typ_UInt64.Value                   
-    member x.typ_Single                 = m_typ_Single.Value                   
-    member x.typ_Double                 = m_typ_Double.Value                   
-    member x.typ_Bool                   = m_typ_Bool.Value                     
-    member x.typ_Char                   = m_typ_Char.Value                     
-    member x.typ_SerializationInfo      = m_typ_SerializationInfo.Value
-    member x.typ_StreamingContext       = m_typ_StreamingContext.Value
-    member x.tref_SecurityPermissionAttribute = m_tref_SecurityPermissionAttribute.Value
-    member x.tspec_Exception            = m_typ_Exception.Value.TypeSpec
-    member x.typ_Exception              = m_typ_Exception.Value
-    member x.generatedAttribsCache with get () = m_generatedAttribsCache  and set v = m_generatedAttribsCache  <- v
-    member x.debuggerBrowsableNeverAttributeCache with get() = m_debuggerBrowsableNeverAttributeCache and set v = m_debuggerBrowsableNeverAttributeCache  <- v                
-    member x.mkSysILTypeRef nm = m_mkSysILTypeRef nm
-    member x.tryMkSysILTypeRef nm = m_tryMkSysILTypeRef nm
+    member x.primaryAssemblyScopeRef    = m_typ_Object.TypeRef.Scope
+    member x.primaryAssemblyName        = m_typ_Object.TypeRef.Scope.AssemblyRef.Name
+    member x.typ_Object                 = m_typ_Object
+    member x.typ_String                 = m_typ_String
+    member x.typ_Array                  = m_typ_Array
+    member x.typ_Type                   = m_typ_Type
+    member x.typ_IntPtr                 = m_typ_IntPtr                    
+    member x.typ_UIntPtr                = m_typ_UIntPtr
+    member x.typ_Byte                   = m_typ_Byte                 
+    member x.typ_Int16                  = m_typ_Int16
+    member x.typ_Int32                  = m_typ_Int32
+    member x.typ_Int64                  = m_typ_Int64
+    member x.typ_SByte                  = m_typ_SByte
+    member x.typ_UInt16                 = m_typ_UInt16
+    member x.typ_UInt32                 = m_typ_UInt32
+    member x.typ_UInt64                 = m_typ_UInt64
+    member x.typ_Single                 = m_typ_Single
+    member x.typ_Double                 = m_typ_Double
+    member x.typ_Bool                   = m_typ_Bool
+    member x.typ_Char                   = m_typ_Char
     override x.ToString() = "<ILGlobals>"
 
-let mkILGlobals(noDebugData, getTypeILScopeRef, tryGetTypeILScopeRef) = 
-    ILGlobals(noDebugData, getTypeILScopeRef, tryGetTypeILScopeRef)
+let mkILGlobals primaryScopeRef = ILGlobals primaryScopeRef
 
 let mkNormalCall mspec = I_call (Normalcall, mspec, None)
 let mkNormalCallvirt mspec = I_callvirt (Normalcall, mspec, None)
@@ -2223,17 +2100,11 @@ let tname_DebuggableAttribute = "System.Diagnostics.DebuggableAttribute"
 (* NOTE: ecma_ prefix refers to the standard "mscorlib" *)
 let ecmaPublicKey = PublicKeyToken (Bytes.ofInt32Array [|0xde; 0xad; 0xbe; 0xef; 0xca; 0xfe; 0xfa; 0xce |]) 
    
-let mkInitializeArrayMethSpec (ilg: ILGlobals) = 
-  mkILNonGenericStaticMethSpecInTy(mkILNonGenericBoxedTy(ilg.mkSysILTypeRef "System.Runtime.CompilerServices.RuntimeHelpers"),"InitializeArray", [ilg.typ_Array;ilg.typ_RuntimeFieldHandle], ILType.Void)
-(* e.ilg. [mkPrimaryAssemblyExnNewobj "System.InvalidCastException"] *)
-let mkPrimaryAssemblyExnNewobj (ilg: ILGlobals) eclass = 
-  mkNormalNewobj (mkILNonGenericCtorMethSpec (ilg.mkSysILTypeRef eclass,[]))
-
-let typ_is_boxed = function ILType.Boxed _ -> true | _ -> false
-let typ_is_value = function ILType.Value _ -> true | _ -> false
+let isILBoxedTy = function ILType.Boxed _ -> true | _ -> false
+let isILValueTy = function ILType.Value _ -> true | _ -> false
 
 
-let tspec_is_primaryAssembly (tspec:ILTypeSpec) n = 
+let isPrimaryAssemblyTySpec (tspec:ILTypeSpec) n = 
   let tref = tspec.TypeRef
   let scoref = tref.Scope
   (tref.Name = n) &&
@@ -2242,32 +2113,29 @@ let tspec_is_primaryAssembly (tspec:ILTypeSpec) n =
   | ILScopeRef.Module _ -> false
   | ILScopeRef.Local -> true
 
-let typ_is_boxed_mscorlib_typ (ty:ILType) n = 
-  typ_is_boxed ty && tspec_is_primaryAssembly ty.TypeSpec n
+let isILBoxedPrimaryAssemblyTy (ty:ILType) n = 
+  isILBoxedTy ty && isPrimaryAssemblyTySpec ty.TypeSpec n
 
-let typ_is_value_mscorlib_typ (ty:ILType) n = 
-  typ_is_value ty && tspec_is_primaryAssembly ty.TypeSpec n
+let isILValuePrimaryAssemblyTy (ty:ILType) n = 
+  isILValueTy ty && isPrimaryAssemblyTySpec ty.TypeSpec n
       
-let isILObjectTy            ty = typ_is_boxed_mscorlib_typ ty tname_Object
-let isILStringTy            ty = typ_is_boxed_mscorlib_typ ty tname_String
-let typ_is_AsyncCallback     ty = typ_is_boxed_mscorlib_typ ty tname_AsyncCallback
-let isILTypedReferenceTy    ty = typ_is_value_mscorlib_typ ty tname_TypedReference
-let typ_is_IAsyncResult ty = typ_is_boxed_mscorlib_typ ty tname_IAsyncResult
-let typ_is_IComparable  ty = typ_is_boxed_mscorlib_typ ty tname_IComparable
-let isILSByteTy        ty = typ_is_value_mscorlib_typ ty tname_SByte
-let isILByteTy         ty = typ_is_value_mscorlib_typ ty tname_Byte
-let isILInt16Ty        ty = typ_is_value_mscorlib_typ ty tname_Int16
-let isILUInt16Ty       ty = typ_is_value_mscorlib_typ ty tname_UInt16
-let isILInt32Ty        ty = typ_is_value_mscorlib_typ ty tname_Int32
-let isILUInt32Ty       ty = typ_is_value_mscorlib_typ ty tname_UInt32
-let isILInt64Ty        ty = typ_is_value_mscorlib_typ ty tname_Int64
-let isILUInt64Ty       ty = typ_is_value_mscorlib_typ ty tname_UInt64
-let isILIntPtrTy       ty = typ_is_value_mscorlib_typ ty tname_IntPtr
-let isILUIntPtrTy      ty = typ_is_value_mscorlib_typ ty tname_UIntPtr
-let isILBoolTy         ty = typ_is_value_mscorlib_typ ty tname_Bool
-let isILCharTy         ty = typ_is_value_mscorlib_typ ty tname_Char
-let isILSingleTy       ty = typ_is_value_mscorlib_typ ty tname_Single
-let isILDoubleTy       ty = typ_is_value_mscorlib_typ ty tname_Double
+let isILObjectTy            ty = isILBoxedPrimaryAssemblyTy ty tname_Object
+let isILStringTy            ty = isILBoxedPrimaryAssemblyTy ty tname_String
+let isILTypedReferenceTy    ty = isILValuePrimaryAssemblyTy ty "System.TypedReference"
+let isILSByteTy        ty = isILValuePrimaryAssemblyTy ty tname_SByte
+let isILByteTy         ty = isILValuePrimaryAssemblyTy ty tname_Byte
+let isILInt16Ty        ty = isILValuePrimaryAssemblyTy ty tname_Int16
+let isILUInt16Ty       ty = isILValuePrimaryAssemblyTy ty tname_UInt16
+let isILInt32Ty        ty = isILValuePrimaryAssemblyTy ty tname_Int32
+let isILUInt32Ty       ty = isILValuePrimaryAssemblyTy ty tname_UInt32
+let isILInt64Ty        ty = isILValuePrimaryAssemblyTy ty tname_Int64
+let isILUInt64Ty       ty = isILValuePrimaryAssemblyTy ty tname_UInt64
+let isILIntPtrTy       ty = isILValuePrimaryAssemblyTy ty tname_IntPtr
+let isILUIntPtrTy      ty = isILValuePrimaryAssemblyTy ty tname_UIntPtr
+let isILBoolTy         ty = isILValuePrimaryAssemblyTy ty tname_Bool
+let isILCharTy         ty = isILValuePrimaryAssemblyTy ty tname_Char
+let isILSingleTy       ty = isILValuePrimaryAssemblyTy ty tname_Single
+let isILDoubleTy       ty = isILValuePrimaryAssemblyTy ty tname_Double
 
 // -------------------------------------------------------------------- 
 // Rescoping
@@ -2807,7 +2675,7 @@ let mkILGenericClass (nm, access, genparams, extends, impl, methods, fields, nes
     HasSecurity=false;
 } 
     
-let mkRawDataValueTypeDef (ilg: ILGlobals) (nm,size,pack) =
+let mkRawDataValueTypeDef (iltyp_ValueType: ILType) (nm,size,pack) =
   { tdKind=ILTypeDefKind.ValueType;
     Name = nm;
     GenericParams= [];
@@ -2815,7 +2683,7 @@ let mkRawDataValueTypeDef (ilg: ILGlobals) (nm,size,pack) =
     Implements = []
     IsAbstract = false;
     IsSealed = true;
-    Extends = Some ilg.typ_ValueType;
+    Extends = Some iltyp_ValueType;
     IsComInterop=false;    
     IsSerializable = false;
     IsSpecialName=false;
@@ -2906,7 +2774,7 @@ let buildILCode (_methName:string) lab2pc instrs tryspecs localspecs : ILCode =
 // Detecting Delegates
 // -------------------------------------------------------------------- 
 
-let mkILDelegateMethods (ilg: ILGlobals) (parms,rtv:ILReturn) = 
+let mkILDelegateMethods (ilg: ILGlobals) (iltyp_AsyncCallback, iltyp_IAsyncResult) (parms,rtv:ILReturn) = 
     let rty = rtv.Type
     let one nm args ret =
         let mdef = mkILNonGenericVirtualMethod (nm,ILMemberAccess.Public,args,mkILReturn ret,MethodBody.Abstract)
@@ -2921,8 +2789,8 @@ let mkILDelegateMethods (ilg: ILGlobals) (parms,rtv:ILReturn) =
     let ctor = { ctor with  mdCodeKind=MethodCodeKind.Runtime; IsHideBySig=true }
     [ ctor;
       one "Invoke" parms rty;
-      one "BeginInvoke" (parms @ [mkILParamNamed("callback",ilg.typ_AsyncCallback); mkILParamNamed("objects",ilg.typ_Object) ] ) ilg.typ_IAsyncResult;
-      one "EndInvoke" [mkILParamNamed("result",ilg.typ_IAsyncResult)] rty; ]
+      one "BeginInvoke" (parms @ [mkILParamNamed("callback",iltyp_AsyncCallback); mkILParamNamed("objects",ilg.typ_Object) ] ) iltyp_IAsyncResult;
+      one "EndInvoke" [mkILParamNamed("result",iltyp_IAsyncResult)] rty; ]
     
 
 let mkCtorMethSpecForDelegate (ilg: ILGlobals) (typ:ILType,useUIntPtr) =
@@ -3263,89 +3131,7 @@ let mkILCustomAttribute ilg (tref,argtys,argvs,propvs) =
     mkILCustomAttribMethRef ilg (mkILNonGenericCtorMethSpec (tref,argtys),argvs,propvs)
 
 let MscorlibScopeRef = ILScopeRef.Assembly (ILAssemblyRef.Create("mscorlib", None, Some ecmaPublicKey, true, None, None))
-let EcmaMscorlibILGlobals = mkILGlobals (false, (fun _ -> MscorlibScopeRef), (fun _ -> Some MscorlibScopeRef))
-
-let tref_CompilerGeneratedAttribute  (ilg: ILGlobals) = ilg.mkSysILTypeRef tname_CompilerGeneratedAttribute
-
-[<Literal>]
-let tname_DebuggerNonUserCodeAttribute = "System.Diagnostics.DebuggerNonUserCodeAttribute"
-[<Literal>]
-let tname_DebuggableAttribute_DebuggingModes = "DebuggingModes"
-[<Literal>]
-let tname_DebuggerHiddenAttribute = "System.Diagnostics.DebuggerHiddenAttribute"
-[<Literal>]
-let tname_DebuggerDisplayAttribute = "System.Diagnostics.DebuggerDisplayAttribute"
-[<Literal>]
-let tname_DebuggerTypeProxyAttribute = "System.Diagnostics.DebuggerTypeProxyAttribute"
-[<Literal>]
-let tname_DebuggerStepThroughAttribute = "System.Diagnostics.DebuggerStepThroughAttribute"
-[<Literal>]
-let tname_DebuggerBrowsableAttribute = "System.Diagnostics.DebuggerBrowsableAttribute"
-[<Literal>]
-let tname_DebuggerBrowsableState = "System.Diagnostics.DebuggerBrowsableState"
-
-let mkSystemDiagnosticsDebugTypeRef (ilg : ILGlobals) typeName = ilg.mkSysILTypeRef typeName
-let mkSystemDiagnosticsDebuggableTypeRef (ilg : ILGlobals) = ilg.mkSysILTypeRef tname_DebuggableAttribute
-let tref_DebuggableAttribute_DebuggingModes (ilg : ILGlobals) = mkILTyRefInTyRef (mkSystemDiagnosticsDebuggableTypeRef ilg, tname_DebuggableAttribute_DebuggingModes)
-
-
-type ILGlobals with
-    member this.mkDebuggerNonUserCodeAttribute() = mkILCustomAttribute this (mkSystemDiagnosticsDebugTypeRef this tname_DebuggerNonUserCodeAttribute, [], [], [])
-    member this.mkDebuggerHiddenAttribute()      = mkILCustomAttribute this (mkSystemDiagnosticsDebugTypeRef this tname_DebuggerHiddenAttribute, [], [], [])
-    member this.mkDebuggerDisplayAttribute s     = mkILCustomAttribute this (mkSystemDiagnosticsDebugTypeRef this tname_DebuggerDisplayAttribute, [this.typ_String],[ILAttribElem.String (Some s)],[])
-    member this.mkDebuggerTypeProxyAttribute (ty : ILType) = mkILCustomAttribute this (mkSystemDiagnosticsDebugTypeRef this tname_DebuggerTypeProxyAttribute,  [this.typ_Type],[ILAttribElem.TypeRef (Some ty.TypeRef)],[])
-    member this.tref_DebuggerBrowsableAttribute n = 
-        let typ_DebuggerBrowsableState = 
-            let tref = mkSystemDiagnosticsDebugTypeRef this tname_DebuggerBrowsableState
-            ILType.Value (mkILNonGenericTySpec tref)
-        mkILCustomAttribute this (mkSystemDiagnosticsDebugTypeRef this tname_DebuggerBrowsableAttribute, [typ_DebuggerBrowsableState],[ILAttribElem.Int32 n],[])
-
-    member this.mkDebuggerBrowsableNeverAttribute() = 
-        match this.debuggerBrowsableNeverAttributeCache with
-        | None ->
-            let res = this.tref_DebuggerBrowsableAttribute 0
-            this.debuggerBrowsableNeverAttributeCache <- Some res
-            res
-        | Some res -> res
-
-    member this.mkDebuggerStepThroughAttribute() = mkILCustomAttribute this (mkSystemDiagnosticsDebugTypeRef this tname_DebuggerStepThroughAttribute, [], [], [])
-    member this.mkDebuggableAttribute (jitOptimizerDisabled) =
-        mkILCustomAttribute this (mkSystemDiagnosticsDebuggableTypeRef this, [this.typ_Bool; this.typ_Bool], [ILAttribElem.Bool false; ILAttribElem.Bool jitOptimizerDisabled], [])
-
-
-    member this.mkDebuggableAttributeV2(jitTracking, ignoreSymbolStoreSequencePoints, jitOptimizerDisabled, enableEnC) =
-        let tref = mkSystemDiagnosticsDebuggableTypeRef this
-        let debuggingMode = (if jitTracking then 1 else 0) |||
-                            (if jitOptimizerDisabled then 256 else 0) |||  
-                            (if ignoreSymbolStoreSequencePoints then 2 else 0) |||
-                            (if enableEnC then 4 else 0)
-        mkILCustomAttribute this 
-          (tref,[mkILNonGenericValueTy (tref_DebuggableAttribute_DebuggingModes this)],
-           (* See System.Diagnostics.DebuggableAttribute.DebuggingModes *)
-           [ILAttribElem.Int32( debuggingMode )],[])
-
-    member this.mkCompilerGeneratedAttribute () = mkILCustomAttribute this (tref_CompilerGeneratedAttribute this, [], [], [])
-
-// Requests attributes to be added to compiler generated methods.
-let addGeneratedAttrs (ilg: ILGlobals) (attrs: ILAttributes) = 
-    let attribs = 
-       match ilg.generatedAttribsCache with 
-       | [] -> 
-           let res = [ if not ilg.noDebugData then
-                        yield ilg.mkCompilerGeneratedAttribute()
-                        yield ilg.mkDebuggerNonUserCodeAttribute()]
-           ilg.generatedAttribsCache <- res
-           res
-       | res -> res
-    mkILCustomAttrs (attrs.AsList @ attribs)
-
-let addMethodGeneratedAttrs ilg (mdef:ILMethodDef)   = {mdef with CustomAttrs   = addGeneratedAttrs ilg mdef.CustomAttrs}
-let addPropertyGeneratedAttrs ilg (pdef:ILPropertyDef) = {pdef with CustomAttrs = addGeneratedAttrs ilg pdef.CustomAttrs}
-let addFieldGeneratedAttrs ilg (fdef:ILFieldDef) = {fdef with CustomAttrs = addGeneratedAttrs ilg fdef.CustomAttrs}
-
-let add_never_attrs (ilg : ILGlobals) (attrs: ILAttributes) = mkILCustomAttrs (attrs.AsList @ [ilg.mkDebuggerBrowsableNeverAttribute()])
-let addPropertyNeverAttrs ilg (pdef:ILPropertyDef) = {pdef with CustomAttrs = add_never_attrs ilg pdef.CustomAttrs}
-let addFieldNeverAttrs ilg (fdef:ILFieldDef) = {fdef with CustomAttrs = add_never_attrs ilg fdef.CustomAttrs}
+let EcmaMscorlibILGlobals = mkILGlobals MscorlibScopeRef
 
 
 // PermissionSet is a 'blob' having the following format:

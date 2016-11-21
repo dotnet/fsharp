@@ -375,8 +375,8 @@ let mkTyconRefInst (tcref:TyconRef) tinst = mkTyconInst tcref.Deref tinst
 // Basic equalites
 //---------------------------------------------------------------------------
 
-let tyconRefEq g tcref1 tcref2 = primEntityRefEq g.compilingFslib g.fslibCcu tcref1 tcref2
-let valRefEq g vref1 vref2 = primValRefEq g.compilingFslib g.fslibCcu vref1 vref2
+let tyconRefEq (g:TcGlobals) tcref1 tcref2 = primEntityRefEq g.compilingFslib g.fslibCcu tcref1 tcref2
+let valRefEq (g:TcGlobals) vref1 vref2 = primValRefEq g.compilingFslib g.fslibCcu vref1 vref2
 
 //---------------------------------------------------------------------------
 // Remove inference equations and abbreviations from units
@@ -538,10 +538,10 @@ let tryNormalizeMeasureInType g ty =
 // Some basic type builders
 //---------------------------------------------------------------------------
 
-let mkNativePtrTy g ty = TType_app (g.nativeptr_tcr, [ty])
-let mkByrefTy g ty = TType_app (g.byref_tcr, [ty])
+let mkNativePtrTy (g:TcGlobals) ty = TType_app (g.nativeptr_tcr, [ty])
+let mkByrefTy (g:TcGlobals) ty = TType_app (g.byref_tcr, [ty])
 
-let mkArrayTy g rank ty m =
+let mkArrayTy (g:TcGlobals) rank ty m =
     if rank < 1 || rank > 32 then
         // TODO : Provide a better message for zero/negative inputs here.
         errorR(Error(FSComp.SR.tastopsMaxArrayThirtyTwo(),m));
@@ -577,7 +577,7 @@ let isCompiledTupleTyconRef g tcref =
          tyconRefEq g g.struct_tuple8_tcr x) -> true
     | _ -> false
 
-let mkCompiledTupleTyconRef g isStruct tys = 
+let mkCompiledTupleTyconRef (g:TcGlobals) isStruct tys = 
     let n = List.length tys 
     if   n = 1 then (if isStruct then g.struct_tuple1_tcr else g.ref_tuple1_tcr)
     elif n = 2 then (if isStruct then g.struct_tuple2_tcr else g.ref_tuple2_tcr)
@@ -614,7 +614,7 @@ let reduceTyconAbbrev (tycon:Tycon) tyargs =
 let reduceTyconRefAbbrev (tcref:TyconRef) tyargs = 
     reduceTyconAbbrev tcref.Deref tyargs
 
-let reduceTyconMeasureableOrProvided g (tycon:Tycon) tyargs = 
+let reduceTyconMeasureableOrProvided (g:TcGlobals) (tycon:Tycon) tyargs = 
     ignore g
     let repr = tycon.TypeReprInfo
     match repr with 
@@ -653,7 +653,7 @@ let evalTupInfoIsStruct aexpr =
 /// and measureable types (float<_>).
 /// It also optionally erases all "compilation representations", i.e. function and
 /// tuple types, and also "nativeptr<'T> --> System.IntPtr"
-let rec stripTyEqnsAndErase eraseFuncAndTuple g ty =
+let rec stripTyEqnsAndErase eraseFuncAndTuple (g:TcGlobals) ty =
     let ty = stripTyEqns g ty
     match ty with
     | TType_app (tcref,args) -> 
@@ -1176,8 +1176,8 @@ let isBeingGeneralized tp typeScheme =
 // Build conditional expressions...
 //------------------------------------------------------------------------- 
 
-let mkLazyAnd g m e1 e2 = mkCond NoSequencePointAtStickyBinding SuppressSequencePointAtTarget m g.bool_ty e1 e2 (Expr.Const(Const.Bool false,m,g.bool_ty))
-let mkLazyOr g m e1 e2 = mkCond NoSequencePointAtStickyBinding SuppressSequencePointAtTarget m g.bool_ty e1 (Expr.Const(Const.Bool true,m,g.bool_ty)) e2
+let mkLazyAnd (g:TcGlobals) m e1 e2 = mkCond NoSequencePointAtStickyBinding SuppressSequencePointAtTarget m g.bool_ty e1 e2 (Expr.Const(Const.Bool false,m,g.bool_ty))
+let mkLazyOr (g:TcGlobals) m e1 e2 = mkCond NoSequencePointAtStickyBinding SuppressSequencePointAtTarget m g.bool_ty e1 (Expr.Const(Const.Bool true,m,g.bool_ty)) e2
 
 let mkCoerceExpr(e,to_ty,m,from_ty)                     = Expr.Op (TOp.Coerce,[to_ty;from_ty],[e],m)
 
@@ -1222,20 +1222,20 @@ let mkUnionCaseFieldSet (e1,cref,tinst,j,e2,m)         = Expr.Op (TOp.UnionCaseF
 let mkExnCaseFieldGet (e1,ecref,j,m)             = Expr.Op (TOp.ExnFieldGet(ecref,j), [],[e1],m)
 let mkExnCaseFieldSet (e1,ecref,j,e2,m)          = Expr.Op (TOp.ExnFieldSet(ecref,j), [],[e1;e2],m)
 
-let mkDummyLambda g (e:Expr,ety) = 
+let mkDummyLambda (g:TcGlobals) (e:Expr,ety) = 
     let m = e.Range
     mkLambda m (fst (mkCompGenLocal m "unitVar" g.unit_ty)) (e,ety)
                            
-let mkWhile       g (spWhile,marker,e1,e2,m)             = 
+let mkWhile (g:TcGlobals) (spWhile,marker,e1,e2,m)             = 
     Expr.Op (TOp.While (spWhile,marker),[]  ,[mkDummyLambda g (e1,g.bool_ty);mkDummyLambda g (e2,g.unit_ty)],m)
 
-let mkFor         g (spFor,v,e1,dir,e2,e3:Expr,m)    = 
+let mkFor (g:TcGlobals) (spFor,v,e1,dir,e2,e3:Expr,m)    = 
     Expr.Op (TOp.For (spFor,dir)    ,[]  ,[mkDummyLambda g (e1,g.int_ty) ;mkDummyLambda g (e2,g.int_ty);mkLambda e3.Range v (e3,g.unit_ty)],m)
 
-let mkTryWith   g (e1,vf,ef:Expr,vh,eh:Expr,m,ty,spTry,spWith) = 
+let mkTryWith g (e1,vf,ef:Expr,vh,eh:Expr,m,ty,spTry,spWith) = 
     Expr.Op (TOp.TryCatch(spTry,spWith),[ty],[mkDummyLambda g (e1,ty);mkLambda ef.Range vf (ef,ty);mkLambda eh.Range vh (eh,ty)],m)
 
-let mkTryFinally g (e1,e2,m,ty,spTry,spFinally)          = 
+let mkTryFinally (g:TcGlobals) (e1,e2,m,ty,spTry,spFinally)          = 
     Expr.Op (TOp.TryFinally(spTry,spFinally),[ty],[mkDummyLambda g (e1,ty);mkDummyLambda g (e2,g.unit_ty)],m)
 
 let mkDefault (m,ty) = Expr.Const(Const.Zero,m,ty) 
@@ -1438,11 +1438,11 @@ let IsCompiledAsStaticPropertyWithField g (v:Val) =
 // Multi-dimensional array types...
 //-------------------------------------------------------------------------
 
-let isArrayTyconRef g tcr =
+let isArrayTyconRef (g:TcGlobals) tcr =
     g.il_arr_tcr_map
     |> Array.exists (tyconRefEq g tcr)
 
-let rankOfArrayTyconRef g tcr =
+let rankOfArrayTyconRef (g:TcGlobals) tcr =
     match g.il_arr_tcr_map |> Array.tryFindIndex (tyconRefEq g tcr) with
     | Some idx ->
         idx + 1
@@ -2144,7 +2144,7 @@ let ArgInfosOfMemberVal g (v:Val) =
 let ArgInfosOfMember g (vref: ValRef) = 
     ArgInfosOfMemberVal g vref.Deref
 
-let GetFSharpViewOfReturnType g retTy =
+let GetFSharpViewOfReturnType (g:TcGlobals) retTy =
     match retTy with 
     | None -> g.unit_ty
     | Some retTy ->  retTy
@@ -2550,7 +2550,7 @@ let trimPathByDisplayEnv denv path =
     | None ->  if isNil path then "" else textOfPath path + "."
 
 
-let superOfTycon g (tycon:Tycon) = 
+let superOfTycon (g:TcGlobals) (tycon:Tycon) = 
     match tycon.TypeContents.tcaug_super with 
     | None -> g.obj_ty 
     | Some ty -> ty 
@@ -2560,9 +2560,13 @@ let superOfTycon g (tycon:Tycon) =
 //----------------------------------------------------------------------------
 
 // AbsIL view of attributes (we read these from .NET binaries) 
+let isILAttribByName (tencl:string list, tname: string) (attr: ILAttribute) = 
+    (attr.Method.EnclosingType.TypeSpec.Name = tname) &&
+    (attr.Method.EnclosingType.TypeSpec.Enclosing = tencl)
+
+// AbsIL view of attributes (we read these from .NET binaries) 
 let isILAttrib (tref:ILTypeRef) (attr: ILAttribute) = 
-    (attr.Method.EnclosingType.TypeSpec.Name = tref.Name) &&
-    (attr.Method.EnclosingType.TypeSpec.Enclosing = tref.Enclosing)
+    isILAttribByName (tref.Enclosing, tref.Name) attr
 
 // REVIEW: consider supporting querying on Abstract IL custom attributes.
 // These linear iterations cost us a fair bit when there are lots of attributes
@@ -2570,7 +2574,9 @@ let isILAttrib (tref:ILTypeRef) (attr: ILAttribute) =
 // results of attribute lookups in the TAST
 let HasILAttribute tref (attrs: ILAttributes) = List.exists (isILAttrib tref) attrs.AsList
 
-let TryDecodeILAttribute g tref (attrs: ILAttributes) = 
+let HasILAttributeByName tname (attrs: ILAttributes) = List.exists (isILAttribByName ([],tname)) attrs.AsList
+
+let TryDecodeILAttribute (g:TcGlobals) tref (attrs: ILAttributes) = 
     attrs.AsList |> List.tryPick(fun x -> if isILAttrib tref x then Some(decodeILAttribData g.ilg x)  else None)
 
 // This one is done by name to ensure the compiler doesn't take a dependency on dereferencing a type that only exists in .NET 3.5
@@ -2704,17 +2710,17 @@ let StripSelfRefCell(g:TcGlobals,baseOrThisInfo:ValBaseOrThisInfo,tau: TType) : 
         then destRefCellTy g tau 
         else tau
 
-let mkRefCellTy  g ty = TType_app(g.refcell_tcr_nice,[ty])
+let mkRefCellTy (g:TcGlobals) ty = TType_app(g.refcell_tcr_nice,[ty])
 
-let mkLazyTy g ty = TType_app(g.lazy_tcr_nice,[ty])
+let mkLazyTy (g:TcGlobals) ty = TType_app(g.lazy_tcr_nice,[ty])
 
-let mkPrintfFormatTy g aty bty cty dty ety = TType_app(g.format_tcr, [aty;bty;cty;dty; ety])
+let mkPrintfFormatTy (g:TcGlobals) aty bty cty dty ety = TType_app(g.format_tcr, [aty;bty;cty;dty; ety])
 
-let mkOptionTy g ty = TType_app (g.option_tcr_nice, [ty])
+let mkOptionTy (g:TcGlobals) ty = TType_app (g.option_tcr_nice, [ty])
 
-let mkListTy g ty = TType_app (g.list_tcr_nice, [ty])
+let mkListTy (g:TcGlobals) ty = TType_app (g.list_tcr_nice, [ty])
 
-let isOptionTy g ty = 
+let isOptionTy (g:TcGlobals) ty = 
     match tryDestAppTy g ty with 
     | None -> false
     | Some tcref -> tyconRefEq g g.option_tcr_canon tcref
@@ -2744,8 +2750,8 @@ let destLinqExpressionTy g ty =
     | Some ty -> ty
     | None -> failwith "destLinqExpressionTy: not an expression type"
 
-let mkNoneCase g = mkUnionCaseRef g.option_tcr_canon "None"
-let mkSomeCase g = mkUnionCaseRef g.option_tcr_canon "Some"
+let mkNoneCase (g:TcGlobals) = mkUnionCaseRef g.option_tcr_canon "None"
+let mkSomeCase (g:TcGlobals) = mkUnionCaseRef g.option_tcr_canon "Some"
 
 type ValRef with 
     member vref.IsDispatchSlot = 
@@ -4337,7 +4343,7 @@ let InferArityOfExprBinding g (v:Val) e =
 // implementations
 //------------------------------------------------------------------------- 
 
-let underlyingTypeOfEnumTy g typ = 
+let underlyingTypeOfEnumTy (g: TcGlobals) typ = 
     assert(isEnumTy g typ)
     let tycon = tyconOfAppTy g typ
     match metadataOfTy g typ with 
@@ -4546,7 +4552,7 @@ and copyAndRemapAndBindVal g compgen tmenv v =
     fixupValData g compgen tmenvinner v2
     v2, tmenvinner
     
-and remapExpr g (compgen:ValCopyFlag) (tmenv:Remap) x =
+and remapExpr (g: TcGlobals) (compgen:ValCopyFlag) (tmenv:Remap) x =
     match x with
     // Binding constructs - see also dtrees below 
     | Expr.Lambda (_,ctorThisValOpt, baseValOpt,vs,b,m,rty)  -> 
@@ -5090,7 +5096,7 @@ let isExnAllocObservable (_ecref:TyconRef) = true
 // However, within the implementation code reads of the tail cell must in theory be treated 
 // with caution.  Hence we are conservative and within fslib we don't treat list 
 // reads as if they were pure. 
-let isUnionCaseFieldMutable g (ucref:UnionCaseRef) n = 
+let isUnionCaseFieldMutable (g: TcGlobals) (ucref:UnionCaseRef) n = 
     (g.compilingFslib && tyconRefEq g ucref.TyconRef g.list_tcr_canon && n = 1) ||
     (ucref.FieldByIndex n).IsMutable
   
@@ -5112,10 +5118,10 @@ let ComputeFieldName tycon f =
 let isQuotedExprTy g ty =  match ty with AppTy g (tcref,_) -> tyconRefEq g tcref g.expr_tcr | _ -> false
 let destQuotedExprTy g ty =  match ty with AppTy g (_,[ty]) -> ty | _ -> failwith "destQuotedExprTy"
 
-let mkQuotedExprTy g ty =  TType_app(g.expr_tcr,[ty])
-let mkRawQuotedExprTy g =  TType_app(g.raw_expr_tcr,[])
+let mkQuotedExprTy (g:TcGlobals) ty =  TType_app(g.expr_tcr,[ty])
+let mkRawQuotedExprTy (g:TcGlobals) =  TType_app(g.raw_expr_tcr,[])
 
-let mkAnyTupledTy g tupInfo tys = 
+let mkAnyTupledTy (g:TcGlobals) tupInfo tys = 
     match tys with 
     | [] -> g.unit_ty 
     | [h] -> h
@@ -5125,8 +5131,8 @@ let mkRefTupledTy g tys = mkAnyTupledTy g tupInfoRef tys
 let mkRefTupledVarsTy g vs = mkRefTupledTy g (typesOfVals vs)
 
 let mkMethodTy g argtys rty = mkIteratedFunTy (List.map (mkRefTupledTy g) argtys) rty 
-let mkArrayType g ty = TType_app (g.array_tcr_nice, [ty])
-let mkByteArrayTy g = mkArrayType g g.byte_ty
+let mkArrayType (g:TcGlobals) ty = TType_app (g.array_tcr_nice, [ty])
+let mkByteArrayTy (g:TcGlobals) = mkArrayType g g.byte_ty
 
 
 //--------------------------------------------------------------------------
@@ -5432,7 +5438,7 @@ let CanTakeAddressOfImmutableVal g (v:ValRef) mut =
      | PossiblyMutates -> isRecdOrStructTyImmutable g v.Type 
      | DefinitelyMutates -> false)
 
-let MustTakeAddressOfVal g (v:ValRef) = 
+let MustTakeAddressOfVal (g:TcGlobals) (v:ValRef) = 
     v.IsMutable &&
     // We can only take the address of mutable values in the same assembly
     valRefInThisAssembly g.compilingFslib v
@@ -5444,13 +5450,13 @@ let MustTakeAddressOfRecdField (rf: RecdField) =
 
 let MustTakeAddressOfRecdFieldRef (rfref: RecdFieldRef) =  MustTakeAddressOfRecdField rfref.RecdField
 
-let CanTakeAddressOfRecdFieldRef g (rfref: RecdFieldRef) mut tinst =
+let CanTakeAddressOfRecdFieldRef (g:TcGlobals) (rfref: RecdFieldRef) mut tinst =
     mut <> DefinitelyMutates && 
     // We only do this if the field is defined in this assembly because we can't take adddresses across assemblies for immutable fields
     entityRefInThisAssembly g.compilingFslib rfref.TyconRef &&
     isRecdOrStructTyImmutable g (actualTyOfRecdFieldRef rfref tinst)
 
-let CanTakeAddressOfUnionFieldRef g (uref: UnionCaseRef) mut tinst cidx =
+let CanTakeAddressOfUnionFieldRef (g:TcGlobals) (uref: UnionCaseRef) mut tinst cidx =
     mut <> DefinitelyMutates && 
     // We only do this if the field is defined in this assembly because we can't take adddresses across assemblies for immutable fields
     entityRefInThisAssembly g.compilingFslib uref.TyconRef &&
@@ -5815,14 +5821,14 @@ let ExprStats x =
 // 
 //------------------------------------------------------------------------- 
 
-let mkString g m n = Expr.Const(Const.String n,m,g.string_ty)
-let mkBool g m b = Expr.Const(Const.Bool b,m,g.bool_ty)
-let mkByte g m b = Expr.Const(Const.Byte b,m,g.byte_ty)
-let mkUInt16 g m b = Expr.Const(Const.UInt16 b,m,g.uint16_ty)
+let mkString (g:TcGlobals) m n = Expr.Const(Const.String n,m,g.string_ty)
+let mkBool (g:TcGlobals) m b = Expr.Const(Const.Bool b,m,g.bool_ty)
+let mkByte (g:TcGlobals) m b = Expr.Const(Const.Byte b,m,g.byte_ty)
+let mkUInt16 (g:TcGlobals) m b = Expr.Const(Const.UInt16 b,m,g.uint16_ty)
 let mkTrue g m = mkBool g m true
 let mkFalse g m = mkBool g m false
-let mkUnit g m = Expr.Const(Const.Unit,m,g.unit_ty)
-let mkInt32 g m n =  Expr.Const(Const.Int32 n,m,g.int32_ty)
+let mkUnit (g:TcGlobals) m = Expr.Const(Const.Unit,m,g.unit_ty)
+let mkInt32 (g:TcGlobals) m n =  Expr.Const(Const.Int32 n,m,g.int32_ty)
 let mkInt g m n =  mkInt32 g m (n)
 let mkZero g m =  mkInt g m 0
 let mkOne g m =  mkInt g m 1
@@ -5838,11 +5844,11 @@ let destIDelegateEventType g ty   =
         | [ty1] -> ty1
         | _ -> failwith "destIDelegateEventType: internal error"
     else failwith "destIDelegateEventType: not an IDelegateEvent type"
-let mkIEventType g ty1 ty2 = TType_app (g.fslib_IEvent2_tcr, [ty1;ty2])
-let mkIObservableType g ty1 = TType_app (g.tcref_IObservable, [ty1])
-let mkIObserverType g ty1 = TType_app (g.tcref_IObserver, [ty1])
+let mkIEventType (g:TcGlobals) ty1 ty2 = TType_app (g.fslib_IEvent2_tcr, [ty1;ty2])
+let mkIObservableType (g:TcGlobals) ty1 = TType_app (g.tcref_IObservable, [ty1])
+let mkIObserverType (g:TcGlobals) ty1 = TType_app (g.tcref_IObserver, [ty1])
 
-let mkRefCellContentsRef g  = mkRecdFieldRef g.refcell_tcr_canon "contents"
+let mkRefCellContentsRef (g:TcGlobals) = mkRecdFieldRef g.refcell_tcr_canon "contents"
 
 let mkSequential spSeq m e1 e2 = Expr.Sequential(e1,e2,NormalSeq,spSeq,m)
 let mkCompGenSequential m e1 e2 = mkSequential SuppressSequencePointOnExprOfSequential m e1 e2
@@ -5959,8 +5965,8 @@ let mkRefCell     g m ty e = mkRecordExpr g (RecdExpr,g.refcell_tcr_canon,[ty],[
 let mkRefCellGet g m ty e = mkRecdFieldGetViaExprAddr (e,mkRefCellContentsRef g,[ty],m)
 let mkRefCellSet g m ty e1 e2 = mkRecdFieldSetViaExprAddr (e1,mkRefCellContentsRef g,[ty],e2,m)
 
-let mkNil g m ty = mkUnionCaseExpr (g.nil_ucref,[ty],[],m)
-let mkCons g ty h t = mkUnionCaseExpr (g.cons_ucref,[ty],[h;t],unionRanges h.Range t.Range)
+let mkNil (g:TcGlobals) m ty = mkUnionCaseExpr (g.nil_ucref,[ty],[],m)
+let mkCons (g:TcGlobals) ty h t = mkUnionCaseExpr (g.cons_ucref,[ty],[h;t],unionRanges h.Range t.Range)
 
 let mkCompGenLocalAndInvisbleBind g nm m e = 
     let locv,loce = mkCompGenLocal m nm (tyOfExpr g e)
@@ -5977,52 +5983,57 @@ let mkUnbox ty e m = mkAsmExpr ([ unbox ], [ty],[e], [ ty ], m)
 let mkBox ty e m = mkAsmExpr ([box],[],[e],[ty],m)
 let mkIsInst ty e m = mkAsmExpr ([ isinst ], [ty],[e], [ ty ], m)
 
-let mspec_Object_GetHashCode (ilg: ILGlobals) = IL.mkILNonGenericInstanceMethSpecInTy(ilg.typ_Object,"GetHashCode",[],ilg.typ_Int32)
-let mspec_Type_GetTypeFromHandle (ilg: ILGlobals) = IL.mkILNonGenericStaticMethSpecInTy(ilg.typ_Type,"GetTypeFromHandle",[ilg.typ_RuntimeTypeHandle],ilg.typ_Type)
-let mspec_String_Length (ilg: ILGlobals) = mkILNonGenericInstanceMethSpecInTy (ilg.typ_String, "get_Length", [], ilg.typ_Int32)
+let mspec_Type_GetTypeFromHandle (g: TcGlobals) = IL.mkILNonGenericStaticMethSpecInTy(g.ilg.typ_Type,"GetTypeFromHandle",[g.iltyp_RuntimeTypeHandle],g.ilg.typ_Type)
+let mspec_String_Length (g: TcGlobals) = mkILNonGenericInstanceMethSpecInTy (g.ilg.typ_String, "get_Length", [], g.ilg.typ_Int32)
 
-let fspec_Missing_Value (ilg: ILGlobals) = IL.mkILFieldSpecInTy(ilg.typ_Missing, "Value", ilg.typ_Missing)
+let fspec_Missing_Value (g: TcGlobals) = IL.mkILFieldSpecInTy(g.iltyp_Missing, "Value", g.iltyp_Missing)
+
+let mkInitializeArrayMethSpec (g: TcGlobals) = 
+  mkILNonGenericStaticMethSpecInTy(mkILNonGenericBoxedTy(g.MkSysILTypeRef "System.Runtime.CompilerServices.RuntimeHelpers"),"InitializeArray", [g.ilg.typ_Array;g.iltyp_RuntimeFieldHandle], ILType.Void)
+
+let mkInvalidCastExnNewobj (g: TcGlobals)  = 
+  mkNormalNewobj (mkILCtorMethSpecForTy (mkILNonGenericBoxedTy (g.MkSysILTypeRef "System.InvalidCastException"), []))
 
 
 let typedExprForIntrinsic _g m (IntrinsicValRef(_,_,_,ty,_) as i) =
     let vref = ValRefForIntrinsic i
     exprForValRef m vref,ty
 
-let mkCallGetGenericComparer g m = typedExprForIntrinsic g m g.get_generic_comparer_info |> fst
-let mkCallGetGenericEREqualityComparer g m = typedExprForIntrinsic g m g.get_generic_er_equality_comparer_info |> fst
-let mkCallGetGenericPEREqualityComparer g m = typedExprForIntrinsic g m g.get_generic_per_equality_comparer_info |> fst
-let mkCallUnbox                g m ty e1    = mkApps g (typedExprForIntrinsic g m g.unbox_info,       [[ty]], [ e1 ],  m)
-let mkCallUnboxFast            g m ty e1    = mkApps g (typedExprForIntrinsic g m g.unbox_fast_info,  [[ty]], [ e1 ],  m)
-let mkCallTypeTest             g m ty e1    = mkApps g (typedExprForIntrinsic g m g.istype_info,      [[ty]], [ e1 ],  m)
-let mkCallTypeOf               g m ty       = mkApps g (typedExprForIntrinsic g m g.typeof_info,      [[ty]], [ ],  m)
-let mkCallTypeDefOf            g m ty       = mkApps g (typedExprForIntrinsic g m g.typedefof_info,   [[ty]], [ ],  m)
+let mkCallGetGenericComparer (g:TcGlobals) m = typedExprForIntrinsic g m g.get_generic_comparer_info |> fst
+let mkCallGetGenericEREqualityComparer (g:TcGlobals) m = typedExprForIntrinsic g m g.get_generic_er_equality_comparer_info |> fst
+let mkCallGetGenericPEREqualityComparer (g:TcGlobals) m = typedExprForIntrinsic g m g.get_generic_per_equality_comparer_info |> fst
+let mkCallUnbox                (g:TcGlobals) m ty e1    = mkApps g (typedExprForIntrinsic g m g.unbox_info,       [[ty]], [ e1 ],  m)
+let mkCallUnboxFast            (g:TcGlobals) m ty e1    = mkApps g (typedExprForIntrinsic g m g.unbox_fast_info,  [[ty]], [ e1 ],  m)
+let mkCallTypeTest             (g:TcGlobals) m ty e1    = mkApps g (typedExprForIntrinsic g m g.istype_info,      [[ty]], [ e1 ],  m)
+let mkCallTypeOf               (g:TcGlobals) m ty       = mkApps g (typedExprForIntrinsic g m g.typeof_info,      [[ty]], [ ],  m)
+let mkCallTypeDefOf            (g:TcGlobals) m ty       = mkApps g (typedExprForIntrinsic g m g.typedefof_info,   [[ty]], [ ],  m)
 
      
-let mkCallDispose              g m ty e1         = mkApps g (typedExprForIntrinsic g m g.dispose_info,                  [[ty]], [ e1 ],  m)
-let mkCallSeq                  g m ty e1         = mkApps g (typedExprForIntrinsic g m g.seq_info,                      [[ty]], [ e1 ],  m)
-let mkCallCreateInstance       g m ty            = mkApps g (typedExprForIntrinsic g m g.create_instance_info,          [[ty]], [ mkUnit g m ],  m)
+let mkCallDispose              (g:TcGlobals) m ty e1         = mkApps g (typedExprForIntrinsic g m g.dispose_info,                  [[ty]], [ e1 ],  m)
+let mkCallSeq                  (g:TcGlobals) m ty e1         = mkApps g (typedExprForIntrinsic g m g.seq_info,                      [[ty]], [ e1 ],  m)
+let mkCallCreateInstance       (g:TcGlobals) m ty            = mkApps g (typedExprForIntrinsic g m g.create_instance_info,          [[ty]], [ mkUnit g m ],  m)
 
-let mkCallGetQuerySourceAsEnumerable                  g m ty1 ty2 e1         = mkApps g (typedExprForIntrinsic g m g.query_source_as_enum_info,                      [[ty1;ty2]], [ e1; mkUnit g m  ],  m)
-let mkCallNewQuerySource                  g m ty1 ty2 e1         = mkApps g (typedExprForIntrinsic g m g.new_query_source_info,                      [[ty1;ty2]], [ e1 ],  m)
+let mkCallGetQuerySourceAsEnumerable      (g:TcGlobals) m ty1 ty2 e1         = mkApps g (typedExprForIntrinsic g m g.query_source_as_enum_info,                      [[ty1;ty2]], [ e1; mkUnit g m  ],  m)
+let mkCallNewQuerySource                  (g:TcGlobals) m ty1 ty2 e1         = mkApps g (typedExprForIntrinsic g m g.new_query_source_info,                      [[ty1;ty2]], [ e1 ],  m)
 
-let mkCallCreateEvent                        g m ty1 ty2 e1 e2 e3 = mkApps g (typedExprForIntrinsic g m g.create_event_info,          [[ty1;ty2]], [ e1;e2;e3 ],  m)
-let mkCallGenericComparisonWithComparerOuter g m ty comp e1 e2    = mkApps g (typedExprForIntrinsic g m g.generic_comparison_withc_outer_info, [[ty]], [  comp;e1;e2 ],  m)
-let mkCallEqualsOperator                     g m ty e1 e2         = mkApps g (typedExprForIntrinsic g m g.equals_operator_info,        [[ty]], [  e1;e2 ],  m)
-let mkCallGenericEqualityEROuter             g m ty e1 e2         = mkApps g (typedExprForIntrinsic g m g.generic_equality_er_outer_info,        [[ty]], [  e1;e2 ],  m)
-let mkCallGenericEqualityWithComparerOuter   g m ty comp e1 e2    = mkApps g (typedExprForIntrinsic g m g.generic_equality_withc_outer_info,  [[ty]], [comp;e1;e2], m)
-let mkCallGenericHashWithComparerOuter       g m ty comp e1       = mkApps g (typedExprForIntrinsic g m g.generic_hash_withc_outer_info,    [[ty]], [comp;e1], m)
+let mkCallCreateEvent                        (g:TcGlobals) m ty1 ty2 e1 e2 e3 = mkApps g (typedExprForIntrinsic g m g.create_event_info,          [[ty1;ty2]], [ e1;e2;e3 ],  m)
+let mkCallGenericComparisonWithComparerOuter (g:TcGlobals) m ty comp e1 e2    = mkApps g (typedExprForIntrinsic g m g.generic_comparison_withc_outer_info, [[ty]], [  comp;e1;e2 ],  m)
+let mkCallEqualsOperator                     (g:TcGlobals) m ty e1 e2         = mkApps g (typedExprForIntrinsic g m g.equals_operator_info,        [[ty]], [  e1;e2 ],  m)
+let mkCallGenericEqualityEROuter             (g:TcGlobals) m ty e1 e2         = mkApps g (typedExprForIntrinsic g m g.generic_equality_er_outer_info,        [[ty]], [  e1;e2 ],  m)
+let mkCallGenericEqualityWithComparerOuter   (g:TcGlobals) m ty comp e1 e2    = mkApps g (typedExprForIntrinsic g m g.generic_equality_withc_outer_info,  [[ty]], [comp;e1;e2], m)
+let mkCallGenericHashWithComparerOuter       (g:TcGlobals) m ty comp e1       = mkApps g (typedExprForIntrinsic g m g.generic_hash_withc_outer_info,    [[ty]], [comp;e1], m)
 
-let mkCallSubtractionOperator g m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_subtraction_info, [[ty; ty; ty]], [e1;e2], m)
+let mkCallSubtractionOperator (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_subtraction_info, [[ty; ty; ty]], [e1;e2], m)
 
-let mkCallArrayLength g m ty el                    = mkApps g (typedExprForIntrinsic g m g.array_length_info, [[ty]], [el], m)
-let mkCallArrayGet   g m ty e1 e2                  = mkApps g (typedExprForIntrinsic g m g.array_get_info, [[ty]], [ e1 ; e2 ],  m)
-let mkCallArray2DGet g m ty e1 idx1 idx2           = mkApps g (typedExprForIntrinsic g m g.array2D_get_info, [[ty]], [ e1 ; idx1; idx2 ],  m)
-let mkCallArray3DGet g m ty e1 idx1 idx2 idx3      = mkApps g (typedExprForIntrinsic g m g.array3D_get_info, [[ty]], [ e1 ; idx1; idx2; idx3 ],  m)
-let mkCallArray4DGet g m ty e1 idx1 idx2 idx3 idx4 = mkApps g (typedExprForIntrinsic g m g.array4D_get_info, [[ty]], [ e1 ; idx1; idx2; idx3; idx4 ],  m)
-let mkCallNewDecimal g m (e1,e2,e3,e4,e5)          = mkApps g (typedExprForIntrinsic g m g.new_decimal_info, [], [ e1;e2;e3;e4;e5 ],  m)
+let mkCallArrayLength (g:TcGlobals) m ty el                    = mkApps g (typedExprForIntrinsic g m g.array_length_info, [[ty]], [el], m)
+let mkCallArrayGet   (g:TcGlobals) m ty e1 e2                  = mkApps g (typedExprForIntrinsic g m g.array_get_info, [[ty]], [ e1 ; e2 ],  m)
+let mkCallArray2DGet (g:TcGlobals) m ty e1 idx1 idx2           = mkApps g (typedExprForIntrinsic g m g.array2D_get_info, [[ty]], [ e1 ; idx1; idx2 ],  m)
+let mkCallArray3DGet (g:TcGlobals) m ty e1 idx1 idx2 idx3      = mkApps g (typedExprForIntrinsic g m g.array3D_get_info, [[ty]], [ e1 ; idx1; idx2; idx3 ],  m)
+let mkCallArray4DGet (g:TcGlobals) m ty e1 idx1 idx2 idx3 idx4 = mkApps g (typedExprForIntrinsic g m g.array4D_get_info, [[ty]], [ e1 ; idx1; idx2; idx3; idx4 ],  m)
+let mkCallNewDecimal (g:TcGlobals) m (e1,e2,e3,e4,e5)          = mkApps g (typedExprForIntrinsic g m g.new_decimal_info, [], [ e1;e2;e3;e4;e5 ],  m)
 
-let mkCallNewFormat g m aty bty cty dty ety e1    = mkApps g (typedExprForIntrinsic g m g.new_format_info, [[aty;bty;cty;dty;ety]], [ e1 ],  m)
-let mkCallRaise     g m aty e1    = mkApps g (typedExprForIntrinsic g m g.raise_info, [[aty]], [ e1 ],  m)
+let mkCallNewFormat (g:TcGlobals) m aty bty cty dty ety e1    = mkApps g (typedExprForIntrinsic g m g.new_format_info, [[aty;bty;cty;dty;ety]], [ e1 ],  m)
+let mkCallRaise     (g:TcGlobals) m aty e1    = mkApps g (typedExprForIntrinsic g m g.raise_info, [[aty]], [ e1 ],  m)
 
 let TryEliminateDesugaredConstants g m c = 
     match c with 
@@ -6036,8 +6047,8 @@ let TryEliminateDesugaredConstants g m c =
     | _ -> 
         None
 
-let mkSeqTy g ty = mkAppTy g.seq_tcr [ty] 
-let mkIEnumeratorTy g ty = mkAppTy g.tcref_System_Collections_Generic_IEnumerator [ty] 
+let mkSeqTy (g:TcGlobals) ty = mkAppTy g.seq_tcr [ty] 
+let mkIEnumeratorTy (g:TcGlobals) ty = mkAppTy g.tcref_System_Collections_Generic_IEnumerator [ty] 
 
 let mkCallSeqCollect g m alphaTy betaTy arg1 arg2 = 
     let enumty2 = try rangeOfFunTy g (tyOfExpr g arg1) with _ -> (* defensive programming *) (mkSeqTy g betaTy)
@@ -6090,7 +6101,7 @@ let mkCallDeserializeQuotationFSharp40Plus g m e1 e2 e3 e4 e5 =
 let mkCallCastQuotation g m ty e1 = 
     mkApps g (typedExprForIntrinsic g m g.cast_quotation_info, [[ty]], [ e1 ],  m)
 
-let mkCallLiftValueWithName g m ty nm e1 = 
+let mkCallLiftValueWithName (g:TcGlobals) m ty nm e1 = 
     let vref = ValRefForIntrinsic g.lift_value_with_name_info 
     // Use "Expr.ValueWithName" if it exists in FSharp.Core
     match vref.TryDeref with
@@ -6130,7 +6141,7 @@ let mkLazyForce g m ty e = mkApps g (typedExprForIntrinsic g m g.lazy_force_info
 let mkGetString g m e1 e2 = mkApps g (typedExprForIntrinsic g m g.getstring_info, [], [e1;e2], m)
 let mkGetStringChar = mkGetString
 let mkGetStringLength g m e =
-    let mspec = mspec_String_Length g.ilg
+    let mspec = mspec_String_Length g
     /// ILCall(useCallvirt,isProtected,valu,newobj,valUseFlags,isProp,noTailCall,mref,actualTypeInst,actualMethInst, retTy)
     Expr.Op(TOp.ILCall(false,false,false,false,ValUseFlag.NormalValUse,true,false,mspec.MethodRef,[],[],[g.int32_ty]),[],[e],m)
 
@@ -6141,23 +6152,23 @@ let mkGetStringLength g m e =
 // Hence each of the following are marked with places where they are generated.
 
 // Generated by the optimizer and the encoding of 'for' loops     
-let mkDecr g m e = mkAsmExpr([ IL.AI_sub  ],[],[e; mkOne g m],[g.int_ty],m)
-let mkIncr g m e = mkAsmExpr([ IL.AI_add  ],[],[mkOne g m; e],[g.int_ty],m)
+let mkDecr (g:TcGlobals) m e = mkAsmExpr([ IL.AI_sub  ],[],[e; mkOne g m],[g.int_ty],m)
+let mkIncr (g:TcGlobals) m e = mkAsmExpr([ IL.AI_add  ],[],[mkOne g m; e],[g.int_ty],m)
 
 // Generated by the pattern match compiler and the optimizer for
 //    1. array patterns
 //    2. optimizations associated with getting 'for' loops into the shape expected by the JIT.
 // 
 // NOTE: The conv.i4 assumes that int_ty is int32. Note: ldlen returns native UNSIGNED int 
-let mkLdlen g m arre = mkAsmExpr ([ IL.I_ldlen; (IL.AI_conv IL.DT_I4) ],[],[ arre ], [ g.int_ty ], m)
+let mkLdlen (g:TcGlobals) m arre = mkAsmExpr ([ IL.I_ldlen; (IL.AI_conv IL.DT_I4) ],[],[ arre ], [ g.int_ty ], m)
 let mkLdelem (_g:TcGlobals) m ty arre idxe = mkAsmExpr ([ IL.I_ldelem_any (ILArrayShape.SingleDimensional, mkILTyvarTy 0us) ],[ty],[ arre;idxe ], [ ty ], m)
 
 // This is generated in equality/compare/hash augmentations and in the pattern match compiler.
 // It is understood by the quotation processor and turned into "Equality" nodes.
 //
 // Note: this is IL assembly code, don't go inserting this in expressions which will be exposed via quotations
-let mkILAsmCeq g m e1 e2 = mkAsmExpr ([ IL.AI_ceq  ],[],  [e1; e2],[g.bool_ty],m)
-let mkILAsmClt g m e1 e2 = mkAsmExpr ([ IL.AI_clt  ],[],  [e1; e2],[g.bool_ty],m)
+let mkILAsmCeq (g:TcGlobals) m e1 e2 = mkAsmExpr ([ IL.AI_ceq  ],[],  [e1; e2],[g.bool_ty],m)
+let mkILAsmClt (g:TcGlobals) m e1 e2 = mkAsmExpr ([ IL.AI_clt  ],[],  [e1; e2],[g.bool_ty],m)
 
 // This is generated in the initialization of the "ctorv" field in the typechecker's compilation of
 // an implicit class construction.
@@ -6175,7 +6186,7 @@ let destThrow = function
 let isThrow x = Option.isSome (destThrow x)
 
 // rethrow - parsed as library call - internally represented as op form.
-let mkReraiseLibCall g ty m = let ve,vt = typedExprForIntrinsic g m g.reraise_info in Expr.App(ve,vt,[ty],[mkUnit g m],m)
+let mkReraiseLibCall (g:TcGlobals) ty m = let ve,vt = typedExprForIntrinsic g m g.reraise_info in Expr.App(ve,vt,[ty],[mkUnit g m],m)
 let mkReraise m returnTy = Expr.Op (TOp.Reraise,[returnTy],[],m) (* could suppress unitArg *)
 
 //----------------------------------------------------------------------------
@@ -6187,12 +6198,12 @@ let tnameCompilationArgumentCountsAttr = FSharpLib.Core + ".CompilationArgumentC
 let tnameCompilationMappingAttr        = FSharpLib.Core + ".CompilationMappingAttribute"
 let tnameSourceConstructFlags          = FSharpLib.Core + ".SourceConstructFlags"
 
-let tref_CompilationArgumentCountsAttr g = mkILTyRef (g.fslibCcu.ILScopeRef, tnameCompilationArgumentCountsAttr)
-let tref_CompilationMappingAttr g        = mkILTyRef (g.fslibCcu.ILScopeRef, tnameCompilationMappingAttr)
-let tref_CompilationSourceNameAttr g     = mkILTyRef (g.fslibCcu.ILScopeRef, tnameCompilationSourceNameAttr)
-let tref_SourceConstructFlags g          = mkILTyRef (g.fslibCcu.ILScopeRef, tnameSourceConstructFlags)
+let tref_CompilationArgumentCountsAttr (g:TcGlobals) = mkILTyRef (g.fslibCcu.ILScopeRef, tnameCompilationArgumentCountsAttr)
+let tref_CompilationMappingAttr (g:TcGlobals)        = mkILTyRef (g.fslibCcu.ILScopeRef, tnameCompilationMappingAttr)
+let tref_CompilationSourceNameAttr (g:TcGlobals)     = mkILTyRef (g.fslibCcu.ILScopeRef, tnameCompilationSourceNameAttr)
+let tref_SourceConstructFlags (g:TcGlobals)          = mkILTyRef (g.fslibCcu.ILScopeRef, tnameSourceConstructFlags)
 
-let mkCompilationMappingAttrPrim g k nums = 
+let mkCompilationMappingAttrPrim (g:TcGlobals) k nums = 
     mkILCustomAttribute g.ilg (tref_CompilationMappingAttr g, 
                                ((mkILNonGenericValueTy (tref_SourceConstructFlags g)) :: (nums |> List.map (fun _ -> g.ilg.typ_Int32))),
                                ((k :: nums) |> List.map (fun n -> ILAttribElem.Int32(n))),
@@ -6201,17 +6212,17 @@ let mkCompilationMappingAttr g kind = mkCompilationMappingAttrPrim g kind []
 let mkCompilationMappingAttrWithSeqNum g kind seqNum = mkCompilationMappingAttrPrim g kind [seqNum]
 let mkCompilationMappingAttrWithVariantNumAndSeqNum g kind varNum seqNum = mkCompilationMappingAttrPrim g kind [varNum;seqNum]
 
-let mkCompilationArgumentCountsAttr g nums = 
+let mkCompilationArgumentCountsAttr (g:TcGlobals) nums = 
     mkILCustomAttribute g.ilg (tref_CompilationArgumentCountsAttr g, [ mkILArr1DTy g.ilg.typ_Int32 ],
                                [ILAttribElem.Array (g.ilg.typ_Int32, List.map (fun n -> ILAttribElem.Int32(n)) nums)],
                                [])
 
-let mkCompilationSourceNameAttr g n = 
+let mkCompilationSourceNameAttr (g:TcGlobals) n = 
     mkILCustomAttribute g.ilg (tref_CompilationSourceNameAttr g, [  g.ilg.typ_String ],
                                [ILAttribElem.String(Some n)],
                                [])
 
-let mkCompilationMappingAttrForQuotationResource g (nm, tys: ILTypeRef list) = 
+let mkCompilationMappingAttrForQuotationResource (g:TcGlobals) (nm, tys: ILTypeRef list) = 
     mkILCustomAttribute g.ilg (tref_CompilationMappingAttr g, 
                                [ g.ilg.typ_String; mkILArr1DTy g.ilg.typ_Type ],
                                [ ILAttribElem.String (Some nm); ILAttribElem.Array (g.ilg.typ_Type, [ for ty in tys -> ILAttribElem.TypeRef (Some ty) ]) ],
@@ -6243,9 +6254,10 @@ let TryDecodeTypeProviderAssemblyAttr ilg (cattr:ILAttribute) =
 //----------------------------------------------------------------------------
 
 let tname_SignatureDataVersionAttr = FSharpLib.Core + ".FSharpInterfaceDataVersionAttribute"
+let tnames_SignatureDataVersionAttr = splitILTypeName tname_SignatureDataVersionAttr
 let tref_SignatureDataVersionAttr () = mkILTyRef(IlxSettings.ilxFsharpCoreLibScopeRef (), tname_SignatureDataVersionAttr)
 
-let mkSignatureDataVersionAttr g ((v1,v2,v3,_) : ILVersionInfo)  = 
+let mkSignatureDataVersionAttr (g:TcGlobals) ((v1,v2,v3,_) : ILVersionInfo)  = 
     mkILCustomAttribute g.ilg
         (tref_SignatureDataVersionAttr(), 
          [g.ilg.typ_Int32;g.ilg.typ_Int32;g.ilg.typ_Int32],
@@ -6254,11 +6266,10 @@ let mkSignatureDataVersionAttr g ((v1,v2,v3,_) : ILVersionInfo)  =
           ILAttribElem.Int32 (int32 v3)],[])
 
 let tname_AutoOpenAttr = FSharpLib.Core + ".AutoOpenAttribute"
-let tref_AutoOpenAttr () = mkILTyRef(IlxSettings.ilxFsharpCoreLibScopeRef (), tname_AutoOpenAttr)
 
-let IsSignatureDataVersionAttr cattr = isILAttrib (tref_SignatureDataVersionAttr ()) cattr
+let IsSignatureDataVersionAttr cattr = isILAttribByName ([],tname_SignatureDataVersionAttr) cattr
 let TryFindAutoOpenAttr (ilg : IL.ILGlobals) cattr = 
-    if isILAttrib (tref_AutoOpenAttr ()) cattr then 
+    if isILAttribByName ([],tname_AutoOpenAttr) cattr then 
         match decodeILAttribData ilg cattr with 
         |  [ILAttribElem.String s],_ -> s
         |  [],_ -> None
@@ -6268,11 +6279,10 @@ let TryFindAutoOpenAttr (ilg : IL.ILGlobals) cattr =
     else
         None
         
-let tref_InternalsVisibleToAttr (ilg : IL.ILGlobals) = 
-    ilg.mkSysILTypeRef "System.Runtime.CompilerServices.InternalsVisibleToAttribute"
+let tname_InternalsVisibleToAttr = "System.Runtime.CompilerServices.InternalsVisibleToAttribute"
 
 let TryFindInternalsVisibleToAttr ilg cattr = 
-    if isILAttrib (tref_InternalsVisibleToAttr ilg) cattr then 
+    if isILAttribByName ([],tname_InternalsVisibleToAttr) cattr then 
         match decodeILAttribData ilg cattr with 
         |  [ILAttribElem.String s],_ -> s
         |  [],_ -> None
@@ -6291,7 +6301,7 @@ let IsMatchingSignatureDataVersionAttr ilg ((v1,v2,v3,_) : ILVersionInfo)  cattr
         warning(Failure(FSComp.SR.tastUnexpectedDecodeOfInterfaceDataVersionAttribute())); 
         false
 
-let mkCompilerGeneratedAttr g n = 
+let mkCompilerGeneratedAttr (g:TcGlobals) n = 
     mkILCustomAttribute g.ilg (tref_CompilationMappingAttr g, [mkILNonGenericValueTy (tref_SourceConstructFlags g)],[ILAttribElem.Int32(n)],[])
 
 //--------------------------------------------------------------------------
@@ -7152,9 +7162,9 @@ let mkNullTest g m e1 e2 e3 =
         let dtree = TDSwitch(e1, [TCase(Test.IsNull,tg3)],Some tg2,m)
         let expr = mbuilder.Close(dtree,m,tyOfExpr g e2)
         expr         
-let mkNonNullTest g m e = mkAsmExpr ([ IL.AI_ldnull ; IL.AI_cgt_un  ],[],  [e],[g.bool_ty],m)
+let mkNonNullTest (g:TcGlobals) m e = mkAsmExpr ([ IL.AI_ldnull ; IL.AI_cgt_un  ],[],  [e],[g.bool_ty],m)
 let mkNonNullCond g m ty e1 e2 e3 = mkCond NoSequencePointAtStickyBinding SuppressSequencePointAtTarget m ty (mkNonNullTest g m e1) e2 e3
-let mkIfThen g m e1 e2 = mkCond NoSequencePointAtStickyBinding SuppressSequencePointAtTarget m g.unit_ty e1 e2 (mkUnit g m)
+let mkIfThen (g:TcGlobals) m e1 e2 = mkCond NoSequencePointAtStickyBinding SuppressSequencePointAtTarget m g.unit_ty e1 e2 (mkUnit g m)
 
 
 let ModuleNameIsMangled g attrs =
@@ -7270,7 +7280,7 @@ type ActivePatternElemRef with
             if n < 0 || n >= List.length nms  then error(InternalError("name_of_apref: index out of range for active pattern reference", vref.Range));
             List.item n nms
 
-let mkChoiceTyconRef g m n = 
+let mkChoiceTyconRef (g:TcGlobals) m n = 
      match n with 
      | 0 | 1 -> error(InternalError("mkChoiceTyconRef",m))
      | 2 -> g.choice2_tcr
@@ -7281,7 +7291,7 @@ let mkChoiceTyconRef g m n =
      | 7 -> g.choice7_tcr
      | _ -> error(Error(FSComp.SR.tastActivePatternsLimitedToSeven(),m))
 
-let mkChoiceTy g m tinst = 
+let mkChoiceTy (g:TcGlobals) m tinst = 
      match List.length tinst with 
      | 0 -> g.unit_ty
      | 1 -> List.head tinst

@@ -2314,12 +2314,12 @@ type TcConfigBuilder =
             ri,fileNameOfPath ri,ILResourceAccess.Public 
 
 
-let OpenILBinary(filename,optimizeForMemory,openBinariesInMemory,ilGlobalsOpt, pdbPathOption, noDebugData, shadowCopyReferences) = 
+let OpenILBinary(filename,optimizeForMemory,openBinariesInMemory,ilGlobalsOpt, pdbPathOption, shadowCopyReferences) = 
       let ilGlobals   = 
           // ILScopeRef.Local can be used only for primary assembly (mscorlib or System.Runtime) itself
           // Remaining assemblies should be opened using existing ilGlobals (so they can properly locate fundamental types)
           match ilGlobalsOpt with 
-          | None -> mkILGlobals (noDebugData, (fun _ -> ILScopeRef.Local),  (fun _ -> Some ILScopeRef.Local))
+          | None -> mkILGlobals ILScopeRef.Local
           | Some g -> g
 
       let opts = { ILBinaryReader.mkDefault ilGlobals with                       
@@ -2463,7 +2463,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
         | Some(primaryAssemblyFilename) ->
             let filename = ComputeMakePathAbsolute data.implicitIncludeDir primaryAssemblyFilename
             try 
-                use ilReader = OpenILBinary(filename,data.optimizeForMemory,data.openBinariesInMemory,None,None, data.noDebugData, data.shadowCopyReferences)
+                use ilReader = OpenILBinary(filename,data.optimizeForMemory,data.openBinariesInMemory,None,None, data.shadowCopyReferences)
                 let ilModule = ilReader.ILModuleDef
                 match ilModule.ManifestOfAssembly.Version with 
                 | Some(v1,v2,v3,_) -> 
@@ -2527,7 +2527,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
         | Some(fslibFilename) ->
             let filename = ComputeMakePathAbsolute data.implicitIncludeDir fslibFilename
             try 
-                use ilReader = OpenILBinary(filename,data.optimizeForMemory,data.openBinariesInMemory,None,None, data.noDebugData, data.shadowCopyReferences)
+                use ilReader = OpenILBinary(filename,data.optimizeForMemory,data.openBinariesInMemory,None,None, data.shadowCopyReferences)
                 checkFSharpBinaryCompatWithMscorlib filename ilReader.ILAssemblyRefs ilReader.ILModuleDef.ManifestOfAssembly.Version rangeStartup;
                 let fslibRoot = Path.GetDirectoryName(FileSystem.GetFullPathShim(filename))
                 fslibRoot (* , sprintf "v%d.%d" v1 v2 *)
@@ -3790,7 +3790,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                     None 
             else   
                 None
-        let ilILBinaryReader = OpenILBinary(filename,tcConfig.optimizeForMemory,tcConfig.openBinariesInMemory,ilGlobalsOpt,pdbPathOption, tcConfig.noDebugData, tcConfig.shadowCopyReferences)
+        let ilILBinaryReader = OpenILBinary(filename,tcConfig.optimizeForMemory,tcConfig.openBinariesInMemory,ilGlobalsOpt,pdbPathOption, tcConfig.shadowCopyReferences)
         tcImports.AttachDisposeAction(fun _ -> (ilILBinaryReader :> IDisposable).Dispose())
         ilILBinaryReader.ILModuleDef, ilILBinaryReader.ILAssemblyRefs
       with e ->
@@ -4022,7 +4022,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
     member tcImports.SystemRuntimeContainsType (typeName : string) : bool = 
         let ns, typeName = IL.splitILTypeName typeName
         let tcGlobals = tcImports.GetTcGlobals()
-        tcGlobals.tryMkSysTyconRef ns typeName |> Option.isSome
+        tcGlobals.TryMkSysTyconRef ns typeName |> Option.isSome
 
     // Add a referenced assembly
     //
@@ -4334,37 +4334,26 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         // Note: TcImports are disposable - the caller owns this object and must dispose
         let frameworkTcImports = new TcImports(tcConfigP,tcResolutions,None,None) 
         
-        let sysCcus =  
-           lazy
-             [| for ccu in frameworkTcImports.GetCcusInDeclOrder() do
-                   printfn "found sys ccu %s" ccu.AssemblyName
-                   yield ccu |]
+        let primaryScopeRef = 
+            let primaryAssemblyReference = tcConfig.PrimaryAssemblyDllReference()
+            let primaryAssemblyResolution = frameworkTcImports.ResolveAssemblyReference(primaryAssemblyReference,ResolveAssemblyReferenceMode.ReportErrors)
+            match frameworkTcImports.RegisterAndImportReferencedAssemblies(primaryAssemblyResolution)  with
+              | (_, [ResolvedImportedAssembly(ccu)]) -> ccu.FSharpViewOfMetadata.ILScopeRef
+              | _        -> failwith "unexpected"
 
-        let tryGetTypeCcu nsname typeName =
-            sysCcus.Value |> Array.tryFind (fun ccu -> ccuHasType ccu nsname typeName) 
-
-        // Search for a type
-        let getTypeCcu nsname typeName =
-            match tryGetTypeCcu nsname typeName with 
-            | None -> CcuThunk.CreateDelayed(FSComp.SR.tcGlobalsSystemTypeNotFound (String.concat "." nsname + "." + typeName))
-            | Some ccu -> ccu
-
-        let tryGetTypeILScopeRef fullTypeName = 
-            let nsname, nm = splitILTypeName fullTypeName 
-            match tryGetTypeCcu nsname nm with 
-            | None -> None
-            | Some ccu -> Some ccu.ILScopeRef
-        
-        let getTypeILScopeRef fullTypeName = 
-            let nsname, nm = splitILTypeName fullTypeName 
-            (getTypeCcu nsname nm).ILScopeRef
-        
-        let ilGlobals = mkILGlobals(tcConfig.noDebugData,getTypeILScopeRef,tryGetTypeILScopeRef)
+        let ilGlobals = mkILGlobals primaryScopeRef
         frameworkTcImports.SetILGlobals ilGlobals
 
         // Load the rest of the framework DLLs all at once (they may be mutually recursive)
         frameworkTcImports.DoRegisterAndImportReferencedAssemblies (tcResolutions.GetAssemblyResolutions())
 
+        let sysCcus =  
+             [| for ccu in frameworkTcImports.GetCcusInDeclOrder() do
+                   printfn "found sys ccu %s" ccu.AssemblyName
+                   yield ccu |]
+
+        let tryFindSysTypeCcu path typeName =
+            sysCcus |> Array.tryFind (fun ccu -> ccuHasType ccu path typeName) 
 
         let fslibCcu = 
             if tcConfig.compilingFslib then 
@@ -4398,24 +4387,17 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                      | ILScopeRef.Local | ILScopeRef.Module _ -> error(InternalError("not ILScopeRef.Assembly",rangeStartup)))
                 fslibCcuInfo.FSharpViewOfMetadata            
                   
-        let using40environment = 
-            match ilGlobals.primaryAssemblyScopeRef.AssemblyRef.Version with 
-            | Some (v1, _v2, _v3, _v4)  -> v1 >= 4us 
-            | _ -> true
-
         // OK, now we have both mscorlib.dll and FSharp.Core.dll we can create TcGlobals
-        let tcGlobals = mkTcGlobals(tcConfig.compilingFslib,ilGlobals,fslibCcu,
-                                    tcConfig.implicitIncludeDir,tcConfig.mlCompatibility,using40environment,
-                                    tcConfig.isInteractive,getTypeCcu, tryGetTypeCcu, tcConfig.emitDebugInfoInQuotations, (tcConfig.primaryAssembly.Name = "mscorlib") )
+        let tcGlobals = TcGlobals(tcConfig.compilingFslib,ilGlobals,fslibCcu,
+                                    tcConfig.implicitIncludeDir,tcConfig.mlCompatibility,
+                                    tcConfig.isInteractive,tryFindSysTypeCcu, tcConfig.emitDebugInfoInQuotations, (tcConfig.primaryAssembly.Name = "mscorlib"), tcConfig.noDebugData )
 
 #if DEBUG
         // the global_g reference cell is used only for debug printing
         global_g := Some tcGlobals
 #endif
         // do this prior to parsing, since parsing IL assembly code may refer to mscorlib
-#if NO_INLINE_IL_PARSER
-        // inline IL not permitted by hostable compiler
-#else
+#if !NO_INLINE_IL_PARSER
         Microsoft.FSharp.Compiler.AbstractIL.Internal.AsciiConstants.parseILGlobals := tcGlobals.ilg 
 #endif
         frameworkTcImports.SetTcGlobals(tcGlobals)

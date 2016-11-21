@@ -609,15 +609,15 @@ let (|StripUnionCaseValue|_|) ev =
   | UnionCaseValue (c,info) -> Some (c,info)
   | _ -> None
 
-let mkBoolVal g n = ConstValue(Const.Bool n, g.bool_ty)
-let mkInt8Val g n = ConstValue(Const.SByte n, g.sbyte_ty)
-let mkInt16Val g n = ConstValue(Const.Int16 n, g.int16_ty)
-let mkInt32Val g n = ConstValue(Const.Int32 n, g.int32_ty)
-let mkInt64Val g n = ConstValue(Const.Int64 n, g.int64_ty)
-let mkUInt8Val g n = ConstValue(Const.Byte n, g.byte_ty)
-let mkUInt16Val g n = ConstValue(Const.UInt16 n, g.uint16_ty)
-let mkUInt32Val g n = ConstValue(Const.UInt32 n, g.uint32_ty)
-let mkUInt64Val g n = ConstValue(Const.UInt64 n, g.uint64_ty)
+let mkBoolVal (g: TcGlobals) n = ConstValue(Const.Bool n, g.bool_ty)
+let mkInt8Val (g: TcGlobals) n = ConstValue(Const.SByte n, g.sbyte_ty)
+let mkInt16Val (g: TcGlobals) n = ConstValue(Const.Int16 n, g.int16_ty)
+let mkInt32Val (g: TcGlobals) n = ConstValue(Const.Int32 n, g.int32_ty)
+let mkInt64Val (g: TcGlobals) n = ConstValue(Const.Int64 n, g.int64_ty)
+let mkUInt8Val (g: TcGlobals) n = ConstValue(Const.Byte n, g.byte_ty)
+let mkUInt16Val (g: TcGlobals) n = ConstValue(Const.UInt16 n, g.uint16_ty)
+let mkUInt32Val (g: TcGlobals) n = ConstValue(Const.UInt32 n, g.uint32_ty)
+let mkUInt64Val (g: TcGlobals) n = ConstValue(Const.UInt64 n, g.uint64_ty)
 
 let (|StripInt32Value|_|) = function StripConstValue(Const.Int32 n) -> Some n | _ -> None
       
@@ -1530,7 +1530,7 @@ let (|AnyQueryBuilderOpTrans|_|) g = function
          Some (src,(fun newSource -> Expr.App(v,vty,tyargs,[builder; replaceArgs(newSource::rest)],m)))
     | _ ->  None
 
-let mkUnitDelayLambda g m e =
+let mkUnitDelayLambda (g: TcGlobals) m e =
     let uv,_ = mkCompGenLocal m "unitVar" g.unit_ty
     mkLambda m uv (e,tyOfExpr g e) 
 

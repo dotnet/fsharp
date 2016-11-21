@@ -236,7 +236,7 @@ type public FsiEvaluationSessionHostConfig () =
 
 /// Used to print value signatures along with their values, according to the current
 /// set of pretty printers installed in the system, and default printing rules.
-type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, ilGlobals, generateDebugInfo, resolvePath, outWriter) = 
+type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, g: TcGlobals, generateDebugInfo, resolvePath, outWriter) = 
 
     /// This printer is used by F# Interactive if no other printers apply.
     let DefaultPrintingIntercept (ienv: Internal.Utilities.StructuredFormat.IEnvironment) (obj:obj) = 
@@ -308,7 +308,7 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, ilGlobals, ge
 
     /// Get the evaluation context used when inverting the storage mapping of the ILRuntimeWriter.
     member __.GetEvaluationContext emEnv = 
-        let cenv = { ilg = ilGlobals ; generatePdb = generateDebugInfo; resolvePath=resolvePath }
+        let cenv = { ilg = g.ilg ; generatePdb = generateDebugInfo; resolvePath=resolvePath; tryMkSysILTypeRef=g.TryMkSysILTypeRef }
         { LookupFieldRef = ILRuntimeWriter.LookupFieldRef emEnv >> Option.get
           LookupMethodRef = ILRuntimeWriter.LookupMethodRef emEnv >> Option.get
           LookupTypeRef = ILRuntimeWriter.LookupTypeRef cenv emEnv 
@@ -920,7 +920,7 @@ type internal FsiDynamicCompiler
 
     let generateDebugInfo = tcConfigB.debuginfo
 
-    let valuePrinter = FsiValuePrinter(fsi, ilGlobals, generateDebugInfo, resolvePath, outWriter)
+    let valuePrinter = FsiValuePrinter(fsi, tcGlobals, generateDebugInfo, resolvePath, outWriter)
 
     let assemblyBuilder,moduleBuilder = ILRuntimeWriter.mkDynamicAssemblyAndModule (assemblyName, tcConfigB.optSettings.localOpt(), generateDebugInfo, false)
 
@@ -966,7 +966,7 @@ type internal FsiDynamicCompiler
         errorLogger.AbortOnError(fsiConsoleOutput);
             
         let fragName = textOfLid prefixPath 
-        let codegenResults = GenerateIlxCode (IlReflectBackend, isInteractiveItExpr, runningOnMono, tcConfig, topCustomAttrs, optimizedImpls, fragName, true, ilxGenerator)
+        let codegenResults = GenerateIlxCode (IlReflectBackend, isInteractiveItExpr, runningOnMono, tcConfig, topCustomAttrs, optimizedImpls, fragName, ilxGenerator)
         errorLogger.AbortOnError(fsiConsoleOutput);
 
         // Each input is like a small separately compiled extension to a single source file. 
@@ -997,14 +997,15 @@ type internal FsiDynamicCompiler
 #endif
 
         ReportTime tcConfig "Reflection.Emit";
-        let emEnv,execs = ILRuntimeWriter.emitModuleFragment(ilGlobals, emEnv, assemblyBuilder, moduleBuilder, mainmod3, generateDebugInfo, resolvePath)
+
+        let emEnv,execs = ILRuntimeWriter.emitModuleFragment(ilGlobals, emEnv, assemblyBuilder, moduleBuilder, mainmod3, generateDebugInfo, resolvePath, tcGlobals.TryMkSysILTypeRef)
 
         errorLogger.AbortOnError(fsiConsoleOutput);
 
         // Explicitly register the resources with the QuotationPickler module 
         // We would save them as resources into the dynamic assembly but there is missing 
         // functionality System.Reflection for dynamic modules that means they can't be read back out 
-        let cenv = { ilg = ilGlobals ; generatePdb = generateDebugInfo; resolvePath=resolvePath }
+        let cenv = { ilg = ilGlobals ; generatePdb = generateDebugInfo; resolvePath=resolvePath; tryMkSysILTypeRef=tcGlobals.TryMkSysILTypeRef }
         for (referencedTypeDefs, bytes) in codegenResults.quotationResourceInfo do 
             let referencedTypes = 
                 [| for tref in referencedTypeDefs do 
