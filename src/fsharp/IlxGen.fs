@@ -3294,7 +3294,7 @@ and GenTraitCall cenv cgbuf eenv (traitInfo, argExprs, m) expr sequel =
     | None -> 
         let replacementExpr = 
             mkThrow m (tyOfExpr cenv.g expr)
-               (mkExnExpr(cenv.g.MkSysTyconRef ["System"] "NotSupportedException", 
+               (mkExnExpr(cenv.g.FindSysTyconRef ["System"] "NotSupportedException", 
                              [ mkString cenv.g m (FSComp.SR.ilDynamicInvocationNotSupported(traitInfo.MemberName))],m)) 
         GenExpr cenv cgbuf eenv SPSuppress replacementExpr sequel
     | Some expr -> 
@@ -5132,7 +5132,7 @@ and GenMethodForBinding
             let bodyExpr =
                 if HasFSharpAttribute cenv.g cenv.g.attrib_NoDynamicInvocationAttribute v.Attribs then
                     mkThrow m returnTy
-                         (mkExnExpr(cenv.g.MkSysTyconRef ["System"] "NotSupportedException", 
+                         (mkExnExpr(cenv.g.FindSysTyconRef ["System"] "NotSupportedException", 
                                        [ mkString cenv.g m (FSComp.SR.ilDynamicInvocationNotSupported(v.CompiledName))],m)) 
                 else 
                     body 
@@ -6177,7 +6177,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                 | Some memberInfo -> 
                     match name, memberInfo.MemberFlags.MemberKind with 
                     | ("Item" | "op_IndexedLookup"), (MemberKind.PropertyGet  | MemberKind.PropertySet) when not (isNil (ArgInfosOfPropertyVal cenv.g vref.Deref)) ->
-                        Some( mkILCustomAttribute cenv.g.ilg (cenv.g.MkSysILTypeRef "System.Reflection.DefaultMemberAttribute",[cenv.g.ilg.typ_String],[ILAttribElem.String(Some(name))],[]) ) 
+                        Some( mkILCustomAttribute cenv.g.ilg (cenv.g.FindSysILTypeRef "System.Reflection.DefaultMemberAttribute",[cenv.g.ilg.typ_String],[ILAttribElem.String(Some(name))],[]) ) 
                     | _ -> None)
             |> Option.toList
 

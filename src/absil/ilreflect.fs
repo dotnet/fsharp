@@ -334,7 +334,7 @@ let convAssemblyRef (aref:ILAssemblyRef) =
 /// The global environment.
 type cenv = 
     { ilg: ILGlobals
-      tryMkSysILTypeRef : string -> ILTypeRef option
+      tryFindSysILTypeRef : string -> ILTypeRef option
       generatePdb: bool
       resolvePath: (ILAssemblyRef -> Choice<string,System.Reflection.Assembly> option) }
 
@@ -1669,7 +1669,7 @@ let typeAttributesOfTypeLayout cenv emEnv x =
     let attr x p = 
       if p.Size =None && p.Pack = None then None
       else 
-        match cenv.tryMkSysILTypeRef "System.Runtime.InteropServices.StructLayoutAttribute", cenv.tryMkSysILTypeRef "System.Runtime.InteropServices.LayoutKind" with
+        match cenv.tryFindSysILTypeRef "System.Runtime.InteropServices.StructLayoutAttribute", cenv.tryFindSysILTypeRef "System.Runtime.InteropServices.LayoutKind" with
         | Some tref1, Some tref2 ->
           Some(convCustomAttr cenv emEnv
                 (IL.mkILCustomAttribute cenv.ilg
@@ -2003,8 +2003,8 @@ let mkDynamicAssemblyAndModule (assemblyName, optimize, debugInfo, collectible) 
     let modB = asmB.DefineDynamicModuleAndLog(assemblyName,filename,debugInfo)
     asmB,modB
 
-let emitModuleFragment (ilg, emEnv, asmB : AssemblyBuilder, modB : ModuleBuilder, modul : IL.ILModuleDef, debugInfo : bool, resolvePath, tryMkSysILTypeRef) =
-    let cenv = { ilg = ilg ; generatePdb = debugInfo; resolvePath=resolvePath; tryMkSysILTypeRef=tryMkSysILTypeRef }
+let emitModuleFragment (ilg, emEnv, asmB : AssemblyBuilder, modB : ModuleBuilder, modul : IL.ILModuleDef, debugInfo : bool, resolvePath, tryFindSysILTypeRef) =
+    let cenv = { ilg = ilg ; generatePdb = debugInfo; resolvePath=resolvePath; tryFindSysILTypeRef=tryFindSysILTypeRef }
 
     let emEnv = buildModuleFragment cenv emEnv asmB modB modul
     match modul.Manifest with 

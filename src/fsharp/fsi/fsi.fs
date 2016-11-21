@@ -308,7 +308,7 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, g: TcGlobals,
 
     /// Get the evaluation context used when inverting the storage mapping of the ILRuntimeWriter.
     member __.GetEvaluationContext emEnv = 
-        let cenv = { ilg = g.ilg ; generatePdb = generateDebugInfo; resolvePath=resolvePath; tryMkSysILTypeRef=g.TryMkSysILTypeRef }
+        let cenv = { ilg = g.ilg ; generatePdb = generateDebugInfo; resolvePath=resolvePath; tryFindSysILTypeRef=g.TryFindSysILTypeRef }
         { LookupFieldRef = ILRuntimeWriter.LookupFieldRef emEnv >> Option.get
           LookupMethodRef = ILRuntimeWriter.LookupMethodRef emEnv >> Option.get
           LookupTypeRef = ILRuntimeWriter.LookupTypeRef cenv emEnv 
@@ -998,14 +998,14 @@ type internal FsiDynamicCompiler
 
         ReportTime tcConfig "Reflection.Emit";
 
-        let emEnv,execs = ILRuntimeWriter.emitModuleFragment(ilGlobals, emEnv, assemblyBuilder, moduleBuilder, mainmod3, generateDebugInfo, resolvePath, tcGlobals.TryMkSysILTypeRef)
+        let emEnv,execs = ILRuntimeWriter.emitModuleFragment(ilGlobals, emEnv, assemblyBuilder, moduleBuilder, mainmod3, generateDebugInfo, resolvePath, tcGlobals.TryFindSysILTypeRef)
 
         errorLogger.AbortOnError(fsiConsoleOutput);
 
         // Explicitly register the resources with the QuotationPickler module 
         // We would save them as resources into the dynamic assembly but there is missing 
         // functionality System.Reflection for dynamic modules that means they can't be read back out 
-        let cenv = { ilg = ilGlobals ; generatePdb = generateDebugInfo; resolvePath=resolvePath; tryMkSysILTypeRef=tcGlobals.TryMkSysILTypeRef }
+        let cenv = { ilg = ilGlobals ; generatePdb = generateDebugInfo; resolvePath=resolvePath; tryFindSysILTypeRef=tcGlobals.TryFindSysILTypeRef }
         for (referencedTypeDefs, bytes) in codegenResults.quotationResourceInfo do 
             let referencedTypes = 
                 [| for tref in referencedTypeDefs do 

@@ -732,7 +732,7 @@ module AttributeHelpers =
 
     /// Try to find an attribute that takes a string argument
     let TryFindStringAttribute (g: TcGlobals) attrib attribs =
-      match g.TryMkSysAttrib attrib with 
+      match g.TryFindSysAttrib attrib with 
       | None -> None
       | Some attribRef -> 
         match TryFindFSharpAttribute g attribRef attribs with
@@ -740,7 +740,7 @@ module AttributeHelpers =
         | _ -> None
         
     let TryFindIntAttribute (g: TcGlobals) attrib attribs =
-      match g.TryMkSysAttrib attrib with 
+      match g.TryFindSysAttrib attrib with 
       | None -> None
       | Some attribRef -> 
         match TryFindFSharpAttribute g attribRef attribs with
@@ -748,7 +748,7 @@ module AttributeHelpers =
         | _ -> None
         
     let TryFindBoolAttribute (g: TcGlobals) attrib attribs =
-      match g.TryMkSysAttrib attrib with 
+      match g.TryFindSysAttrib attrib with 
       | None -> None
       | Some attribRef -> 
         match TryFindFSharpAttribute g attribRef attribs with
@@ -930,7 +930,7 @@ module MainModuleBuilder =
             mkILCustomAttrs
                  [ if not tcConfig.internConstantStrings then 
                        yield mkILCustomAttribute tcGlobals.ilg
-                                 (tcGlobals.MkSysILTypeRef "System.Runtime.CompilerServices.CompilationRelaxationsAttribute", 
+                                 (tcGlobals.FindSysILTypeRef "System.Runtime.CompilerServices.CompilationRelaxationsAttribute", 
                                   [tcGlobals.ilg.typ_Int32], [ILAttribElem.Int32( 8)], []) 
                    yield! iattrs
                    yield! codegenResults.ilAssemAttrs

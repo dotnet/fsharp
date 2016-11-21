@@ -4072,7 +4072,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
     member tcImports.SystemRuntimeContainsType (typeName : string) : bool = 
         let ns, typeName = IL.splitILTypeName typeName
         let tcGlobals = tcImports.GetTcGlobals()
-        tcGlobals.TryMkSysTyconRef ns typeName |> Option.isSome
+        tcGlobals.TryFindSysTyconRef ns typeName |> Option.isSome
 
     // Add a referenced assembly
     //

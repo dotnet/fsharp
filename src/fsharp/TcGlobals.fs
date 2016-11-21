@@ -159,6 +159,7 @@ let tname_IAsyncResult = "System.IAsyncResult"
 
 type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, directoryToResolveRelativePaths, 
                       mlCompatibility: bool, isInteractive:bool, 
+                      // The helper to find system types amongst referenced DLLs
                       tryFindSysTypeCcu, 
                       emitDebugInfoInQuotations: bool, usesMscorlib: bool, noDebugData: bool) =
       
@@ -207,11 +208,14 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_ilsigptr_tcr   = mk_MFCore_tcref fslibCcu "ilsigptr`1"
   let v_fastFunc_tcr   = mk_MFCore_tcref fslibCcu "FSharpFunc`2"
 
+  let dummyAssemblyNameCarryingUsefulErrorInformation path typeName = 
+      FSComp.SR.tcGlobalsSystemTypeNotFound (String.concat "." path + "." + typeName)
+
   // Search for a type. If it is not found, leave a dangling CCU reference with some useful diagnostic information should
   // the type actually be dereferenced
   let findSysTypeCcu path typeName =
       match tryFindSysTypeCcu path typeName with 
-      | None -> CcuThunk.CreateDelayed(FSComp.SR.tcGlobalsSystemTypeNotFound (String.concat "." path + "." + typeName))
+      | None -> CcuThunk.CreateDelayed(dummyAssemblyNameCarryingUsefulErrorInformation path typeName)
       | Some ccu -> ccu
 
   let tryFindSysTyconRef path nm = 
@@ -222,6 +226,29 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let findSysTyconRef path nm = 
       let ccu = findSysTypeCcu path nm 
       mkNonLocalTyconRef2 ccu (Array.ofList path) nm
+
+  let findSysILTypeRef (nm:string) = 
+      let path, typeName = splitILTypeName nm
+      let scoref = 
+          match tryFindSysTypeCcu path typeName with 
+          | None -> ILScopeRef.Assemby (mkSimpleAssRef (dummyAssemblyNameCarryingUsefulErrorInformation path typeName))
+          | Some ccu -> ccu.ILScopeRef
+      mkILTyRef (scoref, nm)
+
+  let tryFindSysILTypeRef (nm:string) = 
+      let path, typeName = splitILTypeName nm
+      tryFindSysTypeCcu path typeName |> Option.map (fun ccu -> mkILTyRef (ccu.ILScopeRef, nm))
+
+  let findSysAttrib (nm:string) = 
+      let tref = findSysILTypeRef nm
+      let path, typeName = splitILTypeName nm
+      AttribInfo(tref, findSysTyconRef path typeName)
+
+  let tryFindSysAttrib nm = 
+      let path, typeName = splitILTypeName nm
+      match tryFindSysTypeCcu path typeName with 
+      | Some _ -> Some (findSysAttrib nm)
+      | None -> None
 
   let mkSysNonGenericTy path n = mkNonGenericTy(findSysTyconRef path n)
   let tryMkSysNonGenericTy path n = tryFindSysTyconRef path n |> Option.map mkNonGenericTy
@@ -450,25 +477,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let mk_MFCore_attrib nm : BuiltinAttribInfo = 
       AttribInfo(mkILTyRef(IlxSettings.ilxFsharpCoreLibScopeRef (), FSharpLib.Core + "." + nm), mk_MFCore_tcref fslibCcu nm) 
     
-  let mkSysILTypeRef (nm:string) = 
-      let path, typeName = splitILTypeName nm
-      findSysTypeCcu path typeName |> (fun ccu -> mkILTyRef (ccu.ILScopeRef, nm))
-
-  let tryMkSysILTypeRef (nm:string) = 
-      let path, typeName = splitILTypeName nm
-      tryFindSysTypeCcu path typeName |> Option.map (fun ccu -> mkILTyRef (ccu.ILScopeRef, nm))
-
-  let mkSysAttrib (nm:string) = 
-      let tref = mkSysILTypeRef nm
-      let path, typeName = splitILTypeName nm
-      AttribInfo(tref, findSysTyconRef path typeName)
-
-  let tryMkSysAttrib nm = 
-      let path, typeName = splitILTypeName nm
-      match tryFindSysTypeCcu path typeName with 
-      | Some _ -> Some (mkSysAttrib nm)
-      | None -> None
-
   let mk_doc filename = ILSourceDocument.Create(language=None, vendor=None, documentType=None, file=filename)
   // Build the memoization table for files
   let v_memoize_file = new MemoizationTable<int, ILSourceDocument> ((fileOfFileIndex >> Filename.fullpath directoryToResolveRelativePaths >> mk_doc), keyComparer=HashIdentity.Structural)
@@ -620,12 +628,12 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_check_this_info            = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "CheckThis"                            , None                 , None                          , [vara],      ([[varaTy]], varaTy))
   let v_quote_to_linq_lambda_info  = makeIntrinsicValRef(fslib_MFLinqRuntimeHelpersQuotationConverter_nleref,  "QuotationToLambdaExpression"          , None                 , None                          , [vara],      ([[mkQuotedExprTy varaTy]], mkLinqExpressionTy varaTy))
     
-  let tref_DebuggableAttribute = mkSysILTypeRef tname_DebuggableAttribute
-  let tref_CompilerGeneratedAttribute  = mkSysILTypeRef tname_CompilerGeneratedAttribute
+  let tref_DebuggableAttribute = findSysILTypeRef tname_DebuggableAttribute
+  let tref_CompilerGeneratedAttribute  = findSysILTypeRef tname_CompilerGeneratedAttribute
 
   let mutable generatedAttribsCache = [] 
   let mutable debuggerBrowsableNeverAttributeCache = None 
-  let mkDebuggerNonUserCodeAttribute() = mkILCustomAttribute ilg (mkSysILTypeRef tname_DebuggerNonUserCodeAttribute, [], [], [])
+  let mkDebuggerNonUserCodeAttribute() = mkILCustomAttribute ilg (findSysILTypeRef tname_DebuggerNonUserCodeAttribute, [], [], [])
   let mkCompilerGeneratedAttribute () = mkILCustomAttribute ilg (tref_CompilerGeneratedAttribute, [], [], [])
 
   // Requests attributes to be added to compiler generated methods.
@@ -647,9 +655,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   let tref_DebuggerBrowsableAttribute n = 
         let typ_DebuggerBrowsableState = 
-            let tref = mkSysILTypeRef tname_DebuggerBrowsableState
+            let tref = findSysILTypeRef tname_DebuggerBrowsableState
             ILType.Value (mkILNonGenericTySpec tref)
-        mkILCustomAttribute ilg (mkSysILTypeRef tname_DebuggerBrowsableAttribute, [typ_DebuggerBrowsableState], [ILAttribElem.Int32 n], [])
+        mkILCustomAttribute ilg (findSysILTypeRef tname_DebuggerBrowsableAttribute, [typ_DebuggerBrowsableState], [ILAttribElem.Int32 n], [])
 
   let mkDebuggerBrowsableNeverAttribute() = 
       match debuggerBrowsableNeverAttributeCache with
@@ -662,7 +670,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let addNeverAttrs (attrs: ILAttributes) = mkILCustomAttrs (attrs.AsList @ [mkDebuggerBrowsableNeverAttribute()])
   let addPropertyNeverAttrs (pdef:ILPropertyDef) = {pdef with CustomAttrs = addNeverAttrs pdef.CustomAttrs}
   let addFieldNeverAttrs (fdef:ILFieldDef) = {fdef with CustomAttrs = addNeverAttrs fdef.CustomAttrs}
-  let mkDebuggerTypeProxyAttribute (ty : ILType) = mkILCustomAttribute ilg (mkSysILTypeRef tname_DebuggerTypeProxyAttribute,  [ilg.typ_Type], [ILAttribElem.TypeRef (Some ty.TypeRef)], [])
+  let mkDebuggerTypeProxyAttribute (ty : ILType) = mkILCustomAttribute ilg (findSysILTypeRef tname_DebuggerTypeProxyAttribute,  [ilg.typ_Type], [ILAttribElem.TypeRef (Some ty.TypeRef)], [])
 
     // Build a map that uses the "canonical" F# type names and TyconRef's for these
     // in preference to the .NET type names. Doing this normalization is a fairly performance critical
@@ -942,55 +950,55 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
     
   member __.tcref_System_Attribute = v_System_Attribute_tcr
 
-  member val iltyp_TypedReference      = tryMkSysILTypeRef "System.TypedReference" |> Option.map mkILNonGenericValueTy
-  member val iltyp_StreamingContext    = tryMkSysILTypeRef tname_StreamingContext  |> Option.map mkILNonGenericValueTy
-  member val iltyp_SerializationInfo   = tryMkSysILTypeRef tname_SerializationInfo  |> Option.map mkILNonGenericBoxedTy
-  member val iltyp_Missing             = mkSysILTypeRef tname_Missing |> mkILNonGenericBoxedTy
-  member val iltyp_AsyncCallback       = mkSysILTypeRef tname_AsyncCallback |> mkILNonGenericBoxedTy
-  member val iltyp_IAsyncResult        = mkSysILTypeRef tname_IAsyncResult |> mkILNonGenericBoxedTy
-  member val iltyp_IComparable         = mkSysILTypeRef tname_IComparable |> mkILNonGenericBoxedTy
-  member val iltyp_Exception           = mkSysILTypeRef tname_Exception |> mkILNonGenericBoxedTy
-  member val iltyp_ValueType           = mkSysILTypeRef tname_ValueType |> mkILNonGenericBoxedTy
-  member val iltyp_RuntimeFieldHandle  = mkSysILTypeRef tname_RuntimeFieldHandle |> mkILNonGenericValueTy
-  member val iltyp_RuntimeMethodHandle = mkSysILTypeRef tname_RuntimeMethodHandle |> mkILNonGenericValueTy
-  member val iltyp_RuntimeTypeHandle   = mkSysILTypeRef tname_RuntimeTypeHandle |> mkILNonGenericValueTy
+  member val iltyp_TypedReference      = tryFindSysILTypeRef "System.TypedReference" |> Option.map mkILNonGenericValueTy
+  member val iltyp_StreamingContext    = tryFindSysILTypeRef tname_StreamingContext  |> Option.map mkILNonGenericValueTy
+  member val iltyp_SerializationInfo   = tryFindSysILTypeRef tname_SerializationInfo  |> Option.map mkILNonGenericBoxedTy
+  member val iltyp_Missing             = findSysILTypeRef tname_Missing |> mkILNonGenericBoxedTy
+  member val iltyp_AsyncCallback       = findSysILTypeRef tname_AsyncCallback |> mkILNonGenericBoxedTy
+  member val iltyp_IAsyncResult        = findSysILTypeRef tname_IAsyncResult |> mkILNonGenericBoxedTy
+  member val iltyp_IComparable         = findSysILTypeRef tname_IComparable |> mkILNonGenericBoxedTy
+  member val iltyp_Exception           = findSysILTypeRef tname_Exception |> mkILNonGenericBoxedTy
+  member val iltyp_ValueType           = findSysILTypeRef tname_ValueType |> mkILNonGenericBoxedTy
+  member val iltyp_RuntimeFieldHandle  = findSysILTypeRef tname_RuntimeFieldHandle |> mkILNonGenericValueTy
+  member val iltyp_RuntimeMethodHandle = findSysILTypeRef tname_RuntimeMethodHandle |> mkILNonGenericValueTy
+  member val iltyp_RuntimeTypeHandle   = findSysILTypeRef tname_RuntimeTypeHandle |> mkILNonGenericValueTy
 
 
-  member val attrib_AttributeUsageAttribute = mkSysAttrib "System.AttributeUsageAttribute"
-  member val attrib_ParamArrayAttribute     = mkSysAttrib "System.ParamArrayAttribute"
-  member val attrib_IDispatchConstantAttribute  = tryMkSysAttrib "System.Runtime.CompilerServices.IDispatchConstantAttribute"
-  member val attrib_IUnknownConstantAttribute  = tryMkSysAttrib "System.Runtime.CompilerServices.IUnknownConstantAttribute"
+  member val attrib_AttributeUsageAttribute = findSysAttrib "System.AttributeUsageAttribute"
+  member val attrib_ParamArrayAttribute     = findSysAttrib "System.ParamArrayAttribute"
+  member val attrib_IDispatchConstantAttribute  = tryFindSysAttrib "System.Runtime.CompilerServices.IDispatchConstantAttribute"
+  member val attrib_IUnknownConstantAttribute  = tryFindSysAttrib "System.Runtime.CompilerServices.IUnknownConstantAttribute"
     
-  member val attrib_SystemObsolete          = mkSysAttrib "System.ObsoleteAttribute"
-  member val attrib_DllImportAttribute      = tryMkSysAttrib "System.Runtime.InteropServices.DllImportAttribute"
-  member val attrib_StructLayoutAttribute   = mkSysAttrib "System.Runtime.InteropServices.StructLayoutAttribute"
-  member val attrib_TypeForwardedToAttribute   = mkSysAttrib "System.Runtime.CompilerServices.TypeForwardedToAttribute"
-  member val attrib_ComVisibleAttribute     = mkSysAttrib "System.Runtime.InteropServices.ComVisibleAttribute"
-  member val attrib_ComImportAttribute      = tryMkSysAttrib "System.Runtime.InteropServices.ComImportAttribute"
-  member val attrib_FieldOffsetAttribute    = mkSysAttrib "System.Runtime.InteropServices.FieldOffsetAttribute" 
-  member val attrib_MarshalAsAttribute      = tryMkSysAttrib "System.Runtime.InteropServices.MarshalAsAttribute"
-  member val attrib_InAttribute             = tryMkSysAttrib "System.Runtime.InteropServices.InAttribute" 
-  member val attrib_OutAttribute            = mkSysAttrib "System.Runtime.InteropServices.OutAttribute" 
-  member val attrib_OptionalAttribute       = tryMkSysAttrib "System.Runtime.InteropServices.OptionalAttribute" 
-  member val attrib_ThreadStaticAttribute   = tryMkSysAttrib "System.ThreadStaticAttribute"
-  member val attrib_SpecialNameAttribute   = tryMkSysAttrib "System.Runtime.CompilerServices.SpecialNameAttribute"
+  member val attrib_SystemObsolete          = findSysAttrib "System.ObsoleteAttribute"
+  member val attrib_DllImportAttribute      = tryFindSysAttrib "System.Runtime.InteropServices.DllImportAttribute"
+  member val attrib_StructLayoutAttribute   = findSysAttrib "System.Runtime.InteropServices.StructLayoutAttribute"
+  member val attrib_TypeForwardedToAttribute   = findSysAttrib "System.Runtime.CompilerServices.TypeForwardedToAttribute"
+  member val attrib_ComVisibleAttribute     = findSysAttrib "System.Runtime.InteropServices.ComVisibleAttribute"
+  member val attrib_ComImportAttribute      = tryFindSysAttrib "System.Runtime.InteropServices.ComImportAttribute"
+  member val attrib_FieldOffsetAttribute    = findSysAttrib "System.Runtime.InteropServices.FieldOffsetAttribute" 
+  member val attrib_MarshalAsAttribute      = tryFindSysAttrib "System.Runtime.InteropServices.MarshalAsAttribute"
+  member val attrib_InAttribute             = tryFindSysAttrib "System.Runtime.InteropServices.InAttribute" 
+  member val attrib_OutAttribute            = findSysAttrib "System.Runtime.InteropServices.OutAttribute" 
+  member val attrib_OptionalAttribute       = tryFindSysAttrib "System.Runtime.InteropServices.OptionalAttribute" 
+  member val attrib_ThreadStaticAttribute   = tryFindSysAttrib "System.ThreadStaticAttribute"
+  member val attrib_SpecialNameAttribute   = tryFindSysAttrib "System.Runtime.CompilerServices.SpecialNameAttribute"
   member val attrib_VolatileFieldAttribute   = mk_MFCore_attrib "VolatileFieldAttribute"
-  member val attrib_ContextStaticAttribute  = tryMkSysAttrib "System.ContextStaticAttribute"
-  member val attrib_FlagsAttribute          = mkSysAttrib "System.FlagsAttribute"
-  member val attrib_DefaultMemberAttribute  = mkSysAttrib "System.Reflection.DefaultMemberAttribute"
-  member val attrib_DebuggerDisplayAttribute  = mkSysAttrib "System.Diagnostics.DebuggerDisplayAttribute"
-  member val attrib_DebuggerTypeProxyAttribute  = mkSysAttrib "System.Diagnostics.DebuggerTypeProxyAttribute"
-  member val attrib_PreserveSigAttribute    = tryMkSysAttrib "System.Runtime.InteropServices.PreserveSigAttribute"
-  member val attrib_MethodImplAttribute     = mkSysAttrib "System.Runtime.CompilerServices.MethodImplAttribute"
-  member val attrib_ExtensionAttribute     = mkSysAttrib "System.Runtime.CompilerServices.ExtensionAttribute"
-  member val attrib_CallerLineNumberAttribute = mkSysAttrib "System.Runtime.CompilerServices.CallerLineNumberAttribute"
-  member val attrib_CallerFilePathAttribute = mkSysAttrib "System.Runtime.CompilerServices.CallerFilePathAttribute"
-  member val attrib_CallerMemberNameAttribute = mkSysAttrib "System.Runtime.CompilerServices.CallerMemberNameAttribute"
+  member val attrib_ContextStaticAttribute  = tryFindSysAttrib "System.ContextStaticAttribute"
+  member val attrib_FlagsAttribute          = findSysAttrib "System.FlagsAttribute"
+  member val attrib_DefaultMemberAttribute  = findSysAttrib "System.Reflection.DefaultMemberAttribute"
+  member val attrib_DebuggerDisplayAttribute  = findSysAttrib "System.Diagnostics.DebuggerDisplayAttribute"
+  member val attrib_DebuggerTypeProxyAttribute  = findSysAttrib "System.Diagnostics.DebuggerTypeProxyAttribute"
+  member val attrib_PreserveSigAttribute    = tryFindSysAttrib "System.Runtime.InteropServices.PreserveSigAttribute"
+  member val attrib_MethodImplAttribute     = findSysAttrib "System.Runtime.CompilerServices.MethodImplAttribute"
+  member val attrib_ExtensionAttribute     = findSysAttrib "System.Runtime.CompilerServices.ExtensionAttribute"
+  member val attrib_CallerLineNumberAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerLineNumberAttribute"
+  member val attrib_CallerFilePathAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerFilePathAttribute"
+  member val attrib_CallerMemberNameAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerMemberNameAttribute"
 
   member val attrib_ProjectionParameterAttribute           = mk_MFCore_attrib "ProjectionParameterAttribute"
   member val attrib_CustomOperationAttribute               = mk_MFCore_attrib "CustomOperationAttribute"
-  member val attrib_NonSerializedAttribute                 = tryMkSysAttrib "System.NonSerializedAttribute"
-  member val attrib_SerializableAttribute                 = tryMkSysAttrib "System.SerializableAttribute"
+  member val attrib_NonSerializedAttribute                 = tryFindSysAttrib "System.NonSerializedAttribute"
+  member val attrib_SerializableAttribute                 = tryFindSysAttrib "System.SerializableAttribute"
   
   member val attrib_AutoSerializableAttribute              = mk_MFCore_attrib "AutoSerializableAttribute"
   member val attrib_RequireQualifiedAccessAttribute        = mk_MFCore_attrib "RequireQualifiedAccessAttribute"
@@ -1000,7 +1008,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val attrib_ExperimentalAttribute                  = mk_MFCore_attrib "ExperimentalAttribute"
   member val attrib_UnverifiableAttribute                  = mk_MFCore_attrib "UnverifiableAttribute"
   member val attrib_LiteralAttribute                       = mk_MFCore_attrib "LiteralAttribute"
-  member val attrib_ConditionalAttribute                   = mkSysAttrib "System.Diagnostics.ConditionalAttribute"
+  member val attrib_ConditionalAttribute                   = findSysAttrib "System.Diagnostics.ConditionalAttribute"
   member val attrib_OptionalArgumentAttribute              = mk_MFCore_attrib "OptionalArgumentAttribute"
   member val attrib_RequiresExplicitTypeArgumentsAttribute = mk_MFCore_attrib "RequiresExplicitTypeArgumentsAttribute"
   member val attrib_DefaultValueAttribute                  = mk_MFCore_attrib "DefaultValueAttribute"
@@ -1010,7 +1018,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val attrib_ReflectedDefinitionAttribute           = mk_MFCore_attrib "ReflectedDefinitionAttribute"
   member val attrib_CompiledNameAttribute                  = mk_MFCore_attrib "CompiledNameAttribute"
   member val attrib_AutoOpenAttribute                      = mk_MFCore_attrib "AutoOpenAttribute"
-  member val attrib_InternalsVisibleToAttribute            = mkSysAttrib "System.Runtime.CompilerServices.InternalsVisibleToAttribute"
+  member val attrib_InternalsVisibleToAttribute            = findSysAttrib "System.Runtime.CompilerServices.InternalsVisibleToAttribute"
   member val attrib_CompilationRepresentationAttribute     = mk_MFCore_attrib "CompilationRepresentationAttribute"
   member val attrib_CompilationArgumentCountsAttribute     = mk_MFCore_attrib "CompilationArgumentCountsAttribute"
   member val attrib_CompilationMappingAttribute            = mk_MFCore_attrib "CompilationMappingAttribute"
@@ -1032,9 +1040,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val attrib_MeasureAttribute                       = mk_MFCore_attrib "MeasureAttribute"
   member val attrib_MeasureableAttribute                   = mk_MFCore_attrib "MeasureAnnotatedAbbreviationAttribute"
   member val attrib_NoDynamicInvocationAttribute           = mk_MFCore_attrib "NoDynamicInvocationAttribute"
-  member val attrib_SecurityAttribute                      = tryMkSysAttrib "System.Security.Permissions.SecurityAttribute"
-  member val attrib_SecurityCriticalAttribute              = mkSysAttrib "System.Security.SecurityCriticalAttribute"
-  member val attrib_SecuritySafeCriticalAttribute          = mkSysAttrib "System.Security.SecuritySafeCriticalAttribute"
+  member val attrib_SecurityAttribute                      = tryFindSysAttrib "System.Security.Permissions.SecurityAttribute"
+  member val attrib_SecurityCriticalAttribute              = findSysAttrib "System.Security.SecurityCriticalAttribute"
+  member val attrib_SecuritySafeCriticalAttribute          = findSysAttrib "System.Security.SecuritySafeCriticalAttribute"
 
   member __.better_tcref_map = betterTyconRefMap
   member __.new_decimal_info = v_new_decimal_info
@@ -1217,23 +1225,23 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.suppressed_types = v_suppressed_types
       // Are we assuming all code gen is for F# interactive, with no static linking 
   member __.isInteractive=isInteractive
-  member __.MkSysTyconRef=findSysTyconRef
-  member __.TryMkSysTyconRef=tryFindSysTyconRef
-  member __.MkSysILTypeRef=mkSysILTypeRef
-  member __.TryMkSysILTypeRef=tryMkSysILTypeRef
+  member __.FindSysTyconRef=findSysTyconRef
+  member __.TryFindSysTyconRef=tryFindSysTyconRef
+  member __.FindSysILTypeRef=findSysILTypeRef
+  member __.TryFindSysILTypeRef=tryFindSysILTypeRef
   member __.usesMscorlib = usesMscorlib
-  member __.MkSysAttrib=mkSysAttrib
-  member __.TryMkSysAttrib=tryMkSysAttrib
+  member __.FindSysAttrib=findSysAttrib
+  member __.TryFindSysAttrib=tryFindSysAttrib
 
   member val ilxPubCloEnv=EraseClosures.newIlxPubCloEnv(ilg, addMethodGeneratedAttrs, addFieldGeneratedAttrs, addFieldNeverAttrs)
   member __.AddMethodGeneratedAttributes mdef = addMethodGeneratedAttrs mdef
   member __.AddFieldGeneratedAttrs mdef = addFieldGeneratedAttrs mdef
   member __.AddFieldNeverAttrs mdef = addFieldNeverAttrs mdef
-  member __.mkDebuggerHiddenAttribute()      = mkILCustomAttribute ilg (mkSysILTypeRef tname_DebuggerHiddenAttribute, [], [], [])
-  member __.mkDebuggerDisplayAttribute s     = mkILCustomAttribute ilg (mkSysILTypeRef tname_DebuggerDisplayAttribute, [ilg.typ_String], [ILAttribElem.String (Some s)], [])
+  member __.mkDebuggerHiddenAttribute()      = mkILCustomAttribute ilg (findSysILTypeRef tname_DebuggerHiddenAttribute, [], [], [])
+  member __.mkDebuggerDisplayAttribute s     = mkILCustomAttribute ilg (findSysILTypeRef tname_DebuggerDisplayAttribute, [ilg.typ_String], [ILAttribElem.String (Some s)], [])
   member __.DebuggerBrowsableNeverAttribute =   mkDebuggerBrowsableNeverAttribute() 
 
-  member __.mkDebuggerStepThroughAttribute() = mkILCustomAttribute ilg (mkSysILTypeRef tname_DebuggerStepThroughAttribute, [], [], [])
+  member __.mkDebuggerStepThroughAttribute() = mkILCustomAttribute ilg (findSysILTypeRef tname_DebuggerStepThroughAttribute, [], [], [])
   member __.mkDebuggableAttribute (jitOptimizerDisabled) =
         mkILCustomAttribute ilg (tref_DebuggableAttribute, [ilg.typ_Bool; ilg.typ_Bool], [ILAttribElem.Bool false; ILAttribElem.Bool jitOptimizerDisabled], [])
 
@@ -1256,8 +1264,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
 
 (*
-                  (cenv.ilg.mkSysILTypeRef "System.Runtime.InteropServices.StructLayoutAttribute", 
-                   [mkILNonGenericValueTy (cenv.ilg.mkSysILTypeRef "System.Runtime.InteropServices.LayoutKind") ], 
+                  (cenv.ilg.findSysILTypeRef "System.Runtime.InteropServices.StructLayoutAttribute", 
+                   [mkILNonGenericValueTy (cenv.ilg.findSysILTypeRef "System.Runtime.InteropServices.LayoutKind") ], 
 *)
 
 

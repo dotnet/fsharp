@@ -5989,10 +5989,10 @@ let mspec_String_Length (g: TcGlobals) = mkILNonGenericInstanceMethSpecInTy (g.i
 let fspec_Missing_Value (g: TcGlobals) = IL.mkILFieldSpecInTy(g.iltyp_Missing, "Value", g.iltyp_Missing)
 
 let mkInitializeArrayMethSpec (g: TcGlobals) = 
-  mkILNonGenericStaticMethSpecInTy(mkILNonGenericBoxedTy(g.MkSysILTypeRef "System.Runtime.CompilerServices.RuntimeHelpers"),"InitializeArray", [g.ilg.typ_Array;g.iltyp_RuntimeFieldHandle], ILType.Void)
+  mkILNonGenericStaticMethSpecInTy(mkILNonGenericBoxedTy(g.FindSysILTypeRef "System.Runtime.CompilerServices.RuntimeHelpers"),"InitializeArray", [g.ilg.typ_Array;g.iltyp_RuntimeFieldHandle], ILType.Void)
 
 let mkInvalidCastExnNewobj (g: TcGlobals)  = 
-  mkNormalNewobj (mkILCtorMethSpecForTy (mkILNonGenericBoxedTy (g.MkSysILTypeRef "System.InvalidCastException"), []))
+  mkNormalNewobj (mkILCtorMethSpecForTy (mkILNonGenericBoxedTy (g.FindSysILTypeRef "System.InvalidCastException"), []))
 
 
 let typedExprForIntrinsic _g m (IntrinsicValRef(_,_,_,ty,_) as i) =
