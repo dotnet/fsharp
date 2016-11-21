@@ -3418,11 +3418,11 @@ and GenGenericParam cenv eenv (tp:Typar) =
 //-------------------------------------------------------------------------- 
 
 and GenSlotParam m cenv eenv (TSlotParam(nm,ty,inFlag,outFlag,optionalFlag,attribs)) : ILParameter = 
-    let inFlag2,outFlag2,optionalFlag2,paramMarshal2,attribs = GenParamAttribs cenv attribs
+    let inFlag2,outFlag2,optionalFlag2,defaultParamValue,paramMarshal2,attribs = GenParamAttribs cenv attribs
     
     { Name=nm
       Type= GenParamType cenv.amap m cenv.g eenv.tyenv ty
-      Default=None  
+      Default=defaultParamValue  
       Marshal=paramMarshal2 
       IsIn=inFlag || inFlag2
       IsOut=outFlag || outFlag2
@@ -4921,10 +4921,30 @@ and GenMarshal cenv attribs =
         // No MarshalAs detected
         None, attribs 
 
+and GenDefaultParameterValue (Attrib (_,_,exprs,_,_,_,_)) =
+    let (AttribExpr (_,defaultValueExpr)) = List.head exprs
+    match defaultValueExpr with
+    | Expr.Const ((Const.String s),_,_) -> Some (ILFieldInit.String s)
+    | Expr.Const ((Const.Bool s),_,_)   -> Some (ILFieldInit.Bool s)
+    | Expr.Const ((Const.Char s),_,_)   -> Some (ILFieldInit.Char (uint16 s))
+    | Expr.Const ((Const.SByte s),_,_)  -> Some (ILFieldInit.Int8 s)
+    | Expr.Const ((Const.Int16 s),_,_)  -> Some (ILFieldInit.Int16 s)
+    | Expr.Const ((Const.Int32 s),_,_)  -> Some (ILFieldInit.Int32 s)
+    | Expr.Const ((Const.Int64 s),_,_)  -> Some (ILFieldInit.Int64 s)
+    | Expr.Const ((Const.Byte s),_,_)   -> Some (ILFieldInit.UInt8 s)
+    | Expr.Const ((Const.UInt16 s),_,_) -> Some (ILFieldInit.UInt16 s)
+    | Expr.Const ((Const.UInt32 s),_,_) -> Some (ILFieldInit.UInt32 s)
+    | Expr.Const ((Const.UInt64 s),_,_) -> Some (ILFieldInit.UInt64 s)
+    | Expr.Const ((Const.Single s),_,_) -> Some (ILFieldInit.Single s)
+    | Expr.Const ((Const.Double s),_,_) -> Some (ILFieldInit.Double s)
+    | Expr.Const (Const.Zero,_,_)       -> Some (ILFieldInit.Null)
+    | _                                 -> None
+
 and GenParamAttribs cenv attribs =
     let inFlag = HasFSharpAttributeOpt cenv.g cenv.g.attrib_InAttribute attribs
     let outFlag = HasFSharpAttribute cenv.g cenv.g.attrib_OutAttribute attribs
     let optionalFlag = HasFSharpAttributeOpt cenv.g cenv.g.attrib_OptionalAttribute attribs
+    let defaultValue = TryFindFSharpAttributeOpt cenv.g cenv.g.attrib_DefaultParameterValueAttribute attribs |> Option.bind GenDefaultParameterValue
     // Return the filtered attributes. Do not generate In, Out or Optional attributes 
     // as custom attributes in the code - they are implicit from the IL bits for these
     let attribs = 
@@ -4932,9 +4952,10 @@ and GenParamAttribs cenv attribs =
         |> List.filter (IsMatchingFSharpAttributeOpt cenv.g cenv.g.attrib_InAttribute >> not)
         |> List.filter (IsMatchingFSharpAttribute cenv.g cenv.g.attrib_OutAttribute >> not)
         |> List.filter (IsMatchingFSharpAttributeOpt cenv.g cenv.g.attrib_OptionalAttribute >> not)
+        |> List.filter (IsMatchingFSharpAttributeOpt cenv.g cenv.g.attrib_DefaultParameterValueAttribute >> not)
 
     let Marshal,attribs =  GenMarshal cenv attribs
-    inFlag,outFlag,optionalFlag,Marshal,attribs
+    inFlag,outFlag,optionalFlag,defaultValue,Marshal,attribs
 
 and GenParams cenv eenv (mspec:ILMethodSpec) (attribs:ArgReprInfo list) (implValsOpt: Val list option) =
     let ilArgTys = mspec.FormalArgTypes
@@ -4951,7 +4972,7 @@ and GenParams cenv eenv (mspec:ILMethodSpec) (attribs:ArgReprInfo list) (implVal
 
     (Set.empty,argInfosAndTypes)
     ||> List.mapFold (fun takenNames ((ilArgTy,topArgInfo),implValOpt) -> 
-        let inFlag,outFlag,optionalFlag,Marshal,attribs = GenParamAttribs cenv topArgInfo.Attribs
+        let inFlag,outFlag,optionalFlag,defaultParamValue,Marshal,attribs = GenParamAttribs cenv topArgInfo.Attribs
         
         let idOpt = (match topArgInfo.Name with 
                      | Some v -> Some v 
@@ -4970,7 +4991,7 @@ and GenParams cenv eenv (mspec:ILMethodSpec) (attribs:ArgReprInfo list) (implVal
         let param : ILParameter = 
             { Name=nmOpt
               Type= ilArgTy  
-              Default=None (* REVIEW: support "default" attributes *)   
+              Default=defaultParamValue (* REVIEW: support "default" attributes *)   
               Marshal=Marshal 
               IsIn=inFlag    
               IsOut=outFlag  

@@ -293,6 +293,7 @@ type public TcGlobals =
       attrib_InAttribute                 : BuiltinAttribInfo option
       attrib_OutAttribute                : BuiltinAttribInfo
       attrib_OptionalAttribute           : BuiltinAttribInfo option
+      attrib_DefaultParameterValueAttribute : BuiltinAttribInfo option
       attrib_ThreadStaticAttribute       : BuiltinAttribInfo option
       attrib_SpecialNameAttribute        : BuiltinAttribInfo option
       attrib_VolatileFieldAttribute      : BuiltinAttribInfo
@@ -1216,6 +1217,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
     attrib_InAttribute             = mkSystemRuntimeInteropServicesAttribute "System.Runtime.InteropServices.InAttribute" 
     attrib_OutAttribute            = mkSystemRuntimeAttrib "System.Runtime.InteropServices.OutAttribute" 
     attrib_OptionalAttribute       = mkSystemRuntimeInteropServicesAttribute "System.Runtime.InteropServices.OptionalAttribute" 
+    attrib_DefaultParameterValueAttribute = mkSystemRuntimeInteropServicesAttribute "System.Runtime.InteropServices.DefaultParameterValueAttribute" 
     attrib_ThreadStaticAttribute   = if ilg.traits.ThreadStaticAttributeScopeRef.IsSome then Some(mkSystemRuntimeAttrib "System.ThreadStaticAttribute") else None
     attrib_SpecialNameAttribute   = if ilg.traits.SpecialNameAttributeScopeRef.IsSome then Some(mkSystemRuntimeAttrib "System.Runtime.CompilerServices.SpecialNameAttribute") else None
     attrib_VolatileFieldAttribute   = mk_MFCore_attrib "VolatileFieldAttribute"
