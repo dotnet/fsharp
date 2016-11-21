@@ -231,7 +231,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
       let path, typeName = splitILTypeName nm
       let scoref = 
           match tryFindSysTypeCcu path typeName with 
-          | None -> ILScopeRef.Assemby (mkSimpleAssRef (dummyAssemblyNameCarryingUsefulErrorInformation path typeName))
+          | None -> ILScopeRef.Assembly (mkSimpleAssRef (dummyAssemblyNameCarryingUsefulErrorInformation path typeName))
           | Some ccu -> ccu.ILScopeRef
       mkILTyRef (scoref, nm)
 
