@@ -731,18 +731,27 @@ module ManifestResourceFormat =
 module AttributeHelpers = 
 
     /// Try to find an attribute that takes a string argument
-    let TryFindStringAttribute tcGlobals attrib attribs =
-        match TryFindFSharpAttribute tcGlobals (tcGlobals.MkSysAttrib attrib) attribs with
+    let TryFindStringAttribute (g: TcGlobals) attrib attribs =
+      match g.TryMkSysAttrib attrib with 
+      | None -> None
+      | Some attribRef -> 
+        match TryFindFSharpAttribute g attribRef attribs with
         | Some (Attrib(_, _, [ AttribStringArg(s) ], _, _, _, _))  -> Some (s)
         | _ -> None
         
-    let TryFindIntAttribute tcGlobals attrib attribs =
-        match TryFindFSharpAttribute tcGlobals (tcGlobals.MkSysAttrib attrib) attribs with
+    let TryFindIntAttribute (g: TcGlobals) attrib attribs =
+      match g.TryMkSysAttrib attrib with 
+      | None -> None
+      | Some attribRef -> 
+        match TryFindFSharpAttribute g attribRef attribs with
         | Some (Attrib(_, _, [ AttribInt32Arg(i) ], _, _, _, _)) -> Some (i)
         | _ -> None
         
-    let TryFindBoolAttribute tcGlobals attrib attribs =
-        match TryFindFSharpAttribute tcGlobals (tcGlobals.MkSysAttrib attrib) attribs with
+    let TryFindBoolAttribute (g: TcGlobals) attrib attribs =
+      match g.TryMkSysAttrib attrib with 
+      | None -> None
+      | Some attribRef -> 
+        match TryFindFSharpAttribute g attribRef attribs with
         | Some (Attrib(_, _, [ AttribBoolArg(p) ], _, _, _, _)) -> Some (p)
         | _ -> None
 
@@ -752,8 +761,8 @@ module AttributeHelpers =
             None
 
     // Try to find an AssemblyVersion attribute 
-    let TryFindVersionAttribute tcGlobals attrib attribName attribs =
-        match TryFindStringAttribute tcGlobals attrib attribs with
+    let TryFindVersionAttribute g attrib attribName attribs =
+        match TryFindStringAttribute g attrib attribs with
         | Some versionString ->
              try Some (IL.parseILVersion versionString)
              with e -> 

@@ -1223,6 +1223,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.TryMkSysILTypeRef=tryMkSysILTypeRef
   member __.usesMscorlib = usesMscorlib
   member __.MkSysAttrib=mkSysAttrib
+  member __.TryMkSysAttrib=tryMkSysAttrib
 
   member val ilxPubCloEnv=EraseClosures.newIlxPubCloEnv(ilg, addMethodGeneratedAttrs, addFieldGeneratedAttrs, addFieldNeverAttrs)
   member __.AddMethodGeneratedAttributes mdef = addMethodGeneratedAttrs mdef

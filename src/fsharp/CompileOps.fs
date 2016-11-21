@@ -1659,7 +1659,9 @@ let DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) =
           yield "System.Numerics" 
      ]
 
-// A set of assemblies to always consider to be system assemblies
+// A set of assemblies to always consider to be system assemblies.  A common set of these can be used a shared 
+// resources between projects in the compiler services.  Also all assembles where well-known system types exist
+// referenced from TcGlobals must be listed here.
 let SystemAssemblies () = 
    HashSet
     [ yield "mscorlib"
@@ -1715,6 +1717,54 @@ let SystemAssemblies () =
       yield "System.Threading.Thread"
       yield "System.Threading.ThreadPool"
       yield "System.Threading.Timer"
+
+      yield "FSharp.Compiler.Interactive.Settings"
+      yield "Microsoft.DiaSymReader"
+      yield "Microsoft.DiaSymReader.PortablePdb"
+      yield "Microsoft.Win32.Registry"
+      yield "System.Diagnostics.Tracing"
+      yield "System.Globalization.Calendars"
+      yield "System.Reflection.Primitives"
+      yield "System.Runtime.Handles"
+      yield "Microsoft.Win32.Primitives"
+      yield "System.IO.FileSystem"
+      yield "System.Net.Primitives"
+      yield "System.Net.Sockets"
+      yield "System.Private.Uri"
+      yield "System.AppContext"
+      yield "System.Buffers"
+      yield "System.Collections.Immutable"
+      yield "System.Diagnostics.DiagnosticSource"
+      yield "System.Diagnostics.Process"
+      yield "System.Diagnostics.TraceSource"
+      yield "System.Globalization.Extensions"
+      yield "System.IO.Compression"
+      yield "System.IO.Compression.ZipFile"
+      yield "System.IO.FileSystem.Primitives"
+      yield "System.Net.Http"
+      yield "System.Net.NameResolution"
+      yield "System.Net.WebHeaderCollection"
+      yield "System.ObjectModel"
+      yield "System.Reflection.Emit.Lightweight"
+      yield "System.Reflection.Metadata"
+      yield "System.Reflection.TypeExtensions"
+      yield "System.Runtime.InteropServices.RuntimeInformation"
+      yield "System.Runtime.Loader"
+      yield "System.Security.Claims"
+      yield "System.Security.Cryptography.Algorithms"
+      yield "System.Security.Cryptography.Cng"
+      yield "System.Security.Cryptography.Csp"
+      yield "System.Security.Cryptography.Encoding"
+      yield "System.Security.Cryptography.OpenSsl"
+      yield "System.Security.Cryptography.Primitives"
+      yield "System.Security.Cryptography.X509Certificates"
+      yield "System.Security.Principal"
+      yield "System.Security.Principal.Windows"
+      yield "System.Threading.Overlapped"
+      yield "System.Threading.Tasks.Extensions"
+      yield "System.Xml.ReaderWriter"
+      yield "System.Xml.XDocument"
+
       ] 
 
 // The set of references entered into the TcConfigBuilder for scripts prior to computing
@@ -4347,10 +4397,14 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         // Load the rest of the framework DLLs all at once (they may be mutually recursive)
         frameworkTcImports.DoRegisterAndImportReferencedAssemblies (tcResolutions.GetAssemblyResolutions())
 
+        // These are the DLLs we can search for well-known types
         let sysCcus =  
              [| for ccu in frameworkTcImports.GetCcusInDeclOrder() do
-                   printfn "found sys ccu %s" ccu.AssemblyName
+                   //printfn "found sys ccu %s" ccu.AssemblyName
                    yield ccu |]
+
+        //for ccu in nonFrameworkDLLs do
+        //    printfn "found non-sys ccu %s" ccu.resolvedPath
 
         let tryFindSysTypeCcu path typeName =
             sysCcus |> Array.tryFind (fun ccu -> ccuHasType ccu path typeName) 
