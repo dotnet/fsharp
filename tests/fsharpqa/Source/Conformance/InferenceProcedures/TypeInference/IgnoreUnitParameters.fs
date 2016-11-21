@@ -53,5 +53,4 @@ let main (argsz:string []) =
         exitCode <- 1
         failwith "bug in d"
 
-    failwith "all good"
     exit exitCode
