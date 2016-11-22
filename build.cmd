@@ -350,13 +350,13 @@ echo.
 
 echo ---------------- Done with arguments, starting preparation -----------------
 if '%VSSDKInstall%'=='' (
-     set VSSDKInstall=%~dp0packages\Microsoft.VSSDK.BuildTools.15.0.25907-RC2\tools\vssdk
+     set VSSDKInstall=%~dp0packages\Microsoft.VSSDK.BuildTools.15.0.25914-RC2\tools\vssdk
 )
 if '%VSSDKToolsPath%'=='' (
-     set VSSDKToolsPath=%~dp0packages\Microsoft.VSSDK.BuildTools.15.0.25907-RC2\tools\vssdk\bin
+     set VSSDKToolsPath=%~dp0packages\Microsoft.VSSDK.BuildTools.15.0.25914-RC2\tools\vssdk\bin
 )
 if '%VSSDKIncludes%'=='' (
-     set VSSDKIncludes=%~dp0packages\Microsoft.VSSDK.BuildTools.15.0.25907-RC2\tools\vssdk\inc
+     set VSSDKIncludes=%~dp0packages\Microsoft.VSSDK.BuildTools.15.0.25914-RC2\tools\vssdk\inc
 )
 
 if '%RestorePackages%'=='' (
