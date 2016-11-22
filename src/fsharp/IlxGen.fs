@@ -4945,7 +4945,7 @@ and GenParamAttribs cenv attribs =
     let outFlag = HasFSharpAttribute cenv.g cenv.g.attrib_OutAttribute attribs
     let optionalFlag = HasFSharpAttributeOpt cenv.g cenv.g.attrib_OptionalAttribute attribs
     let defaultValue = TryFindFSharpAttributeOpt cenv.g cenv.g.attrib_DefaultParameterValueAttribute attribs |> Option.bind GenDefaultParameterValue
-    // Return the filtered attributes. Do not generate In, Out or Optional attributes 
+    // Return the filtered attributes. Do not generate In, Out, Optional or DefaultParameterValue attributes 
     // as custom attributes in the code - they are implicit from the IL bits for these
     let attribs = 
         attribs 
