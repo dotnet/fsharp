@@ -16,17 +16,17 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("IsNone")>]
         let inline isNone option = match option with None -> true | Some _ -> false
 
-        [<CompiledName("DefaultIfNone")>]
-        let defaultIfNone def option = match option with None -> def | Some v -> v
+        [<CompiledName("DefaultValue")>]
+        let defaultValue def option = match option with None -> def | Some v -> v
 
-        [<CompiledName("DefaultIfNoneFrom")>]
-        let defaultIfNoneFrom defThunk option = match option with None -> defThunk () | Some v -> v
+        [<CompiledName("DefaultWith")>]
+        let defaultWith defThunk option = match option with None -> defThunk () | Some v -> v
 
         [<CompiledName("OrElse")>]
         let orElse ifNone option = match option with None -> ifNone | Some _ -> option
 
-        [<CompiledName("OrElseFrom")>]
-        let orElseFrom ifNoneThunk option = match option with None -> ifNoneThunk () | Some _ -> option
+        [<CompiledName("OrElseWith")>]
+        let orElseWith ifNoneThunk option = match option with None -> ifNoneThunk () | Some _ -> option
 
         [<CompiledName("Count")>]
         let count option = match option with None -> 0 | Some _ -> 1

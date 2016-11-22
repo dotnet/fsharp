@@ -24,20 +24,20 @@ namespace Microsoft.FSharp.Core
         val inline isNone: option:'T option -> bool
 
         /// <summary>Gets the value of the option if the option is <c>Some</c>, otherwise returns the specified default value.</summary>
-        /// <param name="def">The specified default value.</param>
+        /// <param name="value">The specified default value.</param>
         /// <param name="option">The input option.</param>
         /// <returns>The option if the option is Some, else the default value.</returns>
         /// <remarks>Identical to the built-in <see cref="defaultArg"/> operator, except with the arguments swapped.</remarks>
-        [<CompiledName("DefaultIfNone")>]
-        val defaultIfNone: def:'T -> option:'T option -> 'T
+        [<CompiledName("DefaultValue")>]
+        val defaultValue: value:'T -> option:'T option -> 'T
 
         /// <summary>Gets the value of the option if the option is <c>Some</c>, otherwise evaluates <paramref name="defThunk"/> and returns the result.</summary>
         /// <param name="defThunk">A thunk that provides a default value when evaluated.</param>
         /// <param name="option">The input option.</param>
         /// <returns>The option if the option is Some, else the result of evaluating <paramref name="defThunk"/>.</returns>
         /// <remarks><paramref name="defThunk"/> is not evaluated unless <paramref name="option"/> is <c>None</c>.</remarks>
-        [<CompiledName("DefaultIfNoneFrom")>]
-        val defaultIfNoneFrom: defThunk:(unit -> 'T) -> option:'T option -> 'T
+        [<CompiledName("DefaultWith")>]
+        val defaultWith: defThunk:(unit -> 'T) -> option:'T option -> 'T
 
         /// <summary>Returns <paramref name="option"/> if it is <c>Some</c>, otherwise returns <paramref name="ifNone"/>.</summary>
         /// <param name="ifNone">The value to use if <paramref name="option"/> is <c>None</c>.</param>
@@ -51,8 +51,8 @@ namespace Microsoft.FSharp.Core
         /// <param name="option">The input option.</param>
         /// <returns>The option if the option is Some, else the result of evaluating <paramref name="ifNoneThunk"/>.</returns>
         /// <remarks><paramref name="ifNoneThunk"/> is not evaluated unless <paramref name="option"/> is <c>None</c>.</remarks>
-        [<CompiledName("OrElseFrom")>]
-        val orElseFrom: ifNoneThunk:(unit -> 'T option) -> option:'T option -> 'T option
+        [<CompiledName("OrElseWith")>]
+        val orElseWith: ifNoneThunk:(unit -> 'T option) -> option:'T option -> 'T option
 
         /// <summary>Gets the value associated with the option.</summary>
         /// <param name="option">The input option.</param>

@@ -143,19 +143,19 @@ type OptionModule() =
         Assert.IsTrue( Option.ofObj<int[]> null = None)
 
     [<Test>]
-    member this.DefaultIfNone() =
-        Assert.AreEqual( Option.defaultIfNone 3 None, 3)
-        Assert.AreEqual( Option.defaultIfNone 3 (Some 42), 42)
-        Assert.AreEqual( Option.defaultIfNone "" None, "")
-        Assert.AreEqual( Option.defaultIfNone "" (Some "x"), "x")
+    member this.DefaultValue() =
+        Assert.AreEqual( Option.defaultValue 3 None, 3)
+        Assert.AreEqual( Option.defaultValue 3 (Some 42), 42)
+        Assert.AreEqual( Option.defaultValue "" None, "")
+        Assert.AreEqual( Option.defaultValue "" (Some "x"), "x")
 
     [<Test>]
-    member this.DefaultIfNoneFrom() =
-        Assert.AreEqual( Option.defaultIfNoneFrom (fun () -> 3) None, 3)
-        Assert.AreEqual( Option.defaultIfNoneFrom (fun () -> "") None, "")
+    member this.DefaultWith() =
+        Assert.AreEqual( Option.defaultWith (fun () -> 3) None, 3)
+        Assert.AreEqual( Option.defaultWith (fun () -> "") None, "")
 
-        Assert.AreEqual( Option.defaultIfNoneFrom assertWasNotCalledThunk (Some 42), 42)
-        Assert.AreEqual( Option.defaultIfNoneFrom assertWasNotCalledThunk (Some ""), "")
+        Assert.AreEqual( Option.defaultWith assertWasNotCalledThunk (Some 42), 42)
+        Assert.AreEqual( Option.defaultWith assertWasNotCalledThunk (Some ""), "")
 
     [<Test>]
     member this.OrElse() =
@@ -169,13 +169,13 @@ type OptionModule() =
         Assert.AreEqual( Option.orElse (Some "") (Some "x"), Some "x")
 
     [<Test>]
-    member this.OrElseFrom() =
-        Assert.AreEqual( Option.orElseFrom (fun () -> None) None, None)
-        Assert.AreEqual( Option.orElseFrom (fun () -> Some 3) None, Some 3)
-        Assert.AreEqual( Option.orElseFrom (fun () -> Some "") None, Some "")
+    member this.OrElseWith() =
+        Assert.AreEqual( Option.orElseWith (fun () -> None) None, None)
+        Assert.AreEqual( Option.orElseWith (fun () -> Some 3) None, Some 3)
+        Assert.AreEqual( Option.orElseWith (fun () -> Some "") None, Some "")
 
-        Assert.AreEqual( Option.orElseFrom assertWasNotCalledThunk (Some 42), Some 42)
-        Assert.AreEqual( Option.orElseFrom assertWasNotCalledThunk (Some ""), Some "")
+        Assert.AreEqual( Option.orElseWith assertWasNotCalledThunk (Some 42), Some 42)
+        Assert.AreEqual( Option.orElseWith assertWasNotCalledThunk (Some ""), Some "")
 
     [<Test>]
     member this.Map2() =
