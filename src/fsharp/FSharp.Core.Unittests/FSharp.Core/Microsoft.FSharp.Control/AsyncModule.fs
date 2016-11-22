@@ -284,20 +284,25 @@ type AsyncModule() =
     [<Test>]
     member this.``OnCancel.RaceBetweenCancellationHandlerAndDisposingHandlerRegistration``() = 
         let test() = 
-            let flag = ref 0
-            let isSet() = lock flag (fun() -> !flag = 1)
+            use flag = new ManualResetEvent(false)
+            use cancelHandlerRegistered = new ManualResetEvent(false)
             let cts = new System.Threading.CancellationTokenSource()
             let go = async {
-                use! holder = Async.OnCancel(fun() -> lock flag (fun() -> flag := 1) |> ignore)
+                use! holder = Async.OnCancel(fun() -> lock flag (fun() -> flag.Set()) |> ignore)
+                let _ = cancelHandlerRegistered.Set()
                 while true do
                     do! Async.Sleep 50
                 }
+
             Async.Start (go, cancellationToken = cts.Token)
-            sleep(100)
+            //wait until we are sure the Async.OnCancel has run:
+            Assert.IsTrue(cancelHandlerRegistered.WaitOne(TimeSpan.FromSeconds 5.))
+            //now cancel:
             cts.Cancel()
-            sleep(100)
-            Assert.IsTrue(isSet())
-        for _i = 1 to 3 do test()
+            //cancel handler should have run:
+            Assert.IsTrue(flag.WaitOne(TimeSpan.FromSeconds 5.))
+
+        for _i = 1 to 300 do test()
 
     [<Test>]
     member this.``OnCancel.RaceBetweenCancellationAndDispose``() = 
