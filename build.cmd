@@ -390,6 +390,7 @@ if exist "%ProgramFiles%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" se
 
 :vsversionset
 if '%VisualStudioVersion%' == '' echo Error: Could not find an installation of Visual Studio && goto :failure
+if '%VSSDK150Install%' == '' (if '%BUILD_VS%' == '1' echo Error: Could not find an installation of Visual Studio 2015 RC2 VSSDK which is required for building VS components && goto :failure)
 
 if exist "%VS150COMNTOOLS%\..\..\MSBuild\15.0\Bin\MSBuild.exe" (
     set _msbuildexe="%VS150COMNTOOLS%\..\..\MSBuild\15.0\Bin\MSBuild.exe"
