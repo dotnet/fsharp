@@ -45,7 +45,7 @@ type internal SVsSettingsPersistenceManager = class end
 [<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".fsscript", 97)>]
 [<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".ml", 97)>]
 [<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".mli", 97)>]
-type internal FSharpLanguageService(package : FSharpPackage) = 
+type internal FSharpLanguageService(package : FSharpPackage) =
     inherit AbstractLanguageService<FSharpPackage, FSharpLanguageService>(package)
 
     static let optionsCache = Dictionary<ProjectId, FSharpProjectOptions>()
@@ -55,12 +55,28 @@ type internal FSharpLanguageService(package : FSharpPackage) =
         else
             None
 
+    static member UpdateOptions(projectId: ProjectId, options: FSharpProjectOptions) =
+        optionsCache.[projectId] <- options
+
     member this.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, site: IProjectSite) =
-        let updatedFiles = site.SourceFilesOnDisk()
-        let workspaceFiles = project.GetCurrentDocuments() |> Seq.map(fun file -> file.FilePath)
-        
-        for file in updatedFiles do if not(workspaceFiles.Contains(file)) then projectContext.AddSourceFile(file)
-        for file in workspaceFiles do if not(updatedFiles.Contains(file)) then projectContext.RemoveSourceFile(file)
+        let hashSetIgnoreCase x = new HashSet<string>(x, StringComparer.OrdinalIgnoreCase)
+        let updatedFiles = site.SourceFilesOnDisk() |> hashSetIgnoreCase
+        let workspaceFiles = project.GetCurrentDocuments() |> Seq.map(fun file -> file.FilePath) |> hashSetIgnoreCase
+
+        let mutable updated = false
+        for file in updatedFiles do
+            if not(workspaceFiles.Contains(file)) then
+                projectContext.AddSourceFile(file)
+                updated <- true
+        for file in workspaceFiles do
+            if not(updatedFiles.Contains(file)) then
+                projectContext.RemoveSourceFile(file)
+                updated <- true
+
+        // update the cached options
+        if updated then
+            let checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(site, "")
+            FSharpLanguageService.UpdateOptions(project.Id, checkOptions)
 
     override this.ContentTypeName = FSharpCommonConstants.FSharpContentTypeName
     override this.LanguageName = FSharpCommonConstants.FSharpLanguageName
@@ -101,8 +117,7 @@ type internal FSharpLanguageService(package : FSharpPackage) =
         let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectFileName)
 
         let options = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(site, site.ProjectFileName())
-        if not (optionsCache.ContainsKey(projectId)) then
-            optionsCache.Add(projectId, options)
+        FSharpLanguageService.UpdateOptions(projectId, options)
 
         match workspace.ProjectTracker.GetProject(projectId) with
         | null ->
@@ -121,8 +136,7 @@ type internal FSharpLanguageService(package : FSharpPackage) =
         let options = FSharpChecker.Instance.GetProjectOptionsFromScript(fileName, fileContents, DateTime.Now, [| |]) |> Async.RunSynchronously
         let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(options.ProjectFileName, options.ProjectFileName)
 
-        if not(optionsCache.ContainsKey(projectId)) then
-            optionsCache.Add(projectId, options)
+        FSharpLanguageService.UpdateOptions(projectId, options)
 
         if obj.ReferenceEquals(workspace.ProjectTracker.GetProject(projectId), null) then
             let projectContextFactory = this.Package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
@@ -155,11 +169,11 @@ and [<Guid(FSharpCommonConstants.packageGuidString)>]
                              CodeSenseDelay = 100)>]
         internal FSharpPackage() =
     inherit AbstractPackage<FSharpPackage, FSharpLanguageService>()
-    
+
     override this.RoslynLanguageName = FSharpCommonConstants.FSharpLanguageName
 
     override this.CreateWorkspace() = this.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
-    
+
     override this.CreateLanguageService() = new FSharpLanguageService(this)
 
     override this.CreateEditorFactories() = Seq.empty<IVsEditorFactory>
