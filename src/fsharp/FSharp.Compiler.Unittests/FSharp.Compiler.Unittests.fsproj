@@ -51,7 +51,7 @@
     <Reference Include="System.Numerics" Condition="'$(TargetFramework)' == 'net40'" />
     <Reference Include="System.Core" />
     <Reference Include="System.ValueTuple">
-        <HintPath>..\..\..\packages\System.ValueTuple.4.4.0-beta-24631-01\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+        <HintPath>..\..\..\packages\System.ValueTuple.4.3.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
