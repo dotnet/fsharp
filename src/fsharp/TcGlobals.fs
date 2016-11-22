@@ -1223,15 +1223,16 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
     // Note that the suppression checks for the precise name of the type
     // so the lowercase versions are visible
   member __.suppressed_types = v_suppressed_types
-      // Are we assuming all code gen is for F# interactive, with no static linking 
+  /// Are we assuming all code gen is for F# interactive, with no static linking 
   member __.isInteractive=isInteractive
-  member __.FindSysTyconRef=findSysTyconRef
-  member __.TryFindSysTyconRef=tryFindSysTyconRef
-  member __.FindSysILTypeRef=findSysILTypeRef
-  member __.TryFindSysILTypeRef=tryFindSysILTypeRef
   member __.usesMscorlib = usesMscorlib
-  member __.FindSysAttrib=findSysAttrib
-  member __.TryFindSysAttrib=tryFindSysAttrib
+
+  member __.FindSysTyconRef path nm = findSysTyconRef path nm
+  member __.TryFindSysTyconRef path nm = tryFindSysTyconRef path nm
+  member __.FindSysILTypeRef nm = findSysILTypeRef nm
+  member __.TryFindSysILTypeRef nm = tryFindSysILTypeRef nm
+  member __.FindSysAttrib nm = findSysAttrib nm
+  member __.TryFindSysAttrib nm = tryFindSysAttrib nm
 
   member val ilxPubCloEnv=EraseClosures.newIlxPubCloEnv(ilg, addMethodGeneratedAttrs, addFieldGeneratedAttrs, addFieldNeverAttrs)
   member __.AddMethodGeneratedAttributes mdef = addMethodGeneratedAttrs mdef
