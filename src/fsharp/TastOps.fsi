@@ -1432,3 +1432,5 @@ val mkCoerceIfNeeded : TcGlobals -> tgtTy: TType -> srcTy: TType -> Expr -> Expr
 val (|InnerExprPat|) : Expr -> Expr
 
 val allValsOfModDef : ModuleOrNamespaceExpr -> seq<Val>
+
+val BindUnitVars : TcGlobals -> (Val list * ArgReprInfo list * Expr) -> Val list * Expr

@@ -7993,3 +7993,18 @@ let DetectAndOptimizeForExpression g option expr =
 
 // Used to remove Expr.Link for inner expressions in pattern matches
 let (|InnerExprPat|) expr = stripExpr expr
+
+//-------------------------------------------------------------------------
+// One of the tranformations performed by the compiler
+// is to eliminate variables of static type "unit".  These are
+// utility functions related to this.
+//------------------------------------------------------------------------- 
+
+let BindUnitVars g (mvs:Val list, paramInfos:ArgReprInfo list, body) = 
+    match mvs,paramInfos with 
+    | [v],[] -> 
+        assert isUnitTy g v.Type
+        [], mkLet NoSequencePointAtInvisibleBinding v.Range v (mkUnit g v.Range) body 
+    | _ -> mvs,body
+
+
