@@ -27,12 +27,16 @@ let FSI_BASIC = FSI_FILE
 
 module CoreTests = 
 
-// These tests are enabled for .NET Framework and .NET Core
-    [<Test>]
-    let ``access-FSI_BASIC``() = singleTestBuildAndRun "core/access" FSI_BASIC
 
+    // These tests are enabled for .NET Framework and .NET Core
     [<Test>]
     let ``access-FSC_BASIC``() = singleTestBuildAndRun "core/access" FSC_BASIC
+
+
+// All tests below here are known to pass for .NET Core but not yet enabled due to CI problems
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+    [<Test>]
+    let ``access-FSI_BASIC``() = singleTestBuildAndRun "core/access" FSI_BASIC
 
     [<Test>]
     let ``apporder-FSC_BASIC`` () = singleTestBuildAndRun "core/apporder" FSC_BASIC
@@ -164,6 +168,7 @@ module CoreTests =
 
     [<Test>]
     let ``test int32`` () = singleTestBuildAndRun "core/int32" FSC_BASIC
+#endif
 
 
 // All tests below here are enabled only for .NET Framework.  We should aim to enable at least all tests mentioning FSC_BASIC or FSI_BASIC
