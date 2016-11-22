@@ -2458,7 +2458,8 @@ type internal FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:st
     // "RuntimeLike" assembly resolution for F# Interactive is not yet properly figured out on .NET Core
     do tcConfigB.resolutionEnvironment <- ReferenceResolver.DesignTimeLike
     do tcConfigB.useSimpleResolution <- true
-    do SetTargetProfile tcConfigB "privatecorelib" // always assume System.Private.CoreLib codegen
+    do SetTargetProfile tcConfigB "netcore" // always assume System.Runtime codegen
+    //do SetTargetProfile tcConfigB "privatecorelib" // always assume System.Private.CoreLib codegen
 #endif
 
     // Preset: --optimize+ -g --tailcalls+ (see 4505)

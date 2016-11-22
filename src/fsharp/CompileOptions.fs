@@ -762,7 +762,7 @@ let SetTargetProfile tcConfigB v =
         match v with
         | "mscorlib" -> PrimaryAssembly.Mscorlib
         | "netcore"  -> PrimaryAssembly.DotNetCore
-        | "privatecorelib"  -> PrimaryAssembly.PrivateCoreLib
+        //| "privatecorelib"  -> PrimaryAssembly.PrivateCoreLib
         | _ -> error(Error(FSComp.SR.optsInvalidTargetProfile(v), rangeCmdArgs))
 
 let advancedFlagsFsc tcConfigB =

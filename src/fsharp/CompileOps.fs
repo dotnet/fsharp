@@ -1666,7 +1666,7 @@ let SystemAssemblies () =
    HashSet
     [ yield "mscorlib"
       yield "System.Runtime"
-      yield "System.Private.CoreLib"
+      //yield "System.Private.CoreLib"
       yield "FSharp.Core"
       yield "System"
       yield "System.Xml" 

@@ -11,7 +11,7 @@ open System.Collections.Generic
 type PrimaryAssembly = 
     | Mscorlib
     | DotNetCore
-    | PrivateCoreLib
+    //| PrivateCoreLib
 
     member Name: string
 
