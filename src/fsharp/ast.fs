@@ -1724,7 +1724,7 @@ let ParseAssemblyCodeInstructions s m =
 #if NO_INLINE_IL_PARSER
 let ParseAssemblyCodeType _s m = 
     errorR(Error((193,"Inline IL not valid in a hosted environment"),m))
-    IL.EcmaILGlobals.typ_Object
+    IL.EcmaMscorlibILGlobals.typ_Object
 #else
 let ParseAssemblyCodeType s m = 
     try Microsoft.FSharp.Compiler.AbstractIL.Internal.AsciiParser.ilType 
@@ -1732,7 +1732,7 @@ let ParseAssemblyCodeType s m =
            (UnicodeLexing.StringAsLexbuf s)
     with RecoverableParseError -> 
       errorR(Error(FSComp.SR.astParseEmbeddedILTypeError(),m)); 
-      IL.EcmaILGlobals.typ_Object
+      IL.EcmaMscorlibILGlobals.typ_Object
 #endif
 
 //------------------------------------------------------------------------

@@ -731,18 +731,27 @@ module ManifestResourceFormat =
 module AttributeHelpers = 
 
     /// Try to find an attribute that takes a string argument
-    let TryFindStringAttribute tcGlobals attrib attribs =
-        match TryFindFSharpAttribute tcGlobals (mkMscorlibAttrib tcGlobals attrib) attribs with
+    let TryFindStringAttribute (g: TcGlobals) attrib attribs =
+      match g.TryFindSysAttrib attrib with 
+      | None -> None
+      | Some attribRef -> 
+        match TryFindFSharpAttribute g attribRef attribs with
         | Some (Attrib(_, _, [ AttribStringArg(s) ], _, _, _, _))  -> Some (s)
         | _ -> None
         
-    let TryFindIntAttribute tcGlobals attrib attribs =
-        match TryFindFSharpAttribute tcGlobals (mkMscorlibAttrib tcGlobals attrib) attribs with
+    let TryFindIntAttribute (g: TcGlobals) attrib attribs =
+      match g.TryFindSysAttrib attrib with 
+      | None -> None
+      | Some attribRef -> 
+        match TryFindFSharpAttribute g attribRef attribs with
         | Some (Attrib(_, _, [ AttribInt32Arg(i) ], _, _, _, _)) -> Some (i)
         | _ -> None
         
-    let TryFindBoolAttribute tcGlobals attrib attribs =
-        match TryFindFSharpAttribute tcGlobals (mkMscorlibAttrib tcGlobals attrib) attribs with
+    let TryFindBoolAttribute (g: TcGlobals) attrib attribs =
+      match g.TryFindSysAttrib attrib with 
+      | None -> None
+      | Some attribRef -> 
+        match TryFindFSharpAttribute g attribRef attribs with
         | Some (Attrib(_, _, [ AttribBoolArg(p) ], _, _, _, _)) -> Some (p)
         | _ -> None
 
@@ -752,8 +761,8 @@ module AttributeHelpers =
             None
 
     // Try to find an AssemblyVersion attribute 
-    let TryFindVersionAttribute tcGlobals attrib attribName attribs =
-        match TryFindStringAttribute tcGlobals attrib attribs with
+    let TryFindVersionAttribute g attrib attribName attribs =
+        match TryFindStringAttribute g attrib attribs with
         | Some versionString ->
              try Some (IL.parseILVersion versionString)
              with e -> 
@@ -793,12 +802,12 @@ module MainModuleBuilder =
     let typesForwardedToSystemNumerics =
       set [ "System.Numerics.BigInteger" ]
 
-    let createMscorlibExportList tcGlobals =
+    let createMscorlibExportList (tcGlobals: TcGlobals) =
       // We want to write forwarders out for all injected types except for System.ITuple, which is internal
       // Forwarding System.ITuple will cause FxCop failures on 4.0
       Set.union (Set.filter (fun t -> t <> "System.ITuple") injectedCompatTypes) typesForwardedToMscorlib |>
           Seq.map (fun t -> 
-                      {   ScopeRef = tcGlobals.sysCcu.ILScopeRef  
+                      {   ScopeRef = tcGlobals.ilg.primaryAssemblyScopeRef
                           Name = t  
                           IsForwarder = true  
                           Access = ILTypeDefAccess.Public  
@@ -806,7 +815,7 @@ module MainModuleBuilder =
                           CustomAttrs = mkILCustomAttrs List.empty<ILAttribute>  }) |> 
           Seq.toList
 
-    let createSystemNumericsExportList tcGlobals (tcImports:TcImports) =
+    let createSystemNumericsExportList (tcGlobals: TcGlobals) (tcImports:TcImports) =
         let refNumericsDllName =
             if tcGlobals.usesMscorlib then "System.Numerics"
             else "System.Runtime.Numerics"
@@ -921,12 +930,12 @@ module MainModuleBuilder =
             mkILCustomAttrs
                  [ if not tcConfig.internConstantStrings then 
                        yield mkILCustomAttribute tcGlobals.ilg
-                                 (mkILTyRef (tcGlobals.ilg.traits.ScopeRef, "System.Runtime.CompilerServices.CompilationRelaxationsAttribute"), 
+                                 (tcGlobals.FindSysILTypeRef "System.Runtime.CompilerServices.CompilationRelaxationsAttribute", 
                                   [tcGlobals.ilg.typ_Int32], [ILAttribElem.Int32( 8)], []) 
                    yield! iattrs
                    yield! codegenResults.ilAssemAttrs
                    if Option.isSome pdbfile then
-                       yield (tcGlobals.ilg.mkDebuggableAttributeV2 (tcConfig.jitTracking, tcConfig.ignoreSymbolStoreSequencePoints, disableJitOptimizations, false (* enableEnC *) )) 
+                       yield (tcGlobals.mkDebuggableAttributeV2 (tcConfig.jitTracking, tcConfig.ignoreSymbolStoreSequencePoints, disableJitOptimizations, false (* enableEnC *) )) 
                    yield! reflectedDefinitionAttrs ]
 
         // Make the manifest of the assembly
@@ -1211,7 +1220,7 @@ module StaticLinker =
         let mscorlib40 = tcConfig.compilingFslib20.Value 
               
         let ilBinaryReader = 
-            let ilGlobals = mkILGlobals (IL.mkMscorlibBasedTraits ILScopeRef.Local) (Some ilGlobals.primaryAssemblyName) tcConfig.noDebugData
+            let ilGlobals = mkILGlobals ILScopeRef.Local
             let opts = { ILBinaryReader.mkDefault (ilGlobals) with 
                             optimizeForMemory=tcConfig.optimizeForMemory
                             pdbPath = None } 
@@ -1233,7 +1242,7 @@ module StaticLinker =
                       elif tref.Name = "System.Environment" then 
                           ILTypeRef.Create(ILScopeRef.Local, [], "Microsoft.FSharp.Core.PrivateEnvironment")  //|> Morphs.morphILScopeRefsInILTypeRef (function ILScopeRef.Local -> ilGlobals.mscorlibScopeRef | x -> x) 
                       else 
-                          tref |> Morphs.morphILScopeRefsInILTypeRef (fun _ -> ilGlobals.traits.ScopeRef) )
+                          tref |> Morphs.morphILScopeRefsInILTypeRef (fun _ -> ilGlobals.primaryAssemblyScopeRef) )
                   
             // strip out System.Runtime.TargetedPatchingOptOutAttribute, which doesn't exist for 2.0
             let fakeModule = 
@@ -1911,7 +1920,7 @@ let main2a(Args (tcConfig, tcImports, frameworkTcImports: TcImports, tcGlobals, 
     Args (tcConfig, tcImports, tcGlobals, errorLogger, generatedCcu, outfile, optimizedImpls, topAttrs, pdbfile, assemblyName, (sigDataAttributes, sigDataResources), optDataResources, assemVerFromAttrib, signingInfo, metadataVersion, exiter)
 
 /// Phase 2b: IL code generation
-let main2b(Args (tcConfig: TcConfig, tcImports, tcGlobals, errorLogger, generatedCcu: CcuThunk, outfile, optimizedImpls, topAttrs, pdbfile, assemblyName, idata, optDataResources, assemVerFromAttrib, signingInfo, metadataVersion, exiter: Exiter)) = 
+let main2b(Args (tcConfig: TcConfig, tcImports, tcGlobals: TcGlobals, errorLogger, generatedCcu: CcuThunk, outfile, optimizedImpls, topAttrs, pdbfile, assemblyName, idata, optDataResources, assemVerFromAttrib, signingInfo, metadataVersion, exiter: Exiter)) = 
 
     // Compute a static linker. 
     let ilGlobals = tcGlobals.ilg
@@ -1927,8 +1936,7 @@ let main2b(Args (tcConfig: TcConfig, tcImports, tcGlobals, errorLogger, generate
     // Check if System.SerializableAttribute exists in mscorlib.dll, 
     // so that make sure the compiler only emits "serializable" bit into IL metadata when it is available.
     // Note that SerializableAttribute may be relocated in the future but now resides in mscorlib.
-    let netFxHasSerializableAttribute = tcImports.SystemRuntimeContainsType "System.SerializableAttribute"
-    let codegenResults = GenerateIlxCode (IlWriteBackend, false, false, tcConfig, topAttrs, optimizedImpls, generatedCcu.AssemblyName, netFxHasSerializableAttribute, ilxGenerator)
+    let codegenResults = GenerateIlxCode (IlWriteBackend, false, false, tcConfig, topAttrs, optimizedImpls, generatedCcu.AssemblyName, ilxGenerator)
     let casApplied = new Dictionary<Stamp, bool>()
     let securityAttrs, topAssemblyAttrs = topAttrs.assemblyAttrs |> List.partition (fun a -> TypeChecker.IsSecurityAttribute tcGlobals (tcImports.GetImportMap()) casApplied a rangeStartup)
     // remove any security attributes from the top-level assembly attribute list
@@ -1984,8 +1992,7 @@ let main4 (Args (tcConfig, errorLogger: ErrorLogger, ilGlobals, ilxMainModule, o
                     signer = GetStrongNameSigner signingInfo
                     fixupOverlappingSequencePoints = false
                     dumpDebugInfo = tcConfig.dumpDebugInfo }, 
-                  ilxMainModule, 
-                  tcConfig.noDebugData)
+                  ilxMainModule)
             with Failure msg -> 
                 error(Error(FSComp.SR.fscProblemWritingBinary(outfile, msg), rangeCmdArgs))
         with e -> 

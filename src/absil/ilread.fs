@@ -1868,7 +1868,7 @@ and seekReadTypeDefOrRefAsTypeRef ctxt (TaggedIndex(tag,idx) ) =
     | tag when tag = tdor_TypeRef -> seekReadTypeRef ctxt idx
     | tag when tag = tdor_TypeSpec -> 
         dprintn ("type spec used where a type ref or def ctxt.is required")
-        ctxt.ilg.tref_Object
+        ctxt.ilg.typ_Object.TypeRef
     | _ -> failwith "seekReadTypeDefOrRefAsTypeRef_readTypeDefOrRefOrSpec"
 
 and seekReadMethodRefParent ctxt numtypars (TaggedIndex(tag,idx)) =
@@ -1984,20 +1984,20 @@ and sigptrGetTy ctxt numtypars bytes sigptr =
     let b0,sigptr = sigptrGetByte bytes sigptr
     if b0 = et_OBJECT then ctxt.ilg.typ_Object , sigptr
     elif b0 = et_STRING then ctxt.ilg.typ_String, sigptr
-    elif b0 = et_I1 then ctxt.ilg.typ_int8, sigptr
-    elif b0 = et_I2 then ctxt.ilg.typ_int16, sigptr
-    elif b0 = et_I4 then ctxt.ilg.typ_int32, sigptr
-    elif b0 = et_I8 then ctxt.ilg.typ_int64, sigptr
+    elif b0 = et_I1 then ctxt.ilg.typ_SByte, sigptr
+    elif b0 = et_I2 then ctxt.ilg.typ_Int16, sigptr
+    elif b0 = et_I4 then ctxt.ilg.typ_Int32, sigptr
+    elif b0 = et_I8 then ctxt.ilg.typ_Int64, sigptr
     elif b0 = et_I then ctxt.ilg.typ_IntPtr, sigptr
-    elif b0 = et_U1 then ctxt.ilg.typ_uint8, sigptr
-    elif b0 = et_U2 then ctxt.ilg.typ_uint16, sigptr
-    elif b0 = et_U4 then ctxt.ilg.typ_uint32, sigptr
-    elif b0 = et_U8 then ctxt.ilg.typ_uint64, sigptr
+    elif b0 = et_U1 then ctxt.ilg.typ_Byte, sigptr
+    elif b0 = et_U2 then ctxt.ilg.typ_UInt16, sigptr
+    elif b0 = et_U4 then ctxt.ilg.typ_UInt32, sigptr
+    elif b0 = et_U8 then ctxt.ilg.typ_UInt64, sigptr
     elif b0 = et_U then ctxt.ilg.typ_UIntPtr, sigptr
-    elif b0 = et_R4 then ctxt.ilg.typ_float32, sigptr
-    elif b0 = et_R8 then ctxt.ilg.typ_float64, sigptr
-    elif b0 = et_CHAR then ctxt.ilg.typ_char, sigptr
-    elif b0 = et_BOOLEAN then ctxt.ilg.typ_bool, sigptr
+    elif b0 = et_R4 then ctxt.ilg.typ_Single, sigptr
+    elif b0 = et_R8 then ctxt.ilg.typ_Double, sigptr
+    elif b0 = et_CHAR then ctxt.ilg.typ_Char, sigptr
+    elif b0 = et_BOOLEAN then ctxt.ilg.typ_Bool, sigptr
     elif b0 = et_WITH then 
         let b0,sigptr = sigptrGetByte bytes sigptr
         let tdorIdx, sigptr = sigptrGetTypeDefOrRefOrSpecIdx bytes sigptr
@@ -2043,9 +2043,8 @@ and sigptrGetTy ctxt numtypars bytes sigptr =
         
     elif b0 = et_VOID then ILType.Void, sigptr
     elif b0 = et_TYPEDBYREF then 
-        match ctxt.ilg.typ_TypedReference with
-        | Some t -> t, sigptr
-        | _ -> failwith "system runtime doesn't contain System.TypedReference"
+        let t = mkILNonGenericValueTy(mkILTyRef(ctxt.ilg.primaryAssemblyScopeRef,"System.TypedReference"))
+        t, sigptr
     elif b0 = et_CMOD_REQD || b0 = et_CMOD_OPT  then 
         let tdorIdx, sigptr = sigptrGetTypeDefOrRefOrSpecIdx bytes sigptr
         let typ, sigptr = sigptrGetTy ctxt numtypars bytes sigptr
