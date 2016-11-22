@@ -4,7 +4,7 @@ module Core_quotes
 #endif
 #light
 
-#if !TESTS_AS_APP
+#if !TESTS_AS_APP && !FX_PORTABLE_OR_NETSTANDARD
 #r "cslib.dll"
 #endif
 
@@ -24,6 +24,7 @@ let check s v1 v2 =
 
 
 open System
+open System.Reflection
 open Microsoft.FSharp.Quotations
 open Microsoft.FSharp.Quotations.Patterns
 open Microsoft.FSharp.Quotations.DerivedPatterns
@@ -346,7 +347,9 @@ module TypedTest = begin
     test "check  PropertyGet (static)" ((<@ System.DateTime.Now @> |> (function PropertyGet(None,_,[]) -> true | _ -> false))) 
     test "check  PropertyGet (instance)" ((<@ ("1").Length @> |> (function PropertyGet(Some(String("1")),_,[]) -> true | _ -> false))) 
 
+#if !FX_PORTABLE_OR_NETSTANDARD
     test "check  PropertySet (static)" ((<@ System.Environment.ExitCode <- 1 @> |> (function PropertySet(None,_,[],Int32(1)) -> true | _ -> false))) 
+#endif
     test "check  PropertySet (instance)" ((<@ ("1").Length @> |> (function PropertyGet(Some(String("1")),_,[]) -> true | _ -> false))) 
 
     test "check null (string)"   (<@ (null:string) @> |> (function Value(null,ty) when ty = typeof<string> -> true | _ -> false))
@@ -513,7 +516,7 @@ module TypedTest = begin
             |   _ -> false
         end
 
-#if !FSHARP_CORE_31 && !TESTS_AS_APP
+#if !FSHARP_CORE_31 && !TESTS_AS_APP && !FX_PORTABLE_OR_NETSTANDARD
     test "check accesses to readonly fields in ReflectedDefinitions" 
         begin
             let c1 = Class1("a")

@@ -52,14 +52,14 @@ let isThreadOrContextStatic g attrs =
     HasFSharpAttributeOpt g g.attrib_ThreadStaticAttribute attrs ||
     HasFSharpAttributeOpt g g.attrib_ContextStaticAttribute attrs 
 
-let mkNilListPat g m ty = TPat_unioncase(g.nil_ucref,[ty],[],m)
-let mkConsListPat g ty ph pt = TPat_unioncase(g.cons_ucref,[ty],[ph;pt],unionRanges ph.Range pt.Range)
+let mkNilListPat (g: TcGlobals) m ty = TPat_unioncase(g.nil_ucref,[ty],[],m)
+let mkConsListPat (g: TcGlobals) ty ph pt = TPat_unioncase(g.cons_ucref,[ty],[ph;pt],unionRanges ph.Range pt.Range)
 
 let mkCompGenLetIn m nm ty e f = 
     let v,ve = mkCompGenLocal m nm ty
     mkCompGenLet m v e (f (v,ve))
 
-let mkUnitDelayLambda g m e =
+let mkUnitDelayLambda (g: TcGlobals) m e =
     let uv,_ = mkCompGenLocal m "unitVar" g.unit_ty
     mkLambda m uv (e,tyOfExpr g e) 
 
@@ -113,7 +113,7 @@ exception InvalidInternalsVisibleToAssemblyName of (*badName*)string * (*fileNam
 
 
 // Identify any security attributes
-let IsSecurityAttribute g amap (casmap : Dictionary<Stamp,bool>) (Attrib(tcref,_,_,_,_,_,_)) m =
+let IsSecurityAttribute (g: TcGlobals) amap (casmap : Dictionary<Stamp,bool>) (Attrib(tcref,_,_,_,_,_,_)) m =
     // There's no CAS on Silverlight, so we have to be careful here
     match g.attrib_SecurityAttribute with
     | None -> false
@@ -1476,7 +1476,7 @@ let InstanceMembersNeedSafeInitCheck cenv m thisTy =
         AllowMultiIntfInstantiations.Yes
         thisTy
         
-let MakeSafeInitField g env m isStatic = 
+let MakeSafeInitField (g: TcGlobals) env m isStatic = 
     let id = ident(globalNng.FreshCompilerGeneratedName("init",m),m)
     let taccess = TAccess [env.eAccessPath]
     NewRecdField isStatic None id g.int_ty true true [] [] XmlDoc.Empty taccess true
@@ -9452,13 +9452,13 @@ and TcMethodApplication
                           match currDfltVal with
                           | MissingValue -> 
                               // Add an I_nop if this is an initonly field to make sure we never recognize it as an lvalue. See mkExprAddrOfExpr. 
-                              emptyPreBinder,mkAsmExpr ([ mkNormalLdsfld (fspec_Missing_Value cenv.g.ilg); AI_nop ],[],[],[currCalledArgTy],mMethExpr)
+                              emptyPreBinder,mkAsmExpr ([ mkNormalLdsfld (fspec_Missing_Value cenv.g); AI_nop ],[],[],[currCalledArgTy],mMethExpr)
                           | DefaultValue -> 
                               emptyPreBinder,mkDefault(mMethExpr,currCalledArgTy)
                           | Constant fieldInit -> 
                                 match currCalledArgTy with
                                 | NullableTy cenv.g inst when fieldInit <> ILFieldInit.Null ->
-                                    let nullableTy = mkILNonGenericBoxedTy(mkILTyRef(cenv.g.ilg.traits.ScopeRef, "System.Nullable`1"))
+                                    let nullableTy = mkILNonGenericBoxedTy(cenv.g.FindSysILTypeRef "System.Nullable`1")
                                     let ctor = mkILCtorMethSpecForTy(nullableTy, [ILType.TypeVar 0us]).MethodRef
                                     let ctorArgs = [Expr.Const(TcFieldInit mMethExpr fieldInit,mMethExpr, inst)]
                                     emptyPreBinder,Expr.Op(TOp.ILCall(false, false, true, true, NormalValUse, false, false, ctor, [inst], [], [currCalledArgTy]), [], ctorArgs, mMethExpr)
@@ -9476,19 +9476,19 @@ and TcMethodApplication
                                         emptyPreBinder,Expr.Const(TcFieldInit mMethExpr fieldInit,mMethExpr,currCalledArgTy)
                                     
                           | WrapperForIDispatch ->
-                              match cenv.g.ilg.traits.SystemRuntimeInteropServicesScopeRef.Value with
+                              match cenv.g.TryFindSysILTypeRef "System.Runtime.InteropServices.DispatchWrapper" with
                               | None -> error(Error(FSComp.SR.fscSystemRuntimeInteropServicesIsRequired(), mMethExpr))
-                              | Some assemblyRef ->
-                                  let tref = mkILNonGenericBoxedTy(mkILTyRef(assemblyRef, "System.Runtime.InteropServices.DispatchWrapper"))
-                                  let mref = mkILCtorMethSpecForTy(tref,[cenv.g.ilg.typ_Object]).MethodRef
+                              | Some tref ->
+                                  let ty = mkILNonGenericBoxedTy tref
+                                  let mref = mkILCtorMethSpecForTy(ty,[cenv.g.ilg.typ_Object]).MethodRef
                                   let expr = Expr.Op(TOp.ILCall(false,false,false,true,NormalValUse,false,false,mref,[],[],[cenv.g.obj_ty]),[],[mkDefault(mMethExpr,currCalledArgTy)],mMethExpr)
                                   emptyPreBinder,expr
                           | WrapperForIUnknown ->
-                              match cenv.g.ilg.traits.SystemRuntimeInteropServicesScopeRef.Value with
+                              match cenv.g.TryFindSysILTypeRef "System.Runtime.InteropServices.UnknownWrapper" with
                               | None -> error(Error(FSComp.SR.fscSystemRuntimeInteropServicesIsRequired(), mMethExpr))
-                              | Some assemblyRef ->
-                                  let tref = mkILNonGenericBoxedTy(mkILTyRef(assemblyRef, "System.Runtime.InteropServices.UnknownWrapper"))
-                                  let mref = mkILCtorMethSpecForTy(tref,[cenv.g.ilg.typ_Object]).MethodRef
+                              | Some tref ->
+                                  let ty = mkILNonGenericBoxedTy tref
+                                  let mref = mkILCtorMethSpecForTy(ty,[cenv.g.ilg.typ_Object]).MethodRef
                                   let expr = Expr.Op(TOp.ILCall(false,false,false,true,NormalValUse,false,false,mref,[],[],[cenv.g.obj_ty]),[],[mkDefault(mMethExpr,currCalledArgTy)],mMethExpr)
                                   emptyPreBinder,expr
                           | PassByRef (ty, dfltVal2) ->
@@ -9872,7 +9872,7 @@ and TcStaticOptimizationConstraint cenv env tpenv c =
         TTyconIsStruct(mkTyparTy tp'),tpenv
 
 /// Emit a conv.i instruction
-and mkConvToNativeInt g e m = Expr.Op (TOp.ILAsm ([ AI_conv ILBasicType.DT_I], [ g.nativeint_ty ]),[],[e],m)
+and mkConvToNativeInt (g:TcGlobals) e m = Expr.Op (TOp.ILAsm ([ AI_conv ILBasicType.DT_I], [ g.nativeint_ty ]),[],[e],m)
 
 /// Fix up the r.h.s. of a 'use x = fixed expr' 
 and TcAndBuildFixedExpr cenv env (overallPatTy, fixedExpr, overallExprTy, mBinding) =
@@ -11538,7 +11538,7 @@ let TcAndPublishValSpec (cenv, env, containerInfo: ContainerInfo, declKind, memF
 
 exception NotUpperCaseConstructor of range
 
-let CheckNamespaceModuleOrTypeName g (id:Ident) = 
+let CheckNamespaceModuleOrTypeName (g:TcGlobals) (id:Ident) = 
     // type names '[]' etc. are used in fslib
     if not g.compilingFslib &&  id.idText.IndexOfAny(IllegalCharactersInTypeAndNamespaceNames) <> -1 then 
         errorR(Error(FSComp.SR.tcInvalidNamespaceModuleTypeUnionName(),id.idRange))
@@ -11740,7 +11740,7 @@ let TcModuleOrNamespaceLidAndPermitAutoResolve env amap (longId : Ident list) =
     | Result res -> Result res
     | Exception err ->  raze err
 
-let TcOpenDecl tcSink g amap m scopem env (longId : Ident list)  = 
+let TcOpenDecl tcSink (g:TcGlobals) amap m scopem env (longId : Ident list)  = 
     let modrefs = ForceRaise (TcModuleOrNamespaceLidAndPermitAutoResolve env amap longId)
 
     // validate opened namespace names

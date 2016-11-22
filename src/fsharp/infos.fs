@@ -93,7 +93,7 @@ let GetSuperTypeOfType g amap m typ =
             None
 
 /// Make a type for System.Collections.Generic.IList<ty>
-let mkSystemCollectionsGenericIListTy g ty = TType_app(g.tcref_System_Collections_Generic_IList,[ty])
+let mkSystemCollectionsGenericIListTy (g: TcGlobals) ty = TType_app(g.tcref_System_Collections_Generic_IList,[ty])
 
 [<RequireQualifiedAccess>]
 /// Indicates whether we can skip interface types that lie outside the reference set
@@ -784,7 +784,7 @@ type ILMethInfo =
 
     /// Indicates if the method is marked as a DllImport (a PInvoke). This is done by looking at the IL custom attributes on 
     /// the method.
-    member x.IsDllImport g = 
+    member x.IsDllImport (g: TcGlobals) = 
         match g.attrib_DllImportAttribute with
         | None -> false
         | Some (AttribInfo(tref,_)) ->x.RawMetadata.CustomAttrs |> TryDecodeILAttribute g tref |> Option.isSome

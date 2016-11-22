@@ -7,6 +7,9 @@
 module Core_patterns
 #endif
 
+open System
+open System.Reflection
+
 #light
 
 let failures = ref false
@@ -181,6 +184,7 @@ end
 module System_Type_Example2 = begin
 
     open System
+    open System.Reflection
     
     let (|Named|Array|ByRef|Ptr|Param|) (typ : System.Type) =
         if typ.IsGenericType        then Named(typ.GetGenericTypeDefinition(), typ.GetGenericArguments())
