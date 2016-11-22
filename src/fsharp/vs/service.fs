@@ -1371,6 +1371,9 @@ type TypeCheckInfo
                // typevariables get colored as types when they occur in syntactic types custom builders, custom operations get colored as keywords
                | CNR(_, (Item.TypeVar  _ | Item.Types _ | Item.UnqualifiedType _) , (ItemOccurence.UseInType | ItemOccurence.UseInAttribute), _, _, _, m) -> 
                    yield (m, FSharpTokenColorKind.TypeName) 
+               | CNR(_, (Item.UnionCase _ | Item.ActivePatternCase _), 
+                     (ItemOccurence.Binding | ItemOccurence.Implemented | ItemOccurence.Pattern | ItemOccurence.Use | ItemOccurence.UseInType), _, _, _, m) ->
+                   yield (m, FSharpTokenColorKind.Pattern)
                | _ -> () 
            |]
     member x.ScopeResolutions = sResolutions
