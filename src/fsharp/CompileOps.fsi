@@ -352,9 +352,7 @@ type TcConfigBuilder =
       mutable emitDebugInfoInQuotations : bool
       mutable exename : string option 
       mutable copyFSharpCore : bool
-#if FSI_SHADOW_COPY_REFERENCES
       mutable shadowCopyReferences : bool
-#endif
     }
 
     static member CreateNew : 

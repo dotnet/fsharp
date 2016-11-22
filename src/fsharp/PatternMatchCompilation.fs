@@ -360,7 +360,7 @@ let rec removeActive x l =
 //---------------------------------------------------------------------------
 
 // tpinst is required because the pattern is specified w.r.t. generalized type variables. 
-let getDiscrimOfPattern g tpinst t = 
+let getDiscrimOfPattern (g: TcGlobals) tpinst t = 
     match t with 
     | TPat_null _m -> 
         Some(Test.IsNull)
@@ -386,7 +386,7 @@ let constOfDiscrim discrim =
 let constOfCase (c: DecisionTreeCase) = constOfDiscrim c.Discriminator
 
 /// Compute pattern identity
-let discrimsEq g d1 d2 =
+let discrimsEq (g: TcGlobals) d1 d2 =
   match d1,d2 with 
   | Test.UnionCase (c1,_),    Test.UnionCase(c2,_) -> g.unionCaseRefEq c1 c2
   | Test.ArrayLength (n1,_),   Test.ArrayLength(n2,_) -> (n1=n2)

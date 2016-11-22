@@ -577,7 +577,7 @@ let BuildILMethInfoCall g amap m isProp (minfo:ILMethInfo) valUseFlags minst dir
     exprTy
 
 /// Build a call to the System.Object constructor taking no arguments,
-let BuildObjCtorCall g m =
+let BuildObjCtorCall (g: TcGlobals) m =
     let ilMethRef = (mkILCtorMethSpecForTy(g.ilg.typ_Object,[])).MethodRef
     Expr.Op(TOp.ILCall(false,false,false,false,CtorValUsedAsSuperInit,false,true,ilMethRef,[],[],[g.obj_ty]),[],[],m)
 

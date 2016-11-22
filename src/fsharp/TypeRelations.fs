@@ -137,7 +137,7 @@ let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 =
 /// variables when compiling patterns at generalized bindings.
 ///     e.g. let ([],x) = ([],[])
 /// Here x gets a generalized type "list<'T>".
-let ChooseTyparSolutionAndRange g amap (tp:Typar) =
+let ChooseTyparSolutionAndRange (g: TcGlobals) amap (tp:Typar) =
     let m = tp.Range
     let max,m = 
          let initial = 

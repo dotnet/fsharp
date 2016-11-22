@@ -2203,9 +2203,6 @@ do test2398997()
 !* Generic formatting
  *--------------------------------------------------------------------------- *)
 
-// See FSHARP1.0:4797
-// On NetFx4.0 and above we do not emit the 'I' suffix
-let bigintsuffix = if (System.Environment.Version.Major, System.Environment.Version.Minor) > (2,0) then "" else "I"
 
 do check "generic format 1"  "[1; 2]" (sprintf "%A" [1;2])
 do check "generic format 2"  "Some [1; 2]" (sprintf "%A" (Some [1;2]))
@@ -2216,8 +2213,6 @@ do check "generic format d"  "1us" (sprintf "%A" 1us)
 do check "generic format e"  "1" (sprintf "%A" 1)
 do check "generic format f"  "1u" (sprintf "%A" 1ul)
 do check "generic format g"  "1L" (sprintf "%A" 1L)
-do check "generic format i"  ("1" + bigintsuffix) ( printf "%A" 1I
-                                                    sprintf "%A" 1I)
 do check "generic format j"  "1.0" (sprintf "%A" 1.0)
 do check "generic format k"  "1.01" (sprintf "%A" 1.01)
 do check "generic format l"  "1000.0" (sprintf "%A" 1000.0)
@@ -2226,7 +2221,14 @@ do check "generic format m"  "-1y" (sprintf "%A" (-1y))
 do check "generic format n"  "-1s" (sprintf "%A" (-1s))
 do check "generic format o"  "-1" (sprintf "%A" (-1))
 do check "generic format p"  "-1L" (sprintf "%A" (-1L))
+#if !FX_PORTABLE_OR_NETSTANDARD
+// See FSHARP1.0:4797
+// On NetFx4.0 and above we do not emit the 'I' suffix
+let bigintsuffix = if (System.Environment.Version.Major, System.Environment.Version.Minor) > (2,0) then "" else "I"
+do check "generic format i"  ("1" + bigintsuffix) ( printf "%A" 1I
+                                                    sprintf "%A" 1I)
 do check "generic format r"  ("-1" + bigintsuffix)  (sprintf "%A" (-1I))
+#endif
 
 
 (*---------------------------------------------------------------------------
@@ -3863,6 +3865,7 @@ module FloatParseTests = begin
     do check "FloatParse.A" (to_bits (of_string "Infinity"))  0x7ff0000000000000L // 9218868437227405312L
     do check "FloatParse.B" (to_bits (of_string "-Infinity")) 0xfff0000000000000L // (-4503599627370496L)
     do check "FloatParse.C" (to_bits (of_string "NaN"))       0xfff8000000000000L  // (-2251799813685248L)
+#if !FX_PORTABLE_OR_NETSTANDARD
     do check "FloatParse.D" (to_bits (of_string "-NaN"))    ( // http://en.wikipedia.org/wiki/NaN
                                                               let bit64 = System.IntPtr.Size = 8 in
                                                               if bit64 && System.Environment.Version.Major < 4 then
@@ -3875,6 +3878,7 @@ module FloatParseTests = begin
                                                                   // and -nan then has the negative-bit cleared!
                                                                   0x7ff8000000000000L // 9221120237041090560L
                                                             )
+#endif
 end
 
 

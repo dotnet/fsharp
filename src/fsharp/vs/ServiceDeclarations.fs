@@ -571,7 +571,7 @@ module internal ItemDescriptionsImpl =
         items |> partialDistinctBy (ItemDisplayPartialEquality g) 
 
     /// Filter types that are explicitly suppressed from the IntelliSense (such as uppercase "FSharpList", "Option", etc.)
-    let RemoveExplicitlySuppressed g items = 
+    let RemoveExplicitlySuppressed (g: TcGlobals) items = 
       items |> List.filter (fun item ->
         // This may explore assemblies that are not in the reference set.
         // In this case just assume the item is not suppressed.

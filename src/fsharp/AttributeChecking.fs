@@ -251,7 +251,7 @@ let MethInfoHasAttribute g m attribSpec minfo  =
 
 
 /// Check IL attributes for 'ObsoleteAttribute', returning errors and warnings as data
-let private CheckILAttributes g cattrs m = 
+let private CheckILAttributes (g: TcGlobals) cattrs m = 
     let (AttribInfo(tref,_)) = g.attrib_SystemObsolete
     match TryDecodeILAttribute g tref cattrs with 
     | Some ([ILAttribElem.String (Some msg) ],_) -> 
@@ -318,7 +318,7 @@ let CheckFSharpAttributes g attribs m =
 
 #if EXTENSIONTYPING
 /// Check a list of provided attributes for 'ObsoleteAttribute', returning errors and warnings as data
-let private CheckProvidedAttributes g m (provAttribs: Tainted<IProvidedCustomAttributeProvider>)  = 
+let private CheckProvidedAttributes (g: TcGlobals) m (provAttribs: Tainted<IProvidedCustomAttributeProvider>)  = 
     let (AttribInfo(tref,_)) = g.attrib_SystemObsolete
     match provAttribs.PUntaint((fun a -> a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure(id), tref.FullName)),m) with
     | Some ([ Some (:? string as msg) ], _) -> WarnD(ObsoleteWarning(msg,m))
@@ -336,7 +336,7 @@ let private CheckProvidedAttributes g m (provAttribs: Tainted<IProvidedCustomAtt
 #endif
 
 /// Indicate if a list of IL attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.
-let CheckILAttributesForUnseen g cattrs _m = 
+let CheckILAttributesForUnseen (g: TcGlobals) cattrs _m = 
     let (AttribInfo(tref,_)) = g.attrib_SystemObsolete
     Option.isSome (TryDecodeILAttribute g tref cattrs)
 

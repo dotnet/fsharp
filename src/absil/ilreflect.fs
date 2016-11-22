@@ -333,8 +333,9 @@ let convAssemblyRef (aref:ILAssemblyRef) =
 
 /// The global environment.
 type cenv = 
-    { ilg: ILGlobals; 
-      generatePdb: bool;
+    { ilg: ILGlobals
+      tryFindSysILTypeRef : string -> ILTypeRef option
+      generatePdb: bool
       resolvePath: (ILAssemblyRef -> Choice<string,System.Reflection.Assembly> option) }
 
 /// Convert an Abstract IL type reference to Reflection.Emit System.Type value.
@@ -1192,7 +1193,7 @@ let rec emitInstr cenv (modB : ModuleBuilder) emEnv (ilG:ILGenerator) instr =
                                       ilG.EmitAndLog(OpCodes.Initblk)
     | EI_ldlen_multi (_,m) -> 
         emitInstr cenv modB emEnv ilG (mkLdcInt32 m);
-        emitInstr cenv modB emEnv ilG (mkNormalCall(mkILNonGenericMethSpecInTy(cenv.ilg.typ_Array, ILCallingConv.Instance, "GetLength", [cenv.ilg.typ_int32], cenv.ilg.typ_int32)))
+        emitInstr cenv modB emEnv ilG (mkNormalCall(mkILNonGenericMethSpecInTy(cenv.ilg.typ_Array, ILCallingConv.Instance, "GetLength", [cenv.ilg.typ_Int32], cenv.ilg.typ_Int32)))
     | i -> Printf.failwithf "the IL instruction %s cannot be emitted" (i.ToString())
 
 
@@ -1668,13 +1669,16 @@ let typeAttributesOfTypeLayout cenv emEnv x =
     let attr x p = 
       if p.Size =None && p.Pack = None then None
       else 
-        Some(convCustomAttr cenv emEnv  
-               (IL.mkILCustomAttribute cenv.ilg
-                  (mkILTyRef (cenv.ilg.traits.ScopeRef,"System.Runtime.InteropServices.StructLayoutAttribute"), 
-                   [mkILNonGenericValueTy (mkILTyRef (cenv.ilg.traits.ScopeRef,"System.Runtime.InteropServices.LayoutKind")) ],
+        match cenv.tryFindSysILTypeRef "System.Runtime.InteropServices.StructLayoutAttribute", cenv.tryFindSysILTypeRef "System.Runtime.InteropServices.LayoutKind" with
+        | Some tref1, Some tref2 ->
+          Some(convCustomAttr cenv emEnv
+                (IL.mkILCustomAttribute cenv.ilg
+                  (tref1, 
+                   [mkILNonGenericValueTy tref2 ],
                    [ ILAttribElem.Int32 x ],
-                   (p.Pack |> Option.toList |> List.map (fun x -> ("Pack", cenv.ilg.typ_int32, false, ILAttribElem.Int32 (int32 x))))  @
-                   (p.Size |> Option.toList |> List.map (fun x -> ("Size", cenv.ilg.typ_int32, false, ILAttribElem.Int32 x)))))) in
+                   (p.Pack |> Option.toList |> List.map (fun x -> ("Pack", cenv.ilg.typ_Int32, false, ILAttribElem.Int32 (int32 x))))  @
+                   (p.Size |> Option.toList |> List.map (fun x -> ("Size", cenv.ilg.typ_Int32, false, ILAttribElem.Int32 x)))))) 
+        | _ -> None
     match x with 
     | ILTypeDefLayout.Auto         -> TypeAttributes.AutoLayout,None
     | ILTypeDefLayout.Explicit p   -> TypeAttributes.ExplicitLayout,(attr 0x02 p)
@@ -1999,8 +2003,8 @@ let mkDynamicAssemblyAndModule (assemblyName, optimize, debugInfo, collectible) 
     let modB = asmB.DefineDynamicModuleAndLog(assemblyName,filename,debugInfo)
     asmB,modB
 
-let emitModuleFragment (ilg, emEnv, asmB : AssemblyBuilder, modB : ModuleBuilder, modul : IL.ILModuleDef, debugInfo : bool, resolvePath) =
-    let cenv = { ilg = ilg ; generatePdb = debugInfo; resolvePath=resolvePath }
+let emitModuleFragment (ilg, emEnv, asmB : AssemblyBuilder, modB : ModuleBuilder, modul : IL.ILModuleDef, debugInfo : bool, resolvePath, tryFindSysILTypeRef) =
+    let cenv = { ilg = ilg ; generatePdb = debugInfo; resolvePath=resolvePath; tryFindSysILTypeRef=tryFindSysILTypeRef }
 
     let emEnv = buildModuleFragment cenv emEnv asmB modB modul
     match modul.Manifest with 

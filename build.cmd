@@ -899,6 +899,7 @@ if '%TEST_VS_IDEUNIT_SUITE%' == '1' (
     )
 )
 
+goto :success
 REM ------ upload test results procedure -------------------------------------
 
 :UPLOAD_TEST_RESULTS

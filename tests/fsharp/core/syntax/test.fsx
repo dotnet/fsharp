@@ -549,7 +549,7 @@ type WrapOneStream =
         override x.Finalize() = x.Dispose(false)
         member x.Dispose(deep: bool) =  
             printf "disposing, deep = %b!\n" deep;
-            if deep then x.myManagedResource.Close()
+            if deep then x.myManagedResource.Dispose()
   end 
 
 let dummy4() = ()
@@ -599,14 +599,14 @@ let LineDirectedInputSample1() =
     // Write a test file
     let outputChannel = System.IO.File.CreateText @"test.txt" 
     outputChannel.Write "This is a test file.\r\nIt is easy to read.";
-    outputChannel.Close();
+    outputChannel.Dispose();
     
     // Now read the test file.
     let inputChannel = System.IO.File.OpenText @"test.txt" 
     let line1 = inputChannel.ReadLine() 
     let line2 = inputChannel.ReadLine() 
     // Don't forget to close the channel
-    inputChannel.Close();
+    inputChannel.Dispose();
     printf "line1=%s\nline2=%s\n" line1 line2
 
 module InfixTokenIndentationExamples = begin

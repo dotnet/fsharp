@@ -22,38 +22,8 @@ let isVerbose = Verbosity = "verbose"
 
 let dependencies = CrackProjectJson.collectReferences (isVerbose, PackagesDir, FrameworkName + "/" + Platform, ProjectJsonLock, false, false) |> Seq.toArray
 
-let executeProcessNoRedirect filename arguments =
-    if isVerbose then 
-       printfn "%s %s" filename arguments
-    let info = ProcessStartInfo(Arguments=arguments, UseShellExecute=false, 
-                                RedirectStandardOutput=true, RedirectStandardError=true,RedirectStandardInput=true,
-                                CreateNoWindow=true, FileName=filename)
-    let p = new Process(StartInfo=info)
-    if p.Start() then
 
-        async { try 
-                  let buffer = Array.zeroCreate 4096
-                  while not p.StandardOutput.EndOfStream do 
-                    let n = p.StandardOutput.Read(buffer, 0, buffer.Length)
-                    if n > 0 then System.Console.Out.Write(buffer, 0, n)
-                with _ -> () } |> Async.Start
-        async { try 
-                  let buffer = Array.zeroCreate 4096
-                  while not p.StandardError.EndOfStream do 
-                    let n = p.StandardError.Read(buffer, 0, buffer.Length)
-                    if n > 0 then System.Console.Error.Write(buffer, 0, n)
-                with _ -> () } |> Async.Start
-        async { try 
-                  while true do 
-                    let c = System.Console.In.ReadLine()
-                    p.StandardInput.WriteLine(c)
-                with _ -> () } |> Async.Start
-        p.WaitForExit()
-        p.ExitCode
-    else
-        0
-
-let executeCompiler references =
+let executeFsi references =
     let addReferenceSwitch list = list |> Seq.map(fun i -> sprintf "-r:%s" i)
     let arguments = 
         [ yield "--noframework"
@@ -69,7 +39,8 @@ let executeCompiler references =
         File.WriteAllLines("fsi.cmd.args", arguments)
         log "%s %s" coreRunExe arguments2
         log "%s %s @fsi.cmd.args" coreRunExe fsiExe 
+
     executeProcessNoRedirect coreRunExe arguments2
 
-exit (executeCompiler dependencies)
+executeFsi dependencies // ignore exit code for now since FailFast gives negative error code
 

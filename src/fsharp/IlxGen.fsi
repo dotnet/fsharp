@@ -34,8 +34,6 @@ type internal IlxGenOptions =
       // Indicates the code generated is an interactive 'it' expression. We generate a setter to allow clearing of the underlying
       // storage, even though 'it' is not logically mutable
       isInteractiveItExpr                    : bool
-      // Indicates System.SerializableAttribute is available in the targeting framework
-      netFxHasSerializableAttribute          : bool
       /// Indicates that, whenever possible, use callvirt instead of call
       alwaysCallVirt                         : bool }
 

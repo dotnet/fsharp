@@ -7,9 +7,11 @@ module Core_attributes
 #endif
 #light
 
-#if !TESTS_AS_APP
+#if !TESTS_AS_APP && !FX_PORTABLE_OR_NETSTANDARD
 #load "testlib.fsi" "testlib.fs" // a warning is expected here
+#endif
 
+#if !TESTS_AS_APP && !FX_PORTABLE_OR_NETSTANDARD
 #r "cslib.dll"
 #endif
 
@@ -887,7 +889,7 @@ module Bug6161_PS_FSharp1_0_MoreAttributesWithArrayArguments = begin
         check "ce99pj32cweqT" (ca.[0].GetType()) (typeof<AnyAttribute>)
         check "ce99pj32cweqY" (ca.[0] :?> AnyAttribute).Value (box [| 42 |])
 
-#if !TESTS_AS_APP
+#if !TESTS_AS_APP && !FX_PORTABLE_OR_NETSTANDARD
     let _ = 
         let ty = typeof<CSharpLibrary.TestClass>
         let ca = ty.GetCustomAttributes(typeof<CSharpLibrary.IntArrayPropAttribute>,false)

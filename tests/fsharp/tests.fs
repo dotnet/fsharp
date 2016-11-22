@@ -16,44 +16,169 @@ open TestFramework
 open Scripting
 open SingleTest
 
+#if FSHARP_SUITE_DRIVES_CORECLR_TESTS
+// Use these lines if you want to test CoreCLR
+let FSC_BASIC = FSC_CORECLR
+let FSI_BASIC = FSI_CORECLR
+#else
+let FSC_BASIC = FSC_OPT_PLUS_DEBUG
+let FSI_BASIC = FSI_FILE
+#endif
+
 module CoreTests = 
 
-#if FSHARP_SUITE_DRIVES_CORECLR_TESTS
 
-// These tests drive the .NET Core compiler directly (from a .NET Framework NUnit component)
+    // These tests are enabled for .NET Framework and .NET Core
     [<Test>]
-    let ``access-FSC_CORECLR``() = singleTestBuildAndRun "core/access" FSC_CORECLR
+    let ``access-FSC_BASIC``() = singleTestBuildAndRun "core/access" FSC_BASIC
 
-    //[<Test>]
-    //let ``access-FSI_CORECLR``() = singleTestBuildAndRun "core/access" FSI_CORECLR
-#else
 
+// All tests below here are known to pass for .NET Core but not yet enabled due to CI problems
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
-    let ``access-FSI_FILE``() = singleTestBuildAndRun "core/access" FSI_FILE
+    let ``access-FSI_BASIC``() = singleTestBuildAndRun "core/access" FSI_BASIC
 
     [<Test>]
-    let ``access-FSC_OPT_PLUS_DEBUG``() = singleTestBuildAndRun "core/access" FSC_OPT_PLUS_DEBUG
+    let ``apporder-FSC_BASIC`` () = singleTestBuildAndRun "core/apporder" FSC_BASIC
 
     [<Test>]
-    let ``access-GENERATED_SIGNATURE``() = singleTestBuildAndRun "core/access" GENERATED_SIGNATURE
+    let ``apporder-FSI_BASIC`` () = singleTestBuildAndRun "core/apporder" FSI_BASIC
 
     [<Test>]
-    let ``apporder-FSC_OPT_PLUS_DEBUG`` () = singleTestBuildAndRun "core/apporder" FSC_OPT_PLUS_DEBUG
+    let ``array-FSC_BASIC`` () = singleTestBuildAndRun "core/array" FSC_BASIC
 
     [<Test>]
-    let ``apporder-FSI_FILE`` () = singleTestBuildAndRun "core/apporder" FSI_FILE
+    let ``array-FSI_BASIC`` () = singleTestBuildAndRun "core/array" FSI_BASIC
 
     [<Test>]
-    let ``array-FSC_OPT_PLUS_DEBUG`` () = singleTestBuildAndRun "core/array" FSC_OPT_PLUS_DEBUG
+    let ``comprehensions-FSC_BASIC`` () = singleTestBuildAndRun "core/comprehensions" FSC_BASIC
 
     [<Test>]
-    let ``array-FSI_FILE`` () = singleTestBuildAndRun "core/array" FSI_FILE
+    let ``comprehensions-FSI_BASIC`` () = singleTestBuildAndRun "core/comprehensions" FSI_BASIC
 
     [<Test>]
-    let ``attributes-FSC_OPT_PLUS_DEBUG`` () = singleTestBuildAndRun "core/attributes" FSC_OPT_PLUS_DEBUG
+    let ``comprehensionshw-FSC_BASIC`` () = singleTestBuildAndRun "core/comprehensions-hw" FSC_BASIC
 
     [<Test>]
-    let ``attributes-FSI_FILE`` () = singleTestBuildAndRun "core/attributes" FSI_FILE
+    let ``comprehensionshw-FSI_BASIC`` () = singleTestBuildAndRun "core/comprehensions-hw" FSI_BASIC
+
+    [<Test>]
+    let ``genericmeasures-FSI_BASIC`` () = singleTestBuildAndRun "core/genericmeasures" FSI_BASIC
+
+    [<Test>]
+    let ``genericmeasures-FSC_BASIC`` () = singleTestBuildAndRun "core/genericmeasures" FSC_BASIC
+
+    [<Test>]
+    let ``innerpoly-FSI_BASIC`` () = singleTestBuildAndRun "core/innerpoly" FSI_BASIC
+
+    [<Test>]
+    let ``innerpoly-FSC_BASIC`` () = singleTestBuildAndRun "core/innerpoly" FSC_BASIC
+
+    [<Test; Category("namespaces")>]
+    let namespaceAttributes () = singleTestBuildAndRun "core/namespaces" FSC_BASIC
+
+    [<Test>]
+    let unicode2 () = singleTestBuildAndRun "core/unicode" FSC_BASIC
+
+    [<Test>]
+    let ``unicode2-FSI_BASIC`` () = singleTestBuildAndRun "core/unicode" FSI_BASIC
+
+    [<Test>]
+    let ``lazy test-FSC_BASIC`` () = singleTestBuildAndRun "core/lazy" FSC_BASIC
+
+    [<Test>]
+    let ``lazy test-FSI_BASIC`` () = singleTestBuildAndRun "core/lazy" FSI_BASIC
+
+    [<Test>]
+    let ``letrec-FSC_BASIC`` () = singleTestBuildAndRun "core/letrec" FSC_BASIC
+
+    [<Test>]
+    let ``letrec-FSI_BASIC`` () = singleTestBuildAndRun "core/letrec" FSI_BASIC
+
+    [<Test>]
+    let ``letrec (mutrec variations part one) FSC_BASIC`` () = singleTestBuildAndRun "core/letrec-mutrec" FSC_BASIC
+
+    [<Test>]
+    let ``letrec (mutrec variations part one) FSI_BASIC`` () = singleTestBuildAndRun "core/letrec-mutrec" FSI_BASIC
+
+    [<Test>]
+    let ``libtest-FSC_BASIC`` () = singleTestBuildAndRun "core/libtest" FSC_BASIC
+
+    [<Test>]
+    let lift () = singleTestBuildAndRun "core/lift" FSC_BASIC
+
+    [<Test>]
+    let map () = singleTestBuildAndRun "core/map" FSC_BASIC
+
+    [<Test>]
+    let ``measures-FSI_BASIC`` () = singleTestBuildAndRun "core/measures" FSI_BASIC
+
+    [<Test>]
+    let ``measures-FSC_BASIC`` () = singleTestBuildAndRun "core/measures" FSC_BASIC
+
+    [<Test>]
+    let nested () = singleTestBuildAndRun "core/nested" FSC_BASIC
+
+    [<Test>]
+    let ``members-ops`` () = singleTestBuildAndRun "core/members/ops" FSC_BASIC
+
+    [<Test>]
+    let ``members-ops-mutrec`` () = singleTestBuildAndRun "core/members/ops-mutrec" FSC_BASIC
+
+    [<Test>]
+    let seq () = singleTestBuildAndRun "core/seq" FSC_BASIC
+
+    [<Test>]
+    let ``math-numbers`` () = singleTestBuildAndRun "core/math/numbers" FSC_BASIC
+
+
+    [<Test>]
+    let ``members-ctree`` () = singleTestBuildAndRun "core/members/ctree" FSC_BASIC
+
+    [<Test>]
+    let ``members-factors`` () = singleTestBuildAndRun "core/members/factors" FSC_BASIC
+
+    [<Test>]
+    let ``members-factors-mutrec`` () = singleTestBuildAndRun "core/members/factors-mutrec" FSC_BASIC
+
+
+    [<Test>]
+    let graph () = singleTestBuildAndRun "perf/graph" FSC_BASIC
+
+    [<Test>]
+    let nbody () = singleTestBuildAndRun "perf/nbody" FSC_BASIC
+
+    [<Test>]
+    let ``letrec (mutrec variations part two) FSC_BASIC`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSC_BASIC
+
+    [<Test>]
+    let printf () = singleTestBuildAndRun "core/printf" FSC_BASIC
+
+    [<Test>]
+    let tlr () = singleTestBuildAndRun "core/tlr" FSC_BASIC
+
+    [<Test>]
+    let subtype () = singleTestBuildAndRun "core/subtype" FSC_BASIC
+
+    [<Test>]
+    let ``quotes-FSC-BASIC`` () = singleTestBuildAndRun "core/quotes" FSC_BASIC
+
+    [<Test>]
+    let syntax () = singleTestBuildAndRun "core/syntax" FSC_BASIC
+
+    [<Test>]
+    let ``test int32`` () = singleTestBuildAndRun "core/int32" FSC_BASIC
+#endif
+
+
+// All tests below here are enabled only for .NET Framework.  We should aim to enable at least all tests mentioning FSC_BASIC or FSI_BASIC
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+
+    [<Test>]
+    let ``attributes-FSC_BASIC`` () = singleTestBuildAndRun "core/attributes" FSC_BASIC
+
+    [<Test>]
+    let ``attributes-FSI_BASIC`` () = singleTestBuildAndRun "core/attributes" FSI_BASIC
 
     [<Test>]
     let byrefs () = 
@@ -73,49 +198,37 @@ module CoreTests =
         testOkFile.CheckExists()
 
     [<Test>]
-    let ``comprehensions-FSC_OPT_PLUS_DEBUG`` () = singleTestBuildAndRun "core/comprehensions" FSC_OPT_PLUS_DEBUG
-
-    [<Test>]
-    let ``comprehensions-FSI_FILE`` () = singleTestBuildAndRun "core/comprehensions" FSI_FILE
-
-    [<Test>]
-    let ``comprehensionshw-FSC_OPT_PLUS_DEBUG`` () = singleTestBuildAndRun "core/comprehensions-hw" FSC_OPT_PLUS_DEBUG
-
-    [<Test>]
-    let ``comprehensionshw-FSI_FILE`` () = singleTestBuildAndRun "core/comprehensions-hw" FSI_FILE
-
-    [<Test>]
-    let control () = singleTestBuildAndRun "core/control" FSC_OPT_PLUS_DEBUG
+    let control () = singleTestBuildAndRun "core/control" FSC_BASIC
 
     [<Test>]
     let ``control --tailcalls`` () = 
         let cfg = testConfig "core/control"
         
-        singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSC_OPT_PLUS_DEBUG
+        singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSC_BASIC
 
 
     [<Test>]
     let controlChamenos () = 
         let cfg = testConfig "core/controlChamenos"
         
-        singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSC_OPT_PLUS_DEBUG
+        singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSC_BASIC
 
 
     [<Test>]
-    let controlMailbox () = singleTestBuildAndRun "core/controlMailbox" FSC_OPT_PLUS_DEBUG
+    let controlMailbox () = singleTestBuildAndRun "core/controlMailbox" FSC_BASIC
 
     [<Test>]
     let ``controlMailbox --tailcalls`` () = 
         let cfg = testConfig "core/controlMailbox"
         
-        singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSC_OPT_PLUS_DEBUG
+        singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSC_BASIC
 
 
     [<Test>]
-    let controlWpf () = singleTestBuildAndRun "core/controlwpf" FSC_OPT_PLUS_DEBUG
+    let controlWpf () = singleTestBuildAndRun "core/controlwpf" FSC_BASIC
 
     [<Test>]
-    let csext () = singleTestBuildAndRun "core/csext" FSC_OPT_PLUS_DEBUG
+    let csext () = singleTestBuildAndRun "core/csext" FSC_BASIC
 
 
     [<Test>]
@@ -309,15 +422,6 @@ module CoreTests =
                 
 
 
-    [<Test; Ignore("incorrect signature file generated, test has been disabled a long time")>]
-    let ``genericmeasures-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/genericmeasures" GENERATED_SIGNATURE
-
-    [<Test>]
-    let ``genericmeasures-FSI_FILE`` () = singleTestBuildAndRun "core/genericmeasures" FSI_FILE
-
-    [<Test>]
-    let ``genericmeasures-FSC_OPT_PLUS_DEBUG`` () = singleTestBuildAndRun "core/genericmeasures" FSC_OPT_PLUS_DEBUG
-
     [<Test>]
     let ``genericmeasures-AS_DLL`` () = singleTestBuildAndRun "core/genericmeasures" AS_DLL
 
@@ -339,19 +443,7 @@ module CoreTests =
         peverify cfg "client.exe"
 
     [<Test>]
-    let ``innerpoly-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/innerpoly" GENERATED_SIGNATURE
-
-    [<Test>]
-    let ``innerpoly-FSI_FILE`` () = singleTestBuildAndRun "core/innerpoly" FSI_FILE
-
-    [<Test>]
-    let ``innerpoly-FSC_OPT_PLUS_DEBUG`` () = singleTestBuildAndRun "core/innerpoly" FSC_OPT_PLUS_DEBUG
-
-    [<Test>]
     let ``innerpoly-AS_DLL`` () = singleTestBuildAndRun "core/innerpoly"  AS_DLL       
-
-    [<Test>]
-    let ``test int32`` () = singleTestBuildAndRun "core/int32" FSC_OPT_PLUS_DEBUG
 
     [<Test>]
     let queriesCustomQueryOps () = 
@@ -537,6 +629,9 @@ module CoreTests =
     let ``signedtest-17`` () = signedtest("--keyfile:sha1024delay.snk --publicsign", "test-sha1024-public-cl.bsl")
 
     [<Test>]
+    let ``quotes-FSI-BASIC`` () = singleTestBuildAndRun "core/quotes" FSI_BASIC
+
+    [<Test>]
     let quotes () = 
         let cfg = testConfig "core/quotes"
 
@@ -580,10 +675,6 @@ module CoreTests =
             testOkFile.CheckExists()
         end
 
-    [<Test; Category("namespaces")>]
-    let namespaceAttributes () = 
-        singleTestBuildAndRun "core/namespaces" FSC_OPT_PLUS_DEBUG
-
     [<Test; Category("parsing")>]
     let parsing () = 
         let cfg = testConfig "core/parsing"
@@ -618,9 +709,6 @@ module CoreTests =
 
         fsi cfg "%s --utf8output" cfg.fsi_flags ["kanji-unicode-utf16.fs"]
  
-
-    [<Test>]
-    let unicode2 () = singleTestBuildAndRun "core/unicode" FSC_OPT_PLUS_DEBUG
 
     [<Test>]
     let internalsvisible () = 
@@ -673,21 +761,6 @@ module CoreTests =
 
         exec cfg ("." ++ "test2.exe") ""
  
-    [<Test; Category("lazy")>]
-    let ``lazy test`` () = singleTestBuildAndRun "core/lazy" FSC_OPT_PLUS_DEBUG
-
-    [<Test; Category("letrec")>]
-    let letrec () = singleTestBuildAndRun "core/letrec" FSC_OPT_PLUS_DEBUG
-
-    [<Test; Category("letrec")>]
-    let ``letrec (mutrec variations part one)`` () = singleTestBuildAndRun "core/letrec-mutrec" FSC_OPT_PLUS_DEBUG
-
-    [<Test; Category("letrec")>]
-    let ``letrec (mutrec variations part two)`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSC_OPT_PLUS_DEBUG
-
-    [<Test>]
-    let ``libtest-FSI_FILE`` () = singleTestBuildAndRun "core/libtest" FSI_FILE
-
     [<Test>]
     let ``libtest-FSI_STDIN`` () = singleTestBuildAndRun "core/libtest" FSI_STDIN
 
@@ -698,13 +771,13 @@ module CoreTests =
     let ``libtest-FSC_OPT_MINUS_DEBUG`` () = singleTestBuildAndRun "core/libtest" FSC_OPT_MINUS_DEBUG
 
     [<Test>]
-    let ``libtest-FSC_OPT_PLUS_DEBUG`` () = singleTestBuildAndRun "core/libtest" FSC_OPT_PLUS_DEBUG
-
-    [<Test>]
     let ``libtest-AS_DLL`` () = singleTestBuildAndRun "core/libtest" AS_DLL
 
-    [<Test; Category("lift")>]
-    let lift () = singleTestBuildAndRun "core/lift" FSC_OPT_PLUS_DEBUG
+    [<Test>]
+    let ``libtest-FSI_BASIC`` () = singleTestBuildAndRun "core/libtest" FSI_BASIC
+
+    [<Test>]
+    let ``letrec (mutrec variations part two) FSI_BASIC`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSI_BASIC
 
 
     [<Test>]
@@ -839,76 +912,40 @@ module CoreTests =
 
 
     [<Test>]
-    let longnames () = singleTestBuildAndRun "core/longnames" FSC_OPT_PLUS_DEBUG
+    let longnames () = singleTestBuildAndRun "core/longnames" FSC_BASIC
 
     [<Test>]
-    let map () = singleTestBuildAndRun "core/map" FSC_OPT_PLUS_DEBUG
-
-    [<Test>]
-    let ``math-numbers`` () = singleTestBuildAndRun "core/math/numbers" FSC_OPT_PLUS_DEBUG
-
-    [<Test>]
-    let ``math-numbersVS2008`` () = singleTestBuildAndRun "core/math/numbersVS2008" FSC_OPT_PLUS_DEBUG
-
-    [<Test>]
-    let ``measures-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/measures" GENERATED_SIGNATURE
-
-    [<Test>]
-    let ``measures-FSI_FILE`` () = singleTestBuildAndRun "core/measures" FSI_FILE
-
-    [<Test>]
-    let ``measures-FSC_OPT_PLUS_DEBUG`` () = singleTestBuildAndRun "core/measures" FSC_OPT_PLUS_DEBUG
+    let ``math-numbersVS2008`` () = singleTestBuildAndRun "core/math/numbersVS2008" FSC_BASIC
 
     [<Test>]
     let ``measures-AS_DLL`` () = singleTestBuildAndRun "core/measures" AS_DLL
 
     [<Test>]
-    let ``members-basics-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/members/basics" GENERATED_SIGNATURE
+    let ``members-basics-FSI_BASIC`` () = singleTestBuildAndRun "core/members/basics" FSI_BASIC
 
     [<Test>]
-    let ``members-basics-FSI_FILE`` () = singleTestBuildAndRun "core/members/basics" FSI_FILE
-
-    [<Test>]
-    let ``members-basics-FSC_OPT_PLUS_DEBUG`` () = singleTestBuildAndRun "core/members/basics" FSC_OPT_PLUS_DEBUG
+    let ``members-basics-FSC_BASIC`` () = singleTestBuildAndRun "core/members/basics" FSC_BASIC
 
     [<Test>]
     let ``members-basics-AS_DLL`` () = singleTestBuildAndRun "core/members/basics" AS_DLL
 
     [<Test>]
-    let ``members-basics-hw`` () = singleTestBuildAndRun "core/members/basics-hw" FSC_OPT_PLUS_DEBUG
+    let ``members-basics-hw`` () = singleTestBuildAndRun "core/members/basics-hw" FSC_BASIC
 
     [<Test>]
-    let ``members-basics-hw-mutrec`` () = singleTestBuildAndRun "core/members/basics-hw-mutrec" FSC_OPT_PLUS_DEBUG
+    let ``members-basics-hw-mutrec`` () = singleTestBuildAndRun "core/members/basics-hw-mutrec" FSC_BASIC
 
     [<Test>]
-    let ``members-ctree`` () = singleTestBuildAndRun "core/members/ctree" FSC_OPT_PLUS_DEBUG
+    let ``members-incremental`` () = singleTestBuildAndRun "core/members/incremental" FSC_BASIC
 
     [<Test>]
-    let ``members-factors`` () = singleTestBuildAndRun "core/members/factors" FSC_OPT_PLUS_DEBUG
+    let ``members-incremental-hw`` () = singleTestBuildAndRun "core/members/incremental-hw" FSC_BASIC
 
     [<Test>]
-    let ``members-factors-mutrec`` () = singleTestBuildAndRun "core/members/factors-mutrec" FSC_OPT_PLUS_DEBUG
+    let ``members-incremental-hw-mutrec`` () = singleTestBuildAndRun "core/members/incremental-hw-mutrec" FSC_BASIC
 
     [<Test>]
-    let ``members-incremental`` () = singleTestBuildAndRun "core/members/incremental" FSC_OPT_PLUS_DEBUG
-
-    [<Test>]
-    let ``members-incremental-hw`` () = singleTestBuildAndRun "core/members/incremental-hw" FSC_OPT_PLUS_DEBUG
-
-    [<Test>]
-    let ``members-incremental-hw-mutrec`` () = singleTestBuildAndRun "core/members/incremental-hw-mutrec" FSC_OPT_PLUS_DEBUG
-
-    [<Test>]
-    let ``members-ops`` () = singleTestBuildAndRun "core/members/ops" FSC_OPT_PLUS_DEBUG
-
-    [<Test>]
-    let ``members-ops-mutrec`` () = singleTestBuildAndRun "core/members/ops-mutrec" FSC_OPT_PLUS_DEBUG
-
-    [<Test>]
-    let nested () = singleTestBuildAndRun "core/nested" FSC_OPT_PLUS_DEBUG
-
-    [<Test>]
-    let patterns () = singleTestBuildAndRun "core/patterns" FSC_OPT_PLUS_DEBUG
+    let patterns () = singleTestBuildAndRun "core/patterns" FSC_BASIC
 
     [<Test>]
     let pinvoke () = 
@@ -918,9 +955,6 @@ module CoreTests =
    
         peverifyWithArgs cfg "/nologo /MD" "test.exe"
                 
-    [<Test>]
-    let printf () = singleTestBuildAndRun "core/printf" FSC_OPT_PLUS_DEBUG
-
     [<Test>]
     let queriesLeafExpressionConvert () = 
         let cfg = testConfig "core/queriesLeafExpressionConvert"
@@ -1121,7 +1155,7 @@ module CoreTests =
         testOkFile.CheckExists()
                 
     [<Test>]
-    let reflect () = singleTestBuildAndRun "core/reflect" FSC_OPT_PLUS_DEBUG
+    let reflect () = singleTestBuildAndRun "core/reflect" FSC_BASIC
 
     [<Test>]
     let testResources () = 
@@ -1150,18 +1184,6 @@ module CoreTests =
         exec cfg ("." ++ "test-link-named.exe") "ResourceName"
 
         exec cfg ("." ++ "test-embed-named.exe") "ResourceName"
-
-    [<Test>]
-    let seq () = singleTestBuildAndRun "core/seq" FSC_OPT_PLUS_DEBUG
-
-    [<Test>]
-    let subtype () = singleTestBuildAndRun "core/subtype" FSC_OPT_PLUS_DEBUG
-
-    [<Test>]
-    let syntax () = singleTestBuildAndRun "core/syntax" FSC_OPT_PLUS_DEBUG
-
-    [<Test>]
-    let tlr () = singleTestBuildAndRun "core/tlr" FSC_OPT_PLUS_DEBUG
 
     [<Test>]
     let topinit () = 
@@ -1321,12 +1343,6 @@ module CoreTests =
 
         peverifyWithArgs cfg "/nologo" "xmlverify.exe"
 
-    [<Test>]
-    let graph () = singleTestBuildAndRun "perf/graph" FSC_OPT_PLUS_DEBUG
-
-    [<Test>]
-    let nbody () = singleTestBuildAndRun "perf/nbody" FSC_OPT_PLUS_DEBUG
-
 module ToolsTests = 
 
     [<Test>]
@@ -1350,15 +1366,15 @@ module ToolsTests =
         peverify cfg "test_two_fsharp_modules_module_2_as_dll.dll"
 
     [<Test>]
-    let eval () = singleTestBuildAndRun "tools/eval" FSC_OPT_PLUS_DEBUG
+    let eval () = singleTestBuildAndRun "tools/eval" FSC_BASIC
 
 
 module RegressionTests = 
     [<Test>]
-    let ``26`` () = singleTestBuildAndRun "regression/26" FSC_OPT_PLUS_DEBUG
+    let ``26`` () = singleTestBuildAndRun "regression/26" FSC_BASIC
 
     [<Test >]
-    let ``321`` () = singleTestBuildAndRun "regression/321" FSC_OPT_PLUS_DEBUG
+    let ``321`` () = singleTestBuildAndRun "regression/321" FSC_BASIC
 
     [<Test>]
     let ``655`` () = 
@@ -1387,10 +1403,10 @@ module RegressionTests =
         peverify cfg  "pack.exe"
                 
     [<Test>]
-    let ``83`` () = singleTestBuildAndRun "regression/83" FSC_OPT_PLUS_DEBUG
+    let ``83`` () = singleTestBuildAndRun "regression/83" FSC_BASIC
 
     [<Test >]
-    let ``84`` () = singleTestBuildAndRun "regression/84" FSC_OPT_PLUS_DEBUG
+    let ``84`` () = singleTestBuildAndRun "regression/84" FSC_BASIC
 
     [<Test >]
     let ``85`` () = 
@@ -1401,10 +1417,10 @@ module RegressionTests =
         peverify cfg "petshop.dll"
                 
     [<Test >]
-    let ``86`` () = singleTestBuildAndRun "regression/86" FSC_OPT_PLUS_DEBUG
+    let ``86`` () = singleTestBuildAndRun "regression/86" FSC_BASIC
 
     [<Test >]
-    let ``tuple-bug-1`` () = singleTestBuildAndRun "regression/tuple-bug-1" FSC_OPT_PLUS_DEBUG
+    let ``tuple-bug-1`` () = singleTestBuildAndRun "regression/tuple-bug-1" FSC_BASIC
 
 module OptimizationTests =
 
@@ -1544,11 +1560,11 @@ module TypecheckTests =
 
         csc cfg "/target:library /out:HighRankArrayTests.dll" ["Class1.cs"]
 
-        SingleTest.singleTestBuildAndRunAux cfg FSC_OPT_PLUS_DEBUG
+        SingleTest.singleTestBuildAndRunAux cfg FSC_BASIC
 
 
     [<Test>]
-    let misc () = singleTestBuildAndRun "typecheck/misc" FSC_OPT_PLUS_DEBUG
+    let misc () = singleTestBuildAndRun "typecheck/misc" FSC_BASIC
 
     [<Test>]
     let ``sigs pos24`` () = 
@@ -1837,7 +1853,7 @@ module TypeProviders =
         peverify cfg (bincompat2 ++ "testlib_client.exe")
 
     [<Test>]
-    let ``helloWorld fsc`` () = helloWorld FSC_OPT_PLUS_DEBUG
+    let ``helloWorld fsc`` () = helloWorld FSC_BASIC
 
     [<Test>]
     let ``helloWorld fsi`` () = helloWorld FSI_STDIN
@@ -1954,7 +1970,7 @@ module TypeProviders =
 
         fsc cfg "--out:providerDesigner.dll -a" ["providerDesigner.fsx"]
 
-        SingleTest.singleTestBuildAndRunAux cfg FSC_OPT_PLUS_DEBUG
+        SingleTest.singleTestBuildAndRunAux cfg FSC_BASIC
         
     [<Test>]
     let wedgeAssembly () = 
@@ -2118,4 +2134,24 @@ namespace CST.RI.Anshun
         fileVersionInfo.ProductVersion |> Assert.areEqual expected
 
 #endif
+
+module GeneratedSignatureTests =
+    [<Test>]
+    let ``members-basics-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/members/basics" GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``access-GENERATED_SIGNATURE``() = singleTestBuildAndRun "core/access" GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``array-GENERATED_SIGNATURE``() = singleTestBuildAndRun "core/array" GENERATED_SIGNATURE
+
+    [<Test; Ignore("incorrect signature file generated, test has been disabled a long time")>]
+    let ``genericmeasures-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/genericmeasures" GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``innerpoly-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/innerpoly" GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``measures-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/measures" GENERATED_SIGNATURE
+
 #endif

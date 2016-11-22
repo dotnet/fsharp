@@ -84,7 +84,7 @@ val ApplyAllOptimizations : TcConfig * TcGlobals * ConstraintSolver.TcValF * str
 
 val CreateIlxAssemblyGenerator : TcConfig * TcImports * TcGlobals * ConstraintSolver.TcValF * CcuThunk -> IlxGen.IlxAssemblyGenerator
 
-val GenerateIlxCode : IlxGen.IlxGenBackend * bool * bool * TcConfig * TypeChecker.TopAttribs * TypedAssemblyAfterOptimization * string * bool * IlxGen.IlxAssemblyGenerator -> IlxGen.IlxGenResults
+val GenerateIlxCode : IlxGen.IlxGenBackend * isInteractiveItExpr:bool * isInteractiveOnMono:bool * TcConfig * TypeChecker.TopAttribs * TypedAssemblyAfterOptimization * fragName:string * IlxGen.IlxAssemblyGenerator -> IlxGen.IlxGenResults
 
 // Used during static linking
 val NormalizeAssemblyRefs : TcImports -> (AbstractIL.IL.ILScopeRef -> AbstractIL.IL.ILScopeRef)

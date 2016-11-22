@@ -1142,9 +1142,17 @@ val isQuotedExprTy : TcGlobals -> TType -> bool
 val destQuotedExprTy : TcGlobals -> TType -> TType
 val mkQuotedExprTy : TcGlobals -> TType -> TType
 val mkRawQuotedExprTy : TcGlobals -> TType
-val mspec_Type_GetTypeFromHandle : ILGlobals ->  ILMethodSpec
-val fspec_Missing_Value : ILGlobals ->  ILFieldSpec
+
+//-------------------------------------------------------------------------
+// Primitives associated with IL code gen
+//------------------------------------------------------------------------- 
+
+val mspec_Type_GetTypeFromHandle : TcGlobals ->  ILMethodSpec
+val fspec_Missing_Value : TcGlobals ->  ILFieldSpec
+val mkInitializeArrayMethSpec: TcGlobals -> ILMethodSpec 
 val mkByteArrayTy : TcGlobals -> TType
+val mkInvalidCastExnNewobj: TcGlobals -> ILInstr
+
 
 //-------------------------------------------------------------------------
 // Construct calls to some intrinsic functions

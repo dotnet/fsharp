@@ -25,11 +25,12 @@ module CoreClrUtilities
 #if !INTERACTIVE
         UnsafeNativeMethods.ExitProcess(exitCode); 
 #endif
-        if exitCode = 0 then 
-            Environment.FailFast("failfast exit")
-        else
-            Environment.FailFast("failfast exit",System.Exception("failfast exit"))
-        failwith "UnsafeNativeMethods.ExitProcess did not exit!!"; ()
+        ()
+        //if exitCode = 0 then 
+        //    Environment.FailFast("failfast exit")
+        //else
+        //    Environment.FailFast("failfast exit",System.Exception("failfast exit"))
+        //failwith "UnsafeNativeMethods.ExitProcess did not exit!!"; ()
 
 #if !INTERACTIVE
     type System.Environment with 

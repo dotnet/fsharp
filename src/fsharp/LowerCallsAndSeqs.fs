@@ -70,7 +70,7 @@ let LowerImplFile g ass =
 let mkLambdaNoType g m uv e = 
     mkLambda m uv (e,tyOfExpr g e) 
 
-let mkUnitDelayLambda g m e =
+let mkUnitDelayLambda (g: TcGlobals) m e =
     let uv,_ue = mkCompGenLocal m "unitVar" g.unit_ty
     mkLambdaNoType g m uv e 
 

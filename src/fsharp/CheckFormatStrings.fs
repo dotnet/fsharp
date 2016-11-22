@@ -28,13 +28,13 @@ let mkFlexibleFormatTypar m tys dflt =
     tp.FixupConstraints [ TyparConstraint.SimpleChoice (tys,m); TyparConstraint.DefaultsTo (lowestDefaultPriority,dflt,m)]
     copyAndFixupFormatTypar m tp
 
-let mkFlexibleIntFormatTypar g m = 
+let mkFlexibleIntFormatTypar (g: TcGlobals) m = 
     mkFlexibleFormatTypar m [ g.byte_ty; g.int16_ty; g.int32_ty; g.int64_ty;  g.sbyte_ty; g.uint16_ty; g.uint32_ty; g.uint64_ty;g.nativeint_ty;g.unativeint_ty; ] g.int_ty
 
-let mkFlexibleDecimalFormatTypar g m =
+let mkFlexibleDecimalFormatTypar (g: TcGlobals) m =
     mkFlexibleFormatTypar m [ g.decimal_ty ] g.decimal_ty
     
-let mkFlexibleFloatFormatTypar g m = 
+let mkFlexibleFloatFormatTypar (g: TcGlobals) m = 
     mkFlexibleFormatTypar m [ g.float_ty; g.float32_ty; g.decimal_ty ] g.float_ty
 
 let isDigit c = ('0' <= c && c <= '9')
@@ -51,7 +51,7 @@ let newInfo ()=
     addZeros       = false
     precision      = false}
 
-let parseFormatStringInternal (m:range) g (source: string option) fmt bty cty = 
+let parseFormatStringInternal (m:range) (g: TcGlobals) (source: string option) fmt bty cty = 
     // Offset is used to adjust ranges depending on whether input string is regular, verbatim or triple-quote.
     // We construct a new 'fmt' string since the current 'fmt' string doesn't distinguish between "\n" and escaped "\\n".
     let (offset, fmt) = 

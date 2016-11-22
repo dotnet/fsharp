@@ -171,3 +171,32 @@ module Scripting =
         | _, true -> "win7-x64"
         | _, false -> "win7-x86"
 
+
+    let executeProcessNoRedirect filename arguments =
+        let info = ProcessStartInfo(Arguments=arguments, UseShellExecute=false, 
+                                    RedirectStandardOutput=true, RedirectStandardError=true,RedirectStandardInput=true,
+                                    CreateNoWindow=true, FileName=filename)
+        let p = new Process(StartInfo=info)
+        if p.Start() then
+
+            async { try 
+                      let buffer = Array.zeroCreate 4096
+                      while not p.StandardOutput.EndOfStream do 
+                        let n = p.StandardOutput.Read(buffer, 0, buffer.Length)
+                        if n > 0 then System.Console.Out.Write(buffer, 0, n)
+                    with _ -> () } |> Async.Start
+            async { try 
+                      let buffer = Array.zeroCreate 4096
+                      while not p.StandardError.EndOfStream do 
+                        let n = p.StandardError.Read(buffer, 0, buffer.Length)
+                        if n > 0 then System.Console.Error.Write(buffer, 0, n)
+                    with _ -> () } |> Async.Start
+            async { try 
+                      while true do 
+                        let c = System.Console.In.ReadLine()
+                        p.StandardInput.WriteLine(c)
+                    with _ -> () } |> Async.Start
+            p.WaitForExit()
+            p.ExitCode
+        else
+            0

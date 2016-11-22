@@ -1519,9 +1519,9 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
                     with e -> 
                         errorRecoveryNoRange e
                         None
-                let locale = TryFindStringAttribute tcGlobals (mkMscorlibAttrib tcGlobals "System.Reflection.AssemblyCultureAttribute") topAttrs.assemblyAttrs
+                let locale = TryFindStringAttribute tcGlobals (tcGlobals.FindSysAttrib  "System.Reflection.AssemblyCultureAttribute") topAttrs.assemblyAttrs
                 let assemVerFromAttrib = 
-                    TryFindStringAttribute tcGlobals (mkMscorlibAttrib tcGlobals "System.Reflection.AssemblyVersionAttribute") topAttrs.assemblyAttrs 
+                    TryFindStringAttribute tcGlobals (tcGlobals.FindSysAttrib "System.Reflection.AssemblyVersionAttribute") topAttrs.assemblyAttrs 
                     |> Option.bind  (fun v -> try Some (parseILVersion v) with _ -> None)
                 let ver = 
                     match assemVerFromAttrib with 

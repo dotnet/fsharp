@@ -12,7 +12,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.Types
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 
 // set to the proper value at CompileOps.fs (BuildFrameworkTcImports)
-let parseILGlobals = ref EcmaILGlobals
+let parseILGlobals = ref EcmaMscorlibILGlobals
 
 // -------------------------------------------------------------------- 
 // Table of parsing and pretty printing data for instructions.

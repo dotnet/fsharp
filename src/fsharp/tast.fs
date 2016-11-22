@@ -4455,7 +4455,10 @@ let primEntityRefEq compilingFslib fslibCcu (x : EntityRef) (y : EntityRef) =
          nonLocalRefEq x.nlr y.nlr || 
          // The tcrefs may have forwarders. If they may possibly be equal then resolve them to get their canonical references
          // and compare those using pointer equality.
-         (not (nonLocalRefDefinitelyNotEq x.nlr y.nlr) && x.Deref === y.Deref)) then
+         (not (nonLocalRefDefinitelyNotEq x.nlr y.nlr) && 
+          let v1 = x.TryDeref 
+          let v2 = y.TryDeref
+          v1.IsSome && v2.IsSome && v1.Value === v2.Value)) then
         true
     else
         compilingFslib && fslibEntityRefEq fslibCcu x y  
