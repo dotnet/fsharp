@@ -379,7 +379,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                           (attr.Flags &&& CompilationRepresentationFlags.UseNullAsTrueValue) = CompilationRepresentationFlags.UseNullAsTrueValue
                       | _ -> false
                    if isNullaryUnion then
-                     let nullaryCase = FSharpType.GetUnionCases(typ, bindingFlags) |> Array.item 0
+                     let nullaryCase = FSharpType.GetUnionCases typ |> Array.item 0
                      ConstructorValue(nullaryCase.Name, [])
                    elif isUnitType typ then UnitValue
                    else ObjectValue(obj)
