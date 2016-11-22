@@ -67,8 +67,14 @@ EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler.Interactive.Settings", "src\fsharp\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj", "{649FA588-F02E-457C-9FCF-87E46407481E}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FsiAnyCPU", "src\fsharp\fsiAnyCpu\FsiAnyCPU.fsproj", "{8B3E283D-B5FE-4055-9D80-7E3A32F3967B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{649FA588-F02E-457C-9FCF-87E46407481E} = {649FA588-F02E-457C-9FCF-87E46407481E}
+	EndProjectSection
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Fsi", "src\fsharp\fsi\Fsi.fsproj", "{D0E98C0D-490B-4C61-9329-0862F6E87645}"
+	ProjectSection(ProjectDependencies) = postProject
+		{649FA588-F02E-457C-9FCF-87E46407481E} = {649FA588-F02E-457C-9FCF-87E46407481E}
+	EndProjectSection
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Tests.FSharpSuite", "tests\fsharp\FSharp.Tests.FSharpSuite.fsproj", "{C163E892-5BF7-4B59-AA99-B0E8079C67C4}"
 EndProject
