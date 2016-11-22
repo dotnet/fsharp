@@ -52,17 +52,14 @@ let lazyMap f (x:Lazy<_>) =
 type PrimaryAssembly = 
     | Mscorlib
     | DotNetCore   
-    //| PrivateCoreLib
 
     member this.Name = 
         match this with
         | Mscorlib -> "mscorlib"
         | DotNetCore -> "System.Runtime"
-        //| PrivateCoreLib -> "System.Private.CoreLib"
     static member IsSomePrimaryAssembly n = 
       n = PrimaryAssembly.Mscorlib.Name 
       || n = PrimaryAssembly.DotNetCore.Name  
-      //|| n = PrimaryAssembly.PrivateCoreLib.Name
 
 // -------------------------------------------------------------------- 
 // Utilities: type names
