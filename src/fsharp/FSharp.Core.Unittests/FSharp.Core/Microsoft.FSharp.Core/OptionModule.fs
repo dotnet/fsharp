@@ -210,3 +210,9 @@ type OptionModule() =
         Assert.AreEqual( Option.map3 concat3 (Some "x") None (Some "z"), None)
         Assert.AreEqual( Option.map3 concat3 None (Some "y") (Some "z"), None)
         Assert.AreEqual( Option.map3 concat3 (Some "x") (Some "y") (Some "z"), Some "xyz")
+
+    [<Test>]
+    member this.MapBindEquivalenceProperties () =
+        let fn x = x + 3
+        Assert.AreEqual(Option.map fn None, Option.bind (fn >> Some) None)
+        Assert.AreEqual(Option.map fn (Some 5), Option.bind (fn >> Some) (Some 5))
