@@ -992,6 +992,7 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
               | Parser.TOKEN_KEYWORD_STRING -> getErrorString("Parser.TOKEN.KEYWORD_STRING")
               | Parser.TOKEN_EOF -> getErrorString("Parser.TOKEN.EOF")
               | Parser.TOKEN_CONST -> getErrorString("Parser.TOKEN.CONST")
+              | Parser.TOKEN_FIXED -> getErrorString("Parser.TOKEN.FIXED")
               | unknown ->           
                   System.Diagnostics.Debug.Assert(false,"unknown token tag")
                   let result = sprintf "%+A" unknown
