@@ -32,6 +32,11 @@ open Microsoft.FSharp.Compiler.Range
 type internal FSharpBreakpointResolutionService() =
 
     static member GetBreakpointLocation(sourceText: SourceText, fileName: string, textSpan: TextSpan, options: FSharpProjectOptions) = async {
+        // REVIEW: ParseFileInProject can cause FSharp.Compiler.Service to become unavailable (i.e. not responding to requests) for 
+        // an arbitrarily long time while it parses all files prior to this one in the project (plus dependent projects if we enable 
+        // cross-project checking in multi-project solutions). FCS will not respond to other 
+        // requests unless this task is cancelled. We need to check that this task is cancelled in a timely way by the
+        // Roslyn UI machinery.
         let! parseResults = FSharpLanguageService.Checker.ParseFileInProject(fileName, sourceText.ToString(), options)
         let textLinePos = sourceText.Lines.GetLinePosition(textSpan.Start)
         let textLineColumn = textLinePos.Character
@@ -42,7 +47,7 @@ type internal FSharpBreakpointResolutionService() =
 
     interface IBreakpointResolutionService with
         member this.ResolveBreakpointAsync(document: Document, textSpan: TextSpan, cancellationToken: CancellationToken): Task<BreakpointResolutionResult> =
-            let computation = async {
+            async {
                 match FSharpLanguageService.GetOptions(document.Project.Id) with
                 | Some(options) ->
                     let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
@@ -51,10 +56,7 @@ type internal FSharpBreakpointResolutionService() =
                            | None -> null
                            | Some(range) -> BreakpointResolutionResult.CreateSpanResult(document, CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
                 | None -> return null
-            }
-
-            Async.StartAsTask(computation, TaskCreationOptions.None, cancellationToken)
-                 .ContinueWith(CommonRoslynHelpers.GetCompletedTaskResult, cancellationToken)
+            } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
             
         // FSROSLYNTODO: enable placing breakpoints by when user suplies fully-qualified function names
         member this.ResolveBreakpointsAsync(_, _, _): Task<IEnumerable<BreakpointResolutionResult>> =
