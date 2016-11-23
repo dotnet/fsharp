@@ -298,7 +298,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         type ValueInfo =
           | TupleValue of (obj * Type) list
           | FunctionClosureValue of System.Type 
-          | RecordValue of (string * obj) list
+          | RecordValue of (string * obj * Type) list
           | ConstructorValue of string * (string * (obj * Type)) list
           | ExceptionValue of System.Type * (string * (obj * Type)) list
           | UnitValue
@@ -361,7 +361,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                 elif FSharpType.IsRecord(reprty,bindingFlags) then 
                     let props = FSharpType.GetRecordFields(reprty,bindingFlags) 
 #endif
-                    RecordValue(props |> Array.map (fun prop -> prop.Name, prop.GetValue(obj,null)) |> Array.toList)
+                    RecordValue(props |> Array.map (fun prop -> prop.Name, prop.GetValue(obj,null), prop.PropertyType) |> Array.toList)
                 else
                     ObjectValue(obj)
 
@@ -965,9 +965,9 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                     bracketIfL (prec <= Precedence.BracketIfTuple) basicL 
 
                 | RecordValue items -> 
-                    let itemL (name,x) =
+                    let itemL (name,x,typ) =
                       countNodes 1 // record labels are counted as nodes. [REVIEW: discussion under 4090].
-                      (name,objL depthLim Precedence.BracketIfTuple (x, x.GetType()))
+                      (name,objL depthLim Precedence.BracketIfTuple (x, typ))
                     makeRecordL (List.map itemL items)
 
                 | ConstructorValue (constr,recd) when // x is List<T>. Note: "null" is never a valid list value. 
