@@ -54,8 +54,9 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>] ([<ImportMany
                                   : Async<Option<range>> = async {
 
         let textLine = sourceText.Lines.GetLineFromPosition(position)
-        let textLineNumber = textLine.LineNumber + 1 // Roslyn line numbers are zero-based
-        let textLineColumn = sourceText.Lines.GetLinePosition(position).Character
+        let textLinePos = sourceText.Lines.GetLinePosition(position)
+        let fcsTextLineNumber = textLinePos.Line + 1 // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
+        let textLineColumn = textLinePos.Character
         let classifiedSpanOption =
             FSharpColorizationService.GetColorizationData(sourceText, textLine.Span, Some(filePath), defines, cancellationToken)
             |> Seq.tryFind(fun classifiedSpan -> classifiedSpan.TextSpan.Contains(position))
@@ -67,7 +68,7 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>] ([<ImportMany
                                     | FSharpCheckFileAnswer.Aborted -> failwith "Compilation isn't complete yet"
                                     | FSharpCheckFileAnswer.Succeeded(results) -> results
 
-            let! declarations = checkFileResults.GetDeclarationLocationAlternate (textLineNumber, islandColumn, textLine.ToString(), qualifiers, false)
+            let! declarations = checkFileResults.GetDeclarationLocationAlternate (fcsTextLineNumber, islandColumn, textLine.ToString(), qualifiers, false)
 
             return match declarations with
                    | FSharpFindDeclResult.DeclFound(range) -> Some(range)
