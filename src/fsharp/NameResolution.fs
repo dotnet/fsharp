@@ -1979,23 +1979,18 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv (typeN
         | Some excon when IsTyconReprAccessible ncenv.amap m ad (modref.NestedTyconRef excon) -> 
             success (resInfo,Item.ExnCase (modref.NestedTyconRef excon),rest)
         | _ ->
-            let unionSearchResult = 
+            // Something in a discriminated union without RequireQualifiedAccess attribute?
+            let unionSearch,hasRequireQualifiedAccessAttribute =
                 match TryFindTypeWithUnionCase modref id with
                 | Some tycon when IsTyconReprAccessible ncenv.amap m ad (modref.NestedTyconRef tycon) -> 
-                    Some(tycon,HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute tycon.Attribs)
-                | _ -> None                 
-
-            // Something in a discriminated union without RequireQualifiedAccess attribute?
-            let unionSearchWithoutRequireQualifiedAccess =
-                match unionSearchResult with
-                | Some(tycon,false) -> 
                     let ucref = mkUnionCaseRef (modref.NestedTyconRef tycon) id.idText
                     let ucinfo = FreshenUnionCaseRef ncenv m ucref
-                    success [resInfo,Item.UnionCase(ucinfo,false),rest]
-                | _ -> NoResultsOrUsefulErrors
+                    let hasRequireQualifiedAccessAttribute = HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute tycon.Attribs
+                    success [resInfo,Item.UnionCase(ucinfo,hasRequireQualifiedAccessAttribute),rest],hasRequireQualifiedAccessAttribute
+                | _ -> NoResultsOrUsefulErrors,false
 
-            match unionSearchWithoutRequireQualifiedAccess with
-            | Result (res :: _) -> success res
+            match unionSearch with
+            | Result (res :: _) when not hasRequireQualifiedAccessAttribute -> success res
             | _ ->
 
             // Something in a type?
@@ -2022,19 +2017,6 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv (typeN
 
             match tyconSearch with
             | Result (res :: _) -> success res
-            | _ ->
-
-            // Something in a discriminated union?
-            let unionSearch,showDeprecated =
-                match unionSearchResult with
-                | Some(tycon,hasRequireQualifiedAccessAttribute) -> 
-                    let ucref = mkUnionCaseRef (modref.NestedTyconRef tycon) id.idText
-                    let ucinfo = FreshenUnionCaseRef ncenv m ucref
-                    success [resInfo,Item.UnionCase(ucinfo,hasRequireQualifiedAccessAttribute),rest],hasRequireQualifiedAccessAttribute
-                | _ -> NoResultsOrUsefulErrors,false
-
-            match unionSearch with
-            | Result (res :: _) when not showDeprecated -> success res
             | _ ->
 
             // Something in a sub-namespace or sub-module 
