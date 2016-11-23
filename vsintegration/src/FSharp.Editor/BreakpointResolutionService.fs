@@ -32,13 +32,12 @@ open Microsoft.FSharp.Compiler.Range
 type internal FSharpBreakpointResolutionService() =
 
     static member GetBreakpointLocation(sourceText: SourceText, fileName: string, textSpan: TextSpan, options: FSharpProjectOptions) = async {
-        let! parseResults = FSharpChecker.Instance.ParseFileInProject(fileName, sourceText.ToString(), options)
-        let textLine = sourceText.Lines.GetLineFromPosition(textSpan.Start)
+        let! parseResults = FSharpLanguageService.Checker.ParseFileInProject(fileName, sourceText.ToString(), options)
+        let textLinePos = sourceText.Lines.GetLinePosition(textSpan.Start)
+        let textLineColumn = textLinePos.Character
+        let fcsTextLineNumber = textLinePos.Line + 1 // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
 
-        let textLineNumber = textLine.LineNumber + 1 // Roslyn line numbers are zero-based
-        let textColumnNumber = textSpan.Start - textLine.Start
-
-        return parseResults.ValidateBreakpointLocation(mkPos textLineNumber textColumnNumber)
+        return parseResults.ValidateBreakpointLocation(mkPos fcsTextLineNumber textLineColumn)
     }
 
     interface IBreakpointResolutionService with

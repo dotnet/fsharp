@@ -49,6 +49,9 @@ type internal FSharpLanguageService(package : FSharpPackage) =
     inherit AbstractLanguageService<FSharpPackage, FSharpLanguageService>(package)
 
     static let optionsCache = Dictionary<ProjectId, FSharpProjectOptions>()
+    static let checker = lazy FSharpChecker.Create()
+    static member Checker with get() = checker.Value
+
     static member GetOptions(projectId: ProjectId) =
         if optionsCache.ContainsKey(projectId) then
             Some(optionsCache.[projectId])
@@ -118,7 +121,7 @@ type internal FSharpLanguageService(package : FSharpPackage) =
         | _ -> ()
 
     member this.SetupStandAloneFile(fileName: string, fileContents: string, workspace: VisualStudioWorkspaceImpl, hier: IVsHierarchy) =
-        let options = FSharpChecker.Instance.GetProjectOptionsFromScript(fileName, fileContents, DateTime.Now, [| |]) |> Async.RunSynchronously
+        let options = FSharpLanguageService.Checker.GetProjectOptionsFromScript(fileName, fileContents, DateTime.Now, [| |]) |> Async.RunSynchronously
         let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(options.ProjectFileName, options.ProjectFileName)
 
         if not(optionsCache.ContainsKey(projectId)) then

@@ -73,16 +73,19 @@ type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SV
                 | _ -> true // anything else is a valid classification type
 
     static member ProvideCompletionsAsyncAux(sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, textVersionHash: int) = async {
-        let! parseResults = FSharpChecker.Instance.ParseFileInProject(filePath, sourceText.ToString(), options)
-        let! checkFileAnswer = FSharpChecker.Instance.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options)
+        let! parseResults = FSharpLanguageService.Checker.ParseFileInProject(filePath, sourceText.ToString(), options)
+        let! checkFileAnswer = FSharpLanguageService.Checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options)
         let checkFileResults = match checkFileAnswer with
                                 | FSharpCheckFileAnswer.Aborted -> failwith "Compilation isn't complete yet"
                                 | FSharpCheckFileAnswer.Succeeded(results) -> results
 
         let textLine = sourceText.Lines.GetLineFromPosition(caretPosition)
-        let textLineNumber = textLine.LineNumber + 1 // Roslyn line numbers are zero-based
-        let qualifyingNames, partialName = QuickParse.GetPartialLongNameEx(textLine.ToString(), caretPosition - textLine.Start - 1) 
-        let! declarations = checkFileResults.GetDeclarationListInfo(Some(parseResults), textLineNumber, caretPosition, textLine.ToString(), qualifyingNames, partialName)
+        let textLinePos = sourceText.Lines.GetLinePosition(caretPosition)
+        let fcsTextLineNumber = textLinePos.Line + 1 // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
+        let textLineColumn = textLinePos.Character
+
+        let qualifyingNames, partialName = QuickParse.GetPartialLongNameEx(textLine.ToString(), textLineColumn - 1) 
+        let! declarations = checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsTextLineNumber, textLineColumn, textLine.ToString(), qualifyingNames, partialName)
 
         let results = List<CompletionItem>()
 

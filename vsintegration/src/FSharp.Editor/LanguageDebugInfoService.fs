@@ -46,7 +46,9 @@ type internal FSharpLanguageDebugInfoService() =
 
             | ClassificationTypeNames.Identifier ->
                 let textLine = sourceText.Lines.GetLineFromPosition(position)
-                match QuickParse.GetCompleteIdentifierIsland false (textLine.ToString()) (position - textLine.Start) with
+                let textLinePos = sourceText.Lines.GetLinePosition(position)
+                let textLineColumn = textLinePos.Character
+                match QuickParse.GetCompleteIdentifierIsland false (textLine.ToString()) textLineColumn with
                 | None -> None
                 | Some(island, islandEnd, _) ->
                     let islandDocumentStart = textLine.Start + islandEnd - island.Length

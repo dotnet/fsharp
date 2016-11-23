@@ -26,7 +26,7 @@ type internal FSharpProjectDiagnosticAnalyzer() =
     inherit ProjectDiagnosticAnalyzer()
 
     static member GetDiagnostics(options: FSharpProjectOptions) =
-        let checkProjectResults = FSharpChecker.Instance.ParseAndCheckProject(options) |> Async.RunSynchronously
+        let checkProjectResults = FSharpLanguageService.Checker.ParseAndCheckProject(options) |> Async.RunSynchronously
         (checkProjectResults.Errors |> Seq.choose(fun (error) ->
             if error.StartLineAlternate = 0 || error.EndLineAlternate = 0 then
                 Some(CommonRoslynHelpers.ConvertError(error, Location.None))

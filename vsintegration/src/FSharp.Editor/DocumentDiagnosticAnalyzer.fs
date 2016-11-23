@@ -25,10 +25,10 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
     inherit DocumentDiagnosticAnalyzer()
 
     static member GetDiagnostics(filePath: string, sourceText: SourceText, textVersionHash: int, options: FSharpProjectOptions, addSemanticErrors: bool) =
-        let parseResults = FSharpChecker.Instance.ParseFileInProject(filePath, sourceText.ToString(), options) |> Async.RunSynchronously
+        let parseResults = FSharpLanguageService.Checker.ParseFileInProject(filePath, sourceText.ToString(), options) |> Async.RunSynchronously
         let errors =
             if addSemanticErrors then
-                let checkResultsAnswer = FSharpChecker.Instance.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options) |> Async.RunSynchronously
+                let checkResultsAnswer = FSharpLanguageService.Checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options) |> Async.RunSynchronously
                 match checkResultsAnswer with
                 | FSharpCheckFileAnswer.Aborted -> failwith "Compilation isn't complete yet"
                 | FSharpCheckFileAnswer.Succeeded(results) -> results.Errors
