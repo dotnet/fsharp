@@ -112,7 +112,7 @@ Use ``VisualFSharp.sln`` if you're building the Visual F# IDE Tools.
 At time of writing, the Visual F# IDE Tools can only be installed into Visual Studio "Next" releases.
 The new builds of the Visual F# IDE Tools can no longer be installed into Visual Studio 2015.
 
-You can install VIsual Studio "Next" from https://www.visualstudio.com/en-us/downloads/visual-studio-next-downloads-vs.aspx.
+You can install Visual Studio "Next" from https://www.visualstudio.com/en-us/downloads/visual-studio-next-downloads-vs.aspx.
 
 **Note:** This step will install a VSIX extension into Visual Studio "Next" that changes the Visual F# IDE Tools 
 components installed in that VS installation.  You can revert this step by disabling or uninstalling the addin.
@@ -127,7 +127,13 @@ For **Release**, uninstall then reinstall:
     VSIXInstaller.exe  /a /u:"VisualFSharp"
     VSIXInstaller.exe /a  release\net40\bin\VisualFSharpFull.vsix
 
-Restart Visual Studio, it should now be running your freshly-built Visual F# IDE Tools with updated F# Interactive. 
+Restart Visual Studio, it should now be running your freshly-built Visual F# IDE Tools with updated F# Interactive.
+
+### [Optional] F5 testing of local changes
+
+To test your changes locally _without_ overwriting your default installed F# tools, set the `VisualFSharp\Vsix\VisualFSharpOpenSource`
+project as the startup project.  When you hit F5 a new instance of Visual Studio will be started in the `FSharpDev` hive with your
+changes, but the root (default) hive will remain untouched.
 
 ### [Optional] Rapid deployment of incremental changes to Visual F# IDE Tools components
 
