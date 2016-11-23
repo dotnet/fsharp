@@ -518,6 +518,25 @@ type OptionalArgInfo =
                 CallerSide (Constant v)
         else 
             NotOptional
+    //is there a better place for this? We need it both here and also in IlxGen.fs
+    static member FieldInitForDefaultParameterValueAttrib (Attrib (_,_,exprs,_,_,_,_)) =
+        let (AttribExpr (_,defaultValueExpr)) = List.head exprs
+        match defaultValueExpr with
+        | Expr.Const ((Const.String s),_,_) -> Some (ILFieldInit.String s)
+        | Expr.Const ((Const.Bool s),_,_)   -> Some (ILFieldInit.Bool s)
+        | Expr.Const ((Const.Char s),_,_)   -> Some (ILFieldInit.Char (uint16 s))
+        | Expr.Const ((Const.SByte s),_,_)  -> Some (ILFieldInit.Int8 s)
+        | Expr.Const ((Const.Int16 s),_,_)  -> Some (ILFieldInit.Int16 s)
+        | Expr.Const ((Const.Int32 s),_,_)  -> Some (ILFieldInit.Int32 s)
+        | Expr.Const ((Const.Int64 s),_,_)  -> Some (ILFieldInit.Int64 s)
+        | Expr.Const ((Const.Byte s),_,_)   -> Some (ILFieldInit.UInt8 s)
+        | Expr.Const ((Const.UInt16 s),_,_) -> Some (ILFieldInit.UInt16 s)
+        | Expr.Const ((Const.UInt32 s),_,_) -> Some (ILFieldInit.UInt32 s)
+        | Expr.Const ((Const.UInt64 s),_,_) -> Some (ILFieldInit.UInt64 s)
+        | Expr.Const ((Const.Single s),_,_) -> Some (ILFieldInit.Single s)
+        | Expr.Const ((Const.Double s),_,_) -> Some (ILFieldInit.Double s)
+        | Expr.Const (Const.Zero,_,_)       -> Some (ILFieldInit.Null)
+        | _                                 -> None
 
 type CallerInfoInfo =
     | NoCallerInfo
@@ -1316,9 +1335,23 @@ type MethInfo =
                     | Some b -> ReflectedArgInfo.Quote b
                     | None -> ReflectedArgInfo.None
                 let isOutArg = HasFSharpAttribute g g.attrib_OutAttribute argInfo.Attribs && isByrefTy g ty
-                let isOptArg = HasFSharpAttribute g g.attrib_OptionalArgumentAttribute argInfo.Attribs
-                // Note: can't specify caller-side default arguments in F#, by design (default is specified on the callee-side) 
-                let optArgInfo = if isOptArg then CalleeSide else NotOptional
+                let isCalleeSideOptArg = HasFSharpAttribute g g.attrib_OptionalArgumentAttribute argInfo.Attribs
+                let isCallerSideOptArg = HasFSharpAttributeOpt g g.attrib_OptionalAttribute argInfo.Attribs
+                let optArgInfo = 
+                    if isCalleeSideOptArg then 
+                        CalleeSide 
+                    elif isCallerSideOptArg then
+                        let defaultParameterValueAttribute = TryFindFSharpAttributeOpt g g.attrib_DefaultParameterValueAttribute argInfo.Attribs
+                        match defaultParameterValueAttribute with
+                        | None -> 
+                            //don't support Optional arguments without DefaultParameterValue defined in F#
+                            // - this saves a bunch of type directed analysis, and not clear what the value-add is.
+                            NotOptional
+                        | Some attr -> 
+                            match OptionalArgInfo.FieldInitForDefaultParameterValueAttrib attr with
+                            | None -> NotOptional //type of default value not appropriate, ignore
+                            | Some v -> CallerSide (Constant v)
+                    else NotOptional
                 
                 let isCallerLineNumberArg = HasFSharpAttribute g g.attrib_CallerLineNumberAttribute argInfo.Attribs
                 let isCallerFilePathArg = HasFSharpAttribute g g.attrib_CallerFilePathAttribute argInfo.Attribs

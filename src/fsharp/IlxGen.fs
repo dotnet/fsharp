@@ -3405,6 +3405,7 @@ and GenGenericParam cenv eenv (tp:Typar) =
 // Generate object expressions as ILX "closures"
 //-------------------------------------------------------------------------- 
 
+// generates the data used for parameters at definitions of abstract method slots such as interface methods or override methods.
 and GenSlotParam m cenv eenv (TSlotParam(nm,ty,inFlag,outFlag,optionalFlag,attribs)) : ILParameter = 
     let inFlag2,outFlag2,optionalFlag2,defaultParamValue,paramMarshal2,attribs = GenParamAttribs cenv attribs
     
@@ -4914,25 +4915,9 @@ and GenParamAttribs cenv attribs =
     let inFlag = HasFSharpAttributeOpt cenv.g cenv.g.attrib_InAttribute attribs
     let outFlag = HasFSharpAttribute cenv.g cenv.g.attrib_OutAttribute attribs
     let optionalFlag = HasFSharpAttributeOpt cenv.g cenv.g.attrib_OptionalAttribute attribs
-    let genFieldInit (Attrib (_,_,exprs,_,_,_,_)) =
-        let (AttribExpr (_,defaultValueExpr)) = List.head exprs
-        match defaultValueExpr with
-        | Expr.Const ((Const.String s),_,_) -> Some (ILFieldInit.String s)
-        | Expr.Const ((Const.Bool s),_,_)   -> Some (ILFieldInit.Bool s)
-        | Expr.Const ((Const.Char s),_,_)   -> Some (ILFieldInit.Char (uint16 s))
-        | Expr.Const ((Const.SByte s),_,_)  -> Some (ILFieldInit.Int8 s)
-        | Expr.Const ((Const.Int16 s),_,_)  -> Some (ILFieldInit.Int16 s)
-        | Expr.Const ((Const.Int32 s),_,_)  -> Some (ILFieldInit.Int32 s)
-        | Expr.Const ((Const.Int64 s),_,_)  -> Some (ILFieldInit.Int64 s)
-        | Expr.Const ((Const.Byte s),_,_)   -> Some (ILFieldInit.UInt8 s)
-        | Expr.Const ((Const.UInt16 s),_,_) -> Some (ILFieldInit.UInt16 s)
-        | Expr.Const ((Const.UInt32 s),_,_) -> Some (ILFieldInit.UInt32 s)
-        | Expr.Const ((Const.UInt64 s),_,_) -> Some (ILFieldInit.UInt64 s)
-        | Expr.Const ((Const.Single s),_,_) -> Some (ILFieldInit.Single s)
-        | Expr.Const ((Const.Double s),_,_) -> Some (ILFieldInit.Double s)
-        | Expr.Const (Const.Zero,_,_)       -> Some (ILFieldInit.Null)
-        | _                                 -> None
-    let defaultValue = TryFindFSharpAttributeOpt cenv.g cenv.g.attrib_DefaultParameterValueAttribute attribs |> Option.bind genFieldInit
+    
+    let defaultValue = TryFindFSharpAttributeOpt cenv.g cenv.g.attrib_DefaultParameterValueAttribute attribs 
+                       |> Option.bind OptionalArgInfo.FieldInitForDefaultParameterValueAttrib
     // Return the filtered attributes. Do not generate In, Out, Optional or DefaultParameterValue attributes 
     // as custom attributes in the code - they are implicit from the IL bits for these
     let attribs = 
@@ -4979,7 +4964,7 @@ and GenParams cenv eenv (mspec:ILMethodSpec) (attribs:ArgReprInfo list) (implVal
         let param : ILParameter = 
             { Name=nmOpt
               Type= ilArgTy  
-              Default=defaultParamValue (* REVIEW: support "default" attributes *)   
+              Default=defaultParamValue
               Marshal=Marshal 
               IsIn=inFlag    
               IsOut=outFlag  
