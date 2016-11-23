@@ -4,6 +4,8 @@ namespace Tests.LanguageService
 
 open System
 open System.IO
+open System.Threading
+open System.Threading.Tasks
 open NUnit.Framework
 #if NUNIT_V2
 #else
@@ -29,6 +31,8 @@ module internal Vector =
 [<Category("LanguageService.ProjectSystem")>]
 type IncrementalBuild() = 
     
+    let save _ = ()
+    let ct = CancellationToken.None
     
     /// Called per test
     [<SetUp>]
@@ -71,7 +75,7 @@ type IncrementalBuild() =
         let bound = buildDesc.GetInitialPartialBuild inputs
 
         let DoCertainStep bound = 
-            match IncrementalBuild.Step (Target(mapped,None)) bound with
+            match IncrementalBuild.Step save ct (Target(mapped,None)) bound with
             | Some bound -> bound
             | None -> failwith "Expected to be able to step"
 
@@ -87,7 +91,7 @@ type IncrementalBuild() =
         updateStamp:=false
         bound <- DoCertainStep bound
         bound <- DoCertainStep bound
-        match IncrementalBuild.Step (Target (mapped, None)) bound with
+        match IncrementalBuild.Step save ct (Target (mapped, None)) bound with
         | Some bound -> failwith "Build should have stopped"
         | None -> () 
 
@@ -117,14 +121,14 @@ type IncrementalBuild() =
             
         printf "-[Step1]----------------------------------------------------------------------------------------\n"
         // Evaluate the first time.
-        let bound = Eval scanned bound
+        let bound = Eval save ct scanned bound
         let r = GetVectorResult (scanned, bound)
         Assert.AreEqual("AccVal-File1.fs-Suffix1-File2.fs-Suffix1",r.[1])
             
         printf "-[Step2]----------------------------------------------------------------------------------------\n"
         // Evaluate the second time. No change should be seen.
         mapSuffix:="Suffix2"
-        let bound = Eval scanned bound
+        let bound = Eval save ct scanned bound
         let r = GetVectorResult (scanned,bound)
         Assert.AreEqual("AccVal-File1.fs-Suffix1-File2.fs-Suffix1",r.[1])
 
@@ -132,7 +136,7 @@ type IncrementalBuild() =
         // Evaluate a third time with timestamps updated. Should cause a rebuild
         System.Threading.Thread.Sleep 10 // Sleep a little to avoid grabbing the same 'Now'
         stampAs:=DateTime.Now
-        let bound = Eval scanned bound
+        let bound = Eval save ct scanned bound
         let r = GetVectorResult (scanned,bound)
         Assert.AreEqual("AccVal-File1.fs-Suffix2-File2.fs-Suffix2",r.[1])
              
@@ -158,7 +162,7 @@ type IncrementalBuild() =
         let inputs1 = [ BuildInput.VectorInput(inputVector, [""]) ]
         let build1 = buildDesc.GetInitialPartialBuild inputs1
 
-        let build1Evaled = Eval result build1
+        let build1Evaled = Eval save ct result build1
         let r1 = GetScalarResult (result, build1Evaled)
         match r1 with
         | Some(v,dt) -> Assert.AreEqual(1,v) 
@@ -169,7 +173,7 @@ type IncrementalBuild() =
         let inputs0 = [ BuildInput.VectorInput(inputVector, []) ]
         let build0 = buildDesc.GetInitialPartialBuild inputs0
 
-        let build0Evaled = Eval result build0
+        let build0Evaled = Eval save ct result build0
         let r0 = GetScalarResult (result, build0Evaled)
         match r0 with
         | Some(v,dt) -> Assert.AreEqual(0,v) 
@@ -205,7 +209,7 @@ type IncrementalBuild() =
             
         // Evaluate it with value 1
         elements := 1
-        let bound = Eval result bound
+        let bound = Eval save ct result bound
         let r1 = GetScalarResult<string>(result, bound)
         match r1 with
         | Some(s,dt) -> printfn "%s" s
@@ -216,7 +220,7 @@ type IncrementalBuild() =
         System.Threading.Thread.Sleep(100)
         timestamp := System.DateTime.Now
             
-        let bound = Eval result bound
+        let bound = Eval save ct result bound
         let r2 = GetScalarResult (result, bound)
         match r2 with
         | Some(s,dt) -> Assert.AreEqual("Mapped Input 0 ",s)
@@ -322,14 +326,14 @@ type IncrementalBuild() =
             
         printf "-[Step1]----------------------------------------------------------------------------------------\n"
         // Evaluate the first time.
-        let bound = Eval mapped bound
+        let bound = Eval save ct mapped bound
         let r = GetVectorResult (mapped,bound)
         Assert.AreEqual("File2.fs.Suffix1",r.[1])
             
         printf "-[Step2]----------------------------------------------------------------------------------------\n"
         // Evaluate the second time. No change should be seen.
         mapSuffix:="Suffix2"
-        let bound = Eval mapped bound
+        let bound = Eval save ct mapped bound
         let r = GetVectorResult (mapped,bound)
         Assert.AreEqual("File2.fs.Suffix1",r.[1])
 
@@ -338,7 +342,7 @@ type IncrementalBuild() =
         while !stampAs = DateTime.Now do 
             System.Threading.Thread.Sleep 10 // Sleep a little to avoid grabbing the same 'Now'
         stampAs:=DateTime.Now
-        let bound = Eval mapped bound
+        let bound = Eval save ct mapped bound
         let r = GetVectorResult (mapped,bound)
         Assert.AreEqual("File2.fs.Suffix2",r.[1])
             
@@ -364,14 +368,14 @@ type IncrementalBuild() =
             
         printf "-[Step1]----------------------------------------------------------------------------------------\n"
         // Evaluate the first time.
-        let bound = Eval joined bound
+        let bound = Eval save ct joined bound
         let (r,_) = Option.get (GetScalarResult<string>(joined,bound))
         Assert.AreEqual("Join1",r)
             
         printf "-[Step2]----------------------------------------------------------------------------------------\n"
         // Evaluate the second time. No change should be seen.
         joinedResult:="Join2"
-        let bound = Eval joined bound
+        let bound = Eval save ct joined bound
         let (r,_) = Option.get (GetScalarResult (joined,bound))
         Assert.AreEqual("Join1",r)
 
@@ -380,7 +384,7 @@ type IncrementalBuild() =
         while !stampAs = DateTime.Now do 
             System.Threading.Thread.Sleep 10 // Sleep a little to avoid grabbing the same 'Now'
         stampAs:=DateTime.Now
-        let bound = Eval joined bound
+        let bound = Eval save ct joined bound
         let (r,_) = Option.get (GetScalarResult (joined,bound))
         Assert.AreEqual("Join2",r)
             
@@ -399,7 +403,7 @@ type IncrementalBuild() =
         let inputs = [ BuildInput.VectorInput(inVector, ["File1.fs";"File2.fs";"File3.fs"]) ]
         let bound = buildDesc.GetInitialPartialBuild inputs
             
-        let e = Eval scanned bound   
+        let e = Eval save ct scanned bound   
         let r = GetScalarResult (vectorSize,e)  
         match r with 
         | Some(r,_) -> Assert.AreEqual(3,r)
@@ -453,7 +457,7 @@ type IncrementalBuild() =
         let inputs = [ BuildInput.ScalarInput(inScalar, "A Scalar Value") ]
         let bound = buildDesc.GetInitialPartialBuild inputs
 
-        let e = Eval inScalar bound
+        let e = Eval save ct inScalar bound
         let r = GetScalarResult(inScalar,e)
         match r with 
             | Some(r,_) -> Assert.AreEqual("A Scalar Value", r)
@@ -476,7 +480,7 @@ type IncrementalBuild() =
               BuildInput.ScalarInput(inScalar, (5,"")) ]
 
         let bound = buildDesc.GetInitialPartialBuild(inputs)
-        let e = Eval result bound
+        let e = Eval save ct result bound
         let r = GetVectorResult(result,e)
         if [| (6,"File1.fs"); (7,"File2.fs"); (8, "File3.fs") |] <> r then 
             printfn "Got %A" r
@@ -493,7 +497,7 @@ type IncrementalBuild() =
         let inputs = [ BuildInput.VectorInput(inVector, ["File1.fs";"File2.fs";"File3.fs"]) ]
         let bound = buildDesc.GetInitialPartialBuild(inputs)
 
-        let e = Eval result bound
+        let e = Eval save ct result bound
         let r = GetScalarResult (result, e)
         match r with 
         | Some(r,ts)->
@@ -503,6 +507,22 @@ type IncrementalBuild() =
         | None -> Assert.Fail()
 
              
+            
+    /// Check a cancellation
+    [<Test>]
+    member public rb.``Can cancel Eval``() =
+        let buildDesc = new BuildDescriptionScope()
+        let inVector = InputVector<string> "InputVector"
+        let result = Vector.ToScalar "ToScalar" inVector
+        buildDesc.DeclareScalarOutput result 
+        let inputs = [ BuildInput.VectorInput(inVector, ["File1.fs";"File2.fs";"File3.fs"]) ]
+        let bound = buildDesc.GetInitialPartialBuild(inputs)
+
+        let cts = new CancellationTokenSource()
+        cts.Cancel() 
+        let res = try Eval save cts.Token result bound |> ignore; false with :? OperationCanceledException -> true
+        Assert.AreEqual(res, true)
+
             
     /// This test replicates the data flow of the assembly reference model. It includes several concepts 
     /// that were new at the time: Scalars, Invalidation, Disposal
@@ -549,7 +569,7 @@ type IncrementalBuild() =
             [ BuildInput.VectorInput(fileNamesNode, ["File1.fs";"File2.fs";"File3.fs"]);
               BuildInput.VectorInput(referencedAssembliesNode, [("lib1.dll", now);("lib2.dll", now)]) ]
         let bound = buildDesc.GetInitialPartialBuild(inputs)
-        let e = Eval finalizedTypeCheckNode bound
+        let e = Eval save ct finalizedTypeCheckNode bound
         let r = GetScalarResult(finalizedTypeCheckNode,e)
             
         ()
@@ -566,7 +586,7 @@ type IncrementalBuild() =
         let inputs = [ BuildInput.VectorInput(inputs, [1;2;3;4]) ]
         let bound = buildDesc.GetInitialPartialBuild inputs
 
-        let evaled = Eval outputs bound
+        let evaled = Eval save ct outputs bound
         let outputs = GetVectorResult(outputs,evaled)
         Assert.AreEqual("Transformation of 4", outputs.[3])
         ()   
@@ -591,7 +611,7 @@ type IncrementalBuild() =
         let inputs = [ BuildInput.VectorInput(inputs, [1;2;3;4]) ]
         let bound = buildDesc.GetInitialPartialBuild inputs
 
-        let evaled = Eval outputs bound
+        let evaled = Eval save ct outputs bound
         let outputs = GetVectorResult(outputs,evaled)
         Assert.AreEqual("Transformation of 4", outputs.[3])
         ()               
@@ -609,7 +629,7 @@ type IncrementalBuild() =
         let inputs = [ BuildInput.VectorInput(inputs, []) ]
         let bound = buildDesc.GetInitialPartialBuild inputs
 
-        let evaled = Eval outputs  bound
+        let evaled = Eval save ct outputs  bound
         let outputs = GetVectorResult(outputs,evaled)
         ()               
               

@@ -64,7 +64,7 @@ type internal FSharpLanguageDebugInfoService() =
             Task.FromResult(Unchecked.defaultof<DebugLocationInfo>)
 
         member this.GetDataTipInfoAsync(document: Document, position: int, cancellationToken: CancellationToken): Task<DebugDataTipInfo> =
-            let computation = async {
+            async {
                 match FSharpLanguageService.GetOptions(document.Project.Id) with
                 | Some(options) ->
                     let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
@@ -75,9 +75,6 @@ type internal FSharpLanguageDebugInfoService() =
                            | None -> Unchecked.defaultof<DebugDataTipInfo>
                            | Some(textSpan) -> new DebugDataTipInfo(textSpan, sourceText.GetSubText(textSpan).ToString())
                 | None -> return Unchecked.defaultof<DebugDataTipInfo>
-            }
-            
-            Async.StartAsTask(computation, TaskCreationOptions.None, cancellationToken)
-                 .ContinueWith(CommonRoslynHelpers.GetCompletedTaskResult, cancellationToken)
+            } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
             
             

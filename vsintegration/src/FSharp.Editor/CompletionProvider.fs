@@ -73,11 +73,17 @@ type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SV
                 | _ -> true // anything else is a valid classification type
 
     static member ProvideCompletionsAsyncAux(sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, textVersionHash: int) = async {
+        // REVIEW: ParseFileInProject and CheckFileInProject can cause FSharp.Compiler.Service to become unavailable (i.e. not responding to requests) for 
+        // an arbitrarily long time while they process all files prior to this one in the project (plus dependent projects
+        // if we enable cross-project checking in multi-project solutions). FCS will not respond to other 
+        // requests unless this task is cancelled. We need to check that this task is cancelled in a timely way by the
+        // Roslyn UI machinery.
         let! parseResults = FSharpLanguageService.Checker.ParseFileInProject(filePath, sourceText.ToString(), options)
         let! checkFileAnswer = FSharpLanguageService.Checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options)
-        let checkFileResults = match checkFileAnswer with
-                                | FSharpCheckFileAnswer.Aborted -> failwith "Compilation isn't complete yet"
-                                | FSharpCheckFileAnswer.Succeeded(results) -> results
+        let checkFileResults = 
+            match checkFileAnswer with
+            | FSharpCheckFileAnswer.Aborted -> failwith "Compilation isn't complete yet or was cancelled"
+            | FSharpCheckFileAnswer.Succeeded(results) -> results
 
         let textLine = sourceText.Lines.GetLineFromPosition(caretPosition)
         let textLinePos = sourceText.Lines.GetLinePosition(caretPosition)
@@ -110,7 +116,7 @@ type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SV
             FSharpCompletionProvider.ShouldTriggerCompletionAux(sourceText, caretPosition, trigger.Kind, document.FilePath, defines)
     
     override this.ProvideCompletionsAsync(context: Microsoft.CodeAnalysis.Completion.CompletionContext) =
-        let computation = async {
+        async {
             match FSharpLanguageService.GetOptions(context.Document.Project.Id) with
             | Some(options) ->
                 let! sourceText = context.Document.GetTextAsync(context.CancellationToken) |> Async.AwaitTask
@@ -118,12 +124,11 @@ type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SV
                 let! results = FSharpCompletionProvider.ProvideCompletionsAsyncAux(sourceText, context.Position, options, context.Document.FilePath, textVersion.GetHashCode())
                 context.AddItems(results)
             | None -> ()
-        }
+        } |> CommonRoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
         
-        Task.Run(CommonRoslynHelpers.GetTaskAction(computation), context.CancellationToken)
 
     override this.GetDescriptionAsync(_: Document, completionItem: CompletionItem, cancellationToken: CancellationToken): Task<CompletionDescription> =
-        let computation = async {
+        async {
             let exists, declarationItem = declarationItemsCache.TryGetValue(completionItem.DisplayText)
             if exists then
                 let! description = declarationItem.DescriptionTextAsync
@@ -131,7 +136,4 @@ type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SV
                 return CompletionDescription.FromText(datatipText)
             else
                 return CompletionDescription.Empty
-        }
-        
-        Async.StartAsTask(computation, TaskCreationOptions.None, cancellationToken)
-            .ContinueWith(CommonRoslynHelpers.GetCompletedTaskResult, cancellationToken)
+        } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
