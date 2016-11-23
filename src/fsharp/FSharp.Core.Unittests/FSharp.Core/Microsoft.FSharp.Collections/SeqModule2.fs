@@ -926,6 +926,12 @@ type SeqModule2() =
         with
         | exn when exn.Message.Contains("seq was short by 1 element") -> ()
 
+        try
+            Seq.item 2 (Array.zeroCreate<int> 0) |> ignore
+            failwith "error expected"
+        with
+        | exn when exn.Message.Contains("seq was short by 3 elements") -> ()
+
     [<Test>]
     member this.Of_Array() =
          // integer Seq
