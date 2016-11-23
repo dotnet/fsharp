@@ -73,8 +73,8 @@ type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SV
                 | _ -> true // anything else is a valid classification type
 
     static member ProvideCompletionsAsyncAux(sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, textVersionHash: int) = async {
-        let! parseResults = FSharpChecker.Instance.ParseFileInProject(filePath, sourceText.ToString(), options)
-        let! checkFileAnswer = FSharpChecker.Instance.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options)
+        let! parseResults = FSharpLanguageService.Checker.ParseFileInProject(filePath, sourceText.ToString(), options)
+        let! checkFileAnswer = FSharpLanguageService.Checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options)
         let checkFileResults = match checkFileAnswer with
                                 | FSharpCheckFileAnswer.Aborted -> failwith "Compilation isn't complete yet"
                                 | FSharpCheckFileAnswer.Succeeded(results) -> results

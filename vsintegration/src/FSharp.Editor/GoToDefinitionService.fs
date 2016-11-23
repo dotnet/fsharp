@@ -61,8 +61,8 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>] ([<ImportMany
             |> Seq.tryFind(fun classifiedSpan -> classifiedSpan.TextSpan.Contains(position))
 
         let processQualifiedIdentifier(qualifiers, islandColumn) = async {
-            let! parseResults = FSharpChecker.Instance.ParseFileInProject(filePath, sourceText.ToString(), options)
-            let! checkFileAnswer = FSharpChecker.Instance.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options)
+            let! parseResults = FSharpLanguageService.Checker.ParseFileInProject(filePath, sourceText.ToString(), options)
+            let! checkFileAnswer = FSharpLanguageService.Checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options)
             let checkFileResults = match checkFileAnswer with
                                     | FSharpCheckFileAnswer.Aborted -> failwith "Compilation isn't complete yet"
                                     | FSharpCheckFileAnswer.Succeeded(results) -> results
@@ -103,12 +103,14 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>] ([<ImportMany
 
                 match definition with
                 | Some(range) ->
-                    let refDocumentId = document.Project.Solution.GetDocumentIdsWithFilePath(range.FileName).First()
-                    let refDocument = document.Project.Solution.GetDocument(refDocumentId)
-                    let! refSourceText = refDocument.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                    let refTextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(refSourceText, range)
-                    let refDisplayString = refSourceText.GetSubText(refTextSpan).ToString()
-                    results.Add(FSharpNavigableItem(refDocument, refTextSpan, refDisplayString))
+                    let refDocumentIds = document.Project.Solution.GetDocumentIdsWithFilePath(range.FileName)
+                    if not refDocumentIds.IsEmpty then 
+                        let refDocumentId = refDocumentIds.First()
+                        let refDocument = document.Project.Solution.GetDocument(refDocumentId)
+                        let! refSourceText = refDocument.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                        let refTextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(refSourceText, range)
+                        let refDisplayString = refSourceText.GetSubText(refTextSpan).ToString()
+                        results.Add(FSharpNavigableItem(refDocument, refTextSpan, refDisplayString))
                 | None -> ()
             | None -> ()
             return results.AsEnumerable()
