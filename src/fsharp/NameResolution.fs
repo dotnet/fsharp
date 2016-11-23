@@ -1979,13 +1979,26 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv (typeN
         | Some excon when IsTyconReprAccessible ncenv.amap m ad (modref.NestedTyconRef excon) -> 
             success (resInfo,Item.ExnCase (modref.NestedTyconRef excon),rest)
         | _ ->
+            // Something in a discriminated union without RequireQualifiedAccess attribute?
+            let unionSearchWithoutRQA =
+                match TryFindTypeWithUnionCase modref id with
+                | Some tycon when IsTyconReprAccessible ncenv.amap m ad (modref.NestedTyconRef tycon) && not (HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute tycon.Attribs) -> 
+                    let ucref = mkUnionCaseRef (modref.NestedTyconRef tycon) id.idText
+                    let ucinfo = FreshenUnionCaseRef ncenv m ucref
+                    success [resInfo,Item.UnionCase(ucinfo,false),rest]
+                | _ -> NoResultsOrUsefulErrors
+
+            match unionSearchWithoutRQA with
+            | Result (res :: _) -> success res
+            | _ ->
+
             // Something in a type?
             let tyconSearch = 
                 let tcrefs = LookupTypeNameInEntityMaybeHaveArity (ncenv.amap, id.idRange, ad, id.idText, (if isNil rest then typeNameResInfo.StaticArgsInfo else TypeNameResolutionStaticArgsInfo.Indefinite), modref)
                 let tcrefs = tcrefs |> List.map (fun tcref -> (resInfo,tcref))
                 if not (isNil rest) then 
                     let tcrefs = CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, TypeNameResolutionInfo (ResolveTypeNamesToTypeRefs,TypeNameResolutionStaticArgsInfo.Indefinite), PermitDirectReferenceToGeneratedType.No, unionRanges m id.idRange)
-                    ResolveLongIdentInTyconRefs ncenv nenv  LookupKind.Expr (depth+1) m ad rest typeNameResInfo id.idRange tcrefs
+                    ResolveLongIdentInTyconRefs ncenv nenv LookupKind.Expr (depth+1) m ad rest typeNameResInfo id.idRange tcrefs
                 // Check if we've got some explicit type arguments 
                 else 
                     let tcrefs = CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, typeNameResInfo, PermitDirectReferenceToGeneratedType.No, unionRanges m id.idRange)

@@ -1,5 +1,4 @@
-// #Conformance #TypeInference #Attributes 
-// Verify the RequireQualifiedAccess attribute works on unions
+// #Conformance #TypeInference #Attributes
 
 module Module =
     type R = { a: int } with static member New = { a = 1 }
@@ -13,7 +12,6 @@ let choice1 v =
 
 let newChoice = R { a = 1}
 
-let record2 = Module.R.New
 let choice2 v =
     match v with
     | Module.R r -> r
