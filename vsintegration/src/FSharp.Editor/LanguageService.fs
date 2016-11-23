@@ -86,14 +86,13 @@ type internal FSharpLanguageService(package : FSharpPackage) =
             let filename = VsTextLines.GetFilename textLines
             match VsRunningDocumentTable.FindDocumentWithoutLocking(package.RunningDocumentTable,filename) with
             | Some (hier, _) ->
-                if IsScript(filename) then
+                match hier with
+                | :? IProvideProjectSite as siteProvider when not (IsScript(filename)) -> 
+                    this.SetupProjectFile(siteProvider, workspace)
+                | _ -> 
                     let editorAdapterFactoryService = this.Package.ComponentModel.GetService<IVsEditorAdaptersFactoryService>()
                     let fileContents = VsTextLines.GetFileContents(textLines, editorAdapterFactoryService)
                     this.SetupStandAloneFile(filename, fileContents, workspace, hier)
-                else
-                    match hier with
-                    | :? IProvideProjectSite as siteProvider -> this.SetupProjectFile(siteProvider, workspace)
-                    | _ -> ()
             | _ -> ()
         | _ -> ()
 

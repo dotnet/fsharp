@@ -1571,7 +1571,7 @@ module internal Parser =
            reactorOps: IReactorOperations,
            // Used by 'FSharpDeclarationListInfo' to check the IncrementalBuilder is still alive.
            checkAlive : (unit -> bool),
-           isResultObsolete: unit->bool,
+           cancellationToken: CancellationToken,
            textSnapshotInfo : obj option) = 
 
         match parseResults.ParseTree with 
@@ -1666,7 +1666,7 @@ module internal Parser =
                     // Typecheck is potentially a long running operation. We chop it up here with an Eventually continuation and, at each slice, give a chance
                     // for the client to claim the result as obsolete and have the typecheck abort.
                     let computation = TypeCheckOneInputAndFinishEventually(checkForErrors,tcConfig, tcImports, tcGlobals, None, TcResultsSink.WithSink sink, tcState, parsedMainInput)
-                    match computation |> Eventually.forceWhile (fun () -> not (isResultObsolete())) with
+                    match computation |> Eventually.forceWhile (fun () -> not cancellationToken.IsCancellationRequested) with
                     | Some((tcEnvAtEnd,_,typedImplFiles),tcState) -> Some (tcEnvAtEnd, typedImplFiles, tcState)
                     | None -> None // Means 'aborted'
                 with
@@ -2049,16 +2049,16 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
 
     /// CreateOneIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.
-    let CreateOneIncrementalBuilder (options:FSharpProjectOptions) = 
+    let CreateOneIncrementalBuilder (options:FSharpProjectOptions, ct) = 
 
         let projectReferences =  
             [ for (nm,opts) in options.ReferencedProjects ->
                 { new IProjectReference with 
                         member x.EvaluateRawContents() = 
-                            let r = self.ParseAndCheckProjectImpl(opts)
+                            let r = self.ParseAndCheckProjectImpl(opts, ct)
                             r.RawFSharpAssemblyData 
                         member x.GetLogicalTimeStamp() = 
-                            self.GetLogicalTimeStampForProject(opts)
+                            self.GetLogicalTimeStampForProject(opts, ct)
                         member x.FileName = nm } ]
 
         let builderOpt, errorsAndWarnings = 
@@ -2104,11 +2104,11 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                  requiredToKeep=(fun (builderOpt,_,_) -> match builderOpt with None -> false | Some b -> b.IsBeingKeptAliveApartFromCacheEntry),
                  onDiscard = (fun (_, _, decrement) -> decrement.Dispose()))
 
-    let getOrCreateBuilder options =  
+    let getOrCreateBuilder (options, ct) =  
         match incrementalBuildersCache.TryGet options with
         | Some b -> b
         | None -> 
-            let b = CreateOneIncrementalBuilder options 
+            let b = CreateOneIncrementalBuilder (options, ct)
             incrementalBuildersCache.Set (options, b)
             b
 
@@ -2193,7 +2193,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
         match cachedResults with 
         | Some (parseResults, _checkResults,_,_) ->  async.Return parseResults
         | _ -> 
-        reactor.EnqueueAndAwaitOpAsync("ParseFileInProject " + filename, fun _ct -> 
+        reactor.EnqueueAndAwaitOpAsync("ParseFileInProject " + filename, fun ct -> 
         
             // Try the caches again - it may have been filled by the time this operation runs
             match locked (fun () -> parseFileInProjectCache.TryGet (filename, source, options)) with 
@@ -2204,7 +2204,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
             | Some (parseResults, _checkResults,_,_) ->  parseResults
             | _ -> 
             foregroundParseCount <- foregroundParseCount + 1
-            let builderOpt,creationErrors,_ = getOrCreateBuilder options 
+            let builderOpt,creationErrors,_ = getOrCreateBuilder (options, ct)
             use _unwind = IncrementalBuilder.KeepBuilderAlive builderOpt
             match builderOpt with
             | None -> FSharpParseFileResults(List.toArray creationErrors, None, true, [])
@@ -2220,21 +2220,21 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
 
     /// Fetch the parse information from the background compiler (which checks w.r.t. the FileSystem API)
     member bc.GetBackgroundParseResultsForFileInProject(filename, options) =
-        reactor.EnqueueAndAwaitOpAsync("GetBackgroundParseResultsForFileInProject " + filename, fun _ct -> 
-            let builderOpt, creationErrors, _ = getOrCreateBuilder options
+        reactor.EnqueueAndAwaitOpAsync("GetBackgroundParseResultsForFileInProject " + filename, fun ct -> 
+            let builderOpt, creationErrors, _ = getOrCreateBuilder (options, ct)
             use _unwind = IncrementalBuilder.KeepBuilderAlive builderOpt
             match builderOpt with
             | None -> FSharpParseFileResults(List.toArray creationErrors, None, true, [])
             | Some builder -> 
-            let inputOpt,_,_,parseErrors = builder.GetParseResultsForFile filename            
+            let inputOpt,_,_,parseErrors = builder.GetParseResultsForFile (filename, ct)
             let dependencyFiles = builder.Dependencies 
             let errors = [| yield! creationErrors; yield! Parser.CreateErrorInfos (builder.TcConfig, false, filename, parseErrors) |]
             FSharpParseFileResults(errors = errors, input = inputOpt, parseHadErrors = false, dependencyFiles = dependencyFiles)
         )
 
     member bc.MatchBraces(filename:string, source, options)=
-        reactor.EnqueueAndAwaitOpAsync("MatchBraces " + filename, fun _ct -> 
-            let builderOpt,_,_ = getOrCreateBuilder options
+        reactor.EnqueueAndAwaitOpAsync("MatchBraces " + filename, fun ct -> 
+            let builderOpt,_,_ = getOrCreateBuilder (options, ct)
             use _unwind = IncrementalBuilder.KeepBuilderAlive builderOpt
             match builderOpt with
             | None -> [| |]
@@ -2261,8 +2261,8 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
             | _ -> None
 
     /// Type-check the result obtained by parsing, but only if the antecedent type checking context is available. 
-    member bc.CheckFileInProjectIfReady(parseResults:FSharpParseFileResults,filename,fileVersion,source,options,isResultObsolete,textSnapshotInfo:obj option) =
-        reactor.EnqueueAndAwaitOpAsync("CheckFileInProjectIfReady " + filename, fun _ct -> 
+    member bc.CheckFileInProjectIfReady(parseResults:FSharpParseFileResults,filename,fileVersion,source,options,textSnapshotInfo:obj option) =
+        reactor.EnqueueAndAwaitOpAsync("CheckFileInProjectIfReady " + filename, fun ct -> 
           let answer = 
             match incrementalBuildersCache.TryGetAny options with
             | Some(Some builder, creationErrors, _) ->
@@ -2277,10 +2277,11 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                     // For scripts, this will have been recorded by GetProjectOptionsFromScript.
                     let loadClosure = scriptClosureCache.TryGet options 
                 
+                    let checkAlive () = builder.IsAlive
                     // Run the type checking.
                     let tcErrors, tcFileResult = 
                         Parser.TypeCheckOneFile(parseResults,source,filename,options.ProjectFileName,tcPrior.TcConfig,tcPrior.TcGlobals,tcPrior.TcImports,  tcPrior.TcState,
-                                                loadClosure,tcPrior.Errors,reactorOps,(fun () -> builder.IsAlive),isResultObsolete,textSnapshotInfo)
+                                                loadClosure,tcPrior.Errors,reactorOps,checkAlive,ct,textSnapshotInfo)
 
                     let checkAnswer = MakeCheckFileAnswer(tcFileResult, options, builder, creationErrors, parseResults.Errors, tcErrors)
                     bc.RecordTypeCheckFileInProjectResults(filename,options,parseResults,fileVersion,tcPrior.TimeStamp,Some checkAnswer,source)
@@ -2292,9 +2293,9 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
 
 
     /// Type-check the result obtained by parsing. Force the evaluation of the antecedent type checking context if needed.
-    member bc.CheckFileInProject(parseResults:FSharpParseFileResults,filename,fileVersion,source,options,isResultObsolete,textSnapshotInfo) =
-        reactor.EnqueueAndAwaitOpAsync("CheckFileInProject " + filename, fun _ct -> 
-            let builderOpt,creationErrors,_ = getOrCreateBuilder options
+    member bc.CheckFileInProject(parseResults:FSharpParseFileResults,filename,fileVersion,source,options,textSnapshotInfo) =
+        reactor.EnqueueAndAwaitOpAsync("CheckFileInProject " + filename, fun ct -> 
+            let builderOpt,creationErrors,_ = getOrCreateBuilder (options, ct)
             use _unwind = IncrementalBuilder.KeepBuilderAlive builderOpt
             match builderOpt with
             | None -> FSharpCheckFileAnswer.Succeeded (MakeCheckFileResultsEmpty(creationErrors))
@@ -2305,11 +2306,11 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
             match bc.GetCachedCheckFileResult(builder,filename,source,options) with 
             | Some (_parseResults, checkResults) -> FSharpCheckFileAnswer.Succeeded checkResults
             | _ ->
-            let tcPrior = builder.GetCheckResultsBeforeFileInProject filename 
+            let tcPrior = builder.GetCheckResultsBeforeFileInProject (filename, ct)
             let loadClosure = scriptClosureCache.TryGet options 
             let tcErrors, tcFileResult = 
                 Parser.TypeCheckOneFile(parseResults,source,filename,options.ProjectFileName,tcPrior.TcConfig,tcPrior.TcGlobals,tcPrior.TcImports,  tcPrior.TcState,
-                                        loadClosure,tcPrior.Errors,reactorOps,(fun () -> builder.IsAlive),isResultObsolete,textSnapshotInfo)
+                                        loadClosure,tcPrior.Errors,reactorOps,(fun () -> builder.IsAlive),ct,textSnapshotInfo)
             let checkAnswer = MakeCheckFileAnswer(tcFileResult, options, builder, creationErrors, parseResults.Errors, tcErrors)
             bc.RecordTypeCheckFileInProjectResults(filename,options,parseResults,fileVersion,tcPrior.TimeStamp,Some checkAnswer,source)
             bc.ImplicitlyStartCheckProjectInBackground(options)
@@ -2317,9 +2318,9 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
         ) 
 
     /// Parses the source file and returns untyped AST
-    member bc.ParseAndCheckFileInProject(filename:string, fileVersion, source, options:FSharpProjectOptions,isResultObsolete,textSnapshotInfo) =
-        reactor.EnqueueAndAwaitOpAsync("ParseAndCheckFileInProject " + filename, fun _ct -> 
-            let builderOpt,creationErrors,_ = getOrCreateBuilder options // Q: Whis it it ok to ignore creationErrors in the build cache? A: These errors will be appended into the typecheck results
+    member bc.ParseAndCheckFileInProject(filename:string, fileVersion, source, options:FSharpProjectOptions,textSnapshotInfo) =
+        reactor.EnqueueAndAwaitOpAsync("ParseAndCheckFileInProject " + filename, fun ct -> 
+            let builderOpt,creationErrors,_ = getOrCreateBuilder (options, ct) // Q: Whis it it ok to ignore creationErrors in the build cache? A: These errors will be appended into the typecheck results
             use _unwind = IncrementalBuilder.KeepBuilderAlive builderOpt
             match builderOpt with
             | None -> 
@@ -2330,7 +2331,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                 match bc.GetCachedCheckFileResult(builder,filename,source,options) with 
                 | Some (parseResults, checkResults) -> parseResults, FSharpCheckFileAnswer.Succeeded checkResults
                 | _ ->
-                let tcPrior = builder.GetCheckResultsBeforeFileInProject filename 
+                let tcPrior = builder.GetCheckResultsBeforeFileInProject (filename, ct)
 
                 // Do the parsing.
                 let parseErrors, _matchPairs, inputOpt, anyErrors = Parser.ParseOneFile (source, false, true, filename, builder.ProjectFileNames, builder.TcConfig)
@@ -2339,7 +2340,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                 let loadClosure = scriptClosureCache.TryGet options 
                 let tcErrors, tcFileResult = 
                     Parser.TypeCheckOneFile(parseResults,source,filename,options.ProjectFileName,tcPrior.TcConfig,tcPrior.TcGlobals,tcPrior.TcImports,  tcPrior.TcState,
-                                            loadClosure,tcPrior.Errors,reactorOps,(fun () -> builder.IsAlive),isResultObsolete,textSnapshotInfo)
+                                            loadClosure,tcPrior.Errors,reactorOps,(fun () -> builder.IsAlive),ct,textSnapshotInfo)
                 let checkAnswer = MakeCheckFileAnswer(tcFileResult, options, builder, creationErrors, parseResults.Errors, tcErrors)
                 bc.RecordTypeCheckFileInProjectResults(filename,options,parseResults,fileVersion,tcPrior.TimeStamp,Some checkAnswer,source)
                 bc.ImplicitlyStartCheckProjectInBackground(options)
@@ -2348,8 +2349,8 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
 
     /// Fetch the check information from the background compiler (which checks w.r.t. the FileSystem API)
     member bc.GetBackgroundCheckResultsForFileInProject(filename,options) =
-        reactor.EnqueueAndAwaitOpAsync("GetBackgroundCheckResultsForFileInProject " + filename, fun _ct -> 
-            let (builderOpt, creationErrors, _) = getOrCreateBuilder options 
+        reactor.EnqueueAndAwaitOpAsync("GetBackgroundCheckResultsForFileInProject " + filename, fun ct -> 
+            let (builderOpt, creationErrors, _) = getOrCreateBuilder (options, ct)
             use _unwind = IncrementalBuilder.KeepBuilderAlive builderOpt
             match builderOpt with
             | None -> 
@@ -2357,8 +2358,8 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                 let typedResults = MakeCheckFileResultsEmpty(creationErrors)
                 (parseResults, typedResults)
             | Some builder -> 
-                let (inputOpt, _, _, untypedErrors) = builder.GetParseResultsForFile filename  
-                let tcProj = builder.GetCheckResultsAfterFileInProject filename 
+                let (inputOpt, _, _, untypedErrors) = builder.GetParseResultsForFile (filename, ct)
+                let tcProj = builder.GetCheckResultsAfterFileInProject (filename, ct)
                 let untypedErrors = [| yield! creationErrors; yield! Parser.CreateErrorInfos (builder.TcConfig, false, filename, untypedErrors) |]
                 let tcErrors = [| yield! creationErrors; yield! Parser.CreateErrorInfos (builder.TcConfig, false, filename, tcProj.Errors) |]
                 let parseResults = FSharpParseFileResults(errors = untypedErrors, input = inputOpt, parseHadErrors = false, dependencyFiles = builder.Dependencies)
@@ -2386,20 +2387,20 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
         | None -> locked (fun () -> parseAndCheckFileInProjectCachePossiblyStale.TryGet((filename,options)))
 
     /// Parse and typecheck the whole project (the implementation, called recursively as project graph is evaluated)
-    member private bc.ParseAndCheckProjectImpl(options) : FSharpCheckProjectResults =
-        let builderOpt,creationErrors,_ = getOrCreateBuilder options
+    member private bc.ParseAndCheckProjectImpl(options, ct) : FSharpCheckProjectResults =
+        let builderOpt,creationErrors,_ = getOrCreateBuilder (options, ct)
         use _unwind = IncrementalBuilder.KeepBuilderAlive builderOpt
         match builderOpt with 
         | None -> 
             FSharpCheckProjectResults (keepAssemblyContents, Array.ofList creationErrors, None, reactorOps)
         | Some builder -> 
-            let (tcProj, ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt)  = builder.GetCheckResultsAndImplementationsForProject()
+            let (tcProj, ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt)  = builder.GetCheckResultsAndImplementationsForProject(ct)
             let errors = [| yield! creationErrors; yield! Parser.CreateErrorInfos (tcProj.TcConfig, true, Microsoft.FSharp.Compiler.TcGlobals.DummyFileNameForRangesWithoutASpecificLocation, tcProj.Errors) |]
             FSharpCheckProjectResults (keepAssemblyContents, errors, Some(tcProj.TcGlobals, tcProj.TcImports, tcProj.TcState.Ccu, tcProj.TcState.PartialAssemblySignature, tcProj.TcSymbolUses, tcProj.TopAttribs, tcAssemblyDataOpt, ilAssemRef, tcProj.TcEnvAtEnd.AccessRights, tcAssemblyExprOpt), reactorOps)
 
     /// Get the timestamp that would be on the output if fully built immediately
-    member private bc.GetLogicalTimeStampForProject(options) =
-        let builderOpt,_creationErrors,_ = getOrCreateBuilder options
+    member private bc.GetLogicalTimeStampForProject(options, ct) =
+        let builderOpt,_creationErrors,_ = getOrCreateBuilder (options, ct)
         use _unwind = IncrementalBuilder.KeepBuilderAlive builderOpt
         match builderOpt with 
         | None -> None
@@ -2407,14 +2408,14 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
 
     /// Keep the projet builder alive over a scope
     member bc.KeepProjectAlive(options) =
-        reactor.EnqueueAndAwaitOpAsync("KeepProjectAlive " + options.ProjectFileName, fun _ct -> 
-            let builderOpt,_creationErrors,_ = getOrCreateBuilder options
+        reactor.EnqueueAndAwaitOpAsync("KeepProjectAlive " + options.ProjectFileName, fun ct -> 
+            let builderOpt,_creationErrors,_ = getOrCreateBuilder (options, ct)
             // This increments, and lets the caller decrement
             IncrementalBuilder.KeepBuilderAlive builderOpt)
 
     /// Parse and typecheck the whole project.
     member bc.ParseAndCheckProject(options) =
-        reactor.EnqueueAndAwaitOpAsync("ParseAndCheckProject " + options.ProjectFileName, fun _ct -> bc.ParseAndCheckProjectImpl(options))
+        reactor.EnqueueAndAwaitOpAsync("ParseAndCheckProject " + options.ProjectFileName, fun ct -> bc.ParseAndCheckProjectImpl(options, ct))
 
     member bc.GetProjectOptionsFromScript(filename, source, ?loadedTimeStamp, ?otherFlags, ?useFsiAuxLib, ?assumeDotNetFramework) = 
         reactor.EnqueueAndAwaitOpAsync ("GetProjectOptionsFromScript " + filename, fun _ct -> 
@@ -2457,12 +2458,14 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
             
     member bc.InvalidateConfiguration(options : FSharpProjectOptions) =
         reactor.EnqueueOp("InvalidateConfiguration", fun () -> 
+            // This operation can't currently be cancelled and is not async
+            let ct = CancellationToken.None
             match incrementalBuildersCache.TryGetAny options with
             | None -> ()
             | Some (_oldBuilder, _, _) ->
                     // We do not need to decrement here - the onDiscard function is called each time an entry is pushed out of the build cache,
                     // including by SetAlternate.
-                    let builderB, errorsB, decrementB = CreateOneIncrementalBuilder options
+                    let builderB, errorsB, decrementB = CreateOneIncrementalBuilder (options, ct)
                     incrementalBuildersCache.Set(options, (builderB, errorsB, decrementB))
             if implicitlyStartBackgroundWork then 
                bc.CheckProjectInBackground(options))
@@ -2481,11 +2484,13 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
 
     member bc.CheckProjectInBackground(options) =
         reactor.SetBackgroundOp(Some(fun () -> 
-            let builderOpt,_,_ = getOrCreateBuilder options
+            // The individual steps of the background build can't currently be cancelled
+            let ct = CancellationToken.None
+            let builderOpt,_,_ = getOrCreateBuilder (options, ct)
             use _unwind = IncrementalBuilder.KeepBuilderAlive builderOpt
             match builderOpt with 
             | None -> false
-            | Some builder -> builder.Step()))
+            | Some builder -> builder.Step(ct)))
 
     member bc.StopBackgroundCompile() =
         reactor.SetBackgroundOp(None)
@@ -2618,21 +2623,18 @@ type FSharpChecker(referenceResolver, projectCacheSize, keepAssemblyContents, ke
               
     /// Typecheck a source code file, returning a handle to the results of the 
     /// parse including the reconstructed types in the file.
-    member ic.CheckFileInProjectIfReady(parseResults:FSharpParseFileResults, filename:string, fileVersion:int, source:string, options:FSharpProjectOptions, ?isResultObsolete, ?textSnapshotInfo:obj) =        
-        let (IsResultObsolete(isResultObsolete)) = defaultArg isResultObsolete (IsResultObsolete(fun _ -> false))
-        backgroundCompiler.CheckFileInProjectIfReady(parseResults,filename,fileVersion,source,options,isResultObsolete,textSnapshotInfo)
+    member ic.CheckFileInProjectIfReady(parseResults:FSharpParseFileResults, filename:string, fileVersion:int, source:string, options:FSharpProjectOptions,  ?textSnapshotInfo:obj) =        
+        backgroundCompiler.CheckFileInProjectIfReady(parseResults,filename,fileVersion,source,options,textSnapshotInfo)
             
     /// Typecheck a source code file, returning a handle to the results of the 
     /// parse including the reconstructed types in the file.
-    member ic.CheckFileInProject(parseResults:FSharpParseFileResults, filename:string, fileVersion:int, source:string, options:FSharpProjectOptions, ?isResultObsolete, ?textSnapshotInfo:obj) =        
-        let (IsResultObsolete(isResultObsolete)) = defaultArg isResultObsolete (IsResultObsolete(fun _ -> false))
-        backgroundCompiler.CheckFileInProject(parseResults,filename,fileVersion,source,options,isResultObsolete,textSnapshotInfo)
+    member ic.CheckFileInProject(parseResults:FSharpParseFileResults, filename:string, fileVersion:int, source:string, options:FSharpProjectOptions, ?textSnapshotInfo:obj) =        
+        backgroundCompiler.CheckFileInProject(parseResults,filename,fileVersion,source,options,textSnapshotInfo)
             
     /// Typecheck a source code file, returning a handle to the results of the 
     /// parse including the reconstructed types in the file.
-    member ic.ParseAndCheckFileInProject(filename:string, fileVersion:int, source:string, options:FSharpProjectOptions, ?isResultObsolete, ?textSnapshotInfo:obj) =        
-        let (IsResultObsolete(isResultObsolete)) = defaultArg isResultObsolete (IsResultObsolete(fun _ -> false))
-        backgroundCompiler.ParseAndCheckFileInProject(filename, fileVersion, source, options, isResultObsolete, textSnapshotInfo)
+    member ic.ParseAndCheckFileInProject(filename:string, fileVersion:int, source:string, options:FSharpProjectOptions, ?textSnapshotInfo:obj) =        
+        backgroundCompiler.ParseAndCheckFileInProject(filename, fileVersion, source, options, textSnapshotInfo)
             
     member ic.ParseAndCheckProject(options) =
         backgroundCompiler.ParseAndCheckProject(options)
@@ -2694,8 +2696,8 @@ type FSharpChecker(referenceResolver, projectCacheSize, keepAssemblyContents, ke
         bc.ParseFileInProject(filename, source, options) 
         |> Async.RunSynchronously
 
-    member bc.TypeCheckSource(parseResults, filename, fileVersion, source, options, isResultObsolete, textSnapshotInfo:obj) = 
-        bc.CheckFileInProjectIfReady(parseResults, filename, fileVersion, source, options, isResultObsolete, textSnapshotInfo)
+    member bc.TypeCheckSource(parseResults, filename, fileVersion, source, options, textSnapshotInfo:obj) = 
+        bc.CheckFileInProjectIfReady(parseResults, filename, fileVersion, source, options, textSnapshotInfo)
         |> Async.RunSynchronously
 
     member ic.GetCheckOptionsFromScriptRoot(filename, source, loadedTimeStamp) = 
@@ -2731,9 +2733,10 @@ type FsiInteractiveChecker(reactorOps: IReactorOperations, tcConfig, tcGlobals, 
         let parseResults = FSharpParseFileResults(parseErrors, inputOpt, parseHadErrors = anyErrors, dependencyFiles = dependencyFiles)
 
         let backgroundErrors = []
+        let ct = CancellationToken.None
         let tcErrors, tcFileResult = 
             Parser.TypeCheckOneFile(parseResults,source,mainInputFileName,"project",tcConfig,tcGlobals,tcImports,  tcState,
-                                    loadClosure,backgroundErrors,reactorOps,(fun () -> true),(fun _ -> false),None)
+                                    loadClosure,backgroundErrors,reactorOps,(fun () -> true),ct,None)
 
         match tcFileResult with 
         | Parser.TypeCheckAborted.No scope ->

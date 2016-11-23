@@ -145,10 +145,15 @@ type internal FSharpColorizationService() =
                 , cancellationToken)
 
         member this.AddSemanticClassificationsAsync(document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
-            let computation = async {
+            async {
                 match FSharpLanguageService.GetOptions(document.Project.Id) with
                 | Some(options) ->
                     let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                    // REVIEW: ParseFileInProject and CheckFileInProject can cause FSharp.Compiler.Service to become unavailable (i.e. not responding to requests) for 
+                    // an arbitrarily long time while they process all files prior to this one in the project (plus dependent projects if we enable
+                    // cross-project checking in multi-project solutions). FCS will not respond to other 
+                    // requests unless this task is cancelled. We need to check that this task is cancelled in a timely way by the
+                    // Roslyn UI machinery.
                     let! parseResults = FSharpLanguageService.Checker.ParseFileInProject(document.Name, sourceText.ToString(), options)
                     let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
                     let! checkResultsAnswer = FSharpLanguageService.Checker.CheckFileInProject(parseResults, document.FilePath, textVersion.GetHashCode(), textSpan.ToString(), options)
@@ -161,9 +166,7 @@ type internal FSharpColorizationService() =
 
                     result.AddRange(extraColorizationData)
                 | None -> ()
-            }
-
-            Task.Run(CommonRoslynHelpers.GetTaskAction(computation), cancellationToken)
+            } |> CommonRoslynHelpers.StartAsyncUnitAsTask cancellationToken
 
         // Do not perform classification if we don't have project options (#defines matter)
         member this.AdjustStaleClassification(_: SourceText, classifiedSpan: ClassifiedSpan) : ClassifiedSpan = classifiedSpan
