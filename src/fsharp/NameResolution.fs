@@ -1979,16 +1979,22 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv (typeN
         | Some excon when IsTyconReprAccessible ncenv.amap m ad (modref.NestedTyconRef excon) -> 
             success (resInfo,Item.ExnCase (modref.NestedTyconRef excon),rest)
         | _ ->
-            // Something in a discriminated union without RequireQualifiedAccess attribute?
-            let unionSearchWithoutRQA =
+            let unionSearchResult = 
                 match TryFindTypeWithUnionCase modref id with
-                | Some tycon when IsTyconReprAccessible ncenv.amap m ad (modref.NestedTyconRef tycon) && not (HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute tycon.Attribs) -> 
+                | Some tycon when IsTyconReprAccessible ncenv.amap m ad (modref.NestedTyconRef tycon) -> 
+                    Some(tycon,HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute tycon.Attribs)
+                | _ -> None                 
+
+            // Something in a discriminated union without RequireQualifiedAccess attribute?
+            let unionSearchWithoutRequireQualifiedAccess =
+                match unionSearchResult with
+                | Some(tycon,false) -> 
                     let ucref = mkUnionCaseRef (modref.NestedTyconRef tycon) id.idText
                     let ucinfo = FreshenUnionCaseRef ncenv m ucref
                     success [resInfo,Item.UnionCase(ucinfo,false),rest]
                 | _ -> NoResultsOrUsefulErrors
 
-            match unionSearchWithoutRQA with
+            match unionSearchWithoutRequireQualifiedAccess with
             | Result (res :: _) -> success res
             | _ ->
 
@@ -2020,12 +2026,11 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv (typeN
 
             // Something in a discriminated union?
             let unionSearch,showDeprecated =
-                match TryFindTypeWithUnionCase modref id with
-                | Some tycon when IsTyconReprAccessible ncenv.amap m ad (modref.NestedTyconRef tycon) -> 
-                    let ucref = mkUnionCaseRef (modref.NestedTyconRef tycon) id.idText 
-                    let showDeprecated = HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute tycon.Attribs
+                match unionSearchResult with
+                | Some(tycon,hasRequireQualifiedAccessAttribute) -> 
+                    let ucref = mkUnionCaseRef (modref.NestedTyconRef tycon) id.idText
                     let ucinfo = FreshenUnionCaseRef ncenv m ucref
-                    success [resInfo,Item.UnionCase(ucinfo,showDeprecated),rest],showDeprecated
+                    success [resInfo,Item.UnionCase(ucinfo,hasRequireQualifiedAccessAttribute),rest],hasRequireQualifiedAccessAttribute
                 | _ -> NoResultsOrUsefulErrors,false
 
             match unionSearch with
