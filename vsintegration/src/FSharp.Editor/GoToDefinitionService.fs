@@ -54,20 +54,21 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>] ([<ImportMany
                                   : Async<Option<range>> = async {
 
         let textLine = sourceText.Lines.GetLineFromPosition(position)
-        let textLineNumber = textLine.LineNumber + 1 // Roslyn line numbers are zero-based
-        let textLineColumn = sourceText.Lines.GetLinePosition(position).Character
+        let textLinePos = sourceText.Lines.GetLinePosition(position)
+        let fcsTextLineNumber = textLinePos.Line + 1 // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
+        let textLineColumn = textLinePos.Character
         let classifiedSpanOption =
             FSharpColorizationService.GetColorizationData(sourceText, textLine.Span, Some(filePath), defines, cancellationToken)
             |> Seq.tryFind(fun classifiedSpan -> classifiedSpan.TextSpan.Contains(position))
 
         let processQualifiedIdentifier(qualifiers, islandColumn) = async {
-            let! parseResults = FSharpChecker.Instance.ParseFileInProject(filePath, sourceText.ToString(), options)
-            let! checkFileAnswer = FSharpChecker.Instance.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options)
+            let! parseResults = FSharpLanguageService.Checker.ParseFileInProject(filePath, sourceText.ToString(), options)
+            let! checkFileAnswer = FSharpLanguageService.Checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options)
             let checkFileResults = match checkFileAnswer with
                                     | FSharpCheckFileAnswer.Aborted -> failwith "Compilation isn't complete yet"
                                     | FSharpCheckFileAnswer.Succeeded(results) -> results
 
-            let! declarations = checkFileResults.GetDeclarationLocationAlternate (textLineNumber, islandColumn, textLine.ToString(), qualifiers, false)
+            let! declarations = checkFileResults.GetDeclarationLocationAlternate (fcsTextLineNumber, islandColumn, textLine.ToString(), qualifiers, false)
 
             return match declarations with
                    | FSharpFindDeclResult.DeclFound(range) -> Some(range)
@@ -103,12 +104,14 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>] ([<ImportMany
 
                 match definition with
                 | Some(range) ->
-                    let refDocumentId = document.Project.Solution.GetDocumentIdsWithFilePath(range.FileName).First()
-                    let refDocument = document.Project.Solution.GetDocument(refDocumentId)
-                    let! refSourceText = refDocument.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                    let refTextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(refSourceText, range)
-                    let refDisplayString = refSourceText.GetSubText(refTextSpan).ToString()
-                    results.Add(FSharpNavigableItem(refDocument, refTextSpan, refDisplayString))
+                    let refDocumentIds = document.Project.Solution.GetDocumentIdsWithFilePath(range.FileName)
+                    if not refDocumentIds.IsEmpty then 
+                        let refDocumentId = refDocumentIds.First()
+                        let refDocument = document.Project.Solution.GetDocument(refDocumentId)
+                        let! refSourceText = refDocument.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                        let refTextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(refSourceText, range)
+                        let refDisplayString = refSourceText.GetSubText(refTextSpan).ToString()
+                        results.Add(FSharpNavigableItem(refDocument, refTextSpan, refDisplayString))
                 | None -> ()
             | None -> ()
             return results.AsEnumerable()
