@@ -52,6 +52,7 @@ type internal FSharpColorizationService() =
         | FSharpTokenColorKind.Operator -> ClassificationTypeNames.Operator
         | FSharpTokenColorKind.TypeName  -> ClassificationTypeNames.ClassName
         | FSharpTokenColorKind.Pattern -> ClassificationTypeNames.EnumName
+        | FSharpTokenColorKind.Module -> ClassificationTypeNames.ModuleName
         | FSharpTokenColorKind.Default 
         | _ -> ClassificationTypeNames.Text
     

@@ -1365,13 +1365,23 @@ type TypeCheckInfo
                | CNR(_, (Item.Value vref), ItemOccurence.Use, _, _, _, m) when valRefEq g g.seq_vref vref -> 
                    yield (m, FSharpTokenColorKind.Keyword) 
                // custom builders, custom operations get colored as keywords
-               | CNR(_, (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use, _, _, _, m) -> 
+               | CNR(_, Item.CustomBuilder(_, valRef), ItemOccurence.Use, _, _, _, _) -> 
+                   yield (valRef.Range, FSharpTokenColorKind.Keyword) 
+               | CNR(_, Item.CustomOperation _, ItemOccurence.Use, _, _, _, m) -> 
                    yield (m, FSharpTokenColorKind.Keyword) 
                // types get colored as types when they occur in syntactic types or custom attributes
                // typevariables get colored as types when they occur in syntactic types custom builders, custom operations get colored as keywords
-               | CNR(_, (Item.TypeVar  _ | Item.Types _ | Item.UnqualifiedType _) , (ItemOccurence.UseInType | ItemOccurence.UseInAttribute), _, _, _, m) -> 
+               | CNR(_, (Item.TypeVar  _ | Item.Types _ | Item.UnqualifiedType _), 
+                     (ItemOccurence.UseInType | ItemOccurence.UseInAttribute | ItemOccurence.Binding _), _, _, _, m) -> 
+                   yield (m, FSharpTokenColorKind.TypeName)
+               | CNR(_, Item.CtorGroup _, ItemOccurence.Use, _, _, _, m) -> 
                    yield (m, FSharpTokenColorKind.TypeName) 
-               | CNR(_, (Item.UnionCase _ | Item.ActivePatternCase _), 
+               | CNR(_, Item.ModuleOrNamespaces _, ItemOccurence.Binding, _, _, _, m) ->
+                   yield (m, FSharpTokenColorKind.Module)
+               | CNR(_, Item.UnionCase (UnionCaseInfo (_, r), _), 
+                     (ItemOccurence.Binding | ItemOccurence.Implemented | ItemOccurence.Pattern | ItemOccurence.Use | ItemOccurence.UseInType), _, _, _, _) ->
+                   yield (r.Range, FSharpTokenColorKind.Pattern)
+               | CNR(_, Item.ActivePatternCase _, 
                      (ItemOccurence.Binding | ItemOccurence.Implemented | ItemOccurence.Pattern | ItemOccurence.Use | ItemOccurence.UseInType), _, _, _, m) ->
                    yield (m, FSharpTokenColorKind.Pattern)
                | _ -> () 

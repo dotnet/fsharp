@@ -89,6 +89,7 @@ type FSharpTokenColorKind =
     | Operator = 10
     | TypeName = 11
     | Pattern = 12
+    | Module = 13
 
 /// Categorize an action the editor should take in response to a token, e.g. brace matching
 /// 
