@@ -69,11 +69,6 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>] ([<ImportMany
                 match QuickParse.GetCompleteIdentifierIsland true (textLine.ToString()) textLineColumn with
                 | Some(islandIdentifier, islandColumn, isQuoted) ->
                     let qualifiers = if isQuoted then [islandIdentifier] else islandIdentifier.Split '.' |> Array.toList
-                    // REVIEW: ParseFileInProject and CheckFileInProject can cause FSharp.Compiler.Service to become unavailable (i.e. not responding to requests) for 
-                    // an arbitrarily long time while they process all files prior to this one in the project (plus dependent projects
-                    // if we enable cross-project checking in multi-project solutions). FCS will not respond to other 
-                    // requests unless this task is cancelled. We need to check that this task is cancelled in a timely way by the
-                    // Roslyn UI machinery.
                     let! parseResults = FSharpLanguageService.Checker.ParseFileInProject(filePath, sourceText.ToString(), options)
                     let! checkFileAnswer = FSharpLanguageService.Checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options)
                     let checkFileResults = 
