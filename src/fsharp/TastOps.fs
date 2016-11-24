@@ -78,15 +78,15 @@ let emptyTyparInst = ([] : TyparInst)
 
 [<NoEquality; NoComparison>]
 type Remap =
-    { tpinst : TyparInst;
-      valRemap: ValRemap;
-      tyconRefRemap : TyconRefRemap;
+    { tpinst : TyparInst
+      valRemap: ValRemap
+      tyconRefRemap : TyconRefRemap
       removeTraitSolutions: bool }
 
 let emptyRemap = 
-    { tpinst        = emptyTyparInst; 
-      tyconRefRemap = emptyTyconRefRemap;
-      valRemap      = ValMap.Empty;
+    { tpinst        = emptyTyparInst
+      tyconRefRemap = emptyTyconRefRemap
+      valRemap      = ValMap.Empty
       removeTraitSolutions = false }
 
 type Remap with 
