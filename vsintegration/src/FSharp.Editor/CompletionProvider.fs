@@ -32,6 +32,7 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons
 
 type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SVsServiceProvider) =
     inherit CompletionProvider()
@@ -99,7 +100,32 @@ type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SV
         let results = List<CompletionItem>()
 
         for declarationItem in declarations.Items do
-            let completionItem = CompletionItem.Create(declarationItem.Name)
+            let glyph = 
+                match declarationItem.GlyphMajor with 
+                | GlyphMajor.Class -> Glyph.ClassPublic
+                | GlyphMajor.Constant -> Glyph.ConstantPublic
+                | GlyphMajor.Delegate -> Glyph.DelegatePublic
+                | GlyphMajor.Enum -> Glyph.EnumPublic
+                | GlyphMajor.EnumMember -> Glyph.EnumMember
+                | GlyphMajor.Event -> Glyph.EventPublic
+                | GlyphMajor.Exception -> Glyph.ClassPublic
+                | GlyphMajor.FieldBlue -> Glyph.FieldPublic
+                | GlyphMajor.Interface -> Glyph.InterfacePublic
+                | GlyphMajor.Method -> Glyph.MethodPublic
+                | GlyphMajor.Method2 -> Glyph.ExtensionMethodPublic
+                | GlyphMajor.Module -> Glyph.ModulePublic
+                | GlyphMajor.NameSpace -> Glyph.Namespace
+                | GlyphMajor.Property -> Glyph.PropertyPublic
+                | GlyphMajor.Struct -> Glyph.StructurePublic
+                | GlyphMajor.Typedef -> Glyph.ClassPublic
+                | GlyphMajor.Type -> Glyph.ClassPublic
+                | GlyphMajor.Union -> Glyph.EnumPublic
+                | GlyphMajor.Variable -> Glyph.Local
+                | GlyphMajor.ValueType -> Glyph.StructurePublic
+                | GlyphMajor.Error -> Glyph.Error
+                | _ -> Glyph.ClassPublic
+
+            let completionItem = CommonCompletionItem.Create(declarationItem.Name, glyph=Nullable(glyph))
             declarationItemsCache.Remove(completionItem.DisplayText) |> ignore // clear out stale entries if they exist
             declarationItemsCache.Add(completionItem.DisplayText, declarationItem)
             results.Add(completionItem)
