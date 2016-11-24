@@ -65,6 +65,9 @@
     <Compile Include="GoToDefinitionService.fs">
       <Link>GoToDefinition\GoToDefinitionService.fs</Link>
     </Compile>
+    <Compile Include="CommentUncommentService.fs">
+      <Link>BlockComment\CommentUncommentService.fs</Link>
+    </Compile>
     <Compile Include="ContentType.fs" />
   </ItemGroup>
   <ItemGroup>
