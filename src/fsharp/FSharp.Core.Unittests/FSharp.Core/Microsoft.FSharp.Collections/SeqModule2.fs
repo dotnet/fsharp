@@ -919,6 +919,20 @@ type SeqModule2() =
            CheckThrowsArgumentException (fun () -> Seq.item i { 10 .. 20 } |> ignore)
 
     [<Test>]
+    member this.``item should fail with correct number of missing elements``() =
+        try
+            Seq.item 0 (Array.zeroCreate<int> 0) |> ignore
+            failwith "error expected"
+        with
+        | exn when exn.Message.Contains("seq was short by 1 element") -> ()
+
+        try
+            Seq.item 2 (Array.zeroCreate<int> 0) |> ignore
+            failwith "error expected"
+        with
+        | exn when exn.Message.Contains("seq was short by 3 elements") -> ()
+
+    [<Test>]
     member this.Of_Array() =
          // integer Seq
         let resultInt = Seq.ofArray [|1..10|]
