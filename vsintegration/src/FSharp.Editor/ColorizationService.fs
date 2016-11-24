@@ -15,6 +15,7 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Editor.Implementation.Classification
+open Microsoft.CodeAnalysis.Editor.Implementation.BlockCommentEditing
 open Microsoft.CodeAnalysis.Editor.Shared.Utilities
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
@@ -22,6 +23,8 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Text.Tagging
+open Microsoft.VisualStudio.Text.Operations
+open Microsoft.VisualStudio.Utilities
 
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
@@ -55,6 +58,7 @@ type private SourceTextData(approxLines: int) =
             i <- i + 1
 
         
+
 [<ExportLanguageService(typeof<IEditorClassificationService>, FSharpCommonConstants.FSharpLanguageName)>]
 type internal FSharpColorizationService() =
 
@@ -193,11 +197,6 @@ type internal FSharpColorizationService() =
                 match FSharpLanguageService.GetOptions(document.Project.Id) with
                 | Some(options) ->
                     let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                    // REVIEW: ParseFileInProject and CheckFileInProject can cause FSharp.Compiler.Service to become unavailable (i.e. not responding to requests) for 
-                    // an arbitrarily long time while they process all files prior to this one in the project (plus dependent projects if we enable
-                    // cross-project checking in multi-project solutions). FCS will not respond to other 
-                    // requests unless this task is cancelled. We need to check that this task is cancelled in a timely way by the
-                    // Roslyn UI machinery.
                     let! parseResults = FSharpLanguageService.Checker.ParseFileInProject(document.Name, sourceText.ToString(), options)
                     let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
                     let! checkResultsAnswer = FSharpLanguageService.Checker.CheckFileInProject(parseResults, document.FilePath, textVersion.GetHashCode(), textSpan.ToString(), options)
@@ -214,3 +213,6 @@ type internal FSharpColorizationService() =
 
         // Do not perform classification if we don't have project options (#defines matter)
         member this.AdjustStaleClassification(_: SourceText, classifiedSpan: ClassifiedSpan) : ClassifiedSpan = classifiedSpan
+
+
+

@@ -3998,7 +3998,8 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
             // dispatch via a thunk which gets set to a non-resource-capturing 
             // failing function when the object is disposed. 
             let systemRuntimeContainsType =  
-                let systemRuntimeContainsTypeRef = ref tcImports.SystemRuntimeContainsType  
+                // NOTE: do not touch this
+                let systemRuntimeContainsTypeRef = ref (fun typeName -> tcImports.SystemRuntimeContainsType(typeName))
                 tcImports.AttachDisposeAction(fun () -> systemRuntimeContainsTypeRef := (fun _ -> raise (System.ObjectDisposedException("The type provider has been disposed"))))  
                 fun arg -> systemRuntimeContainsTypeRef.Value arg  
 

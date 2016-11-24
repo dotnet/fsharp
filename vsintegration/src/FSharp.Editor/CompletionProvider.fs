@@ -77,11 +77,6 @@ type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SV
                 | _ -> true // anything else is a valid classification type
 
     static member ProvideCompletionsAsyncAux(sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, textVersionHash: int) = async {
-        // REVIEW: ParseFileInProject and CheckFileInProject can cause FSharp.Compiler.Service to become unavailable (i.e. not responding to requests) for 
-        // an arbitrarily long time while they process all files prior to this one in the project (plus dependent projects
-        // if we enable cross-project checking in multi-project solutions). FCS will not respond to other 
-        // requests unless this task is cancelled. We need to check that this task is cancelled in a timely way by the
-        // Roslyn UI machinery.
         let! parseResults = FSharpLanguageService.Checker.ParseFileInProject(filePath, sourceText.ToString(), options)
         let! checkFileAnswer = FSharpLanguageService.Checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options)
         let checkFileResults = 
@@ -100,6 +95,8 @@ type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SV
         let results = List<CompletionItem>()
 
         for declarationItem in declarations.Items do
+            // FSROSLYNTODO: This doesn't yet reflect pulbic/private/internal into the glyph
+            // FSROSLYNTODO: We should really use FSharpSymbol information here.  But GetDeclarationListInfo doesn't provide it, and switch to GetDeclarationListSymbols is a bit large at the moment
             let glyph = 
                 match declarationItem.GlyphMajor with 
                 | GlyphMajor.Class -> Glyph.ClassPublic

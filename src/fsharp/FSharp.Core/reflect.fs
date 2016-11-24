@@ -367,15 +367,29 @@ module internal Impl =
     let tupleNames = [|
         "System.Tuple`1";      "System.Tuple`2";      "System.Tuple`3";
         "System.Tuple`4";      "System.Tuple`5";      "System.Tuple`6";
-        "System.Tuple`7";      "System.Tuple`8";      "System.Tuple";
+        "System.Tuple`7";      "System.Tuple`8";      "System.Tuple"
         "System.ValueTuple`1"; "System.ValueTuple`2"; "System.ValueTuple`3";
         "System.ValueTuple`4"; "System.ValueTuple`5"; "System.ValueTuple`6";
         "System.ValueTuple`7"; "System.ValueTuple`8"; "System.ValueTuple" |]
 
+    let simpleTupleNames = [|
+        "Tuple`1";      "Tuple`2";      "Tuple`3";
+        "Tuple`4";      "Tuple`5";      "Tuple`6";
+        "Tuple`7";      "Tuple`8";      
+        "ValueTuple`1"; "ValueTuple`2"; "ValueTuple`3";
+        "ValueTuple`4"; "ValueTuple`5"; "ValueTuple`6";
+        "ValueTuple`7"; "ValueTuple`8"; |]
+
     let isTupleType (typ:Type) = 
-        // Simple Name Match on typ
-        if typ.IsEnum || typ.IsArray || typ.IsPointer then false
-        else tupleNames |> Seq.exists typ.FullName.StartsWith
+      // We need to be careful that we only rely typ.IsGenericType, typ.Namespace and typ.Name here.
+      //
+      // Historically the FSharp.Core reflection utilities get used on implementations of 
+      // System.Type that don't have functionality such as .IsEnum and .FullName fully implemented.
+      // This happens particularly over TypeBuilderInstantiation types in the ProvideTypes implementation of System.TYpe
+      // used in F# type providers.
+      typ.IsGenericType &&
+      typ.Namespace = "System" && 
+      simpleTupleNames |> Seq.exists typ.Name.StartsWith
 
     let maxTuple = 8
     // Which field holds the nested tuple?

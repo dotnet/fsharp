@@ -253,7 +253,7 @@ module TwoCasedUnionWithNullAsTrueValueAnnotation =
         with _ -> false
     test "TwoCasedUnionWithNullAsTrueValueAnnotation" result
 
-module TEst = begin
+module TEst = 
 
   type token = 
    | X
@@ -291,9 +291,6 @@ module TEst = begin
 
   let _ = printany (1,true,2.4,"a tuple",("nested",(fun () -> ()),[2;3],rrv))
   let _ = printany printany (* =) *)
-
-end
-
 
 let _ = 
   if !failures then (stdout.WriteLine "Test Failed"; exit 1) 

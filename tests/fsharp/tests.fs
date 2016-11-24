@@ -641,6 +641,12 @@ module CoreTests =
 
         peverify cfg "test.exe"
 
+        begin
+            use testOkFile = fileguard cfg "test.ok"
+            exec cfg ("." ++ "test.exe") ""
+            testOkFile.CheckExists()
+        end
+
         fsc cfg "%s -o:test-with-debug-data.exe --quotations-debug+ -r cslib.dll -g" cfg.fsc_flags ["test.fsx"]
 
         peverify cfg "test-with-debug-data.exe"
@@ -654,12 +660,6 @@ module CoreTests =
 
             fsi cfg "%s -r cslib.dll" cfg.fsi_flags ["test.fsx"]
 
-            testOkFile.CheckExists()
-        end
-
-        begin
-            use testOkFile = fileguard cfg "test.ok"
-            exec cfg ("." ++ "test.exe") ""
             testOkFile.CheckExists()
         end
 
