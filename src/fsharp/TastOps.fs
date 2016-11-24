@@ -304,7 +304,7 @@ and remapNonLocalValRef tyenv (nlvref:NonLocalValOrMemberRef) =
     let vlink' = remapValLinkage tyenv vlink
     if eref === eref' && vlink === vlink' then nlvref else
     { EnclosingEntity = eref'
-      ItemKey = vlink'  }
+      ItemKey = vlink'  } : NonLocalValOrMemberRef
 
 and remapValRef tmenv (vref: ValRef) = 
     match tmenv.valRemap.TryFind vref.Deref  with 
