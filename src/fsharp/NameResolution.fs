@@ -845,7 +845,6 @@ let AtMostOneResult m res =
     match res with 
     | Exception err -> raze err
     | Result [] -> raze (Error(FSComp.SR.nrInvalidModuleExprType(),m))
-    | Result [res] -> success res
     | Result (res :: _) -> success res 
 
 //-------------------------------------------------------------------------
@@ -1976,25 +1975,31 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv (typeN
         | Some vspec when IsValAccessible ad (mkNestedValRef modref vspec) -> 
             success(resInfo,Item.Value (mkNestedValRef modref vspec),rest)
         | _->
-        match  TryFindTypeWithUnionCase modref id with
-        | Some tycon when IsTyconReprAccessible ncenv.amap m ad (modref.NestedTyconRef tycon) -> 
-            let ucref = mkUnionCaseRef (modref.NestedTyconRef tycon) id.idText 
-            let showDeprecated = HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute tycon.Attribs
-            let ucinfo = FreshenUnionCaseRef ncenv m ucref
-            success (resInfo,Item.UnionCase(ucinfo,showDeprecated),rest)
-        | _ -> 
         match mty.ExceptionDefinitionsByDemangledName.TryFind(id.idText) with
         | Some excon when IsTyconReprAccessible ncenv.amap m ad (modref.NestedTyconRef excon) -> 
             success (resInfo,Item.ExnCase (modref.NestedTyconRef excon),rest)
         | _ ->
+            // Something in a discriminated union without RequireQualifiedAccess attribute?
+            let unionSearch,hasRequireQualifiedAccessAttribute =
+                match TryFindTypeWithUnionCase modref id with
+                | Some tycon when IsTyconReprAccessible ncenv.amap m ad (modref.NestedTyconRef tycon) -> 
+                    let ucref = mkUnionCaseRef (modref.NestedTyconRef tycon) id.idText
+                    let ucinfo = FreshenUnionCaseRef ncenv m ucref
+                    let hasRequireQualifiedAccessAttribute = HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute tycon.Attribs
+                    success [resInfo,Item.UnionCase(ucinfo,hasRequireQualifiedAccessAttribute),rest],hasRequireQualifiedAccessAttribute
+                | _ -> NoResultsOrUsefulErrors,false
 
-            // Something in a type? 
+            match unionSearch with
+            | Result (res :: _) when not hasRequireQualifiedAccessAttribute -> success res
+            | _ ->
+
+            // Something in a type?
             let tyconSearch = 
                 let tcrefs = LookupTypeNameInEntityMaybeHaveArity (ncenv.amap, id.idRange, ad, id.idText, (if isNil rest then typeNameResInfo.StaticArgsInfo else TypeNameResolutionStaticArgsInfo.Indefinite), modref)
                 let tcrefs = tcrefs |> List.map (fun tcref -> (resInfo,tcref))
                 if not (isNil rest) then 
                     let tcrefs = CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, TypeNameResolutionInfo (ResolveTypeNamesToTypeRefs,TypeNameResolutionStaticArgsInfo.Indefinite), PermitDirectReferenceToGeneratedType.No, unionRanges m id.idRange)
-                    ResolveLongIdentInTyconRefs ncenv nenv  LookupKind.Expr (depth+1) m ad rest typeNameResInfo id.idRange tcrefs
+                    ResolveLongIdentInTyconRefs ncenv nenv LookupKind.Expr (depth+1) m ad rest typeNameResInfo id.idRange tcrefs
                 // Check if we've got some explicit type arguments 
                 else 
                     let tcrefs = CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, typeNameResInfo, PermitDirectReferenceToGeneratedType.No, unionRanges m id.idRange)
@@ -2012,7 +2017,7 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv (typeN
 
             match tyconSearch with
             | Result (res :: _) -> success res
-            | _ -> 
+            | _ ->
 
             // Something in a sub-namespace or sub-module 
             let moduleSearch = 
@@ -2027,7 +2032,7 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv (typeN
                 else 
                     NoResultsOrUsefulErrors
 
-            match tyconSearch +++ moduleSearch with
+            match tyconSearch +++ moduleSearch +++ unionSearch with
             | Result [] ->
                 let predictedPossibleTypes =
                     modref.ModuleOrNamespaceType.AllEntities
