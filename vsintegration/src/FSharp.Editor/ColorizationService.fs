@@ -25,18 +25,41 @@ open Microsoft.VisualStudio.Text.Tagging
 
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
-type private SourceLineData(lexStateAtEndOfLine: FSharpTokenizerLexState, hashCode: int, classifiedSpans: IReadOnlyList<ClassifiedSpan>) =
+type private SourceLineData(lineStart: int, lexStateAtStartOfLine: FSharpTokenizerLexState, lexStateAtEndOfLine: FSharpTokenizerLexState, hashCode: int, classifiedSpans: IReadOnlyList<ClassifiedSpan>) =
+    member val LineStart = lineStart
+    member val LexStateAtStartOfLine = lexStateAtStartOfLine
     member val LexStateAtEndOfLine = lexStateAtEndOfLine
     member val HashCode = hashCode
     member val ClassifiedSpans = classifiedSpans
 
-type private SourceTextData(lines: int) =
-    member val Lines = Array.create<Option<SourceLineData>> lines None
+    member data.IsValid(textLine: TextLine) =
+        data.LineStart = textLine.Start && 
+        let lineContents = textLine.Text.ToString(textLine.Span)
+        data.HashCode = lineContents.GetHashCode() 
 
+type private SourceTextData(approxLines: int) =
+    let data = ResizeArray<SourceLineData option>(approxLines)
+    let extendTo i =
+        if i >= data.Count then 
+            data.Capacity <- i + 1
+            for j in data.Count .. i do
+                data.Add(None)
+    member x.Item 
+      with get (i:int) = extendTo  i; data.[i]
+      and set (i:int) v = extendTo  i; data.[i] <- v
+
+    member x.ClearFrom(n) =
+        let mutable i = n
+        while i < data.Count && data.[i].IsSome do
+            data.[i] <- None
+            i <- i + 1
+
+        
 [<ExportLanguageService(typeof<IEditorClassificationService>, FSharpCommonConstants.FSharpLanguageName)>]
 type internal FSharpColorizationService() =
 
-    static let DataCache = ConditionalWeakTable<SourceText, SourceTextData>()
+    static let DataCache = ConditionalWeakTable<DocumentId, SourceTextData>()
+    static let Tokenizers = ConditionalWeakTable<(string list * string option), FSharpSourceTokenizer>()
 
     static let compilerTokenToRoslynToken(colorKind: FSharpTokenColorKind) : string = 
         match colorKind with
@@ -67,10 +90,10 @@ type internal FSharpColorizationService() =
                     Array.set colorMap i classificationType
             tokenInfoOption
 
-        let previousLextState = ref(lexState)
-        let mutable tokenInfoOption = scanAndColorNextToken(lineTokenizer, previousLextState)
+        let previousLexState = ref lexState
+        let mutable tokenInfoOption = scanAndColorNextToken(lineTokenizer, previousLexState)
         while tokenInfoOption.IsSome do
-            tokenInfoOption <- scanAndColorNextToken(lineTokenizer, previousLextState)
+            tokenInfoOption <- scanAndColorNextToken(lineTokenizer, previousLexState)
 
         let mutable startPosition = 0
         let mutable endPosition = startPosition
@@ -85,45 +108,66 @@ type internal FSharpColorizationService() =
             classifiedSpans.Add(new ClassifiedSpan(classificationType, textSpan))
             startPosition <- endPosition
 
-        SourceLineData(previousLextState.Value, lineContents.GetHashCode(), classifiedSpans)
+        SourceLineData(textLine.Start, lexState, previousLexState.Value, lineContents.GetHashCode(), classifiedSpans)
 
-    static member GetColorizationData(sourceText: SourceText, textSpan: TextSpan, fileName: Option<string>, defines: string list, cancellationToken: CancellationToken) : List<ClassifiedSpan> =
+    static member GetColorizationData(documentKey: DocumentId, sourceText: SourceText, textSpan: TextSpan, fileName: Option<string>, defines: string list, cancellationToken: CancellationToken) : List<ClassifiedSpan> =
         try
-            let sourceTokenizer = FSharpSourceTokenizer(defines, fileName)
-            let sourceTextData = DataCache.GetValue(sourceText, fun key -> SourceTextData(key.Lines.Count))
+            let sourceTokenizer = Tokenizers.GetValue ((defines, fileName), fun _ -> FSharpSourceTokenizer(defines, fileName))
+            let lines = sourceText.Lines
+            // We keep incremental data per-document.  When text changes we correlate text line-by-line (by hash codes of lines)
+            let sourceTextData = DataCache.GetValue(documentKey, fun key -> SourceTextData(lines.Count))
 
-            let startLine = sourceText.Lines.GetLineFromPosition(textSpan.Start).LineNumber
-            let endLine = sourceText.Lines.GetLineFromPosition(textSpan.End).LineNumber
+            let startLine = lines.GetLineFromPosition(textSpan.Start).LineNumber
+            let endLine = lines.GetLineFromPosition(textSpan.End).LineNumber
             
-            // Get the last cached scanned line
-            let mutable scanStartLine = startLine
-            while scanStartLine > 0 && sourceTextData.Lines.[scanStartLine - 1].IsNone do
-                scanStartLine <- scanStartLine - 1
+            // Go backwards to find the last cached scanned line that is valid
+            let scanStartLine = 
+                let mutable i = startLine
+                while i > 0 && (match sourceTextData.[i-1] with Some data -> not (data.IsValid(lines.[i])) | None -> true)  do
+                    i <- i - 1
+                i
                 
+            // Rescan the lines if necessary and report the information
             let result = new List<ClassifiedSpan>()
-            let mutable lexState = if scanStartLine = 0 then 0L else sourceTextData.Lines.[scanStartLine - 1].Value.LexStateAtEndOfLine
+            let mutable lexState = if scanStartLine = 0 then 0L else sourceTextData.[scanStartLine - 1].Value.LexStateAtEndOfLine
 
-            for i = scanStartLine to sourceText.Lines.Count - 1 do
+            for i = scanStartLine to endLine do
                 cancellationToken.ThrowIfCancellationRequested()
-
-                let textLine = sourceText.Lines.[i]
+                let textLine = lines.[i]
                 let lineContents = textLine.Text.ToString(textLine.Span)
-                let lineHashCode = lineContents.GetHashCode()
 
-                let mutable lineData = sourceTextData.Lines.[i]
-                if lineData.IsNone || lineData.Value.HashCode <> lineHashCode then
-                    lineData <- Some(scanSourceLine(sourceTokenizer, textLine, lineContents, lexState))
+                let lineData = 
+                    // We can reuse the old data when 
+                    //   1. the line starts at the same overall position
+                    //   2. the hash codes match
+                    //   3. the start-of-line lex states are the same
+                    match sourceTextData.[i] with 
+                    | Some data when data.IsValid(textLine) && data.LexStateAtStartOfLine = lexState -> 
+                        data
+                    | _ -> 
+                        // Otherwise, we recompute
+                        let newData = scanSourceLine(sourceTokenizer, textLine, lineContents, lexState)
+                        sourceTextData.[i] <- Some newData
+                        newData
                     
-                lexState <- lineData.Value.LexStateAtEndOfLine
-                sourceTextData.Lines.[i] <- lineData
+                lexState <- lineData.LexStateAtEndOfLine
 
-                if startLine <= i && i <= endLine then
-                    result.AddRange(lineData.Value.ClassifiedSpans |> Seq.filter(fun token ->
+                if startLine <= i then
+                    result.AddRange(lineData.ClassifiedSpans |> Seq.filter(fun token ->
                         textSpan.Contains(token.TextSpan.Start) ||
                         textSpan.Contains(token.TextSpan.End - 1) ||
                         (token.TextSpan.Start <= textSpan.Start && textSpan.End <= token.TextSpan.End)))
 
+            // If necessary, invalidate all subsequent lines after endLine
+            if endLine < lines.Count - 1 then 
+                match sourceTextData.[endLine+1] with 
+                | Some data  -> 
+                    if data.LexStateAtStartOfLine <> lexState then
+                        sourceTextData.ClearFrom (endLine+1)
+                | None -> ()
+
             result
+
         with ex -> 
             Assert.Exception(ex)
             reraise()  
@@ -140,7 +184,7 @@ type internal FSharpColorizationService() =
                     | Some(options) ->
                         let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
                         if sourceTextTask.Status = TaskStatus.RanToCompletion then
-                            result.AddRange(FSharpColorizationService.GetColorizationData(sourceTextTask.Result, textSpan, Some(document.FilePath), defines, cancellationToken))
+                            result.AddRange(FSharpColorizationService.GetColorizationData(document.Id, sourceTextTask.Result, textSpan, Some(document.FilePath), defines, cancellationToken))
                     | None -> ()
                 , cancellationToken)
 

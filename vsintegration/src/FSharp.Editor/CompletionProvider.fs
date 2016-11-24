@@ -32,35 +32,39 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons
 
 type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SVsServiceProvider) =
     inherit CompletionProvider()
 
-    static let completionTriggers = [ '.' ]
+    static let completionTriggers = [| '.' |]
     static let declarationItemsCache = ConditionalWeakTable<string, FSharpDeclarationListItem>()
     
     let xmlMemberIndexService = serviceProvider.GetService(typeof<IVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
 
-    static member ShouldTriggerCompletionAux(sourceText: SourceText, caretPosition: int, trigger: CompletionTriggerKind, filePath: string, defines: string list) =
+    static member ShouldTriggerCompletionAux(sourceText: SourceText, caretPosition: int, trigger: CompletionTriggerKind, getInfo: (unit -> DocumentId * string * string list)) =
         // Skip if we are at the start of a document
         if caretPosition = 0 then
             false
 
         // Skip if it was triggered by an operation other than insertion
-        else if not (trigger = CompletionTriggerKind.Insertion) then
+        elif not (trigger = CompletionTriggerKind.Insertion) then
             false
 
         // Skip if we are not on a completion trigger
-        else if not (completionTriggers |> Seq.contains(sourceText.[caretPosition - 1])) then
+        else
+          let c = sourceText.[caretPosition - 1]
+          if not (completionTriggers |> Array.contains c) then
             false
 
-        // Trigger completion if we are on a valid classification type
-        else
+          // Trigger completion if we are on a valid classification type
+          else
+            let documentId, filePath,  defines = getInfo()
             let triggerPosition = caretPosition - 1
             let textLine = sourceText.Lines.GetLineFromPosition(triggerPosition)
             let classifiedSpanOption =
-                FSharpColorizationService.GetColorizationData(sourceText, textLine.Span, Some(filePath), defines, CancellationToken.None)
+                FSharpColorizationService.GetColorizationData(documentId, sourceText, textLine.Span, Some(filePath), defines, CancellationToken.None)
                 |> Seq.tryFind(fun classifiedSpan -> classifiedSpan.TextSpan.Contains(triggerPosition))
 
             match classifiedSpanOption with
@@ -96,7 +100,32 @@ type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SV
         let results = List<CompletionItem>()
 
         for declarationItem in declarations.Items do
-            let completionItem = CompletionItem.Create(declarationItem.Name)
+            let glyph = 
+                match declarationItem.GlyphMajor with 
+                | GlyphMajor.Class -> Glyph.ClassPublic
+                | GlyphMajor.Constant -> Glyph.ConstantPublic
+                | GlyphMajor.Delegate -> Glyph.DelegatePublic
+                | GlyphMajor.Enum -> Glyph.EnumPublic
+                | GlyphMajor.EnumMember -> Glyph.EnumMember
+                | GlyphMajor.Event -> Glyph.EventPublic
+                | GlyphMajor.Exception -> Glyph.ClassPublic
+                | GlyphMajor.FieldBlue -> Glyph.FieldPublic
+                | GlyphMajor.Interface -> Glyph.InterfacePublic
+                | GlyphMajor.Method -> Glyph.MethodPublic
+                | GlyphMajor.Method2 -> Glyph.ExtensionMethodPublic
+                | GlyphMajor.Module -> Glyph.ModulePublic
+                | GlyphMajor.NameSpace -> Glyph.Namespace
+                | GlyphMajor.Property -> Glyph.PropertyPublic
+                | GlyphMajor.Struct -> Glyph.StructurePublic
+                | GlyphMajor.Typedef -> Glyph.ClassPublic
+                | GlyphMajor.Type -> Glyph.ClassPublic
+                | GlyphMajor.Union -> Glyph.EnumPublic
+                | GlyphMajor.Variable -> Glyph.Local
+                | GlyphMajor.ValueType -> Glyph.StructurePublic
+                | GlyphMajor.Error -> Glyph.Error
+                | _ -> Glyph.ClassPublic
+
+            let completionItem = CommonCompletionItem.Create(declarationItem.Name, glyph=Nullable(glyph))
             declarationItemsCache.Remove(completionItem.DisplayText) |> ignore // clear out stale entries if they exist
             declarationItemsCache.Add(completionItem.DisplayText, declarationItem)
             results.Add(completionItem)
@@ -106,14 +135,17 @@ type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SV
 
 
     override this.ShouldTriggerCompletion(sourceText: SourceText, caretPosition: int, trigger: CompletionTrigger, _: OptionSet) =
-        let documentId = workspace.GetDocumentIdInCurrentContext(sourceText.Container)
-        let document = workspace.CurrentSolution.GetDocument(documentId)
+        let getInfo() = 
+            let documentId = workspace.GetDocumentIdInCurrentContext(sourceText.Container)
+            let document = workspace.CurrentSolution.GetDocument(documentId)
         
-        match FSharpLanguageService.GetOptions(document.Project.Id) with
-        | None -> false
-        | Some(options) ->
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
-            FSharpCompletionProvider.ShouldTriggerCompletionAux(sourceText, caretPosition, trigger.Kind, document.FilePath, defines)
+            let defines = 
+                match FSharpLanguageService.GetOptions(document.Project.Id) with
+                | None -> []
+                | Some(options) -> CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
+            document.Id, document.FilePath, defines
+
+        FSharpCompletionProvider.ShouldTriggerCompletionAux(sourceText, caretPosition, trigger.Kind, getInfo)
     
     override this.ProvideCompletionsAsync(context: Microsoft.CodeAnalysis.Completion.CompletionContext) =
         async {

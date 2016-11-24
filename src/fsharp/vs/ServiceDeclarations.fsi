@@ -67,6 +67,8 @@ type internal FSharpDeclarationListItem =
     member DescriptionTextAsync : Async<FSharpToolTipText>
     /// Get the glyph integer for the declaration as used by Visual Studio.
     member Glyph : int
+    member GlyphMajor : ItemDescriptionIcons.GlyphMajor
+    member GlyphMinor : ItemDescriptionIcons.GlyphMinor
     
 [<Sealed>]
 /// Represents a set of declarations in F# source code, with information attached ready for display by an editor.

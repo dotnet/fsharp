@@ -8,6 +8,7 @@ open System.Linq
 
 open NUnit.Framework
 
+open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Text
@@ -57,7 +58,8 @@ let main argv =
         File.WriteAllText(filePath, fileContents)
 
         let caretPosition = fileContents.IndexOf(caretMarker) + caretMarker.Length - 1 // inside the marker
-        let definitionOption = FSharpGoToDefinitionService.FindDefinition(SourceText.From(fileContents), filePath, caretPosition, [], options, 0, CancellationToken.None) |> Async.RunSynchronously
+        let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+        let definitionOption = FSharpGoToDefinitionService.FindDefinition(documentId, SourceText.From(fileContents), filePath, caretPosition, [], options, 0, CancellationToken.None) |> Async.RunSynchronously
 
         match definitionOption with
         | None -> Assert.Fail("No definition found")

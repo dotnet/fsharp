@@ -14,6 +14,7 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Editor.Implementation.Debugging
+open Microsoft.CodeAnalysis.Editor.Implementation
 open Microsoft.CodeAnalysis.Editor.Shared.Utilities
 open Microsoft.CodeAnalysis.Formatting
 open Microsoft.CodeAnalysis.Host.Mef
@@ -70,7 +71,7 @@ type internal FSharpLanguageDebugInfoService() =
                     let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
                     let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                     let textSpan = TextSpan.FromBounds(0, sourceText.Length)
-                    let tokens = FSharpColorizationService.GetColorizationData(sourceText, textSpan, Some(document.Name), defines, cancellationToken)
+                    let tokens = FSharpColorizationService.GetColorizationData(document.Id, sourceText, textSpan, Some(document.Name), defines, cancellationToken)
                     return match FSharpLanguageDebugInfoService.GetDataTipInformation(sourceText, position, tokens) with
                            | None -> Unchecked.defaultof<DebugDataTipInfo>
                            | Some(textSpan) -> new DebugDataTipInfo(textSpan, sourceText.GetSubText(textSpan).ToString())
