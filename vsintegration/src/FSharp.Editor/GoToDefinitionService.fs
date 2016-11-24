@@ -44,7 +44,8 @@ type internal FSharpNavigableItem(document: Document, textSpan: TextSpan, displa
 [<ExportLanguageService(typeof<IGoToDefinitionService>, FSharpCommonConstants.FSharpLanguageName)>]
 type internal FSharpGoToDefinitionService [<ImportingConstructor>] ([<ImportMany>]presenters: IEnumerable<INavigableItemsPresenter>) =
 
-    static member FindDefinition (sourceText: SourceText,
+    static member FindDefinition (documentKey: DocumentId,
+                                  sourceText: SourceText,
                                   filePath: string,
                                   position: int,
                                   defines: string list,
@@ -58,7 +59,7 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>] ([<ImportMany
         let fcsTextLineNumber = textLinePos.Line + 1 // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
         let textLineColumn = textLinePos.Character
         let classifiedSpanOption =
-            FSharpColorizationService.GetColorizationData(sourceText, textLine.Span, Some(filePath), defines, cancellationToken)
+            FSharpColorizationService.GetColorizationData(documentKey, sourceText, textLine.Span, Some(filePath), defines, cancellationToken)
             |> Seq.tryFind(fun classifiedSpan -> classifiedSpan.TextSpan.Contains(position))
 
         match classifiedSpanOption with
@@ -102,7 +103,7 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>] ([<ImportMany
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
                 let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
-                let! definition = FSharpGoToDefinitionService.FindDefinition(sourceText, document.FilePath, position, defines, options, textVersion.GetHashCode(), cancellationToken)
+                let! definition = FSharpGoToDefinitionService.FindDefinition(document.Id, sourceText, document.FilePath, position, defines, options, textVersion.GetHashCode(), cancellationToken)
 
                 match definition with
                 | Some(range) ->
