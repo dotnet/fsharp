@@ -7,6 +7,7 @@ open System.Linq
 
 open NUnit.Framework
 
+open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Text
@@ -60,7 +61,9 @@ System.Console.WriteLine(x + y)
 """
 
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
-        let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, filePath, [])
+        let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+        let getInfo() = documentId, filePath, []
+        let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
         Assert.AreEqual(shouldBeTriggered, triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should compute the correct result")
 
     [<TestCase(CompletionTriggerKind.Deletion)>]
@@ -69,14 +72,18 @@ System.Console.WriteLine(x + y)
     member this.ShouldNotTriggerCompletionAfterAnyTriggerOtherThanInsertion(triggerKind: CompletionTriggerKind) =
         let fileContents = "System.Console.WriteLine(123)"
         let caretPosition = fileContents.IndexOf("System.")
-        let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, triggerKind, filePath, [])
+        let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+        let getInfo() = documentId, filePath, []
+        let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, triggerKind, getInfo)
         Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
     
     [<Test>]
     member this.ShouldNotTriggerCompletionInStringLiterals() =
         let fileContents = "let literal = \"System.Console.WriteLine()\""
         let caretPosition = fileContents.IndexOf("System.")
-        let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, filePath, [])
+        let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+        let getInfo() = documentId, filePath, []
+        let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
         Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
     
     [<Test>]
@@ -88,7 +95,9 @@ System.Console.WriteLine()
 *)
 """
         let caretPosition = fileContents.IndexOf("System.")
-        let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, filePath, [])
+        let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+        let getInfo() = documentId, filePath, []
+        let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
         Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
     
     [<Test>]
@@ -99,7 +108,9 @@ System.Console.WriteLine()
 #endif
 """
         let caretPosition = fileContents.IndexOf("System.")
-        let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, filePath, [])
+        let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+        let getInfo() = documentId, filePath, []
+        let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
         Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
 
     [<Test>]

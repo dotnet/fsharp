@@ -1132,89 +1132,89 @@ module internal ItemDescriptionsImpl =
             match repr with
             | TFSharpObjectRepr om -> 
                 match om.fsobjmodel_kind with 
-                | TTyconClass -> iIconGroupClass
-                | TTyconInterface -> iIconGroupInterface
-                | TTyconStruct -> iIconGroupStruct
-                | TTyconDelegate _ -> iIconGroupDelegate
-                | TTyconEnum _ -> iIconGroupEnum
-            | TRecdRepr _ -> iIconGroupType
-            | TUnionRepr _ -> iIconGroupUnion
+                | TTyconClass -> GlyphMajor.Class
+                | TTyconInterface -> GlyphMajor.Interface
+                | TTyconStruct -> GlyphMajor.Struct
+                | TTyconDelegate _ -> GlyphMajor.Delegate
+                | TTyconEnum _ -> GlyphMajor.Enum
+            | TRecdRepr _ -> GlyphMajor.Type
+            | TUnionRepr _ -> GlyphMajor.Union
             | TILObjectRepr(_,_,td) -> 
                 match td.tdKind with 
-                | ILTypeDefKind.Class -> iIconGroupClass
-                | ILTypeDefKind.ValueType -> iIconGroupStruct
-                | ILTypeDefKind.Interface -> iIconGroupInterface
-                | ILTypeDefKind.Enum -> iIconGroupEnum
-                | ILTypeDefKind.Delegate -> iIconGroupDelegate
-            | TAsmRepr _ -> iIconGroupTypedef
-            | TMeasureableRepr _-> iIconGroupTypedef 
+                | ILTypeDefKind.Class -> GlyphMajor.Class
+                | ILTypeDefKind.ValueType -> GlyphMajor.Struct
+                | ILTypeDefKind.Interface -> GlyphMajor.Interface
+                | ILTypeDefKind.Enum -> GlyphMajor.Enum
+                | ILTypeDefKind.Delegate -> GlyphMajor.Delegate
+            | TAsmRepr _ -> GlyphMajor.Typedef
+            | TMeasureableRepr _-> GlyphMajor.Typedef 
 #if EXTENSIONTYPING
-            | TProvidedTypeExtensionPoint _-> iIconGroupTypedef 
-            | TProvidedNamespaceExtensionPoint  _-> iIconGroupTypedef  
+            | TProvidedTypeExtensionPoint _-> GlyphMajor.Typedef 
+            | TProvidedNamespaceExtensionPoint  _-> GlyphMajor.Typedef  
 #endif
-            | TNoRepr -> iIconGroupClass  
+            | TNoRepr -> GlyphMajor.Class  
          
          /// Find the glyph for the given type representation.
          let typeToGlyph typ = 
             if isAppTy denv.g typ then 
                 let tcref = tcrefOfAppTy denv.g typ
                 tcref.TypeReprInfo |> reprToGlyph 
-            elif isAnyTupleTy denv.g typ then iIconGroupStruct
-            elif isFunction denv.g typ then iIconGroupDelegate
-            elif isTyparTy denv.g typ then iIconGroupStruct
-            else iIconGroupTypedef
+            elif isAnyTupleTy denv.g typ then GlyphMajor.Struct
+            elif isFunction denv.g typ then GlyphMajor.Delegate
+            elif isTyparTy denv.g typ then GlyphMajor.Struct
+            else GlyphMajor.Typedef
 
             
          /// Find the glyph for the given value representation.
          let ValueToGlyph typ = 
-            if isFunction denv.g typ then iIconGroupMethod
-            else iIconGroupConstant
+            if isFunction denv.g typ then GlyphMajor.Method
+            else GlyphMajor.Constant
               
          /// Find the major glyph of the given named item.       
          let namedItemToMajorGlyph item = 
             // This may explore assemblies that are not in the reference set,
             // e.g. for type abbreviations to types not in the reference set. 
-            // In this case just use iIconGroupClass.
-           protectAssemblyExploration  iIconGroupClass (fun () ->
+            // In this case just use GlyphMajor.Class.
+           protectAssemblyExploration  GlyphMajor.Class (fun () ->
               match item with 
               | Item.Value(vref) | Item.CustomBuilder (_,vref) -> ValueToGlyph(vref.Type)
               | Item.Types(_,typ::_) -> typeToGlyph (stripTyEqns denv.g typ)    
               | Item.UnionCase _
-              | Item.ActivePatternCase _ -> iIconGroupEnumMember   
-              | Item.ExnCase _ -> iIconGroupException   
-              | Item.RecdField _ -> iIconGroupFieldBlue   
-              | Item.ILField _ -> iIconGroupFieldBlue    
-              | Item.Event _ -> iIconGroupEvent   
-              | Item.Property _ -> iIconGroupProperty   
+              | Item.ActivePatternCase _ -> GlyphMajor.EnumMember   
+              | Item.ExnCase _ -> GlyphMajor.Exception   
+              | Item.RecdField _ -> GlyphMajor.FieldBlue   
+              | Item.ILField _ -> GlyphMajor.FieldBlue    
+              | Item.Event _ -> GlyphMajor.Event   
+              | Item.Property _ -> GlyphMajor.Property   
               | Item.CtorGroup _ 
               | Item.DelegateCtor _ 
               | Item.FakeInterfaceCtor _
               | Item.CustomOperation _
-              | Item.MethodGroup _  -> iIconGroupMethod   
+              | Item.MethodGroup _  -> GlyphMajor.Method   
               | Item.TypeVar _ 
-              | Item.Types _ -> iIconGroupClass   
+              | Item.Types _ -> GlyphMajor.Class   
               | Item.ModuleOrNamespaces(modref::_) -> 
-                    if modref.IsNamespace then iIconGroupNameSpace else iIconGroupModule
-              | Item.ArgName _ -> iIconGroupVariable
-              | Item.SetterArg _ -> iIconGroupVariable
-              | _ -> iIconGroupError)
+                    if modref.IsNamespace then GlyphMajor.NameSpace else GlyphMajor.Module
+              | Item.ArgName _ -> GlyphMajor.Variable
+              | Item.SetterArg _ -> GlyphMajor.Variable
+              | _ -> GlyphMajor.Error)
 
          /// Find the minor glyph of the given named item.       
          let namedItemToMinorGlyph item = 
             // This may explore assemblies that are not in the reference set,
             // e.g. for type abbreviations to types not in the reference set. 
-            // In this case just use iIconItemNormal.
-           protectAssemblyExploration  iIconItemNormal (fun () ->
+            // In this case just use GlyphMinor.Normal.
+           protectAssemblyExploration  GlyphMinor.Normal (fun () ->
              match item with 
-              | Item.Value(vref) when isFunction denv.g vref.Type -> iIconItemSpecial
-              | _ -> iIconItemNormal)
+              | Item.Value(vref) when isFunction denv.g vref.Type -> GlyphMinor.Special
+              | _ -> GlyphMinor.Normal)
 
-         (6 * namedItemToMajorGlyph d) + namedItemToMinorGlyph d
+         (namedItemToMajorGlyph d, namedItemToMinorGlyph d)
 
      
 /// An intellisense declaration
 [<Sealed>]
-type FSharpDeclarationListItem(name, glyph:int, info) =
+type FSharpDeclarationListItem(name, glyphMajor:GlyphMajor, glyphMinor:GlyphMinor, info) =
     let mutable descriptionTextHolder:FSharpToolTipText option = None
     let mutable task = null
 
@@ -1259,7 +1259,9 @@ type FSharpDeclarationListItem(name, glyph:int, info) =
             | Choice2Of2 result -> 
                 result
 
-    member decl.Glyph = glyph      
+    member decl.Glyph = 6 * int glyphMajor + int glyphMinor
+    member decl.GlyphMajor = glyphMajor 
+    member decl.GlyphMinor = glyphMinor 
       
 /// A table of declarations for Intellisense completion 
 [<Sealed>]
@@ -1319,11 +1321,12 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                 match itemsWithSameName with
                 | [] -> failwith "Unexpected empty bag"
                 | items -> 
-                    new FSharpDeclarationListItem(nm, GlyphOfItem(denv,items.Head), Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive)))
+                    let glyphMajor, glyphMinor = GlyphOfItem(denv,items.Head)
+                    new FSharpDeclarationListItem(nm, glyphMajor, glyphMinor, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive)))
 
         new FSharpDeclarationListInfo(Array.ofList decls)
 
     
-    static member Error msg = new FSharpDeclarationListInfo([| new FSharpDeclarationListItem("<Note>", 0, Choice2Of2 (FSharpToolTipText [FSharpToolTipElement.CompositionError msg])) |] )
+    static member Error msg = new FSharpDeclarationListInfo([| new FSharpDeclarationListItem("<Note>", GlyphMajor.Error, GlyphMinor.Normal, Choice2Of2 (FSharpToolTipText [FSharpToolTipElement.CompositionError msg])) |] )
     static member Empty = new FSharpDeclarationListInfo([| |])
 
