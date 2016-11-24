@@ -2035,9 +2035,13 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv (typeN
             match tyconSearch +++ moduleSearch +++ unionSearch with
             | Result [] ->
                 let predictedPossibleTypes =
-                    modref.ModuleOrNamespaceType.AllEntities
-                    |> Seq.map (fun e -> e.DisplayName)
-                    |> Set.ofSeq
+                    match ad with
+                    | AccessibleFrom _ -> 
+                        modref.ModuleOrNamespaceType.AllEntities
+                        |> Seq.filter (fun e -> IsEntityAccessible ncenv.amap m ad (modref.NestedTyconRef e))
+                        |> Seq.map (fun e -> e.DisplayName)
+                        |> Set.ofSeq
+                    | _ -> Set.empty
 
                 raze (UndefinedName(depth,FSComp.SR.undefinedNameValueConstructorNamespaceOrType,id,predictedPossibleTypes))
             | results -> AtMostOneResult id.idRange results
@@ -2413,13 +2417,17 @@ let ResolveTypeLongIdentInTyconRef sink (ncenv:NameResolver) nenv typeNameResInf
     tcref
 
 /// Create an UndefinedName error with details 
-let SuggestTypeLongIdentInModuleOrNamespace depth (modref:ModuleOrNamespaceRef) (id:Ident) =
+let SuggestTypeLongIdentInModuleOrNamespace depth (modref:ModuleOrNamespaceRef) amap ad m (id:Ident) =
     let predictedPossibleTypes =
-        modref.ModuleOrNamespaceType.AllEntities
-        |> Seq.map (fun e -> e.DisplayName)
-        |> Set.ofSeq
+        match ad with
+        | AccessibleFrom _ ->
+            modref.ModuleOrNamespaceType.AllEntities
+            |> Seq.filter (fun e -> IsEntityAccessible amap m ad (modref.NestedTyconRef e))
+            |> Seq.map (fun e -> e.DisplayName)
+            |> Set.ofSeq
+        | _ -> Set.empty
 
-    let errorTextF s = FSComp.SR.undefinedNameTypeIn(s,fullDisplayTextOfModRef modref)
+    let errorTextF s = FSComp.SR.undefinedNameTypeIn(s,fullDisplayTextOfModRef modref)    
     UndefinedName(depth,errorTextF,id,predictedPossibleTypes)
 
 /// Resolve a long identifier representing a type in a module or namespace
@@ -2431,7 +2439,7 @@ let rec private ResolveTypeLongIdentInModuleOrNamespace (ncenv:NameResolver) (ty
         let tcrefs = LookupTypeNameInEntityMaybeHaveArity (ncenv.amap, id.idRange, ad, id.idText, typeNameResInfo.StaticArgsInfo, modref)
         match tcrefs with 
         | _ :: _ -> tcrefs |> CollectResults (fun tcref -> success(resInfo,tcref))
-        | [] -> raze (SuggestTypeLongIdentInModuleOrNamespace depth modref id)
+        | [] -> raze (SuggestTypeLongIdentInModuleOrNamespace depth modref ncenv.amap ad m id)
     | id::rest ->
         let m = unionRanges m id.idRange
         let modulSearch = 
