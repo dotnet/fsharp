@@ -2019,13 +2019,14 @@ and FSharpParameter(cenv, typ:TType, topArgInfo:ArgReprInfo, mOpt, isParamArrayA
 and FSharpAssemblySignature private (cenv, topAttribs: TypeChecker.TopAttribs option, optViewedCcu: CcuThunk option, mtyp: ModuleOrNamespaceType) = 
 
     // Assembly signature for a referenced/linked assembly
-    new (cenv, ccu: CcuThunk) = FSharpAssemblySignature((if ccu.IsUnresolvedReference then cenv else (new cenv(cenv.g, ccu, cenv.tcImports))), None, Some ccu, ccu.Contents.ModuleOrNamespaceType)
+    new (cenv:cenv, ccu: CcuThunk) = 
+        let cenv = if ccu.IsUnresolvedReference then cenv else (new cenv(cenv.g, ccu, cenv.tcImports))
+        FSharpAssemblySignature(cenv, None, Some ccu, ccu.Contents.ModuleOrNamespaceType)
     
     // Assembly signature for an assembly produced via type-checking.
     new (g, thisCcu, tcImports, topAttribs, mtyp) = FSharpAssemblySignature(cenv(g, thisCcu, tcImports), topAttribs, None, mtyp)
 
     member __.Entities = 
-
         let rec loop (rmtyp : ModuleOrNamespaceType) = 
             [| for entity in rmtyp.AllEntities do
                    if entity.IsNamespace then 
