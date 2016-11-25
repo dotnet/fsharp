@@ -518,25 +518,12 @@ type OptionalArgInfo =
                 CallerSide (Constant v)
         else 
             NotOptional
-    //is there a better place for this? We need it both here and also in IlxGen.fs
+    
     static member FieldInitForDefaultParameterValueAttrib (Attrib (_,_,exprs,_,_,_,_)) =
         let (AttribExpr (_,defaultValueExpr)) = List.head exprs
         match defaultValueExpr with
-        | Expr.Const ((Const.String s),_,_) -> Some (ILFieldInit.String s)
-        | Expr.Const ((Const.Bool s),_,_)   -> Some (ILFieldInit.Bool s)
-        | Expr.Const ((Const.Char s),_,_)   -> Some (ILFieldInit.Char (uint16 s))
-        | Expr.Const ((Const.SByte s),_,_)  -> Some (ILFieldInit.Int8 s)
-        | Expr.Const ((Const.Int16 s),_,_)  -> Some (ILFieldInit.Int16 s)
-        | Expr.Const ((Const.Int32 s),_,_)  -> Some (ILFieldInit.Int32 s)
-        | Expr.Const ((Const.Int64 s),_,_)  -> Some (ILFieldInit.Int64 s)
-        | Expr.Const ((Const.Byte s),_,_)   -> Some (ILFieldInit.UInt8 s)
-        | Expr.Const ((Const.UInt16 s),_,_) -> Some (ILFieldInit.UInt16 s)
-        | Expr.Const ((Const.UInt32 s),_,_) -> Some (ILFieldInit.UInt32 s)
-        | Expr.Const ((Const.UInt64 s),_,_) -> Some (ILFieldInit.UInt64 s)
-        | Expr.Const ((Const.Single s),_,_) -> Some (ILFieldInit.Single s)
-        | Expr.Const ((Const.Double s),_,_) -> Some (ILFieldInit.Double s)
-        | Expr.Const (Const.Zero,_,_)       -> Some (ILFieldInit.Null)
-        | _                                 -> None
+        | Expr.Const (ConstToILFieldInit c,_,_) -> Some c
+        | _ -> None
 
 type CallerInfoInfo =
     | NoCallerInfo

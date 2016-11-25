@@ -5995,22 +5995,8 @@ and GenEqualsOverrideCallingIComparable cenv (tcref:TyconRef, ilThisTy, _ilThatT
 
 and GenFieldInit m c =
     match c with 
-    | Const.SByte n   -> ILFieldInit.Int8 n
-    | Const.Int16 n   -> ILFieldInit.Int16 n
-    | Const.Int32 n   -> ILFieldInit.Int32 n
-    | Const.Int64 n   -> ILFieldInit.Int64 n
-    | Const.Byte n    -> ILFieldInit.UInt8 n
-    | Const.UInt16 n  -> ILFieldInit.UInt16 n
-    | Const.UInt32 n  -> ILFieldInit.UInt32 n
-    | Const.UInt64 n  -> ILFieldInit.UInt64 n
-    | Const.Bool n    -> ILFieldInit.Bool n
-    | Const.Char n    -> ILFieldInit.Char (uint16 n)
-    | Const.Single n -> ILFieldInit.Single n
-    | Const.Double n   -> ILFieldInit.Double n
-    | Const.String s  -> ILFieldInit.String s
-    | Const.Zero      -> ILFieldInit.Null
+    | ConstToILFieldInit fieldInit -> fieldInit
     | _ -> error(Error(FSComp.SR.ilTypeCannotBeUsedForLiteralField(),m))
-
 
 and GenAbstractBinding cenv eenv tref (vref:ValRef) =
     assert(vref.IsMember)
