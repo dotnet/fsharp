@@ -779,6 +779,8 @@ module CoreTests =
     [<Test>]
     let ``letrec (mutrec variations part two) FSI_BASIC`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSI_BASIC
 
+    [<Test>]
+    let recordResolution () = singleTestBuildAndRun "core/recordResolution" FSC_OPT_PLUS_DEBUG
 
     [<Test>]
     let ``load-script`` () = 
