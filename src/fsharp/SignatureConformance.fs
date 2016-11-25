@@ -385,13 +385,18 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
         // sig for err then checkRecordFieldsForExn.
         // -------------------------------------------------------------------------------
 
-        and checkRecordFields _g _amap _denv err aenv (implFields:TyconRecdFields) (sigFields:TyconRecdFields) =
+        and checkRecordFields _g _amap denv err aenv (implFields:TyconRecdFields) (sigFields:TyconRecdFields) =
             let implFields = implFields.TrueFieldsAsList
             let sigFields = sigFields.TrueFieldsAsList
             let m1 = implFields |> NameMap.ofKeyedList (fun rfld -> rfld.Name)
             let m2 = sigFields |> NameMap.ofKeyedList (fun rfld -> rfld.Name)
-            NameMap.suball2 (fun s _ -> errorR(err (fun x -> FSComp.SR.DefinitionsInSigAndImplNotCompatibleFieldRequiredButNotSpecified(x, s))); false) (checkField aenv)  m1 m2 &&
-            NameMap.suball2 (fun s _ -> errorR(err (fun x -> FSComp.SR.DefinitionsInSigAndImplNotCompatibleFieldWasPresent(x, s))); false) (fun x y -> checkField aenv y x)  m2 m1 &&
+            NameMap.suball2 
+                (fun fieldName (field:RecdField) -> errorR(err (fun x -> FSComp.SR.DefinitionsInSigAndImplNotCompatibleFieldRequiredButNotSpecified(x, NicePrint.prettyStringOfTy denv field.rfield_type, fieldName))); false) 
+                (checkField aenv) m1 m2 &&
+            NameMap.suball2 
+                (fun fieldName (field:RecdField) -> errorR(err (fun x -> FSComp.SR.DefinitionsInSigAndImplNotCompatibleFieldWasPresent(x, NicePrint.prettyStringOfTy denv field.rfield_type, fieldName))); false) 
+                (fun x y -> checkField aenv y x) m2 m1 &&
+
             // This check is required because constructors etc. are externally visible 
             // and thus compiled representations do pick up dependencies on the field order  
             (if List.forall2 (checkField aenv)  implFields sigFields
@@ -417,12 +422,14 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             (m1,m2) ||> NameMap.suball2 (fun _s vref -> errorR(err (fun x -> FSComp.SR.DefinitionsInSigAndImplNotCompatibleAbstractMemberMissingInImpl(x, NicePrint.stringValOrMember denv vref.Deref))); false) (fun _x _y -> true)  &&
             (m2,m1) ||> NameMap.suball2 (fun _s vref -> errorR(err (fun x -> FSComp.SR.DefinitionsInSigAndImplNotCompatibleAbstractMemberMissingInSig(x, NicePrint.stringValOrMember denv vref.Deref))); false) (fun _x _y -> true)  
 
-        and checkClassFields isStruct _g _amap _denv err aenv (implFields:TyconRecdFields) (sigFields:TyconRecdFields) =
+        and checkClassFields isStruct _g _amap denv err aenv (implFields:TyconRecdFields) (sigFields:TyconRecdFields) =
             let implFields = implFields.TrueFieldsAsList
             let sigFields = sigFields.TrueFieldsAsList
             let m1 = implFields |> NameMap.ofKeyedList (fun rfld -> rfld.Name) 
             let m2 = sigFields |> NameMap.ofKeyedList (fun rfld -> rfld.Name) 
-            NameMap.suball2 (fun s _ -> errorR(err (fun x -> FSComp.SR.DefinitionsInSigAndImplNotCompatibleFieldRequiredButNotSpecified(x, s))); false) (checkField aenv)  m1 m2 &&
+            NameMap.suball2 
+                (fun fieldName (field:RecdField) -> errorR(err (fun x -> FSComp.SR.DefinitionsInSigAndImplNotCompatibleFieldRequiredButNotSpecified(x, NicePrint.prettyStringOfTy denv field.rfield_type, fieldName))); false) 
+                (checkField aenv) m1 m2 &&
             (if isStruct then 
                 NameMap.suball2 (fun s _ -> warning(err (fun x -> FSComp.SR.DefinitionsInSigAndImplNotCompatibleFieldIsInImplButNotSig(x, s))); true) (fun x y -> checkField aenv y x)  m2 m1 
              else
