@@ -25,6 +25,11 @@ type Class() =
     //Check a value type - only default ctor possible.
     static member Method15 ([<Optional;DefaultParameterValue(new DateTime())>]i:DateTime) = i
 
+    //Check nullables. 
+    static member MethodNullable1 ([<Optional;DefaultParameterValue(null)>]i:Nullable<int>) = i
+    static member MethodNullable2 ([<Optional;DefaultParameterValue(Nullable<_>())>]i:Nullable<bool>) = i
+    static member MethodNullable3 ([<Optional;DefaultParameterValue(null)>]i:Nullable<DateTime>) = i
+
     //Sanity checks with a mix of optional/non-optional parameters.
     static member Mix1(a:int, b:string, [<Optional;DefaultParameterValue(-12)>]c:int) = c
     //can omit optional in the middle of the arg list; this works in C# too.

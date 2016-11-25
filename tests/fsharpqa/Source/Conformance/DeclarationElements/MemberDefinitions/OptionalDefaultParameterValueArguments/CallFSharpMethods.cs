@@ -27,6 +27,13 @@ public class MainClass {
         if (Class.Method14() != null) return 1;
         CheckMethod(v => Class.Method15(v), new DateTime(12300L), () => Class.Method15(), new DateTime());
         
+        if (Class.MethodNullable1() != null) return 1;
+        if (Class.MethodNullable1(4) != 4) return 1;
+        if (Class.MethodNullable2() != null) return 1;
+        if (Class.MethodNullable2(true) != true) return 1;
+        if (Class.MethodNullable3() != null) return 1;
+        if (Class.MethodNullable3(new DateTime(1234L)) != new DateTime(1234L)) return 1;
+
         CheckMethod(v => Class.Mix1(1, "1", v), 100, () => Class.Mix1(2, "2"),-12);
         CheckMethod(v => Class.Mix2(1, "1", v, 101), 100, () => Class.Mix2(2, "2", d: 12), -12);
         

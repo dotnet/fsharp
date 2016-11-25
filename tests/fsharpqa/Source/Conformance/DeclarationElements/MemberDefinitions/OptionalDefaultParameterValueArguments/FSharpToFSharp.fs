@@ -23,6 +23,12 @@ type Class() =
     //Check a value type - only default ctor possible.
     static member Method15 ([<Optional;DefaultParameterValue(new DateTime())>]i:DateTime) = i
 
+    //Check nullables. Apparently either null or Nullable() works here, though
+    //maybe 'null is not a proper value' is expected here?
+    static member MethodNullable1 ([<Optional;DefaultParameterValue(null)>]i:Nullable<int>) = i
+    static member MethodNullable2 ([<Optional;DefaultParameterValue(Nullable<_>())>]i:Nullable<bool>) = i
+    static member MethodNullable3 ([<Optional;DefaultParameterValue(null)>]i:Nullable<DateTime>) = i
+
     //Sanity checks with a mix of optional/non-optional parameters.
     static member Mix1(a:int, b:string, [<Optional;DefaultParameterValue(-12)>]c:int) = c
     //can omit optional in the middle of the arg list; this works in C# too.
@@ -53,6 +59,10 @@ do checkMethod (fun v -> Class.Method12(v)) 'c'      (fun () -> Class.Method12()
 do checkMethod (fun v -> Class.Method13(v)) "noo"    (fun () -> Class.Method13()) "ono"
 do checkMethod (fun v -> Class.Method14(v)) (obj())  (fun () -> Class.Method14()) null
 do checkMethod (fun v -> Class.Method15(v)) (new DateTime(12300L))  (fun () -> Class.Method15()) (new DateTime())
+
+do checkMethod (fun v -> Class.MethodNullable1(v)) (Nullable<_>(1))    (fun () -> Class.MethodNullable1()) (Nullable<_>())
+do checkMethod (fun v -> Class.MethodNullable2(v)) (Nullable<_>(true))  (fun () -> Class.MethodNullable2()) (Nullable<_>())
+do checkMethod (fun v -> Class.MethodNullable3(v)) (Nullable<_>(new DateTime(12300L)))  (fun () -> Class.MethodNullable3()) (Nullable<_>())
 
 do checkMethod (fun v -> Class.Mix1(1, "1", v)) 100 (fun () -> Class.Mix1(2, "2")) -12
 do checkMethod (fun v -> Class.Mix2(1, "1", v, 101)) 100 (fun () -> Class.Mix2(2, "2", d=12)) -12
