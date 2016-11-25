@@ -28,7 +28,7 @@ module ExtensionMemberOfGenericTypeWrongNumberOfTypeArgsTest =
       type LibGen with
             member x.P  = 1
 
-module ExtensionMemberOfGenericTypeWrongConstraintsTest = 
+module ExtensionMemberOfGenericTypeNoConstraintsTest = 
 
     type LibGen<'T when 'T :> System.ValueType>() =
         class
