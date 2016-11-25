@@ -65,6 +65,14 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>] ([<ImportMany
         match classifiedSpanOption with
         | Some(classifiedSpan) ->
             match classifiedSpan.ClassificationType with
+            | ClassificationTypeNames.ClassName
+            | ClassificationTypeNames.DelegateName
+            | ClassificationTypeNames.EnumName
+            | ClassificationTypeNames.InterfaceName
+            | ClassificationTypeNames.ModuleName
+            | ClassificationTypeNames.StructName
+            | ClassificationTypeNames.TypeParameterName
+            | ClassificationTypeNames.Operator
             | ClassificationTypeNames.Identifier ->
                 match QuickParse.GetCompleteIdentifierIsland true (textLine.ToString()) textLineColumn with
                 | Some(islandIdentifier, islandColumn, isQuoted) ->
