@@ -5,7 +5,7 @@
 
 module N
 
-type Red  = { X : int }
+type Red  = { A : int }
 type Blue = { X : int; Y : int }
 
 let aBlue   = { X = 0; Y = 1 }
