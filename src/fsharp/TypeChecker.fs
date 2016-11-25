@@ -1390,13 +1390,15 @@ let MakeAndPublishVal cenv env (altActualParent,inSig,declKind,vrec,(ValScheme(i
 
     // CompiledName not allowed on virtual/abstract/override members        
     let compiledNameAttrib  = TryFindFSharpStringAttribute cenv.g cenv.g.attrib_CompiledNameAttribute attrs
-    if Option.isSome compiledNameAttrib && (   (   match memberInfoOpt with 
-                                                   | Some (ValMemberInfoTransient(memberInfo,_,_)) -> 
-                                                       memberInfo.MemberFlags.IsDispatchSlot 
-                                                       || memberInfo.MemberFlags.IsOverrideOrExplicitImpl 
-                                                   | None -> false)
-                                            || (match altActualParent with ParentNone -> true | _ -> false)) then 
-        errorR(Error(FSComp.SR.tcCompiledNameAttributeMisused(),m))
+    if Option.isSome compiledNameAttrib then
+        match memberInfoOpt with 
+        | Some (ValMemberInfoTransient(memberInfo,_,_)) -> 
+            if memberInfo.MemberFlags.IsDispatchSlot || memberInfo.MemberFlags.IsOverrideOrExplicitImpl then
+                errorR(Error(FSComp.SR.tcCompiledNameAttributeMisused(),m))
+        | None -> 
+            match altActualParent with
+            | ParentNone -> errorR(Error(FSComp.SR.tcCompiledNameAttributeMisused(),m)) 
+            | _ -> ()
 
     let compiledNameIsOnProp =
         match memberInfoOpt with
