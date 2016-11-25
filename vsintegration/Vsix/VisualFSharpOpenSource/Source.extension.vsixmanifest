@@ -27,13 +27,12 @@
       <Action Type="Ngen" Path="FSharp.ProjectSystem.PropertyPages.dll" />
       <Action Type="Ngen" Path="FSharp.VS.FSI.dll" />
     </Actions>
-  </Installer>
+- </Installer>
   <Dependencies>
     <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" d:Source="Manual" Version="[4.6,)" />
   </Dependencies>
   <Assets>
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="RegisterFsharpPackage.pkgdef" />
-
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="FSharp.ProjectSystem.FSharp.pkgdef" />
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="FSharp.ProjectSystem.Base.pkgdef" />
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="FSharp.VS.FSI.pkgdef" />
