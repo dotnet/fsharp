@@ -431,7 +431,9 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 (fun fieldName (field:RecdField) -> errorR(err (fun x -> FSComp.SR.DefinitionsInSigAndImplNotCompatibleFieldRequiredButNotSpecified(x, NicePrint.prettyStringOfTy denv field.rfield_type, fieldName))); false) 
                 (checkField aenv) m1 m2 &&
             (if isStruct then 
-                NameMap.suball2 (fun s _ -> warning(err (fun x -> FSComp.SR.DefinitionsInSigAndImplNotCompatibleFieldIsInImplButNotSig(x, s))); true) (fun x y -> checkField aenv y x)  m2 m1 
+                NameMap.suball2 
+                    (fun fieldName (field:RecdField) -> warning(err (fun x -> FSComp.SR.DefinitionsInSigAndImplNotCompatibleFieldIsInImplButNotSig(x, NicePrint.prettyStringOfTy denv field.rfield_type, fieldName))); true) 
+                    (fun x y -> checkField aenv y x) m2 m1 
              else
                 true)
             
