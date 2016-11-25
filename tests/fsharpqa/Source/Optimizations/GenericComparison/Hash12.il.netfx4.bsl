@@ -160,6 +160,19 @@
         IL_0015:  ret
       } // end of method Key::__DebugDisplay
 
+      .method public strict virtual instance string 
+                ToString() cil managed
+      {
+        .maxstack  8
+        IL_0000:  ldstr      "%A"
+        IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class Hash12/HashMicroPerfAndCodeGenerationTests/Key,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,string>::.ctor(string)
+        IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class Hash12/HashMicroPerfAndCodeGenerationTests/Key,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
+        IL_000f:  ldarg.0
+        IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class Hash12/HashMicroPerfAndCodeGenerationTests/Key,string>::Invoke(!0)
+        IL_0015:  ret
+      } // end of method Key::To
+      String
+
       .method public hidebysig virtual final 
               instance int32  CompareTo(class Hash12/HashMicroPerfAndCodeGenerationTests/Key obj) cil managed
       {
@@ -707,6 +720,18 @@
         IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class Hash12/HashMicroPerfAndCodeGenerationTests/KeyWithInnerKeys,string>::Invoke(!0)
         IL_0015:  ret
       } // end of method KeyWithInnerKeys::__DebugDisplay
+
+      .method public strict virtual instance string 
+                ToString() cil managed
+      {
+        .maxstack  8
+        IL_0000:  ldstr      "%A"
+        IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class Hash12/HashMicroPerfAndCodeGenerationTests/KeyWithInnerKeys,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,string>::.ctor(string)
+        IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class Hash12/HashMicroPerfAndCodeGenerationTests/KeyWithInnerKeys,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
+        IL_000f:  ldarg.0
+        IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class Hash12/HashMicroPerfAndCodeGenerationTests/KeyWithInnerKeys,string>::Invoke(!0)
+        IL_0015:  ret
+      } // end of method KeyWithInnerKeys::ToString
 
       .method public hidebysig virtual final 
               instance int32  CompareTo(class Hash12/HashMicroPerfAndCodeGenerationTests/KeyWithInnerKeys obj) cil managed
