@@ -165,17 +165,16 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             // Propagate defn location information from implementation to signature . 
             sigTycon.SetOtherRange (implTycon.Range, true)
             implTycon.SetOtherRange (sigTycon.Range, false)
-            let err f =  Error(f(implTycon.TypeOrMeasureKind.ToString()), m)
-            if implTycon.LogicalName <> sigTycon.LogicalName then  (errorR (err (FSComp.SR.DefinitionsInSigAndImplNotCompatibleNamesDiffer)); false) else
-            if implTycon.CompiledName <> sigTycon.CompiledName then  (errorR (err (FSComp.SR.DefinitionsInSigAndImplNotCompatibleNamesDiffer)); false) else
+            if implTycon.LogicalName <> sigTycon.LogicalName then (errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleNamesDiffer(implTycon.TypeOrMeasureKind.ToString(),sigTycon.LogicalName,implTycon.LogicalName),m)); false) else
+            if implTycon.CompiledName <> sigTycon.CompiledName then (errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleNamesDiffer(implTycon.TypeOrMeasureKind.ToString(),sigTycon.CompiledName,implTycon.CompiledName),m)); false) else
             checkExnInfo  (fun f -> ExnconstrNotContained(denv,implTycon,sigTycon,f)) aenv implTycon.ExceptionInfo sigTycon.ExceptionInfo &&
             let implTypars = implTycon.Typars m
             let sigTypars = sigTycon.Typars m
             if implTypars.Length <> sigTypars.Length then  
-                errorR (err(FSComp.SR.DefinitionsInSigAndImplNotCompatibleParameterCountsDiffer)) 
+                errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleParameterCountsDiffer(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m)) 
                 false
             elif isLessAccessible implTycon.Accessibility sigTycon.Accessibility then 
-                errorR(err(FSComp.SR.DefinitionsInSigAndImplNotCompatibleAccessibilityDiffer)) 
+                errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleAccessibilityDiffer(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m)) 
                 false
             else 
                 let aenv = aenv.BindEquivTypars implTypars sigTypars 
@@ -193,45 +192,45 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 let fintfs     = flatten fintfs 
               
                 let unimpl = ListSet.subtract (fun fity aity -> typeAEquiv g aenv aity fity) fintfs aintfs
-                (unimpl |> List.forall (fun ity -> errorR (err (fun x -> FSComp.SR.DefinitionsInSigAndImplNotCompatibleMissingInterface(x,  NicePrint.minimalStringOfType denv ity))); false)) &&
+                (unimpl |> List.forall (fun ity -> errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleMissingInterface(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName, NicePrint.minimalStringOfType denv ity),m)); false)) &&
                 let hidden = ListSet.subtract (typeAEquiv g aenv) aintfsUser fintfs
                 hidden |> List.iter (fun ity -> (if implTycon.IsFSharpInterfaceTycon then error else warning) (InterfaceNotRevealed(denv,ity,implTycon.Range)))
 
                 let aNull = IsUnionTypeWithNullAsTrueValue g implTycon
                 let fNull = IsUnionTypeWithNullAsTrueValue g sigTycon
                 if aNull && not fNull then 
-                  errorR(err(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationSaysNull))
+                  errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationSaysNull(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
                 elif fNull && not aNull then 
-                  errorR(err(FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureSaysNull))
+                  errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureSaysNull(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
 
                 let aNull2 = TypeNullIsExtraValue g m (generalizedTyconRef (mkLocalTyconRef implTycon))
                 let fNull2 = TypeNullIsExtraValue g m (generalizedTyconRef (mkLocalTyconRef implTycon))
                 if aNull2 && not fNull2 then 
-                    errorR(err(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationSaysNull2))
+                    errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationSaysNull2(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
                 elif fNull2 && not aNull2 then 
-                    errorR(err(FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureSaysNull2))
+                    errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureSaysNull2(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
 
                 let aSealed = isSealedTy g (generalizedTyconRef (mkLocalTyconRef implTycon))
                 let fSealed = isSealedTy g (generalizedTyconRef (mkLocalTyconRef sigTycon))
                 if  aSealed && not fSealed  then 
-                    errorR(err(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationSealed))
+                    errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationSealed(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
                 if  not aSealed && fSealed  then 
-                    errorR(err(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationIsNotSealed))
+                    errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationIsNotSealed(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
 
                 let aPartial = isAbstractTycon implTycon
                 let fPartial = isAbstractTycon sigTycon
                 if aPartial && not fPartial then 
-                    errorR(err(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationIsAbstract))
+                    errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationIsAbstract(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
 
                 if not aPartial && fPartial then 
-                    errorR(err(FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureIsAbstract))
+                    errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureIsAbstract(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
 
                 if not (typeAEquiv g aenv (superOfTycon g implTycon) (superOfTycon g sigTycon)) then 
-                    errorR (err(FSComp.SR.DefinitionsInSigAndImplNotCompatibleTypesHaveDifferentBaseTypes))
+                    errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleTypesHaveDifferentBaseTypes(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
 
                 checkTypars m aenv implTypars sigTypars &&
-                checkTypeRepr err aenv implTycon.TypeReprInfo sigTycon.TypeReprInfo &&
-                checkTypeAbbrev err aenv implTycon.TypeOrMeasureKind sigTycon.TypeOrMeasureKind implTycon.TypeAbbrev sigTycon.TypeAbbrev  &&
+                checkTypeRepr m aenv implTycon sigTycon.TypeReprInfo &&
+                checkTypeAbbrev m aenv implTycon sigTycon &&
                 checkAttribs aenv implTycon.Attribs sigTycon.Attribs (fun attribs -> implTycon.Data.entity_attribs <- attribs) &&
                 checkModuleOrNamespaceContents implTycon.Range aenv (mkLocalEntityRef implTycon) sigTycon.ModuleOrNamespaceType 
             
@@ -385,18 +384,23 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
         // sig for err then checkRecordFieldsForExn.
         // -------------------------------------------------------------------------------
 
-        and checkRecordFields _g _amap _denv err aenv (implFields:TyconRecdFields) (sigFields:TyconRecdFields) =
+        and checkRecordFields m aenv (implTycon:Tycon) (implFields:TyconRecdFields) (sigFields:TyconRecdFields) =
             let implFields = implFields.TrueFieldsAsList
             let sigFields = sigFields.TrueFieldsAsList
             let m1 = implFields |> NameMap.ofKeyedList (fun rfld -> rfld.Name)
             let m2 = sigFields |> NameMap.ofKeyedList (fun rfld -> rfld.Name)
-            NameMap.suball2 (fun s _ -> errorR(err (fun x -> FSComp.SR.DefinitionsInSigAndImplNotCompatibleFieldRequiredButNotSpecified(x, s))); false) (checkField aenv)  m1 m2 &&
-            NameMap.suball2 (fun s _ -> errorR(err (fun x -> FSComp.SR.DefinitionsInSigAndImplNotCompatibleFieldWasPresent(x, s))); false) (fun x y -> checkField aenv y x)  m2 m1 &&
+            NameMap.suball2 
+                (fun fieldName _ -> errorR(Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleFieldRequiredButNotSpecified(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName, fieldName),m)); false) 
+                (checkField aenv) m1 m2 &&
+            NameMap.suball2 
+                (fun fieldName _ -> errorR(Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleFieldWasPresent(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName, fieldName),m)); false) 
+                (fun x y -> checkField aenv y x) m2 m1 &&
+
             // This check is required because constructors etc. are externally visible 
             // and thus compiled representations do pick up dependencies on the field order  
             (if List.forall2 (checkField aenv)  implFields sigFields
              then true
-             else (errorR(err (FSComp.SR.DefinitionsInSigAndImplNotCompatibleFieldOrderDiffer)); false))
+             else (errorR(Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleFieldOrderDiffer(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m)); false))
 
         and checkRecordFieldsForExn _g _denv err aenv (implFields:TyconRecdFields) (sigFields:TyconRecdFields) =
             let implFields = implFields.TrueFieldsAsList
@@ -411,36 +415,40 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
              then true
              else (errorR(err (FSComp.SR.ExceptionDefsNotCompatibleFieldOrderDiffers)); false))
 
-        and checkVirtualSlots _g denv err _aenv implAbstractSlots sigAbstractSlots =
+        and checkVirtualSlots denv m (implTycon:Tycon) implAbstractSlots sigAbstractSlots =
             let m1 = NameMap.ofKeyedList (fun (v:ValRef) -> v.DisplayName) implAbstractSlots
             let m2 = NameMap.ofKeyedList (fun (v:ValRef) -> v.DisplayName) sigAbstractSlots
-            (m1,m2) ||> NameMap.suball2 (fun _s vref -> errorR(err (fun x -> FSComp.SR.DefinitionsInSigAndImplNotCompatibleAbstractMemberMissingInImpl(x, NicePrint.stringValOrMember denv vref.Deref))); false) (fun _x _y -> true)  &&
-            (m2,m1) ||> NameMap.suball2 (fun _s vref -> errorR(err (fun x -> FSComp.SR.DefinitionsInSigAndImplNotCompatibleAbstractMemberMissingInSig(x, NicePrint.stringValOrMember denv vref.Deref))); false) (fun _x _y -> true)  
+            (m1,m2) ||> NameMap.suball2 (fun _s vref -> errorR(Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleAbstractMemberMissingInImpl(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName, NicePrint.stringValOrMember denv vref.Deref),m)); false) (fun _x _y -> true)  &&
+            (m2,m1) ||> NameMap.suball2 (fun _s vref -> errorR(Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleAbstractMemberMissingInSig(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName, NicePrint.stringValOrMember denv vref.Deref),m)); false) (fun _x _y -> true)  
 
-        and checkClassFields isStruct _g _amap _denv err aenv (implFields:TyconRecdFields) (sigFields:TyconRecdFields) =
+        and checkClassFields isStruct m aenv (implTycon:Tycon) (implFields:TyconRecdFields) (sigFields:TyconRecdFields) =
             let implFields = implFields.TrueFieldsAsList
             let sigFields = sigFields.TrueFieldsAsList
             let m1 = implFields |> NameMap.ofKeyedList (fun rfld -> rfld.Name) 
             let m2 = sigFields |> NameMap.ofKeyedList (fun rfld -> rfld.Name) 
-            NameMap.suball2 (fun s _ -> errorR(err (fun x -> FSComp.SR.DefinitionsInSigAndImplNotCompatibleFieldRequiredButNotSpecified(x, s))); false) (checkField aenv)  m1 m2 &&
+            NameMap.suball2 
+                (fun fieldName _ -> errorR(Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleFieldRequiredButNotSpecified(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName, fieldName),m)); false) 
+                (checkField aenv) m1 m2 &&
             (if isStruct then 
-                NameMap.suball2 (fun s _ -> warning(err (fun x -> FSComp.SR.DefinitionsInSigAndImplNotCompatibleFieldIsInImplButNotSig(x, s))); true) (fun x y -> checkField aenv y x)  m2 m1 
+                NameMap.suball2 
+                    (fun fieldName _ -> warning(Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleFieldIsInImplButNotSig(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName, fieldName),m)); true) 
+                    (fun x y -> checkField aenv y x) m2 m1 
              else
                 true)
             
 
-        and checkTypeRepr err aenv implTypeRepr sigTypeRepr =
+        and checkTypeRepr m aenv (implTycon:Tycon) sigTypeRepr =
             let reportNiceError k s1 s2 = 
               let aset = NameSet.ofList s1
               let fset = NameSet.ofList s2
               match Zset.elements (Zset.diff aset fset) with 
               | [] -> 
                   match Zset.elements (Zset.diff fset aset) with             
-                  | [] -> (errorR (err (fun x -> FSComp.SR.DefinitionsInSigAndImplNotCompatibleNumbersDiffer(x, k))); false)
-                  | l -> (errorR (err (fun x -> FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureDefinesButImplDoesNot(x, k, String.concat ";" l))); false)
-              | l -> (errorR (err (fun x -> FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplDefinesButSignatureDoesNot(x, k, String.concat ";" l))); false)
+                  | [] -> (errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleNumbersDiffer(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName, k),m)); false)
+                  | l -> (errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureDefinesButImplDoesNot(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName, k, String.concat ";" l),m)); false)
+              | l -> (errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplDefinesButSignatureDoesNot(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName, k, String.concat ";" l),m)); false)
 
-            match implTypeRepr,sigTypeRepr with 
+            match implTycon.TypeReprInfo,sigTypeRepr with 
             | (TRecdRepr _ 
               | TUnionRepr _ 
               | TILObjectRepr _ 
@@ -452,13 +460,13 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             | (TFSharpObjectRepr r), TNoRepr  -> 
                 match r.fsobjmodel_kind with 
                 | TTyconStruct | TTyconEnum -> 
-                   (errorR (err FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplDefinesStruct); false)
+                   (errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplDefinesStruct(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName),m)); false)
                 | _ -> 
                    true
             | (TAsmRepr _), TNoRepr -> 
-                (errorR (err FSComp.SR.DefinitionsInSigAndImplNotCompatibleDotNetTypeRepresentationIsHidden); false)
+                (errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleDotNetTypeRepresentationIsHidden(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName),m)); false)
             | (TMeasureableRepr _), TNoRepr -> 
-                (errorR (err FSComp.SR.DefinitionsInSigAndImplNotCompatibleTypeIsHidden); false)
+                (errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleTypeIsHidden(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName),m)); false)
             | (TUnionRepr r1), (TUnionRepr r2) -> 
                 let ucases1 = r1.UnionCasesAsList
                 let ucases2 = r2.UnionCasesAsList
@@ -467,7 +475,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                   reportNiceError "union case" (names ucases1) (names ucases2) 
                 else List.forall2 (checkUnionCase aenv) ucases1 ucases2
             | (TRecdRepr implFields), (TRecdRepr sigFields) -> 
-                checkRecordFields g amap denv err aenv implFields sigFields
+                checkRecordFields m aenv implTycon implFields sigFields
             | (TFSharpObjectRepr r1), (TFSharpObjectRepr r2) -> 
                 if not (match r1.fsobjmodel_kind,r2.fsobjmodel_kind with 
                          | TTyconClass,TTyconClass -> true
@@ -486,15 +494,15 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                                ((ps1,ps2) ||> List.lengthsEqAndForall2 (List.lengthsEqAndForall2 (fun p1 p2 -> typeAEquiv g aenv p1.Type p2.Type))) &&
                                (returnTypesAEquiv g aenv rty1 rty2)))
                          | _,_ -> false) then 
-                  (errorR (err FSComp.SR.DefinitionsInSigAndImplNotCompatibleTypeIsDifferentKind); false)
+                  (errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleTypeIsDifferentKind(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName),m)); false)
                 else 
                   let isStruct = (match r1.fsobjmodel_kind with TTyconStruct -> true | _ -> false)
-                  checkClassFields isStruct g amap denv err aenv r1.fsobjmodel_rfields r2.fsobjmodel_rfields &&
-                  checkVirtualSlots g denv err aenv r1.fsobjmodel_vslots r2.fsobjmodel_vslots
+                  checkClassFields isStruct m aenv implTycon r1.fsobjmodel_rfields r2.fsobjmodel_rfields &&
+                  checkVirtualSlots denv m implTycon r1.fsobjmodel_vslots r2.fsobjmodel_vslots
             | (TAsmRepr tcr1),  (TAsmRepr tcr2) -> 
-                if tcr1 <> tcr2 then  (errorR (err FSComp.SR.DefinitionsInSigAndImplNotCompatibleILDiffer); false) else true
+                if tcr1 <> tcr2 then  (errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleILDiffer(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName),m)); false) else true
             | (TMeasureableRepr ty1),  (TMeasureableRepr ty2) -> 
-                if typeAEquiv g aenv ty1 ty2 then true else (errorR (err FSComp.SR.DefinitionsInSigAndImplNotCompatibleRepresentationsDiffer); false)
+                if typeAEquiv g aenv ty1 ty2 then true else (errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleRepresentationsDiffer(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName),m)); false)
             | TNoRepr, TNoRepr -> true
 #if EXTENSIONTYPING
             | TProvidedTypeExtensionPoint info1 , TProvidedTypeExtensionPoint info2 ->  
@@ -503,23 +511,25 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 System.Diagnostics.Debug.Assert(false, "unreachable: TProvidedNamespaceExtensionPoint only on namespaces, not types" )
                 true
 #endif
-            | TNoRepr, _ -> (errorR (err FSComp.SR.DefinitionsInSigAndImplNotCompatibleRepresentationsDiffer); false)
-            | _, _ -> (errorR (err FSComp.SR.DefinitionsInSigAndImplNotCompatibleRepresentationsDiffer); false)
+            | TNoRepr, _ -> (errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleRepresentationsDiffer(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName),m)); false)
+            | _, _ -> (errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleRepresentationsDiffer(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName),m)); false)
 
-        and checkTypeAbbrev err aenv kind1 kind2 implTypeAbbrev sigTypeAbbrev =
-            if kind1 <> kind2 then (errorR (err (fun x -> FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureDeclaresDiffer(x, kind2.ToString(), kind1.ToString()))); false)
+        and checkTypeAbbrev m aenv (implTycon:Tycon) (sigTycon:Tycon) =
+            let kind1 = implTycon.TypeOrMeasureKind
+            let kind2 = sigTycon.TypeOrMeasureKind
+            if kind1 <> kind2 then (errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureDeclaresDiffer(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName, kind2.ToString(), kind1.ToString()),m)); false)
             else
-              match implTypeAbbrev,sigTypeAbbrev with 
+              match implTycon.TypeAbbrev,sigTycon.TypeAbbrev with 
               | Some ty1, Some ty2 -> 
                   if not (typeAEquiv g aenv ty1 ty2) then 
                       let s1, s2, _  = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
-                      errorR (err (fun x -> FSComp.SR.DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer(x, s1, s2))) 
+                      errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName, s1, s2),m)) 
                       false 
                   else 
                       true
               | None,None -> true
-              | Some _, None -> (errorR (err (FSComp.SR.DefinitionsInSigAndImplNotCompatibleAbbreviationHiddenBySig)); false)
-              | None, Some _ -> (errorR (err FSComp.SR.DefinitionsInSigAndImplNotCompatibleSigHasAbbreviation); false)
+              | Some _, None -> (errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleAbbreviationHiddenBySig(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName),m)); false)
+              | None, Some _ -> (errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleSigHasAbbreviation(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName),m)); false)
 
         and checkModuleOrNamespaceContents m aenv (implModRef:ModuleOrNamespaceRef) (signModType:ModuleOrNamespaceType) = 
             let implModType = implModRef.ModuleOrNamespaceType
