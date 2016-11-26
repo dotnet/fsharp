@@ -79,17 +79,14 @@ type internal FSharpQuickInfoProvider [<ImportingConstructor>] (serviceProvider:
                     let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                     let textSpan = TextSpan(0, sourceText.Length)
                     let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
-                    let tokens = FSharpColorizationService.GetColorizationData(document.Id, sourceText, textSpan, Some(document.FilePath), defines, cancellationToken)
+                    let classification = CommonHelpers.tryClassifyAtPosition(document.Id, sourceText, document.FilePath, defines, position, cancellationToken)
 
-                    match tokens |> Seq.tryFind(fun t -> t.TextSpan.Contains(position)) with
-                    | Some(token) ->
-                        match token.ClassificationType with
-                        | ClassificationTypeNames.Identifier ->
-                            let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
-                            let! toolTipElement = FSharpQuickInfoProvider.ProvideQuickInfo(sourceText, position, options, document.FilePath, textVersion.GetHashCode())
-                            let dataTipText = XmlDocumentation.BuildDataTipText(documentationBuilder, toolTipElement) 
-                            return QuickInfoItem(token.TextSpan, FSharpDeferredQuickInfoContent(dataTipText))
-                        | _ -> return Unchecked.defaultof<_>
+                    match classification with
+                    | Some(_column, _island) ->
+                        let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
+                        let! toolTipElement = FSharpQuickInfoProvider.ProvideQuickInfo(sourceText, position, options, document.FilePath, textVersion.GetHashCode())
+                        let dataTipText = XmlDocumentation.BuildDataTipText(documentationBuilder, toolTipElement) 
+                        return QuickInfoItem(textSpan, FSharpDeferredQuickInfoContent(dataTipText))
                     | None -> return Unchecked.defaultof<_>
                 | None -> return Unchecked.defaultof<_>
             } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)

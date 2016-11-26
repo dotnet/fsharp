@@ -43,7 +43,13 @@ type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SV
     let xmlMemberIndexService = serviceProvider.GetService(typeof<IVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
 
-    static member ShouldTriggerCompletionAux(sourceText: SourceText, caretPosition: int, trigger: CompletionTriggerKind, getInfo: (unit -> DocumentId * string * string list)) =
+    static member ShouldTriggerCompletionAux
+        (
+            sourceText: SourceText, 
+            caretPosition: int, 
+            trigger: CompletionTriggerKind, 
+            getInfo: (unit -> DocumentId * string * string list)
+        ) =
         // Skip if we are at the start of a document
         if caretPosition = 0 then
             false
@@ -64,7 +70,7 @@ type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SV
             let triggerPosition = caretPosition - 1
             let textLine = sourceText.Lines.GetLineFromPosition(triggerPosition)
             let classifiedSpanOption =
-                FSharpColorizationService.GetColorizationData(documentId, sourceText, textLine.Span, Some(filePath), defines, CancellationToken.None)
+                CommonHelpers.getColorizationData(documentId, sourceText, textLine.Span, Some(filePath), defines, CancellationToken.None)
                 |> Seq.tryFind(fun classifiedSpan -> classifiedSpan.TextSpan.Contains(triggerPosition))
 
             match classifiedSpanOption with
