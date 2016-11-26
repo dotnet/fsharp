@@ -742,7 +742,21 @@ let UnifyUnitType cenv denv m ty exprOpt =
                             | Some memInfo -> memInfo.MemberFlags.MemberKind = MemberKind.PropertyGet
                         
                         if isProperty then
-                            warning (UnitTypeExpectedWithPossiblePropertySetter (denv,ty,vf.LogicalName,m))
+                            let hasSetter =
+                                match prop.ActualParent with
+                                | Parent entityRef ->
+                                    entityRef.MembersOfFSharpTyconSorted
+                                    |> List.filter (fun valRef -> valRef.DisplayName = prop.DisplayName)
+                                    |> List.exists (fun valRef ->
+                                        match valRef.MemberInfo with 
+                                        | None -> false 
+                                        | Some memInfo -> memInfo.MemberFlags.MemberKind = MemberKind.PropertySet)
+                                | _ -> false
+
+                            if hasSetter then
+                                warning (UnitTypeExpectedWithPossiblePropertySetter (denv,ty,vf.LogicalName,m))
+                            else
+                                warning (UnitTypeExpectedWithEquality (denv,ty,m))
                         else
                             warning (UnitTypeExpectedWithEquality (denv,ty,m))
                     | Expr.Op(_,_,Expr.Val(vf,_,_) :: _,_) :: _ -> 

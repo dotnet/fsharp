@@ -9,7 +9,7 @@ let x = MyClass(1)
 let y = "hello"
 
 let changeProperty() =
-    x.Property1 = 20
+    x.Property2 = "20"
     y = "test"
     
 exit 0
