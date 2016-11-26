@@ -59,7 +59,7 @@ type FSharpSignatureHelpProvider [<ImportingConstructor>]  (serviceProvider: SVs
         let paramLocations = parseResults.FindNoteworthyParamInfoLocations(Pos.fromZ caretLinePos.Line caretLineColumn)
 
         match paramLocations with
-        | None -> return None
+        | None -> return None // no locations = no help
         | Some nwpl -> 
         let names = nwpl.LongId
         let lidEnd = nwpl.LongIdEndLocation
@@ -112,15 +112,22 @@ type FSharpSignatureHelpProvider [<ImportingConstructor>]  (serviceProvider: SVs
                    yield nwpl.TupleEndLocations.[i] |> posToLinePosition
                yield endPos  |]
 
-        // If we are pressing "(" or "<" or ",", then only pop up the info if this is one of the actual, real detect ( or , positions in the detected promptable call
+        // If we are pressing "(" or "<" or ",", then only pop up the info if this is one of the actual, real detected positions in the detected promptable call
+        //
         // For example the last "(" in 
         //    List.map (fun a -> (
-        // should not result in a prompt
+        // should not result in a prompt.
+        //
+        // Likewise the last "," in 
+        //    Console.WriteLine( [(1, 
+        // should not result in a prompt, whereas this one will:
+        //    Console.WriteLine( [(1,2)],
+
         if triggerInfo.TriggerCharacter.HasValue &&
            (triggerInfo.TriggerCharacter.Value = '(' || triggerInfo.TriggerCharacter.Value = '<' || triggerInfo.TriggerCharacter.Value = ',') &&
            triggerInfo.TriggerReason = SignatureHelpTriggerReason.TypeCharCommand &&
            not (tupleEnds |> Array.exists (fun lp -> lp.Character = caretLineColumn)) then
-            return None 
+            return None // comma or paren at wrong location = remove help display
         else
 
         // Compute the argument index by working out where the caret is between the various commas
@@ -141,7 +148,7 @@ type FSharpSignatureHelpProvider [<ImportingConstructor>]  (serviceProvider: SVs
             if argumentIndex < nwpl.NamedParamNames.Length then 
                 nwpl.NamedParamNames.[argumentIndex] 
             else 
-                None
+                None  // not a named argument
 
         // Prepare the results
         let results = List<SignatureHelpItem>()
@@ -178,8 +185,8 @@ type FSharpSignatureHelpProvider [<ImportingConstructor>]  (serviceProvider: SVs
     }
 
     interface ISignatureHelpProvider with
-        member this.IsTriggerCharacter(c) = c ='(' || c = '<' || c = ','
-        member this.IsRetriggerCharacter(c) = c = ')' || c = '>'  || c = '='
+        member this.IsTriggerCharacter(c) = c ='(' || c = '<' || c = ',' || c = '='
+        member this.IsRetriggerCharacter(c) = c = ')' || c = '>' || c = '='
 
         member this.GetItemsAsync(document, position, triggerInfo, cancellationToken) = 
             async {
