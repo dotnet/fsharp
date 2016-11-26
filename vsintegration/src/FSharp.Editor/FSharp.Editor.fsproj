@@ -56,9 +56,6 @@
     <Compile Include="CompletionProvider.fs">
       <Link>Completion\CompletionProvider.fs</Link>
     </Compile>
-    <Compile Include="CompletionService.fs">
-      <Link>Completion\CompletionService.fs</Link>
-    </Compile>
     <Compile Include="SignatureHelp.fs">
       <Link>Completion\SignatureHelp.fs</Link>
     </Compile>
