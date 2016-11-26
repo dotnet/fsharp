@@ -36,7 +36,7 @@ type internal FSharpNavigableItem(document: Document, textSpan: TextSpan) =
         member this.IsImplicitlyDeclared = false
         member this.Document = document
         member this.SourceSpan = textSpan
-        member this.DisplayTaggedParts = Unchecked.defaultof<ImmutableArray<TaggedText>>
+        member this.DisplayTaggedParts = ImmutableArray<TaggedText>.Empty
         member this.ChildItems = ImmutableArray<INavigableItem>.Empty
 
 [<Shared>]
@@ -56,7 +56,7 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>] ([<ImportMany
 
         let textLine = sourceText.Lines.GetLineFromPosition(position)
         let textLinePos = sourceText.Lines.GetLinePosition(position)
-        let fcsTextLineNumber = textLinePos.Line + 1 // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
+        let fcsTextLineNumber = Line.fromZ textLinePos.Line  // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
         let textLineColumn = textLinePos.Character
         let tryClassifyAtPosition (position: int) =
             let classifiedSpanOption =
@@ -93,12 +93,10 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>] ([<ImportMany
 
         match quickParseInfo with 
         | Some (islandColumn, qualifiers) -> 
-            let! parseResults = FSharpLanguageService.Checker.ParseFileInProject(filePath, sourceText.ToString(), options)
-            let! checkFileAnswer = FSharpLanguageService.Checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options)
-            let checkFileResults = 
-                match checkFileAnswer with
-                | FSharpCheckFileAnswer.Aborted -> failwith "Compilation isn't complete yet"
-                | FSharpCheckFileAnswer.Succeeded(results) -> results
+            let! _parseResults, checkFileAnswer = FSharpLanguageService.Checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
+            match checkFileAnswer with
+            | FSharpCheckFileAnswer.Aborted -> return None
+            | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> 
 
             let! declarations = checkFileResults.GetDeclarationLocationAlternate (fcsTextLineNumber, islandColumn, textLine.ToString(), qualifiers, false)
 

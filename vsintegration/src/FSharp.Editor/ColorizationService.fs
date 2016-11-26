@@ -132,7 +132,7 @@ type internal FSharpColorizationService() =
                 i
                 
             // Rescan the lines if necessary and report the information
-            let result = new List<ClassifiedSpan>()
+            let result = List<ClassifiedSpan>()
             let mutable lexState = if scanStartLine = 0 then 0L else sourceTextData.[scanStartLine - 1].Value.LexStateAtEndOfLine
 
             for i = scanStartLine to endLine do
@@ -174,7 +174,7 @@ type internal FSharpColorizationService() =
 
         with ex -> 
             Assert.Exception(ex)
-            reraise()  
+            List<ClassifiedSpan>()
 
     interface IEditorClassificationService with
         
@@ -197,15 +197,14 @@ type internal FSharpColorizationService() =
                 match FSharpLanguageService.GetOptions(document.Project.Id) with
                 | Some(options) ->
                     let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                    let! parseResults = FSharpLanguageService.Checker.ParseFileInProject(document.Name, sourceText.ToString(), options)
                     let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
-                    let! checkResultsAnswer = FSharpLanguageService.Checker.CheckFileInProject(parseResults, document.FilePath, textVersion.GetHashCode(), textSpan.ToString(), options)
+                    let! _parseResults, checkResultsAnswer = FSharpLanguageService.Checker.ParseAndCheckFileInProject(document.FilePath, textVersion.GetHashCode(), textSpan.ToString(), options)
 
-                    let extraColorizationData = match checkResultsAnswer with
-                                                | FSharpCheckFileAnswer.Aborted -> failwith "Compilation isn't complete yet"
-                                                | FSharpCheckFileAnswer.Succeeded(results) -> results.GetExtraColorizationsAlternate()
-                                                |> Seq.map(fun (range, tokenColorKind) -> ClassifiedSpan(CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range), compilerTokenToRoslynToken(tokenColorKind)))
-                                                |> Seq.toList
+                    let extraColorizationData = 
+                        match checkResultsAnswer with
+                        | FSharpCheckFileAnswer.Aborted -> [| |]
+                        | FSharpCheckFileAnswer.Succeeded(results) -> results.GetExtraColorizationsAlternate()
+                        |> Array.map(fun (range, tokenColorKind) -> ClassifiedSpan(CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range), compilerTokenToRoslynToken(tokenColorKind)))
 
                     result.AddRange(extraColorizationData)
                 | None -> ()

@@ -9,7 +9,6 @@ open System.Collections.Generic
 open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
-open System.Linq
 open System.Runtime.CompilerServices
 
 open Microsoft.CodeAnalysis
@@ -35,206 +34,160 @@ open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons
 
-(*
-type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SVsServiceProvider) =
-    inherit CompletionProvider()
+[<Shared>]
+[<ExportSignatureHelpProvider("FSharpSignatureHelpProvider", FSharpCommonConstants.FSharpLanguageName)>]
+type FSharpSignatureHelpProvider [<ImportingConstructor>]  (serviceProvider: SVsServiceProvider) =
 
-    static let completionTriggers = [| '.' |]
-    static let declarationItemsCache = ConditionalWeakTable<string, FSharpDeclarationListItem>()
-    
     let xmlMemberIndexService = serviceProvider.GetService(typeof<IVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
 
-    static member ShouldTriggerCompletionAux(sourceText: SourceText, caretPosition: int, trigger: CompletionTriggerKind, getInfo: (unit -> DocumentId * string * string list)) =
-        // Skip if we are at the start of a document
-        if caretPosition = 0 then
-            false
+    static let oneColAfter (lp: LinePosition) = LinePosition(lp.Line,lp.Character+1)
+    static let oneColBefore (lp: LinePosition) = LinePosition(lp.Line,max 0 (lp.Character-1))
 
-        // Skip if it was triggered by an operation other than insertion
-        elif not (trigger = CompletionTriggerKind.Insertion) then
-            false
+    // Unit-testable core rutine
+    static member internal ProvideMethodsAsyncAux(documentationBuilder: IDocumentationBuilder, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, textVersionHash: int) = async {
+        let! parseResults, checkFileAnswer = FSharpLanguageService.Checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
+        match checkFileAnswer with
+        | FSharpCheckFileAnswer.Aborted -> return None
+        | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> 
 
-        // Skip if we are not on a completion trigger
-        else
-          let c = sourceText.[caretPosition - 1]
-          if not (completionTriggers |> Array.contains c) then
-            false
+        let textLines = sourceText.Lines
+        let caretLinePos = textLines.GetLinePosition(caretPosition)
+        let caretLineColumn = caretLinePos.Character
 
-          // Trigger completion if we are on a valid classification type
-          else
-            let documentId, filePath,  defines = getInfo()
-            let triggerPosition = caretPosition - 1
-            let textLine = sourceText.Lines.GetLineFromPosition(triggerPosition)
-            let classifiedSpanOption =
-                FSharpColorizationService.GetColorizationData(documentId, sourceText, textLine.Span, Some(filePath), defines, CancellationToken.None)
-                |> Seq.tryFind(fun classifiedSpan -> classifiedSpan.TextSpan.Contains(triggerPosition))
+        // Get the parameter locations
+        let paramLocations = parseResults.FindNoteworthyParamInfoLocations(Pos.fromZ caretLinePos.Line caretLineColumn)
 
-            match classifiedSpanOption with
-            | None -> false
-            | Some(classifiedSpan) ->
-                match classifiedSpan.ClassificationType with
-                | ClassificationTypeNames.Comment -> false
-                | ClassificationTypeNames.StringLiteral -> false
-                | ClassificationTypeNames.ExcludedCode -> false
-                | _ -> true // anything else is a valid classification type
-
-*)
-
-
-[<Shared>]
-[<ExportSignatureHelpProvider("FSharpSignatureHelpProvider", FSharpCommonConstants.FSharpLanguageName)>]
-type FSharpSignatureHelpProvider() =
-    let ProvideMethodsAsyncAux(sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, textVersionHash: int) = async {
-        let! parseResults = FSharpLanguageService.Checker.ParseFileInProject(filePath, sourceText.ToString(), options)
-        let! checkFileAnswer = FSharpLanguageService.Checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options)
-        let checkFileResults = 
-            match checkFileAnswer with
-            | FSharpCheckFileAnswer.Aborted -> failwith "Compilation isn't complete yet or was cancelled"
-            | FSharpCheckFileAnswer.Succeeded(results) -> results
-
-        let textLine = sourceText.Lines.GetLineFromPosition(caretPosition)
-        let textLinePos = sourceText.Lines.GetLinePosition(caretPosition)
-        let fcsTextLineNumber = textLinePos.Line + 1 // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
-        let textLineColumn = textLinePos.Character
-
-        let qualifyingNames, partialName = QuickParse.GetPartialLongNameEx(textLine.ToString(), textLineColumn - 1) 
-        let paramLocations = parseResults.FindNoteworthyParamInfoLocations(Range.Pos.fromZ brLine brCol)
         match paramLocations with
+        | None -> return None
         | Some nwpl -> 
-            let names = nwpl.LongId
-            let lidEnd = nwpl.LongIdEndLocation
-            let! methods = checkFileResults.GetMethodsAlternate(lidEnd.Line, lidEnd.Column, "", Some names)
-            if (methods.Methods.Length = 0 || methods.MethodName.EndsWith("> )")) then
+        let names = nwpl.LongId
+        let lidEnd = nwpl.LongIdEndLocation
+
+        // Get the methods
+        let! methodGroup = checkFileResults.GetMethodsAlternate(lidEnd.Line, lidEnd.Column, "", Some names)
+
+        let methods = methodGroup.Methods
+
+        if (methods.Length = 0 || methodGroup.MethodName.EndsWith("> )")) then return None else                    
+
+        let isStaticArgTip =
+            let parenLine, parenCol = Pos.toZ nwpl.OpenParenLocation 
+            assert (parenLine < textLines.Count)
+            let parenLineText = textLines.[parenLine].ToString()
+            parenCol < parenLineText.Length && parenLineText.[parenCol] = '<'
+
+        let filteredMethods =
+            [| for m in methods do 
+                  if (isStaticArgTip && m.StaticParameters.Length > 0) ||
+                      (not isStaticArgTip && m.HasParameters) then   // need to distinguish TP<...>(...)  angle brackets tip from parens tip
+                      yield m |]
+
+        if filteredMethods.Length = 0 then return None else
+
+        let posToLinePosition pos = 
+            let (l,c) = Pos.toZ  pos
+            // FSROSLYNTODO: FCS gives back line counts that are too large. Really, this shouldn't happen
+            //assert (l < textLines.Count)
+            LinePosition(min (textLines.Count-1) l,c)
+
+        // Compute the start position
+        let startPos = nwpl.LongIdStartLocation |> posToLinePosition
+
+        // Compute the end position
+        let endPos = 
+            let last = nwpl.TupleEndLocations.[nwpl.TupleEndLocations.Length-1] |> posToLinePosition
+            (if nwpl.IsThereACloseParen then oneColBefore last else last)  
+
+        // Compute the applicable span between the parentheses
+        let applicableSpan = 
+            textLines.GetTextSpan(LinePositionSpan(startPos, endPos))
+
+        let startOfArgs = nwpl.OpenParenLocation |> posToLinePosition |> oneColAfter 
+        // Compute the argument index by working out where the caret is between the various commas
+        let argumentIndex = 
+            let tupleEnds = 
+                [| yield startOfArgs
+                   for i in 0..nwpl.TupleEndLocations.Length-2 do
+                       yield nwpl.TupleEndLocations.[i] |> posToLinePosition
+                   yield endPos  |]
+            tupleEnds
+            |> Array.pairwise 
+            |> Array.tryFindIndex (fun (lp1,lp2) -> textLines.GetTextSpan(LinePositionSpan(lp1, lp2)).Contains(caretPosition)) 
+            |> (function None -> 0 | Some n -> n)
+         
+        // Compute the overall argument count
+        let argumentCount = 
+            match nwpl.TupleEndLocations.Length with 
+            | 1 when caretLinePos.Character = startOfArgs.Character -> 0  // count "WriteLine(" as zero arguments
+            | n -> n
+
+        // Compute the current argument name, if any
+        let argumentName = 
+            if argumentIndex < nwpl.NamedParamNames.Length then 
+                nwpl.NamedParamNames.[argumentIndex] 
+            else 
                 None
-            else                    
-                // "methods" contains both real methods for this longId, as well as static-parameters in the case of type providers.
-                // They "conflict" for cases of TP(...) (calling a constructor, no static args provided) versus TP<...> (static args), since
-                // both point to the same longId.  However we can look at the character at the 'OpenParen' location and see if it is a '(' or a '<' and then
-                // filter the "methods" list accordingly.
-                let isThisAStaticArgumentsTip =
-                    let parenLine, parenCol = Pos.toZ nwpl.OpenParenLocation 
-                    let textAtOpenParenLocation =
-                        if brSnapshot=null then
-                            // we are unit testing, use the view
-                            let _hr, buf = view.GetBuffer()
-                            let _hr, s = buf.GetLineText(parenLine, parenCol, parenLine, parenCol+1)  
-                            s
-                        else
-                            // we are in the product, use the ITextSnapshot
-                            brSnapshot.GetText(MakeSpan(brSnapshot, parenLine, parenCol, parenLine, parenCol+1))
-                    if textAtOpenParenLocation = "<" then
-                        true
-                    else
-                        false  // note: textAtOpenParenLocation is not necessarily otherwise "(", for example in "sin 42.0" it is "4"
-                    let filteredMethods =
-                        [| for m in methods.Methods do 
-                                if (isThisAStaticArgumentsTip && m.StaticParameters.Length > 0) ||
-                                    (not isThisAStaticArgumentsTip && m.HasParameters) then   // need to distinguish TP<...>(...)  angle brackets tip from parens tip
-                                    yield m |]
-                    if filteredMethods.Length <> 0 then
-                        Some (FSharpMethodListForAMethodTip(documentationBuilder, methods.MethodName, filteredMethods, nwpl, brSnapshot, isThisAStaticArgumentsTip) :> MethodListForAMethodTip)
-                    else
-                        None
 
-(*
-                        // If the name is an operator ending with ">" then it is a mistake 
-                        // we can't tell whether "  >(" is a generic method call or an operator use 
-                        // (it depends on the previous line), so we filter it
-                        //
-                        // Note: this test isn't particularly elegant - encoded operator name would be something like "( ...> )"                        
-                    | _ -> 
-                        None
-
-type internal FSharpMethodListForAMethodTip(documentationBuilder: IDocumentationBuilder, methodsName, methods: FSharpMethodGroupItem[], nwpl: FSharpNoteworthyParamInfoLocations, snapshot: ITextSnapshot, isThisAStaticArgumentsTip: bool) =
-    inherit MethodListForAMethodTip() 
-
-    // Compute the tuple end points
-    let tupleEnds = 
-        let oneColAfter ((l,c): Pos01) = (l,c+1)
-        let oneColBefore ((l,c): Pos01) = (l,c-1)
-        [| yield Pos.toZ nwpl.LongIdStartLocation
-           yield Pos.toZ nwpl.LongIdEndLocation
-           yield oneColAfter (Pos.toZ nwpl.OpenParenLocation)
-           for i in 0..nwpl.TupleEndLocations.Length-2 do
-                yield Pos.toZ nwpl.TupleEndLocations.[i]
-           let last = Pos.toZ nwpl.TupleEndLocations.[nwpl.TupleEndLocations.Length-1]
-           yield if nwpl.IsThereACloseParen then oneColBefore last else last  |]
-
-    let safe i dflt f = if 0 <= i && i < methods.Length then f methods.[i] else dflt
-
-    let parameterRanges =
-        let ss = snapshot
-        [|  // skip 2 because don't want longid start&end, just want open paren and tuple ends
-            for (sl,sc),(el,ec) in tupleEnds |> Seq.skip 2 |> Seq.pairwise do
-                let span = ss.CreateTrackingSpan(MakeSpan(ss,sl,sc,el,ec), SpanTrackingMode.EdgeInclusive)
-                yield span  |]
-
-    let getParameters (m : FSharpMethodGroupItem) =  if isThisAStaticArgumentsTip then m.StaticParameters else m.Parameters
-
-    do assert(methods.Length > 0)
-
-    override x.GetColumnOfStartOfLongId() = nwpl.LongIdStartLocation.Column
-
-    override x.IsThereACloseParen() = nwpl.IsThereACloseParen
-
-    override x.GetNoteworthyParamInfoLocations() = tupleEnds
-
-    override x.GetParameterNames() = nwpl.NamedParamNames
-
-    override x.GetParameterRanges() = parameterRanges
-
-    override x.GetCount() = methods.Length
-
-    override x.GetDescription(methodIndex) = safe methodIndex "" (fun m -> XmlDocumentation.BuildMethodOverloadTipText(documentationBuilder, m.Description))
-            
-    override x.GetType(methodIndex) = safe methodIndex "" (fun m -> m.TypeText)
-
-    override x.GetParameterCount(methodIndex) =  safe methodIndex 0 (fun m -> getParameters(m).Length)
-            
-    override x.GetParameterInfo(methodIndex, parameterIndex, nameOut, displayOut, descriptionOut) =
-        let name,display = safe methodIndex ("","") (fun m -> let p = getParameters(m).[parameterIndex] in p.ParameterName,p.Display )
-           
-        nameOut <- name
-        displayOut <- display
-        descriptionOut <- ""
-
-    override x.GetName(_index) = methodsName
-
-    override x.OpenBracket = if isThisAStaticArgumentsTip then "<" else "("
-    override x.CloseBracket = if isThisAStaticArgumentsTip then ">" else ")"
-
-*)
+        // Prepare the results
         let results = List<SignatureHelpItem>()
 
-        //if triggerInfo.TriggerCharacter = Nullable('(') || triggerInfo.TriggerCharacter = Nullable('<') then 
+        for method in methods do
+            // Create the documentation. Note, do this on the background thread, since doing it in the documentationBuild fails to build the XML index
+            let methodDocs = XmlDocumentation.BuildMethodOverloadTipText(documentationBuilder, method.Description, true)
 
-        for method in methods.Methods do
-            let completionItem =  SignatureHelpItem(isVariadic=false,documentationFactory=(fun ct -> Seq.empty),prefixParts=Seq.empty,separatorParts=Seq.empty,suffixParts=Seq.empty,parameters=Seq.empty,descriptionParts=Seq.empty)
+            let parameters = 
+                let parameters = if isStaticArgTip then method.StaticParameters else method.Parameters
+                [| for p in parameters do 
+                      // FSROSLYNTODO: compute the proper help text for parameters, c.f. AppendParameter in XmlDocumentation.fs
+                      let paramDoc = XmlDocumentation.BuildMethodParamText(documentationBuilder, method.XmlDoc, p.ParameterName) 
+                      let doc = [| TaggedText(TextTags.Text, paramDoc);  |] 
+                      let pm = SignatureHelpParameter(p.ParameterName,isOptional=p.IsOptional,documentationFactory=(fun _ -> doc :> seq<_>),displayParts=[| TaggedText(TextTags.Text,p.Display) |])
+                      yield pm |]
+
+            let doc = [| TaggedText(TextTags.Text, methodDocs + "\n") |] 
+
+            // Prepare the text to display
+            let descriptionParts = [| TaggedText(TextTags.Text, method.TypeText) |]
+            let prefixParts = [| TaggedText(TextTags.Text, methodGroup.MethodName);  TaggedText(TextTags.Punctuation,  (if isStaticArgTip then "<" else "(")) |]
+            let separatorParts = [| TaggedText(TextTags.Punctuation, ", ") |]
+            let suffixParts = [| TaggedText(TextTags.Text, (if isStaticArgTip then ">" else ")")) |]
+            let completionItem =  SignatureHelpItem(isVariadic=method.HasParamArrayArg ,documentationFactory=(fun _ -> doc :> seq<_>),prefixParts=prefixParts,separatorParts=separatorParts,suffixParts=suffixParts,parameters=parameters,descriptionParts=descriptionParts)
+            // FSROSLYNTODO: Do we need a cache like for completion?
             //declarationItemsCache.Remove(completionItem.DisplayText) |> ignore // clear out stale entries if they exist
             //declarationItemsCache.Add(completionItem.DisplayText, declarationItem)
             results.Add(completionItem)
 
 
-        let items = SignatureHelpItems(results,applicableSpan,argumentIndex,argumentCount,argumentName,optionalSelectedItem)
-        return items
+        let items = SignatureHelpItems(results,applicableSpan,argumentIndex,argumentCount,Option.toObj argumentName)
+        return Some items
     }
 
     interface ISignatureHelpProvider with
         member this.IsTriggerCharacter(c) = c ='(' || c = '<' || c = ','
-        member this.IsRetriggerCharacter(c) = c = ')' || c = '>'
+        member this.IsRetriggerCharacter(c) = c = ')' || c = '>'  || c = '='
 
-        member this.GetItemsAsync(document, position, triggerInfo, cancellationToken) = 
+        member this.GetItemsAsync(document, position, _triggerInfo, cancellationToken) = 
             async {
+              try
                 match FSharpLanguageService.GetOptions(document.Project.Id) with
                 | Some(options) ->
+                    // FSROSLYNTODO: Do we need a cache like for completion?
                     //let exists, declarationItem = declarationItemsCache.TryGetValue(completionItem.DisplayText)
                     //if exists then
                         let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                         let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
-                        return! ProvideMethodsAsyncAux(sourceText, position, options, document.FilePath, textVersion.GetHashCode())
+
+                        let! methods = FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(documentationBuilder, sourceText, position, options, document.FilePath, textVersion.GetHashCode())
+                        match methods with 
+                        | None -> return null
+                        | Some m -> return m
                    // else
                    //     return results
                 | None -> 
                     return null // SignatureHelpItems([| |],
+              with ex -> 
+                Assert.Exception(ex)
+                return null
             } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
 

@@ -55,17 +55,18 @@ type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SV
 
         // Skip if we are not on a completion trigger
         else
-          let c = sourceText.[caretPosition - 1]
+          let triggerPosition = caretPosition - 1
+          let c = sourceText.[triggerPosition]
           if not (completionTriggers |> Array.contains c) then
             false
 
           // Trigger completion if we are on a valid classification type
           else
             let documentId, filePath,  defines = getInfo()
-            let triggerPosition = caretPosition - 1
-            let textLine = sourceText.Lines.GetLineFromPosition(triggerPosition)
+            let textLines = sourceText.Lines
+            let triggerLine = textLines.GetLineFromPosition(triggerPosition)
             let classifiedSpanOption =
-                FSharpColorizationService.GetColorizationData(documentId, sourceText, textLine.Span, Some(filePath), defines, CancellationToken.None)
+                FSharpColorizationService.GetColorizationData(documentId, sourceText, triggerLine.Span, Some(filePath), defines, CancellationToken.None)
                 |> Seq.tryFind(fun classifiedSpan -> classifiedSpan.TextSpan.Contains(triggerPosition))
 
             match classifiedSpanOption with
@@ -78,20 +79,19 @@ type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SV
                 | _ -> true // anything else is a valid classification type
 
     static member ProvideCompletionsAsyncAux(sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, textVersionHash: int) = async {
-        let! parseResults = FSharpLanguageService.Checker.ParseFileInProject(filePath, sourceText.ToString(), options)
-        let! checkFileAnswer = FSharpLanguageService.Checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options)
-        let checkFileResults = 
-            match checkFileAnswer with
-            | FSharpCheckFileAnswer.Aborted -> failwith "Compilation isn't complete yet or was cancelled"
-            | FSharpCheckFileAnswer.Succeeded(results) -> results
+        let! parseResults, checkFileAnswer = FSharpLanguageService.Checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
+        match checkFileAnswer with
+        | FSharpCheckFileAnswer.Aborted -> return List()
+        | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> 
 
-        let textLine = sourceText.Lines.GetLineFromPosition(caretPosition)
-        let textLinePos = sourceText.Lines.GetLinePosition(caretPosition)
-        let fcsTextLineNumber = textLinePos.Line + 1 // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
-        let textLineColumn = textLinePos.Character
+        let textLines = sourceText.Lines
+        let caretLine = textLines.GetLineFromPosition(caretPosition)
+        let caretLinePos = textLines.GetLinePosition(caretPosition)
+        let fcsCaretLineNumber = Line.fromZ caretLinePos.Line  // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
+        let caretLineColumn = caretLinePos.Character
 
-        let qualifyingNames, partialName = QuickParse.GetPartialLongNameEx(textLine.ToString(), textLineColumn - 1) 
-        let! declarations = checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsTextLineNumber, textLineColumn, textLine.ToString(), qualifyingNames, partialName)
+        let qualifyingNames, partialName = QuickParse.GetPartialLongNameEx(caretLine.ToString(), caretLineColumn - 1) 
+        let! declarations = checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLineColumn, caretLine.ToString(), qualifyingNames, partialName)
 
         let results = List<CompletionItem>()
 
