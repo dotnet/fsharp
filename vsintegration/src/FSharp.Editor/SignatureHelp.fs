@@ -45,7 +45,7 @@ type FSharpSignatureHelpProvider [<ImportingConstructor>]  (serviceProvider: SVs
     static let oneColBefore (lp: LinePosition) = LinePosition(lp.Line,max 0 (lp.Character-1))
 
     // Unit-testable core rutine
-    static member internal ProvideMethodsAsyncAux(documentationBuilder: IDocumentationBuilder, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, textVersionHash: int) = async {
+    static member internal ProvideMethodsAsyncAux(documentationBuilder: IDocumentationBuilder, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, triggerInfo:SignatureHelpTriggerInfo, filePath: string, textVersionHash: int) = async {
         let! parseResults, checkFileAnswer = FSharpLanguageService.Checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
         match checkFileAnswer with
         | FSharpCheckFileAnswer.Aborted -> return None
@@ -99,18 +99,32 @@ type FSharpSignatureHelpProvider [<ImportingConstructor>]  (serviceProvider: SVs
             let last = nwpl.TupleEndLocations.[nwpl.TupleEndLocations.Length-1] |> posToLinePosition
             (if nwpl.IsThereACloseParen then oneColBefore last else last)  
 
+
         // Compute the applicable span between the parentheses
         let applicableSpan = 
             textLines.GetTextSpan(LinePositionSpan(startPos, endPos))
 
         let startOfArgs = nwpl.OpenParenLocation |> posToLinePosition |> oneColAfter 
+
+        let tupleEnds = 
+            [| yield startOfArgs
+               for i in 0..nwpl.TupleEndLocations.Length-2 do
+                   yield nwpl.TupleEndLocations.[i] |> posToLinePosition
+               yield endPos  |]
+
+        // If we are pressing "(" or "<" or ",", then only pop up the info if this is one of the actual, real detect ( or , positions in the detected promptable call
+        // For example the last "(" in 
+        //    List.map (fun a -> (
+        // should not result in a prompt
+        if triggerInfo.TriggerCharacter.HasValue &&
+           (triggerInfo.TriggerCharacter.Value = '(' || triggerInfo.TriggerCharacter.Value = '<' || triggerInfo.TriggerCharacter.Value = ',') &&
+           triggerInfo.TriggerReason = SignatureHelpTriggerReason.TypeCharCommand &&
+           not (tupleEnds |> Array.exists (fun lp -> lp.Character = caretLineColumn)) then
+            return None 
+        else
+
         // Compute the argument index by working out where the caret is between the various commas
         let argumentIndex = 
-            let tupleEnds = 
-                [| yield startOfArgs
-                   for i in 0..nwpl.TupleEndLocations.Length-2 do
-                       yield nwpl.TupleEndLocations.[i] |> posToLinePosition
-                   yield endPos  |]
             tupleEnds
             |> Array.pairwise 
             |> Array.tryFindIndex (fun (lp1,lp2) -> textLines.GetTextSpan(LinePositionSpan(lp1, lp2)).Contains(caretPosition)) 
@@ -167,7 +181,7 @@ type FSharpSignatureHelpProvider [<ImportingConstructor>]  (serviceProvider: SVs
         member this.IsTriggerCharacter(c) = c ='(' || c = '<' || c = ','
         member this.IsRetriggerCharacter(c) = c = ')' || c = '>'  || c = '='
 
-        member this.GetItemsAsync(document, position, _triggerInfo, cancellationToken) = 
+        member this.GetItemsAsync(document, position, triggerInfo, cancellationToken) = 
             async {
               try
                 match FSharpLanguageService.GetOptions(document.Project.Id) with
@@ -178,7 +192,7 @@ type FSharpSignatureHelpProvider [<ImportingConstructor>]  (serviceProvider: SVs
                         let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                         let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
 
-                        let! methods = FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(documentationBuilder, sourceText, position, options, document.FilePath, textVersion.GetHashCode())
+                        let! methods = FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(documentationBuilder, sourceText, position, options, triggerInfo, document.FilePath, textVersion.GetHashCode())
                         match methods with 
                         | None -> return null
                         | Some m -> return m
