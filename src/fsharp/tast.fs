@@ -3101,13 +3101,13 @@ and
     member x.PropertyName               = x.Deref.PropertyName
 
     /// Indicates whether this value represents a property getter.
-    member x.IsPropertyGetter = 
+    member x.IsPropertyGetterMethod = 
         match x.MemberInfo with
         | None -> false
         | Some (memInfo:ValMemberInfo) -> memInfo.MemberFlags.MemberKind = MemberKind.PropertyGet || memInfo.MemberFlags.MemberKind = MemberKind.PropertyGetSet
 
     /// Indicates whether this value represents a property setter.
-    member x.IsPropertySetter = 
+    member x.IsPropertySetterMethod = 
         match x.MemberInfo with
         | None -> false
         | Some (memInfo:ValMemberInfo) -> memInfo.MemberFlags.MemberKind = MemberKind.PropertySet || memInfo.MemberFlags.MemberKind = MemberKind.PropertyGetSet

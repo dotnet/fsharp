@@ -736,13 +736,13 @@ let UnifyUnitType cenv denv m ty exprOpt =
                 | Some(Expr.App(Expr.Val(vf,_,_),_,_,exprs,_)) when vf.LogicalName = opNameEquals ->
                     match exprs with 
                     | Expr.App(Expr.Val(propRef,_,_),_,_,Expr.Val(vf,_,_) :: _,_) :: _ ->
-                        if propRef.IsPropertyGetter then
+                        if propRef.IsPropertyGetterMethod then
                             let propertyName = propRef.PropertyName
                             let hasCorrespondingSetter =
                                 match propRef.ActualParent with
                                 | Parent entityRef ->
                                     entityRef.MembersOfFSharpTyconSorted
-                                    |> List.exists (fun valRef -> valRef.IsPropertySetter && valRef.PropertyName = propertyName)
+                                    |> List.exists (fun valRef -> valRef.IsPropertySetterMethod && valRef.PropertyName = propertyName)
                                 | _ -> false
 
                             if hasCorrespondingSetter then
@@ -752,7 +752,7 @@ let UnifyUnitType cenv denv m ty exprOpt =
                         else
                             warning (UnitTypeExpectedWithEquality (denv,ty,m))
                     | Expr.Op(TOp.ILCall(_,_,_,_,_,_,_,methodRef,_,_,_),_,Expr.Val(vf,_,_) :: _,_) :: _ when methodRef.Name.StartsWith "get_"->
-                        warning (UnitTypeExpectedWithPossiblePropertySetter (denv,ty,vf.DisplayName,methodRef.Name.Replace("get_",""),m))
+                        warning (UnitTypeExpectedWithPossiblePropertySetter (denv,ty,vf.DisplayName,PrettyNaming.ChopPropertyName(methodRef.Name),m))
                     | Expr.Val(vf,_,_) :: _ -> 
                         warning (UnitTypeExpectedWithPossibleAssignment (denv,ty,vf.IsMutable,vf.DisplayName,m))
                     | _ -> warning (UnitTypeExpectedWithEquality (denv,ty,m))
