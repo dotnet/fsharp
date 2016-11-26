@@ -46,14 +46,14 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
                 let linePositionSpan = LinePositionSpan(LinePosition(error.StartLineAlternate - 1, error.StartColumn),LinePosition(error.EndLineAlternate - 1, error.EndColumn))
                 let textSpan = sourceText.Lines.GetTextSpan(linePositionSpan)
                 // F# compiler report errors at end of file if parsing fails. It should be corrected to match Roslyn boundaries
-                let correctedTextSpan = if textSpan.End < sourceText.Length then textSpan else TextSpan.FromBounds(sourceText.Length - 1, sourceText.Length)
+                let correctedTextSpan = if textSpan.End < sourceText.Length then textSpan else TextSpan.FromBounds(max 0 (sourceText.Length - 1), sourceText.Length)
                 let location = Location.Create(filePath, correctedTextSpan , linePositionSpan)
                 Some(CommonRoslynHelpers.ConvertError(error, location)))
           ).ToImmutableArray()
         return results
       }
 
-    override this.SupportedDiagnostics with get() = CommonRoslynHelpers.SupportedDiagnostics()
+    override this.SupportedDiagnostics = CommonRoslynHelpers.SupportedDiagnostics()
 
     override this.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
         async {
