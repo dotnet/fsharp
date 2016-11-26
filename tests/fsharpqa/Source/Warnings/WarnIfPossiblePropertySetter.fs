@@ -1,5 +1,5 @@
 // #Warnings
-//<Expects status="Warning" span="(12,5)" id="FS0020">If you intended to set a value to a property, then use the '<-' operator e.g. 'x <- expression'</Expects>
+//<Expects status="Warning" span="(12,5)" id="FS0020">If you intended to set a value to a property, then use the '<-' operator e.g. 'x.Property2 <- expression'</Expects>
 
 type MyClass(property1 : int) =
     member val Property1 = property1

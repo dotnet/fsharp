@@ -904,7 +904,7 @@
     <value>The result of this equality expression is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'.</value>
   </data>
   <data name="UnitTypeExpectedWithPossiblePropertySetter" xml:space="preserve">
-    <value>The result of this equality expression is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '&lt;-' operator e.g. '{0} &lt;- expression'.</value>
+    <value>The result of this equality expression is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '&lt;-' operator e.g. '{0}.{1} &lt;- expression'.</value>
   </data>
   <data name="UnitTypeExpectedWithPossibleAssignment" xml:space="preserve">
     <value>The result of this equality expression is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then mark the value 'mutable' and use the '&lt;-' operator e.g. '{0} &lt;- expression'.</value>

@@ -144,7 +144,7 @@ let GetRangeOfError(err:PhasedError) =
       | FunctionValueUnexpected (_,_,m)
       | UnitTypeExpected (_,_,m)
       | UnitTypeExpectedWithEquality (_,_,m)
-      | UnitTypeExpectedWithPossiblePropertySetter (_,_,_,m)
+      | UnitTypeExpectedWithPossiblePropertySetter (_,_,_,_,m)
       | UnitTypeExpectedWithPossibleAssignment (_,_,_,_,m)
       | UseOfAddressOfOperator m 
       | DeprecatedThreadStaticBindingWarning(m) 
@@ -540,7 +540,7 @@ let DeprecatedThreadStaticBindingWarningE() = DeclareResourceString("DeprecatedT
 let FunctionValueUnexpectedE() = DeclareResourceString("FunctionValueUnexpected","%s")
 let UnitTypeExpectedE() = DeclareResourceString("UnitTypeExpected","")
 let UnitTypeExpectedWithEqualityE() = DeclareResourceString("UnitTypeExpectedWithEquality","")
-let UnitTypeExpectedWithPossiblePropertySetterE() = DeclareResourceString("UnitTypeExpectedWithPossiblePropertySetter","%s")
+let UnitTypeExpectedWithPossiblePropertySetterE() = DeclareResourceString("UnitTypeExpectedWithPossiblePropertySetter","%s%s")
 let UnitTypeExpectedWithPossibleAssignmentE() = DeclareResourceString("UnitTypeExpectedWithPossibleAssignment","%s")
 let UnitTypeExpectedWithPossibleAssignmentToMutableE() = DeclareResourceString("UnitTypeExpectedWithPossibleAssignmentToMutable","%s")
 let RecursiveUseCheckedAtRuntimeE() = DeclareResourceString("RecursiveUseCheckedAtRuntime","")
@@ -1213,8 +1213,8 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
       | UnitTypeExpectedWithEquality (_) ->
           let warningText = UnitTypeExpectedWithEqualityE().Format
           os.Append warningText |> ignore
-      | UnitTypeExpectedWithPossiblePropertySetter (_,_,bindingName,_) ->
-          let warningText = UnitTypeExpectedWithPossiblePropertySetterE().Format bindingName
+      | UnitTypeExpectedWithPossiblePropertySetter (_,_,bindingName,propertyName,_) ->
+          let warningText = UnitTypeExpectedWithPossiblePropertySetterE().Format bindingName propertyName
           os.Append warningText |> ignore
       | UnitTypeExpectedWithPossibleAssignment (_,_,isAlreadyMutable,bindingName,_) ->
           let warningText = 

@@ -86,7 +86,7 @@ exception FunctionValueUnexpected of DisplayEnv * TType * range
 exception UnitTypeExpected of DisplayEnv * TType * range
 exception UnitTypeExpectedWithEquality of DisplayEnv * TType * range
 exception UnitTypeExpectedWithPossibleAssignment of DisplayEnv * TType * bool * string * range
-exception UnitTypeExpectedWithPossiblePropertySetter of DisplayEnv * TType * string * range
+exception UnitTypeExpectedWithPossiblePropertySetter of DisplayEnv * TType * string * string * range
 exception UnionPatternsBindDifferentNames of range
 exception VarBoundTwice of Ident
 exception ValueRestriction of DisplayEnv * bool * Val * Typar * range
@@ -737,23 +737,24 @@ let UnifyUnitType cenv denv m ty exprOpt =
                     match exprs with 
                     | Expr.App(Expr.Val(propRef,_,_),_,_,Expr.Val(vf,_,_) :: _,_) :: _ ->
                         if propRef.IsPropertyGetter then
+                            let propertyName = propRef.PropertyName
                             let hasCorrespondingSetter =
                                 match propRef.ActualParent with
                                 | Parent entityRef ->
                                     entityRef.MembersOfFSharpTyconSorted
-                                    |> List.exists (fun valRef -> propRef.PropertyName = valRef.PropertyName && valRef.IsPropertySetter)
+                                    |> List.exists (fun valRef -> valRef.IsPropertySetter && valRef.PropertyName = propertyName)
                                 | _ -> false
 
                             if hasCorrespondingSetter then
-                                warning (UnitTypeExpectedWithPossiblePropertySetter (denv,ty,vf.LogicalName,m))
+                                warning (UnitTypeExpectedWithPossiblePropertySetter (denv,ty,vf.DisplayName,propertyName,m))
                             else
                                 warning (UnitTypeExpectedWithEquality (denv,ty,m))
                         else
                             warning (UnitTypeExpectedWithEquality (denv,ty,m))
-                    | Expr.Op(_,_,Expr.Val(vf,_,_) :: _,_) :: _ -> 
-                        warning (UnitTypeExpectedWithPossiblePropertySetter (denv,ty,vf.LogicalName,m))
+                    | Expr.Op(TOp.ILCall(_,_,_,_,_,_,_,methodRef,_,_,_),_,Expr.Val(vf,_,_) :: _,_) :: _ when methodRef.Name.StartsWith "get_"->
+                        warning (UnitTypeExpectedWithPossiblePropertySetter (denv,ty,vf.DisplayName,methodRef.Name.Replace("get_",""),m))
                     | Expr.Val(vf,_,_) :: _ -> 
-                        warning (UnitTypeExpectedWithPossibleAssignment (denv,ty,vf.IsMutable,vf.LogicalName,m))
+                        warning (UnitTypeExpectedWithPossibleAssignment (denv,ty,vf.IsMutable,vf.DisplayName,m))
                     | _ -> warning (UnitTypeExpectedWithEquality (denv,ty,m))
                 | _ -> warning (UnitTypeExpected (denv,ty,m)) 
         false
