@@ -28,8 +28,7 @@ open Microsoft.VisualStudio.Text.Tagging
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
-type internal FSharpNavigableItem(document: Document, textSpan: TextSpan, displayString: string) =
-    member this.DisplayString = displayString
+type internal FSharpNavigableItem(document: Document, textSpan: TextSpan) =
 
     interface INavigableItem with
         member this.Glyph = Glyph.BasicFile
@@ -52,36 +51,59 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>] ([<ImportMany
                                   options: FSharpProjectOptions,
                                   textVersionHash: int,
                                   cancellationToken: CancellationToken)
-                                  : Async<Option<range>> = async {
+                                  : Async<Option<range>> = 
+      async {
 
         let textLine = sourceText.Lines.GetLineFromPosition(position)
         let textLinePos = sourceText.Lines.GetLinePosition(position)
         let fcsTextLineNumber = textLinePos.Line + 1 // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
         let textLineColumn = textLinePos.Character
-        let classifiedSpanOption =
-            FSharpColorizationService.GetColorizationData(documentKey, sourceText, textLine.Span, Some(filePath), defines, cancellationToken)
-            |> Seq.tryFind(fun classifiedSpan -> classifiedSpan.TextSpan.Contains(position))
+        let tryClassifyAtPosition (position: int) =
+            let classifiedSpanOption =
+                FSharpColorizationService.GetColorizationData(documentKey, sourceText, textLine.Span, Some(filePath), defines, cancellationToken)
+                |> Seq.tryFind(fun classifiedSpan -> classifiedSpan.TextSpan.Contains(position))
 
-        match classifiedSpanOption with
-        | Some(classifiedSpan) ->
-            match classifiedSpan.ClassificationType with
-            | ClassificationTypeNames.Identifier ->
-                match QuickParse.GetCompleteIdentifierIsland true (textLine.ToString()) textLineColumn with
-                | Some(islandIdentifier, islandColumn, isQuoted) ->
-                    let qualifiers = if isQuoted then [islandIdentifier] else islandIdentifier.Split '.' |> Array.toList
-                    let! parseResults = FSharpLanguageService.Checker.ParseFileInProject(filePath, sourceText.ToString(), options)
-                    let! checkFileAnswer = FSharpLanguageService.Checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options)
-                    let checkFileResults = 
-                        match checkFileAnswer with
-                        | FSharpCheckFileAnswer.Aborted -> failwith "Compilation isn't complete yet"
-                        | FSharpCheckFileAnswer.Succeeded(results) -> results
+            match classifiedSpanOption with
+            | Some(classifiedSpan) ->
+                match classifiedSpan.ClassificationType with
+                | ClassificationTypeNames.ClassName
+                | ClassificationTypeNames.DelegateName
+                | ClassificationTypeNames.EnumName
+                | ClassificationTypeNames.InterfaceName
+                | ClassificationTypeNames.ModuleName
+                | ClassificationTypeNames.StructName
+                | ClassificationTypeNames.TypeParameterName
+                | ClassificationTypeNames.Identifier -> 
+                    match QuickParse.GetCompleteIdentifierIsland true (textLine.ToString()) textLineColumn with
+                    | Some (islandIdentifier, islandColumn, isQuoted) -> 
+                        let qualifiers = if isQuoted then [islandIdentifier] else islandIdentifier.Split '.' |> Array.toList
+                        Some (islandColumn, qualifiers)
+                    | None -> None
+                | ClassificationTypeNames.Operator ->
+                    let islandColumn = sourceText.Lines.GetLinePositionSpan(classifiedSpan.TextSpan).End.Character
+                    Some (islandColumn, [""]) 
+                | _ -> None
+            | _ -> None
 
-                    let! declarations = checkFileResults.GetDeclarationLocationAlternate (fcsTextLineNumber, islandColumn, textLine.ToString(), qualifiers, false)
+        // Tolerate being on the right of the identifier
+        let quickParseInfo = 
+            match tryClassifyAtPosition position with 
+            | None when textLineColumn > 0 -> tryClassifyAtPosition (position - 1) 
+            | res -> res
 
-                    match declarations with
-                    | FSharpFindDeclResult.DeclFound(range) -> return Some(range)
-                    | _ -> return None
-                | None -> return None
+        match quickParseInfo with 
+        | Some (islandColumn, qualifiers) -> 
+            let! parseResults = FSharpLanguageService.Checker.ParseFileInProject(filePath, sourceText.ToString(), options)
+            let! checkFileAnswer = FSharpLanguageService.Checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options)
+            let checkFileResults = 
+                match checkFileAnswer with
+                | FSharpCheckFileAnswer.Aborted -> failwith "Compilation isn't complete yet"
+                | FSharpCheckFileAnswer.Succeeded(results) -> results
+
+            let! declarations = checkFileResults.GetDeclarationLocationAlternate (fcsTextLineNumber, islandColumn, textLine.ToString(), qualifiers, false)
+
+            match declarations with
+            | FSharpFindDeclResult.DeclFound(range) -> return Some(range)
             | _ -> return None
         | None -> return None
     }
@@ -110,8 +132,8 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>] ([<ImportMany
                         let refDocument = document.Project.Solution.GetDocument(refDocumentId)
                         let! refSourceText = refDocument.GetTextAsync(cancellationToken) |> Async.AwaitTask
                         let refTextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(refSourceText, range)
-                        let refDisplayString = refSourceText.GetSubText(refTextSpan).ToString()
-                        results.Add(FSharpNavigableItem(refDocument, refTextSpan, refDisplayString))
+                        results.Add(FSharpNavigableItem(refDocument, refTextSpan))
+
                 | None -> ()
             | None -> ()
             return results.AsEnumerable()
@@ -127,13 +149,22 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>] ([<ImportMany
             // REVIEW: document this use of a blocking wait on the cancellation token, explaining why it is ok
             definitionTask.Wait(cancellationToken)
             
-            if definitionTask.Status = TaskStatus.RanToCompletion then
-                if definitionTask.Result.Any() then
-                    let navigableItem = definitionTask.Result.First() :?> FSharpNavigableItem // F# API provides only one INavigableItem
-                    for presenter in presenters do
-                        presenter.DisplayResult(navigableItem.DisplayString, definitionTask.Result)
-                    true
-                else
-                    false
+            if definitionTask.Status = TaskStatus.RanToCompletion && definitionTask.Result.Any() then
+                let navigableItem = definitionTask.Result.First() // F# API provides only one INavigableItem
+                let workspace = document.Project.Solution.Workspace
+                let navigationService = workspace.Services.GetService<IDocumentNavigationService>()
+                ignore presenters
+                navigationService.TryNavigateToSpan(workspace, navigableItem.Document.Id, navigableItem.SourceSpan)
+
+                // FSROSLYNTODO: potentially display multiple results here
+                // If GotoDef returns one result then it should try to jump to a discovered location. If it returns multiple results then it should use 
+                // presenters to render items so user can choose whatever he needs. Given that per comment F# API always returns only one item then we 
+                // should always navigate to definition and get rid of presenters.
+                //
+                //let refDisplayString = refSourceText.GetSubText(refTextSpan).ToString()
+                //for presenter in presenters do
+                //    presenter.DisplayResult(navigableItem.DisplayString, definitionTask.Result)
+                //true
+
             else
                 false
