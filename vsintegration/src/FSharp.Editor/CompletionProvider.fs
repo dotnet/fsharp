@@ -19,6 +19,7 @@ open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Editor.Implementation.Debugging
 open Microsoft.CodeAnalysis.Editor.Shared.Utilities
 open Microsoft.CodeAnalysis.Formatting
+open Microsoft.CodeAnalysis.Host
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Options
 open Microsoft.CodeAnalysis.Text
@@ -166,3 +167,24 @@ type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SV
             else
                 return CompletionDescription.Empty
         } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
+
+type internal FSharpCompletionService(workspace: Workspace, serviceProvider: SVsServiceProvider) =
+    inherit CompletionServiceWithProviders(workspace)
+
+    let builtInProviders = ImmutableArray.Create<CompletionProvider>(FSharpCompletionProvider(workspace, serviceProvider))
+    let completionRules = CompletionRules.Default.WithDismissIfEmpty(true).WithDismissIfLastCharacterDeleted(true).WithDefaultEnterKeyRule(EnterKeyRule.Never)
+
+    override this.Language = FSharpCommonConstants.FSharpLanguageName
+    override this.GetBuiltInProviders() = builtInProviders
+    override this.GetRules() = completionRules
+
+
+
+[<Shared>]
+[<ExportLanguageServiceFactory(typeof<CompletionService>, FSharpCommonConstants.FSharpLanguageName)>]
+type internal FSharpCompletionServiceFactory [<ImportingConstructor>] (serviceProvider: SVsServiceProvider) =
+    interface ILanguageServiceFactory with
+        member this.CreateLanguageService(hostLanguageServices: HostLanguageServices) : ILanguageService =
+            upcast new FSharpCompletionService(hostLanguageServices.WorkspaceServices.Workspace, serviceProvider)
+
+

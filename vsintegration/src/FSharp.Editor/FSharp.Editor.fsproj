@@ -59,8 +59,8 @@
     <Compile Include="CompletionService.fs">
       <Link>Completion\CompletionService.fs</Link>
     </Compile>
-    <Compile Include="CompletionServiceFactory.fs">
-      <Link>Completion\CompletionServiceFactory.fs</Link>
+    <Compile Include="SignatureHelp.fs">
+      <Link>Completion\SignatureHelp.fs</Link>
     </Compile>
     <Compile Include="GoToDefinitionService.fs">
       <Link>GoToDefinition\GoToDefinitionService.fs</Link>
