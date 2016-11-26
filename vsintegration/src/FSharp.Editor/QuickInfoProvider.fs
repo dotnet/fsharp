@@ -68,7 +68,9 @@ type internal FSharpQuickInfoProvider [<System.ComponentModel.Composition.Import
           
             let textLine = sourceText.Lines.GetLineFromPosition(position)
             let textLineNumber = textLine.LineNumber + 1 // Roslyn line numbers are zero-based
-            let qualifyingNames, partialName = QuickParse.GetPartialLongNameEx(textLine.ToString(), position - textLine.Start - 1)
+            let textLinePos = sourceText.Lines.GetLinePosition(position)
+            let textLineColumn = textLinePos.Character
+            let qualifyingNames, partialName = QuickParse.GetPartialLongNameEx(textLine.ToString(), textLineColumn - 1)
             return! checkFileResults.GetToolTipTextAlternate(textLineNumber, position, textLine.ToString(), qualifyingNames, tagOfToken(token.IDENT(partialName)))
         }
     
