@@ -1,5 +1,5 @@
 // #Warnings
-//<Expects status="Error" id="FS0001">This expression was expected to have type</Expects>
+//<Expects status="Error" span="(7,24)" id="FS0988">Main module of program is empty: nothing will happen when it is run</Expects>
 
 namespace MyNamespace1
 
