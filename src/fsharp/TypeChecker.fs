@@ -735,25 +735,16 @@ let UnifyUnitType cenv denv m ty exprOpt =
                 match exprOpt with 
                 | Some(Expr.App(Expr.Val(vf,_,_),_,_,exprs,_)) when vf.LogicalName = opNameEquals ->
                     match exprs with 
-                    | Expr.App(Expr.Val(prop,_,_),_,_,Expr.Val(vf,_,_) :: _,_) :: _ ->
-                        let isProperty = 
-                            match prop.MemberInfo with 
-                            | None -> false 
-                            | Some memInfo -> memInfo.MemberFlags.MemberKind = MemberKind.PropertyGet
-                        
-                        if isProperty then
-                            let hasSetter =
-                                match prop.ActualParent with
+                    | Expr.App(Expr.Val(propRef,_,_),_,_,Expr.Val(vf,_,_) :: _,_) :: _ ->
+                        if propRef.IsPropertyGetter then
+                            let hasCorrespondingSetter =
+                                match propRef.ActualParent with
                                 | Parent entityRef ->
                                     entityRef.MembersOfFSharpTyconSorted
-                                    |> List.filter (fun valRef -> valRef.DisplayName = prop.DisplayName)
-                                    |> List.exists (fun valRef ->
-                                        match valRef.MemberInfo with 
-                                        | None -> false 
-                                        | Some memInfo -> memInfo.MemberFlags.MemberKind = MemberKind.PropertySet)
+                                    |> List.exists (fun valRef -> propRef.PropertyName = valRef.PropertyName && valRef.IsPropertySetter)
                                 | _ -> false
 
-                            if hasSetter then
+                            if hasCorrespondingSetter then
                                 warning (UnitTypeExpectedWithPossiblePropertySetter (denv,ty,vf.LogicalName,m))
                             else
                                 warning (UnitTypeExpectedWithEquality (denv,ty,m))
