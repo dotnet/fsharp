@@ -78,7 +78,10 @@ type internal FSharpColorizationService() =
         | FSharpTokenColorKind.PreprocessorKeyword -> ClassificationTypeNames.PreprocessorKeyword 
         | FSharpTokenColorKind.Operator -> ClassificationTypeNames.Operator
         | FSharpTokenColorKind.TypeName  -> ClassificationTypeNames.ClassName
-        | FSharpTokenColorKind.Default | _ -> ClassificationTypeNames.Text
+        | FSharpTokenColorKind.Pattern -> ClassificationTypeNames.EnumName
+        | FSharpTokenColorKind.Module -> ClassificationTypeNames.ModuleName
+        | FSharpTokenColorKind.Default 
+        | _ -> ClassificationTypeNames.Text
     
     static let scanSourceLine(sourceTokenizer: FSharpSourceTokenizer, textLine: TextLine, lineContents: string, lexState: FSharpTokenizerLexState) : SourceLineData =
     
