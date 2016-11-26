@@ -732,30 +732,41 @@ let UnifyUnitType cenv denv m ty exprOpt =
             if not (typeEquiv cenv.g cenv.g.bool_ty ty) then 
                 warning (UnitTypeExpected (denv,ty,m)) 
             else
-                match exprOpt with 
-                | Some(Expr.App(Expr.Val(vf,_,_),_,_,exprs,_)) when vf.LogicalName = opNameEquals ->
-                    match exprs with 
-                    | Expr.App(Expr.Val(propRef,_,_),_,_,Expr.Val(vf,_,_) :: _,_) :: _ ->
-                        if propRef.IsPropertyGetterMethod then
-                            let propertyName = propRef.PropertyName
-                            let hasCorrespondingSetter =
-                                match propRef.ActualParent with
-                                | Parent entityRef ->
-                                    entityRef.MembersOfFSharpTyconSorted
-                                    |> List.exists (fun valRef -> valRef.IsPropertySetterMethod && valRef.PropertyName = propertyName)
-                                | _ -> false
+                let checkExpr exprOpt =
+                    match exprOpt with 
+                    | Expr.App(Expr.Val(vf,_,_),_,_,exprs,_) when vf.LogicalName = opNameEquals ->
+                        match exprs with 
+                        | Expr.App(Expr.Val(propRef,_,_),_,_,Expr.Val(vf,_,_) :: _,_) :: _ ->
+                            if propRef.IsPropertyGetterMethod then
+                                let propertyName = propRef.PropertyName
+                                let hasCorrespondingSetter =
+                                    match propRef.ActualParent with
+                                    | Parent entityRef ->
+                                        entityRef.MembersOfFSharpTyconSorted
+                                        |> List.exists (fun valRef -> valRef.IsPropertySetterMethod && valRef.PropertyName = propertyName)
+                                    | _ -> false
 
-                            if hasCorrespondingSetter then
-                                warning (UnitTypeExpectedWithPossiblePropertySetter (denv,ty,vf.DisplayName,propertyName,m))
+                                if hasCorrespondingSetter then
+                                    warning (UnitTypeExpectedWithPossiblePropertySetter (denv,ty,vf.DisplayName,propertyName,exprOpt.Range))
+                                else
+                                    warning (UnitTypeExpectedWithEquality (denv,ty,exprOpt.Range))
                             else
-                                warning (UnitTypeExpectedWithEquality (denv,ty,m))
-                        else
-                            warning (UnitTypeExpectedWithEquality (denv,ty,m))
-                    | Expr.Op(TOp.ILCall(_,_,_,_,_,_,_,methodRef,_,_,_),_,Expr.Val(vf,_,_) :: _,_) :: _ when methodRef.Name.StartsWith "get_"->
-                        warning (UnitTypeExpectedWithPossiblePropertySetter (denv,ty,vf.DisplayName,PrettyNaming.ChopPropertyName(methodRef.Name),m))
-                    | Expr.Val(vf,_,_) :: _ -> 
-                        warning (UnitTypeExpectedWithPossibleAssignment (denv,ty,vf.IsMutable,vf.DisplayName,m))
-                    | _ -> warning (UnitTypeExpectedWithEquality (denv,ty,m))
+                                warning (UnitTypeExpectedWithEquality (denv,ty,exprOpt.Range))
+                        | Expr.Op(TOp.ILCall(_,_,_,_,_,_,_,methodRef,_,_,_),_,Expr.Val(vf,_,_) :: _,_) :: _ when methodRef.Name.StartsWith "get_"->
+                            warning (UnitTypeExpectedWithPossiblePropertySetter (denv,ty,vf.DisplayName,PrettyNaming.ChopPropertyName(methodRef.Name),exprOpt.Range))
+                        | Expr.Val(vf,_,_) :: _ -> 
+                            warning (UnitTypeExpectedWithPossibleAssignment (denv,ty,vf.IsMutable,vf.DisplayName,exprOpt.Range))
+                        | _ -> warning (UnitTypeExpectedWithEquality (denv,ty,exprOpt.Range))
+                    | _ -> warning (UnitTypeExpected (denv,ty,exprOpt.Range)) 
+
+                match exprOpt with 
+                | Some(Expr.Sequential(_,inner,_,_,_)) ->
+                    let rec extractNext expr =
+                        match expr with
+                        | Expr.Sequential(_,inner,_,_,_) -> extractNext inner
+                        | _ -> checkExpr expr
+                    extractNext inner
+                | Some expr -> checkExpr expr
                 | _ -> warning (UnitTypeExpected (denv,ty,m)) 
         false
     else
