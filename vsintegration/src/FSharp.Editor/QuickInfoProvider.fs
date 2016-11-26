@@ -51,7 +51,8 @@ type internal FSharpDeferredQuickInfoContent(content: string) =
 
 [<Shared>]
 [<ExportQuickInfoProvider(PredefinedQuickInfoProviderNames.Semantic, FSharpCommonConstants.FSharpLanguageName)>]
-type internal FSharpQuickInfoProvider [<ImportingConstructor>] (serviceProvider: SVsServiceProvider) =
+type internal FSharpQuickInfoProvider [<System.ComponentModel.Composition.ImportingConstructor>] 
+    ([<System.ComponentModel.Composition.Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider) =
 
     let xmlMemberIndexService = serviceProvider.GetService(typeof<SVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
@@ -64,7 +65,7 @@ type internal FSharpQuickInfoProvider [<ImportingConstructor>] (serviceProvider:
                 match checkFileAnswer with
                 | FSharpCheckFileAnswer.Aborted -> failwith "Compilation isn't complete yet"
                 | FSharpCheckFileAnswer.Succeeded(results) -> results
-            
+          
             let textLine = sourceText.Lines.GetLineFromPosition(position)
             let textLineNumber = textLine.LineNumber + 1 // Roslyn line numbers are zero-based
             let qualifyingNames, partialName = QuickParse.GetPartialLongNameEx(textLine.ToString(), position - textLine.Start - 1)
