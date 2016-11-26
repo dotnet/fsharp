@@ -721,9 +721,48 @@ let UnifyFunctionType extraInfo cenv denv mFunExpr ty =
         | Some argm -> error (NotAFunction(denv,ty,mFunExpr,argm))
         | None ->    error (FunctionExpected(denv,ty,mFunExpr))
 
+let ReportImplicitlyIgnoredBoolExpression denv m ty expr =
+    let checkExpr m exprOpt =
+        match exprOpt with 
+        | Expr.App(Expr.Val(vf,_,_),_,_,exprs,_) when vf.LogicalName = opNameEquals ->
+            match exprs with 
+            | Expr.App(Expr.Val(propRef,_,_),_,_,Expr.Val(vf,_,_) :: _,_) :: _ ->
+                if propRef.IsPropertyGetterMethod then
+                    let propertyName = propRef.PropertyName
+                    let hasCorrespondingSetter =
+                        match propRef.ActualParent with
+                        | Parent entityRef ->
+                            entityRef.MembersOfFSharpTyconSorted
+                            |> List.exists (fun valRef -> valRef.IsPropertySetterMethod && valRef.PropertyName = propertyName)
+                        | _ -> false
+
+                    if hasCorrespondingSetter then
+                        UnitTypeExpectedWithPossiblePropertySetter (denv,ty,vf.DisplayName,propertyName,m)
+                    else
+                        UnitTypeExpectedWithEquality (denv,ty,m)
+                else
+                    UnitTypeExpectedWithEquality (denv,ty,m)
+            | Expr.Op(TOp.ILCall(_,_,_,_,_,_,_,methodRef,_,_,_),_,Expr.Val(vf,_,_) :: _,_) :: _ when methodRef.Name.StartsWith "get_"->
+                UnitTypeExpectedWithPossiblePropertySetter (denv,ty,vf.DisplayName,PrettyNaming.ChopPropertyName(methodRef.Name),m)
+            | Expr.Val(vf,_,_) :: _ -> 
+                UnitTypeExpectedWithPossibleAssignment (denv,ty,vf.IsMutable,vf.DisplayName,m)
+            | _ -> UnitTypeExpectedWithEquality (denv,ty,m)
+        | _ -> UnitTypeExpected (denv,ty,m)
+
+    match expr with 
+    | Some(Expr.Sequential(_,inner,_,_,_)) ->
+        let rec extractNext expr =
+            match expr with
+            | Expr.Sequential(_,inner,_,_,_) -> extractNext inner
+            | _ -> checkExpr expr.Range expr
+        extractNext inner
+    | Some expr -> checkExpr m expr
+    | _ -> UnitTypeExpected (denv,ty,m)
 
 let UnifyUnitType cenv denv m ty exprOpt =
-    if not (AddCxTypeEqualsTypeUndoIfFailed denv cenv.css m ty cenv.g.unit_ty) then 
+    if AddCxTypeEqualsTypeUndoIfFailed denv cenv.css m ty cenv.g.unit_ty then 
+        true
+    else
         let domainTy = NewInferenceType ()
         let resultTy = NewInferenceType ()
         if AddCxTypeEqualsTypeUndoIfFailed denv cenv.css m ty (domainTy --> resultTy) then 
@@ -732,45 +771,8 @@ let UnifyUnitType cenv denv m ty exprOpt =
             if not (typeEquiv cenv.g cenv.g.bool_ty ty) then 
                 warning (UnitTypeExpected (denv,ty,m)) 
             else
-                let checkExpr exprOpt =
-                    match exprOpt with 
-                    | Expr.App(Expr.Val(vf,_,_),_,_,exprs,_) when vf.LogicalName = opNameEquals ->
-                        match exprs with 
-                        | Expr.App(Expr.Val(propRef,_,_),_,_,Expr.Val(vf,_,_) :: _,_) :: _ ->
-                            if propRef.IsPropertyGetterMethod then
-                                let propertyName = propRef.PropertyName
-                                let hasCorrespondingSetter =
-                                    match propRef.ActualParent with
-                                    | Parent entityRef ->
-                                        entityRef.MembersOfFSharpTyconSorted
-                                        |> List.exists (fun valRef -> valRef.IsPropertySetterMethod && valRef.PropertyName = propertyName)
-                                    | _ -> false
-
-                                if hasCorrespondingSetter then
-                                    warning (UnitTypeExpectedWithPossiblePropertySetter (denv,ty,vf.DisplayName,propertyName,exprOpt.Range))
-                                else
-                                    warning (UnitTypeExpectedWithEquality (denv,ty,exprOpt.Range))
-                            else
-                                warning (UnitTypeExpectedWithEquality (denv,ty,exprOpt.Range))
-                        | Expr.Op(TOp.ILCall(_,_,_,_,_,_,_,methodRef,_,_,_),_,Expr.Val(vf,_,_) :: _,_) :: _ when methodRef.Name.StartsWith "get_"->
-                            warning (UnitTypeExpectedWithPossiblePropertySetter (denv,ty,vf.DisplayName,PrettyNaming.ChopPropertyName(methodRef.Name),exprOpt.Range))
-                        | Expr.Val(vf,_,_) :: _ -> 
-                            warning (UnitTypeExpectedWithPossibleAssignment (denv,ty,vf.IsMutable,vf.DisplayName,exprOpt.Range))
-                        | _ -> warning (UnitTypeExpectedWithEquality (denv,ty,exprOpt.Range))
-                    | _ -> warning (UnitTypeExpected (denv,ty,exprOpt.Range)) 
-
-                match exprOpt with 
-                | Some(Expr.Sequential(_,inner,_,_,_)) ->
-                    let rec extractNext expr =
-                        match expr with
-                        | Expr.Sequential(_,inner,_,_,_) -> extractNext inner
-                        | _ -> checkExpr expr
-                    extractNext inner
-                | Some expr -> checkExpr expr
-                | _ -> warning (UnitTypeExpected (denv,ty,m)) 
+                warning (ReportImplicitlyIgnoredBoolExpression denv m ty exprOpt)
         false
-    else
-        true
 
 //-------------------------------------------------------------------------
 // Attribute target flags
