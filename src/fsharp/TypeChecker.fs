@@ -3317,7 +3317,7 @@ let mkSeqCollect cenv env m enumElemTy genTy lam enumExpr =
 let mkSeqUsing cenv (env: TcEnv) m resourceTy genTy resourceExpr lam =
     AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace cenv.g.system_IDisposable_typ resourceTy
     let genResultTy = NewInferenceType ()
-    UnifyTypes cenv  env m genTy (mkSeqTy cenv.g genResultTy)
+    UnifyTypes cenv env m genTy (mkSeqTy cenv.g genResultTy)
     mkCallSeqUsing cenv.g m resourceTy genResultTy resourceExpr lam 
 
 let mkSeqDelay cenv env m genTy lam =
@@ -5426,8 +5426,6 @@ and TcStmt cenv env tpenv synExpr =
     else
         mkCompGenSequential m expr (mkUnit cenv.g m),tpenv
 
-
-
 /// During checking of expressions of the form (x(y)).z(w1,w2) 
 /// keep a stack of things on the right. This lets us recognize 
 /// method applications and other item-based syntax. 
@@ -5495,7 +5493,6 @@ and TcExprUndelayedNoType cenv env tpenv expr : Expr * TType * _ =
     expr',exprty,tpenv
 
 and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
-
     match expr with 
     | SynExpr.Paren (expr2,_,_,mWholeExprIncludingParentheses) -> 
         // We invoke CallExprHasTypeSink for every construct which is atomic in the syntax, i.e. where a '.' immediately following the 
@@ -5696,7 +5693,6 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
     | SynExpr.ArrayOrListOfSeqExpr (isArray,comp,m)  ->
         CallExprHasTypeSink cenv.tcSink (m,env.NameEnv,overallTy, env.DisplayEnv,env.eAccessRights)
 
-        
         match comp with 
         | SynExpr.CompExpr(_,_,(SimpleSemicolonSequence true elems as body),_) -> 
             match body with 
@@ -5792,7 +5788,7 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
         let e1',tpenv = TcExprThatCantBeCtorBody cenv cenv.g.bool_ty env tpenv e1
         let e2',tpenv =
             if not isRecovery && Option.isNone e3opt then
-                let env = { env with eContextInfo = ContextInfo.OmittedElseBranch } 
+                let env = { env with eContextInfo = ContextInfo.OmittedElseBranch e2.Range}
                 UnifyTypes cenv env m cenv.g.unit_ty overallTy
                 TcExprThatCanBeCtorBody cenv overallTy env tpenv e2
             else
@@ -5801,8 +5797,8 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
             match e3opt with 
             | None ->
                 mkUnit cenv.g mIfToThen,SuppressSequencePointAtTarget, tpenv // the fake 'unit' value gets exactly the same range as spIfToThen
-            | Some e3 -> 
-                let env = { env with eContextInfo = ContextInfo.ElseBranch } 
+            | Some e3 ->
+                let env = { env with eContextInfo = ContextInfo.ElseBranchResult e3.Range }
                 let e3',tpenv = TcExprThatCanBeCtorBody cenv overallTy env tpenv e3 
                 e3',SequencePointAtTarget,tpenv
         primMkCond spIfToThen SequencePointAtTarget sp2 m overallTy e1' e2' e3', tpenv
