@@ -28,7 +28,9 @@ open Microsoft.CodeAnalysis.Text
 
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.Text
+open Microsoft.VisualStudio.Text.Classification
 open Microsoft.VisualStudio.Text.Tagging
+open Microsoft.VisualStudio.Text.Formatting
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 
@@ -36,27 +38,33 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open System.Windows.Documents
 
 // FSROSLYNTODO: with the merge of the below PR, the QuickInfo API should be changed
 // to allow for a more flexible syntax for defining the content of the tooltip.
 // The below interface should be discarded then or updated accourdingly.
 // https://github.com/dotnet/roslyn/pull/13623
-type internal FSharpDeferredQuickInfoContent(content: string) =
+type internal FSharpDeferredQuickInfoContent(content: string, textProperties: TextFormattingRunProperties) =
     interface IDeferredQuickInfoContent with
         override this.Create() : FrameworkElement =
-            let label = Label(Content = content, Foreground = SolidColorBrush(Colors.Black))
-            label.SetResourceReference(TextBlock.BackgroundProperty, VSColors.ToolTipBrushKey)
-            label.SetResourceReference(TextBlock.ForegroundProperty, VSColors.ToolTipTextBrushKey)
+            let label = Label(Content = content)
+            label.SetValue(TextElement.BackgroundProperty, textProperties.BackgroundBrush)
+            label.SetValue(TextElement.ForegroundProperty, textProperties.ForegroundBrush)
+            label.SetValue(TextElement.FontFamilyProperty, textProperties.Typeface.FontFamily)
+            label.SetValue(TextElement.FontSizeProperty, textProperties.FontRenderingEmSize)
+            label.SetValue(TextElement.FontStyleProperty, if textProperties.Italic then FontStyles.Italic else FontStyles.Normal)
+            label.SetValue(TextElement.FontWeightProperty, if textProperties.Bold then FontWeights.Bold else FontWeights.Normal)
             upcast label
 
 [<Shared>]
 [<ExportQuickInfoProvider(PredefinedQuickInfoProviderNames.Semantic, FSharpCommonConstants.FSharpLanguageName)>]
 type internal FSharpQuickInfoProvider [<System.ComponentModel.Composition.ImportingConstructor>] 
-    ([<System.ComponentModel.Composition.Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider) =
+    ([<System.ComponentModel.Composition.Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider,
+     classificationFormatMapService: IClassificationFormatMapService) =
 
     let xmlMemberIndexService = serviceProvider.GetService(typeof<SVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
-
+    
     static member ProvideQuickInfo(documentId: DocumentId, sourceText: SourceText, filePath: string, position: int, options: FSharpProjectOptions, textVersionHash: int, cancellationToken: CancellationToken) =
         async {
             let! _parseResults, checkResultsAnswer = FSharpChecker.Instance.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
@@ -105,7 +113,8 @@ type internal FSharpQuickInfoProvider [<System.ComponentModel.Composition.Import
                         match quickInfoResult with
                         | Some(toolTipElement, textSpan) ->
                             let dataTipText = XmlDocumentation.BuildDataTipText(documentationBuilder, toolTipElement)
-                            return QuickInfoItem(textSpan, FSharpDeferredQuickInfoContent(dataTipText))
+                            let textProperties = classificationFormatMapService.GetClassificationFormatMap("tooltip").DefaultTextProperties
+                            return QuickInfoItem(textSpan, FSharpDeferredQuickInfoContent(dataTipText, textProperties))
                         | None -> return null
                     | None -> return null
                 | None -> return null
