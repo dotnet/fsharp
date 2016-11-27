@@ -1707,30 +1707,76 @@ module TypecheckTests =
         for n in negs do singleNegTest cfg n
 
     [<Test>]
-    let ``sigs neg group1`` () = negGroup ["neg97"; "neg96"; "neg95"; "neg94"; "neg93"; "neg92"; "neg91" ]
+    let ``sigs neg group1`` () = negGroup ["neg97"]
 
     [<Test>]
-    let ``sigs neg group2`` () = negGroup ["neg90"; "neg89"; "neg88"; "neg35" ]
+    let ``sigs neg group1a`` () = negGroup ["neg96"; ]
 
     [<Test>]
-    let ``sigs neg group3`` () = negGroup ["neg87"; "neg86"; "neg85"; "neg84"; "neg83"; "neg82"; "neg81"; "neg80"; "neg79"; "neg78"; "neg77"; "neg76"; "neg75"; ]
+    let ``sigs neg group1b`` () = negGroup ["neg93"; ]
 
     [<Test>]
-    let ``sigs neg group4`` () = negGroup ["neg74"; "neg73"; "neg72"; "neg71"; "neg70"; "neg69"; "neg68"; "neg67"; "neg66"; "neg65"; "neg64"; "neg61"; "neg63"; ]
+    let ``sigs neg group1c`` () = negGroup [ "neg91" ]
 
     [<Test>]
-    let ``sigs neg group5`` () = negGroup ["neg62"; "neg20"; "neg24"; "neg32"; "neg37"; "neg37_a"; "neg60"; "neg59"; "neg58"; "neg57"; "neg56"; "neg56_a"; "neg56_b" ]
+    let ``sigs neg group1d`` () = negGroup ["neg92" ]
+
     [<Test>]
-    let ``sigs neg group6`` () = negGroup ["neg55"; "neg54"; "neg53"; "neg52"; "neg51"; "neg50"; "neg49"; "neg48"; "neg47"; "neg46"; "neg10"; "neg10_a"; "neg45"; ]
+    let ``sigs neg group1e`` () = negGroup ["neg94"; ]
+
+    [<Test>]
+    let ``sigs neg group1f`` () = negGroup ["neg95"; ]
+
+    [<Test>]
+    let ``sigs neg group2`` () = negGroup ["neg90"; "neg89"; ]
+
+    [<Test>]
+    let ``sigs neg group2a`` () = negGroup ["neg88"; "neg35" ]
+
+    [<Test>]
+    let ``sigs neg group3`` () = negGroup ["neg87"; "neg86"; "neg85"; "neg84"; "neg83"; "neg82"; ]
+
+    [<Test>]
+    let ``sigs neg group3a`` () = negGroup [ "neg81"; "neg80"; "neg79"; "neg78"; "neg77"; "neg76"; "neg75"; ]
+
+    [<Test>]
+    let ``sigs neg group4`` () = negGroup ["neg74"; "neg73"; "neg72"; "neg71"; "neg70"; "neg68"; ]
+
+    [<Test>]
+    let ``sigs neg group4a`` () = negGroup ["neg69"; ]
+
+    [<Test>]
+    let ``sigs neg group4b`` () = negGroup [ "neg64"; "neg61"; "neg63"; ]
+
+    [<Test>]
+    let ``sigs neg group4c`` () = negGroup [ "neg67"; "neg66"; "neg65" ]
+
+    [<Test>]
+    let ``sigs neg group5`` () = negGroup ["neg60"; "neg59"; "neg58"; "neg57"; "neg56"; "neg56_a"; "neg56_b" ]
+
+    [<Test>]
+    let ``sigs neg group5a`` () = negGroup ["neg62"; "neg20"; "neg24"; "neg32"; "neg37"; "neg37_a"; ]
+
+    [<Test>]
+    let ``sigs neg group6`` () = negGroup ["neg49"; "neg48"; "neg47"; "neg46"; "neg10"; "neg10_a"; "neg45"; ]
+
+    [<Test>]
+    let ``sigs neg group6a`` () = negGroup ["neg55"; "neg54"; "neg53"; "neg52"; "neg51"; "neg50"; ]
 
     [<Test>]
     let ``sigs neg group7`` () = negGroup ["neg44"; "neg43"; "neg38"; "neg39"; "neg40"; "neg41"; "neg42"]
 
     [<Test>]
-    let ``sigs neg group8`` () = negGroup ["neg34"; "neg33"; "neg30"; "neg31"; "neg29"; "neg28"; "neg07"; "neg_byref_20";  ]
+    let ``sigs neg group8`` () = negGroup ["neg34"; "neg33"; "neg30"; "neg31" ]
 
     [<Test>]
-    let ``sigs neg group9`` () = negGroup [ "neg_byref_1"; "neg_byref_2"; "neg_byref_3"; "neg_byref_4"; "neg_byref_5"; "neg_byref_6"; "neg_byref_7"; "neg_byref_8";  ]
+    let ``sigs neg group8a`` () = negGroup ["neg29"; "neg28"; "neg07"; "neg_byref_20";  ]
+
+    [<Test>]
+    let ``sigs neg group9`` () = negGroup [ "neg_byref_1"; "neg_byref_2"; "neg_byref_3"; "neg_byref_4"; ]
+
+    [<Test>]
+    let ``sigs neg group9a`` () = negGroup [ "neg_byref_5"; "neg_byref_6"; "neg_byref_7"; "neg_byref_8";  ]
 
     [<Test>]
     let ``sigs neg group10`` () = negGroup ["neg_byref_10"; "neg_byref_11"; "neg_byref_12"; "neg_byref_13"; "neg_byref_14"; "neg_byref_15"; "neg_byref_16";   ]
@@ -1739,10 +1785,16 @@ module TypecheckTests =
     let ``sigs neg group11`` () = negGroup [ "neg_byref_17"; "neg_byref_18"; "neg_byref_19"; "neg_byref_21"; "neg_byref_22"; "neg_byref_23"; "neg36"; "neg17"; "neg26";  ]
 
     [<Test>]
-    let ``sigs neg group12`` () = negGroup [ "neg27"; "neg25"; "neg03"; "neg23"; "neg22"; "neg21"; "neg04"; "neg05"; "neg06"; "neg06_a"; "neg06_b"; "neg08"; "neg09";  ]
+    let ``sigs neg group12`` () = negGroup [ "neg27"; "neg25"; "neg03"; "neg23"; "neg22"; "neg21" ]
 
     [<Test>]
-    let ``sigs neg group13`` () = negGroup [ "neg11"; "neg12"; "neg13"; "neg14"; "neg16"; "neg18"; "neg19"; "neg01"; "neg02"; "neg15"  ]
+    let ``sigs neg group12a`` () = negGroup [ "neg04"; "neg05"; "neg06"; "neg06_a"; "neg06_b"; "neg08"; "neg09";  ]
+
+    [<Test>]
+    let ``sigs neg group13`` () = negGroup [ "neg11"; "neg12"; "neg13"; "neg14"; "neg16" ]
+
+    [<Test>]
+    let ``sigs neg group13a`` () = negGroup [ "neg18"; "neg19"; "neg01"; "neg02"; "neg15"  ]
 
 module TypeProviders = 
 

@@ -64,5 +64,3 @@ neg69.fsx(94,5,94,8): parse error FS0010: Unexpected keyword 'let' or 'use' in i
 neg69.fsx(88,44,88,45): parse error FS0010: Unexpected symbol '>' in type definition. Expected '=' or other token.
 
 neg69.fsx(88,43,88,44): parse error FS1241: Expected type argument or static argument
-
-neg69.fsx(88,43,88,44): parse error FS0010: Unexpected symbol ')' in type arguments. Expected ',' or other token.

@@ -154,7 +154,7 @@ module CommonHelpers =
             result
         with ex -> 
             Assert.Exception(ex)
-            reraise()  
+            List<ClassifiedSpan>()
 
     let tryClassifyAtPosition (documentKey, sourceText: SourceText, filePath, defines, position: int, cancellationToken) =
         let textLine = sourceText.Lines.GetLineFromPosition(position)

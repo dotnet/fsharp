@@ -6,7 +6,7 @@ open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast
 
 [<Sealed>]
-type FSharpNoteworthyParamInfoLocations(longId: string list, longIdRange: range, openParenLocation: pos,  tupleEndLocations: pos list, isThereACloseParen: bool, namedParamNames: string list) =
+type FSharpNoteworthyParamInfoLocations(longId: string list, longIdRange: range, openParenLocation: pos,  tupleEndLocations: pos list, isThereACloseParen: bool, namedParamNames: string option list) =
 
     let tupleEndLocations = Array.ofList tupleEndLocations
     let namedParamNames = Array.ofList namedParamNames
@@ -19,7 +19,7 @@ type FSharpNoteworthyParamInfoLocations(longId: string list, longIdRange: range,
             // so just fill in a blank named param to represent the final missing param
             // (compare to    f(   or   f(42,   where the parser injects a fake "AbrExpr" to represent the missing argument)
             assert(tupleEndLocations.Length = namedParamNames.Length + 1)
-            [| yield! namedParamNames; yield null |]  // "null" is representation of a non-named param
+            [| yield! namedParamNames; yield None |]  // None is representation of a non-named param
     member this.LongId = longId
     member this.LongIdStartLocation = longIdRange.Start
     member this.LongIdEndLocation = longIdRange.End
@@ -48,14 +48,14 @@ module internal NoteworthyParamInfoLocationsImpl =
         | _ -> None
 
     type FindResult = 
-        | Found of openParen: pos * commasAndCloseParen: (pos * string) list * hasClosedParen: bool
+        | Found of openParen: pos * commasAndCloseParen: (pos * string option) list * hasClosedParen: bool
         | NotFound
 
     let digOutIdentFromStaticArg synType =
         match synType with 
-        | SynType.StaticConstantNamed(SynType.LongIdent(LongIdentWithDots([id],_)),_,_) -> id.idText 
-        | SynType.LongIdent(LongIdentWithDots([id],_)) -> id.idText // NOTE: again, not a static constant, but may be a prefix of a Named in incomplete code
-        | _ -> null 
+        | SynType.StaticConstantNamed(SynType.LongIdent(LongIdentWithDots([id],_)),_,_) -> Some id.idText 
+        | SynType.LongIdent(LongIdentWithDots([id],_)) -> Some id.idText // NOTE: again, not a static constant, but may be a prefix of a Named in incomplete code
+        | _ -> None
 
     let getNamedParamName e =
         match e with
@@ -65,14 +65,14 @@ module internal NoteworthyParamInfoLocationsImpl =
                                     SynExpr.Ident op, 
                                     SynExpr.Ident n, 
                                     _range),
-                        _, _) when op.idText="op_Equality" -> n.idText
+                        _, _) when op.idText="op_Equality" -> Some n.idText
         // f(?x=4)
         | SynExpr.App(ExprAtomicFlag.NonAtomic, _,
                         SynExpr.App(ExprAtomicFlag.NonAtomic, true,
                                     SynExpr.Ident op, 
                                     SynExpr.LongIdent(true(*isOptional*),LongIdentWithDots([n],_),_ref,_lidrange), _range), 
-                        _, _) when op.idText="op_Equality" -> n.idText
-        | _ -> null
+                        _, _) when op.idText="op_Equality" -> Some n.idText
+        | _ -> None
 
     let getTypeName(synType) =
         match synType with
@@ -121,14 +121,14 @@ module internal NoteworthyParamInfoLocationsImpl =
 
         | SynExpr.ArbitraryAfterError(_debugStr, range) -> // single argument when e.g. after open paren you hit EOF
             if AstTraversal.rangeContainsPosEdgesExclusive range pos then
-                let r = Found (range.Start, [range.End, null], false)
+                let r = Found (range.Start, [(range.End, None)], false)
                 r, None
             else
                 NotFound, None
 
         | SynExpr.Const(SynConst.Unit, unitRange) ->
             if AstTraversal.rangeContainsPosEdgesExclusive unitRange pos then
-                let r = Found (unitRange.Start, [unitRange.End, null], true)
+                let r = Found (unitRange.Start, [(unitRange.End, None)], true)
                 r, None
             else
                 NotFound, None
@@ -139,7 +139,7 @@ module internal NoteworthyParamInfoLocationsImpl =
             | None ->
                 if AstTraversal.rangeContainsPosEdgesExclusive e.Range pos then
                     // any other expression doesn't start with parens, so if it was the target of an App, then it must be a single argument e.g. "f x"
-                    Found (e.Range.Start, [e.Range.End, null], false), Some inner
+                    Found (e.Range.Start, [ (e.Range.End, None) ], false), Some inner
                 else
                     NotFound, Some inner
             | _ -> NotFound, Some inner
