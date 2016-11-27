@@ -52,14 +52,14 @@ let isThreadOrContextStatic g attrs =
     HasFSharpAttributeOpt g g.attrib_ThreadStaticAttribute attrs ||
     HasFSharpAttributeOpt g g.attrib_ContextStaticAttribute attrs 
 
-let mkNilListPat g m ty = TPat_unioncase(g.nil_ucref,[ty],[],m)
-let mkConsListPat g ty ph pt = TPat_unioncase(g.cons_ucref,[ty],[ph;pt],unionRanges ph.Range pt.Range)
+let mkNilListPat (g: TcGlobals) m ty = TPat_unioncase(g.nil_ucref,[ty],[],m)
+let mkConsListPat (g: TcGlobals) ty ph pt = TPat_unioncase(g.cons_ucref,[ty],[ph;pt],unionRanges ph.Range pt.Range)
 
 let mkCompGenLetIn m nm ty e f = 
     let v,ve = mkCompGenLocal m nm ty
     mkCompGenLet m v e (f (v,ve))
 
-let mkUnitDelayLambda g m e =
+let mkUnitDelayLambda (g: TcGlobals) m e =
     let uv,_ = mkCompGenLocal m "unitVar" g.unit_ty
     mkLambda m uv (e,tyOfExpr g e) 
 
@@ -113,7 +113,7 @@ exception InvalidInternalsVisibleToAssemblyName of (*badName*)string * (*fileNam
 
 
 // Identify any security attributes
-let IsSecurityAttribute g amap (casmap : Dictionary<Stamp,bool>) (Attrib(tcref,_,_,_,_,_,_)) m =
+let IsSecurityAttribute (g: TcGlobals) amap (casmap : Dictionary<Stamp,bool>) (Attrib(tcref,_,_,_,_,_,_)) m =
     // There's no CAS on Silverlight, so we have to be careful here
     match g.attrib_SecurityAttribute with
     | None -> false
@@ -1476,7 +1476,7 @@ let InstanceMembersNeedSafeInitCheck cenv m thisTy =
         AllowMultiIntfInstantiations.Yes
         thisTy
         
-let MakeSafeInitField g env m isStatic = 
+let MakeSafeInitField (g: TcGlobals) env m isStatic = 
     let id = ident(globalNng.FreshCompilerGeneratedName("init",m),m)
     let taccess = TAccess [env.eAccessPath]
     NewRecdField isStatic None id g.int_ty true true [] [] XmlDoc.Empty taccess true
@@ -1884,22 +1884,27 @@ let BuildFieldMap cenv env isPartial ty flds m =
         let allFields = flds |> List.map (fun ((_,ident),_) -> ident)
         flds |> List.map (fun (fld,fldExpr) -> 
             let frefSet = ResolveField cenv.tcSink cenv.nameResolver env.eNameResEnv ad ty fld allFields
-            fld,frefSet, fldExpr)
+            fld,frefSet,fldExpr)
     let relevantTypeSets = 
         frefSets |> List.map (fun (_,frefSet,_) -> frefSet |> List.choose (fun (FieldResolution(rfref,_)) -> Some rfref.TyconRef))
     
     let tcref = 
         match List.fold (ListSet.intersect (tyconRefEq cenv.g)) (List.head relevantTypeSets) (List.tail relevantTypeSets) with
         | [tcref] -> tcref
-        | _ -> 
+        | tcrefs -> 
             if isPartial then 
                 warning (Error(FSComp.SR.tcFieldsDoNotDetermineUniqueRecordType(),m))
-            // OK, there isn't a unique type dictated by the intersection for the field refs. 
-            // We're going to get an error of some kind below. 
-            // Just choose one field ref and let the error come later 
-            let (_,frefSet1,_) = List.head frefSets
-            let (FieldResolution(fref1,_))= List.head frefSet1
-            fref1.TyconRef
+
+            // try finding a record type with the same number of fields as the ones that are given.
+            match tcrefs |> List.tryFind (fun tc -> tc.TrueFieldsAsList.Length = flds.Length) with
+            | Some tcref -> tcref            
+            | _ -> 
+                // OK, there isn't a unique, good type dictated by the intersection for the field refs. 
+                // We're going to get an error of some kind below. 
+                // Just choose one field ref and let the error come later 
+                let (_,frefSet1,_) = List.head frefSets
+                let (FieldResolution(fref1,_))= List.head frefSet1
+                fref1.TyconRef
     
     let fldsmap,rfldsList = 
         ((Map.empty,[]), frefSets) ||> List.fold (fun (fs,rfldsList) (fld,frefs,fldExpr) -> 
@@ -3906,7 +3911,7 @@ type DelayedItem =
 
   /// DelayedApp (isAtomic, argExpr, mFuncAndArg) 
   ///
-  /// Represents the args in "item args", or "item.[args]". 
+  /// Represents the args in "item args", or "item.[args]".
   | DelayedApp of ExprAtomicFlag * Ast.SynExpr * range
 
   /// Represents the long identifiers in "item.Ident1", or "item.Ident1.Ident2" etc.
@@ -5323,7 +5328,15 @@ and RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv e
             RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects cenv env tpenv arg
             dummyCheckedDelayed otherDelayed
         | _ -> ()
-    dummyCheckedDelayed delayed 
+    dummyCheckedDelayed delayed
+
+// Calls UnifyTypes, but upon error only does the minimal error recovery
+// so that IntelliSense information can continue to be collected.
+and UnifyTypesAndRecover cenv env m expectedTy actualTy =
+    try
+        UnifyTypes cenv env m expectedTy actualTy
+    with e ->
+        errorRecovery e m
 
 and TcExprOfUnknownType cenv env tpenv expr =
     let exprty = NewInferenceType ()
@@ -8089,7 +8102,7 @@ and PropagateThenTcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFla
         | [] -> 
             // Avoid unifying twice: we're about to unify in TcDelayed 
             if not (isNil delayed) then 
-                UnifyTypes cenv env mExpr overallTy exprty
+                UnifyTypesAndRecover cenv env mExpr overallTy exprty
         | DelayedDot :: _
         | DelayedSet _ :: _
         | DelayedDotLookup _ :: _ -> ()
@@ -8108,7 +8121,7 @@ and PropagateThenTcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFla
                 | SynExpr.CompExpr _ -> ()
                 | _ -> 
                     // 'delayed' is about to be dropped on the floor, first do rudimentary checking to get name resolutions in its body
-                    RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed 
+                    RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed
                     error (NotAFunction(denv,overallTy,mExpr,mArg)) 
 
     propagate delayed expr.Range exprty
@@ -8127,7 +8140,8 @@ and TcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFlag:ExprAtomicF
     match delayed with 
     | []  
     | DelayedDot :: _ -> 
-        UnifyTypes cenv env mExpr overallTy exprty; expr.Expr,tpenv
+        UnifyTypesAndRecover cenv env mExpr overallTy exprty
+        expr.Expr,tpenv
     // expr.M(args) where x.M is a .NET method or index property 
     // expr.M<tyargs>(args) where x.M is a .NET method or index property 
     // expr.M where x.M is a .NET method or index property 
@@ -8689,7 +8703,7 @@ and TcItemThen cenv overallTy env tpenv (item,mItem,rest,afterOverloadResolution
      
     | Item.CustomOperation (nm,usageTextOpt,_) -> 
         // 'delayed' is about to be dropped on the floor, first do rudimentary checking to get name resolutions in its body 
-        RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed 
+        RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed
         match usageTextOpt() with
         | None -> error(Error(FSComp.SR.tcCustomOperationNotUsedCorrectly(nm), mItem))
         | Some usageText -> error(Error(FSComp.SR.tcCustomOperationNotUsedCorrectly2(nm,usageText), mItem))
@@ -9452,13 +9466,13 @@ and TcMethodApplication
                           match currDfltVal with
                           | MissingValue -> 
                               // Add an I_nop if this is an initonly field to make sure we never recognize it as an lvalue. See mkExprAddrOfExpr. 
-                              emptyPreBinder,mkAsmExpr ([ mkNormalLdsfld (fspec_Missing_Value cenv.g.ilg); AI_nop ],[],[],[currCalledArgTy],mMethExpr)
+                              emptyPreBinder,mkAsmExpr ([ mkNormalLdsfld (fspec_Missing_Value cenv.g); AI_nop ],[],[],[currCalledArgTy],mMethExpr)
                           | DefaultValue -> 
                               emptyPreBinder,mkDefault(mMethExpr,currCalledArgTy)
                           | Constant fieldInit -> 
                                 match currCalledArgTy with
                                 | NullableTy cenv.g inst when fieldInit <> ILFieldInit.Null ->
-                                    let nullableTy = mkILNonGenericBoxedTy(mkILTyRef(cenv.g.ilg.traits.ScopeRef, "System.Nullable`1"))
+                                    let nullableTy = mkILNonGenericBoxedTy(cenv.g.FindSysILTypeRef "System.Nullable`1")
                                     let ctor = mkILCtorMethSpecForTy(nullableTy, [ILType.TypeVar 0us]).MethodRef
                                     let ctorArgs = [Expr.Const(TcFieldInit mMethExpr fieldInit,mMethExpr, inst)]
                                     emptyPreBinder,Expr.Op(TOp.ILCall(false, false, true, true, NormalValUse, false, false, ctor, [inst], [], [currCalledArgTy]), [], ctorArgs, mMethExpr)
@@ -9476,19 +9490,19 @@ and TcMethodApplication
                                         emptyPreBinder,Expr.Const(TcFieldInit mMethExpr fieldInit,mMethExpr,currCalledArgTy)
                                     
                           | WrapperForIDispatch ->
-                              match cenv.g.ilg.traits.SystemRuntimeInteropServicesScopeRef.Value with
+                              match cenv.g.TryFindSysILTypeRef "System.Runtime.InteropServices.DispatchWrapper" with
                               | None -> error(Error(FSComp.SR.fscSystemRuntimeInteropServicesIsRequired(), mMethExpr))
-                              | Some assemblyRef ->
-                                  let tref = mkILNonGenericBoxedTy(mkILTyRef(assemblyRef, "System.Runtime.InteropServices.DispatchWrapper"))
-                                  let mref = mkILCtorMethSpecForTy(tref,[cenv.g.ilg.typ_Object]).MethodRef
+                              | Some tref ->
+                                  let ty = mkILNonGenericBoxedTy tref
+                                  let mref = mkILCtorMethSpecForTy(ty,[cenv.g.ilg.typ_Object]).MethodRef
                                   let expr = Expr.Op(TOp.ILCall(false,false,false,true,NormalValUse,false,false,mref,[],[],[cenv.g.obj_ty]),[],[mkDefault(mMethExpr,currCalledArgTy)],mMethExpr)
                                   emptyPreBinder,expr
                           | WrapperForIUnknown ->
-                              match cenv.g.ilg.traits.SystemRuntimeInteropServicesScopeRef.Value with
+                              match cenv.g.TryFindSysILTypeRef "System.Runtime.InteropServices.UnknownWrapper" with
                               | None -> error(Error(FSComp.SR.fscSystemRuntimeInteropServicesIsRequired(), mMethExpr))
-                              | Some assemblyRef ->
-                                  let tref = mkILNonGenericBoxedTy(mkILTyRef(assemblyRef, "System.Runtime.InteropServices.UnknownWrapper"))
-                                  let mref = mkILCtorMethSpecForTy(tref,[cenv.g.ilg.typ_Object]).MethodRef
+                              | Some tref ->
+                                  let ty = mkILNonGenericBoxedTy tref
+                                  let mref = mkILCtorMethSpecForTy(ty,[cenv.g.ilg.typ_Object]).MethodRef
                                   let expr = Expr.Op(TOp.ILCall(false,false,false,true,NormalValUse,false,false,mref,[],[],[cenv.g.obj_ty]),[],[mkDefault(mMethExpr,currCalledArgTy)],mMethExpr)
                                   emptyPreBinder,expr
                           | PassByRef (ty, dfltVal2) ->
@@ -9872,7 +9886,7 @@ and TcStaticOptimizationConstraint cenv env tpenv c =
         TTyconIsStruct(mkTyparTy tp'),tpenv
 
 /// Emit a conv.i instruction
-and mkConvToNativeInt g e m = Expr.Op (TOp.ILAsm ([ AI_conv ILBasicType.DT_I], [ g.nativeint_ty ]),[],[e],m)
+and mkConvToNativeInt (g:TcGlobals) e m = Expr.Op (TOp.ILAsm ([ AI_conv ILBasicType.DT_I], [ g.nativeint_ty ]),[],[e],m)
 
 /// Fix up the r.h.s. of a 'use x = fixed expr' 
 and TcAndBuildFixedExpr cenv env (overallPatTy, fixedExpr, overallExprTy, mBinding) =
@@ -11538,7 +11552,7 @@ let TcAndPublishValSpec (cenv, env, containerInfo: ContainerInfo, declKind, memF
 
 exception NotUpperCaseConstructor of range
 
-let CheckNamespaceModuleOrTypeName g (id:Ident) = 
+let CheckNamespaceModuleOrTypeName (g:TcGlobals) (id:Ident) = 
     // type names '[]' etc. are used in fslib
     if not g.compilingFslib &&  id.idText.IndexOfAny(IllegalCharactersInTypeAndNamespaceNames) <> -1 then 
         errorR(Error(FSComp.SR.tcInvalidNamespaceModuleTypeUnionName(),id.idRange))
@@ -11740,7 +11754,7 @@ let TcModuleOrNamespaceLidAndPermitAutoResolve env amap (longId : Ident list) =
     | Result res -> Result res
     | Exception err ->  raze err
 
-let TcOpenDecl tcSink g amap m scopem env (longId : Ident list)  = 
+let TcOpenDecl tcSink (g:TcGlobals) amap m scopem env (longId : Ident list)  = 
     let modrefs = ForceRaise (TcModuleOrNamespaceLidAndPermitAutoResolve env amap longId)
 
     // validate opened namespace names
@@ -16059,10 +16073,11 @@ and TcSignatureElementsNonMutRec cenv parent endm env defs =
             [ for def in defs do 
                match def with 
                | SynModuleSigDecl.Types (typeSpecs,_) -> 
-                  for (TypeDefnSig(ComponentInfo(_,_,_,ids,_,_,_,_),trepr,extraMembers,_)) in typeSpecs do 
-                      match trepr with 
-                      | SynTypeDefnSigRepr.Simple((SynTypeDefnSimpleRepr.None _),_) when not (isNil extraMembers) -> ()
-                      | _ -> yield (List.last ids).idText
+                  for (TypeDefnSig(ComponentInfo(_,typars,_,ids,_,_,_,_),trepr,extraMembers,_)) in typeSpecs do 
+                      if isNil typars then
+                          match trepr with 
+                          | SynTypeDefnSigRepr.Simple((SynTypeDefnSimpleRepr.None _),_) when not (isNil extraMembers) -> ()
+                          | _ -> yield (List.last ids).idText
                | _ -> () ]
             |> set
 
@@ -16487,10 +16502,11 @@ and TcModuleOrNamespaceElements cenv parent endm env xml mutRecNSInfo defs =
             [ for def in defs do 
                 match def with 
                 | SynModuleDecl.Types (typeSpecs,_) -> 
-                    for (TypeDefn(ComponentInfo(_,_,_,ids,_,_,_,_),trepr,_,_)) in typeSpecs do 
-                        match trepr with 
-                        | SynTypeDefnRepr.ObjectModel(TyconAugmentation,_,_) -> ()
-                        | _ -> yield (List.last ids).idText
+                    for (TypeDefn(ComponentInfo(_,typars,_,ids,_,_,_,_),trepr,_,_)) in typeSpecs do 
+                        if isNil typars then
+                            match trepr with 
+                            | SynTypeDefnRepr.ObjectModel(TyconAugmentation,_,_) -> ()
+                            | _ -> yield (List.last ids).idText
                 | _ -> () ]
             |> set
 

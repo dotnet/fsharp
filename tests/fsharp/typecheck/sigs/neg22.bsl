@@ -21,6 +21,18 @@ but given a
     'float<kg>'    
 The unit of measure 'm' does not match the unit of measure 'kg'
 
+neg22.fs(17,22,17,29): typecheck error FS0001: Type mismatch. Expecting a
+    'float<m>'    
+but given a
+    'float<kg>'    
+The unit of measure 'm' does not match the unit of measure 'kg'
+
+neg22.fs(17,20,17,29): typecheck error FS0001: Type mismatch. Expecting a
+    'float<m>'    
+but given a
+    'float<kg>'    
+The unit of measure 'm' does not match the unit of measure 'kg'
+
 neg22.fs(28,12,28,18): typecheck error FS0957: The declared type parameters for this type extension do not match the declared type parameters on the original type 'LibGen<_>'
 
 neg22.fs(40,12,40,18): typecheck error FS0957: The declared type parameters for this type extension do not match the declared type parameters on the original type 'LibGen<_>'

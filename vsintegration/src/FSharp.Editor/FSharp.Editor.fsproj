@@ -31,6 +31,7 @@
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="CommonConstants.fs" />
     <Compile Include="CommonRoslynHelpers.fs" />
+    <Compile Include="CommonHelpers.fs" />
     <Compile Include="LanguageService.fs" />
     <Compile Include="ColorizationService.fs">
       <Link>Classification\ColorizationService.fs</Link>
@@ -65,6 +66,12 @@
     <Compile Include="GoToDefinitionService.fs">
       <Link>GoToDefinition\GoToDefinitionService.fs</Link>
     </Compile>
+    <Compile Include="CommentUncommentService.fs">
+      <Link>BlockComment\CommentUncommentService.fs</Link>
+    </Compile>
+    <Compile Include="QuickInfoProvider.fs">
+      <Link>QuickInfo\QuickInfoProvider.fs</Link>
+    </Compile>
     <Compile Include="ContentType.fs" />
   </ItemGroup>
   <ItemGroup>
@@ -90,6 +97,8 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="WindowsBase" />
     <Reference Include="System" />
     <Reference Include="PresentationCore" />
     <Reference Include="System.ComponentModel.Composition" />
@@ -106,6 +115,9 @@
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Text.UI.Wpf, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Text.UI.Wpf.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Text.UI.Wpf.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Language.Intellisense, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Language.Intellisense.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Language.Intellisense.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Text.Data, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Text.Data.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Text.Data.dll</HintPath>

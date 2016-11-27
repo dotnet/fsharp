@@ -528,8 +528,8 @@ module Ok9b =
         let create() = 1
         type Dummy = A | B
 
-
-    test "lkneecec09iew9" (typeof<A.Dummy>.FullName.Contains("AModule") )
+    //A<'T> has a type parameter, so appending Module is not necessary.
+    test "lkneecec09iew9" (not (typeof<A.Dummy>.FullName.Contains("AModule") ) )
 
 module rec Ok10 = 
 

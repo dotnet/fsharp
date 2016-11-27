@@ -6,6 +6,8 @@ namespace Microsoft.FSharp.Compiler
 open System
 open System.IO
 open System.Collections.Generic
+open System.Threading
+open System.Threading.Tasks
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.Tastops
@@ -747,12 +749,26 @@ module internal IncrementalBuild =
                 PartialBuild(bt.Rules, Map.add id (VectorResult(results)) bt.Results)
             | _ -> failwith "Unexpected"
         
-    let ExecuteApply (action:Action) bt = 
+    let mutable injectCancellationFault = false
+    let LocallyInjectCancellationFault() = 
+        injectCancellationFault <- true
+        { new IDisposable with member __.Dispose() =  injectCancellationFault <- false }
+
+    /// Apply the result, and call the 'save' function to update the build.  
+    ///
+    /// Will throw OperationCanceledException if the cancellation token has been set.
+    let ExecuteApply save (ct: CancellationToken) (action:Action) bt = 
+        ct.ThrowIfCancellationRequested()
+        if (injectCancellationFault) then raise (OperationCanceledException("injected fault"))
         let actionResult = action.Execute()
-        ApplyResult(actionResult,bt)
+        let newBt = ApplyResult(actionResult,bt)
+        save newBt
+        newBt
 
     /// Evaluate the result of a single output
-    let EvalLeafsFirst target bt =
+    ///
+    /// Will throw OperationCanceledException if the cancellation token has been set.
+    let EvalLeafsFirst save (ct: CancellationToken) target bt =
 
         let rec eval(bt,gen) =
             #if DEBUG
@@ -760,31 +776,40 @@ module internal IncrementalBuild =
             // Possibly could detect this case directly.
             if gen>5000 then failwith "Infinite loop in incremental builder?"
             #endif
-            let newBt = ForeachAction target bt ExecuteApply bt
-            if newBt=bt then bt else eval(newBt,gen+1)
+            let newBt = ForeachAction target bt (ExecuteApply save ct) bt
+            if newBt=bt then  bt else eval(newBt,gen+1)
         eval(bt,0)
         
-    let Step target (bt:PartialBuild) = 
+    /// Evaluate one step of the build.  Call the 'save' function to save the intermediate result.
+    ///
+    /// Will throw OperationCanceledException if the cancellation token has been set.
+    let Step save ct target (bt:PartialBuild) = 
         
         // Hey look, we're building up the whole list, executing one thing and then throwing
         // the list away. What about saving the list inside the Build instance?
         let worklist = ForeachAction target bt (fun a l -> a :: l) []
             
         match worklist with 
-        | action::_ -> Some (ExecuteApply action bt)
+        | action::_ -> Some (ExecuteApply save ct action bt)
         | _ -> None
             
     /// Evaluate an output of the build.
-    let Eval node bt = EvalLeafsFirst (Target(node,None)) bt
+    ///
+    /// Will throw OperationCanceledException if the cancellation token has been set.  Intermediate
+    /// progrewss along the way may be saved through the use of the 'save' function.
+    let Eval save ct node bt = EvalLeafsFirst save ct (Target(node,None)) bt
 
     /// Evaluate an output of the build.
-    let EvalUpTo (node, n) bt = EvalLeafsFirst (Target(node, Some n)) bt
+    ///
+    /// Will throw OperationCanceledException if the cancellation token has been set.  Intermediate
+    /// progrewss along the way may be saved through the use of the 'save' function.
+    let EvalUpTo save ct (node, n) bt = EvalLeafsFirst save ct (Target(node, Some n)) bt
 
     /// Check if an output is up-to-date and ready
     let IsReady target bt = 
         let worklist = ForeachAction target bt (fun a l -> a :: l) []
         worklist.IsEmpty
-
+        
     /// Check if an output is up-to-date and ready
     let MaxTimeStampInDependencies target bt = 
         ComputeMaxTimeStamp target bt DateTime.MinValue 
@@ -1519,9 +1544,9 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
                     with e -> 
                         errorRecoveryNoRange e
                         None
-                let locale = TryFindStringAttribute tcGlobals (mkMscorlibAttrib tcGlobals "System.Reflection.AssemblyCultureAttribute") topAttrs.assemblyAttrs
+                let locale = TryFindStringAttribute tcGlobals (tcGlobals.FindSysAttrib  "System.Reflection.AssemblyCultureAttribute") topAttrs.assemblyAttrs
                 let assemVerFromAttrib = 
-                    TryFindStringAttribute tcGlobals (mkMscorlibAttrib tcGlobals "System.Reflection.AssemblyVersionAttribute") topAttrs.assemblyAttrs 
+                    TryFindStringAttribute tcGlobals (tcGlobals.FindSysAttrib "System.Reflection.AssemblyVersionAttribute") topAttrs.assemblyAttrs 
                     |> Option.bind  (fun v -> try Some (parseILVersion v) with _ -> None)
                 let ver = 
                     match assemVerFromAttrib with 
@@ -1610,10 +1635,7 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
     // This is the initial representation of progress through the build, i.e. we have made no progress.
     let mutable partialBuild = buildDescription.GetInitialPartialBuild buildInputs
 
-    let EvalAndKeepOutput f = 
-        let newPartialBuild = f partialBuild
-        partialBuild <- newPartialBuild
-        newPartialBuild
+    let SavePartialBuild b = partialBuild <- b
 
     let MaxTimeStampInDependencies (output:INode) = 
         IncrementalBuild.MaxTimeStampInDependencies output.Name partialBuild 
@@ -1650,16 +1672,15 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
         | _ -> true                
 #endif
 
-    member __.Step () =  
-        match IncrementalBuild.Step (Target(tcStatesNode, None)) partialBuild with 
+    member __.Step (ct) =  
+        match IncrementalBuild.Step SavePartialBuild ct (Target(tcStatesNode, None)) partialBuild with 
         | None -> 
             projectChecked.Trigger()
             false
-        | Some newPartialBuild -> 
-            partialBuild <- newPartialBuild
+        | Some _ -> 
             true
     
-    member ib.GetCheckResultsBeforeFileInProjectIfReady filename: PartialCheckResults option  = 
+    member ib.GetCheckResultsBeforeFileInProjectIfReady (filename): PartialCheckResults option  = 
         let slotOfFile = ib.GetSlotOfFileName filename
         let result = 
             match slotOfFile with
@@ -1677,33 +1698,33 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
         | (*first file*) 0 -> IncrementalBuild.IsReady (Target(initialTcAccNode, None)) partialBuild 
         | _ -> IncrementalBuild.IsReady (Target(tcStatesNode, Some (slotOfFile-1))) partialBuild  
         
-    member ib.GetCheckResultsBeforeFileInProject filename = 
+    member ib.GetCheckResultsBeforeFileInProject (filename, ct) = 
         let slotOfFile = ib.GetSlotOfFileName filename
-        ib.GetTypeCheckResultsBeforeSlotInProject slotOfFile
+        ib.GetTypeCheckResultsBeforeSlotInProject (slotOfFile, ct)
 
-    member ib.GetCheckResultsAfterFileInProject filename = 
+    member ib.GetCheckResultsAfterFileInProject (filename, ct) = 
         let slotOfFile = ib.GetSlotOfFileName filename + 1
-        ib.GetTypeCheckResultsBeforeSlotInProject slotOfFile
+        ib.GetTypeCheckResultsBeforeSlotInProject (slotOfFile, ct)
 
-    member ib.GetTypeCheckResultsBeforeSlotInProject slotOfFile = 
+    member ib.GetTypeCheckResultsBeforeSlotInProject (slotOfFile, ct) = 
         let result = 
             match slotOfFile with
             | (*first file*) 0 -> 
-                let build = EvalAndKeepOutput (IncrementalBuild.Eval initialTcAccNode)  
+                let build = IncrementalBuild.Eval SavePartialBuild ct initialTcAccNode partialBuild
                 GetScalarResult(initialTcAccNode,build)
             | _ -> 
-                let build = EvalAndKeepOutput (IncrementalBuild.EvalUpTo (tcStatesNode, (slotOfFile-1))) 
+                let build = IncrementalBuild.EvalUpTo SavePartialBuild ct (tcStatesNode, (slotOfFile-1)) partialBuild
                 GetVectorResultBySlot(tcStatesNode,slotOfFile-1,build)  
         
         match result with
         | Some (tcAcc,timestamp) -> PartialCheckResults.Create (tcAcc,timestamp)
         | None -> failwith "Build was not evaluated, expected the results to be ready after 'Eval'."
 
-    member b.GetCheckResultsAfterLastFileInProject () = 
-        b.GetTypeCheckResultsBeforeSlotInProject(b.GetSlotsCount()) 
+    member b.GetCheckResultsAfterLastFileInProject (ct) = 
+        b.GetTypeCheckResultsBeforeSlotInProject(b.GetSlotsCount(), ct) 
 
-    member __.GetCheckResultsAndImplementationsForProject() = 
-        let build = EvalAndKeepOutput (IncrementalBuild.Eval finalizedTypeCheckNode)
+    member __.GetCheckResultsAndImplementationsForProject(ct) = 
+        let build = IncrementalBuild.Eval SavePartialBuild ct finalizedTypeCheckNode partialBuild
         match GetScalarResult(finalizedTypeCheckNode,build) with
         | Some ((ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, tcAcc), timestamp) -> 
             PartialCheckResults.Create (tcAcc,timestamp), ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt
@@ -1731,12 +1752,12 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
         | Some (VectorResult vr) -> vr.Size
         | _ -> failwith "Failed to find sizes"
       
-    member ib.GetParseResultsForFile filename =
+    member ib.GetParseResultsForFile (filename, ct) =
         let slotOfFile = ib.GetSlotOfFileName filename
         match GetVectorResultBySlot(parseTreesNode,slotOfFile,partialBuild) with
         | Some (results, _) -> results
         | None -> 
-            let build = EvalAndKeepOutput (IncrementalBuild.EvalUpTo (parseTreesNode, slotOfFile))  
+            let build = IncrementalBuild.EvalUpTo SavePartialBuild ct (parseTreesNode, slotOfFile) partialBuild  
             match GetVectorResultBySlot(parseTreesNode,slotOfFile,build) with
             | Some (results, _) -> results
             | None -> failwith "Build was not evaluated, expcted the results to be ready after 'Eval'."

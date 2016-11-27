@@ -447,6 +447,9 @@
   <data name="Parser.TOKEN.INTERNAL" xml:space="preserve">
     <value>keyword 'internal'</value>
   </data>
+  <data name="Parser.TOKEN.FIXED" xml:space="preserve">
+    <value>keyword 'fixed'</value>
+  </data>
   <data name="Parser.TOKEN.CONSTRAINT" xml:space="preserve">
     <value>keyword 'constraint'</value>
   </data>

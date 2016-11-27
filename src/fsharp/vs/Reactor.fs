@@ -141,6 +141,7 @@ type Reactor() =
                         try
                             f ct |> AsyncUtil.AsyncOk
                         with
+                        |   :? OperationCanceledException as e -> AsyncUtil.AsyncCanceled e
                         |   e -> e |> AsyncUtil.AsyncException
                     resultCell.RegisterResult(result)),
                     ccont=(fun () -> resultCell.RegisterResult (AsyncUtil.AsyncCanceled(OperationCanceledException())) )

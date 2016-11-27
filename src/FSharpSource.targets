@@ -446,7 +446,7 @@
           Name="CopyAndSubstituteTextFiles"
           Inputs="@(CopyAndSubstituteText)"
           Outputs="@(CopyAndSubstituteText->'$(OutDir)%(TargetFilename)')"  >
-    <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec $(MSBuildThisFileDirectory)scripts/subst.fsx --in:&quot;%(CopyAndSubstituteText.FullPath)&quot; --out:&quot;$(OutDir)%(CopyAndSubstituteText.TargetFilename)&quot; --pattern1:&quot;%(CopyAndSubstituteText.Pattern1)&quot; --replacement1:&quot;%(CopyAndSubstituteText.Replacement1)&quot; --pattern2:&quot;%(CopyAndSubstituteText.Pattern2)&quot; --replacement2:&quot;%(CopyAndSubstituteText.Replacement2)&quot; " />
+    <Exec Command="&quot;$(FsiToolPath)\$(FsiToolExe)&quot; --exec &quot;$(MSBuildThisFileDirectory)scripts/subst.fsx&quot; --in:&quot;%(CopyAndSubstituteText.FullPath)&quot; --out:&quot;$(OutDir)%(CopyAndSubstituteText.TargetFilename)&quot; --pattern1:&quot;%(CopyAndSubstituteText.Pattern1)&quot; --replacement1:&quot;%(CopyAndSubstituteText.Replacement1)&quot; --pattern2:&quot;%(CopyAndSubstituteText.Pattern2)&quot; --replacement2:&quot;%(CopyAndSubstituteText.Replacement2)&quot; " />
     <!-- Make sure it will get cleaned  -->
     <CreateItem Include="$(OutDir)%(CopyAndSubstituteText.TargetFilename)">
       <Output TaskParameter="Include" ItemName="FileWrites"/>

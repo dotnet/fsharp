@@ -7,6 +7,7 @@ open System.Threading
 open NUnit.Framework
 
 open Microsoft.CodeAnalysis.Classification
+open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 
@@ -16,7 +17,8 @@ type ColorizationServiceTests()  =
     member private this.ExtractMarkerData(fileContents: string, marker: string, defines: string list, isScriptFile: Option<bool>) =
         let textSpan = TextSpan(0, fileContents.Length)
         let fileName = if isScriptFile.IsSome && isScriptFile.Value then "test.fsx" else "test.fs"
-        let tokens = FSharpColorizationService.GetColorizationData(SourceText.From(fileContents), textSpan, Some(fileName), defines, CancellationToken.None)
+        let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+        let tokens = CommonHelpers.getColorizationData(documentId, SourceText.From(fileContents), textSpan, Some(fileName), defines, CancellationToken.None)
         let markerPosition = fileContents.IndexOf(marker)
         Assert.IsTrue(markerPosition >= 0, "Cannot find marker '{0}' in file contents", marker)
         (tokens, markerPosition)
