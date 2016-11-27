@@ -111,6 +111,9 @@
     <Compile Include="GoToDefinitionServiceTests.fs">
       <Link>Roslyn\GoToDefinitionServiceTests.fs</Link>
     </Compile>
+    <Compile Include="QuickInfoProviderTests.fs">
+      <Link>Roslyn\QuickInfoProvider\QuickInfoProviderTests.fs</Link>
+    </Compile>
     <CopyAndSubstituteText Include="VisualFSharp.Unittests.dll.config">
 		<TargetFilename>VisualFSharp.Unittests.dll.config</TargetFilename>
 		<Pattern1>{VisualStudioVersion}</Pattern1>
