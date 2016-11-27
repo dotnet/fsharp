@@ -136,18 +136,14 @@ type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SV
         let getInfo() = 
             let documentId = workspace.GetDocumentIdInCurrentContext(sourceText.Container)
             let document = workspace.CurrentSolution.GetDocument(documentId)
-        
-            let defines = 
-                match FSharpLanguageService.GetOptions(document.Project.Id) with
-                | None -> []
-                | Some(options) -> CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
-            document.Id, document.FilePath, defines
+            let defines = FSharpLanguageService.GetCompilationDefinesForEditingDocument(document)  
+            (documentId, document.FilePath, defines)
 
         FSharpCompletionProvider.ShouldTriggerCompletionAux(sourceText, caretPosition, trigger.Kind, getInfo)
     
     override this.ProvideCompletionsAsync(context: Microsoft.CodeAnalysis.Completion.CompletionContext) =
         async {
-            match FSharpLanguageService.GetOptions(context.Document.Project.Id) with
+            match FSharpLanguageService.TryGetOptionsForEditingDocumentOrProject(context.Document)  with 
             | Some(options) ->
                 let! sourceText = context.Document.GetTextAsync(context.CancellationToken) |> Async.AwaitTask
                 let! textVersion = context.Document.GetTextVersionAsync(context.CancellationToken) |> Async.AwaitTask

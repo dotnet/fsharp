@@ -91,6 +91,7 @@ let _ = Module1.foo 1
             UseScriptResolutionRules = false
             LoadTime = DateTime.MaxValue
             UnresolvedReferences = None
+            ExtraProjectInfo = None
         }
 
         File.WriteAllText(filePath, fileContents)

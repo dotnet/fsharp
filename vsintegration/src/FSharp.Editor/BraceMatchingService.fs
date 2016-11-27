@@ -23,7 +23,7 @@ type internal FSharpBraceMatchingService() =
     interface IBraceMatcher with
         member this.FindBracesAsync(document, position, cancellationToken) = 
             async {
-                match FSharpLanguageService.GetOptions(document.Project.Id) with
+                match FSharpLanguageService.TryGetOptionsForEditingDocumentOrProject(document)  with 
                 | Some(options) ->
                     let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                     let! result = FSharpBraceMatchingService.GetBraceMatchingResult(sourceText, document.Name, options, position)

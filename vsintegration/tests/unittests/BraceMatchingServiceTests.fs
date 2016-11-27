@@ -25,6 +25,7 @@ type BraceMatchingServiceTests()  =
         UseScriptResolutionRules = false
         LoadTime = DateTime.MaxValue
         UnresolvedReferences = None
+        ExtraProjectInfo = None
     }
 
     member private this.VerifyNoBraceMatch(fileContents: string, marker: string) =

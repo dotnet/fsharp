@@ -36,18 +36,14 @@ type internal FSharpColorizationService() =
         
         member this.AddSyntacticClassificationsAsync(document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
             async {
+                let defines = FSharpLanguageService.GetCompilationDefinesForEditingDocument(document)  
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                match FSharpLanguageService.GetOptions(document.Project.Id) with
-                | Some(options) ->
-                    let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
-                    result.AddRange(CommonHelpers.getColorizationData(
-                                      document.Id, sourceText, textSpan, Some(document.FilePath), defines, cancellationToken))
-                | None -> ()
+                result.AddRange(CommonHelpers.getColorizationData(document.Id, sourceText, textSpan, Some(document.FilePath), defines, cancellationToken))
             } |> CommonRoslynHelpers.StartAsyncUnitAsTask(cancellationToken)
 
         member this.AddSemanticClassificationsAsync(document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
             async {
-                match FSharpLanguageService.GetOptions(document.Project.Id) with
+                match FSharpLanguageService.TryGetOptionsForEditingDocumentOrProject(document)  with 
                 | Some(options) ->
                     let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                     let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask

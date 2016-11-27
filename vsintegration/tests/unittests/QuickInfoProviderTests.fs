@@ -47,6 +47,7 @@ let internal options = {
     UseScriptResolutionRules = false
     LoadTime = DateTime.MaxValue
     UnresolvedReferences = None
+    ExtraProjectInfo = None
 }
 
 let private normalizeLineEnds (s: string) = s.Replace("\r\n", "\n").Replace("\n\n", "\n")
