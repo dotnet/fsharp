@@ -15,14 +15,7 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
 module CommonHelpers =
-    type private SourceLineData
-        (
-            lineStart: int, 
-            lexStateAtStartOfLine: FSharpTokenizerLexState, 
-            lexStateAtEndOfLine: FSharpTokenizerLexState, 
-            hashCode: int, 
-            classifiedSpans: IReadOnlyList<ClassifiedSpan>
-        ) =
+    type private SourceLineData(lineStart: int, lexStateAtStartOfLine: FSharpTokenizerLexState, lexStateAtEndOfLine: FSharpTokenizerLexState, hashCode: int, classifiedSpans: IReadOnlyList<ClassifiedSpan>) =
         member val LineStart = lineStart
         member val LexStateAtStartOfLine = lexStateAtStartOfLine
         member val LexStateAtEndOfLine = lexStateAtEndOfLine
@@ -70,14 +63,7 @@ module CommonHelpers =
         | FSharpTokenColorKind.Default 
         | _ -> ClassificationTypeNames.Text
 
-    let private scanSourceLine
-        (
-            sourceTokenizer: FSharpSourceTokenizer, 
-            textLine: TextLine, 
-            lineContents: string, 
-            lexState: FSharpTokenizerLexState
-        ) : SourceLineData =
-    
+    let private scanSourceLine(sourceTokenizer: FSharpSourceTokenizer, textLine: TextLine, lineContents: string, lexState: FSharpTokenizerLexState) : SourceLineData =
         let colorMap = Array.create textLine.Span.Length ClassificationTypeNames.Text
         let lineTokenizer = sourceTokenizer.CreateLineTokenizer(lineContents)
             
@@ -110,15 +96,7 @@ module CommonHelpers =
 
         SourceLineData(textLine.Start, lexState, previousLexState.Value, lineContents.GetHashCode(), classifiedSpans)
 
-    let getColorizationData
-        (
-            documentKey: DocumentId, 
-            sourceText: SourceText, 
-            textSpan: TextSpan, 
-            fileName: string option, 
-            defines: string list, 
-            cancellationToken: CancellationToken
-        ) : List<ClassifiedSpan> =
+    let getColorizationData(documentKey: DocumentId, sourceText: SourceText, textSpan: TextSpan, fileName: string option, defines: string list, cancellationToken: CancellationToken) : List<ClassifiedSpan> =
         try
             let sourceTokenizer = tokenizers.GetValue ((defines, fileName), fun _ -> FSharpSourceTokenizer(defines, fileName))
             let lines = sourceText.Lines

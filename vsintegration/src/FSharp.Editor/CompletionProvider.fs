@@ -43,13 +43,7 @@ type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SV
     let xmlMemberIndexService = serviceProvider.GetService(typeof<IVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
 
-    static member ShouldTriggerCompletionAux
-        (
-            sourceText: SourceText, 
-            caretPosition: int, 
-            trigger: CompletionTriggerKind, 
-            getInfo: (unit -> DocumentId * string * string list)
-        ) =
+    static member ShouldTriggerCompletionAux(sourceText: SourceText, caretPosition: int, trigger: CompletionTriggerKind, getInfo: (unit -> DocumentId * string * string list)) =
         // Skip if we are at the start of a document
         if caretPosition = 0 then
             false

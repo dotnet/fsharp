@@ -44,10 +44,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 type internal FSharpDeferredQuickInfoContent(content: string) =
     interface IDeferredQuickInfoContent with
         override this.Create() : FrameworkElement =
-            let label = new Label()
-            label.Content <- content
-            label.Foreground <- SolidColorBrush(Colors.Black)
-            upcast label
+            upcast new Label(Content = content, Foreground = SolidColorBrush(Colors.Black))
 
 [<Shared>]
 [<ExportQuickInfoProvider(PredefinedQuickInfoProviderNames.Semantic, FSharpCommonConstants.FSharpLanguageName)>]
@@ -57,21 +54,11 @@ type internal FSharpQuickInfoProvider [<System.ComponentModel.Composition.Import
     let xmlMemberIndexService = serviceProvider.GetService(typeof<SVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
 
-    static member ProvideQuickInfo
-        (
-            document: Document, 
-            sourceText: SourceText, 
-            position: int, 
-            options: FSharpProjectOptions, 
-            filePath: string, 
-            textVersionHash: int,
-            cancellationToken: CancellationToken
-        ) = 
+    static member ProvideQuickInfo(document: Document, sourceText: SourceText, position: int, options: FSharpProjectOptions, textVersionHash: int, cancellationToken: CancellationToken) =
         async {
-            let! parseResults = FSharpChecker.Instance.ParseFileInProject(filePath, sourceText.ToString(), options)
-            let! checkFileAnswer = FSharpChecker.Instance.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options)
+            let! _parseResults, checkResultsAnswer = FSharpChecker.Instance.ParseAndCheckFileInProject(document.FilePath, textVersionHash, sourceText.ToString(), options)
             let checkFileResults = 
-                match checkFileAnswer with
+                match checkResultsAnswer with
                 | FSharpCheckFileAnswer.Aborted -> failwith "Compilation isn't complete yet"
                 | FSharpCheckFileAnswer.Succeeded(results) -> results
           
@@ -82,7 +69,7 @@ type internal FSharpQuickInfoProvider [<System.ComponentModel.Composition.Import
             //let qualifyingNames, partialName = QuickParse.GetPartialLongNameEx(textLine.ToString(), textLineColumn - 1)
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
             let tryClassifyAtPosition position = 
-                CommonHelpers.tryClassifyAtPosition(document.Id, sourceText, filePath, defines, position, cancellationToken)
+                CommonHelpers.tryClassifyAtPosition(document.Id, sourceText, document.FilePath, defines, position, cancellationToken)
             
             let quickParseInfo = 
                 match tryClassifyAtPosition position with 
@@ -91,9 +78,7 @@ type internal FSharpQuickInfoProvider [<System.ComponentModel.Composition.Import
 
             match quickParseInfo with 
             | Some (islandColumn, qualifiers) -> 
-                //let tokenTag = QuickParse.CorrectIdentifierToken "" tokenTag
-                let! res = checkFileResults.GetToolTipTextAlternate(
-                               textLineNumber, islandColumn, textLine.ToString(), qualifiers, 189)
+                let! res = checkFileResults.GetToolTipTextAlternate(textLineNumber, islandColumn, textLine.ToString(), qualifiers, FSharpTokenTag.IDENT)
                 return Some(res)
             | None -> return None
         }
@@ -109,16 +94,14 @@ type internal FSharpQuickInfoProvider [<System.ComponentModel.Composition.Import
                     let classification = CommonHelpers.tryClassifyAtPosition(document.Id, sourceText, document.FilePath, defines, position, cancellationToken)
 
                     match classification with
-                    | Some(_column, _island) ->
+                    | Some _ ->
                         let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
-                        let! toolTipElement = 
-                            FSharpQuickInfoProvider.ProvideQuickInfo(document, sourceText, position, options, document.FilePath, 
-                                textVersion.GetHashCode(), cancellationToken)
+                        let! toolTipElement = FSharpQuickInfoProvider.ProvideQuickInfo(document, sourceText, position, options, textVersion.GetHashCode(), cancellationToken)
                         match toolTipElement with
                         | Some toolTipElement ->
                             let dataTipText = XmlDocumentation.BuildDataTipText(documentationBuilder, toolTipElement) 
                             return QuickInfoItem(textSpan, FSharpDeferredQuickInfoContent(dataTipText))
-                        | None -> return Unchecked.defaultof<_>
-                    | None -> return Unchecked.defaultof<_>
-                | None -> return Unchecked.defaultof<_>
+                        | None -> return null
+                    | None -> return null
+                | None -> return null
             } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)

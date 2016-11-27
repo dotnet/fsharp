@@ -42,17 +42,7 @@ type internal FSharpNavigableItem(document: Document, textSpan: TextSpan) =
 [<ExportLanguageService(typeof<IGoToDefinitionService>, FSharpCommonConstants.FSharpLanguageName)>]
 type internal FSharpGoToDefinitionService [<ImportingConstructor>] ([<ImportMany>]presenters: IEnumerable<INavigableItemsPresenter>) =
 
-    static member FindDefinition 
-        (
-            documentKey: DocumentId,
-            sourceText: SourceText,
-            filePath: string,
-            position: int,
-            defines: string list,
-            options: FSharpProjectOptions,
-            textVersionHash: int,
-            cancellationToken: CancellationToken
-        ) : Async<Option<range>> = 
+    static member FindDefinition(documentKey: DocumentId, sourceText: SourceText, filePath: string, position: int, defines: string list, options: FSharpProjectOptions, textVersionHash: int, cancellationToken: CancellationToken) : Async<Option<range>> = 
         async {
             let textLine = sourceText.Lines.GetLineFromPosition(position)
             let textLinePos = sourceText.Lines.GetLinePosition(position)
