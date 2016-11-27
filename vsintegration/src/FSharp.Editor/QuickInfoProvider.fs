@@ -44,7 +44,10 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 type internal FSharpDeferredQuickInfoContent(content: string) =
     interface IDeferredQuickInfoContent with
         override this.Create() : FrameworkElement =
-            upcast new Label(Content = content, Foreground = SolidColorBrush(Colors.Black))
+            let label = Label(Content = content, Foreground = SolidColorBrush(Colors.Black))
+            label.SetResourceReference(TextBlock.BackgroundProperty, VSColors.ToolTipBrushKey)
+            label.SetResourceReference(TextBlock.ForegroundProperty, VSColors.ToolTipTextBrushKey)
+            upcast label
 
 [<Shared>]
 [<ExportQuickInfoProvider(PredefinedQuickInfoProviderNames.Semantic, FSharpCommonConstants.FSharpLanguageName)>]
