@@ -45,7 +45,6 @@ module CommonHelpers =
                 i <- i + 1
 
     let private dataCache = ConditionalWeakTable<DocumentId, SourceTextData>()
-    let private tokenizers = ConditionalWeakTable<(string list * string option), FSharpSourceTokenizer>()
 
     let internal compilerTokenToRoslynToken(colorKind: FSharpTokenColorKind) : string = 
         match colorKind with
@@ -98,7 +97,7 @@ module CommonHelpers =
 
     let getColorizationData(documentKey: DocumentId, sourceText: SourceText, textSpan: TextSpan, fileName: string option, defines: string list, cancellationToken: CancellationToken) : List<ClassifiedSpan> =
         try
-            let sourceTokenizer = tokenizers.GetValue ((defines, fileName), fun _ -> FSharpSourceTokenizer(defines, fileName))
+            let sourceTokenizer = FSharpSourceTokenizer(defines, fileName)
             let lines = sourceText.Lines
             // We keep incremental data per-document.  When text changes we correlate text line-by-line (by hash codes of lines)
             let sourceTextData = dataCache.GetValue(documentKey, fun key -> SourceTextData(lines.Count))
