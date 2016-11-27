@@ -190,7 +190,7 @@ type FSharpSignatureHelpProvider [<ImportingConstructor>]  (serviceProvider: SVs
         member this.GetItemsAsync(document, position, triggerInfo, cancellationToken) = 
             async {
               try
-                match FSharpLanguageService.GetOptions(document.Project.Id) with
+                match FSharpLanguageService.TryGetOptionsForEditingDocumentOrProject(document)  with 
                 | Some(options) ->
                     let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                     let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask

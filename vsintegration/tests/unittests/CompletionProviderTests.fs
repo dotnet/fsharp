@@ -49,6 +49,7 @@ let internal options = {
     UseScriptResolutionRules = false
     LoadTime = DateTime.MaxValue
     UnresolvedReferences = None
+    ExtraProjectInfo = None
 }
 
 let VerifyCompletionList(fileContents: string, marker: string, expected: string list, unexpected: string list) =

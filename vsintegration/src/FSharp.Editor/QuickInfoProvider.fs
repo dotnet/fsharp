@@ -100,14 +100,14 @@ type internal FSharpQuickInfoProvider [<System.ComponentModel.Composition.Import
     interface IQuickInfoProvider with
         override this.GetItemAsync(document: Document, position: int, cancellationToken: CancellationToken): Task<QuickInfoItem> =
             async {
-                match FSharpLanguageService.GetOptions(document.Project.Id) with
-                | Some(options) ->
-                    let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                    let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
-                    let classification = CommonHelpers.tryClassifyAtPosition(document.Id, sourceText, document.FilePath, defines, position, cancellationToken)
+                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                let defines = FSharpLanguageService.GetCompilationDefinesForEditingDocument(document)  
+                let classification = CommonHelpers.tryClassifyAtPosition(document.Id, sourceText, document.FilePath, defines, position, cancellationToken)
 
-                    match classification with
-                    | Some _ ->
+                match classification with
+                | Some _ ->
+                    match FSharpLanguageService.TryGetOptionsForEditingDocumentOrProject(document)  with 
+                    | Some(options) ->
                         let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
                         let! quickInfoResult = FSharpQuickInfoProvider.ProvideQuickInfo(document.Id, sourceText, document.FilePath, position, options, textVersion.GetHashCode(), cancellationToken)
                         match quickInfoResult with

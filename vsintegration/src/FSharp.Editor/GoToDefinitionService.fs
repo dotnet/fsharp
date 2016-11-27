@@ -79,7 +79,7 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>] ([<ImportMany
     member this.FindDefinitionsAsyncAux(document: Document, position: int, cancellationToken: CancellationToken) =
         async {
             let results = List<INavigableItem>()
-            match FSharpLanguageService.GetOptions(document.Project.Id) with
+            match FSharpLanguageService.TryGetOptionsForEditingDocumentOrProject(document)  with 
             | Some(options) ->
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
