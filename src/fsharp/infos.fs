@@ -1459,6 +1459,10 @@ type MethInfo =
         (paramAttribs,paramNamesAndTypes) ||> List.map2 (List.map2 (fun (isParamArrayArg,isOutArg,optArgInfo,callerInfoInfo,reflArgInfo) (ParamNameAndType(nmOpt,pty)) -> 
              ParamData(isParamArrayArg,isOutArg,optArgInfo,callerInfoInfo,nmOpt,reflArgInfo,pty)))
 
+    /// Get the ParamData objects for the parameters of a MethInfo
+    member x.HasParamArrayArg(amap, m, minst) = 
+        x.GetParamDatas(amap, m, minst) |> List.existsSquared (fun (ParamData(isParamArrayArg,_,_,_,_,_,_)) -> isParamArrayArg)
+
 
     /// Select all the type parameters of the declaring type of a method. 
     ///

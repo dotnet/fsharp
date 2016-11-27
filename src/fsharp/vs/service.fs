@@ -63,10 +63,11 @@ module EnvMisc =
 //--------------------------------------------------------------------------
 
 [<Sealed>]
-type FSharpMethodGroupItemParameter(name: string, canonicalTypeTextForSorting: string, display: string) = 
+type FSharpMethodGroupItemParameter(name: string, canonicalTypeTextForSorting: string, display: string, isOptional: bool) = 
     member __.ParameterName = name
     member __.CanonicalTypeTextForSorting = canonicalTypeTextForSorting
     member __.Display = display
+    member __.IsOptional = isOptional
 
 /// Format parameters for Intellisense completion
 module internal Params = 
@@ -82,7 +83,8 @@ module internal Params =
         FSharpMethodGroupItemParameter(
           name = f.rfield_id.idText,
           canonicalTypeTextForSorting = printCanonicalizedTypeName g denv f.rfield_type,
-          display = NicePrint.prettyStringOfTy denv f.rfield_type)
+          display = NicePrint.prettyStringOfTy denv f.rfield_type,
+          isOptional=false)
     
     let ParamOfUnionCaseField g denv isGenerated (i : int) f = 
         let initial = ParamOfRecdField g denv f
@@ -90,17 +92,19 @@ module internal Params =
         FSharpMethodGroupItemParameter(
           name=initial.ParameterName, 
           canonicalTypeTextForSorting=initial.CanonicalTypeTextForSorting, 
-          display=display)
+          display=display,
+          isOptional=false)
 
-    let ParamOfParamData g denv (ParamData(_isParamArrayArg, _isOutArg, _optArgInfo, _callerInfoInfo, nmOpt, _reflArgInfo, pty) as paramData) =
+    let ParamOfParamData g denv (ParamData(_isParamArrayArg, _isOutArg, optArgInfo, _callerInfoInfo, nmOpt, _reflArgInfo, pty) as paramData) =
         FSharpMethodGroupItemParameter(
           name = (match nmOpt with None -> "" | Some pn -> pn.idText),
           canonicalTypeTextForSorting = printCanonicalizedTypeName g denv pty,
-          display = NicePrint.stringOfParamData denv paramData)
+          display = NicePrint.stringOfParamData denv paramData,
+          isOptional=optArgInfo.IsOptional)
 
     // TODO this code is similar to NicePrint.fs:formatParamDataToBuffer, refactor or figure out why different?
     let ParamsOfParamDatas g denv (paramDatas:ParamData list) rty = 
-        let paramNames,paramPrefixes,paramTypes = 
+        let paramInfo,paramTypes = 
             paramDatas 
             |> List.map (fun (ParamData(isParamArrayArg, _isOutArg, optArgInfo, _callerInfoInfo, nmOpt, _reflArgInfo, pty)) -> 
                 let isOptArg = optArgInfo.IsOptional
@@ -110,10 +114,10 @@ module internal Params =
                     let nm = id.idText
                     // detect parameter type, if ptyOpt is None - this is .NET style optional argument
                     let pty = defaultArg ptyOpt pty
-                    nm, (sprintf "?%s:" nm),  pty
+                    (nm, isOptArg, sprintf "?%s:" nm),  pty
                 // Layout an unnamed argument 
                 | None, _,_ -> 
-                    "", "", pty
+                    ("", isOptArg, ""), pty
                 // Layout a named argument 
                 | Some id,_,_ -> 
                     let nm = id.idText
@@ -122,15 +126,16 @@ module internal Params =
                             sprintf "%s %s: " (NicePrint.PrintUtilities.layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute |> showL) nm 
                         else 
                             sprintf "%s: " nm
-                    nm, prefix,pty)
-            |> List.unzip3 
+                    (nm,isOptArg, prefix),pty)
+            |> List.unzip
         let paramTypeAndRetLs,_ = NicePrint.layoutPrettifiedTypes denv (paramTypes@[rty])
         let paramTypeLs,_ = List.frontAndBack  paramTypeAndRetLs
-        (paramNames,paramPrefixes,(paramTypes,paramTypeLs)||>List.zip) |||> List.map3 (fun nm paramPrefix (tau,tyL) -> 
+        (paramInfo,paramTypes,paramTypeLs) |||> List.map3 (fun (nm,isOptArg,paramPrefix) tau tyL -> 
             FSharpMethodGroupItemParameter(
               name = nm,
               canonicalTypeTextForSorting = printCanonicalizedTypeName g denv tau,
-              display = paramPrefix+(showL tyL)
+              display = paramPrefix+(showL tyL),
+              isOptional=isOptArg
             ))
 
     let ParamsOfTypes g denv args rtau = 
@@ -140,7 +145,8 @@ module internal Params =
             FSharpMethodGroupItemParameter(
               name = "",
               canonicalTypeTextForSorting = printCanonicalizedTypeName g denv tau,
-              display =  Layout.showL tyL
+              display =  Layout.showL tyL,
+              isOptional=false
             )
         (args,argsL) ||> List.zip |> List.map mkParam
 
@@ -212,7 +218,8 @@ module internal Params =
                     FSharpMethodGroupItemParameter(
                       name = spName,
                       canonicalTypeTextForSorting = spKind,
-                      display = sprintf "%s%s: %s" (if spOpt then "?" else "") spName spKind))
+                      display = sprintf "%s%s: %s" (if spOpt then "?" else "") spName spKind,
+                      isOptional=spOpt))
 #endif
         | _ -> [| |]
 
@@ -295,11 +302,13 @@ module internal Params =
 /// A single method for Intellisense completion
 [<Sealed; NoEquality; NoComparison>]
 // Note: instances of this type do not hold any references to any compiler resources.
-type FSharpMethodGroupItem(description: FSharpToolTipText, typeText: string, parameters: FSharpMethodGroupItemParameter[], hasParameters: bool, staticParameters: FSharpMethodGroupItemParameter[]) = 
+type FSharpMethodGroupItem(description: FSharpToolTipText, xmlDoc: FSharpXmlDoc, typeText: string, parameters: FSharpMethodGroupItemParameter[], hasParameters: bool, hasParamArrayArg: bool, staticParameters: FSharpMethodGroupItemParameter[]) = 
     member __.Description = description
+    member __.XmlDoc = xmlDoc
     member __.TypeText = typeText
     member __.Parameters = parameters
     member __.HasParameters = hasParameters
+    member __.HasParamArrayArg = hasParamArrayArg
     // Does the type name or method support a static arguments list, like TP<42,"foo"> or conn.CreateCommand<42, "foo">(arg1, arg2)?
     member __.StaticParameters = staticParameters
 
@@ -322,7 +331,7 @@ type FSharpMethodGroup( name: string, unsortedMethods: FSharpMethodGroupItem[] )
         |> Array.map (fun meth -> 
             let parms = meth.Parameters
             if parms.Length = 1 && parms.[0].CanonicalTypeTextForSorting="Microsoft.FSharp.Core.Unit" then 
-                FSharpMethodGroupItem(meth.Description,meth.TypeText,[||],true,meth.StaticParameters) 
+                FSharpMethodGroupItem(meth.Description, meth.XmlDoc, meth.TypeText, [||], true, meth.HasParamArrayArg, meth.StaticParameters) 
             else 
                 meth)
         // Fix the order of methods, to be stable for unit testing.
@@ -375,8 +384,10 @@ type FSharpMethodGroup( name: string, unsortedMethods: FSharpMethodGroupItem[] )
                         FSharpMethodGroupItem(
                           description = FSharpToolTipText [FormatDescriptionOfItem true infoReader m denv item],
                           typeText = FormatReturnTypeOfItem infoReader m denv item,
+                          xmlDoc = GetXmlCommentForItem infoReader m item,
                           parameters = (Params.ParamsOfItem infoReader m denv item |> Array.ofList),
                           hasParameters = (match item with Params.ItemIsProvidedTypeWithStaticArguments m g _ -> false | _ -> true),
+                          hasParamArrayArg = (match item with Item.CtorGroup(_,[meth]) | Item.MethodGroup(_,[meth],_) -> meth.HasParamArrayArg(infoReader.amap, m, meth.FormalMethodInst) | _ -> false),
                           staticParameters = Params.StaticParamsOfItem infoReader m denv item
                         ))
 #if !FX_NO_WEAKTABLE

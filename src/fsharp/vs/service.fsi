@@ -29,10 +29,16 @@ type internal FSharpMethodGroupItemParameter =
     /// information such as whether it is optional.
     member Display: string
 
+    /// Is the parameter optional
+    member IsOptional: bool
+
 /// Represents one method (or other item) in a method group. The item may represent either a method or 
 /// a single, non-overloaded item such as union case or a named function value.
 [<Sealed>]
 type internal FSharpMethodGroupItem = 
+
+    /// The documentation for the item
+    member XmlDoc : FSharpXmlDoc
 
     /// The formatted description text for the method (or other item)
     member Description : FSharpToolTipText
@@ -45,6 +51,9 @@ type internal FSharpMethodGroupItem =
 
     /// Does the method support an arguments list?  This is always true except for static type instantiations like TP<42,"foo">.
     member HasParameters: bool
+
+    /// Does the method support a params list arg?
+    member HasParamArrayArg: bool
 
     /// Does the type name or method support a static arguments list, like TP<42,"foo"> or conn.CreateCommand<42, "foo">(arg1, arg2)?
     member StaticParameters: FSharpMethodGroupItemParameter[]

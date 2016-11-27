@@ -35,7 +35,7 @@ type internal FSharpNavigableItem(document: Document, textSpan: TextSpan) =
         member this.IsImplicitlyDeclared = false
         member this.Document = document
         member this.SourceSpan = textSpan
-        member this.DisplayTaggedParts = Unchecked.defaultof<ImmutableArray<TaggedText>>
+        member this.DisplayTaggedParts = ImmutableArray<TaggedText>.Empty
         member this.ChildItems = ImmutableArray<INavigableItem>.Empty
 
 [<Shared>]
@@ -48,28 +48,28 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>] ([<ImportMany
             let textLinePos = sourceText.Lines.GetLinePosition(position)
             let fcsTextLineNumber = textLinePos.Line + 1 // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
             let textLineColumn = textLinePos.Character
-            let tryClassifyAtPosition position = CommonHelpers.tryClassifyAtPosition(documentKey, sourceText, filePath, defines, position, cancellationToken)
-            // Tolerate being on the right of the identifier
-            let quickParseInfo = 
-                match tryClassifyAtPosition position with 
-                | None when textLineColumn > 0 -> tryClassifyAtPosition (position - 1) 
-                | res -> res
-            
-            match quickParseInfo with 
-            | Some (islandColumn, qualifiers, _) -> 
-                let! parseResults = FSharpLanguageService.Checker.ParseFileInProject(filePath, sourceText.ToString(), options)
-                let! checkFileAnswer = FSharpLanguageService.Checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options)
-                let checkFileResults = 
+            let tryGotoAtPosition position = 
+              async { 
+                match CommonHelpers.tryClassifyAtPosition(documentKey, sourceText, filePath, defines, position, cancellationToken) with 
+                | Some (islandColumn, qualifiers, _) -> 
+                    let! _parseResults, checkFileAnswer = FSharpLanguageService.Checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
                     match checkFileAnswer with
-                    | FSharpCheckFileAnswer.Aborted -> failwith "Compilation isn't complete yet"
-                    | FSharpCheckFileAnswer.Succeeded(results) -> results
+                    | FSharpCheckFileAnswer.Aborted -> return None
+                    | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> 
             
-                let! declarations = checkFileResults.GetDeclarationLocationAlternate (fcsTextLineNumber, islandColumn, textLine.ToString(), qualifiers, false)
+                    let! declarations = checkFileResults.GetDeclarationLocationAlternate (fcsTextLineNumber, islandColumn, textLine.ToString(), qualifiers, false)
             
-                match declarations with
-                | FSharpFindDeclResult.DeclFound(range) -> return Some(range)
-                | _ -> return None
-            | None -> return None
+                    match declarations with
+                    | FSharpFindDeclResult.DeclFound(range) -> return Some(range)
+                    | _ -> return None
+                | None -> return None
+               }
+
+            // Tolerate being on the right of the identifier
+            let! attempt1 = tryGotoAtPosition position
+            match attempt1 with 
+            | None when textLineColumn > 0 -> return! tryGotoAtPosition (position - 1) 
+            | res -> return res
         }
     
     // FSROSLYNTODO: Since we are not integrated with the Roslyn project system yet, the below call

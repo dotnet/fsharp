@@ -30,7 +30,7 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
             if addSemanticErrors then
                 let! checkResultsAnswer = FSharpLanguageService.Checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options) 
                 match checkResultsAnswer with
-                | FSharpCheckFileAnswer.Aborted -> return! failwith "Compilation isn't complete yet"
+                | FSharpCheckFileAnswer.Aborted -> return [| |]
                 | FSharpCheckFileAnswer.Succeeded(results) -> return results.Errors
             else
                 return parseResults.Errors

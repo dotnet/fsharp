@@ -21,6 +21,11 @@ open Microsoft.FSharp.Compiler.Range
 
 open Microsoft.VisualStudio.FSharp.LanguageService
 
+#if PROJECT_ANALYSIS
+// Project-wide error analysis.  We don't enable this because ParseAndCheckProject checks projects against the versions of the files
+// saves to the file system. This is different to the versions of the files active in the editor.  This results in out-of-sync error
+// messages while files are being edited
+
 [<DiagnosticAnalyzer(FSharpCommonConstants.FSharpLanguageName)>]
 type internal FSharpProjectDiagnosticAnalyzer() =
     inherit ProjectDiagnosticAnalyzer()
@@ -38,7 +43,7 @@ type internal FSharpProjectDiagnosticAnalyzer() =
         return results
       }
         
-    override this.SupportedDiagnostics with get() = CommonRoslynHelpers.SupportedDiagnostics()
+    override this.SupportedDiagnostics = CommonRoslynHelpers.SupportedDiagnostics()
 
     override this.AnalyzeProjectAsync(project: Project, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
         async {
@@ -46,3 +51,4 @@ type internal FSharpProjectDiagnosticAnalyzer() =
             | Some(options) -> return! FSharpProjectDiagnosticAnalyzer.GetDiagnostics(options)
             | None -> return ImmutableArray<Diagnostic>.Empty
         } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
+#endif

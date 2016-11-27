@@ -158,18 +158,7 @@ module internal XmlDocumentation =
 
         interface IDocumentationBuilder with 
             /// Append the given processed XML formatted into the string builder
-            override this.AppendDocumentationFromProcessedXML
-                            ( /// StringBuilder to append to
-                              appendTo:StringBuilder,
-                              /// The processed XML text.
-                              processedXml:string,
-                              /// Whether to show exceptions
-                              showExceptions:bool,
-                              /// Whether to show parameters and return
-                              showParameters:bool,
-                              /// Name of parameter
-                              paramName:string option
-                             ) = 
+            override this.AppendDocumentationFromProcessedXML(appendTo, processedXml, showExceptions, showParameters, paramName) = 
                 let ok,xml = xmlIndexService.GetMemberDataFromXML(processedXml)
                 if Com.Succeeded(ok) then 
                     if paramName.IsSome then
@@ -285,7 +274,14 @@ module internal XmlDocumentation =
     let BuildDataTipText(documentationProvider, FSharpToolTipText(dataTipText)) = 
         BuildTipText(documentationProvider,dataTipText,true, true, false, true) 
 
-    let BuildMethodOverloadTipText(documentationProvider, FSharpToolTipText(dataTipText)) = 
-        BuildTipText(documentationProvider,dataTipText,false, false, true, false) 
+    let BuildMethodOverloadTipText(documentationProvider, FSharpToolTipText(dataTipText), showParams) = 
+        BuildTipText(documentationProvider,dataTipText,false, false, showParams, false) 
 
-    let CreateDocumentationBuilder(xmlIndexService, dte) = Provider(xmlIndexService, dte) :> IDocumentationBuilder
+    let BuildMethodParamText(documentationProvider, xml, paramName) = 
+        let sb = StringBuilder()
+        AppendXmlComment(documentationProvider, sb, xml, false, true, Some paramName)
+        sb.ToString()
+
+    let documentationBuilderCache = System.Runtime.CompilerServices.ConditionalWeakTable<IVsXMLMemberIndexService, IDocumentationBuilder>()
+    let CreateDocumentationBuilder(xmlIndexService: IVsXMLMemberIndexService, dte: DTE) = 
+        documentationBuilderCache.GetValue(xmlIndexService,(fun _ -> Provider(xmlIndexService, dte) :> IDocumentationBuilder))
