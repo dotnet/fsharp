@@ -1,5 +1,5 @@
 // #Warnings
-//<Expects status="Error" span="(7,24)" id="FS0988">Main module of program is empty: nothing will happen when it is run</Expects>
+//<Expects status="warning" span="(7,24)" id="FS0988">Main module of program is empty: nothing will happen when it is run</Expects>
 
 namespace MyNamespace1
 
