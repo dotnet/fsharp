@@ -54,9 +54,9 @@ type internal FSharpQuickInfoProvider [<System.ComponentModel.Composition.Import
     let xmlMemberIndexService = serviceProvider.GetService(typeof<SVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
 
-    static member ProvideQuickInfo(document: Document, sourceText: SourceText, position: int, options: FSharpProjectOptions, textVersionHash: int, cancellationToken: CancellationToken) =
+    static member ProvideQuickInfo(documentId: DocumentId, sourceText: SourceText, filePath: string, position: int, options: FSharpProjectOptions, textVersionHash: int, cancellationToken: CancellationToken) =
         async {
-            let! _parseResults, checkResultsAnswer = FSharpChecker.Instance.ParseAndCheckFileInProject(document.FilePath, textVersionHash, sourceText.ToString(), options)
+            let! _parseResults, checkResultsAnswer = FSharpChecker.Instance.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
             let checkFileResults = 
                 match checkResultsAnswer with
                 | FSharpCheckFileAnswer.Aborted -> failwith "Compilation isn't complete yet"
@@ -67,9 +67,9 @@ type internal FSharpQuickInfoProvider [<System.ComponentModel.Composition.Import
             let textLinePos = sourceText.Lines.GetLinePosition(position)
             let textLineColumn = textLinePos.Character
             //let qualifyingNames, partialName = QuickParse.GetPartialLongNameEx(textLine.ToString(), textLineColumn - 1)
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
+            let defines = CompilerEnvironment.GetCompilationDefinesForEditing(filePath, options.OtherOptions |> Seq.toList)
             let tryClassifyAtPosition position = 
-                CommonHelpers.tryClassifyAtPosition(document.Id, sourceText, document.FilePath, defines, position, cancellationToken)
+                CommonHelpers.tryClassifyAtPosition(documentId, sourceText, filePath, defines, position, cancellationToken)
             
             let quickParseInfo = 
                 match tryClassifyAtPosition position with 
@@ -98,7 +98,7 @@ type internal FSharpQuickInfoProvider [<System.ComponentModel.Composition.Import
                     match classification with
                     | Some _ ->
                         let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
-                        let! quickInfoResult = FSharpQuickInfoProvider.ProvideQuickInfo(document, sourceText, position, options, textVersion.GetHashCode(), cancellationToken)
+                        let! quickInfoResult = FSharpQuickInfoProvider.ProvideQuickInfo(document.Id, sourceText, document.FilePath, position, options, textVersion.GetHashCode(), cancellationToken)
                         match quickInfoResult with
                         | Some(toolTipElement, textSpan) ->
                             let dataTipText = XmlDocumentation.BuildDataTipText(documentationBuilder, toolTipElement)
