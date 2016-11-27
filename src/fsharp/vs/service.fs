@@ -1359,20 +1359,30 @@ type TypeCheckInfo
 
     // Not, this does not have to be a SyncOp, it can be called from any thread
     member scope.GetExtraColorizations() = 
-         [| for cnr in sResolutions.CapturedNameResolutions do  
-               match cnr with 
-               // 'seq' in 'seq { ... }' gets colored as keywords
-               | CNR(_, (Item.Value vref), ItemOccurence.Use, _, _, _, m) when valRefEq g g.seq_vref vref -> 
-                   yield (m, FSharpTokenColorKind.Keyword) 
-               // custom builders, custom operations get colored as keywords
-               | CNR(_, (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use, _, _, _, m) -> 
-                   yield (m, FSharpTokenColorKind.Keyword) 
-               // types get colored as types when they occur in syntactic types or custom attributes
-               // typevariables get colored as types when they occur in syntactic types custom builders, custom operations get colored as keywords
-               | CNR(_, (Item.TypeVar  _ | Item.Types _ | Item.UnqualifiedType _) , (ItemOccurence.UseInType | ItemOccurence.UseInAttribute), _, _, _, m) -> 
-                   yield (m, FSharpTokenColorKind.TypeName) 
-               | _ -> () 
-           |]
+         sResolutions.CapturedNameResolutions
+         |> Seq.choose (fun cnr ->
+              match cnr with 
+              // 'seq' in 'seq { ... }' gets colored as keywords
+              | CNR(_, (Item.Value vref), ItemOccurence.Use, _, _, _, m) when valRefEq g g.seq_vref vref -> 
+                  Some (m, FSharpTokenColorKind.Keyword) 
+              // custom builders, custom operations get colored as keywords
+              | CNR(_, (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use, _, _, _, m) -> 
+                  Some (m, FSharpTokenColorKind.Keyword) 
+              // types get colored as types when they occur in syntactic types or custom attributes
+              // typevariables get colored as types when they occur in syntactic types custom builders, custom operations get colored as keywords
+              | CNR(_, ( Item.TypeVar  _ 
+                       | Item.Types _ 
+                       | Item.UnqualifiedType _
+                       | Item.CtorGroup _), 
+                       ( ItemOccurence.UseInType 
+                       | ItemOccurence.UseInAttribute
+                       | ItemOccurence.Use _ 
+                       | ItemOccurence.Binding _
+                       | ItemOccurence.Pattern _), _, _, _, m) -> 
+                  Some (m, FSharpTokenColorKind.TypeName) 
+              | _ -> None)
+         |> Seq.toArray
+
     member x.ScopeResolutions = sResolutions
     member x.ScopeSymbolUses = sSymbolUses
     member x.TcGlobals = g
