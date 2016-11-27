@@ -88,8 +88,9 @@ type FSharpSignatureHelpProvider [<ImportingConstructor>]  (serviceProvider: SVs
         let posToLinePosition pos = 
             let (l,c) = Pos.toZ  pos
             // FSROSLYNTODO: FCS gives back line counts that are too large. Really, this shouldn't happen
-            //assert (l < textLines.Count)
-            LinePosition(min (textLines.Count-1) l,c)
+            let result =LinePosition(l,c)
+            let lastPosInDocument = textLines.GetLinePosition(textLines.[textLines.Count-1].End)
+            if lastPosInDocument.CompareTo(result) > 0 then result else lastPosInDocument
 
         // Compute the start position
         let startPos = nwpl.LongIdStartLocation |> posToLinePosition
@@ -99,6 +100,7 @@ type FSharpSignatureHelpProvider [<ImportingConstructor>]  (serviceProvider: SVs
             let last = nwpl.TupleEndLocations.[nwpl.TupleEndLocations.Length-1] |> posToLinePosition
             (if nwpl.IsThereACloseParen then oneColBefore last else last)  
 
+        assert (startPos.CompareTo(endPos) <= 0)
 
         // Compute the applicable span between the parentheses
         let applicableSpan = 
