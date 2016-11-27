@@ -139,13 +139,13 @@ System.Console.WriteLine()
 let ShouldDisplayTypeMembers() =
     let fileContents = """
 type T1() =
-member this.M1 = 5
-member this.M2 = "literal"
+    member this.M1 = 5
+    member this.M2 = "literal"
 
 [<EntryPoint>]
 let main argv =
-let obj = T1()
-obj.
+    let obj = T1()
+    obj.
 """
     VerifyCompletionList(fileContents, "obj.", ["M1"; "M2"], ["System"])
 
@@ -153,8 +153,8 @@ obj.
 let ShouldDisplaySystemNamespace() =
     let fileContents = """
 type T1 =
-member this.M1 = 5
-member this.M2 = "literal"
+    member this.M1 = 5
+    member this.M2 = "literal"
 System.Console.WriteLine()
 """
     VerifyCompletionList(fileContents, "System.", ["Console"; "Array"; "String"], ["T1"; "M1"; "M2"])
