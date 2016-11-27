@@ -35,13 +35,21 @@ type Class() =
     static member Mix3(a:int, [<Optional;DefaultParameterValue("str")>]b:string, 
                        [<Optional;DefaultParameterValue(-12)>]c:int, [<Optional;DefaultParameterValue(-123)>]d: int) = (b,c,d)
 
+    // compiler should be able to figure out default to pass to Optional parameters without DefaultPaarameterValue.
+    static member Optional1([<Optional>]a: int) = a
+    static member Optional2([<Optional>]a: obj) = a
+    static member Optional3([<Optional>]a: DateTime) = a
+    static member Optional4([<Optional>]a: Nullable<int>) = a
+    static member Optional5([<Optional>]a: string) = a
+
     // Insanity checks - basically make sure the compiler does not crash.
-    static member OnlyOptional([<Optional>]a: int) = a
     static member OnlyDefault([<DefaultParameterValueAttribute(1)>]a: int) = a
 
-let checkMethod f value defaultFun defaultValue =
-    if f value <> value then exit 1
-    if defaultFun() <> defaultValue then exit 1
+let checkMethod (f:'a->'a) value (defaultFun:unit->'a) defaultValue =
+    let result = f value
+    if result <> value then printfn "normal case failed for type %s. Expected %A <> %A" typeof<'a>.Name value result; exit 1
+    let result = defaultFun() 
+    if defaultFun() <> defaultValue then printf "default case failed for type %s. Expected %A <> %A" typeof<'a>.Name defaultValue result; exit 1
 
 do checkMethod (fun v -> Class.Method1 (v)) 1y       (fun () -> Class.Method1 ()) 42y
 do checkMethod (fun v -> Class.Method2 (v)) 1uy      (fun () -> Class.Method2 ()) 42uy
@@ -69,8 +77,12 @@ do if (Class.Mix3(1, "1")) <> ("1",-12,-123) then exit 1
 do if (Class.Mix3(1)) <> ("str",-12,-123) then exit 1
 do if (Class.Mix3(1, c=1, b="123")) <> ("123",1,-123) then exit 1
 
-// can't omit the argument, but can still call the method.
-do if Class.OnlyOptional(5) <> 5 then exit 1
+do checkMethod (fun v -> Class.Optional1(v)) 1    (fun () -> Class.Optional1()) 0
+do checkMethod (fun v -> Class.Optional2(v)) (new obj())  (fun () -> Class.Optional2()) (upcast System.Reflection.Missing.Value)
+do checkMethod (fun v -> Class.Optional3(v)) DateTime.Now  (fun () -> Class.Optional3()) (DateTime())
+do checkMethod (fun v -> Class.Optional4(v)) (Nullable<_>(12300))  (fun () -> Class.Optional4()) (Nullable<_>())
+do checkMethod (fun v -> Class.Optional5(v)) "123"  (fun () -> Class.Optional5()) null
+
 // can't omit the argument, but can still call the method.
 do if Class.OnlyDefault(2) <> 2 then exit 1
 

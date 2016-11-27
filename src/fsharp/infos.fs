@@ -1337,9 +1337,9 @@ type MethInfo =
                         let defaultParameterValueAttribute = TryFindFSharpAttributeOpt g g.attrib_DefaultParameterValueAttribute argInfo.Attribs
                         match defaultParameterValueAttribute with
                         | None -> 
-                            //don't support Optional arguments without DefaultParameterValue defined in F#
-                            // - this saves a bunch of type directed analysis, and not clear what the value-add is.
-                            NotOptional
+                            // Do a type-directed analysis of the type to determine the default value to pass.
+                            // Similar rules as OptionalArgInfo.FromILParameter are applied here, except for the COM and byref-related stuff.
+                            CallerSide (if isObjTy g ty then MissingValue else DefaultValue)
                         | Some attr -> 
                             let defaultValue = OptionalArgInfo.ValueOfDefaultParameterValueAttrib attr
                             match defaultValue with
@@ -1348,7 +1348,7 @@ type MethInfo =
                             | Some (Expr.Const((ConstToILFieldInit fi),_,_)) -> CallerSide (Constant fi)
                             | _ -> NotOptional //type of default value not appropriate, ignore here, compiler already gives error in that case.
                     else NotOptional
-                
+
                 let isCallerLineNumberArg = HasFSharpAttribute g g.attrib_CallerLineNumberAttribute argInfo.Attribs
                 let isCallerFilePathArg = HasFSharpAttribute g g.attrib_CallerFilePathAttribute argInfo.Attribs
                 let isCallerMemberNameArg = HasFSharpAttribute g g.attrib_CallerMemberNameAttribute argInfo.Attribs
