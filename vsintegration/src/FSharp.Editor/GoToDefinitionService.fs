@@ -56,7 +56,7 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>] ([<ImportMany
                 | res -> res
             
             match quickParseInfo with 
-            | Some (islandColumn, qualifiers) -> 
+            | Some (islandColumn, qualifiers, _) -> 
                 let! parseResults = FSharpLanguageService.Checker.ParseFileInProject(filePath, sourceText.ToString(), options)
                 let! checkFileAnswer = FSharpLanguageService.Checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options)
                 let checkFileResults = 

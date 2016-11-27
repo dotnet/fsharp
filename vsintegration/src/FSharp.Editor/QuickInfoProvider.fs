@@ -77,9 +77,9 @@ type internal FSharpQuickInfoProvider [<System.ComponentModel.Composition.Import
                 | res -> res
 
             match quickParseInfo with 
-            | Some (islandColumn, qualifiers) -> 
+            | Some (islandColumn, qualifiers, textSpan) -> 
                 let! res = checkFileResults.GetToolTipTextAlternate(textLineNumber, islandColumn, textLine.ToString(), qualifiers, FSharpTokenTag.IDENT)
-                return Some(res)
+                return Some(res, textSpan)
             | None -> return None
         }
     
@@ -89,16 +89,15 @@ type internal FSharpQuickInfoProvider [<System.ComponentModel.Composition.Import
                 match FSharpLanguageService.GetOptions(document.Project.Id) with
                 | Some(options) ->
                     let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                    let textSpan = TextSpan(0, sourceText.Length)
                     let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
                     let classification = CommonHelpers.tryClassifyAtPosition(document.Id, sourceText, document.FilePath, defines, position, cancellationToken)
 
                     match classification with
                     | Some _ ->
                         let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
-                        let! toolTipElement = FSharpQuickInfoProvider.ProvideQuickInfo(document, sourceText, position, options, textVersion.GetHashCode(), cancellationToken)
-                        match toolTipElement with
-                        | Some toolTipElement ->
+                        let! quickInfoResult = FSharpQuickInfoProvider.ProvideQuickInfo(document, sourceText, position, options, textVersion.GetHashCode(), cancellationToken)
+                        match quickInfoResult with
+                        | Some(toolTipElement, textSpan) ->
                             let dataTipText = XmlDocumentation.BuildDataTipText(documentationBuilder, toolTipElement) 
                             return QuickInfoItem(textSpan, FSharpDeferredQuickInfoContent(dataTipText))
                         | None -> return null

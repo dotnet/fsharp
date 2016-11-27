@@ -180,10 +180,10 @@ module CommonHelpers =
                 match QuickParse.GetCompleteIdentifierIsland true (textLine.ToString()) textLineColumn with
                 | Some (islandIdentifier, islandColumn, isQuoted) -> 
                     let qualifiers = if isQuoted then [islandIdentifier] else islandIdentifier.Split '.' |> Array.toList
-                    Some (islandColumn, qualifiers)
+                    Some (islandColumn, qualifiers, classifiedSpan.TextSpan)
                 | None -> None
             | ClassificationTypeNames.Operator ->
                 let islandColumn = sourceText.Lines.GetLinePositionSpan(classifiedSpan.TextSpan).End.Character
-                Some (islandColumn, [""]) 
+                Some (islandColumn, [""], classifiedSpan.TextSpan) 
             | _ -> None
         | _ -> None
