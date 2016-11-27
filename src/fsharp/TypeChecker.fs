@@ -750,6 +750,7 @@ let ReportImplicitlyIgnoredBoolExpression denv m ty expr =
         | _ -> UnitTypeExpected (denv,ty,m)
 
     match expr with 
+    | Some(Expr.Let(_,Expr.Sequential(_,inner,_,_,_),_,_))
     | Some(Expr.Sequential(_,inner,_,_,_)) ->
         let rec extractNext expr =
             match expr with
