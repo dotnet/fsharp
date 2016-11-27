@@ -40,7 +40,7 @@ type internal FSharpBreakpointResolutionService() =
         let! parseResults = FSharpLanguageService.Checker.ParseFileInProject(fileName, sourceText.ToString(), options)
         let textLinePos = sourceText.Lines.GetLinePosition(textSpan.Start)
         let textLineColumn = textLinePos.Character
-        let fcsTextLineNumber = textLinePos.Line + 1 // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
+        let fcsTextLineNumber = Line.fromZ textLinePos.Line // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
 
         return parseResults.ValidateBreakpointLocation(mkPos fcsTextLineNumber textLineColumn)
     }
@@ -48,7 +48,7 @@ type internal FSharpBreakpointResolutionService() =
     interface IBreakpointResolutionService with
         member this.ResolveBreakpointAsync(document: Document, textSpan: TextSpan, cancellationToken: CancellationToken): Task<BreakpointResolutionResult> =
             async {
-                match FSharpLanguageService.GetOptions(document.Project.Id) with
+                match FSharpLanguageService.TryGetOptionsForEditingDocumentOrProject(document)  with 
                 | Some(options) ->
                     let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                     let! location = FSharpBreakpointResolutionService.GetBreakpointLocation(sourceText, document.Name, textSpan, options)

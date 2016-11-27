@@ -1884,22 +1884,27 @@ let BuildFieldMap cenv env isPartial ty flds m =
         let allFields = flds |> List.map (fun ((_,ident),_) -> ident)
         flds |> List.map (fun (fld,fldExpr) -> 
             let frefSet = ResolveField cenv.tcSink cenv.nameResolver env.eNameResEnv ad ty fld allFields
-            fld,frefSet, fldExpr)
+            fld,frefSet,fldExpr)
     let relevantTypeSets = 
         frefSets |> List.map (fun (_,frefSet,_) -> frefSet |> List.choose (fun (FieldResolution(rfref,_)) -> Some rfref.TyconRef))
     
     let tcref = 
         match List.fold (ListSet.intersect (tyconRefEq cenv.g)) (List.head relevantTypeSets) (List.tail relevantTypeSets) with
         | [tcref] -> tcref
-        | _ -> 
+        | tcrefs -> 
             if isPartial then 
                 warning (Error(FSComp.SR.tcFieldsDoNotDetermineUniqueRecordType(),m))
-            // OK, there isn't a unique type dictated by the intersection for the field refs. 
-            // We're going to get an error of some kind below. 
-            // Just choose one field ref and let the error come later 
-            let (_,frefSet1,_) = List.head frefSets
-            let (FieldResolution(fref1,_))= List.head frefSet1
-            fref1.TyconRef
+
+            // try finding a record type with the same number of fields as the ones that are given.
+            match tcrefs |> List.tryFind (fun tc -> tc.TrueFieldsAsList.Length = flds.Length) with
+            | Some tcref -> tcref            
+            | _ -> 
+                // OK, there isn't a unique, good type dictated by the intersection for the field refs. 
+                // We're going to get an error of some kind below. 
+                // Just choose one field ref and let the error come later 
+                let (_,frefSet1,_) = List.head frefSets
+                let (FieldResolution(fref1,_))= List.head frefSet1
+                fref1.TyconRef
     
     let fldsmap,rfldsList = 
         ((Map.empty,[]), frefSets) ||> List.fold (fun (fs,rfldsList) (fld,frefs,fldExpr) -> 
@@ -3906,7 +3911,7 @@ type DelayedItem =
 
   /// DelayedApp (isAtomic, argExpr, mFuncAndArg) 
   ///
-  /// Represents the args in "item args", or "item.[args]". 
+  /// Represents the args in "item args", or "item.[args]".
   | DelayedApp of ExprAtomicFlag * Ast.SynExpr * range
 
   /// Represents the long identifiers in "item.Ident1", or "item.Ident1.Ident2" etc.
@@ -5323,7 +5328,15 @@ and RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv e
             RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects cenv env tpenv arg
             dummyCheckedDelayed otherDelayed
         | _ -> ()
-    dummyCheckedDelayed delayed 
+    dummyCheckedDelayed delayed
+
+// Calls UnifyTypes, but upon error only does the minimal error recovery
+// so that IntelliSense information can continue to be collected.
+and UnifyTypesAndRecover cenv env m expectedTy actualTy =
+    try
+        UnifyTypes cenv env m expectedTy actualTy
+    with e ->
+        errorRecovery e m
 
 and TcExprOfUnknownType cenv env tpenv expr =
     let exprty = NewInferenceType ()
@@ -8089,7 +8102,7 @@ and PropagateThenTcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFla
         | [] -> 
             // Avoid unifying twice: we're about to unify in TcDelayed 
             if not (isNil delayed) then 
-                UnifyTypes cenv env mExpr overallTy exprty
+                UnifyTypesAndRecover cenv env mExpr overallTy exprty
         | DelayedDot :: _
         | DelayedSet _ :: _
         | DelayedDotLookup _ :: _ -> ()
@@ -8108,7 +8121,7 @@ and PropagateThenTcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFla
                 | SynExpr.CompExpr _ -> ()
                 | _ -> 
                     // 'delayed' is about to be dropped on the floor, first do rudimentary checking to get name resolutions in its body
-                    RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed 
+                    RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed
                     error (NotAFunction(denv,overallTy,mExpr,mArg)) 
 
     propagate delayed expr.Range exprty
@@ -8127,7 +8140,8 @@ and TcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFlag:ExprAtomicF
     match delayed with 
     | []  
     | DelayedDot :: _ -> 
-        UnifyTypes cenv env mExpr overallTy exprty; expr.Expr,tpenv
+        UnifyTypesAndRecover cenv env mExpr overallTy exprty
+        expr.Expr,tpenv
     // expr.M(args) where x.M is a .NET method or index property 
     // expr.M<tyargs>(args) where x.M is a .NET method or index property 
     // expr.M where x.M is a .NET method or index property 
@@ -8689,7 +8703,7 @@ and TcItemThen cenv overallTy env tpenv (item,mItem,rest,afterOverloadResolution
      
     | Item.CustomOperation (nm,usageTextOpt,_) -> 
         // 'delayed' is about to be dropped on the floor, first do rudimentary checking to get name resolutions in its body 
-        RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed 
+        RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed
         match usageTextOpt() with
         | None -> error(Error(FSComp.SR.tcCustomOperationNotUsedCorrectly(nm), mItem))
         | Some usageText -> error(Error(FSComp.SR.tcCustomOperationNotUsedCorrectly2(nm,usageText), mItem))

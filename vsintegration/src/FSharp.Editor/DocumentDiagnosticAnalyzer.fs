@@ -25,17 +25,14 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
     inherit DocumentDiagnosticAnalyzer()
 
     static member GetDiagnostics(filePath: string, sourceText: SourceText, textVersionHash: int, options: FSharpProjectOptions, addSemanticErrors: bool) = async {
-        // REVIEW: ParseFileInProject and CheckFileInProject can cause FSharp.Compiler.Service to become unavailable (i.e. not responding to requests) for 
-        // an arbitrarily long time while they process all files prior to this one in the project (plus dependent projects
-        // if we enable cross-project checking in multi-project solutions). FCS will not respond to other 
-        // requests unless this task is cancelled. We need to check that this task is cancelled in a timely way by the
-        // Roslyn UI machinery.
+
+
         let! parseResults = FSharpLanguageService.Checker.ParseFileInProject(filePath, sourceText.ToString(), options) 
         let! errors = async {
             if addSemanticErrors then
                 let! checkResultsAnswer = FSharpLanguageService.Checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options) 
                 match checkResultsAnswer with
-                | FSharpCheckFileAnswer.Aborted -> return! failwith "Compilation isn't complete yet"
+                | FSharpCheckFileAnswer.Aborted -> return [| |]
                 | FSharpCheckFileAnswer.Succeeded(results) -> return results.Errors
             else
                 return parseResults.Errors
@@ -51,18 +48,18 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
                 let linePositionSpan = LinePositionSpan(LinePosition(error.StartLineAlternate - 1, error.StartColumn),LinePosition(error.EndLineAlternate - 1, error.EndColumn))
                 let textSpan = sourceText.Lines.GetTextSpan(linePositionSpan)
                 // F# compiler report errors at end of file if parsing fails. It should be corrected to match Roslyn boundaries
-                let correctedTextSpan = if textSpan.End < sourceText.Length then textSpan else TextSpan.FromBounds(sourceText.Length - 1, sourceText.Length)
+                let correctedTextSpan = if textSpan.End < sourceText.Length then textSpan else TextSpan.FromBounds(max 0 (sourceText.Length - 1), sourceText.Length)
                 let location = Location.Create(filePath, correctedTextSpan , linePositionSpan)
                 Some(CommonRoslynHelpers.ConvertError(error, location)))
           ).ToImmutableArray()
         return results
       }
 
-    override this.SupportedDiagnostics with get() = CommonRoslynHelpers.SupportedDiagnostics()
+    override this.SupportedDiagnostics = CommonRoslynHelpers.SupportedDiagnostics()
 
     override this.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
         async {
-            match FSharpLanguageService.GetOptions(document.Project.Id) with
+            match FSharpLanguageService.TryGetOptionsForEditingDocumentOrProject(document)  with 
             | Some(options) ->
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
@@ -73,7 +70,8 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
 
     override this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
         async {
-            match FSharpLanguageService.GetOptions(document.Project.Id) with
+            let! optionsOpt = FSharpLanguageService.TryGetOptionsForDocumentOrProject(document) 
+            match optionsOpt with 
             | Some(options) ->
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask

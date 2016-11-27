@@ -19,6 +19,7 @@ open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Editor.Implementation.Debugging
 open Microsoft.CodeAnalysis.Editor.Shared.Utilities
 open Microsoft.CodeAnalysis.Formatting
+open Microsoft.CodeAnalysis.Host
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Options
 open Microsoft.CodeAnalysis.Text
@@ -32,35 +33,40 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons
 
 type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SVsServiceProvider) =
     inherit CompletionProvider()
 
-    static let completionTriggers = [ '.' ]
+    static let completionTriggers = [| '.' |]
     static let declarationItemsCache = ConditionalWeakTable<string, FSharpDeclarationListItem>()
     
     let xmlMemberIndexService = serviceProvider.GetService(typeof<IVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
 
-    static member ShouldTriggerCompletionAux(sourceText: SourceText, caretPosition: int, trigger: CompletionTriggerKind, filePath: string, defines: string list) =
+    static member ShouldTriggerCompletionAux(sourceText: SourceText, caretPosition: int, trigger: CompletionTriggerKind, getInfo: (unit -> DocumentId * string * string list)) =
         // Skip if we are at the start of a document
         if caretPosition = 0 then
             false
 
         // Skip if it was triggered by an operation other than insertion
-        else if not (trigger = CompletionTriggerKind.Insertion) then
+        elif not (trigger = CompletionTriggerKind.Insertion) then
             false
 
         // Skip if we are not on a completion trigger
-        else if not (completionTriggers |> Seq.contains(sourceText.[caretPosition - 1])) then
+        else
+          let triggerPosition = caretPosition - 1
+          let c = sourceText.[triggerPosition]
+          if not (completionTriggers |> Array.contains c) then
             false
 
-        // Trigger completion if we are on a valid classification type
-        else
-            let triggerPosition = caretPosition - 1
-            let textLine = sourceText.Lines.GetLineFromPosition(triggerPosition)
+          // Trigger completion if we are on a valid classification type
+          else
+            let documentId, filePath,  defines = getInfo()
+            let textLines = sourceText.Lines
+            let triggerLine = textLines.GetLineFromPosition(triggerPosition)
             let classifiedSpanOption =
-                FSharpColorizationService.GetColorizationData(sourceText, textLine.Span, Some(filePath), defines, CancellationToken.None)
+                CommonHelpers.getColorizationData(documentId, sourceText, triggerLine.Span, Some(filePath), defines, CancellationToken.None)
                 |> Seq.tryFind(fun classifiedSpan -> classifiedSpan.TextSpan.Contains(triggerPosition))
 
             match classifiedSpanOption with
@@ -73,30 +79,51 @@ type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SV
                 | _ -> true // anything else is a valid classification type
 
     static member ProvideCompletionsAsyncAux(sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, textVersionHash: int) = async {
-        // REVIEW: ParseFileInProject and CheckFileInProject can cause FSharp.Compiler.Service to become unavailable (i.e. not responding to requests) for 
-        // an arbitrarily long time while they process all files prior to this one in the project (plus dependent projects
-        // if we enable cross-project checking in multi-project solutions). FCS will not respond to other 
-        // requests unless this task is cancelled. We need to check that this task is cancelled in a timely way by the
-        // Roslyn UI machinery.
-        let! parseResults = FSharpLanguageService.Checker.ParseFileInProject(filePath, sourceText.ToString(), options)
-        let! checkFileAnswer = FSharpLanguageService.Checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options)
-        let checkFileResults = 
-            match checkFileAnswer with
-            | FSharpCheckFileAnswer.Aborted -> failwith "Compilation isn't complete yet or was cancelled"
-            | FSharpCheckFileAnswer.Succeeded(results) -> results
+        let! parseResults, checkFileAnswer = FSharpLanguageService.Checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
+        match checkFileAnswer with
+        | FSharpCheckFileAnswer.Aborted -> return List()
+        | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> 
 
-        let textLine = sourceText.Lines.GetLineFromPosition(caretPosition)
-        let textLinePos = sourceText.Lines.GetLinePosition(caretPosition)
-        let fcsTextLineNumber = textLinePos.Line + 1 // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
-        let textLineColumn = textLinePos.Character
+        let textLines = sourceText.Lines
+        let caretLine = textLines.GetLineFromPosition(caretPosition)
+        let caretLinePos = textLines.GetLinePosition(caretPosition)
+        let fcsCaretLineNumber = Line.fromZ caretLinePos.Line  // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
+        let caretLineColumn = caretLinePos.Character
 
-        let qualifyingNames, partialName = QuickParse.GetPartialLongNameEx(textLine.ToString(), textLineColumn - 1) 
-        let! declarations = checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsTextLineNumber, textLineColumn, textLine.ToString(), qualifyingNames, partialName)
+        let qualifyingNames, partialName = QuickParse.GetPartialLongNameEx(caretLine.ToString(), caretLineColumn - 1) 
+        let! declarations = checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLineColumn, caretLine.ToString(), qualifyingNames, partialName)
 
         let results = List<CompletionItem>()
 
         for declarationItem in declarations.Items do
-            let completionItem = CompletionItem.Create(declarationItem.Name)
+            // FSROSLYNTODO: This doesn't yet reflect pulbic/private/internal into the glyph
+            // FSROSLYNTODO: We should really use FSharpSymbol information here.  But GetDeclarationListInfo doesn't provide it, and switch to GetDeclarationListSymbols is a bit large at the moment
+            let glyph = 
+                match declarationItem.GlyphMajor with 
+                | GlyphMajor.Class -> Glyph.ClassPublic
+                | GlyphMajor.Constant -> Glyph.ConstantPublic
+                | GlyphMajor.Delegate -> Glyph.DelegatePublic
+                | GlyphMajor.Enum -> Glyph.EnumPublic
+                | GlyphMajor.EnumMember -> Glyph.EnumMember
+                | GlyphMajor.Event -> Glyph.EventPublic
+                | GlyphMajor.Exception -> Glyph.ClassPublic
+                | GlyphMajor.FieldBlue -> Glyph.FieldPublic
+                | GlyphMajor.Interface -> Glyph.InterfacePublic
+                | GlyphMajor.Method -> Glyph.MethodPublic
+                | GlyphMajor.Method2 -> Glyph.ExtensionMethodPublic
+                | GlyphMajor.Module -> Glyph.ModulePublic
+                | GlyphMajor.NameSpace -> Glyph.Namespace
+                | GlyphMajor.Property -> Glyph.PropertyPublic
+                | GlyphMajor.Struct -> Glyph.StructurePublic
+                | GlyphMajor.Typedef -> Glyph.ClassPublic
+                | GlyphMajor.Type -> Glyph.ClassPublic
+                | GlyphMajor.Union -> Glyph.EnumPublic
+                | GlyphMajor.Variable -> Glyph.Local
+                | GlyphMajor.ValueType -> Glyph.StructurePublic
+                | GlyphMajor.Error -> Glyph.Error
+                | _ -> Glyph.ClassPublic
+
+            let completionItem = CommonCompletionItem.Create(declarationItem.Name, glyph=Nullable(glyph))
             declarationItemsCache.Remove(completionItem.DisplayText) |> ignore // clear out stale entries if they exist
             declarationItemsCache.Add(completionItem.DisplayText, declarationItem)
             results.Add(completionItem)
@@ -106,18 +133,17 @@ type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SV
 
 
     override this.ShouldTriggerCompletion(sourceText: SourceText, caretPosition: int, trigger: CompletionTrigger, _: OptionSet) =
-        let documentId = workspace.GetDocumentIdInCurrentContext(sourceText.Container)
-        let document = workspace.CurrentSolution.GetDocument(documentId)
-        
-        match FSharpLanguageService.GetOptions(document.Project.Id) with
-        | None -> false
-        | Some(options) ->
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
-            FSharpCompletionProvider.ShouldTriggerCompletionAux(sourceText, caretPosition, trigger.Kind, document.FilePath, defines)
+        let getInfo() = 
+            let documentId = workspace.GetDocumentIdInCurrentContext(sourceText.Container)
+            let document = workspace.CurrentSolution.GetDocument(documentId)
+            let defines = FSharpLanguageService.GetCompilationDefinesForEditingDocument(document)  
+            (documentId, document.FilePath, defines)
+
+        FSharpCompletionProvider.ShouldTriggerCompletionAux(sourceText, caretPosition, trigger.Kind, getInfo)
     
     override this.ProvideCompletionsAsync(context: Microsoft.CodeAnalysis.Completion.CompletionContext) =
         async {
-            match FSharpLanguageService.GetOptions(context.Document.Project.Id) with
+            match FSharpLanguageService.TryGetOptionsForEditingDocumentOrProject(context.Document)  with 
             | Some(options) ->
                 let! sourceText = context.Document.GetTextAsync(context.CancellationToken) |> Async.AwaitTask
                 let! textVersion = context.Document.GetTextVersionAsync(context.CancellationToken) |> Async.AwaitTask
@@ -137,3 +163,24 @@ type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SV
             else
                 return CompletionDescription.Empty
         } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
+
+type internal FSharpCompletionService(workspace: Workspace, serviceProvider: SVsServiceProvider) =
+    inherit CompletionServiceWithProviders(workspace)
+
+    let builtInProviders = ImmutableArray.Create<CompletionProvider>(FSharpCompletionProvider(workspace, serviceProvider))
+    let completionRules = CompletionRules.Default.WithDismissIfEmpty(true).WithDismissIfLastCharacterDeleted(true).WithDefaultEnterKeyRule(EnterKeyRule.Never)
+
+    override this.Language = FSharpCommonConstants.FSharpLanguageName
+    override this.GetBuiltInProviders() = builtInProviders
+    override this.GetRules() = completionRules
+
+
+
+[<Shared>]
+[<ExportLanguageServiceFactory(typeof<CompletionService>, FSharpCommonConstants.FSharpLanguageName)>]
+type internal FSharpCompletionServiceFactory [<ImportingConstructor>] (serviceProvider: SVsServiceProvider) =
+    interface ILanguageServiceFactory with
+        member this.CreateLanguageService(hostLanguageServices: HostLanguageServices) : ILanguageService =
+            upcast new FSharpCompletionService(hostLanguageServices.WorkspaceServices.Workspace, serviceProvider)
+
+

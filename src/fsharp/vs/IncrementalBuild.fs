@@ -1272,10 +1272,10 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
 
     let tcConfigP = TcConfigProvider.Constant(tcConfig)
     let importsInvalidated = new Event<string>()
-    let fileParsed = new Event<_>()
-    let beforeTypeCheckFile = new Event<_>()
-    let fileChecked = new Event<_>()
-    let projectChecked = new Event<_>()
+    let fileParsed = new Event<string>()
+    let beforeFileChecked = new Event<string>()
+    let fileChecked = new Event<string>()
+    let projectChecked = new Event<unit>()
 
     // Resolve assemblies and create the framework TcImports. This is done when constructing the
     // builder itself, rather than as an incremental task. This caches a level of "system" references. No type providers are 
@@ -1361,7 +1361,7 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
         try  
             IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed filename)
             let result = ParseOneInputFile(tcConfig,lexResourceManager, [], filename ,isLastCompiland,errorLogger,(*retryLocked*)true)
-            fileParsed.Trigger filename
+            fileParsed.Trigger (filename)
             result,sourceRange,filename,errorLogger.GetErrors ()
         with exn -> 
             System.Diagnostics.Debug.Assert(false, sprintf "unexpected failure in IncrementalFSharpBuild.Parse\nerror = %s" (exn.ToString()))
@@ -1457,7 +1457,7 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
             let errorLogger = GetErrorLoggerFilteringByScopedPragmas(false,GetScopedPragmasForInput(input),capturingErrorLogger)
             let fullComputation = 
                 eventually {
-                    beforeTypeCheckFile.Trigger filename
+                    beforeFileChecked.Trigger (filename)
 
                     ApplyMetaCommandsFromInputToTcConfig tcConfig (input, Path.GetDirectoryName filename) |> ignore
                     let sink = TcResultsSinkImpl(tcAcc.tcGlobals)
@@ -1475,7 +1475,7 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
                     let typedImplFiles = if keepAssemblyContents then typedImplFiles else []
                     let tcResolutions = if keepAllBackgroundResolutions then sink.GetResolutions() else TcResolutions.Empty
                     let tcSymbolUses = sink.GetSymbolUses()  
-                    fileChecked.Trigger filename
+                    fileChecked.Trigger (filename)
                     return {tcAcc with tcState=tcState 
                                        tcEnvAtEndOfFile=tcEnvAtEndOfFile
                                        topAttribs=Some topAttribs
@@ -1656,7 +1656,7 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
 
     member __.TcConfig = tcConfig
     member __.FileParsed = fileParsed.Publish
-    member __.BeforeTypeCheckFile = beforeTypeCheckFile.Publish
+    member __.BeforeFileChecked = beforeFileChecked.Publish
     member __.FileChecked = fileChecked.Publish
     member __.ProjectChecked = projectChecked.Publish
     member __.ImportedCcusInvalidated = importsInvalidated.Publish

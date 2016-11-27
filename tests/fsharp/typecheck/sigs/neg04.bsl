@@ -31,6 +31,14 @@ but given a
     ''g list -> 'h'    
 The type 'seq<'a>' does not match the type ''f list'
 
+neg04.fs(47,49,47,51): typecheck error FS0784: This numeric literal requires that a module 'NumericLiteralN' defining functions FromZero, FromOne, FromInt32, FromInt64 and FromString be in scope
+
+neg04.fs(47,30,47,51): typecheck error FS0001: Type mismatch. Expecting a
+    'seq<'a> -> 'f'    
+but given a
+    ''g list -> 'h'    
+The type 'seq<'a>' does not match the type ''f list'
+
 neg04.fs(61,25,61,40): typecheck error FS0001: This expression was expected to have type
     'ClassType1'    
 but here has type

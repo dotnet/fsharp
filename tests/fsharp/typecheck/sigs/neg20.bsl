@@ -245,6 +245,16 @@ neg20.fs(184,28,184,33): typecheck error FS0001: This expression was expected to
 but here has type
     'obj'    
 
+neg20.fs(184,28,184,33): typecheck error FS0001: This expression was expected to have type
+    'int'    
+but here has type
+    'obj'    
+
+neg20.fs(184,34,184,39): typecheck error FS0001: This expression was expected to have type
+    'int'    
+but here has type
+    'obj'    
+
 neg20.fs(184,34,184,39): typecheck error FS0001: This expression was expected to have type
     'int'    
 but here has type
@@ -268,6 +278,16 @@ but here has type
     'string'    
 
 neg20.fs(190,28,190,33): typecheck error FS0001: This expression was expected to have type
+    'string'    
+but here has type
+    'obj'    
+
+neg20.fs(190,28,190,33): typecheck error FS0001: This expression was expected to have type
+    'string'    
+but here has type
+    'obj'    
+
+neg20.fs(190,34,190,39): typecheck error FS0001: This expression was expected to have type
     'string'    
 but here has type
     'obj'    

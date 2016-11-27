@@ -4520,12 +4520,11 @@ typeArgsActual:
   | LESS typeArgActual GREATER 
      { (rhs parseState 1), Some(rhs parseState 3), true, [$2], [], lhs parseState } 
 
-  | LESS typeArgActual recover
-     { if not $3 then 
-           reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedEndOfFileTypeArgs())
-       else
-           reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsMissingGreaterThan())
-       (rhs parseState 1), None, false, [$2], [], (rhs2 parseState 1 2) } 
+  | LESS typeArgActual ends_coming_soon_or_recover
+     { let nextToken = rhs parseState 3
+       if not $3 then reportParseErrorAt nextToken (FSComp.SR.parsMissingTypeArgs())
+       let zeroWidthAtStartOfNextToken = nextToken.StartRange
+       (rhs parseState 1), None, false, [$2], [], unionRanges (rhs parseState 1) zeroWidthAtStartOfNextToken } 
 
   | LESS GREATER 
      { (rhs parseState 1), Some(rhs parseState 2), true, [], [], lhs parseState } 
