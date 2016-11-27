@@ -79,7 +79,10 @@ type internal FSharpQuickInfoProvider [<System.ComponentModel.Composition.Import
             match quickParseInfo with 
             | Some (islandColumn, qualifiers, textSpan) -> 
                 let! res = checkFileResults.GetToolTipTextAlternate(textLineNumber, islandColumn, textLine.ToString(), qualifiers, FSharpTokenTag.IDENT)
-                return Some(res, textSpan)
+                return 
+                    match res with
+                    | FSharpToolTipText [] -> None
+                    | _ -> Some(res, textSpan)
             | None -> return None
         }
     
@@ -98,7 +101,7 @@ type internal FSharpQuickInfoProvider [<System.ComponentModel.Composition.Import
                         let! quickInfoResult = FSharpQuickInfoProvider.ProvideQuickInfo(document, sourceText, position, options, textVersion.GetHashCode(), cancellationToken)
                         match quickInfoResult with
                         | Some(toolTipElement, textSpan) ->
-                            let dataTipText = XmlDocumentation.BuildDataTipText(documentationBuilder, toolTipElement) 
+                            let dataTipText = XmlDocumentation.BuildDataTipText(documentationBuilder, toolTipElement)
                             return QuickInfoItem(textSpan, FSharpDeferredQuickInfoContent(dataTipText))
                         | None -> return null
                     | None -> return null
