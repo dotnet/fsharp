@@ -3405,7 +3405,7 @@ and GenGenericParam cenv eenv (tp:Typar) =
 // Generate object expressions as ILX "closures"
 //-------------------------------------------------------------------------- 
 
-// generates the data used for parameters at definitions of abstract method slots such as interface methods or override methods.
+/// Generates the data used for parameters at definitions of abstract method slots such as interface methods or override methods.
 and GenSlotParam m cenv eenv (TSlotParam(nm,ty,inFlag,outFlag,optionalFlag,attribs)) : ILParameter = 
     let inFlag2,outFlag2,optionalFlag2,defaultParamValue,paramMarshal2,attribs = GenParamAttribs cenv attribs
     
