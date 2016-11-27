@@ -21,15 +21,19 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
 
 [<TestFixture>]
-type GoToDefinitionServiceTests()  =
-    
-    [<TestCase("printf \"%d\" par1", 3, 24, 28)>]
-    [<TestCase("printf \"%s\" par2", 5, 24, 28)>]
-    [<TestCase("let obj = TestType", 2, 5, 13)>]
-    [<TestCase("let obj", 10, 8, 11)>]
-    [<TestCase("obj.Member1", 3, 16, 23)>]
-    [<TestCase("obj.Member2", 5, 16, 23)>]
-    member this.VerifyDefinition(caretMarker: string, definitionLine: int, definitionStartColumn: int, definitionEndColumn: int) =
+module GoToDefinitionServiceTests =
+
+    [<Test>]
+    let VerifyDefinition() =
+
+      let testCases = 
+            [ ("printf \"%d\" par1", 3, 24, 28);
+              ("printf \"%s\" par2", 5, 24, 28);
+              ("let obj = TestType", 2, 5, 13);
+              ("let obj", 10, 8, 11);
+              ("obj.Member1", 3, 16, 23);
+              ("obj.Member2", 5, 16, 23); ] 
+      for caretMarker, definitionLine, definitionStartColumn, definitionEndColumn in testCases do
         let fileContents = """
 type TestType() =
     member this.Member1(par1: int) =

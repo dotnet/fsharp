@@ -45,7 +45,7 @@ type FSharpSignatureHelpProvider [<ImportingConstructor>]  (serviceProvider: SVs
     static let oneColBefore (lp: LinePosition) = LinePosition(lp.Line,max 0 (lp.Character-1))
 
     // Unit-testable core rutine
-    static member internal ProvideMethodsAsyncAux(documentationBuilder: IDocumentationBuilder, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, triggerInfo:SignatureHelpTriggerInfo, filePath: string, textVersionHash: int) = async {
+    static member internal ProvideMethodsAsyncAux(documentationBuilder: IDocumentationBuilder, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, triggerIsTypedChar: char option, filePath: string, textVersionHash: int) = async {
         let! parseResults, checkFileAnswer = FSharpLanguageService.Checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
         match checkFileAnswer with
         | FSharpCheckFileAnswer.Aborted -> return None
@@ -123,12 +123,10 @@ type FSharpSignatureHelpProvider [<ImportingConstructor>]  (serviceProvider: SVs
         // should not result in a prompt, whereas this one will:
         //    Console.WriteLine( [(1,2)],
 
-        if triggerInfo.TriggerCharacter.HasValue &&
-           (triggerInfo.TriggerCharacter.Value = '(' || triggerInfo.TriggerCharacter.Value = '<' || triggerInfo.TriggerCharacter.Value = ',') &&
-           triggerInfo.TriggerReason = SignatureHelpTriggerReason.TypeCharCommand &&
-           not (tupleEnds |> Array.exists (fun lp -> lp.Character = caretLineColumn)) then
+        match triggerIsTypedChar with 
+        | Some ('<' | '(' | ',') when not (tupleEnds |> Array.exists (fun lp -> lp.Character = caretLineColumn))  -> 
             return None // comma or paren at wrong location = remove help display
-        else
+        | _ -> 
 
         // Compute the argument index by working out where the caret is between the various commas
         let argumentIndex = 
@@ -151,7 +149,7 @@ type FSharpSignatureHelpProvider [<ImportingConstructor>]  (serviceProvider: SVs
                 None  // not a named argument
 
         // Prepare the results
-        let results = List<SignatureHelpItem>()
+        let results = List<_>()
 
         for method in methods do
             // Create the documentation. Note, do this on the background thread, since doing it in the documentationBuild fails to build the XML index
@@ -163,8 +161,7 @@ type FSharpSignatureHelpProvider [<ImportingConstructor>]  (serviceProvider: SVs
                       // FSROSLYNTODO: compute the proper help text for parameters, c.f. AppendParameter in XmlDocumentation.fs
                       let paramDoc = XmlDocumentation.BuildMethodParamText(documentationBuilder, method.XmlDoc, p.ParameterName) 
                       let doc = [| TaggedText(TextTags.Text, paramDoc);  |] 
-                      let pm = SignatureHelpParameter(p.ParameterName,isOptional=p.IsOptional,documentationFactory=(fun _ -> doc :> seq<_>),displayParts=[| TaggedText(TextTags.Text,p.Display) |])
-                      yield pm |]
+                      yield (p.ParameterName,p.IsOptional,doc,[| TaggedText(TextTags.Text,p.Display) |]) |]
 
             let doc = [| TaggedText(TextTags.Text, methodDocs + "\n") |] 
 
@@ -173,19 +170,19 @@ type FSharpSignatureHelpProvider [<ImportingConstructor>]  (serviceProvider: SVs
             let prefixParts = [| TaggedText(TextTags.Text, methodGroup.MethodName);  TaggedText(TextTags.Punctuation,  (if isStaticArgTip then "<" else "(")) |]
             let separatorParts = [| TaggedText(TextTags.Punctuation, ", ") |]
             let suffixParts = [| TaggedText(TextTags.Text, (if isStaticArgTip then ">" else ")")) |]
-            let completionItem =  SignatureHelpItem(isVariadic=method.HasParamArrayArg ,documentationFactory=(fun _ -> doc :> seq<_>),prefixParts=prefixParts,separatorParts=separatorParts,suffixParts=suffixParts,parameters=parameters,descriptionParts=descriptionParts)
+            let completionItem =  (method.HasParamArrayArg ,doc,prefixParts,separatorParts,suffixParts,parameters,descriptionParts)
             // FSROSLYNTODO: Do we need a cache like for completion?
             //declarationItemsCache.Remove(completionItem.DisplayText) |> ignore // clear out stale entries if they exist
             //declarationItemsCache.Add(completionItem.DisplayText, declarationItem)
             results.Add(completionItem)
 
 
-        let items = SignatureHelpItems(results,applicableSpan,argumentIndex,argumentCount,Option.toObj argumentName)
+        let items = (results.ToArray(),applicableSpan,argumentIndex,argumentCount,argumentName)
         return Some items
     }
 
     interface ISignatureHelpProvider with
-        member this.IsTriggerCharacter(c) = c ='(' || c = '<' || c = ',' || c = '='
+        member this.IsTriggerCharacter(c) = c ='(' || c = '<' || c = ',' 
         member this.IsRetriggerCharacter(c) = c = ')' || c = '>' || c = '='
 
         member this.GetItemsAsync(document, position, triggerInfo, cancellationToken) = 
@@ -193,20 +190,27 @@ type FSharpSignatureHelpProvider [<ImportingConstructor>]  (serviceProvider: SVs
               try
                 match FSharpLanguageService.GetOptions(document.Project.Id) with
                 | Some(options) ->
-                    // FSROSLYNTODO: Do we need a cache like for completion?
-                    //let exists, declarationItem = declarationItemsCache.TryGetValue(completionItem.DisplayText)
-                    //if exists then
-                        let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                        let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
+                    let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                    let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
 
-                        let! methods = FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(documentationBuilder, sourceText, position, options, triggerInfo, document.FilePath, textVersion.GetHashCode())
-                        match methods with 
-                        | None -> return null
-                        | Some m -> return m
-                   // else
-                   //     return results
+                    let triggerTypedChar = 
+                        if triggerInfo.TriggerCharacter.HasValue && triggerInfo.TriggerReason = SignatureHelpTriggerReason.TypeCharCommand then
+                            Some triggerInfo.TriggerCharacter.Value
+                        else None
+
+                    let! methods = FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(documentationBuilder, sourceText, position, options, triggerTypedChar, document.FilePath, textVersion.GetHashCode())
+                    match methods with 
+                    | None -> return null
+                    | Some (results,applicableSpan,argumentIndex,argumentCount,argumentName) -> 
+
+                        let items = 
+                            results |> Array.map (fun (hasParamArrayArg,doc,prefixParts,separatorParts,suffixParts,parameters,descriptionParts) ->
+                                    let parameters = parameters |> Array.map (fun (paramName, isOptional, paramDoc, displayParts) -> SignatureHelpParameter(paramName,isOptional,documentationFactory=(fun _ -> paramDoc :> seq<_>),displayParts=displayParts))
+                                    SignatureHelpItem(isVariadic=hasParamArrayArg ,documentationFactory=(fun _ -> doc :> seq<_>),prefixParts=prefixParts,separatorParts=separatorParts,suffixParts=suffixParts,parameters=parameters,descriptionParts=descriptionParts))
+
+                        return SignatureHelpItems(items,applicableSpan,argumentIndex,argumentCount,Option.toObj argumentName)
                 | None -> 
-                    return null // SignatureHelpItems([| |],
+                    return null 
               with ex -> 
                 Assert.Exception(ex)
                 return null
