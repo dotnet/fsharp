@@ -48,7 +48,7 @@ type internal FSharpBreakpointResolutionService() =
     interface IBreakpointResolutionService with
         member this.ResolveBreakpointAsync(document: Document, textSpan: TextSpan, cancellationToken: CancellationToken): Task<BreakpointResolutionResult> =
             async {
-                match FSharpLanguageService.GetOptions(document.Project.Id) with
+                match FSharpLanguageService.TryGetOptionsForEditingDocumentOrProject(document)  with 
                 | Some(options) ->
                     let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                     let! location = FSharpBreakpointResolutionService.GetBreakpointLocation(sourceText, document.Name, textSpan, options)

@@ -25,6 +25,8 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
     inherit DocumentDiagnosticAnalyzer()
 
     static member GetDiagnostics(filePath: string, sourceText: SourceText, textVersionHash: int, options: FSharpProjectOptions, addSemanticErrors: bool) = async {
+
+
         let! parseResults = FSharpLanguageService.Checker.ParseFileInProject(filePath, sourceText.ToString(), options) 
         let! errors = async {
             if addSemanticErrors then
@@ -57,7 +59,7 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
 
     override this.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
         async {
-            match FSharpLanguageService.GetOptions(document.Project.Id) with
+            match FSharpLanguageService.TryGetOptionsForEditingDocumentOrProject(document)  with 
             | Some(options) ->
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
@@ -68,7 +70,8 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
 
     override this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
         async {
-            match FSharpLanguageService.GetOptions(document.Project.Id) with
+            let! optionsOpt = FSharpLanguageService.TryGetOptionsForDocumentOrProject(document) 
+            match optionsOpt with 
             | Some(options) ->
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask

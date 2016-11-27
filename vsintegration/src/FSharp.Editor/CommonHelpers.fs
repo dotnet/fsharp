@@ -152,7 +152,9 @@ module CommonHelpers =
                 | None -> ()
 
             result
-        with ex -> 
+        with 
+        | :? System.OperationCanceledException -> reraise()
+        |  ex -> 
             Assert.Exception(ex)
             List<ClassifiedSpan>()
 

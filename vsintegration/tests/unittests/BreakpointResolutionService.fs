@@ -29,6 +29,7 @@ type BreakpointResolutionServiceTests()  =
         UseScriptResolutionRules = false
         LoadTime = DateTime.MaxValue
         UnresolvedReferences = None
+        ExtraProjectInfo = None
     }
     let code = "
 // This is a comment

@@ -318,6 +318,8 @@ type internal FSharpProjectOptions =
       LoadTime : DateTime
       /// Unused in this API and should be 'None'
       UnresolvedReferences : UnresolvedReferencesSet option
+      /// Extra information passed back on event trigger
+      ExtraProjectInfo : obj option
     }
          
           
@@ -473,7 +475,7 @@ type internal FSharpChecker =
     /// <param name="loadedTimeStamp">Indicates when the script was loaded into the editing environment,
     /// so that an 'unload' and 'reload' action will cause the script to be considered as a new project,
     /// so that references are re-resolved.</param>
-    member GetProjectOptionsFromScript : filename: string * source: string * ?loadedTimeStamp: DateTime * ?otherFlags: string[] * ?useFsiAuxLib: bool -> Async<FSharpProjectOptions>
+    member GetProjectOptionsFromScript : filename: string * source: string * ?loadedTimeStamp: DateTime * ?otherFlags: string[] * ?useFsiAuxLib: bool * ?extraProjectInfo: obj -> Async<FSharpProjectOptions>
 
     /// <summary>
     /// <para>Get the FSharpProjectOptions implied by a set of command line arguments.</para>
@@ -484,7 +486,7 @@ type internal FSharpChecker =
     /// <param name="loadedTimeStamp">Indicates when the script was loaded into the editing environment,
     /// so that an 'unload' and 'reload' action will cause the script to be considered as a new project,
     /// so that references are re-resolved.</param>
-    member GetProjectOptionsFromCommandLineArgs : projectFileName: string * argv: string[] * ?loadedTimeStamp: DateTime -> FSharpProjectOptions
+    member GetProjectOptionsFromCommandLineArgs : projectFileName: string * argv: string[] * ?loadedTimeStamp: DateTime * ?extraProjectInfo: obj -> FSharpProjectOptions
            
     /// <summary>
     /// <para>Like ParseFileInProject, but uses results from the background builder.</para>
@@ -558,17 +560,17 @@ type internal FSharpChecker =
     /// and that the file has become eligible to be re-typechecked for errors.
     ///
     /// The event will be raised on a background thread.
-    member BeforeBackgroundFileCheck : IEvent<string>
+    member BeforeBackgroundFileCheck : IEvent<string * obj option>
 
     /// Raised after a parse of a file in the background analysis.
     ///
     /// The event will be raised on a background thread.
-    member FileParsed : IEvent<string>
+    member FileParsed : IEvent<string * obj option>
 
     /// Raised after a check of a file in the background analysis.
     ///
     /// The event will be raised on a background thread.
-    member FileChecked : IEvent<string>
+    member FileChecked : IEvent<string * obj option>
     
     /// Get or set a flag which controls if background work is started implicitly. 
     ///
@@ -583,7 +585,7 @@ type internal FSharpChecker =
     /// Notify the host that a project has been fully checked in the background (using file contents provided by the file system API)
     ///
     /// The event may be raised on a background thread.
-    member ProjectChecked : IEvent<string>
+    member ProjectChecked : IEvent<string * obj option>
 
     // For internal use only 
     member internal ReactorOps : IReactorOperations

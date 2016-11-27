@@ -31,6 +31,7 @@ type DocumentDiagnosticAnalyzerTests()  =
         UseScriptResolutionRules = false
         LoadTime = DateTime.MaxValue
         UnresolvedReferences = None
+        ExtraProjectInfo = None
     }
 
     member private this.VerifyNoErrors(fileContents: string, ?additionalFlags: string[]) =

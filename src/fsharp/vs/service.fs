@@ -1732,6 +1732,7 @@ type FSharpProjectOptions =
       UseScriptResolutionRules : bool      
       LoadTime : System.DateTime
       UnresolvedReferences : UnresolvedReferencesSet option
+      ExtraProjectInfo : obj option
     }
     member x.ProjectOptions = x.OtherOptions
     /// Whether the two parse options refer to the same project.
@@ -2048,10 +2049,10 @@ module Helpers =
 type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContents, keepAllBackgroundResolutions) as self =
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.backgroundCompiler.reactor: The one and only Reactor
     let reactor = Reactor.Singleton
-    let beforeFileChecked = Event<string>()
-    let fileParsed = Event<string>()
-    let fileChecked = Event<string>()
-    let projectChecked = Event<string>()
+    let beforeFileChecked = Event<string * obj option>()
+    let fileParsed = Event<string * obj option>()
+    let fileChecked = Event<string * obj option>()
+    let projectChecked = Event<string * obj option>()
 
     let mutable implicitlyStartBackgroundWork = true
     let reactorOps = 
@@ -2105,10 +2106,10 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
             //
             // This indicates to the UI that the file type check state is dirty. If the file is open and visible then 
             // the UI will sooner or later request a typecheck of the file, recording errors and intellisense information.
-            builder.BeforeTypeCheckFile.Add (beforeFileChecked.Trigger)
-            builder.FileParsed.Add (fileParsed.Trigger)
-            builder.FileChecked.Add (fileChecked.Trigger)
-            builder.ProjectChecked.Add (fun () -> projectChecked.Trigger options.ProjectFileName)
+            builder.BeforeFileChecked.Add (fun file -> beforeFileChecked.Trigger(file, options.ExtraProjectInfo))
+            builder.FileParsed.Add (fun file -> fileParsed.Trigger(file, options.ExtraProjectInfo))
+            builder.FileChecked.Add (fun file -> fileChecked.Trigger(file, options.ExtraProjectInfo))
+            builder.ProjectChecked.Add (fun () -> projectChecked.Trigger (options.ProjectFileName, options.ExtraProjectInfo))
 
         (builderOpt, errorsAndWarnings, decrement)
 
@@ -2438,7 +2439,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
     member bc.ParseAndCheckProject(options) =
         reactor.EnqueueAndAwaitOpAsync("ParseAndCheckProject " + options.ProjectFileName, fun ct -> bc.ParseAndCheckProjectImpl(options, ct))
 
-    member bc.GetProjectOptionsFromScript(filename, source, ?loadedTimeStamp, ?otherFlags, ?useFsiAuxLib, ?assumeDotNetFramework) = 
+    member bc.GetProjectOptionsFromScript(filename, source, ?loadedTimeStamp, ?otherFlags, ?useFsiAuxLib, ?assumeDotNetFramework, ?extraProjectInfo: obj) = 
         reactor.EnqueueAndAwaitOpAsync ("GetProjectOptionsFromScript " + filename, fun _ct -> 
             // Do we add a reference to FSharp.Compiler.Interactive.Settings by default?
             let useFsiAuxLib = defaultArg useFsiAuxLib true
@@ -2473,6 +2474,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                     UseScriptResolutionRules = true 
                     LoadTime = loadedTimeStamp
                     UnresolvedReferences = Some (UnresolvedReferencesSet(fas.UnresolvedReferences))
+                    ExtraProjectInfo=extraProjectInfo
                 }
             scriptClosureCache.Set(co,fas) // Save the full load closure for later correlation.
             co)
@@ -2664,10 +2666,10 @@ type FSharpChecker(referenceResolver, projectCacheSize, keepAssemblyContents, ke
         backgroundCompiler.KeepProjectAlive(options)
 
     /// For a given script file, get the ProjectOptions implied by the #load closure
-    member ic.GetProjectOptionsFromScript(filename, source, ?loadedTimeStamp, ?otherFlags, ?useFsiAuxLib) = 
-        backgroundCompiler.GetProjectOptionsFromScript(filename,source,?loadedTimeStamp=loadedTimeStamp, ?otherFlags=otherFlags, ?useFsiAuxLib=useFsiAuxLib)
+    member ic.GetProjectOptionsFromScript(filename, source, ?loadedTimeStamp, ?otherFlags, ?useFsiAuxLib, ?extraProjectInfo: obj) = 
+        backgroundCompiler.GetProjectOptionsFromScript(filename,source,?loadedTimeStamp=loadedTimeStamp, ?otherFlags=otherFlags, ?useFsiAuxLib=useFsiAuxLib, ?extraProjectInfo=extraProjectInfo)
         
-    member ic.GetProjectOptionsFromCommandLineArgs(projectFileName, argv, ?loadedTimeStamp) = 
+    member ic.GetProjectOptionsFromCommandLineArgs(projectFileName, argv, ?loadedTimeStamp, ?extraProjectInfo: obj) = 
         let loadedTimeStamp = defaultArg loadedTimeStamp DateTime.MaxValue // Not 'now', we don't want to force reloading
         { ProjectFileName = projectFileName
           ProjectFileNames = [| |] // the project file names will be inferred from the ProjectOptions
@@ -2676,7 +2678,8 @@ type FSharpChecker(referenceResolver, projectCacheSize, keepAssemblyContents, ke
           IsIncompleteTypeCheckEnvironment = false
           UseScriptResolutionRules = false
           LoadTime = loadedTimeStamp
-          UnresolvedReferences = None }
+          UnresolvedReferences = None
+          ExtraProjectInfo=extraProjectInfo }
 
     /// Begin background parsing the given project.
     member ic.StartBackgroundCompile(options) = backgroundCompiler.CheckProjectInBackground(options) 
