@@ -145,7 +145,7 @@ let AdjustCalledArgType (infoReader:InfoReader) isConstraint (calledArg: CalledA
         let calledArgTy = 
             let adjustDelegateTy calledTy =
                 let (SigOfFunctionForDelegate(_,delArgTys,_,fty)) = GetSigOfFunctionForDelegate infoReader calledTy m  AccessibleFromSomeFSharpCode
-                let delArgTys = if List.isEmpty delArgTys then [g.unit_ty] else delArgTys
+                let delArgTys = if isNil delArgTys then [g.unit_ty] else delArgTys
                 if (fst (stripFunTy g callerArgTy)).Length = delArgTys.Length
                 then fty 
                 else calledArgTy 
@@ -388,8 +388,8 @@ type CalledMeth<'T>
 
     member x.NumArgSets             = x.ArgSets.Length
 
-    member x.HasOptArgs             = not (List.isEmpty x.UnnamedCalledOptArgs)
-    member x.HasOutArgs             = not (List.isEmpty x.UnnamedCalledOutArgs)
+    member x.HasOptArgs             = not (isNil x.UnnamedCalledOptArgs)
+    member x.HasOutArgs             = not (isNil x.UnnamedCalledOutArgs)
     member x.UsesParamArrayConversion = x.ArgSets |> List.exists (fun argSet -> argSet.ParamArrayCalledArgOpt.IsSome)
     member x.ParamArrayCalledArgOpt = x.ArgSets |> List.tryPick (fun argSet -> argSet.ParamArrayCalledArgOpt)
     member x.ParamArrayCallerArgs = x.ArgSets |> List.tryPick (fun argSet -> if Option.isSome argSet.ParamArrayCalledArgOpt then Some argSet.ParamArrayCallerArgs else None )
@@ -401,7 +401,7 @@ type CalledMeth<'T>
     member x.NumCalledTyArgs = x.CalledTyArgs.Length
     member x.NumCallerTyArgs = x.CallerTyArgs.Length 
 
-    member x.AssignsAllNamedArgs = List.isEmpty x.UnassignedNamedArgs
+    member x.AssignsAllNamedArgs = isNil x.UnassignedNamedArgs
 
     member x.HasCorrectArity =
       (x.NumCalledTyArgs = x.NumCallerTyArgs)  &&
@@ -577,7 +577,7 @@ let BuildILMethInfoCall g amap m isProp (minfo:ILMethInfo) valUseFlags minst dir
     exprTy
 
 /// Build a call to the System.Object constructor taking no arguments,
-let BuildObjCtorCall g m =
+let BuildObjCtorCall (g: TcGlobals) m =
     let ilMethRef = (mkILCtorMethSpecForTy(g.ilg.typ_Object,[])).MethodRef
     Expr.Op(TOp.ILCall(false,false,false,false,CtorValUsedAsSuperInit,false,true,ilMethRef,[],[],[g.obj_ty]),[],[],m)
 
@@ -796,7 +796,7 @@ let BuildNewDelegateExpr (eventInfoOpt:EventInfo option, g, amap, delegateTy, in
                         | h :: _ when not (isObjTy g h.Type) -> error(nonStandardEventError einfo.EventName m)
                         | h :: t -> [exprForVal m h; mkRefTupledVars g m t] 
                     | None -> 
-                        if List.isEmpty delArgTys then [mkUnit g m] else List.map (exprForVal m) delArgVals
+                        if isNil delArgTys then [mkUnit g m] else List.map (exprForVal m) delArgVals
                 mkApps g ((f,fty),[],args,m)
             delArgVals,expr
             

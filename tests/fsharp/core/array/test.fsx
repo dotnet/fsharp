@@ -1,30 +1,15 @@
 // #Conformance #Arrays #Stress #Structs #Mutable #ControlFlow #LetBindings 
-#if Portable
+#if TESTS_AS_APP
 module Core_array
 #endif
 
-#light
 let mutable failures = []
 let report_failure (s) = 
   stderr.WriteLine " NO"; failures <- s :: failures
-let test s b = stderr.Write(s:string);  if b then stderr.WriteLine " OK" else report_failure() 
+let test s b = if not b then (stderr.Write(s:string);   report_failure() )
 let check s b1 b2 = test s (b1 = b2)
 
 
-#if NetCore
-#else
-let argv = System.Environment.GetCommandLineArgs() 
-let SetCulture() = 
-  if argv.Length > 2 && argv.[1] = "--culture" then  begin
-    let cultureString = argv.[2] in 
-    let culture = new System.Globalization.CultureInfo(cultureString) in 
-    stdout.WriteLine ("Running under culture "+culture.ToString()+"...");
-    System.Threading.Thread.CurrentThread.CurrentCulture <-  culture
-  end 
-  
-do SetCulture()    
-#endif
-  
 (* TEST SUITE FOR Array *)
 
 let test_make_get_set_length () = 
@@ -604,7 +589,7 @@ module Array2Tests = begin
 
 end
 
-#if !Portable
+#if !FSCORE_PORTABLE_OLD && !FSCORE_PORTABLE_NEW
 module ArrayNonZeroBasedTestsSlice = 
   let runTest () = 
     let arr = (Array2D.initBased 5 4 3 2 (fun i j -> (i,j)))
@@ -1421,7 +1406,7 @@ module bug872632 =
 
 module CheckUnionTypesAreSealed =
     open System
-#if NetCore
+#if FX_PORTABLE_OR_NETSTANDARD
     open System.Reflection
     type System.Type with
         member this.IsSealed
@@ -1483,8 +1468,7 @@ module manyIndexes =
         0
 
 
-#if Portable
-#else    // this overload of CreateInstance doesn't exist in portable
+#if !FX_PORTABLE_OR_NETSTANDARD
 module bug6447 =
     let a = System.Array.CreateInstance(typeof<int>, [|1|], [|1|])
     let a1 = System.Array.CreateInstance(typeof<int>, [|1|], [|3|])

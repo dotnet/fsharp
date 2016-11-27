@@ -106,13 +106,8 @@ type UsingMSBuild() as this  =
         "distinct"; "exists"; "find"; "all"; "head"; "nth"; "skip"; "skipWhile"; "sumBy"; "take"
         "takeWhile"; "sortByNullable"; "sortByNullableDescending"; "thenByNullable"; "thenByNullableDescending"]
 
-#if FX_ATLEAST_45
     let AA l = Some(System.IO.Path.Combine(System.IO.Path.GetTempPath(), ".NETFramework,Version=v4.0.AssemblyAttributes.fs")), l
     let notAA l = None,l
-#else
-    let AA l = None, l
-    let notAA l = None,l
-#endif
     let stopWatch = new System.Diagnostics.Stopwatch()
     let ResetStopWatch() = stopWatch.Reset(); stopWatch.Start()
     let time1 op a message = 
@@ -472,6 +467,22 @@ type UsingMSBuild() as this  =
         AssertCtrlSpaceCompleteContains code "b a" ["aaa"; "bbb"] []
         AssertCtrlSpaceCompleteContains code "a b" ["aaa"; "bbb"] []
 
+    [<Test>]
+    member this.``AutoCompletion.OnTypeConstraintError``() =
+        let code =
+            [
+                "type Foo = Foo"
+                "    with"
+                "        member __.Bar = 1"
+                "        member __.PublicMethodForIntellisense() = 2"
+                "        member internal __.InternalMethod() = 3"
+                "        member private __.PrivateProperty = 4"
+                ""
+                "let u: Unit ="
+                "    [ Foo ]"
+                "    |> List.map (fun abcd -> abcd.)"
+            ]
+        AssertCtrlSpaceCompleteContains code "abcd." ["Bar"; "Equals"; "GetHashCode"; "GetType"; "InternalMethod"; "PublicMethodForIntellisense"; "ToString"] []
 
     [<Test>]
     [<Category("RangeOperator")>]
@@ -5755,7 +5766,7 @@ let rec f l =
                 type IFoo =
                     abstract DoStuff  : unit -> string
                     abstract DoStuff2 : int * int -> string -> string
-                // Implement an interface in a class (This is kind of lame if you don’t want to actually declare a class)
+                // Implement an interface in a class (This is kind of lame if you don't want to actually declare a class)
                 type Foo() =
                     interface IFoo with
                         member this.DoStuff () = "Return a string"

@@ -15,12 +15,13 @@
     <FX_NOLOADER>true</FX_NOLOADER>
   </PropertyGroup>
   <ItemGroup>
-  <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
-    <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(AssemblyName).dll.lcl</TranslationFile>
-    <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(AssemblyName).dll.lci</LciCommentFile>
-    <HasLceComments>false</HasLceComments>
-    <InProject>false</InProject>
-  </FilesToLocalize>
+    <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
+      <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(AssemblyName).dll.lcl</TranslationFile>
+      <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(AssemblyName).dll.lci</LciCommentFile>
+      <HasLceComments>false</HasLceComments>
+      <InProject>false</InProject>
+    </FilesToLocalize>
+    <PackageNuspec Include="Microsoft.FSharp.Build.netcore.nuspec" Condition="'$(TargetFramework)' == 'coreclr'" />
   </ItemGroup>
   <ItemGroup>
     <FsSrGen Include="FSBuild.txt">

@@ -13,18 +13,6 @@ let report_failure () =
 let test s b = stderr.Write(s:string);  if b then stderr.WriteLine " OK" else report_failure() 
 
 
-let argv = System.Environment.GetCommandLineArgs() 
-let SetCulture() = 
-  if argv.Length > 2 && argv.[1] = "--culture" then  begin
-    let cultureString = argv.[2] in 
-    let culture = new System.Globalization.CultureInfo(cultureString) in 
-    stdout.WriteLine ("Running under culture "+culture.ToString()+"...");
-    System.Threading.Thread.CurrentThread.CurrentCulture <-  culture
-  end 
-  
-do SetCulture()    
-  
-
 test "coic23a" (Seq.toList { 'a' .. 'c' } = ['a';'b';'c'])
 
 test "coic23q" (Seq.toList {1 .. 0} = [])
@@ -450,6 +438,7 @@ test "coic23"
 
 
 
+#if !FX_PORTABLE_OR_NETSTANDARD
 let pickering() = 
     let files = Directory.GetFiles(@"C:\Program Files\Microsoft Enterprise Library January 2006\", "*.csproj", SearchOption.AllDirectories)
     for file in files do
@@ -466,7 +455,7 @@ let pickering() =
         doc.Save(file)
     stdin.ReadLine()
  
-
+#endif
 for i,j in [(1,1);(2,1);(3,2)] do
    printf "i = %d,j = %d\n" i j
 
@@ -500,12 +489,6 @@ let fileInfo dir =
 let rec allFiles dir =
     seq { for file in Directory.GetFiles(dir) do yield file
           for subdir in Directory.GetDirectories dir do yield! (allFiles subdir) }
-
-let _ = 
-  if failures then (stdout.WriteLine "Test Failed"; exit 1) 
-  else (stdout.WriteLine "Test Passed"; 
-        System.IO.File.WriteAllText("test.ok","ok"); 
-        exit 0)
 
 module Attempt = 
     type Attempt<'a> = (unit -> 'a option)
@@ -565,6 +548,7 @@ module RandomSmallIfThenElseTest =
             do ()
         return a }
 
+#if !FX_PORTABLE_OR_NETSTANDARD
 module MoreExtensions =
 
     open Microsoft.FSharp.Control
@@ -733,7 +717,7 @@ module SimpleAsyncWebCrawl =
         collector.Start()
         collector <-- "http://news.google.com"
         Async.CancelDefaultToken()
-
+#endif
 
 module TryFinallySequenceExpressionTests = 
 
@@ -1047,3 +1031,10 @@ module TryFinallySequenceExpressionTests =
        with _ -> ()
 
     testve937() 
+
+let _ = 
+  if failures then (stdout.WriteLine "Test Failed"; exit 1) 
+  else (stdout.WriteLine "Test Passed"; 
+        System.IO.File.WriteAllText("test.ok","ok"); 
+        exit 0)
+

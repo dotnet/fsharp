@@ -261,7 +261,7 @@ module GlobalUsageAnalysis =
     //   - for body
     //   - match targets
     //   - tmethods
-    let UsageFolders g =
+    let UsageFolders (g: TcGlobals) =
       let foldLocalVal f z (vref: ValRef) = 
           if valRefInThisAssembly g.compilingFslib vref then f z vref.Deref
           else z
@@ -406,7 +406,7 @@ type CallPattern = TupleStructure list
 let callPatternOrder = (compare : CallPattern -> CallPattern -> int)
 let argsCP exprs = List.map exprTS exprs
 let noArgsCP = []
-let inline isTrivialCP xs = List.isEmpty xs
+let inline isTrivialCP xs = isNil xs
 
 let rec minimalCallPattern callPattern =
     match callPattern with 

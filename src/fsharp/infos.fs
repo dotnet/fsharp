@@ -58,7 +58,7 @@ let GetSuperTypeOfType g amap m typ =
 #if EXTENSIONTYPING
     let typ = (if isAppTy g typ && (tcrefOfAppTy g typ).IsProvided then stripTyEqns g typ else stripTyEqnsAndMeasureEqns g typ)
 #else
-    let typ = stripTyEqns g typ 
+    let typ = stripTyEqnsAndMeasureEqns g typ 
 #endif
 
     match metadataOfTy g typ with 
@@ -93,7 +93,7 @@ let GetSuperTypeOfType g amap m typ =
             None
 
 /// Make a type for System.Collections.Generic.IList<ty>
-let mkSystemCollectionsGenericIListTy g ty = TType_app(g.tcref_System_Collections_Generic_IList,[ty])
+let mkSystemCollectionsGenericIListTy (g: TcGlobals) ty = TType_app(g.tcref_System_Collections_Generic_IList,[ty])
 
 [<RequireQualifiedAccess>]
 /// Indicates whether we can skip interface types that lie outside the reference set
@@ -369,7 +369,7 @@ type ValRef with
     member vref.IsDefiniteFSharpOverrideMember = 
         let membInfo = vref.MemberInfo.Value   
         let flags = membInfo.MemberFlags
-        not flags.IsDispatchSlot && (flags.IsOverrideOrExplicitImpl || not (List.isEmpty membInfo.ImplementedSlotSigs))
+        not flags.IsDispatchSlot && (flags.IsOverrideOrExplicitImpl || not (isNil membInfo.ImplementedSlotSigs))
 
     /// Check if an F#-declared member value is an  explicit interface member implementation
     member vref.IsFSharpExplicitInterfaceImplementation g = 
@@ -784,7 +784,7 @@ type ILMethInfo =
 
     /// Indicates if the method is marked as a DllImport (a PInvoke). This is done by looking at the IL custom attributes on 
     /// the method.
-    member x.IsDllImport g = 
+    member x.IsDllImport (g: TcGlobals) = 
         match g.attrib_DllImportAttribute with
         | None -> false
         | Some (AttribInfo(tref,_)) ->x.RawMetadata.CustomAttrs |> TryDecodeILAttribute g tref |> Option.isSome

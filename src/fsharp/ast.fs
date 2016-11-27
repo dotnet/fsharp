@@ -1724,7 +1724,7 @@ let ParseAssemblyCodeInstructions s m =
 #if NO_INLINE_IL_PARSER
 let ParseAssemblyCodeType _s m = 
     errorR(Error((193,"Inline IL not valid in a hosted environment"),m))
-    IL.EcmaILGlobals.typ_Object
+    IL.EcmaMscorlibILGlobals.typ_Object
 #else
 let ParseAssemblyCodeType s m = 
     try Microsoft.FSharp.Compiler.AbstractIL.Internal.AsciiParser.ilType 
@@ -1732,7 +1732,7 @@ let ParseAssemblyCodeType s m =
            (UnicodeLexing.StringAsLexbuf s)
     with RecoverableParseError -> 
       errorR(Error(FSComp.SR.astParseEmbeddedILTypeError(),m)); 
-      IL.EcmaILGlobals.typ_Object
+      IL.EcmaMscorlibILGlobals.typ_Object
 #endif
 
 //------------------------------------------------------------------------
@@ -1879,7 +1879,7 @@ module SynInfo =
     let selfMetadata = unnamedTopArg
 
     /// Determine if a syntactic information represents a member without arguments (which is implicitly a property getter)
-    let HasNoArgs (SynValInfo(args,_)) = List.isEmpty args
+    let HasNoArgs (SynValInfo(args,_)) = isNil args
 
     /// Check if one particular argument is an optional argument. Used when adjusting the
     /// types of optional arguments for function and member signatures.

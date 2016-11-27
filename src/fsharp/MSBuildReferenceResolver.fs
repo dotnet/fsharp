@@ -9,7 +9,7 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
 #if FX_RESHAPED_REFLECTION
     open Microsoft.FSharp.Core.ReflectionAdapters
 #endif
-#if RESHAPED_MSBUILD
+#if FX_RESHAPED_MSBUILD
     open Microsoft.FSharp.Compiler.MsBuildAdapters
     open Microsoft.FSharp.Compiler.ToolLocationHelper
 #endif
@@ -100,7 +100,7 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
         | _ -> []
 
     let GetPathToDotNetFrameworkReferenceAssembliesFor40Plus(version) = 
-#if CROSS_PLATFORM_COMPILER // || !RESHAPED_MSBUILD
+#if ENABLE_MONO_SUPPORT // || !FX_RESHAPED_MSBUILD
       match ToolLocationHelper.GetPathToStandardLibraries(".NETFramework",version,"") with
       | null | "" -> []
       | x -> [x]
@@ -241,7 +241,7 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
         let engine = 
             { new IBuildEngine with 
               member __.BuildProjectFile(projectFileName, targetNames, globalProperties, targetOutputs) = true
-#if RESHAPED_MSBUILD 
+#if FX_RESHAPED_MSBUILD 
               member __.LogCustomEvent(e) =  protect (fun () -> logMessage ((e.GetPropertyValue("Message")) :?> string))
               member __.LogErrorEvent(e) =   protect (fun () -> logErrorOrWarning true ((e.GetPropertyValue("Code")) :?> string) ((e.GetPropertyValue("Message")) :?> string))
               member __.LogMessageEvent(e) = protect (fun () -> logMessage ((e.GetPropertyValue("Message")) :?> string))
@@ -298,7 +298,7 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
              |]    
             
         let assemblies = 
-#if RESHAPED_MSBUILD
+#if FX_RESHAPED_MSBUILD
             ignore references
             [||]
 #else
@@ -318,7 +318,7 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
 #else
         rar.TargetProcessorArchitecture <- targetProcessorArchitecture
         let targetedRuntimeVersionValue = typeof<obj>.Assembly.ImageRuntimeVersion
-#if CROSS_PLATFORM_COMPILER
+#if ENABLE_MONO_SUPPORT
         // The properties TargetedRuntimeVersion and CopyLocalDependenciesWhenParentReferenceInGac 
         // are not available on Mono. So we only set them if available (to avoid a compile-time dependency). 
         if not Microsoft.FSharp.Compiler.AbstractIL.IL.runningOnMono then  

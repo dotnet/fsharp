@@ -158,14 +158,14 @@ type UsingMSBuild() =
 
     [<Test>]
     member public this.``PublicSurfaceArea.DotNetReflection``() =
-        let ps = publicTypesInAsm @"fsharp.projectsystem.fsharp.dll"
+        let ps = publicTypesInAsm @"FSharp.ProjectSystem.FSharp.dll"
         Assert.AreEqual(1, ps)  // BuildPropertyDescriptor
-        let ls = publicTypesInAsm @"fsharp.languageservice.dll"
+        let ls = publicTypesInAsm @"FSharp.LanguageService.dll"
         Assert.AreEqual(0, ls)
-        let comp = publicTypesInAsm @"fsharp.compiler.dll"
+        let comp = publicTypesInAsm @"FSharp.Compiler.dll"
         Assert.AreEqual(0, comp)
         let compis = publicTypesInAsm @"FSharp.Compiler.Interactive.Settings.dll"
-        Assert.AreEqual(5, compis)
+        Assert.AreEqual(4, compis)
         let compserver = publicTypesInAsm @"FSharp.Compiler.Server.Shared.dll"
         Assert.AreEqual(0, compserver)
         let lsbase = publicTypesInAsm @"FSharp.LanguageService.Base.dll"

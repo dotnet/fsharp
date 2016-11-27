@@ -1713,7 +1713,7 @@ and Construct =
                     provider.GetMemberCustomAttributesData(ty) 
 #else
                     ignore provider
-                    ty.GetCustomAttributesData()
+                    ty.CustomAttributes
 #endif
                         |> Seq.exists (findAttrib typeof<Microsoft.FSharp.Core.MeasureAttribute>)), m)
                   .PUntaintNoFailure(fun x -> x)
@@ -2580,7 +2580,7 @@ and NonLocalEntityRef    =
                     [ for resolver in resolvers  do
                         let moduleOrNamespace = if j = 0 then null else path.[0..j-1]
                         let typename = path.[j]
-                        let resolution = ExtensionTyping.TryLinkProvidedType(resolutionEnvironment,resolver,moduleOrNamespace,typename,m)
+                        let resolution = ExtensionTyping.TryLinkProvidedType(resolver,moduleOrNamespace,typename,m)
                         match resolution with
                         | None | Some (Tainted.Null) -> ()
                         | Some st -> yield (resolver,st) ]
@@ -4455,7 +4455,10 @@ let primEntityRefEq compilingFslib fslibCcu (x : EntityRef) (y : EntityRef) =
          nonLocalRefEq x.nlr y.nlr || 
          // The tcrefs may have forwarders. If they may possibly be equal then resolve them to get their canonical references
          // and compare those using pointer equality.
-         (not (nonLocalRefDefinitelyNotEq x.nlr y.nlr) && x.Deref === y.Deref)) then
+         (not (nonLocalRefDefinitelyNotEq x.nlr y.nlr) && 
+          let v1 = x.TryDeref 
+          let v2 = y.TryDeref
+          v1.IsSome && v2.IsSome && v1.Value === v2.Value)) then
         true
     else
         compilingFslib && fslibEntityRefEq fslibCcu x y  

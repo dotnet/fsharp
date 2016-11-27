@@ -64,9 +64,10 @@ namespace Microsoft.FSharp.Collections
 
       let rec nth index (e : IEnumerator<'T>) =
           if not (e.MoveNext()) then
+            let shortBy = index + 1
             invalidArgFmt "index"
                 "{0}\nseq was short by {1} {2}"
-                [|SR.GetString SR.notEnoughElements; index; (if index=1 then "element" else "elements")|]
+                [|SR.GetString SR.notEnoughElements; shortBy; (if shortBy = 1 then "element" else "elements")|]
           if index = 0 then e.Current
           else nth (index-1) e
 
@@ -1146,13 +1147,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Replicate")>]
         let replicate count x =
-            #if FX_ATLEAST_40
             System.Linq.Enumerable.Repeat(x,count)
-            #else
-            if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
-            seq { for _ in 1 .. count -> x }
-            #endif
-
 
         [<CompiledName("Append")>]
         let append (source1: seq<'T>) (source2: seq<'T>) =

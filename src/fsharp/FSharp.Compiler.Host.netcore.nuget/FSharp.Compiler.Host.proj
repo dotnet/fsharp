@@ -7,17 +7,46 @@
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
 
   <PropertyGroup>
-    <pkgversion  Condition=" '$(PKGVersion)' == '' ">$(NuGetPerBuildPreReleaseVersion)</pkgversion>
-    <OutDir>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin</OutDir>
+    <PackageLicenceUrl Condition="'$(PackageLicenceUrl)' == ''">https://github.com/Microsoft/visualfsharp/blob/master/License.txt</PackageLicenceUrl>
+    <PackageProjectUrl Condition="'$(PackageProjectUrl)' == ''">https://github.com/Microsoft/visualfsharp</PackageProjectUrl>
+    <PackageVersion    Condition="'$(PackageVersion)' == ''"   >$(NuGetPerBuildPreReleaseVersion)</PackageVersion>
+    <PackageAuthors    Condition="'$(PackageAuthors)' == ''"   >Microsoft</PackageAuthors>
+    <PackageTags       Condition="'$(PackageTags)' == ''"      >Visual F# Compiler FSharp coreclr functional programming</PackageTags>
+    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\coreclr\bin</OutputPath>
   </PropertyGroup>
 
-  <!-- TODO: Switch to using lkg coreclr fsi and remove dependency on running FSharp.Compiler.Tools fsi -->
-  
-  <Target Name="Build" Outputs="$(TargetPath)"  DependsOnTargets="$(BuildDependsOn)">
-    <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec layoutfschostnuget.fsx --nuspec:.\Microsoft.FSharp.Compiler.Host.netcore.nuspec --bindir:$(OutDir)"/>
-    <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec ..\..\scripts\buildnugets.fsx --version:$(pkgversion) --nuspec:.\Microsoft.FSharp.Compiler.Host.netcore.nuspec --bindir:$(OutDir)"/>
-  </Target>
+  <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
+    <PackageNuspec Include="Microsoft.FSharp.Compiler.netcore.nuspec" />
+    <PackageNuspec Include="Microsoft.FSharp.Compiler.Host.netcore.nuspec" />
+  </ItemGroup>
 
-  <Target Name="Rebuild"  DependsOnTargets="Build" />
+  <ItemGroup>
+    <ProjectReference Include="..\fsi\Fsi.fsproj">
+      <Name>fsi</Name>
+      <Project>{d0e98c0d-490b-4c61-9329-0862f6e87645}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Fsc\Fsc.fsproj">
+      <Name>Fsc</Name>
+      <Project>{C94C257C-3C0A-4858-B5D8-D746498D1F08}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\fsiAnyCpu\FsiAnyCPU.fsproj">
+      <Name>FsiAnyCPU.fsproj</Name>
+      <Project>{8b3e283d-b5fe-4055-9d80-7e3a32f3967b}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+  </ItemGroup>
+
+  <Target Name="Build" Outputs="$(TargetPath)"  DependsOnTargets="$(nugetpack)" />
+  <Target Name="Rebuild"  DependsOnTargets="$(nugetpack)" />
+
+  <Target Name="nugetpack" AfterTargets="Build" Condition="'$(TargetFramework)' == 'coreclr' "
+          Inputs="@(PackageNuspec)" Outputs='$(OutputPath.TrimEnd("\"))\nuget\"%(PackageNuspec.Filename)).nupkg'>
+    <PropertyGroup>
+      <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)"</PackageProperties>
+    </PropertyGroup>
+    <Exec Command='$(MSBuildThisFileDirectory)..\..\..\.nuget\nuget.exe pack %(PackageNuspec.Filename)%(PackageNuspec.Extension) -BasePath "$(OutputPath.TrimEnd("\"))" -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory "$(FSharpSourcesRoot.TrimEnd("\"))\..\artifacts"' />
+  </Target>
 
 </Project>

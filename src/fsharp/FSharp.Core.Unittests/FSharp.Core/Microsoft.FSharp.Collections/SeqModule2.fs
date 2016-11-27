@@ -573,8 +573,7 @@ type SeqModule2() =
     member this.SingletonCollectWithException () =
         this.MapWithExceptionTester (fun f-> Seq.collect (f >> Seq.singleton))
 
-#if FX_NO_LINQ
-#else     
+#if !FX_NO_LINQ
     [<Test>]
     member this.SystemLinqSelectWithSideEffects () =
         this.MapWithSideEffectsTester (fun f s -> System.Linq.Enumerable.Select(s, Func<_,_>(f))) false
@@ -696,8 +695,7 @@ type SeqModule2() =
         
         VerifySeqsEqual expectedint resultInt
 
-#if FX_NO_CHAR_PARSE
-#else        
+#if !FX_NO_CHAR_PARSE
         // string Seq
         let funcStr (y:string) = y+"ist"
        
@@ -919,6 +917,20 @@ type SeqModule2() =
         // Out of range
         for i = 11 to 20 do
            CheckThrowsArgumentException (fun () -> Seq.item i { 10 .. 20 } |> ignore)
+
+    [<Test>]
+    member this.``item should fail with correct number of missing elements``() =
+        try
+            Seq.item 0 (Array.zeroCreate<int> 0) |> ignore
+            failwith "error expected"
+        with
+        | exn when exn.Message.Contains("seq was short by 1 element") -> ()
+
+        try
+            Seq.item 2 (Array.zeroCreate<int> 0) |> ignore
+            failwith "error expected"
+        with
+        | exn when exn.Message.Contains("seq was short by 3 elements") -> ()
 
     [<Test>]
     member this.Of_Array() =

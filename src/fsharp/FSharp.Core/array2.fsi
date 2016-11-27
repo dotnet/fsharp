@@ -95,8 +95,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("ZeroCreate")>]
         val zeroCreate : length1:int -> length2:int -> 'T[,]
 
-#if FX_NO_BASED_ARRAYS
-#else
+#if !FX_NO_BASED_ARRAYS
         /// <summary>Creates a based array given the dimensions and a generator function to compute the elements.</summary>
         ///
         /// <param name="base1">The base for the first dimension of the array.</param>

@@ -168,8 +168,7 @@ type BigIntType() =
         Assert.AreEqual(BigInteger.One,1I)
         
         ()
-#if FSHARP_CORE_PORTABLE
-#else
+#if !FSCORE_PORTABLE_OLD
     [<Test>]
     member this.Parse() = 
         Assert.AreEqual(BigInteger.Parse("12345678901234567890"),

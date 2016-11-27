@@ -67,10 +67,16 @@ EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler.Interactive.Settings", "src\fsharp\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj", "{649FA588-F02E-457C-9FCF-87E46407481E}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FsiAnyCPU", "src\fsharp\fsiAnyCpu\FsiAnyCPU.fsproj", "{8B3E283D-B5FE-4055-9D80-7E3A32F3967B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{649FA588-F02E-457C-9FCF-87E46407481E} = {649FA588-F02E-457C-9FCF-87E46407481E}
+	EndProjectSection
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Fsi", "src\fsharp\fsi\Fsi.fsproj", "{D0E98C0D-490B-4C61-9329-0862F6E87645}"
+	ProjectSection(ProjectDependencies) = postProject
+		{649FA588-F02E-457C-9FCF-87E46407481E} = {649FA588-F02E-457C-9FCF-87E46407481E}
+	EndProjectSection
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Tests", "tests\fsharp\FSharp.Tests.fsproj", "{C163E892-5BF7-4B59-AA99-B0E8079C67C4}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Tests.FSharpSuite", "tests\fsharp\FSharp.Tests.FSharpSuite.fsproj", "{C163E892-5BF7-4B59-AA99-B0E8079C67C4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "VisualFSharp.Unittests Support", "VisualFSharp.Unittests Support", "{3F044931-FB83-4433-B934-AE66AB27B278}"
 EndProject
@@ -131,15 +137,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VisualFSharpWeb", "vsintegr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VisualFSharpOpenSource", "vsintegration\Vsix\VisualFSharpOpenSource\VisualFSharpOpenSource.csproj", "{E6A45CDF-B408-420F-B475-74611BEFC52B}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler.Hosted", "tests\fsharpqa\testenv\src\FSharp.Compiler.Hosted\FSharp.Compiler.Hosted.fsproj", "{4FAE092E-5366-43F5-85FA-71EAF66FA4A8}"
-EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "HostedCompilerServer", "tests\fsharpqa\testenv\src\HostedCompilerServer\HostedCompilerServer.fsproj", "{4239EFEA-E746-446A-BF7A-51FCBAB13946}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "diff", "tests\fsharpqa\testenv\src\diff\diff.fsproj", "{BF5C6D92-D053-4216-9C42-B62F5F5C5E91}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ILComparer", "tests\fsharpqa\testenv\src\ILComparer\ILComparer.fsproj", "{2E60864A-E3FF-4BCC-810F-DC7C34E6B236}"
-EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharpQA.Tests", "tests\fsharpqa\Source\FSharpQA.Tests.fsproj", "{21958DEB-133B-4760-A238-1293ED9687EC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -742,18 +744,6 @@ Global
 		{E6A45CDF-B408-420F-B475-74611BEFC52B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E6A45CDF-B408-420F-B475-74611BEFC52B}.Release|x86.ActiveCfg = Release|Any CPU
 		{E6A45CDF-B408-420F-B475-74611BEFC52B}.Release|x86.Build.0 = Release|Any CPU
-		{4FAE092E-5366-43F5-85FA-71EAF66FA4A8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4FAE092E-5366-43F5-85FA-71EAF66FA4A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4FAE092E-5366-43F5-85FA-71EAF66FA4A8}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{4FAE092E-5366-43F5-85FA-71EAF66FA4A8}.Debug|x86.Build.0 = Debug|Any CPU
-		{4FAE092E-5366-43F5-85FA-71EAF66FA4A8}.Proto|Any CPU.ActiveCfg = Proto|Any CPU
-		{4FAE092E-5366-43F5-85FA-71EAF66FA4A8}.Proto|Any CPU.Build.0 = Proto|Any CPU
-		{4FAE092E-5366-43F5-85FA-71EAF66FA4A8}.Proto|x86.ActiveCfg = Proto|Any CPU
-		{4FAE092E-5366-43F5-85FA-71EAF66FA4A8}.Proto|x86.Build.0 = Proto|Any CPU
-		{4FAE092E-5366-43F5-85FA-71EAF66FA4A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4FAE092E-5366-43F5-85FA-71EAF66FA4A8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4FAE092E-5366-43F5-85FA-71EAF66FA4A8}.Release|x86.ActiveCfg = Release|Any CPU
-		{4FAE092E-5366-43F5-85FA-71EAF66FA4A8}.Release|x86.Build.0 = Release|Any CPU
 		{4239EFEA-E746-446A-BF7A-51FCBAB13946}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4239EFEA-E746-446A-BF7A-51FCBAB13946}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4239EFEA-E746-446A-BF7A-51FCBAB13946}.Debug|x86.ActiveCfg = Debug|Any CPU
@@ -784,18 +774,6 @@ Global
 		{2E60864A-E3FF-4BCC-810F-DC7C34E6B236}.Release|Any CPU.Build.0 = Release|Any CPU
 		{2E60864A-E3FF-4BCC-810F-DC7C34E6B236}.Release|x86.ActiveCfg = Release|Any CPU
 		{2E60864A-E3FF-4BCC-810F-DC7C34E6B236}.Release|x86.Build.0 = Release|Any CPU
-		{21958DEB-133B-4760-A238-1293ED9687EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{21958DEB-133B-4760-A238-1293ED9687EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{21958DEB-133B-4760-A238-1293ED9687EC}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{21958DEB-133B-4760-A238-1293ED9687EC}.Debug|x86.Build.0 = Debug|Any CPU
-		{21958DEB-133B-4760-A238-1293ED9687EC}.Proto|Any CPU.ActiveCfg = Proto|Any CPU
-		{21958DEB-133B-4760-A238-1293ED9687EC}.Proto|Any CPU.Build.0 = Proto|Any CPU
-		{21958DEB-133B-4760-A238-1293ED9687EC}.Proto|x86.ActiveCfg = Proto|Any CPU
-		{21958DEB-133B-4760-A238-1293ED9687EC}.Proto|x86.Build.0 = Proto|Any CPU
-		{21958DEB-133B-4760-A238-1293ED9687EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{21958DEB-133B-4760-A238-1293ED9687EC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{21958DEB-133B-4760-A238-1293ED9687EC}.Release|x86.ActiveCfg = Release|Any CPU
-		{21958DEB-133B-4760-A238-1293ED9687EC}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -856,10 +834,8 @@ Global
 		{59ADCE46-9740-4079-834D-9A03A3494EBC} = {141F6C23-E1B1-4D89-9F10-F0B8AD58E71F}
 		{58730C8B-16F5-4956-9291-BB68E17C9142} = {141F6C23-E1B1-4D89-9F10-F0B8AD58E71F}
 		{E6A45CDF-B408-420F-B475-74611BEFC52B} = {141F6C23-E1B1-4D89-9F10-F0B8AD58E71F}
-		{4FAE092E-5366-43F5-85FA-71EAF66FA4A8} = {CFE3259A-2D30-4EB0-80D5-E8B5F3D01449}
 		{4239EFEA-E746-446A-BF7A-51FCBAB13946} = {CFE3259A-2D30-4EB0-80D5-E8B5F3D01449}
 		{BF5C6D92-D053-4216-9C42-B62F5F5C5E91} = {CFE3259A-2D30-4EB0-80D5-E8B5F3D01449}
 		{2E60864A-E3FF-4BCC-810F-DC7C34E6B236} = {CFE3259A-2D30-4EB0-80D5-E8B5F3D01449}
-		{21958DEB-133B-4760-A238-1293ED9687EC} = {CFE3259A-2D30-4EB0-80D5-E8B5F3D01449}
 	EndGlobalSection
 EndGlobal

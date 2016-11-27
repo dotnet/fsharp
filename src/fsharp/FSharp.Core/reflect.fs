@@ -70,7 +70,7 @@ module internal Impl =
 
     //-----------------------------------------------------------------
     // GENERAL UTILITIES
-#if FX_ATLEAST_PORTABLE
+#if FX_PORTABLE_OR_NETSTANDARD
     let instanceFieldFlags = BindingFlags.Instance 
     let instancePropertyFlags = BindingFlags.Instance 
     let staticPropertyFlags = BindingFlags.Static
@@ -90,7 +90,7 @@ module internal Impl =
     let getInstancePropertyReader (typ: Type,propName,bindingFlags) =
         match getInstancePropertyInfo(typ, propName, bindingFlags) with
         | null -> None
-#if FX_ATLEAST_PORTABLE
+#if FX_PORTABLE_OR_NETSTANDARD
         | prop -> Some(fun (obj:obj) -> prop.GetValue(obj,null))
 #else        
         | prop -> Some(fun (obj:obj) -> prop.GetValue(obj,instancePropertyFlags ||| bindingFlags,null,null,null))
@@ -109,11 +109,7 @@ module internal Impl =
       | None -> failwith "no compilation mapping attribute"
       | Some a -> a
 
-#if FX_NO_CUSTOMATTRIBUTEDATA
-    let tryFindCompilationMappingAttributeFromType       (typ:Type)        = tryFindCompilationMappingAttribute ( typ.GetCustomAttributes(typeof<CompilationMappingAttribute>, false))
-    let tryFindCompilationMappingAttributeFromMemberInfo (info:MemberInfo) = tryFindCompilationMappingAttribute (info.GetCustomAttributes(typeof<CompilationMappingAttribute>, false))
-    let    findCompilationMappingAttributeFromMemberInfo (info:MemberInfo) =    findCompilationMappingAttribute (info.GetCustomAttributes(typeof<CompilationMappingAttribute>, false))
-#else
+#if !FX_NO_REFLECTION_ONLY
     let cmaName = typeof<CompilationMappingAttribute>.FullName
     let assemblyName = typeof<CompilationMappingAttribute>.Assembly.GetName().Name 
     let _ = assert (assemblyName = "FSharp.Core")
@@ -139,29 +135,34 @@ module internal Impl =
       match tryFindCompilationMappingAttributeFromData attrs with
       | None -> failwith "no compilation mapping attribute"
       | Some a -> a
+#endif 
 
     let tryFindCompilationMappingAttributeFromType       (typ:Type)        = 
+#if !FX_NO_REFLECTION_ONLY
         let assem = typ.Assembly
         if isNotNull assem && assem.ReflectionOnly then 
            tryFindCompilationMappingAttributeFromData ( typ.GetCustomAttributesData())
         else
-           tryFindCompilationMappingAttribute ( typ.GetCustomAttributes (typeof<CompilationMappingAttribute>,false))
+#endif
+        tryFindCompilationMappingAttribute ( typ.GetCustomAttributes (typeof<CompilationMappingAttribute>,false))
 
     let tryFindCompilationMappingAttributeFromMemberInfo (info:MemberInfo) = 
+#if !FX_NO_REFLECTION_ONLY
         let assem = info.DeclaringType.Assembly
         if isNotNull assem && assem.ReflectionOnly then 
            tryFindCompilationMappingAttributeFromData (info.GetCustomAttributesData())
         else
+#endif
         tryFindCompilationMappingAttribute (info.GetCustomAttributes (typeof<CompilationMappingAttribute>,false))
 
     let    findCompilationMappingAttributeFromMemberInfo (info:MemberInfo) =    
+#if !FX_NO_REFLECTION_ONLY
         let assem = info.DeclaringType.Assembly
         if isNotNull assem && assem.ReflectionOnly then 
             findCompilationMappingAttributeFromData (info.GetCustomAttributesData())
         else
-            findCompilationMappingAttribute (info.GetCustomAttributes (typeof<CompilationMappingAttribute>,false))
-
 #endif
+        findCompilationMappingAttribute (info.GetCustomAttributes (typeof<CompilationMappingAttribute>,false))
 
     let sequenceNumberOfMember          (x: MemberInfo) = let (_,n,_) = findCompilationMappingAttributeFromMemberInfo x in n
     let variantNumberOfMember           (x: MemberInfo) = let (_,_,vn) = findCompilationMappingAttributeFromMemberInfo x in vn
@@ -298,7 +299,7 @@ module internal Impl =
 
     let getUnionCaseRecordReader (typ:Type,tag:int,bindingFlags) = 
         let props = fieldsPropsOfUnionCase(typ,tag,bindingFlags)
-#if FX_ATLEAST_PORTABLE
+#if FX_PORTABLE_OR_NETSTANDARD
         (fun (obj:obj) -> props |> Array.map (fun prop -> prop.GetValue(obj,null)))
 #else        
         (fun (obj:obj) -> props |> Array.map (fun prop -> prop.GetValue(obj,bindingFlags,null,null,null)))
@@ -315,7 +316,7 @@ module internal Impl =
                 | Some reader -> (fun (obj:obj) -> reader obj :?> int)
                 | None -> 
                     (fun (obj:obj) -> 
-#if FX_ATLEAST_PORTABLE
+#if FX_PORTABLE_OR_NETSTANDARD
                         let m2b = typ.GetMethod("GetTag", [| typ |])
 #else                    
                         let m2b = typ.GetMethod("GetTag", BindingFlags.Static ||| bindingFlags, null, [| typ |], null)
@@ -324,7 +325,7 @@ module internal Impl =
         
     let getUnionTagMemberInfo (typ:Type,bindingFlags) = 
         match getInstancePropertyInfo (typ,"Tag",bindingFlags) with
-#if FX_ATLEAST_PORTABLE
+#if FX_PORTABLE_OR_NETSTANDARD
         | null -> (typ.GetMethod("GetTag") :> MemberInfo)
 #else        
         | null -> (typ.GetMethod("GetTag",BindingFlags.Static ||| bindingFlags) :> MemberInfo)
@@ -348,7 +349,7 @@ module internal Impl =
     let getUnionCaseConstructor (typ:Type,tag:int,bindingFlags) = 
         let meth = getUnionCaseConstructorMethod (typ,tag,bindingFlags)
         (fun args -> 
-#if FX_ATLEAST_PORTABLE
+#if FX_PORTABLE_OR_NETSTANDARD
             meth.Invoke(null,args))
 #else        
             meth.Invoke(null,BindingFlags.Static ||| BindingFlags.InvokeMethod ||| bindingFlags,null,args,null))
@@ -366,15 +367,29 @@ module internal Impl =
     let tupleNames = [|
         "System.Tuple`1";      "System.Tuple`2";      "System.Tuple`3";
         "System.Tuple`4";      "System.Tuple`5";      "System.Tuple`6";
-        "System.Tuple`7";      "System.Tuple`8";      "System.Tuple";
+        "System.Tuple`7";      "System.Tuple`8";      "System.Tuple"
         "System.ValueTuple`1"; "System.ValueTuple`2"; "System.ValueTuple`3";
         "System.ValueTuple`4"; "System.ValueTuple`5"; "System.ValueTuple`6";
         "System.ValueTuple`7"; "System.ValueTuple`8"; "System.ValueTuple" |]
 
+    let simpleTupleNames = [|
+        "Tuple`1";      "Tuple`2";      "Tuple`3";
+        "Tuple`4";      "Tuple`5";      "Tuple`6";
+        "Tuple`7";      "Tuple`8";      
+        "ValueTuple`1"; "ValueTuple`2"; "ValueTuple`3";
+        "ValueTuple`4"; "ValueTuple`5"; "ValueTuple`6";
+        "ValueTuple`7"; "ValueTuple`8"; |]
+
     let isTupleType (typ:Type) = 
-        // Simple Name Match on typ
-        if typ.IsEnum || typ.IsArray || typ.IsPointer then false
-        else tupleNames |> Seq.exists typ.FullName.StartsWith
+      // We need to be careful that we only rely typ.IsGenericType, typ.Namespace and typ.Name here.
+      //
+      // Historically the FSharp.Core reflection utilities get used on implementations of 
+      // System.Type that don't have functionality such as .IsEnum and .FullName fully implemented.
+      // This happens particularly over TypeBuilderInstantiation types in the ProvideTypes implementation of System.TYpe
+      // used in F# type providers.
+      typ.IsGenericType &&
+      typ.Namespace = "System" && 
+      simpleTupleNames |> Seq.exists typ.Name.StartsWith
 
     let maxTuple = 8
     // Which field holds the nested tuple?
@@ -447,12 +462,12 @@ module internal Impl =
         //   Item1, Item2, ..., Item<maxTuple-1>
         //   Item1, Item2, ..., Item<maxTuple-1>, Rest
         // The PropertyInfo may not come back in order, so ensure ordering here.
-#if FX_ATLEAST_PORTABLE
+#if FX_PORTABLE_OR_NETSTANDARD
 #else
         assert(maxTuple < 10) // Alphasort will only works for upto 9 items: Item1, Item10, Item2, Item3, ..., Item9, Rest
 #endif
         let props = props |> Array.sortBy (fun p -> p.Name) // they are not always in alphabetic order
-#if FX_ATLEAST_PORTABLE  
+#if FX_PORTABLE_OR_NETSTANDARD  
 #else
         assert(props.Length <= maxTuple)
         assert(let haveNames   = props |> Array.map (fun p -> p.Name)
@@ -471,13 +486,11 @@ module internal Impl =
         //   Item1, Item2, ..., Item<maxTuple-1>
         //   Item1, Item2, ..., Item<maxTuple-1>, Rest
         // The PropertyInfo may not come back in order, so ensure ordering here.
-#if FX_ATLEAST_PORTABLE
-#else
+#if !FX_PORTABLE_OR_NETSTANDARD
         assert(maxTuple < 10) // Alphasort will only works for upto 9 items: Item1, Item10, Item2, Item3, ..., Item9, Rest
 #endif
         let fields = fields |> Array.sortBy (fun fi -> fi.Name) // they are not always in alphabetic order
-#if FX_ATLEAST_PORTABLE  
-#else      
+#if !FX_PORTABLE_OR_NETSTANDARD  
         assert(fields.Length <= maxTuple)
         assert(let haveNames   = fields |> Array.map (fun fi -> fi.Name)
                let expectNames = Array.init fields.Length (fun i -> let j = i+1 // index j = 1,2,..,fields.Length <= maxTuple
@@ -492,7 +505,7 @@ module internal Impl =
         let ctor =
             if typ.IsValueType then
                 let fields = typ.GetFields(bindingFlags) |> orderTupleFields
-#if FX_ATLEAST_PORTABLE
+#if FX_PORTABLE_OR_NETSTANDARD
                 ignore bindingFlags
                 typ.GetConstructor(fields |> Array.map (fun fi -> fi.FieldType))
 #else
@@ -500,7 +513,7 @@ module internal Impl =
 #endif
             else
                 let props = typ.GetProperties() |> orderTupleProperties
-#if FX_ATLEAST_PORTABLE
+#if FX_PORTABLE_OR_NETSTANDARD
                 ignore bindingFlags
                 typ.GetConstructor(props |> Array.map (fun p -> p.PropertyType))
 #else
@@ -514,7 +527,7 @@ module internal Impl =
     let getTupleCtor(typ:Type,bindingFlags) =
           let ctor = getTupleConstructorMethod(typ,bindingFlags)
           (fun (args:obj[]) ->
-#if FX_ATLEAST_PORTABLE   
+#if FX_PORTABLE_OR_NETSTANDARD   
               ctor.Invoke(args))
 #else
               ctor.Invoke(BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| bindingFlags,null,args,null))
@@ -626,7 +639,7 @@ module internal Impl =
 
     let getRecordConstructorMethod(typ:Type,bindingFlags) = 
         let props = fieldPropsOfRecordType(typ,bindingFlags)
-#if FX_ATLEAST_PORTABLE
+#if FX_PORTABLE_OR_NETSTANDARD
         let ctor = typ.GetConstructor(props |> Array.map (fun p -> p.PropertyType))
 #else        
         let ctor = typ.GetConstructor(BindingFlags.Instance ||| bindingFlags,null,props |> Array.map (fun p -> p.PropertyType),null)
@@ -639,7 +652,7 @@ module internal Impl =
     let getRecordConstructor(typ:Type,bindingFlags) = 
         let ctor = getRecordConstructorMethod(typ,bindingFlags)
         (fun (args:obj[]) -> 
-#if FX_ATLEAST_PORTABLE
+#if FX_PORTABLE_OR_NETSTANDARD
             ctor.Invoke(args))
 #else        
             ctor.Invoke(BindingFlags.InvokeMethod  ||| BindingFlags.Instance ||| bindingFlags,null,args,null))
@@ -719,9 +732,8 @@ type UnionCaseInfo(typ: System.Type, tag:int) =
     
     member __.GetCustomAttributes(attributeType) = getMethInfo().GetCustomAttributes(attributeType,false)
 
-#if FX_NO_CUSTOMATTRIBUTEDATA
-#else
-    member __.GetCustomAttributesData() = getMethInfo().GetCustomAttributesData()
+#if !FX_NO_CUSTOMATTRIBUTEDATA
+    member __.GetCustomAttributesData() = getMethInfo().CustomAttributes |> Seq.toArray :> System.Collections.Generic.IList<_>
 #endif    
     member __.Tag = tag
     override x.ToString() = typ.Name + "." + x.Name

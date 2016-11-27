@@ -312,16 +312,10 @@ type internal FSharpProjectOptions =
     }
          
           
-/// Callback which can be used by the host to indicate to the checker that a requested result has become obsolete,
-/// e.g. because of typing by the user in the editor window. This can be used to marginally increase accuracy
-/// of intellisense results in some situations.
-type internal IsResultObsolete = 
-    | IsResultObsolete of (unit->bool)
-
 /// The result of calling TypeCheckResult including the possibility of abort and background compiler not caught up.
 [<RequireQualifiedAccess>]
 type internal FSharpCheckFileAnswer =
-    | Aborted // because isResultObsolete caused an abandonment of the operation
+    | Aborted // because cancellation caused an abandonment of the operation
     | Succeeded of FSharpCheckFileResults    
 
 [<Sealed; AutoSerializable(false)>]      
@@ -383,7 +377,7 @@ type internal FSharpChecker =
     ///     can be used to marginally increase accuracy of intellisense results in some situations.
     /// </param>
     ///
-    member CheckFileInProjectIfReady : parsed: FSharpParseFileResults * filename: string * fileversion: int * source: string * options: FSharpProjectOptions * ?isResultObsolete: IsResultObsolete * ?textSnapshotInfo: obj -> Async<FSharpCheckFileAnswer option>
+    member CheckFileInProjectIfReady : parsed: FSharpParseFileResults * filename: string * fileversion: int * source: string * options: FSharpProjectOptions * ?textSnapshotInfo: obj -> Async<FSharpCheckFileAnswer option>
 
     /// <summary>
     /// <para>
@@ -413,7 +407,7 @@ type internal FSharpChecker =
     ///     can be used to marginally increase accuracy of intellisense results in some situations.
     /// </param>
     ///
-    member CheckFileInProject : parsed: FSharpParseFileResults * filename: string * fileversion: int * source: string * options: FSharpProjectOptions * ?isResultObsolete: IsResultObsolete * ?textSnapshotInfo: obj -> Async<FSharpCheckFileAnswer>
+    member CheckFileInProject : parsed: FSharpParseFileResults * filename: string * fileversion: int * source: string * options: FSharpProjectOptions * ?textSnapshotInfo: obj -> Async<FSharpCheckFileAnswer>
 
     /// <summary>
     /// <para>
@@ -442,7 +436,7 @@ type internal FSharpChecker =
     ///     can be used to marginally increase accuracy of intellisense results in some situations.
     /// </param>
     ///
-    member ParseAndCheckFileInProject : filename: string * fileversion: int * source: string * options: FSharpProjectOptions * ?isResultObsolete: IsResultObsolete * ?textSnapshotInfo: obj -> Async<FSharpParseFileResults * FSharpCheckFileAnswer>
+    member ParseAndCheckFileInProject : filename: string * fileversion: int * source: string * options: FSharpProjectOptions * ?textSnapshotInfo: obj -> Async<FSharpParseFileResults * FSharpCheckFileAnswer>
 
     /// <summary>
     /// <para>Parse and typecheck all files in a project.</para>
@@ -601,8 +595,8 @@ type internal FsiInteractiveChecker =
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]   
 module internal CompilerEnvironment =
     /// These are the names of assemblies that should be referenced for .fs or .fsi files that
-    /// are not asscociated with a project.
-    val DefaultReferencesForOrphanSources : string list
+    /// are not associated with a project.
+    val DefaultReferencesForOrphanSources : assumeDotNetFramework: bool -> string list
     /// Return the compilation defines that should be used when editing the given file.
     val GetCompilationDefinesForEditing : filename : string * compilerFlags : string list -> string list
     /// Return true if this is a subcategory of error or warning message that the language service can emit

@@ -1,10 +1,10 @@
 ﻿// #Conformance #Quotations #Interop #Classes #ObjectConstructors #Attributes #Reflection 
-#if Portable
+#if TESTS_AS_APP
 module Core_quotes
 #endif
 #light
 
-#if !Portable
+#if !TESTS_AS_APP && !FX_PORTABLE_OR_NETSTANDARD
 #r "cslib.dll"
 #endif
 
@@ -23,20 +23,8 @@ let check s v1 v2 =
        report_failure s
 
 
-#if !NetCore
-let argv = System.Environment.GetCommandLineArgs() 
-let SetCulture() = 
-    if argv.Length > 2 && argv.[1] = "--culture" then  
-        let cultureString = argv.[2] 
-        let culture = new System.Globalization.CultureInfo(cultureString) 
-        stdout.WriteLine ("Running under culture "+culture.ToString()+"...");
-        System.Threading.Thread.CurrentThread.CurrentCulture <-  culture
-  
-do SetCulture()    
-#endif
-
-
 open System
+open System.Reflection
 open Microsoft.FSharp.Quotations
 open Microsoft.FSharp.Quotations.Patterns
 open Microsoft.FSharp.Quotations.DerivedPatterns
@@ -56,11 +44,9 @@ let (|TupleTy|_|) ty =
         Some (t1, t2)
     else None
 
-#if Portable
 [<Struct>]
 type S = 
     val mutable x : int
-#endif
 
 
 module TypedTest = begin 
@@ -361,7 +347,9 @@ module TypedTest = begin
     test "check  PropertyGet (static)" ((<@ System.DateTime.Now @> |> (function PropertyGet(None,_,[]) -> true | _ -> false))) 
     test "check  PropertyGet (instance)" ((<@ ("1").Length @> |> (function PropertyGet(Some(String("1")),_,[]) -> true | _ -> false))) 
 
+#if !FX_PORTABLE_OR_NETSTANDARD
     test "check  PropertySet (static)" ((<@ System.Environment.ExitCode <- 1 @> |> (function PropertySet(None,_,[],Int32(1)) -> true | _ -> false))) 
+#endif
     test "check  PropertySet (instance)" ((<@ ("1").Length @> |> (function PropertyGet(Some(String("1")),_,[]) -> true | _ -> false))) 
 
     test "check null (string)"   (<@ (null:string) @> |> (function Value(null,ty) when ty = typeof<string> -> true | _ -> false))
@@ -528,8 +516,7 @@ module TypedTest = begin
             |   _ -> false
         end
 
-#if FSHARP_CORE_31 || Portable
-#else
+#if !FSHARP_CORE_31 && !TESTS_AS_APP && !FX_PORTABLE_OR_NETSTANDARD
     test "check accesses to readonly fields in ReflectedDefinitions" 
         begin
             let c1 = Class1("a")
@@ -1903,7 +1890,7 @@ module TestQuotationOfCOnstructors =
                 
         | _ -> false)
 
-#if !NetCore
+#if !FX_RESHAPED_REFLECTION
     // Also test getting the reflected definition for private members implied by "let f() = ..." bindings
     let fMethod = (typeof<MyClassWithAsLetMethod>.GetMethod("f", Reflection.BindingFlags.Instance ||| Reflection.BindingFlags.Public ||| Reflection.BindingFlags.NonPublic))
 
@@ -2199,7 +2186,7 @@ module ReflectedDefinitionOnTypesWithImplicitCodeGen =
    module M = 
       // This type has an implicit IComparable implementation, it is not accessible as a reflected definition
       type R = { x:int; y:string; z:System.DateTime }
-#if NetCore
+#if FX_PORTABLE_OR_NETSTANDARD
       for m in typeof<R>.GetMethods() do 
 #else
       for m in typeof<R>.GetMethods(System.Reflection.BindingFlags.DeclaredOnly) do 
@@ -2208,7 +2195,7 @@ module ReflectedDefinitionOnTypesWithImplicitCodeGen =
 
       // This type has an implicit IComparable implementation, it is not accessible as a reflected definition
       type U = A of int | B of string | C of System.DateTime 
-#if NetCore
+#if FX_RESHAPED_REFLECTION
       for m in typeof<R>.GetMethods() do 
 #else
       for m in typeof<U>.GetMethods(System.Reflection.BindingFlags.DeclaredOnly) do 
@@ -2217,7 +2204,7 @@ module ReflectedDefinitionOnTypesWithImplicitCodeGen =
 
       // This type has some implicit codegen
       exception X of string * int
-#if NetCore
+#if FX_RESHAPED_REFLECTION
       for m in typeof<R>.GetMethods() do 
 #else
       for m in typeof<X>.GetMethods(System.Reflection.BindingFlags.DeclaredOnly) do 
@@ -2226,14 +2213,14 @@ module ReflectedDefinitionOnTypesWithImplicitCodeGen =
 
       // This type has an implicit IComparable implementation, it is not accessible as a reflected definition
       [<Struct>] type SR = { x:int; y:string; z:System.DateTime }
-#if NetCore
+#if FX_RESHAPED_REFLECTION
       for m in typeof<SR>.GetMethods() do 
 #else
       for m in typeof<SR>.GetMethods(System.Reflection.BindingFlags.DeclaredOnly) do 
 #endif
           check "celnwer35" (Quotations.Expr.TryGetReflectedDefinition(m).IsNone) true
 
-#if !Portable
+#if !FX_PORTABLE_OR_NETSTANDARD
 module BasicUsingTEsts = 
     let q1() = 
       let a = ResizeArray<_>()
@@ -2721,7 +2708,265 @@ module PartialApplicationLeadToInvalidCodeWhenOptimized =
 
     f ()
 
-#if !NetCore
+
+/// TEST F# REFLECTION OVER THE IMPLEMENTATION OF SYMBOL TYPES FROM THE F# TYPE PROVIDER STARTER PACK
+///
+module ReflectionOverTypeInstantiations = 
+
+    open System.Collections.Generic
+
+    let notRequired opname item = 
+        let msg = sprintf "The operation '%s' on item '%s' should not be called on provided type, member or parameter" opname item
+        System.Diagnostics.Debug.Assert (false, msg)
+        raise (System.NotSupportedException msg)
+
+    /// DO NOT ADJUST THIS TYPE - it is the implementation of symbol types from the F# type provider starer pack. 
+    /// This code gets included in all F# type provider implementations. We expect F# reflection to be in a good, 
+    /// known state over these types.
+    ///
+    ///
+    /// Represents the type constructor in a provided symbol type.
+    [<NoComparison>]
+    type ProvidedSymbolKind = 
+        | SDArray 
+        | Array of int 
+        | Pointer 
+        | ByRef 
+        | Generic of System.Type 
+        | FSharpTypeAbbreviation of (System.Reflection.Assembly * string * string[])
+
+
+    /// DO NOT ADJUST THIS TYPE - it is the implementation of symbol types from the F# type provider starer pack. 
+    /// This code gets included in all F# type provider implementations. We expect F# reflection to be in a good, 
+    /// known state over these types.
+    ///
+    /// Represents an array or other symbolic type involving a provided type as the argument.
+    /// See the type provider spec for the methods that must be implemented.
+    /// Note that the type provider specification does not require us to implement pointer-equality for provided types.
+    type ProvidedSymbolType(kind: ProvidedSymbolKind, args: Type list, convToTgt: Type -> Type) =
+        inherit Type()
+
+        let rec isEquivalentTo (thisTy: Type) (otherTy: Type) =
+            match thisTy, otherTy with
+            | (:? ProvidedSymbolType as thisTy), (:? ProvidedSymbolType as thatTy) -> (thisTy.Kind,thisTy.Args) = (thatTy.Kind, thatTy.Args)
+            | (:? ProvidedSymbolType as thisTy), otherTy | otherTy, (:? ProvidedSymbolType as thisTy) ->
+                match thisTy.Kind, thisTy.Args with
+                | ProvidedSymbolKind.SDArray, [ty] | ProvidedSymbolKind.Array _, [ty] when otherTy.IsArray-> ty.Equals(otherTy.GetElementType())
+                | ProvidedSymbolKind.ByRef, [ty] when otherTy.IsByRef -> ty.Equals(otherTy.GetElementType())
+                | ProvidedSymbolKind.Pointer, [ty] when otherTy.IsPointer -> ty.Equals(otherTy.GetElementType())
+                | ProvidedSymbolKind.Generic baseTy, args -> otherTy.IsGenericType && isEquivalentTo baseTy (otherTy.GetGenericTypeDefinition()) && Seq.forall2 isEquivalentTo args (otherTy.GetGenericArguments())
+                | _ -> false
+            | a, b -> a.Equals b
+
+        let nameText() = 
+            match kind,args with 
+            | ProvidedSymbolKind.SDArray,[arg] -> arg.Name + "[]" 
+            | ProvidedSymbolKind.Array _,[arg] -> arg.Name + "[*]" 
+            | ProvidedSymbolKind.Pointer,[arg] -> arg.Name + "*" 
+            | ProvidedSymbolKind.ByRef,[arg] -> arg.Name + "&"
+            | ProvidedSymbolKind.Generic gty, args -> gty.Name + (sprintf "%A" args)
+            | ProvidedSymbolKind.FSharpTypeAbbreviation (_,_,path),_ -> path.[path.Length-1]
+            | _ -> failwith "unreachable"
+
+        /// Substitute types for type variables.
+        static member convType (parameters: Type list) (ty:Type) = 
+            if ty = null then null
+            elif ty.IsGenericType then
+                let args = Array.map (ProvidedSymbolType.convType parameters) (ty.GetGenericArguments())
+                ty.GetGenericTypeDefinition().MakeGenericType(args)  
+            elif ty.HasElementType then 
+                let ety = ProvidedSymbolType.convType parameters (ty.GetElementType()) 
+                if ty.IsArray then 
+                    let rank = ty.GetArrayRank()
+                    if rank = 1 then ety.MakeArrayType()
+                    else ety.MakeArrayType(rank)
+                elif ty.IsPointer then ety.MakePointerType()
+                elif ty.IsByRef then ety.MakeByRefType()
+                else ty
+            elif ty.IsGenericParameter then 
+                if ty.GenericParameterPosition <= parameters.Length - 1 then 
+                    parameters.[ty.GenericParameterPosition]
+                else
+                    ty
+            else ty
+
+        override __.FullName =   
+            match kind,args with 
+            | ProvidedSymbolKind.SDArray,[arg] -> arg.FullName + "[]" 
+            | ProvidedSymbolKind.Array _,[arg] -> arg.FullName + "[*]" 
+            | ProvidedSymbolKind.Pointer,[arg] -> arg.FullName + "*" 
+            | ProvidedSymbolKind.ByRef,[arg] -> arg.FullName + "&"
+            | ProvidedSymbolKind.Generic gty, args -> gty.FullName + "[" + (args |> List.map (fun arg -> arg.ToString()) |> String.concat ",") + "]"
+            | ProvidedSymbolKind.FSharpTypeAbbreviation (_,nsp,path),args -> String.concat "." (Array.append [| nsp |] path) + (match args with [] -> "" | _ -> args.ToString())
+            | _ -> failwith "unreachable"
+   
+        /// Although not strictly required by the type provider specification, this is required when doing basic operations like FullName on
+        /// .NET symbolic types made from this type, e.g. when building Nullable<SomeProvidedType[]>.FullName
+        override __.DeclaringType =                                                                 
+            match kind,args with 
+            | ProvidedSymbolKind.SDArray,[arg] -> arg
+            | ProvidedSymbolKind.Array _,[arg] -> arg
+            | ProvidedSymbolKind.Pointer,[arg] -> arg
+            | ProvidedSymbolKind.ByRef,[arg] -> arg
+            | ProvidedSymbolKind.Generic gty,_ -> gty
+            | ProvidedSymbolKind.FSharpTypeAbbreviation _,_ -> null
+            | _ -> failwith "unreachable"
+
+        override __.IsAssignableFrom(otherTy) = 
+            match kind with
+            | Generic gtd ->
+                if otherTy.IsGenericType then
+                    let otherGtd = otherTy.GetGenericTypeDefinition()
+                    let otherArgs = otherTy.GetGenericArguments()
+                    let yes = gtd.Equals(otherGtd) && Seq.forall2 isEquivalentTo args otherArgs
+                    yes
+                    else
+                        base.IsAssignableFrom(otherTy)
+            | _ -> base.IsAssignableFrom(otherTy)
+
+        override __.Name = nameText()
+
+        override __.BaseType =
+            match kind with 
+            | ProvidedSymbolKind.SDArray -> convToTgt typeof<System.Array> 
+            | ProvidedSymbolKind.Array _ -> convToTgt typeof<System.Array> 
+            | ProvidedSymbolKind.Pointer -> convToTgt typeof<System.ValueType> 
+            | ProvidedSymbolKind.ByRef -> convToTgt typeof<System.ValueType> 
+            | ProvidedSymbolKind.Generic gty  ->
+                if gty.BaseType = null then null else
+                ProvidedSymbolType.convType args gty.BaseType
+            | ProvidedSymbolKind.FSharpTypeAbbreviation _ -> convToTgt typeof<obj>  
+
+        override __.GetArrayRank() = (match kind with ProvidedSymbolKind.Array n -> n | ProvidedSymbolKind.SDArray -> 1 | _ -> invalidOp "non-array type")
+        override __.IsValueTypeImpl() = (match kind with ProvidedSymbolKind.Generic gtd -> gtd.IsValueType | _ -> false)
+        override __.IsArrayImpl() = (match kind with ProvidedSymbolKind.Array _ | ProvidedSymbolKind.SDArray -> true | _ -> false)
+        override __.IsByRefImpl() = (match kind with ProvidedSymbolKind.ByRef _ -> true | _ -> false)
+        override __.IsPointerImpl() = (match kind with ProvidedSymbolKind.Pointer _ -> true | _ -> false)
+        override __.IsPrimitiveImpl() = false
+        override __.IsGenericType = (match kind with ProvidedSymbolKind.Generic _ -> true | _ -> false)
+        override __.GetGenericArguments() = (match kind with ProvidedSymbolKind.Generic _ -> args |> List.toArray | _ -> invalidOp "non-generic type")
+        override __.GetGenericTypeDefinition() = (match kind with ProvidedSymbolKind.Generic e -> e | _ -> invalidOp "non-generic type")
+        override __.IsCOMObjectImpl() = false
+        override __.HasElementTypeImpl() = (match kind with ProvidedSymbolKind.Generic _ -> false | _ -> true)
+        override __.GetElementType() = (match kind,args with (ProvidedSymbolKind.Array _  | ProvidedSymbolKind.SDArray | ProvidedSymbolKind.ByRef | ProvidedSymbolKind.Pointer),[e] -> e | _ -> invalidOp "not an array, pointer or byref type")
+        override this.ToString() = this.FullName
+
+        override __.Assembly = 
+            match kind with 
+            | ProvidedSymbolKind.FSharpTypeAbbreviation (assembly,_nsp,_path) -> assembly
+            | ProvidedSymbolKind.Generic gty -> gty.Assembly
+            | _ -> notRequired "Assembly" (nameText())
+
+        override __.Namespace = 
+            match kind with 
+            | ProvidedSymbolKind.FSharpTypeAbbreviation (_assembly,nsp,_path) -> nsp
+            | _ -> notRequired "Namespace" (nameText())
+
+        override __.GetHashCode()                                                                    = 
+            match kind,args with 
+            | ProvidedSymbolKind.SDArray,[arg] -> 10 + hash arg
+            | ProvidedSymbolKind.Array _,[arg] -> 163 + hash arg
+            | ProvidedSymbolKind.Pointer,[arg] -> 283 + hash arg
+            | ProvidedSymbolKind.ByRef,[arg] -> 43904 + hash arg
+            | ProvidedSymbolKind.Generic gty,_ -> 9797 + hash gty + List.sumBy hash args
+            | ProvidedSymbolKind.FSharpTypeAbbreviation _,_ -> 3092
+            | _ -> failwith "unreachable"
+    
+        override __.Equals(other: obj) =
+            match other with
+            | :? ProvidedSymbolType as otherTy -> (kind, args) = (otherTy.Kind, otherTy.Args)
+            | _ -> false
+
+        member __.Kind = kind
+        member __.Args = args
+    
+        member __.IsFSharpTypeAbbreviation  = match kind with FSharpTypeAbbreviation _ -> true | _ -> false
+        // For example, int<kg>
+        member __.IsFSharpUnitAnnotated = match kind with ProvidedSymbolKind.Generic gtd -> not gtd.IsGenericTypeDefinition | _ -> false
+
+        override __.Module : Module                                                                   = notRequired "Module" (nameText())
+        override __.GetConstructors _bindingAttr                                                      = notRequired "GetConstructors" (nameText())
+        override __.GetMethodImpl(_name, _bindingAttr, _binderBinder, _callConvention, _types, _modifiers) = 
+            match kind with
+            | Generic gtd -> 
+                let ty = gtd.GetGenericTypeDefinition().MakeGenericType(Array.ofList args)
+                ty.GetMethod(_name, _bindingAttr)
+            | _ -> notRequired "GetMethodImpl" (nameText())
+        override __.GetMembers _bindingAttr                                                           = notRequired "GetMembers" (nameText())
+        override __.GetMethods _bindingAttr                                                           = notRequired "GetMethods" (nameText())
+        override __.GetField(_name, _bindingAttr)                                                     = notRequired "GetField" (nameText())
+        override __.GetFields _bindingAttr                                                            = notRequired "GetFields" (nameText())
+        override __.GetInterface(_name, _ignoreCase)                                                  = notRequired "GetInterface" (nameText())
+        override __.GetInterfaces()                                                                   = notRequired "GetInterfaces" (nameText())
+        override __.GetEvent(_name, _bindingAttr)                                                     = notRequired "GetEvent" (nameText())
+        override __.GetEvents _bindingAttr                                                            = notRequired "GetEvents" (nameText())
+        override __.GetProperties _bindingAttr                                                        = notRequired "GetProperties" (nameText())
+        override __.GetPropertyImpl(_name, _bindingAttr, _binder, _returnType, _types, _modifiers)    = notRequired "GetPropertyImpl" (nameText())
+        override __.GetNestedTypes _bindingAttr                                                       = notRequired "GetNestedTypes" (nameText())
+        override __.GetNestedType(_name, _bindingAttr)                                                = notRequired "GetNestedType" (nameText())
+        override __.GetAttributeFlagsImpl()                                                           = notRequired "GetAttributeFlagsImpl" (nameText())
+        override this.UnderlyingSystemType = 
+            match kind with 
+            | ProvidedSymbolKind.SDArray
+            | ProvidedSymbolKind.Array _
+            | ProvidedSymbolKind.Pointer
+            | ProvidedSymbolKind.FSharpTypeAbbreviation _
+            | ProvidedSymbolKind.ByRef -> upcast this
+            | ProvidedSymbolKind.Generic gty -> gty.UnderlyingSystemType  
+    #if FX_NO_CUSTOMATTRIBUTEDATA
+    #else
+        override __.GetCustomAttributesData()                                                        =  ([| |] :> IList<_>)
+    #endif
+        override __.MemberType                                                                       = notRequired "MemberType" (nameText())
+        override __.GetMember(_name,_mt,_bindingAttr)                                                = notRequired "GetMember" (nameText())
+        override __.GUID                                                                             = notRequired "GUID" (nameText())
+        override __.InvokeMember(_name, _invokeAttr, _binder, _target, _args, _modifiers, _culture, _namedParameters) = notRequired "InvokeMember" (nameText())
+        override __.AssemblyQualifiedName                                                            = notRequired "AssemblyQualifiedName" (nameText())
+        override __.GetConstructorImpl(_bindingAttr, _binder, _callConvention, _types, _modifiers)   = notRequired "GetConstructorImpl" (nameText())
+        override __.GetCustomAttributes(_inherit)                                                    = [| |]
+        override __.GetCustomAttributes(_attributeType, _inherit)                                    = [| |]
+        override __.IsDefined(_attributeType, _inherit)                                              = false
+        // FSharp.Data addition: this was added to support arrays of arrays
+        override this.MakeArrayType() = ProvidedSymbolType(ProvidedSymbolKind.SDArray, [this], convToTgt) :> Type
+        override this.MakeArrayType arg = ProvidedSymbolType(ProvidedSymbolKind.Array arg, [this], convToTgt) :> Type
+
+
+
+    /// DO NOT ADJUST THIS TYPE - it is the implementation of symbol types from the F# type provider starer pack. 
+    /// This code gets included in all F# type provider implementations. We expect F# reflection to be in a good, 
+    /// known state over these types.
+    type ProvidedTypeBuilder() =
+        static member MakeGenericType(genericTypeDefinition, genericArguments) = ProvidedSymbolType(Generic genericTypeDefinition, genericArguments, id) :> Type
+    
+
+    /// TEST BEGINS HERE
+    //
+    let checkType nm (ty:System.Type) isTup = 
+        // Calls to basic properties are in a known state
+        check (nm + "-falihksec0 - expect IsArray to give accurate results on typical F# type provider implementation of TypeBuilderInstantiation") (try ty.IsArray |> Some with e -> None) (Some false)
+        check (nm + "-falihksec1 - expect IsPointer to give accurate results on typical F# type provider implementation of TypeBuilderInstantiation") (try ty.IsPointer |> Some with e -> None) (Some false)
+        check (nm + "-falihksec2 - expect IsAbstract to give accurate results on typical F# type provider implementation of TypeBuilderInstantiation") (try ty.IsAbstract |> Some with e -> None) (Some false)
+        check (nm + "-falihksec3 - expect IsClass to give accurate results on typical F# type provider implementation of TypeBuilderInstantiation") (try ty.IsClass |> Some with e -> None) (Some true)
+        check (nm + "-falihksec4 - expect IsValueType to give accurate results on typical F# type provider implementation of TypeBuilderInstantiation") (try ty.IsValueType |> Some with e -> None) (Some false)
+        check (nm + "-falihksec5 - expect IsTuple to give accurate results on typical F# type provider implementation of TypeBuilderInstantiation") (try Reflection.FSharpType.IsTuple(ty) |> Some with _ -> None) (Some isTup)
+
+        check (nm + "-falihksec3a - currently expect IsEnum to throw on typical F# type provider implementation of TypeBuilderInstantiation") (try ty.IsEnum |> ignore; 100 with e -> 200) 200
+        check (nm + "-falihksec4a - currently expect FullName to throw on typical F# type provider implementation of TypeBuilderInstantiation") (try ty.FullName |> ignore; 100 with e -> 200) 200
+        check (nm + "-falihksec5a - currently expect IsFunction to throw on typical F# type provider implementation of TypeBuilderInstantiation") (try Reflection.FSharpType.IsFunction(ty) |> ignore; 100 with _ -> 200) 200
+        check (nm + "-falihksec6a - currently expect IsUnion to throw on typical F# type provider implementation of TypeBuilderInstantiation") (try Reflection.FSharpType.IsUnion(ty) |> ignore; 100 with :? System.NotSupportedException -> 200) 200
+        check (nm + "-falihksec7a - currently expect IsRecord to throw on typical F# type provider implementation of TypeBuilderInstantiation") (try Reflection.FSharpType.IsRecord (ty) |> ignore; 100 with :? System.NotSupportedException -> 200) 200
+        check (nm + "-falihksec8a - currently expect IsModule to throw on typical F# type provider implementation of TypeBuilderInstantiation") (try Reflection.FSharpType.IsModule (ty) |> ignore; 100 with :? System.NotSupportedException -> 200) 200
+
+    // This makes a TypeBuilderInstantiation type, because a real type has been instantiated with a non-real type
+    let t0 = ProvidedTypeBuilder.MakeGenericType(typedefof<list<_>>, [ typeof<int> ])
+    let t1 = typedefof<list<_>>.MakeGenericType(t0)
+    let t2 = typedefof<int * int>.MakeGenericType(t0, t0)
+
+    checkType "test cvweler8" t1 false
+    checkType "test cvweler9" t2 true
+
+
+#if !FX_RESHAPED_REFLECTION
 module TestAssemblyAttributes = 
     let attributes = System.Reflection.Assembly.GetExecutingAssembly().GetCustomAttributes(false)
 #endif

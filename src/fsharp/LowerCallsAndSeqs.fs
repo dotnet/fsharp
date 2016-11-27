@@ -70,7 +70,7 @@ let LowerImplFile g ass =
 let mkLambdaNoType g m uv e = 
     mkLambda m uv (e,tyOfExpr g e) 
 
-let mkUnitDelayLambda g m e =
+let mkUnitDelayLambda (g: TcGlobals) m e =
     let uv,_ue = mkCompGenLocal m "unitVar" g.unit_ty
     mkLambdaNoType g m uv e 
 
@@ -381,7 +381,7 @@ let LowerSeqExpr g amap overallExpr =
             | None -> 
                 None
 
-        | Expr.Match (spBind,exprm,pt,targets,m,ty) when targets |> Array.forall (fun (TTarget(vs,_e,_spTarget)) -> List.isEmpty vs) ->
+        | Expr.Match (spBind,exprm,pt,targets,m,ty) when targets |> Array.forall (fun (TTarget(vs,_e,_spTarget)) -> isNil vs) ->
             // lower all the targets. abandon if any fail to lower
             let tgl = targets |> Array.map (fun (TTarget(_vs,e,_spTarget)) -> Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel e) |> Array.toList
             // LIMITATION: non-trivial pattern matches involving or-patterns or active patterns where bindings can't be 
@@ -400,8 +400,8 @@ let LowerSeqExpr g amap overallExpr =
                                         gtg,dispose,checkDispose)
                                   |> List.unzip3  
                             let generate = primMkMatch (spBind,exprm,pt,Array.ofList gtgs,m,ty)
-                            let dispose = if List.isEmpty disposals then mkUnit g m else List.reduce (mkCompGenSequential m) disposals
-                            let checkDispose = if List.isEmpty checkDisposes then mkFalse g m else List.reduce (mkCompGenSequential m) checkDisposes
+                            let dispose = if isNil disposals then mkUnit g m else List.reduce (mkCompGenSequential m) disposals
+                            let checkDispose = if isNil checkDisposes then mkFalse g m else List.reduce (mkCompGenSequential m) checkDisposes
                             generate,dispose,checkDispose)
                        labels=labs
                        stateVars = stateVars 

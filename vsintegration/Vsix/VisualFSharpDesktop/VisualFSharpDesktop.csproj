@@ -43,8 +43,8 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <VSRootSuffix>FSharpDev</VSRootSuffix>
     <UseCodebase>true</UseCodebase>
-    <DeployExtension Condition="'$(AppVeyor)' != '' or '$(HUDSON_COOKIE)' != '' or '$(UsingMicrobuild)' != ''">False</DeployExtension>
-    <DeployExtension Condition="'$(AppVeyor)' == '' and '$(HUDSON_COOKIE)' == '' and '$(UsingMicrobuild)' == ''">True</DeployExtension>
+    <DeployExtension Condition=" '$(DeployExtension)' == '' and ('$(AppVeyor)' != '' or '$(HUDSON_COOKIE)' != '' or '$(UsingMicrobuild)' != '') ">False</DeployExtension>
+    <DeployExtension Condition=" '$(DeployExtension)' == '' and '$(AppVeyor)' == '' and '$(HUDSON_COOKIE)' == '' and '$(UsingMicrobuild)' == '' ">True</DeployExtension>
     <ProjectGuid>{E7EC4A3E-9D57-45B8-83F5-EDDFD6CEF090}</ProjectGuid>
     <IsPackage>true</IsPackage>
     <RootNamespace>VisualFSharpDesktop</RootNamespace>
@@ -80,11 +80,12 @@
     </Content>
     <Content Include="$(FSharpSourcesRoot)\..\License.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>License.txt</Link>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
-    <Content Include="$(FSharpSourcesRoot)\..\packages\System.ValueTuple.4.4.0-beta-24631-01\System.ValueTuple.4.4.0-beta-24631-01.nupkg">
+    <Content Include="$(FSharpSourcesRoot)\..\packages\System.ValueTuple.4.3.0\System.ValueTuple.4.3.0.nupkg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>packages\System.ValueTuple.4.4.0-beta-24631-01.nupkg</Link>
+      <Link>packages\System.ValueTuple.4.3.0.nupkg</Link>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
   </ItemGroup>
