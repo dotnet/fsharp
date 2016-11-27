@@ -106,13 +106,3 @@ type OpenDocumentsTracker [<ImportingConstructor>](textDocumentFactoryService: I
         member __.DocumentChanged = documentChanged.Publish
         member __.DocumentClosed = documentClosed.Publish
 
-open System.ComponentModel.Composition
-open Microsoft.VisualStudio.Text.Editor
-open Microsoft.VisualStudio.Utilities
-
-[<Export(typeof<IWpfTextViewCreationListener>)>]
-[<ContentType(FSharpCommonConstants.FSharpLanguageName)>]
-[<TextViewRole(PredefinedTextViewRoles.Interactive)>]
-type ActiveViewRegistratorListener [<ImportingConstructor>]([<Import>] openDocumentsTracker: IVSOpenDocumentsTracker) = 
-    interface IWpfTextViewCreationListener with
-        member __.TextViewCreated view = openDocumentsTracker.RegisterView view

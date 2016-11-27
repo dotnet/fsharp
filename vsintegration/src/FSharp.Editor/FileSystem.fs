@@ -4,10 +4,10 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open System.IO
+open System.Collections.Generic
 open System.ComponentModel.Composition
 
-[<Export>]
-type FileSystem [<ImportingConstructor>] (openDocumentsTracker: IOpenDocumentsTracker) =
+type FileSystem (openDocumentsTracker: IOpenDocumentsTracker) =
     static let defaultFileSystem = Shim.FileSystem
 
     let getOpenDocContent (fileName: string) =
@@ -44,3 +44,16 @@ type FileSystem [<ImportingConstructor>] (openDocumentsTracker: IOpenDocumentsTr
         member __.FileDelete fileName = defaultFileSystem.FileDelete fileName
         member __.AssemblyLoadFrom fileName = defaultFileSystem.AssemblyLoadFrom fileName
         member __.AssemblyLoad assemblyName = defaultFileSystem.AssemblyLoad assemblyName
+
+open System.ComponentModel.Composition
+open Microsoft.VisualStudio.Text.Editor
+open Microsoft.VisualStudio.Utilities
+
+[<Export(typeof<IWpfTextViewCreationListener>)>]
+[<ContentType(FSharpCommonConstants.FSharpLanguageName)>]
+[<TextViewRole(PredefinedTextViewRoles.Interactive)>]
+type ActiveViewRegistratorListener [<ImportingConstructor>]([<Import>] openDocumentsTracker: IVSOpenDocumentsTracker) = 
+    do Shim.FileSystem <- FileSystem(openDocumentsTracker)
+
+    interface IWpfTextViewCreationListener with
+        member __.TextViewCreated view = openDocumentsTracker.RegisterView view
