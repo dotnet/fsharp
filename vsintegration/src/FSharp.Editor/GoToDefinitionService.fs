@@ -4,7 +4,6 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Composition
-open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Collections.Immutable
 open System.Linq
@@ -43,70 +42,35 @@ type internal FSharpNavigableItem(document: Document, textSpan: TextSpan) =
 [<ExportLanguageService(typeof<IGoToDefinitionService>, FSharpCommonConstants.FSharpLanguageName)>]
 type internal FSharpGoToDefinitionService [<ImportingConstructor>] ([<ImportMany>]presenters: IEnumerable<INavigableItemsPresenter>) =
 
-    static member FindDefinition (documentKey: DocumentId,
-                                  sourceText: SourceText,
-                                  filePath: string,
-                                  position: int,
-                                  defines: string list,
-                                  options: FSharpProjectOptions,
-                                  textVersionHash: int,
-                                  cancellationToken: CancellationToken)
-                                  : Async<Option<range>> = 
-      async {
-
-        let textLine = sourceText.Lines.GetLineFromPosition(position)
-        let textLinePos = sourceText.Lines.GetLinePosition(position)
-        let fcsTextLineNumber = textLinePos.Line + 1 // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
-        let textLineColumn = textLinePos.Character
-        let tryClassifyAtPosition (position: int) =
-            let classifiedSpanOption =
-                FSharpColorizationService.GetColorizationData(documentKey, sourceText, textLine.Span, Some(filePath), defines, cancellationToken)
-                |> Seq.tryFind(fun classifiedSpan -> classifiedSpan.TextSpan.Contains(position))
-
-            match classifiedSpanOption with
-            | Some(classifiedSpan) ->
-                match classifiedSpan.ClassificationType with
-                | ClassificationTypeNames.ClassName
-                | ClassificationTypeNames.DelegateName
-                | ClassificationTypeNames.EnumName
-                | ClassificationTypeNames.InterfaceName
-                | ClassificationTypeNames.ModuleName
-                | ClassificationTypeNames.StructName
-                | ClassificationTypeNames.TypeParameterName
-                | ClassificationTypeNames.Identifier -> 
-                    match QuickParse.GetCompleteIdentifierIsland true (textLine.ToString()) textLineColumn with
-                    | Some (islandIdentifier, islandColumn, isQuoted) -> 
-                        let qualifiers = if isQuoted then [islandIdentifier] else islandIdentifier.Split '.' |> Array.toList
-                        Some (islandColumn, qualifiers)
-                    | None -> None
-                | ClassificationTypeNames.Operator ->
-                    let islandColumn = sourceText.Lines.GetLinePositionSpan(classifiedSpan.TextSpan).End.Character
-                    Some (islandColumn, [""]) 
-                | _ -> None
-            | _ -> None
-
-        // Tolerate being on the right of the identifier
-        let quickParseInfo = 
-            match tryClassifyAtPosition position with 
-            | None when textLineColumn > 0 -> tryClassifyAtPosition (position - 1) 
-            | res -> res
-
-        match quickParseInfo with 
-        | Some (islandColumn, qualifiers) -> 
-            let! parseResults = FSharpLanguageService.Checker.ParseFileInProject(filePath, sourceText.ToString(), options)
-            let! checkFileAnswer = FSharpLanguageService.Checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options)
-            let checkFileResults = 
-                match checkFileAnswer with
-                | FSharpCheckFileAnswer.Aborted -> failwith "Compilation isn't complete yet"
-                | FSharpCheckFileAnswer.Succeeded(results) -> results
-
-            let! declarations = checkFileResults.GetDeclarationLocationAlternate (fcsTextLineNumber, islandColumn, textLine.ToString(), qualifiers, false)
-
-            match declarations with
-            | FSharpFindDeclResult.DeclFound(range) -> return Some(range)
-            | _ -> return None
-        | None -> return None
-    }
+    static member FindDefinition(documentKey: DocumentId, sourceText: SourceText, filePath: string, position: int, defines: string list, options: FSharpProjectOptions, textVersionHash: int, cancellationToken: CancellationToken) : Async<Option<range>> = 
+        async {
+            let textLine = sourceText.Lines.GetLineFromPosition(position)
+            let textLinePos = sourceText.Lines.GetLinePosition(position)
+            let fcsTextLineNumber = textLinePos.Line + 1 // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
+            let textLineColumn = textLinePos.Character
+            let tryClassifyAtPosition position = CommonHelpers.tryClassifyAtPosition(documentKey, sourceText, filePath, defines, position, cancellationToken)
+            // Tolerate being on the right of the identifier
+            let quickParseInfo = 
+                match tryClassifyAtPosition position with 
+                | None when textLineColumn > 0 -> tryClassifyAtPosition (position - 1) 
+                | res -> res
+            
+            match quickParseInfo with 
+            | Some (islandColumn, qualifiers, _) -> 
+                let! parseResults = FSharpLanguageService.Checker.ParseFileInProject(filePath, sourceText.ToString(), options)
+                let! checkFileAnswer = FSharpLanguageService.Checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options)
+                let checkFileResults = 
+                    match checkFileAnswer with
+                    | FSharpCheckFileAnswer.Aborted -> failwith "Compilation isn't complete yet"
+                    | FSharpCheckFileAnswer.Succeeded(results) -> results
+            
+                let! declarations = checkFileResults.GetDeclarationLocationAlternate (fcsTextLineNumber, islandColumn, textLine.ToString(), qualifiers, false)
+            
+                match declarations with
+                | FSharpFindDeclResult.DeclFound(range) -> return Some(range)
+                | _ -> return None
+            | None -> return None
+        }
     
     // FSROSLYNTODO: Since we are not integrated with the Roslyn project system yet, the below call
     // document.Project.Solution.GetDocumentIdsWithFilePath() will only access files in the same project.

@@ -888,7 +888,7 @@ type TypeCheckInfo
                 | None, _ -> [], None
                 | Some(origLongIdent), Some _ -> origLongIdent, None
                 | Some(origLongIdent), None ->
-                    assert (not (isNil origLongIdent))
+                    System.Diagnostics.Debug.Assert(not (isNil origLongIdent), "origLongIdent is empty")
                     // note: as above, this happens when we are called for "precise" resolution - (F1 keyword, data tip etc..)
                     let plid, residue = List.frontAndBack origLongIdent
                     plid, Some residue

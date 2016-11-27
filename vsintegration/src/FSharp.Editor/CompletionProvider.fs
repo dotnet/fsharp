@@ -64,7 +64,7 @@ type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SV
             let triggerPosition = caretPosition - 1
             let textLine = sourceText.Lines.GetLineFromPosition(triggerPosition)
             let classifiedSpanOption =
-                FSharpColorizationService.GetColorizationData(documentId, sourceText, textLine.Span, Some(filePath), defines, CancellationToken.None)
+                CommonHelpers.getColorizationData(documentId, sourceText, textLine.Span, Some(filePath), defines, CancellationToken.None)
                 |> Seq.tryFind(fun classifiedSpan -> classifiedSpan.TextSpan.Contains(triggerPosition))
 
             match classifiedSpanOption with
