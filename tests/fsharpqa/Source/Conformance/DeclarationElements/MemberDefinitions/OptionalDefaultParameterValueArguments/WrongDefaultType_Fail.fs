@@ -1,6 +1,6 @@
 ﻿// #Conformance #DeclarationElements #MemberDefinitions #OptionalDefaultParameterValueArguments
 
-//this currently fails the PEVerify step - need to fix by creating appropriate compile error.
+//<Expects id="FS3211" status="error"> The default value does not have the same type as the argument.</Expects>
 
 open System.Runtime.InteropServices
 

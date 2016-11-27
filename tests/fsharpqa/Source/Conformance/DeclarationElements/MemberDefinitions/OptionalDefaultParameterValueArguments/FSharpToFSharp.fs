@@ -18,16 +18,16 @@ type Class() =
     static member Method11 ([<Optional;DefaultParameterValue(true)>]i:bool) = i
     static member Method12 ([<Optional;DefaultParameterValue('q')>]i:char) = i
     static member Method13 ([<Optional;DefaultParameterValue("ono")>]i:string) = i
-    //Check a reference type - only null possible.
-    static member Method14 ([<Optional;DefaultParameterValue(null)>]i:obj) = i
+    //Check a reference type - only null possible. We need to give this the correct type or our new compiler error triggers?
+    static member Method14 ([<Optional;DefaultParameterValue(null:obj)>]i:obj) = i
     //Check a value type - only default ctor possible.
     static member Method15 ([<Optional;DefaultParameterValue(new DateTime())>]i:DateTime) = i
 
     //Check nullables. Apparently either null or Nullable() works here, though
     //maybe 'null is not a proper value' is expected here?
-    static member MethodNullable1 ([<Optional;DefaultParameterValue(null)>]i:Nullable<int>) = i
-    static member MethodNullable2 ([<Optional;DefaultParameterValue(Nullable<_>())>]i:Nullable<bool>) = i
-    static member MethodNullable3 ([<Optional;DefaultParameterValue(null)>]i:Nullable<DateTime>) = i
+    static member MethodNullable1 ([<Optional;DefaultParameterValue(Nullable<int>())>]i:Nullable<int>) = i
+    static member MethodNullable2 ([<Optional;DefaultParameterValue(Nullable<bool>())>]i:Nullable<bool>) = i
+    static member MethodNullable3 ([<Optional;DefaultParameterValue(Nullable<DateTime>())>]i:Nullable<DateTime>) = i
 
     //Sanity checks with a mix of optional/non-optional parameters.
     static member Mix1(a:int, b:string, [<Optional;DefaultParameterValue(-12)>]c:int) = c
@@ -74,5 +74,7 @@ do if (Class.Mix3(1, c=1, b="123")) <> ("123",1,-123) then exit 1
 do if Class.OnlyOptional(5) <> 5 then exit 1
 //can't omit the argument, but can still call the method.
 do if Class.OnlyDefault(2) <> 2 then exit 1
+
+
 
 exit 0

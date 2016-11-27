@@ -472,7 +472,7 @@ type ExtensionMethodPriority = uint64
 //-------------------------------------------------------------------------
 // OptionalArgCallerSideValue, OptionalArgInfo
 
-/// The caller-side value for the optional arg, is any 
+/// The caller-side value for the optional arg, if any 
 type OptionalArgCallerSideValue = 
     | Constant of IL.ILFieldInit
     | DefaultValue
@@ -488,6 +488,8 @@ type OptionalArgInfo =
     /// The argument is optional, and is an F# callee-side optional arg 
     | CalleeSide
     /// The argument is optional, and is a caller-side .NET optional or default arg 
+    /// Note this is correctly termed caller side, even though the default value is optically specified on the callee:
+    /// in fact the default value is read from the metadata and passed explicitly to the callee on the caller side.
     | CallerSide of OptionalArgCallerSideValue 
     member x.IsOptional = match x with CalleeSide | CallerSide  _ -> true | NotOptional -> false 
 
@@ -519,10 +521,14 @@ type OptionalArgInfo =
         else 
             NotOptional
     
-    static member FieldInitForDefaultParameterValueAttrib (Attrib (_,_,exprs,_,_,_,_)) =
+    static member ValueOfDefaultParameterValueAttrib (Attrib (_,_,exprs,_,_,_,_)) =
         let (AttribExpr (_,defaultValueExpr)) = List.head exprs
         match defaultValueExpr with
-        | Expr.Const (ConstToILFieldInit c,_,_) -> Some c
+        | Expr.Const (_,_,_) -> Some defaultValueExpr
+        | _ -> None
+    static member FieldInitForDefaultParameterValueAttrib attrib =
+        match OptionalArgInfo.ValueOfDefaultParameterValueAttrib attrib with
+        | Some (Expr.Const (ConstToILFieldInit fi,_,_)) -> Some fi
         | _ -> None
 
 type CallerInfoInfo =
@@ -1335,9 +1341,12 @@ type MethInfo =
                             // - this saves a bunch of type directed analysis, and not clear what the value-add is.
                             NotOptional
                         | Some attr -> 
-                            match OptionalArgInfo.FieldInitForDefaultParameterValueAttrib attr with
-                            | None -> NotOptional //type of default value not appropriate, ignore
-                            | Some v -> CallerSide (Constant v)
+                            let defaultValue = OptionalArgInfo.ValueOfDefaultParameterValueAttrib attr
+                            match defaultValue with
+                            | Some (Expr.Const (_, m, typ)) when not (typeEquiv g typ ty) -> 
+                                error(Error(FSComp.SR.DefaultParameterValueNotAppropriateForArgument(), m)); NotOptional
+                            | Some (Expr.Const((ConstToILFieldInit fi),_,_)) -> CallerSide (Constant fi)
+                            | _ -> NotOptional //type of default value not appropriate, ignore here, compiler already gives error in that case.
                     else NotOptional
                 
                 let isCallerLineNumberArg = HasFSharpAttribute g g.attrib_CallerLineNumberAttribute argInfo.Attribs
