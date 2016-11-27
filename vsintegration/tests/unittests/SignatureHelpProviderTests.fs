@@ -22,6 +22,7 @@
 module Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn.SignatureHelpProvider
 
 open System
+open System.IO
 open System.Threading
 open System.Text
 
@@ -46,11 +47,14 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
 
 let filePath = "C:\\test.fs"
+
+let PathRelativeToTestAssembly p = Path.Combine(Path.GetDirectoryName(Uri( System.Reflection.Assembly.GetExecutingAssembly().CodeBase).LocalPath), p)
+
 let internal options = { 
     ProjectFileName = "C:\\test.fsproj"
     ProjectFileNames =  [| filePath |]
     ReferencedProjects = [| |]
-    OtherOptions = [| |]
+    OtherOptions = [| "-r:" + PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll") |]
     IsIncompleteTypeCheckEnvironment = true
     UseScriptResolutionRules = false
     LoadTime = DateTime.MaxValue
@@ -74,16 +78,65 @@ System.Console.WriteLine(1,arg1=2)
              ("arg1", Some ("[7..40)", 1, 2, Some "arg1"));
              ("=", Some ("[7..40)", 1, 2, Some "arg1")); 
              ("2", Some ("[7..40)", 0, 2, None));
-             (")", None)])
+             (")", None)]);
           ( """
 //2
 open System
 Console.WriteLine([(1,2)])
 """,
-            [("WriteLine(", Some ("[20..45)", 0, 0, None));
+            [
+             ("WriteLine(", Some ("[20..45)", 0, 0, None));
              (",", None); 
-             ("[(", Some ("[20..45)", 0, 1, None))])
-           ]
+             ("[(", Some ("[20..45)", 0, 1, None))
+            ]);
+          ( """
+//3
+type foo = N1.T< 
+type foo2 = N1.T<Param1=
+type foo3 = N1.T<ParamIgnored=
+type foo4 = N1.T<Param1=1,
+type foo5 = N1.T<Param1=1,ParamIgnored=
+""",
+            [("type foo = N1.T<", Some ("[18..26)", 0, 0, None));
+             ("type foo2 = N1.T<", Some ("[38..52)", 0, 0, Some "Param1"));
+             ("type foo2 = N1.T<Param1", Some ("[38..52)", 0, 1, Some "Param1"));
+             ("type foo2 = N1.T<Param1=", Some ("[38..52)", 0, 1, Some "Param1"));
+             ("type foo3 = N1.T<", Some ("[64..84)", 0, 0, Some "ParamIgnored"));
+             ("type foo3 = N1.T<ParamIgnored=", Some ("[64..84)", 0, 1, Some "ParamIgnored"));
+             ("type foo4 = N1.T<Param1", Some ("[96..112)", 0, 2, Some "Param1"));
+             ("type foo4 = N1.T<Param1=", Some ("[96..112)", 0, 2, Some "Param1"));
+             ("type foo4 = N1.T<Param1=1", Some ("[96..112)", 0, 2, Some "Param1"));
+             ("type foo5 = N1.T<Param1", Some ("[124..153)", 0, 2, Some "Param1"));
+             ("type foo5 = N1.T<Param1=", Some ("[124..153)", 0, 2, Some "Param1"));
+             ("type foo5 = N1.T<Param1=1", Some ("[124..153)", 0, 2, Some "Param1"));
+             ("type foo5 = N1.T<Param1=1,", Some ("[124..153)", 1, 2, Some "ParamIgnored"));
+             ("type foo5 = N1.T<Param1=1,ParamIgnored",Some ("[124..153)", 1, 2, Some "ParamIgnored"));
+             ("type foo5 = N1.T<Param1=1,ParamIgnored=",Some ("[124..153)", 1, 2, Some "ParamIgnored"))
+            ]);
+          ( """
+//4
+type foo = N1.T< > 
+type foo2 = N1.T<Param1= >
+type foo3 = N1.T<ParamIgnored= >
+type foo4 = N1.T<Param1=1, >
+type foo5 = N1.T<Param1=1,ParamIgnored= >
+""",
+            [("type foo = N1.T<", Some ("[18..24)", 0, 0, None));
+             ("type foo2 = N1.T<", Some ("[40..53)", 0, 0, Some "Param1"));
+             ("type foo2 = N1.T<Param1", Some ("[40..53)", 0, 1, Some "Param1"));
+             ("type foo2 = N1.T<Param1=", Some ("[40..53)", 0, 1, Some "Param1"));
+             ("type foo3 = N1.T<", Some ("[68..87)", 0, 0, Some "ParamIgnored"));
+             ("type foo3 = N1.T<ParamIgnored=", Some ("[68..87)", 0, 1, Some "ParamIgnored"));
+             ("type foo4 = N1.T<Param1", Some ("[102..117)", 0, 2, Some "Param1"));
+             ("type foo4 = N1.T<Param1=", Some ("[102..117)", 0, 2, Some "Param1"));
+             ("type foo4 = N1.T<Param1=1", Some ("[102..117)", 0, 2, Some "Param1"));
+             ("type foo5 = N1.T<Param1", Some ("[132..160)", 0, 2, Some "Param1"));
+             ("type foo5 = N1.T<Param1=", Some ("[132..160)", 0, 2, Some "Param1"));
+             ("type foo5 = N1.T<Param1=1", Some ("[132..160)", 0, 2, Some "Param1"));
+             ("type foo5 = N1.T<Param1=1,", Some ("[132..160)", 1, 2, Some "ParamIgnored"));
+             ("type foo5 = N1.T<Param1=1,ParamIgnored",Some ("[132..160)", 1, 2, Some "ParamIgnored"));
+             ("type foo5 = N1.T<Param1=1,ParamIgnored=",Some ("[132..160)", 1, 2, Some "ParamIgnored"))])
+          ]
 
     for (fileContents, testCases) in manyTestCases do
       printfn "Test case: fileContents = %s..." fileContents.[2..4]
@@ -111,7 +164,7 @@ Console.WriteLine([(1,2)])
             yield (marker, actual) ] 
       () 
       // Use this to print out data to update the test cases, after uncommenting the assert
-      //printfn "(\"\"\"%s\n\"\"\",\n%s)" fileContents ((sprintf "%A" actual).Replace("null","None"))
+      // printfn "(\"\"\"%s\n\"\"\",\n%s)" fileContents ((sprintf "%A" actual).Replace("null","None"))
 
 
 
