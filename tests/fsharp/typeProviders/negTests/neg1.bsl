@@ -1966,15 +1966,21 @@ neg1.fsx(438,109,438,110): typecheck error FS0001: This expression was expected 
 but here has type
     'string'    
 
-neg1.fsx(440,119,440,120): typecheck error FS0001: This expression was expected to have type
-    'int'    
-but here has type
-    'string'    
+neg1.fsx(438,9,438,111): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(440,119,440,120): typecheck error FS0001: This expression was expected to have type
     'int'    
 but here has type
     'string'    
+
+neg1.fsx(440,19,440,121): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
+neg1.fsx(440,119,440,120): typecheck error FS0001: This expression was expected to have type
+    'int'    
+but here has type
+    'string'    
+
+neg1.fsx(440,19,440,121): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(448,9,448,107): typecheck error FS3148: Too many static parameters. Expected at most 1 parameters, but got 2 unnamed and 0 named parameters.
 
