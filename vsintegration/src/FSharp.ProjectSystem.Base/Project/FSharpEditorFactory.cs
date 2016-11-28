@@ -16,6 +16,8 @@ using IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider;
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 {
+    //TODO: Where should this be put? Constants file?
+    [Guid(Constants.FSharpEditorFactoryIdString)]
     public class FSharpEditorFactory : IVsEditorFactory
     {
         private Package _parentPackage;
@@ -94,7 +96,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             codeWindow.GetEditorCaption(readOnlyStatus, out pbstrEditorCaption);
 
             ppunkDocView = Marshal.GetIUnknownForObject(codeWindow);
-            pguidCmdUI = VSConstants.GUID_TextEditorFactory;
+            pguidCmdUI = Constants.FSharpEditorFactoryGuid;
 
             ppunkDocData = Marshal.GetIUnknownForObject(textBuffer);
 

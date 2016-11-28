@@ -111,6 +111,7 @@
     <Reference Include="Microsoft.VisualStudio.Shell.$(RoslynVSBinariesVersion), Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.$(RoslynVSBinariesVersion).$(RoslynVSPackagesVersion)\lib\Microsoft.VisualStudio.Shell.$(RoslynVSBinariesVersion).dll</HintPath>
     </Reference>
+    <Compile Include="Constants.cs" />
     <Compile Include="FSharpEditorFactory.cs" />
     <Compile Include="InternalsVisibleTo.cs" />
     <Compile Include="..\RegistrationAttributes\WAProvideLanguagePropertyAttribute.cs" />
