@@ -818,9 +818,13 @@ let AddResults res1 res2 =
     | Result x,Result l -> Result (x @ l)
     | Exception _,Result l -> Result l
     | Result x,Exception _ -> Result x
-      // This prefers error messages with more predictions
-    | Exception (UndefinedName(n1,_,_,predictions1) as e1),Exception (UndefinedName(n2,_,_,predictions2) as e2) when n1 = n2 ->
-        if Set.count predictions1 < Set.count predictions2 then Exception e2 else Exception e1
+    | Exception (UndefinedName(n1,f,id1,predictions1) as e1),Exception (UndefinedName(n2,_,id2,predictions2) as e2) when n1 = n2 ->
+        if id1.idText = id2.idText && id1.idRange = id2.idRange then
+            // If we have error massages for the same symbol, then we can merge predictions.
+            Exception(UndefinedName(n1,f,id1,Set.union predictions1 predictions2))
+        else
+            // This prefers error messages with more predictions
+            if Set.count predictions1 < Set.count predictions2 then Exception e2 else Exception e1
      // This prefers error messages coming from deeper failing long identifier paths 
     | Exception (UndefinedName(n1,_,_,_) as e1),Exception (UndefinedName(n2,_,_,_) as e2) ->
         if n1 < n2 then Exception e2 else Exception e1

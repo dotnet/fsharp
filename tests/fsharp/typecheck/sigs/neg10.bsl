@@ -73,13 +73,13 @@ neg10.fs(193,39,193,46): typecheck error FS0767: The type Foo contains the membe
 
 Maybe you want one of the following:
 
-   Equals
-
    ToString
 
-   Finalize
+   Equals
 
    GetHashCode
+
+   Finalize
 
 neg10.fs(193,41,193,44): typecheck error FS0017: The member 'MyX : unit -> int' does not have the correct type to override any given virtual method
 
