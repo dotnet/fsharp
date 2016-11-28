@@ -487,7 +487,7 @@ type OptionalArgInfo =
     | NotOptional
     /// The argument is optional, and is an F# callee-side optional arg 
     | CalleeSide
-    /// The argument is optional, and is a caller-side .NET optional or default arg 
+    /// The argument is optional, and is a caller-side .NET optional or default arg.
     /// Note this is correctly termed caller side, even though the default value is optically specified on the callee:
     /// in fact the default value is read from the metadata and passed explicitly to the callee on the caller side.
     | CallerSide of OptionalArgCallerSideValue 
@@ -1344,9 +1344,17 @@ type MethInfo =
                             let defaultValue = OptionalArgInfo.ValueOfDefaultParameterValueAttrib attr
                             match defaultValue with
                             | Some (Expr.Const (_, m, typ)) when not (typeEquiv g typ ty) -> 
-                                error(Error(FSComp.SR.DefaultParameterValueNotAppropriateForArgument(), m)); NotOptional
-                            | Some (Expr.Const((ConstToILFieldInit fi),_,_)) -> CallerSide (Constant fi)
-                            | _ -> NotOptional //type of default value not appropriate, ignore here, compiler already gives error in that case.
+                                // the type of the default value does not match the type of the argument.
+                                // Emit a warning, and ignore the DefaultParameterValue argument altogether.
+                                warning(Error(FSComp.SR.DefaultParameterValueNotAppropriateForArgument(), m))
+                                NotOptional
+                            | Some (Expr.Const((ConstToILFieldInit fi),_,_)) ->
+                                // Good case - all is well.
+                                CallerSide (Constant fi)
+                            | _ -> 
+                                // Default value is not appropriate, i.e. not a constant.
+                                // Compiler already gives an error in that case, so just ignore here.
+                                NotOptional 
                     else NotOptional
 
                 let isCallerLineNumberArg = HasFSharpAttribute g g.attrib_CallerLineNumberAttribute argInfo.Attribs
