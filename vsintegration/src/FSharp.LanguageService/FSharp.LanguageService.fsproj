@@ -51,6 +51,7 @@
     <EmbeddedResource Include="VSPackage.resx" />
     <EmbeddedResource Include="FSLangSvcStrings.resx" />
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Pervasive.fs" />
     <Compile Include="Error.fs" />
     <Compile Include="Quickparse.fs" />
     <Compile Include="Vs.fs" />
