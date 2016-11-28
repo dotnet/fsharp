@@ -14,6 +14,7 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Editor.Implementation.Debugging
+open Microsoft.CodeAnalysis.Editor.Implementation
 open Microsoft.CodeAnalysis.Editor.Shared.Utilities
 open Microsoft.CodeAnalysis.Formatting
 open Microsoft.CodeAnalysis.Host.Mef
@@ -46,7 +47,9 @@ type internal FSharpLanguageDebugInfoService() =
 
             | ClassificationTypeNames.Identifier ->
                 let textLine = sourceText.Lines.GetLineFromPosition(position)
-                match QuickParse.GetCompleteIdentifierIsland false (textLine.ToString()) (position - textLine.Start) with
+                let textLinePos = sourceText.Lines.GetLinePosition(position)
+                let textLineColumn = textLinePos.Character
+                match QuickParse.GetCompleteIdentifierIsland false (textLine.ToString()) textLineColumn with
                 | None -> None
                 | Some(island, islandEnd, _) ->
                     let islandDocumentStart = textLine.Start + islandEnd - island.Length
@@ -62,20 +65,16 @@ type internal FSharpLanguageDebugInfoService() =
             Task.FromResult(Unchecked.defaultof<DebugLocationInfo>)
 
         member this.GetDataTipInfoAsync(document: Document, position: int, cancellationToken: CancellationToken): Task<DebugDataTipInfo> =
-            let computation = async {
-                match FSharpLanguageService.GetOptions(document.Project.Id) with
-                | Some(options) ->
-                    let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
-                    let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                    let textSpan = TextSpan.FromBounds(0, sourceText.Length)
-                    let tokens = FSharpColorizationService.GetColorizationData(sourceText, textSpan, Some(document.Name), defines, cancellationToken)
-                    return match FSharpLanguageDebugInfoService.GetDataTipInformation(sourceText, position, tokens) with
-                           | None -> Unchecked.defaultof<DebugDataTipInfo>
-                           | Some(textSpan) -> new DebugDataTipInfo(textSpan, sourceText.GetSubText(textSpan).ToString())
-                | None -> return Unchecked.defaultof<DebugDataTipInfo>
-            }
-            
-            Async.StartAsTask(computation, TaskCreationOptions.None, cancellationToken)
-                 .ContinueWith(CommonRoslynHelpers.GetCompletedTaskResult, cancellationToken)
+            async {
+                let defines = FSharpLanguageService.GetCompilationDefinesForEditingDocument(document)  
+                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                let textSpan = TextSpan.FromBounds(0, sourceText.Length)
+                let tokens = CommonHelpers.getColorizationData(document.Id, sourceText, textSpan, Some(document.Name), defines, cancellationToken)
+                let result = 
+                    match FSharpLanguageDebugInfoService.GetDataTipInformation(sourceText, position, tokens) with
+                    | None -> DebugDataTipInfo()
+                    | Some(textSpan) -> DebugDataTipInfo(textSpan, sourceText.GetSubText(textSpan).ToString())
+                return result
+            } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
             
             

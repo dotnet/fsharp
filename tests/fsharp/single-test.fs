@@ -10,12 +10,14 @@ open TestFramework
 type Permutation = 
     | FSC_CORECLR
     | FSI_CORECLR
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     | FSI_FILE
     | FSI_STDIN
     | GENERATED_SIGNATURE
     | FSC_OPT_MINUS_DEBUG
     | FSC_OPT_PLUS_DEBUG
     | AS_DLL
+#endif
 
 let singleTestBuildAndRunAux cfg p = 
     //remove FSharp.Core.dll from the target directory to ensure that compiler uses the correct FSharp.Core.dll
@@ -34,7 +36,7 @@ let singleTestBuildAndRunAux cfg p =
         let coreRunExe = (__SOURCE_DIRECTORY__ ++ sprintf @"../testbin/%s/coreclr/%s/corerun.exe" cfg.BUILD_CONFIG defaultPlatform)
         makeDirectory (getDirectoryName outFile)
         let fscArgs = 
-            sprintf """--debug:portable --debug+ --out:%s  --target:exe -g --define:NETSTANDARD1_6 --define:FSCORE_PORTABLE_NEW --define:FX_PORTABLE_OR_NETSTANDARD "%s" %s """
+            sprintf """--debug:portable --debug+ --out:%s  --target:exe -g --define:FX_RESHAPED_REFLECTION --define:NETSTANDARD1_6 --define:FSCORE_PORTABLE_NEW --define:FX_PORTABLE_OR_NETSTANDARD "%s" %s """
                outFile
                extraSource
                (String.concat " " sources)
@@ -55,7 +57,7 @@ let singleTestBuildAndRunAux cfg p =
     | FSI_CORECLR -> 
         let extraSource = (__SOURCE_DIRECTORY__  ++ "coreclr_utilities.fs")
         let fsiArgs = 
-            sprintf """ --define:NETSTANDARD1_6 --define:FSCORE_PORTABLE_NEW --define:FX_PORTABLE_OR_NETSTANDARD "%s" %s """
+            sprintf """ --define:NETSTANDARD1_6 --define:FSCORE_PORTABLE_NEW --define:FX_RESHAPED_REFLECTION --define:FX_PORTABLE_OR_NETSTANDARD "%s" %s """
                extraSource
                (String.concat " " sources)
 
@@ -71,6 +73,7 @@ let singleTestBuildAndRunAux cfg p =
                
         testOkFile.CheckExists()
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     | FSI_FILE -> 
         use testOkFile = new FileGuard (getfullpath cfg "test.ok")
 
@@ -141,6 +144,7 @@ let singleTestBuildAndRunAux cfg p =
         exec cfg ("." ++ "test--optimize-client-of-lib.exe") ""
 
         testOkFile.CheckExists()
+#endif
 
 let singleTestBuildAndRun dir p = 
     let cfg = testConfig dir

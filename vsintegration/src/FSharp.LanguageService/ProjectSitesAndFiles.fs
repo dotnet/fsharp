@@ -161,7 +161,7 @@ type internal ProjectSitesAndFiles() =
         | None -> ProjectSitesAndFiles.ProjectSiteOfSingleFile(filename)        
 
     /// Create project options for this project site.
-    static member GetProjectOptionsForProjectSite(projectSite:IProjectSite,filename)= 
+    static member GetProjectOptionsForProjectSite(projectSite:IProjectSite,filename,extraProjectInfo) = 
         
         match projectSite with
         | :? IHaveCheckOptions as hco -> hco.OriginalCheckOptions()
@@ -173,7 +173,8 @@ type internal ProjectSitesAndFiles() =
              IsIncompleteTypeCheckEnvironment = projectSite.IsIncompleteTypeCheckEnvironment
              UseScriptResolutionRules = SourceFile.MustBeSingleFileProject(filename)
              LoadTime = projectSite.LoadTime
-             UnresolvedReferences = None }      
+             UnresolvedReferences = None
+             ExtraProjectInfo=extraProjectInfo }      
          
     /// Create project site for these project options
     static member CreateProjectSiteForScript (filename, checkOptions) = ProjectSiteOfScriptFile (filename, checkOptions) :> IProjectSite

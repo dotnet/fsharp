@@ -9,6 +9,7 @@ open NUnit.Framework
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Text
+open Microsoft.CodeAnalysis
 
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.LanguageService
@@ -52,7 +53,8 @@ let main argv =
         Assert.IsTrue(searchPosition >= 0, "SearchToken '{0}' is not found in code", searchToken)
 
         let sourceText = SourceText.From(code)
-        let tokens = FSharpColorizationService.GetColorizationData(sourceText, TextSpan.FromBounds(0, sourceText.Length), Some(fileName), defines, CancellationToken.None)
+        let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+        let tokens = CommonHelpers.getColorizationData(documentId, sourceText, TextSpan.FromBounds(0, sourceText.Length), Some(fileName), defines, CancellationToken.None)
         let actualDataTipSpanOption = FSharpLanguageDebugInfoService.GetDataTipInformation(sourceText, searchPosition, tokens)
         
         match actualDataTipSpanOption with

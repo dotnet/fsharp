@@ -36,17 +36,28 @@ The F# tests are split as follows:
 
 ### FSharp Suite
 
-This is now compiled using [tests\fsharp\FSharp.Tests.fsproj](tests/fsharp/FSharp.Tests.fsproj) to a unit test DLL which acts as a driver script.
+This is compiled using [tests\fsharp\FSharp.Tests.FSharpSuite.fsproj](tests/fsharp/FSharp.Tests.FSharpSuite.fsproj) to a unit test DLL which acts as a driver script. Each individual test is an NUnit test case, and so you can run it like any other NUnit test.
 
-This compiles and executes the `test.fsx` file using some combination of compiler or FSI flags.  
+Tests are grouped in folders per area. Each test compiles and executes a `test.fsx|fs` file in its folder using some combination of compiler or FSI flags specified in the FSharpSuite test project.  
 If the compilation and execution encounter no errors, the test is considered to have passed.
 
 ### FSharpQA Suite
 
-These tests require use of the `RunAll.pl` framework to execute. 
-Test area directories in this suite will contain a number of source code files and a single `env.lst` file. The `env.lst` file defines a series of test cases, one per line.  
-Test cases will run an optional "pre command," compile some set of source files using some set of flags, optionally run the resulting binary, then optionally run a final "post command." 
+These tests use the `RunAll.pl` framework to execute, however the easiest way to run them is via the `build.cmd` script, see [usage examples](https://github.com/Microsoft/visualfsharp/blob/master/build.cmd#L31).
+
+Tests are grouped in folders per area. Each folder contains a number of source code files and a single `env.lst` file. The `env.lst` file defines a series of test cases, one per line.
+Each test case runs an optional "pre command," compiles a given set of source files using given flags, optionally runs the resulting binary, then optionally runs a final "post command." 
 If all of these steps complete without issue, the test is considered to have passed.
+
+#### Test lists
+
+For the FSharpQA suite, the list of test areas and their associated "tags" is stored at
+
+    tests\fsharpqa\source\test.lst   // FSharpQA suite
+
+Tags are in the left column, paths to to corresponding test folders are in the right column.  If no tags are specifie, all tests will be run.
+
+If you want to re-run a particular test area, the easiest way to do so is to set a temporary tag for that area in test.lst (e.g. "RERUN") and then pass that as an argument to `build.cmd`: `build.cmd test-net40-fsharpqa include RERUN`.
 
 ### FSharp.Compiler.Unittests, FSharp.Core.Unittests, VisualFSharp.Unittests
 
@@ -56,16 +67,7 @@ extension or the command line via `nunit3-console.exe`.
 Note that for compatibility reasons, the IDE unit tests should be run in a 32-bit process, 
 using the '--x86' flag to `nunit3-console.exe`
 
-### Test lists
 
-For the FSharp and FSharpQA suites, the list of test areas and their associated "tags" is stored at
-
-    tests\test.lst                   // FSharp suite
-    tests\fsharpqa\source\test.lst   // FSharpQA suite
-
-Tags are in the left column, paths to to corresponding test folders are in the right column.  If no tags are specifie, all tests will be run.
-
-If you want to re-run a particular test area, the easiest way to do so is to set a temporary tag for that area in test.lst (e.g. "RERUN").
 
 ### Logs and output
 

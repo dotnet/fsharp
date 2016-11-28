@@ -69,7 +69,7 @@ type internal FSharpLanguageServiceTestable() as this =
         if this.Unhooked then raise Error.UseOfUnhookedLanguageServiceState        
         artifacts <- Some (ProjectSitesAndFiles())
         let checker = FSharpChecker.Create()
-        checker.BeforeBackgroundFileCheck.Add (fun filename -> UIThread.Run(fun () -> this.NotifyFileTypeCheckStateIsDirty(filename)))
+        checker.BeforeBackgroundFileCheck.Add (fun (filename,_) -> UIThread.Run(fun () -> this.NotifyFileTypeCheckStateIsDirty(filename)))
         checkerContainerOpt <- Some (checker)
         serviceProvider <- Some sp
         isInitialized <- true
@@ -126,7 +126,7 @@ type internal FSharpLanguageServiceTestable() as this =
 
     /// Respond to project being cleaned/rebuilt (any live type providers in the project should be refreshed)
     member this.OnProjectCleaned(projectSite:IProjectSite) = 
-        let checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(projectSite, "")
+        let checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(projectSite, "",None)
         this.FSharpChecker.NotifyProjectCleaned(checkOptions)
 
     member this.OnActiveViewChanged(textView) =
@@ -168,7 +168,7 @@ type internal FSharpLanguageServiceTestable() as this =
     interface IDependencyFileChangeNotify with
         member this.DependencyFileCreated projectSite = 
             // Invalidate the configuration if we notice any add for any DependencyFiles 
-            let checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(projectSite, "")
+            let checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(projectSite, "", None)
             this.FSharpChecker.InvalidateConfiguration(checkOptions)
 
         member this.DependencyFileChanged (filename) = 

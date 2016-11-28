@@ -20,8 +20,8 @@ type internal FSharpNoteworthyParamInfoLocations =
     member TupleEndLocations : pos[]  
     /// false if either this is a call without parens "f x" or the parser recovered as in "f(x,y"
     member IsThereACloseParen : bool   
-    /// empty or a name if an actual named parameter; f(0,a=4,?b=None) would be [|null;"a";"b"|]
-    member NamedParamNames : string[]  
+    /// empty or a name if an actual named parameter; f(0,a=4,?b=None) would be [|None; Some "a"; Some "b"|]
+    member NamedParamNames : string option []  
 
     static member Find : pos * Ast.ParsedInput -> FSharpNoteworthyParamInfoLocations option
 

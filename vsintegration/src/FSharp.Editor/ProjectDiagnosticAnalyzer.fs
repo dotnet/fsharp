@@ -21,29 +21,34 @@ open Microsoft.FSharp.Compiler.Range
 
 open Microsoft.VisualStudio.FSharp.LanguageService
 
+#if PROJECT_ANALYSIS
+// Project-wide error analysis.  We don't enable this because ParseAndCheckProject checks projects against the versions of the files
+// saves to the file system. This is different to the versions of the files active in the editor.  This results in out-of-sync error
+// messages while files are being edited
+
 [<DiagnosticAnalyzer(FSharpCommonConstants.FSharpLanguageName)>]
 type internal FSharpProjectDiagnosticAnalyzer() =
     inherit ProjectDiagnosticAnalyzer()
 
-    static member GetDiagnostics(options: FSharpProjectOptions) =
-        let checkProjectResults = FSharpChecker.Instance.ParseAndCheckProject(options) |> Async.RunSynchronously
-        (checkProjectResults.Errors |> Seq.choose(fun (error) ->
+    static member GetDiagnostics(options: FSharpProjectOptions) = async {
+        let! checkProjectResults = FSharpLanguageService.Checker.ParseAndCheckProject(options) 
+        let results = 
+          (checkProjectResults.Errors |> Seq.choose(fun (error) ->
             if error.StartLineAlternate = 0 || error.EndLineAlternate = 0 then
                 Some(CommonRoslynHelpers.ConvertError(error, Location.None))
             else
                 // F# error line numbers are one-based. Errors that have a valid line number are reported by DocumentDiagnosticAnalyzer
                 None
-        )).ToImmutableArray()
+          )).ToImmutableArray()
+        return results
+      }
         
-    override this.SupportedDiagnostics with get() = CommonRoslynHelpers.SupportedDiagnostics()
+    override this.SupportedDiagnostics = CommonRoslynHelpers.SupportedDiagnostics()
 
     override this.AnalyzeProjectAsync(project: Project, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
-        let computation = async {
-            match FSharpLanguageService.GetOptions(project.Id) with
-            | Some(options) ->
-                return FSharpProjectDiagnosticAnalyzer.GetDiagnostics(options)
+        async {
+            match FSharpLanguageService.GetOptionsForProject(project.Id) with
+            | Some options -> return! FSharpProjectDiagnosticAnalyzer.GetDiagnostics(options)
             | None -> return ImmutableArray<Diagnostic>.Empty
-        }
-
-        Async.StartAsTask(computation, TaskCreationOptions.None, cancellationToken)
-             .ContinueWith(CommonRoslynHelpers.GetCompletedTaskResult, cancellationToken)
+        } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
+#endif

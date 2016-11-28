@@ -5,13 +5,15 @@
 //
 // Technique 2:
 //
-//   Compile this file as an EXE that has InternalsVisibleTo access into the
+//   Enable some tests in the #if EXE section at the end of the file, 
+//   then compile this file as an EXE that has InternalsVisibleTo access into the
 //   appropriate DLLs.  This can be the quickest way to get turnaround on updating the tests
 //   and capturing large amounts of structured output.
-//    cd Debug\net40\bin
-//    .\fsc.exe --define:EXE -o VisualFSharp.Unittests.exe -g --optimize- -r .\FSharp.LanguageService.Compiler.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\tests\service\EditorTests.fs 
-//    .\VisualFSharp.Unittests.exe 
-//
+(*
+    cd Debug\net40\bin
+    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.Unittests.exe -g --optimize- -r .\FSharp.LanguageService.Compiler.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\tests\service\EditorTests.fs 
+    .\VisualFSharp.Unittests.exe 
+*)
 // Technique 3: 
 // 
 //    Use F# Interactive.  This only works for FSHarp.Compiler.Service.dll which has a public API
@@ -93,6 +95,26 @@ let ``Intro test`` () =
                ("Concat", ["str0: string"; "str1: string"; "str2: string"]);
                ("Concat", ["arg0: obj"; "arg1: obj"; "arg2: obj"; "arg3: obj"]);
                ("Concat", ["str0: string"; "str1: string"; "str2: string"; "str3: string"])]
+
+
+[<Test>]
+let ``Basic cancellation test`` () = 
+   try 
+    printfn "locally injecting a cancellation condition in incremental building"
+    use _holder = IncrementalBuild.LocallyInjectCancellationFault()
+    
+    // Split the input & define file name
+    let inputLines = input.Split('\n')
+    let file = "/home/user/Test.fsx"
+    async { 
+        checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+        let! checkOptions = checker.GetProjectOptionsFromScript(file, input) 
+        let! parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, input, checkOptions) 
+        return parseResult, typedRes
+    } |> Async.RunSynchronously
+      |> ignore
+    Assert.Fail("expected a cancellation")
+   with :? OperationCanceledException -> ()
 
 [<Test>]
 let ``GetMethodsAsSymbols should return all overloads of a method as FSharpSymbolUse`` () =
@@ -715,8 +737,10 @@ let ``Test TPProject param info`` () =
 #if EXE
 
 ``Intro test`` () 
-``Test TPProject all symbols`` () 
-``Test TPProject errors`` () 
-``Test TPProject quick info`` () 
-``Test TPProject param info`` () 
+//``Test TPProject all symbols`` () 
+//``Test TPProject errors`` () 
+//``Test TPProject quick info`` () 
+//``Test TPProject param info`` () 
+``Basic cancellation test`` ()
+``Intro test`` () 
 #endif

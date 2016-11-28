@@ -83,13 +83,13 @@ type FsiValue(reflectionValue:obj, reflectionType:Type) =
 [<AutoOpen>]
 module internal Utilities = 
     type IAnyToLayoutCall = 
-        abstract AnyToLayout : FormatOptions * obj -> Internal.Utilities.StructuredFormat.Layout
-        abstract FsiAnyToLayout : FormatOptions * obj -> Internal.Utilities.StructuredFormat.Layout
+        abstract AnyToLayout : FormatOptions * obj * Type -> Internal.Utilities.StructuredFormat.Layout
+        abstract FsiAnyToLayout : FormatOptions * obj * Type -> Internal.Utilities.StructuredFormat.Layout
 
     type private AnyToLayoutSpecialization<'T>() = 
         interface IAnyToLayoutCall with
-            member this.AnyToLayout(options, o : obj) = Internal.Utilities.StructuredFormat.Display.any_to_layout options (Unchecked.unbox o : 'T)
-            member this.FsiAnyToLayout(options, o : obj) = Internal.Utilities.StructuredFormat.Display.fsi_any_to_layout options (Unchecked.unbox o : 'T)
+            member this.AnyToLayout(options, o : obj, ty : Type) = Internal.Utilities.StructuredFormat.Display.any_to_layout options ((Unchecked.unbox o : 'T), ty)
+            member this.FsiAnyToLayout(options, o : obj, ty : Type) = Internal.Utilities.StructuredFormat.Display.fsi_any_to_layout options ((Unchecked.unbox o : 'T), ty)
     
     let getAnyToLayoutCall ty = 
         let specialized = typedefof<AnyToLayoutSpecialization<_>>.MakeGenericType [| ty |]
@@ -236,7 +236,7 @@ type public FsiEvaluationSessionHostConfig () =
 
 /// Used to print value signatures along with their values, according to the current
 /// set of pretty printers installed in the system, and default printing rules.
-type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, ilGlobals, generateDebugInfo, resolvePath, outWriter) = 
+type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, g: TcGlobals, generateDebugInfo, resolvePath, outWriter) = 
 
     /// This printer is used by F# Interactive if no other printers apply.
     let DefaultPrintingIntercept (ienv: Internal.Utilities.StructuredFormat.IEnvironment) (obj:obj) = 
@@ -308,7 +308,7 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, ilGlobals, ge
 
     /// Get the evaluation context used when inverting the storage mapping of the ILRuntimeWriter.
     member __.GetEvaluationContext emEnv = 
-        let cenv = { ilg = ilGlobals ; generatePdb = generateDebugInfo; resolvePath=resolvePath }
+        let cenv = { ilg = g.ilg ; generatePdb = generateDebugInfo; resolvePath=resolvePath; tryFindSysILTypeRef=g.TryFindSysILTypeRef }
         { LookupFieldRef = ILRuntimeWriter.LookupFieldRef emEnv >> Option.get
           LookupMethodRef = ILRuntimeWriter.LookupMethodRef emEnv >> Option.get
           LookupTypeRef = ILRuntimeWriter.LookupTypeRef cenv emEnv 
@@ -335,9 +335,9 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, ilGlobals, ge
               | PrintDecl ->
                   // When printing rhs of fsi declarations, use "fsi_any_to_layout".
                   // This will suppress some less informative values, by returning an empty layout. [fix 4343].
-                  anyToLayoutCall.FsiAnyToLayout(opts, x)
+                  anyToLayoutCall.FsiAnyToLayout(opts, x, ty)
               | PrintExpr -> 
-                  anyToLayoutCall.AnyToLayout(opts, x)
+                  anyToLayoutCall.AnyToLayout(opts, x, ty)
         with 
 #if !FX_REDUCED_EXCEPTIONS
         | :? ThreadAbortException -> Layout.wordL ""
@@ -920,7 +920,7 @@ type internal FsiDynamicCompiler
 
     let generateDebugInfo = tcConfigB.debuginfo
 
-    let valuePrinter = FsiValuePrinter(fsi, ilGlobals, generateDebugInfo, resolvePath, outWriter)
+    let valuePrinter = FsiValuePrinter(fsi, tcGlobals, generateDebugInfo, resolvePath, outWriter)
 
     let assemblyBuilder,moduleBuilder = ILRuntimeWriter.mkDynamicAssemblyAndModule (assemblyName, tcConfigB.optSettings.localOpt(), generateDebugInfo, false)
 
@@ -966,7 +966,7 @@ type internal FsiDynamicCompiler
         errorLogger.AbortOnError(fsiConsoleOutput);
             
         let fragName = textOfLid prefixPath 
-        let codegenResults = GenerateIlxCode (IlReflectBackend, isInteractiveItExpr, runningOnMono, tcConfig, topCustomAttrs, optimizedImpls, fragName, true, ilxGenerator)
+        let codegenResults = GenerateIlxCode (IlReflectBackend, isInteractiveItExpr, runningOnMono, tcConfig, topCustomAttrs, optimizedImpls, fragName, ilxGenerator)
         errorLogger.AbortOnError(fsiConsoleOutput);
 
         // Each input is like a small separately compiled extension to a single source file. 
@@ -997,14 +997,15 @@ type internal FsiDynamicCompiler
 #endif
 
         ReportTime tcConfig "Reflection.Emit";
-        let emEnv,execs = ILRuntimeWriter.emitModuleFragment(ilGlobals, emEnv, assemblyBuilder, moduleBuilder, mainmod3, generateDebugInfo, resolvePath)
+
+        let emEnv,execs = ILRuntimeWriter.emitModuleFragment(ilGlobals, emEnv, assemblyBuilder, moduleBuilder, mainmod3, generateDebugInfo, resolvePath, tcGlobals.TryFindSysILTypeRef)
 
         errorLogger.AbortOnError(fsiConsoleOutput);
 
         // Explicitly register the resources with the QuotationPickler module 
         // We would save them as resources into the dynamic assembly but there is missing 
         // functionality System.Reflection for dynamic modules that means they can't be read back out 
-        let cenv = { ilg = ilGlobals ; generatePdb = generateDebugInfo; resolvePath=resolvePath }
+        let cenv = { ilg = ilGlobals ; generatePdb = generateDebugInfo; resolvePath=resolvePath; tryFindSysILTypeRef=tcGlobals.TryFindSysILTypeRef }
         for (referencedTypeDefs, bytes) in codegenResults.quotationResourceInfo do 
             let referencedTypes = 
                 [| for tref in referencedTypeDefs do 
@@ -2458,6 +2459,7 @@ type internal FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:st
     do tcConfigB.resolutionEnvironment <- ReferenceResolver.DesignTimeLike
     do tcConfigB.useSimpleResolution <- true
     do SetTargetProfile tcConfigB "netcore" // always assume System.Runtime codegen
+    //do SetTargetProfile tcConfigB "privatecorelib" // always assume System.Private.CoreLib codegen
 #endif
 
     // Preset: --optimize+ -g --tailcalls+ (see 4505)

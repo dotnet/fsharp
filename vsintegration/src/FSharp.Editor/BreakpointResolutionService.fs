@@ -32,30 +32,31 @@ open Microsoft.FSharp.Compiler.Range
 type internal FSharpBreakpointResolutionService() =
 
     static member GetBreakpointLocation(sourceText: SourceText, fileName: string, textSpan: TextSpan, options: FSharpProjectOptions) = async {
-        let! parseResults = FSharpChecker.Instance.ParseFileInProject(fileName, sourceText.ToString(), options)
-        let textLine = sourceText.Lines.GetLineFromPosition(textSpan.Start)
+        // REVIEW: ParseFileInProject can cause FSharp.Compiler.Service to become unavailable (i.e. not responding to requests) for 
+        // an arbitrarily long time while it parses all files prior to this one in the project (plus dependent projects if we enable 
+        // cross-project checking in multi-project solutions). FCS will not respond to other 
+        // requests unless this task is cancelled. We need to check that this task is cancelled in a timely way by the
+        // Roslyn UI machinery.
+        let! parseResults = FSharpLanguageService.Checker.ParseFileInProject(fileName, sourceText.ToString(), options)
+        let textLinePos = sourceText.Lines.GetLinePosition(textSpan.Start)
+        let textLineColumn = textLinePos.Character
+        let fcsTextLineNumber = Line.fromZ textLinePos.Line // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
 
-        let textLineNumber = textLine.LineNumber + 1 // Roslyn line numbers are zero-based
-        let textColumnNumber = textSpan.Start - textLine.Start
-
-        return parseResults.ValidateBreakpointLocation(mkPos textLineNumber textColumnNumber)
+        return parseResults.ValidateBreakpointLocation(mkPos fcsTextLineNumber textLineColumn)
     }
 
     interface IBreakpointResolutionService with
         member this.ResolveBreakpointAsync(document: Document, textSpan: TextSpan, cancellationToken: CancellationToken): Task<BreakpointResolutionResult> =
-            let computation = async {
-                match FSharpLanguageService.GetOptions(document.Project.Id) with
-                | Some(options) ->
+            async {
+                match FSharpLanguageService.TryGetOptionsForEditingDocumentOrProject(document)  with 
+                | Some options ->
                     let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                     let! location = FSharpBreakpointResolutionService.GetBreakpointLocation(sourceText, document.Name, textSpan, options)
                     return match location with
                            | None -> null
                            | Some(range) -> BreakpointResolutionResult.CreateSpanResult(document, CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
                 | None -> return null
-            }
-
-            Async.StartAsTask(computation, TaskCreationOptions.None, cancellationToken)
-                 .ContinueWith(CommonRoslynHelpers.GetCompletedTaskResult, cancellationToken)
+            } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
             
         // FSROSLYNTODO: enable placing breakpoints by when user suplies fully-qualified function names
         member this.ResolveBreakpointsAsync(_, _, _): Task<IEnumerable<BreakpointResolutionResult>> =

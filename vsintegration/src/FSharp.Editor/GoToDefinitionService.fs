@@ -4,7 +4,6 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Composition
-open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Collections.Immutable
 open System.Linq
@@ -28,8 +27,7 @@ open Microsoft.VisualStudio.Text.Tagging
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
-type internal FSharpNavigableItem(document: Document, textSpan: TextSpan, displayString: string) =
-    member this.DisplayString = displayString
+type internal FSharpNavigableItem(document: Document, textSpan: TextSpan) =
 
     interface INavigableItem with
         member this.Glyph = Glyph.BasicFile
@@ -37,85 +35,73 @@ type internal FSharpNavigableItem(document: Document, textSpan: TextSpan, displa
         member this.IsImplicitlyDeclared = false
         member this.Document = document
         member this.SourceSpan = textSpan
-        member this.DisplayTaggedParts = Unchecked.defaultof<ImmutableArray<TaggedText>>
+        member this.DisplayTaggedParts = ImmutableArray<TaggedText>.Empty
         member this.ChildItems = ImmutableArray<INavigableItem>.Empty
 
 [<Shared>]
 [<ExportLanguageService(typeof<IGoToDefinitionService>, FSharpCommonConstants.FSharpLanguageName)>]
 type internal FSharpGoToDefinitionService [<ImportingConstructor>] ([<ImportMany>]presenters: IEnumerable<INavigableItemsPresenter>) =
 
-    static member FindDefinition (sourceText: SourceText,
-                                  filePath: string,
-                                  position: int,
-                                  defines: string list,
-                                  options: FSharpProjectOptions,
-                                  textVersionHash: int,
-                                  cancellationToken: CancellationToken)
-                                  : Async<Option<range>> = async {
+    static member FindDefinition(documentKey: DocumentId, sourceText: SourceText, filePath: string, position: int, defines: string list, options: FSharpProjectOptions, textVersionHash: int, cancellationToken: CancellationToken) : Async<Option<range>> = 
+        async {
+            let textLine = sourceText.Lines.GetLineFromPosition(position)
+            let textLinePos = sourceText.Lines.GetLinePosition(position)
+            let fcsTextLineNumber = textLinePos.Line + 1 // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
+            let textLineColumn = textLinePos.Character
+            let tryGotoAtPosition position = 
+              async { 
+                match CommonHelpers.tryClassifyAtPosition(documentKey, sourceText, filePath, defines, position, cancellationToken) with 
+                | Some (islandColumn, qualifiers, _) -> 
+                    let! _parseResults, checkFileAnswer = FSharpLanguageService.Checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
+                    match checkFileAnswer with
+                    | FSharpCheckFileAnswer.Aborted -> return None
+                    | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> 
+            
+                    let! declarations = checkFileResults.GetDeclarationLocationAlternate (fcsTextLineNumber, islandColumn, textLine.ToString(), qualifiers, false)
+            
+                    match declarations with
+                    | FSharpFindDeclResult.DeclFound(range) -> return Some(range)
+                    | _ -> return None
+                | None -> return None
+               }
 
-        let textLine = sourceText.Lines.GetLineFromPosition(position)
-        let textLineNumber = textLine.LineNumber + 1 // Roslyn line numbers are zero-based
-        let textLineColumn = sourceText.Lines.GetLinePosition(position).Character
-        let classifiedSpanOption =
-            FSharpColorizationService.GetColorizationData(sourceText, textLine.Span, Some(filePath), defines, cancellationToken)
-            |> Seq.tryFind(fun classifiedSpan -> classifiedSpan.TextSpan.Contains(position))
-
-        let processQualifiedIdentifier(qualifiers, islandColumn) = async {
-            let! parseResults = FSharpChecker.Instance.ParseFileInProject(filePath, sourceText.ToString(), options)
-            let! checkFileAnswer = FSharpChecker.Instance.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options)
-            let checkFileResults = match checkFileAnswer with
-                                    | FSharpCheckFileAnswer.Aborted -> failwith "Compilation isn't complete yet"
-                                    | FSharpCheckFileAnswer.Succeeded(results) -> results
-
-            let! declarations = checkFileResults.GetDeclarationLocationAlternate (textLineNumber, islandColumn, textLine.ToString(), qualifiers, false)
-
-            return match declarations with
-                   | FSharpFindDeclResult.DeclFound(range) -> Some(range)
-                   | _ -> None
+            // Tolerate being on the right of the identifier
+            let! attempt1 = tryGotoAtPosition position
+            match attempt1 with 
+            | None when textLineColumn > 0 -> return! tryGotoAtPosition (position - 1) 
+            | res -> return res
         }
-
-        return match classifiedSpanOption with
-               | Some(classifiedSpan) ->
-                    match classifiedSpan.ClassificationType with
-                    | ClassificationTypeNames.Identifier ->
-                        match QuickParse.GetCompleteIdentifierIsland true (textLine.ToString()) textLineColumn with
-                        | Some(islandIdentifier, islandColumn, isQuoted) ->
-                            let qualifiers = if isQuoted then [islandIdentifier] else islandIdentifier.Split '.' |> Array.toList
-                            processQualifiedIdentifier(qualifiers, islandColumn) |> Async.RunSynchronously
-                        | None -> None
-                    | _ -> None
-               | None -> None
-    }
     
     // FSROSLYNTODO: Since we are not integrated with the Roslyn project system yet, the below call
     // document.Project.Solution.GetDocumentIdsWithFilePath() will only access files in the same project.
     // Either Roslyn INavigableItem needs to be extended to allow arbitary full paths, or we need to
     // fully integrate with their project system.
     member this.FindDefinitionsAsyncAux(document: Document, position: int, cancellationToken: CancellationToken) =
-        let computation = async {
+        async {
             let results = List<INavigableItem>()
-            match FSharpLanguageService.GetOptions(document.Project.Id) with
-            | Some(options) ->
+            match FSharpLanguageService.TryGetOptionsForEditingDocumentOrProject(document)  with 
+            | Some options ->
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
                 let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
-                let! definition = FSharpGoToDefinitionService.FindDefinition(sourceText, document.FilePath, position, defines, options, textVersion.GetHashCode(), cancellationToken)
+                let! definition = FSharpGoToDefinitionService.FindDefinition(document.Id, sourceText, document.FilePath, position, defines, options, textVersion.GetHashCode(), cancellationToken)
 
                 match definition with
                 | Some(range) ->
-                    let refDocumentId = document.Project.Solution.GetDocumentIdsWithFilePath(range.FileName).First()
-                    let refDocument = document.Project.Solution.GetDocument(refDocumentId)
-                    let! refSourceText = refDocument.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                    let refTextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(refSourceText, range)
-                    let refDisplayString = refSourceText.GetSubText(refTextSpan).ToString()
-                    results.Add(FSharpNavigableItem(refDocument, refTextSpan, refDisplayString))
+                    // REVIEW: 
+                    let fileName = try System.IO.Path.GetFullPath(range.FileName) with _ -> range.FileName
+                    let refDocumentIds = document.Project.Solution.GetDocumentIdsWithFilePath(fileName)
+                    if not refDocumentIds.IsEmpty then 
+                        let refDocumentId = refDocumentIds.First()
+                        let refDocument = document.Project.Solution.GetDocument(refDocumentId)
+                        let! refSourceText = refDocument.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                        let refTextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(refSourceText, range)
+                        results.Add(FSharpNavigableItem(refDocument, refTextSpan))
+
                 | None -> ()
             | None -> ()
             return results.AsEnumerable()
-        }
-        
-        Async.StartAsTask(computation, TaskCreationOptions.None, cancellationToken)
-                .ContinueWith(CommonRoslynHelpers.GetCompletedTaskResult, cancellationToken)
+         } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
 
     interface IGoToDefinitionService with
         member this.FindDefinitionsAsync(document: Document, position: int, cancellationToken: CancellationToken) =
@@ -123,15 +109,26 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>] ([<ImportMany
 
         member this.TryGoToDefinition(document: Document, position: int, cancellationToken: CancellationToken) =
             let definitionTask = this.FindDefinitionsAsyncAux(document, position, cancellationToken)
+            
+            // REVIEW: document this use of a blocking wait on the cancellation token, explaining why it is ok
             definitionTask.Wait(cancellationToken)
             
-            if definitionTask.Status = TaskStatus.RanToCompletion then
-                if definitionTask.Result.Any() then
-                    let navigableItem = definitionTask.Result.First() :?> FSharpNavigableItem // F# API provides only one INavigableItem
-                    for presenter in presenters do
-                        presenter.DisplayResult(navigableItem.DisplayString, definitionTask.Result)
-                    true
-                else
-                    false
+            if definitionTask.Status = TaskStatus.RanToCompletion && definitionTask.Result.Any() then
+                let navigableItem = definitionTask.Result.First() // F# API provides only one INavigableItem
+                let workspace = document.Project.Solution.Workspace
+                let navigationService = workspace.Services.GetService<IDocumentNavigationService>()
+                ignore presenters
+                navigationService.TryNavigateToSpan(workspace, navigableItem.Document.Id, navigableItem.SourceSpan)
+
+                // FSROSLYNTODO: potentially display multiple results here
+                // If GotoDef returns one result then it should try to jump to a discovered location. If it returns multiple results then it should use 
+                // presenters to render items so user can choose whatever he needs. Given that per comment F# API always returns only one item then we 
+                // should always navigate to definition and get rid of presenters.
+                //
+                //let refDisplayString = refSourceText.GetSubText(refTextSpan).ToString()
+                //for presenter in presenters do
+                //    presenter.DisplayResult(navigableItem.DisplayString, definitionTask.Result)
+                //true
+
             else
                 false

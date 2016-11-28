@@ -93,7 +93,7 @@ let GetSuperTypeOfType g amap m typ =
             None
 
 /// Make a type for System.Collections.Generic.IList<ty>
-let mkSystemCollectionsGenericIListTy g ty = TType_app(g.tcref_System_Collections_Generic_IList,[ty])
+let mkSystemCollectionsGenericIListTy (g: TcGlobals) ty = TType_app(g.tcref_System_Collections_Generic_IList,[ty])
 
 [<RequireQualifiedAccess>]
 /// Indicates whether we can skip interface types that lie outside the reference set
@@ -784,7 +784,7 @@ type ILMethInfo =
 
     /// Indicates if the method is marked as a DllImport (a PInvoke). This is done by looking at the IL custom attributes on 
     /// the method.
-    member x.IsDllImport g = 
+    member x.IsDllImport (g: TcGlobals) = 
         match g.attrib_DllImportAttribute with
         | None -> false
         | Some (AttribInfo(tref,_)) ->x.RawMetadata.CustomAttrs |> TryDecodeILAttribute g tref |> Option.isSome
@@ -1458,6 +1458,10 @@ type MethInfo =
         let paramAttribs = x.GetParamAttribs(amap, m)
         (paramAttribs,paramNamesAndTypes) ||> List.map2 (List.map2 (fun (isParamArrayArg,isOutArg,optArgInfo,callerInfoInfo,reflArgInfo) (ParamNameAndType(nmOpt,pty)) -> 
              ParamData(isParamArrayArg,isOutArg,optArgInfo,callerInfoInfo,nmOpt,reflArgInfo,pty)))
+
+    /// Get the ParamData objects for the parameters of a MethInfo
+    member x.HasParamArrayArg(amap, m, minst) = 
+        x.GetParamDatas(amap, m, minst) |> List.existsSquared (fun (ParamData(isParamArrayArg,_,_,_,_,_,_)) -> isParamArrayArg)
 
 
     /// Select all the type parameters of the declaring type of a method. 

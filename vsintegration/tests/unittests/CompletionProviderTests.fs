@@ -1,5 +1,25 @@
+
+// To run the tests in this file:
+//
+// Technique 1: Compile VisualFSharp.Unittests.dll and run it as a set of unit tests
+//
+// Technique 2:
+//
+//   Enable some tests in the #if EXE section at the end of the file, 
+//   then compile this file as an EXE that has InternalsVisibleTo access into the
+//   appropriate DLLs.  This can be the quickest way to get turnaround on updating the tests
+//   and capturing large amounts of structured output.
+(*
+    cd Debug\net40\bin
+    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.Unittests.exe -g --optimize- -r .\FSharp.LanguageService.Compiler.dll  -r .\FSharp.Editor.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\vsintegration\tests\unittests\CompletionProviderTests.fs 
+    .\VisualFSharp.Unittests.exe 
+*)
+// Technique 3: 
+// 
+//    Use F# Interactive.  This only works for FSharp.Compiler.Service.dll which has a public API
+
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-namespace Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
+module Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn.CompletionProviderTests
 
 open System
 open System.Threading
@@ -7,6 +27,7 @@ open System.Linq
 
 open NUnit.Framework
 
+open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Text
@@ -18,93 +39,106 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
 
-[<TestFixture>]
-type CompletionProviderTests()  =
-    let filePath = "C:\\test.fs"
-    let options: FSharpProjectOptions = { 
-        ProjectFileName = "C:\\test.fsproj"
-        ProjectFileNames =  [| filePath |]
-        ReferencedProjects = [| |]
-        OtherOptions = [| |]
-        IsIncompleteTypeCheckEnvironment = true
-        UseScriptResolutionRules = false
-        LoadTime = DateTime.MaxValue
-        UnresolvedReferences = None
-    }
+let filePath = "C:\\test.fs"
+let internal options = { 
+    ProjectFileName = "C:\\test.fsproj"
+    ProjectFileNames =  [| filePath |]
+    ReferencedProjects = [| |]
+    OtherOptions = [| |]
+    IsIncompleteTypeCheckEnvironment = true
+    UseScriptResolutionRules = false
+    LoadTime = DateTime.MaxValue
+    UnresolvedReferences = None
+    ExtraProjectInfo = None
+}
 
-    member private this.VerifyCompletionList(fileContents: string, marker: string, expected: string list, unexpected: string list) =
-        let caretPosition = fileContents.IndexOf(marker) + marker.Length
-        let results = FSharpCompletionProvider.ProvideCompletionsAsyncAux(SourceText.From(fileContents), caretPosition, options, filePath, 0) |>
-            Async.RunSynchronously |>
-            Seq.map(fun result -> result.DisplayText)
+let VerifyCompletionList(fileContents: string, marker: string, expected: string list, unexpected: string list) =
+    let caretPosition = fileContents.IndexOf(marker) + marker.Length
+    let results = 
+        FSharpCompletionProvider.ProvideCompletionsAsyncAux(SourceText.From(fileContents), caretPosition, options, filePath, 0) 
+        |> Async.RunSynchronously 
+        |> Seq.map(fun result -> result.DisplayText)
 
-        for item in expected do
-            Assert.IsTrue(results.Contains(item), "Completions should contain '{0}'. Got '{1}'.", item, String.Join(", ", results))
+    for item in expected do
+        Assert.IsTrue(results.Contains(item), "Completions should contain '{0}'. Got '{1}'.", item, String.Join(", ", results))
 
-        for item in unexpected do
-            Assert.IsFalse(results.Contains(item), "Completions should not contain '{0}'. Got '{1}'", item, String.Join(", ", results))
+    for item in unexpected do
+        Assert.IsFalse(results.Contains(item), "Completions should not contain '{0}'. Got '{1}'", item, String.Join(", ", results))
     
-    [<TestCase("x", false)>]
-    [<TestCase("y", false)>]
-    [<TestCase("1", false)>]
-    [<TestCase("2", false)>]
-    [<TestCase("x +", false)>]
-    [<TestCase("Console.Write", false)>]
-    [<TestCase("System.", true)>]
-    [<TestCase("Console.", true)>]
-    member this.ShouldTriggerCompletionAtCorrectMarkers(marker: string, shouldBeTriggered: bool) =
-        let fileContents = """
+[<Test>]
+let ShouldTriggerCompletionAtCorrectMarkers() =
+    let testCases = 
+       [("x", false)
+        ("y", false)
+        ("1", false)
+        ("2", false)
+        ("x +", false)
+        ("Console.Write", false)
+        ("System.", true)
+        ("Console.", true) ]
+
+    for (marker: string, shouldBeTriggered: bool) in testCases do
+    let fileContents = """
 let x = 1
 let y = 2
 System.Console.WriteLine(x + y)
 """
 
-        let caretPosition = fileContents.IndexOf(marker) + marker.Length
-        let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, filePath, [])
-        Assert.AreEqual(shouldBeTriggered, triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should compute the correct result")
+    let caretPosition = fileContents.IndexOf(marker) + marker.Length
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    let getInfo() = documentId, filePath, []
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+    Assert.AreEqual(shouldBeTriggered, triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should compute the correct result")
 
-    [<TestCase(CompletionTriggerKind.Deletion)>]
-    [<TestCase(CompletionTriggerKind.Other)>]
-    [<TestCase(CompletionTriggerKind.Snippets)>]
-    member this.ShouldNotTriggerCompletionAfterAnyTriggerOtherThanInsertion(triggerKind: CompletionTriggerKind) =
-        let fileContents = "System.Console.WriteLine(123)"
-        let caretPosition = fileContents.IndexOf("System.")
-        let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, triggerKind, filePath, [])
-        Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
+[<Test>]
+let ShouldNotTriggerCompletionAfterAnyTriggerOtherThanInsertion() = 
+    for triggerKind in [CompletionTriggerKind.Deletion; CompletionTriggerKind.Other; CompletionTriggerKind.Snippets ] do
+    let fileContents = "System.Console.WriteLine(123)"
+    let caretPosition = fileContents.IndexOf("System.")
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    let getInfo() = documentId, filePath, []
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, triggerKind, getInfo)
+    Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
     
-    [<Test>]
-    member this.ShouldNotTriggerCompletionInStringLiterals() =
-        let fileContents = "let literal = \"System.Console.WriteLine()\""
-        let caretPosition = fileContents.IndexOf("System.")
-        let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, filePath, [])
-        Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
+[<Test>]
+let ShouldNotTriggerCompletionInStringLiterals() =
+    let fileContents = "let literal = \"System.Console.WriteLine()\""
+    let caretPosition = fileContents.IndexOf("System.")
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    let getInfo() = documentId, filePath, []
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+    Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
     
-    [<Test>]
-    member this.ShouldNotTriggerCompletionInComments() =
-        let fileContents = """
+[<Test>]
+let ShouldNotTriggerCompletionInComments() =
+    let fileContents = """
 (*
 This is a comment
 System.Console.WriteLine()
 *)
 """
-        let caretPosition = fileContents.IndexOf("System.")
-        let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, filePath, [])
-        Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
+    let caretPosition = fileContents.IndexOf("System.")
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    let getInfo() = documentId, filePath, []
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+    Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
     
-    [<Test>]
-    member this.ShouldNotTriggerCompletionInExcludedCode() =
-        let fileContents = """
+[<Test>]
+let ShouldNotTriggerCompletionInExcludedCode() =
+    let fileContents = """
 #if UNDEFINED
 System.Console.WriteLine()
 #endif
 """
-        let caretPosition = fileContents.IndexOf("System.")
-        let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, filePath, [])
-        Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
+    let caretPosition = fileContents.IndexOf("System.")
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    let getInfo() = documentId, filePath, []
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+    Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
 
-    [<Test>]
-    member this.ShouldDisplayTypeMembers() =
-        let fileContents = """
+[<Test>]
+let ShouldDisplayTypeMembers() =
+    let fileContents = """
 type T1() =
     member this.M1 = 5
     member this.M2 = "literal"
@@ -114,14 +148,19 @@ let main argv =
     let obj = T1()
     obj.
 """
-        this.VerifyCompletionList(fileContents, "obj.", ["M1"; "M2"], ["System"])
+    VerifyCompletionList(fileContents, "obj.", ["M1"; "M2"], ["System"])
 
-    [<Test>]
-    member this.ShouldDisplaySystemNamespace() =
-        let fileContents = """
+[<Test>]
+let ShouldDisplaySystemNamespace() =
+    let fileContents = """
 type T1 =
     member this.M1 = 5
     member this.M2 = "literal"
 System.Console.WriteLine()
 """
-        this.VerifyCompletionList(fileContents, "System.", ["Console"; "Array"; "String"], ["T1"; "M1"; "M2"])
+    VerifyCompletionList(fileContents, "System.", ["Console"; "Array"; "String"], ["T1"; "M1"; "M2"])
+
+#if EXE
+
+ShouldDisplaySystemNamespace()
+#endif

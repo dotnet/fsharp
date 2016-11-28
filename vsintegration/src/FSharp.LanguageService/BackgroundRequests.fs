@@ -84,7 +84,7 @@ type internal FSharpLanguageServiceBackgroundRequests
                     // This portion is executed on the UI thread.
                     let rdt = getServiceProvider().RunningDocumentTable
                     let projectSite = getProjectSitesAndFiles().FindOwningProject(rdt,fileName)
-                    let checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(projectSite, fileName)                            
+                    let checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(projectSite, fileName, None)                            
                     let projectFileName = projectSite.ProjectFileName()
                     let data = 
                         {   ProjectSite = projectSite
@@ -169,15 +169,9 @@ type internal FSharpLanguageServiceBackgroundRequests
                         // Should never matter but don't let anything in FSharp.Compiler extend the lifetime of 'source'
                         let sr = ref (Some source)
 
-                        // Determine whether to abandon the CheckFileIfReady operation
-                        let isResultObsolete() = 
-                            match !sr with
-                            | None -> false
-                            | Some source -> req.Timestamp <> source.ChangeCount
-                        
                         // Type-checking
                         let typedResults,aborted = 
-                            match interactiveChecker.CheckFileInProjectIfReady(parseResults,req.FileName,req.Timestamp,req.Text,checkOptions,IsResultObsolete(isResultObsolete),req.Snapshot) |> Async.RunSynchronously with 
+                            match interactiveChecker.CheckFileInProjectIfReady(parseResults,req.FileName,req.Timestamp,req.Text,checkOptions,req.Snapshot) |> Async.RunSynchronously with 
                             | None -> None,false
                             | Some FSharpCheckFileAnswer.Aborted -> 
                                 // isResultObsolete returned true during the type check.

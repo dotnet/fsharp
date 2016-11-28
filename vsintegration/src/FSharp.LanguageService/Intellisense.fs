@@ -56,13 +56,13 @@ type internal FSharpMethodListForAMethodTip(documentationBuilder: IDocumentation
 
     override x.GetNoteworthyParamInfoLocations() = tupleEnds
 
-    override x.GetParameterNames() = nwpl.NamedParamNames
+    override x.GetParameterNames() = nwpl.NamedParamNames |> Array.map Option.toObj
 
     override x.GetParameterRanges() = parameterRanges
 
     override x.GetCount() = methods.Length
 
-    override x.GetDescription(methodIndex) = safe methodIndex "" (fun m -> XmlDocumentation.BuildMethodOverloadTipText(documentationBuilder, m.Description))
+    override x.GetDescription(methodIndex) = safe methodIndex "" (fun m -> XmlDocumentation.BuildMethodOverloadTipText(documentationBuilder, m.Description, true))
             
     override x.GetType(methodIndex) = safe methodIndex "" (fun m -> m.TypeText)
 
