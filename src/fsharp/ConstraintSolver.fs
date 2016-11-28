@@ -122,7 +122,7 @@ type ContextInfo =
 | NoContext
 /// The type equation comes from an omitted else branch.
 | OmittedElseBranch of range
-/// The type equation comes from checking an the result of an else branch.
+/// The type equation comes from a type check of the result of an else branch.
 | ElseBranchResult of range
 /// The type equation comes from the verification of record fields.
 | RecordFields
