@@ -144,7 +144,7 @@ type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SV
     override this.ProvideCompletionsAsync(context: Microsoft.CodeAnalysis.Completion.CompletionContext) =
         async {
             match FSharpLanguageService.TryGetOptionsForEditingDocumentOrProject(context.Document)  with 
-            | Some(options) ->
+            | Some options ->
                 let! sourceText = context.Document.GetTextAsync(context.CancellationToken) |> Async.AwaitTask
                 let! textVersion = context.Document.GetTextVersionAsync(context.CancellationToken) |> Async.AwaitTask
                 let! results = FSharpCompletionProvider.ProvideCompletionsAsyncAux(sourceText, context.Position, options, context.Document.FilePath, textVersion.GetHashCode())
