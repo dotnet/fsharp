@@ -29,9 +29,11 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Pervasive.fs" />
     <Compile Include="CommonConstants.fs" />
     <Compile Include="CommonRoslynHelpers.fs" />
     <Compile Include="CommonHelpers.fs" />
+    <Compile Include="Logging.fs" />
     <Compile Include="LanguageService.fs" />
     <Compile Include="ColorizationService.fs">
       <Link>Classification\ColorizationService.fs</Link>
@@ -51,6 +53,8 @@
     <Compile Include="DocumentDiagnosticAnalyzer.fs">
       <Link>Diagnostics\DocumentDiagnosticAnalyzer.fs</Link>
     </Compile>
+
+
     <Compile Include="ProjectDiagnosticAnalyzer.fs">
       <Link>Diagnostics\ProjectDiagnosticAnalyzer.fs</Link>
     </Compile>
