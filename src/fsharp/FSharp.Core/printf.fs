@@ -811,7 +811,7 @@ module internal PrintfImpl =
             // printfn %0A is considered to mean 'print width zero'
             match box v with 
             | null -> "<null>" 
-            | _ -> Microsoft.FSharp.Text.StructuredPrintfImpl.Display.anyToStringForPrintf opts bindingFlags v
+            | _ -> Microsoft.FSharp.Text.StructuredPrintfImpl.Display.anyToStringForPrintf opts bindingFlags (v, v.GetType())
 
         static member GenericToString<'T>(spec : FormatSpecifier) = 
             let bindingFlags = 

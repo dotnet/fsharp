@@ -921,6 +921,14 @@ let namedEx1 = MyNamedException1(5, "")
 let namedEx2 = MyNamedException7(25)
 ;;
 
+type optionRecord = { x: int option }
+let x = { x = None }
+;;
+
+type optionRecord = { x: obj }
+let x = { x = null }
+;;
+
 ;; (* ;; needed, to isolate error regressions *)
 
 ;;exit 0;; (* piped in to enable error regressions *)

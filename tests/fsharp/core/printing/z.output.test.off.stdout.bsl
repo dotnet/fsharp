@@ -1739,4 +1739,14 @@ exception MyNamedException7 of Big Named Field: int
 val namedEx1 : exn
 val namedEx2 : exn
 
+> 
+type optionRecord =
+  {x: int option;}
+val x : optionRecord
+
+> 
+type optionRecord =
+  {x: obj;}
+val x : optionRecord
+
 > > > 
