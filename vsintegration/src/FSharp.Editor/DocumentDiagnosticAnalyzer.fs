@@ -60,7 +60,7 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
     override this.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
         async {
             match FSharpLanguageService.TryGetOptionsForEditingDocumentOrProject(document)  with 
-            | Some(options) ->
+            | Some options ->
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
                 return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document.FilePath, sourceText, textVersion.GetHashCode(), options, false)
@@ -72,7 +72,7 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
         async {
             let! optionsOpt = FSharpLanguageService.TryGetOptionsForDocumentOrProject(document) 
             match optionsOpt with 
-            | Some(options) ->
+            | Some options ->
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
                 return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document.FilePath, sourceText, textVersion.GetHashCode(), options, true)

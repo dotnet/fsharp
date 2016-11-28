@@ -107,7 +107,7 @@ type internal FSharpQuickInfoProvider [<System.ComponentModel.Composition.Import
                 match classification with
                 | Some _ ->
                     match FSharpLanguageService.TryGetOptionsForEditingDocumentOrProject(document)  with 
-                    | Some(options) ->
+                    | Some options ->
                         let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
                         let! quickInfoResult = FSharpQuickInfoProvider.ProvideQuickInfo(document.Id, sourceText, document.FilePath, position, options, textVersion.GetHashCode(), cancellationToken)
                         match quickInfoResult with

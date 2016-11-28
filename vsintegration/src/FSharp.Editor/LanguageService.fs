@@ -129,7 +129,7 @@ type internal FSharpLanguageService(package : FSharpPackage) =
         let otherOptions = 
             match projectOptionsOpt with 
             | None -> []
-            | Some(options) -> options.OtherOptions |> Array.toList
+            | Some options -> options.OtherOptions |> Array.toList
         CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, otherOptions)
 
     /// Get the global FSharpChecker component

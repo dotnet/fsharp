@@ -11,20 +11,18 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 [<ExportBraceMatcher(FSharpCommonConstants.FSharpLanguageName)>]
 type internal FSharpBraceMatchingService() =
 
-    static member GetBraceMatchingResult(sourceText, fileName, options, position) = async {
-        let isPositionInRange(range) =
-            let span = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range)
-            span.Start <= position && position < span.End
+    static member GetBraceMatchingResult(sourceText, fileName, options, position: int) = async {
         let! matchedBraces = FSharpLanguageService.Checker.MatchBracesAlternate(fileName, sourceText.ToString(), options)
 
-        return matchedBraces |> Seq.tryFind(fun(left, right) -> isPositionInRange(left) || isPositionInRange(right))
+        let isPositionInRange range = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range).Contains(position)
+        return matchedBraces |> Array.tryFind(fun (left, right) -> isPositionInRange left || isPositionInRange right)
     }
         
     interface IBraceMatcher with
         member this.FindBracesAsync(document, position, cancellationToken) = 
             async {
                 match FSharpLanguageService.TryGetOptionsForEditingDocumentOrProject(document)  with 
-                | Some(options) ->
+                | Some options ->
                     let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                     let! result = FSharpBraceMatchingService.GetBraceMatchingResult(sourceText, document.Name, options, position)
                     return match result with

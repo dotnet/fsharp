@@ -80,7 +80,7 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>] ([<ImportMany
         async {
             let results = List<INavigableItem>()
             match FSharpLanguageService.TryGetOptionsForEditingDocumentOrProject(document)  with 
-            | Some(options) ->
+            | Some options ->
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
                 let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
