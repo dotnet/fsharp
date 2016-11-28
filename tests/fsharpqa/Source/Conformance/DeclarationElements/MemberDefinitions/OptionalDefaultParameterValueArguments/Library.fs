@@ -37,6 +37,12 @@ type Class() =
     static member Mix3(a:int, [<Optional;DefaultParameterValue("str")>]b:string, 
                        [<Optional;DefaultParameterValue(-12)>]c:int, [<Optional;DefaultParameterValue(-123)>]d: int) = (b,c,d)
 
+    // compiler should be able to figure out default to pass to Optional parameters without DefaultPaarameterValue.
+    static member Optional1([<Optional>]a: int) = a
+    static member Optional2([<Optional>]a: obj) = a
+    static member Optional3([<Optional>]a: DateTime) = a
+    static member Optional4([<Optional>]a: Nullable<int>) = a
+    static member Optional5([<Optional>]a: string) = a
+
     // Insanity checks - basically make sure the compiler does not crash.
-    static member OnlyOptional([<Optional>]a: int) = a
     static member OnlyDefault([<DefaultParameterValueAttribute(1)>]a: int) = a

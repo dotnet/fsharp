@@ -42,7 +42,11 @@ public class MainClass {
         if (!Class.Mix3(1, c: 1, b: "123").Equals(Tuple.Create("123",1,-123))) return 1;
 
         //C# can omit the argument.
-        if (Class.OnlyOptional() != 0) return 1;
+        if (Class.Optional1() != 0) return 1;
+        if (Class.Optional2() != System.Reflection.Missing.Value) return 1;
+        if (Class.Optional3() != new DateTime()) return 1;
+        if (Class.Optional4() != null) return 1;
+        if (Class.Optional5() != null) return 1;
         //C# can't omit the argument, but can call the method.
         if (Class.OnlyDefault(2) != 2) return 1;
         return 0;
