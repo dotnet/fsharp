@@ -154,7 +154,9 @@ module WindowsPlatform =
             CORDIR <- CORDIR.Replace("Framework", "Framework64")
 
         let allSDK = 
-             [ regQueryREG_SOFTWARE @"Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6\WinSDK-NetFx40Tools" "InstallationFolder"
+             [ regQueryREG_SOFTWARE @"Software\WOW6432Node\Microsoft\Microsoft SDKs\NETFXSDK\4.6.2\WinSDK-NetFx40Tools" "InstallationFolder"
+               regQueryREG_SOFTWARE @"Software\WOW6432Node\Microsoft\Microsoft SDKs\NETFXSDK\4.6.1\WinSDK-NetFx40Tools" "InstallationFolder"
+               regQueryREG_SOFTWARE @"Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6\WinSDK-NetFx40Tools" "InstallationFolder"
                regQueryREG_SOFTWARE @"Software\Microsoft\Microsoft SDKs\Windows\v8.1A\WinSDK-NetFx40Tools" "InstallationFolder"
                regQueryREG_SOFTWARE @"Software\Microsoft\Microsoft SDKs\Windows\v8.0A\WinSDK-NetFx40Tools" "InstallationFolder"
                regQueryREG_SOFTWARE @"Software\Microsoft\Microsoft SDKs\Windows\v7.1\WinSDK-NetFx40Tools" "InstallationFolder"
