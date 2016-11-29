@@ -1201,7 +1201,8 @@ module internal ItemDescriptionsImpl =
             if isAppTy denv.g typ then 
                 let tcref = tcrefOfAppTy denv.g typ
                 tcref.TypeReprInfo |> reprToGlyph 
-            elif isAnyTupleTy denv.g typ then GlyphMajor.Struct
+            elif isStructTupleTy denv.g typ then GlyphMajor.Struct
+            elif isRefTupleTy denv.g typ then GlyphMajor.Class
             elif isFunction denv.g typ then GlyphMajor.Delegate
             elif isTyparTy denv.g typ then GlyphMajor.Struct
             else GlyphMajor.Typedef
