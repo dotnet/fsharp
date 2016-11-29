@@ -247,7 +247,7 @@ let checkResult result =
 let checkErrorLevel1 result = 
     match result with
     | CmdResult.ErrorLevel (_,1) -> ()
-    | CmdResult.Success | CmdResult.ErrorLevel _ -> Assert.Fail  (sprintf "Command passed unexpectedly")
+    | CmdResult.Success | CmdResult.ErrorLevel _ -> Assert.Fail (sprintf "Command passed unexpectedly")
 
 let envVars () = 
     System.Environment.GetEnvironmentVariables () 
@@ -456,14 +456,36 @@ let copy_y cfg f = Commands.copy_y cfg.Directory f >> checkResult
 
 let fsdiff cfg a b = 
     let out = new ResizeArray<string>()
+    let errorText = System.IO.File.ReadAllText (System.IO.Path.Combine(cfg.Directory, a))
     let redirectOutputToFile path args =
         log "%s %s" path args
         use toLog = redirectToLog ()
-        Process.exec { RedirectOutput = Some (function null -> () | s -> out.Add(s)); RedirectError = Some toLog.Post; RedirectInput = None; } cfg.Directory cfg.EnvironmentVariables path args
-    do (Commands.fsdiff redirectOutputToFile cfg.FSDIFF a b) |> (fun _ -> ())
-    out.ToArray() |> List.ofArray
+        let outputf x = 
+            match x with
+            | null -> () 
+            | s -> out.Add s
+
+        let parameters = 
+            { RedirectOutput = Some outputf
+              RedirectError = Some toLog.Post
+              RedirectInput = None }
+
+        Process.exec parameters cfg.Directory cfg.EnvironmentVariables path args
+
+
+    Commands.fsdiff redirectOutputToFile cfg.FSDIFF a b |> ignore     
+    let result = out.ToArray() |> List.ofArray
+    for line in result do
+        log "%s" line
+    if not (List.isEmpty result) then
+        log "New error file:"
+        errorText
+        |> log "%s"
+
+    result
+        
 
 let requireENCulture () = 
     match System.Globalization.CultureInfo.CurrentCulture.TwoLetterISOLanguageName with
-        | "en" -> true
-        | _ -> false
+    | "en" -> true
+    | _ -> false

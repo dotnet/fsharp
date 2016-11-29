@@ -178,17 +178,37 @@ let singleNegTest (cfg: TestConfig) testname =
         then fsc cfg "%s -a -o:%s-pre.dll" cfg.fsc_flags testname [testname + "-pre.fs"] 
         else ()
 
-    // echo Negative typechecker testing: %testname%
     log "Negative typechecker testing: %s" testname
 
     let fsdiff a b = 
         let out = new ResizeArray<string>()
+        let errorText = System.IO.File.ReadAllText (System.IO.Path.Combine(cfg.Directory, a))
         let redirectOutputToFile path args =
             log "%s %s" path args
             use toLog = redirectToLog ()
-            Process.exec { RedirectOutput = Some (function null -> () | s -> out.Add(s)); RedirectError = Some toLog.Post; RedirectInput = None; } cfg.Directory cfg.EnvironmentVariables path args
-        (Commands.fsdiff redirectOutputToFile cfg.FSDIFF a b) |> checkResult
-        out.ToArray() |> List.ofArray
+            let outputf x = 
+                match x with
+                | null -> () 
+                | s -> out.Add s
+
+            let parameters = 
+                { RedirectOutput = Some outputf
+                  RedirectError = Some toLog.Post
+                  RedirectInput = None }
+
+            Process.exec parameters cfg.Directory cfg.EnvironmentVariables path args
+
+        let diffResult = Commands.fsdiff redirectOutputToFile cfg.FSDIFF a b         
+        let result = out.ToArray() |> List.ofArray
+        for line in result do
+            log "%s" line
+        if not (List.isEmpty result) then
+            log "New error file:"
+            errorText
+            |> log "%s"
+
+        checkResult diffResult
+        result
 
     fscAppendErrExpectFail cfg  (sprintf "%s.err" testname) """%s --vserrors --warnaserror --nologo --maxerrors:10000 -a -o:%s.dll""" cfg.fsc_flags testname sources
 
@@ -197,8 +217,8 @@ let singleNegTest (cfg: TestConfig) testname =
     match testnameDiff with
     | [] -> ()
     | l ->
-        log "***** %s.err %s.bsl differed: a bug or baseline may neeed updating" testname testname
-        failwith (sprintf "%s.err %s.bsl differ; %A" testname testname l)
+        log "***** %s.err %s.bsl differed: a bug or baseline may need updating" testname testname        
+        failwithf "%s.err %s.bsl differ; %A" testname testname l
 
     log "Good, output %s.err matched %s.bsl" testname testname
 
@@ -207,10 +227,10 @@ let singleNegTest (cfg: TestConfig) testname =
     let testnameDiff = fsdiff (sprintf "%s.vserr" testname) VSBSLFILE
 
     match testnameDiff with
-        | [] -> ()
-        | l ->
-            log "***** %s.vserr %s differed: a bug or baseline may neeed updating" testname VSBSLFILE
-            failwith (sprintf "%s.vserr %s differ; %A" testname VSBSLFILE l)
+    | [] -> ()
+    | l ->
+        log "***** %s.vserr %s differed: a bug or baseline may need updating" testname VSBSLFILE
+        failwithf "%s.vserr %s differ; %A" testname VSBSLFILE l
 
     log "Good, output %s.vserr matched %s" testname VSBSLFILE
 
