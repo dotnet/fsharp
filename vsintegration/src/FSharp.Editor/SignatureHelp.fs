@@ -162,7 +162,8 @@ type FSharpSignatureHelpProvider [<ImportingConstructor>]  (serviceProvider: SVs
                 [| for p in parameters do 
                       // FSROSLYNTODO: compute the proper help text for parameters, c.f. AppendParameter in XmlDocumentation.fs
                       let paramDoc = XmlDocumentation.BuildMethodParamText(documentationBuilder, method.XmlDoc, p.ParameterName) 
-                      let doc = [| TaggedText(TextTags.Text, paramDoc);  |] 
+                      let doc = if String.IsNullOrWhiteSpace(paramDoc) then [| TaggedText(TextTags.Text, "<no documentation>") |]
+                                else [| TaggedText(TextTags.Text, paramDoc)|]
                       yield (p.ParameterName,p.IsOptional,doc,[| TaggedText(TextTags.Text,p.Display) |]) |]
 
             let doc = [| TaggedText(TextTags.Text, methodDocs + "\n") |] 
