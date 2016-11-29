@@ -1207,11 +1207,6 @@ module internal ItemDescriptionsImpl =
             else GlyphMajor.Typedef
 
             
-         /// Find the glyph for the given value representation.
-         let ValueToGlyph typ = 
-            if isFunction denv.g typ then GlyphMajor.Method
-            else GlyphMajor.Constant
-              
          /// Find the major glyph of the given named item.       
          let namedItemToMajorGlyph item = 
             // This may explore assemblies that are not in the reference set,
@@ -1219,7 +1214,10 @@ module internal ItemDescriptionsImpl =
             // In this case just use GlyphMajor.Class.
            protectAssemblyExploration  GlyphMajor.Class (fun () ->
               match item with 
-              | Item.Value(vref) | Item.CustomBuilder (_,vref) -> ValueToGlyph(vref.Type)
+              | Item.Value(vref) | Item.CustomBuilder (_,vref) -> 
+                    if isFunction denv.g vref.Type then GlyphMajor.Method
+                    elif vref.LiteralValue.IsSome then  GlyphMajor.Constant
+                    else GlyphMajor.Variable
               | Item.Types(_,typ::_) -> typeToGlyph (stripTyEqns denv.g typ)    
               | Item.UnionCase _
               | Item.ActivePatternCase _ -> GlyphMajor.EnumMember   
