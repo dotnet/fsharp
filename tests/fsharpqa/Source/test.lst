@@ -105,6 +105,7 @@ Conformance02			Conformance\DeclarationElements\MemberDefinitions\ImplementingDi
 Conformance02			Conformance\DeclarationElements\MemberDefinitions\MethodsAndProperties
 Conformance02			Conformance\DeclarationElements\MemberDefinitions\NamedArguments
 Conformance02			Conformance\DeclarationElements\MemberDefinitions\OptionalArguments
+Conformance02			Conformance\DeclarationElements\MemberDefinitions\OptionalDefaultParameterValueArguments
 Conformance02			Conformance\DeclarationElements\MemberDefinitions\OverloadingMembers
 Conformance02			Conformance\DeclarationElements\ModuleAbbreviations
 Conformance02			Conformance\DeclarationElements\ObjectConstructors

@@ -2472,6 +2472,15 @@ and GenParamPass3 cenv env seq (param: ILParameter) =
       | Some ntyp -> 
           AddUnsharedRow cenv TableNames.FieldMarshal 
                 (UnsharedRow [| HasFieldMarshal (hfm_ParamDef, pidx); Blob (GetNativeTypeAsBlobIdx cenv ntyp) |]) |> ignore
+      // Write Contant table for DefaultParameterValue attr
+      match param.Default with
+      | None -> ()
+      | Some i -> 
+        AddUnsharedRow cenv TableNames.Constant 
+              (UnsharedRow 
+                  [| GetFieldInitFlags i
+                     HasConstant (hc_ParamDef, pidx)
+                     Blob (GetFieldInitAsBlobIdx cenv i) |]) |> ignore
 
 let GenReturnAsParamRow (returnv : ILReturn) = 
     let flags = (if returnv.Marshal <> None then 0x2000 else 0x0000)
