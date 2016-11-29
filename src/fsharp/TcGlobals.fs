@@ -980,6 +980,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val attrib_InAttribute             = tryFindSysAttrib "System.Runtime.InteropServices.InAttribute" 
   member val attrib_OutAttribute            = findSysAttrib "System.Runtime.InteropServices.OutAttribute" 
   member val attrib_OptionalAttribute       = tryFindSysAttrib "System.Runtime.InteropServices.OptionalAttribute" 
+  member val attrib_DefaultParameterValueAttribute = tryFindSysAttrib "System.Runtime.InteropServices.DefaultParameterValueAttribute" 
   member val attrib_ThreadStaticAttribute   = tryFindSysAttrib "System.ThreadStaticAttribute"
   member val attrib_SpecialNameAttribute   = tryFindSysAttrib "System.Runtime.CompilerServices.SpecialNameAttribute"
   member val attrib_VolatileFieldAttribute   = mk_MFCore_attrib "VolatileFieldAttribute"

@@ -1410,6 +1410,8 @@ val EvalLiteralExprOrAttribArg: TcGlobals -> Expr -> Expr
 val EvaledAttribExprEquality : TcGlobals -> Expr -> Expr -> bool
 val IsSimpleSyntacticConstantExpr: TcGlobals -> Expr -> bool
 
+val (|ConstToILFieldInit|_|): Const -> ILFieldInit option
+
 val (|ExtractAttribNamedArg|_|) : string -> AttribNamedArg list -> AttribExpr option 
 val (|AttribInt32Arg|_|) : AttribExpr -> int32 option
 val (|AttribInt16Arg|_|) : AttribExpr -> int16 option
