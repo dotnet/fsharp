@@ -94,7 +94,15 @@ then building the solution will be enough.
  - We use the proto compiler to compile the source for `FSharp.Core.dll` in this distribution.
  - We use the proto compiler to compile the source for `FSharp.Compiler.dll`, `fsc.exe`, `fsi.exe`, and other binaries found in this distribution.
 
+### Configuring proxy server
 
+If you are behind a proxy server, NuGet client tool must be configured to use it:
+
+    .nuget\nuget.exe config -set http_proxy=proxy.domain.com:8080 -ConfigFile .nuget\NuGet.Config
+    .nuget\nuget.exe config -set http_proxy.user=user_name -ConfigFile .nuget\NuGet.Config
+    .nuget\nuget.exe config -set http_proxy.password=user_password -ConfigFile .nuget\NuGet.Config
+
+Where you should set proper proxy address, user name and password.
 
 # The Visual F# IDE Tools (Windows Only)
 
@@ -120,12 +128,12 @@ components installed in that VS installation.  You can revert this step by disab
 For **Debug**, uninstall then reinstall:
 
     VSIXInstaller.exe  /a /u:"VisualFSharp"
-    VSIXInstaller.exe /a  debug\net40\bin\VisualFSharpFull.vsix
+    VSIXInstaller.exe /a debug\net40\bin\VisualFSharpOpenSource.vsix
 
 For **Release**, uninstall then reinstall:
 
     VSIXInstaller.exe  /a /u:"VisualFSharp"
-    VSIXInstaller.exe /a  release\net40\bin\VisualFSharpFull.vsix
+    VSIXInstaller.exe /a release\net40\bin\VisualFSharpOpenSource.vsix
 
 Restart Visual Studio, it should now be running your freshly-built Visual F# IDE Tools with updated F# Interactive.
 
