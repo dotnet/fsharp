@@ -454,6 +454,45 @@ let rm cfg x = Commands.rm cfg.Directory x
 let mkdir cfg = Commands.mkdir_p cfg.Directory
 let copy_y cfg f = Commands.copy_y cfg.Directory f >> checkResult
 
+let diff normalize path1 path2 =
+    let result = System.Text.StringBuilder()
+    let append s = result.AppendLine s |> ignore
+    let cwd = Environment.CurrentDirectory
+
+    if not <| File.Exists(path1) then failwithf "Invalid path %s" path1
+    if not <| File.Exists(path2) then failwithf "Invalid path %s" path2
+
+    let lines1 = File.ReadAllLines(path1)
+    let lines2 = File.ReadAllLines(path2)
+
+    let minLines = min lines1.Length lines2.Length
+
+    for i = 0 to (minLines - 1) do
+        let normalizePath (line:string) =
+            if normalize then
+                let x = line.IndexOf(cwd, StringComparison.OrdinalIgnoreCase)
+                if x >= 0 then line.Substring(x+cwd.Length) else line
+            else line
+
+        let line1 = normalizePath lines1.[i]
+        let line2 = normalizePath lines2.[i]
+
+        if line1 <> line2 then
+            append <| sprintf "diff between [%s] and [%s]" path1 path2
+            append <| sprintf "line %d" (i+1)
+            append <| sprintf " - %s" line1
+            append <| sprintf " + %s" line2
+
+    if lines1.Length <> lines2.Length then
+        append <| sprintf "diff between [%s] and [%s]" path1 path2
+        append <| sprintf "diff at line %d" minLines
+        lines1.[minLines .. (lines1.Length - 1)] |> Array.iter (append << sprintf "- %s")
+        lines2.[minLines .. (lines2.Length - 1)] |> Array.iter (append << sprintf "+ %s")
+
+    let s = result.ToString()
+    if s <> "" then
+        failwith s
+
 let fsdiff cfg a b = 
     let out = new ResizeArray<string>()
     let errorText = System.IO.File.ReadAllText (System.IO.Path.Combine(cfg.Directory, a))
