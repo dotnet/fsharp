@@ -7,97 +7,85 @@
 //
 // For more about F#, see:
 //     http://fsharp.org
+//     https://docs.microsoft.com/en-us/dotnet/articles/fsharp/
+//
+// To learn more about applied F# programming, use
+//     http://fsharp.org/guides/enterprise/
+//     http://fsharp.org/guides/cloud/
+//     http://fsharp.org/guides/web/
+//     http://fsharp.org/guides/data-science/
+//
+// To install the Visual F# Power Tools, use
+//     'Tools' --> 'Extensions and Updates' --> `Online` and search
 //
 // For additional templates to use with F#, see the 'Online Templates' in Visual Studio, 
 //     'New Project' --> 'Online Templates'
-//
-// For specific F# topics, see:
-//     http://go.microsoft.com/fwlink/?LinkID=234174 (F# Development Portal)
-//     http://go.microsoft.com/fwlink/?LinkID=124614 (Code Gallery)
-//     http://go.microsoft.com/fwlink/?LinkId=235173 (Math/Stats Programming)
-//     http://go.microsoft.com/fwlink/?LinkId=235176 (Charting)
-
-// Contents:
-//    - Integers and basic functions
-//    - Booleans
-//    - Strings
-//    - Tuples
-//      struct Tuples
-//    - Lists and list processing
-//    - Classes
-//    - Generic classes
-//    - Implementing interfaces
-//    - Arrays
-//    - Sequences
-//    - Recursive functions
-//    - Record types
-//    - Union types
-//    - Option types
-//    - Pattern matching
-//    - Units of measure
-//    - Parallel array programming
-//    - Using events
-//    - Database access using type providers
-//    - OData access using type providers
 
 
+// Open namespaces using 'open'
+open System
 
-// ---------------------------------------------------------------
-//         Integers and basic functions
-// ---------------------------------------------------------------
 
-module Integers = 
+/// First some basics on integers and numbers
+module IntegersAndNumbers = 
+
+    /// This is a sample integer.
     let sampleInteger = 176
 
-    /// Do some arithmetic starting with the first integer
-    let sampleInteger2 = (sampleInteger/4 + 5 - 7) * 4
+    /// This is a sample floating point number.
+    let sampleDouble = 4.1
 
-    /// A list of the numbers from 0 to 99
+    /// This computed a new number by some arithmetic.  Numeric types are converted using
+    /// functions 'int', 'double' and so on.
+    let sampleInteger2 = (sampleInteger/4 + 5 - 7) * 4 + int sampleDouble
+
+    /// This is a list of the numbers from 0 to 99.
     let sampleNumbers = [ 0 .. 99 ]
 
-    /// A list of all tuples containing all the numbers from 0 to 99 and their squares
+    /// This is a list of all tuples containing all the numbers from 0 to 99 and their squares.
     let sampleTableOfSquares = [ for i in 0 .. 99 -> (i, i*i) ]
 
     // The next line prints a list that includes tuples, using %A for generic printing
     printfn "The table of squares from 0 to 99 is:\n%A" sampleTableOfSquares
 
 
+/// Much of F# programming consists of defining functions that transform input data to produce
+/// useful resutls.
 module BasicFunctions = 
 
-    // Use 'let' to define a function that accepts an integer argument and returns an integer. 
-    let func1 x = x*x + 3
-
-    // Parenthesis are optional for function arguments
-    let func1a (x) = x*x + 3
+    /// You use 'let' to define a function that accepts an integer argument and returns an integer. 
+    /// Parentheses are optional for function arguments,
+    let sampleFunction1 x = x*x + 3
 
     /// Apply the function, naming the function return result using 'let'. 
     /// The variable type is inferred from the function return type.
-    let result1 = func1 4573
+    let result1 = sampleFunction1 4573
     printfn "The result of squaring the integer 4573 and adding 3 is %d" result1
 
-    // When needed, annotate the type of a parameter name using '(argument:type)'
-    let func2 (x:int) = 2*x*x - x/5 + 3
+    /// When needed, annotate the type of a parameter name using '(argument:type)'
+    let sampleFunction2 (x:int) = 2*x*x - x/5 + 3
 
-    let result2 = func2 (7 + 4)
+    let result2 = sampleFunction2 (7 + 4)
     printfn "The result of applying the 1st sample function to (7 + 4) is %d" result2
 
-    let func3 x = 
+    /// Conditionals use if/then/elid/elif/else.
+    ///
+    /// Note that F# uses whitespace indentation-aware syntax like Python.
+    let sampleFunction3 x = 
         if x < 100.0 then 
             2.0*x*x - x/5.0 + 3.0
         else 
             2.0*x*x + x/5.0 - 37.0
 
-    let result3 = func3 (6.5 + 4.5)
+    let result3 = sampleFunction3 (6.5 + 4.5)
     printfn "The result of applying the 2nd sample function to (6.5 + 4.5) is %f" result3
 
 
 
-// ---------------------------------------------------------------
-//         Booleans
-// ---------------------------------------------------------------
+/// Strings and booleans are fundamental data types in F# programming.
+module StringManipulation = 
 
-module SomeBooleanValues = 
-
+    /// Booleans use 'true', 'false', 'not', '&&' and '||'
     let boolean1 = true
     let boolean2 = false
 
@@ -105,43 +93,34 @@ module SomeBooleanValues =
 
     printfn "The expression 'not boolean1 && (boolean2 || false)' is %A" boolean3
 
-
-
-// ---------------------------------------------------------------
-//         Strings
-// ---------------------------------------------------------------
-
-module StringManipulation = 
-
+    /// Strings use double quotes.
     let string1 = "Hello"
     let string2  = "world"
 
-    /// Use @ to create a verbatim string literal
+    /// Strings can also use @ to create a verbatim string literal
     let string3 = @"c:\Program Files\"
 
-    /// Using a triple-quote string literal
+    /// String literals can also use triple-quotes
     let string4 = """He said "hello world" after you did"""
 
-    let helloWorld = string1 + " " + string2 // concatenate the two strings with a space in between
+    /// String concatenation is '+'. Also see String.concat, System.String.Join and others.
+    let helloWorld = string1 + " " + string2 
     printfn "%s" helloWorld
 
-    /// A string formed by taking the first 7 characters of one of the result strings
+    /// Substrings use the indexer notation, for example the first 7 characters.
     let substring = helloWorld.[0..6]
     printfn "%s" substring
 
 
 
-// ---------------------------------------------------------------
-//         Tuples (ordered sets of values)
-// ---------------------------------------------------------------
-
+/// Tuples are simple combinations of data values into a combined value.
 module Tuples = 
 
-    /// A simple tuple of integers
+    /// First define a simple tuple of integers.
     let tuple1 = (1, 2, 3)
 
-    /// A function that swaps the order of two values in a tuple. 
-    /// QuickInfo shows that the function is inferred to have a generic type.
+    /// Next you define a function that swaps the order of two values in a tuple. 
+    /// The function is inferred to have a generic type.
     let swapElems (a, b) = (b, a)
 
     printfn "The result of swapping (1, 2) is %A" (swapElems (1,2))
@@ -151,79 +130,259 @@ module Tuples =
 
     printfn "tuple1: %A    tuple2: %A" tuple1 tuple2
 
+    /// A simple tuple of integers, represented as a flat inline struct (a value-type)
+    let sampleStructTuple = struct (1, 2, 3)
 
 
 // ---------------------------------------------------------------
-//         Tuples (ordered sets of values)
+//         Lists, Arrays and data processing
 // ---------------------------------------------------------------
 
-module StructTuples = 
+/// Lists, arrays and sequences are basic collection types in F# programming.
+/// Many other collection types are available in System.Collections.Generic,
+/// System.Collections.Immutable and other libraries.
+module ListsAndArrays = 
 
-    /// A simple tuple of integers
-    let tuple1 = struct (1, 2, 3)
+    /// Lists are defined using [ ... ].  This is an empty list.
+    let list1 = [ ]  
 
-    /// A function that swaps the order of two values in a tuple. 
-    /// QuickInfo shows that the function is inferred to have a generic type.
-    let swapElems struct (a, b) = struct (b, a)
+    /// This is a list with 3 elements.
+    let list2 = [ 1; 2; 3 ]
 
-    printfn "The result of swapping struct (1, 2) is %A" (swapElems struct (1,2))
+    /// This is a list of integers from 1 to 1000
+    let numberList = [ 1 .. 1000 ]  
 
-    /// A tuple consisting of an integer, a string, and a double-precision floating point number
-    let tuple2 = struct (1, "fred", 3.1415)
-
-    printfn "tuple1: %A    tuple2: %A" tuple1 tuple2
-
-
-
-// ---------------------------------------------------------------
-//         Lists and list processing
-// ---------------------------------------------------------------
-
-module Lists = 
-
-    let list1 = [ ]            /// an empty list
-
-    let list2 = [ 1; 2; 3 ]    /// list of 3 elements
-
-    let list3 = 42 :: list2    /// a new list with '42' added to the beginning
-
-    let numberList = [ 1 .. 1000 ]  /// list of integers from 1 to 1000
-
-    /// A list containing all the days of the year
+    /// Lists can also be generated by computations. This is a list containing 
+    /// all the days of the year.
     let daysList = 
         [ for month in 1 .. 12 do
               for day in 1 .. System.DateTime.DaysInMonth(2012, month) do 
                   yield System.DateTime(2012, month, day) ]
 
-    /// A list containing the tuples which are the coordinates of the black squares on a chess board.
+    /// Computations can include conditionals.  This is a list containing the tuples
+    /// which are the coordinates of the black squares on a chess board.
     let blackSquares = 
         [ for i in 0 .. 7 do
               for j in 0 .. 7 do 
                   if (i+j) % 2 = 1 then 
                       yield (i, j) ]
 
-    /// Square the numbers in numberList, using the pipeline operator to pass an argument to List.map
+    /// Lists can be transformed using 'List.map' and other functional programming combinators.
+    /// This definition produces a new list by squaring the numbers in numberList, using the pipeline 
+    /// operator to pass an argument to List.map.
     let squares = 
         numberList 
         |> List.map (fun x -> x*x) 
 
-    /// Computes the sum of the squares of the numbers divisible by 3.
+    /// There are many other list combinations. The following computes the sum of the squares of the 
+    /// numbers divisible by 3.
     let sumOfSquares = 
         numberList
         |> List.filter (fun x -> x % 3 = 0)
         |> List.sumBy (fun x -> x * x)
 
+    /// Arrays are like lists, but are stored 'flat' (rather than as immutable linked lists), and
+    /// are mutable (their contents can be changed). This is The empty array.
+    let array1 = [| |]
+
+    /// Arrays are specified using the same range of constructs as lists.
+    let array2 = [| "hello"; "world"; "and"; "hello"; "world"; "again" |]
+
+    /// This is an array of numbers from 1 to 1000.
+    let array3 = [| 1 .. 1000 |]
+
+    /// This is an array containing only the words "hello" and "world"
+    let array4 = 
+        [| for word in array2 do
+               if word.Contains("l") then 
+                   yield word |]
+
+    /// This is an array initialized by index and containing the even numbers from 0 to 2000
+    let evenNumbers = Array.init 1001 (fun n -> n * 2) 
+
+    /// Sub-arrays are extracted using slicing notation.
+    let evenNumbersSlice = evenNumbers.[0..500]
+
+    /// You can loop over lists and arrays using 'for' loops.
+    for word in array4 do 
+        printfn "word: %s" word
+
+    // You can modify the contents of an an array element by using the left arrow assignment operator.
+    array2.[1] <- "WORLD!"
+
+    /// You can transform arrays using 'Array'map' and other functional programming operations.
+    /// The following calculates the sum of the lengths of the words that start with 'h'
+    let sumOfLengthsOfWords = 
+        array2
+        |> Array.filter (fun x -> x.StartsWith "h")
+        |> Array.sumBy (fun x -> x.Length)
 
 
-// ---------------------------------------------------------------
-//         Classes
-// ---------------------------------------------------------------
+/// Sequences are evaluated on-demand and are re-evaluated each time they are iterated. 
+/// An F# sequence is just a System.Collections.Generic.IEnumerable<'T>.
+/// Sequence processing functions can be applied to Lists and Arrays as well.
+module Sequences = 
 
+    /// This is the empty sequence.
+    let seq1 = Seq.empty
+
+    /// This a sequence of values.
+    let seq2 = seq { yield "hello"; yield "world"; yield "and"; yield "hello"; yield "world"; yield "again" }
+
+    /// This is an on-demand sequence from 1 to 100.
+    let numbersSeq = seq { 1 .. 1000 }
+
+    /// This is a sequence producing the words "hello" and "world"
+    let seq3 = 
+        seq { for word in seq2 do
+                  if word.Contains("l") then 
+                      yield word }
+
+    /// This sequence producing the even numbers up to 2000.
+    let evenNumbers = Seq.init 1001 (fun n -> n * 2) 
+
+    let rnd = System.Random()
+
+    /// This is an infinite sequence which is a random walk.
+    /// This example uses yield! to return each element of a subsequence.
+    let rec randomWalk x =
+        seq { yield x
+              yield! randomWalk (x + rnd.NextDouble() - 0.5) }
+
+    /// This example shows the first 100 elements of the random walk.
+    let first100ValuesOfRandomWalk = 
+        randomWalk 5.0 
+        |> Seq.truncate 100
+        |> Seq.toList
+
+
+
+
+/// Recursive functions can call themselves. In F#, functions are only recursive
+/// when declared using 'let rec'.  The members of a set of type declarations are
+/// always implicitly recursive. Entire namespaces and modules can be made recursive
+/// through 'namespace rec' and 'module rec'.
+module RecursiveFunctions  = 
+              
+    /// This example shows a recursive function that computes the factorial of an 
+    /// integer. It uses 'let rec' to define a recursive function.
+    let rec factorial n = 
+        if n = 0 then 1 else n * factorial (n-1)
+
+    /// This example shows a recursive function that computes the greatest common factor of two integers. 
+    //  Since all of the recursive calls are tail calls, the compiler will turn the function into a loop,
+    //  which improves performance and reduces memory consumption.
+    let rec greatestCommonFactor a b =
+        if a = 0 then b
+        elif a < b then greatestCommonFactor a (b - a)
+        else greatestCommonFactor (a - b) b
+
+    /// Thsi example shows a recursive function that computes the sum of a list of integers.
+    let rec sumList xs =
+        match xs with
+        | []    -> 0
+        | y::ys -> y + sumList ys
+
+
+/// A record is a collection of data items brought together into one object.
+module RecordTypes = 
+
+    /// This example shows how to define a new record type.  
+    type ContactCard = 
+        { Name     : string
+          Phone    : string
+          Verified : bool }
+              
+    /// This example shows how to define an instance of a record type.
+    let contact1 = 
+        { Name = "Alf" 
+          Phone = "(206) 555-0157" 
+          Verified = false }
+
+    /// This example shows how to use "copy-and-update" on record values. It creates 
+    /// a new record value that is a copy of contact1, but has different values for 
+    /// the 'Phone' and 'Verified' fields
+    let contact2 = 
+        { contact1 with 
+            Phone = "(206) 555-0112"
+            Verified = true }
+
+    /// This example shows how to write a function that processes a record value.
+    /// It converts a 'ContactCard' object to a string.
+    let showCard (c: ContactCard) = 
+        c.Name + " Phone: " + c.Phone + (if not c.Verified then " (unverified)" else "")
+        
+
+
+/// Union types represent different possibilites for kinds of data.
+module UnionTypes = 
+
+    /// For example, the following represents the suit of a playing card.
+    type Suit = 
+        | Hearts 
+        | Clubs 
+        | Diamonds 
+        | Spades
+
+    /// A union type can also be used to represent the rank of a playing card.
+    type Rank = 
+        /// Represents the rank of cards 2 .. 10
+        | Value of int
+        | Ace
+        | King
+        | Queen
+        | Jack
+
+        /// Union and record types can implement object-oriented members.
+        static member GetAllRanks() = 
+            [ yield Ace
+              for i in 2 .. 10 do yield Value i
+              yield Jack
+              yield Queen
+              yield King ]
+                                   
+    /// This is a record type that combines a Suit and a Rank.
+    type Card =  { Suit: Suit; Rank: Rank }
+              
+    /// This computed a list representing all the cards in the deck.
+    let fullDeck = 
+        [ for suit in [ Hearts; Diamonds; Clubs; Spades] do
+              for rank in Rank.GetAllRanks() do 
+                  yield { Suit=suit; Rank=rank } ]
+
+    /// This example converts a 'Card' object to a string.
+    let showCard (c: Card) = 
+        let rankString = 
+            match c.Rank with 
+            | Ace -> "Ace"
+            | King -> "King"
+            | Queen -> "Queen"
+            | Jack -> "Jack"
+            | Value n -> string n
+        let suitString = 
+            match c.Suit with 
+            | Clubs -> "clubs"
+            | Diamonds -> "diamonds"
+            | Spades -> "spades"
+            | Hearts -> "hearts"
+        rankString  + " of " + suitString
+
+    /// This example prints all the cards in a playing deck.
+    let printAllCards() = 
+        for card in fullDeck do 
+            printfn "%s" (showCard card)
+
+
+
+/// Classes are one way of defining new object types in F#. The following example shows
+/// how a simple vector class is defined.
 module DefiningClasses = 
 
-    /// The class's constructor takes two arguments: dx and dy, both of type 'float'. 
-    type Vector2D(dx : float, dy : float) = 
-        /// The length of the vector, computed when the object is constructed
+    /// The class's constructor takes two arguments: dx and dy, both of type 'double'. 
+    type Vector2D(dx : double, dy : double) = 
+
+        /// This internal field stores the length of the vector, computed when the 
+        /// object is constructed
         let length = sqrt (dx*dx + dy*dy)
 
         // 'this' specifies a name for the object's self identifier.
@@ -236,7 +395,7 @@ module DefiningClasses =
 
         member this.Scale(k) = Vector2D(k * this.DX, k * this.DY)
     
-    /// An instance of the Vector2D class
+    /// This example defines an instance of the Vector2D class
     let vector1 = Vector2D(3.0, 4.0)
 
     /// Get a new scaled vector object, without modifying the original object 
@@ -245,16 +404,13 @@ module DefiningClasses =
     printfn "Length of vector1: %f      Length of vector2: %f" vector1.Length vector2.Length
 
 
-
-// ---------------------------------------------------------------
-//         Generic classes
-// ---------------------------------------------------------------
-
+/// Generic classes allow types to be defined with respect to a set of type parameters.
+/// In the followiung, 'T is the type parameter for the class.
 module DefiningGenericClasses = 
 
-    type StateTracker<'T>(initialElement: 'T) = // 'T is the type parameter for the class
+    type StateTracker<'T>(initialElement: 'T) = 
 
-        /// Store the states in a list
+        /// This internal field store the states in a list
         let mutable states = [ initialElement ]
 
         /// Add a new element to the list of states
@@ -275,351 +431,123 @@ module DefiningGenericClasses =
 
 
 
-// ---------------------------------------------------------------
-//         Implementing interfaces
-// ---------------------------------------------------------------
+/// Interfaces are object types with only 'abstract' members.
+/// Object types and object expressions can implement interfaces. 
+module ImplementingInterfaces = 
 
-/// Type that implements IDisposable
-type ReadFile() =
+    /// This is a type that implements IDisposable
+    type ReadFile() =
 
-    let file = new System.IO.StreamReader("readme.txt")
+        let file = new System.IO.StreamReader("readme.txt")
 
-    member this.ReadLine() = file.ReadLine()
+        member this.ReadLine() = file.ReadLine()
 
-    // this class's implementation of IDisposable members
-    interface System.IDisposable with
-        member this.Dispose() = file.Close()
+        // This is the implementation of IDisposable members
+        interface System.IDisposable with
+            member this.Dispose() = file.Close()
 
 
-
-// ---------------------------------------------------------------
-//         Arrays
-// ---------------------------------------------------------------
-
-module Arrays = 
-
-    /// The empty array
-    let array1 = [| |]
-
-    let array2 = [| "hello"; "world"; "and"; "hello"; "world"; "again" |]
-
-    let array3 = [| 1 .. 1000 |]
-
-    /// An array containing only the words "hello" and "world"
-    let array4 = [| for word in array2 do
-                        if word.Contains("l") then 
-                            yield word |]
-
-    /// An array initialized by index and containing the even numbers from 0 to 2000
-    let evenNumbers = Array.init 1001 (fun n -> n * 2) 
-
-    /// sub-array extracted using slicing notation
-    let evenNumbersSlice = evenNumbers.[0..500]
-
-    for word in array4 do 
-        printfn "word: %s" word
-
-    // modify an array element using the left arrow assignment operator
-    array2.[1] <- "WORLD!"
-
-    /// Calculates the sum of the lengths of the words that start with 'h'
-    let sumOfLengthsOfWords = 
-        array2
-        |> Array.filter (fun x -> x.StartsWith "h")
-        |> Array.sumBy (fun x -> x.Length)
+    /// This is an object that implements IDisposable.  Unlike
+    /// C#, a new type definition is not needed to implement an interface
+    /// you can just use an object expression instead.
+    let interfaceImplementation =
+        { new System.IDisposable with
+            member this.Dispose() = printfn "disposed" }
 
 
 
-// ---------------------------------------------------------------
-//         Sequences
-// ---------------------------------------------------------------
 
-module Sequences = 
-    // Sequences are evaluated on-demand and are re-evaluated each time they are iterated. 
-    // An F# sequence is an instance of a System.Collections.Generic.IEnumerable<'T>,
-    // so Seq functions can be applied to Lists and Arrays as well.
+/// Option values are any kind of value tagged with either 'Some' or 'None'.
+/// They are used extensively in F# code to represent the cases where many other
+/// languages would use null references.
+module OptionValues = 
 
-    /// The empty sequence
-    let seq1 = Seq.empty
+    /// First, define a type of ZipCodes.
+    type ZipCode = ZipCode of string
 
-    let seq2 = seq { yield "hello"; yield "world"; yield "and"; yield "hello"; yield "world"; yield "again" }
+    /// Next, define a type where the ZipCode is optionsl.
+    type Customer = { ZipCode : ZipCode option }
 
-    let numbersSeq = seq { 1 .. 1000 }
-
-    /// another array containing only the words "hello" and "world"
-    let seq3 = 
-        seq { for word in seq2 do
-                  if word.Contains("l") then 
-                      yield word }
-
-    let evenNumbers = Seq.init 1001 (fun n -> n * 2) 
-
-    let rnd = System.Random()
-
-    /// An infinite sequence which is a random walk
-    //  Use yield! to return each element of a subsequence, similar to IEnumerable.SelectMany.
-    let rec randomWalk x =
-        seq { yield x
-              yield! randomWalk (x + rnd.NextDouble() - 0.5) }
-
-    let first100ValuesOfRandomWalk = 
-        randomWalk 5.0 
-        |> Seq.truncate 100
-        |> Seq.toList
-
-
-
-// ---------------------------------------------------------------
-//         Recursive functions
-// ---------------------------------------------------------------
-
-module RecursiveFunctions  = 
-              
-    /// Compute the factorial of an integer. Use 'let rec' to define a recursive function
-    let rec factorial n = 
-        if n = 0 then 1 else n * factorial (n-1)
-
-    /// Computes the greatest common factor of two integers. 
-    //  Since all of the recursive calls are tail calls, the compiler will turn the function into a loop,
-    //  which improves performance and reduces memory consumption.
-    let rec greatestCommonFactor a b =
-        if a = 0 then b
-        elif a < b then greatestCommonFactor a (b - a)
-        else greatestCommonFactor (a - b) b
-
-    /// Computes the sum of a list of integers using recursion.
-    let rec sumList xs =
-        match xs with
-        | []    -> 0
-        | y::ys -> y + sumList ys
-
-    /// Make the function tail recursive, using a helper function with a result accumulator
-    let rec private sumListTailRecHelper accumulator xs =
-        match xs with
-        | []    -> accumulator
-        | y::ys -> sumListTailRecHelper (accumulator+y) ys
-
-    let sumListTailRecursive xs = sumListTailRecHelper 0 xs
-
-
-
-// ---------------------------------------------------------------
-//         Record types
-// ---------------------------------------------------------------
-
-module RecordTypes = 
-
-    // define a record type
-    type ContactCard = 
-        { Name     : string;
-          Phone    : string;
-          Verified : bool }
-              
-    let contact1 = { Name = "Alf" ; Phone = "(206) 555-0157" ; Verified = false }
-
-    // create a new record that is a copy of contact1, 
-    // but has different values for the 'Phone' and 'Verified' fields
-    let contact2 = { contact1 with Phone = "(206) 555-0112"; Verified = true }
-
-    /// Converts a 'ContactCard' object to a string
-    let showCard c = 
-        c.Name + " Phone: " + c.Phone + (if not c.Verified then " (unverified)" else "")
-        
-
-
-// ---------------------------------------------------------------
-//         Union types
-// ---------------------------------------------------------------
-
-module UnionTypes = 
-
-    /// Represents the suit of a playing card
-    type Suit = 
-        | Hearts 
-        | Clubs 
-        | Diamonds 
-        | Spades
-
-    /// Represents the rank of a playing card
-    type Rank = 
-        /// Represents the rank of cards 2 .. 10
-        | Value of int
-        | Ace
-        | King
-        | Queen
-        | Jack
-        static member GetAllRanks() = 
-            [ yield Ace
-              for i in 2 .. 10 do yield Value i
-              yield Jack
-              yield Queen
-              yield King ]
-                                   
-    type Card =  { Suit: Suit; Rank: Rank }
-              
-    /// Returns a list representing all the cards in the deck
-    let fullDeck = 
-        [ for suit in [ Hearts; Diamonds; Clubs; Spades] do
-              for rank in Rank.GetAllRanks() do 
-                  yield { Suit=suit; Rank=rank } ]
-
-    /// Converts a 'Card' object to a string
-    let showCard c = 
-        let rankString = 
-            match c.Rank with 
-            | Ace -> "Ace"
-            | King -> "King"
-            | Queen -> "Queen"
-            | Jack -> "Jack"
-            | Value n -> string n
-        let suitString = 
-            match c.Suit with 
-            | Clubs -> "clubs"
-            | Diamonds -> "diamonds"
-            | Spades -> "spades"
-            | Hearts -> "hearts"
-        rankString  + " of " + suitString
-
-    let printAllCards() = 
-        for card in fullDeck do 
-            printfn "%s" (showCard card)
-
-
-
-// ---------------------------------------------------------------
-//         Option types
-// ---------------------------------------------------------------
-
-module OptionTypes = 
-    /// Option values are any kind of value tagged with either 'Some' or 'None'.
-    /// They are used extensively in F# code to represent the cases where many other
-    /// languages would use null references.
-
-    type Customer = { ZipCode : decimal option }
-
-    /// Abstract class that computes the shipping zone for the customer's zip code, 
+    /// Next, define an interface type the represents an object to compute the shipping zone for the customer's zip code, 
     /// given implementations for the 'getState' and 'getShippingZone' abstract methods.
-    [<AbstractClass>]
     type ShippingCalculator =
-        abstract GetState : decimal -> string option
+        abstract GetState : ZipCode -> string option
         abstract GetShippingZone : string -> int
 
-        /// Return the shipping zone corresponding to the customer's ZIP code
-        /// Customer may not yet have a ZIP code or the ZIP code may be invalid
-        member this.CustomerShippingZone(customer : Customer) =
-            customer.ZipCode |> Option.bind this.GetState |> Option.map this.GetShippingZone
+    /// Next calculate a shipping zone for a customer using a calculator instance.
+    let CustomerShippingZone (calculator: ShippingCalculator, customer: Customer) =
+        customer.ZipCode |> Option.bind calculator.GetState |> Option.map calculator.GetShippingZone
 
 
 
-// ---------------------------------------------------------------
-//         Pattern matching
-// ---------------------------------------------------------------
-
-module PatternMatching = 
-
-    /// A record for a person's first and last name
-    type Person = {
-        First : string
-        Last  : string
-    }
-
-    /// define a discriminated union of 3 different kinds of employees
-    type Employee = 
-        | Engineer  of Person
-        | Manager   of Person * list<Employee>            // manager has list of reports
-        | Executive of Person * list<Employee> * Employee // executive also has an assistant
-
-    /// count everyone underneath the employee in the management hierarchy, including the employee
-    let rec countReports(emp : Employee) = 
-        1 + match emp with
-            | Engineer(id) -> 
-                0
-            | Manager(id, reports) -> 
-                reports |> List.sumBy countReports 
-            | Executive(id, reports, assistant) ->
-                (reports |> List.sumBy countReports) + countReports assistant
-
-
-    /// find all managers/executives named "Dave" who do not have any reports
-    let rec findDaveWithOpenPosition(emps : Employee list) =
-        emps 
-        |> List.filter(function 
-                       | Manager({First = "Dave"}, []) -> true       // [] matches the empty list
-                       | Executive({First = "Dave"}, [], _) -> true
-                       | _ -> false)                                 // '_' is a wildcard pattern that matches anything
-                                                                     // this handles the "or else" case
-
-
-
-// ---------------------------------------------------------------
-//         Units of measure
-// ---------------------------------------------------------------
-
+/// Numeric types can be annotated with units.  F# arithmetic correctly computes the adjusted
+/// numeric types.
 module UnitsOfMeasure = 
 
-    // Code can be annotated with units of measure when using F# arithmetic over numeric types
-
+    /// First open a collection of common unit names
     open Microsoft.FSharp.Data.UnitSystems.SI.UnitNames
 
+    /// Define a unitized constant
+    let sampelValue1  = 1600.0<meter>          
+
+    /// Next, define a new unit type
     [<Measure>]
     type mile =
-        /// Conversion factor mile to meter: meter is defined in SI.UnitNames
-        static member asMeter = 1600.<meter/mile>
+        /// Conversion factor mile to meter.
+        static member asMeter = 1609.34<meter/mile>
 
-    let d  = 50.<mile>          // Distance expressed using imperial units
-    let d2 = d * mile.asMeter   // Same distance expressed using metric system
+    /// Define a unitized constant
+    let sampleValue2  = 500.0<mile>          
 
-    printfn "%A = %A" d d2
-    // let error = d + d2       // Compile error: units of measure do not match
+    /// Compute  metric-system constant
+    let sampleValue3 = sampleValue2 * mile.asMeter   
+
+    printfn "After a %A race I would walk %A miles which would be %A meters" sampelValue1 sampleValue2 sampleValue3
 
 
 
-// ---------------------------------------------------------------
-//         Parallel array programming
-// ---------------------------------------------------------------
-
+/// The FSharp.Core library defines a range of parallel processing functions.  Here
+/// you use some functions for parallel processing over arrays.
 module ParallelArrayProgramming = 
               
+    ///
+    /// First, an array of inputs.
     let oneBigArray = [| 0 .. 100000 |]
     
-    // do some CPU intensive computation 
+    // Next, define a functions that does some CPU intensive computation.
     let rec computeSomeFunction x = 
         if x <= 2 then 1 
         else computeSomeFunction (x - 1) + computeSomeFunction (x - 2)
        
-    // Do a parallel map over a large input array
+    // Next, do a parallel map over a large input array
     let computeResults() = oneBigArray |> Array.Parallel.map (fun x -> computeSomeFunction (x % 20))
 
+    // Next, print the results.
     printfn "Parallel computation results: %A" (computeResults())
 
 
 
-// ---------------------------------------------------------------
-//         Using events
-// ---------------------------------------------------------------
-
+/// Events are a common idiom for .NET programming.
 module Events = 
 
-    open System
-
-    // create instance of Event object that consists of subscription point (event.Publish) and event trigger (event.Trigger)
+    /// First, create instance of Event object that consists of subscription point (event.Publish) and event trigger (event.Trigger)
     let simpleEvent = new Event<int>() 
 
-    // add handler
+    // Next, add handler to the event
     simpleEvent.Publish.Add(
         fun x -> printfn "this is handler was added with Publish.Add: %d" x)
 
-    // trigger event
+    // Next, trigger the event
     simpleEvent.Trigger(5)
 
-    // create instance of Event that follows standard .NET convention: (sender, EventArgs)
+    // Next, create an instance of Event that follows standard .NET convention: (sender, EventArgs)
     let eventForDelegateType = new Event<EventHandler, EventArgs>()
 
-    // add handler
+    // Next, add a handler for this new event
     eventForDelegateType.Publish.AddHandler(
         EventHandler(fun _ _ -> printfn "this is handler was added with Publish.AddHandler"))
 
-    // trigger event (note that sender argument should be set)
+    // Next, trigger this event (note that sender argument should be set)
     eventForDelegateType.Trigger(null, EventArgs.Empty)
 
 
