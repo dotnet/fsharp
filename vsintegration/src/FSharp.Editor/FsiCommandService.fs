@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.VisualStudio.FSharp.Editor
+
 open System
 open Microsoft.VisualStudio.Text.Editor
 open Microsoft.VisualStudio.OLE.Interop
@@ -21,25 +22,26 @@ type FsiCommandFilter(serviceProvider: System.IServiceProvider) =
     let projectSystemPackage =
       lazy(
         let shell = serviceProvider.GetService(typeof<SVsShell>) :?> IVsShell
-        let packageToBeLoadedGuid = ref (Guid "{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}")  // FSharp ProjectSystem guid
-        let pkg = ref null 
-        shell.LoadPackage(packageToBeLoadedGuid, pkg) |> ignore
-        !pkg :?> Package)
-    let getProjectSystemPackage() = projectSystemPackage.Value
+        let packageToBeLoadedGuid = ref (Guid "{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}")  // FSharp ProjectSystem guid        
+        match shell.LoadPackage(packageToBeLoadedGuid) with
+        | VSConstants.S_OK, pkg ->
+            pkg :?> Package
+        | _ -> null)
 
     interface IMenuCommand with
         member val IsAdded = false with get, set
         member val NextTarget = null with get, set
+
         member x.Exec (pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut) =
             if pguidCmdGroup = VSConstants.VsStd11 then
                 if nCmdId = uint32 VSConstants.VSStd11CmdID.ExecuteSelectionInInteractive then
-                    Hooks.OnMLSend (getProjectSystemPackage()) FsiEditorSendAction.ExecuteSelection null null
+                    Hooks.OnMLSend projectSystemPackage.Value FsiEditorSendAction.ExecuteSelection null null
                 elif nCmdId = uint32 VSConstants.VSStd11CmdID.ExecuteLineInInteractive then
-                    Hooks.OnMLSend (getProjectSystemPackage()) FsiEditorSendAction.ExecuteLine null null
+                    Hooks.OnMLSend projectSystemPackage.Value FsiEditorSendAction.ExecuteLine null null
                 VSConstants.S_OK
             elif pguidCmdGroup = Guids.guidInteractive then
                 if nCmdId = uint32 Guids.cmdIDDebugSelection then
-                    Hooks.OnMLSend (getProjectSystemPackage()) FsiEditorSendAction.DebugSelection null null
+                    Hooks.OnMLSend projectSystemPackage.Value FsiEditorSendAction.DebugSelection null null
                 VSConstants.S_OK
             else
                 let x = x :> IMenuCommand
@@ -54,7 +56,7 @@ type FsiCommandFilter(serviceProvider: System.IServiceProvider) =
                 VSConstants.S_OK
             elif pguidCmdGroup = Guids.guidInteractive then
                 if prgCmds.[0].cmdID = uint32 Guids.cmdIDDebugSelection then
-                    let dbgState = Hooks.GetDebuggerState(getProjectSystemPackage())
+                    let dbgState = Hooks.GetDebuggerState projectSystemPackage.Value
                     if dbgState = FsiDebuggerState.AttachedNotToFSI then
                         prgCmds.[0].cmdf <- uint32 OLECMDF.OLECMDF_INVISIBLE
                     else
@@ -83,9 +85,8 @@ type FsiCommandFilterProvider [<ImportingConstructor>]
             
     interface IWpfTextViewCreationListener with
         member __.TextViewCreated(textView) = 
-            let textViewAdapter = editorFactory.GetViewAdapter(textView)
-            match textViewAdapter with
+            match editorFactory.GetViewAdapter(textView) with
             | null -> ()
-            | _ ->
+            | textViewAdapter ->
                 addCommandFilter textViewAdapter (FsiCommandFilter(serviceProvider))
         
