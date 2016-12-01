@@ -24,13 +24,19 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 type internal FSharpDocumentDiagnosticAnalyzer() =
     inherit DocumentDiagnosticAnalyzer()
 
-    static member GetDiagnostics(filePath: string, sourceText: SourceText, textVersionHash: int, options: FSharpProjectOptions, addSemanticErrors: bool) = async {
+    let getChecker(document: Document) =
+        document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().Checker
 
+    let getProjectInfoManager(document: Document) =
+        document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().ProjectInfoManager
 
-        let! parseResults = FSharpLanguageService.Checker.ParseFileInProject(filePath, sourceText.ToString(), options) 
+    member this.GetDiagnostics(document: Document, sourceText: SourceText, textVersionHash: int, options: FSharpProjectOptions, addSemanticErrors: bool) = async {
+        let filePath = document.FilePath
+        let checker = getChecker document
+        let! parseResults = checker.ParseFileInProject(filePath, sourceText.ToString(), options) 
         let! errors = async {
             if addSemanticErrors then
-                let! checkResultsAnswer = FSharpLanguageService.Checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options) 
+                let! checkResultsAnswer = checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options) 
                 match checkResultsAnswer with
                 | FSharpCheckFileAnswer.Aborted -> return [| |]
                 | FSharpCheckFileAnswer.Succeeded(results) -> return results.Errors
@@ -58,24 +64,26 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
     override this.SupportedDiagnostics = CommonRoslynHelpers.SupportedDiagnostics()
 
     override this.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
+        let projectInfoManager = getProjectInfoManager document
         async {
-            match FSharpLanguageService.TryGetOptionsForEditingDocumentOrProject(document)  with 
+            match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)  with 
             | Some options ->
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
-                return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document.FilePath, sourceText, textVersion.GetHashCode(), options, false)
+                return! this.GetDiagnostics(document, sourceText, textVersion.GetHashCode(), options, false)
             | None -> return ImmutableArray<Diagnostic>.Empty
         } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
 
 
     override this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
+        let projectInfoManager = getProjectInfoManager document
         async {
-            let! optionsOpt = FSharpLanguageService.TryGetOptionsForDocumentOrProject(document) 
+            let! optionsOpt = projectInfoManager.TryGetOptionsForDocumentOrProject(document) 
             match optionsOpt with 
             | Some options ->
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
-                return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document.FilePath, sourceText, textVersion.GetHashCode(), options, true)
+                return! this.GetDiagnostics(document, sourceText, textVersion.GetHashCode(), options, true)
             | None -> return ImmutableArray<Diagnostic>.Empty
         } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
 

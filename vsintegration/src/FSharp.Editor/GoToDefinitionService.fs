@@ -40,9 +40,15 @@ type internal FSharpNavigableItem(document: Document, textSpan: TextSpan) =
 
 [<Shared>]
 [<ExportLanguageService(typeof<IGoToDefinitionService>, FSharpCommonConstants.FSharpLanguageName)>]
-type internal FSharpGoToDefinitionService [<ImportingConstructor>] ([<ImportMany>]presenters: IEnumerable<INavigableItemsPresenter>) =
+type internal FSharpGoToDefinitionService 
+    [<ImportingConstructor>]
+    (
+        checkerProvider: FSharpCheckerProvider,
+        projectInfoManager: ProjectInfoManager,
+        [<ImportMany>]presenters: IEnumerable<INavigableItemsPresenter>
+    ) =
 
-    static member FindDefinition(documentKey: DocumentId, sourceText: SourceText, filePath: string, position: int, defines: string list, options: FSharpProjectOptions, textVersionHash: int, cancellationToken: CancellationToken) : Async<Option<range>> = 
+    member this.FindDefinition(documentKey: DocumentId, sourceText: SourceText, filePath: string, position: int, defines: string list, options: FSharpProjectOptions, textVersionHash: int, cancellationToken: CancellationToken) : Async<Option<range>> = 
         async {
             let textLine = sourceText.Lines.GetLineFromPosition(position)
             let textLinePos = sourceText.Lines.GetLinePosition(position)
@@ -52,7 +58,7 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>] ([<ImportMany
               async { 
                 match CommonHelpers.tryClassifyAtPosition(documentKey, sourceText, filePath, defines, position, cancellationToken) with 
                 | Some (islandColumn, qualifiers, _) -> 
-                    let! _parseResults, checkFileAnswer = FSharpLanguageService.Checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
+                    let! _parseResults, checkFileAnswer = checkerProvider.Checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
                     match checkFileAnswer with
                     | FSharpCheckFileAnswer.Aborted -> return None
                     | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> 
@@ -79,12 +85,12 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>] ([<ImportMany
     member this.FindDefinitionsAsyncAux(document: Document, position: int, cancellationToken: CancellationToken) =
         async {
             let results = List<INavigableItem>()
-            match FSharpLanguageService.TryGetOptionsForEditingDocumentOrProject(document)  with 
+            match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)  with 
             | Some options ->
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
                 let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
-                let! definition = FSharpGoToDefinitionService.FindDefinition(document.Id, sourceText, document.FilePath, position, defines, options, textVersion.GetHashCode(), cancellationToken)
+                let! definition = this.FindDefinition(document.Id, sourceText, document.FilePath, position, defines, options, textVersion.GetHashCode(), cancellationToken)
 
                 match definition with
                 | Some(range) ->
