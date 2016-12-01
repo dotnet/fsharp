@@ -4443,7 +4443,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
               | "DiscriminatedUnion",_,_,DeclarationType.DiscriminatedUnion -> ()
               | "AsmType",_,_,DeclarationType.RareType -> ()
               | "FunctionType",_,_,DeclarationType.FunctionType -> ()
-              | "TupleType",_,_,DeclarationType.ValueType -> ()
+              | "TupleType",_,_,DeclarationType.Class -> ()
               | "ValueType",_,_,DeclarationType.ValueType -> ()
               | "Class",_,_,DeclarationType.Class -> ()
               | "Int32",_,_,DeclarationType.Method -> ()
