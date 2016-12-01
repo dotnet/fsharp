@@ -32,6 +32,8 @@
     <Compile Include="CommonConstants.fs" />
     <Compile Include="CommonRoslynHelpers.fs" />
     <Compile Include="CommonHelpers.fs" />
+    <Compile Include="OpenDocumentsTracker.fs" />
+    <Compile Include="FileSystem.fs" />
     <Compile Include="LanguageService.fs" />
     <Compile Include="ColorizationService.fs">
       <Link>Classification\ColorizationService.fs</Link>
