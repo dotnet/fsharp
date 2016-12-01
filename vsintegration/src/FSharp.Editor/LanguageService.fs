@@ -2,9 +2,12 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
+#nowarn "40"
+
 open System
 open System.Collections.Concurrent
 open System.Collections.Generic
+open System.ComponentModel.Composition
 open System.Runtime.InteropServices
 open System.Linq
 open System.IO
@@ -13,9 +16,11 @@ open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
 open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.Diagnostics
 open Microsoft.CodeAnalysis.Editor.Options
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Editor
+open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.LanguageServices.Implementation.LanguageService
@@ -27,6 +32,7 @@ open Microsoft.VisualStudio.LanguageServices.ProjectSystem
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.FSharp.LanguageService
+open Microsoft.VisualStudio.ComponentModelHost
 
 // Workaround to access non-public settings persistence type.
 // GetService( ) with this will work as long as the GUID matches the real type.
@@ -49,6 +55,10 @@ type internal SVsSettingsPersistenceManager = class end
 type internal FSharpLanguageService(package : FSharpPackage) =
     inherit AbstractLanguageService<FSharpPackage, FSharpLanguageService>(package)
 
+    // The latest component model.  This is used to retrieve IDiagnosticAnalyzerService.
+    // FSROSLYNTODO: Work out how to make this and the two tables below non-static.
+    static let mutable componentModelOpt : IComponentModel option = None
+
     // A table of information about projects, excluding single-file projects.  
     static let projectTable = ConcurrentDictionary<ProjectId, FSharpProjectOptions>()
 
@@ -56,7 +66,31 @@ type internal FSharpLanguageService(package : FSharpPackage) =
     // the original options for editing
     static let singleFileProjectTable = ConcurrentDictionary<ProjectId, DateTime * FSharpProjectOptions>()
 
-    static let checker =  lazy FSharpChecker.Create()
+    static let checker =  
+        lazy 
+
+            let checker = FSharpChecker.Create()
+
+            // This is one half of the bridge between the F# background builder and the Roslyn analysis engine.
+            // When the F# background builder refreshes the background semantic build context for a file,
+            // we request Roslyn to reanalyze that individual file.
+            checker.BeforeBackgroundFileCheck.Add(fun (fileName, extraProjectInfo) ->  
+               async {
+                try 
+                    match extraProjectInfo, componentModelOpt with 
+                    | Some (:? Workspace as workspace), Some componentModel  -> 
+                        let analyzerService = componentModel.GetService<IDiagnosticAnalyzerService>()
+                        let solution = workspace.CurrentSolution
+                        let documentIds = solution.GetDocumentIdsWithFilePath(fileName)
+                        if not documentIds.IsEmpty then 
+                            analyzerService.Reanalyze(workspace,documentIds=documentIds)
+                    | _ -> ()
+                with ex -> 
+                    Assert.Exception(ex)
+                } |> Async.StartImmediate
+            )
+
+            checker
 
 
     /// Update the info for a proejct in the project table
@@ -211,10 +245,12 @@ type internal FSharpLanguageService(package : FSharpPackage) =
     override this.SetupNewTextView(textView) =
         base.SetupNewTextView(textView)
         let workspace = this.Package.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
+        componentModelOpt <- Some this.Package.ComponentModel
 
         // FSROSLYNTODO: Hide navigation bars for now. Enable after adding tests
         workspace.Options <- workspace.Options.WithChangedOption(NavigationBarOptions.ShowNavigationBar, FSharpCommonConstants.FSharpLanguageName, false)
         
+        let textViewAdapter = this.Package.ComponentModel.GetService<IVsEditorAdaptersFactoryService>()
         match textView.GetBuffer() with
         | (VSConstants.S_OK, textLines) ->
             let filename = VsTextLines.GetFilename textLines
@@ -224,12 +260,32 @@ type internal FSharpLanguageService(package : FSharpPackage) =
                 | :? IProvideProjectSite as siteProvider when not (IsScript(filename)) -> 
                     this.SetupProjectFile(siteProvider, workspace)
                 | _ -> 
-                    let editorAdapterFactoryService = this.Package.ComponentModel.GetService<IVsEditorAdaptersFactoryService>()
-                    let fileContents = VsTextLines.GetFileContents(textLines, editorAdapterFactoryService)
+                    let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
                     this.SetupStandAloneFile(filename, fileContents, workspace, hier)
             | _ -> ()
         | _ -> ()
 
+        // This is the second half of the bridge between the F# IncrementalBuild analysis engine and the Roslyn analysis
+        // engine.  When a document gets the focus, we call FSharpLanguageService.Checker.StartBackgroundCompile for the
+        // project containing that file. This ensures the F# IncrementalBuild engine starts analyzing the project.
+        let wpfTextView = textViewAdapter.GetWpfTextView(textView)
+        match wpfTextView.TextBuffer.Properties.TryGetProperty<ITextDocument>(typeof<ITextDocument>) with
+        | true, textDocument ->
+            let filePath = textDocument.FilePath
+            let onGotFocus = new EventHandler(fun _ _ ->
+                for documentId in workspace.CurrentSolution.GetDocumentIdsWithFilePath(filePath) do 
+                    let document = workspace.CurrentSolution.GetDocument(documentId)
+                    match FSharpLanguageService.TryGetOptionsForEditingDocumentOrProject(document) with 
+                    | Some options -> FSharpLanguageService.Checker.StartBackgroundCompile(options)
+                    | None -> ()
+            )
+            let rec onViewClosed = new EventHandler(fun _ _ -> 
+                wpfTextView.GotAggregateFocus.RemoveHandler(onGotFocus)
+                wpfTextView.Closed.RemoveHandler(onViewClosed)
+            )
+            wpfTextView.GotAggregateFocus.AddHandler(onGotFocus)
+            wpfTextView.Closed.AddHandler(onViewClosed)
+        | _ -> ()
 
 and [<Guid(FSharpCommonConstants.packageGuidString)>]
     [<ProvideLanguageService(languageService = typeof<FSharpLanguageService>,
@@ -259,3 +315,4 @@ and [<Guid(FSharpCommonConstants.packageGuidString)>]
     override this.CreateEditorFactories() = Seq.empty<IVsEditorFactory>
 
     override this.RegisterMiscellaneousFilesWorkspaceInformation(_) = ()
+
