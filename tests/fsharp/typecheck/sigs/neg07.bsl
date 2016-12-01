@@ -5,6 +5,18 @@ neg07.fs(7,10,7,29): typecheck error FS0049: Uppercase variable identifiers shou
 
 neg07.fs(24,13,24,23): typecheck error FS0039: The value or constructor 'UnionCase1' is not defined
 
+Maybe you want one of the following:
+
+   Sni_Consumer_Info
+
+   nan
+
+   not
+
+   UnverifiableAttribute
+
+   SNI_ConnWrapper
+
 neg07.fs(27,11,27,21): typecheck error FS0049: Uppercase variable identifiers should not generally be used in patterns, and may indicate a misspelt pattern name.
 
 neg07.fs(28,11,28,21): typecheck error FS0049: Uppercase variable identifiers should not generally be used in patterns, and may indicate a misspelt pattern name.
@@ -12,6 +24,18 @@ neg07.fs(28,11,28,21): typecheck error FS0049: Uppercase variable identifiers sh
 neg07.fs(28,11,28,21): typecheck error FS0026: This rule will never be matched
 
 neg07.fs(31,18,31,28): typecheck error FS0039: The value or constructor 'UnionCase1' is not defined
+
+Maybe you want one of the following:
+
+   Sni_Consumer_Info
+
+   nan
+
+   not
+
+   UnverifiableAttribute
+
+   SNI_ConnWrapper
 
 neg07.fs(35,11,35,21): typecheck error FS0049: Uppercase variable identifiers should not generally be used in patterns, and may indicate a misspelt pattern name.
 
