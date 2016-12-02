@@ -130,12 +130,23 @@ type FSharpSignatureHelpProvider [<ImportingConstructor>]  (serviceProvider: SVs
             return None // comma or paren at wrong location = remove help display
         | _ -> 
 
-        // Compute the argument index by working out where the caret is between the various commas
+        // Compute the argument index by working out where the caret is between the various commas.
         let argumentIndex = 
-            tupleEnds
-            |> Array.pairwise 
-            |> Array.tryFindIndex (fun (lp1,lp2) -> textLines.GetTextSpan(LinePositionSpan(lp1, lp2)).Contains(caretPosition)) 
-            |> (function None -> 0 | Some n -> n)
+            let computedTextSpans =
+                tupleEnds 
+                |> Array.pairwise 
+                |> Array.map (fun (lp1, lp2) -> textLines.GetTextSpan(LinePositionSpan(lp1, lp2)))
+                
+            match (computedTextSpans|> Array.tryFindIndex (fun t -> t.Contains(caretPosition))) with 
+            | None -> 
+                // Because 'TextSpan.Contains' only succeeeds if 'TextSpan.Start <= caretPosition < TextSpan.End' is true,
+                // we need to check if the caret is at the very last position in the TextSpan.
+                //
+                // We default to 0, which is the first argument, if the caret position was nowhere to be found.
+                if computedTextSpans.[computedTextSpans.Length-1].End = caretPosition then
+                    computedTextSpans.Length-1 
+                else 0
+            | Some n -> n
          
         // Compute the overall argument count
         let argumentCount = 
