@@ -51,8 +51,8 @@ type internal FSharpSignatureHelpProvider
     static let oneColBefore (lp: LinePosition) = LinePosition(lp.Line,max 0 (lp.Character-1))
 
     // Unit-testable core rutine
-    member internal this.ProvideMethodsAsyncAux(documentationBuilder: IDocumentationBuilder, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, triggerIsTypedChar: char option, filePath: string, textVersionHash: int) = async {
-        let! parseResults, checkFileAnswer = checkerProvider.Checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
+    static member internal ProvideMethodsAsyncAux(checker: FSharpChecker, documentationBuilder: IDocumentationBuilder, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, triggerIsTypedChar: char option, filePath: string, textVersionHash: int) = async {
+        let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
         match checkFileAnswer with
         | FSharpCheckFileAnswer.Aborted -> return None
         | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> 
@@ -206,7 +206,7 @@ type internal FSharpSignatureHelpProvider
                             Some triggerInfo.TriggerCharacter.Value
                         else None
 
-                    let! methods = this.ProvideMethodsAsyncAux(documentationBuilder, sourceText, position, options, triggerTypedChar, document.FilePath, textVersion.GetHashCode())
+                    let! methods = FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(checkerProvider.Checker, documentationBuilder, sourceText, position, options, triggerTypedChar, document.FilePath, textVersion.GetHashCode())
                     match methods with 
                     | None -> return null
                     | Some (results,applicableSpan,argumentIndex,argumentCount,argumentName) -> 

@@ -36,13 +36,13 @@ type internal FSharpBreakpointResolutionService
         projectInfoManager: ProjectInfoManager
     ) =
 
-    member this.GetBreakpointLocation(sourceText: SourceText, fileName: string, textSpan: TextSpan, options: FSharpProjectOptions) = async {
+    static member GetBreakpointLocation(checker: FSharpChecker, sourceText: SourceText, fileName: string, textSpan: TextSpan, options: FSharpProjectOptions) = async {
         // REVIEW: ParseFileInProject can cause FSharp.Compiler.Service to become unavailable (i.e. not responding to requests) for 
         // an arbitrarily long time while it parses all files prior to this one in the project (plus dependent projects if we enable 
         // cross-project checking in multi-project solutions). FCS will not respond to other 
         // requests unless this task is cancelled. We need to check that this task is cancelled in a timely way by the
         // Roslyn UI machinery.
-        let! parseResults = checkerProvider.Checker.ParseFileInProject(fileName, sourceText.ToString(), options)
+        let! parseResults = checker.ParseFileInProject(fileName, sourceText.ToString(), options)
         let textLinePos = sourceText.Lines.GetLinePosition(textSpan.Start)
         let textLineColumn = textLinePos.Character
         let fcsTextLineNumber = Line.fromZ textLinePos.Line // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
@@ -56,7 +56,7 @@ type internal FSharpBreakpointResolutionService
                 match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)  with 
                 | Some options ->
                     let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                    let! location = this.GetBreakpointLocation(sourceText, document.Name, textSpan, options)
+                    let! location = FSharpBreakpointResolutionService.GetBreakpointLocation(checkerProvider.Checker, sourceText, document.Name, textSpan, options)
                     return match location with
                            | None -> null
                            | Some(range) -> BreakpointResolutionResult.CreateSpanResult(document, CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range))

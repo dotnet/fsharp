@@ -84,8 +84,8 @@ type internal FSharpCompletionProvider
                 | ClassificationTypeNames.ExcludedCode -> false
                 | _ -> true // anything else is a valid classification type
 
-    member this.ProvideCompletionsAsyncAux(sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, textVersionHash: int) = async {
-        let! parseResults, checkFileAnswer = checkerProvider.Checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
+    static member ProvideCompletionsAsyncAux(checker: FSharpChecker, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, textVersionHash: int) = async {
+        let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
         match checkFileAnswer with
         | FSharpCheckFileAnswer.Aborted -> return List()
         | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> 
@@ -153,7 +153,7 @@ type internal FSharpCompletionProvider
             | Some options ->
                 let! sourceText = context.Document.GetTextAsync(context.CancellationToken) |> Async.AwaitTask
                 let! textVersion = context.Document.GetTextVersionAsync(context.CancellationToken) |> Async.AwaitTask
-                let! results = this.ProvideCompletionsAsyncAux(sourceText, context.Position, options, context.Document.FilePath, textVersion.GetHashCode())
+                let! results = FSharpCompletionProvider.ProvideCompletionsAsyncAux(checkerProvider.Checker, sourceText, context.Position, options, context.Document.FilePath, textVersion.GetHashCode())
                 context.AddItems(results)
             | None -> ()
         } |> CommonRoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
