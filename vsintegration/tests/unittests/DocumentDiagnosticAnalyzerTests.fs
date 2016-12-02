@@ -59,7 +59,7 @@ type DocumentDiagnosticAnalyzerTests()  =
 
     member private this.VerifyDiagnosticBetweenMarkers(fileContents: string, expectedMessage: string, expectedSeverity: DiagnosticSeverity) =
         let errors = 
-            FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(filePath, SourceText.From(fileContents), 0, options, true) 
+            FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(FSharpChecker.Instance, filePath, SourceText.From(fileContents), 0, options, true) 
              |> Async.RunSynchronously
              |> Seq.filter(fun e -> e.Severity = expectedSeverity) |> Seq.toArray
         Assert.AreEqual(1, errors.Length, "There should be exactly one error generated")

@@ -30,8 +30,7 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
     let getProjectInfoManager(document: Document) =
         document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().ProjectInfoManager
 
-    static member GetDiagnostics(checker: FSharpChecker, document: Document, sourceText: SourceText, textVersionHash: int, options: FSharpProjectOptions, addSemanticErrors: bool) = async {
-        let filePath = document.FilePath
+    static member GetDiagnostics(checker: FSharpChecker, filePath: string, sourceText: SourceText, textVersionHash: int, options: FSharpProjectOptions, addSemanticErrors: bool) = async {
         let! parseResults = checker.ParseFileInProject(filePath, sourceText.ToString(), options) 
         let! errors = async {
             if addSemanticErrors then
@@ -69,7 +68,7 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
             | Some options ->
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
-                return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(getChecker document, document, sourceText, textVersion.GetHashCode(), options, false)
+                return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(getChecker document, document.FilePath, sourceText, textVersion.GetHashCode(), options, false)
             | None -> return ImmutableArray<Diagnostic>.Empty
         } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
 
@@ -82,7 +81,7 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
             | Some options ->
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
-                return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(getChecker document, document, sourceText, textVersion.GetHashCode(), options, true)
+                return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(getChecker document, document.FilePath, sourceText, textVersion.GetHashCode(), options, true)
             | None -> return ImmutableArray<Diagnostic>.Empty
         } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
 
