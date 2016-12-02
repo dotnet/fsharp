@@ -23,6 +23,37 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("IsNone")>]
         val inline isNone: option:'T option -> bool
 
+        /// <summary>Gets the value of the option if the option is <c>Some</c>, otherwise returns the specified default value.</summary>
+        /// <param name="def">The specified default value.</param>
+        /// <param name="option">The input option.</param>
+        /// <returns>The option if the option is Some, else the default value.</returns>
+        /// <remarks>Identical to the built-in <see cref="defaultArg"/> operator, except with the arguments swapped.</remarks>
+        [<CompiledName("DefaultIfNone")>]
+        val defaultIfNone: def:'T -> option:'T option -> 'T
+
+        /// <summary>Gets the value of the option if the option is <c>Some</c>, otherwise evaluates <paramref name="defThunk"/> and returns the result.</summary>
+        /// <param name="defThunk">A thunk that provides a default value when evaluated.</param>
+        /// <param name="option">The input option.</param>
+        /// <returns>The option if the option is Some, else the result of evaluating <paramref name="defThunk"/>.</returns>
+        /// <remarks><paramref name="defThunk"/> is not evaluated unless <paramref name="option"/> is <c>None</c>.</remarks>
+        [<CompiledName("DefaultIfNoneFrom")>]
+        val defaultIfNoneFrom: defThunk:(unit -> 'T) -> option:'T option -> 'T
+
+        /// <summary>Returns <paramref name="option"/> if it is <c>Some</c>, otherwise returns <paramref name="ifNone"/>.</summary>
+        /// <param name="ifNone">The value to use if <paramref name="option"/> is <c>None</c>.</param>
+        /// <param name="option">The input option.</param>
+        /// <returns>The option if the option is Some, else the alternate option.</returns>
+        [<CompiledName("OrElse")>]
+        val orElse: ifNone:'T option -> option:'T option -> 'T option
+
+        /// <summary>Returns <paramref name="option"/> if it is <c>Some</c>, otherwise evaluates <paramref name="ifNoneThunk"/> and returns the result.</summary>
+        /// <param name="ifNoneThunk">A thunk that provides an alternate option when evaluated.</param>
+        /// <param name="option">The input option.</param>
+        /// <returns>The option if the option is Some, else the result of evaluating <paramref name="ifNoneThunk"/>.</returns>
+        /// <remarks><paramref name="ifNoneThunk"/> is not evaluated unless <paramref name="option"/> is <c>None</c>.</remarks>
+        [<CompiledName("OrElseFrom")>]
+        val orElseFrom: ifNoneThunk:(unit -> 'T option) -> option:'T option -> 'T option
+
         /// <summary>Gets the value associated with the option.</summary>
         /// <param name="option">The input option.</param>
         /// <returns>The value within the option.</returns>
@@ -84,6 +115,23 @@ namespace Microsoft.FSharp.Core
         /// <returns>An option of the input value after applying the mapping function, or None if the input is None.</returns>
         [<CompiledName("Map")>]
         val map: mapping:('T -> 'U) -> option:'T option -> 'U option
+
+        /// <summary><c>map f option1 option2</c> evaluates to <c>match option1, option2 with Some x, Some y -> Some (f x y) | _ -> None</c>.</summary>
+        /// <param name="mapping">A function to apply to the option values.</param>
+        /// <param name="option1">The first option.</param>
+        /// <param name="option2">The second option.</param>
+        /// <returns>An option of the input values after applying the mapping function, or None if either input is None.</returns>
+        [<CompiledName("Map2")>]
+        val map2: mapping:('T1 -> 'T2 -> 'U) -> 'T1 option -> 'T2 option -> 'U option
+
+        /// <summary><c>map f option1 option2 option3</c> evaluates to <c>match option1, option2, option3 with Some x, Some y, Some z -> Some (f x y z) | _ -> None</c>.</summary>
+        /// <param name="mapping">A function to apply to the option values.</param>
+        /// <param name="option1">The first option.</param>
+        /// <param name="option2">The second option.</param>
+        /// <param name="option3">The third option.</param>
+        /// <returns>An option of the input values after applying the mapping function, or None if any input is None.</returns>
+        [<CompiledName("Map3")>]
+        val map3: mapping:('T1 -> 'T2 -> 'T3 -> 'U) -> 'T1 option -> 'T2 option -> 'T3 option -> 'U option
 
         /// <summary><c>bind f inp</c> evaluates to <c>match inp with None -> None | Some x -> f x</c></summary>
         /// <param name="binder">A function that takes the value of type T from an option and transforms it into
