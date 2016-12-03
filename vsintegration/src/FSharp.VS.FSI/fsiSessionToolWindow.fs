@@ -98,14 +98,7 @@ type internal FsiToolWindow() as this =
     do  textLines.InitializeContent("", 0) |> throwOnFailure0
     let textView       = Util.CreateObjectT<VsTextViewClass,IVsTextView> provider
     do  setSiteForObjectWithSite textView  providerNative
-
-    // We want to disable zooming in the VFSI window. This code does that.
-    let userData = textView :?> IVsUserData
-    do if userData <> null then
-           let roles = "ANALYZABLE,INTERACTIVE"
-           let mutable guid_VsTextViewRoles = new Guid("{297078ff-81a2-43d8-9ca3-4489c53c99ba}")
-           userData.SetData(&guid_VsTextViewRoles, roles) |> throwOnFailure0
-
+    
     do  textView.Initialize(textLines,
                             IntPtr.Zero,
                             uint32 TextViewInitFlags.VIF_VSCROLL ||| uint32 TextViewInitFlags.VIF_HSCROLL ||| uint32 TextViewInitFlags3.VIF_NO_HWND_SUPPORT,

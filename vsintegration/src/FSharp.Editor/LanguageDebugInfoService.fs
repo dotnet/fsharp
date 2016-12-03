@@ -30,7 +30,11 @@ open Microsoft.FSharp.Compiler.Range
 
 [<Shared>]
 [<ExportLanguageService(typeof<ILanguageDebugInfoService>, FSharpCommonConstants.FSharpLanguageName)>]
-type internal FSharpLanguageDebugInfoService() =
+type internal FSharpLanguageDebugInfoService 
+    [<ImportingConstructor>]
+    (
+        projectInfoManager: ProjectInfoManager
+    ) =
 
     static member GetDataTipInformation(sourceText: SourceText, position: int, tokens: List<ClassifiedSpan>): TextSpan option =
         let tokenIndex = tokens |> Seq.tryFindIndex(fun t -> t.TextSpan.Contains(position))
@@ -66,7 +70,7 @@ type internal FSharpLanguageDebugInfoService() =
 
         member this.GetDataTipInfoAsync(document: Document, position: int, cancellationToken: CancellationToken): Task<DebugDataTipInfo> =
             async {
-                let defines = FSharpLanguageService.GetCompilationDefinesForEditingDocument(document)  
+                let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 let textSpan = TextSpan.FromBounds(0, sourceText.Length)
                 let tokens = CommonHelpers.getColorizationData(document.Id, sourceText, textSpan, Some(document.Name), defines, cancellationToken)

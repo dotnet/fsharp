@@ -109,9 +109,8 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
 
         
         // Process let-binding
-        let findBreakPoints allowSameLine = 
-            let checkRange m = [ if rangeContainsPos m pos || (allowSameLine && m.StartLine = pos.Line) then 
-                                     yield m ]
+        let findBreakPoints () = 
+            let checkRange m = [ if rangeContainsPos m pos || m.StartLine = pos.Line then yield m ]
             let walkBindSeqPt sp = [ match sp with SequencePointAtBinding m -> yield! checkRange m | _ -> () ]
             let walkForSeqPt sp = [ match sp with SequencePointAtForLoop m -> yield! checkRange m | _ -> () ]
             let walkWhileSeqPt sp = [ match sp with SequencePointAtWhileLoop m -> yield! checkRange m | _ -> () ]
@@ -340,15 +339,7 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
  
         ErrorScope.Protect 
             Range.range0 
-            (fun () -> 
-                // Find the last breakpoint reported where the position is inside the region
-                match findBreakPoints false |> List.rev with
-                | h::_ -> Some(h)
-                | _ -> 
-                    // If there is no such breakpoint, look for any breakpoint beginning on this line
-                    match findBreakPoints true with
-                    | h::_ -> Some(h)
-                    | _ -> None)
+            (fun () -> findBreakPoints() |> List.tryLast)
             (fun _msg -> None)   
             
     /// When these files appear or disappear the configuration for the current project is invalidated.
@@ -458,6 +449,7 @@ module UntypedParseImpl =
                     // also want it for e.g. [|arr|].(0)
                     Some(expr.Range) 
                 | x -> x  // we found the answer deeper somewhere in the lhs
+            | SynExpr.Const(SynConst.Double(_), range) -> Some(range) 
             | _ -> defaultTraverse expr
         })
     
@@ -582,6 +574,13 @@ module UntypedParseImpl =
                               dive exprIndexer exprIndexer.Range traverseSynExpr
                               dive exprRhs exprRhs.Range traverseSynExpr
                             ] |> pick expr
+                        | SynExpr.Const (SynConst.Double(_), m) ->
+                            if posEq m.End pos then
+                                // the cursor is at the dot
+                                Some(m.End, false)
+                            else
+                                // the cursor is left of the dot
+                                None
                         | SynExpr.DiscardAfterMissingQualificationAfterDot(e,m) ->
                             match traverseSynExpr(e) with
                             | None -> 

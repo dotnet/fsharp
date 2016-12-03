@@ -25,19 +25,51 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 type internal FSharpDocumentDiagnosticAnalyzer() =
     inherit DocumentDiagnosticAnalyzer()
 
-    static member GetDiagnostics(filePath: string, sourceText: SourceText, textVersionHash: int, options: FSharpProjectOptions, addSemanticErrors: bool) = 
+    let getChecker(document: Document) =
+        document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().Checker
+
+    let getProjectInfoManager(document: Document) =
+        document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().ProjectInfoManager
+    
+    static let errorInfoEqualityComparer =
+        { new IEqualityComparer<FSharpErrorInfo> with 
+            member __.Equals (x, y) =
+                x.FileName = y.FileName &&
+                x.StartLineAlternate = y.StartLineAlternate &&
+                x.EndLineAlternate = y.EndLineAlternate &&
+                x.StartColumn = y.StartColumn &&
+                x.EndColumn = y.EndColumn &&
+                x.Severity = y.Severity &&
+                x.Message = y.Message &&
+                x.Subcategory = y.Subcategory &&
+                x.ErrorNumber = y.ErrorNumber
+            member __.GetHashCode x =
+                let mutable hash = 17
+                hash <- hash * 23 + x.EndLineAlternate.GetHashCode()
+                hash <- hash * 23 + x.EndLineAlternate.GetHashCode()
+                hash <- hash * 23 + x.StartColumn.GetHashCode()
+                hash <- hash * 23 + x.EndColumn.GetHashCode()
+                hash <- hash * 23 + x.Severity.GetHashCode()
+                hash <- hash * 23 + x.Message.GetHashCode()
+                hash <- hash * 23 + x.Subcategory.GetHashCode()
+                hash <- hash * 23 + x.ErrorNumber.GetHashCode()
+                hash 
+        }
+
+    static member GetDiagnostics(checker: FSharpChecker, filePath: string, sourceText: SourceText, textVersionHash: int, options: FSharpProjectOptions, addSemanticErrors: bool) = 
         async {
-            let! parseResults = FSharpLanguageService.Checker.ParseFileInProject(filePath, sourceText.ToString(), options) 
+            let! parseResults = checker.ParseFileInProject(filePath, sourceText.ToString(), options) 
             let! errors = 
                 async {
                     if addSemanticErrors then
-                        let! checkResultsAnswer = FSharpLanguageService.Checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options) 
+                        let! checkResultsAnswer = checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options) 
                         match checkResultsAnswer with
                         | FSharpCheckFileAnswer.Aborted -> return [||]
                         | FSharpCheckFileAnswer.Succeeded results ->
-                            let parseErrors = HashSet parseResults.Errors
                             // In order to eleminate duplicates, we should not return parse errors here because they are returned by `AnalyzeSyntaxAsync` method.
-                            return results.Errors |> Array.filter (not << parseErrors.Contains)
+                            let allErrors = HashSet(results.Errors, errorInfoEqualityComparer)
+                            allErrors.ExceptWith(parseResults.Errors)
+                            return Seq.toArray allErrors
                     else
                         return parseResults.Errors
                 }
@@ -66,24 +98,26 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
     override this.SupportedDiagnostics = CommonRoslynHelpers.SupportedDiagnostics()
 
     override this.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
+        let projectInfoManager = getProjectInfoManager document
         async {
-            match FSharpLanguageService.TryGetOptionsForEditingDocumentOrProject(document)  with 
+            match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)  with 
             | Some options ->
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
-                return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document.FilePath, sourceText, textVersion.GetHashCode(), options, false)
+                return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(getChecker document, document.FilePath, sourceText, textVersion.GetHashCode(), options, false)
             | None -> return ImmutableArray<Diagnostic>.Empty
         } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
 
 
     override this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
+        let projectInfoManager = getProjectInfoManager document
         async {
-            let! optionsOpt = FSharpLanguageService.TryGetOptionsForDocumentOrProject(document) 
+            let! optionsOpt = projectInfoManager.TryGetOptionsForDocumentOrProject(document) 
             match optionsOpt with 
             | Some options ->
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
-                return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document.FilePath, sourceText, textVersion.GetHashCode(), options, true)
+                return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(getChecker document, document.FilePath, sourceText, textVersion.GetHashCode(), options, true)
             | None -> return ImmutableArray<Diagnostic>.Empty
         } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
 
