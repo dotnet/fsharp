@@ -69,6 +69,9 @@
     <Compile Include="QuickInfoProvider.fs">
       <Link>QuickInfo\QuickInfoProvider.fs</Link>
     </Compile>
+    <Compile Include="InlineRenameService.fs">
+      <Link>InlineRename\InlineRenameService.fs</Link>
+    </Compile>
     <Compile Include="ContentType.fs" />
     <Compile Include="FsiCommandService.fs" />
   </ItemGroup>
