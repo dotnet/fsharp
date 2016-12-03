@@ -39,12 +39,12 @@ type DocumentDiagnosticAnalyzerTests()  =
                                 | None -> options
                                 | Some(flags) -> {options with OtherOptions = Array.append options.OtherOptions flags}
 
-        let errors = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(filePath, SourceText.From(fileContents), 0, additionalOptions, true) |> Async.RunSynchronously
+        let errors = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(FSharpChecker.Instance, filePath, SourceText.From(fileContents), 0, additionalOptions, true) |> Async.RunSynchronously
         Assert.AreEqual(0, errors.Length, "There should be no errors generated")
 
     member private this.VerifyErrorAtMarker(fileContents: string, expectedMarker: string, ?expectedMessage: string) =
         let errors = 
-             FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(filePath, SourceText.From(fileContents), 0, options, true) 
+             FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(FSharpChecker.Instance, filePath, SourceText.From(fileContents), 0, options, true) 
              |> Async.RunSynchronously
              |> Seq.filter(fun e -> e.Severity = DiagnosticSeverity.Error) |> Seq.toArray
         Assert.AreEqual(1, errors.Length, "There should be exactly one error generated")
@@ -59,7 +59,7 @@ type DocumentDiagnosticAnalyzerTests()  =
 
     member private this.VerifyDiagnosticBetweenMarkers(fileContents: string, expectedMessage: string, expectedSeverity: DiagnosticSeverity) =
         let errors = 
-            FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(filePath, SourceText.From(fileContents), 0, options, true) 
+            FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(FSharpChecker.Instance, filePath, SourceText.From(fileContents), 0, options, true) 
              |> Async.RunSynchronously
              |> Seq.filter(fun e -> e.Severity = expectedSeverity) |> Seq.toArray
         Assert.AreEqual(1, errors.Length, "There should be exactly one error generated")

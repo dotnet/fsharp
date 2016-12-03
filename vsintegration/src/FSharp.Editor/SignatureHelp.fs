@@ -36,7 +36,13 @@ open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons
 
 [<Shared>]
 [<ExportSignatureHelpProvider("FSharpSignatureHelpProvider", FSharpCommonConstants.FSharpLanguageName)>]
-type FSharpSignatureHelpProvider [<ImportingConstructor>]  (serviceProvider: SVsServiceProvider) =
+type internal FSharpSignatureHelpProvider 
+    [<ImportingConstructor>]
+    (
+        serviceProvider: SVsServiceProvider,
+        checkerProvider: FSharpCheckerProvider,
+        projectInfoManager: ProjectInfoManager
+    ) =
 
     let xmlMemberIndexService = serviceProvider.GetService(typeof<IVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
@@ -45,8 +51,8 @@ type FSharpSignatureHelpProvider [<ImportingConstructor>]  (serviceProvider: SVs
     static let oneColBefore (lp: LinePosition) = LinePosition(lp.Line,max 0 (lp.Character-1))
 
     // Unit-testable core rutine
-    static member internal ProvideMethodsAsyncAux(documentationBuilder: IDocumentationBuilder, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, triggerIsTypedChar: char option, filePath: string, textVersionHash: int) = async {
-        let! parseResults, checkFileAnswer = FSharpLanguageService.Checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
+    static member internal ProvideMethodsAsyncAux(checker: FSharpChecker, documentationBuilder: IDocumentationBuilder, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, triggerIsTypedChar: char option, filePath: string, textVersionHash: int) = async {
+        let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
         match checkFileAnswer with
         | FSharpCheckFileAnswer.Aborted -> return None
         | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> 
@@ -190,7 +196,7 @@ type FSharpSignatureHelpProvider [<ImportingConstructor>]  (serviceProvider: SVs
         member this.GetItemsAsync(document, position, triggerInfo, cancellationToken) = 
             async {
               try
-                match FSharpLanguageService.TryGetOptionsForEditingDocumentOrProject(document)  with 
+                match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)  with 
                 | Some options ->
                     let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                     let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
@@ -200,7 +206,7 @@ type FSharpSignatureHelpProvider [<ImportingConstructor>]  (serviceProvider: SVs
                             Some triggerInfo.TriggerCharacter.Value
                         else None
 
-                    let! methods = FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(documentationBuilder, sourceText, position, options, triggerTypedChar, document.FilePath, textVersion.GetHashCode())
+                    let! methods = FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(checkerProvider.Checker, documentationBuilder, sourceText, position, options, triggerTypedChar, document.FilePath, textVersion.GetHashCode())
                     match methods with 
                     | None -> return null
                     | Some (results,applicableSpan,argumentIndex,argumentCount,argumentName) -> 

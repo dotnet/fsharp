@@ -58,16 +58,21 @@ type internal FSharpDeferredQuickInfoContent(content: string, textProperties: Te
 
 [<Shared>]
 [<ExportQuickInfoProvider(PredefinedQuickInfoProviderNames.Semantic, FSharpCommonConstants.FSharpLanguageName)>]
-type internal FSharpQuickInfoProvider [<System.ComponentModel.Composition.ImportingConstructor>] 
-    ([<System.ComponentModel.Composition.Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider,
-     classificationFormatMapService: IClassificationFormatMapService) =
+type internal FSharpQuickInfoProvider 
+    [<System.ComponentModel.Composition.ImportingConstructor>] 
+    (
+        [<System.ComponentModel.Composition.Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider,
+        classificationFormatMapService: IClassificationFormatMapService,
+        checkerProvider: FSharpCheckerProvider,
+        projectInfoManager: ProjectInfoManager
+    ) =
 
     let xmlMemberIndexService = serviceProvider.GetService(typeof<SVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
     
-    static member ProvideQuickInfo(documentId: DocumentId, sourceText: SourceText, filePath: string, position: int, options: FSharpProjectOptions, textVersionHash: int, cancellationToken: CancellationToken) =
+    static member ProvideQuickInfo(checker: FSharpChecker, documentId: DocumentId, sourceText: SourceText, filePath: string, position: int, options: FSharpProjectOptions, textVersionHash: int, cancellationToken: CancellationToken) =
         async {
-            let! _parseResults, checkResultsAnswer = FSharpChecker.Instance.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
+            let! _parseResults, checkResultsAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
             let checkFileResults = 
                 match checkResultsAnswer with
                 | FSharpCheckFileAnswer.Aborted -> failwith "Compilation isn't complete yet"
@@ -101,15 +106,15 @@ type internal FSharpQuickInfoProvider [<System.ComponentModel.Composition.Import
         override this.GetItemAsync(document: Document, position: int, cancellationToken: CancellationToken): Task<QuickInfoItem> =
             async {
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                let defines = FSharpLanguageService.GetCompilationDefinesForEditingDocument(document)  
+                let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
                 let classification = CommonHelpers.tryClassifyAtPosition(document.Id, sourceText, document.FilePath, defines, position, cancellationToken)
 
                 match classification with
                 | Some _ ->
-                    match FSharpLanguageService.TryGetOptionsForEditingDocumentOrProject(document)  with 
+                    match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)  with 
                     | Some options ->
                         let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
-                        let! quickInfoResult = FSharpQuickInfoProvider.ProvideQuickInfo(document.Id, sourceText, document.FilePath, position, options, textVersion.GetHashCode(), cancellationToken)
+                        let! quickInfoResult = FSharpQuickInfoProvider.ProvideQuickInfo(checkerProvider.Checker, document.Id, sourceText, document.FilePath, position, options, textVersion.GetHashCode(), cancellationToken)
                         match quickInfoResult with
                         | Some(toolTipElement, textSpan) ->
                             let dataTipText = XmlDocumentation.BuildDataTipText(documentationBuilder, toolTipElement)
