@@ -40,27 +40,61 @@ open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
-module InlineRenameInfo =
-    let create () =
-        { new IInlineRenameInfo with
-            member __.CanRename = true
-            member __.LocalizedErrorMessage = ""
-            member __.TriggerSpan = Unchecked.defaultof<_>
-            member __.HasOverloads = false
-            member __.ForceRenameOverloads = true
-            member __.DisplayName = ""
-            member __.FullDisplayName = ""
-            member __.Glyph = Glyph.MethodPublic
-            member __.GetFinalSymbolName replacementText = ""
-            member __.GetReferenceEditSpan(location, cancellationToken) = Unchecked.defaultof<_>
-            member __.GetConflictEditSpan(location, replacementText, cancellationToken) = Nullable()
-            member __.FindRenameLocationsAsync(optionSet, cancellationToken) = Task<IInlineRenameLocationSet>.FromResult null
-            member __.TryOnBeforeGlobalSymbolRenamed(workspace, changedDocumentIDs, replacementText) = true
-            member __.TryOnAfterGlobalSymbolRenamed(workspace, changedDocumentIDs, replacementText) = true
-        }
+type internal InlineRenameInfo(canRename: bool) =
+    interface IInlineRenameInfo with
+        member __.CanRename = canRename
+        member __.LocalizedErrorMessage = ""
+        member __.TriggerSpan = Unchecked.defaultof<_>
+        member __.HasOverloads = false
+        member __.ForceRenameOverloads = true
+        member __.DisplayName = ""
+        member __.FullDisplayName = ""
+        member __.Glyph = Glyph.MethodPublic
+        member __.GetFinalSymbolName _replacementText = ""
+        member __.GetReferenceEditSpan(_location, _cancellationToken) = Unchecked.defaultof<_>
+        member __.GetConflictEditSpan(_location, _replacementText, _cancellationToken) = Nullable()
+        member __.FindRenameLocationsAsync(_optionSet, _cancellationToken) = Task<IInlineRenameLocationSet>.FromResult null
+        member __.TryOnBeforeGlobalSymbolRenamed(_workspace, _changedDocumentIDs, _replacementText) = true
+        member __.TryOnAfterGlobalSymbolRenamed(_workspace, _changedDocumentIDs, _replacementText) = true
 
 [<ExportLanguageService(typeof<IEditorInlineRenameService>, FSharpCommonConstants.FSharpLanguageName); Shared>]
-type internal InlineRenameService [<ImportingConstructor>]([<ImportMany>] _refactorNotifyServices: seq<IRefactorNotifyService>) =
+type internal InlineRenameService 
+    [<ImportingConstructor>]
+    (
+        projectInfoManager: ProjectInfoManager,
+        checkerProvider: FSharpCheckerProvider,
+        [<ImportMany>] _refactorNotifyServices: seq<IRefactorNotifyService>
+    ) =
+
+    static member GetInlineRenameInfo(checker: FSharpChecker, documentKey: DocumentId, sourceText: SourceText, filePath: string, position: int, defines: string list, options: FSharpProjectOptions, textVersionHash: int, cancellationToken: CancellationToken) : Async<IInlineRenameInfo> = 
+        async {
+            let textLine = sourceText.Lines.GetLineFromPosition(position)
+            let textLinePos = sourceText.Lines.GetLinePosition(position)
+            let fcsTextLineNumber = textLinePos.Line + 1 // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
+            match CommonHelpers.tryClassifyAtPosition(documentKey, sourceText, filePath, defines, position, cancellationToken) with 
+            | Some (islandColumn, qualifiers, _) -> 
+                let! _parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
+                match checkFileAnswer with
+                | FSharpCheckFileAnswer.Aborted -> return InlineRenameInfo(false) :> _
+                | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> 
+        
+                let! declarations = checkFileResults.GetDeclarationLocationAlternate (fcsTextLineNumber, islandColumn, textLine.ToString(), qualifiers, false)
+        
+                match declarations with
+                | FSharpFindDeclResult.DeclFound(_range) -> return InlineRenameInfo(true) :> _
+                | _ -> return InlineRenameInfo(false) :> _
+            | None -> return InlineRenameInfo(false) :> _
+        }
+    
     interface IEditorInlineRenameService with
-        member __.GetRenameInfoAsync(_document: Document, _position: int, _cancellationToken: CancellationToken) : Task<IInlineRenameInfo> =
-            Task.FromResult (InlineRenameInfo.create())
+        member __.GetRenameInfoAsync(document: Document, position: int, cancellationToken: CancellationToken) : Task<IInlineRenameInfo> =
+            async {
+                match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)  with 
+                | Some options ->
+                    let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                    let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
+                    let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
+                    return! InlineRenameService.GetInlineRenameInfo(checkerProvider.Checker, document.Id, sourceText, document.FilePath, position, defines, options, textVersion.GetHashCode(), cancellationToken)
+                | None -> return new InlineRenameInfo(false) :> _
+            }
+            |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
