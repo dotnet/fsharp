@@ -3100,6 +3100,18 @@ and
     ///   - If this is an implementation of an abstract slot then this is the name of the property implemented by the abstract slot
     member x.PropertyName               = x.Deref.PropertyName
 
+    /// Indicates whether this value represents a property getter.
+    member x.IsPropertyGetterMethod = 
+        match x.MemberInfo with
+        | None -> false
+        | Some (memInfo:ValMemberInfo) -> memInfo.MemberFlags.MemberKind = MemberKind.PropertyGet || memInfo.MemberFlags.MemberKind = MemberKind.PropertyGetSet
+
+    /// Indicates whether this value represents a property setter.
+    member x.IsPropertySetterMethod = 
+        match x.MemberInfo with
+        | None -> false
+        | Some (memInfo:ValMemberInfo) -> memInfo.MemberFlags.MemberKind = MemberKind.PropertySet || memInfo.MemberFlags.MemberKind = MemberKind.PropertyGetSet
+
     /// A unique stamp within the context of this invocation of the compiler process 
     member x.Stamp                      = x.Deref.Stamp
 

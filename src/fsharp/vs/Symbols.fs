@@ -1357,20 +1357,14 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         x.IsPropertyGetterMethod ||
         match fsharpInfo() with 
         | None -> false
-        | Some v -> 
-        match v.MemberInfo with 
-        | None -> false 
-        | Some memInfo -> memInfo.MemberFlags.MemberKind = MemberKind.PropertyGet
+        | Some v -> v.IsPropertyGetterMethod
 
     member x.IsSetterMethod =  
         if isUnresolved() then false else 
         x.IsPropertySetterMethod ||
         match fsharpInfo() with 
         | None -> false
-        | Some v -> 
-        match v.MemberInfo with 
-        | None -> false 
-        | Some memInfo -> memInfo.MemberFlags.MemberKind = MemberKind.PropertySet
+        | Some v -> v.IsPropertySetterMethod
 
     member __.IsPropertyGetterMethod = 
         if isUnresolved() then false else 
@@ -1378,10 +1372,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | M m when m.LogicalName.StartsWith("get_") -> 
             let propName = PrettyNaming.ChopPropertyName(m.LogicalName) 
             not (isNil (GetImmediateIntrinsicPropInfosOfType(Some propName, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 (generalizedTyconRef m.DeclaringEntityRef)))
-        | V v -> 
-            match v.MemberInfo with 
-            | None -> false 
-            | Some memInfo -> memInfo.MemberFlags.MemberKind = MemberKind.PropertyGet
+        | V v -> v.IsPropertyGetterMethod
         | _ -> false
 
     member __.IsPropertySetterMethod = 
@@ -1391,10 +1382,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | M m when m.LogicalName.StartsWith("set_") -> 
             let propName = PrettyNaming.ChopPropertyName(m.LogicalName) 
             not (isNil (GetImmediateIntrinsicPropInfosOfType(Some propName, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 (generalizedTyconRef m.DeclaringEntityRef)))
-        | V v -> 
-            match v.MemberInfo with 
-            | None -> false 
-            | Some memInfo -> memInfo.MemberFlags.MemberKind = MemberKind.PropertySet
+        | V v -> v.IsPropertySetterMethod
         | _ -> false
 
     member __.IsInstanceMember = 
