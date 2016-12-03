@@ -57,7 +57,12 @@ type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SV
         else
           let triggerPosition = caretPosition - 1
           let c = sourceText.[triggerPosition]
+          
           if not (completionTriggers |> Array.contains c) then
+            false
+          
+          // do not trigger completion if it's not single dot, i.e. range expression
+          elif triggerPosition > 0 && sourceText.[triggerPosition - 1] = '.' then
             false
 
           // Trigger completion if we are on a valid classification type

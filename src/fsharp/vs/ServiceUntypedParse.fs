@@ -458,6 +458,7 @@ module UntypedParseImpl =
                     // also want it for e.g. [|arr|].(0)
                     Some(expr.Range) 
                 | x -> x  // we found the answer deeper somewhere in the lhs
+            | SynExpr.Const(SynConst.Double(_), range) -> Some(range) 
             | _ -> defaultTraverse expr
         })
     
@@ -582,6 +583,13 @@ module UntypedParseImpl =
                               dive exprIndexer exprIndexer.Range traverseSynExpr
                               dive exprRhs exprRhs.Range traverseSynExpr
                             ] |> pick expr
+                        | SynExpr.Const (SynConst.Double(_), m) ->
+                            if posEq m.End pos then
+                                // the cursor is at the dot
+                                Some(m.End, false)
+                            else
+                                // the cursor is left of the dot
+                                None
                         | SynExpr.DiscardAfterMissingQualificationAfterDot(e,m) ->
                             match traverseSynExpr(e) with
                             | None -> 
