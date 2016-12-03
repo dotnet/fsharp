@@ -5,6 +5,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.Composition
 open System.Collections.Immutable
+open System.Collections.Generic
 open System.Threading
 open System.Threading.Tasks
 
@@ -24,36 +25,43 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 type internal FSharpDocumentDiagnosticAnalyzer() =
     inherit DocumentDiagnosticAnalyzer()
 
-    static member GetDiagnostics(filePath: string, sourceText: SourceText, textVersionHash: int, options: FSharpProjectOptions, addSemanticErrors: bool) = async {
-
-
-        let! parseResults = FSharpLanguageService.Checker.ParseFileInProject(filePath, sourceText.ToString(), options) 
-        let! errors = async {
-            if addSemanticErrors then
-                let! checkResultsAnswer = FSharpLanguageService.Checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options) 
-                match checkResultsAnswer with
-                | FSharpCheckFileAnswer.Aborted -> return [| |]
-                | FSharpCheckFileAnswer.Succeeded(results) -> return results.Errors
-            else
-                return parseResults.Errors
-          }
-        
-        let results = 
-          (errors |> Seq.choose(fun (error) ->
-            if error.StartLineAlternate = 0 || error.EndLineAlternate = 0 then
-                // F# error line numbers are one-based. Compiler returns 0 for global errors (reported by ProjectDiagnosticAnalyzer)
-                None
-            else
-                // Roslyn line numbers are zero-based
-                let linePositionSpan = LinePositionSpan(LinePosition(error.StartLineAlternate - 1, error.StartColumn),LinePosition(error.EndLineAlternate - 1, error.EndColumn))
-                let textSpan = sourceText.Lines.GetTextSpan(linePositionSpan)
-                // F# compiler report errors at end of file if parsing fails. It should be corrected to match Roslyn boundaries
-                let correctedTextSpan = if textSpan.End < sourceText.Length then textSpan else TextSpan.FromBounds(max 0 (sourceText.Length - 1), sourceText.Length)
-                let location = Location.Create(filePath, correctedTextSpan , linePositionSpan)
-                Some(CommonRoslynHelpers.ConvertError(error, location)))
-          ).ToImmutableArray()
-        return results
-      }
+    static member GetDiagnostics(filePath: string, sourceText: SourceText, textVersionHash: int, options: FSharpProjectOptions, addSemanticErrors: bool) = 
+        async {
+            let! parseResults = FSharpLanguageService.Checker.ParseFileInProject(filePath, sourceText.ToString(), options) 
+            let! errors = 
+                async {
+                    if addSemanticErrors then
+                        let! checkResultsAnswer = FSharpLanguageService.Checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options) 
+                        match checkResultsAnswer with
+                        | FSharpCheckFileAnswer.Aborted -> return [||]
+                        | FSharpCheckFileAnswer.Succeeded results ->
+                            let parseErrors = HashSet parseResults.Errors
+                            // In order to eleminate duplicates, we should not return parse errors here because they are returned by `AnalyzeSyntaxAsync` method.
+                            return results.Errors |> Array.filter (not << parseErrors.Contains)
+                    else
+                        return parseResults.Errors
+                }
+            
+            let results = 
+              (errors |> Seq.choose(fun error ->
+                if error.StartLineAlternate = 0 || error.EndLineAlternate = 0 then
+                    // F# error line numbers are one-based. Compiler returns 0 for global errors (reported by ProjectDiagnosticAnalyzer)
+                    None
+                else
+                    // Roslyn line numbers are zero-based
+                    let linePositionSpan = LinePositionSpan(LinePosition(error.StartLineAlternate - 1, error.StartColumn),LinePosition(error.EndLineAlternate - 1, error.EndColumn))
+                    let textSpan = sourceText.Lines.GetTextSpan(linePositionSpan)
+                    
+                    // F# compiler report errors at end of file if parsing fails. It should be corrected to match Roslyn boundaries
+                    let correctedTextSpan = 
+                        if textSpan.End < sourceText.Length then textSpan 
+                        else TextSpan.FromBounds(max 0 (sourceText.Length - 1), sourceText.Length)
+                    
+                    let location = Location.Create(filePath, correctedTextSpan , linePositionSpan)
+                    Some(CommonRoslynHelpers.ConvertError(error, location)))
+              ).ToImmutableArray()
+            return results
+        }
 
     override this.SupportedDiagnostics = CommonRoslynHelpers.SupportedDiagnostics()
 
