@@ -7767,6 +7767,23 @@ and EvaledAttribExprEquality g e1 e2 =
     | TypeDefOfExpr g ty1, TypeDefOfExpr g ty2 -> typeEquiv g ty1 ty2
     | _ -> false
 
+let (|ConstToILFieldInit|_|) c =
+    match c with 
+    | Const.SByte n   -> Some (ILFieldInit.Int8 n)
+    | Const.Int16 n   -> Some (ILFieldInit.Int16 n)
+    | Const.Int32 n   -> Some (ILFieldInit.Int32 n)
+    | Const.Int64 n   -> Some (ILFieldInit.Int64 n)
+    | Const.Byte n    -> Some (ILFieldInit.UInt8 n)
+    | Const.UInt16 n  -> Some (ILFieldInit.UInt16 n)
+    | Const.UInt32 n  -> Some (ILFieldInit.UInt32 n)
+    | Const.UInt64 n  -> Some (ILFieldInit.UInt64 n)
+    | Const.Bool n    -> Some (ILFieldInit.Bool n)
+    | Const.Char n    -> Some (ILFieldInit.Char (uint16 n))
+    | Const.Single n  -> Some (ILFieldInit.Single n)
+    | Const.Double n  -> Some (ILFieldInit.Double n)
+    | Const.String s  -> Some (ILFieldInit.String s)
+    | Const.Zero      -> Some (ILFieldInit.Null)
+    | _               -> None
 
 let EvalLiteralExprOrAttribArg g x = 
     match x with 

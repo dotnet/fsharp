@@ -48,7 +48,7 @@ type internal FSharpProjectDiagnosticAnalyzer() =
     override this.AnalyzeProjectAsync(project: Project, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
         async {
             match FSharpLanguageService.GetOptionsForProject(project.Id) with
-            | Some(options) -> return! FSharpProjectDiagnosticAnalyzer.GetDiagnostics(options)
+            | Some options -> return! FSharpProjectDiagnosticAnalyzer.GetDiagnostics(options)
             | None -> return ImmutableArray<Diagnostic>.Empty
         } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
 #endif

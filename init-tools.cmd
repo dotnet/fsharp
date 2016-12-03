@@ -32,7 +32,7 @@ if exist "%TOOLRUNTIME_DIR%" rmdir /S /Q "%TOOLRUNTIME_DIR%"
 :: Download Nuget.exe
 if NOT exist "%PACKAGES_DIR%NuGet.exe" (
   if NOT exist "%PACKAGES_DIR%" mkdir "%PACKAGES_DIR%"
-  powershell -NoProfile -ExecutionPolicy unrestricted -Command "(New-Object Net.WebClient).DownloadFile('https://www.nuget.org/nuget.exe', '%PACKAGES_DIR%NuGet.exe')
+  powershell -NoProfile -ExecutionPolicy unrestricted -Command "$wc = New-Object System.Net.WebClient; $wc.Proxy = [System.Net.WebRequest]::DefaultWebProxy; $wc.Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials; $wc.DownloadFile('https://www.nuget.org/nuget.exe', '%PACKAGES_DIR%NuGet.exe')
 )
 
 if NOT exist "%PROJECT_JSON_PATH%" mkdir "%PROJECT_JSON_PATH%"
@@ -48,7 +48,7 @@ if [%PROCESSOR_ARCHITECTURE%]==[x86] (set DOTNET_ZIP_NAME=dotnet-dev-win-x86.%DO
 set DOTNET_REMOTE_PATH=https://dotnetcli.blob.core.windows.net/dotnet/Sdk/%DOTNET_VERSION%/%DOTNET_ZIP_NAME%
 set DOTNET_LOCAL_PATH=%DOTNET_PATH%%DOTNET_ZIP_NAME%
 echo Installing '%DOTNET_REMOTE_PATH%' to '%DOTNET_LOCAL_PATH%' >> "%INIT_TOOLS_LOG%"
-powershell -NoProfile -ExecutionPolicy unrestricted -Command "$retryCount = 0; $success = $false; do { try { (New-Object Net.WebClient).DownloadFile('%DOTNET_REMOTE_PATH%', '%DOTNET_LOCAL_PATH%'); $success = $true; } catch { if ($retryCount -ge 6) { throw; } else { $retryCount++; Start-Sleep -Seconds (5 * $retryCount); } } } while ($success -eq $false); Add-Type -Assembly 'System.IO.Compression.FileSystem' -ErrorVariable AddTypeErrors; if ($AddTypeErrors.Count -eq 0) { [System.IO.Compression.ZipFile]::ExtractToDirectory('%DOTNET_LOCAL_PATH%', '%DOTNET_PATH%') } else { (New-Object -com shell.application).namespace('%DOTNET_PATH%').CopyHere((new-object -com shell.application).namespace('%DOTNET_LOCAL_PATH%').Items(),16) }" >> "%INIT_TOOLS_LOG%"
+powershell -NoProfile -ExecutionPolicy unrestricted -Command "$retryCount = 0; $success = $false; do { try { $wc = New-Object System.Net.WebClient; $wc.Proxy = [System.Net.WebRequest]::DefaultWebProxy; $wc.Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials; $wc.DownloadFile('%DOTNET_REMOTE_PATH%', '%DOTNET_LOCAL_PATH%'); $success = $true; } catch { if ($retryCount -ge 6) { throw; } else { $retryCount++; Start-Sleep -Seconds (5 * $retryCount); } } } while ($success -eq $false); Add-Type -Assembly 'System.IO.Compression.FileSystem' -ErrorVariable AddTypeErrors; if ($AddTypeErrors.Count -eq 0) { [System.IO.Compression.ZipFile]::ExtractToDirectory('%DOTNET_LOCAL_PATH%', '%DOTNET_PATH%') } else { (New-Object -com shell.application).namespace('%DOTNET_PATH%').CopyHere((new-object -com shell.application).namespace('%DOTNET_LOCAL_PATH%').Items(),16) }" >> "%INIT_TOOLS_LOG%"
 if NOT exist "%DOTNET_LOCAL_PATH%" (
   echo ERROR: Could not install dotnet cli correctly. See '%INIT_TOOLS_LOG%' for more details.
   set TOOLS_INIT_RETURN_CODE=1

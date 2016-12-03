@@ -826,30 +826,31 @@ module ProvidedMethodCalls =
         let ty = Import.ImportProvidedType amap m objTy
         let normTy = normalizeEnumTy g ty
         obj.PUntaint((fun v ->
-            let fail() = raise <| TypeProviderError(FSComp.SR.etUnsupportedConstantType(v.GetType().ToString()), constant.TypeProviderDesignation, m)
+            let fail() = raise (TypeProviderError(FSComp.SR.etUnsupportedConstantType(v.GetType().ToString()), constant.TypeProviderDesignation, m))
             try 
-                match v with
-                | null -> mkNull m ty
-                | _ when typeEquiv g normTy g.bool_ty -> Expr.Const(Const.Bool(v :?> bool), m, ty)
-                | _ when typeEquiv g normTy g.sbyte_ty -> Expr.Const(Const.SByte(v :?> sbyte), m, ty)
-                | _ when typeEquiv g normTy g.byte_ty -> Expr.Const(Const.Byte(v :?> byte), m, ty)
-                | _ when typeEquiv g normTy g.int16_ty -> Expr.Const(Const.Int16(v :?> int16), m, ty)
-                | _ when typeEquiv g normTy g.uint16_ty -> Expr.Const(Const.UInt16(v :?> uint16), m, ty)
-                | _ when typeEquiv g normTy g.int32_ty -> Expr.Const(Const.Int32(v :?> int32), m, ty)
-                | _ when typeEquiv g normTy g.uint32_ty -> Expr.Const(Const.UInt32(v :?> uint32), m, ty)
-                | _ when typeEquiv g normTy g.int64_ty -> Expr.Const(Const.Int64(v :?> int64), m, ty)
-                | _ when typeEquiv g normTy g.uint64_ty -> Expr.Const(Const.UInt64(v :?> uint64), m, ty)
-                | _ when typeEquiv g normTy g.nativeint_ty -> Expr.Const(Const.IntPtr(v :?> int64), m, ty) 
-                | _ when typeEquiv g normTy g.unativeint_ty -> Expr.Const(Const.UIntPtr(v :?> uint64), m, ty) 
-                | _ when typeEquiv g normTy g.float32_ty -> Expr.Const(Const.Single(v :?> float32), m, ty)
-                | _ when typeEquiv g normTy g.float_ty -> Expr.Const(Const.Double(v :?> float), m, ty)
-                | _ when typeEquiv g normTy g.char_ty -> Expr.Const(Const.Char(v :?> char), m, ty)
-                | _ when typeEquiv g normTy g.string_ty -> Expr.Const(Const.String(v :?> string), m, ty)
-                | _ when typeEquiv g normTy g.decimal_ty -> Expr.Const(Const.Decimal(v :?> decimal), m, ty)
-                | _ when typeEquiv g normTy g.unit_ty -> Expr.Const(Const.Unit, m, ty)
-                | _ -> fail()
-             with _ -> 
-                 fail()
+                if isNull v then mkNull m ty else
+                let c = 
+                    match v with
+                    | _ when typeEquiv g normTy g.bool_ty -> Const.Bool(v :?> bool)
+                    | _ when typeEquiv g normTy g.sbyte_ty -> Const.SByte(v :?> sbyte)
+                    | _ when typeEquiv g normTy g.byte_ty -> Const.Byte(v :?> byte)
+                    | _ when typeEquiv g normTy g.int16_ty -> Const.Int16(v :?> int16)
+                    | _ when typeEquiv g normTy g.uint16_ty -> Const.UInt16(v :?> uint16)
+                    | _ when typeEquiv g normTy g.int32_ty -> Const.Int32(v :?> int32)
+                    | _ when typeEquiv g normTy g.uint32_ty -> Const.UInt32(v :?> uint32)
+                    | _ when typeEquiv g normTy g.int64_ty -> Const.Int64(v :?> int64)
+                    | _ when typeEquiv g normTy g.uint64_ty -> Const.UInt64(v :?> uint64)
+                    | _ when typeEquiv g normTy g.nativeint_ty -> Const.IntPtr(v :?> int64)
+                    | _ when typeEquiv g normTy g.unativeint_ty -> Const.UIntPtr(v :?> uint64)
+                    | _ when typeEquiv g normTy g.float32_ty -> Const.Single(v :?> float32)
+                    | _ when typeEquiv g normTy g.float_ty -> Const.Double(v :?> float)
+                    | _ when typeEquiv g normTy g.char_ty -> Const.Char(v :?> char)
+                    | _ when typeEquiv g normTy g.string_ty -> Const.String(v :?> string)
+                    | _ when typeEquiv g normTy g.decimal_ty -> Const.Decimal(v :?> decimal)
+                    | _ when typeEquiv g normTy g.unit_ty -> Const.Unit
+                    | _ -> fail()
+                Expr.Const(c, m, ty)
+             with _ -> fail()
             ), range=m)
 
     /// Erasure over System.Type.

@@ -115,8 +115,8 @@
   <PropertyGroup>
     <!-- Compiler tool locations.		-->
     <FsSrGenToolPath>$(FSharpSourcesRoot)\..\packages\fssrgen.3.1.0\lib\net46</FsSrGenToolPath>
-    <FsLexToolPath>$(FSharpSourcesRoot)\..\packages\FsLexYacc.7.0.1\build</FsLexToolPath>
-    <FsYaccToolPath>$(FSharpSourcesRoot)\..\packages\FsLexYacc.7.0.1\build</FsYaccToolPath>
+    <FsLexToolPath>$(FSharpSourcesRoot)\..\packages\FsLexYacc.7.0.3\build</FsLexToolPath>
+    <FsYaccToolPath>$(FSharpSourcesRoot)\..\packages\FsLexYacc.7.0.3\build</FsYaccToolPath>
     <FsiToolExe>fsi.exe</FsiToolExe>
     <FsLexToolExe>fslex.exe</FsLexToolExe>
     <FsYaccToolExe>fsyacc.exe</FsYaccToolExe>
