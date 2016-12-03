@@ -40,6 +40,27 @@ open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
+module InlineRenameInfo =
+    let create () =
+        { new IInlineRenameInfo with
+            member __.CanRename = true
+            member __.LocalizedErrorMessage = ""
+            member __.TriggerSpan = Unchecked.defaultof<_>
+            member __.HasOverloads = false
+            member __.ForceRenameOverloads = true
+            member __.DisplayName = ""
+            member __.FullDisplayName = ""
+            member __.Glyph = Glyph.MethodPublic
+            member __.GetFinalSymbolName replacementText = ""
+            member __.GetReferenceEditSpan(location, cancellationToken) = Unchecked.defaultof<_>
+            member __.GetConflictEditSpan(location, replacementText, cancellationToken) = Nullable()
+            member __.FindRenameLocationsAsync(optionSet, cancellationToken) = Task<IInlineRenameLocationSet>.FromResult null
+            member __.TryOnBeforeGlobalSymbolRenamed(workspace, changedDocumentIDs, replacementText) = true
+            member __.TryOnAfterGlobalSymbolRenamed(workspace, changedDocumentIDs, replacementText) = true
+        }
+
 [<ExportLanguageService(typeof<IEditorInlineRenameService>, FSharpCommonConstants.FSharpLanguageName); Shared>]
-type internal InlineRenameService [<ImportingConstructor>]([<ImportMany>] refactorNotifyServices: seq<IRefactorNotifyService>) =
-    inherit AbstractEditorInlineRenameService(refactorNotifyServices)
+type internal InlineRenameService [<ImportingConstructor>]([<ImportMany>] _refactorNotifyServices: seq<IRefactorNotifyService>) =
+    interface IEditorInlineRenameService with
+        member __.GetRenameInfoAsync(_document: Document, _position: int, _cancellationToken: CancellationToken) : Task<IInlineRenameInfo> =
+            Task.FromResult (InlineRenameInfo.create())
