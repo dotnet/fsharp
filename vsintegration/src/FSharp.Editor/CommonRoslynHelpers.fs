@@ -20,7 +20,6 @@ module internal CommonRoslynHelpers =
         let endPosition = sourceText.Lines.[range.EndLine - 1].Start + range.EndColumn
         TextSpan(startPosition, endPosition - startPosition)
 
-
     let GetCompletedTaskResult(task: Task<'TResult>) =
         if task.Status = TaskStatus.RanToCompletion then
             task.Result
@@ -30,7 +29,6 @@ module internal CommonRoslynHelpers =
 
     let StartAsyncAsTask cancellationToken computation =
         Async.StartAsTask(computation, TaskCreationOptions.None, cancellationToken)
-             .ContinueWith(GetCompletedTaskResult, cancellationToken)
 
     let StartAsyncUnitAsTask cancellationToken (computation:Async<unit>) = 
         StartAsyncAsTask cancellationToken computation  :> Task

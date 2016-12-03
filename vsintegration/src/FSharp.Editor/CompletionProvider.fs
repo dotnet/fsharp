@@ -38,11 +38,20 @@ open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons
 type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SVsServiceProvider) =
     inherit CompletionProvider()
 
-    static let completionTriggers = [| '.' |]
     static let declarationItemsCache = ConditionalWeakTable<string, FSharpDeclarationListItem>()
     
     let xmlMemberIndexService = serviceProvider.GetService(typeof<IVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
+
+    static let isStartingNewWord (text: SourceText, characterPosition: int) =
+        let ch = text.[characterPosition]
+        
+        if (not (Char.IsLetter ch)) then false
+        // Only want to trigger if we're the first character in an identifier.  If there's a
+        // character before or after us, then we don't want to trigger.
+        elif characterPosition > 0 && Char.IsLetterOrDigit (text.[characterPosition - 1]) then false
+        elif characterPosition < text.Length - 1 && Char.IsLetterOrDigit(text.[characterPosition + 1]) then false
+        else true
 
     static member ShouldTriggerCompletionAux(sourceText: SourceText, caretPosition: int, trigger: CompletionTriggerKind, getInfo: (unit -> DocumentId * string * string list)) =
         // Skip if we are at the start of a document
@@ -55,18 +64,17 @@ type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SV
 
         // Skip if we are not on a completion trigger
         else
-          let triggerPosition = caretPosition - 1
-          let c = sourceText.[triggerPosition]
-          if not (completionTriggers |> Array.contains c) then
+          let ch = sourceText.[caretPosition - 1]
+          if ch <> '.' && not ((ch = ' ' && (caretPosition = sourceText.Length - 1) || isStartingNewWord (sourceText, caretPosition - 1))) then
             false
 
           // Trigger completion if we are on a valid classification type
           else
             let documentId, filePath,  defines = getInfo()
-            let textLines = sourceText.Lines
-            let triggerLine = textLines.GetLineFromPosition(triggerPosition)
+            let triggerPosition = caretPosition - 1
+            let textLine = sourceText.Lines.GetLineFromPosition(triggerPosition)
             let classifiedSpanOption =
-                CommonHelpers.getColorizationData(documentId, sourceText, triggerLine.Span, Some(filePath), defines, CancellationToken.None)
+                CommonHelpers.getColorizationData(documentId, sourceText, textLine.Span, Some(filePath), defines, CancellationToken.None)
                 |> Seq.tryFind(fun classifiedSpan -> classifiedSpan.TextSpan.Contains(triggerPosition))
 
             match classifiedSpanOption with
