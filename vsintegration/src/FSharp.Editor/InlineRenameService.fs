@@ -58,6 +58,15 @@ type internal FailureInlineRenameInfo() =
         member __.TryOnAfterGlobalSymbolRenamed(_workspace, _changedDocumentIDs, _replacementText) = false
 
 type internal InlineRenameInfo(checker: FSharpChecker, options: FSharpProjectOptions, solution: Solution, sourceText: SourceText, symbolUse: FSharpSymbolUse) =
+    let gate = obj()
+    let mutable underlyingFindRenameLocationsTask: Task<ImmutableDictionary<DocumentId, FSharpSymbolUse[]>> = null
+
+    let getSpanText(document: Document, triggerSpan: TextSpan, cancellationToken: CancellationToken) =
+        async {
+            let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+            return sourceText.ToString(triggerSpan)
+        }
+
     interface IInlineRenameInfo with
         member __.CanRename = true
         member __.LocalizedErrorMessage = null
@@ -65,24 +74,54 @@ type internal InlineRenameInfo(checker: FSharpChecker, options: FSharpProjectOpt
         member __.HasOverloads = false
         member __.ForceRenameOverloads = true
         member __.DisplayName = symbolUse.Symbol.DisplayName
-        member __.FullDisplayName = symbolUse.Symbol.FullName
+        member __.FullDisplayName = try symbolUse.Symbol.FullName with _ -> symbolUse.Symbol.DisplayName
         member __.Glyph = Glyph.MethodPublic
         member __.GetFinalSymbolName replacementText = replacementText
-        member __.GetReferenceEditSpan(location, _cancellationToken) = location.TextSpan
-        member __.GetConflictEditSpan(_location, _replacementText, _cancellationToken) = Nullable()
+        
+        member __.GetReferenceEditSpan(location, cancellationToken) =
+            let searchName = symbolUse.Symbol.DisplayName
+            let spanText = getSpanText(location.Document, location.TextSpan, cancellationToken) |> Async.RunSynchronously
+            let index = spanText.LastIndexOf(searchName, StringComparison.Ordinal)
+ 
+            if index < 0 then
+                // Couldn't even find the search text at this reference location.  This might happen
+                // if the user used things like unicode escapes.  IN that case, we'll have to rename
+                // the entire identifier.
+                location.TextSpan
+            else TextSpan(location.TextSpan.Start + index, searchName.Length)
+
+        member __.GetConflictEditSpan(location, replacementText, cancellationToken) =
+            let spanText = getSpanText(location.Document, location.TextSpan, cancellationToken) |> Async.RunSynchronously
+            let position = spanText.LastIndexOf(replacementText, StringComparison.Ordinal)
+ 
+            if position < 0 then Nullable()
+            else Nullable(TextSpan(location.TextSpan.Start + position, replacementText.Length))
+
         member __.FindRenameLocationsAsync(_optionSet, cancellationToken) =
+            let renameTask =
+                lock gate <| fun _ ->
+                    if isNull underlyingFindRenameLocationsTask then
+                        // If this is the first call, then just start finding the initial set of rename locations.
+                        underlyingFindRenameLocationsTask <- 
+                            async {
+                                let! projectCheckResults = checker.ParseAndCheckProject(options)
+                                let! symbolUses = projectCheckResults.GetUsesOfSymbol(symbolUse.Symbol)
+                                
+                                return
+                                    (symbolUses 
+                                     |> Seq.collect (fun symbolUse -> solution.GetDocumentIdsWithFilePath(symbolUse.FileName) |> Seq.map (fun id -> id, symbolUse))
+                                     |> Seq.groupBy fst
+                                    ).ToImmutableDictionary((fun (id, _) -> id), fun (_, xs) -> xs |> Seq.map snd |> Seq.toArray)
+                            } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
+
+                        underlyingFindRenameLocationsTask
+                    else
+                        // We already have a task to figure out the set of rename locations.  Let it
+                        // finish, then ask it to get the rename locations with the updated options.
+                        underlyingFindRenameLocationsTask
+ 
             async {
-                let! projectCheckResults = checker.ParseAndCheckProject(options)
-                let! symbolUses = projectCheckResults.GetUsesOfSymbol(symbolUse.Symbol)
-                
-                let symbolUsesByDocumentId = 
-                    let dic = Dictionary()
-                    symbolUses 
-                    |> Seq.collect (fun symbolUse -> solution.GetDocumentIdsWithFilePath(symbolUse.FileName) |> Seq.map (fun id -> id, symbolUse))
-                    |> Seq.groupBy fst
-                    |> Seq.map (fun (id, xs) -> id, xs |> Seq.map snd)
-                    |> Seq.iter (fun (id, uses) -> dic.[id] <- uses)
-                    dic
+                let! symbolUsesByDocumentId = Async.AwaitTask renameTask
 
                 return
                     { new IInlineRenameLocationSet with
@@ -112,17 +151,18 @@ type internal InlineRenameInfo(checker: FSharpChecker, options: FSharpProjectOpt
                                         /// Whether or not the replacement text entered by the user is valid.
                                         member __.ReplacementTextValid = true
                                         /// The documents that need to be updated.
-                                        member __.DocumentIds = symbolUsesByDocumentId.Keys |> Seq.cast<DocumentId>
+                                        member __.DocumentIds = symbolUsesByDocumentId.Keys
                                         /// Returns all the replacements that need to be performed for the specified document.
                                         member __.GetReplacements(documentId) =
                                             match symbolUsesByDocumentId.TryGetValue documentId with
                                             | false, _ -> Seq.empty
                                             | true, symbolUses ->
                                                 symbolUses
-                                                |> Seq.map (fun symbolUse ->
-                                                    InlineRenameReplacement(InlineRenameReplacementKind.NoConflict, 
-                                                        CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate),
-                                                        CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate)))
+                                                |> Array.map (fun symbolUse ->
+                                                    let originalSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate)
+                                                    let newSpan = TextSpan(originalSpan.Start, replacementText.Length)
+                                                    InlineRenameReplacement(InlineRenameReplacementKind.NoConflict, originalSpan, newSpan))
+                                                |> Array.toSeq
                                     }
                             }
                             |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
