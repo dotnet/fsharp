@@ -60,16 +60,14 @@ type internal FailureInlineRenameInfo() =
 
 type internal InlineRenameInfo
     (
-        checker: FSharpChecker, 
+        checker: FSharpChecker,
         options: FSharpProjectOptions, 
         document: Document,
         sourceText: SourceText, 
         symbolUse: FSharpSymbolUse,
-        cancellationToken: CancellationToken
+        checkFileResults: FSharpCheckFileResults
     ) =
     
-    let gate = obj()
-    let mutable underlyingGetSymbolUsesTask: Task<ImmutableDictionary<DocumentId, FSharpSymbolUse[]>> = null
     let renamedSpansTracker = RenamedSpansTracker()
 
     let getSpanText(document: Document, triggerSpan: TextSpan, cancellationToken: CancellationToken) =
@@ -78,19 +76,45 @@ type internal InlineRenameInfo
             return sourceText.ToString(triggerSpan)
         }
 
-    let getReferenceEditSpan (location: InlineRenameLocation) (cancellationToken: CancellationToken) = 
-        let searchName = symbolUse.Symbol.DisplayName
-        let spanText = getSpanText(location.Document, location.TextSpan, cancellationToken) |> Async.RunSynchronously
-        let index = spanText.LastIndexOf(searchName, StringComparison.Ordinal)
-        if index < 0 then
-            // Couldn't even find the search text at this reference location.  This might happen
-            // if the user used things like unicode escapes. In that case, we'll have to rename the entire identifier.
-            location.TextSpan
-        else TextSpan(location.TextSpan.Start + index, searchName.Length)
-
-    let triggerSpan =
-        let triggerSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate)
-        getReferenceEditSpan (InlineRenameLocation(document, triggerSpan)) cancellationToken
+    let triggerSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate)
+    let underlyingGetSymbolUsesTaskLock = obj()
+    let mutable underlyingGetSymbolUsesTask: Task<ImmutableDictionary<DocumentId, FSharpSymbolUse[]>> = null
+    
+    let getSymbolUses cancellationToken =
+        lock underlyingGetSymbolUsesTaskLock <| fun _ ->
+            if isNull underlyingGetSymbolUsesTask then
+                // If this is the first call, then just start finding the initial set of rename locations.
+                underlyingGetSymbolUsesTask <- 
+                    async {
+                        let! symbolUses =
+                            if symbolUse.Symbol.IsPrivateToFile then
+                                checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
+                            else
+                                async {
+                                    let! projectCheckResults = checker.ParseAndCheckProject(options)
+                                    return! projectCheckResults.GetUsesOfSymbol(symbolUse.Symbol)
+                                }
+                        
+                        return
+                            (symbolUses 
+                             |> Seq.collect (fun symbolUse -> 
+                                  document.Project.Solution.GetDocumentIdsWithFilePath(symbolUse.FileName) |> Seq.map (fun id -> id, symbolUse))
+                             |> Seq.groupBy fst
+                            ).ToImmutableDictionary(
+                                (fun (id, _) -> id), 
+                                fun (_, xs) -> 
+                                    xs 
+                                    |> Seq.map snd 
+                                    |> Seq.sortBy (fun (x: FSharpSymbolUse) -> x.RangeAlternate.StartLine, x.RangeAlternate.StartColumn) 
+                                    |> Seq.toArray)
+                    } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
+        
+                underlyingGetSymbolUsesTask
+            else
+                // We already have a task to figure out the set of rename locations.
+                // Let it finish, then ask it to get the rename locations with the updated options.
+                underlyingGetSymbolUsesTask
+        |> Async.AwaitTask
 
     interface IInlineRenameInfo with
         /// Whether or not the entity at the selected location can be renamed.
@@ -113,13 +137,22 @@ type internal InlineRenameInfo
         /// Normally, the final name will be same as the replacement text. However, that may not always be the same.  
         /// For example, when renaming an attribute the replacement text may be "NewName" while the final symbol name might be "NewNameAttribute".
         member __.GetFinalSymbolName replacementText = replacementText
+
         /// Returns the actual span that should be edited in the buffer for a given rename reference
-        member __.GetReferenceEditSpan(location, cancellationToken) = getReferenceEditSpan location cancellationToken
+        member __.GetReferenceEditSpan(location, cancellationToken) =
+            let searchName = symbolUse.Symbol.DisplayName
+            let spanText = getSpanText(location.Document, location.TextSpan, cancellationToken) |> Async.RunSynchronously
+            let _index = spanText.LastIndexOf(searchName, StringComparison.Ordinal)
+            //if index < 0 then
+                // Couldn't even find the search text at this reference location.  This might happen
+                // if the user used things like unicode escapes. In that case, we'll have to rename the entire identifier.
+            location.TextSpan
+            //else TextSpan(location.TextSpan.Start + index, searchName.Length)
         
         /// Returns the actual span that should be edited in the buffer for a given rename conflict
-        member __.GetConflictEditSpan(location, replacementText, _cancellationToken) =
-            //let spanText = getSpanText(location.Document, location.TextSpan, cancellationToken) |> Async.RunSynchronously
-            //let position = spanText.LastIndexOf(replacementText, StringComparison.Ordinal)
+        member __.GetConflictEditSpan(location, replacementText, cancellationToken) =
+            let spanText = getSpanText(location.Document, location.TextSpan, cancellationToken) |> Async.RunSynchronously
+            let _position = spanText.LastIndexOf(replacementText, StringComparison.Ordinal)
  
             //if position < 0 then Nullable()
             //let position = renamedSpansTracker.GetAdjustedPosition(location.TextSpan.Start, location.Document.Id)
@@ -129,38 +162,8 @@ type internal InlineRenameInfo
         /// multiple times.  For example, this can be called one time for the initial set of
         /// locations to rename, as well as any time the rename options are changed by the user.
         member __.FindRenameLocationsAsync(_optionSet, cancellationToken) =
-            let getSymbolUsesTask =
-                lock gate <| fun _ ->
-                    if isNull underlyingGetSymbolUsesTask then
-                        // If this is the first call, then just start finding the initial set of rename locations.
-                        underlyingGetSymbolUsesTask <- 
-                            async {
-                                // todo do not check the whole project if the symbol is local for file (port the logic from VFPT)
-                                let! projectCheckResults = checker.ParseAndCheckProject(options)
-                                let! symbolUses = projectCheckResults.GetUsesOfSymbol(symbolUse.Symbol)
-                                
-                                return
-                                    (symbolUses 
-                                     |> Seq.collect (fun symbolUse -> 
-                                          document.Project.Solution.GetDocumentIdsWithFilePath(symbolUse.FileName) |> Seq.map (fun id -> id, symbolUse))
-                                     |> Seq.groupBy fst
-                                    ).ToImmutableDictionary(
-                                        (fun (id, _) -> id), 
-                                        fun (_, xs) -> 
-                                            xs 
-                                            |> Seq.map snd 
-                                            |> Seq.sortBy (fun (x: FSharpSymbolUse) -> x.RangeAlternate.StartLine, x.RangeAlternate.StartColumn) 
-                                            |> Seq.toArray)
-                            } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
-
-                        underlyingGetSymbolUsesTask
-                    else
-                        // We already have a task to figure out the set of rename locations.
-                        // Let it finish, then ask it to get the rename locations with the updated options.
-                        underlyingGetSymbolUsesTask
- 
             async {
-                let! symbolUsesByDocumentId = Async.AwaitTask getSymbolUsesTask
+                let! symbolUsesByDocumentId = getSymbolUses cancellationToken
                 return
                     { new IInlineRenameLocationSet with
                         /// The set of locations that need to be updated with the replacement text that the user has entered in the inline rename session.  
@@ -235,17 +238,17 @@ type internal InlineRenameService
             match CommonHelpers.tryClassifyAtPosition(document.Id, sourceText, filePath, defines, position, cancellationToken) with 
             | Some (islandColumn, qualifiers, _) -> 
                 let! _parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
+                
                 match checkFileAnswer with
                 | FSharpCheckFileAnswer.Aborted -> return FailureInlineRenameInfo() :> _
                 | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> 
         
-                //let! declarations = checkFileResults.GetDeclarationLocationAlternate (fcsTextLineNumber, islandColumn, textLine.ToString(), qualifiers, false)
-                let! symbol = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, islandColumn, textLine.Text.ToString(), qualifiers)
+                let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, islandColumn, textLine.Text.ToString(), qualifiers)
                 
-                match symbol with
-                | Some symbol ->
-                    match symbol.Symbol.DeclarationLocation with
-                    | Some _ -> return InlineRenameInfo(checker, options, document, sourceText, symbol, cancellationToken) :> _
+                match symbolUse with
+                | Some symbolUse ->
+                    match symbolUse.Symbol.DeclarationLocation with
+                    | Some _ -> return InlineRenameInfo(checker, options, document, sourceText, symbolUse, checkFileResults) :> _
                     | _ -> return FailureInlineRenameInfo() :> _
                 | _ -> return FailureInlineRenameInfo() :> _
             | None -> return FailureInlineRenameInfo() :> _
