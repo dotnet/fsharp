@@ -56,20 +56,19 @@ type internal FSharpLanguageDebugInfoService
             Task.FromResult(Unchecked.defaultof<DebugLocationInfo>)
 
         member this.GetDataTipInfoAsync(document: Document, position: int, cancellationToken: CancellationToken): Task<DebugDataTipInfo> =
-            let computation =
-                async {
+            async {
                 let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
-                    let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                    let textSpan = TextSpan.FromBounds(0, sourceText.Length)
-                    let tokens = CommonHelpers.getColorizationData(document.Id, sourceText, textSpan, Some(document.Name), defines, cancellationToken)
-                    let result = 
-                         match FSharpLanguageDebugInfoService.GetDataTipInformation(sourceText, position, tokens) with
-                         | None -> 
-                            DebugDataTipInfo()
-                         | Some textSpan -> 
-                            DebugDataTipInfo(textSpan, sourceText.GetSubText(textSpan).ToString())
-                    return result
-                }
-            Async.StartAsTask(computation, TaskCreationOptions.None, cancellationToken)
+                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                let textSpan = TextSpan.FromBounds(0, sourceText.Length)
+                let tokens = CommonHelpers.getColorizationData(document.Id, sourceText, textSpan, Some(document.Name), defines, cancellationToken)
+                let result = 
+                     match FSharpLanguageDebugInfoService.GetDataTipInformation(sourceText, position, tokens) with
+                     | None -> 
+                        DebugDataTipInfo()
+                     | Some textSpan -> 
+                        DebugDataTipInfo(textSpan, sourceText.GetSubText(textSpan).ToString())
+                return result
+            }
+            |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
             
             
