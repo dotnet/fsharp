@@ -129,8 +129,8 @@ type internal InlineRenameInfo(checker: FSharpChecker, options: FSharpProjectOpt
                       }
             } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
             
-        member __.TryOnBeforeGlobalSymbolRenamed(_workspace, _changedDocumentIDs, _replacementText) = false
-        member __.TryOnAfterGlobalSymbolRenamed(_workspace, _changedDocumentIDs, _replacementText) = false
+        member __.TryOnBeforeGlobalSymbolRenamed(_workspace, _changedDocumentIDs, _replacementText) = true
+        member __.TryOnAfterGlobalSymbolRenamed(_workspace, _changedDocumentIDs, _replacementText) = true
 
 [<ExportLanguageService(typeof<IEditorInlineRenameService>, FSharpCommonConstants.FSharpLanguageName); Shared>]
 type internal InlineRenameService 
