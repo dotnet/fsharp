@@ -2145,7 +2145,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad n
           ResolveExprLongIdentPrim sink ncenv FullyQualified m ad nenv typeNameResInfo lid
 
     | [id] when fullyQualified <> FullyQualified ->
-
+          let typeError = ref None
           // Single identifier.  Lookup the unqualified names in the environment
           let envSearch = 
               match nenv.eUnqualifiedItems.TryFind(id.idText) with
@@ -2156,7 +2156,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad n
                   // Do not use type names from the environment if an explicit type instantiation is 
                   // given and the number of type parameters do not match
                   let tcrefs = 
-                      tcrefs |> List.filter (fun  tcref ->
+                      tcrefs |> List.filter (fun tcref ->
                           typeNameResInfo.StaticArgsInfo.HasNoStaticArgsInfo || 
                           typeNameResInfo.StaticArgsInfo.NumStaticArgs = tcref.Typars(m).Length)
                   
@@ -2166,8 +2166,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad n
                       let resInfo,item,rest = ForceRaise res
                       ResolutionInfo.SendToSink(sink,ncenv,nenv,ItemOccurence.Use,ad,resInfo,ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
                       Some(item,rest)
-                  | _ ->  
-                      None
+                  | Exception e -> typeError := Some e; None
 
               | Some res -> 
                   Some (FreshenUnqualifiedItem ncenv m res, [])
@@ -2200,12 +2199,15 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad n
                   match AtMostOneResult m innerSearch with
                   | Result _ as res -> ForceRaise res
                   | _ -> 
-                      let predictedNames =
-                          nenv.eUnqualifiedItems
-                          |> Seq.map (fun e -> e.Value.DisplayName)
-                          |> Set.ofSeq
-
-                      let failingCase = raze (UndefinedName(0,FSComp.SR.undefinedNameValueOfConstructor,id,predictedNames)) // TODO: Predict ctors
+                      let failingCase = 
+                          match !typeError with
+                          | Some e -> raze e
+                          | _ -> 
+                              let predictedNames =
+                                  nenv.eUnqualifiedItems
+                                  |> Seq.map (fun e -> e.Value.DisplayName)
+                                  |> Set.ofSeq
+                              raze (UndefinedName(0,FSComp.SR.undefinedNameValueOfConstructor,id,predictedNames)) // TODO: Predict ctors
                       ForceRaise failingCase
 
               ResolutionInfo.SendToSink(sink,ncenv,nenv,ItemOccurence.Use,ad,resInfo,ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
@@ -2213,7 +2215,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad n
               
             
     // A compound identifier. 
-    // It still might be a value in the environment, or something in an F# module, namespace, typ, or nested type 
+    // It still might be a value in the environment, or something in an F# module, namespace, type, or nested type 
     | id :: rest -> 
     
         let m = unionRanges m id.idRange
