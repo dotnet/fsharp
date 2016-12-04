@@ -52,25 +52,23 @@ type internal RenamedSpansTracker() =
     member __.IsDocumentChanged (documentId: DocumentId) = documentToModifiedSpansMap.ContainsKey(documentId)
  
     member __.AddModifiedSpan(documentId: DocumentId, oldSpan: TextSpan, newSpan: TextSpan) =
-        match documentToModifiedSpansMap.TryGetValue(documentId) with
-        | false, _ ->
-            let spans = ResizeArray<Spans>()
-            documentToModifiedSpansMap.[documentId] <- spans
-        | true, spans -> spans.Add { Old = oldSpan; New = newSpan }
+        let spans =
+            match documentToModifiedSpansMap.TryGetValue(documentId) with
+            | false, _ ->
+                let spans = ResizeArray<Spans>()
+                documentToModifiedSpansMap.[documentId] <- spans
+                spans
+            | true, spans -> spans
+        spans.Add { Old = oldSpan; New = newSpan }
  
     // Given a position in the old solution, we get back the new adjusted position 
     member __.GetAdjustedPosition(startingPosition: int, documentId: DocumentId) =
-        let documentReplacementSpans = 
-            if documentToModifiedSpansMap.ContainsKey(documentId) then
-                documentToModifiedSpansMap.[documentId] |> Seq.filter (fun pair -> pair.Old.Start < startingPosition)
-            else
-                Seq.empty
- 
-        let mutable adjustedStartingPosition = startingPosition
-        for textSpanPair in documentReplacementSpans do
-            adjustedStartingPosition <- adjustedStartingPosition + (textSpanPair.New.Length - textSpanPair.Old.Length)
- 
-        adjustedStartingPosition
+        match documentToModifiedSpansMap.TryGetValue(documentId) with
+        | true, spans -> 
+            spans 
+            |> Seq.filter (fun pair -> pair.Old.Start < startingPosition)
+            |> Seq.fold (fun res pair -> res + (pair.New.Length - pair.Old.Length)) startingPosition
+        | _ -> startingPosition
  
     member __.GetResolutionTextSpan(originalSpan: TextSpan, documentId: DocumentId) =
         match documentToModifiedSpansMap.TryGetValue(documentId) with

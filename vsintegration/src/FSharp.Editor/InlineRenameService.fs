@@ -69,7 +69,8 @@ type internal InlineRenameInfo
     ) =
     
     let gate = obj()
-    let mutable underlyingFindRenameLocationsTask: Task<ImmutableDictionary<DocumentId, FSharpSymbolUse[]>> = null
+    let mutable underlyingGetSymbolUsesTask: Task<ImmutableDictionary<DocumentId, FSharpSymbolUse[]>> = null
+    let renamedSpansTracker = RenamedSpansTracker()
 
     let getSpanText(document: Document, triggerSpan: TextSpan, cancellationToken: CancellationToken) =
         async {
@@ -114,23 +115,27 @@ type internal InlineRenameInfo
         member __.GetFinalSymbolName replacementText = replacementText
         /// Returns the actual span that should be edited in the buffer for a given rename reference
         member __.GetReferenceEditSpan(location, cancellationToken) = getReferenceEditSpan location cancellationToken
+        
         /// Returns the actual span that should be edited in the buffer for a given rename conflict
-        member __.GetConflictEditSpan(location, replacementText, cancellationToken) =
-            let spanText = getSpanText(location.Document, location.TextSpan, cancellationToken) |> Async.RunSynchronously
-            let position = spanText.LastIndexOf(replacementText, StringComparison.Ordinal)
+        member __.GetConflictEditSpan(location, replacementText, _cancellationToken) =
+            //let spanText = getSpanText(location.Document, location.TextSpan, cancellationToken) |> Async.RunSynchronously
+            //let position = spanText.LastIndexOf(replacementText, StringComparison.Ordinal)
  
             //if position < 0 then Nullable()
-            Nullable(TextSpan(location.TextSpan.Start + position, replacementText.Length))
+            //let position = renamedSpansTracker.GetAdjustedPosition(location.TextSpan.Start, location.Document.Id)
+            Nullable(TextSpan(location.TextSpan.Start, replacementText.Length))
+        
         /// Determine the set of locations to rename given the provided options. May be called 
         /// multiple times.  For example, this can be called one time for the initial set of
         /// locations to rename, as well as any time the rename options are changed by the user.
         member __.FindRenameLocationsAsync(_optionSet, cancellationToken) =
-            let renameTask =
+            let getSymbolUsesTask =
                 lock gate <| fun _ ->
-                    if isNull underlyingFindRenameLocationsTask then
+                    if isNull underlyingGetSymbolUsesTask then
                         // If this is the first call, then just start finding the initial set of rename locations.
-                        underlyingFindRenameLocationsTask <- 
+                        underlyingGetSymbolUsesTask <- 
                             async {
+                                // todo do not check the whole project if the symbol is local for file (port the logic from VFPT)
                                 let! projectCheckResults = checker.ParseAndCheckProject(options)
                                 let! symbolUses = projectCheckResults.GetUsesOfSymbol(symbolUse.Symbol)
                                 
@@ -139,18 +144,23 @@ type internal InlineRenameInfo
                                      |> Seq.collect (fun symbolUse -> 
                                           document.Project.Solution.GetDocumentIdsWithFilePath(symbolUse.FileName) |> Seq.map (fun id -> id, symbolUse))
                                      |> Seq.groupBy fst
-                                    ).ToImmutableDictionary((fun (id, _) -> id), fun (_, xs) -> xs |> Seq.map snd |> Seq.toArray)
+                                    ).ToImmutableDictionary(
+                                        (fun (id, _) -> id), 
+                                        fun (_, xs) -> 
+                                            xs 
+                                            |> Seq.map snd 
+                                            |> Seq.sortBy (fun (x: FSharpSymbolUse) -> x.RangeAlternate.StartLine, x.RangeAlternate.StartColumn) 
+                                            |> Seq.toArray)
                             } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
 
-                        underlyingFindRenameLocationsTask
+                        underlyingGetSymbolUsesTask
                     else
                         // We already have a task to figure out the set of rename locations.
                         // Let it finish, then ask it to get the rename locations with the updated options.
-                        underlyingFindRenameLocationsTask
+                        underlyingGetSymbolUsesTask
  
             async {
-                let! symbolUsesByDocumentId = Async.AwaitTask renameTask
-                let renamedSpansTracker = RenamedSpansTracker()
+                let! symbolUsesByDocumentId = Async.AwaitTask getSymbolUsesTask
                 return
                     { new IInlineRenameLocationSet with
                         /// The set of locations that need to be updated with the replacement text that the user has entered in the inline rename session.  
@@ -184,6 +194,7 @@ type internal InlineRenameInfo
                                             match symbolUsesByDocumentId.TryGetValue documentId with
                                             | false, _ -> Seq.empty
                                             | true, symbolUses ->
+                                                renamedSpansTracker.ClearDocuments [documentId]
                                                 symbolUses
                                                 |> Array.map (fun symbolUse ->
                                                     let sourceText = document.Project.Solution.GetDocument(documentId).GetTextAsync().Result // !!!!!!!!!!!!!!!!!!
