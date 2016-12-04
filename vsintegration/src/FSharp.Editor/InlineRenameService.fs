@@ -44,7 +44,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 type internal FailureInlineRenameInfo() =
     interface IInlineRenameInfo with
         member __.CanRename = false
-        member __.LocalizedErrorMessage = "Cannot rename symbol because it's not defined in a F# project in current solution"
+        member __.LocalizedErrorMessage = EditorFeaturesResources.You_cannot_rename_this_element
         member __.TriggerSpan = Unchecked.defaultof<_>
         member __.HasOverloads = false
         member __.ForceRenameOverloads = true
@@ -62,9 +62,10 @@ type internal InlineRenameInfo
     (
         checker: FSharpChecker, 
         options: FSharpProjectOptions, 
-        solution: Solution, 
+        document: Document,
         sourceText: SourceText, 
-        symbolUse: FSharpSymbolUse
+        symbolUse: FSharpSymbolUse,
+        cancellationToken: CancellationToken
     ) =
     
     let gate = obj()
@@ -76,13 +77,27 @@ type internal InlineRenameInfo
             return sourceText.ToString(triggerSpan)
         }
 
+    let getReferenceEditSpan (location: InlineRenameLocation) (cancellationToken: CancellationToken) = 
+        let searchName = symbolUse.Symbol.DisplayName
+        let spanText = getSpanText(location.Document, location.TextSpan, cancellationToken) |> Async.RunSynchronously
+        let index = spanText.LastIndexOf(searchName, StringComparison.Ordinal)
+        if index < 0 then
+            // Couldn't even find the search text at this reference location.  This might happen
+            // if the user used things like unicode escapes. In that case, we'll have to rename the entire identifier.
+            location.TextSpan
+        else TextSpan(location.TextSpan.Start + index, searchName.Length)
+
+    let triggerSpan =
+        let triggerSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate)
+        getReferenceEditSpan (InlineRenameLocation(document, triggerSpan)) cancellationToken
+
     interface IInlineRenameInfo with
         /// Whether or not the entity at the selected location can be renamed.
         member __.CanRename = true
         /// Provides the reason that can be displayed to the user if the entity at the selected location cannot be renamed.
         member __.LocalizedErrorMessage = null
         /// The span of the entity that is being renamed.
-        member __.TriggerSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate)
+        member __.TriggerSpan = triggerSpan
         /// Whether or not this entity has overloads that can also be renamed if the user wants.
         member __.HasOverloads = false
         /// Whether the Rename Overloads option should be forced to true. Used if rename is invoked from within a nameof expression.
@@ -97,19 +112,8 @@ type internal InlineRenameInfo
         /// Normally, the final name will be same as the replacement text. However, that may not always be the same.  
         /// For example, when renaming an attribute the replacement text may be "NewName" while the final symbol name might be "NewNameAttribute".
         member __.GetFinalSymbolName replacementText = replacementText
-        
         /// Returns the actual span that should be edited in the buffer for a given rename reference
-        member __.GetReferenceEditSpan(location, cancellationToken) =
-            let searchName = symbolUse.Symbol.DisplayName
-            let spanText = getSpanText(location.Document, location.TextSpan, cancellationToken) |> Async.RunSynchronously
-            let index = spanText.LastIndexOf(searchName, StringComparison.Ordinal)
- 
-            if index < 0 then
-                // Couldn't even find the search text at this reference location.  This might happen
-                // if the user used things like unicode escapes. In that case, we'll have to rename the entire identifier.
-                location.TextSpan
-            else TextSpan(location.TextSpan.Start + index, searchName.Length)
-
+        member __.GetReferenceEditSpan(location, cancellationToken) = getReferenceEditSpan location cancellationToken
         /// Returns the actual span that should be edited in the buffer for a given rename conflict
         member __.GetConflictEditSpan(location, replacementText, cancellationToken) =
             let spanText = getSpanText(location.Document, location.TextSpan, cancellationToken) |> Async.RunSynchronously
@@ -117,7 +121,6 @@ type internal InlineRenameInfo
  
             if position < 0 then Nullable()
             else Nullable(TextSpan(location.TextSpan.Start + position, replacementText.Length))
-
         /// Determine the set of locations to rename given the provided options. May be called 
         /// multiple times.  For example, this can be called one time for the initial set of
         /// locations to rename, as well as any time the rename options are changed by the user.
@@ -133,7 +136,8 @@ type internal InlineRenameInfo
                                 
                                 return
                                     (symbolUses 
-                                     |> Seq.collect (fun symbolUse -> solution.GetDocumentIdsWithFilePath(symbolUse.FileName) |> Seq.map (fun id -> id, symbolUse))
+                                     |> Seq.collect (fun symbolUse -> 
+                                          document.Project.Solution.GetDocumentIdsWithFilePath(symbolUse.FileName) |> Seq.map (fun id -> id, symbolUse))
                                      |> Seq.groupBy fst
                                     ).ToImmutableDictionary((fun (id, _) -> id), fun (_, xs) -> xs |> Seq.map snd |> Seq.toArray)
                             } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
@@ -146,7 +150,7 @@ type internal InlineRenameInfo
  
             async {
                 let! symbolUsesByDocumentId = Async.AwaitTask renameTask
-
+                
                 return
                     { new IInlineRenameLocationSet with
                         /// The set of locations that need to be updated with the replacement text that the user has entered in the inline rename session.  
@@ -156,8 +160,9 @@ type internal InlineRenameInfo
                             |> Seq.collect (fun (KeyValue(documentId, symbolUses)) -> 
                                 symbolUses
                                 |> Seq.map (fun symbolUse -> 
+                                    let sourceText = document.Project.Solution.GetDocument(documentId).GetTextAsync(cancellationToken).Result // !!!!!!!!!!!!!!!!!
                                     InlineRenameLocation(
-                                        solution.GetDocument(documentId), 
+                                        document.Project.Solution.GetDocument(documentId), 
                                         CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate))))
                             |> Seq.toArray :> _
                         
@@ -169,7 +174,7 @@ type internal InlineRenameInfo
                                 return 
                                     { new IInlineRenameReplacementInfo with
                                         /// The solution obtained after resolving all conflicts.
-                                        member __.NewSolution = solution
+                                        member __.NewSolution = document.Project.Solution // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                                         /// Whether or not the replacement text entered by the user is valid.
                                         member __.ReplacementTextValid = true
                                         /// The documents that need to be updated.
@@ -181,6 +186,7 @@ type internal InlineRenameInfo
                                             | true, symbolUses ->
                                                 symbolUses
                                                 |> Array.map (fun symbolUse ->
+                                                    let sourceText = document.Project.Solution.GetDocument(documentId).GetTextAsync().Result // !!!!!!!!!!!!!!!!!!
                                                     let originalSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate)
                                                     let newSpan = TextSpan(originalSpan.Start, replacementText.Length)
                                                     InlineRenameReplacement(InlineRenameReplacementKind.NoConflict, originalSpan, newSpan))
@@ -226,7 +232,7 @@ type internal InlineRenameService
                 match symbol with
                 | Some symbol ->
                     match symbol.Symbol.DeclarationLocation with
-                    | Some _ -> return InlineRenameInfo(checker, options, document.Project.Solution, sourceText, symbol) :> _
+                    | Some _ -> return InlineRenameInfo(checker, options, document, sourceText, symbol, cancellationToken) :> _
                     | _ -> return FailureInlineRenameInfo() :> _
                 | _ -> return FailureInlineRenameInfo() :> _
             | None -> return FailureInlineRenameInfo() :> _
