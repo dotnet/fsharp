@@ -26,6 +26,7 @@ open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Options
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Editor.Implementation.InlineRename
+open Microsoft.CodeAnalysis.Rename.ConflictEngine
 
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.Text
@@ -57,7 +58,15 @@ type internal FailureInlineRenameInfo() =
         member __.TryOnBeforeGlobalSymbolRenamed(_workspace, _changedDocumentIDs, _replacementText) = false
         member __.TryOnAfterGlobalSymbolRenamed(_workspace, _changedDocumentIDs, _replacementText) = false
 
-type internal InlineRenameInfo(checker: FSharpChecker, options: FSharpProjectOptions, solution: Solution, sourceText: SourceText, symbolUse: FSharpSymbolUse) =
+type internal InlineRenameInfo
+    (
+        checker: FSharpChecker, 
+        options: FSharpProjectOptions, 
+        solution: Solution, 
+        sourceText: SourceText, 
+        symbolUse: FSharpSymbolUse
+    ) =
+    
     let gate = obj()
     let mutable underlyingFindRenameLocationsTask: Task<ImmutableDictionary<DocumentId, FSharpSymbolUse[]>> = null
 
@@ -68,16 +77,28 @@ type internal InlineRenameInfo(checker: FSharpChecker, options: FSharpProjectOpt
         }
 
     interface IInlineRenameInfo with
+        /// Whether or not the entity at the selected location can be renamed.
         member __.CanRename = true
+        /// Provides the reason that can be displayed to the user if the entity at the selected location cannot be renamed.
         member __.LocalizedErrorMessage = null
+        /// The span of the entity that is being renamed.
         member __.TriggerSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate)
+        /// Whether or not this entity has overloads that can also be renamed if the user wants.
         member __.HasOverloads = false
+        /// Whether the Rename Overloads option should be forced to true. Used if rename is invoked from within a nameof expression.
         member __.ForceRenameOverloads = true
+        /// The short name of the symbol being renamed, for use in displaying information to the user.
         member __.DisplayName = symbolUse.Symbol.DisplayName
+        /// The full name of the symbol being renamed, for use in displaying information to the user.
         member __.FullDisplayName = try symbolUse.Symbol.FullName with _ -> symbolUse.Symbol.DisplayName
+        /// The glyph for the symbol being renamed, for use in displaying information to the user.
         member __.Glyph = Glyph.MethodPublic
+        /// Gets the final name of the symbol if the user has typed the provided replacement text in the editor.  
+        /// Normally, the final name will be same as the replacement text. However, that may not always be the same.  
+        /// For example, when renaming an attribute the replacement text may be "NewName" while the final symbol name might be "NewNameAttribute".
         member __.GetFinalSymbolName replacementText = replacementText
         
+        /// Returns the actual span that should be edited in the buffer for a given rename reference
         member __.GetReferenceEditSpan(location, cancellationToken) =
             let searchName = symbolUse.Symbol.DisplayName
             let spanText = getSpanText(location.Document, location.TextSpan, cancellationToken) |> Async.RunSynchronously
@@ -85,11 +106,11 @@ type internal InlineRenameInfo(checker: FSharpChecker, options: FSharpProjectOpt
  
             if index < 0 then
                 // Couldn't even find the search text at this reference location.  This might happen
-                // if the user used things like unicode escapes.  IN that case, we'll have to rename
-                // the entire identifier.
+                // if the user used things like unicode escapes. In that case, we'll have to rename the entire identifier.
                 location.TextSpan
             else TextSpan(location.TextSpan.Start + index, searchName.Length)
 
+        /// Returns the actual span that should be edited in the buffer for a given rename conflict
         member __.GetConflictEditSpan(location, replacementText, cancellationToken) =
             let spanText = getSpanText(location.Document, location.TextSpan, cancellationToken) |> Async.RunSynchronously
             let position = spanText.LastIndexOf(replacementText, StringComparison.Ordinal)
@@ -97,6 +118,9 @@ type internal InlineRenameInfo(checker: FSharpChecker, options: FSharpProjectOpt
             if position < 0 then Nullable()
             else Nullable(TextSpan(location.TextSpan.Start + position, replacementText.Length))
 
+        /// Determine the set of locations to rename given the provided options. May be called 
+        /// multiple times.  For example, this can be called one time for the initial set of
+        /// locations to rename, as well as any time the rename options are changed by the user.
         member __.FindRenameLocationsAsync(_optionSet, cancellationToken) =
             let renameTask =
                 lock gate <| fun _ ->
@@ -116,8 +140,8 @@ type internal InlineRenameInfo(checker: FSharpChecker, options: FSharpProjectOpt
 
                         underlyingFindRenameLocationsTask
                     else
-                        // We already have a task to figure out the set of rename locations.  Let it
-                        // finish, then ask it to get the rename locations with the updated options.
+                        // We already have a task to figure out the set of rename locations.
+                        // Let it finish, then ask it to get the rename locations with the updated options.
                         underlyingFindRenameLocationsTask
  
             async {
@@ -125,9 +149,8 @@ type internal InlineRenameInfo(checker: FSharpChecker, options: FSharpProjectOpt
 
                 return
                     { new IInlineRenameLocationSet with
-                        /// The set of locations that need to be updated with the replacement text that the user
-                        /// has entered in the inline rename session.  These are the locations are all relative
-                        /// to the solution when the inline rename session began.
+                        /// The set of locations that need to be updated with the replacement text that the user has entered in the inline rename session.  
+                        /// These are the locations are all relative to the solution when the inline rename session began.
                         member __.Locations : IList<InlineRenameLocation> =
                             symbolUsesByDocumentId
                             |> Seq.collect (fun (KeyValue(documentId, symbolUses)) -> 
@@ -140,8 +163,7 @@ type internal InlineRenameInfo(checker: FSharpChecker, options: FSharpProjectOpt
                         
                         /// Returns the set of replacements and their possible resolutions if the user enters the
                         /// provided replacement text and options.  Replacements are keyed by their document id
-                        /// and TextSpan in the original solution, and specify their new span and possible conflict
-                        /// resolution.
+                        /// and TextSpan in the original solution, and specify their new span and possible conflict resolution.
                         member __.GetReplacementsAsync(replacementText, optionSet, cancellationToken) : Task<IInlineRenameReplacementInfo> =
                             async {
                                 return 
@@ -168,8 +190,12 @@ type internal InlineRenameInfo(checker: FSharpChecker, options: FSharpProjectOpt
                             |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
                       }
             } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
-            
+        
+        /// Called before the rename is applied to the specified documents in the workspace. 
+        /// Return <code>true</code> if rename should proceed, or <code>false</code> if it should be canceled.
         member __.TryOnBeforeGlobalSymbolRenamed(_workspace, _changedDocumentIDs, _replacementText) = true
+        /// Called after the rename is applied to the specified documents in the workspace.  Return 
+        /// <code>true</code> if this operation succeeded, or <code>false</code> if it failed.
         member __.TryOnAfterGlobalSymbolRenamed(_workspace, _changedDocumentIDs, _replacementText) = true
 
 [<ExportLanguageService(typeof<IEditorInlineRenameService>, FSharpCommonConstants.FSharpLanguageName); Shared>]
