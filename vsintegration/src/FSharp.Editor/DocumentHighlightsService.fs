@@ -31,19 +31,18 @@ open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open System.Windows.Documents
- 
-[<System.Composition.Shared>]
+
+type internal FSharpHighlightSpan =
+    { IsDefinition: bool
+      Range: range }
+    override this.ToString() = sprintf "%+A" this
+
+[<Shared>]
 [<ExportLanguageService(typeof<IDocumentHighlightsService>, FSharpCommonConstants.FSharpLanguageName)>]
-type internal FSharpDocumentHighlightsService 
-    [<System.Composition.ImportingConstructor>] 
-    (
-        checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager
-    ) =
+type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerProvider: FSharpCheckerProvider, projectInfoManager: ProjectInfoManager) =
 
     static member GetDocumentHighlights(checker: FSharpChecker, documentKey: DocumentId, sourceText: SourceText, filePath: string, position: int, 
-                                        defines: string list, options: FSharpProjectOptions, textVersionHash: int, cancellationToken: CancellationToken) 
-                                        : Async<HighlightSpan[]> =
+                                        defines: string list, options: FSharpProjectOptions, textVersionHash: int, cancellationToken: CancellationToken) : Async<FSharpHighlightSpan[]> =
         async {
             let textLine = sourceText.Lines.GetLineFromPosition(position)
             let textLinePos = sourceText.Lines.GetLinePosition(position)
@@ -63,8 +62,7 @@ type internal FSharpDocumentHighlightsService
                                 let! symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
                                 return 
                                     [| for symbolUse in symbolUses do
-                                         let kind = if symbolUse.IsFromDefinition then HighlightSpanKind.Definition else HighlightSpanKind.Reference
-                                         yield HighlightSpan(CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate), kind) |]
+                                         yield { IsDefinition = symbolUse.IsFromDefinition; Range = symbolUse.RangeAlternate } |]
                             | None -> return [||]
                     | None -> return [||]
                 }
@@ -82,7 +80,12 @@ type internal FSharpDocumentHighlightsService
                      let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                      let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
                      let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
-                     let! highlightSpans = FSharpDocumentHighlightsService.GetDocumentHighlights(checkerProvider.Checker, document.Id, sourceText, document.FilePath, position, defines, options, textVersion.GetHashCode(), cancellationToken)
+                     let! spans = FSharpDocumentHighlightsService.GetDocumentHighlights(checkerProvider.Checker, document.Id, sourceText, document.FilePath, position, defines, options, textVersion.GetHashCode(), cancellationToken)
+                     
+                     let highlightSpans = spans |> Array.map (fun span ->
+                        let kind = if span.IsDefinition then HighlightSpanKind.Definition else HighlightSpanKind.Reference
+                        HighlightSpan(CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, span.Range), kind))
+                     
                      return [| DocumentHighlights(document, highlightSpans.ToImmutableArray()) |].ToImmutableArray()
                  | None -> return ImmutableArray<DocumentHighlights>()
             }   
