@@ -11,6 +11,18 @@ neg86.fsx(8,13,8,17): typecheck error FS3167: 'join' must be followed by 'in'. U
 
 neg86.fsx(9,21,9,22): typecheck error FS0039: The value or constructor 'e' is not defined
 
+Maybe you want one of the following:
+
+   exn
+
+   exp
+
+   Set
+
+   ref
+
+   seq
+
 neg86.fsx(23,13,23,17): typecheck error FS3097: Incorrect syntax for 'join'. Usage: join var in collection on (outerKey = innerKey). Note that parentheses are required after 'on'.
 
 neg86.fsx(28,13,28,17): typecheck error FS3097: Incorrect syntax for 'join'. Usage: join var in collection on (outerKey = innerKey). Note that parentheses are required after 'on'.
@@ -19,4 +31,28 @@ neg86.fsx(33,36,33,37): typecheck error FS3125: Invalid join relation in 'join'.
 
 neg86.fsx(34,21,34,22): typecheck error FS0039: The value or constructor 'e' is not defined
 
+Maybe you want one of the following:
+
+   exn
+
+   exp
+
+   Set
+
+   ref
+
+   seq
+
 neg86.fsx(34,23,34,24): typecheck error FS0039: The value or constructor 'c' is not defined
+
+Maybe you want one of the following:
+
+   cos
+
+   ceil
+
+   char
+
+   cosh
+
+   count
