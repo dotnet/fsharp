@@ -48,23 +48,30 @@ type internal FSharpDocumentHighlightsService
             let textLine = sourceText.Lines.GetLineFromPosition(position)
             let textLinePos = sourceText.Lines.GetLinePosition(position)
             let fcsTextLineNumber = textLinePos.Line + 1
-            
-            match CommonHelpers.tryClassifyAtPosition(documentKey, sourceText, filePath, defines, position, cancellationToken) with 
-            | Some (islandColumn, qualifiers, _) -> 
-                let! _parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
-                match checkFileAnswer with
-                | FSharpCheckFileAnswer.Aborted -> return [||]
-                | FSharpCheckFileAnswer.Succeeded(checkFileResults) ->
-                    let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, islandColumn, textLine.ToString(), qualifiers)
-                    match symbolUse with
-                    | Some symbolUse ->
-                        let! symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
-                        return 
-                            [| for symbolUse in symbolUses do
-                                 let kind = if symbolUse.IsFromDefinition then HighlightSpanKind.Definition else HighlightSpanKind.Reference
-                                 yield HighlightSpan(CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate), kind) |]
+            let textLineColumn = textLinePos.Character
+            let tryGetHighlightsAtPosition position =
+                async {
+                    match CommonHelpers.tryClassifyAtPosition(documentKey, sourceText, filePath, defines, position, cancellationToken) with 
+                    | Some (islandColumn, qualifiers, _) -> 
+                        let! _parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
+                        match checkFileAnswer with
+                        | FSharpCheckFileAnswer.Aborted -> return [||]
+                        | FSharpCheckFileAnswer.Succeeded(checkFileResults) ->
+                            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, islandColumn, textLine.ToString(), qualifiers)
+                            match symbolUse with
+                            | Some symbolUse ->
+                                let! symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
+                                return 
+                                    [| for symbolUse in symbolUses do
+                                         let kind = if symbolUse.IsFromDefinition then HighlightSpanKind.Definition else HighlightSpanKind.Reference
+                                         yield HighlightSpan(CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate), kind) |]
+                            | None -> return [||]
                     | None -> return [||]
-            | None -> return [||]
+                }
+            let! attempt1 = tryGetHighlightsAtPosition position
+            match attempt1 with
+            | [||] when textLineColumn > 0 -> return! tryGetHighlightsAtPosition (position - 1)
+            | res -> return res
         }        
 
     interface IDocumentHighlightsService with
