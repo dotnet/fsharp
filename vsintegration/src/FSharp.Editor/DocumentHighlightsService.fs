@@ -41,12 +41,11 @@ type internal FSharpHighlightSpan =
 [<ExportLanguageService(typeof<IDocumentHighlightsService>, FSharpCommonConstants.FSharpLanguageName)>]
 type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerProvider: FSharpCheckerProvider, projectInfoManager: ProjectInfoManager) =
 
-    /// Fix invalid symbols if they appear to have redundant suffix and prefix. 
-    /// All symbol uses are assumed to belong to a single snapshot.
-    static let fixInvalidSymbolSpans (lastIdent: string) (spans: FSharpHighlightSpan []) =
+    /// Fix invalid spans if they appear to have redundant suffix and prefix.
+    static let fixInvalidSymbolSpans (sourceText: SourceText) (lastIdent: string) (spans: FSharpHighlightSpan []) =
         spans
         |> Seq.choose (fun (span: FSharpHighlightSpan) ->
-            let newLastIdent = span.TextSpan.ToString()
+            let newLastIdent = sourceText.GetSubText(span.TextSpan).ToString()
             let index = newLastIdent.LastIndexOf(lastIdent, StringComparison.Ordinal)
             if index > 0 then 
                 // Sometimes FCS returns a composite identifier for a short symbol, so we truncate the prefix
@@ -77,7 +76,8 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
             let textLineColumn = textLinePos.Character
             let tryGetHighlightsAtPosition position =
                 async {
-                    match CommonHelpers.tryClassifyAtPosition(documentKey, sourceText, filePath, defines, position, cancellationToken) with 
+                    match CommonHelpers.tryClassifyAtPosition(documentKey, sourceText, filePath, defines, position, cancellationToken) with
+                    | Some (_, [], _) -> return [||]
                     | Some (islandEndColumn, qualifiers, _span) -> 
                         let! _parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
                         match checkFileAnswer with
@@ -87,12 +87,12 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
                             match symbolUse with
                             | Some symbolUse ->
                                 let! symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
-                                let lastIdent = List.head qualifiers
+                                let lastIdent = List.last qualifiers
                                 return 
                                     [| for symbolUse in symbolUses do
                                          yield { IsDefinition = symbolUse.IsFromDefinition
                                                  TextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate) } |]
-                                    |> fixInvalidSymbolSpans lastIdent
+                                    |> fixInvalidSymbolSpans sourceText lastIdent
                             | None -> return [||]
                     | None -> return [||]
                 }
