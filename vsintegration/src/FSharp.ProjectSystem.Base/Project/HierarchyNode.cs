@@ -1182,7 +1182,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             else
                 uiFlags = (uint)(__VSADDITEMFLAGS.VSADDITEM_AddExistingItems | __VSADDITEMFLAGS.VSADDITEM_AllowMultiSelect | __VSADDITEMFLAGS.VSADDITEM_AllowStickyFilter | __VSADDITEMFLAGS.VSADDITEM_ProjectHandlesLinks);
 
-            ErrorHandler.ThrowOnFailure(addItemDialog.AddProjectItemDlg(this.hierarchyId, ref projectGuid, project, uiFlags, null, null, ref strBrowseLocations, ref strFilter, out iDontShowAgain)); /*&fDontShowAgain*/
+            var res = addItemDialog.AddProjectItemDlg(this.hierarchyId, ref projectGuid, project, uiFlags, null, null, ref strBrowseLocations, ref strFilter, out iDontShowAgain);
+
+            if (res != VSConstants.OLE_E_PROMPTSAVECANCELLED &&
+                res != VSConstants.S_OK)
+            {
+                ErrorHandler.ThrowOnFailure(res);
+            }
 
             return VSConstants.S_OK;
         }
