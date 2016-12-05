@@ -35,7 +35,7 @@ open System.Windows.Documents
 [<System.Composition.Shared>]
 [<ExportLanguageService(typeof<IDocumentHighlightsService>, FSharpCommonConstants.FSharpLanguageName)>]
 type internal FSharpDocumentHighlightsService 
-    [<System.ComponentModel.Composition.ImportingConstructor>] 
+    [<System.Composition.ImportingConstructor>] 
     (
         checkerProvider: FSharpCheckerProvider,
         projectInfoManager: ProjectInfoManager
