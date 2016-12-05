@@ -21,6 +21,11 @@ open Microsoft.FSharp.Compiler.Range
 
 open Microsoft.VisualStudio.FSharp.LanguageService
 
+[<RequireQualifiedAccess>]
+type internal DiagnosticsType =
+    | Syntax
+    | Semantic
+
 [<DiagnosticAnalyzer(FSharpCommonConstants.FSharpLanguageName)>]
 type internal FSharpDocumentDiagnosticAnalyzer() =
     inherit DocumentDiagnosticAnalyzer()
@@ -56,12 +61,13 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
                 hash 
         }
 
-    static member GetDiagnostics(checker: FSharpChecker, filePath: string, sourceText: SourceText, textVersionHash: int, options: FSharpProjectOptions, addSemanticErrors: bool) = 
+    static member GetDiagnostics(checker: FSharpChecker, filePath: string, sourceText: SourceText, textVersionHash: int, options: FSharpProjectOptions, diagnosticType: DiagnosticsType) = 
         async {
             let! parseResults = checker.ParseFileInProject(filePath, sourceText.ToString(), options) 
             let! errors = 
                 async {
-                    if addSemanticErrors then
+                    match diagnosticType with
+                    | DiagnosticsType.Semantic ->
                         let! checkResultsAnswer = checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options) 
                         match checkResultsAnswer with
                         | FSharpCheckFileAnswer.Aborted -> return [||]
@@ -70,7 +76,7 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
                             let allErrors = HashSet(results.Errors, errorInfoEqualityComparer)
                             allErrors.ExceptWith(parseResults.Errors)
                             return Seq.toArray allErrors
-                    else
+                    | DiagnosticsType.Syntax ->
                         return parseResults.Errors
                 }
             
@@ -104,7 +110,7 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
             | Some options ->
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
-                return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(getChecker document, document.FilePath, sourceText, textVersion.GetHashCode(), options, false)
+                return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(getChecker document, document.FilePath, sourceText, textVersion.GetHashCode(), options, DiagnosticsType.Syntax)
             | None -> return ImmutableArray<Diagnostic>.Empty
         } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
 
@@ -117,7 +123,7 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
             | Some options ->
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
-                return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(getChecker document, document.FilePath, sourceText, textVersion.GetHashCode(), options, true)
+                return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(getChecker document, document.FilePath, sourceText, textVersion.GetHashCode(), options, DiagnosticsType.Semantic)
             | None -> return ImmutableArray<Diagnostic>.Empty
         } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
 
