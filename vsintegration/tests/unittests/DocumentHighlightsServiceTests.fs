@@ -47,23 +47,52 @@ let internal options = {
     ExtraProjectInfo = None
 }
 
+let private getSpans (fileContents: string) (caretPosition: int) =
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    FSharpDocumentHighlightsService.GetDocumentHighlights(
+        FSharpChecker.Instance, documentId, SourceText.From(fileContents), filePath, caretPosition, [], options, 0, CancellationToken.None)
+    |> Async.RunSynchronously
+
+let private span isDefinition (startLine, startCol) (endLine, endCol) =
+        { IsDefinition = isDefinition
+          Range = Range.mkRange filePath (Range.mkPos startLine startCol) (Range.mkPos endLine endCol) }
+
 [<Test>]
-let ShouldHighlightAllLocalSymbolReferences() =
+let ShouldHighlightAllSimpleLocalSymbolReferences() =
     let fileContents = """
     let foo x = 
         x + x
     let y = foo 2
     """
     let caretPosition = fileContents.IndexOf("foo") + 1
-    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-    
-    let spans  =
-        FSharpDocumentHighlightsService.GetDocumentHighlights(
-            FSharpChecker.Instance, documentId, SourceText.From(fileContents), filePath, caretPosition, [], options, 0, CancellationToken.None)
-        |> Async.RunSynchronously
+    let spans = getSpans fileContents caretPosition
     
     let expected =
-        [| { IsDefinition = true; Range = Range.mkRange filePath (Range.mkPos 2 8) (Range.mkPos 2 11) }
-           { IsDefinition = false; Range = Range.mkRange filePath (Range.mkPos 4 12) (Range.mkPos 4 15) } |]
+        [| span true (2, 8) (2, 11)
+           span false (4, 12) (4, 15) |]
+    
+    Assert.AreEqual(expected, spans)
+
+[<Test>]
+let ShouldHighlightAllQualifiedSymbolReferences() =
+    let fileContents = """
+    let x = System.DateTime.Now
+    let y = System.DateTime.MaxValue
+    """
+    let caretPosition = fileContents.IndexOf("DateTime") + 1
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    
+    let spans = getSpans fileContents caretPosition
+    
+    let expected =
+        [| span false (2, 19) (2, 27)
+           span false (3, 19) (3, 27) |]
+    
+    Assert.AreEqual(expected, spans)
+
+    let caretPosition = fileContents.IndexOf("Now") + 1
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    let spans = getSpans fileContents caretPosition
+    let expected = [| span false (2, 28) (2, 31) |]
     
     Assert.AreEqual(expected, spans)

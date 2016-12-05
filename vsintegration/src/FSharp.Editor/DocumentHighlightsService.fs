@@ -34,12 +34,39 @@ open System.Windows.Documents
 
 type internal FSharpHighlightSpan =
     { IsDefinition: bool
-      Range: range }
+      TextSpan: TextSpan }
     override this.ToString() = sprintf "%+A" this
 
 [<Shared>]
 [<ExportLanguageService(typeof<IDocumentHighlightsService>, FSharpCommonConstants.FSharpLanguageName)>]
 type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerProvider: FSharpCheckerProvider, projectInfoManager: ProjectInfoManager) =
+
+    /// Fix invalid symbols if they appear to have redundant suffix and prefix. 
+    /// All symbol uses are assumed to belong to a single snapshot.
+    static let fixInvalidSymbolSpans (lastIdent: string) (spans: FSharpHighlightSpan []) =
+        spans
+        |> Seq.choose (fun (span: FSharpHighlightSpan) ->
+            let newLastIdent = span.TextSpan.ToString()
+            let index = newLastIdent.LastIndexOf(lastIdent, StringComparison.Ordinal)
+            if index > 0 then 
+                // Sometimes FCS returns a composite identifier for a short symbol, so we truncate the prefix
+                // Example: newLastIdent --> "x.Length", lastIdent --> "Length"
+                Some { span with TextSpan = TextSpan(span.TextSpan.Start + index, span.TextSpan.Length - index) }
+            elif index = 0 && newLastIdent.Length > lastIdent.Length then
+                // The returned symbol use is too long; we truncate its redundant suffix
+                // Example: newLastIdent --> "Length<'T>", lastIdent --> "Length"
+                Some { span with TextSpan = TextSpan(span.TextSpan.Start, lastIdent.Length) }
+            elif index = 0 then
+                Some span
+            else
+                // In the case of attributes, a returned symbol use may be a part of original text
+                // Example: newLastIdent --> "Sample", lastIdent --> "SampleAttribute"
+                let index = lastIdent.LastIndexOf(newLastIdent, StringComparison.Ordinal)
+                if index >= 0 then
+                    Some span
+                else None)
+        |> Seq.distinctBy (fun span -> span.TextSpan.Start)
+        |> Seq.toArray
 
     static member GetDocumentHighlights(checker: FSharpChecker, documentKey: DocumentId, sourceText: SourceText, filePath: string, position: int, 
                                         defines: string list, options: FSharpProjectOptions, textVersionHash: int, cancellationToken: CancellationToken) : Async<FSharpHighlightSpan[]> =
@@ -51,18 +78,21 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
             let tryGetHighlightsAtPosition position =
                 async {
                     match CommonHelpers.tryClassifyAtPosition(documentKey, sourceText, filePath, defines, position, cancellationToken) with 
-                    | Some (islandColumn, qualifiers, _) -> 
+                    | Some (islandEndColumn, qualifiers, _span) -> 
                         let! _parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
                         match checkFileAnswer with
                         | FSharpCheckFileAnswer.Aborted -> return [||]
                         | FSharpCheckFileAnswer.Succeeded(checkFileResults) ->
-                            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, islandColumn, textLine.ToString(), qualifiers)
+                            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, islandEndColumn, textLine.ToString(), qualifiers)
                             match symbolUse with
                             | Some symbolUse ->
                                 let! symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
+                                let lastIdent = List.head qualifiers
                                 return 
                                     [| for symbolUse in symbolUses do
-                                         yield { IsDefinition = symbolUse.IsFromDefinition; Range = symbolUse.RangeAlternate } |]
+                                         yield { IsDefinition = symbolUse.IsFromDefinition
+                                                 TextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate) } |]
+                                    |> fixInvalidSymbolSpans lastIdent
                             | None -> return [||]
                     | None -> return [||]
                 }
@@ -84,7 +114,7 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
                      
                      let highlightSpans = spans |> Array.map (fun span ->
                         let kind = if span.IsDefinition then HighlightSpanKind.Definition else HighlightSpanKind.Reference
-                        HighlightSpan(CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, span.Range), kind))
+                        HighlightSpan(span.TextSpan, kind))
                      
                      return [| DocumentHighlights(document, highlightSpans.ToImmutableArray()) |].ToImmutableArray()
                  | None -> return ImmutableArray<DocumentHighlights>()
