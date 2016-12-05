@@ -178,39 +178,29 @@ let singleNegTest (cfg: TestConfig) testname =
         then fsc cfg "%s -a -o:%s-pre.dll" cfg.fsc_flags testname [testname + "-pre.fs"] 
         else ()
 
-    // echo Negative typechecker testing: %testname%
     log "Negative typechecker testing: %s" testname
-
-    let fsdiff a b = 
-        let out = new ResizeArray<string>()
-        let redirectOutputToFile path args =
-            log "%s %s" path args
-            use toLog = redirectToLog ()
-            Process.exec { RedirectOutput = Some (function null -> () | s -> out.Add(s)); RedirectError = Some toLog.Post; RedirectInput = None; } cfg.Directory cfg.EnvironmentVariables path args
-        (Commands.fsdiff redirectOutputToFile cfg.FSDIFF a b) |> checkResult
-        out.ToArray() |> List.ofArray
 
     fscAppendErrExpectFail cfg  (sprintf "%s.err" testname) """%s --vserrors --warnaserror --nologo --maxerrors:10000 -a -o:%s.dll""" cfg.fsc_flags testname sources
 
-    let testnameDiff = fsdiff (sprintf "%s.err" testname) (sprintf "%s.bsl" testname)
+    let testnameDiff = fsdiff cfg (sprintf "%s.err" testname) (sprintf "%s.bsl" testname)
 
     match testnameDiff with
-    | [] -> ()
+    | "" -> ()
     | l ->
-        log "***** %s.err %s.bsl differed: a bug or baseline may neeed updating" testname testname
-        failwith (sprintf "%s.err %s.bsl differ; %A" testname testname l)
+        log "***** %s.err %s.bsl differed: a bug or baseline may need updating" testname testname        
+        failwithf "%s.err %s.bsl differ; %A" testname testname l
 
     log "Good, output %s.err matched %s.bsl" testname testname
 
     fscAppendErrExpectFail cfg (sprintf "%s.vserr" testname) "%s --test:ContinueAfterParseFailure --vserrors --warnaserror --nologo --maxerrors:10000 -a -o:%s.dll" cfg.fsc_flags testname sources
 
-    let testnameDiff = fsdiff (sprintf "%s.vserr" testname) VSBSLFILE
+    let testnameDiff = fsdiff cfg (sprintf "%s.vserr" testname) VSBSLFILE
 
     match testnameDiff with
-        | [] -> ()
-        | l ->
-            log "***** %s.vserr %s differed: a bug or baseline may neeed updating" testname VSBSLFILE
-            failwith (sprintf "%s.vserr %s differ; %A" testname VSBSLFILE l)
+    | "" -> ()
+    | l ->
+        log "***** %s.vserr %s differed: a bug or baseline may need updating" testname VSBSLFILE
+        failwithf "%s.vserr %s differ; %A" testname VSBSLFILE l
 
     log "Good, output %s.vserr matched %s" testname VSBSLFILE
 
