@@ -498,11 +498,6 @@ module CoreTests =
                 Command.exec cfg.Directory cfg.EnvironmentVariables { Output = OutputAndError(Overwrite(outFile), Overwrite(errFile)); Input = Some(RedirectInput(inFile)); } p 
                 >> checkResult
             Printf.ksprintf (fun flags (inFile, outFile, errFile) -> Commands.fsi (``exec <a >b 2>c`` (inFile, outFile, errFile)) cfg.FSI flags [])
-        
-        let fsdiff a b = 
-            let ``exec >`` f p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = Output(Overwrite(f)); Input = None} p >> checkResult
-            let diffFile = Path.ChangeExtension(a, ".diff")
-            Commands.fsdiff (``exec >`` diffFile) cfg.FSDIFF a b
 
         let fsc_flags_errors_ok = ""
 
@@ -524,10 +519,14 @@ module CoreTests =
         expectedFileOut |> withDefault diffFileOut
         expectedFileErr |> withDefault diffFileErr
 
-        fsdiff diffFileOut expectedFileOut
-        fsdiff diffFileErr expectedFileErr
+        
+        match fsdiff cfg diffFileOut expectedFileOut with
+        | "" -> ()
+        | diffs -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" diffFileOut expectedFileOut diffs)
 
-
+        match fsdiff cfg diffFileErr expectedFileErr with
+        | "" -> ()
+        | diffs -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" diffFileErr expectedFileErr diffs)
 
     [<Test>]
     let ``printing-1`` () = 
@@ -567,8 +566,8 @@ module CoreTests =
         let diffs = fsdiff cfg outfile bslfile 
 
         match diffs with
-            | [] -> ()
-            | _ -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" outfile bslfile diffs)
+        | "" -> ()
+        | _ -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" outfile bslfile diffs)
 
     [<Test; Category("signedtest")>]
     let ``signedtest-1`` () = signedtest("","test-unsigned.bsl")
@@ -902,13 +901,13 @@ module CoreTests =
         let diffs = fsdiff cfg stdoutPath stdoutBaseline
 
         match diffs with
-        | [] -> ()
+        | "" -> ()
         | _ -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" stdoutPath stdoutBaseline diffs)
 
         let diffs2 = fsdiff cfg stderrPath stderrBaseline
 
         match diffs2 with
-        | [] -> ()
+        | "" -> ()
         | _ -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" stderrPath stderrBaseline diffs2)
 
 
@@ -1439,9 +1438,9 @@ module OptimizationTests =
         let diff = fsdiff cfg outFile expectedFile
 
         match diff with
-            | [] -> ()
-            | _ ->
-                Assert.Fail (sprintf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff)
+        | "" -> ()
+        | _ ->
+            Assert.Fail (sprintf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff)
 
 
     [<Test>]
@@ -1457,7 +1456,7 @@ module OptimizationTests =
         let diff = fsdiff cfg outFile expectedFile
 
         match diff with
-        | [] -> ()
+        | "" -> ()
         | _ -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff)
 
 
@@ -1474,7 +1473,7 @@ module OptimizationTests =
         let diff = fsdiff cfg outFile expectedFile
 
         match diff with
-        | [] -> ()
+        | "" -> ()
         | _ -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff)
 
 
@@ -1491,7 +1490,7 @@ module OptimizationTests =
         let diff = fsdiff cfg outFile expectedFile
 
         match diff with
-        | [] -> ()
+        | "" -> ()
         | _ -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff)
 
 
