@@ -93,10 +93,6 @@ module Commands =
         Directory.CreateDirectory path |> ignore
         path
 
-    let fsdiff exec fsdiffExe file1 file2 =
-        // %FSDIFF% %testname%.err %testname%.bsl
-        exec fsdiffExe (sprintf "%s %s normalize" file1 file2)
-
 
 type TestConfig = 
     { EnvironmentVariables : Map<string, string>
@@ -109,7 +105,6 @@ type TestConfig =
       fsc_flags : string
       FSCBinPath : string
       FSCOREDLLPATH : string
-      FSDIFF : string
       FSI : string
       fsi_flags : string
       ILDASM : string
@@ -179,7 +174,6 @@ let config configurationName envVars =
 
     let SCRIPT_ROOT = __SOURCE_DIRECTORY__ 
     let FSCBinPath = SCRIPT_ROOT ++ ".." ++ ".." ++ configurationName ++ "net40" ++ "bin"
-    let FSDIFF = SCRIPT_ROOT ++ ".." ++ "fsharpqa" ++ "testenv" ++ "bin" ++ "diff.exe"
 
     let csc_flags = "/nologo" 
     let fsc_flags = "-r:System.Core.dll --nowarn:20 --define:COMPILED" 
@@ -203,7 +197,6 @@ let config configurationName envVars =
       CORSDK = CORSDK |> Commands.pathAddBackslash
       FSCBinPath = FSCBinPath |> Commands.pathAddBackslash
       FSCOREDLLPATH = FSCOREDLLPATH
-      FSDIFF = FSDIFF
       ILDASM = ILDASM
       SN = SN
       NGEN = NGEN 
@@ -230,7 +223,6 @@ let logConfig (cfg: TestConfig) =
     log "fsc_flags           =%s" cfg.fsc_flags
     log "FSCBINPATH          =%s" cfg.FSCBinPath
     log "FSCOREDLLPATH       =%s" cfg.FSCOREDLLPATH
-    log "FSDIFF              =%s" cfg.FSDIFF
     log "FSI                 =%s" cfg.FSI
     log "fsi_flags           =%s" cfg.fsi_flags
     log "ILDASM              =%s" cfg.ILDASM
@@ -489,41 +481,21 @@ let diff normalize path1 path2 =
         lines1.[minLines .. (lines1.Length - 1)] |> Array.iter (append << sprintf "- %s")
         lines2.[minLines .. (lines2.Length - 1)] |> Array.iter (append << sprintf "+ %s")
 
-    let s = result.ToString()
-    if s <> "" then
-        failwith s
+    result.ToString()
 
 let fsdiff cfg a b = 
-    let out = new ResizeArray<string>()
+    let actualFile = System.IO.Path.Combine(cfg.Directory, a)
+    let expectedFile = System.IO.Path.Combine(cfg.Directory, b)
     let errorText = System.IO.File.ReadAllText (System.IO.Path.Combine(cfg.Directory, a))
-    let redirectOutputToFile path args =
-        log "%s %s" path args
-        use toLog = redirectToLog ()
-        let outputf x = 
-            match x with
-            | null -> () 
-            | s -> out.Add s
 
-        let parameters = 
-            { RedirectOutput = Some outputf
-              RedirectError = Some toLog.Post
-              RedirectInput = None }
-
-        Process.exec parameters cfg.Directory cfg.EnvironmentVariables path args
-
-
-    Commands.fsdiff redirectOutputToFile cfg.FSDIFF a b |> ignore     
-    let result = out.ToArray() |> List.ofArray
-    for line in result do
-        log "%s" line
-    if not (List.isEmpty result) then
+    let result = diff false actualFile expectedFile
+    if result <> "" then
+        log "%s" result
         log "New error file:"
-        errorText
-        |> log "%s"
+        log "%s" errorText
 
     result
         
-
 let requireENCulture () = 
     match System.Globalization.CultureInfo.CurrentCulture.TwoLetterISOLanguageName with
     | "en" -> true

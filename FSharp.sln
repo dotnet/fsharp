@@ -41,8 +41,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libraries", "Libraries", "{
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "HostedCompilerServer", "tests\fsharpqa\testenv\src\HostedCompilerServer\HostedCompilerServer.fsproj", "{4239EFEA-E746-446A-BF7A-51FCBAB13946}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "diff", "tests\fsharpqa\testenv\src\diff\diff.fsproj", "{BF5C6D92-D053-4216-9C42-B62F5F5C5E91}"
-EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ILComparer", "tests\fsharpqa\testenv\src\ILComparer\ILComparer.fsproj", "{2E60864A-E3FF-4BCC-810F-DC7C34E6B236}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Tests.FSharpSuite.DrivingCoreCLR", "tests\fsharp\FSharp.Tests.FSharpSuite.DrivingCoreCLR.fsproj", "{BDA4D411-6AD9-4B3E-A3B3-07BAD6BEF1ED}"
