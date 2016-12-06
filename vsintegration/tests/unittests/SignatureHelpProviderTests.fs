@@ -66,18 +66,18 @@ let ShouldGiveSignatureHelpAtCorrectMarkers() =
     let manyTestCases = 
         [ ("""
 //1
-System.Console.WriteLine(1,arg1=2)
-
+System.Console.WriteLine(format="Hello, {0}",arg0="World")
 """,
             [(".", None); 
              ("System", None); 
              ("WriteLine", None);
-             ("(", Some ("[7..40)", 0, 2, None)); 
-             (",", Some ("[7..40)", 1, 2, Some "arg1"));
-             ("arg", Some ("[7..40)", 1, 2, Some "arg1"));
-             ("arg1", Some ("[7..40)", 1, 2, Some "arg1"));
-             ("=", Some ("[7..40)", 1, 2, Some "arg1")); 
-             ("2", Some ("[7..40)", 0, 2, None));
+             ("(", Some ("[5..62)", 0, 2, Some "format")); 
+             ("format", Some ("[5..62)", 0, 2, Some "format"));
+             (",", None);
+             ("""",""", Some ("[5..62)", 1, 2, Some "arg0"));
+             ("arg0", Some ("[5..62)", 1, 2, Some "arg0"));
+             ("arg0=", Some ("[5..62)", 1, 2, Some "arg0")); 
+             ("World", Some ("[5..62)", 1, 2, Some "arg0"));
              (")", None)]);
           ( """
 //2
@@ -85,9 +85,9 @@ open System
 Console.WriteLine([(1,2)])
 """,
             [
-             ("WriteLine(", Some ("[20..45)", 0, 0, None));
+             ("WriteLine(", Some ("[17..42)", 0, 0, None));
              (",", None); 
-             ("[(", Some ("[20..45)", 0, 1, None))
+             ("[(", Some ("[17..42)", 0, 1, None))
             ]);
           ( """
 //3
@@ -97,21 +97,21 @@ type foo3 = N1.T<ParamIgnored=
 type foo4 = N1.T<Param1=1,
 type foo5 = N1.T<Param1=1,ParamIgnored=
 """,
-            [("type foo = N1.T<", Some ("[18..26)", 0, 0, None));
-             ("type foo2 = N1.T<", Some ("[38..52)", 0, 0, Some "Param1"));
-             ("type foo2 = N1.T<Param1", Some ("[38..52)", 0, 1, Some "Param1"));
-             ("type foo2 = N1.T<Param1=", Some ("[38..52)", 0, 1, Some "Param1"));
-             ("type foo3 = N1.T<", Some ("[64..84)", 0, 0, Some "ParamIgnored"));
-             ("type foo3 = N1.T<ParamIgnored=", Some ("[64..84)", 0, 1, Some "ParamIgnored"));
-             ("type foo4 = N1.T<Param1", Some ("[96..112)", 0, 2, Some "Param1"));
-             ("type foo4 = N1.T<Param1=", Some ("[96..112)", 0, 2, Some "Param1"));
-             ("type foo4 = N1.T<Param1=1", Some ("[96..112)", 0, 2, Some "Param1"));
-             ("type foo5 = N1.T<Param1", Some ("[124..153)", 0, 2, Some "Param1"));
-             ("type foo5 = N1.T<Param1=", Some ("[124..153)", 0, 2, Some "Param1"));
-             ("type foo5 = N1.T<Param1=1", Some ("[124..153)", 0, 2, Some "Param1"));
-             ("type foo5 = N1.T<Param1=1,", Some ("[124..153)", 1, 2, Some "ParamIgnored"));
-             ("type foo5 = N1.T<Param1=1,ParamIgnored",Some ("[124..153)", 1, 2, Some "ParamIgnored"));
-             ("type foo5 = N1.T<Param1=1,ParamIgnored=",Some ("[124..153)", 1, 2, Some "ParamIgnored"))
+            [("type foo = N1.T<", Some ("[16..23)", 0, 0, None));
+             ("type foo2 = N1.T<", Some ("[35..48)", 0, 0, Some "Param1"));
+             ("type foo2 = N1.T<Param1", Some ("[35..48)", 0, 1, Some "Param1"));
+             ("type foo2 = N1.T<Param1=", Some ("[35..48)", 0, 1, Some "Param1"));
+             ("type foo3 = N1.T<", Some ("[60..79)", 0, 0, Some "ParamIgnored"));
+             ("type foo3 = N1.T<ParamIgnored=", Some ("[60..79)", 0, 1, Some "ParamIgnored"));
+             ("type foo4 = N1.T<Param1", Some ("[91..106)", 0, 2, Some "Param1"));
+             ("type foo4 = N1.T<Param1=", Some ("[91..106)", 0, 2, Some "Param1"));
+             ("type foo4 = N1.T<Param1=1", Some ("[91..106)", 0, 2, Some "Param1"));
+             ("type foo5 = N1.T<Param1", Some ("[118..146)", 0, 2, Some "Param1"));
+             ("type foo5 = N1.T<Param1=", Some ("[118..146)", 0, 2, Some "Param1"));
+             ("type foo5 = N1.T<Param1=1", Some ("[118..146)", 0, 2, Some "Param1"));
+             ("type foo5 = N1.T<Param1=1,", Some ("[118..146)", 1, 2, Some "ParamIgnored"));
+             ("type foo5 = N1.T<Param1=1,ParamIgnored",Some ("[118..146)", 1, 2, Some "ParamIgnored"));
+             ("type foo5 = N1.T<Param1=1,ParamIgnored=",Some ("[118..146)", 1, 2, Some "ParamIgnored"))
             ]);
           ( """
 //4
@@ -121,21 +121,21 @@ type foo3 = N1.T<ParamIgnored= >
 type foo4 = N1.T<Param1=1, >
 type foo5 = N1.T<Param1=1,ParamIgnored= >
 """,
-            [("type foo = N1.T<", Some ("[18..24)", 0, 0, None));
-             ("type foo2 = N1.T<", Some ("[40..53)", 0, 0, Some "Param1"));
-             ("type foo2 = N1.T<Param1", Some ("[40..53)", 0, 1, Some "Param1"));
-             ("type foo2 = N1.T<Param1=", Some ("[40..53)", 0, 1, Some "Param1"));
-             ("type foo3 = N1.T<", Some ("[68..87)", 0, 0, Some "ParamIgnored"));
-             ("type foo3 = N1.T<ParamIgnored=", Some ("[68..87)", 0, 1, Some "ParamIgnored"));
-             ("type foo4 = N1.T<Param1", Some ("[102..117)", 0, 2, Some "Param1"));
-             ("type foo4 = N1.T<Param1=", Some ("[102..117)", 0, 2, Some "Param1"));
-             ("type foo4 = N1.T<Param1=1", Some ("[102..117)", 0, 2, Some "Param1"));
-             ("type foo5 = N1.T<Param1", Some ("[132..160)", 0, 2, Some "Param1"));
-             ("type foo5 = N1.T<Param1=", Some ("[132..160)", 0, 2, Some "Param1"));
-             ("type foo5 = N1.T<Param1=1", Some ("[132..160)", 0, 2, Some "Param1"));
-             ("type foo5 = N1.T<Param1=1,", Some ("[132..160)", 1, 2, Some "ParamIgnored"));
-             ("type foo5 = N1.T<Param1=1,ParamIgnored",Some ("[132..160)", 1, 2, Some "ParamIgnored"));
-             ("type foo5 = N1.T<Param1=1,ParamIgnored=",Some ("[132..160)", 1, 2, Some "ParamIgnored"))])
+            [("type foo = N1.T<", Some ("[16..22)", 0, 0, None));
+             ("type foo2 = N1.T<", Some ("[37..50)", 0, 0, Some "Param1"));
+             ("type foo2 = N1.T<Param1", Some ("[37..50)", 0, 1, Some "Param1"));
+             ("type foo2 = N1.T<Param1=", Some ("[37..50)", 0, 1, Some "Param1"));
+             ("type foo3 = N1.T<", Some ("[64..83)", 0, 0, Some "ParamIgnored"));
+             ("type foo3 = N1.T<ParamIgnored=", Some ("[64..83)", 0, 1, Some "ParamIgnored"));
+             ("type foo4 = N1.T<Param1", Some ("[97..112)", 0, 2, Some "Param1"));
+             ("type foo4 = N1.T<Param1=", Some ("[97..112)", 0, 2, Some "Param1"));
+             ("type foo4 = N1.T<Param1=1", Some ("[97..112)", 0, 2, Some "Param1"));
+             ("type foo5 = N1.T<Param1", Some ("[126..154)", 0, 2, Some "Param1"));
+             ("type foo5 = N1.T<Param1=", Some ("[126..154)", 0, 2, Some "Param1"));
+             ("type foo5 = N1.T<Param1=1", Some ("[126..154)", 0, 2, Some "Param1"));
+             ("type foo5 = N1.T<Param1=1,", Some ("[126..154)", 1, 2, Some "ParamIgnored"));
+             ("type foo5 = N1.T<Param1=1,ParamIgnored",Some ("[126..154)", 1, 2, Some "ParamIgnored"));
+             ("type foo5 = N1.T<Param1=1,ParamIgnored=",Some ("[126..154)", 1, 2, Some "ParamIgnored"))])
 //Test case 5
           ( """let _ = System.DateTime(""",
             [("let _ = System.DateTime(",  Some ("[8..24)", 0, 0, None)) ])
