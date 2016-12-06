@@ -67,16 +67,26 @@ type internal InlineRenameInfo
         symbolUse: FSharpSymbolUse,
         checkFileResults: FSharpCheckFileResults
     ) =
-    
-    let renamedSpansTracker = RenamedSpansTracker()
 
-    let getSpanText(document: Document, triggerSpan: TextSpan, cancellationToken: CancellationToken) =
-        async {
-            let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-            return sourceText.ToString(triggerSpan)
-        }
+    let getDocumentText (document: Document) cancellationToken =
+        match document.TryGetText() with
+        | true, text -> text
+        | _ -> document.GetTextAsync(cancellationToken).Result
 
-    let triggerSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate)
+    // for property access cases FSC incorrectly reports ranges including prefix
+    // try to trim the range to a name
+    // NOTE won't work if prefix already contains string that matches property name, i.e. `aaa.aaa`
+    let fixupSpan (sourceText: SourceText) span =
+        // TODO: search in-place to avoid ToString call
+        let useText = sourceText.ToString(span)
+        let index = useText.IndexOf(symbolUse.Symbol.DisplayName)
+        if index <= 0 then span
+        else TextSpan(span.Start + index, symbolUse.Symbol.DisplayName.Length)
+
+    let triggerSpan =
+        CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate)
+        |> fixupSpan sourceText
+
     let underlyingGetSymbolUsesTaskLock = obj()
     let mutable underlyingGetSymbolUsesTask: Task<ImmutableDictionary<DocumentId, FSharpSymbolUse[]>> = null
     
@@ -140,23 +150,12 @@ type internal InlineRenameInfo
 
         /// Returns the actual span that should be edited in the buffer for a given rename reference
         member __.GetReferenceEditSpan(location, cancellationToken) =
-            let searchName = symbolUse.Symbol.DisplayName
-            let spanText = getSpanText(location.Document, location.TextSpan, cancellationToken) |> Async.RunSynchronously
-            let _index = spanText.LastIndexOf(searchName, StringComparison.Ordinal)
-            //if index < 0 then
-                // Couldn't even find the search text at this reference location.  This might happen
-                // if the user used things like unicode escapes. In that case, we'll have to rename the entire identifier.
-            location.TextSpan
-            //else TextSpan(location.TextSpan.Start + index, searchName.Length)
+            let text = getDocumentText location.Document cancellationToken
+            fixupSpan text location.TextSpan 
         
         /// Returns the actual span that should be edited in the buffer for a given rename conflict
-        member __.GetConflictEditSpan(location, replacementText, cancellationToken) =
-            let spanText = getSpanText(location.Document, location.TextSpan, cancellationToken) |> Async.RunSynchronously
-            let _position = spanText.LastIndexOf(replacementText, StringComparison.Ordinal)
- 
-            //if position < 0 then Nullable()
-            //let position = renamedSpansTracker.GetAdjustedPosition(location.TextSpan.Start, location.Document.Id)
-            Nullable(TextSpan(location.TextSpan.Start, replacementText.Length))
+        member __.GetConflictEditSpan(location, _replacementText, _cancellationToken) =
+            Nullable(location.TextSpan)
         
         /// Determine the set of locations to rename given the provided options. May be called 
         /// multiple times.  For example, this can be called one time for the initial set of
@@ -164,49 +163,56 @@ type internal InlineRenameInfo
         member __.FindRenameLocationsAsync(_optionSet, cancellationToken) =
             async {
                 let! symbolUsesByDocumentId = getSymbolUses cancellationToken
+                let locationsByDocument = List()
+                for (KeyValue(documentId, symbolUses)) in symbolUsesByDocumentId do
+                    let document = document.Project.Solution.GetDocument(documentId)
+                    let! sourceText = 
+                        document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                    let locations = List();
+                    for symbolUse in symbolUses do
+                        locations.Add(InlineRenameLocation(document, fixupSpan sourceText (CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate))))
+                    locationsByDocument.Add((document, locations))
                 return
                     { new IInlineRenameLocationSet with
                         /// The set of locations that need to be updated with the replacement text that the user has entered in the inline rename session.  
                         /// These are the locations are all relative to the solution when the inline rename session began.
                         member __.Locations : IList<InlineRenameLocation> =
-                            symbolUsesByDocumentId
-                            |> Seq.collect (fun (KeyValue(documentId, symbolUses)) -> 
-                                symbolUses
-                                |> Seq.map (fun symbolUse -> 
-                                    let sourceText = document.Project.Solution.GetDocument(documentId).GetTextAsync(cancellationToken).Result // !!!!!!!!!!!!!!!!!
-                                    InlineRenameLocation(
-                                        document.Project.Solution.GetDocument(documentId), 
-                                        CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate))))
-                            |> Seq.toArray :> _
-                        
+                            let locations = List()
+                            for (_, l) in locationsByDocument do
+                                locations.AddRange(l)
+                            locations :> _
+
                         /// Returns the set of replacements and their possible resolutions if the user enters the
                         /// provided replacement text and options.  Replacements are keyed by their document id
                         /// and TextSpan in the original solution, and specify their new span and possible conflict resolution.
-                        member __.GetReplacementsAsync(replacementText, optionSet, cancellationToken) : Task<IInlineRenameReplacementInfo> =
+                        member this.GetReplacementsAsync(replacementText, optionSet, cancellationToken) : Task<IInlineRenameReplacementInfo> =
+                            let rec applyChanges i (solution: Solution) =
+                                async {
+                                    if i = locationsByDocument.Count then 
+                                        return solution
+                                    else
+                                        let document = 
+                                            fst (locationsByDocument.[i])
+                                        let! oldSourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                                        let changes = 
+                                            snd (locationsByDocument.[i]) 
+                                            |> Seq.map (fun r -> TextChange(r.TextSpan, replacementText))
+                                        let newSource = oldSourceText.WithChanges(changes)
+                                        return! applyChanges (i + 1) (solution.WithDocumentText(document.Id, newSource))
+                                }
+
                             async {
+                                let! newSolution = applyChanges 0 document.Project.Solution
                                 return 
                                     { new IInlineRenameReplacementInfo with
                                         /// The solution obtained after resolving all conflicts.
-                                        member __.NewSolution = document.Project.Solution // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                                        member __.NewSolution = newSolution
                                         /// Whether or not the replacement text entered by the user is valid.
                                         member __.ReplacementTextValid = true
                                         /// The documents that need to be updated.
                                         member __.DocumentIds = symbolUsesByDocumentId.Keys
                                         /// Returns all the replacements that need to be performed for the specified document.
-                                        member __.GetReplacements(documentId) =
-                                            match symbolUsesByDocumentId.TryGetValue documentId with
-                                            | false, _ -> Seq.empty
-                                            | true, symbolUses ->
-                                                renamedSpansTracker.ClearDocuments [documentId]
-                                                symbolUses
-                                                |> Array.map (fun symbolUse ->
-                                                    let sourceText = document.Project.Solution.GetDocument(documentId).GetTextAsync().Result // !!!!!!!!!!!!!!!!!!
-                                                    let originalSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate)
-                                                    let startPosition = renamedSpansTracker.GetAdjustedPosition(originalSpan.Start, documentId)
-                                                    let newSpan = TextSpan(startPosition, replacementText.Length)
-                                                    renamedSpansTracker.AddModifiedSpan(documentId, originalSpan, newSpan)
-                                                    InlineRenameReplacement(InlineRenameReplacementKind.NoConflict, originalSpan, newSpan))
-                                                |> Array.toSeq
+                                        member __.GetReplacements(documentId) = Seq.empty
                                     }
                             }
                             |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
