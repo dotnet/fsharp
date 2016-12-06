@@ -172,7 +172,7 @@ type internal FSharpSignatureHelpProvider
 
         for method in methods do
             // Create the documentation. Note, do this on the background thread, since doing it in the documentationBuild fails to build the XML index
-            let methodDocs = XmlDocumentation.BuildMethodOverloadTipText(documentationBuilder, method.Description, true)
+            let methodDocs = XmlDocumentation.BuildMethodOverloadTipText(documentationBuilder, method.Description, false)
 
             let parameters = 
                 let parameters = if isStaticArgTip then method.StaticParameters else method.Parameters
