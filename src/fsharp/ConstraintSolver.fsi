@@ -53,9 +53,9 @@ type ContextInfo =
 /// No context was given.
 | NoContext
 /// The type equation comes from an omitted else branch.
-| OmittedElseBranch
-/// The type equation comes from checking an else branch.
-| ElseBranch
+| OmittedElseBranch of range
+/// The type equation comes from a type check of the result of an else branch.
+| ElseBranchResult of range
 /// The type equation comes from the verification of record fields.
 | RecordFields
 /// The type equation comes from the verification of a tuple in record fields.
@@ -71,13 +71,13 @@ type ContextInfo =
 
 exception ConstraintSolverTupleDiffLengths              of DisplayEnv * TType list * TType list * range * range
 exception ConstraintSolverInfiniteTypes                 of ContextInfo * DisplayEnv * TType * TType * range * range
-exception ConstraintSolverTypesNotInEqualityRelation    of DisplayEnv * TType * TType * range * range
+exception ConstraintSolverTypesNotInEqualityRelation    of DisplayEnv * TType * TType * range * range * ContextInfo
 exception ConstraintSolverTypesNotInSubsumptionRelation of DisplayEnv * TType * TType * range * range
 exception ConstraintSolverMissingConstraint             of DisplayEnv * Typar * TyparConstraint * range * range
 exception ConstraintSolverError                         of string * range * range
 exception ConstraintSolverRelatedInformation            of string option * range * exn
 exception ErrorFromApplyingDefault                      of TcGlobals * DisplayEnv * Typar * TType * exn * range
-exception ErrorFromAddingTypeEquation                   of TcGlobals * DisplayEnv * TType * TType * exn * ContextInfo * range
+exception ErrorFromAddingTypeEquation                   of TcGlobals * DisplayEnv * TType * TType * exn * range
 exception ErrorsFromAddingSubsumptionConstraint         of TcGlobals * DisplayEnv * TType * TType * exn * ContextInfo * range
 exception ErrorFromAddingConstraint                     of DisplayEnv * exn * range
 exception UnresolvedConversionOperator                  of DisplayEnv * TType * TType * range

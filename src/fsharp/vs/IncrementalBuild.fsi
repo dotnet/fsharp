@@ -122,7 +122,7 @@ type internal IncrementalBuilder =
       /// Raised just before a file is type-checked, to invalidate the state of the file in VS and force VS to request a new direct typecheck of the file.
       /// The incremental builder also typechecks the file (error and intellisense results from the backgroud builder are not
       /// used by VS). 
-      member BeforeTypeCheckFile : IEvent<string>
+      member BeforeFileChecked : IEvent<string>
 
       /// Raised just after a file is parsed
       member FileParsed : IEvent<string>

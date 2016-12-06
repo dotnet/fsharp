@@ -86,7 +86,7 @@ type internal FsiToolWindow() as this =
     
     let providerGlobal = Package.GetGlobalService(typeof<IOleServiceProvider>) :?> IOleServiceProvider
     let provider       = new ServiceProvider(providerGlobal) :> System.IServiceProvider
-    let editorAdaptersFactory =
+    let textViewAdapter =
         // end of 623708 workaround. 
         let componentModel = provider.GetService(typeof<SComponentModel>) :?> IComponentModel
         componentModel.GetService<IVsEditorAdaptersFactoryService>()
@@ -98,14 +98,7 @@ type internal FsiToolWindow() as this =
     do  textLines.InitializeContent("", 0) |> throwOnFailure0
     let textView       = Util.CreateObjectT<VsTextViewClass,IVsTextView> provider
     do  setSiteForObjectWithSite textView  providerNative
-
-    // We want to disable zooming in the VFSI window. This code does that.
-    let userData = textView :?> IVsUserData
-    do if userData <> null then
-           let roles = "ANALYZABLE,INTERACTIVE"
-           let mutable guid_VsTextViewRoles = new Guid("{297078ff-81a2-43d8-9ca3-4489c53c99ba}")
-           userData.SetData(&guid_VsTextViewRoles, roles) |> throwOnFailure0
-
+    
     do  textView.Initialize(textLines,
                             IntPtr.Zero,
                             uint32 TextViewInitFlags.VIF_VSCROLL ||| uint32 TextViewInitFlags.VIF_HSCROLL ||| uint32 TextViewInitFlags3.VIF_NO_HWND_SUPPORT,
@@ -130,7 +123,7 @@ type internal FsiToolWindow() as this =
     do  codeWinMan.OnNewView(textView)  |> throwOnFailure0
 
     //  Create the stream on top of the text buffer.
-    let textStream = new TextBufferStream(editorAdaptersFactory.GetDataBuffer(textLines))
+    let textStream = new TextBufferStream(textViewAdapter.GetDataBuffer(textLines))
     let synchronizationContext = System.Threading.SynchronizationContext.Current
     let win32win = { new System.Windows.Forms.IWin32Window with member this.Handle = textView.GetWindowHandle()}
     let mutable textView       = textView
@@ -152,7 +145,7 @@ type internal FsiToolWindow() as this =
     //
     // REVIEW: Next question, can WORD-WRAP be toggled on by default? Do we want that? Maybe not!
     let setTextViewProperties() =
-          let wpfTextView = editorAdaptersFactory.GetWpfTextView(textView)
+          let wpfTextView = textViewAdapter.GetWpfTextView(textView)
           // Enable find in the text view without implementing the IVsFindTarget interface (by allowing                
           // the active text view to directly respond to the find manager via the locate find target                
           // command)  
@@ -185,11 +178,11 @@ type internal FsiToolWindow() as this =
             let horizontalScrollbar = 0
             let verticalScrollbar   = 1                
             // Make sure that the last line of the buffer is visible. [ignore errors].            
-            let buffer = editorAdaptersFactory.GetDataBuffer(textLines)
+            let buffer = textViewAdapter.GetDataBuffer(textLines)
             let lastLine = buffer.CurrentSnapshot.LineCount - 1
             if lastLine >= 0 then
                 let lineStart = buffer.CurrentSnapshot.GetLineFromLineNumber(lastLine).Start
-                let wpfTextView = editorAdaptersFactory.GetWpfTextView(textView)
+                let wpfTextView = textViewAdapter.GetWpfTextView(textView)
                 wpfTextView.DisplayTextLineContainingBufferPosition(lineStart, 0.0, ViewRelativePosition.Bottom)
 
     let setScrollToStartOfLine() =
@@ -784,7 +777,7 @@ type internal FsiToolWindow() as this =
         member this.QueryStatus (guid, cCmds, prgCmds, pCmdText)=
 
             // Added to prevent command processing when the zoom control in the margin is focused
-            let wpfTextView = editorAdaptersFactory.GetWpfTextView(textView)
+            let wpfTextView = textViewAdapter.GetWpfTextView(textView)
 
             // Can't search in the F# Interactive window
             // InterceptsCommandRouting property denotes whether this element requires normal input as opposed to VS commands

@@ -116,7 +116,7 @@ let GetRangeOfError(err:PhasedError) =
 #endif
       | ReservedKeyword(_,m)
       | IndentationProblem(_,m)
-      | ErrorFromAddingTypeEquation(_,_,_,_,_,_,m) 
+      | ErrorFromAddingTypeEquation(_,_,_,_,_,m) 
       | ErrorFromApplyingDefault(_,_,_,_,_,m) 
       | ErrorsFromAddingSubsumptionConstraint(_,_,_,_,_,_,m)
       | FunctionExpected(_,_,m)
@@ -142,7 +142,10 @@ let GetRangeOfError(err:PhasedError) =
       | TypeIsImplicitlyAbstract m 
       | RequiredButNotSpecified (_,_,_,_,m) 
       | FunctionValueUnexpected (_,_,m)
-      | UnitTypeExpected (_,_,_,m )
+      | UnitTypeExpected (_,_,m)
+      | UnitTypeExpectedWithEquality (_,_,m)
+      | UnitTypeExpectedWithPossiblePropertySetter (_,_,_,_,m)
+      | UnitTypeExpectedWithPossibleAssignment (_,_,_,_,m)
       | UseOfAddressOfOperator m 
       | DeprecatedThreadStaticBindingWarning(m) 
       | NonUniqueInferredAbstractSlot (_,_,_,_,_,m) 
@@ -202,7 +205,7 @@ let GetRangeOfError(err:PhasedError) =
       | ConstraintSolverTupleDiffLengths(_,_,_,m,_) 
       | ConstraintSolverInfiniteTypes(_,_,_,_,m,_) 
       | ConstraintSolverMissingConstraint(_,_,_,m,_) 
-      | ConstraintSolverTypesNotInEqualityRelation(_,_,_,m,_)
+      | ConstraintSolverTypesNotInEqualityRelation(_,_,_,m,_,_)
       | ConstraintSolverError(_,m,_) 
       | ConstraintSolverTypesNotInSubsumptionRelation(_,_,_,m,_) 
       | ConstraintSolverRelatedInformation(_,m,_) 
@@ -266,6 +269,9 @@ let GetErrorNumber(err:PhasedError) =
       | UnionPatternsBindDifferentNames _  -> 18
       | UnionCaseWrongArguments  _ -> 19
       | UnitTypeExpected _  -> 20
+      | UnitTypeExpectedWithEquality _  -> 20
+      | UnitTypeExpectedWithPossiblePropertySetter _  -> 20
+      | UnitTypeExpectedWithPossibleAssignment _  -> 20
       | RecursiveUseCheckedAtRuntime  _ -> 21
       | LetRecEvaluatedOutOfOrder  _ -> 22
       | NameClash _ -> 23
@@ -408,9 +414,9 @@ let SplitRelatedErrors(err:PhasedError) =
       | ConstraintSolverRelatedInformation(fopt,m2,e) -> 
           let e,related = SplitRelatedException e
           ConstraintSolverRelatedInformation(fopt,m2,e.Exception)|>ToPhased, related
-      | ErrorFromAddingTypeEquation(g,denv,t1,t2,e,specializedMessageF,m) ->
+      | ErrorFromAddingTypeEquation(g,denv,t1,t2,e,m) ->
           let e,related = SplitRelatedException e
-          ErrorFromAddingTypeEquation(g,denv,t1,t2,e.Exception,specializedMessageF,m)|>ToPhased, related
+          ErrorFromAddingTypeEquation(g,denv,t1,t2,e.Exception,m)|>ToPhased, related
       | ErrorFromApplyingDefault(g,denv,tp,defaultType,e,m) ->  
           let e,related = SplitRelatedException e
           ErrorFromApplyingDefault(g,denv,tp,defaultType,e.Exception,m)|>ToPhased, related
@@ -532,8 +538,11 @@ let UseOfAddressOfOperatorE() = DeclareResourceString("UseOfAddressOfOperator","
 let DefensiveCopyWarningE() = DeclareResourceString("DefensiveCopyWarning","%s")
 let DeprecatedThreadStaticBindingWarningE() = DeclareResourceString("DeprecatedThreadStaticBindingWarning","")
 let FunctionValueUnexpectedE() = DeclareResourceString("FunctionValueUnexpected","%s")
-let UnitTypeExpected1E() = DeclareResourceString("UnitTypeExpected1","")
-let UnitTypeExpected2E() = DeclareResourceString("UnitTypeExpected2","%s")
+let UnitTypeExpectedE() = DeclareResourceString("UnitTypeExpected","")
+let UnitTypeExpectedWithEqualityE() = DeclareResourceString("UnitTypeExpectedWithEquality","")
+let UnitTypeExpectedWithPossiblePropertySetterE() = DeclareResourceString("UnitTypeExpectedWithPossiblePropertySetter","%s%s")
+let UnitTypeExpectedWithPossibleAssignmentE() = DeclareResourceString("UnitTypeExpectedWithPossibleAssignment","%s")
+let UnitTypeExpectedWithPossibleAssignmentToMutableE() = DeclareResourceString("UnitTypeExpectedWithPossibleAssignmentToMutable","%s")
 let RecursiveUseCheckedAtRuntimeE() = DeclareResourceString("RecursiveUseCheckedAtRuntime","")
 let LetRecUnsound1E() = DeclareResourceString("LetRecUnsound1","%s")
 let LetRecUnsound2E() = DeclareResourceString("LetRecUnsound2","%s%s")
@@ -601,8 +610,8 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
     let rec OutputExceptionR (os:System.Text.StringBuilder) = function        
       | ConstraintSolverTupleDiffLengths(_,tl1,tl2,m,m2) -> 
           os.Append(ConstraintSolverTupleDiffLengthsE().Format tl1.Length tl2.Length) |> ignore
-          (if m.StartLine <> m2.StartLine then 
-             os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore)
+          if m.StartLine <> m2.StartLine then 
+             os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
       | ConstraintSolverInfiniteTypes(contextInfo,denv,t1,t2,m,m2) ->
           // REVIEW: consider if we need to show _cxs (the type parameter constraints)
           let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
@@ -615,30 +624,39 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
             os.Append(" " + FSComp.SR.yieldUsedInsteadOfYieldBang()) |> ignore
           | _ -> ()
 
-          (if m.StartLine <> m2.StartLine then 
-             os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore )
+          if m.StartLine <> m2.StartLine then 
+             os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
       | ConstraintSolverMissingConstraint(denv,tpr,tpc,m,m2) -> 
           os.Append(ConstraintSolverMissingConstraintE().Format (NicePrint.stringOfTyparConstraint denv (tpr,tpc))) |> ignore
-          (if m.StartLine <> m2.StartLine then 
-             os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore )
-      | ConstraintSolverTypesNotInEqualityRelation(denv,(TType_measure _ as t1),(TType_measure _ as t2),m,m2) -> 
+          if m.StartLine <> m2.StartLine then 
+             os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
+      | ConstraintSolverTypesNotInEqualityRelation(denv,(TType_measure _ as t1),(TType_measure _ as t2),m,m2,contextInfo) -> 
           // REVIEW: consider if we need to show _cxs (the type parameter constraints)
           let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
-          os.Append(ConstraintSolverTypesNotInEqualityRelation1E().Format t1 t2 )  |> ignore
-          (if m.StartLine <> m2.StartLine then 
-             os.Append(SeeAlsoE().Format (stringOfRange m))  |> ignore)
-      | ConstraintSolverTypesNotInEqualityRelation(denv,t1,t2,m,m2) -> 
-          // REVIEW: consider if we need to show _cxs (the type parameter constrants)
+          
+          match contextInfo with
+          | ContextInfo.OmittedElseBranch range when range = m -> os.Append(FSComp.SR.missingElseBranch(t2)) |> ignore
+          | ContextInfo.ElseBranchResult range when range = m -> os.Append(FSComp.SR.elseBranchHasWrongType(t1,t2)) |> ignore
+          | _ -> os.Append(ConstraintSolverTypesNotInEqualityRelation1E().Format t1 t2 )  |> ignore
+          
+          if m.StartLine <> m2.StartLine then
+             os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
+      | ConstraintSolverTypesNotInEqualityRelation(denv,t1,t2,m,m2,contextInfo) -> 
+          // REVIEW: consider if we need to show _cxs (the type parameter constraints)
           let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
-          os.Append(ConstraintSolverTypesNotInEqualityRelation2E().Format t1 t2)  |> ignore
-          (if m.StartLine <> m2.StartLine then 
-             os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore)
+          
+          match contextInfo with
+          | ContextInfo.OmittedElseBranch range when range = m -> os.Append(FSComp.SR.missingElseBranch(t2)) |> ignore
+          | ContextInfo.ElseBranchResult range when range = m -> os.Append(FSComp.SR.elseBranchHasWrongType(t1,t2)) |> ignore
+          | _ -> os.Append(ConstraintSolverTypesNotInEqualityRelation2E().Format t1 t2) |> ignore
+          if m.StartLine <> m2.StartLine then 
+             os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
       | ConstraintSolverTypesNotInSubsumptionRelation(denv,t1,t2,m,m2) -> 
           // REVIEW: consider if we need to show _cxs (the type parameter constraints)
-          let t1, t2, cxs= NicePrint.minimalStringsOfTwoTypes denv t1 t2
+          let t1, t2, cxs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
           os.Append(ConstraintSolverTypesNotInSubsumptionRelationE().Format t2 t1 cxs) |> ignore
-          (if m.StartLine <> m2.StartLine then 
-             os.Append(SeeAlsoE().Format (stringOfRange m2)) |> ignore)
+          if m.StartLine <> m2.StartLine then 
+             os.Append(SeeAlsoE().Format (stringOfRange m2)) |> ignore
       | ConstraintSolverError(msg,m,m2) -> 
          os.Append(ConstraintSolverErrorE().Format msg) |> ignore
          if m.StartLine <> m2.StartLine then 
@@ -648,13 +666,13 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
           | ConstraintSolverError _ -> OutputExceptionR os e
           | _ -> ()
           fopt |> Option.iter (Printf.bprintf os " %s")
-      | ErrorFromAddingTypeEquation(g,denv,t1,t2,ConstraintSolverTypesNotInEqualityRelation(_, t1', t2',_ ,_ ),contextInfo,_) 
+      | ErrorFromAddingTypeEquation(g,denv,t1,t2,ConstraintSolverTypesNotInEqualityRelation(_, t1', t2',m ,_ , contextInfo),_) 
          when typeEquiv g t1 t1'
          &&   typeEquiv g t2 t2' ->
           let t1,t2,tpcs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
           match contextInfo with
-          | ContextInfo.OmittedElseBranch -> os.Append(FSComp.SR.missingElseBranch(t2)) |> ignore
-          | ContextInfo.ElseBranch -> os.Append(FSComp.SR.elseBranchHasWrongType(t1,t2)) |> ignore
+          | ContextInfo.OmittedElseBranch range when range = m -> os.Append(FSComp.SR.missingElseBranch(t2)) |> ignore
+          | ContextInfo.ElseBranchResult range when range = m -> os.Append(FSComp.SR.elseBranchHasWrongType(t1,t2)) |> ignore
           | ContextInfo.TupleInRecordFields ->
                 os.Append(ErrorFromAddingTypeEquation1E().Format t2 t1 tpcs) |> ignore
                 os.Append(System.Environment.NewLine + FSComp.SR.commaInsteadOfSemicolonInRecord()) |> ignore
@@ -662,13 +680,15 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
                 os.Append(ErrorFromAddingTypeEquation1E().Format t2 t1 tpcs) |> ignore
                 os.Append(System.Environment.NewLine + FSComp.SR.derefInsteadOfNot()) |> ignore
           | _ -> os.Append(ErrorFromAddingTypeEquation1E().Format t2 t1 tpcs) |> ignore
-      | ErrorFromAddingTypeEquation(_,_,_,_,((ConstraintSolverTypesNotInSubsumptionRelation _ | ConstraintSolverError _) as e), _, _)  ->  
+      | ErrorFromAddingTypeEquation(_,_,_,_,((ConstraintSolverTypesNotInEqualityRelation (_,_,_,_,_,contextInfo) ) as e), _) when contextInfo <> ContextInfo.NoContext ->  
           OutputExceptionR os e
-      | ErrorFromAddingTypeEquation(g,denv,t1,t2,e,_,_) ->
-          if not (typeEquiv g t1 t2) then (
+      | ErrorFromAddingTypeEquation(_,_,_,_,((ConstraintSolverTypesNotInSubsumptionRelation _ | ConstraintSolverError _ ) as e), _) ->  
+          OutputExceptionR os e
+      | ErrorFromAddingTypeEquation(g,denv,t1,t2,e,_) ->
+          if not (typeEquiv g t1 t2) then
               let t1,t2,tpcs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
               if t1<>t2 + tpcs then os.Append(ErrorFromAddingTypeEquation2E().Format t1 t2 tpcs) |> ignore
-          )
+
           OutputExceptionR os e
       | ErrorFromApplyingDefault(_,denv,_,defaultType,e,_) ->  
           let defaultType = NicePrint.minimalStringOfType denv defaultType
@@ -1195,16 +1215,25 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
       | DeprecatedThreadStaticBindingWarning(_) -> 
           os.Append(DeprecatedThreadStaticBindingWarningE().Format) |> ignore
       | FunctionValueUnexpected (denv,ty,_) ->
-          // REVIEW: consider if we need to show _cxs (the type parameter constrants)
+          // REVIEW: consider if we need to show _cxs (the type parameter constraints)
           let _, ty, _cxs = PrettyTypes.PrettifyTypes1 denv.g ty
           os.Append(FunctionValueUnexpectedE().Format (NicePrint.stringOfTy denv ty)) |> ignore
-      | UnitTypeExpected (denv,ty,perhapsProp,_) ->
-          // REVIEW: consider if we need to show _cxs (the type parameter constrants)
-          let _, ty, _cxs = PrettyTypes.PrettifyTypes1 denv.g ty
-          if perhapsProp then 
-            os.Append(UnitTypeExpected2E().Format (NicePrint.stringOfTy denv ty)) |> ignore
-          else
-            os.Append(UnitTypeExpected1E().Format) |> ignore
+      | UnitTypeExpected (_,_,_) ->
+          let warningText = UnitTypeExpectedE().Format
+          os.Append warningText |> ignore
+      | UnitTypeExpectedWithEquality (_) ->
+          let warningText = UnitTypeExpectedWithEqualityE().Format
+          os.Append warningText |> ignore
+      | UnitTypeExpectedWithPossiblePropertySetter (_,_,bindingName,propertyName,_) ->
+          let warningText = UnitTypeExpectedWithPossiblePropertySetterE().Format bindingName propertyName
+          os.Append warningText |> ignore
+      | UnitTypeExpectedWithPossibleAssignment (_,_,isAlreadyMutable,bindingName,_) ->
+          let warningText = 
+            if isAlreadyMutable then
+                UnitTypeExpectedWithPossibleAssignmentToMutableE().Format bindingName
+            else
+                UnitTypeExpectedWithPossibleAssignmentE().Format bindingName
+          os.Append warningText |> ignore
       | RecursiveUseCheckedAtRuntime  _ -> 
           os.Append(RecursiveUseCheckedAtRuntimeE().Format) |> ignore
       | LetRecUnsound (_,[v],_) ->  

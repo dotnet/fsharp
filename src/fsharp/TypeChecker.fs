@@ -83,7 +83,10 @@ exception FieldsFromDifferentTypes of DisplayEnv * RecdFieldRef * RecdFieldRef *
 exception FieldGivenTwice of DisplayEnv * Tast.RecdFieldRef * range
 exception MissingFields of string list * range
 exception FunctionValueUnexpected of DisplayEnv * TType * range
-exception UnitTypeExpected of DisplayEnv * TType * bool * range
+exception UnitTypeExpected of DisplayEnv * TType * range
+exception UnitTypeExpectedWithEquality of DisplayEnv * TType * range
+exception UnitTypeExpectedWithPossibleAssignment of DisplayEnv * TType * bool * string * range
+exception UnitTypeExpectedWithPossiblePropertySetter of DisplayEnv * TType * string * string * range
 exception UnionPatternsBindDifferentNames of range
 exception VarBoundTwice of Ident
 exception ValueRestriction of DisplayEnv * bool * Val * Typar * range
@@ -718,23 +721,59 @@ let UnifyFunctionType extraInfo cenv denv mFunExpr ty =
         | Some argm -> error (NotAFunction(denv,ty,mFunExpr,argm))
         | None ->    error (FunctionExpected(denv,ty,mFunExpr))
 
+let ReportImplicitlyIgnoredBoolExpression denv m ty expr =
+    let checkExpr m exprOpt =
+        match exprOpt with 
+        | Expr.App(Expr.Val(vf,_,_),_,_,exprs,_) when vf.LogicalName = opNameEquals ->
+            match exprs with 
+            | Expr.App(Expr.Val(propRef,_,_),_,_,Expr.Val(vf,_,_) :: _,_) :: _ ->
+                if propRef.IsPropertyGetterMethod then
+                    let propertyName = propRef.PropertyName
+                    let hasCorrespondingSetter =
+                        match propRef.ActualParent with
+                        | Parent entityRef ->
+                            entityRef.MembersOfFSharpTyconSorted
+                            |> List.exists (fun valRef -> valRef.IsPropertySetterMethod && valRef.PropertyName = propertyName)
+                        | _ -> false
+
+                    if hasCorrespondingSetter then
+                        UnitTypeExpectedWithPossiblePropertySetter (denv,ty,vf.DisplayName,propertyName,m)
+                    else
+                        UnitTypeExpectedWithEquality (denv,ty,m)
+                else
+                    UnitTypeExpectedWithEquality (denv,ty,m)
+            | Expr.Op(TOp.ILCall(_,_,_,_,_,_,_,methodRef,_,_,_),_,Expr.Val(vf,_,_) :: _,_) :: _ when methodRef.Name.StartsWith "get_"->
+                UnitTypeExpectedWithPossiblePropertySetter (denv,ty,vf.DisplayName,PrettyNaming.ChopPropertyName(methodRef.Name),m)
+            | Expr.Val(vf,_,_) :: _ -> 
+                UnitTypeExpectedWithPossibleAssignment (denv,ty,vf.IsMutable,vf.DisplayName,m)
+            | _ -> UnitTypeExpectedWithEquality (denv,ty,m)
+        | _ -> UnitTypeExpected (denv,ty,m)
+
+    match expr with 
+    | Some(Expr.Let(_,Expr.Sequential(_,inner,_,_,_),_,_))
+    | Some(Expr.Sequential(_,inner,_,_,_)) ->
+        let rec extractNext expr =
+            match expr with
+            | Expr.Sequential(_,inner,_,_,_) -> extractNext inner
+            | _ -> checkExpr expr.Range expr
+        extractNext inner
+    | Some expr -> checkExpr m expr
+    | _ -> UnitTypeExpected (denv,ty,m)
 
 let UnifyUnitType cenv denv m ty exprOpt =
-    if not (AddCxTypeEqualsTypeUndoIfFailed denv cenv.css m ty cenv.g.unit_ty) then 
+    if AddCxTypeEqualsTypeUndoIfFailed denv cenv.css m ty cenv.g.unit_ty then 
+        true
+    else
         let domainTy = NewInferenceType ()
         let resultTy = NewInferenceType ()
         if AddCxTypeEqualsTypeUndoIfFailed denv cenv.css m ty (domainTy --> resultTy) then 
             warning (FunctionValueUnexpected(denv,ty,m))
-        else
-            let perhapsProp = 
-                typeEquiv cenv.g cenv.g.bool_ty ty &&
-                match exprOpt with 
-                | Some(Expr.App(Expr.Val(vf,_,_),_,_,[__],_)) when vf.LogicalName = opNameEquals -> true
-                | _ -> false
-            warning (UnitTypeExpected (denv,ty,perhapsProp,m)) 
+        else        
+            if not (typeEquiv cenv.g cenv.g.bool_ty ty) then 
+                warning (UnitTypeExpected (denv,ty,m)) 
+            else
+                warning (ReportImplicitlyIgnoredBoolExpression denv m ty exprOpt)
         false
-    else
-        true
 
 //-------------------------------------------------------------------------
 // Attribute target flags
@@ -1390,13 +1429,15 @@ let MakeAndPublishVal cenv env (altActualParent,inSig,declKind,vrec,(ValScheme(i
 
     // CompiledName not allowed on virtual/abstract/override members        
     let compiledNameAttrib  = TryFindFSharpStringAttribute cenv.g cenv.g.attrib_CompiledNameAttribute attrs
-    if Option.isSome compiledNameAttrib && (   (   match memberInfoOpt with 
-                                                   | Some (ValMemberInfoTransient(memberInfo,_,_)) -> 
-                                                       memberInfo.MemberFlags.IsDispatchSlot 
-                                                       || memberInfo.MemberFlags.IsOverrideOrExplicitImpl 
-                                                   | None -> false)
-                                            || (match altActualParent with ParentNone -> true | _ -> false)) then 
-        errorR(Error(FSComp.SR.tcCompiledNameAttributeMisused(),m))
+    if Option.isSome compiledNameAttrib then
+        match memberInfoOpt with 
+        | Some (ValMemberInfoTransient(memberInfo,_,_)) -> 
+            if memberInfo.MemberFlags.IsDispatchSlot || memberInfo.MemberFlags.IsOverrideOrExplicitImpl then
+                errorR(Error(FSComp.SR.tcCompiledNameAttributeMisused(),m))
+        | None -> 
+            match altActualParent with
+            | ParentNone -> errorR(Error(FSComp.SR.tcCompiledNameAttributeMisused(),m)) 
+            | _ -> ()
 
     let compiledNameIsOnProp =
         match memberInfoOpt with
@@ -2249,7 +2290,8 @@ module GeneralizationHelpers =
         | Some memberFlags -> 
             match memberFlags.MemberKind with 
             // can't infer extra polymorphism for properties 
-            | MemberKind.PropertyGet  | MemberKind.PropertySet  -> 
+            | MemberKind.PropertyGet 
+            | MemberKind.PropertySet -> 
                  if not (isNil declaredTypars) then 
                      errorR(Error(FSComp.SR.tcPropertyRequiresExplicitTypeParameters(),m))
             | MemberKind.Constructor -> 
@@ -3317,7 +3359,7 @@ let mkSeqCollect cenv env m enumElemTy genTy lam enumExpr =
 let mkSeqUsing cenv (env: TcEnv) m resourceTy genTy resourceExpr lam =
     AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace cenv.g.system_IDisposable_typ resourceTy
     let genResultTy = NewInferenceType ()
-    UnifyTypes cenv  env m genTy (mkSeqTy cenv.g genResultTy)
+    UnifyTypes cenv env m genTy (mkSeqTy cenv.g genResultTy)
     mkCallSeqUsing cenv.g m resourceTy genResultTy resourceExpr lam 
 
 let mkSeqDelay cenv env m genTy lam =
@@ -5426,8 +5468,6 @@ and TcStmt cenv env tpenv synExpr =
     else
         mkCompGenSequential m expr (mkUnit cenv.g m),tpenv
 
-
-
 /// During checking of expressions of the form (x(y)).z(w1,w2) 
 /// keep a stack of things on the right. This lets us recognize 
 /// method applications and other item-based syntax. 
@@ -5495,7 +5535,6 @@ and TcExprUndelayedNoType cenv env tpenv expr : Expr * TType * _ =
     expr',exprty,tpenv
 
 and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
-
     match expr with 
     | SynExpr.Paren (expr2,_,_,mWholeExprIncludingParentheses) -> 
         // We invoke CallExprHasTypeSink for every construct which is atomic in the syntax, i.e. where a '.' immediately following the 
@@ -5696,7 +5735,6 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
     | SynExpr.ArrayOrListOfSeqExpr (isArray,comp,m)  ->
         CallExprHasTypeSink cenv.tcSink (m,env.NameEnv,overallTy, env.DisplayEnv,env.eAccessRights)
 
-        
         match comp with 
         | SynExpr.CompExpr(_,_,(SimpleSemicolonSequence true elems as body),_) -> 
             match body with 
@@ -5792,7 +5830,7 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
         let e1',tpenv = TcExprThatCantBeCtorBody cenv cenv.g.bool_ty env tpenv e1
         let e2',tpenv =
             if not isRecovery && Option.isNone e3opt then
-                let env = { env with eContextInfo = ContextInfo.OmittedElseBranch } 
+                let env = { env with eContextInfo = ContextInfo.OmittedElseBranch e2.Range}
                 UnifyTypes cenv env m cenv.g.unit_ty overallTy
                 TcExprThatCanBeCtorBody cenv overallTy env tpenv e2
             else
@@ -5801,8 +5839,8 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
             match e3opt with 
             | None ->
                 mkUnit cenv.g mIfToThen,SuppressSequencePointAtTarget, tpenv // the fake 'unit' value gets exactly the same range as spIfToThen
-            | Some e3 -> 
-                let env = { env with eContextInfo = ContextInfo.ElseBranch } 
+            | Some e3 ->
+                let env = { env with eContextInfo = ContextInfo.ElseBranchResult e3.Range }
                 let e3',tpenv = TcExprThatCanBeCtorBody cenv overallTy env tpenv e3 
                 e3',SequencePointAtTarget,tpenv
         primMkCond spIfToThen SequencePointAtTarget sp2 m overallTy e1' e2' e3', tpenv

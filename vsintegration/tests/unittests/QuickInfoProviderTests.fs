@@ -47,6 +47,7 @@ let internal options = {
     UseScriptResolutionRules = false
     LoadTime = DateTime.MaxValue
     UnresolvedReferences = None
+    ExtraProjectInfo = None
 }
 
 let private normalizeLineEnds (s: string) = s.Replace("\r\n", "\n").Replace("\n\n", "\n")
@@ -96,7 +97,7 @@ Full name: System.Console"
         let getInfo() = documentId, filePath, []
         
         let quickInfo =
-            FSharpQuickInfoProvider.ProvideQuickInfo(documentId, SourceText.From(fileContents), filePath, caretPosition, options, 0, CancellationToken.None)
+            FSharpQuickInfoProvider.ProvideQuickInfo(FSharpChecker.Instance, documentId, SourceText.From(fileContents), filePath, caretPosition, options, 0, CancellationToken.None)
             |> Async.RunSynchronously
         
         let actual = quickInfo |> Option.map (fun (text, _) -> getQuickInfoText text)

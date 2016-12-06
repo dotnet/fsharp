@@ -29,39 +29,39 @@ open Microsoft.VisualStudio.Utilities
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
 [<ExportLanguageService(typeof<IEditorClassificationService>, FSharpCommonConstants.FSharpLanguageName)>]
-type internal FSharpColorizationService() =
+type internal FSharpColorizationService
+    [<ImportingConstructor>]
+    (
+        checkerProvider: FSharpCheckerProvider,
+        projectInfoManager: ProjectInfoManager
+    ) =
     interface IEditorClassificationService with
         // Do not perform classification if we don't have project options (#defines matter)
         member this.AddLexicalClassifications(_: SourceText, _: TextSpan, _: List<ClassifiedSpan>, _: CancellationToken) = ()
         
         member this.AddSyntacticClassificationsAsync(document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
             async {
+                let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                match FSharpLanguageService.GetOptions(document.Project.Id) with
-                | Some(options) ->
-                    let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
-                    result.AddRange(CommonHelpers.getColorizationData(
-                                      document.Id, sourceText, textSpan, Some(document.FilePath), defines, cancellationToken))
-                | None -> ()
-            } |> CommonRoslynHelpers.StartAsyncUnitAsTask(cancellationToken)
+                result.AddRange(CommonHelpers.getColorizationData(document.Id, sourceText, textSpan, Some(document.FilePath), defines, cancellationToken))
+            } |> CommonRoslynHelpers.StartAsyncUnitAsTask cancellationToken
 
         member this.AddSemanticClassificationsAsync(document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
             async {
-                match FSharpLanguageService.GetOptions(document.Project.Id) with
-                | Some(options) ->
+                match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)  with 
+                | Some options ->
                     let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                    let! parseResults = FSharpLanguageService.Checker.ParseFileInProject(document.Name, sourceText.ToString(), options)
                     let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
-                    let! checkResultsAnswer = FSharpLanguageService.Checker.CheckFileInProject(parseResults, document.FilePath, textVersion.GetHashCode(), textSpan.ToString(), options)
+                    let! _parseResults, checkResultsAnswer = checkerProvider.Checker.ParseAndCheckFileInProject(document.FilePath, textVersion.GetHashCode(), sourceText.ToString(), options)
 
                     let extraColorizationData = 
                         match checkResultsAnswer with
-                        | FSharpCheckFileAnswer.Aborted -> failwith "Compilation isn't complete yet"
-                        | FSharpCheckFileAnswer.Succeeded(results) -> results.GetExtraColorizationsAlternate()
-                        |> Seq.map(fun (range, tokenColorKind) -> 
-                            ClassifiedSpan(CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range), 
-                                           CommonHelpers.compilerTokenToRoslynToken(tokenColorKind)))
-                        |> Seq.toList
+                        | FSharpCheckFileAnswer.Aborted -> [| |]
+                        | FSharpCheckFileAnswer.Succeeded(results) -> 
+                            [| for (range, tokenColorKind)  in results.GetExtraColorizationsAlternate() do
+                                  let span = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range)
+                                  if textSpan.Contains(span.Start) || textSpan.Contains(span.End - 1) || span.Contains(textSpan) then
+                                      yield ClassifiedSpan(span, CommonHelpers.compilerTokenToRoslynToken(tokenColorKind)) |]
 
                     result.AddRange(extraColorizationData)
                 | None -> ()

@@ -93,10 +93,6 @@ module Commands =
         Directory.CreateDirectory path |> ignore
         path
 
-    let fsdiff exec fsdiffExe file1 file2 =
-        // %FSDIFF% %testname%.err %testname%.bsl
-        exec fsdiffExe (sprintf "%s %s normalize" file1 file2)
-
 
 type TestConfig = 
     { EnvironmentVariables : Map<string, string>
@@ -109,7 +105,6 @@ type TestConfig =
       fsc_flags : string
       FSCBinPath : string
       FSCOREDLLPATH : string
-      FSDIFF : string
       FSI : string
       fsi_flags : string
       ILDASM : string
@@ -154,7 +149,9 @@ module WindowsPlatform =
             CORDIR <- CORDIR.Replace("Framework", "Framework64")
 
         let allSDK = 
-             [ regQueryREG_SOFTWARE @"Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6\WinSDK-NetFx40Tools" "InstallationFolder"
+             [ regQueryREG_SOFTWARE @"Software\WOW6432Node\Microsoft\Microsoft SDKs\NETFXSDK\4.6.2\WinSDK-NetFx40Tools" "InstallationFolder"
+               regQueryREG_SOFTWARE @"Software\WOW6432Node\Microsoft\Microsoft SDKs\NETFXSDK\4.6.1\WinSDK-NetFx40Tools" "InstallationFolder"
+               regQueryREG_SOFTWARE @"Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6\WinSDK-NetFx40Tools" "InstallationFolder"
                regQueryREG_SOFTWARE @"Software\Microsoft\Microsoft SDKs\Windows\v8.1A\WinSDK-NetFx40Tools" "InstallationFolder"
                regQueryREG_SOFTWARE @"Software\Microsoft\Microsoft SDKs\Windows\v8.0A\WinSDK-NetFx40Tools" "InstallationFolder"
                regQueryREG_SOFTWARE @"Software\Microsoft\Microsoft SDKs\Windows\v7.1\WinSDK-NetFx40Tools" "InstallationFolder"
@@ -177,7 +174,6 @@ let config configurationName envVars =
 
     let SCRIPT_ROOT = __SOURCE_DIRECTORY__ 
     let FSCBinPath = SCRIPT_ROOT ++ ".." ++ ".." ++ configurationName ++ "net40" ++ "bin"
-    let FSDIFF = SCRIPT_ROOT ++ ".." ++ "fsharpqa" ++ "testenv" ++ "bin" ++ "diff.exe"
 
     let csc_flags = "/nologo" 
     let fsc_flags = "-r:System.Core.dll --nowarn:20 --define:COMPILED" 
@@ -201,7 +197,6 @@ let config configurationName envVars =
       CORSDK = CORSDK |> Commands.pathAddBackslash
       FSCBinPath = FSCBinPath |> Commands.pathAddBackslash
       FSCOREDLLPATH = FSCOREDLLPATH
-      FSDIFF = FSDIFF
       ILDASM = ILDASM
       SN = SN
       NGEN = NGEN 
@@ -228,7 +223,6 @@ let logConfig (cfg: TestConfig) =
     log "fsc_flags           =%s" cfg.fsc_flags
     log "FSCBINPATH          =%s" cfg.FSCBinPath
     log "FSCOREDLLPATH       =%s" cfg.FSCOREDLLPATH
-    log "FSDIFF              =%s" cfg.FSDIFF
     log "FSI                 =%s" cfg.FSI
     log "fsi_flags           =%s" cfg.fsi_flags
     log "ILDASM              =%s" cfg.ILDASM
@@ -245,7 +239,7 @@ let checkResult result =
 let checkErrorLevel1 result = 
     match result with
     | CmdResult.ErrorLevel (_,1) -> ()
-    | CmdResult.Success | CmdResult.ErrorLevel _ -> Assert.Fail  (sprintf "Command passed unexpectedly")
+    | CmdResult.Success | CmdResult.ErrorLevel _ -> Assert.Fail (sprintf "Command passed unexpectedly")
 
 let envVars () = 
     System.Environment.GetEnvironmentVariables () 
@@ -452,16 +446,57 @@ let rm cfg x = Commands.rm cfg.Directory x
 let mkdir cfg = Commands.mkdir_p cfg.Directory
 let copy_y cfg f = Commands.copy_y cfg.Directory f >> checkResult
 
-let fsdiff cfg a b = 
-    let out = new ResizeArray<string>()
-    let redirectOutputToFile path args =
-        log "%s %s" path args
-        use toLog = redirectToLog ()
-        Process.exec { RedirectOutput = Some (function null -> () | s -> out.Add(s)); RedirectError = Some toLog.Post; RedirectInput = None; } cfg.Directory cfg.EnvironmentVariables path args
-    do (Commands.fsdiff redirectOutputToFile cfg.FSDIFF a b) |> (fun _ -> ())
-    out.ToArray() |> List.ofArray
+let diff normalize path1 path2 =
+    let result = System.Text.StringBuilder()
+    let append s = result.AppendLine s |> ignore
+    let cwd = Environment.CurrentDirectory
 
+    if not <| File.Exists(path1) then failwithf "Invalid path %s" path1
+    if not <| File.Exists(path2) then failwithf "Invalid path %s" path2
+
+    let lines1 = File.ReadAllLines(path1)
+    let lines2 = File.ReadAllLines(path2)
+
+    let minLines = min lines1.Length lines2.Length
+
+    for i = 0 to (minLines - 1) do
+        let normalizePath (line:string) =
+            if normalize then
+                let x = line.IndexOf(cwd, StringComparison.OrdinalIgnoreCase)
+                if x >= 0 then line.Substring(x+cwd.Length) else line
+            else line
+
+        let line1 = normalizePath lines1.[i]
+        let line2 = normalizePath lines2.[i]
+
+        if line1 <> line2 then
+            append <| sprintf "diff between [%s] and [%s]" path1 path2
+            append <| sprintf "line %d" (i+1)
+            append <| sprintf " - %s" line1
+            append <| sprintf " + %s" line2
+
+    if lines1.Length <> lines2.Length then
+        append <| sprintf "diff between [%s] and [%s]" path1 path2
+        append <| sprintf "diff at line %d" minLines
+        lines1.[minLines .. (lines1.Length - 1)] |> Array.iter (append << sprintf "- %s")
+        lines2.[minLines .. (lines2.Length - 1)] |> Array.iter (append << sprintf "+ %s")
+
+    result.ToString()
+
+let fsdiff cfg a b = 
+    let actualFile = System.IO.Path.Combine(cfg.Directory, a)
+    let expectedFile = System.IO.Path.Combine(cfg.Directory, b)
+    let errorText = System.IO.File.ReadAllText (System.IO.Path.Combine(cfg.Directory, a))
+
+    let result = diff false actualFile expectedFile
+    if result <> "" then
+        log "%s" result
+        log "New error file:"
+        log "%s" errorText
+
+    result
+        
 let requireENCulture () = 
     match System.Globalization.CultureInfo.CurrentCulture.TwoLetterISOLanguageName with
-        | "en" -> true
-        | _ -> false
+    | "en" -> true
+    | _ -> false

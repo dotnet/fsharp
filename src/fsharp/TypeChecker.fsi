@@ -75,7 +75,10 @@ exception UnionCaseWrongNumberOfArgs of DisplayEnv * int * int * range
 exception FieldsFromDifferentTypes of DisplayEnv * RecdFieldRef * RecdFieldRef * range
 exception FieldGivenTwice of DisplayEnv * RecdFieldRef * range
 exception MissingFields of string list * range
-exception UnitTypeExpected of DisplayEnv * TType * bool * range
+exception UnitTypeExpected of DisplayEnv * TType * range
+exception UnitTypeExpectedWithEquality of DisplayEnv * TType * range
+exception UnitTypeExpectedWithPossiblePropertySetter of DisplayEnv * TType * string * string * range
+exception UnitTypeExpectedWithPossibleAssignment of DisplayEnv * TType * bool * string * range
 exception FunctionValueUnexpected of DisplayEnv * TType * range
 exception UnionPatternsBindDifferentNames of range
 exception VarBoundTwice of Ast.Ident
