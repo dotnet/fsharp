@@ -11,6 +11,9 @@ module EditDistance =
     open Internal.Utilities.EditDistance
 
     [<Test>]
-    [<TestCase("CA", "ABC", ExpectedResult = 3)>]
-    let RestrictedEditDistance (str1 : string, str2 : string) : int =
-        CalcEditDistance (str1, str2)
+    [<TestCase("RICK", "RICK", ExpectedResult = "1.000")>]
+    [<TestCase("MARTHA", "MARHTA", ExpectedResult = "0.961")>]
+    [<TestCase("DWAYNE", "DUANE", ExpectedResult = "0.840")>]
+    [<TestCase("DIXON", "DICKSONX", ExpectedResult = "0.813")>]
+    let JaroWinklerTest (str1 : string, str2 : string) : string =
+        String.Format("{0:0.000}", JaroWinklerDistance str1 str2)
