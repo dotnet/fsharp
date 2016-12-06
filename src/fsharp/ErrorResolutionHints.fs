@@ -15,7 +15,7 @@ let FilterPredictions unknownIdent allPredictions =
     allPredictions
     |> Seq.toList
     |> List.distinct
-    |> List.sortBy (fun s -> Internal.Utilities.EditDistance.CalcEditDistance(unknownIdent,s))
+    |> List.sortByDescending (Internal.Utilities.EditDistance.JaroWinklerDistance unknownIdent)
     |> take 5
 
 let FormatPredictions predictions =

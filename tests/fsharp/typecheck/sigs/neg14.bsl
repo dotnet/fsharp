@@ -5,12 +5,12 @@ neg14b.fs(2,13,2,14): typecheck error FS0039: The value, constructor, namespace 
 
 Maybe you want one of the following:
 
-   z
-
-   okType
-
    fieldsInWrongOrder
 
+   missingConstructorInSignature
+
    missingFieldInSignature
+
+   missingInterfaceInImplementation
 
    missingInterfaceInSignature
