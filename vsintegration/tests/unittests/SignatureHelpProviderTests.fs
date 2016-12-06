@@ -71,13 +71,13 @@ System.Console.WriteLine(format="Hello, {0}",arg0="World")
             [(".", None); 
              ("System", None); 
              ("WriteLine", None);
-             ("(", Some ("[5..62)", 0, 2, Some "format")); 
-             ("format", Some ("[5..62)", 0, 2, Some "format"));
+             ("(", Some ("[7..64)", 0, 2, Some "format")); 
+             ("format", Some ("[7..64)", 0, 2, Some "format"));
              (",", None);
-             ("""",""", Some ("[5..62)", 1, 2, Some "arg0"));
-             ("arg0", Some ("[5..62)", 1, 2, Some "arg0"));
-             ("arg0=", Some ("[5..62)", 1, 2, Some "arg0")); 
-             ("World", Some ("[5..62)", 1, 2, Some "arg0"));
+             ("""",""", Some ("[7..64)", 1, 2, Some "arg0"));
+             ("arg0", Some ("[7..64)", 1, 2, Some "arg0"));
+             ("arg0=", Some ("[7..64)", 1, 2, Some "arg0")); 
+             ("World", Some ("[7..64)", 1, 2, Some "arg0"));
              (")", None)]);
           ( """
 //2
