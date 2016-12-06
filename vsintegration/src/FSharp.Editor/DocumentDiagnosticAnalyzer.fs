@@ -5,6 +5,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.Composition
 open System.Collections.Immutable
+open System.Collections.Generic
 open System.Threading
 open System.Threading.Tasks
 
@@ -20,6 +21,11 @@ open Microsoft.FSharp.Compiler.Range
 
 open Microsoft.VisualStudio.FSharp.LanguageService
 
+[<RequireQualifiedAccess>]
+type internal DiagnosticsType =
+    | Syntax
+    | Semantic
+
 [<DiagnosticAnalyzer(FSharpCommonConstants.FSharpLanguageName)>]
 type internal FSharpDocumentDiagnosticAnalyzer() =
     inherit DocumentDiagnosticAnalyzer()
@@ -29,35 +35,71 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
 
     let getProjectInfoManager(document: Document) =
         document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().ProjectInfoManager
+    
+    static let errorInfoEqualityComparer =
+        { new IEqualityComparer<FSharpErrorInfo> with 
+            member __.Equals (x, y) =
+                x.FileName = y.FileName &&
+                x.StartLineAlternate = y.StartLineAlternate &&
+                x.EndLineAlternate = y.EndLineAlternate &&
+                x.StartColumn = y.StartColumn &&
+                x.EndColumn = y.EndColumn &&
+                x.Severity = y.Severity &&
+                x.Message = y.Message &&
+                x.Subcategory = y.Subcategory &&
+                x.ErrorNumber = y.ErrorNumber
+            member __.GetHashCode x =
+                let mutable hash = 17
+                hash <- hash * 23 + x.EndLineAlternate.GetHashCode()
+                hash <- hash * 23 + x.EndLineAlternate.GetHashCode()
+                hash <- hash * 23 + x.StartColumn.GetHashCode()
+                hash <- hash * 23 + x.EndColumn.GetHashCode()
+                hash <- hash * 23 + x.Severity.GetHashCode()
+                hash <- hash * 23 + x.Message.GetHashCode()
+                hash <- hash * 23 + x.Subcategory.GetHashCode()
+                hash <- hash * 23 + x.ErrorNumber.GetHashCode()
+                hash 
+        }
 
-    static member GetDiagnostics(checker: FSharpChecker, filePath: string, sourceText: SourceText, textVersionHash: int, options: FSharpProjectOptions, addSemanticErrors: bool) = async {
-        let! parseResults = checker.ParseFileInProject(filePath, sourceText.ToString(), options) 
-        let! errors = async {
-            if addSemanticErrors then
-                let! checkResultsAnswer = checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options) 
-                match checkResultsAnswer with
-                | FSharpCheckFileAnswer.Aborted -> return [| |]
-                | FSharpCheckFileAnswer.Succeeded(results) -> return results.Errors
-            else
-                return parseResults.Errors
-          }
-        
-        let results = 
-          (errors |> Seq.choose(fun (error) ->
-            if error.StartLineAlternate = 0 || error.EndLineAlternate = 0 then
-                // F# error line numbers are one-based. Compiler returns 0 for global errors (reported by ProjectDiagnosticAnalyzer)
-                None
-            else
-                // Roslyn line numbers are zero-based
-                let linePositionSpan = LinePositionSpan(LinePosition(error.StartLineAlternate - 1, error.StartColumn),LinePosition(error.EndLineAlternate - 1, error.EndColumn))
-                let textSpan = sourceText.Lines.GetTextSpan(linePositionSpan)
-                // F# compiler report errors at end of file if parsing fails. It should be corrected to match Roslyn boundaries
-                let correctedTextSpan = if textSpan.End < sourceText.Length then textSpan else TextSpan.FromBounds(max 0 (sourceText.Length - 1), sourceText.Length)
-                let location = Location.Create(filePath, correctedTextSpan , linePositionSpan)
-                Some(CommonRoslynHelpers.ConvertError(error, location)))
-          ).ToImmutableArray()
-        return results
-      }
+    static member GetDiagnostics(checker: FSharpChecker, filePath: string, sourceText: SourceText, textVersionHash: int, options: FSharpProjectOptions, diagnosticType: DiagnosticsType) = 
+        async {
+            let! parseResults = checker.ParseFileInProject(filePath, sourceText.ToString(), options) 
+            let! errors = 
+                async {
+                    match diagnosticType with
+                    | DiagnosticsType.Semantic ->
+                        let! checkResultsAnswer = checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options) 
+                        match checkResultsAnswer with
+                        | FSharpCheckFileAnswer.Aborted -> return [||]
+                        | FSharpCheckFileAnswer.Succeeded results ->
+                            // In order to eleminate duplicates, we should not return parse errors here because they are returned by `AnalyzeSyntaxAsync` method.
+                            let allErrors = HashSet(results.Errors, errorInfoEqualityComparer)
+                            allErrors.ExceptWith(parseResults.Errors)
+                            return Seq.toArray allErrors
+                    | DiagnosticsType.Syntax ->
+                        return parseResults.Errors
+                }
+            
+            let results = 
+              (errors |> Seq.choose(fun error ->
+                if error.StartLineAlternate = 0 || error.EndLineAlternate = 0 then
+                    // F# error line numbers are one-based. Compiler returns 0 for global errors (reported by ProjectDiagnosticAnalyzer)
+                    None
+                else
+                    // Roslyn line numbers are zero-based
+                    let linePositionSpan = LinePositionSpan(LinePosition(error.StartLineAlternate - 1, error.StartColumn),LinePosition(error.EndLineAlternate - 1, error.EndColumn))
+                    let textSpan = sourceText.Lines.GetTextSpan(linePositionSpan)
+                    
+                    // F# compiler report errors at end of file if parsing fails. It should be corrected to match Roslyn boundaries
+                    let correctedTextSpan = 
+                        if textSpan.End < sourceText.Length then textSpan 
+                        else TextSpan.FromBounds(max 0 (sourceText.Length - 1), sourceText.Length)
+                    
+                    let location = Location.Create(filePath, correctedTextSpan , linePositionSpan)
+                    Some(CommonRoslynHelpers.ConvertError(error, location)))
+              ).ToImmutableArray()
+            return results
+        }
 
     override this.SupportedDiagnostics = CommonRoslynHelpers.SupportedDiagnostics()
 
@@ -68,7 +110,7 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
             | Some options ->
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
-                return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(getChecker document, document.FilePath, sourceText, textVersion.GetHashCode(), options, false)
+                return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(getChecker document, document.FilePath, sourceText, textVersion.GetHashCode(), options, DiagnosticsType.Syntax)
             | None -> return ImmutableArray<Diagnostic>.Empty
         } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
 
@@ -81,7 +123,7 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
             | Some options ->
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
-                return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(getChecker document, document.FilePath, sourceText, textVersion.GetHashCode(), options, true)
+                return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(getChecker document, document.FilePath, sourceText, textVersion.GetHashCode(), options, DiagnosticsType.Semantic)
             | None -> return ImmutableArray<Diagnostic>.Empty
         } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
 
