@@ -84,9 +84,10 @@ type internal FSharpCompletionProvider
             | None -> false
             | Some(classifiedSpan) ->
                 match classifiedSpan.ClassificationType with
-                | ClassificationTypeNames.Comment -> false
-                | ClassificationTypeNames.StringLiteral -> false
-                | ClassificationTypeNames.ExcludedCode -> false
+                | ClassificationTypeNames.Comment
+                | ClassificationTypeNames.StringLiteral
+                | ClassificationTypeNames.ExcludedCode
+                | ClassificationTypeNames.NumericLiteral -> false
                 | _ -> true // anything else is a valid classification type
 
     static member ProvideCompletionsAsyncAux(checker: FSharpChecker, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, textVersionHash: int) = async {
