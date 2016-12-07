@@ -43,7 +43,7 @@ namespace Microsoft.FSharp.Collections
                     member this.OnComplete (_, terminatingIdx) =
                         this.OnComplete terminatingIdx
 
-                    member this.OnDispose _ = 
+                    member this.OnDispose _ =
                         try this.OnDispose ()
                         finally ()
 
@@ -94,7 +94,7 @@ namespace Microsoft.FSharp.Collections
                 abstract member Compose<'U> : (SeqFactory<'T,'U>) -> ISeq<'U>
                 abstract member ForEach<'consumer when 'consumer :> Consumer<'T,'T>> : f:((unit->unit)->'consumer) -> 'consumer
 
-        open Core 
+        open Core
 
         module internal TailCall =
             // used for performance reasons; these are not recursive calls, so should be safe
@@ -124,21 +124,17 @@ namespace Microsoft.FSharp.Collections
                 static member Combine (first:SeqFactory<'T,'U>) (second:SeqFactory<'U,'V>) : SeqFactory<'T,'V> =
                     upcast ComposedFactory(first, second, first.PipeIdx+1)
 
-            and ChooseFactory<'T,'U> (filter:'T->option<'U>) =
-                inherit SeqFactory<'T,'U> ()
-                override this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'U,'V>) : Consumer<'T,'V> = upcast Choose (filter, next) 
-            
             and DistinctFactory<'T when 'T: equality> () =
                 inherit SeqFactory<'T,'T> ()
-                override this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Distinct (next) 
+                override this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Distinct (next)
 
             and DistinctByFactory<'T,'Key when 'Key: equality> (keyFunction:'T-> 'Key) =
                 inherit SeqFactory<'T,'T> ()
-                override this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast DistinctBy (keyFunction, next) 
-            
+                override this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast DistinctBy (keyFunction, next)
+
             and ExceptFactory<'T when 'T: equality> (itemsToExclude: seq<'T>) =
                 inherit SeqFactory<'T,'T> ()
-                override this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Except (itemsToExclude, next) 
+                override this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Except (itemsToExclude, next)
 
             and IdentityFactory<'T> () =
                 inherit SeqFactory<'T,'T> ()
@@ -172,31 +168,31 @@ namespace Microsoft.FSharp.Collections
 
             and SkipFactory<'T> (count:int, onNotEnoughElements) =
                 inherit SeqFactory<'T,'T> ()
-                override this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Skip (count, onNotEnoughElements, next) 
+                override this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Skip (count, onNotEnoughElements, next)
 
             and SkipWhileFactory<'T> (predicate:'T->bool) =
                 inherit SeqFactory<'T,'T> ()
-                override this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast SkipWhile (predicate, next) 
+                override this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast SkipWhile (predicate, next)
 
             and TakeWhileFactory<'T> (predicate:'T->bool) =
                 inherit SeqFactory<'T,'T> ()
-                override this.Create<'V> (outOfBand:IOutOfBand) (pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast TakeWhile (predicate, outOfBand, next, pipeIdx) 
+                override this.Create<'V> (outOfBand:IOutOfBand) (pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast TakeWhile (predicate, outOfBand, next, pipeIdx)
 
             and TakeFactory<'T> (count:int) =
                 inherit SeqFactory<'T,'T> ()
-                override this.Create<'V> (outOfBand:IOutOfBand) (pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Take (count, outOfBand, next, pipeIdx) 
-            
+                override this.Create<'V> (outOfBand:IOutOfBand) (pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Take (count, outOfBand, next, pipeIdx)
+
             and TailFactory<'T> () =
                 inherit SeqFactory<'T,'T> ()
-                override this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Tail<'T,'V> (next) 
+                override this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Tail<'T,'V> (next)
 
             and TruncateFactory<'T> (count:int) =
                 inherit SeqFactory<'T,'T> ()
-                override this.Create<'V> (outOfBand:IOutOfBand) (pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Truncate (count, outOfBand, next, pipeIdx) 
-            
+                override this.Create<'V> (outOfBand:IOutOfBand) (pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Truncate (count, outOfBand, next, pipeIdx)
+
             and WindowedFactory<'T> (windowSize:int) =
                 inherit SeqFactory<'T, 'T[]> ()
-                override this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'T[],'V>) : Consumer<'T,'V> = upcast Windowed (windowSize, next) 
+                override this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'T[],'V>) : Consumer<'T,'V> = upcast Windowed (windowSize, next)
 
             and ISkipping =
                 // Seq.init(Infinite)? lazily uses Current. The only Composer component that can do that is Skip
@@ -233,20 +229,13 @@ namespace Microsoft.FSharp.Collections
                         try     this.OnDispose ()
                         finally next.OnDispose (&stopTailCall)
 
-            and Choose<'T,'U,'V> (choose:'T->option<'U>, next:Consumer<'U,'V>) =
-                inherit SeqComponent<'T,'V>(Upcast.iCompletionChaining next)
-
-                override __.ProcessNext (input:'T) : bool =
-                    match choose input with
-                    | Some value -> TailCall.avoid (next.ProcessNext value)
-                    | None -> false
 
             and Distinct<'T,'V when 'T: equality> (next:Consumer<'T,'V>) =
                 inherit SeqComponent<'T,'V>(Upcast.iCompletionChaining next)
 
                 let hashSet = HashSet<'T>(HashIdentity.Structural<'T>)
 
-                override __.ProcessNext (input:'T) : bool = 
+                override __.ProcessNext (input:'T) : bool =
                     if hashSet.Add input then
                         TailCall.avoid (next.ProcessNext input)
                     else
@@ -257,7 +246,7 @@ namespace Microsoft.FSharp.Collections
 
                 let hashSet = HashSet<'Key>(HashIdentity.Structural<'Key>)
 
-                override __.ProcessNext (input:'T) : bool = 
+                override __.ProcessNext (input:'T) : bool =
                     if hashSet.Add(keyFunction input) then
                         TailCall.avoid (next.ProcessNext input)
                     else
@@ -268,7 +257,7 @@ namespace Microsoft.FSharp.Collections
 
                 let cached = lazy(HashSet(itemsToExclude, HashIdentity.Structural))
 
-                override __.ProcessNext (input:'T) : bool = 
+                override __.ProcessNext (input:'T) : bool =
                     if cached.Value.Add input then
                         TailCall.avoid (next.ProcessNext input)
                     else
@@ -348,7 +337,7 @@ namespace Microsoft.FSharp.Collections
                 let mutable isFirst = true
                 let mutable lastValue = Unchecked.defaultof<'T>
 
-                override __.ProcessNext (input:'T) : bool = 
+                override __.ProcessNext (input:'T) : bool =
                     if isFirst then
                         lastValue <- input
                         isFirst <- false
@@ -381,7 +370,7 @@ namespace Microsoft.FSharp.Collections
                         else
                             false
 
-                override __.ProcessNext (input:'T) : bool = 
+                override __.ProcessNext (input:'T) : bool =
                     if count < skipCount then
                         count <- count + 1
                         false
@@ -399,7 +388,7 @@ namespace Microsoft.FSharp.Collections
 
                 let mutable skip = true
 
-                override __.ProcessNext (input:'T) : bool = 
+                override __.ProcessNext (input:'T) : bool =
                     if skip then
                         skip <- predicate input
                         if skip then
@@ -421,7 +410,7 @@ namespace Microsoft.FSharp.Collections
             and TakeWhile<'T,'V> (predicate:'T->bool, outOfBand:IOutOfBand, next:Consumer<'T,'V>, pipeIdx:int) =
                 inherit SeqComponent<'T,'V>(Upcast.iCompletionChaining next)
 
-                override __.ProcessNext (input:'T) : bool = 
+                override __.ProcessNext (input:'T) : bool =
                     if predicate input then
                         TailCall.avoid (next.ProcessNext input)
                     else
@@ -451,7 +440,7 @@ namespace Microsoft.FSharp.Collections
 
                 member __.Count = count
 
-                override __.ProcessNext (input:'T) : bool = 
+                override __.ProcessNext (input:'T) : bool =
                     if count < truncateCount then
                         count <- count + 1
                         if count = truncateCount then
@@ -471,7 +460,7 @@ namespace Microsoft.FSharp.Collections
 
                 override __.ProcessNext (input:'T) : bool =
                     circularBuffer.[idx] <- input
-                    
+
                     idx <- idx + 1
                     if idx = windowSize then
                         idx <- 0
@@ -484,7 +473,7 @@ namespace Microsoft.FSharp.Collections
                             let window = Array.init windowSize (fun i -> circularBuffer.[(idx+i) % windowSize])
                             TailCall.avoid (next.ProcessNext window)
                         else
-                            let window = Array.zeroCreateUnchecked windowSize 
+                            let window = Array.zeroCreateUnchecked windowSize
                             Array.Copy(circularBuffer, idx, window, 0, windowSize - idx)
                             Array.Copy(circularBuffer, 0, window, windowSize - idx, idx)
                             TailCall.avoid (next.ProcessNext window)
@@ -496,7 +485,7 @@ namespace Microsoft.FSharp.Collections
 
             type Result<'T>() =
                 let mutable haltedIdx = 0
-                
+
                 member val Current = Unchecked.defaultof<'T> with get, set
                 member val SeqState = SeqProcessNextStates.NotStarted with get, set
                 member __.HaltedIdx = haltedIdx
@@ -538,14 +527,14 @@ namespace Microsoft.FSharp.Collections
                         | _ -> ()
                     iterate alist
 
-                let unfold (generator:'S->option<'T*'S>) state (outOfBand:OutOfBand) (consumer:Consumer<'T,'U>) = 
+                let unfold (generator:'S->option<'T*'S>) state (outOfBand:OutOfBand) (consumer:Consumer<'T,'U>) =
                     let rec iterate current =
                         match outOfBand.HaltedIdx, generator current with
                         | 0, Some (item, next) ->
                             consumer.ProcessNext item |> ignore
                             iterate next
                         | _ -> ()
-    
+
                     iterate state
 
                 let makeIsSkipping (consumer:Consumer<'T,'U>) =
@@ -591,7 +580,7 @@ namespace Microsoft.FSharp.Collections
                     interface IDisposable with
                         member __.Dispose () = ()
 
-                type EmptyEnumerators<'T>() = 
+                type EmptyEnumerators<'T>() =
                     static let element : IEnumerator<'T> = upcast (new Empty<'T> ())
                     static member Element = element
 
@@ -842,7 +831,7 @@ namespace Microsoft.FSharp.Collections
 
                     let rec moveNext current =
                         match result.HaltedIdx, current with
-                        | 0, head::tail -> 
+                        | 0, head::tail ->
                             if seqComponent.ProcessNext head then
                                 list <- tail
                                 true
@@ -953,7 +942,7 @@ namespace Microsoft.FSharp.Collections
                                 // Skip can only is only checked at the start of the sequence, so once
                                 // triggered, we stay triggered.
                                 maybeSkipping <- isSkipping ()
-                    
+
                             if maybeSkipping then
                                 moveNext ()
                             elif seqComponent.ProcessNext (f idx) then
@@ -1057,7 +1046,7 @@ namespace Microsoft.FSharp.Collections
                             ForEach.execute f IdentityFactory.Instance (ForEach.enumerable (Upcast.enumerable this))
 
             [<CompiledName("ToComposer")>]
-            let toComposer (source:seq<'T>) : ISeq<'T> = 
+            let toComposer (source:seq<'T>) : ISeq<'T> =
                 match source with
                 | :? ISeq<'T> as s -> s
                 | :? array<'T> as a -> Upcast.seq (Array.Enumerable((fun () -> a), IdentityFactory.Instance))
@@ -1113,7 +1102,7 @@ namespace Microsoft.FSharp.Collections
             let tryItem i (source:ISeq<'T>) =
                 if i < 0 then None else
                 source.Compose (SkipFactory(i, fun _ _ -> ()))
-                |> tryHead 
+                |> tryHead
 
             [<CompiledName("IterateIndexed")>]
             let iteri f (source:ISeq<'T>) =
@@ -1163,13 +1152,13 @@ namespace Microsoft.FSharp.Collections
                                 halt ()
                             Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
                 |> fun forall -> forall.Value
-                
+
             [<CompiledName("Filter")>]
             let inline filter<'T> (f:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
                 source |> compose { new SeqFactory<'T,'T>() with
                     member __.Create _ _ next =
                         upcast { new SeqComponentSimple<'T,'V>(Upcast.iCompletionChaining next) with
-                            member __.ProcessNext input = 
+                            member __.ProcessNext input =
                                 if f input then TailCall.avoid (next.ProcessNext input)
                                 else false } }
 
@@ -1178,7 +1167,7 @@ namespace Microsoft.FSharp.Collections
                 source |> compose { new SeqFactory<'T,'U>() with
                     member __.Create _ _ next =
                         upcast { new SeqComponentSimple<'T,'V>(Upcast.iCompletionChaining next) with
-                            member __.ProcessNext input = 
+                            member __.ProcessNext input =
                                 TailCall.avoid (next.ProcessNext (f input)) } }
 
             [<CompiledName("MapIndexed")>]
@@ -1186,7 +1175,7 @@ namespace Microsoft.FSharp.Collections
                 source |> compose { new SeqFactory<'T,'U>() with
                     member __.Create _ _ next =
                         upcast { new SeqComponentSimpleValue<'T,'V,int>(Upcast.iCompletionChaining next, -1) with
-                            override this.ProcessNext (input:'T) : bool = 
+                            override this.ProcessNext (input:'T) : bool =
                                 this.Value <- this.Value  + 1
                                 TailCall.avoid (next.ProcessNext (f this.Value input)) } }
 
@@ -1194,14 +1183,20 @@ namespace Microsoft.FSharp.Collections
                 source |> compose { new SeqFactory<'T,'U>() with
                     member __.Create _ _ next =
                         upcast { new SeqComponentSimpleValue<'T,'V,int>(Upcast.iCompletionChaining next, -1) with
-                            override this.ProcessNext (input:'T) : bool = 
+                            override this.ProcessNext (input:'T) : bool =
                                 this.Value <- this.Value  + 1
                                 TailCall.avoid (next.ProcessNext (f.Invoke (this.Value, input))) } }
 
             [<CompiledName("Choose")>]
-            let choose f source =
-                source
-                |> compose (ChooseFactory f)
+            let inline choose (f:'T->option<'U>) (source:ISeq<'T>) : ISeq<'U> =
+                source |> compose { new SeqFactory<'T,'U>() with
+                    member __.Create _ _ next =
+                        upcast { new SeqComponentSimple<'T,'V>(Upcast.iCompletionChaining next) with
+                            member __.ProcessNext input =
+                                match f input with
+                                | Some value -> TailCall.avoid (next.ProcessNext value)
+                                | None       -> false } }
+
 
             [<CompiledName("Indexed")>]
             let inline indexed source =
@@ -1223,7 +1218,7 @@ namespace Microsoft.FSharp.Collections
 
             [<CompiledName("TryFind")>]
             let tryFind f (source:ISeq<'T>)  =
-                source 
+                source
                 |> foreach (fun halt ->
                     { new Folder<'T, Option<'T>> (None) with
                         override this.ProcessNext value =
