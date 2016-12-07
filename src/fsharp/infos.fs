@@ -58,7 +58,7 @@ let GetSuperTypeOfType g amap m typ =
 #if EXTENSIONTYPING
     let typ = (if isAppTy g typ && (tcrefOfAppTy g typ).IsProvided then stripTyEqns g typ else stripTyEqnsAndMeasureEqns g typ)
 #else
-    let typ = stripTyEqns g typ 
+    let typ = stripTyEqnsAndMeasureEqns g typ 
 #endif
 
     match metadataOfTy g typ with 
@@ -93,7 +93,7 @@ let GetSuperTypeOfType g amap m typ =
             None
 
 /// Make a type for System.Collections.Generic.IList<ty>
-let mkSystemCollectionsGenericIListTy g ty = TType_app(g.tcref_System_Collections_Generic_IList,[ty])
+let mkSystemCollectionsGenericIListTy (g: TcGlobals) ty = TType_app(g.tcref_System_Collections_Generic_IList,[ty])
 
 [<RequireQualifiedAccess>]
 /// Indicates whether we can skip interface types that lie outside the reference set
@@ -369,7 +369,7 @@ type ValRef with
     member vref.IsDefiniteFSharpOverrideMember = 
         let membInfo = vref.MemberInfo.Value   
         let flags = membInfo.MemberFlags
-        not flags.IsDispatchSlot && (flags.IsOverrideOrExplicitImpl || not (List.isEmpty membInfo.ImplementedSlotSigs))
+        not flags.IsDispatchSlot && (flags.IsOverrideOrExplicitImpl || not (isNil membInfo.ImplementedSlotSigs))
 
     /// Check if an F#-declared member value is an  explicit interface member implementation
     member vref.IsFSharpExplicitInterfaceImplementation g = 
@@ -472,7 +472,7 @@ type ExtensionMethodPriority = uint64
 //-------------------------------------------------------------------------
 // OptionalArgCallerSideValue, OptionalArgInfo
 
-/// The caller-side value for the optional arg, is any 
+/// The caller-side value for the optional arg, if any 
 type OptionalArgCallerSideValue = 
     | Constant of IL.ILFieldInit
     | DefaultValue
@@ -487,7 +487,9 @@ type OptionalArgInfo =
     | NotOptional
     /// The argument is optional, and is an F# callee-side optional arg 
     | CalleeSide
-    /// The argument is optional, and is a caller-side .NET optional or default arg 
+    /// The argument is optional, and is a caller-side .NET optional or default arg.
+    /// Note this is correctly termed caller side, even though the default value is optically specified on the callee:
+    /// in fact the default value is read from the metadata and passed explicitly to the callee on the caller side.
     | CallerSide of OptionalArgCallerSideValue 
     member x.IsOptional = match x with CalleeSide | CallerSide  _ -> true | NotOptional -> false 
 
@@ -518,6 +520,16 @@ type OptionalArgInfo =
                 CallerSide (Constant v)
         else 
             NotOptional
+    
+    static member ValueOfDefaultParameterValueAttrib (Attrib (_,_,exprs,_,_,_,_)) =
+        let (AttribExpr (_,defaultValueExpr)) = List.head exprs
+        match defaultValueExpr with
+        | Expr.Const (_,_,_) -> Some defaultValueExpr
+        | _ -> None
+    static member FieldInitForDefaultParameterValueAttrib attrib =
+        match OptionalArgInfo.ValueOfDefaultParameterValueAttrib attrib with
+        | Some (Expr.Const (ConstToILFieldInit fi,_,_)) -> Some fi
+        | _ -> None
 
 type CallerInfoInfo =
     | NoCallerInfo
@@ -784,7 +796,7 @@ type ILMethInfo =
 
     /// Indicates if the method is marked as a DllImport (a PInvoke). This is done by looking at the IL custom attributes on 
     /// the method.
-    member x.IsDllImport g = 
+    member x.IsDllImport (g: TcGlobals) = 
         match g.attrib_DllImportAttribute with
         | None -> false
         | Some (AttribInfo(tref,_)) ->x.RawMetadata.CustomAttrs |> TryDecodeILAttribute g tref |> Option.isSome
@@ -1316,10 +1328,35 @@ type MethInfo =
                     | Some b -> ReflectedArgInfo.Quote b
                     | None -> ReflectedArgInfo.None
                 let isOutArg = HasFSharpAttribute g g.attrib_OutAttribute argInfo.Attribs && isByrefTy g ty
-                let isOptArg = HasFSharpAttribute g g.attrib_OptionalArgumentAttribute argInfo.Attribs
-                // Note: can't specify caller-side default arguments in F#, by design (default is specified on the callee-side) 
-                let optArgInfo = if isOptArg then CalleeSide else NotOptional
-                
+                let isCalleeSideOptArg = HasFSharpAttribute g g.attrib_OptionalArgumentAttribute argInfo.Attribs
+                let isCallerSideOptArg = HasFSharpAttributeOpt g g.attrib_OptionalAttribute argInfo.Attribs
+                let optArgInfo = 
+                    if isCalleeSideOptArg then 
+                        CalleeSide 
+                    elif isCallerSideOptArg then
+                        let defaultParameterValueAttribute = TryFindFSharpAttributeOpt g g.attrib_DefaultParameterValueAttribute argInfo.Attribs
+                        match defaultParameterValueAttribute with
+                        | None -> 
+                            // Do a type-directed analysis of the type to determine the default value to pass.
+                            // Similar rules as OptionalArgInfo.FromILParameter are applied here, except for the COM and byref-related stuff.
+                            CallerSide (if isObjTy g ty then MissingValue else DefaultValue)
+                        | Some attr -> 
+                            let defaultValue = OptionalArgInfo.ValueOfDefaultParameterValueAttrib attr
+                            match defaultValue with
+                            | Some (Expr.Const (_, m, typ)) when not (typeEquiv g typ ty) -> 
+                                // the type of the default value does not match the type of the argument.
+                                // Emit a warning, and ignore the DefaultParameterValue argument altogether.
+                                warning(Error(FSComp.SR.DefaultParameterValueNotAppropriateForArgument(), m))
+                                NotOptional
+                            | Some (Expr.Const((ConstToILFieldInit fi),_,_)) ->
+                                // Good case - all is well.
+                                CallerSide (Constant fi)
+                            | _ -> 
+                                // Default value is not appropriate, i.e. not a constant.
+                                // Compiler already gives an error in that case, so just ignore here.
+                                NotOptional 
+                    else NotOptional
+
                 let isCallerLineNumberArg = HasFSharpAttribute g g.attrib_CallerLineNumberAttribute argInfo.Attribs
                 let isCallerFilePathArg = HasFSharpAttribute g g.attrib_CallerFilePathAttribute argInfo.Attribs
                 let isCallerMemberNameArg = HasFSharpAttribute g g.attrib_CallerMemberNameAttribute argInfo.Attribs
@@ -1458,6 +1495,10 @@ type MethInfo =
         let paramAttribs = x.GetParamAttribs(amap, m)
         (paramAttribs,paramNamesAndTypes) ||> List.map2 (List.map2 (fun (isParamArrayArg,isOutArg,optArgInfo,callerInfoInfo,reflArgInfo) (ParamNameAndType(nmOpt,pty)) -> 
              ParamData(isParamArrayArg,isOutArg,optArgInfo,callerInfoInfo,nmOpt,reflArgInfo,pty)))
+
+    /// Get the ParamData objects for the parameters of a MethInfo
+    member x.HasParamArrayArg(amap, m, minst) = 
+        x.GetParamDatas(amap, m, minst) |> List.existsSquared (fun (ParamData(isParamArrayArg,_,_,_,_,_,_)) -> isParamArrayArg)
 
 
     /// Select all the type parameters of the declaring type of a method. 

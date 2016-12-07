@@ -1,62 +1,8 @@
 // #Regression #Conformance #Regression #Exceptions #Constants #LetBindings #Lists #Collections #Stress #Sequences #Optimizations #Records #Unions 
-#if Portable
+#if TESTS_AS_APP
 module Core_libtest
 #endif
 
-(* CONTENTS-INDEX-REGEXP = FROM>^\!\* <TO *)
-(*----------------------------------------------------------------------------
-CONTENTS-START-LINE: HERE=2 SEP=2
- 92.    Exceptions
- 725.   check the same for GetHashCode
- 797.   check we can resolve overlapping constructor names using type names
- 828.   hashing of large terms that contain back pointers (are infinite)
- 833.   Equality tests over structured values for data likely to contain
- 1266.  Equality tests over structured values for data likely to contain
- 1325.  List library 
- 1656.  Infinite data structure tests
- 1689.  Perf tests
- 1943.  Calling conventions.  These are used in method pointer types.
- 2297.  foreach/to_seq
- 2351.  foreachG/to_seq
- 2401.  Generic formatting
- 2492.  For loop variables can escape
- 2499.  Type tests
- 2511.  streams
- 2587.  type syntax
- 3316.  check optimizations 
- 3402.  BUG 868: repro - mod_float
- 3414.  misc tests of IEnumerable functions
- 3454.  systematic tests of IEnumerable functions
- 3520.  record effect order
- 3700.  BUG 709: repro
- 3736.  BUG 701: possible repro
- 3781.  BUG 737: repro - do not expand sharing in large constants...
- 3881.  set union - timings w.r.t. "union by fold"
- 3961.  set/map filter: was bug
- 4010.  Bug 1028: conversion functions like int32 do not accept strings, suggested by Mort.
- 4393.  Bug 1029: Support conversion functions named after C# type names? e.g. uint for uint32
- 4425.  BUG 945: comment lexing does not handle slash-quote inside quoted strings
- 4436.  BUG 946: comment lexing does not handle double-quote and backslash inside @-strings
- 4448.  BUG 1080: Seq.cache_all does not have the properties of cache
- 4511.  BUG 747: Parsing (expr :> type) as top-level expression in fsi requires brackets, grammar issue
- 4525.  BUG 1049: Adding string : 'a -> string, test cases.
- 4579.  BUG 1178: Seq.init and Seq.initInfinite implemented using Seq.unfold which evaluates Current on every step
- 4609.  BUG 1482: Seq.initInfinite overflow and Seq.init negative count to be trapped
- 4748.  BUG 1477: struct with field offset attributes on fields throws assertions in fsi
- 4765.  BUG 1561: (-star-star-) opens a comment but does not close it and other XML Doc issues.
- 4782.  BUG 1750: ilxgen stack incorrect during multi-branch match tests
- 4799.  BUG 2247: Unverifiable code from struct valued tyfunc
- 4820.  BUG 1190, 3569: record and list patterns do not permit trailing seperator
- 4840.  BUG 3808
- 4853.  BUG 3947
- 4874.  BUG 4063: ilreflect ctor emit regression - Type/TypeBuilder change
- 4899.  BUG 4139: %A formatter does not accept width, e.g. printf "%10000A"
- 4910.  BUG 1043: Can (-star-) again be lexed specially and recognised as bracket-star-bracket?
- 4924.  Tail-cons optimized operators temporarily put 'null' in lists
- 5030.  Bug 4884: another TaggedCollections issue - same type fails cast
- 5048.  wrap up
-CONTENTS-END-LINE:
-----------------------------------------------------------------------------*)
 
 #nowarn "62"
 #nowarn "44"
@@ -64,21 +10,6 @@ CONTENTS-END-LINE:
 let mutable failures = []
 let reportFailure s = 
   stdout.WriteLine "\n................TEST FAILED...............\n"; failures <- failures @ [s]
-
-(* TEST SUITE FOR STANDARD LIBRARY *)
-
-#if NetCore
-#else
-let argv = System.Environment.GetCommandLineArgs() 
-let SetCulture() = 
-  if argv.Length > 2 && argv.[1] = "--culture" then  
-    let cultureString = argv.[2] in 
-    let culture = new System.Globalization.CultureInfo(cultureString) in 
-    stdout.WriteLine ("Running under culture "+culture.ToString()+"...");
-    System.Threading.Thread.CurrentThread.CurrentCulture <-  culture
-  
-do SetCulture()    
-#endif
 
 let check s e r = 
   if r = e then  stdout.WriteLine (s^": YES") 
@@ -2272,9 +2203,6 @@ do test2398997()
 !* Generic formatting
  *--------------------------------------------------------------------------- *)
 
-// See FSHARP1.0:4797
-// On NetFx4.0 and above we do not emit the 'I' suffix
-let bigintsuffix = if (System.Environment.Version.Major, System.Environment.Version.Minor) > (2,0) then "" else "I"
 
 do check "generic format 1"  "[1; 2]" (sprintf "%A" [1;2])
 do check "generic format 2"  "Some [1; 2]" (sprintf "%A" (Some [1;2]))
@@ -2285,8 +2213,6 @@ do check "generic format d"  "1us" (sprintf "%A" 1us)
 do check "generic format e"  "1" (sprintf "%A" 1)
 do check "generic format f"  "1u" (sprintf "%A" 1ul)
 do check "generic format g"  "1L" (sprintf "%A" 1L)
-do check "generic format i"  ("1" + bigintsuffix) ( printf "%A" 1I
-                                                    sprintf "%A" 1I)
 do check "generic format j"  "1.0" (sprintf "%A" 1.0)
 do check "generic format k"  "1.01" (sprintf "%A" 1.01)
 do check "generic format l"  "1000.0" (sprintf "%A" 1000.0)
@@ -2295,7 +2221,14 @@ do check "generic format m"  "-1y" (sprintf "%A" (-1y))
 do check "generic format n"  "-1s" (sprintf "%A" (-1s))
 do check "generic format o"  "-1" (sprintf "%A" (-1))
 do check "generic format p"  "-1L" (sprintf "%A" (-1L))
+#if !FX_PORTABLE_OR_NETSTANDARD
+// See FSHARP1.0:4797
+// On NetFx4.0 and above we do not emit the 'I' suffix
+let bigintsuffix = if (System.Environment.Version.Major, System.Environment.Version.Minor) > (2,0) then "" else "I"
+do check "generic format i"  ("1" + bigintsuffix) ( printf "%A" 1I
+                                                    sprintf "%A" 1I)
 do check "generic format r"  ("-1" + bigintsuffix)  (sprintf "%A" (-1I))
+#endif
 
 
 (*---------------------------------------------------------------------------
@@ -2470,11 +2403,11 @@ module IEnumerableTests = begin
   do check "Seq.averageBy" (Seq.averageBy float [0..100]) 50.
   do check "Seq.min" (Seq.min [1; 4; 2; 5; 8; 4; 0; 3]) 0
   do check "Seq.max" (Seq.max [1; 4; 2; 5; 8; 4; 0; 3]) 8
-  #if Portable
-  #else // strings don't have enumerators on portable
+#if !FSCORE_PORTABLE_OLD && !FSCORE_PORTABLE_NEW
+  // strings don't have enumerators on portable
   do check "Seq.minBy" (Seq.minBy int "this is a test") ' '
   do check "Seq.maxBy" (Seq.maxBy int "this is a test") 't'
-  #endif
+#endif
 
   // Test where the key includes null values
   do check "dict - option key" (dict [ (None,10); (Some 3, 220) ]).[None] 10
@@ -2780,13 +2713,13 @@ module SeqTestsOnEnumerableEnforcingDisposalAtEnd = begin
    do check "<dispoal>" numActiveEnumerators 0
    do check "Seq.max" (Seq.max (countEnumeratorsAndCheckedDisposedAtMostOnce [1; 4; 2; 5; 8; 4; 0; 3])) 8
    do check "<dispoal>" numActiveEnumerators 0
-   #if Portable
-   #else // strings don't have enumerators in portable
+#if !FX_PORTABLE_OR_NETSTANDARD
+// strings don't have enumerators in portable
    do check "Seq.minBy" (Seq.minBy int (countEnumeratorsAndCheckedDisposedAtMostOnce "this is a test")) ' '
    do check "<dispoal>" numActiveEnumerators 0
    do check "Seq.maxBy" (Seq.maxBy int (countEnumeratorsAndCheckedDisposedAtMostOnce "this is a test")) 't'
    do check "<dispoal>" numActiveEnumerators 0
-   #endif
+#endif
 
 end
 
@@ -3582,8 +3515,7 @@ module GenericComparisonAndEquality = begin
     [<StructuralEquality ; StructuralComparison>]
     type RecordTypeA<'T> = {f1 : string ; f2 : 'T}
 
-    #if Portable
-    #else
+#if !FSCORE_PORTABLE_OLD && !FSCORE_PORTABLE_NEW
     // IComparable<T>
     let _ = 
         
@@ -3619,7 +3551,7 @@ module GenericComparisonAndEquality = begin
         
         check "d3wiojd32icr" (l1 = l2) true ;
         check "d3wiojd32icu" (l3 = l4) true              
-    #endif
+#endif
 
     // IEquatable<T>        
     let _ = 
@@ -3761,15 +3693,14 @@ module MiscIEnumerableTests = begin
     open System.Net
     open System.IO
 
-    #if Portable
-    #else
+#if !FX_PORTABLE_OR_NETSTANDARD
     /// generate the sequence of lines read off an internet connection
     let httpSeq (nm:string) = 
            Seq.generate 
              (fun () -> new StreamReader(((WebRequest.Create(nm)).GetResponse()).GetResponseStream()) ) 
              (fun os -> try Some(os.ReadLine()) with _ -> None) 
              (fun os -> os.Close())
-    #endif
+#endif
 
     /// generate an infinite sequence using an functional cursor
     let dataSeq1 = Seq.unfold (fun s -> Some(s,s+1)) 0
@@ -3934,6 +3865,7 @@ module FloatParseTests = begin
     do check "FloatParse.A" (to_bits (of_string "Infinity"))  0x7ff0000000000000L // 9218868437227405312L
     do check "FloatParse.B" (to_bits (of_string "-Infinity")) 0xfff0000000000000L // (-4503599627370496L)
     do check "FloatParse.C" (to_bits (of_string "NaN"))       0xfff8000000000000L  // (-2251799813685248L)
+#if !FX_PORTABLE_OR_NETSTANDARD
     do check "FloatParse.D" (to_bits (of_string "-NaN"))    ( // http://en.wikipedia.org/wiki/NaN
                                                               let bit64 = System.IntPtr.Size = 8 in
                                                               if bit64 && System.Environment.Version.Major < 4 then
@@ -3946,6 +3878,7 @@ module FloatParseTests = begin
                                                                   // and -nan then has the negative-bit cleared!
                                                                   0x7ff8000000000000L // 9221120237041090560L
                                                             )
+#endif
 end
 
 
@@ -4144,12 +4077,9 @@ module SetTests = begin
 
     let unionTest n (nx,ny) =
       let check (xs:'a Set) = 
-    #if DEBUG
-    #if Portable
-    #else
+#if DEBUG && !FSCORE_PORTABLE_OLD && !FSCORE_PORTABLE_NEW
           test "vwnwer" (xs.CheckBalanceInvariant);
-    #endif
-    #endif
+#endif
           xs in
       let xs = randomInts nx |> check in
       let ys = randomInts ny |> check in
@@ -4340,8 +4270,7 @@ do check "clwnwe91" 10m 10m
 do check "clwnwe92" 10m 10.000m
 do check "clwnwe93" 1000000000m 1000000000m
 do check "clwnwe94" (4294967296000000000m.ToString()) "4294967296000000000"
-#if Portable
-#else
+#if !FX_PORTABLE_OR_NETSTANDARD
 do check "clwnwe95" (10.000m.ToString(System.Globalization.CultureInfo.GetCultureInfo(1033).NumberFormat)) "10.000"  // The actual output of a vanilla .ToString() depends on current culture UI. For this reason I am specifying the en-us culture.
 #endif
 do check "clwnwe96" (10m.ToString()) "10"
@@ -4392,9 +4321,7 @@ do check "lkvcnwd09g" 2.0M (20.0M % 6.00M)
 do check "lkvcnwd09h" 20.0M (floor 20.300M)
 do check "lkvcnwd09j" 20.0 (floor 20.300)
 do check "lkvcnwd09k" 20.0f (floor 20.300f)
-#if Portable
-// bug 500323
-#else
+#if !FX_PORTABLE_OR_NETSTANDARD
 do check "lkvcnwd09l" 20.0M (round 20.300M)
 do check "lkvcnwd09z" 20.0M (round 20.500M)
 do check "lkvcnwd09x" 22.0M (round 21.500M)
@@ -5629,8 +5556,7 @@ module bug122495 =
     let c = C( P = a.[0..1])
 
 
-#if Portable
-#else
+#if !FX_PORTABLE_OR_NETSTANDARD
 (*---------------------------------------------------------------------------
 !* Bug 33760: wrong codegen for params[] Action overload
  *--------------------------------------------------------------------------- *)      

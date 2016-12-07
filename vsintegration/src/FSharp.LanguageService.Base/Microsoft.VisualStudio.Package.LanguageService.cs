@@ -71,11 +71,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService.Resources {
         }
         
         internal SR() {
-#if FX_ATLEAST_45
             resources = new System.Resources.ResourceManager("FSharp.LanguageService.Base.Microsoft.VisualStudio.Package.LanguageService", this.GetType().Assembly);
-#else
-            resources = new System.Resources.ResourceManager("Microsoft.VisualStudio.Package.LanguageService", this.GetType().Assembly);
-#endif
         }
         
         private static SR GetLoader() {

@@ -7,6 +7,7 @@ module internal Microsoft.FSharp.Compiler.AbstractIL.IL
 open Internal.Utilities
 open System.Collections.Generic
 
+[<RequireQualifiedAccess>]
 type PrimaryAssembly = 
     | Mscorlib
     | DotNetCore
@@ -1354,6 +1355,8 @@ type ILResource =
       Location: ILResourceLocation;
       Access: ILResourceAccess;
       CustomAttrs: ILAttributes }
+    /// Read the bytes from a resource local to an assembly
+    member Bytes : byte[]
 
 /// Table of resources in a module.
 [<NoEquality; NoComparison>]
@@ -1472,29 +1475,6 @@ val isTypeNameForGlobalFunctions: string -> bool
 
 val ungenericizeTypeName: string -> string (* e.g. List`1 --> List *)
 
-/// Represents the capabilities of target framework profile.
-/// Different profiles may omit some types or contain them in different assemblies.
-type IPrimaryAssemblyTraits = 
-    
-    abstract TypedReferenceTypeScopeRef : ILScopeRef option
-    abstract RuntimeArgumentHandleTypeScopeRef : ILScopeRef option
-    abstract SerializationInfoTypeScopeRef : ILScopeRef option
-    abstract SecurityPermissionAttributeTypeScopeRef : ILScopeRef option    
-    abstract IDispatchConstantAttributeScopeRef : ILScopeRef option
-    abstract IUnknownConstantAttributeScopeRef : ILScopeRef option
-    abstract ArgIteratorTypeScopeRef : ILScopeRef option
-    abstract MarshalByRefObjectScopeRef : ILScopeRef option
-    abstract ThreadStaticAttributeScopeRef : ILScopeRef option
-    abstract SpecialNameAttributeScopeRef : ILScopeRef option
-    abstract ContextStaticAttributeScopeRef : ILScopeRef option
-    abstract NonSerializedAttributeScopeRef : ILScopeRef option
-
-    abstract SystemRuntimeInteropServicesScopeRef   : Lazy<ILScopeRef option>
-    abstract SystemLinqExpressionsScopeRef          : Lazy<ILScopeRef>
-    abstract SystemCollectionsScopeRef              : Lazy<ILScopeRef>
-    abstract SystemReflectionScopeRef               : Lazy<ILScopeRef>
-    abstract SystemDiagnosticsDebugScopeRef         : Lazy<ILScopeRef>
-    abstract ScopeRef : ILScopeRef
 
 // ====================================================================
 // PART 2
@@ -1507,103 +1487,34 @@ type IPrimaryAssemblyTraits =
 /// A table of common references to items in primary assebly (System.Runtime or mscorlib).
 /// If a particular version of System.Runtime.dll has been loaded then you should 
 /// reference items from it via an ILGlobals for that specific version built using mkILGlobals. 
-[<NoEquality; NoComparison>]
+[<NoEquality; NoComparison; Class>]
 type ILGlobals = 
-    { 
-      traits : IPrimaryAssemblyTraits
-      primaryAssemblyName: string
-      noDebugData: bool
-      tref_Object: ILTypeRef
-      tspec_Object: ILTypeSpec
-      typ_Object: ILType
-      tref_String: ILTypeRef
-      typ_String: ILType
-      typ_StringBuilder: ILType
-      typ_AsyncCallback: ILType
-      typ_IAsyncResult: ILType
-      typ_IComparable: ILType
-      tref_Type: ILTypeRef
-      typ_Type: ILType
-      typ_Missing: Lazy<ILType>
-      typ_Activator: ILType
-      typ_Delegate: ILType
-      typ_ValueType: ILType
-      typ_Enum: ILType
-      tspec_TypedReference: ILTypeSpec option
-      typ_TypedReference: ILType option
-      typ_MulticastDelegate: ILType
-      typ_Array: ILType
-      tspec_Int64: ILTypeSpec
-      tspec_UInt64: ILTypeSpec
-      tspec_Int32: ILTypeSpec
-      tspec_UInt32: ILTypeSpec
-      tspec_Int16: ILTypeSpec
-      tspec_UInt16: ILTypeSpec
-      tspec_SByte: ILTypeSpec
-      tspec_Byte: ILTypeSpec
-      tspec_Single: ILTypeSpec
-      tspec_Double: ILTypeSpec
-      tspec_IntPtr: ILTypeSpec
-      tspec_UIntPtr: ILTypeSpec
-      tspec_Char: ILTypeSpec
-      tspec_Bool: ILTypeSpec
-      typ_int8: ILType
-      typ_int16: ILType
-      typ_int32: ILType
-      typ_int64: ILType
-      typ_uint8: ILType
-      typ_uint16: ILType
-      typ_uint32: ILType
-      typ_uint64: ILType
-      typ_float32: ILType
-      typ_float64: ILType
-      typ_bool: ILType
-      typ_char: ILType
-      typ_IntPtr: ILType
-      typ_UIntPtr: ILType
-      typ_RuntimeArgumentHandle: ILType option
-      typ_RuntimeTypeHandle: ILType
-      typ_RuntimeMethodHandle: ILType
-      typ_RuntimeFieldHandle: ILType
-      typ_Byte: ILType
-      typ_Int16: ILType
-      typ_Int32: ILType
-      typ_Int64: ILType
-      typ_SByte: ILType
-      typ_UInt16: ILType
-      typ_UInt32: ILType
-      typ_UInt64: ILType
-      typ_Single: ILType
-      typ_Double: ILType
-      typ_Bool: ILType
-      typ_Char: ILType
-      typ_SerializationInfo: ILType option
-      typ_StreamingContext: ILType
-      tref_SecurityPermissionAttribute : ILTypeRef option
-      tspec_Exception: ILTypeSpec
-      typ_Exception: ILType 
-      mutable generatedAttribsCache: ILAttribute list 
-      mutable debuggerBrowsableNeverAttributeCache : ILAttribute option 
-      mutable debuggerTypeProxyAttributeCache : ILAttribute option }
+    member primaryAssemblyScopeRef : ILScopeRef
+    member primaryAssemblyName : string
+    member typ_Object: ILType
+    member typ_String: ILType
+    member typ_Type: ILType
+    member typ_Array: ILType
+    member typ_IntPtr: ILType
+    member typ_UIntPtr: ILType
+    member typ_Byte: ILType
+    member typ_Int16: ILType
+    member typ_Int32: ILType
+    member typ_Int64: ILType
+    member typ_SByte: ILType
+    member typ_UInt16: ILType
+    member typ_UInt32: ILType
+    member typ_UInt64: ILType
+    member typ_Single: ILType
+    member typ_Double: ILType
+    member typ_Bool: ILType
+    member typ_Char: ILType
 
-      with
-      member mkDebuggableAttribute: bool (* disable JIT optimizations *) -> ILAttribute
-      /// Some commonly used custom attibutes
-      member mkDebuggableAttributeV2               : bool (* jitTracking *) * bool (* ignoreSymbolStoreSequencePoints *) * bool (* disable JIT optimizations *) * bool (* enable EnC *) -> ILAttribute
-      member mkCompilerGeneratedAttribute          : unit -> ILAttribute
-      member mkDebuggerNonUserCodeAttribute        : unit -> ILAttribute
-      member mkDebuggerStepThroughAttribute        : unit -> ILAttribute
-      member mkDebuggerHiddenAttribute             : unit -> ILAttribute
-      member mkDebuggerDisplayAttribute            : string -> ILAttribute
-      member mkDebuggerTypeProxyAttribute          : ILType -> ILAttribute
-      member mkDebuggerBrowsableNeverAttribute     : unit -> ILAttribute
 
-/// Build the table of commonly used references given an <c>ILScopeRef</c> for system runtime assembly. 
-val mkILGlobals : IPrimaryAssemblyTraits -> string option -> bool -> ILGlobals
+/// Build the table of commonly used references given functions to find types in system assemblies
+val mkILGlobals: ILScopeRef -> ILGlobals
 
-val mkMscorlibBasedTraits : ILScopeRef -> IPrimaryAssemblyTraits
-
-val EcmaILGlobals : ILGlobals
+val EcmaMscorlibILGlobals : ILGlobals
 
 /// When writing a binary the fake "toplevel" type definition (called <Module>)
 /// must come first. This function puts it first, and creates it in the returned 
@@ -1782,7 +1693,7 @@ val mkILTypeDefForGlobalFunctions: ILGlobals -> ILMethodDefs * ILFieldDefs -> IL
 ///   ldtoken    field valuetype '<PrivateImplementationDetails>'/'$$struct0x6000127-1' '<PrivateImplementationDetails>'::'$$method0x6000127-1'
 ///   call       void System.Runtime.CompilerServices.RuntimeHelpers::InitializeArray(class System.Array,valuetype System.RuntimeFieldHandle)
 /// idiom.
-val mkRawDataValueTypeDef:  ILGlobals -> string * size:int32 * pack:uint16 -> ILTypeDef
+val mkRawDataValueTypeDef:  ILType -> string * size:int32 * pack:uint16 -> ILTypeDef
 
 /// Injecting code into existing code blocks.  A branch will
 /// be added from the given instructions to the (unique) entry of
@@ -1802,7 +1713,7 @@ val mkILStorageCtor: ILSourceMarker option * ILInstr list * ILType * (string * I
 val mkILSimpleStorageCtor: ILSourceMarker option * ILTypeSpec option * ILType * (string * ILType) list * ILMemberAccess -> ILMethodDef
 val mkILSimpleStorageCtorWithParamNames: ILSourceMarker option * ILTypeSpec option * ILType * (string * string * ILType) list * ILMemberAccess -> ILMethodDef
 
-val mkILDelegateMethods: ILGlobals -> ILParameter list * ILReturn -> ILMethodDef list
+val mkILDelegateMethods: ILGlobals -> ILType * ILType -> ILParameter list * ILReturn -> ILMethodDef list
 
 /// Given a delegate type definition which lies in a particular scope, 
 /// make a reference to its constructor.
@@ -1924,38 +1835,10 @@ val rescopeILMethodRef: ILScopeRef -> ILMethodRef -> ILMethodRef
 /// the new scope. 
 val rescopeILFieldRef: ILScopeRef -> ILFieldRef -> ILFieldRef
 
-
 //-----------------------------------------------------------------------
 // The ILCode Builder utility.
 //----------------------------------------------------------------------
 
-
-/// buildILCode: Build code from a sequence of instructions.
-/// 
-/// e.g. "buildILCode meth resolver instrs exns locals"
-/// 
-/// This makes the basic block structure of code from more primitive
-/// information, i.e. an array of instructions.
-///   [meth]: for debugging and should give the name of the method.
-///   [resolver]: should return the instruction indexes referred to 
-///               by code-label strings in the instruction stream.
-///   [instrs]: the instructions themselves, perhaps with attributes giving 
-///             debugging information
-///   [exns]: the table of exception-handling specifications
-///           for the method.  These are again given with respect to labels which will
-///           be mapped to pc's by [resolver].  
-///   [locals]: the table of specifications of when local variables are live and
-///           should appear in the debug info.
-/// 
-/// If the input code is well-formed, the function will returns the 
-/// chop up the instruction sequence into basic blocks as required for
-/// the exception handlers and then return the tree-structured code
-/// corresponding to the instruction stream.
-/// A new set of code labels will be used throughout the resulting code.
-/// 
-/// The input can be badly formed in many ways: exception handlers might
-/// overlap, or scopes of local variables may overlap badly with 
-/// exception handlers.
 val buildILCode: string -> lab2pc: Dictionary<ILCodeLabel,int> -> instrs:ILInstr[] -> ILExceptionSpec list -> ILLocalDebugInfo list -> ILCode
 
 // -------------------------------------------------------------------- 
@@ -1974,18 +1857,6 @@ val instILType: ILGenericArgs -> ILType -> ILType
 
 /// This is a 'vendor neutral' way of referencing mscorlib. 
 val ecmaPublicKey: PublicKey
-
-/// Some commonly used methods. 
-val mkInitializeArrayMethSpec: ILGlobals -> ILMethodSpec 
-
-val mkPrimaryAssemblyExnNewobj: ILGlobals -> string -> ILInstr
-
-val addMethodGeneratedAttrs : ILGlobals -> ILMethodDef -> ILMethodDef
-val addPropertyGeneratedAttrs : ILGlobals -> ILPropertyDef -> ILPropertyDef
-val addFieldGeneratedAttrs : ILGlobals -> ILFieldDef -> ILFieldDef
-
-val addPropertyNeverAttrs : ILGlobals -> ILPropertyDef -> ILPropertyDef
-val addFieldNeverAttrs : ILGlobals -> ILFieldDef -> ILFieldDef
 
 /// Discriminating different important built-in types.
 val isILObjectTy: ILType -> bool

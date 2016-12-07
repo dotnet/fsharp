@@ -49,11 +49,12 @@ type private ProjectSiteOfSingleFile(sourceFile) =
     // CompilerFlags() gets called a lot, so pre-compute what we can
     static let compilerFlags = 
         let flags = ["--noframework";"--warn:3"]
-        let defaultReferences = CompilerEnvironment.DefaultReferencesForOrphanSources 
+        let assumeDotNetFramework = true
+        let defaultReferences = CompilerEnvironment.DefaultReferencesForOrphanSources(assumeDotNetFramework)
                                 |> List.map(fun r->sprintf "-r:%s.dll" r)
         (flags @ defaultReferences) |> List.toArray
 
-    let projectFileName = Path.Combine(Path.GetDirectoryName(sourceFile),"orphan.fsproj")
+    let projectFileName = sourceFile + ".orphan.fsproj"
 
     interface IProjectSite with
         override this.SourceFilesOnDisk() = [|sourceFile|]
@@ -160,7 +161,7 @@ type internal ProjectSitesAndFiles() =
         | None -> ProjectSitesAndFiles.ProjectSiteOfSingleFile(filename)        
 
     /// Create project options for this project site.
-    static member GetProjectOptionsForProjectSite(projectSite:IProjectSite,filename)= 
+    static member GetProjectOptionsForProjectSite(projectSite:IProjectSite,filename,extraProjectInfo) = 
         
         match projectSite with
         | :? IHaveCheckOptions as hco -> hco.OriginalCheckOptions()
@@ -172,7 +173,8 @@ type internal ProjectSitesAndFiles() =
              IsIncompleteTypeCheckEnvironment = projectSite.IsIncompleteTypeCheckEnvironment
              UseScriptResolutionRules = SourceFile.MustBeSingleFileProject(filename)
              LoadTime = projectSite.LoadTime
-             UnresolvedReferences = None }      
+             UnresolvedReferences = None
+             ExtraProjectInfo=extraProjectInfo }      
          
     /// Create project site for these project options
     static member CreateProjectSiteForScript (filename, checkOptions) = ProjectSiteOfScriptFile (filename, checkOptions) :> IProjectSite

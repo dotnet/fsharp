@@ -257,9 +257,9 @@ end
 val opt1 : 'a option
 val opt1b : int option = None
 val opt4 : 'a option option option option
-val opt4b : int option option option option = Some (Some (Some null))
+val opt4b : int option option option option = Some (Some (Some None))
 val opt5 : int list option option option option option list =
-  [Some (Some (Some (Some null)));
+  [Some (Some (Some (Some None)));
    Some (Some (Some (Some (Some [1; 2; 3; 4; 5; 6]))));
    Some
      (Some
@@ -1081,10 +1081,10 @@ exception ExUnit of unit
 exception ExUnits of unit * unit
 exception ExUnitOption of unit option
 val ex0 : exn = Ex0
-val exU : exn = ExUnit null
-val exUs : exn = ExUnits (null,null)
-val exUSome : exn = ExUnitOption (Some null)
-val exUNone : exn = ExUnitOption null
+val exU : exn = ExUnit ()
+val exUs : exn = ExUnits ((),())
+val exUSome : exn = ExUnitOption (Some ())
+val exUNone : exn = ExUnitOption None
 type 'a T4063 = | AT4063 of 'a
 
 > 
@@ -2512,15 +2512,15 @@ val f : (unit -> int)
     0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0;
     0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0;
     ...|]
-> val it : 'a list = []
-> val it : 'a list list = [[]]
-> val it : 'a option = None
-> val it : 'a list * 'b list = ([], [])
-> val it : x:'a -> 'a = <fun:clo@757-3>
+> val it : 'a list
+> val it : 'a list list
+> val it : 'a option
+> val it : 'a list * 'b list
+> val it : x:'a -> 'a
 > 
 val fff : x:'a -> 'a
 
-> val it : ('a -> 'a) = <fun:clo@759-4>
+> val it : ('a -> 'a)
 > 
 val note_ExpectDupMethod : string =
   "Regression4927: Expect error due to duplicate methods in the "+[20 chars]
@@ -2715,5 +2715,15 @@ exception MyNamedException6 of Val1: int * bool * string * Data8: float
 exception MyNamedException7 of Big Named Field: int
 val namedEx1 : exn = MyNamedException1 (5,"")
 val namedEx2 : exn = MyNamedException7 25
+
+> 
+type optionRecord =
+  {x: int option;}
+val x : optionRecord = {x = None;}
+
+> 
+type optionRecord =
+  {x: obj;}
+val x : optionRecord = {x = null;}
 
 > > > 

@@ -239,7 +239,6 @@ type TcConfigBuilder =
       mutable framework: bool
       mutable resolutionEnvironment : ReferenceResolver.ResolutionEnvironment
       mutable implicitlyResolveAssemblies : bool
-      mutable addVersionSpecificFrameworkReferences : bool
       /// Set if the user has explicitly turned indentation-aware syntax on/off
       mutable light: bool option
       mutable conditionalCompilationDefines: string list
@@ -296,7 +295,6 @@ type TcConfigBuilder =
       mutable noSignatureData : bool
       mutable onlyEssentialOptimizationData : bool
       mutable useOptimizationDataFile : bool
-      mutable useSignatureDataFile : bool
       mutable jitTracking : bool
       mutable portablePDB : bool
       mutable embeddedPDB : bool
@@ -319,7 +317,6 @@ type TcConfigBuilder =
       mutable abortOnError : bool
       mutable baseAddress : int32 option
  #if DEBUG
-      mutable writeGeneratedILFiles : bool (* write il files? *)  
       mutable showOptimizationData : bool
 #endif
       mutable showTerms     : bool 
@@ -332,9 +329,8 @@ type TcConfigBuilder =
       mutable emitTailcalls : bool
 #if PREFERRED_UI_LANG
       mutable preferredUiLang: string option
-#else
-      mutable lcid         : int option
 #endif
+      mutable lcid         : int option
       mutable productNameForBannerText : string
       mutable showBanner  : bool
       mutable showTimes : bool
@@ -356,9 +352,7 @@ type TcConfigBuilder =
       mutable emitDebugInfoInQuotations : bool
       mutable exename : string option 
       mutable copyFSharpCore : bool
-#if SHADOW_COPY_REFERENCES
       mutable shadowCopyReferences : bool
-#endif
     }
 
     static member CreateNew : 
@@ -454,7 +448,6 @@ type TcConfig =
     member noSignatureData : bool
     member onlyEssentialOptimizationData : bool
     member useOptimizationDataFile : bool
-    member useSignatureDataFile : bool
     member jitTracking : bool
     member portablePDB : bool
     member embeddedPDB : bool
@@ -476,7 +469,6 @@ type TcConfig =
     member maxErrors : int
     member baseAddress : int32 option
 #if DEBUG
-    member writeGeneratedILFiles : bool (* write il files? *)  
     member showOptimizationData : bool
 #endif
     member showTerms     : bool 
@@ -526,7 +518,7 @@ type TcConfig =
     member sqmNumOfSourceFiles : int
     member sqmSessionStartedTime : int64
     member copyFSharpCore : bool
-#if SHADOW_COPY_REFERENCES
+#if FSI_SHADOW_COPY_REFERENCES
     member shadowCopyReferences : bool
 #endif
     static member Create : TcConfigBuilder * validate: bool -> TcConfig
@@ -636,14 +628,11 @@ val IsOptimizationDataResource : ILResource -> bool
 val IsReflectedDefinitionsResource : ILResource -> bool
 val GetSignatureDataResourceName : ILResource -> string
 
-#if NO_COMPILER_BACKEND
-#else
 /// Write F# signature data as an IL resource
 val WriteSignatureData : TcConfig * TcGlobals * Tastops.Remap * CcuThunk * string -> ILResource
 
 /// Write F# optimization data as an IL resource
 val WriteOptimizationData :  TcGlobals * string * CcuThunk * Optimizer.LazyModuleInfo -> ILResource
-#endif
 
 
 //----------------------------------------------------------------------------
@@ -677,7 +666,7 @@ val GetScopedPragmasForInput : Ast.ParsedInput -> ScopedPragma list
 val GetErrorLoggerFilteringByScopedPragmas : checkFile:bool * ScopedPragma list * ErrorLogger  -> ErrorLogger
 
 /// This list is the default set of references for "non-project" files. 
-val DefaultBasicReferencesForOutOfProjectSources : string list
+val DefaultReferencesForScriptsAndOutOfProjectSources : bool -> string list
 
 //----------------------------------------------------------------------------
 // Parsing
@@ -763,10 +752,16 @@ type LoadClosure =
       UnresolvedReferences : UnresolvedAssemblyReference list
 
       /// The list of all sources in the closure with inputs when available
-      Inputs: (string * ParsedInput option) list
+      Inputs: (string * ParsedInput option * PhasedError list * PhasedError list) list
 
       /// The #nowarns
       NoWarns: (string * range list) list
+
+      /// Errors seen while processing resolutions
+      ResolutionErrors : PhasedError list
+
+      /// Warnings seen while processing resolutions
+      ResolutionWarnings : PhasedError list 
 
       /// *Parse* errors seen while parsing root of closure
       RootErrors : PhasedError list
@@ -775,7 +770,7 @@ type LoadClosure =
       RootWarnings : PhasedError list }
 
     // Used from service.fs, when editing a script file
-    static member ComputeClosureOfSourceText : referenceResolver: ReferenceResolver.Resolver * filename: string * source: string * implicitDefines:CodeContext * useSimpleResolution: bool * useFsiAuxLib: bool * lexResourceManager: Lexhelp.LexResourceManager * applyCompilerOptions: (TcConfigBuilder -> unit) -> LoadClosure
+    static member ComputeClosureOfSourceText : referenceResolver: ReferenceResolver.Resolver * filename: string * source: string * implicitDefines:CodeContext * useSimpleResolution: bool * useFsiAuxLib: bool * lexResourceManager: Lexhelp.LexResourceManager * applyCompilerOptions: (TcConfigBuilder -> unit) * assumeDotNetFramework : bool -> LoadClosure
 
     /// Used from fsi.fs and fsc.fs, for #load and command line. The resulting references are then added to a TcConfig.
-    static member ComputeClosureOfSourceFiles : tcConfig:TcConfig * (string * range) list * implicitDefines:CodeContext * useDefaultScriptingReferences : bool * lexResourceManager : Lexhelp.LexResourceManager -> LoadClosure
+    static member ComputeClosureOfSourceFiles : tcConfig:TcConfig * (string * range) list * implicitDefines:CodeContext * lexResourceManager : Lexhelp.LexResourceManager -> LoadClosure

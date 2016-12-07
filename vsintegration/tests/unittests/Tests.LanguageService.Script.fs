@@ -1204,11 +1204,7 @@ type UsingMSBuild() as this =
     member public this.``Fsx.HashReferenceAgainstStrongName``() = 
         let code =
                                             ["#light"
-#if FX_ATLEAST_40                                            
                                              sprintf "#reference \"System.Core, Version=%s, Culture=neutral, PublicKeyToken=b77a5c561934e089\"" (System.Environment.Version.ToString())
-#else
-                                             "#reference \"System.Core, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089\""
-#endif                                             
                                              "open System."]
         let (_, file) = createSingleFileFsxFromLines code
         MoveCursorToEndOfMarker(file,"open System.") 

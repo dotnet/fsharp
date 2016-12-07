@@ -7,13 +7,11 @@
 /// The implementation of the functions can be found in ilsupp-*.fs
 module internal Microsoft.FSharp.Compiler.AbstractIL.Internal.Support
 
-#if FX_NO_PDB_WRITER
-#else
+#if !FX_NO_PDB_WRITER
 type PdbWriter
 val pdbInitialize : string -> string -> PdbWriter
 #endif
-#if FX_NO_PDB_READER
-#else
+#if !FX_NO_PDB_READER
 type PdbReader
 val pdbReadClose: PdbReader -> unit
 #endif
@@ -31,8 +29,7 @@ open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 
-#if FX_NO_LINKEDRESOURCES
-#else
+#if !FX_NO_LINKEDRESOURCES
 type IStream = System.Runtime.InteropServices.ComTypes.IStream
 #endif
 
@@ -42,14 +39,12 @@ type IStream = System.Runtime.InteropServices.ComTypes.IStream
 /// required buffer is returned.
 type PEFileType = X86 | X64
 
-#if FX_NO_LINKEDRESOURCES
-#else
+#if !FX_NO_LINKEDRESOURCES
 val linkNativeResources: unlinkedResources:byte[] list ->  rva:int32 -> PEFileType -> tempFilePath:string -> byte[]
 val unlinkResource: int32 -> byte[] -> byte[]
 #endif
 
-#if FX_NO_PDB_WRITER
-#else
+#if !FX_NO_PDB_WRITER
 /// PDB reader and associated types
 type PdbDocument
 type PdbMethod
@@ -90,8 +85,7 @@ val pdbVariableGetSignature: PdbVariable -> byte[]
 val pdbVariableGetAddressAttributes: PdbVariable -> int32 (* kind *) * int32 (* addrField1 *)
 #endif
 
-#if FX_NO_PDB_WRITER
-#else
+#if !FX_NO_PDB_WRITER
 //---------------------------------------------------------------------
 // PDB writer.
 //---------------------------------------------------------------------

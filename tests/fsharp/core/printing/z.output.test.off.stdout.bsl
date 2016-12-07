@@ -1537,15 +1537,15 @@ val f : (unit -> int)
     0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0;
     0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0;
     ...|]
-> val it : 'a list = []
-> val it : 'a list list = [[]]
-> val it : 'a option = None
-> val it : 'a list * 'b list = ([], [])
-> val it : x:'a -> 'a = <fun:clo@757-3>
+> val it : 'a list
+> val it : 'a list list
+> val it : 'a option
+> val it : 'a list * 'b list
+> val it : x:'a -> 'a
 > 
 val fff : x:'a -> 'a
 
-> val it : ('a -> 'a) = <fun:clo@759-4>
+> val it : ('a -> 'a)
 > 
 val note_ExpectDupMethod : string
 
@@ -1738,5 +1738,15 @@ exception MyNamedException6 of Val1: int * bool * string * Data8: float
 exception MyNamedException7 of Big Named Field: int
 val namedEx1 : exn
 val namedEx2 : exn
+
+> 
+type optionRecord =
+  {x: int option;}
+val x : optionRecord
+
+> 
+type optionRecord =
+  {x: obj;}
+val x : optionRecord
 
 > > > 

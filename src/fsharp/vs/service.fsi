@@ -29,10 +29,16 @@ type internal FSharpMethodGroupItemParameter =
     /// information such as whether it is optional.
     member Display: string
 
+    /// Is the parameter optional
+    member IsOptional: bool
+
 /// Represents one method (or other item) in a method group. The item may represent either a method or 
 /// a single, non-overloaded item such as union case or a named function value.
 [<Sealed>]
 type internal FSharpMethodGroupItem = 
+
+    /// The documentation for the item
+    member XmlDoc : FSharpXmlDoc
 
     /// The formatted description text for the method (or other item)
     member Description : FSharpToolTipText
@@ -45,6 +51,9 @@ type internal FSharpMethodGroupItem =
 
     /// Does the method support an arguments list?  This is always true except for static type instantiations like TP<42,"foo">.
     member HasParameters: bool
+
+    /// Does the method support a params list arg?
+    member HasParamArrayArg: bool
 
     /// Does the type name or method support a static arguments list, like TP<42,"foo"> or conn.CreateCommand<42, "foo">(arg1, arg2)?
     member StaticParameters: FSharpMethodGroupItemParameter[]
@@ -309,19 +318,15 @@ type internal FSharpProjectOptions =
       LoadTime : DateTime
       /// Unused in this API and should be 'None'
       UnresolvedReferences : UnresolvedReferencesSet option
+      /// Extra information passed back on event trigger
+      ExtraProjectInfo : obj option
     }
          
           
-/// Callback which can be used by the host to indicate to the checker that a requested result has become obsolete,
-/// e.g. because of typing by the user in the editor window. This can be used to marginally increase accuracy
-/// of intellisense results in some situations.
-type internal IsResultObsolete = 
-    | IsResultObsolete of (unit->bool)
-
 /// The result of calling TypeCheckResult including the possibility of abort and background compiler not caught up.
 [<RequireQualifiedAccess>]
 type internal FSharpCheckFileAnswer =
-    | Aborted // because isResultObsolete caused an abandonment of the operation
+    | Aborted // because cancellation caused an abandonment of the operation
     | Succeeded of FSharpCheckFileResults    
 
 [<Sealed; AutoSerializable(false)>]      
@@ -383,7 +388,7 @@ type internal FSharpChecker =
     ///     can be used to marginally increase accuracy of intellisense results in some situations.
     /// </param>
     ///
-    member CheckFileInProjectIfReady : parsed: FSharpParseFileResults * filename: string * fileversion: int * source: string * options: FSharpProjectOptions * ?isResultObsolete: IsResultObsolete * ?textSnapshotInfo: obj -> Async<FSharpCheckFileAnswer option>
+    member CheckFileInProjectIfReady : parsed: FSharpParseFileResults * filename: string * fileversion: int * source: string * options: FSharpProjectOptions * ?textSnapshotInfo: obj -> Async<FSharpCheckFileAnswer option>
 
     /// <summary>
     /// <para>
@@ -413,7 +418,7 @@ type internal FSharpChecker =
     ///     can be used to marginally increase accuracy of intellisense results in some situations.
     /// </param>
     ///
-    member CheckFileInProject : parsed: FSharpParseFileResults * filename: string * fileversion: int * source: string * options: FSharpProjectOptions * ?isResultObsolete: IsResultObsolete * ?textSnapshotInfo: obj -> Async<FSharpCheckFileAnswer>
+    member CheckFileInProject : parsed: FSharpParseFileResults * filename: string * fileversion: int * source: string * options: FSharpProjectOptions * ?textSnapshotInfo: obj -> Async<FSharpCheckFileAnswer>
 
     /// <summary>
     /// <para>
@@ -442,7 +447,7 @@ type internal FSharpChecker =
     ///     can be used to marginally increase accuracy of intellisense results in some situations.
     /// </param>
     ///
-    member ParseAndCheckFileInProject : filename: string * fileversion: int * source: string * options: FSharpProjectOptions * ?isResultObsolete: IsResultObsolete * ?textSnapshotInfo: obj -> Async<FSharpParseFileResults * FSharpCheckFileAnswer>
+    member ParseAndCheckFileInProject : filename: string * fileversion: int * source: string * options: FSharpProjectOptions * ?textSnapshotInfo: obj -> Async<FSharpParseFileResults * FSharpCheckFileAnswer>
 
     /// <summary>
     /// <para>Parse and typecheck all files in a project.</para>
@@ -470,7 +475,7 @@ type internal FSharpChecker =
     /// <param name="loadedTimeStamp">Indicates when the script was loaded into the editing environment,
     /// so that an 'unload' and 'reload' action will cause the script to be considered as a new project,
     /// so that references are re-resolved.</param>
-    member GetProjectOptionsFromScript : filename: string * source: string * ?loadedTimeStamp: DateTime * ?otherFlags: string[] * ?useFsiAuxLib: bool -> Async<FSharpProjectOptions>
+    member GetProjectOptionsFromScript : filename: string * source: string * ?loadedTimeStamp: DateTime * ?otherFlags: string[] * ?useFsiAuxLib: bool * ?extraProjectInfo: obj -> Async<FSharpProjectOptions>
 
     /// <summary>
     /// <para>Get the FSharpProjectOptions implied by a set of command line arguments.</para>
@@ -481,7 +486,7 @@ type internal FSharpChecker =
     /// <param name="loadedTimeStamp">Indicates when the script was loaded into the editing environment,
     /// so that an 'unload' and 'reload' action will cause the script to be considered as a new project,
     /// so that references are re-resolved.</param>
-    member GetProjectOptionsFromCommandLineArgs : projectFileName: string * argv: string[] * ?loadedTimeStamp: DateTime -> FSharpProjectOptions
+    member GetProjectOptionsFromCommandLineArgs : projectFileName: string * argv: string[] * ?loadedTimeStamp: DateTime * ?extraProjectInfo: obj -> FSharpProjectOptions
            
     /// <summary>
     /// <para>Like ParseFileInProject, but uses results from the background builder.</para>
@@ -555,17 +560,17 @@ type internal FSharpChecker =
     /// and that the file has become eligible to be re-typechecked for errors.
     ///
     /// The event will be raised on a background thread.
-    member BeforeBackgroundFileCheck : IEvent<string>
+    member BeforeBackgroundFileCheck : IEvent<string * obj option>
 
     /// Raised after a parse of a file in the background analysis.
     ///
     /// The event will be raised on a background thread.
-    member FileParsed : IEvent<string>
+    member FileParsed : IEvent<string * obj option>
 
     /// Raised after a check of a file in the background analysis.
     ///
     /// The event will be raised on a background thread.
-    member FileChecked : IEvent<string>
+    member FileChecked : IEvent<string * obj option>
     
     /// Get or set a flag which controls if background work is started implicitly. 
     ///
@@ -580,7 +585,7 @@ type internal FSharpChecker =
     /// Notify the host that a project has been fully checked in the background (using file contents provided by the file system API)
     ///
     /// The event may be raised on a background thread.
-    member ProjectChecked : IEvent<string>
+    member ProjectChecked : IEvent<string * obj option>
 
     // For internal use only 
     member internal ReactorOps : IReactorOperations
@@ -601,8 +606,8 @@ type internal FsiInteractiveChecker =
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]   
 module internal CompilerEnvironment =
     /// These are the names of assemblies that should be referenced for .fs or .fsi files that
-    /// are not asscociated with a project.
-    val DefaultReferencesForOrphanSources : string list
+    /// are not associated with a project.
+    val DefaultReferencesForOrphanSources : assumeDotNetFramework: bool -> string list
     /// Return the compilation defines that should be used when editing the given file.
     val GetCompilationDefinesForEditing : filename : string * compilerFlags : string list -> string list
     /// Return true if this is a subcategory of error or warning message that the language service can emit

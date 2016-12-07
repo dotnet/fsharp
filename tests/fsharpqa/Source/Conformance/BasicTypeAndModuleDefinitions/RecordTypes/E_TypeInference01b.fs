@@ -6,7 +6,7 @@
 namespace N
 module M =
 
-    type GRed<'a>  = { GX : 'a }
+    type GRed<'a>  = { GA : 'a }
     type Blue<'a> = { GX : 'a; Y : int }
 
     let gaBlue   = { GX = 0; Y = 1 }

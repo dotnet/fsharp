@@ -1,5 +1,5 @@
 ﻿// #Query
-#if Portable
+#if TESTS_AS_APP
 module Core_queriesLeafExpressionConvert
 #endif
 
@@ -15,19 +15,6 @@ module Infrastructure =
     let mutable failures = []
     let reportFailure s = 
         stderr.WriteLine " NO"; failures <- s :: failures
-
-#if NetCore
-#else
-    let argv = System.Environment.GetCommandLineArgs() 
-    let SetCulture() = 
-        if argv.Length > 2 && argv.[1] = "--culture" then  
-            let cultureString = argv.[2] 
-            let culture = new System.Globalization.CultureInfo(cultureString) 
-            stdout.WriteLine ("Running under culture "+culture.ToString()+"...");
-            System.Threading.Thread.CurrentThread.CurrentCulture <-  culture
-  
-    do SetCulture()    
-#endif
 
     let check  s v1 v2 = 
        if v1 = v2 then 
@@ -62,16 +49,6 @@ module LeafExpressionEvaluationTests =
         check nm (Eval q) expected
         check (nm + "(after applying Id)") (Eval (Id q)) expected
         check (nm + "(after applying Id^2)")  (Eval (Id (Id q))) expected
-
-#if STATEMENTS_IN_EXPRESSIONS
-    let f () = () 
-
-    checkEval "cwe90wecmp" (<@ f ()  @> ) ()
-#endif
-
-    //(let rec fib x = if x <= 2 then 1 else fib (x-1) + fib (x-2) in fib 36)
-
-    //2.53/0.35
 
     checkEval "2ver9ewv2" (<@ if true then 1 else 0  @>) 1
     checkEval "2ver9ewv3" (<@ if false then 1 else 0  @>) 0
@@ -127,98 +104,6 @@ module LeafExpressionEvaluationTests =
     check "2ver9ewvg" (Eval <@ (fun (x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10 + x11 + x12) @> (3,4,5,6,7,8,9,10,11,12,13,14)) (3+4+5+6+7+8+9+10+11+12+13+14)
 
     checkEval "vlwjvrwe90" (<@ let f (x:int) (y:int) = x + y in f 1 2  @>) 3
-
-    //debug <- true
-    
-
-#if STATEMENTS_IN_EXPRESSIONS
-    checkEval "slnvrwe90" (<@ let rec f (x:int) : int = f x in 1  @>) 1
-
-    checkEval "2ver9ewva" (<@ let rec f1 (x:int) : int = f2 x 
-                              and f2 x = f1 x 
-                              1  @>) 1
-
-    checkEval "2ver9ewvq" 
-      (<@ let rec f1 (x:int) : int = f2 x 
-          and f2 x = f3 x 
-          and f3 x = f1 x 
-          1  @>) 
-      1
-
-    checkEval "2ver9ewvq" 
-      (<@ let rec f1 (x:int) : int = f2 (x-1) 
-          and f2 x = f3 (x-1) 
-          and f3 x = if x < 0 then -1 else f1 (x-1) 
-          f1 100  @>) 
-      -1
-
-
-    checkEval "2ver9ewvq" 
-      (<@ let rec f1 (x:int) : int = f2 (x-1) 
-          and f2 x = f3 (x-1) 
-          and f3 x = fend (x-1) 
-          and fend x = if x < 0 then -1 else f1 (x-1) 
-          f1 100  @>) 
-      -1
-
-    checkEval "2ver9ewvq" 
-      (<@ let rec f1 (x:int) : int = f2 (x-1) 
-          and f2 x = f3 (x-1) 
-          and f3 x = f4 (x-1) 
-          and f4 x = fend (x-1) 
-          and fend x = if x < 0 then -1 else f1 (x-1) 
-          f1 100  @>) 
-      -1
-
-    checkEval "2ver9ewvq" 
-      (<@ let rec f1 (x:int) : int = f2 (x-1) 
-          and f2 x = f3 (x-1) 
-          and f3 x = f4 (x-1) 
-          and f4 x = f5 (x-1) 
-          and f5 x = fend (x-1) 
-          and fend x = if x < 0 then -1 else f1 (x-1) 
-          f1 100  @>) 
-      -1
-
-
-    checkEval "2ver9ewvq" 
-      (<@ let rec f1 (x:int) : int = f2 (x-1) 
-          and f2 x = f3 (x-1) 
-          and f3 x = f4 (x-1) 
-          and f4 x = f5 (x-1) 
-          and f5 x = f6 (x-1) 
-          and f6 x = fend (x-1) 
-          and fend x = if x < 0 then -1 else f1 (x-1) 
-          f1 100  @>) 
-      -1
-
-    checkEval "2ver9ewvq" 
-      (<@ let rec f1 (x:int) : int = f2 (x-1) 
-          and f2 x = f3 (x-1) 
-          and f3 x = f4 (x-1) 
-          and f4 x = f5 (x-1) 
-          and f5 x = f6 (x-1) 
-          and f6 x = f7 (x-1) 
-          and f7 x = fend (x-1) 
-          and fend x = if x < 0 then -1 else f1 (x-1) 
-          f1 100  @>) 
-      -1
-
-
-
-    checkEval "2ver9ewv1" (<@ let rec f (x:int) : int = x+x in f 2  @>) 4
-
-    Eval <@ let rec fib x = if x <= 2 then 1 else fib (x-1) + fib (x-2) in fib 36 @> 
-    checkEval "2ver9ewvh" (<@ while false do ()  @>) ()
-    checkEval "2ver9ewvj" (<@ let rec f (x:int) : int = f x in 1  @>) 1
-
-    let x = ref 0
-    let incrx () = incr x
-
-    checkEval "2ver9ewvec" (<@ !x @>) 0
-    checkEval "2ver9ewev" (<@ incrx() @>) ()
-    checkEval "2ver9eweb" (<@ !x @>) 2  // NOTE: checkEval evaluates the quotation two times :-)
-#endif
 
     checkEval "2ver9ewvk" (<@ 1 + 1 @>) 2
     checkEval "2ver9ewvl" (<@ 1 > 1 @>) false
@@ -338,9 +223,6 @@ module LeafExpressionEvaluationTests =
         checkEval "2ver9e6rw8" (<@ c2.Data @>) 7
         checkEval "2ver9e7rw9" (<@ c3.Data @>) "8"
         checkEval "2ver9e7rwQ" (<@ { Name = "Don"; Data = 6 } @>) { Name="Don"; Data=6 }
-#if STATEMENTS_IN_EXPRESSIONS
-        checkEval "2ver9e7rwW" (<@ c1.Name <- "Ali Baba" @>) ()
-#endif
         checkEval "2ver9e7rwE" (<@ c1.Name  @>) "Don"
 
     module ArrayTests = 
@@ -381,25 +263,6 @@ module LeafExpressionEvaluationTests =
         checkEval "2ver9eQrwP" (<@ match c2 with E1 "1"  -> 2 | E0 -> 1 | _ -> 3  @>) 2
         checkEval "2ver9eQrwA" (<@ match c2 with E1 "2"  -> 2 | E0 -> 1 | _ -> 3  @>) 3
         checkEval "2ver9eQrwS" (<@ match c3 with E1 "2"  -> 2 | E0 -> 1 | _ -> 3  @>) 2
-#if STATEMENTS_IN_EXPRESSIONS
-        checkEval "2ver9eQrwD1" (<@ try failwith "" with _ -> 2  @>) 2
-        checkEval "2ver9eQrwD2" (<@ let x = ref 0 in 
-                                    try 
-                                           try failwith "" 
-                                           finally incr x 
-                                    with _ -> !x @>) 1
-        checkEval "2ver9eQrwD3" (<@ let x = ref 0 in 
-                                    (try incr x; incr x
-                                     finally incr x )
-                                    x.Value @>) 3
-        checkEval "2ver9eQrwD4" (<@ try 3 finally () @>) 3
-        checkEval "2ver9eQrwD5" (<@ try () finally () @>) ()
-        checkEval "2ver9eQrwD6" (<@ try () with _ -> () @>) ()
-        checkEval "2ver9eQrwD7" (<@ try raise E0 with E0 -> 2  @>) 2
-        checkEval "2ver9eQrwF" (<@ try raise c1 with E0 -> 2  @>) 2
-        checkEval "2ver9eQrwG" (<@ try raise c2 with E0 -> 2 | E1 "1" -> 3 @>) 3
-        checkEval "2ver9eQrwH" (<@ try raise c2 with E1 "1" -> 3 | E0 -> 2  @>) 3
-#endif
 
     module TypeTests = 
         type C0() = 
@@ -592,22 +455,6 @@ module LeafExpressionEvaluationTests =
         checkEval "vrewoinrv093" (<@ iarr.[0] @>) 0
         checkEval "vrewoinrv094" (<@ ilist.[0] @>) 0
 
-#if STATEMENTS_IN_EXPRESSIONS
-        checkEval "vrewoinrv095" (<@ farr.[0] <- 0.0 @>) ()
-        checkEval "vrewoinrv096" (<@ iarr.[0] <- 0 @>) ()
-
-        checkEval "vrewoinrv097" (<@ farr.[0] <- 1.0 @>) ()
-        checkEval "vrewoinrv098" (<@ iarr.[0] <- 1 @>) ()
-        checkEval "vrewoinrv099" (<@ farr.[0] @>) 1.0
-        checkEval "vrewoinrv09q" (<@ iarr.[0] @>) 1
-#endif
-
-
-#if STATEMENTS_IN_EXPRESSIONS
-        checkEval "vrewoinrv09w" (<@ farr.[0] <- 0.0 @>) ()
-        checkEval "vrewoinrv09e" (<@ iarr.[0] <- 0 @>) ()
-#endif
-
 
         checkEval "vrewoinrv09r" (<@ Array.average farr @>) (Array.average farr)
         checkEval "vrewoinrv09t" (<@ Array.sum farr @>) (Array.sum farr)
@@ -716,8 +563,7 @@ module LeafExpressionEvaluationTests =
         checkEval "vrewoinrv09c" (<@ ceil 2.0 @>) (ceil 2.0)
         checkEval "vrewoinrv09v" (<@ sqrt 2.0 @>) (sqrt 2.0)
         checkEval "vrewoinrv09b" (<@ sign 2.0 @>) (sign 2.0)
-#if Portable
-#else
+#if !FX_PORTABLE_OR_NETSTANDARD
         checkEval "vrewoinrv09n" (<@ truncate 2.3 @>) (truncate 2.3)
 #endif
         checkEval "vrewoinrv09m" (<@ floor 2.3 @>) (floor 2.3)
@@ -737,8 +583,7 @@ module LeafExpressionEvaluationTests =
         checkEval "vrewoinrv09D" (<@ ceil 2.0f @>) (ceil 2.0f)
         checkEval "vrewoinrv09F" (<@ sqrt 2.0f @>) (sqrt 2.0f)
         checkEval "vrewoinrv09G" (<@ sign 2.0f @>) (sign 2.0f)
-#if Portable
-#else
+#if !FX_PORTABLE_OR_NETSTANDARD
         checkEval "vrewoinrv09H" (<@ truncate 2.3f @>) (truncate 2.3f)
 #endif
         checkEval "vrewoinrv09J" (<@ floor 2.3f @>) (floor 2.3f)
@@ -750,8 +595,7 @@ module LeafExpressionEvaluationTests =
 
         checkEval "vrewoinrv09V" (<@ ceil 2.0M @>) (ceil 2.0M)
         checkEval "vrewoinrv09B" (<@ sign 2.0M @>) (sign 2.0M)
-#if Portable
-#else
+#if !FX_PORTABLE_OR_NETSTANDARD
         checkEval "vrewoinrv09N" (<@ truncate 2.3M @>) (truncate 2.3M)
 #endif
         checkEval "vrewoinrv09M" (<@ floor 2.3M @>) (floor 2.3M)
@@ -771,8 +615,7 @@ module LeafExpressionEvaluationTests =
         checkEval "vrewoinrv09SS" (<@ [ 0UL .. 10UL ] @>) [ 0UL .. 10UL ]
         
         //Comment this testcase under portable due to bug 500323:[FSharp] portable library can't run "round" function
-#if Portable
-#else        
+#if !FX_PORTABLE_OR_NETSTANDARD
         // Round dynamic dispatch on Decimal
         checkEval "vrewoinrv09FF" (<@ round 2.3M @>) (round 2.3M)
 #endif
@@ -876,18 +719,6 @@ module LeafExpressionEvaluationTests =
 
         let v = new obj()
         checkEval "ecnowe0" (<@ v.ExtensionMethod0() @>)  3
-#if STATEMENTS_IN_EXPRESSIONS
-        checkEval "ecnowe1" (<@ v.ExtensionMethod1() @>)  ()
-        checkEval "ecnowe3" (<@ v.ExtensionMethod3(3) @>)  ()
-        checkEval "ecnowe8" (<@ v.ExtensionProperty3 <- 4 @>)  ()
-        checkEval "ecnowea" (<@ v.ExtensionIndexer2(3) <- 4 @>)  ()
-        check "ecnowec" (Eval (<@ v.ExtensionMethod1 @>) ()) ()
-        check "ecnowee" (Eval (<@ v.ExtensionMethod3 @>) 3) ()
-        checkEval "ecnweh8" (<@ v2b.ExtensionProperty3 <- 4 @>)  ()
-        checkEval "ecnweh1" (<@ v2.ExtensionMethod1() @>) ()
-        checkEval "ecnweh3" (<@ v2.ExtensionMethod3(3) @>) ()
-        checkEval "ecnweha" (<@ v2b.ExtensionIndexer2(3) <- 4 @>)  ()
-#endif
         checkEval "ecnowe2" (<@ v.ExtensionMethod2(3) @>) 3
         checkEval "ecnowe4" (<@ v.ExtensionMethod4(3,4) @>)  7
         checkEval "ecnowe5" (<@ v.ExtensionMethod5(3,4) @>)  (3,4)

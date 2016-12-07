@@ -1142,9 +1142,17 @@ val isQuotedExprTy : TcGlobals -> TType -> bool
 val destQuotedExprTy : TcGlobals -> TType -> TType
 val mkQuotedExprTy : TcGlobals -> TType -> TType
 val mkRawQuotedExprTy : TcGlobals -> TType
-val mspec_Type_GetTypeFromHandle : ILGlobals ->  ILMethodSpec
-val fspec_Missing_Value : ILGlobals ->  ILFieldSpec
+
+//-------------------------------------------------------------------------
+// Primitives associated with IL code gen
+//------------------------------------------------------------------------- 
+
+val mspec_Type_GetTypeFromHandle : TcGlobals ->  ILMethodSpec
+val fspec_Missing_Value : TcGlobals ->  ILFieldSpec
+val mkInitializeArrayMethSpec: TcGlobals -> ILMethodSpec 
 val mkByteArrayTy : TcGlobals -> TType
+val mkInvalidCastExnNewobj: TcGlobals -> ILInstr
+
 
 //-------------------------------------------------------------------------
 // Construct calls to some intrinsic functions
@@ -1402,6 +1410,8 @@ val EvalLiteralExprOrAttribArg: TcGlobals -> Expr -> Expr
 val EvaledAttribExprEquality : TcGlobals -> Expr -> Expr -> bool
 val IsSimpleSyntacticConstantExpr: TcGlobals -> Expr -> bool
 
+val (|ConstToILFieldInit|_|): Const -> ILFieldInit option
+
 val (|ExtractAttribNamedArg|_|) : string -> AttribNamedArg list -> AttribExpr option 
 val (|AttribInt32Arg|_|) : AttribExpr -> int32 option
 val (|AttribInt16Arg|_|) : AttribExpr -> int16 option
@@ -1432,3 +1442,5 @@ val mkCoerceIfNeeded : TcGlobals -> tgtTy: TType -> srcTy: TType -> Expr -> Expr
 val (|InnerExprPat|) : Expr -> Expr
 
 val allValsOfModDef : ModuleOrNamespaceExpr -> seq<Val>
+
+val BindUnitVars : TcGlobals -> (Val list * ArgReprInfo list * Expr) -> Val list * Expr

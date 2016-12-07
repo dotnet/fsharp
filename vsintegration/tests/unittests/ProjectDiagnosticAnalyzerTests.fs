@@ -33,6 +33,7 @@ type ProjectDiagnosticAnalyzerTests()  =
         let args = mkProjectCommandLineArgs (dllName, [fileName])
         checker.GetProjectOptionsFromCommandLineArgs (projectName, args)
 
+#if PROJECT_ANALYSIS
     [<Test>]
     member public this.ProjectDiagnosticsDontReportJustProjectErrors_Bug1596() =
         // https://github.com/Microsoft/visualfsharp/issues/1596
@@ -43,7 +44,7 @@ printf "%d" x
         let options = CreateProjectAndGetOptions(fileContents)
         let additionalOptions = {options with OtherOptions = Array.append options.OtherOptions [| "--times" |]}
 
-        let errors = FSharpProjectDiagnosticAnalyzer.GetDiagnostics(additionalOptions)
+        let errors = FSharpProjectDiagnosticAnalyzer.GetDiagnostics(additionalOptions)  |> Async.RunSynchronously
         Assert.AreEqual(1, errors.Length, "Exactly one warning should have been reported")
         
         let warning = errors.[0]
@@ -59,5 +60,6 @@ printf "%d" x
 """
         let options = CreateProjectAndGetOptions(fileContents)
 
-        let errors = FSharpProjectDiagnosticAnalyzer.GetDiagnostics(options)
+        let errors = FSharpProjectDiagnosticAnalyzer.GetDiagnostics(options)  |> Async.RunSynchronously
         Assert.AreEqual(0, errors.Length, "No semantic errors should have been reported")
+#endif

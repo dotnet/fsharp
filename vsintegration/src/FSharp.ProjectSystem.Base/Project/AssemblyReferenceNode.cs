@@ -18,10 +18,7 @@ using System.Diagnostics.CodeAnalysis;
 using ShellConstants = Microsoft.VisualStudio.Shell.Interop.Constants;
 using Microsoft.Build.Execution;
 using System.Linq;
-
-#if FX_ATLEAST_45
 using Microsoft.Internal.VisualStudio.PlatformUI;
-#endif
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 {
@@ -663,7 +660,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return VSConstants.guidCOMPLUSLibrary;
         }
 
-#if FX_ATLEAST_45 
         public override object GetProperty(int propId)
         {
             if (propId == (int)__VSHPROPID5.VSHPROPID_ProvisionalViewingStatus)
@@ -676,6 +672,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return base.GetProperty(propId);
         }
-#endif
     }
 }

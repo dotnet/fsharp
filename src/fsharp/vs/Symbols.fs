@@ -1333,7 +1333,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | M m when m.LogicalName.StartsWith("add_") -> 
             let eventName = m.LogicalName.[4..]
             let entityTy = generalizedTyconRef m.DeclaringEntityRef
-            not (List.isEmpty (cenv.infoReader.GetImmediateIntrinsicEventsOfType (Some eventName, AccessibleFromSomeFSharpCode, range0, entityTy))) ||
+            not (isNil (cenv.infoReader.GetImmediateIntrinsicEventsOfType (Some eventName, AccessibleFromSomeFSharpCode, range0, entityTy))) ||
             match GetImmediateIntrinsicPropInfosOfType(Some eventName, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 (generalizedTyconRef m.DeclaringEntityRef) with 
             | pinfo :: _  -> pinfo.IsFSharpEventProperty
             | _ -> false
@@ -1346,7 +1346,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | M m when m.LogicalName.StartsWith("remove_") -> 
             let eventName = m.LogicalName.[7..]
             let entityTy = generalizedTyconRef m.DeclaringEntityRef
-            not (List.isEmpty (cenv.infoReader.GetImmediateIntrinsicEventsOfType (Some eventName, AccessibleFromSomeFSharpCode, range0, entityTy))) ||
+            not (isNil (cenv.infoReader.GetImmediateIntrinsicEventsOfType (Some eventName, AccessibleFromSomeFSharpCode, range0, entityTy))) ||
             match GetImmediateIntrinsicPropInfosOfType(Some eventName, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 (generalizedTyconRef m.DeclaringEntityRef) with 
             | pinfo :: _ -> pinfo.IsFSharpEventProperty
             | _ -> false
@@ -1357,31 +1357,22 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         x.IsPropertyGetterMethod ||
         match fsharpInfo() with 
         | None -> false
-        | Some v -> 
-        match v.MemberInfo with 
-        | None -> false 
-        | Some memInfo -> memInfo.MemberFlags.MemberKind = MemberKind.PropertyGet
+        | Some v -> v.IsPropertyGetterMethod
 
     member x.IsSetterMethod =  
         if isUnresolved() then false else 
         x.IsPropertySetterMethod ||
         match fsharpInfo() with 
         | None -> false
-        | Some v -> 
-        match v.MemberInfo with 
-        | None -> false 
-        | Some memInfo -> memInfo.MemberFlags.MemberKind = MemberKind.PropertySet
+        | Some v -> v.IsPropertySetterMethod
 
     member __.IsPropertyGetterMethod = 
         if isUnresolved() then false else 
         match d with 
         | M m when m.LogicalName.StartsWith("get_") -> 
             let propName = PrettyNaming.ChopPropertyName(m.LogicalName) 
-            not (List.isEmpty (GetImmediateIntrinsicPropInfosOfType(Some propName, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 (generalizedTyconRef m.DeclaringEntityRef)))
-        | V v -> 
-            match v.MemberInfo with 
-            | None -> false 
-            | Some memInfo -> memInfo.MemberFlags.MemberKind = MemberKind.PropertyGet
+            not (isNil (GetImmediateIntrinsicPropInfosOfType(Some propName, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 (generalizedTyconRef m.DeclaringEntityRef)))
+        | V v -> v.IsPropertyGetterMethod
         | _ -> false
 
     member __.IsPropertySetterMethod = 
@@ -1390,11 +1381,8 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         // Look for a matching property with the right name. 
         | M m when m.LogicalName.StartsWith("set_") -> 
             let propName = PrettyNaming.ChopPropertyName(m.LogicalName) 
-            not (List.isEmpty (GetImmediateIntrinsicPropInfosOfType(Some propName, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 (generalizedTyconRef m.DeclaringEntityRef)))
-        | V v -> 
-            match v.MemberInfo with 
-            | None -> false 
-            | Some memInfo -> memInfo.MemberFlags.MemberKind = MemberKind.PropertySet
+            not (isNil (GetImmediateIntrinsicPropInfosOfType(Some propName, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 (generalizedTyconRef m.DeclaringEntityRef)))
+        | V v -> v.IsPropertySetterMethod
         | _ -> false
 
     member __.IsInstanceMember = 

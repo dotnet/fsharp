@@ -2,15 +2,16 @@
 (*-------------------------------------------------------------------------
 !* attribute tests
  *------------------------------------------------------------------------- *)
-#if Portable
+#if TESTS_AS_APP
 module Core_attributes
 #endif
 #light
 
-#if Portable
-#else
+#if !TESTS_AS_APP && !FX_PORTABLE_OR_NETSTANDARD
 #load "testlib.fsi" "testlib.fs" // a warning is expected here
+#endif
 
+#if !TESTS_AS_APP && !FX_PORTABLE_OR_NETSTANDARD
 #r "cslib.dll"
 #endif
 
@@ -25,16 +26,12 @@ let check (s:string) e r =
 open System
 open System.Diagnostics
 
-#if Portable
-#else
 (* ATTRIBUTES *)
 
 [<LoaderOptimization(LoaderOptimization.MultiDomainHost)>] 
 
 let main = ()
 
-#endif
-    
     
 (* attribute on a type *)
 type [< Obsolete("testing an obsolete warning is printed")>] x = X
@@ -49,8 +46,7 @@ let fx3 (x:x2) = fx2 x
 (* attribute on a method *)
 let [<Obsolete("DEBUG")>] myLoggingMethod x = stderr.WriteLine(x:string)
 
-#if Portable
-#else
+#if !FX_PORTABLE_OR_NETSTANDARD
 let [<STAThread>] myLoggingMethod2 x = stderr.WriteLine(x:string)
 #endif
 
@@ -92,8 +88,7 @@ end;;
 (* attribute on a return type *)
 (* NOT YET: let [<return: Ignore("ignore")>] myMethod3 x = x + 1 *)
 
-#if Portable
-#else
+#if !FX_NO_CRYPTO
 (* BUG 428 - compile time error - on obsolete attributes *)
 let f (cert:System.Security.Cryptography.X509Certificates.X509Certificate) = 
   let x = cert.GetName () in 
@@ -238,8 +233,7 @@ let ca4 = typeof<y4>.GetCustomAttributes(typeof<System.ObsoleteAttribute>,false)
 do if Array.length ca4 <> 1 then failwith "could not find CA on type"
 
 
-#if Portable
-#else
+#if !FX_PORTABLE_OR_NETSTANDARD
 open System.Runtime.InteropServices
 
 [<DllImport("KERNEL32.DLL", EntryPoint="MoveFileW",  SetLastError=true,CharSet=CharSet.Unicode, ExactSpelling=true,CallingConvention=CallingConvention.StdCall)>]
@@ -336,8 +330,7 @@ let ca7d =
     ty.Assembly.GetCustomAttributes(typeof<DontPressThisButton3Attribute>,false)
 do if Array.length ca7d <> 1 then report_failure (sprintf "could not get parameterized CA on assembly, num CAs = %d" (Array.length ca7d))
 
-#if Portable
-#else
+#if !FX_PORTABLE_OR_NETSTANDARD
 #if COMPILED
 [<``module``: DontPressThisButton3(1, "", -2)>]
 do()
@@ -388,8 +381,7 @@ module CheckGenericParameterAttibutesAndNames =
     if typeof<Cases>.GetMethod("M2").GetGenericArguments().[1].Name <> "V" then report_failure "wrong name on generic parameter (C)" 
     if typeof<Cases>.GetMethod("M3").GetGenericArguments().[0].Name <> "a" then report_failure "unexpected inferred name on generic parameter (D)" 
 
-#if Portable
-#else
+#if !FX_PORTABLE_OR_NETSTANDARD
 module CheckAttributesOnElementsWithSignatures = 
 
     let checkOneAttribute msg (cas: _ []) = 
@@ -445,8 +437,7 @@ end
 // 
 
 
-#if Portable
-#else
+#if !FX_PORTABLE_OR_NETSTANDARD
 
 #r "System.Security.dll";;
 #r "System.Configuration.dll";;
@@ -525,8 +516,7 @@ module ThreadStaticTest = begin
         static val mutable private results : int list
         static member Results with get() = C.results and set v = C.results <- v
 
-#if Portable
-#else
+#if !FX_PORTABLE_OR_NETSTANDARD
     let N = 1000
     let main() = 
         let t1 = 
@@ -576,8 +566,7 @@ end
 (*-------------------------------------------------------------------------
 !* System.Runtime.InteropServices.In/OUT attributes
  *------------------------------------------------------------------------- *)
-#if Portable
-#else
+#if !FX_PORTABLE_OR_NETSTANDARD
 open System
 let g   ( [<System.Runtime.InteropServices.Out>] x : int byref) = 0
 let g2 (( [<System.Runtime.InteropServices.In>]  x : int byref), ([<System.Runtime.InteropServices.Out >] y : int byref)) = 0
@@ -627,8 +616,7 @@ type C =
 
     end
 
-#if Portable
-#else
+#if !FX_PORTABLE_OR_NETSTANDARD
 let test2179 = 
     let ty = typeof<C> in
 
@@ -901,8 +889,7 @@ module Bug6161_PS_FSharp1_0_MoreAttributesWithArrayArguments = begin
         check "ce99pj32cweqT" (ca.[0].GetType()) (typeof<AnyAttribute>)
         check "ce99pj32cweqY" (ca.[0] :?> AnyAttribute).Value (box [| 42 |])
 
-#if Portable
-#else
+#if !TESTS_AS_APP && !FX_PORTABLE_OR_NETSTANDARD
     let _ = 
         let ty = typeof<CSharpLibrary.TestClass>
         let ca = ty.GetCustomAttributes(typeof<CSharpLibrary.IntArrayPropAttribute>,false)
@@ -1100,8 +1087,7 @@ module NullsInAttributes =
     test "TestProperty5"  (null, null, null, Some null, Some null, Some null)
     test "TestProperty6"  (box "1", "2", typeof<int16>, Some (box "3"), Some  "4", Some typeof<string>)
     
-#if Portable
-#else
+#if !FX_PORTABLE_OR_NETSTANDARD
 module Bug5762 =
       open System
       open System.IO

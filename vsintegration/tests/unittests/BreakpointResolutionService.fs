@@ -29,6 +29,7 @@ type BreakpointResolutionServiceTests()  =
         UseScriptResolutionRules = false
         LoadTime = DateTime.MaxValue
         UnresolvedReferences = None
+        ExtraProjectInfo = None
     }
     let code = "
 // This is a comment
@@ -69,7 +70,7 @@ let main argv =
         
         let sourceText = SourceText.From(code)
         let searchSpan = TextSpan.FromBounds(searchPosition, searchPosition + searchToken.Length)
-        let actualResolutionOption = FSharpBreakpointResolutionService.GetBreakpointLocation(sourceText, fileName, searchSpan, options) |> Async.RunSynchronously
+        let actualResolutionOption = FSharpBreakpointResolutionService.GetBreakpointLocation(FSharpChecker.Instance, sourceText, fileName, searchSpan, options) |> Async.RunSynchronously
         
         match actualResolutionOption with
         | None -> Assert.IsTrue(expectedResolution.IsNone, "BreakpointResolutionService failed to resolve breakpoint position")

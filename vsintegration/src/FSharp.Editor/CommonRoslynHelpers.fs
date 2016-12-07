@@ -20,22 +20,26 @@ module internal CommonRoslynHelpers =
         let endPosition = sourceText.Lines.[range.EndLine - 1].Start + range.EndColumn
         TextSpan(startPosition, endPosition - startPosition)
 
-    let GetTaskAction(computation: Async<unit>) =
-        // Shortcut due to nonstandard way of converting Async<unit> to Task
-        let action() =
-            try
-                computation |> Async.RunSynchronously
-            with ex ->
-                Assert.Exception(ex.GetBaseException())
-                raise(ex.GetBaseException())
-        Action action
-
     let GetCompletedTaskResult(task: Task<'TResult>) =
         if task.Status = TaskStatus.RanToCompletion then
             task.Result
         else
             Assert.Exception(task.Exception.GetBaseException())
             raise(task.Exception.GetBaseException())
+
+    let StartAsyncAsTask cancellationToken computation =
+        let computation =
+            async {
+                try
+                    return! computation
+                with e ->
+                    Assert.Exception(e)
+                    return Unchecked.defaultof<_>
+            }
+        Async.StartAsTask(computation, TaskCreationOptions.None, cancellationToken)
+
+    let StartAsyncUnitAsTask cancellationToken (computation:Async<unit>) = 
+        StartAsyncAsTask cancellationToken computation  :> Task
 
     let SupportedDiagnostics() =
         // We are constructing our own descriptors at run-time. Compiler service is already doing error formatting and localization.

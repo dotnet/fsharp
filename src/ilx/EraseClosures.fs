@@ -15,9 +15,6 @@ open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.PrettyNaming
 
-let addMethodGeneratedAttrsToTypeDef ilg tdef = 
-    { tdef with Methods = tdef.Methods.AsList |> List.map (fun md -> md |> addMethodGeneratedAttrs ilg) |> mkILMethods }
-
 // -------------------------------------------------------------------- 
 // Erase closures and function types
 // by compiling down to code pointers, classes etc.
@@ -121,14 +118,23 @@ let mkFuncTypeRef n =
                          [IlxSettings.ilxNamespace () + ".OptimizedClosures"],
                          "FSharpFunc`"+ string (n + 1))
 type cenv = 
-    { ilg:ILGlobals;
-      tref_Func: ILTypeRef[];
-      mkILTyFuncTy: ILType }
+    { ilg:ILGlobals
+      tref_Func: ILTypeRef[]
+      mkILTyFuncTy: ILType
+      addFieldGeneratedAttrs: ILFieldDef -> ILFieldDef
+      addFieldNeverAttrs: ILFieldDef -> ILFieldDef
+      addMethodGeneratedAttrs: ILMethodDef -> ILMethodDef }
   
-let newIlxPubCloEnv(ilg) =
+let addMethodGeneratedAttrsToTypeDef cenv tdef = 
+    { tdef with Methods = tdef.Methods.AsList |> List.map (fun md -> md |> cenv.addMethodGeneratedAttrs) |> mkILMethods }
+
+let newIlxPubCloEnv(ilg,addMethodGeneratedAttrs,addFieldGeneratedAttrs,addFieldNeverAttrs) =
     { ilg=ilg;
       tref_Func= Array.init 10 (fun i -> mkFuncTypeRef(i+1));
-      mkILTyFuncTy=ILType.Boxed (mkILNonGenericTySpec (mkILTyRef (IlxSettings.ilxFsharpCoreLibScopeRef (), IlxSettings.ilxNamespace () + ".FSharpTypeFunc"))) }
+      mkILTyFuncTy=ILType.Boxed (mkILNonGenericTySpec (mkILTyRef (IlxSettings.ilxFsharpCoreLibScopeRef (), IlxSettings.ilxNamespace () + ".FSharpTypeFunc"))) 
+      addMethodGeneratedAttrs=addMethodGeneratedAttrs
+      addFieldGeneratedAttrs=addFieldGeneratedAttrs
+      addFieldNeverAttrs=addFieldNeverAttrs}
 
 let mkILTyFuncTy cenv = cenv.mkILTyFuncTy
   
@@ -179,7 +185,7 @@ let mkCallBlockForMultiValueApp cenv doTailCall (args',rty') =
 
 let mkMethSpecForClosureCall cenv (clospec: IlxClosureSpec) = 
     let tyargsl,argtys,rstruct = stripSupportedAbstraction clospec.FormalLambdas
-    if not (List.isEmpty tyargsl) then failwith "mkMethSpecForClosureCall: internal error";
+    if not (isNil tyargsl) then failwith "mkMethSpecForClosureCall: internal error"
     let rty' = mkTyOfLambdas cenv rstruct
     let argtys' = typesOfILParams argtys
     let minst' = clospec.GenericArgs
@@ -237,7 +243,7 @@ let mkCallFunc cenv allocLocal numThisGenParams tl apps =
                 // direct calls. 
                 match stripSupportedIndirectCall apps with 
                 // Type applications: REVIEW: get rid of curried tyapps - just tuple them 
-                | tyargs,[],_ when not (List.isEmpty tyargs) ->
+                | tyargs,[],_ when not (isNil tyargs) ->
                     // strip again, instantiating as we go.  we could do this while we count. 
                     let (revInstTyArgs, rest') = 
                         (([],apps), tyargs) ||> List.fold (fun (revArgsSoFar,cs) _  -> 
@@ -260,7 +266,7 @@ let mkCallFunc cenv allocLocal numThisGenParams tl apps =
                     else instrs1 @ buildApp false loaders' rest' 
 
               // Term applications 
-                | [],args,rest when not (List.isEmpty args) -> 
+                | [],args,rest when not (isNil args) -> 
                     let precall,loaders' = computePreCall fst args.Length rest loaders
                     let isLast = (match rest with Apps_done _ -> true | _ -> false)
                     let rty  = mkTyOfApps cenv rest
@@ -334,8 +340,8 @@ let mkILCloFldDefs cenv flds =
     |> List.map (fun fv -> 
          let fdef = mkILInstanceField (fv.fvName,fv.fvType,None,ILMemberAccess.Public)
          if fv.fvCompilerGenerated then 
-             fdef |> addFieldNeverAttrs cenv.ilg
-                  |> addFieldGeneratedAttrs cenv.ilg
+             fdef |> cenv.addFieldNeverAttrs 
+                  |> cenv.addFieldGeneratedAttrs 
          else
              fdef)
 
@@ -454,7 +460,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                 convIlxClosureDef cenv encl td {clo with cloStructure=nowStruct; 
                                                          cloCode=notlazy nowCode}
 
-              let nowTypeDefs = nowTypeDefs |>  List.map (addMethodGeneratedAttrsToTypeDef cenv.ilg)
+              let nowTypeDefs = nowTypeDefs |>  List.map (addMethodGeneratedAttrsToTypeDef cenv)
 
               nowTypeDefs @ laterTypeDefs
           else 
@@ -475,7 +481,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                      nowTy,
                      mkILCloFldSpecs cenv nowFields,
                      ILMemberAccess.Assembly)
-                   |> addMethodGeneratedAttrs cenv.ilg
+                   |> cenv.addMethodGeneratedAttrs 
 
               let cloTypeDef = 
                 { Name = td.Name;
@@ -552,7 +558,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                             cloCode=notlazy laterCode}
 
               // add 'compiler generated' to all the methods in the 'now' classes
-              let nowTypeDefs = nowTypeDefs |>  List.map (addMethodGeneratedAttrsToTypeDef cenv.ilg)
+              let nowTypeDefs = nowTypeDefs |>  List.map (addMethodGeneratedAttrsToTypeDef cenv)
 
               nowTypeDefs @ laterTypeDefs
                         
@@ -577,7 +583,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                             nowTy,
                             mkILCloFldSpecs cenv nowFields,
                             ILMemberAccess.Assembly)
-                        |> addMethodGeneratedAttrs cenv.ilg
+                        |> cenv.addMethodGeneratedAttrs 
 
                     { Name = td.Name;
                       GenericParams= td.GenericParams;

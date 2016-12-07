@@ -51,7 +51,7 @@ module internal ReflectionAdapters =
     let exit (_n:int) = failwith "System.Environment.Exit does not exist!"
 #endif
 
-#if !FX_HAS_TYPECODE
+#if FX_NO_TYPECODE
     [<System.Flags>]
     type TypeCode = 
         | Int32     = 0
@@ -317,6 +317,7 @@ module internal ReflectionAdapters =
         member this.GetSetMethod() = this.SetMethod
 
 #if FX_RESHAPED_REFLECTION_CORECLR
+
     type CustomAssemblyResolver() =
         inherit AssemblyLoadContext()
         override this.Load (assemblyName:AssemblyName):Assembly =

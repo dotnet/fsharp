@@ -67,6 +67,8 @@ type internal FSharpDeclarationListItem =
     member DescriptionTextAsync : Async<FSharpToolTipText>
     /// Get the glyph integer for the declaration as used by Visual Studio.
     member Glyph : int
+    member GlyphMajor : ItemDescriptionIcons.GlyphMajor
+    member GlyphMinor : ItemDescriptionIcons.GlyphMinor
     
 [<Sealed>]
 /// Represents a set of declarations in F# source code, with information attached ready for display by an editor.
@@ -96,6 +98,7 @@ module internal ItemDescriptionsImpl =
     val GetXmlDocSigOfValRef : TcGlobals -> ValRef -> (string option * string) option
     val GetXmlDocSigOfProp : InfoReader -> range -> PropInfo -> (string option * string) option
     val GetXmlDocSigOfEvent : InfoReader -> range -> EventInfo -> (string option * string) option
+    val GetXmlCommentForItem : InfoReader -> range -> Item -> FSharpXmlDoc
     val FormatDescriptionOfItem : bool -> InfoReader -> range -> DisplayEnv -> Item -> FSharpToolTipElement
     val FormatReturnTypeOfItem  : InfoReader -> range -> DisplayEnv -> Item -> string
     val RemoveDuplicateItems : TcGlobals -> Item list -> Item list

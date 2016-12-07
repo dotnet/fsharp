@@ -14,17 +14,6 @@ let check s b1 b2 =
        printfn ", FAILED: expected %A, got %A" b2 b1;
        report_failure s
 
-let argv = System.Environment.GetCommandLineArgs() 
-let SetCulture() = 
-  if argv.Length > 2 && argv.[1] = "--culture" then  begin
-    let cultureString = argv.[2] in 
-    let culture = new System.Globalization.CultureInfo(cultureString) in 
-    stdout.WriteLine ("Running under culture "+culture.ToString()+"...");
-    System.Threading.Thread.CurrentThread.CurrentCulture <-  culture
-  end 
-  
-do SetCulture()    
-
 open System
 open System.Drawing
 open System.ComponentModel

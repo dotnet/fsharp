@@ -1,15 +1,11 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-// This file is compiled 4(!) times in the codebase
+// This file is compiled 2(!) times in the codebase
 //    - as the internal implementation of printf '%A' formatting 
 //           defines: RUNTIME
-//    - as the internal implementation of structured formatting in the FSharp.Compiler-proto.dll 
-//           defines: COMPILER + BUILDING_WITH_LKG
 //    - as the internal implementation of structured formatting in FSharp.Compiler.dll 
 //           defines: COMPILER 
 //           NOTE: this implementation is used by fsi.exe. This is very important.
-//    - as the public implementation of structured formatting in the FSharp.PowerPack.dll  
-//           defines: <none> 
 //
 // The one implementation file is used because we very much want to keep the implementations of
 // structured formatting the same for fsi.exe and '%A' printing. However fsi.exe may have
@@ -255,24 +251,24 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         ///
         /// Data from other .NET languages is formatted using a virtual
         /// call to Object.ToString() on the boxed version of the input.
-        val any_to_string: value:'T -> string
+        val any_to_string: value:'T * Type -> string
 
         /// Output any value to a channel using the same set of formatting rules
         /// as any_to_string
-        val output_any: writer:TextWriter -> value:'T -> unit
+        val output_any: writer:TextWriter -> value:'T * Type -> unit
 
 #if RUNTIME   // FSharp.Core.dll: Most functions aren't needed in FSharp.Core.dll, but we add one entry for printf
 
 #if FX_RESHAPED_REFLECTION
-        val anyToStringForPrintf: options:FormatOptions -> showNonPublicMembers : bool -> value:'T -> string
+        val anyToStringForPrintf: options:FormatOptions -> showNonPublicMembers : bool -> value:'T * Type -> string
 #else
-        val anyToStringForPrintf: options:FormatOptions -> bindingFlags:System.Reflection.BindingFlags -> value:'T -> string
+        val anyToStringForPrintf: options:FormatOptions -> bindingFlags:System.Reflection.BindingFlags -> value:'T * Type -> string
 #endif
 #else
-        val any_to_layout   : options:FormatOptions -> value:'T -> Layout
+        val any_to_layout   : options:FormatOptions -> value:'T * Type -> Layout
         val squash_layout   : options:FormatOptions -> layout:Layout -> Layout
         val output_layout   : options:FormatOptions -> writer:TextWriter -> layout:Layout -> unit
-        val layout_as_string: options:FormatOptions -> value:'T -> string
+        val layout_as_string: options:FormatOptions -> value:'T * Type -> string
 #endif
 
         /// Convert any value to a layout using the given formatting options.  The
@@ -283,5 +279,5 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 
 
 #if COMPILER
-        val fsi_any_to_layout : options:FormatOptions -> value:'T -> Layout
+        val fsi_any_to_layout : options:FormatOptions -> value:'T * Type -> Layout
 #endif  

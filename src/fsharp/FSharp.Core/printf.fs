@@ -811,7 +811,7 @@ module internal PrintfImpl =
             // printfn %0A is considered to mean 'print width zero'
             match box v with 
             | null -> "<null>" 
-            | _ -> Microsoft.FSharp.Text.StructuredPrintfImpl.Display.anyToStringForPrintf opts bindingFlags v
+            | _ -> Microsoft.FSharp.Text.StructuredPrintfImpl.Display.anyToStringForPrintf opts bindingFlags (v, v.GetType())
 
         static member GenericToString<'T>(spec : FormatSpecifier) = 
             let bindingFlags = 
@@ -1257,17 +1257,15 @@ module internal PrintfImpl =
     /// 2nd level is global dictionary that maps format string to the corresponding PrintfFactory
     type Cache<'T, 'State, 'Residue, 'Result>() =
         static let generate(fmt) = PrintfBuilder<'State, 'Residue, 'Result>().Build<'T>(fmt)        
-#if FSHARP_CORE_4_5
+#if FX_NO_CONCURRENT_DICTIONARY
+        static let mutable map = Dictionary<string, CachedItem<'T, 'State, 'Residue, 'Result>>()
+#else
         static let mutable map = System.Collections.Concurrent.ConcurrentDictionary<string, CachedItem<'T, 'State, 'Residue, 'Result>>()
         static let getOrAddFunc = Func<_, _>(generate)
-#else
-        static let mutable map = Dictionary<string, CachedItem<'T, 'State, 'Residue, 'Result>>()
 #endif
 
         static let get(key : string) = 
-#if FSHARP_CORE_4_5
-            map.GetOrAdd(key, getOrAddFunc)
-#else
+#if FX_NO_CONCURRENT_DICTIONARY
             lock map (fun () ->
                 let mutable res = Unchecked.defaultof<_>
                 if map.TryGetValue(key, &res) then res
@@ -1284,11 +1282,12 @@ module internal PrintfImpl =
                 map.Add(key, v)
                 v
             )
+#else
+            map.GetOrAdd(key, getOrAddFunc)
 #endif
 
         [<DefaultValue>]
-#if FX_NO_THREAD_STATIC
-#else
+#if !FX_NO_THREAD_STATIC
         [<ThreadStatic>]
 #endif
         static val mutable private last : string * CachedItem<'T, 'State, 'Residue, 'Result>
@@ -1379,8 +1378,7 @@ module Printf =
     [<CompiledName("PrintFormatToStringThenFail")>]
     let failwithf fmt = ksprintf failwith fmt
 
-#if FX_NO_SYSTEM_CONSOLE
-#else    
+#if !FX_NO_SYSTEM_CONSOLE
 #if EXTRAS_FOR_SILVERLIGHT_COMPILER
     [<CompiledName("PrintFormat")>]
     let printf fmt = fprintf (!outWriter) fmt

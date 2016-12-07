@@ -10,18 +10,29 @@ module CoreClrUtilities
         static member CreateDelegate(delegateType, obj : obj, methodInfo : System.Reflection.MethodInfo) = methodInfo.CreateDelegate(delegateType, obj)            
 
     // Completely not portable:  change to Environment.Exit() when netfx implements it for coreclr
+#if !INTERACTIVE
     module internal UnsafeNativeMethods =
         [<DllImport("kernel32.dll")>]
         extern void ExitProcess(int _exitCode)
 
         [<DllImport("kernel32.dll")>]
         extern System.IntPtr GetCommandLine();
+#endif
 
 
     [<CompiledName("Exit")>]
     let exit (exitCode:int) =
-        UnsafeNativeMethods.ExitProcess(exitCode); failwith "UnsafeNativeMethods.ExitProcess did not exit!!"; ()
+#if !INTERACTIVE
+        UnsafeNativeMethods.ExitProcess(exitCode); 
+#endif
+        ()
+        //if exitCode = 0 then 
+        //    Environment.FailFast("failfast exit")
+        //else
+        //    Environment.FailFast("failfast exit",System.Exception("failfast exit"))
+        //failwith "UnsafeNativeMethods.ExitProcess did not exit!!"; ()
 
+#if !INTERACTIVE
     type System.Environment with 
         static member GetCommandLineArgs() = 
             let cl = 
@@ -29,6 +40,7 @@ module CoreClrUtilities
                 if c = IntPtr.Zero then "" 
                 else Marshal.PtrToStringUni(c)
             cl.Split(' ')
+#endif
 
     [<Flags>]
     type BindingFlags =

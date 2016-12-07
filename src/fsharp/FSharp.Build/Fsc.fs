@@ -140,10 +140,7 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     let mutable sources : ITaskItem[] = [||]
     let mutable sourceLink : string = null
     let mutable targetType : string = null 
-#if FX_ATLEAST_35   
-#else 
     let mutable toolExe : string = "fsc.exe"
-#endif    
     let mutable warningLevel : string = null
     let mutable treatWarningsAsErrors : bool = false
     let mutable warningsAsErrors : string = null
@@ -165,7 +162,15 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     let mutable capturedArguments : string list = []  // list of individual args, to pass to HostObject Compile()
     let mutable capturedFilenames : string list = []  // list of individual source filenames, to pass to HostObject Compile()
 
+#if ENABLE_MONO_SUPPORT
+    // The property YieldDuringToolExecution is not available on Mono.
+    // So we only set it if available (to avoid a compile-time dependency). 
+    let runningOnMono = try System.Type.GetType("Mono.Runtime") <> null with e-> false         
+    do if not runningOnMono then  
+        typeof<ToolTask>.InvokeMember("YieldDuringToolExecution",(BindingFlags.Instance ||| BindingFlags.SetProperty ||| BindingFlags.Public),null,this,[| box true |])  |> ignore 
+#else
     do this.YieldDuringToolExecution <- true  // See bug 6483; this makes parallel build faster, and is fine to set unconditionally
+#endif
 
     let generateCommandLineBuilder () =
         let builder = new FscCommandLineBuilder()
@@ -435,14 +440,6 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     member fsc.VersionFile
         with get() = versionFile
         and set(s) = versionFile <- s
-
-#if FX_ATLEAST_35
-#else
-    // Allow overriding to the executable name "fsc.exe"
-    member fsc.ToolExe
-        with get() = toolExe
-        and set(s) = toolExe<- s
-#endif
 
     // For targeting other folders for "fsc.exe" (or ToolExe if different)
     member fsc.ToolPath
