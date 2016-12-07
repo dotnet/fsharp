@@ -1215,8 +1215,8 @@ type internal FsiDynamicCompiler
               |> List.map (fun input-> 
                     input.ParseErrors |> List.iter errorSink
                     input.MetaCommandErrors |> List.iter errorSink
-                    input.ParseWarnings |> List.iter errorSink
-                    input.MetaCommandWarnings |> List.iter errorSink
+                    input.ParseWarnings |> List.iter warnSink
+                    input.MetaCommandWarnings |> List.iter warnSink
                     let parsedInput = 
                         match input.SyntaxTree with 
                         | None -> ParseOneInputFile(tcConfig,lexResourceManager,["INTERACTIVE"],input.FileName,(true,false),errorLogger,(*retryLocked*)false)
