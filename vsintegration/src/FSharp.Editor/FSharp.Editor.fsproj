@@ -69,9 +69,6 @@
     <Compile Include="QuickInfoProvider.fs">
       <Link>QuickInfo\QuickInfoProvider.fs</Link>
     </Compile>
-    <Compile Include="RenamedSpansTracker.fs">
-      <Link>InlineRename\RenamedSpansTracker.fs</Link>
-    </Compile>
     <Compile Include="InlineRenameService.fs">
       <Link>InlineRename\InlineRenameService.fs</Link>
     </Compile>
