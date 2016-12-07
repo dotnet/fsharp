@@ -1258,8 +1258,9 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig,tcGlobals,tcState:Tc
 
 
 /// Manages an incremental build graph for the build of a single F# project
-type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig: TcConfig, projectDirectory, outfile, assemblyName, niceNameGen: Ast.NiceNameGenerator, lexResourceManager,
-                        sourceFiles, projectReferences: IProjectReference list, ensureReactive, 
+type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig: TcConfig, projectDirectory, outfile, 
+                        assemblyName, niceNameGen: Ast.NiceNameGenerator, lexResourceManager,
+                        sourceFiles, projectReferences: IProjectReference list, loadClosureOpt: LoadClosure option, ensureReactive, 
                         keepAssemblyContents, keepAllBackgroundResolutions) =
 
     /// Maximum time share for a piece of background work before it should (cooperatively) yield
@@ -1432,6 +1433,14 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
 
         let tcEnvAtEndOfFile = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
         let tcState = GetInitialTcState (rangeStartup, assemblyName, tcConfig, tcGlobals, tcImports, niceNameGen, tcEnvAtEndOfFile)
+        let loadClosureErrors = 
+           [ match loadClosureOpt with 
+             | None -> ()
+             | Some loadClosure -> 
+                for inp in loadClosure.Inputs do
+                    for e in inp.MetaCommandErrors do yield e,FSharpErrorSeverity.Error 
+                    for e in inp.MetaCommandWarnings do yield e,FSharpErrorSeverity.Warning ]
+
         let tcAcc = 
             { tcGlobals=tcGlobals
               tcImports=tcImports
@@ -1442,7 +1451,7 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
               tcSymbolUses=[]
               topAttribs=None
               typedImplFiles=[]
-              tcErrors=errorLogger.GetErrors() }   
+              tcErrors = loadClosureErrors @ errorLogger.GetErrors() }   
         tcAcc
                 
     /// This is a build task function that gets placed into the build rules as the computation for a Vector.ScanLeft
@@ -1766,7 +1775,7 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
 
     /// CreateIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.
-    static member TryCreateBackgroundBuilderForProjectOptions (referenceResolver, frameworkTcImportsCache, scriptClosureOptions:LoadClosure option, sourceFiles:string list, commandLineArgs:string list, projectReferences, projectDirectory, useScriptResolutionRules, keepAssemblyContents, keepAllBackgroundResolutions) =
+    static member TryCreateBackgroundBuilderForProjectOptions (referenceResolver, frameworkTcImportsCache, loadClosureOpt:LoadClosure option, sourceFiles:string list, commandLineArgs:string list, projectReferences, projectDirectory, useScriptResolutionRules, keepAssemblyContents, keepAllBackgroundResolutions) =
     
         // Trap and report warnings and errors from creation.
         use errorScope = new ErrorScope()
@@ -1815,21 +1824,21 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
         
                 tcConfigB, sourceFilesNew
 
-            match scriptClosureOptions with
-            | Some closure -> 
+            match loadClosureOpt with
+            | Some loadClosure -> 
                 let dllReferences = 
                     [for reference in tcConfigB.referencedDLLs do
                         // If there's (one or more) resolutions of closure references then yield them all
-                        match closure.References  |> List.tryFind (fun (resolved,_)->resolved=reference.Text) with
+                        match loadClosure.References  |> List.tryFind (fun (resolved,_)->resolved=reference.Text) with
                         | Some (resolved,closureReferences) -> 
                             for closureReference in closureReferences do
                                 yield AssemblyReference(closureReference.originalReference.Range, resolved, None)
                         | None -> yield reference]
-                tcConfigB.referencedDLLs<-[]
+                tcConfigB.referencedDLLs <- []
                 // Add one by one to remove duplicates
                 for dllReference in dllReferences do
                     tcConfigB.AddReferencedAssemblyByPath(dllReference.Range,dllReference.Text)
-                tcConfigB.knownUnresolvedReferences<-closure.UnresolvedReferences
+                tcConfigB.knownUnresolvedReferences <- loadClosure.UnresolvedReferences
             | None -> ()
 
             let tcConfig = TcConfig.Create(tcConfigB,validate=true)
@@ -1841,7 +1850,7 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
             let builder = 
                 new IncrementalBuilder(frameworkTcImportsCache,
                                         tcConfig, projectDirectory, outfile, assemblyName, niceNameGen,
-                                        resourceManager, sourceFilesNew, projectReferences, ensureReactive=true, 
+                                        resourceManager, sourceFilesNew, projectReferences, loadClosureOpt, ensureReactive=true, 
                                         keepAssemblyContents=keepAssemblyContents, 
                                         keepAllBackgroundResolutions=keepAllBackgroundResolutions)
             Some builder

@@ -316,8 +316,10 @@ type internal FSharpProjectOptions =
       /// This ensures that a complete reload of the project or script type checking
       /// context occurs on project or script unload/reload.
       LoadTime : DateTime
-      /// Unused in this API and should be 'None'
+      /// Unused in this API and should be 'None' when used as user-specified input
       UnresolvedReferences : UnresolvedReferencesSet option
+      /// Unused in this API and should be '[]' when used as user-specified input
+      OriginalLoadReferences: (range * string) list
       /// Extra information passed back on event trigger
       ExtraProjectInfo : obj option
     }

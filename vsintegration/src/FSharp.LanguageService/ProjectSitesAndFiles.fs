@@ -174,6 +174,7 @@ type internal ProjectSitesAndFiles() =
              UseScriptResolutionRules = SourceFile.MustBeSingleFileProject(filename)
              LoadTime = projectSite.LoadTime
              UnresolvedReferences = None
+             OriginalLoadReferences = []
              ExtraProjectInfo=extraProjectInfo }      
          
     /// Create project site for these project options

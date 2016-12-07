@@ -4688,6 +4688,16 @@ let GetAssemblyResolutionInformation(tcConfig : TcConfig) =
     let resolutions = TcAssemblyResolutions.Resolve(tcConfig,assemblyList,[])
     resolutions.GetAssemblyResolutions(),resolutions.GetUnresolvedReferences()
     
+
+[<RequireQualifiedAccess>]
+type LoadClosureInput = 
+    { FileName: string
+      SyntaxTree: ParsedInput option
+      ParseErrors: PhasedError list 
+      ParseWarnings: PhasedError list
+      MetaCommandErrors: PhasedError list 
+      MetaCommandWarnings: PhasedError list }
+
 [<RequireQualifiedAccess>]
 type LoadClosure = 
     { /// The source files along with the ranges of the #load positions in each file.
@@ -4697,7 +4707,9 @@ type LoadClosure =
       /// The list of references that were not resolved during load closure. These may still be extension references.
       UnresolvedReferences : UnresolvedAssemblyReference list
       /// The list of all sources in the closure with inputs when available
-      Inputs: (string * ParsedInput option * PhasedError list * PhasedError list) list
+      Inputs: LoadClosureInput list
+      /// The #load, including those that didn't resolve
+      OriginalLoadReferences: (range * string) list
       /// The #nowarns
       NoWarns: (string * range list) list
       /// Errors seen while processing resolutions
@@ -4705,9 +4717,13 @@ type LoadClosure =
       /// Warnings seen while processing resolutions
       ResolutionWarnings : PhasedError list 
       /// Errors seen while parsing root of closure
-      RootErrors : PhasedError list
+      AllRootFileErrors : PhasedError list
       /// Warnings seen while parsing root of closure
-      RootWarnings : PhasedError list }   
+      AllRootFileWarnings : PhasedError list 
+      /// Errors seen while processing the root of closure, which are related to the options and load closure
+      LoadClosureRootFileErrors : PhasedError list
+      /// Warnings seen while processing the root of closure, which are related to the options and load closure
+      LoadClosureRootFileWarnings: PhasedError list }   
 
 
 [<RequireQualifiedAccess>]
@@ -4724,7 +4740,7 @@ module private ScriptPreprocessClosure =
     type ClosureSource = ClosureSource of filename: string * referenceRange: range * sourceText: string * parseRequired: bool 
         
     /// Represents an output of the closure finding process
-    type ClosureFile = ClosureFile  of string * range * ParsedInput option * PhasedError list * PhasedError list * (string * range) list // filename, range, errors, warnings, nowarns
+    type ClosureFile = ClosureFile  of string * range * ParsedInput option * PhasedError list * PhasedError list *  PhasedError list * PhasedError list * (string * range) list // filename, range, errors, warnings, nowarns
 
     type Observed() =
         let seen = System.Collections.Generic.Dictionary<_,bool>()
@@ -4820,18 +4836,17 @@ module private ScriptPreprocessClosure =
                     observedSources.SetSeen(filename)
                     //printfn "visiting %s" filename
                     if IsScript(filename) || parseRequired then 
-                        let errors = ref []
-                        let warnings = ref [] 
-                        let errorLogger = 
-                                { new ErrorLogger("FindClosure") with 
-                                    member x.ErrorSinkImpl(e) = errors := e :: !errors
-                                    member x.WarnSinkImpl(e) = warnings := e :: !warnings
-                                    member x.ErrorCount = (!errors).Length }                        
+                        let parseResult, parseErrors, parseWarnings =
+                            let errorLogger = CaptureErrorLogger("FindClosureParse")                    
+                            use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
+                            let result = ParseScriptText(filename,source,!tcConfig,codeContext,lexResourceManager,errorLogger) 
+                            result, errorLogger.Errors, errorLogger.Warnings
 
-                        use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
-                        let pathOfMetaCommandSource = Path.GetDirectoryName(filename)
-                        match ParseScriptText(filename,source,!tcConfig,codeContext,lexResourceManager,errorLogger) with 
+                        match parseResult with 
                         | Some parsedScriptAst ->                    
+                            let errorLogger = CaptureErrorLogger("FindClosureMetaCommands")                    
+                            use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
+                            let pathOfMetaCommandSource = Path.GetDirectoryName(filename)
                             let preSources = (!tcConfig).GetAvailableLoadedSources()
 
                             let tcConfigResult, noWarns = ApplyMetaCommandsFromInputToTcConfigAndGatherNoWarn !tcConfig (parsedScriptAst,pathOfMetaCommandSource)
@@ -4848,18 +4863,18 @@ module private ScriptPreprocessClosure =
                                     for subSource in ClosureSourceOfFilename(subFile,m,tcConfigResult.inputCodePage,false) do
                                         yield! loop subSource
                                 else
-                                    yield ClosureFile(subFile, m, None, [], [], []) 
+                                    yield ClosureFile(subFile, m, None, [], [], [], [], []) 
 
                             //printfn "yielding source %s" filename
-                            yield ClosureFile(filename, m, Some parsedScriptAst, !errors, !warnings, !noWarns)
+                            yield ClosureFile(filename, m, Some parsedScriptAst, parseErrors, parseWarnings, errorLogger.Errors, errorLogger.Warnings, !noWarns)
 
                         | None -> 
                             //printfn "yielding source %s (failed parse)" filename
-                            yield ClosureFile(filename, m, None, !errors, !warnings, [])
+                            yield ClosureFile(filename, m, None, parseErrors, parseWarnings, [], [],  [])
                     else 
                         // Don't traverse into .fs leafs.
                         //printfn "yielding non-script source %s" filename
-                        yield ClosureFile(filename, m, None, [], [], []) ]
+                        yield ClosureFile(filename, m, None, [], [], [], [], []) ]
 
         closureSources |> List.map loop |> List.concat, !tcConfig
         
@@ -4872,14 +4887,14 @@ module private ScriptPreprocessClosure =
                 closureFiles 
             else 
                 match List.frontAndBack closureFiles with
-                | rest, ClosureFile(filename,m,Some(ParsedInput.ImplFile(ParsedImplFileInput(name,isScript,qualNameOfFile,scopedPragmas,hashDirectives,implFileFlags,_))),errs,warns,nowarns) -> 
-                    rest @ [ClosureFile(filename,m,Some(ParsedInput.ImplFile(ParsedImplFileInput(name,isScript,qualNameOfFile,scopedPragmas,hashDirectives,implFileFlags,(true, tcConfig.target.IsExe)))),errs,warns,nowarns)]
+                | rest, ClosureFile(filename,m,Some(ParsedInput.ImplFile(ParsedImplFileInput(name,isScript,qualNameOfFile,scopedPragmas,hashDirectives,implFileFlags,_))),parseErrors,parseWarnings, metaErrors, metaWarnings, nowarns) -> 
+                    rest @ [ClosureFile(filename,m,Some(ParsedInput.ImplFile(ParsedImplFileInput(name,isScript,qualNameOfFile,scopedPragmas,hashDirectives,implFileFlags,(true, tcConfig.target.IsExe)))),parseErrors,parseWarnings, metaErrors, metaWarnings,nowarns)]
                 | _ -> closureFiles
 
         // Get all source files.
-        let sourceFiles = [  for (ClosureFile(filename,m,_,_,_,_)) in closureFiles -> (filename,m) ]
-        let sourceInputs = [  for (ClosureFile(filename,_,input,errs,warns,_nowarns)) in closureFiles -> (filename,input,errs,warns) ]
-        let globalNoWarns = closureFiles |> List.collect (fun (ClosureFile(_,_,_,_,_,noWarns)) -> noWarns)
+        let sourceFiles = [  for (ClosureFile(filename,m,_,_,_,_,_,_)) in closureFiles -> (filename,m) ]
+        let sourceInputs = [  for (ClosureFile(filename,_,input,parseErrors,parseWarnings, metaErrors, metaWarnings,_nowarns)) in closureFiles -> ({ FileName=filename; SyntaxTree=input; ParseErrors=parseErrors; ParseWarnings=parseWarnings; MetaCommandErrors=metaErrors; MetaCommandWarnings=metaWarnings }: LoadClosureInput)  ]
+        let globalNoWarns = closureFiles |> List.collect (fun (ClosureFile(_,_,_,_,_,_,_,noWarns)) -> noWarns)
 
         // Resolve all references.
         let references, unresolvedReferences, resolutionWarnings, resolutionErrors = 
@@ -4897,9 +4912,14 @@ module private ScriptPreprocessClosure =
             references, unresolvedReferences, resolutionWarnings, resolutionErrors
 
         // Root errors and warnings - look at the last item in the closureFiles list
-        let rootErrors, rootWarnings = 
+        let loadClosureRootErrors, loadClosureRootWarnings = 
             match List.rev closureFiles with
-            | ClosureFile(_,_,_,errors,warnings,_) :: _ -> errors @ !resolutionErrors, warnings @ !resolutionWarnings
+            | ClosureFile(_,_,_,_,_, metaErrors, metaWarnings,_) :: _ -> metaErrors @ !resolutionErrors, metaWarnings @ !resolutionWarnings
+            | _ -> [],[] // When no file existed.
+        
+        let allRootErrors, allRootWarnings = 
+            match List.rev closureFiles with
+            | ClosureFile(_,_,_,parseErrors,parseWarnings, metaErrors, metaWarnings,_) :: _ -> parseErrors @ metaErrors @ !resolutionErrors, parseWarnings @ metaWarnings @ !resolutionWarnings
             | _ -> [],[] // When no file existed.
         
         let isRootRange exn =
@@ -4912,8 +4932,8 @@ module private ScriptPreprocessClosure =
             | None -> true
         
         // Filter out non-root errors and warnings
-        let rootErrors = rootErrors |> List.filter isRootRange
-        let rootWarnings = rootWarnings |> List.filter isRootRange
+        let allRootErrors = allRootErrors |> List.filter isRootRange
+        let allRootWarnings = allRootWarnings |> List.filter isRootRange
         
         let result : LoadClosure = 
             { SourceFiles = List.groupByFirst sourceFiles
@@ -4921,10 +4941,13 @@ module private ScriptPreprocessClosure =
               UnresolvedReferences = unresolvedReferences
               Inputs = sourceInputs
               NoWarns = List.groupByFirst globalNoWarns
+              OriginalLoadReferences = tcConfig.loadedSources
               ResolutionErrors = !resolutionErrors
               ResolutionWarnings = !resolutionWarnings      
-              RootErrors = rootErrors
-              RootWarnings = rootWarnings}       
+              AllRootFileErrors = allRootErrors
+              AllRootFileWarnings = allRootWarnings
+              LoadClosureRootFileErrors = loadClosureRootErrors
+              LoadClosureRootFileWarnings = loadClosureRootWarnings }       
 
         result
 

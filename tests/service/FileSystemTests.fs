@@ -102,6 +102,7 @@ let ``FileSystem compilation test``() =
           UseScriptResolutionRules = true 
           LoadTime = System.DateTime.Now // Not 'now', we don't want to force reloading
           UnresolvedReferences = None 
+          OriginalLoadReferences = []
           ExtraProjectInfo = None }
 
     let results = checker.ParseAndCheckProject(projectOptions) |> Async.RunSynchronously

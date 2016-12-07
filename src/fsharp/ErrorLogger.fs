@@ -257,6 +257,16 @@ let AssertFalseErrorLogger =
             member x.ErrorCount = 
                 assert false; 0 }
 
+type CaptureErrorLogger(nm) = 
+    inherit ErrorLogger(nm) 
+    let errors = ref []
+    let warnings = ref [] 
+    override x.ErrorSinkImpl(e) = errors := e :: !errors
+    override x.WarnSinkImpl(e) = warnings := e :: !warnings
+    override x.ErrorCount = (!errors).Length 
+    member x.Errors = !errors
+    member x.Warnings = !warnings
+
 /// When no errorLogger is installed (on the thread) use this one.
 let uninitializedErrorLoggerFallback = ref AssertFalseErrorLogger
 

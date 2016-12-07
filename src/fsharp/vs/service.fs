@@ -1626,14 +1626,13 @@ module internal Parser =
                 // Play unresolved references for this file.
                 tcImports.ReportUnresolvedAssemblyReferences(loadClosure.UnresolvedReferences)
 
-                // If there was a loadClosure, replay the errors and warnings
-                loadClosure.RootErrors |> List.iter errorSink
-                loadClosure.RootWarnings |> List.iter warnSink
-                
+                // If there was a loadClosure, replay the errors and warnings from resolution, excluding parsing
+                loadClosure.LoadClosureRootFileErrors |> List.iter errorSink
+                loadClosure.LoadClosureRootFileWarnings |> List.iter warnSink
 
                 let fileOfBackgroundError err = (match GetRangeOfError (fst err) with Some m-> m.FileName | None -> null)
                 let sameFile file hashLoadInFile = 
-                    (0 = String.Compare(fst hashLoadInFile, file, StringComparison.OrdinalIgnoreCase))
+                    (0 = String.Compare(hashLoadInFile, file, StringComparison.OrdinalIgnoreCase))
 
                 //  walk the list of #loads and keep the ones for this file.
                 let hashLoadsInFile = 
@@ -1641,7 +1640,7 @@ module internal Parser =
                     |> List.filter(fun (_,ms) -> ms<>[]) // #loaded file, ranges of #load
 
                 let hashLoadBackgroundErrors, otherBackgroundErrors = 
-                    backgroundErrors |> List.partition (fun backgroundError -> hashLoadsInFile |> List.exists (sameFile (fileOfBackgroundError backgroundError)))
+                    backgroundErrors |> List.partition (fun backgroundError -> hashLoadsInFile |>  List.exists (fst >> sameFile (fileOfBackgroundError backgroundError)))
 
                 // Create single errors for the #load-ed files.
                 // Group errors and warnings by file name.
@@ -1653,10 +1652,10 @@ module internal Parser =
                 //  Join the sets and report errors. 
                 //  It is by-design that these messages are only present in the language service. A true build would report the errors at their
                 //  spots in the individual source files.
-                for hashLoadInFile in hashLoadsInFile do
+                for (fileOfHashLoad, rangesOfHashLoad) in hashLoadsInFile do
                     for errorGroupedByFileName in hashLoadBackgroundErrorsGroupedByFileName do
-                        if sameFile (fst errorGroupedByFileName) hashLoadInFile then
-                            for rangeOfHashLoad in snd hashLoadInFile do // Handle the case of two #loads of the same file
+                        if sameFile (fst errorGroupedByFileName) fileOfHashLoad then
+                            for rangeOfHashLoad in rangesOfHashLoad do // Handle the case of two #loads of the same file
                                 let errorsAndWarnings = snd errorGroupedByFileName |> List.map(fun (pe,f)->pe.Exception,f) // Strip the build phase here. It will be replaced, in total, with TypeCheck
                                 let errors = [ for (err,sev) in errorsAndWarnings do if sev = FSharpErrorSeverity.Error then yield err ]
                                 let warnings = [ for (err,sev) in errorsAndWarnings do if sev = FSharpErrorSeverity.Warning then yield err ]
@@ -1732,6 +1731,7 @@ type FSharpProjectOptions =
       UseScriptResolutionRules : bool      
       LoadTime : System.DateTime
       UnresolvedReferences : UnresolvedReferencesSet option
+      OriginalLoadReferences: (range * string) list
       ExtraProjectInfo : obj option
     }
     member x.ProjectOptions = x.OtherOptions
@@ -1750,6 +1750,8 @@ type FSharpProjectOptions =
         options1.ProjectFileName = options2.ProjectFileName &&
         options1.ProjectFileNames = options2.ProjectFileNames &&
         options1.OtherOptions = options2.OtherOptions &&
+        options1.UnresolvedReferences = options2.UnresolvedReferences &&
+        options1.OriginalLoadReferences = options2.OriginalLoadReferences &&
         options1.ReferencedProjects.Length = options2.ReferencedProjects.Length &&
         Array.forall2 (fun (n1,a) (n2,b) -> n1 = n2 && FSharpProjectOptions.AreSameForChecking(a,b)) options1.ReferencedProjects options2.ReferencedProjects &&
         options1.LoadTime = options2.LoadTime
@@ -2457,27 +2459,28 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                 let collect _name = ()
                 let fsiCompilerOptions = CompileOptions.GetCoreFsiCompilerOptions tcConfigB 
                 CompileOptions.ParseCompilerOptions (collect, fsiCompilerOptions, Array.toList otherFlags)
-            let fas = LoadClosure.ComputeClosureOfSourceText(referenceResolver,filename, source, CodeContext.Editing, useSimpleResolution, useFsiAuxLib, new Lexhelp.LexResourceManager(), applyCompilerOptions, assumeDotNetFramework)
+            let loadClosure = LoadClosure.ComputeClosureOfSourceText(referenceResolver,filename, source, CodeContext.Editing, useSimpleResolution, useFsiAuxLib, new Lexhelp.LexResourceManager(), applyCompilerOptions, assumeDotNetFramework)
             let otherFlags = 
                 [| yield "--noframework"; yield "--warn:3"; 
                    yield! otherFlags 
-                   for r in fas.References do yield "-r:" + fst r
-                   for (code,_) in fas.NoWarns do yield "--nowarn:" + code
+                   for r in loadClosure.References do yield "-r:" + fst r
+                   for (code,_) in loadClosure.NoWarns do yield "--nowarn:" + code
                 |]
-            let co = 
+            let options = 
                 {
                     ProjectFileName = filename + ".fsproj" // Make a name that is unique in this directory.
-                    ProjectFileNames = fas.SourceFiles |> List.map fst |> List.toArray
+                    ProjectFileNames = loadClosure.SourceFiles |> List.map fst |> List.toArray
                     OtherOptions = otherFlags 
                     ReferencedProjects= [| |]  
                     IsIncompleteTypeCheckEnvironment = false
                     UseScriptResolutionRules = true 
                     LoadTime = loadedTimeStamp
-                    UnresolvedReferences = Some (UnresolvedReferencesSet(fas.UnresolvedReferences))
+                    UnresolvedReferences = Some (UnresolvedReferencesSet(loadClosure.UnresolvedReferences))
+                    OriginalLoadReferences = loadClosure.OriginalLoadReferences
                     ExtraProjectInfo=extraProjectInfo
                 }
-            scriptClosureCache.Set(co,fas) // Save the full load closure for later correlation.
-            co)
+            scriptClosureCache.Set(options,loadClosure) // Save the full load closure for later correlation.
+            options)
             
     member bc.InvalidateConfiguration(options : FSharpProjectOptions) =
         reactor.EnqueueOp("InvalidateConfiguration", fun () -> 
@@ -2679,6 +2682,7 @@ type FSharpChecker(referenceResolver, projectCacheSize, keepAssemblyContents, ke
           UseScriptResolutionRules = false
           LoadTime = loadedTimeStamp
           UnresolvedReferences = None
+          OriginalLoadReferences=[]
           ExtraProjectInfo=extraProjectInfo }
 
     /// Begin background parsing the given project.

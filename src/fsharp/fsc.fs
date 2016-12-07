@@ -251,8 +251,8 @@ let AdjustForScriptCompile(tcConfigB:TcConfigBuilder, commandLineSourceFiles, le
             references |> List.iter (fun r-> tcConfigB.AddReferencedAssemblyByPath(r.originalReference.Range, r.resolvedPath))
             closure.NoWarns |> List.map(fun (n, ms)->ms|>List.map(fun m->m, n)) |> List.concat |> List.iter tcConfigB.TurnWarningOff
             closure.SourceFiles |> List.map fst |> List.iter AddIfNotPresent
-            closure.RootWarnings |> List.iter warnSink
-            closure.RootErrors |> List.iter errorSink
+            closure.AllRootFileWarnings |> List.iter warnSink
+            closure.AllRootFileErrors |> List.iter errorSink
             
             else AddIfNotPresent(filename)
          

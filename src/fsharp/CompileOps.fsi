@@ -741,6 +741,16 @@ type CodeContext =
     | Editing
 
 [<RequireQualifiedAccess>]
+type LoadClosureInput = 
+    { FileName: string
+      SyntaxTree: ParsedInput option
+      ParseErrors: PhasedError list 
+      ParseWarnings: PhasedError list
+      MetaCommandErrors: PhasedError list 
+      MetaCommandWarnings: PhasedError list }
+
+
+[<RequireQualifiedAccess>]
 type LoadClosure = 
     { /// The source files along with the ranges of the #load positions in each file.
       SourceFiles: (string * range list) list
@@ -748,11 +758,14 @@ type LoadClosure =
       /// The resolved references along with the ranges of the #r positions in each file.
       References: (string * AssemblyResolution list) list
 
-      /// The list of references that were not resolved during load closure. These may still be extension references.
+      /// The list of references that were not resolved during load closure.
       UnresolvedReferences : UnresolvedAssemblyReference list
 
-      /// The list of all sources in the closure with inputs when available
-      Inputs: (string * ParsedInput option * PhasedError list * PhasedError list) list
+      /// The list of all sources in the closure with inputs when available, with associated parse errors and warnings
+      Inputs: LoadClosureInput list
+
+      /// The original #load references, including those that didn't resolve
+      OriginalLoadReferences: (range * string) list
 
       /// The #nowarns
       NoWarns: (string * range list) list
@@ -763,11 +776,17 @@ type LoadClosure =
       /// Warnings seen while processing resolutions
       ResolutionWarnings : PhasedError list 
 
-      /// *Parse* errors seen while parsing root of closure
-      RootErrors : PhasedError list
+      /// All parse, meta-command and reference resolution errors seen while parsing root of closure
+      AllRootFileErrors : PhasedError list
 
-      /// *Parse* warnings seen while parsing root of closure
-      RootWarnings : PhasedError list }
+      /// All parse, meta-command and reference resolution warnings seen while parsing root of closure
+      AllRootFileWarnings : PhasedError list 
+
+      /// Errors seen while processing the root of closure, which are related to the options and load closure
+      LoadClosureRootFileErrors : PhasedError list
+
+      /// Warnings seen while processing the root of closure, which are related to the options and load closure
+      LoadClosureRootFileWarnings: PhasedError list }   
 
     // Used from service.fs, when editing a script file
     static member ComputeClosureOfSourceText : referenceResolver: ReferenceResolver.Resolver * filename: string * source: string * implicitDefines:CodeContext * useSimpleResolution: bool * useFsiAuxLib: bool * lexResourceManager: Lexhelp.LexResourceManager * applyCompilerOptions: (TcConfigBuilder -> unit) * assumeDotNetFramework : bool -> LoadClosure

@@ -1198,9 +1198,9 @@ type internal FsiDynamicCompiler
           
           // Intent "[Loading %s]\n" (String.concat "\n     and " sourceFiles)
           fsiConsoleOutput.uprintf "[%s " (FSIstrings.SR.fsiLoadingFilesPrefixText())
-          closure.Inputs  |> List.iteri (fun i (sourceFile,_,_,_) -> 
-              if i=0 then fsiConsoleOutput.uprintf  "%s" sourceFile
-              else fsiConsoleOutput.uprintnf " %s %s" (FSIstrings.SR.fsiLoadingFilesPrefixText()) sourceFile)
+          closure.Inputs  |> List.iteri (fun i input -> 
+              if i=0 then fsiConsoleOutput.uprintf  "%s" input.FileName
+              else fsiConsoleOutput.uprintnf " %s %s" (FSIstrings.SR.fsiLoadingFilesPrefixText()) input.FileName)
           fsiConsoleOutput.uprintfn "]"
 
           closure.NoWarns |> Seq.map (fun (n,ms) -> ms |> Seq.map (fun m -> m,n)) |> Seq.concat |> Seq.iter tcConfigB.TurnWarningOff
@@ -1212,14 +1212,16 @@ type internal FsiDynamicCompiler
           // Non-scripts will not have been parsed during #load closure so parse them now
           let sourceFiles,inputs = 
               closure.Inputs  
-              |> List.map (fun (filename, input, errs, warns)-> 
-                    errs |> List.iter errorSink
-                    warns |> List.iter warnSink
+              |> List.map (fun input-> 
+                    input.ParseErrors |> List.iter errorSink
+                    input.MetaCommandErrors |> List.iter errorSink
+                    input.ParseWarnings |> List.iter errorSink
+                    input.MetaCommandWarnings |> List.iter errorSink
                     let parsedInput = 
-                        match input with 
-                        | None -> ParseOneInputFile(tcConfig,lexResourceManager,["INTERACTIVE"],filename,(true,false),errorLogger,(*retryLocked*)false)
-                        | _-> input
-                    filename, parsedInput)
+                        match input.SyntaxTree with 
+                        | None -> ParseOneInputFile(tcConfig,lexResourceManager,["INTERACTIVE"],input.FileName,(true,false),errorLogger,(*retryLocked*)false)
+                        | _-> input.SyntaxTree
+                    input.FileName, parsedInput)
               |> List.unzip
           
           errorLogger.AbortOnError(fsiConsoleOutput);
