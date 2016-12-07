@@ -491,7 +491,8 @@ let AddFakeNameToNameEnv nm nenv item =
     {nenv with eUnqualifiedItems= nenv.eUnqualifiedItems.Add (nm, item) }
 
 /// Add a set of F# values to the environment.
-let AddValRefsToNameEnvWithPriority bulkAddMode pri nenv vrefs =
+let AddValRefsToNameEnvWithPriority bulkAddMode pri nenv (vrefs: ValRef []) =
+    if vrefs.Length = 0 then nenv else
     {nenv with eUnqualifiedItems= AddValRefsToItems bulkAddMode nenv.eUnqualifiedItems vrefs
                eIndexedExtensionMembers = (nenv.eIndexedExtensionMembers,vrefs) ||> Array.fold (AddValRefToExtensionMembers pri)
                ePatItems = 
