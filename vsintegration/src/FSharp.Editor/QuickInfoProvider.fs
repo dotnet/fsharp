@@ -80,17 +80,9 @@ type internal FSharpQuickInfoProvider
           
             let textLine = sourceText.Lines.GetLineFromPosition(position)
             let textLineNumber = textLine.LineNumber + 1 // Roslyn line numbers are zero-based
-            let textLinePos = sourceText.Lines.GetLinePosition(position)
-            let textLineColumn = textLinePos.Character
             //let qualifyingNames, partialName = QuickParse.GetPartialLongNameEx(textLine.ToString(), textLineColumn - 1)
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing(filePath, options.OtherOptions |> Seq.toList)
-            let tryClassifyAtPosition position = 
-                CommonHelpers.tryClassifyAtPosition(documentId, sourceText, filePath, defines, position, cancellationToken)
-            
-            let quickParseInfo = 
-                match tryClassifyAtPosition position with 
-                | None when textLineColumn > 0 -> tryClassifyAtPosition (position - 1) 
-                | res -> res
+            let quickParseInfo = CommonHelpers.tryClassifyAtPosition(documentId, sourceText, filePath, defines, position, false, cancellationToken)
 
             match quickParseInfo with 
             | Some (islandColumn, qualifiers, textSpan) -> 
@@ -107,7 +99,7 @@ type internal FSharpQuickInfoProvider
             async {
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
-                let classification = CommonHelpers.tryClassifyAtPosition(document.Id, sourceText, document.FilePath, defines, position, cancellationToken)
+                let classification = CommonHelpers.tryClassifyAtPosition(document.Id, sourceText, document.FilePath, defines, position, false, cancellationToken)
 
                 match classification with
                 | Some _ ->
