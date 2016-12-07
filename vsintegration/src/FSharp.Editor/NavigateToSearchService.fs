@@ -79,7 +79,7 @@ module private Index =
                 if res = 0 then a.Offset.CompareTo(b.Offset) else res }
 
     type IIndexedNavigableItems =
-        abstract Find: searchValue: string -> ImmutableArray<INavigateToSearchResult>
+        abstract Find: searchValue: string -> INavigateToSearchResult []
 
     let build (items: seq<NavigableItem>) =
         let entries = ResizeArray()
@@ -126,7 +126,7 @@ module private Index =
                      while pos < entries.Count && entries.[pos].StartsWith searchValue do
                          handle pos
                          pos <- pos + 1
-                  result.ToImmutableArray() }
+                  result.ToArray() }
 
 module private Utils =
     let navigateToItemKindToRoslynKind = function
@@ -178,7 +178,7 @@ type internal FSharpNavigateToSearchService
         projectInfoManager: ProjectInfoManager
     ) =
 
-    let itemsByDocumentId = ConcurrentDictionary<DocumentId, (int * NavigableItem [])>()
+    let itemsByDocumentId = ConditionalWeakTable<DocumentId, (int * Index.IIndexedNavigableItems)>()
 
     let getNavigableItems(document: Document, options: FSharpProjectOptions, cancellationToken: CancellationToken) =
         async {
@@ -196,7 +196,7 @@ type internal FSharpNavigateToSearchService
                 | None -> [||]
         }
 
-    let getCachedNavigableItems(document: Document, options: FSharpProjectOptions, cancellationToken: CancellationToken) =
+    let getCachedIndexedNavigableItems(document: Document, options: FSharpProjectOptions, cancellationToken: CancellationToken) =
         async {
             let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
             let textVersionHash = hash textVersion
@@ -205,8 +205,9 @@ type internal FSharpNavigateToSearchService
                 return items
             | _ ->
                 let! items = getNavigableItems(document, options, cancellationToken)
-                itemsByDocumentId.[document.Id] <- (textVersionHash, items)
-                return items
+                let indexedItems = Index.build items
+                itemsByDocumentId.Add(document.Id, (textVersionHash, indexedItems))
+                return indexedItems
         }
 
     interface INavigateToSearchService with
@@ -216,10 +217,10 @@ type internal FSharpNavigateToSearchService
                 | Some options ->
                     let! items =
                         project.Documents
-                        |> Seq.map (fun document -> getCachedNavigableItems(document, options, cancellationToken))
+                        |> Seq.map (fun document -> getCachedIndexedNavigableItems(document, options, cancellationToken))
                         |> Async.Parallel
 
-                    return (items |> Array.concat |> Index.build).Find(searchPattern).ToImmutableArray()
+                    return (items |> Array.map (fun items -> items.Find(searchPattern)) |> Array.concat).ToImmutableArray()
 
                 | None -> return ImmutableArray<INavigateToSearchResult>.Empty
             } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
@@ -230,7 +231,7 @@ type internal FSharpNavigateToSearchService
                 let! options = projectInfoManager.TryGetOptionsForDocumentOrProject(document)
                 match options with
                 | Some options ->
-                    let! items = getCachedNavigableItems(document, options, cancellationToken)
-                    return (Index.build items).Find(searchPattern).ToImmutableArray()
+                    let! items = getCachedIndexedNavigableItems(document, options, cancellationToken)
+                    return items.Find(searchPattern).ToImmutableArray()
                 | None -> return ImmutableArray<INavigateToSearchResult>.Empty
             } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
