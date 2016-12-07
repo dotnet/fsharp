@@ -67,31 +67,31 @@ type internal NavigateToSearchResult(name: string, item: INavigableItem, kind: s
         member __.NavigableItem = item
 
 module private Utils =
-    let fsharpNavigableItemKindToRoslynKind = function
-        | FSharpNavigableItemKind.Module -> NavigateToItemKind.Module
-        | FSharpNavigableItemKind.ModuleAbbreviation -> NavigateToItemKind.Module
-        | FSharpNavigableItemKind.Exception -> NavigateToItemKind.Class
-        | FSharpNavigableItemKind.Type -> NavigateToItemKind.Class
-        | FSharpNavigableItemKind.ModuleValue -> NavigateToItemKind.Field
-        | FSharpNavigableItemKind.Field -> NavigateToItemKind.Field
-        | FSharpNavigableItemKind.Property -> NavigateToItemKind.Property
-        | FSharpNavigableItemKind.Constructor -> NavigateToItemKind.Method
-        | FSharpNavigableItemKind.Member -> NavigateToItemKind.Method
-        | FSharpNavigableItemKind.EnumCase -> NavigateToItemKind.EnumItem
-        | FSharpNavigableItemKind.UnionCase -> NavigateToItemKind.EnumItem
+    let navigateToItemKindToRoslynKind = function
+        | NavigateTo.NavigableItemKind.Module -> NavigateToItemKind.Module
+        | NavigateTo.NavigableItemKind.ModuleAbbreviation -> NavigateToItemKind.Module
+        | NavigateTo.NavigableItemKind.Exception -> NavigateToItemKind.Class
+        | NavigateTo.NavigableItemKind.Type -> NavigateToItemKind.Class
+        | NavigateTo.NavigableItemKind.ModuleValue -> NavigateToItemKind.Field
+        | NavigateTo.NavigableItemKind.Field -> NavigateToItemKind.Field
+        | NavigateTo.NavigableItemKind.Property -> NavigateToItemKind.Property
+        | NavigateTo.NavigableItemKind.Constructor -> NavigateToItemKind.Method
+        | NavigateTo.NavigableItemKind.Member -> NavigateToItemKind.Method
+        | NavigateTo.NavigableItemKind.EnumCase -> NavigateToItemKind.EnumItem
+        | NavigateTo.NavigableItemKind.UnionCase -> NavigateToItemKind.EnumItem
 
-    let fsharpNavigableItemKindToGlyph = function
-        | FSharpNavigableItemKind.Module -> Glyph.ModulePublic
-        | FSharpNavigableItemKind.ModuleAbbreviation -> Glyph.ModulePublic
-        | FSharpNavigableItemKind.Exception -> Glyph.ClassPublic
-        | FSharpNavigableItemKind.Type -> Glyph.ClassPublic
-        | FSharpNavigableItemKind.ModuleValue -> Glyph.FieldPublic
-        | FSharpNavigableItemKind.Field -> Glyph.FieldPublic
-        | FSharpNavigableItemKind.Property -> Glyph.PropertyPublic
-        | FSharpNavigableItemKind.Constructor -> Glyph.MethodPublic
-        | FSharpNavigableItemKind.Member -> Glyph.MethodPublic
-        | FSharpNavigableItemKind.EnumCase -> Glyph.EnumPublic
-        | FSharpNavigableItemKind.UnionCase -> Glyph.EnumPublic
+    let navigateToItemKindToGlyph = function
+        | NavigateTo.NavigableItemKind.Module -> Glyph.ModulePublic
+        | NavigateTo.NavigableItemKind.ModuleAbbreviation -> Glyph.ModulePublic
+        | NavigateTo.NavigableItemKind.Exception -> Glyph.ClassPublic
+        | NavigateTo.NavigableItemKind.Type -> Glyph.ClassPublic
+        | NavigateTo.NavigableItemKind.ModuleValue -> Glyph.FieldPublic
+        | NavigateTo.NavigableItemKind.Field -> Glyph.FieldPublic
+        | NavigateTo.NavigableItemKind.Property -> Glyph.PropertyPublic
+        | NavigateTo.NavigableItemKind.Constructor -> Glyph.MethodPublic
+        | NavigateTo.NavigableItemKind.Member -> Glyph.MethodPublic
+        | NavigateTo.NavigableItemKind.EnumCase -> Glyph.EnumPublic
+        | NavigateTo.NavigableItemKind.UnionCase -> Glyph.EnumPublic
 
 [<ExportLanguageService(typeof<INavigateToSearchService>, FSharpCommonConstants.FSharpLanguageName); Shared>]
 type internal FSharpNavigateToSearchService 
@@ -105,8 +105,8 @@ type internal FSharpNavigateToSearchService
         async {
             let! parseResults = checker.ParseFileInProject(filePath, sourceText.ToString(), options)
             match parseResults.ParseTree with
-            | Some parseTree -> return NavigableItemsCollector.collect filePath parseTree
-            | None -> return Seq.empty
+            | Some parsedInput -> return NavigateTo.getNavigableItems parsedInput
+            | None -> return [||]
         }
 
     interface INavigateToSearchService with
@@ -125,13 +125,14 @@ type internal FSharpNavigateToSearchService
                         |> Async.Parallel
                     
                     return
-                        (items
-                         |> Seq.collect (fun (document, sourceText, items: seq<InternalNavigableItem>) ->
-                             items |> Seq.map (fun item ->
-                                let navigableItem = NavigableItem(document, CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, item.Range),
-                                                                  Utils.fsharpNavigableItemKindToGlyph item.Kind)
-                                NavigateToSearchResult(item.Name, navigableItem, Utils.fsharpNavigableItemKindToRoslynKind item.Kind) :> INavigateToSearchResult))
-                        ).ToImmutableArray()
+                        [| for document, sourceText, items in items do
+                             for item in items do
+                                 let sourceSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, item.Range)
+                                 let glyph = Utils.navigateToItemKindToGlyph item.Kind
+                                 let navigableItem = NavigableItem(document, sourceSpan, glyph)
+                                 let kind = Utils.navigateToItemKindToRoslynKind item.Kind
+                                 yield NavigateToSearchResult(item.Name, navigableItem, kind) :> INavigateToSearchResult |]
+                        .ToImmutableArray()
 
                 | None -> return [].ToImmutableArray()
             } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)

@@ -52,3 +52,25 @@ module internal NavigationImpl =
     val internal getNavigationFromImplFile : Ast.SynModuleOrNamespace list -> FSharpNavigationItems
     val internal empty : FSharpNavigationItems
 
+module internal NavigateTo =
+    [<RequireQualifiedAccess>]
+    type internal NavigableItemKind =
+        | Module
+        | ModuleAbbreviation
+        | Exception
+        | Type
+        | ModuleValue
+        | Field
+        | Property
+        | Constructor
+        | Member
+        | EnumCase
+        | UnionCase
+    
+    type internal NavigableItem = 
+        { Name: string
+          Range: Range.range
+          IsSignature: bool
+          Kind: NavigableItemKind }
+
+    val internal getNavigableItems : Ast.ParsedInput -> NavigableItem []
