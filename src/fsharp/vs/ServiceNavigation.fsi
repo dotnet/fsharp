@@ -66,11 +66,24 @@ module internal NavigateTo =
         | Member
         | EnumCase
         | UnionCase
+
+    [<RequireQualifiedAccess>]
+    type internal ContainerType =
+        | File
+        | Namespace
+        | Module
+        | Type
+        | Exception
+
+    type internal Container =
+        { Type: ContainerType
+          Name: string }
     
     type internal NavigableItem = 
         { Name: string
           Range: Range.range
           IsSignature: bool
-          Kind: NavigableItemKind }
+          Kind: NavigableItemKind
+          Container: Container }
 
     val internal getNavigableItems : Ast.ParsedInput -> NavigableItem []

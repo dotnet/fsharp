@@ -3,6 +3,7 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
+open System.IO
 open System.Composition
 open System.Collections.Concurrent
 open System.Collections.Generic
@@ -40,11 +41,11 @@ open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open System.Windows.Documents
 
-type internal NavigableItem(document: Document, sourceSpan: TextSpan, glyph: Glyph) =
+type internal NavigableItem(document: Document, sourceSpan: TextSpan, glyph: Glyph, name: string) =
     interface INavigableItem with
         member __.Glyph = glyph
         /// The tagged parts to display for this item. If default, the line of text from <see cref="Document"/> is used.
-        member __.DisplayTaggedParts = [].ToImmutableArray()
+        member __.DisplayTaggedParts = [| TaggedText(TextTags.Text, name) |].ToImmutableArray()
         /// Return true to display the file path of <see cref="Document"/> and the span of <see cref="SourceSpan"/> when displaying this item.
         member __.DisplayFileLocation = true
         /// This is intended for symbols that are ordinary symbols in the language sense, and may be used by code, but that are simply declared 
@@ -53,17 +54,17 @@ type internal NavigableItem(document: Document, sourceSpan: TextSpan, glyph: Gly
         member __.IsImplicitlyDeclared = false
         member __.Document = document
         member __.SourceSpan = sourceSpan
-        member __.ChildItems = [].ToImmutableArray()
+        member __.ChildItems = ImmutableArray<INavigableItem>.Empty
 
-type internal NavigateToSearchResult(name: string, item: INavigableItem, kind: string) =
+type internal NavigateToSearchResult(name: string, item: INavigableItem, kind: string, additionalInfo: string) =
     interface INavigateToSearchResult with
-        member __.AdditionalInformation = ""
+        member __.AdditionalInformation = additionalInfo
         member __.Kind = kind
-        member __.MatchKind = NavigateToMatchKind.Exact
+        member __.MatchKind = NavigateToMatchKind.Substring
         member __.IsCaseSensitive = false
         member __.Name = name
-        member __.SecondarySort = ""
-        member __.Summary = "summary"
+        member __.SecondarySort = null
+        member __.Summary = null
         member __.NavigableItem = item
 
 module private Utils =
@@ -92,6 +93,21 @@ module private Utils =
         | NavigateTo.NavigableItemKind.Member -> Glyph.MethodPublic
         | NavigateTo.NavigableItemKind.EnumCase -> Glyph.EnumPublic
         | NavigateTo.NavigableItemKind.UnionCase -> Glyph.EnumPublic
+
+    let containerToString (container: NavigateTo.Container) (project: Project) =
+        let typeAsString =
+            match container.Type with
+            | NavigateTo.ContainerType.File -> "project "
+            | NavigateTo.ContainerType.Namespace -> "namespace "
+            | NavigateTo.ContainerType.Module -> "module "
+            | NavigateTo.ContainerType.Exception -> "exception "
+            | NavigateTo.ContainerType.Type -> "type "
+        let name =
+            match container.Type with
+            | NavigateTo.ContainerType.File ->
+                (Path.GetFileNameWithoutExtension project.Name) + ", " + (Path.GetFileName container.Name)
+            | _ -> container.Name
+        typeAsString + name
 
 [<ExportLanguageService(typeof<INavigateToSearchService>, FSharpCommonConstants.FSharpLanguageName); Shared>]
 type internal FSharpNavigateToSearchService 
@@ -129,10 +145,11 @@ type internal FSharpNavigateToSearchService
                              for item in items do
                                  let sourceSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, item.Range)
                                  let glyph = Utils.navigateToItemKindToGlyph item.Kind
-                                 let navigableItem = NavigableItem(document, sourceSpan, glyph)
+                                 let navigableItem = NavigableItem(document, sourceSpan, glyph, item.Name)
                                  let kind = Utils.navigateToItemKindToRoslynKind item.Kind
-                                 yield NavigateToSearchResult(item.Name, navigableItem, kind) :> INavigateToSearchResult |]
-                        .ToImmutableArray()
+                                 let additionalInfo = Utils.containerToString item.Container project
+                                 yield NavigateToSearchResult(item.Name, navigableItem, kind, additionalInfo) :> INavigateToSearchResult 
+                        |].ToImmutableArray()
 
                 | None -> return [].ToImmutableArray()
             } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
