@@ -124,10 +124,6 @@ namespace Microsoft.FSharp.Collections
                 static member Combine (first:SeqFactory<'T,'U>) (second:SeqFactory<'U,'V>) : SeqFactory<'T,'V> =
                     upcast ComposedFactory(first, second, first.PipeIdx+1)
 
-            and DistinctFactory<'T when 'T: equality> () =
-                inherit SeqFactory<'T,'T> ()
-                override this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Distinct (next)
-
             and DistinctByFactory<'T,'Key when 'Key: equality> (keyFunction:'T-> 'Key) =
                 inherit SeqFactory<'T,'T> ()
                 override this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast DistinctBy (keyFunction, next)
@@ -229,17 +225,6 @@ namespace Microsoft.FSharp.Collections
                         try     this.OnDispose ()
                         finally next.OnDispose (&stopTailCall)
 
-
-            and Distinct<'T,'V when 'T: equality> (next:Consumer<'T,'V>) =
-                inherit SeqComponent<'T,'V>(Upcast.iCompletionChaining next)
-
-                let hashSet = HashSet<'T>(HashIdentity.Structural<'T>)
-
-                override __.ProcessNext (input:'T) : bool =
-                    if hashSet.Add input then
-                        TailCall.avoid (next.ProcessNext input)
-                    else
-                        false
 
             and DistinctBy<'T,'Key,'V when 'Key: equality> (keyFunction: 'T -> 'Key, next:Consumer<'T,'V>) =
                 inherit SeqComponent<'T,'V>(Upcast.iCompletionChaining next)

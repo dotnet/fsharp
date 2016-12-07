@@ -74,6 +74,7 @@ namespace Microsoft.FSharp.Collections
         type SeqFactory<'T,'U> =
             new : unit -> SeqFactory<'T,'U>
             abstract PipeIdx : PipeIdx
+            default  PipeIdx : PipeIdx
             abstract member Create : IOutOfBand -> PipeIdx -> Consumer<'U,'V> -> Consumer<'T,'V>
 
         type ISeq<'T> =
@@ -82,6 +83,18 @@ namespace Microsoft.FSharp.Collections
             abstract member ForEach : f:((unit -> unit) -> 'a) -> 'a when 'a :> Consumer<'T,'T>
 
     open Core
+
+    module internal TailCall =
+        val inline avoid : boolean:bool -> bool
+
+    module internal Upcast =
+        // The f# compiler outputs unnecessary unbox.any calls in upcasts. If this functionality
+        // is fixed with the compiler then these functions can be removed.
+        val inline seq : t:#ISeq<'T> -> ISeq<'T>
+        val inline enumerable : t:#IEnumerable<'T> -> IEnumerable<'T>
+        val inline enumerator : t:#IEnumerator<'T> -> IEnumerator<'T>
+        val inline enumeratorNonGeneric : t:#IEnumerator -> IEnumerator
+        val inline iCompletionChaining  : t:#ICompletionChaining -> ICompletionChaining
 
     module internal Seq =
         type ComposedFactory<'T,'U,'V> =
@@ -95,11 +108,6 @@ namespace Microsoft.FSharp.Collections
               Combine : first: SeqFactory<'T,'U> ->
                           second: SeqFactory<'U,'V> ->
                              SeqFactory<'T,'V>
-          end
-        and DistinctFactory<'T when 'T : equality> =
-          class
-            inherit  SeqFactory<'T,'T>
-            new : unit ->  DistinctFactory<'T>
           end
         and DistinctByFactory<'T,'Key when 'Key : equality> =
           class
@@ -217,12 +225,6 @@ namespace Microsoft.FSharp.Collections
             interface ICompletionChaining
             new : next:ICompletionChaining ->
                     SeqComponent<'T,'U>
-          end
-        and Distinct<'T,'V when 'T : equality> =
-          class
-            inherit  SeqComponent<'T,'V>
-            new : next: Consumer<'T,'V> ->  Distinct<'T,'V>
-            override ProcessNext : input:'T -> bool
           end
         and DistinctBy<'T,'Key,'V when 'Key : equality> =
           class
@@ -647,7 +649,7 @@ namespace Microsoft.FSharp.Collections
         val mapi_adapt : f:OptimizedClosures.FSharpFunc<int,'a,'b> -> source: ISeq<'a> -> ISeq<'b>
 
         [<CompiledNameAttribute ("Choose")>]
-        val choose : f:('a->option<'b>) -> source: ISeq<'a> -> ISeq<'b>
+        val inline choose : f:('a->option<'b>) -> source: ISeq<'a> -> ISeq<'b>
 
         [<CompiledNameAttribute ("Indexed")>]
         val inline indexed : source: ISeq<'a> -> ISeq<int * 'a>

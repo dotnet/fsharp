@@ -13,6 +13,9 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Core.CompilerServices
     open Microsoft.FSharp.Control
     open Microsoft.FSharp.Collections
+    open Microsoft.FSharp.Collections.Composer
+    open Microsoft.FSharp.Collections.Composer.Core
+    open Microsoft.FSharp.Collections.Composer.Seq
     open Microsoft.FSharp.Primitives.Basics
     open Microsoft.FSharp.Collections.IEnumerator
 
@@ -41,22 +44,22 @@ namespace Microsoft.FSharp.Collections
 #endif
         let mkDelayedSeq (f: unit -> IEnumerable<'T>) = mkSeq (fun () -> f().GetEnumerator())
         let inline indexNotFound() = raise (new System.Collections.Generic.KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))
-        
+
         [<CompiledName("ToComposer")>]
-        let toComposer (source:seq<'T>): Composer.Core.ISeq<'T> = 
+        let toComposer (source:seq<'T>): Composer.Core.ISeq<'T> =
             Composer.Seq.toComposer source
 
         let inline foreach f (source:seq<_>) =
             Composer.Seq.foreach f (toComposer source)
 
-        let private seqFactory createSeqComponent (source:seq<'T>) =
+        let inline seqFactory (createSeqComponent:#SeqFactory<_,_>) (source:seq<'T>) =
             match source with
             | :? Composer.Core.ISeq<'T> as s -> Upcast.enumerable (s.Compose createSeqComponent)
             | :? array<'T> as a -> Upcast.enumerable (Composer.Seq.Array.create a createSeqComponent)
             | :? list<'T> as a -> Upcast.enumerable (Composer.Seq.List.create a createSeqComponent)
             | null -> nullArg "source"
             | _ -> Upcast.enumerable (Composer.Seq.Enumerable.create source createSeqComponent)
-        
+
         [<CompiledName("Delay")>]
         let delay f = mkDelayedSeq f
 
@@ -339,7 +342,7 @@ namespace Microsoft.FSharp.Collections
                             this.Value._2 <- f.Invoke (this.Value._2, value)
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
-                    member this.OnComplete _ = 
+                    member this.OnComplete _ =
                         if this.Value._1 then
                             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
                 })
@@ -387,7 +390,7 @@ namespace Microsoft.FSharp.Collections
                                 this.Value <- c
                                 halt ()
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *)
-                    member this.OnComplete _ = 
+                    member this.OnComplete _ =
                         if this.Value = 0 && e2.MoveNext() then
                             this.Value <- -1 })
             |> fun compare -> compare.Value
@@ -524,7 +527,7 @@ namespace Microsoft.FSharp.Collections
         let windowed windowSize (source: seq<_>) =
             if windowSize <= 0 then invalidArgFmt "windowSize" "{0}\nwindowSize = {1}"
                                         [|SR.GetString SR.inputMustBePositive; windowSize|]
-            source |> seqFactory (Composer.Seq.WindowedFactory (windowSize))            
+            source |> seqFactory (Composer.Seq.WindowedFactory (windowSize))
 
         [<CompiledName("Cache")>]
         let cache (source : seq<'T>) =
@@ -642,7 +645,13 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Distinct")>]
         let distinct source =
-            source |> seqFactory (Composer.Seq.DistinctFactory ())
+            source |> seqFactory { new SeqFactory<'T,'T>() with
+                member __.Create _ _ next =
+                    upcast { new SeqComponentSimpleValue<'T,'V,HashSet<'T>>
+                                    (Upcast.iCompletionChaining next,(HashSet<'T>(HashIdentity.Structural<'T>))) with
+                        override this.ProcessNext (input:'T) : bool =
+                            if this.Value.Add input then TailCall.avoid (next.ProcessNext input)
+                            else false } }
 
         [<CompiledName("DistinctBy")>]
         let distinctBy keyf source =
@@ -719,7 +728,7 @@ namespace Microsoft.FSharp.Collections
 #endif
                 then mkDelayedSeq (fun () -> countByValueType keyf source)
                 else mkDelayedSeq (fun () -> countByRefType   keyf source)
-        
+
         [<CompiledName("Sum")>]
         let inline sum (source:seq<'a>) : 'a =
             source
@@ -750,7 +759,7 @@ namespace Microsoft.FSharp.Collections
                         this.Value._2 <- this.Value._2 + 1
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
-                    member this.OnComplete _ = 
+                    member this.OnComplete _ =
                         if this.Value._2 = 0 then
                             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString })
             |> fun total -> LanguagePrimitives.DivideByInt< ^a> total.Value._1 total.Value._2
@@ -765,7 +774,7 @@ namespace Microsoft.FSharp.Collections
                         this.Value._2 <- this.Value._2 + 1
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
-                    member this.OnComplete _ = 
+                    member this.OnComplete _ =
                         if this.Value._2 = 0 then
                             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString })
             |> fun total -> LanguagePrimitives.DivideByInt< ^U> total.Value._1 total.Value._2
@@ -788,7 +797,7 @@ namespace Microsoft.FSharp.Collections
                             this.Value._2 <- value
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
-                    member this.OnComplete _ = 
+                    member this.OnComplete _ =
                         if this.Value._1 then
                             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
                 })
@@ -811,7 +820,7 @@ namespace Microsoft.FSharp.Collections
                         | _ -> ()
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
-                    member this.OnComplete _ = 
+                    member this.OnComplete _ =
                         if this.Value._1 then
                             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
                 })
@@ -846,7 +855,7 @@ namespace Microsoft.FSharp.Collections
                             this.Value._2 <- value
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
-                    member this.OnComplete _ = 
+                    member this.OnComplete _ =
                         if this.Value._1 then
                             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
                 })
@@ -869,7 +878,7 @@ namespace Microsoft.FSharp.Collections
                         | _ -> ()
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
-                    member this.OnComplete _ = 
+                    member this.OnComplete _ =
                         if this.Value._1 then
                             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
                 })
@@ -939,7 +948,7 @@ namespace Microsoft.FSharp.Collections
                             halt()
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
             |> fun exists -> exists.Value
-        
+
             source1
             |> foreach (fun halt ->
                 { new Composer.Core.Folder<_,bool> (false) with
@@ -962,7 +971,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Tail")>]
         let tail (source: seq<'T>) =
             source |> seqFactory (Composer.Seq.TailFactory ())
-        
+
         [<CompiledName("TryLast")>]
         let tryLast (source : seq<_>) =
             source
@@ -973,7 +982,7 @@ namespace Microsoft.FSharp.Collections
                             this.Value._1 <- false
                         this.Value._2 <- value
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun tried -> 
+            |> fun tried ->
                 if tried.Value._1 then
                     None
                 else
@@ -997,9 +1006,9 @@ namespace Microsoft.FSharp.Collections
                         else
                             this.Value._3 <- true
                             halt ()
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) 
+                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
-                      member this.OnComplete _ = 
+                      member this.OnComplete _ =
                         if this.Value._1 then
                             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
                         elif this.Value._3 then
@@ -1016,8 +1025,8 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Reverse")>]
         let rev source =
             checkNonNull "source" source
-            let delayedReverse () = 
-                let array = source |> toArray 
+            let delayedReverse () =
+                let array = source |> toArray
                 Array.Reverse array
                 array
             Upcast.enumerable (Composer.Seq.Array.createDelayedId delayedReverse)
