@@ -10,7 +10,7 @@ namespace Microsoft.FSharp.Collections
 
   [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
   module Composer =
-    module Core = 
+    module Core =
         /// <summary>PipeIdx denotes the index of the element within the pipeline. 0 denotes the
         /// source of the chain.</summary>
         type PipeIdx = int
@@ -20,7 +20,7 @@ namespace Microsoft.FSharp.Collections
         /// provides it's own OnComplete and OnDispose function which should be used to handle
         /// a particular consumers cleanup.</summary>
         type ICompletionChaining =
-            /// <summary>OnComplete is used to determine if the object has been processed correctly, 
+            /// <summary>OnComplete is used to determine if the object has been processed correctly,
             /// and possibly throw exceptions to denote incorrect application (i.e. such as a Take
             /// operation which didn't have a source at least as large as was required). It is
             /// not called in the case of an exception being thrown whilst the stream is still
@@ -95,11 +95,6 @@ namespace Microsoft.FSharp.Collections
               Combine : first: SeqFactory<'T,'U> ->
                           second: SeqFactory<'U,'V> ->
                              SeqFactory<'T,'V>
-          end
-        and ChooseFactory<'T,'U> =
-          class
-            inherit  SeqFactory<'T,'U>
-            new : filter:('T -> 'U option) ->  ChooseFactory<'T,'U>
           end
         and DistinctFactory<'T when 'T : equality> =
           class
@@ -222,14 +217,6 @@ namespace Microsoft.FSharp.Collections
             interface ICompletionChaining
             new : next:ICompletionChaining ->
                     SeqComponent<'T,'U>
-          end
-
-        and Choose<'T,'U,'V> =
-          class
-            inherit  SeqComponent<'T,'V>
-            new : choose:('T -> 'U option) * next: Consumer<'U,'V> ->
-                     Choose<'T,'U,'V>
-            override ProcessNext : input:'T -> bool
           end
         and Distinct<'T,'V when 'T : equality> =
           class
@@ -647,13 +634,13 @@ namespace Microsoft.FSharp.Collections
           element:'T -> source: ISeq<'T> -> bool when 'T : equality
         [<CompiledNameAttribute ("ForAll")>]
         val forall : f:('T -> bool) -> source: ISeq<'T> -> bool
-        
+
         [<CompiledName "Filter">]
         val inline filter : f:('T -> bool) -> source: ISeq<'T> ->  ISeq<'T>
 
         [<CompiledName "Map">]
         val inline map : f:('T -> 'U) -> source: ISeq<'T> ->  ISeq<'U>
-          
+
         [<CompiledNameAttribute ("MapIndexed")>]
         val inline mapi : f:(int->'a->'b) -> source: ISeq<'a> -> ISeq<'b>
 
