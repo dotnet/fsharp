@@ -4,37 +4,16 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Composition
-open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
-open System.Linq
-open System.Runtime.CompilerServices
-open System.Windows
-open System.Windows.Controls
-open System.Windows.Media
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Completion
-open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Editor
-open Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.QuickInfo
-open Microsoft.CodeAnalysis.Editor.Shared.Utilities
-open Microsoft.CodeAnalysis.Formatting
 open Microsoft.CodeAnalysis.Host.Mef
-open Microsoft.CodeAnalysis.Options
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Editor.Implementation.InlineRename
-open Microsoft.CodeAnalysis.Rename.ConflictEngine
-
-open Microsoft.VisualStudio.FSharp.LanguageService
-open Microsoft.VisualStudio.Text
-open Microsoft.VisualStudio.Text.Classification
-open Microsoft.VisualStudio.Text.Tagging
-open Microsoft.VisualStudio.Text.Formatting
-open Microsoft.VisualStudio.Shell
-open Microsoft.VisualStudio.Shell.Interop
 
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Parser
@@ -76,12 +55,12 @@ type internal InlineRenameInfo
     // for property access cases FSC incorrectly reports ranges including prefix
     // try to trim the range to a name
     // NOTE won't work if prefix already contains string that matches property name, i.e. `aaa.aaa`
-    let fixupSpan (sourceText: SourceText) span =
+    let fixupSpan (_sourceText: SourceText) span = span
         // TODO: search in-place to avoid ToString call
-        let useText = sourceText.ToString(span)
-        let index = useText.IndexOf(symbolUse.Symbol.DisplayName)
-        if index <= 0 then span
-        else TextSpan(span.Start + index, symbolUse.Symbol.DisplayName.Length)
+        // let useText = sourceText.ToString(span)
+        // let index = useText.IndexOf(symbolUse.Symbol.DisplayName)
+        // if index <= 0 then span
+        // else TextSpan(span.Start + index, symbolUse.Symbol.DisplayName.Length)
 
     let triggerSpan =
         CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate)
