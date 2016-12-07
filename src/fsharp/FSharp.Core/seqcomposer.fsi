@@ -10,7 +10,7 @@ namespace Microsoft.FSharp.Collections
 
   [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
   module Composer =
-    module Core = 
+    module Core =
         /// <summary>PipeIdx denotes the index of the element within the pipeline. 0 denotes the
         /// source of the chain.</summary>
         type PipeIdx = int
@@ -20,7 +20,7 @@ namespace Microsoft.FSharp.Collections
         /// provides it's own OnComplete and OnDispose function which should be used to handle
         /// a particular consumers cleanup.</summary>
         type ICompletionChaining =
-            /// <summary>OnComplete is used to determine if the object has been processed correctly, 
+            /// <summary>OnComplete is used to determine if the object has been processed correctly,
             /// and possibly throw exceptions to denote incorrect application (i.e. such as a Take
             /// operation which didn't have a source at least as large as was required). It is
             /// not called in the case of an exception being thrown whilst the stream is still
@@ -74,6 +74,7 @@ namespace Microsoft.FSharp.Collections
         type SeqFactory<'T,'U> =
             new : unit -> SeqFactory<'T,'U>
             abstract PipeIdx : PipeIdx
+            default  PipeIdx : PipeIdx
             abstract member Create : IOutOfBand -> PipeIdx -> Consumer<'U,'V> -> Consumer<'T,'V>
 
         type ISeq<'T> =
@@ -95,26 +96,6 @@ namespace Microsoft.FSharp.Collections
               Combine : first: SeqFactory<'T,'U> ->
                           second: SeqFactory<'U,'V> ->
                              SeqFactory<'T,'V>
-          end
-        and ChooseFactory<'T,'U> =
-          class
-            inherit  SeqFactory<'T,'U>
-            new : filter:('T -> 'U option) ->  ChooseFactory<'T,'U>
-          end
-        and DistinctFactory<'T when 'T : equality> =
-          class
-            inherit  SeqFactory<'T,'T>
-            new : unit ->  DistinctFactory<'T>
-          end
-        and DistinctByFactory<'T,'Key when 'Key : equality> =
-          class
-            inherit  SeqFactory<'T,'T>
-            new : keyFunction:('T -> 'Key) ->  DistinctByFactory<'T,'Key>
-          end
-        and ExceptFactory<'T when 'T : equality> =
-          class
-            inherit  SeqFactory<'T,'T>
-            new : itemsToExclude:seq<'T> ->  ExceptFactory<'T>
           end
         and IdentityFactory<'T> =
           class
@@ -151,52 +132,6 @@ namespace Microsoft.FSharp.Collections
                   input2:IEnumerable<'Second> ->
                      Mapi2Factory<'First,'Second,'U>
           end
-        and PairwiseFactory<'T> =
-          class
-            inherit  SeqFactory<'T,('T * 'T)>
-            new : unit ->  PairwiseFactory<'T>
-          end
-        and ScanFactory<'T,'State> =
-          class
-            inherit  SeqFactory<'T,'State>
-            new : folder:('State -> 'T -> 'State) * initialState:'State ->
-                     ScanFactory<'T,'State>
-          end
-        and SkipFactory<'T> =
-          class
-            inherit  SeqFactory<'T,'T>
-            new : count:int * notEnoughElements:(string->array<obj>->unit) -> SkipFactory<'T>
-          end
-        and SkipWhileFactory<'T> =
-          class
-            inherit  SeqFactory<'T,'T>
-            new : predicate:('T -> bool) ->  SkipWhileFactory<'T>
-          end
-        and TakeWhileFactory<'T> =
-          class
-            inherit  SeqFactory<'T,'T>
-            new : predicate:('T -> bool) ->  TakeWhileFactory<'T>
-          end
-        and TakeFactory<'T> =
-          class
-            inherit  SeqFactory<'T,'T>
-            new : count:int ->  TakeFactory<'T>
-          end
-        and TailFactory<'T> =
-          class
-            inherit  SeqFactory<'T,'T>
-            new : unit ->  TailFactory<'T>
-          end
-        and TruncateFactory<'T> =
-          class
-            inherit  SeqFactory<'T,'T>
-            new : count:int ->  TruncateFactory<'T>
-          end
-        and WindowedFactory<'T> =
-          class
-            inherit  SeqFactory<'T,'T []>
-            new : windowSize:int ->  WindowedFactory<'T>
-          end
         and ISkipping =
           interface
             abstract member Skipping : unit -> bool
@@ -222,34 +157,6 @@ namespace Microsoft.FSharp.Collections
             interface ICompletionChaining
             new : next:ICompletionChaining ->
                     SeqComponent<'T,'U>
-          end
-
-        and Choose<'T,'U,'V> =
-          class
-            inherit  SeqComponent<'T,'V>
-            new : choose:('T -> 'U option) * next: Consumer<'U,'V> ->
-                     Choose<'T,'U,'V>
-            override ProcessNext : input:'T -> bool
-          end
-        and Distinct<'T,'V when 'T : equality> =
-          class
-            inherit  SeqComponent<'T,'V>
-            new : next: Consumer<'T,'V> ->  Distinct<'T,'V>
-            override ProcessNext : input:'T -> bool
-          end
-        and DistinctBy<'T,'Key,'V when 'Key : equality> =
-          class
-            inherit  SeqComponent<'T,'V>
-            new : keyFunction:('T -> 'Key) * next: Consumer<'T,'V> ->
-                     DistinctBy<'T,'Key,'V>
-            override ProcessNext : input:'T -> bool
-          end
-        and Except<'T,'V when 'T : equality> =
-          class
-            inherit  SeqComponent<'T,'V>
-            new : itemsToExclude:seq<'T> * next: Consumer<'T,'V> ->
-                     Except<'T,'V>
-            override ProcessNext : input:'T -> bool
           end
         and Map2First<'First,'Second,'U,'V> =
           class
@@ -295,76 +202,6 @@ namespace Microsoft.FSharp.Collections
                      Mapi2<'First,'Second,'U,'V>
             override OnDispose : unit -> unit
             override ProcessNext : input:'First -> bool
-          end
-        and Pairwise<'T,'V> =
-          class
-            inherit  SeqComponent<'T,'V>
-            new : next: Consumer<('T * 'T),'V> ->
-                     Pairwise<'T,'V>
-            override ProcessNext : input:'T -> bool
-          end
-        and Scan<'T,'State,'V> =
-          class
-            inherit  SeqComponent<'T,'V>
-            new : folder:('State -> 'T -> 'State) * initialState:'State *
-                  next: Consumer<'State,'V> ->
-                     Scan<'T,'State,'V>
-            override ProcessNext : input:'T -> bool
-          end
-        and Skip<'T,'V> =
-          class
-            inherit  SeqComponent<'T,'V>
-            interface ISkipping
-            new : skipCount:int * exceptionOnNotEnoughElements:(string->array<obj>->unit) * next: Consumer<'T,'V> ->
-                     Skip<'T,'V>
-            override OnComplete :  PipeIdx -> unit
-            override ProcessNext : input:'T -> bool
-          end
-        and SkipWhile<'T,'V> =
-          class
-            inherit  SeqComponent<'T,'V>
-            new : predicate:('T -> bool) * next: Consumer<'T,'V> ->
-                     SkipWhile<'T,'V>
-            override ProcessNext : input:'T -> bool
-          end
-        and Take<'T,'V> =
-          class
-            inherit  Truncate<'T,'V>
-            new : takeCount:int * outOfBand: IOutOfBand *
-                  next: Consumer<'T,'V> * pipelineIdx:int ->
-                     Take<'T,'V>
-            override OnComplete : terminatingIdx: PipeIdx -> unit
-          end
-        and TakeWhile<'T,'V> =
-          class
-            inherit  SeqComponent<'T,'V>
-            new : predicate:('T -> bool) * outOfBand: IOutOfBand *
-                  next: Consumer<'T,'V> * pipeIdx:int ->
-                     TakeWhile<'T,'V>
-            override ProcessNext : input:'T -> bool
-          end
-        and Tail<'T,'V> =
-          class
-            inherit  SeqComponent<'T,'V>
-            new : next: Consumer<'T,'V> ->  Tail<'T,'V>
-            override OnComplete :  PipeIdx -> unit
-            override ProcessNext : input:'T -> bool
-          end
-        and Truncate<'T,'V> =
-          class
-            inherit  SeqComponent<'T,'V>
-            new : truncateCount:int * outOfBand: IOutOfBand *
-                  next: Consumer<'T,'V> * pipeIdx:int ->
-                     Truncate<'T,'V>
-            override ProcessNext : input:'T -> bool
-            member Count : int
-          end
-        and Windowed<'T,'V> =
-          class
-            inherit  SeqComponent<'T,'V>
-            new : windowSize:int * next: Consumer<'T [],'V> ->
-                     Windowed<'T,'V>
-            override ProcessNext : input:'T -> bool
           end
         type SeqProcessNextStates =
           |  InProcess  =  0
@@ -617,57 +454,100 @@ namespace Microsoft.FSharp.Collections
                        EnumerableDecider<'T>
             end
         end
-        [<CompiledNameAttribute ("ToComposer")>]
+
+        [<CompiledName "ToComposer">]
         val toComposer : source:seq<'T> ->  ISeq<'T>
-        val inline foreach :
-          f:((unit -> unit) -> 'a) -> source: ISeq<'b> -> 'a
-            when 'a :>  Consumer<'b,'b>
-        [<CompiledNameAttribute ("Empty")>]
+
+        val inline foreach : f:((unit -> unit) -> 'a) -> source: ISeq<'b> -> 'a when 'a :>  Consumer<'b,'b>
+
+        [<CompiledName "Empty">]
         val empty<'T> :  ISeq<'T>
-        [<CompiledNameAttribute ("Unfold")>]
-        val unfold :
-          generator:('State -> ('T * 'State) option) ->
-            state:'State ->  ISeq<'T>
-        [<CompiledNameAttribute ("InitializeInfinite")>]
+
+        [<CompiledName "Unfold">]
+        val unfold : generator:('State -> ('T * 'State) option) -> state:'State ->  ISeq<'T>
+
+        [<CompiledName "InitializeInfinite">]
         val initInfinite : f:(int -> 'T) ->  ISeq<'T>
-        [<CompiledNameAttribute ("Initialize")>]
+
+        [<CompiledName "Initialize">]
         val init : count:int -> f:(int -> 'T) ->  ISeq<'T>
-        [<CompiledNameAttribute ("Iterate")>]
+
+        [<CompiledName "Iterate">]
         val iter : f:('T -> unit) -> source: ISeq<'T> -> unit
-        [<CompiledNameAttribute ("TryHead")>]
+
+        [<CompiledName "TryHead">]
         val tryHead : source: ISeq<'T> -> 'T option
-        [<CompiledNameAttribute ("TryItem")>]
-        val tryItem : i:int -> source: ISeq<'T> -> 'T option
-        [<CompiledNameAttribute ("IterateIndexed")>]
+
+        [<CompiledName "IterateIndexed">]
         val iteri : f:(int -> 'T -> unit) -> source: ISeq<'T> -> unit
-        [<CompiledNameAttribute ("Exists")>]
+
+        [<CompiledName "Except">]
+        val inline except : itemsToExclude:seq<'T> -> source:ISeq<'T> -> ISeq<'T> when 'T:equality
+
+        [<CompiledName "Exists">]
         val exists : f:('T -> bool) -> source: ISeq<'T> -> bool
-        [<CompiledNameAttribute ("Contains")>]
-        val inline contains :
-          element:'T -> source: ISeq<'T> -> bool when 'T : equality
-        [<CompiledNameAttribute ("ForAll")>]
+
+        [<CompiledName "Contains">]
+        val inline contains : element:'T -> source: ISeq<'T> -> bool when 'T : equality
+
+        [<CompiledName "ForAll">]
         val forall : f:('T -> bool) -> source: ISeq<'T> -> bool
-        
+
         [<CompiledName "Filter">]
         val inline filter : f:('T -> bool) -> source: ISeq<'T> ->  ISeq<'T>
 
         [<CompiledName "Map">]
         val inline map : f:('T -> 'U) -> source: ISeq<'T> ->  ISeq<'U>
-          
-        [<CompiledNameAttribute ("MapIndexed")>]
+
+        [<CompiledName "MapIndexed">]
         val inline mapi : f:(int->'a->'b) -> source: ISeq<'a> -> ISeq<'b>
 
         val mapi_adapt : f:OptimizedClosures.FSharpFunc<int,'a,'b> -> source: ISeq<'a> -> ISeq<'b>
 
-        [<CompiledNameAttribute ("Choose")>]
-        val choose : f:('a->option<'b>) -> source: ISeq<'a> -> ISeq<'b>
+        [<CompiledName "Choose">]
+        val inline choose : f:('a->option<'b>) -> source: ISeq<'a> -> ISeq<'b>
 
-        [<CompiledNameAttribute ("Indexed")>]
+        [<CompiledName "Distinct">]
+        val inline distinct : source: ISeq<'T> -> ISeq<'T> when 'T:equality
+
+        [<CompiledName "DistinctBy">]
+        val inline distinctBy : keyf:('T->'Key) -> source: ISeq<'T> -> ISeq<'T> when 'Key:equality
+
+        [<CompiledName "Pairwise">]
+        val inline pairwise : source:ISeq<'T> -> ISeq<'T * 'T>
+
+        [<CompiledName "Scan">]
+        val inline scan : folder:('State->'T->'State) -> initialState:'State -> source:ISeq<'T> -> ISeq<'State>
+
+        [<CompiledName "Skip">]
+        val inline skip : skipCount:int -> source:ISeq<'T> -> ISeq<'T>
+
+        [<CompiledName "SkipWhile">]
+        val inline skipWhile : predicate:('T->bool) -> source:ISeq<'T> -> ISeq<'T>
+
+        [<CompiledName "Take">]
+        val inline take : takeCount:int -> source:ISeq<'T> -> ISeq<'T>
+
+        [<CompiledName "TakeWhile">]
+        val inline takeWhile : predicate:('T->bool) -> source:ISeq<'T> -> ISeq<'T>
+
+        [<CompiledName "Tail">]
+        val inline tail : source:ISeq<'T> -> ISeq<'T>
+
+        [<CompiledName "Truncate">]
+        val inline truncate : truncateCount:int -> source:ISeq<'T> -> ISeq<'T>
+
+        [<CompiledName "Indexed">]
         val inline indexed : source: ISeq<'a> -> ISeq<int * 'a>
 
-        [<CompiledNameAttribute ("TryPick")>]
-        val tryPick :
-          f:('T -> 'U option) -> source: ISeq<'T> -> Option<'U>
-        [<CompiledNameAttribute ("TryFind")>]
+        [<CompiledName "TryItem">]
+        val tryItem : index:int -> source: ISeq<'T> -> 'T option
+
+        [<CompiledName "TryPick">]
+        val tryPick : f:('T -> 'U option) -> source: ISeq<'T> -> Option<'U>
+
+        [<CompiledName "TryFind">]
         val tryFind : f:('T -> bool) -> source: ISeq<'T> -> Option<'T>
 
+        [<CompiledName "Windowed">]
+        val inline windowed : windowSize:int -> source:ISeq<'T> -> ISeq<'T[]>
