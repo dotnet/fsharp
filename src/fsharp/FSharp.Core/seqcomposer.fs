@@ -162,10 +162,6 @@ namespace Microsoft.FSharp.Collections
                 inherit SeqFactory<'T,'T> ()
                 override this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Skip (count, onNotEnoughElements, next)
 
-            and SkipWhileFactory<'T> (predicate:'T->bool) =
-                inherit SeqFactory<'T,'T> ()
-                override this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast SkipWhile (predicate, next)
-
             and TakeWhileFactory<'T> (predicate:'T->bool) =
                 inherit SeqFactory<'T,'T> ()
                 override this.Create<'V> (outOfBand:IOutOfBand) (pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast TakeWhile (predicate, outOfBand, next, pipeIdx)
@@ -351,21 +347,6 @@ namespace Microsoft.FSharp.Collections
                         let x = skipCount - count
                         notEnoughElements "{0}\ntried to skip {1} {2} past the end of the seq"
                             [|SR.GetString SR.notEnoughElements; x; (if x=1 then "element" else "elements")|]
-
-            and SkipWhile<'T,'V> (predicate:'T->bool, next:Consumer<'T,'V>) =
-                inherit SeqComponent<'T,'V>(Upcast.iCompletionChaining next)
-
-                let mutable skip = true
-
-                override __.ProcessNext (input:'T) : bool =
-                    if skip then
-                        skip <- predicate input
-                        if skip then
-                            false
-                        else
-                            TailCall.avoid (next.ProcessNext input)
-                    else
-                        TailCall.avoid (next.ProcessNext input)
 
             and Take<'T,'V> (takeCount:int, outOfBand:IOutOfBand, next:Consumer<'T,'V>, pipelineIdx:int) =
                 inherit Truncate<'T, 'V>(takeCount, outOfBand, next, pipelineIdx)
@@ -1185,6 +1166,22 @@ namespace Microsoft.FSharp.Collections
                             override this.ProcessNext (input:'T) : bool =
                                 if this.Value.Add (keyf input) then TailCall.avoid (next.ProcessNext input)
                                 else false } }
+
+
+            [<CompiledName("SkipWhile")>]
+            let inline skipWhile (predicate:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
+                source |> compose { new SeqFactory<'T,'T>() with
+                    member __.Create _ _ next =
+                        upcast { new SeqComponentSimpleValue<'T,'V,bool>(Upcast.iCompletionChaining next,true) with
+                            override self.ProcessNext (input:'T) : bool =
+                                if self.Value (*skip*) then
+                                    self.Value <- predicate input
+                                    if self.Value (*skip*) then
+                                        false
+                                    else
+                                        TailCall.avoid (next.ProcessNext input)
+                                else
+                                    TailCall.avoid (next.ProcessNext input) }}
 
 
             [<CompiledName("Indexed")>]

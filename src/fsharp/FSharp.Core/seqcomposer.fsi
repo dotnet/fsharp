@@ -153,11 +153,6 @@ namespace Microsoft.FSharp.Collections
             inherit  SeqFactory<'T,'T>
             new : count:int * notEnoughElements:(string->array<obj>->unit) -> SkipFactory<'T>
           end
-        and SkipWhileFactory<'T> =
-          class
-            inherit  SeqFactory<'T,'T>
-            new : predicate:('T -> bool) ->  SkipWhileFactory<'T>
-          end
         and TakeWhileFactory<'T> =
           class
             inherit  SeqFactory<'T,'T>
@@ -283,13 +278,6 @@ namespace Microsoft.FSharp.Collections
             new : skipCount:int * exceptionOnNotEnoughElements:(string->array<obj>->unit) * next: Consumer<'T,'V> ->
                      Skip<'T,'V>
             override OnComplete :  PipeIdx -> unit
-            override ProcessNext : input:'T -> bool
-          end
-        and SkipWhile<'T,'V> =
-          class
-            inherit  SeqComponent<'T,'V>
-            new : predicate:('T -> bool) * next: Consumer<'T,'V> ->
-                     SkipWhile<'T,'V>
             override ProcessNext : input:'T -> bool
           end
         and Take<'T,'V> =
@@ -632,6 +620,9 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledNameAttribute "DistinctBy">]
         val inline distinctBy : keyf:('T->'Key) -> source: ISeq<'T> -> ISeq<'T> when 'Key:equality
+
+        [<CompiledName("SkipWhile")>]
+        val inline skipWhile : predicate:('T->bool) -> source:ISeq<'T> -> ISeq<'T>
 
         [<CompiledNameAttribute ("Indexed")>]
         val inline indexed : source: ISeq<'a> -> ISeq<int * 'a>
