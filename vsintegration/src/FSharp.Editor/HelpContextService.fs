@@ -113,11 +113,8 @@ type internal FSharpHelpContextService
                     let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                     let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
                     let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
-                    // GetHelpTerm may check one char back and forward
-                    let tokenStart = if textSpan.Start > 0 then textSpan.Start - 1 else textSpan.Start
-                    let tokenEnd = if textSpan.End < (sourceText.ToString().Length - 1) then textSpan.End + 1 else textSpan.End
-                    let tokenSpan = TextSpan.FromBounds(tokenStart, tokenEnd)
-                    let tokens = CommonHelpers.getColorizationData(document.Id, sourceText, tokenSpan, Some document.Name, defines, cancellationToken)
+                    let textLine = sourceText.Lines.GetLineFromPosition(textSpan.Start)
+                    let tokens = CommonHelpers.getColorizationData(document.Id, sourceText, textLine.Span, Some document.Name, defines, cancellationToken)
                     let! keyword = FSharpHelpContextService.GetHelpTerm(checkerProvider.Checker, sourceText, document.FilePath, options, textSpan, tokens, textVersion.GetHashCode())
 
                     return match keyword with 
