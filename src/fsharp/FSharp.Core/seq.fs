@@ -257,7 +257,7 @@ namespace Microsoft.FSharp.Collections
             if count < 0 then invalidArgInputMustBeNonNegative "count" count
             (* Note: don't create or dispose any IEnumerable if n = 0 *)
             if count = 0 then empty else
-            source |> seqFactory (Composer.Seq.TakeFactory count)
+            source |> toComposer |> Composer.Seq.take count |> Upcast.enumerable
 
         [<CompiledName("IsEmpty")>]
         let isEmpty (source : seq<'T>)  =
@@ -451,10 +451,10 @@ namespace Microsoft.FSharp.Collections
         let singleton x = mkSeq (fun () -> IEnumerator.Singleton x)
 
 
-        [<CompiledName("Truncate")>]
+        [<CompiledName "Truncate">]
         let truncate n (source: seq<'T>) =
             if n <= 0 then empty else
-            source |> seqFactory (Composer.Seq.TruncateFactory n)
+            source |> toComposer |> Composer.Seq.truncate n |> Upcast.enumerable
 
         [<CompiledName("Pairwise")>]
         let pairwise<'T> (source:seq<'T>) : seq<'T*'T> =

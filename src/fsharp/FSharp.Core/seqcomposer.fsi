@@ -142,20 +142,10 @@ namespace Microsoft.FSharp.Collections
             inherit  SeqFactory<'T,('T * 'T)>
             new : unit ->  PairwiseFactory<'T>
           end
-        and TakeFactory<'T> =
-          class
-            inherit  SeqFactory<'T,'T>
-            new : count:int ->  TakeFactory<'T>
-          end
         and TailFactory<'T> =
           class
             inherit  SeqFactory<'T,'T>
             new : unit ->  TailFactory<'T>
-          end
-        and TruncateFactory<'T> =
-          class
-            inherit  SeqFactory<'T,'T>
-            new : count:int ->  TruncateFactory<'T>
           end
         and WindowedFactory<'T> =
           class
@@ -247,29 +237,12 @@ namespace Microsoft.FSharp.Collections
                      Pairwise<'T,'V>
             override ProcessNext : input:'T -> bool
           end
-        and Take<'T,'V> =
-          class
-            inherit  Truncate<'T,'V>
-            new : takeCount:int * outOfBand: IOutOfBand *
-                  next: Consumer<'T,'V> * pipelineIdx:int ->
-                     Take<'T,'V>
-            override OnComplete : terminatingIdx: PipeIdx -> unit
-          end
         and Tail<'T,'V> =
           class
             inherit  SeqComponent<'T,'V>
             new : next: Consumer<'T,'V> ->  Tail<'T,'V>
             override OnComplete :  PipeIdx -> unit
             override ProcessNext : input:'T -> bool
-          end
-        and Truncate<'T,'V> =
-          class
-            inherit  SeqComponent<'T,'V>
-            new : truncateCount:int * outOfBand: IOutOfBand *
-                  next: Consumer<'T,'V> * pipeIdx:int ->
-                     Truncate<'T,'V>
-            override ProcessNext : input:'T -> bool
-            member Count : int
           end
         and Windowed<'T,'V> =
           class
@@ -588,8 +561,14 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "SkipWhile">]
         val inline skipWhile : predicate:('T->bool) -> source:ISeq<'T> -> ISeq<'T>
 
+        [<CompiledName "Take">]
+        val inline take : takeCount:int -> source:ISeq<'T> -> ISeq<'T>
+
         [<CompiledName "TakeWhile">]
         val inline takeWhile : predicate:('T->bool) -> source:ISeq<'T> -> ISeq<'T>
+
+        [<CompiledName "Truncate">]
+        val inline truncate : truncateCount:int -> source:ISeq<'T> -> ISeq<'T>
 
         [<CompiledNameAttribute ("Indexed")>]
         val inline indexed : source: ISeq<'a> -> ISeq<int * 'a>
