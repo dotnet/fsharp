@@ -97,11 +97,6 @@ namespace Microsoft.FSharp.Collections
                           second: SeqFactory<'U,'V> ->
                              SeqFactory<'T,'V>
           end
-        and DistinctByFactory<'T,'Key when 'Key : equality> =
-          class
-            inherit  SeqFactory<'T,'T>
-            new : keyFunction:('T -> 'Key) ->  DistinctByFactory<'T,'Key>
-          end
         and ExceptFactory<'T when 'T : equality> =
           class
             inherit  SeqFactory<'T,'T>
@@ -213,13 +208,6 @@ namespace Microsoft.FSharp.Collections
             interface ICompletionChaining
             new : next:ICompletionChaining ->
                     SeqComponent<'T,'U>
-          end
-        and DistinctBy<'T,'Key,'V when 'Key : equality> =
-          class
-            inherit  SeqComponent<'T,'V>
-            new : keyFunction:('T -> 'Key) * next: Consumer<'T,'V> ->
-                     DistinctBy<'T,'Key,'V>
-            override ProcessNext : input:'T -> bool
           end
         and Except<'T,'V when 'T : equality> =
           class
@@ -640,7 +628,10 @@ namespace Microsoft.FSharp.Collections
         val inline choose : f:('a->option<'b>) -> source: ISeq<'a> -> ISeq<'b>
 
         [<CompiledNameAttribute "Distinct">]
-        val inline distinct : source: ISeq<'a> -> ISeq<'a>
+        val inline distinct : source: ISeq<'T> -> ISeq<'T> when 'T:equality
+
+        [<CompiledNameAttribute "DistinctBy">]
+        val inline distinctBy : keyf:('T->'Key) -> source: ISeq<'T> -> ISeq<'T> when 'Key:equality
 
         [<CompiledNameAttribute ("Indexed")>]
         val inline indexed : source: ISeq<'a> -> ISeq<int * 'a>

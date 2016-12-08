@@ -124,10 +124,6 @@ namespace Microsoft.FSharp.Collections
                 static member Combine (first:SeqFactory<'T,'U>) (second:SeqFactory<'U,'V>) : SeqFactory<'T,'V> =
                     upcast ComposedFactory(first, second, first.PipeIdx+1)
 
-            and DistinctByFactory<'T,'Key when 'Key: equality> (keyFunction:'T-> 'Key) =
-                inherit SeqFactory<'T,'T> ()
-                override this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast DistinctBy (keyFunction, next)
-
             and ExceptFactory<'T when 'T: equality> (itemsToExclude: seq<'T>) =
                 inherit SeqFactory<'T,'T> ()
                 override this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Except (itemsToExclude, next)
@@ -224,18 +220,6 @@ namespace Microsoft.FSharp.Collections
                     member this.OnDispose stopTailCall  =
                         try     this.OnDispose ()
                         finally next.OnDispose (&stopTailCall)
-
-
-            and DistinctBy<'T,'Key,'V when 'Key: equality> (keyFunction: 'T -> 'Key, next:Consumer<'T,'V>) =
-                inherit SeqComponent<'T,'V>(Upcast.iCompletionChaining next)
-
-                let hashSet = HashSet<'Key>(HashIdentity.Structural<'Key>)
-
-                override __.ProcessNext (input:'T) : bool =
-                    if hashSet.Add(keyFunction input) then
-                        TailCall.avoid (next.ProcessNext input)
-                    else
-                        false
 
             and Except<'T,'V when 'T: equality> (itemsToExclude: seq<'T>, next:Consumer<'T,'V>) =
                 inherit SeqComponent<'T,'V>(Upcast.iCompletionChaining next)
@@ -1183,13 +1167,23 @@ namespace Microsoft.FSharp.Collections
                                 | None       -> false } }
 
             [<CompiledName("Distinct")>]
-            let inline distinct source =
+            let inline distinct (source:ISeq<'T>) : ISeq<'T> when 'T:equality =
                 source |> compose { new SeqFactory<'T,'T>() with
                     member __.Create _ _ next =
                         upcast { new SeqComponentSimpleValue<'T,'V,HashSet<'T>>
                                         (Upcast.iCompletionChaining next,(HashSet<'T>(HashIdentity.Structural<'T>))) with
                             override this.ProcessNext (input:'T) : bool =
                                 if this.Value.Add input then TailCall.avoid (next.ProcessNext input)
+                                else false } }
+
+            [<CompiledName("DistinctBy")>]
+            let inline distinctBy (keyf:'T->'Key) (source:ISeq<'T>) :ISeq<'T>  when 'Key:equality =
+                source |> compose { new SeqFactory<'T,'T>() with
+                    member __.Create _ _ next =
+                        upcast { new SeqComponentSimpleValue<'T,'V,HashSet<'Key>>
+                                        (Upcast.iCompletionChaining next,(HashSet<'Key>(HashIdentity.Structural<'Key>))) with
+                            override this.ProcessNext (input:'T) : bool =
+                                if this.Value.Add (keyf input) then TailCall.avoid (next.ProcessNext input)
                                 else false } }
 
 
