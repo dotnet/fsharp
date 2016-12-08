@@ -142,11 +142,6 @@ namespace Microsoft.FSharp.Collections
             inherit  SeqFactory<'T,('T * 'T)>
             new : unit ->  PairwiseFactory<'T>
           end
-        and TailFactory<'T> =
-          class
-            inherit  SeqFactory<'T,'T>
-            new : unit ->  TailFactory<'T>
-          end
         and ISkipping =
           interface
             abstract member Skipping : unit -> bool
@@ -230,13 +225,6 @@ namespace Microsoft.FSharp.Collections
             inherit  SeqComponent<'T,'V>
             new : next: Consumer<('T * 'T),'V> ->
                      Pairwise<'T,'V>
-            override ProcessNext : input:'T -> bool
-          end
-        and Tail<'T,'V> =
-          class
-            inherit  SeqComponent<'T,'V>
-            new : next: Consumer<'T,'V> ->  Tail<'T,'V>
-            override OnComplete :  PipeIdx -> unit
             override ProcessNext : input:'T -> bool
           end
         type SeqProcessNextStates =
@@ -554,6 +542,9 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "TakeWhile">]
         val inline takeWhile : predicate:('T->bool) -> source:ISeq<'T> -> ISeq<'T>
+
+        [<CompiledName "Tail">]
+        val inline tail : source:ISeq<'T> -> ISeq<'T>
 
         [<CompiledName "Truncate">]
         val inline truncate : truncateCount:int -> source:ISeq<'T> -> ISeq<'T>
