@@ -124,10 +124,6 @@ namespace Microsoft.FSharp.Collections
                 static member Combine (first:SeqFactory<'T,'U>) (second:SeqFactory<'U,'V>) : SeqFactory<'T,'V> =
                     upcast ComposedFactory(first, second, first.PipeIdx+1)
 
-            and ExceptFactory<'T when 'T: equality> (itemsToExclude: seq<'T>) =
-                inherit SeqFactory<'T,'T> ()
-                override this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Except (itemsToExclude, next)
-
             and IdentityFactory<'T> () =
                 inherit SeqFactory<'T,'T> ()
                 static let singleton : SeqFactory<'T,'T> = upcast (IdentityFactory<'T>())
@@ -188,17 +184,6 @@ namespace Microsoft.FSharp.Collections
                     member this.OnDispose stopTailCall  =
                         try     this.OnDispose ()
                         finally next.OnDispose (&stopTailCall)
-
-            and Except<'T,'V when 'T: equality> (itemsToExclude: seq<'T>, next:Consumer<'T,'V>) =
-                inherit SeqComponent<'T,'V>(Upcast.iCompletionChaining next)
-
-                let cached = lazy(HashSet(itemsToExclude, HashIdentity.Structural))
-
-                override __.ProcessNext (input:'T) : bool =
-                    if cached.Value.Add input then
-                        TailCall.avoid (next.ProcessNext input)
-                    else
-                        false
 
             and Map2First<'First,'Second,'U,'V> (map:'First->'Second->'U, enumerable2:IEnumerable<'Second>, outOfBand:IOutOfBand, next:Consumer<'U,'V>, pipeIdx:int) =
                 inherit SeqComponent<'First,'V>(Upcast.iCompletionChaining next)
@@ -918,6 +903,17 @@ namespace Microsoft.FSharp.Collections
                             this.Value <- this.Value + 1
                             Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
                 |> ignore
+
+            [<CompiledName "Except">]
+            let inline except (itemsToExclude: seq<'T>) (source:ISeq<'T>) : ISeq<'T> when 'T:equality =
+                source |> compose { new SeqFactory<'T,'T>() with
+                    member __.Create _ _ next =
+                        upcast { new SeqComponentSimpleValue<'T,'V,Lazy<HashSet<'T>>>
+                                        (Upcast.iCompletionChaining next,lazy(HashSet<'T>(itemsToExclude,HashIdentity.Structural<'T>))) with
+                            override this.ProcessNext (input:'T) : bool =
+                                if this.Value.Value.Add input then TailCall.avoid (next.ProcessNext input)
+                                else false
+                        }}
 
             [<CompiledName("Exists")>]
             let exists f (source:ISeq<'T>) =
