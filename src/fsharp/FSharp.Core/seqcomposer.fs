@@ -158,10 +158,6 @@ namespace Microsoft.FSharp.Collections
                 inherit SeqFactory<'T,'T> ()
                 override this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Tail<'T,'V> (next)
 
-            and WindowedFactory<'T> (windowSize:int) =
-                inherit SeqFactory<'T, 'T[]> ()
-                override this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'T[],'V>) : Consumer<'T,'V> = upcast Windowed (windowSize, next)
-
             and ISkipping =
                 // Seq.init(Infinite)? lazily uses Current. The only Composer component that can do that is Skip
                 // and it can only do it at the start of a sequence
@@ -307,34 +303,6 @@ namespace Microsoft.FSharp.Collections
                 override this.OnComplete _ =
                     if first then
                         invalidArg "source" (SR.GetString(SR.notEnoughElements))
-
-            and Windowed<'T,'V> (windowSize: int, next:Consumer<'T[],'V>) =
-                inherit SeqComponent<'T,'V>(Upcast.iCompletionChaining next)
-
-                let circularBuffer = Array.zeroCreateUnchecked windowSize
-                let mutable idx = 0
-
-                let mutable priming = windowSize - 1
-
-                override __.ProcessNext (input:'T) : bool =
-                    circularBuffer.[idx] <- input
-
-                    idx <- idx + 1
-                    if idx = windowSize then
-                        idx <- 0
-
-                    if priming > 0 then
-                        priming <- priming - 1
-                        false
-                    else
-                        if windowSize < 32 then
-                            let window = Array.init windowSize (fun i -> circularBuffer.[(idx+i) % windowSize])
-                            TailCall.avoid (next.ProcessNext window)
-                        else
-                            let window = Array.zeroCreateUnchecked windowSize
-                            Array.Copy(circularBuffer, idx, window, 0, windowSize - idx)
-                            Array.Copy(circularBuffer, 0, window, windowSize - idx, idx)
-                            TailCall.avoid (next.ProcessNext window)
 
             type SeqProcessNextStates =
             | InProcess  = 0
@@ -1220,3 +1188,38 @@ namespace Microsoft.FSharp.Collections
                                 halt ()
                             Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
                 |> fun find -> find.Value
+
+            [<CompiledName "Windowed">]
+            let inline windowed (windowSize:int) (source:ISeq<'T>) : ISeq<'T[]> =
+                source |> compose { new SeqFactory<'T,'T[]>() with
+                    member __.Create outOfBand pipeIdx next =
+                        upcast {
+                            new SeqComponentSimpleValue<'T,'U,Values<'T[],int,int>>
+                                        (   Upcast.iCompletionChaining next
+                                        ,   Values<'T[],int,int>
+                                            ((*circularBuffer = _1 *) Array.zeroCreateUnchecked windowSize
+                                            ,(* idx = _2 *)          0
+                                            ,(* priming = _3 *)      windowSize-1
+                                            )
+                                        ) with
+                                override self.ProcessNext (input:'T) : bool =
+                                    self.Value._1.[(* idx *)self.Value._2] <- input
+
+                                    self.Value._2 <- (* idx *)self.Value._2 + 1
+                                    if (* idx *) self.Value._2 = windowSize then
+                                        self.Value._2 <- 0
+
+                                    if (* priming  *) self.Value._3 > 0 then
+                                        self.Value._3 <- self.Value._3 - 1
+                                        false
+                                    else
+                                        if windowSize < 32 then
+                                            let window :'T [] = Array.init windowSize (fun i -> self.Value._1.[((* idx *)self.Value._2+i) % windowSize]: 'T)
+                                            TailCall.avoid (next.ProcessNext window)
+                                        else
+                                            let window = Array.zeroCreateUnchecked windowSize
+                                            Array.Copy((*circularBuffer*)self.Value._1, (* idx *)self.Value._2, window, 0, windowSize - (* idx *)self.Value._2)
+                                            Array.Copy((*circularBuffer*)self.Value._1, 0, window, windowSize - (* idx *)self.Value._2, (* idx *)self.Value._2)
+                                            TailCall.avoid (next.ProcessNext window)
+
+                        }}

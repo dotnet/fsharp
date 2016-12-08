@@ -517,7 +517,7 @@ namespace Microsoft.FSharp.Collections
         let windowed windowSize (source: seq<_>) =
             if windowSize <= 0 then invalidArgFmt "windowSize" "{0}\nwindowSize = {1}"
                                         [|SR.GetString SR.inputMustBePositive; windowSize|]
-            source |> seqFactory (Composer.Seq.WindowedFactory (windowSize))
+            source |> toComposer |> Composer.Seq.windowed windowSize |> Upcast.enumerable
 
         [<CompiledName("Cache")>]
         let cache (source : seq<'T>) =
