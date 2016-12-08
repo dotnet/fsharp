@@ -5,7 +5,7 @@
     <Identity Id="VisualFSharp" Version="15.4.1.0" Language="en-US" Publisher="Microsoft.VisualFSharpTools" />
     <DisplayName>Visual F# Tools</DisplayName>
     <Description xml:space="preserve">Deploy Visual F# Tools templates to Visual Studio</Description>
-    <PackageId>Microsoft.FSharp.VSIX.Desktop.Core</PackageId>
+    <ShortcutPath>..\CommonExtensions\Microsoft\FSharp</ShortcutPath>
   </Metadata>
   <Installation>
     <InstallationTarget Id="Microsoft.VisualStudio.VSWinDesktopExpress" Version="[15.0]" />

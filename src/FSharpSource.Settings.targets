@@ -32,7 +32,6 @@
     <WarningsAsErrors />
 
     <FX_NO_LOADER Condition=" '$(FX_NO_LOADER)'==''">false</FX_NO_LOADER>
-    <VSSDK_BUILDTOOLS_VERSION>Microsoft.VSSDK.BuildTools.15.0.25907-RC2</VSSDK_BUILDTOOLS_VERSION>
 
     <!-- Always qualify the IntermediateOutputPath by the TargetFramework if any exists -->
     <IntermediateOutputPath>obj\$(Configuration)\$(TargetFramework)\</IntermediateOutputPath>
@@ -45,10 +44,10 @@
     <UseSourceLink>true</UseSourceLink>
     <UseGatherBinaries>true</UseGatherBinaries>
     <AddVsSdkAttributesToSomeCoreComponents>true</AddVsSdkAttributesToSomeCoreComponents>
-    <VsSDKInstall Condition=" '$(VsSDKInstall)' == '' ">$(MSBuildThisFileDirectory)..\packages\$(VSSDK_BUILDTOOLS_VERSION)\tools\vssdk</VsSDKInstall>
-    <VsSDKToolPath Condition=" '$(VsSDKToolPath)' == '' ">$(MSBuildThisFileDirectory)..\packages\$(VSSDK_BUILDTOOLS_VERSION)\tools\vssdk\bin</VsSDKToolPath>
-    <VsSDKIncludes Condition=" '$(VsSDKIncludes)' == '' ">$(MSBuildThisFileDirectory)..\packages\$(VSSDK_BUILDTOOLS_VERSION)\tools\vssdk\inc</VsSDKIncludes>
-    <VsixSchemaPath Condition=" '$(VsixSchemaPath)' == '' ">$(MSBuildThisFileDirectory)..\packages\$(VSSDK_BUILDTOOLS_VERSION)\tools\vssdk\schemas\VSIXManifestSchema.xsd</VsixSchemaPath>
+    <VsSDKInstall>$(MSBuildThisFileDirectory)..\packages\Microsoft.VSSDK.BuildTools.15.0.25907-RC2\tools\vssdk</VsSDKInstall>
+    <VsSDKToolPath>$(MSBuildThisFileDirectory)..\packages\Microsoft.VSSDK.BuildTools.15.0.25907-RC2\tools\vssdk\bin</VsSDKToolPath>
+    <VsSDKIncludes>$(MSBuildThisFileDirectory)..\packages\Microsoft.VSSDK.BuildTools.15.0.25907-RC2\tools\vssdk\inc</VsSDKIncludes>
+    <VsixSchemaPath>$(MSBuildThisFileDirectory)..\packages\Microsoft.VSSDK.BuildTools.15.0.25907-RC2\tools\vssdk\schemas\VSIXManifestSchema.xsd</VsixSchemaPath>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(ProjectLanguage)' == 'FSharp' ">
