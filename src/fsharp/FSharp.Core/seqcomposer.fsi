@@ -132,11 +132,6 @@ namespace Microsoft.FSharp.Collections
                   input2:IEnumerable<'Second> ->
                      Mapi2Factory<'First,'Second,'U>
           end
-        and PairwiseFactory<'T> =
-          class
-            inherit  SeqFactory<'T,('T * 'T)>
-            new : unit ->  PairwiseFactory<'T>
-          end
         and ISkipping =
           interface
             abstract member Skipping : unit -> bool
@@ -207,13 +202,6 @@ namespace Microsoft.FSharp.Collections
                      Mapi2<'First,'Second,'U,'V>
             override OnDispose : unit -> unit
             override ProcessNext : input:'First -> bool
-          end
-        and Pairwise<'T,'V> =
-          class
-            inherit  SeqComponent<'T,'V>
-            new : next: Consumer<('T * 'T),'V> ->
-                     Pairwise<'T,'V>
-            override ProcessNext : input:'T -> bool
           end
         type SeqProcessNextStates =
           |  InProcess  =  0
@@ -524,6 +512,9 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "DistinctBy">]
         val inline distinctBy : keyf:('T->'Key) -> source: ISeq<'T> -> ISeq<'T> when 'Key:equality
+
+        [<CompiledName "Pairwise">]
+        val inline pairwise : source:ISeq<'T> -> ISeq<'T * 'T>
 
         [<CompiledName "Scan">]
         val inline scan : folder:('State->'T->'State) -> initialState:'State -> source:ISeq<'T> -> ISeq<'State>

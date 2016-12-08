@@ -146,10 +146,6 @@ namespace Microsoft.FSharp.Collections
                 inherit SeqFactory<'First,'U> ()
                 override this.Create<'V> (outOfBand:IOutOfBand) (pipeIdx:PipeIdx) (next:Consumer<'U,'V>) : Consumer<'First,'V> = upcast Mapi2 (map, input2, outOfBand, next, pipeIdx)
 
-            and PairwiseFactory<'T> () =
-                inherit SeqFactory<'T,'T*'T> ()
-                override this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'T*'T,'V>) : Consumer<'T,'V> = upcast Pairwise (next)
-
             and ISkipping =
                 // Seq.init(Infinite)? lazily uses Current. The only Composer component that can do that is Skip
                 // and it can only do it at the start of a sequence
@@ -252,22 +248,6 @@ namespace Microsoft.FSharp.Collections
 
                 override __.OnDispose () =
                     input2.Dispose ()
-
-            and Pairwise<'T,'V> (next:Consumer<'T*'T,'V>) =
-                inherit SeqComponent<'T,'V>(Upcast.iCompletionChaining next)
-
-                let mutable isFirst = true
-                let mutable lastValue = Unchecked.defaultof<'T>
-
-                override __.ProcessNext (input:'T) : bool =
-                    if isFirst then
-                        lastValue <- input
-                        isFirst <- false
-                        false
-                    else
-                        let currentPair = lastValue, input
-                        lastValue <- input
-                        TailCall.avoid (next.ProcessNext currentPair)
 
             type SeqProcessNextStates =
             | InProcess  = 0
@@ -1014,6 +994,28 @@ namespace Microsoft.FSharp.Collections
                             override this.ProcessNext (input:'T) : bool =
                                 if this.Value.Add (keyf input) then TailCall.avoid (next.ProcessNext input)
                                 else false } }
+
+            [<CompiledName "Pairwise">]
+            let inline pairwise (source:ISeq<'T>) : ISeq<'T * 'T> =
+                source |> compose { new SeqFactory<'T,'T * 'T>() with
+                    member __.Create _ _ next =
+                        upcast { new SeqComponentSimpleValue<'T,'U,Values<bool,'T>>
+                                    (   Upcast.iCompletionChaining next
+                                    ,   Values<bool,'T>
+                                        ((* isFirst   = _1*) true
+                                        ,(* lastValue = _2*) Unchecked.defaultof<'T>
+                                        )
+                                    ) with
+                                override self.ProcessNext (input:'T) : bool =
+                                    if (*isFirst*) self.Value._1  then
+                                        self.Value._2 (*lastValue*)<- input
+                                        self.Value._1 (*isFirst*)<- false
+                                        false
+                                    else
+                                        let currentPair = self.Value._2, input
+                                        self.Value._2 (*lastValue*)<- input
+                                        TailCall.avoid (next.ProcessNext currentPair)
+                        }}
 
             [<CompiledName "Scan">]
             let inline scan (folder:'State->'T->'State) (initialState: 'State) (source:ISeq<'T>) :ISeq<'State> =
