@@ -148,11 +148,6 @@ namespace Microsoft.FSharp.Collections
             new : folder:('State -> 'T -> 'State) * initialState:'State ->
                      ScanFactory<'T,'State>
           end
-        and SkipFactory<'T> =
-          class
-            inherit  SeqFactory<'T,'T>
-            new : count:int * notEnoughElements:(string->array<obj>->unit) -> SkipFactory<'T>
-          end
         and TakeFactory<'T> =
           class
             inherit  SeqFactory<'T,'T>
@@ -264,15 +259,6 @@ namespace Microsoft.FSharp.Collections
             new : folder:('State -> 'T -> 'State) * initialState:'State *
                   next: Consumer<'State,'V> ->
                      Scan<'T,'State,'V>
-            override ProcessNext : input:'T -> bool
-          end
-        and Skip<'T,'V> =
-          class
-            inherit  SeqComponent<'T,'V>
-            interface ISkipping
-            new : skipCount:int * exceptionOnNotEnoughElements:(string->array<obj>->unit) * next: Consumer<'T,'V> ->
-                     Skip<'T,'V>
-            override OnComplete :  PipeIdx -> unit
             override ProcessNext : input:'T -> bool
           end
         and Take<'T,'V> =
@@ -576,8 +562,7 @@ namespace Microsoft.FSharp.Collections
         val iter : f:('T -> unit) -> source: ISeq<'T> -> unit
         [<CompiledNameAttribute ("TryHead")>]
         val tryHead : source: ISeq<'T> -> 'T option
-        [<CompiledNameAttribute ("TryItem")>]
-        val tryItem : i:int -> source: ISeq<'T> -> 'T option
+
         [<CompiledNameAttribute ("IterateIndexed")>]
         val iteri : f:(int -> 'T -> unit) -> source: ISeq<'T> -> unit
         [<CompiledNameAttribute ("Exists")>]
@@ -608,6 +593,9 @@ namespace Microsoft.FSharp.Collections
         [<CompiledNameAttribute "DistinctBy">]
         val inline distinctBy : keyf:('T->'Key) -> source: ISeq<'T> -> ISeq<'T> when 'Key:equality
 
+        [<CompiledName "Skip">]
+        val inline skip : skipCount:int -> source:ISeq<'T> -> ISeq<'T>
+
         [<CompiledName "SkipWhile">]
         val inline skipWhile : predicate:('T->bool) -> source:ISeq<'T> -> ISeq<'T>
 
@@ -616,6 +604,9 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledNameAttribute ("Indexed")>]
         val inline indexed : source: ISeq<'a> -> ISeq<int * 'a>
+
+        [<CompiledNameAttribute "TryItem">]
+        val tryItem : index:int -> source: ISeq<'T> -> 'T option
 
         [<CompiledNameAttribute ("TryPick")>]
         val tryPick : f:('T -> 'U option) -> source: ISeq<'T> -> Option<'U>
