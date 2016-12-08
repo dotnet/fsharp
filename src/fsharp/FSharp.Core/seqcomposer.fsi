@@ -147,11 +147,6 @@ namespace Microsoft.FSharp.Collections
             inherit  SeqFactory<'T,'T>
             new : unit ->  TailFactory<'T>
           end
-        and WindowedFactory<'T> =
-          class
-            inherit  SeqFactory<'T,'T []>
-            new : windowSize:int ->  WindowedFactory<'T>
-          end
         and ISkipping =
           interface
             abstract member Skipping : unit -> bool
@@ -242,13 +237,6 @@ namespace Microsoft.FSharp.Collections
             inherit  SeqComponent<'T,'V>
             new : next: Consumer<'T,'V> ->  Tail<'T,'V>
             override OnComplete :  PipeIdx -> unit
-            override ProcessNext : input:'T -> bool
-          end
-        and Windowed<'T,'V> =
-          class
-            inherit  SeqComponent<'T,'V>
-            new : windowSize:int * next: Consumer<'T [],'V> ->
-                     Windowed<'T,'V>
             override ProcessNext : input:'T -> bool
           end
         type SeqProcessNextStates =
@@ -582,3 +570,5 @@ namespace Microsoft.FSharp.Collections
         [<CompiledNameAttribute ("TryFind")>]
         val tryFind : f:('T -> bool) -> source: ISeq<'T> -> Option<'T>
 
+        [<CompiledName "Windowed">]
+        val inline windowed : windowSize:int -> source:ISeq<'T> -> ISeq<'T[]>
