@@ -72,7 +72,7 @@ type UsingMSBuild() as this =
                 printf "  message = <<<%s> \n" e.Message 
             AssertEqual(0,count)
 
-    let AssertExactlyCountErrorSeenContaining(project:OpenProject,tex,expectedCount) =
+    let AssertExactlyCountErrorSeenContaining(project:OpenProject,text,expectedCount) =
         let nMatching = (GetErrors(project)) |> List.filter (fun e ->e.ToString().Contains(text)) |> List.length
         match nMatching with
         | 0 -> 
