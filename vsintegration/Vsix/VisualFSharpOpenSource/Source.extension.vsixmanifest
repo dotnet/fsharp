@@ -5,7 +5,7 @@
     <Identity Id="VisualFSharp" Version="15.4.1.9055" Language="en-US" Publisher="Microsoft.VisualFSharpTools" />
     <DisplayName>Visual F# Tools</DisplayName>
     <Description xml:space="preserve">Deploy Visual F# Tools templates to Visual Studio</Description>
-    <PackageId>Microsoft.FSharp.VSIX.OpenSource.Core</PackageId>
+    <ShortcutPath>..\CommonExtensions\Microsoft\FSharp</ShortcutPath>
   </Metadata>
   <Installation Experimental="true">
     <InstallationTarget Id="Microsoft.VisualStudio.Pro" Version="[15.0]" />
