@@ -13,6 +13,7 @@ open Microsoft.CodeAnalysis
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.LanguageService
+open UnitTests.TestLib.Utils
 
 [<TestFixture>]
 type HelpContextServiceTests() =
@@ -40,10 +41,17 @@ type HelpContextServiceTests() =
        ]
 
     member private this.TestF1Keywords(expectedKeywords: string option list, lines : string list, ?addtlRefAssy : list<string>) =
+        let newOptions = 
+            let refs = 
+                defaultArg addtlRefAssy []
+                |> List.map (fun r -> "-r:" + r) 
+                |> Array.ofList
+            { options with OtherOptions = Array.append options.OtherOptions refs }
+
         let fileContents = String.Join("\r\n", lines)
         let version = fileContents.GetHashCode()
         let sourceText = SourceText.From(fileContents.Replace("$", ""))
-        
+
         let res = [
           for marker in markers fileContents do
             let span = TextSpan(marker, 0)
@@ -51,7 +59,7 @@ type HelpContextServiceTests() =
             let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
             let tokens = CommonHelpers.getColorizationData(documentId, sourceText, textLine.Span, Some "test.fs", [], CancellationToken.None)
 
-            yield FSharpHelpContextService.GetHelpTerm(FSharpChecker.Instance, sourceText, fileName,  options, span, tokens, version)
+            yield FSharpHelpContextService.GetHelpTerm(FSharpChecker.Instance, sourceText, fileName,  newOptions, span, tokens, version)
                   |> Async.RunSynchronously
         ]
         let equalLength = List.length expectedKeywords = List.length res
@@ -208,7 +216,6 @@ type HelpContextServiceTests() =
         this.TestF1Keywords(keywords, file)
 
 
-(*
     [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
@@ -224,9 +231,7 @@ type HelpContextServiceTests() =
             ]
         this.TestF1Keywords(keywords, file, 
             addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
-*)
 
-(*
     [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
@@ -244,7 +249,6 @@ type HelpContextServiceTests() =
             ]
         this.TestF1Keywords(keywords, file, 
             addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
-*)
 
     [<Test>]
     member public this.``EndOfLine``() =
