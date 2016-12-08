@@ -349,7 +349,7 @@ echo INCLUDE_TEST_TAGS=%INCLUDE_TEST_TAGS%
 echo.
 
 echo ---------------- Done with arguments, starting preparation -----------------
-set BuildToolsPackage=Microsoft.VSSDK.BuildTools.15.0.25907-RC2
+set BuildToolsPackage=Microsoft.VSSDK.BuildTools.15.0.25929-RC2
 if '%VSSDKInstall%'=='' (
      set VSSDKInstall=%~dp0packages\%BuildToolsPackage%\tools\vssdk
 )
