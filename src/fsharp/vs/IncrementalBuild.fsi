@@ -44,7 +44,7 @@ type internal FSharpErrorInfo =
 type internal ErrorScope = 
     interface IDisposable
     new : unit -> ErrorScope
-    member ErrorsAndWarnings : FSharpErrorInfo list
+    member Diagnostics : FSharpErrorInfo list
     static member Protect<'a> : range -> (unit->'a) -> (string->'a) -> 'a
     static member ProtectWithDefault<'a> : range -> (unit -> 'a) -> 'a -> 'a
     static member ProtectAndDiscard : range -> (unit -> unit) -> unit

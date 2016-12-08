@@ -52,5 +52,5 @@ module internal ReferenceResolver =
            explicitIncludeDirs:string list *
            implicitIncludeDir:string *
            logMessage:(string->unit) *
-           logErrorOrWarning:(bool -> string -> string -> unit)
+           logDiagnostic:(bool -> string -> string -> unit)
              -> ResolvedFile[]

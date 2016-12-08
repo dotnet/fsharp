@@ -445,12 +445,12 @@ type internal FsiStdinSyphon(errorWriter: TextWriter) =
             if 0 < i && i <= lines.Length then lines.[i-1] else ""
 
     /// Display the given error.
-    member syphon.PrintError (tcConfig:TcConfigBuilder, isWarn, err) = 
+    member syphon.PrintError (tcConfig:TcConfigBuilder, err) = 
         Utilities.ignoreAllErrors (fun () -> 
-            DoWithErrorColor isWarn  (fun () ->
+            DoWithErrorColor true (fun () ->
                 errorWriter.WriteLine();
-                writeViaBufferWithEnvironmentNewLines errorWriter (OutputErrorOrWarningContext "  " syphon.GetLine) err; 
-                writeViaBufferWithEnvironmentNewLines errorWriter (OutputErrorOrWarning (tcConfig.implicitIncludeDir,tcConfig.showFullPaths,tcConfig.flatErrors,tcConfig.errorStyle,false))  err;
+                writeViaBufferWithEnvironmentNewLines errorWriter (OutputDiagnosticContext "  " syphon.GetLine) err; 
+                writeViaBufferWithEnvironmentNewLines errorWriter (OutputDiagnostic (tcConfig.implicitIncludeDir,tcConfig.showFullPaths,tcConfig.flatErrors,tcConfig.errorStyle,false))  err;
                 errorWriter.WriteLine()
                 errorWriter.Flush()))
 
@@ -476,30 +476,29 @@ type internal FsiConsoleOutput(tcConfigB, outWriter:TextWriter, errorWriter:Text
 /// This ErrorLogger reports all warnings, but raises StopProcessing on first error or early exit
 type internal ErrorLoggerThatStopsOnFirstError(tcConfigB:TcConfigBuilder, fsiStdinSyphon:FsiStdinSyphon, fsiConsoleOutput: FsiConsoleOutput) = 
     inherit ErrorLogger("ErrorLoggerThatStopsOnFirstError")
-    let mutable errors = 0 
+    let mutable errorCount = 0 
+
     member x.SetError() = 
-        errors <- 1
-    member x.ErrorSinkHelper(err) = 
-        fsiStdinSyphon.PrintError(tcConfigB,false,err)
-        errors <- errors + 1
-        if tcConfigB.abortOnError then exit 1 (* non-zero exit code *)
-        // STOP ON FIRST ERROR (AVOIDS PARSER ERROR RECOVERY)
-        raise StopProcessing
+        errorCount <- 1
+
+    member x.ResetErrorCount() = (errorCount <- 0)
     
-    member x.ResetErrorCount() = (errors <- 0)
-    
-    override x.WarnSinkImpl(err) = 
-        DoWithErrorColor true (fun () -> 
-            if ReportWarningAsError (tcConfigB.globalWarnLevel, tcConfigB.specificWarnOff, tcConfigB.specificWarnOn, tcConfigB.specificWarnAsError, tcConfigB.specificWarnAsWarn, tcConfigB.globalWarnAsError) err then 
-                x.ErrorSinkHelper err 
-            elif ReportWarning (tcConfigB.globalWarnLevel, tcConfigB.specificWarnOff, tcConfigB.specificWarnOn) err then 
+    override x.DiagnosticSink(err, isError) = 
+        if isError || ReportWarningAsError (tcConfigB.globalWarnLevel, tcConfigB.specificWarnOff, tcConfigB.specificWarnOn, tcConfigB.specificWarnAsError, tcConfigB.specificWarnAsWarn, tcConfigB.globalWarnAsError) err  then 
+            fsiStdinSyphon.PrintError(tcConfigB,err)
+            errorCount <- errorCount + 1
+            if tcConfigB.abortOnError then exit 1 (* non-zero exit code *)
+            // STOP ON FIRST ERROR (AVOIDS PARSER ERROR RECOVERY)
+            raise StopProcessing
+        else 
+          DoWithErrorColor isError (fun () -> 
+            if ReportWarning (tcConfigB.globalWarnLevel, tcConfigB.specificWarnOff, tcConfigB.specificWarnOn) err then 
                 fsiConsoleOutput.Error.WriteLine()
-                writeViaBufferWithEnvironmentNewLines fsiConsoleOutput.Error (OutputErrorOrWarningContext "  " fsiStdinSyphon.GetLine) err
-                writeViaBufferWithEnvironmentNewLines fsiConsoleOutput.Error (OutputErrorOrWarning (tcConfigB.implicitIncludeDir,tcConfigB.showFullPaths,tcConfigB.flatErrors,tcConfigB.errorStyle,true)) err
+                writeViaBufferWithEnvironmentNewLines fsiConsoleOutput.Error (OutputDiagnosticContext "  " fsiStdinSyphon.GetLine) err
+                writeViaBufferWithEnvironmentNewLines fsiConsoleOutput.Error (OutputDiagnostic (tcConfigB.implicitIncludeDir,tcConfigB.showFullPaths,tcConfigB.flatErrors,tcConfigB.errorStyle,isError)) err
                 fsiConsoleOutput.Error.WriteLine())
 
-    override x.ErrorSinkImpl err = x.ErrorSinkHelper err
-    override x.ErrorCount = errors
+    override x.ErrorCount = errorCount
 
 type ErrorLogger with
     member x.CheckForErrors() = (x.ErrorCount > 0)
@@ -1206,17 +1205,14 @@ type internal FsiDynamicCompiler
           closure.NoWarns |> Seq.map (fun (n,ms) -> ms |> Seq.map (fun m -> m,n)) |> Seq.concat |> Seq.iter tcConfigB.TurnWarningOff
 
           // Play errors and warnings from resolution
-          closure.ResolutionErrors |> List.iter errorSink
-          closure.ResolutionWarnings |> List.iter warnSink
+          closure.ResolutionDiagnostics |> List.iter diagnosticSink
                 
           // Non-scripts will not have been parsed during #load closure so parse them now
           let sourceFiles,inputs = 
               closure.Inputs  
               |> List.map (fun input-> 
-                    input.ParseErrors |> List.iter errorSink
-                    input.MetaCommandErrors |> List.iter errorSink
-                    input.ParseWarnings |> List.iter errorSink
-                    input.MetaCommandWarnings |> List.iter errorSink
+                    input.ParseDiagnostics |> List.iter diagnosticSink
+                    input.MetaCommandDiagnostics |> List.iter diagnosticSink
                     let parsedInput = 
                         match input.SyntaxTree with 
                         | None -> ParseOneInputFile(tcConfig,lexResourceManager,["INTERACTIVE"],input.FileName,(true,false),errorLogger,(*retryLocked*)false)
@@ -2430,8 +2426,6 @@ type internal FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:st
     do if runningOnMono then enableConsoleColoring <- false 
 #endif
 
-    do SetUninitializedErrorLoggerFallback AssertFalseErrorLogger
-    
 
     //----------------------------------------------------------------------------
     // tcConfig - build the initial config

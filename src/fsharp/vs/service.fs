@@ -1443,7 +1443,7 @@ module internal Parser =
         let fileInfo = GetFileInfoForLastLineErrors source
          
         // This function gets called whenever an error happens during parsing or checking
-        let errorSink sev (exn:PhasedError) = 
+        let diagnosticSink sev (exn:PhasedError) = 
             // Sanity check here. The phase of an error should be in a phase known to the language service.
             let exn =
                 if not(exn.IsPhaseInCompile()) then
@@ -1471,14 +1471,13 @@ module internal Parser =
       
         let errorLogger = 
             { new ErrorLogger("ErrorHandler") with 
-                member x.WarnSinkImpl exn = errorSink FSharpErrorSeverity.Warning exn
-                member x.ErrorSinkImpl exn = errorSink FSharpErrorSeverity.Error exn
+                member x.DiagnosticSink (exn, isError) = diagnosticSink (if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning) exn
                 member x.ErrorCount = errorCount }
       
       
         // Public members
         member x.ErrorLogger = errorLogger
-        member x.CollectedErrorsAndWarnings = errorsAndWarningsCollector.ToArray()
+        member x.CollectedDiagnostics = errorsAndWarningsCollector.ToArray()
         member x.ErrorCount = errorCount
         member x.TcConfig with set tc = tcConfig <- tc
         member x.AnyErrors = errorCount > 0
@@ -1567,7 +1566,7 @@ module internal Parser =
                     None)
                 
 
-          errHandler.CollectedErrorsAndWarnings,
+          errHandler.CollectedDiagnostics,
           matchPairRef.ToArray(),
           parseResult,
           errHandler.AnyErrors
@@ -1588,7 +1587,7 @@ module internal Parser =
            tcState: TcState,
            loadClosure: LoadClosure option,
            // These are the errors and warnings seen by the background compiler for the entire antecedant 
-           backgroundErrors: (PhasedError * FSharpErrorSeverity) list,    
+           backgroundDiagnostics: (PhasedError * FSharpErrorSeverity) list,    
            reactorOps: IReactorOperations,
            // Used by 'FSharpDeclarationListInfo' to check the IncrementalBuilder is still alive.
            checkAlive : (unit -> bool),
@@ -1604,7 +1603,7 @@ module internal Parser =
         | Some parsedMainInput ->
 
             // Initialize the error handler 
-            let errHandler = new ErrorHandler(true,mainInputFileName,tcConfig, source)
+            let errHandler = new ErrorHandler(true, mainInputFileName, tcConfig, source)
 
             use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _oldLogger -> errHandler.ErrorLogger)
             use unwindBP = PushThreadBuildPhaseUntilUnwind (BuildPhase.TypeCheck)      
@@ -1616,9 +1615,8 @@ module internal Parser =
             errHandler.TcConfig <- tcConfig
 
             // Play background errors and warnings for this file.
-            for (err,sev) in backgroundErrors do
-                if sev = FSharpErrorSeverity.Error then errorSink err else warnSink err
-
+            for (err,sev) in backgroundDiagnostics do
+                diagnosticSink (err, (sev = FSharpErrorSeverity.Error))
 
             // If additional references were brought in by the preprocessor then we need to process them
             match loadClosure with
@@ -1627,8 +1625,7 @@ module internal Parser =
                 tcImports.ReportUnresolvedAssemblyReferences(loadClosure.UnresolvedReferences)
 
                 // If there was a loadClosure, replay the errors and warnings from resolution, excluding parsing
-                loadClosure.LoadClosureRootFileErrors |> List.iter errorSink
-                loadClosure.LoadClosureRootFileWarnings |> List.iter warnSink
+                loadClosure.LoadClosureRootFileDiagnostics |> List.iter diagnosticSink
 
                 let fileOfBackgroundError err = (match GetRangeOfError (fst err) with Some m-> m.FileName | None -> null)
                 let sameFile file hashLoadInFile = 
@@ -1639,13 +1636,16 @@ module internal Parser =
                     loadClosure.SourceFiles 
                     |> List.filter(fun (_,ms) -> ms<>[]) // #loaded file, ranges of #load
 
-                let hashLoadBackgroundErrors, otherBackgroundErrors = 
-                    backgroundErrors |> List.partition (fun backgroundError -> hashLoadsInFile |>  List.exists (fst >> sameFile (fileOfBackgroundError backgroundError)))
+                let hashLoadBackgroundDiagnostics, otherBackgroundDiagnostics = 
+                    backgroundDiagnostics 
+                    |> List.partition (fun backgroundError -> 
+                        hashLoadsInFile 
+                        |>  List.exists (fst >> sameFile (fileOfBackgroundError backgroundError)))
 
                 // Create single errors for the #load-ed files.
                 // Group errors and warnings by file name.
-                let hashLoadBackgroundErrorsGroupedByFileName = 
-                    hashLoadBackgroundErrors 
+                let hashLoadBackgroundDiagnosticsGroupedByFileName = 
+                    hashLoadBackgroundDiagnostics 
                     |> List.map(fun err -> fileOfBackgroundError err,err) 
                     |> List.groupByFirst  // fileWithErrors, error list
 
@@ -1653,20 +1653,22 @@ module internal Parser =
                 //  It is by-design that these messages are only present in the language service. A true build would report the errors at their
                 //  spots in the individual source files.
                 for (fileOfHashLoad, rangesOfHashLoad) in hashLoadsInFile do
-                    for errorGroupedByFileName in hashLoadBackgroundErrorsGroupedByFileName do
+                    for errorGroupedByFileName in hashLoadBackgroundDiagnosticsGroupedByFileName do
                         if sameFile (fst errorGroupedByFileName) fileOfHashLoad then
                             for rangeOfHashLoad in rangesOfHashLoad do // Handle the case of two #loads of the same file
-                                let errorsAndWarnings = snd errorGroupedByFileName |> List.map(fun (pe,f)->pe.Exception,f) // Strip the build phase here. It will be replaced, in total, with TypeCheck
-                                let errors = [ for (err,sev) in errorsAndWarnings do if sev = FSharpErrorSeverity.Error then yield err ]
-                                let warnings = [ for (err,sev) in errorsAndWarnings do if sev = FSharpErrorSeverity.Warning then yield err ]
+                                let diagnostics = snd errorGroupedByFileName |> List.map(fun (pe,f)->pe.Exception,f) // Strip the build phase here. It will be replaced, in total, with TypeCheck
+                                let errors = [ for (err,sev) in diagnostics do if sev = FSharpErrorSeverity.Error then yield err ]
+                                let warnings = [ for (err,sev) in diagnostics do if sev = FSharpErrorSeverity.Warning then yield err ]
                                 
                                 let message = HashLoadedSourceHasIssues(warnings,errors,rangeOfHashLoad)
                                 if errors=[] then warning(message)
                                 else errorR(message)
 
                 // Replay other background errors.
-                for (phasedError,sev) in otherBackgroundErrors do
-                    if sev = FSharpErrorSeverity.Warning then warning phasedError.Exception else errorR phasedError.Exception
+                for (phasedError,sev) in otherBackgroundDiagnostics do
+                    if sev = FSharpErrorSeverity.Warning then 
+                        warning phasedError.Exception 
+                    else errorR phasedError.Exception
 
             | None -> 
                 // For non-scripts, check for disallow #r and #load.
@@ -1694,7 +1696,7 @@ module internal Parser =
                     errorR e
                     Some(tcState.TcEnvFromSignatures, [], tcState)
             
-            let errors = errHandler.CollectedErrorsAndWarnings
+            let errors = errHandler.CollectedDiagnostics
             
             match tcEnvAtEndOpt with
             | Some (tcEnvAtEnd, _typedImplFiles, tcState) ->
@@ -2085,7 +2087,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                             self.GetLogicalTimeStampForProject(opts, ct)
                         member x.FileName = nm } ]
 
-        let builderOpt, errorsAndWarnings = 
+        let builderOpt, diagnostics = 
             IncrementalBuilder.TryCreateBackgroundBuilderForProjectOptions
                   (referenceResolver, frameworkTcImportsCache, scriptClosureCache.TryGet options, Array.toList options.ProjectFileNames, 
                    Array.toList options.OtherOptions, projectReferences, options.ProjectDirectory, 
@@ -2113,7 +2115,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
             builder.FileChecked.Add (fun file -> fileChecked.Trigger(file, options.ExtraProjectInfo))
             builder.ProjectChecked.Add (fun () -> projectChecked.Trigger (options.ProjectFileName, options.ExtraProjectInfo))
 
-        (builderOpt, errorsAndWarnings, decrement)
+        (builderOpt, diagnostics, decrement)
 
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.backgroundCompiler.incrementalBuildersCache. This root typically holds more 
     // live information than anything else in the F# Language Service, since it holds up to 3 (projectCacheStrongSize) background project builds
@@ -2760,11 +2762,11 @@ type FsiInteractiveChecker(reactorOps: IReactorOperations, tcConfig, tcGlobals, 
         let dependencyFiles = [] // interactions have no dependencies
         let parseResults = FSharpParseFileResults(parseErrors, inputOpt, parseHadErrors = anyErrors, dependencyFiles = dependencyFiles)
 
-        let backgroundErrors = []
+        let backgroundDiagnostics = []
         let ct = CancellationToken.None
         let tcErrors, tcFileResult = 
             Parser.TypeCheckOneFile(parseResults,source,mainInputFileName,"project",tcConfig,tcGlobals,tcImports,  tcState,
-                                    loadClosure,backgroundErrors,reactorOps,(fun () -> true),ct,None)
+                                    loadClosure,backgroundDiagnostics,reactorOps,(fun () -> true),ct,None)
 
         match tcFileResult with 
         | Parser.TypeCheckAborted.No scope ->
