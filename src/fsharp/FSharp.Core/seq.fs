@@ -91,7 +91,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Skip")>]
         let skip count (source: seq<_>) =
-            source |> seqFactory (Composer.Seq.SkipFactory (count, invalidOpFmt))
+            source |> toComposer |> Composer.Seq.skip count |> Upcast.enumerable
 
         let invalidArgumnetIndex = invalidArgFmt "index"
 
@@ -99,7 +99,7 @@ namespace Microsoft.FSharp.Collections
         let item i (source : seq<'T>) =
             if i < 0 then invalidArgInputMustBeNonNegative "index" i else
                 source
-                |> seqFactory (Composer.Seq.SkipFactory (i, invalidArgumnetIndex))
+                |> toComposer |> Composer.Seq.skip i |> Upcast.enumerable
                 |> tryHead
                 |> function
                     | None -> invalidArgFmt "index" "{0}\nseq was short by 1 element"  [|SR.GetString SR.notEnoughElements|]

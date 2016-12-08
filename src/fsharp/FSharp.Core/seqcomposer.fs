@@ -158,10 +158,6 @@ namespace Microsoft.FSharp.Collections
                 inherit SeqFactory<'T,'State> ()
                 override this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'State,'V>) : Consumer<'T,'V> = upcast Scan<_,_,_> (folder, initialState, next)
 
-            and SkipFactory<'T> (count:int, onNotEnoughElements) =
-                inherit SeqFactory<'T,'T> ()
-                override this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Skip (count, onNotEnoughElements, next)
-
             and TakeFactory<'T> (count:int) =
                 inherit SeqFactory<'T,'T> ()
                 override this.Create<'V> (outOfBand:IOutOfBand) (pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Take (count, outOfBand, next, pipeIdx)
@@ -317,32 +313,6 @@ namespace Microsoft.FSharp.Collections
                 override __.ProcessNext (input:'T) : bool =
                     foldResult <- f.Invoke(foldResult, input)
                     TailCall.avoid (next.ProcessNext foldResult)
-
-            and Skip<'T,'V> (skipCount:int, notEnoughElements:string->array<obj>->unit, next:Consumer<'T,'V>) =
-                inherit SeqComponent<'T,'V>(Upcast.iCompletionChaining next)
-
-                let mutable count = 0
-
-                interface ISkipping with
-                    member __.Skipping () =
-                        if count < skipCount then
-                            count <- count + 1
-                            true
-                        else
-                            false
-
-                override __.ProcessNext (input:'T) : bool =
-                    if count < skipCount then
-                        count <- count + 1
-                        false
-                    else
-                        TailCall.avoid (next.ProcessNext input)
-
-                override __.OnComplete _ =
-                    if count < skipCount then
-                        let x = skipCount - count
-                        notEnoughElements "{0}\ntried to skip {1} {2} past the end of the seq"
-                            [|SR.GetString SR.notEnoughElements; x; (if x=1 then "element" else "elements")|]
 
             and Take<'T,'V> (takeCount:int, outOfBand:IOutOfBand, next:Consumer<'T,'V>, pipelineIdx:int) =
                 inherit Truncate<'T, 'V>(takeCount, outOfBand, next, pipelineIdx)
@@ -1034,11 +1004,7 @@ namespace Microsoft.FSharp.Collections
                             Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
                 |> fun head -> head.Value
 
-            [<CompiledName("TryItem")>]
-            let tryItem i (source:ISeq<'T>) =
-                if i < 0 then None else
-                source.Compose (SkipFactory(i, fun _ _ -> ()))
-                |> tryHead
+
 
             [<CompiledName("IterateIndexed")>]
             let iteri f (source:ISeq<'T>) =
@@ -1153,6 +1119,37 @@ namespace Microsoft.FSharp.Collections
                                 if this.Value.Add (keyf input) then TailCall.avoid (next.ProcessNext input)
                                 else false } }
 
+            [<CompiledName "Skip">]
+            let inline skip (skipCount:int) (source:ISeq<'T>) : ISeq<'T> =
+                source |> compose { new SeqFactory<'T,'T>() with
+                    member __.Create _ _ next =
+                        upcast {
+                            new SeqComponentSimpleValue<'T,'U,int>(Upcast.iCompletionChaining next,(*count*)0) with
+
+                                override self.ProcessNext (input:'T) : bool =
+                                    if (*count*) self.Value < skipCount then
+                                        self.Value <- self.Value + 1
+                                        false
+                                    else
+                                        TailCall.avoid (next.ProcessNext input)
+
+                                override self.OnComplete _ =
+                                    if (*count*) self.Value < skipCount then
+                                        let x = skipCount - self.Value
+                                        invalidOpFmt "{0}\ntried to skip {1} {2} past the end of the seq"
+                                            [|SR.GetString SR.notEnoughElements; x; (if x=1 then "element" else "elements")|]
+
+                            interface ISkipping with
+                                member self.Skipping () =
+                                    let self = self :?> SeqComponentSimpleValue<'T,'U,int>
+                                    if (*count*) self.Value < skipCount then
+                                        self.Value <- self.Value + 1
+                                        true
+                                    else
+                                        false
+                        }}
+
+
 
             [<CompiledName "SkipWhile">]
             let inline skipWhile (predicate:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
@@ -1184,6 +1181,11 @@ namespace Microsoft.FSharp.Collections
             [<CompiledName("Indexed")>]
             let inline indexed source =
                 mapi (fun i x -> i,x) source
+
+            [<CompiledName "TryItem">]
+            let tryItem index (source:ISeq<'T>) =
+                if index < 0 then None else
+                source |> skip index |> tryHead
 
             [<CompiledName("TryPick")>]
             let tryPick f (source:ISeq<'T>)  =
