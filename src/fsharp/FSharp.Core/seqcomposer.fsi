@@ -84,18 +84,6 @@ namespace Microsoft.FSharp.Collections
 
     open Core
 
-    module internal TailCall =
-        val inline avoid : boolean:bool -> bool
-
-    module internal Upcast =
-        // The f# compiler outputs unnecessary unbox.any calls in upcasts. If this functionality
-        // is fixed with the compiler then these functions can be removed.
-        val inline seq : t:#ISeq<'T> -> ISeq<'T>
-        val inline enumerable : t:#IEnumerable<'T> -> IEnumerable<'T>
-        val inline enumerator : t:#IEnumerator<'T> -> IEnumerator<'T>
-        val inline enumeratorNonGeneric : t:#IEnumerator -> IEnumerator
-        val inline iCompletionChaining  : t:#ICompletionChaining -> ICompletionChaining
-
     module internal Seq =
         type ComposedFactory<'T,'U,'V> =
           class
