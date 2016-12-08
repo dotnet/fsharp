@@ -460,11 +460,9 @@ namespace Microsoft.FSharp.Collections
         let pairwise<'T> (source:seq<'T>) : seq<'T*'T> =
             source |> seqFactory (Composer.Seq.PairwiseFactory ())
 
-        [<CompiledName("Scan")>]
-        let scan<'T,'State> f (z:'State) (source : seq<'T>): seq<'State> =
-            let first = [|z|] :> IEnumerable<'State>
-            let rest = source |> seqFactory (Composer.Seq.ScanFactory (f, z))
-            upcast Composer.Seq.Enumerable.ConcatEnumerable [|first; rest;|]
+        [<CompiledName "Scan">]
+        let scan<'T,'State> (folder:'State->'T->'State) (state:'State) (source:seq<'T>) : seq<'State> =
+            source |> toComposer |> Composer.Seq.scan folder state |> Upcast.enumerable
 
         [<CompiledName("TryFindBack")>]
         let tryFindBack f (source : seq<'T>) =
