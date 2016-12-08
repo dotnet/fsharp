@@ -162,10 +162,6 @@ namespace Microsoft.FSharp.Collections
                 inherit SeqFactory<'T,'T> ()
                 override this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Skip (count, onNotEnoughElements, next)
 
-            and TakeWhileFactory<'T> (predicate:'T->bool) =
-                inherit SeqFactory<'T,'T> ()
-                override this.Create<'V> (outOfBand:IOutOfBand) (pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast TakeWhile (predicate, outOfBand, next, pipeIdx)
-
             and TakeFactory<'T> (count:int) =
                 inherit SeqFactory<'T,'T> ()
                 override this.Create<'V> (outOfBand:IOutOfBand) (pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Take (count, outOfBand, next, pipeIdx)
@@ -356,16 +352,6 @@ namespace Microsoft.FSharp.Collections
                         let x = takeCount - this.Count
                         invalidOpFmt "tried to take {0} {1} past the end of the seq"
                             [|SR.GetString SR.notEnoughElements; x; (if x=1 then "element" else "elements")|]
-
-            and TakeWhile<'T,'V> (predicate:'T->bool, outOfBand:IOutOfBand, next:Consumer<'T,'V>, pipeIdx:int) =
-                inherit SeqComponent<'T,'V>(Upcast.iCompletionChaining next)
-
-                override __.ProcessNext (input:'T) : bool =
-                    if predicate input then
-                        TailCall.avoid (next.ProcessNext input)
-                    else
-                        outOfBand.StopFurtherProcessing pipeIdx
-                        false
 
             and Tail<'T, 'V> (next:Consumer<'T,'V>) =
                 inherit SeqComponent<'T,'V>(Upcast.iCompletionChaining next)
@@ -1147,7 +1133,7 @@ namespace Microsoft.FSharp.Collections
                                 | Some value -> TailCall.avoid (next.ProcessNext value)
                                 | None       -> false } }
 
-            [<CompiledName("Distinct")>]
+            [<CompiledName "Distinct">]
             let inline distinct (source:ISeq<'T>) : ISeq<'T> when 'T:equality =
                 source |> compose { new SeqFactory<'T,'T>() with
                     member __.Create _ _ next =
@@ -1157,7 +1143,7 @@ namespace Microsoft.FSharp.Collections
                                 if this.Value.Add input then TailCall.avoid (next.ProcessNext input)
                                 else false } }
 
-            [<CompiledName("DistinctBy")>]
+            [<CompiledName "DistinctBy">]
             let inline distinctBy (keyf:'T->'Key) (source:ISeq<'T>) :ISeq<'T>  when 'Key:equality =
                 source |> compose { new SeqFactory<'T,'T>() with
                     member __.Create _ _ next =
@@ -1168,7 +1154,7 @@ namespace Microsoft.FSharp.Collections
                                 else false } }
 
 
-            [<CompiledName("SkipWhile")>]
+            [<CompiledName "SkipWhile">]
             let inline skipWhile (predicate:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
                 source |> compose { new SeqFactory<'T,'T>() with
                     member __.Create _ _ next =
@@ -1183,6 +1169,17 @@ namespace Microsoft.FSharp.Collections
                                 else
                                     TailCall.avoid (next.ProcessNext input) }}
 
+            [<CompiledName "TakeWhile">]
+            let inline takeWhile (predicate:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
+                source |> compose { new SeqFactory<'T,'T>() with
+                    member __.Create outOfBand pipeIdx next =
+                        upcast { new SeqComponent<'T,'V>(Upcast.iCompletionChaining next) with
+                            override __.ProcessNext (input:'T) : bool =
+                                if predicate input then
+                                    TailCall.avoid (next.ProcessNext input)
+                                else
+                                    outOfBand.StopFurtherProcessing pipeIdx
+                                    false }}
 
             [<CompiledName("Indexed")>]
             let inline indexed source =
