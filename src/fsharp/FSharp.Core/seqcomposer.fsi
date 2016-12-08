@@ -478,34 +478,40 @@ namespace Microsoft.FSharp.Collections
                        EnumerableDecider<'T>
             end
         end
-        [<CompiledNameAttribute ("ToComposer")>]
+
+        [<CompiledName "ToComposer">]
         val toComposer : source:seq<'T> ->  ISeq<'T>
-        val inline foreach :
-          f:((unit -> unit) -> 'a) -> source: ISeq<'b> -> 'a
-            when 'a :>  Consumer<'b,'b>
-        [<CompiledNameAttribute ("Empty")>]
+
+        val inline foreach : f:((unit -> unit) -> 'a) -> source: ISeq<'b> -> 'a when 'a :>  Consumer<'b,'b>
+
+        [<CompiledName "Empty">]
         val empty<'T> :  ISeq<'T>
-        [<CompiledNameAttribute ("Unfold")>]
-        val unfold :
-          generator:('State -> ('T * 'State) option) ->
-            state:'State ->  ISeq<'T>
-        [<CompiledNameAttribute ("InitializeInfinite")>]
+
+        [<CompiledName "Unfold">]
+        val unfold : generator:('State -> ('T * 'State) option) -> state:'State ->  ISeq<'T>
+
+        [<CompiledName "InitializeInfinite">]
         val initInfinite : f:(int -> 'T) ->  ISeq<'T>
-        [<CompiledNameAttribute ("Initialize")>]
+
+        [<CompiledName "Initialize">]
         val init : count:int -> f:(int -> 'T) ->  ISeq<'T>
-        [<CompiledNameAttribute ("Iterate")>]
+
+        [<CompiledName "Iterate">]
         val iter : f:('T -> unit) -> source: ISeq<'T> -> unit
-        [<CompiledNameAttribute ("TryHead")>]
+
+        [<CompiledName "TryHead">]
         val tryHead : source: ISeq<'T> -> 'T option
 
-        [<CompiledNameAttribute ("IterateIndexed")>]
+        [<CompiledName "IterateIndexed">]
         val iteri : f:(int -> 'T -> unit) -> source: ISeq<'T> -> unit
-        [<CompiledNameAttribute ("Exists")>]
+
+        [<CompiledName "Exists">]
         val exists : f:('T -> bool) -> source: ISeq<'T> -> bool
-        [<CompiledNameAttribute ("Contains")>]
-        val inline contains :
-          element:'T -> source: ISeq<'T> -> bool when 'T : equality
-        [<CompiledNameAttribute ("ForAll")>]
+
+        [<CompiledName "Contains">]
+        val inline contains : element:'T -> source: ISeq<'T> -> bool when 'T : equality
+
+        [<CompiledName "ForAll">]
         val forall : f:('T -> bool) -> source: ISeq<'T> -> bool
 
         [<CompiledName "Filter">]
@@ -514,18 +520,18 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "Map">]
         val inline map : f:('T -> 'U) -> source: ISeq<'T> ->  ISeq<'U>
 
-        [<CompiledNameAttribute ("MapIndexed")>]
+        [<CompiledName "MapIndexed">]
         val inline mapi : f:(int->'a->'b) -> source: ISeq<'a> -> ISeq<'b>
 
         val mapi_adapt : f:OptimizedClosures.FSharpFunc<int,'a,'b> -> source: ISeq<'a> -> ISeq<'b>
 
-        [<CompiledNameAttribute ("Choose")>]
+        [<CompiledName "Choose">]
         val inline choose : f:('a->option<'b>) -> source: ISeq<'a> -> ISeq<'b>
 
-        [<CompiledNameAttribute "Distinct">]
+        [<CompiledName "Distinct">]
         val inline distinct : source: ISeq<'T> -> ISeq<'T> when 'T:equality
 
-        [<CompiledNameAttribute "DistinctBy">]
+        [<CompiledName "DistinctBy">]
         val inline distinctBy : keyf:('T->'Key) -> source: ISeq<'T> -> ISeq<'T> when 'Key:equality
 
         [<CompiledName "Scan">]
@@ -549,16 +555,16 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "Truncate">]
         val inline truncate : truncateCount:int -> source:ISeq<'T> -> ISeq<'T>
 
-        [<CompiledNameAttribute ("Indexed")>]
+        [<CompiledName "Indexed">]
         val inline indexed : source: ISeq<'a> -> ISeq<int * 'a>
 
-        [<CompiledNameAttribute "TryItem">]
+        [<CompiledName "TryItem">]
         val tryItem : index:int -> source: ISeq<'T> -> 'T option
 
-        [<CompiledNameAttribute ("TryPick")>]
+        [<CompiledName "TryPick">]
         val tryPick : f:('T -> 'U option) -> source: ISeq<'T> -> Option<'U>
 
-        [<CompiledNameAttribute ("TryFind")>]
+        [<CompiledName "TryFind">]
         val tryFind : f:('T -> bool) -> source: ISeq<'T> -> Option<'T>
 
         [<CompiledName "Windowed">]
