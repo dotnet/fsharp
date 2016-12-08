@@ -347,14 +347,15 @@ echo INCLUDE_TEST_TAGS=%INCLUDE_TEST_TAGS%
 echo.
 
 echo ---------------- Done with arguments, starting preparation -----------------
+set BuildToolsPackage=Microsoft.VSSDK.BuildTools.15.0.25929-RC2
 if '%VSSDKInstall%'=='' (
-     set VSSDKInstall=%~dp0packages\Microsoft.VSSDK.BuildTools.15.0.25907-RC2\tools\vssdk
+     set VSSDKInstall=%~dp0packages\%BuildToolsPackage%\tools\vssdk
 )
 if '%VSSDKToolsPath%'=='' (
-     set VSSDKToolsPath=%~dp0packages\Microsoft.VSSDK.BuildTools.15.0.25907-RC2\tools\vssdk\bin
+     set VSSDKToolsPath=%~dp0packages\%BuildToolsPackage%\tools\vssdk\bin
 )
 if '%VSSDKIncludes%'=='' (
-     set VSSDKIncludes=%~dp0packages\Microsoft.VSSDK.BuildTools.15.0.25907-RC2\tools\vssdk\inc
+     set VSSDKIncludes=%~dp0packages\%BuildToolsPackage%\tools\vssdk\inc
 )
 
 if '%RestorePackages%'=='' (
