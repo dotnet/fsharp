@@ -1000,17 +1000,16 @@ type ErrorScope()  =
     let unwindEL =        
         PushErrorLoggerPhaseUntilUnwind (fun _oldLogger -> 
             { new ErrorLogger("ErrorScope") with 
-                member x.WarnSinkImpl(exn) = 
-                      errors <- FSharpErrorInfo.CreateFromException(exn,true,false,range.Zero):: errors
-                member x.ErrorSinkImpl(exn) = 
-                      let err = FSharpErrorInfo.CreateFromException(exn,false,false,range.Zero)
+                member x.DiagnosticSink(exn, isError) = 
+                      let err = FSharpErrorInfo.CreateFromException(exn,isError,false,range.Zero)
                       errors <- err :: errors
-                      mostRecentError <- Some err
+                      if isError then 
+                          mostRecentError <- Some err
                 member x.ErrorCount = errors.Length })
         
     member x.Errors = errors |> List.filter (fun error -> error.Severity = FSharpErrorSeverity.Error)
     member x.Warnings = errors |> List.filter (fun error -> error.Severity = FSharpErrorSeverity.Warning)
-    member x.ErrorsAndWarnings = errors
+    member x.Diagnostics = errors
     member x.TryGetFirstErrorText() =
         match x.Errors with 
         | error :: _ -> Some error.Message
@@ -1146,23 +1145,21 @@ type FrameworkImportsCache(keepStrongly) =
 type internal CompilationErrorLogger (debugName:string, tcConfig:TcConfig) = 
     inherit ErrorLogger("CompilationErrorLogger("+debugName+")")
             
-    let warningsSeenInScope = new ResizeArray<_>()
-    let errorsSeenInScope = new ResizeArray<_>()
+    let mutable errorCount = 0
+    let diagnostics = new ResizeArray<_>()
             
-    let warningOrError warn exn = 
-        let warn = warn && not (ReportWarningAsError (tcConfig.globalWarnLevel, tcConfig.specificWarnOff, tcConfig.specificWarnOn, tcConfig.specificWarnAsError, tcConfig.specificWarnAsWarn, tcConfig.globalWarnAsError) exn)                
-        if not warn then
-            errorsSeenInScope.Add(exn)
+    let warningOrError isError exn = 
+        if isError || ReportWarningAsError (tcConfig.globalWarnLevel, tcConfig.specificWarnOff, tcConfig.specificWarnOn, tcConfig.specificWarnAsError, tcConfig.specificWarnAsWarn, tcConfig.globalWarnAsError) exn then
+            diagnostics.Add(exn, isError)
+            errorCount <- errorCount + 1
         else if ReportWarning (tcConfig.globalWarnLevel, tcConfig.specificWarnOff, tcConfig.specificWarnOn) exn then 
-            warningsSeenInScope.Add(exn)
+            diagnostics.Add(exn, isError)
 
-    override x.WarnSinkImpl(exn) = warningOrError true exn
-    override x.ErrorSinkImpl(exn) = warningOrError false exn
-    override x.ErrorCount = errorsSeenInScope.Count
+    override x.DiagnosticSink(exn, isError) = warningOrError isError exn
+    override x.ErrorCount = errorCount
 
     member x.GetErrors() = 
-        [ for e in errorsSeenInScope -> e,FSharpErrorSeverity.Error 
-          for e in warningsSeenInScope -> e,FSharpErrorSeverity.Warning ]
+        [ for (e,isError) in diagnostics -> e, (if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning) ]
 
 
 /// This represents the global state established as each task function runs as part of the build
@@ -1438,8 +1435,8 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
              | None -> ()
              | Some loadClosure -> 
                 for inp in loadClosure.Inputs do
-                    for e in inp.MetaCommandErrors do yield e,FSharpErrorSeverity.Error 
-                    for e in inp.MetaCommandWarnings do yield e,FSharpErrorSeverity.Warning ]
+                    for (err, isError) in inp.MetaCommandDiagnostics do 
+                        yield err,(if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning) ]
 
         let tcAcc = 
             { tcGlobals=tcGlobals
@@ -1858,7 +1855,7 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
             errorRecoveryNoRange e
             None
 
-        builderOpt, errorScope.ErrorsAndWarnings
+        builderOpt, errorScope.Diagnostics
 
     static member KeepBuilderAlive (builderOpt: IncrementalBuilder option) = 
         match builderOpt with 
