@@ -87,6 +87,9 @@
     <Compile Include="BraceMatchingServiceTests.fs">
       <Link>Roslyn\BraceMatchingServiceTests.fs</Link>
     </Compile>
+    <Compile Include="HelpContextServiceTests.fs">
+      <Link>Roslyn\HelpContextServiceTests.fs</Link>
+    </Compile>
     <Compile Include="IndentationServiceTests.fs">
       <Link>Roslyn\IndentationServiceTests.fs</Link>
     </Compile>
