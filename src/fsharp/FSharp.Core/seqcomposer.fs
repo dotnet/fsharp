@@ -154,10 +154,6 @@ namespace Microsoft.FSharp.Collections
                 inherit SeqFactory<'T,'T*'T> ()
                 override this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'T*'T,'V>) : Consumer<'T,'V> = upcast Pairwise (next)
 
-            and TailFactory<'T> () =
-                inherit SeqFactory<'T,'T> ()
-                override this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Tail<'T,'V> (next)
-
             and ISkipping =
                 // Seq.init(Infinite)? lazily uses Current. The only Composer component that can do that is Skip
                 // and it can only do it at the start of a sequence
@@ -287,22 +283,6 @@ namespace Microsoft.FSharp.Collections
                         let currentPair = lastValue, input
                         lastValue <- input
                         TailCall.avoid (next.ProcessNext currentPair)
-
-            and Tail<'T, 'V> (next:Consumer<'T,'V>) =
-                inherit SeqComponent<'T,'V>(Upcast.iCompletionChaining next)
-
-                let mutable first = true
-
-                override __.ProcessNext (input:'T) : bool =
-                    if first then
-                        first <- false
-                        false
-                    else
-                        TailCall.avoid (next.ProcessNext input)
-
-                override this.OnComplete _ =
-                    if first then
-                        invalidArg "source" (SR.GetString(SR.notEnoughElements))
 
             type SeqProcessNextStates =
             | InProcess  = 0
@@ -1135,7 +1115,25 @@ namespace Microsoft.FSharp.Collections
                                     TailCall.avoid (next.ProcessNext input)
                                 else
                                     outOfBand.StopFurtherProcessing pipeIdx
-                                    false }}
+                                    false
+                        }}
+
+            [<CompiledName "Tail">]
+            let inline tail (source:ISeq<'T>) :ISeq<'T> =
+                source |> compose { new SeqFactory<'T,'T>() with
+                    member __.Create _ _ next =
+                        upcast { new SeqComponentSimpleValue<'T,'V,bool>(Upcast.iCompletionChaining next,(*first*) true) with
+                            override self.ProcessNext (input:'T) : bool =
+                                if (*first*) self.Value then
+                                    self.Value <- false
+                                    false
+                                else
+                                    TailCall.avoid (next.ProcessNext input)
+
+                            override self.OnComplete _ =
+                                if (*first*) self.Value then
+                                    invalidArg "source" (SR.GetString(SR.notEnoughElements))
+                        }}
 
             [<CompiledName "Truncate">]
             let inline truncate (truncateCount:int) (source:ISeq<'T>) : ISeq<'T> =

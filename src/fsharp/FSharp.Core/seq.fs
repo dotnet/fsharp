@@ -934,9 +934,9 @@ namespace Microsoft.FSharp.Collections
             | None -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             | Some x -> x
 
-        [<CompiledName("Tail")>]
+        [<CompiledName "Tail">]
         let tail (source: seq<'T>) =
-            source |> seqFactory (Composer.Seq.TailFactory ())
+            source |> toComposer |> Composer.Seq.tail |> Upcast.enumerable
 
         [<CompiledName("TryLast")>]
         let tryLast (source : seq<_>) =
