@@ -70,6 +70,13 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("ForAll")>]
         val forall: predicate:('T -> bool) -> option:'T option -> bool
 
+        /// <summary>Evaluates to true if <paramref name="option"/> is <c>Some</c> and its value is equal to <paramref name="value"/>.</summary>
+        /// <param name="value">The value to test for equality.</param>
+        /// <param name="option">The input option.</param>
+        /// <returns>True if the option is <c>Some</c> and contains a value equal to <paramref name="value"/>, otherwise false.</returns>
+        [<CompiledName("Contains")>]
+        val contains: value:'T -> option:'T option -> bool when 'T : equality
+
         /// <summary><c>iter f inp</c> executes <c>match inp with None -> () | Some x -> f x</c>.</summary>
         /// <param name="action">A function to apply to the option value.</param>
         /// <param name="option">The input option.</param>
