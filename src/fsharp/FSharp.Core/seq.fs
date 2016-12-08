@@ -1007,10 +1007,11 @@ namespace Microsoft.FSharp.Collections
             let arr,state = Array.mapFoldBack f array acc
             readonly arr, state
 
-        [<CompiledName("Except")>]
+        [<CompiledName "Except">]
         let except (itemsToExclude: seq<'T>) (source: seq<'T>) =
             checkNonNull "itemsToExclude" itemsToExclude
-            source |> seqFactory (Composer.Seq.ExceptFactory itemsToExclude)
+            if isEmpty itemsToExclude then source else
+            source |> toComposer |> Composer.Seq.except itemsToExclude |> Upcast.enumerable
 
         [<CompiledName("ChunkBySize")>]
         let chunkBySize chunkSize (source : seq<_>) =

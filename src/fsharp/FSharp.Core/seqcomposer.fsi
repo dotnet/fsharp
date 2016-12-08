@@ -97,11 +97,6 @@ namespace Microsoft.FSharp.Collections
                           second: SeqFactory<'U,'V> ->
                              SeqFactory<'T,'V>
           end
-        and ExceptFactory<'T when 'T : equality> =
-          class
-            inherit  SeqFactory<'T,'T>
-            new : itemsToExclude:seq<'T> ->  ExceptFactory<'T>
-          end
         and IdentityFactory<'T> =
           class
             inherit  SeqFactory<'T,'T>
@@ -167,13 +162,6 @@ namespace Microsoft.FSharp.Collections
             interface ICompletionChaining
             new : next:ICompletionChaining ->
                     SeqComponent<'T,'U>
-          end
-        and Except<'T,'V when 'T : equality> =
-          class
-            inherit  SeqComponent<'T,'V>
-            new : itemsToExclude:seq<'T> * next: Consumer<'T,'V> ->
-                     Except<'T,'V>
-            override ProcessNext : input:'T -> bool
           end
         and Map2First<'First,'Second,'U,'V> =
           class
@@ -504,6 +492,9 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "IterateIndexed">]
         val iteri : f:(int -> 'T -> unit) -> source: ISeq<'T> -> unit
+
+        [<CompiledName "Except">]
+        val inline except : itemsToExclude:seq<'T> -> source:ISeq<'T> -> ISeq<'T> when 'T:equality
 
         [<CompiledName "Exists">]
         val exists : f:('T -> bool) -> source: ISeq<'T> -> bool
