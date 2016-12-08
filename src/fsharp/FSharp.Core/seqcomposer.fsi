@@ -153,11 +153,6 @@ namespace Microsoft.FSharp.Collections
             inherit  SeqFactory<'T,'T>
             new : count:int * notEnoughElements:(string->array<obj>->unit) -> SkipFactory<'T>
           end
-        and TakeWhileFactory<'T> =
-          class
-            inherit  SeqFactory<'T,'T>
-            new : predicate:('T -> bool) ->  TakeWhileFactory<'T>
-          end
         and TakeFactory<'T> =
           class
             inherit  SeqFactory<'T,'T>
@@ -287,14 +282,6 @@ namespace Microsoft.FSharp.Collections
                   next: Consumer<'T,'V> * pipelineIdx:int ->
                      Take<'T,'V>
             override OnComplete : terminatingIdx: PipeIdx -> unit
-          end
-        and TakeWhile<'T,'V> =
-          class
-            inherit  SeqComponent<'T,'V>
-            new : predicate:('T -> bool) * outOfBand: IOutOfBand *
-                  next: Consumer<'T,'V> * pipeIdx:int ->
-                     TakeWhile<'T,'V>
-            override ProcessNext : input:'T -> bool
           end
         and Tail<'T,'V> =
           class
@@ -621,15 +608,18 @@ namespace Microsoft.FSharp.Collections
         [<CompiledNameAttribute "DistinctBy">]
         val inline distinctBy : keyf:('T->'Key) -> source: ISeq<'T> -> ISeq<'T> when 'Key:equality
 
-        [<CompiledName("SkipWhile")>]
+        [<CompiledName "SkipWhile">]
         val inline skipWhile : predicate:('T->bool) -> source:ISeq<'T> -> ISeq<'T>
+
+        [<CompiledName "TakeWhile">]
+        val inline takeWhile : predicate:('T->bool) -> source:ISeq<'T> -> ISeq<'T>
 
         [<CompiledNameAttribute ("Indexed")>]
         val inline indexed : source: ISeq<'a> -> ISeq<int * 'a>
 
         [<CompiledNameAttribute ("TryPick")>]
-        val tryPick :
-          f:('T -> 'U option) -> source: ISeq<'T> -> Option<'U>
+        val tryPick : f:('T -> 'U option) -> source: ISeq<'T> -> Option<'U>
+
         [<CompiledNameAttribute ("TryFind")>]
         val tryFind : f:('T -> bool) -> source: ISeq<'T> -> Option<'T>
 

@@ -882,11 +882,11 @@ namespace Microsoft.FSharp.Collections
             acc
 
 *)
-        [<CompiledName("TakeWhile")>]
+        [<CompiledName "TakeWhile">]
         let takeWhile predicate (source: seq<_>) =
-            source |> seqFactory (Composer.Seq.TakeWhileFactory predicate)
+            source |> toComposer |> Composer.Seq.takeWhile predicate |> Upcast.enumerable
 
-        [<CompiledName("SkipWhile")>]
+        [<CompiledName "SkipWhile">]
         let skipWhile predicate (source: seq<_>) =
             source |> toComposer |> Composer.Seq.skipWhile predicate |> Upcast.enumerable
 
