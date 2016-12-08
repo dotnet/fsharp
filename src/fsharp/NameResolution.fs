@@ -513,12 +513,12 @@ let AddValRefsToNameEnvWithPriority bulkAddMode pri nenv (vrefs: ValRef []) =
         ePatItems = (nenv.ePatItems,vrefs) ||> Array.fold AddValRefsToActivePatternsNameEnv }
 
 /// Add a single F# value to the environment.
-let AddValRefToNameEnv nenv vref = 
+let AddValRefToNameEnv nenv (vref:ValRef) = 
     let pri = NextExtensionMethodPriority()
     { nenv with 
         eUnqualifiedItems = 
             if vref.MemberInfo.IsNone then 
-                eUnqualifiedItems.Add (vref.LogicalName, Item.Value vref) 
+                nenv.eUnqualifiedItems.Add (vref.LogicalName, Item.Value vref) 
             else
                 nenv.eUnqualifiedItems
         eIndexedExtensionMembers = AddValRefToExtensionMembers pri nenv.eIndexedExtensionMembers vref
