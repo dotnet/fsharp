@@ -83,11 +83,11 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Iterate")>]
         let iter f (source : seq<'T>) =
-            Composer.Seq.iter f (toComposer source)
+            source |> toComposer |> Composer.Seq.iter f
 
         [<CompiledName("TryHead")>]
         let tryHead (source : seq<_>) =
-            Composer.Seq.tryHead (toComposer source)
+            source |> toComposer |> Composer.Seq.tryHead
 
         [<CompiledName("Skip")>]
         let skip count (source: seq<_>) =
@@ -107,26 +107,26 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("TryItem")>]
         let tryItem i (source:seq<'T>) =
-            Composer.Seq.tryItem i (toComposer source)
+            source |> toComposer |> Composer.Seq.tryItem i
 
         [<CompiledName("Get")>]
         let nth i (source : seq<'T>) = item i source
 
         [<CompiledName("IterateIndexed")>]
         let iteri f (source:seq<'T>) =
-            Composer.Seq.iteri f (toComposer source)
+            source |> toComposer |> Composer.Seq.iteri f
 
         [<CompiledName("Exists")>]
         let exists f (source:seq<'T>) =
-            Composer.Seq.exists f (toComposer source)
+            source |> toComposer |> Composer.Seq.exists f
 
         [<CompiledName("Contains")>]
         let inline contains element (source:seq<'T>) =
-            Composer.Seq.contains element (toComposer source)
+            source |> toComposer |> Composer.Seq.contains element
 
         [<CompiledName("ForAll")>]
         let forall f (source:seq<'T>) =
-            Composer.Seq.forall f (toComposer source)
+            source |> toComposer |> Composer.Seq.forall f
 
         [<CompiledName("Iterate2")>]
         let iter2 f (source1 : seq<_>) (source2 : seq<_>)    =
@@ -174,22 +174,19 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Filter")>]
         let filter<'T> (f:'T->bool) (source:seq<'T>) : seq<'T> =
-            Composer.Seq.filter f (toComposer source)
-            |> Upcast.enumerable
+            source |> toComposer |> Composer.Seq.filter f |> Upcast.enumerable
 
         [<CompiledName("Where")>]
         let where f source = filter f source
 
         [<CompiledName("Map")>]
         let map<'T,'U> (f:'T->'U) (source:seq<'T>) : seq<'U> =
-            Composer.Seq.map f (toComposer source)
-            |> Upcast.enumerable
+            source |> toComposer |> Composer.Seq.map f |> Upcast.enumerable
 
         [<CompiledName("MapIndexed")>]
         let mapi f source =
             let f' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt f
-            Composer.Seq.mapi_adapt f' (toComposer source)
-            |> Upcast.enumerable
+            source |> toComposer |> Composer.Seq.mapi_adapt f' |> Upcast.enumerable
 
         [<CompiledName("MapIndexed2")>]
         let mapi2 f source1 source2 =
@@ -211,13 +208,11 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Choose")>]
         let choose f source =
-            Composer.Seq.choose f (toComposer source)
-            |> Upcast.enumerable
+            source |> toComposer |> Composer.Seq.choose f |> Upcast.enumerable
 
         [<CompiledName("Indexed")>]
         let indexed source =
-            Composer.Seq.indexed (toComposer source)
-            |> Upcast.enumerable
+            source |> toComposer |> Composer.Seq.indexed |> Upcast.enumerable
 
         [<CompiledName("Zip")>]
         let zip source1 source2  =
@@ -234,7 +229,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("TryPick")>]
         let tryPick f (source : seq<'T>)  =
-            Composer.Seq.tryPick f (toComposer source)
+            source |> toComposer |> Composer.Seq.tryPick f
 
         [<CompiledName("Pick")>]
         let pick f source  =
@@ -244,7 +239,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("TryFind")>]
         let tryFind f (source : seq<'T>)  =
-            Composer.Seq.tryFind f (toComposer source)
+            source |> toComposer |> Composer.Seq.tryFind f
 
         [<CompiledName("Find")>]
         let find f source =
