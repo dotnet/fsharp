@@ -154,17 +154,9 @@ namespace Microsoft.FSharp.Collections
                 inherit SeqFactory<'T,'T*'T> ()
                 override this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'T*'T,'V>) : Consumer<'T,'V> = upcast Pairwise (next)
 
-            and TakeFactory<'T> (count:int) =
-                inherit SeqFactory<'T,'T> ()
-                override this.Create<'V> (outOfBand:IOutOfBand) (pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Take (count, outOfBand, next, pipeIdx)
-
             and TailFactory<'T> () =
                 inherit SeqFactory<'T,'T> ()
                 override this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Tail<'T,'V> (next)
-
-            and TruncateFactory<'T> (count:int) =
-                inherit SeqFactory<'T,'T> ()
-                override this.Create<'V> (outOfBand:IOutOfBand) (pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Truncate (count, outOfBand, next, pipeIdx)
 
             and WindowedFactory<'T> (windowSize:int) =
                 inherit SeqFactory<'T, 'T[]> ()
@@ -300,15 +292,6 @@ namespace Microsoft.FSharp.Collections
                         lastValue <- input
                         TailCall.avoid (next.ProcessNext currentPair)
 
-            and Take<'T,'V> (takeCount:int, outOfBand:IOutOfBand, next:Consumer<'T,'V>, pipelineIdx:int) =
-                inherit Truncate<'T, 'V>(takeCount, outOfBand, next, pipelineIdx)
-
-                override this.OnComplete terminatingIdx =
-                    if terminatingIdx < pipelineIdx && this.Count < takeCount then
-                        let x = takeCount - this.Count
-                        invalidOpFmt "tried to take {0} {1} past the end of the seq"
-                            [|SR.GetString SR.notEnoughElements; x; (if x=1 then "element" else "elements")|]
-
             and Tail<'T, 'V> (next:Consumer<'T,'V>) =
                 inherit SeqComponent<'T,'V>(Upcast.iCompletionChaining next)
 
@@ -324,23 +307,6 @@ namespace Microsoft.FSharp.Collections
                 override this.OnComplete _ =
                     if first then
                         invalidArg "source" (SR.GetString(SR.notEnoughElements))
-
-            and Truncate<'T,'V> (truncateCount:int, outOfBand:IOutOfBand, next:Consumer<'T,'V>, pipeIdx:int) =
-                inherit SeqComponent<'T,'V>(Upcast.iCompletionChaining next)
-
-                let mutable count = 0
-
-                member __.Count = count
-
-                override __.ProcessNext (input:'T) : bool =
-                    if count < truncateCount then
-                        count <- count + 1
-                        if count = truncateCount then
-                            outOfBand.StopFurtherProcessing pipeIdx
-                        TailCall.avoid (next.ProcessNext input)
-                    else
-                        outOfBand.StopFurtherProcessing pipeIdx
-                        false
 
             and Windowed<'T,'V> (windowSize: int, next:Consumer<'T[],'V>) =
                 inherit SeqComponent<'T,'V>(Upcast.iCompletionChaining next)
@@ -1153,8 +1119,6 @@ namespace Microsoft.FSharp.Collections
                                         false
                         }}
 
-
-
             [<CompiledName "SkipWhile">]
             let inline skipWhile (predicate:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
                 source |> compose { new SeqFactory<'T,'T>() with
@@ -1170,6 +1134,29 @@ namespace Microsoft.FSharp.Collections
                                 else
                                     TailCall.avoid (next.ProcessNext input) }}
 
+            [<CompiledName "Take">]
+            let inline take (takeCount:int) (source:ISeq<'T>) : ISeq<'T> =
+                source |> compose { new SeqFactory<'T,'T>() with
+                    member __.Create outOfBand pipelineIdx next =
+                        upcast {
+                            new SeqComponentSimpleValue<'T,'U,int>(Upcast.iCompletionChaining next,(*count*)0) with
+                                override self.ProcessNext (input:'T) : bool =
+                                    if (*count*) self.Value < takeCount then
+                                        self.Value <- self.Value + 1
+                                        if self.Value = takeCount then
+                                            outOfBand.StopFurtherProcessing pipelineIdx
+                                        TailCall.avoid (next.ProcessNext input)
+                                    else
+                                        outOfBand.StopFurtherProcessing pipelineIdx
+                                        false
+
+                                override this.OnComplete terminatingIdx =
+                                    if terminatingIdx < pipelineIdx && this.Value < takeCount then
+                                        let x = takeCount - this.Value
+                                        invalidOpFmt "tried to take {0} {1} past the end of the seq"
+                                            [|SR.GetString SR.notEnoughElements; x; (if x=1 then "element" else "elements")|]
+                        }}
+
             [<CompiledName "TakeWhile">]
             let inline takeWhile (predicate:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
                 source |> compose { new SeqFactory<'T,'T>() with
@@ -1181,6 +1168,23 @@ namespace Microsoft.FSharp.Collections
                                 else
                                     outOfBand.StopFurtherProcessing pipeIdx
                                     false }}
+
+            [<CompiledName "Truncate">]
+            let inline truncate (truncateCount:int) (source:ISeq<'T>) : ISeq<'T> =
+                source |> compose { new SeqFactory<'T,'T>() with
+                    member __.Create outOfBand pipeIdx next =
+                        upcast {
+                            new SeqComponentSimpleValue<'T,'U,int>(Upcast.iCompletionChaining next,(*count*)0) with
+                                override self.ProcessNext (input:'T) : bool =
+                                    if (*count*) self.Value < truncateCount then
+                                        self.Value <- self.Value + 1
+                                        if self.Value = truncateCount then
+                                            outOfBand.StopFurtherProcessing pipeIdx
+                                        TailCall.avoid (next.ProcessNext input)
+                                    else
+                                        outOfBand.StopFurtherProcessing pipeIdx
+                                        false
+                        }}
 
             [<CompiledName("Indexed")>]
             let inline indexed source =
