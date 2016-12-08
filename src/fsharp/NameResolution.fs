@@ -525,8 +525,6 @@ let AddValRefToNameEnv nenv vref =
         ePatItems = AddValRefsToActivePatternsNameEnv nenv.ePatItems vref }
 
 
-    AddValRefsToNameEnvWithPriority BulkAdd.No (NextExtensionMethodPriority()) nenv [| vref |]
-
 /// Add a set of active pattern result tags to the environment.
 let AddActivePatternResultTagsToNameEnv (apinfo: PrettyNaming.ActivePatternInfo) nenv ty m =
     let nms = apinfo.Names
