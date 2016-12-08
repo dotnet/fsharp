@@ -451,9 +451,9 @@ namespace Microsoft.FSharp.Collections
             if n <= 0 then empty else
             source |> toComposer |> Composer.Seq.truncate n |> Upcast.enumerable
 
-        [<CompiledName("Pairwise")>]
+        [<CompiledName "Pairwise">]
         let pairwise<'T> (source:seq<'T>) : seq<'T*'T> =
-            source |> seqFactory (Composer.Seq.PairwiseFactory ())
+            source |> toComposer |> Composer.Seq.pairwise  |> Upcast.enumerable
 
         [<CompiledName "Scan">]
         let scan<'T,'State> (folder:'State->'T->'State) (state:'State) (source:seq<'T>) : seq<'State> =
