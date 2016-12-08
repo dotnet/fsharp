@@ -649,7 +649,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("DistinctBy")>]
         let distinctBy keyf source =
-            source |> seqFactory (Composer.Seq.DistinctByFactory keyf)
+            source |> toComposer |> Composer.Seq.distinctBy keyf |> Upcast.enumerable
 
         [<CompiledName("SortBy")>]
         let sortBy keyf source =
