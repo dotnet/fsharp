@@ -142,12 +142,6 @@ namespace Microsoft.FSharp.Collections
             inherit  SeqFactory<'T,('T * 'T)>
             new : unit ->  PairwiseFactory<'T>
           end
-        and ScanFactory<'T,'State> =
-          class
-            inherit  SeqFactory<'T,'State>
-            new : folder:('State -> 'T -> 'State) * initialState:'State ->
-                     ScanFactory<'T,'State>
-          end
         and TakeFactory<'T> =
           class
             inherit  SeqFactory<'T,'T>
@@ -251,14 +245,6 @@ namespace Microsoft.FSharp.Collections
             inherit  SeqComponent<'T,'V>
             new : next: Consumer<('T * 'T),'V> ->
                      Pairwise<'T,'V>
-            override ProcessNext : input:'T -> bool
-          end
-        and Scan<'T,'State,'V> =
-          class
-            inherit  SeqComponent<'T,'V>
-            new : folder:('State -> 'T -> 'State) * initialState:'State *
-                  next: Consumer<'State,'V> ->
-                     Scan<'T,'State,'V>
             override ProcessNext : input:'T -> bool
           end
         and Take<'T,'V> =
@@ -592,6 +578,9 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledNameAttribute "DistinctBy">]
         val inline distinctBy : keyf:('T->'Key) -> source: ISeq<'T> -> ISeq<'T> when 'Key:equality
+
+        [<CompiledName "Scan">]
+        val inline scan : folder:('State->'T->'State) -> initialState:'State -> source:ISeq<'T> -> ISeq<'State>
 
         [<CompiledName "Skip">]
         val inline skip : skipCount:int -> source:ISeq<'T> -> ISeq<'T>

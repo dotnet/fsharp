@@ -154,10 +154,6 @@ namespace Microsoft.FSharp.Collections
                 inherit SeqFactory<'T,'T*'T> ()
                 override this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'T*'T,'V>) : Consumer<'T,'V> = upcast Pairwise (next)
 
-            and ScanFactory<'T,'State> (folder:'State->'T->'State, initialState:'State) =
-                inherit SeqFactory<'T,'State> ()
-                override this.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'State,'V>) : Consumer<'T,'V> = upcast Scan<_,_,_> (folder, initialState, next)
-
             and TakeFactory<'T> (count:int) =
                 inherit SeqFactory<'T,'T> ()
                 override this.Create<'V> (outOfBand:IOutOfBand) (pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = upcast Take (count, outOfBand, next, pipeIdx)
@@ -303,16 +299,6 @@ namespace Microsoft.FSharp.Collections
                         let currentPair = lastValue, input
                         lastValue <- input
                         TailCall.avoid (next.ProcessNext currentPair)
-
-            and Scan<'T,'State,'V> (folder:'State->'T->'State, initialState: 'State, next:Consumer<'State,'V>) =
-                inherit SeqComponent<'T,'V>(Upcast.iCompletionChaining next)
-
-                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
-                let mutable foldResult = initialState
-
-                override __.ProcessNext (input:'T) : bool =
-                    foldResult <- f.Invoke(foldResult, input)
-                    TailCall.avoid (next.ProcessNext foldResult)
 
             and Take<'T,'V> (takeCount:int, outOfBand:IOutOfBand, next:Consumer<'T,'V>, pipelineIdx:int) =
                 inherit Truncate<'T, 'V>(takeCount, outOfBand, next, pipelineIdx)
@@ -1118,6 +1104,24 @@ namespace Microsoft.FSharp.Collections
                             override this.ProcessNext (input:'T) : bool =
                                 if this.Value.Add (keyf input) then TailCall.avoid (next.ProcessNext input)
                                 else false } }
+
+            [<CompiledName "Scan">]
+            let inline scan (folder:'State->'T->'State) (initialState: 'State) (source:ISeq<'T>) :ISeq<'State> =
+                source |> compose { new SeqFactory<'T,'State>() with
+                    member __.Create _ _ next =
+                        upcast { new SeqComponentSimpleValue<'T,'V,'State>(Upcast.iCompletionChaining next, initialState) with
+                            override this.ProcessNext (input:'T) : bool =
+                                this.Value <- folder this.Value input
+                                TailCall.avoid (next.ProcessNext this.Value) } }
+
+
+            let scan_adapt (folder:OptimizedClosures.FSharpFunc<'State,'T,'State>) (initialState: 'State) (source:ISeq<'T>) :ISeq<'State> =
+                source |> compose { new SeqFactory<'T,'State>() with
+                    member __.Create _ _ next =
+                        upcast { new SeqComponentSimpleValue<'T,'V,'State>(Upcast.iCompletionChaining next, initialState) with
+                            override this.ProcessNext (input:'T) : bool =
+                                this.Value <- folder.Invoke(this.Value,input)
+                                TailCall.avoid (next.ProcessNext this.Value) } }
 
             [<CompiledName "Skip">]
             let inline skip (skipCount:int) (source:ISeq<'T>) : ISeq<'T> =
