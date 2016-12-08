@@ -172,7 +172,7 @@ type internal FSharpSignatureHelpProvider
 
         for method in methods do
             // Create the documentation. Note, do this on the background thread, since doing it in the documentationBuild fails to build the XML index
-            let methodDocs = XmlDocumentation.BuildMethodOverloadTipText(documentationBuilder, method.Description, false)
+            let summaryDoc = XmlDocumentation.BuildMethodOverloadTipText(documentationBuilder, method.Description, false)
 
             let parameters = 
                 let parameters = if isStaticArgTip then method.StaticParameters else method.Parameters
@@ -186,15 +186,17 @@ type internal FSharpSignatureHelpProvider
             let hasParamComments (pcs: (string*bool*TaggedText[]*TaggedText[])[]) =
                 pcs |> Array.exists (fun (_, _, doc, _) -> doc.Length > 0)
 
-            let doc = if (hasParamComments parameters) then [| TaggedText(TextTags.Text, methodDocs + "\n") |] 
-                      else [| TaggedText(TextTags.Text, methodDocs) |]
+            let summaryText = if String.IsNullOrWhiteSpace(summaryDoc) then [| TaggedText() |]
+                              elif (hasParamComments parameters) then [| TaggedText(TextTags.Text, summaryDoc + "\n") |]
+                              else [| TaggedText(TextTags.Text, summaryDoc) |]
 
             // Prepare the text to display
             let descriptionParts = [| TaggedText(TextTags.Text, method.TypeText) |]
             let prefixParts = [| TaggedText(TextTags.Text, methodGroup.MethodName);  TaggedText(TextTags.Punctuation,  (if isStaticArgTip then "<" else "(")) |]
             let separatorParts = [| TaggedText(TextTags.Punctuation, ", ") |]
             let suffixParts = [| TaggedText(TextTags.Text, (if isStaticArgTip then ">" else ")")) |]
-            let completionItem =  (method.HasParamArrayArg ,doc,prefixParts,separatorParts,suffixParts,parameters,descriptionParts)
+
+            let completionItem = (method.HasParamArrayArg, summaryText, prefixParts, separatorParts, suffixParts, parameters, descriptionParts)
             // FSROSLYNTODO: Do we need a cache like for completion?
             //declarationItemsCache.Remove(completionItem.DisplayText) |> ignore // clear out stale entries if they exist
             //declarationItemsCache.Add(completionItem.DisplayText, declarationItem)
@@ -226,10 +228,12 @@ type internal FSharpSignatureHelpProvider
                     match methods with 
                     | None -> return null
                     | Some (results,applicableSpan,argumentIndex,argumentCount,argumentName) -> 
-
                         let items = 
-                            results |> Array.map (fun (hasParamArrayArg,doc,prefixParts,separatorParts,suffixParts,parameters,descriptionParts) ->
-                                    let parameters = parameters |> Array.map (fun (paramName, isOptional, paramDoc, displayParts) -> SignatureHelpParameter(paramName,isOptional,documentationFactory=(fun _ -> paramDoc :> seq<_>),displayParts=displayParts))
+                            results 
+                            |> Array.map (fun (hasParamArrayArg, doc, prefixParts, separatorParts, suffixParts, parameters, descriptionParts) ->
+                                    let parameters = parameters 
+                                                     |> Array.map (fun (paramName, isOptional, paramDoc, displayParts) -> 
+                                                        SignatureHelpParameter(paramName,isOptional,documentationFactory=(fun _ -> paramDoc :> seq<_>),displayParts=displayParts))
                                     SignatureHelpItem(isVariadic=hasParamArrayArg ,documentationFactory=(fun _ -> doc :> seq<_>),prefixParts=prefixParts,separatorParts=separatorParts,suffixParts=suffixParts,parameters=parameters,descriptionParts=descriptionParts))
 
                         return SignatureHelpItems(items,applicableSpan,argumentIndex,argumentCount,Option.toObj argumentName)
