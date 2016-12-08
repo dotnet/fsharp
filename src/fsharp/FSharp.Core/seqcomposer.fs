@@ -1182,6 +1182,16 @@ namespace Microsoft.FSharp.Collections
                                 | Some value -> TailCall.avoid (next.ProcessNext value)
                                 | None       -> false } }
 
+            [<CompiledName("Distinct")>]
+            let inline distinct source =
+                source |> compose { new SeqFactory<'T,'T>() with
+                    member __.Create _ _ next =
+                        upcast { new SeqComponentSimpleValue<'T,'V,HashSet<'T>>
+                                        (Upcast.iCompletionChaining next,(HashSet<'T>(HashIdentity.Structural<'T>))) with
+                            override this.ProcessNext (input:'T) : bool =
+                                if this.Value.Add input then TailCall.avoid (next.ProcessNext input)
+                                else false } }
+
 
             [<CompiledName("Indexed")>]
             let inline indexed source =
