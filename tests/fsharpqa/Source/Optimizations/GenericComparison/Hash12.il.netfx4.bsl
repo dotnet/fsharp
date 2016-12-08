@@ -170,8 +170,7 @@
         IL_000f:  ldarg.0
         IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class Hash12/HashMicroPerfAndCodeGenerationTests/Key,string>::Invoke(!0)
         IL_0015:  ret
-      } // end of method Key::To
-      String
+      } // end of method Key::ToString
 
       .method public hidebysig virtual final 
               instance int32  CompareTo(class Hash12/HashMicroPerfAndCodeGenerationTests/Key obj) cil managed
