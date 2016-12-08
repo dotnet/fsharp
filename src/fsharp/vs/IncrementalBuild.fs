@@ -1147,15 +1147,14 @@ type internal CompilationErrorLogger (debugName:string, tcConfig:TcConfig) =
             
     let mutable errorCount = 0
     let diagnostics = new ResizeArray<_>()
-            
-    let warningOrError isError exn = 
+
+    override x.DiagnosticSink(exn, isError) = 
         if isError || ReportWarningAsError (tcConfig.globalWarnLevel, tcConfig.specificWarnOff, tcConfig.specificWarnOn, tcConfig.specificWarnAsError, tcConfig.specificWarnAsWarn, tcConfig.globalWarnAsError) exn then
             diagnostics.Add(exn, isError)
             errorCount <- errorCount + 1
         else if ReportWarning (tcConfig.globalWarnLevel, tcConfig.specificWarnOff, tcConfig.specificWarnOn) exn then 
             diagnostics.Add(exn, isError)
 
-    override x.DiagnosticSink(exn, isError) = warningOrError isError exn
     override x.ErrorCount = errorCount
 
     member x.GetErrors() = 

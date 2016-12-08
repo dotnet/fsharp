@@ -3102,8 +3102,7 @@ let GetScopedPragmasForInput input =
 // interact well with #line directives.
 type ErrorLoggerFilteringByScopedPragmas (checkFile, scopedPragmas, errorLogger:ErrorLogger) =
     inherit ErrorLogger("ErrorLoggerFilteringByScopedPragmas")
-    let mutable scopedPragmas = scopedPragmas
-    member x.ScopedPragmas with set v = scopedPragmas <- v
+
     override x.DiagnosticSink (phasedError,isError) = 
         if isError then 
             errorLogger.DiagnosticSink (phasedError,isError)
