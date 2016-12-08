@@ -529,7 +529,10 @@ let AddValRefToNameEnv nenv (vref:ValRef) =
 let AddActivePatternResultTagsToNameEnv (apinfo: PrettyNaming.ActivePatternInfo) nenv ty m =
     let nms = apinfo.Names
     let apresl = nms |> List.mapi (fun j nm -> nm, j)
-    { nenv with  eUnqualifiedItems= (apresl,nenv.eUnqualifiedItems) ||> List.foldBack (fun (nm,j) acc -> acc.Add(nm, Item.ActivePatternResult(apinfo,ty,j, m))) } 
+    { nenv with
+        eUnqualifiedItems = 
+            (apresl,nenv.eUnqualifiedItems) 
+            ||> List.foldBack (fun (nm,j) acc -> acc.Add(nm, Item.ActivePatternResult(apinfo,ty,j, m))) } 
 
 /// Generalize a union case, from Cons --> List<T>.Cons
 let GeneralizeUnionCaseRef (ucref:UnionCaseRef) = 
@@ -554,7 +557,7 @@ let AddTyconByAccessNames bulkAddMode (tcrefs:TyconRef[]) (tab: LayeredMultiMap<
 let AddRecdField (rfref:RecdFieldRef) tab = NameMultiMap.add rfref.FieldName rfref tab
 
 /// Add a set of union cases to the corresponding sub-table of the environment 
-let AddUnionCases1 (tab:Map<_,_>) (ucrefs:UnionCaseRef list)= 
+let AddUnionCases1 (tab:Map<_,_>) (ucrefs:UnionCaseRef list) = 
     (tab, ucrefs) ||> List.fold (fun acc ucref -> 
         let item = Item.UnionCase(GeneralizeUnionCaseRef ucref,false)
         acc.Add (ucref.CaseName, item))
@@ -588,8 +591,9 @@ let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g:TcGlobals) 
             | Choice1Of2 (tcref,extMemInfo) -> tab1.Add (tcref, extMemInfo), tab2
             | Choice2Of2 extMemInfo -> tab1, extMemInfo :: tab2)  
 
+    let isILOrRequiredQualifiedAccess = isIL || (not ownDefinition && HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute tcref.Attribs)
     let eFieldLabels = 
-        if not tcref.IsRecordTycon || isIL || flds.Length = 0 || (not ownDefinition && HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute tcref.Attribs) then 
+        if isILOrRequiredQualifiedAccess || not tcref.IsRecordTycon || flds.Length = 0 then 
             nenv.eFieldLabels 
         else 
             (nenv.eFieldLabels,flds) ||> Array.fold (fun acc f -> 
@@ -600,12 +604,11 @@ let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g:TcGlobals) 
         let tab = nenv.eUnqualifiedItems
         // add the type name for potential use as a constructor
         // The rules are
-        // -	The unqualified lookup table in the environment can contain map names to a set of type names (the set of type names is a new kind of "item"). 
-        // -	When the contents of a type definition is added to the environment, an entry is added in this table for all class and struct types.
-        // -	When opening a module, types are added first to the environment, then values, then auto-opened sub-modules. 
-        // -	When a value is added by an "open" previously available type names will become inaccessible by this table. 
+        // - The unqualified lookup table in the environment can contain map names to a set of type names (the set of type names is a new kind of "item"). 
+        // - When the contents of a type definition is added to the environment, an entry is added in this table for all class and struct types.
+        // - When opening a module, types are added first to the environment, then values, then auto-opened sub-modules. 
+        // - When a value is added by an "open" previously available type names will become inaccessible by this table. 
         let tab = 
-
             // This may explore into an unreferenced assembly if the name
             // is a type abbreviation. If it does, assume the name does not
             // have a constructor.
@@ -619,21 +622,23 @@ let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g:TcGlobals) 
             if mayHaveConstruction then 
                 tab.LinearTryModifyThenLaterFlatten (tcref.DisplayName, (fun prev ->
                     match prev with 
-                    | Some (Item.UnqualifiedType tcrefs) ->  Item.UnqualifiedType (tcref::tcrefs)
-                    | _ ->  Item.UnqualifiedType [tcref]))
+                    | Some (Item.UnqualifiedType tcrefs) -> Item.UnqualifiedType (tcref::tcrefs)
+                    | _ -> Item.UnqualifiedType [tcref]))
             else
                 tab
-        if isIL || ucrefs.Length = 0  || (not ownDefinition && HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute tcref.Attribs) then 
+        if isILOrRequiredQualifiedAccess || ucrefs.Length = 0 then 
             tab 
         else 
             AddUnionCases2 bulkAddMode tab ucrefs
+
     let ePatItems = 
-        if isIL || ucrefs.Length = 0  || (not ownDefinition && HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute tcref.Attribs) then 
-          nenv.ePatItems 
+        if isILOrRequiredQualifiedAccess || ucrefs.Length = 0 then 
+            nenv.ePatItems 
         else 
-          AddUnionCases1 nenv.ePatItems ucrefs
+            AddUnionCases1 nenv.ePatItems ucrefs
+
     { nenv with 
-        eFieldLabels= eFieldLabels
+        eFieldLabels = eFieldLabels
         eUnqualifiedItems = eUnqualifiedItems
         ePatItems = ePatItems
         eIndexedExtensionMembers = eIndexedExtensionMembers 
