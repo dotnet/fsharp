@@ -82,7 +82,7 @@ type UsingMSBuild() as this =
             failwith (sprintf "Multiple errors containing \"%s\"" text)
 
     let AssertExactlyOneErrorSeenContaining(project:OpenProject,text) =
-        AssertExactlyCountErrorSeenContaining(project:OpenProject,tex,1)
+        AssertExactlyCountErrorSeenContaining(project,text,1)
 
     /// Assert that a given squiggle is an Error (or warning) containing the given text        
     let AssertSquiggleIsErrorContaining,AssertSquiggleIsWarningContaining, AssertSquiggleIsErrorNotContaining,AssertSquiggleIsWarningNotContaining =         
