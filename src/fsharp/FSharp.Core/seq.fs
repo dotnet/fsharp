@@ -52,7 +52,7 @@ namespace Microsoft.FSharp.Collections
         let inline foreach f (source:seq<_>) =
             Composer.Seq.foreach f (toComposer source)
 
-        let inline seqFactory (createSeqComponent:#SeqFactory<_,_>) (source:seq<'T>) =
+        let private seqFactory (createSeqComponent:#SeqFactory<_,_>) (source:seq<'T>) =
             match source with
             | :? Composer.Core.ISeq<'T> as s -> Upcast.enumerable (s.Compose createSeqComponent)
             | :? array<'T> as a -> Upcast.enumerable (Composer.Seq.Array.create a createSeqComponent)
@@ -637,13 +637,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Distinct")>]
         let distinct source =
-            source |> seqFactory { new SeqFactory<'T,'T>() with
-                member __.Create _ _ next =
-                    upcast { new SeqComponentSimpleValue<'T,'V,HashSet<'T>>
-                                    (Upcast.iCompletionChaining next,(HashSet<'T>(HashIdentity.Structural<'T>))) with
-                        override this.ProcessNext (input:'T) : bool =
-                            if this.Value.Add input then TailCall.avoid (next.ProcessNext input)
-                            else false } }
+            source |> toComposer |> Composer.Seq.distinct |> Upcast.enumerable
 
         [<CompiledName("DistinctBy")>]
         let distinctBy keyf source =

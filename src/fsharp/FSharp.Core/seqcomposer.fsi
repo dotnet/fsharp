@@ -651,6 +651,9 @@ namespace Microsoft.FSharp.Collections
         [<CompiledNameAttribute ("Choose")>]
         val inline choose : f:('a->option<'b>) -> source: ISeq<'a> -> ISeq<'b>
 
+        [<CompiledNameAttribute "Distinct">]
+        val inline distinct : source: ISeq<'a> -> ISeq<'a>
+
         [<CompiledNameAttribute ("Indexed")>]
         val inline indexed : source: ISeq<'a> -> ISeq<int * 'a>
 
