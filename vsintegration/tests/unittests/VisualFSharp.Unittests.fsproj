@@ -41,7 +41,6 @@
     <Compile Include="Tests.XmlDocComments.fs" />
     <Compile Include="Tests.LanguageService.General.fs" />
     <Compile Include="Tests.LanguageService.Completion.fs" />
-    <Compile Include="Tests.LanguageService.F1Keyword.fs" />
     <Compile Include="Tests.LanguageService.IncrementalBuild.fs" />
     <Compile Include="Tests.LanguageService.GotoDefinition.fs" />
     <Compile Include="Tests.LanguageService.NavigationBar.fs" />
