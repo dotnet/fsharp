@@ -3118,7 +3118,7 @@ type ErrorLoggerFilteringByScopedPragmas (checkFile, scopedPragmas, errorLogger:
                         (not checkFile || m.FileIndex = pragmaRange.FileIndex) &&
                         Range.posGeq m.Start pragmaRange.Start))  
             | None -> true
-          if report then errorLogger.DiagnosticSink(phasedError,true)
+          if report then errorLogger.DiagnosticSink(phasedError,false)
 
     override x.ErrorCount = errorLogger.ErrorCount
 
