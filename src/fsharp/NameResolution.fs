@@ -493,24 +493,47 @@ let AddFakeNameToNameEnv nm nenv item =
 /// Add a set of F# values to the environment.
 let AddValRefsToNameEnvWithPriority bulkAddMode pri nenv (vrefs: ValRef []) =
     if vrefs.Length = 0 then nenv else
-    {nenv with eUnqualifiedItems= AddValRefsToItems bulkAddMode nenv.eUnqualifiedItems vrefs
-               eIndexedExtensionMembers = (nenv.eIndexedExtensionMembers,vrefs) ||> Array.fold (AddValRefToExtensionMembers pri)
-               ePatItems = 
-                   (nenv.ePatItems,vrefs) ||> Array.fold (fun acc vref ->
-                       let ePatItems = 
-                         (ActivePatternElemsOfValRef vref, acc) ||> List.foldBack (fun apref tab -> 
-                             NameMap.add apref.Name (Item.ActivePatternCase apref) tab)
+    { nenv with 
+        eUnqualifiedItems = AddValRefsToItems bulkAddMode nenv.eUnqualifiedItems vrefs
+        eIndexedExtensionMembers = (nenv.eIndexedExtensionMembers,vrefs) ||> Array.fold (AddValRefToExtensionMembers pri)
+        ePatItems = 
+            (nenv.ePatItems,vrefs) ||> Array.fold (fun acc vref ->
+                let ePatItems = 
+                    (ActivePatternElemsOfValRef vref, acc) ||> List.foldBack (fun apref tab -> 
+                        NameMap.add apref.Name (Item.ActivePatternCase apref) tab)
 
-                       // Add literal constants to the environment available for resolving items in patterns 
-                       let ePatItems = 
-                           match vref.LiteralValue with 
-                           | None -> ePatItems 
-                           | Some _ -> NameMap.add vref.LogicalName (Item.Value vref) ePatItems
+                // Add literal constants to the environment available for resolving items in patterns 
+                let ePatItems = 
+                    match vref.LiteralValue with 
+                    | None -> ePatItems 
+                    | Some _ -> NameMap.add vref.LogicalName (Item.Value vref) ePatItems
 
-                       ePatItems) }
+                ePatItems) }
 
 /// Add a single F# value to the environment.
 let AddValRefToNameEnv nenv vref = 
+    let pri = NextExtensionMethodPriority()
+    { nenv with 
+        eUnqualifiedItems = 
+            if vref.MemberInfo.IsNone then 
+                eUnqualifiedItems.Add (vref.LogicalName, Item.Value vref) 
+            else
+                nenv.eUnqualifiedItems
+        eIndexedExtensionMembers = AddValRefToExtensionMembers pri nenv.eIndexedExtensionMembers vref
+        ePatItems = 
+            let ePatItems = 
+                (ActivePatternElemsOfValRef vref, nenv.ePatItems) ||> List.foldBack (fun apref tab -> 
+                    NameMap.add apref.Name (Item.ActivePatternCase apref) tab)
+
+            // Add literal constants to the environment available for resolving items in patterns 
+            let ePatItems = 
+                match vref.LiteralValue with 
+                | None -> ePatItems 
+                | Some _ -> NameMap.add vref.LogicalName (Item.Value vref) ePatItems
+
+            ePatItems }
+
+
     AddValRefsToNameEnvWithPriority BulkAdd.No (NextExtensionMethodPriority()) nenv [| vref |]
 
 /// Add a set of active pattern result tags to the environment.
