@@ -218,3 +218,18 @@ module internal Extensions =
             | :? FSharpUnionCase as m -> not m.Accessibility.IsPublic
             | :? FSharpField as m -> not m.Accessibility.IsPublic
             | _ -> false
+
+    type Async<'a> with
+        /// Creates an asynchronous workflow that runs the asynchronous workflow given as an argument at most once. 
+        /// When the returned workflow is started for the second time, it reuses the result of the previous execution.
+        static member Cache (input : Async<'T>) =
+            let agent = MailboxProcessor<AsyncReplyChannel<_>>.Start <| fun agent ->
+                async {
+                    let! replyCh = agent.Receive ()
+                    let! res = input
+                    replyCh.Reply res
+                    while true do
+                        let! replyCh = agent.Receive ()
+                        replyCh.Reply res 
+                }
+            async { return! agent.PostAndAsyncReply id }

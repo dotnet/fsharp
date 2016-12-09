@@ -91,40 +91,26 @@ type internal InlineRenameInfo
         let span = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate)
         CommonHelpers.fixupSpan(sourceText, span)
 
-    let underlyingGetSymbolUsesTaskLock = obj()
-    let mutable underlyingGetSymbolUsesTask: Task<ImmutableDictionary<DocumentId, FSharpSymbolUse[]>> = null
-    
-    let getSymbolUses cancellationToken =
-        lock underlyingGetSymbolUsesTaskLock <| fun _ ->
-            if isNull underlyingGetSymbolUsesTask then
-                // If this is the first call, then just start finding the initial set of rename locations.
-                underlyingGetSymbolUsesTask <- 
+    let symbolUses =
+        async {
+            let! symbolUses =
+                if symbolUse.Symbol.IsPrivateToFile then
+                    checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
+                else
                     async {
-                        let! symbolUses =
-                            if symbolUse.Symbol.IsPrivateToFile then
-                                checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
-                            else
-                                async {
-                                    let! projectCheckResults = checker.ParseAndCheckProject(options)
-                                    return! projectCheckResults.GetUsesOfSymbol(symbolUse.Symbol)
-                                }
-                        
-                        return
-                            (symbolUses 
-                             |> Seq.collect (fun symbolUse -> 
-                                  document.Project.Solution.GetDocumentIdsWithFilePath(symbolUse.FileName) |> Seq.map (fun id -> id, symbolUse))
-                             |> Seq.groupBy fst
-                            ).ToImmutableDictionary(
-                                (fun (id, _) -> id), 
-                                fun (_, xs) -> xs |> Seq.map snd |> Seq.toArray)
-                    } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
-        
-                underlyingGetSymbolUsesTask
-            else
-                // We already have a task to figure out the set of rename locations.
-                // Let it finish, then ask it to get the rename locations with the updated options.
-                underlyingGetSymbolUsesTask
-        |> Async.AwaitTask
+                        let! projectCheckResults = checker.ParseAndCheckProject(options)
+                        return! projectCheckResults.GetUsesOfSymbol(symbolUse.Symbol)
+                    }
+            
+            return
+                (symbolUses 
+                 |> Seq.collect (fun symbolUse -> 
+                      document.Project.Solution.GetDocumentIdsWithFilePath(symbolUse.FileName) |> Seq.map (fun id -> id, symbolUse))
+                 |> Seq.groupBy fst
+                ).ToImmutableDictionary(
+                    (fun (id, _) -> id), 
+                    fun (_, xs) -> xs |> Seq.map snd |> Seq.toArray)
+        } |> Async.Cache
 
     interface IInlineRenameInfo with
         member __.CanRename = true
@@ -145,7 +131,7 @@ type internal InlineRenameInfo
         
         member __.FindRenameLocationsAsync(_optionSet, cancellationToken) =
             async {
-                let! symbolUsesByDocumentId = getSymbolUses cancellationToken
+                let! symbolUsesByDocumentId = symbolUses
                 let! locationsByDocument =
                     symbolUsesByDocumentId
                     |> Seq.map (fun (KeyValue(documentId, symbolUses)) ->
