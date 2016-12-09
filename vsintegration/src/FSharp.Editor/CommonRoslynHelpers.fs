@@ -80,3 +80,12 @@ module internal CommonRoslynHelpers =
         | GlyphMajor.ValueType -> Glyph.StructurePublic
         | GlyphMajor.Error -> Glyph.Error
         | _ -> Glyph.ClassPublic
+
+[<AutoOpen>]
+module internal RoslynExtensions =
+    type Project with
+        /// The list of all other projects within the same solution that reference this project.
+        member this.GetDependentProjects() =
+            [ for project in this.Solution.Projects do
+                if project.ProjectReferences |> Seq.exists (fun ref -> ref.ProjectId = this.Id) then 
+                    yield project ]

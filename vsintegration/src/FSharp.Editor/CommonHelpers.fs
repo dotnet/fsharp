@@ -197,8 +197,20 @@ module CommonHelpers =
         | -1 | 0 -> span
         | index -> TextSpan(span.Start + index + 1, text.Length - index - 1)
 
+[<RequireQualifiedAccess; NoComparison>]
+type internal SymbolDeclarationLocation = 
+    | CurrentDocument
+    | Projects of Project list * isLocalForProject: bool
+
 [<AutoOpen>]
 module internal Extensions =
+    open System.IO
+
+    type Path with
+        static member GetFullPathSafe path =
+            try Path.GetFullPath path
+            with _ -> path
+
     type FSharpSymbol with
         member this.IsPrivateToFile = 
             match this with
@@ -219,6 +231,38 @@ module internal Extensions =
             | :? FSharpField as m -> not m.Accessibility.IsPublic
             | _ -> false
 
+        member this.GetDeclarationLocation (currentDocument: Document) : SymbolDeclarationLocation option =
+            if this.IsPrivateToFile then 
+                Some SymbolDeclarationLocation.CurrentDocument
+            else
+                let isSymbolLocalForProject = this.IsInternalToProject
+                
+                let declarationLocation = 
+                    match this.ImplementationLocation with
+                    | Some x -> Some x
+                    | None -> this.DeclarationLocation
+                
+                match declarationLocation with
+                | Some loc ->
+                    let filePath = Path.GetFullPathSafe loc.FileName
+                    let isScript = String.Equals(Path.GetExtension(filePath), ".fsx", StringComparison.OrdinalIgnoreCase)
+                    if isScript && filePath = currentDocument.FilePath then 
+                        Some SymbolDeclarationLocation.CurrentDocument
+                    elif isScript then
+                        // The standalone script might include other files via '#load'
+                        // These files appear in project options and the standalone file 
+                        // should be treated as an individual project
+                        Some (SymbolDeclarationLocation.Projects ([currentDocument.Project], isSymbolLocalForProject))
+                    else
+                        let projects =
+                            currentDocument.Project.Solution.Projects 
+                            |> Seq.filter (fun p -> p.Documents |> Seq.exists (fun doc -> doc.FilePath = filePath))
+                            |> Seq.toList
+                        match projects with
+                        | [] -> None
+                        | projects -> Some (SymbolDeclarationLocation.Projects (projects, isSymbolLocalForProject))
+                | None -> None
+
     type Async<'a> with
         /// Creates an asynchronous workflow that runs the asynchronous workflow given as an argument at most once. 
         /// When the returned workflow is started for the second time, it reuses the result of the previous execution.
@@ -233,3 +277,9 @@ module internal Extensions =
                         replyCh.Reply res 
                 }
             async { return! agent.PostAndAsyncReply id }
+
+        static member inline Map (f: 'a -> 'b) (input: Async<'a>) : Async<'b> = 
+            async {
+                let! result = input
+                return f result 
+            }

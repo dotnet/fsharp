@@ -70,15 +70,15 @@ type internal InlineRenameLocationSet(locationsByDocument: DocumentLocations [],
                         member __.GetReplacements(documentId) = Seq.empty }
             }
             |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
-        
 
 type internal InlineRenameInfo
     (
         checker: FSharpChecker,
-        options: FSharpProjectOptions, 
+        projectInfoManager: ProjectInfoManager,
         document: Document,
         sourceText: SourceText, 
         symbolUse: FSharpSymbolUse,
+        declLoc: SymbolDeclarationLocation,
         checkFileResults: FSharpCheckFileResults
     ) =
 
@@ -94,13 +94,29 @@ type internal InlineRenameInfo
     let symbolUses =
         async {
             let! symbolUses =
-                if symbolUse.Symbol.IsPrivateToFile then
+                match declLoc with
+                | SymbolDeclarationLocation.CurrentDocument ->
                     checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
-                else
-                    async {
-                        let! projectCheckResults = checker.ParseAndCheckProject(options)
-                        return! projectCheckResults.GetUsesOfSymbol(symbolUse.Symbol)
-                    }
+                | SymbolDeclarationLocation.Projects (projects, isInternalToProject) -> 
+                    let projects =
+                        if isInternalToProject then projects
+                        else 
+                            [ for project in projects do
+                                yield project
+                                yield! project.GetDependentProjects() ]
+                            |> List.distinctBy (fun x -> x.Id)
+
+                    projects
+                    |> Seq.map (fun project ->
+                        async {
+                            match projectInfoManager.TryGetOptionsForProject(project.Id) with
+                            | Some options ->
+                                let! projectCheckResults = checker.ParseAndCheckProject(options)
+                                return! projectCheckResults.GetUsesOfSymbol(symbolUse.Symbol)
+                            | None -> return [||]
+                        })
+                    |> Async.Parallel
+                    |> Async.Map Array.concat
             
             return
                 (symbolUses 
@@ -161,7 +177,8 @@ type internal InlineRenameService
         [<ImportMany>] _refactorNotifyServices: seq<IRefactorNotifyService>
     ) =
 
-    static member GetInlineRenameInfo(checker: FSharpChecker, document: Document, sourceText: SourceText, position: int, defines: string list, options: FSharpProjectOptions, textVersionHash: int, cancellationToken: CancellationToken) : Async<IInlineRenameInfo> = 
+    static member GetInlineRenameInfo(checker: FSharpChecker, projectInfoManager: ProjectInfoManager, document: Document, sourceText: SourceText, position: int, 
+                                      defines: string list, options: FSharpProjectOptions, textVersionHash: int, cancellationToken: CancellationToken) : Async<IInlineRenameInfo> = 
         async {
             let textLine = sourceText.Lines.GetLineFromPosition(position)
             let textLinePos = sourceText.Lines.GetLinePosition(position)
@@ -179,8 +196,8 @@ type internal InlineRenameService
                 
                 match symbolUse with
                 | Some symbolUse ->
-                    match symbolUse.Symbol.DeclarationLocation with
-                    | Some _ -> return InlineRenameInfo(checker, options, document, sourceText, symbolUse, checkFileResults) :> _
+                    match symbolUse.Symbol.GetDeclarationLocation(document) with
+                    | Some declLoc -> return InlineRenameInfo(checker, projectInfoManager, document, sourceText, symbolUse, declLoc, checkFileResults) :> _
                     | _ -> return FailureInlineRenameInfo.Instance :> _
                 | _ -> return FailureInlineRenameInfo.Instance :> _
             | None -> return FailureInlineRenameInfo.Instance :> _
@@ -194,7 +211,7 @@ type internal InlineRenameService
                     let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                     let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
                     let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
-                    return! InlineRenameService.GetInlineRenameInfo(checkerProvider.Checker, document, sourceText, position, defines, options, textVersion.GetHashCode(), cancellationToken)
+                    return! InlineRenameService.GetInlineRenameInfo(checkerProvider.Checker, projectInfoManager, document, sourceText, position, defines, options, textVersion.GetHashCode(), cancellationToken)
                 | None -> return FailureInlineRenameInfo.Instance :> _
             }
             |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
