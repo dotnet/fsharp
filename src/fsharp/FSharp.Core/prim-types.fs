@@ -382,6 +382,11 @@ namespace Microsoft.FSharp.Core
         inherit System.Attribute()
         member x.Path = path
         new() =  AutoOpenAttribute("")
+    
+    [<AttributeUsage(AttributeTargets.Method,AllowMultiple=false)>]
+    [<Sealed>]
+    type TailRecursionAttribute() =
+        inherit System.Attribute()
 
     [<MeasureAnnotatedAbbreviation>] type float<[<Measure>] 'Measure> = float 
     [<MeasureAnnotatedAbbreviation>] type float32<[<Measure>] 'Measure> = float32

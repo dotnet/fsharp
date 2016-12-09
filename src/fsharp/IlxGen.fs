@@ -2436,7 +2436,11 @@ and GenApp cenv cgbuf eenv (f,fty,tyargs,args,m) sequel =
          arityInfo.Length = args.Length
         ) &&
         (* no tailcall out of exception handler, etc. *)
-        (match sequelIgnoringEndScopesAndDiscard sequel with Return | ReturnVoid -> true | _ -> false))
+        (match sequelIgnoringEndScopesAndDiscard sequel with 
+        | Return | ReturnVoid -> true 
+        | _ -> let isTailRecursionFunc = HasFSharpAttribute cenv.g cenv.g.attrib_TailRecursionAttribute v.Attribs
+               if isTailRecursionFunc then warning (Error((8888, "no tail recursion"), m))
+               false))
     -> 
         let (kind,mark) = ListAssoc.find cenv.g.valRefEq v eenv.innerVals
         let ntmargs = 
