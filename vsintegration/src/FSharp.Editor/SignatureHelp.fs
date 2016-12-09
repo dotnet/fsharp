@@ -36,7 +36,13 @@ open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons
 
 [<Shared>]
 [<ExportSignatureHelpProvider("FSharpSignatureHelpProvider", FSharpCommonConstants.FSharpLanguageName)>]
-type FSharpSignatureHelpProvider [<ImportingConstructor>]  (serviceProvider: SVsServiceProvider) =
+type internal FSharpSignatureHelpProvider 
+    [<ImportingConstructor>]
+    (
+        serviceProvider: SVsServiceProvider,
+        checkerProvider: FSharpCheckerProvider,
+        projectInfoManager: ProjectInfoManager
+    ) =
 
     let xmlMemberIndexService = serviceProvider.GetService(typeof<IVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
@@ -45,8 +51,8 @@ type FSharpSignatureHelpProvider [<ImportingConstructor>]  (serviceProvider: SVs
     static let oneColBefore (lp: LinePosition) = LinePosition(lp.Line,max 0 (lp.Character-1))
 
     // Unit-testable core rutine
-    static member internal ProvideMethodsAsyncAux(documentationBuilder: IDocumentationBuilder, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, triggerIsTypedChar: char option, filePath: string, textVersionHash: int) = async {
-        let! parseResults, checkFileAnswer = FSharpLanguageService.Checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
+    static member internal ProvideMethodsAsyncAux(checker: FSharpChecker, documentationBuilder: IDocumentationBuilder, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, triggerIsTypedChar: char option, filePath: string, textVersionHash: int) = async {
+        let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
         match checkFileAnswer with
         | FSharpCheckFileAnswer.Aborted -> return None
         | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> 
@@ -130,12 +136,23 @@ type FSharpSignatureHelpProvider [<ImportingConstructor>]  (serviceProvider: SVs
             return None // comma or paren at wrong location = remove help display
         | _ -> 
 
-        // Compute the argument index by working out where the caret is between the various commas
+        // Compute the argument index by working out where the caret is between the various commas.
         let argumentIndex = 
-            tupleEnds
-            |> Array.pairwise 
-            |> Array.tryFindIndex (fun (lp1,lp2) -> textLines.GetTextSpan(LinePositionSpan(lp1, lp2)).Contains(caretPosition)) 
-            |> (function None -> 0 | Some n -> n)
+            let computedTextSpans =
+                tupleEnds 
+                |> Array.pairwise 
+                |> Array.map (fun (lp1, lp2) -> textLines.GetTextSpan(LinePositionSpan(lp1, lp2)))
+                
+            match (computedTextSpans|> Array.tryFindIndex (fun t -> t.Contains(caretPosition))) with 
+            | None -> 
+                // Because 'TextSpan.Contains' only succeeeds if 'TextSpan.Start <= caretPosition < TextSpan.End' is true,
+                // we need to check if the caret is at the very last position in the TextSpan.
+                //
+                // We default to 0, which is the first argument, if the caret position was nowhere to be found.
+                if computedTextSpans.[computedTextSpans.Length-1].End = caretPosition then
+                    computedTextSpans.Length-1 
+                else 0
+            | Some n -> n
          
         // Compute the overall argument count
         let argumentCount = 
@@ -162,10 +179,15 @@ type FSharpSignatureHelpProvider [<ImportingConstructor>]  (serviceProvider: SVs
                 [| for p in parameters do 
                       // FSROSLYNTODO: compute the proper help text for parameters, c.f. AppendParameter in XmlDocumentation.fs
                       let paramDoc = XmlDocumentation.BuildMethodParamText(documentationBuilder, method.XmlDoc, p.ParameterName) 
-                      let doc = [| TaggedText(TextTags.Text, paramDoc);  |] 
+                      let doc = if String.IsNullOrWhiteSpace(paramDoc) then [||]
+                                else [| TaggedText(TextTags.Text, paramDoc) |]
                       yield (p.ParameterName,p.IsOptional,doc,[| TaggedText(TextTags.Text,p.Display) |]) |]
 
-            let doc = [| TaggedText(TextTags.Text, methodDocs + "\n") |] 
+            let hasParamComments (pcs: (string*bool*TaggedText[]*TaggedText[])[]) =
+                pcs |> Array.exists (fun (_, _, doc, _) -> doc.Length > 0)
+
+            let doc = if (hasParamComments parameters) then [| TaggedText(TextTags.Text, methodDocs + "\n") |] 
+                      else [| TaggedText(TextTags.Text, methodDocs) |]
 
             // Prepare the text to display
             let descriptionParts = [| TaggedText(TextTags.Text, method.TypeText) |]
@@ -190,7 +212,7 @@ type FSharpSignatureHelpProvider [<ImportingConstructor>]  (serviceProvider: SVs
         member this.GetItemsAsync(document, position, triggerInfo, cancellationToken) = 
             async {
               try
-                match FSharpLanguageService.TryGetOptionsForEditingDocumentOrProject(document)  with 
+                match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)  with 
                 | Some options ->
                     let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                     let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
@@ -200,7 +222,7 @@ type FSharpSignatureHelpProvider [<ImportingConstructor>]  (serviceProvider: SVs
                             Some triggerInfo.TriggerCharacter.Value
                         else None
 
-                    let! methods = FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(documentationBuilder, sourceText, position, options, triggerTypedChar, document.FilePath, textVersion.GetHashCode())
+                    let! methods = FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(checkerProvider.Checker, documentationBuilder, sourceText, position, options, triggerTypedChar, document.FilePath, textVersion.GetHashCode())
                     match methods with 
                     | None -> return null
                     | Some (results,applicableSpan,argumentIndex,argumentCount,argumentName) -> 
