@@ -38,7 +38,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         public FSharpEditorFactory(Package parentPackage)
         {
-            _parentPackage = _parentPackage ?? throw new ArgumentNullException(nameof(_parentPackage));
+            _parentPackage = parentPackage ?? throw new ArgumentNullException(nameof(parentPackage));
             _componentModel = (IComponentModel)ServiceProvider.GetService(typeof(SComponentModel));
             _editorAdaptersFactoryService = _componentModel.GetService<IVsEditorAdaptersFactoryService>();
             _contentTypeRegistryService = _componentModel.GetService<IContentTypeRegistryService>();
