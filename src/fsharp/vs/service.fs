@@ -1096,6 +1096,34 @@ type TypeCheckInfo
             else 
                 items
 
+    let keywordTypes =
+        [
+            "bigint";
+            "bool";
+            "byref";
+            "byte";
+            "char";
+            "decimal";
+            "double";
+            "float";
+            "float32";
+            "int";
+            "int16";
+            "int32";
+            "int64";
+            "nativeint";
+            "obj";
+            "sbyte";
+            "single";
+            "string";
+            "unit";
+            "uint";
+            "uint16";
+            "uint32";
+            "uint64";
+            "unativeint"
+        ] |> Set.ofSeq
+
     /// Get the auto-complete items at a location
     member x.GetDeclarations (parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, hasTextChangedSinceLastTypecheck) =
         let isInterfaceFile = SourceFileImpl.IsInterfaceFile mainInputFileName
@@ -1369,30 +1397,33 @@ type TypeCheckInfo
          sSymbolUses.GetFormatSpecifierLocations() 
 
     // Not, this does not have to be a SyncOp, it can be called from any thread
-    member scope.GetExtraColorizations() = 
-         sResolutions.CapturedNameResolutions
-         |> Seq.choose (fun cnr ->
-              match cnr with 
-              // 'seq' in 'seq { ... }' gets colored as keywords
-              | CNR(_, (Item.Value vref), ItemOccurence.Use, _, _, _, m) when valRefEq g g.seq_vref vref -> 
-                  Some (m, FSharpTokenColorKind.Keyword) 
-              // custom builders, custom operations get colored as keywords
-              | CNR(_, (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use, _, _, _, m) -> 
-                  Some (m, FSharpTokenColorKind.Keyword) 
-              // types get colored as types when they occur in syntactic types or custom attributes
-              // typevariables get colored as types when they occur in syntactic types custom builders, custom operations get colored as keywords
-              | CNR(_, ( Item.TypeVar  _ 
-                       | Item.Types _ 
-                       | Item.UnqualifiedType _
-                       | Item.CtorGroup _), 
-                       ( ItemOccurence.UseInType 
-                       | ItemOccurence.UseInAttribute
-                       | ItemOccurence.Use _ 
-                       | ItemOccurence.Binding _
-                       | ItemOccurence.Pattern _), _, _, _, m) -> 
-                  Some (m, FSharpTokenColorKind.TypeName) 
-              | _ -> None)
-         |> Seq.toArray
+    member scope.GetExtraColorizations() =
+        sResolutions.CapturedNameResolutions
+        |> Seq.choose (fun cnr ->
+            match cnr with
+            // 'seq' in 'seq { ... }' gets colored as keywords
+            | CNR(_, (Item.Value vref), ItemOccurence.Use, _, _, _, m) when valRefEq g g.seq_vref vref ->
+                Some (m, FSharpTokenColorKind.Keyword)
+            // custom builders, custom operations get colored as keywords
+            | CNR(_, (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use, _, _, _, m) ->
+                Some (m, FSharpTokenColorKind.Keyword)
+            // well known type aliases get colored as keywords
+            | CNR(_, (Item.Types (n, _)), _, _, _, _, m) when keywordTypes.Contains(n) ->
+                Some (m, FSharpTokenColorKind.Keyword)
+            // types get colored as types when they occur in syntactic types or custom attributes
+            // typevariables get colored as types when they occur in syntactic types custom builders, custom operations get colored as keywords
+            | CNR(_, ( Item.TypeVar _
+                     | Item.Types _
+                     | Item.UnqualifiedType _
+                     | Item.CtorGroup _),
+                     ( ItemOccurence.UseInType
+                     | ItemOccurence.UseInAttribute
+                     | ItemOccurence.Use _
+                     | ItemOccurence.Binding _
+                     | ItemOccurence.Pattern _), _, _, _, m) ->
+                Some (m, FSharpTokenColorKind.TypeName)
+            | _ -> None)
+        |> Seq.toArray
 
     member x.ScopeResolutions = sResolutions
     member x.ScopeSymbolUses = sSymbolUses
