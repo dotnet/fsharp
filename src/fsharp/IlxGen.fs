@@ -6469,12 +6469,9 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                                                              callInstrs),
                                                           None))
                       yield ilMethodDef
-                  | None,_ ->
-                      ()
-                  | _,None ->
-                      ()
-                  | _ ->
-                      ()
+                  | None,_ -> ()
+                  | _,None -> ()
+                  | _ -> ()
               | _ -> () ]
               
         let ilMethods = methodDefs @ augmentOverrideMethodDefs @ abstractMethodDefs
