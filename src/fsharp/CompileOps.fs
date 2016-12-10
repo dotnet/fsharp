@@ -1537,17 +1537,17 @@ let CollectErrorOrWarning (implicitIncludeDir,showFullPaths,flattenErrors,errorS
                 | Some m -> Some(outputWhere (showFullPaths,errorStyle) m)
                 | None -> None
 
-            let OutputCanonicalInformation(err:PhasedError,subcategory, errorNumber) : CanonicalInformation = 
+            let OutputCanonicalInformation(subcategory, errorNumber) : CanonicalInformation = 
                 let text = 
                     match errorStyle with
                     // Show the subcategory for --vserrors so that we can fish it out in Visual Studio and use it to determine error stickiness.
                     | ErrorStyle.VSErrors -> sprintf "%s %s FS%04d: " subcategory (if warn then "warning" else "error") errorNumber
-                    | _ -> sprintf "%s FS%04d: " (if warn then "warning" else "error") (GetErrorNumber err)
+                    | _ -> sprintf "%s FS%04d: " (if warn then "warning" else "error") errorNumber
                 {  ErrorNumber = errorNumber; Subcategory = subcategory; TextRepresentation = text}
         
             let mainError,relatedErrors = SplitRelatedErrors err
             let where = OutputWhere(mainError)
-            let canonical = OutputCanonicalInformation(mainError,err.Subcategory(),GetErrorNumber mainError)
+            let canonical = OutputCanonicalInformation(err.Subcategory(),GetErrorNumber mainError)
             let message = 
                 let os = System.Text.StringBuilder()
                 OutputPhasedError os mainError flattenErrors
@@ -1557,12 +1557,12 @@ let CollectErrorOrWarning (implicitIncludeDir,showFullPaths,flattenErrors,errorS
             
             errors.Add ( ErrorOrWarning.Long( not warn, entry ) )
 
-            let OutputRelatedError(err) =
+            let OutputRelatedError(err:PhasedError) =
                 match errorStyle with
                 // Give a canonical string when --vserror.
                 | ErrorStyle.VSErrors -> 
                     let relWhere = OutputWhere(mainError) // mainError?
-                    let relCanonical = OutputCanonicalInformation(err, err.Subcategory(),GetErrorNumber mainError) // Use main error for code
+                    let relCanonical = OutputCanonicalInformation(err.Subcategory(),GetErrorNumber mainError) // Use main error for code
                     let relMessage = 
                         let os = System.Text.StringBuilder()
                         OutputPhasedError os err flattenErrors
