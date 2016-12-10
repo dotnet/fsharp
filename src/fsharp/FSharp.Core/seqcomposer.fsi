@@ -11,38 +11,8 @@ namespace Microsoft.FSharp.Collections
   [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
   module Composer =
     module Core =
-        /// <summary>PipeIdx denotes the index of the element within the pipeline. 0 denotes the
-        /// source of the chain.</summary>
-        type PipeIdx = int
-
-        /// <summary>ICompletionChaining is used to correctly handle cleaning up of the pipeline. A
-        /// base implementation is provided in Consumer, and should not be overwritten. Consumer
-        /// provides it's own OnComplete and OnDispose function which should be used to handle
-        /// a particular consumers cleanup.</summary>
-        type ICompletionChaining =
-            /// <summary>OnComplete is used to determine if the object has been processed correctly,
-            /// and possibly throw exceptions to denote incorrect application (i.e. such as a Take
-            /// operation which didn't have a source at least as large as was required). It is
-            /// not called in the case of an exception being thrown whilst the stream is still
-            /// being processed.</summary>
-            abstract OnComplete : stopTailCall:byref<unit>*PipeIdx -> unit
-            /// <summary>OnDispose is used to cleanup the stream. It is always called at the last operation
-            /// after the enumeration has completed.</summary>
-            abstract OnDispose : stopTailCall:byref<unit> -> unit
-
-        type IOutOfBand =
-            abstract StopFurtherProcessing : PipeIdx -> unit
-
-        /// <summary>Consumer is the base class of all elements within the pipeline</summary>
-        [<AbstractClass>]
-        type Consumer<'T,'U> =
-            interface ICompletionChaining
-            new : unit -> Consumer<'T,'U>
-            abstract member ProcessNext : input:'T -> bool
-            abstract member OnComplete : PipeIdx -> unit
-            abstract member OnDispose : unit -> unit
-            override OnComplete : PipeIdx -> unit
-            override OnDispose : unit -> unit
+        [<Struct; NoComparison; NoEquality>]
+        type NoValue = struct end
 
         /// <summary>Values is a mutable struct. It can be embedded within the folder type
         /// if two values are required for the calculation.</summary>
@@ -61,14 +31,84 @@ namespace Microsoft.FSharp.Collections
             val mutable _2: 'b
             val mutable _3: 'c
 
+        /// <summary>PipeIdx denotes the index of the element within the pipeline. 0 denotes the
+        /// source of the chain.</summary>
+        type PipeIdx = int
+
+        type IOutOfBand =
+            abstract StopFurtherProcessing : PipeIdx -> unit
+
+        /// <summary>ICompletionChain is used to correctly handle cleaning up of the pipeline. A
+        /// base implementation is provided in Consumer, and should not be overwritten. Consumer
+        /// provides it's own OnComplete and OnDispose function which should be used to handle
+        /// a particular consumers cleanup.</summary>
+        type ICompletionChain =
+            /// <summary>OnComplete is used to determine if the object has been processed correctly,
+            /// and possibly throw exceptions to denote incorrect application (i.e. such as a Take
+            /// operation which didn't have a source at least as large as was required). It is
+            /// not called in the case of an exception being thrown whilst the stream is still
+            /// being processed.</summary>
+            abstract ChainComplete : stopTailCall:byref<unit>*PipeIdx -> unit
+            /// <summary>OnDispose is used to cleanup the stream. It is always called at the last operation
+            /// after the enumeration has completed.</summary>
+            abstract ChainDispose : stopTailCall:byref<unit> -> unit
+
+        /// <summary>Consumer is the base class of all elements within the pipeline</summary>
+        [<AbstractClass>]
+        type Consumer<'T,'U> =
+            interface ICompletionChain
+            new : unit -> Consumer<'T,'U>
+            abstract member ProcessNext : input:'T -> bool
+
+        [<AbstractClass>]
+        type ConsumerWithState<'T,'U,'Value> =
+            inherit Consumer<'T,'U>
+            val mutable Value : 'Value
+            new : init:'Value -> ConsumerWithState<'T,'U,'Value>
+
+        [<AbstractClass>]
+        type ConsumerChainedWithState<'T,'U,'Value> =
+            inherit ConsumerWithState<'T,'U,'Value>
+            interface ICompletionChain
+            val private Next : ICompletionChain
+            new : next:ICompletionChain * init:'Value -> ConsumerChainedWithState<'T,'U,'Value>
+
+        [<AbstractClass>]
+        type ConsumerChained<'T,'U> =
+            inherit ConsumerChainedWithState<'T,'U,NoValue>
+            new : next:ICompletionChain -> ConsumerChained<'T,'U>
+
+        [<AbstractClass>] 
+        type ConsumerChainedWithStateAndCleanup<'T,'U,'Value> =
+            inherit ConsumerChainedWithState<'T,'U,'Value>
+            interface ICompletionChain
+
+            abstract OnComplete : PipeIdx -> unit
+            abstract OnDispose  : unit -> unit
+
+            new : next:ICompletionChain * init:'Value -> ConsumerChainedWithStateAndCleanup<'T,'U,'Value>
+
+        [<AbstractClass>]
+        type ConsumerChainedWithCleanup<'T,'U> =
+            inherit ConsumerChainedWithStateAndCleanup<'T,'U,NoValue>
+            new : next:ICompletionChain -> ConsumerChainedWithCleanup<'T,'U>
+
         /// <summary>Folder is a base class to assist with fold-like operations. It's intended usage
         /// is as a base class for an object expression that will be used from within
         /// the ForEach function.</summary>
         [<AbstractClass>]
-        type Folder<'T,'U> =
-            inherit Consumer<'T,'T>
-            new : init:'U -> Folder<'T,'U>
-            val mutable Value: 'U
+        type Folder<'T,'Value> =
+            inherit ConsumerWithState<'T,'T,'Value>
+            new : init:'Value -> Folder<'T,'Value>
+
+        [<AbstractClass>]
+        type FolderWithOnComplete<'T, 'Value> =
+            inherit Folder<'T,'Value>
+            interface ICompletionChain
+
+            abstract OnComplete : PipeIdx -> unit
+
+            new : init:'Value -> FolderWithOnComplete<'T,'Value>
 
         [<AbstractClass>]
         type SeqFactory<'T,'U> =
@@ -137,30 +177,9 @@ namespace Microsoft.FSharp.Collections
             abstract member Skipping : unit -> bool
           end
 
-        and [<AbstractClass>] SeqComponentSimple<'T,'U> =
-          class
-            inherit Consumer<'T,'U>
-            interface ICompletionChaining
-            new : next:ICompletionChaining -> SeqComponentSimple<'T,'U>
-          end
-
-        and [<AbstractClass>] SeqComponentSimpleValue<'T,'U,'Value> =
-          class
-            inherit SeqComponentSimple<'T,'U>
-            val mutable Value : 'Value
-            new : next:ICompletionChaining*value:'Value -> SeqComponentSimpleValue<'T,'U,'Value>
-          end
-
-        and [<AbstractClass>] SeqComponent<'T,'U> =
-          class
-            inherit Consumer<'T,'U>
-            interface ICompletionChaining
-            new : next:ICompletionChaining ->
-                    SeqComponent<'T,'U>
-          end
         and Map2First<'First,'Second,'U,'V> =
           class
-            inherit  SeqComponent<'First,'V>
+            inherit  ConsumerChainedWithCleanup<'First,'V>
             new : map:('First -> 'Second -> 'U) *
                   enumerable2:IEnumerable<'Second> *
                   outOfBand: IOutOfBand *
@@ -171,7 +190,7 @@ namespace Microsoft.FSharp.Collections
           end
         and Map2Second<'First,'Second,'U,'V> =
           class
-            inherit  SeqComponent<'Second,'V>
+            inherit  ConsumerChainedWithCleanup<'Second,'V>
             new : map:('First -> 'Second -> 'U) *
                   enumerable1:IEnumerable<'First> *
                   outOfBand: IOutOfBand *
@@ -182,7 +201,7 @@ namespace Microsoft.FSharp.Collections
           end
         and Map3<'First,'Second,'Third,'U,'V> =
           class
-            inherit  SeqComponent<'First,'V>
+            inherit  ConsumerChainedWithCleanup<'First,'V>
             new : map:('First -> 'Second -> 'Third -> 'U) *
                   enumerable2:IEnumerable<'Second> *
                   enumerable3:IEnumerable<'Third> *
@@ -194,7 +213,7 @@ namespace Microsoft.FSharp.Collections
           end
         and Mapi2<'First,'Second,'U,'V> =
           class
-            inherit  SeqComponent<'First,'V>
+            inherit  ConsumerChainedWithCleanup<'First,'V>
             new : map:(int -> 'First -> 'Second -> 'U) *
                   enumerable2:IEnumerable<'Second> *
                   outOfBand: IOutOfBand *
@@ -280,7 +299,7 @@ namespace Microsoft.FSharp.Collections
               interface IEnumerator
               interface IDisposable
               new : result: Result<'T> *
-                    seqComponent: ICompletionChaining ->
+                    seqComponent: ICompletionChain ->
                        EnumeratorBase<'T>
             end
           and [<AbstractClass>] EnumerableBase<'T> =

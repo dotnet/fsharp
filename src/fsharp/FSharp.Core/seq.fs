@@ -320,7 +320,7 @@ namespace Microsoft.FSharp.Collections
 
             source
             |> foreach (fun _ ->
-                { new Composer.Core.Folder<'T, Composer.Core.Values<bool,'T>> (Composer.Core.Values<_,_>(true, Unchecked.defaultof<'T>)) with
+                { new Composer.Core.FolderWithOnComplete<'T, Composer.Core.Values<bool,'T>> (Composer.Core.Values<_,_>(true, Unchecked.defaultof<'T>)) with
                     override this.ProcessNext value =
                         if this.Value._1 then
                             this.Value._1 <- false
@@ -366,7 +366,7 @@ namespace Microsoft.FSharp.Collections
 
             source1
             |> foreach (fun halt ->
-                { new Composer.Core.Folder<'T,int> (0) with
+                { new Composer.Core.FolderWithOnComplete<'T,int> (0) with
                     override this.ProcessNext value =
                         if not (e2.MoveNext()) then
                             this.Value <- 1
@@ -732,7 +732,7 @@ namespace Microsoft.FSharp.Collections
         let inline average (source: seq< ^a>) : ^a =
             source
             |> foreach (fun _ ->
-                { new Composer.Core.Folder<'a, Composer.Core.Values<'a, int>> (Composer.Core.Values<_,_>(LanguagePrimitives.GenericZero, 0)) with
+                { new Composer.Core.FolderWithOnComplete<'a, Composer.Core.Values<'a, int>> (Composer.Core.Values<_,_>(LanguagePrimitives.GenericZero, 0)) with
                     override this.ProcessNext value =
                         this.Value._1 <- Checked.(+) this.Value._1 value
                         this.Value._2 <- this.Value._2 + 1
@@ -747,7 +747,7 @@ namespace Microsoft.FSharp.Collections
         let inline averageBy (f : 'T -> ^U) (source: seq< 'T >) : ^U =
             source
             |> foreach (fun _ ->
-                { new Composer.Core.Folder<'T,Composer.Core.Values<'U, int>> (Composer.Core.Values<_,_>(LanguagePrimitives.GenericZero, 0)) with
+                { new Composer.Core.FolderWithOnComplete<'T,Composer.Core.Values<'U, int>> (Composer.Core.Values<_,_>(LanguagePrimitives.GenericZero, 0)) with
                     override this.ProcessNext value =
                         this.Value._1 <- Checked.(+) this.Value._1 (f value)
                         this.Value._2 <- this.Value._2 + 1
@@ -762,7 +762,7 @@ namespace Microsoft.FSharp.Collections
         let inline min (source: seq<_>) =
             source
             |> foreach (fun _ ->
-                { new Composer.Core.Folder<'T,Composer.Core.Values<bool,'T>> (Composer.Core.Values<_,_>(true, Unchecked.defaultof<'T>)) with
+                { new Composer.Core.FolderWithOnComplete<'T,Composer.Core.Values<bool,'T>> (Composer.Core.Values<_,_>(true, Unchecked.defaultof<'T>)) with
                     override this.ProcessNext value =
                         if this.Value._1 then
                             this.Value._1 <- false
@@ -781,7 +781,7 @@ namespace Microsoft.FSharp.Collections
         let inline minBy (f : 'T -> 'U) (source: seq<'T>) : 'T =
             source
             |> foreach (fun _ ->
-                { new Composer.Core.Folder<'T,Composer.Core.Values<bool,'U,'T>> (Composer.Core.Values<_,_,_>(true,Unchecked.defaultof<'U>,Unchecked.defaultof<'T>)) with
+                { new Composer.Core.FolderWithOnComplete<'T,Composer.Core.Values<bool,'U,'T>> (Composer.Core.Values<_,_,_>(true,Unchecked.defaultof<'U>,Unchecked.defaultof<'T>)) with
                     override this.ProcessNext value =
                         match this.Value._1, f value with
                         | true, valueU ->
@@ -820,7 +820,7 @@ namespace Microsoft.FSharp.Collections
         let inline max (source: seq<_>) =
             source
             |> foreach (fun _ ->
-                { new Composer.Core.Folder<'T,Composer.Core.Values<bool,'T>> (Composer.Core.Values<_,_>(true, Unchecked.defaultof<'T>)) with
+                { new Composer.Core.FolderWithOnComplete<'T,Composer.Core.Values<bool,'T>> (Composer.Core.Values<_,_>(true, Unchecked.defaultof<'T>)) with
                     override this.ProcessNext value =
                         if this.Value._1 then
                             this.Value._1 <- false
@@ -839,7 +839,7 @@ namespace Microsoft.FSharp.Collections
         let inline maxBy (f : 'T -> 'U) (source: seq<'T>) : 'T =
             source
             |> foreach (fun _ ->
-                { new Composer.Core.Folder<'T,Composer.Core.Values<bool,'U,'T>> (Composer.Core.Values<_,_,_>(true,Unchecked.defaultof<'U>,Unchecked.defaultof<'T>)) with
+                { new Composer.Core.FolderWithOnComplete<'T,Composer.Core.Values<bool,'U,'T>> (Composer.Core.Values<_,_,_>(true,Unchecked.defaultof<'U>,Unchecked.defaultof<'T>)) with
                     override this.ProcessNext value =
                         match this.Value._1, f value with
                         | true, valueU ->
@@ -959,7 +959,7 @@ namespace Microsoft.FSharp.Collections
         let exactlyOne (source : seq<_>) =
             source
             |> foreach (fun halt ->
-                { new Composer.Core.Folder<'T, Composer.Core.Values<bool,'T, bool>> (Composer.Core.Values<bool,'T, bool>(true, Unchecked.defaultof<'T>, false)) with
+                { new Composer.Core.FolderWithOnComplete<'T, Composer.Core.Values<bool,'T, bool>> (Composer.Core.Values<bool,'T, bool>(true, Unchecked.defaultof<'T>, false)) with
                     override this.ProcessNext value =
                         if this.Value._1 then
                             this.Value._1 <- false
