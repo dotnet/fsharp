@@ -61,8 +61,11 @@
       <Link>Completion\SignatureHelp.fs</Link>
     </Compile>
     <Compile Include="GoToDefinitionService.fs">
-      <Link>GoToDefinition\GoToDefinitionService.fs</Link>
+      <Link>Navigation\GoToDefinitionService.fs</Link>
     </Compile>
+    <Compile Include="FindReferencesService.fs">
+      <Link>Navigation\FindReferencesService.fs</Link>
+    </Compile> 
     <Compile Include="CommentUncommentService.fs">
       <Link>BlockComment\CommentUncommentService.fs</Link>
     </Compile>

@@ -188,3 +188,10 @@ module CommonHelpers =
                 Some (islandColumn, [""], classifiedSpan.TextSpan) 
             | _ -> None
         | _ -> None
+
+     /// Fix invalid span if it appears to have redundant suffix and prefix.
+    let fixupSpan (sourceText: SourceText, span: TextSpan) : TextSpan =
+        let text = sourceText.GetSubText(span).ToString()
+        match text.LastIndexOf '.' with
+        | -1 | 0 -> span
+        | index -> TextSpan(span.Start + index + 1, text.Length - index - 1)
