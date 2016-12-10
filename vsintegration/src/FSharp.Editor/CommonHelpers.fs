@@ -195,3 +195,22 @@ module CommonHelpers =
         match text.LastIndexOf '.' with
         | -1 | 0 -> span
         | index -> TextSpan(span.Start + index + 1, text.Length - index - 1)
+
+[<AutoOpen>]
+module internal Extensions =
+    open System.IO
+
+    type Path with
+        static member GetFullPathSafe path =
+            try Path.GetFullPath path
+            with _ -> path
+
+    type FSharpSymbol with
+        member this.IsPrivateToFile = 
+            match this with
+            | :? FSharpMemberOrFunctionOrValue as m -> not m.IsModuleValueOrMember
+            | :? FSharpEntity as m -> m.Accessibility.IsPrivate
+            | :? FSharpGenericParameter -> true
+            | :? FSharpUnionCase as m -> m.Accessibility.IsPrivate
+            | :? FSharpField as m -> m.Accessibility.IsPrivate
+            | _ -> false
