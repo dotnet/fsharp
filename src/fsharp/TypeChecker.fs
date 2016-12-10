@@ -12306,6 +12306,11 @@ module IncrClassChecking =
         member localRep.IsValWithRepresentation (v:Val) = 
                 localRep.ValsWithRepresentation.Contains(v) 
 
+        member localRep.IsValRepresentedAsLocalVar  (v:Val) =
+            match localRep.LookupRepr v with 
+            | InVar false -> true
+            | _ -> false
+
         /// Make the elaborated expression that represents a use of a 
         /// a "let v = ..." class binding
         member localRep.MakeValueLookup thisValOpt tinst safeStaticInitInfo v tyargs m =
@@ -12744,14 +12749,14 @@ module IncrClassChecking =
                 //    (c) rely on the fact that there are no 'let' bindings prior to the inherits expr.
                 let inheritsExpr = 
                     match ctorInfo.InstanceCtorSafeThisValOpt with 
-                    | None -> 
-                        inheritsExpr
-                    | Some v -> 
+                    | Some v when not (reps.IsValRepresentedAsLocalVar (v)) -> 
                         // Rewrite the expression to convert it to a load of a field if needed.
                         // We are allowed to load fields from our own object even though we haven't called
                         // the super class constructor yet.
                         let ldexpr = reps.FixupIncrClassExprPhase2C (Some(thisVal)) safeStaticInitInfo thisTyInst (exprForVal m v) 
                         mkInvisibleLet m v ldexpr inheritsExpr
+                    | _ -> 
+                        inheritsExpr
 
                 let spAtSuperInit = (if inheritsIsVisible then SequencePointsAtSeq else SuppressSequencePointOnExprOfSequential)
                 mkSequential spAtSuperInit m inheritsExpr ctorBody
