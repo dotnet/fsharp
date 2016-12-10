@@ -72,15 +72,20 @@ type internal FSharpFindReferencesService
                         let! declarationSpan =
                             match declarationRange with
                             | Some range -> rangeToDocumentSpan range
-                            | None -> async.Return (Some (DocumentSpan()))
+                            | None -> async.Return None
                 
-                        let declarationSpan = match declarationSpan with Some x -> x | None -> DocumentSpan()
-
+                    
                         let definitionItem =
-                            DefinitionItem.Create(
-                                ImmutableArray<string>.Empty, 
-                                [TaggedText(TextTags.Text, symbolUse.Symbol.FullName)].ToImmutableArray(), 
-                                declarationSpan)
+                            match declarationSpan with 
+                            | Some span ->
+                                DefinitionItem.Create(
+                                    ImmutableArray<string>.Empty, 
+                                    [TaggedText(TextTags.Text, symbolUse.Symbol.FullName)].ToImmutableArray(), 
+                                    span)
+                            | None -> 
+                                DefinitionItem.CreateNonNavigableItem(
+                                    ImmutableArray<string>.Empty, 
+                                    [TaggedText(TextTags.Text, symbolUse.Symbol.FullName)].ToImmutableArray())    
                 
                         do! context.OnDefinitionFoundAsync(definitionItem) |> Async.AwaitTask
                 
