@@ -74,7 +74,6 @@ type internal FSharpFindReferencesService
                             | Some range -> rangeToDocumentSpan range
                             | None -> async.Return None
                 
-                    
                         let definitionItem =
                             match declarationSpan with 
                             | Some span ->
@@ -88,9 +87,16 @@ type internal FSharpFindReferencesService
                                     [TaggedText(TextTags.Text, symbolUse.Symbol.FullName)].ToImmutableArray())    
                 
                         do! context.OnDefinitionFoundAsync(definitionItem) |> Async.AwaitTask
-                
-                        let! projectCheckResults = checker.ParseAndCheckProject(options)
-                        let! symbolUses = projectCheckResults.GetUsesOfSymbol(symbolUse.Symbol)
+                        
+                        let! symbolUses =
+                            async {
+                                if symbolUse.Symbol.IsPrivateToFile then
+                                    return! checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
+                                else
+                                    let! projectCheckResults = checker.ParseAndCheckProject(options)
+                                    return! projectCheckResults.GetUsesOfSymbol(symbolUse.Symbol)
+                            }
+
                         for symbolUse in symbolUses do
                             match declarationRange with
                             | Some declRange when declRange = symbolUse.RangeAlternate -> ()
