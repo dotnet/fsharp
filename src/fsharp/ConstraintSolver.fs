@@ -2022,7 +2022,7 @@ and ReportNoCandidatesError (csenv:ConstraintSolverEnv) (nUnnamedCallerArgs,nNam
     | _,_,_,_,([],[cmeth]) -> 
         let minfo = cmeth.Method
         let msgNum,msgText = FSComp.SR.csRequiredSignatureIs(NicePrint.stringOfMethInfo amap m denv minfo)
-        let msgNum,msgText,msgRange = 
+        let error = 
             match cmeth.UnassignedNamedArgs with 
             | CallerNamedArg(id,_) :: _ -> 
                 if minfo.IsConstructor then
@@ -2031,13 +2031,13 @@ and ReportNoCandidatesError (csenv:ConstraintSolverEnv) (nUnnamedCallerArgs,nNam
                     let predictions =
                         typ.AllInstanceFieldsAsList
                         |> List.map (fun p -> p.Name.Replace("@",""))
-                        |> ErrorResolutionHints.FilterPredictions id.idText
+                        |> Set.ofList
 
-                    msgNum,FSComp.SR.csCtorHasNoArgumentOrReturnProperty(methodName, id.idText, msgText, ErrorResolutionHints.FormatPredictions predictions),id.idRange
+                    ErrorWithPredictions((msgNum,FSComp.SR.csCtorHasNoArgumentOrReturnProperty(methodName, id.idText, msgText)),id.idRange,id.idText,predictions)
                 else
-                    msgNum,FSComp.SR.csMemberHasNoArgumentOrReturnProperty(methodName, id.idText, msgText),id.idRange
-            | [] -> (msgNum,msgText,m)
-        Error ((msgNum,msgText),msgRange)
+                    Error((msgNum,FSComp.SR.csMemberHasNoArgumentOrReturnProperty(methodName, id.idText, msgText)),id.idRange)
+            | [] -> Error((msgNum,msgText),m)
+        ErrorD error
 
     // One method, incorrect number of arguments provided by the user
     | _,_,([],[cmeth]),_,_ when not cmeth.HasCorrectArity ->  

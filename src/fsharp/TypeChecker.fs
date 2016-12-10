@@ -6315,12 +6315,12 @@ and FreshenObjExprAbstractSlot cenv (env: TcEnv) (implty:TType) virtNameAndArity
             let predictions =
                 virtNameAndArityPairs
                 |> List.map (fst >> fst)
-                |> ErrorResolutionHints.FilterPredictions bindName
+                |> Set.ofList
 
             if containsNonAbstractMemberWithSameName then
-                errorR(Error(FSComp.SR.tcMemberFoundIsNotAbstractOrVirtual(tcref.DisplayName, bindName, ErrorResolutionHints.FormatPredictions predictions),mBinding))                
+                errorR(ErrorWithPredictions(FSComp.SR.tcMemberFoundIsNotAbstractOrVirtual(tcref.DisplayName, bindName),mBinding,bindName,predictions))
             else
-                errorR(Error(FSComp.SR.tcNoAbstractOrVirtualMemberFound(bindName, ErrorResolutionHints.FormatPredictions predictions),mBinding))
+                errorR(ErrorWithPredictions(FSComp.SR.tcNoAbstractOrVirtualMemberFound(bindName),mBinding,bindName,predictions))
         | [(_,absSlot:MethInfo)]     ->
             errorR(Error(FSComp.SR.tcArgumentArityMismatch(bindName, List.sum absSlot.NumArgs, arity, getSignature absSlot, getDetails absSlot),mBinding))
         | (_,absSlot:MethInfo) :: _  ->

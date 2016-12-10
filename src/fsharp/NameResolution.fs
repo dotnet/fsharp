@@ -2731,11 +2731,7 @@ let SuggestOtherLabelsOfSameRecordType (nenv:NameResolutionEnv) typeName (id:Ide
         |> List.filter ((<>) id.idText)
         |> Set.ofList
 
-    let predictedLabels = Set.difference labelsOfPossibleRecord givenFields
-    let predictions = ErrorResolutionHints.FilterPredictions id.idText predictedLabels
-
-    let errorCode,text = FSComp.SR.nrRecordDoesNotContainSuchLabel(typeName, id.idText)
-    errorCode,text + ErrorResolutionHints.FormatPredictions predictions
+    Set.difference labelsOfPossibleRecord givenFields
     
       
 let SuggestLabelsOfRelatedRecords (nenv:NameResolutionEnv) (id:Ident) (allFields:Ident list) =
@@ -2794,8 +2790,10 @@ let ResolveFieldPrim (ncenv:NameResolver) nenv ad typ (mp,id:Ident) allFields =
             | None ->
                 let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv typ
                 if isRecdTy g typ then
-                    // record label doesn't belong to record type -> predict other labels of same record                    
-                    error(Error(SuggestOtherLabelsOfSameRecordType nenv typeName id allFields,m))
+                    // record label doesn't belong to record type -> predict other labels of same record
+                    let predictedLabels = SuggestOtherLabelsOfSameRecordType nenv typeName id allFields
+                    let errorText = FSComp.SR.nrRecordDoesNotContainSuchLabel(typeName,id.idText)
+                    error(ErrorWithPredictions(errorText, m, id.idText, predictedLabels))
                 else
                     lookup()
         else 
