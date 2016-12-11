@@ -248,8 +248,6 @@ type internal FSharpLanguageService(package : FSharpPackage) as this =
                 let projectContextFactory = this.Package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
                 let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
                 
-                
-                
                 let projectContext = 
                     projectContextFactory.CreateProjectContext(
                         FSharpCommonConstants.FSharpLanguageName, projectDisplayName, projectFileName, projectGuid, siteProvider, null, errorReporter)
@@ -264,9 +262,11 @@ type internal FSharpLanguageService(package : FSharpPackage) as this =
                                                 projectInfoManager.ClearProjectInfo(project.Id)
                                                 project.Disconnect()))
                 for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider) do
-                    setup referencedSite
+                    let referencedProjectId = setup referencedSite                    
+                    project.AddProjectReference(ProjectReference referencedProjectId)
             | _ -> ()
-        setup (siteProvider.GetProjectSite())
+            projectId
+        setup (siteProvider.GetProjectSite()) |> ignore
 
     member this.SetupStandAloneFile(fileName: string, fileContents: string, workspace: VisualStudioWorkspaceImpl, hier: IVsHierarchy) =
 
