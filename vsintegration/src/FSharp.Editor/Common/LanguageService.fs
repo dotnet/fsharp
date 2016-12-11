@@ -112,7 +112,6 @@ type internal ProjectInfoManager
     member this.UpdateProjectInfo(projectId: ProjectId, site: IProjectSite, workspace: Workspace) =
         let extraProjectInfo = Some(box workspace)
         let options = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(site, site.ProjectFileName(), extraProjectInfo, serviceProvider)
-        System.Windows.Forms.MessageBox.Show(sprintf "Bp 3: %A\n%A" options.ReferencedProjects options) |> ignore
         checkerProvider.Checker.InvalidateConfiguration(options)
         projectTable.[projectId] <- options
 

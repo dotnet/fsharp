@@ -99,7 +99,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             member ips.ProjectGuid = inner.ProjectGuid
             member ips.IsIncompleteTypeCheckEnvironment = false
             member ips.LoadTime = inner.LoadTime 
-            member ips.Parent = inner.Parent
+            member ips.ProjectProvider = inner.ProjectProvider
 
     type internal ProjectSiteOptionLifetimeState =
         | Opening=1  // The project has been opened, but has not yet called Compile() to compute sources/flags
@@ -1443,7 +1443,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     member this.TargetFrameworkMoniker = x.GetTargetFrameworkMoniker()
                     member this.ProjectGuid = x.GetProjectGuid()
                     member this.LoadTime = creationTime
-                    member this.Parent = x :> _
+                    member this.ProjectProvider = Some (x :> IProvideProjectSite)
                 }
 
             // Snapshot-capture relevent values from "this", and returns an IProjectSite 
@@ -1475,7 +1475,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     member this.TargetFrameworkMoniker = targetFrameworkMoniker
                     member this.ProjectGuid = x.GetProjectGuid()
                     member this.LoadTime = creationTime
-                    member this.Parent = x :> _
+                    member this.ProjectProvider = Some (x :> IProvideProjectSite)
                 }
 
             // let the language service ask us questions

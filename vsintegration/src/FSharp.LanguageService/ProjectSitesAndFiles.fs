@@ -16,10 +16,6 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 /// already available, so we don't have to recreate it
 type private IHaveCheckOptions = 
     abstract OriginalCheckOptions : unit -> FSharpProjectOptions
-
-[<ComImport; InterfaceType(ComInterfaceType.InterfaceIsIUnknown); Guid("ad98f020-bad0-0000-0000-abc037459871")>]
-type internal IProvideProjectSite =
-    abstract GetProjectSite : unit -> IProjectSite
         
 /// Convert from FSharpProjectOptions into IProjectSite.         
 type private ProjectSiteOfScriptFile(filename:string, checkOptions : FSharpProjectOptions) = 
@@ -37,7 +33,7 @@ type private ProjectSiteOfScriptFile(filename:string, checkOptions : FSharpProje
         override this.TargetFrameworkMoniker = ""
         override this.ProjectGuid = ""
         override this.LoadTime = checkOptions.LoadTime
-        override this.Parent = null
+        override this.ProjectProvider = None
 
     interface IHaveCheckOptions with
         override this.OriginalCheckOptions() = checkOptions
@@ -71,7 +67,7 @@ type private ProjectSiteOfSingleFile(sourceFile) =
         override this.TargetFrameworkMoniker = ""
         override this.ProjectGuid = ""
         override this.LoadTime = new DateTime(2000,1,1)  // any constant time is fine, orphan files do not interact with reloading based on update time
-        override this.Parent = null
+        override this.ProjectProvider = None
     
 /// Information about projects, open files and other active artifacts in visual studio.
 /// Keeps track of the relationship between IVsTextLines buffers, IFSharpSource objects, IProjectSite objects and FSharpProjectOptions
@@ -97,9 +93,9 @@ type internal ProjectSitesAndFiles() =
         |> Option.bind (fun path -> try Some (Path.GetFullPath path) with _ -> None)
 
     static let referencedProjects (projectSite:IProjectSite) =
-        match projectSite.Parent with
-        | null -> Seq.empty
-        | :? IVsHierarchy as hier ->                                
+        match projectSite.ProjectProvider with
+        | None -> Seq.empty
+        | Some (:? IVsHierarchy as hier) ->                                
             match hier.GetProperty(VSConstants.VSITEMID_ROOT, int __VSHPROPID.VSHPROPID_ExtObject) with
             | VSConstants.S_OK, (:? EnvDTE.Project as p) ->
                 (p.Object :?> VSLangProj.VSProject).References
@@ -108,7 +104,7 @@ type internal ProjectSitesAndFiles() =
                     Option.ofObj r
                     |> Option.bind (fun r -> try Option.ofObj r.SourceProject with _ -> None))            
             | _ -> Seq.empty
-        | _ -> Seq.empty
+        | Some _ -> Seq.empty
 
     static let rec referencedProvideProjectSites (projectSite:IProjectSite, solutionService: IVsSolution) =
         referencedProjects projectSite
@@ -123,7 +119,6 @@ type internal ProjectSitesAndFiles() =
         |> Seq.choose (fun (p, ps) ->            
             fullOutputAssemblyPath p
             |> Option.map (fun path ->
-                System.Windows.Forms.MessageBox.Show(sprintf "Bp 2: %A" path) |> ignore 
                 path, getProjectOptionsForProjectSite (ps.GetProjectSite(), fileName, extraProjectInfo, solutionService))
             )
         |> Seq.toArray
