@@ -49,3 +49,5 @@ type internal IProjectSite =
     /// timestamp the site was last loaded
     abstract LoadTime : System.DateTime 
 
+    abstract Parent : obj
+

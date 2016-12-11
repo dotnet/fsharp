@@ -37,6 +37,7 @@ type private ProjectSiteOfScriptFile(filename:string, checkOptions : FSharpProje
         override this.TargetFrameworkMoniker = ""
         override this.ProjectGuid = ""
         override this.LoadTime = checkOptions.LoadTime
+        override this.Parent = null
 
     interface IHaveCheckOptions with
         override this.OriginalCheckOptions() = checkOptions
@@ -70,6 +71,7 @@ type private ProjectSiteOfSingleFile(sourceFile) =
         override this.TargetFrameworkMoniker = ""
         override this.ProjectGuid = ""
         override this.LoadTime = new DateTime(2000,1,1)  // any constant time is fine, orphan files do not interact with reloading based on update time
+        override this.Parent = null
     
 /// Information about projects, open files and other active artifacts in visual studio.
 /// Keeps track of the relationship between IVsTextLines buffers, IFSharpSource objects, IProjectSite objects and FSharpProjectOptions
@@ -82,6 +84,60 @@ type internal ProjectSitesAndFiles() =
         | :? IProvideProjectSite as siteFactory -> 
             Some(siteFactory.GetProjectSite())
         | _ -> None
+
+    static let fullOutputAssemblyPath (p:EnvDTE.Project) =
+        let getProperty tag =
+            try Some (p.Properties.[tag].Value.ToString()) with _ -> None
+        getProperty "FullPath"
+        |> Option.bind (fun fullPath ->
+            (try Some (p.ConfigurationManager.ActiveConfiguration.Properties.["OutputPath"].Value.ToString()) with _ -> None)
+            |> Option.bind (fun outputPath -> 
+                getProperty "OutputFileName"
+                |> Option.map (fun outputFileName -> Path.Combine(fullPath, outputPath, outputFileName))))
+        |> Option.bind (fun path -> try Some (Path.GetFullPath path) with _ -> None)
+
+    static let referencedProjects (projectSite:IProjectSite) =
+        match projectSite.Parent with
+        | null -> Seq.empty
+        | :? IVsHierarchy as hier ->                                
+            match hier.GetProperty(VSConstants.VSITEMID_ROOT, int __VSHPROPID.VSHPROPID_ExtObject) with
+            | VSConstants.S_OK, (:? EnvDTE.Project as p) ->
+                (p.Object :?> VSLangProj.VSProject).References
+                |> Seq.cast<VSLangProj.Reference>
+                |> Seq.choose (fun r ->
+                    Option.ofObj r
+                    |> Option.bind (fun r -> try Option.ofObj r.SourceProject with _ -> None))            
+            | _ -> Seq.empty
+        | _ -> Seq.empty
+
+    static let rec referencedProvideProjectSites (projectSite:IProjectSite, solutionService: IVsSolution) =
+        referencedProjects projectSite
+        |> Seq.choose (fun p ->
+            match solutionService.GetProjectOfUniqueName(p.UniqueName) with
+            | VSConstants.S_OK, (:? IProvideProjectSite as ps) ->
+                Some (p, ps)
+            | _ -> None)
+            
+    static let rec referencedProjectsOf (projectSite:IProjectSite, fileName, extraProjectInfo, solutionService: IVsSolution) =
+        referencedProvideProjectSites (projectSite, solutionService)
+        |> Seq.choose (fun (p, ps) ->            
+            fullOutputAssemblyPath p
+            |> Option.map (fun path ->
+                System.Windows.Forms.MessageBox.Show(sprintf "Bp 2: %A" path) |> ignore 
+                path, getProjectOptionsForProjectSite (ps.GetProjectSite(), fileName, extraProjectInfo, solutionService))
+            )
+        |> Seq.toArray
+
+    and getProjectOptionsForProjectSite(projectSite:IProjectSite, fileName, extraProjectInfo, solutionService) =            
+           {ProjectFileName = projectSite.ProjectFileName()
+            ProjectFileNames = projectSite.SourceFilesOnDisk()
+            OtherOptions = projectSite.CompilerFlags()
+            ReferencedProjects = referencedProjectsOf(projectSite, fileName, extraProjectInfo, solutionService)
+            IsIncompleteTypeCheckEnvironment = projectSite.IsIncompleteTypeCheckEnvironment
+            UseScriptResolutionRules = SourceFile.MustBeSingleFileProject fileName
+            LoadTime = projectSite.LoadTime
+            UnresolvedReferences = None
+            ExtraProjectInfo=extraProjectInfo }   
 
     /// Construct a project site for a single file. May be a single file project (for scripts) or an orphan project site (for everything else).
     static member ProjectSiteOfSingleFile(filename:string) : IProjectSite = 
@@ -158,23 +214,21 @@ type internal ProjectSitesAndFiles() =
     member art.FindOwningProject(rdt:IVsRunningDocumentTable, filename) = 
         match art.TryFindOwningProject(rdt, filename) with
         | Some site -> site
-        | None -> ProjectSitesAndFiles.ProjectSiteOfSingleFile(filename)        
+        | None -> ProjectSitesAndFiles.ProjectSiteOfSingleFile(filename)      
+        
+    static member GetReferencedProjectSites(projectSite:IProjectSite, serviceProvider:System.IServiceProvider) =
+        let solutionService = serviceProvider.GetService(typeof<SVsSolution>) :?> IVsSolution
+        referencedProvideProjectSites (projectSite, solutionService)
+        |> Seq.map (fun (_, ps) -> ps.GetProjectSite())
+        |> Seq.toArray
 
     /// Create project options for this project site.
-    static member GetProjectOptionsForProjectSite(projectSite:IProjectSite,filename,extraProjectInfo) = 
-        
+    static member GetProjectOptionsForProjectSite(projectSite:IProjectSite,filename,extraProjectInfo, serviceProvider:System.IServiceProvider) =
         match projectSite with
         | :? IHaveCheckOptions as hco -> hco.OriginalCheckOptions()
         | _ -> 
-            {ProjectFileName = projectSite.ProjectFileName()
-             ProjectFileNames = projectSite.SourceFilesOnDisk()
-             OtherOptions = projectSite.CompilerFlags()
-             ReferencedProjects = [| |]
-             IsIncompleteTypeCheckEnvironment = projectSite.IsIncompleteTypeCheckEnvironment
-             UseScriptResolutionRules = SourceFile.MustBeSingleFileProject(filename)
-             LoadTime = projectSite.LoadTime
-             UnresolvedReferences = None
-             ExtraProjectInfo=extraProjectInfo }      
+            let solutionService = serviceProvider.GetService(typeof<SVsSolution>) :?> IVsSolution
+            getProjectOptionsForProjectSite(projectSite, filename, extraProjectInfo, solutionService)
          
     /// Create project site for these project options
     static member CreateProjectSiteForScript (filename, checkOptions) = ProjectSiteOfScriptFile (filename, checkOptions) :> IProjectSite
