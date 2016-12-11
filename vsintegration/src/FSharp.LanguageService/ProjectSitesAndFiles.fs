@@ -106,28 +106,33 @@ type internal ProjectSitesAndFiles() =
             | _ -> Seq.empty
         | Some _ -> Seq.empty
 
-    static let rec referencedProvideProjectSites (projectSite:IProjectSite, solutionService: IVsSolution) =
-        referencedProjects projectSite
-        |> Seq.choose (fun p ->
-            match solutionService.GetProjectOfUniqueName(p.UniqueName) with
-            | VSConstants.S_OK, (:? IProvideProjectSite as ps) ->
-                Some (p, ps)
-            | _ -> None)
-            
-    static let rec referencedProjectsOf (projectSite:IProjectSite, fileName, extraProjectInfo, solutionService: IVsSolution) =
-        referencedProvideProjectSites (projectSite, solutionService)
+    static let rec referencedProvideProjectSites (projectSite:IProjectSite, serviceProvider:System.IServiceProvider) =
+        let solutionService = 
+            try Some (serviceProvider.GetService(typeof<SVsSolution>) :?> IVsSolution) with _ -> None
+        match solutionService with
+        | Some solutionService ->
+            referencedProjects projectSite
+            |> Seq.choose (fun p ->
+                match solutionService.GetProjectOfUniqueName(p.UniqueName) with
+                | VSConstants.S_OK, (:? IProvideProjectSite as ps) ->
+                    Some (p, ps)
+                | _ -> None)
+        | None -> Seq.empty
+                    
+    static let rec referencedProjectsOf (projectSite:IProjectSite, fileName, extraProjectInfo, serviceProvider:System.IServiceProvider) =
+        referencedProvideProjectSites (projectSite, serviceProvider)
         |> Seq.choose (fun (p, ps) ->            
             fullOutputAssemblyPath p
             |> Option.map (fun path ->
-                path, getProjectOptionsForProjectSite (ps.GetProjectSite(), fileName, extraProjectInfo, solutionService))
+                path, getProjectOptionsForProjectSite (ps.GetProjectSite(), fileName, extraProjectInfo, serviceProvider))
             )
         |> Seq.toArray
 
-    and getProjectOptionsForProjectSite(projectSite:IProjectSite, fileName, extraProjectInfo, solutionService) =            
+    and getProjectOptionsForProjectSite(projectSite:IProjectSite, fileName, extraProjectInfo, serviceProvider) =            
            {ProjectFileName = projectSite.ProjectFileName()
             ProjectFileNames = projectSite.SourceFilesOnDisk()
             OtherOptions = projectSite.CompilerFlags()
-            ReferencedProjects = referencedProjectsOf(projectSite, fileName, extraProjectInfo, solutionService)
+            ReferencedProjects = referencedProjectsOf(projectSite, fileName, extraProjectInfo, serviceProvider)
             IsIncompleteTypeCheckEnvironment = projectSite.IsIncompleteTypeCheckEnvironment
             UseScriptResolutionRules = SourceFile.MustBeSingleFileProject fileName
             LoadTime = projectSite.LoadTime
@@ -212,18 +217,16 @@ type internal ProjectSitesAndFiles() =
         | None -> ProjectSitesAndFiles.ProjectSiteOfSingleFile(filename)      
         
     static member GetReferencedProjectSites(projectSite:IProjectSite, serviceProvider:System.IServiceProvider) =
-        let solutionService = serviceProvider.GetService(typeof<SVsSolution>) :?> IVsSolution
-        referencedProvideProjectSites (projectSite, solutionService)
+        referencedProvideProjectSites (projectSite, serviceProvider)
         |> Seq.map (fun (_, ps) -> ps.GetProjectSite())
         |> Seq.toArray
 
     /// Create project options for this project site.
-    static member GetProjectOptionsForProjectSite(projectSite:IProjectSite,filename,extraProjectInfo, serviceProvider:System.IServiceProvider) =
+    static member GetProjectOptionsForProjectSite(projectSite:IProjectSite,filename,extraProjectInfo,serviceProvider:System.IServiceProvider) =
         match projectSite with
         | :? IHaveCheckOptions as hco -> hco.OriginalCheckOptions()
-        | _ -> 
-            let solutionService = serviceProvider.GetService(typeof<SVsSolution>) :?> IVsSolution
-            getProjectOptionsForProjectSite(projectSite, filename, extraProjectInfo, solutionService)
+        | _ ->             
+            getProjectOptionsForProjectSite(projectSite, filename, extraProjectInfo, serviceProvider)
          
     /// Create project site for these project options
     static member CreateProjectSiteForScript (filename, checkOptions) = ProjectSiteOfScriptFile (filename, checkOptions) :> IProjectSite
