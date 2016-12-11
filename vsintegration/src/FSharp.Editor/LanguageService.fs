@@ -282,11 +282,9 @@ type internal FSharpLanguageService(package : FSharpPackage) as this =
     override this.SetupNewTextView(textView) =
         base.SetupNewTextView(textView)
         let workspace = this.Package.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
-
-        // FSROSLYNTODO: Hide navigation bars for now. Enable after adding tests
-        workspace.Options <- workspace.Options.WithChangedOption(NavigationBarOptions.ShowNavigationBar, FSharpCommonConstants.FSharpLanguageName, false)
-        
+        workspace.Options <- workspace.Options.WithChangedOption(NavigationBarOptions.ShowNavigationBar, FSharpCommonConstants.FSharpLanguageName, true)
         let textViewAdapter = this.Package.ComponentModel.GetService<IVsEditorAdaptersFactoryService>()
+        
         match textView.GetBuffer() with
         | (VSConstants.S_OK, textLines) ->
             let filename = VsTextLines.GetFilename textLines
