@@ -156,6 +156,7 @@ let GetRangeOfError(err:PhasedError) =
       | RecursiveUseCheckedAtRuntime (_,_,m) 
       | LetRecEvaluatedOutOfOrder (_,_,_,m) 
       | Error (_,m)
+      | ErrorWithPredictions (_,m,_,_)
       | NumberedError (_,m)
       | SyntaxError (_,m) 
       | InternalError (_,m)
@@ -388,6 +389,7 @@ let GetWarningLevel err =
   | DefensiveCopyWarning _
   | FullAbstraction _ ->  5
   | NumberedError((n,_),_) 
+  | ErrorWithPredictions((n,_),_,_,_) 
   | Error((n,_),_) -> 
       // 1178,tcNoComparisonNeeded1,"The struct, record or union type '%s' is not structurally comparable because the type parameter %s does not satisfy the 'comparison' constraint. Consider adding the 'NoComparison' attribute to this type to clarify that the type is not comparable"
       // 1178,tcNoComparisonNeeded2,"The struct, record or union type '%s' is not structurally comparable because the type '%s' does not satisfy the 'comparison' constraint. Consider adding the 'NoComparison' attribute to this type to clarify that the type is not comparable" 
