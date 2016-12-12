@@ -59,3 +59,12 @@ module internal CommonRoslynHelpers =
         let severity = if error.Severity = FSharpErrorSeverity.Error then DiagnosticSeverity.Error else DiagnosticSeverity.Warning
         let descriptor = new DiagnosticDescriptor(id, emptyString, description, error.Subcategory, severity, true, emptyString, String.Empty, null)
         Diagnostic.Create(descriptor, location)
+
+[<AutoOpen>]
+module internal RoslynExtensions =
+    type Project with
+        /// The list of all other projects within the same solution that reference this project.
+        member this.GetDependentProjects() =
+            [ for project in this.Solution.Projects do
+                if project.ProjectReferences |> Seq.exists (fun ref -> ref.ProjectId = this.Id) then 
+                    yield project ] 
