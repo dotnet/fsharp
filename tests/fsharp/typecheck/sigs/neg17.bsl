@@ -21,52 +21,16 @@ neg17b.fs(16,19,16,48): typecheck error FS0072: Lookup on object of indeterminat
 
 neg17b.fs(17,19,17,47): typecheck error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
 
-neg17b.fs(21,31,21,77): typecheck error FS0039: The value, constructor, namespace or type 'DefaultTagOfUnionTypeWithPrivateRepresentation' is not defined
-
-Maybe you want one of the following:
-
-   UnionTypeWithPrivateRepresentation
-
-   RecordTypeWithPrivateRepresentation
-
-   InternalUnionType
-
-   InternalRecordType
-
-   Type
+neg17b.fs(21,31,21,77): typecheck error FS0039: The value, constructor, namespace or type 'DefaultTagOfUnionTypeWithPrivateRepresentation' is not defined Maybe you want one of the following: UnionTypeWithPrivateRepresentation, RecordTypeWithPrivateRepresentation, InternalUnionType, InternalRecordType, Type
 
 neg17b.fs(29,31,29,61): typecheck error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
 
 neg17b.fs(30,31,30,84): typecheck error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
 
-neg17b.fs(32,24,32,50): typecheck error FS0039: The type 'RecordTypeWithPrivateField' is not defined in 'Neg17.M'.
-
-Maybe you want one of the following:
-
-   RecordTypeWithPrivateRepresentation
-
-   UnionTypeWithPrivateRepresentation
-
-   InternalRecordType
-
-   InternalUnionType
-
-   Type
+neg17b.fs(32,24,32,50): typecheck error FS0039: The type 'RecordTypeWithPrivateField' is not defined in 'Neg17.M'. Maybe you want one of the following: RecordTypeWithPrivateRepresentation, UnionTypeWithPrivateRepresentation, InternalRecordType, InternalUnionType, Type
 
 neg17b.fs(43,30,43,60): typecheck error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
 
-neg17b.fs(45,23,45,49): typecheck error FS0039: The type 'RecordTypeWithPrivateField' is not defined in 'Neg17.M'.
-
-Maybe you want one of the following:
-
-   RecordTypeWithPrivateRepresentation
-
-   UnionTypeWithPrivateRepresentation
-
-   InternalRecordType
-
-   InternalUnionType
-
-   Type
+neg17b.fs(45,23,45,49): typecheck error FS0039: The type 'RecordTypeWithPrivateField' is not defined in 'Neg17.M'. Maybe you want one of the following: RecordTypeWithPrivateRepresentation, UnionTypeWithPrivateRepresentation, InternalRecordType, InternalUnionType, Type
 
 neg17b.fs(54,20,54,50): typecheck error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
