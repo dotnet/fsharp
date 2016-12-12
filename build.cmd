@@ -344,7 +344,13 @@ echo TEST_VS_IDEUNIT_SUITE=%TEST_VS_IDEUNIT_SUITE%
 echo INCLUDE_TEST_SPEC_NUNIT=%INCLUDE_TEST_SPEC_NUNIT%
 echo INCLUDE_TEST_TAGS=%INCLUDE_TEST_TAGS%
 
-echo.
+
+echo .
+echo Environment
+echo 
+set
+echo .
+echo .
 
 echo ---------------- Done with arguments, starting preparation -----------------
 if '%VSSDKInstall%'=='' (
