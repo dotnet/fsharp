@@ -205,12 +205,28 @@ module internal Extensions =
             try Path.GetFullPath path
             with _ -> path
 
-    type FSharpSymbol with
+    type FSharpSymbolUse with
         member this.IsPrivateToFile = 
-            match this with
-            | :? FSharpMemberOrFunctionOrValue as m -> not m.IsModuleValueOrMember
-            | :? FSharpEntity as m -> m.Accessibility.IsPrivate
-            | :? FSharpGenericParameter -> true
-            | :? FSharpUnionCase as m -> m.Accessibility.IsPrivate
-            | :? FSharpField as m -> m.Accessibility.IsPrivate
-            | _ -> false
+            let isPrivate =
+                match this.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as m -> not m.IsModuleValueOrMember
+                | :? FSharpEntity as m -> m.Accessibility.IsPrivate
+                | :? FSharpGenericParameter -> true
+                | :? FSharpUnionCase as m -> m.Accessibility.IsPrivate
+                | :? FSharpField as m -> m.Accessibility.IsPrivate
+                | _ -> false
+            
+            let declarationLocation =
+                match this.Symbol.SignatureLocation with
+                | Some x -> Some x
+                | _ ->
+                    match this.Symbol.DeclarationLocation with
+                    | Some x -> Some x
+                    | _ -> this.Symbol.ImplementationLocation
+            
+            let declaredInTheFile = 
+                match declarationLocation with
+                | Some declRange -> declRange.FileName = this.RangeAlternate.FileName
+                | _ -> false
+            
+            isPrivate && declaredInTheFile
