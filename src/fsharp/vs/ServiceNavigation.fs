@@ -58,12 +58,11 @@ type FSharpNavigationItems(declarations:FSharpNavigationTopLevelDeclaration[]) =
     member x.Declarations = declarations
 
 module NavigationImpl =
-
     let unionRangesChecked r1 r2 = if r1 = range.Zero then r2 elif r2 = range.Zero then r1 else unionRanges r1 r2
     
     let rangeOfDecls2 f decls = 
       match (decls |> List.map (f >> (fun (d:FSharpNavigationDeclarationItem) -> d.bodyRange))) with 
-      | hd::tl -> tl |> List.fold (unionRangesChecked) hd
+      | hd::tl -> tl |> List.fold unionRangesChecked hd
       | [] -> range.Zero
     
     let rangeOfDecls = rangeOfDecls2 fst
@@ -98,7 +97,7 @@ module NavigationImpl =
             FSharpNavigationDeclarationItem.Create
               (name, kind, baseGlyph, m, bodym, false), (addItemName name), nested
             
-        let createDecl(baseName, (id:Ident), kind, baseGlyph, m, bodym, nested) =
+        let createDecl(baseName, id:Ident, kind, baseGlyph, m, bodym, nested) =
             let name = (if baseName <> "" then baseName + "." else "") + (id.idText)
             FSharpNavigationDeclarationItem.Create
               (name, kind, baseGlyph, m, bodym, false), (addItemName name), nested
@@ -107,17 +106,18 @@ module NavigationImpl =
         let createMemberLid(lid, kind, baseGlyph, m) =
             FSharpNavigationDeclarationItem.Create(textOfLid lid, kind, baseGlyph, m, m, false), (addItemName(textOfLid lid))
 
-        let createMember((id:Ident), kind, baseGlyph, m) =
+        let createMember(id:Ident, kind, baseGlyph, m) =
             FSharpNavigationDeclarationItem.Create(id.idText, kind, baseGlyph, m, m, false), (addItemName(id.idText))
-            
 
         // Process let-binding
         let processBinding isMember (Binding(_, _, _, _, _, _, SynValData(memebrOpt, _, _), synPat, _, synExpr, _, _)) =
-            let m = match synExpr with 
-                    | SynExpr.Typed(e, _, _) -> e.Range // fix range for properties with type annotations
-                    | _ -> synExpr.Range
+            let m = 
+                match synExpr with 
+                | SynExpr.Typed(e, _, _) -> e.Range // fix range for properties with type annotations
+                | _ -> synExpr.Range
+
             match synPat, memebrOpt with
-            | SynPat.LongIdent(LongIdentWithDots(lid,_), _,_, _, _, _), Some(flags) when isMember -> 
+            | SynPat.LongIdent(LongIdentWithDots(lid,_), _, _, _, _, _), Some(flags) when isMember -> 
                 let icon, kind =
                   match flags.MemberKind with
                   | MemberKind.ClassConstructor
@@ -133,7 +133,10 @@ module NavigationImpl =
                   | hd::_ -> (lid, hd.idRange) 
                   | _ -> (lid, m)
                 [ createMemberLid(lidShow, kind, icon, unionRanges rangeMerge m) ]
-            | SynPat.LongIdent(LongIdentWithDots(lid,_), _,_, _, _, _), _ -> [ createMemberLid(lid, FieldDecl, GlyphMajor.Constant, unionRanges (List.head lid).idRange m) ]
+            | SynPat.LongIdent(LongIdentWithDots(lid,_), _, _, _, _, _), _ -> 
+                [ createMemberLid(lid, FieldDecl, GlyphMajor.Constant, unionRanges (List.head lid).idRange m) ]
+            | SynPat.Named(_, id, _, _, _), _ -> 
+                [ createMember(id, FieldDecl, GlyphMajor.Method, unionRanges id.idRange m) ]
             | _ -> []
         
         // Process a class declaration or F# type declaration
