@@ -19,6 +19,7 @@ open Microsoft.CodeAnalysis.Navigation
 open Microsoft.CodeAnalysis.Editor.Shared.Utilities
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
+open Microsoft.CodeAnalysis.Notification
 
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.Text
@@ -29,6 +30,9 @@ open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Ast
+
+type internal NavigationBarSymbolItem(text, glyph, spans, childItems) =
+    inherit NavigationBarItem(text, glyph, spans, childItems)
 
 [<ExportLanguageService(typeof<INavigationBarItemService>, FSharpCommonConstants.FSharpLanguageName); Shared>]
 type internal FSharpNavigationBarItemService
@@ -61,20 +65,21 @@ type internal FSharpNavigationBarItemService
                             return 
                                 navItems.Declarations
                                 |> Array.choose (fun topLevelDecl ->
-                                    rangeToTextSpan(topLevelDecl.Declaration.BodyRange)
+                                    rangeToTextSpan(topLevelDecl.Declaration.Range)
                                     |> Option.map (fun topLevelTextSpan ->
                                         let childItems =
                                             topLevelDecl.Nested
                                             |> Array.choose (fun decl ->
                                                 rangeToTextSpan(decl.Range)
                                                 |> Option.map(fun textSpan ->
-                                                    NavigationBarPresentedItem(
+                                                    NavigationBarSymbolItem(
                                                         decl.Name, 
                                                         CommonHelpers.glyphMajorToRoslynGlyph(decl.GlyphMajor), 
-                                                        [| textSpan |])
+                                                        [| textSpan |],
+                                                        null)
                                                     :> NavigationBarItem))
                                         
-                                        NavigationBarPresentedItem(
+                                        NavigationBarSymbolItem(
                                             topLevelDecl.Declaration.Name, 
                                             CommonHelpers.glyphMajorToRoslynGlyph(topLevelDecl.Declaration.GlyphMajor),
                                             [| topLevelTextSpan |],
@@ -84,11 +89,19 @@ type internal FSharpNavigationBarItemService
                 | None -> return emptyResult
             } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
         
-        
         member __.ShowItemGrayedIfNear (_item) : bool = false
         
-        member __.NavigateToItem(_document, item, view, _cancellationToken) =
+        member __.NavigateToItem(document, item, _view, _cancellationToken) =
             match item.Spans |> Seq.tryHead with
             | Some span ->
-                view.Selection.Select(SnapshotSpan(view.TextBuffer.CurrentSnapshot, Span(span.Start, span.Length)), false)
+                let workspace = document.Project.Solution.Workspace
+                let navigationService = workspace.Services.GetService<IDocumentNavigationService>()
+                
+                if navigationService.CanNavigateToPosition(workspace, document.Id, span.Start) then
+                    navigationService.TryNavigateToPosition(workspace, document.Id, span.Start) |> ignore
+                else
+                    let notificationService = workspace.Services.GetService<INotificationService>()
+                    notificationService.SendNotification(EditorFeaturesResources.The_definition_of_the_object_is_hidden, severity = NotificationSeverity.Error)
+
+                //view.Selection.Select(SnapshotSpan(view.TextBuffer.CurrentSnapshot, Span(span.Start, span.Length)), false)
             | None -> ()
