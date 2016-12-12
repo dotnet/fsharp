@@ -484,20 +484,20 @@
     <Exec Command='$(MSBuildThisFileDirectory)..\.nuget\nuget.exe pack %(PackageNuspec.Filename)%(PackageNuspec.Extension) -BasePath "$(OutputPath.TrimEnd("\"))" -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory "$(MSBuildThisFileDirectory)..\artifacts' />
   </Target>
 
-  <Target Name="dotnetrestore" BeforeTargets="corecompile" Condition=" '$(DOTNET_PUBLISH)' == 'true'>
+  <Target Name="dotnetrestore" BeforeTargets="corecompile" Condition=" '$(DOTNET_PUBLISH)' == 'true' ">
     <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe restore --configfile $(MSBuildThisFileDirectory)..\.nuget\NuGet.Config project.json"/>
   </Target>
 
-  <Target Name="dotnetpublish" '$(DOTNET_PUBLISH)' == 'true'>
+  <Target Name="dotnetpublish" '$(DOTNET_PUBLISH)' == 'true' ">
     <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe publish --no-build project.json -r $(DOTNET_PUBLISH_PLATFORM) -c $(Configuration) -o $(DOTNET_PUBLISH_PATH)"/>
   </Target>
 
-  <Target Name="dotnetpublishfsccompiler" Condition=" '$(DOTNET_PUBLISH_FSC)' == 'true'>
+  <Target Name="dotnetpublishfsccompiler" Condition=" '$(DOTNET_PUBLISH_FSC)' == 'true' ">
     <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe restore DeployCompiler\fsc\project.json"/>
     <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe publish --no-build DeployCompiler\fsc\project.json -r $(DOTNET_PUBLISH_PLATFORM) -c $(Configuration) -o $(DOTNET_PUBLISH_FSC_PATH)"/>
   </Target>
 
-  <Target Name="dotnetpublishfsicompiler" Condition=" '$(DOTNET_PUBLISH_FSI)' == 'true'>
+  <Target Name="dotnetpublishfsicompiler" Condition=" '$(DOTNET_PUBLISH_FSI)' == 'true' ">
     <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe restore DeployCompiler\fsi\project.json"/>
     <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe publish --no-build DeployCompiler\fsi\project.json -r $(DOTNET_PUBLISH_PLATFORM) -c $(Configuration) -o $(DOTNET_PUBLISH_FSI_PATH)"/>
   </Target>
