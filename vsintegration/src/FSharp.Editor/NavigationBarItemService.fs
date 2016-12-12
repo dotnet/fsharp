@@ -23,9 +23,6 @@ open Microsoft.CodeAnalysis.Notification
 
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.Text
-open Microsoft.VisualStudio.Text.Tagging
-open Microsoft.VisualStudio.Shell
-open Microsoft.VisualStudio.TextManager.Interop
 
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
@@ -40,11 +37,9 @@ type internal FSharpNavigationBarItemService
     (
         checkerProvider: FSharpCheckerProvider,
         projectInfoManager: ProjectInfoManager
-        //[<System.ComponentModel.Composition.Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider
     ) =
     
     static let emptyResult: IList<NavigationBarItem> = upcast [||]
-    //let vsTextManager = serviceProvider.GetService(typeof<SVsTextManager>) :?> IVsTextManager
 
     interface INavigationBarItemService with
         member __.GetItemsAsync(document, cancellationToken) : Task<IList<NavigationBarItem>> = 
@@ -55,36 +50,33 @@ type internal FSharpNavigationBarItemService
                     let! fileParseResults = checkerProvider.Checker.ParseFileInProject(document.FilePath, sourceText.ToString(), options)
                     match fileParseResults.ParseTree with
                     | Some parsedInput ->
-                        match parsedInput with
-                        | ParsedInput.SigFile _ -> return emptyResult
-                        | ParsedInput.ImplFile(ParsedImplFileInput(_, _, _, _, _, moduleOrNamespaceList, _)) -> 
-                            let navItems = NavigationImpl.getNavigationFromImplFile(moduleOrNamespaceList)
-                            let rangeToTextSpan range = 
-                                try Some(CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
-                                with _ -> None
-                            return 
-                                navItems.Declarations
-                                |> Array.choose (fun topLevelDecl ->
-                                    rangeToTextSpan(topLevelDecl.Declaration.Range)
-                                    |> Option.map (fun topLevelTextSpan ->
-                                        let childItems =
-                                            topLevelDecl.Nested
-                                            |> Array.choose (fun decl ->
-                                                rangeToTextSpan(decl.Range)
-                                                |> Option.map(fun textSpan ->
-                                                    NavigationBarSymbolItem(
-                                                        decl.Name, 
-                                                        CommonHelpers.glyphMajorToRoslynGlyph(decl.GlyphMajor), 
-                                                        [| textSpan |],
-                                                        null)
-                                                    :> NavigationBarItem))
-                                        
-                                        NavigationBarSymbolItem(
-                                            topLevelDecl.Declaration.Name, 
-                                            CommonHelpers.glyphMajorToRoslynGlyph(topLevelDecl.Declaration.GlyphMajor),
-                                            [| topLevelTextSpan |],
-                                            childItems)
-                                        :> NavigationBarItem)) :> IList<_>
+                        let navItems = NavigationImpl.getNavigation parsedInput
+                        let rangeToTextSpan range = 
+                            try Some(CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
+                            with _ -> None
+                        return 
+                            navItems.Declarations
+                            |> Array.choose (fun topLevelDecl ->
+                                rangeToTextSpan(topLevelDecl.Declaration.Range)
+                                |> Option.map (fun topLevelTextSpan ->
+                                    let childItems =
+                                        topLevelDecl.Nested
+                                        |> Array.choose (fun decl ->
+                                            rangeToTextSpan(decl.Range)
+                                            |> Option.map(fun textSpan ->
+                                                NavigationBarSymbolItem(
+                                                    decl.Name, 
+                                                    CommonHelpers.glyphMajorToRoslynGlyph(decl.GlyphMajor), 
+                                                    [| textSpan |],
+                                                    null)
+                                                :> NavigationBarItem))
+                                    
+                                    NavigationBarSymbolItem(
+                                        topLevelDecl.Declaration.Name, 
+                                        CommonHelpers.glyphMajorToRoslynGlyph(topLevelDecl.Declaration.GlyphMajor),
+                                        [| topLevelTextSpan |],
+                                        childItems)
+                                    :> NavigationBarItem)) :> IList<_>
                     | None -> return emptyResult
                 | None -> return emptyResult
             } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
@@ -102,6 +94,4 @@ type internal FSharpNavigationBarItemService
                 else
                     let notificationService = workspace.Services.GetService<INotificationService>()
                     notificationService.SendNotification(EditorFeaturesResources.The_definition_of_the_object_is_hidden, severity = NotificationSeverity.Error)
-
-                //view.Selection.Select(SnapshotSpan(view.TextBuffer.CurrentSnapshot, Span(span.Start, span.Length)), false)
             | None -> ()
