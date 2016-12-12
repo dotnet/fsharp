@@ -4384,7 +4384,20 @@ and TcTyparOrMeasurePar optKind cenv (env:TcEnv) newOk tpenv (Typar(id,_,_) as t
     match TryFindUnscopedTypar key tpenv with
     | Some res -> checkRes res
     | None -> 
-        if newOk = NoNewTypars then error (UndefinedName(0,FSComp.SR.undefinedNameTypeParameter,id,NoPredictions))
+        if newOk = NoNewTypars then
+            let predictions1 =
+                env.eNameResEnv.eTypars
+                |> Seq.map (fun p -> "'" + p.Key)
+                |> Set.ofSeq
+
+            let predictions2 =
+                match tpenv with
+                | UnscopedTyparEnv elements ->
+                    elements
+                    |> Seq.map (fun p -> "'" + p.Key)
+                    |> Set.ofSeq
+
+            error (UndefinedName(0,FSComp.SR.undefinedNameTypeParameter,id,Set.union predictions1 predictions2))
         // OK, this is an implicit declaration of a type parameter 
         // The kind defaults to Type
         let tp' = NewTypar ((match optKind with None -> TyparKind.Type | Some kind -> kind), TyparRigidity.WarnIfNotRigid,tp,false,TyparDynamicReq.Yes,[],false,false)
