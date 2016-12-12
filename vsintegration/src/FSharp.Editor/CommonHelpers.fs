@@ -196,8 +196,14 @@ module CommonHelpers =
         | -1 | 0 -> span
         | index -> TextSpan(span.Start + index + 1, text.Length - index - 1)
 
+[<RequireQualifiedAccess; NoComparison>] 
+type internal SymbolDeclarationLocation = 
+    | CurrentDocument
+    | Projects of Project list * isLocalForProject: bool
+
 [<AutoOpen>]
 module internal Extensions =
+    open System
     open System.IO
 
     type Path with
@@ -205,7 +211,52 @@ module internal Extensions =
             try Path.GetFullPath path
             with _ -> path
 
+    type FSharpSymbol with
+        member this.IsInternalToProject =
+            match this with 
+            | :? FSharpParameter -> true
+            | :? FSharpMemberOrFunctionOrValue as m -> not m.IsModuleValueOrMember || not m.Accessibility.IsPublic
+            | :? FSharpEntity as m -> not m.Accessibility.IsPublic
+            | :? FSharpGenericParameter -> true
+            | :? FSharpUnionCase as m -> not m.Accessibility.IsPublic
+            | :? FSharpField as m -> not m.Accessibility.IsPublic
+            | _ -> false
+
     type FSharpSymbolUse with
+        member this.GetDeclarationLocation (currentDocument: Document) : SymbolDeclarationLocation option =
+            if this.IsPrivateToFile then
+                Some SymbolDeclarationLocation.CurrentDocument
+            else
+                let isSymbolLocalForProject = this.Symbol.IsInternalToProject
+                
+                let declarationLocation = 
+                    match this.Symbol.ImplementationLocation with
+                    | Some x -> Some x
+                    | None -> this.Symbol.DeclarationLocation
+                
+                match declarationLocation with
+                | Some loc ->
+                    let filePath = Path.GetFullPathSafe loc.FileName
+                    let isScript = String.Equals(Path.GetExtension(filePath), ".fsx", StringComparison.OrdinalIgnoreCase)
+                    if isScript && filePath = currentDocument.FilePath then 
+                        Some SymbolDeclarationLocation.CurrentDocument
+                    elif isScript then
+                        // The standalone script might include other files via '#load'
+                        // These files appear in project options and the standalone file 
+                        // should be treated as an individual project
+                        Some (SymbolDeclarationLocation.Projects ([currentDocument.Project], isSymbolLocalForProject))
+                    else
+                        let projects =
+                            currentDocument.Project.Solution.GetDocumentIdsWithFilePath(currentDocument.FilePath)
+                            |> Seq.map (fun x -> x.ProjectId)
+                            |> Seq.distinct
+                            |> Seq.map currentDocument.Project.Solution.GetProject
+                            |> Seq.toList
+                        match projects with
+                        | [] -> None
+                        | projects -> Some (SymbolDeclarationLocation.Projects (projects, isSymbolLocalForProject))
+                | None -> None
+
         member this.IsPrivateToFile = 
             let isPrivate =
                 match this.Symbol with
