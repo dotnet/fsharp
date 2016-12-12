@@ -2566,7 +2566,7 @@ let rec private ResolveTypeLongIdentInModuleOrNamespace (ncenv:NameResolver) (ty
         tyconSearch +++ modulSearch
 
 /// Resolve a long identifier representing a type 
-let rec ResolveTypeLongIdentPrim (ncenv:NameResolver) fullyQualified m nenv ad (lid: Ident list) (staticResInfo: TypeNameResolutionStaticArgsInfo) genOk =
+let rec ResolveTypeLongIdentPrim (ncenv:NameResolver) occurence fullyQualified m nenv ad (lid: Ident list) (staticResInfo: TypeNameResolutionStaticArgsInfo) genOk =
     let typeNameResInfo = TypeNameResolutionInfo.ResolveToTypeRefs staticResInfo
     match lid with 
     | [] -> error(Error(FSComp.SR.nrUnexpectedEmptyLongId(),m))
@@ -2575,7 +2575,7 @@ let rec ResolveTypeLongIdentPrim (ncenv:NameResolver) fullyQualified m nenv ad (
          error (Error(FSComp.SR.nrGlobalUsedOnlyAsFirstName(), id.idRange))
          
     | id :: lid when id.idText = MangledGlobalName ->
-        ResolveTypeLongIdentPrim ncenv FullyQualified m nenv ad lid staticResInfo genOk
+        ResolveTypeLongIdentPrim ncenv occurence FullyQualified m nenv ad lid staticResInfo genOk
 
     | [id]  ->  
         match LookupTypeNameInEnvHaveArity fullyQualified id.idText staticResInfo.NumStaticArgs nenv with
@@ -2597,7 +2597,13 @@ let rec ResolveTypeLongIdentPrim (ncenv:NameResolver) fullyQualified m nenv ad (
                     | AccessibleFrom _ ->
                         nenv.TyconsByDemangledNameAndArity(fullyQualified)
                         |> Seq.filter (fun kv -> IsEntityAccessible ncenv.amap m ad kv.Value)
-                        |> Seq.map (fun e -> e.Value.DisplayName)
+                        |> Seq.collect (fun e -> 
+                            match occurence with
+                            | ItemOccurence.UseInAttribute -> 
+                                [yield e.Value.DisplayName
+                                 if e.Value.DisplayName.EndsWith "Attribute" then
+                                    yield e.Value.DisplayName.Replace("Attribute","")]
+                            | _ -> [e.Value.DisplayName])
                         |> Set.ofSeq
                     | _ -> Set.empty
                 
@@ -2649,7 +2655,7 @@ let rec ResolveTypeLongIdentPrim (ncenv:NameResolver) fullyQualified m nenv ad (
 /// Resolve a long identifier representing a type and report it
 let ResolveTypeLongIdent sink (ncenv:NameResolver) occurence fullyQualified nenv ad (lid: Ident list) staticResInfo genOk =
     let m = rangeOfLid lid
-    let res = ResolveTypeLongIdentPrim ncenv fullyQualified m nenv ad lid staticResInfo genOk 
+    let res = ResolveTypeLongIdentPrim ncenv occurence fullyQualified m nenv ad lid staticResInfo genOk 
     // Register the result as a name resolution
     match res with 
     | Result (resInfo,tcref) -> 

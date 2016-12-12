@@ -781,7 +781,7 @@ let OutputPhasedErrorR errorStyle (os:System.Text.StringBuilder) (err:PhasedErro
           os.Append(k (DecompileOpName id.idText)) |> ignore
           if Set.isEmpty predictions |> not then
               let filtered = ErrorResolutionHints.FilterPredictions id.idText predictions
-              os.Append(ErrorResolutionHints.FormatPredictions errorStyle filtered) |> ignore
+              os.Append(ErrorResolutionHints.FormatPredictions errorStyle DecompileOpName filtered) |> ignore
           
       | InternalUndefinedItemRef(f,smr,ccuName,s) ->  
           let _, errs = f(smr, ccuName, s)  
@@ -1261,7 +1261,7 @@ let OutputPhasedErrorR errorStyle (os:System.Text.StringBuilder) (err:PhasedErro
           os.Append(NonUniqueInferredAbstractSlot1E().Format bindnm) |> ignore
           let ty1 = bvirt1.EnclosingType
           let ty2 = bvirt2.EnclosingType
-          // REVIEW: consider if we need to show _cxs (the type parameter constrants)
+          // REVIEW: consider if we need to show _cxs (the type parameter constraints)
           let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
           os.Append(NonUniqueInferredAbstractSlot2E().Format) |> ignore
           if t1 <> t2 then 
@@ -1269,10 +1269,10 @@ let OutputPhasedErrorR errorStyle (os:System.Text.StringBuilder) (err:PhasedErro
           os.Append(NonUniqueInferredAbstractSlot4E().Format) |> ignore
       | Error ((_,s),_) -> os.Append(s) |> ignore
       | ErrorWithPredictions ((_,s),_,idText,predictions) -> 
-          os.Append(s) |> ignore
+          os.Append(DecompileOpName s) |> ignore
           if Set.isEmpty predictions |> not then
               let filtered = ErrorResolutionHints.FilterPredictions idText predictions
-              os.Append(ErrorResolutionHints.FormatPredictions errorStyle filtered) |> ignore
+              os.Append(ErrorResolutionHints.FormatPredictions errorStyle DecompileOpName filtered) |> ignore
       | NumberedError ((_,s),_) -> os.Append(s) |> ignore
       | InternalError (s,_) 
       | InvalidArgument s 
