@@ -4,6 +4,7 @@ environment:
   matrix:
     - BUILD_PROFILE: ci_part1
     - BUILD_PROFILE: ci_part2
+    - BUILD_PROFILE: ci_part3
 
 init:
   - git config --global core.autocrlf true
