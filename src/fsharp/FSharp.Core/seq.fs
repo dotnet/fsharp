@@ -703,15 +703,9 @@ namespace Microsoft.FSharp.Collections
                 then mkDelayedSeq (fun () -> countByValueType keyf source)
                 else mkDelayedSeq (fun () -> countByRefType   keyf source)
 
-        [<CompiledName("Sum")>]
+        [<CompiledName "Sum">]
         let inline sum (source:seq<'a>) : 'a =
-            source
-            |> foreach (fun _ ->
-                { new Composer.Core.Folder<'a,'a> (LanguagePrimitives.GenericZero) with
-                    override this.ProcessNext value =
-                        this.Value <- Checked.(+) this.Value value
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun sum -> sum.Value
+            source |> toComposer |> Composer.Seq.sum
 
         [<CompiledName("SumBy")>]
         let inline sumBy (f : 'T -> ^U) (source: seq<'T>) : ^U =

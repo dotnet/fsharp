@@ -1107,6 +1107,18 @@ namespace Microsoft.FSharp.Collections
                                 else
                                     TailCall.avoid (next.ProcessNext input) }}
 
+            [<CompiledName "Sum">]
+            let inline sum (source:ISeq< ^T>) : ^T
+                when ^T:(static member Zero : ^T)
+                and  ^T:(static member (+) :  ^T *  ^T ->  ^T) =
+                source
+                |> foreach (fun _ ->
+                    { new Folder< ^T,^T> (LanguagePrimitives.GenericZero) with
+                        override this.ProcessNext value =
+                            this.Value <- Checked.(+) this.Value value
+                            Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
+                |> fun sum -> sum.Value
+
             [<CompiledName "Take">]
             let inline take (takeCount:int) (source:ISeq<'T>) : ISeq<'T> =
                 source |> compose { new SeqFactory<'T,'T>() with
