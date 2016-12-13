@@ -719,47 +719,13 @@ namespace Microsoft.FSharp.Collections
         let inline averageBy (f : 'T -> ^U) (source: seq< 'T >) : ^U =
             source |> toComposer |> Composer.Seq.averageBy f
 
-        [<CompiledName("Min")>]
-        let inline min (source: seq<_>) =
-            source
-            |> foreach (fun _ ->
-                { new Composer.Core.FolderWithOnComplete<'T,Composer.Core.Values<bool,'T>> (Composer.Core.Values<_,_>(true, Unchecked.defaultof<'T>)) with
-                    override this.ProcessNext value =
-                        if this.Value._1 then
-                            this.Value._1 <- false
-                            this.Value._2 <- value
-                        elif value < this.Value._2 then
-                            this.Value._2 <- value
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
+        [<CompiledName "Min">]
+        let inline min (source: seq<'T>): 'T when 'T : comparison =
+            source |> toComposer |> Composer.Seq.min
 
-                    member this.OnComplete _ =
-                        if this.Value._1 then
-                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-                })
-            |> fun min -> min.Value._2
-
-        [<CompiledName("MinBy")>]
-        let inline minBy (f : 'T -> 'U) (source: seq<'T>) : 'T =
-            source
-            |> foreach (fun _ ->
-                { new Composer.Core.FolderWithOnComplete<'T,Composer.Core.Values<bool,'U,'T>> (Composer.Core.Values<_,_,_>(true,Unchecked.defaultof<'U>,Unchecked.defaultof<'T>)) with
-                    override this.ProcessNext value =
-                        match this.Value._1, f value with
-                        | true, valueU ->
-                            this.Value._1 <- false
-                            this.Value._2 <- valueU
-                            this.Value._3 <- value
-                        | false, valueU when valueU < this.Value._2 ->
-                            this.Value._2 <- valueU
-                            this.Value._3 <- value
-                        | _ -> ()
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
-
-                    member this.OnComplete _ =
-                        if this.Value._1 then
-                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-                })
-            |> fun min -> min.Value._3
+        [<CompiledName "MinBy">]
+        let inline minBy (projection: 'T -> 'U when 'U:comparison) (source: seq<'T>) : 'T =
+            source |> toComposer |> Composer.Seq.minBy projection
 (*
         [<CompiledName("MinValueBy")>]
         let inline minValBy (f : 'T -> 'U) (source: seq<'T>) : 'U =
