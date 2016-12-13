@@ -50,21 +50,21 @@ module internal Hooks =
         with e2 ->
             (System.Windows.Forms.MessageBox.Show(e2.ToString()) |> ignore)
 
-    let private queryFSIToolWindow (this:Package) (f : FsiToolWindow -> 't) (dflt : 't) =
+    let private queryFSIToolWindow tryOpen (this:Package) (f:FsiToolWindow -> 't) (defaultValue:'t) =
         try            
             let window = this.FindToolWindow(typeof<FsiToolWindow>, 0, true)
             let windowFrame = window.Frame :?> IVsWindowFrame
-            if windowFrame.IsVisible() <> VSConstants.S_OK then
+            if tryOpen && windowFrame.IsVisible() <> VSConstants.S_OK then
                 windowFrame.Show() |> throwOnFailure0
             match window with
             | :? FsiToolWindow as window -> f window
-            | _ -> dflt
-        with e2 ->
-            (System.Windows.Forms.MessageBox.Show(VFSIstrings.SR.exceptionRaisedWhenRequestingToolWindow(e2.ToString())) |> ignore)
-            dflt
+            | _ -> defaultValue
+        with e ->
+            (System.Windows.Forms.MessageBox.Show(VFSIstrings.SR.exceptionRaisedWhenRequestingToolWindow(e.ToString())) |> ignore)
+            defaultValue
 
     let private withFSIToolWindow (this:Package) f =
-        queryFSIToolWindow this f ()
+        queryFSIToolWindow true this f ()
 
     let OnMLSend (this:Package) (action : FsiEditorSendAction) (sender:obj) (e:EventArgs) =
         withFSIToolWindow this (fun window ->
@@ -78,7 +78,7 @@ module internal Hooks =
         withFSIToolWindow this (fun window -> window.AddReferences references)
 
     let GetDebuggerState (this:Package) =
-        queryFSIToolWindow this (fun window -> window.GetDebuggerState()) FsiDebuggerState.AttachedNotToFSI
+        queryFSIToolWindow false this (fun window -> window.GetDebuggerState()) FsiDebuggerState.AttachedNotToFSI
 
     // FxCop request this function not be public
     let private supportWhenFSharpDocument (sender:obj) (e:EventArgs) =    
