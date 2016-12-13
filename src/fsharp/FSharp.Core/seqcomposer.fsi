@@ -485,6 +485,12 @@ namespace Microsoft.FSharp.Collections
             and  'T:(static member (+) : ^T * ^T -> ^T)
             and  ^T:(static member DivideByInt : ^T * int -> ^T)
 
+        [<CompiledName "AverageBy">]
+        val inline averageBy : f:('T -> ^U) -> source:ISeq< 'T > -> ^U
+            when ^U:(static member Zero : ^U)
+            and  ^U:(static member (+) : ^U * ^U -> ^U)
+            and  ^U:(static member DivideByInt : ^U * int -> ^U)
+
         [<CompiledName "Empty">]
         val empty<'T> :  ISeq<'T>
 

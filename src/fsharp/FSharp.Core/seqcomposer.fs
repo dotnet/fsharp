@@ -863,6 +863,24 @@ namespace Microsoft.FSharp.Collections
                                 invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString })
                 |> fun total -> LanguagePrimitives.DivideByInt< ^T> total.Value._1 total.Value._2
 
+            [<CompiledName "AverageBy">]
+            let inline averageBy (f : 'T -> ^U) (source: ISeq< 'T >) : ^U
+                when ^U:(static member Zero : ^U)
+                and  ^U:(static member (+) : ^U * ^U -> ^U)
+                and  ^U:(static member DivideByInt : ^U * int -> ^U) =
+                source
+                |> foreach (fun _ ->
+                    { new FolderWithOnComplete<'T,Values<'U, int>>(Values<_,_>(LanguagePrimitives.GenericZero, 0)) with
+                        override this.ProcessNext value =
+                            this.Value._1 <- Checked.(+) this.Value._1 (f value)
+                            this.Value._2 <- this.Value._2 + 1
+                            Unchecked.defaultof<_> (* return value unsed in ForEach context *)
+
+                        member this.OnComplete _ =
+                            if this.Value._2 = 0 then
+                                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString })
+                |> fun total -> LanguagePrimitives.DivideByInt< ^U> total.Value._1 total.Value._2
+
             [<CompiledName "Empty">]
             let empty<'T> = EmptyEnumerable.Enumerable<'T>.Instance
 
