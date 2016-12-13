@@ -309,26 +309,10 @@ namespace Microsoft.FSharp.Collections
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
             |> fun fold -> fold.Value
 
-        [<CompiledName("Reduce")>]
+        [<CompiledName "Reduce">]
         let reduce f (source : seq<'T>)  =
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-
-            source
-            |> foreach (fun _ ->
-                { new Composer.Core.FolderWithOnComplete<'T, Composer.Core.Values<bool,'T>> (Composer.Core.Values<_,_>(true, Unchecked.defaultof<'T>)) with
-                    override this.ProcessNext value =
-                        if this.Value._1 then
-                            this.Value._1 <- false
-                            this.Value._2 <- value
-                        else
-                            this.Value._2 <- f.Invoke (this.Value._2, value)
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
-
-                    member this.OnComplete _ =
-                        if this.Value._1 then
-                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-                })
-            |> fun reduced -> reduced.Value._2
+            source |> toComposer |> Composer.Seq.reduce(fun a b -> f.Invoke(a,b))
 
         [<CompiledName("Replicate")>]
         let replicate count x =
