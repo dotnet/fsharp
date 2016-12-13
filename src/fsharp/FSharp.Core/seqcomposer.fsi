@@ -547,6 +547,11 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "SkipWhile">]
         val inline skipWhile : predicate:('T->bool) -> source:ISeq<'T> -> ISeq<'T>
 
+        [<CompiledName "Sum">]
+        val inline sum : source:ISeq<'T> -> 'T
+            when 'T:(static member Zero : ^T)
+            and  'T:(static member (+) :  ^T *  ^T ->  ^T)
+
         [<CompiledName "Take">]
         val inline take : takeCount:int -> source:ISeq<'T> -> ISeq<'T>
 
