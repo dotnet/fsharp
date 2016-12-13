@@ -86,7 +86,7 @@ namespace Microsoft.FSharp.Collections
             type ConsumerChained<'T,'U>(next:ICompletionChain) =
                 inherit ConsumerChainedWithState<'T,'U,NoValue>(next, Unchecked.defaultof<NoValue>)
 
-            [<AbstractClass>] 
+            [<AbstractClass>]
             type ConsumerChainedWithStateAndCleanup<'T,'U,'Value> (next, init) =
                 inherit ConsumerChainedWithState<'T,'U,'Value>(next, init)
 
@@ -830,7 +830,7 @@ namespace Microsoft.FSharp.Collections
                         member this.ForEach (f:(unit->unit)->#Consumer<'T,'T>) =
                             ForEach.execute f IdentityFactory.Instance (ForEach.enumerable (Upcast.enumerable this))
 
-            [<CompiledName("ToComposer")>]
+            [<CompiledName "ToComposer">]
             let toComposer (source:seq<'T>) : ISeq<'T> =
                 match source with
                 | :? ISeq<'T> as s -> s
@@ -845,24 +845,24 @@ namespace Microsoft.FSharp.Collections
             let inline compose (factory:#SeqFactory<_,_>) (source:ISeq<'T>) =
                 source.Compose factory
 
-            [<CompiledName("Empty")>]
+            [<CompiledName "Empty">]
             let empty<'T> = EmptyEnumerable.Enumerable<'T>.Instance
 
-            [<CompiledName("Unfold")>]
+            [<CompiledName "Unfold">]
             let unfold (generator:'State->option<'T * 'State>) (state:'State) : ISeq<'T> =
                 Upcast.seq (new Unfold.Enumerable<'T,'T,'State>(generator, state, IdentityFactory.Instance))
 
-            [<CompiledName("InitializeInfinite")>]
+            [<CompiledName "InitializeInfinite">]
             let initInfinite<'T> (f:int->'T) : ISeq<'T> =
                 Upcast.seq (new Init.EnumerableDecider<'T>(Nullable (), f))
 
-            [<CompiledName("Initialize")>]
+            [<CompiledName "Initialize">]
             let init<'T> (count:int) (f:int->'T) : ISeq<'T> =
                 if count < 0 then invalidArgInputMustBeNonNegative "count" count
                 elif count = 0 then empty else
                 Upcast.seq (new Init.EnumerableDecider<'T>(Nullable count, f))
 
-            [<CompiledName("Iterate")>]
+            [<CompiledName "Iterate">]
             let iter f (source:ISeq<'T>) =
                 source
                 |> foreach (fun _ ->
@@ -872,7 +872,7 @@ namespace Microsoft.FSharp.Collections
                             Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
                 |> ignore
 
-            [<CompiledName("TryHead")>]
+            [<CompiledName "TryHead">]
             let tryHead (source:ISeq<'T>) =
                 source
                 |> foreach (fun halt ->
@@ -885,7 +885,7 @@ namespace Microsoft.FSharp.Collections
 
 
 
-            [<CompiledName("IterateIndexed")>]
+            [<CompiledName "IterateIndexed">]
             let iteri f (source:ISeq<'T>) =
                 let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt f
 
@@ -909,7 +909,7 @@ namespace Microsoft.FSharp.Collections
                                 else false
                         }}
 
-            [<CompiledName("Exists")>]
+            [<CompiledName "Exists">]
             let exists f (source:ISeq<'T>) =
                 source
                 |> foreach (fun halt ->
@@ -921,7 +921,7 @@ namespace Microsoft.FSharp.Collections
                             Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
                 |> fun exists -> exists.Value
 
-            [<CompiledName("Contains")>]
+            [<CompiledName "Contains">]
             let inline contains element (source:ISeq<'T>) =
                 source
                 |> foreach (fun halt ->
@@ -933,7 +933,7 @@ namespace Microsoft.FSharp.Collections
                             Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
                 |> fun contains -> contains.Value
 
-            [<CompiledName("ForAll")>]
+            [<CompiledName "ForAll">]
             let forall f (source:ISeq<'T>) =
                 source
                 |> foreach (fun halt ->
@@ -945,7 +945,7 @@ namespace Microsoft.FSharp.Collections
                             Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
                 |> fun forall -> forall.Value
 
-            [<CompiledName("Filter")>]
+            [<CompiledName "Filter">]
             let inline filter<'T> (f:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
                 source |> compose { new SeqFactory<'T,'T>() with
                     member __.Create _ _ next =
@@ -954,7 +954,7 @@ namespace Microsoft.FSharp.Collections
                                 if f input then TailCall.avoid (next.ProcessNext input)
                                 else false } }
 
-            [<CompiledName("Map")>]
+            [<CompiledName "Map">]
             let inline map<'T,'U> (f:'T->'U) (source:ISeq<'T>) : ISeq<'U> =
                 source |> compose { new SeqFactory<'T,'U>() with
                     member __.Create _ _ next =
@@ -962,7 +962,7 @@ namespace Microsoft.FSharp.Collections
                             member __.ProcessNext input =
                                 TailCall.avoid (next.ProcessNext (f input)) } }
 
-            [<CompiledName("MapIndexed")>]
+            [<CompiledName "MapIndexed">]
             let inline mapi f source =
                 source |> compose { new SeqFactory<'T,'U>() with
                     member __.Create _ _ next =
@@ -979,7 +979,7 @@ namespace Microsoft.FSharp.Collections
                                 this.Value <- this.Value  + 1
                                 TailCall.avoid (next.ProcessNext (f.Invoke (this.Value, input))) } }
 
-            [<CompiledName("Choose")>]
+            [<CompiledName "Choose">]
             let inline choose (f:'T->option<'U>) (source:ISeq<'T>) : ISeq<'U> =
                 source |> compose { new SeqFactory<'T,'U>() with
                     member __.Create _ _ next =
@@ -1167,7 +1167,7 @@ namespace Microsoft.FSharp.Collections
                                         false
                         }}
 
-            [<CompiledName("Indexed")>]
+            [<CompiledName "Indexed">]
             let inline indexed source =
                 mapi (fun i x -> i,x) source
 
@@ -1176,7 +1176,7 @@ namespace Microsoft.FSharp.Collections
                 if index < 0 then None else
                 source |> skip index |> tryHead
 
-            [<CompiledName("TryPick")>]
+            [<CompiledName "TryPick">]
             let tryPick f (source:ISeq<'T>)  =
                 source
                 |> foreach (fun halt ->
@@ -1190,7 +1190,7 @@ namespace Microsoft.FSharp.Collections
                             Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
                 |> fun pick -> pick.Value
 
-            [<CompiledName("TryFind")>]
+            [<CompiledName "TryFind">]
             let tryFind f (source:ISeq<'T>)  =
                 source
                 |> foreach (fun halt ->
