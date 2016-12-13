@@ -743,47 +743,13 @@ namespace Microsoft.FSharp.Collections
             acc
 
 *)
-        [<CompiledName("Max")>]
-        let inline max (source: seq<_>) =
-            source
-            |> foreach (fun _ ->
-                { new Composer.Core.FolderWithOnComplete<'T,Composer.Core.Values<bool,'T>> (Composer.Core.Values<_,_>(true, Unchecked.defaultof<'T>)) with
-                    override this.ProcessNext value =
-                        if this.Value._1 then
-                            this.Value._1 <- false
-                            this.Value._2 <- value
-                        elif value > this.Value._2 then
-                            this.Value._2 <- value
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
+        [<CompiledName "Max">]
+        let inline max (source: seq<'T>) =
+            source |> toComposer |> Composer.Seq.max
 
-                    member this.OnComplete _ =
-                        if this.Value._1 then
-                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-                })
-            |> fun max -> max.Value._2
-
-        [<CompiledName("MaxBy")>]
-        let inline maxBy (f : 'T -> 'U) (source: seq<'T>) : 'T =
-            source
-            |> foreach (fun _ ->
-                { new Composer.Core.FolderWithOnComplete<'T,Composer.Core.Values<bool,'U,'T>> (Composer.Core.Values<_,_,_>(true,Unchecked.defaultof<'U>,Unchecked.defaultof<'T>)) with
-                    override this.ProcessNext value =
-                        match this.Value._1, f value with
-                        | true, valueU ->
-                            this.Value._1 <- false
-                            this.Value._2 <- valueU
-                            this.Value._3 <- value
-                        | false, valueU when valueU > this.Value._2 ->
-                            this.Value._2 <- valueU
-                            this.Value._3 <- value
-                        | _ -> ()
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
-
-                    member this.OnComplete _ =
-                        if this.Value._1 then
-                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-                })
-            |> fun min -> min.Value._3
+        [<CompiledName "MaxBy">]
+        let inline maxBy (projection: 'T -> 'U) (source: seq<'T>) : 'T =
+            source |> toComposer |> Composer.Seq.maxBy projection
 
 (*
         [<CompiledName("MaxValueBy")>]
