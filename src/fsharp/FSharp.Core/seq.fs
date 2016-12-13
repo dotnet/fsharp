@@ -704,33 +704,16 @@ namespace Microsoft.FSharp.Collections
                 else mkDelayedSeq (fun () -> countByRefType   keyf source)
 
         [<CompiledName "Sum">]
-        let inline sum (source:seq<'a>) : 'a =
+        let sum (source:seq<'a>) : 'a =
             source |> toComposer |> Composer.Seq.sum
 
-        [<CompiledName("SumBy")>]
-        let inline sumBy (f : 'T -> ^U) (source: seq<'T>) : ^U =
-            source
-            |> foreach (fun _ ->
-                { new Composer.Core.Folder<'T,'U> (LanguagePrimitives.GenericZero< ^U>) with
-                    override this.ProcessNext value =
-                        this.Value <- Checked.(+) this.Value (f value)
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun sum -> sum.Value
+        [<CompiledName "SumBy">]
+        let sumBy (f : 'T -> ^U) (source: seq<'T>) : ^U =
+            source |> toComposer |> Composer.Seq.sumBy f
 
-        [<CompiledName("Average")>]
-        let inline average (source: seq< ^a>) : ^a =
-            source
-            |> foreach (fun _ ->
-                { new Composer.Core.FolderWithOnComplete<'a, Composer.Core.Values<'a, int>> (Composer.Core.Values<_,_>(LanguagePrimitives.GenericZero, 0)) with
-                    override this.ProcessNext value =
-                        this.Value._1 <- Checked.(+) this.Value._1 value
-                        this.Value._2 <- this.Value._2 + 1
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
-
-                    member this.OnComplete _ =
-                        if this.Value._2 = 0 then
-                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString })
-            |> fun total -> LanguagePrimitives.DivideByInt< ^a> total.Value._1 total.Value._2
+        [<CompiledName "Average">]
+        let average (source: seq< ^a>) : ^a =
+            source |> toComposer |> Composer.Seq.average
 
         [<CompiledName("AverageBy")>]
         let inline averageBy (f : 'T -> ^U) (source: seq< 'T >) : ^U =

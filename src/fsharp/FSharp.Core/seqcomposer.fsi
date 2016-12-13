@@ -479,6 +479,12 @@ namespace Microsoft.FSharp.Collections
 
         val inline foreach : f:((unit -> unit) -> 'a) -> source: ISeq<'b> -> 'a when 'a :>  Consumer<'b,'b>
 
+        [<CompiledName "Average">]
+        val inline average : source: ISeq< ^T> -> ^T
+            when 'T:(static member Zero : ^T)
+            and  'T:(static member (+) : ^T * ^T -> ^T)
+            and  ^T:(static member DivideByInt : ^T * int -> ^T)
+
         [<CompiledName "Empty">]
         val empty<'T> :  ISeq<'T>
 
@@ -550,7 +556,12 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "Sum">]
         val inline sum : source:ISeq<'T> -> 'T
             when 'T:(static member Zero : ^T)
-            and  'T:(static member (+) :  ^T *  ^T ->  ^T)
+            and  'T:(static member (+) : ^T * ^T -> ^T)
+
+        [<CompiledName "SumBy">]
+        val inline sumBy : f :('T -> ^U) -> source: ISeq<'T> -> ^U
+            when ^U:(static member Zero : ^U)
+            and  ^U:(static member (+) : ^U * ^U -> ^U)
 
         [<CompiledName "Take">]
         val inline take : takeCount:int -> source:ISeq<'T> -> ISeq<'T>
