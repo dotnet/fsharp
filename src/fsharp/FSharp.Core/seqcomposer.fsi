@@ -78,7 +78,7 @@ namespace Microsoft.FSharp.Collections
             inherit ConsumerChainedWithState<'T,'U,NoValue>
             new : next:ICompletionChain -> ConsumerChained<'T,'U>
 
-        [<AbstractClass>] 
+        [<AbstractClass>]
         type ConsumerChainedWithStateAndCleanup<'T,'U,'Value> =
             inherit ConsumerChainedWithState<'T,'U,'Value>
             interface ICompletionChain
@@ -481,6 +481,9 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Empty">]
         val empty<'T> :  ISeq<'T>
+
+        [<CompiledName "Fold">]
+        val inline fold<'T,'State> : f:('State->'T->'State) -> seed:'State -> source:ISeq<'T> -> 'State
 
         [<CompiledName "Unfold">]
         val unfold : generator:('State -> ('T * 'State) option) -> state:'State ->  ISeq<'T>

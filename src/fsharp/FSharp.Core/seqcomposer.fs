@@ -848,6 +848,18 @@ namespace Microsoft.FSharp.Collections
             [<CompiledName "Empty">]
             let empty<'T> = EmptyEnumerable.Enumerable<'T>.Instance
 
+
+            [<CompiledName "Fold">]
+            let inline fold<'T,'State> (f:'State->'T->'State) (seed:'State) (source:ISeq<'T>) : 'State =
+                source
+                |> foreach (fun _ ->
+                    { new Folder<'T,'State>(seed) with
+                        override this.ProcessNext value =
+                            this.Value <- f this.Value value
+                            Unchecked.defaultof<_> (* return value unsed in ForEach context *)
+                    })
+                |> fun folded -> folded.Value
+
             [<CompiledName "Unfold">]
             let unfold (generator:'State->option<'T * 'State>) (state:'State) : ISeq<'T> =
                 Upcast.seq (new Unfold.Enumerable<'T,'T,'State>(generator, state, IdentityFactory.Instance))
