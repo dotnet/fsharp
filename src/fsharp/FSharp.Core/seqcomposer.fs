@@ -1162,6 +1162,25 @@ namespace Microsoft.FSharp.Collections
                                         TailCall.avoid (next.ProcessNext currentPair)
                         }}
 
+            [<CompiledName "Reduce">]
+            let inline reduce (f:'T->'T->'T) (source : ISeq<'T>) : 'T =
+                source
+                |> foreach (fun _ ->
+                    { new FolderWithOnComplete<'T, Values<bool,'T>>(Values<_,_>(true, Unchecked.defaultof<'T>)) with
+                        override this.ProcessNext value =
+                            if this.Value._1 then
+                                this.Value._1 <- false
+                                this.Value._2 <- value
+                            else
+                                this.Value._2 <- f this.Value._2 value
+                            Unchecked.defaultof<_> (* return value unsed in ForEach context *)
+
+                        member this.OnComplete _ =
+                            if this.Value._1 then
+                                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                    })
+                |> fun reduced -> reduced.Value._2
+
             [<CompiledName "Scan">]
             let inline scan (folder:'State->'T->'State) (initialState: 'State) (source:ISeq<'T>) :ISeq<'State> =
                 source |> compose { new SeqFactory<'T,'State>() with

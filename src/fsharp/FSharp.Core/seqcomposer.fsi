@@ -562,6 +562,9 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "Pairwise">]
         val inline pairwise : source:ISeq<'T> -> ISeq<'T * 'T>
 
+        [<CompiledName "Reduce">]
+        val inline reduce : f:('T->'T->'T) -> source: ISeq<'T> -> 'T
+
         [<CompiledName "Scan">]
         val inline scan : folder:('State->'T->'State) -> initialState:'State -> source:ISeq<'T> -> ISeq<'State>
 
