@@ -810,26 +810,9 @@ namespace Microsoft.FSharp.Collections
             | None -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             | Some x -> x
 
-        [<CompiledName("ExactlyOne")>]
+        [<CompiledName "ExactlyOne">]
         let exactlyOne (source : seq<_>) =
-            source
-            |> foreach (fun halt ->
-                { new Composer.Core.FolderWithOnComplete<'T, Composer.Core.Values<bool,'T, bool>> (Composer.Core.Values<bool,'T, bool>(true, Unchecked.defaultof<'T>, false)) with
-                    override this.ProcessNext value =
-                        if this.Value._1 then
-                            this.Value._1 <- false
-                            this.Value._2 <- value
-                        else
-                            this.Value._3 <- true
-                            halt ()
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
-
-                      member this.OnComplete _ =
-                        if this.Value._1 then
-                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-                        elif this.Value._3 then
-                            invalidArg "source" (SR.GetString(SR.inputSequenceTooLong)) })
-            |> fun one -> one.Value._2
+            source |> toComposer |> Composer.Seq.exactlyOne
 
         [<CompiledName("Reverse")>]
         let rev source =

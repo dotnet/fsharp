@@ -494,6 +494,9 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "Empty">]
         val empty<'T> :  ISeq<'T>
 
+        [<CompiledName "ExactlyOne">]
+        val inline exactlyOne  : source : ISeq<'T> -> 'T
+
         [<CompiledName "Fold">]
         val inline fold<'T,'State> : f:('State->'T->'State) -> seed:'State -> source:ISeq<'T> -> 'State
 
