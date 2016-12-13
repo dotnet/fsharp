@@ -608,5 +608,8 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "TryFind">]
         val tryFind : f:('T -> bool) -> source: ISeq<'T> -> Option<'T>
 
+        [<CompiledName "TryFindIndex">]
+        val inline tryFindIndex: preidcate:('T->bool) -> source:ISeq<'T> -> int option
+
         [<CompiledName "Windowed">]
         val inline windowed : windowSize:int -> source:ISeq<'T> -> ISeq<'T[]>

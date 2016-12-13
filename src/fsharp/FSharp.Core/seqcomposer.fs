@@ -1376,6 +1376,20 @@ namespace Microsoft.FSharp.Collections
                             Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
                 |> fun find -> find.Value
 
+            [<CompiledName "TryFindIndex">]
+            let inline tryFindIndex (predicate:'T->bool) (source:ISeq<'T>) : int option =
+                source
+                |> foreach (fun halt ->
+                    { new Folder<'T, Values<Option<int>, int>>(Values<_,_>(None, 0)) with
+                        override this.ProcessNext value =
+                            if predicate value then
+                                this.Value._1 <- Some(this.Value._2)
+                                halt ()
+                            else
+                                this.Value._2 <- this.Value._2 + 1
+                            Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
+                |> fun tried -> tried.Value._1
+
             [<CompiledName "Windowed">]
             let inline windowed (windowSize:int) (source:ISeq<'T>) : ISeq<'T[]> =
                 source |> compose { new SeqFactory<'T,'T[]>() with
