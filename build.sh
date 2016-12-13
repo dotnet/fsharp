@@ -6,4 +6,4 @@ export BUILD_NET40=1
 
 # This is a very, very limited build script for Mono which bootstraps the compiler
 xbuild src/fsharp-proto-build.proj 
-xbuild build-everything.proj /p:Configuration=release
+xbuild build-everything.proj /p:Configuration=release /v:diag
