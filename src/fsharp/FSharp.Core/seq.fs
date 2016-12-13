@@ -284,17 +284,12 @@ namespace Microsoft.FSharp.Collections
                     state <-  state + 1
                 state
 
-        [<CompiledName("Fold")>]
-        let fold<'T,'State> f (x:'State) (source:seq<'T>) =
+        [<CompiledName "Fold">]
+        let fold<'T,'State> (f:'State->'T->'State)  (x:'State) (source:seq<'T>) =
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
+            source |> toComposer
+            |> Composer.Seq.fold<'T,'State>(fun (a:'State) (b:'T) -> f.Invoke(a,b)) x
 
-            source
-            |> foreach (fun _ ->
-                { new Composer.Core.Folder<'T,'State> (x) with
-                    override this.ProcessNext value =
-                        this.Value <- f.Invoke (this.Value, value)
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun folded -> folded.Value
 
         [<CompiledName("Fold2")>]
         let fold2<'T1,'T2,'State> f (state:'State) (source1: seq<'T1>) (source2: seq<'T2>) =
