@@ -1950,6 +1950,7 @@ let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo
                 | Some (RecdFieldItem (rfinfo)) when (match lookupKind with LookupKind.Expr | LookupKind.RecdField | LookupKind.Pattern -> true | _ -> false) -> 
                     success(resInfo,Item.RecdField(rfinfo),rest)
                 | _ ->
+
                 let pinfos = ExtensionPropInfosOfTypeInScope ncenv.InfoReader nenv (optFilter, ad) m typ
                 if not (isNil pinfos) && isLookUpExpr then 
                     success (resInfo,Item.Property (nm,pinfos),rest) else
@@ -1958,7 +1959,32 @@ let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo
                     success (resInfo,Item.MakeMethGroup (nm,minfos),rest) 
                                 
                 elif isTyparTy g typ then raze (IndeterminateType(unionRanges m id.idRange))
-                else raze (UndefinedName (depth,FSComp.SR.undefinedNameFieldConstructorOrMember, id,NoPredictions))
+                else
+                    let predictions1 =
+                        ExtensionPropInfosOfTypeInScope ncenv.InfoReader nenv (None, ad) m typ 
+                        |> List.map (fun p -> p.PropertyName)
+                        |> Set.ofList
+                    let predictions2 =
+                        ExtensionMethInfosOfTypeInScope ncenv.InfoReader nenv None m typ
+                        |> List.map (fun m -> m.DisplayName)
+                        |> Set.ofList
+                    let predictions3 =
+                        GetIntrinsicPropInfosOfType ncenv.InfoReader (None, ad, AllowMultiIntfInstantiations.No) findFlag m typ
+                        |> List.map (fun p -> p.PropertyName)
+                        |> Set.ofList
+                    let predictions4 =
+                        GetIntrinsicMethInfosOfType ncenv.InfoReader (None, ad, AllowMultiIntfInstantiations.No) findFlag m typ
+                        |> List.filter (fun m -> not m.IsClassConstructor && not m.IsConstructor)
+                        |> List.map (fun m -> m.DisplayName)
+                        |> Set.ofList
+
+                    let predictions = 
+                        predictions1 
+                        |> Set.union predictions2
+                        |> Set.union predictions3
+                        |> Set.union predictions4
+
+                    raze (UndefinedName (depth,FSComp.SR.undefinedNameFieldConstructorOrMember, id, predictions))
 
            |> OneResult
 
