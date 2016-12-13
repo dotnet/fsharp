@@ -456,19 +456,9 @@ namespace Microsoft.FSharp.Collections
                 let res = Array.scanSubRight f arr 0 (arr.Length - 1) acc
                 res :> seq<_>)
 
-        [<CompiledName("TryFindIndex")>]
+        [<CompiledName "TryFindIndex">]
         let tryFindIndex p (source:seq<_>) =
-            source
-            |> foreach (fun halt ->
-                { new Composer.Core.Folder<'T, Composer.Core.Values<Option<int>, int>> (Composer.Core.Values<_,_>(None, 0)) with
-                    override this.ProcessNext value =
-                        if p value then
-                            this.Value._1 <- Some(this.Value._2)
-                            halt ()
-                        else
-                            this.Value._2 <- this.Value._2 + 1
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun tried -> tried.Value._1
+            source |> toComposer |> Composer.Seq.tryFindIndex p
 
         [<CompiledName("FindIndex")>]
         let findIndex p (source:seq<_>) =
