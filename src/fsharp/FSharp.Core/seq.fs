@@ -185,8 +185,8 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("MapIndexed")>]
         let mapi f source =
-            let f' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt f
-            source |> toComposer |> Composer.Seq.mapi_adapt f' |> Upcast.enumerable
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt f
+            source |> toComposer |> Composer.Seq.mapi (fun idx a ->f.Invoke(idx,a)) |> Upcast.enumerable
 
         [<CompiledName("MapIndexed2")>]
         let mapi2 f source1 source2 =
