@@ -1040,14 +1040,6 @@ namespace Microsoft.FSharp.Collections
                                 this.Value <- this.Value  + 1
                                 TailCall.avoid (next.ProcessNext (f this.Value input)) } }
 
-            let mapi_adapt (f:OptimizedClosures.FSharpFunc<_,_,_>) source =
-                source |> compose { new SeqFactory<'T,'U>() with
-                    member __.Create _ _ next =
-                        upcast { new ConsumerChainedWithState<'T,'V,int>(Upcast.iCompletionChain next, -1) with
-                            override this.ProcessNext (input:'T) : bool =
-                                this.Value <- this.Value  + 1
-                                TailCall.avoid (next.ProcessNext (f.Invoke (this.Value, input))) } }
-
             [<CompiledName "Choose">]
             let inline choose (f:'T->option<'U>) (source:ISeq<'T>) : ISeq<'U> =
                 source |> compose { new SeqFactory<'T,'U>() with
@@ -1210,15 +1202,6 @@ namespace Microsoft.FSharp.Collections
                         upcast { new ConsumerChainedWithState<'T,'V,'State>(Upcast.iCompletionChain next, initialState) with
                             override this.ProcessNext (input:'T) : bool =
                                 this.Value <- folder this.Value input
-                                TailCall.avoid (next.ProcessNext this.Value) } }
-
-
-            let scan_adapt (folder:OptimizedClosures.FSharpFunc<'State,'T,'State>) (initialState: 'State) (source:ISeq<'T>) :ISeq<'State> =
-                source |> compose { new SeqFactory<'T,'State>() with
-                    member __.Create _ _ next =
-                        upcast { new ConsumerChainedWithState<'T,'V,'State>(Upcast.iCompletionChain next, initialState) with
-                            override this.ProcessNext (input:'T) : bool =
-                                this.Value <- folder.Invoke(this.Value,input)
                                 TailCall.avoid (next.ProcessNext this.Value) } }
 
             [<CompiledName "Skip">]

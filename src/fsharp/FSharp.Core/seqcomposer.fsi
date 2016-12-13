@@ -539,8 +539,6 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "MapIndexed">]
         val inline mapi : f:(int->'a->'b) -> source: ISeq<'a> -> ISeq<'b>
 
-        val mapi_adapt : f:OptimizedClosures.FSharpFunc<int,'a,'b> -> source: ISeq<'a> -> ISeq<'b>
-
         [<CompiledName "Choose">]
         val inline choose : f:('a->option<'b>) -> source: ISeq<'a> -> ISeq<'b>
 
