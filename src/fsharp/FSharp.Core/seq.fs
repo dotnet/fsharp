@@ -704,31 +704,20 @@ namespace Microsoft.FSharp.Collections
                 else mkDelayedSeq (fun () -> countByRefType   keyf source)
 
         [<CompiledName "Sum">]
-        let sum (source:seq<'a>) : 'a =
+        let inline sum (source:seq<'a>) : 'a =
             source |> toComposer |> Composer.Seq.sum
 
         [<CompiledName "SumBy">]
-        let sumBy (f : 'T -> ^U) (source: seq<'T>) : ^U =
+        let inline sumBy (f : 'T -> ^U) (source: seq<'T>) : ^U =
             source |> toComposer |> Composer.Seq.sumBy f
 
         [<CompiledName "Average">]
-        let average (source: seq< ^a>) : ^a =
+        let inline average (source: seq< ^a>) : ^a =
             source |> toComposer |> Composer.Seq.average
 
-        [<CompiledName("AverageBy")>]
+        [<CompiledName "AverageBy">]
         let inline averageBy (f : 'T -> ^U) (source: seq< 'T >) : ^U =
-            source
-            |> foreach (fun _ ->
-                { new Composer.Core.FolderWithOnComplete<'T,Composer.Core.Values<'U, int>> (Composer.Core.Values<_,_>(LanguagePrimitives.GenericZero, 0)) with
-                    override this.ProcessNext value =
-                        this.Value._1 <- Checked.(+) this.Value._1 (f value)
-                        this.Value._2 <- this.Value._2 + 1
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
-
-                    member this.OnComplete _ =
-                        if this.Value._2 = 0 then
-                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString })
-            |> fun total -> LanguagePrimitives.DivideByInt< ^U> total.Value._1 total.Value._2
+            source |> toComposer |> Composer.Seq.averageBy f
 
         [<CompiledName("Min")>]
         let inline min (source: seq<_>) =
