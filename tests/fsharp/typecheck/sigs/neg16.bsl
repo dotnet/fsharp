@@ -63,9 +63,9 @@ but here has type
 
 neg16.fs(85,8,85,18): typecheck error FS0039: The pattern discriminator 'FooA++' is not defined.
 
-neg16.fs(87,50,87,54): typecheck error FS0039: The value or constructor 'OneA' is not defined. Maybe you want one of the following: None, Ok, Binder, nullArg, exn
+neg16.fs(87,50,87,54): typecheck error FS0039: The value or constructor 'OneA' is not defined. Maybe you want one of the following: nan, None, nanf, Some, pown
 
-neg16.fs(87,60,87,69): typecheck error FS0039: The value or constructor 'TwoA+' is not defined. Maybe you want one of the following: ThisAssembly, TypeAttributes, MTConfigUtil, ( |FooA++| ), box
+neg16.fs(87,60,87,69): typecheck error FS0039: The value or constructor 'TwoA+' is not defined. Maybe you want one of the following: tan, tanh, atan, typeof, float
 
 neg16.fs(90,8,90,18): typecheck error FS0039: The pattern discriminator 'FooB++' is not defined.
 

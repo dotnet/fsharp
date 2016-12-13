@@ -4,7 +4,7 @@
 module internal Microsoft.FSharp.Compiler.ErrorResolutionHints
 
 /// Filters predictions based on edit distance to an unknown identifier.
-let FilterPredictions  unknownIdent (allPredictions:ErrorLogger.Predictions) =
+let FilterPredictions (unknownIdent:string) (allPredictions:ErrorLogger.Predictions) =
     let rec take n predictions = 
         predictions 
         |> Seq.mapi (fun i x -> i,x) 
@@ -12,9 +12,9 @@ let FilterPredictions  unknownIdent (allPredictions:ErrorLogger.Predictions) =
         |> Seq.map snd 
         |> Seq.toList
 
-
+    let unknownIdent = unknownIdent.ToUpperInvariant()
     allPredictions
-    |> Seq.sortByDescending (Internal.Utilities.EditDistance.JaroWinklerDistance unknownIdent)
+    |> Seq.sortByDescending (fun p -> Internal.Utilities.EditDistance.JaroWinklerDistance unknownIdent (p.ToUpperInvariant()))
     |> take 5
 
 let FormatPredictions errorStyle normalizeF predictions =
