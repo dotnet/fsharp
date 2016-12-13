@@ -39,6 +39,9 @@ def static getBuildJobName(def configuration, def os) {
                 else if (configuration == "Release_ci_part2") {
                     build_args = "ci_part2"
                 }
+                else if (configuration == "Release_ci_part3") {
+                    build_args = "ci_part3"
+                }
                 else if (configuration == "Release_net40_no_vs") {
                     build_args = "net40"
                 }
