@@ -1390,6 +1390,22 @@ namespace Microsoft.FSharp.Collections
                             Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
                 |> fun tried -> tried.Value._1
 
+            [<CompiledName "TryLast">]
+            let inline tryLast (source :ISeq<'T>) : 'T option =
+                source
+                |> foreach (fun _ ->
+                    { new Folder<'T, Values<bool,'T>>(Values<bool,'T>(true, Unchecked.defaultof<'T>)) with
+                        override this.ProcessNext value =
+                            if this.Value._1 then
+                                this.Value._1 <- false
+                            this.Value._2 <- value
+                            Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
+                |> fun tried ->
+                    if tried.Value._1 then
+                        None
+                    else
+                        Some tried.Value._2
+
             [<CompiledName "Windowed">]
             let inline windowed (windowSize:int) (source:ISeq<'T>) : ISeq<'T[]> =
                 source |> compose { new SeqFactory<'T,'T[]>() with
