@@ -1056,6 +1056,49 @@ namespace Microsoft.FSharp.Collections
                                 if this.Value.Add (keyf input) then TailCall.avoid (next.ProcessNext input)
                                 else false } }
 
+
+            [<CompiledName "Min">]
+            let inline min (source: ISeq< 'T>) : 'T when 'T:comparison =
+                source
+                |> foreach (fun _ ->
+                    { new FolderWithOnComplete<'T,Values<bool,'T>>(Values<_,_>(true, Unchecked.defaultof<'T>)) with
+                        override this.ProcessNext value =
+                            if this.Value._1 then
+                                this.Value._1 <- false
+                                this.Value._2 <- value
+                            elif value < this.Value._2 then
+                                this.Value._2 <- value
+                            Unchecked.defaultof<_> (* return value unsed in ForEach context *)
+
+                        member this.OnComplete _ =
+                            if this.Value._1 then
+                                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                    })
+                |> fun min -> min.Value._2
+
+            [<CompiledName "MinBy">]
+            let inline minBy (f : 'T -> 'U) (source: ISeq<'T>) : 'T =
+                source
+                |> foreach (fun _ ->
+                    { new FolderWithOnComplete< 'T,Values<bool,'U,'T>>(Values<_,_,_>(true,Unchecked.defaultof< 'U>,Unchecked.defaultof< 'T>)) with
+                        override this.ProcessNext value =
+                            match this.Value._1, f value with
+                            | true, valueU ->
+                                this.Value._1 <- false
+                                this.Value._2 <- valueU
+                                this.Value._3 <- value
+                            | false, valueU when valueU < this.Value._2 ->
+                                this.Value._2 <- valueU
+                                this.Value._3 <- value
+                            | _ -> ()
+                            Unchecked.defaultof<_> (* return value unsed in ForEach context *)
+
+                        member this.OnComplete _ =
+                            if this.Value._1 then
+                                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                    })
+                |> fun min -> min.Value._3
+
             [<CompiledName "Pairwise">]
             let inline pairwise (source:ISeq<'T>) : ISeq<'T * 'T> =
                 source |> compose { new SeqFactory<'T,'T * 'T>() with

@@ -547,6 +547,12 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "DistinctBy">]
         val inline distinctBy : keyf:('T->'Key) -> source: ISeq<'T> -> ISeq<'T> when 'Key:equality
 
+        [<CompiledName "Min">]
+        val inline min : source: ISeq<'T> -> 'T when 'T:comparison
+
+        [<CompiledName "MinBy">]
+        val inline minBy : f:('T -> 'U) -> source: ISeq<'T> -> 'T when 'U:comparison
+
         [<CompiledName "Pairwise">]
         val inline pairwise : source:ISeq<'T> -> ISeq<'T * 'T>
 
