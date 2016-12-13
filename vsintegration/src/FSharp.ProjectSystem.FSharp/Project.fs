@@ -208,6 +208,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
                 base.Initialize()
 
+
                 // read list of available FSharp.Core versions
                 do
                     let nullService = 

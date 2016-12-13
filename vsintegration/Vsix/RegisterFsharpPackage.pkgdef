@@ -1,10 +1,6 @@
 # Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 [$RootKey$\ShellFileAssociations]
-".fs"="VisualStudio.fs.15.0"
-".fsi"="VisualStudio.fsi.15.0"
-".fsscript"="VisualStudio.fsscript.15.0"
-".fsx"="VisualStudio.fsx.15.0"
 ".fsproj"="VisualStudio.Launcher.fsproj.15.0"
 
 [$RootKey$\Services\{bc6dd5a5-d4d6-4dab-a00d-a51242dbaf1b}]

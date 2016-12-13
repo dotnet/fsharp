@@ -16,8 +16,12 @@ using IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider;
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 {
-    //TODO: Where should this be put? Constants file?
     [Guid(Constants.FSharpEditorFactoryIdString)]
+    [ProvideEditorFactory(typeof(FSharpEditorFactory), 101)]
+    [ProvideEditorExtension(typeof(FSharpEditorFactory), ".fs", Int32.MaxValue, NameResourceID = 101)]
+    [ProvideEditorExtension(typeof(FSharpEditorFactory), ".fsi", Int32.MaxValue, NameResourceID = 101)]
+    [ProvideEditorExtension(typeof(FSharpEditorFactory), ".fsscript", Int32.MaxValue, NameResourceID = 101)]
+    [ProvideEditorExtension(typeof(FSharpEditorFactory), ".fsx", Int32.MaxValue, NameResourceID = 101)]
     public class FSharpEditorFactory : IVsEditorFactory
     {
         private Package _parentPackage;
@@ -34,7 +38,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        private string ContentTypeName => "FSharp";
+        private string ContentTypeName => "F#";
 
         public FSharpEditorFactory(Package parentPackage)
         {
@@ -55,7 +59,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             ppunkDocData = IntPtr.Zero;
             pbstrEditorCaption = String.Empty;
             pguidCmdUI = Guid.Empty;
-            pgrfCDW = 0;    //TODO: What is this?
+            pgrfCDW = 0;
 
             IVsTextBuffer textBuffer = null;
 
@@ -96,8 +100,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             codeWindow.GetEditorCaption(readOnlyStatus, out pbstrEditorCaption);
 
             ppunkDocView = Marshal.GetIUnknownForObject(codeWindow);
-            pguidCmdUI = Constants.FSharpEditorFactoryGuid;
-
+            pguidCmdUI = VSConstants.GUID_TextEditorFactory;
             ppunkDocData = Marshal.GetIUnknownForObject(textBuffer);
 
             return VSConstants.S_OK;
