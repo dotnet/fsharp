@@ -179,32 +179,36 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Where")>]
         let where f source = filter f source
 
-        [<CompiledName("Map")>]
+        [<CompiledName "Map">]
         let map<'T,'U> (f:'T->'U) (source:seq<'T>) : seq<'U> =
             source |> toComposer |> Composer.Seq.map f |> Upcast.enumerable
 
-        [<CompiledName("MapIndexed")>]
+        [<CompiledName "MapIndexed">]
         let mapi f source =
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt f
             source |> toComposer |> Composer.Seq.mapi (fun idx a ->f.Invoke(idx,a)) |> Upcast.enumerable
 
-        [<CompiledName("MapIndexed2")>]
-        let mapi2 f source1 source2 =
-            checkNonNull "source2" source2
-            source1 |> seqFactory (Composer.Seq.Mapi2Factory (f, source2))
-
-        [<CompiledName("Map2")>]
-        let map2<'T,'U,'V> (f:'T->'U->'V) (source1:seq<'T>) (source2:seq<'U>) : seq<'V> =
+        [<CompiledName "MapIndexed2">]
+        let mapi2 (mapfn:int->'T->'U->'V) (source1:seq<'T>) (source2:seq<'U>) =
             checkNonNull "source1" source1
-            match source1 with
-            | :? Composer.Core.ISeq<'T> as s -> Upcast.enumerable (s.Compose (Composer.Seq.Map2FirstFactory (f, source2)))
-            | _ -> source2 |> seqFactory (Composer.Seq.Map2SecondFactory (f, source1))
+            checkNonNull "source2" source2
+            let f = OptimizedClosures.FSharpFunc<int,'T,'U,'V>.Adapt mapfn
+            (source1|>toComposer, source2|>toComposer)
+            ||> Composer.Seq.mapi2 (fun idx a b ->f.Invoke(idx,a,b)) |> Upcast.enumerable
 
-        [<CompiledName("Map3")>]
-        let map3 f source1 source2 source3 =
+        [<CompiledName "Map2">]
+        let map2<'T,'U,'V> (mapfn:'T->'U->'V) (source1:seq<'T>) (source2:seq<'U>) : seq<'V> =
+            checkNonNull "source1" source1
+            checkNonNull "source2" source2
+            (source1|>toComposer, source2|>toComposer)
+            ||> Composer.Seq.map2 mapfn |> Upcast.enumerable
+
+        [<CompiledName "Map3">]
+        let map3 mapfn source1 source2 source3 =
             checkNonNull "source2" source2
             checkNonNull "source3" source3
-            source1 |> seqFactory (Composer.Seq.Map3Factory (f, source2, source3))
+            (source1|>toComposer, source2|>toComposer, source3|>toComposer)
+            |||> Composer.Seq.map3 mapfn |> Upcast.enumerable
 
         [<CompiledName("Choose")>]
         let choose f source =
