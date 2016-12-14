@@ -1052,18 +1052,18 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         ShiftKeyUp(this.VS)
         MoveCursorToEndOfMarker(file, "MyLi")
         let tooltip = time1 GetQuickInfoAtCursor file "Time of first tooltip"
-        AssertMatchesRegex '\n' "module MyLibrary\n[Filename:.*\bin\Debug\testlib.exe]\n[Signature:T:MyLibrary]" tooltip  
+        AssertMatchesRegex '\n' "module MyLibrary[Filename:.*\\bin\\Debug\\testlib.exe]\n[Signature:T:MyLibrary]" tooltip  
 
         MoveCursorToEndOfMarker(file, "Nes")
         let tooltip = time1 GetQuickInfoAtCursor file "Time of first tooltip"
-        AssertMatchesRegex '\n' "module Nested\n\nfrom MyLibrary\n[Filename:.*\bin\Debug\testlib.exe]\n[Signature:T:MyLibrary.Nested]" tooltip
+        AssertMatchesRegex '\n' "module Nested\n\nfrom MyLibrary[Filename:.*\\bin\Debug\\testlib.exe]\n[Signature:T:MyLibrary.Nested]" tooltip
 
         MoveCursorToEndOfMarker(file, "Dee")
         let tooltip = time1 GetQuickInfoAtCursor file "Time of first tooltip"
-        AssertMatchesRegex '\n' "module Deeper\n\nfrom MyLibrary.Nested\n[Filename:.*\bin\Debug\testlib.exe]\n[Signature:T:MyLibrary.Nested]" tooltip
+        AssertMatchesRegex '\n' "module Deeper\n\nfrom MyLibrary.Nested[Filename:.*\\bin\\Debug\\testlib.exe]\n[Signature:T:MyLibrary.Nested]" tooltip
 
         gpatcc.AssertExactly(0,0)
-            
+
     (* ------------------------------------------------------------------------------------- *)
 
 
@@ -1094,7 +1094,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         // The <summary> arises because the xml doc mechanism places these before handing them to VS for processing.
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"XX","module XXX")
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"YY","module YYY\n\nfrom XXX")
-        this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"ZZ","module ZZZ\n\nfrom XXX\n<summary>\n\nDoc</summary>")
+        this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"ZZ","module ZZZ\n\nfrom XXX<summary>\n\nDoc</summary>")
 
     [<Test>]
     member public this.``IdentifierWithTick``() = 
