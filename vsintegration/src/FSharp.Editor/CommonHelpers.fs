@@ -198,22 +198,6 @@ module CommonHelpers =
         | -1 | 0 -> span
         | index -> TextSpan(span.Start + index + 1, text.Length - index - 1)
 
-[<RequireQualifiedAccess; NoComparison>]
-type internal SymbolDeclarationLocation = 
-    | CurrentDocument
-    | Projects of Project list * isLocalForProject: bool
-
-[<AutoOpen>]
-module internal Extensions =
-    open System.IO
-
-    type Path with
-        static member GetFullPathSafe path =
-            try Path.GetFullPath path
-            with _ -> path
-
-    type FSharpSymbol with
-        member this.IsPrivateToFile = 
     let glyphMajorToRoslynGlyph = function
         | GlyphMajor.Class -> Glyph.ClassPublic
         | GlyphMajor.Constant -> Glyph.ConstantPublic
@@ -237,6 +221,23 @@ module internal Extensions =
         | GlyphMajor.ValueType -> Glyph.StructurePublic
         | GlyphMajor.Error -> Glyph.Error
         | _ -> Glyph.None
+
+[<RequireQualifiedAccess; NoComparison>]
+type internal SymbolDeclarationLocation = 
+    | CurrentDocument
+    | Projects of Project list * isLocalForProject: bool
+
+[<AutoOpen>]
+module internal Extensions =
+    open System.IO
+
+    type Path with
+        static member GetFullPathSafe path =
+            try Path.GetFullPath path
+            with _ -> path
+
+    type FSharpSymbol with
+        member this.IsPrivateToFile = 
             match this with
             | :? FSharpMemberOrFunctionOrValue as m -> not m.IsModuleValueOrMember
             | :? FSharpEntity as m -> m.Accessibility.IsPrivate
