@@ -14,6 +14,12 @@ open Microsoft.VisualStudio.FSharp.Interactive
 open EnvDTE
 
 type FsiCommandFilter(serviceProvider: System.IServiceProvider) =
+
+    let isNotNull (value : 'T) =  
+        match value with  
+        | null -> false  
+        | _ -> true 
+
     let projectSystemPackage =
       lazy(
         let shell = serviceProvider.GetService(typeof<SVsShell>) :?> IVsShell
