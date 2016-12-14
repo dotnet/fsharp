@@ -680,7 +680,7 @@ tcUnnamedArgumentsDoNotFormPrefix,"The unnamed arguments do not form a prefix of
 853,tcAbstractMembersIllegalInAugmentation,"Abstract members are not permitted in an augmentation - they must be defined as part of the type itself"
 854,tcMethodOverridesIllegalHere,"Method overrides and interface implementations are not permitted here"
 855,tcNoMemberFoundForOverride,"No abstract or interface member was found that corresponds to this override"
-856,tcOverrideArityMismatch,"This override takes a different number of arguments to the corresponding abstract member"
+856,tcOverrideArityMismatch,"This override takes a different number of arguments to the corresponding abstract member. The following abstract members were found:%s"
 857,tcDefaultImplementationAlreadyExists,"This method already has a default implementation"
 858,tcDefaultAmbiguous,"The method implemented by this default is ambiguous"
 859,tcNoPropertyFoundForOverride,"No abstract property was found that corresponds to this override"
