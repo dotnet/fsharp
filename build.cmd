@@ -149,6 +149,10 @@ if /i '%ARG%' == 'vs' (
     set BUILD_VS=1
 )
 
+if /i '%ARG%' == 'vstest' (
+    set TEST_VS_IDEUNIT_SUITE=1
+)
+
 if /i '%ARG%' == 'nobuild' (
     set BUILD_PHASE=0
 )

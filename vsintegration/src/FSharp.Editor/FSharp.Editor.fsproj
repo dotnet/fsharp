@@ -45,6 +45,7 @@
     <Compile Include="GoToDefinition\GoToDefinitionService.fs"/>
     <Compile Include="BlockComment\CommentUncommentService.fs"/>
     <Compile Include="QuickInfo\QuickInfoProvider.fs"/>
+    <Compile Include="NavigationBarItemService.fs" />
     <Compile Include="ContentType.fs" />
     <Compile Include="FsiCommandService.fs" />
   </ItemGroup>
