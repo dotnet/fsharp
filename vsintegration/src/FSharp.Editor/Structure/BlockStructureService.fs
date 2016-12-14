@@ -39,19 +39,81 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open Microsoft.FSharp.Compiler.SourceCodeServices.Structure
 open System.Windows.Documents
 
 [<ExportLanguageServiceFactory(typeof<BlockStructureService>, FSharpCommonConstants.FSharpLanguageName); Shared>]
-type internal FSharpBlockStructureServiceFactory() =
+type internal FSharpBlockStructureServiceFactory [<ImportingConstructor>](checkerProvider: FSharpCheckerProvider, projectInfoManager: ProjectInfoManager) =
     interface ILanguageServiceFactory with
         member __.CreateLanguageService(_languageServices) =
-            upcast FSharpBlockStructureService()
+            upcast FSharpBlockStructureService(checkerProvider.Checker, projectInfoManager)
  
-type internal FSharpBlockStructureService() =
+type internal FSharpBlockStructureService(checker: FSharpChecker, projectInfoManager: ProjectInfoManager) =
     inherit BlockStructureService()
-        override __.Language = FSharpCommonConstants.FSharpLanguageName
+    let scopeToBlockType = function
+        | Scope.Open -> BlockTypes.Imports
+        | Scope.Namespace
+        | Scope.Module -> BlockTypes.Namespace 
+        | Scope.Record
+        | Scope.Tuple
+        | Scope.Attribute
+        | Scope.Interface
+        | Scope.TypeExtension
+        | Scope.UnionCase
+        | Scope.EnumCase
+        | Scope.SimpleType
+        | Scope.RecordDefn
+        | Scope.UnionDefn
+        | Scope.Type -> BlockTypes.Type
+        | Scope.Member -> BlockTypes.Member
+        | Scope.LetOrUse
+        | Scope.Match
+        | Scope.IfThenElse
+        | Scope.ThenInIfThenElse
+        | Scope.ElseInIfThenElse
+        | Scope.MatchLambda -> BlockTypes.Conditional
+        | Scope.CompExpr
+        | Scope.TryInTryWith
+        | Scope.WithInTryWith
+        | Scope.TryFinally
+        | Scope.TryInTryFinally
+        | Scope.FinallyInTryFinally
+        | Scope.ObjExpr
+        | Scope.ArrayOrList
+        | Scope.CompExprInternal
+        | Scope.Quote
+        | Scope.SpecialFunc
+        | Scope.MatchClause
+        | Scope.Lambda
+        | Scope.LetOrUseBang
+        | Scope.YieldOrReturn
+        | Scope.YieldOrReturnBang
+        | Scope.RecordField
+        | Scope.TryWith -> BlockTypes.Expression
+        | Scope.Do -> BlockTypes.Statement
+        | Scope.While
+        | Scope.For -> BlockTypes.Loop
+        | Scope.HashDirective -> BlockTypes.PreprocessorRegion
+        | Scope.Comment
+        | Scope.XmlDocComment -> BlockTypes.Comment
+        | _ -> BlockTypes.Nonstructural
+        
+    override __.Language = FSharpCommonConstants.FSharpLanguageName
  
-        override __.GetBlockStructureAsync(_document, cancellationToken) : Task<BlockStructure> =
-            async {
-                return BlockStructure([].ToImmutableArray())
-            } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
+    override __.GetBlockStructureAsync(document, cancellationToken) : Task<BlockStructure> =
+        async {
+            match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document) with 
+            | Some options ->
+                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                let! fileParseResults = checker.ParseFileInProject(document.FilePath, sourceText.ToString(), options)
+                match fileParseResults.ParseTree with
+                | Some parsedInput ->
+                    let ranges = Structure.getOutliningRanges (sourceText.Lines |> Seq.map (fun x -> x.ToString()) |> Seq.toArray) parsedInput
+                    let blockSpans =
+                        ranges
+                        |> Seq.map (fun range -> 
+                            BlockSpan(scopeToBlockType range.Scope, true, CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range.Range)))
+                    return BlockStructure(blockSpans.ToImmutableArray())
+                | None -> return BlockStructure(ImmutableArray<_>.Empty)
+            | None -> return BlockStructure(ImmutableArray<_>.Empty)
+        } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
