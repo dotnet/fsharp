@@ -930,6 +930,22 @@ namespace Microsoft.FSharp.Collections
                             Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
                 |> fun exists -> exists.Value
 
+            [<CompiledName "Exists2">]
+            let exists2 (predicate:'T->'U->bool) (source1: ISeq<'T>) (source2: ISeq<'U>) : bool =
+                source1
+                |> foreach (fun halt ->
+                    { new Folder<'T,Values<bool,IEnumerator<'U>>>(Values<_,_>(false,source2.GetEnumerator())) with
+                        override self.ProcessNext value =
+                            if self.Value._2.MoveNext() then
+                                if predicate value self.Value._2.Current then
+                                    self.Value._1 <- true
+                                    halt()
+                            else
+                                halt()
+                            Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
+                |> fun exists -> exists.Value._1
+
+
             [<CompiledName "Contains">]
             let inline contains element (source:ISeq<'T>) =
                 source
@@ -943,16 +959,31 @@ namespace Microsoft.FSharp.Collections
                 |> fun contains -> contains.Value
 
             [<CompiledName "ForAll">]
-            let forall f (source:ISeq<'T>) =
+            let forall predicate (source:ISeq<'T>) =
                 source
                 |> foreach (fun halt ->
                     { new Folder<'T, bool> (true) with
                         override this.ProcessNext value =
-                            if not (f value) then
+                            if not (predicate value) then
                                 this.Value <- false
                                 halt ()
                             Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
                 |> fun forall -> forall.Value
+
+            [<CompiledName "ForAll2">]
+            let inline forall2 predicate (source1:ISeq<'T>) (source2:ISeq<'U>) : bool =
+                source1
+                |> foreach (fun halt ->
+                    { new Folder<'T,Values<bool,IEnumerator<'U>>>(Values<_,_>(true,source2.GetEnumerator())) with
+                        override self.ProcessNext value =
+                            if self.Value._2.MoveNext() then
+                                if not (predicate value self.Value._2.Current) then
+                                    self.Value._1 <- false
+                                    halt()
+                            else
+                                halt()
+                            Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
+                |> fun all -> all.Value._1
 
             [<CompiledName "Filter">]
             let inline filter<'T> (f:'T->bool) (source:ISeq<'T>) : ISeq<'T> =

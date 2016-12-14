@@ -457,11 +457,17 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "Exists">]
         val exists : f:('T -> bool) -> source: ISeq<'T> -> bool
 
+        [<CompiledName "Exists2">]
+        val exists2 : predicate:('T->'U->bool) -> source1:ISeq<'T> -> source2:ISeq<'U> -> bool
+
         [<CompiledName "Contains">]
         val inline contains : element:'T -> source: ISeq<'T> -> bool when 'T : equality
 
         [<CompiledName "ForAll">]
         val forall : f:('T -> bool) -> source: ISeq<'T> -> bool
+
+        [<CompiledName "ForAll2">]
+        val inline forall2 : predicate:('T->'U->bool) -> source1:ISeq<'T> -> source2:ISeq<'U> -> bool
 
         [<CompiledName "Filter">]
         val inline filter : f:('T -> bool) -> source: ISeq<'T> ->  ISeq<'T>

@@ -109,22 +109,22 @@ namespace Microsoft.FSharp.Collections
         let tryItem i (source:seq<'T>) =
             source |> toComposer |> Composer.Seq.tryItem i
 
-        [<CompiledName("Get")>]
+        [<CompiledName "Get">]
         let nth i (source : seq<'T>) = item i source
 
-        [<CompiledName("IterateIndexed")>]
+        [<CompiledName "IterateIndexed">]
         let iteri f (source:seq<'T>) =
             source |> toComposer |> Composer.Seq.iteri f
 
-        [<CompiledName("Exists")>]
+        [<CompiledName "Exists">]
         let exists f (source:seq<'T>) =
             source |> toComposer |> Composer.Seq.exists f
 
-        [<CompiledName("Contains")>]
+        [<CompiledName "Contains">]
         let inline contains element (source:seq<'T>) =
             source |> toComposer |> Composer.Seq.contains element
 
-        [<CompiledName("ForAll")>]
+        [<CompiledName "ForAll">]
         let forall f (source:seq<'T>) =
             source |> toComposer |> Composer.Seq.forall f
 
@@ -735,47 +735,23 @@ namespace Microsoft.FSharp.Collections
         let skipWhile predicate (source: seq<_>) =
             source |> toComposer |> Composer.Seq.skipWhile predicate |> Upcast.enumerable
 
-        [<CompiledName("ForAll2")>]
+        [<CompiledName "ForAll2">]
         let forall2 p (source1: seq<_>) (source2: seq<_>) =
+            checkNonNull "source1" source1
             checkNonNull "source2" source2
+            let p = OptimizedClosures.FSharpFunc<_,_,_>.Adapt p
+            (source1|>toComposer, source2|>toComposer)
+            ||> Composer.Seq.forall2 (fun a b -> p.Invoke(a,b))
 
-            use e2 = source2.GetEnumerator()
-            let p = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(p)
-
-            source1
-            |> foreach (fun halt ->
-                { new Composer.Core.Folder<_,bool> (true) with
-                    override this.ProcessNext value =
-                        if (e2.MoveNext()) then
-                            if not (p.Invoke(value, e2.Current)) then
-                                this.Value <- false
-                                halt()
-                        else
-                            halt()
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun all -> all.Value
-
-        [<CompiledName("Exists2")>]
+        [<CompiledName "Exists2">]
         let exists2 p (source1: seq<_>) (source2: seq<_>) =
+            checkNonNull "source1" source1
             checkNonNull "source2" source2
+            let p = OptimizedClosures.FSharpFunc<_,_,_>.Adapt p
+            (source1|>toComposer, source2|>toComposer)
+            ||> Composer.Seq.exists2 (fun a b -> p.Invoke(a,b))
 
-            use e2 = source2.GetEnumerator()
-            let p = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(p)
-
-            source1
-            |> foreach (fun halt ->
-                { new Composer.Core.Folder<_,bool> (false) with
-                    override this.ProcessNext value =
-                        if (e2.MoveNext()) then
-                            if p.Invoke(value, e2.Current) then
-                                this.Value <- true
-                                halt()
-                        else
-                            halt()
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun exists -> exists.Value
-
-        [<CompiledName("Head")>]
+        [<CompiledName "Head">]
         let head (source : seq<_>) =
             match tryHead source with
             | None -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
