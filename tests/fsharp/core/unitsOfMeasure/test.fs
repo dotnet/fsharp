@@ -29,6 +29,17 @@ let foo =
     problem // Error: Incorrect number of type arguments to local call
 
 
+let nullReferenceError weightedList =
+    let rec loop accumululatedWeight (remaining : float<'u> list) =
+        match remaining with
+        | [] -> accumululatedWeight
+        | weight :: tail ->
+            loop (accumululatedWeight + weight) tail
+
+    loop 0.0<_> weightedList
+
+let ``is this null?`` = nullReferenceError [ 0.3; 0.3; 0.4 ]
+
 module TestLibrary =
 
     [<Measure>] 

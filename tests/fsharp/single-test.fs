@@ -27,13 +27,13 @@ let singleTestBuildAndRunAux cfg p =
         ["testlib.fsi";"testlib.fs";"test.mli";"test.ml";"test.fsi";"test.fs";"test2.fsi";"test2.fs";"test.fsx";"test2.fsx"]
         |> List.filter (fileExists cfg)
 
-
     match p with 
     | FSC_CORECLR -> 
         let testName = getBasename cfg.Directory
         let extraSource = (__SOURCE_DIRECTORY__  ++ "coreclr_utilities.fs")
-        let outFile = (__SOURCE_DIRECTORY__ ++ sprintf @"../testbin/%s/coreclr/fsharp/core/%s/output/test.exe" cfg.BUILD_CONFIG testName)
-        let coreRunExe = (__SOURCE_DIRECTORY__ ++ sprintf @"../testbin/%s/coreclr/%s/corerun.exe" cfg.BUILD_CONFIG defaultPlatform)
+        let outDir =  (__SOURCE_DIRECTORY__ ++ sprintf @"../testbin/%s/coreclr/fsharp/core/%s" cfg.BUILD_CONFIG testName)
+        let outFile = (__SOURCE_DIRECTORY__ ++ sprintf @"../testbin/%s/coreclr/fsharp/core/%s/test.exe" cfg.BUILD_CONFIG testName)
+
         makeDirectory (getDirectoryName outFile)
         let fscArgs = 
             sprintf """--debug:portable --debug+ --out:%s  --target:exe -g --define:FX_RESHAPED_REFLECTION --define:NETSTANDARD1_6 --define:FSCORE_PORTABLE_NEW --define:FX_PORTABLE_OR_NETSTANDARD "%s" %s """
@@ -41,16 +41,16 @@ let singleTestBuildAndRunAux cfg p =
                extraSource
                (String.concat " " sources)
 
-        let fsccArgs = sprintf """--verbose:repro %s""" fscArgs
+        let fsccArgs = sprintf """--OutputDir:%s %s""" outDir fscArgs
 
         fsi cfg "--exec %s %s %s"
                cfg.fsi_flags
                (__SOURCE_DIRECTORY__ ++ @"../scripts/fscc.fsx")
                fsccArgs
                []
-               
+
         use testOkFile = new FileGuard (getfullpath cfg "test.ok")
-        exec cfg  coreRunExe outFile
+        exec cfg  cfg.DotNetExe outFile
 
         testOkFile.CheckExists()
 
@@ -70,7 +70,7 @@ let singleTestBuildAndRunAux cfg p =
                (__SOURCE_DIRECTORY__ ++ @"../scripts/fsci.fsx")
                fsciArgs
                []
-               
+
         testOkFile.CheckExists()
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS

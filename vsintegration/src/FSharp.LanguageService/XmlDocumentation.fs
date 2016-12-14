@@ -200,11 +200,9 @@ module internal XmlDocumentation =
         match xml with
         | FSharpXmlDoc.None -> ()
         | FSharpXmlDoc.XmlDocFileSignature(filename,signature) -> 
-            segment.Append("\n") |> ignore
             documentationProvider.AppendDocumentation(segment,filename,signature,showExceptions,showParameters, paramName)
         | FSharpXmlDoc.Text(rawXml) ->
             let processedXml = ProcessXml(rawXml)
-            segment.Append("\n") |> ignore
             documentationProvider.AppendDocumentationFromProcessedXML(segment,processedXml,showExceptions,showParameters, paramName)
 
     /// Common sanitation for data tip segment
