@@ -13,6 +13,7 @@ open Microsoft.CodeAnalysis.Text
 
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons
 
 module CommonHelpers =
     type private SourceLineData(lineStart: int, lexStateAtStartOfLine: FSharpTokenizerLexState, lexStateAtEndOfLine: FSharpTokenizerLexState, hashCode: int, classifiedSpans: IReadOnlyList<ClassifiedSpan>) =
@@ -189,7 +190,7 @@ module CommonHelpers =
             | _ -> None
         | _ -> None
 
-     /// Fix invalid span if it appears to have redundant suffix and prefix.
+    /// Fix invalid span if it appears to have redundant suffix and prefix.
     let fixupSpan (sourceText: SourceText, span: TextSpan) : TextSpan =
         let text = sourceText.GetSubText(span).ToString()
         match text.LastIndexOf '.' with
@@ -281,3 +282,28 @@ module internal Extensions =
                 | _ -> false
             
             isPrivate && declaredInTheFile
+
+    let glyphMajorToRoslynGlyph = function
+        | GlyphMajor.Class -> Glyph.ClassPublic
+        | GlyphMajor.Constant -> Glyph.ConstantPublic
+        | GlyphMajor.Delegate -> Glyph.DelegatePublic
+        | GlyphMajor.Enum -> Glyph.EnumPublic
+        | GlyphMajor.EnumMember -> Glyph.FieldPublic
+        | GlyphMajor.Event -> Glyph.EventPublic
+        | GlyphMajor.Exception -> Glyph.ClassPublic
+        | GlyphMajor.FieldBlue -> Glyph.FieldPublic
+        | GlyphMajor.Interface -> Glyph.InterfacePublic
+        | GlyphMajor.Method -> Glyph.MethodPublic
+        | GlyphMajor.Method2 -> Glyph.MethodPublic
+        | GlyphMajor.Module -> Glyph.ModulePublic
+        | GlyphMajor.NameSpace -> Glyph.Namespace
+        | GlyphMajor.Property -> Glyph.PropertyPublic
+        | GlyphMajor.Struct -> Glyph.StructurePublic
+        | GlyphMajor.Typedef -> Glyph.ClassPublic
+        | GlyphMajor.Type -> Glyph.ClassPublic
+        | GlyphMajor.Union -> Glyph.EnumPublic
+        | GlyphMajor.Variable -> Glyph.FieldPublic
+        | GlyphMajor.ValueType -> Glyph.StructurePublic
+        | GlyphMajor.Error -> Glyph.Error
+        | _ -> Glyph.None
+

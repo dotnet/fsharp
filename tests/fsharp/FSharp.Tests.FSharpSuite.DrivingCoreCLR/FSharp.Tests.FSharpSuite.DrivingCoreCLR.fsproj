@@ -1,8 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\src</FSharpSourcesRoot>
+    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\..\src</FSharpSourcesRoot>
     <ProjectGuid>{bda4d411-6ad9-4b3e-a3b3-07bad6bef1ed}</ProjectGuid>
+    <DOTNET_PUBLISH_TEST>true</DOTNET_PUBLISH_TEST>
+    <DOTNET_PUBLISH_COMPILERS>true</DOTNET_PUBLISH_COMPILERS>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
   <PropertyGroup>
@@ -23,17 +25,18 @@
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <ItemGroup>
-    <Compile Include="..\..\src\scripts\scriptlib.fsx">
+    <Compile Include="..\..\..\src\scripts\scriptlib.fsx">
       <Link>scriptlib.fsx</Link>
     </Compile>
-    <Compile Include="test-framework.fs" />
-    <Compile Include="..\..\src\fsharp\FSharp.Compiler.Unittests\NunitHelpers.fs">
+    <Compile Include="..\test-framework.fs" />
+    <Compile Include="..\..\..\src\fsharp\FSharp.Compiler.Unittests\NunitHelpers.fs">
       <Link>NunitHelpers.fs</Link>
     </Compile>
-    <Compile Include="single-test.fs" />
-    <Compile Include="tests.fs" />
+    <Compile Include="..\single-test.fs" />
+    <Compile Include="..\tests.fs" />
+    <Compile Include="Program.fs" Condition="'$(TargetFramework)' == 'coreclr'" />
   </ItemGroup>
-  <ItemGroup>
+  <ItemGroup  Condition=" '$(TargetFramework)' != 'coreclr' ">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Core" />

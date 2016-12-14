@@ -105,8 +105,7 @@ Where you should set proper proxy address, user name and password.
 
 # The Visual F# IDE Tools (Windows Only)
 
-To build and test Visual F# IDE Tools, you must use [Visual Studio "vNext" (aka "Dev15")](https://www.visualstudio.com/en-us/downloads/visual-studio-next-downloads-vs.aspx). This is the one after Visual Studio 2015 (aka "Dev 14").  You must also install Visual Studio SDK (also called _Visual Studio Extensibility SDK_ on the Visual Studio installer) before building Visual F# IDE Tools.
-Please ensure that the Visual Studio SDK version is matched with your current Visual Studio to ensure successful builds. For example: Visual Studio 2015 Update 1 requires Visual Studio 2015 SDK Update 1. Any installation of Visual Studio 2015 and later provides Visual Studio SDK as part of the installation of Visual Studio 2015 as feature installation. 
+To build and test Visual F# IDE Tools, you must use the latest version of [Visual Studio 2017 RC](https://www.visualstudio.com/vs/visual-studio-2017-rc/#downloadvs).  See the section titled "Development tools" in the [readme](README.md).
 
     build.cmd vs              -- build the Visual F# IDE Tools (see below)
     build.cmd vs test         -- build Visual F# IDE Tools, run all tests (see below)
@@ -116,22 +115,22 @@ Use ``VisualFSharp.sln`` if you're building the Visual F# IDE Tools.
 
 ## [Optional] Install the Visual F# IDE Tools  (Windows Only)
 
-At time of writing, the Visual F# IDE Tools can only be installed into Visual Studio "Next" releases.
+At time of writing, the Visual F# IDE Tools can only be installed into the latest Visual Studio 2017 RC releases.
 The new builds of the Visual F# IDE Tools can no longer be installed into Visual Studio 2015.
 
-You can install Visual Studio "Next" from https://www.visualstudio.com/en-us/downloads/visual-studio-next-downloads-vs.aspx.
+You can install Visual Studio 2017 RC from https://www.visualstudio.com/vs/visual-studio-2017-rc/#downloadvs.
 
 **Note:** This step will install a VSIX extension into Visual Studio "Next" that changes the Visual F# IDE Tools 
 components installed in that VS installation.  You can revert this step by disabling or uninstalling the addin.
 
 For **Debug**, uninstall then reinstall:
 
-    VSIXInstaller.exe  /a /u:"VisualFSharp"
+    VSIXInstaller.exe /a /u:"VisualFSharp"
     VSIXInstaller.exe /a debug\net40\bin\VisualFSharpOpenSource.vsix
 
 For **Release**, uninstall then reinstall:
 
-    VSIXInstaller.exe  /a /u:"VisualFSharp"
+    VSIXInstaller.exe /a /u:"VisualFSharp"
     VSIXInstaller.exe /a release\net40\bin\VisualFSharpOpenSource.vsix
 
 Restart Visual Studio, it should now be running your freshly-built Visual F# IDE Tools with updated F# Interactive.

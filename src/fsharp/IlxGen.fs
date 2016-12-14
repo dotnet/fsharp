@@ -5355,8 +5355,10 @@ and GenGetVal cenv cgbuf eenv (v:ValRef,m) sequel =
 and GenBindRhs cenv cgbuf eenv sp (vspec:Val) e =   
     match e with 
     | Expr.TyLambda _ | Expr.Lambda _ -> 
-        match e with
-        | Expr.TyLambda(_, tyargs, body, _, _) when 
+        let isLocalTypeFunc = IsNamedLocalTypeFuncVal cenv.g vspec e
+         
+        match e, isLocalTypeFunc with
+        | Expr.TyLambda(_, tyargs, body, _, _), true when 
             (
                 tyargs |> List.forall (fun tp -> tp.IsErased) &&
                 (match StorageForVal vspec.Range vspec eenv with Local _ -> true | _ -> false)
@@ -5364,7 +5366,6 @@ and GenBindRhs cenv cgbuf eenv sp (vspec:Val) e =
             // type lambda with erased type arguments that is stored as local variable (not method or property)- inline body
             GenExpr cenv cgbuf eenv sp body Continue
         | _ ->
-            let isLocalTypeFunc = IsNamedLocalTypeFuncVal cenv.g vspec e
             let selfv = if isLocalTypeFunc then None else Some (mkLocalValRef vspec)
             GenLambda cenv cgbuf eenv isLocalTypeFunc selfv e Continue 
     | _ -> 
