@@ -1920,7 +1920,7 @@ let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo
            // Lookup: datatype constructors take precedence 
            match unionCaseSearch with 
            | Some ucase -> 
-               success(resInfo,Item.UnionCase(ucase,false),rest)
+               OneResult (success(resInfo,Item.UnionCase(ucase,false),rest))
            | None -> 
                 let isLookUpExpr = lookupKind = LookupKind.Expr
                 match TryFindIntrinsicNamedItemOfType ncenv.InfoReader (nm,ad) findFlag m typ with
@@ -1933,7 +1933,7 @@ let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo
                     // make sure to keep the intrinsic pinfos before the extension pinfos in the list,
                     // since later on this logic is used when giving preference to intrinsic definitions
                     match DecodeFSharpEvent (pinfos@extensionPropInfos) ad g ncenv m with
-                    | Some x -> success (resInfo, x, rest)
+                    | Some x -> success [resInfo, x, rest]
                     | None -> raze (UndefinedName (depth,FSComp.SR.undefinedNameFieldConstructorOrMember, id,NoPredictions))
                 | Some(MethodItem msets) when isLookUpExpr -> 
                     let minfos = msets |> ExcludeHiddenOfMethInfos g ncenv.amap m
@@ -1941,55 +1941,28 @@ let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo
                     // fold the available extension members into the overload resolution
                     let extensionMethInfos = ExtensionMethInfosOfTypeInScope ncenv.InfoReader nenv optFilter m typ
 
-                    success (resInfo,Item.MakeMethGroup (nm,minfos@extensionMethInfos),rest) 
+                    success [resInfo,Item.MakeMethGroup (nm,minfos@extensionMethInfos),rest]
                 | Some (ILFieldItem (finfo:: _))  when (match lookupKind with LookupKind.Expr | LookupKind.Pattern -> true | _ -> false) -> 
-                    success (resInfo,Item.ILField finfo,rest)
+                    success [resInfo,Item.ILField finfo,rest]
 
                 | Some (EventItem (einfo :: _)) when isLookUpExpr -> 
-                    success (resInfo,Item.Event einfo,rest)
+                    success [resInfo,Item.Event einfo,rest]
                 | Some (RecdFieldItem (rfinfo)) when (match lookupKind with LookupKind.Expr | LookupKind.RecdField | LookupKind.Pattern -> true | _ -> false) -> 
-                    success(resInfo,Item.RecdField(rfinfo),rest)
+                    success [resInfo,Item.RecdField(rfinfo),rest]
                 | _ ->
 
                 let pinfos = ExtensionPropInfosOfTypeInScope ncenv.InfoReader nenv (optFilter, ad) m typ
-                if not (isNil pinfos) && isLookUpExpr then 
-                    success (resInfo,Item.Property (nm,pinfos),rest) else
+                if not (isNil pinfos) && isLookUpExpr then OneResult(success (resInfo,Item.Property (nm,pinfos),rest)) else
                 let minfos = ExtensionMethInfosOfTypeInScope ncenv.InfoReader nenv optFilter m typ
+
                 if not (isNil minfos) && isLookUpExpr then 
-                    success (resInfo,Item.MakeMethGroup (nm,minfos),rest) 
-                                
+                    success [resInfo,Item.MakeMethGroup (nm,minfos),rest]
                 elif isTyparTy g typ then raze (IndeterminateType(unionRanges m id.idRange))
-                else
-                    let predictions1 =
-                        ExtensionPropInfosOfTypeInScope ncenv.InfoReader nenv (None, ad) m typ 
-                        |> List.map (fun p -> p.PropertyName)
-                        |> Set.ofList
-                    let predictions2 =
-                        ExtensionMethInfosOfTypeInScope ncenv.InfoReader nenv None m typ
-                        |> List.map (fun m -> m.DisplayName)
-                        |> Set.ofList
-                    let predictions3 =
-                        GetIntrinsicPropInfosOfType ncenv.InfoReader (None, ad, AllowMultiIntfInstantiations.No) findFlag m typ
-                        |> List.map (fun p -> p.PropertyName)
-                        |> Set.ofList
-                    let predictions4 =
-                        GetIntrinsicMethInfosOfType ncenv.InfoReader (None, ad, AllowMultiIntfInstantiations.No) findFlag m typ
-                        |> List.filter (fun m -> not m.IsClassConstructor && not m.IsConstructor)
-                        |> List.map (fun m -> m.DisplayName)
-                        |> Set.ofList
-
-                    let predictions = 
-                        predictions1 
-                        |> Set.union predictions2
-                        |> Set.union predictions3
-                        |> Set.union predictions4
-
-                    raze (UndefinedName (depth,FSComp.SR.undefinedNameFieldConstructorOrMember, id, predictions))
-
-           |> OneResult
+                else NoResultsOrUsefulErrors
 
         match contentsSearchAccessible with
         | Result res when not (isNil res) -> contentsSearchAccessible
+        | Exception _ -> contentsSearchAccessible
         | _ -> 
               
         let nestedSearchAccessible = 
@@ -2008,7 +1981,34 @@ let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo
             else 
                 ResolveLongIdentInNestedTypes ncenv nenv lookupKind resInfo (depth+1) id m ad rest findFlag typeNameResInfo nestedTypes
 
-        contentsSearchAccessible +++ nestedSearchAccessible
+        match nestedSearchAccessible with
+        | Result res when not (isNil res) -> nestedSearchAccessible
+        | _ -> 
+            let predictions1 =
+                ExtensionPropInfosOfTypeInScope ncenv.InfoReader nenv (None, ad) m typ 
+                |> List.map (fun p -> p.PropertyName)
+                |> Set.ofList
+            let predictions2 =
+                ExtensionMethInfosOfTypeInScope ncenv.InfoReader nenv None m typ
+                |> List.map (fun m -> m.DisplayName)
+                |> Set.ofList
+            let predictions3 =
+                GetIntrinsicPropInfosOfType ncenv.InfoReader (None, ad, AllowMultiIntfInstantiations.No) findFlag m typ
+                |> List.map (fun p -> p.PropertyName)
+                |> Set.ofList
+            let predictions4 =
+                GetIntrinsicMethInfosOfType ncenv.InfoReader (None, ad, AllowMultiIntfInstantiations.No) findFlag m typ
+                |> List.filter (fun m -> not m.IsClassConstructor && not m.IsConstructor)
+                |> List.map (fun m -> m.DisplayName)
+                |> Set.ofList
+
+            let predictions = 
+                predictions1 
+                |> Set.union predictions2
+                |> Set.union predictions3
+                |> Set.union predictions4
+
+            raze (UndefinedName (depth,FSComp.SR.undefinedNameFieldConstructorOrMember, id, predictions))
         
 and ResolveLongIdentInNestedTypes (ncenv:NameResolver) nenv lookupKind resInfo depth id m ad lid findFlag typeNameResInfo typs = 
     typs |> CollectAtMostOneResult (fun typ -> 
