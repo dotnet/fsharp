@@ -143,85 +143,12 @@ namespace Microsoft.FSharp.Collections
             new : unit ->  IdentityFactory<'T>
             static member Instance :  SeqFactory<'T,'T>
           end
-        and Map2FirstFactory<'First,'Second,'U> =
-          class
-            inherit  SeqFactory<'First,'U>
-            new : map:('First -> 'Second -> 'U) *
-                  input2:IEnumerable<'Second> ->
-                     Map2FirstFactory<'First,'Second,'U>
-          end
-        and Map2SecondFactory<'First,'Second,'U> =
-          class
-            inherit  SeqFactory<'Second,'U>
-            new : map:('First -> 'Second -> 'U) *
-                  input1:IEnumerable<'First> ->
-                     Map2SecondFactory<'First,'Second,'U>
-          end
-        and Map3Factory<'First,'Second,'Third,'U> =
-          class
-            inherit  SeqFactory<'First,'U>
-            new : map:('First -> 'Second -> 'Third -> 'U) *
-                  input2:IEnumerable<'Second> *
-                  input3:IEnumerable<'Third> ->
-                     Map3Factory<'First,'Second,'Third,'U>
-          end
-        and Mapi2Factory<'First,'Second,'U> =
-          class
-            inherit  SeqFactory<'First,'U>
-            new : map:(int -> 'First -> 'Second -> 'U) *
-                  input2:IEnumerable<'Second> ->
-                     Mapi2Factory<'First,'Second,'U>
-          end
+
         and ISkipping =
           interface
             abstract member Skipping : unit -> bool
           end
 
-        and Map2First<'First,'Second,'U,'V> =
-          class
-            inherit  ConsumerChainedWithCleanup<'First,'V>
-            new : map:('First -> 'Second -> 'U) *
-                  enumerable2:IEnumerable<'Second> *
-                  outOfBand: IOutOfBand *
-                  next: Consumer<'U,'V> * pipeIdx:int ->
-                     Map2First<'First,'Second,'U,'V>
-            override OnDispose : unit -> unit
-            override ProcessNext : input:'First -> bool
-          end
-        and Map2Second<'First,'Second,'U,'V> =
-          class
-            inherit  ConsumerChainedWithCleanup<'Second,'V>
-            new : map:('First -> 'Second -> 'U) *
-                  enumerable1:IEnumerable<'First> *
-                  outOfBand: IOutOfBand *
-                  next: Consumer<'U,'V> * pipeIdx:int ->
-                     Map2Second<'First,'Second,'U,'V>
-            override OnDispose : unit -> unit
-            override ProcessNext : input:'Second -> bool
-          end
-        and Map3<'First,'Second,'Third,'U,'V> =
-          class
-            inherit  ConsumerChainedWithCleanup<'First,'V>
-            new : map:('First -> 'Second -> 'Third -> 'U) *
-                  enumerable2:IEnumerable<'Second> *
-                  enumerable3:IEnumerable<'Third> *
-                  outOfBand: IOutOfBand *
-                  next: Consumer<'U,'V> * pipeIdx:int ->
-                     Map3<'First,'Second,'Third,'U,'V>
-            override OnDispose : unit -> unit
-            override ProcessNext : input:'First -> bool
-          end
-        and Mapi2<'First,'Second,'U,'V> =
-          class
-            inherit  ConsumerChainedWithCleanup<'First,'V>
-            new : map:(int -> 'First -> 'Second -> 'U) *
-                  enumerable2:IEnumerable<'Second> *
-                  outOfBand: IOutOfBand *
-                  next: Consumer<'U,'V> * pipeIdx:int ->
-                     Mapi2<'First,'Second,'U,'V>
-            override OnDispose : unit -> unit
-            override ProcessNext : input:'First -> bool
-          end
         type SeqProcessNextStates =
           |  InProcess  =  0
           |  NotStarted  =  1
@@ -538,6 +465,15 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "MapIndexed">]
         val inline mapi : f:(int->'a->'b) -> source: ISeq<'a> -> ISeq<'b>
+
+        [<CompiledName "Map2">]
+        val inline map2<'First,'Second,'U> : map:('First->'Second->'U) -> source1:ISeq<'First> -> source2:ISeq<'Second> -> ISeq<'U>
+
+        [<CompiledName "MapIndexed2">]
+        val inline mapi2<'First,'Second,'U> : map:(int -> 'First->'Second->'U) -> source1:ISeq<'First> -> source2:ISeq<'Second> -> ISeq<'U>
+
+        [<CompiledName "Map3">]
+        val inline map3<'First,'Second,'Third,'U> : map:('First->'Second->'Third->'U) -> source1:ISeq<'First> -> source2:ISeq<'Second> -> source3:ISeq<'Third> -> ISeq<'U>
 
         [<CompiledName "Choose">]
         val inline choose : f:('a->option<'b>) -> source: ISeq<'a> -> ISeq<'b>

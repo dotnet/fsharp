@@ -170,98 +170,10 @@ namespace Microsoft.FSharp.Collections
                 override __.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = next
                 static member Instance = singleton
 
-            and Map2FirstFactory<'First,'Second,'U> (map:'First->'Second->'U, input2:IEnumerable<'Second>) =
-                inherit SeqFactory<'First,'U> ()
-                override this.Create<'V> (outOfBand:IOutOfBand) (pipeIdx:PipeIdx) (next:Consumer<'U,'V>) : Consumer<'First,'V> = upcast Map2First (map, input2, outOfBand, next, pipeIdx)
-
-            and Map2SecondFactory<'First,'Second,'U> (map:'First->'Second->'U, input1:IEnumerable<'First>) =
-                inherit SeqFactory<'Second,'U> ()
-                override this.Create<'V> (outOfBand:IOutOfBand) (pipeIdx:PipeIdx) (next:Consumer<'U,'V>) : Consumer<'Second,'V> = upcast Map2Second (map, input1, outOfBand, next, pipeIdx)
-
-            and Map3Factory<'First,'Second,'Third,'U> (map:'First->'Second->'Third->'U, input2:IEnumerable<'Second>, input3:IEnumerable<'Third>) =
-                inherit SeqFactory<'First,'U> ()
-                override this.Create<'V> (outOfBand:IOutOfBand) (pipeIdx:PipeIdx) (next:Consumer<'U,'V>) : Consumer<'First,'V> = upcast Map3 (map, input2, input3, outOfBand, next, pipeIdx)
-
-            and Mapi2Factory<'First,'Second,'U> (map:int->'First->'Second->'U, input2:IEnumerable<'Second>) =
-                inherit SeqFactory<'First,'U> ()
-                override this.Create<'V> (outOfBand:IOutOfBand) (pipeIdx:PipeIdx) (next:Consumer<'U,'V>) : Consumer<'First,'V> = upcast Mapi2 (map, input2, outOfBand, next, pipeIdx)
-
             and ISkipping =
                 // Seq.init(Infinite)? lazily uses Current. The only Composer component that can do that is Skip
                 // and it can only do it at the start of a sequence
                 abstract Skipping : unit -> bool
-
-            and Map2First<'First,'Second,'U,'V> (map:'First->'Second->'U, enumerable2:IEnumerable<'Second>, outOfBand:IOutOfBand, next:Consumer<'U,'V>, pipeIdx:int) =
-                inherit ConsumerChainedWithCleanup<'First,'V>(Upcast.iCompletionChain next)
-
-                let input2 = enumerable2.GetEnumerator ()
-                let map' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt map
-
-                override __.ProcessNext (input:'First) : bool =
-                    if input2.MoveNext () then
-                        TailCall.avoid (next.ProcessNext (map'.Invoke (input, input2.Current)))
-                    else
-                        outOfBand.StopFurtherProcessing pipeIdx
-                        false
-
-                override __.OnComplete _ = ()
-                override __.OnDispose () =
-                    input2.Dispose ()
-
-            and Map2Second<'First,'Second,'U,'V> (map:'First->'Second->'U, enumerable1:IEnumerable<'First>, outOfBand:IOutOfBand, next:Consumer<'U,'V>, pipeIdx:int) =
-                inherit ConsumerChainedWithCleanup<'Second,'V>(Upcast.iCompletionChain next)
-
-                let input1 = enumerable1.GetEnumerator ()
-                let map' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt map
-
-                override __.ProcessNext (input:'Second) : bool =
-                    if input1.MoveNext () then
-                        TailCall.avoid (next.ProcessNext (map'.Invoke (input1.Current, input)))
-                    else
-                        outOfBand.StopFurtherProcessing pipeIdx
-                        false
-
-                override __.OnComplete _ = ()
-                override __.OnDispose () =
-                    input1.Dispose ()
-
-            and Map3<'First,'Second,'Third,'U,'V> (map:'First->'Second->'Third->'U, enumerable2:IEnumerable<'Second>, enumerable3:IEnumerable<'Third>, outOfBand:IOutOfBand, next:Consumer<'U,'V>, pipeIdx:int) =
-                inherit ConsumerChainedWithCleanup<'First,'V>(Upcast.iCompletionChain next)
-
-                let input2 = enumerable2.GetEnumerator ()
-                let input3 = enumerable3.GetEnumerator ()
-                let map' = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt map
-
-                override __.ProcessNext (input:'First) : bool =
-                    if input2.MoveNext () && input3.MoveNext () then
-                        TailCall.avoid (next.ProcessNext (map'.Invoke (input, input2.Current, input3.Current)))
-                    else
-                        outOfBand.StopFurtherProcessing pipeIdx
-                        false
-
-                override __.OnComplete _ = ()
-                override __.OnDispose () =
-                    try     input2.Dispose ()
-                    finally input3.Dispose ()
-
-            and Mapi2<'First,'Second,'U,'V> (map:int->'First->'Second->'U, enumerable2:IEnumerable<'Second>, outOfBand:IOutOfBand, next:Consumer<'U,'V>, pipeIdx:int) =
-                inherit ConsumerChainedWithCleanup<'First,'V>(Upcast.iCompletionChain next)
-
-                let mutable idx = 0
-                let input2 = enumerable2.GetEnumerator ()
-                let mapi2' = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt map
-
-                override __.ProcessNext (input:'First) : bool =
-                    if input2.MoveNext () then
-                        idx <- idx + 1
-                        TailCall.avoid (next.ProcessNext (mapi2'.Invoke (idx-1, input, input2.Current)))
-                    else
-                        outOfBand.StopFurtherProcessing pipeIdx
-                        false
-
-                override __.OnComplete _ = ()
-                override __.OnDispose () =
-                    input2.Dispose ()
 
             type SeqProcessNextStates =
             | InProcess  = 0
@@ -1039,6 +951,63 @@ namespace Microsoft.FSharp.Collections
                             override this.ProcessNext (input:'T) : bool =
                                 this.Value <- this.Value  + 1
                                 TailCall.avoid (next.ProcessNext (f this.Value input)) } }
+
+
+            [<CompiledName "Map2">]
+            let inline map2<'First,'Second,'U> (map:'First->'Second->'U) (source1:ISeq<'First>) (source2:ISeq<'Second>) : ISeq<'U> =
+                source1 |> compose { new SeqFactory<'First,'U>() with
+                    member __.Create<'V> outOfBand pipeIdx next =
+                        upcast { new ConsumerChainedWithStateAndCleanup<'First,'V, IEnumerator<'Second>>(Upcast.iCompletionChain next, (source2.GetEnumerator ())) with
+                            member self.ProcessNext input =
+                                if self.Value.MoveNext () then
+                                    TailCall.avoid (next.ProcessNext (map input self.Value.Current))
+                                else
+                                    outOfBand.StopFurtherProcessing pipeIdx
+                                    false
+
+                            override self.OnDispose () = ()
+                            override self.OnComplete _ =
+                                self.Value.Dispose ()  } }
+
+
+            [<CompiledName "MapIndexed2">]
+            let inline mapi2<'First,'Second,'U> (map:int -> 'First->'Second->'U) (source1:ISeq<'First>) (source2:ISeq<'Second>) : ISeq<'U> =
+                source1 |> compose { new SeqFactory<'First,'U>() with
+                    member __.Create<'V> outOfBand pipeIdx next =
+                        upcast { new ConsumerChainedWithStateAndCleanup<'First,'V, Values<int,IEnumerator<'Second>>>
+                                                    (Upcast.iCompletionChain next, Values<_,_>(-1, source2.GetEnumerator ())) with
+                            member self.ProcessNext input =
+                                if self.Value._2.MoveNext () then
+                                    self.Value._1 <- self.Value._1 + 1
+                                    TailCall.avoid (next.ProcessNext (map self.Value._1 input self.Value._2.Current))
+                                else
+                                    outOfBand.StopFurtherProcessing pipeIdx
+                                    false
+
+                            override self.OnDispose () = ()
+                            override self.OnComplete _ =
+                                self.Value._2.Dispose ()  } }
+
+
+            [<CompiledName "Map3">]
+            let inline map3<'First,'Second,'Third,'U>
+                            (map:'First->'Second->'Third->'U) (source1:ISeq<'First>) (source2:ISeq<'Second>) (source3:ISeq<'Third>) : ISeq<'U> =
+                source1 |> compose { new SeqFactory<'First,'U>() with
+                    member __.Create<'V> outOfBand pipeIdx next =
+                        upcast { new ConsumerChainedWithStateAndCleanup<'First,'V, Values<IEnumerator<'Second>,IEnumerator<'Third>>>
+                                                    (Upcast.iCompletionChain next, Values<_,_>(source2.GetEnumerator(),source3.GetEnumerator())) with
+                            member self.ProcessNext input =
+                                if self.Value._1.MoveNext() && self.Value._2.MoveNext ()  then
+                                    TailCall.avoid (next.ProcessNext (map input self.Value._1 .Current self.Value._2.Current))
+                                else
+                                    outOfBand.StopFurtherProcessing pipeIdx
+                                    false
+
+                            override self.OnDispose () = ()
+                            override self.OnComplete _ =
+                                self.Value._1.Dispose ()
+                                self.Value._2.Dispose () } }
+
 
             [<CompiledName "Choose">]
             let inline choose (f:'T->option<'U>) (source:ISeq<'T>) : ISeq<'U> =
