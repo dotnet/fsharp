@@ -47,14 +47,14 @@ open System.Windows.Documents
 type internal FSharpDeferredQuickInfoContent(content: string, textProperties: TextFormattingRunProperties) =
     interface IDeferredQuickInfoContent with
         override this.Create() : FrameworkElement =
-            let label = Label(Content = content)
-            label.SetValue(TextElement.BackgroundProperty, textProperties.BackgroundBrush)
-            label.SetValue(TextElement.ForegroundProperty, textProperties.ForegroundBrush)
-            label.SetValue(TextElement.FontFamilyProperty, textProperties.Typeface.FontFamily)
-            label.SetValue(TextElement.FontSizeProperty, textProperties.FontRenderingEmSize)
-            label.SetValue(TextElement.FontStyleProperty, if textProperties.Italic then FontStyles.Italic else FontStyles.Normal)
-            label.SetValue(TextElement.FontWeightProperty, if textProperties.Bold then FontWeights.Bold else FontWeights.Normal)
-            upcast label
+            let textBlock = TextBlock(Run(content), TextWrapping = TextWrapping.Wrap, TextTrimming = TextTrimming.None)
+            textBlock.SetValue(TextElement.BackgroundProperty, textProperties.BackgroundBrush)
+            textBlock.SetValue(TextElement.ForegroundProperty, textProperties.ForegroundBrush)
+            textBlock.SetValue(TextElement.FontFamilyProperty, textProperties.Typeface.FontFamily)
+            textBlock.SetValue(TextElement.FontSizeProperty, textProperties.FontRenderingEmSize)
+            textBlock.SetValue(TextElement.FontStyleProperty, if textProperties.Italic then FontStyles.Italic else FontStyles.Normal)
+            textBlock.SetValue(TextElement.FontWeightProperty, if textProperties.Bold then FontWeights.Bold else FontWeights.Normal)
+            upcast textBlock
 
 [<Shared>]
 [<ExportQuickInfoProvider(PredefinedQuickInfoProviderNames.Semantic, FSharpCommonConstants.FSharpLanguageName)>]

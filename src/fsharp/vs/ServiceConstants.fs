@@ -2,7 +2,7 @@
 
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
-module internal ItemDescriptionIcons = 
+module ItemDescriptionIcons = 
 
     type GlyphMajor = 
         | Class = 0x0000

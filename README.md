@@ -48,11 +48,10 @@ For F# Compiler on OSX and Linux (see .travis.yml for build steps)
 
 For Visual F# IDE Tools 4.1 development (Windows)
 
-- [Visual Studio 15](https://www.visualstudio.com/en-us/downloads/visual-studio-next-downloads-vs.aspx)
-  - Select Visual C++ / Common Tools For Visual C++
-  - Visual F#
-  - Visual Studio Extensibility Tools
-- [Visual Studio 15 SDK](https://www.visualstudio.com/en-us/downloads/visual-studio-next-downloads-vs.aspx)
+- [Visual Studio 2017 RC](https://www.visualstudio.com/vs/visual-studio-2017-rc/#downloadvs)
+  - Under the "Windows" workloads, select ".NET desktop development".
+    - Select "F# language suport" under the optional components.
+  - Under the "Other Toolsets" workloads, select "Visual Studio extension development".
 
 ####Additional frameworks
 

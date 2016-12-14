@@ -72,6 +72,19 @@
     <Compile Include="QuickInfoProvider.fs">
       <Link>QuickInfo\QuickInfoProvider.fs</Link>
     </Compile>
+    <Compile Include="Classification\ColorizationService.fs"/>
+    <Compile Include="Utilities\BraceMatchingService.fs" />
+    <Compile Include="Utilities\IndentationService.fs"/>
+    <Compile Include="Debugging\BreakpointResolutionService.fs"/>
+    <Compile Include="Debugging\LanguageDebugInfoService.fs"/>
+    <Compile Include="Diagnostics\DocumentDiagnosticAnalyzer.fs"/>
+    <Compile Include="Diagnostics\ProjectDiagnosticAnalyzer.fs"/>
+    <Compile Include="Completion\CompletionProvider.fs"/>
+    <Compile Include="Completion\SignatureHelp.fs"/>
+    <Compile Include="GoToDefinition\GoToDefinitionService.fs"/>
+    <Compile Include="BlockComment\CommentUncommentService.fs"/>
+    <Compile Include="QuickInfo\QuickInfoProvider.fs"/>
+    <Compile Include="NavigationBarItemService.fs" />
     <Compile Include="ContentType.fs" />
     <Compile Include="FsiCommandService.fs" />
   </ItemGroup>
