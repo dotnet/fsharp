@@ -3164,12 +3164,14 @@ let ComputeQualifiedNameOfFileFromUniquePath (m, p: string list) = QualifiedName
 let QualFileNameOfSpecs filename specs = 
     match specs with 
     | [SynModuleOrNamespaceSig(modname,_,true,_,_,_,_,m)] -> QualFileNameOfModuleName m filename modname
-    | _ -> QualFileNameOfFilename (rangeN filename 1) filename
+    | [SynModuleOrNamespaceSig(_,_,false,_,_,_,_,m)] -> QualFileNameOfFilename m filename
+    | _ -> QualFileNameOfFilename (mkRange filename pos0 pos0) filename
 
 let QualFileNameOfImpls filename specs = 
     match specs with 
     | [SynModuleOrNamespace(modname,_,true,_,_,_,_,m)] -> QualFileNameOfModuleName m filename modname
-    | _ -> QualFileNameOfFilename (rangeN filename 1) filename
+    | [SynModuleOrNamespace(_,_,false,_,_,_,_,m)] -> QualFileNameOfFilename m filename
+    | _ -> QualFileNameOfFilename (mkRange filename pos0 pos0) filename
 
 let PrepandPathToQualFileName x (QualifiedNameOfFile(q)) = ComputeQualifiedNameOfFileFromUniquePath (q.idRange,pathOfLid x@[q.idText])
 let PrepandPathToImpl x (SynModuleOrNamespace(p,b,c,d,e,f,g,h)) = SynModuleOrNamespace(x@p,b,c,d,e,f,g,h)
