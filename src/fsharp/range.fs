@@ -212,7 +212,7 @@ let rangeContainsPos (m1:range) p =
 let rangeBeforePos (m1:range) p =
     posGeq p m1.End
 
-let rangeN filename line =  mkRange filename (mkPos line 0) (mkPos line 80)
+let rangeN filename line = mkRange filename (mkPos line 0) (mkPos line 0)
 let pos0 = mkPos 1 0
 let range0 =  rangeN "unknown" 1
 let rangeStartup = rangeN "startup" 1

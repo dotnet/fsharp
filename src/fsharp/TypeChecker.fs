@@ -10597,7 +10597,7 @@ and ComputeIsComplete enclosingDeclaredTypars declaredTypars ty =
 /// Determine if a uniquely-identified-abstract-slot exists for an override member (or interface member implementation) based on the information available 
 /// at the syntactic definition of the member (i.e. prior to type inference). If so, we know the expected signature of the override, and the full slotsig 
 /// it implements. Apply the inferred slotsig. 
-and ApplyAbstractSlotInference cenv (envinner:TcEnv) (bindingTy,m,synTyparDecls,declaredTypars,memberId,tcrefObjTy,renaming,_objTy,optIntfSlotTy,valSynData,memberFlags,attribs) = 
+and ApplyAbstractSlotInference (cenv:cenv) (envinner:TcEnv) (bindingTy,m,synTyparDecls,declaredTypars,memberId,tcrefObjTy,renaming,_objTy,optIntfSlotTy,valSynData,memberFlags,attribs) = 
 
     let ad = envinner.eAccessRights
     let typToSearchForAbstractMembers = 
@@ -10627,11 +10627,17 @@ and ApplyAbstractSlotInference cenv (envinner:TcEnv) (bindingTy,m,synTyparDecls,
                      errorR(Error(FSComp.SR.tcNoMemberFoundForOverride(),memberId.idRange))
                      []
 
-                 | _ -> 
+                 | slots -> 
                      match dispatchSlotsArityMatch with 
                      | meths when meths |> makeUniqueBySig |> List.length = 1 -> meths
                      | [] -> 
-                         errorR(Error(FSComp.SR.tcOverrideArityMismatch(),memberId.idRange))
+                         let details =
+                             slots
+                             |> List.map (NicePrint.stringOfMethInfo cenv.amap m envinner.DisplayEnv)
+                             |> Seq.map (sprintf "%s   %s" System.Environment.NewLine)
+                             |> String.concat ""
+
+                         errorR(Error(FSComp.SR.tcOverrideArityMismatch(details),memberId.idRange))
                          []
                      | _ -> [] // check that method to override is sealed is located at CheckOverridesAreAllUsedOnce (typrelns.fs)
                       // We hit this case when it is ambiguous which abstract method is being implemented. 
