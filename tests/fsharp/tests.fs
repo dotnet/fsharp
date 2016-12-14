@@ -166,15 +166,13 @@ module CoreTests =
     [<Test>]
     let ``test int32`` () = singleTestBuildAndRun "core/int32" FSC_BASIC
 
-// All tests below here are enabled only for .NET Framework.  We should aim to enable at least all tests mentioning FSC_BASIC or FSI_BASIC
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
-
     [<Test>]
     let ``quotes-FSC-BASIC`` () = singleTestBuildAndRun "core/quotes" FSC_BASIC
 
     [<Test>]
     let ``attributes-FSC_BASIC`` () = singleTestBuildAndRun "core/attributes" FSC_BASIC
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let ``attributes-FSI_BASIC`` () = singleTestBuildAndRun "core/attributes" FSI_BASIC
 
@@ -194,6 +192,7 @@ module CoreTests =
         fsi cfg "" ["test.fsx"]
 
         testOkFile.CheckExists()
+#endif
 
     [<Test>]
     let control () = singleTestBuildAndRun "core/control" FSC_BASIC
@@ -229,6 +228,7 @@ module CoreTests =
     let csext () = singleTestBuildAndRun "core/csext" FSC_BASIC
 
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let events () = 
         let cfg = testConfig "core/events"
@@ -299,7 +299,6 @@ module CoreTests =
     //        testOkFile.CheckExists()
     //    
 
-    
 
     [<Test>]
     let forwarders () = 
@@ -624,11 +623,13 @@ module CoreTests =
     // Test dumpbin with SHA 1024 bit key public signed CL
     [<Test; Category("signedtest")>]
     let ``signedtest-17`` () = signedtest("--keyfile:sha1024delay.snk --publicsign", "test-sha1024-public-cl.bsl")
+#endif
 
     [<Test>]
     let ``quotes-FSI-BASIC`` () = singleTestBuildAndRun "core/quotes" FSI_BASIC
 
-    [<Test>]
+ #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+   [<Test>]
     let quotes () = 
         let cfg = testConfig "core/quotes"
 
@@ -730,7 +731,6 @@ module CoreTests =
         exec cfg ("." ++ "main.exe") ""
  
 
-
     // Repro for https://github.com/Microsoft/visualfsharp/issues/1298
     [<Test>]
     let fileorder () = 
@@ -769,6 +769,7 @@ module CoreTests =
 
     [<Test>]
     let ``libtest-AS_DLL`` () = singleTestBuildAndRun "core/libtest" AS_DLL
+#endif
 
     [<Test>]
     let ``libtest-FSI_BASIC`` () = singleTestBuildAndRun "core/libtest" FSI_BASIC
@@ -776,6 +777,7 @@ module CoreTests =
     [<Test>]
     let ``letrec (mutrec variations part two) FSI_BASIC`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSI_BASIC
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let recordResolution () = singleTestBuildAndRun "core/recordResolution" FSC_OPT_PLUS_DEBUG
 
@@ -907,8 +909,7 @@ module CoreTests =
         match diffs2 with
         | "" -> ()
         | _ -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" stderrPath stderrBaseline diffs2)
-
-
+#endif
 
     [<Test>]
     let longnames () = singleTestBuildAndRun "core/longnames" FSC_BASIC
@@ -916,8 +917,10 @@ module CoreTests =
     [<Test>]
     let ``math-numbersVS2008`` () = singleTestBuildAndRun "core/math/numbersVS2008" FSC_BASIC
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let ``measures-AS_DLL`` () = singleTestBuildAndRun "core/measures" AS_DLL
+#endif
 
     [<Test>]
     let ``members-basics-FSI_BASIC`` () = singleTestBuildAndRun "core/members/basics" FSI_BASIC
@@ -925,8 +928,10 @@ module CoreTests =
     [<Test>]
     let ``members-basics-FSC_BASIC`` () = singleTestBuildAndRun "core/members/basics" FSC_BASIC
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let ``members-basics-AS_DLL`` () = singleTestBuildAndRun "core/members/basics" AS_DLL
+#endif
 
     [<Test>]
     let ``members-basics-hw`` () = singleTestBuildAndRun "core/members/basics-hw" FSC_BASIC
@@ -946,6 +951,7 @@ module CoreTests =
     [<Test>]
     let patterns () = singleTestBuildAndRun "core/patterns" FSC_BASIC
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let pinvoke () = 
         let cfg = testConfig "core/pinvoke"
@@ -1068,8 +1074,6 @@ module CoreTests =
         exec cfg ("." ++ "test--optimize.exe") ""
 
         testOkFile3.CheckExists()
-                
-
 
 
     [<Test>]
@@ -1101,7 +1105,6 @@ module CoreTests =
         exec cfg ("." ++ "test--optimize.exe") ""
 
         testOkFile3.CheckExists()
-                
 
 
     [<Test>]
@@ -1152,10 +1155,12 @@ module CoreTests =
         exec cfg ("." ++ "module2-staticlink.exe") ""
 
         testOkFile.CheckExists()
+#endif
                 
     [<Test>]
     let reflect () = singleTestBuildAndRun "core/reflect" FSC_BASIC
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let testResources () = 
         let cfg = testConfig "core/resources"
@@ -1341,9 +1346,11 @@ module CoreTests =
         fsc cfg "%s -o:xmlverify.exe -g" cfg.fsc_flags ["xmlverify.fs"]
 
         peverifyWithArgs cfg "/nologo" "xmlverify.exe"
+#endif
 
 module ToolsTests = 
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let bundle () = 
         let cfg = testConfig "tools/bundle"
@@ -1363,6 +1370,7 @@ module ToolsTests =
         fsc cfg "%s -a --standalone -r:test_two_fsharp_modules_module_1.dll -o:test_two_fsharp_modules_module_2_as_dll.dll -g" cfg.fsc_flags ["test_two_fsharp_modules_module_2.fs"]
    
         peverify cfg "test_two_fsharp_modules_module_2_as_dll.dll"
+#endif
 
     [<Test>]
     let eval () = singleTestBuildAndRun "tools/eval" FSC_BASIC
@@ -1421,6 +1429,8 @@ module RegressionTests =
     [<Test >]
     let ``tuple-bug-1`` () = singleTestBuildAndRun "regression/tuple-bug-1" FSC_BASIC
 
+
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
 module OptimizationTests =
 
     [<Test>]
@@ -1528,7 +1538,7 @@ module OptimizationTests =
             |> Seq.length
 
         log "Ran ok - optimizations removed %d textual occurrences of optimizable identifiers from target IL" numElim 
-                
+
     [<Test>]
     let stats () = 
         let cfg = testConfig "optimize/stats"
@@ -1550,7 +1560,7 @@ module OptimizationTests =
 
         log "now:"
         log "%s" m
-                
+#endif
 
 module TypecheckTests = 
     [<Test>]
@@ -1565,6 +1575,7 @@ module TypecheckTests =
     [<Test>]
     let misc () = singleTestBuildAndRun "typecheck/misc" FSC_BASIC
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let ``sigs pos24`` () = 
         let cfg = testConfig "typecheck/sigs"
@@ -1792,7 +1803,9 @@ module TypecheckTests =
 
     [<Test>]
     let ``sigs neg group13a`` () = negGroup [ "neg18"; "neg19"; "neg01"; "neg02"; "neg15"  ]
+#endif
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
 module TypeProviders = 
 
     [<Test>]

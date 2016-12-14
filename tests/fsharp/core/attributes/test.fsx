@@ -28,7 +28,9 @@ open System.Diagnostics
 
 (* ATTRIBUTES *)
 
+#if !TESTS_AS_APP && !FX_PORTABLE_OR_NETSTANDARD
 [<LoaderOptimization(LoaderOptimization.MultiDomainHost)>] 
+#endif
 
 let main = ()
 
