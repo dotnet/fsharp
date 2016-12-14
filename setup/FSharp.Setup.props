@@ -26,6 +26,8 @@
 
     <PropertyGroup>
         <BinariesDir>$(SetupRootFolder)\..\$(Configuration)</BinariesDir>
+        <VsixBuildLocation>$(BinariesDir)\$(TargetFramework)\bin</VsixBuildLocation>
+        <InsertionDir>$(BinariesDir)\insertion</InsertionDir>
         <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
         <OutputPath Condition="'$(Lang)' == ''">$(BinariesDir)\setup</OutputPath>
         <OutputPath Condition="'$(Lang)' != ''">$(BinariesDir)\setup\$(Lang)</OutputPath>
