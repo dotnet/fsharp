@@ -9,6 +9,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     internal static class Constants
     {
         public const string FSharpEditorFactoryIdString = "8a5aa6cf-46e3-4520-a70a-7393d15233e9";
-        public static readonly Guid FSharpEditorFactoryGuid = new Guid(FSharpEditorFactoryIdString);
     }
 }
