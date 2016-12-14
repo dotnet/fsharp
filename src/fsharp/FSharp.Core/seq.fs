@@ -101,7 +101,7 @@ namespace Microsoft.FSharp.Collections
                 source
                 |> toComposer |> Composer.Seq.skip i |> Upcast.enumerable
                 |> tryHead
-                |> function
+                |>  function
                     | None -> invalidArgFmt "index" "{0}\nseq was short by 1 element"  [|SR.GetString SR.notEnoughElements|]
                     | Some value -> value
 
@@ -128,42 +128,23 @@ namespace Microsoft.FSharp.Collections
         let forall f (source:seq<'T>) =
             source |> toComposer |> Composer.Seq.forall f
 
-        [<CompiledName("Iterate2")>]
-        let iter2 f (source1 : seq<_>) (source2 : seq<_>)    =
+        [<CompiledName "Iterate2">]
+        let iter2 (f:'T->'U->unit) (source1 : seq<'T>) (source2 : seq<'U>)    =
+            checkNonNull "source1" source1
             checkNonNull "source2" source2
-
-            use e2 = source2.GetEnumerator()
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
+            (source1|>toComposer, source2|>toComposer)
+            ||> Composer.Seq.iter2 (fun a b -> f.Invoke(a,b))
 
-            source1
-            |> foreach (fun halt ->
-                { new Composer.Core.Folder<_,_> () with
-                    override this.ProcessNext value =
-                        if (e2.MoveNext()) then
-                            f.Invoke(value, e2.Current)
-                        else
-                            halt()
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> ignore
 
-        [<CompiledName("IterateIndexed2")>]
-        let iteri2 f (source1 : seq<_>) (source2 : seq<_>) =
+        [<CompiledName "IterateIndexed2">]
+        let iteri2 (f:int->'T->'U->unit)  (source1 : seq<_>) (source2 : seq<_>) =
+            checkNonNull "source1" source1
             checkNonNull "source2" source2
-
-            use e2 = source2.GetEnumerator()
             let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
+            (source1|>toComposer, source2|>toComposer)
+            ||> Composer.Seq.iteri2 (fun idx a b -> f.Invoke(idx,a,b))
 
-            source1
-            |> foreach (fun halt ->
-                { new Composer.Core.Folder<_,int> (0) with
-                    override this.ProcessNext value =
-                        if (e2.MoveNext()) then
-                            f.Invoke(this.Value, value, e2.Current)
-                            this.Value <- this.Value + 1
-                        else
-                            halt()
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> ignore
 
         // Build an IEnumerble by wrapping/transforming iterators as they get generated.
         let revamp f (ie : seq<_>) = mkSeq (fun () -> f (ie.GetEnumerator()))

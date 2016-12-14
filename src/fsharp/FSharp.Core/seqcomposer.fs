@@ -853,6 +853,34 @@ namespace Microsoft.FSharp.Collections
                             Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
                 |> ignore
 
+            [<CompiledName "Iterate2">]
+            let inline iter2 (f:'T->'U->unit) (source1:ISeq<'T>) (source2:ISeq<'U>) : unit =
+                source1
+                |> foreach (fun halt ->
+                    { new Folder<'T,IEnumerator<'U>> (source2.GetEnumerator()) with
+                        override self.ProcessNext value =
+                            if self.Value.MoveNext() then
+                                f value self.Value.Current
+                            else
+                                halt()
+                            Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
+                |> ignore
+
+            [<CompiledName "IterateIndexed2">]
+            let inline iteri2 (f:int->'T->'U->unit) (source1:ISeq<'T>) (source2:seq<'U>) : unit =
+                source1
+                |> foreach (fun halt ->
+                    { new Folder<'T,Values<int,IEnumerator<'U>>>(Values<_,_>(-1,source2.GetEnumerator())) with
+                        override self.ProcessNext value =
+                            if self.Value._2.MoveNext() then
+                                f self.Value._1 value self.Value._2.Current
+                                self.Value._1 <- self.Value._1 + 1
+                            else
+                                halt()
+                            Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
+                |> ignore
+
+
             [<CompiledName "TryHead">]
             let tryHead (source:ISeq<'T>) =
                 source
