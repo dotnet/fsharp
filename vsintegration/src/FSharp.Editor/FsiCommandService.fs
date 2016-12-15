@@ -14,6 +14,7 @@ open Microsoft.VisualStudio.FSharp.Interactive
 open EnvDTE
 
 type FsiCommandFilter(serviceProvider: System.IServiceProvider) =
+
     let projectSystemPackage =
       lazy(
         let shell = serviceProvider.GetService(typeof<SVsShell>) :?> IVsShell
@@ -44,7 +45,7 @@ type FsiCommandFilter(serviceProvider: System.IServiceProvider) =
                 if nCmdId = uint32 Guids.cmdIDDebugSelection then
                     Hooks.OnMLSend projectSystemPackage.Value FsiEditorSendAction.DebugSelection null null
                 VSConstants.S_OK
-            elif isNotNull nextTarget then
+            elif not (isNull nextTarget) then
                 nextTarget.Exec(&pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut)
             else
                 VSConstants.E_FAIL
@@ -66,7 +67,7 @@ type FsiCommandFilter(serviceProvider: System.IServiceProvider) =
                         else
                             prgCmds.[i].cmdf <- uint32 (OLECMDF.OLECMDF_SUPPORTED ||| OLECMDF.OLECMDF_ENABLED)
                 VSConstants.S_OK
-            elif isNotNull nextTarget then
+            elif not (isNull nextTarget) then
                 nextTarget.QueryStatus(&pguidCmdGroup, cCmds, prgCmds, pCmdText)
             else
                 VSConstants.E_FAIL

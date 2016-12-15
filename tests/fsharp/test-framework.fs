@@ -485,7 +485,7 @@ let fsdiff cfg a b =
     let expectedFile = System.IO.Path.Combine(cfg.Directory, b)
     let errorText = System.IO.File.ReadAllText (System.IO.Path.Combine(cfg.Directory, a))
 
-    let result = diff false actualFile expectedFile
+    let result = diff false expectedFile actualFile
     if result <> "" then
         log "%s" result
         log "New error file:"

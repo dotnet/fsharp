@@ -1052,7 +1052,10 @@ type MethInfo =
     member x.IsClassConstructor =
         match x with 
         | ILMeth(_,ilmeth,_) -> ilmeth.IsClassConstructor
-        | FSMeth _ -> false
+        | FSMeth(_,_,vref,_) -> 
+             match vref.TryDeref with
+             | Some x -> x.IsClassConstructor
+             | _ -> false
         | DefaultStructCtor _ -> false
 #if EXTENSIONTYPING
         | ProvidedMeth(_,mi,_,m) -> mi.PUntaint((fun mi -> mi.IsConstructor && mi.IsStatic), m) // Note: these are never public anyway
@@ -2354,5 +2357,3 @@ let PropInfosEquivByNameAndSig erasureFlag g amap m (pinfo:PropInfo) (pinfo2:Pro
     let retTy = pinfo.GetPropertyType(amap,m)
     let retTy2 = pinfo2.GetPropertyType(amap,m) 
     typeEquivAux erasureFlag g retTy retTy2
-
-

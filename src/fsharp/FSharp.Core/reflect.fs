@@ -140,7 +140,7 @@ module internal Impl =
     let tryFindCompilationMappingAttributeFromType       (typ:Type)        = 
 #if !FX_NO_REFLECTION_ONLY
         let assem = typ.Assembly
-        if isNotNull assem && assem.ReflectionOnly then 
+        if (not (isNull assem)) && assem.ReflectionOnly then 
            tryFindCompilationMappingAttributeFromData ( typ.GetCustomAttributesData())
         else
 #endif
@@ -149,7 +149,7 @@ module internal Impl =
     let tryFindCompilationMappingAttributeFromMemberInfo (info:MemberInfo) = 
 #if !FX_NO_REFLECTION_ONLY
         let assem = info.DeclaringType.Assembly
-        if isNotNull assem && assem.ReflectionOnly then 
+        if (not (isNull assem)) && assem.ReflectionOnly then 
            tryFindCompilationMappingAttributeFromData (info.GetCustomAttributesData())
         else
 #endif
@@ -158,7 +158,7 @@ module internal Impl =
     let    findCompilationMappingAttributeFromMemberInfo (info:MemberInfo) =    
 #if !FX_NO_REFLECTION_ONLY
         let assem = info.DeclaringType.Assembly
-        if isNotNull assem && assem.ReflectionOnly then 
+        if (not (isNull assem)) && assem.ReflectionOnly then 
             findCompilationMappingAttributeFromData (info.GetCustomAttributesData())
         else
 #endif
