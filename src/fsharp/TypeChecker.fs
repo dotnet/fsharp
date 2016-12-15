@@ -4385,19 +4385,23 @@ and TcTyparOrMeasurePar optKind cenv (env:TcEnv) newOk tpenv (Typar(id,_,_) as t
     | Some res -> checkRes res
     | None -> 
         if newOk = NoNewTypars then
-            let predictions1 =
-                env.eNameResEnv.eTypars
-                |> Seq.map (fun p -> "'" + p.Key)
-                |> Set.ofSeq
-
-            let predictions2 =
-                match tpenv with
-                | UnscopedTyparEnv elements ->
-                    elements
+            let predictTypeParameters() =
+                let predictions1 =
+                    env.eNameResEnv.eTypars
                     |> Seq.map (fun p -> "'" + p.Key)
                     |> Set.ofSeq
 
-            error (UndefinedName(0,FSComp.SR.undefinedNameTypeParameter,id,Set.union predictions1 predictions2))
+                let predictions2 =
+                    match tpenv with
+                    | UnscopedTyparEnv elements ->
+                        elements
+                        |> Seq.map (fun p -> "'" + p.Key)
+                        |> Set.ofSeq
+
+                Set.union predictions1 predictions2
+
+            error (UndefinedName(0,FSComp.SR.undefinedNameTypeParameter,id,predictTypeParameters))
+        
         // OK, this is an implicit declaration of a type parameter 
         // The kind defaults to Type
         let tp' = NewTypar ((match optKind with None -> TyparKind.Type | Some kind -> kind), TyparRigidity.WarnIfNotRigid,tp,false,TyparDynamicReq.Yes,[],false,false)
@@ -6325,15 +6329,15 @@ and FreshenObjExprAbstractSlot cenv (env: TcEnv) (implty:TType) virtNameAndArity
                 tcref.MembersOfFSharpTyconByName
                 |> Seq.exists (fun kv -> kv.Value |> List.exists (fun valRef -> valRef.DisplayName = bindName))
 
-            let predictions =
+            let predictVirtualMembers() =
                 virtNameAndArityPairs
                 |> List.map (fst >> fst)
                 |> Set.ofList
 
             if containsNonAbstractMemberWithSameName then
-                errorR(ErrorWithPredictions(FSComp.SR.tcMemberFoundIsNotAbstractOrVirtual(tcref.DisplayName, bindName),mBinding,bindName,predictions))
+                errorR(ErrorWithPredictions(FSComp.SR.tcMemberFoundIsNotAbstractOrVirtual(tcref.DisplayName, bindName),mBinding,bindName,predictVirtualMembers))
             else
-                errorR(ErrorWithPredictions(FSComp.SR.tcNoAbstractOrVirtualMemberFound(bindName),mBinding,bindName,predictions))
+                errorR(ErrorWithPredictions(FSComp.SR.tcNoAbstractOrVirtualMemberFound(bindName),mBinding,bindName,predictVirtualMembers))
         | [(_,absSlot:MethInfo)]     ->
             errorR(Error(FSComp.SR.tcArgumentArityMismatch(bindName, List.sum absSlot.NumArgs, arity, getSignature absSlot, getDetails absSlot),mBinding))
         | (_,absSlot:MethInfo) :: _  ->

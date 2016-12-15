@@ -46,9 +46,9 @@ let rec findOriginalException err =
     | _ -> err
 
 
-type Predictions = Set<string>
+type Predictions = unit -> Set<string>
 
-let NoPredictions : Predictions = Set.empty
+let NoPredictions : Predictions = fun () -> Set.empty
 
 /// Thrown when we stop processing the F# Interactive entry or #load.
 exception StopProcessingExn of exn option

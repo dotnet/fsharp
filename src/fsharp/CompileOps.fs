@@ -777,10 +777,10 @@ let OutputPhasedErrorR errorStyle (os:System.Text.StringBuilder) (err:PhasedErro
               os.Append(Duplicate1E().Format (DecompileOpName s)) |> ignore
           else 
               os.Append(Duplicate2E().Format k (DecompileOpName s)) |> ignore
-      | UndefinedName(_,k,id,predictions) ->
+      | UndefinedName(_,k,id,predictionsF) ->
           os.Append(k (DecompileOpName id.idText)) |> ignore
-          if Set.isEmpty predictions |> not then
-              let filtered = ErrorResolutionHints.FilterPredictions id.idText predictions
+          let filtered = ErrorResolutionHints.FilterPredictions id.idText predictionsF
+          if List.isEmpty filtered |> not then
               os.Append(ErrorResolutionHints.FormatPredictions errorStyle DecompileOpName filtered) |> ignore
           
       | InternalUndefinedItemRef(f,smr,ccuName,s) ->  
@@ -1268,10 +1268,10 @@ let OutputPhasedErrorR errorStyle (os:System.Text.StringBuilder) (err:PhasedErro
               os.Append(NonUniqueInferredAbstractSlot3E().Format t1 t2) |> ignore
           os.Append(NonUniqueInferredAbstractSlot4E().Format) |> ignore
       | Error ((_,s),_) -> os.Append(s) |> ignore
-      | ErrorWithPredictions ((_,s),_,idText,predictions) -> 
+      | ErrorWithPredictions ((_,s),_,idText,predictionsF) -> 
           os.Append(DecompileOpName s) |> ignore
-          if Set.isEmpty predictions |> not then
-              let filtered = ErrorResolutionHints.FilterPredictions idText predictions
+          let filtered = ErrorResolutionHints.FilterPredictions idText predictionsF
+          if List.isEmpty filtered |> not then
               os.Append(ErrorResolutionHints.FormatPredictions errorStyle DecompileOpName filtered) |> ignore
       | NumberedError ((_,s),_) -> os.Append(s) |> ignore
       | InternalError (s,_) 
