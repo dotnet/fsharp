@@ -55,6 +55,7 @@ type internal NavigateToSearchResult(item: NavigableItem, matchKind: NavigateToM
         member __.MatchKind = matchKind
         member __.IsCaseSensitive = false
         member __.Name = item.Name
+        member __.NameMatchSpans = ImmutableArray<_>.Empty
         member __.SecondarySort = null
         member __.Summary = null
         member __.NavigableItem = upcast item
