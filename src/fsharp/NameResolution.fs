@@ -2044,7 +2044,7 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv (typeN
                     | ResolveTypeNamesToCtors -> 
                         tcrefs 
                         |> List.map (fun (resInfo, tcref) -> resInfo, FreshenTycon ncenv m tcref) 
-                        |> CollectResults (fun (resInfo,typ) -> ResolveObjectConstructorPrim ncenv nenv.eDisplayEnv resInfo id.idRange ad typ) 
+                        |> CollectAtMostOneResult (fun (resInfo,typ) -> ResolveObjectConstructorPrim ncenv nenv.eDisplayEnv resInfo id.idRange ad typ) 
                         |> MapResults (fun (resInfo,item) -> (resInfo,item,[]))
 
             match tyconSearch with
@@ -2081,19 +2081,17 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv (typeN
 /// An identifier has resolved to a type name in an expression (corresponding to one or more TyconRefs). 
 /// Return either a set of constructors (later refined by overload resolution), or a set of TyconRefs.
 let ChooseTyconRefInExpr (ncenv:NameResolver, m, ad, nenv, id:Ident, typeNameResInfo:TypeNameResolutionInfo, resInfo:ResolutionInfo, tcrefs) =
-
-      let tcrefs = tcrefs |> List.map (fun tcref -> (resInfo,tcref))
-      let tcrefs = CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, typeNameResInfo, PermitDirectReferenceToGeneratedType.No, m)
-      match typeNameResInfo.ResolutionFlag with 
-      | ResolveTypeNamesToCtors ->
-          let typs = tcrefs |> List.map (fun (resInfo,tcref) -> (resInfo,FreshenTycon ncenv m tcref)) 
-          typs 
-              |> CollectResults (fun (resInfo,typ) -> ResolveObjectConstructorPrim ncenv nenv.eDisplayEnv resInfo id.idRange ad typ) 
-              |> MapResults (fun (resInfo,item) -> (resInfo,item,[]))
-      | ResolveTypeNamesToTypeRefs ->
-          let typs = tcrefs |> List.map (fun (resInfo,tcref) -> (resInfo,FreshenTycon ncenv m tcref)) 
-          success (typs |> List.map (fun (resInfo,typ) -> (resInfo,Item.Types(id.idText,[typ]),[])))
-
+    let tcrefs = tcrefs |> List.map (fun tcref -> (resInfo,tcref))
+    let tcrefs = CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, typeNameResInfo, PermitDirectReferenceToGeneratedType.No, m)
+    match typeNameResInfo.ResolutionFlag with 
+    | ResolveTypeNamesToCtors ->
+        let typs = tcrefs |> List.map (fun (resInfo,tcref) -> (resInfo,FreshenTycon ncenv m tcref)) 
+        typs 
+            |> CollectResults (fun (resInfo,typ) -> ResolveObjectConstructorPrim ncenv nenv.eDisplayEnv resInfo id.idRange ad typ) 
+            |> MapResults (fun (resInfo,item) -> (resInfo,item,[]))
+    | ResolveTypeNamesToTypeRefs ->
+        let typs = tcrefs |> List.map (fun (resInfo,tcref) -> (resInfo,FreshenTycon ncenv m tcref)) 
+        success (typs |> List.map (fun (resInfo,typ) -> (resInfo,Item.Types(id.idText,[typ]),[])))
 
 
 /// Resolve F# "A.B.C" syntax in expressions
@@ -2306,7 +2304,7 @@ let rec ResolvePatternLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv num
             if isNil rest then 
                 tcrefs 
                 |> List.map (fun (resInfo,tcref) -> (resInfo,FreshenTycon ncenv m tcref)) 
-                |> CollectResults (fun (resInfo,typ) -> ResolveObjectConstructorPrim ncenv nenv.eDisplayEnv resInfo id.idRange ad typ) 
+                |> CollectAtMostOneResult (fun (resInfo,typ) -> ResolveObjectConstructorPrim ncenv nenv.eDisplayEnv resInfo id.idRange ad typ) 
                 |> MapResults (fun (resInfo,item) -> (resInfo,item,[]))
             else
                 NoResultsOrUsefulErrors
