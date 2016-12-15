@@ -742,6 +742,7 @@ namespace Microsoft.FSharp.Collections
                         member this.ForEach (f:(unit->unit)->#Consumer<'T,'T>) =
                             ForEach.execute f IdentityFactory.Instance (ForEach.enumerable (Upcast.enumerable this))
 
+
             [<CompiledName "ToComposer">]
             let toComposer (source:seq<'T>) : ISeq<'T> =
                 match source with
@@ -751,11 +752,14 @@ namespace Microsoft.FSharp.Collections
                 | null -> nullArg "source"
                 | _ -> Upcast.seq (Enumerable.Enumerable<'T,'T>(source, IdentityFactory.Instance))
 
+
             let inline foreach f (source:ISeq<_>) =
                 source.ForEach f
 
+
             let inline compose (factory:#SeqFactory<_,_>) (source:ISeq<'T>) =
                 source.Compose factory
+
 
             [<CompiledName "Average">]
             let inline average (source: ISeq< ^T>) : ^T
@@ -775,6 +779,7 @@ namespace Microsoft.FSharp.Collections
                                 invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString })
                 |> fun total -> LanguagePrimitives.DivideByInt< ^T> total.Value._1 total.Value._2
 
+
             [<CompiledName "AverageBy">]
             let inline averageBy (f : 'T -> ^U) (source: ISeq< 'T >) : ^U
                 when ^U:(static member Zero : ^U)
@@ -793,8 +798,10 @@ namespace Microsoft.FSharp.Collections
                                 invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString })
                 |> fun total -> LanguagePrimitives.DivideByInt< ^U> total.Value._1 total.Value._2
 
+
             [<CompiledName "Empty">]
             let empty<'T> = EmptyEnumerable.Enumerable<'T>.Instance
+
 
             [<CompiledName "ExactlyOne">]
             let inline exactlyOne (source : ISeq<'T>) : 'T =
@@ -829,32 +836,41 @@ namespace Microsoft.FSharp.Collections
                     })
                 |> fun folded -> folded.Value
 
+
             [<CompiledName "Fold2">]
             let inline fold2<'T1,'T2,'State> (folder:'State->'T1->'T2->'State) (state:'State) (source1: ISeq<'T1>) (source2: ISeq<'T2>) =
                 source1
                 |> foreach (fun halt ->
-                    { new Folder<_,Values<'State,IEnumerator<'T2>>>(Values<_,_>(state,source2.GetEnumerator())) with
+                    { new FolderWithOnComplete<_,Values<'State,IEnumerator<'T2>>>(Values<_,_>(state,source2.GetEnumerator())) with
                         override self.ProcessNext value =
                             if self.Value._2.MoveNext() then
                                 self.Value._1 <- folder self.Value._1 value self.Value._2.Current
                             else
                                 halt()
-                            Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
+                            Unchecked.defaultof<_> (* return value unsed in ForEach context *)
+
+                        override self.OnComplete _ =
+                            self.Value._2.Dispose()
+                    })
                 |> fun fold -> fold.Value._1
+
 
             [<CompiledName "Unfold">]
             let unfold (generator:'State->option<'T * 'State>) (state:'State) : ISeq<'T> =
                 Upcast.seq (new Unfold.Enumerable<'T,'T,'State>(generator, state, IdentityFactory.Instance))
 
+
             [<CompiledName "InitializeInfinite">]
             let initInfinite<'T> (f:int->'T) : ISeq<'T> =
                 Upcast.seq (new Init.EnumerableDecider<'T>(Nullable (), f))
+
 
             [<CompiledName "Initialize">]
             let init<'T> (count:int) (f:int->'T) : ISeq<'T> =
                 if count < 0 then invalidArgInputMustBeNonNegative "count" count
                 elif count = 0 then empty else
                 Upcast.seq (new Init.EnumerableDecider<'T>(Nullable count, f))
+
 
             [<CompiledName "Iterate">]
             let iter f (source:ISeq<'T>) =
@@ -866,30 +882,42 @@ namespace Microsoft.FSharp.Collections
                             Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
                 |> ignore
 
+
             [<CompiledName "Iterate2">]
             let inline iter2 (f:'T->'U->unit) (source1:ISeq<'T>) (source2:ISeq<'U>) : unit =
                 source1
                 |> foreach (fun halt ->
-                    { new Folder<'T,IEnumerator<'U>> (source2.GetEnumerator()) with
+                    { new FolderWithOnComplete<'T,IEnumerator<'U>> (source2.GetEnumerator()) with
                         override self.ProcessNext value =
                             if self.Value.MoveNext() then
                                 f value self.Value.Current
                             else
                                 halt()
-                            Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
+                            Unchecked.defaultof<_> (* return value unsed in ForEach context *)
+
+                        override self.OnComplete _ =
+                            self.Value.Dispose()
+                    })
                 |> ignore
+
 
             [<CompiledName "IterateIndexed2">]
             let inline iteri2 (f:int->'T->'U->unit) (source1:ISeq<'T>) (source2:seq<'U>) : unit =
                 source1
                 |> foreach (fun halt ->
-                    { new Folder<'T,Values<int,IEnumerator<'U>>>(Values<_,_>(-1,source2.GetEnumerator())) with
+                    { new FolderWithOnComplete<'T,Values<int,IEnumerator<'U>>>(Values<_,_>(-1,source2.GetEnumerator())) with
                         override self.ProcessNext value =
                             if self.Value._2.MoveNext() then
                                 f self.Value._1 value self.Value._2.Current
                                 self.Value._1 <- self.Value._1 + 1
+                                Unchecked.defaultof<_>
                             else
                                 halt()
+                                Unchecked.defaultof<_>
+
+                        override self.OnComplete _ =
+                            self.Value._2.Dispose()
+
                             Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
                 |> ignore
 
@@ -928,6 +956,7 @@ namespace Microsoft.FSharp.Collections
                                 else false
                         }}
 
+
             [<CompiledName "Exists">]
             let exists f (source:ISeq<'T>) =
                 source
@@ -940,11 +969,12 @@ namespace Microsoft.FSharp.Collections
                             Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
                 |> fun exists -> exists.Value
 
+
             [<CompiledName "Exists2">]
             let exists2 (predicate:'T->'U->bool) (source1: ISeq<'T>) (source2: ISeq<'U>) : bool =
                 source1
                 |> foreach (fun halt ->
-                    { new Folder<'T,Values<bool,IEnumerator<'U>>>(Values<_,_>(false,source2.GetEnumerator())) with
+                    { new FolderWithOnComplete<'T,Values<bool,IEnumerator<'U>>>(Values<_,_>(false,source2.GetEnumerator())) with
                         override self.ProcessNext value =
                             if self.Value._2.MoveNext() then
                                 if predicate value self.Value._2.Current then
@@ -952,7 +982,12 @@ namespace Microsoft.FSharp.Collections
                                     halt()
                             else
                                 halt()
-                            Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
+                            Unchecked.defaultof<_> (* return value unsed in ForEach context *)
+
+                        override self.OnComplete _ =
+                            self.Value._2.Dispose()
+
+                    })
                 |> fun exists -> exists.Value._1
 
 
@@ -968,6 +1003,7 @@ namespace Microsoft.FSharp.Collections
                             Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
                 |> fun contains -> contains.Value
 
+
             [<CompiledName "ForAll">]
             let forall predicate (source:ISeq<'T>) =
                 source
@@ -980,11 +1016,12 @@ namespace Microsoft.FSharp.Collections
                             Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
                 |> fun forall -> forall.Value
 
+
             [<CompiledName "ForAll2">]
             let inline forall2 predicate (source1:ISeq<'T>) (source2:ISeq<'U>) : bool =
                 source1
                 |> foreach (fun halt ->
-                    { new Folder<'T,Values<bool,IEnumerator<'U>>>(Values<_,_>(true,source2.GetEnumerator())) with
+                    { new FolderWithOnComplete<'T,Values<bool,IEnumerator<'U>>>(Values<_,_>(true,source2.GetEnumerator())) with
                         override self.ProcessNext value =
                             if self.Value._2.MoveNext() then
                                 if not (predicate value self.Value._2.Current) then
@@ -992,8 +1029,13 @@ namespace Microsoft.FSharp.Collections
                                     halt()
                             else
                                 halt()
-                            Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
+                            Unchecked.defaultof<_> (* return value unsed in ForEach context *)
+
+                        override self.OnComplete _ =
+                            self.Value._2.Dispose()
+                    })
                 |> fun all -> all.Value._1
+
 
             [<CompiledName "Filter">]
             let inline filter<'T> (f:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
@@ -1004,6 +1046,7 @@ namespace Microsoft.FSharp.Collections
                                 if f input then TailCall.avoid (next.ProcessNext input)
                                 else false } }
 
+
             [<CompiledName "Map">]
             let inline map<'T,'U> (f:'T->'U) (source:ISeq<'T>) : ISeq<'U> =
                 source |> compose { new SeqFactory<'T,'U>() with
@@ -1011,6 +1054,7 @@ namespace Microsoft.FSharp.Collections
                         upcast { new ConsumerChained<'T,'V>(Upcast.iCompletionChain next) with
                             member __.ProcessNext input =
                                 TailCall.avoid (next.ProcessNext (f input)) } }
+
 
             [<CompiledName "MapIndexed">]
             let inline mapi f source =
@@ -1088,6 +1132,7 @@ namespace Microsoft.FSharp.Collections
                                 | Some value -> TailCall.avoid (next.ProcessNext value)
                                 | None       -> false } }
 
+
             [<CompiledName "Distinct">]
             let inline distinct (source:ISeq<'T>) : ISeq<'T> when 'T:equality =
                 source |> compose { new SeqFactory<'T,'T>() with
@@ -1098,6 +1143,7 @@ namespace Microsoft.FSharp.Collections
                                 if this.Value.Add input then TailCall.avoid (next.ProcessNext input)
                                 else false } }
 
+
             [<CompiledName "DistinctBy">]
             let inline distinctBy (keyf:'T->'Key) (source:ISeq<'T>) :ISeq<'T>  when 'Key:equality =
                 source |> compose { new SeqFactory<'T,'T>() with
@@ -1107,6 +1153,7 @@ namespace Microsoft.FSharp.Collections
                             override this.ProcessNext (input:'T) : bool =
                                 if this.Value.Add (keyf input) then TailCall.avoid (next.ProcessNext input)
                                 else false } }
+
 
             [<CompiledName "Max">]
             let inline max (source: ISeq<'T>) : 'T when 'T:comparison =
@@ -1126,6 +1173,7 @@ namespace Microsoft.FSharp.Collections
                                 invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
                     })
                 |> fun max -> max.Value._2
+
 
             [<CompiledName "MaxBy">]
             let inline maxBy (f :'T -> 'U) (source: ISeq<'T>) : 'T when 'U:comparison =
@@ -1150,6 +1198,7 @@ namespace Microsoft.FSharp.Collections
                     })
                 |> fun min -> min.Value._3
 
+
             [<CompiledName "Min">]
             let inline min (source: ISeq< 'T>) : 'T when 'T:comparison =
                 source
@@ -1168,6 +1217,7 @@ namespace Microsoft.FSharp.Collections
                                 invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
                     })
                 |> fun min -> min.Value._2
+
 
             [<CompiledName "MinBy">]
             let inline minBy (f : 'T -> 'U) (source: ISeq<'T>) : 'T =
@@ -1192,6 +1242,7 @@ namespace Microsoft.FSharp.Collections
                     })
                 |> fun min -> min.Value._3
 
+
             [<CompiledName "Pairwise">]
             let inline pairwise (source:ISeq<'T>) : ISeq<'T * 'T> =
                 source |> compose { new SeqFactory<'T,'T * 'T>() with
@@ -1214,6 +1265,7 @@ namespace Microsoft.FSharp.Collections
                                         TailCall.avoid (next.ProcessNext currentPair)
                         }}
 
+
             [<CompiledName "Reduce">]
             let inline reduce (f:'T->'T->'T) (source : ISeq<'T>) : 'T =
                 source
@@ -1233,6 +1285,7 @@ namespace Microsoft.FSharp.Collections
                     })
                 |> fun reduced -> reduced.Value._2
 
+
             [<CompiledName "Scan">]
             let inline scan (folder:'State->'T->'State) (initialState: 'State) (source:ISeq<'T>) :ISeq<'State> =
                 source |> compose { new SeqFactory<'T,'State>() with
@@ -1241,6 +1294,7 @@ namespace Microsoft.FSharp.Collections
                             override this.ProcessNext (input:'T) : bool =
                                 this.Value <- folder this.Value input
                                 TailCall.avoid (next.ProcessNext this.Value) } }
+
 
             [<CompiledName "Skip">]
             let inline skip (skipCount:int) (source:ISeq<'T>) : ISeq<'T> =
@@ -1273,6 +1327,7 @@ namespace Microsoft.FSharp.Collections
                                         false
                         }}
 
+
             [<CompiledName "SkipWhile">]
             let inline skipWhile (predicate:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
                 source |> compose { new SeqFactory<'T,'T>() with
@@ -1288,6 +1343,7 @@ namespace Microsoft.FSharp.Collections
                                 else
                                     TailCall.avoid (next.ProcessNext input) }}
 
+
             [<CompiledName "Sum">]
             let inline sum (source:ISeq< ^T>) : ^T
                 when ^T:(static member Zero : ^T)
@@ -1300,6 +1356,7 @@ namespace Microsoft.FSharp.Collections
                             Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
                 |> fun sum -> sum.Value
 
+
             [<CompiledName "SumBy">]
             let inline sumBy (f : 'T -> ^U) (source: ISeq<'T>) : ^U
                 when ^U:(static member Zero : ^U)
@@ -1311,6 +1368,7 @@ namespace Microsoft.FSharp.Collections
                             this.Value <- Checked.(+) this.Value (f value)
                             Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
                 |> fun sum -> sum.Value
+
 
             [<CompiledName "Take">]
             let inline take (takeCount:int) (source:ISeq<'T>) : ISeq<'T> =
@@ -1336,6 +1394,7 @@ namespace Microsoft.FSharp.Collections
                                             [|SR.GetString SR.notEnoughElements; x; (if x=1 then "element" else "elements")|]
                         }}
 
+
             [<CompiledName "TakeWhile">]
             let inline takeWhile (predicate:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
                 source |> compose { new SeqFactory<'T,'T>() with
@@ -1348,6 +1407,7 @@ namespace Microsoft.FSharp.Collections
                                     outOfBand.StopFurtherProcessing pipeIdx
                                     false
                         }}
+
 
             [<CompiledName "Tail">]
             let inline tail (source:ISeq<'T>) :ISeq<'T> =
@@ -1384,14 +1444,17 @@ namespace Microsoft.FSharp.Collections
                                         false
                         }}
 
+
             [<CompiledName "Indexed">]
             let inline indexed source =
                 mapi (fun i x -> i,x) source
+
 
             [<CompiledName "TryItem">]
             let tryItem index (source:ISeq<'T>) =
                 if index < 0 then None else
                 source |> skip index |> tryHead
+
 
             [<CompiledName "TryPick">]
             let tryPick f (source:ISeq<'T>)  =
@@ -1407,6 +1470,7 @@ namespace Microsoft.FSharp.Collections
                             Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
                 |> fun pick -> pick.Value
 
+
             [<CompiledName "TryFind">]
             let tryFind f (source:ISeq<'T>)  =
                 source
@@ -1418,6 +1482,7 @@ namespace Microsoft.FSharp.Collections
                                 halt ()
                             Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
                 |> fun find -> find.Value
+
 
             [<CompiledName "TryFindIndex">]
             let inline tryFindIndex (predicate:'T->bool) (source:ISeq<'T>) : int option =
@@ -1448,6 +1513,7 @@ namespace Microsoft.FSharp.Collections
                         None
                     else
                         Some tried.Value._2
+
 
             [<CompiledName "Windowed">]
             let inline windowed (windowSize:int) (source:ISeq<'T>) : ISeq<'T[]> =
