@@ -42,7 +42,8 @@ namespace Microsoft.FSharp.Collections
         /// base implementation is provided in Consumer, and should not be overwritten. Consumer
         /// provides it's own OnComplete and OnDispose function which should be used to handle
         /// a particular consumers cleanup.</summary>
-        type ICompletionChain =
+        [<AbstractClass>]
+        type Consumer =
             /// <summary>OnComplete is used to determine if the object has been processed correctly,
             /// and possibly throw exceptions to denote incorrect application (i.e. such as a Take
             /// operation which didn't have a source at least as large as was required). It is
@@ -56,7 +57,7 @@ namespace Microsoft.FSharp.Collections
         /// <summary>Consumer is the base class of all elements within the pipeline</summary>
         [<AbstractClass>]
         type Consumer<'T,'U> =
-            interface ICompletionChain
+            inherit Consumer
             new : unit -> Consumer<'T,'U>
             abstract member ProcessNext : input:'T -> bool
 
@@ -69,29 +70,27 @@ namespace Microsoft.FSharp.Collections
         [<AbstractClass>]
         type ConsumerChainedWithState<'T,'U,'Value> =
             inherit ConsumerWithState<'T,'U,'Value>
-            interface ICompletionChain
-            val private Next : ICompletionChain
-            new : next:ICompletionChain * init:'Value -> ConsumerChainedWithState<'T,'U,'Value>
+            val private Next : Consumer
+            new : next:Consumer * init:'Value -> ConsumerChainedWithState<'T,'U,'Value>
 
         [<AbstractClass>]
         type ConsumerChained<'T,'U> =
             inherit ConsumerChainedWithState<'T,'U,NoValue>
-            new : next:ICompletionChain -> ConsumerChained<'T,'U>
+            new : next:Consumer -> ConsumerChained<'T,'U>
 
         [<AbstractClass>]
         type ConsumerChainedWithStateAndCleanup<'T,'U,'Value> =
             inherit ConsumerChainedWithState<'T,'U,'Value>
-            interface ICompletionChain
 
             abstract OnComplete : PipeIdx -> unit
             abstract OnDispose  : unit -> unit
 
-            new : next:ICompletionChain * init:'Value -> ConsumerChainedWithStateAndCleanup<'T,'U,'Value>
+            new : next:Consumer * init:'Value -> ConsumerChainedWithStateAndCleanup<'T,'U,'Value>
 
         [<AbstractClass>]
         type ConsumerChainedWithCleanup<'T,'U> =
             inherit ConsumerChainedWithStateAndCleanup<'T,'U,NoValue>
-            new : next:ICompletionChain -> ConsumerChainedWithCleanup<'T,'U>
+            new : next:Consumer -> ConsumerChainedWithCleanup<'T,'U>
 
         /// <summary>Folder is a base class to assist with fold-like operations. It's intended usage
         /// is as a base class for an object expression that will be used from within
@@ -104,7 +103,6 @@ namespace Microsoft.FSharp.Collections
         [<AbstractClass>]
         type FolderWithOnComplete<'T, 'Value> =
             inherit Folder<'T,'Value>
-            interface ICompletionChain
 
             abstract OnComplete : PipeIdx -> unit
 
@@ -225,7 +223,7 @@ namespace Microsoft.FSharp.Collections
             interface IEnumerator
             interface IDisposable
             new : result: Result<'T> *
-                seqComponent: ICompletionChain ->
+                seqComponent: Consumer ->
                     EnumeratorBase<'T>
         end
         and [<AbstractClass>] EnumerableBase<'T> =
