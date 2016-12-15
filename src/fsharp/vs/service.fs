@@ -1098,6 +1098,7 @@ type TypeCheckInfo
 
     let keywordTypes =
         [
+            "array";
             "bigint";
             "bool";
             "byref";
@@ -1111,9 +1112,11 @@ type TypeCheckInfo
             "int16";
             "int32";
             "int64";
+            "list";
             "nativeint";
             "obj";
             "sbyte";
+            "seq";
             "single";
             "string";
             "unit";
