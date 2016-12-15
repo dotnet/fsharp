@@ -629,7 +629,7 @@ module CoreTests =
     let ``quotes-FSI-BASIC`` () = singleTestBuildAndRun "core/quotes" FSI_BASIC
 
  #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
-   [<Test>]
+    [<Test>]
     let quotes () = 
         let cfg = testConfig "core/quotes"
 
