@@ -207,13 +207,15 @@ type internal FSharpLanguageService(package : FSharpPackage) as this =
     let projectInfoManager = this.Package.ComponentModel.DefaultExportProvider.GetExport<ProjectInfoManager>().Value
 
     /// Sync the information for the project 
-    member this.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, site: IProjectSite) =
+    member this.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, site: IProjectSite, forceUpdate) =
 
         let hashSetIgnoreCase x = new HashSet<string>(x, StringComparer.OrdinalIgnoreCase)
         let updatedFiles = site.SourceFilesOnDisk() |> hashSetIgnoreCase
         let workspaceFiles = project.GetCurrentDocuments() |> Seq.map(fun file -> file.FilePath) |> hashSetIgnoreCase
 
-        let mutable updated = false
+        // If syncing project upon some reference changes, we don't have a mechanism to recognize which references have been added/removed.
+        // Hence, the current solution is to force update current project options.
+        let mutable updated = forceUpdate
         for file in updatedFiles do
             if not(workspaceFiles.Contains(file)) then
                 projectContext.AddSourceFile(file)
@@ -243,9 +245,9 @@ type internal FSharpLanguageService(package : FSharpPackage) as this =
             let projectContext = projectContextFactory.CreateProjectContext(FSharpCommonConstants.FSharpLanguageName, projectFileName, projectFileName, projectGuid, siteProvider, null, errorReporter)
             let project = projectContext :?> AbstractProject
 
-            this.SyncProject(project, projectContext, site)
-            site.AdviseProjectSiteChanges(FSharpCommonConstants.FSharpLanguageServiceCallbackName, AdviseProjectSiteChanges(fun () -> this.SyncProject(project, projectContext, site)))
-            site.AdviseProjectSiteClosed(FSharpCommonConstants.FSharpLanguageServiceCallbackName, AdviseProjectSiteChanges(fun () -> projectInfoManager.ClearProjectInfo(project.Id); project.Disconnect()))
+            this.SyncProject(project, projectContext, site, forceUpdate=false)
+            site.AdviseProjectSiteChanges(FSharpCommonConstants.FSharpLanguageServiceCallbackName, AdviseProjectSiteChanges(fun () -> this.SyncProject(project, projectContext, site, forceUpdate=true)))
+            site.AdviseProjectSiteClosed(FSharpCommonConstants.FSharpLanguageServiceCallbackName, AdviseProjectSiteChanges(fun () -> ClearProjectInfo(project.Id); project.Disconnect()))
         | _ -> ()
 
     member this.SetupStandAloneFile(fileName: string, fileContents: string, workspace: VisualStudioWorkspaceImpl, hier: IVsHierarchy) =
