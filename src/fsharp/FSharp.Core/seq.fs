@@ -114,7 +114,8 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "IterateIndexed">]
         let iteri f (source:seq<'T>) =
-            source |> toComposer |> Composer.Seq.iteri f
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt f
+            source |> toComposer |> Composer.Seq.iteri (fun idx a -> f.Invoke(idx,a))
 
         [<CompiledName "Exists">]
         let exists f (source:seq<'T>) =
@@ -276,23 +277,13 @@ namespace Microsoft.FSharp.Collections
             |> Composer.Seq.fold<'T,'State>(fun (a:'State) (b:'T) -> f.Invoke(a,b)) x
 
 
-        [<CompiledName("Fold2")>]
+        [<CompiledName "Fold2">]
         let fold2<'T1,'T2,'State> f (state:'State) (source1: seq<'T1>) (source2: seq<'T2>) =
+            checkNonNull "source1" source1
             checkNonNull "source2" source2
-
-            use e2 = source2.GetEnumerator()
             let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
-
-            source1
-            |> foreach (fun halt ->
-                { new Composer.Core.Folder<_,'State> (state) with
-                    override this.ProcessNext value =
-                        if (e2.MoveNext()) then
-                            this.Value <- f.Invoke(this.Value, value, e2.Current)
-                        else
-                            halt()
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun fold -> fold.Value
+            (source1 |> toComposer, source2|>toComposer)
+            ||> Composer.Seq.fold2(fun s a b -> f.Invoke(s,a,b)) state
 
         [<CompiledName "Reduce">]
         let reduce f (source : seq<'T>)  =
