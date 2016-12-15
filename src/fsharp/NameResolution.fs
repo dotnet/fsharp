@@ -2088,12 +2088,11 @@ let ChooseTyconRefInExpr (ncenv:NameResolver, m, ad, nenv, id:Ident, typeNameRes
     | ResolveTypeNamesToCtors ->
         let typs = tcrefs |> List.map (fun (resInfo,tcref) -> (resInfo,FreshenTycon ncenv m tcref)) 
         typs 
-            |> CollectResults (fun (resInfo,typ) -> ResolveObjectConstructorPrim ncenv nenv.eDisplayEnv resInfo id.idRange ad typ) 
+            |> CollectAtMostOneResult (fun (resInfo,typ) -> ResolveObjectConstructorPrim ncenv nenv.eDisplayEnv resInfo id.idRange ad typ) 
             |> MapResults (fun (resInfo,item) -> (resInfo,item,[]))
     | ResolveTypeNamesToTypeRefs ->
         let typs = tcrefs |> List.map (fun (resInfo,tcref) -> (resInfo,FreshenTycon ncenv m tcref)) 
         success (typs |> List.map (fun (resInfo,typ) -> (resInfo,Item.Types(id.idText,[typ]),[])))
-
 
 /// Resolve F# "A.B.C" syntax in expressions
 /// Not all of the sequence will necessarily be swallowed, i.e. we return some identifiers 
