@@ -2048,34 +2048,30 @@ and ReportNoCandidatesError (csenv:ConstraintSolverEnv) (nUnnamedCallerArgs,nNam
         let nActual = cmeth.TotalNumUnnamedCallerArgs
         let nreqdTyArgs = cmeth.NumCalledTyArgs
         let nactualTyArgs = cmeth.NumCallerTyArgs
+        let signature = NicePrint.stringOfMethInfo amap m denv minfo
         if nActual <> nReqd then 
             if nReqdNamed > 0 || cmeth.NumAssignedProps > 0 then 
                 if nReqd > nActual then 
-                    let errid =
-                        let suggestNamesForMissingArguments = 
-                            if nReqd > nActual then 
-                                let missingArgs = List.drop nReqd cmeth.AllUnnamedCalledArgs
-                                match NamesOfCalledArgs missingArgs with 
-                                | [] -> (false, "")
-                                | names -> (true, String.concat ";" (pathOfLid names))
-                            else (false, "")
-
-                        match suggestNamesForMissingArguments with
-                        | false, _ -> if nActual = 0 then (1, "") else (2, "")
-                        | true, str -> if nActual = 0 then (3, str) else (4, str)
-
-                    match errid with
-                    | 1, _ -> ErrorD (Error (FSComp.SR.csMemberSignatureMismatch(methodName, (nReqd-nActual), (NicePrint.stringOfMethInfo amap m denv minfo)), m))
-                    | 2, _ -> ErrorD (Error (FSComp.SR.csMemberSignatureMismatch2(methodName, (nReqd-nActual), (NicePrint.stringOfMethInfo amap m denv minfo)), m))
-                    | 3, str -> ErrorD (Error (FSComp.SR.csMemberSignatureMismatch3(methodName, (nReqd-nActual), (NicePrint.stringOfMethInfo amap m denv minfo), str), m))
-                    | 4, str -> ErrorD (Error (FSComp.SR.csMemberSignatureMismatch4(methodName, (nReqd-nActual), (NicePrint.stringOfMethInfo amap m denv minfo), str), m))
-                    | _ -> failwith "unreachable"
+                    let diff = nReqd - nActual
+                    let missingArgs = List.drop nReqd cmeth.AllUnnamedCalledArgs
+                    match NamesOfCalledArgs missingArgs with 
+                    | [] ->     
+                        if nActual = 0 then 
+                            ErrorD (Error (FSComp.SR.csMemberSignatureMismatch(methodName, diff, signature), m))
+                        else 
+                            ErrorD (Error (FSComp.SR.csMemberSignatureMismatch2(methodName, diff, signature), m))
+                    | names -> 
+                        let str = String.concat ";" (pathOfLid names)
+                        if nActual = 0 then 
+                            ErrorD (Error (FSComp.SR.csMemberSignatureMismatch3(methodName, diff, signature, str), m))
+                        else
+                            ErrorD (Error (FSComp.SR.csMemberSignatureMismatch4(methodName, diff, signature, str), m))
                 else 
-                    ErrorD (Error (FSComp.SR.csMemberSignatureMismatchArityNamed(methodName, (nReqd+nReqdNamed), nActual, nReqdNamed, (NicePrint.stringOfMethInfo amap m denv minfo)), m))
+                    ErrorD (Error (FSComp.SR.csMemberSignatureMismatchArityNamed(methodName, (nReqd+nReqdNamed), nActual, nReqdNamed, signature), m))
             else
-                ErrorD (Error (FSComp.SR.csMemberSignatureMismatchArity(methodName, nReqd, nActual, (NicePrint.stringOfMethInfo amap m denv minfo)), m))
+                ErrorD (Error (FSComp.SR.csMemberSignatureMismatchArity(methodName, nReqd, nActual, signature), m))
         else 
-            ErrorD (Error (FSComp.SR.csMemberSignatureMismatchArityType(methodName, nreqdTyArgs, nactualTyArgs, (NicePrint.stringOfMethInfo amap m denv minfo)), m))
+            ErrorD (Error (FSComp.SR.csMemberSignatureMismatchArityType(methodName, nreqdTyArgs, nactualTyArgs, signature), m))
 
     // One or more accessible, all the same arity, none correct 
     | ((cmeth :: cmeths2),_),_,_,_,_ when not cmeth.HasCorrectArity && cmeths2 |> List.forall (fun cmeth2 -> cmeth.TotalNumUnnamedCalledArgs = cmeth2.TotalNumUnnamedCalledArgs) -> 
