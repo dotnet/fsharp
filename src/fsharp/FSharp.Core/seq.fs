@@ -15,7 +15,6 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Collections.Composer
     open Microsoft.FSharp.Collections.Composer.Core
-    open Microsoft.FSharp.Collections.Composer.Seq
     open Microsoft.FSharp.Primitives.Basics
     open Microsoft.FSharp.Collections.IEnumerator
 
@@ -47,25 +46,25 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("ToComposer")>]
         let toComposer (source:seq<'T>): Composer.Core.ISeq<'T> =
-            Composer.Seq.toComposer source
+            Composer.toComposer source
 
         let inline foreach f (source:seq<_>) =
-            Composer.Seq.foreach f (toComposer source)
+            Composer.foreach f (toComposer source)
 
         let private seqFactory (createSeqComponent:#SeqFactory<_,_>) (source:seq<'T>) =
             match source with
             | :? Composer.Core.ISeq<'T> as s -> Upcast.enumerable (s.Compose createSeqComponent)
-            | :? array<'T> as a -> Upcast.enumerable (Composer.Seq.Array.create a createSeqComponent)
-            | :? list<'T> as a -> Upcast.enumerable (Composer.Seq.List.create a createSeqComponent)
+            | :? array<'T> as a -> Upcast.enumerable (Composer.Array.create a createSeqComponent)
+            | :? list<'T> as a -> Upcast.enumerable (Composer.List.create a createSeqComponent)
             | null -> nullArg "source"
-            | _ -> Upcast.enumerable (Composer.Seq.Enumerable.create source createSeqComponent)
+            | _ -> Upcast.enumerable (Composer.Enumerable.create source createSeqComponent)
 
         [<CompiledName("Delay")>]
         let delay f = mkDelayedSeq f
 
         [<CompiledName("Unfold")>]
         let unfold (generator:'State->option<'T * 'State>) (state:'State) : seq<'T> =
-            Composer.Seq.unfold generator state
+            Composer.unfold generator state
             |> Upcast.enumerable
 
         [<CompiledName("Empty")>]
@@ -73,25 +72,26 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("InitializeInfinite")>]
         let initInfinite<'T> (f:int->'T) : IEnumerable<'T> =
-            Composer.Seq.initInfinite f
+            Composer.initInfinite f
             |> Upcast.enumerable
 
         [<CompiledName("Initialize")>]
         let init<'T> (count:int) (f:int->'T) : IEnumerable<'T> =
-            Composer.Seq.init count f
+            Composer.init count f
             |> Upcast.enumerable
 
         [<CompiledName("Iterate")>]
         let iter f (source : seq<'T>) =
-            source |> toComposer |> Composer.Seq.iter f
+            source |> toComposer |> Composer.iter f
 
         [<CompiledName("TryHead")>]
         let tryHead (source : seq<_>) =
-            source |> toComposer |> Composer.Seq.tryHead
+            source |> toComposer |> Composer.tryHead
 
         [<CompiledName("Skip")>]
         let skip count (source: seq<_>) =
-            source |> toComposer |> Composer.Seq.skip count |> Upcast.enumerable
+            source |> toComposer
+            |> Composer.skip (SR.GetString SR.notEnoughElements) count |> Upcast.enumerable
 
         let invalidArgumnetIndex = invalidArgFmt "index"
 
@@ -99,7 +99,7 @@ namespace Microsoft.FSharp.Collections
         let item i (source : seq<'T>) =
             if i < 0 then invalidArgInputMustBeNonNegative "index" i else
                 source
-                |> toComposer |> Composer.Seq.skip i |> Upcast.enumerable
+                |> toComposer |> Composer.skip (SR.GetString SR.notEnoughElements) i |> Upcast.enumerable
                 |> tryHead
                 |>  function
                     | None -> invalidArgFmt "index" "{0}\nseq was short by 1 element"  [|SR.GetString SR.notEnoughElements|]
@@ -107,7 +107,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("TryItem")>]
         let tryItem i (source:seq<'T>) =
-            source |> toComposer |> Composer.Seq.tryItem i
+            source |> toComposer |> Composer.tryItem (SR.GetString SR.notEnoughElements) i
 
         [<CompiledName "Get">]
         let nth i (source : seq<'T>) = item i source
@@ -115,19 +115,19 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "IterateIndexed">]
         let iteri f (source:seq<'T>) =
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt f
-            source |> toComposer |> Composer.Seq.iteri (fun idx a -> f.Invoke(idx,a))
+            source |> toComposer |> Composer.iteri (fun idx a -> f.Invoke(idx,a))
 
         [<CompiledName "Exists">]
         let exists f (source:seq<'T>) =
-            source |> toComposer |> Composer.Seq.exists f
+            source |> toComposer |> Composer.exists f
 
         [<CompiledName "Contains">]
         let inline contains element (source:seq<'T>) =
-            source |> toComposer |> Composer.Seq.contains element
+            source |> toComposer |> Composer.contains element
 
         [<CompiledName "ForAll">]
         let forall f (source:seq<'T>) =
-            source |> toComposer |> Composer.Seq.forall f
+            source |> toComposer |> Composer.forall f
 
         [<CompiledName "Iterate2">]
         let iter2 (f:'T->'U->unit) (source1 : seq<'T>) (source2 : seq<'U>)    =
@@ -135,7 +135,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source2" source2
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             (source1|>toComposer, source2|>toComposer)
-            ||> Composer.Seq.iter2 (fun a b -> f.Invoke(a,b))
+            ||> Composer.iter2 (fun a b -> f.Invoke(a,b))
 
 
         [<CompiledName "IterateIndexed2">]
@@ -144,7 +144,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source2" source2
             let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
             (source1|>toComposer, source2|>toComposer)
-            ||> Composer.Seq.iteri2 (fun idx a b -> f.Invoke(idx,a,b))
+            ||> Composer.iteri2 (fun idx a b -> f.Invoke(idx,a,b))
 
 
         // Build an IEnumerble by wrapping/transforming iterators as they get generated.
@@ -156,19 +156,19 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Filter")>]
         let filter<'T> (f:'T->bool) (source:seq<'T>) : seq<'T> =
-            source |> toComposer |> Composer.Seq.filter f |> Upcast.enumerable
+            source |> toComposer |> Composer.filter f |> Upcast.enumerable
 
         [<CompiledName("Where")>]
         let where f source = filter f source
 
         [<CompiledName "Map">]
         let map<'T,'U> (f:'T->'U) (source:seq<'T>) : seq<'U> =
-            source |> toComposer |> Composer.Seq.map f |> Upcast.enumerable
+            source |> toComposer |> Composer.map f |> Upcast.enumerable
 
         [<CompiledName "MapIndexed">]
         let mapi f source =
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt f
-            source |> toComposer |> Composer.Seq.mapi (fun idx a ->f.Invoke(idx,a)) |> Upcast.enumerable
+            source |> toComposer |> Composer.mapi (fun idx a ->f.Invoke(idx,a)) |> Upcast.enumerable
 
         [<CompiledName "MapIndexed2">]
         let mapi2 (mapfn:int->'T->'U->'V) (source1:seq<'T>) (source2:seq<'U>) =
@@ -176,29 +176,29 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source2" source2
             let f = OptimizedClosures.FSharpFunc<int,'T,'U,'V>.Adapt mapfn
             (source1|>toComposer, source2|>toComposer)
-            ||> Composer.Seq.mapi2 (fun idx a b ->f.Invoke(idx,a,b)) |> Upcast.enumerable
+            ||> Composer.mapi2 (fun idx a b ->f.Invoke(idx,a,b)) |> Upcast.enumerable
 
         [<CompiledName "Map2">]
         let map2<'T,'U,'V> (mapfn:'T->'U->'V) (source1:seq<'T>) (source2:seq<'U>) : seq<'V> =
             checkNonNull "source1" source1
             checkNonNull "source2" source2
             (source1|>toComposer, source2|>toComposer)
-            ||> Composer.Seq.map2 mapfn |> Upcast.enumerable
+            ||> Composer.map2 mapfn |> Upcast.enumerable
 
         [<CompiledName "Map3">]
         let map3 mapfn source1 source2 source3 =
             checkNonNull "source2" source2
             checkNonNull "source3" source3
             (source1|>toComposer, source2|>toComposer, source3|>toComposer)
-            |||> Composer.Seq.map3 mapfn |> Upcast.enumerable
+            |||> Composer.map3 mapfn |> Upcast.enumerable
 
         [<CompiledName("Choose")>]
         let choose f source =
-            source |> toComposer |> Composer.Seq.choose f |> Upcast.enumerable
+            source |> toComposer |> Composer.choose f |> Upcast.enumerable
 
         [<CompiledName("Indexed")>]
         let indexed source =
-            source |> toComposer |> Composer.Seq.indexed |> Upcast.enumerable
+            source |> toComposer |> Composer.indexed |> Upcast.enumerable
 
         [<CompiledName("Zip")>]
         let zip source1 source2  =
@@ -215,7 +215,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("TryPick")>]
         let tryPick f (source : seq<'T>)  =
-            source |> toComposer |> Composer.Seq.tryPick f
+            source |> toComposer |> Composer.tryPick f
 
         [<CompiledName("Pick")>]
         let pick f source  =
@@ -225,7 +225,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("TryFind")>]
         let tryFind f (source : seq<'T>)  =
-            source |> toComposer |> Composer.Seq.tryFind f
+            source |> toComposer |> Composer.tryFind f
 
         [<CompiledName("Find")>]
         let find f source =
@@ -238,7 +238,7 @@ namespace Microsoft.FSharp.Collections
             if count < 0 then invalidArgInputMustBeNonNegative "count" count
             (* Note: don't create or dispose any IEnumerable if n = 0 *)
             if count = 0 then empty else
-            source |> toComposer |> Composer.Seq.take count |> Upcast.enumerable
+            source |> toComposer |> Composer.take (SR.GetString SR.notEnoughElements) count |> Upcast.enumerable
 
         [<CompiledName("IsEmpty")>]
         let isEmpty (source : seq<'T>)  =
@@ -254,7 +254,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Concat")>]
         let concat (sources:seq<#seq<'T>>) : seq<'T> =
             checkNonNull "sources" sources
-            upcast Composer.Seq.Enumerable.ConcatEnumerable sources
+            upcast Composer.Enumerable.ConcatEnumerable sources
 
         [<CompiledName("Length")>]
         let length (source : seq<'T>)    =
@@ -274,7 +274,7 @@ namespace Microsoft.FSharp.Collections
         let fold<'T,'State> (f:'State->'T->'State)  (x:'State) (source:seq<'T>) =
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             source |> toComposer
-            |> Composer.Seq.fold<'T,'State>(fun (a:'State) (b:'T) -> f.Invoke(a,b)) x
+            |> Composer.fold<'T,'State>(fun (a:'State) (b:'T) -> f.Invoke(a,b)) x
 
 
         [<CompiledName "Fold2">]
@@ -283,12 +283,12 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source2" source2
             let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
             (source1 |> toComposer, source2|>toComposer)
-            ||> Composer.Seq.fold2(fun s a b -> f.Invoke(s,a,b)) state
+            ||> Composer.fold2(fun s a b -> f.Invoke(s,a,b)) state
 
         [<CompiledName "Reduce">]
         let reduce f (source : seq<'T>)  =
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-            source |> toComposer |> Composer.Seq.reduce(fun a b -> f.Invoke(a,b))
+            source |> toComposer |> Composer.reduce(fun a b -> f.Invoke(a,b))
 
         [<CompiledName("Replicate")>]
         let replicate count x =
@@ -305,8 +305,8 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source1" source1
             checkNonNull "source2" source2
             match source1 with
-            | :? Composer.Seq.Enumerable.EnumerableBase<'T> as s -> s.Append source2
-            | _ -> Upcast.enumerable (new Composer.Seq.Enumerable.AppendEnumerable<_>([source2; source1]))
+            | :? Composer.Enumerable.EnumerableBase<'T> as s -> s.Append source2
+            | _ -> Upcast.enumerable (new Composer.Enumerable.AppendEnumerable<_>([source2; source1]))
 
 
         [<CompiledName("Collect")>]
@@ -318,7 +318,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source2" source2
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             (source1|>toComposer, source2|>toComposer)
-            ||> Composer.Seq.compareWith (fun a b -> f.Invoke(a,b))
+            ||> Composer.compareWith (fun a b -> f.Invoke(a,b))
 
 
         [<CompiledName("OfList")>]
@@ -334,7 +334,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("OfArray")>]
         let ofArray (source : 'T array) =
             checkNonNull "source" source
-            Upcast.enumerable (Composer.Seq.Array.createId source)
+            Upcast.enumerable (Composer.Array.createId source)
 
         [<CompiledName("ToArray")>]
         let toArray (source : seq<'T>)  =
@@ -388,15 +388,15 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "Truncate">]
         let truncate n (source: seq<'T>) =
             if n <= 0 then empty else
-            source |> toComposer |> Composer.Seq.truncate n |> Upcast.enumerable
+            source |> toComposer |> Composer.truncate n |> Upcast.enumerable
 
         [<CompiledName "Pairwise">]
         let pairwise<'T> (source:seq<'T>) : seq<'T*'T> =
-            source |> toComposer |> Composer.Seq.pairwise  |> Upcast.enumerable
+            source |> toComposer |> Composer.pairwise  |> Upcast.enumerable
 
         [<CompiledName "Scan">]
         let scan<'T,'State> (folder:'State->'T->'State) (state:'State) (source:seq<'T>) : seq<'State> =
-            source |> toComposer |> Composer.Seq.scan folder state |> Upcast.enumerable
+            source |> toComposer |> Composer.scan folder state |> Upcast.enumerable
 
         [<CompiledName("TryFindBack")>]
         let tryFindBack f (source : seq<'T>) =
@@ -418,7 +418,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "TryFindIndex">]
         let tryFindIndex p (source:seq<_>) =
-            source |> toComposer |> Composer.Seq.tryFindIndex p
+            source |> toComposer |> Composer.tryFindIndex p
 
         [<CompiledName("FindIndex")>]
         let findIndex p (source:seq<_>) =
@@ -441,7 +441,7 @@ namespace Microsoft.FSharp.Collections
         let windowed windowSize (source: seq<_>) =
             if windowSize <= 0 then invalidArgFmt "windowSize" "{0}\nwindowSize = {1}"
                                         [|SR.GetString SR.inputMustBePositive; windowSize|]
-            source |> toComposer |> Composer.Seq.windowed windowSize |> Upcast.enumerable
+            source |> toComposer |> Composer.windowed windowSize |> Upcast.enumerable
 
         [<CompiledName("Cache")>]
         let cache (source : seq<'T>) =
@@ -559,11 +559,11 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Distinct")>]
         let distinct source =
-            source |> toComposer |> Composer.Seq.distinct |> Upcast.enumerable
+            source |> toComposer |> Composer.distinct |> Upcast.enumerable
 
         [<CompiledName("DistinctBy")>]
         let distinctBy keyf source =
-            source |> toComposer |> Composer.Seq.distinctBy keyf |> Upcast.enumerable
+            source |> toComposer |> Composer.distinctBy keyf |> Upcast.enumerable
 
         [<CompiledName("SortBy")>]
         let sortBy keyf source =
@@ -572,7 +572,7 @@ namespace Microsoft.FSharp.Collections
                 let array = source |> toArray
                 Array.stableSortInPlaceBy keyf array
                 array
-            Upcast.enumerable (Composer.Seq.Array.createDelayedId delayedSort)
+            Upcast.enumerable (Composer.Array.createDelayedId delayedSort)
 
         [<CompiledName("Sort")>]
         let sort source =
@@ -581,7 +581,7 @@ namespace Microsoft.FSharp.Collections
                 let array = source |> toArray
                 Array.stableSortInPlace array
                 array
-            Upcast.enumerable (Composer.Seq.Array.createDelayedId delayedSort)
+            Upcast.enumerable (Composer.Array.createDelayedId delayedSort)
 
         [<CompiledName("SortWith")>]
         let sortWith f source =
@@ -590,7 +590,7 @@ namespace Microsoft.FSharp.Collections
                 let array = source |> toArray
                 Array.stableSortInPlaceWith f array
                 array
-            Upcast.enumerable (Composer.Seq.Array.createDelayedId delayedSort)
+            Upcast.enumerable (Composer.Array.createDelayedId delayedSort)
 
         [<CompiledName("SortByDescending")>]
         let inline sortByDescending keyf source =
@@ -639,27 +639,27 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Sum">]
         let inline sum (source:seq<'a>) : 'a =
-            source |> toComposer |> Composer.Seq.sum
+            source |> toComposer |> Composer.sum
 
         [<CompiledName "SumBy">]
         let inline sumBy (f : 'T -> ^U) (source: seq<'T>) : ^U =
-            source |> toComposer |> Composer.Seq.sumBy f
+            source |> toComposer |> Composer.sumBy f
 
         [<CompiledName "Average">]
         let inline average (source: seq< ^a>) : ^a =
-            source |> toComposer |> Composer.Seq.average
+            source |> toComposer |> Composer.average
 
         [<CompiledName "AverageBy">]
         let inline averageBy (f : 'T -> ^U) (source: seq< 'T >) : ^U =
-            source |> toComposer |> Composer.Seq.averageBy f
+            source |> toComposer |> Composer.averageBy f
 
         [<CompiledName "Min">]
         let inline min (source: seq<'T>): 'T when 'T : comparison =
-            source |> toComposer |> Composer.Seq.min
+            source |> toComposer |> Composer.min
 
         [<CompiledName "MinBy">]
         let inline minBy (projection: 'T -> 'U when 'U:comparison) (source: seq<'T>) : 'T =
-            source |> toComposer |> Composer.Seq.minBy projection
+            source |> toComposer |> Composer.minBy projection
 (*
         [<CompiledName("MinValueBy")>]
         let inline minValBy (f : 'T -> 'U) (source: seq<'T>) : 'U =
@@ -679,11 +679,11 @@ namespace Microsoft.FSharp.Collections
 *)
         [<CompiledName "Max">]
         let inline max (source: seq<'T>) =
-            source |> toComposer |> Composer.Seq.max
+            source |> toComposer |> Composer.max
 
         [<CompiledName "MaxBy">]
         let inline maxBy (projection: 'T -> 'U) (source: seq<'T>) : 'T =
-            source |> toComposer |> Composer.Seq.maxBy projection
+            source |> toComposer |> Composer.maxBy projection
 
 (*
         [<CompiledName("MaxValueBy")>]
@@ -704,11 +704,11 @@ namespace Microsoft.FSharp.Collections
 *)
         [<CompiledName "TakeWhile">]
         let takeWhile predicate (source: seq<_>) =
-            source |> toComposer |> Composer.Seq.takeWhile predicate |> Upcast.enumerable
+            source |> toComposer |> Composer.takeWhile predicate |> Upcast.enumerable
 
         [<CompiledName "SkipWhile">]
         let skipWhile predicate (source: seq<_>) =
-            source |> toComposer |> Composer.Seq.skipWhile predicate |> Upcast.enumerable
+            source |> toComposer |> Composer.skipWhile predicate |> Upcast.enumerable
 
         [<CompiledName "ForAll2">]
         let forall2 p (source1: seq<_>) (source2: seq<_>) =
@@ -716,7 +716,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source2" source2
             let p = OptimizedClosures.FSharpFunc<_,_,_>.Adapt p
             (source1|>toComposer, source2|>toComposer)
-            ||> Composer.Seq.forall2 (fun a b -> p.Invoke(a,b))
+            ||> Composer.forall2 (fun a b -> p.Invoke(a,b))
 
         [<CompiledName "Exists2">]
         let exists2 p (source1: seq<_>) (source2: seq<_>) =
@@ -724,7 +724,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source2" source2
             let p = OptimizedClosures.FSharpFunc<_,_,_>.Adapt p
             (source1|>toComposer, source2|>toComposer)
-            ||> Composer.Seq.exists2 (fun a b -> p.Invoke(a,b))
+            ||> Composer.exists2 (fun a b -> p.Invoke(a,b))
 
         [<CompiledName "Head">]
         let head (source : seq<_>) =
@@ -734,11 +734,11 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Tail">]
         let tail (source: seq<'T>) =
-            source |> toComposer |> Composer.Seq.tail |> Upcast.enumerable
+            source |> toComposer |> Composer.tail (SR.GetString SR.notEnoughElements) |> Upcast.enumerable
 
         [<CompiledName "TryLast">]
         let tryLast (source : seq<_>) =
-            source |> toComposer |> Composer.Seq.tryLast
+            source |> toComposer |> Composer.tryLast
 
         [<CompiledName("Last")>]
         let last (source : seq<_>) =
@@ -748,7 +748,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "ExactlyOne">]
         let exactlyOne (source : seq<_>) =
-            source |> toComposer |> Composer.Seq.exactlyOne
+            source |> toComposer |> Composer.exactlyOne (SR.GetString(SR.inputSequenceTooLong))
 
         [<CompiledName("Reverse")>]
         let rev source =
@@ -757,7 +757,7 @@ namespace Microsoft.FSharp.Collections
                 let array = source |> toArray
                 Array.Reverse array
                 array
-            Upcast.enumerable (Composer.Seq.Array.createDelayedId delayedReverse)
+            Upcast.enumerable (Composer.Array.createDelayedId delayedReverse)
 
         [<CompiledName("Permute")>]
         let permute f (source:seq<_>) =
@@ -766,7 +766,7 @@ namespace Microsoft.FSharp.Collections
                 source
                 |> toArray
                 |> Array.permute f
-            Upcast.enumerable (Composer.Seq.Array.createDelayedId delayedPermute)
+            Upcast.enumerable (Composer.Array.createDelayedId delayedPermute)
 
         [<CompiledName("MapFold")>]
         let mapFold<'T,'State,'Result> (f: 'State -> 'T -> 'Result * 'State) acc source =
@@ -785,7 +785,7 @@ namespace Microsoft.FSharp.Collections
         let except (itemsToExclude: seq<'T>) (source: seq<'T>) =
             checkNonNull "itemsToExclude" itemsToExclude
             if isEmpty itemsToExclude then source else
-            source |> toComposer |> Composer.Seq.except itemsToExclude |> Upcast.enumerable
+            source |> toComposer |> Composer.except itemsToExclude |> Upcast.enumerable
 
         [<CompiledName("ChunkBySize")>]
         let chunkBySize chunkSize (source : seq<_>) =
