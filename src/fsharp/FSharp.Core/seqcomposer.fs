@@ -829,6 +829,19 @@ namespace Microsoft.FSharp.Collections
                     })
                 |> fun folded -> folded.Value
 
+            [<CompiledName "Fold2">]
+            let inline fold2<'T1,'T2,'State> (folder:'State->'T1->'T2->'State) (state:'State) (source1: ISeq<'T1>) (source2: ISeq<'T2>) =
+                source1
+                |> foreach (fun halt ->
+                    { new Folder<_,Values<'State,IEnumerator<'T2>>>(Values<_,_>(state,source2.GetEnumerator())) with
+                        override self.ProcessNext value =
+                            if self.Value._2.MoveNext() then
+                                self.Value._1 <- folder self.Value._1 value self.Value._2.Current
+                            else
+                                halt()
+                            Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
+                |> fun fold -> fold.Value._1
+
             [<CompiledName "Unfold">]
             let unfold (generator:'State->option<'T * 'State>) (state:'State) : ISeq<'T> =
                 Upcast.seq (new Unfold.Enumerable<'T,'T,'State>(generator, state, IdentityFactory.Instance))
@@ -893,16 +906,13 @@ namespace Microsoft.FSharp.Collections
                 |> fun head -> head.Value
 
 
-
             [<CompiledName "IterateIndexed">]
             let iteri f (source:ISeq<'T>) =
-                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt f
-
                 source
                 |> foreach (fun _ ->
                     { new Folder<'T, int> (0) with
                         override this.ProcessNext value =
-                            f.Invoke(this.Value, value)
+                            f this.Value value
                             this.Value <- this.Value + 1
                             Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
                 |> ignore

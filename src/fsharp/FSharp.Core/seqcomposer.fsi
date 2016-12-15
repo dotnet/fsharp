@@ -427,6 +427,9 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "Fold">]
         val inline fold<'T,'State> : f:('State->'T->'State) -> seed:'State -> source:ISeq<'T> -> 'State
 
+        [<CompiledName "Fold2">]
+        val inline fold2<'T1,'T2,'State> : folder:('State->'T1->'T2->'State) -> state:'State -> source1: ISeq<'T1> -> source2: ISeq<'T2> -> 'State
+
         [<CompiledName "Unfold">]
         val unfold : generator:('State -> ('T * 'State) option) -> state:'State ->  ISeq<'T>
 
