@@ -860,6 +860,14 @@ let rec CollectResults f = function
     | [h] -> OneResult (f h)
     | h :: t -> AddResults (OneResult (f h)) (CollectResults f t)
 
+let rec CollectAtMostOneResult f = function
+    | [] -> NoResultsOrUsefulErrors
+    | [h] -> OneResult (f h)
+    | h :: t ->
+        match OneResult (f h) with
+        | Result r when not (isNil r) -> Result r
+        | r-> AddResults r (CollectAtMostOneResult f t)
+
 let MapResults f = function
     | Result xs -> Result (List.map f xs)
     | Exception err -> Exception err
@@ -2430,7 +2438,7 @@ let rec ResolveTypeLongIdentInTyconRefPrim (ncenv:NameResolver) (typeNameResInfo
             let tcrefs = tcrefs |> List.map (fun tcref -> (resInfo,tcref))
             let tcrefs  = CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, typeNameResInfo.DropStaticArgsInfo, genOk, m)
             match tcrefs with 
-            | _ :: _ -> tcrefs |> CollectResults (fun (resInfo,tcref) -> ResolveTypeLongIdentInTyconRefPrim ncenv typeNameResInfo ad resInfo genOk (depth+1) m tcref rest)
+            | _ :: _ -> tcrefs |> CollectAtMostOneResult (fun (resInfo,tcref) -> ResolveTypeLongIdentInTyconRefPrim ncenv typeNameResInfo ad resInfo genOk (depth+1) m tcref rest)
             | [] -> raze (UndefinedName(depth,FSComp.SR.undefinedNameType,id,NoPredictions))
             
         AtMostOneResult m tyconSearch
