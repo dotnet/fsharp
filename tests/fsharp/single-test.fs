@@ -182,25 +182,24 @@ let singleNegTest (cfg: TestConfig) testname =
 
     fscAppendErrExpectFail cfg  (sprintf "%s.err" testname) """%s --vserrors --warnaserror --nologo --maxerrors:10000 -a -o:%s.dll""" cfg.fsc_flags testname sources
 
-    let testnameDiff = fsdiff cfg (sprintf "%s.err" testname) (sprintf "%s.bsl" testname)
-
-    match testnameDiff with
-    | "" -> ()
-    | l ->
-        log "***** %s.err %s.bsl differed: a bug or baseline may need updating" testname testname        
-        failwithf "%s.err %s.bsl differ; %A" testname testname l
-
-    log "Good, output %s.err matched %s.bsl" testname testname
+    let diff = fsdiff cfg (sprintf "%s.err" testname) (sprintf "%s.bsl" testname)
 
     fscAppendErrExpectFail cfg (sprintf "%s.vserr" testname) "%s --test:ContinueAfterParseFailure --vserrors --warnaserror --nologo --maxerrors:10000 -a -o:%s.dll" cfg.fsc_flags testname sources
 
-    let testnameDiff = fsdiff cfg (sprintf "%s.vserr" testname) VSBSLFILE
+    let vbslDiff = fsdiff cfg (sprintf "%s.vserr" testname) VSBSLFILE
 
-    match testnameDiff with
-    | "" -> ()
-    | l ->
+    match diff,vbslDiff with
+    | "","" -> 
+        log "Good, output %s.err matched %s.bsl" testname testname
+        log "Good, output %s.vserr matched %s" testname VSBSLFILE
+    | l,"" ->        
+        log "***** %s.err %s.bsl differed: a bug or baseline may need updating" testname testname        
+        failwithf "%s.err %s.bsl differ; %A" testname testname l
+    | "",l ->
+        log "Good, output %s.err matched %s.bsl" testname testname
         log "***** %s.vserr %s differed: a bug or baseline may need updating" testname VSBSLFILE
         failwithf "%s.vserr %s differ; %A" testname VSBSLFILE l
-
-    log "Good, output %s.vserr matched %s" testname VSBSLFILE
-
+    | l1,l2 ->    
+        log "***** %s.err %s.bsl differed: a bug or baseline may need updating" testname testname 
+        log "***** %s.vserr %s differed: a bug or baseline may need updating" testname VSBSLFILE
+        failwithf "%s.err %s.bsl differ; %A; %s.vserr %s differ; %A" testname testname l1 testname VSBSLFILE l2
