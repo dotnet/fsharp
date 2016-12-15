@@ -1,50 +1,75 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
-namespace Tests.LanguageService.F1Keyword
+namespace Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
 
 open System
+open System.Threading
+
 open NUnit.Framework
-open Salsa.Salsa
-open Salsa.VsOpsUtils
-open UnitTests.TestLib.Salsa
+
+open Microsoft.CodeAnalysis.Classification
+open Microsoft.CodeAnalysis.Editor
+open Microsoft.CodeAnalysis.Text
+open Microsoft.CodeAnalysis
+open Microsoft.FSharp.Compiler.SourceCodeServices
+open Microsoft.VisualStudio.FSharp.Editor
+open Microsoft.VisualStudio.FSharp.LanguageService
 open UnitTests.TestLib.Utils
-open UnitTests.TestLib.LanguageService
-open UnitTests.TestLib.ProjectSystem
 
-[<TestFixture>] 
-type UsingMSBuild() =
-    inherit LanguageServiceBaseTests()
+[<TestFixture>]
+type HelpContextServiceTests() =
 
-    member private this.TestF1Keywords(expectedKeywords, testLines, ?addtlRefAssy : list<string>) =
-        let lines, poslist = // poslist is in _cursor_ postions. Cursor postions are 1-based.
-            let rec extractPos (col:int) row (s:string) poslist =
-                    let next = s.IndexOf("$", col)
-                    if next < 0 then
-                        s, poslist
-                    else                     
-                        let s = s.Remove(next, 1)
-                        extractPos next row s ((row,next+1)::poslist)
-            let _, l, p =
-                List.fold (fun (row,lines,poslist) s -> 
-                                let (s', poslist') = extractPos 0 row s poslist
-                                (row+1, (s'::lines),poslist')) (1,[],[]) testLines 
-            List.rev l , List.rev p
+    let fileName = "C:\\test.fs"
+    let options: FSharpProjectOptions = { 
+        ProjectFileName = "C:\\test.fsproj"
+        ProjectFileNames =  [| fileName |]
+        ReferencedProjects = [| |]
+        OtherOptions = [| |]
+        IsIncompleteTypeCheckEnvironment = true
+        UseScriptResolutionRules = false
+        LoadTime = DateTime.MaxValue
+        UnresolvedReferences = None
+        ExtraProjectInfo = None
+    }
 
-        let refs = 
-            let standard = ["mscorlib"; "System"; "System.Core"]
-            match addtlRefAssy with
-            | Some r -> standard @ r
-            | _ -> standard
+    let markers (source:string) = 
+       let mutable cnt = 0
+       [
+       for i in 0 .. (source.Length - 1) do
+         if source.[i] = '$' then 
+           yield (i - cnt)
+           cnt <- cnt + 1
+       ]
 
-        let (_,_, file) = this.CreateSingleFileProject(lines, references = refs)
-        Assert.IsTrue(List.length expectedKeywords = List.length poslist, sprintf "number of keywords (%d) does not match positions (%d)" (List.length expectedKeywords) (List.length poslist))
-        List.iter2 
-            (fun expectedKeyword (row,col) ->
-                MoveCursorTo(file,row,col)
-                let keyword = GetF1KeywordAtCursor file
-                Assert.AreEqual(expectedKeyword, keyword)) expectedKeywords poslist
-        ()
-        
+    member private this.TestF1Keywords(expectedKeywords: string option list, lines : string list, ?addtlRefAssy : list<string>) =
+        let newOptions = 
+            let refs = 
+                defaultArg addtlRefAssy []
+                |> List.map (fun r -> "-r:" + r) 
+                |> Array.ofList
+            { options with OtherOptions = Array.append options.OtherOptions refs }
+
+        let fileContents = String.Join("\r\n", lines)
+        let version = fileContents.GetHashCode()
+        let sourceText = SourceText.From(fileContents.Replace("$", ""))
+
+        let res = [
+          for marker in markers fileContents do
+            let span = TextSpan(marker, 0)
+            let textLine = sourceText.Lines.GetLineFromPosition(marker)
+            let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+            let tokens = CommonHelpers.getColorizationData(documentId, sourceText, textLine.Span, Some "test.fs", [], CancellationToken.None)
+
+            yield FSharpHelpContextService.GetHelpTerm(FSharpChecker.Instance, sourceText, fileName,  newOptions, span, tokens, version)
+                  |> Async.RunSynchronously
+        ]
+        let equalLength = List.length expectedKeywords = List.length res
+        Assert.True(equalLength)
+
+        List.iter2(fun exp res -> 
+           Assert.AreEqual(exp, res)
+        ) expectedKeywords res
+
+
     [<Test>]
     member public this.``NoKeyword.Negative`` () =
         let file =
@@ -156,13 +181,13 @@ type UsingMSBuild() =
             ]
         let keywords = 
             [
-                Some "File1.escaped func"
-                Some "File1.escaped value"
-                Some "File1.x"
-                Some "File1.escaped func"
-                Some "File1.escaped value"
-                Some "File1.z"
-                Some "File1.z"
+                Some "Test.escaped func"
+                Some "Test.escaped value"
+                Some "Test.x"
+                Some "Test.escaped func"
+                Some "Test.escaped value"
+                Some "Test.z"
+                Some "Test.z"
             ]
         this.TestF1Keywords(keywords, file)        
 
@@ -224,7 +249,6 @@ type UsingMSBuild() =
             ]
         this.TestF1Keywords(keywords, file, 
             addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
-
 
     [<Test>]
     member public this.``EndOfLine``() =
@@ -369,9 +393,3 @@ type UsingMSBuild() =
               Some "System.Int32.ToString"
             ]
         this.TestF1Keywords(keywords, file)
-
-
-// Context project system
-[<TestFixture>] 
-type UsingProjectSystem() = 
-    inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)
