@@ -43,17 +43,19 @@ namespace Microsoft.FSharp.Collections
             type IOutOfBand =
                 abstract StopFurtherProcessing : PipeIdx -> unit
 
-            type ICompletionChain =
+            [<AbstractClass>]
+            type Consumer() =
                 abstract ChainComplete : stopTailCall:byref<unit> * PipeIdx -> unit
                 abstract ChainDispose  : stopTailCall:byref<unit> -> unit
 
             [<AbstractClass>]
             type Consumer<'T,'U> () =
+                inherit Consumer()
+
                 abstract ProcessNext : input:'T -> bool
 
-                interface ICompletionChain with
-                    member this.ChainComplete (_,_) = ()
-                    member this.ChainDispose _ = ()
+                override this.ChainComplete (_,_) = ()
+                override this.ChainDispose _ = ()
 
             [<AbstractClass>]
             type ConsumerWithState<'T,'U,'Value> =
@@ -69,21 +71,20 @@ namespace Microsoft.FSharp.Collections
             type ConsumerChainedWithState<'T,'U,'Value> =
                 inherit ConsumerWithState<'T,'U,'Value>
 
-                val private Next : ICompletionChain
+                val private Next : Consumer
 
-                new (next:ICompletionChain, init) = {
+                new (next:Consumer, init) = {
                     inherit ConsumerWithState<'T,'U,'Value> (init)
                     Next = next
                 }
 
-                interface ICompletionChain with
-                    member this.ChainComplete (stopTailCall, terminatingIdx) =
-                        this.Next.ChainComplete (&stopTailCall, terminatingIdx)
-                    member this.ChainDispose stopTailCall =
-                        this.Next.ChainDispose (&stopTailCall)
+                override this.ChainComplete (stopTailCall, terminatingIdx) =
+                    this.Next.ChainComplete (&stopTailCall, terminatingIdx)
+                override this.ChainDispose stopTailCall =
+                    this.Next.ChainDispose (&stopTailCall)
 
             [<AbstractClass>]
-            type ConsumerChained<'T,'U>(next:ICompletionChain) =
+            type ConsumerChained<'T,'U>(next:Consumer) =
                 inherit ConsumerChainedWithState<'T,'U,NoValue>(next, Unchecked.defaultof<NoValue>)
 
             [<AbstractClass>]
@@ -93,16 +94,15 @@ namespace Microsoft.FSharp.Collections
                 abstract OnComplete : PipeIdx -> unit
                 abstract OnDispose  : unit -> unit
 
-                interface ICompletionChain with
-                    member this.ChainComplete (stopTailCall, terminatingIdx) =
-                        this.OnComplete terminatingIdx
-                        next.ChainComplete (&stopTailCall, terminatingIdx)
-                    member this.ChainDispose stopTailCall  =
-                        try     this.OnDispose ()
-                        finally next.ChainDispose (&stopTailCall)
+                override this.ChainComplete (stopTailCall, terminatingIdx) =
+                    this.OnComplete terminatingIdx
+                    next.ChainComplete (&stopTailCall, terminatingIdx)
+                override this.ChainDispose stopTailCall  =
+                    try     this.OnDispose ()
+                    finally next.ChainDispose (&stopTailCall)
 
             [<AbstractClass>]
-            type ConsumerChainedWithCleanup<'T,'U>(next:ICompletionChain) =
+            type ConsumerChainedWithCleanup<'T,'U>(next:Consumer) =
                 inherit ConsumerChainedWithStateAndCleanup<'T,'U,NoValue>(next, Unchecked.defaultof<NoValue>)
 
             [<AbstractClass>]
@@ -115,10 +115,9 @@ namespace Microsoft.FSharp.Collections
 
                 abstract OnComplete : PipeIdx -> unit
 
-                interface ICompletionChain with
-                    member this.ChainComplete (stopTailCall, terminatingIdx) =
-                        this.OnComplete terminatingIdx
-                    member this.ChainDispose _ = ()
+                override this.ChainComplete (stopTailCall, terminatingIdx) =
+                    this.OnComplete terminatingIdx
+                override this.ChainDispose _ = ()
 
             [<AbstractClass>]
             type SeqFactory<'T,'U> () =
@@ -149,7 +148,6 @@ namespace Microsoft.FSharp.Collections
             let inline enumerable (t:#IEnumerable<'T>) : IEnumerable<'T> = (# "" t : IEnumerable<'T> #)
             let inline enumerator (t:#IEnumerator<'T>) : IEnumerator<'T> = (# "" t : IEnumerator<'T> #)
             let inline enumeratorNonGeneric (t:#IEnumerator) : IEnumerator = (# "" t : IEnumerator #)
-            let inline iCompletionChain (t:#ICompletionChain) : ICompletionChain = (# "" t : ICompletionChain #)
 
 
         type ComposedFactory<'T,'U,'V> private (first:SeqFactory<'T,'U>, second:SeqFactory<'U,'V>, secondPipeIdx:PipeIdx) =
@@ -259,11 +257,11 @@ namespace Microsoft.FSharp.Collections
                 try
                     executeOn pipeline consumer
                     let mutable stopTailCall = ()
-                    (Upcast.iCompletionChain consumer).ChainComplete (&stopTailCall, pipeline.HaltedIdx)
+                    consumer.ChainComplete (&stopTailCall, pipeline.HaltedIdx)
                     result
                 finally
                     let mutable stopTailCall = ()
-                    (Upcast.iCompletionChain consumer).ChainDispose (&stopTailCall)
+                    consumer.ChainDispose (&stopTailCall)
 
         module Enumerable =
             type Empty<'T>() =
@@ -282,7 +280,7 @@ namespace Microsoft.FSharp.Collections
                 static member Element = element
 
             [<AbstractClass>]
-            type EnumeratorBase<'T>(result:Result<'T>, seqComponent:ICompletionChain) =
+            type EnumeratorBase<'T>(result:Result<'T>, seqComponent:Consumer) =
                 interface IDisposable with
                     member __.Dispose() : unit =
                         let mutable stopTailCall = ()
@@ -335,7 +333,7 @@ namespace Microsoft.FSharp.Collections
                     else
                         result.SeqState <- SeqProcessNextStates.Finished
                         let mutable stopTailCall = ()
-                        (Upcast.iCompletionChain seqComponent).ChainComplete (&stopTailCall, result.HaltedIdx)
+                        (seqComponent).ChainComplete (&stopTailCall, result.HaltedIdx)
                         false
 
                 interface IEnumerator with
@@ -349,7 +347,7 @@ namespace Microsoft.FSharp.Collections
                             source.Dispose ()
                         finally
                             let mutable stopTailCall = ()
-                            (Upcast.iCompletionChain seqComponent).ChainDispose (&stopTailCall)
+                            (seqComponent).ChainDispose (&stopTailCall)
 
             and Enumerable<'T,'U>(enumerable:IEnumerable<'T>, current:SeqFactory<'T,'U>) =
                 inherit EnumerableBase<'U>()
@@ -485,7 +483,7 @@ namespace Microsoft.FSharp.Collections
                     else
                         result.SeqState <- SeqProcessNextStates.Finished
                         let mutable stopTailCall = ()
-                        (Upcast.iCompletionChain seqComponent).ChainComplete (&stopTailCall, result.HaltedIdx)
+                        (seqComponent).ChainComplete (&stopTailCall, result.HaltedIdx)
                         false
 
                 interface IEnumerator with
@@ -537,7 +535,7 @@ namespace Microsoft.FSharp.Collections
                     | _ ->
                         result.SeqState <- SeqProcessNextStates.Finished
                         let mutable stopTailCall = ()
-                        (Upcast.iCompletionChain seqComponent).ChainComplete (&stopTailCall, result.HaltedIdx)
+                        (seqComponent).ChainComplete (&stopTailCall, result.HaltedIdx)
                         false
 
                 interface IEnumerator with
@@ -651,7 +649,7 @@ namespace Microsoft.FSharp.Collections
                     else
                         result.SeqState <- SeqProcessNextStates.Finished
                         let mutable stopTailCall = ()
-                        (Upcast.iCompletionChain seqComponent).ChainComplete (&stopTailCall, result.HaltedIdx)
+                        (seqComponent).ChainComplete (&stopTailCall, result.HaltedIdx)
                         false
 
                 interface IEnumerator with
@@ -945,7 +943,7 @@ namespace Microsoft.FSharp.Collections
             source |> compose { new SeqFactory<'T,'T>() with
                 member __.Create _ _ next =
                     upcast { new ConsumerChainedWithState<'T,'V,Lazy<HashSet<'T>>>
-                                    (Upcast.iCompletionChain next,lazy(HashSet<'T>(itemsToExclude,HashIdentity.Structural<'T>))) with
+                                    (next,lazy(HashSet<'T>(itemsToExclude,HashIdentity.Structural<'T>))) with
                         override this.ProcessNext (input:'T) : bool =
                             if this.Value.Value.Add input then TailCall.avoid (next.ProcessNext input)
                             else false
@@ -1036,7 +1034,7 @@ namespace Microsoft.FSharp.Collections
         let inline filter<'T> (f:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
             source |> compose { new SeqFactory<'T,'T>() with
                 member __.Create _ _ next =
-                    upcast { new ConsumerChained<'T,'V>(Upcast.iCompletionChain next) with
+                    upcast { new ConsumerChained<'T,'V>(next) with
                         member __.ProcessNext input =
                             if f input then TailCall.avoid (next.ProcessNext input)
                             else false } }
@@ -1046,7 +1044,7 @@ namespace Microsoft.FSharp.Collections
         let inline map<'T,'U> (f:'T->'U) (source:ISeq<'T>) : ISeq<'U> =
             source |> compose { new SeqFactory<'T,'U>() with
                 member __.Create _ _ next =
-                    upcast { new ConsumerChained<'T,'V>(Upcast.iCompletionChain next) with
+                    upcast { new ConsumerChained<'T,'V>(next) with
                         member __.ProcessNext input =
                             TailCall.avoid (next.ProcessNext (f input)) } }
 
@@ -1055,7 +1053,7 @@ namespace Microsoft.FSharp.Collections
         let inline mapi f source =
             source |> compose { new SeqFactory<'T,'U>() with
                 member __.Create _ _ next =
-                    upcast { new ConsumerChainedWithState<'T,'V,int>(Upcast.iCompletionChain next, -1) with
+                    upcast { new ConsumerChainedWithState<'T,'V,int>(next, -1) with
                         override this.ProcessNext (input:'T) : bool =
                             this.Value <- this.Value  + 1
                             TailCall.avoid (next.ProcessNext (f this.Value input)) } }
@@ -1065,7 +1063,7 @@ namespace Microsoft.FSharp.Collections
         let inline map2<'First,'Second,'U> (map:'First->'Second->'U) (source1:ISeq<'First>) (source2:ISeq<'Second>) : ISeq<'U> =
             source1 |> compose { new SeqFactory<'First,'U>() with
                 member __.Create<'V> outOfBand pipeIdx next =
-                    upcast { new ConsumerChainedWithStateAndCleanup<'First,'V, IEnumerator<'Second>>(Upcast.iCompletionChain next, (source2.GetEnumerator ())) with
+                    upcast { new ConsumerChainedWithStateAndCleanup<'First,'V, IEnumerator<'Second>>(next, (source2.GetEnumerator ())) with
                         member self.ProcessNext input =
                             if self.Value.MoveNext () then
                                 TailCall.avoid (next.ProcessNext (map input self.Value.Current))
@@ -1083,7 +1081,7 @@ namespace Microsoft.FSharp.Collections
             source1 |> compose { new SeqFactory<'First,'U>() with
                 member __.Create<'V> outOfBand pipeIdx next =
                     upcast { new ConsumerChainedWithStateAndCleanup<'First,'V, Values<int,IEnumerator<'Second>>>
-                                                (Upcast.iCompletionChain next, Values<_,_>(-1, source2.GetEnumerator ())) with
+                                                (next, Values<_,_>(-1, source2.GetEnumerator ())) with
                         member self.ProcessNext input =
                             if self.Value._2.MoveNext () then
                                 self.Value._1 <- self.Value._1 + 1
@@ -1103,7 +1101,7 @@ namespace Microsoft.FSharp.Collections
             source1 |> compose { new SeqFactory<'First,'U>() with
                 member __.Create<'V> outOfBand pipeIdx next =
                     upcast { new ConsumerChainedWithStateAndCleanup<'First,'V, Values<IEnumerator<'Second>,IEnumerator<'Third>>>
-                                                (Upcast.iCompletionChain next, Values<_,_>(source2.GetEnumerator(),source3.GetEnumerator())) with
+                                                (next, Values<_,_>(source2.GetEnumerator(),source3.GetEnumerator())) with
                         member self.ProcessNext input =
                             if self.Value._1.MoveNext() && self.Value._2.MoveNext ()  then
                                 TailCall.avoid (next.ProcessNext (map input self.Value._1 .Current self.Value._2.Current))
@@ -1144,7 +1142,7 @@ namespace Microsoft.FSharp.Collections
         let inline choose (f:'T->option<'U>) (source:ISeq<'T>) : ISeq<'U> =
             source |> compose { new SeqFactory<'T,'U>() with
                 member __.Create _ _ next =
-                    upcast { new ConsumerChained<'T,'V>(Upcast.iCompletionChain next) with
+                    upcast { new ConsumerChained<'T,'V>(next) with
                         member __.ProcessNext input =
                             match f input with
                             | Some value -> TailCall.avoid (next.ProcessNext value)
@@ -1156,7 +1154,7 @@ namespace Microsoft.FSharp.Collections
             source |> compose { new SeqFactory<'T,'T>() with
                 member __.Create _ _ next =
                     upcast { new ConsumerChainedWithState<'T,'V,HashSet<'T>>
-                                    (Upcast.iCompletionChain next,(HashSet<'T>(HashIdentity.Structural<'T>))) with
+                                    (next,(HashSet<'T>(HashIdentity.Structural<'T>))) with
                         override this.ProcessNext (input:'T) : bool =
                             if this.Value.Add input then TailCall.avoid (next.ProcessNext input)
                             else false } }
@@ -1167,7 +1165,7 @@ namespace Microsoft.FSharp.Collections
             source |> compose { new SeqFactory<'T,'T>() with
                 member __.Create _ _ next =
                     upcast { new ConsumerChainedWithState<'T,'V,HashSet<'Key>>
-                                    (Upcast.iCompletionChain next,(HashSet<'Key>(HashIdentity.Structural<'Key>))) with
+                                    (next,(HashSet<'Key>(HashIdentity.Structural<'Key>))) with
                         override this.ProcessNext (input:'T) : bool =
                             if this.Value.Add (keyf input) then TailCall.avoid (next.ProcessNext input)
                             else false } }
@@ -1266,7 +1264,7 @@ namespace Microsoft.FSharp.Collections
             source |> compose { new SeqFactory<'T,'T * 'T>() with
                 member __.Create _ _ next =
                     upcast { new ConsumerChainedWithState<'T,'U,Values<bool,'T>>
-                                (   Upcast.iCompletionChain next
+                                (   next
                                 ,   Values<bool,'T>
                                     ((* isFirst   = _1*) true
                                     ,(* lastValue = _2*) Unchecked.defaultof<'T>
@@ -1308,7 +1306,7 @@ namespace Microsoft.FSharp.Collections
         let inline scan (folder:'State->'T->'State) (initialState: 'State) (source:ISeq<'T>) :ISeq<'State> =
             source |> compose { new SeqFactory<'T,'State>() with
                 member __.Create _ _ next =
-                    upcast { new ConsumerChainedWithState<'T,'V,'State>(Upcast.iCompletionChain next, initialState) with
+                    upcast { new ConsumerChainedWithState<'T,'V,'State>(next, initialState) with
                         override this.ProcessNext (input:'T) : bool =
                             this.Value <- folder this.Value input
                             TailCall.avoid (next.ProcessNext this.Value) } }
@@ -1319,7 +1317,7 @@ namespace Microsoft.FSharp.Collections
             source |> compose { new SeqFactory<'T,'T>() with
                 member __.Create _ _ next =
                     upcast {
-                        new ConsumerChainedWithStateAndCleanup<'T,'U,int>(Upcast.iCompletionChain next,(*count*)0) with
+                        new ConsumerChainedWithStateAndCleanup<'T,'U,int>(next,(*count*)0) with
 
                             override self.ProcessNext (input:'T) : bool =
                                 if (*count*) self.Value < skipCount then
@@ -1350,7 +1348,7 @@ namespace Microsoft.FSharp.Collections
         let inline skipWhile (predicate:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
             source |> compose { new SeqFactory<'T,'T>() with
                 member __.Create _ _ next =
-                    upcast { new ConsumerChainedWithState<'T,'V,bool>(Upcast.iCompletionChain next,true) with
+                    upcast { new ConsumerChainedWithState<'T,'V,bool>(next,true) with
                         override self.ProcessNext (input:'T) : bool =
                             if self.Value (*skip*) then
                                 self.Value <- predicate input
@@ -1393,7 +1391,7 @@ namespace Microsoft.FSharp.Collections
             source |> compose { new SeqFactory<'T,'T>() with
                 member __.Create outOfBand pipelineIdx next =
                     upcast {
-                        new ConsumerChainedWithStateAndCleanup<'T,'U,int>(Upcast.iCompletionChain next,(*count*)0) with
+                        new ConsumerChainedWithStateAndCleanup<'T,'U,int>(next,(*count*)0) with
                             override self.ProcessNext (input:'T) : bool =
                                 if (*count*) self.Value < takeCount then
                                     self.Value <- self.Value + 1
@@ -1417,7 +1415,7 @@ namespace Microsoft.FSharp.Collections
         let inline takeWhile (predicate:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
             source |> compose { new SeqFactory<'T,'T>() with
                 member __.Create outOfBand pipeIdx next =
-                    upcast { new ConsumerChained<'T,'V>(Upcast.iCompletionChain next) with
+                    upcast { new ConsumerChained<'T,'V>(next) with
                         override __.ProcessNext (input:'T) : bool =
                             if predicate input then
                                 TailCall.avoid (next.ProcessNext input)
@@ -1431,7 +1429,7 @@ namespace Microsoft.FSharp.Collections
         let inline tail errorString (source:ISeq<'T>) :ISeq<'T> =
             source |> compose { new SeqFactory<'T,'T>() with
                 member __.Create _ _ next =
-                    upcast { new ConsumerChainedWithStateAndCleanup<'T,'V,bool>(Upcast.iCompletionChain next,(*first*) true) with
+                    upcast { new ConsumerChainedWithStateAndCleanup<'T,'V,bool>(next,(*first*) true) with
                         override self.ProcessNext (input:'T) : bool =
                             if (*first*) self.Value then
                                 self.Value <- false
@@ -1451,7 +1449,7 @@ namespace Microsoft.FSharp.Collections
             source |> compose { new SeqFactory<'T,'T>() with
                 member __.Create outOfBand pipeIdx next =
                     upcast {
-                        new ConsumerChainedWithState<'T,'U,int>(Upcast.iCompletionChain next,(*count*)0) with
+                        new ConsumerChainedWithState<'T,'U,int>(next,(*count*)0) with
                             override self.ProcessNext (input:'T) : bool =
                                 if (*count*) self.Value < truncateCount then
                                     self.Value <- self.Value + 1
@@ -1540,7 +1538,7 @@ namespace Microsoft.FSharp.Collections
                 member __.Create outOfBand pipeIdx next =
                     upcast {
                         new ConsumerChainedWithState<'T,'U,Values<'T[],int,int>>
-                                    (   Upcast.iCompletionChain next
+                                    (   next
                                     ,   Values<'T[],int,int>
                                         ((*circularBuffer = _1 *) Array.zeroCreateUnchecked windowSize
                                         ,(* idx = _2 *)          0
