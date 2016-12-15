@@ -866,7 +866,9 @@ let rec CollectAtMostOneResult f = function
     | h :: t ->
         match OneResult (f h) with
         | Result r when not (isNil r) -> Result r
-        | r-> AddResults r (CollectAtMostOneResult f t)
+        | r -> AddResults r (CollectAtMostOneResult f t)
+
+let CollectResults' atMostOne f = if atMostOne then CollectAtMostOneResult f else CollectResults f
 
 let MapResults f = function
     | Result xs -> Result (List.map f xs)
@@ -1637,7 +1639,7 @@ let CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities
 //------------------------------------------------------------------------- 
 
 /// Perform name resolution for an identifier which must resolve to be a namespace or module.
-let rec ResolveLongIndentAsModuleOrNamespace amap m fullyQualified (nenv:NameResolutionEnv) ad (lid:Ident list) =
+let rec ResolveLongIndentAsModuleOrNamespace atMostOne amap m fullyQualified (nenv:NameResolutionEnv) ad (lid:Ident list) =
     match lid with 
     | [] -> NoResultsOrUsefulErrors
 
@@ -1646,7 +1648,7 @@ let rec ResolveLongIndentAsModuleOrNamespace amap m fullyQualified (nenv:NameRes
          
 
     | id :: lid when id.idText = MangledGlobalName -> 
-        ResolveLongIndentAsModuleOrNamespace amap m FullyQualified nenv ad lid
+        ResolveLongIndentAsModuleOrNamespace atMostOne amap m FullyQualified nenv ad lid
 
     | id:: rest -> 
         match nenv.ModulesAndNamespaces(fullyQualified).TryFind(id.idText) with
@@ -1663,7 +1665,7 @@ let rec ResolveLongIndentAsModuleOrNamespace amap m fullyQualified (nenv:NameRes
                         look (depth+1) subref mspec.ModuleOrNamespaceType rest
                     | _ -> raze (UndefinedName(depth,FSComp.SR.undefinedNameNamespace,id,NoPredictions))
 
-            modrefs |> CollectResults (fun modref -> 
+            modrefs |> CollectResults' atMostOne (fun modref -> 
                 if IsEntityAccessible amap m ad modref then 
                     look 1 modref modref.ModuleOrNamespaceType rest
                 else 
@@ -1672,13 +1674,13 @@ let rec ResolveLongIndentAsModuleOrNamespace amap m fullyQualified (nenv:NameRes
             raze (UndefinedName(0,FSComp.SR.undefinedNameNamespaceOrModule,id,NoPredictions))
 
 
-let ResolveLongIndentAsModuleOrNamespaceThen amap m fullyQualified (nenv:NameResolutionEnv) ad lid f =
+let ResolveLongIndentAsModuleOrNamespaceThen atMostOne amap m fullyQualified (nenv:NameResolutionEnv) ad lid f =
     match lid with 
     | [] -> NoResultsOrUsefulErrors
     | id :: rest -> 
-        match ResolveLongIndentAsModuleOrNamespace amap m fullyQualified nenv ad [id] with
+        match ResolveLongIndentAsModuleOrNamespace false amap m fullyQualified nenv ad [id] with
         |  Result modrefs -> 
-              modrefs |> CollectResults (fun (depth,modref,mty) ->  
+              modrefs |> CollectResults' atMostOne (fun (depth,modref,mty) ->  
                   let resInfo = ResolutionInfo.Empty.AddEntity(id.idRange,modref) 
                   f resInfo (depth+1) id.idRange modref mty rest) 
         |  Exception err -> Exception err 
@@ -2189,7 +2191,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad n
           // Otherwise modules are searched first. REVIEW: modules and types should be searched together. 
           // For each module referenced by 'id', search the module as if it were an F# module and/or a .NET namespace. 
           let moduleSearch ad = 
-               ResolveLongIndentAsModuleOrNamespaceThen ncenv.amap m fullyQualified nenv ad lid 
+               ResolveLongIndentAsModuleOrNamespaceThen true ncenv.amap m fullyQualified nenv ad lid 
                    (ResolveExprLongIdentInModuleOrNamespace ncenv nenv typeNameResInfo ad)
 
           // REVIEW: somewhat surprisingly, this shows up on performance traces, with tcrefs non-nil.
@@ -2363,7 +2365,7 @@ let rec ResolvePatternLongIdentPrim sink (ncenv:NameResolver) fullyQualified war
     // Long identifiers in patterns 
     | _ -> 
         let moduleSearch ad = 
-            ResolveLongIndentAsModuleOrNamespaceThen ncenv.amap m fullyQualified nenv ad lid 
+            ResolveLongIndentAsModuleOrNamespaceThen true ncenv.amap m fullyQualified nenv ad lid 
                 (ResolvePatternLongIdentInModuleOrNamespace ncenv nenv numTyArgsOpt ad)
         let tyconSearch ad = 
             match lid with 
@@ -2375,7 +2377,7 @@ let rec ResolvePatternLongIdentPrim sink (ncenv:NameResolver) fullyQualified war
             | _ -> 
                 NoResultsOrUsefulErrors
         let resInfo,res,rest = 
-            match AtMostOneResult m (tyconSearch ad +++  moduleSearch ad) with 
+            match AtMostOneResult m (tyconSearch ad +++ moduleSearch ad) with 
             | Result _ as res -> ForceRaise res
             | _ ->  
                 ForceRaise (AtMostOneResult m (tyconSearch AccessibleFromSomeFSharpCode +++ moduleSearch AccessibleFromSomeFSharpCode))
@@ -2532,12 +2534,12 @@ let rec ResolveTypeLongIdentPrim (ncenv:NameResolver) fullyQualified m nenv ad (
                 | _ -> 
                     NoResultsOrUsefulErrors
         let modulSearch = 
-            ResolveLongIndentAsModuleOrNamespaceThen ncenv.amap m fullyQualified nenv ad lid 
+            ResolveLongIndentAsModuleOrNamespaceThen false ncenv.amap m fullyQualified nenv ad lid 
                 (ResolveTypeLongIdentInModuleOrNamespace ncenv typeNameResInfo ad genOk)
             |?> List.concat 
 
         let modulSearchFailed() = 
-            ResolveLongIndentAsModuleOrNamespaceThen ncenv.amap m fullyQualified nenv AccessibleFromSomeFSharpCode lid 
+            ResolveLongIndentAsModuleOrNamespaceThen false ncenv.amap m fullyQualified nenv AccessibleFromSomeFSharpCode lid 
                 (ResolveTypeLongIdentInModuleOrNamespace ncenv typeNameResInfo.DropStaticArgsInfo AccessibleFromSomeFSharpCode genOk)
             |?> List.concat 
 
@@ -2731,7 +2733,7 @@ let ResolveFieldPrim (ncenv:NameResolver) nenv ad typ (mp,id:Ident) allFields =
             | _ -> NoResultsOrUsefulErrors
 
         let modulSearch ad = 
-            ResolveLongIndentAsModuleOrNamespaceThen ncenv.amap m OpenQualified nenv ad lid 
+            ResolveLongIndentAsModuleOrNamespaceThen true ncenv.amap m OpenQualified nenv ad lid 
                 (ResolveFieldInModuleOrNamespace ncenv nenv ad)
 
         let search =

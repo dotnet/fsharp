@@ -348,7 +348,7 @@ type PermitDirectReferenceToGeneratedType =
     | No
 
 /// Resolve a long identifier to a namespace or module.
-val internal ResolveLongIndentAsModuleOrNamespace   : Import.ImportMap -> range -> FullyQualifiedFlag -> NameResolutionEnv -> AccessorDomain -> Ident list -> ResultOrException<(int * ModuleOrNamespaceRef * ModuleOrNamespaceType) list >
+val internal ResolveLongIndentAsModuleOrNamespace   : bool -> Import.ImportMap -> range -> FullyQualifiedFlag -> NameResolutionEnv -> AccessorDomain -> Ident list -> ResultOrException<(int * ModuleOrNamespaceRef * ModuleOrNamespaceType) list >
 
 /// Resolve a long identifier to an object constructor.
 val internal ResolveObjectConstructor               : NameResolver -> DisplayEnv -> range -> AccessorDomain -> TType -> ResultOrException<Item>
