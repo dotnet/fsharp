@@ -1645,7 +1645,6 @@ let rec ResolveLongIndentAsModuleOrNamespace atMostOne amap m fullyQualified (ne
 
     | [id] when id.idText = MangledGlobalName ->
          error (Error(FSComp.SR.nrGlobalUsedOnlyAsFirstName(), id.idRange))
-         
 
     | id :: lid when id.idText = MangledGlobalName -> 
         ResolveLongIndentAsModuleOrNamespace atMostOne amap m FullyQualified nenv ad lid
@@ -1953,7 +1952,7 @@ let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo
                     match typeNameResInfo.ResolutionFlag with 
                     | ResolveTypeNamesToCtors -> 
                         nestedTypes 
-                        |> CollectResults (ResolveObjectConstructorPrim ncenv nenv.eDisplayEnv resInfo m ad) 
+                        |> CollectAtMostOneResult (ResolveObjectConstructorPrim ncenv nenv.eDisplayEnv resInfo m ad) 
                         |> MapResults (fun (resInfo,item) -> (resInfo,item,[]))
                     | ResolveTypeNamesToTypeRefs -> 
                         OneSuccess (resInfo,Item.Types (nm,nestedTypes),rest)
