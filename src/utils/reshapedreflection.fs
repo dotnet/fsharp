@@ -83,7 +83,7 @@ module internal ReflectionAdapters =
         | _ -> raise (AmbiguousMatchException())
 
     let canUseAccessor (accessor : MethodInfo) nonPublic = 
-        isNotNull(box accessor) && (accessor.IsPublic || nonPublic)
+        (not (isNull (box accessor))) && (accessor.IsPublic || nonPublic)
 
     type System.Type with
         member this.GetTypeInfo() = IntrospectionExtensions.GetTypeInfo(this)

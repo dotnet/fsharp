@@ -41,7 +41,6 @@
     <Compile Include="Tests.XmlDocComments.fs" />
     <Compile Include="Tests.LanguageService.General.fs" />
     <Compile Include="Tests.LanguageService.Completion.fs" />
-    <Compile Include="Tests.LanguageService.F1Keyword.fs" />
     <Compile Include="Tests.LanguageService.IncrementalBuild.fs" />
     <Compile Include="Tests.LanguageService.GotoDefinition.fs" />
     <Compile Include="Tests.LanguageService.NavigationBar.fs" />
@@ -86,6 +85,9 @@
     </Compile>
     <Compile Include="BraceMatchingServiceTests.fs">
       <Link>Roslyn\BraceMatchingServiceTests.fs</Link>
+    </Compile>
+    <Compile Include="HelpContextServiceTests.fs">
+      <Link>Roslyn\HelpContextServiceTests.fs</Link>
     </Compile>
     <Compile Include="IndentationServiceTests.fs">
       <Link>Roslyn\IndentationServiceTests.fs</Link>
