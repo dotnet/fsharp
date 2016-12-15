@@ -868,7 +868,7 @@ let rec CollectAtMostOneResult f = function
         | Result r when not (isNil r) -> Result r
         | r -> AddResults r (CollectAtMostOneResult f t)
 
-let CollectResults' atMostOne f = if atMostOne then CollectAtMostOneResult f else CollectResults f
+let CollectResults2 atMostOne f = if atMostOne then CollectAtMostOneResult f else CollectResults f
 
 let MapResults f = function
     | Result xs -> Result (List.map f xs)
@@ -1664,7 +1664,7 @@ let rec ResolveLongIndentAsModuleOrNamespace atMostOne amap m fullyQualified (ne
                         look (depth+1) subref mspec.ModuleOrNamespaceType rest
                     | _ -> raze (UndefinedName(depth,FSComp.SR.undefinedNameNamespace,id,NoPredictions))
 
-            modrefs |> CollectResults' atMostOne (fun modref -> 
+            modrefs |> CollectResults2 atMostOne (fun modref -> 
                 if IsEntityAccessible amap m ad modref then 
                     look 1 modref modref.ModuleOrNamespaceType rest
                 else 
@@ -1679,7 +1679,7 @@ let ResolveLongIndentAsModuleOrNamespaceThen atMostOne amap m fullyQualified (ne
     | id :: rest -> 
         match ResolveLongIndentAsModuleOrNamespace false amap m fullyQualified nenv ad [id] with
         |  Result modrefs -> 
-              modrefs |> CollectResults' atMostOne (fun (depth,modref,mty) ->  
+              modrefs |> CollectResults2 atMostOne (fun (depth,modref,mty) ->  
                   let resInfo = ResolutionInfo.Empty.AddEntity(id.idRange,modref) 
                   f resInfo (depth+1) id.idRange modref mty rest) 
         |  Exception err -> Exception err 
@@ -1985,7 +1985,7 @@ let private ResolveLongIdentInTyconRef (ncenv:NameResolver) nenv lookupKind resI
     typ |> ResolveLongIdentInTypePrim ncenv nenv lookupKind resInfo depth m ad lid IgnoreOverrides typeNameResInfo  
 
 let private ResolveLongIdentInTyconRefs atMostOne (ncenv:NameResolver) nenv lookupKind depth m ad lid typeNameResInfo idRange tcrefs = 
-    tcrefs |> CollectResults' atMostOne (fun (resInfo:ResolutionInfo,tcref) -> 
+    tcrefs |> CollectResults2 atMostOne (fun (resInfo:ResolutionInfo,tcref) -> 
         let resInfo = resInfo.AddEntity(idRange,tcref)
         tcref |> ResolveLongIdentInTyconRef ncenv nenv lookupKind resInfo depth m ad lid typeNameResInfo |> AtMostOneResult m) 
 
@@ -2531,6 +2531,7 @@ let rec ResolveTypeLongIdentPrim (ncenv:NameResolver) fullyQualified m nenv ad (
                     OneResult (ResolveTypeLongIdentInTyconRefPrim ncenv typeNameResInfo ad ResolutionInfo.Empty genOk 1 m tcref rest)
                 | _ -> 
                     NoResultsOrUsefulErrors
+
         let modulSearch = 
             ResolveLongIndentAsModuleOrNamespaceThen false ncenv.amap m fullyQualified nenv ad lid 
                 (ResolveTypeLongIdentInModuleOrNamespace ncenv typeNameResInfo ad genOk)
