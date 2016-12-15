@@ -312,30 +312,14 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Collect")>]
         let collect f sources = map f sources |> concat
 
-        [<CompiledName("CompareWith")>]
+        [<CompiledName "CompareWith">]
         let compareWith (f:'T -> 'T -> int) (source1 : seq<'T>) (source2: seq<'T>) =
+            checkNonNull "source1" source1
             checkNonNull "source2" source2
-
-            use e2 = source2.GetEnumerator()
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
+            (source1|>toComposer, source2|>toComposer)
+            ||> Composer.Seq.compareWith (fun a b -> f.Invoke(a,b))
 
-            source1
-            |> foreach (fun halt ->
-                { new Composer.Core.FolderWithOnComplete<'T,int> (0) with
-                    override this.ProcessNext value =
-                        if not (e2.MoveNext()) then
-                            this.Value <- 1
-                            halt ()
-                        else
-                            let c = f.Invoke (value, e2.Current)
-                            if c <> 0 then
-                                this.Value <- c
-                                halt ()
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
-                    member this.OnComplete _ =
-                        if this.Value = 0 && e2.MoveNext() then
-                            this.Value <- -1 })
-            |> fun compare -> compare.Value
 
         [<CompiledName("OfList")>]
         let ofList (source : 'T list) =

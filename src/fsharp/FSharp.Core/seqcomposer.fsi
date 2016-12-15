@@ -490,6 +490,9 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "Map3">]
         val inline map3<'First,'Second,'Third,'U> : map:('First->'Second->'Third->'U) -> source1:ISeq<'First> -> source2:ISeq<'Second> -> source3:ISeq<'Third> -> ISeq<'U>
 
+        [<CompiledName "CompareWith">]
+        val inline compareWith : f:('T -> 'T -> int) -> source1 :ISeq<'T> -> source2:ISeq<'T> -> int
+
         [<CompiledName "Choose">]
         val inline choose : f:('a->option<'b>) -> source: ISeq<'a> -> ISeq<'b>
 

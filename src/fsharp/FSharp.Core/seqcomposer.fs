@@ -1122,6 +1122,29 @@ namespace Microsoft.FSharp.Collections
                                 self.Value._2.Dispose () } }
 
 
+            [<CompiledName "CompareWith">]
+            let inline compareWith (f:'T -> 'T -> int) (source1 :ISeq<'T>) (source2:ISeq<'T>) : int =
+                source1
+                |> foreach (fun halt ->
+                    { new FolderWithOnComplete<'T,Values<int,IEnumerator<'T>>>(Values<_,_>(0,source2.GetEnumerator())) with
+                        override self.ProcessNext value =
+                            if not (self.Value._2.MoveNext()) then
+                                self.Value._1 <- 1
+                                halt ()
+                            else
+                                let c = f value self.Value._2.Current
+                                if c <> 0 then
+                                    self.Value._1 <- c
+                                    halt ()
+                            Unchecked.defaultof<_> (* return value unsed in ForEach context *)
+
+                        override self.OnComplete _ =
+                            if self.Value._1 = 0 && self.Value._2.MoveNext() then
+                                self.Value._1 <- -1
+                            self.Value._2.Dispose()
+                    })
+                |> fun compare -> compare.Value._1
+
             [<CompiledName "Choose">]
             let inline choose (f:'T->option<'U>) (source:ISeq<'T>) : ISeq<'U> =
                 source |> compose { new SeqFactory<'T,'U>() with
