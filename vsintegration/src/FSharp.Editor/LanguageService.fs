@@ -247,7 +247,7 @@ type internal FSharpLanguageService(package : FSharpPackage) as this =
 
             this.SyncProject(project, projectContext, site, forceUpdate=false)
             site.AdviseProjectSiteChanges(FSharpCommonConstants.FSharpLanguageServiceCallbackName, AdviseProjectSiteChanges(fun () -> this.SyncProject(project, projectContext, site, forceUpdate=true)))
-            site.AdviseProjectSiteClosed(FSharpCommonConstants.FSharpLanguageServiceCallbackName, AdviseProjectSiteChanges(fun () -> ClearProjectInfo(project.Id); project.Disconnect()))
+            site.AdviseProjectSiteClosed(FSharpCommonConstants.FSharpLanguageServiceCallbackName, AdviseProjectSiteChanges(fun () -> projectInfoManager.ClearProjectInfo(project.Id); project.Disconnect()))
         | _ -> ()
 
     member this.SetupStandAloneFile(fileName: string, fileContents: string, workspace: VisualStudioWorkspaceImpl, hier: IVsHierarchy) =
