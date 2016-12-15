@@ -34,6 +34,7 @@
       <Link>NunitHelpers.fs</Link>
     </Compile>
     <Compile Include="single-test.fs" />
+    <Compile Include="TypeProviderTests.fs" />
     <Compile Include="tests.fs" />
   </ItemGroup>
   <ItemGroup>
