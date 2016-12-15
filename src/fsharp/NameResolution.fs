@@ -864,9 +864,9 @@ let rec CollectAtMostOneResult f = function
     | [] -> NoResultsOrUsefulErrors
     | [h] -> OneResult (f h)
     | h :: t ->
-        match OneResult (f h) with
-        | Result r when not (isNil r) -> Result r
-        | r -> AddResults r (CollectAtMostOneResult f t)
+        match f h with
+        | Result r -> Result [r]
+        | Exception e -> AddResults (Exception e) (CollectAtMostOneResult f t)
 
 let CollectResults2 atMostOne f = if atMostOne then CollectAtMostOneResult f else CollectResults f
 
