@@ -714,7 +714,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         let getProperty (ty: Type) (obj: obj) name =
 #if FX_PORTABLE_OR_NETSTANDARD
             let prop = ty.GetProperty(name, (BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic))
-            if isNotNull prop then prop.GetValue(obj,[||])
+            if not isNull prop then prop.GetValue(obj,[||])
 #if FX_NO_MISSINGMETHODEXCEPTION
             // Profile 7, 47, 78 and 259 raise MissingMemberException
             else 
