@@ -152,18 +152,13 @@ namespace Microsoft.FSharp.Collections
         |  Finished  =  2
     type Result<'T> =
         class
+        inherit  Consumer<'T,'T>
         interface  IOutOfBand
         new : unit ->  Result<'T>
         member Current : 'T
         member HaltedIdx : int
         member SeqState :  SeqProcessNextStates
-        member Current : 'T with set
         member SeqState :  SeqProcessNextStates with set
-        end
-    type SetResult<'T> =
-        class
-        inherit  Consumer<'T,'T>
-        new : result: Result<'T> ->  SetResult<'T>
         override ProcessNext : input:'T -> bool
         end
     type OutOfBand =

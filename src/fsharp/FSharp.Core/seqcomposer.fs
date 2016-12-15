@@ -179,21 +179,20 @@ namespace Microsoft.FSharp.Collections
         | Finished   = 2
 
         type Result<'T>() =
+            inherit Consumer<'T,'T>()
+
+            let mutable current = Unchecked.defaultof<'T>
             let mutable haltedIdx = 0
 
-            member val Current = Unchecked.defaultof<'T> with get, set
+            member __.Current = current
             member val SeqState = SeqProcessNextStates.NotStarted with get, set
             member __.HaltedIdx = haltedIdx
 
             interface IOutOfBand with
                 member __.StopFurtherProcessing pipeIdx = haltedIdx <- pipeIdx
 
-        // SetResult<> is used at the end of the chain of SeqComponents to assign the final value
-        type SetResult<'T> (result:Result<'T>) =
-            inherit Consumer<'T,'T>()
-
             override __.ProcessNext (input:'T) : bool =
-                result.Current <- input
+                current <- input
                 true
 
         type OutOfBand() =
@@ -355,7 +354,7 @@ namespace Microsoft.FSharp.Collections
                 interface IEnumerable<'U> with
                     member this.GetEnumerator () : IEnumerator<'U> =
                         let result = Result<'U> ()
-                        Upcast.enumerator (new Enumerator<'T,'U>(enumerable.GetEnumerator(), current.Build result (SetResult<'U> result), result))
+                        Upcast.enumerator (new Enumerator<'T,'U>(enumerable.GetEnumerator(), current.Build result result, result))
 
                 interface ISeq<'U> with
                     member __.Compose (next:SeqFactory<'U,'V>) : ISeq<'V> =
@@ -497,7 +496,7 @@ namespace Microsoft.FSharp.Collections
                 interface IEnumerable<'U> with
                     member this.GetEnumerator () : IEnumerator<'U> =
                         let result = Result<'U> ()
-                        Upcast.enumerator (new Enumerator<'T,'U>(delayedArray, current.Build result (SetResult<'U> result), result))
+                        Upcast.enumerator (new Enumerator<'T,'U>(delayedArray, current.Build result result, result))
 
                 interface ISeq<'U> with
                     member __.Compose (next:SeqFactory<'U,'V>) : ISeq<'V> =
@@ -549,7 +548,7 @@ namespace Microsoft.FSharp.Collections
                 interface IEnumerable<'U> with
                     member this.GetEnumerator () : IEnumerator<'U> =
                         let result = Result<'U> ()
-                        Upcast.enumerator (new Enumerator<'T,'U>(alist, current.Build result (SetResult<'U> result), result))
+                        Upcast.enumerator (new Enumerator<'T,'U>(alist, current.Build result result, result))
 
                 interface ISeq<'U> with
                     member __.Compose (next:SeqFactory<'U,'V>) : ISeq<'V> =
@@ -588,7 +587,7 @@ namespace Microsoft.FSharp.Collections
                 interface IEnumerable<'U> with
                     member this.GetEnumerator () : IEnumerator<'U> =
                         let result = Result<'U> ()
-                        Upcast.enumerator (new Enumerator<'T,'U,'GeneratorState>(generator, state, current.Build result (SetResult<'U> result), result))
+                        Upcast.enumerator (new Enumerator<'T,'U,'GeneratorState>(generator, state, current.Build result result, result))
 
                 interface ISeq<'U> with
                     member this.Compose (next:SeqFactory<'U,'V>) : ISeq<'V> =
@@ -663,7 +662,7 @@ namespace Microsoft.FSharp.Collections
                 interface IEnumerable<'U> with
                     member this.GetEnumerator () : IEnumerator<'U> =
                         let result = Result<'U> ()
-                        Upcast.enumerator (new Enumerator<'T,'U>(count, f, current.Build result (SetResult<'U> result), result))
+                        Upcast.enumerator (new Enumerator<'T,'U>(count, f, current.Build result result, result))
 
                 interface ISeq<'U> with
                     member this.Compose (next:SeqFactory<'U,'V>) : ISeq<'V> =
