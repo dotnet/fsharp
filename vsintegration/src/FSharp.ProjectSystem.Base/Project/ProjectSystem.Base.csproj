@@ -83,9 +83,9 @@
     <Reference Include="EnvDTE80.dll" />
     <Reference Include="VSLangProj" />
     <Reference Include="VSLangProj80" />
-	<Reference Include="Microsoft.VisualStudio.Editor" />
-	<Reference Include="Microsoft.VisualStudio.CoreUtility" />
-	<Reference Include="Microsoft.VisualStudio.ComponentModelHost" />
+    <Reference Include="Microsoft.VisualStudio.Editor" />
+    <Reference Include="Microsoft.VisualStudio.CoreUtility" />
+    <Reference Include="Microsoft.VisualStudio.ComponentModelHost" />
     <Reference Include="microsoft.visualstudio.vcprojectengine" />
     <Reference Include="Microsoft.VisualStudio.OLE.Interop.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Immutable.10.0, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
@@ -194,6 +194,7 @@
     <Compile Include="SolutionListenerForProjectReferenceUpdate.cs" />
     <Compile Include="StructuresEnums.cs" />
     <Compile Include="SuspendFileChanges.cs" />
+    <Compile Include="TextViewCreationListener.cs" />
     <Compile Include="Tracing.cs" />
     <Compile Include="TrackDocumentsHelper.cs" />
     <Compile Include="TypeConverters.cs" />
@@ -230,18 +231,16 @@
       <Name>FSharp.Core</Name>
     </ProjectReference>
   </ItemGroup>
-
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
   <Import Project="$(VsSDKInstall)\Microsoft.VsSDK.targets" />
-
   <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
     <ItemGroup>
       <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />
       <BinariesToBeSigned Include="$(OutDir)localize\**\$(AssemblyName).resources.dll" />
       <FilesToSign Include="@(BinariesToBeSigned)">
-         <Authenticode>Microsoft</Authenticode>
-         <StrongName>StrongName</StrongName>
+        <Authenticode>Microsoft</Authenticode>
+        <StrongName>StrongName</StrongName>
       </FilesToSign>
     </ItemGroup>
   </Target>
