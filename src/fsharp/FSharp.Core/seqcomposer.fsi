@@ -438,7 +438,7 @@ namespace Microsoft.FSharp.Collections
     val inline iter2 : f:('T->'U->unit) -> source1 : ISeq<'T> -> source2 : ISeq<'U> -> unit
 
     [<CompiledName "IterateIndexed2">]
-    val inline iteri2 : f:(int->'T->'U->unit) -> source1:ISeq<'T> -> source2:seq<'U> -> unit
+    val inline iteri2 : f:(int->'T->'U->unit) -> source1:ISeq<'T> -> source2:ISeq<'U> -> unit
 
     [<CompiledName "TryHead">]
     val tryHead : source: ISeq<'T> -> 'T option
