@@ -894,7 +894,7 @@ namespace Microsoft.FSharp.Collections
 
 
         [<CompiledName "IterateIndexed2">]
-        let inline iteri2 (f:int->'T->'U->unit) (source1:ISeq<'T>) (source2:seq<'U>) : unit =
+        let inline iteri2 (f:int->'T->'U->unit) (source1:ISeq<'T>) (source2:ISeq<'U>) : unit =
             source1
             |> foreach (fun halt ->
                 { new FolderWithOnComplete<'T,Values<int,IEnumerator<'U>>>(Values<_,_>(-1,source2.GetEnumerator())) with
