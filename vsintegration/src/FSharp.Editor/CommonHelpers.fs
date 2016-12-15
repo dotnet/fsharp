@@ -60,7 +60,7 @@ module CommonHelpers =
         | FSharpTokenColorKind.PreprocessorKeyword -> ClassificationTypeNames.PreprocessorKeyword 
         | FSharpTokenColorKind.Operator -> ClassificationTypeNames.Operator
         | FSharpTokenColorKind.TypeName  -> ClassificationTypeNames.ClassName
-        | FSharpTokenColorKind.Default
+        | FSharpTokenColorKind.Default 
         | _ -> ClassificationTypeNames.Text
 
     let private scanSourceLine(sourceTokenizer: FSharpSourceTokenizer, textLine: TextLine, lineContents: string, lexState: FSharpTokenizerLexState) : SourceLineData =
@@ -71,11 +71,7 @@ module CommonHelpers =
             let tokenInfoOption, nextLexState = lineTokenizer.ScanToken(lexState.Value)
             lexState.Value <- nextLexState
             if tokenInfoOption.IsSome then
-                let classificationType = 
-                    if tokenInfoOption.Value.CharClass = FSharpTokenCharKind.WhiteSpace then
-                        ClassificationTypeNames.WhiteSpace 
-                    else 
-                        compilerTokenToRoslynToken(tokenInfoOption.Value.ColorClass)
+                let classificationType = compilerTokenToRoslynToken(tokenInfoOption.Value.ColorClass)
                 for i = tokenInfoOption.Value.LeftColumn to tokenInfoOption.Value.RightColumn do
                     Array.set colorMap i classificationType
             tokenInfoOption
@@ -163,21 +159,14 @@ module CommonHelpers =
             Assert.Exception(ex)
             List<ClassifiedSpan>()
 
-    let tryClassifyAtPosition (documentKey, sourceText: SourceText, filePath, defines, position: int, includeRightColumn: bool, cancellationToken) =
+    let tryClassifyAtPosition (documentKey, sourceText: SourceText, filePath, defines, position: int, cancellationToken) =
         let textLine = sourceText.Lines.GetLineFromPosition(position)
         let textLinePos = sourceText.Lines.GetLinePosition(position)
         let textLineColumn = textLinePos.Character
 
         let classifiedSpanOption =
             getColorizationData(documentKey, sourceText, textLine.Span, Some(filePath), defines, cancellationToken)
-            |> Seq.tryFind(fun classifiedSpan ->
-                if includeRightColumn then
-                    classifiedSpan.ClassificationType <> ClassificationTypeNames.WhiteSpace &&
-                    (classifiedSpan.TextSpan.Contains(position) ||
-                    // TextSpan.Contains returns `false` for `position` equals its right bound, 
-                    // so we have to check if it contains `position - 1`.
-                     (position > 0 && classifiedSpan.TextSpan.Contains(position - 1)))
-                else classifiedSpan.TextSpan.Contains(position))
+            |> Seq.tryFind(fun classifiedSpan -> classifiedSpan.TextSpan.Contains(position))
 
         match classifiedSpanOption with
         | Some(classifiedSpan) ->
