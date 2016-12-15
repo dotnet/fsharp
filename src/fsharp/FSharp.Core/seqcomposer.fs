@@ -1427,6 +1427,7 @@ namespace Microsoft.FSharp.Collections
                                     invalidArg "source" (SR.GetString(SR.notEnoughElements))
                         }}
 
+
             [<CompiledName "Truncate">]
             let inline truncate (truncateCount:int) (source:ISeq<'T>) : ISeq<'T> =
                 source |> compose { new SeqFactory<'T,'T>() with
