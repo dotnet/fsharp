@@ -24,10 +24,14 @@ namespace Microsoft.FSharp.Collections
             type NoValue = struct end
 
             [<Struct; NoComparison; NoEquality>]
+            type Value<'a> =
+                val mutable _1 : 'a
+                new (a:'a) = { _1 = a }
+
+            [<Struct; NoComparison; NoEquality>]
             type Values<'a,'b> =
                 val mutable _1 : 'a
                 val mutable _2 : 'b
-
                 new (a:'a, b: 'b) = { _1 = a;  _2 = b }
 
             [<Struct; NoComparison; NoEquality>]
@@ -35,7 +39,6 @@ namespace Microsoft.FSharp.Collections
                 val mutable _1 : 'a
                 val mutable _2 : 'b
                 val mutable _3 : 'c
-
                 new (a:'a, b:'b, c:'c) = { _1 = a; _2 = b; _3 = c }
 
             type PipeIdx = int
@@ -43,96 +46,90 @@ namespace Microsoft.FSharp.Collections
             type IOutOfBand =
                 abstract StopFurtherProcessing : PipeIdx -> unit
 
-            type ICompletionChain =
+            [<AbstractClass>]
+            type Activity() =
                 abstract ChainComplete : stopTailCall:byref<unit> * PipeIdx -> unit
                 abstract ChainDispose  : stopTailCall:byref<unit> -> unit
 
             [<AbstractClass>]
-            type Consumer<'T,'U> () =
+            type Activity<'T,'U> () =
+                inherit Activity()
                 abstract ProcessNext : input:'T -> bool
 
-                interface ICompletionChain with
-                    member this.ChainComplete (_,_) = ()
-                    member this.ChainDispose _ = ()
-
             [<AbstractClass>]
-            type ConsumerWithState<'T,'U,'Value> =
-                inherit Consumer<'T,'U>
-
-                val mutable Value : 'Value
-
-                new (init) = {
-                    Value = init
-                }
-
-            [<AbstractClass>]
-            type ConsumerChainedWithState<'T,'U,'Value> =
-                inherit ConsumerWithState<'T,'U,'Value>
-
-                val private Next : ICompletionChain
-
-                new (next:ICompletionChain, init) = {
-                    inherit ConsumerWithState<'T,'U,'Value> (init)
+            type Transform<'T,'U,'State> =
+                inherit Activity<'T,'U>
+                
+                new (next:Activity, initState:'State) = {
+                    inherit Activity<'T,'U> ()
+                    State = initState
                     Next = next
                 }
 
-                interface ICompletionChain with
-                    member this.ChainComplete (stopTailCall, terminatingIdx) =
-                        this.Next.ChainComplete (&stopTailCall, terminatingIdx)
-                    member this.ChainDispose stopTailCall =
-                        this.Next.ChainDispose (&stopTailCall)
+                val mutable State : 'State
+                val Next : Activity
+                
+                override this.ChainComplete (stopTailCall, terminatingIdx) =
+                    this.Next.ChainComplete (&stopTailCall, terminatingIdx)
+                override this.ChainDispose stopTailCall =
+                    this.Next.ChainDispose (&stopTailCall)
 
             [<AbstractClass>]
-            type ConsumerChained<'T,'U>(next:ICompletionChain) =
-                inherit ConsumerChainedWithState<'T,'U,NoValue>(next, Unchecked.defaultof<NoValue>)
-
-            [<AbstractClass>]
-            type ConsumerChainedWithStateAndCleanup<'T,'U,'Value> (next, init) =
-                inherit ConsumerChainedWithState<'T,'U,'Value>(next, init)
+            type TransformWithPostProcessing<'T,'U,'State>(next:Activity, initState:'State) =
+                inherit Transform<'T,'U,'State>(next, initState)
 
                 abstract OnComplete : PipeIdx -> unit
                 abstract OnDispose  : unit -> unit
 
-                interface ICompletionChain with
-                    member this.ChainComplete (stopTailCall, terminatingIdx) =
-                        this.OnComplete terminatingIdx
-                        next.ChainComplete (&stopTailCall, terminatingIdx)
-                    member this.ChainDispose stopTailCall  =
-                        try     this.OnDispose ()
-                        finally next.ChainDispose (&stopTailCall)
+                override this.ChainComplete (stopTailCall, terminatingIdx) =
+                    this.OnComplete terminatingIdx
+                    this.Next.ChainComplete (&stopTailCall, terminatingIdx)
+                override this.ChainDispose stopTailCall  =
+                    try     this.OnDispose ()
+                    finally this.Next.ChainDispose (&stopTailCall)
 
             [<AbstractClass>]
-            type ConsumerChainedWithCleanup<'T,'U>(next:ICompletionChain) =
-                inherit ConsumerChainedWithStateAndCleanup<'T,'U,NoValue>(next, Unchecked.defaultof<NoValue>)
+            type Folder<'T,'Result,'State> =
+                inherit Activity<'T,'T>
+
+                val mutable Result : 'Result
+                val mutable State : 'State
+
+                val mutable HaltedIdx : int
+                member this.StopFurtherProcessing pipeIdx = this.HaltedIdx <- pipeIdx
+                interface IOutOfBand with
+                    member this.StopFurtherProcessing pipeIdx = this.StopFurtherProcessing pipeIdx
+
+                new (initalResult,initState) = {
+                    inherit Activity<'T,'T>()
+                    State = initState
+                    HaltedIdx = 0
+                    Result = initalResult
+                }
+
+                override this.ChainComplete (_,_) = ()
+                override this.ChainDispose _ = ()
 
             [<AbstractClass>]
-            type Folder<'T,'U>(init) =
-                inherit ConsumerWithState<'T,'T,'U>(init)
-
-            [<AbstractClass>]
-            type FolderWithOnComplete<'T, 'U>(init) =
-                inherit Folder<'T,'U>(init)
+            type FolderWithPostProcessing<'T,'Result,'State>(initResult,initState) =
+                inherit Folder<'T,'Result,'State>(initResult,initState)
 
                 abstract OnComplete : PipeIdx -> unit
+                abstract OnDispose : unit -> unit
 
-                interface ICompletionChain with
-                    member this.ChainComplete (stopTailCall, terminatingIdx) =
-                        this.OnComplete terminatingIdx
-                    member this.ChainDispose _ = ()
+                override this.ChainComplete (stopTailCall, terminatingIdx) =
+                    this.OnComplete terminatingIdx
+                override this.ChainDispose _ =
+                    this.OnDispose ()
 
             [<AbstractClass>]
-            type SeqFactory<'T,'U> () =
-                abstract PipeIdx : PipeIdx
-                abstract Create<'V> : IOutOfBand -> PipeIdx -> Consumer<'U,'V> -> Consumer<'T,'V>
-
-                default __.PipeIdx = 1
-
-                member this.Build outOfBand next = this.Create outOfBand 1 next
+            type TransformFactory<'T,'U> () =
+                abstract Compose<'V> : IOutOfBand -> PipeIdx -> Activity<'U,'V> -> Activity<'T,'V>
 
             type ISeq<'T> =
                 inherit IEnumerable<'T>
-                abstract member Compose<'U> : (SeqFactory<'T,'U>) -> ISeq<'U>
-                abstract member ForEach<'consumer when 'consumer :> Consumer<'T,'T>> : f:((unit->unit)->'consumer) -> 'consumer
+                abstract member PushTransform<'U> : TransformFactory<'T,'U> -> ISeq<'U>
+                abstract member Fold<'Result,'State> : f:(PipeIdx->Folder<'T,'Result,'State>) -> 'Result
 
         open Core
 
@@ -145,35 +142,40 @@ namespace Microsoft.FSharp.Collections
         module internal Upcast =
             // The f# compiler outputs unnecessary unbox.any calls in upcasts. If this functionality
             // is fixed with the compiler then these functions can be removed.
-            let inline seq (t:#ISeq<'T>) : ISeq<'T> = (# "" t : ISeq<'T> #)
-            let inline enumerable (t:#IEnumerable<'T>) : IEnumerable<'T> = (# "" t : IEnumerable<'T> #)
-            let inline enumerator (t:#IEnumerator<'T>) : IEnumerator<'T> = (# "" t : IEnumerator<'T> #)
-            let inline enumeratorNonGeneric (t:#IEnumerator) : IEnumerator = (# "" t : IEnumerator #)
-            let inline iCompletionChain (t:#ICompletionChain) : ICompletionChain = (# "" t : ICompletionChain #)
+            let inline seq<'T,'seq when 'seq :> ISeq<'T> and 'seq : not struct> (t:'seq) : ISeq<'T> = (# "" t : ISeq<'T> #)
+            let inline enumerable<'T,'enumerable when 'enumerable :> IEnumerable<'T> and 'enumerable : not struct> (t:'enumerable) : IEnumerable<'T> = (# "" t : IEnumerable<'T> #)
+            let inline enumerator<'T,'enumerator when 'enumerator :> IEnumerator<'T> and 'enumerator : not struct> (t:'enumerator) : IEnumerator<'T> = (# "" t : IEnumerator<'T> #)
+            let inline enumeratorNonGeneric<'enumerator when 'enumerator :> IEnumerator and 'enumerator : not struct> (t:'enumerator) : IEnumerator = (# "" t : IEnumerator #)
+            let inline outOfBand<'outOfBand when 'outOfBand :> IOutOfBand and 'outOfBand : not struct> (t:'outOfBand) : IOutOfBand = (# "" t : IOutOfBand #)
 
+        let createFold (factory:TransformFactory<_,_>) (folder:Folder<_,_,_>) pipeIdx  =
+            factory.Compose (Upcast.outOfBand folder) pipeIdx folder
 
-        type ComposedFactory<'T,'U,'V> private (first:SeqFactory<'T,'U>, second:SeqFactory<'U,'V>, secondPipeIdx:PipeIdx) =
-            inherit SeqFactory<'T,'V>()
+        let inline valueComparer<'T when 'T : equality> ()=
+            let c = HashIdentity.Structural<'T>
+            { new IEqualityComparer<Value<'T>> with
+                    member __.GetHashCode o    = c.GetHashCode o._1
+                    member __.Equals (lhs,rhs) = c.Equals (lhs._1, rhs._1) }
 
-            override __.PipeIdx =
-                secondPipeIdx
+        type ComposedFactory<'T,'U,'V> private (first:TransformFactory<'T,'U>, second:TransformFactory<'U,'V>) =
+            inherit TransformFactory<'T,'V>()
 
-            override this.Create<'W> (outOfBand:IOutOfBand) (pipeIdx:PipeIdx) (next:Consumer<'V,'W>) : Consumer<'T,'W> =
-                first.Create outOfBand pipeIdx (second.Create outOfBand secondPipeIdx next)
+            override this.Compose<'W> (outOfBand:IOutOfBand) (pipeIdx:PipeIdx) (next:Activity<'V,'W>) : Activity<'T,'W> =
+                first.Compose outOfBand (pipeIdx-1) (second.Compose outOfBand pipeIdx next)
 
-            static member Combine (first:SeqFactory<'T,'U>) (second:SeqFactory<'U,'V>) : SeqFactory<'T,'V> =
-                upcast ComposedFactory(first, second, first.PipeIdx+1)
+            static member Combine (first:TransformFactory<'T,'U>) (second:TransformFactory<'U,'V>) : TransformFactory<'T,'V> =
+                upcast ComposedFactory(first, second)
 
-        and IdentityFactory<'T> () =
-            inherit SeqFactory<'T,'T> ()
-            static let singleton : SeqFactory<'T,'T> = upcast (IdentityFactory<'T>())
-            override __.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = next
+        and IdentityFactory<'T> private () =
+            inherit TransformFactory<'T,'T> ()
+            static let singleton : TransformFactory<'T,'T> = upcast (IdentityFactory<'T>())
+            override __.Compose<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Activity<'T,'V>) : Activity<'T,'V> = next
             static member Instance = singleton
 
-        and ISkipping =
+        and ISkipable =
             // Seq.init(Infinite)? lazily uses Current. The only Composer component that can do that is Skip
             // and it can only do it at the start of a sequence
-            abstract Skipping : unit -> bool
+            abstract CanSkip : unit -> bool
 
         type SeqProcessNextStates =
         | InProcess  = 0
@@ -181,89 +183,135 @@ namespace Microsoft.FSharp.Collections
         | Finished   = 2
 
         type Result<'T>() =
-            let mutable haltedIdx = 0
+            inherit Folder<'T,'T,NoValue>(Unchecked.defaultof<'T>,Unchecked.defaultof<NoValue>)
 
-            member val Current = Unchecked.defaultof<'T> with get, set
             member val SeqState = SeqProcessNextStates.NotStarted with get, set
-            member __.HaltedIdx = haltedIdx
 
-            interface IOutOfBand with
-                member __.StopFurtherProcessing pipeIdx = haltedIdx <- pipeIdx
-
-        // SetResult<> is used at the end of the chain of SeqComponents to assign the final value
-        type SetResult<'T> (result:Result<'T>) =
-            inherit Consumer<'T,'T>()
-
-            override __.ProcessNext (input:'T) : bool =
-                result.Current <- input
+            override this.ProcessNext (input:'T) : bool =
+                this.Result <- input
                 true
 
-        type OutOfBand() =
-            let mutable haltedIdx = 0
-            interface IOutOfBand with member __.StopFurtherProcessing pipeIdx = haltedIdx <- pipeIdx
-            member __.HaltedIdx = haltedIdx
+        module Fold =
+            type IIterate<'T> =
+                abstract Iterate<'U,'Result,'State> : outOfBand:Folder<'U,'Result,'State> -> consumer:Activity<'T,'U> -> unit
 
-        module ForEach =
-            let enumerable (enumerable:IEnumerable<'T>) (outOfBand:OutOfBand) (consumer:Consumer<'T,'U>) =
-                use enumerator = enumerable.GetEnumerator ()
-                while (outOfBand.HaltedIdx = 0) && (enumerator.MoveNext ()) do
-                    consumer.ProcessNext enumerator.Current |> ignore
+            [<Struct;NoComparison;NoEquality>]
+            type enumerable<'T> (enumerable:IEnumerable<'T>) =
+                interface IIterate<'T> with
+                    member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Activity<'T,'U>) =
+                        use enumerator = enumerable.GetEnumerator ()
+                        let rec iterate () =
+                            if enumerator.MoveNext () then  
+                                consumer.ProcessNext enumerator.Current |> ignore
+                                if outOfBand.HaltedIdx = 0 then
+                                    iterate ()
+                        iterate ()
 
-            let array (array:array<'T>) (outOfBand:OutOfBand) (consumer:Consumer<'T,'U>) =
-                let mutable idx = 0
-                while (outOfBand.HaltedIdx = 0) && (idx < array.Length) do
-                    consumer.ProcessNext array.[idx] |> ignore
-                    idx <- idx + 1
+            [<Struct;NoComparison;NoEquality>]
+            type Array<'T> (array:array<'T>) =
+                interface IIterate<'T> with
+                    member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Activity<'T,'U>) =
+                        let array = array
+                        let rec iterate idx =
+                            if idx < array.Length then  
+                                consumer.ProcessNext array.[idx] |> ignore
+                                if outOfBand.HaltedIdx = 0 then
+                                    iterate (idx+1)
+                        iterate 0
 
-            let list (alist:list<'T>) (outOfBand:OutOfBand) (consumer:Consumer<'T,'U>) =
-                let rec iterate lst =
-                    match outOfBand.HaltedIdx, lst with
-                    | 0, hd :: tl ->
-                        consumer.ProcessNext hd |> ignore
-                        iterate tl
-                    | _ -> ()
-                iterate alist
+            [<Struct;NoComparison;NoEquality>]
+            type resizeArray<'T> (array:ResizeArray<'T>) =
+                interface IIterate<'T> with
+                    member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Activity<'T,'U>) =
+                        let array = array
+                        let rec iterate idx =
+                            if idx < array.Count then  
+                                consumer.ProcessNext array.[idx] |> ignore
+                                if outOfBand.HaltedIdx = 0 then
+                                    iterate (idx+1)
+                        iterate 0
 
-            let unfold (generator:'S->option<'T*'S>) state (outOfBand:OutOfBand) (consumer:Consumer<'T,'U>) =
-                let rec iterate current =
-                    match outOfBand.HaltedIdx, generator current with
-                    | 0, Some (item, next) ->
-                        consumer.ProcessNext item |> ignore
-                        iterate next
-                    | _ -> ()
+            [<Struct;NoComparison;NoEquality>]
+            type List<'T> (alist:list<'T>) =
+                interface IIterate<'T> with
+                    member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Activity<'T,'U>) =
+                        let rec iterate lst =
+                            match lst with
+                            | hd :: tl ->
+                                consumer.ProcessNext hd |> ignore
+                                if outOfBand.HaltedIdx = 0 then
+                                    iterate tl
+                            | _ -> ()
+                        iterate alist
 
-                iterate state
+            [<Struct;NoComparison;NoEquality>]
+            type unfold<'S,'T> (generator:'S->option<'T*'S>, state:'S) =
+                interface IIterate<'T> with
+                    member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Activity<'T,'U>) =
+                        let generator = generator
+                        let rec iterate current =
+                            match generator current with
+                            | Some (item, next) ->
+                                consumer.ProcessNext item |> ignore
+                                if outOfBand.HaltedIdx = 0 then
+                                    iterate next
+                            | _ -> ()
+                        iterate state
 
-            let makeIsSkipping (consumer:Consumer<'T,'U>) =
-                match box consumer with
-                | :? ISkipping as skip -> skip.Skipping
-                | _ -> fun () -> false
+            [<Struct;NoComparison;NoEquality>]
+            type init<'T> (f:int->'T, terminatingIdx:int) =
+                interface IIterate<'T> with
+                    member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Activity<'T,'U>) =
+                        let terminatingIdx = terminatingIdx
+                        let f = f
 
-            let init f (terminatingIdx:int) (outOfBand:OutOfBand) (consumer:Consumer<'T,'U>) =
-                let mutable idx = -1
-                let isSkipping = makeIsSkipping consumer
-                let mutable maybeSkipping = true
-                while (outOfBand.HaltedIdx = 0) && (idx < terminatingIdx) do
-                    if maybeSkipping then
-                        maybeSkipping <- isSkipping ()
+                        let firstIdx = 
+                            match box consumer with
+                            | :? ISkipable as skipping ->
+                                let rec skip idx =
+                                    if idx = terminatingIdx || outOfBand.HaltedIdx <> 0 then
+                                        terminatingIdx
+                                    elif skipping.CanSkip () then
+                                        skip (idx+1)
+                                    else
+                                        idx
+                                skip -1
+                            | _ -> -1
 
-                    if not maybeSkipping then
-                        consumer.ProcessNext (f (idx+1)) |> ignore
+                        let rec iterate idx =
+                            if idx < terminatingIdx then
+                                consumer.ProcessNext (f (idx+1)) |> ignore
+                                if outOfBand.HaltedIdx = 0 then
+                                    iterate (idx+1)
+                                else
+                                    idx
+                            else
+                                idx
 
-                    idx <- idx + 1
+                        let finalIdx = iterate firstIdx
+                        if outOfBand.HaltedIdx = 0 && finalIdx = System.Int32.MaxValue then
+                            raise <| System.InvalidOperationException (SR.GetString(SR.enumerationPastIntMaxValue))
 
-            let execute (f:(unit->unit)->#Consumer<'U,'U>) (current:SeqFactory<'T,'U>) executeOn =
-                let pipeline = OutOfBand()
-                let result = f (fun () -> (pipeline:>IOutOfBand).StopFurtherProcessing (current.PipeIdx+1))
-                let consumer = current.Build pipeline result
+            let execute (createFolder:PipeIdx->Folder<'U,'Result,'State>) (transformFactory:TransformFactory<'T,'U>) pipeIdx (executeOn:#IIterate<'T>) =
+                let mutable stopTailCall = ()
+                let result = createFolder (pipeIdx+1)
+                let consumer = createFold transformFactory result pipeIdx
                 try
-                    executeOn pipeline consumer
-                    let mutable stopTailCall = ()
-                    (Upcast.iCompletionChain consumer).ChainComplete (&stopTailCall, pipeline.HaltedIdx)
-                    result
+                    executeOn.Iterate result consumer
+                    consumer.ChainComplete (&stopTailCall, result.HaltedIdx)
+                    result.Result
                 finally
-                    let mutable stopTailCall = ()
-                    (Upcast.iCompletionChain consumer).ChainDispose (&stopTailCall)
+                    consumer.ChainDispose (&stopTailCall)
+
+            let executeThin (createFolder:PipeIdx->Folder<'T,'Result,'State>) (executeOn:#IIterate<'T>) =
+                let mutable stopTailCall = ()
+                let result = createFolder 1
+                try
+                    executeOn.Iterate result result
+                    result.ChainComplete (&stopTailCall, result.HaltedIdx)
+                    result.Result
+                finally
+                    result.ChainDispose (&stopTailCall)
 
         module Enumerable =
             type Empty<'T>() =
@@ -282,11 +330,11 @@ namespace Microsoft.FSharp.Collections
                 static member Element = element
 
             [<AbstractClass>]
-            type EnumeratorBase<'T>(result:Result<'T>, seqComponent:ICompletionChain) =
+            type EnumeratorBase<'T>(result:Result<'T>, activity:Activity) =
                 interface IDisposable with
-                    member __.Dispose() : unit =
+                    member __.Dispose () : unit =
                         let mutable stopTailCall = ()
-                        seqComponent.ChainDispose (&stopTailCall)
+                        activity.ChainDispose (&stopTailCall)
 
                 interface IEnumerator with
                     member this.Current : obj = box ((Upcast.enumerator this)).Current
@@ -295,7 +343,7 @@ namespace Microsoft.FSharp.Collections
 
                 interface IEnumerator<'T> with
                     member __.Current =
-                        if result.SeqState = SeqProcessNextStates.InProcess then result.Current
+                        if result.SeqState = SeqProcessNextStates.InProcess then result.Result
                         else
                             match result.SeqState with
                             | SeqProcessNextStates.NotStarted -> notStarted()
@@ -306,9 +354,9 @@ namespace Microsoft.FSharp.Collections
                 let derivedClassShouldImplement () =
                     failwith "library implementation error: derived class should implement (should be abstract)"
 
-                abstract member Append   : (seq<'T>) -> IEnumerable<'T>
+                abstract member Append : (ISeq<'T>) -> ISeq<'T>
 
-                default this.Append source = Upcast.enumerable (AppendEnumerable [this; source])
+                default this.Append source = Upcast.seq (AppendEnumerable [this; source])
 
                 interface IEnumerable with
                     member this.GetEnumerator () : IEnumerator =
@@ -320,22 +368,22 @@ namespace Microsoft.FSharp.Collections
                     member this.GetEnumerator () : IEnumerator<'T> = derivedClassShouldImplement ()
 
                 interface ISeq<'T> with
-                    member __.Compose _ = derivedClassShouldImplement ()
-                    member __.ForEach _ = derivedClassShouldImplement ()
+                    member __.PushTransform _ = derivedClassShouldImplement ()
+                    member __.Fold _ = derivedClassShouldImplement ()
 
-            and Enumerator<'T,'U>(source:IEnumerator<'T>, seqComponent:Consumer<'T,'U>, result:Result<'U>) =
-                inherit EnumeratorBase<'U>(result, seqComponent)
+            and Enumerator<'T,'U>(source:IEnumerator<'T>, activity:Activity<'T,'U>, result:Result<'U>) =
+                inherit EnumeratorBase<'U>(result, activity)
 
                 let rec moveNext () =
                     if (result.HaltedIdx = 0) && source.MoveNext () then
-                        if seqComponent.ProcessNext source.Current then
+                        if activity.ProcessNext source.Current then
                             true
                         else
                             moveNext ()
                     else
                         result.SeqState <- SeqProcessNextStates.Finished
                         let mutable stopTailCall = ()
-                        (Upcast.iCompletionChain seqComponent).ChainComplete (&stopTailCall, result.HaltedIdx)
+                        activity.ChainComplete (&stopTailCall, result.HaltedIdx)
                         false
 
                 interface IEnumerator with
@@ -344,27 +392,53 @@ namespace Microsoft.FSharp.Collections
                         moveNext ()
 
                 interface IDisposable with
-                    member __.Dispose() =
+                    member __.Dispose () =
                         try
                             source.Dispose ()
                         finally
                             let mutable stopTailCall = ()
-                            (Upcast.iCompletionChain seqComponent).ChainDispose (&stopTailCall)
+                            activity.ChainDispose (&stopTailCall)
 
-            and Enumerable<'T,'U>(enumerable:IEnumerable<'T>, current:SeqFactory<'T,'U>) =
+            and Enumerable<'T,'U>(enumerable:IEnumerable<'T>, current:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
                 inherit EnumerableBase<'U>()
 
                 interface IEnumerable<'U> with
                     member this.GetEnumerator () : IEnumerator<'U> =
                         let result = Result<'U> ()
-                        Upcast.enumerator (new Enumerator<'T,'U>(enumerable.GetEnumerator(), current.Build result (SetResult<'U> result), result))
+                        Upcast.enumerator (new Enumerator<'T,'U>(enumerable.GetEnumerator(), createFold current result pipeIdx, result))
 
                 interface ISeq<'U> with
-                    member __.Compose (next:SeqFactory<'U,'V>) : ISeq<'V> =
-                        Upcast.seq (new Enumerable<'T,'V>(enumerable, ComposedFactory.Combine current next))
+                    member __.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
+                        Upcast.seq (new Enumerable<'T,'V>(enumerable, ComposedFactory.Combine current next, pipeIdx+1))
 
-                    member this.ForEach (f:(unit->unit)->#Consumer<'U,'U>) =
-                        ForEach.execute f current (ForEach.enumerable enumerable)
+                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'U,'Result,'State>) =
+                        Fold.execute f current pipeIdx (Fold.enumerable enumerable)
+
+            and EnumerableThin<'T>(enumerable:IEnumerable<'T>) =
+                inherit EnumerableBase<'T>()
+
+                interface IEnumerable<'T> with
+                    member this.GetEnumerator () = enumerable.GetEnumerator ()
+
+                interface ISeq<'T> with
+                    member __.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
+                        Upcast.seq (new Enumerable<'T,'U>(enumerable, next, 1))
+
+                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
+                        Fold.executeThin f (Fold.enumerable enumerable)
+
+            and SeqDelayed<'T>(delayed:unit->ISeq<'T>, pipeIdx:PipeIdx) =
+                inherit EnumerableBase<'T>()
+
+                interface IEnumerable<'T> with
+                    member this.GetEnumerator () : IEnumerator<'T> = (delayed()).GetEnumerator ()
+
+                interface ISeq<'T> with
+                    member __.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
+                        Upcast.seq (new SeqDelayed<'U>((fun () -> (delayed()).PushTransform next), pipeIdx+1))
+
+                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
+                        (delayed()).Fold f
 
             and ConcatEnumerator<'T, 'Collection when 'Collection :> seq<'T>> (sources:seq<'Collection>) =
                 let mutable state = SeqProcessNextStates.NotStarted
@@ -400,11 +474,11 @@ namespace Microsoft.FSharp.Collections
                     member __.Reset () = noReset ()
 
                 interface IDisposable with
-                    member __.Dispose() =
+                    member __.Dispose () =
                         main.Dispose ()
                         active.Dispose ()
 
-            and AppendEnumerable<'T> (sources:list<seq<'T>>) =
+            and AppendEnumerable<'T> (sources:list<ISeq<'T>>) =
                 inherit EnumerableBase<'T>()
 
                 interface IEnumerable<'T> with
@@ -412,14 +486,14 @@ namespace Microsoft.FSharp.Collections
                         Upcast.enumerator (new ConcatEnumerator<_,_> (sources |> List.rev))
 
                 override this.Append source =
-                    Upcast.enumerable (AppendEnumerable (source :: sources))
+                    Upcast.seq (AppendEnumerable (source::sources))
 
                 interface ISeq<'T> with
-                    member this.Compose (next:SeqFactory<'T,'U>) : ISeq<'U> =
-                        Upcast.seq (Enumerable<'T,'V>(this, next))
+                    member this.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
+                        Upcast.seq (Enumerable<'T,'V>(this, next, 1))
 
-                    member this.ForEach (f:(unit->unit)->#Consumer<'T,'T>) =
-                        ForEach.execute f IdentityFactory.Instance (ForEach.enumerable this)
+                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
+                        Fold.executeThin f (Fold.enumerable this)
 
             and ConcatEnumerable<'T, 'Collection when 'Collection :> seq<'T>> (sources:seq<'Collection>) =
                 inherit EnumerableBase<'T>()
@@ -429,14 +503,14 @@ namespace Microsoft.FSharp.Collections
                         Upcast.enumerator (new ConcatEnumerator<_,_> (sources))
 
                 interface ISeq<'T> with
-                    member this.Compose (next:SeqFactory<'T,'U>) : ISeq<'U> =
-                        Upcast.seq (Enumerable<'T,'V>(this, next))
+                    member this.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
+                        Upcast.seq (Enumerable<'T,'V>(this, next, 1))
 
-                    member this.ForEach (f:(unit->unit)->#Consumer<'T,'T>) =
-                        ForEach.execute f IdentityFactory.Instance (ForEach.enumerable this)
+                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
+                        Fold.executeThin f (Fold.enumerable this)
 
             let create enumerable current =
-                Upcast.seq (Enumerable(enumerable, current))
+                Upcast.seq (Enumerable (enumerable, current, 1))
 
         module EmptyEnumerable =
             type Enumerable<'T> () =
@@ -449,87 +523,103 @@ namespace Microsoft.FSharp.Collections
                     member this.GetEnumerator () : IEnumerator<'T> = IEnumerator.Empty<'T>()
 
                 override this.Append source =
-                    Upcast.enumerable (Enumerable.Enumerable<'T,'T> (source, IdentityFactory.Instance))
+                    Upcast.seq (Enumerable.EnumerableThin<'T> source)
 
                 interface ISeq<'T> with
-                    member this.Compose (next:SeqFactory<'T,'U>) : ISeq<'U> =
-                        Upcast.seq (Enumerable.Enumerable<'T,'V>(this, next))
+                    member this.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
+                        Upcast.seq (Enumerable.Enumerable<'T,'V>(this, next, 1))
 
-                    member this.ForEach (f:(unit->unit)->#Consumer<'T,'T>) =
-                        ForEach.execute f IdentityFactory.Instance (ForEach.enumerable this)
-
-
+                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
+                        Fold.executeThin f (Fold.enumerable this)
 
         module Array =
-            type Enumerator<'T,'U>(delayedArray:unit->array<'T>, seqComponent:Consumer<'T,'U>, result:Result<'U>) =
-                inherit Enumerable.EnumeratorBase<'U>(result, seqComponent)
+            type Enumerator<'T,'U>(array:array<'T>, activity:Activity<'T,'U>, result:Result<'U>) =
+                inherit Enumerable.EnumeratorBase<'U>(result, activity)
 
                 let mutable idx = 0
-                let mutable array = Unchecked.defaultof<_>
-
-                let mutable initMoveNext = Unchecked.defaultof<_>
-                do
-                    initMoveNext <-
-                        fun () ->
-                            result.SeqState <- SeqProcessNextStates.InProcess
-                            array <- delayedArray ()
-                            initMoveNext <- ignore
 
                 let rec moveNext () =
                     if (result.HaltedIdx = 0) && idx < array.Length then
                         idx <- idx+1
-                        if seqComponent.ProcessNext array.[idx-1] then
+                        if activity.ProcessNext array.[idx-1] then
                             true
                         else
                             moveNext ()
                     else
                         result.SeqState <- SeqProcessNextStates.Finished
                         let mutable stopTailCall = ()
-                        (Upcast.iCompletionChain seqComponent).ChainComplete (&stopTailCall, result.HaltedIdx)
+                        activity.ChainComplete (&stopTailCall, result.HaltedIdx)
                         false
 
                 interface IEnumerator with
                     member __.MoveNext () =
-                        initMoveNext ()
+                        result.SeqState <- SeqProcessNextStates.InProcess
                         moveNext ()
 
-            type Enumerable<'T,'U>(delayedArray:unit->array<'T>, current:SeqFactory<'T,'U>) =
+            type Enumerable<'T,'U>(array:array<'T>, transformFactory:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
                 inherit Enumerable.EnumerableBase<'U>()
 
                 interface IEnumerable<'U> with
                     member this.GetEnumerator () : IEnumerator<'U> =
                         let result = Result<'U> ()
-                        Upcast.enumerator (new Enumerator<'T,'U>(delayedArray, current.Build result (SetResult<'U> result), result))
+                        Upcast.enumerator (new Enumerator<'T,'U>(array, createFold transformFactory result pipeIdx, result))
 
                 interface ISeq<'U> with
-                    member __.Compose (next:SeqFactory<'U,'V>) : ISeq<'V> =
-                        Upcast.seq (new Enumerable<'T,'V>(delayedArray, ComposedFactory.Combine current next))
+                    member __.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
+                        Upcast.seq (new Enumerable<'T,'V>(array, ComposedFactory.Combine transformFactory next, 1))
 
-                    member this.ForEach (f:(unit->unit)->#Consumer<'U,'U>) =
-                        ForEach.execute f current (ForEach.array (delayedArray ()))
+                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'U,'Result,'State>) =
+                        Fold.execute f transformFactory pipeIdx (Fold.Array array)
 
-            let createDelayed (delayedArray:unit->array<'T>) (current:SeqFactory<'T,'U>) =
-                Upcast.seq (Enumerable(delayedArray, current))
+        module ResizeArray =
+            type Enumerator<'T,'U>(array:ResizeArray<'T>, activity:Activity<'T,'U>, result:Result<'U>) =
+                inherit Enumerable.EnumeratorBase<'U>(result, activity)
 
-            let create (array:array<'T>) (current:SeqFactory<'T,'U>) =
-                createDelayed (fun () -> array) current
+                let mutable idx = 0
 
-            let createDelayedId (delayedArray:unit -> array<'T>) =
-                createDelayed delayedArray IdentityFactory.Instance
+                let rec moveNext () =
+                    if (result.HaltedIdx = 0) && idx < array.Count then
+                        idx <- idx+1
+                        if activity.ProcessNext array.[idx-1] then
+                            true
+                        else
+                            moveNext ()
+                    else
+                        result.SeqState <- SeqProcessNextStates.Finished
+                        let mutable stopTailCall = ()
+                        activity.ChainComplete (&stopTailCall, result.HaltedIdx)
+                        false
 
-            let createId (array:array<'T>) =
-                create array IdentityFactory.Instance
+                interface IEnumerator with
+                    member __.MoveNext () =
+                        result.SeqState <- SeqProcessNextStates.InProcess
+                        moveNext ()
+
+            type Enumerable<'T,'U>(resizeArray:ResizeArray<'T>, transformFactory:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
+                inherit Enumerable.EnumerableBase<'U>()
+
+                interface IEnumerable<'U> with
+                    member this.GetEnumerator () : IEnumerator<'U> =
+                        let result = Result<'U> ()
+                        Upcast.enumerator (new Enumerator<'T,'U>(resizeArray, createFold transformFactory result pipeIdx, result))
+
+                interface ISeq<'U> with
+                    member __.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
+                        Upcast.seq (new Enumerable<'T,'V>(resizeArray, ComposedFactory.Combine transformFactory next, 1))
+
+                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'U,'Result,'State>) =
+                        Fold.execute f transformFactory pipeIdx (Fold.resizeArray resizeArray)
 
         module List =
-            type Enumerator<'T,'U>(alist:list<'T>, seqComponent:Consumer<'T,'U>, result:Result<'U>) =
-                inherit Enumerable.EnumeratorBase<'U>(result, seqComponent)
+            type Enumerator<'T,'U>(alist:list<'T>, activity:Activity<'T,'U>, result:Result<'U>) =
+                inherit Enumerable.EnumeratorBase<'U>(result, activity)
 
                 let mutable list = alist
 
                 let rec moveNext current =
                     match result.HaltedIdx, current with
                     | 0, head::tail ->
-                        if seqComponent.ProcessNext head then
+                        if activity.ProcessNext head then
                             list <- tail
                             true
                         else
@@ -537,7 +627,7 @@ namespace Microsoft.FSharp.Collections
                     | _ ->
                         result.SeqState <- SeqProcessNextStates.Finished
                         let mutable stopTailCall = ()
-                        (Upcast.iCompletionChain seqComponent).ChainComplete (&stopTailCall, result.HaltedIdx)
+                        activity.ChainComplete (&stopTailCall, result.HaltedIdx)
                         false
 
                 interface IEnumerator with
@@ -545,27 +635,27 @@ namespace Microsoft.FSharp.Collections
                         result.SeqState <- SeqProcessNextStates.InProcess
                         moveNext list
 
-            type Enumerable<'T,'U>(alist:list<'T>, current:SeqFactory<'T,'U>) =
+            type Enumerable<'T,'U>(alist:list<'T>, transformFactory:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
                 inherit Enumerable.EnumerableBase<'U>()
 
                 interface IEnumerable<'U> with
                     member this.GetEnumerator () : IEnumerator<'U> =
                         let result = Result<'U> ()
-                        Upcast.enumerator (new Enumerator<'T,'U>(alist, current.Build result (SetResult<'U> result), result))
+                        Upcast.enumerator (new Enumerator<'T,'U>(alist, createFold transformFactory result pipeIdx, result))
 
                 interface ISeq<'U> with
-                    member __.Compose (next:SeqFactory<'U,'V>) : ISeq<'V> =
-                        Upcast.seq (new Enumerable<'T,'V>(alist, ComposedFactory.Combine current next))
+                    member __.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
+                        Upcast.seq (new Enumerable<'T,'V>(alist, ComposedFactory.Combine transformFactory next, pipeIdx+1))
 
-                    member this.ForEach (f:(unit->unit)->#Consumer<'U,'U>) =
-                        ForEach.execute f current (ForEach.list alist)
+                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'U,'Result,'State>) =
+                        Fold.execute f transformFactory pipeIdx (Fold.List alist)
 
             let create alist current =
-                Upcast.seq (Enumerable(alist, current))
+                Upcast.seq (Enumerable(alist, current, 1))
 
         module Unfold =
-            type Enumerator<'T,'U,'State>(generator:'State->option<'T*'State>, state:'State, seqComponent:Consumer<'T,'U>, result:Result<'U>) =
-                inherit Enumerable.EnumeratorBase<'U>(result, seqComponent)
+            type Enumerator<'T,'U,'State>(generator:'State->option<'T*'State>, state:'State, activity:Activity<'T,'U>, result:Result<'U>) =
+                inherit Enumerable.EnumeratorBase<'U>(result, activity)
 
                 let mutable current = state
 
@@ -573,7 +663,7 @@ namespace Microsoft.FSharp.Collections
                     match result.HaltedIdx, generator current with
                     | 0, Some (item, nextState) ->
                         current <- nextState
-                        if seqComponent.ProcessNext item then
+                        if activity.ProcessNext item then
                             true
                         else
                             moveNext ()
@@ -584,20 +674,20 @@ namespace Microsoft.FSharp.Collections
                         result.SeqState <- SeqProcessNextStates.InProcess
                         moveNext ()
 
-            type Enumerable<'T,'U,'GeneratorState>(generator:'GeneratorState->option<'T*'GeneratorState>, state:'GeneratorState, current:SeqFactory<'T,'U>) =
+            type Enumerable<'T,'U,'GeneratorState>(generator:'GeneratorState->option<'T*'GeneratorState>, state:'GeneratorState, transformFactory:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
                 inherit Enumerable.EnumerableBase<'U>()
 
                 interface IEnumerable<'U> with
                     member this.GetEnumerator () : IEnumerator<'U> =
                         let result = Result<'U> ()
-                        Upcast.enumerator (new Enumerator<'T,'U,'GeneratorState>(generator, state, current.Build result (SetResult<'U> result), result))
+                        Upcast.enumerator (new Enumerator<'T,'U,'GeneratorState>(generator, state, createFold transformFactory result pipeIdx, result))
 
                 interface ISeq<'U> with
-                    member this.Compose (next:SeqFactory<'U,'V>) : ISeq<'V> =
-                        Upcast.seq (new Enumerable<'T,'V,'GeneratorState>(generator, state, ComposedFactory.Combine current next))
+                    member this.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
+                        Upcast.seq (new Enumerable<'T,'V,'GeneratorState>(generator, state, ComposedFactory.Combine transformFactory next, pipeIdx+1))
 
-                    member this.ForEach (f:(unit->unit)->#Consumer<'U,'U>) =
-                        ForEach.execute f current (ForEach.unfold generator state)
+                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'U,'Result,'State>) =
+                        Fold.execute f transformFactory pipeIdx (Fold.unfold (generator, state))
 
         module Init =
             // The original implementation of "init" delayed the calculation of Current, and so it was possible
@@ -619,11 +709,13 @@ namespace Microsoft.FSharp.Collections
                 else
                     System.Int32.MaxValue
 
-            type Enumerator<'T,'U>(count:Nullable<int>, f:int->'T, seqComponent:Consumer<'T,'U>, result:Result<'U>) =
-                inherit Enumerable.EnumeratorBase<'U>(result, seqComponent)
+            type Enumerator<'T,'U>(count:Nullable<int>, f:int->'T, activity:Activity<'T,'U>, result:Result<'U>) =
+                inherit Enumerable.EnumeratorBase<'U>(result, activity)
 
                 let isSkipping =
-                    ForEach.makeIsSkipping seqComponent
+                    match box activity with
+                    | :? ISkipable as skip -> skip.CanSkip
+                    | _ -> fun () -> false
 
                 let terminatingIdx =
                     getTerminatingIdx count
@@ -632,7 +724,7 @@ namespace Microsoft.FSharp.Collections
                 let mutable idx = -1
 
                 let rec moveNext () =
-                    if (result.HaltedIdx = 0) && idx < terminatingIdx then
+                    if result.HaltedIdx = 0 && idx < terminatingIdx then
                         idx <- idx + 1
 
                         if maybeSkipping then
@@ -642,16 +734,16 @@ namespace Microsoft.FSharp.Collections
 
                         if maybeSkipping then
                             moveNext ()
-                        elif seqComponent.ProcessNext (f idx) then
+                        elif activity.ProcessNext (f idx) then
                             true
                         else
                             moveNext ()
-                    elif (result.HaltedIdx = 0) && idx = System.Int32.MaxValue then
+                    elif result.HaltedIdx = 0 && idx = System.Int32.MaxValue then
                         raise <| System.InvalidOperationException (SR.GetString(SR.enumerationPastIntMaxValue))
                     else
                         result.SeqState <- SeqProcessNextStates.Finished
                         let mutable stopTailCall = ()
-                        (Upcast.iCompletionChain seqComponent).ChainComplete (&stopTailCall, result.HaltedIdx)
+                        activity.ChainComplete (&stopTailCall, result.HaltedIdx)
                         false
 
                 interface IEnumerator with
@@ -659,21 +751,21 @@ namespace Microsoft.FSharp.Collections
                         result.SeqState <- SeqProcessNextStates.InProcess
                         moveNext ()
 
-            type Enumerable<'T,'U>(count:Nullable<int>, f:int->'T, current:SeqFactory<'T,'U>) =
+            type Enumerable<'T,'U>(count:Nullable<int>, f:int->'T, transformFactory:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
                 inherit Enumerable.EnumerableBase<'U>()
 
                 interface IEnumerable<'U> with
                     member this.GetEnumerator () : IEnumerator<'U> =
                         let result = Result<'U> ()
-                        Upcast.enumerator (new Enumerator<'T,'U>(count, f, current.Build result (SetResult<'U> result), result))
+                        Upcast.enumerator (new Enumerator<'T,'U>(count, f, createFold transformFactory result pipeIdx, result))
 
                 interface ISeq<'U> with
-                    member this.Compose (next:SeqFactory<'U,'V>) : ISeq<'V> =
-                        Upcast.seq (new Enumerable<'T,'V>(count, f, ComposedFactory.Combine current next))
+                    member this.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
+                        Upcast.seq (new Enumerable<'T,'V>(count, f, ComposedFactory.Combine transformFactory next, pipeIdx+1))
 
-                    member this.ForEach (createResult:(unit->unit)->#Consumer<'U,'U>) =
+                    member this.Fold<'Result,'State> (createResult:PipeIdx->Folder<'U,'Result,'State>) =
                         let terminatingIdx = getTerminatingIdx count
-                        ForEach.execute createResult current (ForEach.init f terminatingIdx)
+                        Fold.execute createResult transformFactory pipeIdx (Fold.init (f, terminatingIdx))
 
             let upto lastOption f =
                 match lastOption with
@@ -721,11 +813,11 @@ namespace Microsoft.FSharp.Collections
                                         setIndex (!index + 1)
                                         true
                                 )
-                            member self.Reset() = noReset()
+                            member this.Reset() = noReset()
                         interface System.IDisposable with
-                            member x.Dispose() = () }
+                            member x.Dispose () = () }
 
-            type EnumerableDecider<'T>(count:Nullable<int>, f:int->'T) =
+            type EnumerableDecider<'T>(count:Nullable<int>, f:int->'T, pipeIdx:PipeIdx) =
                 inherit Enumerable.EnumerableBase<'T>()
 
                 interface IEnumerable<'T> with
@@ -736,835 +828,861 @@ namespace Microsoft.FSharp.Collections
                         upto (if count.HasValue then Some (count.Value-1) else None) f
 
                 interface ISeq<'T> with
-                    member this.Compose (next:SeqFactory<'T,'U>) : ISeq<'U> =
-                        Upcast.seq (Enumerable<'T,'V>(count, f, next))
+                    member this.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
+                        Upcast.seq (Enumerable<'T,'V>(count, f, next, pipeIdx+1))
 
-                    member this.ForEach (f:(unit->unit)->#Consumer<'T,'T>) =
-                        ForEach.execute f IdentityFactory.Instance (ForEach.enumerable (Upcast.enumerable this))
+                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
+                        Fold.executeThin f (Fold.enumerable (Upcast.enumerable this))
 
+        [<CompiledName "OfResizeArrayUnchecked">]
+        let ofResizeArrayUnchecked (source:ResizeArray<'T>) : ISeq<'T> =
+            Upcast.seq (ResizeArray.Enumerable (source, IdentityFactory.Instance, 1))
 
-        [<CompiledName "ToComposer">]
-        let toComposer (source:seq<'T>) : ISeq<'T> =
+        [<CompiledName "OfArray">]
+        let ofArray (source:array<'T>) : ISeq<'T> =
+            Upcast.seq (Array.Enumerable (source, IdentityFactory.Instance, 1))
+
+        [<CompiledName "OfList">]
+        let ofList (source:list<'T>) : ISeq<'T> =
+            Upcast.seq (List.Enumerable (source, IdentityFactory.Instance, 1))
+
+        [<CompiledName "OfSeq">]
+        let ofSeq (source:seq<'T>) : ISeq<'T> =
             match source with
-            | :? ISeq<'T> as s -> s
-            | :? array<'T> as a -> Upcast.seq (Array.Enumerable((fun () -> a), IdentityFactory.Instance))
-            | :? list<'T> as a -> Upcast.seq (List.Enumerable(a, IdentityFactory.Instance))
-            | null -> nullArg "source"
-            | _ -> Upcast.seq (Enumerable.Enumerable<'T,'T>(source, IdentityFactory.Instance))
-
-
-        let inline foreach f (source:ISeq<_>) = source.ForEach f
-        let inline compose (factory:#SeqFactory<_,_>) (source:ISeq<'T>) = source.Compose factory
+            | :? ISeq<'T>  as seq   -> seq
+            | :? array<'T> as array -> ofArray array
+            | :? list<'T>  as list  -> ofList list
+            | null                  -> nullArg "source"
+            | _                     -> Upcast.seq (Enumerable.EnumerableThin<'T> source)
 
         [<CompiledName "Average">]
-        let inline average (source: ISeq< ^T>) : ^T
-            when ^T:(static member Zero : ^T)
-            and  ^T:(static member (+) : ^T * ^T -> ^T)
-            and  ^T:(static member DivideByInt : ^T * int -> ^T) =
-            source
-            |> foreach (fun _ ->
-                { new FolderWithOnComplete< ^T, Values< ^T, int>> (Values<_,_>(LanguagePrimitives.GenericZero, 0)) with
+        let inline average (source:ISeq<'T>) =
+            source.Fold (fun _ ->
+                upcast { new FolderWithPostProcessing<'T,'T,int> (LanguagePrimitives.GenericZero, 0) with
                     override this.ProcessNext value =
-                        this.Value._1 <- Checked.(+) this.Value._1 value
-                        this.Value._2 <- this.Value._2 + 1
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
+                        this.Result <- Checked.(+) this.Result value
+                        this.State <- this.State + 1
+                        Unchecked.defaultof<_> (* return value unused in Fold context *)
 
                     override this.OnComplete _ =
-                        if this.Value._2 = 0 then
-                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString })
-            |> fun total -> LanguagePrimitives.DivideByInt< ^T> total.Value._1 total.Value._2
-
+                        if this.State = 0 then
+                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                        this.Result <- LanguagePrimitives.DivideByInt<'T> this.Result this.State 
+                    override this.OnDispose () = () })
 
         [<CompiledName "AverageBy">]
-        let inline averageBy (f : 'T -> ^U) (source: ISeq< 'T >) : ^U
-            when ^U:(static member Zero : ^U)
-            and  ^U:(static member (+) : ^U * ^U -> ^U)
-            and  ^U:(static member DivideByInt : ^U * int -> ^U) =
-            source
-            |> foreach (fun _ ->
-                { new FolderWithOnComplete<'T,Values<'U, int>>(Values<_,_>(LanguagePrimitives.GenericZero, 0)) with
+        let inline averageBy (f:'T->'U) (source:ISeq<'T>) =
+            source.Fold (fun _ ->
+                upcast { new FolderWithPostProcessing<'T,'U,int>(LanguagePrimitives.GenericZero,0) with
                     override this.ProcessNext value =
-                        this.Value._1 <- Checked.(+) this.Value._1 (f value)
-                        this.Value._2 <- this.Value._2 + 1
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
+                        this.Result <- Checked.(+) this.Result (f value)
+                        this.State <- this.State + 1
+                        Unchecked.defaultof<_> (* return value unused in Fold context *)
 
                     override this.OnComplete _ =
-                        if this.Value._2 = 0 then
-                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString })
-            |> fun total -> LanguagePrimitives.DivideByInt< ^U> total.Value._1 total.Value._2
-
+                        if this.State = 0 then
+                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                        this.Result <- LanguagePrimitives.DivideByInt<'U> this.Result this.State
+                    override this.OnDispose () = () })
 
         [<CompiledName "Empty">]
         let empty<'T> = EmptyEnumerable.Enumerable<'T>.Instance
 
-
         [<CompiledName "ExactlyOne">]
-        let inline exactlyOne errorString  (source : ISeq<'T>) : 'T =
-            source
-            |> foreach (fun halt ->
-                { new FolderWithOnComplete<'T, Values<bool,'T, bool>>(Values<bool,'T, bool>(true, Unchecked.defaultof<'T>, false)) with
+        let exactlyOne (source:ISeq<'T>) : 'T =
+            source.Fold (fun pipeIdx ->
+                upcast { new FolderWithPostProcessing<'T,'T,Values<bool, bool>>(Unchecked.defaultof<'T>, Values<bool,bool>(true, false)) with
                     override this.ProcessNext value =
-                        if this.Value._1 then
-                            this.Value._1 <- false
-                            this.Value._2 <- value
+                        if this.State._1 then
+                            this.State._1 <- false
+                            this.Result <- value
                         else
-                            this.Value._3 <- true
-                            halt ()
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
+                            this.State._2 <- true
+                            this.StopFurtherProcessing pipeIdx
+                        Unchecked.defaultof<_> (* return value unused in Fold context *)
 
                     override this.OnComplete _ =
-                        if this.Value._1 then
+                        if this.State._1 then
                             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-                        elif this.Value._3 then
-                            invalidArg "source" errorString })
-            |> fun one -> one.Value._2
-
+                        elif this.State._2 then
+                            invalidArg "source" (SR.GetString SR.inputSequenceTooLong)
+                    override this.OnDispose () = () })
 
         [<CompiledName "Fold">]
         let inline fold<'T,'State> (f:'State->'T->'State) (seed:'State) (source:ISeq<'T>) : 'State =
-            source
-            |> foreach (fun _ ->
-                { new Folder<'T,'State>(seed) with
+            source.Fold (fun _ ->
+                upcast { new Folder<'T,'State,NoValue>(seed,Unchecked.defaultof<NoValue>) with
                     override this.ProcessNext value =
-                        this.Value <- f this.Value value
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
-                })
-            |> fun folded -> folded.Value
-
+                        this.Result <- f this.Result value
+                        Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "Fold2">]
-        let inline fold2<'T1,'T2,'State> (folder:'State->'T1->'T2->'State) (state:'State) (source1: ISeq<'T1>) (source2: ISeq<'T2>) =
-            source1
-            |> foreach (fun halt ->
-                { new FolderWithOnComplete<_,Values<'State,IEnumerator<'T2>>>(Values<_,_>(state,source2.GetEnumerator())) with
-                    override self.ProcessNext value =
-                        if self.Value._2.MoveNext() then
-                            self.Value._1 <- folder self.Value._1 value self.Value._2.Current
+        let inline fold2<'T1,'T2,'State> (folder:'State->'T1->'T2->'State) (state:'State) (source1:ISeq<'T1>) (source2: ISeq<'T2>) =
+            source1.Fold (fun pipeIdx ->
+                upcast { new FolderWithPostProcessing<_,'State,IEnumerator<'T2>>(state,source2.GetEnumerator()) with
+                    override this.ProcessNext value =
+                        if this.State.MoveNext() then
+                            this.Result <- folder this.Result value this.State.Current
                         else
-                            halt()
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
+                            this.StopFurtherProcessing pipeIdx
+                        Unchecked.defaultof<_> (* return value unused in Fold context *)
 
-                    override self.OnComplete _ =
-                        self.Value._2.Dispose()
-                })
-            |> fun fold -> fold.Value._1
-
+                    override this.OnComplete _ = ()
+                    override this.OnDispose () = this.State.Dispose () })
 
         [<CompiledName "Unfold">]
         let unfold (generator:'State->option<'T * 'State>) (state:'State) : ISeq<'T> =
-            Upcast.seq (new Unfold.Enumerable<'T,'T,'State>(generator, state, IdentityFactory.Instance))
-
+            Upcast.seq (new Unfold.Enumerable<'T,'T,'State>(generator, state, IdentityFactory.Instance, 1))
 
         [<CompiledName "InitializeInfinite">]
         let initInfinite<'T> (f:int->'T) : ISeq<'T> =
-            Upcast.seq (new Init.EnumerableDecider<'T>(Nullable (), f))
-
+            Upcast.seq (new Init.EnumerableDecider<'T>(Nullable (), f, 1))
 
         [<CompiledName "Initialize">]
         let init<'T> (count:int) (f:int->'T) : ISeq<'T> =
             if count < 0 then invalidArgInputMustBeNonNegative "count" count
             elif count = 0 then empty else
-            Upcast.seq (new Init.EnumerableDecider<'T>(Nullable count, f))
-
+            Upcast.seq (new Init.EnumerableDecider<'T>(Nullable count, f, 1))
 
         [<CompiledName "Iterate">]
-        let iter f (source:ISeq<'T>) =
-            source
-            |> foreach (fun _ ->
-                { new Consumer<'T,'T> () with
+        let inline iter f (source:ISeq<'T>) =
+            source.Fold (fun _ ->
+                upcast { new Folder<'T,unit,NoValue> ((),Unchecked.defaultof<NoValue>) with
                     override this.ProcessNext value =
                         f value
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> ignore
-
+                        Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "Iterate2">]
         let inline iter2 (f:'T->'U->unit) (source1:ISeq<'T>) (source2:ISeq<'U>) : unit =
-            source1
-            |> foreach (fun halt ->
-                { new FolderWithOnComplete<'T,IEnumerator<'U>> (source2.GetEnumerator()) with
-                    override self.ProcessNext value =
-                        if self.Value.MoveNext() then
-                            f value self.Value.Current
+            source1.Fold (fun pipeIdx ->
+                upcast { new FolderWithPostProcessing<'T,unit,IEnumerator<'U>> ((),source2.GetEnumerator()) with
+                    override this.ProcessNext value =
+                        if this.State.MoveNext() then
+                            f value this.State.Current
                         else
-                            halt()
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
+                            this.StopFurtherProcessing pipeIdx
+                        Unchecked.defaultof<_> (* return value unused in Fold context *)
 
-                    override self.OnComplete _ =
-                        self.Value.Dispose()
-                })
-            |> ignore
-
+                    override this.OnComplete _ = ()
+                    override this.OnDispose () = this.State.Dispose () })
 
         [<CompiledName "IterateIndexed2">]
-        let inline iteri2 (f:int->'T->'U->unit) (source1:ISeq<'T>) (source2:seq<'U>) : unit =
-            source1
-            |> foreach (fun halt ->
-                { new FolderWithOnComplete<'T,Values<int,IEnumerator<'U>>>(Values<_,_>(-1,source2.GetEnumerator())) with
-                    override self.ProcessNext value =
-                        if self.Value._2.MoveNext() then
-                            f self.Value._1 value self.Value._2.Current
-                            self.Value._1 <- self.Value._1 + 1
+        let inline iteri2 (f:int->'T->'U->unit) (source1:ISeq<'T>) (source2:ISeq<'U>) : unit =
+            source1.Fold (fun pipeIdx ->
+                upcast { new FolderWithPostProcessing<'T,unit,Values<int,IEnumerator<'U>>>((),Values<_,_>(-1,source2.GetEnumerator())) with
+                    override this.ProcessNext value =
+                        if this.State._2.MoveNext() then
+                            f this.State._1 value this.State._2.Current
+                            this.State._1 <- this.State._1 + 1
                             Unchecked.defaultof<_>
                         else
-                            halt()
+                            this.StopFurtherProcessing pipeIdx
                             Unchecked.defaultof<_>
-
-                    override self.OnComplete _ =
-                        self.Value._2.Dispose()
-
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> ignore
-
+                    override this.OnComplete _ = () 
+                    override this.OnDispose () = this.State._2.Dispose () })
 
         [<CompiledName "TryHead">]
         let tryHead (source:ISeq<'T>) =
-            source
-            |> foreach (fun halt ->
-                { new Folder<'T, Option<'T>> (None) with
+            source.Fold (fun pipeIdx ->
+                upcast { new Folder<'T, Option<'T>,NoValue> (None,Unchecked.defaultof<NoValue>) with
                     override this.ProcessNext value =
-                        this.Value <- Some value
-                        halt ()
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun head -> head.Value
+                        this.Result <- Some value
+                        this.StopFurtherProcessing pipeIdx
+                        Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
+        [<CompiledName "Head">]
+        let head (source:ISeq<_>) =
+            match tryHead source with
+            | None -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+            | Some x -> x
 
         [<CompiledName "IterateIndexed">]
-        let iteri f (source:ISeq<'T>) =
-            source
-            |> foreach (fun _ ->
-                { new Folder<'T, int> (0) with
+        let inline iteri f (source:ISeq<'T>) =
+            source.Fold (fun _ ->
+                { new Folder<'T,unit,int> ((),0) with
                     override this.ProcessNext value =
-                        f this.Value value
-                        this.Value <- this.Value + 1
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> ignore
+                        f this.State value
+                        this.State <- this.State + 1
+                        Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "Except">]
         let inline except (itemsToExclude: seq<'T>) (source:ISeq<'T>) : ISeq<'T> when 'T:equality =
-            source |> compose { new SeqFactory<'T,'T>() with
-                member __.Create _ _ next =
-                    upcast { new ConsumerChainedWithState<'T,'V,Lazy<HashSet<'T>>>
-                                    (Upcast.iCompletionChain next,lazy(HashSet<'T>(itemsToExclude,HashIdentity.Structural<'T>))) with
+            source.PushTransform { new TransformFactory<'T,'T>() with
+                override __.Compose _ _ next =
+                    upcast { new Transform<'T,'V,Lazy<HashSet<'T>>>(next,lazy(HashSet<'T>(itemsToExclude,HashIdentity.Structural<'T>))) with
                         override this.ProcessNext (input:'T) : bool =
-                            if this.Value.Value.Add input then TailCall.avoid (next.ProcessNext input)
-                            else false
-                    }}
-
+                            this.State.Value.Add input && TailCall.avoid (next.ProcessNext input) }}
 
         [<CompiledName "Exists">]
-        let exists f (source:ISeq<'T>) =
-            source
-            |> foreach (fun halt ->
-                { new Folder<'T, bool> (false) with
+        let inline exists f (source:ISeq<'T>) =
+            source.Fold (fun pipeIdx ->
+                upcast { new Folder<'T, bool,NoValue> (false,Unchecked.defaultof<NoValue>) with
                     override this.ProcessNext value =
                         if f value then
-                            this.Value <- true
-                            halt ()
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun exists -> exists.Value
-
+                            this.Result <- true
+                            this.StopFurtherProcessing pipeIdx
+                        Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "Exists2">]
-        let exists2 (predicate:'T->'U->bool) (source1: ISeq<'T>) (source2: ISeq<'U>) : bool =
-            source1
-            |> foreach (fun halt ->
-                { new FolderWithOnComplete<'T,Values<bool,IEnumerator<'U>>>(Values<_,_>(false,source2.GetEnumerator())) with
-                    override self.ProcessNext value =
-                        if self.Value._2.MoveNext() then
-                            if predicate value self.Value._2.Current then
-                                self.Value._1 <- true
-                                halt()
+        let inline exists2 (predicate:'T->'U->bool) (source1:ISeq<'T>) (source2: ISeq<'U>) : bool =
+            source1.Fold (fun pipeIdx ->
+                upcast { new FolderWithPostProcessing<'T,bool,IEnumerator<'U>>(false,source2.GetEnumerator()) with
+                    override this.ProcessNext value =
+                        if this.State.MoveNext() then
+                            if predicate value this.State.Current then
+                                this.Result <- true
+                                this.StopFurtherProcessing pipeIdx
                         else
-                            halt()
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
+                            this.StopFurtherProcessing pipeIdx
+                        Unchecked.defaultof<_> (* return value unused in Fold context *)
 
-                    override self.OnComplete _ =
-                        self.Value._2.Dispose()
-
-                })
-            |> fun exists -> exists.Value._1
-
+                    override this.OnComplete _ = ()
+                    override this.OnDispose () = this.State.Dispose () })
 
         [<CompiledName "Contains">]
         let inline contains element (source:ISeq<'T>) =
-            source
-            |> foreach (fun halt ->
-                { new Folder<'T, bool> (false) with
+            source.Fold (fun pipeIdx ->
+                upcast { new Folder<'T, bool,NoValue> (false,Unchecked.defaultof<NoValue>) with
                     override this.ProcessNext value =
                         if element = value then
-                            this.Value <- true
-                            halt ()
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun contains -> contains.Value
-
+                            this.Result <- true
+                            this.StopFurtherProcessing pipeIdx
+                        Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "ForAll">]
-        let forall predicate (source:ISeq<'T>) =
-            source
-            |> foreach (fun halt ->
-                { new Folder<'T, bool> (true) with
+        let inline forall predicate (source:ISeq<'T>) =
+            source.Fold (fun pipeIdx ->
+                upcast { new Folder<'T, bool,NoValue> (true,Unchecked.defaultof<NoValue>) with
                     override this.ProcessNext value =
                         if not (predicate value) then
-                            this.Value <- false
-                            halt ()
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun forall -> forall.Value
-
+                            this.Result <- false
+                            this.StopFurtherProcessing pipeIdx
+                        Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "ForAll2">]
         let inline forall2 predicate (source1:ISeq<'T>) (source2:ISeq<'U>) : bool =
-            source1
-            |> foreach (fun halt ->
-                { new FolderWithOnComplete<'T,Values<bool,IEnumerator<'U>>>(Values<_,_>(true,source2.GetEnumerator())) with
-                    override self.ProcessNext value =
-                        if self.Value._2.MoveNext() then
-                            if not (predicate value self.Value._2.Current) then
-                                self.Value._1 <- false
-                                halt()
+            source1.Fold (fun pipeIdx ->
+                upcast { new FolderWithPostProcessing<'T,bool,IEnumerator<'U>>(true,source2.GetEnumerator()) with
+                    override this.ProcessNext value =
+                        if this.State.MoveNext() then
+                            if not (predicate value this.State.Current) then
+                                this.Result <- false
+                                this.StopFurtherProcessing pipeIdx
                         else
-                            halt()
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
+                            this.StopFurtherProcessing pipeIdx
+                        Unchecked.defaultof<_> (* return value unused in Fold context *)
 
-                    override self.OnComplete _ =
-                        self.Value._2.Dispose()
-                })
-            |> fun all -> all.Value._1
-
+                    override this.OnComplete _ = ()
+                    override this.OnDispose () = this.State.Dispose () })
 
         [<CompiledName "Filter">]
         let inline filter<'T> (f:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
-            source |> compose { new SeqFactory<'T,'T>() with
-                member __.Create _ _ next =
-                    upcast { new ConsumerChained<'T,'V>(Upcast.iCompletionChain next) with
-                        member __.ProcessNext input =
+            source.PushTransform { new TransformFactory<'T,'T>() with
+                override __.Compose _ _ next =
+                    upcast { new Transform<'T,'V,NoValue>(next,Unchecked.defaultof<NoValue>) with
+                        override __.ProcessNext input =
                             if f input then TailCall.avoid (next.ProcessNext input)
                             else false } }
 
-
         [<CompiledName "Map">]
         let inline map<'T,'U> (f:'T->'U) (source:ISeq<'T>) : ISeq<'U> =
-            source |> compose { new SeqFactory<'T,'U>() with
-                member __.Create _ _ next =
-                    upcast { new ConsumerChained<'T,'V>(Upcast.iCompletionChain next) with
-                        member __.ProcessNext input =
+            source.PushTransform { new TransformFactory<'T,'U>() with
+                override __.Compose _ _ next =
+                    upcast { new Transform<'T,'V,NoValue>(next,Unchecked.defaultof<NoValue>) with
+                        override __.ProcessNext input =
                             TailCall.avoid (next.ProcessNext (f input)) } }
 
-
         [<CompiledName "MapIndexed">]
-        let inline mapi f source =
-            source |> compose { new SeqFactory<'T,'U>() with
-                member __.Create _ _ next =
-                    upcast { new ConsumerChainedWithState<'T,'V,int>(Upcast.iCompletionChain next, -1) with
+        let inline mapi f (source:ISeq<_>) =
+            source.PushTransform { new TransformFactory<'T,'U>() with
+                override __.Compose _ _ next =
+                    upcast { new Transform<'T,'V,int>(next, -1) with
                         override this.ProcessNext (input:'T) : bool =
-                            this.Value <- this.Value  + 1
-                            TailCall.avoid (next.ProcessNext (f this.Value input)) } }
-
+                            this.State <- this.State  + 1
+                            TailCall.avoid (next.ProcessNext (f this.State input)) } }
 
         [<CompiledName "Map2">]
-        let inline map2<'First,'Second,'U> (map:'First->'Second->'U) (source1:ISeq<'First>) (source2:ISeq<'Second>) : ISeq<'U> =
-            source1 |> compose { new SeqFactory<'First,'U>() with
-                member __.Create<'V> outOfBand pipeIdx next =
-                    upcast { new ConsumerChainedWithStateAndCleanup<'First,'V, IEnumerator<'Second>>(Upcast.iCompletionChain next, (source2.GetEnumerator ())) with
-                        member self.ProcessNext input =
-                            if self.Value.MoveNext () then
-                                TailCall.avoid (next.ProcessNext (map input self.Value.Current))
+        let inline map2<'T,'U,'V> (map:'T->'U->'V) (source1:ISeq<'T>) (source2:ISeq<'U>) : ISeq<'V> =
+            source1.PushTransform { new TransformFactory<'T,'V>() with
+                override __.Compose outOfBand pipeIdx (next:Activity<'V,'W>) =
+                    upcast { new TransformWithPostProcessing<'T,'W, IEnumerator<'U>>(next, (source2.GetEnumerator ())) with
+                        override this.ProcessNext input =
+                            if this.State.MoveNext () then
+                                TailCall.avoid (next.ProcessNext (map input this.State.Current))
                             else
                                 outOfBand.StopFurtherProcessing pipeIdx
                                 false
-
-                        override self.OnDispose () = ()
-                        override self.OnComplete _ =
-                            self.Value.Dispose ()  } }
-
+                        override this.OnComplete _ = () 
+                        override this.OnDispose () = this.State.Dispose () }}
 
         [<CompiledName "MapIndexed2">]
-        let inline mapi2<'First,'Second,'U> (map:int -> 'First->'Second->'U) (source1:ISeq<'First>) (source2:ISeq<'Second>) : ISeq<'U> =
-            source1 |> compose { new SeqFactory<'First,'U>() with
-                member __.Create<'V> outOfBand pipeIdx next =
-                    upcast { new ConsumerChainedWithStateAndCleanup<'First,'V, Values<int,IEnumerator<'Second>>>
-                                                (Upcast.iCompletionChain next, Values<_,_>(-1, source2.GetEnumerator ())) with
-                        member self.ProcessNext input =
-                            if self.Value._2.MoveNext () then
-                                self.Value._1 <- self.Value._1 + 1
-                                TailCall.avoid (next.ProcessNext (map self.Value._1 input self.Value._2.Current))
+        let inline mapi2<'T,'U,'V> (map:int->'T->'U->'V) (source1:ISeq<'T>) (source2:ISeq<'U>) : ISeq<'V> =
+            source1.PushTransform { new TransformFactory<'T,'V>() with
+                override __.Compose<'W> outOfBand pipeIdx next =
+                    upcast { new TransformWithPostProcessing<'T,'W, Values<int,IEnumerator<'U>>>(next, Values<_,_>(-1,source2.GetEnumerator ())) with
+                        override this.ProcessNext t =
+                            let idx : byref<_> = &this.State._1
+                            let u = this.State._2
+                            if u.MoveNext () then
+                                idx <- idx + 1
+                                TailCall.avoid (next.ProcessNext (map idx t u.Current))
                             else
                                 outOfBand.StopFurtherProcessing pipeIdx
                                 false
-
-                        override self.OnDispose () = ()
-                        override self.OnComplete _ =
-                            self.Value._2.Dispose ()  } }
-
+                        override this.OnDispose () = this.State._2.Dispose ()
+                        override this.OnComplete _ = () }}
 
         [<CompiledName "Map3">]
-        let inline map3<'First,'Second,'Third,'U>
-                        (map:'First->'Second->'Third->'U) (source1:ISeq<'First>) (source2:ISeq<'Second>) (source3:ISeq<'Third>) : ISeq<'U> =
-            source1 |> compose { new SeqFactory<'First,'U>() with
-                member __.Create<'V> outOfBand pipeIdx next =
-                    upcast { new ConsumerChainedWithStateAndCleanup<'First,'V, Values<IEnumerator<'Second>,IEnumerator<'Third>>>
-                                                (Upcast.iCompletionChain next, Values<_,_>(source2.GetEnumerator(),source3.GetEnumerator())) with
-                        member self.ProcessNext input =
-                            if self.Value._1.MoveNext() && self.Value._2.MoveNext ()  then
-                                TailCall.avoid (next.ProcessNext (map input self.Value._1 .Current self.Value._2.Current))
+        let inline map3<'T,'U,'V,'W>(map:'T->'U->'V->'W) (source1:ISeq<'T>) (source2:ISeq<'U>) (source3:ISeq<'V>) : ISeq<'W> =
+            source1.PushTransform { new TransformFactory<'T,'W>() with
+                override __.Compose<'X> outOfBand pipeIdx next =
+                    upcast { new TransformWithPostProcessing<'T,'X,Values<IEnumerator<'U>,IEnumerator<'V>>>(next,Values<_,_>(source2.GetEnumerator(),source3.GetEnumerator())) with
+                        override this.ProcessNext t =
+                            let u = this.State._1
+                            let v = this.State._2
+                            if u.MoveNext() && v.MoveNext ()  then
+                                TailCall.avoid (next.ProcessNext (map t u.Current v.Current))
                             else
                                 outOfBand.StopFurtherProcessing pipeIdx
                                 false
-
-                        override self.OnDispose () = ()
-                        override self.OnComplete _ =
-                            self.Value._1.Dispose ()
-                            self.Value._2.Dispose () } }
-
+                        override this.OnComplete _ = () 
+                        override this.OnDispose () = 
+                            this.State._1.Dispose ()
+                            this.State._2.Dispose () }}
 
         [<CompiledName "CompareWith">]
-        let inline compareWith (f:'T -> 'T -> int) (source1 :ISeq<'T>) (source2:ISeq<'T>) : int =
-            source1
-            |> foreach (fun halt ->
-                { new FolderWithOnComplete<'T,Values<int,IEnumerator<'T>>>(Values<_,_>(0,source2.GetEnumerator())) with
-                    override self.ProcessNext value =
-                        if not (self.Value._2.MoveNext()) then
-                            self.Value._1 <- 1
-                            halt ()
+        let inline compareWith (f:'T->'T->int) (source1:ISeq<'T>) (source2:ISeq<'T>) : int =
+            source1.Fold (fun pipeIdx ->
+                upcast { new FolderWithPostProcessing<'T,int,IEnumerator<'T>>(0,source2.GetEnumerator()) with
+                    override this.ProcessNext value =
+                        if not (this.State.MoveNext()) then
+                            this.Result <- 1
+                            this.StopFurtherProcessing pipeIdx
                         else
-                            let c = f value self.Value._2.Current
+                            let c = f value this.State.Current
                             if c <> 0 then
-                                self.Value._1 <- c
-                                halt ()
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
-
-                    override self.OnComplete _ =
-                        if self.Value._1 = 0 && self.Value._2.MoveNext() then
-                            self.Value._1 <- -1
-                        self.Value._2.Dispose()
-                })
-            |> fun compare -> compare.Value._1
+                                this.Result <- c
+                                this.StopFurtherProcessing pipeIdx
+                        Unchecked.defaultof<_> (* return value unused in Fold context *)
+                    override this.OnComplete _ =
+                        if this.Result = 0 && this.State.MoveNext() then
+                            this.Result <- -1
+                    override this.OnDispose () = this.State.Dispose () })
 
         [<CompiledName "Choose">]
         let inline choose (f:'T->option<'U>) (source:ISeq<'T>) : ISeq<'U> =
-            source |> compose { new SeqFactory<'T,'U>() with
-                member __.Create _ _ next =
-                    upcast { new ConsumerChained<'T,'V>(Upcast.iCompletionChain next) with
-                        member __.ProcessNext input =
+            source.PushTransform { new TransformFactory<'T,'U>() with
+                override __.Compose _ _ next =
+                    upcast { new Transform<'T,'V,NoValue>(next,Unchecked.defaultof<NoValue>) with
+                        override __.ProcessNext input =
                             match f input with
                             | Some value -> TailCall.avoid (next.ProcessNext value)
                             | None       -> false } }
 
-
         [<CompiledName "Distinct">]
         let inline distinct (source:ISeq<'T>) : ISeq<'T> when 'T:equality =
-            source |> compose { new SeqFactory<'T,'T>() with
-                member __.Create _ _ next =
-                    upcast { new ConsumerChainedWithState<'T,'V,HashSet<'T>>
-                                    (Upcast.iCompletionChain next,(HashSet<'T>(HashIdentity.Structural<'T>))) with
+            source.PushTransform { new TransformFactory<'T,'T>() with
+                override __.Compose _ _ next =
+                    upcast { new Transform<'T,'V,HashSet<'T>>(next,HashSet HashIdentity.Structural) with
                         override this.ProcessNext (input:'T) : bool =
-                            if this.Value.Add input then TailCall.avoid (next.ProcessNext input)
-                            else false } }
-
+                            this.State.Add input && TailCall.avoid (next.ProcessNext input) }}
 
         [<CompiledName "DistinctBy">]
         let inline distinctBy (keyf:'T->'Key) (source:ISeq<'T>) :ISeq<'T>  when 'Key:equality =
-            source |> compose { new SeqFactory<'T,'T>() with
-                member __.Create _ _ next =
-                    upcast { new ConsumerChainedWithState<'T,'V,HashSet<'Key>>
-                                    (Upcast.iCompletionChain next,(HashSet<'Key>(HashIdentity.Structural<'Key>))) with
+            source.PushTransform { new TransformFactory<'T,'T>() with
+                override __.Compose _ _ next =
+                    upcast { new Transform<'T,'V,HashSet<'Key>> (next,HashSet HashIdentity.Structural) with
                         override this.ProcessNext (input:'T) : bool =
-                            if this.Value.Add (keyf input) then TailCall.avoid (next.ProcessNext input)
-                            else false } }
-
+                            this.State.Add (keyf input) && TailCall.avoid (next.ProcessNext input) }}
 
         [<CompiledName "Max">]
-        let inline max (source: ISeq<'T>) : 'T when 'T:comparison =
-            source
-            |> foreach (fun _ ->
-                { new FolderWithOnComplete<'T,Values<bool,'T>>(Values<_,_>(true, Unchecked.defaultof<'T>)) with
+        let inline max (source:ISeq<'T>) : 'T when 'T:comparison =
+            source.Fold (fun _ ->
+                upcast { new FolderWithPostProcessing<'T,'T,bool>(Unchecked.defaultof<'T>,true) with
                     override this.ProcessNext value =
-                        if this.Value._1 then
-                            this.Value._1 <- false
-                            this.Value._2 <- value
-                        elif value > this.Value._2 then
-                            this.Value._2 <- value
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
+                        if this.State then
+                            this.State <- false
+                            this.Result <- value
+                        elif value > this.Result then
+                            this.Result <- value
+                        Unchecked.defaultof<_> (* return value unused in Fold context *)
 
                     override this.OnComplete _ =
-                        if this.Value._1 then
+                        if this.State then
                             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-                })
-            |> fun max -> max.Value._2
-
+                    override this.OnDispose () = () })
 
         [<CompiledName "MaxBy">]
-        let inline maxBy (f :'T -> 'U) (source: ISeq<'T>) : 'T when 'U:comparison =
-            source
-            |> foreach (fun _ ->
-                { new FolderWithOnComplete<'T,Values<bool,'U,'T>>(Values<_,_,_>(true,Unchecked.defaultof<'U>,Unchecked.defaultof<'T>)) with
+        let inline maxBy (f:'T->'U) (source:ISeq<'T>) : 'T when 'U:comparison =
+            source.Fold (fun _ ->
+                upcast { new FolderWithPostProcessing<'T,'T,Values<bool,'U>>(Unchecked.defaultof<'T>,Values<_,_>(true,Unchecked.defaultof<'U>)) with
                     override this.ProcessNext value =
-                        match this.Value._1, f value with
+                        match this.State._1, f value with
                         | true, valueU ->
-                            this.Value._1 <- false
-                            this.Value._2 <- valueU
-                            this.Value._3 <- value
-                        | false, valueU when valueU > this.Value._2 ->
-                            this.Value._2 <- valueU
-                            this.Value._3 <- value
+                            this.State._1 <- false
+                            this.State._2 <- valueU
+                            this.Result <- value
+                        | false, valueU when valueU > this.State._2 ->
+                            this.State._2 <- valueU
+                            this.Result <- value
                         | _ -> ()
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
+                        Unchecked.defaultof<_> (* return value unused in Fold context *)
 
                     override this.OnComplete _ =
-                        if this.Value._1 then
+                        if this.State._1 then
                             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-                })
-            |> fun min -> min.Value._3
-
+                    override this.OnDispose () = () })
 
         [<CompiledName "Min">]
-        let inline min (source: ISeq< 'T>) : 'T when 'T:comparison =
-            source
-            |> foreach (fun _ ->
-                { new FolderWithOnComplete<'T,Values<bool,'T>>(Values<_,_>(true, Unchecked.defaultof<'T>)) with
+        let inline min (source:ISeq<'T>) : 'T when 'T:comparison =
+            source.Fold (fun _ ->
+                upcast { new FolderWithPostProcessing<'T,'T,bool>(Unchecked.defaultof<'T>,true) with
                     override this.ProcessNext value =
-                        if this.Value._1 then
-                            this.Value._1 <- false
-                            this.Value._2 <- value
-                        elif value < this.Value._2 then
-                            this.Value._2 <- value
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
+                        if this.State then
+                            this.State <- false
+                            this.Result <- value
+                        elif value < this.Result then
+                            this.Result <- value
+                        Unchecked.defaultof<_> (* return value unused in Fold context *)
 
                     override this.OnComplete _ =
-                        if this.Value._1 then
+                        if this.State then
                             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-                })
-            |> fun min -> min.Value._2
-
+                    override this.OnDispose () = () })
 
         [<CompiledName "MinBy">]
-        let inline minBy (f : 'T -> 'U) (source: ISeq<'T>) : 'T =
-            source
-            |> foreach (fun _ ->
-                { new FolderWithOnComplete< 'T,Values<bool,'U,'T>>(Values<_,_,_>(true,Unchecked.defaultof< 'U>,Unchecked.defaultof< 'T>)) with
+        let inline minBy (f:'T->'U) (source:ISeq<'T>) : 'T =
+            source.Fold (fun _ ->
+                upcast { new FolderWithPostProcessing<'T,'T,Values<bool,'U>>(Unchecked.defaultof<'T>,Values<_,_>(true,Unchecked.defaultof< 'U>)) with
                     override this.ProcessNext value =
-                        match this.Value._1, f value with
+                        match this.State._1, f value with
                         | true, valueU ->
-                            this.Value._1 <- false
-                            this.Value._2 <- valueU
-                            this.Value._3 <- value
-                        | false, valueU when valueU < this.Value._2 ->
-                            this.Value._2 <- valueU
-                            this.Value._3 <- value
+                            this.State._1 <- false
+                            this.State._2 <- valueU
+                            this.Result <- value
+                        | false, valueU when valueU < this.State._2 ->
+                            this.State._2 <- valueU
+                            this.Result <- value
                         | _ -> ()
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
+                        Unchecked.defaultof<_> (* return value unused in Fold context *)
 
                     override this.OnComplete _ =
-                        if this.Value._1 then
+                        if this.State._1 then
                             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-                })
-            |> fun min -> min.Value._3
-
+                    override this.OnDispose () = () })
 
         [<CompiledName "Pairwise">]
-        let inline pairwise (source:ISeq<'T>) : ISeq<'T * 'T> =
-            source |> compose { new SeqFactory<'T,'T * 'T>() with
-                member __.Create _ _ next =
-                    upcast { new ConsumerChainedWithState<'T,'U,Values<bool,'T>>
-                                (   Upcast.iCompletionChain next
-                                ,   Values<bool,'T>
-                                    ((* isFirst   = _1*) true
-                                    ,(* lastValue = _2*) Unchecked.defaultof<'T>
-                                    )
-                                ) with
-                            override self.ProcessNext (input:'T) : bool =
-                                if (*isFirst*) self.Value._1  then
-                                    self.Value._2 (*lastValue*)<- input
-                                    self.Value._1 (*isFirst*)<- false
+        let pairwise (source:ISeq<'T>) : ISeq<'T*'T> =
+            source.PushTransform { new TransformFactory<'T,'T * 'T>() with
+                override __.Compose _ _ next =
+                    upcast { new Transform<'T,'U,Values<bool,'T>>(next, Values<bool,'T>(true, Unchecked.defaultof<'T>)) with
+                            // member this.isFirst   = this.State._1
+                            // member this.lastValue = this.State._2
+                            override this.ProcessNext (input:'T) : bool =
+                                if this.State._1  then
+                                    this.State._2 <- input
+                                    this.State._1 <- false
                                     false
                                 else
-                                    let currentPair = self.Value._2, input
-                                    self.Value._2 (*lastValue*)<- input
-                                    TailCall.avoid (next.ProcessNext currentPair)
-                    }}
-
+                                    let currentPair = this.State._2, input
+                                    this.State._2 <- input
+                                    TailCall.avoid (next.ProcessNext currentPair) }}
 
         [<CompiledName "Reduce">]
-        let inline reduce (f:'T->'T->'T) (source : ISeq<'T>) : 'T =
-            source
-            |> foreach (fun _ ->
-                { new FolderWithOnComplete<'T, Values<bool,'T>>(Values<_,_>(true, Unchecked.defaultof<'T>)) with
+        let inline reduce (f:'T->'T->'T) (source: ISeq<'T>) : 'T =
+            source.Fold (fun _ ->
+                upcast { new FolderWithPostProcessing<'T,'T,bool>(Unchecked.defaultof<'T>,true) with
                     override this.ProcessNext value =
-                        if this.Value._1 then
-                            this.Value._1 <- false
-                            this.Value._2 <- value
+                        if this.State then
+                            this.State <- false
+                            this.Result <- value
                         else
-                            this.Value._2 <- f this.Value._2 value
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
+                            this.Result <- f this.Result value
+                        Unchecked.defaultof<_> (* return value unused in Fold context *)
 
                     override this.OnComplete _ =
-                        if this.Value._1 then
+                        if this.State then
                             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-                })
-            |> fun reduced -> reduced.Value._2
-
+                    override this.OnDispose () = () })
 
         [<CompiledName "Scan">]
-        let inline scan (folder:'State->'T->'State) (initialState: 'State) (source:ISeq<'T>) :ISeq<'State> =
-            source |> compose { new SeqFactory<'T,'State>() with
-                member __.Create _ _ next =
-                    upcast { new ConsumerChainedWithState<'T,'V,'State>(Upcast.iCompletionChain next, initialState) with
+        let inline scan (folder:'State->'T->'State) (initialState:'State) (source:ISeq<'T>) :ISeq<'State> =
+            source.PushTransform { new TransformFactory<'T,'State>() with
+                override __.Compose _ _ next =
+                    upcast { new Transform<'T,'V,'State>(next, initialState) with
                         override this.ProcessNext (input:'T) : bool =
-                            this.Value <- folder this.Value input
-                            TailCall.avoid (next.ProcessNext this.Value) } }
-
+                            this.State <- folder this.State input
+                            TailCall.avoid (next.ProcessNext this.State) } }
 
         [<CompiledName "Skip">]
-        let inline skip (errorString:string) (skipCount:int) (source:ISeq<'T>) : ISeq<'T> =
-            source |> compose { new SeqFactory<'T,'T>() with
-                member __.Create _ _ next =
-                    upcast {
-                        new ConsumerChainedWithStateAndCleanup<'T,'U,int>(Upcast.iCompletionChain next,(*count*)0) with
-
-                            override self.ProcessNext (input:'T) : bool =
-                                if (*count*) self.Value < skipCount then
-                                    self.Value <- self.Value + 1
+        let skip (skipCount:int) (source:ISeq<'T>) : ISeq<'T> =
+            source.PushTransform { new TransformFactory<'T,'T>() with
+                override __.Compose _ _ next =
+                    let mutable this = Unchecked.defaultof<TransformWithPostProcessing<'T,'U,int>>
+                    let skipper = 
+                        { new TransformWithPostProcessing<'T,'U,int>(next,(*count*)0) with
+                            // member this.count = this.State
+                            override this.ProcessNext (input:'T) : bool =
+                                if this.State < skipCount then
+                                    this.State <- this.State + 1
                                     false
                                 else
                                     TailCall.avoid (next.ProcessNext input)
 
-                            override self.OnDispose () = ()
-                            override self.OnComplete _ =
-                                if (*count*) self.Value < skipCount then
-                                    let x = skipCount - self.Value
+                            override this.OnComplete _ =
+                                if this.State < skipCount then
+                                    let x = skipCount - this.State
                                     invalidOpFmt "{0}\ntried to skip {1} {2} past the end of the seq"
-                                        [|errorString; x; (if x=1 then "element" else "elements")|]
+                                        [|SR.GetString SR.notEnoughElements; x; (if x=1 then "element" else "elements")|]
+                            override this.OnDispose () = ()
 
-                        interface ISkipping with
-                            member self.Skipping () =
-                                let self = self :?> ConsumerChainedWithState<'T,'U,int>
-                                if (*count*) self.Value < skipCount then
-                                    self.Value <- self.Value + 1
+                        interface ISkipable with
+                            member __.CanSkip () =
+                                if this.State < skipCount then
+                                    this.State <- this.State + 1
                                     true
                                 else
-                                    false
-                    }}
-
+                                    false }
+                    this <- skipper
+                    upcast this }
 
         [<CompiledName "SkipWhile">]
         let inline skipWhile (predicate:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
-            source |> compose { new SeqFactory<'T,'T>() with
-                member __.Create _ _ next =
-                    upcast { new ConsumerChainedWithState<'T,'V,bool>(Upcast.iCompletionChain next,true) with
-                        override self.ProcessNext (input:'T) : bool =
-                            if self.Value (*skip*) then
-                                self.Value <- predicate input
-                                if self.Value (*skip*) then
+            source.PushTransform { new TransformFactory<'T,'T>() with
+                override __.Compose _ _ next =
+                    upcast { new Transform<'T,'V,bool>(next,true) with
+                        // member this.skip = this.State
+                        override this.ProcessNext (input:'T) : bool =
+                            if this.State then
+                                this.State <- predicate input
+                                if this.State then
                                     false
                                 else
                                     TailCall.avoid (next.ProcessNext input)
                             else
                                 TailCall.avoid (next.ProcessNext input) }}
 
-
         [<CompiledName "Sum">]
-        let inline sum (source:ISeq< ^T>) : ^T
-            when ^T:(static member Zero : ^T)
-            and  ^T:(static member (+) :  ^T *  ^T ->  ^T) =
-            source
-            |> foreach (fun _ ->
-                { new Folder< ^T,^T> (LanguagePrimitives.GenericZero) with
+        let inline sum (source:ISeq<'T>) =
+            source.Fold (fun _ ->
+                upcast { new Folder<'T,'T,NoValue> (LanguagePrimitives.GenericZero,Unchecked.defaultof<NoValue>) with
                     override this.ProcessNext value =
-                        this.Value <- Checked.(+) this.Value value
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun sum -> sum.Value
-
+                        this.Result <- Checked.(+) this.Result value
+                        Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "SumBy">]
-        let inline sumBy (f : 'T -> ^U) (source: ISeq<'T>) : ^U
-            when ^U:(static member Zero : ^U)
-            and  ^U:(static member (+) :  ^U *  ^U ->  ^U) =
-            source
-            |> foreach (fun _ ->
-                { new Folder<'T,'U> (LanguagePrimitives.GenericZero< ^U>) with
+        let inline sumBy (f:'T->'U) (source:ISeq<'T>) =
+            source.Fold (fun _ ->
+                upcast { new Folder<'T,'U,NoValue> (LanguagePrimitives.GenericZero<'U>,Unchecked.defaultof<NoValue>) with
                     override this.ProcessNext value =
-                        this.Value <- Checked.(+) this.Value (f value)
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun sum -> sum.Value
-
+                        this.Result <- Checked.(+) this.Result (f value)
+                        Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "Take">]
-        let inline take (errorString:string) (takeCount:int) (source:ISeq<'T>) : ISeq<'T> =
-            source |> compose { new SeqFactory<'T,'T>() with
-                member __.Create outOfBand pipelineIdx next =
-                    upcast {
-                        new ConsumerChainedWithStateAndCleanup<'T,'U,int>(Upcast.iCompletionChain next,(*count*)0) with
-                            override self.ProcessNext (input:'T) : bool =
-                                if (*count*) self.Value < takeCount then
-                                    self.Value <- self.Value + 1
-                                    if self.Value = takeCount then
-                                        outOfBand.StopFurtherProcessing pipelineIdx
-                                    TailCall.avoid (next.ProcessNext input)
-                                else
+        let take (takeCount:int) (source:ISeq<'T>) : ISeq<'T> =
+            source.PushTransform { new TransformFactory<'T,'T>() with
+                member __.Compose outOfBand pipelineIdx next =
+                    upcast { new TransformWithPostProcessing<'T,'U,int>(next,(*count*)0) with
+                        // member this.count = this.State
+                        override this.ProcessNext (input:'T) : bool =
+                            if this.State < takeCount then
+                                this.State <- this.State + 1
+                                if this.State = takeCount then
                                     outOfBand.StopFurtherProcessing pipelineIdx
-                                    false
+                                TailCall.avoid (next.ProcessNext input)
+                            else
+                                outOfBand.StopFurtherProcessing pipelineIdx
+                                false
 
-                            override this.OnDispose () = ()
-                            override this.OnComplete terminatingIdx =
-                                if terminatingIdx < pipelineIdx && this.Value < takeCount then
-                                    let x = takeCount - this.Value
-                                    invalidOpFmt "tried to take {0} {1} past the end of the seq"
-                                        [|errorString; x; (if x=1 then "element" else "elements")|]
-                    }}
-
+                        override this.OnComplete terminatingIdx =
+                            if terminatingIdx < pipelineIdx && this.State < takeCount then
+                                let x = takeCount - this.State
+                                invalidOpFmt "tried to take {0} {1} past the end of the seq"
+                                    [|SR.GetString SR.notEnoughElements; x; (if x=1 then "element" else "elements")|]
+                        override this.OnDispose () = () }}
 
         [<CompiledName "TakeWhile">]
         let inline takeWhile (predicate:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
-            source |> compose { new SeqFactory<'T,'T>() with
-                member __.Create outOfBand pipeIdx next =
-                    upcast { new ConsumerChained<'T,'V>(Upcast.iCompletionChain next) with
+            source.PushTransform { new TransformFactory<'T,'T>() with
+                member __.Compose outOfBand pipeIdx next =
+                    upcast { new Transform<'T,'V,NoValue>(next,Unchecked.defaultof<NoValue>) with
                         override __.ProcessNext (input:'T) : bool =
                             if predicate input then
                                 TailCall.avoid (next.ProcessNext input)
                             else
                                 outOfBand.StopFurtherProcessing pipeIdx
-                                false
-                    }}
-
+                                false }}
 
         [<CompiledName "Tail">]
-        let inline tail errorString (source:ISeq<'T>) :ISeq<'T> =
-            source |> compose { new SeqFactory<'T,'T>() with
-                member __.Create _ _ next =
-                    upcast { new ConsumerChainedWithStateAndCleanup<'T,'V,bool>(Upcast.iCompletionChain next,(*first*) true) with
-                        override self.ProcessNext (input:'T) : bool =
-                            if (*first*) self.Value then
-                                self.Value <- false
+        let tail (source:ISeq<'T>) : ISeq<'T> =
+            source.PushTransform { new TransformFactory<'T,'T>() with
+                member __.Compose _ _ next =
+                    upcast { new TransformWithPostProcessing<'T,'V,bool>(next,true) with
+                        // member this.isFirst = this.State
+                        override this.ProcessNext (input:'T) : bool =
+                            if this.State then
+                                this.State <- false
                                 false
                             else
                                 TailCall.avoid (next.ProcessNext input)
-
-                        override self.OnDispose () = ()
-                        override self.OnComplete _ =
-                            if (*first*) self.Value then
-                                invalidArg "source" errorString
-                    }}
-
+                        override this.OnComplete _ =
+                            if this.State then
+                                invalidArg "source" (SR.GetString SR.notEnoughElements) 
+                        override this.OnDispose () = () }}
 
         [<CompiledName "Truncate">]
-        let inline truncate (truncateCount:int) (source:ISeq<'T>) : ISeq<'T> =
-            source |> compose { new SeqFactory<'T,'T>() with
-                member __.Create outOfBand pipeIdx next =
-                    upcast {
-                        new ConsumerChainedWithState<'T,'U,int>(Upcast.iCompletionChain next,(*count*)0) with
-                            override self.ProcessNext (input:'T) : bool =
-                                if (*count*) self.Value < truncateCount then
-                                    self.Value <- self.Value + 1
-                                    if self.Value = truncateCount then
-                                        outOfBand.StopFurtherProcessing pipeIdx
-                                    TailCall.avoid (next.ProcessNext input)
-                                else
+        let truncate (truncateCount:int) (source:ISeq<'T>) : ISeq<'T> =
+            source.PushTransform { new TransformFactory<'T,'T>() with
+                member __.Compose outOfBand pipeIdx next =
+                    upcast { new Transform<'T,'U,int>(next,(*count*)0) with
+                        // member this.count = this.State
+                        override this.ProcessNext (input:'T) : bool =
+                            if this.State < truncateCount then
+                                this.State <- this.State + 1
+                                if this.State = truncateCount then
                                     outOfBand.StopFurtherProcessing pipeIdx
-                                    false
-                    }}
-
+                                TailCall.avoid (next.ProcessNext input)
+                            else
+                                outOfBand.StopFurtherProcessing pipeIdx
+                                false }}
 
         [<CompiledName "Indexed">]
-        let inline indexed source =
+        let indexed source =
             mapi (fun i x -> i,x) source
 
-
         [<CompiledName "TryItem">]
-        let tryItem (errorString:string) index (source:ISeq<'T>) =
+        let tryItem index (source:ISeq<'T>) =
             if index < 0 then None else
-            source |> skip errorString index |> tryHead
-
+            source |> skip index |> tryHead
 
         [<CompiledName "TryPick">]
-        let tryPick f (source:ISeq<'T>)  =
-            source
-            |> foreach (fun halt ->
-                { new Folder<'T, Option<'U>> (None) with
+        let inline tryPick f (source:ISeq<'T>)  =
+            source.Fold (fun pipeIdx ->
+                upcast { new Folder<'T, Option<'U>,NoValue> (None,Unchecked.defaultof<NoValue>) with
                     override this.ProcessNext value =
                         match f value with
                         | (Some _) as some ->
-                            this.Value <- some
-                            halt ()
+                            this.Result <- some
+                            this.StopFurtherProcessing pipeIdx
                         | None -> ()
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun pick -> pick.Value
-
+                        Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "TryFind">]
-        let tryFind f (source:ISeq<'T>)  =
-            source
-            |> foreach (fun halt ->
-                { new Folder<'T, Option<'T>> (None) with
+        let inline tryFind f (source:ISeq<'T>)  =
+            source.Fold (fun pipeIdx ->
+                upcast { new Folder<'T, Option<'T>,NoValue> (None,Unchecked.defaultof<NoValue>) with
                     override this.ProcessNext value =
                         if f value then
-                            this.Value <- Some value
-                            halt ()
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun find -> find.Value
-
+                            this.Result <- Some value
+                            this.StopFurtherProcessing pipeIdx
+                        Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "TryFindIndex">]
         let inline tryFindIndex (predicate:'T->bool) (source:ISeq<'T>) : int option =
-            source
-            |> foreach (fun halt ->
-                { new Folder<'T, Values<Option<int>, int>>(Values<_,_>(None, 0)) with
+            source.Fold (fun pipeIdx ->
+                { new Folder<'T, Option<int>, int>(None, 0) with
+                    // member this.index = this.State
                     override this.ProcessNext value =
                         if predicate value then
-                            this.Value._1 <- Some(this.Value._2)
-                            halt ()
+                            this.Result <- Some this.State
+                            this.StopFurtherProcessing pipeIdx
                         else
-                            this.Value._2 <- this.Value._2 + 1
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun tried -> tried.Value._1
+                            this.State <- this.State + 1
+                        Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "TryLast">]
-        let inline tryLast (source :ISeq<'T>) : 'T option =
-            source
-            |> foreach (fun _ ->
-                { new Folder<'T, Values<bool,'T>>(Values<bool,'T>(true, Unchecked.defaultof<'T>)) with
+        let tryLast (source:ISeq<'T>) : 'T option =
+            source.Fold (fun _ ->
+                upcast { new FolderWithPostProcessing<'T,option<'T>,Values<bool,'T>>(None,Values<bool,'T>(true, Unchecked.defaultof<'T>)) with
+                    // member this.noItems = this.State._1
+                    // memebr this.last    = this.State._2
                     override this.ProcessNext value =
-                        if this.Value._1 then
-                            this.Value._1 <- false
-                        this.Value._2 <- value
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun tried ->
-                if tried.Value._1 then
-                    None
-                else
-                    Some tried.Value._2
+                        if this.State._1 then
+                            this.State._1 <- false
+                        this.State._2 <- value
+                        Unchecked.defaultof<_> (* return value unused in Fold context *)
+                    override this.OnComplete _ =
+                        if not this.State._1 then
+                            this.Result <- Some this.State._2
+                    override this.OnDispose () = () })
 
+        [<CompiledName("Last")>]
+        let last (source:ISeq<_>) =
+            match tryLast source with
+            | None -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+            | Some x -> x
 
         [<CompiledName "Windowed">]
-        let inline windowed (windowSize:int) (source:ISeq<'T>) : ISeq<'T[]> =
-            source |> compose { new SeqFactory<'T,'T[]>() with
-                member __.Create outOfBand pipeIdx next =
+        let windowed (windowSize:int) (source:ISeq<'T>) : ISeq<'T[]> =
+            source.PushTransform { new TransformFactory<'T,'T[]>() with
+                member __.Compose outOfBand pipeIdx next =
                     upcast {
-                        new ConsumerChainedWithState<'T,'U,Values<'T[],int,int>>
-                                    (   Upcast.iCompletionChain next
-                                    ,   Values<'T[],int,int>
-                                        ((*circularBuffer = _1 *) Array.zeroCreateUnchecked windowSize
-                                        ,(* idx = _2 *)          0
-                                        ,(* priming = _3 *)      windowSize-1
-                                        )
-                                    ) with
-                            override self.ProcessNext (input:'T) : bool =
-                                self.Value._1.[(* idx *)self.Value._2] <- input
+                        new Transform<'T,'U,Values<'T[],int,int>>(next,Values<'T[],int,int>(Array.zeroCreateUnchecked windowSize, 0, windowSize-1)) with
+                            override this.ProcessNext (input:'T) : bool =
+                                let circularBuffer     =  this.State._1
+                                let idx     : byref<_> = &this.State._2
+                                let priming : byref<_> = &this.State._3
 
-                                self.Value._2 <- (* idx *)self.Value._2 + 1
-                                if (* idx *) self.Value._2 = windowSize then
-                                    self.Value._2 <- 0
+                                circularBuffer.[idx] <- input
 
-                                if (* priming  *) self.Value._3 > 0 then
-                                    self.Value._3 <- self.Value._3 - 1
+                                idx <- idx + 1
+                                if idx = windowSize then
+                                    idx <- 0
+
+                                if priming > 0 then
+                                    priming <- priming - 1
                                     false
+                                elif windowSize < 32 then
+                                    let idx = idx
+                                    let window :'T [] = Array.init windowSize (fun i -> circularBuffer.[(idx+i) % windowSize]: 'T)
+                                    TailCall.avoid (next.ProcessNext window)
                                 else
-                                    if windowSize < 32 then
-                                        let window :'T [] = Array.init windowSize (fun i -> self.Value._1.[((* idx *)self.Value._2+i) % windowSize]: 'T)
-                                        TailCall.avoid (next.ProcessNext window)
-                                    else
-                                        let window = Array.zeroCreateUnchecked windowSize
-                                        Array.Copy((*circularBuffer*)self.Value._1, (* idx *)self.Value._2, window, 0, windowSize - (* idx *)self.Value._2)
-                                        Array.Copy((*circularBuffer*)self.Value._1, 0, window, windowSize - (* idx *)self.Value._2, (* idx *)self.Value._2)
-                                        TailCall.avoid (next.ProcessNext window)
+                                    let window = Array.zeroCreateUnchecked windowSize
+                                    Array.Copy (circularBuffer, idx, window, 0, windowSize - idx)
+                                    Array.Copy (circularBuffer, 0, window, windowSize - idx, idx)
+                                    TailCall.avoid (next.ProcessNext window) }}
 
-                    }}
+        [<CompiledName("Concat")>]
+        let concat (sources:ISeq<#ISeq<'T>>) : ISeq<'T> =
+            Upcast.seq (Enumerable.ConcatEnumerable sources)
+
+        [<CompiledName("Append")>]
+        let append (source1:ISeq<'T>) (source2: ISeq<'T>) : ISeq<'T> =
+            match source1 with
+            | :? Enumerable.EnumerableBase<'T> as s -> s.Append source2
+            | _ -> Upcast.seq (new Enumerable.AppendEnumerable<_>([source2; source1]))
+
+        [<CompiledName "Delay">]
+        let delay (delayed:unit->ISeq<'T>) =
+            Upcast.seq (Enumerable.SeqDelayed (delayed, 1))
+
+        module internal GroupBy =
+            let inline private impl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (source:ISeq<'T>) =
+                source.Fold (fun _ ->
+                    upcast { new FolderWithPostProcessing<'T,ISeq<'Key*ISeq<'T>>,_>(Unchecked.defaultof<_>,Dictionary comparer) with
+                        override this.ProcessNext v =
+                            let safeKey = keyf v
+                            match this.State.TryGetValue safeKey with
+                            | false, _ ->
+                                let prev = ResizeArray ()
+                                this.State.[safeKey] <- prev
+                                prev.Add v
+                            | true, prev -> prev.Add v
+                            Unchecked.defaultof<_> (* return value unused in Fold context *)
+
+                        override this.OnComplete _ =
+                            let maxWastage = 4
+                            for value in this.State.Values do
+                                if value.Capacity - value.Count > maxWastage then value.TrimExcess ()
+
+                            this.Result <-
+                                this.State
+                                |> ofSeq
+                                |> map (fun kv -> getKey kv.Key, ofResizeArrayUnchecked kv.Value)
+
+                        override this.OnDispose () = () })
+
+            let inline byVal (keyf:'T->'Key) (source:ISeq<'T>) =
+                delay (fun () -> impl HashIdentity.Structural<'Key> keyf id source) 
+
+            let inline byRef (keyf:'T->'Key) (source:ISeq<'T>) =
+                delay (fun () -> impl (valueComparer<'Key> ()) (keyf >> Value) (fun v -> v._1) source)
+        
+        [<CompiledName("GroupByVal")>]
+        let inline groupByVal<'T,'Key when 'Key : equality and 'Key : struct> (keyf:'T->'Key) (source:ISeq<'T>) =
+            GroupBy.byVal keyf source
+
+        [<CompiledName("GroupByRef")>]
+        let inline groupByRef<'T,'Key when 'Key : equality and 'Key : not struct> (keyf:'T->'Key) (source:ISeq<'T>) =
+            GroupBy.byRef keyf source
+
+        module CountBy =
+            let inline private impl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (source:ISeq<'T>) =
+                source.Fold (fun _ ->
+                    upcast { new FolderWithPostProcessing<'T,ISeq<'Key*int>,_>(Unchecked.defaultof<_>,Dictionary comparer) with
+                        override this.ProcessNext v =
+                            let safeKey = keyf v
+                            this.State.[safeKey] <- 
+                                match this.State.TryGetValue safeKey with
+                                | true, prev -> prev + 1
+                                | false, _   -> 1
+                            Unchecked.defaultof<_> (* return value unused in Fold context *)
+
+                        override this.OnComplete _ =
+                            this.Result <-
+                                this.State
+                                |> ofSeq
+                                |> map (fun group -> getKey group.Key, group.Value)
+
+                        override this.OnDispose () = () })
+
+            let inline byVal (keyf:'T->'Key) (source:ISeq<'T>) =
+                delay (fun () -> impl HashIdentity.Structural<'Key> keyf id source) 
+
+            let inline byRef (keyf:'T->'Key) (source:ISeq<'T>) =
+                delay (fun () -> impl (valueComparer<'Key> ()) (keyf >> Value) (fun v -> v._1) source)
+        
+        [<CompiledName("CountByVal")>]
+        let inline countByVal<'T,'Key when 'Key : equality and 'Key : struct>  (projection:'T -> 'Key) (source:ISeq<'T>) =
+            CountBy.byVal projection source 
+
+        [<CompiledName("CountByRef")>]
+        let inline countByRef<'T,'Key when 'Key : equality and 'Key : not struct> (projection:'T -> 'Key) (source:ISeq<'T>) =
+            CountBy.byRef projection source 
+
+        [<CompiledName("ToArray")>]
+        let toArray (source:ISeq<'T>)  =
+            match box source with
+            | :? ('T[]) as res -> (res.Clone() :?> 'T[])
+            | :? ('T list) as res -> List.toArray res
+            | :? ICollection<'T> as res ->
+                // Directly create an array and copy ourselves.
+                // This avoids an extra copy if using ResizeArray in fallback below.
+                let arr = Array.zeroCreateUnchecked res.Count
+                res.CopyTo(arr, 0)
+                arr
+            | _ ->
+                source.Fold (fun _ ->
+                    upcast { new FolderWithPostProcessing<'T,array<'T>,_>(Unchecked.defaultof<_>,ResizeArray ()) with
+                        override this.ProcessNext v =
+                            this.State.Add v
+                            Unchecked.defaultof<_> (* return value unused in Fold context *)
+                        override this.OnComplete _ =
+                            this.Result <- this.State.ToArray ()
+                        override this.OnDispose () = () })
+
+        [<CompiledName("SortBy")>]
+        let sortBy keyf source =
+            delay (fun () ->
+                let array = source |> toArray
+                Array.stableSortInPlaceBy keyf array
+                Upcast.seq (Array.Enumerable (array, IdentityFactory.Instance, 1)))
+
+        [<CompiledName("Sort")>]
+        let sort source =
+            delay (fun () -> 
+                let array = source |> toArray
+                Array.stableSortInPlace array
+                Upcast.seq (Array.Enumerable (array, IdentityFactory.Instance, 1)))
+
+        [<CompiledName("SortWith")>]
+        let sortWith f source =
+            delay (fun () ->
+                let array = source |> toArray
+                Array.stableSortInPlaceWith f array
+                Upcast.seq (Array.Enumerable (array, IdentityFactory.Instance, 1)))
+
+        [<CompiledName("Reverse")>]
+        let rev source =
+            delay (fun () ->
+                let array = source |> toArray
+                Array.Reverse array
+                Upcast.seq (Array.Enumerable (array, IdentityFactory.Instance, 1)))
+
+        [<CompiledName("Permute")>]
+        let permute f (source:ISeq<_>) =
+            delay (fun () ->
+                source
+                |> toArray
+                |> Array.permute f
+                |> fun array -> Upcast.seq (Array.Enumerable (array, IdentityFactory.Instance, 1)))

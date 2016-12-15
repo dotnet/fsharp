@@ -17,6 +17,13 @@ namespace Microsoft.FSharp.Collections
         /// <summary>Values is a mutable struct. It can be embedded within the folder type
         /// if two values are required for the calculation.</summary>
         [<Struct; NoComparison; NoEquality>]
+        type Value<'a> =
+            new : a:'a -> Value<'a>
+            val mutable _1: 'a
+
+        /// <summary>Values is a mutable struct. It can be embedded within the folder type
+        /// if two values are required for the calculation.</summary>
+        [<Struct; NoComparison; NoEquality>]
         type Values<'a,'b> =
             new : a:'a * b:'b -> Values<'a,'b>
             val mutable _1: 'a
@@ -38,11 +45,10 @@ namespace Microsoft.FSharp.Collections
         type IOutOfBand =
             abstract StopFurtherProcessing : PipeIdx -> unit
 
-        /// <summary>ICompletionChain is used to correctly handle cleaning up of the pipeline. A
-        /// base implementation is provided in Consumer, and should not be overwritten. Consumer
-        /// provides it's own OnComplete and OnDispose function which should be used to handle
-        /// a particular consumers cleanup.</summary>
-        type ICompletionChain =
+        /// <summary>Activity is the root class for chains of activities. It is in a non-generic
+        /// form so that it can be used by subsequent activities</summary>
+        [<AbstractClass>]
+        type Activity =
             /// <summary>OnComplete is used to determine if the object has been processed correctly,
             /// and possibly throw exceptions to denote incorrect application (i.e. such as a Take
             /// operation which didn't have a source at least as large as was required). It is
@@ -53,357 +59,70 @@ namespace Microsoft.FSharp.Collections
             /// after the enumeration has completed.</summary>
             abstract ChainDispose : stopTailCall:byref<unit> -> unit
 
-        /// <summary>Consumer is the base class of all elements within the pipeline</summary>
+        /// <summary>Activity is the base class of all elements within the pipeline</summary>
         [<AbstractClass>]
-        type Consumer<'T,'U> =
-            interface ICompletionChain
-            new : unit -> Consumer<'T,'U>
+        type Activity<'T,'U> =
+            inherit Activity
+            new : unit -> Activity<'T,'U>
             abstract member ProcessNext : input:'T -> bool
 
         [<AbstractClass>]
-        type ConsumerWithState<'T,'U,'Value> =
-            inherit Consumer<'T,'U>
-            val mutable Value : 'Value
-            new : init:'Value -> ConsumerWithState<'T,'U,'Value>
+        type Transform<'T,'U,'State> =
+            inherit Activity<'T,'U>
+            new : next:Activity * 'State -> Transform<'T,'U,'State>
+            val mutable State : 'State
+            val private Next : Activity
 
         [<AbstractClass>]
-        type ConsumerChainedWithState<'T,'U,'Value> =
-            inherit ConsumerWithState<'T,'U,'Value>
-            interface ICompletionChain
-            val private Next : ICompletionChain
-            new : next:ICompletionChain * init:'Value -> ConsumerChainedWithState<'T,'U,'Value>
-
-        [<AbstractClass>]
-        type ConsumerChained<'T,'U> =
-            inherit ConsumerChainedWithState<'T,'U,NoValue>
-            new : next:ICompletionChain -> ConsumerChained<'T,'U>
-
-        [<AbstractClass>]
-        type ConsumerChainedWithStateAndCleanup<'T,'U,'Value> =
-            inherit ConsumerChainedWithState<'T,'U,'Value>
-            interface ICompletionChain
-
+        type TransformWithPostProcessing<'T,'U,'State> =
+            inherit Transform<'T,'U,'State>
+            new : next:Activity * 'State -> TransformWithPostProcessing<'T,'U,'State>
             abstract OnComplete : PipeIdx -> unit
             abstract OnDispose  : unit -> unit
 
-            new : next:ICompletionChain * init:'Value -> ConsumerChainedWithStateAndCleanup<'T,'U,'Value>
-
-        [<AbstractClass>]
-        type ConsumerChainedWithCleanup<'T,'U> =
-            inherit ConsumerChainedWithStateAndCleanup<'T,'U,NoValue>
-            new : next:ICompletionChain -> ConsumerChainedWithCleanup<'T,'U>
-
         /// <summary>Folder is a base class to assist with fold-like operations. It's intended usage
         /// is as a base class for an object expression that will be used from within
-        /// the ForEach function.</summary>
+        /// the Fold function.</summary>
         [<AbstractClass>]
-        type Folder<'T,'Value> =
-            inherit ConsumerWithState<'T,'T,'Value>
-            new : init:'Value -> Folder<'T,'Value>
+        type Folder<'T,'Result,'State> =
+            inherit Activity<'T,'T>
+            new : 'Result*'State -> Folder<'T,'Result,'State>
+            interface IOutOfBand
+            val mutable State : 'State
+            val mutable Result : 'Result
+            val mutable HaltedIdx : int
+            member StopFurtherProcessing : PipeIdx -> unit
 
         [<AbstractClass>]
-        type FolderWithOnComplete<'T, 'Value> =
-            inherit Folder<'T,'Value>
-            interface ICompletionChain
-
+        type FolderWithPostProcessing<'T,'Result,'State> =
+            inherit Folder<'T,'Result,'State>
+            new : 'Result*'State -> FolderWithPostProcessing<'T,'Result,'State>
+            abstract OnDispose : unit -> unit
             abstract OnComplete : PipeIdx -> unit
 
-            new : init:'Value -> FolderWithOnComplete<'T,'Value>
-
         [<AbstractClass>]
-        type SeqFactory<'T,'U> =
-            new : unit -> SeqFactory<'T,'U>
-            abstract PipeIdx : PipeIdx
-            default  PipeIdx : PipeIdx
-            abstract member Create : IOutOfBand -> PipeIdx -> Consumer<'U,'V> -> Consumer<'T,'V>
+        type TransformFactory<'T,'U> =
+            new : unit -> TransformFactory<'T,'U>
+            abstract member Compose : IOutOfBand -> PipeIdx -> Activity<'U,'V> -> Activity<'T,'V>
 
         type ISeq<'T> =
             inherit System.Collections.Generic.IEnumerable<'T>
-            abstract member Compose : SeqFactory<'T,'U> -> ISeq<'U>
-            abstract member ForEach : f:((unit -> unit) -> 'a) -> 'a when 'a :> Consumer<'T,'T>
+            abstract member PushTransform : TransformFactory<'T,'U> -> ISeq<'U>
+            abstract member Fold<'Result,'State> : f:(PipeIdx->Folder<'T,'Result,'State>) -> 'Result
 
     open Core
 
-    type ComposedFactory<'T,'U,'V> =
-        class
-        inherit  SeqFactory<'T,'V>
-        private new : first: SeqFactory<'T,'U> *
-                        second: SeqFactory<'U,'V> *
-                        secondPipeIdx: PipeIdx ->
-                            ComposedFactory<'T,'U,'V>
-        static member
-            Combine : first: SeqFactory<'T,'U> ->
-                        second: SeqFactory<'U,'V> ->
-                            SeqFactory<'T,'V>
-        end
-    and IdentityFactory<'T> =
-        class
-        inherit  SeqFactory<'T,'T>
-        new : unit ->  IdentityFactory<'T>
-        static member Instance :  SeqFactory<'T,'T>
-        end
+    [<CompiledName "OfResizeArrayUnchecked">]
+    val ofResizeArrayUnchecked : ResizeArray<'T> -> ISeq<'T>
 
-    and ISkipping =
-        interface
-        abstract member Skipping : unit -> bool
-        end
+    [<CompiledName "OfList">]
+    val ofList : list<'T> -> ISeq<'T>
 
-    type SeqProcessNextStates =
-        |  InProcess  =  0
-        |  NotStarted  =  1
-        |  Finished  =  2
-    type Result<'T> =
-        class
-        interface  IOutOfBand
-        new : unit ->  Result<'T>
-        member Current : 'T
-        member HaltedIdx : int
-        member SeqState :  SeqProcessNextStates
-        member Current : 'T with set
-        member SeqState :  SeqProcessNextStates with set
-        end
-    type SetResult<'T> =
-        class
-        inherit  Consumer<'T,'T>
-        new : result: Result<'T> ->  SetResult<'T>
-        override ProcessNext : input:'T -> bool
-        end
-    type OutOfBand =
-        class
-        interface  IOutOfBand
-        new : unit ->  OutOfBand
-        member HaltedIdx : int
-        end
-    module ForEach = begin
-        val enumerable :
-            enumerable:IEnumerable<'T> ->
-            outOfBand: OutOfBand ->
-            consumer: Consumer<'T,'U> -> unit
-        val array :
-            array:'T array ->
-            outOfBand: OutOfBand ->
-            consumer: Consumer<'T,'U> -> unit
-        val list :
-            alist:'T list ->
-            outOfBand: OutOfBand ->
-            consumer: Consumer<'T,'U> -> unit
-        val unfold :
-            generator:('S -> ('T * 'S) option) ->
-            state:'S ->
-            outOfBand: OutOfBand ->
-                consumer: Consumer<'T,'U> -> unit
-        val makeIsSkipping :
-            consumer: Consumer<'T,'U> -> (unit -> bool)
-        val init :
-            f:(int -> 'T) ->
-            terminatingIdx:int ->
-            outOfBand: OutOfBand ->
-                consumer: Consumer<'T,'U> -> unit
-        val execute :
-            f:((unit -> unit) -> 'a) ->
-            current: SeqFactory<'T,'U> ->
-            executeOn:( OutOfBand ->  Consumer<'T,'U> ->
-                            unit) -> 'a when 'a :>  Consumer<'U,'U>
-    end
-    module Enumerable = begin
-        type Empty<'T> =
-            class
-            interface IDisposable
-            interface IEnumerator
-            interface IEnumerator<'T>
-            new : unit ->  Empty<'T>
-        end
-        type EmptyEnumerators<'T> =
-            class
-            new : unit ->  EmptyEnumerators<'T>
-            static member Element : IEnumerator<'T>
-        end
-        [<AbstractClass>]
-        type EnumeratorBase<'T> =
-            class
-            interface IEnumerator<'T>
-            interface IEnumerator
-            interface IDisposable
-            new : result: Result<'T> *
-                seqComponent: ICompletionChain ->
-                    EnumeratorBase<'T>
-        end
-        and [<AbstractClass>] EnumerableBase<'T> =
-            class
-            interface  ISeq<'T>
-            interface IEnumerable<'T>
-            interface IEnumerable
-            new : unit ->  EnumerableBase<'T>
-            abstract member
-                Append : seq<'T> -> IEnumerable<'T>
-            override
-                Append : source:seq<'T> -> IEnumerable<'T>
-        end
-        and Enumerator<'T,'U> =
-            class
-            inherit  EnumeratorBase<'U>
-            interface IDisposable
-            interface IEnumerator
-            new : source:IEnumerator<'T> *
-                seqComponent: Consumer<'T,'U> *
-                result: Result<'U> ->
-                    Enumerator<'T,'U>
-        end
-        and Enumerable<'T,'U> =
-            class
-            inherit  EnumerableBase<'U>
-            interface  ISeq<'U>
-            interface IEnumerable<'U>
-            new : enumerable:IEnumerable<'T> *
-                current: SeqFactory<'T,'U> ->
-                    Enumerable<'T,'U>
-        end
-        and ConcatEnumerator<'T,'Collection when 'Collection :> seq<'T>> =
-            class
-            interface IDisposable
-            interface IEnumerator
-            interface IEnumerator<'T>
-            new : sources:seq<'Collection> ->
-                    ConcatEnumerator<'T,'Collection>
-        end
-        and AppendEnumerable<'T> =
-            class
-            inherit  EnumerableBase<'T>
-            interface  ISeq<'T>
-            interface IEnumerable<'T>
-            new : sources:seq<'T> list ->  AppendEnumerable<'T>
-            override
-                Append : source:seq<'T> ->
-                        IEnumerable<'T>
-        end
-        and ConcatEnumerable<'T,'Collection when 'Collection :> seq<'T>> =
-            class
-            inherit  EnumerableBase<'T>
-            interface  ISeq<'T>
-            interface IEnumerable<'T>
-            new : sources:seq<'Collection> ->
-                    ConcatEnumerable<'T,'Collection>
-        end
-        val create :
-            enumerable:IEnumerable<'a> ->
-            current: SeqFactory<'a,'b> ->  ISeq<'b>
-    end
-    module EmptyEnumerable = begin
-        type Enumerable<'T> =
-            class
-            inherit  Enumerable.EnumerableBase<'T>
-            interface  ISeq<'T>
-            interface IEnumerable<'T>
-            new : unit ->  Enumerable<'T>
-            override
-                Append : source:seq<'T> -> IEnumerable<'T>
-            static member Instance :  ISeq<'T>
-        end
-    end
-    module Array = begin
-        type Enumerator<'T,'U> =
-            class
-            inherit  Enumerable.EnumeratorBase<'U>
-            interface IEnumerator
-            new : delayedArray:(unit -> 'T array) *
-                seqComponent: Consumer<'T,'U> *
-                result: Result<'U> ->  Enumerator<'T,'U>
-        end
-        type Enumerable<'T,'U> =
-            class
-            inherit  Enumerable.EnumerableBase<'U>
-            interface  ISeq<'U>
-            interface IEnumerable<'U>
-            new : delayedArray:(unit -> 'T array) *
-                current: SeqFactory<'T,'U> ->
-                    Enumerable<'T,'U>
-        end
-        val createDelayed :
-            delayedArray:(unit -> 'T array) ->
-            current: SeqFactory<'T,'U> ->  ISeq<'U>
-        val create :
-            array:'T array ->
-            current: SeqFactory<'T,'U> ->  ISeq<'U>
-        val createDelayedId :
-            delayedArray:(unit -> 'T array) ->  ISeq<'T>
-        val createId : array:'T array ->  ISeq<'T>
-    end
-    module List = begin
-        type Enumerator<'T,'U> =
-            class
-            inherit  Enumerable.EnumeratorBase<'U>
-            interface IEnumerator
-            new : alist:'T list * seqComponent: Consumer<'T,'U> *
-                result: Result<'U> ->  Enumerator<'T,'U>
-        end
-        type Enumerable<'T,'U> =
-            class
-            inherit  Enumerable.EnumerableBase<'U>
-            interface  ISeq<'U>
-            interface IEnumerable<'U>
-            new : alist:'T list * current: SeqFactory<'T,'U> ->
-                    Enumerable<'T,'U>
-        end
-        val create :
-            alist:'a list ->
-            current: SeqFactory<'a,'b> ->  ISeq<'b>
-    end
-    module Unfold = begin
-        type Enumerator<'T,'U,'State> =
-            class
-            inherit  Enumerable.EnumeratorBase<'U>
-            interface IEnumerator
-            new : generator:('State -> ('T * 'State) option) * state:'State *
-                seqComponent: Consumer<'T,'U> *
-                result: Result<'U> ->
-                    Enumerator<'T,'U,'State>
-        end
-        type Enumerable<'T,'U,'GeneratorState> =
-            class
-            inherit  Enumerable.EnumerableBase<'U>
-            interface  ISeq<'U>
-            interface IEnumerable<'U>
-            new : generator:('GeneratorState -> ('T * 'GeneratorState) option) *
-                state:'GeneratorState * current: SeqFactory<'T,'U> ->
-                    Enumerable<'T,'U,'GeneratorState>
-        end
-    end
-    module Init = begin
-        val getTerminatingIdx : count:Nullable<int> -> int
-        type Enumerator<'T,'U> =
-            class
-            inherit  Enumerable.EnumeratorBase<'U>
-            interface IEnumerator
-            new : count:Nullable<int> * f:(int -> 'T) *
-                seqComponent: Consumer<'T,'U> *
-                result: Result<'U> ->  Enumerator<'T,'U>
-        end
-        type Enumerable<'T,'U> =
-            class
-            inherit  Enumerable.EnumerableBase<'U>
-            interface  ISeq<'U>
-            interface IEnumerable<'U>
-            new : count:Nullable<int> * f:(int -> 'T) *
-                current: SeqFactory<'T,'U> ->
-                    Enumerable<'T,'U>
-        end
-        val upto :
-            lastOption:int option ->
-            f:(int -> 'U) -> IEnumerator<'U>
-        type EnumerableDecider<'T> =
-            class
-            inherit  Enumerable.EnumerableBase<'T>
-            interface  ISeq<'T>
-            interface IEnumerable<'T>
-            new : count:Nullable<int> * f:(int -> 'T) ->
-                    EnumerableDecider<'T>
-        end
-    end
+    [<CompiledName "OfArray">]
+    val ofArray : array<'T> -> ISeq<'T>
 
-    [<CompiledName "ToComposer">]
-    val toComposer : source:seq<'T> ->  ISeq<'T>
-
-    val inline foreach : f:((unit -> unit) -> 'a) -> source: ISeq<'b> -> 'a when 'a :>  Consumer<'b,'b>
+    [<CompiledName "OfSeq">]
+    val ofSeq : seq<'T> -> ISeq<'T>
 
     [<CompiledName "Average">]
     val inline average : source: ISeq< ^T> -> ^T
@@ -418,10 +137,10 @@ namespace Microsoft.FSharp.Collections
         and  ^U:(static member DivideByInt : ^U * int -> ^U)
 
     [<CompiledName "Empty">]
-    val empty<'T> :  ISeq<'T>
+    val empty<'T> : ISeq<'T>
 
     [<CompiledName "ExactlyOne">]
-    val inline exactlyOne  : errorString:string -> source : ISeq<'T> -> 'T
+    val exactlyOne : ISeq<'T> -> 'T
 
     [<CompiledName "Fold">]
     val inline fold<'T,'State> : f:('State->'T->'State) -> seed:'State -> source:ISeq<'T> -> 'State
@@ -430,100 +149,103 @@ namespace Microsoft.FSharp.Collections
     val inline fold2<'T1,'T2,'State> : folder:('State->'T1->'T2->'State) -> state:'State -> source1: ISeq<'T1> -> source2: ISeq<'T2> -> 'State
 
     [<CompiledName "Unfold">]
-    val unfold : generator:('State -> ('T * 'State) option) -> state:'State ->  ISeq<'T>
+    val unfold : generator:('State -> option<'T*'State>) -> state:'State -> ISeq<'T>
 
     [<CompiledName "InitializeInfinite">]
-    val initInfinite : f:(int -> 'T) ->  ISeq<'T>
+    val initInfinite : f:(int -> 'T) -> ISeq<'T>
 
     [<CompiledName "Initialize">]
-    val init : count:int -> f:(int -> 'T) ->  ISeq<'T>
+    val init : count:int -> f:(int -> 'T) -> ISeq<'T>
 
     [<CompiledName "Iterate">]
-    val iter : f:('T -> unit) -> source: ISeq<'T> -> unit
+    val inline iter : f:('T -> unit) -> source:ISeq<'T> -> unit
 
     [<CompiledName "Iterate2">]
     val inline iter2 : f:('T->'U->unit) -> source1 : ISeq<'T> -> source2 : ISeq<'U> -> unit
 
     [<CompiledName "IterateIndexed2">]
-    val inline iteri2 : f:(int->'T->'U->unit) -> source1:ISeq<'T> -> source2:seq<'U> -> unit
+    val inline iteri2 : f:(int->'T->'U->unit) -> source1:ISeq<'T> -> source2:ISeq<'U> -> unit
 
     [<CompiledName "TryHead">]
-    val tryHead : source: ISeq<'T> -> 'T option
+    val tryHead : ISeq<'T> -> option<'T>
+
+    [<CompiledName("Head")>]
+    val head: source:ISeq<'T> -> 'T
 
     [<CompiledName "IterateIndexed">]
-    val iteri : f:(int -> 'T -> unit) -> source: ISeq<'T> -> unit
+    val inline iteri : f:(int -> 'T -> unit) -> source:ISeq<'T> -> unit
 
     [<CompiledName "Except">]
     val inline except : itemsToExclude:seq<'T> -> source:ISeq<'T> -> ISeq<'T> when 'T:equality
 
     [<CompiledName "Exists">]
-    val exists : f:('T -> bool) -> source: ISeq<'T> -> bool
+    val inline exists : f:('T -> bool) -> source:ISeq<'T> -> bool
 
     [<CompiledName "Exists2">]
-    val exists2 : predicate:('T->'U->bool) -> source1:ISeq<'T> -> source2:ISeq<'U> -> bool
+    val inline exists2 : predicate:('T->'U->bool) -> source1:ISeq<'T> -> source2:ISeq<'U> -> bool
 
     [<CompiledName "Contains">]
-    val inline contains : element:'T -> source: ISeq<'T> -> bool when 'T : equality
+    val inline contains : element:'T -> source:ISeq<'T> -> bool when 'T : equality
 
     [<CompiledName "ForAll">]
-    val forall : f:('T -> bool) -> source: ISeq<'T> -> bool
+    val inline forall : f:('T -> bool) -> source:ISeq<'T> -> bool
 
     [<CompiledName "ForAll2">]
     val inline forall2 : predicate:('T->'U->bool) -> source1:ISeq<'T> -> source2:ISeq<'U> -> bool
 
     [<CompiledName "Filter">]
-    val inline filter : f:('T -> bool) -> source: ISeq<'T> ->  ISeq<'T>
+    val inline filter : f:('T -> bool) -> source:ISeq<'T> -> ISeq<'T>
 
     [<CompiledName "Map">]
-    val inline map : f:('T -> 'U) -> source: ISeq<'T> ->  ISeq<'U>
+    val inline map : f:('T -> 'U) -> source:ISeq<'T> -> ISeq<'U>
 
     [<CompiledName "MapIndexed">]
     val inline mapi : f:(int->'a->'b) -> source: ISeq<'a> -> ISeq<'b>
 
     [<CompiledName "Map2">]
-    val inline map2<'First,'Second,'U> : map:('First->'Second->'U) -> source1:ISeq<'First> -> source2:ISeq<'Second> -> ISeq<'U>
+    val inline map2<'T,'U,'V> : map:('T->'U->'V) -> source1:ISeq<'T> -> source2:ISeq<'U> -> ISeq<'V>
 
     [<CompiledName "MapIndexed2">]
-    val inline mapi2<'First,'Second,'U> : map:(int -> 'First->'Second->'U) -> source1:ISeq<'First> -> source2:ISeq<'Second> -> ISeq<'U>
+    val inline mapi2<'T,'U,'V> : map:(int -> 'T->'U->'V) -> source1:ISeq<'T> -> source2:ISeq<'U> -> ISeq<'V>
 
     [<CompiledName "Map3">]
-    val inline map3<'First,'Second,'Third,'U> : map:('First->'Second->'Third->'U) -> source1:ISeq<'First> -> source2:ISeq<'Second> -> source3:ISeq<'Third> -> ISeq<'U>
+    val inline map3<'T,'U,'V,'W> : map:('T->'U->'V->'W) -> source1:ISeq<'T> -> source2:ISeq<'U> -> source3:ISeq<'V> -> ISeq<'W>
 
     [<CompiledName "CompareWith">]
-    val inline compareWith : f:('T -> 'T -> int) -> source1 :ISeq<'T> -> source2:ISeq<'T> -> int
+    val inline compareWith : f:('T->'T->int) -> source1 :ISeq<'T> -> source2:ISeq<'T> -> int
 
     [<CompiledName "Choose">]
     val inline choose : f:('a->option<'b>) -> source: ISeq<'a> -> ISeq<'b>
 
     [<CompiledName "Distinct">]
-    val inline distinct : source: ISeq<'T> -> ISeq<'T> when 'T:equality
+    val inline distinct : source:ISeq<'T> -> ISeq<'T> when 'T:equality
 
     [<CompiledName "DistinctBy">]
-    val inline distinctBy : keyf:('T->'Key) -> source: ISeq<'T> -> ISeq<'T> when 'Key:equality
+    val inline distinctBy : keyf:('T->'Key) -> source:ISeq<'T> -> ISeq<'T> when 'Key:equality
 
     [<CompiledName "Max">]
-    val inline max : source: ISeq<'T> -> 'T when 'T:comparison
+    val inline max : source:ISeq<'T> -> 'T when 'T:comparison
 
     [<CompiledName "MaxBy">]
-    val inline maxBy : f:('T -> 'U) -> source: ISeq<'T> -> 'T when 'U:comparison
+    val inline maxBy : f:('T->'U) -> source:ISeq<'T> -> 'T when 'U:comparison
 
     [<CompiledName "Min">]
-    val inline min : source: ISeq<'T> -> 'T when 'T:comparison
+    val inline min : source:ISeq<'T> -> 'T when 'T:comparison
 
     [<CompiledName "MinBy">]
-    val inline minBy : f:('T -> 'U) -> source: ISeq<'T> -> 'T when 'U:comparison
+    val inline minBy : f:('T->'U) -> source:ISeq<'T> -> 'T when 'U:comparison
 
     [<CompiledName "Pairwise">]
-    val inline pairwise : source:ISeq<'T> -> ISeq<'T * 'T>
+    val pairwise : source:ISeq<'T> -> ISeq<'T * 'T>
 
     [<CompiledName "Reduce">]
-    val inline reduce : f:('T->'T->'T) -> source: ISeq<'T> -> 'T
+    val inline reduce : f:('T->'T->'T) -> source:ISeq<'T> -> 'T
 
     [<CompiledName "Scan">]
     val inline scan : folder:('State->'T->'State) -> initialState:'State -> source:ISeq<'T> -> ISeq<'State>
 
     [<CompiledName "Skip">]
-    val inline skip : errorString:string -> skipCount:int -> source:ISeq<'T> -> ISeq<'T>
+    val skip : skipCount:int -> source:ISeq<'T> -> ISeq<'T>
 
     [<CompiledName "SkipWhile">]
     val inline skipWhile : predicate:('T->bool) -> source:ISeq<'T> -> ISeq<'T>
@@ -534,39 +256,89 @@ namespace Microsoft.FSharp.Collections
         and  'T:(static member (+) : ^T * ^T -> ^T)
 
     [<CompiledName "SumBy">]
-    val inline sumBy : f :('T -> ^U) -> source: ISeq<'T> -> ^U
+    val inline sumBy : f :('T -> ^U) -> source:ISeq<'T> -> ^U
         when ^U:(static member Zero : ^U)
         and  ^U:(static member (+) : ^U * ^U -> ^U)
 
     [<CompiledName "Take">]
-    val inline take : errorString:string -> takeCount:int -> source:ISeq<'T> -> ISeq<'T>
+    val take : takeCount:int -> source:ISeq<'T> -> ISeq<'T>
 
     [<CompiledName "TakeWhile">]
     val inline takeWhile : predicate:('T->bool) -> source:ISeq<'T> -> ISeq<'T>
 
     [<CompiledName "Tail">]
-    val inline tail : errorString:string -> source:ISeq<'T> -> ISeq<'T>
+    val tail : source:ISeq<'T> -> ISeq<'T>
 
     [<CompiledName "Truncate">]
-    val inline truncate : truncateCount:int -> source:ISeq<'T> -> ISeq<'T>
+    val truncate : truncateCount:int -> source:ISeq<'T> -> ISeq<'T>
 
     [<CompiledName "Indexed">]
-    val inline indexed : source: ISeq<'a> -> ISeq<int * 'a>
+    val indexed : source: ISeq<'a> -> ISeq<int * 'a>
 
     [<CompiledName "TryItem">]
-    val tryItem : errorString:string -> index:int -> source: ISeq<'T> -> 'T option
+    val tryItem : index:int -> source:ISeq<'T> -> option<'T>
 
     [<CompiledName "TryPick">]
-    val tryPick : f:('T -> 'U option) -> source: ISeq<'T> -> Option<'U>
+    val inline tryPick : f:('T -> option<'U>) -> source:ISeq<'T> -> option<'U>
 
     [<CompiledName "TryFind">]
-    val tryFind : f:('T -> bool) -> source: ISeq<'T> -> Option<'T>
+    val inline tryFind : f:('T -> bool) -> source:ISeq<'T> -> option<'T>
 
     [<CompiledName "TryFindIndex">]
-    val inline tryFindIndex: preidcate:('T->bool) -> source:ISeq<'T> -> int option
+    val inline tryFindIndex: predicate:('T->bool) -> source:ISeq<'T> -> option<int>
+
+    [<CompiledName("Last")>]
+    val last: source:ISeq<'T> -> 'T
 
     [<CompiledName "TryLast">]
-    val inline tryLast : source:ISeq<'T> -> 'T option
+    val tryLast : source:ISeq<'T> -> option<'T>
 
     [<CompiledName "Windowed">]
-    val inline windowed : windowSize:int -> source:ISeq<'T> -> ISeq<'T[]>
+    val windowed : windowSize:int -> source:ISeq<'T> -> ISeq<array<'T>>
+
+    [<CompiledName "Concat">]
+    val concat : sources:ISeq<'Collection> -> ISeq<'T> when 'Collection :> ISeq<'T>
+
+    [<CompiledName "Append">]
+    val append: source1:ISeq<'T> -> source2:ISeq<'T> -> ISeq<'T>
+
+    [<CompiledName "Delay">]
+    val delay : (unit -> ISeq<'T>) -> ISeq<'T>
+
+    [<CompiledName "GroupByVal">]
+    val inline groupByVal : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * ISeq<'T>> when 'Key : equality and 'Key : struct
+
+    [<CompiledName "GroupByRef">]
+    val inline groupByRef : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * ISeq<'T>> when 'Key : equality and 'Key : not struct
+
+    [<CompiledName("CountByVal")>]
+    val inline countByVal : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * int> when 'Key : equality and 'Key : struct
+
+    [<CompiledName("CountByRef")>]
+    val inline countByRef : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * int> when 'Key : equality and 'Key : not struct
+
+    [<CompiledName("ToArray")>]
+    val toArray: source:ISeq<'T> -> array<'T>
+
+    [<CompiledName("SortBy")>]
+    val sortBy : projection:('T->'Key) -> source:ISeq<'T> -> ISeq<'T> when 'Key : comparison
+
+    [<CompiledName("Sort")>]
+    val sort : source:ISeq<'T> -> ISeq<'T> when 'T : comparison
+
+    [<CompiledName("SortWith")>]
+    val sortWith : comparer:('T->'T->int) -> source:ISeq<'T> -> ISeq<'T>
+
+    [<CompiledName("Reverse")>]
+    val rev: source:ISeq<'T> -> ISeq<'T>
+
+    [<CompiledName("Permute")>]
+    val permute: indexMap:(int->int) -> source:ISeq<'T> -> ISeq<'T>
+
+    module internal GroupBy =
+        val inline byVal : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * ISeq<'T>> when 'Key : equality
+        val inline byRef : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * ISeq<'T>> when 'Key : equality
+
+    module internal CountBy =
+        val inline byVal : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * int> when 'Key : equality
+        val inline byRef : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * int> when 'Key : equality
