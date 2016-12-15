@@ -42,7 +42,7 @@
     <Compile Include="Completion\CompletionProvider.fs"/>
     <Compile Include="Completion\SignatureHelp.fs"/>
     <Compile Include="Navigation\GoToDefinitionService.fs"/>
-    <Compile Include="Navigation\FindReferencesService.fs.fs"/>
+    <Compile Include="Navigation\FindReferencesService.fs"/>
     <Compile Include="BlockComment\CommentUncommentService.fs"/>
     <Compile Include="QuickInfo\QuickInfoProvider.fs"/>
     <Compile Include="NavigationBarItemService.fs" />

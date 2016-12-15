@@ -197,6 +197,30 @@ module CommonHelpers =
         | -1 | 0 -> span
         | index -> TextSpan(span.Start + index + 1, text.Length - index - 1)
 
+    let glyphMajorToRoslynGlyph = function
+        | GlyphMajor.Class
+        | GlyphMajor.Typedef
+        | GlyphMajor.Type
+        | GlyphMajor.Exception -> Glyph.ClassPublic
+        | GlyphMajor.Constant -> Glyph.ConstantPublic
+        | GlyphMajor.Delegate -> Glyph.DelegatePublic
+        | GlyphMajor.Union
+        | GlyphMajor.Enum -> Glyph.EnumPublic
+        | GlyphMajor.EnumMember
+        | GlyphMajor.Variable
+        | GlyphMajor.FieldBlue -> Glyph.FieldPublic
+        | GlyphMajor.Event -> Glyph.EventPublic
+        | GlyphMajor.Interface -> Glyph.InterfacePublic
+        | GlyphMajor.Method
+        | GlyphMajor.Method2 -> Glyph.MethodPublic
+        | GlyphMajor.Module -> Glyph.ModulePublic
+        | GlyphMajor.NameSpace -> Glyph.Namespace
+        | GlyphMajor.Property -> Glyph.PropertyPublic
+        | GlyphMajor.Struct
+        | GlyphMajor.ValueType -> Glyph.StructurePublic
+        | GlyphMajor.Error -> Glyph.Error
+        | _ -> Glyph.None
+
 [<RequireQualifiedAccess; NoComparison>] 
 type internal SymbolDeclarationLocation = 
     | CurrentDocument
