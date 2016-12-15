@@ -18,10 +18,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 {
     [Guid(Constants.FSharpEditorFactoryIdString)]
     [ProvideEditorFactory(typeof(FSharpEditorFactory), 101)]
-    [ProvideEditorExtension(typeof(FSharpEditorFactory), ".fs", Int32.MaxValue, NameResourceID = 101)]
-    [ProvideEditorExtension(typeof(FSharpEditorFactory), ".fsi", Int32.MaxValue, NameResourceID = 101)]
-    [ProvideEditorExtension(typeof(FSharpEditorFactory), ".fsscript", Int32.MaxValue, NameResourceID = 101)]
-    [ProvideEditorExtension(typeof(FSharpEditorFactory), ".fsx", Int32.MaxValue, NameResourceID = 101)]
+    [ProvideEditorExtension(typeof(FSharpEditorFactory), ".fs", 32)]
+    [ProvideEditorExtension(typeof(FSharpEditorFactory), ".fsi", 32)]
+    [ProvideEditorExtension(typeof(FSharpEditorFactory), ".fsscript", 32)]
+    [ProvideEditorExtension(typeof(FSharpEditorFactory), ".fsx", 32)]
     public class FSharpEditorFactory : IVsEditorFactory
     {
         private Package _parentPackage;
@@ -100,7 +100,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             codeWindow.GetEditorCaption(readOnlyStatus, out pbstrEditorCaption);
 
             ppunkDocView = Marshal.GetIUnknownForObject(codeWindow);
-            pguidCmdUI = VSConstants.GUID_TextEditorFactory;
             ppunkDocData = Marshal.GetIUnknownForObject(textBuffer);
 
             return VSConstants.S_OK;
