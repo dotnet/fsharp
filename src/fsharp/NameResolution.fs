@@ -1656,14 +1656,32 @@ let rec ResolveLongIndentAsModuleOrNamespace atMostOne amap m fullyQualified (ne
 
     | id :: rest -> 
         let moduleOrNamespaces = nenv.ModulesAndNamespaces(fullyQualified)
-        let predictModulesAndNamespaces() =
-            moduleOrNamespaces
-            |> Seq.collect (fun kv -> kv.Value)
-            |> Seq.filter (fun modref -> IsEntityAccessible amap m ad modref)
-            |> Seq.map (fun e -> e.DisplayName)
-            |> Set.ofSeq
+        let namespaceNotFound = lazy(
+            let predictModulesAndNamespaces() =
+                moduleOrNamespaces
+                |> Seq.collect (fun kv -> kv.Value)
+                |> Seq.filter (fun modref -> IsEntityAccessible amap m ad modref)
+                |> Seq.map (fun e -> e.DisplayName)
+                |> Set.ofSeq
 
-        match moduleOrNamespaces.TryFind(id.idText) with
+            UndefinedName(0,FSComp.SR.undefinedNameNamespaceOrModule,id,predictModulesAndNamespaces))
+        
+        let moduleNotFoundErrorCache = ref None
+        let moduleNotFound (modref: ModuleOrNamespaceRef) (mty:ModuleOrNamespaceType) id depth =
+            match !moduleNotFoundErrorCache with
+            | Some error -> error
+            | None ->
+                let predictNames() =
+                    mty.ModulesAndNamespacesByDemangledName
+                    |> Seq.filter (fun kv -> IsEntityAccessible amap m ad (modref.NestedTyconRef kv.Value))
+                    |> Seq.map (fun e -> e.Value.DisplayName)
+                    |> Set.ofSeq
+                
+                let error = raze (UndefinedName(depth,FSComp.SR.undefinedNameNamespace,id,predictNames))
+                moduleNotFoundErrorCache := Some error
+                error
+
+        match moduleOrNamespaces.TryFind id.idText with
         | Some modrefs ->
             /// Look through the sub-namespaces and/or modules
             let rec look depth (modref: ModuleOrNamespaceRef) (mty:ModuleOrNamespaceType) (lid:Ident list) =
@@ -1671,25 +1689,20 @@ let rec ResolveLongIndentAsModuleOrNamespace atMostOne amap m fullyQualified (ne
                 | [] -> success (depth,modref,mty)
                 | id :: rest ->
                     match mty.ModulesAndNamespacesByDemangledName.TryFind id.idText with
-                    | Some mspec when IsEntityAccessible amap m ad (modref.NestedTyconRef mspec) -> 
-                          let subref = modref.NestedTyconRef mspec
-                          look (depth+1) subref mspec.ModuleOrNamespaceType rest
-                    | _ -> 
-                          let predictNames() =
-                              mty.ModulesAndNamespacesByDemangledName
-                              |> Seq.filter (fun kv -> IsEntityAccessible amap m ad (modref.NestedTyconRef kv.Value))
-                              |> Seq.map (fun e -> e.Value.DisplayName)
-                              |> Set.ofSeq
-
-                          raze (UndefinedName(depth,FSComp.SR.undefinedNameNamespace,id,predictNames))
+                    | Some mspec -> 
+                        let subref = modref.NestedTyconRef mspec
+                        if IsEntityAccessible amap m ad subref then
+                            look (depth+1) subref mspec.ModuleOrNamespaceType rest
+                        else
+                            moduleNotFound modref mty id depth
+                    | _ -> moduleNotFound modref mty id depth
 
             modrefs |> CollectResults2 atMostOne (fun modref -> 
                 if IsEntityAccessible amap m ad modref then 
                     look 1 modref modref.ModuleOrNamespaceType rest
                 else
-                    raze (UndefinedName(0,FSComp.SR.undefinedNameNamespaceOrModule,id,predictModulesAndNamespaces))) 
-        | None ->
-            raze (UndefinedName(0,FSComp.SR.undefinedNameNamespaceOrModule,id,predictModulesAndNamespaces))
+                    raze (namespaceNotFound.Force())) 
+        | None -> raze (namespaceNotFound.Force())
 
 
 let ResolveLongIndentAsModuleOrNamespaceThen atMostOne amap m fullyQualified (nenv:NameResolutionEnv) ad lid f =
