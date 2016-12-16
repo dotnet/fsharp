@@ -40,36 +40,32 @@ type internal FSharpNavigableItem(document: Document, textSpan: TextSpan) =
 
 [<Shared>]
 [<ExportLanguageService(typeof<IGoToDefinitionService>, FSharpCommonConstants.FSharpLanguageName)>]
-type internal FSharpGoToDefinitionService [<ImportingConstructor>] ([<ImportMany>]presenters: IEnumerable<INavigableItemsPresenter>) =
+type internal FSharpGoToDefinitionService 
+    [<ImportingConstructor>]
+    (
+        checkerProvider: FSharpCheckerProvider,
+        projectInfoManager: ProjectInfoManager,
+        [<ImportMany>]presenters: IEnumerable<INavigableItemsPresenter>
+    ) =
 
-    static member FindDefinition(documentKey: DocumentId, sourceText: SourceText, filePath: string, position: int, defines: string list, options: FSharpProjectOptions, textVersionHash: int, cancellationToken: CancellationToken) : Async<Option<range>> = 
+    static member FindDefinition(checker: FSharpChecker, documentKey: DocumentId, sourceText: SourceText, filePath: string, position: int, defines: string list, options: FSharpProjectOptions, textVersionHash: int, cancellationToken: CancellationToken) : Async<Option<range>> = 
         async {
             let textLine = sourceText.Lines.GetLineFromPosition(position)
             let textLinePos = sourceText.Lines.GetLinePosition(position)
             let fcsTextLineNumber = textLinePos.Line + 1 // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
-            let textLineColumn = textLinePos.Character
-            let tryGotoAtPosition position = 
-              async { 
-                match CommonHelpers.tryClassifyAtPosition(documentKey, sourceText, filePath, defines, position, cancellationToken) with 
-                | Some (islandColumn, qualifiers, _) -> 
-                    let! _parseResults, checkFileAnswer = FSharpLanguageService.Checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
-                    match checkFileAnswer with
-                    | FSharpCheckFileAnswer.Aborted -> return None
-                    | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> 
+            match CommonHelpers.tryClassifyAtPosition(documentKey, sourceText, filePath, defines, position, cancellationToken) with 
+            | Some (islandColumn, qualifiers, _) -> 
+                let! _parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
+                match checkFileAnswer with
+                | FSharpCheckFileAnswer.Aborted -> return None
+                | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> 
             
-                    let! declarations = checkFileResults.GetDeclarationLocationAlternate (fcsTextLineNumber, islandColumn, textLine.ToString(), qualifiers, false)
+                let! declarations = checkFileResults.GetDeclarationLocationAlternate (fcsTextLineNumber, islandColumn, textLine.ToString(), qualifiers, false)
             
-                    match declarations with
-                    | FSharpFindDeclResult.DeclFound(range) -> return Some(range)
-                    | _ -> return None
-                | None -> return None
-               }
-
-            // Tolerate being on the right of the identifier
-            let! attempt1 = tryGotoAtPosition position
-            match attempt1 with 
-            | None when textLineColumn > 0 -> return! tryGotoAtPosition (position - 1) 
-            | res -> return res
+                match declarations with
+                | FSharpFindDeclResult.DeclFound(range) -> return Some(range)
+                | _ -> return None
+            | None -> return None
         }
     
     // FSROSLYNTODO: Since we are not integrated with the Roslyn project system yet, the below call
@@ -79,12 +75,12 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>] ([<ImportMany
     member this.FindDefinitionsAsyncAux(document: Document, position: int, cancellationToken: CancellationToken) =
         async {
             let results = List<INavigableItem>()
-            match FSharpLanguageService.TryGetOptionsForEditingDocumentOrProject(document)  with 
+            match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)  with 
             | Some options ->
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
                 let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
-                let! definition = FSharpGoToDefinitionService.FindDefinition(document.Id, sourceText, document.FilePath, position, defines, options, textVersion.GetHashCode(), cancellationToken)
+                let! definition = FSharpGoToDefinitionService.FindDefinition(checkerProvider.Checker, document.Id, sourceText, document.FilePath, position, defines, options, textVersion.GetHashCode(), cancellationToken)
 
                 match definition with
                 | Some(range) ->

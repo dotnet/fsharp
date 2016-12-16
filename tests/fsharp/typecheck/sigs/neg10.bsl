@@ -73,13 +73,13 @@ neg10.fs(193,39,193,46): typecheck error FS0767: The type Foo contains the membe
 
 Maybe you want one of the following:
 
-   Equals
-
    ToString
 
-   Finalize
+   Equals
 
    GetHashCode
+
+   Finalize
 
 neg10.fs(193,41,193,44): typecheck error FS0017: The member 'MyX : unit -> int' does not have the correct type to override any given virtual method
 
@@ -257,4 +257,4 @@ neg10.fs(456,24,456,25): typecheck error FS0001: The type 'C' does not support a
 
 neg10.fs(457,26,457,27): typecheck error FS0001: The type 'C' does not support a conversion to the type 'decimal'
 
-neg10.fsi(1,1,1,81): typecheck error FS0240: The signature file 'Neg10' does not have a corresponding implementation file. If an implementation file exists then check the 'module' and 'namespace' declarations in the signature and implementation files match.
+neg10.fsi(1,1,1,1): typecheck error FS0240: The signature file 'Neg10' does not have a corresponding implementation file. If an implementation file exists then check the 'module' and 'namespace' declarations in the signature and implementation files match.

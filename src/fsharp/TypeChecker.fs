@@ -83,7 +83,10 @@ exception FieldsFromDifferentTypes of DisplayEnv * RecdFieldRef * RecdFieldRef *
 exception FieldGivenTwice of DisplayEnv * Tast.RecdFieldRef * range
 exception MissingFields of string list * range
 exception FunctionValueUnexpected of DisplayEnv * TType * range
-exception UnitTypeExpected of DisplayEnv * TType * bool * range
+exception UnitTypeExpected of DisplayEnv * TType * range
+exception UnitTypeExpectedWithEquality of DisplayEnv * TType * range
+exception UnitTypeExpectedWithPossibleAssignment of DisplayEnv * TType * bool * string * range
+exception UnitTypeExpectedWithPossiblePropertySetter of DisplayEnv * TType * string * string * range
 exception UnionPatternsBindDifferentNames of range
 exception VarBoundTwice of Ident
 exception ValueRestriction of DisplayEnv * bool * Val * Typar * range
@@ -656,7 +659,7 @@ let ImplicitlyOpenOwnNamespace tcSink g amap scopem enclosingNamespacePath env =
             | None -> enclosingNamespacePath
 
         let ad = env.eAccessRights
-        match ResolveLongIndentAsModuleOrNamespace amap scopem OpenQualified env.eNameResEnv ad enclosingNamespacePathToOpen with 
+        match ResolveLongIndentAsModuleOrNamespace ResultCollectionSettings.AllResults amap scopem OpenQualified env.eNameResEnv ad enclosingNamespacePathToOpen with 
         | Result modrefs -> OpenModulesOrNamespaces tcSink g amap scopem false env (List.map p23 modrefs)
         | Exception _ ->  env
 
@@ -718,23 +721,59 @@ let UnifyFunctionType extraInfo cenv denv mFunExpr ty =
         | Some argm -> error (NotAFunction(denv,ty,mFunExpr,argm))
         | None ->    error (FunctionExpected(denv,ty,mFunExpr))
 
+let ReportImplicitlyIgnoredBoolExpression denv m ty expr =
+    let checkExpr m exprOpt =
+        match exprOpt with 
+        | Expr.App(Expr.Val(vf,_,_),_,_,exprs,_) when vf.LogicalName = opNameEquals ->
+            match exprs with 
+            | Expr.App(Expr.Val(propRef,_,_),_,_,Expr.Val(vf,_,_) :: _,_) :: _ ->
+                if propRef.IsPropertyGetterMethod then
+                    let propertyName = propRef.PropertyName
+                    let hasCorrespondingSetter =
+                        match propRef.ActualParent with
+                        | Parent entityRef ->
+                            entityRef.MembersOfFSharpTyconSorted
+                            |> List.exists (fun valRef -> valRef.IsPropertySetterMethod && valRef.PropertyName = propertyName)
+                        | _ -> false
+
+                    if hasCorrespondingSetter then
+                        UnitTypeExpectedWithPossiblePropertySetter (denv,ty,vf.DisplayName,propertyName,m)
+                    else
+                        UnitTypeExpectedWithEquality (denv,ty,m)
+                else
+                    UnitTypeExpectedWithEquality (denv,ty,m)
+            | Expr.Op(TOp.ILCall(_,_,_,_,_,_,_,methodRef,_,_,_),_,Expr.Val(vf,_,_) :: _,_) :: _ when methodRef.Name.StartsWith "get_"->
+                UnitTypeExpectedWithPossiblePropertySetter (denv,ty,vf.DisplayName,PrettyNaming.ChopPropertyName(methodRef.Name),m)
+            | Expr.Val(vf,_,_) :: _ -> 
+                UnitTypeExpectedWithPossibleAssignment (denv,ty,vf.IsMutable,vf.DisplayName,m)
+            | _ -> UnitTypeExpectedWithEquality (denv,ty,m)
+        | _ -> UnitTypeExpected (denv,ty,m)
+
+    match expr with 
+    | Some(Expr.Let(_,Expr.Sequential(_,inner,_,_,_),_,_))
+    | Some(Expr.Sequential(_,inner,_,_,_)) ->
+        let rec extractNext expr =
+            match expr with
+            | Expr.Sequential(_,inner,_,_,_) -> extractNext inner
+            | _ -> checkExpr expr.Range expr
+        extractNext inner
+    | Some expr -> checkExpr m expr
+    | _ -> UnitTypeExpected (denv,ty,m)
 
 let UnifyUnitType cenv denv m ty exprOpt =
-    if not (AddCxTypeEqualsTypeUndoIfFailed denv cenv.css m ty cenv.g.unit_ty) then 
+    if AddCxTypeEqualsTypeUndoIfFailed denv cenv.css m ty cenv.g.unit_ty then 
+        true
+    else
         let domainTy = NewInferenceType ()
         let resultTy = NewInferenceType ()
         if AddCxTypeEqualsTypeUndoIfFailed denv cenv.css m ty (domainTy --> resultTy) then 
             warning (FunctionValueUnexpected(denv,ty,m))
-        else
-            let perhapsProp = 
-                typeEquiv cenv.g cenv.g.bool_ty ty &&
-                match exprOpt with 
-                | Some(Expr.App(Expr.Val(vf,_,_),_,_,[__],_)) when vf.LogicalName = opNameEquals -> true
-                | _ -> false
-            warning (UnitTypeExpected (denv,ty,perhapsProp,m)) 
+        else        
+            if not (typeEquiv cenv.g cenv.g.bool_ty ty) then 
+                warning (UnitTypeExpected (denv,ty,m)) 
+            else
+                warning (ReportImplicitlyIgnoredBoolExpression denv m ty exprOpt)
         false
-    else
-        true
 
 //-------------------------------------------------------------------------
 // Attribute target flags
@@ -1390,13 +1429,15 @@ let MakeAndPublishVal cenv env (altActualParent,inSig,declKind,vrec,(ValScheme(i
 
     // CompiledName not allowed on virtual/abstract/override members        
     let compiledNameAttrib  = TryFindFSharpStringAttribute cenv.g cenv.g.attrib_CompiledNameAttribute attrs
-    if Option.isSome compiledNameAttrib && (   (   match memberInfoOpt with 
-                                                   | Some (ValMemberInfoTransient(memberInfo,_,_)) -> 
-                                                       memberInfo.MemberFlags.IsDispatchSlot 
-                                                       || memberInfo.MemberFlags.IsOverrideOrExplicitImpl 
-                                                   | None -> false)
-                                            || (match altActualParent with ParentNone -> true | _ -> false)) then 
-        errorR(Error(FSComp.SR.tcCompiledNameAttributeMisused(),m))
+    if Option.isSome compiledNameAttrib then
+        match memberInfoOpt with 
+        | Some (ValMemberInfoTransient(memberInfo,_,_)) -> 
+            if memberInfo.MemberFlags.IsDispatchSlot || memberInfo.MemberFlags.IsOverrideOrExplicitImpl then
+                errorR(Error(FSComp.SR.tcCompiledNameAttributeMisused(),m))
+        | None -> 
+            match altActualParent with
+            | ParentNone -> errorR(Error(FSComp.SR.tcCompiledNameAttributeMisused(),m)) 
+            | _ -> ()
 
     let compiledNameIsOnProp =
         match memberInfoOpt with
@@ -2249,7 +2290,8 @@ module GeneralizationHelpers =
         | Some memberFlags -> 
             match memberFlags.MemberKind with 
             // can't infer extra polymorphism for properties 
-            | MemberKind.PropertyGet  | MemberKind.PropertySet  -> 
+            | MemberKind.PropertyGet 
+            | MemberKind.PropertySet -> 
                  if not (isNil declaredTypars) then 
                      errorR(Error(FSComp.SR.tcPropertyRequiresExplicitTypeParameters(),m))
             | MemberKind.Constructor -> 
@@ -6618,7 +6660,7 @@ and TcConstExpr cenv overallTy env m tpenv c  =
         let expr = 
             let modName = ("NumericLiteral" + suffix)
             let ad = env.eAccessRights
-            match ResolveLongIndentAsModuleOrNamespace cenv.amap m OpenQualified env.eNameResEnv ad [ident (modName,m)] with 
+            match ResolveLongIndentAsModuleOrNamespace ResultCollectionSettings.AtMostOneResult cenv.amap m OpenQualified env.eNameResEnv ad [ident (modName,m)] with 
             | Result []
             | Exception _ -> error(Error(FSComp.SR.tcNumericLiteralRequiresModule(modName),m))
             | Result ((_,mref,_) :: _) -> 
@@ -10555,7 +10597,7 @@ and ComputeIsComplete enclosingDeclaredTypars declaredTypars ty =
 /// Determine if a uniquely-identified-abstract-slot exists for an override member (or interface member implementation) based on the information available 
 /// at the syntactic definition of the member (i.e. prior to type inference). If so, we know the expected signature of the override, and the full slotsig 
 /// it implements. Apply the inferred slotsig. 
-and ApplyAbstractSlotInference cenv (envinner:TcEnv) (bindingTy,m,synTyparDecls,declaredTypars,memberId,tcrefObjTy,renaming,_objTy,optIntfSlotTy,valSynData,memberFlags,attribs) = 
+and ApplyAbstractSlotInference (cenv:cenv) (envinner:TcEnv) (bindingTy,m,synTyparDecls,declaredTypars,memberId,tcrefObjTy,renaming,_objTy,optIntfSlotTy,valSynData,memberFlags,attribs) = 
 
     let ad = envinner.eAccessRights
     let typToSearchForAbstractMembers = 
@@ -10585,11 +10627,17 @@ and ApplyAbstractSlotInference cenv (envinner:TcEnv) (bindingTy,m,synTyparDecls,
                      errorR(Error(FSComp.SR.tcNoMemberFoundForOverride(),memberId.idRange))
                      []
 
-                 | _ -> 
+                 | slots -> 
                      match dispatchSlotsArityMatch with 
                      | meths when meths |> makeUniqueBySig |> List.length = 1 -> meths
                      | [] -> 
-                         errorR(Error(FSComp.SR.tcOverrideArityMismatch(),memberId.idRange))
+                         let details =
+                             slots
+                             |> List.map (NicePrint.stringOfMethInfo cenv.amap m envinner.DisplayEnv)
+                             |> Seq.map (sprintf "%s   %s" System.Environment.NewLine)
+                             |> String.concat ""
+
+                         errorR(Error(FSComp.SR.tcOverrideArityMismatch(details),memberId.idRange))
                          []
                      | _ -> [] // check that method to override is sealed is located at CheckOverridesAreAllUsedOnce (typrelns.fs)
                       // We hit this case when it is ambiguous which abstract method is being implemented. 
@@ -11745,8 +11793,8 @@ let TcTyconMemberSpecs cenv env containerInfo declKind tpenv (augSpfn: SynMember
 
 let TcModuleOrNamespaceLidAndPermitAutoResolve env amap (longId : Ident list) =
     let ad = env.eAccessRights
-    let m = longId |> List.map(fun id -> id.idRange) |> List.reduce unionRanges
-    match ResolveLongIndentAsModuleOrNamespace amap m OpenQualified env.eNameResEnv ad longId  with 
+    let m = longId |> List.map (fun id -> id.idRange) |> List.reduce unionRanges
+    match ResolveLongIndentAsModuleOrNamespace ResultCollectionSettings.AllResults amap m OpenQualified env.eNameResEnv ad longId  with 
     | Result res -> Result res
     | Exception err ->  raze err
 
@@ -13234,7 +13282,7 @@ module MutRecBindingChecking =
     /// Check a "module X = A.B.C" module abbreviation declaration
     let TcModuleAbbrevDecl (cenv:cenv) scopem env (id,p,m) = 
         let ad = env.eAccessRights
-        let mvvs = ForceRaise (ResolveLongIndentAsModuleOrNamespace cenv.amap m OpenQualified env.eNameResEnv ad p)
+        let mvvs = ForceRaise (ResolveLongIndentAsModuleOrNamespace ResultCollectionSettings.AllResults cenv.amap m OpenQualified env.eNameResEnv ad p)
         let modrefs = mvvs |> List.map p23 
         if modrefs.Length > 0 && modrefs |> List.forall (fun modref -> modref.IsNamespace) then 
             errorR(Error(FSComp.SR.tcModuleAbbreviationForNamespace(fullDisplayTextOfModRef (List.head modrefs)),m))
@@ -15946,7 +15994,7 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
 
         | SynModuleSigDecl.NestedModule(ComponentInfo(attribs,_parms, _constraints,longPath,xml,_,vis,im) as compInfo,isRec,mdefs,m) ->
             if isRec then 
-                // Treat 'module rec M = ...' as a single mutully recursive definition group 'module M = ...'
+                // Treat 'module rec M = ...' as a single mutually recursive definition group 'module M = ...'
                 let modDecl = SynModuleSigDecl.NestedModule(compInfo,false,mdefs,m)
                 return! TcSignatureElementsMutRec cenv parent endm None env [modDecl]
             else
@@ -15973,7 +16021,7 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
             
         | SynModuleSigDecl.ModuleAbbrev (id,p,m) -> 
             let ad = env.eAccessRights
-            let mvvs = ForceRaise (ResolveLongIndentAsModuleOrNamespace cenv.amap m OpenQualified env.eNameResEnv ad p)
+            let mvvs = ForceRaise (ResolveLongIndentAsModuleOrNamespace ResultCollectionSettings.AllResults cenv.amap m OpenQualified env.eNameResEnv ad p)
             let scopem = unionRanges m endm
             let modrefs = mvvs |> List.map p23 
             if modrefs.Length > 0 && modrefs |> List.forall (fun modref -> modref.IsNamespace) then 

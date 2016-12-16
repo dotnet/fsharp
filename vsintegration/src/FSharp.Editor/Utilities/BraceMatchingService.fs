@@ -4,15 +4,21 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Threading.Tasks
+open System.ComponentModel.Composition
 open Microsoft.CodeAnalysis.Editor
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
 [<ExportBraceMatcher(FSharpCommonConstants.FSharpLanguageName)>]
-type internal FSharpBraceMatchingService() =
+type internal FSharpBraceMatchingService 
+    [<ImportingConstructor>]
+    (
+        checkerProvider: FSharpCheckerProvider,
+        projectInfoManager: ProjectInfoManager
+    ) =
 
-    static member GetBraceMatchingResult(sourceText, fileName, options, position: int) = async {
-        let! matchedBraces = FSharpLanguageService.Checker.MatchBracesAlternate(fileName, sourceText.ToString(), options)
+    static member GetBraceMatchingResult(checker: FSharpChecker, sourceText, fileName, options, position: int) = async {
+        let! matchedBraces = checker.MatchBracesAlternate(fileName, sourceText.ToString(), options)
 
         let isPositionInRange range = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range).Contains(position)
         return matchedBraces |> Array.tryFind(fun (left, right) -> isPositionInRange left || isPositionInRange right)
@@ -21,10 +27,10 @@ type internal FSharpBraceMatchingService() =
     interface IBraceMatcher with
         member this.FindBracesAsync(document, position, cancellationToken) = 
             async {
-                match FSharpLanguageService.TryGetOptionsForEditingDocumentOrProject(document)  with 
+                match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)  with 
                 | Some options ->
                     let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                    let! result = FSharpBraceMatchingService.GetBraceMatchingResult(sourceText, document.Name, options, position)
+                    let! result = FSharpBraceMatchingService.GetBraceMatchingResult(checkerProvider.Checker, sourceText, document.Name, options, position)
                     return match result with
                            | None -> Nullable()
                            | Some(left, right) ->

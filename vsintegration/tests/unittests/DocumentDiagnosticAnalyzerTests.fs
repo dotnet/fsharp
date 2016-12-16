@@ -34,19 +34,23 @@ type DocumentDiagnosticAnalyzerTests()  =
         ExtraProjectInfo = None
     }
 
+    let getDiagnostics (fileContents: string) = 
+        async {
+            let! syntacticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(FSharpChecker.Instance, filePath, SourceText.From(fileContents), 0, options, DiagnosticsType.Syntax) 
+            let! semanticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(FSharpChecker.Instance, filePath, SourceText.From(fileContents), 0, options, DiagnosticsType.Semantic) 
+            return syntacticDiagnostics.AddRange(semanticDiagnostics)
+        } |> Async.RunSynchronously
+
     member private this.VerifyNoErrors(fileContents: string, ?additionalFlags: string[]) =
         let additionalOptions = match additionalFlags with
                                 | None -> options
                                 | Some(flags) -> {options with OtherOptions = Array.append options.OtherOptions flags}
 
-        let errors = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(filePath, SourceText.From(fileContents), 0, additionalOptions, true) |> Async.RunSynchronously
+        let errors = getDiagnostics fileContents
         Assert.AreEqual(0, errors.Length, "There should be no errors generated")
 
     member private this.VerifyErrorAtMarker(fileContents: string, expectedMarker: string, ?expectedMessage: string) =
-        let errors = 
-             FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(filePath, SourceText.From(fileContents), 0, options, true) 
-             |> Async.RunSynchronously
-             |> Seq.filter(fun e -> e.Severity = DiagnosticSeverity.Error) |> Seq.toArray
+        let errors = getDiagnostics fileContents |> Seq.filter(fun e -> e.Severity = DiagnosticSeverity.Error) |> Seq.toArray
         Assert.AreEqual(1, errors.Length, "There should be exactly one error generated")
         let actualError = errors.[0]
         if expectedMessage.IsSome then
@@ -58,10 +62,7 @@ type DocumentDiagnosticAnalyzerTests()  =
         Assert.AreEqual(expectedEnd, actualError.Location.SourceSpan.End, "Error end positions should match")
 
     member private this.VerifyDiagnosticBetweenMarkers(fileContents: string, expectedMessage: string, expectedSeverity: DiagnosticSeverity) =
-        let errors = 
-            FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(filePath, SourceText.From(fileContents), 0, options, true) 
-             |> Async.RunSynchronously
-             |> Seq.filter(fun e -> e.Severity = expectedSeverity) |> Seq.toArray
+        let errors = getDiagnostics fileContents |> Seq.filter(fun e -> e.Severity = expectedSeverity) |> Seq.toArray
         Assert.AreEqual(1, errors.Length, "There should be exactly one error generated")
         let actualError = errors.[0]
         Assert.AreEqual(expectedSeverity, actualError.Severity)

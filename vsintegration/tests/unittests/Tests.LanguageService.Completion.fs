@@ -4443,7 +4443,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
               | "DiscriminatedUnion",_,_,DeclarationType.DiscriminatedUnion -> ()
               | "AsmType",_,_,DeclarationType.RareType -> ()
               | "FunctionType",_,_,DeclarationType.FunctionType -> ()
-              | "TupleType",_,_,DeclarationType.ValueType -> ()
+              | "TupleType",_,_,DeclarationType.Class -> ()
               | "ValueType",_,_,DeclarationType.ValueType -> ()
               | "Class",_,_,DeclarationType.Class -> ()
               | "Int32",_,_,DeclarationType.Method -> ()
@@ -4468,7 +4468,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
               | "RecordAbbreviation",_,_,DeclarationType.Record -> ()
               | "DiscriminatedUnionAbbreviation",_,_,DeclarationType.DiscriminatedUnion -> ()
               | "AsmTypeAbbreviation",_,_,DeclarationType.RareType -> ()
-              | "TupleTypeAbbreviation",_,_,DeclarationType.ValueType -> ()
+              | "TupleTypeAbbreviation",_,_,_ -> ()
               | name,_,_,x -> failwith (sprintf "Unexpected union member %s seen with declaration type %A" name x)
         
     [<Test>]

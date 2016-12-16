@@ -35,7 +35,13 @@ open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons
 
-type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SVsServiceProvider) =
+type internal FSharpCompletionProvider
+    (
+        workspace: Workspace,
+        serviceProvider: SVsServiceProvider,
+        checkerProvider: FSharpCheckerProvider,
+        projectInfoManager: ProjectInfoManager
+    ) =
     inherit CompletionProvider()
 
     static let declarationItemsCache = ConditionalWeakTable<string, FSharpDeclarationListItem>()
@@ -66,6 +72,11 @@ type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SV
         else
           let ch = sourceText.[caretPosition - 1]
           if ch <> '.' && not ((ch = ' ' && (caretPosition = sourceText.Length - 1) || isStartingNewWord (sourceText, caretPosition - 1))) then
+          
+            false
+          
+          // do not trigger completion if it's not single dot, i.e. range expression
+          elif caretPosition > 0 && sourceText.[caretPosition - 1] = '.' then
             false
 
           // Trigger completion if we are on a valid classification type
@@ -81,13 +92,14 @@ type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SV
             | None -> false
             | Some(classifiedSpan) ->
                 match classifiedSpan.ClassificationType with
-                | ClassificationTypeNames.Comment -> false
-                | ClassificationTypeNames.StringLiteral -> false
-                | ClassificationTypeNames.ExcludedCode -> false
+                | ClassificationTypeNames.Comment
+                | ClassificationTypeNames.StringLiteral
+                | ClassificationTypeNames.ExcludedCode
+                | ClassificationTypeNames.NumericLiteral -> false
                 | _ -> true // anything else is a valid classification type
 
-    static member ProvideCompletionsAsyncAux(sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, textVersionHash: int) = async {
-        let! parseResults, checkFileAnswer = FSharpLanguageService.Checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
+    static member ProvideCompletionsAsyncAux(checker: FSharpChecker, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, textVersionHash: int) = async {
+        let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
         match checkFileAnswer with
         | FSharpCheckFileAnswer.Aborted -> return List()
         | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> 
@@ -144,18 +156,18 @@ type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SV
         let getInfo() = 
             let documentId = workspace.GetDocumentIdInCurrentContext(sourceText.Container)
             let document = workspace.CurrentSolution.GetDocument(documentId)
-            let defines = FSharpLanguageService.GetCompilationDefinesForEditingDocument(document)  
+            let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
             (documentId, document.FilePath, defines)
 
         FSharpCompletionProvider.ShouldTriggerCompletionAux(sourceText, caretPosition, trigger.Kind, getInfo)
     
     override this.ProvideCompletionsAsync(context: Microsoft.CodeAnalysis.Completion.CompletionContext) =
         async {
-            match FSharpLanguageService.TryGetOptionsForEditingDocumentOrProject(context.Document)  with 
+            match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(context.Document)  with 
             | Some options ->
                 let! sourceText = context.Document.GetTextAsync(context.CancellationToken) |> Async.AwaitTask
                 let! textVersion = context.Document.GetTextVersionAsync(context.CancellationToken) |> Async.AwaitTask
-                let! results = FSharpCompletionProvider.ProvideCompletionsAsyncAux(sourceText, context.Position, options, context.Document.FilePath, textVersion.GetHashCode())
+                let! results = FSharpCompletionProvider.ProvideCompletionsAsyncAux(checkerProvider.Checker, sourceText, context.Position, options, context.Document.FilePath, textVersion.GetHashCode())
                 context.AddItems(results)
             | None -> ()
         } |> CommonRoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
@@ -172,10 +184,16 @@ type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SV
                 return CompletionDescription.Empty
         } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
 
-type internal FSharpCompletionService(workspace: Workspace, serviceProvider: SVsServiceProvider) =
+type internal FSharpCompletionService
+    (
+        workspace: Workspace,
+        serviceProvider: SVsServiceProvider,
+        checkerProvider: FSharpCheckerProvider,
+        projectInfoManager: ProjectInfoManager
+    ) =
     inherit CompletionServiceWithProviders(workspace)
 
-    let builtInProviders = ImmutableArray.Create<CompletionProvider>(FSharpCompletionProvider(workspace, serviceProvider))
+    let builtInProviders = ImmutableArray.Create<CompletionProvider>(FSharpCompletionProvider(workspace, serviceProvider, checkerProvider, projectInfoManager))
     let completionRules = CompletionRules.Default.WithDismissIfEmpty(true).WithDismissIfLastCharacterDeleted(true).WithDefaultEnterKeyRule(EnterKeyRule.Never)
 
     override this.Language = FSharpCommonConstants.FSharpLanguageName
@@ -186,9 +204,15 @@ type internal FSharpCompletionService(workspace: Workspace, serviceProvider: SVs
 
 [<Shared>]
 [<ExportLanguageServiceFactory(typeof<CompletionService>, FSharpCommonConstants.FSharpLanguageName)>]
-type internal FSharpCompletionServiceFactory [<ImportingConstructor>] (serviceProvider: SVsServiceProvider) =
+type internal FSharpCompletionServiceFactory 
+    [<ImportingConstructor>] 
+    (
+        serviceProvider: SVsServiceProvider,
+        checkerProvider: FSharpCheckerProvider,
+        projectInfoManager: ProjectInfoManager
+    ) =
     interface ILanguageServiceFactory with
         member this.CreateLanguageService(hostLanguageServices: HostLanguageServices) : ILanguageService =
-            upcast new FSharpCompletionService(hostLanguageServices.WorkspaceServices.Workspace, serviceProvider)
+            upcast new FSharpCompletionService(hostLanguageServices.WorkspaceServices.Workspace, serviceProvider, checkerProvider, projectInfoManager)
 
 

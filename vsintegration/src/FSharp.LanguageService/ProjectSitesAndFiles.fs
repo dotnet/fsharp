@@ -54,7 +54,7 @@ type private ProjectSiteOfSingleFile(sourceFile) =
                                 |> List.map(fun r->sprintf "-r:%s.dll" r)
         (flags @ defaultReferences) |> List.toArray
 
-    let projectFileName = Path.Combine(Path.GetDirectoryName(sourceFile),"orphan.fsproj")
+    let projectFileName = sourceFile + ".orphan.fsproj"
 
     interface IProjectSite with
         override this.SourceFilesOnDisk() = [|sourceFile|]

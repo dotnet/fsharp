@@ -20,6 +20,11 @@ module internal CommonRoslynHelpers =
         let endPosition = sourceText.Lines.[range.EndLine - 1].Start + range.EndColumn
         TextSpan(startPosition, endPosition - startPosition)
 
+    let TryFSharpRangeToTextSpan(sourceText: SourceText, range: range) : TextSpan option =
+        try Some(FSharpRangeToTextSpan(sourceText, range))
+        with e -> 
+            //Assert.Exception(e)
+            None
     let GetCompletedTaskResult(task: Task<'TResult>) =
         if task.Status = TaskStatus.RanToCompletion then
             task.Result
@@ -28,6 +33,14 @@ module internal CommonRoslynHelpers =
             raise(task.Exception.GetBaseException())
 
     let StartAsyncAsTask cancellationToken computation =
+        let computation =
+            async {
+                try
+                    return! computation
+                with e ->
+                    Assert.Exception(e)
+                    return Unchecked.defaultof<_>
+            }
         Async.StartAsTask(computation, TaskCreationOptions.None, cancellationToken)
 
     let StartAsyncUnitAsTask cancellationToken (computation:Async<unit>) = 
@@ -45,3 +58,12 @@ module internal CommonRoslynHelpers =
         let severity = if error.Severity = FSharpErrorSeverity.Error then DiagnosticSeverity.Error else DiagnosticSeverity.Warning
         let descriptor = new DiagnosticDescriptor(id, emptyString, description, error.Subcategory, severity, true, emptyString, String.Empty, null)
         Diagnostic.Create(descriptor, location)
+
+[<AutoOpen>]
+module internal RoslynExtensions =
+    type Project with
+        /// The list of all other projects within the same solution that reference this project.
+        member this.GetDependentProjects() =
+            [ for project in this.Solution.Projects do
+                if project.ProjectReferences |> Seq.exists (fun ref -> ref.ProjectId = this.Id) then 
+                    yield project ] 

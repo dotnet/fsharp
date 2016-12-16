@@ -55,7 +55,7 @@ let internal options = {
 let VerifyCompletionList(fileContents: string, marker: string, expected: string list, unexpected: string list) =
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
     let results = 
-        FSharpCompletionProvider.ProvideCompletionsAsyncAux(SourceText.From(fileContents), caretPosition, options, filePath, 0) 
+        FSharpCompletionProvider.ProvideCompletionsAsyncAux(FSharpChecker.Instance, SourceText.From(fileContents), caretPosition, options, filePath, 0) 
         |> Async.RunSynchronously 
         |> Seq.map(fun result -> result.DisplayText)
 

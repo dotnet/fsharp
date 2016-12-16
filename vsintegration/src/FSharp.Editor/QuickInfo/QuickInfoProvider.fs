@@ -47,27 +47,32 @@ open System.Windows.Documents
 type internal FSharpDeferredQuickInfoContent(content: string, textProperties: TextFormattingRunProperties) =
     interface IDeferredQuickInfoContent with
         override this.Create() : FrameworkElement =
-            let label = Label(Content = content)
-            label.SetValue(TextElement.BackgroundProperty, textProperties.BackgroundBrush)
-            label.SetValue(TextElement.ForegroundProperty, textProperties.ForegroundBrush)
-            label.SetValue(TextElement.FontFamilyProperty, textProperties.Typeface.FontFamily)
-            label.SetValue(TextElement.FontSizeProperty, textProperties.FontRenderingEmSize)
-            label.SetValue(TextElement.FontStyleProperty, if textProperties.Italic then FontStyles.Italic else FontStyles.Normal)
-            label.SetValue(TextElement.FontWeightProperty, if textProperties.Bold then FontWeights.Bold else FontWeights.Normal)
-            upcast label
+            let textBlock = TextBlock(Run(content), TextWrapping = TextWrapping.Wrap, TextTrimming = TextTrimming.None)
+            textBlock.SetValue(TextElement.BackgroundProperty, textProperties.BackgroundBrush)
+            textBlock.SetValue(TextElement.ForegroundProperty, textProperties.ForegroundBrush)
+            textBlock.SetValue(TextElement.FontFamilyProperty, textProperties.Typeface.FontFamily)
+            textBlock.SetValue(TextElement.FontSizeProperty, textProperties.FontRenderingEmSize)
+            textBlock.SetValue(TextElement.FontStyleProperty, if textProperties.Italic then FontStyles.Italic else FontStyles.Normal)
+            textBlock.SetValue(TextElement.FontWeightProperty, if textProperties.Bold then FontWeights.Bold else FontWeights.Normal)
+            upcast textBlock
 
 [<Shared>]
 [<ExportQuickInfoProvider(PredefinedQuickInfoProviderNames.Semantic, FSharpCommonConstants.FSharpLanguageName)>]
-type internal FSharpQuickInfoProvider [<System.ComponentModel.Composition.ImportingConstructor>] 
-    ([<System.ComponentModel.Composition.Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider,
-     classificationFormatMapService: IClassificationFormatMapService) =
+type internal FSharpQuickInfoProvider 
+    [<System.ComponentModel.Composition.ImportingConstructor>] 
+    (
+        [<System.ComponentModel.Composition.Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider,
+        classificationFormatMapService: IClassificationFormatMapService,
+        checkerProvider: FSharpCheckerProvider,
+        projectInfoManager: ProjectInfoManager
+    ) =
 
     let xmlMemberIndexService = serviceProvider.GetService(typeof<SVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
     
-    static member ProvideQuickInfo(documentId: DocumentId, sourceText: SourceText, filePath: string, position: int, options: FSharpProjectOptions, textVersionHash: int, cancellationToken: CancellationToken) =
+    static member ProvideQuickInfo(checker: FSharpChecker, documentId: DocumentId, sourceText: SourceText, filePath: string, position: int, options: FSharpProjectOptions, textVersionHash: int, cancellationToken: CancellationToken) =
         async {
-            let! _parseResults, checkResultsAnswer = FSharpChecker.Instance.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
+            let! _parseResults, checkResultsAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
             let checkFileResults = 
                 match checkResultsAnswer with
                 | FSharpCheckFileAnswer.Aborted -> failwith "Compilation isn't complete yet"
@@ -101,15 +106,15 @@ type internal FSharpQuickInfoProvider [<System.ComponentModel.Composition.Import
         override this.GetItemAsync(document: Document, position: int, cancellationToken: CancellationToken): Task<QuickInfoItem> =
             async {
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                let defines = FSharpLanguageService.GetCompilationDefinesForEditingDocument(document)  
+                let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
                 let classification = CommonHelpers.tryClassifyAtPosition(document.Id, sourceText, document.FilePath, defines, position, cancellationToken)
 
                 match classification with
                 | Some _ ->
-                    match FSharpLanguageService.TryGetOptionsForEditingDocumentOrProject(document)  with 
+                    match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)  with 
                     | Some options ->
                         let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
-                        let! quickInfoResult = FSharpQuickInfoProvider.ProvideQuickInfo(document.Id, sourceText, document.FilePath, position, options, textVersion.GetHashCode(), cancellationToken)
+                        let! quickInfoResult = FSharpQuickInfoProvider.ProvideQuickInfo(checkerProvider.Checker, document.Id, sourceText, document.FilePath, position, options, textVersion.GetHashCode(), cancellationToken)
                         match quickInfoResult with
                         | Some(toolTipElement, textSpan) ->
                             let dataTipText = XmlDocumentation.BuildDataTipText(documentationBuilder, toolTipElement)
