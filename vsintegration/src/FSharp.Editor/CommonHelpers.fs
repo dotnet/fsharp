@@ -16,7 +16,12 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons
 
-module CommonHelpers =
+[<RequireQualifiedAccess>]
+type internal SymbolSearchKind =
+    | IncludeRightColumn
+    | DoesNotIncludeRightColumn
+
+module internal CommonHelpers =
     type private SourceLineData(lineStart: int, lexStateAtStartOfLine: FSharpTokenizerLexState, lexStateAtEndOfLine: FSharpTokenizerLexState, hashCode: int, classifiedSpans: IReadOnlyList<ClassifiedSpan>) =
         member val LineStart = lineStart
         member val LexStateAtStartOfLine = lexStateAtStartOfLine
@@ -97,7 +102,8 @@ module CommonHelpers =
 
         SourceLineData(textLine.Start, lexState, previousLexState.Value, lineContents.GetHashCode(), classifiedSpans)
 
-    let getColorizationData(documentKey: DocumentId, sourceText: SourceText, textSpan: TextSpan, fileName: string option, defines: string list, cancellationToken: CancellationToken) : List<ClassifiedSpan> =
+    let getColorizationData(documentKey: DocumentId, sourceText: SourceText, textSpan: TextSpan, fileName: string option, defines: string list, 
+                            cancellationToken: CancellationToken) : List<ClassifiedSpan> =
         try
             let sourceTokenizer = FSharpSourceTokenizer(defines, fileName)
             let lines = sourceText.Lines
@@ -160,36 +166,40 @@ module CommonHelpers =
             Assert.Exception(ex)
             List<ClassifiedSpan>()
 
-    let tryClassifyAtPosition (documentKey, sourceText: SourceText, filePath, defines, position: int, cancellationToken) =
+    let tryClassifyAtPosition (documentKey, sourceText: SourceText, filePath, defines, position: int, symbolSearchKind: SymbolSearchKind, cancellationToken) =
         let textLine = sourceText.Lines.GetLineFromPosition(position)
         let textLinePos = sourceText.Lines.GetLinePosition(position)
         let textLineColumn = textLinePos.Character
+        let spans = getColorizationData(documentKey, sourceText, textLine.Span, Some filePath, defines, cancellationToken)
 
-        let classifiedSpanOption =
-            getColorizationData(documentKey, sourceText, textLine.Span, Some(filePath), defines, cancellationToken)
-            |> Seq.tryFind(fun classifiedSpan -> classifiedSpan.TextSpan.Contains(position))
-
-        match classifiedSpanOption with
-        | Some(classifiedSpan) ->
-            match classifiedSpan.ClassificationType with
-            | ClassificationTypeNames.ClassName
-            | ClassificationTypeNames.DelegateName
-            | ClassificationTypeNames.EnumName
-            | ClassificationTypeNames.InterfaceName
-            | ClassificationTypeNames.ModuleName
-            | ClassificationTypeNames.StructName
-            | ClassificationTypeNames.TypeParameterName
-            | ClassificationTypeNames.Identifier -> 
-                match QuickParse.GetCompleteIdentifierIsland true (textLine.ToString()) textLineColumn with
-                | Some (islandIdentifier, islandColumn, isQuoted) -> 
-                    let qualifiers = if isQuoted then [islandIdentifier] else islandIdentifier.Split '.' |> Array.toList
-                    Some (islandColumn, qualifiers, classifiedSpan.TextSpan)
-                | None -> None
-            | ClassificationTypeNames.Operator ->
-                let islandColumn = sourceText.Lines.GetLinePositionSpan(classifiedSpan.TextSpan).End.Character
-                Some (islandColumn, [""], classifiedSpan.TextSpan) 
+        let attempt (position: int) =
+            let classifiedSpanOption = spans |> Seq.tryFind (fun classifiedSpan -> classifiedSpan.TextSpan.Contains position)
+            
+            match classifiedSpanOption with
+            | Some(classifiedSpan) ->
+                match classifiedSpan.ClassificationType with
+                | ClassificationTypeNames.ClassName
+                | ClassificationTypeNames.DelegateName
+                | ClassificationTypeNames.EnumName
+                | ClassificationTypeNames.InterfaceName
+                | ClassificationTypeNames.ModuleName
+                | ClassificationTypeNames.StructName
+                | ClassificationTypeNames.TypeParameterName
+                | ClassificationTypeNames.Identifier -> 
+                    match QuickParse.GetCompleteIdentifierIsland true (textLine.ToString()) textLineColumn with
+                    | Some (islandIdentifier, islandColumn, isQuoted) -> 
+                        let qualifiers = if isQuoted then [islandIdentifier] else islandIdentifier.Split '.' |> Array.toList
+                        Some (islandColumn, qualifiers, classifiedSpan.TextSpan)
+                    | None -> None
+                | ClassificationTypeNames.Operator ->
+                    let islandColumn = sourceText.Lines.GetLinePositionSpan(classifiedSpan.TextSpan).End.Character
+                    Some (islandColumn, [""], classifiedSpan.TextSpan) 
+                | _ -> None
             | _ -> None
-        | _ -> None
+
+        match attempt position, symbolSearchKind with
+        | None, SymbolSearchKind.IncludeRightColumn -> attempt (position - 1)
+        | x, _ -> x
 
     /// Fix invalid span if it appears to have redundant suffix and prefix.
     let fixupSpan (sourceText: SourceText, span: TextSpan) : TextSpan =

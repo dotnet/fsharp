@@ -43,6 +43,7 @@
     <Compile Include="Completion\SignatureHelp.fs"/>
     <Compile Include="QuickInfo\QuickInfoProvider.fs"/>
     <Compile Include="InlineRename\InlineRenameService.fs" />
+    <Compile Include="DocumentHighlights\DocumentHighlightsService.fs" />
     <Compile Include="Navigation\GoToDefinitionService.fs" />
     <Compile Include="Navigation\NavigationBarItemService.fs" />
     <Compile Include="Navigation\NavigateToSearchService.fs" />
