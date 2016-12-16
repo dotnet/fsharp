@@ -15,7 +15,7 @@ using Microsoft.VisualStudio.Text.Editor;
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 {
     [Export(typeof(IVsTextViewCreationListener))]
-    [ContentType("F#")]
+    [ContentType(Constants.FSharpContentType)]
     [TextViewRole(PredefinedTextViewRoles.Editable)]
     public class TextViewCreationListener : IVsTextViewCreationListener
     {

@@ -38,8 +38,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        private string ContentTypeName => "F#";
-
         public FSharpEditorFactory(Package parentPackage)
         {
             _parentPackage = parentPackage ?? throw new ArgumentNullException(nameof(parentPackage));
@@ -81,7 +79,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             // Do we need to create a text buffer?
             if (textBuffer == null)
             {
-                var contentType = _contentTypeRegistryService.GetContentType(ContentTypeName);
+                var contentType = _contentTypeRegistryService.GetContentType(Constants.FSharpContentType);
                 textBuffer = _editorAdaptersFactoryService.CreateVsTextBufferAdapter(_oleServiceProvider, contentType);
             }
 
