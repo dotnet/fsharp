@@ -184,7 +184,7 @@ type internal InlineRenameService
             let textLinePos = sourceText.Lines.GetLinePosition(position)
             let fcsTextLineNumber = textLinePos.Line + 1 // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
             
-            match CommonHelpers.tryClassifyAtPosition(document.Id, sourceText, document.FilePath, defines, position, true, cancellationToken) with 
+            match CommonHelpers.tryClassifyAtPosition(document.Id, sourceText, document.FilePath, defines, position, cancellationToken) with 
             | Some (islandColumn, qualifiers, _) -> 
                 let! _parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(document.FilePath, textVersionHash, sourceText.ToString(), options)
                 
@@ -196,7 +196,7 @@ type internal InlineRenameService
                 
                 match symbolUse with
                 | Some symbolUse ->
-                    match symbolUse.Symbol.GetDeclarationLocation(document) with
+                    match symbolUse.GetDeclarationLocation(document) with
                     | Some declLoc -> return InlineRenameInfo(checker, projectInfoManager, document, sourceText, symbolUse, declLoc, checkFileResults) :> _
                     | _ -> return FailureInlineRenameInfo.Instance :> _
                 | _ -> return FailureInlineRenameInfo.Instance :> _

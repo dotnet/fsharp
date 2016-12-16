@@ -21,6 +21,12 @@ module internal CommonRoslynHelpers =
         let endPosition = sourceText.Lines.[range.EndLine - 1].Start + range.EndColumn
         TextSpan(startPosition, endPosition - startPosition)
 
+    let TryFSharpRangeToTextSpan(sourceText: SourceText, range: range) : TextSpan option =
+        try Some(FSharpRangeToTextSpan(sourceText, range))
+        with e -> 
+            //Assert.Exception(e)
+            None
+
     let GetCompletedTaskResult(task: Task<'TResult>) =
         if task.Status = TaskStatus.RanToCompletion then
             task.Result
