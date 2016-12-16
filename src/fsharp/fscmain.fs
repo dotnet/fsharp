@@ -48,7 +48,7 @@ module Driver =
 
 [<EntryPoint>]
 let main(argv) =
-    System.Runtime.GCSettings.LatencyMode <- System.Runtime.GCLatencyMode.Batch
+    System.Runtime.GCSettings.LatencyMode <- System.Runtime.GCLatencyMode.LowLatency
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
 
 #if !FX_NO_HEAPTERMINATION
