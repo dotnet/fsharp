@@ -126,6 +126,7 @@ type internal FSharpQuickInfoProvider
             let textLineColumn = textLinePos.Character
             //let qualifyingNames, partialName = QuickParse.GetPartialLongNameEx(textLine.ToString(), textLineColumn - 1)
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing(filePath, options.OtherOptions |> Seq.toList)
+            
             let tryClassifyAtPosition position = 
                 CommonHelpers.tryClassifyAtPosition(documentId, sourceText, filePath, defines, position, cancellationToken)
             
@@ -137,10 +138,14 @@ type internal FSharpQuickInfoProvider
             match quickParseInfo with 
             | Some (islandColumn, qualifiers, textSpan) -> 
                 let! res = checkFileResults.GetToolTipTextAlternate(textLineNumber, islandColumn, textLine.ToString(), qualifiers, FSharpTokenTag.IDENT)
-                return 
-                    match res with
-                    | FSharpToolTipText [] -> None
-                    | _ -> Some(res, textSpan)
+                match res with
+                | FSharpToolTipText [] -> return None
+                | _ -> 
+                    let! symbolUse = checkFileResults.GetSymbolUseAtLocation(textLineNumber, islandColumn, textLine.ToString(), qualifiers)
+                    match symbolUse with
+                    | Some symbolUse ->
+                        return Some(res, textSpan, Glyph.forSymbol symbolUse.Symbol)
+                    | None -> return None
             | None -> return None
         }
     
@@ -156,13 +161,12 @@ type internal FSharpQuickInfoProvider
                     match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)  with 
                     | Some options ->
                         let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
-                        
                         let! quickInfoResult = FSharpQuickInfoProvider.ProvideQuickInfo(checkerProvider.Checker, document.Id, sourceText, document.FilePath, position, options, textVersion.GetHashCode(), cancellationToken)
                         match quickInfoResult with
-                        | Some(toolTipElement, textSpan) ->
+                        | Some(toolTipElement, textSpan, glyph) ->
                             let dataTipText = XmlDocumentation.BuildDataTipText(documentationBuilder, toolTipElement)
                             let textProperties = classificationFormatMapService.GetClassificationFormatMap("tooltip").DefaultTextProperties
-                            return QuickInfoItem(textSpan, FSharpDeferredQuickInfoContent(dataTipText, textProperties, Glyph.ClassPublic))
+                            return QuickInfoItem(textSpan, FSharpDeferredQuickInfoContent(dataTipText, textProperties, glyph))
                         | None -> return null
                     | None -> return null
                 | None -> return null
