@@ -40,7 +40,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         public FSharpEditorFactory(Package parentPackage)
         {
-            _parentPackage = parentPackage ?? throw new ArgumentNullException(nameof(parentPackage));
+            if (parentPackage == null)
+            {
+                throw new ArgumentNullException(nameof(parentPackage));
+            }
+
+            _parentPackage = parentPackage;
             _componentModel = (IComponentModel)ServiceProvider.GetService(typeof(SComponentModel));
             _editorAdaptersFactoryService = _componentModel.GetService<IVsEditorAdaptersFactoryService>();
             _contentTypeRegistryService = _componentModel.GetService<IContentTypeRegistryService>();
