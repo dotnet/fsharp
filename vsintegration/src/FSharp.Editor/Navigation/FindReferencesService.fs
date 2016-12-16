@@ -67,7 +67,7 @@ type internal FSharpFindReferencesService
                 let lineNumber = sourceText.Lines.GetLinePosition(position).Line + 1
                 let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.FilePath, options.OtherOptions |> Seq.toList)
                 
-                match CommonHelpers.tryClassifyAtPosition(document.Id, sourceText, document.FilePath, defines, position, context.CancellationToken) with
+                match CommonHelpers.tryClassifyAtPosition(document.Id, sourceText, document.FilePath, defines, position, SymbolSearchKind.IncludeRightColumn, context.CancellationToken) with
                 | Some (islandColumn, qualifiers, _) -> 
                     let! symbolUse = checkFileResults.GetSymbolUseAtLocation(lineNumber, islandColumn, textLine, qualifiers)
                     match symbolUse with
