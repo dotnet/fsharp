@@ -36,7 +36,7 @@ open Microsoft.VisualStudio.Text.Formatting
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.Imaging
-//open Microsoft.VisualStudio.Imaging.Interop
+open Microsoft.VisualStudio.Imaging.Interop
 open Microsoft.VisualStudio.PlatformUI
 
 open Microsoft.FSharp.Compiler
@@ -53,11 +53,12 @@ open System.Windows.Media
 // to allow for a more flexible syntax for defining the content of the tooltip.
 // The below interface should be discarded then or updated accourdingly.
 // https://github.com/dotnet/roslyn/pull/13623
-type internal FSharpDeferredQuickInfoContent(content: string, textProperties: TextFormattingRunProperties, _glyph: Glyph) =
+type internal FSharpDeferredQuickInfoContent(content: string, textProperties: TextFormattingRunProperties, glyph: Glyph) =
     interface IDeferredQuickInfoContent with
         override this.Create() : FrameworkElement =
-            //let moniker = GlyphExtensions.GetImageMoniker(glyph)
-            let image = new CrispImage() //Moniker = moniker)
+            let moniker = GlyphExtensions.GetImageMoniker(glyph)
+            let image = new CrispImage()
+            image.Moniker <- (box moniker) :?> _
  
             // Inform the ImageService of the background color so that images have the correct background.
             let binding = 
