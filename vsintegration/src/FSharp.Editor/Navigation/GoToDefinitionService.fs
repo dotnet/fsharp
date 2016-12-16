@@ -53,7 +53,7 @@ type internal FSharpGoToDefinitionService
             let textLine = sourceText.Lines.GetLineFromPosition(position)
             let textLinePos = sourceText.Lines.GetLinePosition(position)
             let fcsTextLineNumber = textLinePos.Line + 1 // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
-            match CommonHelpers.tryClassifyAtPosition(documentKey, sourceText, filePath, defines, position, cancellationToken) with 
+            match CommonHelpers.tryClassifyAtPosition(documentKey, sourceText, filePath, defines, position, SymbolSearchKind.IncludeRightColumn, cancellationToken) with 
             | Some (islandColumn, qualifiers, _) -> 
                 let! _parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
                 match checkFileAnswer with
