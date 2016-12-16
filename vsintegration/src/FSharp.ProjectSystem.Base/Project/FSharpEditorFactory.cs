@@ -56,6 +56,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             ppunkDocView = IntPtr.Zero;
             ppunkDocData = IntPtr.Zero;
             pbstrEditorCaption = String.Empty;
+
+            //pguidCmdUI is the highest priority Guid that Visual Studio Shell looks at when translating key strokes into editor commands.
+            //Here we intentionally set it to Guid.Empty so it will not play a part in translating keystrokes at all. The next highest priority 
+            //will be commands tied to this FSharpEditorFactory (such as Alt-Enter).
+            //However, because we are setting pguidCmdUI, we are not going to get typical text editor commands bound to this editor unless we inherit 
+            //those keybindings on the IVsWindowFrame in which our editor lives.
             pguidCmdUI = Guid.Empty;
             pgrfCDW = 0;
 
@@ -105,14 +111,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         public int MapLogicalView(ref Guid rguidLogicalView, out string pbstrPhysicalView)
         {
-            pbstrPhysicalView = null; //TODO: What's a physical view vs logical view?
+            pbstrPhysicalView = null; 
 
             if(rguidLogicalView.Equals(VSConstants.LOGVIEWID.Designer_guid) || rguidLogicalView.Equals(VSConstants.LOGVIEWID.Primary_guid))
             {
                 return VSConstants.S_OK;
             }
 
-            //TODO: What scenarios trigger this?
             return VSConstants.E_NOTIMPL;
         }
 

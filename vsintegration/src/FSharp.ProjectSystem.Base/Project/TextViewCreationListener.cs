@@ -33,6 +33,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             InitKeyBindings(textViewAdapter);
         }
 
+        /// <summary>
+        /// The <see cref="FSharpEditorFactory"/> initializes the pguidCmdUI to an empty Guid. This means that our buffer does not receive the normal text editor command bindings.
+        /// In order to handle this, we tell the IVsWindowFrame in which our editor lives to inherit the keybindinds from the text editor factory.
+        /// This allows us to specify the TextEditor keybindings at a lower priority than our F# Editor Factory keybindings and allows us to handle Alt+Enter
+        /// </summary>
         public void InitKeyBindings(IVsTextView vsTextView)
         {
             var os = vsTextView as IObjectWithSite;

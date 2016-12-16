@@ -219,8 +219,8 @@
     
     <!-- ALT-ENTER is used for the SendToInteractive command.
          ALT-ENTER is globally bound to Diagram.Property.
-         Here we bind it in the Editor context of the standard TextEditor.
-         Ideally, we would bind it for F# only editor.
+         ALT-ENTER is Text Editor bound to View.QuickAction
+         Here we bind it in the Editor context of our FSharpEditorFactory. This gives it the highest priority of all ALT-ENTER commands in the context of an F# editor.
     -->
     <KeyBinding guid ="guidVSStd11" id ="cmdidExecuteSelectionInInteractive" editor="guidFSharpEditorFactory" key1="VK_RETURN" mod1="Alt"  />
     <KeyBinding guid ="guidVSStd11" id ="cmdidExecuteLineInInteractive" editor="guidFSharpEditorFactory" key1="VK_OEM_7" mod1="Alt"  />
