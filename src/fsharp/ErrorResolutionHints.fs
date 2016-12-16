@@ -26,4 +26,4 @@ let FormatPredictions predictions =
             predictions 
             |> Seq.map (sprintf "%s   %s" System.Environment.NewLine) 
             |> String.concat ""
-        System.Environment.NewLine  + FSComp.SR.undefinedNameRecordLabelDetails() + predictionText
+        System.Environment.NewLine + FSComp.SR.undefinedNameRecordLabelDetails() + predictionText

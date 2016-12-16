@@ -61,7 +61,12 @@ neg10.fs(131,23,131,29): typecheck error FS0906: Type abbreviations cannot have 
 
 neg10.fs(169,32,169,35): typecheck error FS0035: This construct is deprecated: This form of object expression is not used in F#. Use 'member this.MemberName ... = ...' to define member implementations in object expressions.
 
-neg10.fs(169,32,169,33): typecheck error FS0017: The member 'X : unit -> 'a' does not have the correct type to override any given virtual method
+neg10.fs(169,32,169,33): typecheck error FS3213: The member 'X : unit -> 'a' matches multiple overloads of the same method.
+Please restrict it to one of the following:
+
+   X : unit -> 'a
+
+   X : unit -> 'a.
 
 neg10.fs(169,19,169,26): typecheck error FS0783: At least one override did not correctly implement its corresponding abstract member
 
