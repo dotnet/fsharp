@@ -85,7 +85,7 @@ type internal FSharpQuickInfoProvider
             //let qualifyingNames, partialName = QuickParse.GetPartialLongNameEx(textLine.ToString(), textLineColumn - 1)
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing(filePath, options.OtherOptions |> Seq.toList)
             let tryClassifyAtPosition position = 
-                CommonHelpers.tryClassifyAtPosition(documentId, sourceText, filePath, defines, position, cancellationToken)
+                CommonHelpers.tryClassifyAtPosition(documentId, sourceText, filePath, defines, position, SymbolSearchKind.DoesNotIncludeRightColumn, cancellationToken)
             
             let quickParseInfo = 
                 match tryClassifyAtPosition position with 
@@ -107,7 +107,8 @@ type internal FSharpQuickInfoProvider
             async {
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
-                let classification = CommonHelpers.tryClassifyAtPosition(document.Id, sourceText, document.FilePath, defines, position, cancellationToken)
+                let classification = 
+                    CommonHelpers.tryClassifyAtPosition(document.Id, sourceText, document.FilePath, defines, position, SymbolSearchKind.DoesNotIncludeRightColumn, cancellationToken)
 
                 match classification with
                 | Some _ ->

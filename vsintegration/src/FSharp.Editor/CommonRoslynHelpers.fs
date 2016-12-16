@@ -9,6 +9,7 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.VisualStudio.FSharp.LanguageService
 
@@ -60,6 +61,32 @@ module internal CommonRoslynHelpers =
         let descriptor = new DiagnosticDescriptor(id, emptyString, description, error.Subcategory, severity, true, emptyString, String.Empty, null)
         Diagnostic.Create(descriptor, location)
 
+    let FSharpGlyphToRoslynGlyph = function
+        // FSROSLYNTODO: This doesn't yet reflect pulbic/private/internal into the glyph
+        // FSROSLYNTODO: We should really use FSharpSymbol information here.  But GetDeclarationListInfo doesn't provide it, and switch to GetDeclarationListSymbols is a bit large at the moment
+        | GlyphMajor.Class -> Glyph.ClassPublic
+        | GlyphMajor.Constant -> Glyph.ConstantPublic
+        | GlyphMajor.Delegate -> Glyph.DelegatePublic
+        | GlyphMajor.Enum -> Glyph.EnumPublic
+        | GlyphMajor.EnumMember -> Glyph.EnumMember
+        | GlyphMajor.Event -> Glyph.EventPublic
+        | GlyphMajor.Exception -> Glyph.ClassPublic
+        | GlyphMajor.FieldBlue -> Glyph.FieldPublic
+        | GlyphMajor.Interface -> Glyph.InterfacePublic
+        | GlyphMajor.Method -> Glyph.MethodPublic
+        | GlyphMajor.Method2 -> Glyph.ExtensionMethodPublic
+        | GlyphMajor.Module -> Glyph.ModulePublic
+        | GlyphMajor.NameSpace -> Glyph.Namespace
+        | GlyphMajor.Property -> Glyph.PropertyPublic
+        | GlyphMajor.Struct -> Glyph.StructurePublic
+        | GlyphMajor.Typedef -> Glyph.ClassPublic
+        | GlyphMajor.Type -> Glyph.ClassPublic
+        | GlyphMajor.Union -> Glyph.EnumPublic
+        | GlyphMajor.Variable -> Glyph.Local
+        | GlyphMajor.ValueType -> Glyph.StructurePublic
+        | GlyphMajor.Error -> Glyph.Error
+        | _ -> Glyph.ClassPublic
+
 [<AutoOpen>]
 module internal RoslynExtensions =
     type Project with
@@ -67,4 +94,4 @@ module internal RoslynExtensions =
         member this.GetDependentProjects() =
             [ for project in this.Solution.Projects do
                 if project.ProjectReferences |> Seq.exists (fun ref -> ref.ProjectId = this.Id) then 
-                    yield project ] 
+                    yield project ]

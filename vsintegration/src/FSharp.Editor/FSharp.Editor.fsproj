@@ -32,7 +32,7 @@
     <Compile Include="CommonRoslynHelpers.fs" />
     <Compile Include="CommonHelpers.fs" />
     <Compile Include="LanguageService.fs" />
-    <Compile Include="Classification\ColorizationService.fs"/>
+    <Compile Include="Classification\ColorizationService.fs" />
     <Compile Include="Utilities\BraceMatchingService.fs" />
     <Compile Include="Utilities\IndentationService.fs"/>
     <Compile Include="Debugging\BreakpointResolutionService.fs"/>
@@ -41,13 +41,16 @@
     <Compile Include="Diagnostics\ProjectDiagnosticAnalyzer.fs"/>
     <Compile Include="Completion\CompletionProvider.fs"/>
     <Compile Include="Completion\SignatureHelp.fs"/>
-    <Compile Include="Navigation\GoToDefinitionService.fs"/>
-    <Compile Include="Navigation\FindReferencesService.fs"/>
-    <Compile Include="BlockComment\CommentUncommentService.fs"/>
     <Compile Include="QuickInfo\QuickInfoProvider.fs"/>
+    <Compile Include="InlineRename\InlineRenameService.fs" />
+    <Compile Include="DocumentHighlights\DocumentHighlightsService.fs" />
+    <Compile Include="Navigation\GoToDefinitionService.fs" />
+    <Compile Include="Navigation\NavigationBarItemService.fs" />
+    <Compile Include="Navigation\NavigateToSearchService.fs" />
+    <Compile Include="Navigation\FindReferencesService.fs" />
+    <Compile Include="BlockComment\CommentUncommentService.fs" />
     <Compile Include="Structure\BlockStructureService.fs" />
-    <Compile Include="NavigationBarItemService.fs" />
-    <Compile Include="HelpContextService.fs"/>
+    <Compile Include="HelpContextService.fs" />
     <Compile Include="ContentType.fs" />
     <Compile Include="FsiCommandService.fs" />
   </ItemGroup>

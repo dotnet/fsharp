@@ -53,29 +53,19 @@ type internal FSharpGoToDefinitionService
             let textLine = sourceText.Lines.GetLineFromPosition(position)
             let textLinePos = sourceText.Lines.GetLinePosition(position)
             let fcsTextLineNumber = textLinePos.Line + 1 // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
-            let textLineColumn = textLinePos.Character
-            let tryGotoAtPosition position = 
-              async { 
-                match CommonHelpers.tryClassifyAtPosition(documentKey, sourceText, filePath, defines, position, cancellationToken) with 
-                | Some (islandColumn, qualifiers, _) -> 
-                    let! _parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
-                    match checkFileAnswer with
-                    | FSharpCheckFileAnswer.Aborted -> return None
-                    | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> 
+            match CommonHelpers.tryClassifyAtPosition(documentKey, sourceText, filePath, defines, position, SymbolSearchKind.IncludeRightColumn, cancellationToken) with 
+            | Some (islandColumn, qualifiers, _) -> 
+                let! _parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
+                match checkFileAnswer with
+                | FSharpCheckFileAnswer.Aborted -> return None
+                | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> 
             
-                    let! declarations = checkFileResults.GetDeclarationLocationAlternate (fcsTextLineNumber, islandColumn, textLine.ToString(), qualifiers, false)
+                let! declarations = checkFileResults.GetDeclarationLocationAlternate (fcsTextLineNumber, islandColumn, textLine.ToString(), qualifiers, false)
             
-                    match declarations with
-                    | FSharpFindDeclResult.DeclFound(range) -> return Some(range)
-                    | _ -> return None
-                | None -> return None
-               }
-
-            // Tolerate being on the right of the identifier
-            let! attempt1 = tryGotoAtPosition position
-            match attempt1 with 
-            | None when textLineColumn > 0 -> return! tryGotoAtPosition (position - 1) 
-            | res -> return res
+                match declarations with
+                | FSharpFindDeclResult.DeclFound(range) -> return Some(range)
+                | _ -> return None
+            | None -> return None
         }
     
     // FSROSLYNTODO: Since we are not integrated with the Roslyn project system yet, the below call
