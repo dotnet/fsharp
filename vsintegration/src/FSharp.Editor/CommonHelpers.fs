@@ -2,6 +2,7 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
+open System
 open System.Collections.Generic
 open System.Threading
 open System.Threading.Tasks
@@ -341,3 +342,23 @@ module internal Extensions =
         | GlyphMajor.Error -> Glyph.Error
         | _ -> Glyph.None
 
+    type Async<'a> with
+        /// Creates an asynchronous workflow that runs the asynchronous workflow given as an argument at most once. 
+        /// When the returned workflow is started for the second time, it reuses the result of the previous execution.
+        static member Cache (input : Async<'T>) =
+            let agent = MailboxProcessor<AsyncReplyChannel<_>>.Start <| fun agent ->
+                async {
+                    let! replyCh = agent.Receive ()
+                    let! res = input
+                    replyCh.Reply res
+                    while true do
+                        let! replyCh = agent.Receive ()
+                        replyCh.Reply res 
+                }
+            async { return! agent.PostAndAsyncReply id }
+
+        static member inline Map (f: 'a -> 'b) (input: Async<'a>) : Async<'b> = 
+            async {
+                let! result = input
+                return f result 
+            }
