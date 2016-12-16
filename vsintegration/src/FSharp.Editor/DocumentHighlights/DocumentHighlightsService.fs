@@ -74,7 +74,7 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
             let textLinePos = sourceText.Lines.GetLinePosition(position)
             let fcsTextLineNumber = textLinePos.Line + 1
             
-            match CommonHelpers.tryClassifyAtPosition(documentKey, sourceText, filePath, defines, position, true, cancellationToken) with
+            match CommonHelpers.tryClassifyAtPosition(documentKey, sourceText, filePath, defines, position, SymbolSearchKind.IncludeRightColumn, cancellationToken) with
             | Some (_, [], _) -> return [||]
             | Some (islandEndColumn, qualifiers, _span) -> 
                 let! _parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
