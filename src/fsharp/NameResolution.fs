@@ -1648,14 +1648,14 @@ let rec ResolveLongIndentAsModuleOrNamespace atMostOne amap m fullyQualified (ne
     match lid with 
     | [] -> NoResultsOrUsefulErrors
 
-    | [id] when id.idText = MangledGlobalName ->
-         error (Error(FSComp.SR.nrGlobalUsedOnlyAsFirstName(), id.idRange))
-
-    | id :: lid when id.idText = MangledGlobalName -> 
-        ResolveLongIndentAsModuleOrNamespace atMostOne amap m FullyQualified nenv ad lid
+    | id :: rest when id.idText = MangledGlobalName ->
+        if isNil rest then
+            error (Error(FSComp.SR.nrGlobalUsedOnlyAsFirstName(), id.idRange))
+        else
+            ResolveLongIndentAsModuleOrNamespace atMostOne amap m FullyQualified nenv ad rest
 
     | id :: rest -> 
-        let moduleOrNamespaces = nenv.ModulesAndNamespaces(fullyQualified)
+        let moduleOrNamespaces = nenv.ModulesAndNamespaces fullyQualified
         let namespaceNotFound = lazy(
             let predictModulesAndNamespaces() =
                 moduleOrNamespaces
@@ -1710,11 +1710,11 @@ let ResolveLongIndentAsModuleOrNamespaceThen atMostOne amap m fullyQualified (ne
     | [] -> NoResultsOrUsefulErrors
     | id :: rest -> 
         match ResolveLongIndentAsModuleOrNamespace ResultCollectionSettings.AllResults amap m fullyQualified nenv ad [id] with
-        |  Result modrefs -> 
-              modrefs |> CollectResults2 atMostOne (fun (depth,modref,mty) ->  
-                  let resInfo = ResolutionInfo.Empty.AddEntity(id.idRange,modref) 
-                  f resInfo (depth+1) id.idRange modref mty rest) 
-        |  Exception err -> Exception err 
+        | Result modrefs -> 
+            modrefs |> CollectResults2 atMostOne (fun (depth,modref,mty) ->  
+                let resInfo = ResolutionInfo.Empty.AddEntity(id.idRange,modref) 
+                f resInfo (depth+1) id.idRange modref mty rest)
+        | Exception err -> Exception err 
 
 //-------------------------------------------------------------------------
 // Bind name used in "new Foo.Bar(...)" constructs
