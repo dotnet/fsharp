@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
@@ -18,7 +18,8 @@
     <TargetType>LIBRARY</TargetType>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <NoWarn>$(NoWarn);75</NoWarn>
-    <Tailcalls Condition="'$(CodeCoverage)' != ''">false</Tailcalls>    <OtherFlags>$(OtherFlags) --warnon:1182  --subsystemversion:6.00</OtherFlags>
+    <Tailcalls Condition="'$(CodeCoverage)' != ''">false</Tailcalls>
+    <OtherFlags>$(OtherFlags) --warnon:1182  --subsystemversion:6.00</OtherFlags>
     <ImportVSSDKTargets>true</ImportVSSDKTargets>
     <CreateVsixContainer>false</CreateVsixContainer>
     <DeployExtension>false</DeployExtension>
@@ -80,6 +81,9 @@
   <ItemGroup>
     <Reference Include="mscorlib" />
     <Reference Include="PresentationFramework" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="System.Xml" />
     <Reference Include="WindowsBase" />
     <Reference Include="System" />
     <Reference Include="PresentationCore" />
@@ -109,6 +113,15 @@
     </Reference>
     <Reference Include="Microsoft.VisualStudio.CoreUtility, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.CoreUtility.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.CoreUtility.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Imaging, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Imaging.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Imaging.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Imaging.Interop.14.0.DesignTime, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Imaging.Interop.14.0.DesignTime.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Imaging.Interop.14.0.DesignTime.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.ImageCatalog, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.ImageCatalog.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.ImageCatalog.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Utilities, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Utilities.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Utilities.dll</HintPath>

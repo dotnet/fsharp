@@ -25,7 +25,9 @@ open Microsoft.CodeAnalysis.Formatting
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Options
 open Microsoft.CodeAnalysis.Text
+open Microsoft.CodeAnalysis.Editor.Shared.Extensions
 
+open Microsoft.VisualStudio.Language.Intellisense
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Text.Classification
@@ -33,20 +35,47 @@ open Microsoft.VisualStudio.Text.Tagging
 open Microsoft.VisualStudio.Text.Formatting
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
+open Microsoft.VisualStudio.Imaging
+//open Microsoft.VisualStudio.Imaging.Interop
+open Microsoft.VisualStudio.PlatformUI
 
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
+
 open System.Windows.Documents
+open System.Windows.Controls
+open System.Windows.Data
+open System.Windows.Media
 
 // FSROSLYNTODO: with the merge of the below PR, the QuickInfo API should be changed
 // to allow for a more flexible syntax for defining the content of the tooltip.
 // The below interface should be discarded then or updated accourdingly.
 // https://github.com/dotnet/roslyn/pull/13623
-type internal FSharpDeferredQuickInfoContent(content: string, textProperties: TextFormattingRunProperties) =
+type internal FSharpDeferredQuickInfoContent(content: string, textProperties: TextFormattingRunProperties, _glyph: Glyph) =
     interface IDeferredQuickInfoContent with
         override this.Create() : FrameworkElement =
+            //let moniker = GlyphExtensions.GetImageMoniker(glyph)
+            let image = new CrispImage() //Moniker = moniker)
+ 
+            // Inform the ImageService of the background color so that images have the correct background.
+            let binding = 
+                Binding(
+                    "Background", 
+                    Converter = new BrushToColorConverter(), 
+                    RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof<StackPanel>, 1))
+ 
+            image.SetBinding(ImageThemingUtilities.ImageBackgroundColorProperty, binding) |> ignore
+
+            image.Margin <- new Thickness(1., 1., 3., 1.)
+            let symbolGlyphBorder =
+                new Border(
+                    BorderThickness = new Thickness(0.),
+                    BorderBrush = Brushes.Transparent,
+                    VerticalAlignment = VerticalAlignment.Top,
+                    Child = image)
+
             let textBlock = TextBlock(Run(content), TextWrapping = TextWrapping.Wrap, TextTrimming = TextTrimming.None)
             textBlock.SetValue(TextElement.BackgroundProperty, textProperties.BackgroundBrush)
             textBlock.SetValue(TextElement.ForegroundProperty, textProperties.ForegroundBrush)
@@ -54,7 +83,19 @@ type internal FSharpDeferredQuickInfoContent(content: string, textProperties: Te
             textBlock.SetValue(TextElement.FontSizeProperty, textProperties.FontRenderingEmSize)
             textBlock.SetValue(TextElement.FontStyleProperty, if textProperties.Italic then FontStyles.Italic else FontStyles.Normal)
             textBlock.SetValue(TextElement.FontWeightProperty, if textProperties.Bold then FontWeights.Bold else FontWeights.Normal)
-            upcast textBlock
+
+            let symbolGlyphAndMainDescriptionDock = 
+                new DockPanel(
+                    LastChildFill = true,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    Background = Brushes.Transparent)
+ 
+            symbolGlyphAndMainDescriptionDock.Children.Add(symbolGlyphBorder) |> ignore
+            symbolGlyphAndMainDescriptionDock.Children.Add(textBlock) |> ignore
+
+            let panel = StackPanel(Orientation = Orientation.Vertical)
+            panel.Children.Add(symbolGlyphAndMainDescriptionDock) |> ignore
+            upcast panel
 
 [<Shared>]
 [<ExportQuickInfoProvider(PredefinedQuickInfoProviderNames.Semantic, FSharpCommonConstants.FSharpLanguageName)>]
@@ -114,12 +155,13 @@ type internal FSharpQuickInfoProvider
                     match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)  with 
                     | Some options ->
                         let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
+                        
                         let! quickInfoResult = FSharpQuickInfoProvider.ProvideQuickInfo(checkerProvider.Checker, document.Id, sourceText, document.FilePath, position, options, textVersion.GetHashCode(), cancellationToken)
                         match quickInfoResult with
                         | Some(toolTipElement, textSpan) ->
                             let dataTipText = XmlDocumentation.BuildDataTipText(documentationBuilder, toolTipElement)
                             let textProperties = classificationFormatMapService.GetClassificationFormatMap("tooltip").DefaultTextProperties
-                            return QuickInfoItem(textSpan, FSharpDeferredQuickInfoContent(dataTipText, textProperties))
+                            return QuickInfoItem(textSpan, FSharpDeferredQuickInfoContent(dataTipText, textProperties, Glyph.ClassPublic))
                         | None -> return null
                     | None -> return null
                 | None -> return null

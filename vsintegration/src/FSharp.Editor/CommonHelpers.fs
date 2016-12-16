@@ -15,7 +15,7 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons
 
-module CommonHelpers =
+module internal CommonHelpers =
     type private SourceLineData(lineStart: int, lexStateAtStartOfLine: FSharpTokenizerLexState, lexStateAtEndOfLine: FSharpTokenizerLexState, hashCode: int, classifiedSpans: IReadOnlyList<ClassifiedSpan>) =
         member val LineStart = lineStart
         member val LexStateAtStartOfLine = lexStateAtStartOfLine
@@ -186,7 +186,7 @@ module CommonHelpers =
                 | None -> None
             | ClassificationTypeNames.Operator ->
                 let islandColumn = sourceText.Lines.GetLinePositionSpan(classifiedSpan.TextSpan).End.Character
-                Some (islandColumn, [""], classifiedSpan.TextSpan) 
+                Some (islandColumn, [""], classifiedSpan.TextSpan)
             | _ -> None
         | _ -> None
 
