@@ -2,8 +2,8 @@
 // Regression test for FSharp1.0:5641
 // Title: List.hd/tl --> List.head/tail
 
-//<Expects status="error" span="(30,6-30,8)" id="FS0039">The value, constructor, namespace or type 'hd' is not defined$</Expects>
-//<Expects status="error" span="(31,6-31,8)" id="FS0039">The value, constructor, namespace or type 'tl' is not defined$</Expects>
+//<Expects status="error" span="(30,6-30,8)" id="FS0039">The value, constructor, namespace or type 'hd' is not defined</Expects>
+//<Expects status="error" span="(31,6-31,8)" id="FS0039">The value, constructor, namespace or type 'tl' is not defined</Expects>
 
 // Positive tests...
 if  (List.head [1 .. 10] <> 1)

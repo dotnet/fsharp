@@ -2,7 +2,7 @@
 // FSB 6350, Compiler crash on invalid code: Crash by invalid type definition
 
 //<Expects status="error" span="(19,39)" id="FS0658">Structs may only bind a 'this' parameter at member declarations$</Expects>
-//<Expects status="error" span="(20,14)" id="FS0039">The field, constructor or member 'dt' is not defined$</Expects>
+//<Expects status="error" span="(20,14)" id="FS0039">The field, constructor or member 'dt' is not defined</Expects>
 //<Expects status="error" span="(20,9)" id="FS0696">This is not a valid object construction expression\. Explicit object constructors must either call an alternate constructor or initialize all fields of the object and specify a call to a super class constructor\.$</Expects>
 
 module mod6350

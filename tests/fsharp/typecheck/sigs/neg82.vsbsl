@@ -43,4 +43,4 @@ neg82.fsx(102,1,102,4): parse error FS0058: Possible incorrect indentation: this
 
 neg82.fsx(138,1,138,4): parse error FS0058: Possible incorrect indentation: this token is offside of context started at position (102:1). Try indenting this token further or using standard formatting conventions.
 
-neg82.fsx(93,5,93,7): typecheck error FS0039: The namespace or module 'sb' is not defined
+neg82.fsx(93,5,93,7): typecheck error FS0039: The namespace or module 'sb' is not defined. Maybe you want one of the following: MS, Web, System, Security, SeqModule

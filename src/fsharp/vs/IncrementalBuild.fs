@@ -973,7 +973,7 @@ type FSharpErrorInfo(fileName, s:pos, e:pos, severity: FSharpErrorSeverity, mess
     static member (*internal*) CreateFromException(exn,warn,trim:bool,fallbackRange:range) = 
         let m = match GetRangeOfError exn with Some m -> m | None -> fallbackRange 
         let e = if trim then m.Start else m.End
-        let msg = bufs (fun buf -> OutputPhasedError buf exn false)
+        let msg = bufs (fun buf -> OutputPhasedError ErrorLogger.ErrorStyle.DefaultErrors buf exn false)
         let errorNum = GetErrorNumber exn
         FSharpErrorInfo(m.FileName, m.Start, e, (if warn then FSharpErrorSeverity.Warning else FSharpErrorSeverity.Error), msg, exn.Subcategory(), errorNum)
         

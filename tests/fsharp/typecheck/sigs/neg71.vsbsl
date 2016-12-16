@@ -13,4 +13,4 @@ neg71.fsx(230,1,230,13): parse error FS0010: Unexpected identifier in member def
 
 neg71.fsx(168,1,168,28): typecheck error FS0960: 'let' and 'do' bindings must come before member and interface definitions in type definitions
 
-neg71.fsx(168,9,168,18): typecheck error FS0039: The value or constructor 'Simulator' is not defined
+neg71.fsx(168,9,168,18): typecheck error FS0039: The value or constructor 'Simulator' is not defined. Maybe you want one of the following: StatusBar, s, StructFormat, Result, sin

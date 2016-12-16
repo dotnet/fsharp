@@ -2,7 +2,7 @@
 // Verify an error if not fully-qualifying discriminated union
 // when marked with RequireQualifiedAccess
 
-//<Expects id="FS0039" status="error">The value or constructor 'B' is not defined$</Expects>
+//<Expects id="FS0039" status="error">The value or constructor 'B' is not defined</Expects>
 
 [<RequireQualifiedAccess>]
 type DiscUnion =
