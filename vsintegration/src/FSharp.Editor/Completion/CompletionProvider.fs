@@ -108,33 +108,7 @@ type internal FSharpCompletionProvider
         let results = List<CompletionItem>()
 
         for declarationItem in declarations.Items do
-            // FSROSLYNTODO: This doesn't yet reflect pulbic/private/internal into the glyph
-            // FSROSLYNTODO: We should really use FSharpSymbol information here.  But GetDeclarationListInfo doesn't provide it, and switch to GetDeclarationListSymbols is a bit large at the moment
-            let glyph = 
-                match declarationItem.GlyphMajor with 
-                | GlyphMajor.Class -> Glyph.ClassPublic
-                | GlyphMajor.Constant -> Glyph.ConstantPublic
-                | GlyphMajor.Delegate -> Glyph.DelegatePublic
-                | GlyphMajor.Enum -> Glyph.EnumPublic
-                | GlyphMajor.EnumMember -> Glyph.EnumMember
-                | GlyphMajor.Event -> Glyph.EventPublic
-                | GlyphMajor.Exception -> Glyph.ClassPublic
-                | GlyphMajor.FieldBlue -> Glyph.FieldPublic
-                | GlyphMajor.Interface -> Glyph.InterfacePublic
-                | GlyphMajor.Method -> Glyph.MethodPublic
-                | GlyphMajor.Method2 -> Glyph.ExtensionMethodPublic
-                | GlyphMajor.Module -> Glyph.ModulePublic
-                | GlyphMajor.NameSpace -> Glyph.Namespace
-                | GlyphMajor.Property -> Glyph.PropertyPublic
-                | GlyphMajor.Struct -> Glyph.StructurePublic
-                | GlyphMajor.Typedef -> Glyph.ClassPublic
-                | GlyphMajor.Type -> Glyph.ClassPublic
-                | GlyphMajor.Union -> Glyph.EnumPublic
-                | GlyphMajor.Variable -> Glyph.Local
-                | GlyphMajor.ValueType -> Glyph.StructurePublic
-                | GlyphMajor.Error -> Glyph.Error
-                | _ -> Glyph.ClassPublic
-
+            let glyph = CommonRoslynHelpers.FSharpGlyphToRoslynGlyph declarationItem.GlyphMajor
             let completionItem = CommonCompletionItem.Create(declarationItem.Name, glyph=Nullable(glyph))
             declarationItemsCache.Remove(completionItem.DisplayText) |> ignore // clear out stale entries if they exist
             declarationItemsCache.Add(completionItem.DisplayText, declarationItem)
@@ -142,7 +116,6 @@ type internal FSharpCompletionProvider
 
         return results
     }
-
 
     override this.ShouldTriggerCompletion(sourceText: SourceText, caretPosition: int, trigger: CompletionTrigger, _: OptionSet) =
         let getInfo() = 
