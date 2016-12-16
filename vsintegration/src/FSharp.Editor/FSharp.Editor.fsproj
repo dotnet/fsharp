@@ -48,6 +48,10 @@
     <Compile Include="Navigation\GoToDefinitionService.fs" />
     <Compile Include="Navigation\NavigationBarItemService.fs" />
     <Compile Include="Navigation\NavigateToSearchService.fs" />
+    <Compile Include="BlockComment\CommentUncommentService.fs" />
+    <Compile Include="QuickInfo\QuickInfoProvider.fs" />
+    <Compile Include="Structure\BlockStructureService.fs" />
+    <Compile Include="HelpContextService.fs" />
     <Compile Include="ContentType.fs" />
     <Compile Include="FsiCommandService.fs" />
   </ItemGroup>

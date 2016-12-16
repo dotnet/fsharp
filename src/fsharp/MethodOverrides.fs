@@ -285,24 +285,43 @@ module DispatchSlotChecking =
             | [] -> 
                 if not isOptional && 
                    // Check that no available prior override implements this dispatch slot
-                   not (DispatchSlotIsAlreadyImplemented g amap m availPriorOverridesKeyed dispatchSlot) then 
+                   not (DispatchSlotIsAlreadyImplemented g amap m availPriorOverridesKeyed dispatchSlot) 
+                then 
                     // error reporting path 
                     let (CompiledSig (vargtys,_vrty,fvmtps,_)) = CompiledSigOfMeth g amap m dispatchSlot
-                    let noimpl() = if isReqdTyInterface then fail(Error(FSComp.SR.typrelNoImplementationGivenWithSuggestion(NicePrint.stringOfMethInfo amap m denv dispatchSlot), m))
-                                   else fail(Error(FSComp.SR.typrelNoImplementationGiven(NicePrint.stringOfMethInfo amap m denv dispatchSlot), m))
-                    match  overrides |> List.filter (IsPartialMatch g amap m dispatchSlot)  with 
+                    let noimpl() = 
+                        if isReqdTyInterface then 
+                            fail(Error(FSComp.SR.typrelNoImplementationGivenWithSuggestion(NicePrint.stringOfMethInfo amap m denv dispatchSlot), m))
+                        else 
+                            fail(Error(FSComp.SR.typrelNoImplementationGiven(NicePrint.stringOfMethInfo amap m denv dispatchSlot), m))
+
+                    match overrides |> List.filter (IsPartialMatch g amap m dispatchSlot) with 
                     | [] -> 
-                        match overrides |> List.filter (fun overrideBy -> IsNameMatch dispatchSlot overrideBy && 
-                                                                          IsImplMatch g dispatchSlot overrideBy)  with 
+                        let possibleOverrides =
+                            overrides
+                            |> List.filter (fun overrideBy -> IsNameMatch dispatchSlot overrideBy && IsImplMatch g dispatchSlot overrideBy)
+
+                        match possibleOverrides with 
                         | [] -> 
                             noimpl()
-                        | [ Override(_,_,_,(mtps,_),argTys,_,_,_) as overrideBy ] -> 
-                            let error_msg = 
-                                if argTys.Length <> vargtys.Length then FSComp.SR.typrelMemberDoesNotHaveCorrectNumberOfArguments(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot)
-                                elif mtps.Length <> fvmtps.Length then FSComp.SR.typrelMemberDoesNotHaveCorrectNumberOfTypeParameters(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot)
-                                elif not (IsTyparKindMatch g amap m dispatchSlot overrideBy) then  FSComp.SR.typrelMemberDoesNotHaveCorrectKindsOfGenericParameters(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot)
-                                else FSComp.SR.typrelMemberCannotImplement(FormatOverride denv overrideBy, NicePrint.stringOfMethInfo amap m denv dispatchSlot, FormatMethInfoSig g amap m denv dispatchSlot)
-                            fail(Error(error_msg, overrideBy.Range))
+                        | [ Override(_,_,_,(mtps,_),argTys,_,_,_) as overrideBy ] ->
+                            let possibleDispatchSlots =
+                                dispatchSlots
+                                |> List.filter (fun (RequiredSlot(dispatchSlot,_)) -> IsNameMatch dispatchSlot overrideBy && IsImplMatch g dispatchSlot overrideBy)
+                                |> List.length
+                           
+                            if possibleDispatchSlots > 1 then
+                                // Error will be reported below in CheckOverridesAreAllUsedOnce 
+                                ()
+
+                            elif argTys.Length <> vargtys.Length then 
+                                fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectNumberOfArguments(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
+                            elif mtps.Length <> fvmtps.Length then
+                                fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectNumberOfTypeParameters(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
+                            elif not (IsTyparKindMatch g amap m dispatchSlot overrideBy) then
+                                fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectKindsOfGenericParameters(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
+                            else 
+                                fail(Error(FSComp.SR.typrelMemberCannotImplement(FormatOverride denv overrideBy, NicePrint.stringOfMethInfo amap m denv dispatchSlot, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
                         | overrideBy :: _ -> 
                             errorR(Error(FSComp.SR.typrelOverloadNotFound(FormatMethInfoSig g amap m denv dispatchSlot, FormatMethInfoSig g amap m denv dispatchSlot),overrideBy.Range))
 
@@ -338,10 +357,17 @@ module DispatchSlotChecking =
                     errorR(OverrideDoesntOverride(denv,overrideBy,Some dispatchSlot,g,amap,m))
                 | _ -> 
                     match relevantVirts |> List.filter (fun dispatchSlot -> IsNameMatch dispatchSlot overrideBy) with 
+                    | [] -> errorR(OverrideDoesntOverride(denv,overrideBy,None,g,amap,m))
                     | [dispatchSlot] -> 
                         errorR(OverrideDoesntOverride(denv, overrideBy, Some dispatchSlot, g, amap, m))
-                    | _ -> 
-                        errorR(OverrideDoesntOverride(denv,overrideBy,None,g,amap,m))
+                    | possibleDispatchSlots -> 
+                       let details =
+                            possibleDispatchSlots
+                            |> List.map (fun dispatchSlot -> FormatMethInfoSig g amap m denv dispatchSlot)
+                            |> Seq.map (sprintf "%s   %s" System.Environment.NewLine)
+                            |> String.concat ""
+
+                       errorR(Error(FSComp.SR.typrelMemberHasMultiplePossibleDispatchSlots(FormatOverride denv overrideBy, details), overrideBy.Range))
 
 
             | [dispatchSlot] -> 
