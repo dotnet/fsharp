@@ -15,6 +15,11 @@ module FSharpStaticTypeDefinitions =
     [<BaseDefinition(ContentTypeNames.RoslynContentType)>]
     let FSharpContentTypeDefinition = ContentTypeDefinition()
 
+    [<Export>]
+    [<Name(FSharpCommonConstants.FSharpSignatureHelpContentTypeName)>]
+    [<BaseDefinition("sighelp")>]
+    let FSharpSignatureHelpContentTypeDefinition = ContentTypeDefinition()
+
 [<ExportContentTypeLanguageService(FSharpCommonConstants.FSharpContentTypeName, FSharpCommonConstants.FSharpLanguageName)>]
 type FSharpContentType [<System.Composition.ImportingConstructor>](contentTypeRegistry : IContentTypeRegistryService) =  
     member this.contentTypeRegistryService = contentTypeRegistry

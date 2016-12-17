@@ -3,6 +3,7 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
+open System.Text.RegularExpressions
 open System.Composition
 open System.Collections.Concurrent
 open System.Collections.Generic
@@ -181,20 +182,49 @@ type internal FSharpSignatureHelpProvider
                       let paramDoc = XmlDocumentation.BuildMethodParamText(documentationBuilder, method.XmlDoc, p.ParameterName) 
                       let doc = if String.IsNullOrWhiteSpace(paramDoc) then [||]
                                 else [| TaggedText(TextTags.Text, paramDoc) |]
-                      yield (p.ParameterName,p.IsOptional,doc,[| TaggedText(TextTags.Text,p.Display) |]) |]
+                      let parameterParts =
+                          if isStaticArgTip then
+                              [| TaggedText(TextTags.Class, p.Display) |]                                
+                          else
+                              let str = p.Display
+                              match str.IndexOf(':') with
+                              | -1 -> [| TaggedText(TextTags.Parameter, str) |]                                
+                              | 0 -> 
+                                [| TaggedText(TextTags.Punctuation, ":"); 
+                                   TaggedText(TextTags.Class, str.[1..]) |]
+                              | i -> 
+                                [| TaggedText(TextTags.Parameter, str.[..i-1]); 
+                                   TaggedText(TextTags.Punctuation, ":"); 
+                                   TaggedText(TextTags.Class, str.[i+1..]) |]
+                      yield (p.ParameterName, p.IsOptional, doc, parameterParts) 
+                |]
 
             let hasParamComments (pcs: (string*bool*TaggedText[]*TaggedText[])[]) =
                 pcs |> Array.exists (fun (_, _, doc, _) -> doc.Length > 0)
 
-            let summaryText = if String.IsNullOrWhiteSpace(summaryDoc) then [| TaggedText() |]
-                              elif (hasParamComments parameters) then [| TaggedText(TextTags.Text, summaryDoc + "\n") |]
-                              else [| TaggedText(TextTags.Text, summaryDoc) |]
-
+            let summaryText =                 
+                let doc = 
+                    if String.IsNullOrWhiteSpace summaryDoc then
+                        String.Empty
+                    elif hasParamComments parameters then 
+                        summaryDoc + "\n" 
+                    else 
+                        summaryDoc
+                [| TaggedText(TextTags.Text, doc) |]
+                
             // Prepare the text to display
-            let descriptionParts = [| TaggedText(TextTags.Text, method.TypeText) |]
-            let prefixParts = [| TaggedText(TextTags.Text, methodGroup.MethodName);  TaggedText(TextTags.Punctuation,  (if isStaticArgTip then "<" else "(")) |]
+            let descriptionParts = 
+                let str = method.TypeText
+                if str.StartsWith(":", StringComparison.OrdinalIgnoreCase) then
+                    [| TaggedText(TextTags.Punctuation, ":"); 
+                       TaggedText(TextTags.Class, str.[1..]) |]
+                else
+                    [| TaggedText(TextTags.Text, str) |]
+            let prefixParts = 
+                [| TaggedText(TextTags.Method, methodGroup.MethodName);  
+                   TaggedText(TextTags.Punctuation, (if isStaticArgTip then "<" else "(")) |]
             let separatorParts = [| TaggedText(TextTags.Punctuation, ", ") |]
-            let suffixParts = [| TaggedText(TextTags.Text, (if isStaticArgTip then ">" else ")")) |]
+            let suffixParts = [| TaggedText(TextTags.Punctuation, (if isStaticArgTip then ">" else ")")) |]
 
             let completionItem = (method.HasParamArrayArg, summaryText, prefixParts, separatorParts, suffixParts, parameters, descriptionParts)
             // FSROSLYNTODO: Do we need a cache like for completion?
@@ -244,3 +274,17 @@ type internal FSharpSignatureHelpProvider
                 return null
             } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
 
+open System.ComponentModel.Composition
+open Microsoft.VisualStudio.Utilities
+open Microsoft.VisualStudio.Text
+open Microsoft.VisualStudio.Text.Classification
+open Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.SignatureHelp.Presentation
+
+// Enable colorized signature help for F# buffers
+
+[<Export(typeof<IClassifierProvider>)>]
+[<ContentType(FSharpCommonConstants.FSharpSignatureHelpContentTypeName)>]
+type FSharpSignatureHelpClassifierProvider [<ImportingConstructor>] (typeMap) =
+    interface IClassifierProvider with
+        override __.GetClassifier (buffer: ITextBuffer) =
+            buffer.Properties.GetOrCreateSingletonProperty(fun _ -> SignatureHelpClassifier(buffer, typeMap) :> _)
