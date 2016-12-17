@@ -395,7 +395,7 @@ module internal Structure =
                     loop(lineNum, Some (CommentList.New commentType (lineNum, lineStr)), result) rest (lineNum + 1)
                 | _, Some comment -> 
                     loop(lineNum, None, comment :: result) rest (lineNum + 1)
-                | _ -> state 
+                | _ -> loop(lineNum, None, result) rest (lineNum + 1)
         
         let comments: CommentList list = 
             loop (-1, None, []) (List.ofArray lines) 0 
