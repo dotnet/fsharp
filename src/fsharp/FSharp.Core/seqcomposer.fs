@@ -58,23 +58,23 @@ namespace Microsoft.FSharp.Collections
                 override this.ChainDispose _ = ()
 
             [<AbstractClass>]
-            type ConsumerWithState<'T,'U,'Value> =
+            type ConsumerWithState<'T,'U,'State> =
                 inherit Consumer<'T,'U>
 
-                val mutable Value : 'Value
+                val mutable State : 'State
 
-                new (init) = {
-                    Value = init
+                new (initialState) = {
+                    State = initialState
                 }
 
             [<AbstractClass>]
-            type ConsumerChainedWithState<'T,'U,'Value> =
-                inherit ConsumerWithState<'T,'U,'Value>
+            type ConsumerChainedWithState<'T,'U,'State> =
+                inherit ConsumerWithState<'T,'U,'State>
 
                 val private Next : Consumer
 
-                new (next:Consumer, init) = {
-                    inherit ConsumerWithState<'T,'U,'Value> (init)
+                new (next:Consumer, initialState) = {
+                    inherit ConsumerWithState<'T,'U,'State> (initialState)
                     Next = next
                 }
 
@@ -88,8 +88,8 @@ namespace Microsoft.FSharp.Collections
                 inherit ConsumerChainedWithState<'T,'U,NoValue>(next, Unchecked.defaultof<NoValue>)
 
             [<AbstractClass>]
-            type ConsumerChainedWithStateAndCleanup<'T,'U,'Value> (next, init) =
-                inherit ConsumerChainedWithState<'T,'U,'Value>(next, init)
+            type ConsumerChainedWithStateAndCleanup<'T,'U,'State> (next, inititalState) =
+                inherit ConsumerChainedWithState<'T,'U,'State>(next, inititalState)
 
                 abstract OnComplete : PipeIdx -> unit
                 abstract OnDispose  : unit -> unit
@@ -106,12 +106,12 @@ namespace Microsoft.FSharp.Collections
                 inherit ConsumerChainedWithStateAndCleanup<'T,'U,NoValue>(next, Unchecked.defaultof<NoValue>)
 
             [<AbstractClass>]
-            type Folder<'T,'U>(init) =
-                inherit ConsumerWithState<'T,'T,'U>(init)
+            type Folder<'T,'U>(initialState) =
+                inherit ConsumerWithState<'T,'T,'U>(initialState)
 
             [<AbstractClass>]
-            type FolderWithOnComplete<'T, 'U>(init) =
-                inherit Folder<'T,'U>(init)
+            type FolderWithOnComplete<'T, 'U>(initialState) =
+                inherit Folder<'T,'U>(initialState)
 
                 abstract OnComplete : PipeIdx -> unit
 
@@ -762,14 +762,14 @@ namespace Microsoft.FSharp.Collections
             |> foreach (fun _ ->
                 { new FolderWithOnComplete< ^T, Values< ^T, int>> (Values<_,_>(LanguagePrimitives.GenericZero, 0)) with
                     override this.ProcessNext value =
-                        this.Value._1 <- Checked.(+) this.Value._1 value
-                        this.Value._2 <- this.Value._2 + 1
+                        this.State._1 <- Checked.(+) this.State._1 value
+                        this.State._2 <- this.State._2 + 1
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
                     override this.OnComplete _ =
-                        if this.Value._2 = 0 then
+                        if this.State._2 = 0 then
                             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString })
-            |> fun total -> LanguagePrimitives.DivideByInt< ^T> total.Value._1 total.Value._2
+            |> fun total -> LanguagePrimitives.DivideByInt< ^T> total.State._1 total.State._2
 
 
         [<CompiledName "AverageBy">]
@@ -781,14 +781,14 @@ namespace Microsoft.FSharp.Collections
             |> foreach (fun _ ->
                 { new FolderWithOnComplete<'T,Values<'U, int>>(Values<_,_>(LanguagePrimitives.GenericZero, 0)) with
                     override this.ProcessNext value =
-                        this.Value._1 <- Checked.(+) this.Value._1 (f value)
-                        this.Value._2 <- this.Value._2 + 1
+                        this.State._1 <- Checked.(+) this.State._1 (f value)
+                        this.State._2 <- this.State._2 + 1
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
                     override this.OnComplete _ =
-                        if this.Value._2 = 0 then
+                        if this.State._2 = 0 then
                             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString })
-            |> fun total -> LanguagePrimitives.DivideByInt< ^U> total.Value._1 total.Value._2
+            |> fun total -> LanguagePrimitives.DivideByInt< ^U> total.State._1 total.State._2
 
 
         [<CompiledName "Empty">]
@@ -801,20 +801,20 @@ namespace Microsoft.FSharp.Collections
             |> foreach (fun halt ->
                 { new FolderWithOnComplete<'T, Values<bool,'T, bool>>(Values<bool,'T, bool>(true, Unchecked.defaultof<'T>, false)) with
                     override this.ProcessNext value =
-                        if this.Value._1 then
-                            this.Value._1 <- false
-                            this.Value._2 <- value
+                        if this.State._1 then
+                            this.State._1 <- false
+                            this.State._2 <- value
                         else
-                            this.Value._3 <- true
+                            this.State._3 <- true
                             halt ()
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
                     override this.OnComplete _ =
-                        if this.Value._1 then
+                        if this.State._1 then
                             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-                        elif this.Value._3 then
+                        elif this.State._3 then
                             invalidArg "source" errorString })
-            |> fun one -> one.Value._2
+            |> fun one -> one.State._2
 
 
         [<CompiledName "Fold">]
@@ -823,10 +823,10 @@ namespace Microsoft.FSharp.Collections
             |> foreach (fun _ ->
                 { new Folder<'T,'State>(seed) with
                     override this.ProcessNext value =
-                        this.Value <- f this.Value value
+                        this.State <- f this.State value
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *)
                 })
-            |> fun folded -> folded.Value
+            |> fun folded -> folded.State
 
 
         [<CompiledName "Fold2">]
@@ -835,16 +835,16 @@ namespace Microsoft.FSharp.Collections
             |> foreach (fun halt ->
                 { new FolderWithOnComplete<_,Values<'State,IEnumerator<'T2>>>(Values<_,_>(state,source2.GetEnumerator())) with
                     override self.ProcessNext value =
-                        if self.Value._2.MoveNext() then
-                            self.Value._1 <- folder self.Value._1 value self.Value._2.Current
+                        if self.State._2.MoveNext() then
+                            self.State._1 <- folder self.State._1 value self.State._2.Current
                         else
                             halt()
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
                     override self.OnComplete _ =
-                        self.Value._2.Dispose()
+                        self.State._2.Dispose()
                 })
-            |> fun fold -> fold.Value._1
+            |> fun fold -> fold.State._1
 
 
         [<CompiledName "Unfold">]
@@ -881,14 +881,14 @@ namespace Microsoft.FSharp.Collections
             |> foreach (fun halt ->
                 { new FolderWithOnComplete<'T,IEnumerator<'U>> (source2.GetEnumerator()) with
                     override self.ProcessNext value =
-                        if self.Value.MoveNext() then
-                            f value self.Value.Current
+                        if self.State.MoveNext() then
+                            f value self.State.Current
                         else
                             halt()
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
                     override self.OnComplete _ =
-                        self.Value.Dispose()
+                        self.State.Dispose()
                 })
             |> ignore
 
@@ -899,16 +899,16 @@ namespace Microsoft.FSharp.Collections
             |> foreach (fun halt ->
                 { new FolderWithOnComplete<'T,Values<int,IEnumerator<'U>>>(Values<_,_>(-1,source2.GetEnumerator())) with
                     override self.ProcessNext value =
-                        if self.Value._2.MoveNext() then
-                            f self.Value._1 value self.Value._2.Current
-                            self.Value._1 <- self.Value._1 + 1
+                        if self.State._2.MoveNext() then
+                            f self.State._1 value self.State._2.Current
+                            self.State._1 <- self.State._1 + 1
                             Unchecked.defaultof<_>
                         else
                             halt()
                             Unchecked.defaultof<_>
 
                     override self.OnComplete _ =
-                        self.Value._2.Dispose()
+                        self.State._2.Dispose()
 
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
             |> ignore
@@ -920,10 +920,10 @@ namespace Microsoft.FSharp.Collections
             |> foreach (fun halt ->
                 { new Folder<'T, Option<'T>> (None) with
                     override this.ProcessNext value =
-                        this.Value <- Some value
+                        this.State <- Some value
                         halt ()
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun head -> head.Value
+            |> fun head -> head.State
 
 
         [<CompiledName "IterateIndexed">]
@@ -932,8 +932,8 @@ namespace Microsoft.FSharp.Collections
             |> foreach (fun _ ->
                 { new Folder<'T, int> (0) with
                     override this.ProcessNext value =
-                        f this.Value value
-                        this.Value <- this.Value + 1
+                        f this.State value
+                        this.State <- this.State + 1
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
             |> ignore
 
@@ -944,7 +944,7 @@ namespace Microsoft.FSharp.Collections
                     upcast { new ConsumerChainedWithState<'T,'V,Lazy<HashSet<'T>>>
                                     (next,lazy(HashSet<'T>(itemsToExclude,HashIdentity.Structural<'T>))) with
                         override this.ProcessNext (input:'T) : bool =
-                            if this.Value.Value.Add input then TailCall.avoid (next.ProcessNext input)
+                            if this.State.Value.Add input then TailCall.avoid (next.ProcessNext input)
                             else false
                     }}
 
@@ -956,10 +956,10 @@ namespace Microsoft.FSharp.Collections
                 { new Folder<'T, bool> (false) with
                     override this.ProcessNext value =
                         if f value then
-                            this.Value <- true
+                            this.State <- true
                             halt ()
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun exists -> exists.Value
+            |> fun exists -> exists.State
 
 
         [<CompiledName "Exists2">]
@@ -968,19 +968,19 @@ namespace Microsoft.FSharp.Collections
             |> foreach (fun halt ->
                 { new FolderWithOnComplete<'T,Values<bool,IEnumerator<'U>>>(Values<_,_>(false,source2.GetEnumerator())) with
                     override self.ProcessNext value =
-                        if self.Value._2.MoveNext() then
-                            if predicate value self.Value._2.Current then
-                                self.Value._1 <- true
+                        if self.State._2.MoveNext() then
+                            if predicate value self.State._2.Current then
+                                self.State._1 <- true
                                 halt()
                         else
                             halt()
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
                     override self.OnComplete _ =
-                        self.Value._2.Dispose()
+                        self.State._2.Dispose()
 
                 })
-            |> fun exists -> exists.Value._1
+            |> fun exists -> exists.State._1
 
 
         [<CompiledName "Contains">]
@@ -990,10 +990,10 @@ namespace Microsoft.FSharp.Collections
                 { new Folder<'T, bool> (false) with
                     override this.ProcessNext value =
                         if element = value then
-                            this.Value <- true
+                            this.State <- true
                             halt ()
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun contains -> contains.Value
+            |> fun contains -> contains.State
 
 
         [<CompiledName "ForAll">]
@@ -1003,10 +1003,10 @@ namespace Microsoft.FSharp.Collections
                 { new Folder<'T, bool> (true) with
                     override this.ProcessNext value =
                         if not (predicate value) then
-                            this.Value <- false
+                            this.State <- false
                             halt ()
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun forall -> forall.Value
+            |> fun forall -> forall.State
 
 
         [<CompiledName "ForAll2">]
@@ -1015,18 +1015,18 @@ namespace Microsoft.FSharp.Collections
             |> foreach (fun halt ->
                 { new FolderWithOnComplete<'T,Values<bool,IEnumerator<'U>>>(Values<_,_>(true,source2.GetEnumerator())) with
                     override self.ProcessNext value =
-                        if self.Value._2.MoveNext() then
-                            if not (predicate value self.Value._2.Current) then
-                                self.Value._1 <- false
+                        if self.State._2.MoveNext() then
+                            if not (predicate value self.State._2.Current) then
+                                self.State._1 <- false
                                 halt()
                         else
                             halt()
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
                     override self.OnComplete _ =
-                        self.Value._2.Dispose()
+                        self.State._2.Dispose()
                 })
-            |> fun all -> all.Value._1
+            |> fun all -> all.State._1
 
 
         [<CompiledName "Filter">]
@@ -1054,8 +1054,8 @@ namespace Microsoft.FSharp.Collections
                 member __.Create _ _ next =
                     upcast { new ConsumerChainedWithState<'T,'V,int>(next, -1) with
                         override this.ProcessNext (input:'T) : bool =
-                            this.Value <- this.Value  + 1
-                            TailCall.avoid (next.ProcessNext (f this.Value input)) } }
+                            this.State <- this.State  + 1
+                            TailCall.avoid (next.ProcessNext (f this.State input)) } }
 
 
         [<CompiledName "Map2">]
@@ -1064,15 +1064,15 @@ namespace Microsoft.FSharp.Collections
                 member __.Create<'V> outOfBand pipeIdx next =
                     upcast { new ConsumerChainedWithStateAndCleanup<'First,'V, IEnumerator<'Second>>(next, (source2.GetEnumerator ())) with
                         member self.ProcessNext input =
-                            if self.Value.MoveNext () then
-                                TailCall.avoid (next.ProcessNext (map input self.Value.Current))
+                            if self.State.MoveNext () then
+                                TailCall.avoid (next.ProcessNext (map input self.State.Current))
                             else
                                 outOfBand.StopFurtherProcessing pipeIdx
                                 false
 
                         override self.OnDispose () = ()
                         override self.OnComplete _ =
-                            self.Value.Dispose ()  } }
+                            self.State.Dispose ()  } }
 
 
         [<CompiledName "MapIndexed2">]
@@ -1082,16 +1082,16 @@ namespace Microsoft.FSharp.Collections
                     upcast { new ConsumerChainedWithStateAndCleanup<'First,'V, Values<int,IEnumerator<'Second>>>
                                                 (next, Values<_,_>(-1, source2.GetEnumerator ())) with
                         member self.ProcessNext input =
-                            if self.Value._2.MoveNext () then
-                                self.Value._1 <- self.Value._1 + 1
-                                TailCall.avoid (next.ProcessNext (map self.Value._1 input self.Value._2.Current))
+                            if self.State._2.MoveNext () then
+                                self.State._1 <- self.State._1 + 1
+                                TailCall.avoid (next.ProcessNext (map self.State._1 input self.State._2.Current))
                             else
                                 outOfBand.StopFurtherProcessing pipeIdx
                                 false
 
                         override self.OnDispose () = ()
                         override self.OnComplete _ =
-                            self.Value._2.Dispose ()  } }
+                            self.State._2.Dispose ()  } }
 
 
         [<CompiledName "Map3">]
@@ -1102,16 +1102,16 @@ namespace Microsoft.FSharp.Collections
                     upcast { new ConsumerChainedWithStateAndCleanup<'First,'V, Values<IEnumerator<'Second>,IEnumerator<'Third>>>
                                                 (next, Values<_,_>(source2.GetEnumerator(),source3.GetEnumerator())) with
                         member self.ProcessNext input =
-                            if self.Value._1.MoveNext() && self.Value._2.MoveNext ()  then
-                                TailCall.avoid (next.ProcessNext (map input self.Value._1 .Current self.Value._2.Current))
+                            if self.State._1.MoveNext() && self.State._2.MoveNext ()  then
+                                TailCall.avoid (next.ProcessNext (map input self.State._1 .Current self.State._2.Current))
                             else
                                 outOfBand.StopFurtherProcessing pipeIdx
                                 false
 
                         override self.OnDispose () = ()
                         override self.OnComplete _ =
-                            self.Value._1.Dispose ()
-                            self.Value._2.Dispose () } }
+                            self.State._1.Dispose ()
+                            self.State._2.Dispose () } }
 
 
         [<CompiledName "CompareWith">]
@@ -1120,22 +1120,22 @@ namespace Microsoft.FSharp.Collections
             |> foreach (fun halt ->
                 { new FolderWithOnComplete<'T,Values<int,IEnumerator<'T>>>(Values<_,_>(0,source2.GetEnumerator())) with
                     override self.ProcessNext value =
-                        if not (self.Value._2.MoveNext()) then
-                            self.Value._1 <- 1
+                        if not (self.State._2.MoveNext()) then
+                            self.State._1 <- 1
                             halt ()
                         else
-                            let c = f value self.Value._2.Current
+                            let c = f value self.State._2.Current
                             if c <> 0 then
-                                self.Value._1 <- c
+                                self.State._1 <- c
                                 halt ()
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
                     override self.OnComplete _ =
-                        if self.Value._1 = 0 && self.Value._2.MoveNext() then
-                            self.Value._1 <- -1
-                        self.Value._2.Dispose()
+                        if self.State._1 = 0 && self.State._2.MoveNext() then
+                            self.State._1 <- -1
+                        self.State._2.Dispose()
                 })
-            |> fun compare -> compare.Value._1
+            |> fun compare -> compare.State._1
 
         [<CompiledName "Choose">]
         let inline choose (f:'T->option<'U>) (source:ISeq<'T>) : ISeq<'U> =
@@ -1155,7 +1155,7 @@ namespace Microsoft.FSharp.Collections
                     upcast { new ConsumerChainedWithState<'T,'V,HashSet<'T>>
                                     (next,(HashSet<'T>(HashIdentity.Structural<'T>))) with
                         override this.ProcessNext (input:'T) : bool =
-                            if this.Value.Add input then TailCall.avoid (next.ProcessNext input)
+                            if this.State.Add input then TailCall.avoid (next.ProcessNext input)
                             else false } }
 
 
@@ -1166,7 +1166,7 @@ namespace Microsoft.FSharp.Collections
                     upcast { new ConsumerChainedWithState<'T,'V,HashSet<'Key>>
                                     (next,(HashSet<'Key>(HashIdentity.Structural<'Key>))) with
                         override this.ProcessNext (input:'T) : bool =
-                            if this.Value.Add (keyf input) then TailCall.avoid (next.ProcessNext input)
+                            if this.State.Add (keyf input) then TailCall.avoid (next.ProcessNext input)
                             else false } }
 
 
@@ -1176,18 +1176,18 @@ namespace Microsoft.FSharp.Collections
             |> foreach (fun _ ->
                 { new FolderWithOnComplete<'T,Values<bool,'T>>(Values<_,_>(true, Unchecked.defaultof<'T>)) with
                     override this.ProcessNext value =
-                        if this.Value._1 then
-                            this.Value._1 <- false
-                            this.Value._2 <- value
-                        elif value > this.Value._2 then
-                            this.Value._2 <- value
+                        if this.State._1 then
+                            this.State._1 <- false
+                            this.State._2 <- value
+                        elif value > this.State._2 then
+                            this.State._2 <- value
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
                     override this.OnComplete _ =
-                        if this.Value._1 then
+                        if this.State._1 then
                             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
                 })
-            |> fun max -> max.Value._2
+            |> fun max -> max.State._2
 
 
         [<CompiledName "MaxBy">]
@@ -1196,22 +1196,22 @@ namespace Microsoft.FSharp.Collections
             |> foreach (fun _ ->
                 { new FolderWithOnComplete<'T,Values<bool,'U,'T>>(Values<_,_,_>(true,Unchecked.defaultof<'U>,Unchecked.defaultof<'T>)) with
                     override this.ProcessNext value =
-                        match this.Value._1, f value with
+                        match this.State._1, f value with
                         | true, valueU ->
-                            this.Value._1 <- false
-                            this.Value._2 <- valueU
-                            this.Value._3 <- value
-                        | false, valueU when valueU > this.Value._2 ->
-                            this.Value._2 <- valueU
-                            this.Value._3 <- value
+                            this.State._1 <- false
+                            this.State._2 <- valueU
+                            this.State._3 <- value
+                        | false, valueU when valueU > this.State._2 ->
+                            this.State._2 <- valueU
+                            this.State._3 <- value
                         | _ -> ()
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
                     override this.OnComplete _ =
-                        if this.Value._1 then
+                        if this.State._1 then
                             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
                 })
-            |> fun min -> min.Value._3
+            |> fun min -> min.State._3
 
 
         [<CompiledName "Min">]
@@ -1220,18 +1220,18 @@ namespace Microsoft.FSharp.Collections
             |> foreach (fun _ ->
                 { new FolderWithOnComplete<'T,Values<bool,'T>>(Values<_,_>(true, Unchecked.defaultof<'T>)) with
                     override this.ProcessNext value =
-                        if this.Value._1 then
-                            this.Value._1 <- false
-                            this.Value._2 <- value
-                        elif value < this.Value._2 then
-                            this.Value._2 <- value
+                        if this.State._1 then
+                            this.State._1 <- false
+                            this.State._2 <- value
+                        elif value < this.State._2 then
+                            this.State._2 <- value
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
                     override this.OnComplete _ =
-                        if this.Value._1 then
+                        if this.State._1 then
                             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
                 })
-            |> fun min -> min.Value._2
+            |> fun min -> min.State._2
 
 
         [<CompiledName "MinBy">]
@@ -1240,22 +1240,22 @@ namespace Microsoft.FSharp.Collections
             |> foreach (fun _ ->
                 { new FolderWithOnComplete< 'T,Values<bool,'U,'T>>(Values<_,_,_>(true,Unchecked.defaultof< 'U>,Unchecked.defaultof< 'T>)) with
                     override this.ProcessNext value =
-                        match this.Value._1, f value with
+                        match this.State._1, f value with
                         | true, valueU ->
-                            this.Value._1 <- false
-                            this.Value._2 <- valueU
-                            this.Value._3 <- value
-                        | false, valueU when valueU < this.Value._2 ->
-                            this.Value._2 <- valueU
-                            this.Value._3 <- value
+                            this.State._1 <- false
+                            this.State._2 <- valueU
+                            this.State._3 <- value
+                        | false, valueU when valueU < this.State._2 ->
+                            this.State._2 <- valueU
+                            this.State._3 <- value
                         | _ -> ()
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
                     override this.OnComplete _ =
-                        if this.Value._1 then
+                        if this.State._1 then
                             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
                 })
-            |> fun min -> min.Value._3
+            |> fun min -> min.State._3
 
 
         [<CompiledName "Pairwise">]
@@ -1270,13 +1270,13 @@ namespace Microsoft.FSharp.Collections
                                     )
                                 ) with
                             override self.ProcessNext (input:'T) : bool =
-                                if (*isFirst*) self.Value._1  then
-                                    self.Value._2 (*lastValue*)<- input
-                                    self.Value._1 (*isFirst*)<- false
+                                if (*isFirst*) self.State._1  then
+                                    self.State._2 (*lastValue*)<- input
+                                    self.State._1 (*isFirst*)<- false
                                     false
                                 else
-                                    let currentPair = self.Value._2, input
-                                    self.Value._2 (*lastValue*)<- input
+                                    let currentPair = self.State._2, input
+                                    self.State._2 (*lastValue*)<- input
                                     TailCall.avoid (next.ProcessNext currentPair)
                     }}
 
@@ -1287,18 +1287,18 @@ namespace Microsoft.FSharp.Collections
             |> foreach (fun _ ->
                 { new FolderWithOnComplete<'T, Values<bool,'T>>(Values<_,_>(true, Unchecked.defaultof<'T>)) with
                     override this.ProcessNext value =
-                        if this.Value._1 then
-                            this.Value._1 <- false
-                            this.Value._2 <- value
+                        if this.State._1 then
+                            this.State._1 <- false
+                            this.State._2 <- value
                         else
-                            this.Value._2 <- f this.Value._2 value
+                            this.State._2 <- f this.State._2 value
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
                     override this.OnComplete _ =
-                        if this.Value._1 then
+                        if this.State._1 then
                             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
                 })
-            |> fun reduced -> reduced.Value._2
+            |> fun reduced -> reduced.State._2
 
 
         [<CompiledName "Scan">]
@@ -1307,8 +1307,8 @@ namespace Microsoft.FSharp.Collections
                 member __.Create _ _ next =
                     upcast { new ConsumerChainedWithState<'T,'V,'State>(next, initialState) with
                         override this.ProcessNext (input:'T) : bool =
-                            this.Value <- folder this.Value input
-                            TailCall.avoid (next.ProcessNext this.Value) } }
+                            this.State <- folder this.State input
+                            TailCall.avoid (next.ProcessNext this.State) } }
 
 
         [<CompiledName "Skip">]
@@ -1319,24 +1319,24 @@ namespace Microsoft.FSharp.Collections
                         new ConsumerChainedWithStateAndCleanup<'T,'U,int>(next,(*count*)0) with
 
                             override self.ProcessNext (input:'T) : bool =
-                                if (*count*) self.Value < skipCount then
-                                    self.Value <- self.Value + 1
+                                if (*count*) self.State < skipCount then
+                                    self.State <- self.State + 1
                                     false
                                 else
                                     TailCall.avoid (next.ProcessNext input)
 
                             override self.OnDispose () = ()
                             override self.OnComplete _ =
-                                if (*count*) self.Value < skipCount then
-                                    let x = skipCount - self.Value
+                                if (*count*) self.State < skipCount then
+                                    let x = skipCount - self.State
                                     invalidOpFmt "{0}\ntried to skip {1} {2} past the end of the seq"
                                         [|errorString; x; (if x=1 then "element" else "elements")|]
 
                         interface ISkipping with
                             member self.Skipping () =
                                 let self = self :?> ConsumerChainedWithState<'T,'U,int>
-                                if (*count*) self.Value < skipCount then
-                                    self.Value <- self.Value + 1
+                                if (*count*) self.State < skipCount then
+                                    self.State <- self.State + 1
                                     true
                                 else
                                     false
@@ -1349,9 +1349,9 @@ namespace Microsoft.FSharp.Collections
                 member __.Create _ _ next =
                     upcast { new ConsumerChainedWithState<'T,'V,bool>(next,true) with
                         override self.ProcessNext (input:'T) : bool =
-                            if self.Value (*skip*) then
-                                self.Value <- predicate input
-                                if self.Value (*skip*) then
+                            if self.State (*skip*) then
+                                self.State <- predicate input
+                                if self.State (*skip*) then
                                     false
                                 else
                                     TailCall.avoid (next.ProcessNext input)
@@ -1367,9 +1367,9 @@ namespace Microsoft.FSharp.Collections
             |> foreach (fun _ ->
                 { new Folder< ^T,^T> (LanguagePrimitives.GenericZero) with
                     override this.ProcessNext value =
-                        this.Value <- Checked.(+) this.Value value
+                        this.State <- Checked.(+) this.State value
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun sum -> sum.Value
+            |> fun sum -> sum.State
 
 
         [<CompiledName "SumBy">]
@@ -1380,9 +1380,9 @@ namespace Microsoft.FSharp.Collections
             |> foreach (fun _ ->
                 { new Folder<'T,'U> (LanguagePrimitives.GenericZero< ^U>) with
                     override this.ProcessNext value =
-                        this.Value <- Checked.(+) this.Value (f value)
+                        this.State <- Checked.(+) this.State (f value)
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun sum -> sum.Value
+            |> fun sum -> sum.State
 
 
         [<CompiledName "Take">]
@@ -1392,9 +1392,9 @@ namespace Microsoft.FSharp.Collections
                     upcast {
                         new ConsumerChainedWithStateAndCleanup<'T,'U,int>(next,(*count*)0) with
                             override self.ProcessNext (input:'T) : bool =
-                                if (*count*) self.Value < takeCount then
-                                    self.Value <- self.Value + 1
-                                    if self.Value = takeCount then
+                                if (*count*) self.State < takeCount then
+                                    self.State <- self.State + 1
+                                    if self.State = takeCount then
                                         outOfBand.StopFurtherProcessing pipelineIdx
                                     TailCall.avoid (next.ProcessNext input)
                                 else
@@ -1403,8 +1403,8 @@ namespace Microsoft.FSharp.Collections
 
                             override this.OnDispose () = ()
                             override this.OnComplete terminatingIdx =
-                                if terminatingIdx < pipelineIdx && this.Value < takeCount then
-                                    let x = takeCount - this.Value
+                                if terminatingIdx < pipelineIdx && this.State < takeCount then
+                                    let x = takeCount - this.State
                                     invalidOpFmt "tried to take {0} {1} past the end of the seq"
                                         [|errorString; x; (if x=1 then "element" else "elements")|]
                     }}
@@ -1430,15 +1430,15 @@ namespace Microsoft.FSharp.Collections
                 member __.Create _ _ next =
                     upcast { new ConsumerChainedWithStateAndCleanup<'T,'V,bool>(next,(*first*) true) with
                         override self.ProcessNext (input:'T) : bool =
-                            if (*first*) self.Value then
-                                self.Value <- false
+                            if (*first*) self.State then
+                                self.State <- false
                                 false
                             else
                                 TailCall.avoid (next.ProcessNext input)
 
                         override self.OnDispose () = ()
                         override self.OnComplete _ =
-                            if (*first*) self.Value then
+                            if (*first*) self.State then
                                 invalidArg "source" errorString
                     }}
 
@@ -1450,9 +1450,9 @@ namespace Microsoft.FSharp.Collections
                     upcast {
                         new ConsumerChainedWithState<'T,'U,int>(next,(*count*)0) with
                             override self.ProcessNext (input:'T) : bool =
-                                if (*count*) self.Value < truncateCount then
-                                    self.Value <- self.Value + 1
-                                    if self.Value = truncateCount then
+                                if (*count*) self.State < truncateCount then
+                                    self.State <- self.State + 1
+                                    if self.State = truncateCount then
                                         outOfBand.StopFurtherProcessing pipeIdx
                                     TailCall.avoid (next.ProcessNext input)
                                 else
@@ -1480,11 +1480,11 @@ namespace Microsoft.FSharp.Collections
                     override this.ProcessNext value =
                         match f value with
                         | (Some _) as some ->
-                            this.Value <- some
+                            this.State <- some
                             halt ()
                         | None -> ()
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun pick -> pick.Value
+            |> fun pick -> pick.State
 
 
         [<CompiledName "TryFind">]
@@ -1494,10 +1494,10 @@ namespace Microsoft.FSharp.Collections
                 { new Folder<'T, Option<'T>> (None) with
                     override this.ProcessNext value =
                         if f value then
-                            this.Value <- Some value
+                            this.State <- Some value
                             halt ()
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun find -> find.Value
+            |> fun find -> find.State
 
 
         [<CompiledName "TryFindIndex">]
@@ -1507,12 +1507,12 @@ namespace Microsoft.FSharp.Collections
                 { new Folder<'T, Values<Option<int>, int>>(Values<_,_>(None, 0)) with
                     override this.ProcessNext value =
                         if predicate value then
-                            this.Value._1 <- Some(this.Value._2)
+                            this.State._1 <- Some(this.State._2)
                             halt ()
                         else
-                            this.Value._2 <- this.Value._2 + 1
+                            this.State._2 <- this.State._2 + 1
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun tried -> tried.Value._1
+            |> fun tried -> tried.State._1
 
         [<CompiledName "TryLast">]
         let inline tryLast (source :ISeq<'T>) : 'T option =
@@ -1520,15 +1520,15 @@ namespace Microsoft.FSharp.Collections
             |> foreach (fun _ ->
                 { new Folder<'T, Values<bool,'T>>(Values<bool,'T>(true, Unchecked.defaultof<'T>)) with
                     override this.ProcessNext value =
-                        if this.Value._1 then
-                            this.Value._1 <- false
-                        this.Value._2 <- value
+                        if this.State._1 then
+                            this.State._1 <- false
+                        this.State._2 <- value
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
             |> fun tried ->
-                if tried.Value._1 then
+                if tried.State._1 then
                     None
                 else
-                    Some tried.Value._2
+                    Some tried.State._2
 
 
         [<CompiledName "Windowed">]
@@ -1545,23 +1545,23 @@ namespace Microsoft.FSharp.Collections
                                         )
                                     ) with
                             override self.ProcessNext (input:'T) : bool =
-                                self.Value._1.[(* idx *)self.Value._2] <- input
+                                self.State._1.[(* idx *)self.State._2] <- input
 
-                                self.Value._2 <- (* idx *)self.Value._2 + 1
-                                if (* idx *) self.Value._2 = windowSize then
-                                    self.Value._2 <- 0
+                                self.State._2 <- (* idx *)self.State._2 + 1
+                                if (* idx *) self.State._2 = windowSize then
+                                    self.State._2 <- 0
 
-                                if (* priming  *) self.Value._3 > 0 then
-                                    self.Value._3 <- self.Value._3 - 1
+                                if (* priming  *) self.State._3 > 0 then
+                                    self.State._3 <- self.State._3 - 1
                                     false
                                 else
                                     if windowSize < 32 then
-                                        let window :'T [] = Array.init windowSize (fun i -> self.Value._1.[((* idx *)self.Value._2+i) % windowSize]: 'T)
+                                        let window :'T [] = Array.init windowSize (fun i -> self.State._1.[((* idx *)self.State._2+i) % windowSize]: 'T)
                                         TailCall.avoid (next.ProcessNext window)
                                     else
                                         let window = Array.zeroCreateUnchecked windowSize
-                                        Array.Copy((*circularBuffer*)self.Value._1, (* idx *)self.Value._2, window, 0, windowSize - (* idx *)self.Value._2)
-                                        Array.Copy((*circularBuffer*)self.Value._1, 0, window, windowSize - (* idx *)self.Value._2, (* idx *)self.Value._2)
+                                        Array.Copy((*circularBuffer*)self.State._1, (* idx *)self.State._2, window, 0, windowSize - (* idx *)self.State._2)
+                                        Array.Copy((*circularBuffer*)self.State._1, 0, window, windowSize - (* idx *)self.State._2, (* idx *)self.State._2)
                                         TailCall.avoid (next.ProcessNext window)
 
                     }}
