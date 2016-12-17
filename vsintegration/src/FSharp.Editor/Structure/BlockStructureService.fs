@@ -55,12 +55,8 @@ type internal FSharpBlockStructureService(checker: FSharpChecker, projectInfoMan
         | Scope.Namespace
         | Scope.Module -> BlockTypes.Namespace 
         | Scope.Record
-        | Scope.Tuple
-        | Scope.Attribute
         | Scope.Interface
         | Scope.TypeExtension
-        | Scope.UnionCase
-        | Scope.EnumCase
         | Scope.SimpleType
         | Scope.RecordDefn
         | Scope.UnionDefn
@@ -68,27 +64,19 @@ type internal FSharpBlockStructureService(checker: FSharpChecker, projectInfoMan
         | Scope.Member -> BlockTypes.Member
         | Scope.LetOrUse
         | Scope.Match
-        | Scope.IfThenElse
-        | Scope.ThenInIfThenElse
-        | Scope.ElseInIfThenElse
-        | Scope.MatchLambda -> BlockTypes.Conditional
+        | Scope.MatchLambda
+        | Scope.IfThenElse-> BlockTypes.Conditional
         | Scope.CompExpr
-        | Scope.TryInTryWith
-        | Scope.WithInTryWith
         | Scope.TryFinally
-        | Scope.TryInTryFinally
-        | Scope.FinallyInTryFinally
         | Scope.ObjExpr
         | Scope.ArrayOrList
         | Scope.CompExprInternal
         | Scope.Quote
         | Scope.SpecialFunc
-        | Scope.MatchClause
         | Scope.Lambda
         | Scope.LetOrUseBang
         | Scope.YieldOrReturn
         | Scope.YieldOrReturnBang
-        | Scope.RecordField
         | Scope.TryWith -> BlockTypes.Expression
         | Scope.Do -> BlockTypes.Statement
         | Scope.While
@@ -96,8 +84,24 @@ type internal FSharpBlockStructureService(checker: FSharpChecker, projectInfoMan
         | Scope.HashDirective -> BlockTypes.PreprocessorRegion
         | Scope.Comment
         | Scope.XmlDocComment -> BlockTypes.Comment
-        | _ -> BlockTypes.Nonstructural
         
+    let removeOverlappedRanges (ranges: seq<ScopeRange>) : seq<ScopeRange> =
+        let removeOverlappedRangesStartingOnSameColumn (ranges: seq<ScopeRange>) =
+            ranges
+            |> Seq.sortBy (fun x -> x.Range.StartLine)
+            |> Seq.fold (fun (lastEndLine: int option, result: ScopeRange list) range -> 
+                match lastEndLine with
+                | None -> Some range.Range.EndLine, range :: result
+                | Some lastEndLine when lastEndLine >= range.Range.StartLine -> Some lastEndLine, result
+                | _ -> Some range.Range.EndLine, range :: result
+               )
+               (None, []) 
+            |> snd
+
+        ranges 
+        |> Seq.groupBy (fun x -> x.Range.StartColumn)
+        |> Seq.collect (fun (_, ranges) -> removeOverlappedRangesStartingOnSameColumn ranges)
+
     override __.Language = FSharpCommonConstants.FSharpLanguageName
  
     override __.GetBlockStructureAsync(document, cancellationToken) : Task<BlockStructure> =
@@ -111,8 +115,10 @@ type internal FSharpBlockStructureService(checker: FSharpChecker, projectInfoMan
                     let ranges = Structure.getOutliningRanges (sourceText.Lines |> Seq.map (fun x -> x.ToString()) |> Seq.toArray) parsedInput
                     let blockSpans =
                         ranges
-                        |> Seq.map (fun range -> 
-                            BlockSpan(scopeToBlockType range.Scope, true, CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range.Range)))
+                        |> removeOverlappedRanges
+                        |> Seq.choose (fun range -> 
+                            CommonRoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range.Range)
+                            |> Option.map (fun span -> BlockSpan(scopeToBlockType range.Scope, true, span)))
                     return BlockStructure(blockSpans.ToImmutableArray())
                 | None -> return BlockStructure(ImmutableArray<_>.Empty)
             | None -> return BlockStructure(ImmutableArray<_>.Empty)
