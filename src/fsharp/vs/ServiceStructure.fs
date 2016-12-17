@@ -59,12 +59,12 @@ module internal Structure =
         | While
         | Match
         | MatchLambda
+        | Lambda
         | CompExprInternal
         | Quote
         | Record
         | SpecialFunc
         | Do
-        | Lambda
         | Interface
         | HashDirective
         | LetOrUseBang
@@ -78,15 +78,15 @@ module internal Structure =
         | XmlDocComment
 
     [<NoComparison; Struct>]
-    type internal ScopeRange (scope:Scope, collapse:Collapse, r:range) =
-        member __.Scope = scope
-        member __.Collapse = collapse
-        member __.Range = r
+    type internal ScopeRange = 
+        { Scope: Scope
+          Collapse: Collapse
+          Range: range }
 
     // Only yield a range that spans 2 or more lines
     let inline private rcheck scope collapse (r: range) =
         seq { if r.StartLine <> r.EndLine then 
-                yield ScopeRange (scope, collapse, r) }
+                yield { Scope = scope; Collapse = collapse; Range = r }}
 
     let rec private parseExpr expression =
         seq {
@@ -128,12 +128,12 @@ module internal Structure =
                 yield! parseExpr body
             | SynExpr.Match (seqPointAtBinding,_,clauses,_,r) ->
                 match seqPointAtBinding with
-                | SequencePointAtBinding pr ->
-                    yield! rcheck Scope.Match Collapse.Same <| Range.endToEnd pr r
+                | SequencePointAtBinding _ ->
+                    yield! rcheck Scope.Match Collapse.Same r
                 | _ -> ()
                 yield! parseMatchClauses clauses
             | SynExpr.MatchLambda (_,_,clauses,_,r) ->
-                yield! rcheck Scope.MatchLambda Collapse.Same <| Range.modStart r 8
+                yield! rcheck Scope.MatchLambda Collapse.Same r
                 yield! parseMatchClauses clauses
             | SynExpr.App (atomicFlag,isInfix,funcExpr,argExpr,r) ->
                 // seq exprs, custom operators, etc
@@ -319,10 +319,10 @@ module internal Structure =
             match ranges with
             | [] -> None
             | [r] when r.StartLine = r.EndLine -> None
-            | [r] -> Some <| ScopeRange (scope, Collapse.Same, (Range.mkRange "" r.Start r.End))
+            | [r] -> Some { Scope = scope; Collapse = Collapse.Same; Range = Range.mkRange "" r.Start r.End }
             | lastRange :: rest ->
                 let firstRange = Seq.last rest
-                Some <| ScopeRange (scope, Collapse.Same, (Range.mkRange "" firstRange.Start lastRange.End))
+                Some { Scope = scope; Collapse = Collapse.Same; Range = Range.mkRange "" firstRange.Start lastRange.End }
 
         decls |> (List.choose predicate >> groupConsecutiveDecls >> List.choose selectRanges)
 
@@ -419,13 +419,13 @@ module internal Structure =
                 match comment.Type with 
                 | Regular -> Scope.Comment
                 | XmlDoc -> Scope.XmlDocComment
-            ScopeRange(
-                scopeType, 
-                Collapse.Same, 
-                Range.mkRange 
-                    "" 
-                    (Range.mkPos (startLine + 1) startCol)
-                    (Range.mkPos (endLine + 1) endCol)))
+            
+            { Scope = scopeType
+              Collapse = Collapse.Same
+              Range = Range.mkRange 
+                          "" 
+                          (Range.mkPos (startLine + 1) startCol)
+                          (Range.mkPos (endLine + 1) endCol) })
 
     let getOutliningRanges (sourceLines: string []) (parsedInput: ParsedInput) =
         match parsedInput with

@@ -85,23 +85,6 @@ type internal FSharpBlockStructureService(checker: FSharpChecker, projectInfoMan
         | Scope.Comment
         | Scope.XmlDocComment -> BlockTypes.Comment
         
-    let removeOverlappedRanges (ranges: seq<ScopeRange>) : seq<ScopeRange> =
-        let removeOverlappedRangesStartingOnSameColumn (ranges: seq<ScopeRange>) =
-            ranges
-            |> Seq.sortBy (fun x -> x.Range.StartLine)
-            |> Seq.fold (fun (lastEndLine: int option, result: ScopeRange list) range -> 
-                match lastEndLine with
-                | None -> Some range.Range.EndLine, range :: result
-                | Some lastEndLine when lastEndLine >= range.Range.StartLine -> Some lastEndLine, result
-                | _ -> Some range.Range.EndLine, range :: result
-               )
-               (None, []) 
-            |> snd
-
-        ranges 
-        |> Seq.groupBy (fun x -> x.Range.StartColumn)
-        |> Seq.collect (fun (_, ranges) -> removeOverlappedRangesStartingOnSameColumn ranges)
-
     override __.Language = FSharpCommonConstants.FSharpLanguageName
  
     override __.GetBlockStructureAsync(document, cancellationToken) : Task<BlockStructure> =
@@ -112,10 +95,9 @@ type internal FSharpBlockStructureService(checker: FSharpChecker, projectInfoMan
                 let! fileParseResults = checker.ParseFileInProject(document.FilePath, sourceText.ToString(), options)
                 match fileParseResults.ParseTree with
                 | Some parsedInput ->
-                    let ranges = Structure.getOutliningRanges (sourceText.Lines |> Seq.map (fun x -> x.ToString()) |> Seq.toArray) parsedInput
                     let blockSpans =
-                        ranges
-                        |> removeOverlappedRanges
+                        Structure.getOutliningRanges (sourceText.Lines |> Seq.map (fun x -> x.ToString()) |> Seq.toArray) parsedInput
+                        |> Seq.distinctBy (fun x -> x.Range.StartLine)
                         |> Seq.choose (fun range -> 
                             CommonRoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range.Range)
                             |> Option.map (fun span -> BlockSpan(scopeToBlockType range.Scope, true, span)))
