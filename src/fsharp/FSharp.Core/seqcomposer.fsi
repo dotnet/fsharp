@@ -62,16 +62,16 @@ namespace Microsoft.FSharp.Collections
             abstract member ProcessNext : input:'T -> bool
 
         [<AbstractClass>]
-        type ConsumerWithState<'T,'U,'Value> =
+        type ConsumerWithState<'T,'U,'State> =
             inherit Consumer<'T,'U>
-            val mutable Value : 'Value
-            new : init:'Value -> ConsumerWithState<'T,'U,'Value>
+            val mutable State : 'State
+            new : 'State -> ConsumerWithState<'T,'U,'State>
 
         [<AbstractClass>]
-        type ConsumerChainedWithState<'T,'U,'Value> =
-            inherit ConsumerWithState<'T,'U,'Value>
+        type ConsumerChainedWithState<'T,'U,'State> =
+            inherit ConsumerWithState<'T,'U,'State>
             val private Next : Consumer
-            new : next:Consumer * init:'Value -> ConsumerChainedWithState<'T,'U,'Value>
+            new : next:Consumer * 'State -> ConsumerChainedWithState<'T,'U,'State>
 
         [<AbstractClass>]
         type ConsumerChained<'T,'U> =
@@ -79,13 +79,13 @@ namespace Microsoft.FSharp.Collections
             new : next:Consumer -> ConsumerChained<'T,'U>
 
         [<AbstractClass>]
-        type ConsumerChainedWithStateAndCleanup<'T,'U,'Value> =
-            inherit ConsumerChainedWithState<'T,'U,'Value>
+        type ConsumerChainedWithStateAndCleanup<'T,'U,'State> =
+            inherit ConsumerChainedWithState<'T,'U,'State>
 
             abstract OnComplete : PipeIdx -> unit
             abstract OnDispose  : unit -> unit
 
-            new : next:Consumer * init:'Value -> ConsumerChainedWithStateAndCleanup<'T,'U,'Value>
+            new : next:Consumer * 'State -> ConsumerChainedWithStateAndCleanup<'T,'U,'State>
 
         [<AbstractClass>]
         type ConsumerChainedWithCleanup<'T,'U> =
@@ -96,17 +96,17 @@ namespace Microsoft.FSharp.Collections
         /// is as a base class for an object expression that will be used from within
         /// the ForEach function.</summary>
         [<AbstractClass>]
-        type Folder<'T,'Value> =
-            inherit ConsumerWithState<'T,'T,'Value>
-            new : init:'Value -> Folder<'T,'Value>
+        type Folder<'T,'State> =
+            inherit ConsumerWithState<'T,'T,'State>
+            new : 'State -> Folder<'T,'State>
 
         [<AbstractClass>]
-        type FolderWithOnComplete<'T, 'Value> =
-            inherit Folder<'T,'Value>
+        type FolderWithOnComplete<'T, 'State> =
+            inherit Folder<'T,'State>
 
             abstract OnComplete : PipeIdx -> unit
 
-            new : init:'Value -> FolderWithOnComplete<'T,'Value>
+            new : 'State -> FolderWithOnComplete<'T,'State>
 
         [<AbstractClass>]
         type SeqFactory<'T,'U> =
