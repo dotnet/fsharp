@@ -16,6 +16,18 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("IsNone")>]
         let inline isNone option = match option with None -> true | Some _ -> false
 
+        [<CompiledName("DefaultValue")>]
+        let defaultValue def option = match option with None -> def | Some v -> v
+
+        [<CompiledName("DefaultWith")>]
+        let defaultWith defThunk option = match option with None -> defThunk () | Some v -> v
+
+        [<CompiledName("OrElse")>]
+        let orElse ifNone option = match option with None -> ifNone | Some _ -> option
+
+        [<CompiledName("OrElseWith")>]
+        let orElseWith ifNoneThunk option = match option with None -> ifNoneThunk () | Some _ -> option
+
         [<CompiledName("Count")>]
         let count option = match option with None -> 0 | Some _ -> 1
 
@@ -31,14 +43,32 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("ForAll")>]
         let forall p inp = match inp with None -> true | Some x -> p x
 
+        [<CompiledName("Contains")>]
+        let inline contains x inp = match inp with None -> false | Some v -> v = x
+
         [<CompiledName("Iterate")>]
         let iter f inp = match inp with None -> () | Some x -> f x
 
         [<CompiledName("Map")>]
         let map f inp = match inp with None -> None | Some x -> Some (f x)
 
+        [<CompiledName("Map2")>]
+        let map2 f option1 option2 = 
+            match option1, option2 with
+            | Some x, Some y -> Some <| f x y
+            | _ -> None
+
+        [<CompiledName("Map3")>]
+        let map3 f option1 option2 option3 = 
+            match option1, option2, option3 with
+            | Some x, Some y, Some z -> Some <| f x y z
+            | _ -> None
+
         [<CompiledName("Bind")>]
         let bind f inp = match inp with None -> None | Some x -> f x
+
+        [<CompiledName("Flatten")>]
+        let flatten option = match option with None -> None | Some x -> x
 
         [<CompiledName("Filter")>]
         let filter f inp = match inp with None -> None | Some x -> if f x then Some x else None
