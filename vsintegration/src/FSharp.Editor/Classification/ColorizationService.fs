@@ -59,7 +59,7 @@ type internal FSharpColorizationService
                         | FSharpCheckFileAnswer.Aborted -> [| |]
                         | FSharpCheckFileAnswer.Succeeded(results) -> 
                             [| for (range, tokenColorKind)  in results.GetExtraColorizationsAlternate() do
-                                  let span = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range)
+                                  let span = CommonHelpers.fixupSpan(sourceText, CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
                                   if textSpan.Contains(span.Start) || textSpan.Contains(span.End - 1) || span.Contains(textSpan) then
                                       yield ClassifiedSpan(span, CommonHelpers.compilerTokenToRoslynToken(tokenColorKind)) |]
 

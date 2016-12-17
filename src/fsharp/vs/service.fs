@@ -1425,6 +1425,13 @@ type TypeCheckInfo
                      | ItemOccurence.Binding _
                      | ItemOccurence.Pattern _), _, _, _, m) ->
                 Some (m, FSharpTokenColorKind.TypeName)
+            | CNR(_, Item.ModuleOrNamespaces refs, 
+                     ( ItemOccurence.UseInType   
+                     | ItemOccurence.UseInAttribute
+                     | ItemOccurence.Use _
+                     | ItemOccurence.Binding _
+                     | ItemOccurence.Pattern _), _, _, _, m) when refs |> List.exists (fun x -> x.IsModule) ->
+                Some (m, FSharpTokenColorKind.TypeName)
             | _ -> None)
         |> Seq.toArray
 
