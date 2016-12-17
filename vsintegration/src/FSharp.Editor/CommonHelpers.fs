@@ -2,6 +2,7 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
+open System
 open System.Collections.Generic
 open System.Threading
 open System.Threading.Tasks
@@ -13,8 +14,14 @@ open Microsoft.CodeAnalysis.Text
 
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons
 
-module CommonHelpers =
+[<RequireQualifiedAccess>]
+type internal SymbolSearchKind =
+    | IncludeRightColumn
+    | DoesNotIncludeRightColumn
+
+module internal CommonHelpers =
     type private SourceLineData(lineStart: int, lexStateAtStartOfLine: FSharpTokenizerLexState, lexStateAtEndOfLine: FSharpTokenizerLexState, hashCode: int, classifiedSpans: IReadOnlyList<ClassifiedSpan>) =
         member val LineStart = lineStart
         member val LexStateAtStartOfLine = lexStateAtStartOfLine
@@ -95,7 +102,8 @@ module CommonHelpers =
 
         SourceLineData(textLine.Start, lexState, previousLexState.Value, lineContents.GetHashCode(), classifiedSpans)
 
-    let getColorizationData(documentKey: DocumentId, sourceText: SourceText, textSpan: TextSpan, fileName: string option, defines: string list, cancellationToken: CancellationToken) : List<ClassifiedSpan> =
+    let getColorizationData(documentKey: DocumentId, sourceText: SourceText, textSpan: TextSpan, fileName: string option, defines: string list, 
+                            cancellationToken: CancellationToken) : List<ClassifiedSpan> =
         try
             let sourceTokenizer = FSharpSourceTokenizer(defines, fileName)
             let lines = sourceText.Lines
@@ -158,33 +166,199 @@ module CommonHelpers =
             Assert.Exception(ex)
             List<ClassifiedSpan>()
 
-    let tryClassifyAtPosition (documentKey, sourceText: SourceText, filePath, defines, position: int, cancellationToken) =
+    let tryClassifyAtPosition (documentKey, sourceText: SourceText, filePath, defines, position: int, symbolSearchKind: SymbolSearchKind, cancellationToken) =
         let textLine = sourceText.Lines.GetLineFromPosition(position)
         let textLinePos = sourceText.Lines.GetLinePosition(position)
         let textLineColumn = textLinePos.Character
+        let spans = getColorizationData(documentKey, sourceText, textLine.Span, Some filePath, defines, cancellationToken)
 
-        let classifiedSpanOption =
-            getColorizationData(documentKey, sourceText, textLine.Span, Some(filePath), defines, cancellationToken)
-            |> Seq.tryFind(fun classifiedSpan -> classifiedSpan.TextSpan.Contains(position))
-
-        match classifiedSpanOption with
-        | Some(classifiedSpan) ->
-            match classifiedSpan.ClassificationType with
-            | ClassificationTypeNames.ClassName
-            | ClassificationTypeNames.DelegateName
-            | ClassificationTypeNames.EnumName
-            | ClassificationTypeNames.InterfaceName
-            | ClassificationTypeNames.ModuleName
-            | ClassificationTypeNames.StructName
-            | ClassificationTypeNames.TypeParameterName
-            | ClassificationTypeNames.Identifier -> 
-                match QuickParse.GetCompleteIdentifierIsland true (textLine.ToString()) textLineColumn with
-                | Some (islandIdentifier, islandColumn, isQuoted) -> 
-                    let qualifiers = if isQuoted then [islandIdentifier] else islandIdentifier.Split '.' |> Array.toList
-                    Some (islandColumn, qualifiers, classifiedSpan.TextSpan)
-                | None -> None
-            | ClassificationTypeNames.Operator ->
-                let islandColumn = sourceText.Lines.GetLinePositionSpan(classifiedSpan.TextSpan).End.Character
-                Some (islandColumn, [""], classifiedSpan.TextSpan) 
+        let attempt (position: int) =
+            let classifiedSpanOption = spans |> Seq.tryFind (fun classifiedSpan -> classifiedSpan.TextSpan.Contains position)
+            
+            match classifiedSpanOption with
+            | Some(classifiedSpan) ->
+                match classifiedSpan.ClassificationType with
+                | ClassificationTypeNames.ClassName
+                | ClassificationTypeNames.DelegateName
+                | ClassificationTypeNames.EnumName
+                | ClassificationTypeNames.InterfaceName
+                | ClassificationTypeNames.ModuleName
+                | ClassificationTypeNames.StructName
+                | ClassificationTypeNames.TypeParameterName
+                | ClassificationTypeNames.Identifier -> 
+                    match QuickParse.GetCompleteIdentifierIsland true (textLine.ToString()) textLineColumn with
+                    | Some (islandIdentifier, islandColumn, isQuoted) -> 
+                        let qualifiers = if isQuoted then [islandIdentifier] else islandIdentifier.Split '.' |> Array.toList
+                        Some (islandColumn, qualifiers, classifiedSpan.TextSpan)
+                    | None -> None
+                | ClassificationTypeNames.Operator ->
+                    let islandColumn = sourceText.Lines.GetLinePositionSpan(classifiedSpan.TextSpan).End.Character
+                    Some (islandColumn, [""], classifiedSpan.TextSpan) 
+                | _ -> None
             | _ -> None
-        | _ -> None
+
+        match attempt position, symbolSearchKind with
+        | None, SymbolSearchKind.IncludeRightColumn -> attempt (position - 1)
+        | x, _ -> x
+
+    /// Fix invalid span if it appears to have redundant suffix and prefix.
+    let fixupSpan (sourceText: SourceText, span: TextSpan) : TextSpan =
+        let text = sourceText.GetSubText(span).ToString()
+        match text.LastIndexOf '.' with
+        | -1 | 0 -> span
+        | index -> TextSpan(span.Start + index + 1, text.Length - index - 1)
+
+    let glyphMajorToRoslynGlyph = function
+        | GlyphMajor.Class
+        | GlyphMajor.Typedef
+        | GlyphMajor.Type
+        | GlyphMajor.Exception -> Glyph.ClassPublic
+        | GlyphMajor.Constant -> Glyph.ConstantPublic
+        | GlyphMajor.Delegate -> Glyph.DelegatePublic
+        | GlyphMajor.Union
+        | GlyphMajor.Enum -> Glyph.EnumPublic
+        | GlyphMajor.EnumMember
+        | GlyphMajor.Variable
+        | GlyphMajor.FieldBlue -> Glyph.FieldPublic
+        | GlyphMajor.Event -> Glyph.EventPublic
+        | GlyphMajor.Interface -> Glyph.InterfacePublic
+        | GlyphMajor.Method
+        | GlyphMajor.Method2 -> Glyph.MethodPublic
+        | GlyphMajor.Module -> Glyph.ModulePublic
+        | GlyphMajor.NameSpace -> Glyph.Namespace
+        | GlyphMajor.Property -> Glyph.PropertyPublic
+        | GlyphMajor.Struct
+        | GlyphMajor.ValueType -> Glyph.StructurePublic
+        | GlyphMajor.Error -> Glyph.Error
+        | _ -> Glyph.None
+
+[<RequireQualifiedAccess; NoComparison>] 
+type internal SymbolDeclarationLocation = 
+    | CurrentDocument
+    | Projects of Project list * isLocalForProject: bool
+
+[<AutoOpen>]
+module internal Extensions =
+    open System
+    open System.IO
+
+    type Path with
+        static member GetFullPathSafe path =
+            try Path.GetFullPath path
+            with _ -> path
+
+    type FSharpSymbol with
+        member this.IsInternalToProject =
+            match this with 
+            | :? FSharpParameter -> true
+            | :? FSharpMemberOrFunctionOrValue as m -> not m.IsModuleValueOrMember || not m.Accessibility.IsPublic
+            | :? FSharpEntity as m -> not m.Accessibility.IsPublic
+            | :? FSharpGenericParameter -> true
+            | :? FSharpUnionCase as m -> not m.Accessibility.IsPublic
+            | :? FSharpField as m -> not m.Accessibility.IsPublic
+            | _ -> false
+
+    type FSharpSymbolUse with
+        member this.GetDeclarationLocation (currentDocument: Document) : SymbolDeclarationLocation option =
+            if this.IsPrivateToFile then
+                Some SymbolDeclarationLocation.CurrentDocument
+            else
+                let isSymbolLocalForProject = this.Symbol.IsInternalToProject
+                
+                let declarationLocation = 
+                    match this.Symbol.ImplementationLocation with
+                    | Some x -> Some x
+                    | None -> this.Symbol.DeclarationLocation
+                
+                match declarationLocation with
+                | Some loc ->
+                    let filePath = Path.GetFullPathSafe loc.FileName
+                    let isScript = String.Equals(Path.GetExtension(filePath), ".fsx", StringComparison.OrdinalIgnoreCase)
+                    if isScript && filePath = currentDocument.FilePath then 
+                        Some SymbolDeclarationLocation.CurrentDocument
+                    elif isScript then
+                        // The standalone script might include other files via '#load'
+                        // These files appear in project options and the standalone file 
+                        // should be treated as an individual project
+                        Some (SymbolDeclarationLocation.Projects ([currentDocument.Project], isSymbolLocalForProject))
+                    else
+                        let projects =
+                            currentDocument.Project.Solution.GetDocumentIdsWithFilePath(currentDocument.FilePath)
+                            |> Seq.map (fun x -> x.ProjectId)
+                            |> Seq.distinct
+                            |> Seq.map currentDocument.Project.Solution.GetProject
+                            |> Seq.toList
+                        match projects with
+                        | [] -> None
+                        | projects -> Some (SymbolDeclarationLocation.Projects (projects, isSymbolLocalForProject))
+                | None -> None
+
+        member this.IsPrivateToFile = 
+            let isPrivate =
+                match this.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as m -> not m.IsModuleValueOrMember
+                | :? FSharpEntity as m -> m.Accessibility.IsPrivate
+                | :? FSharpGenericParameter -> true
+                | :? FSharpUnionCase as m -> m.Accessibility.IsPrivate
+                | :? FSharpField as m -> m.Accessibility.IsPrivate
+                | _ -> false
+            
+            let declarationLocation =
+                match this.Symbol.SignatureLocation with
+                | Some x -> Some x
+                | _ ->
+                    match this.Symbol.DeclarationLocation with
+                    | Some x -> Some x
+                    | _ -> this.Symbol.ImplementationLocation
+            
+            let declaredInTheFile = 
+                match declarationLocation with
+                | Some declRange -> declRange.FileName = this.RangeAlternate.FileName
+                | _ -> false
+            
+            isPrivate && declaredInTheFile
+
+    let glyphMajorToRoslynGlyph = function
+        | GlyphMajor.Class -> Glyph.ClassPublic
+        | GlyphMajor.Constant -> Glyph.ConstantPublic
+        | GlyphMajor.Delegate -> Glyph.DelegatePublic
+        | GlyphMajor.Enum -> Glyph.EnumPublic
+        | GlyphMajor.EnumMember -> Glyph.FieldPublic
+        | GlyphMajor.Event -> Glyph.EventPublic
+        | GlyphMajor.Exception -> Glyph.ClassPublic
+        | GlyphMajor.FieldBlue -> Glyph.FieldPublic
+        | GlyphMajor.Interface -> Glyph.InterfacePublic
+        | GlyphMajor.Method -> Glyph.MethodPublic
+        | GlyphMajor.Method2 -> Glyph.MethodPublic
+        | GlyphMajor.Module -> Glyph.ModulePublic
+        | GlyphMajor.NameSpace -> Glyph.Namespace
+        | GlyphMajor.Property -> Glyph.PropertyPublic
+        | GlyphMajor.Struct -> Glyph.StructurePublic
+        | GlyphMajor.Typedef -> Glyph.ClassPublic
+        | GlyphMajor.Type -> Glyph.ClassPublic
+        | GlyphMajor.Union -> Glyph.EnumPublic
+        | GlyphMajor.Variable -> Glyph.FieldPublic
+        | GlyphMajor.ValueType -> Glyph.StructurePublic
+        | GlyphMajor.Error -> Glyph.Error
+        | _ -> Glyph.None
+
+    type Async<'a> with
+        /// Creates an asynchronous workflow that runs the asynchronous workflow given as an argument at most once. 
+        /// When the returned workflow is started for the second time, it reuses the result of the previous execution.
+        static member Cache (input : Async<'T>) =
+            let agent = MailboxProcessor<AsyncReplyChannel<_>>.Start <| fun agent ->
+                async {
+                    let! replyCh = agent.Receive ()
+                    let! res = input
+                    replyCh.Reply res
+                    while true do
+                        let! replyCh = agent.Receive ()
+                        replyCh.Reply res 
+                }
+            async { return! agent.PostAndAsyncReply id }
+
+        static member inline Map (f: 'a -> 'b) (input: Async<'a>) : Async<'b> = 
+            async {
+                let! result = input
+                return f result 
+            }

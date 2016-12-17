@@ -66,18 +66,18 @@ let ShouldGiveSignatureHelpAtCorrectMarkers() =
     let manyTestCases = 
         [ ("""
 //1
-System.Console.WriteLine(1,arg1=2)
-
+System.Console.WriteLine(format="Hello, {0}",arg0="World")
 """,
             [(".", None); 
              ("System", None); 
              ("WriteLine", None);
-             ("(", Some ("[7..40)", 0, 2, None)); 
-             (",", Some ("[7..40)", 1, 2, Some "arg1"));
-             ("arg", Some ("[7..40)", 1, 2, Some "arg1"));
-             ("arg1", Some ("[7..40)", 1, 2, Some "arg1"));
-             ("=", Some ("[7..40)", 1, 2, Some "arg1")); 
-             ("2", Some ("[7..40)", 0, 2, None));
+             ("(", Some ("[7..64)", 0, 2, Some "format")); 
+             ("format", Some ("[7..64)", 0, 2, Some "format"));
+             (",", None);
+             ("""",""", Some ("[7..64)", 1, 2, Some "arg0"));
+             ("arg0", Some ("[7..64)", 1, 2, Some "arg0"));
+             ("arg0=", Some ("[7..64)", 1, 2, Some "arg0")); 
+             ("World", Some ("[7..64)", 1, 2, Some "arg0"));
              (")", None)]);
           ( """
 //2
@@ -141,8 +141,10 @@ type foo5 = N1.T<Param1=1,ParamIgnored= >
             [("let _ = System.DateTime(",  Some ("[8..24)", 0, 0, None)) ])
           ]
 
+    let sb = System.Text.StringBuilder()
     for (fileContents, testCases) in manyTestCases do
       printfn "Test case: fileContents = %s..." fileContents.[2..4]
+      
       let actual = 
         [ for (marker, expected) in testCases do
             printfn "Test case: marker = %s" marker 
@@ -156,20 +158,23 @@ type foo5 = N1.T<Param1=1,ParamIgnored= >
                 } 
 
             let triggerChar = if marker = "," then Some ',' elif marker = "(" then Some '(' elif marker = "<" then Some '<' else None
-            let triggered = FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(documentationProvider, SourceText.From(fileContents), caretPosition, options, triggerChar, filePath, 0) |> Async.RunSynchronously
-            FSharpLanguageService.Checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+            let triggered = FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(FSharpChecker.Instance, documentationProvider, SourceText.From(fileContents), caretPosition, options, triggerChar, filePath, 0) |> Async.RunSynchronously
+            FSharpChecker.Instance.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
             let actual = 
                 match triggered with 
                 | None -> None
                 | Some (results,applicableSpan,argumentIndex,argumentCount,argumentName) -> Some (applicableSpan.ToString(),argumentIndex,argumentCount,argumentName)
 
-            if expected <> actual then Assert.Fail(sprintf "FSharpCompletionProvider.ProvideMethodsAsyncAux() gave unexpected results, expected %A, got %A" expected actual)
+            if expected <> actual then 
+                sb.AppendLine(sprintf "FSharpCompletionProvider.ProvideMethodsAsyncAux() gave unexpected results, expected %A, got %A" expected actual) |> ignore
+            yield (marker, actual) ]
 
-            yield (marker, actual) ] 
-      () 
-      // Use this to print out data to update the test cases, after uncommenting the assert
-      //printfn "(\"\"\"%s\n\"\"\",\n%s)" fileContents ((sprintf "%A" actual).Replace("null","None"))
-
+      printfn "(\"\"\"%s\n\"\"\",\n%s)" fileContents ((sprintf "%A" actual).Replace("null","None"))
+        
+            
+    match sb.ToString() with
+    | "" -> ()
+    | errorText -> Assert.Fail errorText
 
 
 

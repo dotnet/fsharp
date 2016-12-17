@@ -536,6 +536,9 @@
     <Compile Include="..\MSBuildReferenceResolver.fs">
       <Link>Service/MSBuildReferenceResolver.fs</Link>
     </Compile>
+    <Compile Include="..\vs\ServiceStructure.fs">
+      <Link>Service/ServiceStructure.fs</Link>
+    </Compile>
     <Compile Include="..\vs\service.fsi">
       <Link>Service/service.fsi</Link>
     </Compile>
@@ -597,7 +600,7 @@
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
-  <Import Project="$(FSharpSourcesRoot)\..\packages\FsLexYacc.7.0.1\build\FsLexYacc.targets" />
+  <Import Project="$(FsLexToolPath)\FsLexYacc.targets" />
   <Import Project="$(VsSDKInstall)\Microsoft.VsSDK.targets" Condition="'$(AddVsSdkAttributesToSomeCoreComponents)' == 'true'"/>
   <PropertyGroup>
     <OtherFlags>$(OtherFlags) /warnon:1182</OtherFlags>

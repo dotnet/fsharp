@@ -27,13 +27,13 @@ let singleTestBuildAndRunAux cfg p =
         ["testlib.fsi";"testlib.fs";"test.mli";"test.ml";"test.fsi";"test.fs";"test2.fsi";"test2.fs";"test.fsx";"test2.fsx"]
         |> List.filter (fileExists cfg)
 
-
     match p with 
     | FSC_CORECLR -> 
         let testName = getBasename cfg.Directory
         let extraSource = (__SOURCE_DIRECTORY__  ++ "coreclr_utilities.fs")
-        let outFile = (__SOURCE_DIRECTORY__ ++ sprintf @"../testbin/%s/coreclr/fsharp/core/%s/output/test.exe" cfg.BUILD_CONFIG testName)
-        let coreRunExe = (__SOURCE_DIRECTORY__ ++ sprintf @"../testbin/%s/coreclr/%s/corerun.exe" cfg.BUILD_CONFIG defaultPlatform)
+        let outDir =  (__SOURCE_DIRECTORY__ ++ sprintf @"../testbin/%s/coreclr/fsharp/core/%s" cfg.BUILD_CONFIG testName)
+        let outFile = (__SOURCE_DIRECTORY__ ++ sprintf @"../testbin/%s/coreclr/fsharp/core/%s/test.exe" cfg.BUILD_CONFIG testName)
+
         makeDirectory (getDirectoryName outFile)
         let fscArgs = 
             sprintf """--debug:portable --debug+ --out:%s  --target:exe -g --define:FX_RESHAPED_REFLECTION --define:NETSTANDARD1_6 --define:FSCORE_PORTABLE_NEW --define:FX_PORTABLE_OR_NETSTANDARD "%s" %s """
@@ -41,16 +41,16 @@ let singleTestBuildAndRunAux cfg p =
                extraSource
                (String.concat " " sources)
 
-        let fsccArgs = sprintf """--verbose:repro %s""" fscArgs
+        let fsccArgs = sprintf """--OutputDir:%s %s""" outDir fscArgs
 
         fsi cfg "--exec %s %s %s"
                cfg.fsi_flags
                (__SOURCE_DIRECTORY__ ++ @"../scripts/fscc.fsx")
                fsccArgs
                []
-               
+
         use testOkFile = new FileGuard (getfullpath cfg "test.ok")
-        exec cfg  coreRunExe outFile
+        exec cfg  cfg.DotNetExe outFile
 
         testOkFile.CheckExists()
 
@@ -70,7 +70,7 @@ let singleTestBuildAndRunAux cfg p =
                (__SOURCE_DIRECTORY__ ++ @"../scripts/fsci.fsx")
                fsciArgs
                []
-               
+
         testOkFile.CheckExists()
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
@@ -178,39 +178,28 @@ let singleNegTest (cfg: TestConfig) testname =
         then fsc cfg "%s -a -o:%s-pre.dll" cfg.fsc_flags testname [testname + "-pre.fs"] 
         else ()
 
-    // echo Negative typechecker testing: %testname%
     log "Negative typechecker testing: %s" testname
-
-    let fsdiff a b = 
-        let out = new ResizeArray<string>()
-        let redirectOutputToFile path args =
-            log "%s %s" path args
-            use toLog = redirectToLog ()
-            Process.exec { RedirectOutput = Some (function null -> () | s -> out.Add(s)); RedirectError = Some toLog.Post; RedirectInput = None; } cfg.Directory cfg.EnvironmentVariables path args
-        (Commands.fsdiff redirectOutputToFile cfg.FSDIFF a b) |> checkResult
-        out.ToArray() |> List.ofArray
 
     fscAppendErrExpectFail cfg  (sprintf "%s.err" testname) """%s --vserrors --warnaserror --nologo --maxerrors:10000 -a -o:%s.dll""" cfg.fsc_flags testname sources
 
-    let testnameDiff = fsdiff (sprintf "%s.err" testname) (sprintf "%s.bsl" testname)
-
-    match testnameDiff with
-    | [] -> ()
-    | l ->
-        log "***** %s.err %s.bsl differed: a bug or baseline may neeed updating" testname testname
-        failwith (sprintf "%s.err %s.bsl differ; %A" testname testname l)
-
-    log "Good, output %s.err matched %s.bsl" testname testname
+    let diff = fsdiff cfg (sprintf "%s.err" testname) (sprintf "%s.bsl" testname)
 
     fscAppendErrExpectFail cfg (sprintf "%s.vserr" testname) "%s --test:ContinueAfterParseFailure --vserrors --warnaserror --nologo --maxerrors:10000 -a -o:%s.dll" cfg.fsc_flags testname sources
 
-    let testnameDiff = fsdiff (sprintf "%s.vserr" testname) VSBSLFILE
+    let vbslDiff = fsdiff cfg (sprintf "%s.vserr" testname) VSBSLFILE
 
-    match testnameDiff with
-        | [] -> ()
-        | l ->
-            log "***** %s.vserr %s differed: a bug or baseline may neeed updating" testname VSBSLFILE
-            failwith (sprintf "%s.vserr %s differ; %A" testname VSBSLFILE l)
-
-    log "Good, output %s.vserr matched %s" testname VSBSLFILE
-
+    match diff,vbslDiff with
+    | "","" -> 
+        log "Good, output %s.err matched %s.bsl" testname testname
+        log "Good, output %s.vserr matched %s" testname VSBSLFILE
+    | l,"" ->        
+        log "***** %s.err %s.bsl differed: a bug or baseline may need updating" testname testname        
+        failwithf "%s.err %s.bsl differ; %A" testname testname l
+    | "",l ->
+        log "Good, output %s.err matched %s.bsl" testname testname
+        log "***** %s.vserr %s differed: a bug or baseline may need updating" testname VSBSLFILE
+        failwithf "%s.vserr %s differ; %A" testname VSBSLFILE l
+    | l1,l2 ->    
+        log "***** %s.err %s.bsl differed: a bug or baseline may need updating" testname testname 
+        log "***** %s.vserr %s differed: a bug or baseline may need updating" testname VSBSLFILE
+        failwithf "%s.err %s.bsl differ; %A; %s.vserr %s differ; %A" testname testname l1 testname VSBSLFILE l2

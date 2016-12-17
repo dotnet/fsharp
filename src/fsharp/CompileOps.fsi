@@ -73,14 +73,6 @@ val ParseInput : (UnicodeLexing.Lexbuf -> Parser.token) * ErrorLogger * UnicodeL
 // Error and warnings
 //--------------------------------------------------------------------------
 
-/// Represents the style being used to format errros
-type ErrorStyle = 
-    | DefaultErrors 
-    | EmacsErrors 
-    | TestErrors 
-    | VSErrors
-    | GccErrors
-
 /// Get the location associated with an error
 val GetRangeOfError : PhasedError -> range option
 
@@ -91,7 +83,7 @@ val GetErrorNumber : PhasedError -> int
 val SplitRelatedErrors : PhasedError -> PhasedError * PhasedError list
 
 /// Output an error to a buffer
-val OutputPhasedError : StringBuilder -> PhasedError -> bool -> unit
+val OutputPhasedError : ErrorLogger.ErrorStyle -> StringBuilder -> PhasedError -> bool -> unit
 
 /// Output an error or warning to a buffer
 val OutputErrorOrWarning : implicitIncludeDir:string * showFullPaths: bool * flattenErrors: bool * errorStyle: ErrorStyle *  warning:bool -> StringBuilder -> PhasedError -> unit

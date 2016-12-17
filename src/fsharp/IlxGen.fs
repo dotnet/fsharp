@@ -3405,12 +3405,13 @@ and GenGenericParam cenv eenv (tp:Typar) =
 // Generate object expressions as ILX "closures"
 //-------------------------------------------------------------------------- 
 
+/// Generates the data used for parameters at definitions of abstract method slots such as interface methods or override methods.
 and GenSlotParam m cenv eenv (TSlotParam(nm,ty,inFlag,outFlag,optionalFlag,attribs)) : ILParameter = 
-    let inFlag2,outFlag2,optionalFlag2,paramMarshal2,attribs = GenParamAttribs cenv attribs
+    let inFlag2,outFlag2,optionalFlag2,defaultParamValue,paramMarshal2,attribs = GenParamAttribs cenv attribs
     
     { Name=nm
       Type= GenParamType cenv.amap m eenv.tyenv ty
-      Default=None  
+      Default=defaultParamValue  
       Marshal=paramMarshal2 
       IsIn=inFlag || inFlag2
       IsOut=outFlag || outFlag2
@@ -4914,16 +4915,20 @@ and GenParamAttribs cenv attribs =
     let inFlag = HasFSharpAttributeOpt cenv.g cenv.g.attrib_InAttribute attribs
     let outFlag = HasFSharpAttribute cenv.g cenv.g.attrib_OutAttribute attribs
     let optionalFlag = HasFSharpAttributeOpt cenv.g cenv.g.attrib_OptionalAttribute attribs
-    // Return the filtered attributes. Do not generate In, Out or Optional attributes 
+    
+    let defaultValue = TryFindFSharpAttributeOpt cenv.g cenv.g.attrib_DefaultParameterValueAttribute attribs 
+                       |> Option.bind OptionalArgInfo.FieldInitForDefaultParameterValueAttrib
+    // Return the filtered attributes. Do not generate In, Out, Optional or DefaultParameterValue attributes 
     // as custom attributes in the code - they are implicit from the IL bits for these
     let attribs = 
         attribs 
         |> List.filter (IsMatchingFSharpAttributeOpt cenv.g cenv.g.attrib_InAttribute >> not)
         |> List.filter (IsMatchingFSharpAttribute cenv.g cenv.g.attrib_OutAttribute >> not)
         |> List.filter (IsMatchingFSharpAttributeOpt cenv.g cenv.g.attrib_OptionalAttribute >> not)
+        |> List.filter (IsMatchingFSharpAttributeOpt cenv.g cenv.g.attrib_DefaultParameterValueAttribute >> not)
 
     let Marshal,attribs =  GenMarshal cenv attribs
-    inFlag,outFlag,optionalFlag,Marshal,attribs
+    inFlag,outFlag,optionalFlag,defaultValue,Marshal,attribs
 
 and GenParams cenv eenv (mspec:ILMethodSpec) (attribs:ArgReprInfo list) (implValsOpt: Val list option) =
     let ilArgTys = mspec.FormalArgTypes
@@ -4940,7 +4945,7 @@ and GenParams cenv eenv (mspec:ILMethodSpec) (attribs:ArgReprInfo list) (implVal
 
     (Set.empty,argInfosAndTypes)
     ||> List.mapFold (fun takenNames ((ilArgTy,topArgInfo),implValOpt) -> 
-        let inFlag,outFlag,optionalFlag,Marshal,attribs = GenParamAttribs cenv topArgInfo.Attribs
+        let inFlag,outFlag,optionalFlag,defaultParamValue,Marshal,attribs = GenParamAttribs cenv topArgInfo.Attribs
         
         let idOpt = (match topArgInfo.Name with 
                      | Some v -> Some v 
@@ -4959,7 +4964,7 @@ and GenParams cenv eenv (mspec:ILMethodSpec) (attribs:ArgReprInfo list) (implVal
         let param : ILParameter = 
             { Name=nmOpt
               Type= ilArgTy  
-              Default=None (* REVIEW: support "default" attributes *)   
+              Default=defaultParamValue
               Marshal=Marshal 
               IsIn=inFlag    
               IsOut=outFlag  
@@ -5350,8 +5355,10 @@ and GenGetVal cenv cgbuf eenv (v:ValRef,m) sequel =
 and GenBindRhs cenv cgbuf eenv sp (vspec:Val) e =   
     match e with 
     | Expr.TyLambda _ | Expr.Lambda _ -> 
-        match e with
-        | Expr.TyLambda(_, tyargs, body, _, _) when 
+        let isLocalTypeFunc = IsNamedLocalTypeFuncVal cenv.g vspec e
+         
+        match e, isLocalTypeFunc with
+        | Expr.TyLambda(_, tyargs, body, _, _), true when 
             (
                 tyargs |> List.forall (fun tp -> tp.IsErased) &&
                 (match StorageForVal vspec.Range vspec eenv with Local _ -> true | _ -> false)
@@ -5359,7 +5366,6 @@ and GenBindRhs cenv cgbuf eenv sp (vspec:Val) e =
             // type lambda with erased type arguments that is stored as local variable (not method or property)- inline body
             GenExpr cenv cgbuf eenv sp body Continue
         | _ ->
-            let isLocalTypeFunc = IsNamedLocalTypeFuncVal cenv.g vspec e
             let selfv = if isLocalTypeFunc then None else Some (mkLocalValRef vspec)
             GenLambda cenv cgbuf eenv isLocalTypeFunc selfv e Continue 
     | _ -> 
@@ -5990,22 +5996,8 @@ and GenEqualsOverrideCallingIComparable cenv (tcref:TyconRef, ilThisTy, _ilThatT
 
 and GenFieldInit m c =
     match c with 
-    | Const.SByte n   -> ILFieldInit.Int8 n
-    | Const.Int16 n   -> ILFieldInit.Int16 n
-    | Const.Int32 n   -> ILFieldInit.Int32 n
-    | Const.Int64 n   -> ILFieldInit.Int64 n
-    | Const.Byte n    -> ILFieldInit.UInt8 n
-    | Const.UInt16 n  -> ILFieldInit.UInt16 n
-    | Const.UInt32 n  -> ILFieldInit.UInt32 n
-    | Const.UInt64 n  -> ILFieldInit.UInt64 n
-    | Const.Bool n    -> ILFieldInit.Bool n
-    | Const.Char n    -> ILFieldInit.Char (uint16 n)
-    | Const.Single n -> ILFieldInit.Single n
-    | Const.Double n   -> ILFieldInit.Double n
-    | Const.String s  -> ILFieldInit.String s
-    | Const.Zero      -> ILFieldInit.Null
+    | ConstToILFieldInit fieldInit -> fieldInit
     | _ -> error(Error(FSComp.SR.ilTypeCannotBeUsedForLiteralField(),m))
-
 
 and GenAbstractBinding cenv eenv tref (vref:ValRef) =
     assert(vref.IsMember)

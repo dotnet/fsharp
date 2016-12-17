@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
@@ -18,8 +18,7 @@
     <TargetType>LIBRARY</TargetType>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <NoWarn>$(NoWarn);75</NoWarn>
-    <Tailcalls Condition="'$(CodeCoverage)' != ''">false</Tailcalls>
-    <OtherFlags>$(OtherFlags) --warnon:1182  --subsystemversion:6.00</OtherFlags>
+    <Tailcalls Condition="'$(CodeCoverage)' != ''">false</Tailcalls>    <OtherFlags>$(OtherFlags) --warnon:1182  --subsystemversion:6.00</OtherFlags>
     <ImportVSSDKTargets>true</ImportVSSDKTargets>
     <CreateVsixContainer>false</CreateVsixContainer>
     <DeployExtension>false</DeployExtension>
@@ -35,45 +34,27 @@
     <Compile Include="CommonHelpers.fs" />
     <Compile Include="Logging.fs" />
     <Compile Include="LanguageService.fs" />
-    <Compile Include="ColorizationService.fs">
-      <Link>Classification\ColorizationService.fs</Link>
-    </Compile>
-    <Compile Include="BraceMatchingService.fs">
-      <Link>Utilities\BraceMatchingService.fs</Link>
-    </Compile>
-    <Compile Include="IndentationService.fs">
-      <Link>Utilities\IndentationService.fs</Link>
-    </Compile>
-    <Compile Include="BreakpointResolutionService.fs">
-      <Link>Debugging\BreakpointResolutionService.fs</Link>
-    </Compile>
-    <Compile Include="LanguageDebugInfoService.fs">
-      <Link>Debugging\LanguageDebugInfoService.fs</Link>
-    </Compile>
-    <Compile Include="DocumentDiagnosticAnalyzer.fs">
-      <Link>Diagnostics\DocumentDiagnosticAnalyzer.fs</Link>
-    </Compile>
-
-
-    <Compile Include="ProjectDiagnosticAnalyzer.fs">
-      <Link>Diagnostics\ProjectDiagnosticAnalyzer.fs</Link>
-    </Compile>
-    <Compile Include="CompletionProvider.fs">
-      <Link>Completion\CompletionProvider.fs</Link>
-    </Compile>
-    <Compile Include="SignatureHelp.fs">
-      <Link>Completion\SignatureHelp.fs</Link>
-    </Compile>
-    <Compile Include="GoToDefinitionService.fs">
-      <Link>GoToDefinition\GoToDefinitionService.fs</Link>
-    </Compile>
-    <Compile Include="CommentUncommentService.fs">
-      <Link>BlockComment\CommentUncommentService.fs</Link>
-    </Compile>
-    <Compile Include="QuickInfoProvider.fs">
-      <Link>QuickInfo\QuickInfoProvider.fs</Link>
-    </Compile>
+    <Compile Include="Classification\ColorizationService.fs" />
+    <Compile Include="Utilities\BraceMatchingService.fs" />
+    <Compile Include="Utilities\IndentationService.fs"/>
+    <Compile Include="Debugging\BreakpointResolutionService.fs"/>
+    <Compile Include="Debugging\LanguageDebugInfoService.fs"/>
+    <Compile Include="Diagnostics\DocumentDiagnosticAnalyzer.fs"/>
+    <Compile Include="Diagnostics\ProjectDiagnosticAnalyzer.fs"/>
+    <Compile Include="Completion\CompletionProvider.fs"/>
+    <Compile Include="Completion\SignatureHelp.fs"/>
+    <Compile Include="QuickInfo\QuickInfoProvider.fs"/>
+    <Compile Include="InlineRename\InlineRenameService.fs" />
+    <Compile Include="DocumentHighlights\DocumentHighlightsService.fs" />
+    <Compile Include="Navigation\GoToDefinitionService.fs" />
+    <Compile Include="Navigation\NavigationBarItemService.fs" />
+    <Compile Include="Navigation\NavigateToSearchService.fs" />
+    <Compile Include="Navigation\FindReferencesService.fs" />
+    <Compile Include="BlockComment\CommentUncommentService.fs" />
+    <Compile Include="Structure\BlockStructureService.fs" />
+    <Compile Include="HelpContextService.fs" />
     <Compile Include="ContentType.fs" />
+    <Compile Include="FsiCommandService.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
@@ -93,6 +74,11 @@
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.LanguageService.Compiler\FSharp.LanguageService.Compiler.fsproj">
       <Project>{a437a6ec-5323-47c2-8f86-e2cac54ff152}</Project>
       <Name>FSharp.LanguageService.Compiler</Name>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\FSharp.VS.FSI\FSharp.VS.FSI.fsproj">
+      <Name>FSharp.VS.FSI</Name>
+      <Project>{991dcf75-c2eb-42b6-9a0d-aa1d2409d519}</Project>
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
@@ -162,7 +148,7 @@
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop" />
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.8.0" />
     <Reference Include="Microsoft.CodeAnalysis">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.CodeAnalysis.Common.$(RoslynVersion)\lib\net45\Microsoft.CodeAnalysis.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.CodeAnalysis.Common.$(RoslynVersion)\lib\netstandard1.3\Microsoft.CodeAnalysis.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.CodeAnalysis.EditorFeatures">
@@ -174,11 +160,11 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.CodeAnalysis.Features">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.CodeAnalysis.Features.$(RoslynVersion)\lib\net45\Microsoft.CodeAnalysis.Features.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.CodeAnalysis.Features.$(RoslynVersion)\lib\netstandard1.3\Microsoft.CodeAnalysis.Features.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.CodeAnalysis.Workspaces">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.CodeAnalysis.Workspaces.Common.$(RoslynVersion)\lib\net45\Microsoft.CodeAnalysis.Workspaces.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.CodeAnalysis.Workspaces.Common.$(RoslynVersion)\lib\netstandard1.3\Microsoft.CodeAnalysis.Workspaces.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.LanguageServices">
