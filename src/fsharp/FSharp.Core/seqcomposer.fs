@@ -63,8 +63,8 @@ namespace Microsoft.FSharp.Collections
 
                 val mutable State : 'State
 
-                new (initialState) = {
-                    State = initialState
+                new (initState) = {
+                    State = initState
                 }
 
             [<AbstractClass>]
@@ -73,8 +73,8 @@ namespace Microsoft.FSharp.Collections
 
                 val private Next : Consumer
 
-                new (next:Consumer, initialState) = {
-                    inherit ConsumerWithState<'T,'U,'State> (initialState)
+                new (next:Consumer, initState) = {
+                    inherit ConsumerWithState<'T,'U,'State> (initState)
                     Next = next
                 }
 
@@ -106,12 +106,23 @@ namespace Microsoft.FSharp.Collections
                 inherit ConsumerChainedWithStateAndCleanup<'T,'U,NoValue>(next, Unchecked.defaultof<NoValue>)
 
             [<AbstractClass>]
-            type Folder<'T,'U>(initialState) =
-                inherit ConsumerWithState<'T,'T,'U>(initialState)
+            type Folder<'T,'Result,'State> =
+                inherit ConsumerWithState<'T,'T,'State>
+
+                val mutable Result : 'Result
+
+                new (initalResult,initState) = {
+                    inherit ConsumerWithState<'T,'T,'State>(initState)
+                    Result = initalResult
+                }
 
             [<AbstractClass>]
-            type FolderWithOnComplete<'T, 'U>(initialState) =
-                inherit Folder<'T,'U>(initialState)
+            type Folder<'T,'Result>(initResult) =
+                inherit Folder<'T,'Result,NoValue>(initResult,Unchecked.defaultof<NoValue>)
+
+            [<AbstractClass>]
+            type FolderWithOnComplete<'T,'Result,'State>(initResult,initState) =
+                inherit Folder<'T,'Result,'State>(initResult,initState)
 
                 abstract OnComplete : PipeIdx -> unit
 
@@ -131,7 +142,7 @@ namespace Microsoft.FSharp.Collections
             type ISeq<'T> =
                 inherit IEnumerable<'T>
                 abstract member Compose<'U> : (SeqFactory<'T,'U>) -> ISeq<'U>
-                abstract member ForEach<'consumer when 'consumer :> Consumer<'T,'T>> : f:((unit->unit)->'consumer) -> 'consumer
+                abstract member ForEach<'Result,'State> : f:((unit->unit)->Folder<'T,'Result,'State>) -> 'Result
 
         open Core
 
@@ -249,7 +260,7 @@ namespace Microsoft.FSharp.Collections
 
                     idx <- idx + 1
 
-            let execute (f:(unit->unit)->#Consumer<'U,'U>) (current:SeqFactory<'T,'U>) executeOn =
+            let execute (f:(unit->unit)->Folder<'U,'Result,'State>) (current:SeqFactory<'T,'U>) executeOn =
                 let pipeline = OutOfBand()
                 let result = f (fun () -> (pipeline:>IOutOfBand).StopFurtherProcessing (current.PipeIdx+1))
                 let consumer = current.Build pipeline result
@@ -257,7 +268,7 @@ namespace Microsoft.FSharp.Collections
                     executeOn pipeline consumer
                     let mutable stopTailCall = ()
                     consumer.ChainComplete (&stopTailCall, pipeline.HaltedIdx)
-                    result
+                    result.Result
                 finally
                     let mutable stopTailCall = ()
                     consumer.ChainDispose (&stopTailCall)
@@ -360,7 +371,7 @@ namespace Microsoft.FSharp.Collections
                     member __.Compose (next:SeqFactory<'U,'V>) : ISeq<'V> =
                         Upcast.seq (new Enumerable<'T,'V>(enumerable, ComposedFactory.Combine current next))
 
-                    member this.ForEach (f:(unit->unit)->#Consumer<'U,'U>) =
+                    member this.ForEach<'Result,'State> (f:((unit->unit)->Folder<'U,'Result,'State>)) =
                         ForEach.execute f current (ForEach.enumerable enumerable)
 
             and ConcatEnumerator<'T, 'Collection when 'Collection :> seq<'T>> (sources:seq<'Collection>) =
@@ -415,7 +426,7 @@ namespace Microsoft.FSharp.Collections
                     member this.Compose (next:SeqFactory<'T,'U>) : ISeq<'U> =
                         Upcast.seq (Enumerable<'T,'V>(this, next))
 
-                    member this.ForEach (f:(unit->unit)->#Consumer<'T,'T>) =
+                    member this.ForEach<'Result,'State> (f:((unit->unit)->Folder<'T,'Result,'State>)) =
                         ForEach.execute f IdentityFactory.Instance (ForEach.enumerable this)
 
             and ConcatEnumerable<'T, 'Collection when 'Collection :> seq<'T>> (sources:seq<'Collection>) =
@@ -429,7 +440,7 @@ namespace Microsoft.FSharp.Collections
                     member this.Compose (next:SeqFactory<'T,'U>) : ISeq<'U> =
                         Upcast.seq (Enumerable<'T,'V>(this, next))
 
-                    member this.ForEach (f:(unit->unit)->#Consumer<'T,'T>) =
+                    member this.ForEach<'Result,'State> (f:((unit->unit)->Folder<'T,'Result,'State>)) =
                         ForEach.execute f IdentityFactory.Instance (ForEach.enumerable this)
 
             let create enumerable current =
@@ -452,7 +463,7 @@ namespace Microsoft.FSharp.Collections
                     member this.Compose (next:SeqFactory<'T,'U>) : ISeq<'U> =
                         Upcast.seq (Enumerable.Enumerable<'T,'V>(this, next))
 
-                    member this.ForEach (f:(unit->unit)->#Consumer<'T,'T>) =
+                    member this.ForEach<'Result,'State> (f:((unit->unit)->Folder<'T,'Result,'State>)) =
                         ForEach.execute f IdentityFactory.Instance (ForEach.enumerable this)
 
 
@@ -502,7 +513,7 @@ namespace Microsoft.FSharp.Collections
                     member __.Compose (next:SeqFactory<'U,'V>) : ISeq<'V> =
                         Upcast.seq (new Enumerable<'T,'V>(delayedArray, ComposedFactory.Combine current next))
 
-                    member this.ForEach (f:(unit->unit)->#Consumer<'U,'U>) =
+                    member this.ForEach<'Result,'State> (f:((unit->unit)->Folder<'U,'Result,'State>)) =
                         ForEach.execute f current (ForEach.array (delayedArray ()))
 
             let createDelayed (delayedArray:unit->array<'T>) (current:SeqFactory<'T,'U>) =
@@ -554,7 +565,7 @@ namespace Microsoft.FSharp.Collections
                     member __.Compose (next:SeqFactory<'U,'V>) : ISeq<'V> =
                         Upcast.seq (new Enumerable<'T,'V>(alist, ComposedFactory.Combine current next))
 
-                    member this.ForEach (f:(unit->unit)->#Consumer<'U,'U>) =
+                    member this.ForEach<'Result,'State> (f:((unit->unit)->Folder<'U,'Result,'State>)) =
                         ForEach.execute f current (ForEach.list alist)
 
             let create alist current =
@@ -593,7 +604,7 @@ namespace Microsoft.FSharp.Collections
                     member this.Compose (next:SeqFactory<'U,'V>) : ISeq<'V> =
                         Upcast.seq (new Enumerable<'T,'V,'GeneratorState>(generator, state, ComposedFactory.Combine current next))
 
-                    member this.ForEach (f:(unit->unit)->#Consumer<'U,'U>) =
+                    member this.ForEach<'Result,'State> (f:((unit->unit)->Folder<'U,'Result,'State>)) =
                         ForEach.execute f current (ForEach.unfold generator state)
 
         module Init =
@@ -668,7 +679,7 @@ namespace Microsoft.FSharp.Collections
                     member this.Compose (next:SeqFactory<'U,'V>) : ISeq<'V> =
                         Upcast.seq (new Enumerable<'T,'V>(count, f, ComposedFactory.Combine current next))
 
-                    member this.ForEach (createResult:(unit->unit)->#Consumer<'U,'U>) =
+                    member this.ForEach<'Result,'State> (createResult:((unit->unit)->Folder<'U,'Result,'State>)) =
                         let terminatingIdx = getTerminatingIdx count
                         ForEach.execute createResult current (ForEach.init f terminatingIdx)
 
@@ -736,9 +747,8 @@ namespace Microsoft.FSharp.Collections
                     member this.Compose (next:SeqFactory<'T,'U>) : ISeq<'U> =
                         Upcast.seq (Enumerable<'T,'V>(count, f, next))
 
-                    member this.ForEach (f:(unit->unit)->#Consumer<'T,'T>) =
+                    member this.ForEach<'Result,'State> (f:((unit->unit)->Folder<'T,'Result,'State>)) =
                         ForEach.execute f IdentityFactory.Instance (ForEach.enumerable (Upcast.enumerable this))
-
 
         [<CompiledName "ToComposer">]
         let toComposer (source:seq<'T>) : ISeq<'T> =
@@ -748,7 +758,6 @@ namespace Microsoft.FSharp.Collections
             | :? list<'T> as a -> Upcast.seq (List.Enumerable(a, IdentityFactory.Instance))
             | null -> nullArg "source"
             | _ -> Upcast.seq (Enumerable.Enumerable<'T,'T>(source, IdentityFactory.Instance))
-
 
         let inline foreach f (source:ISeq<_>) = source.ForEach f
         let inline compose (factory:#SeqFactory<_,_>) (source:ISeq<'T>) = source.Compose factory
@@ -760,17 +769,16 @@ namespace Microsoft.FSharp.Collections
             and  ^T:(static member DivideByInt : ^T * int -> ^T) =
             source
             |> foreach (fun _ ->
-                { new FolderWithOnComplete< ^T, Values< ^T, int>> (Values<_,_>(LanguagePrimitives.GenericZero, 0)) with
+                upcast { new FolderWithOnComplete< ^T, ^T, int> (LanguagePrimitives.GenericZero, 0) with
                     override this.ProcessNext value =
-                        this.State._1 <- Checked.(+) this.State._1 value
-                        this.State._2 <- this.State._2 + 1
+                        this.Result <- Checked.(+) this.Result value
+                        this.State <- this.State + 1
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
                     override this.OnComplete _ =
-                        if this.State._2 = 0 then
-                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString })
-            |> fun total -> LanguagePrimitives.DivideByInt< ^T> total.State._1 total.State._2
-
+                        if this.State = 0 then
+                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                        this.Result <- LanguagePrimitives.DivideByInt< ^T> this.Result this.State })
 
         [<CompiledName "AverageBy">]
         let inline averageBy (f : 'T -> ^U) (source: ISeq< 'T >) : ^U
@@ -779,83 +787,71 @@ namespace Microsoft.FSharp.Collections
             and  ^U:(static member DivideByInt : ^U * int -> ^U) =
             source
             |> foreach (fun _ ->
-                { new FolderWithOnComplete<'T,Values<'U, int>>(Values<_,_>(LanguagePrimitives.GenericZero, 0)) with
+                upcast { new FolderWithOnComplete<'T,'U, int>(LanguagePrimitives.GenericZero, 0) with
                     override this.ProcessNext value =
-                        this.State._1 <- Checked.(+) this.State._1 (f value)
-                        this.State._2 <- this.State._2 + 1
+                        this.Result <- Checked.(+) this.Result (f value)
+                        this.State <- this.State + 1
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
                     override this.OnComplete _ =
-                        if this.State._2 = 0 then
-                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString })
-            |> fun total -> LanguagePrimitives.DivideByInt< ^U> total.State._1 total.State._2
-
+                        if this.State = 0 then
+                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                        this.Result <- LanguagePrimitives.DivideByInt< ^U> this.Result this.State })
 
         [<CompiledName "Empty">]
         let empty<'T> = EmptyEnumerable.Enumerable<'T>.Instance
-
 
         [<CompiledName "ExactlyOne">]
         let inline exactlyOne errorString  (source : ISeq<'T>) : 'T =
             source
             |> foreach (fun halt ->
-                { new FolderWithOnComplete<'T, Values<bool,'T, bool>>(Values<bool,'T, bool>(true, Unchecked.defaultof<'T>, false)) with
+                upcast { new FolderWithOnComplete<'T,'T,Values<bool, bool>>(Unchecked.defaultof<'T>, Values<bool,bool>(true, false)) with
                     override this.ProcessNext value =
                         if this.State._1 then
                             this.State._1 <- false
-                            this.State._2 <- value
+                            this.Result <- value
                         else
-                            this.State._3 <- true
+                            this.State._2 <- true
                             halt ()
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
                     override this.OnComplete _ =
                         if this.State._1 then
                             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-                        elif this.State._3 then
+                        elif this.State._2 then
                             invalidArg "source" errorString })
-            |> fun one -> one.State._2
-
 
         [<CompiledName "Fold">]
         let inline fold<'T,'State> (f:'State->'T->'State) (seed:'State) (source:ISeq<'T>) : 'State =
             source
             |> foreach (fun _ ->
-                { new Folder<'T,'State>(seed) with
+                upcast { new Folder<'T,'State>(seed) with
                     override this.ProcessNext value =
-                        this.State <- f this.State value
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
-                })
-            |> fun folded -> folded.State
-
+                        this.Result <- f this.Result value
+                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
 
         [<CompiledName "Fold2">]
         let inline fold2<'T1,'T2,'State> (folder:'State->'T1->'T2->'State) (state:'State) (source1: ISeq<'T1>) (source2: ISeq<'T2>) =
             source1
             |> foreach (fun halt ->
-                { new FolderWithOnComplete<_,Values<'State,IEnumerator<'T2>>>(Values<_,_>(state,source2.GetEnumerator())) with
+                upcast { new FolderWithOnComplete<_,'State,IEnumerator<'T2>>(state,source2.GetEnumerator()) with
                     override self.ProcessNext value =
-                        if self.State._2.MoveNext() then
-                            self.State._1 <- folder self.State._1 value self.State._2.Current
+                        if self.State.MoveNext() then
+                            self.Result <- folder self.Result value self.State.Current
                         else
                             halt()
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
                     override self.OnComplete _ =
-                        self.State._2.Dispose()
-                })
-            |> fun fold -> fold.State._1
-
+                        self.State.Dispose() })
 
         [<CompiledName "Unfold">]
         let unfold (generator:'State->option<'T * 'State>) (state:'State) : ISeq<'T> =
             Upcast.seq (new Unfold.Enumerable<'T,'T,'State>(generator, state, IdentityFactory.Instance))
 
-
         [<CompiledName "InitializeInfinite">]
         let initInfinite<'T> (f:int->'T) : ISeq<'T> =
             Upcast.seq (new Init.EnumerableDecider<'T>(Nullable (), f))
-
 
         [<CompiledName "Initialize">]
         let init<'T> (count:int) (f:int->'T) : ISeq<'T> =
@@ -863,23 +859,21 @@ namespace Microsoft.FSharp.Collections
             elif count = 0 then empty else
             Upcast.seq (new Init.EnumerableDecider<'T>(Nullable count, f))
 
-
         [<CompiledName "Iterate">]
         let iter f (source:ISeq<'T>) =
             source
             |> foreach (fun _ ->
-                { new Consumer<'T,'T> () with
+                upcast { new Folder<'T,NoValue> (Unchecked.defaultof<NoValue>) with
                     override this.ProcessNext value =
                         f value
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
             |> ignore
 
-
         [<CompiledName "Iterate2">]
         let inline iter2 (f:'T->'U->unit) (source1:ISeq<'T>) (source2:ISeq<'U>) : unit =
             source1
             |> foreach (fun halt ->
-                { new FolderWithOnComplete<'T,IEnumerator<'U>> (source2.GetEnumerator()) with
+                upcast { new FolderWithOnComplete<'T,NoValue,IEnumerator<'U>> (Unchecked.defaultof<_>,source2.GetEnumerator()) with
                     override self.ProcessNext value =
                         if self.State.MoveNext() then
                             f value self.State.Current
@@ -888,16 +882,14 @@ namespace Microsoft.FSharp.Collections
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
                     override self.OnComplete _ =
-                        self.State.Dispose()
-                })
+                        self.State.Dispose() })
             |> ignore
-
 
         [<CompiledName "IterateIndexed2">]
         let inline iteri2 (f:int->'T->'U->unit) (source1:ISeq<'T>) (source2:ISeq<'U>) : unit =
             source1
             |> foreach (fun halt ->
-                { new FolderWithOnComplete<'T,Values<int,IEnumerator<'U>>>(Values<_,_>(-1,source2.GetEnumerator())) with
+                upcast { new FolderWithOnComplete<'T,NoValue,Values<int,IEnumerator<'U>>>(Unchecked.defaultof<_>,Values<_,_>(-1,source2.GetEnumerator())) with
                     override self.ProcessNext value =
                         if self.State._2.MoveNext() then
                             f self.State._1 value self.State._2.Current
@@ -913,24 +905,21 @@ namespace Microsoft.FSharp.Collections
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
             |> ignore
 
-
         [<CompiledName "TryHead">]
         let tryHead (source:ISeq<'T>) =
             source
             |> foreach (fun halt ->
-                { new Folder<'T, Option<'T>> (None) with
+                upcast { new Folder<'T, Option<'T>> (None) with
                     override this.ProcessNext value =
-                        this.State <- Some value
+                        this.Result <- Some value
                         halt ()
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun head -> head.State
-
 
         [<CompiledName "IterateIndexed">]
         let iteri f (source:ISeq<'T>) =
             source
             |> foreach (fun _ ->
-                { new Folder<'T, int> (0) with
+                { new Folder<'T,NoValue,int> (Unchecked.defaultof<_>,0) with
                     override this.ProcessNext value =
                         f this.State value
                         this.State <- this.State + 1
@@ -945,89 +934,75 @@ namespace Microsoft.FSharp.Collections
                                     (next,lazy(HashSet<'T>(itemsToExclude,HashIdentity.Structural<'T>))) with
                         override this.ProcessNext (input:'T) : bool =
                             if this.State.Value.Add input then TailCall.avoid (next.ProcessNext input)
-                            else false
-                    }}
-
+                            else false }}
 
         [<CompiledName "Exists">]
         let exists f (source:ISeq<'T>) =
             source
             |> foreach (fun halt ->
-                { new Folder<'T, bool> (false) with
+                upcast { new Folder<'T, bool> (false) with
                     override this.ProcessNext value =
                         if f value then
-                            this.State <- true
+                            this.Result <- true
                             halt ()
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun exists -> exists.State
-
 
         [<CompiledName "Exists2">]
         let exists2 (predicate:'T->'U->bool) (source1: ISeq<'T>) (source2: ISeq<'U>) : bool =
             source1
             |> foreach (fun halt ->
-                { new FolderWithOnComplete<'T,Values<bool,IEnumerator<'U>>>(Values<_,_>(false,source2.GetEnumerator())) with
+                upcast { new FolderWithOnComplete<'T,bool,IEnumerator<'U>>(false,source2.GetEnumerator()) with
                     override self.ProcessNext value =
-                        if self.State._2.MoveNext() then
-                            if predicate value self.State._2.Current then
-                                self.State._1 <- true
+                        if self.State.MoveNext() then
+                            if predicate value self.State.Current then
+                                self.Result <- true
                                 halt()
                         else
                             halt()
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
                     override self.OnComplete _ =
-                        self.State._2.Dispose()
-
-                })
-            |> fun exists -> exists.State._1
-
+                        self.State.Dispose() })
 
         [<CompiledName "Contains">]
         let inline contains element (source:ISeq<'T>) =
             source
             |> foreach (fun halt ->
-                { new Folder<'T, bool> (false) with
+                upcast { new Folder<'T, bool> (false) with
                     override this.ProcessNext value =
                         if element = value then
-                            this.State <- true
+                            this.Result <- true
                             halt ()
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun contains -> contains.State
-
 
         [<CompiledName "ForAll">]
         let forall predicate (source:ISeq<'T>) =
             source
             |> foreach (fun halt ->
-                { new Folder<'T, bool> (true) with
+                upcast { new Folder<'T, bool> (true) with
                     override this.ProcessNext value =
                         if not (predicate value) then
-                            this.State <- false
+                            this.Result <- false
                             halt ()
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun forall -> forall.State
-
 
         [<CompiledName "ForAll2">]
         let inline forall2 predicate (source1:ISeq<'T>) (source2:ISeq<'U>) : bool =
             source1
             |> foreach (fun halt ->
-                { new FolderWithOnComplete<'T,Values<bool,IEnumerator<'U>>>(Values<_,_>(true,source2.GetEnumerator())) with
+                upcast { new FolderWithOnComplete<'T,bool,IEnumerator<'U>>(true,source2.GetEnumerator()) with
                     override self.ProcessNext value =
-                        if self.State._2.MoveNext() then
-                            if not (predicate value self.State._2.Current) then
-                                self.State._1 <- false
+                        if self.State.MoveNext() then
+                            if not (predicate value self.State.Current) then
+                                self.Result <- false
                                 halt()
                         else
                             halt()
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
                     override self.OnComplete _ =
-                        self.State._2.Dispose()
+                        self.State.Dispose()
                 })
-            |> fun all -> all.State._1
-
 
         [<CompiledName "Filter">]
         let inline filter<'T> (f:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
@@ -1038,7 +1013,6 @@ namespace Microsoft.FSharp.Collections
                             if f input then TailCall.avoid (next.ProcessNext input)
                             else false } }
 
-
         [<CompiledName "Map">]
         let inline map<'T,'U> (f:'T->'U) (source:ISeq<'T>) : ISeq<'U> =
             source |> compose { new SeqFactory<'T,'U>() with
@@ -1046,7 +1020,6 @@ namespace Microsoft.FSharp.Collections
                     upcast { new ConsumerChained<'T,'V>(next) with
                         member __.ProcessNext input =
                             TailCall.avoid (next.ProcessNext (f input)) } }
-
 
         [<CompiledName "MapIndexed">]
         let inline mapi f source =
@@ -1056,7 +1029,6 @@ namespace Microsoft.FSharp.Collections
                         override this.ProcessNext (input:'T) : bool =
                             this.State <- this.State  + 1
                             TailCall.avoid (next.ProcessNext (f this.State input)) } }
-
 
         [<CompiledName "Map2">]
         let inline map2<'First,'Second,'U> (map:'First->'Second->'U) (source1:ISeq<'First>) (source2:ISeq<'Second>) : ISeq<'U> =
@@ -1073,7 +1045,6 @@ namespace Microsoft.FSharp.Collections
                         override self.OnDispose () = ()
                         override self.OnComplete _ =
                             self.State.Dispose ()  } }
-
 
         [<CompiledName "MapIndexed2">]
         let inline mapi2<'First,'Second,'U> (map:int -> 'First->'Second->'U) (source1:ISeq<'First>) (source2:ISeq<'Second>) : ISeq<'U> =
@@ -1118,24 +1089,22 @@ namespace Microsoft.FSharp.Collections
         let inline compareWith (f:'T -> 'T -> int) (source1 :ISeq<'T>) (source2:ISeq<'T>) : int =
             source1
             |> foreach (fun halt ->
-                { new FolderWithOnComplete<'T,Values<int,IEnumerator<'T>>>(Values<_,_>(0,source2.GetEnumerator())) with
+                upcast { new FolderWithOnComplete<'T,int,IEnumerator<'T>>(0,source2.GetEnumerator()) with
                     override self.ProcessNext value =
-                        if not (self.State._2.MoveNext()) then
-                            self.State._1 <- 1
+                        if not (self.State.MoveNext()) then
+                            self.Result <- 1
                             halt ()
                         else
-                            let c = f value self.State._2.Current
+                            let c = f value self.State.Current
                             if c <> 0 then
-                                self.State._1 <- c
+                                self.Result <- c
                                 halt ()
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
                     override self.OnComplete _ =
-                        if self.State._1 = 0 && self.State._2.MoveNext() then
-                            self.State._1 <- -1
-                        self.State._2.Dispose()
-                })
-            |> fun compare -> compare.State._1
+                        if self.Result = 0 && self.State.MoveNext() then
+                            self.Result <- -1
+                        self.State.Dispose() })
 
         [<CompiledName "Choose">]
         let inline choose (f:'T->option<'U>) (source:ISeq<'T>) : ISeq<'U> =
@@ -1147,7 +1116,6 @@ namespace Microsoft.FSharp.Collections
                             | Some value -> TailCall.avoid (next.ProcessNext value)
                             | None       -> false } }
 
-
         [<CompiledName "Distinct">]
         let inline distinct (source:ISeq<'T>) : ISeq<'T> when 'T:equality =
             source |> compose { new SeqFactory<'T,'T>() with
@@ -1157,7 +1125,6 @@ namespace Microsoft.FSharp.Collections
                         override this.ProcessNext (input:'T) : bool =
                             if this.State.Add input then TailCall.avoid (next.ProcessNext input)
                             else false } }
-
 
         [<CompiledName "DistinctBy">]
         let inline distinctBy (keyf:'T->'Key) (source:ISeq<'T>) :ISeq<'T>  when 'Key:equality =
@@ -1169,94 +1136,81 @@ namespace Microsoft.FSharp.Collections
                             if this.State.Add (keyf input) then TailCall.avoid (next.ProcessNext input)
                             else false } }
 
-
         [<CompiledName "Max">]
         let inline max (source: ISeq<'T>) : 'T when 'T:comparison =
             source
             |> foreach (fun _ ->
-                { new FolderWithOnComplete<'T,Values<bool,'T>>(Values<_,_>(true, Unchecked.defaultof<'T>)) with
+                upcast { new FolderWithOnComplete<'T,'T,bool>(Unchecked.defaultof<'T>,true) with
                     override this.ProcessNext value =
-                        if this.State._1 then
-                            this.State._1 <- false
-                            this.State._2 <- value
-                        elif value > this.State._2 then
-                            this.State._2 <- value
+                        if this.State then
+                            this.State <- false
+                            this.Result <- value
+                        elif value > this.Result then
+                            this.Result <- value
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
                     override this.OnComplete _ =
-                        if this.State._1 then
-                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-                })
-            |> fun max -> max.State._2
-
+                        if this.State then
+                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString })
 
         [<CompiledName "MaxBy">]
         let inline maxBy (f :'T -> 'U) (source: ISeq<'T>) : 'T when 'U:comparison =
             source
             |> foreach (fun _ ->
-                { new FolderWithOnComplete<'T,Values<bool,'U,'T>>(Values<_,_,_>(true,Unchecked.defaultof<'U>,Unchecked.defaultof<'T>)) with
+                upcast { new FolderWithOnComplete<'T,'T,Values<bool,'U>>(Unchecked.defaultof<'T>,Values<_,_>(true,Unchecked.defaultof<'U>)) with
                     override this.ProcessNext value =
                         match this.State._1, f value with
                         | true, valueU ->
                             this.State._1 <- false
                             this.State._2 <- valueU
-                            this.State._3 <- value
+                            this.Result <- value
                         | false, valueU when valueU > this.State._2 ->
                             this.State._2 <- valueU
-                            this.State._3 <- value
+                            this.Result <- value
                         | _ -> ()
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
                     override this.OnComplete _ =
                         if this.State._1 then
-                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-                })
-            |> fun min -> min.State._3
-
+                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString })
 
         [<CompiledName "Min">]
         let inline min (source: ISeq< 'T>) : 'T when 'T:comparison =
             source
             |> foreach (fun _ ->
-                { new FolderWithOnComplete<'T,Values<bool,'T>>(Values<_,_>(true, Unchecked.defaultof<'T>)) with
+                upcast { new FolderWithOnComplete<'T,'T,bool>(Unchecked.defaultof<'T>,true) with
                     override this.ProcessNext value =
-                        if this.State._1 then
-                            this.State._1 <- false
-                            this.State._2 <- value
-                        elif value < this.State._2 then
-                            this.State._2 <- value
+                        if this.State then
+                            this.State <- false
+                            this.Result <- value
+                        elif value < this.Result then
+                            this.Result <- value
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
                     override this.OnComplete _ =
-                        if this.State._1 then
-                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-                })
-            |> fun min -> min.State._2
-
+                        if this.State then
+                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString })
 
         [<CompiledName "MinBy">]
         let inline minBy (f : 'T -> 'U) (source: ISeq<'T>) : 'T =
             source
             |> foreach (fun _ ->
-                { new FolderWithOnComplete< 'T,Values<bool,'U,'T>>(Values<_,_,_>(true,Unchecked.defaultof< 'U>,Unchecked.defaultof< 'T>)) with
+                upcast { new FolderWithOnComplete<'T,'T,Values<bool,'U>>(Unchecked.defaultof<'T>,Values<_,_>(true,Unchecked.defaultof< 'U>)) with
                     override this.ProcessNext value =
                         match this.State._1, f value with
                         | true, valueU ->
                             this.State._1 <- false
                             this.State._2 <- valueU
-                            this.State._3 <- value
+                            this.Result <- value
                         | false, valueU when valueU < this.State._2 ->
                             this.State._2 <- valueU
-                            this.State._3 <- value
+                            this.Result <- value
                         | _ -> ()
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
                     override this.OnComplete _ =
                         if this.State._1 then
-                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-                })
-            |> fun min -> min.State._3
-
+                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString })
 
         [<CompiledName "Pairwise">]
         let inline pairwise (source:ISeq<'T>) : ISeq<'T * 'T> =
@@ -1277,32 +1231,27 @@ namespace Microsoft.FSharp.Collections
                                 else
                                     let currentPair = self.State._2, input
                                     self.State._2 (*lastValue*)<- input
-                                    TailCall.avoid (next.ProcessNext currentPair)
-                    }}
-
+                                    TailCall.avoid (next.ProcessNext currentPair) }}
 
         [<CompiledName "Reduce">]
         let inline reduce (f:'T->'T->'T) (source : ISeq<'T>) : 'T =
             source
             |> foreach (fun _ ->
-                { new FolderWithOnComplete<'T, Values<bool,'T>>(Values<_,_>(true, Unchecked.defaultof<'T>)) with
+                upcast { new FolderWithOnComplete<'T,'T,bool>(Unchecked.defaultof<'T>,true) with
                     override this.ProcessNext value =
-                        if this.State._1 then
-                            this.State._1 <- false
-                            this.State._2 <- value
+                        if this.State then
+                            this.State <- false
+                            this.Result <- value
                         else
-                            this.State._2 <- f this.State._2 value
+                            this.Result <- f this.Result value
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *)
 
                     override this.OnComplete _ =
-                        if this.State._1 then
-                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-                })
-            |> fun reduced -> reduced.State._2
-
+                        if this.State then
+                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString })
 
         [<CompiledName "Scan">]
-        let inline scan (folder:'State->'T->'State) (initialState: 'State) (source:ISeq<'T>) :ISeq<'State> =
+        let inline scan (folder:'State->'T->'State) (initialState:'State) (source:ISeq<'T>) :ISeq<'State> =
             source |> compose { new SeqFactory<'T,'State>() with
                 member __.Create _ _ next =
                     upcast { new ConsumerChainedWithState<'T,'V,'State>(next, initialState) with
@@ -1342,7 +1291,6 @@ namespace Microsoft.FSharp.Collections
                                     false
                     }}
 
-
         [<CompiledName "SkipWhile">]
         let inline skipWhile (predicate:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
             source |> compose { new SeqFactory<'T,'T>() with
@@ -1358,19 +1306,16 @@ namespace Microsoft.FSharp.Collections
                             else
                                 TailCall.avoid (next.ProcessNext input) }}
 
-
         [<CompiledName "Sum">]
         let inline sum (source:ISeq< ^T>) : ^T
             when ^T:(static member Zero : ^T)
             and  ^T:(static member (+) :  ^T *  ^T ->  ^T) =
             source
             |> foreach (fun _ ->
-                { new Folder< ^T,^T> (LanguagePrimitives.GenericZero) with
+                upcast { new Folder< ^T,^T> (LanguagePrimitives.GenericZero) with
                     override this.ProcessNext value =
-                        this.State <- Checked.(+) this.State value
+                        this.Result <- Checked.(+) this.Result value
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun sum -> sum.State
-
 
         [<CompiledName "SumBy">]
         let inline sumBy (f : 'T -> ^U) (source: ISeq<'T>) : ^U
@@ -1378,12 +1323,10 @@ namespace Microsoft.FSharp.Collections
             and  ^U:(static member (+) :  ^U *  ^U ->  ^U) =
             source
             |> foreach (fun _ ->
-                { new Folder<'T,'U> (LanguagePrimitives.GenericZero< ^U>) with
+                upcast { new Folder<'T,'U> (LanguagePrimitives.GenericZero< ^U>) with
                     override this.ProcessNext value =
-                        this.State <- Checked.(+) this.State (f value)
+                        this.Result <- Checked.(+) this.Result (f value)
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun sum -> sum.State
-
 
         [<CompiledName "Take">]
         let inline take (errorString:string) (takeCount:int) (source:ISeq<'T>) : ISeq<'T> =
@@ -1409,7 +1352,6 @@ namespace Microsoft.FSharp.Collections
                                         [|errorString; x; (if x=1 then "element" else "elements")|]
                     }}
 
-
         [<CompiledName "TakeWhile">]
         let inline takeWhile (predicate:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
             source |> compose { new SeqFactory<'T,'T>() with
@@ -1422,7 +1364,6 @@ namespace Microsoft.FSharp.Collections
                                 outOfBand.StopFurtherProcessing pipeIdx
                                 false
                     }}
-
 
         [<CompiledName "Tail">]
         let inline tail errorString (source:ISeq<'T>) :ISeq<'T> =
@@ -1439,9 +1380,7 @@ namespace Microsoft.FSharp.Collections
                         override self.OnDispose () = ()
                         override self.OnComplete _ =
                             if (*first*) self.State then
-                                invalidArg "source" errorString
-                    }}
-
+                                invalidArg "source" errorString }}
 
         [<CompiledName "Truncate">]
         let inline truncate (truncateCount:int) (source:ISeq<'T>) : ISeq<'T> =
@@ -1457,79 +1396,67 @@ namespace Microsoft.FSharp.Collections
                                     TailCall.avoid (next.ProcessNext input)
                                 else
                                     outOfBand.StopFurtherProcessing pipeIdx
-                                    false
-                    }}
-
+                                    false }}
 
         [<CompiledName "Indexed">]
-        let inline indexed source =
+        let indexed source =
             mapi (fun i x -> i,x) source
-
 
         [<CompiledName "TryItem">]
         let tryItem (errorString:string) index (source:ISeq<'T>) =
             if index < 0 then None else
             source |> skip errorString index |> tryHead
 
-
         [<CompiledName "TryPick">]
         let tryPick f (source:ISeq<'T>)  =
             source
             |> foreach (fun halt ->
-                { new Folder<'T, Option<'U>> (None) with
+                upcast { new Folder<'T, Option<'U>> (None) with
                     override this.ProcessNext value =
                         match f value with
                         | (Some _) as some ->
-                            this.State <- some
+                            this.Result <- some
                             halt ()
                         | None -> ()
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun pick -> pick.State
-
 
         [<CompiledName "TryFind">]
         let tryFind f (source:ISeq<'T>)  =
             source
             |> foreach (fun halt ->
-                { new Folder<'T, Option<'T>> (None) with
+                upcast { new Folder<'T, Option<'T>> (None) with
                     override this.ProcessNext value =
                         if f value then
-                            this.State <- Some value
+                            this.Result <- Some value
                             halt ()
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun find -> find.State
-
 
         [<CompiledName "TryFindIndex">]
         let inline tryFindIndex (predicate:'T->bool) (source:ISeq<'T>) : int option =
             source
             |> foreach (fun halt ->
-                { new Folder<'T, Values<Option<int>, int>>(Values<_,_>(None, 0)) with
+                { new Folder<'T, Option<int>, int>(None, 0) with
                     override this.ProcessNext value =
                         if predicate value then
-                            this.State._1 <- Some(this.State._2)
+                            this.Result <- Some this.State
                             halt ()
                         else
-                            this.State._2 <- this.State._2 + 1
+                            this.State <- this.State + 1
                         Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun tried -> tried.State._1
 
         [<CompiledName "TryLast">]
         let inline tryLast (source :ISeq<'T>) : 'T option =
             source
             |> foreach (fun _ ->
-                { new Folder<'T, Values<bool,'T>>(Values<bool,'T>(true, Unchecked.defaultof<'T>)) with
+                upcast { new FolderWithOnComplete<'T,option<'T>,Values<bool,'T>>(None,Values<bool,'T>(true, Unchecked.defaultof<'T>)) with
                     override this.ProcessNext value =
                         if this.State._1 then
                             this.State._1 <- false
                         this.State._2 <- value
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun tried ->
-                if tried.State._1 then
-                    None
-                else
-                    Some tried.State._2
-
+                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
+                    override this.OnComplete _ =
+                        if not this.State._1 then
+                            this.Result <- Some this.State._2 })
 
         [<CompiledName "Windowed">]
         let inline windowed (windowSize:int) (source:ISeq<'T>) : ISeq<'T[]> =

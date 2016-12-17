@@ -96,17 +96,23 @@ namespace Microsoft.FSharp.Collections
         /// is as a base class for an object expression that will be used from within
         /// the ForEach function.</summary>
         [<AbstractClass>]
-        type Folder<'T,'State> =
+        type Folder<'T,'Result,'State> =
             inherit ConsumerWithState<'T,'T,'State>
-            new : 'State -> Folder<'T,'State>
+            new : 'Result*'State -> Folder<'T,'Result,'State>
+            val mutable Result : 'Result
 
         [<AbstractClass>]
-        type FolderWithOnComplete<'T, 'State> =
-            inherit Folder<'T,'State>
+        type Folder<'T,'Result> =
+            inherit Folder<'T,'Result,NoValue>
+            new : 'Result -> Folder<'T,'Result>
+
+        [<AbstractClass>]
+        type FolderWithOnComplete<'T,'Result,'State> =
+            inherit Folder<'T,'Result,'State>
 
             abstract OnComplete : PipeIdx -> unit
 
-            new : 'State -> FolderWithOnComplete<'T,'State>
+            new : 'Result*'State -> FolderWithOnComplete<'T,'Result,'State>
 
         [<AbstractClass>]
         type SeqFactory<'T,'U> =
@@ -118,7 +124,7 @@ namespace Microsoft.FSharp.Collections
         type ISeq<'T> =
             inherit System.Collections.Generic.IEnumerable<'T>
             abstract member Compose : SeqFactory<'T,'U> -> ISeq<'U>
-            abstract member ForEach : f:((unit -> unit) -> 'a) -> 'a when 'a :> Consumer<'T,'T>
+            abstract member ForEach<'Result,'State> : f:((unit->unit)->Folder<'T,'Result,'State>) -> 'Result
 
     open Core
 
@@ -167,37 +173,6 @@ namespace Microsoft.FSharp.Collections
         new : unit ->  OutOfBand
         member HaltedIdx : int
         end
-    module ForEach = begin
-        val enumerable :
-            enumerable:IEnumerable<'T> ->
-            outOfBand: OutOfBand ->
-            consumer: Consumer<'T,'U> -> unit
-        val array :
-            array:'T array ->
-            outOfBand: OutOfBand ->
-            consumer: Consumer<'T,'U> -> unit
-        val list :
-            alist:'T list ->
-            outOfBand: OutOfBand ->
-            consumer: Consumer<'T,'U> -> unit
-        val unfold :
-            generator:('S -> ('T * 'S) option) ->
-            state:'S ->
-            outOfBand: OutOfBand ->
-                consumer: Consumer<'T,'U> -> unit
-        val makeIsSkipping :
-            consumer: Consumer<'T,'U> -> (unit -> bool)
-        val init :
-            f:(int -> 'T) ->
-            terminatingIdx:int ->
-            outOfBand: OutOfBand ->
-                consumer: Consumer<'T,'U> -> unit
-        val execute :
-            f:((unit -> unit) -> 'a) ->
-            current: SeqFactory<'T,'U> ->
-            executeOn:( OutOfBand ->  Consumer<'T,'U> ->
-                            unit) -> 'a when 'a :>  Consumer<'U,'U>
-    end
     module Enumerable = begin
         type Empty<'T> =
             class
@@ -396,7 +371,7 @@ namespace Microsoft.FSharp.Collections
     [<CompiledName "ToComposer">]
     val toComposer : source:seq<'T> ->  ISeq<'T>
 
-    val inline foreach : f:((unit -> unit) -> 'a) -> source: ISeq<'b> -> 'a when 'a :>  Consumer<'b,'b>
+    val inline foreach : f:((unit -> unit) -> Folder<'T,'Result,'State>) -> source: ISeq<'T> -> 'Result
 
     [<CompiledName "Average">]
     val inline average : source: ISeq< ^T> -> ^T
@@ -544,7 +519,7 @@ namespace Microsoft.FSharp.Collections
     val inline truncate : truncateCount:int -> source:ISeq<'T> -> ISeq<'T>
 
     [<CompiledName "Indexed">]
-    val inline indexed : source: ISeq<'a> -> ISeq<int * 'a>
+    val indexed : source: ISeq<'a> -> ISeq<int * 'a>
 
     [<CompiledName "TryItem">]
     val tryItem : errorString:string -> index:int -> source: ISeq<'T> -> 'T option
