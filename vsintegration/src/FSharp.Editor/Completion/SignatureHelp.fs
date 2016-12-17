@@ -215,9 +215,9 @@ type internal FSharpSignatureHelpProvider
             // Prepare the text to display
             let descriptionParts = 
                 let str = method.TypeText
-                if str.StartsWith(": ", StringComparison.OrdinalIgnoreCase) then
-                    [| TaggedText(TextTags.Punctuation, ": "); 
-                       TaggedText(TextTags.Class, str.[2..]) |]
+                if str.StartsWith(":", StringComparison.OrdinalIgnoreCase) then
+                    [| TaggedText(TextTags.Punctuation, ":"); 
+                       TaggedText(TextTags.Class, str.[1..]) |]
                 else
                     [| TaggedText(TextTags.Text, str) |]
             let prefixParts = 
@@ -264,7 +264,7 @@ type internal FSharpSignatureHelpProvider
                                     let parameters = parameters 
                                                      |> Array.map (fun (paramName, isOptional, paramDoc, displayParts) -> 
                                                         SignatureHelpParameter(paramName,isOptional,documentationFactory=(fun _ -> paramDoc :> seq<_>),displayParts=displayParts))
-                                    AbstractSignatureHelpProvider.SymbolKeySignatureHelpItem(null, isVariadic=hasParamArrayArg ,documentationFactory=(fun _ -> doc :> seq<_>),prefixParts=prefixParts,separatorParts=separatorParts,suffixParts=suffixParts,parameters=parameters,descriptionParts=descriptionParts) :> SignatureHelpItem)
+                                    SignatureHelpItem(isVariadic=hasParamArrayArg ,documentationFactory=(fun _ -> doc :> seq<_>),prefixParts=prefixParts,separatorParts=separatorParts,suffixParts=suffixParts,parameters=parameters,descriptionParts=descriptionParts))
 
                         return SignatureHelpItems(items,applicableSpan,argumentIndex,argumentCount,Option.toObj argumentName)
                 | None -> 
