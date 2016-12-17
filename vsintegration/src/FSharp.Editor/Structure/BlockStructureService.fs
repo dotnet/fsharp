@@ -55,12 +55,8 @@ type internal FSharpBlockStructureService(checker: FSharpChecker, projectInfoMan
         | Scope.Namespace
         | Scope.Module -> BlockTypes.Namespace 
         | Scope.Record
-        | Scope.Tuple
-        | Scope.Attribute
         | Scope.Interface
         | Scope.TypeExtension
-        | Scope.UnionCase
-        | Scope.EnumCase
         | Scope.SimpleType
         | Scope.RecordDefn
         | Scope.UnionDefn
@@ -68,27 +64,19 @@ type internal FSharpBlockStructureService(checker: FSharpChecker, projectInfoMan
         | Scope.Member -> BlockTypes.Member
         | Scope.LetOrUse
         | Scope.Match
-        | Scope.IfThenElse
-        | Scope.ThenInIfThenElse
-        | Scope.ElseInIfThenElse
-        | Scope.MatchLambda -> BlockTypes.Conditional
+        | Scope.MatchLambda
+        | Scope.IfThenElse-> BlockTypes.Conditional
         | Scope.CompExpr
-        | Scope.TryInTryWith
-        | Scope.WithInTryWith
         | Scope.TryFinally
-        | Scope.TryInTryFinally
-        | Scope.FinallyInTryFinally
         | Scope.ObjExpr
         | Scope.ArrayOrList
         | Scope.CompExprInternal
         | Scope.Quote
         | Scope.SpecialFunc
-        | Scope.MatchClause
         | Scope.Lambda
         | Scope.LetOrUseBang
         | Scope.YieldOrReturn
         | Scope.YieldOrReturnBang
-        | Scope.RecordField
         | Scope.TryWith -> BlockTypes.Expression
         | Scope.Do -> BlockTypes.Statement
         | Scope.While
@@ -96,7 +84,6 @@ type internal FSharpBlockStructureService(checker: FSharpChecker, projectInfoMan
         | Scope.HashDirective -> BlockTypes.PreprocessorRegion
         | Scope.Comment
         | Scope.XmlDocComment -> BlockTypes.Comment
-        | _ -> BlockTypes.Nonstructural
         
     override __.Language = FSharpCommonConstants.FSharpLanguageName
  
@@ -108,11 +95,12 @@ type internal FSharpBlockStructureService(checker: FSharpChecker, projectInfoMan
                 let! fileParseResults = checker.ParseFileInProject(document.FilePath, sourceText.ToString(), options)
                 match fileParseResults.ParseTree with
                 | Some parsedInput ->
-                    let ranges = Structure.getOutliningRanges (sourceText.Lines |> Seq.map (fun x -> x.ToString()) |> Seq.toArray) parsedInput
                     let blockSpans =
-                        ranges
-                        |> Seq.map (fun range -> 
-                            BlockSpan(scopeToBlockType range.Scope, true, CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range.Range)))
+                        Structure.getOutliningRanges (sourceText.Lines |> Seq.map (fun x -> x.ToString()) |> Seq.toArray) parsedInput
+                        |> Seq.distinctBy (fun x -> x.Range.StartLine)
+                        |> Seq.choose (fun range -> 
+                            CommonRoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range.Range)
+                            |> Option.map (fun span -> BlockSpan(scopeToBlockType range.Scope, true, span)))
                     return BlockStructure(blockSpans.ToImmutableArray())
                 | None -> return BlockStructure(ImmutableArray<_>.Empty)
             | None -> return BlockStructure(ImmutableArray<_>.Empty)
