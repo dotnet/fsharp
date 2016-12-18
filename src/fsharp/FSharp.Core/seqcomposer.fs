@@ -207,70 +207,90 @@ namespace Microsoft.FSharp.Collections
                 true
 
         module ForEach =
-            let enumerable (enumerable:IEnumerable<'T>) (outOfBand:Folder<'U,'Result,'State>) (consumer:Consumer<'T,'U>) =
-                use enumerator = enumerable.GetEnumerator ()
-                while (outOfBand.HaltedIdx = 0) && (enumerator.MoveNext ()) do
-                    consumer.ProcessNext enumerator.Current |> ignore
+            type IIterate<'T> =
+                abstract Iterate<'U,'Result,'State> : outOfBand:Folder<'U,'Result,'State> -> consumer:Consumer<'T,'U> -> unit
 
-            let array (array:array<'T>) (outOfBand:Folder<'U,'Result,'State>) (consumer:Consumer<'T,'U>) =
-                let mutable idx = 0
-                while (outOfBand.HaltedIdx = 0) && (idx < array.Length) do
-                    consumer.ProcessNext array.[idx] |> ignore
-                    idx <- idx + 1
+            [<Struct;NoComparison;NoEquality>]
+            type enumerable<'T> (enumerable:IEnumerable<'T>) =
+                interface IIterate<'T> with
+                    member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Consumer<'T,'U>) =
+                        use enumerator = enumerable.GetEnumerator ()
+                        let rec iterate () =
+                            if enumerator.MoveNext () then  
+                                consumer.ProcessNext enumerator.Current |> ignore
+                                if outOfBand.HaltedIdx = 0 then
+                                    iterate ()
+                        iterate ()
 
-            let list (alist:list<'T>) (outOfBand:Folder<'U,'Result,'State>) (consumer:Consumer<'T,'U>) =
-                let rec iterate lst =
-                    match outOfBand.HaltedIdx, lst with
-                    | 0, hd :: tl ->
-                        consumer.ProcessNext hd |> ignore
-                        iterate tl
-                    | _ -> ()
-                iterate alist
+            [<Struct;NoComparison;NoEquality>]
+            type Array<'T> (array:array<'T>) =
+                interface IIterate<'T> with
+                    member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Consumer<'T,'U>) =
+                        let mutable idx = 0
+                        while (outOfBand.HaltedIdx = 0) && (idx < array.Length) do
+                            consumer.ProcessNext array.[idx] |> ignore
+                            idx <- idx + 1
 
-            let unfold (generator:'S->option<'T*'S>) state (outOfBand:Folder<'U,'Result,'State>) (consumer:Consumer<'T,'U>) =
-                let rec iterate current =
-                    match outOfBand.HaltedIdx, generator current with
-                    | 0, Some (item, next) ->
-                        consumer.ProcessNext item |> ignore
-                        iterate next
-                    | _ -> ()
+            [<Struct;NoComparison;NoEquality>]
+            type List<'T> (alist:list<'T>) =
+                interface IIterate<'T> with
+                    member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Consumer<'T,'U>) =
+                        let rec iterate lst =
+                            match outOfBand.HaltedIdx, lst with
+                            | 0, hd :: tl ->
+                                consumer.ProcessNext hd |> ignore
+                                iterate tl
+                            | _ -> ()
+                        iterate alist
 
-                iterate state
+            type unfold<'S,'T> (generator:'S->option<'T*'S>, state:'S) =
+                interface IIterate<'T> with
+                    member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Consumer<'T,'U>) =
+                        let rec iterate current =
+                            match outOfBand.HaltedIdx, generator current with
+                            | 0, Some (item, next) ->
+                                consumer.ProcessNext item |> ignore
+                                iterate next
+                            | _ -> ()
+
+                        iterate state
 
             let makeIsSkipping (consumer:Consumer<'T,'U>) =
                 match box consumer with
                 | :? ISkipping as skip -> skip.Skipping
                 | _ -> fun () -> false
 
-            let init f (terminatingIdx:int) (outOfBand:Folder<'U,'Result,'State>) (consumer:Consumer<'T,'U>) =
-                let mutable idx = -1
-                let isSkipping = makeIsSkipping consumer
-                let mutable maybeSkipping = true
-                while (outOfBand.HaltedIdx = 0) && (idx < terminatingIdx) do
-                    if maybeSkipping then
-                        maybeSkipping <- isSkipping ()
+            type init<'T> (f, terminatingIdx:int) =
+                interface IIterate<'T> with
+                    member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Consumer<'T,'U>) =
+                        let mutable idx = -1
+                        let isSkipping = makeIsSkipping consumer
+                        let mutable maybeSkipping = true
+                        while (outOfBand.HaltedIdx = 0) && (idx < terminatingIdx) do
+                            if maybeSkipping then
+                                maybeSkipping <- isSkipping ()
 
-                    if not maybeSkipping then
-                        consumer.ProcessNext (f (idx+1)) |> ignore
+                            if not maybeSkipping then
+                                consumer.ProcessNext (f (idx+1)) |> ignore
 
-                    idx <- idx + 1
+                            idx <- idx + 1
 
-            let execute (f:PipeIdx->Folder<'U,'Result,'State>) (current:SeqFactory<'T,'U>) executeOn =
+            let execute (f:PipeIdx->Folder<'U,'Result,'State>) (current:SeqFactory<'T,'U>) (executeOn:#IIterate<'T>) =
                 let mutable stopTailCall = ()
                 let result = f (current.PipeIdx+1)
                 let consumer = current.Build (Upcast.outOfBand result) result
                 try
-                    executeOn result consumer
+                    executeOn.Iterate result consumer
                     consumer.ChainComplete (&stopTailCall, result.HaltedIdx)
                     result.Result
                 finally
                     consumer.ChainDispose (&stopTailCall)
 
-            let executeThin (f:PipeIdx->Folder<'U,'Result,'State>) executeOn =
+            let executeThin (f:PipeIdx->Folder<'T,'Result,'State>) (executeOn:#IIterate<'T>) =
                 let mutable stopTailCall = ()
                 let result = f 1
                 try
-                    executeOn result result
+                    executeOn.Iterate result result
                     result.ChainComplete (&stopTailCall, result.HaltedIdx)
                     result.Result
                 finally
@@ -530,7 +550,7 @@ namespace Microsoft.FSharp.Collections
                         Upcast.seq (new Enumerable<'T,'V>(delayedArray, ComposedFactory.Combine current next))
 
                     member this.ForEach<'Result,'State> (f:PipeIdx->Folder<'U,'Result,'State>) =
-                        ForEach.execute f current (ForEach.array (delayedArray ()))
+                        ForEach.execute f current (ForEach.Array (delayedArray ()))
 
             let createDelayed (delayedArray:unit->array<'T>) (current:SeqFactory<'T,'U>) =
                 Upcast.seq (Enumerable(delayedArray, current))
@@ -582,7 +602,7 @@ namespace Microsoft.FSharp.Collections
                         Upcast.seq (new Enumerable<'T,'V>(alist, ComposedFactory.Combine current next))
 
                     member this.ForEach<'Result,'State> (f:PipeIdx->Folder<'U,'Result,'State>) =
-                        ForEach.execute f current (ForEach.list alist)
+                        ForEach.execute f current (ForEach.List alist)
 
             let create alist current =
                 Upcast.seq (Enumerable(alist, current))
@@ -621,7 +641,7 @@ namespace Microsoft.FSharp.Collections
                         Upcast.seq (new Enumerable<'T,'V,'GeneratorState>(generator, state, ComposedFactory.Combine current next))
 
                     member this.ForEach<'Result,'State> (f:PipeIdx->Folder<'U,'Result,'State>) =
-                        ForEach.execute f current (ForEach.unfold generator state)
+                        ForEach.execute f current (ForEach.unfold (generator, state))
 
         module Init =
             // The original implementation of "init" delayed the calculation of Current, and so it was possible
@@ -697,7 +717,7 @@ namespace Microsoft.FSharp.Collections
 
                     member this.ForEach<'Result,'State> (createResult:PipeIdx->Folder<'U,'Result,'State>) =
                         let terminatingIdx = getTerminatingIdx count
-                        ForEach.execute createResult current (ForEach.init f terminatingIdx)
+                        ForEach.execute createResult current (ForEach.init (f, terminatingIdx))
 
             let upto lastOption f =
                 match lastOption with
