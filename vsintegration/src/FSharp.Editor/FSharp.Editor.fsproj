@@ -33,6 +33,7 @@
     <Compile Include="CommonRoslynHelpers.fs" />
     <Compile Include="CommonHelpers.fs" />
     <Compile Include="Logging.fs" />
+    <Compile Include="ContentType.fs" />
     <Compile Include="LanguageService.fs" />
     <Compile Include="Classification\ColorizationService.fs" />
     <Compile Include="Utilities\BraceMatchingService.fs" />
@@ -52,9 +53,8 @@
     <Compile Include="Navigation\FindReferencesService.fs" />
     <Compile Include="BlockComment\CommentUncommentService.fs" />
     <Compile Include="Structure\BlockStructureService.fs" />
-    <Compile Include="HelpContextService.fs" />
-    <Compile Include="ContentType.fs" />
-    <Compile Include="FsiCommandService.fs" />
+    <Compile Include="Commands\HelpContextService.fs" />    
+    <Compile Include="Commands\FsiCommandService.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
