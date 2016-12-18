@@ -99,7 +99,10 @@ namespace Microsoft.FSharp.Collections
         type Folder<'T,'Result,'State> =
             inherit ConsumerWithState<'T,'T,'State>
             new : 'Result*'State -> Folder<'T,'Result,'State>
+            interface IOutOfBand
+            val mutable HaltedIdx : int
             val mutable Result : 'Result
+            member StopFurtherProcessing : PipeIdx -> unit
 
         [<AbstractClass>]
         type Folder<'T,'Result> =
@@ -124,7 +127,7 @@ namespace Microsoft.FSharp.Collections
         type ISeq<'T> =
             inherit System.Collections.Generic.IEnumerable<'T>
             abstract member Compose : SeqFactory<'T,'U> -> ISeq<'U>
-            abstract member ForEach<'Result,'State> : f:((unit->unit)->Folder<'T,'Result,'State>) -> 'Result
+            abstract member ForEach<'Result,'State> : f:(PipeIdx->Folder<'T,'Result,'State>) -> 'Result
 
     open Core
 
@@ -158,20 +161,11 @@ namespace Microsoft.FSharp.Collections
         |  Finished  =  2
     type Result<'T> =
         class
-        inherit  Consumer<'T,'T>
-        interface  IOutOfBand
+        inherit  Folder<'T,'T>
         new : unit ->  Result<'T>
-        member Current : 'T
-        member HaltedIdx : int
         member SeqState :  SeqProcessNextStates
         member SeqState :  SeqProcessNextStates with set
         override ProcessNext : input:'T -> bool
-        end
-    type OutOfBand =
-        class
-        interface  IOutOfBand
-        new : unit ->  OutOfBand
-        member HaltedIdx : int
         end
     module Enumerable = begin
         type Empty<'T> =
@@ -371,7 +365,7 @@ namespace Microsoft.FSharp.Collections
     [<CompiledName "ToComposer">]
     val toComposer : source:seq<'T> ->  ISeq<'T>
 
-    val inline foreach : f:((unit -> unit) -> Folder<'T,'Result,'State>) -> source: ISeq<'T> -> 'Result
+    val inline foreach : f:(PipeIdx->Folder<'T,'Result,'State>) -> source:ISeq<'T> -> 'Result
 
     [<CompiledName "Average">]
     val inline average : source: ISeq< ^T> -> ^T
