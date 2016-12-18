@@ -195,7 +195,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
             member this.RegisterForIdleTime() =
                 mgr <- this.GetService(typeof<SOleComponentManager>) :?> IOleComponentManager
-                if componentID = 0u && mgr <> null then
+                if componentID = 0u && not (isNull mgr) then
                     let crinfo = Array.zeroCreate<OLECRINFO>(1)
                     let mutable crinfo0 = crinfo.[0]
                     crinfo0.cbSize <- Marshal.SizeOf(typeof<OLECRINFO>) |> uint32
@@ -369,7 +369,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     // see e.g "C:\Program Files\Microsoft Visual Studio 2008 SDK\VisualStudioIntegration\Common\IDL\olecm.idl" for details
                     //Trace.Print("CurrentDirectoryDebug", (fun () -> sprintf "curdir='%s'\n" (System.IO.Directory.GetCurrentDirectory())))  // can be useful for watching how GetCurrentDirectory changes
                     let periodic = (grfidlef &&& (uint32 _OLEIDLEF.oleidlefPeriodic)) <> 0u                        
-                    if periodic && mgr.FContinueIdle() <> 0 then
+                    if periodic && not (isNull mgr) && mgr.FContinueIdle() <> 0 then
                         TaskReporterIdleRegistration.DoIdle(mgr)
                     else
                         0
