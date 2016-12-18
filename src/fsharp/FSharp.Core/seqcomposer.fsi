@@ -110,12 +110,13 @@ namespace Microsoft.FSharp.Collections
             new : 'Result -> Folder<'T,'Result>
 
         [<AbstractClass>]
-        type FolderWithOnComplete<'T,'Result,'State> =
+        type FolderWithCleanup<'T,'Result,'State> =
             inherit Folder<'T,'Result,'State>
 
+            abstract OnDispose : unit -> unit
             abstract OnComplete : PipeIdx -> unit
 
-            new : 'Result*'State -> FolderWithOnComplete<'T,'Result,'State>
+            new : 'Result*'State -> FolderWithCleanup<'T,'Result,'State>
 
         [<AbstractClass>]
         type SeqFactory<'T,'U> =
