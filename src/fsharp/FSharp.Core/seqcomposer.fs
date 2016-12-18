@@ -254,16 +254,25 @@ namespace Microsoft.FSharp.Collections
                     idx <- idx + 1
 
             let execute (f:PipeIdx->Folder<'U,'Result,'State>) (current:SeqFactory<'T,'U>) executeOn =
+                let mutable stopTailCall = ()
                 let result = f (current.PipeIdx+1)
                 let consumer = current.Build (Upcast.outOfBand result) result
                 try
                     executeOn result consumer
-                    let mutable stopTailCall = ()
                     consumer.ChainComplete (&stopTailCall, result.HaltedIdx)
                     result.Result
                 finally
-                    let mutable stopTailCall = ()
                     consumer.ChainDispose (&stopTailCall)
+
+            let executeThin (f:PipeIdx->Folder<'U,'Result,'State>) executeOn =
+                let mutable stopTailCall = ()
+                let result = f 1
+                try
+                    executeOn result result
+                    result.ChainComplete (&stopTailCall, result.HaltedIdx)
+                    result.Result
+                finally
+                    result.ChainDispose (&stopTailCall)
 
         module Enumerable =
             type Empty<'T>() =
@@ -366,6 +375,19 @@ namespace Microsoft.FSharp.Collections
                     member this.ForEach<'Result,'State> (f:PipeIdx->Folder<'U,'Result,'State>) =
                         ForEach.execute f current (ForEach.enumerable enumerable)
 
+            and EnumerableThin<'T>(enumerable:IEnumerable<'T>) =
+                inherit EnumerableBase<'T>()
+
+                interface IEnumerable<'T> with
+                    member this.GetEnumerator () = enumerable.GetEnumerator ()
+
+                interface ISeq<'T> with
+                    member __.Compose (next:SeqFactory<'T,'U>) : ISeq<'U> =
+                        Upcast.seq (new Enumerable<'T,'U>(enumerable, next))
+
+                    member this.ForEach<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
+                        ForEach.executeThin f (ForEach.enumerable enumerable)
+
             and ConcatEnumerator<'T, 'Collection when 'Collection :> seq<'T>> (sources:seq<'Collection>) =
                 let mutable state = SeqProcessNextStates.NotStarted
                 let main = sources.GetEnumerator ()
@@ -419,7 +441,7 @@ namespace Microsoft.FSharp.Collections
                         Upcast.seq (Enumerable<'T,'V>(this, next))
 
                     member this.ForEach<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
-                        ForEach.execute f IdentityFactory.Instance (ForEach.enumerable this)
+                        ForEach.executeThin f (ForEach.enumerable this)
 
             and ConcatEnumerable<'T, 'Collection when 'Collection :> seq<'T>> (sources:seq<'Collection>) =
                 inherit EnumerableBase<'T>()
@@ -433,7 +455,7 @@ namespace Microsoft.FSharp.Collections
                         Upcast.seq (Enumerable<'T,'V>(this, next))
 
                     member this.ForEach<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
-                        ForEach.execute f IdentityFactory.Instance (ForEach.enumerable this)
+                        ForEach.executeThin f (ForEach.enumerable this)
 
             let create enumerable current =
                 Upcast.seq (Enumerable(enumerable, current))
@@ -449,14 +471,14 @@ namespace Microsoft.FSharp.Collections
                     member this.GetEnumerator () : IEnumerator<'T> = IEnumerator.Empty<'T>()
 
                 override this.Append source =
-                    Upcast.enumerable (Enumerable.Enumerable<'T,'T> (source, IdentityFactory.Instance))
+                    Upcast.enumerable (Enumerable.EnumerableThin<'T> source)
 
                 interface ISeq<'T> with
                     member this.Compose (next:SeqFactory<'T,'U>) : ISeq<'U> =
                         Upcast.seq (Enumerable.Enumerable<'T,'V>(this, next))
 
                     member this.ForEach<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
-                        ForEach.execute f IdentityFactory.Instance (ForEach.enumerable this)
+                        ForEach.executeThin f (ForEach.enumerable this)
 
 
 
@@ -740,7 +762,7 @@ namespace Microsoft.FSharp.Collections
                         Upcast.seq (Enumerable<'T,'V>(count, f, next))
 
                     member this.ForEach<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
-                        ForEach.execute f IdentityFactory.Instance (ForEach.enumerable (Upcast.enumerable this))
+                        ForEach.executeThin f (ForEach.enumerable (Upcast.enumerable this))
 
         [<CompiledName "ToComposer">]
         let toComposer (source:seq<'T>) : ISeq<'T> =
@@ -749,7 +771,7 @@ namespace Microsoft.FSharp.Collections
             | :? array<'T> as a -> Upcast.seq (Array.Enumerable((fun () -> a), IdentityFactory.Instance))
             | :? list<'T> as a -> Upcast.seq (List.Enumerable(a, IdentityFactory.Instance))
             | null -> nullArg "source"
-            | _ -> Upcast.seq (Enumerable.Enumerable<'T,'T>(source, IdentityFactory.Instance))
+            | _ -> Upcast.seq (Enumerable.EnumerableThin<'T> source)
 
         let inline foreach f (source:ISeq<_>) = source.ForEach f
         let inline compose (factory:#SeqFactory<_,_>) (source:ISeq<'T>) = source.Compose factory
