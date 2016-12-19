@@ -1114,15 +1114,15 @@ module ToStringOnUnionTest = begin
 
 end
 
-module ToStringOnUnionTest = begin
+module ToStringOnUnionTestOverride = begin
 
   type MyUnion = A of string | B
     with
       override x.ToString() = "MyUnion"
 
   let a1 = A "FOO"
-  do test "union-tostring-with-override" (a1.ToString() = "MyUnion))")
-  do test "union-sprintfO-with-override" ((sprintf "%O" a1) = "MyUnion))")
+  do test "union-tostring-with-override" (a1.ToString() = "MyUnion")
+  do test "union-sprintfO-with-override" ((sprintf "%O" a1) = "MyUnion")
 
 end
 
