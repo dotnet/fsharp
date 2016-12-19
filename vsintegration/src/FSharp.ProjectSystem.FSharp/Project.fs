@@ -355,6 +355,14 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 pIdIco <- 400u
                 VSConstants.S_OK
 
+            override this.Dispose(disposing) =
+                try 
+                    if componentID <> 0u && not (isNull mgr) then
+                        mgr.FRevokeComponent(componentID) |> ignore                        
+                        componentID <- 0u
+                finally
+                    base.Dispose(disposing)
+
             interface Microsoft.VisualStudio.FSharp.Interactive.ITestVFSI with
                 member this.SendTextInteraction(s:string) =
                     GetToolWindowAsITestVFSI().SendTextInteraction(s)
