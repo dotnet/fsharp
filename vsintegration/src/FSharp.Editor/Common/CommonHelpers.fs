@@ -38,7 +38,7 @@ type internal LexerSymbol =
       Text: string 
       FileName: string }
     member x.Range: Range.range = 
-        Range.mkRange x.FileName (Range.mkPos x.Line x.LeftColumn) (Range.mkPos x.Line x.RightColumn)
+        Range.mkRange x.FileName (Range.mkPos (x.Line + 1) x.LeftColumn) (Range.mkPos (x.Line + 1) x.RightColumn)
 
 [<RequireQualifiedAccess>]
 type internal SymbolLookupKind =
