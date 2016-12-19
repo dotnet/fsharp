@@ -112,7 +112,8 @@ type internal FSharpQuickInfoProvider
     let xmlMemberIndexService = serviceProvider.GetService(typeof<SVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
     
-    static member ProvideQuickInfo(checker: FSharpChecker, documentId: DocumentId, sourceText: SourceText, filePath: string, position: int, options: FSharpProjectOptions, textVersionHash: int, cancellationToken: CancellationToken) =
+    static member ProvideQuickInfo(checker: FSharpChecker, documentId: DocumentId, sourceText: SourceText, filePath: string, position: int, 
+                                   options: FSharpProjectOptions, textVersionHash: int, cancellationToken: CancellationToken) =
         async {
             let! _parseResults, checkResultsAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
             let checkFileResults = 
@@ -144,7 +145,7 @@ type internal FSharpQuickInfoProvider
                     let! symbolUse = checkFileResults.GetSymbolUseAtLocation(textLineNumber, islandColumn, textLine.ToString(), qualifiers)
                     match symbolUse with
                     | Some symbolUse ->
-                        return Some(res, textSpan, Glyph.forSymbol symbolUse.Symbol)
+                        return Some(res, textSpan, symbolUse.Symbol)
                     | None -> return None
             | None -> return None
         }
@@ -164,10 +165,10 @@ type internal FSharpQuickInfoProvider
                         let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
                         let! quickInfoResult = FSharpQuickInfoProvider.ProvideQuickInfo(checkerProvider.Checker, document.Id, sourceText, document.FilePath, position, options, textVersion.GetHashCode(), cancellationToken)
                         match quickInfoResult with
-                        | Some(toolTipElement, textSpan, glyph) ->
+                        | Some(toolTipElement, textSpan, symbol) ->
                             let dataTipText = XmlDocumentation.BuildDataTipText(documentationBuilder, toolTipElement)
                             let textProperties = classificationFormatMapService.GetClassificationFormatMap("tooltip").DefaultTextProperties
-                            return QuickInfoItem(textSpan, FSharpDeferredQuickInfoContent(dataTipText, textProperties, glyph))
+                            return QuickInfoItem(textSpan, FSharpDeferredQuickInfoContent(dataTipText, textProperties, Glyph.forSymbol symbol))
                         | None -> return null
                     | None -> return null
                 | None -> return null
