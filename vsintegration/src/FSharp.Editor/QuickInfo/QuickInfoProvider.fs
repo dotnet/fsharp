@@ -88,7 +88,8 @@ type internal FSharpQuickInfoProvider
                 let! res = checkFileResults.GetToolTipTextAlternate(textLineNumber, symbol.RightColumn, textLine.ToString(), [symbol.Text], FSharpTokenTag.IDENT)
                 return 
                     match res with
-                    | FSharpToolTipText [] -> None
+                    | FSharpToolTipText [] 
+                    | FSharpToolTipText [FSharpToolTipElement.None] -> None
                     | _ -> Some(res, CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbol.Range))
             | None -> return None
         }
