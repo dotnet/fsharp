@@ -26,7 +26,6 @@ module internal CommonRoslynHelpers =
         with e -> 
             //Assert.Exception(e)
             None
-
     let GetCompletedTaskResult(task: Task<'TResult>) =
         if task.Status = TaskStatus.RanToCompletion then
             task.Result

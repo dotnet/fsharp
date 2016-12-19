@@ -68,8 +68,8 @@ let VerifyCompletionList(fileContents: string, marker: string, expected: string 
 [<Test>]
 let ShouldTriggerCompletionAtCorrectMarkers() =
     let testCases = 
-       [("x", false)
-        ("y", false)
+       [("x", true)
+        ("y", true)
         ("1", false)
         ("2", false)
         ("x +", false)
