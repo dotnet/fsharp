@@ -6432,7 +6432,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                         yield { ilMethodDef with Access=reprAccess }
                  | _ -> 
                      ()
-              | TUnionRepr _ when (not <| tycon.HasOverride cenv.g "ToString" []) -> 
+              | TUnionRepr _ when (not <| tycon.HasMember cenv.g "ToString" []) -> 
                   match (eenv.valsInScope.TryFind cenv.g.sprintf_vref.Deref,
                          eenv.valsInScope.TryFind cenv.g.new_format_vref.Deref) with
                   | Some(Lazy(Method(_,_,sprintfMethSpec,_,_,_))), Some(Lazy(Method(_,_,newFormatMethSpec,_,_,_))) ->
