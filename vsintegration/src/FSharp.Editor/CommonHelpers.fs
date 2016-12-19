@@ -176,7 +176,7 @@ module internal CommonHelpers =
             let classifiedSpanOption = spans |> Seq.tryFind (fun classifiedSpan -> classifiedSpan.TextSpan.Contains position)
             
             match classifiedSpanOption with
-            | Some(classifiedSpan) ->
+            | Some classifiedSpan ->
                 match classifiedSpan.ClassificationType with
                 | ClassificationTypeNames.ClassName
                 | ClassificationTypeNames.DelegateName
@@ -189,17 +189,27 @@ module internal CommonHelpers =
                     match QuickParse.GetCompleteIdentifierIsland true (textLine.ToString()) textLineColumn with
                     | Some (islandIdentifier, islandColumn, isQuoted) -> 
                         let qualifiers = if isQuoted then [islandIdentifier] else islandIdentifier.Split '.' |> Array.toList
-                        Some (islandColumn, qualifiers, classifiedSpan.TextSpan)
+                        Some ((islandColumn, qualifiers, classifiedSpan.TextSpan), classifiedSpan.ClassificationType)
                     | None -> None
                 | ClassificationTypeNames.Operator ->
                     let islandColumn = sourceText.Lines.GetLinePositionSpan(classifiedSpan.TextSpan).End.Character
-                    Some (islandColumn, [""], classifiedSpan.TextSpan) 
+                    Some ((islandColumn, [""], classifiedSpan.TextSpan), classifiedSpan.ClassificationType) 
                 | _ -> None
             | _ -> None
 
-        match attempt position, symbolSearchKind with
-        | None, SymbolSearchKind.IncludeRightColumn -> attempt (position - 1)
-        | x, _ -> x
+        let result =
+            let result = attempt position
+            match symbolSearchKind with
+            | SymbolSearchKind.DoesNotIncludeRightColumn -> result
+            | SymbolSearchKind.IncludeRightColumn ->
+                match attempt position with
+                | None -> attempt (position - 1)
+                | Some(_, ClassificationTypeNames.Operator) as result ->
+                    match attempt (position - 1) with
+                    | Some(_, classificationType) as leftResult when classificationType <> ClassificationTypeNames.Operator -> leftResult
+                    | _ -> result
+                | x -> x
+        result |> Option.map fst
 
     /// Fix invalid span if it appears to have redundant suffix and prefix.
     let fixupSpan (sourceText: SourceText, span: TextSpan) : TextSpan =
