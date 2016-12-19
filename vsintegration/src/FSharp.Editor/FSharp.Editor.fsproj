@@ -27,16 +27,17 @@
     <IncludePkgdefInVSIXContainer>true</IncludePkgdefInVSIXContainer>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="Pervasive.fs" />
-    <Compile Include="CommonConstants.fs" />
-    <Compile Include="CommonRoslynHelpers.fs" />
-    <Compile Include="CommonHelpers.fs" />
-    <Compile Include="Logging.fs" />
-    <Compile Include="LanguageService.fs" />
+    <Compile Include="Common\AssemblyInfo.fs" />    
+    <Compile Include="Common\CommonConstants.fs" />
+    <Compile Include="Common\CommonRoslynHelpers.fs" />
+    <Compile Include="Common\CommonHelpers.fs" />
+    <Compile Include="Common\Pervasive.fs" />
+    <Compile Include="Common\Logging.fs" />
+    <Compile Include="Common\ContentType.fs" />
+    <Compile Include="Common\LanguageService.fs" />
     <Compile Include="Classification\ColorizationService.fs" />
-    <Compile Include="Utilities\BraceMatchingService.fs" />
-    <Compile Include="Utilities\IndentationService.fs"/>
+    <Compile Include="Formatting\BraceMatchingService.fs" />
+    <Compile Include="Formatting\IndentationService.fs"/>
     <Compile Include="Debugging\BreakpointResolutionService.fs"/>
     <Compile Include="Debugging\LanguageDebugInfoService.fs"/>
     <Compile Include="Diagnostics\DocumentDiagnosticAnalyzer.fs"/>
@@ -52,9 +53,8 @@
     <Compile Include="Navigation\FindReferencesService.fs" />
     <Compile Include="BlockComment\CommentUncommentService.fs" />
     <Compile Include="Structure\BlockStructureService.fs" />
-    <Compile Include="HelpContextService.fs" />
-    <Compile Include="ContentType.fs" />
-    <Compile Include="FsiCommandService.fs" />
+    <Compile Include="Commands\HelpContextService.fs" />    
+    <Compile Include="Commands\FsiCommandService.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">

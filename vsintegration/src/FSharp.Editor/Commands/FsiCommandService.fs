@@ -13,7 +13,7 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.FSharp.Interactive
 open EnvDTE
 
-type FsiCommandFilter(serviceProvider: System.IServiceProvider) =
+type internal FsiCommandFilter(serviceProvider: System.IServiceProvider) =
 
     let projectSystemPackage =
       lazy(
@@ -73,9 +73,9 @@ type FsiCommandFilter(serviceProvider: System.IServiceProvider) =
                 VSConstants.E_FAIL
 
 [<Export(typeof<IWpfTextViewCreationListener>)>]
-[<ContentType("F#")>]
+[<ContentType(FSharpCommonConstants.FSharpContentTypeName)>]
 [<TextViewRole(PredefinedTextViewRoles.PrimaryDocument)>]
-type FsiCommandFilterProvider [<ImportingConstructor>] 
+type internal FsiCommandFilterProvider [<ImportingConstructor>] 
     ([<Import(typeof<SVsServiceProvider>)>] serviceProvider: System.IServiceProvider,
      editorFactory: IVsEditorAdaptersFactoryService) =
     interface IWpfTextViewCreationListener with
