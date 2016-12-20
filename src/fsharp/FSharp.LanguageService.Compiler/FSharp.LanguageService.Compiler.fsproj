@@ -539,6 +539,9 @@
     <Compile Include="..\vs\ServiceStructure.fs">
       <Link>Service/ServiceStructure.fs</Link>
     </Compile>
+    <Compile Include="..\vs\ServiceAssemblyContent.fs">
+      <Link>Service/ServiceAssemblyContent.fs</Link>
+    </Compile>
     <Compile Include="..\vs\service.fsi">
       <Link>Service/service.fsi</Link>
     </Compile>
