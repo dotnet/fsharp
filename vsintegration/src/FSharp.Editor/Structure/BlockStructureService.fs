@@ -105,13 +105,27 @@ module internal BlockStructure =
     | Scope.CompExpr
     | Scope.ObjExpr
     | Scope.UnionDefn
+    | Scope.Attribute
     | Scope.Type -> BlockTypes.Type
+    | Scope.New
+    | Scope.RecordField
     | Scope.Member -> BlockTypes.Member
     | Scope.LetOrUse
     | Scope.Match
+    | Scope.MatchClause
+    | Scope.EnumCase
+    | Scope.UnionCase
     | Scope.MatchLambda
-    | Scope.IfThenElse-> BlockTypes.Conditional
+    | Scope.ThenInIfThenElse
+    | Scope.ElseInIfThenElse
+    | Scope.TryWith
+    | Scope.TryInTryWith
+    | Scope.WithInTryWith
     | Scope.TryFinally
+    | Scope.TryInTryFinally
+    | Scope.FinallyInTryFinally
+    | Scope.IfThenElse-> BlockTypes.Conditional
+    | Scope.Tuple
     | Scope.ArrayOrList
     | Scope.CompExprInternal
     | Scope.Quote
@@ -215,11 +229,13 @@ module internal BlockStructure =
         Structure.getOutliningRanges linetext parsedInput
         |> Seq.distinctBy (fun x -> x.Range.StartLine)
         |> Seq.choose (fun scopeRange -> 
-            let textSpan = CommonRoslynHelpers.TryFSharpRangeToTextSpan(sourceText, scopeRange.Range)
-            let hintSpan = CommonRoslynHelpers.TryFSharpRangeToTextSpan(sourceText, scopeRange.CollapseRange)
+            // the range of text to collapse
+            let textSpan = CommonRoslynHelpers.TryFSharpRangeToTextSpan(sourceText, scopeRange.CollapseRange)
+            // the range of the entire expression
+            let hintSpan = CommonRoslynHelpers.TryFSharpRangeToTextSpan(sourceText, scopeRange.Range)
             match textSpan,hintSpan with
             | Some textSpan, Some hintSpan ->
-                    Some <| BlockSpan(scopeToBlockType scopeRange.Scope, true, textSpan,hintSpan)
+                    Some <| (BlockSpan(scopeToBlockType scopeRange.Scope, true, textSpan,hintSpan):BlockSpan)
             | _, _ -> None
         )
         
