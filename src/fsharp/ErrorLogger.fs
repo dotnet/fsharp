@@ -14,6 +14,15 @@ open System
 // General error recovery mechanism
 //-----------------------------------------------------------------------
 
+/// Represents the style being used to format errros
+[<RequireQualifiedAccess>]
+type ErrorStyle = 
+| DefaultErrors 
+| EmacsErrors 
+| TestErrors 
+| VSErrors
+| GccErrors
+
 /// Thrown when we want to add some range information to a .NET exception
 exception WrappedError of exn * range
 
@@ -37,6 +46,10 @@ let rec findOriginalException err =
     | _ -> err
 
 
+type Predictions = unit -> Set<string>
+
+let NoPredictions : Predictions = fun () -> Set.empty
+
 /// Thrown when we stop processing the F# Interactive entry or #load.
 exception StopProcessingExn of exn option
 let (|StopProcessing|_|) exn = match exn with StopProcessingExn _ -> Some () | _ -> None
@@ -48,11 +61,20 @@ exception NumberedError of (int * string) * range with   // int is e.g. 191 in F
         match this :> exn with
         | NumberedError((_,msg),_) -> msg
         | _ -> "impossible"
+
 exception Error of (int * string) * range with   // int is e.g. 191 in FS0191  // eventually remove this type, it is a transitional artifact of the old unnumbered error style
     override this.Message =
         match this :> exn with
         | Error((_,msg),_) -> msg
         | _ -> "impossible"
+
+
+exception ErrorWithPredictions of (int * string) * range * string * Predictions with   // int is e.g. 191 in FS0191 
+    override this.Message =
+        match this :> exn with
+        | ErrorWithPredictions((_,msg),_,_,_) -> msg
+        | _ -> "impossible"
+
 exception InternalError of string * range
 exception UserCompilerMessage of string * int * range
 exception LibraryUseOnly of range
@@ -517,7 +539,7 @@ let NewlineifyErrorString (message:string) = message.Replace(stringThatIsAProxyF
 /// fixes given string by replacing all control chars with spaces.
 /// NOTE: newlines are recognized and replaced with stringThatIsAProxyForANewlineInFlatErrors (ASCII 29, the 'group separator'), 
 /// which is decoded by the IDE with 'NewlineifyErrorString' back into newlines, so that multi-line errors can be displayed in QuickInfo
-let NormalizeErrorString (text : string) =    
+let NormalizeErrorString (text : string) =
     if isNull text then nullArg "text"
     let text = text.Trim()
 
@@ -530,7 +552,7 @@ let NormalizeErrorString (text : string) =
                 // handle \r\n sequence - replace it with one single space
                 buf.Append(stringThatIsAProxyForANewlineInFlatErrors) |> ignore
                 2
-            | '\n' ->
+            | '\n' | '\r' ->
                 buf.Append(stringThatIsAProxyForANewlineInFlatErrors) |> ignore
                 1
             | c ->

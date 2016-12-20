@@ -61,7 +61,12 @@ neg10.fs(131,23,131,29): typecheck error FS0906: Type abbreviations cannot have 
 
 neg10.fs(169,32,169,35): typecheck error FS0035: This construct is deprecated: This form of object expression is not used in F#. Use 'member this.MemberName ... = ...' to define member implementations in object expressions.
 
-neg10.fs(169,32,169,33): typecheck error FS0017: The member 'X : unit -> 'a' does not have the correct type to override any given virtual method
+neg10.fs(169,32,169,33): typecheck error FS3213: The member 'X : unit -> 'a' matches multiple overloads of the same method.
+Please restrict it to one of the following:
+
+   X : unit -> 'a
+
+   X : unit -> 'a.
 
 neg10.fs(169,19,169,26): typecheck error FS0783: At least one override did not correctly implement its corresponding abstract member
 
@@ -69,17 +74,7 @@ neg10.fs(174,9,175,20): typecheck error FS0951: Literal enumerations must have t
 
 neg10.fs(180,10,180,11): typecheck error FS0866: Interfaces cannot contain definitions of object constructors
 
-neg10.fs(193,39,193,46): typecheck error FS0767: The type Foo contains the member 'MyX' but it is not a virtual or abstract method that is available to override or implement.
-
-Maybe you want one of the following:
-
-   ToString
-
-   Equals
-
-   GetHashCode
-
-   Finalize
+neg10.fs(193,39,193,46): typecheck error FS0767: The type Foo contains the member 'MyX' but it is not a virtual or abstract method that is available to override or implement. Maybe you want one of the following: Equals, Finalize, GetHashCode, ToString
 
 neg10.fs(193,41,193,44): typecheck error FS0017: The member 'MyX : unit -> int' does not have the correct type to override any given virtual method
 
