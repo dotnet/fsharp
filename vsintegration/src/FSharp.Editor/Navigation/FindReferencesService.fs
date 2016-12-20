@@ -67,12 +67,12 @@ type internal FSharpFindReferencesService
                 let lineNumber = sourceText.Lines.GetLinePosition(position).Line + 1
                 let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.FilePath, options.OtherOptions |> Seq.toList)
                 
-                match CommonHelpers.tryClassifyAtPosition(document.Id, sourceText, document.FilePath, defines, position, SymbolSearchKind.IncludeRightColumn, context.CancellationToken) with
-                | Some (islandColumn, qualifiers, _) -> 
-                    let! symbolUse = checkFileResults.GetSymbolUseAtLocation(lineNumber, islandColumn, textLine, qualifiers)
+                match CommonHelpers.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Fuzzy) with
+                | Some symbol -> 
+                    let! symbolUse = checkFileResults.GetSymbolUseAtLocation(lineNumber, symbol.RightColumn, textLine, [symbol.Text])
                     match symbolUse with
                     | Some symbolUse ->
-                        let! declaration = checkFileResults.GetDeclarationLocationAlternate (lineNumber, islandColumn, textLine, qualifiers, false)
+                        let! declaration = checkFileResults.GetDeclarationLocationAlternate (lineNumber, symbol.RightColumn, textLine, [symbol.Text], false)
                         let declarationRange = 
                             match declaration with
                             | FSharpFindDeclResult.DeclFound range -> Some range

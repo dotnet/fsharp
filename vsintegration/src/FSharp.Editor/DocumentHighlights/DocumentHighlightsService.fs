@@ -68,29 +68,27 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
         |> Seq.toArray
 
     static member GetDocumentHighlights(checker: FSharpChecker, documentKey: DocumentId, sourceText: SourceText, filePath: string, position: int, 
-                                        defines: string list, options: FSharpProjectOptions, textVersionHash: int, cancellationToken: CancellationToken) : Async<FSharpHighlightSpan[]> =
+                                        defines: string list, options: FSharpProjectOptions, textVersionHash: int) : Async<FSharpHighlightSpan[]> =
         async {
             let textLine = sourceText.Lines.GetLineFromPosition(position)
             let textLinePos = sourceText.Lines.GetLinePosition(position)
             let fcsTextLineNumber = textLinePos.Line + 1
             
-            match CommonHelpers.tryClassifyAtPosition(documentKey, sourceText, filePath, defines, position, SymbolSearchKind.IncludeRightColumn, cancellationToken) with
-            | Some (_, [], _) -> return [||]
-            | Some (islandEndColumn, qualifiers, _span) -> 
+            match CommonHelpers.getSymbolAtPosition(documentKey, sourceText, position, filePath, defines, SymbolLookupKind.Fuzzy) with
+            | Some symbol -> 
                 let! _parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
                 match checkFileAnswer with
                 | FSharpCheckFileAnswer.Aborted -> return [||]
                 | FSharpCheckFileAnswer.Succeeded(checkFileResults) ->
-                    let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, islandEndColumn, textLine.ToString(), qualifiers)
+                    let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.RightColumn, textLine.ToString(), [symbol.Text])
                     match symbolUse with
                     | Some symbolUse ->
                         let! symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
-                        let lastIdent = List.last qualifiers
                         return 
                             [| for symbolUse in symbolUses do
                                  yield { IsDefinition = symbolUse.IsFromDefinition
                                          TextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate) } |]
-                            |> fixInvalidSymbolSpans sourceText lastIdent
+                            |> fixInvalidSymbolSpans sourceText symbol.Text
                     | None -> return [||]
             | None -> return [||]
         }        
@@ -103,8 +101,8 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
                      let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                      let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
                      let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
-                     let! spans = FSharpDocumentHighlightsService.GetDocumentHighlights(checkerProvider.Checker, document.Id, sourceText, document.FilePath, position, defines, options, textVersion.GetHashCode(), cancellationToken)
-                     
+                     let! spans = FSharpDocumentHighlightsService.GetDocumentHighlights(checkerProvider.Checker, document.Id, sourceText, document.FilePath, 
+                                                                                        position, defines, options, textVersion.GetHashCode())
                      let highlightSpans = spans |> Array.map (fun span ->
                         let kind = if span.IsDefinition then HighlightSpanKind.Definition else HighlightSpanKind.Reference
                         HighlightSpan(span.TextSpan, kind))

@@ -1,4 +1,5 @@
-﻿namespace Microsoft.VisualStudio.FSharp.Logging
+﻿namespace Microsoft.VisualStudio.FSharp.Editor.Logging
+
 open System
 open System.Collections.Generic
 open System.Windows.Media
@@ -11,6 +12,7 @@ open Microsoft.VisualStudio.Utilities
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.ComponentModelHost
+open Microsoft.VisualStudio.FSharp.Editor
 
 [<RequireQualifiedAccess>]
 type LogType =
@@ -27,13 +29,10 @@ type LogType =
 
 
 module Config =
-
     let [<Literal>] fsharpOutputGuidString = "E721F849-446C-458C-997A-99E14A04CFD3"
     let fsharpOutputGuid = Guid fsharpOutputGuidString
 
 open Config
-
-
 
 type [<Export>] Logger [<ImportingConstructor>]
     ([<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider) =
@@ -52,14 +51,13 @@ type [<Export>] Logger [<ImportingConstructor>]
     static let mutable globalServiceProvider: IServiceProvider option = None
 
     static member GlobalServiceProvider
-        with get () = globalServiceProvider |>  Option.getOrElse (ServiceProvider.GlobalProvider :> IServiceProvider)
+        with get () = globalServiceProvider |>  Option.defaultValue (ServiceProvider.GlobalProvider :> IServiceProvider)
         and  set v  = globalServiceProvider <- Some v
 
     member __.FSharpLoggingPane
         with get () = getPane () |> function
             | Some pane -> Some pane
             | None      -> createPane(); getPane()
-
 
     member self.Log (msgType:LogType,msg:string) =
         let time = DateTime.Now.ToString("hh:mm:ss tt")
@@ -69,7 +67,6 @@ type [<Export>] Logger [<ImportingConstructor>]
         | Some pane, LogType.Info    -> String.Format("[F#][{0}{1}] {2}{3}", "INFO " , time, msg, Environment.NewLine) |> pane.OutputString |> ignore
         | Some pane, LogType.Warn    -> String.Format("[F#][{0}{1}] {2}{3}", "WARN " , time, msg, Environment.NewLine) |> pane.OutputString |> ignore
         | Some pane, LogType.Error   -> String.Format("[F#][{0}{1}] {2}{3}", "ERROR ", time, msg, Environment.NewLine) |> pane.OutputString |> ignore
-
 
 [<AutoOpen>]
 module Logging =
@@ -92,4 +89,3 @@ module Logging =
 
     let logExceptionWithContext(ex: Exception, context) =
         logErrorf "Context: %s\nException Message: %s\nStack Trace: %s" context ex.Message ex.StackTrace
-
