@@ -46,10 +46,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("ToComposer")>]
         let toComposer (source:seq<'T>): Composer.Core.ISeq<'T> =
-            Composer.toComposer source
-
-        let inline foreach f (source:seq<_>) =
-            Composer.foreach f (toComposer source)
+            Composer.ofSeq source
 
         [<CompiledName("Delay")>]
         let delay f = mkDelayedSeq f
