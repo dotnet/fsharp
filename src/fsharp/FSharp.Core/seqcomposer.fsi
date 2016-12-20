@@ -132,10 +132,8 @@ namespace Microsoft.FSharp.Collections
 
     open Core
 
-    [<CompiledName "ToComposer">]
-    val toComposer : source:seq<'T> ->  ISeq<'T>
-
-    val inline foreach : f:(PipeIdx->Folder<'T,'Result,'State>) -> source:ISeq<'T> -> 'Result
+    [<CompiledName "OfSeq">]
+    val ofSeq : source:seq<'T> ->  ISeq<'T>
 
     [<CompiledName "Average">]
     val inline average : source: ISeq< ^T> -> ^T

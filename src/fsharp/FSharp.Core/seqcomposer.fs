@@ -786,8 +786,8 @@ namespace Microsoft.FSharp.Collections
                     member this.ForEach<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
                         ForEach.executeThin f (ForEach.enumerable (Upcast.enumerable this))
 
-        [<CompiledName "ToComposer">]
-        let toComposer (source:seq<'T>) : ISeq<'T> =
+        [<CompiledName "OfSeq">]
+        let ofSeq (source:seq<'T>) : ISeq<'T> =
             match source with
             | :? ISeq<'T> as s -> s
             | :? array<'T> as a -> Upcast.seq (Array.Enumerable((fun () -> a), IdentityFactory.Instance))
@@ -795,16 +795,12 @@ namespace Microsoft.FSharp.Collections
             | null -> nullArg "source"
             | _ -> Upcast.seq (Enumerable.EnumerableThin<'T> source)
 
-        let inline foreach f (source:ISeq<_>) = source.ForEach f
-        let inline compose (factory:#SeqFactory<_,_>) (source:ISeq<'T>) = source.Compose factory
-
         [<CompiledName "Average">]
         let inline average (source: ISeq< ^T>) : ^T
             when ^T:(static member Zero : ^T)
             and  ^T:(static member (+) : ^T * ^T -> ^T)
             and  ^T:(static member DivideByInt : ^T * int -> ^T) =
-            source
-            |> foreach (fun _ ->
+            source.ForEach (fun _ ->
                 upcast { new FolderWithCleanup< ^T, ^T, int> (LanguagePrimitives.GenericZero, 0) with
                     override this.ProcessNext value =
                         this.Result <- Checked.(+) this.Result value
@@ -822,8 +818,7 @@ namespace Microsoft.FSharp.Collections
             when ^U:(static member Zero : ^U)
             and  ^U:(static member (+) : ^U * ^U -> ^U)
             and  ^U:(static member DivideByInt : ^U * int -> ^U) =
-            source
-            |> foreach (fun _ ->
+            source.ForEach (fun _ ->
                 upcast { new FolderWithCleanup<'T,'U, int>(LanguagePrimitives.GenericZero, 0) with
                     override this.ProcessNext value =
                         this.Result <- Checked.(+) this.Result (f value)
@@ -841,8 +836,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "ExactlyOne">]
         let inline exactlyOne errorString  (source : ISeq<'T>) : 'T =
-            source
-            |> foreach (fun pipeIdx ->
+            source.ForEach (fun pipeIdx ->
                 upcast { new FolderWithCleanup<'T,'T,Values<bool, bool>>(Unchecked.defaultof<'T>, Values<bool,bool>(true, false)) with
                     override this.ProcessNext value =
                         if this.State._1 then
@@ -862,8 +856,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Fold">]
         let inline fold<'T,'State> (f:'State->'T->'State) (seed:'State) (source:ISeq<'T>) : 'State =
-            source
-            |> foreach (fun _ ->
+            source.ForEach (fun _ ->
                 upcast { new Folder<'T,'State>(seed) with
                     override this.ProcessNext value =
                         this.Result <- f this.Result value
@@ -871,8 +864,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Fold2">]
         let inline fold2<'T1,'T2,'State> (folder:'State->'T1->'T2->'State) (state:'State) (source1: ISeq<'T1>) (source2: ISeq<'T2>) =
-            source1
-            |> foreach (fun pipeIdx ->
+            source1.ForEach (fun pipeIdx ->
                 upcast { new FolderWithCleanup<_,'State,IEnumerator<'T2>>(state,source2.GetEnumerator()) with
                     override self.ProcessNext value =
                         if self.State.MoveNext() then
@@ -900,8 +892,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Iterate">]
         let iter f (source:ISeq<'T>) =
-            source
-            |> foreach (fun _ ->
+            source.ForEach (fun _ ->
                 upcast { new Folder<'T,NoValue> (Unchecked.defaultof<NoValue>) with
                     override this.ProcessNext value =
                         f value
@@ -910,8 +901,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Iterate2">]
         let inline iter2 (f:'T->'U->unit) (source1:ISeq<'T>) (source2:ISeq<'U>) : unit =
-            source1
-            |> foreach (fun pipeIdx ->
+            source1.ForEach (fun pipeIdx ->
                 upcast { new FolderWithCleanup<'T,NoValue,IEnumerator<'U>> (Unchecked.defaultof<_>,source2.GetEnumerator()) with
                     override self.ProcessNext value =
                         if self.State.MoveNext() then
@@ -926,8 +916,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "IterateIndexed2">]
         let inline iteri2 (f:int->'T->'U->unit) (source1:ISeq<'T>) (source2:ISeq<'U>) : unit =
-            source1
-            |> foreach (fun pipeIdx ->
+            source1.ForEach (fun pipeIdx ->
                 upcast { new FolderWithCleanup<'T,NoValue,Values<int,IEnumerator<'U>>>(Unchecked.defaultof<_>,Values<_,_>(-1,source2.GetEnumerator())) with
                     override self.ProcessNext value =
                         if self.State._2.MoveNext() then
@@ -943,8 +932,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "TryHead">]
         let tryHead (source:ISeq<'T>) =
-            source
-            |> foreach (fun pipeIdx ->
+            source.ForEach (fun pipeIdx ->
                 upcast { new Folder<'T, Option<'T>> (None) with
                     override this.ProcessNext value =
                         this.Result <- Some value
@@ -953,8 +941,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "IterateIndexed">]
         let iteri f (source:ISeq<'T>) =
-            source
-            |> foreach (fun _ ->
+            source.ForEach (fun _ ->
                 { new Folder<'T,NoValue,int> (Unchecked.defaultof<_>,0) with
                     override this.ProcessNext value =
                         f this.State value
@@ -964,7 +951,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Except">]
         let inline except (itemsToExclude: seq<'T>) (source:ISeq<'T>) : ISeq<'T> when 'T:equality =
-            source |> compose { new SeqFactory<'T,'T>() with
+            source.Compose { new SeqFactory<'T,'T>() with
                 override __.Create _ _ next =
                     upcast { new ConsumerChainedWithState<'T,'V,Lazy<HashSet<'T>>>
                                     (next,lazy(HashSet<'T>(itemsToExclude,HashIdentity.Structural<'T>))) with
@@ -974,8 +961,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Exists">]
         let exists f (source:ISeq<'T>) =
-            source
-            |> foreach (fun pipeIdx ->
+            source.ForEach (fun pipeIdx ->
                 upcast { new Folder<'T, bool> (false) with
                     override this.ProcessNext value =
                         if f value then
@@ -985,8 +971,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Exists2">]
         let exists2 (predicate:'T->'U->bool) (source1: ISeq<'T>) (source2: ISeq<'U>) : bool =
-            source1
-            |> foreach (fun pipeIdx ->
+            source1.ForEach (fun pipeIdx ->
                 upcast { new FolderWithCleanup<'T,bool,IEnumerator<'U>>(false,source2.GetEnumerator()) with
                     override self.ProcessNext value =
                         if self.State.MoveNext() then
@@ -1002,8 +987,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Contains">]
         let inline contains element (source:ISeq<'T>) =
-            source
-            |> foreach (fun pipeIdx ->
+            source.ForEach (fun pipeIdx ->
                 upcast { new Folder<'T, bool> (false) with
                     override this.ProcessNext value =
                         if element = value then
@@ -1013,8 +997,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "ForAll">]
         let forall predicate (source:ISeq<'T>) =
-            source
-            |> foreach (fun pipeIdx ->
+            source.ForEach (fun pipeIdx ->
                 upcast { new Folder<'T, bool> (true) with
                     override this.ProcessNext value =
                         if not (predicate value) then
@@ -1024,8 +1007,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "ForAll2">]
         let inline forall2 predicate (source1:ISeq<'T>) (source2:ISeq<'U>) : bool =
-            source1
-            |> foreach (fun pipeIdx ->
+            source1.ForEach (fun pipeIdx ->
                 upcast { new FolderWithCleanup<'T,bool,IEnumerator<'U>>(true,source2.GetEnumerator()) with
                     override self.ProcessNext value =
                         if self.State.MoveNext() then
@@ -1041,7 +1023,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Filter">]
         let inline filter<'T> (f:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
-            source |> compose { new SeqFactory<'T,'T>() with
+            source.Compose { new SeqFactory<'T,'T>() with
                 override __.Create _ _ next =
                     upcast { new ConsumerChained<'T,'V>(next) with
                         override __.ProcessNext input =
@@ -1050,15 +1032,15 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Map">]
         let inline map<'T,'U> (f:'T->'U) (source:ISeq<'T>) : ISeq<'U> =
-            source |> compose { new SeqFactory<'T,'U>() with
+            source.Compose { new SeqFactory<'T,'U>() with
                 override __.Create _ _ next =
                     upcast { new ConsumerChained<'T,'V>(next) with
                         override __.ProcessNext input =
                             TailCall.avoid (next.ProcessNext (f input)) } }
 
         [<CompiledName "MapIndexed">]
-        let inline mapi f source =
-            source |> compose { new SeqFactory<'T,'U>() with
+        let inline mapi f (source:ISeq<_>) =
+            source.Compose { new SeqFactory<'T,'U>() with
                 override __.Create _ _ next =
                     upcast { new ConsumerChainedWithState<'T,'V,int>(next, -1) with
                         override this.ProcessNext (input:'T) : bool =
@@ -1067,7 +1049,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Map2">]
         let inline map2<'First,'Second,'U> (map:'First->'Second->'U) (source1:ISeq<'First>) (source2:ISeq<'Second>) : ISeq<'U> =
-            source1 |> compose { new SeqFactory<'First,'U>() with
+            source1.Compose { new SeqFactory<'First,'U>() with
                 override __.Create<'V> outOfBand pipeIdx next =
                     upcast { new ConsumerChainedWithStateAndCleanup<'First,'V, IEnumerator<'Second>>(next, (source2.GetEnumerator ())) with
                         override self.ProcessNext input =
@@ -1081,7 +1063,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "MapIndexed2">]
         let inline mapi2<'First,'Second,'U> (map:int -> 'First->'Second->'U) (source1:ISeq<'First>) (source2:ISeq<'Second>) : ISeq<'U> =
-            source1 |> compose { new SeqFactory<'First,'U>() with
+            source1.Compose { new SeqFactory<'First,'U>() with
                 override __.Create<'V> outOfBand pipeIdx next =
                     upcast { new ConsumerChainedWithStateAndCleanup<'First,'V, Values<int,IEnumerator<'Second>>>
                                                 (next, Values<_,_>(-1, source2.GetEnumerator ())) with
@@ -1098,7 +1080,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "Map3">]
         let inline map3<'First,'Second,'Third,'U>
                         (map:'First->'Second->'Third->'U) (source1:ISeq<'First>) (source2:ISeq<'Second>) (source3:ISeq<'Third>) : ISeq<'U> =
-            source1 |> compose { new SeqFactory<'First,'U>() with
+            source1.Compose { new SeqFactory<'First,'U>() with
                 override __.Create<'V> outOfBand pipeIdx next =
                     upcast { new ConsumerChainedWithStateAndCleanup<'First,'V, Values<IEnumerator<'Second>,IEnumerator<'Third>>>
                                                 (next, Values<_,_>(source2.GetEnumerator(),source3.GetEnumerator())) with
@@ -1116,8 +1098,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "CompareWith">]
         let inline compareWith (f:'T -> 'T -> int) (source1 :ISeq<'T>) (source2:ISeq<'T>) : int =
-            source1
-            |> foreach (fun pipeIdx ->
+            source1.ForEach (fun pipeIdx ->
                 upcast { new FolderWithCleanup<'T,int,IEnumerator<'T>>(0,source2.GetEnumerator()) with
                     override self.ProcessNext value =
                         if not (self.State.MoveNext()) then
@@ -1136,7 +1117,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Choose">]
         let inline choose (f:'T->option<'U>) (source:ISeq<'T>) : ISeq<'U> =
-            source |> compose { new SeqFactory<'T,'U>() with
+            source.Compose { new SeqFactory<'T,'U>() with
                 override __.Create _ _ next =
                     upcast { new ConsumerChained<'T,'V>(next) with
                         override __.ProcessNext input =
@@ -1146,7 +1127,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Distinct">]
         let inline distinct (source:ISeq<'T>) : ISeq<'T> when 'T:equality =
-            source |> compose { new SeqFactory<'T,'T>() with
+            source.Compose { new SeqFactory<'T,'T>() with
                 override __.Create _ _ next =
                     upcast { new ConsumerChainedWithState<'T,'V,HashSet<'T>>
                                     (next,(HashSet<'T>(HashIdentity.Structural<'T>))) with
@@ -1156,7 +1137,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "DistinctBy">]
         let inline distinctBy (keyf:'T->'Key) (source:ISeq<'T>) :ISeq<'T>  when 'Key:equality =
-            source |> compose { new SeqFactory<'T,'T>() with
+            source.Compose { new SeqFactory<'T,'T>() with
                 override __.Create _ _ next =
                     upcast { new ConsumerChainedWithState<'T,'V,HashSet<'Key>>
                                     (next,(HashSet<'Key>(HashIdentity.Structural<'Key>))) with
@@ -1166,8 +1147,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Max">]
         let inline max (source: ISeq<'T>) : 'T when 'T:comparison =
-            source
-            |> foreach (fun _ ->
+            source.ForEach (fun _ ->
                 upcast { new FolderWithCleanup<'T,'T,bool>(Unchecked.defaultof<'T>,true) with
                     override this.ProcessNext value =
                         if this.State then
@@ -1184,8 +1164,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "MaxBy">]
         let inline maxBy (f :'T -> 'U) (source: ISeq<'T>) : 'T when 'U:comparison =
-            source
-            |> foreach (fun _ ->
+            source.ForEach (fun _ ->
                 upcast { new FolderWithCleanup<'T,'T,Values<bool,'U>>(Unchecked.defaultof<'T>,Values<_,_>(true,Unchecked.defaultof<'U>)) with
                     override this.ProcessNext value =
                         match this.State._1, f value with
@@ -1206,8 +1185,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Min">]
         let inline min (source: ISeq< 'T>) : 'T when 'T:comparison =
-            source
-            |> foreach (fun _ ->
+            source.ForEach (fun _ ->
                 upcast { new FolderWithCleanup<'T,'T,bool>(Unchecked.defaultof<'T>,true) with
                     override this.ProcessNext value =
                         if this.State then
@@ -1224,8 +1202,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "MinBy">]
         let inline minBy (f : 'T -> 'U) (source: ISeq<'T>) : 'T =
-            source
-            |> foreach (fun _ ->
+            source.ForEach (fun _ ->
                 upcast { new FolderWithCleanup<'T,'T,Values<bool,'U>>(Unchecked.defaultof<'T>,Values<_,_>(true,Unchecked.defaultof< 'U>)) with
                     override this.ProcessNext value =
                         match this.State._1, f value with
@@ -1246,7 +1223,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Pairwise">]
         let inline pairwise (source:ISeq<'T>) : ISeq<'T * 'T> =
-            source |> compose { new SeqFactory<'T,'T * 'T>() with
+            source.Compose { new SeqFactory<'T,'T * 'T>() with
                 override __.Create _ _ next =
                     upcast { new ConsumerChainedWithState<'T,'U,Values<bool,'T>>
                                 (   next
@@ -1267,8 +1244,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Reduce">]
         let inline reduce (f:'T->'T->'T) (source : ISeq<'T>) : 'T =
-            source
-            |> foreach (fun _ ->
+            source.ForEach (fun _ ->
                 upcast { new FolderWithCleanup<'T,'T,bool>(Unchecked.defaultof<'T>,true) with
                     override this.ProcessNext value =
                         if this.State then
@@ -1285,7 +1261,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Scan">]
         let inline scan (folder:'State->'T->'State) (initialState:'State) (source:ISeq<'T>) :ISeq<'State> =
-            source |> compose { new SeqFactory<'T,'State>() with
+            source.Compose { new SeqFactory<'T,'State>() with
                 override __.Create _ _ next =
                     upcast { new ConsumerChainedWithState<'T,'V,'State>(next, initialState) with
                         override this.ProcessNext (input:'T) : bool =
@@ -1295,7 +1271,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Skip">]
         let skip (errorString:string) (skipCount:int) (source:ISeq<'T>) : ISeq<'T> =
-            source |> compose { new SeqFactory<'T,'T>() with
+            source.Compose { new SeqFactory<'T,'T>() with
                 override __.Create _ _ next =
                     upcast {
                         new ConsumerChainedWithStateAndCleanup<'T,'U,int>(next,(*count*)0) with
@@ -1326,7 +1302,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "SkipWhile">]
         let inline skipWhile (predicate:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
-            source |> compose { new SeqFactory<'T,'T>() with
+            source.Compose { new SeqFactory<'T,'T>() with
                 override __.Create _ _ next =
                     upcast { new ConsumerChainedWithState<'T,'V,bool>(next,true) with
                         override self.ProcessNext (input:'T) : bool =
@@ -1343,8 +1319,7 @@ namespace Microsoft.FSharp.Collections
         let inline sum (source:ISeq< ^T>) : ^T
             when ^T:(static member Zero : ^T)
             and  ^T:(static member (+) :  ^T *  ^T ->  ^T) =
-            source
-            |> foreach (fun _ ->
+            source.ForEach (fun _ ->
                 upcast { new Folder< ^T,^T> (LanguagePrimitives.GenericZero) with
                     override this.ProcessNext value =
                         this.Result <- Checked.(+) this.Result value
@@ -1354,8 +1329,7 @@ namespace Microsoft.FSharp.Collections
         let inline sumBy (f : 'T -> ^U) (source: ISeq<'T>) : ^U
             when ^U:(static member Zero : ^U)
             and  ^U:(static member (+) :  ^U *  ^U ->  ^U) =
-            source
-            |> foreach (fun _ ->
+            source.ForEach (fun _ ->
                 upcast { new Folder<'T,'U> (LanguagePrimitives.GenericZero< ^U>) with
                     override this.ProcessNext value =
                         this.Result <- Checked.(+) this.Result (f value)
@@ -1363,7 +1337,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Take">]
         let inline take (errorString:string) (takeCount:int) (source:ISeq<'T>) : ISeq<'T> =
-            source |> compose { new SeqFactory<'T,'T>() with
+            source.Compose { new SeqFactory<'T,'T>() with
                 member __.Create outOfBand pipelineIdx next =
                     upcast {
                         new ConsumerChainedWithStateAndCleanup<'T,'U,int>(next,(*count*)0) with
@@ -1386,7 +1360,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "TakeWhile">]
         let inline takeWhile (predicate:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
-            source |> compose { new SeqFactory<'T,'T>() with
+            source.Compose { new SeqFactory<'T,'T>() with
                 member __.Create outOfBand pipeIdx next =
                     upcast { new ConsumerChained<'T,'V>(next) with
                         override __.ProcessNext (input:'T) : bool =
@@ -1399,7 +1373,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Tail">]
         let inline tail errorString (source:ISeq<'T>) :ISeq<'T> =
-            source |> compose { new SeqFactory<'T,'T>() with
+            source.Compose { new SeqFactory<'T,'T>() with
                 member __.Create _ _ next =
                     upcast { new ConsumerChainedWithStateAndCleanup<'T,'V,bool>(next,(*first*) true) with
                         override self.ProcessNext (input:'T) : bool =
@@ -1416,7 +1390,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Truncate">]
         let inline truncate (truncateCount:int) (source:ISeq<'T>) : ISeq<'T> =
-            source |> compose { new SeqFactory<'T,'T>() with
+            source.Compose { new SeqFactory<'T,'T>() with
                 member __.Create outOfBand pipeIdx next =
                     upcast {
                         new ConsumerChainedWithState<'T,'U,int>(next,(*count*)0) with
@@ -1441,8 +1415,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "TryPick">]
         let tryPick f (source:ISeq<'T>)  =
-            source
-            |> foreach (fun pipeIdx ->
+            source.ForEach (fun pipeIdx ->
                 upcast { new Folder<'T, Option<'U>> (None) with
                     override this.ProcessNext value =
                         match f value with
@@ -1454,8 +1427,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "TryFind">]
         let tryFind f (source:ISeq<'T>)  =
-            source
-            |> foreach (fun pipeIdx ->
+            source.ForEach (fun pipeIdx ->
                 upcast { new Folder<'T, Option<'T>> (None) with
                     override this.ProcessNext value =
                         if f value then
@@ -1465,8 +1437,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "TryFindIndex">]
         let inline tryFindIndex (predicate:'T->bool) (source:ISeq<'T>) : int option =
-            source
-            |> foreach (fun pipeIdx ->
+            source.ForEach (fun pipeIdx ->
                 { new Folder<'T, Option<int>, int>(None, 0) with
                     override this.ProcessNext value =
                         if predicate value then
@@ -1478,8 +1449,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "TryLast">]
         let inline tryLast (source :ISeq<'T>) : 'T option =
-            source
-            |> foreach (fun _ ->
+            source.ForEach (fun _ ->
                 upcast { new FolderWithCleanup<'T,option<'T>,Values<bool,'T>>(None,Values<bool,'T>(true, Unchecked.defaultof<'T>)) with
                     override this.ProcessNext value =
                         if this.State._1 then
@@ -1493,7 +1463,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Windowed">]
         let inline windowed (windowSize:int) (source:ISeq<'T>) : ISeq<'T[]> =
-            source |> compose { new SeqFactory<'T,'T[]>() with
+            source.Compose { new SeqFactory<'T,'T[]>() with
                 member __.Create outOfBand pipeIdx next =
                     upcast {
                         new ConsumerChainedWithState<'T,'U,Values<'T[],int,int>>
