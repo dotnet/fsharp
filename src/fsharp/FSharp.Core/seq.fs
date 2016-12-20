@@ -51,14 +51,6 @@ namespace Microsoft.FSharp.Collections
         let inline foreach f (source:seq<_>) =
             Composer.foreach f (toComposer source)
 
-        let private seqFactory (createSeqComponent:#SeqFactory<_,_>) (source:seq<'T>) =
-            match source with
-            | :? Composer.Core.ISeq<'T> as s -> Upcast.enumerable (s.Compose createSeqComponent)
-            | :? array<'T> as a -> Upcast.enumerable (Composer.Array.create a createSeqComponent)
-            | :? list<'T> as a -> Upcast.enumerable (Composer.List.create a createSeqComponent)
-            | null -> nullArg "source"
-            | _ -> Upcast.enumerable (Composer.Enumerable.create source createSeqComponent)
-
         [<CompiledName("Delay")>]
         let delay f = mkDelayedSeq f
 
@@ -254,7 +246,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Concat")>]
         let concat (sources:seq<#seq<'T>>) : seq<'T> =
             checkNonNull "sources" sources
-            upcast Composer.Enumerable.ConcatEnumerable sources
+            sources |> toComposer |> Composer.map toComposer |> Composer.concat |> Upcast.enumerable
 
         [<CompiledName("Length")>]
         let length (source : seq<'T>)    =
@@ -304,10 +296,7 @@ namespace Microsoft.FSharp.Collections
         let append (source1: seq<'T>) (source2: seq<'T>) =
             checkNonNull "source1" source1
             checkNonNull "source2" source2
-            match source1 with
-            | :? Composer.Enumerable.EnumerableBase<'T> as s -> s.Append source2
-            | _ -> Upcast.enumerable (new Composer.Enumerable.AppendEnumerable<_>([source2; source1]))
-
+            Composer.append (toComposer source1) (toComposer source2) |> Upcast.enumerable
 
         [<CompiledName("Collect")>]
         let collect f sources = map f sources |> concat
