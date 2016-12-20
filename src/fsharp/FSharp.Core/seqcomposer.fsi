@@ -94,7 +94,7 @@ namespace Microsoft.FSharp.Collections
 
         /// <summary>Folder is a base class to assist with fold-like operations. It's intended usage
         /// is as a base class for an object expression that will be used from within
-        /// the ForEach function.</summary>
+        /// the Fold function.</summary>
         [<AbstractClass>]
         type Folder<'T,'Result,'State> =
             inherit ConsumerWithState<'T,'T,'State>
@@ -128,7 +128,7 @@ namespace Microsoft.FSharp.Collections
         type ISeq<'T> =
             inherit System.Collections.Generic.IEnumerable<'T>
             abstract member Compose : SeqFactory<'T,'U> -> ISeq<'U>
-            abstract member ForEach<'Result,'State> : f:(PipeIdx->Folder<'T,'Result,'State>) -> 'Result
+            abstract member Fold<'Result,'State> : f:(PipeIdx->Folder<'T,'Result,'State>) -> 'Result
 
     open Core
 
