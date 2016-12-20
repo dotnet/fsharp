@@ -337,9 +337,9 @@ namespace Microsoft.FSharp.Collections
                 let derivedClassShouldImplement () =
                     failwith "library implementation error: derived class should implement (should be abstract)"
 
-                abstract member Append   : (seq<'T>) -> IEnumerable<'T>
+                abstract member Append   : (ISeq<'T>) -> ISeq<'T>
 
-                default this.Append source = Upcast.enumerable (AppendEnumerable [this; source])
+                default this.Append source = Upcast.seq (AppendEnumerable [this; source])
 
                 interface IEnumerable with
                     member this.GetEnumerator () : IEnumerator =
@@ -448,7 +448,7 @@ namespace Microsoft.FSharp.Collections
                         main.Dispose ()
                         active.Dispose ()
 
-            and AppendEnumerable<'T> (sources:list<seq<'T>>) =
+            and AppendEnumerable<'T> (sources:list<ISeq<'T>>) =
                 inherit EnumerableBase<'T>()
 
                 interface IEnumerable<'T> with
@@ -456,7 +456,7 @@ namespace Microsoft.FSharp.Collections
                         Upcast.enumerator (new ConcatEnumerator<_,_> (sources |> List.rev))
 
                 override this.Append source =
-                    Upcast.enumerable (AppendEnumerable (source :: sources))
+                    Upcast.seq (AppendEnumerable (source :: sources))
 
                 interface ISeq<'T> with
                     member this.Compose (next:SeqFactory<'T,'U>) : ISeq<'U> =
@@ -493,7 +493,7 @@ namespace Microsoft.FSharp.Collections
                     member this.GetEnumerator () : IEnumerator<'T> = IEnumerator.Empty<'T>()
 
                 override this.Append source =
-                    Upcast.enumerable (Enumerable.EnumerableThin<'T> source)
+                    Upcast.seq (Enumerable.EnumerableThin<'T> source)
 
                 interface ISeq<'T> with
                     member this.Compose (next:SeqFactory<'T,'U>) : ISeq<'U> =
@@ -1294,7 +1294,7 @@ namespace Microsoft.FSharp.Collections
 
 
         [<CompiledName "Skip">]
-        let inline skip (errorString:string) (skipCount:int) (source:ISeq<'T>) : ISeq<'T> =
+        let skip (errorString:string) (skipCount:int) (source:ISeq<'T>) : ISeq<'T> =
             source |> compose { new SeqFactory<'T,'T>() with
                 override __.Create _ _ next =
                     upcast {
@@ -1525,3 +1525,15 @@ namespace Microsoft.FSharp.Collections
                                         TailCall.avoid (next.ProcessNext window)
 
                     }}
+
+        [<CompiledName("Concat")>]
+        let concat (sources:ISeq<#ISeq<'T>>) : ISeq<'T> =
+            Upcast.seq (Enumerable.ConcatEnumerable sources)
+
+        [<CompiledName("Append")>]
+        let append (source1: ISeq<'T>) (source2: ISeq<'T>) : ISeq<'T> =
+            match source1 with
+            | :? Enumerable.EnumerableBase<'T> as s -> s.Append source2
+            | _ -> Upcast.seq (new Enumerable.AppendEnumerable<_>([source2; source1]))
+
+

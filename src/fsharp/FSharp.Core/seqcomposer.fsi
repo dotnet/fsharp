@@ -132,237 +132,6 @@ namespace Microsoft.FSharp.Collections
 
     open Core
 
-    type ComposedFactory<'T,'U,'V> =
-        class
-        inherit  SeqFactory<'T,'V>
-        private new : first: SeqFactory<'T,'U> *
-                        second: SeqFactory<'U,'V> *
-                        secondPipeIdx: PipeIdx ->
-                            ComposedFactory<'T,'U,'V>
-        static member
-            Combine : first: SeqFactory<'T,'U> ->
-                        second: SeqFactory<'U,'V> ->
-                            SeqFactory<'T,'V>
-        end
-    and IdentityFactory<'T> =
-        class
-        inherit  SeqFactory<'T,'T>
-        new : unit ->  IdentityFactory<'T>
-        static member Instance :  SeqFactory<'T,'T>
-        end
-
-    and ISkipping =
-        interface
-        abstract member Skipping : unit -> bool
-        end
-
-    type SeqProcessNextStates =
-        |  InProcess  =  0
-        |  NotStarted  =  1
-        |  Finished  =  2
-    type Result<'T> =
-        class
-        inherit  Folder<'T,'T>
-        new : unit ->  Result<'T>
-        member SeqState :  SeqProcessNextStates
-        member SeqState :  SeqProcessNextStates with set
-        override ProcessNext : input:'T -> bool
-        end
-    module Enumerable = begin
-        type Empty<'T> =
-            class
-            interface IDisposable
-            interface IEnumerator
-            interface IEnumerator<'T>
-            new : unit ->  Empty<'T>
-        end
-        type EmptyEnumerators<'T> =
-            class
-            new : unit ->  EmptyEnumerators<'T>
-            static member Element : IEnumerator<'T>
-        end
-        [<AbstractClass>]
-        type EnumeratorBase<'T> =
-            class
-            interface IEnumerator<'T>
-            interface IEnumerator
-            interface IDisposable
-            new : result: Result<'T> *
-                seqComponent: Consumer ->
-                    EnumeratorBase<'T>
-        end
-        and [<AbstractClass>] EnumerableBase<'T> =
-            class
-            interface  ISeq<'T>
-            interface IEnumerable<'T>
-            interface IEnumerable
-            new : unit ->  EnumerableBase<'T>
-            abstract member
-                Append : seq<'T> -> IEnumerable<'T>
-            override
-                Append : source:seq<'T> -> IEnumerable<'T>
-        end
-        and Enumerator<'T,'U> =
-            class
-            inherit  EnumeratorBase<'U>
-            interface IDisposable
-            interface IEnumerator
-            new : source:IEnumerator<'T> *
-                seqComponent: Consumer<'T,'U> *
-                result: Result<'U> ->
-                    Enumerator<'T,'U>
-        end
-        and Enumerable<'T,'U> =
-            class
-            inherit  EnumerableBase<'U>
-            interface  ISeq<'U>
-            interface IEnumerable<'U>
-            new : enumerable:IEnumerable<'T> *
-                current: SeqFactory<'T,'U> ->
-                    Enumerable<'T,'U>
-        end
-        and ConcatEnumerator<'T,'Collection when 'Collection :> seq<'T>> =
-            class
-            interface IDisposable
-            interface IEnumerator
-            interface IEnumerator<'T>
-            new : sources:seq<'Collection> ->
-                    ConcatEnumerator<'T,'Collection>
-        end
-        and AppendEnumerable<'T> =
-            class
-            inherit  EnumerableBase<'T>
-            interface  ISeq<'T>
-            interface IEnumerable<'T>
-            new : sources:seq<'T> list ->  AppendEnumerable<'T>
-            override
-                Append : source:seq<'T> ->
-                        IEnumerable<'T>
-        end
-        and ConcatEnumerable<'T,'Collection when 'Collection :> seq<'T>> =
-            class
-            inherit  EnumerableBase<'T>
-            interface  ISeq<'T>
-            interface IEnumerable<'T>
-            new : sources:seq<'Collection> ->
-                    ConcatEnumerable<'T,'Collection>
-        end
-        val create :
-            enumerable:IEnumerable<'a> ->
-            current: SeqFactory<'a,'b> ->  ISeq<'b>
-    end
-    module EmptyEnumerable = begin
-        type Enumerable<'T> =
-            class
-            inherit  Enumerable.EnumerableBase<'T>
-            interface  ISeq<'T>
-            interface IEnumerable<'T>
-            new : unit ->  Enumerable<'T>
-            override
-                Append : source:seq<'T> -> IEnumerable<'T>
-            static member Instance :  ISeq<'T>
-        end
-    end
-    module Array = begin
-        type Enumerator<'T,'U> =
-            class
-            inherit  Enumerable.EnumeratorBase<'U>
-            interface IEnumerator
-            new : delayedArray:(unit -> 'T array) *
-                seqComponent: Consumer<'T,'U> *
-                result: Result<'U> ->  Enumerator<'T,'U>
-        end
-        type Enumerable<'T,'U> =
-            class
-            inherit  Enumerable.EnumerableBase<'U>
-            interface  ISeq<'U>
-            interface IEnumerable<'U>
-            new : delayedArray:(unit -> 'T array) *
-                current: SeqFactory<'T,'U> ->
-                    Enumerable<'T,'U>
-        end
-        val createDelayed :
-            delayedArray:(unit -> 'T array) ->
-            current: SeqFactory<'T,'U> ->  ISeq<'U>
-        val create :
-            array:'T array ->
-            current: SeqFactory<'T,'U> ->  ISeq<'U>
-        val createDelayedId :
-            delayedArray:(unit -> 'T array) ->  ISeq<'T>
-        val createId : array:'T array ->  ISeq<'T>
-    end
-    module List = begin
-        type Enumerator<'T,'U> =
-            class
-            inherit  Enumerable.EnumeratorBase<'U>
-            interface IEnumerator
-            new : alist:'T list * seqComponent: Consumer<'T,'U> *
-                result: Result<'U> ->  Enumerator<'T,'U>
-        end
-        type Enumerable<'T,'U> =
-            class
-            inherit  Enumerable.EnumerableBase<'U>
-            interface  ISeq<'U>
-            interface IEnumerable<'U>
-            new : alist:'T list * current: SeqFactory<'T,'U> ->
-                    Enumerable<'T,'U>
-        end
-        val create :
-            alist:'a list ->
-            current: SeqFactory<'a,'b> ->  ISeq<'b>
-    end
-    module Unfold = begin
-        type Enumerator<'T,'U,'State> =
-            class
-            inherit  Enumerable.EnumeratorBase<'U>
-            interface IEnumerator
-            new : generator:('State -> ('T * 'State) option) * state:'State *
-                seqComponent: Consumer<'T,'U> *
-                result: Result<'U> ->
-                    Enumerator<'T,'U,'State>
-        end
-        type Enumerable<'T,'U,'GeneratorState> =
-            class
-            inherit  Enumerable.EnumerableBase<'U>
-            interface  ISeq<'U>
-            interface IEnumerable<'U>
-            new : generator:('GeneratorState -> ('T * 'GeneratorState) option) *
-                state:'GeneratorState * current: SeqFactory<'T,'U> ->
-                    Enumerable<'T,'U,'GeneratorState>
-        end
-    end
-    module Init = begin
-        val getTerminatingIdx : count:Nullable<int> -> int
-        type Enumerator<'T,'U> =
-            class
-            inherit  Enumerable.EnumeratorBase<'U>
-            interface IEnumerator
-            new : count:Nullable<int> * f:(int -> 'T) *
-                seqComponent: Consumer<'T,'U> *
-                result: Result<'U> ->  Enumerator<'T,'U>
-        end
-        type Enumerable<'T,'U> =
-            class
-            inherit  Enumerable.EnumerableBase<'U>
-            interface  ISeq<'U>
-            interface IEnumerable<'U>
-            new : count:Nullable<int> * f:(int -> 'T) *
-                current: SeqFactory<'T,'U> ->
-                    Enumerable<'T,'U>
-        end
-        val upto :
-            lastOption:int option ->
-            f:(int -> 'U) -> IEnumerator<'U>
-        type EnumerableDecider<'T> =
-            class
-            inherit  Enumerable.EnumerableBase<'T>
-            interface  ISeq<'T>
-            interface IEnumerable<'T>
-            new : count:Nullable<int> * f:(int -> 'T) ->
-                    EnumerableDecider<'T>
-        end
-    end
-
     [<CompiledName "ToComposer">]
     val toComposer : source:seq<'T> ->  ISeq<'T>
 
@@ -486,7 +255,7 @@ namespace Microsoft.FSharp.Collections
     val inline scan : folder:('State->'T->'State) -> initialState:'State -> source:ISeq<'T> -> ISeq<'State>
 
     [<CompiledName "Skip">]
-    val inline skip : errorString:string -> skipCount:int -> source:ISeq<'T> -> ISeq<'T>
+    val skip : errorString:string -> skipCount:int -> source:ISeq<'T> -> ISeq<'T>
 
     [<CompiledName "SkipWhile">]
     val inline skipWhile : predicate:('T->bool) -> source:ISeq<'T> -> ISeq<'T>
@@ -533,3 +302,16 @@ namespace Microsoft.FSharp.Collections
 
     [<CompiledName "Windowed">]
     val inline windowed : windowSize:int -> source:ISeq<'T> -> ISeq<'T[]>
+
+    [<CompiledName("Concat")>]
+    val concat : sources:ISeq<'Collection> -> ISeq<'T> when 'Collection :> ISeq<'T>
+
+    [<CompiledName("Append")>]
+    val append: source1:ISeq<'T> -> source2:ISeq<'T> -> ISeq<'T>
+
+    module internal Array = begin
+        val createDelayed   : (unit -> 'T array) -> SeqFactory<'T,'U> ->  ISeq<'U>
+        val create          : 'T array -> SeqFactory<'T,'U> ->  ISeq<'U>
+        val createDelayedId : (unit -> 'T array) ->  ISeq<'T>
+        val createId        : 'T array ->  ISeq<'T>
+    end
