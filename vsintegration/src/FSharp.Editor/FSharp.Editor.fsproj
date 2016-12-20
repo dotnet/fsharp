@@ -35,7 +35,7 @@
     <Compile Include="Common\Logging.fs" />
     <Compile Include="Common\ContentType.fs" />
     <Compile Include="Common\LanguageService.fs" />
-    <Compile Include="AssemblyContentProvider.fs" />
+    <Compile Include="Common\AssemblyContentProvider.fs" />
     <Compile Include="Classification\ColorizationService.fs" />
     <Compile Include="Formatting\BraceMatchingService.fs" />
     <Compile Include="Formatting\IndentationService.fs" />

@@ -23,7 +23,9 @@ module internal Utils =
     [<RequireQualifiedAccess>]
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module Option =
-        let inline attempt (f: unit -> 'T) = try Some <| f() with _ -> None
+        let inline attempt (f: unit -> 'T) = try Some (f()) with _ -> None
+        let inline defaultValue v = function Some x -> x | None -> v
+        let inline orElse v = function Some x -> Some x | None -> v
 
     [<RequireQualifiedAccess>]
     [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
@@ -86,10 +88,10 @@ module internal Utils =
         
     type FSharpEntity with
         member x.TryGetFullName() =
-            Option. attempt (fun _ -> x.TryFullName)
-            |> Option.flatten
-            |> Option.orElseWith (fun _ ->
-                Option.attempt (fun _ -> String.Join(".", x.AccessPath, x.DisplayName)))
+            try x.TryFullName 
+            with _ -> 
+                try Some(String.Join(".", x.AccessPath, x.DisplayName))
+                with _ -> None
 
         member x.TryGetFullDisplayName() =
             let fullName = x.TryGetFullName() |> Option.map (fun fullName -> fullName.Split '.')
@@ -123,7 +125,7 @@ module internal Utils =
             x.NestedEntities |> Seq.filter (fun entity -> entity.Accessibility.IsPublic)
 
         member x.TryGetMembersFunctionsAndValues = 
-            Option.attempt (fun _ -> x.MembersFunctionsAndValues) |> Option.defaultValue ([||] :> _)
+            try x.MembersFunctionsAndValues with _ -> [||] :> _
 
     let isOperator (name: string) =
         name.StartsWith "( " && name.EndsWith " )" && name.Length > 4
