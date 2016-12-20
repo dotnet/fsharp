@@ -121,8 +121,6 @@ namespace Microsoft.FSharp.Collections
         [<AbstractClass>]
         type SeqFactory<'T,'U> =
             new : unit -> SeqFactory<'T,'U>
-            abstract PipeIdx : PipeIdx
-            default  PipeIdx : PipeIdx
             abstract member Create : IOutOfBand -> PipeIdx -> Consumer<'U,'V> -> Consumer<'T,'V>
 
         type ISeq<'T> =
