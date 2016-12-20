@@ -1344,7 +1344,7 @@ let CombineVisibilityAttribs vis1 vis2 m =
         errorR(Error(FSComp.SR.tcMultipleVisibilityAttributes(),m))
    if Option.isSome vis1 then vis1 else vis2
 
-let ComputeAccessAndCompPath env declKindOpt m vis actualParent = 
+let ComputeAccessAndCompPath env declKindOpt m vis overrideVis actualParent = 
     let accessPath = env.eAccessPath
     let accessModPermitted = 
         match declKindOpt with 
@@ -1354,11 +1354,12 @@ let ComputeAccessAndCompPath env declKindOpt m vis actualParent =
     if Option.isSome vis && not accessModPermitted then 
         errorR(Error(FSComp.SR.tcMultipleVisibilityAttributesWithLet(),m)) 
     let vis = 
-        match vis with 
-        | None -> taccessPublic (* a module or member binding defaults to "public" *)
-        | Some SynAccess.Public -> taccessPublic
-        | Some SynAccess.Private -> taccessPrivate accessPath
-        | Some SynAccess.Internal -> taccessInternal 
+        match overrideVis, vis with 
+        | Some v,_ -> v
+        | _, None -> taccessPublic (* a module or member binding defaults to "public" *)
+        | _, Some SynAccess.Public -> taccessPublic
+        | _, Some SynAccess.Private -> taccessPrivate accessPath
+        | _, Some SynAccess.Internal -> taccessInternal 
 
     let vis = 
         match actualParent with 
@@ -1397,7 +1398,7 @@ let MakeAndPublishVal cenv env (altActualParent,inSig,declKind,vrec,(ValScheme(i
         | _ -> false
 
     let isExtrinsic = (declKind=ExtrinsicExtensionBinding)
-    let actualParent = 
+    let actualParent, overrideVis = 
         // Use the parent of the member if it's available 
         // If it's an extrinsic extension member or not a member then use the containing module. 
         match memberInfoOpt with 
@@ -1405,10 +1406,20 @@ let MakeAndPublishVal cenv env (altActualParent,inSig,declKind,vrec,(ValScheme(i
             if memberInfo.ApparentParent.IsModuleOrNamespace then 
                 errorR(InternalError(FSComp.SR.tcExpectModuleOrNamespaceParent(id.idText),m))
 
-            Parent(memberInfo.ApparentParent)
-        | _ -> altActualParent
-             
-    let vis,_ = ComputeAccessAndCompPath env (Some declKind) id.idRange vis actualParent
+            // Members of interface implementations have the accessibility of the interface
+            // they are implementing.
+            let vis =
+                if Tastops.MemberIsExplicitImpl cenv.g memberInfo then
+                    let slotSig = List.head memberInfo.ImplementedSlotSigs
+                    match slotSig.ImplementedType with
+                    | TType_app (tyconref,_) -> Some tyconref.Accessibility
+                    | _ -> None
+                else
+                    None
+            Parent(memberInfo.ApparentParent), vis
+        | _ -> altActualParent, None
+                    
+    let vis,_ = ComputeAccessAndCompPath env (Some declKind) id.idRange vis overrideVis actualParent
 
     let inlineFlag = 
         if HasFSharpAttributeOpt cenv.g cenv.g.attrib_DllImportAttribute attrs then 
@@ -11636,7 +11647,7 @@ module TcRecdUnionAndEnumDeclarations = begin
         | Parent tcref -> combineAccess vis tcref.TypeReprAccessibility
 
     let MakeRecdFieldSpec _cenv env parent (isStatic,konst,ty',attrsForProperty,attrsForField,id,isMutable,vol,xmldoc,vis,m) =
-        let vis,_ = ComputeAccessAndCompPath env None m vis parent
+        let vis,_ = ComputeAccessAndCompPath env None m vis None parent
         let vis = CombineReprAccess parent vis
         NewRecdField isStatic konst id ty' isMutable vol attrsForProperty attrsForField xmldoc vis false
 
@@ -11714,7 +11725,7 @@ module TcRecdUnionAndEnumDeclarations = begin
                 
     let TcUnionCaseDecl cenv env parent thisTy tpenv  (UnionCase (synAttrs,id,args,xmldoc,vis,m)) =
         let attrs = TcAttributes cenv env AttributeTargets.UnionCaseDecl synAttrs // the attributes of a union case decl get attached to the generated "static factory" method
-        let vis,_ = ComputeAccessAndCompPath env None m vis parent
+        let vis,_ = ComputeAccessAndCompPath env None m vis None parent
         let vis = CombineReprAccess parent vis
         let realUnionCaseName =  
             if id.idText = opNameCons then "Cons" 
@@ -11764,7 +11775,7 @@ module TcRecdUnionAndEnumDeclarations = begin
         | SynConst.UserNum _ -> error(Error(FSComp.SR.tcInvalidEnumerationLiteral(),m))
         | _ -> 
             let v = TcConst cenv fieldTy m env v
-            let vis,_ = ComputeAccessAndCompPath env None m None parent
+            let vis,_ = ComputeAccessAndCompPath env None m None None parent
             let vis = CombineReprAccess parent vis
             if id.idText = "value__" then errorR(Error(FSComp.SR.tcNotValidEnumCaseName(),id.idRange))
             NewRecdField true (Some v) id thisTy false false [] attrs (xmldoc.ToXmlDoc()) vis false
@@ -14022,7 +14033,7 @@ module TcExceptionDeclarations =
     let TcExnDefnCore_Phase1A cenv env parent (SynExceptionDefnRepr(synAttrs,UnionCase(_,id,_,_,_,_),_,doc,vis,m)) =
         let attrs = TcAttributes cenv env AttributeTargets.ExnDecl synAttrs
         if not (String.isUpper id.idText) then errorR(NotUpperCaseConstructor(m))
-        let vis,cpath = ComputeAccessAndCompPath env None m vis parent
+        let vis,cpath = ComputeAccessAndCompPath env None m vis None parent
         let vis = TcRecdUnionAndEnumDeclarations.CombineReprAccess parent vis
         CheckForDuplicateConcreteType env (id.idText + "Exception") id.idRange
         CheckForDuplicateConcreteType env id.idText id.idRange
@@ -14264,7 +14275,7 @@ module EstablishTypeDefinitionCores =
         let modKind = ComputeModuleOrNamespaceKind cenv.g true typeNames modAttrs id.idText
         let modName = AdjustModuleName modKind id.idText
 
-        let vis,_ = ComputeAccessAndCompPath envInitial None id.idRange vis parent
+        let vis,_ = ComputeAccessAndCompPath envInitial None id.idRange vis None parent
              
         CheckForDuplicateModule envInitial id.idText id.idRange
         let id = ident (modName, id.idRange)
@@ -14293,7 +14304,7 @@ module EstablishTypeDefinitionCores =
 
         // Augmentations of type definitions are allowed within the same file as long as no new type representation or abbreviation is given 
         CheckForDuplicateConcreteType env id.idText id.idRange
-        let vis,cpath = ComputeAccessAndCompPath env None id.idRange synVis parent
+        let vis,cpath = ComputeAccessAndCompPath env None id.idRange synVis None parent
 
         // Establish the visibility of the representation, e.g.
         //   type R = 
@@ -14310,7 +14321,7 @@ module EstablishTypeDefinitionCores =
             | SynTypeDefnSimpleRepr.Enum _ -> None
             | SynTypeDefnSimpleRepr.Exception _ -> None
          
-        let visOfRepr,_ = ComputeAccessAndCompPath env None id.idRange synVisOfRepr parent
+        let visOfRepr,_ = ComputeAccessAndCompPath env None id.idRange synVisOfRepr None parent
         let visOfRepr = combineAccess vis visOfRepr 
         // If we supported nested types and modules then additions would be needed here
         let lmtyp = notlazy (NewEmptyModuleOrNamespaceType ModuleOrType)
@@ -16016,7 +16027,7 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
                 return! TcSignatureElementsMutRec cenv parent endm None env [modDecl]
             else
                 let id = ComputeModuleName longPath
-                let vis,_ = ComputeAccessAndCompPath env None im vis parent
+                let vis,_ = ComputeAccessAndCompPath env None im vis None parent
                 let attribs = TcAttributes cenv env AttributeTargets.ModuleDecl attribs
                 CheckNamespaceModuleOrTypeName cenv.g id
                 let modKind = EstablishTypeDefinitionCores.ComputeModuleOrNamespaceKind cenv.g true typeNames attribs id.idText
@@ -16335,7 +16346,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv:cenv) parent typeNames scopem 
               let modName = EstablishTypeDefinitionCores.AdjustModuleName modKind id.idText
               CheckForDuplicateConcreteType env modName im
               CheckForDuplicateModule env id.idText id.idRange
-              let vis,_ = ComputeAccessAndCompPath env None id.idRange vis parent
+              let vis,_ = ComputeAccessAndCompPath env None id.idRange vis None parent
              
               let endm = m.EndRange
               let id = ident (modName, id.idRange)
