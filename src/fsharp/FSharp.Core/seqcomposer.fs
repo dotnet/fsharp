@@ -221,33 +221,39 @@ namespace Microsoft.FSharp.Collections
             type Array<'T> (array:array<'T>) =
                 interface IIterate<'T> with
                     member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Consumer<'T,'U>) =
-                        let mutable idx = 0
-                        while (outOfBand.HaltedIdx = 0) && (idx < array.Length) do
-                            consumer.ProcessNext array.[idx] |> ignore
-                            idx <- idx + 1
+                        let array = array
+                        let rec iterate idx =
+                            if idx < array.Length then  
+                                consumer.ProcessNext array.[idx] |> ignore
+                                if outOfBand.HaltedIdx = 0 then
+                                    iterate (idx+1)
+                        iterate 0
 
             [<Struct;NoComparison;NoEquality>]
             type List<'T> (alist:list<'T>) =
                 interface IIterate<'T> with
                     member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Consumer<'T,'U>) =
                         let rec iterate lst =
-                            match outOfBand.HaltedIdx, lst with
-                            | 0, hd :: tl ->
+                            match lst with
+                            | hd :: tl ->
                                 consumer.ProcessNext hd |> ignore
-                                iterate tl
+                                if outOfBand.HaltedIdx = 0 then
+                                    iterate tl
                             | _ -> ()
                         iterate alist
 
+            [<Struct;NoComparison;NoEquality>]
             type unfold<'S,'T> (generator:'S->option<'T*'S>, state:'S) =
                 interface IIterate<'T> with
                     member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Consumer<'T,'U>) =
+                        let generator = generator
                         let rec iterate current =
-                            match outOfBand.HaltedIdx, generator current with
-                            | 0, Some (item, next) ->
+                            match generator current with
+                            | Some (item, next) ->
                                 consumer.ProcessNext item |> ignore
-                                iterate next
+                                if outOfBand.HaltedIdx = 0 then
+                                    iterate next
                             | _ -> ()
-
                         iterate state
 
             let makeIsSkipping (consumer:Consumer<'T,'U>) =
@@ -255,20 +261,30 @@ namespace Microsoft.FSharp.Collections
                 | :? ISkipping as skip -> skip.Skipping
                 | _ -> fun () -> false
 
-            type init<'T> (f, terminatingIdx:int) =
+            [<Struct;NoComparison;NoEquality>]
+            type init<'T> (f:int->'T, terminatingIdx:int) =
                 interface IIterate<'T> with
                     member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Consumer<'T,'U>) =
-                        let mutable idx = -1
+                        let terminatingIdx =terminatingIdx
+                        let f = f
+
                         let isSkipping = makeIsSkipping consumer
-                        let mutable maybeSkipping = true
-                        while (outOfBand.HaltedIdx = 0) && (idx < terminatingIdx) do
-                            if maybeSkipping then
-                                maybeSkipping <- isSkipping ()
+                        let rec skip idx =
+                            if idx >= terminatingIdx || outOfBand.HaltedIdx <> 0 then
+                                terminatingIdx
+                            elif isSkipping () then
+                                skip (idx+1)
+                            else
+                                idx
 
-                            if not maybeSkipping then
-                                consumer.ProcessNext (f (idx+1)) |> ignore
+                        let rec iterate idx =
+                            if idx < terminatingIdx then
+                                consumer.ProcessNext (f idx) |> ignore
+                                if outOfBand.HaltedIdx = 0 then
+                                    iterate (idx+1)
 
-                            idx <- idx + 1
+                        skip 0
+                        |> iterate
 
             let execute (f:PipeIdx->Folder<'U,'Result,'State>) (current:SeqFactory<'T,'U>) pipeIdx (executeOn:#IIterate<'T>) =
                 let mutable stopTailCall = ()
