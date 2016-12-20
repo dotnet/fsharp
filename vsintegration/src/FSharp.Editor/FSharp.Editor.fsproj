@@ -30,7 +30,6 @@
   <ItemGroup>
     <Compile Include="Common\AssemblyInfo.fs" />
     <Compile Include="Common\CommonConstants.fs" />
-    <Compile Include="Common\Pervasive.fs" />
     <Compile Include="Common\CommonRoslynHelpers.fs" />
     <Compile Include="Common\CommonHelpers.fs" />
     <Compile Include="Common\Logging.fs" />

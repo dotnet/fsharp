@@ -306,7 +306,7 @@ module internal CommonHelpers =
                 | LexerSymbolKind.GenericTypeParameter 
                 | LexerSymbolKind.StaticallyResolvedTypeParameter -> true 
                 | _ -> false) 
-            |> Option.orTry (fun _ -> tokensUnderCursor |> List.tryFind (fun { DraftToken.Kind = k } -> k = LexerSymbolKind.Operator))
+            |> Option.orElseWith (fun _ -> tokensUnderCursor |> List.tryFind (fun { DraftToken.Kind = k } -> k = LexerSymbolKind.Operator))
             |> Option.map (fun token ->
                 { Kind = token.Kind
                   Line = linePos.Line
@@ -396,6 +396,10 @@ type internal SymbolDeclarationLocation =
 module internal Extensions =
     open System
     open System.IO
+
+    type System.IServiceProvider with
+        member x.GetService<'T>() = x.GetService(typeof<'T>) :?> 'T
+        member x.GetService<'S, 'T>() = x.GetService(typeof<'S>) :?> 'T
 
     type Path with
         static member GetFullPathSafe path =

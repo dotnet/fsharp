@@ -51,7 +51,7 @@ type [<Export>] Logger [<ImportingConstructor>]
     static let mutable globalServiceProvider: IServiceProvider option = None
 
     static member GlobalServiceProvider
-        with get () = globalServiceProvider |>  Option.getOrElse (ServiceProvider.GlobalProvider :> IServiceProvider)
+        with get () = globalServiceProvider |>  Option.defaultValue (ServiceProvider.GlobalProvider :> IServiceProvider)
         and  set v  = globalServiceProvider <- Some v
 
     member __.FSharpLoggingPane
