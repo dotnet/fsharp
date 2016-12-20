@@ -178,21 +178,21 @@ type internal InlineRenameService
     ) =
 
     static member GetInlineRenameInfo(checker: FSharpChecker, projectInfoManager: ProjectInfoManager, document: Document, sourceText: SourceText, position: int, 
-                                      defines: string list, options: FSharpProjectOptions, textVersionHash: int, cancellationToken: CancellationToken) : Async<IInlineRenameInfo> = 
+                                      defines: string list, options: FSharpProjectOptions, textVersionHash: int) : Async<IInlineRenameInfo> = 
         async {
             let textLine = sourceText.Lines.GetLineFromPosition(position)
             let textLinePos = sourceText.Lines.GetLinePosition(position)
             let fcsTextLineNumber = textLinePos.Line + 1 // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
             
-            match CommonHelpers.tryClassifyAtPosition(document.Id, sourceText, document.FilePath, defines, position, SymbolSearchKind.IncludeRightColumn, cancellationToken) with 
-            | Some (islandColumn, qualifiers, _) -> 
+            match CommonHelpers.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Fuzzy) with 
+            | Some symbol -> 
                 let! _parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(document.FilePath, textVersionHash, sourceText.ToString(), options)
                 
                 match checkFileAnswer with
                 | FSharpCheckFileAnswer.Aborted -> return FailureInlineRenameInfo.Instance :> _
                 | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> 
         
-                let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, islandColumn, textLine.Text.ToString(), qualifiers)
+                let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.RightColumn, textLine.Text.ToString(), [symbol.Text])
                 
                 match symbolUse with
                 | Some symbolUse ->
@@ -211,7 +211,7 @@ type internal InlineRenameService
                     let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                     let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
                     let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
-                    return! InlineRenameService.GetInlineRenameInfo(checkerProvider.Checker, projectInfoManager, document, sourceText, position, defines, options, textVersion.GetHashCode(), cancellationToken)
+                    return! InlineRenameService.GetInlineRenameInfo(checkerProvider.Checker, projectInfoManager, document, sourceText, position, defines, options, hash textVersion)
                 | None -> return FailureInlineRenameInfo.Instance :> _
             }
             |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
