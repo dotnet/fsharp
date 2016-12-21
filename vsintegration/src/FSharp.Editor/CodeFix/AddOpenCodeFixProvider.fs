@@ -123,15 +123,15 @@ type internal FSharpAddOpenCodeFixProvider
 
     let openNamespaceFix (context: CodeFixContext) ctx name ns multipleNames = 
         let displayText = "open " + ns + if multipleNames then " (" + name + ")" else ""
-
+        // TODO when fresh Roslyn NuGet packages are published, assign "Namespace" Tag to this CodeAction to show proper glyph.
         CodeAction.Create(
             fixUnderscoresInMenuText displayText,
-            fun (cancellationToken: CancellationToken) -> 
+            (fun (cancellationToken: CancellationToken) -> 
                 async {
                     let! sourceText = context.Document.GetTextAsync() |> Async.AwaitTask
                     return context.Document.WithText(InsertContext.insertOpenDeclaration sourceText ctx ns)
-                } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
-            )
+                } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)),
+            displayText)
 
     let getSuggestions (context: CodeFixContext) (candidates: (Entity * InsertContext) list) : unit =
         let openNamespaceFixes =
