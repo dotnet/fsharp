@@ -318,7 +318,9 @@ module internal CommonHelpers =
                 | LexerSymbolKind.GenericTypeParameter 
                 | LexerSymbolKind.StaticallyResolvedTypeParameter -> true 
                 | _ -> false) 
-            |> Option.orTry (fun _ -> tokensUnderCursor |> List.tryFind (fun { DraftToken.Kind = k } -> k = LexerSymbolKind.Operator))
+            |> (function
+                | Some x -> Some x 
+                | None -> tokensUnderCursor |> List.tryFind (fun { DraftToken.Kind = k } -> k = LexerSymbolKind.Operator))
             |> Option.map (fun token ->
                 { Kind = token.Kind
                   Line = linePos.Line
