@@ -193,6 +193,8 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             let mutable mgr : IOleComponentManager = null
             let mutable componentID = 0u
 
+            let locker = obj()
+
             member this.RegisterForIdleTime() =
                 mgr <- this.GetService(typeof<SOleComponentManager>) :?> IOleComponentManager
                 if componentID = 0u && not (isNull mgr) then
@@ -203,10 +205,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     crinfo0.grfcadvf <- uint32 (_OLECADVF.olecadvfModal ||| _OLECADVF.olecadvfRedrawOff ||| _OLECADVF.olecadvfWarningsOff)
                     crinfo0.uIdleTimeInterval <- 1000u
                     crinfo.[0] <- crinfo0 
-                    let componentID_out = ref componentID
-                    let _hr = mgr.FRegisterComponent(this, crinfo, componentID_out)
-                    componentID <- componentID_out.Value
-                    ()
+                    mgr.FRegisterComponent(this, crinfo, &componentID) |> ignore
                 
             /// This method loads a localized string based on the specified resource.
 
@@ -354,6 +353,15 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             member this.getIdIcoLogoForAboutbox(pIdIco:byref<uint32>) =
                 pIdIco <- 400u
                 VSConstants.S_OK
+
+            override this.Dispose(disposing) =
+                try 
+                    lock (locker) (fun _ ->
+                        if componentID <> 0u && not (isNull mgr) then
+                            mgr.FRevokeComponent(componentID) |> ignore                        
+                            componentID <- 0u)
+                finally
+                    base.Dispose(disposing)
 
             interface Microsoft.VisualStudio.FSharp.Interactive.ITestVFSI with
                 member this.SendTextInteraction(s:string) =

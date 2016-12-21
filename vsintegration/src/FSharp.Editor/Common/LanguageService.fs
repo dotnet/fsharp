@@ -233,7 +233,12 @@ type internal FSharpLanguageService(package : FSharpPackage) as this =
         let site = siteProvider.GetProjectSite()
         let projectGuid = Guid(site.ProjectGuid)
         let projectFileName = site.ProjectFileName()
-        let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectFileName)
+
+        let projectDisplayName = 
+            if String.IsNullOrWhiteSpace projectFileName then projectFileName
+            else Path.GetFileNameWithoutExtension projectFileName
+
+        let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
 
         projectInfoManager.UpdateProjectInfo(projectId, site, workspace)
 
@@ -242,9 +247,7 @@ type internal FSharpLanguageService(package : FSharpPackage) as this =
             let projectContextFactory = this.Package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
             let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
             
-            let projectDisplayName = 
-                if String.IsNullOrWhiteSpace projectFileName then projectFileName
-                else Path.GetFileNameWithoutExtension projectFileName
+            
             
             let projectContext = 
                 projectContextFactory.CreateProjectContext(
