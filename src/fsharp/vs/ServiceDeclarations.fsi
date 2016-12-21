@@ -28,27 +28,29 @@ type internal FSharpXmlDoc =
     /// Indicates that the text for the documentation can be found in a .xml documentation file, using the given signature key
     | XmlDocFileSignature of (*File:*) string * (*Signature:*)string
 
+type internal Layout = Internal.Utilities.StructuredFormat.Layout
+
 /// A single tool tip display element
 //
 // Note: instances of this type do not hold any references to any compiler resources.
 [<RequireQualifiedAccess>]
-type internal FSharpToolTipElement = 
+type internal FSharpToolTipElement<'T> = 
     | None
     /// A single type, method, etc with comment.
-    | Single of (* text *) string * FSharpXmlDoc
+    | Single of (* text *) 'T * FSharpXmlDoc
     /// A single parameter, with the parameter name.
-    | SingleParameter of (* text *) string * FSharpXmlDoc * string
+    | SingleParameter of (* text *) 'T * FSharpXmlDoc * string
     /// For example, a method overload group.
-    | Group of ((* text *) string * FSharpXmlDoc) list
+    | Group of ((* text *) 'T * FSharpXmlDoc) list
     /// An error occurred formatting this element
     | CompositionError of string
 
 /// Information for building a tool tip box.
 //
 // Note: instances of this type do not hold any references to any compiler resources.
-type internal FSharpToolTipText = 
+type internal FSharpToolTipText<'T> = 
     /// A list of data tip elements to display.
-    | FSharpToolTipText of FSharpToolTipElement list  
+    | FSharpToolTipText of FSharpToolTipElement<'T> list  
     
 [<Sealed>]
 /// Represents a declaration in F# source code, with information attached ready for display by an editor.
@@ -62,9 +64,9 @@ type internal FSharpDeclarationListItem =
     /// resources and may trigger execution of a type provider method to retrieve documentation.
     ///
     /// May return "Loading..." if timeout occurs
-    member DescriptionText : FSharpToolTipText
+    member DescriptionText : FSharpToolTipText<Layout>
     /// Get the description text, asynchronously.  Never returns "Loading...".
-    member DescriptionTextAsync : Async<FSharpToolTipText>
+    member DescriptionTextAsync : Async<FSharpToolTipText<Layout>>
     /// Get the glyph integer for the declaration as used by Visual Studio.
     member Glyph : int
     member GlyphMajor : ItemDescriptionIcons.GlyphMajor
@@ -99,8 +101,8 @@ module internal ItemDescriptionsImpl =
     val GetXmlDocSigOfProp : InfoReader -> range -> PropInfo -> (string option * string) option
     val GetXmlDocSigOfEvent : InfoReader -> range -> EventInfo -> (string option * string) option
     val GetXmlCommentForItem : InfoReader -> range -> Item -> FSharpXmlDoc
-    val FormatDescriptionOfItem : bool -> InfoReader -> range -> DisplayEnv -> Item -> FSharpToolTipElement
-    val FormatReturnTypeOfItem  : InfoReader -> range -> DisplayEnv -> Item -> string
+    val FormatDescriptionOfItem : bool -> InfoReader -> range -> DisplayEnv -> Item -> FSharpToolTipElement<Layout>
+    val FormatReturnTypeOfItem  : InfoReader -> range -> DisplayEnv -> Item -> Layout
     val RemoveDuplicateItems : TcGlobals -> Item list -> Item list
     val RemoveExplicitlySuppressed : TcGlobals -> Item list -> Item list
     val GetF1Keyword : Item -> string option

@@ -44,6 +44,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionsImpl
 open Internal.Utilities
 open Internal.Utilities.Collections
 
+type internal Layout = Internal.Utilities.StructuredFormat.Layout
 
 [<AutoOpen>]
 module EnvMisc =
@@ -63,7 +64,7 @@ module EnvMisc =
 //--------------------------------------------------------------------------
 
 [<Sealed>]
-type FSharpMethodGroupItemParameter(name: string, canonicalTypeTextForSorting: string, display: string, isOptional: bool) = 
+type FSharpMethodGroupItemParameter(name: string, canonicalTypeTextForSorting: string, display: Layout, isOptional: bool) = 
     member __.ParameterName = name
     member __.CanonicalTypeTextForSorting = canonicalTypeTextForSorting
     member __.Display = display
@@ -83,12 +84,12 @@ module internal Params =
         FSharpMethodGroupItemParameter(
           name = f.rfield_id.idText,
           canonicalTypeTextForSorting = printCanonicalizedTypeName g denv f.rfield_type,
-          display = NicePrint.prettyStringOfTy denv f.rfield_type,
+          display = NicePrint.prettyLayoutOfTy denv f.rfield_type,
           isOptional=false)
     
     let ParamOfUnionCaseField g denv isGenerated (i : int) f = 
         let initial = ParamOfRecdField g denv f
-        let display = if isGenerated i f then initial.Display else NicePrint.stringOfParamData denv (ParamData(false, false, NotOptional, NoCallerInfo, Some f.rfield_id, ReflectedArgInfo.None, f.rfield_type)) 
+        let display = if isGenerated i f then initial.Display else NicePrint.layoutOfParamData denv (ParamData(false, false, NotOptional, NoCallerInfo, Some f.rfield_id, ReflectedArgInfo.None, f.rfield_type)) 
         FSharpMethodGroupItemParameter(
           name=initial.ParameterName, 
           canonicalTypeTextForSorting=initial.CanonicalTypeTextForSorting, 
@@ -99,7 +100,7 @@ module internal Params =
         FSharpMethodGroupItemParameter(
           name = (match nmOpt with None -> "" | Some pn -> pn.idText),
           canonicalTypeTextForSorting = printCanonicalizedTypeName g denv pty,
-          display = NicePrint.stringOfParamData denv paramData,
+          display = NicePrint.layoutOfParamData denv paramData,
           isOptional=optArgInfo.IsOptional)
 
     // TODO this code is similar to NicePrint.fs:formatParamDataToBuffer, refactor or figure out why different?
@@ -114,18 +115,23 @@ module internal Params =
                     let nm = id.idText
                     // detect parameter type, if ptyOpt is None - this is .NET style optional argument
                     let pty = defaultArg ptyOpt pty
-                    (nm, isOptArg, sprintf "?%s:" nm),  pty
+                    (nm, isOptArg, SepL.questionMark ^^ (wordL (TaggedTextOps.tagParameter nm))),  pty
                 // Layout an unnamed argument 
                 | None, _,_ -> 
-                    ("", isOptArg, ""), pty
+                    ("", isOptArg, emptyL), pty
                 // Layout a named argument 
                 | Some id,_,_ -> 
                     let nm = id.idText
                     let prefix = 
-                        if isParamArrayArg then 
-                            sprintf "%s %s: " (NicePrint.PrintUtilities.layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute |> showL) nm 
+                        if isParamArrayArg then
+                            NicePrint.PrintUtilities.layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute ^^
+                            wordL (TaggedTextOps.tagParameter nm) ^^
+                            RightL.colon
+                            //sprintf "%s %s: " (NicePrint.PrintUtilities.layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute |> showL) nm 
                         else 
-                            sprintf "%s: " nm
+                            wordL (TaggedTextOps.tagParameter nm) ^^
+                            RightL.colon
+                            //sprintf "%s: " nm
                     (nm,isOptArg, prefix),pty)
             |> List.unzip
         let paramTypeAndRetLs,_ = NicePrint.layoutPrettifiedTypes denv (paramTypes@[rty])
@@ -134,7 +140,7 @@ module internal Params =
             FSharpMethodGroupItemParameter(
               name = nm,
               canonicalTypeTextForSorting = printCanonicalizedTypeName g denv tau,
-              display = paramPrefix+(showL tyL),
+              display = paramPrefix ^^ tyL,
               isOptional=isOptArg
             ))
 
@@ -145,7 +151,7 @@ module internal Params =
             FSharpMethodGroupItemParameter(
               name = "",
               canonicalTypeTextForSorting = printCanonicalizedTypeName g denv tau,
-              display =  Layout.showL tyL,
+              display =  tyL,
               isOptional=false
             )
         (args,argsL) ||> List.zip |> List.map mkParam
@@ -212,13 +218,14 @@ module internal Params =
             staticParameters 
                 |> Array.map (fun sp -> 
                     let typ = Import.ImportProvidedType amap m (sp.PApply((fun x -> x.ParameterType),m))
-                    let spKind = NicePrint.stringOfTy denv typ
+                    let spKind = NicePrint.prettyLayoutOfTy denv typ
                     let spName = sp.PUntaint((fun sp -> sp.Name), m)
                     let spOpt = sp.PUntaint((fun sp -> sp.IsOptional), m)
                     FSharpMethodGroupItemParameter(
                       name = spName,
-                      canonicalTypeTextForSorting = spKind,
-                      display = sprintf "%s%s: %s" (if spOpt then "?" else "") spName spKind,
+                      canonicalTypeTextForSorting = showL spKind,
+                      display = (if spOpt then SepL.questionMark else emptyL) ^^ wordL (TaggedTextOps.tagParameter spName) ^^ spKind,
+                      //display = sprintf "%s%s: %s" (if spOpt then "?" else "") spName spKind,
                       isOptional=spOpt))
 #endif
         | _ -> [| |]
@@ -302,7 +309,7 @@ module internal Params =
 /// A single method for Intellisense completion
 [<Sealed; NoEquality; NoComparison>]
 // Note: instances of this type do not hold any references to any compiler resources.
-type FSharpMethodGroupItem(description: FSharpToolTipText, xmlDoc: FSharpXmlDoc, typeText: string, parameters: FSharpMethodGroupItemParameter[], hasParameters: bool, hasParamArrayArg: bool, staticParameters: FSharpMethodGroupItemParameter[]) = 
+type FSharpMethodGroupItem(description: FSharpToolTipText<Layout>, xmlDoc: FSharpXmlDoc, typeText: Layout, parameters: FSharpMethodGroupItemParameter[], hasParameters: bool, hasParamArrayArg: bool, staticParameters: FSharpMethodGroupItemParameter[]) = 
     member __.Description = description
     member __.XmlDoc = xmlDoc
     member __.TypeText = typeText
@@ -501,7 +508,7 @@ type TypeCheckInfo
     // Is not keyed on 'Names' collection because this is invariant for the current position in 
     // this unchanged file. Keyed on lineStr though to prevent a change to the currently line
     // being available against a stale scope.
-    let getToolTipTextCache = AgedLookup<int*int*string,FSharpToolTipText>(getToolTipTextSize,areSame=(fun (x,y) -> x = y))
+    let getToolTipTextCache = AgedLookup<int*int*string,FSharpToolTipText<Layout>>(getToolTipTextSize,areSame=(fun (x,y) -> x = y))
     
     let amap = tcImports.GetImportMap()
     let infoReader = new InfoReader(g,amap)
@@ -1232,8 +1239,8 @@ type TypeCheckInfo
             match matches with 
             | resolved::_ // Take the first seen
             | [resolved] -> 
-                let tip = resolved.prepareToolTip ()
-                FSharpToolTipText [FSharpToolTipElement.Single(tip.TrimEnd([|'\n'|]) ,FSharpXmlDoc.None)]
+                let tip = wordL (TaggedTextOps.tagStringLiteral((resolved.prepareToolTip ()).TrimEnd([|'\n'|])))
+                FSharpToolTipText [FSharpToolTipElement.Single(tip ,FSharpXmlDoc.None)]
 
             | [] -> FSharpToolTipText []
                                     

@@ -27,7 +27,7 @@ type internal FSharpMethodGroupItemParameter =
 
     /// The text to display for the parameter including its name, its type and visual indicators of other
     /// information such as whether it is optional.
-    member Display: string
+    member Display: Layout
 
     /// Is the parameter optional
     member IsOptional: bool
@@ -41,10 +41,10 @@ type internal FSharpMethodGroupItem =
     member XmlDoc : FSharpXmlDoc
 
     /// The formatted description text for the method (or other item)
-    member Description : FSharpToolTipText
+    member Description : FSharpToolTipText<Layout>
 
     /// The formatted type text for the method (or other item)
-    member TypeText: string
+    member TypeText: Layout
 
     /// The parameters of the method in the overload set
     member Parameters: FSharpMethodGroupItemParameter[]
@@ -208,7 +208,7 @@ type internal FSharpCheckFileResults =
     /// <param name="lineText">The text of the line where the information is being requested.</param>
     /// <param name="names">The identifiers at the location where the information is being requested.</param>
     /// <param name="tokenTag">Used to discriminate between 'identifiers', 'strings' and others. For strings, an attempt is made to give a tooltip for a #r "..." location. Use a value from FSharpTokenInfo.Tag, or FSharpTokenTag.Identifier, unless you have other information available.</param>
-    member GetToolTipTextAlternate : line:int * colAtEndOfNames:int * lineText:string * names:string list * tokenTag:int -> Async<FSharpToolTipText>
+    member GetToolTipTextAlternate : line:int * colAtEndOfNames:int * lineText:string * names:string list * tokenTag:int -> Async<FSharpToolTipText<Layout>>
 
     /// <summary>Compute the Visual Studio F1-help key identifier for the given location, based on name resolution results</summary>
     ///

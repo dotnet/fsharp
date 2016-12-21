@@ -143,8 +143,11 @@ type internal FSharpCompletionProvider
             let exists, declarationItem = declarationItemsCache.TryGetValue(completionItem.DisplayText)
             if exists then
                 let! description = declarationItem.DescriptionTextAsync
-                let datatipText = XmlDocumentation.BuildDataTipText(documentationBuilder, description) 
-                return CompletionDescription.FromText(datatipText)
+                let documentation = List()
+                let collector = CommonRoslynHelpers.CollectTaggedText documentation
+                // mix main description and xmldoc by using one collector
+                XmlDocumentation.BuildDataTipText(documentationBuilder, collector, collector, description) 
+                return CompletionDescription.Create(documentation.ToImmutableArray())
             else
                 return CompletionDescription.Empty
         } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken

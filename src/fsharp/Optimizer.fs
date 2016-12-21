@@ -31,6 +31,7 @@ open Microsoft.FSharp.Compiler.Tastops.DebugPrint
 open Microsoft.FSharp.Compiler.TypeChecker
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Layout
+open Microsoft.FSharp.Compiler.Layout.TaggedTextOps
 open Microsoft.FSharp.Compiler.TypeRelations
 
 open System.Collections.Generic
@@ -148,29 +149,29 @@ type ImplFileOptimizationInfo = LazyModuleInfo
 type CcuOptimizationInfo = LazyModuleInfo
 
 #if DEBUG
-let braceL x = leftL "{" ^^ x ^^ rightL "}"  
+let braceL x = leftL (tagText "{") ^^ x ^^ rightL (tagText "}")
 let seqL xL xs = Seq.fold (fun z x -> z @@ xL x)  emptyL xs
 let namemapL xL xmap = NameMap.foldBack (fun nm x z -> xL nm x @@ z)  xmap emptyL
 
 let rec exprValueInfoL g = function
   | ConstValue (x,ty)         -> NicePrint.layoutConst g ty x
-  | UnknownValue             -> wordL "?"
+  | UnknownValue             -> wordL (tagText "?")
   | SizeValue (_,vinfo)      -> exprValueInfoL g vinfo
-  | ValValue (vr,vinfo)      -> bracketL ((valRefL vr ^^ wordL "alias") --- exprValueInfoL g vinfo)
+  | ValValue (vr,vinfo)      -> bracketL ((valRefL vr ^^ wordL (tagText "alias")) --- exprValueInfoL g vinfo)
   | TupleValue vinfos    -> bracketL (exprValueInfosL g vinfos)
   | RecdValue (_,vinfos)     -> braceL   (exprValueInfosL g vinfos)
   | UnionCaseValue (ucr,vinfos) -> unionCaseRefL ucr ^^ bracketL (exprValueInfosL g vinfos)
-  | CurriedLambdaValue(_lambdaId,_arities,_bsize,expr',_ety) -> wordL "lam" ++ exprL expr' (* (sprintf "lam(size=%d)" bsize) *)
+  | CurriedLambdaValue(_lambdaId,_arities,_bsize,expr',_ety) -> wordL (tagText "lam") ++ exprL expr' (* (sprintf "lam(size=%d)" bsize) *)
   | ConstExprValue (_size,x)  -> exprL x
 and exprValueInfosL g vinfos = commaListL (List.map (exprValueInfoL g) (Array.toList vinfos))
 and moduleInfoL g (x:LazyModuleInfo) = 
     let x = x.Force()
-    braceL ((wordL "Modules: " @@ (x.ModuleOrNamespaceInfos |> namemapL (fun nm x -> wordL nm ^^ moduleInfoL g x) ) )
-            @@ (wordL "Values:" @@ (x.ValInfos.Entries |> seqL (fun (vref,x) -> valRefL vref ^^ valInfoL g x) )))
+    braceL ((wordL (tagText "Modules: ") @@ (x.ModuleOrNamespaceInfos |> namemapL (fun nm x -> wordL (tagText nm) ^^ moduleInfoL g x) ) )
+            @@ (wordL (tagText "Values:") @@ (x.ValInfos.Entries |> seqL (fun (vref,x) -> valRefL vref ^^ valInfoL g x) )))
 
 and valInfoL g (x:ValInfo) = 
-    braceL ((wordL "ValExprInfo: " @@ exprValueInfoL g x.ValExprInfo) 
-            @@ (wordL "ValMakesNoCriticalTailcalls:" @@ wordL (if x.ValMakesNoCriticalTailcalls then "true" else "false")))
+    braceL ((wordL (tagText "ValExprInfo: ") @@ exprValueInfoL g x.ValExprInfo) 
+            @@ (wordL (tagText "ValMakesNoCriticalTailcalls:") @@ wordL (tagText (if x.ValMakesNoCriticalTailcalls then "true" else "false"))))
 #endif
 
 type Summary<'Info> =

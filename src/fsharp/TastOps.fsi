@@ -650,13 +650,17 @@ type DisplayEnv =
     member AddOpenPath : string list  -> DisplayEnv
     member AddOpenModuleOrNamespace : ModuleOrNamespaceRef   -> DisplayEnv
 
+val tagEntityRefName: xref: EntityRef -> name: string -> StructuredFormat.TaggedText
 
 /// Return the full text for an item as we want it displayed to the user as a fully qualified entity
 val fullDisplayTextOfModRef : ModuleOrNamespaceRef -> string
 val fullDisplayTextOfParentOfModRef : ModuleOrNamespaceRef -> string option
 val fullDisplayTextOfValRef   : ValRef -> string
+val fullDisplayTextOfValRefAsLayout   : ValRef -> StructuredFormat.Layout
 val fullDisplayTextOfTyconRef  : TyconRef -> string
+val fullDisplayTextOfTyconRefAsLayout  : TyconRef -> StructuredFormat.Layout
 val fullDisplayTextOfExnRef  : TyconRef -> string
+val fullDisplayTextOfExnRefAsLayout  : TyconRef -> StructuredFormat.Layout
 val fullDisplayTextOfUnionCaseRef  : UnionCaseRef -> string
 val fullDisplayTextOfRecdFieldRef  : RecdFieldRef -> string
 
