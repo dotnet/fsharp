@@ -99,7 +99,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             member ips.ProjectGuid = inner.ProjectGuid
             member ips.IsIncompleteTypeCheckEnvironment = false
             member ips.LoadTime = inner.LoadTime 
-
+            member ips.ProjectProvider = inner.ProjectProvider
 
     type internal ProjectSiteOptionLifetimeState =
         | Opening=1  // The project has been opened, but has not yet called Compile() to compute sources/flags
@@ -189,6 +189,23 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
             // FSI-LINKAGE-POINT: unsited init
             do Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageCtorUnsited (this :> Package)
+
+            let mutable mgr : IOleComponentManager = null
+            let mutable componentID = 0u
+
+            let locker = obj()
+
+            member this.RegisterForIdleTime() =
+                mgr <- this.GetService(typeof<SOleComponentManager>) :?> IOleComponentManager
+                if componentID = 0u && not (isNull mgr) then
+                    let crinfo = Array.zeroCreate<OLECRINFO>(1)
+                    let mutable crinfo0 = crinfo.[0]
+                    crinfo0.cbSize <- Marshal.SizeOf(typeof<OLECRINFO>) |> uint32
+                    crinfo0.grfcrf <- uint32 (_OLECRF.olecrfNeedIdleTime ||| _OLECRF.olecrfNeedPeriodicIdleTime)
+                    crinfo0.grfcadvf <- uint32 (_OLECADVF.olecadvfModal ||| _OLECADVF.olecadvfRedrawOff ||| _OLECADVF.olecadvfWarningsOff)
+                    crinfo0.uIdleTimeInterval <- 1000u
+                    crinfo.[0] <- crinfo0 
+                    mgr.FRegisterComponent(this, crinfo, &componentID) |> ignore
                 
             /// This method loads a localized string based on the specified resource.
 
@@ -207,6 +224,9 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 UIThread.CaptureSynchronizationContext()
 
                 base.Initialize()
+
+                let fSharpEditorFactory = new Microsoft.VisualStudio.FSharp.ProjectSystem.FSharpEditorFactory(this);
+                this.RegisterEditorFactory(fSharpEditorFactory);
 
                 // read list of available FSharp.Core versions
                 do
@@ -289,6 +309,8 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitalizeSited (this :> Package) commandService
                 // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
                 let _fsiPropertyPage = this.GetDialogPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>)
+
+                this.RegisterForIdleTime()
                 ()
 
             /// This method is called during Devenv /Setup to get the bitmap to
@@ -335,12 +357,51 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 pIdIco <- 400u
                 VSConstants.S_OK
 
+            override this.Dispose(disposing) =
+                try 
+                    lock (locker) (fun _ ->
+                        if componentID <> 0u && not (isNull mgr) then
+                            mgr.FRevokeComponent(componentID) |> ignore                        
+                            componentID <- 0u)
+                finally
+                    base.Dispose(disposing)
+
             interface Microsoft.VisualStudio.FSharp.Interactive.ITestVFSI with
                 member this.SendTextInteraction(s:string) =
                     GetToolWindowAsITestVFSI().SendTextInteraction(s)
                 member this.GetMostRecentLines(n:int) : string[] =
                     GetToolWindowAsITestVFSI().GetMostRecentLines(n)
+            
+            interface IOleComponent with
+                override this.FContinueMessageLoop(_uReason:uint32, _pvLoopData:IntPtr, _pMsgPeeked:MSG[]) = 
+                    1
 
+                override this.FDoIdle(grfidlef:uint32) =
+                    // see e.g "C:\Program Files\Microsoft Visual Studio 2008 SDK\VisualStudioIntegration\Common\IDL\olecm.idl" for details
+                    //Trace.Print("CurrentDirectoryDebug", (fun () -> sprintf "curdir='%s'\n" (System.IO.Directory.GetCurrentDirectory())))  // can be useful for watching how GetCurrentDirectory changes
+                    let periodic = (grfidlef &&& (uint32 _OLEIDLEF.oleidlefPeriodic)) <> 0u                        
+                    if periodic && not (isNull mgr) && mgr.FContinueIdle() <> 0 then
+                        TaskReporterIdleRegistration.DoIdle(mgr)
+                    else
+                        0
+
+                override this.FPreTranslateMessage(_pMsg) = 0
+
+                override this.FQueryTerminate(_fPromptUser) = 1
+
+                override this.FReserved1(_dwReserved, _message, _wParam, _lParam) = 1
+
+                override this.HwndGetWindow(_dwWhich, _dwReserved) = 0n
+
+                override this.OnActivationChange(_pic, _fSameComponent, _pcrinfo, _fHostIsActivating, _pchostinfo, _dwReserved) = ()
+
+                override this.OnAppActivate(_fActive, _dwOtherThreadID) = ()
+
+                override this.OnEnterState(_uStateID, _fEnter)  = ()
+        
+                override this.OnLoseActivation() = ()
+
+                override this.Terminate() = ()
 
     /// Factory for creating our editor, creates FSharp Projects
     [<Guid(GuidList.guidFSharpProjectFactoryString)>]
@@ -1385,6 +1446,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     member this.TargetFrameworkMoniker = x.GetTargetFrameworkMoniker()
                     member this.ProjectGuid = x.GetProjectGuid()
                     member this.LoadTime = creationTime
+                    member this.ProjectProvider = Some (x :> IProvideProjectSite)
                 }
 
             // Snapshot-capture relevent values from "this", and returns an IProjectSite 
@@ -1416,6 +1478,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     member this.TargetFrameworkMoniker = targetFrameworkMoniker
                     member this.ProjectGuid = x.GetProjectGuid()
                     member this.LoadTime = creationTime
+                    member this.ProjectProvider = Some (x :> IProvideProjectSite)
                 }
 
             // let the language service ask us questions
