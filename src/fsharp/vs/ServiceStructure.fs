@@ -506,14 +506,12 @@ module internal Structure =
         seq {
             match simple with
             | SynTypeDefnSimpleRepr.Enum (cases,_er) ->
-//                yield! rcheck Scope.SimpleType Collapse.Below er er
                 yield!
                     cases
                     |> Seq.collect (fun (SynEnumCase.EnumCase (attrs, _, _, _, cr)) ->
                         seq { yield! rcheck Scope.EnumCase Collapse.Below cr cr
                               yield! parseAttributes attrs })
             | SynTypeDefnSimpleRepr.Record (_opt,fields,rr) ->
-                //yield! rcheck Scope.SimpleType Collapse.Same <| Range.modBoth rr (accessRange opt+1) 1
                 yield! rcheck Scope.RecordDefn Collapse.Same rr rr //<| Range.modBoth rr 1 1
                 yield! fields
                     |> Seq.collect (fun (SynField.Field (attrs,_,_,_,_,_,_,fr)) ->
@@ -521,7 +519,6 @@ module internal Structure =
                         yield! parseAttributes attrs
                     })
             | SynTypeDefnSimpleRepr.Union (_opt,cases,ur) ->
-//                yield! rcheck Scope.SimpleType Collapse.Same <| Range.modStart ur (accessRange opt)
                 yield! rcheck Scope.UnionDefn Collapse.Same ur ur
                 yield! cases
                     |> Seq.collect (fun (SynUnionCase.UnionCase (attrs,_,_,_,_,cr)) ->
