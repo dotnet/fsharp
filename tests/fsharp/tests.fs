@@ -27,12 +27,9 @@ let FSI_BASIC = FSI_FILE
 
 module CoreTests = 
 
-
     // These tests are enabled for .NET Framework and .NET Core
     [<Test>]
     let ``access-FSC_BASIC``() = singleTestBuildAndRun "core/access" FSC_BASIC
-
-
 // All tests below here are known to pass for .NET Core but not yet enabled due to CI problems
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
@@ -166,11 +163,13 @@ module CoreTests =
     [<Test>]
     let ``test int32`` () = singleTestBuildAndRun "core/int32" FSC_BASIC
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let ``quotes-FSC-BASIC`` () = singleTestBuildAndRun "core/quotes" FSC_BASIC
 
     [<Test>]
     let ``attributes-FSC_BASIC`` () = singleTestBuildAndRun "core/attributes" FSC_BASIC
+#endif
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
@@ -200,7 +199,6 @@ module CoreTests =
     [<Test>]
     let ``control --tailcalls`` () = 
         let cfg = testConfig "core/control"
-        
         singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSC_BASIC
 
 
@@ -221,8 +219,11 @@ module CoreTests =
         singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSC_BASIC
 
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+    // Requires winforms will not run on coreclr
     [<Test>]
     let controlWpf () = singleTestBuildAndRun "core/controlwpf" FSC_BASIC
+#endif
 
     [<Test>]
     let csext () = singleTestBuildAndRun "core/csext" FSC_BASIC
@@ -625,10 +626,10 @@ module CoreTests =
     let ``signedtest-17`` () = signedtest("--keyfile:sha1024delay.snk --publicsign", "test-sha1024-public-cl.bsl")
 #endif
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let ``quotes-FSI-BASIC`` () = singleTestBuildAndRun "core/quotes" FSI_BASIC
 
- #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let quotes () = 
         let cfg = testConfig "core/quotes"
@@ -769,7 +770,6 @@ module CoreTests =
 
     [<Test>]
     let ``libtest-AS_DLL`` () = singleTestBuildAndRun "core/libtest" AS_DLL
-#endif
 
     [<Test>]
     let ``libtest-FSI_BASIC`` () = singleTestBuildAndRun "core/libtest" FSI_BASIC
@@ -777,7 +777,6 @@ module CoreTests =
     [<Test>]
     let ``letrec (mutrec variations part two) FSI_BASIC`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSI_BASIC
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let recordResolution () = singleTestBuildAndRun "core/recordResolution" FSC_OPT_PLUS_DEBUG
 
@@ -920,22 +919,24 @@ module CoreTests =
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let ``measures-AS_DLL`` () = singleTestBuildAndRun "core/measures" AS_DLL
-#endif
 
+    // Requires winforms will not run on coreclr
     [<Test>]
     let ``members-basics-FSI_BASIC`` () = singleTestBuildAndRun "core/members/basics" FSI_BASIC
 
+    // Requires winforms will not run on coreclr
     [<Test>]
     let ``members-basics-FSC_BASIC`` () = singleTestBuildAndRun "core/members/basics" FSC_BASIC
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+    // Requires winforms will not run on coreclr
     [<Test>]
     let ``members-basics-AS_DLL`` () = singleTestBuildAndRun "core/members/basics" AS_DLL
-#endif
 
+    // Requires winforms will not run on coreclr
     [<Test>]
     let ``members-basics-hw`` () = singleTestBuildAndRun "core/members/basics-hw" FSC_BASIC
 
+    // Requires winforms will not run on coreclr
     [<Test>]
     let ``members-basics-hw-mutrec`` () = singleTestBuildAndRun "core/members/basics-hw-mutrec" FSC_BASIC
 
@@ -947,6 +948,8 @@ module CoreTests =
 
     [<Test>]
     let ``members-incremental-hw-mutrec`` () = singleTestBuildAndRun "core/members/incremental-hw-mutrec" FSC_BASIC
+
+#endif
 
     [<Test>]
     let patterns () = singleTestBuildAndRun "core/patterns" FSC_BASIC
@@ -1350,7 +1353,6 @@ module CoreTests =
 
 module ToolsTests = 
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let bundle () = 
         let cfg = testConfig "tools/bundle"
@@ -1370,10 +1372,11 @@ module ToolsTests =
         fsc cfg "%s -a --standalone -r:test_two_fsharp_modules_module_1.dll -o:test_two_fsharp_modules_module_2_as_dll.dll -g" cfg.fsc_flags ["test_two_fsharp_modules_module_2.fs"]
    
         peverify cfg "test_two_fsharp_modules_module_2_as_dll.dll"
-#endif
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let eval () = singleTestBuildAndRun "tools/eval" FSC_BASIC
+#endif
 
 
 module RegressionTests = 
@@ -1409,9 +1412,11 @@ module RegressionTests =
 
         peverify cfg  "pack.exe"
                 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+    // Requires WinForms
     [<Test>]
     let ``83`` () = singleTestBuildAndRun "regression/83" FSC_BASIC
-
+#endif
     [<Test >]
     let ``84`` () = singleTestBuildAndRun "regression/84" FSC_BASIC
 
@@ -1566,14 +1571,13 @@ module TypecheckTests =
     [<Test>]
     let ``full-rank-arrays`` () = 
         let cfg = testConfig "typecheck/full-rank-arrays"
+        SingleTest.singleTestBuildAndRunWithCopyDlls cfg "full-rank-arrays.dll" FSC_BASIC
 
-        csc cfg "/target:library /out:HighRankArrayTests.dll" ["Class1.cs"]
-
-        SingleTest.singleTestBuildAndRunAux cfg FSC_BASIC
-
-
+#if !FX_NO_CONVERTER
+    // Converter is not coming back until dotnet standard 2.0
     [<Test>]
-    let misc () = singleTestBuildAndRun "typecheck/misc" FSC_BASIC
+    let misc () = singleTestBuildAndRunWithCopyDll "typecheck/misc" "full-rank-arrays" FSC_BASIC
+#endif
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
@@ -1906,6 +1910,7 @@ open System.Runtime.InteropServices
         
         fv.LegalCopyright |> Assert.areEqual "Copyright \u00A9 Compressed Space Transport 2380"
         fv.LegalTrademarks |> Assert.areEqual "CST \u2122"
+#endif
 
 #if !FX_PORTABLE_OR_NETSTANDARD
 module ProductVersionTest =
@@ -1955,8 +1960,6 @@ namespace CST.RI.Anshun
 
         fileVersionInfo.ProductVersion |> Assert.areEqual expected
 
-#endif
-
 module GeneratedSignatureTests =
     [<Test>]
     let ``members-basics-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/members/basics" GENERATED_SIGNATURE
@@ -1975,5 +1978,4 @@ module GeneratedSignatureTests =
 
     [<Test>]
     let ``measures-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/measures" GENERATED_SIGNATURE
-
 #endif

@@ -90,23 +90,6 @@ end;;
 (* attribute on a return type *)
 (* NOT YET: let [<return: Ignore("ignore")>] myMethod3 x = x + 1 *)
 
-#if !FX_NO_CRYPTO
-(* BUG 428 - compile time error - on obsolete attributes *)
-let f (cert:System.Security.Cryptography.X509Certificates.X509Certificate) = 
-  let x = cert.GetName () in 
-  ()
-
-
-open System.Threading
-let test32498() = 
-  let guiTH = new Thread(new ThreadStart(fun () -> ())) in
-  guiTH.ApartmentState <- ApartmentState.STA
-
-//let [<System.Runtime.CompilerServices.CompilerGlobalScope>] id x = x
-
-//[<System.Runtime.CompilerServices.CompilerGlobalScope>] let id2 x = x
-#endif
- 
 
 type A =
     class

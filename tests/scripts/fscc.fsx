@@ -23,7 +23,8 @@ let CompilerPathOpt = getCmdLineArgOptional              "--compilerPath:"
 let Flavour         = getCmdLineArg "--flavour:"         "release"
 let TestName        = getCmdLineArg "--TestName:"        "test"
 let OutputDir       = getCmdLineArg "--OutputDir:"       ("bin" ++ Flavour)
-let ExtraArgs       = getCmdLineExtraArgs (fun x -> List.exists x.StartsWith ["--platform:";"--projectJsonLock:";"--packagesDir:";"--framework:";"--verbose:";"--compilerPath:";"--flavour:";"--TestName:";"--OutputDir:"])
+let CopyDlls        = getCmdLineArg "--CopyDlls:"        ""
+let ExtraArgs       = getCmdLineExtraArgs (fun x -> List.exists x.StartsWith ["--platform:";"--projectJsonLock:";"--packagesDir:";"--framework:";"--verbose:";"--compilerPath:";"--flavour:";"--TestName:";"--OutputDir:";"--CopyDlls:"])
 
 let CompilerPath    = defaultArg CompilerPathOpt (root ++ "tests" ++ "testbin" ++ Flavour ++ "coreclr" ++ "fsc")
 let Win32Manifest   = CompilerPath ++ "default.win32manifest"
@@ -42,7 +43,6 @@ let runtimeConfigLines =
        "    }";
        "  }";
        "}" |]
-
 
 let executeCompiler references =
     let Win32manifest=Path.Combine(CompilerPath, "default.win32manifest")
@@ -63,6 +63,7 @@ let executeCompiler references =
         log "%s %s @fsc.cmd.args" coreRunExe fscExe
     File.WriteAllLines(OutputDir ++ "fsc.cmd.args", arguments)
     File.WriteAllLines(OutputDir ++ (TestName + ".runtimeconfig.json"), runtimeConfigLines)
+    CopyDlls.Split(';') |> Array.iter(fun s -> if not (System.String.IsNullOrWhiteSpace(s)) then File.Copy(s, OutputDir ++ Path.GetFileName(s)))
     executeProcess coreRunExe arguments2
 
 exit (executeCompiler dependencies)

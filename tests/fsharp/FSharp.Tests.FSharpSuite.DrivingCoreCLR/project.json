@@ -9,7 +9,6 @@
     "nunit": "3.5.0",
     "nunitlite": "3.5.0",
     "Microsoft.FSharp.Compiler.netcore": "1.0.0-alpha-*",
-    "System.Security.Cryptography.X509Certificates": "4.3.0.0",
   },
   "runtimes": {
     "win7-x86": {},
@@ -23,7 +22,8 @@
         "Microsoft.NETCore.App": {
           "type": "platform",
           "version": "1.0.1"
-        }
+        },
+        "System.Reflection.Emit.Lightweight": "4.3.0",
       },
       "imports": [ "netstandard1.1", "netstandard1.6", "portable-net45+win8+wp8+wpa81" ]
     }
