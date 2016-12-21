@@ -193,20 +193,27 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             let mutable mgr : IOleComponentManager = null
             let mutable componentID = 0u
 
-            let locker = obj()
+            let thisLock = obj()
 
             member this.RegisterForIdleTime() =
-                mgr <- this.GetService(typeof<SOleComponentManager>) :?> IOleComponentManager
-                if componentID = 0u && not (isNull mgr) then
-                    let crinfo = Array.zeroCreate<OLECRINFO>(1)
-                    let mutable crinfo0 = crinfo.[0]
-                    crinfo0.cbSize <- Marshal.SizeOf(typeof<OLECRINFO>) |> uint32
-                    crinfo0.grfcrf <- uint32 (_OLECRF.olecrfNeedIdleTime ||| _OLECRF.olecrfNeedPeriodicIdleTime)
-                    crinfo0.grfcadvf <- uint32 (_OLECADVF.olecadvfModal ||| _OLECADVF.olecadvfRedrawOff ||| _OLECADVF.olecadvfWarningsOff)
-                    crinfo0.uIdleTimeInterval <- 1000u
-                    crinfo.[0] <- crinfo0 
-                    mgr.FRegisterComponent(this, crinfo, &componentID) |> ignore
-                
+
+                // Get Service is probably expensive best not to call it under a lock
+                let lclMgr = if isNull mgr then this.GetService(typeof<SOleComponentManager>) :?> IOleComponentManager else Unchecked.defaultof<IOleComponentManager>
+
+                lock (thisLock) (fun _ -> 
+                    if isNull mgr then mgr <- lclMgr
+                    if componentID = 0u && not (isNull mgr) then
+                        let crinfo = Array.zeroCreate<OLECRINFO>(1)
+                        let mutable crinfo0 = crinfo.[0]
+                        crinfo0.cbSize <- Marshal.SizeOf(typeof<OLECRINFO>) |> uint32
+                        crinfo0.grfcrf <- uint32 (_OLECRF.olecrfNeedIdleTime ||| _OLECRF.olecrfNeedPeriodicIdleTime)
+                        crinfo0.grfcadvf <- uint32 (_OLECADVF.olecadvfModal ||| _OLECADVF.olecadvfRedrawOff ||| _OLECADVF.olecadvfWarningsOff)
+                        crinfo0.uIdleTimeInterval <- 1000u
+                        crinfo.[0] <- crinfo0
+ 
+                        mgr.FRegisterComponent(this, crinfo, &componentID) |> ignore
+                )
+
             /// This method loads a localized string based on the specified resource.
 
             /// <param name="resourceName">Resource to load</param>
@@ -359,7 +366,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
             override this.Dispose(disposing) =
                 try 
-                    lock (locker) (fun _ ->
+                    lock (thisLock) (fun _ ->
                         if componentID <> 0u && not (isNull mgr) then
                             mgr.FRevokeComponent(componentID) |> ignore                        
                             componentID <- 0u)
