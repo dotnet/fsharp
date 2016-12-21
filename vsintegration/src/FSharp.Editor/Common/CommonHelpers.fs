@@ -41,6 +41,18 @@ type internal SymbolLookupKind =
     | ByRightColumn
     | ByLongIdent
 
+[<RequireQualifiedAccess>]
+module Option =
+    /// Gets the value associated with the option or the supplied default value.
+    let inline getOrElse v = function
+        | Some x -> x | None -> v
+
+    /// Gets the option if Some x, otherwise try to get another value
+    let inline orTry f =
+        function
+        | Some x -> Some x
+        | None -> f()
+
 module internal CommonHelpers =
     type private SourceLineData(lineStart: int, lexStateAtStartOfLine: FSharpTokenizerLexState, lexStateAtEndOfLine: FSharpTokenizerLexState, 
                                 hashCode: int, classifiedSpans: IReadOnlyList<ClassifiedSpan>, tokens: FSharpTokenInfo list) =
@@ -306,7 +318,7 @@ module internal CommonHelpers =
                 | LexerSymbolKind.GenericTypeParameter 
                 | LexerSymbolKind.StaticallyResolvedTypeParameter -> true 
                 | _ -> false) 
-            |> Option.orElseWith (fun _ -> tokensUnderCursor |> List.tryFind (fun { DraftToken.Kind = k } -> k = LexerSymbolKind.Operator))
+            |> Option.orTry (fun _ -> tokensUnderCursor |> List.tryFind (fun { DraftToken.Kind = k } -> k = LexerSymbolKind.Operator))
             |> Option.map (fun token ->
                 { Kind = token.Kind
                   Line = linePos.Line
