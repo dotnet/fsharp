@@ -225,6 +225,9 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
                 base.Initialize()
 
+                let fSharpEditorFactory = new Microsoft.VisualStudio.FSharp.ProjectSystem.FSharpEditorFactory(this);
+                this.RegisterEditorFactory(fSharpEditorFactory);
+
                 // read list of available FSharp.Core versions
                 do
                     let nullService = 
