@@ -76,7 +76,8 @@ type internal FSharpCheckerProvider
 type internal ProjectInfoManager 
     [<ImportingConstructor>]
     (
-        checkerProvider: FSharpCheckerProvider
+        checkerProvider: FSharpCheckerProvider,
+        [<Import(typeof<SVsServiceProvider>)>] serviceProvider: System.IServiceProvider
     ) =
     // A table of information about projects, excluding single-file projects.  
     let projectTable = ConcurrentDictionary<ProjectId, FSharpProjectOptions>()
@@ -101,16 +102,16 @@ type internal ProjectInfoManager
         if SourceFile.MustBeSingleFileProject(fileName) then 
             let! options = checkerProvider.Checker.GetProjectOptionsFromScript(fileName, fileContents, loadTime, [| |], ?extraProjectInfo=extraProjectInfo) 
             let site = ProjectSitesAndFiles.CreateProjectSiteForScript(fileName, options)
-            return ProjectSitesAndFiles.GetProjectOptionsForProjectSite(site,fileName,options.ExtraProjectInfo)
+            return ProjectSitesAndFiles.GetProjectOptionsForProjectSite(site,fileName,options.ExtraProjectInfo,serviceProvider)
         else
             let site = ProjectSitesAndFiles.ProjectSiteOfSingleFile(fileName)
-            return ProjectSitesAndFiles.GetProjectOptionsForProjectSite(site,fileName,extraProjectInfo)
+            return ProjectSitesAndFiles.GetProjectOptionsForProjectSite(site,fileName,extraProjectInfo,serviceProvider)
       }
 
     /// Update the info for a project in the project table
     member this.UpdateProjectInfo(projectId: ProjectId, site: IProjectSite, workspace: Workspace) =
         let extraProjectInfo = Some(box workspace)
-        let options = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(site, site.ProjectFileName(), extraProjectInfo)
+        let options = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(site, site.ProjectFileName(), extraProjectInfo, serviceProvider)
         checkerProvider.Checker.InvalidateConfiguration(options)
         projectTable.[projectId] <- options
 
@@ -230,35 +231,42 @@ type internal FSharpLanguageService(package : FSharpPackage) as this =
             projectInfoManager.UpdateProjectInfo(project.Id, site, project.Workspace)
 
     member this.SetupProjectFile(siteProvider: IProvideProjectSite, workspace: VisualStudioWorkspaceImpl) =
-        let site = siteProvider.GetProjectSite()
-        let projectGuid = Guid(site.ProjectGuid)
-        let projectFileName = site.ProjectFileName()
+        let  rec setup (site: IProjectSite) =
+            let projectGuid = Guid(site.ProjectGuid)
+            let projectFileName = site.ProjectFileName()
 
-        let projectDisplayName = 
-            if String.IsNullOrWhiteSpace projectFileName then projectFileName
-            else Path.GetFileNameWithoutExtension projectFileName
+            let projectDisplayName = 
+                if String.IsNullOrWhiteSpace projectFileName then projectFileName
+                else Path.GetFileNameWithoutExtension projectFileName
 
-        let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
+            let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
 
-        projectInfoManager.UpdateProjectInfo(projectId, site, workspace)
+            projectInfoManager.UpdateProjectInfo(projectId, site, workspace)
 
-        match workspace.ProjectTracker.GetProject(projectId) with
-        | null ->
-            let projectContextFactory = this.Package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
-            let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
-            
-            
-            
-            let projectContext = 
-                projectContextFactory.CreateProjectContext(
-                    FSharpCommonConstants.FSharpLanguageName, projectDisplayName, projectFileName, projectGuid, siteProvider, null, errorReporter)
+            match workspace.ProjectTracker.GetProject(projectId) with
+            | null ->
+                let projectContextFactory = this.Package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
+                let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
+                
+                let projectContext = 
+                    projectContextFactory.CreateProjectContext(
+                        FSharpCommonConstants.FSharpLanguageName, projectDisplayName, projectFileName, projectGuid, siteProvider, null, errorReporter)
 
-            let project = projectContext :?> AbstractProject
+                let project = projectContext :?> AbstractProject
 
-            this.SyncProject(project, projectContext, site, forceUpdate=false)
-            site.AdviseProjectSiteChanges(FSharpCommonConstants.FSharpLanguageServiceCallbackName, AdviseProjectSiteChanges(fun () -> this.SyncProject(project, projectContext, site, forceUpdate=true)))
-            site.AdviseProjectSiteClosed(FSharpCommonConstants.FSharpLanguageServiceCallbackName, AdviseProjectSiteChanges(fun () -> projectInfoManager.ClearProjectInfo(project.Id); project.Disconnect()))
-        | _ -> ()
+                this.SyncProject(project, projectContext, site, forceUpdate=false)
+                site.AdviseProjectSiteChanges(FSharpCommonConstants.FSharpLanguageServiceCallbackName, 
+                                              AdviseProjectSiteChanges(fun () -> this.SyncProject(project, projectContext, site, forceUpdate=true)))
+                site.AdviseProjectSiteClosed(FSharpCommonConstants.FSharpLanguageServiceCallbackName, 
+                                             AdviseProjectSiteChanges(fun () -> 
+                                                projectInfoManager.ClearProjectInfo(project.Id)
+                                                project.Disconnect()))
+                for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider) do
+                    let referencedProjectId = setup referencedSite                    
+                    project.AddProjectReference(ProjectReference referencedProjectId)
+            | _ -> ()
+            projectId
+        setup (siteProvider.GetProjectSite()) |> ignore
 
     member this.SetupStandAloneFile(fileName: string, fileContents: string, workspace: VisualStudioWorkspaceImpl, hier: IVsHierarchy) =
 
