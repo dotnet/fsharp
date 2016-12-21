@@ -17,6 +17,23 @@ module internal Structure =
 /// from an untyped AST for the purposes of block structure.
     [<RequireQualifiedAccess>]
     module private Range =
+
+        let inline union (r1:range) (r2:range) =
+            let startPos =
+                if r1.StartLine <= r2.StartLine
+                 && r1.StartColumn <= r2.StartColumn then r1.Start else r2.Start
+            let endPos =
+                if r1.EndLine >= r2.EndLine
+                 && r1.EndColumn >= r2.EndColumn then r1.End else r2.End
+            mkFileIndexRange r1.FileIndex startPos endPos
+
+        let unionOpts (r1:range option) (r2:range option) =
+            match r1 , r2 with
+            | None, None -> None
+            | Some r, None -> Some r
+            | None , Some r -> Some r
+            | Some r1, Some r2 -> union r1 r2|> Some
+
         /// Create a range starting at the end of r1 and finishing at the end of r2
         let inline endToEnd (r1: range) (r2: range) = mkFileIndexRange r1.FileIndex r1.End   r2.End
 
@@ -51,6 +68,22 @@ module internal Structure =
     let longIdentRange (longId:LongIdent) =
         Range.startToEnd (List.head longId).idRange (List.last longId).idRange
 
+    let rangeOfTypeArgsElse other (typeArgs:SynTyparDecl list) =
+        match typeArgs with
+        | [] -> other
+        | ls ->
+            ls|> List.map (fun (TyparDecl (_,typarg)) -> typarg.Range)
+            |> List.reduce Range.union
+
+    let rangeOfSynPatsElse other (synPats:SynSimplePat list) =
+        match synPats with
+        | [] -> other
+        | ls ->
+            ls |> List.map (
+                fun ( SynSimplePat.Attrib (range=r)
+                    | SynSimplePat.Id (range=r)
+                    | SynSimplePat.Typed (range=r)) -> r)
+            |> List.reduce Range.union
 
 
     /// Scope indicates the way a range/snapshot should be collapsed. |Scope.Scope.Same| is for a scope inside
@@ -165,7 +198,7 @@ module internal Structure =
         CollapseRange:range
     }
 
-    /// Yields a ScopeRange that spans 2 or more lines or an empty seq
+    // Only yield a range that spans 2 or more lines
     let inline private rcheck scope collapse (fullRange:range) (collapseRange:range)  = seq {
         if fullRange.StartLine <> fullRange.EndLine then yield {
             Scope = scope
@@ -189,9 +222,10 @@ module internal Structure =
             | SynExpr.Typed (e,_,_)
             | SynExpr.DotIndexedGet (e,_,_,_)
             | SynExpr.DotIndexedSet (e,_,_,_,_,_) -> yield! parseExpr e
-            | SynExpr.New (_,_,e,r) ->
-                yield! rcheck Scope.New Collapse.Below r r
-                yield! parseExpr e
+            | SynExpr.New (_,_,expr,r) ->
+                let collapse = Range.endToEnd expr.Range r
+                yield! rcheck Scope.New Collapse.Below r collapse
+                yield! parseExpr expr
             | SynExpr.YieldOrReturn (_,e,r) ->
                 yield! rcheck Scope.YieldOrReturn Collapse.Below r r
                 yield! parseExpr e
@@ -385,12 +419,15 @@ module internal Structure =
                 yield! attrs |> Seq.collect (fun attr -> parseExpr attr.ArgExpr)
         }
 
-    and private parseBinding (SynBinding.Binding (_,kind,_,_,attrs,_,SynValData(memberFlags,_,_),_,_,e,br,_) as binding) =
+    and private parseBinding (SynBinding.Binding (_,kind,_,_,attrs,_,SynValData(memberFlags,_,_),_,_,expr,br,_) as binding) =
         seq {
             match kind with
             | SynBindingKind.NormalBinding ->
                 let collapse = Range.endToEnd binding.RangeOfBindingSansRhs binding.RangeOfBindingAndRhs
                 match memberFlags with
+                | Some ({MemberKind=MemberKind.Constructor}) ->
+                    let collapse = Range.startToEnd expr.Range br
+                    yield! rcheck Scope.New Collapse.Below br collapse
                 | Some _ ->
                     yield! rcheck Scope.Member Collapse.Below binding.RangeOfBindingAndRhs collapse
                 | None ->
@@ -400,7 +437,7 @@ module internal Structure =
                 yield! rcheck Scope.Do Collapse.Below br r
             | _ -> ()
             yield! parseAttributes attrs
-            yield! parseExpr e
+            yield! parseExpr expr
         }
 
     and private parseBindings sqs = sqs |> Seq.collect parseBinding
@@ -417,7 +454,14 @@ module internal Structure =
         seq {
             match d with
             | SynMemberDefn.Member
-                (SynBinding.Binding (_,_kind,_,_,attrs,_,SynValData(_memberFlags,_,_),_,_,_e,lhsr,_)as binding,_r) as _memb ->
+                (SynBinding.Binding (_,_kind,_,_,attrs,_,SynValData(Some{MemberKind=MemberKind.Constructor},_,_),synPat,_,_e,_lhsr,_)
+                    as binding,_r) as _memb ->
+                let collapse = Range.endToEnd synPat.Range d.Range
+                yield! rcheck Scope.New Collapse.Below d.Range collapse
+                yield! parseAttributes attrs
+                yield! parseBinding binding
+            | SynMemberDefn.Member
+                (SynBinding.Binding (_,_kind,_,_,attrs,_,SynValData(_memberFlags,_,_),_synPat,_,_e,lhsr,_)as binding,_r) as _memb ->
                 let collapse = Range.endToEnd lhsr d.Range
                 yield! rcheck Scope.Member Collapse.Below d.Range collapse
                 yield! parseAttributes attrs
@@ -431,7 +475,7 @@ module internal Structure =
                     yield! Seq.collect parseSynMemberDefn members
                 | None -> ()
             | SynMemberDefn.NestedType (td, _, _r) ->
-                yield! parseTypeDefn td d.Range
+                yield! parseTypeDefn td //d.Range
             | SynMemberDefn.AbstractSlot (ValSpfn(_, _, _, synt, _, _, _, _, _, _, _), _, r) ->
                 yield! rcheck Scope.Member Collapse.Below d.Range <| Range.startToEnd synt.Range r
             | SynMemberDefn.AutoProperty (_, _, _, _, (*memkind*)_, _, _, _, e, _, r) ->
@@ -461,8 +505,8 @@ module internal Structure =
                 | SynAccess.Internal -> 8
         seq {
             match simple with
-            | SynTypeDefnSimpleRepr.Enum (cases,er) ->
-                yield! rcheck Scope.SimpleType Collapse.Below er er
+            | SynTypeDefnSimpleRepr.Enum (cases,_er) ->
+//                yield! rcheck Scope.SimpleType Collapse.Below er er
                 yield!
                     cases
                     |> Seq.collect (fun (SynEnumCase.EnumCase (attrs, _, _, _, cr)) ->
@@ -487,21 +531,31 @@ module internal Structure =
             | _ -> ()
         }
 
-    and private parseTypeDefn (TypeDefn (componentInfo, objectModel, members, range)) (fullrange:range) =
-        seq {
+    and private parseTypeDefn
+        (TypeDefn
+            (SynComponentInfo.ComponentInfo(_attribs,typeArgs,_constraints,_longId,_doc,_b,_access,r)
+                as _componentInfo, objectModel,  members, fullrange)) = seq {
+            let genericRange = rangeOfTypeArgsElse r typeArgs
+            let collapse = Range.endToEnd (Range.modEnd 1 genericRange) fullrange
             match objectModel with
+            // matches against a type declaration with <'T,...> and (args,...)
+            | SynTypeDefnRepr.ObjectModel
+                (SynTypeDefnKind.TyconUnspecified,
+                    SynMemberDefn.ImplicitCtor(_,_,synPatList,_,r)::_,_) ->
+                    let declRange = rangeOfSynPatsElse r synPatList
+                    let collapse = Range.endToEnd (Range.union genericRange declRange) fullrange
+                    yield! rcheck Scope.Type Collapse.Below fullrange collapse
             | SynTypeDefnRepr.ObjectModel (defnKind, objMembers, _) ->
-                let range = Range.endToEnd componentInfo.Range range
                 match defnKind with
                 | SynTypeDefnKind.TyconAugmentation ->
-                    yield! rcheck Scope.TypeExtension Collapse.Below fullrange range
+                    yield! rcheck Scope.TypeExtension Collapse.Below fullrange collapse
                 | _ ->
-                    yield! rcheck Scope.Type Collapse.Below fullrange range
+                    yield! rcheck Scope.Type Collapse.Below fullrange collapse
                 yield! Seq.collect parseSynMemberDefn objMembers
                 // visit the members of a type extension
                 yield! Seq.collect parseSynMemberDefn members
             | SynTypeDefnRepr.Simple (simpleRepr,_r) ->
-                yield! rcheck Scope.Type Collapse.Below fullrange <| Range.endToEnd componentInfo.Range range
+                yield! rcheck Scope.Type Collapse.Below fullrange collapse
                 yield! parseSimpleRepr simpleRepr
                 yield! Seq.collect parseSynMemberDefn members
             | SynTypeDefnRepr.Exception _ -> ()
@@ -555,7 +609,7 @@ module internal Structure =
                 )
                 yield! parseBindings bindings
             | SynModuleDecl.Types (types,_r) ->
-                yield! Seq.collect (fun t -> parseTypeDefn t decl.Range) types
+                yield! Seq.collect (fun t -> parseTypeDefn t ) types
             // Fold the attributes above a module
             | SynModuleDecl.NestedModule (SynComponentInfo.ComponentInfo (attrs,_,_,_,_,_,_,cmpRange),_, decls,_,_) ->
 //                cmpInfo.
