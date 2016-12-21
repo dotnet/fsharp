@@ -74,11 +74,9 @@ module internal InsertContext =
         { ctx.Pos with Line = line }
 
     /// <summary>
-    /// Inserts open declaration into abstract document. 
+    /// Inserts open declaration into `SourceText`. 
     /// </summary>
-    /// <param name="state">Abstract state which is changed after a line is inserted into the document. 
-    /// This is ITestSnapshot for VS, for example.</param>
-    /// <param name="doc">Document.</param>
+    /// <param name="sourceText">SourceText.</param>
     /// <param name="ctx">Insertion context. Typically returned from tryGetInsertionContext</param>
     /// <param name="ns">Namespace to open.</param>
     let insertOpenDeclaration (sourceText: SourceText) (ctx: InsertContext) (ns: string) : SourceText =
