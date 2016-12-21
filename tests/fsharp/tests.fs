@@ -1576,7 +1576,7 @@ module TypecheckTests =
 #if !FX_NO_CONVERTER
     // Converter is not coming back until dotnet standard 2.0
     [<Test>]
-    let misc () = singleTestBuildAndRunWithCopyDll "typecheck/misc" "full-rank-arrays" FSC_BASIC
+    let misc () = singleTestBuildAndRunWithCopyDlls "typecheck/misc" "full-rank-arrays" FSC_BASIC
 #endif
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
