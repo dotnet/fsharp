@@ -112,78 +112,59 @@ type internal FSharpAddOpenCodeFixProvider
     inherit CodeFixProvider()
 
     let checker = checkerProvider.Checker
-
-    //let openNamespace (snapshotSpan: SnapshotSpan) (ctx: InsertContext) ns name = 
-    //    use transaction = textUndoHistory.CreateTransaction(Resource.recordGenerationCommandName)
-    //    // first, replace the symbol with (potentially) partially qualified name
-    //    let snapshot = 
-    //        if name <> "" then snapshotSpan.Snapshot.TextBuffer.Replace (snapshotSpan.Span, name) 
-    //        else snapshotSpan.Snapshot
-        
-    //    let doc =
-    //        { new IInsertContextDocument<ITextSnapshot> with
-    //              member __.Insert (snapshot, line, lineStr) = 
-    //                let pos = snapshot.GetLineFromLineNumber(line).Start.Position
-    //                snapshot.TextBuffer.Insert (pos, lineStr + Environment.NewLine)
-    //              member __.GetLineStr (snapshot, line) = snapshot.GetLineFromLineNumber(line).GetText() }
-        
-    //    InsertContext.insertOpenDeclaration snapshot doc ctx ns |> ignore
-    //    transaction.Complete()
-
-    //let replaceFullyQualifiedSymbol (snapshotSpan: SnapshotSpan) qualifier = 
-    //    use transaction = textUndoHistory.CreateTransaction(Resource.recordGenerationCommandName)
-    //    snapshotSpan.Snapshot.TextBuffer.Replace (snapshotSpan.Span, qualifier) |> ignore
-    //    transaction.Complete()
-
     let fixUnderscoresInMenuText (text: string) = text.Replace("_", "__")
 
-    let openNamespaceAction (context: CodeFixContext) ctx name ns multipleNames = 
+    let qualifySymbolFix (context: CodeFixContext) (fullName, qualifier) = 
+        CodeAction.Create(
+            fixUnderscoresInMenuText fullName,
+            fun (cancellationToken: CancellationToken) -> 
+                async {
+                    let! sourceText = context.Document.GetTextAsync() |> Async.AwaitTask
+                    return context.Document.WithText(sourceText.Replace(context.Span, qualifier))
+                } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken))
+
+    let openNamespaceFix (context: CodeFixContext) ctx name ns multipleNames = 
         let displayText = "open " + ns + if multipleNames then " (" + name + ")" else ""
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                fixUnderscoresInMenuText displayText,
-                fun (cancellationToken: CancellationToken) -> 
-                    async {
-                        let! sourceText = context.Document.GetTextAsync() |> Async.AwaitTask
-                        return context.Document.WithText(InsertContext.insertOpenDeclaration sourceText ctx ns)
-                    } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
-                ), context.Diagnostics)
-
-            
-
-    //let qualifiedSymbolAction (context: CodeFixContext) (fullName, qualifier) =
-    //    { new ISuggestion with
-    //        member __.Text = fixUnderscoresInMenuText fullName
-    //        member __.Invoke() = replaceFullyQualifiedSymbol snapshotSpan qualifier
-    //        member __.NeedsIcon = false }
+        CodeAction.Create(
+            fixUnderscoresInMenuText displayText,
+            fun (cancellationToken: CancellationToken) -> 
+                async {
+                    let! sourceText = context.Document.GetTextAsync() |> Async.AwaitTask
+                    return context.Document.WithText(InsertContext.insertOpenDeclaration sourceText ctx ns)
+                } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
+            )
 
     let getSuggestions (context: CodeFixContext) (candidates: (Entity * InsertContext) list) : unit =
-        candidates
-        |> Seq.choose (fun (entity, ctx) -> entity.Namespace |> Option.map (fun ns -> ns, entity.Name, ctx))
-        |> Seq.groupBy (fun (ns, _, _) -> ns)
-        |> Seq.map (fun (ns, xs) -> 
-            ns, 
-            xs 
-            |> Seq.map (fun (_, name, ctx) -> name, ctx) 
-            |> Seq.distinctBy (fun (name, _) -> name)
-            |> Seq.sortBy fst
-            |> Seq.toArray)
-        |> Seq.map (fun (ns, names) ->
-            let multipleNames = names |> Array.length > 1
-            names |> Seq.map (fun (name, ctx) -> ns, name, ctx, multipleNames))
-        |> Seq.concat
-        |> Seq.iter (fun (ns, name, ctx, multipleNames) -> 
-            openNamespaceAction context ctx name ns multipleNames)
+        let openNamespaceFixes =
+            candidates
+            |> Seq.choose (fun (entity, ctx) -> entity.Namespace |> Option.map (fun ns -> ns, entity.Name, ctx))
+            |> Seq.groupBy (fun (ns, _, _) -> ns)
+            |> Seq.map (fun (ns, xs) -> 
+                ns, 
+                xs 
+                |> Seq.map (fun (_, name, ctx) -> name, ctx) 
+                |> Seq.distinctBy (fun (name, _) -> name)
+                |> Seq.sortBy fst
+                |> Seq.toArray)
+            |> Seq.map (fun (ns, names) ->
+                let multipleNames = names |> Array.length > 1
+                names |> Seq.map (fun (name, ctx) -> ns, name, ctx, multipleNames))
+            |> Seq.concat
+            |> Seq.map (fun (ns, name, ctx, multipleNames) -> 
+                openNamespaceFix context ctx name ns multipleNames)
+            |> Seq.toList
             
-            
-        //let qualifySymbolActions = []
-            //candidates
-            //|> Seq.map (fun (entity, _) -> entity.FullRelativeName, entity.Qualifier)
-            //|> Seq.distinct
-            //|> Seq.sort
-            //|> Seq.map (qualifiedSymbolAction context)
-            //|> Seq.toList
+        let quilifySymbolFixes =
+            candidates
+            |> Seq.map (fun (entity, _) -> entity.FullRelativeName, entity.Qualifier)
+            |> Seq.distinct
+            |> Seq.sort
+            |> Seq.map (qualifySymbolFix context)
+            |> Seq.toList
+
+        for codeFix in openNamespaceFixes @ quilifySymbolFixes do
+            context.RegisterCodeFix(codeFix, context.Diagnostics)
 
     override __.FixableDiagnosticIds = ["FS0039"].ToImmutableArray()
 
@@ -205,7 +186,7 @@ type internal FSharpAddOpenCodeFixProvider
                     match symbol with
                     | Some symbol ->
                         let pos = Pos.fromZ textLinePos.Line textLinePos.Character
-                        match ParsedInput.getEntityKind parsedInput pos with // convert context.Span to Range !
+                        match ParsedInput.getEntityKind parsedInput pos with
                         | None -> ()
                         | Some entityKind ->
                             let isAttribute = entityKind = EntityKind.Attribute
@@ -235,7 +216,7 @@ type internal FSharpAddOpenCodeFixProvider
                                                    e.CleanedIdents 
                                                    |> Array.replace (e.CleanedIdents.Length - 1) (lastIdent.Substring(0, lastIdent.Length - 9)) ])
                                 |> List.concat
-                            
+
                             let idents = ParsedInput.getLongIdentAt parsedInput (Range.mkPos pos.Line symbol.RightColumn)
                             match idents with
                             | Some idents ->

@@ -269,25 +269,25 @@ module internal TypedAstPatterns =
         if ty.HasTypeDefinition then Some ty.TypeDefinition
         else None
 
-    let (|Attribute|_|) (entity: FSharpEntity) =
-        let isAttribute (entity: FSharpEntity) =
-            let getBaseType (entity: FSharpEntity) =
-                try 
-                    match entity.BaseType with
-                    | Some (TypeWithDefinition def) -> Some def
-                    | _ -> None
-                with _ -> None
+    //let (|Attribute|_|) (entity: FSharpEntity) =
+    //    let isAttribute (entity: FSharpEntity) =
+    //        let getBaseType (entity: FSharpEntity) =
+    //            try 
+    //                match entity.BaseType with
+    //                | Some (TypeWithDefinition def) -> Some def
+    //                | _ -> None
+    //            with _ -> None
 
-            let rec isAttributeType (ty: FSharpEntity option) =
-                match ty with
-                | None -> false
-                | Some ty ->
-                    match ty.TryGetFullName() with
-                    | None -> false
-                    | Some fullName ->
-                        fullName = "System.Attribute" || isAttributeType (getBaseType ty)
-            isAttributeType (Some entity)
-        if isAttribute entity then Some() else None
+    //        let rec isAttributeType (ty: FSharpEntity option) =
+    //            match ty with
+    //            | None -> false
+    //            | Some ty ->
+    //                match ty.TryGetFullName() with
+    //                | None -> false
+    //                | Some fullName ->
+    //                    fullName = "System.Attribute" || isAttributeType (getBaseType ty)
+    //        isAttributeType (Some entity)
+    //    if isAttribute entity then Some() else None
 
     let (|FSharpModule|_|) (entity: FSharpEntity) = if entity.IsFSharpModule then Some() else None
 
@@ -315,7 +315,7 @@ module internal AssemblyContentProvider =
               AutoOpenParent = parent.AutoOpen |> Option.map parent.FixParentModuleSuffix
               Kind = 
                 match entity with
-                | TypedAstPatterns.Attribute -> EntityKind.Attribute 
+                //| TypedAstPatterns.Attribute -> EntityKind.Attribute 
                 | TypedAstPatterns.FSharpModule ->
                     EntityKind.Module 
                         { IsAutoOpen = hasAttribute<AutoOpenAttribute> entity.Attributes
