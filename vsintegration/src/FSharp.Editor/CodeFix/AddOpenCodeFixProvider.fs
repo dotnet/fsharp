@@ -108,6 +108,7 @@ type internal FSharpAddOpenCodeFixProvider
         assemblyContentProvider: AssemblyContentProvider
     ) =
     inherit CodeFixProvider()
+    let fixableDiagnosticIds = ["FS0039"]
 
     let checker = checkerProvider.Checker
     let fixUnderscoresInMenuText (text: string) = text.Replace("_", "__")
@@ -162,9 +163,9 @@ type internal FSharpAddOpenCodeFixProvider
             |> Seq.toList
 
         for codeFix in openNamespaceFixes @ quilifySymbolFixes do
-            context.RegisterCodeFix(codeFix, context.Diagnostics)
+            context.RegisterCodeFix(codeFix, (context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds.Contains x.Id)).ToImmutableArray())
 
-    override __.FixableDiagnosticIds = ["FS0039"].ToImmutableArray()
+    override __.FixableDiagnosticIds = fixableDiagnosticIds.ToImmutableArray()
 
     override __.RegisterCodeFixesAsync context : Task =
         async {
