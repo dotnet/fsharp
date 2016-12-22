@@ -57,7 +57,7 @@
     <Compile Include="Commands\HelpContextService.fs" />
     <Compile Include="Commands\FsiCommandService.fs" />
     <Compile Include="CodeFix\AddOpenCodeFixProvider.fs" />
-    <Compile Include="CodeFix\AddNewKeywordToDisposableConstructorInvokation.fs" />
+    <Compile Include="CodeFix\AddNewKeywordToDisposableConstructorInvocation.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
