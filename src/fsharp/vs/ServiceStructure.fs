@@ -11,8 +11,12 @@ open Microsoft.FSharp.Compiler.Ast
 open System.Collections.Generic
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
+open Microsoft.FSharp.Compiler.Ast
 
 module internal Structure =
+
+
+
 /// Set of visitor utilities, designed for the express purpose of fetching ranges
 /// from an untyped AST for the purposes of block structure.
     [<RequireQualifiedAccess>]
@@ -207,6 +211,11 @@ module internal Structure =
             CollapseRange = collapseRange
         }
     }
+
+      //============================================//
+     //     Implementation File AST Traversal      //
+    //============================================//
+
 
     let rec private parseExpr expression =
         seq {
@@ -454,12 +463,13 @@ module internal Structure =
         seq {
             match d with
             | SynMemberDefn.Member
-                (SynBinding.Binding (_,_kind,_,_,attrs,_,SynValData(Some{MemberKind=MemberKind.Constructor},_,_),synPat,_,_e,_lhsr,_)
-                    as binding,_r) as _memb ->
-                let collapse = Range.endToEnd synPat.Range d.Range
-                yield! rcheck Scope.New Collapse.Below d.Range collapse
-                yield! parseAttributes attrs
-                yield! parseBinding binding
+                (SynBinding.Binding (_,_kind,_,_,attrs,_,
+                    SynValData (Some{MemberKind=MemberKind.Constructor},_,_),synPat,_,_e,_lhsr,_)
+                        as binding,_r) as _memb ->
+               let collapse = Range.endToEnd synPat.Range d.Range
+               yield! rcheck Scope.New Collapse.Below d.Range collapse
+               yield! parseAttributes attrs
+               yield! parseBinding binding
             | SynMemberDefn.Member
                 (SynBinding.Binding (_,_kind,_,_,attrs,_,SynValData(_memberFlags,_,_),_synPat,_,_e,lhsr,_)as binding,_r) as _memb ->
                 let collapse = Range.endToEnd lhsr d.Range
@@ -538,9 +548,10 @@ module internal Structure =
             // matches against a type declaration with <'T,...> and (args,...)
             | SynTypeDefnRepr.ObjectModel
                 (SynTypeDefnKind.TyconUnspecified,
-                    SynMemberDefn.ImplicitCtor(_,_,synPatList,_,r)::_,_) ->
+                    SynMemberDefn.ImplicitCtor(_,_,synPatList,_,r)::typeMembers,_) ->
                     let declRange = rangeOfSynPatsElse r synPatList
                     let collapse = Range.endToEnd (Range.union genericRange declRange) fullrange
+                    yield! Seq.collect parseSynMemberDefn typeMembers
                     yield! rcheck Scope.Type Collapse.Below fullrange collapse
             | SynTypeDefnRepr.ObjectModel (defnKind, objMembers, _) ->
                 match defnKind with
@@ -626,13 +637,17 @@ module internal Structure =
 
     let private parseModuleOrNamespace moduleOrNs =
         seq {
-            let (SynModuleOrNamespace.SynModuleOrNamespace (longId,_,isModule,decls,_,_,_,r)) = moduleOrNs
-            let fullrange = Range.startToEnd (longIdentRange longId) r |> Range.modEnd -1
-            let collapse = Range.endToEnd (longIdentRange longId) r |> Range.modEnd -1
+            let (SynModuleOrNamespace.SynModuleOrNamespace (longId,_,isModule,decls,_,attribs,_,r)) = moduleOrNs
+            yield! parseAttributes attribs
+            
+
+            let fullrange = Range.startToEnd (longIdentRange longId) r  
+            let collapse = Range.endToEnd (longIdentRange longId) r 
             if isModule then
                 yield! rcheck Scope.Module Collapse.Below fullrange collapse
-            else
-                yield! rcheck Scope.Namespace Collapse.Below fullrange collapse
+            //else
+            //    //yield! rcheck Scope.Namespace Collapse.Below (Range.modEnd -1 fullrange) (Range.modEnd -1 collapse)
+            //    yield! rcheck Scope.Namespace Collapse.Below (fullrange) (collapse)
 
             yield! collectHashDirectives decls
             yield! collectOpens decls
@@ -703,6 +718,157 @@ module internal Structure =
               Range = range
               CollapseRange = range })
 
+
+
+      //=======================================//
+     //     Signature File AST Traversal      //
+    //=======================================//
+
+
+
+    let rec private parseSynMemberDefnSig (dsig:SynMemberSig) =
+        seq {
+            match dsig with
+            | SynMemberSig.Member(valSigs,_flags,r) as _memb ->
+                let collapse = Range.endToEnd valSigs.RangeOfId r
+                yield! rcheck Scope.Member Collapse.Below r collapse
+
+            | SynMemberSig.ValField(Field(_attrs,_a,_b,_c,_d,_e,_,_fr),_fullrange) ->
+                 ()   
+            | SynMemberSig.Interface(tp,r) ->
+                yield! rcheck Scope.Interface Collapse.Below r <| Range.endToEnd tp.Range r
+
+            | SynMemberSig.NestedType (typeDefSig, _r) ->
+                yield! parseTypeDefnSig typeDefSig //d.Range
+            | SynMemberSig.Inherit(typeName, r) ->
+                yield! rcheck Scope.Member Collapse.Below r <| Range.endToEnd  typeName.Range r
+        }
+
+
+
+
+    and  private parseTypeDefnSig
+        (TypeDefnSig
+            (SynComponentInfo.ComponentInfo(_attribs,typeArgs,_constraints,_longId,_doc,_b,_access,r)
+                as _componentInfo, objectModel,  memberSigs, fullrange)) = seq {
+            let genericRange = rangeOfTypeArgsElse r typeArgs
+            let collapse = Range.endToEnd (Range.modEnd 1 genericRange) fullrange
+            match objectModel with
+            // matches against a type declaration with <'T,...> and (args,...)
+            | SynTypeDefnSigRepr.ObjectModel
+                (SynTypeDefnKind.TyconUnspecified,memberSigs,r) ->
+                    let collapse = Range.endToEnd r fullrange
+                    yield! Seq.collect parseSynMemberDefnSig memberSigs
+                    yield! rcheck Scope.Type Collapse.Below fullrange collapse
+            | SynTypeDefnSigRepr.ObjectModel (defnKind, objMembers, _) ->
+                match defnKind with
+                | SynTypeDefnKind.TyconAugmentation ->
+                    yield! rcheck Scope.TypeExtension Collapse.Below fullrange collapse
+                | _ ->
+                    yield! rcheck Scope.Type Collapse.Below fullrange collapse
+                yield! Seq.collect parseSynMemberDefnSig objMembers
+                // visit the members of a type extension
+                yield! Seq.collect parseSynMemberDefnSig memberSigs
+            | SynTypeDefnSigRepr.Simple (simpleRepr,_r) ->
+                yield! rcheck Scope.Type Collapse.Below fullrange collapse
+                yield! parseSimpleRepr simpleRepr
+                yield! Seq.collect parseSynMemberDefnSig memberSigs
+            | SynTypeDefnSigRepr.Exception _ -> ()
+        }
+
+
+
+
+    let private getConsecutiveSigModuleDecls (predicate: SynModuleSigDecl -> range option) (scope:Scope) (decls: SynModuleSigDecls) =
+        let groupConsecutiveSigDecls input =
+            let rec loop (input: range list) (res: range list list) currentBulk =
+                match input, currentBulk with
+                | [], [] -> List.rev res
+                | [], _ -> List.rev (currentBulk::res)
+                | r :: rest, [] -> loop rest res [r]
+                | r :: rest, last :: _ when r.StartLine = last.EndLine + 1 ->
+                    loop rest res (r::currentBulk)
+                | r :: rest, _ -> loop rest (currentBulk::res) [r]
+            loop input [] []
+
+        let selectSigRanges (ranges: range list) =
+            match ranges with
+            | [] -> None
+            | [r] when r.StartLine = r.EndLine -> None
+            | [r] ->
+                let range = Range.mkRange "" r.Start r.End
+                Some { Scope = scope; Collapse = Collapse.Same; Range = range ; CollapseRange = range }
+            | lastRange :: rest ->
+                let firstRange = Seq.last rest
+                let range = Range.mkRange "" firstRange.Start lastRange.End
+                Some { Scope = scope; Collapse = Collapse.Same; Range = range; CollapseRange = range }
+
+        decls |> (List.choose predicate >> groupConsecutiveSigDecls >> List.choose selectSigRanges)
+
+    let collectSigHashDirectives (decls: SynModuleSigDecls) =
+        decls
+        |> getConsecutiveSigModuleDecls(
+            function
+            | SynModuleSigDecl.HashDirective (ParsedHashDirective (directive, _, _),r) ->
+                let prefixLength = "#".Length + directive.Length + " ".Length
+                Some (Range.mkRange "" (Range.mkPos r.StartLine prefixLength) r.End)
+            | _ -> None) Scope.HashDirective
+
+
+    let collectSigOpens = getConsecutiveSigModuleDecls (function SynModuleSigDecl.Open (_, r) -> Some r | _ -> None) Scope.Open
+
+    let rec private parseSigDeclaration (decl: SynModuleSigDecl) =
+        seq {
+            match decl with
+            | SynModuleSigDecl.Val ((ValSpfn(attrs,_,_,_,_,_,_,_,_,_,_)) ,_r) ->
+                yield! parseAttributes attrs
+
+
+                //yield! bindings |> Seq.collect (fun binding ->
+                //    let collapse = Range.endToEnd binding.RangeOfBindingSansRhs r
+                //    rcheck Scope.LetOrUse Collapse.Below r collapse
+                //)
+                //yield! parseBindings bindings
+            | SynModuleSigDecl.Types (typeSigs,_r) ->
+                yield! Seq.collect parseTypeDefnSig typeSigs
+            // Fold the attributes above a module
+            | SynModuleSigDecl.NestedModule (SynComponentInfo.ComponentInfo (attrs,_,_,_,_,_,_,cmpRange),_, decls,_) ->
+//                cmpInfo.
+                // Outline the full scope of the module
+                let r = Range.endToEnd cmpRange decl.Range
+                yield! rcheck Scope.Module Collapse.Below decl.Range r
+                // A module's component info stores the ranges of its attributes
+                yield! parseAttributes attrs
+                yield! collectSigOpens decls
+                yield! Seq.collect parseSigDeclaration decls
+            | _ -> ()
+        }
+
+
+
+    let private parseModuleOrNamespaceSigs moduleOrNamespaceSigs =
+        seq {
+            let (SynModuleOrNamespaceSig.SynModuleOrNamespaceSig(longId,_,isModule,decls,_,attribs,_,r)) =  moduleOrNamespaceSigs
+            yield! parseAttributes attribs
+            
+
+            let fullrange = Range.startToEnd (longIdentRange longId) r  
+            let collapse = Range.endToEnd (longIdentRange longId) r 
+            if isModule then
+                yield! rcheck Scope.Module Collapse.Below fullrange collapse
+            //else
+            //    //yield! rcheck Scope.Namespace Collapse.Below (Range.modEnd -1 fullrange) (Range.modEnd -1 collapse)
+            //    yield! rcheck Scope.Namespace Collapse.Below (fullrange) (collapse)
+
+            yield! collectSigHashDirectives decls
+            yield! collectSigOpens decls
+            yield! Seq.collect parseSigDeclaration decls
+        }
+
+
+
+
+
     let getOutliningRanges (sourceLines: string []) (parsedInput: ParsedInput) =
         match parsedInput with
         | ParsedInput.ImplFile implFile ->
@@ -710,4 +876,8 @@ module internal Structure =
             let astBasedRanges = Seq.collect parseModuleOrNamespace modules
             let commentRanges = getCommentRanges sourceLines
             Seq.append astBasedRanges commentRanges
-        | _ -> Seq.empty
+        | ParsedInput.SigFile sigFile -> 
+            let (ParsedSigFileInput(_,_,_,_,moduleSigs )) = sigFile
+            let astBasedRanges = Seq.collect parseModuleOrNamespaceSigs moduleSigs
+            let commentRanges = getCommentRanges sourceLines
+            Seq.append astBasedRanges commentRanges

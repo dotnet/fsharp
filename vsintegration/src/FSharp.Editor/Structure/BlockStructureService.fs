@@ -34,8 +34,7 @@ open Microsoft.VisualStudio.Text.Classification
 open Microsoft.VisualStudio.Text.Tagging
 open Microsoft.VisualStudio.Text.Formatting
 open Microsoft.VisualStudio.Shell
-open Microsoft.VisualStudio.Shell.Interop
-
+open Microsoft.VisualStudio.Shell.Interop          
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
