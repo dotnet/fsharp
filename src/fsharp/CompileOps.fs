@@ -1453,32 +1453,32 @@ let SanitizeFileName fileName implicitIncludeDir =
         fileName
 
 [<RequireQualifiedAccess>]
-type ErrorLocation =
+type DiagnosticLocation =
     { Range : range
       File : string
       TextRepresentation : string
       IsEmpty : bool }
 
 [<RequireQualifiedAccess>]
-type CanonicalInformation = 
+type DiagnosticCanonicalInformation = 
     { ErrorNumber : int
       Subcategory : string
       TextRepresentation : string }
 
 [<RequireQualifiedAccess>]
-type DetailedIssueInfo = 
-    { Location : ErrorLocation option
-      Canonical : CanonicalInformation
+type DiagnosticDetailedInfo = 
+    { Location : DiagnosticLocation option
+      Canonical : DiagnosticCanonicalInformation
       Message : string }
 
 [<RequireQualifiedAccess>]
-type ErrorOrWarning = 
+type Diagnostic = 
     | Short of bool * string
-    | Long of bool * DetailedIssueInfo
+    | Long of bool * DiagnosticDetailedInfo
 
-/// returns sequence that contains ErrorOrWarning for the given error + ErrorOrWarning for all related errors
-let CollectErrorOrWarning (implicitIncludeDir,showFullPaths,flattenErrors,errorStyle,warn, err:PhasedError) = 
-    let outputWhere (showFullPaths,errorStyle) m : ErrorLocation = 
+/// returns sequence that contains Diagnostic for the given error + Diagnostic for all related errors
+let CollectDiagnostic (implicitIncludeDir,showFullPaths,flattenErrors,errorStyle,warn, err:PhasedError) = 
+    let outputWhere (showFullPaths,errorStyle) m : DiagnosticLocation = 
         if m = rangeStartup || m = rangeCmdArgs then 
             { Range = m; TextRepresentation = ""; IsEmpty = true; File = "" }
         else
@@ -1537,7 +1537,7 @@ let CollectErrorOrWarning (implicitIncludeDir,showFullPaths,flattenErrors,errorS
                 | Some m -> Some(outputWhere (showFullPaths,errorStyle) m)
                 | None -> None
 
-            let OutputCanonicalInformation(subcategory, errorNumber) : CanonicalInformation = 
+            let OutputDiagnosticCanonicalInformation(err:PhasedError,subcategory, errorNumber) : DiagnosticCanonicalInformation = 
                 let text = 
                     match errorStyle with
                     // Show the subcategory for --vserrors so that we can fish it out in Visual Studio and use it to determine error stickiness.
@@ -1547,34 +1547,34 @@ let CollectErrorOrWarning (implicitIncludeDir,showFullPaths,flattenErrors,errorS
         
             let mainError,relatedErrors = SplitRelatedErrors err
             let where = OutputWhere(mainError)
-            let canonical = OutputCanonicalInformation(err.Subcategory(),GetErrorNumber mainError)
+            let canonical = OutputDiagnosticCanonicalInformation(mainError,err.Subcategory(),GetErrorNumber mainError)
             let message = 
                 let os = System.Text.StringBuilder()
                 OutputPhasedError errorStyle os mainError flattenErrors
                 os.ToString()
             
-            let entry : DetailedIssueInfo = { Location = where; Canonical = canonical; Message = message }
+            let entry : DiagnosticDetailedInfo = { Location = where; Canonical = canonical; Message = message }
             
-            errors.Add ( ErrorOrWarning.Long( not warn, entry ) )
+            errors.Add ( Diagnostic.Long( not warn, entry ) )
 
             let OutputRelatedError(err:PhasedError) =
                 match errorStyle with
                 // Give a canonical string when --vserror.
                 | ErrorStyle.VSErrors -> 
                     let relWhere = OutputWhere(mainError) // mainError?
-                    let relCanonical = OutputCanonicalInformation(err.Subcategory(),GetErrorNumber mainError) // Use main error for code
+                    let relCanonical = OutputDiagnosticCanonicalInformation(err, err.Subcategory(),GetErrorNumber mainError) // Use main error for code
                     let relMessage = 
                         let os = System.Text.StringBuilder()
                         OutputPhasedError errorStyle os err flattenErrors
                         os.ToString()
 
-                    let entry : DetailedIssueInfo = { Location = relWhere; Canonical = relCanonical; Message = relMessage}
-                    errors.Add( ErrorOrWarning.Long (not warn, entry) )
+                    let entry : DiagnosticDetailedInfo = { Location = relWhere; Canonical = relCanonical; Message = relMessage}
+                    errors.Add( Diagnostic.Long (not warn, entry) )
 
                 | _ -> 
                     let os = System.Text.StringBuilder()
-                    OutputPhasedError errorStyle os err flattenErrors
-                    errors.Add( ErrorOrWarning.Short((not warn), os.ToString()) )
+                    OutputPhasedError os err flattenErrors
+                    errors.Add( Diagnostic.Short((not warn), os.ToString()) )
         
             relatedErrors |> List.iter OutputRelatedError
 
@@ -1592,22 +1592,22 @@ let CollectErrorOrWarning (implicitIncludeDir,showFullPaths,flattenErrors,errorS
 
 /// used by fsc.exe and fsi.exe, but not by VS
 /// prints error and related errors to the specified StringBuilder
-let rec OutputErrorOrWarning (implicitIncludeDir,showFullPaths,flattenErrors,errorStyle,warn) os (err:PhasedError) = 
+let rec OutputDiagnostic (implicitIncludeDir,showFullPaths,flattenErrors,errorStyle,warn) os (err:PhasedError) = 
     
-    let errors = CollectErrorOrWarning (implicitIncludeDir,showFullPaths,flattenErrors,errorStyle,warn, err)
+    let errors = CollectDiagnostic (implicitIncludeDir,showFullPaths,flattenErrors,errorStyle,warn, err)
     for e in errors do
         Printf.bprintf os "\n"
         match e with
-        | ErrorOrWarning.Short(_, txt) -> 
+        | Diagnostic.Short(_, txt) -> 
             os.Append txt |> ignore
-        | ErrorOrWarning.Long(_, details) ->
+        | Diagnostic.Long(_, details) ->
             match details.Location with
             | Some l when not l.IsEmpty -> os.Append(l.TextRepresentation) |> ignore
             | _ -> ()
             os.Append( details.Canonical.TextRepresentation ) |> ignore
             os.Append( details.Message ) |> ignore
       
-let OutputErrorOrWarningContext prefix fileLineFn os err =
+let OutputDiagnosticContext prefix fileLineFn os err =
     match GetRangeOfError err with
     | None   -> ()      
     | Some m -> 
@@ -2949,7 +2949,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                 if showMessages && tcConfig.showReferenceResolutions then (fun (message:string)->dprintf "%s\n" message)
                 else ignore
 
-            let logErrorOrWarning showMessages = 
+            let logDiagnostic showMessages = 
                 (fun isError code message->
                     if showMessages && mode = ReportErrors then 
                       if isError then
@@ -2996,7 +2996,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                         tcConfig.fsharpBinariesDir, // FSharp binaries directory
                         tcConfig.includes, // Explicit include directories
                         tcConfig.implicitIncludeDir, // Implicit include directory (likely the project directory)
-                        logMessage showMessages, logErrorOrWarning showMessages)
+                        logMessage showMessages, logDiagnostic showMessages)
                 with 
                     ReferenceResolver.ResolutionFailure -> error(Error(FSComp.SR.buildAssemblyResolutionFailed(),errorAndWarningRange))
             
@@ -3100,16 +3100,16 @@ let GetScopedPragmasForInput input =
 // However this is indicative of a more systematic problem where source-line 
 // sensitive operations (lexfilter and warning filtering) do not always
 // interact well with #line directives.
-type ErrorLoggerFilteringByScopedPragmas (checkFile,scopedPragmas,errorLogger:ErrorLogger) =
+type ErrorLoggerFilteringByScopedPragmas (checkFile, scopedPragmas, errorLogger:ErrorLogger) =
     inherit ErrorLogger("ErrorLoggerFilteringByScopedPragmas")
-    let mutable scopedPragmas = scopedPragmas
-    member x.ScopedPragmas with set v = scopedPragmas <- v
-    override x.ErrorSinkImpl err = errorLogger.ErrorSink err
-    override x.ErrorCount = errorLogger.ErrorCount
-    override x.WarnSinkImpl err = 
-        let report = 
-            let warningNum = GetErrorNumber err
-            match GetRangeOfError err with 
+
+    override x.DiagnosticSink (phasedError,isError) = 
+        if isError then 
+            errorLogger.DiagnosticSink (phasedError,isError)
+        else 
+          let report = 
+            let warningNum = GetErrorNumber phasedError
+            match GetRangeOfError phasedError with 
             | Some m -> 
                 not (scopedPragmas |> List.exists (fun pragma ->
                     match pragma with 
@@ -3118,26 +3118,12 @@ type ErrorLoggerFilteringByScopedPragmas (checkFile,scopedPragmas,errorLogger:Er
                         (not checkFile || m.FileIndex = pragmaRange.FileIndex) &&
                         Range.posGeq m.Start pragmaRange.Start))  
             | None -> true
-        if report then errorLogger.WarnSink(err)
-    override x.ErrorNumbers = errorLogger.ErrorNumbers
-    override x.WarningNumbers = errorLogger.WarningNumbers
+          if report then errorLogger.DiagnosticSink(phasedError,false)
+
+    override x.ErrorCount = errorLogger.ErrorCount
 
 let GetErrorLoggerFilteringByScopedPragmas(checkFile,scopedPragmas,errorLogger) = 
     (ErrorLoggerFilteringByScopedPragmas(checkFile,scopedPragmas,errorLogger) :> ErrorLogger)
-
-/// Build an ErrorLogger that delegates to another ErrorLogger but filters warnings turned off by the given pragma declarations
-type DelayedErrorLogger(errorLogger:ErrorLogger) =
-    inherit ErrorLogger("DelayedErrorLogger")
-    let delayed = new ResizeArray<_>()
-    override x.ErrorSinkImpl err = delayed.Add (err,true)
-    override x.ErrorCount = delayed |> Seq.filter snd |> Seq.length
-    override x.WarnSinkImpl err = delayed.Add(err,false)
-    member x.CommitDelayedErrorsAndWarnings() = 
-        // Eagerly grab all the errors and warnings from the mutable collection
-        let errors = delayed |> Seq.toList
-        // Now report them
-        for (err,isError) in errors do
-            if isError then errorLogger.ErrorSink err else errorLogger.WarnSink err
 
 
 //----------------------------------------------------------------------------
@@ -3305,10 +3291,10 @@ let ParseInput (lexer,errorLogger:ErrorLogger,lexbuf:UnicodeLexing.Lexbuf,defaul
     let lower = String.lowercase filename 
     // Delay sending errors and warnings until after the file is parsed. This gives us a chance to scrape the
     // #nowarn declarations for the file
-    let filteringErrorLogger = ErrorLoggerFilteringByScopedPragmas(false,[],errorLogger)
-    let errorLogger = DelayedErrorLogger(filteringErrorLogger)
-    use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
+    let delayLogger = CapturingErrorLogger("Parsing")
+    use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> delayLogger)
     use unwindBP = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parse)
+    let mutable scopedPragmas  = []
     try     
         let input = 
             if mlCompatSuffixes |> List.exists (Filename.checkSuffix lower)   then  
@@ -3321,13 +3307,13 @@ let ParseInput (lexer,errorLogger:ErrorLogger,lexbuf:UnicodeLexing.Lexbuf,defaul
                 let intfs = Parser.signatureFile lexer lexbuf 
                 PostParseModuleSpecs (defaultNamespace,filename,isLastCompiland,intfs)
             else 
-                errorLogger.Error(Error(FSComp.SR.buildInvalidSourceFileExtension(filename),Range.rangeStartup))
-        filteringErrorLogger.ScopedPragmas <- GetScopedPragmasForInput input
+                delayLogger.Error(Error(FSComp.SR.buildInvalidSourceFileExtension(filename),Range.rangeStartup))
+        scopedPragmas <- GetScopedPragmasForInput input
         input
     finally
         // OK, now commit the errors, since the ScopedPragmas will (hopefully) have been scraped
-        errorLogger.CommitDelayedErrorsAndWarnings()
-    (* unwindEL, unwindBP dispose *)
+        let filteringErrorLogger = ErrorLoggerFilteringByScopedPragmas(false,scopedPragmas,errorLogger)
+        delayLogger.CommitDelayedDiagnostics(filteringErrorLogger)
 
 //----------------------------------------------------------------------------
 // parsing - ParseOneInputFile
@@ -4690,6 +4676,14 @@ let GetAssemblyResolutionInformation(tcConfig : TcConfig) =
     let resolutions = TcAssemblyResolutions.Resolve(tcConfig,assemblyList,[])
     resolutions.GetAssemblyResolutions(),resolutions.GetUnresolvedReferences()
     
+
+[<RequireQualifiedAccess>]
+type LoadClosureInput = 
+    { FileName: string
+      SyntaxTree: ParsedInput option
+      ParseDiagnostics: (PhasedError * bool) list 
+      MetaCommandDiagnostics: (PhasedError * bool) list  }
+
 [<RequireQualifiedAccess>]
 type LoadClosure = 
     { /// The source files along with the ranges of the #load positions in each file.
@@ -4699,17 +4693,17 @@ type LoadClosure =
       /// The list of references that were not resolved during load closure. These may still be extension references.
       UnresolvedReferences : UnresolvedAssemblyReference list
       /// The list of all sources in the closure with inputs when available
-      Inputs: (string * ParsedInput option * PhasedError list * PhasedError list) list
+      Inputs: LoadClosureInput list
+      /// The #load, including those that didn't resolve
+      OriginalLoadReferences: (range * string) list
       /// The #nowarns
       NoWarns: (string * range list) list
-      /// Errors seen while processing resolutions
-      ResolutionErrors : PhasedError list
-      /// Warnings seen while processing resolutions
-      ResolutionWarnings : PhasedError list 
-      /// Errors seen while parsing root of closure
-      RootErrors : PhasedError list
-      /// Warnings seen while parsing root of closure
-      RootWarnings : PhasedError list }   
+      /// Diagnostics seen while processing resolutions
+      ResolutionDiagnostics : (PhasedError * bool)  list
+      /// Diagnostics seen while parsing root of closure
+      AllRootFileDiagnostics : (PhasedError * bool) list
+      /// Diagnostics seen while processing the compiler options implied root of closure
+      LoadClosureRootFileDiagnostics : (PhasedError * bool) list }   
 
 
 [<RequireQualifiedAccess>]
@@ -4726,7 +4720,7 @@ module private ScriptPreprocessClosure =
     type ClosureSource = ClosureSource of filename: string * referenceRange: range * sourceText: string * parseRequired: bool 
         
     /// Represents an output of the closure finding process
-    type ClosureFile = ClosureFile  of string * range * ParsedInput option * PhasedError list * PhasedError list * (string * range) list // filename, range, errors, warnings, nowarns
+    type ClosureFile = ClosureFile  of string * range * ParsedInput option * (PhasedError * bool) list * (PhasedError * bool) list * (string * range) list // filename, range, errors, warnings, nowarns
 
     type Observed() =
         let seen = System.Collections.Generic.Dictionary<_,bool>()
@@ -4822,18 +4816,17 @@ module private ScriptPreprocessClosure =
                     observedSources.SetSeen(filename)
                     //printfn "visiting %s" filename
                     if IsScript(filename) || parseRequired then 
-                        let errors = ref []
-                        let warnings = ref [] 
-                        let errorLogger = 
-                                { new ErrorLogger("FindClosure") with 
-                                    member x.ErrorSinkImpl(e) = errors := e :: !errors
-                                    member x.WarnSinkImpl(e) = warnings := e :: !warnings
-                                    member x.ErrorCount = (!errors).Length }                        
+                        let parseResult, parseDiagnostics =
+                            let errorLogger = CapturingErrorLogger("FindClosureParse")                    
+                            use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
+                            let result = ParseScriptText(filename,source,!tcConfig,codeContext,lexResourceManager,errorLogger) 
+                            result, errorLogger.Diagnostics
 
-                        use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
-                        let pathOfMetaCommandSource = Path.GetDirectoryName(filename)
-                        match ParseScriptText(filename,source,!tcConfig,codeContext,lexResourceManager,errorLogger) with 
+                        match parseResult with 
                         | Some parsedScriptAst ->                    
+                            let errorLogger = CapturingErrorLogger("FindClosureMetaCommands")                    
+                            use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
+                            let pathOfMetaCommandSource = Path.GetDirectoryName(filename)
                             let preSources = (!tcConfig).GetAvailableLoadedSources()
 
                             let tcConfigResult, noWarns = ApplyMetaCommandsFromInputToTcConfigAndGatherNoWarn !tcConfig (parsedScriptAst,pathOfMetaCommandSource)
@@ -4853,11 +4846,11 @@ module private ScriptPreprocessClosure =
                                     yield ClosureFile(subFile, m, None, [], [], []) 
 
                             //printfn "yielding source %s" filename
-                            yield ClosureFile(filename, m, Some parsedScriptAst, !errors, !warnings, !noWarns)
+                            yield ClosureFile(filename, m, Some parsedScriptAst, parseDiagnostics, errorLogger.Diagnostics, !noWarns)
 
                         | None -> 
                             //printfn "yielding source %s (failed parse)" filename
-                            yield ClosureFile(filename, m, None, !errors, !warnings, [])
+                            yield ClosureFile(filename, m, None, parseDiagnostics, [],  [])
                     else 
                         // Don't traverse into .fs leafs.
                         //printfn "yielding non-script source %s" filename
@@ -4874,35 +4867,31 @@ module private ScriptPreprocessClosure =
                 closureFiles 
             else 
                 match List.frontAndBack closureFiles with
-                | rest, ClosureFile(filename,m,Some(ParsedInput.ImplFile(ParsedImplFileInput(name,isScript,qualNameOfFile,scopedPragmas,hashDirectives,implFileFlags,_))),errs,warns,nowarns) -> 
-                    rest @ [ClosureFile(filename,m,Some(ParsedInput.ImplFile(ParsedImplFileInput(name,isScript,qualNameOfFile,scopedPragmas,hashDirectives,implFileFlags,(true, tcConfig.target.IsExe)))),errs,warns,nowarns)]
+                | rest, ClosureFile(filename,m,Some(ParsedInput.ImplFile(ParsedImplFileInput(name,isScript,qualNameOfFile,scopedPragmas,hashDirectives,implFileFlags,_))), parseDiagnostics, metaDiagnostics, nowarns) -> 
+                    rest @ [ClosureFile(filename,m,Some(ParsedInput.ImplFile(ParsedImplFileInput(name,isScript,qualNameOfFile,scopedPragmas,hashDirectives,implFileFlags,(true, tcConfig.target.IsExe)))),parseDiagnostics, metaDiagnostics, nowarns)]
                 | _ -> closureFiles
 
         // Get all source files.
         let sourceFiles = [  for (ClosureFile(filename,m,_,_,_,_)) in closureFiles -> (filename,m) ]
-        let sourceInputs = [  for (ClosureFile(filename,_,input,errs,warns,_nowarns)) in closureFiles -> (filename,input,errs,warns) ]
+        let sourceInputs = [  for (ClosureFile(filename,_,input,parseDiagnostics,metaDiagnostics,_nowarns)) in closureFiles -> ({ FileName=filename; SyntaxTree=input; ParseDiagnostics=parseDiagnostics; MetaCommandDiagnostics=metaDiagnostics }: LoadClosureInput)  ]
         let globalNoWarns = closureFiles |> List.collect (fun (ClosureFile(_,_,_,_,_,noWarns)) -> noWarns)
 
         // Resolve all references.
-        let references, unresolvedReferences, resolutionWarnings, resolutionErrors = 
-            let resolutionErrors = ref []
-            let resolutionWarnings = ref [] 
-            let errorLogger = 
-                { new ErrorLogger("GetLoadClosure") with 
-                   member x.ErrorSinkImpl(e) = resolutionErrors := e :: !resolutionErrors
-                   member x.WarnSinkImpl(e) = resolutionWarnings := e :: !resolutionWarnings
-                   member x.ErrorCount = (!resolutionErrors).Length }      
+        let references, unresolvedReferences, resolutionDiagnostics = 
+            let errorLogger = CapturingErrorLogger("GetLoadClosure") 
         
             use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger) 
             let references,unresolvedReferences = GetAssemblyResolutionInformation(tcConfig)
             let references =  references |> List.map (fun ar -> ar.resolvedPath,ar)
-            references, unresolvedReferences, resolutionWarnings, resolutionErrors
+            references, unresolvedReferences, errorLogger.Diagnostics
 
         // Root errors and warnings - look at the last item in the closureFiles list
-        let rootErrors, rootWarnings = 
+        let loadClosureRootDiagnostics, allRootDiagnostics = 
             match List.rev closureFiles with
-            | ClosureFile(_,_,_,errors,warnings,_) :: _ -> errors @ !resolutionErrors, warnings @ !resolutionWarnings
-            | _ -> [],[] // When no file existed.
+            | ClosureFile(_,_,_,parseDiagnostics,metaDiagnostics,_) :: _ -> 
+                (metaDiagnostics @ resolutionDiagnostics),
+                (parseDiagnostics @ metaDiagnostics @ resolutionDiagnostics)
+            | _ -> [], [] // When no file existed.
         
         let isRootRange exn =
             match GetRangeOfError exn with
@@ -4914,8 +4903,7 @@ module private ScriptPreprocessClosure =
             | None -> true
         
         // Filter out non-root errors and warnings
-        let rootErrors = rootErrors |> List.filter isRootRange
-        let rootWarnings = rootWarnings |> List.filter isRootRange
+        let allRootDiagnostics = allRootDiagnostics |> List.filter (fst >> isRootRange)
         
         let result : LoadClosure = 
             { SourceFiles = List.groupByFirst sourceFiles
@@ -4923,10 +4911,10 @@ module private ScriptPreprocessClosure =
               UnresolvedReferences = unresolvedReferences
               Inputs = sourceInputs
               NoWarns = List.groupByFirst globalNoWarns
-              ResolutionErrors = !resolutionErrors
-              ResolutionWarnings = !resolutionWarnings      
-              RootErrors = rootErrors
-              RootWarnings = rootWarnings}       
+              OriginalLoadReferences = tcConfig.loadedSources
+              ResolutionDiagnostics = resolutionDiagnostics
+              AllRootFileDiagnostics = allRootDiagnostics
+              LoadClosureRootFileDiagnostics = loadClosureRootDiagnostics }       
 
         result
 

@@ -225,8 +225,17 @@ type internal ProjectSitesAndFiles() =
     static member GetProjectOptionsForProjectSite(projectSite:IProjectSite,filename,extraProjectInfo,serviceProvider:System.IServiceProvider) =
         match projectSite with
         | :? IHaveCheckOptions as hco -> hco.OriginalCheckOptions()
-        | _ ->             
-            getProjectOptionsForProjectSite(projectSite, filename, extraProjectInfo, serviceProvider)
+        | _ -> 
+            {ProjectFileName = projectSite.ProjectFileName()
+             ProjectFileNames = projectSite.SourceFilesOnDisk()
+             OtherOptions = projectSite.CompilerFlags()
+             ReferencedProjects = [| |]
+             IsIncompleteTypeCheckEnvironment = projectSite.IsIncompleteTypeCheckEnvironment
+             UseScriptResolutionRules = SourceFile.MustBeSingleFileProject(filename)
+             LoadTime = projectSite.LoadTime
+             UnresolvedReferences = None
+             OriginalLoadReferences = []
+             ExtraProjectInfo=extraProjectInfo }      
          
     /// Create project site for these project options
     static member CreateProjectSiteForScript (filename, checkOptions) = ProjectSiteOfScriptFile (filename, checkOptions) :> IProjectSite

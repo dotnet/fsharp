@@ -54,8 +54,7 @@ type HashIfExpression()     =
         let errorLogger     =
             {
                 new ErrorLogger("TestErrorLogger") with
-                    member x.WarnSinkImpl(e)    = warnings.Add e
-                    member x.ErrorSinkImpl(e)   = errors.Add e
+                    member x.DiagnosticSink(e, isError)    = if isError then errors.Add e else warnings.Add e 
                     member x.ErrorCount         = errors.Count
             }
 
