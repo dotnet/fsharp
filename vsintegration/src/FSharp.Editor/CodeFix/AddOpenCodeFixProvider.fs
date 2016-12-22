@@ -176,8 +176,7 @@ type internal FSharpAddOpenCodeFixProvider
                 match parseResults.ParseTree, checkFileAnswer with
                 | None, _
                 | _, FSharpCheckFileAnswer.Aborted -> ()
-                | Some parsedInput, FSharpCheckFileAnswer.Succeeded(checkFileResults) ->
-                    let entities = assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies checkFileResults
+                | Some parsedInput, FSharpCheckFileAnswer.Succeeded checkFileResults ->
                     let textLinePos = sourceText.Lines.GetLinePosition context.Span.Start
                     let defines = CompilerEnvironment.GetCompilationDefinesForEditing(context.Document.FilePath, options.OtherOptions |> Seq.toList)
                     let symbol = CommonHelpers.getSymbolAtPosition(context.Document.Id, sourceText, context.Span.Start, context.Document.FilePath, defines, SymbolLookupKind.Fuzzy)
@@ -188,9 +187,9 @@ type internal FSharpAddOpenCodeFixProvider
                         | None -> ()
                         | Some entityKind ->
                             let isAttribute = entityKind = EntityKind.Attribute
-                            
                             let entities =
-                                entities |> List.filter (fun e ->
+                                assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies checkFileResults
+                                |> List.filter (fun e ->
                                     match entityKind, e.Kind with
                                     | EntityKind.Attribute, EntityKind.Attribute 
                                     | EntityKind.Type, (EntityKind.Type | EntityKind.Attribute)
@@ -198,10 +197,7 @@ type internal FSharpAddOpenCodeFixProvider
                                     | EntityKind.Attribute, _
                                     | _, EntityKind.Module _
                                     | EntityKind.Module _, _
-                                    | EntityKind.Type, _ -> false)
-                            
-                            let entities = 
-                                entities
+                                    | EntityKind.Type, _ -> false)                            
                                 |> List.map (fun e -> 
                                      [ yield e.TopRequireQualifiedAccessParent, e.AutoOpenParent, e.Namespace, e.CleanedIdents
                                        if isAttribute then
