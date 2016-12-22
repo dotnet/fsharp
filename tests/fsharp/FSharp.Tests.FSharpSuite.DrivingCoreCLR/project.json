@@ -22,7 +22,8 @@
         "Microsoft.NETCore.App": {
           "type": "platform",
           "version": "1.0.1"
-        }
+        },
+        "System.Reflection.Emit.Lightweight": "4.3.0",
       },
       "imports": [ "netstandard1.1", "netstandard1.6", "portable-net45+win8+wp8+wpa81" ]
     }
