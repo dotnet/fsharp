@@ -183,40 +183,28 @@ type internal FSharpAddOpenCodeFixProvider
                     match symbol with
                     | Some symbol ->
                         let pos = Pos.fromZ textLinePos.Line textLinePos.Character
-                        match ParsedInput.getEntityKind parsedInput pos with
-                        | None -> ()
-                        | Some entityKind ->
-                            let isAttribute = entityKind = EntityKind.Attribute
-                            let entities =
-                                assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies checkFileResults
-                                |> List.filter (fun e ->
-                                    match entityKind, e.Kind with
-                                    | EntityKind.Attribute, EntityKind.Attribute 
-                                    | EntityKind.Type, (EntityKind.Type | EntityKind.Attribute)
-                                    | EntityKind.FunctionOrValue _, _ -> true 
-                                    | EntityKind.Attribute, _
-                                    | _, EntityKind.Module _
-                                    | EntityKind.Module _, _
-                                    | EntityKind.Type, _ -> false)                            
-                                |> List.map (fun e -> 
-                                     [ yield e.TopRequireQualifiedAccessParent, e.AutoOpenParent, e.Namespace, e.CleanedIdents
-                                       if isAttribute then
-                                           let lastIdent = e.CleanedIdents.[e.CleanedIdents.Length - 1]
-                                           if e.Kind = EntityKind.Attribute && lastIdent.EndsWith "Attribute" then
-                                               yield 
-                                                   e.TopRequireQualifiedAccessParent, 
-                                                   e.AutoOpenParent,
-                                                   e.Namespace,
-                                                   e.CleanedIdents 
-                                                   |> Array.replace (e.CleanedIdents.Length - 1) (lastIdent.Substring(0, lastIdent.Length - 9)) ])
-                                |> List.concat
+                        let isAttribute = ParsedInput.getEntityKind parsedInput pos = Some EntityKind.Attribute
+                        let entities =
+                            assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies checkFileResults
+                            |> List.map (fun e -> 
+                                 [ yield e.TopRequireQualifiedAccessParent, e.AutoOpenParent, e.Namespace, e.CleanedIdents
+                                   if isAttribute then
+                                       let lastIdent = e.CleanedIdents.[e.CleanedIdents.Length - 1]
+                                       if e.Kind = EntityKind.Attribute && lastIdent.EndsWith "Attribute" then
+                                           yield 
+                                               e.TopRequireQualifiedAccessParent, 
+                                               e.AutoOpenParent,
+                                               e.Namespace,
+                                               e.CleanedIdents 
+                                               |> Array.replace (e.CleanedIdents.Length - 1) (lastIdent.Substring(0, lastIdent.Length - 9)) ])
+                            |> List.concat
 
-                            let idents = ParsedInput.getLongIdentAt parsedInput (Range.mkPos pos.Line symbol.RightColumn)
-                            match idents with
-                            | Some idents ->
-                                let createEntity = ParsedInput.tryFindInsertionContext pos.Line parsedInput idents
-                                return entities |> Seq.map createEntity |> Seq.concat |> Seq.toList |> getSuggestions context
-                            | None -> ()
+                        let idents = ParsedInput.getLongIdentAt parsedInput (Range.mkPos pos.Line symbol.RightColumn)
+                        match idents with
+                        | Some idents ->
+                            let createEntity = ParsedInput.tryFindInsertionContext pos.Line parsedInput idents
+                            return entities |> Seq.map createEntity |> Seq.concat |> Seq.toList |> getSuggestions context
+                        | None -> ()
                     | None -> ()
             | None -> ()
         } |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
