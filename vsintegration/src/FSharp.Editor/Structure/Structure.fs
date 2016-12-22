@@ -1,11 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
-//----------------------------------------------------------------------------
-// Open up the compiler as an incremental service for parsing,
-// type checking and intellisense-like environment-reporting.
-//--------------------------------------------------------------------------
-
-namespace Microsoft.FSharp.Compiler.SourceCodeServices
+﻿namespace Microsoft.VisualStudio.FSharp.Editor
 
 open Microsoft.FSharp.Compiler.Ast
 open System.Collections.Generic
@@ -104,6 +97,7 @@ module internal Structure =
         | Type
         | Member
         | LetOrUse
+        | Val
         | CompExpr
         | IfThenElse
         | ThenInIfThenElse
@@ -151,6 +145,7 @@ module internal Structure =
             | Type                  -> "Type"
             | Member                -> "Member"
             | LetOrUse              -> "LetOrUse"
+            | Val                   -> "Val"
             | CompExpr              -> "CompExpr"
             | IfThenElse            -> "IfThenElse"
             | ThenInIfThenElse      -> "ThenInIfThenElse"
@@ -719,45 +714,75 @@ module internal Structure =
               CollapseRange = range })
 
 
-
       //=======================================//
      //     Signature File AST Traversal      //
     //=======================================//
+
+
+    let lastMemberSigRangeElse r memberSigs =
+        match memberSigs with
+        | [] -> r
+        | ls ->
+            match List.last ls with
+            | SynMemberSig.Inherit (range=r)
+            | SynMemberSig.Interface (range=r)
+            | SynMemberSig.Member (range=r)
+            | SynMemberSig.NestedType (range=r)
+            | SynMemberSig.ValField (range=r) -> r
+
+    let lastTypeDefnSigRangeElse r (typeSigs:SynTypeDefnSig list) =
+        match typeSigs with
+        | [] -> r
+        | ls ->
+            let (SynTypeDefnSig.TypeDefnSig(_,_,memberSigs,r)) = List.last ls
+            lastMemberSigRangeElse r memberSigs
+
+    let lastModuleSigDeclRangeElse range (sigDecls:SynModuleSigDecls) =
+        match sigDecls with
+        | [] -> range
+        | ls -> match List.last ls with
+                | SynModuleSigDecl.Types (typeSigs,r) -> lastTypeDefnSigRangeElse r typeSigs
+                | SynModuleSigDecl.Val (_,r) -> r
+                | SynModuleSigDecl.Exception(_,r) -> r
+                | SynModuleSigDecl.Open(_,r)-> r
+                | SynModuleSigDecl.ModuleAbbrev(_,_,r)-> r
+                | _ -> range
 
 
 
     let rec private parseSynMemberDefnSig (dsig:SynMemberSig) =
         seq {
             match dsig with
-            | SynMemberSig.Member(valSigs,_flags,r) as _memb ->
+            | SynMemberSig.Member(valSigs,_flags,r) ->
                 let collapse = Range.endToEnd valSigs.RangeOfId r
                 yield! rcheck Scope.Member Collapse.Below r collapse
-
-            | SynMemberSig.ValField(Field(_attrs,_a,_b,_c,_d,_e,_,_fr),_fullrange) ->
-                 ()   
+            | SynMemberSig.ValField(Field(attrs,_a,_b,_c,_d,_e,_,fr),fullrange) ->
+                let collapse = Range.endToEnd fr fullrange
+                yield! rcheck Scope.Val Collapse.Below fullrange collapse
+                yield! parseAttributes attrs
             | SynMemberSig.Interface(tp,r) ->
                 yield! rcheck Scope.Interface Collapse.Below r <| Range.endToEnd tp.Range r
-
             | SynMemberSig.NestedType (typeDefSig, _r) ->
                 yield! parseTypeDefnSig typeDefSig //d.Range
-            | SynMemberSig.Inherit(typeName, r) ->
-                yield! rcheck Scope.Member Collapse.Below r <| Range.endToEnd  typeName.Range r
+            | _ -> ()
+                //yield! rcheck Scope.Member Collapse.Below r <| Range.endToEnd  typeName.Range r
         }
 
 
 
 
     and  private parseTypeDefnSig
-        (TypeDefnSig
-            (SynComponentInfo.ComponentInfo(_attribs,typeArgs,_constraints,_longId,_doc,_b,_access,r)
+      (TypeDefnSig (SynComponentInfo.ComponentInfo(attribs,typeArgs,_constraints,_longId,_doc,_b,_access,r)
                 as _componentInfo, objectModel,  memberSigs, fullrange)) = seq {
+            yield! parseAttributes attribs
             let genericRange = rangeOfTypeArgsElse r typeArgs
-            let collapse = Range.endToEnd (Range.modEnd 1 genericRange) fullrange
+            let rangeEnd = lastMemberSigRangeElse r memberSigs
+            let collapse = Range.endToEnd (Range.modEnd 1 genericRange) rangeEnd
+            let fullrange = Range.startToEnd fullrange rangeEnd
             match objectModel with
             // matches against a type declaration with <'T,...> and (args,...)
             | SynTypeDefnSigRepr.ObjectModel
-                (SynTypeDefnKind.TyconUnspecified,memberSigs,r) ->
-                    let collapse = Range.endToEnd r fullrange
+                (SynTypeDefnKind.TyconUnspecified,memberSigs,_r) ->
                     yield! Seq.collect parseSynMemberDefnSig memberSigs
                     yield! rcheck Scope.Type Collapse.Below fullrange collapse
             | SynTypeDefnSigRepr.ObjectModel (defnKind, objMembers, _) ->
@@ -817,10 +842,12 @@ module internal Structure =
 
     let collectSigOpens = getConsecutiveSigModuleDecls (function SynModuleSigDecl.Open (_, r) -> Some r | _ -> None) Scope.Open
 
-    let rec private parseSigDeclaration (decl: SynModuleSigDecl) =
+    let rec private parseModuleSigDeclaration (decl: SynModuleSigDecl) =
         seq {
             match decl with
-            | SynModuleSigDecl.Val ((ValSpfn(attrs,_,_,_,_,_,_,_,_,_,_)) ,_r) ->
+            | SynModuleSigDecl.Val ((ValSpfn(attrs,ident,_valdecls,_,_,_,_,_,_,_,_)) ,r) ->
+                let collapse = Range.endToEnd  ident.idRange r
+                yield! rcheck Scope.Val Collapse.Below r collapse
                 yield! parseAttributes attrs
 
 
@@ -832,15 +859,17 @@ module internal Structure =
             | SynModuleSigDecl.Types (typeSigs,_r) ->
                 yield! Seq.collect parseTypeDefnSig typeSigs
             // Fold the attributes above a module
-            | SynModuleSigDecl.NestedModule (SynComponentInfo.ComponentInfo (attrs,_,_,_,_,_,_,cmpRange),_, decls,_) ->
+            | SynModuleSigDecl.NestedModule (SynComponentInfo.ComponentInfo (attrs,_,_,_,_,_,_,cmpRange),_, decls,moduleRange) ->
 //                cmpInfo.
+                let rangeEnd = lastModuleSigDeclRangeElse moduleRange decls
                 // Outline the full scope of the module
-                let r = Range.endToEnd cmpRange decl.Range
-                yield! rcheck Scope.Module Collapse.Below decl.Range r
+                let collapse = Range.endToEnd cmpRange rangeEnd
+                let fullrange = Range.startToEnd moduleRange rangeEnd
+                yield! rcheck Scope.Module Collapse.Below fullrange collapse
                 // A module's component info stores the ranges of its attributes
                 yield! parseAttributes attrs
                 yield! collectSigOpens decls
-                yield! Seq.collect parseSigDeclaration decls
+                yield! Seq.collect parseModuleSigDeclaration decls
             | _ -> ()
         }
 
@@ -850,10 +879,10 @@ module internal Structure =
         seq {
             let (SynModuleOrNamespaceSig.SynModuleOrNamespaceSig(longId,_,isModule,decls,_,attribs,_,r)) =  moduleOrNamespaceSigs
             yield! parseAttributes attribs
-            
+            let rangeEnd = lastModuleSigDeclRangeElse r decls
 
-            let fullrange = Range.startToEnd (longIdentRange longId) r  
-            let collapse = Range.endToEnd (longIdentRange longId) r 
+            let fullrange = Range.startToEnd (longIdentRange longId) rangeEnd
+            let collapse = Range.endToEnd (longIdentRange longId) rangeEnd
             if isModule then
                 yield! rcheck Scope.Module Collapse.Below fullrange collapse
             //else
@@ -862,7 +891,7 @@ module internal Structure =
 
             yield! collectSigHashDirectives decls
             yield! collectSigOpens decls
-            yield! Seq.collect parseSigDeclaration decls
+            yield! Seq.collect parseModuleSigDeclaration decls
         }
 
 
@@ -876,8 +905,11 @@ module internal Structure =
             let astBasedRanges = Seq.collect parseModuleOrNamespace modules
             let commentRanges = getCommentRanges sourceLines
             Seq.append astBasedRanges commentRanges
-        | ParsedInput.SigFile sigFile -> 
+        | ParsedInput.SigFile sigFile ->
             let (ParsedSigFileInput(_,_,_,_,moduleSigs )) = sigFile
             let astBasedRanges = Seq.collect parseModuleOrNamespaceSigs moduleSigs
             let commentRanges = getCommentRanges sourceLines
             Seq.append astBasedRanges commentRanges
+
+
+
