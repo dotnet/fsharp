@@ -4,7 +4,7 @@ module Core_control
 #endif
 #light
 
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if FX_PORTABLE_OR_NETSTANDARD
 open System.Threading.Tasks
 #endif
 
@@ -666,7 +666,7 @@ module AsBeginEndTests =
            (sprintf "cvew0-9rn7")
            (let req = AsyncRequest( async { return 2087 } ) 
             let iar = req.BeginAsync(null,null)
-            iar.AsyncWaitHandle.WaitOne(100,true) |> ignore
+            iar.AsyncWaitHandle.WaitOne(100) |> ignore
             req.EndAsync(iar))
            2087
 
@@ -675,7 +675,7 @@ module AsBeginEndTests =
            (let req = AsyncRequest( async { return 2087 } ) 
             let mutable called = 0
             let iar = req.BeginAsync(System.AsyncCallback(fun _ -> called <- 10),null)
-            iar.AsyncWaitHandle.WaitOne(100,true) |> ignore
+            iar.AsyncWaitHandle.WaitOne(100) |> ignore
             let v = req.EndAsync(iar)
             v + called)
            2097
@@ -686,7 +686,7 @@ module AsBeginEndTests =
             let mutable called = 0
             let iar = req.BeginAsync(System.AsyncCallback(fun iar -> called <- req.EndAsync(iar)),null)
             while not iar.IsCompleted do
-                 iar.AsyncWaitHandle.WaitOne(100,true) |> ignore
+                 iar.AsyncWaitHandle.WaitOne(100) |> ignore
             
             called)
            2087
@@ -701,7 +701,7 @@ module AsBeginEndTests =
                                             return 10 } ) 
             let iar = req.BeginAsync(null,null)
             printfn "waiting"
-            iar.AsyncWaitHandle.WaitOne(100,true) |> ignore
+            iar.AsyncWaitHandle.WaitOne(100) |> ignore
             printfn "cancelling"
             req.CancelAsync(iar)
             (try req.EndAsync(iar) with :? System.OperationCanceledException as e -> 100 ))

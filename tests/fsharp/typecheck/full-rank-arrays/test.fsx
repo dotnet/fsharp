@@ -1,7 +1,7 @@
 // #TypeInference
 (* Avoid ;; since it allows fsi to recover from type errors *)
 
-#r "HighRankArrayTests.dll"
+#r "full-rank-arrays.dll"
 open HighRankArrayTests
 open System
 
