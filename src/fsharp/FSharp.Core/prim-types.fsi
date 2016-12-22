@@ -1828,6 +1828,7 @@ namespace Microsoft.FSharp.Collections
         
         interface System.Collections.Generic.IEnumerable<'T>
         interface System.Collections.IEnumerable
+        interface System.Collections.Generic.IReadOnlyCollection<'T>
         
     /// <summary>An abbreviation for the type of immutable singly-linked lists. </summary>
     ///
