@@ -83,6 +83,23 @@ type ListType() =
         Assert.AreEqual(false, enum.MoveNext())
         CheckThrowsInvalidOperationExn(fun () -> enum.Current |> ignore)
     
+    [<Test>]
+    member this.IReadOnlyCollection_T() =
+        
+        // Legit IReadOnlyCollection_T
+        let c = ['a'; 'b'; 'c'] :> IReadOnlyCollection<char>
+
+        Assert.AreEqual(c.Count, Seq.length c)
+
+        let c = [1..10] :> IReadOnlyCollection<int>
+
+        Assert.AreEqual(c.Count, 10)
+
+        // Legit IReadOnlyCollection_T
+        let c = [] :> IReadOnlyCollection<int>
+
+        Assert.AreEqual(c.Count, 0)
+    
     // Base class methods
     [<Test>]
     member this.ObjectToString() =
