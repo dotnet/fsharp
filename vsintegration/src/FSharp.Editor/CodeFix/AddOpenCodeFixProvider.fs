@@ -191,7 +191,7 @@ type internal FSharpAddOpenCodeFixProvider
                                  [ yield e.TopRequireQualifiedAccessParent, e.AutoOpenParent, e.Namespace, e.CleanedIdents
                                    if isAttribute then
                                        let lastIdent = e.CleanedIdents.[e.CleanedIdents.Length - 1]
-                                       if e.Kind = EntityKind.Attribute && lastIdent.EndsWith "Attribute" then
+                                       if lastIdent.EndsWith "Attribute" && e.Kind LookupType.Precise = EntityKind.Attribute then
                                            yield 
                                                e.TopRequireQualifiedAccessParent, 
                                                e.AutoOpenParent,
