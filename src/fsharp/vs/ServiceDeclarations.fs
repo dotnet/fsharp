@@ -1320,7 +1320,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
     member self.Items = declarations
     
     // Make a 'Declarations' object for a set of selected items
-    static member Create(infoReader:InfoReader, m, denv, items, reactor, checkAlive) = 
+    static member Create(infoReader:InfoReader, m, denv, items, reactor, checkAlive, isAttributes) = 
         let g = infoReader.g
          
         let items = items |> RemoveExplicitlySuppressed g
@@ -1373,6 +1373,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                 | items -> 
                     let glyphMajor, glyphMinor = GlyphOfItem(denv,items.Head)
                     let isAttribute = IsAttribute infoReader items.Head
+                    let nm = if isAttributes then nm.[0..nm.Length-10] else nm
                     new FSharpDeclarationListItem(nm, glyphMajor, glyphMinor, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), isAttribute))
 
         new FSharpDeclarationListInfo(Array.ofList decls)

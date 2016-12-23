@@ -74,6 +74,8 @@ module internal AstTraversal =
         // VisitRecordField allows overriding behavior when visiting l.h.s. of constructed record instances
         abstract VisitRecordField : TraversePath * SynExpr option * LongIdentWithDots option -> 'T option
         default this.VisitRecordField (_path, _copyOpt, _recordField) = None
+        abstract VisitAttribute : SynAttribute -> 'T option
+        default this.VisitAttribute (_synAttribute) = None
 
     let dive node range project =
         range,(fun() -> project node)
@@ -142,14 +144,16 @@ module internal AstTraversal =
                 | SynModuleDecl.Types(synTypeDefnList, _range) -> synTypeDefnList |> List.map (fun x -> dive x x.Range (traverseSynTypeDefn path)) |> pick decl
                 | SynModuleDecl.Exception(_synExceptionDefn, _range) -> None
                 | SynModuleDecl.Open(_longIdent, _range) -> None
-                | SynModuleDecl.Attributes(_synAttributes, _range) -> None
+                | SynModuleDecl.Attributes(synAttributes, _range) -> traverseAttributes synAttributes
                 | SynModuleDecl.HashDirective(_parsedHashDirective, _range) -> None
                 | SynModuleDecl.NamespaceFragment(synModuleOrNamespace) -> traverseSynModuleOrNamespace path synModuleOrNamespace
             visitor.VisitModuleDecl(defaultTraverse, decl)
 
-        and traverseSynModuleOrNamespace path (SynModuleOrNamespace(_longIdent, _isRec, _isModule, synModuleDecls, _preXmlDoc, _synAttributes, _synAccessOpt, range) as mors) =
-            let path = TraverseStep.ModuleOrNamespace mors :: path
-            synModuleDecls |> List.map (fun x -> dive x x.Range (traverseSynModuleDecl path)) |> pick range mors
+        and traverseSynModuleOrNamespace path (SynModuleOrNamespace(_longIdent, _isRec, _isModule, synModuleDecls, _preXmlDoc, attributes, _synAccessOpt, range) as mors) =
+            traverseAttributes attributes
+            |> Option.orElseWith (fun _ ->
+                let path = TraverseStep.ModuleOrNamespace mors :: path
+                synModuleDecls |> List.map (fun x -> dive x x.Range (traverseSynModuleDecl path)) |> pick range mors)
         and traverseSynExpr path (expr:SynExpr) =
             let pick = pick expr.Range
             let defaultTraverse e = 
@@ -453,6 +457,19 @@ module internal AstTraversal =
 #endif
                         )
 
+        and walkField (SynField.Field(attrs, _, _, _, _, _, _, _)) = traverseAttributes attrs
+        
+        and walkEnumCase (EnumCase(attrs, _, _, _, _)) = traverseAttributes attrs
+
+        and walkUnionCaseType = function
+            | SynUnionCaseType.UnionCaseFields fields -> List.tryPick walkField fields
+            | SynUnionCaseType.UnionCaseFullType(_, _) -> None
+
+        and walkUnionCase (UnionCase(attrs, _, t, _, _, _)) = 
+            traverseAttributes attrs |> Option.orElse (walkUnionCaseType t)
+        
+        and traverseAttributes (attributes: SynAttributes) = attributes |> List.tryPick visitor.VisitAttribute
+
         and traverseSynTypeDefn path (SynTypeDefn.TypeDefn(synComponentInfo, synTypeDefnRepr, synMemberDefns, tRange) as tydef) =
             let path = TraverseStep.TypeDefn tydef :: path
             [
@@ -470,8 +487,13 @@ module internal AstTraversal =
                     match synTypeDefnSimpleRepr with
                     | SynTypeDefnSimpleRepr.TypeAbbrev(_,synType,m) ->
                         yield dive synTypeDefnRepr synTypeDefnRepr.Range (fun _ -> visitor.VisitTypeAbbrev(synType,m))
-                    | _ ->
-                        () // enums/DUs/record definitions don't have any SynExprs inside them
+                    | SynTypeDefnSimpleRepr.Enum (cases, r) -> yield r, fun _ -> List.tryPick walkEnumCase cases
+                    | SynTypeDefnSimpleRepr.Union(_, cases, r) -> yield r, fun _ -> List.tryPick walkUnionCase cases
+                    | SynTypeDefnSimpleRepr.Record(_, fields, r) -> yield r, fun _ -> List.tryPick walkField fields
+                    | SynTypeDefnSimpleRepr.Exception (SynExceptionDefnRepr(attribs, unionCase, _, _, _, r)) -> 
+                        yield r, (fun _ -> traverseAttributes attribs |> Option.orElseWith (fun _ -> walkUnionCase unionCase))
+                    | _ -> ()
+                    
                 yield! synMemberDefns |> normalizeMembersToDealWithPeculiaritiesOfGettersAndSetters path (fun _ -> None)
             ] |> pick tRange tydef
 
@@ -481,7 +503,7 @@ module internal AstTraversal =
             match m with
             | SynMemberDefn.Open(_longIdent, _range) -> None
             | SynMemberDefn.Member(synBinding, _range) -> traverseSynBinding path synBinding
-            | SynMemberDefn.ImplicitCtor(_synAccessOption, _synAttributes, _synSimplePatList, _identOption, _range) -> None
+            | SynMemberDefn.ImplicitCtor(_synAccessOption, synAttributes, _synSimplePatList, _identOption, _range) -> traverseAttributes synAttributes
             | SynMemberDefn.ImplicitInherit(synType, synExpr, _identOption, range) -> 
                 [
                     dive () synType.Range (fun () -> 
@@ -492,7 +514,8 @@ module internal AstTraversal =
                         visitor.VisitImplicitInherit(traverseSynExpr path, synType, synExpr, range)
                         )
                 ] |> pick m
-            | SynMemberDefn.AutoProperty(_attribs, _isStatic, _id, _tyOpt, _propKind, _, _xmlDoc, _access, synExpr, _, _) -> traverseSynExpr path synExpr
+            | SynMemberDefn.AutoProperty(attribs, _isStatic, _id, _tyOpt, _propKind, _, _xmlDoc, _access, synExpr, _, _) -> 
+                traverseSynExpr path synExpr |> Option.orElseWith (fun _ -> traverseAttributes attribs)
             | SynMemberDefn.LetBindings(synBindingList, _, _, _range) -> synBindingList |> List.map (fun x -> dive x x.RangeOfBindingAndRhs (traverseSynBinding path)) |> pick m
             | SynMemberDefn.AbstractSlot(_synValSig, _memberFlags, _range) -> None
             | SynMemberDefn.Interface(synType, synMemberDefnsOption, _range) -> 
@@ -503,7 +526,7 @@ module internal AstTraversal =
                     | Some(x) -> [ yield! x |> normalizeMembersToDealWithPeculiaritiesOfGettersAndSetters path (fun _ -> None) ]  |> pick x
                 | ok -> ok
             | SynMemberDefn.Inherit(synType, _identOption, range) -> traverseInherit (synType, range)
-            | SynMemberDefn.ValField(_synField, _range) -> None
+            | SynMemberDefn.ValField(field, _range) -> walkField field
             | SynMemberDefn.NestedType(synTypeDefn, _synAccessOption, _range) -> traverseSynTypeDefn path synTypeDefn
 
         and traverseSynMatchClause path mc =
@@ -522,8 +545,8 @@ module internal AstTraversal =
             let defaultTraverse b =
                 let path = TraverseStep.Binding b :: path
                 match b with
-                | (SynBinding.Binding(_synAccessOption, _synBindingKind, _, _, _synAttributes, _preXmlDoc, _synValData, _synPat, _synBindingReturnInfoOption, synExpr, _range, _sequencePointInfoForBinding)) ->
-                    traverseSynExpr path synExpr
+                | (SynBinding.Binding(_synAccessOption, _synBindingKind, _, _, synAttributes, _preXmlDoc, _synValData, _synPat, _synBindingReturnInfoOption, synExpr, _range, _sequencePointInfoForBinding)) ->
+                    traverseSynExpr path synExpr |> Option.orElseWith (fun _ -> traverseAttributes synAttributes)
             visitor.VisitBinding(defaultTraverse,b)
 
         match parseTree with

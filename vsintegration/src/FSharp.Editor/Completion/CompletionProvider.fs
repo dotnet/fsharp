@@ -95,7 +95,7 @@ type internal FSharpCompletionProvider
         match parseResults.ParseTree, checkFileAnswer with
         | _, FSharpCheckFileAnswer.Aborted
         | None, _ -> return List()
-        | Some(parsedInput), FSharpCheckFileAnswer.Succeeded(checkFileResults) -> 
+        | Some(_), FSharpCheckFileAnswer.Succeeded(checkFileResults) -> 
             let textLines = sourceText.Lines
             let caretLine = textLines.GetLineFromPosition(caretPosition)
             let caretLinePos = textLines.GetLinePosition(caretPosition)
@@ -108,16 +108,8 @@ type internal FSharpCompletionProvider
             let results = List<CompletionItem>()
             
             for declarationItem in declarations.Items do
-                let displayText =
-                    if declarationItem.IsAttributeType then
-                        let pos = Pos.fromZ caretLinePos.Line caretLinePos.Character
-                        if ParsedInput.getEntityKind parsedInput pos = Some EntityKind.Attribute then
-                            declarationItem.Name.[0..declarationItem.Name.Length - 10]
-                        else declarationItem.Name
-                    else declarationItem.Name
-            
                 let glyph = CommonRoslynHelpers.FSharpGlyphToRoslynGlyph declarationItem.GlyphMajor
-                let completionItem = CommonCompletionItem.Create(displayText, glyph=Nullable(glyph))
+                let completionItem = CommonCompletionItem.Create(declarationItem.Name, glyph=Nullable(glyph))
                 declarationItemsCache.Remove(completionItem.DisplayText) |> ignore // clear out stale entries if they exist
                 declarationItemsCache.Add(completionItem.DisplayText, declarationItem)
                 results.Add(completionItem)

@@ -74,6 +74,7 @@ type internal CompletionContext =
     // completing named parameters\setters in parameter list of constructor\method calls
     // end of name ast node * list of properties\parameters that were already set
     | ParameterList of pos * HashSet<string>
+    | AttributeApplication
 
 // implementation details used by other code in the compiler    
 module internal UntypedParseImpl =

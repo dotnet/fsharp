@@ -1002,21 +1002,23 @@ type TypeCheckInfo
         | Some (CompletionContext.Inherit(InheritanceContext.Class, (plid, _))) ->
             GetEnvironmentLookupResolutions(mkPos line loc, plid, filterCtors, false) 
             |> FilterRelevantItemsBy None GetBaseClassCandidates
+            |> Option.map (fun x -> x, false)
 
         // Completion at 'interface ..."
         | Some (CompletionContext.Inherit(InheritanceContext.Interface, (plid, _))) ->
             GetEnvironmentLookupResolutions(mkPos line loc, plid, filterCtors, false) 
             |> FilterRelevantItemsBy None GetInterfaceCandidates
+            |> Option.map (fun x -> x, false)
 
         // Completion at 'implement ..."
         | Some (CompletionContext.Inherit(InheritanceContext.Unknown, (plid, _))) ->
             GetEnvironmentLookupResolutions(mkPos line loc, plid, filterCtors, false) 
             |> FilterRelevantItemsBy None (fun t -> GetBaseClassCandidates t || GetInterfaceCandidates t)
+            |> Option.map (fun x -> x, false)
 
         // Completion at ' { XXX = ... } "
         | Some(CompletionContext.RecordField(RecordContext.New(plid, residue))) ->
-            GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid, residue)
-            |> Some            
+            Some(GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid, residue), false)
 
         // Completion at ' { XXX = ... with ... } "
         | Some(CompletionContext.RecordField(RecordContext.CopyOnUpdate(r, (plid, residue)))) -> 
@@ -1025,11 +1027,11 @@ type TypeCheckInfo
                 GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid, residue)
                 |> Some
             | x -> x
+            |> Option.map (fun x -> x, false)
 
         // Completion at ' { XXX = ... with ... } "
         | Some(CompletionContext.RecordField(RecordContext.Constructor(typeName))) ->
-            GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, [typeName], None)
-            |> Some
+            Some(GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, [typeName], None), false)
 
         // Completion at ' SomeMethod( ... ) ' with named arguments 
         | Some(CompletionContext.ParameterList (endPos, fields)) ->
@@ -1048,12 +1050,23 @@ type TypeCheckInfo
                 | None -> Some (items, denv, m)
                 | Some (declItems, declaredDisplayEnv, declaredRange) -> Some (filtered @ declItems, declaredDisplayEnv, declaredRange)
             | _ -> declaredItems
+            |> Option.map (fun x -> x, false)
+
+        | Some(CompletionContext.AttributeApplication) ->
+            let isAttribute = function
+                | Item.Types(_,((TType_app(tcref,_)):: _)) -> 
+                    let ty = generalizedTyconRef tcref
+                    Infos.ExistsHeadTypeInEntireHierarchy infoReader.g infoReader.amap range0 ty infoReader.g.tcref_System_Attribute
+                | _ -> false
+
+            GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, line, loc, filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck, false)
+            |> Option.map (fun (items, denv, r) -> (items |> List.filter isAttribute, denv, r), true)
 
         // Other completions
         | cc ->
             let isInRangeOperator = (match cc with Some (CompletionContext.RangeOperator) -> true | _ -> false)
             let declaredItems = GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, line, loc, filterCtors,resolveOverloads, hasTextChangedSinceLastTypecheck, isInRangeOperator)
-            declaredItems
+            declaredItems |> Option.map (fun x -> x, false)
 
     /// Return 'false' if this is not a completion item valid in an interface file.
     let IsValidSignatureFileItem item =
@@ -1135,10 +1148,10 @@ type TypeCheckInfo
             (fun () -> 
                 match GetDeclItemsForNamesAtPosition(parseResultsOpt, Some qualifyingNames, Some partialName, line, lineStr, colAtEndOfNamesAndResidue, ResolveTypeNamesToCtors, ResolveOverloads.Yes, hasTextChangedSinceLastTypecheck) with
                 | None -> FSharpDeclarationListInfo.Empty  
-                | Some(items,denv,m) -> 
+                | Some((items,denv,m), isAttributes) -> 
                     let items = items |> FilterAutoCompletesBasedOnParseContext parseResultsOpt (mkPos line colAtEndOfNamesAndResidue)
                     let items = if isInterfaceFile then items |> List.filter IsValidSignatureFileItem else items
-                    FSharpDeclarationListInfo.Create(infoReader,m,denv,items,reactorOps,checkAlive))
+                    FSharpDeclarationListInfo.Create(infoReader,m,denv,items,reactorOps,checkAlive,isAttributes))
             (fun msg -> FSharpDeclarationListInfo.Error msg)
 
     /// Get the symbols for auto-complete items at a location
@@ -1149,7 +1162,7 @@ type TypeCheckInfo
             (fun () -> 
                 match GetDeclItemsForNamesAtPosition(parseResultsOpt, Some qualifyingNames, Some partialName, line, lineStr, colAtEndOfNamesAndResidue, ResolveTypeNamesToCtors, ResolveOverloads.Yes, hasTextChangedSinceLastTypecheck) with
                 | None -> List.Empty  
-                | Some(items,_denv,_m) -> 
+                | Some((items,_denv,_m),_) -> 
                     let items = items |> FilterAutoCompletesBasedOnParseContext parseResultsOpt (mkPos line colAtEndOfNamesAndResidue)
                     let items = if isInterfaceFile then items |> List.filter IsValidSignatureFileItem else items
 
@@ -1251,7 +1264,7 @@ type TypeCheckInfo
                 (fun () -> 
                     match GetDeclItemsForNamesAtPosition(None,Some(names),None,line,lineStr,colAtEndOfNames,ResolveTypeNamesToCtors,ResolveOverloads.Yes,fun _ -> false) with
                     | None -> FSharpToolTipText []
-                    | Some(items,denv,m) ->
+                    | Some((items,denv,m),_) ->
                          FSharpToolTipText(items |> List.map (FormatDescriptionOfItem false infoReader m denv )))
                 (fun err -> FSharpToolTipText [FSharpToolTipElement.CompositionError err])
                
@@ -1270,7 +1283,7 @@ type TypeCheckInfo
             (fun () ->
                 match GetDeclItemsForNamesAtPosition(None, Some names, None, line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors, ResolveOverloads.No, fun _ -> false) with // F1 Keywords do not distiguish between overloads
                 | None -> None
-                | Some(items,_,_) ->
+                | Some((items,_,_),_) ->
                     match items with
                     | [] -> None
                     | [item] ->
@@ -1301,14 +1314,14 @@ type TypeCheckInfo
             (fun () -> 
                 match GetDeclItemsForNamesAtPosition(None,namesOpt,None,line,lineStr,colAtEndOfNames,ResolveTypeNamesToCtors,ResolveOverloads.No, fun _ -> false) with
                 | None -> FSharpMethodGroup("",[| |])
-                | Some(items,denv,m) -> FSharpMethodGroup.Create(infoReader,m,denv,items))
+                | Some((items,denv,m),_) -> FSharpMethodGroup.Create(infoReader,m,denv,items))
             (fun msg -> 
                 FSharpMethodGroup(msg,[| |]))
 
     member scope.GetMethodsAsSymbols (line, lineStr, colAtEndOfNames, names) =
         match GetDeclItemsForNamesAtPosition (None,Some(names), None, line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors, ResolveOverloads.No, fun _ -> false) with
-        | None | Some ([], _, _) -> None
-        | Some (items, denv, m) ->
+        | None | Some (([], _, _), _) -> None
+        | Some ((items, denv, m),_) ->
             let allItems =
                 items
                 |> List.collect (fun item ->
@@ -1341,8 +1354,8 @@ type TypeCheckInfo
     member scope.GetDeclarationLocation (line, lineStr, colAtEndOfNames, names, preferFlag) =
           match GetDeclItemsForNamesAtPosition (None,Some(names), None, line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors,ResolveOverloads.Yes, fun _ -> false) with
           | None
-          | Some ([], _, _) -> FSharpFindDeclResult.DeclNotFound FSharpFindDeclFailureReason.Unknown
-          | Some (item :: _ , _, _) -> 
+          | Some (([], _, _), _) -> FSharpFindDeclResult.DeclNotFound FSharpFindDeclFailureReason.Unknown
+          | Some ((item :: _ , _, _), _) -> 
 
               // For IL-based entities, switch to a different item. This is because
               // rangeOfItem, ccuOfItem don't work on IL methods or fields.
@@ -1382,8 +1395,8 @@ type TypeCheckInfo
 
     member scope.GetSymbolUseAtLocation (line, lineStr, colAtEndOfNames, names) =
         match GetDeclItemsForNamesAtPosition (None,Some(names), None, line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors, ResolveOverloads.Yes, fun _ -> false) with
-        | None | Some ([], _, _) -> None
-        | Some (item :: _ , denv, m) -> 
+        | None | Some (([], _, _), _) -> None
+        | Some ((item :: _ , denv, m), _) -> 
             let symbol = FSharpSymbol.Create(g, thisCcu, tcImports, item)
             Some (symbol, denv, m)
 

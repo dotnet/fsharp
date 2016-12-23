@@ -72,6 +72,7 @@ type CompletionContext =
     // completing named parameters\setters in parameter list of constructor\method calls
     // end of name ast node * list of properties\parameters that were already set
     | ParameterList of pos * HashSet<string>
+    | AttributeApplication
 
 //----------------------------------------------------------------------------
 // FSharpParseFileResults
@@ -861,6 +862,7 @@ module UntypedParseImpl =
                             match parseLid lidwd with
                             | Some (completionPath) -> GetCompletionContextForInheritSynMember (componentInfo, typeDefnKind, completionPath)
                             | None -> Some (CompletionContext.Invalid) // A $ .B -> no completion list
-                        | _ -> None }
+                        | _ -> None 
+                        
+                    member this.VisitAttribute(_attr) = Some CompletionContext.AttributeApplication }
         AstTraversal.Traverse(pos, pt, walker)
-
