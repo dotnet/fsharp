@@ -46,9 +46,9 @@ let rec findOriginalException err =
     | _ -> err
 
 
-type Predictions = unit -> Set<string>
+type Suggestions = unit -> Set<string>
 
-let NoPredictions : Predictions = fun () -> Set.empty
+let NoSuggestions : Suggestions = fun () -> Set.empty
 
 /// Thrown when we stop processing the F# Interactive entry or #load.
 exception StopProcessingExn of exn option
@@ -69,10 +69,10 @@ exception Error of (int * string) * range with   // int is e.g. 191 in FS0191  /
         | _ -> "impossible"
 
 
-exception ErrorWithPredictions of (int * string) * range * string * Predictions with   // int is e.g. 191 in FS0191 
+exception ErrorWithSuggestions of (int * string) * range * string * Suggestions with   // int is e.g. 191 in FS0191 
     override this.Message =
         match this :> exn with
-        | ErrorWithPredictions((_,msg),_,_,_) -> msg
+        | ErrorWithSuggestions((_,msg),_,_,_) -> msg
         | _ -> "impossible"
 
 exception InternalError of string * range

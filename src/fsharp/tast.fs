@@ -395,7 +395,7 @@ assert (sizeof<TyparFlags> = 4)
 
 let unassignedTyparName = "?"
 
-exception UndefinedName of int * (* error func that expects identifier name *)(string -> string) * Ident * ErrorLogger.Predictions
+exception UndefinedName of int * (* error func that expects identifier name *)(string -> string) * Ident * ErrorLogger.Suggestions
 exception InternalUndefinedItemRef of (string * string * string -> int * string) * string * string * string
 
 let KeyTyconByDemangledNameAndArity nm (typars: _ list) x = 

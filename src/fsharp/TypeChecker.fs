@@ -5128,7 +5128,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv,names,takenNames) ty pat
             match args with 
             | SynConstructorArgs.Pats [] 
             | SynConstructorArgs.NamePatPairs ([], _)-> TcPat warnOnUpperForId cenv env topValInfo vFlags (tpenv,names,takenNames) ty (mkSynPatVar vis id)
-            | _ -> error (UndefinedName(0,FSComp.SR.undefinedNamePatternDiscriminator,id,NoPredictions))
+            | _ -> error (UndefinedName(0,FSComp.SR.undefinedNamePatternDiscriminator,id,NoSuggestions))
 
         | Item.ActivePatternCase(APElemRef(apinfo,vref,idx)) as item -> 
             let args = match args with SynConstructorArgs.Pats args -> args | _ -> error(Error(FSComp.SR.tcNamedActivePattern(apinfo.ActiveTags.[idx]),m))
@@ -6340,15 +6340,15 @@ and FreshenObjExprAbstractSlot cenv (env: TcEnv) (implty:TType) virtNameAndArity
                 tcref.MembersOfFSharpTyconByName
                 |> Seq.exists (fun kv -> kv.Value |> List.exists (fun valRef -> valRef.DisplayName = bindName))
 
-            let predictVirtualMembers() =
+            let suggestVirtualMembers() =
                 virtNameAndArityPairs
                 |> List.map (fst >> fst)
                 |> Set.ofList
 
             if containsNonAbstractMemberWithSameName then
-                errorR(ErrorWithPredictions(FSComp.SR.tcMemberFoundIsNotAbstractOrVirtual(tcref.DisplayName, bindName),mBinding,bindName,predictVirtualMembers))
+                errorR(ErrorWithSuggestions(FSComp.SR.tcMemberFoundIsNotAbstractOrVirtual(tcref.DisplayName, bindName),mBinding,bindName,suggestVirtualMembers))
             else
-                errorR(ErrorWithPredictions(FSComp.SR.tcNoAbstractOrVirtualMemberFound(bindName),mBinding,bindName,predictVirtualMembers))
+                errorR(ErrorWithSuggestions(FSComp.SR.tcNoAbstractOrVirtualMemberFound(bindName),mBinding,bindName,suggestVirtualMembers))
         | [(_,absSlot:MethInfo)]     ->
             errorR(Error(FSComp.SR.tcArgumentArityMismatch(bindName, List.sum absSlot.NumArgs, arity, getSignature absSlot, getDetails absSlot),mBinding))
         | (_,absSlot:MethInfo) :: _  ->
