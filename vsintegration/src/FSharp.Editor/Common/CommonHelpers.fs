@@ -140,13 +140,13 @@ module internal CommonHelpers =
             // Go backwards to find the last cached scanned line that is valid
             let scanStartLine = 
                 let mutable i = startLine
-                while i > 0 && (match sourceTextData.[i-1] with Some data -> not (data.IsValid(lines.[i])) | None -> true)  do
+                while i > 0 && (match sourceTextData.[i] with Some data -> not (data.IsValid(lines.[i])) | None -> true)  do
                     i <- i - 1
                 i
                 
             // Rescan the lines if necessary and report the information
             let result = new List<ClassifiedSpan>()
-            let mutable lexState = if scanStartLine = 0 then 0L else sourceTextData.[scanStartLine - 1].Value.LexStateAtEndOfLine
+            let mutable lexState = if scanStartLine = 0 then 0L else sourceTextData.[scanStartLine].Value.LexStateAtEndOfLine
 
             for i = scanStartLine to endLine do
                 cancellationToken.ThrowIfCancellationRequested()
@@ -319,7 +319,6 @@ module internal CommonHelpers =
         try
             let textLine = sourceText.Lines.GetLineFromPosition(position)
             let textLinePos = sourceText.Lines.GetLinePosition(position)
-            let lineNumber = textLinePos.Line + 1 // FCS line number
             let sourceTokenizer = FSharpSourceTokenizer(defines, Some fileName)
             let lines = sourceText.Lines
             // We keep incremental data per-document. When text changes we correlate text line-by-line (by hash codes of lines)
@@ -327,12 +326,12 @@ module internal CommonHelpers =
 
             // Go backwards to find the last cached scanned line that is valid
             let scanStartLine = 
-                let mutable i = lineNumber
-                while i > 0 && (match sourceTextData.[i-1] with Some data -> not (data.IsValid(lines.[i])) | None -> true)  do
+                let mutable i = textLinePos.Line
+                while i >= 0 && (match sourceTextData.[i] with Some data -> not (data.IsValid(lines.[i])) | None -> true)  do
                     i <- i - 1
                 i
                 
-            let lexState = if scanStartLine = 0 then 0L else sourceTextData.[scanStartLine - 1].Value.LexStateAtEndOfLine
+            let lexState = if scanStartLine = 0 then 0L else sourceTextData.[scanStartLine].Value.LexStateAtEndOfLine
             let lineContents = textLine.Text.ToString(textLine.Span)
 
             let lineData = 
@@ -340,13 +339,13 @@ module internal CommonHelpers =
                 //   1. the line starts at the same overall position
                 //   2. the hash codes match
                 //   3. the start-of-line lex states are the same
-                match sourceTextData.[lineNumber] with 
+                match sourceTextData.[textLinePos.Line] with 
                 | Some data when data.IsValid(textLine) && data.LexStateAtStartOfLine = lexState -> 
                     data
                 | _ -> 
                     // Otherwise, we recompute
                     let newData = scanSourceLine(sourceTokenizer, textLine, lineContents, lexState)
-                    sourceTextData.[lineNumber] <- Some newData
+                    sourceTextData.[textLinePos.Line] <- Some newData
                     newData
                 
             getSymbolFromTokens(fileName, lineData.Tokens, textLinePos, lineContents, lookupKind)
