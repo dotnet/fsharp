@@ -29,6 +29,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Common\AssemblyInfo.fs" />
+    <Compile Include="Common\Pervasive.fs" />
     <Compile Include="Common\CommonConstants.fs" />
     <Compile Include="Common\CommonRoslynHelpers.fs" />
     <Compile Include="Common\CommonHelpers.fs" />
@@ -53,6 +54,7 @@
     <Compile Include="Navigation\NavigateToSearchService.fs" />
     <Compile Include="Navigation\FindReferencesService.fs" />
     <Compile Include="BlockComment\CommentUncommentService.fs" />
+    <Compile Include="Structure\Structure.fs" />
     <Compile Include="Structure\BlockStructureService.fs" />
     <Compile Include="Commands\HelpContextService.fs" />
     <Compile Include="Commands\FsiCommandService.fs" />

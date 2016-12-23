@@ -39,8 +39,9 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.SourceCodeServices.Structure
+
 open System.Windows.Documents
+open Microsoft.VisualStudio.FSharp.Editor.Structure
 
 [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module internal InsertContext =
