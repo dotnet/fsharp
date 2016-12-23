@@ -84,10 +84,35 @@ type MapType() =
         CheckThrowsInvalidOperationExn(fun () -> enum.Current |> ignore)
         Assert.AreEqual(enum.MoveNext(), false)
         CheckThrowsInvalidOperationExn(fun () -> enum.Current |> ignore)  
-    
+
+    [<Test>]
+    member __.IDictionary() =
+        // Legit ID
+        let id = (Map.ofArray [|(1,1);(2,4);(3,9)|]) :> IDictionary
+
+        Assert.IsTrue(id.Contains(box 1))
+        Assert.IsFalse(id.Contains(box 5))
+        Assert.AreEqual(id.[box 1], 1)
+        Assert.AreEqual(id.[box 3], 9)
+        CollectionAssert.AreEqual(id.Keys,   [| 1; 2; 3|])
+        CollectionAssert.AreEqual(id.Values, [| 1; 4; 9|])
+
+        CheckThrowsNotSupportedException(fun () -> id.[box 2] <-88)
+
+        CheckThrowsNotSupportedException(fun () -> id.Add(box 4, box 16))
+        Assert.AreEqual(id.[box 1], 1)
+        Assert.IsNull(id.[box 100])     // IDictionary.[x] returns null when key isn't found
+        CheckThrowsNotSupportedException(fun () -> id.Remove(box 1) |> ignore)
+
+        // Empty ID
+        let id = (Map.empty : Map<int,int>) :> IDictionary
+        Assert.IsFalse(id.Contains(box 5))
+        CheckThrowsKeyNotFoundException(fun () -> id.[1] |> ignore)
+        CollectionAssert.AreEqual(id.Keys,   [| |] )
+        CollectionAssert.AreEqual(id.Values, [| |] )
     
     [<Test>]
-    member this.IDictionary() =        
+    member __.IDictionary_T() =
         // Legit ID
         let id = (Map.ofArray [|(1,1);(2,4);(3,9)|]) :> IDictionary<_,_> 
         
@@ -113,7 +138,27 @@ type MapType() =
         Assert.AreEqual(id.Values, [| |] ) 
     
     [<Test>]
-    member this.ICollection() =        
+    member __.ICollection() =
+        // Legit IC
+        let ic = (Map.ofArray [|(1,1);(2,4);(3,9)|]) :> ICollection
+
+        Assert.AreEqual (3, ic.Count)
+
+        let newArr = Array.create 5 (new KeyValuePair<int,int>(3,9))
+        ic.CopyTo(newArr,0)
+
+        Assert.IsTrue(ic.IsSynchronized)
+        Assert.IsNotNull(ic.SyncRoot)
+
+        // Empty IC
+        let ic = (Map.empty : Map<int,int>) :> ICollection
+        Assert.AreEqual (0, ic.Count)
+
+        let newArr = Array.create 5 (new KeyValuePair<int,int>(0,0))
+        ic.CopyTo(newArr,0)
+
+    [<Test>]
+    member __.ICollection_T() =
         // Legit IC
         let ic = (Map.ofArray [|(1,1);(2,4);(3,9)|]) :> ICollection<KeyValuePair<_,_>>
         
@@ -150,7 +195,62 @@ type MapType() =
         let ic = [] |> Map.ofList :> IComparable   
         Assert.AreEqual(ic.CompareTo([]|> Map.ofList),0)
     
-    
+    [<Test>]
+    member __.IComparable_T() =
+        // Legit IC
+        let ic = (Map.ofArray [|(1,1);(2,4);(3,9)|]) :> IComparable<_>
+        Assert.AreEqual(ic.CompareTo([(1,1);(2,4);(3,9)]|> Map.ofList),0)
+        Assert.AreEqual(ic.CompareTo([(1,1);(3,9);(2,4)]|> Map.ofList),0)
+        Assert.AreEqual(ic.CompareTo([(1,1);(9,81);(2,4)]|> Map.ofList),-1)
+        Assert.AreEqual(ic.CompareTo([(1,1);(0,0);(2,4)]|> Map.ofList),1)
+
+        // Empty IC
+        let ic = [] |> Map.ofList :> IComparable<_>
+        Assert.AreEqual(ic.CompareTo([]|> Map.ofList),0)
+
+    [<Test>]
+    member __.IEquatable_T() =
+        // Legit IC
+        let ic = (Map.ofArray [|(1,1);(2,4);(3,9)|]) :> IComparable<_>
+        Assert.AreEqual(ic.CompareTo([(1,1);(2,4);(3,9)]|> Map.ofList),0)
+        Assert.AreEqual(ic.CompareTo([(1,1);(3,9);(2,4)]|> Map.ofList),0)
+        Assert.AreEqual(ic.CompareTo([(1,1);(9,81);(2,4)]|> Map.ofList),-1)
+        Assert.AreEqual(ic.CompareTo([(1,1);(0,0);(2,4)]|> Map.ofList),1)
+
+        // Empty IC
+        let ic = [] |> Map.ofList :> IComparable<_>
+        Assert.AreEqual(ic.CompareTo([]|> Map.ofList),0)
+
+#if FX_ATLEAST_45
+    [<Test>]
+    member __.IReadOnlyCollection_T () =
+        Assert.Ignore ("Test not yet implemented.")
+
+    [<Test>]
+    member __.IReadOnlyDictionary_T () =
+        // Legit IROD
+        let id = (Map.ofArray [|(1,1);(2,4);(3,9)|]) :> IReadOnlyDictionary<_,_>
+
+        Assert.IsTrue(id.ContainsKey(1))
+        Assert.IsFalse(id.ContainsKey(5))
+
+        Assert.AreEqual(id.[1], 1)
+        Assert.AreEqual(id.[3], 9)
+
+        CollectionAssert.AreEqual(id.Keys,   [| 1; 2; 3|])
+        CollectionAssert.AreEqual(id.Values, [| 1; 4; 9|]
+
+        Assert.IsTrue(id.TryGetValue(1, ref 1))
+        Assert.IsFalse(id.TryGetValue(100, ref 1))
+
+        // Empty ID
+        let id = Map.empty :> IReadOnlyDictionary<int, int>   // Note no type args
+        Assert.IsFalse(id.ContainsKey(5))
+        CheckThrowsKeyNotFoundException(fun () -> id.[1] |> ignore)
+        CollectionAssert.AreEqual(id.Keys,   [| |] )
+        CollectionAssert.AreEqual(id.Values, [| |] )
+#endif
+
     // Base class methods
     [<Test>]
     member this.ObjectGetHashCode() =
@@ -265,12 +365,12 @@ type MapType() =
             for i = 0 to l.Count - 1 do
                 Assert.AreEqual(i*i, l.[i])
                 Assert.AreEqual(i*i, l.Item(i))
-        
+
         // Invalid index
         let l = (Map.ofArray [|(1,1);(2,4);(3,9)|])
         CheckThrowsKeyNotFoundException(fun () -> l.[ -1 ] |> ignore)
         CheckThrowsKeyNotFoundException(fun () -> l.[1000] |> ignore)
-    
+
     [<Test>]
     member this.Remove() =
     

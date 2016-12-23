@@ -5,6 +5,7 @@ namespace Microsoft.FSharp.Collections
     open System
     open System.Collections.Generic
     open System.Diagnostics
+    open System.Reflection
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 
@@ -401,16 +402,28 @@ namespace Microsoft.FSharp.Collections
               i.started <- true  (* The first call to MoveNext "starts" the enumeration. *)
               not i.stack.IsEmpty
 
-        let mkIEnumerator s = 
-          let i = ref (mkIterator s) 
-          { new IEnumerator<_> with 
+        /// Enumerator for MapTree.
+        [<Sealed>]
+        type MapTreeEnumerator<'Key, 'Value when 'Key : comparison> (s : MapTree<'Key, 'Value>) =
+            let i = ref (mkIterator s)
+
+            interface IEnumerator<KeyValuePair<'Key, 'Value>> with
                 member __.Current = current !i
             interface System.Collections.IEnumerator with
                 member __.Current = box (current !i)
                 member __.MoveNext() = moveNext !i
                 member __.Reset() = i :=  mkIterator s
+            interface System.Collections.IDictionaryEnumerator with
+                member __.Entry =
+                    let kvp = current !i
+                    System.Collections.DictionaryEntry (box kvp.Key, box kvp.Value)
+                member __.Key = box (current !i).Key
+                member __.Value = box (current !i).Value
             interface System.IDisposable with 
-                member __.Dispose() = ()}
+                member __.Dispose() = ()
+
+        let mkIEnumerator s =
+            new MapTreeEnumerator<_,_> (s)
 
 
 
@@ -562,22 +575,25 @@ namespace Microsoft.FSharp.Collections
                 res <- combineHash res (Unchecked.hash y)
             abs res
 
-        override this.Equals(that) = 
+        member private this.EqualsImpl (that : Map<'Key,'Value>) =
+            use e1 = (this :> seq<_>).GetEnumerator() 
+            use e2 = (that :> seq<_>).GetEnumerator() 
+            let rec loop () = 
+                let m1 = e1.MoveNext() 
+                let m2 = e2.MoveNext()
+                (m1 = m2) && (not m1 || let e1c, e2c = e1.Current, e2.Current in ((e1c.Key = e2c.Key) && (Unchecked.equals e1c.Value e2c.Value) && loop()))
+            loop()
+
+        override this.Equals (that) = 
             match that with 
             | :? Map<'Key,'Value> as that -> 
-                use e1 = (this :> seq<_>).GetEnumerator() 
-                use e2 = (that :> seq<_>).GetEnumerator() 
-                let rec loop () = 
-                    let m1 = e1.MoveNext() 
-                    let m2 = e2.MoveNext()
-                    (m1 = m2) && (not m1 || let e1c, e2c = e1.Current, e2.Current in ((e1c.Key = e2c.Key) && (Unchecked.equals e1c.Value e2c.Value) && loop()))
-                loop()
+                this.EqualsImpl that
             | _ -> false
 
         override this.GetHashCode() = this.ComputeHashCode()
 
         interface IEnumerable<KeyValuePair<'Key, 'Value>> with
-            member __.GetEnumerator() = MapTree.mkIEnumerator tree
+            member __.GetEnumerator() = upcast (MapTree.mkIEnumerator tree)
 
         interface System.Collections.IEnumerable with
             member __.GetEnumerator() = (MapTree.mkIEnumerator tree :> System.Collections.IEnumerator)
@@ -587,7 +603,7 @@ namespace Microsoft.FSharp.Collections
                 with get x = m.[x]            
                 and  set x v = ignore(x,v); raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
 
-            // REVIEW: this implementation could avoid copying the Values to an array    
+            // REVIEW: this implementation could avoid copying the Keys to an array    
             member s.Keys = ([| for kvp in s -> kvp.Key |] :> ICollection<'Key>)
 
             // REVIEW: this implementation could avoid copying the Values to an array    
@@ -598,6 +614,62 @@ namespace Microsoft.FSharp.Collections
             member s.TryGetValue(k,r) = if s.ContainsKey(k) then (r <- s.[k]; true) else false
             member s.Remove(k : 'Key) = ignore(k); (raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated))) : bool)
 
+        interface System.Collections.IDictionary with
+            member m.Item
+                with get key =
+                    match key with
+                    | null ->
+                        // According to the documentation for IDictionary, implementations should
+                        // raise ArgumentNullException if the key passed to the indexer is null.
+                        nullArg "key"
+                    | :? 'Key as key ->
+                        match m.TryFind key with
+                        | Some v -> box v
+                        | None -> null
+                    | _ -> null
+                and  set key value =
+                    if Object.ReferenceEquals (null, key) then nullArg "key"
+                    ignore value
+                    raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
+
+            // REVIEW: this implementation could avoid copying the Keys to an array
+            member s.Keys = ([| for kvp in s -> kvp.Key |] :> System.Collections.ICollection)
+
+            // REVIEW: this implementation could avoid copying the Values to an array
+            member s.Values = ([| for kvp in s -> kvp.Value |] :> System.Collections.ICollection)
+
+            member __.IsFixedSize = true
+            member __.IsReadOnly = true
+
+            member __.Add(key, value) =
+                if Object.ReferenceEquals (null, key) then nullArg "key"
+                ignore value
+                raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
+            member __.Clear () = raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
+            member m.Contains key =
+                // IDictionary MSDN documentation says:
+                // "Implementations can vary in whether they allow the key to be null."
+                match key with
+                | :? 'Key as k ->
+                    m.ContainsKey k
+                | null when not
+#if FX_RESHAPED_REFLECTION
+                    ((typeof<'Key>).GetTypeInfo().IsValueType)
+#else
+                    typeof<'Key>.IsValueType
+#endif
+                    ->
+                    // If this map's key type is a reference type, a null reference could be a
+                    // legitimate key in the map so pass it through to ContainsKey.
+                    // Need to call ContainsKey with default(Key) instead of null to satisfy type constraints.
+                    m.ContainsKey Unchecked.defaultof<_>
+                | _ -> false
+
+            member __.GetEnumerator () = upcast (MapTree.mkIEnumerator tree)
+            member __.Remove key =
+                if Object.ReferenceEquals (null, key) then nullArg "key"
+                raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
+
         interface ICollection<KeyValuePair<'Key, 'Value>> with 
             member __.Add(x) = ignore(x); raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)));
             member __.Clear() = raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)));
@@ -607,8 +679,26 @@ namespace Microsoft.FSharp.Collections
             member s.IsReadOnly = true
             member s.Count = s.Count
 
+        interface System.Collections.ICollection with
+            member s.Count = s.Count
+            member s.IsSynchronized = true
+            member s.SyncRoot = upcast s
+            member __.CopyTo(arr,i) =
+                // Check arguments in accordance with what's specified by the docs for ICollection.
+                if Object.ReferenceEquals (null, arr) then nullArg "arr"
+                elif i < 0 then raise (IndexOutOfRangeException ())
+
+                // Raise an ArgumentException if 'arr' is multidimensional,
+                // or has the wrong element type.
+                match arr with
+                | :? (KeyValuePair<'Key,'Value>[]) as kvpArr ->
+                    MapTree.copyToArray tree kvpArr i
+                | _ ->
+                    raise (ArgumentException("arr"))
+
         interface System.IComparable with 
-            member m.CompareTo(obj: obj) = 
+            member m.CompareTo(obj: obj) =
+                // REVIEW: Docs for IComparable say implementations shouldn't raise exceptions for null arguments.
                 match obj with 
                 | :? Map<'Key,'Value>  as m2->
                     Seq.compareWith 
@@ -618,6 +708,45 @@ namespace Microsoft.FSharp.Collections
                        m m2 
                 | _ -> 
                     invalidArg "obj" (SR.GetString(SR.notComparable))
+
+        interface System.IComparable<Map<'Key,'Value>> with
+            member m.CompareTo other =
+                // REVIEW: Docs for IComparable say implementations shouldn't raise exceptions for null arguments.
+                (m, other)
+                ||> Seq.compareWith (fun (kvp1 : KeyValuePair<_,_>) (kvp2 : KeyValuePair<_,_>) ->
+                    let c = comparer.Compare(kvp1.Key,kvp2.Key)
+                    if c <> 0 then c else Unchecked.compare kvp1.Value kvp2.Value)
+
+        interface System.IEquatable<Map<'Key,'Value>> with
+            member this.Equals other =
+                // Not equal if the other instance is null.
+                not (Object.ReferenceEquals (null, other)) && this.EqualsImpl other
+
+#if FX_ATLEAST_45
+        interface IReadOnlyCollection<KeyValuePair<'Key, 'Value>> with
+            member s.Count = s.Count
+
+        interface IReadOnlyDictionary<'Key, 'Value> with
+            member m.Item
+                with get x = m.[x]
+
+            // REVIEW: this implementation could avoid copying the Keys to an array
+            member s.Keys = ([| for kvp in s -> kvp.Key |] :> IEnumerable<'Key>)
+
+            // REVIEW: this implementation could avoid copying the Values to an array
+            member s.Values = ([| for kvp in s -> kvp.Value |] :> IEnumerable<'Value>)
+
+            member s.ContainsKey(k) = s.ContainsKey(k)
+            member s.TryGetValue(k,r) =
+                match s.TryFind k with
+                | None ->
+                    // Like Dictionary<_,_>, clear the 'out' value if the key wasn't found.
+                    r <- Unchecked.defaultof<_>
+                    false
+                | Some v ->
+                    r <- v
+                    true
+#endif
 
         override x.ToString() = 
            match List.ofSeq (Seq.truncate 4 x) with 

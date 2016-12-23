@@ -90,12 +90,21 @@ namespace Microsoft.FSharp.Collections
         /// <summary>Returns the highest element in the set according to the ordering being used for the set.</summary>
         member MaximumElement: 'T
 
-        interface ICollection<'T> 
-        interface IEnumerable<'T> 
-        interface System.Collections.IEnumerable 
+        interface IEnumerable<'T>
+        interface System.Collections.IEnumerable
+        interface ICollection<'T>
+        interface System.Collections.ICollection
 
+        interface System.IComparable<Set<'T>>
         interface System.IComparable
+        interface System.IEquatable<Set<'T>>
+
+#if FX_ATLEAST_45
+        interface IReadOnlyCollection<'T>
+#endif
+
         override Equals : obj -> bool
+        override GetHashCode : unit -> int
 
 
 namespace Microsoft.FSharp.Collections
