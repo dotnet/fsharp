@@ -1,5 +1,4 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 module SR =
@@ -13,6 +12,5 @@ module SR =
 #endif
         s.Replace(@"\n", System.Environment.NewLine)
 
-//    Sigh!!!!  We do this because at the moment we don't have a tool to generate the SR from a resx file
-//    [<Literal>]
-//    let ResourceName = "ResourceName"
+    //    Sigh!!!!  We do this because at the moment we don't have a tool to generate the SR from a resx file
+    let AddNewKeyword = lazy ( GetString "AddNewKeyword" )          // "Add 'new' keyword"
