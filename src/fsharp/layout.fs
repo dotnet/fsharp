@@ -351,7 +351,7 @@ let taggedTextListR collector =
   { new LayoutRenderer<NoResult, NoState> with 
       member x.Start () = NoState
       member x.AddText z text = collector text; z
-      member x.AddBreak rstrs n = collector (tagSpace(spaces n)); collector Literals.lineBreak; rstrs 
+      member x.AddBreak rstrs n = collector Literals.lineBreak; collector (tagSpace(spaces n)); rstrs 
       member x.AddTag z (_,_,_) = z
       member x.Finish rstrs = NoResult }
 

@@ -40,7 +40,7 @@ module internal CommonRoslynHelpers =
         match t with
         | TaggedText.ActivePatternCase t
         | TaggedText.ActivePatternResult t -> TaggedText(TextTags.Enum, t)
-        | TaggedText.Alias t -> TaggedText(TextTags.Alias, t) 
+        | TaggedText.Alias t -> TaggedText(TextTags.Class, t)
         | TaggedText.Class t -> TaggedText(TextTags.Class, t)
         | TaggedText.Delegate t -> TaggedText(TextTags.Delegate, t)
         | TaggedText.Enum t -> TaggedText(TextTags.Enum, t)

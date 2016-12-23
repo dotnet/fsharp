@@ -1912,8 +1912,8 @@ let layoutILTypeRef         denv x = x |> PrintIL.layoutILTypeRef denv
 let outputExnDef            denv os x = x |> TastDefinitionPrinting.layoutExnDefn denv |> bufferL os
 let layoutExnDef            denv x = x |> TastDefinitionPrinting.layoutExnDefn denv
 let stringOfTyparConstraints denv x   = x |> PrintTypes.layoutConstraintsWithInfo denv SimplifyTypes.typeSimplificationInfo0  |> showL
-let outputTycon             denv infoReader ad m (* width *) os x = TastDefinitionPrinting.layoutTycon denv infoReader ad m true (wordL (tagText "type")) x (* |> Layout.squashTo width *) |>  bufferL os
-let layoutTycon             denv infoReader ad m (* width *) x = TastDefinitionPrinting.layoutTycon denv infoReader ad m true (wordL (tagText "type")) x (* |> Layout.squashTo width *)
+let outputTycon             denv infoReader ad m (* width *) os x = TastDefinitionPrinting.layoutTycon denv infoReader ad m true (wordL (tagKeyword "type")) x (* |> Layout.squashTo width *) |>  bufferL os
+let layoutTycon             denv infoReader ad m (* width *) x = TastDefinitionPrinting.layoutTycon denv infoReader ad m true (wordL (tagKeyword "type")) x (* |> Layout.squashTo width *)
 let layoutUnionCases        denv x    = x |> TastDefinitionPrinting.layoutUnionCaseFields denv true
 let outputUnionCases        denv os x    = x |> TastDefinitionPrinting.layoutUnionCaseFields denv true |> bufferL os
 /// Pass negative number as pos in case of single cased discriminated unions
