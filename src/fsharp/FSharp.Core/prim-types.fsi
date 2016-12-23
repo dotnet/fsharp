@@ -1828,7 +1828,11 @@ namespace Microsoft.FSharp.Collections
         
         interface System.Collections.Generic.IEnumerable<'T>
         interface System.Collections.IEnumerable
+
+#if FSCORE_PORTABLE_OLD
+#else
         interface System.Collections.Generic.IReadOnlyCollection<'T>
+#endif
         
     /// <summary>An abbreviation for the type of immutable singly-linked lists. </summary>
     ///

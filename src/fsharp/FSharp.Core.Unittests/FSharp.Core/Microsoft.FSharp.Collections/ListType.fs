@@ -82,7 +82,9 @@ type ListType() =
         CheckThrowsInvalidOperationExn(fun () -> enum.Current |> ignore)
         Assert.AreEqual(false, enum.MoveNext())
         CheckThrowsInvalidOperationExn(fun () -> enum.Current |> ignore)
-    
+ 
+ #if FSCORE_PORTABLE_OLD
+ #else 
     [<Test>]
     member this.IReadOnlyCollection_T() =
         
@@ -99,6 +101,7 @@ type ListType() =
         let c = [] :> IReadOnlyCollection<int>
 
         Assert.AreEqual(c.Count, 0)
+#endif
     
     // Base class methods
     [<Test>]
