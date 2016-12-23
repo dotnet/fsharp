@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
@@ -18,7 +18,8 @@
     <TargetType>LIBRARY</TargetType>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <NoWarn>$(NoWarn);75</NoWarn>
-    <Tailcalls Condition="'$(CodeCoverage)' != ''">false</Tailcalls>    <OtherFlags>$(OtherFlags) --warnon:1182  --subsystemversion:6.00</OtherFlags>
+    <Tailcalls Condition="'$(CodeCoverage)' != ''">false</Tailcalls>
+    <OtherFlags>$(OtherFlags) --warnon:1182  --subsystemversion:6.00</OtherFlags>
     <ImportVSSDKTargets>true</ImportVSSDKTargets>
     <CreateVsixContainer>false</CreateVsixContainer>
     <DeployExtension>false</DeployExtension>
@@ -27,23 +28,24 @@
     <IncludePkgdefInVSIXContainer>true</IncludePkgdefInVSIXContainer>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="Pervasive.fs" />
-    <Compile Include="CommonConstants.fs" />
-    <Compile Include="CommonRoslynHelpers.fs" />
-    <Compile Include="CommonHelpers.fs" />
-    <Compile Include="Logging.fs" />
-    <Compile Include="LanguageService.fs" />
+    <Compile Include="Common\AssemblyInfo.fs" />
+    <Compile Include="Common\CommonConstants.fs" />
+    <Compile Include="Common\CommonRoslynHelpers.fs" />
+    <Compile Include="Common\CommonHelpers.fs" />
+    <Compile Include="Common\Logging.fs" />
+    <Compile Include="Common\ContentType.fs" />
+    <Compile Include="Common\LanguageService.fs" />
+    <Compile Include="Common\AssemblyContentProvider.fs" />
     <Compile Include="Classification\ColorizationService.fs" />
-    <Compile Include="Utilities\BraceMatchingService.fs" />
-    <Compile Include="Utilities\IndentationService.fs"/>
-    <Compile Include="Debugging\BreakpointResolutionService.fs"/>
-    <Compile Include="Debugging\LanguageDebugInfoService.fs"/>
-    <Compile Include="Diagnostics\DocumentDiagnosticAnalyzer.fs"/>
-    <Compile Include="Diagnostics\ProjectDiagnosticAnalyzer.fs"/>
-    <Compile Include="Completion\CompletionProvider.fs"/>
-    <Compile Include="Completion\SignatureHelp.fs"/>
-    <Compile Include="QuickInfo\QuickInfoProvider.fs"/>
+    <Compile Include="Formatting\BraceMatchingService.fs" />
+    <Compile Include="Formatting\IndentationService.fs" />
+    <Compile Include="Debugging\BreakpointResolutionService.fs" />
+    <Compile Include="Debugging\LanguageDebugInfoService.fs" />
+    <Compile Include="Diagnostics\DocumentDiagnosticAnalyzer.fs" />
+    <Compile Include="Diagnostics\ProjectDiagnosticAnalyzer.fs" />
+    <Compile Include="Completion\CompletionProvider.fs" />
+    <Compile Include="Completion\SignatureHelp.fs" />
+    <Compile Include="QuickInfo\QuickInfoProvider.fs" />
     <Compile Include="InlineRename\InlineRenameService.fs" />
     <Compile Include="DocumentHighlights\DocumentHighlightsService.fs" />
     <Compile Include="Navigation\GoToDefinitionService.fs" />
@@ -52,9 +54,9 @@
     <Compile Include="Navigation\FindReferencesService.fs" />
     <Compile Include="BlockComment\CommentUncommentService.fs" />
     <Compile Include="Structure\BlockStructureService.fs" />
-    <Compile Include="HelpContextService.fs" />
-    <Compile Include="ContentType.fs" />
-    <Compile Include="FsiCommandService.fs" />
+    <Compile Include="Commands\HelpContextService.fs" />
+    <Compile Include="Commands\FsiCommandService.fs" />
+    <Compile Include="CodeFix\AddOpenCodeFixProvider.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">

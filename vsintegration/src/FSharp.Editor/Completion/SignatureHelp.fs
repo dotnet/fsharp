@@ -284,7 +284,7 @@ open Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.SignatureHelp.Pre
 
 [<Export(typeof<IClassifierProvider>)>]
 [<ContentType(FSharpCommonConstants.FSharpSignatureHelpContentTypeName)>]
-type FSharpSignatureHelpClassifierProvider [<ImportingConstructor>] (typeMap) =
+type internal FSharpSignatureHelpClassifierProvider [<ImportingConstructor>] (typeMap) =
     interface IClassifierProvider with
         override __.GetClassifier (buffer: ITextBuffer) =
             buffer.Properties.GetOrCreateSingletonProperty(fun _ -> SignatureHelpClassifier(buffer, typeMap) :> _)

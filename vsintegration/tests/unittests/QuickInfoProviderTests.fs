@@ -97,7 +97,7 @@ Full name: System.Console"
         let getInfo() = documentId, filePath, []
         
         let quickInfo =
-            FSharpQuickInfoProvider.ProvideQuickInfo(FSharpChecker.Instance, documentId, SourceText.From(fileContents), filePath, caretPosition, options, 0, CancellationToken.None)
+            FSharpQuickInfoProvider.ProvideQuickInfo(FSharpChecker.Instance, documentId, SourceText.From(fileContents), filePath, caretPosition, options, 0)
             |> Async.RunSynchronously
         
         let actual = quickInfo |> Option.map (fun (text, _) -> getQuickInfoText text)

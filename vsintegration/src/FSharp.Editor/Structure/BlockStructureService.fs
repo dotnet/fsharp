@@ -97,6 +97,8 @@ type internal FSharpBlockStructureService(checker: FSharpChecker, projectInfoMan
                 | Some parsedInput ->
                     let blockSpans =
                         Structure.getOutliningRanges (sourceText.Lines |> Seq.map (fun x -> x.ToString()) |> Seq.toArray) parsedInput
+                        // it's crucial to not return more than one BlockSpan, othewise Roslyn crashes Visual Studio when user hover 
+                        // mouse over guide lines.
                         |> Seq.distinctBy (fun x -> x.Range.StartLine)
                         |> Seq.choose (fun range -> 
                             CommonRoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range.Range)
