@@ -9,7 +9,6 @@ open System.Collections.Generic
 open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
-open System.Linq
 open System.Runtime.CompilerServices
 open System.Windows
 open System.Windows.Controls
@@ -164,7 +163,7 @@ type internal FSharpAddOpenCodeFixProvider
             |> Seq.toList
 
         for codeFix in openNamespaceFixes @ quilifySymbolFixes do
-            context.RegisterCodeFix(codeFix, (context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds.Contains x.Id)).ToImmutableArray())
+            context.RegisterCodeFix(codeFix, (context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id)).ToImmutableArray())
 
     override __.FixableDiagnosticIds = fixableDiagnosticIds.ToImmutableArray()
 
