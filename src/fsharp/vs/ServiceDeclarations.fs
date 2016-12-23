@@ -1263,7 +1263,7 @@ module internal ItemDescriptionsImpl =
      
 /// An intellisense declaration
 [<Sealed>]
-type FSharpDeclarationListItem(name, glyphMajor:GlyphMajor, glyphMinor:GlyphMinor, info, isAttributeType: bool) =
+type FSharpDeclarationListItem(name, glyphMajor:GlyphMajor, glyphMinor:GlyphMinor, info) =
     let mutable descriptionTextHolder:FSharpToolTipText option = None
     let mutable task = null
 
@@ -1310,8 +1310,7 @@ type FSharpDeclarationListItem(name, glyphMajor:GlyphMajor, glyphMinor:GlyphMino
 
     member decl.Glyph = 6 * int glyphMajor + int glyphMinor
     member decl.GlyphMajor = glyphMajor 
-    member decl.GlyphMinor = glyphMinor 
-    member decl.IsAttributeType = isAttributeType
+    member decl.GlyphMinor = glyphMinor
       
 /// A table of declarations for Intellisense completion 
 [<Sealed>]
@@ -1320,7 +1319,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
     member self.Items = declarations
     
     // Make a 'Declarations' object for a set of selected items
-    static member Create(infoReader:InfoReader, m, denv, items, reactor, checkAlive, isAttributes) = 
+    static member Create(infoReader:InfoReader, m, denv, items, reactor, checkAlive, atAttributeApplication) = 
         let g = infoReader.g
          
         let items = items |> RemoveExplicitlySuppressed g
@@ -1372,15 +1371,14 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                 | [] -> failwith "Unexpected empty bag"
                 | items -> 
                     let glyphMajor, glyphMinor = GlyphOfItem(denv,items.Head)
-                    let isAttribute = IsAttribute infoReader items.Head
-                    let nm = if isAttributes then nm.[0..nm.Length-10] else nm
-                    new FSharpDeclarationListItem(nm, glyphMajor, glyphMinor, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), isAttribute))
+                    let nm = if atAttributeApplication && IsAttribute infoReader items.Head then nm.[0..nm.Length-10] else nm
+                    new FSharpDeclarationListItem(nm, glyphMajor, glyphMinor, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive)))
 
         new FSharpDeclarationListInfo(Array.ofList decls)
 
     
     static member Error msg = 
         new FSharpDeclarationListInfo(
-                [| new FSharpDeclarationListItem("<Note>", GlyphMajor.Error, GlyphMinor.Normal, Choice2Of2 (FSharpToolTipText [FSharpToolTipElement.CompositionError msg]), false) |] )
+                [| new FSharpDeclarationListItem("<Note>", GlyphMajor.Error, GlyphMinor.Normal, Choice2Of2 (FSharpToolTipText [FSharpToolTipElement.CompositionError msg])) |] )
     static member Empty = new FSharpDeclarationListInfo([| |])
 

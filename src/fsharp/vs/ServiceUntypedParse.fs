@@ -864,5 +864,8 @@ module UntypedParseImpl =
                             | None -> Some (CompletionContext.Invalid) // A $ .B -> no completion list
                         | _ -> None 
                         
-                    member this.VisitAttribute(_attr) = Some CompletionContext.AttributeApplication }
+                    member this.VisitAttribute(attr) = 
+                        if rangeContainsPos attr.TypeName.Range pos then
+                            Some CompletionContext.AttributeApplication
+                        else None }
         AstTraversal.Traverse(pos, pt, walker)

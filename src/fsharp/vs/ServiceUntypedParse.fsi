@@ -9,6 +9,7 @@ namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
 open System.Collections.Generic
 open Microsoft.FSharp.Compiler 
+open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.ErrorLogger
 
@@ -78,7 +79,6 @@ type internal CompletionContext =
 
 // implementation details used by other code in the compiler    
 module internal UntypedParseImpl =
-    open Microsoft.FSharp.Compiler.Ast
     val TryFindExpressionASTLeftOfDotLeftOfCursor : pos * ParsedInput option -> (pos * bool) option
     val GetRangeOfExprLeftOfDot : pos  * ParsedInput option -> range option
     val TryFindExpressionIslandInPosition : pos * ParsedInput option -> string option

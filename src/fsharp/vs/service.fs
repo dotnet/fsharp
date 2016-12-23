@@ -1053,14 +1053,13 @@ type TypeCheckInfo
             |> Option.map (fun x -> x, false)
 
         | Some(CompletionContext.AttributeApplication) ->
-            let isAttribute = function
-                | Item.Types(_,((TType_app(tcref,_)):: _)) -> 
-                    let ty = generalizedTyconRef tcref
-                    Infos.ExistsHeadTypeInEntireHierarchy infoReader.g infoReader.amap range0 ty infoReader.g.tcref_System_Attribute
-                | _ -> false
-
             GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, line, loc, filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck, false)
-            |> Option.map (fun (items, denv, r) -> (items |> List.filter isAttribute, denv, r), true)
+            |> Option.map (fun (items, denv, r) -> 
+                (items 
+                 |> List.filter (function
+                     | Item.Types _
+                     | Item.ModuleOrNamespaces _ -> true
+                     | _ -> false), denv, r), true)
 
         // Other completions
         | cc ->
@@ -1148,10 +1147,10 @@ type TypeCheckInfo
             (fun () -> 
                 match GetDeclItemsForNamesAtPosition(parseResultsOpt, Some qualifyingNames, Some partialName, line, lineStr, colAtEndOfNamesAndResidue, ResolveTypeNamesToCtors, ResolveOverloads.Yes, hasTextChangedSinceLastTypecheck) with
                 | None -> FSharpDeclarationListInfo.Empty  
-                | Some((items,denv,m), isAttributes) -> 
+                | Some((items,denv,m), atAttributeApplication) -> 
                     let items = items |> FilterAutoCompletesBasedOnParseContext parseResultsOpt (mkPos line colAtEndOfNamesAndResidue)
                     let items = if isInterfaceFile then items |> List.filter IsValidSignatureFileItem else items
-                    FSharpDeclarationListInfo.Create(infoReader,m,denv,items,reactorOps,checkAlive,isAttributes))
+                    FSharpDeclarationListInfo.Create(infoReader,m,denv,items,reactorOps,checkAlive,atAttributeApplication))
             (fun msg -> FSharpDeclarationListInfo.Error msg)
 
     /// Get the symbols for auto-complete items at a location
