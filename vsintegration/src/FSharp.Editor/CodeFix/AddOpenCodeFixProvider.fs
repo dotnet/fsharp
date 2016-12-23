@@ -39,8 +39,9 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.SourceCodeServices.Structure
+
 open System.Windows.Documents
+open Microsoft.VisualStudio.FSharp.Editor.Structure
 
 [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module internal InsertContext =
@@ -191,7 +192,7 @@ type internal FSharpAddOpenCodeFixProvider
                                  [ yield e.TopRequireQualifiedAccessParent, e.AutoOpenParent, e.Namespace, e.CleanedIdents
                                    if isAttribute then
                                        let lastIdent = e.CleanedIdents.[e.CleanedIdents.Length - 1]
-                                       if e.Kind = EntityKind.Attribute && lastIdent.EndsWith "Attribute" then
+                                       if lastIdent.EndsWith "Attribute" && e.Kind LookupType.Precise = EntityKind.Attribute then
                                            yield 
                                                e.TopRequireQualifiedAccessParent, 
                                                e.AutoOpenParent,

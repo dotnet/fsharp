@@ -156,7 +156,7 @@ let GetRangeOfError(err:PhasedError) =
       | RecursiveUseCheckedAtRuntime (_,_,m) 
       | LetRecEvaluatedOutOfOrder (_,_,_,m) 
       | Error (_,m)
-      | ErrorWithPredictions (_,m,_,_)
+      | ErrorWithSuggestions (_,m,_,_)
       | NumberedError (_,m)
       | SyntaxError (_,m) 
       | InternalError (_,m)
@@ -370,7 +370,7 @@ let GetErrorNumber(err:PhasedError) =
       | WrappedError(e,_) -> GetFromException e   
 
       | Error ((n,_),_) -> n
-      | ErrorWithPredictions ((n,_),_,_,_) -> n
+      | ErrorWithSuggestions ((n,_),_,_,_) -> n
       | Failure _ -> 192
       | NumberedError((n,_),_) -> n
       | IllegalFileNameChar(fileName,invalidChar) -> fst (FSComp.SR.buildUnexpectedFileNameCharacter(fileName,string invalidChar))
@@ -389,7 +389,7 @@ let GetWarningLevel err =
   | DefensiveCopyWarning _
   | FullAbstraction _ ->  5
   | NumberedError((n,_),_) 
-  | ErrorWithPredictions((n,_),_,_,_) 
+  | ErrorWithSuggestions((n,_),_,_,_) 
   | Error((n,_),_) -> 
       // 1178,tcNoComparisonNeeded1,"The struct, record or union type '%s' is not structurally comparable because the type parameter %s does not satisfy the 'comparison' constraint. Consider adding the 'NoComparison' attribute to this type to clarify that the type is not comparable"
       // 1178,tcNoComparisonNeeded2,"The struct, record or union type '%s' is not structurally comparable because the type '%s' does not satisfy the 'comparison' constraint. Consider adding the 'NoComparison' attribute to this type to clarify that the type is not comparable" 
@@ -777,9 +777,9 @@ let OutputPhasedErrorR errorStyle (os:System.Text.StringBuilder) (err:PhasedErro
               os.Append(Duplicate1E().Format (DecompileOpName s)) |> ignore
           else 
               os.Append(Duplicate2E().Format k (DecompileOpName s)) |> ignore
-      | UndefinedName(_,k,id,predictionsF) ->
+      | UndefinedName(_,k,id,suggestionsF) ->
           os.Append(k (DecompileOpName id.idText)) |> ignore
-          let filtered = ErrorResolutionHints.FilterPredictions id.idText predictionsF
+          let filtered = ErrorResolutionHints.FilterPredictions id.idText suggestionsF
           if List.isEmpty filtered |> not then
               os.Append(ErrorResolutionHints.FormatPredictions errorStyle DecompileOpName filtered) |> ignore
           
@@ -1268,9 +1268,9 @@ let OutputPhasedErrorR errorStyle (os:System.Text.StringBuilder) (err:PhasedErro
               os.Append(NonUniqueInferredAbstractSlot3E().Format t1 t2) |> ignore
           os.Append(NonUniqueInferredAbstractSlot4E().Format) |> ignore
       | Error ((_,s),_) -> os.Append(s) |> ignore
-      | ErrorWithPredictions ((_,s),_,idText,predictionsF) -> 
+      | ErrorWithSuggestions ((_,s),_,idText,suggestionF) -> 
           os.Append(DecompileOpName s) |> ignore
-          let filtered = ErrorResolutionHints.FilterPredictions idText predictionsF
+          let filtered = ErrorResolutionHints.FilterPredictions idText suggestionF
           if List.isEmpty filtered |> not then
               os.Append(ErrorResolutionHints.FormatPredictions errorStyle DecompileOpName filtered) |> ignore
       | NumberedError ((_,s),_) -> os.Append(s) |> ignore
