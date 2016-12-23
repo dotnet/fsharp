@@ -3,21 +3,31 @@
 /// Functions to format error message details
 module internal Microsoft.FSharp.Compiler.ErrorResolutionHints
 
+let maxSuggestions = 5
+
+let minStringLengthForThreshold = 3
+
+let thresholdForSuggestions = 0.7
+
 /// Filters predictions based on edit distance to an unknown identifier.
-let FilterPredictions (unknownIdent:string) (predictionsF:ErrorLogger.Predictions) =
-    let rec take n predictions = 
-        predictions 
-        |> Seq.mapi (fun i x -> i,x) 
-        |> Seq.takeWhile (fun (i,_) -> i < n) 
-        |> Seq.map snd 
-        |> Seq.toList
-
+let FilterPredictions (unknownIdent:string) (predictionsF:ErrorLogger.Suggestions) =    
     let unknownIdent = unknownIdent.ToUpperInvariant()
+    let useThreshold = unknownIdent.Length >= minStringLengthForThreshold
     predictionsF()
-    |> Seq.sortByDescending (fun p -> Internal.Utilities.EditDistance.JaroWinklerDistance unknownIdent (p.ToUpperInvariant()))
-    |> take 5
+    |> Seq.choose (fun p -> 
+        let similarity = Internal.Utilities.EditDistance.JaroWinklerDistance unknownIdent (p.ToUpperInvariant())
+        if not useThreshold || similarity >= thresholdForSuggestions then
+            Some(similarity,p)
+        else
+            None
+        )
+    |> Seq.sortByDescending fst
+    |> Seq.mapi (fun i x -> i,x) 
+    |> Seq.takeWhile (fun (i,_) -> i < maxSuggestions) 
+    |> Seq.map snd 
+    |> Seq.toList
 
-let FormatPredictions errorStyle normalizeF predictions =
+let FormatPredictions errorStyle normalizeF (predictions: (float * string) list) =
     match predictions with
     | [] -> System.String.Empty
     | _ ->
@@ -25,14 +35,14 @@ let FormatPredictions errorStyle normalizeF predictions =
         | ErrorLogger.ErrorStyle.VSErrors ->
             let predictionText =
                 predictions 
-                |> List.map normalizeF
+                |> List.map (snd >> normalizeF)
                 |> String.concat ", "
 
             " " + FSComp.SR.undefinedNameRecordLabelDetails() + " " + predictionText
         | _ ->
             let predictionText =
                 predictions 
-                |> List.map normalizeF
+                |> List.map (snd >> normalizeF)
                 |> Seq.map (sprintf "%s   %s" System.Environment.NewLine) 
                 |> String.concat ""
 
