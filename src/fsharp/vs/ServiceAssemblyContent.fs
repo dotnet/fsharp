@@ -197,6 +197,12 @@ type EntityKind =
     | Module of ModuleKind
     override x.ToString() = sprintf "%A" x
 
+[<RequireQualifiedAccess>]
+type LookupType =
+    | Fuzzy
+    | Precise
+
+[<NoComparison; NoEquality>]
 type RawEntity = 
     { /// Full entity name as it's seen in compiled code (raw FSharpEntity.FullName, FSharpValueOrFunction.FullName). 
       FullName: string
@@ -208,7 +214,7 @@ type RawEntity =
       IsPublic: bool
       TopRequireQualifiedAccessParent: Idents option
       AutoOpenParent: Idents option
-      Kind: EntityKind }
+      Kind: LookupType -> EntityKind }
     override x.ToString() = sprintf "%A" x  
 
 type AssemblyPath = string
@@ -271,27 +277,10 @@ module internal TypedAstPatterns =
         if ty.HasTypeDefinition then Some ty.TypeDefinition
         else None
 
-    // todo FSharpEntity.BaseType causes uncatchable error dialog in debug mode, it does not allow to test VFT at all.
-
-    //let (|Attribute|_|) (entity: FSharpEntity) =
-    //    let isAttribute (entity: FSharpEntity) =
-    //        let getBaseType (entity: FSharpEntity) =
-    //            try 
-    //                match entity.BaseType with
-    //                | Some (TypeWithDefinition def) -> Some def
-    //                | _ -> None
-    //            with _ -> None
-
-    //        let rec isAttributeType (ty: FSharpEntity option) =
-    //            match ty with
-    //            | None -> false
-    //            | Some ty ->
-    //                match ty.TryGetFullName() with
-    //                | None -> false
-    //                | Some fullName ->
-    //                    fullName = "System.Attribute" || isAttributeType (getBaseType ty)
-    //        isAttributeType (Some entity)
-    //    if isAttribute entity then Some() else None
+    let (|Attribute|_|) (entity: FSharpEntity) =
+        let isAttribute (entity: FSharpEntity) =
+            try entity.IsAttributeType with _ -> false
+        if isAttribute entity then Some() else None
 
     let (|FSharpModule|_|) (entity: FSharpEntity) = if entity.IsFSharpModule then Some() else None
 
@@ -317,15 +306,19 @@ module internal AssemblyContentProvider =
               IsPublic = entity.Accessibility.IsPublic
               TopRequireQualifiedAccessParent = parent.RequiresQualifiedAccess |> Option.map parent.FixParentModuleSuffix
               AutoOpenParent = parent.AutoOpen |> Option.map parent.FixParentModuleSuffix
-              Kind = 
-                match entity with
-                // see comment above about BaseType
-                //| TypedAstPatterns.Attribute -> EntityKind.Attribute 
-                | TypedAstPatterns.FSharpModule ->
+              Kind = fun lookupType ->
+                match entity, lookupType with                
+                | TypedAstPatterns.FSharpModule, _ ->
                     EntityKind.Module 
                         { IsAutoOpen = hasAttribute<AutoOpenAttribute> entity.Attributes
                           HasModuleSuffix = hasModuleSuffixAttribute entity }
-                | _ -> EntityKind.Type })
+                | _, LookupType.Fuzzy ->
+                    EntityKind.Type
+                | _, LookupType.Precise ->
+                    match entity with
+                    | TypedAstPatterns.Attribute -> EntityKind.Attribute 
+                    | _ -> EntityKind.Type 
+            })
 
     let private traverseMemberFunctionAndValues ns (parent: Parent) (membersFunctionsAndValues: seq<FSharpMemberOrFunctionOrValue>) =
         membersFunctionsAndValues
@@ -338,7 +331,7 @@ module internal AssemblyContentProvider =
                   TopRequireQualifiedAccessParent = 
                         parent.RequiresQualifiedAccess |> Option.map parent.FixParentModuleSuffix
                   AutoOpenParent = parent.AutoOpen |> Option.map parent.FixParentModuleSuffix
-                  Kind = EntityKind.FunctionOrValue func.IsActivePattern }
+                  Kind = fun _ -> EntityKind.FunctionOrValue func.IsActivePattern }
 
             [ yield! func.TryGetFullDisplayName() 
                      |> Option.map (fun fullDisplayName -> processIdents func.FullName (fullDisplayName.Split '.'))
@@ -373,7 +366,7 @@ module internal AssemblyContentProvider =
                         { RequiresQualifiedAccess =
                             parent.RequiresQualifiedAccess
                             |> Option.orElse (
-                                if hasAttribute<RequireQualifiedAccessAttribute> entity.Attributes then 
+                                if entity.IsFSharp && hasAttribute<RequireQualifiedAccessAttribute> entity.Attributes then 
                                     parent.FormatEntityFullName entity |> Option.map snd
                                 else None)
                           AutoOpen =
@@ -405,7 +398,7 @@ module internal AssemblyContentProvider =
     let getAssemblySignatureContent contentType (signature: FSharpAssemblySignature) =
             signature.TryGetEntities()
             |> Seq.collect (traverseEntity contentType Parent.Empty)
-            |> Seq.distinct
+            |> Seq.distinctBy (fun {FullName = fullName; CleanedIdents = cleanIdents} -> (fullName, cleanIdents))
 
     let private getAssemblySignaturesContent contentType (assemblies: FSharpAssembly list) = 
         assemblies 
