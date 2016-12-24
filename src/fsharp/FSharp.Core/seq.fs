@@ -734,7 +734,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "ExactlyOne">]
         let exactlyOne (source : seq<_>) =
-            source |> toComposer |> Composer.exactlyOne (SR.GetString(SR.inputSequenceTooLong))
+            source |> toComposer |> Composer.exactlyOne
 
         [<CompiledName("Reverse")>]
         let rev source =

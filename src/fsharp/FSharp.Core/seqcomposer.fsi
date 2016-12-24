@@ -134,10 +134,10 @@ namespace Microsoft.FSharp.Collections
         and  ^U:(static member DivideByInt : ^U * int -> ^U)
 
     [<CompiledName "Empty">]
-    val empty<'T> :  ISeq<'T>
+    val empty<'T> : ISeq<'T>
 
     [<CompiledName "ExactlyOne">]
-    val inline exactlyOne  : errorString:string -> source : ISeq<'T> -> 'T
+    val exactlyOne : ISeq<'T> -> 'T
 
     [<CompiledName "Fold">]
     val inline fold<'T,'State> : f:('State->'T->'State) -> seed:'State -> source:ISeq<'T> -> 'State
@@ -155,7 +155,7 @@ namespace Microsoft.FSharp.Collections
     val init : count:int -> f:(int -> 'T) ->  ISeq<'T>
 
     [<CompiledName "Iterate">]
-    val iter : f:('T -> unit) -> source: ISeq<'T> -> unit
+    val inline iter : f:('T -> unit) -> source: ISeq<'T> -> unit
 
     [<CompiledName "Iterate2">]
     val inline iter2 : f:('T->'U->unit) -> source1 : ISeq<'T> -> source2 : ISeq<'U> -> unit
@@ -164,25 +164,25 @@ namespace Microsoft.FSharp.Collections
     val inline iteri2 : f:(int->'T->'U->unit) -> source1:ISeq<'T> -> source2:ISeq<'U> -> unit
 
     [<CompiledName "TryHead">]
-    val tryHead : source: ISeq<'T> -> 'T option
+    val tryHead : ISeq<'T> -> 'T option
 
     [<CompiledName "IterateIndexed">]
-    val iteri : f:(int -> 'T -> unit) -> source: ISeq<'T> -> unit
+    val inline iteri : f:(int -> 'T -> unit) -> source: ISeq<'T> -> unit
 
     [<CompiledName "Except">]
     val inline except : itemsToExclude:seq<'T> -> source:ISeq<'T> -> ISeq<'T> when 'T:equality
 
     [<CompiledName "Exists">]
-    val exists : f:('T -> bool) -> source: ISeq<'T> -> bool
+    val inline exists : f:('T -> bool) -> source: ISeq<'T> -> bool
 
     [<CompiledName "Exists2">]
-    val exists2 : predicate:('T->'U->bool) -> source1:ISeq<'T> -> source2:ISeq<'U> -> bool
+    val inline exists2 : predicate:('T->'U->bool) -> source1:ISeq<'T> -> source2:ISeq<'U> -> bool
 
     [<CompiledName "Contains">]
     val inline contains : element:'T -> source: ISeq<'T> -> bool when 'T : equality
 
     [<CompiledName "ForAll">]
-    val forall : f:('T -> bool) -> source: ISeq<'T> -> bool
+    val inline forall : f:('T -> bool) -> source: ISeq<'T> -> bool
 
     [<CompiledName "ForAll2">]
     val inline forall2 : predicate:('T->'U->bool) -> source1:ISeq<'T> -> source2:ISeq<'U> -> bool
@@ -230,7 +230,7 @@ namespace Microsoft.FSharp.Collections
     val inline minBy : f:('T -> 'U) -> source: ISeq<'T> -> 'T when 'U:comparison
 
     [<CompiledName "Pairwise">]
-    val inline pairwise : source:ISeq<'T> -> ISeq<'T * 'T>
+    val pairwise : source:ISeq<'T> -> ISeq<'T * 'T>
 
     [<CompiledName "Reduce">]
     val inline reduce : f:('T->'T->'T) -> source: ISeq<'T> -> 'T
@@ -273,19 +273,19 @@ namespace Microsoft.FSharp.Collections
     val tryItem : index:int -> source: ISeq<'T> -> 'T option
 
     [<CompiledName "TryPick">]
-    val tryPick : f:('T -> 'U option) -> source: ISeq<'T> -> Option<'U>
+    val inline tryPick : f:('T -> 'U option) -> source: ISeq<'T> -> Option<'U>
 
     [<CompiledName "TryFind">]
-    val tryFind : f:('T -> bool) -> source: ISeq<'T> -> Option<'T>
+    val inline tryFind : f:('T -> bool) -> source: ISeq<'T> -> Option<'T>
 
     [<CompiledName "TryFindIndex">]
-    val inline tryFindIndex: preidcate:('T->bool) -> source:ISeq<'T> -> int option
+    val inline tryFindIndex: predicate:('T->bool) -> source:ISeq<'T> -> int option
 
     [<CompiledName "TryLast">]
     val inline tryLast : source:ISeq<'T> -> 'T option
 
     [<CompiledName "Windowed">]
-    val inline windowed : windowSize:int -> source:ISeq<'T> -> ISeq<'T[]>
+    val windowed : windowSize:int -> source:ISeq<'T> -> ISeq<'T[]>
 
     [<CompiledName("Concat")>]
     val concat : sources:ISeq<'Collection> -> ISeq<'T> when 'Collection :> ISeq<'T>
