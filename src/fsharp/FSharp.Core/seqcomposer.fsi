@@ -68,10 +68,8 @@ namespace Microsoft.FSharp.Collections
 
         [<AbstractClass>]
         type TransformWithPostProcessing<'T,'U,'State> =
-            inherit Activity<'T,'U>
+            inherit Transform<'T,'U,'State>
             new : next:Activity * 'State -> TransformWithPostProcessing<'T,'U,'State>
-            val mutable State : 'State
-            val private Next : Activity
             abstract OnComplete : PipeIdx -> unit
             abstract OnDispose  : unit -> unit
 
@@ -92,7 +90,6 @@ namespace Microsoft.FSharp.Collections
         type FolderWithPostProcessing<'T,'Result,'State> =
             inherit Folder<'T,'Result,'State>
             new : 'Result*'State -> FolderWithPostProcessing<'T,'Result,'State>
-
             abstract OnDispose : unit -> unit
             abstract OnComplete : PipeIdx -> unit
 
