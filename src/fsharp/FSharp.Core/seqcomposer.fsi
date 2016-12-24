@@ -38,12 +38,10 @@ namespace Microsoft.FSharp.Collections
         type IOutOfBand =
             abstract StopFurtherProcessing : PipeIdx -> unit
 
-        /// <summary>ICompletionChain is used to correctly handle cleaning up of the pipeline. A
-        /// base implementation is provided in Consumer, and should not be overwritten. Consumer
-        /// provides it's own OnComplete and OnDispose function which should be used to handle
-        /// a particular consumers cleanup.</summary>
+        /// <summary>Activity is the root class for chains of activities. It is in a non-generic
+        /// form so that it can be used by subsequent activities</summary>
         [<AbstractClass>]
-        type Consumer =
+        type Activity =
             /// <summary>OnComplete is used to determine if the object has been processed correctly,
             /// and possibly throw exceptions to denote incorrect application (i.e. such as a Take
             /// operation which didn't have a source at least as large as was required). It is
@@ -54,50 +52,40 @@ namespace Microsoft.FSharp.Collections
             /// after the enumeration has completed.</summary>
             abstract ChainDispose : stopTailCall:byref<unit> -> unit
 
-        /// <summary>Consumer is the base class of all elements within the pipeline</summary>
+        /// <summary>Activity is the base class of all elements within the pipeline</summary>
         [<AbstractClass>]
-        type Consumer<'T,'U> =
-            inherit Consumer
-            new : unit -> Consumer<'T,'U>
+        type Activity<'T,'U> =
+            inherit Activity
+            new : unit -> Activity<'T,'U>
             abstract member ProcessNext : input:'T -> bool
 
         [<AbstractClass>]
-        type ConsumerWithState<'T,'U,'State> =
-            inherit Consumer<'T,'U>
+        type Activity<'T,'U,'State> =
+            inherit Activity<'T,'U>
             val mutable State : 'State
-            new : 'State -> ConsumerWithState<'T,'U,'State>
+            new : 'State -> Activity<'T,'U,'State>
 
         [<AbstractClass>]
-        type ConsumerChainedWithState<'T,'U,'State> =
-            inherit ConsumerWithState<'T,'U,'State>
-            val private Next : Consumer
-            new : next:Consumer * 'State -> ConsumerChainedWithState<'T,'U,'State>
+        type ActivityChained<'T,'U,'State> =
+            inherit Activity<'T,'U,'State>
+            val private Next : Activity
+            new : next:Activity * 'State -> ActivityChained<'T,'U,'State>
 
         [<AbstractClass>]
-        type ConsumerChained<'T,'U> =
-            inherit ConsumerChainedWithState<'T,'U,NoValue>
-            new : next:Consumer -> ConsumerChained<'T,'U>
-
-        [<AbstractClass>]
-        type ConsumerChainedWithStateAndCleanup<'T,'U,'State> =
-            inherit ConsumerChainedWithState<'T,'U,'State>
+        type ActivityChainedWithPostProcessing<'T,'U,'State> =
+            inherit ActivityChained<'T,'U,'State>
 
             abstract OnComplete : PipeIdx -> unit
             abstract OnDispose  : unit -> unit
 
-            new : next:Consumer * 'State -> ConsumerChainedWithStateAndCleanup<'T,'U,'State>
-
-        [<AbstractClass>]
-        type ConsumerChainedWithCleanup<'T,'U> =
-            inherit ConsumerChainedWithStateAndCleanup<'T,'U,NoValue>
-            new : next:Consumer -> ConsumerChainedWithCleanup<'T,'U>
+            new : next:Activity * 'State -> ActivityChainedWithPostProcessing<'T,'U,'State>
 
         /// <summary>Folder is a base class to assist with fold-like operations. It's intended usage
         /// is as a base class for an object expression that will be used from within
         /// the Fold function.</summary>
         [<AbstractClass>]
         type Folder<'T,'Result,'State> =
-            inherit ConsumerWithState<'T,'T,'State>
+            inherit Activity<'T,'T,'State>
             new : 'Result*'State -> Folder<'T,'Result,'State>
             interface IOutOfBand
             val mutable HaltedIdx : int
@@ -110,18 +98,18 @@ namespace Microsoft.FSharp.Collections
             new : 'Result -> Folder<'T,'Result>
 
         [<AbstractClass>]
-        type FolderWithCleanup<'T,'Result,'State> =
+        type FolderWithPostProcessing<'T,'Result,'State> =
             inherit Folder<'T,'Result,'State>
 
             abstract OnDispose : unit -> unit
             abstract OnComplete : PipeIdx -> unit
 
-            new : 'Result*'State -> FolderWithCleanup<'T,'Result,'State>
+            new : 'Result*'State -> FolderWithPostProcessing<'T,'Result,'State>
 
         [<AbstractClass>]
         type SeqFactory<'T,'U> =
             new : unit -> SeqFactory<'T,'U>
-            abstract member Create : IOutOfBand -> PipeIdx -> Consumer<'U,'V> -> Consumer<'T,'V>
+            abstract member Create : IOutOfBand -> PipeIdx -> Activity<'U,'V> -> Activity<'T,'V>
 
         type ISeq<'T> =
             inherit System.Collections.Generic.IEnumerable<'T>

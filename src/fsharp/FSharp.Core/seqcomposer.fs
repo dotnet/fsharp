@@ -27,7 +27,6 @@ namespace Microsoft.FSharp.Collections
             type Values<'a,'b> =
                 val mutable _1 : 'a
                 val mutable _2 : 'b
-
                 new (a:'a, b: 'b) = { _1 = a;  _2 = b }
 
             [<Struct; NoComparison; NoEquality>]
@@ -35,7 +34,6 @@ namespace Microsoft.FSharp.Collections
                 val mutable _1 : 'a
                 val mutable _2 : 'b
                 val mutable _3 : 'c
-
                 new (a:'a, b:'b, c:'c) = { _1 = a; _2 = b; _3 = c }
 
             type PipeIdx = int
@@ -44,37 +42,35 @@ namespace Microsoft.FSharp.Collections
                 abstract StopFurtherProcessing : PipeIdx -> unit
 
             [<AbstractClass>]
-            type Consumer() =
+            type Activity() =
                 abstract ChainComplete : stopTailCall:byref<unit> * PipeIdx -> unit
                 abstract ChainDispose  : stopTailCall:byref<unit> -> unit
 
             [<AbstractClass>]
-            type Consumer<'T,'U> () =
-                inherit Consumer()
-
+            type Activity<'T,'U> () =
+                inherit Activity()
                 abstract ProcessNext : input:'T -> bool
-
                 override this.ChainComplete (_,_) = ()
                 override this.ChainDispose _ = ()
 
             [<AbstractClass>]
-            type ConsumerWithState<'T,'U,'State> =
-                inherit Consumer<'T,'U>
-
+            type Activity<'T,'U,'State> =
+                inherit Activity<'T,'U>
+                
                 val mutable State : 'State
-
+                
                 new (initState) = {
                     State = initState
                 }
 
             [<AbstractClass>]
-            type ConsumerChainedWithState<'T,'U,'State> =
-                inherit ConsumerWithState<'T,'U,'State>
-
-                val private Next : Consumer
-
-                new (next:Consumer, initState) = {
-                    inherit ConsumerWithState<'T,'U,'State> (initState)
+            type ActivityChained<'T,'U,'State> =
+                inherit Activity<'T,'U,'State>
+                
+                val private Next : Activity
+                
+                new (next:Activity, initState:'State) = {
+                    inherit Activity<'T,'U,'State> (initState)
                     Next = next
                 }
 
@@ -84,12 +80,8 @@ namespace Microsoft.FSharp.Collections
                     this.Next.ChainDispose (&stopTailCall)
 
             [<AbstractClass>]
-            type ConsumerChained<'T,'U>(next:Consumer) =
-                inherit ConsumerChainedWithState<'T,'U,NoValue>(next, Unchecked.defaultof<NoValue>)
-
-            [<AbstractClass>]
-            type ConsumerChainedWithStateAndCleanup<'T,'U,'State> (next, inititalState) =
-                inherit ConsumerChainedWithState<'T,'U,'State>(next, inititalState)
+            type ActivityChainedWithPostProcessing<'T,'U,'State> (next:Activity, inititalState:'State) =
+                inherit ActivityChained<'T,'U,'State>(next, inititalState)
 
                 abstract OnComplete : PipeIdx -> unit
                 abstract OnDispose  : unit -> unit
@@ -102,12 +94,8 @@ namespace Microsoft.FSharp.Collections
                     finally next.ChainDispose (&stopTailCall)
 
             [<AbstractClass>]
-            type ConsumerChainedWithCleanup<'T,'U>(next:Consumer) =
-                inherit ConsumerChainedWithStateAndCleanup<'T,'U,NoValue>(next, Unchecked.defaultof<NoValue>)
-
-            [<AbstractClass>]
             type Folder<'T,'Result,'State> =
-                inherit ConsumerWithState<'T,'T,'State>
+                inherit Activity<'T,'T,'State>
 
                 val mutable Result : 'Result
                 val mutable HaltedIdx : int
@@ -117,7 +105,7 @@ namespace Microsoft.FSharp.Collections
                     member this.StopFurtherProcessing pipeIdx = this.StopFurtherProcessing pipeIdx
 
                 new (initalResult,initState) = {
-                    inherit ConsumerWithState<'T,'T,'State>(initState)
+                    inherit Activity<'T,'T,'State>(initState)
                     HaltedIdx = 0
                     Result = initalResult
                 }
@@ -127,7 +115,7 @@ namespace Microsoft.FSharp.Collections
                 inherit Folder<'T,'Result,NoValue>(initResult,Unchecked.defaultof<NoValue>)
 
             [<AbstractClass>]
-            type FolderWithCleanup<'T,'Result,'State>(initResult,initState) =
+            type FolderWithPostProcessing<'T,'Result,'State>(initResult,initState) =
                 inherit Folder<'T,'Result,'State>(initResult,initState)
 
                 abstract OnComplete : PipeIdx -> unit
@@ -140,7 +128,7 @@ namespace Microsoft.FSharp.Collections
 
             [<AbstractClass>]
             type SeqFactory<'T,'U> () =
-                abstract Create<'V> : IOutOfBand -> PipeIdx -> Consumer<'U,'V> -> Consumer<'T,'V>
+                abstract Create<'V> : IOutOfBand -> PipeIdx -> Activity<'U,'V> -> Activity<'T,'V>
 
             type ISeq<'T> =
                 inherit IEnumerable<'T>
@@ -170,7 +158,7 @@ namespace Microsoft.FSharp.Collections
         type ComposedFactory<'T,'U,'V> private (first:SeqFactory<'T,'U>, second:SeqFactory<'U,'V>) =
             inherit SeqFactory<'T,'V>()
 
-            override this.Create<'W> (outOfBand:IOutOfBand) (pipeIdx:PipeIdx) (next:Consumer<'V,'W>) : Consumer<'T,'W> =
+            override this.Create<'W> (outOfBand:IOutOfBand) (pipeIdx:PipeIdx) (next:Activity<'V,'W>) : Activity<'T,'W> =
                 first.Create outOfBand (pipeIdx-1) (second.Create outOfBand pipeIdx next)
 
             static member Combine (first:SeqFactory<'T,'U>) (second:SeqFactory<'U,'V>) : SeqFactory<'T,'V> =
@@ -179,7 +167,7 @@ namespace Microsoft.FSharp.Collections
         and IdentityFactory<'T> () =
             inherit SeqFactory<'T,'T> ()
             static let singleton : SeqFactory<'T,'T> = upcast (IdentityFactory<'T>())
-            override __.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Consumer<'T,'V>) : Consumer<'T,'V> = next
+            override __.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Activity<'T,'V>) : Activity<'T,'V> = next
             static member Instance = singleton
 
         and ISkipping =
@@ -203,12 +191,12 @@ namespace Microsoft.FSharp.Collections
 
         module Fold =
             type IIterate<'T> =
-                abstract Iterate<'U,'Result,'State> : outOfBand:Folder<'U,'Result,'State> -> consumer:Consumer<'T,'U> -> unit
+                abstract Iterate<'U,'Result,'State> : outOfBand:Folder<'U,'Result,'State> -> consumer:Activity<'T,'U> -> unit
 
             [<Struct;NoComparison;NoEquality>]
             type enumerable<'T> (enumerable:IEnumerable<'T>) =
                 interface IIterate<'T> with
-                    member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Consumer<'T,'U>) =
+                    member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Activity<'T,'U>) =
                         use enumerator = enumerable.GetEnumerator ()
                         let rec iterate () =
                             if enumerator.MoveNext () then  
@@ -220,7 +208,7 @@ namespace Microsoft.FSharp.Collections
             [<Struct;NoComparison;NoEquality>]
             type Array<'T> (array:array<'T>) =
                 interface IIterate<'T> with
-                    member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Consumer<'T,'U>) =
+                    member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Activity<'T,'U>) =
                         let array = array
                         let rec iterate idx =
                             if idx < array.Length then  
@@ -232,7 +220,7 @@ namespace Microsoft.FSharp.Collections
             [<Struct;NoComparison;NoEquality>]
             type List<'T> (alist:list<'T>) =
                 interface IIterate<'T> with
-                    member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Consumer<'T,'U>) =
+                    member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Activity<'T,'U>) =
                         let rec iterate lst =
                             match lst with
                             | hd :: tl ->
@@ -245,7 +233,7 @@ namespace Microsoft.FSharp.Collections
             [<Struct;NoComparison;NoEquality>]
             type unfold<'S,'T> (generator:'S->option<'T*'S>, state:'S) =
                 interface IIterate<'T> with
-                    member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Consumer<'T,'U>) =
+                    member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Activity<'T,'U>) =
                         let generator = generator
                         let rec iterate current =
                             match generator current with
@@ -256,7 +244,7 @@ namespace Microsoft.FSharp.Collections
                             | _ -> ()
                         iterate state
 
-            let makeIsSkipping (consumer:Consumer<'T,'U>) =
+            let makeIsSkipping (consumer:Activity<'T,'U>) =
                 match box consumer with
                 | :? ISkipping as skip -> skip.Skipping
                 | _ -> fun () -> false
@@ -264,7 +252,7 @@ namespace Microsoft.FSharp.Collections
             [<Struct;NoComparison;NoEquality>]
             type init<'T> (f:int->'T, terminatingIdx:int) =
                 interface IIterate<'T> with
-                    member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Consumer<'T,'U>) =
+                    member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Activity<'T,'U>) =
                         let terminatingIdx =terminatingIdx
                         let f = f
 
@@ -324,7 +312,7 @@ namespace Microsoft.FSharp.Collections
                 static member Element = element
 
             [<AbstractClass>]
-            type EnumeratorBase<'T>(result:Result<'T>, seqComponent:Consumer) =
+            type EnumeratorBase<'T>(result:Result<'T>, seqComponent:Activity) =
                 interface IDisposable with
                     member __.Dispose() : unit =
                         let mutable stopTailCall = ()
@@ -365,7 +353,7 @@ namespace Microsoft.FSharp.Collections
                     member __.Compose _ = derivedClassShouldImplement ()
                     member __.Fold _ = derivedClassShouldImplement ()
 
-            and Enumerator<'T,'U>(source:IEnumerator<'T>, seqComponent:Consumer<'T,'U>, result:Result<'U>) =
+            and Enumerator<'T,'U>(source:IEnumerator<'T>, seqComponent:Activity<'T,'U>, result:Result<'U>) =
                 inherit EnumeratorBase<'U>(result, seqComponent)
 
                 let rec moveNext () =
@@ -514,7 +502,7 @@ namespace Microsoft.FSharp.Collections
                         Fold.executeThin f (Fold.enumerable this)
 
         module Array =
-            type Enumerator<'T,'U>(delayedArray:unit->array<'T>, seqComponent:Consumer<'T,'U>, result:Result<'U>) =
+            type Enumerator<'T,'U>(delayedArray:unit->array<'T>, seqComponent:Activity<'T,'U>, result:Result<'U>) =
                 inherit Enumerable.EnumeratorBase<'U>(result, seqComponent)
 
                 let mutable idx = 0
@@ -574,7 +562,7 @@ namespace Microsoft.FSharp.Collections
                 create array IdentityFactory.Instance
 
         module List =
-            type Enumerator<'T,'U>(alist:list<'T>, seqComponent:Consumer<'T,'U>, result:Result<'U>) =
+            type Enumerator<'T,'U>(alist:list<'T>, seqComponent:Activity<'T,'U>, result:Result<'U>) =
                 inherit Enumerable.EnumeratorBase<'U>(result, seqComponent)
 
                 let mutable list = alist
@@ -617,7 +605,7 @@ namespace Microsoft.FSharp.Collections
                 Upcast.seq (Enumerable(alist, current, 1))
 
         module Unfold =
-            type Enumerator<'T,'U,'State>(generator:'State->option<'T*'State>, state:'State, seqComponent:Consumer<'T,'U>, result:Result<'U>) =
+            type Enumerator<'T,'U,'State>(generator:'State->option<'T*'State>, state:'State, seqComponent:Activity<'T,'U>, result:Result<'U>) =
                 inherit Enumerable.EnumeratorBase<'U>(result, seqComponent)
 
                 let mutable current = state
@@ -672,7 +660,7 @@ namespace Microsoft.FSharp.Collections
                 else
                     System.Int32.MaxValue
 
-            type Enumerator<'T,'U>(count:Nullable<int>, f:int->'T, seqComponent:Consumer<'T,'U>, result:Result<'U>) =
+            type Enumerator<'T,'U>(count:Nullable<int>, f:int->'T, seqComponent:Activity<'T,'U>, result:Result<'U>) =
                 inherit Enumerable.EnumeratorBase<'U>(result, seqComponent)
 
                 let isSkipping =
@@ -810,7 +798,7 @@ namespace Microsoft.FSharp.Collections
             and  ^T:(static member (+) : ^T * ^T -> ^T)
             and  ^T:(static member DivideByInt : ^T * int -> ^T) =
             source.Fold (fun _ ->
-                upcast { new FolderWithCleanup< ^T, ^T, int> (LanguagePrimitives.GenericZero, 0) with
+                upcast { new FolderWithPostProcessing< ^T, ^T, int> (LanguagePrimitives.GenericZero, 0) with
                     override this.ProcessNext value =
                         this.Result <- Checked.(+) this.Result value
                         this.State <- this.State + 1
@@ -828,7 +816,7 @@ namespace Microsoft.FSharp.Collections
             and  ^U:(static member (+) : ^U * ^U -> ^U)
             and  ^U:(static member DivideByInt : ^U * int -> ^U) =
             source.Fold (fun _ ->
-                upcast { new FolderWithCleanup<'T,'U, int>(LanguagePrimitives.GenericZero, 0) with
+                upcast { new FolderWithPostProcessing<'T,'U, int>(LanguagePrimitives.GenericZero, 0) with
                     override this.ProcessNext value =
                         this.Result <- Checked.(+) this.Result (f value)
                         this.State <- this.State + 1
@@ -846,7 +834,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "ExactlyOne">]
         let inline exactlyOne errorString  (source : ISeq<'T>) : 'T =
             source.Fold (fun pipeIdx ->
-                upcast { new FolderWithCleanup<'T,'T,Values<bool, bool>>(Unchecked.defaultof<'T>, Values<bool,bool>(true, false)) with
+                upcast { new FolderWithPostProcessing<'T,'T,Values<bool, bool>>(Unchecked.defaultof<'T>, Values<bool,bool>(true, false)) with
                     override this.ProcessNext value =
                         if this.State._1 then
                             this.State._1 <- false
@@ -874,7 +862,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "Fold2">]
         let inline fold2<'T1,'T2,'State> (folder:'State->'T1->'T2->'State) (state:'State) (source1: ISeq<'T1>) (source2: ISeq<'T2>) =
             source1.Fold (fun pipeIdx ->
-                upcast { new FolderWithCleanup<_,'State,IEnumerator<'T2>>(state,source2.GetEnumerator()) with
+                upcast { new FolderWithPostProcessing<_,'State,IEnumerator<'T2>>(state,source2.GetEnumerator()) with
                     override self.ProcessNext value =
                         if self.State.MoveNext() then
                             self.Result <- folder self.Result value self.State.Current
@@ -911,7 +899,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "Iterate2">]
         let inline iter2 (f:'T->'U->unit) (source1:ISeq<'T>) (source2:ISeq<'U>) : unit =
             source1.Fold (fun pipeIdx ->
-                upcast { new FolderWithCleanup<'T,NoValue,IEnumerator<'U>> (Unchecked.defaultof<_>,source2.GetEnumerator()) with
+                upcast { new FolderWithPostProcessing<'T,NoValue,IEnumerator<'U>> (Unchecked.defaultof<_>,source2.GetEnumerator()) with
                     override self.ProcessNext value =
                         if self.State.MoveNext() then
                             f value self.State.Current
@@ -926,7 +914,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "IterateIndexed2">]
         let inline iteri2 (f:int->'T->'U->unit) (source1:ISeq<'T>) (source2:ISeq<'U>) : unit =
             source1.Fold (fun pipeIdx ->
-                upcast { new FolderWithCleanup<'T,NoValue,Values<int,IEnumerator<'U>>>(Unchecked.defaultof<_>,Values<_,_>(-1,source2.GetEnumerator())) with
+                upcast { new FolderWithPostProcessing<'T,NoValue,Values<int,IEnumerator<'U>>>(Unchecked.defaultof<_>,Values<_,_>(-1,source2.GetEnumerator())) with
                     override self.ProcessNext value =
                         if self.State._2.MoveNext() then
                             f self.State._1 value self.State._2.Current
@@ -962,7 +950,7 @@ namespace Microsoft.FSharp.Collections
         let inline except (itemsToExclude: seq<'T>) (source:ISeq<'T>) : ISeq<'T> when 'T:equality =
             source.Compose { new SeqFactory<'T,'T>() with
                 override __.Create _ _ next =
-                    upcast { new ConsumerChainedWithState<'T,'V,Lazy<HashSet<'T>>>
+                    upcast { new ActivityChained<'T,'V,Lazy<HashSet<'T>>>
                                     (next,lazy(HashSet<'T>(itemsToExclude,HashIdentity.Structural<'T>))) with
                         override this.ProcessNext (input:'T) : bool =
                             if this.State.Value.Add input then TailCall.avoid (next.ProcessNext input)
@@ -981,7 +969,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "Exists2">]
         let exists2 (predicate:'T->'U->bool) (source1: ISeq<'T>) (source2: ISeq<'U>) : bool =
             source1.Fold (fun pipeIdx ->
-                upcast { new FolderWithCleanup<'T,bool,IEnumerator<'U>>(false,source2.GetEnumerator()) with
+                upcast { new FolderWithPostProcessing<'T,bool,IEnumerator<'U>>(false,source2.GetEnumerator()) with
                     override self.ProcessNext value =
                         if self.State.MoveNext() then
                             if predicate value self.State.Current then
@@ -1017,7 +1005,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "ForAll2">]
         let inline forall2 predicate (source1:ISeq<'T>) (source2:ISeq<'U>) : bool =
             source1.Fold (fun pipeIdx ->
-                upcast { new FolderWithCleanup<'T,bool,IEnumerator<'U>>(true,source2.GetEnumerator()) with
+                upcast { new FolderWithPostProcessing<'T,bool,IEnumerator<'U>>(true,source2.GetEnumerator()) with
                     override self.ProcessNext value =
                         if self.State.MoveNext() then
                             if not (predicate value self.State.Current) then
@@ -1034,7 +1022,7 @@ namespace Microsoft.FSharp.Collections
         let inline filter<'T> (f:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
             source.Compose { new SeqFactory<'T,'T>() with
                 override __.Create _ _ next =
-                    upcast { new ConsumerChained<'T,'V>(next) with
+                    upcast { new ActivityChained<'T,'V,NoValue>(next,Unchecked.defaultof<NoValue>) with
                         override __.ProcessNext input =
                             if f input then TailCall.avoid (next.ProcessNext input)
                             else false } }
@@ -1043,7 +1031,7 @@ namespace Microsoft.FSharp.Collections
         let inline map<'T,'U> (f:'T->'U) (source:ISeq<'T>) : ISeq<'U> =
             source.Compose { new SeqFactory<'T,'U>() with
                 override __.Create _ _ next =
-                    upcast { new ConsumerChained<'T,'V>(next) with
+                    upcast { new ActivityChained<'T,'V,NoValue>(next,Unchecked.defaultof<NoValue>) with
                         override __.ProcessNext input =
                             TailCall.avoid (next.ProcessNext (f input)) } }
 
@@ -1051,7 +1039,7 @@ namespace Microsoft.FSharp.Collections
         let inline mapi f (source:ISeq<_>) =
             source.Compose { new SeqFactory<'T,'U>() with
                 override __.Create _ _ next =
-                    upcast { new ConsumerChainedWithState<'T,'V,int>(next, -1) with
+                    upcast { new ActivityChained<'T,'V,int>(next, -1) with
                         override this.ProcessNext (input:'T) : bool =
                             this.State <- this.State  + 1
                             TailCall.avoid (next.ProcessNext (f this.State input)) } }
@@ -1059,8 +1047,8 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "Map2">]
         let inline map2<'First,'Second,'U> (map:'First->'Second->'U) (source1:ISeq<'First>) (source2:ISeq<'Second>) : ISeq<'U> =
             source1.Compose { new SeqFactory<'First,'U>() with
-                override __.Create<'V> outOfBand pipeIdx next =
-                    upcast { new ConsumerChainedWithStateAndCleanup<'First,'V, IEnumerator<'Second>>(next, (source2.GetEnumerator ())) with
+                override __.Create outOfBand pipeIdx (next:Activity<'U,'V>) =
+                    upcast { new ActivityChainedWithPostProcessing<'First,'V, IEnumerator<'Second>>(next, (source2.GetEnumerator ())) with
                         override self.ProcessNext input =
                             if self.State.MoveNext () then
                                 TailCall.avoid (next.ProcessNext (map input self.State.Current))
@@ -1074,7 +1062,7 @@ namespace Microsoft.FSharp.Collections
         let inline mapi2<'First,'Second,'U> (map:int -> 'First->'Second->'U) (source1:ISeq<'First>) (source2:ISeq<'Second>) : ISeq<'U> =
             source1.Compose { new SeqFactory<'First,'U>() with
                 override __.Create<'V> outOfBand pipeIdx next =
-                    upcast { new ConsumerChainedWithStateAndCleanup<'First,'V, Values<int,IEnumerator<'Second>>>
+                    upcast { new ActivityChainedWithPostProcessing<'First,'V, Values<int,IEnumerator<'Second>>>
                                                 (next, Values<_,_>(-1, source2.GetEnumerator ())) with
                         override self.ProcessNext input =
                             if self.State._2.MoveNext () then
@@ -1091,7 +1079,7 @@ namespace Microsoft.FSharp.Collections
                         (map:'First->'Second->'Third->'U) (source1:ISeq<'First>) (source2:ISeq<'Second>) (source3:ISeq<'Third>) : ISeq<'U> =
             source1.Compose { new SeqFactory<'First,'U>() with
                 override __.Create<'V> outOfBand pipeIdx next =
-                    upcast { new ConsumerChainedWithStateAndCleanup<'First,'V, Values<IEnumerator<'Second>,IEnumerator<'Third>>>
+                    upcast { new ActivityChainedWithPostProcessing<'First,'V, Values<IEnumerator<'Second>,IEnumerator<'Third>>>
                                                 (next, Values<_,_>(source2.GetEnumerator(),source3.GetEnumerator())) with
                         override self.ProcessNext input =
                             if self.State._1.MoveNext() && self.State._2.MoveNext ()  then
@@ -1108,7 +1096,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "CompareWith">]
         let inline compareWith (f:'T -> 'T -> int) (source1 :ISeq<'T>) (source2:ISeq<'T>) : int =
             source1.Fold (fun pipeIdx ->
-                upcast { new FolderWithCleanup<'T,int,IEnumerator<'T>>(0,source2.GetEnumerator()) with
+                upcast { new FolderWithPostProcessing<'T,int,IEnumerator<'T>>(0,source2.GetEnumerator()) with
                     override self.ProcessNext value =
                         if not (self.State.MoveNext()) then
                             self.Result <- 1
@@ -1128,7 +1116,7 @@ namespace Microsoft.FSharp.Collections
         let inline choose (f:'T->option<'U>) (source:ISeq<'T>) : ISeq<'U> =
             source.Compose { new SeqFactory<'T,'U>() with
                 override __.Create _ _ next =
-                    upcast { new ConsumerChained<'T,'V>(next) with
+                    upcast { new ActivityChained<'T,'V,NoValue>(next,Unchecked.defaultof<NoValue>) with
                         override __.ProcessNext input =
                             match f input with
                             | Some value -> TailCall.avoid (next.ProcessNext value)
@@ -1138,7 +1126,7 @@ namespace Microsoft.FSharp.Collections
         let inline distinct (source:ISeq<'T>) : ISeq<'T> when 'T:equality =
             source.Compose { new SeqFactory<'T,'T>() with
                 override __.Create _ _ next =
-                    upcast { new ConsumerChainedWithState<'T,'V,HashSet<'T>>
+                    upcast { new ActivityChained<'T,'V,HashSet<'T>>
                                     (next,(HashSet<'T>(HashIdentity.Structural<'T>))) with
                         override this.ProcessNext (input:'T) : bool =
                             if this.State.Add input then TailCall.avoid (next.ProcessNext input)
@@ -1148,7 +1136,7 @@ namespace Microsoft.FSharp.Collections
         let inline distinctBy (keyf:'T->'Key) (source:ISeq<'T>) :ISeq<'T>  when 'Key:equality =
             source.Compose { new SeqFactory<'T,'T>() with
                 override __.Create _ _ next =
-                    upcast { new ConsumerChainedWithState<'T,'V,HashSet<'Key>>
+                    upcast { new ActivityChained<'T,'V,HashSet<'Key>>
                                     (next,(HashSet<'Key>(HashIdentity.Structural<'Key>))) with
                         override this.ProcessNext (input:'T) : bool =
                             if this.State.Add (keyf input) then TailCall.avoid (next.ProcessNext input)
@@ -1157,7 +1145,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "Max">]
         let inline max (source: ISeq<'T>) : 'T when 'T:comparison =
             source.Fold (fun _ ->
-                upcast { new FolderWithCleanup<'T,'T,bool>(Unchecked.defaultof<'T>,true) with
+                upcast { new FolderWithPostProcessing<'T,'T,bool>(Unchecked.defaultof<'T>,true) with
                     override this.ProcessNext value =
                         if this.State then
                             this.State <- false
@@ -1174,7 +1162,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "MaxBy">]
         let inline maxBy (f :'T -> 'U) (source: ISeq<'T>) : 'T when 'U:comparison =
             source.Fold (fun _ ->
-                upcast { new FolderWithCleanup<'T,'T,Values<bool,'U>>(Unchecked.defaultof<'T>,Values<_,_>(true,Unchecked.defaultof<'U>)) with
+                upcast { new FolderWithPostProcessing<'T,'T,Values<bool,'U>>(Unchecked.defaultof<'T>,Values<_,_>(true,Unchecked.defaultof<'U>)) with
                     override this.ProcessNext value =
                         match this.State._1, f value with
                         | true, valueU ->
@@ -1195,7 +1183,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "Min">]
         let inline min (source: ISeq< 'T>) : 'T when 'T:comparison =
             source.Fold (fun _ ->
-                upcast { new FolderWithCleanup<'T,'T,bool>(Unchecked.defaultof<'T>,true) with
+                upcast { new FolderWithPostProcessing<'T,'T,bool>(Unchecked.defaultof<'T>,true) with
                     override this.ProcessNext value =
                         if this.State then
                             this.State <- false
@@ -1212,7 +1200,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "MinBy">]
         let inline minBy (f : 'T -> 'U) (source: ISeq<'T>) : 'T =
             source.Fold (fun _ ->
-                upcast { new FolderWithCleanup<'T,'T,Values<bool,'U>>(Unchecked.defaultof<'T>,Values<_,_>(true,Unchecked.defaultof< 'U>)) with
+                upcast { new FolderWithPostProcessing<'T,'T,Values<bool,'U>>(Unchecked.defaultof<'T>,Values<_,_>(true,Unchecked.defaultof< 'U>)) with
                     override this.ProcessNext value =
                         match this.State._1, f value with
                         | true, valueU ->
@@ -1234,7 +1222,7 @@ namespace Microsoft.FSharp.Collections
         let inline pairwise (source:ISeq<'T>) : ISeq<'T * 'T> =
             source.Compose { new SeqFactory<'T,'T * 'T>() with
                 override __.Create _ _ next =
-                    upcast { new ConsumerChainedWithState<'T,'U,Values<bool,'T>>
+                    upcast { new ActivityChained<'T,'U,Values<bool,'T>>
                                 (   next
                                 ,   Values<bool,'T>
                                     ((* isFirst   = _1*) true
@@ -1254,7 +1242,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "Reduce">]
         let inline reduce (f:'T->'T->'T) (source : ISeq<'T>) : 'T =
             source.Fold (fun _ ->
-                upcast { new FolderWithCleanup<'T,'T,bool>(Unchecked.defaultof<'T>,true) with
+                upcast { new FolderWithPostProcessing<'T,'T,bool>(Unchecked.defaultof<'T>,true) with
                     override this.ProcessNext value =
                         if this.State then
                             this.State <- false
@@ -1272,7 +1260,7 @@ namespace Microsoft.FSharp.Collections
         let inline scan (folder:'State->'T->'State) (initialState:'State) (source:ISeq<'T>) :ISeq<'State> =
             source.Compose { new SeqFactory<'T,'State>() with
                 override __.Create _ _ next =
-                    upcast { new ConsumerChainedWithState<'T,'V,'State>(next, initialState) with
+                    upcast { new ActivityChained<'T,'V,'State>(next, initialState) with
                         override this.ProcessNext (input:'T) : bool =
                             this.State <- folder this.State input
                             TailCall.avoid (next.ProcessNext this.State) } }
@@ -1283,7 +1271,7 @@ namespace Microsoft.FSharp.Collections
             source.Compose { new SeqFactory<'T,'T>() with
                 override __.Create _ _ next =
                     upcast {
-                        new ConsumerChainedWithStateAndCleanup<'T,'U,int>(next,(*count*)0) with
+                        new ActivityChainedWithPostProcessing<'T,'U,int>(next,(*count*)0) with
 
                             override self.ProcessNext (input:'T) : bool =
                                 if (*count*) self.State < skipCount then
@@ -1301,7 +1289,7 @@ namespace Microsoft.FSharp.Collections
 
                         interface ISkipping with
                             member self.Skipping () =
-                                let self = self :?> ConsumerChainedWithState<'T,'U,int>
+                                let self = self :?> ActivityChained<'T,'U,int>
                                 if (*count*) self.State < skipCount then
                                     self.State <- self.State + 1
                                     true
@@ -1313,7 +1301,7 @@ namespace Microsoft.FSharp.Collections
         let inline skipWhile (predicate:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
             source.Compose { new SeqFactory<'T,'T>() with
                 override __.Create _ _ next =
-                    upcast { new ConsumerChainedWithState<'T,'V,bool>(next,true) with
+                    upcast { new ActivityChained<'T,'V,bool>(next,true) with
                         override self.ProcessNext (input:'T) : bool =
                             if self.State (*skip*) then
                                 self.State <- predicate input
@@ -1349,7 +1337,7 @@ namespace Microsoft.FSharp.Collections
             source.Compose { new SeqFactory<'T,'T>() with
                 member __.Create outOfBand pipelineIdx next =
                     upcast {
-                        new ConsumerChainedWithStateAndCleanup<'T,'U,int>(next,(*count*)0) with
+                        new ActivityChainedWithPostProcessing<'T,'U,int>(next,(*count*)0) with
                             override self.ProcessNext (input:'T) : bool =
                                 if (*count*) self.State < takeCount then
                                     self.State <- self.State + 1
@@ -1371,7 +1359,7 @@ namespace Microsoft.FSharp.Collections
         let inline takeWhile (predicate:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
             source.Compose { new SeqFactory<'T,'T>() with
                 member __.Create outOfBand pipeIdx next =
-                    upcast { new ConsumerChained<'T,'V>(next) with
+                    upcast { new ActivityChained<'T,'V,NoValue>(next,Unchecked.defaultof<NoValue>) with
                         override __.ProcessNext (input:'T) : bool =
                             if predicate input then
                                 TailCall.avoid (next.ProcessNext input)
@@ -1384,7 +1372,7 @@ namespace Microsoft.FSharp.Collections
         let inline tail errorString (source:ISeq<'T>) :ISeq<'T> =
             source.Compose { new SeqFactory<'T,'T>() with
                 member __.Create _ _ next =
-                    upcast { new ConsumerChainedWithStateAndCleanup<'T,'V,bool>(next,(*first*) true) with
+                    upcast { new ActivityChainedWithPostProcessing<'T,'V,bool>(next,(*first*) true) with
                         override self.ProcessNext (input:'T) : bool =
                             if (*first*) self.State then
                                 self.State <- false
@@ -1402,7 +1390,7 @@ namespace Microsoft.FSharp.Collections
             source.Compose { new SeqFactory<'T,'T>() with
                 member __.Create outOfBand pipeIdx next =
                     upcast {
-                        new ConsumerChainedWithState<'T,'U,int>(next,(*count*)0) with
+                        new ActivityChained<'T,'U,int>(next,(*count*)0) with
                             override self.ProcessNext (input:'T) : bool =
                                 if (*count*) self.State < truncateCount then
                                     self.State <- self.State + 1
@@ -1459,7 +1447,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "TryLast">]
         let inline tryLast (source :ISeq<'T>) : 'T option =
             source.Fold (fun _ ->
-                upcast { new FolderWithCleanup<'T,option<'T>,Values<bool,'T>>(None,Values<bool,'T>(true, Unchecked.defaultof<'T>)) with
+                upcast { new FolderWithPostProcessing<'T,option<'T>,Values<bool,'T>>(None,Values<bool,'T>(true, Unchecked.defaultof<'T>)) with
                     override this.ProcessNext value =
                         if this.State._1 then
                             this.State._1 <- false
@@ -1475,7 +1463,7 @@ namespace Microsoft.FSharp.Collections
             source.Compose { new SeqFactory<'T,'T[]>() with
                 member __.Create outOfBand pipeIdx next =
                     upcast {
-                        new ConsumerChainedWithState<'T,'U,Values<'T[],int,int>>
+                        new ActivityChained<'T,'U,Values<'T[],int,int>>
                                     (   next
                                     ,   Values<'T[],int,int>
                                         ((*circularBuffer = _1 *) Array.zeroCreateUnchecked windowSize
