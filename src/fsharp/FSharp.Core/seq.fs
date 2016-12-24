@@ -80,7 +80,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Skip")>]
         let skip count (source: seq<_>) =
             source |> toComposer
-            |> Composer.skip (SR.GetString SR.notEnoughElements) count |> Upcast.enumerable
+            |> Composer.skip count |> Upcast.enumerable
 
         let invalidArgumnetIndex = invalidArgFmt "index"
 
@@ -88,7 +88,7 @@ namespace Microsoft.FSharp.Collections
         let item i (source : seq<'T>) =
             if i < 0 then invalidArgInputMustBeNonNegative "index" i else
                 source
-                |> toComposer |> Composer.skip (SR.GetString SR.notEnoughElements) i |> Upcast.enumerable
+                |> toComposer |> Composer.skip i |> Upcast.enumerable
                 |> tryHead
                 |>  function
                     | None -> invalidArgFmt "index" "{0}\nseq was short by 1 element"  [|SR.GetString SR.notEnoughElements|]
@@ -96,7 +96,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("TryItem")>]
         let tryItem i (source:seq<'T>) =
-            source |> toComposer |> Composer.tryItem (SR.GetString SR.notEnoughElements) i
+            source |> toComposer |> Composer.tryItem i
 
         [<CompiledName "Get">]
         let nth i (source : seq<'T>) = item i source
@@ -227,7 +227,7 @@ namespace Microsoft.FSharp.Collections
             if count < 0 then invalidArgInputMustBeNonNegative "count" count
             (* Note: don't create or dispose any IEnumerable if n = 0 *)
             if count = 0 then empty else
-            source |> toComposer |> Composer.take (SR.GetString SR.notEnoughElements) count |> Upcast.enumerable
+            source |> toComposer |> Composer.take count |> Upcast.enumerable
 
         [<CompiledName("IsEmpty")>]
         let isEmpty (source : seq<'T>)  =
@@ -720,7 +720,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Tail">]
         let tail (source: seq<'T>) =
-            source |> toComposer |> Composer.tail (SR.GetString SR.notEnoughElements) |> Upcast.enumerable
+            source |> toComposer |> Composer.tail |> Upcast.enumerable
 
         [<CompiledName "TryLast">]
         let tryLast (source : seq<_>) =
