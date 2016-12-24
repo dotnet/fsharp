@@ -832,7 +832,7 @@ namespace Microsoft.FSharp.Collections
         let empty<'T> = EmptyEnumerable.Enumerable<'T>.Instance
 
         [<CompiledName "ExactlyOne">]
-        let inline exactlyOne errorString  (source : ISeq<'T>) : 'T =
+        let exactlyOne (source:ISeq<'T>) : 'T =
             source.Fold (fun pipeIdx ->
                 upcast { new FolderWithPostProcessing<'T,'T,Values<bool, bool>>(Unchecked.defaultof<'T>, Values<bool,bool>(true, false)) with
                     override this.ProcessNext value =
@@ -848,7 +848,7 @@ namespace Microsoft.FSharp.Collections
                         if this.State._1 then
                             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
                         elif this.State._2 then
-                            invalidArg "source" errorString
+                            invalidArg "source" (SR.GetString SR.inputSequenceTooLong)
                     override this.OnDispose () = () })
 
         [<CompiledName "Fold">]
@@ -888,7 +888,7 @@ namespace Microsoft.FSharp.Collections
             Upcast.seq (new Init.EnumerableDecider<'T>(Nullable count, f, 1))
 
         [<CompiledName "Iterate">]
-        let iter f (source:ISeq<'T>) =
+        let inline iter f (source:ISeq<'T>) =
             source.Fold (fun _ ->
                 upcast { new Folder<'T,NoValue> (Unchecked.defaultof<NoValue>) with
                     override this.ProcessNext value =
@@ -937,7 +937,7 @@ namespace Microsoft.FSharp.Collections
                         Unchecked.defaultof<_> (* return value unsed in Fold context *) })
 
         [<CompiledName "IterateIndexed">]
-        let iteri f (source:ISeq<'T>) =
+        let inline iteri f (source:ISeq<'T>) =
             source.Fold (fun _ ->
                 { new Folder<'T,NoValue,int> (Unchecked.defaultof<_>,0) with
                     override this.ProcessNext value =
@@ -957,7 +957,7 @@ namespace Microsoft.FSharp.Collections
                             else false }}
 
         [<CompiledName "Exists">]
-        let exists f (source:ISeq<'T>) =
+        let inline exists f (source:ISeq<'T>) =
             source.Fold (fun pipeIdx ->
                 upcast { new Folder<'T, bool> (false) with
                     override this.ProcessNext value =
@@ -967,7 +967,7 @@ namespace Microsoft.FSharp.Collections
                         Unchecked.defaultof<_> (* return value unsed in Fold context *) })
 
         [<CompiledName "Exists2">]
-        let exists2 (predicate:'T->'U->bool) (source1: ISeq<'T>) (source2: ISeq<'U>) : bool =
+        let inline exists2 (predicate:'T->'U->bool) (source1: ISeq<'T>) (source2: ISeq<'U>) : bool =
             source1.Fold (fun pipeIdx ->
                 upcast { new FolderWithPostProcessing<'T,bool,IEnumerator<'U>>(false,source2.GetEnumerator()) with
                     override self.ProcessNext value =
@@ -993,7 +993,7 @@ namespace Microsoft.FSharp.Collections
                         Unchecked.defaultof<_> (* return value unsed in Fold context *) })
 
         [<CompiledName "ForAll">]
-        let forall predicate (source:ISeq<'T>) =
+        let inline forall predicate (source:ISeq<'T>) =
             source.Fold (fun pipeIdx ->
                 upcast { new Folder<'T, bool> (true) with
                     override this.ProcessNext value =
@@ -1219,7 +1219,7 @@ namespace Microsoft.FSharp.Collections
                     override self.OnDispose () = () })
 
         [<CompiledName "Pairwise">]
-        let inline pairwise (source:ISeq<'T>) : ISeq<'T * 'T> =
+        let pairwise (source:ISeq<'T>) : ISeq<'T*'T> =
             source.Compose { new SeqFactory<'T,'T * 'T>() with
                 override __.Create _ _ next =
                     upcast { new ActivityChained<'T,'U,Values<bool,'T>>
@@ -1411,7 +1411,7 @@ namespace Microsoft.FSharp.Collections
             source |> skip index |> tryHead
 
         [<CompiledName "TryPick">]
-        let tryPick f (source:ISeq<'T>)  =
+        let inline tryPick f (source:ISeq<'T>)  =
             source.Fold (fun pipeIdx ->
                 upcast { new Folder<'T, Option<'U>> (None) with
                     override this.ProcessNext value =
@@ -1423,7 +1423,7 @@ namespace Microsoft.FSharp.Collections
                         Unchecked.defaultof<_> (* return value unsed in Fold context *) })
 
         [<CompiledName "TryFind">]
-        let tryFind f (source:ISeq<'T>)  =
+        let inline tryFind f (source:ISeq<'T>)  =
             source.Fold (fun pipeIdx ->
                 upcast { new Folder<'T, Option<'T>> (None) with
                     override this.ProcessNext value =
@@ -1459,7 +1459,7 @@ namespace Microsoft.FSharp.Collections
                     override self.OnDispose () = () })
 
         [<CompiledName "Windowed">]
-        let inline windowed (windowSize:int) (source:ISeq<'T>) : ISeq<'T[]> =
+        let windowed (windowSize:int) (source:ISeq<'T>) : ISeq<'T[]> =
             source.Compose { new SeqFactory<'T,'T[]>() with
                 member __.Create outOfBand pipeIdx next =
                     upcast {
