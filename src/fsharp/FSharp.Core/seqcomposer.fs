@@ -64,7 +64,7 @@ namespace Microsoft.FSharp.Collections
                 }
 
                 val mutable State : 'State
-                val private Next : Activity
+                val Next : Activity
                 
                 override this.ChainComplete (stopTailCall, terminatingIdx) =
                     this.Next.ChainComplete (&stopTailCall, terminatingIdx)
@@ -72,17 +72,8 @@ namespace Microsoft.FSharp.Collections
                     this.Next.ChainDispose (&stopTailCall)
 
             [<AbstractClass>]
-            type TransformWithPostProcessing<'T,'U,'State> =
-                inherit Activity<'T,'U>
-
-                new (next:Activity, initState:'State) = {
-                    inherit Activity<'T,'U> ()
-                    State = initState
-                    Next = next
-                }
-
-                val mutable State : 'State
-                val private Next : Activity
+            type TransformWithPostProcessing<'T,'U,'State>(next:Activity, initState:'State) =
+                inherit Transform<'T,'U,'State>(next, initState)
 
                 abstract OnComplete : PipeIdx -> unit
                 abstract OnDispose  : unit -> unit
@@ -801,7 +792,7 @@ namespace Microsoft.FSharp.Collections
                     override this.ProcessNext value =
                         this.Result <- Checked.(+) this.Result value
                         this.State <- this.State + 1
-                        Unchecked.defaultof<_> (* return value unsed in Fold context *)
+                        Unchecked.defaultof<_> (* return value unused in Fold context *)
 
                     override this.OnComplete _ =
                         if this.State = 0 then
@@ -819,7 +810,7 @@ namespace Microsoft.FSharp.Collections
                     override this.ProcessNext value =
                         this.Result <- Checked.(+) this.Result (f value)
                         this.State <- this.State + 1
-                        Unchecked.defaultof<_> (* return value unsed in Fold context *)
+                        Unchecked.defaultof<_> (* return value unused in Fold context *)
 
                     override this.OnComplete _ =
                         if this.State = 0 then
@@ -841,7 +832,7 @@ namespace Microsoft.FSharp.Collections
                         else
                             this.State._2 <- true
                             this.StopFurtherProcessing pipeIdx
-                        Unchecked.defaultof<_> (* return value unsed in Fold context *)
+                        Unchecked.defaultof<_> (* return value unused in Fold context *)
 
                     override this.OnComplete _ =
                         if this.State._1 then
@@ -856,7 +847,7 @@ namespace Microsoft.FSharp.Collections
                 upcast { new Folder<'T,'State,NoValue>(seed,Unchecked.defaultof<NoValue>) with
                     override this.ProcessNext value =
                         this.Result <- f this.Result value
-                        Unchecked.defaultof<_> (* return value unsed in Fold context *) })
+                        Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "Fold2">]
         let inline fold2<'T1,'T2,'State> (folder:'State->'T1->'T2->'State) (state:'State) (source1: ISeq<'T1>) (source2: ISeq<'T2>) =
@@ -867,7 +858,7 @@ namespace Microsoft.FSharp.Collections
                             self.Result <- folder self.Result value self.State.Current
                         else
                             self.StopFurtherProcessing pipeIdx
-                        Unchecked.defaultof<_> (* return value unsed in Fold context *)
+                        Unchecked.defaultof<_> (* return value unused in Fold context *)
 
                     override self.OnComplete _ = ()
                     override self.OnDispose () = self.State.Dispose() })
@@ -892,7 +883,7 @@ namespace Microsoft.FSharp.Collections
                 upcast { new Folder<'T,NoValue,NoValue> (Unchecked.defaultof<NoValue>,Unchecked.defaultof<NoValue>) with
                     override this.ProcessNext value =
                         f value
-                        Unchecked.defaultof<_> (* return value unsed in Fold context *) })
+                        Unchecked.defaultof<_> (* return value unused in Fold context *) })
             |> ignore
 
         [<CompiledName "Iterate2">]
@@ -904,7 +895,7 @@ namespace Microsoft.FSharp.Collections
                             f value self.State.Current
                         else
                             self.StopFurtherProcessing pipeIdx
-                        Unchecked.defaultof<_> (* return value unsed in Fold context *)
+                        Unchecked.defaultof<_> (* return value unused in Fold context *)
 
                     override self.OnComplete _ = ()
                     override self.OnDispose () = self.State.Dispose() })
@@ -933,7 +924,7 @@ namespace Microsoft.FSharp.Collections
                     override this.ProcessNext value =
                         this.Result <- Some value
                         this.StopFurtherProcessing pipeIdx
-                        Unchecked.defaultof<_> (* return value unsed in Fold context *) })
+                        Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "IterateIndexed">]
         let inline iteri f (source:ISeq<'T>) =
@@ -942,7 +933,7 @@ namespace Microsoft.FSharp.Collections
                     override this.ProcessNext value =
                         f this.State value
                         this.State <- this.State + 1
-                        Unchecked.defaultof<_> (* return value unsed in Fold context *) })
+                        Unchecked.defaultof<_> (* return value unused in Fold context *) })
             |> ignore
 
         [<CompiledName "Except">]
@@ -963,7 +954,7 @@ namespace Microsoft.FSharp.Collections
                         if f value then
                             this.Result <- true
                             this.StopFurtherProcessing pipeIdx
-                        Unchecked.defaultof<_> (* return value unsed in Fold context *) })
+                        Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "Exists2">]
         let inline exists2 (predicate:'T->'U->bool) (source1: ISeq<'T>) (source2: ISeq<'U>) : bool =
@@ -976,7 +967,7 @@ namespace Microsoft.FSharp.Collections
                                 self.StopFurtherProcessing pipeIdx
                         else
                             self.StopFurtherProcessing pipeIdx
-                        Unchecked.defaultof<_> (* return value unsed in Fold context *)
+                        Unchecked.defaultof<_> (* return value unused in Fold context *)
 
                     override self.OnComplete _ = ()
                     override self.OnDispose () = self.State.Dispose() })
@@ -989,7 +980,7 @@ namespace Microsoft.FSharp.Collections
                         if element = value then
                             this.Result <- true
                             this.StopFurtherProcessing pipeIdx
-                        Unchecked.defaultof<_> (* return value unsed in Fold context *) })
+                        Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "ForAll">]
         let inline forall predicate (source:ISeq<'T>) =
@@ -999,7 +990,7 @@ namespace Microsoft.FSharp.Collections
                         if not (predicate value) then
                             this.Result <- false
                             this.StopFurtherProcessing pipeIdx
-                        Unchecked.defaultof<_> (* return value unsed in Fold context *) })
+                        Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "ForAll2">]
         let inline forall2 predicate (source1:ISeq<'T>) (source2:ISeq<'U>) : bool =
@@ -1012,7 +1003,7 @@ namespace Microsoft.FSharp.Collections
                                 self.StopFurtherProcessing pipeIdx
                         else
                             self.StopFurtherProcessing pipeIdx
-                        Unchecked.defaultof<_> (* return value unsed in Fold context *)
+                        Unchecked.defaultof<_> (* return value unused in Fold context *)
 
                     override self.OnComplete _ = ()
                     override self.OnDispose () = self.State.Dispose() })
@@ -1104,7 +1095,7 @@ namespace Microsoft.FSharp.Collections
                             if c <> 0 then
                                 self.Result <- c
                                 self.StopFurtherProcessing pipeIdx
-                        Unchecked.defaultof<_> (* return value unsed in Fold context *)
+                        Unchecked.defaultof<_> (* return value unused in Fold context *)
                     override self.OnComplete _ =
                         if self.Result = 0 && self.State.MoveNext() then
                             self.Result <- -1
@@ -1150,7 +1141,7 @@ namespace Microsoft.FSharp.Collections
                             this.Result <- value
                         elif value > this.Result then
                             this.Result <- value
-                        Unchecked.defaultof<_> (* return value unsed in Fold context *)
+                        Unchecked.defaultof<_> (* return value unused in Fold context *)
 
                     override this.OnComplete _ =
                         if this.State then
@@ -1171,7 +1162,7 @@ namespace Microsoft.FSharp.Collections
                             this.State._2 <- valueU
                             this.Result <- value
                         | _ -> ()
-                        Unchecked.defaultof<_> (* return value unsed in Fold context *)
+                        Unchecked.defaultof<_> (* return value unused in Fold context *)
 
                     override this.OnComplete _ =
                         if this.State._1 then
@@ -1188,7 +1179,7 @@ namespace Microsoft.FSharp.Collections
                             this.Result <- value
                         elif value < this.Result then
                             this.Result <- value
-                        Unchecked.defaultof<_> (* return value unsed in Fold context *)
+                        Unchecked.defaultof<_> (* return value unused in Fold context *)
 
                     override this.OnComplete _ =
                         if this.State then
@@ -1209,7 +1200,7 @@ namespace Microsoft.FSharp.Collections
                             this.State._2 <- valueU
                             this.Result <- value
                         | _ -> ()
-                        Unchecked.defaultof<_> (* return value unsed in Fold context *)
+                        Unchecked.defaultof<_> (* return value unused in Fold context *)
 
                     override this.OnComplete _ =
                         if this.State._1 then
@@ -1247,7 +1238,7 @@ namespace Microsoft.FSharp.Collections
                             this.Result <- value
                         else
                             this.Result <- f this.Result value
-                        Unchecked.defaultof<_> (* return value unsed in Fold context *)
+                        Unchecked.defaultof<_> (* return value unused in Fold context *)
 
                     override this.OnComplete _ =
                         if this.State then
@@ -1315,7 +1306,7 @@ namespace Microsoft.FSharp.Collections
                 upcast { new Folder< ^T,^T,NoValue> (LanguagePrimitives.GenericZero,Unchecked.defaultof<NoValue>) with
                     override this.ProcessNext value =
                         this.Result <- Checked.(+) this.Result value
-                        Unchecked.defaultof<_> (* return value unsed in Fold context *) })
+                        Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "SumBy">]
         let inline sumBy (f : 'T -> ^U) (source: ISeq<'T>) : ^U
@@ -1325,7 +1316,7 @@ namespace Microsoft.FSharp.Collections
                 upcast { new Folder<'T,'U,NoValue> (LanguagePrimitives.GenericZero< ^U>,Unchecked.defaultof<NoValue>) with
                     override this.ProcessNext value =
                         this.Result <- Checked.(+) this.Result (f value)
-                        Unchecked.defaultof<_> (* return value unsed in Fold context *) })
+                        Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "Take">]
         let take (takeCount:int) (source:ISeq<'T>) : ISeq<'T> =
@@ -1414,7 +1405,7 @@ namespace Microsoft.FSharp.Collections
                             this.Result <- some
                             this.StopFurtherProcessing pipeIdx
                         | None -> ()
-                        Unchecked.defaultof<_> (* return value unsed in Fold context *) })
+                        Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "TryFind">]
         let inline tryFind f (source:ISeq<'T>)  =
@@ -1424,7 +1415,7 @@ namespace Microsoft.FSharp.Collections
                         if f value then
                             this.Result <- Some value
                             this.StopFurtherProcessing pipeIdx
-                        Unchecked.defaultof<_> (* return value unsed in Fold context *) })
+                        Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "TryFindIndex">]
         let inline tryFindIndex (predicate:'T->bool) (source:ISeq<'T>) : int option =
@@ -1436,7 +1427,7 @@ namespace Microsoft.FSharp.Collections
                             this.StopFurtherProcessing pipeIdx
                         else
                             this.State <- this.State + 1
-                        Unchecked.defaultof<_> (* return value unsed in Fold context *) })
+                        Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "TryLast">]
         let inline tryLast (source :ISeq<'T>) : 'T option =
@@ -1446,7 +1437,7 @@ namespace Microsoft.FSharp.Collections
                         if this.State._1 then
                             this.State._1 <- false
                         this.State._2 <- value
-                        Unchecked.defaultof<_> (* return value unsed in Fold context *)
+                        Unchecked.defaultof<_> (* return value unused in Fold context *)
                     override this.OnComplete _ =
                         if not this.State._1 then
                             this.Result <- Some this.State._2
