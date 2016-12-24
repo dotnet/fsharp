@@ -83,8 +83,7 @@ type ListType() =
         Assert.AreEqual(false, enum.MoveNext())
         CheckThrowsInvalidOperationExn(fun () -> enum.Current |> ignore)
  
- #if FSCORE_PORTABLE_OLD
- #else 
+ #if !FSCORE_PORTABLE_OLD
     [<Test>]
     member this.IReadOnlyCollection_T() =
         
@@ -97,7 +96,7 @@ type ListType() =
 
         Assert.AreEqual(c.Count, 10)
 
-        // Legit IReadOnlyCollection_T
+        // Empty IReadOnlyCollection_T
         let c = [] :> IReadOnlyCollection<int>
 
         Assert.AreEqual(c.Count, 0)
