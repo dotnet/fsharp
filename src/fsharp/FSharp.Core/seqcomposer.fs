@@ -54,49 +54,51 @@ namespace Microsoft.FSharp.Collections
                 override this.ChainDispose _ = ()
 
             [<AbstractClass>]
-            type Activity<'T,'U,'State> =
+            type Transform<'T,'U,'State> =
                 inherit Activity<'T,'U>
                 
-                val mutable State : 'State
-                
-                new (initState) = {
-                    State = initState
-                }
-
-            [<AbstractClass>]
-            type ActivityChained<'T,'U,'State> =
-                inherit Activity<'T,'U,'State>
-                
-                val private Next : Activity
-                
                 new (next:Activity, initState:'State) = {
-                    inherit Activity<'T,'U,'State> (initState)
+                    inherit Activity<'T,'U> ()
+                    State = initState
                     Next = next
                 }
 
+                val mutable State : 'State
+                val private Next : Activity
+                
                 override this.ChainComplete (stopTailCall, terminatingIdx) =
                     this.Next.ChainComplete (&stopTailCall, terminatingIdx)
                 override this.ChainDispose stopTailCall =
                     this.Next.ChainDispose (&stopTailCall)
 
             [<AbstractClass>]
-            type ActivityChainedWithPostProcessing<'T,'U,'State> (next:Activity, inititalState:'State) =
-                inherit ActivityChained<'T,'U,'State>(next, inititalState)
+            type TransformWithPostProcessing<'T,'U,'State> =
+                inherit Activity<'T,'U>
+
+                new (next:Activity, initState:'State) = {
+                    inherit Activity<'T,'U> ()
+                    State = initState
+                    Next = next
+                }
+
+                val mutable State : 'State
+                val private Next : Activity
 
                 abstract OnComplete : PipeIdx -> unit
                 abstract OnDispose  : unit -> unit
 
                 override this.ChainComplete (stopTailCall, terminatingIdx) =
                     this.OnComplete terminatingIdx
-                    next.ChainComplete (&stopTailCall, terminatingIdx)
+                    this.Next.ChainComplete (&stopTailCall, terminatingIdx)
                 override this.ChainDispose stopTailCall  =
                     try     this.OnDispose ()
-                    finally next.ChainDispose (&stopTailCall)
+                    finally this.Next.ChainDispose (&stopTailCall)
 
             [<AbstractClass>]
             type Folder<'T,'Result,'State> =
-                inherit Activity<'T,'T,'State>
+                inherit Activity<'T,'T>
 
+                val mutable State : 'State
                 val mutable Result : 'Result
                 val mutable HaltedIdx : int
 
@@ -105,14 +107,11 @@ namespace Microsoft.FSharp.Collections
                     member this.StopFurtherProcessing pipeIdx = this.StopFurtherProcessing pipeIdx
 
                 new (initalResult,initState) = {
-                    inherit Activity<'T,'T,'State>(initState)
+                    inherit Activity<'T,'T>()
+                    State = initState
                     HaltedIdx = 0
                     Result = initalResult
                 }
-
-            [<AbstractClass>]
-            type Folder<'T,'Result>(initResult) =
-                inherit Folder<'T,'Result,NoValue>(initResult,Unchecked.defaultof<NoValue>)
 
             [<AbstractClass>]
             type FolderWithPostProcessing<'T,'Result,'State>(initResult,initState) =
@@ -181,7 +180,7 @@ namespace Microsoft.FSharp.Collections
         | Finished   = 2
 
         type Result<'T>() =
-            inherit Folder<'T,'T>(Unchecked.defaultof<'T>)
+            inherit Folder<'T,'T,NoValue>(Unchecked.defaultof<'T>,Unchecked.defaultof<NoValue>)
 
             member val SeqState = SeqProcessNextStates.NotStarted with get, set
 
@@ -854,7 +853,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "Fold">]
         let inline fold<'T,'State> (f:'State->'T->'State) (seed:'State) (source:ISeq<'T>) : 'State =
             source.Fold (fun _ ->
-                upcast { new Folder<'T,'State>(seed) with
+                upcast { new Folder<'T,'State,NoValue>(seed,Unchecked.defaultof<NoValue>) with
                     override this.ProcessNext value =
                         this.Result <- f this.Result value
                         Unchecked.defaultof<_> (* return value unsed in Fold context *) })
@@ -890,7 +889,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "Iterate">]
         let inline iter f (source:ISeq<'T>) =
             source.Fold (fun _ ->
-                upcast { new Folder<'T,NoValue> (Unchecked.defaultof<NoValue>) with
+                upcast { new Folder<'T,NoValue,NoValue> (Unchecked.defaultof<NoValue>,Unchecked.defaultof<NoValue>) with
                     override this.ProcessNext value =
                         f value
                         Unchecked.defaultof<_> (* return value unsed in Fold context *) })
@@ -930,7 +929,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "TryHead">]
         let tryHead (source:ISeq<'T>) =
             source.Fold (fun pipeIdx ->
-                upcast { new Folder<'T, Option<'T>> (None) with
+                upcast { new Folder<'T, Option<'T>,NoValue> (None,Unchecked.defaultof<NoValue>) with
                     override this.ProcessNext value =
                         this.Result <- Some value
                         this.StopFurtherProcessing pipeIdx
@@ -950,7 +949,7 @@ namespace Microsoft.FSharp.Collections
         let inline except (itemsToExclude: seq<'T>) (source:ISeq<'T>) : ISeq<'T> when 'T:equality =
             source.Compose { new SeqFactory<'T,'T>() with
                 override __.Create _ _ next =
-                    upcast { new ActivityChained<'T,'V,Lazy<HashSet<'T>>>
+                    upcast { new Transform<'T,'V,Lazy<HashSet<'T>>>
                                     (next,lazy(HashSet<'T>(itemsToExclude,HashIdentity.Structural<'T>))) with
                         override this.ProcessNext (input:'T) : bool =
                             if this.State.Value.Add input then TailCall.avoid (next.ProcessNext input)
@@ -959,7 +958,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "Exists">]
         let inline exists f (source:ISeq<'T>) =
             source.Fold (fun pipeIdx ->
-                upcast { new Folder<'T, bool> (false) with
+                upcast { new Folder<'T, bool,NoValue> (false,Unchecked.defaultof<NoValue>) with
                     override this.ProcessNext value =
                         if f value then
                             this.Result <- true
@@ -985,7 +984,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "Contains">]
         let inline contains element (source:ISeq<'T>) =
             source.Fold (fun pipeIdx ->
-                upcast { new Folder<'T, bool> (false) with
+                upcast { new Folder<'T, bool,NoValue> (false,Unchecked.defaultof<NoValue>) with
                     override this.ProcessNext value =
                         if element = value then
                             this.Result <- true
@@ -995,7 +994,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "ForAll">]
         let inline forall predicate (source:ISeq<'T>) =
             source.Fold (fun pipeIdx ->
-                upcast { new Folder<'T, bool> (true) with
+                upcast { new Folder<'T, bool,NoValue> (true,Unchecked.defaultof<NoValue>) with
                     override this.ProcessNext value =
                         if not (predicate value) then
                             this.Result <- false
@@ -1022,7 +1021,7 @@ namespace Microsoft.FSharp.Collections
         let inline filter<'T> (f:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
             source.Compose { new SeqFactory<'T,'T>() with
                 override __.Create _ _ next =
-                    upcast { new ActivityChained<'T,'V,NoValue>(next,Unchecked.defaultof<NoValue>) with
+                    upcast { new Transform<'T,'V,NoValue>(next,Unchecked.defaultof<NoValue>) with
                         override __.ProcessNext input =
                             if f input then TailCall.avoid (next.ProcessNext input)
                             else false } }
@@ -1031,7 +1030,7 @@ namespace Microsoft.FSharp.Collections
         let inline map<'T,'U> (f:'T->'U) (source:ISeq<'T>) : ISeq<'U> =
             source.Compose { new SeqFactory<'T,'U>() with
                 override __.Create _ _ next =
-                    upcast { new ActivityChained<'T,'V,NoValue>(next,Unchecked.defaultof<NoValue>) with
+                    upcast { new Transform<'T,'V,NoValue>(next,Unchecked.defaultof<NoValue>) with
                         override __.ProcessNext input =
                             TailCall.avoid (next.ProcessNext (f input)) } }
 
@@ -1039,7 +1038,7 @@ namespace Microsoft.FSharp.Collections
         let inline mapi f (source:ISeq<_>) =
             source.Compose { new SeqFactory<'T,'U>() with
                 override __.Create _ _ next =
-                    upcast { new ActivityChained<'T,'V,int>(next, -1) with
+                    upcast { new Transform<'T,'V,int>(next, -1) with
                         override this.ProcessNext (input:'T) : bool =
                             this.State <- this.State  + 1
                             TailCall.avoid (next.ProcessNext (f this.State input)) } }
@@ -1048,7 +1047,7 @@ namespace Microsoft.FSharp.Collections
         let inline map2<'First,'Second,'U> (map:'First->'Second->'U) (source1:ISeq<'First>) (source2:ISeq<'Second>) : ISeq<'U> =
             source1.Compose { new SeqFactory<'First,'U>() with
                 override __.Create outOfBand pipeIdx (next:Activity<'U,'V>) =
-                    upcast { new ActivityChainedWithPostProcessing<'First,'V, IEnumerator<'Second>>(next, (source2.GetEnumerator ())) with
+                    upcast { new TransformWithPostProcessing<'First,'V, IEnumerator<'Second>>(next, (source2.GetEnumerator ())) with
                         override self.ProcessNext input =
                             if self.State.MoveNext () then
                                 TailCall.avoid (next.ProcessNext (map input self.State.Current))
@@ -1062,7 +1061,7 @@ namespace Microsoft.FSharp.Collections
         let inline mapi2<'First,'Second,'U> (map:int -> 'First->'Second->'U) (source1:ISeq<'First>) (source2:ISeq<'Second>) : ISeq<'U> =
             source1.Compose { new SeqFactory<'First,'U>() with
                 override __.Create<'V> outOfBand pipeIdx next =
-                    upcast { new ActivityChainedWithPostProcessing<'First,'V, Values<int,IEnumerator<'Second>>>
+                    upcast { new TransformWithPostProcessing<'First,'V, Values<int,IEnumerator<'Second>>>
                                                 (next, Values<_,_>(-1, source2.GetEnumerator ())) with
                         override self.ProcessNext input =
                             if self.State._2.MoveNext () then
@@ -1079,7 +1078,7 @@ namespace Microsoft.FSharp.Collections
                         (map:'First->'Second->'Third->'U) (source1:ISeq<'First>) (source2:ISeq<'Second>) (source3:ISeq<'Third>) : ISeq<'U> =
             source1.Compose { new SeqFactory<'First,'U>() with
                 override __.Create<'V> outOfBand pipeIdx next =
-                    upcast { new ActivityChainedWithPostProcessing<'First,'V, Values<IEnumerator<'Second>,IEnumerator<'Third>>>
+                    upcast { new TransformWithPostProcessing<'First,'V, Values<IEnumerator<'Second>,IEnumerator<'Third>>>
                                                 (next, Values<_,_>(source2.GetEnumerator(),source3.GetEnumerator())) with
                         override self.ProcessNext input =
                             if self.State._1.MoveNext() && self.State._2.MoveNext ()  then
@@ -1091,7 +1090,6 @@ namespace Microsoft.FSharp.Collections
                         override self.OnDispose () = 
                             self.State._1.Dispose ()
                             self.State._2.Dispose () }}
-
 
         [<CompiledName "CompareWith">]
         let inline compareWith (f:'T -> 'T -> int) (source1 :ISeq<'T>) (source2:ISeq<'T>) : int =
@@ -1116,7 +1114,7 @@ namespace Microsoft.FSharp.Collections
         let inline choose (f:'T->option<'U>) (source:ISeq<'T>) : ISeq<'U> =
             source.Compose { new SeqFactory<'T,'U>() with
                 override __.Create _ _ next =
-                    upcast { new ActivityChained<'T,'V,NoValue>(next,Unchecked.defaultof<NoValue>) with
+                    upcast { new Transform<'T,'V,NoValue>(next,Unchecked.defaultof<NoValue>) with
                         override __.ProcessNext input =
                             match f input with
                             | Some value -> TailCall.avoid (next.ProcessNext value)
@@ -1126,7 +1124,7 @@ namespace Microsoft.FSharp.Collections
         let inline distinct (source:ISeq<'T>) : ISeq<'T> when 'T:equality =
             source.Compose { new SeqFactory<'T,'T>() with
                 override __.Create _ _ next =
-                    upcast { new ActivityChained<'T,'V,HashSet<'T>>
+                    upcast { new Transform<'T,'V,HashSet<'T>>
                                     (next,(HashSet<'T>(HashIdentity.Structural<'T>))) with
                         override this.ProcessNext (input:'T) : bool =
                             if this.State.Add input then TailCall.avoid (next.ProcessNext input)
@@ -1136,7 +1134,7 @@ namespace Microsoft.FSharp.Collections
         let inline distinctBy (keyf:'T->'Key) (source:ISeq<'T>) :ISeq<'T>  when 'Key:equality =
             source.Compose { new SeqFactory<'T,'T>() with
                 override __.Create _ _ next =
-                    upcast { new ActivityChained<'T,'V,HashSet<'Key>>
+                    upcast { new Transform<'T,'V,HashSet<'Key>>
                                     (next,(HashSet<'Key>(HashIdentity.Structural<'Key>))) with
                         override this.ProcessNext (input:'T) : bool =
                             if this.State.Add (keyf input) then TailCall.avoid (next.ProcessNext input)
@@ -1222,7 +1220,7 @@ namespace Microsoft.FSharp.Collections
         let pairwise (source:ISeq<'T>) : ISeq<'T*'T> =
             source.Compose { new SeqFactory<'T,'T * 'T>() with
                 override __.Create _ _ next =
-                    upcast { new ActivityChained<'T,'U,Values<bool,'T>>
+                    upcast { new Transform<'T,'U,Values<bool,'T>>
                                 (   next
                                 ,   Values<bool,'T>
                                     ((* isFirst   = _1*) true
@@ -1260,19 +1258,17 @@ namespace Microsoft.FSharp.Collections
         let inline scan (folder:'State->'T->'State) (initialState:'State) (source:ISeq<'T>) :ISeq<'State> =
             source.Compose { new SeqFactory<'T,'State>() with
                 override __.Create _ _ next =
-                    upcast { new ActivityChained<'T,'V,'State>(next, initialState) with
+                    upcast { new Transform<'T,'V,'State>(next, initialState) with
                         override this.ProcessNext (input:'T) : bool =
                             this.State <- folder this.State input
                             TailCall.avoid (next.ProcessNext this.State) } }
-
 
         [<CompiledName "Skip">]
         let skip (skipCount:int) (source:ISeq<'T>) : ISeq<'T> =
             source.Compose { new SeqFactory<'T,'T>() with
                 override __.Create _ _ next =
                     upcast {
-                        new ActivityChainedWithPostProcessing<'T,'U,int>(next,(*count*)0) with
-
+                        new TransformWithPostProcessing<'T,'U,int>(next,(*count*)0) with
                             override self.ProcessNext (input:'T) : bool =
                                 if (*count*) self.State < skipCount then
                                     self.State <- self.State + 1
@@ -1289,19 +1285,18 @@ namespace Microsoft.FSharp.Collections
 
                         interface ISkipping with
                             member self.Skipping () =
-                                let self = self :?> ActivityChained<'T,'U,int>
+                                let self = self :?> TransformWithPostProcessing<'T,'U,int>
                                 if (*count*) self.State < skipCount then
                                     self.State <- self.State + 1
                                     true
                                 else
-                                    false
-                    }}
+                                    false }}
 
         [<CompiledName "SkipWhile">]
         let inline skipWhile (predicate:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
             source.Compose { new SeqFactory<'T,'T>() with
                 override __.Create _ _ next =
-                    upcast { new ActivityChained<'T,'V,bool>(next,true) with
+                    upcast { new Transform<'T,'V,bool>(next,true) with
                         override self.ProcessNext (input:'T) : bool =
                             if self.State (*skip*) then
                                 self.State <- predicate input
@@ -1317,7 +1312,7 @@ namespace Microsoft.FSharp.Collections
             when ^T:(static member Zero : ^T)
             and  ^T:(static member (+) :  ^T *  ^T ->  ^T) =
             source.Fold (fun _ ->
-                upcast { new Folder< ^T,^T> (LanguagePrimitives.GenericZero) with
+                upcast { new Folder< ^T,^T,NoValue> (LanguagePrimitives.GenericZero,Unchecked.defaultof<NoValue>) with
                     override this.ProcessNext value =
                         this.Result <- Checked.(+) this.Result value
                         Unchecked.defaultof<_> (* return value unsed in Fold context *) })
@@ -1327,7 +1322,7 @@ namespace Microsoft.FSharp.Collections
             when ^U:(static member Zero : ^U)
             and  ^U:(static member (+) :  ^U *  ^U ->  ^U) =
             source.Fold (fun _ ->
-                upcast { new Folder<'T,'U> (LanguagePrimitives.GenericZero< ^U>) with
+                upcast { new Folder<'T,'U,NoValue> (LanguagePrimitives.GenericZero< ^U>,Unchecked.defaultof<NoValue>) with
                     override this.ProcessNext value =
                         this.Result <- Checked.(+) this.Result (f value)
                         Unchecked.defaultof<_> (* return value unsed in Fold context *) })
@@ -1337,7 +1332,7 @@ namespace Microsoft.FSharp.Collections
             source.Compose { new SeqFactory<'T,'T>() with
                 member __.Create outOfBand pipelineIdx next =
                     upcast {
-                        new ActivityChainedWithPostProcessing<'T,'U,int>(next,(*count*)0) with
+                        new TransformWithPostProcessing<'T,'U,int>(next,(*count*)0) with
                             override self.ProcessNext (input:'T) : bool =
                                 if (*count*) self.State < takeCount then
                                     self.State <- self.State + 1
@@ -1359,20 +1354,19 @@ namespace Microsoft.FSharp.Collections
         let inline takeWhile (predicate:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
             source.Compose { new SeqFactory<'T,'T>() with
                 member __.Create outOfBand pipeIdx next =
-                    upcast { new ActivityChained<'T,'V,NoValue>(next,Unchecked.defaultof<NoValue>) with
+                    upcast { new Transform<'T,'V,NoValue>(next,Unchecked.defaultof<NoValue>) with
                         override __.ProcessNext (input:'T) : bool =
                             if predicate input then
                                 TailCall.avoid (next.ProcessNext input)
                             else
                                 outOfBand.StopFurtherProcessing pipeIdx
-                                false
-                    }}
+                                false }}
 
         [<CompiledName "Tail">]
         let tail (source:ISeq<'T>) :ISeq<'T> =
             source.Compose { new SeqFactory<'T,'T>() with
                 member __.Create _ _ next =
-                    upcast { new ActivityChainedWithPostProcessing<'T,'V,bool>(next,(*first*) true) with
+                    upcast { new TransformWithPostProcessing<'T,'V,bool>(next,(*first*) true) with
                         override self.ProcessNext (input:'T) : bool =
                             if (*first*) self.State then
                                 self.State <- false
@@ -1390,7 +1384,7 @@ namespace Microsoft.FSharp.Collections
             source.Compose { new SeqFactory<'T,'T>() with
                 member __.Create outOfBand pipeIdx next =
                     upcast {
-                        new ActivityChained<'T,'U,int>(next,(*count*)0) with
+                        new Transform<'T,'U,int>(next,(*count*)0) with
                             override self.ProcessNext (input:'T) : bool =
                                 if (*count*) self.State < truncateCount then
                                     self.State <- self.State + 1
@@ -1413,7 +1407,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "TryPick">]
         let inline tryPick f (source:ISeq<'T>)  =
             source.Fold (fun pipeIdx ->
-                upcast { new Folder<'T, Option<'U>> (None) with
+                upcast { new Folder<'T, Option<'U>,NoValue> (None,Unchecked.defaultof<NoValue>) with
                     override this.ProcessNext value =
                         match f value with
                         | (Some _) as some ->
@@ -1425,7 +1419,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "TryFind">]
         let inline tryFind f (source:ISeq<'T>)  =
             source.Fold (fun pipeIdx ->
-                upcast { new Folder<'T, Option<'T>> (None) with
+                upcast { new Folder<'T, Option<'T>,NoValue> (None,Unchecked.defaultof<NoValue>) with
                     override this.ProcessNext value =
                         if f value then
                             this.Result <- Some value
@@ -1463,7 +1457,7 @@ namespace Microsoft.FSharp.Collections
             source.Compose { new SeqFactory<'T,'T[]>() with
                 member __.Create outOfBand pipeIdx next =
                     upcast {
-                        new ActivityChained<'T,'U,Values<'T[],int,int>>
+                        new Transform<'T,'U,Values<'T[],int,int>>
                                     (   next
                                     ,   Values<'T[],int,int>
                                         ((*circularBuffer = _1 *) Array.zeroCreateUnchecked windowSize
@@ -1489,9 +1483,7 @@ namespace Microsoft.FSharp.Collections
                                         let window = Array.zeroCreateUnchecked windowSize
                                         Array.Copy((*circularBuffer*)self.State._1, (* idx *)self.State._2, window, 0, windowSize - (* idx *)self.State._2)
                                         Array.Copy((*circularBuffer*)self.State._1, 0, window, windowSize - (* idx *)self.State._2, (* idx *)self.State._2)
-                                        TailCall.avoid (next.ProcessNext window)
-
-                    }}
+                                        TailCall.avoid (next.ProcessNext window) }}
 
         [<CompiledName("Concat")>]
         let concat (sources:ISeq<#ISeq<'T>>) : ISeq<'T> =
@@ -1502,5 +1494,3 @@ namespace Microsoft.FSharp.Collections
             match source1 with
             | :? Enumerable.EnumerableBase<'T> as s -> s.Append source2
             | _ -> Upcast.seq (new Enumerable.AppendEnumerable<_>([source2; source1]))
-
-

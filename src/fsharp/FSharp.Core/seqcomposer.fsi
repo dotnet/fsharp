@@ -60,51 +60,41 @@ namespace Microsoft.FSharp.Collections
             abstract member ProcessNext : input:'T -> bool
 
         [<AbstractClass>]
-        type Activity<'T,'U,'State> =
+        type Transform<'T,'U,'State> =
             inherit Activity<'T,'U>
+            new : next:Activity * 'State -> Transform<'T,'U,'State>
             val mutable State : 'State
-            new : 'State -> Activity<'T,'U,'State>
-
-        [<AbstractClass>]
-        type ActivityChained<'T,'U,'State> =
-            inherit Activity<'T,'U,'State>
             val private Next : Activity
-            new : next:Activity * 'State -> ActivityChained<'T,'U,'State>
 
         [<AbstractClass>]
-        type ActivityChainedWithPostProcessing<'T,'U,'State> =
-            inherit ActivityChained<'T,'U,'State>
-
+        type TransformWithPostProcessing<'T,'U,'State> =
+            inherit Activity<'T,'U>
+            new : next:Activity * 'State -> TransformWithPostProcessing<'T,'U,'State>
+            val mutable State : 'State
+            val private Next : Activity
             abstract OnComplete : PipeIdx -> unit
             abstract OnDispose  : unit -> unit
-
-            new : next:Activity * 'State -> ActivityChainedWithPostProcessing<'T,'U,'State>
 
         /// <summary>Folder is a base class to assist with fold-like operations. It's intended usage
         /// is as a base class for an object expression that will be used from within
         /// the Fold function.</summary>
         [<AbstractClass>]
         type Folder<'T,'Result,'State> =
-            inherit Activity<'T,'T,'State>
+            inherit Activity<'T,'T>
             new : 'Result*'State -> Folder<'T,'Result,'State>
             interface IOutOfBand
-            val mutable HaltedIdx : int
+            val mutable State : 'State
             val mutable Result : 'Result
+            val mutable HaltedIdx : int
             member StopFurtherProcessing : PipeIdx -> unit
-
-        [<AbstractClass>]
-        type Folder<'T,'Result> =
-            inherit Folder<'T,'Result,NoValue>
-            new : 'Result -> Folder<'T,'Result>
 
         [<AbstractClass>]
         type FolderWithPostProcessing<'T,'Result,'State> =
             inherit Folder<'T,'Result,'State>
+            new : 'Result*'State -> FolderWithPostProcessing<'T,'Result,'State>
 
             abstract OnDispose : unit -> unit
             abstract OnComplete : PipeIdx -> unit
-
-            new : 'Result*'State -> FolderWithPostProcessing<'T,'Result,'State>
 
         [<AbstractClass>]
         type SeqFactory<'T,'U> =
