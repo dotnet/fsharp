@@ -864,6 +864,8 @@ module UntypedParseImpl =
                             | None -> Some (CompletionContext.Invalid) // A $ .B -> no completion list
                         | _ -> None 
                         
+                    member this.VisitBinding(defaultTraverse, synBinding) = defaultTraverse synBinding
+
                     member this.VisitAttribute(attr) = 
                         if rangeContainsPos attr.TypeName.Range pos then
                             Some CompletionContext.AttributeApplication
