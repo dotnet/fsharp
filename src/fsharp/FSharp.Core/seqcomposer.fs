@@ -1267,7 +1267,7 @@ namespace Microsoft.FSharp.Collections
 
 
         [<CompiledName "Skip">]
-        let skip (errorString:string) (skipCount:int) (source:ISeq<'T>) : ISeq<'T> =
+        let skip (skipCount:int) (source:ISeq<'T>) : ISeq<'T> =
             source.Compose { new SeqFactory<'T,'T>() with
                 override __.Create _ _ next =
                     upcast {
@@ -1284,7 +1284,7 @@ namespace Microsoft.FSharp.Collections
                                 if (*count*) self.State < skipCount then
                                     let x = skipCount - self.State
                                     invalidOpFmt "{0}\ntried to skip {1} {2} past the end of the seq"
-                                        [|errorString; x; (if x=1 then "element" else "elements")|]
+                                        [|SR.GetString SR.notEnoughElements; x; (if x=1 then "element" else "elements")|]
                             override self.OnDispose () = ()
 
                         interface ISkipping with
@@ -1333,7 +1333,7 @@ namespace Microsoft.FSharp.Collections
                         Unchecked.defaultof<_> (* return value unsed in Fold context *) })
 
         [<CompiledName "Take">]
-        let inline take (errorString:string) (takeCount:int) (source:ISeq<'T>) : ISeq<'T> =
+        let take (takeCount:int) (source:ISeq<'T>) : ISeq<'T> =
             source.Compose { new SeqFactory<'T,'T>() with
                 member __.Create outOfBand pipelineIdx next =
                     upcast {
@@ -1352,7 +1352,7 @@ namespace Microsoft.FSharp.Collections
                                 if terminatingIdx < pipelineIdx && this.State < takeCount then
                                     let x = takeCount - this.State
                                     invalidOpFmt "tried to take {0} {1} past the end of the seq"
-                                        [|errorString; x; (if x=1 then "element" else "elements")|]
+                                        [|SR.GetString SR.notEnoughElements; x; (if x=1 then "element" else "elements")|]
                             override this.OnDispose () = () }}
 
         [<CompiledName "TakeWhile">]
@@ -1369,7 +1369,7 @@ namespace Microsoft.FSharp.Collections
                     }}
 
         [<CompiledName "Tail">]
-        let inline tail errorString (source:ISeq<'T>) :ISeq<'T> =
+        let tail (source:ISeq<'T>) :ISeq<'T> =
             source.Compose { new SeqFactory<'T,'T>() with
                 member __.Create _ _ next =
                     upcast { new ActivityChainedWithPostProcessing<'T,'V,bool>(next,(*first*) true) with
@@ -1382,11 +1382,11 @@ namespace Microsoft.FSharp.Collections
 
                         override self.OnComplete _ =
                             if (*first*) self.State then
-                                invalidArg "source" errorString 
+                                invalidArg "source" (SR.GetString SR.notEnoughElements) 
                         override self.OnDispose () = () }}
 
         [<CompiledName "Truncate">]
-        let inline truncate (truncateCount:int) (source:ISeq<'T>) : ISeq<'T> =
+        let truncate (truncateCount:int) (source:ISeq<'T>) : ISeq<'T> =
             source.Compose { new SeqFactory<'T,'T>() with
                 member __.Create outOfBand pipeIdx next =
                     upcast {
@@ -1406,9 +1406,9 @@ namespace Microsoft.FSharp.Collections
             mapi (fun i x -> i,x) source
 
         [<CompiledName "TryItem">]
-        let tryItem (errorString:string) index (source:ISeq<'T>) =
+        let tryItem index (source:ISeq<'T>) =
             if index < 0 then None else
-            source |> skip errorString index |> tryHead
+            source |> skip index |> tryHead
 
         [<CompiledName "TryPick">]
         let tryPick f (source:ISeq<'T>)  =

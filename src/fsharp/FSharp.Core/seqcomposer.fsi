@@ -239,7 +239,7 @@ namespace Microsoft.FSharp.Collections
     val inline scan : folder:('State->'T->'State) -> initialState:'State -> source:ISeq<'T> -> ISeq<'State>
 
     [<CompiledName "Skip">]
-    val skip : errorString:string -> skipCount:int -> source:ISeq<'T> -> ISeq<'T>
+    val skip : skipCount:int -> source:ISeq<'T> -> ISeq<'T>
 
     [<CompiledName "SkipWhile">]
     val inline skipWhile : predicate:('T->bool) -> source:ISeq<'T> -> ISeq<'T>
@@ -255,22 +255,22 @@ namespace Microsoft.FSharp.Collections
         and  ^U:(static member (+) : ^U * ^U -> ^U)
 
     [<CompiledName "Take">]
-    val inline take : errorString:string -> takeCount:int -> source:ISeq<'T> -> ISeq<'T>
+    val take : takeCount:int -> source:ISeq<'T> -> ISeq<'T>
 
     [<CompiledName "TakeWhile">]
     val inline takeWhile : predicate:('T->bool) -> source:ISeq<'T> -> ISeq<'T>
 
     [<CompiledName "Tail">]
-    val inline tail : errorString:string -> source:ISeq<'T> -> ISeq<'T>
+    val tail : source:ISeq<'T> -> ISeq<'T>
 
     [<CompiledName "Truncate">]
-    val inline truncate : truncateCount:int -> source:ISeq<'T> -> ISeq<'T>
+    val truncate : truncateCount:int -> source:ISeq<'T> -> ISeq<'T>
 
     [<CompiledName "Indexed">]
     val indexed : source: ISeq<'a> -> ISeq<int * 'a>
 
     [<CompiledName "TryItem">]
-    val tryItem : errorString:string -> index:int -> source: ISeq<'T> -> 'T option
+    val tryItem : index:int -> source: ISeq<'T> -> 'T option
 
     [<CompiledName "TryPick">]
     val tryPick : f:('T -> 'U option) -> source: ISeq<'T> -> Option<'U>
