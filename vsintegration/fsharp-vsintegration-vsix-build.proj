@@ -6,8 +6,6 @@
 
   <ItemGroup>
     <VsixProjects Include="Vsix\VisualFSharpFull\VisualFSharpFull.csproj" />
-    <VsixProjects Include="Vsix\VisualFSharpDesktop\VisualFSharpDesktop.csproj" />
-    <VsixProjects Include="Vsix\VisualFSharpWeb\VisualFSharpWeb.csproj" />
     <VsixProjects Include="Vsix\VisualFSharpOpenSource\VisualFSharpOpenSource.csproj" />
   </ItemGroup>
 

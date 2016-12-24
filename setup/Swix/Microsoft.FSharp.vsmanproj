@@ -21,12 +21,6 @@
             <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Vsix.Full.Core.json" />
             <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Vsix.Full.Resources.%(SetupLanguages.LocaleCode).json" />
             
-            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Vsix.Desktop.Core.json" />
-            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Vsix.Desktop.Resources.%(SetupLanguages.LocaleCode).json" />
-            
-            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Vsix.Web.Core.json" />
-            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Vsix.Web.Resources.%(SetupLanguages.LocaleCode).json" />
-            
             <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Dependencies.json" />
         </ItemGroup>
     </Target>
