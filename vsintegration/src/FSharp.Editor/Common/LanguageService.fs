@@ -146,7 +146,7 @@ type internal ProjectInfoManager
             let loadTime,_ = singleFileProjectTable.[projectId]
             let fileName = document.FilePath
             let! cancellationToken = Async.CancellationToken
-            let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+            let! sourceText = document.GetTextAsync(cancellationToken)
             let! options = this.ComputeSingleFileOptions (fileName, loadTime, sourceText.ToString(), document.Project.Solution.Workspace)
             singleFileProjectTable.[projectId] <- (loadTime, options)
             return Some options

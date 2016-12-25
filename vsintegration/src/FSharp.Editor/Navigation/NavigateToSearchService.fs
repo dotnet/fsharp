@@ -183,7 +183,7 @@ type internal FSharpNavigateToSearchService
 
     let getNavigableItems(document: Document, options: FSharpProjectOptions, cancellationToken: CancellationToken) =
         async {
-            let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+            let! sourceText = document.GetTextAsync(cancellationToken)
             let! parseResults = checkerProvider.Checker.ParseFileInProject(document.FilePath, sourceText.ToString(), options)
             return 
                 match parseResults.ParseTree |> Option.map NavigateTo.getNavigableItems with
@@ -199,7 +199,7 @@ type internal FSharpNavigateToSearchService
 
     let getCachedIndexedNavigableItems(document: Document, options: FSharpProjectOptions, cancellationToken: CancellationToken) =
         async {
-            let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
+            let! textVersion = document.GetTextVersionAsync(cancellationToken)
             let textVersionHash = hash textVersion
             match itemsByDocumentId.TryGetValue document.Id with
             | true, (oldTextVersionHash, items) when oldTextVersionHash = textVersionHash ->

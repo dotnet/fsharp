@@ -131,7 +131,7 @@ type internal FSharpBlockStructureService(checker: FSharpChecker, projectInfoMan
         async {
             match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document) with 
             | Some options ->
-                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                let! sourceText = document.GetTextAsync(cancellationToken)
                 let! fileParseResults = checker.ParseFileInProject(document.FilePath, sourceText.ToString(), options)
                 match fileParseResults.ParseTree with
                 | Some parsedInput ->

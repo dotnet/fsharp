@@ -29,7 +29,7 @@ type internal FSharpBraceMatchingService
             async {
                 match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)  with 
                 | Some options ->
-                    let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                    let! sourceText = document.GetTextAsync(cancellationToken)
                     let! result = FSharpBraceMatchingService.GetBraceMatchingResult(checkerProvider.Checker, sourceText, document.Name, options, position)
                     return match result with
                            | None -> Nullable()

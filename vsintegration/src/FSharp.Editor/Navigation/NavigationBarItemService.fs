@@ -46,7 +46,7 @@ type internal FSharpNavigationBarItemService
             async {
                 match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)  with 
                 | Some options ->
-                    let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                    let! sourceText = document.GetTextAsync(cancellationToken)
                     let! fileParseResults = checkerProvider.Checker.ParseFileInProject(document.FilePath, sourceText.ToString(), options)
                     match fileParseResults.ParseTree with
                     | Some parsedInput ->

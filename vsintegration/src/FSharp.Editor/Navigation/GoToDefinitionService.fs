@@ -77,8 +77,8 @@ type internal FSharpGoToDefinitionService
             let results = List<INavigableItem>()
             match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)  with 
             | Some options ->
-                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
+                let! sourceText = document.GetTextAsync(cancellationToken)
+                let! textVersion = document.GetTextVersionAsync(cancellationToken)
                 let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
                 let! definition = FSharpGoToDefinitionService.FindDefinition(checkerProvider.Checker, document.Id, sourceText, document.FilePath, position, defines, options, textVersion.GetHashCode())
 
@@ -90,7 +90,7 @@ type internal FSharpGoToDefinitionService
                     if not refDocumentIds.IsEmpty then 
                         let refDocumentId = refDocumentIds.First()
                         let refDocument = document.Project.Solution.GetDocument(refDocumentId)
-                        let! refSourceText = refDocument.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                        let! refSourceText = refDocument.GetTextAsync(cancellationToken)
                         let refTextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(refSourceText, range)
                         results.Add(FSharpNavigableItem(refDocument, refTextSpan))
 

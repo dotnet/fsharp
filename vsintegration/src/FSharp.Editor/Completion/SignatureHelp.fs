@@ -246,8 +246,8 @@ type internal FSharpSignatureHelpProvider
               try
                 match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)  with 
                 | Some options ->
-                    let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                    let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
+                    let! sourceText = document.GetTextAsync(cancellationToken)
+                    let! textVersion = document.GetTextVersionAsync(cancellationToken)
 
                     let triggerTypedChar = 
                         if triggerInfo.TriggerCharacter.HasValue && triggerInfo.TriggerReason = SignatureHelpTriggerReason.TypeCharCommand then

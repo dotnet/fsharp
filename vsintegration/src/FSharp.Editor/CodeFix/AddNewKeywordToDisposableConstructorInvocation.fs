@@ -25,7 +25,7 @@ type internal FSharpAddNewKeywordCodeFixProvider() =
                     title,
                     (fun (cancellationToken: CancellationToken) ->
                         async {
-                            let! sourceText = context.Document.GetTextAsync() |> Async.AwaitTask
+                            let! sourceText = context.Document.GetTextAsync()
                             return context.Document.WithText(sourceText.WithChanges(TextChange(TextSpan(context.Span.Start, 0), "new ")))
                         } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)),
                     title), (context.Diagnostics |> Seq.filter (fun x -> this.FixableDiagnosticIds.Contains x.Id)).ToImmutableArray())

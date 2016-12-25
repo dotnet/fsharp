@@ -130,8 +130,8 @@ type internal FSharpCompletionProvider
         async {
             match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(context.Document)  with 
             | Some options ->
-                let! sourceText = context.Document.GetTextAsync(context.CancellationToken) |> Async.AwaitTask
-                let! textVersion = context.Document.GetTextVersionAsync(context.CancellationToken) |> Async.AwaitTask
+                let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
+                let! textVersion = context.Document.GetTextVersionAsync(context.CancellationToken)
                 let! results = FSharpCompletionProvider.ProvideCompletionsAsyncAux(checkerProvider.Checker, sourceText, context.Position, options, context.Document.FilePath, textVersion.GetHashCode())
                 context.AddItems(results)
             | None -> ()
