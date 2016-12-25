@@ -22,7 +22,7 @@ type internal FSharpPrefixUnusedValueWithUnderscoreCodeFixProvider() =
             title,
             (fun (cancellationToken: CancellationToken) ->
                 async {
-                    let! sourceText = context.Document.GetTextAsync() |> Async.AwaitTask
+                    let! sourceText = context.Document.GetTextAsync()
                     return context.Document.WithText(sourceText.WithChanges(textChange))
                 } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)),
             title)
