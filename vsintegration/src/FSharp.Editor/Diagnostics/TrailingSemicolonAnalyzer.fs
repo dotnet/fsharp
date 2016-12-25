@@ -13,11 +13,13 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Diagnostics
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
+type private LineHash = int
+
 [<DiagnosticAnalyzer(FSharpCommonConstants.FSharpLanguageName)>]
 type internal TrailingSemicolonDiagnosticAnalyzer() =
     inherit DocumentDiagnosticAnalyzer()
     
-    let cacheByDocumentId = ConditionalWeakTable<DocumentId, ResizeArray<(FSharpTokenizerLexState * Location option) option>>()
+    let cacheByDocumentId = ConditionalWeakTable<DocumentId, ResizeArray<(LineHash * Location option) option>>()
     
     let getLexer(document: Document) = 
         document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().Lexer
@@ -41,8 +43,8 @@ type internal TrailingSemicolonDiagnosticAnalyzer() =
                 let cache =
                     match cacheByDocumentId.TryGetValue document.Id with
                     | true, x -> 
-                        x.Capacity <- lineDatas.Capacity
                         if x.Count < lineDatas.Count then
+                            x.Capacity <- lineDatas.Capacity
                             for __ in 1..lineDatas.Count - x.Count do
                                 x.Add None
                         elif x.Count > lineDatas.Count then
@@ -55,13 +57,15 @@ type internal TrailingSemicolonDiagnosticAnalyzer() =
                         for __ in 1..lineDatas.Count do cache.Add None
                         cache
                 
+                //Logging.Logging.logInfof "LineDatas: %+A" (Seq.toList lineDatas)
+
                 let mutable calculatedLines = 0
 
                 let locations =
                     lineDatas
                     |> Seq.mapi (fun lineNumber lineData ->
                         match cache.[lineNumber] with
-                        | Some (oldLexState, oldLocation) when oldLexState = lineData.LexStateAtEndOfLine ->
+                        | Some (oldHashCode, oldLocation) when oldHashCode = lineData.HashCode ->
                             oldLocation
                         | _ ->
                             calculatedLines <- calculatedLines + 1
@@ -77,13 +81,12 @@ type internal TrailingSemicolonDiagnosticAnalyzer() =
                                     let location = Location.Create(document.FilePath, textSpan, linePositionSpan)
                                     Some location
                                 | _ -> None
-                            cache.[lineNumber] <- Some (lineData.LexStateAtEndOfLine, location)
+                            cache.[lineNumber] <- Some (lineData.HashCode, location)
                             location)
                      |> Seq.choose id
 
                 cacheByDocumentId.Remove(document.Id) |> ignore
                 cacheByDocumentId.Add(document.Id, cache)
-
 
                 let result =
                     (locations
@@ -96,7 +99,7 @@ type internal TrailingSemicolonDiagnosticAnalyzer() =
                          Diagnostic.Create(descriptor, location))
                     ).ToImmutableArray()
 
-                Logging.Logging.logInfof "TrailingSemicolonAnalyzer: %d/%d lines calculated" calculatedLines lineDatas.Count
+                //Logging.Logging.logInfof "TrailingSemicolonAnalyzer: %d/%d lines calculated" calculatedLines lineDatas.Count
 
                 return result
             | None -> return ImmutableArray<_>.Empty

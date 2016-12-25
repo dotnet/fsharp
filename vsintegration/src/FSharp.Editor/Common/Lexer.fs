@@ -61,7 +61,10 @@ type internal SourceLineData(lineStart: int, lexStateAtStartOfLine: FSharpTokeni
     member data.IsValid(textLine: TextLine) =
         data.LineStart = textLine.Start && 
         let lineContents = textLine.Text.ToString(textLine.Span)
-        data.HashCode = lineContents.GetHashCode() 
+        data.HashCode = lineContents.GetHashCode()
+    override __.ToString() = 
+        sprintf "SourceLineData(line: %d, startLexState: %d, endLexState: %d, hash: %d, token count: %d)"
+                lineStart lexStateAtStartOfLine lexStateAtEndOfLine hashCode tokens.Length
 
 type internal SourceTextData(approxLines: int) =
     let data = ResizeArray<SourceLineData option>(approxLines)
@@ -83,7 +86,7 @@ type internal SourceTextData(approxLines: int) =
     /// Go backwards to find the last cached scanned line that is valid.
     member x.GetLastValidCachedLine (startLine: int,  sourceLines: TextLineCollection) : int =
         let mutable i = startLine
-        while i > 0 && (match x.[i] with Some data -> not (data.IsValid(sourceLines.[i])) | None -> true)  do
+        while i >= 0 && (match x.[i] with Some data -> not (data.IsValid(sourceLines.[i])) | None -> true)  do
             i <- i - 1
         i
 
@@ -95,10 +98,11 @@ type internal Lexer() =
         let colorMap = Array.create textLine.Span.Length ClassificationTypeNames.Text
         let lineTokenizer = sourceTokenizer.CreateLineTokenizer(lineContents)
         let tokens = ResizeArray()
+        let previousLexState = ref lexState
             
-        let scanAndColorNextToken(lineTokenizer: FSharpLineTokenizer, lexState: Ref<FSharpTokenizerLexState>) : Option<FSharpTokenInfo> =
-            let tokenInfoOption, nextLexState = lineTokenizer.ScanToken(lexState.Value)
-            lexState.Value <- nextLexState
+        let scanAndColorNextToken(lineTokenizer: FSharpLineTokenizer) : Option<FSharpTokenInfo> =
+            let tokenInfoOption, nextLexState = lineTokenizer.ScanToken(previousLexState.Value)
+            previousLexState := nextLexState
             if tokenInfoOption.IsSome then
                 let classificationType = CommonHelpers.compilerTokenToRoslynToken(tokenInfoOption.Value.ColorClass)
                 for i = tokenInfoOption.Value.LeftColumn to tokenInfoOption.Value.RightColumn do
@@ -106,10 +110,10 @@ type internal Lexer() =
                 tokens.Add tokenInfoOption.Value
             tokenInfoOption
 
-        let previousLexState = ref lexState
-        let mutable tokenInfoOption = scanAndColorNextToken(lineTokenizer, previousLexState)
+        let mutable tokenInfoOption = scanAndColorNextToken(lineTokenizer)
+        
         while tokenInfoOption.IsSome do
-            tokenInfoOption <- scanAndColorNextToken(lineTokenizer, previousLexState)
+            tokenInfoOption <- scanAndColorNextToken(lineTokenizer)
 
         let mutable startPosition = 0
         let mutable endPosition = startPosition
@@ -254,7 +258,8 @@ type internal Lexer() =
             
         // Rescan the lines if necessary and report the information
         let result = ResizeArray()
-        let mutable lexState = if scanStartLine = 0 then 0L else sourceTextData.[scanStartLine].Value.LexStateAtEndOfLine
+        let mutable lexState = if scanStartLine = -1 then 0L else sourceTextData.[scanStartLine].Value.LexStateAtEndOfLine
+        let scanStartLine = max scanStartLine 0
 
         for i = scanStartLine to endLine do
             cancellationToken.ThrowIfCancellationRequested()
