@@ -105,7 +105,8 @@ type internal FSharpAddOpenCodeFixProvider
     (
         checkerProvider: FSharpCheckerProvider, 
         projectInfoManager: ProjectInfoManager,
-        assemblyContentProvider: AssemblyContentProvider
+        assemblyContentProvider: AssemblyContentProvider,
+        lexer: Lexer
     ) =
     inherit CodeFixProvider()
     let fixableDiagnosticIds = ["FS0039"]
@@ -180,7 +181,7 @@ type internal FSharpAddOpenCodeFixProvider
                 | Some parsedInput, FSharpCheckFileAnswer.Succeeded checkFileResults ->
                     let textLinePos = sourceText.Lines.GetLinePosition context.Span.Start
                     let defines = CompilerEnvironment.GetCompilationDefinesForEditing(context.Document.FilePath, options.OtherOptions |> Seq.toList)
-                    let symbol = CommonHelpers.getSymbolAtPosition(context.Document.Id, sourceText, context.Span.Start, context.Document.FilePath, defines, SymbolLookupKind.Fuzzy)
+                    let symbol = lexer.GetSymbolAtPosition(context.Document.Id, sourceText, context.Span.Start, context.Document.FilePath, defines, SymbolLookupKind.Fuzzy)
                     match symbol with
                     | Some symbol ->
                         let pos = Pos.fromZ textLinePos.Line textLinePos.Character

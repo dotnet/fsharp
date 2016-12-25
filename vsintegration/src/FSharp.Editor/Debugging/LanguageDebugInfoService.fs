@@ -21,7 +21,8 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 type internal FSharpLanguageDebugInfoService 
     [<ImportingConstructor>]
     (
-        projectInfoManager: ProjectInfoManager
+        projectInfoManager: ProjectInfoManager,
+        lexer: Lexer
     ) =
 
     static member GetDataTipInformation(sourceText: SourceText, position: int, tokens: List<ClassifiedSpan>): TextSpan option =
@@ -60,7 +61,7 @@ type internal FSharpLanguageDebugInfoService
                 let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 let textSpan = TextSpan.FromBounds(0, sourceText.Length)
-                let tokens = CommonHelpers.getColorizationData(document.Id, sourceText, textSpan, Some(document.Name), defines, cancellationToken)
+                let tokens = lexer.GetColorizationData(document.Id, sourceText, textSpan, Some(document.Name), defines, cancellationToken)
                 let result = 
                      match FSharpLanguageDebugInfoService.GetDataTipInformation(sourceText, position, tokens) with
                      | None -> 

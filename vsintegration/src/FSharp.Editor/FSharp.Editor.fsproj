@@ -35,6 +35,7 @@
     <Compile Include="Common\CommonConstants.fs" />
     <Compile Include="Common\CommonRoslynHelpers.fs" />
     <Compile Include="Common\CommonHelpers.fs" />
+    <Compile Include="Common\Lexer.fs" />
     <Compile Include="Common\Logging.fs" />
     <Compile Include="Common\ContentType.fs" />
     <Compile Include="Common\LanguageService.fs" />
@@ -47,7 +48,7 @@
     <Compile Include="Diagnostics\DocumentDiagnosticAnalyzer.fs" />
     <Compile Include="Diagnostics\ProjectDiagnosticAnalyzer.fs" />
     <Compile Include="Diagnostics\TrailingSemicolonAnalyzer.fs" />
-    <Compile Include="Completion\CompletionProvider.fs" /> 
+    <Compile Include="Completion\CompletionProvider.fs" />
     <Compile Include="Completion\SignatureHelp.fs" />
     <Compile Include="QuickInfo\QuickInfoProvider.fs" />
     <Compile Include="InlineRename\InlineRenameService.fs" />

@@ -45,15 +45,16 @@ type internal FSharpGoToDefinitionService
     (
         checkerProvider: FSharpCheckerProvider,
         projectInfoManager: ProjectInfoManager,
-        [<ImportMany>]presenters: IEnumerable<INavigableItemsPresenter>
+        [<ImportMany>]presenters: IEnumerable<INavigableItemsPresenter>,
+        lexer: Lexer
     ) =
 
-    static member FindDefinition(checker: FSharpChecker, documentKey: DocumentId, sourceText: SourceText, filePath: string, position: int, defines: string list, options: FSharpProjectOptions, textVersionHash: int) : Async<Option<range>> = 
+    static member FindDefinition(lexer: Lexer, checker: FSharpChecker, documentKey: DocumentId, sourceText: SourceText, filePath: string, position: int, defines: string list, options: FSharpProjectOptions, textVersionHash: int) : Async<Option<range>> = 
         async {
             let textLine = sourceText.Lines.GetLineFromPosition(position)
             let textLinePos = sourceText.Lines.GetLinePosition(position)
             let fcsTextLineNumber = textLinePos.Line + 1 // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
-            match CommonHelpers.getSymbolAtPosition(documentKey, sourceText, position, filePath, defines, SymbolLookupKind.Fuzzy) with 
+            match lexer.GetSymbolAtPosition(documentKey, sourceText, position, filePath, defines, SymbolLookupKind.Fuzzy) with 
             | Some symbol -> 
                 let! _parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
                 match checkFileAnswer with
@@ -80,7 +81,8 @@ type internal FSharpGoToDefinitionService
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
                 let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
-                let! definition = FSharpGoToDefinitionService.FindDefinition(checkerProvider.Checker, document.Id, sourceText, document.FilePath, position, defines, options, textVersion.GetHashCode())
+                let! definition = 
+                    FSharpGoToDefinitionService.FindDefinition(lexer, checkerProvider.Checker, document.Id, sourceText, document.FilePath, position, defines, options, textVersion.GetHashCode())
 
                 match definition with
                 | Some(range) ->

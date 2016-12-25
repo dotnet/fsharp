@@ -40,7 +40,8 @@ type internal FSharpCompletionProvider
         workspace: Workspace,
         serviceProvider: SVsServiceProvider,
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager
+        projectInfoManager: ProjectInfoManager,
+        lexer: Lexer
     ) =
     inherit CompletionProvider()
 
@@ -50,7 +51,7 @@ type internal FSharpCompletionProvider
     let xmlMemberIndexService = serviceProvider.GetService(typeof<IVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
 
-    static member ShouldTriggerCompletionAux(sourceText: SourceText, caretPosition: int, trigger: CompletionTriggerKind, getInfo: (unit -> DocumentId * string * string list)) =
+    static member ShouldTriggerCompletionAux(lexer: Lexer, sourceText: SourceText, caretPosition: int, trigger: CompletionTriggerKind, getInfo: (unit -> DocumentId * string * string list)) =
         // Skip if we are at the start of a document
         if caretPosition = 0 then
             false
@@ -77,7 +78,7 @@ type internal FSharpCompletionProvider
             let textLines = sourceText.Lines
             let triggerLine = textLines.GetLineFromPosition(triggerPosition)
             let classifiedSpanOption =
-                CommonHelpers.getColorizationData(documentId, sourceText, triggerLine.Span, Some(filePath), defines, CancellationToken.None)
+                lexer.GetColorizationData(documentId, sourceText, triggerLine.Span, Some(filePath), defines, CancellationToken.None)
                 |> Seq.tryFind(fun classifiedSpan -> classifiedSpan.TextSpan.Contains(triggerPosition))
 
             match classifiedSpanOption with
@@ -124,7 +125,7 @@ type internal FSharpCompletionProvider
             let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
             (documentId, document.FilePath, defines)
 
-        FSharpCompletionProvider.ShouldTriggerCompletionAux(sourceText, caretPosition, trigger.Kind, getInfo)
+        FSharpCompletionProvider.ShouldTriggerCompletionAux(lexer, sourceText, caretPosition, trigger.Kind, getInfo)
     
     override this.ProvideCompletionsAsync(context: Microsoft.CodeAnalysis.Completion.CompletionContext) =
         async {
@@ -154,11 +155,12 @@ type internal FSharpCompletionService
         workspace: Workspace,
         serviceProvider: SVsServiceProvider,
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager
+        projectInfoManager: ProjectInfoManager,
+        lexer: Lexer
     ) =
     inherit CompletionServiceWithProviders(workspace)
 
-    let builtInProviders = ImmutableArray.Create<CompletionProvider>(FSharpCompletionProvider(workspace, serviceProvider, checkerProvider, projectInfoManager))
+    let builtInProviders = ImmutableArray.Create<CompletionProvider>(FSharpCompletionProvider(workspace, serviceProvider, checkerProvider, projectInfoManager, lexer))
     let completionRules = CompletionRules.Default.WithDismissIfEmpty(true).WithDismissIfLastCharacterDeleted(true).WithDefaultEnterKeyRule(EnterKeyRule.Never)
 
     override this.Language = FSharpCommonConstants.FSharpLanguageName
@@ -174,10 +176,11 @@ type internal FSharpCompletionServiceFactory
     (
         serviceProvider: SVsServiceProvider,
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager
+        projectInfoManager: ProjectInfoManager,
+        lexer: Lexer
     ) =
     interface ILanguageServiceFactory with
         member this.CreateLanguageService(hostLanguageServices: HostLanguageServices) : ILanguageService =
-            upcast new FSharpCompletionService(hostLanguageServices.WorkspaceServices.Workspace, serviceProvider, checkerProvider, projectInfoManager)
+            upcast new FSharpCompletionService(hostLanguageServices.WorkspaceServices.Workspace, serviceProvider, checkerProvider, projectInfoManager, lexer)
 
 

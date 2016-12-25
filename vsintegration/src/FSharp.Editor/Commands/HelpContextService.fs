@@ -21,7 +21,8 @@ type internal FSharpHelpContextService
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager
+        projectInfoManager: ProjectInfoManager,
+        lexer: Lexer
     ) =
 
     static member GetHelpTerm(checker: FSharpChecker, sourceText : SourceText, fileName, options, span: TextSpan, tokens: List<ClassifiedSpan>, textVersion) = async {
@@ -112,7 +113,7 @@ type internal FSharpHelpContextService
                     let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
                     let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
                     let textLine = sourceText.Lines.GetLineFromPosition(textSpan.Start)
-                    let tokens = CommonHelpers.getColorizationData(document.Id, sourceText, textLine.Span, Some document.Name, defines, cancellationToken)
+                    let tokens = lexer.GetColorizationData(document.Id, sourceText, textLine.Span, Some document.Name, defines, cancellationToken)
                     let! keyword = FSharpHelpContextService.GetHelpTerm(checkerProvider.Checker, sourceText, document.FilePath, options, textSpan, tokens, textVersion.GetHashCode())
                     return defaultArg keyword String.Empty
                 | None -> return String.Empty
