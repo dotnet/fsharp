@@ -34,5 +34,5 @@ type internal RemoveTrailingSemicolonCodeFixProvider() =
     override __.RegisterCodeFixesAsync context : Task =
        async {
            let diagnostics = (context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id)).ToImmutableArray()
-           context.RegisterCodeFix(createCodeFix("Remove trailing semicolon", context, TextChange(context.Span, "")), diagnostics)
+           context.RegisterCodeFix(createCodeFix(SR.RemoveTrailingSemicolon.Value, context, TextChange(context.Span, "")), diagnostics)
         } |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

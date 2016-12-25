@@ -123,6 +123,9 @@
   <data name="PrefixValueNameWithUnderscore" xml:space="preserve">
     <value>Prefix value name with underscore</value>
   </data>
+  <data name="RemoveTrailingSemicolon" xml:space="preserve">
+    <value>Remove trailing semicolon</value>
+  </data>
   <data name="RenameValueToUnderscore" xml:space="preserve">
     <value>Rename value to '_'</value>
   </data>

@@ -16,3 +16,4 @@ module SR =
     let AddNewKeyword = lazy ( GetString "AddNewKeyword" )                                   // "Add 'new' keyword"
     let PrefixValueNameWithUnderscore = lazy ( GetString "PrefixValueNameWithUnderscore" )   // "Prefix value name with underscore"
     let RenameValueToUnderscore = lazy ( GetString "RenameValueToUnderscore" )               // "Rename value to '_'"
+    let RemoveTrailingSemicolon = lazy ( GetString "RemoveTrailingSemicolon" )               // "Remove trailing semicolon"
