@@ -46,7 +46,8 @@
     <Compile Include="Debugging\LanguageDebugInfoService.fs" />
     <Compile Include="Diagnostics\DocumentDiagnosticAnalyzer.fs" />
     <Compile Include="Diagnostics\ProjectDiagnosticAnalyzer.fs" />
-    <Compile Include="Completion\CompletionProvider.fs" />
+    <Compile Include="Diagnostics\TrailingSemicolonAnalyzer.fs" />
+    <Compile Include="Completion\CompletionProvider.fs" /> 
     <Compile Include="Completion\SignatureHelp.fs" />
     <Compile Include="QuickInfo\QuickInfoProvider.fs" />
     <Compile Include="InlineRename\InlineRenameService.fs" />
@@ -60,9 +61,10 @@
     <Compile Include="Structure\BlockStructureService.fs" />
     <Compile Include="Commands\HelpContextService.fs" />
     <Compile Include="Commands\FsiCommandService.fs" />
-    <Compile Include="CodeFix\AddNewKeywordToDisposableConstructorInvocation.fs" />
-    <Compile Include="CodeFix\AddOpenCodeFixProvider.fs" />
-    <Compile Include="CodeFix\PrefixUnusedValueWithUnderscore.fs" />
+    <Compile Include="CodeFixes\AddNewKeywordToDisposableConstructorInvocation.fs" />
+    <Compile Include="CodeFixes\AddOpen.fs" />
+    <Compile Include="CodeFixes\PrefixUnusedValueWithUnderscore.fs" />
+    <Compile Include="CodeFixes\RemoveTrailingSemicolon.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
