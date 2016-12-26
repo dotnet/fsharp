@@ -36,14 +36,13 @@ type internal FSharpImplementInterfaceCodeFixProvider
     let fixableDiagnosticIds = ["FS0366"]
     let checker = checkerProvider.Checker
 
-    let queryInterfaceState (pos: pos) (ast: Ast.ParsedInput) =
+    let queryInterfaceState (pos: pos) tokens (ast: Ast.ParsedInput) =
         async {
             let line = pos.Line
             let column = pos.Column
             match InterfaceStubGenerator.tryFindInterfaceDeclaration pos ast with
             | None -> return None
             | Some iface ->
-                let tokens = []
                 let endPosOfWidth =
                     tokens 
                     |> List.tryPick (fun (t: FSharpTokenInfo) ->
@@ -134,32 +133,42 @@ type internal FSharpImplementInterfaceCodeFixProvider
                 | Some parsedInput, FSharpCheckFileAnswer.Succeeded checkFileResults ->
                     let textLine = sourceText.Lines.GetLineFromPosition context.Span.End
                     let defines = CompilerEnvironment.GetCompilationDefinesForEditing(context.Document.FilePath, options.OtherOptions |> Seq.toList)
-                    // On long identifiers (e.g. System.IDisposable), we would like to inspect the last identifier
-                    let symbol = CommonHelpers.getSymbolAtPosition(context.Document.Id, sourceText, context.Span.End, context.Document.FilePath, defines, SymbolLookupKind.Fuzzy)
-                    match symbol with
-                    | Some symbol ->
-                        match symbol.Kind with
-                        | LexerSymbolKind.Ident ->
-                            let! interfaceState = queryInterfaceState symbol.Range.Start parsedInput
-                            match interfaceState with
-                            | Some state ->                                
-                                let fcsTextLineNumber = symbol.Range.StartLine
-                                let! options = context.Document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
-                                let tabSize = options.GetOption(FormattingOptions.TabSize, FSharpCommonConstants.FSharpLanguageName)
-                                let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.RightColumn, textLine.ToString(), [symbol.Text])
-                                symbolUse
-                                |> Option.bind (fun symbolUse ->
-                                    match symbolUse.Symbol with
-                                    | :? FSharpEntity as entity -> 
-                                        if InterfaceStubGenerator.isInterface entity && entity.DisplayName = symbol.Text then
-                                            Some (entity, symbolUse.DisplayContext)
-                                        else None
-                                    | _ -> None)
-                                |> Option.iter (fun (entity, displayContext) ->
-                                    let diagnostics = (context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id)).ToImmutableArray()
-                                    getSuggestions (context, sourceText, checkFileResults, state, displayContext, entity, tabSize)
-                                    |> List.iter (fun codeFix -> context.RegisterCodeFix(codeFix, diagnostics)))
-                            | None -> ()
+                    // Notice that context.Span doesn't return reliable ranges to find tokens at exact positions.
+                    // That's why we tokenize the line and try to find the last successive identifier token
+                    let tokens = CommonHelpers.tokenizeLine(context.Document.Id, sourceText, context.Span.End, context.Document.FilePath, defines)
+                    let rec tryFindIdentifierToken acc tokens =
+                       match tokens with
+                       | t :: remainingTokens when t.Tag = FSharpTokenTag.Identifier ->
+                           tryFindIdentifierToken (Some t) remainingTokens
+                       | t :: remainingTokens when t.Tag = FSharpTokenTag.DOT || Option.isNone acc ->
+                           tryFindIdentifierToken acc remainingTokens
+                       | _ :: _ 
+                       | [] -> acc
+                    match tryFindIdentifierToken None tokens with
+                    | Some token ->
+                        let interfacePos = Pos.fromZ textLine.LineNumber token.LeftColumn
+                        let! interfaceState = queryInterfaceState interfacePos tokens parsedInput
+                        let fixupColumn = textLine.Start + token.RightColumn
+                        let symbol = CommonHelpers.getSymbolAtPosition(context.Document.Id, sourceText, fixupColumn, context.Document.FilePath, defines, SymbolLookupKind.Fuzzy)
+                        match interfaceState, symbol with
+                        | Some state, Some symbol ->                                
+                            let fcsTextLineNumber = interfacePos.Line
+                            let lineContents = textLine.ToString()                            
+                            let! options = context.Document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
+                            let tabSize = options.GetOption(FormattingOptions.TabSize, FSharpCommonConstants.FSharpLanguageName)
+                            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.RightColumn, lineContents, [symbol.Text])
+                            symbolUse
+                            |> Option.bind (fun symbolUse ->
+                                match symbolUse.Symbol with
+                                | :? FSharpEntity as entity -> 
+                                    if InterfaceStubGenerator.isInterface entity then
+                                        Some (entity, symbolUse.DisplayContext)
+                                    else None
+                                | _ -> None)
+                            |> Option.iter (fun (entity, displayContext) ->
+                                let diagnostics = (context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id)).ToImmutableArray()
+                                getSuggestions (context, sourceText, checkFileResults, state, displayContext, entity, tabSize)
+                                |> List.iter (fun codeFix -> context.RegisterCodeFix(codeFix, diagnostics)))
                         | _ -> ()
                     | None -> ()
             | None -> ()
