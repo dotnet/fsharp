@@ -122,8 +122,8 @@ type internal FSharpImplementInterfaceCodeFixProvider
                             title)                
                     context.RegisterCodeFix(codeAction, diagnostics)
 
-                registerCodeFix SR.ImplementInterfaceVerbose.Value true
-                registerCodeFix SR.ImplementInterface.Value false
+                registerCodeFix SR.ImplementInterface.Value true
+                registerCodeFix SR.ImplementInterfaceWithoutTypeAnnotation.Value false
             else 
                 ()
             
