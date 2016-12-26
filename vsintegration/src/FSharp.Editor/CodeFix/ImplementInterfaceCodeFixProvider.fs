@@ -2,12 +2,14 @@
 
 namespace rec Microsoft.VisualStudio.FSharp.Editor
 
+open System
 open System.Composition
 open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.Formatting
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
@@ -34,11 +36,10 @@ type internal FSharpImplementInterfaceCodeFixProvider
     let fixableDiagnosticIds = ["FS0366"]
     let checker = checkerProvider.Checker
 
-    let queryInterfaceState (point: LinePosition) (ast: Ast.ParsedInput) =
+    let queryInterfaceState (pos: pos) (ast: Ast.ParsedInput) =
         async {
-            let line = point.Line
-            let column = point.Character
-            let pos = Pos.fromZ line column
+            let line = pos.Line
+            let column = pos.Column
             match InterfaceStubGenerator.tryFindInterfaceDeclaration pos ast with
             | None -> return None
             | Some iface ->
@@ -54,7 +55,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
         
     let getLineIdent (lineStr: string) =
         lineStr.Length - lineStr.TrimStart(' ').Length
-
+        
     let inferStartColumn indentSize state (sourceText: SourceText) = 
         match InterfaceStubGenerator.getMemberNameAndRanges state.InterfaceData with
         | (_, range) :: _ ->
@@ -75,15 +76,16 @@ type internal FSharpImplementInterfaceCodeFixProvider
                 // There is no reference point, we indent the content at the start column of the interface
                 |> Option.defaultValue iface.Range.StartColumn
 
-    let handleImplementInterface (sourceText: SourceText) state displayContext implementedMemberSignatures entity verboseMode =         
-        let indentSize = 4
+    let handleImplementInterface (sourceText: SourceText) state displayContext implementedMemberSignatures entity indentSize verboseMode = 
         let startColumn = inferStartColumn indentSize state sourceText
         let objectIdentifier = "this"
         let defaultBody = "raise (System.NotImplementedException())"
         let typeParams = state.InterfaceData.TypeParameters
-        let stub = InterfaceStubGenerator.formatInterface 
-                       startColumn indentSize typeParams objectIdentifier defaultBody
-                       displayContext implementedMemberSignatures entity verboseMode
+        let stub = 
+            let stub = InterfaceStubGenerator.formatInterface 
+                           startColumn indentSize typeParams objectIdentifier defaultBody
+                           displayContext implementedMemberSignatures entity verboseMode
+            stub.TrimEnd(Environment.NewLine.ToCharArray())
         match state.EndPosOfWith with
         | Some pos -> 
             let currentPos = sourceText.Lines.[pos.Line-1].Start + pos.Column
@@ -103,7 +105,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
                 } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)),
             title)
 
-    let getSuggestions (context, sourceText, state: InterfaceState, displayContext, entity, results: FSharpCheckFileResults) =
+    let getSuggestions (context, sourceText, results: FSharpCheckFileResults, state: InterfaceState, displayContext, entity, indentSize) =
         if InterfaceStubGenerator.hasNoInterfaceMember entity then []
         else
             let membersAndRanges = InterfaceStubGenerator.getMemberNameAndRanges state.InterfaceData
@@ -112,8 +114,8 @@ type internal FSharpImplementInterfaceCodeFixProvider
             // This comparison is a bit expensive
             if hasTypeCheckError && List.length membersAndRanges <> Seq.length interfaceMembers then
                 let implementedMemberSignatures = set []
-                [ createCodeFix("Implement Interface Explicitly", context, handleImplementInterface sourceText state displayContext implementedMemberSignatures entity false)
-                  createCodeFix("Implement Interface Explicitly (verbose)", context, handleImplementInterface sourceText state displayContext implementedMemberSignatures entity true) ]
+                [ createCodeFix("Implement Interface Explicitly", context, handleImplementInterface sourceText state displayContext implementedMemberSignatures entity indentSize false)
+                  createCodeFix("Implement Interface Explicitly (verbose)", context, handleImplementInterface sourceText state displayContext implementedMemberSignatures entity indentSize true) ]
             else []
             
     override __.FixableDiagnosticIds = fixableDiagnosticIds.ToImmutableArray()
@@ -122,15 +124,15 @@ type internal FSharpImplementInterfaceCodeFixProvider
         async {
             match projectInfoManager.TryGetOptionsForEditingDocumentOrProject context.Document with 
             | Some options ->
-                let! sourceText = context.Document.GetTextAsync(context.CancellationToken) |> Async.AwaitTask
-                let! textVersion = context.Document.GetTextVersionAsync(context.CancellationToken) |> Async.AwaitTask
+                let cancellationToken = context.CancellationToken
+                let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                let! textVersion = context.Document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
                 let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(context.Document.FilePath, textVersion.GetHashCode(), sourceText.ToString(), options)
                 match parseResults.ParseTree, checkFileAnswer with
                 | None, _
                 | _, FSharpCheckFileAnswer.Aborted -> ()
                 | Some parsedInput, FSharpCheckFileAnswer.Succeeded checkFileResults ->
-                    let textLinePos = sourceText.Lines.GetLinePosition context.Span.End
-                    let textLine = sourceText.Lines.[textLinePos.Line]
+                    let textLine = sourceText.Lines.GetLineFromPosition context.Span.End
                     let defines = CompilerEnvironment.GetCompilationDefinesForEditing(context.Document.FilePath, options.OtherOptions |> Seq.toList)
                     // On long identifiers (e.g. System.IDisposable), we would like to inspect the last identifier
                     let symbol = CommonHelpers.getSymbolAtPosition(context.Document.Id, sourceText, context.Span.End, context.Document.FilePath, defines, SymbolLookupKind.Fuzzy)
@@ -138,10 +140,12 @@ type internal FSharpImplementInterfaceCodeFixProvider
                     | Some symbol ->
                         match symbol.Kind with
                         | LexerSymbolKind.Ident ->
-                            let! interfaceState = queryInterfaceState textLinePos parsedInput
+                            let! interfaceState = queryInterfaceState symbol.Range.Start parsedInput
                             match interfaceState with
                             | Some state ->                                
-                                let fcsTextLineNumber = textLinePos.Line + 1
+                                let fcsTextLineNumber = symbol.Range.StartLine
+                                let! options = context.Document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
+                                let tabSize = options.GetOption(FormattingOptions.TabSize, FSharpCommonConstants.FSharpLanguageName)
                                 let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.RightColumn, textLine.ToString(), [symbol.Text])
                                 symbolUse
                                 |> Option.bind (fun symbolUse ->
@@ -153,7 +157,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
                                     | _ -> None)
                                 |> Option.iter (fun (entity, displayContext) ->
                                     let diagnostics = (context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id)).ToImmutableArray()
-                                    getSuggestions (context, sourceText, state, displayContext, entity, checkFileResults)
+                                    getSuggestions (context, sourceText, checkFileResults, state, displayContext, entity, tabSize)
                                     |> List.iter (fun codeFix -> context.RegisterCodeFix(codeFix, diagnostics)))
                             | None -> ()
                         | _ -> ()
