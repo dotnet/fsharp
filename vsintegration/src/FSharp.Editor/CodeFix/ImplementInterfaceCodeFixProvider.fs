@@ -38,7 +38,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
 
     let queryInterfaceState (pos: pos) tokens (ast: Ast.ParsedInput) =
         async {
-            let line = pos.Line
+            let line = pos.Line - 1
             let column = pos.Column
             match InterfaceStubGenerator.tryFindInterfaceDeclaration pos ast with
             | None -> return None
@@ -93,29 +93,39 @@ type internal FSharpImplementInterfaceCodeFixProvider
             let range = state.InterfaceData.Range
             let currentPos = sourceText.Lines.[range.EndLine-1].Start + range.EndColumn
             TextChange(TextSpan(currentPos, 0), " with" + stub)
-
-    let createCodeFix (title: string, context: CodeFixContext, textChange: TextChange) =
-        CodeAction.Create(
-            title,
-            (fun (cancellationToken: CancellationToken) ->
-                async {
-                    let! sourceText = context.Document.GetTextAsync() |> Async.AwaitTask
-                    return context.Document.WithText(sourceText.WithChanges(textChange))
-                } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)),
-            title)
-
-    let getSuggestions (context, sourceText, results: FSharpCheckFileResults, state: InterfaceState, displayContext, entity, indentSize) =
-        if InterfaceStubGenerator.hasNoInterfaceMember entity then []
+            
+    let getSuggestions (context: CodeFixContext, results: FSharpCheckFileResults, state: InterfaceState, displayContext, entity, indentSize) =
+        if InterfaceStubGenerator.hasNoInterfaceMember entity then 
+            ()
         else
             let membersAndRanges = InterfaceStubGenerator.getMemberNameAndRanges state.InterfaceData
             let interfaceMembers = InterfaceStubGenerator.getInterfaceMembers entity
             let hasTypeCheckError = results.Errors |> Array.exists (fun e -> e.Severity = FSharpErrorSeverity.Error)                
             // This comparison is a bit expensive
-            if hasTypeCheckError && List.length membersAndRanges <> Seq.length interfaceMembers then
-                let implementedMemberSignatures = set []
-                [ createCodeFix("Implement Interface Explicitly", context, handleImplementInterface sourceText state displayContext implementedMemberSignatures entity indentSize false)
-                  createCodeFix("Implement Interface Explicitly (verbose)", context, handleImplementInterface sourceText state displayContext implementedMemberSignatures entity indentSize true) ]
-            else []
+            if hasTypeCheckError && List.length membersAndRanges <> Seq.length interfaceMembers then    
+                let diagnostics = (context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id)).ToImmutableArray()            
+                let registerCodeFix title verboseMode =
+                    let codeAction =
+                        CodeAction.Create(
+                            title,
+                            (fun (cancellationToken: CancellationToken) ->
+                                async {
+                                    let! sourceText = context.Document.GetTextAsync() |> Async.AwaitTask
+                                    let getMemberByLocation(name, range: range) =
+                                        let lineStr = sourceText.Lines.[range.EndLine-1].ToString()
+                                        results.GetSymbolUseAtLocation(range.EndLine, range.EndColumn, lineStr, [name])
+                                    let! implementedMemberSignatures =
+                                        InterfaceStubGenerator.getImplementedMemberSignatures getMemberByLocation displayContext state.InterfaceData    
+                                    let textChange = handleImplementInterface sourceText state displayContext implementedMemberSignatures entity indentSize verboseMode
+                                    return context.Document.WithText(sourceText.WithChanges textChange)
+                                } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)),
+                            title)                
+                    context.RegisterCodeFix(codeAction, diagnostics)
+
+                registerCodeFix "Implement Interface Explicitly" false
+                registerCodeFix "Implement Interface Explicitly (verbose)" true
+            else 
+                ()
             
     override __.FixableDiagnosticIds = fixableDiagnosticIds.ToImmutableArray()
 
@@ -131,11 +141,11 @@ type internal FSharpImplementInterfaceCodeFixProvider
                 | None, _
                 | _, FSharpCheckFileAnswer.Aborted -> ()
                 | Some parsedInput, FSharpCheckFileAnswer.Succeeded checkFileResults ->
-                    let textLine = sourceText.Lines.GetLineFromPosition context.Span.End
+                    let textLine = sourceText.Lines.GetLineFromPosition context.Span.Start
                     let defines = CompilerEnvironment.GetCompilationDefinesForEditing(context.Document.FilePath, options.OtherOptions |> Seq.toList)
                     // Notice that context.Span doesn't return reliable ranges to find tokens at exact positions.
                     // That's why we tokenize the line and try to find the last successive identifier token
-                    let tokens = CommonHelpers.tokenizeLine(context.Document.Id, sourceText, context.Span.End, context.Document.FilePath, defines)
+                    let tokens = CommonHelpers.tokenizeLine(context.Document.Id, sourceText, context.Span.Start, context.Document.FilePath, defines)
                     let rec tryFindIdentifierToken acc tokens =
                        match tokens with
                        | t :: remainingTokens when t.Tag = FSharpTokenTag.Identifier ->
@@ -146,13 +156,13 @@ type internal FSharpImplementInterfaceCodeFixProvider
                        | [] -> acc
                     match tryFindIdentifierToken None tokens with
                     | Some token ->
-                        let interfacePos = Pos.fromZ textLine.LineNumber token.LeftColumn
-                        let! interfaceState = queryInterfaceState interfacePos tokens parsedInput
-                        let fixupColumn = textLine.Start + token.RightColumn
-                        let symbol = CommonHelpers.getSymbolAtPosition(context.Document.Id, sourceText, fixupColumn, context.Document.FilePath, defines, SymbolLookupKind.Fuzzy)
+                        let fixupPosition = textLine.Start + token.RightColumn
+                        let interfacePos = Pos.fromZ textLine.LineNumber token.RightColumn
+                        let! interfaceState = queryInterfaceState interfacePos tokens parsedInput                        
+                        let symbol = CommonHelpers.getSymbolAtPosition(context.Document.Id, sourceText, fixupPosition, context.Document.FilePath, defines, SymbolLookupKind.Fuzzy)
                         match interfaceState, symbol with
                         | Some state, Some symbol ->                                
-                            let fcsTextLineNumber = interfacePos.Line
+                            let fcsTextLineNumber = textLine.LineNumber + 1
                             let lineContents = textLine.ToString()                            
                             let! options = context.Document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
                             let tabSize = options.GetOption(FormattingOptions.TabSize, FSharpCommonConstants.FSharpLanguageName)
@@ -165,10 +175,8 @@ type internal FSharpImplementInterfaceCodeFixProvider
                                         Some (entity, symbolUse.DisplayContext)
                                     else None
                                 | _ -> None)
-                            |> Option.iter (fun (entity, displayContext) ->
-                                let diagnostics = (context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id)).ToImmutableArray()
-                                getSuggestions (context, sourceText, checkFileResults, state, displayContext, entity, tabSize)
-                                |> List.iter (fun codeFix -> context.RegisterCodeFix(codeFix, diagnostics)))
+                            |> Option.iter (fun (entity, displayContext) ->                                
+                                getSuggestions (context, checkFileResults, state, displayContext, entity, tabSize))
                         | _ -> ()
                     | None -> ()
             | None -> ()
