@@ -235,35 +235,39 @@ namespace Microsoft.FSharp.Collections
                             | _ -> ()
                         iterate state
 
-            let makeIsSkipping (consumer:Activity<'T,'U>) =
-                match box consumer with
-                | :? ISkipping as skip -> skip.Skipping
-                | _ -> fun () -> false
-
             [<Struct;NoComparison;NoEquality>]
             type init<'T> (f:int->'T, terminatingIdx:int) =
                 interface IIterate<'T> with
                     member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Activity<'T,'U>) =
-                        let terminatingIdx =terminatingIdx
+                        let terminatingIdx = terminatingIdx
                         let f = f
 
-                        let isSkipping = makeIsSkipping consumer
-                        let rec skip idx =
-                            if idx >= terminatingIdx || outOfBand.HaltedIdx <> 0 then
-                                terminatingIdx
-                            elif isSkipping () then
-                                skip (idx+1)
-                            else
-                                idx
+                        let firstIdx = 
+                            match box consumer with
+                            | :? ISkipping as skipping ->
+                                let rec skip idx =
+                                    if idx = terminatingIdx || outOfBand.HaltedIdx <> 0 then
+                                        terminatingIdx
+                                    elif skipping.Skipping () then
+                                        skip (idx+1)
+                                    else
+                                        idx
+                                skip -1
+                            | _ -> -1
 
                         let rec iterate idx =
                             if idx < terminatingIdx then
-                                consumer.ProcessNext (f idx) |> ignore
+                                consumer.ProcessNext (f (idx+1)) |> ignore
                                 if outOfBand.HaltedIdx = 0 then
                                     iterate (idx+1)
+                                else
+                                    idx
+                            else
+                                idx
 
-                        skip 0
-                        |> iterate
+                        let finalIdx = iterate firstIdx
+                        if outOfBand.HaltedIdx = 0 && finalIdx = System.Int32.MaxValue then
+                            raise <| System.InvalidOperationException (SR.GetString(SR.enumerationPastIntMaxValue))
 
             let execute (f:PipeIdx->Folder<'U,'Result,'State>) (current:TransformFactory<'T,'U>) pipeIdx (executeOn:#IIterate<'T>) =
                 let mutable stopTailCall = ()
@@ -655,7 +659,9 @@ namespace Microsoft.FSharp.Collections
                 inherit Enumerable.EnumeratorBase<'U>(result, seqComponent)
 
                 let isSkipping =
-                    Fold.makeIsSkipping seqComponent
+                    match box seqComponent with
+                    | :? ISkipping as skip -> skip.Skipping
+                    | _ -> fun () -> false
 
                 let terminatingIdx =
                     getTerminatingIdx count
@@ -664,7 +670,7 @@ namespace Microsoft.FSharp.Collections
                 let mutable idx = -1
 
                 let rec moveNext () =
-                    if (result.HaltedIdx = 0) && idx < terminatingIdx then
+                    if result.HaltedIdx = 0 && idx < terminatingIdx then
                         idx <- idx + 1
 
                         if maybeSkipping then
@@ -678,7 +684,7 @@ namespace Microsoft.FSharp.Collections
                             true
                         else
                             moveNext ()
-                    elif (result.HaltedIdx = 0) && idx = System.Int32.MaxValue then
+                    elif result.HaltedIdx = 0 && idx = System.Int32.MaxValue then
                         raise <| System.InvalidOperationException (SR.GetString(SR.enumerationPastIntMaxValue))
                     else
                         result.SeqState <- SeqProcessNextStates.Finished
@@ -1259,8 +1265,9 @@ namespace Microsoft.FSharp.Collections
         let skip (skipCount:int) (source:ISeq<'T>) : ISeq<'T> =
             source.PushTransform { new TransformFactory<'T,'T>() with
                 override __.Compose _ _ next =
-                    upcast {
-                        new TransformWithPostProcessing<'T,'U,int>(next,(*count*)0) with
+                    let mutable self = Unchecked.defaultof<TransformWithPostProcessing<'T,'U,int>>
+                    let skipper = 
+                        { new TransformWithPostProcessing<'T,'U,int>(next,(*count*)0) with
                             override self.ProcessNext (input:'T) : bool =
                                 if (*count*) self.State < skipCount then
                                     self.State <- self.State + 1
@@ -1276,13 +1283,14 @@ namespace Microsoft.FSharp.Collections
                             override self.OnDispose () = ()
 
                         interface ISkipping with
-                            member self.Skipping () =
-                                let self = self :?> TransformWithPostProcessing<'T,'U,int>
+                            member __.Skipping () =
                                 if (*count*) self.State < skipCount then
                                     self.State <- self.State + 1
                                     true
                                 else
-                                    false }}
+                                    false }
+                    self <- skipper
+                    upcast self }
 
         [<CompiledName "SkipWhile">]
         let inline skipWhile (predicate:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
