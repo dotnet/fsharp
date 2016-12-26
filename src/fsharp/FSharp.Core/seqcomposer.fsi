@@ -94,13 +94,13 @@ namespace Microsoft.FSharp.Collections
             abstract OnComplete : PipeIdx -> unit
 
         [<AbstractClass>]
-        type SeqFactory<'T,'U> =
-            new : unit -> SeqFactory<'T,'U>
-            abstract member Create : IOutOfBand -> PipeIdx -> Activity<'U,'V> -> Activity<'T,'V>
+        type TransformFactory<'T,'U> =
+            new : unit -> TransformFactory<'T,'U>
+            abstract member Compose : IOutOfBand -> PipeIdx -> Activity<'U,'V> -> Activity<'T,'V>
 
         type ISeq<'T> =
             inherit System.Collections.Generic.IEnumerable<'T>
-            abstract member Compose : SeqFactory<'T,'U> -> ISeq<'U>
+            abstract member PushTransform : TransformFactory<'T,'U> -> ISeq<'U>
             abstract member Fold<'Result,'State> : f:(PipeIdx->Folder<'T,'Result,'State>) -> 'Result
 
     open Core
@@ -281,8 +281,8 @@ namespace Microsoft.FSharp.Collections
     val append: source1:ISeq<'T> -> source2:ISeq<'T> -> ISeq<'T>
 
     module internal Array = begin
-        val createDelayed   : (unit -> 'T array) -> SeqFactory<'T,'U> ->  ISeq<'U>
-        val create          : 'T array -> SeqFactory<'T,'U> ->  ISeq<'U>
+        val createDelayed   : (unit -> 'T array) -> TransformFactory<'T,'U> ->  ISeq<'U>
+        val create          : 'T array -> TransformFactory<'T,'U> ->  ISeq<'U>
         val createDelayedId : (unit -> 'T array) ->  ISeq<'T>
         val createId        : 'T array ->  ISeq<'T>
     end

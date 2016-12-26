@@ -50,8 +50,6 @@ namespace Microsoft.FSharp.Collections
             type Activity<'T,'U> () =
                 inherit Activity()
                 abstract ProcessNext : input:'T -> bool
-                override this.ChainComplete (_,_) = ()
-                override this.ChainDispose _ = ()
 
             [<AbstractClass>]
             type Transform<'T,'U,'State> =
@@ -89,10 +87,10 @@ namespace Microsoft.FSharp.Collections
             type Folder<'T,'Result,'State> =
                 inherit Activity<'T,'T>
 
-                val mutable State : 'State
                 val mutable Result : 'Result
-                val mutable HaltedIdx : int
+                val mutable State : 'State
 
+                val mutable HaltedIdx : int
                 member this.StopFurtherProcessing pipeIdx = this.HaltedIdx <- pipeIdx
                 interface IOutOfBand with
                     member this.StopFurtherProcessing pipeIdx = this.StopFurtherProcessing pipeIdx
@@ -103,6 +101,9 @@ namespace Microsoft.FSharp.Collections
                     HaltedIdx = 0
                     Result = initalResult
                 }
+
+                override this.ChainComplete (_,_) = ()
+                override this.ChainDispose _ = ()
 
             [<AbstractClass>]
             type FolderWithPostProcessing<'T,'Result,'State>(initResult,initState) =
@@ -117,12 +118,12 @@ namespace Microsoft.FSharp.Collections
                     this.OnDispose ()
 
             [<AbstractClass>]
-            type SeqFactory<'T,'U> () =
-                abstract Create<'V> : IOutOfBand -> PipeIdx -> Activity<'U,'V> -> Activity<'T,'V>
+            type TransformFactory<'T,'U> () =
+                abstract Compose<'V> : IOutOfBand -> PipeIdx -> Activity<'U,'V> -> Activity<'T,'V>
 
             type ISeq<'T> =
                 inherit IEnumerable<'T>
-                abstract member Compose<'U> : (SeqFactory<'T,'U>) -> ISeq<'U>
+                abstract member PushTransform<'U> : TransformFactory<'T,'U> -> ISeq<'U>
                 abstract member Fold<'Result,'State> : f:(PipeIdx->Folder<'T,'Result,'State>) -> 'Result
 
         open Core
@@ -142,22 +143,22 @@ namespace Microsoft.FSharp.Collections
             let inline enumeratorNonGeneric (t:#IEnumerator) : IEnumerator = (# "" t : IEnumerator #)
             let inline outOfBand (t:#IOutOfBand) : IOutOfBand = (# "" t : IOutOfBand #)
 
-        let createFold (factory:SeqFactory<_,_>) (folder:Folder<_,_,_>) pipeIdx  =
-            factory.Create (Upcast.outOfBand folder) pipeIdx folder
+        let createFold (factory:TransformFactory<_,_>) (folder:Folder<_,_,_>) pipeIdx  =
+            factory.Compose (Upcast.outOfBand folder) pipeIdx folder
 
-        type ComposedFactory<'T,'U,'V> private (first:SeqFactory<'T,'U>, second:SeqFactory<'U,'V>) =
-            inherit SeqFactory<'T,'V>()
+        type ComposedFactory<'T,'U,'V> private (first:TransformFactory<'T,'U>, second:TransformFactory<'U,'V>) =
+            inherit TransformFactory<'T,'V>()
 
-            override this.Create<'W> (outOfBand:IOutOfBand) (pipeIdx:PipeIdx) (next:Activity<'V,'W>) : Activity<'T,'W> =
-                first.Create outOfBand (pipeIdx-1) (second.Create outOfBand pipeIdx next)
+            override this.Compose<'W> (outOfBand:IOutOfBand) (pipeIdx:PipeIdx) (next:Activity<'V,'W>) : Activity<'T,'W> =
+                first.Compose outOfBand (pipeIdx-1) (second.Compose outOfBand pipeIdx next)
 
-            static member Combine (first:SeqFactory<'T,'U>) (second:SeqFactory<'U,'V>) : SeqFactory<'T,'V> =
+            static member Combine (first:TransformFactory<'T,'U>) (second:TransformFactory<'U,'V>) : TransformFactory<'T,'V> =
                 upcast ComposedFactory(first, second)
 
         and IdentityFactory<'T> () =
-            inherit SeqFactory<'T,'T> ()
-            static let singleton : SeqFactory<'T,'T> = upcast (IdentityFactory<'T>())
-            override __.Create<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Activity<'T,'V>) : Activity<'T,'V> = next
+            inherit TransformFactory<'T,'T> ()
+            static let singleton : TransformFactory<'T,'T> = upcast (IdentityFactory<'T>())
+            override __.Compose<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Activity<'T,'V>) : Activity<'T,'V> = next
             static member Instance = singleton
 
         and ISkipping =
@@ -264,7 +265,7 @@ namespace Microsoft.FSharp.Collections
                         skip 0
                         |> iterate
 
-            let execute (f:PipeIdx->Folder<'U,'Result,'State>) (current:SeqFactory<'T,'U>) pipeIdx (executeOn:#IIterate<'T>) =
+            let execute (f:PipeIdx->Folder<'U,'Result,'State>) (current:TransformFactory<'T,'U>) pipeIdx (executeOn:#IIterate<'T>) =
                 let mutable stopTailCall = ()
                 let result = f (pipeIdx+1)
                 let consumer = createFold current result pipeIdx
@@ -340,7 +341,7 @@ namespace Microsoft.FSharp.Collections
                     member this.GetEnumerator () : IEnumerator<'T> = derivedClassShouldImplement ()
 
                 interface ISeq<'T> with
-                    member __.Compose _ = derivedClassShouldImplement ()
+                    member __.PushTransform _ = derivedClassShouldImplement ()
                     member __.Fold _ = derivedClassShouldImplement ()
 
             and Enumerator<'T,'U>(source:IEnumerator<'T>, seqComponent:Activity<'T,'U>, result:Result<'U>) =
@@ -371,7 +372,7 @@ namespace Microsoft.FSharp.Collections
                             let mutable stopTailCall = ()
                             (seqComponent).ChainDispose (&stopTailCall)
 
-            and Enumerable<'T,'U>(enumerable:IEnumerable<'T>, current:SeqFactory<'T,'U>, pipeIdx:PipeIdx) =
+            and Enumerable<'T,'U>(enumerable:IEnumerable<'T>, current:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
                 inherit EnumerableBase<'U>()
 
                 interface IEnumerable<'U> with
@@ -380,7 +381,7 @@ namespace Microsoft.FSharp.Collections
                         Upcast.enumerator (new Enumerator<'T,'U>(enumerable.GetEnumerator(), createFold current result pipeIdx, result))
 
                 interface ISeq<'U> with
-                    member __.Compose (next:SeqFactory<'U,'V>) : ISeq<'V> =
+                    member __.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
                         Upcast.seq (new Enumerable<'T,'V>(enumerable, ComposedFactory.Combine current next, pipeIdx+1))
 
                     member this.Fold<'Result,'State> (f:PipeIdx->Folder<'U,'Result,'State>) =
@@ -393,7 +394,7 @@ namespace Microsoft.FSharp.Collections
                     member this.GetEnumerator () = enumerable.GetEnumerator ()
 
                 interface ISeq<'T> with
-                    member __.Compose (next:SeqFactory<'T,'U>) : ISeq<'U> =
+                    member __.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
                         Upcast.seq (new Enumerable<'T,'U>(enumerable, next, 1))
 
                     member this.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
@@ -448,7 +449,7 @@ namespace Microsoft.FSharp.Collections
                     Upcast.seq (AppendEnumerable (source::sources))
 
                 interface ISeq<'T> with
-                    member this.Compose (next:SeqFactory<'T,'U>) : ISeq<'U> =
+                    member this.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
                         Upcast.seq (Enumerable<'T,'V>(this, next, 1))
 
                     member this.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
@@ -462,7 +463,7 @@ namespace Microsoft.FSharp.Collections
                         Upcast.enumerator (new ConcatEnumerator<_,_> (sources))
 
                 interface ISeq<'T> with
-                    member this.Compose (next:SeqFactory<'T,'U>) : ISeq<'U> =
+                    member this.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
                         Upcast.seq (Enumerable<'T,'V>(this, next, 1))
 
                     member this.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
@@ -485,7 +486,7 @@ namespace Microsoft.FSharp.Collections
                     Upcast.seq (Enumerable.EnumerableThin<'T> source)
 
                 interface ISeq<'T> with
-                    member this.Compose (next:SeqFactory<'T,'U>) : ISeq<'U> =
+                    member this.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
                         Upcast.seq (Enumerable.Enumerable<'T,'V>(this, next, 1))
 
                     member this.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
@@ -524,7 +525,7 @@ namespace Microsoft.FSharp.Collections
                         initMoveNext ()
                         moveNext ()
 
-            type Enumerable<'T,'U>(delayedArray:unit->array<'T>, current:SeqFactory<'T,'U>, pipeIdx:PipeIdx) =
+            type Enumerable<'T,'U>(delayedArray:unit->array<'T>, current:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
                 inherit Enumerable.EnumerableBase<'U>()
 
                 interface IEnumerable<'U> with
@@ -533,16 +534,16 @@ namespace Microsoft.FSharp.Collections
                         Upcast.enumerator (new Enumerator<'T,'U>(delayedArray, createFold current result pipeIdx, result))
 
                 interface ISeq<'U> with
-                    member __.Compose (next:SeqFactory<'U,'V>) : ISeq<'V> =
+                    member __.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
                         Upcast.seq (new Enumerable<'T,'V>(delayedArray, ComposedFactory.Combine current next, 1))
 
                     member this.Fold<'Result,'State> (f:PipeIdx->Folder<'U,'Result,'State>) =
                         Fold.execute f current pipeIdx (Fold.Array (delayedArray ()))
 
-            let createDelayed (delayedArray:unit->array<'T>) (current:SeqFactory<'T,'U>) =
+            let createDelayed (delayedArray:unit->array<'T>) (current:TransformFactory<'T,'U>) =
                 Upcast.seq (Enumerable(delayedArray, current, 1))
 
-            let create (array:array<'T>) (current:SeqFactory<'T,'U>) =
+            let create (array:array<'T>) (current:TransformFactory<'T,'U>) =
                 createDelayed (fun () -> array) current
 
             let createDelayedId (delayedArray:unit -> array<'T>) =
@@ -576,7 +577,7 @@ namespace Microsoft.FSharp.Collections
                         result.SeqState <- SeqProcessNextStates.InProcess
                         moveNext list
 
-            type Enumerable<'T,'U>(alist:list<'T>, current:SeqFactory<'T,'U>, pipeIdx:PipeIdx) =
+            type Enumerable<'T,'U>(alist:list<'T>, current:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
                 inherit Enumerable.EnumerableBase<'U>()
 
                 interface IEnumerable<'U> with
@@ -585,7 +586,7 @@ namespace Microsoft.FSharp.Collections
                         Upcast.enumerator (new Enumerator<'T,'U>(alist, createFold current result pipeIdx, result))
 
                 interface ISeq<'U> with
-                    member __.Compose (next:SeqFactory<'U,'V>) : ISeq<'V> =
+                    member __.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
                         Upcast.seq (new Enumerable<'T,'V>(alist, ComposedFactory.Combine current next, pipeIdx+1))
 
                     member this.Fold<'Result,'State> (f:PipeIdx->Folder<'U,'Result,'State>) =
@@ -615,7 +616,7 @@ namespace Microsoft.FSharp.Collections
                         result.SeqState <- SeqProcessNextStates.InProcess
                         moveNext ()
 
-            type Enumerable<'T,'U,'GeneratorState>(generator:'GeneratorState->option<'T*'GeneratorState>, state:'GeneratorState, current:SeqFactory<'T,'U>, pipeIdx:PipeIdx) =
+            type Enumerable<'T,'U,'GeneratorState>(generator:'GeneratorState->option<'T*'GeneratorState>, state:'GeneratorState, current:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
                 inherit Enumerable.EnumerableBase<'U>()
 
                 interface IEnumerable<'U> with
@@ -624,7 +625,7 @@ namespace Microsoft.FSharp.Collections
                         Upcast.enumerator (new Enumerator<'T,'U,'GeneratorState>(generator, state, createFold current result pipeIdx, result))
 
                 interface ISeq<'U> with
-                    member this.Compose (next:SeqFactory<'U,'V>) : ISeq<'V> =
+                    member this.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
                         Upcast.seq (new Enumerable<'T,'V,'GeneratorState>(generator, state, ComposedFactory.Combine current next, pipeIdx+1))
 
                     member this.Fold<'Result,'State> (f:PipeIdx->Folder<'U,'Result,'State>) =
@@ -690,7 +691,7 @@ namespace Microsoft.FSharp.Collections
                         result.SeqState <- SeqProcessNextStates.InProcess
                         moveNext ()
 
-            type Enumerable<'T,'U>(count:Nullable<int>, f:int->'T, current:SeqFactory<'T,'U>, pipeIdx:PipeIdx) =
+            type Enumerable<'T,'U>(count:Nullable<int>, f:int->'T, current:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
                 inherit Enumerable.EnumerableBase<'U>()
 
                 interface IEnumerable<'U> with
@@ -699,7 +700,7 @@ namespace Microsoft.FSharp.Collections
                         Upcast.enumerator (new Enumerator<'T,'U>(count, f, createFold current result pipeIdx, result))
 
                 interface ISeq<'U> with
-                    member this.Compose (next:SeqFactory<'U,'V>) : ISeq<'V> =
+                    member this.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
                         Upcast.seq (new Enumerable<'T,'V>(count, f, ComposedFactory.Combine current next, pipeIdx+1))
 
                     member this.Fold<'Result,'State> (createResult:PipeIdx->Folder<'U,'Result,'State>) =
@@ -767,7 +768,7 @@ namespace Microsoft.FSharp.Collections
                         upto (if count.HasValue then Some (count.Value-1) else None) f
 
                 interface ISeq<'T> with
-                    member this.Compose (next:SeqFactory<'T,'U>) : ISeq<'U> =
+                    member this.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
                         Upcast.seq (Enumerable<'T,'V>(count, f, next, pipeIdx+1))
 
                     member this.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
@@ -938,8 +939,8 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Except">]
         let inline except (itemsToExclude: seq<'T>) (source:ISeq<'T>) : ISeq<'T> when 'T:equality =
-            source.Compose { new SeqFactory<'T,'T>() with
-                override __.Create _ _ next =
+            source.PushTransform { new TransformFactory<'T,'T>() with
+                override __.Compose _ _ next =
                     upcast { new Transform<'T,'V,Lazy<HashSet<'T>>>
                                     (next,lazy(HashSet<'T>(itemsToExclude,HashIdentity.Structural<'T>))) with
                         override this.ProcessNext (input:'T) : bool =
@@ -1010,8 +1011,8 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Filter">]
         let inline filter<'T> (f:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
-            source.Compose { new SeqFactory<'T,'T>() with
-                override __.Create _ _ next =
+            source.PushTransform { new TransformFactory<'T,'T>() with
+                override __.Compose _ _ next =
                     upcast { new Transform<'T,'V,NoValue>(next,Unchecked.defaultof<NoValue>) with
                         override __.ProcessNext input =
                             if f input then TailCall.avoid (next.ProcessNext input)
@@ -1019,16 +1020,16 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Map">]
         let inline map<'T,'U> (f:'T->'U) (source:ISeq<'T>) : ISeq<'U> =
-            source.Compose { new SeqFactory<'T,'U>() with
-                override __.Create _ _ next =
+            source.PushTransform { new TransformFactory<'T,'U>() with
+                override __.Compose _ _ next =
                     upcast { new Transform<'T,'V,NoValue>(next,Unchecked.defaultof<NoValue>) with
                         override __.ProcessNext input =
                             TailCall.avoid (next.ProcessNext (f input)) } }
 
         [<CompiledName "MapIndexed">]
         let inline mapi f (source:ISeq<_>) =
-            source.Compose { new SeqFactory<'T,'U>() with
-                override __.Create _ _ next =
+            source.PushTransform { new TransformFactory<'T,'U>() with
+                override __.Compose _ _ next =
                     upcast { new Transform<'T,'V,int>(next, -1) with
                         override this.ProcessNext (input:'T) : bool =
                             this.State <- this.State  + 1
@@ -1036,8 +1037,8 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Map2">]
         let inline map2<'First,'Second,'U> (map:'First->'Second->'U) (source1:ISeq<'First>) (source2:ISeq<'Second>) : ISeq<'U> =
-            source1.Compose { new SeqFactory<'First,'U>() with
-                override __.Create outOfBand pipeIdx (next:Activity<'U,'V>) =
+            source1.PushTransform { new TransformFactory<'First,'U>() with
+                override __.Compose outOfBand pipeIdx (next:Activity<'U,'V>) =
                     upcast { new TransformWithPostProcessing<'First,'V, IEnumerator<'Second>>(next, (source2.GetEnumerator ())) with
                         override self.ProcessNext input =
                             if self.State.MoveNext () then
@@ -1050,8 +1051,8 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "MapIndexed2">]
         let inline mapi2<'First,'Second,'U> (map:int -> 'First->'Second->'U) (source1:ISeq<'First>) (source2:ISeq<'Second>) : ISeq<'U> =
-            source1.Compose { new SeqFactory<'First,'U>() with
-                override __.Create<'V> outOfBand pipeIdx next =
+            source1.PushTransform { new TransformFactory<'First,'U>() with
+                override __.Compose<'V> outOfBand pipeIdx next =
                     upcast { new TransformWithPostProcessing<'First,'V, Values<int,IEnumerator<'Second>>>
                                                 (next, Values<_,_>(-1, source2.GetEnumerator ())) with
                         override self.ProcessNext input =
@@ -1067,8 +1068,8 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "Map3">]
         let inline map3<'First,'Second,'Third,'U>
                         (map:'First->'Second->'Third->'U) (source1:ISeq<'First>) (source2:ISeq<'Second>) (source3:ISeq<'Third>) : ISeq<'U> =
-            source1.Compose { new SeqFactory<'First,'U>() with
-                override __.Create<'V> outOfBand pipeIdx next =
+            source1.PushTransform { new TransformFactory<'First,'U>() with
+                override __.Compose<'V> outOfBand pipeIdx next =
                     upcast { new TransformWithPostProcessing<'First,'V, Values<IEnumerator<'Second>,IEnumerator<'Third>>>
                                                 (next, Values<_,_>(source2.GetEnumerator(),source3.GetEnumerator())) with
                         override self.ProcessNext input =
@@ -1103,8 +1104,8 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Choose">]
         let inline choose (f:'T->option<'U>) (source:ISeq<'T>) : ISeq<'U> =
-            source.Compose { new SeqFactory<'T,'U>() with
-                override __.Create _ _ next =
+            source.PushTransform { new TransformFactory<'T,'U>() with
+                override __.Compose _ _ next =
                     upcast { new Transform<'T,'V,NoValue>(next,Unchecked.defaultof<NoValue>) with
                         override __.ProcessNext input =
                             match f input with
@@ -1113,8 +1114,8 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Distinct">]
         let inline distinct (source:ISeq<'T>) : ISeq<'T> when 'T:equality =
-            source.Compose { new SeqFactory<'T,'T>() with
-                override __.Create _ _ next =
+            source.PushTransform { new TransformFactory<'T,'T>() with
+                override __.Compose _ _ next =
                     upcast { new Transform<'T,'V,HashSet<'T>>
                                     (next,(HashSet<'T>(HashIdentity.Structural<'T>))) with
                         override this.ProcessNext (input:'T) : bool =
@@ -1123,8 +1124,8 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "DistinctBy">]
         let inline distinctBy (keyf:'T->'Key) (source:ISeq<'T>) :ISeq<'T>  when 'Key:equality =
-            source.Compose { new SeqFactory<'T,'T>() with
-                override __.Create _ _ next =
+            source.PushTransform { new TransformFactory<'T,'T>() with
+                override __.Compose _ _ next =
                     upcast { new Transform<'T,'V,HashSet<'Key>>
                                     (next,(HashSet<'Key>(HashIdentity.Structural<'Key>))) with
                         override this.ProcessNext (input:'T) : bool =
@@ -1209,8 +1210,8 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Pairwise">]
         let pairwise (source:ISeq<'T>) : ISeq<'T*'T> =
-            source.Compose { new SeqFactory<'T,'T * 'T>() with
-                override __.Create _ _ next =
+            source.PushTransform { new TransformFactory<'T,'T * 'T>() with
+                override __.Compose _ _ next =
                     upcast { new Transform<'T,'U,Values<bool,'T>>
                                 (   next
                                 ,   Values<bool,'T>
@@ -1247,8 +1248,8 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Scan">]
         let inline scan (folder:'State->'T->'State) (initialState:'State) (source:ISeq<'T>) :ISeq<'State> =
-            source.Compose { new SeqFactory<'T,'State>() with
-                override __.Create _ _ next =
+            source.PushTransform { new TransformFactory<'T,'State>() with
+                override __.Compose _ _ next =
                     upcast { new Transform<'T,'V,'State>(next, initialState) with
                         override this.ProcessNext (input:'T) : bool =
                             this.State <- folder this.State input
@@ -1256,8 +1257,8 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Skip">]
         let skip (skipCount:int) (source:ISeq<'T>) : ISeq<'T> =
-            source.Compose { new SeqFactory<'T,'T>() with
-                override __.Create _ _ next =
+            source.PushTransform { new TransformFactory<'T,'T>() with
+                override __.Compose _ _ next =
                     upcast {
                         new TransformWithPostProcessing<'T,'U,int>(next,(*count*)0) with
                             override self.ProcessNext (input:'T) : bool =
@@ -1285,8 +1286,8 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "SkipWhile">]
         let inline skipWhile (predicate:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
-            source.Compose { new SeqFactory<'T,'T>() with
-                override __.Create _ _ next =
+            source.PushTransform { new TransformFactory<'T,'T>() with
+                override __.Compose _ _ next =
                     upcast { new Transform<'T,'V,bool>(next,true) with
                         override self.ProcessNext (input:'T) : bool =
                             if self.State (*skip*) then
@@ -1320,8 +1321,8 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Take">]
         let take (takeCount:int) (source:ISeq<'T>) : ISeq<'T> =
-            source.Compose { new SeqFactory<'T,'T>() with
-                member __.Create outOfBand pipelineIdx next =
+            source.PushTransform { new TransformFactory<'T,'T>() with
+                member __.Compose outOfBand pipelineIdx next =
                     upcast {
                         new TransformWithPostProcessing<'T,'U,int>(next,(*count*)0) with
                             override self.ProcessNext (input:'T) : bool =
@@ -1343,8 +1344,8 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "TakeWhile">]
         let inline takeWhile (predicate:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
-            source.Compose { new SeqFactory<'T,'T>() with
-                member __.Create outOfBand pipeIdx next =
+            source.PushTransform { new TransformFactory<'T,'T>() with
+                member __.Compose outOfBand pipeIdx next =
                     upcast { new Transform<'T,'V,NoValue>(next,Unchecked.defaultof<NoValue>) with
                         override __.ProcessNext (input:'T) : bool =
                             if predicate input then
@@ -1355,8 +1356,8 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Tail">]
         let tail (source:ISeq<'T>) :ISeq<'T> =
-            source.Compose { new SeqFactory<'T,'T>() with
-                member __.Create _ _ next =
+            source.PushTransform { new TransformFactory<'T,'T>() with
+                member __.Compose _ _ next =
                     upcast { new TransformWithPostProcessing<'T,'V,bool>(next,(*first*) true) with
                         override self.ProcessNext (input:'T) : bool =
                             if (*first*) self.State then
@@ -1372,8 +1373,8 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Truncate">]
         let truncate (truncateCount:int) (source:ISeq<'T>) : ISeq<'T> =
-            source.Compose { new SeqFactory<'T,'T>() with
-                member __.Create outOfBand pipeIdx next =
+            source.PushTransform { new TransformFactory<'T,'T>() with
+                member __.Compose outOfBand pipeIdx next =
                     upcast {
                         new Transform<'T,'U,int>(next,(*count*)0) with
                             override self.ProcessNext (input:'T) : bool =
@@ -1445,8 +1446,8 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Windowed">]
         let windowed (windowSize:int) (source:ISeq<'T>) : ISeq<'T[]> =
-            source.Compose { new SeqFactory<'T,'T[]>() with
-                member __.Create outOfBand pipeIdx next =
+            source.PushTransform { new TransformFactory<'T,'T[]>() with
+                member __.Compose outOfBand pipeIdx next =
                     upcast {
                         new Transform<'T,'U,Values<'T[],int,int>>
                                     (   next
