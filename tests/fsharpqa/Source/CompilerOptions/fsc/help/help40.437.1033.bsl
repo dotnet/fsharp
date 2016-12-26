@@ -96,6 +96,12 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
 --lib:<dir;...>                          Specify a directory for the include path which
                                          is used to resolve source files and assemblies
                                          (Short form: -I)
+--simpleresolution                       Resolve assembly references using
+                                         directory-based rules rather than MSBuild
+                                         resolution
+--targetprofile:<string>                 Specify target framework profile of this
+                                         assembly. Valid values are mscorlib or netcore.
+                                         Default - mscorlib
 --baseaddress:<address>                  Base address for the library to be built
 --noframework                            Do not reference the default CLI assemblies by
                                          default
@@ -106,12 +112,6 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
                                          referenced DLLs that depend on this assembly.
                                          Use an assembly name e.g. mylib, not a DLL name.
 --pdb:<string>                           Name the output debug file
---simpleresolution                       Resolve assembly references using
-                                         directory-based rules rather than MSBuild
-                                         resolution
 --highentropyva[+|-]                     Enable high-entropy ASLR
 --subsystemversion:<string>              Specify subsystem version of this assembly
---targetprofile:<string>                 Specify target framework profile of this
-                                         assembly. Valid values are mscorlib or netcore.
-                                         Default - mscorlib
 --quotations-debug[+|-]                  Emit debug information in quotations

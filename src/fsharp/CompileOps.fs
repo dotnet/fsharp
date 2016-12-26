@@ -2602,6 +2602,9 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
 
     // Look for an explicit reference to FSharp.Core and use that to compute fsharpBinariesDir
     let fsharpBinariesDirValue = 
+#if FX_NO_SIMPLIFIED_LOADER
+        data.defaultFSharpBinariesDir
+#else
         match fslibExplicitFilenameOpt with
         | Some(fslibFilename) ->
             let filename = ComputeMakePathAbsolute data.implicitIncludeDir fslibFilename
@@ -2614,12 +2617,13 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                 error(Error(FSComp.SR.buildErrorOpeningBinaryFile(filename, e.Message), rangeStartup))
         | _ ->
             data.defaultFSharpBinariesDir
+#endif
 
     member x.MscorlibMajorVersion = mscorlibMajorVersion
     member x.primaryAssembly = data.primaryAssembly
     member x.autoResolveOpenDirectivesToDlls = data.autoResolveOpenDirectivesToDlls
     member x.noFeedback = data.noFeedback
-    member x.stackReserveSize = data.stackReserveSize
+    member x.stackReserveSize = data.stackReserveSize   
     member x.implicitIncludeDir = data.implicitIncludeDir
     member x.openBinariesInMemory = data.openBinariesInMemory
     member x.openDebugInformationForLaterStaticLinking = data.openDebugInformationForLaterStaticLinking
@@ -2985,7 +2989,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                 
                                        
             // Whatever is left, pass to MSBuild.
-            let Resolve(references,showMessages) = 
+            let Resolve(references,showMessages) =
                 try 
                     tcConfig.referenceResolver.Resolve
                        (tcConfig.resolutionEnvironment,
@@ -3434,20 +3438,24 @@ type TcAssemblyResolutions(results : AssemblyResolution list, unresolved : Unres
 
 
     static member GetAllDllReferences (tcConfig:TcConfig) =
-        [ let primaryReference = tcConfig.PrimaryAssemblyDllReference()
-          yield primaryReference
-          if not tcConfig.compilingFslib then 
-              yield tcConfig.CoreLibraryDllReference()
+        [
+            let primaryReference = tcConfig.PrimaryAssemblyDllReference()
+            yield primaryReference
 
-          let assumeDotNetFramework = primaryReference.SimpleAssemblyNameIs("mscorlib")
-          if tcConfig.framework then 
-              for s in DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) do 
-                  yield AssemblyReference(rangeStartup,s+".dll",None)
+            if not tcConfig.compilingFslib then 
+                yield tcConfig.CoreLibraryDllReference()
 
-          if tcConfig.useFsiAuxLib then 
-              let name = Path.Combine(tcConfig.fsharpBinariesDir, GetFsiLibraryName()+".dll")
-              yield AssemblyReference(rangeStartup,name,None) 
-          yield! tcConfig.referencedDLLs ]
+            let assumeDotNetFramework = primaryReference.SimpleAssemblyNameIs("mscorlib")
+            if tcConfig.framework then 
+                for s in DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) do 
+                    yield AssemblyReference(rangeStartup,s+".dll",None)
+
+            if tcConfig.useFsiAuxLib then
+                let name = Path.Combine(tcConfig.fsharpBinariesDir, GetFsiLibraryName() + ".dll")
+                yield AssemblyReference(rangeStartup,name,None)
+
+            yield! tcConfig.referencedDLLs
+        ]
 
     static member SplitNonFoundationalResolutions (tcConfig:TcConfig) =
         let assemblyList = TcAssemblyResolutions.GetAllDllReferences tcConfig
