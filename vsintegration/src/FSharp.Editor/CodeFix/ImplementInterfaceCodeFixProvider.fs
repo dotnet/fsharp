@@ -94,7 +94,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
             let currentPos = sourceText.Lines.[range.EndLine-1].Start + range.EndColumn
             TextChange(TextSpan(currentPos, 0), " with" + stub)
             
-    let getSuggestions (context: CodeFixContext, results: FSharpCheckFileResults, state: InterfaceState, displayContext, entity, indentSize) =
+    let registerSuggestions (context: CodeFixContext, results: FSharpCheckFileResults, state: InterfaceState, displayContext, entity, indentSize) =
         if InterfaceStubGenerator.hasNoInterfaceMember entity then 
             ()
         else
@@ -122,8 +122,8 @@ type internal FSharpImplementInterfaceCodeFixProvider
                             title)                
                     context.RegisterCodeFix(codeAction, diagnostics)
 
-                registerCodeFix "Implement Interface Explicitly" false
-                registerCodeFix "Implement Interface Explicitly (verbose)" true
+                registerCodeFix SR.ImplementInterfaceVerbose.Value true
+                registerCodeFix SR.ImplementInterface.Value false
             else 
                 ()
             
@@ -176,7 +176,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
                                     else None
                                 | _ -> None)
                             |> Option.iter (fun (entity, displayContext) ->                                
-                                getSuggestions (context, checkFileResults, state, displayContext, entity, tabSize))
+                                registerSuggestions (context, checkFileResults, state, displayContext, entity, tabSize))
                         | _ -> ()
                     | None -> ()
             | None -> ()

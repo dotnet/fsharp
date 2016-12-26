@@ -120,6 +120,12 @@
   <data name="AddNewKeyword" xml:space="preserve">
     <value>Add 'new' keyword</value>
   </data>
+  <data name="ImplementInterface" xml:space="preserve">
+    <value>Implement Interface Explicitly</value>
+  </data>
+  <data name="ImplementInterfaceVerbose" xml:space="preserve">
+    <value>Implement Interface Explicitly (verbose)</value>
+  </data>
   <data name="PrefixValueNameWithUnderscore" xml:space="preserve">
     <value>Prefix value name with underscore</value>
   </data>
