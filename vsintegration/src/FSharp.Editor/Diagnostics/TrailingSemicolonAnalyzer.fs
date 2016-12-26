@@ -2,6 +2,7 @@
 
 namespace rec Microsoft.VisualStudio.FSharp.Editor
 
+open System
 open System.Composition
 open System.Collections.Immutable
 open System.Threading
@@ -57,30 +58,31 @@ type internal TrailingSemicolonDiagnosticAnalyzer() =
                         for __ in 1..lineDatas.Count do cache.Add None
                         cache
                 
-                //Logging.Logging.logInfof "LineDatas: %+A" (Seq.toList lineDatas)
-
-                let mutable calculatedLines = 0
+                let getTrailingSemicolonIndex (line: string) : int =
+                    let rec loop (index: int) =
+                        if index < 0 then -1 
+                        elif line.[index] = ';' then index
+                        elif Char.IsWhiteSpace(line.[index]) then loop (index - 1)
+                        else -1
+                    loop (line.Length - 1)
 
                 let locations =
                     lineDatas
                     |> Seq.mapi (fun lineNumber lineData ->
                         match cache.[lineNumber] with
-                        | Some (oldHashCode, oldLocation) when oldHashCode = lineData.HashCode ->
-                            oldLocation
+                        | Some (oldHashCode, oldLocation) when oldHashCode = lineData.HashCode -> oldLocation
                         | _ ->
-                            calculatedLines <- calculatedLines + 1
                             let location =
-                                let line = lines.[lineNumber]
-                                let lineStr = line.ToString()
-                                let trimmedLineStr = lineStr.TrimEnd()
-                                match trimmedLineStr.LastIndexOf ';' with
+                                match getTrailingSemicolonIndex (lines.[lineNumber].ToString()) with
                                 | -1 -> None
-                                | semicolonIndex when semicolonIndex = trimmedLineStr.Length - 1 ->
-                                    let linePositionSpan = LinePositionSpan(LinePosition(line.LineNumber, semicolonIndex), LinePosition(line.LineNumber, semicolonIndex + 1))
+                                | lastSemicolonIndex ->
+                                    let linePositionSpan = 
+                                        LinePositionSpan(
+                                            LinePosition(lineNumber, lastSemicolonIndex), 
+                                            LinePosition(lineNumber, lastSemicolonIndex + 1))
                                     let textSpan = sourceText.Lines.GetTextSpan(linePositionSpan)
                                     let location = Location.Create(document.FilePath, textSpan, linePositionSpan)
                                     Some location
-                                | _ -> None
                             cache.[lineNumber] <- Some (lineData.HashCode, location)
                             location)
                      |> Seq.choose id
@@ -88,7 +90,7 @@ type internal TrailingSemicolonDiagnosticAnalyzer() =
                 cacheByDocumentId.Remove(document.Id) |> ignore
                 cacheByDocumentId.Add(document.Id, cache)
 
-                let result =
+                return
                     (locations
                      |> Seq.map (fun location ->
                          let id = "TrailingSemicolon"
@@ -97,11 +99,7 @@ type internal TrailingSemicolonDiagnosticAnalyzer() =
                          let severity = DiagnosticSeverity.Info
                          let descriptor = DiagnosticDescriptor(id, emptyString, description, "", severity, true, emptyString, "", null)
                          Diagnostic.Create(descriptor, location))
-                    ).ToImmutableArray()
-
-                //Logging.Logging.logInfof "TrailingSemicolonAnalyzer: %d/%d lines calculated" calculatedLines lineDatas.Count
-
-                return result
+                ).ToImmutableArray()
             | None -> return ImmutableArray<_>.Empty
         } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
 
