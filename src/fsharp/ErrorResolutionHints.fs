@@ -9,7 +9,7 @@ let minStringLengthForThreshold = 3
 
 let thresholdForSuggestions = 0.7
 
-/// Filters predictions based on edit distance to an unknown identifier.
+/// Filters predictions based on edit distance to the given unknown identifier.
 let FilterPredictions (unknownIdent:string) (predictionsF:ErrorLogger.Suggestions) =    
     let unknownIdent = unknownIdent.ToUpperInvariant()
     let useThreshold = unknownIdent.Length >= minStringLengthForThreshold
@@ -38,7 +38,7 @@ let FormatPredictions errorStyle normalizeF (predictions: (float * string) list)
                 |> List.map (snd >> normalizeF)
                 |> String.concat ", "
 
-            " " + FSComp.SR.undefinedNameRecordLabelDetails() + " " + predictionText
+            " " + FSComp.SR.undefinedNameSuggestionsIntro() + " " + predictionText
         | _ ->
             let predictionText =
                 predictions 
@@ -46,4 +46,4 @@ let FormatPredictions errorStyle normalizeF (predictions: (float * string) list)
                 |> Seq.map (sprintf "%s   %s" System.Environment.NewLine) 
                 |> String.concat ""
 
-            System.Environment.NewLine + FSComp.SR.undefinedNameRecordLabelDetails() + predictionText
+            System.Environment.NewLine + FSComp.SR.undefinedNameSuggestionsIntro() + predictionText
