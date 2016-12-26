@@ -108,12 +108,11 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
         async {
             match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)  with 
             | Some options ->
-                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
+                let! sourceText = document.GetTextAsync(cancellationToken)
+                let! textVersion = document.GetTextVersionAsync(cancellationToken)
                 return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(getChecker document, document.FilePath, sourceText, textVersion.GetHashCode(), options, DiagnosticsType.Syntax)
             | None -> return ImmutableArray<Diagnostic>.Empty
         } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
-
 
     override this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
         let projectInfoManager = getProjectInfoManager document
@@ -121,9 +120,13 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
             let! optionsOpt = projectInfoManager.TryGetOptionsForDocumentOrProject(document) 
             match optionsOpt with 
             | Some options ->
-                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
+                let! sourceText = document.GetTextAsync(cancellationToken)
+                let! textVersion = document.GetTextVersionAsync(cancellationToken)
                 return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(getChecker document, document.FilePath, sourceText, textVersion.GetHashCode(), options, DiagnosticsType.Semantic)
             | None -> return ImmutableArray<Diagnostic>.Empty
         } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
+
+    interface IBuiltInAnalyzer with
+        member __.GetAnalyzerCategory() : DiagnosticAnalyzerCategory = DiagnosticAnalyzerCategory.SemanticDocumentAnalysis
+        member __.OpenFileOnly _ = true
 

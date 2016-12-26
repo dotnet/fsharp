@@ -38,7 +38,7 @@ type internal FSharpFindReferencesService
                     |> Seq.map (fun documentId ->
                         async {
                             let doc = solution.GetDocument(documentId)
-                            let! sourceText = doc.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                            let! sourceText = doc.GetTextAsync(cancellationToken)
                             match CommonRoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
                             | Some span ->
                                 let span = CommonHelpers.fixupSpan(sourceText, span)
@@ -51,8 +51,8 @@ type internal FSharpFindReferencesService
 
     let findReferencedSymbolsAsync(document: Document, position: int, context: FindReferencesContext) : Async<unit> =
         async {
-            let! sourceText = document.GetTextAsync(context.CancellationToken) |> Async.AwaitTask
-            let! textVersion = document.GetTextVersionAsync(context.CancellationToken) |> Async.AwaitTask
+            let! sourceText = document.GetTextAsync(context.CancellationToken)
+            let! textVersion = document.GetTextVersionAsync(context.CancellationToken)
             let checker = checkerProvider.Checker
             let! options = projectInfoManager.TryGetOptionsForDocumentOrProject(document)
             match options with

@@ -55,7 +55,7 @@ type internal FSharpBreakpointResolutionService
             async {
                 match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)  with 
                 | Some options ->
-                    let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                    let! sourceText = document.GetTextAsync(cancellationToken)
                     let! location = FSharpBreakpointResolutionService.GetBreakpointLocation(checkerProvider.Checker, sourceText, document.Name, textSpan, options)
                     return match location with
                            | None -> null
