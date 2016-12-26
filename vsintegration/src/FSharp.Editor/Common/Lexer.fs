@@ -5,6 +5,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.ComponentModel.Composition
 open System.Collections.Generic
+open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
@@ -50,7 +51,7 @@ type private DraftToken =
         { Kind = kind; Token = token; RightColumn = token.LeftColumn + token.FullMatchedLength - 1 }
 
 type internal SourceLineData(lineStart: int, lexStateAtStartOfLine: FSharpTokenizerLexState, lexStateAtEndOfLine: FSharpTokenizerLexState, 
-                             hashCode: int, classifiedSpans: IReadOnlyList<ClassifiedSpan>, tokens: FSharpTokenInfo list) =
+                             hashCode: int, classifiedSpans: IReadOnlyList<ClassifiedSpan>, tokens: ImmutableArray<FSharpTokenInfo>) =
     member val LineStart = lineStart
     member val LexStateAtStartOfLine = lexStateAtStartOfLine
     member val LexStateAtEndOfLine = lexStateAtEndOfLine
@@ -97,7 +98,7 @@ type internal Lexer() =
     let scanSourceLine(sourceTokenizer: FSharpSourceTokenizer, textLine: TextLine, lineContents: string, lexState: FSharpTokenizerLexState) : SourceLineData =
         let colorMap = Array.create textLine.Span.Length ClassificationTypeNames.Text
         let lineTokenizer = sourceTokenizer.CreateLineTokenizer(lineContents)
-        let tokens = ResizeArray()
+        let tokens = ImmutableArray.CreateBuilder()
         let previousLexState = ref lexState
             
         let scanAndColorNextToken(lineTokenizer: FSharpLineTokenizer) : Option<FSharpTokenInfo> =
@@ -128,10 +129,10 @@ type internal Lexer() =
             classifiedSpans.Add(new ClassifiedSpan(classificationType, textSpan))
             startPosition <- endPosition
 
-        SourceLineData(textLine.Start, lexState, previousLexState.Value, lineContents.GetHashCode(), classifiedSpans, List.ofSeq tokens)
+        SourceLineData(textLine.Start, lexState, previousLexState.Value, lineContents.GetHashCode(), classifiedSpans, tokens.ToImmutable())
 
     /// Returns symbol at a given position.
-    let getSymbolFromTokens (fileName: string, tokens: FSharpTokenInfo list, linePos: LinePosition, lineStr: string, lookupKind: SymbolLookupKind) : LexerSymbol option =
+    let getSymbolFromTokens (fileName: string, tokens: ImmutableArray<FSharpTokenInfo>, linePos: LinePosition, lineStr: string, lookupKind: SymbolLookupKind) : LexerSymbol option =
         let isIdentifier t = t.CharClass = FSharpTokenCharKind.Identifier
         let isOperator t = t.ColorClass = FSharpTokenColorKind.Operator
     
@@ -157,7 +158,7 @@ type internal Lexer() =
         // we'll get (IDENT, left=2, length=5).
         let tokens = 
             tokens
-            |> List.fold (fun (acc, lastToken) (token: FSharpTokenInfo) ->
+            |> Seq.fold (fun (acc, lastToken) (token: FSharpTokenInfo) ->
                 match lastToken with
                 | Some t when token.LeftColumn <= t.RightColumn -> acc, lastToken
                 | _ ->
