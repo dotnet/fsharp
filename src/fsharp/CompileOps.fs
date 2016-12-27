@@ -1547,7 +1547,7 @@ let CollectDiagnostic (implicitIncludeDir,showFullPaths,flattenErrors,errorStyle
         
             let mainError,relatedErrors = SplitRelatedErrors err
             let where = OutputWhere(mainError)
-            let canonical = OutputDiagnosticCanonicalInformation(err.Subcategory(),GetErrorNumber mainError)
+            let canonical = OutputCanonicalInformation(err.Subcategory(),GetErrorNumber mainError)
             let message = 
                 let os = System.Text.StringBuilder()
                 OutputPhasedError errorStyle os mainError flattenErrors
@@ -1562,7 +1562,7 @@ let CollectDiagnostic (implicitIncludeDir,showFullPaths,flattenErrors,errorStyle
                 // Give a canonical string when --vserror.
                 | ErrorStyle.VSErrors -> 
                     let relWhere = OutputWhere(mainError) // mainError?
-                    let relCanonical = OutputDiagnosticCanonicalInformation(err.Subcategory(),GetErrorNumber mainError) // Use main error for code
+                    let relCanonical = OutputCanonicalInformation(err.Subcategory(),GetErrorNumber mainError) // Use main error for code
                     let relMessage = 
                         let os = System.Text.StringBuilder()
                         OutputPhasedError errorStyle os err flattenErrors
