@@ -32,7 +32,7 @@ type internal FSharpReplaceWithSuggestionCodeFixProvider() =
     override __.FixableDiagnosticIds = fixableDiagnosticIds.ToImmutableArray()
 
     override __.RegisterCodeFixesAsync context : Task =
-       async { 
+        async { 
             context.Diagnostics 
             |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
             |> Seq.iter (fun diagnostic ->
