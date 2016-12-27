@@ -51,7 +51,7 @@ type private DraftToken =
         { Kind = kind; Token = token; RightColumn = token.LeftColumn + token.FullMatchedLength - 1 }
 
 type internal SourceLineData(lineStart: int, lexStateAtStartOfLine: FSharpTokenizerLexState, lexStateAtEndOfLine: FSharpTokenizerLexState, 
-                             hashCode: int, classifiedSpans: IReadOnlyList<ClassifiedSpan>, tokens: ImmutableArray<FSharpTokenInfo>) =
+                             hashCode: int, classifiedSpans: ImmutableArray<ClassifiedSpan>, tokens: ImmutableArray<FSharpTokenInfo>) =
     member val LineStart = lineStart
     member val LexStateAtStartOfLine = lexStateAtStartOfLine
     member val LexStateAtEndOfLine = lexStateAtEndOfLine
@@ -60,10 +60,7 @@ type internal SourceLineData(lineStart: int, lexStateAtStartOfLine: FSharpTokeni
     member val Tokens = tokens
 
     member data.IsValid(textLine: TextLine) =
-        let lineStartsMatch = data.LineStart = textLine.Start
-        let newHashCode = textLine.ToString().GetHashCode()
-        let hashCodeMatch = data.HashCode = newHashCode
-        lineStartsMatch && hashCodeMatch
+        data.LineStart = textLine.Start && data.HashCode = textLine.ToString().GetHashCode()
     override __.ToString() = 
         sprintf "SourceLineData(line: %d, startLexState: %d, endLexState: %d, hashCode: %d, token count: %d)"
                 lineStart lexStateAtStartOfLine lexStateAtEndOfLine hashCode tokens.Length
@@ -87,19 +84,10 @@ type internal SourceTextData(approxLines: int) =
 
     /// Go backwards to find the last cached scanned line that is valid.
     member x.GetLastValidCachedLine (startLine: int,  sourceLines: TextLineCollection) : int =
-        let rec loop (i: int) =
-            if i < 0 then i
-            else 
-                let data = x.[i] 
-                let found =
-                    match data with
-                    | Some data -> 
-                        let sourceLine = sourceLines.[i]
-                        let isValid = data.IsValid(sourceLine)
-                        isValid 
-                    | None -> false
-                if found then i else loop (i - 1)
-        loop startLine
+        let mutable i = startLine
+        while i >= 0 && (match x.[i] with Some data -> not (data.IsValid(sourceLines.[i])) | None -> true)  do
+            i <- i - 1
+        i
 
 [<Export(typeof<Lexer>); System.Composition.Shared>]
 type internal Lexer() =
@@ -118,7 +106,7 @@ type internal Lexer() =
             if tokenInfoOption.IsSome then
                 let classificationType = CommonHelpers.compilerTokenToRoslynToken(tokenInfoOption.Value.ColorClass)
                 for i = tokenInfoOption.Value.LeftColumn to tokenInfoOption.Value.RightColumn do
-                    Array.set colorMap i classificationType
+                    colorMap.[i] <- classificationType
                 tokens.Add tokenInfoOption.Value
             tokenInfoOption
 
@@ -129,7 +117,7 @@ type internal Lexer() =
 
         let mutable startPosition = 0
         let mutable endPosition = startPosition
-        let classifiedSpans = new List<ClassifiedSpan>()
+        let classifiedSpans = ImmutableArray.CreateBuilder()
 
         while startPosition < colorMap.Length do
             let classificationType = colorMap.[startPosition]
@@ -137,10 +125,10 @@ type internal Lexer() =
             while endPosition < colorMap.Length && classificationType = colorMap.[endPosition] do
                 endPosition <- endPosition + 1
             let textSpan = new TextSpan(textLine.Start + startPosition, endPosition - startPosition)
-            classifiedSpans.Add(new ClassifiedSpan(classificationType, textSpan))
+            classifiedSpans.Add(ClassifiedSpan(classificationType, textSpan))
             startPosition <- endPosition
 
-        SourceLineData(textLine.Start, lexState, previousLexState.Value, lineContents.GetHashCode(), classifiedSpans, tokens.ToImmutable())
+        SourceLineData(textLine.Start, lexState, previousLexState.Value, lineContents.GetHashCode(), classifiedSpans.ToImmutable(), tokens.ToImmutable())
 
     /// Returns symbol at a given position.
     let getSymbolFromTokens (fileName: string, tokens: ImmutableArray<FSharpTokenInfo>, linePos: LinePosition, lineStr: string, lookupKind: SymbolLookupKind) : LexerSymbol option =
