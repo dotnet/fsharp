@@ -51,20 +51,22 @@ type private DraftToken =
         { Kind = kind; Token = token; RightColumn = token.LeftColumn + token.FullMatchedLength - 1 }
 
 type internal SourceLineData(lineStart: int, lexStateAtStartOfLine: FSharpTokenizerLexState, lexStateAtEndOfLine: FSharpTokenizerLexState, 
-                             checkSum: ImmutableArray<byte>, classifiedSpans: IReadOnlyList<ClassifiedSpan>, tokens: ImmutableArray<FSharpTokenInfo>) =
+                             hashCode: int, classifiedSpans: IReadOnlyList<ClassifiedSpan>, tokens: ImmutableArray<FSharpTokenInfo>) =
     member val LineStart = lineStart
     member val LexStateAtStartOfLine = lexStateAtStartOfLine
     member val LexStateAtEndOfLine = lexStateAtEndOfLine
-    member val CheckSum = checkSum
+    member val HashCode = hashCode
     member val ClassifiedSpans = classifiedSpans
     member val Tokens = tokens
 
     member data.IsValid(textLine: TextLine) =
-        data.LineStart = textLine.Start && 
-        data.CheckSum = textLine.Text.GetChecksum()
+        let lineStartsMatch = data.LineStart = textLine.Start
+        let newHashCode = textLine.ToString().GetHashCode()
+        let hashCodeMatch = data.HashCode = newHashCode
+        lineStartsMatch && hashCodeMatch
     override __.ToString() = 
-        sprintf "SourceLineData(line: %d, startLexState: %d, endLexState: %d, checkSum: %A, token count: %d)"
-                lineStart lexStateAtStartOfLine lexStateAtEndOfLine (Seq.toArray checkSum) tokens.Length
+        sprintf "SourceLineData(line: %d, startLexState: %d, endLexState: %d, hashCode: %d, token count: %d)"
+                lineStart lexStateAtStartOfLine lexStateAtEndOfLine hashCode tokens.Length
 
 type internal SourceTextData(approxLines: int) =
     let data = ResizeArray<SourceLineData option>(approxLines)
@@ -74,8 +76,8 @@ type internal SourceTextData(approxLines: int) =
             for j in data.Count .. i do
                 data.Add(None)
     member x.Item 
-      with get (i:int) = extendTo  i; data.[i]
-      and set (i:int) v = extendTo  i; data.[i] <- v
+      with get (i:int) = extendTo i; data.[i]
+      and set (i:int) v = extendTo i; data.[i] <- v
 
     member x.ClearFrom(n) =
         let mutable i = n
@@ -85,10 +87,19 @@ type internal SourceTextData(approxLines: int) =
 
     /// Go backwards to find the last cached scanned line that is valid.
     member x.GetLastValidCachedLine (startLine: int,  sourceLines: TextLineCollection) : int =
-        let mutable i = startLine
-        while i >= 0 && (match x.[i] with Some data -> not (data.IsValid(sourceLines.[i])) | None -> true)  do
-            i <- i - 1
-        i
+        let rec loop (i: int) =
+            if i < 0 then i
+            else 
+                let data = x.[i] 
+                let found =
+                    match data with
+                    | Some data -> 
+                        let sourceLine = sourceLines.[i]
+                        let isValid = data.IsValid(sourceLine)
+                        isValid 
+                    | None -> false
+                if found then i else loop (i - 1)
+        loop startLine
 
 [<Export(typeof<Lexer>); System.Composition.Shared>]
 type internal Lexer() =
@@ -129,7 +140,7 @@ type internal Lexer() =
             classifiedSpans.Add(new ClassifiedSpan(classificationType, textSpan))
             startPosition <- endPosition
 
-        SourceLineData(textLine.Start, lexState, previousLexState.Value, textLine.Text.GetChecksum(), classifiedSpans, tokens.ToImmutable())
+        SourceLineData(textLine.Start, lexState, previousLexState.Value, lineContents.GetHashCode(), classifiedSpans, tokens.ToImmutable())
 
     /// Returns symbol at a given position.
     let getSymbolFromTokens (fileName: string, tokens: ImmutableArray<FSharpTokenInfo>, linePos: LinePosition, lineStr: string, lookupKind: SymbolLookupKind) : LexerSymbol option =
@@ -254,45 +265,46 @@ type internal Lexer() =
         let sourceTokenizer = FSharpSourceTokenizer(defines, fileName)
         let lines = sourceText.Lines
         // We keep incremental data per-document.  When text changes we correlate text line-by-line (by hash codes of lines)
-        let sourceTextData = dataCache.GetValue(documentKey, fun key -> SourceTextData(lines.Count))
-        let scanStartLine = sourceTextData.GetLastValidCachedLine(startLine, lines)
+        let sourceTextData =  dataCache.GetValue(documentKey, fun key -> SourceTextData(lines.Count))
+        lock sourceTextData <| fun () ->
+            let scanStartLine = sourceTextData.GetLastValidCachedLine(startLine, lines)
+            // Rescan the lines if necessary and report the information
+            let result = ResizeArray()
+            let mutable lexState = if scanStartLine = -1 then 0L else sourceTextData.[scanStartLine].Value.LexStateAtEndOfLine
+            let scanStartLine = max scanStartLine 0
+            for i = scanStartLine to endLine do
+                cancellationToken.ThrowIfCancellationRequested()
+                let textLine = lines.[i]
             
-        // Rescan the lines if necessary and report the information
-        let result = ResizeArray()
-        let mutable lexState = if scanStartLine = -1 then 0L else sourceTextData.[scanStartLine].Value.LexStateAtEndOfLine
-        let scanStartLine = max scanStartLine 0
-        for i = scanStartLine to endLine do
-            cancellationToken.ThrowIfCancellationRequested()
-            let textLine = lines.[i]
-
-            let lineData = 
-                // We can reuse the old data when 
-                //   1. the line starts at the same overall position
-                //   2. the hash codes match
-                //   3. the start-of-line lex states are the same
-                match sourceTextData.[i] with 
-                | Some data when data.IsValid(textLine) && data.LexStateAtStartOfLine = lexState -> 
-                    data
-                | _ -> 
-                    // Otherwise, we recompute
-                    let newData = scanSourceLine(sourceTokenizer, textLine, lexState)
-                    sourceTextData.[i] <- Some newData
-                    newData
-                
-            lexState <- lineData.LexStateAtEndOfLine
-
-            if startLine <= i then
-                result.Add(lineData)
-
-            // If necessary, invalidate all subsequent lines after endLine
-            if endLine < lines.Count - 1 then 
-                match sourceTextData.[endLine+1] with 
-                | Some data  -> 
-                    if data.LexStateAtStartOfLine <> lexState then
-                        sourceTextData.ClearFrom (endLine+1)
-                | None -> ()
-
-        result
+                let lineData = 
+                    // We can reuse the old data when 
+                    //   1. the line starts at the same overall position
+                    //   2. the hash codes match
+                    //   3. the start-of-line lex states are the same
+                    let oldData = sourceTextData.[i]
+                    match oldData with 
+                    | Some data when data.IsValid(textLine) && data.LexStateAtStartOfLine = lexState -> 
+                        data
+                    | _ -> 
+                        // Otherwise, we recompute
+                        let newData = scanSourceLine(sourceTokenizer, textLine, lexState)
+                        sourceTextData.[i] <- Some newData
+                        newData
+                    
+                lexState <- lineData.LexStateAtEndOfLine
+            
+                if startLine <= i then
+                    result.Add(lineData)
+            
+                // If necessary, invalidate all subsequent lines after endLine
+                if endLine < lines.Count - 1 then 
+                    match sourceTextData.[endLine+1] with 
+                    | Some data  -> 
+                        if data.LexStateAtStartOfLine <> lexState then
+                            sourceTextData.ClearFrom (endLine+1)
+                    | None -> ()
+            
+            result
 
     member this.GetColorizationData(documentKey: DocumentId, sourceText: SourceText, textSpan: TextSpan, fileName: string option, defines: string list, 
                                     cancellationToken: CancellationToken) : List<ClassifiedSpan> =

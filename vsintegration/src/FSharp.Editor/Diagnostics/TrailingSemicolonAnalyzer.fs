@@ -14,13 +14,13 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Diagnostics
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
-type private LineCheckSum = ImmutableArray<byte>
+type private LineHash = int
 
 [<DiagnosticAnalyzer(FSharpCommonConstants.FSharpLanguageName)>]
 type internal TrailingSemicolonDiagnosticAnalyzer() =
     inherit DocumentDiagnosticAnalyzer()
     
-    let cacheByDocumentId = ConditionalWeakTable<DocumentId, ResizeArray<(LineCheckSum * Location option) option>>()
+    let cacheByDocumentId = ConditionalWeakTable<DocumentId, ResizeArray<(LineHash * Location option) option>>()
     
     let getLexer(document: Document) = 
         document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().Lexer
@@ -70,7 +70,7 @@ type internal TrailingSemicolonDiagnosticAnalyzer() =
                     lineDatas
                     |> Seq.mapi (fun lineNumber lineData ->
                         match cache.[lineNumber] with
-                        | Some (oldCheckSum, oldLocation) when oldCheckSum = lineData.CheckSum -> oldLocation
+                        | Some (oldHashCode, oldLocation) when oldHashCode = lineData.HashCode -> oldLocation
                         | _ ->
                             let location =
                                 match getTrailingSemicolonIndex (lines.[lineNumber].ToString()) with
@@ -83,7 +83,7 @@ type internal TrailingSemicolonDiagnosticAnalyzer() =
                                     let textSpan = sourceText.Lines.GetTextSpan(linePositionSpan)
                                     let location = Location.Create(document.FilePath, textSpan, linePositionSpan)
                                     Some location
-                            cache.[lineNumber] <- Some (lineData.CheckSum, location)
+                            cache.[lineNumber] <- Some (lineData.HashCode, location)
                             location)
                      |> Seq.choose id
 
