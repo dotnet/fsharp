@@ -15,6 +15,8 @@ open Microsoft.FSharp.Compiler.Range
 
 type internal ShortIdent = string
 type Idents = ShortIdent[]
+type MaybeUnresolvedIdent = { Ident: ShortIdent; Resolved: bool }
+type MaybeUnresolvedIdents = MaybeUnresolvedIdent[]
 type IsAutoOpen = bool
 type ModuleKind = { IsAutoOpen: bool; HasModuleSuffix: bool }
 
@@ -467,15 +469,18 @@ module internal Entity =
             | _ -> candidateNs.Length
         candidateNs.[0..nsCount - 1]
 
-    let tryCreate (targetNamespace: Idents option, targetScope: Idents, partiallyQualifiedName: Idents, 
-                   requiresQualifiedAccessParent: Idents option, autoOpenParent: Idents option, 
-                   candidateNamespace: Idents option, candidate: Idents) =
+    let tryCreate (targetNamespace: Idents option, targetScope: Idents, partiallyQualifiedName: MaybeUnresolvedIdents, 
+                   requiresQualifiedAccessParent: Idents option, autoOpenParent: Idents option, candidateNamespace: Idents option, candidate: Idents) =
         match candidate with
         | [||] -> [||]
         | _ ->
             partiallyQualifiedName
             |> Array.heads
-            |> Array.choose (fun parts -> 
+            // the last part must be unresolved, otherwise we show false positive suggestions like
+            // "open System" for `let _ = System.DateTime.Naaaw`. Here only "Naaw" is unresolved.
+            |> Array.filter (fun x -> not (x.[x.Length - 1].Resolved))
+            |> Array.choose (fun parts ->
+                let parts = parts |> Array.map (fun x -> x.Ident)
                 if not (candidate |> Array.endsWith parts) then None
                 else 
                   let identCount = parts.Length
@@ -556,29 +561,25 @@ module internal ParsedInput =
         | SynConstructorArgs.Pats ps -> ps
         | SynConstructorArgs.NamePatPairs(xs, _) -> List.map snd xs
 
-    let internal longIdentToArray (longIdent: LongIdent): Idents =
-        longIdent |> Seq.map string |> Seq.toArray
-
-    /// Returns all Idents and LongIdents found in an untyped AST.
-    let internal getLongIdents (input: ParsedInput option) : IDictionary<Range.pos, Idents> =
-        let identsByEndPos = Dictionary<Range.pos, Idents>()
+    /// Returns all `Ident`s and `LongIdent`s found in an untyped AST.
+    let internal getLongIdents (input: ParsedInput option) : IDictionary<Range.pos, LongIdent> =
+        let identsByEndPos = Dictionary<Range.pos, LongIdent>()
     
         let addLongIdent (longIdent: LongIdent) =
-            let idents = longIdentToArray longIdent
             for ident in longIdent do
-                identsByEndPos.[ident.idRange.End] <- idents
+                identsByEndPos.[ident.idRange.End] <- longIdent
     
         let addLongIdentWithDots (LongIdentWithDots (longIdent, lids) as value) =
-            match longIdentToArray longIdent with
-            | [||] -> ()
-            | [|_|] as idents -> identsByEndPos.[value.Range.End] <- idents
+            match longIdent with
+            | [] -> ()
+            | [_] as idents -> identsByEndPos.[value.Range.End] <- idents
             | idents ->
                 for dotRange in lids do
                     identsByEndPos.[Range.mkPos dotRange.EndLine (dotRange.EndColumn - 1)] <- idents
                 identsByEndPos.[value.Range.End] <- idents
     
         let addIdent (ident: Ident) =
-            identsByEndPos.[ident.idRange.End] <- [|ident.idText|]
+            identsByEndPos.[ident.idRange.End] <- [ident]
     
         let rec walkImplFileInput (ParsedImplFileInput(_, _, _, _, _, moduleOrNamespaceList, _)) =
             List.iter walkSynModuleOrNamespace moduleOrNamespaceList
@@ -895,7 +896,7 @@ module internal ParsedInput =
              walkImplFileInput input
         | _ -> ()
         //debug "%A" idents
-        identsByEndPos :> _
+        upcast identsByEndPos
     
     let getLongIdentAt ast pos =
         let idents = getLongIdents (Some ast)
@@ -1012,13 +1013,12 @@ module internal ParsedInput =
             |> Seq.sortBy (fun (m, _, _) -> -m.Length)
             |> Seq.toList
 
-        fun (partiallyQualifiedName: Idents) (requiresQualifiedAccessParent: Idents option, autoOpenParent: Idents option, 
-                                              entityNamespace: Idents option, entity: Idents) ->
+        fun (partiallyQualifiedName: MaybeUnresolvedIdents) 
+            (requiresQualifiedAccessParent: Idents option, autoOpenParent: Idents option, entityNamespace: Idents option, entity: Idents) ->
             match res with
             | None -> [||]
             | Some (scope, ns, pos) -> 
-                Entity.tryCreate(ns, scope.Idents, partiallyQualifiedName, requiresQualifiedAccessParent, 
-                                 autoOpenParent, entityNamespace, entity)
+                Entity.tryCreate(ns, scope.Idents, partiallyQualifiedName, requiresQualifiedAccessParent, autoOpenParent, entityNamespace, entity)
                 |> Array.map (fun e ->
                     e,
                     match modules |> List.filter (fun (m, _, _) -> entity |> Array.startsWith m ) with
