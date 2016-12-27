@@ -948,7 +948,7 @@ module internal ItemDescriptionsImpl =
                     ([],modrefs) 
                     ||> Seq.fold (fun st modref -> 
                         match fullDisplayTextOfParentOfModRef modref with 
-                        | Some(txt) -> (txt, modref.IsNamespace)::st 
+                        | Some(txt) -> txt::st 
                         | _ -> st) 
                     |> Seq.mapi (fun i x -> i,x) 
                     |> Seq.toList
@@ -957,10 +957,10 @@ module internal ItemDescriptionsImpl =
                     (
                         if not (List.isEmpty namesToAdd) then
                             wordL (tagLineBreak "\n") ^^
-                            List.fold ( fun s (i, (txt, isNamespace)) ->
+                            List.fold ( fun s (i, txt) ->
                                 s ^^
                                 wordL (tagLineBreak "\n") ^^
-                                wordL ((if isNamespace then tagNamespace else tagModule) ((if i = 0 then FSComp.SR.typeInfoFromFirst else FSComp.SR.typeInfoFromNext) txt))
+                                wordL (tagText ((if i = 0 then FSComp.SR.typeInfoFromFirst else FSComp.SR.typeInfoFromNext) txt))
                             ) emptyL namesToAdd 
                         else 
                             emptyL

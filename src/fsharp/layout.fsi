@@ -88,6 +88,7 @@ module TaggedTextOps =
         val lineBreak : TaggedText
         val space : TaggedText
         val comma : TaggedText
+        val dot : TaggedText
         val semicolon : TaggedText
         val leftParen : TaggedText
         val rightParen : TaggedText
@@ -101,6 +102,7 @@ module TaggedTextOps =
         val arrow : TaggedText
         val questionMark : TaggedText
         val colon: TaggedText
+        val minus: TaggedText
 
 module SepL =
     val dot: Layout

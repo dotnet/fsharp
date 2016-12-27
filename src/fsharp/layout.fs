@@ -109,6 +109,7 @@ module TaggedTextOps =
         let rightAngle = tagPunctuation ">"
         let star = tagOperator "*"
         let colon = tagPunctuation ":"
+        let minus = tagPunctuation "-"
 
 open TaggedTextOps
 

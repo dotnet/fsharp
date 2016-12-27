@@ -213,13 +213,13 @@ module private PrintIL =
             let isParamArray = TryFindILAttribute denv.g.attrib_ParamArrayAttribute p.CustomAttrs
             match isParamArray, p.Name, p.IsOptional with 
             // Layout an optional argument 
-            | _, Some nm, true -> leftL (tagPunctuation "?") ^^  sepL (tagParameter nm) ^^ SepL.colon
+            | _, Some nm, true -> leftL (tagPunctuation "?") ^^  sepL (tagParameter nm) ^^ RightL.colon
             // Layout an unnamed argument 
             | _, None, _ -> leftL (tagPunctuation ":")
             // Layout a named argument 
             | true, Some nm,_ ->      
-                layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute ^^ wordL (tagParameter nm) ^^ SepL.colon
-            | false, Some nm,_ -> leftL (tagParameter nm) ^^ SepL.colon
+                layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute ^^ wordL (tagParameter nm) ^^ RightL.colon
+            | false, Some nm,_ -> leftL (tagParameter nm) ^^ RightL.colon
         preL ^^ (layoutILType denv ilTyparSubst p.Type)
        
 
@@ -974,7 +974,7 @@ module private PrintTypes =
                 match argInfo.Name, isOptionalArg, isParamArray, tryDestOptionTy denv.g ty with 
                 // Layout an optional argument 
                 | Some(id), true, _, Some ty -> 
-                    leftL  (tagPunctuation "?") ^^ sepL (tagParameter id.idText) ^^ SepL.colon ^^ layoutTypeWithInfoAndPrec denv env 2 ty 
+                    leftL  (tagPunctuation "?") ^^ sepL (tagParameter id.idText) ^^ RightL.colon ^^ layoutTypeWithInfoAndPrec denv env 2 ty 
                 // Layout an unnamed argument 
                 | None, _,_, _ -> 
                     layoutTypeWithInfoAndPrec denv env 2 ty
@@ -985,7 +985,7 @@ module private PrintTypes =
                             layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute ^^ leftL (tagParameter id.idText)
                         else
                             leftL (tagParameter id.idText)
-                    prefix ^^ SepL.colon ^^ layoutTypeWithInfoAndPrec denv env 2 ty
+                    prefix ^^ RightL.colon ^^ layoutTypeWithInfoAndPrec denv env 2 ty
                         
             let delimitReturnValue = tagPunctuation (if denv.useColonForReturnType then ":" else "->")
 
@@ -1223,11 +1223,11 @@ module InfoMemberPrinting =
         | true, Some nm,_,_ -> 
             layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute ^^
             wordL (tagParameter nm.idText) ^^
-            SepL.colon ^^
+            RightL.colon ^^
             PrintTypes.layoutType denv pty
         | false, Some nm,_,_ -> 
             wordL (tagParameter nm.idText) ^^
-            SepL.colon ^^
+            RightL.colon ^^
             PrintTypes.layoutType denv pty
 
     let formatParamDataToBuffer denv os pd = layoutParamData denv pd |> bufferL os

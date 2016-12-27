@@ -96,7 +96,7 @@ module internal XmlDocumentation =
         if String.IsNullOrEmpty(xml) then xml
         else
             let trimmedXml = xml.TrimStart([|' ';'\r';'\n'|])
-            if trimmedXml.Length>0 then
+            if trimmedXml.Length > 0 then
                 if trimmedXml.[0] <> '<' then 
                     // This code runs for local/within-project xmldoc tooltips, but not for cross-project or .XML - for that see ast.fs in the compiler
                     let escapedXml = System.Security.SecurityElement.Escape(xml)
@@ -104,7 +104,113 @@ module internal XmlDocumentation =
                 else 
                     "<root>" + xml + "</root>"
             else xml
-    
+
+    let AppendHardLine(collector: ITaggedTextCollector) =
+        collector.Add Literals.lineBreak
+       
+    let EnsureHardLine(collector: ITaggedTextCollector) =
+        if not collector.EndsWithLineBreak then AppendHardLine collector
+        
+    let AppendOnNewLine (collector: ITaggedTextCollector) (line:string) =
+        if line.Length > 0 then 
+            EnsureHardLine collector
+            collector.Add(TaggedTextOps.tagText line)
+
+    open System.Xml
+    open System.Xml.Linq
+
+    let rec private WriteElement (collector: ITaggedTextCollector) (n: XNode) = 
+        match n.NodeType with
+        | XmlNodeType.Text -> 
+            WriteText collector (n :?> XText)
+        | XmlNodeType.Element ->
+            let el = n :?> XElement
+            match el.Name.LocalName with
+            | "see" | "seealso" -> 
+                for attr in el.Attributes() do
+                    WriteAttribute collector attr "cref" (WriteTypeName collector)
+            | "paramref" | "typeref" ->
+                for attr in el.Attributes() do
+                    WriteAttribute collector attr "name" (tagParameter >> collector.Add)
+            | _ -> 
+                WriteNodes collector (el.Nodes())
+        | _ -> ()
+                
+    and WriteNodes (collector: ITaggedTextCollector) (nodes: seq<XNode>) = 
+        for n in nodes do
+            WriteElement collector n
+
+    and WriteText (collector: ITaggedTextCollector) (n: XText) = 
+        collector.Add(tagText n.Value)
+
+    and WriteAttribute (collector: ITaggedTextCollector) (attr: XAttribute) (taggedName: string) tagger = 
+        if attr.Name.LocalName = taggedName then
+            tagger attr.Value
+        else
+            collector.Add(tagText attr.Value)
+
+    and WriteTypeName (collector: ITaggedTextCollector) (typeName: string) =
+        let typeName = if typeName.StartsWith("T:") then typeName.Substring(2) else typeName
+        let parts = typeName.Split([|'.'|])
+        for i = 0 to parts.Length - 2 do
+            collector.Add(tagNamespace parts.[i])
+            collector.Add(Literals.dot)
+        collector.Add(tagClass parts.[parts.Length - 1])
+
+    type XmlDocReader(s: string) = 
+        let doc = XElement.Parse(ProcessXml(s))
+        let tryFindParameter name = 
+            doc.Descendants (XName.op_Implicit "param")
+            |> Seq.tryFind (fun el -> 
+                match el.Attribute(XName.op_Implicit "name") with
+                | null -> false
+                | attr -> attr.Value = name)
+
+        member __.CollectSummary(collector: ITaggedTextCollector) = 
+            match Seq.tryHead (doc.Descendants(XName.op_Implicit "summary")) with
+            | None -> ()
+            | Some el ->
+                EnsureHardLine collector
+                WriteElement collector el
+
+        member this.CollectParameter(collector: ITaggedTextCollector, paramName: string) =
+            match tryFindParameter paramName with
+            | None -> ()
+            | Some el ->
+                EnsureHardLine collector
+                WriteNodes collector (el.Nodes())
+           
+        member this.CollectParameters(collector: ITaggedTextCollector) =
+            for p in doc.Descendants(XName.op_Implicit "param") do
+                match p.Attribute(XName.op_Implicit "name") with
+                | null -> ()
+                | name ->
+                    EnsureHardLine collector
+                    collector.Add(tagParameter name.Value)
+                    collector.Add(Literals.colon)
+                    collector.Add(Literals.space)
+                    WriteNodes collector (p.Nodes())
+
+        member this.CollectExceptions(collector: ITaggedTextCollector) =
+            let mutable started = false;
+            for p in doc.Descendants(XName.op_Implicit "exception") do
+                match p.Attribute(XName.op_Implicit "cref") with
+                | null -> ()
+                | exnType ->
+                    if not started then
+                        started <- true
+                        AppendHardLine collector
+                        AppendHardLine collector
+                        AppendOnNewLine collector Strings.ExceptionsHeader
+                    EnsureHardLine collector
+                    collector.Add(tagSpace "    ")
+                    WriteTypeName collector exnType.Value
+                    if not (Seq.isEmpty (p.Nodes())) then
+                        collector.Add Literals.space
+                        collector.Add Literals.minus
+                        collector.Add Literals.space
+                        WriteNodes collector (p.Nodes())
+
     /// Provide Xml Documentation             
     type Provider(xmlIndexService:IVsXMLMemberIndexService, dte: DTE) = 
         /// Index of assembly name to xml member index.
@@ -114,24 +220,7 @@ module internal XmlDocumentation =
         let solutionEvents = events.SolutionEvents
         do solutionEvents.add_AfterClosing(fun () -> 
             xmlCache.Clear())
-            
-        let AppendHardLine(collector: ITaggedTextCollector) =
-            collector.Add Literals.lineBreak
-       
-        let EnsureHardLine(collector: ITaggedTextCollector) =
-            if not collector.EndsWithLineBreak then AppendHardLine collector
-        
-        let AppendOnNewLine (collector: ITaggedTextCollector) (line:string) =
-            if line.Length > 0 then 
-                EnsureHardLine collector
-                collector.Add(TaggedTextOps.tagText line)
-                    
-        let AppendSummary (collector: ITaggedTextCollector) (memberData:IVsXMLMemberData3) = 
-            let ok,summary = memberData.GetSummaryText()
-            if Com.Succeeded(ok) || not (String.IsNullOrEmpty summary)then 
-                // if failed, still show the summary because it may contain an error message.
-                AppendOnNewLine collector summary
-            
+
     #if DEBUG // Keep under DEBUG so that it can keep building.
 
         let _AppendTypeParameters (collector: ITaggedTextCollector) (memberData:IVsXMLMemberData3) = 
@@ -146,36 +235,12 @@ module internal XmlDocumentation =
                         collector.Add(tagPunctuation "-")
                         collector.Add(Literals.space)
                         collector.Add(tagText text)
-                        //AppendOnNewLine sb (sprintf "%s - %s" name text)
-                
+
         let _AppendRemarks (collector: ITaggedTextCollector) (memberData:IVsXMLMemberData3) = 
             let ok,remarksText = memberData.GetRemarksText()
             if Com.Succeeded(ok) then 
                 AppendOnNewLine collector remarksText            
     #endif
-
-        let AppendParameters (collector: ITaggedTextCollector) (memberData:IVsXMLMemberData3) = 
-            let ok,count = memberData.GetParamCount()
-            if Com.Succeeded(ok) && count > 0 then 
-                for param in 0..(count-1) do
-                    let ok,name,text = memberData.GetParamTextAt(param)
-                    if Com.Succeeded(ok) then
-                        EnsureHardLine collector
-                        collector.Add(tagParameter name)
-                        collector.Add(Literals.colon)
-                        collector.Add(Literals.space)
-                        collector.Add(tagText text)
-                        //AppendOnNewLine sb (sprintf "%s: %s" name text)
-
-        let AppendParameter (collector: ITaggedTextCollector) ( memberData:IVsXMLMemberData3) (paramName:string) =
-            let ok,count = memberData.GetParamCount()
-            if Com.Succeeded(ok) && count > 0 then 
-                if not collector.EndsWithLineBreak then 
-                    AppendHardLine(collector)
-                for param in 0..(count-1) do
-                    let ok,name,text = memberData.GetParamTextAt(param)
-                    if Com.Succeeded(ok) && name = paramName then 
-                        AppendOnNewLine collector text
 
         let _AppendReturns (collector: ITaggedTextCollector) (memberData:IVsXMLMemberData3) = 
             let ok,returnsText = memberData.GetReturnsText()
@@ -184,22 +249,7 @@ module internal XmlDocumentation =
                     AppendHardLine(collector)
                     AppendHardLine(collector)
                 AppendOnNewLine collector returnsText
-            
-        let AppendExceptions (collector: ITaggedTextCollector) (memberData:IVsXMLMemberData3) = 
-            let ok,count = memberData.GetExceptionCount()
-            if Com.Succeeded(ok) && count > 0 then 
-                if count > 0 then 
-                    AppendHardLine collector
-                    AppendHardLine collector
-                    AppendOnNewLine collector Strings.ExceptionsHeader
-                    for exc in 0..count do
-                        let ok,typ,_text = memberData.GetExceptionTextAt(exc)
-                        if Com.Succeeded(ok) then 
-                            EnsureHardLine collector
-                            collector.Add(tagSpace "    ")
-                            collector.Add(tagClass typ)
-                            //AppendOnNewLine sb (sprintf "    %s" typ )
-                
+
         /// Retrieve the pre-existing xml index or None
         let GetMemberIndexOfAssembly(assemblyName) =
             match xmlCache.TryGet(assemblyName) with 
@@ -214,27 +264,27 @@ module internal XmlDocumentation =
                     else None
                 else None
 
-        let AppendMemberData(collector: ITaggedTextCollector,memberData:IVsXMLMemberData3,showExceptions:bool,showParameters:bool) =
+        let AppendMemberData(collector: ITaggedTextCollector, xmlDocReader: XmlDocReader,showExceptions:bool,showParameters:bool) =
             AppendHardLine collector
-            AppendSummary collector memberData
+            xmlDocReader.CollectSummary(collector)
 //          AppendParameters appendTo memberData
 //          AppendTypeParameters appendTo memberData
-            if (showParameters) then 
-                AppendParameters collector memberData
+            if (showParameters) then
+                xmlDocReader.CollectParameters collector
                 // Not showing returns because there's no resource localization in language service to place the "returns:" text
                 // AppendReturns appendTo memberData
-            if (showExceptions) then AppendExceptions collector memberData
+            if (showExceptions) then 
+                xmlDocReader.CollectExceptions collector
 //          AppendRemarks appendTo memberData
 
         interface IDocumentationBuilder with 
             /// Append the given processed XML formatted into the string builder
             override this.AppendDocumentationFromProcessedXML(appendTo, processedXml, showExceptions, showParameters, paramName) = 
-                let ok,xml = xmlIndexService.GetMemberDataFromXML(processedXml)
-                if Com.Succeeded(ok) then 
-                    if paramName.IsSome then
-                        AppendParameter appendTo (xml:?>IVsXMLMemberData3) paramName.Value
-                    else
-                        AppendMemberData(appendTo,xml:?>IVsXMLMemberData3,showExceptions,showParameters)
+                let xmlDocReader = XmlDocReader(processedXml)
+                if paramName.IsSome then
+                    xmlDocReader.CollectParameter(appendTo, paramName.Value)
+                else
+                    AppendMemberData(appendTo, xmlDocReader, showExceptions,showParameters)
 
             /// Append Xml documentation contents into the StringBuilder
             override this.AppendDocumentation
@@ -257,9 +307,8 @@ module internal XmlDocumentation =
                         let _,idx = index.ParseMemberSignature(signature)
                         if idx <> 0u then
                             let ok,xml = index.GetMemberXML(idx)
-                            let processedXml = ProcessXml(xml)
                             if Com.Succeeded(ok) then 
-                                (this:>IDocumentationBuilder).AppendDocumentationFromProcessedXML(sink, processedXml, showExceptions, showParameters, paramName)
+                                (this:>IDocumentationBuilder).AppendDocumentationFromProcessedXML(sink, xml, showExceptions, showParameters, paramName)
                     | None -> ()
                 with e-> 
                     Assert.Exception(e)
@@ -275,14 +324,6 @@ module internal XmlDocumentation =
             let processedXml = ProcessXml(rawXml)
             documentationProvider.AppendDocumentationFromProcessedXML(sink, processedXml, showExceptions, showParameters, paramName)
 
-    /// Common sanitation for data tip segment
-    let _CleanDataTipSegment(segment:StringBuilder) =     
-        segment.Replace("\r", "")
-          .Replace("\n\n\n","\n\n")
-          .Replace("\n\n\n","\n\n") 
-          .ToString()
-          .Trim([|'\n'|])
-
     let private AddSeparator (collector: ITaggedTextCollector) =
         collector.Add Literals.lineBreak
         collector.Add (tagText "-------------")
@@ -293,15 +334,23 @@ module internal XmlDocumentation =
     let BuildTipText(documentationProvider:IDocumentationBuilder, dataTipText:FSharpToolTipElement<Layout> list, textCollector, xmlCollector, showText, showExceptions, showParameters, showOverloadText) = 
         let textCollector: ITaggedTextCollector = TextSanitizingCollector(textCollector, lineLimit = 45) :> _
         let xmlCollector: ITaggedTextCollector = TextSanitizingCollector(xmlCollector, lineLimit = 45) :> _
-        let Process(dataTipElement:FSharpToolTipElement<_>) =
+
+        let addSeparatorIfNecessary add =
+            if add then
+                AddSeparator textCollector
+                AddSeparator xmlCollector
+
+        let Process add (dataTipElement:FSharpToolTipElement<_>) =
             match dataTipElement with 
             | FSharpToolTipElement.None -> false
-            | FSharpToolTipElement.Single (text, xml) -> 
+            | FSharpToolTipElement.Single (text, xml) ->
+                addSeparatorIfNecessary add
                 if showText then 
                     renderL (taggedTextListR textCollector.Add) text |> ignore
                 AppendXmlComment(documentationProvider, xmlCollector, xml, showExceptions, showParameters, None)
                 true
             | FSharpToolTipElement.SingleParameter(text, xml, paramName) ->
+                addSeparatorIfNecessary add
                 if showText then
                     renderL (taggedTextListR textCollector.Add) text |> ignore
                 AppendXmlComment(documentationProvider, xmlCollector, xml, showExceptions, showParameters, Some paramName)
@@ -309,7 +358,8 @@ module internal XmlDocumentation =
             | FSharpToolTipElement.Group (overloads) -> 
                 let overloads = Array.ofList overloads
                 let len = Array.length overloads
-                if len >= 1 then 
+                if len >= 1 then
+                    addSeparatorIfNecessary add
                     if showOverloadText then 
                         let AppendOverload(text,_) = 
                             if not(Microsoft.FSharp.Compiler.Layout.isEmptyL text) then
@@ -324,7 +374,6 @@ module internal XmlDocumentation =
                         if len >= 6 then 
                             textCollector.Add Literals.lineBreak
                             textCollector.Add (tagText(PrettyNaming.FormatAndOtherOverloadsString(len-5)))
-                            //segment.Append("\n").Append(PrettyNaming.FormatAndOtherOverloadsString(len-5)) |> ignore
 
                     let _,xml = overloads.[0]
                     AppendXmlComment(documentationProvider, textCollector, xml, showExceptions, showParameters, None)
@@ -336,26 +385,8 @@ module internal XmlDocumentation =
                 textCollector.Add(tagText errText)
                 true
 
-//            CleanDataTipSegment(segment) 
-
-        let mutable addSeparator = false
-        for dataTip in dataTipText do
-            if addSeparator then
-                AddSeparator textCollector
-                AddSeparator xmlCollector           
-            addSeparator <- Process dataTip
-
-        //let segments = dataTipText |> List.map Format |> List.filter (fun d->d<>null) |> Array.ofList
-        //let text =  System.String.Join("\n-------------\n", segments)
-
-        //let lines = text.Split([|'\n'|],maxLinesInText+1) // Need one more than max to determine whether there is truncation.
-        //let truncate = lines.Length>maxLinesInText            
-        //let lines = lines |> Seq.truncate maxLinesInText 
-        //let lines = if truncate then Seq.append lines ["..."] else lines
-        //let lines = lines |> Seq.toArray
-        //let join = String.Join("\n",lines)
-
-        //join
+        List.fold Process false dataTipText
+        |> ignore
 
     let BuildDataTipText(documentationProvider, textCollector, xmlCollector, FSharpToolTipText(dataTipText)) = 
         BuildTipText(documentationProvider, dataTipText, textCollector, xmlCollector, true, true, false, true) 
