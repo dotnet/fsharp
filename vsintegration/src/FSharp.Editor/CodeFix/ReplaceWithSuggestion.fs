@@ -16,7 +16,7 @@ open Microsoft.CodeAnalysis.CodeActions
 [<ExportCodeFixProvider(FSharpCommonConstants.FSharpLanguageName, Name = "ReplaceWithSuggestion"); Shared>]
 type internal FSharpReplaceWithSuggestionCodeFixProvider() =
     inherit CodeFixProvider()
-    let fixableDiagnosticIds = ["FS0039"; "FS1129"; "FS0495"]
+    let fixableDiagnosticIds = ["FS0039"; "FS1129"; "FS0495"] |> Set.ofList
     let maybeString = FSComp.SR.undefinedNameSuggestionsIntro()
         
     let createCodeFix (title: string, context: CodeFixContext, textChange: TextChange) =
@@ -34,7 +34,7 @@ type internal FSharpReplaceWithSuggestionCodeFixProvider() =
     override __.RegisterCodeFixesAsync context : Task =
        async { 
             context.Diagnostics 
-            |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id)
+            |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
             |> Seq.iter (fun x ->
                 let message = x.GetMessage()
                 let splitted = message.Split([|maybeString|], StringSplitOptions.None)
