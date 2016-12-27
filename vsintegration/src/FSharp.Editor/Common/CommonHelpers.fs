@@ -319,7 +319,7 @@ module internal CommonHelpers =
         try
             let textLine = sourceText.Lines.GetLineFromPosition(position)
             let textLinePos = sourceText.Lines.GetLinePosition(position)
-            let lineNumber = textLinePos.Line + 1 // FCS line number
+            let lineNumber = textLinePos.Line
             let sourceTokenizer = FSharpSourceTokenizer(defines, Some fileName)
             let lines = sourceText.Lines
             // We keep incremental data per-document. When text changes we correlate text line-by-line (by hash codes of lines)
@@ -328,11 +328,11 @@ module internal CommonHelpers =
             // Go backwards to find the last cached scanned line that is valid
             let scanStartLine = 
                 let mutable i = lineNumber
-                while i > 0 && (match sourceTextData.[i-1] with Some data -> not (data.IsValid(lines.[i])) | None -> true)  do
+                while i > 0 && (match sourceTextData.[i] with Some data -> not (data.IsValid(lines.[i])) | None -> true)  do
                     i <- i - 1
                 i
                 
-            let lexState = if scanStartLine = 0 then 0L else sourceTextData.[scanStartLine - 1].Value.LexStateAtEndOfLine
+            let lexState = if scanStartLine = 0 then 0L else sourceTextData.[scanStartLine].Value.LexStateAtEndOfLine
             let lineContents = textLine.Text.ToString(textLine.Span)
 
             let lineData = 
@@ -476,30 +476,6 @@ module internal Extensions =
                 | _ -> false
             
             isPrivate && declaredInTheFile
-
-    let glyphMajorToRoslynGlyph = function
-        | GlyphMajor.Class -> Glyph.ClassPublic
-        | GlyphMajor.Constant -> Glyph.ConstantPublic
-        | GlyphMajor.Delegate -> Glyph.DelegatePublic
-        | GlyphMajor.Enum -> Glyph.EnumPublic
-        | GlyphMajor.EnumMember -> Glyph.FieldPublic
-        | GlyphMajor.Event -> Glyph.EventPublic
-        | GlyphMajor.Exception -> Glyph.ClassPublic
-        | GlyphMajor.FieldBlue -> Glyph.FieldPublic
-        | GlyphMajor.Interface -> Glyph.InterfacePublic
-        | GlyphMajor.Method -> Glyph.MethodPublic
-        | GlyphMajor.Method2 -> Glyph.MethodPublic
-        | GlyphMajor.Module -> Glyph.ModulePublic
-        | GlyphMajor.NameSpace -> Glyph.Namespace
-        | GlyphMajor.Property -> Glyph.PropertyPublic
-        | GlyphMajor.Struct -> Glyph.StructurePublic
-        | GlyphMajor.Typedef -> Glyph.ClassPublic
-        | GlyphMajor.Type -> Glyph.ClassPublic
-        | GlyphMajor.Union -> Glyph.EnumPublic
-        | GlyphMajor.Variable -> Glyph.FieldPublic
-        | GlyphMajor.ValueType -> Glyph.StructurePublic
-        | GlyphMajor.Error -> Glyph.Error
-        | _ -> Glyph.None
 
     type Async<'a> with
         /// Creates an asynchronous workflow that runs the asynchronous workflow given as an argument at most once. 
