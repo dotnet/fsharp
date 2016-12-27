@@ -31,6 +31,7 @@ let FormatPredictions errorStyle normalizeF (predictions: (float * string) list)
     match predictions with
     | [] -> System.String.Empty
     | _ ->
+        " " + FSComp.SR.undefinedNameSuggestionsIntro() + 
         match errorStyle with
         | ErrorLogger.ErrorStyle.VSErrors ->
             let predictionText =
@@ -38,12 +39,9 @@ let FormatPredictions errorStyle normalizeF (predictions: (float * string) list)
                 |> List.map (snd >> normalizeF)
                 |> String.concat ", "
 
-            " " + FSComp.SR.undefinedNameSuggestionsIntro() + " " + predictionText
+            " " + predictionText
         | _ ->
-            let predictionText =
-                predictions 
-                |> List.map (snd >> normalizeF)
-                |> Seq.map (sprintf "%s   %s" System.Environment.NewLine) 
-                |> String.concat ""
-
-            System.Environment.NewLine + FSComp.SR.undefinedNameSuggestionsIntro() + predictionText
+            predictions
+            |> List.map (snd >> normalizeF) 
+            |> List.map (sprintf "%s   %s" System.Environment.NewLine)
+            |> String.concat ""
