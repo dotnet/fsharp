@@ -498,50 +498,20 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             mkSeq (fun () -> source.GetEnumerator())
 
-        let inline groupByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (seq:seq<'T>) =
-            checkNonNull "seq" seq
-
-            let dict = Dictionary<_,ResizeArray<_>> comparer
-
-            // Previously this was 1, but I think this is rather stingy, considering that we are already paying
-            // for at least a key, the ResizeArray reference, which includes an array reference, an Entry in the
-            // Dictionary, plus any empty space in the Dictionary of unfilled hash buckets.
-            let minimumBucketSize = 4
-
-            // Build the groupings
-            seq |> iter (fun v ->
-                let safeKey = keyf v
-                let mutable prev = Unchecked.defaultof<_>
-                match dict.TryGetValue (safeKey, &prev) with
-                | true -> prev.Add v
-                | false ->
-                    let prev = ResizeArray ()
-                    dict.[safeKey] <- prev
-                    prev.Add v)
-
-            // Trim the size of each result group, don't trim very small buckets, as excessive work, and garbage for
-            // minimal gain
-            dict |> iter (fun group -> if group.Value.Count > minimumBucketSize then group.Value.TrimExcess())
-
-            // Return the sequence-of-sequences. Don't reveal the
-            // internal collections: just reveal them as sequences
-            dict |> map (fun group -> (getKey group.Key, readonly group.Value))
-
-        // We avoid wrapping a StructBox, because under 64 JIT we get some "hard" tailcalls which affect performance
-        let groupByValueType (keyf:'T->'Key) (seq:seq<'T>) = seq |> groupByImpl HashIdentity.Structural<'Key> keyf id
-
-        // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
-        let groupByRefType   (keyf:'T->'Key) (seq:seq<'T>) = seq |> groupByImpl RuntimeHelpers.StructBox<'Key>.Comparer (fun t -> RuntimeHelpers.StructBox (keyf t)) (fun sb -> sb.Value)
-
         [<CompiledName("GroupBy")>]
         let groupBy (keyf:'T->'Key) (seq:seq<'T>) =
+            let grouped = 
 #if FX_RESHAPED_REFLECTION
-            if (typeof<'Key>).GetTypeInfo().IsValueType
+                if (typeof<'Key>).GetTypeInfo().IsValueType
 #else
-            if typeof<'Key>.IsValueType
+                if typeof<'Key>.IsValueType
 #endif
-                then mkDelayedSeq (fun () -> groupByValueType keyf seq)
-                else mkDelayedSeq (fun () -> groupByRefType   keyf seq)
+                    then seq |> toComposer |> Composer.groupByVal' keyf
+                    else seq |> toComposer |> Composer.groupByRef' keyf
+
+            grouped
+            |> Composer.map (fun (key,value) -> key, Upcast.enumerable value)
+            |> Upcast.enumerable
 
         [<CompiledName("Distinct")>]
         let distinct source =

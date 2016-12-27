@@ -17,6 +17,13 @@ namespace Microsoft.FSharp.Collections
         /// <summary>Values is a mutable struct. It can be embedded within the folder type
         /// if two values are required for the calculation.</summary>
         [<Struct; NoComparison; NoEquality>]
+        type Value<'a> =
+            new : a:'a -> Value<'a>
+            val mutable _1: 'a
+
+        /// <summary>Values is a mutable struct. It can be embedded within the folder type
+        /// if two values are required for the calculation.</summary>
+        [<Struct; NoComparison; NoEquality>]
         type Values<'a,'b> =
             new : a:'a * b:'b -> Values<'a,'b>
             val mutable _1: 'a
@@ -105,8 +112,17 @@ namespace Microsoft.FSharp.Collections
 
     open Core
 
+    [<CompiledName "OfResizeArrayUnchecked">]
+    val ofResizeArrayUnchecked : ResizeArray<'T> ->  ISeq<'T>
+
+    [<CompiledName "OfList">]
+    val ofList : list<'T> ->  ISeq<'T>
+
+    [<CompiledName "OfArray">]
+    val ofArray : array<'T> ->  ISeq<'T>
+
     [<CompiledName "OfSeq">]
-    val ofSeq : source:seq<'T> ->  ISeq<'T>
+    val ofSeq : seq<'T> ->  ISeq<'T>
 
     [<CompiledName "Average">]
     val inline average : source: ISeq< ^T> -> ^T
@@ -274,11 +290,23 @@ namespace Microsoft.FSharp.Collections
     [<CompiledName "Windowed">]
     val windowed : windowSize:int -> source:ISeq<'T> -> ISeq<'T[]>
 
-    [<CompiledName("Concat")>]
+    [<CompiledName "Concat">]
     val concat : sources:ISeq<'Collection> -> ISeq<'T> when 'Collection :> ISeq<'T>
 
-    [<CompiledName("Append")>]
+    [<CompiledName "Append">]
     val append: source1:ISeq<'T> -> source2:ISeq<'T> -> ISeq<'T>
+
+    [<CompiledName "Delayed">]
+    val delayed : (unit -> ISeq<'T>) -> ISeq<'T>
+
+    val inline internal groupByVal' : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * ISeq<'T>> when 'Key : equality
+    val inline internal groupByRef' : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * ISeq<'T>> when 'Key : equality
+
+    [<CompiledName "GroupByVal">]
+    val inline groupByVal : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * ISeq<'T>> when 'Key : equality and 'T : struct
+
+    [<CompiledName "GroupByRef">]
+    val inline groupByRef : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * ISeq<'T>> when 'Key : equality and 'T : not struct
 
     module internal Array = begin
         val createDelayed   : (unit -> 'T array) -> TransformFactory<'T,'U> ->  ISeq<'U>
