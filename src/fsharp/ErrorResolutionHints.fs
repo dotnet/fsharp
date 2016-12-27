@@ -9,18 +9,17 @@ let minStringLengthForThreshold = 3
 
 let thresholdForSuggestions = 0.7
 
-/// Filters predictions based on edit distance to an unknown identifier.
+/// Filters predictions based on edit distance to the given unknown identifier.
 let FilterPredictions (unknownIdent:string) (predictionsF:ErrorLogger.Suggestions) =    
     let unknownIdent = unknownIdent.ToUpperInvariant()
     let useThreshold = unknownIdent.Length >= minStringLengthForThreshold
     predictionsF()
     |> Seq.choose (fun p -> 
         let similarity = Internal.Utilities.EditDistance.JaroWinklerDistance unknownIdent (p.ToUpperInvariant())
-        if not useThreshold || similarity >= thresholdForSuggestions then
+        if not useThreshold || similarity >= thresholdForSuggestions || p.Contains unknownIdent then
             Some(similarity,p)
         else
-            None
-        )
+            None)
     |> Seq.sortByDescending fst
     |> Seq.mapi (fun i x -> i,x) 
     |> Seq.takeWhile (fun (i,_) -> i < maxSuggestions) 
@@ -31,6 +30,7 @@ let FormatPredictions errorStyle normalizeF (predictions: (float * string) list)
     match predictions with
     | [] -> System.String.Empty
     | _ ->
+        " " + FSComp.SR.undefinedNameSuggestionsIntro() + 
         match errorStyle with
         | ErrorLogger.ErrorStyle.VSErrors ->
             let predictionText =
@@ -38,12 +38,9 @@ let FormatPredictions errorStyle normalizeF (predictions: (float * string) list)
                 |> List.map (snd >> normalizeF)
                 |> String.concat ", "
 
-            " " + FSComp.SR.undefinedNameRecordLabelDetails() + " " + predictionText
+            " " + predictionText
         | _ ->
-            let predictionText =
-                predictions 
-                |> List.map (snd >> normalizeF)
-                |> Seq.map (sprintf "%s   %s" System.Environment.NewLine) 
-                |> String.concat ""
-
-            System.Environment.NewLine + FSComp.SR.undefinedNameRecordLabelDetails() + predictionText
+            predictions
+            |> List.map (snd >> normalizeF) 
+            |> List.map (sprintf "%s   %s" System.Environment.NewLine)
+            |> String.concat ""
