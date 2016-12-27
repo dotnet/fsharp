@@ -119,7 +119,7 @@ type internal FSharpAddOpenCodeFixProvider
             fixUnderscoresInMenuText fullName,
             fun (cancellationToken: CancellationToken) -> 
                 async {
-                    let! sourceText = context.Document.GetTextAsync() |> Async.AwaitTask
+                    let! sourceText = context.Document.GetTextAsync()
                     return context.Document.WithText(sourceText.Replace(context.Span, qualifier))
                 } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken))
 
@@ -130,7 +130,7 @@ type internal FSharpAddOpenCodeFixProvider
             fixUnderscoresInMenuText displayText,
             (fun (cancellationToken: CancellationToken) -> 
                 async {
-                    let! sourceText = context.Document.GetTextAsync() |> Async.AwaitTask
+                    let! sourceText = context.Document.GetTextAsync()
                     return context.Document.WithText(InsertContext.insertOpenDeclaration sourceText ctx ns)
                 } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)),
             displayText)
@@ -172,8 +172,8 @@ type internal FSharpAddOpenCodeFixProvider
         async {
             match projectInfoManager.TryGetOptionsForEditingDocumentOrProject context.Document with 
             | Some options ->
-                let! sourceText = context.Document.GetTextAsync(context.CancellationToken) |> Async.AwaitTask
-                let! textVersion = context.Document.GetTextVersionAsync(context.CancellationToken) |> Async.AwaitTask
+                let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
+                let! textVersion = context.Document.GetTextVersionAsync(context.CancellationToken)
                 let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(context.Document.FilePath, textVersion.GetHashCode(), sourceText.ToString(), options)
                 match parseResults.ParseTree, checkFileAnswer with
                 | None, _

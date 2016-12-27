@@ -98,14 +98,14 @@ type internal FSharpQuickInfoProvider
     interface IQuickInfoProvider with
         override this.GetItemAsync(document: Document, position: int, cancellationToken: CancellationToken): Task<QuickInfoItem> =
             async {
-                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                let! sourceText = document.GetTextAsync(cancellationToken)
                 let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
 
                 match lexer.GetSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Fuzzy) with
                 | Some _ ->
                     match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document) with 
                     | Some options ->
-                        let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
+                        let! textVersion = document.GetTextVersionAsync(cancellationToken)
                         let! quickInfoResult = FSharpQuickInfoProvider.ProvideQuickInfo(lexer, checkerProvider.Checker, document.Id, sourceText, document.FilePath, position, options, textVersion.GetHashCode())
                         match quickInfoResult with
                         | Some(toolTipElement, textSpan) ->

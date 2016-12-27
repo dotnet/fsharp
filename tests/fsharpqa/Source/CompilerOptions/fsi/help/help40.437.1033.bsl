@@ -55,6 +55,12 @@ Usage: fsi.exe <options> [script.fsx [<arguments>]]
 --lib:<dir;...>                          Specify a directory for the include path which
                                          is used to resolve source files and assemblies
                                          (Short form: -I)
+--simpleresolution                       Resolve assembly references using
+                                         directory-based rules rather than MSBuild
+                                         resolution
+--targetprofile:<string>                 Specify target framework profile of this
+                                         assembly. Valid values are mscorlib or netcore.
+                                         Default - mscorlib
 --noframework                            Do not reference the default CLI assemblies by
                                          default
 --exec                                   Exit fsi after loading the files or running the

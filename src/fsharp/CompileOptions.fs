@@ -738,15 +738,28 @@ let cliRootFlag (_tcConfigB : TcConfigBuilder) =
         CompilerOption("cliroot", tagString, OptionString (fun _  -> ()), Some(DeprecatedCommandLineOptionFull(FSComp.SR.optsClirootDeprecatedMsg(), rangeCmdArgs)),
                            Some(FSComp.SR.optsClirootDescription()))
 
+let SetTargetProfile tcConfigB v = 
+    tcConfigB.primaryAssembly <- 
+        match v with
+        | "mscorlib" -> PrimaryAssembly.Mscorlib
+        | "netcore"  -> PrimaryAssembly.DotNetCore
+        | _ -> error(Error(FSComp.SR.optsInvalidTargetProfile(v), rangeCmdArgs))
+
 let advancedFlagsBoth tcConfigB =
     [
-        codePageFlag tcConfigB
-        utf8OutputFlag tcConfigB
+        yield codePageFlag tcConfigB
+        yield utf8OutputFlag tcConfigB
 #if PREFERRED_UI_LANG
-        preferredUiLang tcConfigB
+        yield preferredUiLang tcConfigB
 #endif
-        fullPathsFlag tcConfigB
-        libFlag tcConfigB
+        yield fullPathsFlag tcConfigB
+        yield libFlag tcConfigB
+        yield CompilerOption("simpleresolution", 
+                             tagNone, 
+                             OptionUnit (fun () -> tcConfigB.useSimpleResolution<-true), 
+                             None, 
+                             Some (FSComp.SR.optsSimpleresolution()))
+        yield CompilerOption("targetprofile", tagString, OptionString (SetTargetProfile tcConfigB), None, Some(FSComp.SR.optsTargetProfile()))
     ]
 
 let noFrameworkFlag isFsc tcConfigB = 
@@ -756,13 +769,11 @@ let noFrameworkFlag isFsc tcConfigB =
                                                    tcConfigB.implicitlyResolveAssemblies <- false), None,
                            Some (FSComp.SR.optsNoframework()))
 
-let advancedFlagsFsi tcConfigB = advancedFlagsBoth tcConfigB  @ [noFrameworkFlag false tcConfigB]
-let SetTargetProfile tcConfigB v = 
-    tcConfigB.primaryAssembly <- 
-        match v with
-        | "mscorlib" -> PrimaryAssembly.Mscorlib
-        | "netcore"  -> PrimaryAssembly.DotNetCore
-        | _ -> error(Error(FSComp.SR.optsInvalidTargetProfile(v), rangeCmdArgs))
+let advancedFlagsFsi tcConfigB = 
+    advancedFlagsBoth tcConfigB  @
+    [
+        yield noFrameworkFlag false tcConfigB
+    ]
 
 let advancedFlagsFsc tcConfigB =
     advancedFlagsBoth tcConfigB @
@@ -786,11 +797,8 @@ let advancedFlagsFsc tcConfigB =
 #endif
         yield CompilerOption("pdb", tagString, OptionString (fun s -> tcConfigB.debugSymbolFile <- Some s), None,
                              Some (FSComp.SR.optsPdb()))
-        yield CompilerOption("simpleresolution", tagNone, OptionUnit (fun () -> tcConfigB.useSimpleResolution<-true), None,
-                             Some (FSComp.SR.optsSimpleresolution()))
         yield CompilerOption("highentropyva", tagNone, OptionSwitch (useHighEntropyVASwitch tcConfigB), None, Some (FSComp.SR.optsUseHighEntropyVA()))
         yield CompilerOption("subsystemversion", tagString, OptionString (subSystemVersionSwitch tcConfigB), None, Some (FSComp.SR.optsSubSystemVersion()))
-        yield CompilerOption("targetprofile", tagString, OptionString (SetTargetProfile tcConfigB), None, Some(FSComp.SR.optsTargetProfile()))
         yield CompilerOption("quotations-debug", tagNone, OptionSwitch(fun switch -> tcConfigB.emitDebugInfoInQuotations <- switch = OptionSwitch.On), None, Some(FSComp.SR.optsEmitDebugInfoInQuotations()))
     ]
 

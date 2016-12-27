@@ -4,27 +4,17 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Composition
-open System.Collections.Concurrent
 open System.Collections.Generic
-open System.Linq
 open System.Threading
-open System.Threading.Tasks
 open System.Runtime.CompilerServices
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Editor
-open Microsoft.CodeAnalysis.Editor.Implementation.Classification
-open Microsoft.CodeAnalysis.Editor.Implementation.BlockCommentEditing
-open Microsoft.CodeAnalysis.Editor.Shared.Utilities
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
 
 open Microsoft.VisualStudio.FSharp.LanguageService
-open Microsoft.VisualStudio.Text
-open Microsoft.VisualStudio.Text.Tagging
-open Microsoft.VisualStudio.Text.Operations
-open Microsoft.VisualStudio.Utilities
 
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
@@ -43,7 +33,7 @@ type internal FSharpColorizationService
         member this.AddSyntacticClassificationsAsync(document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
             async {
                 let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
-                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                let! sourceText = document.GetTextAsync(cancellationToken)
                 result.AddRange(lexer.GetColorizationData(document.Id, sourceText, textSpan, Some(document.FilePath), defines, cancellationToken))
             } |> CommonRoslynHelpers.StartAsyncUnitAsTask cancellationToken
 
@@ -51,8 +41,8 @@ type internal FSharpColorizationService
             async {
                 match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)  with 
                 | Some options ->
-                    let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                    let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
+                    let! sourceText = document.GetTextAsync(cancellationToken)
+                    let! textVersion = document.GetTextVersionAsync(cancellationToken)
                     let! _parseResults, checkResultsAnswer = checkerProvider.Checker.ParseAndCheckFileInProject(document.FilePath, textVersion.GetHashCode(), sourceText.ToString(), options)
 
                     match checkResultsAnswer with
