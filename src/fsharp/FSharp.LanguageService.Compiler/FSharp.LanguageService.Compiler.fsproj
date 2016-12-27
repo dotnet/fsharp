@@ -559,6 +559,9 @@
     <Compile Include="..\vs\service.fs">
       <Link>Service/service.fs</Link>
     </Compile>
+    <Compile Include="..\vs\ServiceInterfaceStubGenerator.fs">
+      <Link>Service/ServiceInterfaceStubGenerator.fs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
