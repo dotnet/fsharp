@@ -55,16 +55,13 @@ type internal FSharpColorizationService
                     let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
                     let! _parseResults, checkResultsAnswer = checkerProvider.Checker.ParseAndCheckFileInProject(document.FilePath, textVersion.GetHashCode(), sourceText.ToString(), options)
 
-                    let extraColorizationData = 
-                        match checkResultsAnswer with
-                        | FSharpCheckFileAnswer.Aborted -> [| |]
-                        | FSharpCheckFileAnswer.Succeeded(results) -> 
-                            [| for (range, tokenColorKind)  in results.GetExtraColorizationsAlternate() do
-                                  let span = CommonHelpers.fixupSpan(sourceText, CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
-                                  if textSpan.Contains(span.Start) || textSpan.Contains(span.End - 1) || span.Contains(textSpan) then
-                                      yield ClassifiedSpan(span, CommonHelpers.compilerTokenToRoslynToken(tokenColorKind)) |]
-
-                    result.AddRange(extraColorizationData)
+                    match checkResultsAnswer with
+                    | FSharpCheckFileAnswer.Aborted -> ()
+                    | FSharpCheckFileAnswer.Succeeded(results) -> 
+                        for (range, tokenColorKind)  in results.GetExtraColorizationsAlternate() do
+                           let span = CommonHelpers.fixupSpan(sourceText, CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
+                           if textSpan.Contains(span.Start) || textSpan.Contains(span.End - 1) || span.Contains(textSpan) then
+                               result.Add(ClassifiedSpan(span, CommonHelpers.compilerTokenToRoslynToken(tokenColorKind)))
                 | None -> ()
             } |> CommonRoslynHelpers.StartAsyncUnitAsTask cancellationToken
 

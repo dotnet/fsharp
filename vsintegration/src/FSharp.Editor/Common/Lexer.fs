@@ -51,21 +51,20 @@ type private DraftToken =
         { Kind = kind; Token = token; RightColumn = token.LeftColumn + token.FullMatchedLength - 1 }
 
 type internal SourceLineData(lineStart: int, lexStateAtStartOfLine: FSharpTokenizerLexState, lexStateAtEndOfLine: FSharpTokenizerLexState, 
-                             hashCode: int, classifiedSpans: IReadOnlyList<ClassifiedSpan>, tokens: ImmutableArray<FSharpTokenInfo>) =
+                             checkSum: ImmutableArray<byte>, classifiedSpans: IReadOnlyList<ClassifiedSpan>, tokens: ImmutableArray<FSharpTokenInfo>) =
     member val LineStart = lineStart
     member val LexStateAtStartOfLine = lexStateAtStartOfLine
     member val LexStateAtEndOfLine = lexStateAtEndOfLine
-    member val HashCode = hashCode
+    member val CheckSum = checkSum
     member val ClassifiedSpans = classifiedSpans
     member val Tokens = tokens
 
     member data.IsValid(textLine: TextLine) =
         data.LineStart = textLine.Start && 
-        let lineContents = textLine.Text.ToString(textLine.Span)
-        data.HashCode = lineContents.GetHashCode()
+        data.CheckSum = textLine.Text.GetChecksum()
     override __.ToString() = 
-        sprintf "SourceLineData(line: %d, startLexState: %d, endLexState: %d, hash: %d, token count: %d)"
-                lineStart lexStateAtStartOfLine lexStateAtEndOfLine hashCode tokens.Length
+        sprintf "SourceLineData(line: %d, startLexState: %d, endLexState: %d, checkSum: %A, token count: %d)"
+                lineStart lexStateAtStartOfLine lexStateAtEndOfLine (Seq.toArray checkSum) tokens.Length
 
 type internal SourceTextData(approxLines: int) =
     let data = ResizeArray<SourceLineData option>(approxLines)
@@ -95,8 +94,9 @@ type internal SourceTextData(approxLines: int) =
 type internal Lexer() =
     let dataCache = ConditionalWeakTable<DocumentId, SourceTextData>()
 
-    let scanSourceLine(sourceTokenizer: FSharpSourceTokenizer, textLine: TextLine, lineContents: string, lexState: FSharpTokenizerLexState) : SourceLineData =
+    let scanSourceLine(sourceTokenizer: FSharpSourceTokenizer, textLine: TextLine, lexState: FSharpTokenizerLexState) : SourceLineData =
         let colorMap = Array.create textLine.Span.Length ClassificationTypeNames.Text
+        let lineContents = textLine.ToString()
         let lineTokenizer = sourceTokenizer.CreateLineTokenizer(lineContents)
         let tokens = ImmutableArray.CreateBuilder()
         let previousLexState = ref lexState
@@ -129,7 +129,7 @@ type internal Lexer() =
             classifiedSpans.Add(new ClassifiedSpan(classificationType, textSpan))
             startPosition <- endPosition
 
-        SourceLineData(textLine.Start, lexState, previousLexState.Value, lineContents.GetHashCode(), classifiedSpans, tokens.ToImmutable())
+        SourceLineData(textLine.Start, lexState, previousLexState.Value, textLine.Text.GetChecksum(), classifiedSpans, tokens.ToImmutable())
 
     /// Returns symbol at a given position.
     let getSymbolFromTokens (fileName: string, tokens: ImmutableArray<FSharpTokenInfo>, linePos: LinePosition, lineStr: string, lookupKind: SymbolLookupKind) : LexerSymbol option =
@@ -261,11 +261,9 @@ type internal Lexer() =
         let result = ResizeArray()
         let mutable lexState = if scanStartLine = -1 then 0L else sourceTextData.[scanStartLine].Value.LexStateAtEndOfLine
         let scanStartLine = max scanStartLine 0
-
         for i = scanStartLine to endLine do
             cancellationToken.ThrowIfCancellationRequested()
             let textLine = lines.[i]
-            let lineContents = textLine.Text.ToString(textLine.Span)
 
             let lineData = 
                 // We can reuse the old data when 
@@ -277,7 +275,7 @@ type internal Lexer() =
                     data
                 | _ -> 
                     // Otherwise, we recompute
-                    let newData = scanSourceLine(sourceTokenizer, textLine, lineContents, lexState)
+                    let newData = scanSourceLine(sourceTokenizer, textLine, lexState)
                     sourceTextData.[i] <- Some newData
                     newData
                 
@@ -323,7 +321,7 @@ type internal Lexer() =
             let textLinePos = sourceText.Lines.GetLinePosition(position)
             let sourceLineDatas = this.GetSourceLineDatas(documentKey, sourceText, textLinePos.Line, textLinePos.Line, Some fileName, defines, CancellationToken.None)
             assert(sourceLineDatas.Count = 1)
-            let lineContents = textLine.Text.ToString(textLine.Span)
+            let lineContents = textLine.ToString()
             getSymbolFromTokens(fileName, sourceLineDatas.[0].Tokens, textLinePos, lineContents, lookupKind)
         with 
         | :? System.OperationCanceledException -> reraise()
