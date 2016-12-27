@@ -1828,6 +1828,10 @@ namespace Microsoft.FSharp.Collections
         
         interface System.Collections.Generic.IEnumerable<'T>
         interface System.Collections.IEnumerable
+
+#if !FSCORE_PORTABLE_OLD
+        interface System.Collections.Generic.IReadOnlyCollection<'T>
+#endif
         
     /// <summary>An abbreviation for the type of immutable singly-linked lists. </summary>
     ///
@@ -2153,7 +2157,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The value to check.</param>
         /// <returns>True when value is not null, false otherwise.</returns>
         [<CompiledName("IsNotNull")>]
-        val inline isNotNull : value:'T -> bool when 'T : null
+        val inline internal isNotNull : value:'T -> bool when 'T : null
 
         /// <summary>Throw a <c>System.Exception</c> exception.</summary>
         /// <param name="message">The exception message.</param>

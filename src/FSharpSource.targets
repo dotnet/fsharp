@@ -135,6 +135,7 @@
     <DefineConstants>$(DefineConstants);FX_NO_HEAPTERMINATION</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_LINKEDRESOURCES</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_LOADER_OPTIMIZATION</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_SIMPLIFIED_LOADER</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_PARAMETERIZED_THREAD_START</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_PDB_READER</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_PDB_WRITER</DefineConstants>
@@ -169,7 +170,7 @@
     <PortableNuGetMode>true</PortableNuGetMode>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)'=='coreclr' AND '$(UnitTestAssembly)' == 'true' ">
+  <PropertyGroup Condition=" '$(TargetFramework)'=='coreclr' AND '$(DOTNET_PUBLISH_TEST)'=='true' ">
     <OutputPath>bin\$(Configuration)\netcoreapp1.0</OutputPath>
     <CustomOutputPath>true</CustomOutputPath>
     <DOTNET_PUBLISH>true</DOTNET_PUBLISH>
@@ -179,6 +180,12 @@
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(TargetFramework)'=='coreclr' AND '$(DOTNET_PUBLISH_COMPILERS)'=='true' ">
+    <DOTNET_PUBLISH_FSC>true</DOTNET_PUBLISH_FSC>
+    <DOTNET_PUBLISH_FSC_PATH>$(FSharpSourcesRoot)\..\tests\testbin\$(Configuration)\coreclr\FSC</DOTNET_PUBLISH_FSC_PATH>
+    <DOTNET_PUBLISH_FSI>true</DOTNET_PUBLISH_FSI>
+    <DOTNET_PUBLISH_FSI_PATH>$(FSharpSourcesRoot)\..\tests\testbin\$(Configuration)\coreclr\FSC</DOTNET_PUBLISH_FSI_PATH>
+  </PropertyGroup>
 
   <!-- Target Portable Profile 47 -->
   <PropertyGroup Condition="'$(TargetFramework)'=='portable47'">
@@ -478,12 +485,22 @@
     <Exec Command='$(MSBuildThisFileDirectory)..\.nuget\nuget.exe pack %(PackageNuspec.Filename)%(PackageNuspec.Extension) -BasePath "$(OutputPath.TrimEnd("\"))" -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory "$(MSBuildThisFileDirectory)..\artifacts' />
   </Target>
 
-  <Target Name="dotnetrestore" BeforeTargets="Build" Condition=" '$(TargetFramework)' == 'coreclr' and '$(DOTNET_PUBLISH)' == 'true' ">
+  <Target Name="dotnetrestore" BeforeTargets="Build" Condition=" '$(DOTNET_PUBLISH)' == 'true' ">
     <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe restore --configfile $(MSBuildThisFileDirectory)..\.nuget\NuGet.Config project.json"/>
   </Target>
 
-  <Target Name="dotnetpublish" BeforeTargets="Build" Condition=" '$(TargetFramework)' == 'coreclr' and '$(DOTNET_PUBLISH)' == 'true' ">
-    <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe publish --no-build project.json -r $(DOTNET_PUBLISH_PLATFORM) -c $(Configuration) -o $(DOTNET_PUBLISH_PATH)"/>
+  <Target Name="dotnetpublish" AfterTargets="Build" Condition=" '$(DOTNET_PUBLISH)' == 'true' ">
+    <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe --verbose publish --no-build project.json -r $(DOTNET_PUBLISH_PLATFORM) -c $(Configuration) -o $(DOTNET_PUBLISH_PATH)"/>
+  </Target>
+
+  <Target Name="dotnetpublishfsccompiler" AfterTargets="CopyFilesToOutputDirectory" Condition=" '$(DOTNET_PUBLISH_FSC)' == 'true' ">
+    <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe restore DeployCompiler\fsc\project.json"/>
+    <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe --verbose publish --no-build DeployCompiler\fsc\project.json -r $(DOTNET_PUBLISH_PLATFORM) -c $(Configuration) -o $(DOTNET_PUBLISH_FSC_PATH)"/>
+  </Target>
+
+  <Target Name="dotnetpublishfsicompiler" AfterTargets="CopyFilesToOutputDirectory" Condition=" '$(DOTNET_PUBLISH_FSI)' == 'true' ">
+    <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe restore DeployCompiler\fsi\project.json"/>
+    <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe --verbose publish --no-build DeployCompiler\fsi\project.json -r $(DOTNET_PUBLISH_PLATFORM) -c $(Configuration) -o $(DOTNET_PUBLISH_FSI_PATH)"/>
   </Target>
 
   <Target Name="GenerateSourceLink" BeforeTargets="CoreCompile" Condition="'$(UseSourceLink)' == 'true'">

@@ -776,7 +776,7 @@ module RegExp =
     check "fwhin3op9" ((|Match|_|) "^.*.ml$" "abc.ml") (Some [])
 
     let testFun() = 
-        File.WriteAllLines("test.fs", seq { for (IsMatch "(.*).fs" f) in allFiles System.Environment.CurrentDirectory do yield! "-------------------------------" :: "\n" :: "\n" :: ("// FILE: "+f) :: "" :: "module "+(f |> Path.GetDirectoryName |> Path.GetFileName |> (fun s -> s.ToUpper()))+ " =" :: [ for line in Array.toList (File.ReadAllLines(f)) -> "    "+line ] } |> Seq.toArray)
+        File.WriteAllLines("test.fs", seq { for (IsMatch "(.*).fs" f) in allFiles (System.IO.Directory.GetCurrentDirectory()) do yield! "-------------------------------" :: "\n" :: "\n" :: ("// FILE: "+f) :: "" :: "module "+(f |> Path.GetDirectoryName |> Path.GetFileName |> (fun s -> s.ToUpper()))+ " =" :: [ for line in Array.toList (File.ReadAllLines(f)) -> "    "+line ] } |> Seq.toArray)
 
 module RandomWalk = 
     let ran = new System.Random()
