@@ -24,6 +24,11 @@ namespace Microsoft.FSharp.Collections
             type NoValue = struct end
 
             [<Struct; NoComparison; NoEquality>]
+            type Value<'a> =
+                val mutable _1 : 'a
+                new (a:'a) = { _1 = a }
+
+            [<Struct; NoComparison; NoEquality>]
             type Values<'a,'b> =
                 val mutable _1 : 'a
                 val mutable _2 : 'b
@@ -203,6 +208,18 @@ namespace Microsoft.FSharp.Collections
                         let array = array
                         let rec iterate idx =
                             if idx < array.Length then  
+                                consumer.ProcessNext array.[idx] |> ignore
+                                if outOfBand.HaltedIdx = 0 then
+                                    iterate (idx+1)
+                        iterate 0
+
+            [<Struct;NoComparison;NoEquality>]
+            type resizeArray<'T> (array:ResizeArray<'T>) =
+                interface IIterate<'T> with
+                    member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Activity<'T,'U>) =
+                        let array = array
+                        let rec iterate idx =
+                            if idx < array.Count then  
                                 consumer.ProcessNext array.[idx] |> ignore
                                 if outOfBand.HaltedIdx = 0 then
                                     iterate (idx+1)
@@ -404,6 +421,19 @@ namespace Microsoft.FSharp.Collections
                     member this.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
                         Fold.executeThin f (Fold.enumerable enumerable)
 
+            and SeqDelayed<'T>(delayed:unit->ISeq<'T>, pipeIdx:PipeIdx) =
+                inherit EnumerableBase<'T>()
+
+                interface IEnumerable<'T> with
+                    member this.GetEnumerator () : IEnumerator<'T> = (delayed()).GetEnumerator ()
+
+                interface ISeq<'T> with
+                    member __.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
+                        Upcast.seq (new SeqDelayed<'U>((fun () -> (delayed()).PushTransform next), pipeIdx+1))
+
+                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
+                        (delayed()).Fold f
+
             and ConcatEnumerator<'T, 'Collection when 'Collection :> seq<'T>> (sources:seq<'Collection>) =
                 let mutable state = SeqProcessNextStates.NotStarted
                 let main = sources.GetEnumerator ()
@@ -474,7 +504,7 @@ namespace Microsoft.FSharp.Collections
                         Fold.executeThin f (Fold.enumerable this)
 
             let create enumerable current =
-                Upcast.seq (Enumerable(enumerable, current, 1))
+                Upcast.seq (Enumerable (enumerable, current, 1))
 
         module EmptyEnumerable =
             type Enumerable<'T> () =
@@ -555,6 +585,45 @@ namespace Microsoft.FSharp.Collections
 
             let createId (array:array<'T>) =
                 create array IdentityFactory.Instance
+
+        module ResizeArray =
+            type Enumerator<'T,'U>(array:ResizeArray<'T>, activity:Activity<'T,'U>, result:Result<'U>) =
+                inherit Enumerable.EnumeratorBase<'U>(result, activity)
+
+                let mutable idx = 0
+
+                let rec moveNext () =
+                    if (result.HaltedIdx = 0) && idx < array.Count then
+                        idx <- idx+1
+                        if activity.ProcessNext array.[idx-1] then
+                            true
+                        else
+                            moveNext ()
+                    else
+                        result.SeqState <- SeqProcessNextStates.Finished
+                        let mutable stopTailCall = ()
+                        activity.ChainComplete (&stopTailCall, result.HaltedIdx)
+                        false
+
+                interface IEnumerator with
+                    member __.MoveNext () =
+                        result.SeqState <- SeqProcessNextStates.InProcess
+                        moveNext ()
+
+            type Enumerable<'T,'U>(resizeArray:ResizeArray<'T>, transformFactory:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
+                inherit Enumerable.EnumerableBase<'U>()
+
+                interface IEnumerable<'U> with
+                    member this.GetEnumerator () : IEnumerator<'U> =
+                        let result = Result<'U> ()
+                        Upcast.enumerator (new Enumerator<'T,'U>(resizeArray, createFold transformFactory result pipeIdx, result))
+
+                interface ISeq<'U> with
+                    member __.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
+                        Upcast.seq (new Enumerable<'T,'V>(resizeArray, ComposedFactory.Combine transformFactory next, 1))
+
+                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'U,'Result,'State>) =
+                        Fold.execute f transformFactory pipeIdx (Fold.resizeArray resizeArray)
 
         module List =
             type Enumerator<'T,'U>(alist:list<'T>, activity:Activity<'T,'U>, result:Result<'U>) =
@@ -780,14 +849,26 @@ namespace Microsoft.FSharp.Collections
                     member this.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
                         Fold.executeThin f (Fold.enumerable (Upcast.enumerable this))
 
+        [<CompiledName "OfResizeArrayUnchecked">]
+        let ofResizeArrayUnchecked (source:ResizeArray<'T>) : ISeq<'T> =
+            Upcast.seq (ResizeArray.Enumerable (source, IdentityFactory.Instance, 1))
+
+        [<CompiledName "OfArray">]
+        let ofArray (source:array<'T>) : ISeq<'T> =
+            Upcast.seq (Array.Enumerable ((fun () -> source), IdentityFactory.Instance, 1))
+
+        [<CompiledName "OfList">]
+        let ofList (source:list<'T>) : ISeq<'T> =
+            Upcast.seq (List.Enumerable (source, IdentityFactory.Instance, 1))
+
         [<CompiledName "OfSeq">]
         let ofSeq (source:seq<'T>) : ISeq<'T> =
             match source with
-            | :? ISeq<'T> as s -> s
-            | :? array<'T> as a -> Upcast.seq (Array.Enumerable((fun () -> a), IdentityFactory.Instance, 1))
-            | :? list<'T> as a -> Upcast.seq (List.Enumerable(a, IdentityFactory.Instance, 1))
-            | null -> nullArg "source"
-            | _ -> Upcast.seq (Enumerable.EnumerableThin<'T> source)
+            | :? ISeq<'T>  as seq   -> seq
+            | :? array<'T> as array -> ofArray array
+            | :? list<'T>  as list  -> ofList list
+            | null                  -> nullArg "source"
+            | _                     -> Upcast.seq (Enumerable.EnumerableThin<'T> source)
 
         [<CompiledName "Average">]
         let inline average (source:ISeq<'T>) =
@@ -1473,3 +1554,56 @@ namespace Microsoft.FSharp.Collections
             match source1 with
             | :? Enumerable.EnumerableBase<'T> as s -> s.Append source2
             | _ -> Upcast.seq (new Enumerable.AppendEnumerable<_>([source2; source1]))
+
+        [<CompiledName "Delayed">]
+        let delayed (delayed:unit->ISeq<'T>) =
+            Upcast.seq (Enumerable.SeqDelayed (delayed, 1))
+
+        let inline groupByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (source:ISeq<'T>) =
+            source.Fold (fun _ ->
+                upcast { new FolderWithPostProcessing<'T,ISeq<'Key*ISeq<'T>>,_>(Unchecked.defaultof<_>,Dictionary comparer) with
+                    override this.ProcessNext v =
+                        let safeKey = keyf v
+                        match this.State.TryGetValue safeKey with
+                        | false, _ ->
+                            let prev = ResizeArray ()
+                            this.State.[safeKey] <- prev
+                            prev.Add v
+                        | true, prev -> prev.Add v
+                        Unchecked.defaultof<_> (* return value unused in Fold context *)
+
+                    override this.OnComplete _ =
+                        let maxWastage = 4
+                        for value in this.State.Values do
+                            if value.Capacity - value.Count > maxWastage then value.TrimExcess ()
+
+                        this.Result <-
+                            this.State
+                            |> ofSeq
+                            |> map (fun kv -> getKey kv.Key, ofResizeArrayUnchecked kv.Value)
+
+                    override this.OnDispose () = () })
+
+        let inline groupByVal' (keyf:'T->'Key) (source:ISeq<'T>) =
+            delayed (fun () ->
+                source
+                |> groupByImpl HashIdentity.Structural<'Key> keyf id)
+
+        let inline groupByRef' (keyf:'T->'Key) (source:ISeq<'T>) =
+            delayed (fun () ->
+                let comparer =
+                    let c = HashIdentity.Structural<'Key>
+                    { new IEqualityComparer<Value<'Key>> with
+                           member __.GetHashCode o    = c.GetHashCode o._1
+                           member __.Equals (lhs,rhs) = c.Equals (lhs._1, rhs._1) }
+                source
+                |> groupByImpl comparer (fun t -> Value(keyf t)) (fun sb -> sb._1))
+        
+        [<CompiledName("GroupByVal")>]
+        let inline groupByVal<'T,'Key when 'Key : equality and 'T : struct> (keyf:'T->'Key) (source:ISeq<'T>) =
+            groupByVal' keyf source
+
+        [<CompiledName("GroupByRef")>]
+        let inline groupByRef<'T,'Key when 'Key : equality and 'T : not struct> (keyf:'T->'Key) (source:ISeq<'T>) =
+            groupByRef' keyf source
+
