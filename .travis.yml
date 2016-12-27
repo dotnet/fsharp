@@ -1,18 +1,30 @@
 
 language: csharp
 
-sudo: required
-dist: trusty
-
-os:
-  - linux
-
-mono:
-  - latest
-  - 4.6.1
+matrix:
+  include:
+    - os: linux
+      dist: trusty
+      sudo: required
+      mono:
+        - latest
+        - 4.4.2
+        - 4.0.5
+    - os: osx
+      mono:
+        - latest
+        - 4.4.2
+        - 4.0.5
+  # Allow builds which fail only on OSX (macOS) to succeed for now
+  # while we're working on getting macOS CI builds working.
+  allow_failures:
+    - os: osx
+  # The whole build matrix fails when any individual builds fail
+  # (except those which have been allowed with allow_failures).
+  fast_finish: true
 
 env:
-  - BUILD_NET40=1 TEST_NET40_COREUNIT_SUITE=1 
+  - BUILD_NET40=1 TEST_NET40_COREUNIT_SUITE=1
 
 # These are not yet enabled
 #  - BUILD_CORECLR=1 TEST_CORECLR_COREUNIT_SUITE=1
@@ -20,9 +32,3 @@ env:
 
 script:
   - ./build.sh
-
-
-  
-
-
-
