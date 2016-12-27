@@ -35,15 +35,15 @@ type internal FSharpReplaceWithSuggestionCodeFixProvider() =
        async { 
             context.Diagnostics 
             |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
-            |> Seq.iter (fun x ->
-                let message = x.GetMessage()
+            |> Seq.iter (fun diagnostic ->
+                let message = diagnostic.GetMessage()
                 let splitted = message.Split([|maybeString|], StringSplitOptions.None)
                 if splitted.Length > 1 then
                     let suggestions = 
                         splitted.[1].Split([|' '; '\r'; '\n'|], StringSplitOptions.RemoveEmptyEntries) 
                         |> Array.map (fun s -> s.Trim())
                     
-                    let diagnostics = [| x |].ToImmutableArray()
+                    let diagnostics = [| diagnostic |].ToImmutableArray()
 
                     for suggestion in suggestions do
                         let codefix = 
