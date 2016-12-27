@@ -108,7 +108,7 @@ let ConsoleErrorLoggerUpToMaxErrors (tcConfigB:TcConfigBuilder, exiter : Exiter)
 
             member this.HandleIssue(tcConfigB, err, isError) =
                 DoWithErrorColor isError (fun () -> 
-                    (writeViaBufferWithEnvironmentNewLines stderr (OutputDiagnostic (tcConfigB.implicitIncludeDir, tcConfigB.showFullPaths, tcConfigB.flatErrors, tcConfigB.errorStyle, not isError)) err
+                    (writeViaBufferWithEnvironmentNewLines stderr (OutputDiagnostic (tcConfigB.implicitIncludeDir, tcConfigB.showFullPaths, tcConfigB.flatErrors, tcConfigB.errorStyle, isError)) err
                      stderr.WriteLine()))
     } :> _
 
