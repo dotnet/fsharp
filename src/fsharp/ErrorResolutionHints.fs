@@ -16,11 +16,10 @@ let FilterPredictions (unknownIdent:string) (predictionsF:ErrorLogger.Suggestion
     predictionsF()
     |> Seq.choose (fun p -> 
         let similarity = Internal.Utilities.EditDistance.JaroWinklerDistance unknownIdent (p.ToUpperInvariant())
-        if not useThreshold || similarity >= thresholdForSuggestions then
+        if not useThreshold || similarity >= thresholdForSuggestions || p.Contains unknownIdent then
             Some(similarity,p)
         else
-            None
-        )
+            None)
     |> Seq.sortByDescending fst
     |> Seq.mapi (fun i x -> i,x) 
     |> Seq.takeWhile (fun (i,_) -> i < maxSuggestions) 
