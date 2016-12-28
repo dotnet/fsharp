@@ -705,7 +705,10 @@ module UntypedParseImpl =
             | SynIndexerArg.Two(e1, e2) -> List.tryPick walkExpr [e1; e2]
 
         and walkType = function
-            | SynType.LongIdent ident -> ifPosInRange ident.Range (fun _ -> Some EntityKind.Type)
+            | SynType.LongIdent ident -> 
+                // we protect it with try..with because System.Exception : rangeOfLidwd may raise
+                // at Microsoft.FSharp.Compiler.Ast.LongIdentWithDots.get_Range() in D:\j\workspace\release_ci_pa---3f142ccc\src\fsharp\ast.fs:line 156
+                try ifPosInRange ident.Range (fun _ -> Some EntityKind.Type) with _ -> None
             | SynType.App(ty, _, types, _, _, _, _) -> 
                 walkType ty |> orElse (List.tryPick walkType types)
             | SynType.LongIdentApp(_, _, _, types, _, _, _) -> List.tryPick walkType types
