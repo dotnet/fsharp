@@ -157,8 +157,12 @@ type internal FSharpImplementInterfaceCodeFixProvider
                     // Notice that context.Span doesn't return reliable ranges to find tokens at exact positions.
                     // That's why we tokenize the line and try to find the last successive identifier token
                     let tokens = CommonHelpers.tokenizeLine(context.Document.Id, sourceText, context.Span.Start, context.Document.FilePath, defines)
+                    let startLeftColumn = context.Span.Start - textLine.Start
                     let rec tryFindIdentifierToken acc tokens =
                        match tokens with
+                       | t :: remainingTokens when t.LeftColumn < startLeftColumn ->
+                           // Skip all the tokens starting before the context
+                           tryFindIdentifierToken acc remainingTokens
                        | t :: remainingTokens when t.Tag = FSharpTokenTag.Identifier ->
                            tryFindIdentifierToken (Some t) remainingTokens
                        | t :: remainingTokens when t.Tag = FSharpTokenTag.DOT || Option.isNone acc ->
