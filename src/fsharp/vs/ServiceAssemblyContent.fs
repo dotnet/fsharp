@@ -189,12 +189,12 @@ module internal Utils =
         |> Option.isSome
 
 [<RequireQualifiedAccess>]
-type LookupType =
+type internal LookupType =
     | Fuzzy
     | Precise
 
 [<NoComparison; NoEquality>]
-type RawEntity = 
+type internal RawEntity = 
     { /// Full entity name as it's seen in compiled code (raw FSharpEntity.FullName, FSharpValueOrFunction.FullName). 
       FullName: string
       /// Entity name parts with removed module suffixes (Ns.M1Module.M2Module.M3.entity -> Ns.M1.M2.M3.entity)

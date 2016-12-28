@@ -361,6 +361,15 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
         // This does not need to be run on the background thread
         scope.ValidateBreakpointLocationImpl(pos)
 
+type ModuleKind = { IsAutoOpen: bool; HasModuleSuffix: bool }
+
+type EntityKind =
+    | Attribute
+    | Type
+    | FunctionOrValue of isActivePattern:bool
+    | Module of ModuleKind
+    override x.ToString() = sprintf "%A" x
+
 module UntypedParseImpl =
     
     let emptyStringSet = HashSet<string>()
@@ -604,15 +613,6 @@ module UntypedParseImpl =
                         | _ -> defaultTraverse(expr) }
         AstTraversal.Traverse(pos, parseTree, walker)
     
-    type ModuleKind = { IsAutoOpen: bool; HasModuleSuffix: bool }
-
-    type EntityKind =
-        | Attribute
-        | Type
-        | FunctionOrValue of isActivePattern:bool
-        | Module of ModuleKind
-        override x.ToString() = sprintf "%A" x
-
     let GetEntityKind (pos: pos, input: ParsedInput) : EntityKind option =
         let (|ConstructorPats|) = function
             | Pats ps -> ps
@@ -635,8 +635,8 @@ module UntypedParseImpl =
         let rec walkImplFileInput (ParsedImplFileInput(_, _, _, _, _, moduleOrNamespaceList, _)) = 
             List.tryPick (walkSynModuleOrNamespace true) moduleOrNamespaceList
 
-        and walkSynModuleOrNamespace isTopLevel (SynModuleOrNamespace(_, _, isModule, decls, _, attrs, _, r)) =
-            if isModule && isTopLevel then None else List.tryPick walkAttribute attrs
+        and walkSynModuleOrNamespace isTopLevel (SynModuleOrNamespace(_, _, _, decls, _, attrs, _, r)) =
+            List.tryPick walkAttribute attrs
             |> orElse (ifPosInRange r (fun _ -> List.tryPick (walkSynModuleDecl isTopLevel) decls))
 
         and walkAttribute (attr: SynAttribute) = 
@@ -888,7 +888,10 @@ module UntypedParseImpl =
 
         match input with 
         | ParsedInput.SigFile _ -> None
-        | ParsedInput.ImplFile input -> walkImplFileInput input
+        | ParsedInput.ImplFile input -> 
+            let ast = sprintf "%+A" input
+            let _x = ast
+            walkImplFileInput input
 
     type internal TS = AstTraversal.TraverseStep
 
