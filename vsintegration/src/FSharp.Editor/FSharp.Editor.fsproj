@@ -64,7 +64,9 @@
     <Compile Include="CodeFix\AddNewKeywordToDisposableConstructorInvocation.fs" />
     <Compile Include="CodeFix\AddOpenCodeFixProvider.fs" />
     <Compile Include="CodeFix\ProposeUppercaseLabel.fs" />
+    <Compile Include="CodeFix\ReplaceWithSuggestion.fs" />
     <Compile Include="CodeFix\PrefixUnusedValueWithUnderscore.fs" />
+    <Compile Include="CodeFix\ImplementInterfaceCodeFixProvider.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
