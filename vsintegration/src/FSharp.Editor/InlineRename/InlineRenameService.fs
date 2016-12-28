@@ -93,7 +93,7 @@ type internal InlineRenameInfo
 
     let symbolUses = 
         SymbolHelpers.getSymbolUsesInSolution(symbolUse.Symbol, declLoc, checkFileResults, projectInfoManager, checker, document.Project.Solution)
-        |> Async.Cache
+        |> Async.cache
 
     interface IInlineRenameInfo with
         member __.CanRename = true
