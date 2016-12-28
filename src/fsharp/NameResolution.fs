@@ -1909,6 +1909,19 @@ let DecodeFSharpEvent (pinfos:PropInfo list) ad g (ncenv:NameResolver) m =
     | _ -> 
         None
 
+/// Returns all record label names for the given type.
+let GetRecordLabelsForType g nenv typ =
+    if isRecdTy g typ then
+        let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv typ
+        nenv.eFieldLabels
+        |> Seq.filter (fun kv -> 
+            kv.Value 
+            |> List.map (fun r -> r.TyconRef.DisplayName)
+            |> List.exists ((=) typeName))
+        |> Seq.map (fun kv -> kv.Key)
+        |> Set.ofSeq
+    else
+        Set.empty
 
 // REVIEW: this shows up on performance logs. Consider for example endless resolutions of "List.map" to 
 // the empty set of results, or "x.Length" for a list or array type. This indicates it could be worth adding a cache here.
@@ -2011,19 +2024,7 @@ let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo
                     |> List.filter (fun m -> not m.IsClassConstructor && not m.IsConstructor)
                     |> List.map (fun m -> m.DisplayName)
                     |> Set.ofList
-                let suggestions5 =
-                    if isRecdTy g typ then
-                        let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv typ
-                        nenv.eFieldLabels
-                        |> Seq.filter (fun kv -> 
-                            kv.Value 
-                            |> List.map (fun r -> r.TyconRef.DisplayName)
-                            |> List.exists ((=) typeName))
-                        |> Seq.map (fun kv -> kv.Key)
-                        |> Set.ofSeq
-                    else
-                        Set.empty
-
+                let suggestions5 = GetRecordLabelsForType g nenv typ
             
                 suggestions1 
                 |> Set.union suggestions2
@@ -2770,15 +2771,8 @@ let rec ResolveFieldInModuleOrNamespace (ncenv:NameResolver) nenv ad (resInfo:Re
         error(InternalError("ResolveFieldInModuleOrNamespace",m))
 
 /// Suggest other labels of the same record
-let SuggestOtherLabelsOfSameRecordType (nenv:NameResolutionEnv) typeName (id:Ident) (allFields:Ident list) =    
-    let labelsOfPossibleRecord =
-        nenv.eFieldLabels
-        |> Seq.filter (fun kv -> 
-            kv.Value 
-            |> List.map (fun r -> r.TyconRef.DisplayName)
-            |> List.exists ((=) typeName))
-        |> Seq.map (fun kv -> kv.Key)
-        |> Set.ofSeq
+let SuggestOtherLabelsOfSameRecordType g (nenv:NameResolutionEnv) typ (id:Ident) (allFields:Ident list) =    
+    let labelsOfPossibleRecord = GetRecordLabelsForType g nenv typ
 
     let givenFields = 
         allFields 
@@ -2843,10 +2837,10 @@ let ResolveFieldPrim (ncenv:NameResolver) nenv ad typ (mp,id:Ident) allFields =
             match ncenv.InfoReader.TryFindRecdOrClassFieldInfoOfType(id.idText,m,typ) with
             | Some (RecdFieldInfo(_,rfref)) -> [ResolutionInfo.Empty, FieldResolution(rfref,false)]
             | None ->
-                let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv typ
                 if isRecdTy g typ then
                     // record label doesn't belong to record type -> suggest other labels of same record
-                    let suggestLabels() = SuggestOtherLabelsOfSameRecordType nenv typeName id allFields
+                    let suggestLabels() = SuggestOtherLabelsOfSameRecordType g nenv typ id allFields
+                    let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv typ
                     let errorText = FSComp.SR.nrRecordDoesNotContainSuchLabel(typeName,id.idText)
                     error(ErrorWithSuggestions(errorText, m, id.idText, suggestLabels))
                 else
