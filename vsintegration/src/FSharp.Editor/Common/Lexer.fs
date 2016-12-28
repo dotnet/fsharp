@@ -328,3 +328,16 @@ type internal Lexer() =
         |  ex -> 
             Assert.Exception(ex)
             None
+
+    member this.TokenizeLine (documentKey, sourceText: SourceText, position, fileName, defines, cancellationToken) =
+        try
+            let lines = sourceText.Lines
+            let line = lines.GetLineFromPosition(position).LineNumber
+            this.GetSourceLineDatas(documentKey, sourceText, line, line, Some fileName, defines, cancellationToken)
+            |> Seq.tryHead
+            |> Option.map (fun x -> Seq.toList x.Tokens)
+            |> Option.defaultValue []
+        with 
+        |  ex -> 
+            Assert.Exception(ex)
+            []

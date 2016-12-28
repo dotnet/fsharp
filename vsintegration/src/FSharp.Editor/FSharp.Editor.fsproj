@@ -66,6 +66,8 @@
     <Compile Include="CodeFixes\AddOpen.fs" />
     <Compile Include="CodeFixes\PrefixUnusedValueWithUnderscore.fs" />
     <Compile Include="CodeFixes\RemoveTrailingSemicolon.fs" />
+    <Compile Include="CodeFixes\ReplaceWithSuggestion.fs" />
+    <Compile Include="CodeFixes\ImplementInterfaceCodeFixProvider.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
