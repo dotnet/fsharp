@@ -2166,8 +2166,21 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv (typeN
                             |> Seq.filter (fun kv -> IsEntityAccessible ncenv.amap m ad (modref.NestedTyconRef kv.Value))
                             |> Seq.map (fun e -> e.Value.DisplayName)
                             |> Set.ofSeq
+                        
+                        let unions =
+                            modref.ModuleOrNamespaceType.AllEntities
+                            |> Seq.collect (fun tycon ->
+                                let hasRequireQualifiedAccessAttribute = HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute tycon.Attribs
+                                if hasRequireQualifiedAccessAttribute then
+                                    [||]
+                                else
+                                    tycon.UnionCasesArray)
+                            |> Seq.map (fun uc -> uc.DisplayName)
+                            |> Set.ofSeq
 
-                        Set.union types submodules // TODO: Add unions
+                        types
+                        |> Set.union submodules
+                        |> Set.union unions
                     | _ -> Set.empty
 
                 raze (UndefinedName(depth,FSComp.SR.undefinedNameValueConstructorNamespaceOrType,id,suggestPossibleTypes))
