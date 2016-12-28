@@ -3,11 +3,18 @@
 
 namespace Microsoft.VisualStudio.FSharp.LanguageService
 
+open System
+open System.Runtime.InteropServices
+
 /// Narrow abstraction over the project system.
 type internal AdviseProjectSiteChanges = delegate of unit -> unit  
 
+[<ComImport; InterfaceType(ComInterfaceType.InterfaceIsIUnknown); Guid("ad98f020-bad0-0000-0000-abc037459871")>]
+type internal IProvideProjectSite =
+    abstract GetProjectSite : unit -> IProjectSite
+
 /// Represents known F#-specific information about a project.
-type internal IProjectSite = 
+and internal IProjectSite = 
 
     /// List of files in the project. In the correct order.
     abstract SourceFilesOnDisk : unit -> string[]
@@ -49,3 +56,4 @@ type internal IProjectSite =
     /// timestamp the site was last loaded
     abstract LoadTime : System.DateTime 
 
+    abstract ProjectProvider : IProvideProjectSite option

@@ -1,3 +1,4 @@
+rem Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 @if "%_echo%"=="" echo off 
 
 setlocal enableDelayedExpansion
@@ -18,10 +19,10 @@ echo Usage:
 echo.
 echo build.cmd ^<all^|net40^|coreclr^|pcls^|vs^>
 echo           ^<proto^|protofx^>
-echo           ^<ci^|ci_part1^|ci_part2^|microbuild^>
+echo           ^<ci^|ci_part1^|ci_part2^|ci_part3^|microbuild^>
 echo           ^<debug^|release^>
 echo           ^<diag^|publicsign^>
-echo           ^<test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-pcl-coreunit^|test-net40-fsharp^|test-net40-fsharpqa^>
+echo           ^<test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-pcl-coreunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^>
 echo           ^<include tag^>
 echo.
 echo No arguments default to 'default', meaning this (no testing)
@@ -102,6 +103,7 @@ if /i '%_autoselect_tests%' == '1' (
     )
 
     if /i '%BUILD_CORECLR%' == '1' (
+        set BUILD_NET40=1
         set TEST_CORECLR_FSHARP_SUITE=1
         set TEST_CORECLR_COREUNIT_SUITE=1
     )
@@ -147,6 +149,10 @@ if /i '%ARG%' == 'vs' (
     set BUILD_VS=1
 )
 
+if /i '%ARG%' == 'vstest' (
+    set TEST_VS_IDEUNIT_SUITE=1
+)
+
 if /i '%ARG%' == 'nobuild' (
     set BUILD_PHASE=0
 )
@@ -166,7 +172,7 @@ if /i '%ARG%' == 'microbuild' (
     set _autoselect=0
     set BUILD_PROTO=1
     set BUILD_NET40=1
-    set BUILD_CORECLR=0
+    set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
     set BUILD_SETUP=%FSC_BUILD_SETUP%
@@ -207,12 +213,24 @@ if /i '%ARG%' == 'ci_part2' (
     set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_PROTO=1
     set BUILD_NET40=1
-    set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
 
     set TEST_NET40_COREUNIT_SUITE=1
     set TEST_NET40_FSHARP_SUITE=1
     set TEST_PORTABLE_COREUNIT_SUITE=1
+    set CI=1
+
+)
+
+if /i '%ARG%' == 'ci_part3' (
+    set _autoselect=0
+
+    REM what we do
+    set BUILD_PROTO_WITH_CORECLR_LKG=1
+    set BUILD_PROTO=1
+    set BUILD_NET40=1
+    set BUILD_CORECLR=1
+
     set TEST_CORECLR_FSHARP_SUITE=1
     set TEST_CORECLR_COREUNIT_SUITE=1
     set CI=1
@@ -245,7 +263,6 @@ if /i '%ARG%' == 'include' (
     if '!INCLUDE_TEST_SPEC_NUNIT!' == '' ( set INCLUDE_TEST_SPEC_NUNIT=cat == %ARG2% ) else (set INCLUDE_TEST_SPEC_NUNIT=cat == %ARG2% or !INCLUDE_TEST_SPEC_NUNIT! )
     if '!INCLUDE_TEST_TAGS!' == '' ( set INCLUDE_TEST_TAGS=%ARG2% ) else (set INCLUDE_TEST_TAGS=%ARG2%;!INCLUDE_TEST_TAGS! )
 )
-
 
 if /i '%ARG%' == 'test-all' (
     set _autoselect=0
@@ -282,19 +299,16 @@ if /i '%ARG%' == 'test-net40-coreunit' (
     set TEST_NET40_COREUNIT_SUITE=1
 )
 
-
 if /i '%ARG%' == 'test-coreclr-coreunit' (
     set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_CORECLR=1
     set TEST_CORECLR_COREUNIT_SUITE=1
 )
 
-
 if /i '%ARG%' == 'test-pcl-coreunit' (
     set BUILD_PORTABLE=1
     set TEST_PORTABLE_COREUNIT_SUITE=1
 )
-
 
 if /i '%ARG%' == 'test-net40-fsharp' (
     set BUILD_NET40=1
@@ -346,17 +360,24 @@ echo TEST_VS_IDEUNIT_SUITE=%TEST_VS_IDEUNIT_SUITE%
 echo INCLUDE_TEST_SPEC_NUNIT=%INCLUDE_TEST_SPEC_NUNIT%
 echo INCLUDE_TEST_TAGS=%INCLUDE_TEST_TAGS%
 
-echo.
+
+echo .
+echo Environment
+echo 
+set
+echo .
+echo .
 
 echo ---------------- Done with arguments, starting preparation -----------------
+set BuildToolsPackage=Microsoft.VSSDK.BuildTools.15.0.25929-RC2
 if '%VSSDKInstall%'=='' (
-     set VSSDKInstall=%~dp0packages\Microsoft.VSSDK.BuildTools.15.0.25907-RC2\tools\vssdk
+     set VSSDKInstall=%~dp0packages\%BuildToolsPackage%\tools\vssdk
 )
 if '%VSSDKToolsPath%'=='' (
-     set VSSDKToolsPath=%~dp0packages\Microsoft.VSSDK.BuildTools.15.0.25907-RC2\tools\vssdk\bin
+     set VSSDKToolsPath=%~dp0packages\%BuildToolsPackage%\tools\vssdk\bin
 )
 if '%VSSDKIncludes%'=='' (
-     set VSSDKIncludes=%~dp0packages\Microsoft.VSSDK.BuildTools.15.0.25907-RC2\tools\vssdk\inc
+     set VSSDKIncludes=%~dp0packages\%BuildToolsPackage%\tools\vssdk\inc
 )
 
 if '%RestorePackages%'=='' (
@@ -535,51 +556,42 @@ if not exist %NUNITPATH% echo Error: Could not find %NUNITPATH% && goto :failure
 @echo xcopy "%~dp0tests\fsharpqa\testenv\src\nunit*.*" "%~dp0tests\fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
       xcopy "%~dp0tests\fsharpqa\testenv\src\nunit*.*" "%~dp0tests\fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
 
+set X86_PROGRAMFILES=%ProgramFiles%
+if "%OSARCH%"=="AMD64" set X86_PROGRAMFILES=%ProgramFiles(x86)%
 
-if '%BUILD_CORECLR%' == '1' (
-  echo Restoring CoreCLR packages and runtimes necessary for actually running and testing
-  echo %_nugetexe% restore .\tests\fsharp\project.json -PackagesDirectory packages -ConfigFile %_nugetconfig%
-       %_nugetexe% restore .\tests\fsharp\project.json -PackagesDirectory packages -ConfigFile %_nugetconfig%
-       if ERRORLEVEL 1 ( goto :failure )
-  
-  echo Deploy x86 version of compiler and dependencies, ready for testing
-  echo %_fsiexe% --exec tests\scripts\DeployProj.fsx --platform:win7-x86 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\win7-x86 --copyCompiler:yes --v:quiet
-       %_fsiexe% --exec tests\scripts\DeployProj.fsx --platform:win7-x86 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\win7-x86 --copyCompiler:yes --v:quiet
-       if ERRORLEVEL 1 ( goto :failure )
-  echo %_fsiexe% --exec tests\scripts\DeployProj.fsx --platform:win7-x86 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\win7-x86 --copyCompiler:no --v:quiet
-       %_fsiexe% --exec tests\scripts\DeployProj.fsx --platform:win7-x86 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\win7-x86 --copyCompiler:no --v:quiet
-       if ERRORLEVEL 1 ( goto :failure )
+set SYSWOW64=.
+if "%OSARCH%"=="AMD64" set SYSWOW64=SysWoW64
 
-  echo Deploy x64 compiler to tests\testbin\%BUILD_CONFIG%\coreclr\fsc\win7-x64, ready for testing
-  echo %_fsiexe% --exec tests\scripts\DeployProj.fsx --platform:win7-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\win7-x64 --copyCompiler:yes --v:quiet
-       %_fsiexe% --exec tests\scripts\DeployProj.fsx --platform:win7-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\win7-x64 --copyCompiler:yes --v:quiet
-       if ERRORLEVEL 1 ( goto :failure )
+if not "%OSARCH%"=="x86" set REGEXE32BIT=%WINDIR%\syswow64\reg.exe
 
-  echo Deploy x64 runtime and FSharp.Core library to tests\testbin\%BUILD_CONFIG%\coreclr\win7-x64, ready for testing
-  echo %_fsiexe% --exec tests\scripts\DeployProj.fsx --platform:win7-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\win7-x64 --copyCompiler:no --v:quiet
-       %_fsiexe% --exec tests\scripts\DeployProj.fsx --platform:win7-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\win7-x64 --copyCompiler:no --v:quiet
-       if ERRORLEVEL 1 ( goto :failure )
+echo  SDK environment vars from Registry
+                            FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\WOW6432Node\Microsoft\Microsoft SDKs\NETFXSDK\4.6.2\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
+if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\WOW6432Node\Microsoft\Microsoft SDKs\NETFXSDK\4.6.1\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
+if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
+if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v8.1A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
+if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v8.0A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
+if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.1\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
+if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.0A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
 
-  echo Deploy linux compiler to tests\testbin\%BUILD_CONFIG%\coreclr\fsc\ubuntu.14.04-x64, ready for testing
-  echo %_fsiexe% --exec tests\scripts\DeployProj.fsx --platform:ubuntu.14.04-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\ubuntu.14.04-x64 --copyCompiler:yes --v:quiet
-       %_fsiexe% --exec tests\scripts\DeployProj.fsx --platform:ubuntu.14.04-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\ubuntu.14.04-x64 --copyCompiler:yes --v:quiet
-       if ERRORLEVEL 1 ( goto :failure )
+set PATH=%PATH%;%WINSDKNETFXTOOLS%
+for /d %%i in (%WINDIR%\Microsoft.NET\Framework\v4.0.?????) do set CORDIR=%%i
+set PATH=%PATH%;%CORDIR%
 
-  echo Deploy linux runtime and FSharp.Core library to tests\testbin\%BUILD_CONFIG%\coreclr\ubuntu.14.04-x64, ready for testing
-  echo %_fsiexe% --exec tests\scripts\DeployProj.fsx --platform:ubuntu.14.04-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\ubuntu.14.04-x64 --copyCompiler:no --v:quiet
-       %_fsiexe% --exec tests\scripts\DeployProj.fsx --platform:ubuntu.14.04-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\ubuntu.14.04-x64 --copyCompiler:no --v:quiet
-       if ERRORLEVEL 1 ( goto :failure )
+set REGEXE32BIT=reg.exe
 
-  echo Deploy OSX compiler to tests\testbin\%BUILD_CONFIG%\coreclr\fsc\osx.10.10-x64, ready for testing
-  echo %_fsiexe% --exec tests\scripts\DeployProj.fsx --platform:osx.10.10-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\osx.10.10-x64 --copyCompiler:yes --v:quiet
-       %_fsiexe% --exec tests\scripts\DeployProj.fsx --platform:osx.10.10-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\fsc\osx.10.10-x64 --copyCompiler:yes --v:quiet
-       if ERRORLEVEL 1 ( goto :failure )
+IF NOT DEFINED SNEXE32  IF EXIST "%WINSDKNETFXTOOLS%\sn.exe"               set SNEXE32=%WINSDKNETFXTOOLS%sn.exe
+IF NOT DEFINED SNEXE64  IF EXIST "%WINSDKNETFXTOOLS%x64\sn.exe"           set SNEXE64=%WINSDKNETFXTOOLS%x64\sn.exe
+IF NOT DEFINED ildasm   IF EXIST "%WINSDKNETFXTOOLS%\ildasm.exe"           set ildasm=%WINSDKNETFXTOOLS%ildasm.exe
 
-  echo Deploy OSX runtime and FSharp.Core library to tests\testbin\%BUILD_CONFIG%\coreclr\osx.10.10-x64, ready for testing
-  echo %_fsiexe% --exec tests\scripts\DeployProj.fsx --platform:osx.10.10-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\osx.10.10-x64 --copyCompiler:no --v:quiet
-       %_fsiexe% --exec tests\scripts\DeployProj.fsx --platform:osx.10.10-x64 --projectJsonLock:%~dp0tests\fsharp\project.lock.json --packagesDir:%~dp0packages --fsharpCore:%BUILD_CONFIG%\coreclr\bin\FSharp.Core.dll --output:tests\testbin\%BUILD_CONFIG%\coreclr\osx.10.10-x64 --copyCompiler:no --v:quiet
-       if ERRORLEVEL 1 ( goto :failure )
-)
+
+echo .
+echo  SDK environment vars
+echo  =======================
+echo WINSDKNETFXTOOLS:  %WINSDKNETFXTOOLS%
+echo SNEXE32:           %SNEXE32%
+echo SNEXE64:           %SNEXE64%
+echo ILDASM:            %ILDASM%
+echo
 
 if 'TEST_NET40_COMPILERUNIT_SUITE' == '0' and 'TEST_PORTABLE_COREUNIT_SUITE' == '0' and 'TEST_CORECLR_COREUNIT_SUITE' == '0' and 'TEST_VS_IDEUNIT_SUITE' == '0' and 'TEST_NET40_FSHARP_SUITE' == '0' and 'TEST_NET40_FSHARPQA_SUITE' == '0' goto :success
 
@@ -653,33 +665,6 @@ rem Set this to 1 in order to use an external compiler host process
 rem    This only has an effect when running the FSHARPQA tests, but can
 rem    greatly speed up execution since fsc.exe does not need to be spawned thousands of times
 set HOSTED_COMPILER=1
-
-set X86_PROGRAMFILES=%ProgramFiles%
-if "%OSARCH%"=="AMD64" set X86_PROGRAMFILES=%ProgramFiles(x86)%
-
-set SYSWOW64=.
-if "%OSARCH%"=="AMD64" set SYSWOW64=SysWoW64
-
-if not "%OSARCH%"=="x86" set REGEXE32BIT=%WINDIR%\syswow64\reg.exe
-
-                            FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\WOW6432Node\Microsoft\Microsoft SDKs\NETFXSDK\4.6.2\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
-if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\WOW6432Node\Microsoft\Microsoft SDKs\NETFXSDK\4.6.1\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
-if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
-if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v8.1A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
-if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v8.0A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
-if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.1\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
-if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.0A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
-
-set PATH=%PATH%;%WINSDKNETFXTOOLS%
-for /d %%i in (%WINDIR%\Microsoft.NET\Framework\v4.0.?????) do set CORDIR=%%i
-set PATH=%PATH%;%CORDIR%
-
-set REGEXE32BIT=reg.exe
-
-IF NOT DEFINED SNEXE32  IF EXIST "%WINSDKNETFXTOOLS%\sn.exe"               set SNEXE32=%WINSDKNETFXTOOLS%sn.exe
-IF NOT DEFINED SNEXE64  IF EXIST "%WINSDKNETFXTOOLS%x64\sn.exe"           set SNEXE64=%WINSDKNETFXTOOLS%x64\sn.exe
-IF NOT DEFINED ildasm   IF EXIST "%WINSDKNETFXTOOLS%\ildasm.exe"           set ildasm=%WINSDKNETFXTOOLS%ildasm.exe
-
 
 if '%TEST_NET40_FSHARPQA_SUITE%' == '1' (
 
@@ -831,7 +816,6 @@ if '%TEST_CORECLR_COREUNIT_SUITE%' == '1' (
 
 REM ---------------- coreclr-fsharp  -----------------------
 
-
 if '%TEST_CORECLR_FSHARP_SUITE%' == '1' (
 
     set single_threaded=true
@@ -842,26 +826,15 @@ if '%TEST_CORECLR_FSHARP_SUITE%' == '1' (
     set OUTPUTFILE=
     set ERRORFILE=
     set XMLFILE=!RESULTSDIR!\test-coreclr-fsharp-results.xml
-    if '%CI%' == '1' (
-        set OUTPUTFILE=!RESULTSDIR!\test-coreclr-fsharp-output.log
-        set ERRORFILE=!RESULTSDIR!\test-coreclr-fsharp-errors.log
-        set ERRORARG=--err:"!ERRORFILE!" 
-        set OUTPUTARG=--output:"!OUTPUTFILE!" 
-	)
+    echo "%_dotnetexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.Unittests\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
+         "%_dotnetexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Tests.FSharpSuite.DrivingCoreCLR\FSharp.Tests.FSharpSuite.DrivingCoreCLR.dll" !WHERE_ARG_NUNIT!
 
-    echo "!NUNIT3_CONSOLE!" --verbose "!FSCBINPATH!\FSharp.Tests.FSharpSuite.DrivingCoreCLR.dll" --framework:V4.0 --work:"!FSCBINPATH!"  !OUTPUTARG! !ERRORARG! --result:"!XMLFILE!;format=nunit3" !WHERE_ARG_NUNIT!
-         "!NUNIT3_CONSOLE!" --verbose "!FSCBINPATH!\FSharp.Tests.FSharpSuite.DrivingCoreCLR.dll" --framework:V4.0 --work:"!FSCBINPATH!"  !OUTPUTARG! !ERRORARG! --result:"!XMLFILE!;format=nunit3" !WHERE_ARG_NUNIT!
+
 
     call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
     if NOT '!saved_errorlevel!' == '0' (
-        echo --------------begin coreclr-fsharp test output -------------------
-        type "!OUTPUTFILE!"
-        echo --------------end coreclr-fsharp test output -------------------
-        echo --------------begin coreclr-fsharp test errors -------------------
-        type "!ERRORFILE!"
-        echo --------------end coreclr-fsharp test errors -------------------
         echo -----------------------------------------------------------------
-        echo Error: Running tests coreclr-fsharp failed , see logs abvoe -- FAILED
+        echo Error: Running tests coreclr-fsharp failed, see logs above-- FAILED
         echo -----------------------------------------------------------------
         goto :failure
     )

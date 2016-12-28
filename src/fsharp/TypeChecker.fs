@@ -659,7 +659,7 @@ let ImplicitlyOpenOwnNamespace tcSink g amap scopem enclosingNamespacePath env =
             | None -> enclosingNamespacePath
 
         let ad = env.eAccessRights
-        match ResolveLongIndentAsModuleOrNamespace amap scopem OpenQualified env.eNameResEnv ad enclosingNamespacePathToOpen with 
+        match ResolveLongIndentAsModuleOrNamespace ResultCollectionSettings.AllResults amap scopem OpenQualified env.eNameResEnv ad enclosingNamespacePathToOpen with 
         | Result modrefs -> OpenModulesOrNamespaces tcSink g amap scopem false env (List.map p23 modrefs)
         | Exception _ ->  env
 
@@ -1344,7 +1344,7 @@ let CombineVisibilityAttribs vis1 vis2 m =
         errorR(Error(FSComp.SR.tcMultipleVisibilityAttributes(),m))
    if Option.isSome vis1 then vis1 else vis2
 
-let ComputeAccessAndCompPath env declKindOpt m vis actualParent = 
+let ComputeAccessAndCompPath env declKindOpt m vis overrideVis actualParent = 
     let accessPath = env.eAccessPath
     let accessModPermitted = 
         match declKindOpt with 
@@ -1354,11 +1354,12 @@ let ComputeAccessAndCompPath env declKindOpt m vis actualParent =
     if Option.isSome vis && not accessModPermitted then 
         errorR(Error(FSComp.SR.tcMultipleVisibilityAttributesWithLet(),m)) 
     let vis = 
-        match vis with 
-        | None -> taccessPublic (* a module or member binding defaults to "public" *)
-        | Some SynAccess.Public -> taccessPublic
-        | Some SynAccess.Private -> taccessPrivate accessPath
-        | Some SynAccess.Internal -> taccessInternal 
+        match overrideVis, vis with 
+        | Some v,_ -> v
+        | _, None -> taccessPublic (* a module or member binding defaults to "public" *)
+        | _, Some SynAccess.Public -> taccessPublic
+        | _, Some SynAccess.Private -> taccessPrivate accessPath
+        | _, Some SynAccess.Internal -> taccessInternal 
 
     let vis = 
         match actualParent with 
@@ -1397,7 +1398,7 @@ let MakeAndPublishVal cenv env (altActualParent,inSig,declKind,vrec,(ValScheme(i
         | _ -> false
 
     let isExtrinsic = (declKind=ExtrinsicExtensionBinding)
-    let actualParent = 
+    let actualParent, overrideVis = 
         // Use the parent of the member if it's available 
         // If it's an extrinsic extension member or not a member then use the containing module. 
         match memberInfoOpt with 
@@ -1405,10 +1406,20 @@ let MakeAndPublishVal cenv env (altActualParent,inSig,declKind,vrec,(ValScheme(i
             if memberInfo.ApparentParent.IsModuleOrNamespace then 
                 errorR(InternalError(FSComp.SR.tcExpectModuleOrNamespaceParent(id.idText),m))
 
-            Parent(memberInfo.ApparentParent)
-        | _ -> altActualParent
-             
-    let vis,_ = ComputeAccessAndCompPath env (Some declKind) id.idRange vis actualParent
+            // Members of interface implementations have the accessibility of the interface
+            // they are implementing.
+            let vis =
+                if Tastops.MemberIsExplicitImpl cenv.g memberInfo then
+                    let slotSig = List.head memberInfo.ImplementedSlotSigs
+                    match slotSig.ImplementedType with
+                    | TType_app (tyconref,_) -> Some tyconref.Accessibility
+                    | _ -> None
+                else
+                    None
+            Parent(memberInfo.ApparentParent), vis
+        | _ -> altActualParent, None
+                    
+    let vis,_ = ComputeAccessAndCompPath env (Some declKind) id.idRange vis overrideVis actualParent
 
     let inlineFlag = 
         if HasFSharpAttributeOpt cenv.g cenv.g.attrib_DllImportAttribute attrs then 
@@ -4384,7 +4395,24 @@ and TcTyparOrMeasurePar optKind cenv (env:TcEnv) newOk tpenv (Typar(id,_,_) as t
     match TryFindUnscopedTypar key tpenv with
     | Some res -> checkRes res
     | None -> 
-        if newOk = NoNewTypars then error (UndefinedName(0,FSComp.SR.undefinedNameTypeParameter,id,NoPredictions))
+        if newOk = NoNewTypars then
+            let predictTypeParameters() =
+                let predictions1 =
+                    env.eNameResEnv.eTypars
+                    |> Seq.map (fun p -> "'" + p.Key)
+                    |> Set.ofSeq
+
+                let predictions2 =
+                    match tpenv with
+                    | UnscopedTyparEnv elements ->
+                        elements
+                        |> Seq.map (fun p -> "'" + p.Key)
+                        |> Set.ofSeq
+
+                Set.union predictions1 predictions2
+
+            error (UndefinedName(0,FSComp.SR.undefinedNameTypeParameter,id,predictTypeParameters))
+        
         // OK, this is an implicit declaration of a type parameter 
         // The kind defaults to Type
         let tp' = NewTypar ((match optKind with None -> TyparKind.Type | Some kind -> kind), TyparRigidity.WarnIfNotRigid,tp,false,TyparDynamicReq.Yes,[],false,false)
@@ -5100,7 +5128,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv,names,takenNames) ty pat
             match args with 
             | SynConstructorArgs.Pats [] 
             | SynConstructorArgs.NamePatPairs ([], _)-> TcPat warnOnUpperForId cenv env topValInfo vFlags (tpenv,names,takenNames) ty (mkSynPatVar vis id)
-            | _ -> error (UndefinedName(0,FSComp.SR.undefinedNamePatternDiscriminator,id,NoPredictions))
+            | _ -> error (UndefinedName(0,FSComp.SR.undefinedNamePatternDiscriminator,id,NoSuggestions))
 
         | Item.ActivePatternCase(APElemRef(apinfo,vref,idx)) as item -> 
             let args = match args with SynConstructorArgs.Pats args -> args | _ -> error(Error(FSComp.SR.tcNamedActivePattern(apinfo.ActiveTags.[idx]),m))
@@ -6312,15 +6340,15 @@ and FreshenObjExprAbstractSlot cenv (env: TcEnv) (implty:TType) virtNameAndArity
                 tcref.MembersOfFSharpTyconByName
                 |> Seq.exists (fun kv -> kv.Value |> List.exists (fun valRef -> valRef.DisplayName = bindName))
 
-            let predictions =
+            let suggestVirtualMembers() =
                 virtNameAndArityPairs
                 |> List.map (fst >> fst)
-                |> ErrorResolutionHints.FilterPredictions bindName
+                |> Set.ofList
 
             if containsNonAbstractMemberWithSameName then
-                errorR(Error(FSComp.SR.tcMemberFoundIsNotAbstractOrVirtual(tcref.DisplayName, bindName, ErrorResolutionHints.FormatPredictions predictions),mBinding))                
+                errorR(ErrorWithSuggestions(FSComp.SR.tcMemberFoundIsNotAbstractOrVirtual(tcref.DisplayName, bindName),mBinding,bindName,suggestVirtualMembers))
             else
-                errorR(Error(FSComp.SR.tcNoAbstractOrVirtualMemberFound(bindName, ErrorResolutionHints.FormatPredictions predictions),mBinding))
+                errorR(ErrorWithSuggestions(FSComp.SR.tcNoAbstractOrVirtualMemberFound(bindName),mBinding,bindName,suggestVirtualMembers))
         | [(_,absSlot:MethInfo)]     ->
             errorR(Error(FSComp.SR.tcArgumentArityMismatch(bindName, List.sum absSlot.NumArgs, arity, getSignature absSlot, getDetails absSlot),mBinding))
         | (_,absSlot:MethInfo) :: _  ->
@@ -6660,7 +6688,7 @@ and TcConstExpr cenv overallTy env m tpenv c  =
         let expr = 
             let modName = ("NumericLiteral" + suffix)
             let ad = env.eAccessRights
-            match ResolveLongIndentAsModuleOrNamespace cenv.amap m OpenQualified env.eNameResEnv ad [ident (modName,m)] with 
+            match ResolveLongIndentAsModuleOrNamespace ResultCollectionSettings.AtMostOneResult cenv.amap m OpenQualified env.eNameResEnv ad [ident (modName,m)] with 
             | Result []
             | Exception _ -> error(Error(FSComp.SR.tcNumericLiteralRequiresModule(modName),m))
             | Result ((_,mref,_) :: _) -> 
@@ -10597,7 +10625,7 @@ and ComputeIsComplete enclosingDeclaredTypars declaredTypars ty =
 /// Determine if a uniquely-identified-abstract-slot exists for an override member (or interface member implementation) based on the information available 
 /// at the syntactic definition of the member (i.e. prior to type inference). If so, we know the expected signature of the override, and the full slotsig 
 /// it implements. Apply the inferred slotsig. 
-and ApplyAbstractSlotInference cenv (envinner:TcEnv) (bindingTy,m,synTyparDecls,declaredTypars,memberId,tcrefObjTy,renaming,_objTy,optIntfSlotTy,valSynData,memberFlags,attribs) = 
+and ApplyAbstractSlotInference (cenv:cenv) (envinner:TcEnv) (bindingTy,m,synTyparDecls,declaredTypars,memberId,tcrefObjTy,renaming,_objTy,optIntfSlotTy,valSynData,memberFlags,attribs) = 
 
     let ad = envinner.eAccessRights
     let typToSearchForAbstractMembers = 
@@ -10627,11 +10655,17 @@ and ApplyAbstractSlotInference cenv (envinner:TcEnv) (bindingTy,m,synTyparDecls,
                      errorR(Error(FSComp.SR.tcNoMemberFoundForOverride(),memberId.idRange))
                      []
 
-                 | _ -> 
+                 | slots -> 
                      match dispatchSlotsArityMatch with 
                      | meths when meths |> makeUniqueBySig |> List.length = 1 -> meths
                      | [] -> 
-                         errorR(Error(FSComp.SR.tcOverrideArityMismatch(),memberId.idRange))
+                         let details =
+                             slots
+                             |> List.map (NicePrint.stringOfMethInfo cenv.amap m envinner.DisplayEnv)
+                             |> Seq.map (sprintf "%s   %s" System.Environment.NewLine)
+                             |> String.concat ""
+
+                         errorR(Error(FSComp.SR.tcOverrideArityMismatch(details),memberId.idRange))
                          []
                      | _ -> [] // check that method to override is sealed is located at CheckOverridesAreAllUsedOnce (typrelns.fs)
                       // We hit this case when it is ambiguous which abstract method is being implemented. 
@@ -11613,7 +11647,7 @@ module TcRecdUnionAndEnumDeclarations = begin
         | Parent tcref -> combineAccess vis tcref.TypeReprAccessibility
 
     let MakeRecdFieldSpec _cenv env parent (isStatic,konst,ty',attrsForProperty,attrsForField,id,isMutable,vol,xmldoc,vis,m) =
-        let vis,_ = ComputeAccessAndCompPath env None m vis parent
+        let vis,_ = ComputeAccessAndCompPath env None m vis None parent
         let vis = CombineReprAccess parent vis
         NewRecdField isStatic konst id ty' isMutable vol attrsForProperty attrsForField xmldoc vis false
 
@@ -11691,7 +11725,7 @@ module TcRecdUnionAndEnumDeclarations = begin
                 
     let TcUnionCaseDecl cenv env parent thisTy tpenv  (UnionCase (synAttrs,id,args,xmldoc,vis,m)) =
         let attrs = TcAttributes cenv env AttributeTargets.UnionCaseDecl synAttrs // the attributes of a union case decl get attached to the generated "static factory" method
-        let vis,_ = ComputeAccessAndCompPath env None m vis parent
+        let vis,_ = ComputeAccessAndCompPath env None m vis None parent
         let vis = CombineReprAccess parent vis
         let realUnionCaseName =  
             if id.idText = opNameCons then "Cons" 
@@ -11741,7 +11775,7 @@ module TcRecdUnionAndEnumDeclarations = begin
         | SynConst.UserNum _ -> error(Error(FSComp.SR.tcInvalidEnumerationLiteral(),m))
         | _ -> 
             let v = TcConst cenv fieldTy m env v
-            let vis,_ = ComputeAccessAndCompPath env None m None parent
+            let vis,_ = ComputeAccessAndCompPath env None m None None parent
             let vis = CombineReprAccess parent vis
             if id.idText = "value__" then errorR(Error(FSComp.SR.tcNotValidEnumCaseName(),id.idRange))
             NewRecdField true (Some v) id thisTy false false [] attrs (xmldoc.ToXmlDoc()) vis false
@@ -11787,8 +11821,8 @@ let TcTyconMemberSpecs cenv env containerInfo declKind tpenv (augSpfn: SynMember
 
 let TcModuleOrNamespaceLidAndPermitAutoResolve env amap (longId : Ident list) =
     let ad = env.eAccessRights
-    let m = longId |> List.map(fun id -> id.idRange) |> List.reduce unionRanges
-    match ResolveLongIndentAsModuleOrNamespace amap m OpenQualified env.eNameResEnv ad longId  with 
+    let m = longId |> List.map (fun id -> id.idRange) |> List.reduce unionRanges
+    match ResolveLongIndentAsModuleOrNamespace ResultCollectionSettings.AllResults amap m OpenQualified env.eNameResEnv ad longId  with 
     | Result res -> Result res
     | Exception err ->  raze err
 
@@ -13276,7 +13310,7 @@ module MutRecBindingChecking =
     /// Check a "module X = A.B.C" module abbreviation declaration
     let TcModuleAbbrevDecl (cenv:cenv) scopem env (id,p,m) = 
         let ad = env.eAccessRights
-        let mvvs = ForceRaise (ResolveLongIndentAsModuleOrNamespace cenv.amap m OpenQualified env.eNameResEnv ad p)
+        let mvvs = ForceRaise (ResolveLongIndentAsModuleOrNamespace ResultCollectionSettings.AllResults cenv.amap m OpenQualified env.eNameResEnv ad p)
         let modrefs = mvvs |> List.map p23 
         if modrefs.Length > 0 && modrefs |> List.forall (fun modref -> modref.IsNamespace) then 
             errorR(Error(FSComp.SR.tcModuleAbbreviationForNamespace(fullDisplayTextOfModRef (List.head modrefs)),m))
@@ -13999,7 +14033,7 @@ module TcExceptionDeclarations =
     let TcExnDefnCore_Phase1A cenv env parent (SynExceptionDefnRepr(synAttrs,UnionCase(_,id,_,_,_,_),_,doc,vis,m)) =
         let attrs = TcAttributes cenv env AttributeTargets.ExnDecl synAttrs
         if not (String.isUpper id.idText) then errorR(NotUpperCaseConstructor(m))
-        let vis,cpath = ComputeAccessAndCompPath env None m vis parent
+        let vis,cpath = ComputeAccessAndCompPath env None m vis None parent
         let vis = TcRecdUnionAndEnumDeclarations.CombineReprAccess parent vis
         CheckForDuplicateConcreteType env (id.idText + "Exception") id.idRange
         CheckForDuplicateConcreteType env id.idText id.idRange
@@ -14241,7 +14275,7 @@ module EstablishTypeDefinitionCores =
         let modKind = ComputeModuleOrNamespaceKind cenv.g true typeNames modAttrs id.idText
         let modName = AdjustModuleName modKind id.idText
 
-        let vis,_ = ComputeAccessAndCompPath envInitial None id.idRange vis parent
+        let vis,_ = ComputeAccessAndCompPath envInitial None id.idRange vis None parent
              
         CheckForDuplicateModule envInitial id.idText id.idRange
         let id = ident (modName, id.idRange)
@@ -14270,7 +14304,7 @@ module EstablishTypeDefinitionCores =
 
         // Augmentations of type definitions are allowed within the same file as long as no new type representation or abbreviation is given 
         CheckForDuplicateConcreteType env id.idText id.idRange
-        let vis,cpath = ComputeAccessAndCompPath env None id.idRange synVis parent
+        let vis,cpath = ComputeAccessAndCompPath env None id.idRange synVis None parent
 
         // Establish the visibility of the representation, e.g.
         //   type R = 
@@ -14287,7 +14321,7 @@ module EstablishTypeDefinitionCores =
             | SynTypeDefnSimpleRepr.Enum _ -> None
             | SynTypeDefnSimpleRepr.Exception _ -> None
          
-        let visOfRepr,_ = ComputeAccessAndCompPath env None id.idRange synVisOfRepr parent
+        let visOfRepr,_ = ComputeAccessAndCompPath env None id.idRange synVisOfRepr None parent
         let visOfRepr = combineAccess vis visOfRepr 
         // If we supported nested types and modules then additions would be needed here
         let lmtyp = notlazy (NewEmptyModuleOrNamespaceType ModuleOrType)
@@ -15988,12 +16022,12 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
 
         | SynModuleSigDecl.NestedModule(ComponentInfo(attribs,_parms, _constraints,longPath,xml,_,vis,im) as compInfo,isRec,mdefs,m) ->
             if isRec then 
-                // Treat 'module rec M = ...' as a single mutully recursive definition group 'module M = ...'
+                // Treat 'module rec M = ...' as a single mutually recursive definition group 'module M = ...'
                 let modDecl = SynModuleSigDecl.NestedModule(compInfo,false,mdefs,m)
                 return! TcSignatureElementsMutRec cenv parent endm None env [modDecl]
             else
                 let id = ComputeModuleName longPath
-                let vis,_ = ComputeAccessAndCompPath env None im vis parent
+                let vis,_ = ComputeAccessAndCompPath env None im vis None parent
                 let attribs = TcAttributes cenv env AttributeTargets.ModuleDecl attribs
                 CheckNamespaceModuleOrTypeName cenv.g id
                 let modKind = EstablishTypeDefinitionCores.ComputeModuleOrNamespaceKind cenv.g true typeNames attribs id.idText
@@ -16015,7 +16049,7 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
             
         | SynModuleSigDecl.ModuleAbbrev (id,p,m) -> 
             let ad = env.eAccessRights
-            let mvvs = ForceRaise (ResolveLongIndentAsModuleOrNamespace cenv.amap m OpenQualified env.eNameResEnv ad p)
+            let mvvs = ForceRaise (ResolveLongIndentAsModuleOrNamespace ResultCollectionSettings.AllResults cenv.amap m OpenQualified env.eNameResEnv ad p)
             let scopem = unionRanges m endm
             let modrefs = mvvs |> List.map p23 
             if modrefs.Length > 0 && modrefs |> List.forall (fun modref -> modref.IsNamespace) then 
@@ -16312,7 +16346,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv:cenv) parent typeNames scopem 
               let modName = EstablishTypeDefinitionCores.AdjustModuleName modKind id.idText
               CheckForDuplicateConcreteType env modName im
               CheckForDuplicateModule env id.idText id.idRange
-              let vis,_ = ComputeAccessAndCompPath env None id.idRange vis parent
+              let vis,_ = ComputeAccessAndCompPath env None id.idRange vis None parent
              
               let endm = m.EndRange
               let id = ident (modName, id.idRange)

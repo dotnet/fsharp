@@ -296,7 +296,8 @@ module internal Salsa =
           member this.ProjectGuid = 
                 let projectObj, projectObjFlags = MSBuild.CrackProject(projectfile, configurationFunc(), platformFunc())
                 projectObj.GetProperty(ProjectFileConstants.ProjectGuid).EvaluatedValue
-        
+          member this.ProjectProvider = None
+
     // Attempt to treat as MSBuild project.
     let internal NewMSBuildProjectSite(configurationFunc, platformFunc, msBuildProjectName) = 
         let newProjectSite = new MSBuildProjectSite(msBuildProjectName,configurationFunc,platformFunc)

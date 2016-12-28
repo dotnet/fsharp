@@ -2007,87 +2007,91 @@ and ReportNoCandidatesError (csenv:ConstraintSolverEnv) (nUnnamedCallerArgs,nNam
     // No version accessible 
     | ([],others),_,_,_,_ ->  
         if isNil others then
-            ErrorD (Error (FSComp.SR.csMemberIsNotAccessible(methodName, (ShowAccessDomain ad)), m))
+            Error (FSComp.SR.csMemberIsNotAccessible(methodName, (ShowAccessDomain ad)), m)
         else
-            ErrorD (Error (FSComp.SR.csMemberIsNotAccessible2(methodName, (ShowAccessDomain ad)), m))
+            Error (FSComp.SR.csMemberIsNotAccessible2(methodName, (ShowAccessDomain ad)), m)
     | _,([],(cmeth::_)),_,_,_ ->  
     
-        // Check all the argument types. 
-
-        if (cmeth.CalledObjArgTys(m).Length <> 0) then
-            ErrorD(Error (FSComp.SR.csMethodIsNotAStaticMethod(methodName),m))
+        // Check all the argument types.
+        if cmeth.CalledObjArgTys(m).Length <> 0 then
+            Error (FSComp.SR.csMethodIsNotAStaticMethod(methodName),m)
         else
-            ErrorD(Error (FSComp.SR.csMethodIsNotAnInstanceMethod(methodName),m))
+            Error (FSComp.SR.csMethodIsNotAnInstanceMethod(methodName),m)
 
     // One method, incorrect name/arg assignment 
     | _,_,_,_,([],[cmeth]) -> 
         let minfo = cmeth.Method
         let msgNum,msgText = FSComp.SR.csRequiredSignatureIs(NicePrint.stringOfMethInfo amap m denv minfo)
-        let msgNum,msgText,msgRange = 
-            match cmeth.UnassignedNamedArgs with 
-            | CallerNamedArg(id,_) :: _ -> 
-                if minfo.IsConstructor then
-                    let typ = minfo.DeclaringEntityRef
+        match cmeth.UnassignedNamedArgs with 
+        | CallerNamedArg(id,_) :: _ -> 
+            if minfo.IsConstructor then
+                let predictFields() =
+                    minfo.DeclaringEntityRef.AllInstanceFieldsAsList
+                    |> List.map (fun p -> p.Name.Replace("@",""))
+                    |> Set.ofList
 
-                    let predictions =
-                        typ.AllInstanceFieldsAsList
-                        |> List.map (fun p -> p.Name.Replace("@",""))
-                        |> ErrorResolutionHints.FilterPredictions id.idText
-
-                    msgNum,FSComp.SR.csCtorHasNoArgumentOrReturnProperty(methodName, id.idText, msgText, ErrorResolutionHints.FormatPredictions predictions),id.idRange
-                else
-                    msgNum,FSComp.SR.csMemberHasNoArgumentOrReturnProperty(methodName, id.idText, msgText),id.idRange
-            | [] -> (msgNum,msgText,m)
-        ErrorD (Error ((msgNum,msgText),msgRange))
+                ErrorWithSuggestions((msgNum,FSComp.SR.csCtorHasNoArgumentOrReturnProperty(methodName, id.idText, msgText)),id.idRange,id.idText,predictFields)
+            else
+                Error((msgNum,FSComp.SR.csMemberHasNoArgumentOrReturnProperty(methodName, id.idText, msgText)),id.idRange)
+        | [] -> Error((msgNum,msgText),m)
 
     // One method, incorrect number of arguments provided by the user
     | _,_,([],[cmeth]),_,_ when not cmeth.HasCorrectArity ->  
         let minfo = cmeth.Method
         let nReqd = cmeth.TotalNumUnnamedCalledArgs
-        let nReqdNamed = cmeth.TotalNumAssignedNamedArgs
         let nActual = cmeth.TotalNumUnnamedCallerArgs
-        let nreqdTyArgs = cmeth.NumCalledTyArgs
-        let nactualTyArgs = cmeth.NumCallerTyArgs
-        if nActual <> nReqd then 
-            if nReqdNamed > 0 || cmeth.NumAssignedProps > 0 then 
-                if nReqd > nActual then 
-                    let errid =
-                        let suggestNamesForMissingArguments = 
-                            if nReqd > nActual then 
-                                let missingArgs = List.drop nReqd cmeth.AllUnnamedCalledArgs
-                                match NamesOfCalledArgs missingArgs with 
-                                | [] -> (false, "")
-                                | names -> (true, String.concat ";" (pathOfLid names))
-                            else (false, "")
+        let signature = NicePrint.stringOfMethInfo amap m denv minfo
+        if nActual = nReqd then 
+            let nreqdTyArgs = cmeth.NumCalledTyArgs
+            let nactualTyArgs = cmeth.NumCallerTyArgs
+            Error (FSComp.SR.csMemberSignatureMismatchArityType(methodName, nreqdTyArgs, nactualTyArgs, signature), m)
+        else
+            let nReqdNamed = cmeth.TotalNumAssignedNamedArgs
 
-                        match suggestNamesForMissingArguments with
-                        | false, _ -> if nActual = 0 then (1, "") else (2, "")
-                        | true, str -> if nActual = 0 then (3, str) else (4, str)
+            if nReqdNamed = 0 && cmeth.NumAssignedProps = 0 then
+                if minfo.IsConstructor then
+                    let couldBeNameArgs =
+                        cmeth.ArgSets
+                        |> List.exists (fun argSet ->
+                            argSet.UnnamedCallerArgs 
+                            |> List.exists (fun c -> c.Expr.ToString().EndsWith "Sequential"))
 
-                    match errid with
-                    | 1, _ -> ErrorD (Error (FSComp.SR.csMemberSignatureMismatch(methodName, (nReqd-nActual), (NicePrint.stringOfMethInfo amap m denv minfo)), m))
-                    | 2, _ -> ErrorD (Error (FSComp.SR.csMemberSignatureMismatch2(methodName, (nReqd-nActual), (NicePrint.stringOfMethInfo amap m denv minfo)), m))
-                    | 3, str -> ErrorD (Error (FSComp.SR.csMemberSignatureMismatch3(methodName, (nReqd-nActual), (NicePrint.stringOfMethInfo amap m denv minfo), str), m))
-                    | 4, str -> ErrorD (Error (FSComp.SR.csMemberSignatureMismatch4(methodName, (nReqd-nActual), (NicePrint.stringOfMethInfo amap m denv minfo), str), m))
-                    | _ -> failwith "unreachable"
-                else 
-                    ErrorD (Error (FSComp.SR.csMemberSignatureMismatchArityNamed(methodName, (nReqd+nReqdNamed), nActual, nReqdNamed, (NicePrint.stringOfMethInfo amap m denv minfo)), m))
+                    if couldBeNameArgs then
+                        Error (FSComp.SR.csCtorSignatureMismatchArityProp(methodName, nReqd, nActual, signature), m)
+                    else
+                        Error (FSComp.SR.csCtorSignatureMismatchArity(methodName, nReqd, nActual, signature), m)
+                else
+                    Error (FSComp.SR.csMemberSignatureMismatchArity(methodName, nReqd, nActual, signature), m)
             else
-                ErrorD (Error (FSComp.SR.csMemberSignatureMismatchArity(methodName, nReqd, nActual, (NicePrint.stringOfMethInfo amap m denv minfo)), m))
-        else 
-            ErrorD (Error (FSComp.SR.csMemberSignatureMismatchArityType(methodName, nreqdTyArgs, nactualTyArgs, (NicePrint.stringOfMethInfo amap m denv minfo)), m))
+                if nReqd > nActual then
+                    let diff = nReqd - nActual
+                    let missingArgs = List.drop nReqd cmeth.AllUnnamedCalledArgs
+                    match NamesOfCalledArgs missingArgs with 
+                    | [] ->
+                        if nActual = 0 then 
+                            Error (FSComp.SR.csMemberSignatureMismatch(methodName, diff, signature), m)
+                        else 
+                            Error (FSComp.SR.csMemberSignatureMismatch2(methodName, diff, signature), m)
+                    | names -> 
+                        let str = String.concat ";" (pathOfLid names)
+                        if nActual = 0 then 
+                            Error (FSComp.SR.csMemberSignatureMismatch3(methodName, diff, signature, str), m)
+                        else 
+                            Error (FSComp.SR.csMemberSignatureMismatch4(methodName, diff, signature, str), m)
+                else 
+                    Error (FSComp.SR.csMemberSignatureMismatchArityNamed(methodName, (nReqd+nReqdNamed), nActual, nReqdNamed, signature), m)
 
     // One or more accessible, all the same arity, none correct 
     | ((cmeth :: cmeths2),_),_,_,_,_ when not cmeth.HasCorrectArity && cmeths2 |> List.forall (fun cmeth2 -> cmeth.TotalNumUnnamedCalledArgs = cmeth2.TotalNumUnnamedCalledArgs) -> 
-        ErrorD (Error (FSComp.SR.csMemberNotAccessible(methodName, nUnnamedCallerArgs, methodName, cmeth.TotalNumUnnamedCalledArgs),m))
+        Error (FSComp.SR.csMemberNotAccessible(methodName, nUnnamedCallerArgs, methodName, cmeth.TotalNumUnnamedCalledArgs),m)
     // Many methods, all with incorrect number of generic arguments
     | _,_,_,([],(cmeth :: _)),_ -> 
         let msg = FSComp.SR.csIncorrectGenericInstantiation((ShowAccessDomain ad), methodName, cmeth.NumCallerTyArgs)
-        ErrorD (Error (msg,m))
+        Error (msg,m)
     // Many methods of different arities, all incorrect 
     | _,_,([],(cmeth :: _)),_,_ -> 
         let minfo = cmeth.Method
-        ErrorD (Error (FSComp.SR.csMemberOverloadArityMismatch(methodName, cmeth.TotalNumUnnamedCallerArgs, (List.sum minfo.NumArgs)),m))
+        Error (FSComp.SR.csMemberOverloadArityMismatch(methodName, cmeth.TotalNumUnnamedCallerArgs, (List.sum minfo.NumArgs)),m)
     | _ -> 
         let msg = 
             if nNamedCallerArgs = 0 then 
@@ -2099,7 +2103,8 @@ and ReportNoCandidatesError (csenv:ConstraintSolverEnv) (nUnnamedCallerArgs,nNam
                 else 
                     let sample = s.MinimumElement
                     FSComp.SR.csNoMemberTakesTheseArguments3((ShowAccessDomain ad), methodName, nUnnamedCallerArgs, sample)
-        ErrorD (Error (msg,m))
+        Error (msg,m)
+    |> ErrorD
 
 
 // Resolve the overloading of a method 

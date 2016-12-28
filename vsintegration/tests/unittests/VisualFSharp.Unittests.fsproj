@@ -41,7 +41,6 @@
     <Compile Include="Tests.XmlDocComments.fs" />
     <Compile Include="Tests.LanguageService.General.fs" />
     <Compile Include="Tests.LanguageService.Completion.fs" />
-    <Compile Include="Tests.LanguageService.F1Keyword.fs" />
     <Compile Include="Tests.LanguageService.IncrementalBuild.fs" />
     <Compile Include="Tests.LanguageService.GotoDefinition.fs" />
     <Compile Include="Tests.LanguageService.NavigationBar.fs" />
@@ -87,6 +86,9 @@
     <Compile Include="BraceMatchingServiceTests.fs">
       <Link>Roslyn\BraceMatchingServiceTests.fs</Link>
     </Compile>
+    <Compile Include="HelpContextServiceTests.fs">
+      <Link>Roslyn\HelpContextServiceTests.fs</Link>
+    </Compile>
     <Compile Include="IndentationServiceTests.fs">
       <Link>Roslyn\IndentationServiceTests.fs</Link>
     </Compile>
@@ -112,7 +114,10 @@
       <Link>Roslyn\GoToDefinitionServiceTests.fs</Link>
     </Compile>
     <Compile Include="QuickInfoProviderTests.fs">
-      <Link>Roslyn\QuickInfoProvider\QuickInfoProviderTests.fs</Link>
+      <Link>Roslyn\QuickInfoProviderTests.fs</Link>
+    </Compile>
+    <Compile Include="DocumentHighlightsServiceTests.fs">
+      <Link>Roslyn\DocumentHighlightsServiceTests.fs</Link>
     </Compile>
     <CopyAndSubstituteText Include="VisualFSharp.Unittests.dll.config">
 		<TargetFilename>VisualFSharp.Unittests.dll.config</TargetFilename>
@@ -159,6 +164,9 @@
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.10.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.11.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.dll" />
+    <Reference Include="Microsoft.VisualStudio.Text.Logic, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Text.Logic.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Text.Logic.dll</HintPath>
+    </Reference>    
     <Reference Include="Microsoft.VisualStudio.Threading, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Threading.14.1.131\lib\net45\Microsoft.VisualStudio.Threading.dll</HintPath>
       <Private>True</Private>
@@ -213,7 +221,7 @@
       <HintPath>$(NUnitLibDir)\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CodeAnalysis">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.CodeAnalysis.Common.$(RoslynVersion)\lib\net45\Microsoft.CodeAnalysis.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.CodeAnalysis.Common.$(RoslynVersion)\lib\netstandard1.3\Microsoft.CodeAnalysis.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.CodeAnalysis.EditorFeatures">
@@ -225,11 +233,11 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.CodeAnalysis.Features">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.CodeAnalysis.Features.$(RoslynVersion)\lib\net45\Microsoft.CodeAnalysis.Features.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.CodeAnalysis.Features.$(RoslynVersion)\lib\netstandard1.3\Microsoft.CodeAnalysis.Features.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.CodeAnalysis.Workspaces">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.CodeAnalysis.Workspaces.Common.$(RoslynVersion)\lib\net45\Microsoft.CodeAnalysis.Workspaces.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.CodeAnalysis.Workspaces.Common.$(RoslynVersion)\lib\netstandard1.3\Microsoft.CodeAnalysis.Workspaces.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.LanguageServices">

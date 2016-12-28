@@ -27,14 +27,10 @@ let FSI_BASIC = FSI_FILE
 
 module CoreTests = 
 
-
     // These tests are enabled for .NET Framework and .NET Core
     [<Test>]
     let ``access-FSC_BASIC``() = singleTestBuildAndRun "core/access" FSC_BASIC
-
-
 // All tests below here are known to pass for .NET Core but not yet enabled due to CI problems
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let ``access-FSI_BASIC``() = singleTestBuildAndRun "core/access" FSI_BASIC
 
@@ -141,7 +137,6 @@ module CoreTests =
     [<Test>]
     let ``members-factors-mutrec`` () = singleTestBuildAndRun "core/members/factors-mutrec" FSC_BASIC
 
-
     [<Test>]
     let graph () = singleTestBuildAndRun "perf/graph" FSC_BASIC
 
@@ -161,25 +156,23 @@ module CoreTests =
     let subtype () = singleTestBuildAndRun "core/subtype" FSC_BASIC
 
     [<Test>]
-    let ``quotes-FSC-BASIC`` () = singleTestBuildAndRun "core/quotes" FSC_BASIC
-
-    [<Test>]
     let syntax () = singleTestBuildAndRun "core/syntax" FSC_BASIC
 
     [<Test>]
     let ``test int32`` () = singleTestBuildAndRun "core/int32" FSC_BASIC
-#endif
 
-
-// All tests below here are enabled only for .NET Framework.  We should aim to enable at least all tests mentioning FSC_BASIC or FSI_BASIC
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+    [<Test>]
+    let ``quotes-FSC-BASIC`` () = singleTestBuildAndRun "core/quotes" FSC_BASIC
 
     [<Test>]
     let ``attributes-FSC_BASIC`` () = singleTestBuildAndRun "core/attributes" FSC_BASIC
 
     [<Test>]
     let ``attributes-FSI_BASIC`` () = singleTestBuildAndRun "core/attributes" FSI_BASIC
+#endif
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let byrefs () = 
 
@@ -196,6 +189,7 @@ module CoreTests =
         fsi cfg "" ["test.fsx"]
 
         testOkFile.CheckExists()
+#endif
 
     [<Test>]
     let control () = singleTestBuildAndRun "core/control" FSC_BASIC
@@ -203,7 +197,6 @@ module CoreTests =
     [<Test>]
     let ``control --tailcalls`` () = 
         let cfg = testConfig "core/control"
-        
         singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSC_BASIC
 
 
@@ -224,13 +217,17 @@ module CoreTests =
         singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSC_BASIC
 
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+    // Requires winforms will not run on coreclr
     [<Test>]
     let controlWpf () = singleTestBuildAndRun "core/controlwpf" FSC_BASIC
+#endif
 
     [<Test>]
     let csext () = singleTestBuildAndRun "core/csext" FSC_BASIC
 
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let events () = 
         let cfg = testConfig "core/events"
@@ -301,7 +298,6 @@ module CoreTests =
     //        testOkFile.CheckExists()
     //    
 
-    
 
     [<Test>]
     let forwarders () = 
@@ -626,7 +622,9 @@ module CoreTests =
     // Test dumpbin with SHA 1024 bit key public signed CL
     [<Test; Category("signedtest")>]
     let ``signedtest-17`` () = signedtest("--keyfile:sha1024delay.snk --publicsign", "test-sha1024-public-cl.bsl")
+#endif
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let ``quotes-FSI-BASIC`` () = singleTestBuildAndRun "core/quotes" FSI_BASIC
 
@@ -731,7 +729,6 @@ module CoreTests =
         // Run F# main. Quick test!
         exec cfg ("." ++ "main.exe") ""
  
-
 
     // Repro for https://github.com/Microsoft/visualfsharp/issues/1298
     [<Test>]
@@ -909,8 +906,7 @@ module CoreTests =
         match diffs2 with
         | "" -> ()
         | _ -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" stderrPath stderrBaseline diffs2)
-
-
+#endif
 
     [<Test>]
     let longnames () = singleTestBuildAndRun "core/longnames" FSC_BASIC
@@ -918,21 +914,27 @@ module CoreTests =
     [<Test>]
     let ``math-numbersVS2008`` () = singleTestBuildAndRun "core/math/numbersVS2008" FSC_BASIC
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let ``measures-AS_DLL`` () = singleTestBuildAndRun "core/measures" AS_DLL
 
+    // Requires winforms will not run on coreclr
     [<Test>]
     let ``members-basics-FSI_BASIC`` () = singleTestBuildAndRun "core/members/basics" FSI_BASIC
 
+    // Requires winforms will not run on coreclr
     [<Test>]
     let ``members-basics-FSC_BASIC`` () = singleTestBuildAndRun "core/members/basics" FSC_BASIC
 
+    // Requires winforms will not run on coreclr
     [<Test>]
     let ``members-basics-AS_DLL`` () = singleTestBuildAndRun "core/members/basics" AS_DLL
 
+    // Requires winforms will not run on coreclr
     [<Test>]
     let ``members-basics-hw`` () = singleTestBuildAndRun "core/members/basics-hw" FSC_BASIC
 
+    // Requires winforms will not run on coreclr
     [<Test>]
     let ``members-basics-hw-mutrec`` () = singleTestBuildAndRun "core/members/basics-hw-mutrec" FSC_BASIC
 
@@ -945,9 +947,12 @@ module CoreTests =
     [<Test>]
     let ``members-incremental-hw-mutrec`` () = singleTestBuildAndRun "core/members/incremental-hw-mutrec" FSC_BASIC
 
+#endif
+
     [<Test>]
     let patterns () = singleTestBuildAndRun "core/patterns" FSC_BASIC
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let pinvoke () = 
         let cfg = testConfig "core/pinvoke"
@@ -1070,8 +1075,6 @@ module CoreTests =
         exec cfg ("." ++ "test--optimize.exe") ""
 
         testOkFile3.CheckExists()
-                
-
 
 
     [<Test>]
@@ -1103,7 +1106,6 @@ module CoreTests =
         exec cfg ("." ++ "test--optimize.exe") ""
 
         testOkFile3.CheckExists()
-                
 
 
     [<Test>]
@@ -1154,10 +1156,12 @@ module CoreTests =
         exec cfg ("." ++ "module2-staticlink.exe") ""
 
         testOkFile.CheckExists()
+#endif
                 
     [<Test>]
     let reflect () = singleTestBuildAndRun "core/reflect" FSC_BASIC
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let testResources () = 
         let cfg = testConfig "core/resources"
@@ -1343,6 +1347,7 @@ module CoreTests =
         fsc cfg "%s -o:xmlverify.exe -g" cfg.fsc_flags ["xmlverify.fs"]
 
         peverifyWithArgs cfg "/nologo" "xmlverify.exe"
+#endif
 
 module ToolsTests = 
 
@@ -1366,8 +1371,10 @@ module ToolsTests =
    
         peverify cfg "test_two_fsharp_modules_module_2_as_dll.dll"
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let eval () = singleTestBuildAndRun "tools/eval" FSC_BASIC
+#endif
 
 
 module RegressionTests = 
@@ -1403,9 +1410,11 @@ module RegressionTests =
 
         peverify cfg  "pack.exe"
                 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+    // Requires WinForms
     [<Test>]
     let ``83`` () = singleTestBuildAndRun "regression/83" FSC_BASIC
-
+#endif
     [<Test >]
     let ``84`` () = singleTestBuildAndRun "regression/84" FSC_BASIC
 
@@ -1423,6 +1432,8 @@ module RegressionTests =
     [<Test >]
     let ``tuple-bug-1`` () = singleTestBuildAndRun "regression/tuple-bug-1" FSC_BASIC
 
+
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
 module OptimizationTests =
 
     [<Test>]
@@ -1530,7 +1541,7 @@ module OptimizationTests =
             |> Seq.length
 
         log "Ran ok - optimizations removed %d textual occurrences of optimizable identifiers from target IL" numElim 
-                
+
     [<Test>]
     let stats () = 
         let cfg = testConfig "optimize/stats"
@@ -1552,21 +1563,21 @@ module OptimizationTests =
 
         log "now:"
         log "%s" m
-                
+#endif
 
 module TypecheckTests = 
     [<Test>]
     let ``full-rank-arrays`` () = 
         let cfg = testConfig "typecheck/full-rank-arrays"
+        SingleTest.singleTestBuildAndRunWithCopyDlls cfg "full-rank-arrays.dll" FSC_BASIC
 
-        csc cfg "/target:library /out:HighRankArrayTests.dll" ["Class1.cs"]
-
-        SingleTest.singleTestBuildAndRunAux cfg FSC_BASIC
-
-
+#if !FX_NO_CONVERTER
+    // Converter is not coming back until dotnet standard 2.0
     [<Test>]
     let misc () = singleTestBuildAndRun "typecheck/misc" FSC_BASIC
+#endif
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let ``sigs pos24`` () = 
         let cfg = testConfig "typecheck/sigs"
@@ -1701,375 +1712,135 @@ module TypecheckTests =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s -a -o:pos05.dll" cfg.fsc_flags ["pos05.fs"]
 
-    let negGroup negs = 
+    [<TestCase("group13a","neg01")>]
+    [<TestCase("group13a","neg02")>]
+    [<TestCase("group12","neg03")>]
+    [<TestCase("group12a","neg04")>]
+    [<TestCase("group12a","neg05")>]
+    [<TestCase("group12a","neg06")>]
+    [<TestCase("group12a","neg06_a")>]
+    [<TestCase("group12a","neg06_b")>]
+    [<TestCase("group8a","neg07")>]
+    [<TestCase("group12a","neg08")>]
+    [<TestCase("group12a","neg09")>]
+    [<TestCase("group6","neg10")>]
+    [<TestCase("group6","neg10_a")>]
+    [<TestCase("group13","neg11")>]
+    [<TestCase("group13","neg12")>]
+    [<TestCase("group13","neg13")>]
+    [<TestCase("group13","neg14")>]
+    [<TestCase("group13a","neg15")>]
+    [<TestCase("group13","neg16")>]
+    [<TestCase("group11","neg17")>]
+    [<TestCase("group13a","neg18")>]
+    [<TestCase("group13a","neg19")>]
+    [<TestCase("group5a","neg20")>]
+    [<TestCase("group12","neg21")>]
+    [<TestCase("group12","neg22")>]
+    [<TestCase("group12","neg23")>]
+    [<TestCase("group5a","neg24")>]
+    [<TestCase("group12","neg25")>]
+    [<TestCase("group11","neg26")>]
+    [<TestCase("group12","neg27")>]
+    [<TestCase("group8a","neg28")>]
+    [<TestCase("group8a","neg29")>]
+    [<TestCase("group8","neg30")>]
+    [<TestCase("group8","neg31")>]
+    [<TestCase("group5a","neg32")>]
+    [<TestCase("group8","neg33")>]
+    [<TestCase("group8","neg34")>]
+    [<TestCase("group2a","neg35")>]
+    [<TestCase("group11","neg36")>]
+    [<TestCase("group5a","neg37")>]
+    [<TestCase("group5a","neg37_a")>]
+    [<TestCase("group7","neg38")>]
+    [<TestCase("group7","neg39")>]
+    [<TestCase("group7","neg40")>]
+    [<TestCase("group7","neg41")>]
+    [<TestCase("group7","neg42")>]
+    [<TestCase("group7","neg43")>]
+    [<TestCase("group7","neg44")>]
+    [<TestCase("group6","neg45")>]
+    [<TestCase("group6","neg46")>]
+    [<TestCase("group6","neg47")>]
+    [<TestCase("group6","neg48")>]
+    [<TestCase("group6","neg49")>]
+    [<TestCase("group6a","neg50")>]
+    [<TestCase("group6a","neg51")>]
+    [<TestCase("group6a","neg52")>]
+    [<TestCase("group6a","neg53")>]
+    [<TestCase("group6a","neg54")>]
+    [<TestCase("group6a","neg55")>]
+    [<TestCase("group5","neg56")>]
+    [<TestCase("group5","neg56_a")>]
+    [<TestCase("group5","neg56_b")>]
+    [<TestCase("group5","neg57")>]
+    [<TestCase("group5","neg58")>]
+    [<TestCase("group5","neg59")>]
+    [<TestCase("group5","neg60")>]
+    [<TestCase("group4b","neg61")>]
+    [<TestCase("group5a","neg62")>]
+    [<TestCase("group4b","neg63")>]
+    [<TestCase("group4b","neg64")>]
+    [<TestCase("group4c","neg65")>]
+    [<TestCase("group4c","neg66")>]
+    [<TestCase("group4c","neg67")>]
+    [<TestCase("group4","neg68")>]
+    [<TestCase("group4a","neg69")>]
+    [<TestCase("group4","neg70")>]
+    [<TestCase("group4","neg71")>]
+    [<TestCase("group4","neg72")>]
+    [<TestCase("group4","neg73")>]
+    [<TestCase("group4","neg74")>]
+    [<TestCase("group3a","neg75")>]
+    [<TestCase("group3a","neg76")>]
+    [<TestCase("group3a","neg77")>]
+    [<TestCase("group3a","neg78")>]
+    [<TestCase("group3a","neg79")>]
+    [<TestCase("group3a","neg80")>]
+    [<TestCase("group3a","neg81")>]
+    [<TestCase("group3","neg82")>]
+    [<TestCase("group3","neg83")>]
+    [<TestCase("group3","neg84")>]
+    [<TestCase("group3","neg85")>]
+    [<TestCase("group3","neg86")>]
+    [<TestCase("group3","neg87")>]
+    [<TestCase("group2a","neg88")>]
+    [<TestCase("group2","neg89")>]
+    [<TestCase("group2","neg90")>]
+    [<TestCase("group1c","neg91")>]
+    [<TestCase("group1d","neg92")>]
+    [<TestCase("group1b","neg93")>]
+    [<TestCase("group1e","neg94")>]
+    [<TestCase("group1f","neg95")>]
+    [<TestCase("group1a","neg96")>]
+    [<TestCase("group1","neg97")>]
+    [<TestCase("group9","neg_byref_1")>]
+    [<TestCase("group9","neg_byref_2")>]
+    [<TestCase("group9","neg_byref_3")>]
+    [<TestCase("group9","neg_byref_4")>]
+    [<TestCase("group9a","neg_byref_5")>]
+    [<TestCase("group9a","neg_byref_6")>]
+    [<TestCase("group9a","neg_byref_7")>]
+    [<TestCase("group9a","neg_byref_8")>]
+    [<TestCase("group10","neg_byref_10")>]
+    [<TestCase("group10","neg_byref_11")>]
+    [<TestCase("group10","neg_byref_12")>]
+    [<TestCase("group10","neg_byref_13")>]
+    [<TestCase("group10","neg_byref_14")>]
+    [<TestCase("group10","neg_byref_15")>]
+    [<TestCase("group10","neg_byref_16")>]
+    [<TestCase("group11","neg_byref_17")>]
+    [<TestCase("group11","neg_byref_18")>]
+    [<TestCase("group11","neg_byref_19")>]
+    [<TestCase("group8a","neg_byref_20")>]
+    [<TestCase("group11","neg_byref_21")>]
+    [<TestCase("group11","neg_byref_22")>]
+    [<TestCase("group11","neg_byref_23")>]
+    let ``type check signatures`` (groupName:string,testName:string) = 
+        log "Group: %s" groupName
         let cfg = testConfig "typecheck/sigs"
-        for n in negs do singleNegTest cfg n
-
-    [<Test>]
-    let ``sigs neg group1`` () = negGroup ["neg97"]
-
-    [<Test>]
-    let ``sigs neg group1a`` () = negGroup ["neg96"; ]
-
-    [<Test>]
-    let ``sigs neg group1b`` () = negGroup ["neg93"; ]
-
-    [<Test>]
-    let ``sigs neg group1c`` () = negGroup [ "neg91" ]
-
-    [<Test>]
-    let ``sigs neg group1d`` () = negGroup ["neg92" ]
-
-    [<Test>]
-    let ``sigs neg group1e`` () = negGroup ["neg94"; ]
-
-    [<Test>]
-    let ``sigs neg group1f`` () = negGroup ["neg95"; ]
-
-    [<Test>]
-    let ``sigs neg group2`` () = negGroup ["neg90"; "neg89"; ]
-
-    [<Test>]
-    let ``sigs neg group2a`` () = negGroup ["neg88"; "neg35" ]
-
-    [<Test>]
-    let ``sigs neg group3`` () = negGroup ["neg87"; "neg86"; "neg85"; "neg84"; "neg83"; "neg82"; ]
-
-    [<Test>]
-    let ``sigs neg group3a`` () = negGroup [ "neg81"; "neg80"; "neg79"; "neg78"; "neg77"; "neg76"; "neg75"; ]
-
-    [<Test>]
-    let ``sigs neg group4`` () = negGroup ["neg74"; "neg73"; "neg72"; "neg71"; "neg70"; "neg68"; ]
-
-    [<Test>]
-    let ``sigs neg group4a`` () = negGroup ["neg69"; ]
-
-    [<Test>]
-    let ``sigs neg group4b`` () = negGroup [ "neg64"; "neg61"; "neg63"; ]
-
-    [<Test>]
-    let ``sigs neg group4c`` () = negGroup [ "neg67"; "neg66"; "neg65" ]
-
-    [<Test>]
-    let ``sigs neg group5`` () = negGroup ["neg60"; "neg59"; "neg58"; "neg57"; "neg56"; "neg56_a"; "neg56_b" ]
-
-    [<Test>]
-    let ``sigs neg group5a`` () = negGroup ["neg62"; "neg20"; "neg24"; "neg32"; "neg37"; "neg37_a"; ]
-
-    [<Test>]
-    let ``sigs neg group6`` () = negGroup ["neg49"; "neg48"; "neg47"; "neg46"; "neg10"; "neg10_a"; "neg45"; ]
-
-    [<Test>]
-    let ``sigs neg group6a`` () = negGroup ["neg55"; "neg54"; "neg53"; "neg52"; "neg51"; "neg50"; ]
-
-    [<Test>]
-    let ``sigs neg group7`` () = negGroup ["neg44"; "neg43"; "neg38"; "neg39"; "neg40"; "neg41"; "neg42"]
-
-    [<Test>]
-    let ``sigs neg group8`` () = negGroup ["neg34"; "neg33"; "neg30"; "neg31" ]
-
-    [<Test>]
-    let ``sigs neg group8a`` () = negGroup ["neg29"; "neg28"; "neg07"; "neg_byref_20";  ]
-
-    [<Test>]
-    let ``sigs neg group9`` () = negGroup [ "neg_byref_1"; "neg_byref_2"; "neg_byref_3"; "neg_byref_4"; ]
-
-    [<Test>]
-    let ``sigs neg group9a`` () = negGroup [ "neg_byref_5"; "neg_byref_6"; "neg_byref_7"; "neg_byref_8";  ]
-
-    [<Test>]
-    let ``sigs neg group10`` () = negGroup ["neg_byref_10"; "neg_byref_11"; "neg_byref_12"; "neg_byref_13"; "neg_byref_14"; "neg_byref_15"; "neg_byref_16";   ]
-
-    [<Test>]
-    let ``sigs neg group11`` () = negGroup [ "neg_byref_17"; "neg_byref_18"; "neg_byref_19"; "neg_byref_21"; "neg_byref_22"; "neg_byref_23"; "neg36"; "neg17"; "neg26";  ]
-
-    [<Test>]
-    let ``sigs neg group12`` () = negGroup [ "neg27"; "neg25"; "neg03"; "neg23"; "neg22"; "neg21" ]
-
-    [<Test>]
-    let ``sigs neg group12a`` () = negGroup [ "neg04"; "neg05"; "neg06"; "neg06_a"; "neg06_b"; "neg08"; "neg09";  ]
-
-    [<Test>]
-    let ``sigs neg group13`` () = negGroup [ "neg11"; "neg12"; "neg13"; "neg14"; "neg16" ]
-
-    [<Test>]
-    let ``sigs neg group13a`` () = negGroup [ "neg18"; "neg19"; "neg01"; "neg02"; "neg15"  ]
-
-module TypeProviders = 
-
-    [<Test>]
-    let diamondAssembly () = 
-        let cfg = testConfig "typeProviders/diamondAssembly"
-
-        rm cfg "provider.dll"
-
-        fsc cfg "%s" "--out:provided.dll -a" [".." ++ "helloWorld" ++ "provided.fs"]
-
-        fsc cfg "%s" "--out:provider.dll -a" [".." ++ "helloWorld" ++ "provider.fsx"]
-
-        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test1.dll -a" cfg.fsc_flags ["test1.fsx"]
-
-        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test2a.dll -a -r:test1.dll" cfg.fsc_flags ["test2a.fsx"]
-
-        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test2b.dll -a -r:test1.dll" cfg.fsc_flags ["test2b.fsx"]
-
-        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test3.exe -r:test1.dll -r:test2a.dll -r:test2b.dll" cfg.fsc_flags ["test3.fsx"]
-
-        peverify cfg "test1.dll"
-
-        peverify cfg "test2a.dll"
-
-        peverify cfg "test2b.dll"
-
-        peverify cfg "test3.exe"
-
-        exec cfg ("." ++ "test3.exe") ""
-
-        use testOkFile = fileguard cfg "test.ok"
-
-        fsi cfg "%s" cfg.fsi_flags ["test3.fsx"]
-
-        testOkFile.CheckExists()
-                
-    [<Test>]
-    let globalNamespace () = 
-        let cfg = testConfig "typeProviders/globalNamespace"
-
-        csc cfg """/out:globalNamespaceTP.dll /debug+ /target:library /r:"%s" """ cfg.FSCOREDLLPATH ["globalNamespaceTP.cs"]
-
-        fsc cfg "%s /debug+ /r:globalNamespaceTP.dll /optimize-" cfg.fsc_flags ["test.fsx"]
-                
-    let helloWorld p = 
-        let cfg = testConfig "typeProviders/helloWorld"
-
-        fsc cfg "%s" "--out:provided1.dll -g -a" [".." ++ "helloWorld" ++ "provided.fs"]
-
-        fsc cfg "%s" "--out:provided2.dll -g -a" [".." ++ "helloWorld" ++ "provided.fs"]
-
-        fsc cfg "%s" "--out:provided3.dll -g -a" [".." ++ "helloWorld" ++ "provided.fs"]
-
-        fsc cfg "%s" "--out:provided4.dll -g -a" [".." ++ "helloWorld" ++ "provided.fs"]
-
-        fsc cfg "%s" "--out:providedJ.dll -g -a" [".." ++ "helloWorld" ++ "providedJ.fs"]
-
-        fsc cfg "%s" "--out:providedK.dll -g -a" [".." ++ "helloWorld" ++ "providedK.fs"]
-
-        fsc cfg "%s" "--out:providedNullAssemblyName.dll -g -a" [".." ++ "helloWorld" ++ "providedNullAssemblyName.fsx"]
-
-        fsc cfg "--out:provided.dll -a" [".." ++ "helloWorld" ++ "provided.fs"]
-
-        fsc cfg "--out:providedJ.dll -a" [".." ++ "helloWorld" ++ "providedJ.fs"]
-
-        fsc cfg "--out:providedK.dll -a" [".." ++ "helloWorld" ++ "providedK.fs"]
-
-        fsc cfg "--out:provider.dll -a" ["provider.fsx"]
-
-        SingleTest.singleTestBuildAndRunAux cfg p 
-
-
-        rm cfg "provider_with_binary_compat_changes.dll"
-
-        mkdir cfg "bincompat1"
-
-        log "pushd bincompat1"
-        let bincompat1 = getfullpath cfg "bincompat1"
-
-        Directory.EnumerateFiles(bincompat1 ++ "..", "*.dll")
-        |> Seq.iter (fun from -> Commands.copy_y bincompat1 from ("." ++ Path.GetFileName(from)) |> ignore)
-
-        fscIn cfg bincompat1 "%s" "-g -a -o:test_lib.dll -r:provider.dll" [".." ++ "test.fsx"]
-
-        fscIn cfg bincompat1 "%s" "-r:test_lib.dll -r:provider.dll" [".." ++ "testlib_client.fsx"]
-
-        log "popd"
-
-        mkdir cfg "bincompat2"
-        
-        log "pushd bincompat2"
-        let bincompat2 = getfullpath cfg "bincompat2"
-
-        Directory.EnumerateFiles(bincompat2 ++ ".." ++ "bincompat1", "*.dll")
-        |> Seq.iter (fun from -> Commands.copy_y bincompat2 from ("." ++ Path.GetFileName(from)) |> ignore)
-
-        fscIn cfg bincompat2 "%s" "--define:ADD_AN_OPTIONAL_STATIC_PARAMETER --define:USE_IMPLICIT_ITypeProvider2 --out:provider.dll -g -a" [".." ++ "provider.fsx"]
-
-        fscIn cfg bincompat2 "-g -a -o:test_lib_recompiled.dll -r:provider.dll" [".." ++ "test.fsx"]
-
-        fscIn cfg bincompat2 "%s" "--define:ADD_AN_OPTIONAL_STATIC_PARAMETER -r:test_lib.dll -r:provider.dll" [".." ++ "testlib_client.fsx"]
-
-        peverify cfg (bincompat2 ++ "provider.dll")
-
-        peverify cfg (bincompat2 ++ "test_lib.dll")
-
-        peverify cfg (bincompat2 ++ "test_lib_recompiled.dll")
-
-        peverify cfg (bincompat2 ++ "testlib_client.exe")
-
-    [<Test>]
-    let ``helloWorld fsc`` () = helloWorld FSC_BASIC
-
-    [<Test>]
-    let ``helloWorld fsi`` () = helloWorld FSI_STDIN
-
-
-    [<Test>]
-    let helloWorldCSharp () = 
-        let cfg = testConfig "typeProviders/helloWorldCSharp"
-
-        rm cfg "magic.dll"
-
-        fsc cfg "%s" "--out:magic.dll -a --keyfile:magic.snk" ["magic.fs "]
-
-        rm cfg "provider.dll"
-
-        csc cfg """/out:provider.dll /target:library "/r:%s" /r:magic.dll""" cfg.FSCOREDLLPATH ["provider.cs"]
-
-        fsc cfg "%s /debug+ /r:provider.dll /optimize-" cfg.fsc_flags ["test.fsx"]
-
-        peverify cfg "magic.dll"
-
-        peverify cfg "provider.dll"
-
-        peverify cfg "test.exe"
-
-        exec cfg ("." ++ "test.exe") ""
-                
-
-
-
-    let testsSimple = 
-        ["neg2h"; "neg4"; "neg1"; "neg1_a"; "neg2"; "neg2c"; "neg2e"; "neg2g"; "neg6"]
-        @ ["InvalidInvokerExpression"; "providerAttributeErrorConsume"; "ProviderAttribute_EmptyConsume"]
-        
-    let testsWithDefine = [
-        "EVIL_PROVIDER_GetNestedNamespaces_Exception";
-        "EVIL_PROVIDER_NamespaceName_Exception";
-        "EVIL_PROVIDER_NamespaceName_Empty";
-        "EVIL_PROVIDER_GetTypes_Exception";
-        "EVIL_PROVIDER_ResolveTypeName_Exception";
-        "EVIL_PROVIDER_GetNamespaces_Exception";
-        "EVIL_PROVIDER_GetStaticParameters_Exception";
-        "EVIL_PROVIDER_GetInvokerExpression_Exception";
-        "EVIL_PROVIDER_GetTypes_Null";
-        "EVIL_PROVIDER_ResolveTypeName_Null";
-        "EVIL_PROVIDER_GetNamespaces_Null";
-        "EVIL_PROVIDER_GetStaticParameters_Null";
-        "EVIL_PROVIDER_GetInvokerExpression_Null";
-        "EVIL_PROVIDER_DoesNotHaveConstructor";
-        "EVIL_PROVIDER_ConstructorThrows";
-        "EVIL_PROVIDER_ReturnsTypeWithIncorrectNameFromApplyStaticArguments" ]
-
-
-    [<Test>]
-    let negTests () = 
-      for name in (testsSimple  @ testsWithDefine) do
-       let cfg = testConfig "typeProviders/negTests"
-       let dir = cfg.Directory
-
-       if requireENCulture () then
-
-        let fileExists = Commands.fileExists dir >> Option.isSome
-
-        rm cfg "provided.dll"
-
-        fsc cfg "--out:provided.dll -a" [".." ++ "helloWorld" ++ "provided.fs"]
-
-        rm cfg "providedJ.dll"
-
-        fsc cfg "--out:providedJ.dll -a" [".." ++ "helloWorld" ++ "providedJ.fs"]
-
-        rm cfg "providedK.dll"
-
-        fsc cfg "--out:providedK.dll -a" [".." ++ "helloWorld" ++ "providedK.fs"]
-
-        rm cfg "provider.dll"
-
-        fsc cfg "--out:provider.dll -a" ["provider.fsx"]
-
-        fsc cfg "--out:provider_providerAttributeErrorConsume.dll -a" ["providerAttributeError.fsx"]
-
-        fsc cfg "--out:provider_ProviderAttribute_EmptyConsume.dll -a" ["providerAttribute_Empty.fsx"]
-
-        rm cfg "helloWorldProvider.dll"
-
-        fsc cfg "--out:helloWorldProvider.dll -a" [".." ++ "helloWorld" ++ "provider.fsx"]
-
-        rm cfg "MostBasicProvider.dll"
-
-        fsc cfg "--out:MostBasicProvider.dll -a" ["MostBasicProvider.fsx"]
-
-        let preprocess name pref = 
-            let dirp = (dir |> Commands.pathAddBackslash)
-            do
-            File.ReadAllText(sprintf "%s%s.%sbslpp" dirp name pref)
-                .Replace("<ASSEMBLY>", getfullpath cfg (sprintf "provider_%s.dll" name))
-                .Replace("<URIPATH>",sprintf "file:///%s" dirp)
-                |> fun txt -> File.WriteAllText(sprintf "%s%s.%sbsl" dirp name pref,txt)
-
-        if name = "ProviderAttribute_EmptyConsume" || name = "providerAttributeErrorConsume" then ()
-        else  fsc cfg "--define:%s --out:provider_%s.dll -a" name name ["provider.fsx"]
-
-        if fileExists (sprintf "%s.bslpp" name) then preprocess name "" 
-
-        if fileExists (sprintf "%s.vsbslpp" name) then preprocess name "vs"
-
-        SingleTest.singleNegTest cfg name
-
-    [<Test>]
-    let splitAssembly () = 
-        let cfg = testConfig "typeProviders/splitAssembly"
-
-        fsc cfg "--out:provider.dll -a" ["provider.fs"]
-
-        fsc cfg "--out:providerDesigner.dll -a" ["providerDesigner.fsx"]
-
-        SingleTest.singleTestBuildAndRunAux cfg FSC_BASIC
-        
-    [<Test>]
-    let wedgeAssembly () = 
-        let cfg = testConfig "typeProviders/wedgeAssembly"
-
-        rm cfg "provider.dll"
-
-        rm cfg "provided.dll"
-
-        fsc cfg "%s" "--out:provided.dll -a" [".." ++ "helloWorld" ++ "provided.fs"]
-
-        rm cfg "providedJ.dll"
-
-        fsc cfg "%s" "--out:providedJ.dll -a" [".." ++ "helloWorld" ++ "providedJ.fs"]
-
-        rm cfg "providedK.dll"
-
-        fsc cfg "%s" "--out:providedK.dll -a" [".." ++ "helloWorld" ++ "providedK.fs"]
-
-        fsc cfg "%s" "--out:provider.dll -a" [".." ++ "helloWorld" ++ "provider.fsx"]
-
-        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test2a.dll -a" cfg.fsc_flags ["test2a.fs"]
-
-        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test2b.dll -a" cfg.fsc_flags ["test2b.fs"]
-
-        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test3.exe" cfg.fsc_flags ["test3.fsx"]
-
-        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test2a-with-sig.dll -a" cfg.fsc_flags ["test2a.fsi"; "test2a.fs"]
-
-        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test2b-with-sig.dll -a" cfg.fsc_flags ["test2b.fsi"; "test2b.fs"]
-
-        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test3-with-sig.exe --define:SIGS" cfg.fsc_flags ["test3.fsx"]
-
-        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test2a-with-sig-restricted.dll -a" cfg.fsc_flags ["test2a-restricted.fsi"; "test2a.fs"]
-
-        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test2b-with-sig-restricted.dll -a"cfg.fsc_flags ["test2b-restricted.fsi"; "test2b.fs"]
-
-        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test3-with-sig-restricted.exe --define:SIGS_RESTRICTED" cfg.fsc_flags ["test3.fsx"]
-
-        peverify cfg "test2a.dll"
-
-        peverify cfg "test2b.dll"
-
-        peverify cfg "test3.exe"
-
-        exec cfg ("." ++ "test3.exe") ""
+        singleNegTest cfg testName 
 
 module FscTests =                 
     [<Test>]
@@ -2137,6 +1908,7 @@ open System.Runtime.InteropServices
         
         fv.LegalCopyright |> Assert.areEqual "Copyright \u00A9 Compressed Space Transport 2380"
         fv.LegalTrademarks |> Assert.areEqual "CST \u2122"
+#endif
 
 #if !FX_PORTABLE_OR_NETSTANDARD
 module ProductVersionTest =
@@ -2186,8 +1958,6 @@ namespace CST.RI.Anshun
 
         fileVersionInfo.ProductVersion |> Assert.areEqual expected
 
-#endif
-
 module GeneratedSignatureTests =
     [<Test>]
     let ``members-basics-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/members/basics" GENERATED_SIGNATURE
@@ -2206,5 +1976,4 @@ module GeneratedSignatureTests =
 
     [<Test>]
     let ``measures-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/measures" GENERATED_SIGNATURE
-
 #endif

@@ -156,6 +156,7 @@ let GetRangeOfError(err:PhasedError) =
       | RecursiveUseCheckedAtRuntime (_,_,m) 
       | LetRecEvaluatedOutOfOrder (_,_,_,m) 
       | Error (_,m)
+      | ErrorWithSuggestions (_,m,_,_)
       | NumberedError (_,m)
       | SyntaxError (_,m) 
       | InternalError (_,m)
@@ -369,6 +370,7 @@ let GetErrorNumber(err:PhasedError) =
       | WrappedError(e,_) -> GetFromException e   
 
       | Error ((n,_),_) -> n
+      | ErrorWithSuggestions ((n,_),_,_,_) -> n
       | Failure _ -> 192
       | NumberedError((n,_),_) -> n
       | IllegalFileNameChar(fileName,invalidChar) -> fst (FSComp.SR.buildUnexpectedFileNameCharacter(fileName,string invalidChar))
@@ -387,6 +389,7 @@ let GetWarningLevel err =
   | DefensiveCopyWarning _
   | FullAbstraction _ ->  5
   | NumberedError((n,_),_) 
+  | ErrorWithSuggestions((n,_),_,_,_) 
   | Error((n,_),_) -> 
       // 1178,tcNoComparisonNeeded1,"The struct, record or union type '%s' is not structurally comparable because the type parameter %s does not satisfy the 'comparison' constraint. Consider adding the 'NoComparison' attribute to this type to clarify that the type is not comparable"
       // 1178,tcNoComparisonNeeded2,"The struct, record or union type '%s' is not structurally comparable because the type '%s' does not satisfy the 'comparison' constraint. Consider adding the 'NoComparison' attribute to this type to clarify that the type is not comparable" 
@@ -606,7 +609,7 @@ let getErrorString key = SR.GetString key
 
 let (|InvalidArgument|_|) (exn:exn) = match exn with :? ArgumentException as e -> Some e.Message | _ -> None
 
-let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
+let OutputPhasedErrorR errorStyle (os:System.Text.StringBuilder) (err:PhasedError) =
     let rec OutputExceptionR (os:System.Text.StringBuilder) = function        
       | ConstraintSolverTupleDiffLengths(_,tl1,tl2,m,m2) -> 
           os.Append(ConstraintSolverTupleDiffLengthsE().Format tl1.Length tl2.Length) |> ignore
@@ -774,11 +777,11 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
               os.Append(Duplicate1E().Format (DecompileOpName s)) |> ignore
           else 
               os.Append(Duplicate2E().Format k (DecompileOpName s)) |> ignore
-      | UndefinedName(_,k,id,predictions) ->
+      | UndefinedName(_,k,id,suggestionsF) ->
           os.Append(k (DecompileOpName id.idText)) |> ignore
-          if Set.isEmpty predictions |> not then
-              let filtered = ErrorResolutionHints.FilterPredictions id.idText predictions
-              os.Append(ErrorResolutionHints.FormatPredictions filtered) |> ignore
+          let filtered = ErrorResolutionHints.FilterPredictions id.idText suggestionsF
+          if List.isEmpty filtered |> not then
+              os.Append(ErrorResolutionHints.FormatPredictions errorStyle DecompileOpName filtered) |> ignore
           
       | InternalUndefinedItemRef(f,smr,ccuName,s) ->  
           let _, errs = f(smr, ccuName, s)  
@@ -1258,13 +1261,18 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
           os.Append(NonUniqueInferredAbstractSlot1E().Format bindnm) |> ignore
           let ty1 = bvirt1.EnclosingType
           let ty2 = bvirt2.EnclosingType
-          // REVIEW: consider if we need to show _cxs (the type parameter constrants)
+          // REVIEW: consider if we need to show _cxs (the type parameter constraints)
           let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
           os.Append(NonUniqueInferredAbstractSlot2E().Format) |> ignore
           if t1 <> t2 then 
               os.Append(NonUniqueInferredAbstractSlot3E().Format t1 t2) |> ignore
           os.Append(NonUniqueInferredAbstractSlot4E().Format) |> ignore
       | Error ((_,s),_) -> os.Append(s) |> ignore
+      | ErrorWithSuggestions ((_,s),_,idText,suggestionF) -> 
+          os.Append(DecompileOpName s) |> ignore
+          let filtered = ErrorResolutionHints.FilterPredictions idText suggestionF
+          if List.isEmpty filtered |> not then
+              os.Append(ErrorResolutionHints.FormatPredictions errorStyle DecompileOpName filtered) |> ignore
       | NumberedError ((_,s),_) -> os.Append(s) |> ignore
       | InternalError (s,_) 
       | InvalidArgument s 
@@ -1416,21 +1424,13 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
 
 
 // remove any newlines and tabs 
-let OutputPhasedError (os:System.Text.StringBuilder) (err:PhasedError) (flattenErrors:bool) = 
+let OutputPhasedError errorStyle (os:System.Text.StringBuilder) (err:PhasedError) (flattenErrors:bool) = 
     let buf = new System.Text.StringBuilder()
 
-    OutputPhasedErrorR buf err
+    OutputPhasedErrorR errorStyle buf err
     let s = if flattenErrors then ErrorLogger.NormalizeErrorString (buf.ToString()) else buf.ToString()
     
     os.Append(s) |> ignore
-
-
-type ErrorStyle = 
-    | DefaultErrors 
-    | EmacsErrors 
-    | TestErrors 
-    | VSErrors
-    | GccErrors
 
 let SanitizeFileName fileName implicitIncludeDir =
     // The assert below is almost ok, but it fires in two cases:
@@ -1537,35 +1537,35 @@ let CollectErrorOrWarning (implicitIncludeDir,showFullPaths,flattenErrors,errorS
                 | Some m -> Some(outputWhere (showFullPaths,errorStyle) m)
                 | None -> None
 
-            let OutputCanonicalInformation(err:PhasedError,subcategory, errorNumber) : CanonicalInformation = 
+            let OutputCanonicalInformation(subcategory, errorNumber) : CanonicalInformation = 
                 let text = 
                     match errorStyle with
                     // Show the subcategory for --vserrors so that we can fish it out in Visual Studio and use it to determine error stickiness.
                     | ErrorStyle.VSErrors -> sprintf "%s %s FS%04d: " subcategory (if warn then "warning" else "error") errorNumber
-                    | _ -> sprintf "%s FS%04d: " (if warn then "warning" else "error") (GetErrorNumber err)
+                    | _ -> sprintf "%s FS%04d: " (if warn then "warning" else "error") errorNumber
                 {  ErrorNumber = errorNumber; Subcategory = subcategory; TextRepresentation = text}
         
             let mainError,relatedErrors = SplitRelatedErrors err
             let where = OutputWhere(mainError)
-            let canonical = OutputCanonicalInformation(mainError,err.Subcategory(),GetErrorNumber mainError)
+            let canonical = OutputCanonicalInformation(err.Subcategory(),GetErrorNumber mainError)
             let message = 
                 let os = System.Text.StringBuilder()
-                OutputPhasedError os mainError flattenErrors
+                OutputPhasedError errorStyle os mainError flattenErrors
                 os.ToString()
             
             let entry : DetailedIssueInfo = { Location = where; Canonical = canonical; Message = message }
             
             errors.Add ( ErrorOrWarning.Long( not warn, entry ) )
 
-            let OutputRelatedError(err) =
+            let OutputRelatedError(err:PhasedError) =
                 match errorStyle with
                 // Give a canonical string when --vserror.
                 | ErrorStyle.VSErrors -> 
                     let relWhere = OutputWhere(mainError) // mainError?
-                    let relCanonical = OutputCanonicalInformation(err, err.Subcategory(),GetErrorNumber mainError) // Use main error for code
+                    let relCanonical = OutputCanonicalInformation(err.Subcategory(),GetErrorNumber mainError) // Use main error for code
                     let relMessage = 
                         let os = System.Text.StringBuilder()
-                        OutputPhasedError os err flattenErrors
+                        OutputPhasedError errorStyle os err flattenErrors
                         os.ToString()
 
                     let entry : DetailedIssueInfo = { Location = relWhere; Canonical = relCanonical; Message = relMessage}
@@ -1573,7 +1573,7 @@ let CollectErrorOrWarning (implicitIncludeDir,showFullPaths,flattenErrors,errorS
 
                 | _ -> 
                     let os = System.Text.StringBuilder()
-                    OutputPhasedError os err flattenErrors
+                    OutputPhasedError errorStyle os err flattenErrors
                     errors.Add( ErrorOrWarning.Short((not warn), os.ToString()) )
         
             relatedErrors |> List.iter OutputRelatedError
@@ -2602,6 +2602,9 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
 
     // Look for an explicit reference to FSharp.Core and use that to compute fsharpBinariesDir
     let fsharpBinariesDirValue = 
+#if FX_NO_SIMPLIFIED_LOADER
+        data.defaultFSharpBinariesDir
+#else
         match fslibExplicitFilenameOpt with
         | Some(fslibFilename) ->
             let filename = ComputeMakePathAbsolute data.implicitIncludeDir fslibFilename
@@ -2614,12 +2617,13 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                 error(Error(FSComp.SR.buildErrorOpeningBinaryFile(filename, e.Message), rangeStartup))
         | _ ->
             data.defaultFSharpBinariesDir
+#endif
 
     member x.MscorlibMajorVersion = mscorlibMajorVersion
     member x.primaryAssembly = data.primaryAssembly
     member x.autoResolveOpenDirectivesToDlls = data.autoResolveOpenDirectivesToDlls
     member x.noFeedback = data.noFeedback
-    member x.stackReserveSize = data.stackReserveSize
+    member x.stackReserveSize = data.stackReserveSize   
     member x.implicitIncludeDir = data.implicitIncludeDir
     member x.openBinariesInMemory = data.openBinariesInMemory
     member x.openDebugInformationForLaterStaticLinking = data.openDebugInformationForLaterStaticLinking
@@ -2985,7 +2989,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                 
                                        
             // Whatever is left, pass to MSBuild.
-            let Resolve(references,showMessages) = 
+            let Resolve(references,showMessages) =
                 try 
                     tcConfig.referenceResolver.Resolve
                        (tcConfig.resolutionEnvironment,
@@ -3164,12 +3168,14 @@ let ComputeQualifiedNameOfFileFromUniquePath (m, p: string list) = QualifiedName
 let QualFileNameOfSpecs filename specs = 
     match specs with 
     | [SynModuleOrNamespaceSig(modname,_,true,_,_,_,_,m)] -> QualFileNameOfModuleName m filename modname
-    | _ -> QualFileNameOfFilename (rangeN filename 1) filename
+    | [SynModuleOrNamespaceSig(_,_,false,_,_,_,_,m)] -> QualFileNameOfFilename m filename
+    | _ -> QualFileNameOfFilename (mkRange filename pos0 pos0) filename
 
 let QualFileNameOfImpls filename specs = 
     match specs with 
     | [SynModuleOrNamespace(modname,_,true,_,_,_,_,m)] -> QualFileNameOfModuleName m filename modname
-    | _ -> QualFileNameOfFilename (rangeN filename 1) filename
+    | [SynModuleOrNamespace(_,_,false,_,_,_,_,m)] -> QualFileNameOfFilename m filename
+    | _ -> QualFileNameOfFilename (mkRange filename pos0 pos0) filename
 
 let PrepandPathToQualFileName x (QualifiedNameOfFile(q)) = ComputeQualifiedNameOfFileFromUniquePath (q.idRange,pathOfLid x@[q.idText])
 let PrepandPathToImpl x (SynModuleOrNamespace(p,b,c,d,e,f,g,h)) = SynModuleOrNamespace(x@p,b,c,d,e,f,g,h)
@@ -3432,20 +3438,24 @@ type TcAssemblyResolutions(results : AssemblyResolution list, unresolved : Unres
 
 
     static member GetAllDllReferences (tcConfig:TcConfig) =
-        [ let primaryReference = tcConfig.PrimaryAssemblyDllReference()
-          yield primaryReference
-          if not tcConfig.compilingFslib then 
-              yield tcConfig.CoreLibraryDllReference()
+        [
+            let primaryReference = tcConfig.PrimaryAssemblyDllReference()
+            yield primaryReference
 
-          let assumeDotNetFramework = primaryReference.SimpleAssemblyNameIs("mscorlib")
-          if tcConfig.framework then 
-              for s in DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) do 
-                  yield AssemblyReference(rangeStartup,s+".dll",None)
+            if not tcConfig.compilingFslib then 
+                yield tcConfig.CoreLibraryDllReference()
 
-          if tcConfig.useFsiAuxLib then 
-              let name = Path.Combine(tcConfig.fsharpBinariesDir, GetFsiLibraryName()+".dll")
-              yield AssemblyReference(rangeStartup,name,None) 
-          yield! tcConfig.referencedDLLs ]
+            let assumeDotNetFramework = primaryReference.SimpleAssemblyNameIs("mscorlib")
+            if tcConfig.framework then 
+                for s in DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) do 
+                    yield AssemblyReference(rangeStartup,s+".dll",None)
+
+            if tcConfig.useFsiAuxLib then
+                let name = Path.Combine(tcConfig.fsharpBinariesDir, GetFsiLibraryName() + ".dll")
+                yield AssemblyReference(rangeStartup,name,None)
+
+            yield! tcConfig.referencedDLLs
+        ]
 
     static member SplitNonFoundationalResolutions (tcConfig:TcConfig) =
         let assemblyList = TcAssemblyResolutions.GetAllDllReferences tcConfig

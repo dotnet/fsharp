@@ -1,8 +1,8 @@
 // #Regression #Conformance #DeclarationElements #Import 
 
-//<Expects status="error" span="(20,9-20,10)" id="FS0039">The value or constructor 'A' is not defined$</Expects>
-//<Expects status="error" span="(27,9-27,10)" id="FS0039">The value or constructor 'B' is not defined$</Expects>
-//<Expects status="error" span="(34,9-34,10)" id="FS0039">The value or constructor 'C' is not defined$</Expects>
+//<Expects status="error" span="(20,9-20,10)" id="FS0039">The value or constructor 'A' is not defined</Expects>
+//<Expects status="error" span="(27,9-27,10)" id="FS0039">The value or constructor 'B' is not defined</Expects>
+//<Expects status="error" span="(34,9-34,10)" id="FS0039">The value or constructor 'C' is not defined</Expects>
 
 
 module TestModule1 =

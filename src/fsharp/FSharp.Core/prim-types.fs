@@ -3502,6 +3502,10 @@ namespace Microsoft.FSharp.Collections
        | (::)  : Head: 'T * Tail: 'T list -> 'T list
        interface System.Collections.Generic.IEnumerable<'T>
        interface System.Collections.IEnumerable
+
+#if !FSCORE_PORTABLE_OLD
+       interface System.Collections.Generic.IReadOnlyCollection<'T>
+#endif
         
     and 'T list = List<'T>
 
@@ -3695,6 +3699,11 @@ namespace Microsoft.FSharp.Collections
         interface System.Collections.IEnumerable with
             member l.GetEnumerator() = (PrivateListHelpers.mkListEnumerator l :> System.Collections.IEnumerator)
 
+#if !FSCORE_PORTABLE_OLD
+        interface IReadOnlyCollection<'T> with
+            member l.Count = l.Length
+#endif
+
     type seq<'T> = IEnumerable<'T>
 
         
@@ -3790,7 +3799,7 @@ namespace Microsoft.FSharp.Core
             | _ -> false
 
         [<CompiledName("IsNotNull")>]
-        let inline isNotNull (value : 'T) = 
+        let inline internal isNotNull (value : 'T) = 
             match value with 
             | null -> false 
             | _ -> true

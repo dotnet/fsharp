@@ -5,7 +5,7 @@
     <Identity Id="VisualFSharp" Version="15.4.1.9055" Language="en-US" Publisher="Microsoft.VisualFSharpTools" />
     <DisplayName>Visual F# Tools</DisplayName>
     <Description xml:space="preserve">Deploy Visual F# Tools templates to Visual Studio</Description>
-    <ShortcutPath>..\CommonExtensions\Microsoft\FSharp</ShortcutPath>
+    <PackageId>Microsoft.FSharp.VSIX.OpenSource.Core</PackageId>
   </Metadata>
   <Installation Experimental="true">
     <InstallationTarget Id="Microsoft.VisualStudio.Pro" Version="[15.0]" />
@@ -60,6 +60,7 @@
 
     <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="FSharp.Editor" Path="|FSharp.Editor|" AssemblyName="|FSharp.Editor;AssemblyName|" />
     <Asset Type="Microsoft.VisualStudio.Analyzer" d:Source="Project" d:ProjectName="FSharp.Editor" Path="|FSharp.Editor|" />
+    <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="ProjectSystem.Base" Path="|ProjectSystem.Base|" />
   </Assets>
   <Prerequisites>
     <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[15.0,16.0)" DisplayName="Visual Studio core editor" /> 
