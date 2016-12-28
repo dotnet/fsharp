@@ -74,8 +74,6 @@ module internal AstTraversal =
         // VisitRecordField allows overriding behavior when visiting l.h.s. of constructed record instances
         abstract VisitRecordField : TraversePath * SynExpr option * LongIdentWithDots option -> 'T option
         default this.VisitRecordField (_path, _copyOpt, _recordField) = None
-        abstract VisitAttribute : SynAttribute -> 'T option
-        default this.VisitAttribute (_synAttribute) = None
 
     let dive node range project =
         range,(fun() -> project node)

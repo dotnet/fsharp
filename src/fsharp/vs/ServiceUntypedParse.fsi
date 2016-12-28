@@ -77,12 +77,21 @@ type internal CompletionContext =
     | ParameterList of pos * HashSet<string>
     | AttributeApplication
 
+type internal ModuleKind = { IsAutoOpen: bool; HasModuleSuffix: bool }
+
+type internal EntityKind =
+    | Attribute
+    | Type
+    | FunctionOrValue of isActivePattern:bool
+    | Module of ModuleKind
+
 // implementation details used by other code in the compiler    
 module internal UntypedParseImpl =
     val TryFindExpressionASTLeftOfDotLeftOfCursor : pos * ParsedInput option -> (pos * bool) option
     val GetRangeOfExprLeftOfDot : pos  * ParsedInput option -> range option
     val TryFindExpressionIslandInPosition : pos * ParsedInput option -> string option
     val TryGetCompletionContext : pos * FSharpParseFileResults option -> CompletionContext option
+    val GetEntityKind: pos * ParsedInput -> EntityKind option
 
 // implementation details used by other code in the compiler    
 module internal SourceFileImpl =
