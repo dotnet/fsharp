@@ -2554,7 +2554,7 @@ and TryInlineApplication cenv env finfo (tyargs: TType list,args: Expr list,m) =
 
         let isGetHashCode =
             match finfo.Info with
-            | ValValue(vref,_) -> vref.DisplayName = "GetHashCode"
+            | ValValue(vref,_) -> vref.DisplayName = "GetHashCode" && vref.IsCompilerGenerated
             | _ -> false
 
         if isGetHashCode then None else
