@@ -139,7 +139,7 @@ type InProcErrorLoggerProvider() =
             { new ErrorLoggerUpToMaxErrors(tcConfigBuilder, exiter, "InProcCompilerErrorLoggerUpToMaxErrors") with
                     member this.HandleTooManyErrors(text) = warnings.Add(Diagnostic.Short(false, text))
                     member this.HandleIssue(tcConfigBuilder, err, isError) = 
-                        let errs = CollectDiagnostic(tcConfigBuilder.implicitIncludeDir, tcConfigBuilder.showFullPaths, tcConfigBuilder.flatErrors, tcConfigBuilder.errorStyle, not isError, err)
+                        let errs = CollectDiagnostic(tcConfigBuilder.implicitIncludeDir, tcConfigBuilder.showFullPaths, tcConfigBuilder.flatErrors, tcConfigBuilder.errorStyle, isError, err)
                         let container = if isError then errors else warnings 
                         container.AddRange(errs) } 
             :> ErrorLogger }
