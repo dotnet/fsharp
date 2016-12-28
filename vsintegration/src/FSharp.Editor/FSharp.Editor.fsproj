@@ -28,13 +28,17 @@
     <IncludePkgdefInVSIXContainer>true</IncludePkgdefInVSIXContainer>
   </PropertyGroup>
   <ItemGroup>
+    <EmbeddedResource Include="FSharp.Editor.resx" />
+    <Compile Include="srFSharp.Editor.fs" />
     <Compile Include="Common\AssemblyInfo.fs" />
+    <Compile Include="Common\Pervasive.fs" />
     <Compile Include="Common\CommonConstants.fs" />
     <Compile Include="Common\CommonRoslynHelpers.fs" />
     <Compile Include="Common\CommonHelpers.fs" />
     <Compile Include="Common\Logging.fs" />
     <Compile Include="Common\ContentType.fs" />
     <Compile Include="Common\LanguageService.fs" />
+    <Compile Include="Common\AssemblyContentProvider.fs" />
     <Compile Include="Classification\ColorizationService.fs" />
     <Compile Include="Formatting\BraceMatchingService.fs" />
     <Compile Include="Formatting\IndentationService.fs" />
@@ -52,9 +56,15 @@
     <Compile Include="Navigation\NavigateToSearchService.fs" />
     <Compile Include="Navigation\FindReferencesService.fs" />
     <Compile Include="BlockComment\CommentUncommentService.fs" />
+    <Compile Include="Structure\Structure.fs" />
     <Compile Include="Structure\BlockStructureService.fs" />
     <Compile Include="Commands\HelpContextService.fs" />
     <Compile Include="Commands\FsiCommandService.fs" />
+    <Compile Include="CodeFix\AddNewKeywordToDisposableConstructorInvocation.fs" />
+    <Compile Include="CodeFix\AddOpenCodeFixProvider.fs" />
+    <Compile Include="CodeFix\ReplaceWithSuggestion.fs" />
+    <Compile Include="CodeFix\PrefixUnusedValueWithUnderscore.fs" />
+    <Compile Include="CodeFix\ImplementInterfaceCodeFixProvider.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">

@@ -156,7 +156,7 @@ let GetRangeOfError(err:PhasedError) =
       | RecursiveUseCheckedAtRuntime (_,_,m) 
       | LetRecEvaluatedOutOfOrder (_,_,_,m) 
       | Error (_,m)
-      | ErrorWithPredictions (_,m,_,_)
+      | ErrorWithSuggestions (_,m,_,_)
       | NumberedError (_,m)
       | SyntaxError (_,m) 
       | InternalError (_,m)
@@ -370,7 +370,7 @@ let GetErrorNumber(err:PhasedError) =
       | WrappedError(e,_) -> GetFromException e   
 
       | Error ((n,_),_) -> n
-      | ErrorWithPredictions ((n,_),_,_,_) -> n
+      | ErrorWithSuggestions ((n,_),_,_,_) -> n
       | Failure _ -> 192
       | NumberedError((n,_),_) -> n
       | IllegalFileNameChar(fileName,invalidChar) -> fst (FSComp.SR.buildUnexpectedFileNameCharacter(fileName,string invalidChar))
@@ -389,7 +389,7 @@ let GetWarningLevel err =
   | DefensiveCopyWarning _
   | FullAbstraction _ ->  5
   | NumberedError((n,_),_) 
-  | ErrorWithPredictions((n,_),_,_,_) 
+  | ErrorWithSuggestions((n,_),_,_,_) 
   | Error((n,_),_) -> 
       // 1178,tcNoComparisonNeeded1,"The struct, record or union type '%s' is not structurally comparable because the type parameter %s does not satisfy the 'comparison' constraint. Consider adding the 'NoComparison' attribute to this type to clarify that the type is not comparable"
       // 1178,tcNoComparisonNeeded2,"The struct, record or union type '%s' is not structurally comparable because the type '%s' does not satisfy the 'comparison' constraint. Consider adding the 'NoComparison' attribute to this type to clarify that the type is not comparable" 
@@ -777,9 +777,9 @@ let OutputPhasedErrorR errorStyle (os:System.Text.StringBuilder) (err:PhasedErro
               os.Append(Duplicate1E().Format (DecompileOpName s)) |> ignore
           else 
               os.Append(Duplicate2E().Format k (DecompileOpName s)) |> ignore
-      | UndefinedName(_,k,id,predictionsF) ->
+      | UndefinedName(_,k,id,suggestionsF) ->
           os.Append(k (DecompileOpName id.idText)) |> ignore
-          let filtered = ErrorResolutionHints.FilterPredictions id.idText predictionsF
+          let filtered = ErrorResolutionHints.FilterPredictions id.idText suggestionsF
           if List.isEmpty filtered |> not then
               os.Append(ErrorResolutionHints.FormatPredictions errorStyle DecompileOpName filtered) |> ignore
           
@@ -1268,9 +1268,9 @@ let OutputPhasedErrorR errorStyle (os:System.Text.StringBuilder) (err:PhasedErro
               os.Append(NonUniqueInferredAbstractSlot3E().Format t1 t2) |> ignore
           os.Append(NonUniqueInferredAbstractSlot4E().Format) |> ignore
       | Error ((_,s),_) -> os.Append(s) |> ignore
-      | ErrorWithPredictions ((_,s),_,idText,predictionsF) -> 
+      | ErrorWithSuggestions ((_,s),_,idText,suggestionF) -> 
           os.Append(DecompileOpName s) |> ignore
-          let filtered = ErrorResolutionHints.FilterPredictions idText predictionsF
+          let filtered = ErrorResolutionHints.FilterPredictions idText suggestionF
           if List.isEmpty filtered |> not then
               os.Append(ErrorResolutionHints.FormatPredictions errorStyle DecompileOpName filtered) |> ignore
       | NumberedError ((_,s),_) -> os.Append(s) |> ignore
@@ -2602,6 +2602,9 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
 
     // Look for an explicit reference to FSharp.Core and use that to compute fsharpBinariesDir
     let fsharpBinariesDirValue = 
+#if FX_NO_SIMPLIFIED_LOADER
+        data.defaultFSharpBinariesDir
+#else
         match fslibExplicitFilenameOpt with
         | Some(fslibFilename) ->
             let filename = ComputeMakePathAbsolute data.implicitIncludeDir fslibFilename
@@ -2614,12 +2617,13 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                 error(Error(FSComp.SR.buildErrorOpeningBinaryFile(filename, e.Message), rangeStartup))
         | _ ->
             data.defaultFSharpBinariesDir
+#endif
 
     member x.MscorlibMajorVersion = mscorlibMajorVersion
     member x.primaryAssembly = data.primaryAssembly
     member x.autoResolveOpenDirectivesToDlls = data.autoResolveOpenDirectivesToDlls
     member x.noFeedback = data.noFeedback
-    member x.stackReserveSize = data.stackReserveSize
+    member x.stackReserveSize = data.stackReserveSize   
     member x.implicitIncludeDir = data.implicitIncludeDir
     member x.openBinariesInMemory = data.openBinariesInMemory
     member x.openDebugInformationForLaterStaticLinking = data.openDebugInformationForLaterStaticLinking
@@ -2985,7 +2989,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                 
                                        
             // Whatever is left, pass to MSBuild.
-            let Resolve(references,showMessages) = 
+            let Resolve(references,showMessages) =
                 try 
                     tcConfig.referenceResolver.Resolve
                        (tcConfig.resolutionEnvironment,
@@ -3434,20 +3438,24 @@ type TcAssemblyResolutions(results : AssemblyResolution list, unresolved : Unres
 
 
     static member GetAllDllReferences (tcConfig:TcConfig) =
-        [ let primaryReference = tcConfig.PrimaryAssemblyDllReference()
-          yield primaryReference
-          if not tcConfig.compilingFslib then 
-              yield tcConfig.CoreLibraryDllReference()
+        [
+            let primaryReference = tcConfig.PrimaryAssemblyDllReference()
+            yield primaryReference
 
-          let assumeDotNetFramework = primaryReference.SimpleAssemblyNameIs("mscorlib")
-          if tcConfig.framework then 
-              for s in DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) do 
-                  yield AssemblyReference(rangeStartup,s+".dll",None)
+            if not tcConfig.compilingFslib then 
+                yield tcConfig.CoreLibraryDllReference()
 
-          if tcConfig.useFsiAuxLib then 
-              let name = Path.Combine(tcConfig.fsharpBinariesDir, GetFsiLibraryName()+".dll")
-              yield AssemblyReference(rangeStartup,name,None) 
-          yield! tcConfig.referencedDLLs ]
+            let assumeDotNetFramework = primaryReference.SimpleAssemblyNameIs("mscorlib")
+            if tcConfig.framework then 
+                for s in DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) do 
+                    yield AssemblyReference(rangeStartup,s+".dll",None)
+
+            if tcConfig.useFsiAuxLib then
+                let name = Path.Combine(tcConfig.fsharpBinariesDir, GetFsiLibraryName() + ".dll")
+                yield AssemblyReference(rangeStartup,name,None)
+
+            yield! tcConfig.referencedDLLs
+        ]
 
     static member SplitNonFoundationalResolutions (tcConfig:TcConfig) =
         let assemblyList = TcAssemblyResolutions.GetAllDllReferences tcConfig

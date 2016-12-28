@@ -99,7 +99,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             member ips.ProjectGuid = inner.ProjectGuid
             member ips.IsIncompleteTypeCheckEnvironment = false
             member ips.LoadTime = inner.LoadTime 
-
+            member ips.ProjectProvider = inner.ProjectProvider
 
     type internal ProjectSiteOptionLifetimeState =
         | Opening=1  // The project has been opened, but has not yet called Compile() to compute sources/flags
@@ -190,23 +190,29 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             // FSI-LINKAGE-POINT: unsited init
             do Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageCtorUnsited (this :> Package)
 
-            let mutable mgr : IOleComponentManager = null
+            // Get the ComponentManager one time at the start
+            let mgr : IOleComponentManager = this.GetService(typeof<SOleComponentManager>) :?> IOleComponentManager
+
             let mutable componentID = 0u
 
-            let locker = obj()
+            let thisLock = obj()
 
             member this.RegisterForIdleTime() =
-                mgr <- this.GetService(typeof<SOleComponentManager>) :?> IOleComponentManager
-                if componentID = 0u && not (isNull mgr) then
-                    let crinfo = Array.zeroCreate<OLECRINFO>(1)
-                    let mutable crinfo0 = crinfo.[0]
-                    crinfo0.cbSize <- Marshal.SizeOf(typeof<OLECRINFO>) |> uint32
-                    crinfo0.grfcrf <- uint32 (_OLECRF.olecrfNeedIdleTime ||| _OLECRF.olecrfNeedPeriodicIdleTime)
-                    crinfo0.grfcadvf <- uint32 (_OLECADVF.olecadvfModal ||| _OLECADVF.olecadvfRedrawOff ||| _OLECADVF.olecadvfWarningsOff)
-                    crinfo0.uIdleTimeInterval <- 1000u
-                    crinfo.[0] <- crinfo0 
-                    mgr.FRegisterComponent(this, crinfo, &componentID) |> ignore
-                
+
+                if not (isNull mgr) && componentID = 0u then
+                    lock (thisLock) (fun _ -> 
+                        if componentID = 0u then
+                            let crinfo = Array.zeroCreate<OLECRINFO>(1)
+                            let mutable crinfo0 = crinfo.[0]
+                            crinfo0.cbSize <- Marshal.SizeOf(typeof<OLECRINFO>) |> uint32
+                            crinfo0.grfcrf <- uint32 (_OLECRF.olecrfNeedIdleTime ||| _OLECRF.olecrfNeedPeriodicIdleTime)
+                            crinfo0.grfcadvf <- uint32 (_OLECADVF.olecadvfModal ||| _OLECADVF.olecadvfRedrawOff ||| _OLECADVF.olecadvfWarningsOff)
+                            crinfo0.uIdleTimeInterval <- 1000u
+                            crinfo.[0] <- crinfo0
+     
+                            mgr.FRegisterComponent(this, crinfo, &componentID) |> ignore
+                    )
+
             /// This method loads a localized string based on the specified resource.
 
             /// <param name="resourceName">Resource to load</param>
@@ -224,6 +230,9 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 UIThread.CaptureSynchronizationContext()
 
                 base.Initialize()
+
+                let fSharpEditorFactory = new Microsoft.VisualStudio.FSharp.ProjectSystem.FSharpEditorFactory(this);
+                this.RegisterEditorFactory(fSharpEditorFactory);
 
                 // read list of available FSharp.Core versions
                 do
@@ -355,11 +364,12 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 VSConstants.S_OK
 
             override this.Dispose(disposing) =
-                try 
-                    lock (locker) (fun _ ->
-                        if componentID <> 0u && not (isNull mgr) then
-                            mgr.FRevokeComponent(componentID) |> ignore                        
-                            componentID <- 0u)
+                try
+                    if not (isNull mgr) && componentID <> 0u then
+                        lock (thisLock) (fun _ ->
+                            if componentID <> 0u then
+                                mgr.FRevokeComponent(componentID) |> ignore
+                                componentID <- 0u)
                 finally
                     base.Dispose(disposing)
 
@@ -376,7 +386,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 override this.FDoIdle(grfidlef:uint32) =
                     // see e.g "C:\Program Files\Microsoft Visual Studio 2008 SDK\VisualStudioIntegration\Common\IDL\olecm.idl" for details
                     //Trace.Print("CurrentDirectoryDebug", (fun () -> sprintf "curdir='%s'\n" (System.IO.Directory.GetCurrentDirectory())))  // can be useful for watching how GetCurrentDirectory changes
-                    let periodic = (grfidlef &&& (uint32 _OLEIDLEF.oleidlefPeriodic)) <> 0u                        
+                    let periodic = (grfidlef &&& (uint32 _OLEIDLEF.oleidlefPeriodic)) <> 0u
                     if periodic && not (isNull mgr) && mgr.FContinueIdle() <> 0 then
                         TaskReporterIdleRegistration.DoIdle(mgr)
                     else
@@ -1443,6 +1453,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     member this.TargetFrameworkMoniker = x.GetTargetFrameworkMoniker()
                     member this.ProjectGuid = x.GetProjectGuid()
                     member this.LoadTime = creationTime
+                    member this.ProjectProvider = Some (x :> IProvideProjectSite)
                 }
 
             // Snapshot-capture relevent values from "this", and returns an IProjectSite 
@@ -1474,6 +1485,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     member this.TargetFrameworkMoniker = targetFrameworkMoniker
                     member this.ProjectGuid = x.GetProjectGuid()
                     member this.LoadTime = creationTime
+                    member this.ProjectProvider = Some (x :> IProvideProjectSite)
                 }
 
             // let the language service ask us questions

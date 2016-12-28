@@ -36,7 +36,7 @@ type internal FailureInlineRenameInfo private () =
         member __.FindRenameLocationsAsync(_optionSet, _cancellationToken) = Task<IInlineRenameLocationSet>.FromResult null
         member __.TryOnBeforeGlobalSymbolRenamed(_workspace, _changedDocumentIDs, _replacementText) = false
         member __.TryOnAfterGlobalSymbolRenamed(_workspace, _changedDocumentIDs, _replacementText) = false
-    static member Instance = FailureInlineRenameInfo()
+    static member Instance = FailureInlineRenameInfo() :> IInlineRenameInfo
 
 type internal DocumentLocations =
     { Document: Document
@@ -54,7 +54,7 @@ type internal InlineRenameLocationSet(locationsByDocument: DocumentLocations [],
                         return solution
                     else
                         let doc = locationsByDocument.[i]
-                        let! oldSourceText = doc.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                        let! oldSourceText = doc.Document.GetTextAsync(cancellationToken)
                         let changes = doc.Locations |> Seq.map (fun loc -> TextChange(loc.TextSpan, replacementText))
                         let newSource = oldSourceText.WithChanges(changes)
                         return! applyChanges (i + 1) (solution.WithDocumentText(doc.Document.Id, newSource))
@@ -153,7 +153,7 @@ type internal InlineRenameInfo
                     |> Seq.map (fun (KeyValue(documentId, symbolUses)) ->
                         async {
                             let document = document.Project.Solution.GetDocument(documentId)
-                            let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                            let! sourceText = document.GetTextAsync(cancellationToken)
                             let locations =
                                 symbolUses
                                 |> Array.map (fun symbolUse ->
@@ -189,7 +189,7 @@ type internal InlineRenameService
                 let! _parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(document.FilePath, textVersionHash, sourceText.ToString(), options)
                 
                 match checkFileAnswer with
-                | FSharpCheckFileAnswer.Aborted -> return FailureInlineRenameInfo.Instance :> _
+                | FSharpCheckFileAnswer.Aborted -> return FailureInlineRenameInfo.Instance
                 | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> 
         
                 let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.RightColumn, textLine.Text.ToString(), [symbol.Text])
@@ -197,10 +197,10 @@ type internal InlineRenameService
                 match symbolUse with
                 | Some symbolUse ->
                     match symbolUse.GetDeclarationLocation(document) with
-                    | Some declLoc -> return InlineRenameInfo(checker, projectInfoManager, document, sourceText, symbolUse, declLoc, checkFileResults) :> _
-                    | _ -> return FailureInlineRenameInfo.Instance :> _
-                | _ -> return FailureInlineRenameInfo.Instance :> _
-            | None -> return FailureInlineRenameInfo.Instance :> _
+                    | Some declLoc -> return InlineRenameInfo(checker, projectInfoManager, document, sourceText, symbolUse, declLoc, checkFileResults) :> IInlineRenameInfo
+                    | _ -> return FailureInlineRenameInfo.Instance
+                | _ -> return FailureInlineRenameInfo.Instance
+            | None -> return FailureInlineRenameInfo.Instance
         }
     
     interface IEditorInlineRenameService with
@@ -208,10 +208,10 @@ type internal InlineRenameService
             async {
                 match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)  with 
                 | Some options ->
-                    let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                    let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
+                    let! sourceText = document.GetTextAsync(cancellationToken)
+                    let! textVersion = document.GetTextVersionAsync(cancellationToken)
                     let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
                     return! InlineRenameService.GetInlineRenameInfo(checkerProvider.Checker, projectInfoManager, document, sourceText, position, defines, options, hash textVersion)
-                | None -> return FailureInlineRenameInfo.Instance :> _
+                | None -> return FailureInlineRenameInfo.Instance
             }
             |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)

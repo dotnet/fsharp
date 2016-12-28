@@ -1,10 +1,6 @@
 # Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 [$RootKey$\ShellFileAssociations]
-".fs"="VisualStudio.fs.15.0"
-".fsi"="VisualStudio.fsi.15.0"
-".fsscript"="VisualStudio.fsscript.15.0"
-".fsx"="VisualStudio.fsx.15.0"
 ".fsproj"="VisualStudio.Launcher.fsproj.15.0"
 
 [$RootKey$\Services\{bc6dd5a5-d4d6-4dab-a00d-a51242dbaf1b}]
@@ -17,6 +13,7 @@
 "OldVersion"="2.0.0.0-4.4.0.0"
 "NewVersion"="4.4.1.0"
 "Culture"="neutral"
+"codeBase"="$PackageFolder$\FSharp.Core.dll"
 
 [$RootKey$\Projects\{A1591282-1198-4647-A2B1-27E5FF5F6F3B}\LanguageTemplates]
 "{F2A71F9B-5D33-465A-A702-920D77279786}"="{76B279E8-36ED-494E-B145-5344F8DEFCB6}"

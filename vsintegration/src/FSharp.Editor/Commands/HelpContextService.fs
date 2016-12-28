@@ -108,8 +108,8 @@ type internal FSharpHelpContextService
             async {
                 match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document) with 
                 | Some options ->
-                    let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                    let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
+                    let! sourceText = document.GetTextAsync(cancellationToken)
+                    let! textVersion = document.GetTextVersionAsync(cancellationToken)
                     let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
                     let textLine = sourceText.Lines.GetLineFromPosition(textSpan.Start)
                     let tokens = CommonHelpers.getColorizationData(document.Id, sourceText, textLine.Span, Some document.Name, defines, cancellationToken)

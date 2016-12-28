@@ -19,7 +19,8 @@ type Permutation =
     | AS_DLL
 #endif
 
-let singleTestBuildAndRunAux cfg p = 
+let singleTestBuildAndRunCore  cfg (copyFiles:string) p = 
+
     //remove FSharp.Core.dll from the target directory to ensure that compiler uses the correct FSharp.Core.dll
     do if fileExists cfg "FSharp.Core.dll" then rm cfg "FSharp.Core.dll"
 
@@ -36,12 +37,12 @@ let singleTestBuildAndRunAux cfg p =
 
         makeDirectory (getDirectoryName outFile)
         let fscArgs = 
-            sprintf """--debug:portable --debug+ --out:%s  --target:exe -g --define:FX_RESHAPED_REFLECTION --define:NETSTANDARD1_6 --define:FSCORE_PORTABLE_NEW --define:FX_PORTABLE_OR_NETSTANDARD "%s" %s """
+            sprintf """--debug:portable --debug+ --out:%s  --target:exe -g --define:FX_RESHAPED_REFLECTION --define:NETSTANDARD1_6 --define:FSCORE_PORTABLE_NEW --define:FX_PORTABLE_OR_NETSTANDARD --define:FX_RESHAPED_REFLECTION "%s" %s """
                outFile
                extraSource
                (String.concat " " sources)
 
-        let fsccArgs = sprintf """--OutputDir:%s %s""" outDir fscArgs
+        let fsccArgs = sprintf """--OutputDir:%s --CopyDlls:%s %s""" outDir copyFiles fscArgs
 
         fsi cfg "--exec %s %s %s"
                cfg.fsi_flags
@@ -55,13 +56,15 @@ let singleTestBuildAndRunAux cfg p =
         testOkFile.CheckExists()
 
     | FSI_CORECLR -> 
+        let testName = getBasename cfg.Directory
         let extraSource = (__SOURCE_DIRECTORY__  ++ "coreclr_utilities.fs")
+        let outDir =  (__SOURCE_DIRECTORY__ ++ sprintf @"../testbin/%s/coreclr/fsharp/core/%s" cfg.BUILD_CONFIG testName)
         let fsiArgs = 
             sprintf """ --define:NETSTANDARD1_6 --define:FSCORE_PORTABLE_NEW --define:FX_RESHAPED_REFLECTION --define:FX_PORTABLE_OR_NETSTANDARD "%s" %s """
                extraSource
                (String.concat " " sources)
 
-        let fsciArgs = sprintf """--verbose:repro %s""" fsiArgs
+        let fsciArgs = sprintf """--verbose:repro --OutputDir:%s --CopyDlls:%s %s""" outDir copyFiles fsiArgs
 
         use testOkFile = new FileGuard (getfullpath cfg "test.ok")
 
@@ -145,6 +148,12 @@ let singleTestBuildAndRunAux cfg p =
 
         testOkFile.CheckExists()
 #endif
+
+let singleTestBuildAndRunAux cfg p = 
+    singleTestBuildAndRunCore cfg "" p 
+
+let singleTestBuildAndRunWithCopyDlls  cfg copyFiles p = 
+    singleTestBuildAndRunCore cfg copyFiles p
 
 let singleTestBuildAndRun dir p = 
     let cfg = testConfig dir
