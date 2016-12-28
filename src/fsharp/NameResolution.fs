@@ -2011,12 +2011,25 @@ let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo
                     |> List.filter (fun m -> not m.IsClassConstructor && not m.IsConstructor)
                     |> List.map (fun m -> m.DisplayName)
                     |> Set.ofList
+                let suggestions5 =
+                    if isRecdTy g typ then
+                        let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv typ
+                        nenv.eFieldLabels
+                        |> Seq.filter (fun kv -> 
+                            kv.Value 
+                            |> List.map (fun r -> r.TyconRef.DisplayName)
+                            |> List.exists ((=) typeName))
+                        |> Seq.map (fun kv -> kv.Key)
+                        |> Set.ofSeq
+                    else
+                        Set.empty
 
             
                 suggestions1 
                 |> Set.union suggestions2
                 |> Set.union suggestions3
                 |> Set.union suggestions4
+                |> Set.union suggestions5
 
             raze (UndefinedName (depth,FSComp.SR.undefinedNameFieldConstructorOrMember, id, suggestMembers))
         
