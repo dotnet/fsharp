@@ -527,19 +527,10 @@ namespace Microsoft.FSharp.Collections
                         Fold.executeThin f (Fold.enumerable this)
 
         module Array =
-            type Enumerator<'T,'U>(delayedArray:unit->array<'T>, activity:Activity<'T,'U>, result:Result<'U>) =
+            type Enumerator<'T,'U>(array:array<'T>, activity:Activity<'T,'U>, result:Result<'U>) =
                 inherit Enumerable.EnumeratorBase<'U>(result, activity)
 
                 let mutable idx = 0
-                let mutable array = Unchecked.defaultof<_>
-
-                let mutable initMoveNext = Unchecked.defaultof<_>
-                do
-                    initMoveNext <-
-                        fun () ->
-                            result.SeqState <- SeqProcessNextStates.InProcess
-                            array <- delayedArray ()
-                            initMoveNext <- ignore
 
                 let rec moveNext () =
                     if (result.HaltedIdx = 0) && idx < array.Length then
@@ -556,35 +547,23 @@ namespace Microsoft.FSharp.Collections
 
                 interface IEnumerator with
                     member __.MoveNext () =
-                        initMoveNext ()
+                        result.SeqState <- SeqProcessNextStates.InProcess
                         moveNext ()
 
-            type Enumerable<'T,'U>(delayedArray:unit->array<'T>, transformFactory:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
+            type Enumerable<'T,'U>(array:array<'T>, transformFactory:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
                 inherit Enumerable.EnumerableBase<'U>()
 
                 interface IEnumerable<'U> with
                     member this.GetEnumerator () : IEnumerator<'U> =
                         let result = Result<'U> ()
-                        Upcast.enumerator (new Enumerator<'T,'U>(delayedArray, createFold transformFactory result pipeIdx, result))
+                        Upcast.enumerator (new Enumerator<'T,'U>(array, createFold transformFactory result pipeIdx, result))
 
                 interface ISeq<'U> with
                     member __.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
-                        Upcast.seq (new Enumerable<'T,'V>(delayedArray, ComposedFactory.Combine transformFactory next, 1))
+                        Upcast.seq (new Enumerable<'T,'V>(array, ComposedFactory.Combine transformFactory next, 1))
 
                     member this.Fold<'Result,'State> (f:PipeIdx->Folder<'U,'Result,'State>) =
-                        Fold.execute f transformFactory pipeIdx (Fold.Array (delayedArray ()))
-
-            let createDelayed (delayedArray:unit->array<'T>) (current:TransformFactory<'T,'U>) =
-                Upcast.seq (Enumerable(delayedArray, current, 1))
-
-            let create (array:array<'T>) (current:TransformFactory<'T,'U>) =
-                createDelayed (fun () -> array) current
-
-            let createDelayedId (delayedArray:unit -> array<'T>) =
-                createDelayed delayedArray IdentityFactory.Instance
-
-            let createId (array:array<'T>) =
-                create array IdentityFactory.Instance
+                        Fold.execute f transformFactory pipeIdx (Fold.Array array)
 
         module ResizeArray =
             type Enumerator<'T,'U>(array:ResizeArray<'T>, activity:Activity<'T,'U>, result:Result<'U>) =
@@ -855,7 +834,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "OfArray">]
         let ofArray (source:array<'T>) : ISeq<'T> =
-            Upcast.seq (Array.Enumerable ((fun () -> source), IdentityFactory.Instance, 1))
+            Upcast.seq (Array.Enumerable (source, IdentityFactory.Instance, 1))
 
         [<CompiledName "OfList">]
         let ofList (source:list<'T>) : ISeq<'T> =
@@ -1608,3 +1587,53 @@ namespace Microsoft.FSharp.Collections
         let inline groupByRef<'T,'Key when 'Key : equality and 'Key : not struct> (keyf:'T->'Key) (source:ISeq<'T>) =
             GroupBy.byRef keyf source
 
+        [<CompiledName("ToArray")>]
+        let toArray (source:ISeq<'T>)  =
+            match box source with
+            | :? ('T[]) as res -> (res.Clone() :?> 'T[])
+            | :? ('T list) as res -> List.toArray res
+            | :? ICollection<'T> as res ->
+                // Directly create an array and copy ourselves.
+                // This avoids an extra copy if using ResizeArray in fallback below.
+                let arr = Array.zeroCreateUnchecked res.Count
+                res.CopyTo(arr, 0)
+                arr
+            | _ ->
+                let res = ResizeArray source
+                res.ToArray()
+
+        [<CompiledName("SortBy")>]
+        let sortBy keyf source =
+            delay (fun () ->
+                let array = source |> toArray
+                Array.stableSortInPlaceBy keyf array
+                Upcast.seq (Array.Enumerable (array, IdentityFactory.Instance, 1)))
+
+        [<CompiledName("Sort")>]
+        let sort source =
+            delay (fun () -> 
+                let array = source |> toArray
+                Array.stableSortInPlace array
+                Upcast.seq (Array.Enumerable (array, IdentityFactory.Instance, 1)))
+
+        [<CompiledName("SortWith")>]
+        let sortWith f source =
+            delay (fun () ->
+                let array = source |> toArray
+                Array.stableSortInPlaceWith f array
+                Upcast.seq (Array.Enumerable (array, IdentityFactory.Instance, 1)))
+
+        [<CompiledName("Reverse")>]
+        let rev source =
+            delay (fun () ->
+                let array = source |> toArray
+                Array.Reverse array
+                Upcast.seq (Array.Enumerable (array, IdentityFactory.Instance, 1)))
+
+        [<CompiledName("Permute")>]
+        let permute f (source:ISeq<_>) =
+            delay (fun () ->
+                source
+                |> toArray
+                |> Array.permute f
+                |> fun array -> Upcast.seq (Array.Enumerable (array, IdentityFactory.Instance, 1)))
