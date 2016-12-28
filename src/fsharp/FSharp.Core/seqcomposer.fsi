@@ -305,13 +305,24 @@ namespace Microsoft.FSharp.Collections
     [<CompiledName "GroupByRef">]
     val inline groupByRef : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * ISeq<'T>> when 'Key : equality and 'Key : not struct
 
+    [<CompiledName("ToArray")>]
+    val toArray: source:ISeq<'T> -> 'T[]
+
+    [<CompiledName("SortBy")>]
+    val sortBy : projection:('T->'Key) -> source:ISeq<'T> -> ISeq<'T> when 'Key : comparison
+
+    [<CompiledName("Sort")>]
+    val sort : source:ISeq<'T> -> ISeq<'T> when 'T : comparison
+
+    [<CompiledName("SortWith")>]
+    val sortWith : comparer:('T->'T->int) -> source:ISeq<'T> -> ISeq<'T>
+
+    [<CompiledName("Reverse")>]
+    val rev: source:ISeq<'T> -> ISeq<'T>
+
+    [<CompiledName("Permute")>]
+    val permute: indexMap:(int->int) -> source:ISeq<'T> -> ISeq<'T>
+
     module internal GroupBy =
         val inline byVal : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * ISeq<'T>> when 'Key : equality
         val inline byRef : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * ISeq<'T>> when 'Key : equality
-
-    module internal Array = begin
-        val createDelayed   : (unit -> 'T array) -> TransformFactory<'T,'U> ->  ISeq<'U>
-        val create          : 'T array -> TransformFactory<'T,'U> ->  ISeq<'U>
-        val createDelayedId : (unit -> 'T array) ->  ISeq<'T>
-        val createId        : 'T array ->  ISeq<'T>
-    end

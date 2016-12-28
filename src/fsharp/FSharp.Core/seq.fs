@@ -46,6 +46,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("ToComposer")>]
         let toComposer (source:seq<'T>): Composer.Core.ISeq<'T> =
+            checkNonNull "source" source
             Composer.ofSeq source
 
         [<CompiledName("Delay")>]
@@ -320,23 +321,11 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("OfArray")>]
         let ofArray (source : 'T array) =
             checkNonNull "source" source
-            Upcast.enumerable (Composer.Array.createId source)
+            Upcast.enumerable (Composer.ofArray source)
 
         [<CompiledName("ToArray")>]
         let toArray (source : seq<'T>)  =
-            checkNonNull "source" source
-            match source with
-            | :? ('T[]) as res -> (res.Clone() :?> 'T[])
-            | :? ('T list) as res -> List.toArray res
-            | :? ICollection<'T> as res ->
-                // Directly create an array and copy ourselves.
-                // This avoids an extra copy if using ResizeArray in fallback below.
-                let arr = Array.zeroCreateUnchecked res.Count
-                res.CopyTo(arr, 0)
-                arr
-            | _ ->
-                let res = ResizeArray<_>(source)
-                res.ToArray()
+            source |> toComposer |> Composer.toArray
 
         let foldArraySubRight (f:OptimizedClosures.FSharpFunc<'T,_,_>) (arr: 'T[]) start fin acc =
             let mutable state = acc
@@ -523,30 +512,15 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("SortBy")>]
         let sortBy keyf source =
-            checkNonNull "source" source
-            let delayedSort () =
-                let array = source |> toArray
-                Array.stableSortInPlaceBy keyf array
-                array
-            Upcast.enumerable (Composer.Array.createDelayedId delayedSort)
+            source |> toComposer |> Composer.sortBy keyf |> Upcast.enumerable
 
         [<CompiledName("Sort")>]
         let sort source =
-            checkNonNull "source" source
-            let delayedSort () =
-                let array = source |> toArray
-                Array.stableSortInPlace array
-                array
-            Upcast.enumerable (Composer.Array.createDelayedId delayedSort)
+            source |> toComposer |> Composer.sort  |> Upcast.enumerable
 
         [<CompiledName("SortWith")>]
         let sortWith f source =
-            checkNonNull "source" source
-            let delayedSort () =
-                let array = source |> toArray
-                Array.stableSortInPlaceWith f array
-                array
-            Upcast.enumerable (Composer.Array.createDelayedId delayedSort)
+            source |> toComposer |> Composer.sortWith f |> Upcast.enumerable
 
         [<CompiledName("SortByDescending")>]
         let inline sortByDescending keyf source =
@@ -708,21 +682,11 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Reverse")>]
         let rev source =
-            checkNonNull "source" source
-            let delayedReverse () =
-                let array = source |> toArray
-                Array.Reverse array
-                array
-            Upcast.enumerable (Composer.Array.createDelayedId delayedReverse)
+            source |> toComposer |> Composer.rev |> Upcast.enumerable
 
         [<CompiledName("Permute")>]
         let permute f (source:seq<_>) =
-            checkNonNull "source" source
-            let delayedPermute () =
-                source
-                |> toArray
-                |> Array.permute f
-            Upcast.enumerable (Composer.Array.createDelayedId delayedPermute)
+            source |> toComposer |> Composer.permute f |> Upcast.enumerable
 
         [<CompiledName("MapFold")>]
         let mapFold<'T,'State,'Result> (f: 'State -> 'T -> 'Result * 'State) acc source =
