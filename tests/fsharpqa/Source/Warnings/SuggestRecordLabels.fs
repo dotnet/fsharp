@@ -1,7 +1,10 @@
 // #Warnings
-//<Expects status="Error" id="FS0039">The value, constructor, namespace or type 'DateTie' is not defined</Expects>
-//<Expects>Maybe you want one of the following: DateTime, DateTimeKind, DateTimeOffset</Expects>
+//<Expects status="Error" id="FS0039">The field, constructor or member 'ello' is not defined. Maybe you want one of the following: Hello</Expects>
 
-let x = System.DateTie.MaxValue
+type MyRecord = { Hello: int; World: bool}
+
+let r = { Hello = 2 ; World = true}
+
+let x = r.ello
 
 exit 0
