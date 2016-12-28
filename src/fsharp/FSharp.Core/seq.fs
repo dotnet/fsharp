@@ -506,8 +506,8 @@ namespace Microsoft.FSharp.Collections
 #else
                 if typeof<'Key>.IsValueType
 #endif
-                    then seq |> toComposer |> Composer.groupByVal' keyf
-                    else seq |> toComposer |> Composer.groupByRef' keyf
+                    then seq |> toComposer |> Composer.GroupBy.byVal keyf
+                    else seq |> toComposer |> Composer.GroupBy.byRef keyf
 
             grouped
             |> Composer.map (fun (key,value) -> key, Upcast.enumerable value)
