@@ -183,7 +183,7 @@ type UsingMSBuild() as this  =
           shouldNotContain
 
     member public this.AutoCompleteBug70080Helper(programText:string) =
-        this.AutoCompleteBug70080HelperHelper(programText, ["AttributeUsageAttribute"], [])
+        this.AutoCompleteBug70080HelperHelper(programText, ["AttributeUsage"], [])
 
     member private this.testAutoCompleteAdjacentToDot op =
         let text = sprintf "System.Console%s" op
@@ -3476,21 +3476,21 @@ let x = query { for bbbb in abbbbc(*D0*) do
     member public this.``Attribute.WhenAttachedToLet.Bug70080``() =        
         this.AutoCompleteBug70080Helper @"
                     open System
-                    [<Attr     // expect AttributeUsageAttribute from System namespace
+                    [<Attr     // expect AttributeUsage from System namespace
                     let f() = 4"
 
     [<Test>]
     member public this.``Attribute.WhenAttachedToType.Bug70080``() =        
         this.AutoCompleteBug70080Helper @"
                     open System
-                    [<Attr     // expect AttributeUsageAttribute from System namespace
+                    [<Attr     // expect AttributeUsage from System namespace
                     type MyAttr() = inherit Attribute()"
 
     [<Test>]
     member public this.``Attribute.WhenAttachedToNothing.Bug70080``() =        
         this.AutoCompleteBug70080Helper @"
                     open System
-                    [<Attr     // expect AttributeUsageAttribute from System namespace
+                    [<Attr     // expect AttributeUsage from System namespace
                     // nothing here"
 
     [<Test>]
@@ -3498,7 +3498,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         this.AutoCompleteBug70080Helper @"
                     namespace Foo
                     open System
-                    [<Attr     // expect AttributeUsageAttribute from System namespace
+                    [<Attr     // expect AttributeUsage from System namespace
                     let f() = 4"
 
     [<Test>]
@@ -3506,7 +3506,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         this.AutoCompleteBug70080Helper @"
                     namespace Foo
                     open System
-                    [<Attr     // expect AttributeUsageAttribute from System namespace
+                    [<Attr     // expect AttributeUsage from System namespace
                     type MyAttr() = inherit Attribute()"
 
     [<Test>]
@@ -3514,7 +3514,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         this.AutoCompleteBug70080Helper @"
                     namespace Foo
                     open System
-                    [<Attr     // expect AttributeUsageAttribute from System namespace
+                    [<Attr     // expect AttributeUsage from System namespace
                     // nothing here"
 
     [<Test>]
@@ -3522,7 +3522,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         this.AutoCompleteBug70080Helper @"
                     namespace Foo
                     open System
-                    [<Attr     // expect AttributeUsageAttribute from System namespace
+                    [<Attr     // expect AttributeUsage from System namespace
                     module Foo = 
                         let x = 42"
 
@@ -3530,7 +3530,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
     member public this.``Attribute.WhenAttachedToModule.Bug70080``() =        
         this.AutoCompleteBug70080Helper @"
                     open System
-                    [<Attr     // expect AttributeUsageAttribute from System namespace
+                    [<Attr     // expect AttributeUsage from System namespace
                     module Foo = 
                         let x = 42"
 
@@ -6063,7 +6063,7 @@ let rec f l =
                 type TestAttribute() = 
                     member x.print() = "print" """,
             marker = "(*Mattribute*)",
-            list = ["Int32";"ObsoleteAttribute"])
+            list = ["Int32";"Obsolete"])
 
     [<Test>]
     member this.``ImportStatment.System.ImportDirectly``() = 
