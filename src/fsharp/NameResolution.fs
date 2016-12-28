@@ -2025,12 +2025,24 @@ let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo
                     |> List.map (fun m -> m.DisplayName)
                     |> Set.ofList
                 let suggestions5 = GetRecordLabelsForType g nenv typ
-            
+                let suggestions6 =
+                    match lookupKind with 
+                    | LookupKind.Expr | LookupKind.Pattern ->
+                        if isAppTy g typ then 
+                            let tcref,_ = destAppTy g typ
+                            tcref.UnionCasesArray
+                            |> Array.map (fun uc -> uc.DisplayName)
+                            |> Set.ofArray
+                        else 
+                            Set.empty
+                    | _ -> Set.empty
+                        
                 suggestions1 
                 |> Set.union suggestions2
                 |> Set.union suggestions3
                 |> Set.union suggestions4
                 |> Set.union suggestions5
+                |> Set.union suggestions6
 
             raze (UndefinedName (depth,FSComp.SR.undefinedNameFieldConstructorOrMember, id, suggestMembers))
         
