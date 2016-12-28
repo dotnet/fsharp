@@ -315,40 +315,50 @@ module internal CommonHelpers =
                   Text = lineStr.Substring(token.Token.LeftColumn, token.Token.FullMatchedLength)
                   FileName = fileName })
 
+    let private getCachedSourceLineData(documentKey: DocumentId, sourceText: SourceText, position: int, fileName: string, defines: string list) = 
+        let textLine = sourceText.Lines.GetLineFromPosition(position)
+        let textLinePos = sourceText.Lines.GetLinePosition(position)
+        let lineNumber = textLinePos.Line + 1 // FCS line number
+        let sourceTokenizer = FSharpSourceTokenizer(defines, Some fileName)
+        let lines = sourceText.Lines
+        // We keep incremental data per-document. When text changes we correlate text line-by-line (by hash codes of lines)
+        let sourceTextData = dataCache.GetValue(documentKey, fun key -> SourceTextData(lines.Count))
+
+        // Go backwards to find the last cached scanned line that is valid
+        let scanStartLine = 
+            let mutable i = lineNumber
+            while i > 0 && (match sourceTextData.[i-1] with Some data -> not (data.IsValid(lines.[i])) | None -> true)  do
+                i <- i - 1
+            i
+                
+        let lexState = if scanStartLine = 0 then 0L else sourceTextData.[scanStartLine - 1].Value.LexStateAtEndOfLine
+        let lineContents = textLine.Text.ToString(textLine.Span)
+        
+        // We can reuse the old data when 
+        //   1. the line starts at the same overall position
+        //   2. the hash codes match
+        //   3. the start-of-line lex states are the same
+        match sourceTextData.[lineNumber] with 
+        | Some data when data.IsValid(textLine) && data.LexStateAtStartOfLine = lexState -> 
+            data, textLinePos, lineContents
+        | _ -> 
+            // Otherwise, we recompute
+            let newData = scanSourceLine(sourceTokenizer, textLine, lineContents, lexState)
+            sourceTextData.[lineNumber] <- Some newData
+            newData, textLinePos, lineContents
+           
+    let tokenizeLine (documentKey, sourceText, position, fileName, defines) =
+        try
+            let lineData, _, _ = getCachedSourceLineData(documentKey, sourceText, position, fileName, defines)
+            lineData.Tokens   
+        with 
+        |  ex -> 
+            Assert.Exception(ex)
+            []
+
     let getSymbolAtPosition(documentKey: DocumentId, sourceText: SourceText, position: int, fileName: string, defines: string list, lookupKind: SymbolLookupKind) : LexerSymbol option =
         try
-            let textLine = sourceText.Lines.GetLineFromPosition(position)
-            let textLinePos = sourceText.Lines.GetLinePosition(position)
-            let lineNumber = textLinePos.Line + 1 // FCS line number
-            let sourceTokenizer = FSharpSourceTokenizer(defines, Some fileName)
-            let lines = sourceText.Lines
-            // We keep incremental data per-document. When text changes we correlate text line-by-line (by hash codes of lines)
-            let sourceTextData = dataCache.GetValue(documentKey, fun key -> SourceTextData(lines.Count))
-
-            // Go backwards to find the last cached scanned line that is valid
-            let scanStartLine = 
-                let mutable i = lineNumber
-                while i > 0 && (match sourceTextData.[i-1] with Some data -> not (data.IsValid(lines.[i])) | None -> true)  do
-                    i <- i - 1
-                i
-                
-            let lexState = if scanStartLine = 0 then 0L else sourceTextData.[scanStartLine - 1].Value.LexStateAtEndOfLine
-            let lineContents = textLine.Text.ToString(textLine.Span)
-
-            let lineData = 
-                // We can reuse the old data when 
-                //   1. the line starts at the same overall position
-                //   2. the hash codes match
-                //   3. the start-of-line lex states are the same
-                match sourceTextData.[lineNumber] with 
-                | Some data when data.IsValid(textLine) && data.LexStateAtStartOfLine = lexState -> 
-                    data
-                | _ -> 
-                    // Otherwise, we recompute
-                    let newData = scanSourceLine(sourceTokenizer, textLine, lineContents, lexState)
-                    sourceTextData.[lineNumber] <- Some newData
-                    newData
-                
+            let lineData, textLinePos, lineContents = getCachedSourceLineData(documentKey, sourceText, position, fileName, defines)
             getSymbolFromTokens(fileName, lineData.Tokens, textLinePos, lineContents, lookupKind)
         with 
         | :? System.OperationCanceledException -> reraise()
@@ -521,3 +531,12 @@ module internal Extensions =
                 let! result = input
                 return f result 
             }
+
+    type AsyncBuilder with
+        member __.Bind(computation: System.Threading.Tasks.Task<'a>, binder: 'a -> Async<'b>): Async<'b> =
+            async {
+                let! a = Async.AwaitTask computation
+                return! binder a
+            }
+
+        member __.ReturnFrom(computation: System.Threading.Tasks.Task<'a>): Async<'a> = Async.AwaitTask computation

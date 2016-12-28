@@ -22,7 +22,7 @@ type internal FSharpPrefixUnusedValueWithUnderscoreCodeFixProvider() =
             title,
             (fun (cancellationToken: CancellationToken) ->
                 async {
-                    let! sourceText = context.Document.GetTextAsync() |> Async.AwaitTask
+                    let! sourceText = context.Document.GetTextAsync()
                     return context.Document.WithText(sourceText.WithChanges(textChange))
                 } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)),
             title)
@@ -32,6 +32,6 @@ type internal FSharpPrefixUnusedValueWithUnderscoreCodeFixProvider() =
     override __.RegisterCodeFixesAsync context : Task =
        async {
            let diagnostics = (context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id)).ToImmutableArray()
-           context.RegisterCodeFix(createCodeFix("Prefix value name with underscore", context, TextChange(TextSpan(context.Span.Start, 0), "_")), diagnostics)
-           context.RegisterCodeFix(createCodeFix("Rename value to '_'", context, TextChange(context.Span, "_")), diagnostics)
+           context.RegisterCodeFix(createCodeFix(SR.PrefixValueNameWithUnderscore.Value, context, TextChange(TextSpan(context.Span.Start, 0), "_")), diagnostics)
+           context.RegisterCodeFix(createCodeFix(SR.RenameValueToUnderscore.Value, context, TextChange(context.Span, "_")), diagnostics)
         } |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

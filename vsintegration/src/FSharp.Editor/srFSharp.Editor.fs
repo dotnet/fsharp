@@ -13,4 +13,8 @@ module SR =
         s.Replace(@"\n", System.Environment.NewLine)
 
     //    Sigh!!!!  We do this because at the moment we don't have a tool to generate the SR from a resx file
-    let AddNewKeyword = lazy ( GetString "AddNewKeyword" )          // "Add 'new' keyword"
+    let AddNewKeyword = lazy ( GetString "AddNewKeyword" )                                   // "Add 'new' keyword"
+    let PrefixValueNameWithUnderscore = lazy ( GetString "PrefixValueNameWithUnderscore" )   // "Prefix value name with underscore"
+    let RenameValueToUnderscore = lazy ( GetString "RenameValueToUnderscore" )               // "Rename value to '_'"
+    let ImplementInterface = lazy ( GetString "ImplementInterface" ) 
+    let ImplementInterfaceWithoutTypeAnnotation = lazy ( GetString "ImplementInterfaceWithoutTypeAnnotation" ) 

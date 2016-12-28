@@ -16,7 +16,7 @@ let defaultPackagesDir =
 
 let Platform        = getCmdLineArg "--platform:"        "win7-x64"
 let ProjectJsonLock = getCmdLineArg "--projectJsonLock:" (root ++ "tests" ++ "fsharp" ++ "FSharp.Tests.FSharpSuite.DrivingCoreCLR" ++ "project.lock.json")
-let PackagesDir     = getCmdLineArg "--packagesDir:"     (defaultPackagesDir)
+let PackagesDir     = getCmdLineArg "--packagesDir:"     (root ++ "packages")
 let FrameworkName   = getCmdLineArg "--framework:"       ".NETCoreApp,Version=v1.0"
 let Verbosity       = getCmdLineArg "--verbose:"         "quiet"
 let CompilerPathOpt = getCmdLineArgOptional              "--compilerPath:"
@@ -24,7 +24,7 @@ let Flavour         = getCmdLineArg "--flavour:"         "release"
 let TestName        = getCmdLineArg "--TestName:"        "test"
 let OutputDir       = getCmdLineArg "--OutputDir:"       ("bin" ++ Flavour)
 let CopyDlls        = getCmdLineArg "--CopyDlls:"        ""
-let ExtraArgs       = getCmdLineExtraArgs (fun x -> List.exists x.StartsWith ["--platform:";"--projectJsonLock:";"--packagesDir:";"--framework:";"--verbose:";"--compilerPath:";"--flavour:";"--TestName:";"--OutputDir:";"--CopyDlls:"])
+let ExtraArgs       = getCmdLineExtraArgs                (fun x -> List.exists x.StartsWith ["--platform:";"--projectJsonLock:";"--packagesDir:";"--framework:";"--verbose:";"--compilerPath:";"--flavour:";"--TestName:";"--OutputDir:";"--CopyDlls:"])
 
 let CompilerPath    = defaultArg CompilerPathOpt (root ++ "tests" ++ "testbin" ++ Flavour ++ "coreclr" ++ "fsc")
 let Win32Manifest   = CompilerPath ++ "default.win32manifest"
@@ -54,7 +54,7 @@ let executeCompiler references =
           yield "--win32manifest:" + Win32Manifest
           yield! addReferenceSwitch references 
           yield! ExtraArgs ]
-    
+
     let coreRunExe = (root ++ "Tools" ++ "dotnetcli" ++ "dotnet.exe")
     let fscExe = (CompilerPath ++ "fsc.exe")
     let arguments2 = sprintf @"%s %s" fscExe (String.concat " " arguments)

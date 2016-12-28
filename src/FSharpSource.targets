@@ -135,6 +135,7 @@
     <DefineConstants>$(DefineConstants);FX_NO_HEAPTERMINATION</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_LINKEDRESOURCES</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_LOADER_OPTIMIZATION</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_SIMPLIFIED_LOADER</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_PARAMETERIZED_THREAD_START</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_PDB_READER</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_PDB_WRITER</DefineConstants>
@@ -489,17 +490,17 @@
   </Target>
 
   <Target Name="dotnetpublish" AfterTargets="Build" Condition=" '$(DOTNET_PUBLISH)' == 'true' ">
-    <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe publish --no-build project.json -r $(DOTNET_PUBLISH_PLATFORM) -c $(Configuration) -o $(DOTNET_PUBLISH_PATH)"/>
+    <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe --verbose publish --no-build project.json -r $(DOTNET_PUBLISH_PLATFORM) -c $(Configuration) -o $(DOTNET_PUBLISH_PATH)"/>
   </Target>
 
   <Target Name="dotnetpublishfsccompiler" AfterTargets="CopyFilesToOutputDirectory" Condition=" '$(DOTNET_PUBLISH_FSC)' == 'true' ">
     <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe restore DeployCompiler\fsc\project.json"/>
-    <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe publish --no-build DeployCompiler\fsc\project.json -r $(DOTNET_PUBLISH_PLATFORM) -c $(Configuration) -o $(DOTNET_PUBLISH_FSC_PATH)"/>
+    <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe --verbose publish --no-build DeployCompiler\fsc\project.json -r $(DOTNET_PUBLISH_PLATFORM) -c $(Configuration) -o $(DOTNET_PUBLISH_FSC_PATH)"/>
   </Target>
 
   <Target Name="dotnetpublishfsicompiler" AfterTargets="CopyFilesToOutputDirectory" Condition=" '$(DOTNET_PUBLISH_FSI)' == 'true' ">
     <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe restore DeployCompiler\fsi\project.json"/>
-    <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe publish --no-build DeployCompiler\fsi\project.json -r $(DOTNET_PUBLISH_PLATFORM) -c $(Configuration) -o $(DOTNET_PUBLISH_FSI_PATH)"/>
+    <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe --verbose publish --no-build DeployCompiler\fsi\project.json -r $(DOTNET_PUBLISH_PLATFORM) -c $(Configuration) -o $(DOTNET_PUBLISH_FSI_PATH)"/>
   </Target>
 
   <Target Name="GenerateSourceLink" BeforeTargets="CoreCompile" Condition="'$(UseSourceLink)' == 'true'">

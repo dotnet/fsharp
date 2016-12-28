@@ -98,8 +98,8 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
             async {
                  match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)  with 
                  | Some options ->
-                     let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                     let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
+                     let! sourceText = document.GetTextAsync(cancellationToken)
+                     let! textVersion = document.GetTextVersionAsync(cancellationToken) 
                      let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
                      let! spans = FSharpDocumentHighlightsService.GetDocumentHighlights(checkerProvider.Checker, document.Id, sourceText, document.FilePath, 
                                                                                         position, defines, options, textVersion.GetHashCode())
