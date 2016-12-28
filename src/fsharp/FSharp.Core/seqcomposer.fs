@@ -1555,55 +1555,56 @@ namespace Microsoft.FSharp.Collections
             | :? Enumerable.EnumerableBase<'T> as s -> s.Append source2
             | _ -> Upcast.seq (new Enumerable.AppendEnumerable<_>([source2; source1]))
 
-        [<CompiledName "Delayed">]
-        let delayed (delayed:unit->ISeq<'T>) =
+        [<CompiledName "Delay">]
+        let delay (delayed:unit->ISeq<'T>) =
             Upcast.seq (Enumerable.SeqDelayed (delayed, 1))
 
-        let inline groupByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (source:ISeq<'T>) =
-            source.Fold (fun _ ->
-                upcast { new FolderWithPostProcessing<'T,ISeq<'Key*ISeq<'T>>,_>(Unchecked.defaultof<_>,Dictionary comparer) with
-                    override this.ProcessNext v =
-                        let safeKey = keyf v
-                        match this.State.TryGetValue safeKey with
-                        | false, _ ->
-                            let prev = ResizeArray ()
-                            this.State.[safeKey] <- prev
-                            prev.Add v
-                        | true, prev -> prev.Add v
-                        Unchecked.defaultof<_> (* return value unused in Fold context *)
+        module internal GroupBy =
+            let inline groupByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (source:ISeq<'T>) =
+                source.Fold (fun _ ->
+                    upcast { new FolderWithPostProcessing<'T,ISeq<'Key*ISeq<'T>>,_>(Unchecked.defaultof<_>,Dictionary comparer) with
+                        override this.ProcessNext v =
+                            let safeKey = keyf v
+                            match this.State.TryGetValue safeKey with
+                            | false, _ ->
+                                let prev = ResizeArray ()
+                                this.State.[safeKey] <- prev
+                                prev.Add v
+                            | true, prev -> prev.Add v
+                            Unchecked.defaultof<_> (* return value unused in Fold context *)
 
-                    override this.OnComplete _ =
-                        let maxWastage = 4
-                        for value in this.State.Values do
-                            if value.Capacity - value.Count > maxWastage then value.TrimExcess ()
+                        override this.OnComplete _ =
+                            let maxWastage = 4
+                            for value in this.State.Values do
+                                if value.Capacity - value.Count > maxWastage then value.TrimExcess ()
 
-                        this.Result <-
-                            this.State
-                            |> ofSeq
-                            |> map (fun kv -> getKey kv.Key, ofResizeArrayUnchecked kv.Value)
+                            this.Result <-
+                                this.State
+                                |> ofSeq
+                                |> map (fun kv -> getKey kv.Key, ofResizeArrayUnchecked kv.Value)
 
-                    override this.OnDispose () = () })
+                        override this.OnDispose () = () })
 
-        let inline groupByVal' (keyf:'T->'Key) (source:ISeq<'T>) =
-            delayed (fun () ->
-                source
-                |> groupByImpl HashIdentity.Structural<'Key> keyf id)
+            let inline byVal (keyf:'T->'Key) (source:ISeq<'T>) =
+                delay (fun () ->
+                    source
+                    |> groupByImpl HashIdentity.Structural<'Key> keyf id)
 
-        let inline groupByRef' (keyf:'T->'Key) (source:ISeq<'T>) =
-            delayed (fun () ->
-                let comparer =
-                    let c = HashIdentity.Structural<'Key>
-                    { new IEqualityComparer<Value<'Key>> with
-                           member __.GetHashCode o    = c.GetHashCode o._1
-                           member __.Equals (lhs,rhs) = c.Equals (lhs._1, rhs._1) }
-                source
-                |> groupByImpl comparer (fun t -> Value(keyf t)) (fun sb -> sb._1))
+            let inline byRef (keyf:'T->'Key) (source:ISeq<'T>) =
+                delay (fun () ->
+                    let comparer =
+                        let c = HashIdentity.Structural<'Key>
+                        { new IEqualityComparer<Value<'Key>> with
+                               member __.GetHashCode o    = c.GetHashCode o._1
+                               member __.Equals (lhs,rhs) = c.Equals (lhs._1, rhs._1) }
+                    source
+                    |> groupByImpl comparer (fun t -> Value(keyf t)) (fun sb -> sb._1))
         
         [<CompiledName("GroupByVal")>]
         let inline groupByVal<'T,'Key when 'Key : equality and 'Key : struct> (keyf:'T->'Key) (source:ISeq<'T>) =
-            groupByVal' keyf source
+            GroupBy.byVal keyf source
 
         [<CompiledName("GroupByRef")>]
         let inline groupByRef<'T,'Key when 'Key : equality and 'Key : not struct> (keyf:'T->'Key) (source:ISeq<'T>) =
-            groupByRef' keyf source
+            GroupBy.byRef keyf source
 

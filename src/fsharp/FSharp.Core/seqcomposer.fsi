@@ -296,17 +296,18 @@ namespace Microsoft.FSharp.Collections
     [<CompiledName "Append">]
     val append: source1:ISeq<'T> -> source2:ISeq<'T> -> ISeq<'T>
 
-    [<CompiledName "Delayed">]
-    val delayed : (unit -> ISeq<'T>) -> ISeq<'T>
-
-    val inline internal groupByVal' : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * ISeq<'T>> when 'Key : equality
-    val inline internal groupByRef' : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * ISeq<'T>> when 'Key : equality
+    [<CompiledName "Delay">]
+    val delay : (unit -> ISeq<'T>) -> ISeq<'T>
 
     [<CompiledName "GroupByVal">]
     val inline groupByVal : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * ISeq<'T>> when 'Key : equality and 'Key : struct
 
     [<CompiledName "GroupByRef">]
     val inline groupByRef : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * ISeq<'T>> when 'Key : equality and 'Key : not struct
+
+    module internal GroupBy =
+        val inline byVal : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * ISeq<'T>> when 'Key : equality
+        val inline byRef : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * ISeq<'T>> when 'Key : equality
 
     module internal Array = begin
         val createDelayed   : (unit -> 'T array) -> TransformFactory<'T,'U> ->  ISeq<'U>
