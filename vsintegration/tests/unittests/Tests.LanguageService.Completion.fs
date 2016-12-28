@@ -185,9 +185,6 @@ type UsingMSBuild() as this  =
     member public this.AutoCompleteBug70080Helper(programText:string) =
         this.AutoCompleteBug70080HelperHelper(programText, ["AttributeUsageAttribute"], [])
 
-    member public this.AutoCompleteBug70080HelperNoSuffix(programText:string) =
-        this.AutoCompleteBug70080HelperHelper(programText, ["AttributeUsage"], [])
-
     member private this.testAutoCompleteAdjacentToDot op =
         let text = sprintf "System.Console%s" op
         // First, test that pressing dot works.
@@ -3477,7 +3474,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
 
     [<Test>]
     member public this.``Attribute.WhenAttachedToLet.Bug70080``() =        
-        this.AutoCompleteBug70080HelperNoSuffix @"
+        this.AutoCompleteBug70080Helper @"
                     open System
                     [<Attr     // expect AttributeUsage from System namespace
                     let f() = 4"
@@ -3491,17 +3488,17 @@ let x = query { for bbbb in abbbbc(*D0*) do
 
     [<Test>]
     member public this.``Attribute.WhenAttachedToNothing.Bug70080``() =        
-        this.AutoCompleteBug70080HelperNoSuffix @"
+        this.AutoCompleteBug70080Helper @"
                     open System
-                    [<Attr     // expect AttributeUsage from System namespace
+                    [<Attr     // expect AttributeUsageAttribute from System namespace
                     // nothing here"
 
     [<Test>]
     member public this.``Attribute.WhenAttachedToLetInNamespace.Bug70080``() =        
-        this.AutoCompleteBug70080HelperNoSuffix @"
+        this.AutoCompleteBug70080Helper @"
                     namespace Foo
                     open System
-                    [<Attr     // expect AttributeUsage from System namespace
+                    [<Attr     // expect AttributeUsageAttribute from System namespace
                     let f() = 4"
 
     [<Test>]

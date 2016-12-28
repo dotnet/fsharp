@@ -1263,7 +1263,7 @@ module internal ItemDescriptionsImpl =
      
 /// An intellisense declaration
 [<Sealed>]
-type FSharpDeclarationListItem(name, glyphMajor:GlyphMajor, glyphMinor:GlyphMinor, info) =
+type FSharpDeclarationListItem(name: string, glyphMajor: GlyphMajor, glyphMinor: GlyphMinor, info, isAttribute: bool) =
     let mutable descriptionTextHolder:FSharpToolTipText option = None
     let mutable task = null
 
@@ -1311,16 +1311,15 @@ type FSharpDeclarationListItem(name, glyphMajor:GlyphMajor, glyphMinor:GlyphMino
     member decl.Glyph = 6 * int glyphMajor + int glyphMinor
     member decl.GlyphMajor = glyphMajor 
     member decl.GlyphMinor = glyphMinor
+    member decl.IsAttribute = isAttribute
       
 /// A table of declarations for Intellisense completion 
 [<Sealed>]
 type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) = 
-    static let attributeSuffixLength = "Attribute".Length
-
     member self.Items = declarations
     
     // Make a 'Declarations' object for a set of selected items
-    static member Create(infoReader:InfoReader, m, denv, items, reactor, checkAlive, atAttributeApplication) = 
+    static member Create(infoReader:InfoReader, m, denv, items, reactor, checkAlive) = 
         let g = infoReader.g
         let items = items |> RemoveExplicitlySuppressed g
         
@@ -1371,26 +1370,11 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                 | [] -> failwith "Unexpected empty bag"
                 | items -> 
                     let glyphMajor, glyphMinor = GlyphOfItem(denv,items.Head)
-                    (* If:
-                         * we at an attribute application position 
-                         * the completion item is an attribute type
-                         * the item name has "Attribute" sufix (yes, it's possible to define a System.Attribute derivative that has no this suffix)
-                       then remove "Attribute" suffix from its name.
-                    *)
-                    let nm = 
-                        if atAttributeApplication 
-                           && IsAttribute infoReader items.Head 
-                           && nm.EndsWith "Attribute" 
-                        then nm.[0..nm.Length-attributeSuffixLength-1] 
-                        else nm
-
-                    new FSharpDeclarationListItem(nm, glyphMajor, glyphMinor, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive)))
+                    new FSharpDeclarationListItem(nm, glyphMajor, glyphMinor, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), IsAttribute infoReader items.Head))
 
         new FSharpDeclarationListInfo(Array.ofList decls)
-
     
     static member Error msg = 
         new FSharpDeclarationListInfo(
-                [| new FSharpDeclarationListItem("<Note>", GlyphMajor.Error, GlyphMinor.Normal, Choice2Of2 (FSharpToolTipText [FSharpToolTipElement.CompositionError msg])) |] )
-    static member Empty = new FSharpDeclarationListInfo([| |])
-
+                [| new FSharpDeclarationListItem("<Note>", GlyphMajor.Error, GlyphMinor.Normal, Choice2Of2 (FSharpToolTipText [FSharpToolTipElement.CompositionError msg]), false) |] )
+    static member Empty = FSharpDeclarationListInfo([| |])
