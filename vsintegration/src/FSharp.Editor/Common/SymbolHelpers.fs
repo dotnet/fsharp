@@ -46,7 +46,7 @@ module internal SymbolHelpers =
                             | None -> return [||]
                         })
                     |> Async.Parallel
-                    |> Async.Map Array.concat
+                    |> Async.map Array.concat
             
             return
                 (symbolUses 

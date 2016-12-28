@@ -191,6 +191,30 @@ module Async =
             return () 
         }
 
+    /// Creates an asynchronous workflow that runs the asynchronous workflow given as an argument at most once. 
+    /// When the returned workflow is started for the second time, it reuses the result of the previous execution.
+    let cache (input : Async<'T>) =
+        let agent = MailboxProcessor<AsyncReplyChannel<_>>.Start <| fun agent ->
+            async {
+                let! replyCh = agent.Receive ()
+                let! res = input
+                replyCh.Reply res
+                while true do
+                    let! replyCh = agent.Receive ()
+                    replyCh.Reply res 
+            }
+        async { return! agent.PostAndAsyncReply id }
+
+type AsyncBuilder with
+    member __.Bind(computation: System.Threading.Tasks.Task<'a>, binder: 'a -> Async<'b>): Async<'b> =
+        async {
+            let! a = Async.AwaitTask computation
+            return! binder a
+        }
+
+    member __.ReturnFrom(computation: System.Threading.Tasks.Task<'a>): Async<'a> = Async.AwaitTask computation
+
+
 module Option =
     let guard (x: bool) : Option<unit> =
         if x then Some() else None
