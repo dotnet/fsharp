@@ -58,4 +58,44 @@ module internal SymbolHelpers =
                     fun (_, xs) -> xs |> Seq.map snd |> Seq.toArray)
         }
 
+    type OriginalText = string
 
+    let changeAllSymbolReferences (document: Document, symbolSpan: TextSpan, textChanger: string -> string, projectInfoManager: ProjectInfoManager, checker: FSharpChecker)
+        : Async<(Func<CancellationToken, Task<Solution>> * OriginalText) option> =
+        asyncMaybe {
+            do! Option.guard (symbolSpan.Length > 0)
+            let! cancellationToken = liftAsync Async.CancellationToken
+            let! sourceText = document.GetTextAsync(cancellationToken)
+            let originalText = sourceText.ToString(symbolSpan)
+            do! Option.guard (originalText.Length > 0)
+            let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
+            let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
+            let! symbol = CommonHelpers.getSymbolAtPosition(document.Id, sourceText, symbolSpan.Start, document.FilePath, defines, SymbolLookupKind.Fuzzy)
+            let! _, checkFileResults = checker.ParseAndCheckDocument(document, options)
+            let textLine = sourceText.Lines.GetLineFromPosition(symbolSpan.Start)
+            let textLinePos = sourceText.Lines.GetLinePosition(symbolSpan.Start)
+            let fcsTextLineNumber = textLinePos.Line + 1
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.RightColumn, textLine.Text.ToString(), [symbol.Text])
+            let! declLoc = symbolUse.GetDeclarationLocation(document)
+            let newText = textChanger originalText
+            // defer finding all symbol uses throughout the solution
+            return 
+                Func<_,_>(fun (cancellationToken: CancellationToken) ->
+                    async {
+                        let! symbolUsesByDocumentId = 
+                            getSymbolUsesInSolution(symbolUse.Symbol, declLoc, checkFileResults, projectInfoManager, checker, document.Project.Solution)
+                    
+                        let mutable solution = document.Project.Solution
+                        
+                        for KeyValue(documentId, symbolUses) in symbolUsesByDocumentId do
+                            let document = document.Project.Solution.GetDocument(documentId)
+                            let! sourceText = document.GetTextAsync(cancellationToken)
+                            let mutable sourceText = sourceText
+                            for symbolUse in symbolUses do
+                                let textSpan = CommonHelpers.fixupSpan(sourceText, CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate))
+                                sourceText <- sourceText.Replace(textSpan, newText)
+                                solution <- solution.WithDocumentText(documentId, sourceText)
+                        return solution
+                    } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken),
+               originalText
+        }
