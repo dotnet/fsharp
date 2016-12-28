@@ -1600,10 +1600,10 @@ namespace Microsoft.FSharp.Collections
                 |> groupByImpl comparer (fun t -> Value(keyf t)) (fun sb -> sb._1))
         
         [<CompiledName("GroupByVal")>]
-        let inline groupByVal<'T,'Key when 'Key : equality and 'T : struct> (keyf:'T->'Key) (source:ISeq<'T>) =
+        let inline groupByVal<'T,'Key when 'Key : equality and 'Key : struct> (keyf:'T->'Key) (source:ISeq<'T>) =
             groupByVal' keyf source
 
         [<CompiledName("GroupByRef")>]
-        let inline groupByRef<'T,'Key when 'Key : equality and 'T : not struct> (keyf:'T->'Key) (source:ISeq<'T>) =
+        let inline groupByRef<'T,'Key when 'Key : equality and 'Key : not struct> (keyf:'T->'Key) (source:ISeq<'T>) =
             groupByRef' keyf source
 

@@ -303,10 +303,10 @@ namespace Microsoft.FSharp.Collections
     val inline internal groupByRef' : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * ISeq<'T>> when 'Key : equality
 
     [<CompiledName "GroupByVal">]
-    val inline groupByVal : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * ISeq<'T>> when 'Key : equality and 'T : struct
+    val inline groupByVal : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * ISeq<'T>> when 'Key : equality and 'Key : struct
 
     [<CompiledName "GroupByRef">]
-    val inline groupByRef : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * ISeq<'T>> when 'Key : equality and 'T : not struct
+    val inline groupByRef : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * ISeq<'T>> when 'Key : equality and 'Key : not struct
 
     module internal Array = begin
         val createDelayed   : (unit -> 'T array) -> TransformFactory<'T,'U> ->  ISeq<'U>
