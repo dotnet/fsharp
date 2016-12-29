@@ -71,8 +71,7 @@ type internal XmlDocCommandFilter
                                 match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document) with 
                                 | None -> ()
                                 | Some options -> 
-                                    let! sourceText = document.GetTextAsync()
-                                    let sourceText = sourceText.ToString()
+                                    let sourceText = wpfTextView.TextBuffer.CurrentSnapshot.GetText()
                                     let! parseResults = checker.ParseFileInProject(filePath, sourceText, options)                                    
                                     let! xmlDocables = XmlDocParser.getXmlDocables (sourceText, parseResults.ParseTree)
                                     let xmlDocablesBelowThisLine = 
