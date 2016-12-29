@@ -1,4 +1,6 @@
-﻿namespace Microsoft.FSharp.Compiler.SourceCodeServices
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+
+namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
 open System
 open System.Diagnostics
@@ -7,98 +9,6 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
-
-[<RequireQualifiedAccess>]
-[<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module Array =
-    /// pass an array byref to reverse it in place
-    let revInPlace (array: 'T []) =
-        if Array.isEmpty array then () else
-        let arrlen, revlen = array.Length-1, array.Length/2 - 1
-        for idx in 0 .. revlen do
-            let t1 = array.[idx] 
-            let t2 = array.[arrlen-idx]
-            array.[idx] <- t2
-            array.[arrlen-idx] <- t1
-
-    /// Async implementation of Array.map.
-    let mapAsync (mapping : 'T -> Async<'U>) (array : 'T[]) : Async<'U[]> =
-        let len = Array.length array
-        let result = Array.zeroCreate len
-
-        async { // Apply the mapping function to each array element.
-            for i in 0 .. len - 1 do
-                let! mappedValue = mapping array.[i]
-                result.[i] <- mappedValue
-
-            // Return the completed results.
-            return result
-        }
-
-[<RequireQualifiedAccess>]
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module String =
-    open System.IO
-
-    let inline toCharArray (str: string) = str.ToCharArray()
-
-    let lowerCaseFirstChar (str: string) =
-        if String.IsNullOrEmpty str 
-         || Char.IsLower(str, 0) then str else 
-        let strArr = toCharArray str
-        match Array.tryHead strArr with
-        | None -> str
-        | Some c  -> 
-            strArr.[0] <- Char.ToLower c
-            String (strArr)
-
-    let extractTrailingIndex (str: string) =
-        match str with
-        | null -> null, None
-        | _ ->
-            let charr = str.ToCharArray() 
-            Array.revInPlace charr
-            let digits = Array.takeWhile Char.IsDigit charr
-            Array.revInPlace digits
-            String digits
-            |> function
-               | "" -> str, None
-               | index -> str.Substring (0, str.Length - index.Length), Some (int index)
-
-    /// Remove all trailing and leading whitespace from the string
-    /// return null if the string is null
-    let trim (value: string) = if isNull value then null else value.Trim()
-    
-    /// Splits a string into substrings based on the strings in the array separators
-    let split options (separator: string []) (value: string) = 
-        if isNull value  then null else value.Split(separator, options)
-
-    let (|StartsWith|_|) pattern value =
-        if String.IsNullOrWhiteSpace value then
-            None
-        elif value.StartsWith pattern then
-            Some()
-        else None
-
-    let (|Contains|_|) pattern value =
-        if String.IsNullOrWhiteSpace value then
-            None
-        elif value.Contains pattern then
-            Some()
-        else None
-    
-    let getLines (str: string) =
-        use reader = new StringReader(str)
-        [|
-        let line = ref (reader.ReadLine())
-        while not (isNull !line) do
-            yield !line
-            line := reader.ReadLine()
-        if str.EndsWith("\n") then
-            // last trailing space not returned
-            // http://stackoverflow.com/questions/19365404/stringreader-omits-trailing-linebreak
-            yield String.Empty
-        |]
         
 [<AutoOpen>]
 module internal CodeGenerationUtils =
