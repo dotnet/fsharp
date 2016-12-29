@@ -121,10 +121,10 @@
     <value>Add 'new' keyword</value>
   </data>
   <data name="ImplementInterface" xml:space="preserve">
-    <value>Implement interface explicitly</value>
+    <value>Implement interface</value>
   </data>
   <data name="ImplementInterfaceWithoutTypeAnnotation" xml:space="preserve">
-    <value>Implement interface explicitly without type annotation</value>
+    <value>Implement interface without type annotation</value>
   </data>
   <data name="PrefixValueNameWithUnderscore" xml:space="preserve">
     <value>Prefix value name with underscore</value>
