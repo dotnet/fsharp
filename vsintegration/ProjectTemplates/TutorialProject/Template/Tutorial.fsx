@@ -24,6 +24,17 @@
 // For additional templates to use with F#, see the 'Online Templates' in Visual Studio, 
 //     'New Project' --> 'Online Templates'
 
+// F# supports three kinds of comments:
+
+//  1. Double-slash comments.  These are used in most situations.
+(*  2. ML-style Block comments.  These aren't uses that often. *)
+/// 3. Triple-slash comments.  These are used for documenting functions, types, and so on.
+///    They will appear as text when you hover over something which is decorated with these comments.
+///
+///    They also support .NET-style XML comments, which allow you to generate reference documentation,
+///    and they also allow editors (such as Visual Studio) to extract information from them.
+///    To learn more, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/xml-documentation
+
 
 // Open namespaces using the 'open' directive.
 //
@@ -75,7 +86,7 @@ module BasicFunctions =
     // If 'result1' were not of type 'int', then the line would fail to compile.
     printfn "The result of squaring the integer 4573 and adding 3 is %d" result1
 
-    /// When needed, annotate the type of a parameter name using '(argument:type)'.  Parenthesis are required.
+    /// When needed, annotate the type of a parameter name using '(argument:type)'.  Parentheses are required.
     let sampleFunction2 (x:int) = 2*x*x - x/5 + 3
 
     let result2 = sampleFunction2 (7 + 4)
@@ -125,6 +136,7 @@ module StringManipulation =
     let string2  = "world"
 
     /// Strings can also use @ to create a verbatim string literal.
+    /// This will ignore escape characters such as '\', '\n', '\t', etc.
     let string3 = @"C:\Program Files\"
 
     /// String literals can also use triple-quotes.
@@ -162,16 +174,22 @@ module Tuples =
     /// and a double-precision floating point number.
     let tuple2 = (1, "fred", 3.1415)
 
-    printfn "tuple1: %A    tuple2: %A" tuple1 tuple2
+    printfn "tuple1: %A\ttuple2: %A" tuple1 tuple2
 
     /// Tuples are normally objects, but they can also be represented as structs.
     ///
     /// These interoperate completely with structs in C# and Visual Basic.NET; however,
-    /// struct tuples are not interchangeable with object tuples (often called reference tuples).
+    /// struct tuples are not implicitly convertable with object tuples (often called reference tuples).
     ///
     /// The second line below will fail to compile because of this.  Uncomment it to see what happens.
-    let sampleStructTuple = struct (1, 2, 3)
+    let sampleStructTuple = struct (1, 2)
     //let thisWillNotCompile: (int*int) = struct (1, 2)
+
+    // Although you can
+    let convertFromStructTuple (struct(a, b)) = (a, b)
+    let convertToStructTuple (a, b) = struct(a, b)
+
+    printfn "Struct Tuple: %A\nReference tuple made from the Struct Tuple: %A" sampleStructTuple (sampleStructTuple |> convertFromStructTuple)
 
 
 /// Lists are ordered, immutable, singly-linked lists.  They are eager in their evaluation.
@@ -195,8 +213,11 @@ module Lists =
     /// all the days of the year.
     let daysList = 
         [ for month in 1 .. 12 do
-              for day in 1 .. System.DateTime.DaysInMonth(2012, month) do 
+              for day in 1 .. System.DateTime.DaysInMonth(2017, month) do 
                   yield System.DateTime(2012, month, day) ]
+
+    // Print the first 5 elements of 'daysList' using 'List.take'.
+    printfn "The first 5 days of 2017 are: %A" (daysList |> List.take 5)
 
     /// Computations can include conditionals.  This is a list containing the tuples
     /// which are the coordinates of the black squares on a chess board.
@@ -219,6 +240,8 @@ module Lists =
         numberList
         |> List.filter (fun x -> x % 3 = 0)
         |> List.sumBy (fun x -> x * x)
+
+    printfn "The sum of the squares of numbers up to 1000 that are divisible by 3 is: %d" sumOfSquares
 
 
 /// Arrays are fixed-size, mutable collections of elements of the same type.
@@ -250,7 +273,7 @@ module Arrays =
     /// Sub-arrays are extracted using slicing notation.
     let evenNumbersSlice = evenNumbers.[0..500]
 
-    /// You can loop over lists and arrays using 'for' loops.
+    /// You can loop over arrays and lists using 'for' loops.
     for word in array4 do 
         printfn "word: %s" word
 
@@ -259,12 +282,14 @@ module Arrays =
     // To learn more about this operator, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/values/index#mutable-variables
     array2.[1] <- "WORLD!"
 
-    /// You can transform arrays using 'Array'map' and other functional programming operations.
+    /// You can transform arrays using 'Array.map' and other functional programming operations.
     /// The following calculates the sum of the lengths of the words that start with 'h'.
     let sumOfLengthsOfWords = 
         array2
         |> Array.filter (fun x -> x.StartsWith "h")
         |> Array.sumBy (fun x -> x.Length)
+
+    printfn "The sum of the lengths of the words in Array 2 is: %d" sumOfLengthsOfWords
 
 
 /// Sequences are a logical series of elements, all of the same type.  These are a more general type than Lists and Arrays.
@@ -309,6 +334,8 @@ module Sequences =
         |> Seq.truncate 100
         |> Seq.toList
 
+    printfn "First 100 elements of a random walk: %A" first100ValuesOfRandomWalk
+
 
 /// Recursive functions can call themselves. In F#, functions are only recursive
 /// when declared using 'let rec'.
@@ -323,6 +350,8 @@ module RecursiveFunctions =
     let rec factorial n = 
         if n = 0 then 1 else n * factorial (n-1)
 
+    printfn "Factorial of 6 is: %d" (factorial 6)
+
     /// Computes the greatest common factor of two integers.
     ///
     /// Since all of the recursive calls are tail calls,
@@ -332,6 +361,8 @@ module RecursiveFunctions =
         if a = 0 then b
         elif a < b then greatestCommonFactor a (b - a)
         else greatestCommonFactor (a - b) b
+
+    printfn "The Greatest Common Factor of 300 and 620 is %d" (greatestCommonFactor 300 620)
 
     /// This example computes the sum of a list of integers using recursion.
     let rec sumList xs =
@@ -348,6 +379,10 @@ module RecursiveFunctions =
     /// This invokes the tail recursive helper function, providing '0' as a seed accumulator.
     /// An approach like this is common in F#.
     let sumListTailRecursive xs = sumListTailRecHelper 0 xs
+
+    let oneThroughTen = [1; 2; 3; 4; 5; 6; 7; 8; 9; 10]
+
+    printfn "The sum 1-10 is %d" (sumListTailRecursive oneThroughTen)
 
 
 /// Records are an aggregate of named values, with optional members (such as methods).
@@ -386,6 +421,8 @@ module RecordTypes =
     let showContactCard (c: ContactCard) = 
         c.Name + " Phone: " + c.Phone + (if not c.Verified then " (unverified)" else "")
 
+    printfn "Alf's Contact Card: %s" (showContactCard contact1)
+
     /// This is an example of a Record with a member.
     type ContactCardAlternate =
         { Name     : string
@@ -404,7 +441,7 @@ module RecordTypes =
           Address = "111 Alf Street" }
    
     // Members are accessed via the '.' operator on an instantiated type.
-    printfn "Alf's anternate contact card %A" contactAlternate.PrintedContactCard
+    printfn "Alf's alternate contact card is %s" contactAlternate.PrintedContactCard
 
     /// Records can also be represented as structs via the 'Struct' attribute.
     /// This is helpful in situations where the performance of structs outweighs
@@ -480,6 +517,10 @@ module DiscriminatedUnions =
 
     // Single-case DUs are often used for domain modeling.  This can buy you extra type safety
     // over primitive types such as strings and ints.
+    //
+    // Single-case DUs cannot be implicitly converted to or from the type they wrap.
+    // For example, a function which takes in an Address cannot accept a string as that input,
+    // or vive/versa.
     type Address = Address of string
     type Name = Name of string
     type SSN = SSN of int
@@ -501,7 +542,7 @@ module DiscriminatedUnions =
     ///
     /// This represents a Binary Search Tree, with one case being the Empty tree,
     /// and the other being a Node with a value and two subtrees.
-    type 'T BST =
+    type BST<'T> =
         | Empty
         | Node of value:'T * left: BST<'T> * right: BST<'T>
 
@@ -527,6 +568,8 @@ module DiscriminatedUnions =
             else Node(x, left, insert item right) // Call into right subtree.
 
     /// Discriminated Unions can also be represented as structs via the 'Struct' attribute.
+    /// This is helpful in situations where the performance of structs outweighs
+    /// the flexibility of reference types.
     ///
     /// However, there are two important things to know when doing this:
     ///     1. A struct DU cannot be recursively-defined.
@@ -572,7 +615,7 @@ module PatternMatching =
 
     /// Find all managers/executives named "Dave" who do not have any reports.
     /// This uses the 'function' shorthand to as a lambda expression.
-    let rec findDaveWithOpenPosition(emps : Employee list) =
+    let rec findDaveWithOpenPosition(emps : List<Employee>) =
         emps
         |> List.filter(function
                        | Manager({First = "Dave"}, []) -> true // [] matches an empty list.
@@ -610,12 +653,19 @@ module PatternMatching =
     let (|TimeSpan|_|) = parseTimeSpan
 
     /// Pattern Matching via 'function' keyword and Active Patterns often looks like this.
-    let parse = function
+    let printParseResult = function
         | Int x -> printfn "%d" x
         | Double x -> printfn "%f" x
         | Date d -> printfn "%s" (d.ToString())
         | TimeSpan t -> printfn "%s" (t.ToString())
         | _ -> printfn "Nothing was parse-able!"
+
+    // Call the printer with some different values to parse.
+    printParseResult "12"
+    printParseResult "12.045"
+    printParseResult "12/28/2016"
+    printParseResult "9:01PM"
+    printParseResult "banana!"
 
 
 /// Option values are any kind of value tagged with either 'Some' or 'None'.
@@ -720,17 +770,17 @@ module DefiningGenericClasses =
 
     type StateTracker<'T>(initialElement: 'T) = 
 
-        /// This internal field store the states in a list
+        /// This internal field store the states in a list.
         let mutable states = [ initialElement ]
 
-        /// Add a new element to the list of states
+        /// Add a new element to the list of states.
         member this.UpdateState newState = 
-            states <- newState :: states  // use the '<-' operator to mutate the value
+            states <- newState :: states  // use the '<-' operator to mutate the value.
 
-        /// Get the entire list of historical states
+        /// Get the entire list of historical states.
         member this.History = states
 
-        /// Get the latest state
+        /// Get the latest state.
         member this.Current = states.Head
 
     /// An 'int' instance of the state tracker class. Note that the type parameter is inferred.
@@ -746,14 +796,14 @@ module DefiningGenericClasses =
 /// To learn more, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/interfaces
 module ImplementingInterfaces = 
 
-    /// This is a type that implements IDisposable
+    /// This is a type that implements IDisposable.
     type ReadFile() =
 
         let file = new System.IO.StreamReader("readme.txt")
 
         member this.ReadLine() = file.ReadLine()
 
-        // This is the implementation of IDisposable members
+        // This is the implementation of IDisposable members.
         interface System.IDisposable with
             member this.Dispose() = file.Close()
 
@@ -768,9 +818,10 @@ module ImplementingInterfaces =
 
 /// The FSharp.Core library defines a range of parallel processing functions.  Here
 /// you use some functions for parallel processing over arrays.
+///
+/// To learn more, see: https://msdn.microsoft.com/en-us/visualfsharpdocs/conceptual/array.parallel-module-%5Bfsharp%5D
 module ParallelArrayProgramming = 
               
-    ///
     /// First, an array of inputs.
     let oneBigArray = [| 0 .. 100000 |]
     
@@ -779,8 +830,10 @@ module ParallelArrayProgramming =
         if x <= 2 then 1 
         else computeSomeFunction (x - 1) + computeSomeFunction (x - 2)
        
-    // Next, do a parallel map over a large input array
-    let computeResults() = oneBigArray |> Array.Parallel.map (fun x -> computeSomeFunction (x % 20))
+    // Next, do a parallel map over a large input array.
+    let computeResults() = 
+        oneBigArray 
+        |> Array.Parallel.map (fun x -> computeSomeFunction (x % 20))
 
     // Next, print the results.
     printfn "Parallel computation results: %A" (computeResults())
@@ -788,26 +841,28 @@ module ParallelArrayProgramming =
 
 
 /// Events are a common idiom for .NET programming.
+///
+/// To learn more, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/members/events
 module Events = 
 
-    /// First, create instance of Event object that consists of subscription point (event.Publish) and event trigger (event.Trigger)
+    /// First, create instance of Event object that consists of subscription point (event.Publish) and event trigger (event.Trigger).
     let simpleEvent = new Event<int>() 
 
-    // Next, add handler to the event
+    // Next, add handler to the event.
     simpleEvent.Publish.Add(
         fun x -> printfn "this is handler was added with Publish.Add: %d" x)
 
-    // Next, trigger the event
+    // Next, trigger the event.
     simpleEvent.Trigger(5)
 
-    // Next, create an instance of Event that follows standard .NET convention: (sender, EventArgs)
+    // Next, create an instance of Event that follows standard .NET convention: (sender, EventArgs).
     let eventForDelegateType = new Event<EventHandler, EventArgs>()
 
-    // Next, add a handler for this new event
+    // Next, add a handler for this new event.
     eventForDelegateType.Publish.AddHandler(
         EventHandler(fun _ _ -> printfn "this is handler was added with Publish.AddHandler"))
 
-    // Next, trigger this event (note that sender argument should be set)
+    // Next, trigger this event (note that sender argument should be set).
     eventForDelegateType.Trigger(null, EventArgs.Empty)
 
 
