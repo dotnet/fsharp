@@ -137,6 +137,7 @@ type internal ProjectSitesAndFiles() =
             UseScriptResolutionRules = SourceFile.MustBeSingleFileProject fileName
             LoadTime = projectSite.LoadTime
             UnresolvedReferences = None
+            OriginalLoadReferences = []
             ExtraProjectInfo=extraProjectInfo }   
 
     /// Construct a project site for a single file. May be a single file project (for scripts) or an orphan project site (for everything else).
@@ -225,9 +226,8 @@ type internal ProjectSitesAndFiles() =
     static member GetProjectOptionsForProjectSite(projectSite:IProjectSite,filename,extraProjectInfo,serviceProvider:System.IServiceProvider) =
         match projectSite with
         | :? IHaveCheckOptions as hco -> hco.OriginalCheckOptions()
-        | _ ->             
+        | _ -> 
             getProjectOptionsForProjectSite(projectSite, filename, extraProjectInfo, serviceProvider)
-         
     /// Create project site for these project options
     static member CreateProjectSiteForScript (filename, checkOptions) = ProjectSiteOfScriptFile (filename, checkOptions) :> IProjectSite
 

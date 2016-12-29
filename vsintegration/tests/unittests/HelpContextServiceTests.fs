@@ -28,6 +28,7 @@ type HelpContextServiceTests() =
         UseScriptResolutionRules = false
         LoadTime = DateTime.MaxValue
         UnresolvedReferences = None
+        OriginalLoadReferences = []
         ExtraProjectInfo = None
     }
 
