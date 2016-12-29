@@ -42,11 +42,12 @@ val mainCompile :
     exiter : Exiter -> unit
 
 
+/// Part of LegacyHostedCompilerForTesting
 type InProcErrorLoggerProvider = 
     new : unit -> InProcErrorLoggerProvider
     member Provider : ErrorLoggerProvider
-    member CapturedWarnings : ErrorOrWarning[]
-    member CapturedErrors : ErrorOrWarning[]
+    member CapturedWarnings : Diagnostic[]
+    member CapturedErrors : Diagnostic[]
 
 
 module internal MainModuleBuilder =

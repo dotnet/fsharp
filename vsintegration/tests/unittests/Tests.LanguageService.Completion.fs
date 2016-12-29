@@ -4532,6 +4532,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         for completion in completions do 
             let _,_,descfunc,_ = completion
             let desc = descfunc()
+            printfn "MemberInfoCompileErrorsShowInDataTip: desc = <<<%s>>>" desc
             AssertContains(desc,"Simulated compiler error")
 
     // Bunch of crud in empty list. This test asserts that unwanted things don't exist at the top level.
