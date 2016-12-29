@@ -92,7 +92,7 @@ val NormalizeAssemblyRefs : TcImports -> (AbstractIL.IL.ILScopeRef -> AbstractIL
 // Miscellany
 val ignoreFailureOnMono1_1_16 : (unit -> unit) -> unit
 val mutable enableConsoleColoring : bool
-val DoWithErrorColor : bool -> (unit -> 'a) -> 'a
+val DoWithErrorColor : isError:bool -> (unit -> 'a) -> 'a
 val ReportTime : TcConfig -> string -> unit
 val GetAbbrevFlagSet : TcConfigBuilder -> bool -> Set<string>
 val PostProcessCompilerArgs : string Set -> string [] -> string list

@@ -435,8 +435,8 @@ module internal ItemDescriptionsImpl =
 
         ToolTipFault |> Option.iter (fun msg -> 
            let exn = Error((0,msg),range.Zero)
-           let ph = PhasedError.Create(exn, BuildPhase.TypeCheck)
-           phasedError ph)
+           let ph = PhasedDiagnostic.Create(exn, BuildPhase.TypeCheck)
+           simulateError ph)
  
         FSharpToolTipElement.Group(minfos |> List.map formatOne)
 

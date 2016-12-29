@@ -28,6 +28,7 @@ type BreakpointResolutionServiceTests()  =
         IsIncompleteTypeCheckEnvironment = true
         UseScriptResolutionRules = false
         LoadTime = DateTime.MaxValue
+        OriginalLoadReferences = []
         UnresolvedReferences = None
         ExtraProjectInfo = None
     }

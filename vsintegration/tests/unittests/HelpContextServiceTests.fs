@@ -29,6 +29,7 @@ type HelpContextServiceTests() =
         LoadTime = DateTime.MaxValue
         UnresolvedReferences = None
         ExtraProjectInfo = None
+        OriginalLoadReferences = []
     }
 
     let markers (source:string) = 

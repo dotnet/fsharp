@@ -138,7 +138,7 @@ let g (t : T) = t.Count()
                 "#r \"System2\""
             ]
         TakeCoffeeBreak(this.VS)
-        checkErrors 1
+        checkErrors 2
 
         ReplaceFileInMemory file <|
             [

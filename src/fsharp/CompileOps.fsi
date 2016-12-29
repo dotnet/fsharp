@@ -74,48 +74,53 @@ val ParseInput : (UnicodeLexing.Lexbuf -> Parser.token) * ErrorLogger * UnicodeL
 //--------------------------------------------------------------------------
 
 /// Get the location associated with an error
-val GetRangeOfError : PhasedError -> range option
+val GetRangeOfDiagnostic : PhasedDiagnostic -> range option
 
 /// Get the number associated with an error
-val GetErrorNumber : PhasedError -> int
+val GetDiagnosticNumber : PhasedDiagnostic -> int
 
 /// Split errors into a "main" error and a set of associated errors
-val SplitRelatedErrors : PhasedError -> PhasedError * PhasedError list
+val SplitRelatedDiagnostics : PhasedDiagnostic -> PhasedDiagnostic * PhasedDiagnostic list
 
 /// Output an error to a buffer
-val OutputPhasedError : ErrorLogger.ErrorStyle -> StringBuilder -> PhasedError -> bool -> unit
+val OutputPhasedDiagnostic : ErrorStyle -> StringBuilder -> PhasedDiagnostic -> isError: bool -> unit
 
 /// Output an error or warning to a buffer
-val OutputErrorOrWarning : implicitIncludeDir:string * showFullPaths: bool * flattenErrors: bool * errorStyle: ErrorStyle *  warning:bool -> StringBuilder -> PhasedError -> unit
+val OutputDiagnostic : implicitIncludeDir:string * showFullPaths: bool * flattenErrors: bool * errorStyle: ErrorStyle *  isError:bool -> StringBuilder -> PhasedDiagnostic -> unit
 
 /// Output extra context information for an error or warning to a buffer
-val OutputErrorOrWarningContext : prefix:string -> fileLineFunction:(string -> int -> string) -> StringBuilder -> PhasedError -> unit
+val OutputDiagnosticContext : prefix:string -> fileLineFunction:(string -> int -> string) -> StringBuilder -> PhasedDiagnostic -> unit
 
+/// Part of LegacyHostedCompilerForTesting
 [<RequireQualifiedAccess>]
-type ErrorLocation =
+type DiagnosticLocation =
     { Range : range
       File : string
       TextRepresentation : string
       IsEmpty : bool }
 
+/// Part of LegacyHostedCompilerForTesting
 [<RequireQualifiedAccess>]
-type CanonicalInformation = 
+type DiagnosticCanonicalInformation = 
     { ErrorNumber : int
       Subcategory : string
       TextRepresentation : string }
 
+/// Part of LegacyHostedCompilerForTesting
 [<RequireQualifiedAccess>]
-type DetailedIssueInfo = 
-    { Location : ErrorLocation option
-      Canonical : CanonicalInformation
+type DiagnosticDetailedInfo = 
+    { Location : DiagnosticLocation option
+      Canonical : DiagnosticCanonicalInformation
       Message : string }
 
+/// Part of LegacyHostedCompilerForTesting
 [<RequireQualifiedAccess>]
-type ErrorOrWarning = 
+type Diagnostic = 
     | Short of bool * string
-    | Long of bool * DetailedIssueInfo
+    | Long of bool * DiagnosticDetailedInfo
 
-val CollectErrorOrWarning : implicitIncludeDir:string * showFullPaths: bool * flattenErrors: bool * errorStyle: ErrorStyle *  warning:bool * PhasedError -> seq<ErrorOrWarning>
+/// Part of LegacyHostedCompilerForTesting
+val CollectDiagnostic : implicitIncludeDir:string * showFullPaths: bool * flattenErrors: bool * errorStyle: ErrorStyle *  warning:bool * PhasedDiagnostic -> seq<Diagnostic>
 
 //----------------------------------------------------------------------------
 // Resolve assembly references 
@@ -717,10 +722,10 @@ val TypeCheckOneInputAndFinishEventually :
         -> Eventually<(TcEnv * TopAttribs * TypedImplFile list) * TcState>
 
 /// Indicates if we should report a warning
-val ReportWarning : globalWarnLevel: int * specificWarnOff: int list * specificWarnOn: int list -> PhasedError -> bool
+val ReportWarning : globalWarnLevel: int * specificWarnOff: int list * specificWarnOn: int list -> PhasedDiagnostic -> bool
 
 /// Indicates if we should report a warning as an error
-val ReportWarningAsError : globalWarnLevel: int * specificWarnOff: int list * specificWarnOn: int list * specificWarnAsError: int list * specificWarnAsWarn: int list * globalWarnAsError: bool -> PhasedError -> bool
+val ReportWarningAsError : globalWarnLevel: int * specificWarnOff: int list * specificWarnOn: int list * specificWarnAsError: int list * specificWarnAsWarn: int list * globalWarnAsError: bool -> PhasedDiagnostic -> bool
 
 //----------------------------------------------------------------------------
 // #load closure
@@ -733,6 +738,14 @@ type CodeContext =
     | Editing
 
 [<RequireQualifiedAccess>]
+type LoadClosureInput = 
+    { FileName: string
+      SyntaxTree: ParsedInput option
+      ParseDiagnostics: (PhasedDiagnostic * bool) list 
+      MetaCommandDiagnostics: (PhasedDiagnostic * bool) list  }
+
+
+[<RequireQualifiedAccess>]
 type LoadClosure = 
     { /// The source files along with the ranges of the #load positions in each file.
       SourceFiles: (string * range list) list
@@ -740,26 +753,26 @@ type LoadClosure =
       /// The resolved references along with the ranges of the #r positions in each file.
       References: (string * AssemblyResolution list) list
 
-      /// The list of references that were not resolved during load closure. These may still be extension references.
+      /// The list of references that were not resolved during load closure.
       UnresolvedReferences : UnresolvedAssemblyReference list
 
-      /// The list of all sources in the closure with inputs when available
-      Inputs: (string * ParsedInput option * PhasedError list * PhasedError list) list
+      /// The list of all sources in the closure with inputs when available, with associated parse errors and warnings
+      Inputs: LoadClosureInput list
+
+      /// The original #load references, including those that didn't resolve
+      OriginalLoadReferences: (range * string) list
 
       /// The #nowarns
       NoWarns: (string * range list) list
 
-      /// Errors seen while processing resolutions
-      ResolutionErrors : PhasedError list
+      /// Diagnostics seen while processing resolutions
+      ResolutionDiagnostics : (PhasedDiagnostic * bool)  list
 
-      /// Warnings seen while processing resolutions
-      ResolutionWarnings : PhasedError list 
+      /// Diagnostics to show for root of closure (used by fsc.fs)
+      AllRootFileDiagnostics : (PhasedDiagnostic * bool) list
 
-      /// *Parse* errors seen while parsing root of closure
-      RootErrors : PhasedError list
-
-      /// *Parse* warnings seen while parsing root of closure
-      RootWarnings : PhasedError list }
+      /// Diagnostics seen while processing the compiler options implied root of closure
+      LoadClosureRootFileDiagnostics : (PhasedDiagnostic * bool) list }   
 
     // Used from service.fs, when editing a script file
     static member ComputeClosureOfSourceText : referenceResolver: ReferenceResolver.Resolver * filename: string * source: string * implicitDefines:CodeContext * useSimpleResolution: bool * useFsiAuxLib: bool * lexResourceManager: Lexhelp.LexResourceManager * applyCompilerOptions: (TcConfigBuilder -> unit) * assumeDotNetFramework : bool -> LoadClosure

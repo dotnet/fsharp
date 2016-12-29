@@ -225,7 +225,7 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
                     implicitIncludeDir: string,
                     allowRawFileName: bool,
                     logMessage: (string -> unit), 
-                    logErrorOrWarning: (bool -> string -> string -> unit)) =
+                    logDiagnostic: (bool -> string -> string -> unit)) =
                       
         let frameworkRegistryBase, assemblyFoldersSuffix, assemblyFoldersConditions = 
           "Software\Microsoft\.NetFramework", "AssemblyFoldersEx" , ""              
@@ -243,14 +243,14 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
               member __.BuildProjectFile(projectFileName, targetNames, globalProperties, targetOutputs) = true
 #if FX_RESHAPED_MSBUILD 
               member __.LogCustomEvent(e) =  protect (fun () -> logMessage ((e.GetPropertyValue("Message")) :?> string))
-              member __.LogErrorEvent(e) =   protect (fun () -> logErrorOrWarning true ((e.GetPropertyValue("Code")) :?> string) ((e.GetPropertyValue("Message")) :?> string))
+              member __.LogErrorEvent(e) =   protect (fun () -> logDiagnostic true ((e.GetPropertyValue("Code")) :?> string) ((e.GetPropertyValue("Message")) :?> string))
               member __.LogMessageEvent(e) = protect (fun () -> logMessage ((e.GetPropertyValue("Message")) :?> string))
-              member __.LogWarningEvent(e) = protect (fun () -> logErrorOrWarning false ((e.GetPropertyValue("Code")) :?> string)  ((e.GetPropertyValue("Message")) :?> string))
+              member __.LogWarningEvent(e) = protect (fun () -> logDiagnostic false ((e.GetPropertyValue("Code")) :?> string)  ((e.GetPropertyValue("Message")) :?> string))
 #else 
               member __.LogCustomEvent(e) =  protect (fun () -> logMessage e.Message)
-              member __.LogErrorEvent(e) =   protect (fun () -> logErrorOrWarning true e.Code e.Message)
+              member __.LogErrorEvent(e) =   protect (fun () -> logDiagnostic true e.Code e.Message)
               member __.LogMessageEvent(e) = protect (fun () -> logMessage e.Message)
-              member __.LogWarningEvent(e) = protect (fun () -> logErrorOrWarning false e.Code e.Message)
+              member __.LogWarningEvent(e) = protect (fun () -> logDiagnostic false e.Code e.Message)
 #endif 
               member __.ColumnNumberOfTaskNode with get() = 1 
               member __.LineNumberOfTaskNode with get() = 1 
@@ -353,7 +353,7 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
 
            /// Perform the resolution on rooted and unrooted paths, and then combine the results.
            member __.Resolve(resolutionEnvironment, references, targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture,                
-                             fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, logMessage, logErrorOrWarning) =
+                             fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, logMessage, logDiagnostic) =
 
                 // The {RawFileName} target is 'dangerous', in the sense that is uses <c>Directory.GetCurrentDirectory()</c> to resolve unrooted file paths.
                 // It is unreliable to use this mutable global state inside Visual Studio.  As a result, we partition all references into a "rooted" set
@@ -375,9 +375,9 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
 
                 let rooted, unrooted = references |> Array.partition (fst >> FileSystem.IsPathRootedShim)
 
-                let rootedResults = ResolveCore(resolutionEnvironment, rooted,  targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture, fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, true, logMessage, logErrorOrWarning)
+                let rootedResults = ResolveCore(resolutionEnvironment, rooted,  targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture, fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, true, logMessage, logDiagnostic)
 
-                let unrootedResults = ResolveCore(resolutionEnvironment, unrooted,  targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture, fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, false, logMessage, logErrorOrWarning)
+                let unrootedResults = ResolveCore(resolutionEnvironment, unrooted,  targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture, fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, false, logMessage, logDiagnostic)
 
                 // now unify the two sets of results
                 Array.concat [| rootedResults; unrootedResults |]

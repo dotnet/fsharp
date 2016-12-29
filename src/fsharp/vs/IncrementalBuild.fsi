@@ -36,15 +36,15 @@ type internal FSharpErrorInfo =
     member Message:string
     member Subcategory:string
     member ErrorNumber:int
-    static member internal CreateFromExceptionAndAdjustEof : PhasedError * bool * bool * range * lastPosInFile:(int*int) -> FSharpErrorInfo
-    static member internal CreateFromException : PhasedError * bool * bool * range -> FSharpErrorInfo
+    static member internal CreateFromExceptionAndAdjustEof : PhasedDiagnostic * isError: bool * trim: bool * range * lastPosInFile:(int*int) -> FSharpErrorInfo
+    static member internal CreateFromException : PhasedDiagnostic * isError: bool * trim: bool * range -> FSharpErrorInfo
 
 // Implementation details used by other code in the compiler    
 [<Sealed>]
 type internal ErrorScope = 
     interface IDisposable
     new : unit -> ErrorScope
-    member ErrorsAndWarnings : FSharpErrorInfo list
+    member Diagnostics : FSharpErrorInfo list
     static member Protect<'a> : range -> (unit->'a) -> (string->'a) -> 'a
     static member ProtectWithDefault<'a> : range -> (unit -> 'a) -> 'a -> 'a
     static member ProtectAndDiscard : range -> (unit -> unit) -> unit
@@ -75,7 +75,7 @@ type internal CompilationErrorLogger =
     new : debugName:string * tcConfig:TcConfig ->  CompilationErrorLogger
             
     /// Get the captured errors
-    member GetErrors : unit -> (PhasedError * FSharpErrorSeverity) list
+    member GetErrors : unit -> (PhasedDiagnostic * FSharpErrorSeverity) list
 
 /// Represents the state in the incremental graph assocaited with checking a file
 type internal PartialCheckResults = 
@@ -89,7 +89,7 @@ type internal PartialCheckResults =
       TcEnvAtEnd : TypeChecker.TcEnv
 
       /// Represents the collected errors from type checking
-      Errors : (PhasedError * FSharpErrorSeverity) list 
+      Errors : (PhasedDiagnostic * FSharpErrorSeverity) list 
 
       /// Represents the collected name resolutions from type checking
       TcResolutions: TcResolutions list 
@@ -186,7 +186,7 @@ type internal IncrementalBuilder =
       /// Await the untyped parse results for a particular slot in the vector of parse results.
       ///
       /// This may be a marginally long-running operation (parses are relatively quick, only one file needs to be parsed)
-      member GetParseResultsForFile : filename:string * ct: CancellationToken -> Ast.ParsedInput option * Range.range * string * (PhasedError * FSharpErrorSeverity) list
+      member GetParseResultsForFile : filename:string * ct: CancellationToken -> Ast.ParsedInput option * Range.range * string * (PhasedDiagnostic * FSharpErrorSeverity) list
 
       static member TryCreateBackgroundBuilderForProjectOptions : ReferenceResolver.Resolver * FrameworkImportsCache * scriptClosureOptions:LoadClosure option * sourceFiles:string list * commandLineArgs:string list * projectReferences: IProjectReference list * projectDirectory:string * useScriptResolutionRules:bool * keepAssemblyContents: bool * keepAllBackgroundResolutions: bool -> IncrementalBuilder option * FSharpErrorInfo list 
 

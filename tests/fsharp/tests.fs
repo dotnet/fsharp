@@ -1712,135 +1712,380 @@ module TypecheckTests =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s -a -o:pos05.dll" cfg.fsc_flags ["pos05.fs"]
 
-    [<TestCase("group13a","neg01")>]
-    [<TestCase("group13a","neg02")>]
-    [<TestCase("group12","neg03")>]
-    [<TestCase("group12a","neg04")>]
-    [<TestCase("group12a","neg05")>]
-    [<TestCase("group12a","neg06")>]
-    [<TestCase("group12a","neg06_a")>]
-    [<TestCase("group12a","neg06_b")>]
-    [<TestCase("group8a","neg07")>]
-    [<TestCase("group12a","neg08")>]
-    [<TestCase("group12a","neg09")>]
-    [<TestCase("group6","neg10")>]
-    [<TestCase("group6","neg10_a")>]
-    [<TestCase("group13","neg11")>]
-    [<TestCase("group13","neg12")>]
-    [<TestCase("group13","neg13")>]
-    [<TestCase("group13","neg14")>]
-    [<TestCase("group13a","neg15")>]
-    [<TestCase("group13","neg16")>]
-    [<TestCase("group11","neg17")>]
-    [<TestCase("group13a","neg18")>]
-    [<TestCase("group13a","neg19")>]
-    [<TestCase("group5a","neg20")>]
-    [<TestCase("group12","neg21")>]
-    [<TestCase("group12","neg22")>]
-    [<TestCase("group12","neg23")>]
-    [<TestCase("group5a","neg24")>]
-    [<TestCase("group12","neg25")>]
-    [<TestCase("group11","neg26")>]
-    [<TestCase("group12","neg27")>]
-    [<TestCase("group8a","neg28")>]
-    [<TestCase("group8a","neg29")>]
-    [<TestCase("group8","neg30")>]
-    [<TestCase("group8","neg31")>]
-    [<TestCase("group5a","neg32")>]
-    [<TestCase("group8","neg33")>]
-    [<TestCase("group8","neg34")>]
-    [<TestCase("group2a","neg35")>]
-    [<TestCase("group11","neg36")>]
-    [<TestCase("group5a","neg37")>]
-    [<TestCase("group5a","neg37_a")>]
-    [<TestCase("group7","neg38")>]
-    [<TestCase("group7","neg39")>]
-    [<TestCase("group7","neg40")>]
-    [<TestCase("group7","neg41")>]
-    [<TestCase("group7","neg42")>]
-    [<TestCase("group7","neg43")>]
-    [<TestCase("group7","neg44")>]
-    [<TestCase("group6","neg45")>]
-    [<TestCase("group6","neg46")>]
-    [<TestCase("group6","neg47")>]
-    [<TestCase("group6","neg48")>]
-    [<TestCase("group6","neg49")>]
-    [<TestCase("group6a","neg50")>]
-    [<TestCase("group6a","neg51")>]
-    [<TestCase("group6a","neg52")>]
-    [<TestCase("group6a","neg53")>]
-    [<TestCase("group6a","neg54")>]
-    [<TestCase("group6a","neg55")>]
-    [<TestCase("group5","neg56")>]
-    [<TestCase("group5","neg56_a")>]
-    [<TestCase("group5","neg56_b")>]
-    [<TestCase("group5","neg57")>]
-    [<TestCase("group5","neg58")>]
-    [<TestCase("group5","neg59")>]
-    [<TestCase("group5","neg60")>]
-    [<TestCase("group4b","neg61")>]
-    [<TestCase("group5a","neg62")>]
-    [<TestCase("group4b","neg63")>]
-    [<TestCase("group4b","neg64")>]
-    [<TestCase("group4c","neg65")>]
-    [<TestCase("group4c","neg66")>]
-    [<TestCase("group4c","neg67")>]
-    [<TestCase("group4","neg68")>]
-    [<TestCase("group4a","neg69")>]
-    [<TestCase("group4","neg70")>]
-    [<TestCase("group4","neg71")>]
-    [<TestCase("group4","neg72")>]
-    [<TestCase("group4","neg73")>]
-    [<TestCase("group4","neg74")>]
-    [<TestCase("group3a","neg75")>]
-    [<TestCase("group3a","neg76")>]
-    [<TestCase("group3a","neg77")>]
-    [<TestCase("group3a","neg78")>]
-    [<TestCase("group3a","neg79")>]
-    [<TestCase("group3a","neg80")>]
-    [<TestCase("group3a","neg81")>]
-    [<TestCase("group3","neg82")>]
-    [<TestCase("group3","neg83")>]
-    [<TestCase("group3","neg84")>]
-    [<TestCase("group3","neg85")>]
-    [<TestCase("group3","neg86")>]
-    [<TestCase("group3","neg87")>]
-    [<TestCase("group2a","neg88")>]
-    [<TestCase("group2","neg89")>]
-    [<TestCase("group2","neg90")>]
-    [<TestCase("group1c","neg91")>]
-    [<TestCase("group1d","neg92")>]
-    [<TestCase("group1b","neg93")>]
-    [<TestCase("group1e","neg94")>]
-    [<TestCase("group1f","neg95")>]
-    [<TestCase("group1a","neg96")>]
-    [<TestCase("group1","neg97")>]
-    [<TestCase("group9","neg_byref_1")>]
-    [<TestCase("group9","neg_byref_2")>]
-    [<TestCase("group9","neg_byref_3")>]
-    [<TestCase("group9","neg_byref_4")>]
-    [<TestCase("group9a","neg_byref_5")>]
-    [<TestCase("group9a","neg_byref_6")>]
-    [<TestCase("group9a","neg_byref_7")>]
-    [<TestCase("group9a","neg_byref_8")>]
-    [<TestCase("group10","neg_byref_10")>]
-    [<TestCase("group10","neg_byref_11")>]
-    [<TestCase("group10","neg_byref_12")>]
-    [<TestCase("group10","neg_byref_13")>]
-    [<TestCase("group10","neg_byref_14")>]
-    [<TestCase("group10","neg_byref_15")>]
-    [<TestCase("group10","neg_byref_16")>]
-    [<TestCase("group11","neg_byref_17")>]
-    [<TestCase("group11","neg_byref_18")>]
-    [<TestCase("group11","neg_byref_19")>]
-    [<TestCase("group8a","neg_byref_20")>]
-    [<TestCase("group11","neg_byref_21")>]
-    [<TestCase("group11","neg_byref_22")>]
-    [<TestCase("group11","neg_byref_23")>]
-    let ``type check signatures`` (groupName:string,testName:string) = 
-        log "Group: %s" groupName
-        let cfg = testConfig "typecheck/sigs"
-        singleNegTest cfg testName 
+    [<Test>] 
+    let ``type check neg01`` () = singleNegTest (testConfig "typecheck/sigs") "neg01"
+
+    [<Test>] 
+    let ``type check neg02`` () = singleNegTest (testConfig "typecheck/sigs") "neg02"
+
+    [<Test>] 
+    let ``type check neg03`` () = singleNegTest (testConfig "typecheck/sigs") "neg03"
+
+    [<Test>] 
+    let ``type check neg04`` () = singleNegTest (testConfig "typecheck/sigs") "neg04"
+
+    [<Test>] 
+    let ``type check neg05`` () = singleNegTest (testConfig "typecheck/sigs") "neg05"
+
+    [<Test>] 
+    let ``type check neg06`` () = singleNegTest (testConfig "typecheck/sigs") "neg06"
+
+    [<Test>] 
+    let ``type check neg06_a`` () = singleNegTest (testConfig "typecheck/sigs") "neg06_a"
+
+    [<Test>] 
+    let ``type check neg06_b`` () = singleNegTest (testConfig "typecheck/sigs") "neg06_b"
+
+    [<Test>] 
+    let ``type check neg07`` () = singleNegTest (testConfig "typecheck/sigs") "neg07"
+
+    [<Test>] 
+    let ``type check neg08`` () = singleNegTest (testConfig "typecheck/sigs") "neg08"
+
+    [<Test>] 
+    let ``type check neg09`` () = singleNegTest (testConfig "typecheck/sigs") "neg09"
+
+    [<Test>] 
+    let ``type check neg10`` () = singleNegTest (testConfig "typecheck/sigs") "neg10"
+
+    [<Test>] 
+    let ``type check neg10_a`` () = singleNegTest (testConfig "typecheck/sigs") "neg10_a"
+
+    [<Test>] 
+    let ``type check neg11`` () = singleNegTest (testConfig "typecheck/sigs") "neg11"
+
+    [<Test>] 
+    let ``type check neg12`` () = singleNegTest (testConfig "typecheck/sigs") "neg12"
+
+    [<Test>] 
+    let ``type check neg13`` () = singleNegTest (testConfig "typecheck/sigs") "neg13"
+
+    [<Test>] 
+    let ``type check neg14`` () = singleNegTest (testConfig "typecheck/sigs") "neg14"
+
+    [<Test>] 
+    let ``type check neg15`` () = singleNegTest (testConfig "typecheck/sigs") "neg15"
+
+    [<Test>] 
+    let ``type check neg16`` () = singleNegTest (testConfig "typecheck/sigs") "neg16"
+
+    [<Test>] 
+    let ``type check neg17`` () = singleNegTest (testConfig "typecheck/sigs") "neg17"
+
+    [<Test>] 
+    let ``type check neg18`` () = singleNegTest (testConfig "typecheck/sigs") "neg18"
+
+    [<Test>] 
+    let ``type check neg19`` () = singleNegTest (testConfig "typecheck/sigs") "neg19"
+
+    [<Test>] 
+    let ``type check neg20`` () = singleNegTest (testConfig "typecheck/sigs") "neg20"
+
+    [<Test>] 
+    let ``type check neg21`` () = singleNegTest (testConfig "typecheck/sigs") "neg21"
+
+    [<Test>] 
+    let ``type check neg22`` () = singleNegTest (testConfig "typecheck/sigs") "neg22"
+
+    [<Test>] 
+    let ``type check neg23`` () = singleNegTest (testConfig "typecheck/sigs") "neg23"
+
+    [<Test>] 
+    let ``type check neg24`` () = singleNegTest (testConfig "typecheck/sigs") "neg24"
+
+    [<Test>] 
+    let ``type check neg25`` () = singleNegTest (testConfig "typecheck/sigs") "neg25"
+
+    [<Test>] 
+    let ``type check neg26`` () = singleNegTest (testConfig "typecheck/sigs") "neg26"
+
+    [<Test>] 
+    let ``type check neg27`` () = singleNegTest (testConfig "typecheck/sigs") "neg27"
+
+    [<Test>] 
+    let ``type check neg28`` () = singleNegTest (testConfig "typecheck/sigs") "neg28"
+
+    [<Test>] 
+    let ``type check neg29`` () = singleNegTest (testConfig "typecheck/sigs") "neg29"
+
+    [<Test>] 
+    let ``type check neg30`` () = singleNegTest (testConfig "typecheck/sigs") "neg30"
+
+    [<Test>] 
+    let ``type check neg31`` () = singleNegTest (testConfig "typecheck/sigs") "neg31"
+
+    [<Test>] 
+    let ``type check neg32`` () = singleNegTest (testConfig "typecheck/sigs") "neg32"
+
+    [<Test>] 
+    let ``type check neg33`` () = singleNegTest (testConfig "typecheck/sigs") "neg33"
+
+    [<Test>] 
+    let ``type check neg34`` () = singleNegTest (testConfig "typecheck/sigs") "neg34"
+
+    [<Test>] 
+    let ``type check neg35`` () = singleNegTest (testConfig "typecheck/sigs") "neg35"
+
+    [<Test>] 
+    let ``type check neg36`` () = singleNegTest (testConfig "typecheck/sigs") "neg36"
+
+    [<Test>] 
+    let ``type check neg37`` () = singleNegTest (testConfig "typecheck/sigs") "neg37"
+
+    [<Test>] 
+    let ``type check neg37_a`` () = singleNegTest (testConfig "typecheck/sigs") "neg37_a"
+
+    [<Test>] 
+    let ``type check neg38`` () = singleNegTest (testConfig "typecheck/sigs") "neg38"
+
+    [<Test>] 
+    let ``type check neg39`` () = singleNegTest (testConfig "typecheck/sigs") "neg39"
+
+    [<Test>] 
+    let ``type check neg40`` () = singleNegTest (testConfig "typecheck/sigs") "neg40"
+
+    [<Test>] 
+    let ``type check neg41`` () = singleNegTest (testConfig "typecheck/sigs") "neg41"
+
+    [<Test>] 
+    let ``type check neg42`` () = singleNegTest (testConfig "typecheck/sigs") "neg42"
+
+    [<Test>] 
+    let ``type check neg43`` () = singleNegTest (testConfig "typecheck/sigs") "neg43"
+
+    [<Test>] 
+    let ``type check neg44`` () = singleNegTest (testConfig "typecheck/sigs") "neg44"
+
+    [<Test>] 
+    let ``type check neg45`` () = singleNegTest (testConfig "typecheck/sigs") "neg45"
+
+    [<Test>] 
+    let ``type check neg46`` () = singleNegTest (testConfig "typecheck/sigs") "neg46"
+
+    [<Test>] 
+    let ``type check neg47`` () = singleNegTest (testConfig "typecheck/sigs") "neg47"
+
+    [<Test>] 
+    let ``type check neg48`` () = singleNegTest (testConfig "typecheck/sigs") "neg48"
+
+    [<Test>] 
+    let ``type check neg49`` () = singleNegTest (testConfig "typecheck/sigs") "neg49"
+
+    [<Test>] 
+    let ``type check neg50`` () = singleNegTest (testConfig "typecheck/sigs") "neg50"
+
+    [<Test>] 
+    let ``type check neg51`` () = singleNegTest (testConfig "typecheck/sigs") "neg51"
+
+    [<Test>] 
+    let ``type check neg52`` () = singleNegTest (testConfig "typecheck/sigs") "neg52"
+
+    [<Test>] 
+    let ``type check neg53`` () = singleNegTest (testConfig "typecheck/sigs") "neg53"
+
+    [<Test>] 
+    let ``type check neg54`` () = singleNegTest (testConfig "typecheck/sigs") "neg54"
+
+    [<Test>] 
+    let ``type check neg55`` () = singleNegTest (testConfig "typecheck/sigs") "neg55"
+
+    [<Test>] 
+    let ``type check neg56`` () = singleNegTest (testConfig "typecheck/sigs") "neg56"
+
+    [<Test>] 
+    let ``type check neg56_a`` () = singleNegTest (testConfig "typecheck/sigs") "neg56_a"
+
+    [<Test>] 
+    let ``type check neg56_b`` () = singleNegTest (testConfig "typecheck/sigs") "neg56_b"
+
+    [<Test>] 
+    let ``type check neg57`` () = singleNegTest (testConfig "typecheck/sigs") "neg57"
+
+    [<Test>] 
+    let ``type check neg58`` () = singleNegTest (testConfig "typecheck/sigs") "neg58"
+
+    [<Test>] 
+    let ``type check neg59`` () = singleNegTest (testConfig "typecheck/sigs") "neg59"
+
+    [<Test>] 
+    let ``type check neg60`` () = singleNegTest (testConfig "typecheck/sigs") "neg60"
+
+    [<Test>] 
+    let ``type check neg61`` () = singleNegTest (testConfig "typecheck/sigs") "neg61"
+
+    [<Test>] 
+    let ``type check neg62`` () = singleNegTest (testConfig "typecheck/sigs") "neg62"
+
+    [<Test>] 
+    let ``type check neg63`` () = singleNegTest (testConfig "typecheck/sigs") "neg63"
+
+    [<Test>] 
+    let ``type check neg64`` () = singleNegTest (testConfig "typecheck/sigs") "neg64"
+
+    [<Test>] 
+    let ``type check neg65`` () = singleNegTest (testConfig "typecheck/sigs") "neg65"
+
+    [<Test>] 
+    let ``type check neg66`` () = singleNegTest (testConfig "typecheck/sigs") "neg66"
+
+    [<Test>] 
+    let ``type check neg67`` () = singleNegTest (testConfig "typecheck/sigs") "neg67"
+
+    [<Test>] 
+    let ``type check neg68`` () = singleNegTest (testConfig "typecheck/sigs") "neg68"
+
+    [<Test>] 
+    let ``type check neg69`` () = singleNegTest (testConfig "typecheck/sigs") "neg69"
+
+    [<Test>] 
+    let ``type check neg70`` () = singleNegTest (testConfig "typecheck/sigs") "neg70"
+
+    [<Test>] 
+    let ``type check neg71`` () = singleNegTest (testConfig "typecheck/sigs") "neg71"
+
+    [<Test>] 
+    let ``type check neg72`` () = singleNegTest (testConfig "typecheck/sigs") "neg72"
+
+    [<Test>] 
+    let ``type check neg73`` () = singleNegTest (testConfig "typecheck/sigs") "neg73"
+
+    [<Test>] 
+    let ``type check neg74`` () = singleNegTest (testConfig "typecheck/sigs") "neg74"
+
+    [<Test>] 
+    let ``type check neg75`` () = singleNegTest (testConfig "typecheck/sigs") "neg75"
+
+    [<Test>] 
+    let ``type check neg76`` () = singleNegTest (testConfig "typecheck/sigs") "neg76"
+
+    [<Test>] 
+    let ``type check neg77`` () = singleNegTest (testConfig "typecheck/sigs") "neg77"
+
+    [<Test>] 
+    let ``type check neg78`` () = singleNegTest (testConfig "typecheck/sigs") "neg78"
+
+    [<Test>] 
+    let ``type check neg79`` () = singleNegTest (testConfig "typecheck/sigs") "neg79"
+
+    [<Test>] 
+    let ``type check neg80`` () = singleNegTest (testConfig "typecheck/sigs") "neg80"
+
+    [<Test>] 
+    let ``type check neg81`` () = singleNegTest (testConfig "typecheck/sigs") "neg81"
+
+    [<Test>] 
+    let ``type check neg82`` () = singleNegTest (testConfig "typecheck/sigs") "neg82"
+
+    [<Test>] 
+    let ``type check neg83`` () = singleNegTest (testConfig "typecheck/sigs") "neg83"
+
+    [<Test>] 
+    let ``type check neg84`` () = singleNegTest (testConfig "typecheck/sigs") "neg84"
+
+    [<Test>] 
+    let ``type check neg85`` () = singleNegTest (testConfig "typecheck/sigs") "neg85"
+
+    [<Test>] 
+    let ``type check neg86`` () = singleNegTest (testConfig "typecheck/sigs") "neg86"
+
+    [<Test>] 
+    let ``type check neg87`` () = singleNegTest (testConfig "typecheck/sigs") "neg87"
+
+    [<Test>] 
+    let ``type check neg88`` () = singleNegTest (testConfig "typecheck/sigs") "neg88"
+
+    [<Test>] 
+    let ``type check neg89`` () = singleNegTest (testConfig "typecheck/sigs") "neg89"
+
+    [<Test>] 
+    let ``type check neg90`` () = singleNegTest (testConfig "typecheck/sigs") "neg90"
+
+    [<Test>] 
+    let ``type check neg91`` () = singleNegTest (testConfig "typecheck/sigs") "neg91"
+
+    [<Test>] 
+    let ``type check neg92`` () = singleNegTest (testConfig "typecheck/sigs") "neg92"
+
+    [<Test>] 
+    let ``type check neg93`` () = singleNegTest (testConfig "typecheck/sigs") "neg93"
+
+    [<Test>] 
+    let ``type check neg94`` () = singleNegTest (testConfig "typecheck/sigs") "neg94"
+
+    [<Test>] 
+    let ``type check neg95`` () = singleNegTest (testConfig "typecheck/sigs") "neg95"
+
+    [<Test>] 
+    let ``type check neg96`` () = singleNegTest (testConfig "typecheck/sigs") "neg96"
+
+    [<Test>] 
+    let ``type check neg97`` () = singleNegTest (testConfig "typecheck/sigs") "neg97"
+
+    [<Test>] 
+    let ``type check neg_byref_1`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_1"
+
+    [<Test>] 
+    let ``type check neg_byref_2`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_2"
+
+    [<Test>] 
+    let ``type check neg_byref_3`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_3"
+
+    [<Test>] 
+    let ``type check neg_byref_4`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_4"
+
+    [<Test>] 
+    let ``type check neg_byref_5`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_5"
+
+    [<Test>] 
+    let ``type check neg_byref_6`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_6"
+
+    [<Test>] 
+    let ``type check neg_byref_7`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_7"
+
+    [<Test>] 
+    let ``type check neg_byref_8`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_8"
+
+    [<Test>] 
+    let ``type check neg_byref_10`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_10"
+
+    [<Test>] 
+    let ``type check neg_byref_11`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_11"
+
+    [<Test>] 
+    let ``type check neg_byref_12`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_12"
+
+    [<Test>] 
+    let ``type check neg_byref_13`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_13"
+
+    [<Test>] 
+    let ``type check neg_byref_14`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_14"
+
+    [<Test>] 
+    let ``type check neg_byref_15`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_15"
+
+    [<Test>] 
+    let ``type check neg_byref_16`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_16"
+
+    [<Test>] 
+    let ``type check neg_byref_17`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_17"
+
+    [<Test>] 
+    let ``type check neg_byref_18`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_18"
+
+    [<Test>] 
+    let ``type check neg_byref_19`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_19"
+
+    [<Test>] 
+    let ``type check neg_byref_20`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_20"
+
+    [<Test>] 
+    let ``type check neg_byref_21`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_21"
+
+    [<Test>] 
+    let ``type check neg_byref_22`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_22"
+
+    [<Test>] 
+    let ``type check neg_byref_23`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_23"
 
 module FscTests =                 
     [<Test>]

@@ -970,16 +970,16 @@ type FSharpErrorInfo(fileName, s:pos, e:pos, severity: FSharpErrorSeverity, mess
     override __.ToString()= sprintf "%s (%d,%d)-(%d,%d) %s %s %s" fileName (int s.Line) (s.Column + 1) (int e.Line) (e.Column + 1) subcategory (if severity=FSharpErrorSeverity.Warning then "warning" else "error")  message
             
     /// Decompose a warning or error into parts: position, severity, message, error number
-    static member (*internal*) CreateFromException(exn,warn,trim:bool,fallbackRange:range) = 
-        let m = match GetRangeOfError exn with Some m -> m | None -> fallbackRange 
+    static member (*internal*) CreateFromException(exn, isError, trim:bool, fallbackRange:range) = 
+        let m = match GetRangeOfDiagnostic exn with Some m -> m | None -> fallbackRange 
         let e = if trim then m.Start else m.End
-        let msg = bufs (fun buf -> OutputPhasedError ErrorLogger.ErrorStyle.DefaultErrors buf exn false)
-        let errorNum = GetErrorNumber exn
-        FSharpErrorInfo(m.FileName, m.Start, e, (if warn then FSharpErrorSeverity.Warning else FSharpErrorSeverity.Error), msg, exn.Subcategory(), errorNum)
+        let msg = bufs (fun buf -> OutputPhasedDiagnostic ErrorLogger.ErrorStyle.DefaultErrors buf exn false)
+        let errorNum = GetDiagnosticNumber exn
+        FSharpErrorInfo(m.FileName, m.Start, e, (if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning), msg, exn.Subcategory(), errorNum)
         
     /// Decompose a warning or error into parts: position, severity, message, error number
-    static member internal CreateFromExceptionAndAdjustEof(exn,warn,trim:bool,fallbackRange:range, (linesCount:int, lastLength:int)) = 
-        let r = FSharpErrorInfo.CreateFromException(exn,warn,trim,fallbackRange)
+    static member internal CreateFromExceptionAndAdjustEof(exn, isError, trim:bool, fallbackRange:range, (linesCount:int, lastLength:int)) = 
+        let r = FSharpErrorInfo.CreateFromException(exn,isError,trim,fallbackRange)
                 
         // Adjust to make sure that errors reported at Eof are shown at the linesCount        
         let startline, schange = min (r.StartLineAlternate, false) (linesCount, true)
@@ -1000,17 +1000,16 @@ type ErrorScope()  =
     let unwindEL =        
         PushErrorLoggerPhaseUntilUnwind (fun _oldLogger -> 
             { new ErrorLogger("ErrorScope") with 
-                member x.WarnSinkImpl(exn) = 
-                      errors <- FSharpErrorInfo.CreateFromException(exn,true,false,range.Zero):: errors
-                member x.ErrorSinkImpl(exn) = 
-                      let err = FSharpErrorInfo.CreateFromException(exn,false,false,range.Zero)
+                member x.DiagnosticSink(exn, isError) = 
+                      let err = FSharpErrorInfo.CreateFromException(exn,isError,false,range.Zero)
                       errors <- err :: errors
-                      mostRecentError <- Some err
+                      if isError then 
+                          mostRecentError <- Some err
                 member x.ErrorCount = errors.Length })
         
     member x.Errors = errors |> List.filter (fun error -> error.Severity = FSharpErrorSeverity.Error)
     member x.Warnings = errors |> List.filter (fun error -> error.Severity = FSharpErrorSeverity.Warning)
-    member x.ErrorsAndWarnings = errors
+    member x.Diagnostics = errors
     member x.TryGetFirstErrorText() =
         match x.Errors with 
         | error :: _ -> Some error.Message
@@ -1102,7 +1101,7 @@ type TypeCheckAccumulator =
       tcSymbolUses: TcSymbolUses list
       topAttribs:TopAttribs option
       typedImplFiles:TypedImplFile list
-      tcErrors:(PhasedError * FSharpErrorSeverity) list } // errors=true, warnings=false
+      tcErrors:(PhasedDiagnostic * FSharpErrorSeverity) list } // errors=true, warnings=false
 
       
 /// Global service state
@@ -1146,23 +1145,20 @@ type FrameworkImportsCache(keepStrongly) =
 type internal CompilationErrorLogger (debugName:string, tcConfig:TcConfig) = 
     inherit ErrorLogger("CompilationErrorLogger("+debugName+")")
             
-    let warningsSeenInScope = new ResizeArray<_>()
-    let errorsSeenInScope = new ResizeArray<_>()
-            
-    let warningOrError warn exn = 
-        let warn = warn && not (ReportWarningAsError (tcConfig.globalWarnLevel, tcConfig.specificWarnOff, tcConfig.specificWarnOn, tcConfig.specificWarnAsError, tcConfig.specificWarnAsWarn, tcConfig.globalWarnAsError) exn)                
-        if not warn then
-            errorsSeenInScope.Add(exn)
-        else if ReportWarning (tcConfig.globalWarnLevel, tcConfig.specificWarnOff, tcConfig.specificWarnOn) exn then 
-            warningsSeenInScope.Add(exn)
+    let mutable errorCount = 0
+    let diagnostics = new ResizeArray<_>()
 
-    override x.WarnSinkImpl(exn) = warningOrError true exn
-    override x.ErrorSinkImpl(exn) = warningOrError false exn
-    override x.ErrorCount = errorsSeenInScope.Count
+    override x.DiagnosticSink(exn, isError) = 
+        if isError || ReportWarningAsError (tcConfig.globalWarnLevel, tcConfig.specificWarnOff, tcConfig.specificWarnOn, tcConfig.specificWarnAsError, tcConfig.specificWarnAsWarn, tcConfig.globalWarnAsError) exn then
+            diagnostics.Add(exn, isError)
+            errorCount <- errorCount + 1
+        else if ReportWarning (tcConfig.globalWarnLevel, tcConfig.specificWarnOff, tcConfig.specificWarnOn) exn then 
+            diagnostics.Add(exn, isError)
+
+    override x.ErrorCount = errorCount
 
     member x.GetErrors() = 
-        [ for e in errorsSeenInScope -> e,FSharpErrorSeverity.Error 
-          for e in warningsSeenInScope -> e,FSharpErrorSeverity.Warning ]
+        [ for (e,isError) in diagnostics -> e, (if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning) ]
 
 
 /// This represents the global state established as each task function runs as part of the build
@@ -1193,7 +1189,7 @@ type PartialCheckResults =
       TcGlobals: TcGlobals 
       TcConfig: TcConfig 
       TcEnvAtEnd: TcEnv 
-      Errors: (PhasedError * FSharpErrorSeverity) list 
+      Errors: (PhasedDiagnostic * FSharpErrorSeverity) list 
       TcResolutions: TcResolutions list 
       TcSymbolUses: TcSymbolUses list 
       TopAttribs: TopAttribs option
@@ -1258,8 +1254,9 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig,tcGlobals,tcState:Tc
 
 
 /// Manages an incremental build graph for the build of a single F# project
-type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig: TcConfig, projectDirectory, outfile, assemblyName, niceNameGen: Ast.NiceNameGenerator, lexResourceManager,
-                        sourceFiles, projectReferences: IProjectReference list, ensureReactive, 
+type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig: TcConfig, projectDirectory, outfile, 
+                        assemblyName, niceNameGen: Ast.NiceNameGenerator, lexResourceManager,
+                        sourceFiles, projectReferences: IProjectReference list, loadClosureOpt: LoadClosure option, ensureReactive, 
                         keepAssemblyContents, keepAllBackgroundResolutions) =
 
     /// Maximum time share for a piece of background work before it should (cooperatively) yield
@@ -1432,6 +1429,14 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
 
         let tcEnvAtEndOfFile = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
         let tcState = GetInitialTcState (rangeStartup, assemblyName, tcConfig, tcGlobals, tcImports, niceNameGen, tcEnvAtEndOfFile)
+        let loadClosureErrors = 
+           [ match loadClosureOpt with 
+             | None -> ()
+             | Some loadClosure -> 
+                for inp in loadClosure.Inputs do
+                    for (err, isError) in inp.MetaCommandDiagnostics do 
+                        yield err,(if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning) ]
+
         let tcAcc = 
             { tcGlobals=tcGlobals
               tcImports=tcImports
@@ -1442,7 +1447,7 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
               tcSymbolUses=[]
               topAttribs=None
               typedImplFiles=[]
-              tcErrors=errorLogger.GetErrors() }   
+              tcErrors = loadClosureErrors @ errorLogger.GetErrors() }   
         tcAcc
                 
     /// This is a build task function that gets placed into the build rules as the computation for a Vector.ScanLeft
@@ -1766,7 +1771,7 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
 
     /// CreateIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.
-    static member TryCreateBackgroundBuilderForProjectOptions (referenceResolver, frameworkTcImportsCache, scriptClosureOptions:LoadClosure option, sourceFiles:string list, commandLineArgs:string list, projectReferences, projectDirectory, useScriptResolutionRules, keepAssemblyContents, keepAllBackgroundResolutions) =
+    static member TryCreateBackgroundBuilderForProjectOptions (referenceResolver, frameworkTcImportsCache, loadClosureOpt:LoadClosure option, sourceFiles:string list, commandLineArgs:string list, projectReferences, projectDirectory, useScriptResolutionRules, keepAssemblyContents, keepAllBackgroundResolutions) =
     
         // Trap and report warnings and errors from creation.
         use errorScope = new ErrorScope()
@@ -1815,21 +1820,21 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
         
                 tcConfigB, sourceFilesNew
 
-            match scriptClosureOptions with
-            | Some closure -> 
+            match loadClosureOpt with
+            | Some loadClosure -> 
                 let dllReferences = 
                     [for reference in tcConfigB.referencedDLLs do
                         // If there's (one or more) resolutions of closure references then yield them all
-                        match closure.References  |> List.tryFind (fun (resolved,_)->resolved=reference.Text) with
+                        match loadClosure.References  |> List.tryFind (fun (resolved,_)->resolved=reference.Text) with
                         | Some (resolved,closureReferences) -> 
                             for closureReference in closureReferences do
                                 yield AssemblyReference(closureReference.originalReference.Range, resolved, None)
                         | None -> yield reference]
-                tcConfigB.referencedDLLs<-[]
+                tcConfigB.referencedDLLs <- []
                 // Add one by one to remove duplicates
                 for dllReference in dllReferences do
                     tcConfigB.AddReferencedAssemblyByPath(dllReference.Range,dllReference.Text)
-                tcConfigB.knownUnresolvedReferences<-closure.UnresolvedReferences
+                tcConfigB.knownUnresolvedReferences <- loadClosure.UnresolvedReferences
             | None -> ()
 
             let tcConfig = TcConfig.Create(tcConfigB,validate=true)
@@ -1841,7 +1846,7 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
             let builder = 
                 new IncrementalBuilder(frameworkTcImportsCache,
                                         tcConfig, projectDirectory, outfile, assemblyName, niceNameGen,
-                                        resourceManager, sourceFilesNew, projectReferences, ensureReactive=true, 
+                                        resourceManager, sourceFilesNew, projectReferences, loadClosureOpt, ensureReactive=true, 
                                         keepAssemblyContents=keepAssemblyContents, 
                                         keepAllBackgroundResolutions=keepAllBackgroundResolutions)
             Some builder
@@ -1849,7 +1854,7 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
             errorRecoveryNoRange e
             None
 
-        builderOpt, errorScope.ErrorsAndWarnings
+        builderOpt, errorScope.Diagnostics
 
     static member KeepBuilderAlive (builderOpt: IncrementalBuilder option) = 
         match builderOpt with 

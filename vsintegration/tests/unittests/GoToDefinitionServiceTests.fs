@@ -90,6 +90,7 @@ let _ = Module1.foo 1
             IsIncompleteTypeCheckEnvironment = true
             UseScriptResolutionRules = false
             LoadTime = DateTime.MaxValue
+            OriginalLoadReferences = []
             UnresolvedReferences = None
             ExtraProjectInfo = None
         }
