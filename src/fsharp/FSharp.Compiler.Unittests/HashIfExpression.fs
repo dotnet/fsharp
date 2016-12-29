@@ -48,8 +48,8 @@ type HashIfExpression()     =
         sb.ToString ()
 
     let createParser () =
-        let errors          = ResizeArray<PhasedError>()
-        let warnings        = ResizeArray<PhasedError>()
+        let errors          = ResizeArray<PhasedDiagnostic>()
+        let warnings        = ResizeArray<PhasedDiagnostic>()
 
         let errorLogger     =
             {

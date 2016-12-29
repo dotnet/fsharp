@@ -74,22 +74,22 @@ val ParseInput : (UnicodeLexing.Lexbuf -> Parser.token) * ErrorLogger * UnicodeL
 //--------------------------------------------------------------------------
 
 /// Get the location associated with an error
-val GetRangeOfError : PhasedError -> range option
+val GetRangeOfDiagnostic : PhasedDiagnostic -> range option
 
 /// Get the number associated with an error
-val GetErrorNumber : PhasedError -> int
+val GetDiagnosticNumber : PhasedDiagnostic -> int
 
 /// Split errors into a "main" error and a set of associated errors
-val SplitRelatedErrors : PhasedError -> PhasedError * PhasedError list
+val SplitRelatedDiagnostics : PhasedDiagnostic -> PhasedDiagnostic * PhasedDiagnostic list
 
 /// Output an error to a buffer
-val OutputPhasedError : ErrorLogger.ErrorStyle -> StringBuilder -> PhasedError -> bool -> unit
+val OutputPhasedDiagnostic : ErrorStyle -> StringBuilder -> PhasedDiagnostic -> isError: bool -> unit
 
 /// Output an error or warning to a buffer
-val OutputDiagnostic : implicitIncludeDir:string * showFullPaths: bool * flattenErrors: bool * errorStyle: ErrorStyle *  isError:bool -> StringBuilder -> PhasedError -> unit
+val OutputDiagnostic : implicitIncludeDir:string * showFullPaths: bool * flattenErrors: bool * errorStyle: ErrorStyle *  isError:bool -> StringBuilder -> PhasedDiagnostic -> unit
 
 /// Output extra context information for an error or warning to a buffer
-val OutputDiagnosticContext : prefix:string -> fileLineFunction:(string -> int -> string) -> StringBuilder -> PhasedError -> unit
+val OutputDiagnosticContext : prefix:string -> fileLineFunction:(string -> int -> string) -> StringBuilder -> PhasedDiagnostic -> unit
 
 /// Part of LegacyHostedCompilerForTesting
 [<RequireQualifiedAccess>]
@@ -120,7 +120,7 @@ type Diagnostic =
     | Long of bool * DiagnosticDetailedInfo
 
 /// Part of LegacyHostedCompilerForTesting
-val CollectDiagnostic : implicitIncludeDir:string * showFullPaths: bool * flattenErrors: bool * errorStyle: ErrorStyle *  warning:bool * PhasedError -> seq<Diagnostic>
+val CollectDiagnostic : implicitIncludeDir:string * showFullPaths: bool * flattenErrors: bool * errorStyle: ErrorStyle *  warning:bool * PhasedDiagnostic -> seq<Diagnostic>
 
 //----------------------------------------------------------------------------
 // Resolve assembly references 
@@ -722,10 +722,10 @@ val TypeCheckOneInputAndFinishEventually :
         -> Eventually<(TcEnv * TopAttribs * TypedImplFile list) * TcState>
 
 /// Indicates if we should report a warning
-val ReportWarning : globalWarnLevel: int * specificWarnOff: int list * specificWarnOn: int list -> PhasedError -> bool
+val ReportWarning : globalWarnLevel: int * specificWarnOff: int list * specificWarnOn: int list -> PhasedDiagnostic -> bool
 
 /// Indicates if we should report a warning as an error
-val ReportWarningAsError : globalWarnLevel: int * specificWarnOff: int list * specificWarnOn: int list * specificWarnAsError: int list * specificWarnAsWarn: int list * globalWarnAsError: bool -> PhasedError -> bool
+val ReportWarningAsError : globalWarnLevel: int * specificWarnOff: int list * specificWarnOn: int list * specificWarnAsError: int list * specificWarnAsWarn: int list * globalWarnAsError: bool -> PhasedDiagnostic -> bool
 
 //----------------------------------------------------------------------------
 // #load closure
@@ -741,8 +741,8 @@ type CodeContext =
 type LoadClosureInput = 
     { FileName: string
       SyntaxTree: ParsedInput option
-      ParseDiagnostics: (PhasedError * bool) list 
-      MetaCommandDiagnostics: (PhasedError * bool) list  }
+      ParseDiagnostics: (PhasedDiagnostic * bool) list 
+      MetaCommandDiagnostics: (PhasedDiagnostic * bool) list  }
 
 
 [<RequireQualifiedAccess>]
@@ -766,13 +766,13 @@ type LoadClosure =
       NoWarns: (string * range list) list
 
       /// Diagnostics seen while processing resolutions
-      ResolutionDiagnostics : (PhasedError * bool)  list
+      ResolutionDiagnostics : (PhasedDiagnostic * bool)  list
 
       /// Diagnostics to show for root of closure (used by fsc.fs)
-      AllRootFileDiagnostics : (PhasedError * bool) list
+      AllRootFileDiagnostics : (PhasedDiagnostic * bool) list
 
       /// Diagnostics seen while processing the compiler options implied root of closure
-      LoadClosureRootFileDiagnostics : (PhasedError * bool) list }   
+      LoadClosureRootFileDiagnostics : (PhasedDiagnostic * bool) list }   
 
     // Used from service.fs, when editing a script file
     static member ComputeClosureOfSourceText : referenceResolver: ReferenceResolver.Resolver * filename: string * source: string * implicitDefines:CodeContext * useSimpleResolution: bool * useFsiAuxLib: bool * lexResourceManager: Lexhelp.LexResourceManager * applyCompilerOptions: (TcConfigBuilder -> unit) * assumeDotNetFramework : bool -> LoadClosure

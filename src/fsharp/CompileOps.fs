@@ -107,7 +107,7 @@ exception HashLoadedSourceHasIssues of (*warnings*) exn list * (*errors*) exn li
 exception HashLoadedScriptConsideredSource of range
 
 
-let GetRangeOfError(err:PhasedError) = 
+let GetRangeOfDiagnostic(err:PhasedDiagnostic) = 
   let rec RangeFromException = function
       | ErrorFromAddingConstraint(_,err2,_) -> RangeFromException err2 
 #if EXTENSIONTYPING
@@ -247,7 +247,7 @@ let GetRangeOfError(err:PhasedError) =
   
   RangeFromException err.Exception
 
-let GetErrorNumber(err:PhasedError) = 
+let GetDiagnosticNumber(err:PhasedDiagnostic) = 
    let rec GetFromException(e:exn) = 
       match e with
       (* DO NOT CHANGE THESE NUMBERS *)
@@ -400,7 +400,7 @@ let GetWarningLevel err =
   | _ ->  2
 
 let warningOn err level specificWarnOn = 
-    let n = GetErrorNumber err
+    let n = GetDiagnosticNumber err
     List.contains n specificWarnOn ||
     // Some specific warnings are never on by default, i.e. unused variable warnings
     match n with 
@@ -408,7 +408,7 @@ let warningOn err level specificWarnOn =
     | 3180 -> false // abImplicitHeapAllocation - off by default
     | _ -> level >= GetWarningLevel err 
 
-let SplitRelatedErrors(err:PhasedError) = 
+let SplitRelatedDiagnostics(err:PhasedDiagnostic) = 
     let ToPhased(e) = {Exception=e; Phase = err.Phase}
     let rec SplitRelatedException = function
       | UnresolvedOverloading(a,overloads,b,c) -> 
@@ -609,7 +609,7 @@ let getErrorString key = SR.GetString key
 
 let (|InvalidArgument|_|) (exn:exn) = match exn with :? ArgumentException as e -> Some e.Message | _ -> None
 
-let OutputPhasedErrorR errorStyle (os:System.Text.StringBuilder) (err:PhasedError) =
+let OutputPhasedErrorR errorStyle (os:System.Text.StringBuilder) (err:PhasedDiagnostic) =
     let rec OutputExceptionR (os:System.Text.StringBuilder) = function        
       | ConstraintSolverTupleDiffLengths(_,tl1,tl2,m,m2) -> 
           os.Append(ConstraintSolverTupleDiffLengthsE().Format tl1.Length tl2.Length) |> ignore
@@ -1424,7 +1424,7 @@ let OutputPhasedErrorR errorStyle (os:System.Text.StringBuilder) (err:PhasedErro
 
 
 // remove any newlines and tabs 
-let OutputPhasedError errorStyle (os:System.Text.StringBuilder) (err:PhasedError) (flattenErrors:bool) = 
+let OutputPhasedDiagnostic errorStyle (os:System.Text.StringBuilder) (err:PhasedDiagnostic) (flattenErrors:bool) = 
     let buf = new System.Text.StringBuilder()
 
     OutputPhasedErrorR errorStyle buf err
@@ -1477,7 +1477,7 @@ type Diagnostic =
     | Long of bool * DiagnosticDetailedInfo
 
 /// returns sequence that contains Diagnostic for the given error + Diagnostic for all related errors
-let CollectDiagnostic (implicitIncludeDir,showFullPaths,flattenErrors,errorStyle,isError, err:PhasedError) = 
+let CollectDiagnostic (implicitIncludeDir,showFullPaths,flattenErrors,errorStyle,isError, err:PhasedDiagnostic) = 
     let outputWhere (showFullPaths,errorStyle) m : DiagnosticLocation = 
         if m = rangeStartup || m = rangeCmdArgs then 
             { Range = m; TextRepresentation = ""; IsEmpty = true; File = "" }
@@ -1533,7 +1533,7 @@ let CollectDiagnostic (implicitIncludeDir,showFullPaths,flattenErrors,errorStyle
         let errors = ResizeArray()
         let report err =
             let OutputWhere(err) = 
-                match GetRangeOfError err with 
+                match GetRangeOfDiagnostic err with 
                 | Some m -> Some(outputWhere (showFullPaths,errorStyle) m)
                 | None -> None
 
@@ -1545,27 +1545,27 @@ let CollectDiagnostic (implicitIncludeDir,showFullPaths,flattenErrors,errorStyle
                     | _ -> sprintf "%s FS%04d: " (if isError then "error" else "warning") errorNumber
                 {  ErrorNumber = errorNumber; Subcategory = subcategory; TextRepresentation = text}
         
-            let mainError,relatedErrors = SplitRelatedErrors err
+            let mainError,relatedErrors = SplitRelatedDiagnostics err
             let where = OutputWhere(mainError)
-            let canonical = OutputCanonicalInformation(err.Subcategory(),GetErrorNumber mainError)
+            let canonical = OutputCanonicalInformation(err.Subcategory(),GetDiagnosticNumber mainError)
             let message = 
                 let os = System.Text.StringBuilder()
-                OutputPhasedError errorStyle os mainError flattenErrors
+                OutputPhasedDiagnostic errorStyle os mainError flattenErrors
                 os.ToString()
             
             let entry : DiagnosticDetailedInfo = { Location = where; Canonical = canonical; Message = message }
             
             errors.Add ( Diagnostic.Long(isError, entry ) )
 
-            let OutputRelatedError(err:PhasedError) =
+            let OutputRelatedError(err:PhasedDiagnostic) =
                 match errorStyle with
                 // Give a canonical string when --vserror.
                 | ErrorStyle.VSErrors -> 
                     let relWhere = OutputWhere(mainError) // mainError?
-                    let relCanonical = OutputCanonicalInformation(err.Subcategory(),GetErrorNumber mainError) // Use main error for code
+                    let relCanonical = OutputCanonicalInformation(err.Subcategory(),GetDiagnosticNumber mainError) // Use main error for code
                     let relMessage = 
                         let os = System.Text.StringBuilder()
-                        OutputPhasedError errorStyle os err flattenErrors
+                        OutputPhasedDiagnostic errorStyle os err flattenErrors
                         os.ToString()
 
                     let entry : DiagnosticDetailedInfo = { Location = relWhere; Canonical = relCanonical; Message = relMessage}
@@ -1573,7 +1573,7 @@ let CollectDiagnostic (implicitIncludeDir,showFullPaths,flattenErrors,errorStyle
 
                 | _ -> 
                     let os = System.Text.StringBuilder()
-                    OutputPhasedError errorStyle os err flattenErrors
+                    OutputPhasedDiagnostic errorStyle os err flattenErrors
                     errors.Add( Diagnostic.Short(isError, os.ToString()) )
         
             relatedErrors |> List.iter OutputRelatedError
@@ -1592,7 +1592,7 @@ let CollectDiagnostic (implicitIncludeDir,showFullPaths,flattenErrors,errorStyle
 
 /// used by fsc.exe and fsi.exe, but not by VS
 /// prints error and related errors to the specified StringBuilder
-let rec OutputDiagnostic (implicitIncludeDir,showFullPaths,flattenErrors,errorStyle,isError) os (err:PhasedError) = 
+let rec OutputDiagnostic (implicitIncludeDir,showFullPaths,flattenErrors,errorStyle,isError) os (err:PhasedDiagnostic) = 
     
     let errors = CollectDiagnostic (implicitIncludeDir,showFullPaths,flattenErrors,errorStyle,isError, err)
     for e in errors do
@@ -1608,7 +1608,7 @@ let rec OutputDiagnostic (implicitIncludeDir,showFullPaths,flattenErrors,errorSt
             os.Append( details.Message ) |> ignore
       
 let OutputDiagnosticContext prefix fileLineFn os err =
-    match GetRangeOfError err with
+    match GetRangeOfDiagnostic err with
     | None   -> ()      
     | Some m -> 
         let filename = m.FileName
@@ -3065,14 +3065,14 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                
 
 let ReportWarning (globalWarnLevel : int, specificWarnOff : int list, specificWarnOn : int list) err = 
-    let n = GetErrorNumber err
+    let n = GetDiagnosticNumber err
     warningOn err globalWarnLevel specificWarnOn && not (List.contains n specificWarnOff)
 
 let ReportWarningAsError (globalWarnLevel : int, specificWarnOff : int list, specificWarnOn : int list, specificWarnAsError : int list, specificWarnAsWarn : int list, globalWarnAsError : bool) err =
     warningOn err globalWarnLevel specificWarnOn &&
-    not (List.contains (GetErrorNumber err) specificWarnAsWarn) &&
-    ((globalWarnAsError && not (List.contains (GetErrorNumber err) specificWarnOff)) ||
-     List.contains (GetErrorNumber err) specificWarnAsError)
+    not (List.contains (GetDiagnosticNumber err) specificWarnAsWarn) &&
+    ((globalWarnAsError && not (List.contains (GetDiagnosticNumber err) specificWarnOff)) ||
+     List.contains (GetDiagnosticNumber err) specificWarnAsError)
 
 //----------------------------------------------------------------------------
 // Scoped #nowarn pragmas
@@ -3112,8 +3112,8 @@ type ErrorLoggerFilteringByScopedPragmas (checkFile, scopedPragmas, errorLogger:
             errorLogger.DiagnosticSink (phasedError,isError)
         else 
           let report = 
-            let warningNum = GetErrorNumber phasedError
-            match GetRangeOfError phasedError with 
+            let warningNum = GetDiagnosticNumber phasedError
+            match GetRangeOfDiagnostic phasedError with 
             | Some m -> 
                 not (scopedPragmas |> List.exists (fun pragma ->
                     match pragma with 
@@ -4689,8 +4689,8 @@ let GetAssemblyResolutionInformation(tcConfig : TcConfig) =
 type LoadClosureInput = 
     { FileName: string
       SyntaxTree: ParsedInput option
-      ParseDiagnostics: (PhasedError * bool) list 
-      MetaCommandDiagnostics: (PhasedError * bool) list  }
+      ParseDiagnostics: (PhasedDiagnostic * bool) list 
+      MetaCommandDiagnostics: (PhasedDiagnostic * bool) list  }
 
 [<RequireQualifiedAccess>]
 type LoadClosure = 
@@ -4707,11 +4707,11 @@ type LoadClosure =
       /// The #nowarns
       NoWarns: (string * range list) list
       /// Diagnostics seen while processing resolutions
-      ResolutionDiagnostics : (PhasedError * bool)  list
+      ResolutionDiagnostics : (PhasedDiagnostic * bool)  list
       /// Diagnostics seen while parsing root of closure
-      AllRootFileDiagnostics : (PhasedError * bool) list
+      AllRootFileDiagnostics : (PhasedDiagnostic * bool) list
       /// Diagnostics seen while processing the compiler options implied root of closure
-      LoadClosureRootFileDiagnostics : (PhasedError * bool) list }   
+      LoadClosureRootFileDiagnostics : (PhasedDiagnostic * bool) list }   
 
 
 [<RequireQualifiedAccess>]
@@ -4728,7 +4728,7 @@ module private ScriptPreprocessClosure =
     type ClosureSource = ClosureSource of filename: string * referenceRange: range * sourceText: string * parseRequired: bool 
         
     /// Represents an output of the closure finding process
-    type ClosureFile = ClosureFile  of string * range * ParsedInput option * (PhasedError * bool) list * (PhasedError * bool) list * (string * range) list // filename, range, errors, warnings, nowarns
+    type ClosureFile = ClosureFile  of string * range * ParsedInput option * (PhasedDiagnostic * bool) list * (PhasedDiagnostic * bool) list * (string * range) list // filename, range, errors, warnings, nowarns
 
     type Observed() =
         let seen = System.Collections.Generic.Dictionary<_,bool>()
@@ -4902,7 +4902,7 @@ module private ScriptPreprocessClosure =
             | _ -> [], [] // When no file existed.
         
         let isRootRange exn =
-            match GetRangeOfError exn with
+            match GetRangeOfDiagnostic exn with
             | Some m -> 
                 // Return true if the error was *not* from a #load-ed file.
                 let isArgParameterWhileNotEditing = (codeContext <> CodeContext.Editing) && (m = range0 || m = rangeStartup || m = rangeCmdArgs)

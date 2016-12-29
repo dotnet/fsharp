@@ -176,9 +176,10 @@ module BuildPhaseSubcategory =
     let Internal = "internal"          // Compiler ICE
 
 [<System.Diagnostics.DebuggerDisplay("{DebugDisplay()}")>]
-type PhasedError = { Exception:exn; Phase:BuildPhase } with
+type PhasedDiagnostic = 
+    { Exception:exn; Phase:BuildPhase }
     /// Construct a phased error
-    static member Create(exn:exn,phase:BuildPhase) : PhasedError =
+    static member Create(exn:exn,phase:BuildPhase) : PhasedDiagnostic =
         System.Diagnostics.Debug.Assert(phase<>BuildPhase.DefaultPhase, sprintf "Compile error seen with no phase to attribute it to.%A %s %s" phase exn.Message exn.StackTrace )        
         {Exception = exn; Phase=phase}
     member this.DebugDisplay() =
@@ -236,9 +237,9 @@ type PhasedError = { Exception:exn; Phase:BuildPhase } with
         // Sanity check ensures that Phase matches Subcategory            
 #if DEBUG
         if isPhaseInCompile then 
-            System.Diagnostics.Debug.Assert(PhasedError.IsSubcategoryOfCompile(pe.Subcategory()), "Subcategory did not match isPhaesInCompile=true")
+            System.Diagnostics.Debug.Assert(PhasedDiagnostic.IsSubcategoryOfCompile(pe.Subcategory()), "Subcategory did not match isPhaesInCompile=true")
         else
-            System.Diagnostics.Debug.Assert(not(PhasedError.IsSubcategoryOfCompile(pe.Subcategory())), "Subcategory did not match isPhaseInCompile=false")
+            System.Diagnostics.Debug.Assert(not(PhasedDiagnostic.IsSubcategoryOfCompile(pe.Subcategory())), "Subcategory did not match isPhaseInCompile=false")
 #endif            
         isPhaseInCompile
 
@@ -248,7 +249,7 @@ type ErrorLogger(nameForDebugging:string) =
     abstract ErrorCount: int
     // The 'Impl' factoring enables a developer to place a breakpoint at the non-Impl 
     // code just below and get a breakpoint for all error logger implementations.
-    abstract DiagnosticSink: phasedError: PhasedError * isError: bool -> unit
+    abstract DiagnosticSink: phasedError: PhasedDiagnostic * isError: bool -> unit
     member this.DebugDisplay() = sprintf "ErrorLogger(%s)" nameForDebugging
 
 let DiscardErrorsLogger = 
@@ -337,12 +338,27 @@ module ErrorLoggerExtensions =
 #endif
 
     type ErrorLogger with  
-        member x.ErrorR  exn = match exn with StopProcessing | ReportedError _ -> raise exn | _ -> x.DiagnosticSink(PhasedError.Create(exn,CompileThreadStatic.BuildPhase), true)
-        member x.Warning exn = match exn with StopProcessing | ReportedError _ -> raise exn | _ -> x.DiagnosticSink(PhasedError.Create(exn,CompileThreadStatic.BuildPhase), false)
-        member x.Error   exn = x.ErrorR exn; raise (ReportedError (Some exn))
-        member x.PhasedError   (ph:PhasedError) = 
+
+        member x.ErrorR  exn = 
+            match exn with 
+            | StopProcessing 
+            | ReportedError _ -> raise exn 
+            | _ -> x.DiagnosticSink(PhasedDiagnostic.Create(exn,CompileThreadStatic.BuildPhase), true)
+
+        member x.Warning exn = 
+            match exn with 
+            | StopProcessing 
+            | ReportedError _ -> raise exn 
+            | _ -> x.DiagnosticSink(PhasedDiagnostic.Create(exn,CompileThreadStatic.BuildPhase), false)
+
+        member x.Error   exn = 
+            x.ErrorR exn
+            raise (ReportedError (Some exn))
+
+        member x.SimulateError   (ph:PhasedDiagnostic) = 
             x.DiagnosticSink (ph, true)
             raise (ReportedError (Some ph.Exception))
+
         member x.ErrorRecovery (exn:exn) (m:range) =
             // Never throws ReportedError.
             // Throws StopProcessing and exceptions raised by the DiagnosticSink(exn) handler.
@@ -405,7 +421,7 @@ let errorR  exn = CompileThreadStatic.ErrorLogger.ErrorR exn
 let warning exn = CompileThreadStatic.ErrorLogger.Warning exn
 let error   exn = CompileThreadStatic.ErrorLogger.Error exn
 // for test only
-let phasedError (p : PhasedError) = CompileThreadStatic.ErrorLogger.PhasedError p
+let simulateError (p : PhasedDiagnostic) = CompileThreadStatic.ErrorLogger.SimulateError p
 
 let diagnosticSink (phasedError, isError) = CompileThreadStatic.ErrorLogger.DiagnosticSink (phasedError, isError)
 let errorSink pe = diagnosticSink (pe, true)

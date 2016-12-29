@@ -71,7 +71,7 @@ type ErrorLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, nameFo
     let mutable errors = 0
 
     /// Called when an error or warning occurs
-    abstract HandleIssue: tcConfigB: TcConfigBuilder * error: PhasedError * isError: bool -> unit
+    abstract HandleIssue: tcConfigB: TcConfigBuilder * error: PhasedDiagnostic * isError: bool -> unit
     /// Called when 'too many errors' has occured
     abstract HandleTooManyErrors: text: string -> unit
 

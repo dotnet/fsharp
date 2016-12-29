@@ -1453,25 +1453,25 @@ module internal Parser =
         lastLine, lastLineLength
          
     let ReportError (tcConfig:TcConfig, allErrors, mainInputFileName, fileInfo, (exn, sev)) = 
-        [ let warn = (sev = FSharpErrorSeverity.Warning) && not (ReportWarningAsError (tcConfig.globalWarnLevel, tcConfig.specificWarnOff, tcConfig.specificWarnOn, tcConfig.specificWarnAsError, tcConfig.specificWarnAsWarn, tcConfig.globalWarnAsError) exn)                
-          if (not warn || ReportWarning (tcConfig.globalWarnLevel, tcConfig.specificWarnOff, tcConfig.specificWarnOn) exn) then 
+        [ let isError = (sev = FSharpErrorSeverity.Error) || ReportWarningAsError (tcConfig.globalWarnLevel, tcConfig.specificWarnOff, tcConfig.specificWarnOn, tcConfig.specificWarnAsError, tcConfig.specificWarnAsWarn, tcConfig.globalWarnAsError) exn                
+          if (isError || ReportWarning (tcConfig.globalWarnLevel, tcConfig.specificWarnOff, tcConfig.specificWarnOn) exn) then 
             let oneError trim exn = 
                 [ // We use the first line of the file as a fallbackRange for reporting unexpected errors.
                   // Not ideal, but it's hard to see what else to do.
                   let fallbackRange = rangeN mainInputFileName 1
-                  let ei = FSharpErrorInfo.CreateFromExceptionAndAdjustEof(exn,warn,trim,fallbackRange,fileInfo)
+                  let ei = FSharpErrorInfo.CreateFromExceptionAndAdjustEof (exn, isError, trim, fallbackRange, fileInfo)
                   if allErrors || (ei.FileName=mainInputFileName) || (ei.FileName=Microsoft.FSharp.Compiler.TcGlobals.DummyFileNameForRangesWithoutASpecificLocation) then
                       yield ei ]
                       
-            let mainError,relatedErrors = SplitRelatedErrors exn 
+            let mainError,relatedErrors = SplitRelatedDiagnostics exn 
             yield! oneError false mainError
             for e in relatedErrors do 
                 yield! oneError true e ]
 
     let CreateErrorInfos (tcConfig:TcConfig, allErrors, mainInputFileName, errors) = 
         let fileInfo = (Int32.MaxValue, Int32.MaxValue)
-        [| for (exn,warn) in errors do 
-              yield! ReportError (tcConfig, allErrors, mainInputFileName, fileInfo, (exn, warn)) |]
+        [| for (exn,isError) in errors do 
+              yield! ReportError (tcConfig, allErrors, mainInputFileName, fileInfo, (exn, isError)) |]
                             
 
     /// Error handler for parsing & type checking while processing a single file
@@ -1484,7 +1484,7 @@ module internal Parser =
         let fileInfo = GetFileInfoForLastLineErrors source
          
         // This function gets called whenever an error happens during parsing or checking
-        let diagnosticSink sev (exn:PhasedError) = 
+        let diagnosticSink sev (exn:PhasedDiagnostic) = 
             // Sanity check here. The phase of an error should be in a phase known to the language service.
             let exn =
                 if not(exn.IsPhaseInCompile()) then
@@ -1628,7 +1628,7 @@ module internal Parser =
            tcState: TcState,
            loadClosure: LoadClosure option,
            // These are the errors and warnings seen by the background compiler for the entire antecedant 
-           backgroundDiagnostics: (PhasedError * FSharpErrorSeverity) list,    
+           backgroundDiagnostics: (PhasedDiagnostic * FSharpErrorSeverity) list,    
            reactorOps: IReactorOperations,
            // Used by 'FSharpDeclarationListInfo' to check the IncrementalBuilder is still alive.
            checkAlive : (unit -> bool),
@@ -1668,7 +1668,7 @@ module internal Parser =
                 // If there was a loadClosure, replay the errors and warnings from resolution, excluding parsing
                 loadClosure.LoadClosureRootFileDiagnostics |> List.iter diagnosticSink
 
-                let fileOfBackgroundError err = (match GetRangeOfError (fst err) with Some m-> m.FileName | None -> null)
+                let fileOfBackgroundError err = (match GetRangeOfDiagnostic (fst err) with Some m-> m.FileName | None -> null)
                 let sameFile file hashLoadInFile = 
                     (0 = String.Compare(hashLoadInFile, file, StringComparison.OrdinalIgnoreCase))
 
@@ -2849,7 +2849,7 @@ module CompilerEnvironment =
     /// Return true if this is a subcategory of error or warning message that the language service can emit
     let IsCheckerSupportedSubcategory(subcategory:string) =
         // Beware: This code logic is duplicated in DocumentTask.cs in the language service
-        PhasedError.IsSubcategoryOfCompile(subcategory)
+        PhasedDiagnostic.IsSubcategoryOfCompile(subcategory)
 
 /// Information about the debugging environment
 module DebuggerEnvironment =
