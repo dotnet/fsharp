@@ -551,23 +551,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "MinBy">]
         let inline minBy (projection: 'T -> 'U when 'U:comparison) (source: seq<'T>) : 'T =
             source |> toComposer |> Composer.minBy projection
-(*
-        [<CompiledName("MinValueBy")>]
-        let inline minValBy (f : 'T -> 'U) (source: seq<'T>) : 'U =
-            checkNonNull "source" source
-            use e = source.GetEnumerator()
-            if not (e.MoveNext()) then
-                invalidArg "source" InputSequenceEmptyString
-            let first = e.Current
-            let mutable acc = f first
-            while e.MoveNext() do
-                let currv = e.Current
-                let curr = f currv
-                if curr < acc then
-                    acc <- curr
-            acc
 
-*)
         [<CompiledName "Max">]
         let inline max (source: seq<'T>) =
             source |> toComposer |> Composer.max
@@ -576,23 +560,6 @@ namespace Microsoft.FSharp.Collections
         let inline maxBy (projection: 'T -> 'U) (source: seq<'T>) : 'T =
             source |> toComposer |> Composer.maxBy projection
 
-(*
-        [<CompiledName("MaxValueBy")>]
-        let inline maxValBy (f : 'T -> 'U) (source: seq<'T>) : 'U =
-            checkNonNull "source" source
-            use e = source.GetEnumerator()
-            if not (e.MoveNext()) then
-                invalidArg "source" InputSequenceEmptyString
-            let first = e.Current
-            let mutable acc = f first
-            while e.MoveNext() do
-                let currv = e.Current
-                let curr = f currv
-                if curr > acc then
-                    acc <- curr
-            acc
-
-*)
         [<CompiledName "TakeWhile">]
         let takeWhile predicate (source: seq<_>) =
             source |> toComposer |> Composer.takeWhile predicate |> Upcast.enumerable
