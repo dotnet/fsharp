@@ -917,7 +917,7 @@ namespace Microsoft.FSharp.Collections
                         Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "Fold2">]
-        let inline fold2<'T1,'T2,'State> (folder:'State->'T1->'T2->'State) (state:'State) (source1: ISeq<'T1>) (source2: ISeq<'T2>) =
+        let inline fold2<'T1,'T2,'State> (folder:'State->'T1->'T2->'State) (state:'State) (source1:ISeq<'T1>) (source2: ISeq<'T2>) =
             source1.Fold (fun pipeIdx ->
                 upcast { new FolderWithPostProcessing<_,'State,IEnumerator<'T2>>(state,source2.GetEnumerator()) with
                     override this.ProcessNext value =
@@ -990,6 +990,12 @@ namespace Microsoft.FSharp.Collections
                         this.StopFurtherProcessing pipeIdx
                         Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
+        [<CompiledName "Head">]
+        let head (source:ISeq<_>) =
+            match tryHead source with
+            | None -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+            | Some x -> x
+
         [<CompiledName "IterateIndexed">]
         let inline iteri f (source:ISeq<'T>) =
             source.Fold (fun _ ->
@@ -1018,7 +1024,7 @@ namespace Microsoft.FSharp.Collections
                         Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "Exists2">]
-        let inline exists2 (predicate:'T->'U->bool) (source1: ISeq<'T>) (source2: ISeq<'U>) : bool =
+        let inline exists2 (predicate:'T->'U->bool) (source1:ISeq<'T>) (source2: ISeq<'U>) : bool =
             source1.Fold (fun pipeIdx ->
                 upcast { new FolderWithPostProcessing<'T,bool,IEnumerator<'U>>(false,source2.GetEnumerator()) with
                     override this.ProcessNext value =
@@ -1283,7 +1289,7 @@ namespace Microsoft.FSharp.Collections
                                     TailCall.avoid (next.ProcessNext currentPair) }}
 
         [<CompiledName "Reduce">]
-        let inline reduce (f:'T->'T->'T) (source : ISeq<'T>) : 'T =
+        let inline reduce (f:'T->'T->'T) (source: ISeq<'T>) : 'T =
             source.Fold (fun _ ->
                 upcast { new FolderWithPostProcessing<'T,'T,bool>(Unchecked.defaultof<'T>,true) with
                     override this.ProcessNext value =
@@ -1408,7 +1414,7 @@ namespace Microsoft.FSharp.Collections
                                 false }}
 
         [<CompiledName "Tail">]
-        let tail (source:ISeq<'T>) :ISeq<'T> =
+        let tail (source:ISeq<'T>) : ISeq<'T> =
             source.PushTransform { new TransformFactory<'T,'T>() with
                 member __.Compose _ _ next =
                     upcast { new TransformWithPostProcessing<'T,'V,bool>(next,true) with
@@ -1485,7 +1491,7 @@ namespace Microsoft.FSharp.Collections
                         Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "TryLast">]
-        let inline tryLast (source :ISeq<'T>) : 'T option =
+        let tryLast (source:ISeq<'T>) : 'T option =
             source.Fold (fun _ ->
                 upcast { new FolderWithPostProcessing<'T,option<'T>,Values<bool,'T>>(None,Values<bool,'T>(true, Unchecked.defaultof<'T>)) with
                     // member this.noItems = this.State._1
@@ -1499,6 +1505,12 @@ namespace Microsoft.FSharp.Collections
                         if not this.State._1 then
                             this.Result <- Some this.State._2
                     override this.OnDispose () = () })
+
+        [<CompiledName("Last")>]
+        let last (source:ISeq<_>) =
+            match tryLast source with
+            | None -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+            | Some x -> x
 
         [<CompiledName "Windowed">]
         let windowed (windowSize:int) (source:ISeq<'T>) : ISeq<'T[]> =
@@ -1535,7 +1547,7 @@ namespace Microsoft.FSharp.Collections
             Upcast.seq (Enumerable.ConcatEnumerable sources)
 
         [<CompiledName("Append")>]
-        let append (source1: ISeq<'T>) (source2: ISeq<'T>) : ISeq<'T> =
+        let append (source1:ISeq<'T>) (source2: ISeq<'T>) : ISeq<'T> =
             match source1 with
             | :? Enumerable.EnumerableBase<'T> as s -> s.Append source2
             | _ -> Upcast.seq (new Enumerable.AppendEnumerable<_>([source2; source1]))
