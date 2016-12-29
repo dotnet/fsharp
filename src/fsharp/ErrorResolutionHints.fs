@@ -26,6 +26,7 @@ let FilterPredictions (unknownIdent:string) (predictionsF:ErrorLogger.Suggestion
     |> Seq.map snd 
     |> Seq.toList
 
+/// Formats the given predictions according to the error style.
 let FormatPredictions errorStyle normalizeF (predictions: (float * string) list) =
     match predictions with
     | [] -> System.String.Empty
