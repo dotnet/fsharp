@@ -1350,7 +1350,7 @@ let GetGeneratedILModuleName (t:CompilerTarget) (s:string) =
 
 let ignoreFailureOnMono1_1_16 f = try f() with _ -> ()
 
-let DoWithErrorColor isWarn f =
+let DoWithErrorColor isError f =
     if not enableConsoleColoring then
         f()
     else
@@ -1367,7 +1367,7 @@ let DoWithErrorColor isWarn f =
               try
                 let warnColor  = if Console.BackgroundColor = ConsoleColor.White then ConsoleColor.DarkBlue else ConsoleColor.Cyan
                 let errorColor = ConsoleColor.Red
-                ignoreFailureOnMono1_1_16 (fun () -> Console.ForegroundColor <- (if isWarn then warnColor else errorColor))
+                ignoreFailureOnMono1_1_16 (fun () -> Console.ForegroundColor <- (if isError then errorColor else warnColor))
                 f()
               finally
                 ignoreFailureOnMono1_1_16 (fun () -> Console.ForegroundColor <- c)
