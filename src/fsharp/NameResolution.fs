@@ -1909,6 +1909,19 @@ let DecodeFSharpEvent (pinfos:PropInfo list) ad g (ncenv:NameResolver) m =
     | _ -> 
         None
 
+/// Returns all record label names for the given type.
+let GetRecordLabelsForType g nenv typ =
+    if isRecdTy g typ then
+        let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv typ
+        nenv.eFieldLabels
+        |> Seq.filter (fun kv -> 
+            kv.Value 
+            |> List.map (fun r -> r.TyconRef.DisplayName)
+            |> List.exists ((=) typeName))
+        |> Seq.map (fun kv -> kv.Key)
+        |> Set.ofSeq
+    else
+        Set.empty
 
 // REVIEW: this shows up on performance logs. Consider for example endless resolutions of "List.map" to 
 // the empty set of results, or "x.Length" for a list or array type. This indicates it could be worth adding a cache here.
@@ -2011,12 +2024,25 @@ let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo
                     |> List.filter (fun m -> not m.IsClassConstructor && not m.IsConstructor)
                     |> List.map (fun m -> m.DisplayName)
                     |> Set.ofList
-
-            
+                let suggestions5 = GetRecordLabelsForType g nenv typ
+                let suggestions6 =
+                    match lookupKind with 
+                    | LookupKind.Expr | LookupKind.Pattern ->
+                        if isAppTy g typ then 
+                            let tcref,_ = destAppTy g typ
+                            tcref.UnionCasesArray
+                            |> Array.map (fun uc -> uc.DisplayName)
+                            |> Set.ofArray
+                        else 
+                            Set.empty
+                    | _ -> Set.empty
+                        
                 suggestions1 
                 |> Set.union suggestions2
                 |> Set.union suggestions3
                 |> Set.union suggestions4
+                |> Set.union suggestions5
+                |> Set.union suggestions6
 
             raze (UndefinedName (depth,FSComp.SR.undefinedNameFieldConstructorOrMember, id, suggestMembers))
         
@@ -2140,8 +2166,21 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv (typeN
                             |> Seq.filter (fun kv -> IsEntityAccessible ncenv.amap m ad (modref.NestedTyconRef kv.Value))
                             |> Seq.map (fun e -> e.Value.DisplayName)
                             |> Set.ofSeq
+                        
+                        let unions =
+                            modref.ModuleOrNamespaceType.AllEntities
+                            |> Seq.collect (fun tycon ->
+                                let hasRequireQualifiedAccessAttribute = HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute tycon.Attribs
+                                if hasRequireQualifiedAccessAttribute then
+                                    [||]
+                                else
+                                    tycon.UnionCasesArray)
+                            |> Seq.map (fun uc -> uc.DisplayName)
+                            |> Set.ofSeq
 
-                        Set.union types submodules // TODO: Add unions
+                        types
+                        |> Set.union submodules
+                        |> Set.union unions
                     | _ -> Set.empty
 
                 raze (UndefinedName(depth,FSComp.SR.undefinedNameValueConstructorNamespaceOrType,id,suggestPossibleTypes))
@@ -2757,15 +2796,8 @@ let rec ResolveFieldInModuleOrNamespace (ncenv:NameResolver) nenv ad (resInfo:Re
         error(InternalError("ResolveFieldInModuleOrNamespace",m))
 
 /// Suggest other labels of the same record
-let SuggestOtherLabelsOfSameRecordType (nenv:NameResolutionEnv) typeName (id:Ident) (allFields:Ident list) =    
-    let labelsOfPossibleRecord =
-        nenv.eFieldLabels
-        |> Seq.filter (fun kv -> 
-            kv.Value 
-            |> List.map (fun r -> r.TyconRef.DisplayName)
-            |> List.exists ((=) typeName))
-        |> Seq.map (fun kv -> kv.Key)
-        |> Set.ofSeq
+let SuggestOtherLabelsOfSameRecordType g (nenv:NameResolutionEnv) typ (id:Ident) (allFields:Ident list) =    
+    let labelsOfPossibleRecord = GetRecordLabelsForType g nenv typ
 
     let givenFields = 
         allFields 
@@ -2830,10 +2862,10 @@ let ResolveFieldPrim (ncenv:NameResolver) nenv ad typ (mp,id:Ident) allFields =
             match ncenv.InfoReader.TryFindRecdOrClassFieldInfoOfType(id.idText,m,typ) with
             | Some (RecdFieldInfo(_,rfref)) -> [ResolutionInfo.Empty, FieldResolution(rfref,false)]
             | None ->
-                let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv typ
                 if isRecdTy g typ then
                     // record label doesn't belong to record type -> suggest other labels of same record
-                    let suggestLabels() = SuggestOtherLabelsOfSameRecordType nenv typeName id allFields
+                    let suggestLabels() = SuggestOtherLabelsOfSameRecordType g nenv typ id allFields
+                    let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv typ
                     let errorText = FSComp.SR.nrRecordDoesNotContainSuchLabel(typeName,id.idText)
                     error(ErrorWithSuggestions(errorText, m, id.idText, suggestLabels))
                 else
