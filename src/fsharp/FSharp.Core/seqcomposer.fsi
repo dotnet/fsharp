@@ -113,16 +113,16 @@ namespace Microsoft.FSharp.Collections
     open Core
 
     [<CompiledName "OfResizeArrayUnchecked">]
-    val ofResizeArrayUnchecked : ResizeArray<'T> ->  ISeq<'T>
+    val ofResizeArrayUnchecked : ResizeArray<'T> -> ISeq<'T>
 
     [<CompiledName "OfList">]
-    val ofList : list<'T> ->  ISeq<'T>
+    val ofList : list<'T> -> ISeq<'T>
 
     [<CompiledName "OfArray">]
-    val ofArray : array<'T> ->  ISeq<'T>
+    val ofArray : array<'T> -> ISeq<'T>
 
     [<CompiledName "OfSeq">]
-    val ofSeq : seq<'T> ->  ISeq<'T>
+    val ofSeq : seq<'T> -> ISeq<'T>
 
     [<CompiledName "Average">]
     val inline average : source: ISeq< ^T> -> ^T
@@ -149,16 +149,16 @@ namespace Microsoft.FSharp.Collections
     val inline fold2<'T1,'T2,'State> : folder:('State->'T1->'T2->'State) -> state:'State -> source1: ISeq<'T1> -> source2: ISeq<'T2> -> 'State
 
     [<CompiledName "Unfold">]
-    val unfold : generator:('State -> ('T * 'State) option) -> state:'State ->  ISeq<'T>
+    val unfold : generator:('State -> option<'T*'State>) -> state:'State -> ISeq<'T>
 
     [<CompiledName "InitializeInfinite">]
-    val initInfinite : f:(int -> 'T) ->  ISeq<'T>
+    val initInfinite : f:(int -> 'T) -> ISeq<'T>
 
     [<CompiledName "Initialize">]
-    val init : count:int -> f:(int -> 'T) ->  ISeq<'T>
+    val init : count:int -> f:(int -> 'T) -> ISeq<'T>
 
     [<CompiledName "Iterate">]
-    val inline iter : f:('T -> unit) -> source: ISeq<'T> -> unit
+    val inline iter : f:('T -> unit) -> source:ISeq<'T> -> unit
 
     [<CompiledName "Iterate2">]
     val inline iter2 : f:('T->'U->unit) -> source1 : ISeq<'T> -> source2 : ISeq<'U> -> unit
@@ -167,76 +167,79 @@ namespace Microsoft.FSharp.Collections
     val inline iteri2 : f:(int->'T->'U->unit) -> source1:ISeq<'T> -> source2:ISeq<'U> -> unit
 
     [<CompiledName "TryHead">]
-    val tryHead : ISeq<'T> -> 'T option
+    val tryHead : ISeq<'T> -> option<'T>
+
+    [<CompiledName("Head")>]
+    val head: source:ISeq<'T> -> 'T
 
     [<CompiledName "IterateIndexed">]
-    val inline iteri : f:(int -> 'T -> unit) -> source: ISeq<'T> -> unit
+    val inline iteri : f:(int -> 'T -> unit) -> source:ISeq<'T> -> unit
 
     [<CompiledName "Except">]
     val inline except : itemsToExclude:seq<'T> -> source:ISeq<'T> -> ISeq<'T> when 'T:equality
 
     [<CompiledName "Exists">]
-    val inline exists : f:('T -> bool) -> source: ISeq<'T> -> bool
+    val inline exists : f:('T -> bool) -> source:ISeq<'T> -> bool
 
     [<CompiledName "Exists2">]
     val inline exists2 : predicate:('T->'U->bool) -> source1:ISeq<'T> -> source2:ISeq<'U> -> bool
 
     [<CompiledName "Contains">]
-    val inline contains : element:'T -> source: ISeq<'T> -> bool when 'T : equality
+    val inline contains : element:'T -> source:ISeq<'T> -> bool when 'T : equality
 
     [<CompiledName "ForAll">]
-    val inline forall : f:('T -> bool) -> source: ISeq<'T> -> bool
+    val inline forall : f:('T -> bool) -> source:ISeq<'T> -> bool
 
     [<CompiledName "ForAll2">]
     val inline forall2 : predicate:('T->'U->bool) -> source1:ISeq<'T> -> source2:ISeq<'U> -> bool
 
     [<CompiledName "Filter">]
-    val inline filter : f:('T -> bool) -> source: ISeq<'T> ->  ISeq<'T>
+    val inline filter : f:('T -> bool) -> source:ISeq<'T> -> ISeq<'T>
 
     [<CompiledName "Map">]
-    val inline map : f:('T -> 'U) -> source: ISeq<'T> ->  ISeq<'U>
+    val inline map : f:('T -> 'U) -> source:ISeq<'T> -> ISeq<'U>
 
     [<CompiledName "MapIndexed">]
     val inline mapi : f:(int->'a->'b) -> source: ISeq<'a> -> ISeq<'b>
 
     [<CompiledName "Map2">]
-    val inline map2<'First,'Second,'U> : map:('First->'Second->'U) -> source1:ISeq<'First> -> source2:ISeq<'Second> -> ISeq<'U>
+    val inline map2<'T,'U,'V> : map:('T->'U->'V) -> source1:ISeq<'T> -> source2:ISeq<'U> -> ISeq<'V>
 
     [<CompiledName "MapIndexed2">]
-    val inline mapi2<'First,'Second,'U> : map:(int -> 'First->'Second->'U) -> source1:ISeq<'First> -> source2:ISeq<'Second> -> ISeq<'U>
+    val inline mapi2<'T,'U,'V> : map:(int -> 'T->'U->'V) -> source1:ISeq<'T> -> source2:ISeq<'U> -> ISeq<'V>
 
     [<CompiledName "Map3">]
-    val inline map3<'First,'Second,'Third,'U> : map:('First->'Second->'Third->'U) -> source1:ISeq<'First> -> source2:ISeq<'Second> -> source3:ISeq<'Third> -> ISeq<'U>
+    val inline map3<'T,'U,'V,'W> : map:('T->'U->'V->'W) -> source1:ISeq<'T> -> source2:ISeq<'U> -> source3:ISeq<'V> -> ISeq<'W>
 
     [<CompiledName "CompareWith">]
-    val inline compareWith : f:('T -> 'T -> int) -> source1 :ISeq<'T> -> source2:ISeq<'T> -> int
+    val inline compareWith : f:('T->'T->int) -> source1 :ISeq<'T> -> source2:ISeq<'T> -> int
 
     [<CompiledName "Choose">]
     val inline choose : f:('a->option<'b>) -> source: ISeq<'a> -> ISeq<'b>
 
     [<CompiledName "Distinct">]
-    val inline distinct : source: ISeq<'T> -> ISeq<'T> when 'T:equality
+    val inline distinct : source:ISeq<'T> -> ISeq<'T> when 'T:equality
 
     [<CompiledName "DistinctBy">]
-    val inline distinctBy : keyf:('T->'Key) -> source: ISeq<'T> -> ISeq<'T> when 'Key:equality
+    val inline distinctBy : keyf:('T->'Key) -> source:ISeq<'T> -> ISeq<'T> when 'Key:equality
 
     [<CompiledName "Max">]
-    val inline max : source: ISeq<'T> -> 'T when 'T:comparison
+    val inline max : source:ISeq<'T> -> 'T when 'T:comparison
 
     [<CompiledName "MaxBy">]
-    val inline maxBy : f:('T -> 'U) -> source: ISeq<'T> -> 'T when 'U:comparison
+    val inline maxBy : f:('T->'U) -> source:ISeq<'T> -> 'T when 'U:comparison
 
     [<CompiledName "Min">]
-    val inline min : source: ISeq<'T> -> 'T when 'T:comparison
+    val inline min : source:ISeq<'T> -> 'T when 'T:comparison
 
     [<CompiledName "MinBy">]
-    val inline minBy : f:('T -> 'U) -> source: ISeq<'T> -> 'T when 'U:comparison
+    val inline minBy : f:('T->'U) -> source:ISeq<'T> -> 'T when 'U:comparison
 
     [<CompiledName "Pairwise">]
     val pairwise : source:ISeq<'T> -> ISeq<'T * 'T>
 
     [<CompiledName "Reduce">]
-    val inline reduce : f:('T->'T->'T) -> source: ISeq<'T> -> 'T
+    val inline reduce : f:('T->'T->'T) -> source:ISeq<'T> -> 'T
 
     [<CompiledName "Scan">]
     val inline scan : folder:('State->'T->'State) -> initialState:'State -> source:ISeq<'T> -> ISeq<'State>
@@ -253,7 +256,7 @@ namespace Microsoft.FSharp.Collections
         and  'T:(static member (+) : ^T * ^T -> ^T)
 
     [<CompiledName "SumBy">]
-    val inline sumBy : f :('T -> ^U) -> source: ISeq<'T> -> ^U
+    val inline sumBy : f :('T -> ^U) -> source:ISeq<'T> -> ^U
         when ^U:(static member Zero : ^U)
         and  ^U:(static member (+) : ^U * ^U -> ^U)
 
@@ -273,22 +276,25 @@ namespace Microsoft.FSharp.Collections
     val indexed : source: ISeq<'a> -> ISeq<int * 'a>
 
     [<CompiledName "TryItem">]
-    val tryItem : index:int -> source: ISeq<'T> -> 'T option
+    val tryItem : index:int -> source:ISeq<'T> -> option<'T>
 
     [<CompiledName "TryPick">]
-    val inline tryPick : f:('T -> 'U option) -> source: ISeq<'T> -> Option<'U>
+    val inline tryPick : f:('T -> option<'U>) -> source:ISeq<'T> -> option<'U>
 
     [<CompiledName "TryFind">]
-    val inline tryFind : f:('T -> bool) -> source: ISeq<'T> -> Option<'T>
+    val inline tryFind : f:('T -> bool) -> source:ISeq<'T> -> option<'T>
 
     [<CompiledName "TryFindIndex">]
-    val inline tryFindIndex: predicate:('T->bool) -> source:ISeq<'T> -> int option
+    val inline tryFindIndex: predicate:('T->bool) -> source:ISeq<'T> -> option<int>
+
+    [<CompiledName("Last")>]
+    val last: source:ISeq<'T> -> 'T
 
     [<CompiledName "TryLast">]
-    val inline tryLast : source:ISeq<'T> -> 'T option
+    val tryLast : source:ISeq<'T> -> option<'T>
 
     [<CompiledName "Windowed">]
-    val windowed : windowSize:int -> source:ISeq<'T> -> ISeq<'T[]>
+    val windowed : windowSize:int -> source:ISeq<'T> -> ISeq<array<'T>>
 
     [<CompiledName "Concat">]
     val concat : sources:ISeq<'Collection> -> ISeq<'T> when 'Collection :> ISeq<'T>
@@ -312,7 +318,7 @@ namespace Microsoft.FSharp.Collections
     val inline countByRef : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * int> when 'Key : equality and 'Key : not struct
 
     [<CompiledName("ToArray")>]
-    val toArray: source:ISeq<'T> -> 'T[]
+    val toArray: source:ISeq<'T> -> array<'T>
 
     [<CompiledName("SortBy")>]
     val sortBy : projection:('T->'Key) -> source:ISeq<'T> -> ISeq<'T> when 'Key : comparison

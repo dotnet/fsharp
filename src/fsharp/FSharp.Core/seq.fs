@@ -582,9 +582,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Head">]
         let head (source : seq<_>) =
-            match tryHead source with
-            | None -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-            | Some x -> x
+            source |> toComposer |> Composer.head
 
         [<CompiledName "Tail">]
         let tail (source: seq<'T>) =
@@ -596,9 +594,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Last")>]
         let last (source : seq<_>) =
-            match tryLast source with
-            | None -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-            | Some x -> x
+            source |> toComposer |> Composer.last
 
         [<CompiledName "ExactlyOne">]
         let exactlyOne (source : seq<_>) =
