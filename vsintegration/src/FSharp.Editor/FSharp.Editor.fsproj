@@ -63,19 +63,14 @@
     <Compile Include="Structure\BlockStructureService.fs" />
     <Compile Include="Commands\HelpContextService.fs" />
     <Compile Include="Commands\FsiCommandService.fs" />
+    <Compile Include="Commands\XmlDocCommandService.fs" />
     <Compile Include="CodeFixes\AddNewKeywordToDisposableConstructorInvocation.fs" />
     <Compile Include="CodeFixes\AddOpen.fs" />
     <Compile Include="CodeFixes\PrefixUnusedValueWithUnderscore.fs" />
     <Compile Include="CodeFixes\RemoveTrailingSemicolon.fs" />
     <Compile Include="CodeFixes\ReplaceWithSuggestion.fs" />
     <Compile Include="CodeFixes\ImplementInterfaceCodeFixProvider.fs" />
-    <Compile Include="Commands\XmlDocCommandService.fs" />
-    <Compile Include="CodeFix\AddNewKeywordToDisposableConstructorInvocation.fs" />
-    <Compile Include="CodeFix\AddOpenCodeFixProvider.fs" />
-    <Compile Include="CodeFix\ProposeUppercaseLabel.fs" />
-    <Compile Include="CodeFix\ReplaceWithSuggestion.fs" />
-    <Compile Include="CodeFix\PrefixUnusedValueWithUnderscore.fs" />
-    <Compile Include="CodeFix\ImplementInterfaceCodeFixProvider.fs" />
+    <Compile Include="CodeFixes\ProposeUppercaseLabel.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">

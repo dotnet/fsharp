@@ -181,6 +181,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
                             | _ -> 
                                 Some context.Span.End
                         let! interfaceState = queryInterfaceState appendBracketAt interfacePos tokens parsedInput                        
+                        let symbol = lexer.GetSymbolAtPosition(context.Document.Id, sourceText, fixupPosition, context.Document.FilePath, defines, SymbolLookupKind.Fuzzy)
                         match interfaceState, symbol with
                         | Some state, Some symbol ->                                
                             let fcsTextLineNumber = textLine.LineNumber + 1
