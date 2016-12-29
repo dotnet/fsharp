@@ -3476,7 +3476,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
     member public this.``Attribute.WhenAttachedToLet.Bug70080``() =        
         this.AutoCompleteBug70080Helper @"
                     open System
-                    [<Attr     // expect AttributeUsageAttribute from System namespace
+                    [<Attr     // expect AttributeUsage from System namespace
                     let f() = 4"
 
     [<Test>]

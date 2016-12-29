@@ -69,7 +69,8 @@ type internal FSharpDeclarationListItem =
     member Glyph : int
     member GlyphMajor : ItemDescriptionIcons.GlyphMajor
     member GlyphMinor : ItemDescriptionIcons.GlyphMinor
-    
+    member IsAttribute : bool
+
 [<Sealed>]
 /// Represents a set of declarations in F# source code, with information attached ready for display by an editor.
 /// Returned by GetDeclarations.

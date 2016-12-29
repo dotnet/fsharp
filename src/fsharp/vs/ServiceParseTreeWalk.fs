@@ -536,4 +536,3 @@ module internal AstTraversal =
 #endif
             l |> List.map (fun x -> dive x x.Range (traverseSynModuleOrNamespace [])) |> pick fileRange l
         | ParsedInput.SigFile _sigFile -> None
-

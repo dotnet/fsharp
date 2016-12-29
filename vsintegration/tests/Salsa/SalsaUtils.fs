@@ -220,7 +220,7 @@ module internal VsOpsUtils =
             printfn "Failed to find expected value %s in " membername
             let MAX = 25
             printfn "Completion list = %s" (if completions.Length > MAX then sprintf "%A ... and more" completions.[0..MAX] else sprintf "%A" completions)
-            Assert.Fail(sprintf "Couldn't find '%s' in completion list" membername)
+            Assert.Fail(sprintf "Couldn't find '%s' in completion list: %+A" membername (completions |> Array.map (fun (name,_,_,_) -> name)))
 
     /// Verify the completion list does not contain a member with the given name
     let AssertCompListDoesNotContain(completions : CompletionItem[], membername) =

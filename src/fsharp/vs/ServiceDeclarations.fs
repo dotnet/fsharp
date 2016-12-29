@@ -705,6 +705,17 @@ module internal ItemDescriptionsImpl =
         |  _ -> 
             GetXmlCommentForItemAux None infoReader m d
 
+    let IsAttribute (infoReader: InfoReader) d =
+        try
+            let g = infoReader.g
+            let amap = infoReader.amap
+            match d with
+            | Item.Types(_,((TType_app(tcref,_)):: _)) -> 
+                let ty = generalizedTyconRef tcref
+                Infos.ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_Attribute
+            | _ -> false
+        with _ -> false
+
     /// Output a the description of a language item
     let rec FormatItemDescriptionToToolTipElement isDecl (infoReader:InfoReader) m denv d = 
         let g = infoReader.g
@@ -1168,7 +1179,6 @@ module internal ItemDescriptionsImpl =
 
     // Compute the index of the VS glyph shown with an item in the Intellisense menu
     let GlyphOfItem(denv,d) = 
-
          /// Find the glyph for the given representation.    
          let reprToGlyph repr = 
             match repr with
@@ -1255,7 +1265,7 @@ module internal ItemDescriptionsImpl =
      
 /// An intellisense declaration
 [<Sealed>]
-type FSharpDeclarationListItem(name, glyphMajor:GlyphMajor, glyphMinor:GlyphMinor, info) =
+type FSharpDeclarationListItem(name: string, glyphMajor: GlyphMajor, glyphMinor: GlyphMinor, info, isAttribute: bool) =
     let mutable descriptionTextHolder:FSharpToolTipText option = None
     let mutable task = null
 
@@ -1302,18 +1312,17 @@ type FSharpDeclarationListItem(name, glyphMajor:GlyphMajor, glyphMinor:GlyphMino
 
     member decl.Glyph = 6 * int glyphMajor + int glyphMinor
     member decl.GlyphMajor = glyphMajor 
-    member decl.GlyphMinor = glyphMinor 
+    member decl.GlyphMinor = glyphMinor
+    member decl.IsAttribute = isAttribute
       
 /// A table of declarations for Intellisense completion 
 [<Sealed>]
 type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) = 
-
     member self.Items = declarations
     
     // Make a 'Declarations' object for a set of selected items
     static member Create(infoReader:InfoReader, m, denv, items, reactor, checkAlive) = 
         let g = infoReader.g
-         
         let items = items |> RemoveExplicitlySuppressed g
         
         // Sort by name. For things with the same name, 
@@ -1363,11 +1372,11 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                 | [] -> failwith "Unexpected empty bag"
                 | items -> 
                     let glyphMajor, glyphMinor = GlyphOfItem(denv,items.Head)
-                    new FSharpDeclarationListItem(nm, glyphMajor, glyphMinor, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive)))
+                    new FSharpDeclarationListItem(nm, glyphMajor, glyphMinor, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), IsAttribute infoReader items.Head))
 
         new FSharpDeclarationListInfo(Array.ofList decls)
-
     
-    static member Error msg = new FSharpDeclarationListInfo([| new FSharpDeclarationListItem("<Note>", GlyphMajor.Error, GlyphMinor.Normal, Choice2Of2 (FSharpToolTipText [FSharpToolTipElement.CompositionError msg])) |] )
-    static member Empty = new FSharpDeclarationListInfo([| |])
-
+    static member Error msg = 
+        new FSharpDeclarationListInfo(
+                [| new FSharpDeclarationListItem("<Note>", GlyphMajor.Error, GlyphMinor.Normal, Choice2Of2 (FSharpToolTipText [FSharpToolTipElement.CompositionError msg]), false) |] )
+    static member Empty = FSharpDeclarationListInfo([| |])

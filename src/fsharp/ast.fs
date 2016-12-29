@@ -1063,12 +1063,12 @@ and
         SynBindingKind *
         mustInline:bool *
         isMutable:bool *
-        SynAttributes *
+        attrs:SynAttributes *
         xmlDoc:PreXmlDoc *
         SynValData *
         headPat:SynPat *
         SynBindingReturnInfo option *
-        SynExpr  *
+        expr:SynExpr  *
         range:range *
         SequencePointInfoForBinding
     // no member just named "Range", as that would be confusing:
@@ -1178,7 +1178,7 @@ and
     [<NoEquality; NoComparison>]
     SynEnumCase =
     /// The untyped, unchecked syntax tree for one case in an enum definition.
-    | EnumCase of SynAttributes * ident:Ident * SynConst * PreXmlDoc * range:range
+    | EnumCase of attrs:SynAttributes * ident:Ident * SynConst * PreXmlDoc * range:range
     member this.Range =
         match this with
         | EnumCase (range=m) -> m
@@ -1234,7 +1234,7 @@ and
     [<NoEquality; NoComparison>]
     /// The untyped, unchecked syntax tree for a field declaration in a record or class
     SynField =
-    | Field of SynAttributes * isStatic:bool * Ident option * SynType * bool * xmlDoc:PreXmlDoc * accessibility:SynAccess option * range:range
+    | Field of attrs:SynAttributes * isStatic:bool * Ident option * SynType * bool * xmlDoc:PreXmlDoc * accessibility:SynAccess option * range:range
 
 
 and
@@ -1344,7 +1344,7 @@ and
     | Inherit of SynType  * Ident option * range:range
     | ValField of SynField  * range:range
     /// A feature that is not implemented
-    | NestedType of SynTypeDefn * accessibility:SynAccess option * range:range
+    | NestedType of typeDefn:SynTypeDefn * accessibility:SynAccess option * range:range
     /// SynMemberDefn.AutoProperty (attribs,isStatic,id,tyOpt,propKind,memberFlags,xmlDoc,access,synExpr,mGetSet,mWholeAutoProp).
     ///
     /// F# syntax: 'member val X = expr'
