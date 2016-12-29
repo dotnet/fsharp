@@ -151,6 +151,12 @@ namespace Microsoft.FSharp.Collections
         let createFold (factory:TransformFactory<_,_>) (folder:Folder<_,_,_>) pipeIdx  =
             factory.Compose (Upcast.outOfBand folder) pipeIdx folder
 
+        let inline valueComparer<'T when 'T : equality> ()=
+            let c = HashIdentity.Structural<'T>
+            { new IEqualityComparer<Value<'T>> with
+                    member __.GetHashCode o    = c.GetHashCode o._1
+                    member __.Equals (lhs,rhs) = c.Equals (lhs._1, rhs._1) }
+
         type ComposedFactory<'T,'U,'V> private (first:TransformFactory<'T,'U>, second:TransformFactory<'U,'V>) =
             inherit TransformFactory<'T,'V>()
 
@@ -1565,19 +1571,10 @@ namespace Microsoft.FSharp.Collections
                         override this.OnDispose () = () })
 
             let inline byVal (keyf:'T->'Key) (source:ISeq<'T>) =
-                delay (fun () ->
-                    source
-                    |> groupByImpl HashIdentity.Structural<'Key> keyf id)
+                delay (fun () -> groupByImpl HashIdentity.Structural<'Key> keyf id source) 
 
             let inline byRef (keyf:'T->'Key) (source:ISeq<'T>) =
-                delay (fun () ->
-                    let comparer =
-                        let c = HashIdentity.Structural<'Key>
-                        { new IEqualityComparer<Value<'Key>> with
-                               member __.GetHashCode o    = c.GetHashCode o._1
-                               member __.Equals (lhs,rhs) = c.Equals (lhs._1, rhs._1) }
-                    source
-                    |> groupByImpl comparer (fun t -> Value(keyf t)) (fun sb -> sb._1))
+                delay (fun () -> groupByImpl (valueComparer<'Key> ()) (keyf >> Value) (fun v -> v._1) source)
         
         [<CompiledName("GroupByVal")>]
         let inline groupByVal<'T,'Key when 'Key : equality and 'Key : struct> (keyf:'T->'Key) (source:ISeq<'T>) =
@@ -1599,8 +1596,14 @@ namespace Microsoft.FSharp.Collections
                 res.CopyTo(arr, 0)
                 arr
             | _ ->
-                let res = ResizeArray source
-                res.ToArray()
+                source.Fold (fun _ ->
+                    upcast { new FolderWithPostProcessing<'T,array<'T>,_>(Unchecked.defaultof<_>,ResizeArray ()) with
+                        override this.ProcessNext v =
+                            this.State.Add v
+                            Unchecked.defaultof<_> (* return value unused in Fold context *)
+                        override this.OnComplete _ =
+                            this.Result <- this.State.ToArray ()
+                        override this.OnDispose () = () })
 
         [<CompiledName("SortBy")>]
         let sortBy keyf source =
