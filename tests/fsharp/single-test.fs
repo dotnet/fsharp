@@ -56,13 +56,15 @@ let singleTestBuildAndRunCore  cfg (copyFiles:string) p =
         testOkFile.CheckExists()
 
     | FSI_CORECLR -> 
+        let testName = getBasename cfg.Directory
         let extraSource = (__SOURCE_DIRECTORY__  ++ "coreclr_utilities.fs")
+        let outDir =  (__SOURCE_DIRECTORY__ ++ sprintf @"../testbin/%s/coreclr/fsharp/core/%s" cfg.BUILD_CONFIG testName)
         let fsiArgs = 
             sprintf """ --define:NETSTANDARD1_6 --define:FSCORE_PORTABLE_NEW --define:FX_RESHAPED_REFLECTION --define:FX_PORTABLE_OR_NETSTANDARD "%s" %s """
                extraSource
                (String.concat " " sources)
 
-        let fsciArgs = sprintf """--verbose:repro %s""" fsiArgs
+        let fsciArgs = sprintf """--verbose:repro --OutputDir:%s --CopyDlls:%s %s""" outDir copyFiles fsiArgs
 
         use testOkFile = new FileGuard (getfullpath cfg "test.ok")
 

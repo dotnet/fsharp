@@ -50,7 +50,7 @@ type internal FSharpCheckerProvider
     ) =
     let checker = 
         lazy
-            let checker = FSharpChecker.Create()
+            let checker = FSharpChecker.Create(projectCacheSize = 200, keepAllBackgroundResolutions = false)
 
             // This is one half of the bridge between the F# background builder and the Roslyn analysis engine.
             // When the F# background builder refreshes the background semantic build context for a file,
@@ -147,7 +147,7 @@ type internal ProjectInfoManager
             let loadTime,_ = singleFileProjectTable.[projectId]
             let fileName = document.FilePath
             let! cancellationToken = Async.CancellationToken
-            let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+            let! sourceText = document.GetTextAsync(cancellationToken)
             let! options = this.ComputeSingleFileOptions (fileName, loadTime, sourceText.ToString(), document.Project.Solution.Workspace)
             singleFileProjectTable.[projectId] <- (loadTime, options)
             return Some options
