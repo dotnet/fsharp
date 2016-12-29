@@ -184,7 +184,7 @@ type internal FSharpAddOpenCodeFixProvider
                     match symbol with
                     | Some symbol ->
                         let pos = Pos.fromZ textLinePos.Line textLinePos.Character
-                        let isAttribute = ParsedInput.getEntityKind parsedInput pos = Some EntityKind.Attribute
+                        let isAttribute = UntypedParseImpl.GetEntityKind(pos, parsedInput) = Some EntityKind.Attribute
                         let entities =
                             assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies checkFileResults
                             |> List.map (fun e -> 
