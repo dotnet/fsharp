@@ -91,42 +91,9 @@ type internal InlineRenameInfo
         let span = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate)
         CommonHelpers.fixupSpan(sourceText, span)
 
-    let symbolUses =
-        async {
-            let! symbolUses =
-                match declLoc with
-                | SymbolDeclarationLocation.CurrentDocument ->
-                    checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
-                | SymbolDeclarationLocation.Projects (projects, isInternalToProject) -> 
-                    let projects =
-                        if isInternalToProject then projects
-                        else 
-                            [ for project in projects do
-                                yield project
-                                yield! project.GetDependentProjects() ]
-                            |> List.distinctBy (fun x -> x.Id)
-
-                    projects
-                    |> Seq.map (fun project ->
-                        async {
-                            match projectInfoManager.TryGetOptionsForProject(project.Id) with
-                            | Some options ->
-                                let! projectCheckResults = checker.ParseAndCheckProject(options)
-                                return! projectCheckResults.GetUsesOfSymbol(symbolUse.Symbol)
-                            | None -> return [||]
-                        })
-                    |> Async.Parallel
-                    |> Async.Map Array.concat
-            
-            return
-                (symbolUses 
-                 |> Seq.collect (fun symbolUse -> 
-                      document.Project.Solution.GetDocumentIdsWithFilePath(symbolUse.FileName) |> Seq.map (fun id -> id, symbolUse))
-                 |> Seq.groupBy fst
-                ).ToImmutableDictionary(
-                    (fun (id, _) -> id), 
-                    fun (_, xs) -> xs |> Seq.map snd |> Seq.toArray)
-        } |> Async.Cache
+    let symbolUses = 
+        SymbolHelpers.getSymbolUsesInSolution(symbolUse.Symbol, declLoc, checkFileResults, projectInfoManager, checker, document.Project.Solution)
+        |> Async.cache
 
     interface IInlineRenameInfo with
         member __.CanRename = true
@@ -192,15 +159,14 @@ type internal InlineRenameService
                 match checkFileAnswer with
                 | FSharpCheckFileAnswer.Aborted -> return FailureInlineRenameInfo.Instance
                 | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> 
-        
-                let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.RightColumn, textLine.Text.ToString(), [symbol.Text])
-                
-                match symbolUse with
-                | Some symbolUse ->
-                    match symbolUse.GetDeclarationLocation(document) with
-                    | Some declLoc -> return InlineRenameInfo(checker, projectInfoManager, document, sourceText, symbolUse, declLoc, checkFileResults) :> IInlineRenameInfo
+                    let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.RightColumn, textLine.Text.ToString(), [symbol.Text])
+                    
+                    match symbolUse with
+                    | Some symbolUse ->
+                        match symbolUse.GetDeclarationLocation(document) with
+                        | Some declLoc -> return InlineRenameInfo(checker, projectInfoManager, document, sourceText, symbolUse, declLoc, checkFileResults) :> IInlineRenameInfo
+                        | _ -> return FailureInlineRenameInfo.Instance
                     | _ -> return FailureInlineRenameInfo.Instance
-                | _ -> return FailureInlineRenameInfo.Instance
             | None -> return FailureInlineRenameInfo.Instance
         }
     

@@ -39,6 +39,7 @@
     <Compile Include="Common\Logging.fs" />
     <Compile Include="Common\ContentType.fs" />
     <Compile Include="Common\LanguageService.fs" />
+    <Compile Include="Common\SymbolHelpers.fs" />
     <Compile Include="Common\AssemblyContentProvider.fs" />
     <Compile Include="Classification\ColorizationService.fs" />
     <Compile Include="Formatting\BraceMatchingService.fs" />
@@ -68,6 +69,13 @@
     <Compile Include="CodeFixes\RemoveTrailingSemicolon.fs" />
     <Compile Include="CodeFixes\ReplaceWithSuggestion.fs" />
     <Compile Include="CodeFixes\ImplementInterfaceCodeFixProvider.fs" />
+    <Compile Include="Commands\XmlDocCommandService.fs" />
+    <Compile Include="CodeFix\AddNewKeywordToDisposableConstructorInvocation.fs" />
+    <Compile Include="CodeFix\AddOpenCodeFixProvider.fs" />
+    <Compile Include="CodeFix\ProposeUppercaseLabel.fs" />
+    <Compile Include="CodeFix\ReplaceWithSuggestion.fs" />
+    <Compile Include="CodeFix\PrefixUnusedValueWithUnderscore.fs" />
+    <Compile Include="CodeFix\ImplementInterfaceCodeFixProvider.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">

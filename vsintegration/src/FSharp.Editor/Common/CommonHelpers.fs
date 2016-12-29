@@ -84,6 +84,20 @@ module internal Extensions =
             try Path.GetFullPath path
             with _ -> path
 
+    type FSharpChecker with
+        member this.ParseAndCheckDocument(document: Document, options: FSharpProjectOptions) : Async<(Ast.ParsedInput * FSharpCheckFileResults) option> =
+            async {
+                let! cancellationToken = Async.CancellationToken
+                let! sourceText = document.GetTextAsync()
+                let! textVersion = document.GetTextVersionAsync(cancellationToken)
+                let! parseResults, checkFileAnswer = this.ParseAndCheckFileInProject(document.FilePath, textVersion.GetHashCode(), sourceText.ToString(), options)
+                return
+                    match parseResults.ParseTree, checkFileAnswer with
+                    | _, FSharpCheckFileAnswer.Aborted 
+                    | None, _ -> None
+                    | Some parsedInput, FSharpCheckFileAnswer.Succeeded checkResults -> Some (parsedInput, checkResults)
+            }
+
     type FSharpSymbol with
         member this.IsInternalToProject =
             match this with 
@@ -155,32 +169,4 @@ module internal Extensions =
             
             isPrivate && declaredInTheFile
     
-    type Async<'a> with
-        /// Creates an asynchronous workflow that runs the asynchronous workflow given as an argument at most once. 
-        /// When the returned workflow is started for the second time, it reuses the result of the previous execution.
-        static member Cache (input : Async<'T>) =
-            let agent = MailboxProcessor<AsyncReplyChannel<_>>.Start <| fun agent ->
-                async {
-                    let! replyCh = agent.Receive ()
-                    let! res = input
-                    replyCh.Reply res
-                    while true do
-                        let! replyCh = agent.Receive ()
-                        replyCh.Reply res 
-                }
-            async { return! agent.PostAndAsyncReply id }
-
-        static member inline Map (f: 'a -> 'b) (input: Async<'a>) : Async<'b> = 
-            async {
-                let! result = input
-                return f result 
-            }
-
-    type AsyncBuilder with
-        member __.Bind(computation: System.Threading.Tasks.Task<'a>, binder: 'a -> Async<'b>): Async<'b> =
-            async {
-                let! a = Async.AwaitTask computation
-                return! binder a
-            }
-
-        member __.ReturnFrom(computation: System.Threading.Tasks.Task<'a>): Async<'a> = Async.AwaitTask computation
+    
