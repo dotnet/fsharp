@@ -706,13 +706,15 @@ module internal ItemDescriptionsImpl =
             GetXmlCommentForItemAux None infoReader m d
 
     let IsAttribute (infoReader: InfoReader) d =
-        let g = infoReader.g
-        let amap = infoReader.amap
-        match d with
-        | Item.Types(_,((TType_app(tcref,_)):: _)) -> 
-            let ty = generalizedTyconRef tcref
-            Infos.ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_Attribute
-        | _ -> false
+        try
+            let g = infoReader.g
+            let amap = infoReader.amap
+            match d with
+            | Item.Types(_,((TType_app(tcref,_)):: _)) -> 
+                let ty = generalizedTyconRef tcref
+                Infos.ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_Attribute
+            | _ -> false
+        with _ -> false
 
     /// Output a the description of a language item
     let rec FormatItemDescriptionToToolTipElement isDecl (infoReader:InfoReader) m denv d = 

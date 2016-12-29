@@ -891,10 +891,7 @@ module UntypedParseImpl =
 
         match input with 
         | ParsedInput.SigFile _ -> None
-        | ParsedInput.ImplFile input -> 
-            let ast = sprintf "%+A" input
-            let _x = ast
-            walkImplFileInput input
+        | ParsedInput.ImplFile input -> walkImplFileInput input
 
     type internal TS = AstTraversal.TraverseStep
 
