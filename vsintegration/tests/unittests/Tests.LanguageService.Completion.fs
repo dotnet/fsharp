@@ -6063,7 +6063,7 @@ let rec f l =
                 type TestAttribute() = 
                     member x.print() = "print" """,
             marker = "(*Mattribute*)",
-            list = ["Int32";"Obsolete"])
+            list = ["Int32";"ObsoleteAttribute"])
 
     [<Test>]
     member this.``ImportStatment.System.ImportDirectly``() = 
