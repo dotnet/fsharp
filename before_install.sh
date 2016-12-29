@@ -19,7 +19,7 @@ case $OSName in
 esac
 
 # On Linux (or at least, Ubuntu), when building with Mono, need to install the mono-devel package first.
-if [ $OS == "Linux" ]; then
+if [ $OS = 'Linux' ]; then
     sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
     echo "deb http://download.mono-project.com/repo/debian wheezy main" | sudo tee /etc/apt/sources.list.d/mono-xamarin.list
     sudo apt-get update
@@ -28,8 +28,9 @@ fi
 
 # Check if SSL certificates have been imported into Mono's certificate store.
 # If certs haven't been installed, some/all of the Nuget packages will fail to restore.
-if [ `certmgr -list -c Trust | grep -c -F "X.509"` -le 1 ]; then
-  echo "No SSL certificates installed so unable to restore NuGet packages.\nRun 'mozroots --sync --import' to install certificates to Mono's certificate store." >&2;
+if [ $('certmgr -list -c Trust | grep -c -F "X.509"') -le 1 ]; then
+  echo "No SSL certificates installed so unable to restore NuGet packages." >&2;
+  echo "Run 'mozroots --sync --import' to install certificates to Mono's certificate store." >&2;
   exit 1
 fi
 
@@ -59,14 +60,14 @@ chmod u+x packages/FsLexYacc.7.0.3/build/fsyacc.exe
 
 # The FSharp.Compiler.Tools package doesn't work correctly unless a proper install of F# has been done on the machine.
 # OSX can skip this because the OSX Mono installer includes F#.
-if [ $OS != "OSX" ]; then
+if [ $OS != 'OSX' ]; then
     sudo apt-get -y install fsharp
 fi
 
 # "access to the path /etc/mono/registry/last-time is denied"
 # On non-OSX systems, may need to create Mono's registry folder to avoid exceptions during builds.
 # This doesn't seem to be necessary on OSX, as the folder is created by the installer.
-if [ $OS != "OSX" ]; then
+if [ $OS != 'OSX' ]; then
     # This registry folder path is correct for Linux;
     # on OSX the folder is /Library/Frameworks/Mono.framework/Versions/Current/etc/mono/registry
     # and may be different for *BSD systems.
