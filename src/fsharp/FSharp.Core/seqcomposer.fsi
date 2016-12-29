@@ -305,6 +305,12 @@ namespace Microsoft.FSharp.Collections
     [<CompiledName "GroupByRef">]
     val inline groupByRef : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * ISeq<'T>> when 'Key : equality and 'Key : not struct
 
+    [<CompiledName("CountByVal")>]
+    val inline countByVal : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * int> when 'Key : equality and 'Key : struct
+
+    [<CompiledName("CountByRef")>]
+    val inline countByRef : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * int> when 'Key : equality and 'Key : not struct
+
     [<CompiledName("ToArray")>]
     val toArray: source:ISeq<'T> -> 'T[]
 
@@ -326,3 +332,7 @@ namespace Microsoft.FSharp.Collections
     module internal GroupBy =
         val inline byVal : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * ISeq<'T>> when 'Key : equality
         val inline byRef : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * ISeq<'T>> when 'Key : equality
+
+    module internal CountBy =
+        val inline byVal : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * int> when 'Key : equality
+        val inline byRef : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * int> when 'Key : equality

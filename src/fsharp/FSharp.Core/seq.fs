@@ -472,15 +472,15 @@ namespace Microsoft.FSharp.Collections
             mkSeq (fun () -> source.GetEnumerator())
 
         [<CompiledName("GroupBy")>]
-        let groupBy (keyf:'T->'Key) (seq:seq<'T>) =
+        let groupBy (keyf:'T->'Key) (source:seq<'T>) =
             let grouped = 
 #if FX_RESHAPED_REFLECTION
                 if (typeof<'Key>).GetTypeInfo().IsValueType
 #else
                 if typeof<'Key>.IsValueType
 #endif
-                    then seq |> toComposer |> Composer.GroupBy.byVal keyf
-                    else seq |> toComposer |> Composer.GroupBy.byRef keyf
+                    then source |> toComposer |> Composer.GroupBy.byVal keyf
+                    else source |> toComposer |> Composer.GroupBy.byRef keyf
 
             grouped
             |> Composer.map (fun (key,value) -> key, Upcast.enumerable value)
@@ -518,38 +518,15 @@ namespace Microsoft.FSharp.Collections
             let inline compareDescending a b = compare b a
             sortWith compareDescending source
 
-        let inline countByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (source:seq<'T>) =
-            checkNonNull "source" source
-
-            let dict = Dictionary comparer
-
-            // Build the groupings
-            source |> iter (fun v ->
-                let safeKey = keyf v
-                let mutable prev = Unchecked.defaultof<_>
-                if dict.TryGetValue(safeKey, &prev)
-                    then dict.[safeKey] <- prev + 1
-                    else dict.[safeKey] <- 1)
-
-            dict |> map (fun group -> (getKey group.Key, group.Value))
-
-        // We avoid wrapping a StructBox, because under 64 JIT we get some "hard" tailcalls which affect performance
-        let countByValueType (keyf:'T->'Key) (seq:seq<'T>) = seq |> countByImpl HashIdentity.Structural<'Key> keyf id
-
-        // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
-        let countByRefType   (keyf:'T->'Key) (seq:seq<'T>) = seq |> countByImpl RuntimeHelpers.StructBox<'Key>.Comparer (fun t -> RuntimeHelpers.StructBox (keyf t)) (fun sb -> sb.Value)
-
         [<CompiledName("CountBy")>]
         let countBy (keyf:'T->'Key) (source:seq<'T>) =
-            checkNonNull "source" source
-
 #if FX_RESHAPED_REFLECTION
             if (typeof<'Key>).GetTypeInfo().IsValueType
 #else
             if typeof<'Key>.IsValueType
 #endif
-                then mkDelayedSeq (fun () -> countByValueType keyf source)
-                else mkDelayedSeq (fun () -> countByRefType   keyf source)
+                then source |> toComposer |> Composer.CountBy.byVal keyf |> Upcast.enumerable
+                else source |> toComposer |> Composer.CountBy.byRef keyf |> Upcast.enumerable
 
         [<CompiledName "Sum">]
         let inline sum (source:seq<'a>) : 'a =
