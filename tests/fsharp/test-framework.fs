@@ -144,7 +144,11 @@ module WindowsPlatform =
 
         let CORSDK =
             let find s = envVars |> Map.tryFind s
-            [| "WINSDKNETFXTOOLS"; "WindowsSDK_ExecutablePath_x64"; "WindowsSDK_ExecutablePath_x86" |] |> Seq.tryPick (fun s -> find s) |> function None -> "" | Some x -> x
+            [| "WINSDKNETFXTOOLS"; "WindowsSDK_ExecutablePath_x64"; "WindowsSDK_ExecutablePath_x86" |] 
+            |> Seq.tryPick find 
+            |> function 
+                 | None -> @"C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.6.1 Tools\x64\"
+                 | Some x -> x
 
         CORDIR, CORSDK
 

@@ -44,6 +44,7 @@ let internal options = {
     UseScriptResolutionRules = false
     LoadTime = DateTime.MaxValue
     UnresolvedReferences = None
+    OriginalLoadReferences = []
     ExtraProjectInfo = None
 }
 

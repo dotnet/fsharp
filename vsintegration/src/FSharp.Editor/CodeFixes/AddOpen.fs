@@ -184,7 +184,7 @@ type internal FSharpAddOpenCodeFixProvider
                         let endLinePos = sourceText.Lines.GetLinePosition context.Span.End
                         let endPos = Pos.fromZ endLinePos.Line endLinePos.Character
                         Range.mkRange context.Document.FilePath startPos endPos
-                    
+                        let isAttribute = UntypedParseImpl.GetEntityKind(pos, parsedInput) = Some EntityKind.Attribute
                     let isAttribute = ParsedInput.getEntityKind parsedInput unresolvedIdentRange.Start = Some EntityKind.Attribute
                     let entities =
                         assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies checkFileResults
