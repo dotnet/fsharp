@@ -328,18 +328,14 @@ module internal CommonHelpers =
     let private getCachedSourceLineData(documentKey: DocumentId, sourceText: SourceText, position: int, fileName: string, defines: string list) = 
         let textLine = sourceText.Lines.GetLineFromPosition(position)
         let textLinePos = sourceText.Lines.GetLinePosition(position)
-        let lineNumber = textLinePos.Line + 1 // FCS line number
+        let lineNumber = textLinePos.Line
         let sourceTokenizer = FSharpSourceTokenizer(defines, Some fileName)
         let lines = sourceText.Lines
         // We keep incremental data per-document. When text changes we correlate text line-by-line (by hash codes of lines)
         let sourceTextData = dataCache.GetValue(documentKey, fun key -> SourceTextData(lines.Count))
         // Go backwards to find the last cached scanned line that is valid
-        let scanStartLine = 
-            let mutable i = lineNumber
-            while i > 0 && (match sourceTextData.[i-1] with Some data -> not (data.IsValid(lines.[i])) | None -> true)  do
-                i <- i - 1
-            i
-        let lexState = if scanStartLine = 0 then 0L else sourceTextData.[scanStartLine - 1].Value.LexStateAtEndOfLine
+        let scanStartLine = sourceTextData.GetLastValidCachedLine(lineNumber, lines)
+        let lexState = if scanStartLine = 0 then 0L else sourceTextData.[scanStartLine].Value.LexStateAtEndOfLine
         let lineContents = textLine.Text.ToString(textLine.Span)
         
         // We can reuse the old data when 
