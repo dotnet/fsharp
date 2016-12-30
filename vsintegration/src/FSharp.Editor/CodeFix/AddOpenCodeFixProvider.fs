@@ -9,7 +9,6 @@ open System.Collections.Generic
 open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
-open System.Linq
 open System.Runtime.CompilerServices
 open System.Windows
 open System.Windows.Controls
@@ -39,8 +38,9 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.SourceCodeServices.Structure
+
 open System.Windows.Documents
+open Microsoft.VisualStudio.FSharp.Editor.Structure
 
 [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module internal InsertContext =
@@ -108,6 +108,7 @@ type internal FSharpAddOpenCodeFixProvider
         assemblyContentProvider: AssemblyContentProvider
     ) =
     inherit CodeFixProvider()
+    let fixableDiagnosticIds = ["FS0039"]
 
     let checker = checkerProvider.Checker
     let fixUnderscoresInMenuText (text: string) = text.Replace("_", "__")
@@ -117,7 +118,7 @@ type internal FSharpAddOpenCodeFixProvider
             fixUnderscoresInMenuText fullName,
             fun (cancellationToken: CancellationToken) -> 
                 async {
-                    let! sourceText = context.Document.GetTextAsync() |> Async.AwaitTask
+                    let! sourceText = context.Document.GetTextAsync()
                     return context.Document.WithText(sourceText.Replace(context.Span, qualifier))
                 } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken))
 
@@ -128,7 +129,7 @@ type internal FSharpAddOpenCodeFixProvider
             fixUnderscoresInMenuText displayText,
             (fun (cancellationToken: CancellationToken) -> 
                 async {
-                    let! sourceText = context.Document.GetTextAsync() |> Async.AwaitTask
+                    let! sourceText = context.Document.GetTextAsync()
                     return context.Document.WithText(InsertContext.insertOpenDeclaration sourceText ctx ns)
                 } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)),
             displayText)
@@ -162,65 +163,49 @@ type internal FSharpAddOpenCodeFixProvider
             |> Seq.toList
 
         for codeFix in openNamespaceFixes @ quilifySymbolFixes do
-            context.RegisterCodeFix(codeFix, context.Diagnostics)
+            context.RegisterCodeFix(codeFix, (context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id)).ToImmutableArray())
 
-    override __.FixableDiagnosticIds = ["FS0039"].ToImmutableArray()
+    override __.FixableDiagnosticIds = fixableDiagnosticIds.ToImmutableArray()
 
     override __.RegisterCodeFixesAsync context : Task =
         async {
             match projectInfoManager.TryGetOptionsForEditingDocumentOrProject context.Document with 
             | Some options ->
-                let! sourceText = context.Document.GetTextAsync(context.CancellationToken) |> Async.AwaitTask
-                let! textVersion = context.Document.GetTextVersionAsync(context.CancellationToken) |> Async.AwaitTask
+                let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
+                let! textVersion = context.Document.GetTextVersionAsync(context.CancellationToken)
                 let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(context.Document.FilePath, textVersion.GetHashCode(), sourceText.ToString(), options)
                 match parseResults.ParseTree, checkFileAnswer with
                 | None, _
                 | _, FSharpCheckFileAnswer.Aborted -> ()
-                | Some parsedInput, FSharpCheckFileAnswer.Succeeded(checkFileResults) ->
-                    let entities = assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies checkFileResults
+                | Some parsedInput, FSharpCheckFileAnswer.Succeeded checkFileResults ->
                     let textLinePos = sourceText.Lines.GetLinePosition context.Span.Start
                     let defines = CompilerEnvironment.GetCompilationDefinesForEditing(context.Document.FilePath, options.OtherOptions |> Seq.toList)
                     let symbol = CommonHelpers.getSymbolAtPosition(context.Document.Id, sourceText, context.Span.Start, context.Document.FilePath, defines, SymbolLookupKind.Fuzzy)
                     match symbol with
                     | Some symbol ->
                         let pos = Pos.fromZ textLinePos.Line textLinePos.Character
-                        match ParsedInput.getEntityKind parsedInput pos with
-                        | None -> ()
-                        | Some entityKind ->
-                            let isAttribute = entityKind = EntityKind.Attribute
-                            
-                            let entities =
-                                entities |> List.filter (fun e ->
-                                    match entityKind, e.Kind with
-                                    | EntityKind.Attribute, EntityKind.Attribute 
-                                    | EntityKind.Type, (EntityKind.Type | EntityKind.Attribute)
-                                    | EntityKind.FunctionOrValue _, _ -> true 
-                                    | EntityKind.Attribute, _
-                                    | _, EntityKind.Module _
-                                    | EntityKind.Module _, _
-                                    | EntityKind.Type, _ -> false)
-                            
-                            let entities = 
-                                entities
-                                |> List.map (fun e -> 
-                                     [ yield e.TopRequireQualifiedAccessParent, e.AutoOpenParent, e.Namespace, e.CleanedIdents
-                                       if isAttribute then
-                                           let lastIdent = e.CleanedIdents.[e.CleanedIdents.Length - 1]
-                                           if e.Kind = EntityKind.Attribute && lastIdent.EndsWith "Attribute" then
-                                               yield 
-                                                   e.TopRequireQualifiedAccessParent, 
-                                                   e.AutoOpenParent,
-                                                   e.Namespace,
-                                                   e.CleanedIdents 
-                                                   |> Array.replace (e.CleanedIdents.Length - 1) (lastIdent.Substring(0, lastIdent.Length - 9)) ])
-                                |> List.concat
+                        let isAttribute = UntypedParseImpl.GetEntityKind(pos, parsedInput) = Some EntityKind.Attribute
+                        let entities =
+                            assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies checkFileResults
+                            |> List.map (fun e -> 
+                                 [ yield e.TopRequireQualifiedAccessParent, e.AutoOpenParent, e.Namespace, e.CleanedIdents
+                                   if isAttribute then
+                                       let lastIdent = e.CleanedIdents.[e.CleanedIdents.Length - 1]
+                                       if lastIdent.EndsWith "Attribute" && e.Kind LookupType.Precise = EntityKind.Attribute then
+                                           yield 
+                                               e.TopRequireQualifiedAccessParent, 
+                                               e.AutoOpenParent,
+                                               e.Namespace,
+                                               e.CleanedIdents 
+                                               |> Array.replace (e.CleanedIdents.Length - 1) (lastIdent.Substring(0, lastIdent.Length - 9)) ])
+                            |> List.concat
 
-                            let idents = ParsedInput.getLongIdentAt parsedInput (Range.mkPos pos.Line symbol.RightColumn)
-                            match idents with
-                            | Some idents ->
-                                let createEntity = ParsedInput.tryFindInsertionContext pos.Line parsedInput idents
-                                return entities |> Seq.map createEntity |> Seq.concat |> Seq.toList |> getSuggestions context
-                            | None -> ()
+                        let idents = ParsedInput.getLongIdentAt parsedInput (Range.mkPos pos.Line symbol.RightColumn)
+                        match idents with
+                        | Some idents ->
+                            let createEntity = ParsedInput.tryFindInsertionContext pos.Line parsedInput idents
+                            return entities |> Seq.map createEntity |> Seq.concat |> Seq.toList |> getSuggestions context
+                        | None -> ()
                     | None -> ()
             | None -> ()
         } |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

@@ -137,6 +137,7 @@ type internal ProjectSitesAndFiles() =
             UseScriptResolutionRules = SourceFile.MustBeSingleFileProject fileName
             LoadTime = projectSite.LoadTime
             UnresolvedReferences = None
+            OriginalLoadReferences = []
             ExtraProjectInfo=extraProjectInfo }   
 
     /// Construct a project site for a single file. May be a single file project (for scripts) or an orphan project site (for everything else).

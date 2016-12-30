@@ -837,9 +837,9 @@ let AddResults res1 res2 =
     | Result x,Result l -> Result (x @ l)
     | Exception _,Result l -> Result l
     | Result x,Exception _ -> Result x
-    // If we have error messages for the same symbol, then we can merge predictions.
-    | Exception (UndefinedName(n1,f,id1,predictions1)),Exception (UndefinedName(n2,_,id2,predictions2)) when n1 = n2 && id1.idText = id2.idText && id1.idRange = id2.idRange ->
-        Exception(UndefinedName(n1,f,id1,fun () -> Set.union (predictions1()) (predictions2())))
+    // If we have error messages for the same symbol, then we can merge suggestions.
+    | Exception (UndefinedName(n1,f,id1,suggestions1)),Exception (UndefinedName(n2,_,id2,suggestions2)) when n1 = n2 && id1.idText = id2.idText && id1.idRange = id2.idRange ->
+        Exception(UndefinedName(n1,f,id1,fun () -> Set.union (suggestions1()) (suggestions2())))
     // This prefers error messages coming from deeper failing long identifier paths 
     | Exception (UndefinedName(n1,_,_,_) as e1),Exception (UndefinedName(n2,_,_,_) as e2) ->
         if n1 < n2 then Exception e2 else Exception e1
@@ -1657,27 +1657,27 @@ let rec ResolveLongIndentAsModuleOrNamespace atMostOne amap m fullyQualified (ne
     | id :: rest -> 
         let moduleOrNamespaces = nenv.ModulesAndNamespaces fullyQualified
         let namespaceNotFound = lazy(
-            let predictModulesAndNamespaces() =
+            let suggestModulesAndNamespaces() =
                 moduleOrNamespaces
                 |> Seq.collect (fun kv -> kv.Value)
                 |> Seq.filter (fun modref -> IsEntityAccessible amap m ad modref)
                 |> Seq.map (fun e -> e.DisplayName)
                 |> Set.ofSeq
 
-            UndefinedName(0,FSComp.SR.undefinedNameNamespaceOrModule,id,predictModulesAndNamespaces))
+            UndefinedName(0,FSComp.SR.undefinedNameNamespaceOrModule,id,suggestModulesAndNamespaces))
         
         let moduleNotFoundErrorCache = ref None
         let moduleNotFound (modref: ModuleOrNamespaceRef) (mty:ModuleOrNamespaceType) id depth =
             match !moduleNotFoundErrorCache with
             | Some error -> error
             | None ->
-                let predictNames() =
+                let suggestNames() =
                     mty.ModulesAndNamespacesByDemangledName
                     |> Seq.filter (fun kv -> IsEntityAccessible amap m ad (modref.NestedTyconRef kv.Value))
                     |> Seq.map (fun e -> e.Value.DisplayName)
                     |> Set.ofSeq
                 
-                let error = raze (UndefinedName(depth,FSComp.SR.undefinedNameNamespace,id,predictNames))
+                let error = raze (UndefinedName(depth,FSComp.SR.undefinedNameNamespace,id,suggestNames))
                 moduleNotFoundErrorCache := Some error
                 error
 
@@ -1909,6 +1909,19 @@ let DecodeFSharpEvent (pinfos:PropInfo list) ad g (ncenv:NameResolver) m =
     | _ -> 
         None
 
+/// Returns all record label names for the given type.
+let GetRecordLabelsForType g nenv typ =
+    if isRecdTy g typ then
+        let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv typ
+        nenv.eFieldLabels
+        |> Seq.filter (fun kv -> 
+            kv.Value 
+            |> List.map (fun r -> r.TyconRef.DisplayName)
+            |> List.exists ((=) typeName))
+        |> Seq.map (fun kv -> kv.Key)
+        |> Set.ofSeq
+    else
+        Set.empty
 
 // REVIEW: this shows up on performance logs. Consider for example endless resolutions of "List.map" to 
 // the empty set of results, or "x.Length" for a list or array type. This indicates it could be worth adding a cache here.
@@ -1943,7 +1956,7 @@ let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo
                     // since later on this logic is used when giving preference to intrinsic definitions
                     match DecodeFSharpEvent (pinfos@extensionPropInfos) ad g ncenv m with
                     | Some x -> success [resInfo, x, rest]
-                    | None -> raze (UndefinedName (depth,FSComp.SR.undefinedNameFieldConstructorOrMember, id,NoPredictions))
+                    | None -> raze (UndefinedName (depth,FSComp.SR.undefinedNameFieldConstructorOrMember, id,NoSuggestions))
                 | Some(MethodItem msets) when isLookUpExpr -> 
                     let minfos = msets |> ExcludeHiddenOfMethInfos g ncenv.amap m
                     
@@ -1993,32 +2006,45 @@ let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo
         match nestedSearchAccessible with
         | Result res when not (isNil res) -> nestedSearchAccessible
         | _ -> 
-            let predictMembers() = 
-                let predictions1 =
+            let suggestMembers() = 
+                let suggestions1 =
                     ExtensionPropInfosOfTypeInScope ncenv.InfoReader nenv (None, ad) m typ 
                     |> List.map (fun p -> p.PropertyName)
                     |> Set.ofList
-                let predictions2 =
+                let suggestions2 =
                     ExtensionMethInfosOfTypeInScope ncenv.InfoReader nenv None m typ
                     |> List.map (fun m -> m.DisplayName)
                     |> Set.ofList
-                let predictions3 =
+                let suggestions3 =
                     GetIntrinsicPropInfosOfType ncenv.InfoReader (None, ad, AllowMultiIntfInstantiations.No) findFlag m typ
                     |> List.map (fun p -> p.PropertyName)
                     |> Set.ofList
-                let predictions4 =
+                let suggestions4 =
                     GetIntrinsicMethInfosOfType ncenv.InfoReader (None, ad, AllowMultiIntfInstantiations.No) findFlag m typ
                     |> List.filter (fun m -> not m.IsClassConstructor && not m.IsConstructor)
                     |> List.map (fun m -> m.DisplayName)
                     |> Set.ofList
+                let suggestions5 = GetRecordLabelsForType g nenv typ
+                let suggestions6 =
+                    match lookupKind with 
+                    | LookupKind.Expr | LookupKind.Pattern ->
+                        if isAppTy g typ then 
+                            let tcref,_ = destAppTy g typ
+                            tcref.UnionCasesArray
+                            |> Array.map (fun uc -> uc.DisplayName)
+                            |> Set.ofArray
+                        else 
+                            Set.empty
+                    | _ -> Set.empty
+                        
+                suggestions1 
+                |> Set.union suggestions2
+                |> Set.union suggestions3
+                |> Set.union suggestions4
+                |> Set.union suggestions5
+                |> Set.union suggestions6
 
-            
-                predictions1 
-                |> Set.union predictions2
-                |> Set.union predictions3
-                |> Set.union predictions4
-
-            raze (UndefinedName (depth,FSComp.SR.undefinedNameFieldConstructorOrMember, id, predictMembers))
+            raze (UndefinedName (depth,FSComp.SR.undefinedNameFieldConstructorOrMember, id, suggestMembers))
         
 and ResolveLongIdentInNestedTypes (ncenv:NameResolver) nenv lookupKind resInfo depth id m ad lid findFlag typeNameResInfo typs = 
     typs |> CollectAtMostOneResult (fun typ -> 
@@ -2126,7 +2152,7 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv (typeN
 
             match tyconSearch +++ moduleSearch +++ unionSearch with
             | Result [] ->
-                let predictPossibleTypes() =
+                let suggestPossibleTypes() =
                     match ad with
                     | AccessibleFrom _ ->
                         let types = 
@@ -2140,11 +2166,24 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv (typeN
                             |> Seq.filter (fun kv -> IsEntityAccessible ncenv.amap m ad (modref.NestedTyconRef kv.Value))
                             |> Seq.map (fun e -> e.Value.DisplayName)
                             |> Set.ofSeq
+                        
+                        let unions =
+                            modref.ModuleOrNamespaceType.AllEntities
+                            |> Seq.collect (fun tycon ->
+                                let hasRequireQualifiedAccessAttribute = HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute tycon.Attribs
+                                if hasRequireQualifiedAccessAttribute then
+                                    [||]
+                                else
+                                    tycon.UnionCasesArray)
+                            |> Seq.map (fun uc -> uc.DisplayName)
+                            |> Set.ofSeq
 
-                        Set.union types submodules // TODO: Add unions
+                        types
+                        |> Set.union submodules
+                        |> Set.union unions
                     | _ -> Set.empty
 
-                raze (UndefinedName(depth,FSComp.SR.undefinedNameValueConstructorNamespaceOrType,id,predictPossibleTypes))
+                raze (UndefinedName(depth,FSComp.SR.undefinedNameValueConstructorNamespaceOrType,id,suggestPossibleTypes))
             | results -> AtMostOneResult id.idRange results
 
 /// An identifier has resolved to a type name in an expression (corresponding to one or more TyconRefs). 
@@ -2239,11 +2278,11 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad n
                           match !typeError with
                           | Some e -> raze e
                           | _ ->
-                              let predictNames() =
+                              let suggestNames() =
                                   nenv.eUnqualifiedItems
                                   |> Seq.map (fun e -> e.Value.DisplayName)
                                   |> Set.ofSeq
-                              raze (UndefinedName(0,FSComp.SR.undefinedNameValueOfConstructor,id,predictNames)) // TODO: Predict ctors
+                              raze (UndefinedName(0,FSComp.SR.undefinedNameValueOfConstructor,id,suggestNames)) // TODO: suggest ctors
                       ForceRaise failingCase
 
               ResolutionInfo.SendToSink(sink,ncenv,nenv,ItemOccurence.Use,ad,resInfo,ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
@@ -2332,12 +2371,12 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad n
                   | Exception err -> ForceRaise(Exception err)
                   | Result (res :: _) -> ForceRaise(Result res)
                   | Result [] ->
-                        let predictNames() =
+                        let suggestNames() =
                             nenv.eUnqualifiedItems
                             |> Seq.map (fun e -> e.Value.DisplayName)
                             |> Set.ofSeq
 
-                        let failingCase = raze (UndefinedName(0,FSComp.SR.undefinedNameValueNamespaceTypeOrModule,id,predictNames)) // TODO: Predict modules and types
+                        let failingCase = raze (UndefinedName(0,FSComp.SR.undefinedNameValueNamespaceTypeOrModule,id,suggestNames)) // TODO: suggest modules and types
                         ForceRaise failingCase
 
           ResolutionInfo.SendToSink(sink,ncenv,nenv,ItemOccurence.Use,ad,resInfo,ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
@@ -2417,7 +2456,7 @@ let rec ResolvePatternLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv num
 
         match tyconSearch +++ ctorSearch +++ moduleSearch with
         | Result [] -> 
-            let predictPossibleTypes() =
+            let suggestPossibleTypes() =
                 match ad with
                 | AccessibleFrom _ ->
                     let submodules =
@@ -2425,10 +2464,10 @@ let rec ResolvePatternLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv num
                         |> Seq.filter (fun kv -> IsEntityAccessible ncenv.amap m ad (modref.NestedTyconRef kv.Value))
                         |> Seq.map (fun e -> e.Value.DisplayName)
                         |> Set.ofSeq
-                    submodules // TODO: Predict types and ctors
+                    submodules // TODO: suggest types and ctors
                 | _ -> Set.empty
 
-            raze (UndefinedName(depth,FSComp.SR.undefinedNameConstructorModuleOrNamespace,id,predictPossibleTypes))
+            raze (UndefinedName(depth,FSComp.SR.undefinedNameConstructorModuleOrNamespace,id,suggestPossibleTypes))
         | results -> AtMostOneResult id.idRange results
         
 /// Used to report a warning condition for the use of upper-case identifiers in patterns
@@ -2525,7 +2564,7 @@ let rec ResolveTypeLongIdentInTyconRefPrim (ncenv:NameResolver) (typeNameResInfo
         let tcrefs = CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, typeNameResInfo, genOk, m) 
         match tcrefs with 
         | tcref :: _ -> success tcref
-        | [] -> raze (UndefinedName(depth,FSComp.SR.undefinedNameType,id,NoPredictions)) // TODO: Predict types
+        | [] -> raze (UndefinedName(depth,FSComp.SR.undefinedNameType,id,NoSuggestions)) // TODO: suggest types
     | id::rest ->
 #if EXTENSIONTYPING
         // No dotting through type generators to get to a nested type!
@@ -2540,7 +2579,7 @@ let rec ResolveTypeLongIdentInTyconRefPrim (ncenv:NameResolver) (typeNameResInfo
             let tcrefs = CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, typeNameResInfo.DropStaticArgsInfo, genOk, m)
             match tcrefs with 
             | _ :: _ -> tcrefs |> CollectAtMostOneResult (fun (resInfo,tcref) -> ResolveTypeLongIdentInTyconRefPrim ncenv typeNameResInfo ad resInfo genOk (depth+1) m tcref rest)
-            | [] -> raze (UndefinedName(depth,FSComp.SR.undefinedNameType,id,NoPredictions)) // TODO: Predict types
+            | [] -> raze (UndefinedName(depth,FSComp.SR.undefinedNameType,id,NoSuggestions)) // TODO: suggest types
             
         AtMostOneResult m tyconSearch
 
@@ -2554,7 +2593,7 @@ let ResolveTypeLongIdentInTyconRef sink (ncenv:NameResolver) nenv typeNameResInf
 
 /// Create an UndefinedName error with details 
 let SuggestTypeLongIdentInModuleOrNamespace depth (modref:ModuleOrNamespaceRef) amap ad m (id:Ident) =
-    let predictPossibleTypes() =
+    let suggestPossibleTypes() =
         match ad with
         | AccessibleFrom _ ->
             modref.ModuleOrNamespaceType.AllEntities
@@ -2564,7 +2603,7 @@ let SuggestTypeLongIdentInModuleOrNamespace depth (modref:ModuleOrNamespaceRef) 
         | _ -> Set.empty
 
     let errorTextF s = FSComp.SR.undefinedNameTypeIn(s,fullDisplayTextOfModRef modref)    
-    UndefinedName(depth,errorTextF,id,predictPossibleTypes)
+    UndefinedName(depth,errorTextF,id,suggestPossibleTypes)
 
 /// Resolve a long identifier representing a type in a module or namespace
 let rec private ResolveTypeLongIdentInModuleOrNamespace (ncenv:NameResolver) (typeNameResInfo: TypeNameResolutionInfo) ad genOk (resInfo:ResolutionInfo) depth m modref _mty (lid: Ident list) =
@@ -2584,7 +2623,7 @@ let rec private ResolveTypeLongIdentInModuleOrNamespace (ncenv:NameResolver) (ty
                 let resInfo = resInfo.AddEntity(id.idRange,submodref)
                 ResolveTypeLongIdentInModuleOrNamespace ncenv typeNameResInfo ad genOk resInfo (depth+1) m submodref submodref.ModuleOrNamespaceType rest
             | _ ->
-                let predictPossibleModules() =
+                let suggestPossibleModules() =
                     match ad with
                     | AccessibleFrom _ ->
                         modref.ModuleOrNamespaceType.ModulesAndNamespacesByDemangledName
@@ -2592,13 +2631,13 @@ let rec private ResolveTypeLongIdentInModuleOrNamespace (ncenv:NameResolver) (ty
                         |> Seq.map (fun e -> e.Value.DisplayName)
                         |> Set.ofSeq
                     | _ -> Set.empty
-                raze (UndefinedName(depth,FSComp.SR.undefinedNameNamespaceOrModule,id,predictPossibleModules))
+                raze (UndefinedName(depth,FSComp.SR.undefinedNameNamespaceOrModule,id,suggestPossibleModules))
 
         let tyconSearch = 
             let tcrefs = LookupTypeNameInEntityMaybeHaveArity (ncenv.amap, id.idRange, ad, id.idText, TypeNameResolutionStaticArgsInfo.Indefinite, modref)
             match tcrefs with 
             | _ :: _ -> tcrefs |> CollectResults (fun tcref -> ResolveTypeLongIdentInTyconRefPrim ncenv typeNameResInfo ad resInfo genOk (depth+1) m tcref rest)
-            | [] -> raze (UndefinedName(depth,FSComp.SR.undefinedNameType,id,NoPredictions)) // TODO: Predict ctors
+            | [] -> raze (UndefinedName(depth,FSComp.SR.undefinedNameType,id,NoSuggestions)) // TODO: suggest ctors
         tyconSearch +++ modulSearch
 
 /// Resolve a long identifier representing a type 
@@ -2628,7 +2667,7 @@ let rec ResolveTypeLongIdentPrim (ncenv:NameResolver) occurence fullyQualified m
                 //CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities tcref rest typeNameResInfo m
                 success(ResolutionInfo.Empty,tcref)
             | [] -> 
-                let predictPossibleTypes() =
+                let suggestPossibleTypes() =
                     match ad with
                     | AccessibleFrom _ ->
                         nenv.TyconsByDemangledNameAndArity(fullyQualified)
@@ -2643,7 +2682,7 @@ let rec ResolveTypeLongIdentPrim (ncenv:NameResolver) occurence fullyQualified m
                         |> Set.ofSeq
                     | _ -> Set.empty
                 
-                raze (UndefinedName(0,FSComp.SR.undefinedNameType,id,predictPossibleTypes))
+                raze (UndefinedName(0,FSComp.SR.undefinedNameType,id,suggestPossibleTypes))
 
     | id::rest ->
         let m = unionRanges m id.idRange
@@ -2717,7 +2756,7 @@ let rec ResolveFieldInModuleOrNamespace (ncenv:NameResolver) nenv ad (resInfo:Re
             | Some tycon when IsEntityAccessible ncenv.amap m ad (modref.NestedTyconRef tycon) -> 
                 let showDeprecated = HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute tycon.Attribs
                 success [resInfo, FieldResolution(modref.RecdFieldRefInNestedTycon tycon id,showDeprecated), rest]
-            | _ -> raze (UndefinedName(depth,FSComp.SR.undefinedNameRecordLabelOrNamespace,id,NoPredictions))
+            | _ -> raze (UndefinedName(depth,FSComp.SR.undefinedNameRecordLabelOrNamespace,id,NoSuggestions))
 
         match modulScopedFieldNames with
         | Result (res :: _) -> success res
@@ -2749,23 +2788,16 @@ let rec ResolveFieldInModuleOrNamespace (ncenv:NameResolver) nenv ad (resInfo:Re
                     let resInfo = resInfo.AddEntity(id.idRange,submodref)
                     ResolveFieldInModuleOrNamespace ncenv nenv ad resInfo (depth+1) m submodref submodref.ModuleOrNamespaceType rest
                     |> OneResult
-                | _ -> raze (UndefinedName(depth,FSComp.SR.undefinedNameRecordLabelOrNamespace,id,NoPredictions))
-            else raze (UndefinedName(depth,FSComp.SR.undefinedNameRecordLabelOrNamespace,id,NoPredictions))
+                | _ -> raze (UndefinedName(depth,FSComp.SR.undefinedNameRecordLabelOrNamespace,id,NoSuggestions))
+            else raze (UndefinedName(depth,FSComp.SR.undefinedNameRecordLabelOrNamespace,id,NoSuggestions))
 
         AtMostOneResult m (modulScopedFieldNames +++ tyconSearch +++ modulSearch)
     | [] -> 
         error(InternalError("ResolveFieldInModuleOrNamespace",m))
 
 /// Suggest other labels of the same record
-let SuggestOtherLabelsOfSameRecordType (nenv:NameResolutionEnv) typeName (id:Ident) (allFields:Ident list) =    
-    let labelsOfPossibleRecord =
-        nenv.eFieldLabels
-        |> Seq.filter (fun kv -> 
-            kv.Value 
-            |> List.map (fun r -> r.TyconRef.DisplayName)
-            |> List.exists ((=) typeName))
-        |> Seq.map (fun kv -> kv.Key)
-        |> Set.ofSeq
+let SuggestOtherLabelsOfSameRecordType g (nenv:NameResolutionEnv) typ (id:Ident) (allFields:Ident list) =    
+    let labelsOfPossibleRecord = GetRecordLabelsForType g nenv typ
 
     let givenFields = 
         allFields 
@@ -2777,7 +2809,7 @@ let SuggestOtherLabelsOfSameRecordType (nenv:NameResolutionEnv) typeName (id:Ide
     
       
 let SuggestLabelsOfRelatedRecords (nenv:NameResolutionEnv) (id:Ident) (allFields:Ident list) =
-    let predictLabels() =                         
+    let suggestLabels() =                         
         let givenFields = allFields |> List.map (fun fld -> fld.idText) |> List.filter ((<>) id.idText) |> Set.ofList
         if Set.isEmpty givenFields then 
             // return labels from all records
@@ -2805,7 +2837,7 @@ let SuggestLabelsOfRelatedRecords (nenv:NameResolutionEnv) (id:Ident) (allFields
 
             Set.difference labelsOfPossibleRecords givenFields
 
-    UndefinedName(0,FSComp.SR.undefinedNameRecordLabel, id, predictLabels)
+    UndefinedName(0,FSComp.SR.undefinedNameRecordLabel, id, suggestLabels)
 
 /// Resolve a long identifier representing a record field 
 let ResolveFieldPrim (ncenv:NameResolver) nenv ad typ (mp,id:Ident) allFields =
@@ -2818,7 +2850,7 @@ let ResolveFieldPrim (ncenv:NameResolver) nenv ad typ (mp,id:Ident) allFields =
             let frefs = 
                 try Map.find id.idText nenv.eFieldLabels 
                 with :? KeyNotFoundException ->
-                    // record label is unknown -> predict related labels and give a hint to the user
+                    // record label is unknown -> suggest related labels and give a hint to the user
                     error(SuggestLabelsOfRelatedRecords nenv id allFields)
 
             // Eliminate duplicates arising from multiple 'open' 
@@ -2830,12 +2862,12 @@ let ResolveFieldPrim (ncenv:NameResolver) nenv ad typ (mp,id:Ident) allFields =
             match ncenv.InfoReader.TryFindRecdOrClassFieldInfoOfType(id.idText,m,typ) with
             | Some (RecdFieldInfo(_,rfref)) -> [ResolutionInfo.Empty, FieldResolution(rfref,false)]
             | None ->
-                let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv typ
                 if isRecdTy g typ then
-                    // record label doesn't belong to record type -> predict other labels of same record
-                    let predictLabels() = SuggestOtherLabelsOfSameRecordType nenv typeName id allFields
+                    // record label doesn't belong to record type -> suggest other labels of same record
+                    let suggestLabels() = SuggestOtherLabelsOfSameRecordType g nenv typ id allFields
+                    let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv typ
                     let errorText = FSComp.SR.nrRecordDoesNotContainSuchLabel(typeName,id.idText)
-                    error(ErrorWithPredictions(errorText, m, id.idText, predictLabels))
+                    error(ErrorWithSuggestions(errorText, m, id.idText, suggestLabels))
                 else
                     lookup()
         else 

@@ -2030,7 +2030,7 @@ and ReportNoCandidatesError (csenv:ConstraintSolverEnv) (nUnnamedCallerArgs,nNam
                     |> List.map (fun p -> p.Name.Replace("@",""))
                     |> Set.ofList
 
-                ErrorWithPredictions((msgNum,FSComp.SR.csCtorHasNoArgumentOrReturnProperty(methodName, id.idText, msgText)),id.idRange,id.idText,predictFields)
+                ErrorWithSuggestions((msgNum,FSComp.SR.csCtorHasNoArgumentOrReturnProperty(methodName, id.idText, msgText)),id.idRange,id.idText,predictFields)
             else
                 Error((msgNum,FSComp.SR.csMemberHasNoArgumentOrReturnProperty(methodName, id.idText, msgText)),id.idRange)
         | [] -> Error((msgNum,msgText),m)

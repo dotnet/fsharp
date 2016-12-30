@@ -9,6 +9,7 @@ open System
 open System.IO
 open System.Text
 open System.Text.RegularExpressions
+open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Driver
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.CompileOps
@@ -48,8 +49,8 @@ type internal CompilationResult =
 
 [<RequireQualifiedAccess>]
 type internal CompilationOutput = 
-    { Errors : ErrorOrWarning[]
-      Warnings : ErrorOrWarning[]  }
+    { Errors : Diagnostic[]
+      Warnings : Diagnostic[]  }
 
 type internal InProcCompiler(referenceResolver) = 
     member this.Compile(argv) = 
@@ -72,7 +73,7 @@ type internal InProcCompiler(referenceResolver) =
 
 /// in-proc version of fsc.exe
 type internal FscCompiler() =
-    let referenceResolver = Microsoft.FSharp.Compiler.MSBuildReferenceResolver.Resolver 
+    let referenceResolver = MSBuildReferenceResolver.Resolver 
     let compiler = InProcCompiler(referenceResolver)
 
     let emptyLocation = 
@@ -86,7 +87,7 @@ type internal FscCompiler() =
     /// converts short and long issue types to the same CompilationIssue reprsentation
     let convert issue : CompilationIssue = 
         match issue with
-        | Microsoft.FSharp.Compiler.CompileOps.ErrorOrWarning.Short(isError, text) -> 
+        | Diagnostic.Short(isError, text) -> 
             {
                 Location = emptyLocation
                 Code = ""
@@ -95,7 +96,7 @@ type internal FscCompiler() =
                 Text = text
                 Type = if isError then CompilationIssueType.Error else CompilationIssueType.Warning
             }
-        | Microsoft.FSharp.Compiler.CompileOps.ErrorOrWarning.Long(isError, details) ->
+        | Diagnostic.Long(isError, details) ->
             let loc, file = 
                 match details.Location with
                 | Some l when not l.IsEmpty -> 

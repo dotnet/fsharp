@@ -46,9 +46,9 @@ let rec findOriginalException err =
     | _ -> err
 
 
-type Predictions = unit -> Set<string>
+type Suggestions = unit -> Set<string>
 
-let NoPredictions : Predictions = fun () -> Set.empty
+let NoSuggestions : Suggestions = fun () -> Set.empty
 
 /// Thrown when we stop processing the F# Interactive entry or #load.
 exception StopProcessingExn of exn option
@@ -69,10 +69,10 @@ exception Error of (int * string) * range with   // int is e.g. 191 in FS0191  /
         | _ -> "impossible"
 
 
-exception ErrorWithPredictions of (int * string) * range * string * Predictions with   // int is e.g. 191 in FS0191 
+exception ErrorWithSuggestions of (int * string) * range * string * Suggestions with   // int is e.g. 191 in FS0191 
     override this.Message =
         match this :> exn with
-        | ErrorWithPredictions((_,msg),_,_,_) -> msg
+        | ErrorWithSuggestions((_,msg),_,_,_) -> msg
         | _ -> "impossible"
 
 exception InternalError of string * range
@@ -176,9 +176,10 @@ module BuildPhaseSubcategory =
     let Internal = "internal"          // Compiler ICE
 
 [<System.Diagnostics.DebuggerDisplay("{DebugDisplay()}")>]
-type PhasedError = { Exception:exn; Phase:BuildPhase } with
+type PhasedDiagnostic = 
+    { Exception:exn; Phase:BuildPhase }
     /// Construct a phased error
-    static member Create(exn:exn,phase:BuildPhase) : PhasedError =
+    static member Create(exn:exn,phase:BuildPhase) : PhasedDiagnostic =
         System.Diagnostics.Debug.Assert(phase<>BuildPhase.DefaultPhase, sprintf "Compile error seen with no phase to attribute it to.%A %s %s" phase exn.Message exn.StackTrace )        
         {Exception = exn; Phase=phase}
     member this.DebugDisplay() =
@@ -236,9 +237,9 @@ type PhasedError = { Exception:exn; Phase:BuildPhase } with
         // Sanity check ensures that Phase matches Subcategory            
 #if DEBUG
         if isPhaseInCompile then 
-            System.Diagnostics.Debug.Assert(PhasedError.IsSubcategoryOfCompile(pe.Subcategory()), "Subcategory did not match isPhaesInCompile=true")
+            System.Diagnostics.Debug.Assert(PhasedDiagnostic.IsSubcategoryOfCompile(pe.Subcategory()), "Subcategory did not match isPhaesInCompile=true")
         else
-            System.Diagnostics.Debug.Assert(not(PhasedError.IsSubcategoryOfCompile(pe.Subcategory())), "Subcategory did not match isPhaseInCompile=false")
+            System.Diagnostics.Debug.Assert(not(PhasedDiagnostic.IsSubcategoryOfCompile(pe.Subcategory())), "Subcategory did not match isPhaseInCompile=false")
 #endif            
         isPhaseInCompile
 
@@ -248,39 +249,33 @@ type ErrorLogger(nameForDebugging:string) =
     abstract ErrorCount: int
     // The 'Impl' factoring enables a developer to place a breakpoint at the non-Impl 
     // code just below and get a breakpoint for all error logger implementations.
-    abstract WarnSinkImpl: PhasedError -> unit
-    abstract ErrorSinkImpl: PhasedError -> unit
-    member this.WarnSink err = 
-        this.WarnSinkImpl err
-    member this.ErrorSink err =
-        this.ErrorSinkImpl err
+    abstract DiagnosticSink: phasedError: PhasedDiagnostic * isError: bool -> unit
     member this.DebugDisplay() = sprintf "ErrorLogger(%s)" nameForDebugging
-    // Record the reported error/warning numbers for SQM purpose
-    abstract ErrorNumbers : int list
-    abstract WarningNumbers : int list
-    default this.ErrorNumbers = []
-    default this.WarningNumbers = []
 
 let DiscardErrorsLogger = 
     { new ErrorLogger("DiscardErrorsLogger") with 
-            member x.WarnSinkImpl(e) = 
-                ()
-            member x.ErrorSinkImpl(e) = 
-                ()
-            member x.ErrorCount = 
-                0 }
+            member x.DiagnosticSink(phasedError,isError) = ()
+            member x.ErrorCount = 0 }
 
 let AssertFalseErrorLogger =
     { new ErrorLogger("AssertFalseErrorLogger") with 
-            member x.WarnSinkImpl(e) = 
-                assert false; ()
-            member x.ErrorSinkImpl(e) = 
-                assert false; ()
-            member x.ErrorCount = 
-                assert false; 0 }
+            member x.DiagnosticSink(phasedError,isError) = assert false; ()
+            member x.ErrorCount = assert false; 0 }
 
-/// When no errorLogger is installed (on the thread) use this one.
-let uninitializedErrorLoggerFallback = ref AssertFalseErrorLogger
+type CapturingErrorLogger(nm) = 
+    inherit ErrorLogger(nm) 
+    let mutable errorCount = 0 
+    let diagnostics = ResizeArray()
+    override x.DiagnosticSink(phasedError, isError) = 
+        if isError then errorCount <- errorCount + 1
+        diagnostics.Add (phasedError, isError) 
+    override x.ErrorCount = errorCount
+    member x.Diagnostics = diagnostics |> Seq.toList
+    member x.CommitDelayedDiagnostics(errorLogger:ErrorLogger) = 
+        // Eagerly grab all the errors and warnings from the mutable collection
+        let errors = diagnostics.ToArray()
+        errors |> Array.iter errorLogger.DiagnosticSink
+
 
 /// Type holds thread-static globals for use by the compile.
 type internal CompileThreadStatic =
@@ -301,7 +296,7 @@ type internal CompileThreadStatic =
     static member ErrorLogger
         with get() = 
             match box CompileThreadStatic.errorLogger with
-            | null -> !uninitializedErrorLoggerFallback
+            | null -> AssertFalseErrorLogger
             | _ -> CompileThreadStatic.errorLogger
         and set v = CompileThreadStatic.errorLogger <- v
 
@@ -343,15 +338,30 @@ module ErrorLoggerExtensions =
 #endif
 
     type ErrorLogger with  
-        member x.ErrorR  exn = match exn with StopProcessing | ReportedError _ -> raise exn | _ -> x.ErrorSink(PhasedError.Create(exn,CompileThreadStatic.BuildPhase))
-        member x.Warning exn = match exn with StopProcessing | ReportedError _ -> raise exn | _ -> x.WarnSink(PhasedError.Create(exn,CompileThreadStatic.BuildPhase))
-        member x.Error   exn = x.ErrorR exn; raise (ReportedError (Some exn))
-        member x.PhasedError   (ph:PhasedError) = 
-            x.ErrorSink ph
+
+        member x.ErrorR  exn = 
+            match exn with 
+            | StopProcessing 
+            | ReportedError _ -> raise exn 
+            | _ -> x.DiagnosticSink(PhasedDiagnostic.Create(exn,CompileThreadStatic.BuildPhase), true)
+
+        member x.Warning exn = 
+            match exn with 
+            | StopProcessing 
+            | ReportedError _ -> raise exn 
+            | _ -> x.DiagnosticSink(PhasedDiagnostic.Create(exn,CompileThreadStatic.BuildPhase), false)
+
+        member x.Error   exn = 
+            x.ErrorR exn
+            raise (ReportedError (Some exn))
+
+        member x.SimulateError   (ph:PhasedDiagnostic) = 
+            x.DiagnosticSink (ph, true)
             raise (ReportedError (Some ph.Exception))
+
         member x.ErrorRecovery (exn:exn) (m:range) =
             // Never throws ReportedError.
-            // Throws StopProcessing and exceptions raised by the ErrorSink(exn) handler.
+            // Throws StopProcessing and exceptions raised by the DiagnosticSink(exn) handler.
             match exn with
             (* Don't send ThreadAbortException down the error channel *)
 #if FX_REDUCED_EXCEPTIONS
@@ -370,13 +380,13 @@ module ErrorLoggerExtensions =
             // Do standard error recovery.
             // Additionally ignore/catch StopProcessing. [This is the only catch handler for StopProcessing].
             // Additionally ignore/catch ReportedError.
-            // Can throw other exceptions raised by the ErrorSink(exn) handler.         
+            // Can throw other exceptions raised by the DiagnosticSink(exn) handler.         
             match exn with
             | StopProcessing | WrappedError(StopProcessing,_) -> () // suppress, so skip error recovery.
             | _ ->
                 try  x.ErrorRecovery exn m
                 with
-                  | StopProcessing | WrappedError(StopProcessing,_) -> () // catch, e.g. raised by ErrorSink.
+                  | StopProcessing | WrappedError(StopProcessing,_) -> () // catch, e.g. raised by DiagnosticSink.
                   | ReportedError _ | WrappedError(ReportedError _,_)  -> () // catch, but not expected unless ErrorRecovery is changed.
         member x.ErrorRecoveryNoRange (exn:exn) =
             x.ErrorRecovery exn range0
@@ -395,8 +405,7 @@ let PushErrorLoggerPhaseUntilUnwind(errorLoggerTransformer : ErrorLogger -> #Err
     let newInstalled = ref true
     let newIsInstalled() = if !newInstalled then () else (assert false; (); (*failwith "error logger used after unwind"*)) // REVIEW: ok to throw?
     let chkErrorLogger = { new ErrorLogger("PushErrorLoggerPhaseUntilUnwind") with
-                             member x.WarnSinkImpl(e)  = newIsInstalled(); newErrorLogger.WarnSink(e)
-                             member x.ErrorSinkImpl(e) = newIsInstalled(); newErrorLogger.ErrorSink(e)
+                             member x.DiagnosticSink(phasedError, isError) = newIsInstalled(); newErrorLogger.DiagnosticSink(phasedError, isError)
                              member x.ErrorCount   = newIsInstalled(); newErrorLogger.ErrorCount }
     CompileThreadStatic.ErrorLogger <- chkErrorLogger
     { new System.IDisposable with 
@@ -406,17 +415,17 @@ let PushErrorLoggerPhaseUntilUnwind(errorLoggerTransformer : ErrorLogger -> #Err
 
 let SetThreadBuildPhaseNoUnwind(phase:BuildPhase) = CompileThreadStatic.BuildPhase <- phase
 let SetThreadErrorLoggerNoUnwind(errorLogger)     = CompileThreadStatic.ErrorLogger <- errorLogger
-let SetUninitializedErrorLoggerFallback errLogger = uninitializedErrorLoggerFallback := errLogger
 
 // Global functions are still used by parser and TAST ops.
 let errorR  exn = CompileThreadStatic.ErrorLogger.ErrorR exn
 let warning exn = CompileThreadStatic.ErrorLogger.Warning exn
 let error   exn = CompileThreadStatic.ErrorLogger.Error exn
 // for test only
-let phasedError (p : PhasedError) = CompileThreadStatic.ErrorLogger.PhasedError p
+let simulateError (p : PhasedDiagnostic) = CompileThreadStatic.ErrorLogger.SimulateError p
 
-let errorSink pe = CompileThreadStatic.ErrorLogger.ErrorSink pe
-let warnSink pe = CompileThreadStatic.ErrorLogger.WarnSink pe
+let diagnosticSink (phasedError, isError) = CompileThreadStatic.ErrorLogger.DiagnosticSink (phasedError, isError)
+let errorSink pe = diagnosticSink (pe, true)
+let warnSink pe = diagnosticSink (pe, false)
 let errorRecovery exn m = CompileThreadStatic.ErrorLogger.ErrorRecovery exn m
 let stopProcessingRecovery exn m = CompileThreadStatic.ErrorLogger.StopProcessingRecovery exn m
 let errorRecoveryNoRange exn = CompileThreadStatic.ErrorLogger.ErrorRecoveryNoRange exn
@@ -439,8 +448,7 @@ let suppressErrorReporting f =
     try
         let errorLogger = 
             { new ErrorLogger("suppressErrorReporting") with 
-                member x.WarnSinkImpl(_exn) = ()
-                member x.ErrorSinkImpl(_exn) = ()
+                member x.DiagnosticSink(_phasedError,_isError) = ()
                 member x.ErrorCount = 0 }
         SetThreadErrorLoggerNoUnwind(errorLogger)
         f()

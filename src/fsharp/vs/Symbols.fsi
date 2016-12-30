@@ -244,6 +244,9 @@ and [<Class>] internal FSharpEntity =
     /// Get all the interface implementations, by walking the type hierarchy
     member AllInterfaces : IList<FSharpType>  
 
+    /// Check if the entity inherits from System.Attribute in its type hierarchy
+    member IsAttributeType : bool
+
     /// Get the base type, if any 
     member BaseType : FSharpType option
 

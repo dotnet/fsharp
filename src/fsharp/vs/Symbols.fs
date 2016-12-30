@@ -397,7 +397,12 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
         [ for ty in AllInterfacesOfType  cenv.g cenv.amap range0 AllowMultiIntfInstantiations.Yes (generalizedTyconRef entity) do 
              yield FSharpType(cenv,  ty) ]
         |> makeReadOnlyCollection
-
+    
+    member x.IsAttributeType =
+        if isUnresolved() then false else
+        let ty = generalizedTyconRef entity
+        Infos.ExistsHeadTypeInEntireHierarchy cenv.g cenv.amap range0 ty cenv.g.tcref_System_Attribute
+        
     member x.BaseType = 
         checkIsResolved()        
         GetSuperTypeOfType cenv.g cenv.amap range0 (generalizedTyconRef entity) 
