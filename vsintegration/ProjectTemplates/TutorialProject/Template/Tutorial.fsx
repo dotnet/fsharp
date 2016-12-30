@@ -68,7 +68,7 @@ module IntegersAndNumbers =
     printfn "The table of squares from 0 to 99 is:\n%A" sampleTableOfSquares
 
 
-/// Values in F# are immutable by default (save for Arrays).  They cannot be changed
+/// Values in F# are immutable by default.  They cannot be changed
 /// in the course of a program's execution unless explicitly marked as mutable.
 ///
 /// To learn more, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/values/index#why-immutable
