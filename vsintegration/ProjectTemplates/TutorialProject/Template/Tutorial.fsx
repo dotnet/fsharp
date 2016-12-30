@@ -27,7 +27,7 @@
 // F# supports three kinds of comments:
 
 //  1. Double-slash comments.  These are used in most situations.
-(*  2. ML-style Block comments.  These aren't uses that often. *)
+(*  2. ML-style Block comments.  These aren't used that often. *)
 /// 3. Triple-slash comments.  These are used for documenting functions, types, and so on.
 ///    They will appear as text when you hover over something which is decorated with these comments.
 ///
@@ -84,10 +84,14 @@ module Immutability =
     /// A mutable binding.  This is required to be able to mutate the value of 'otherNumber'.
     let mutable otherNumber = 2
 
+    printfn "'otherNumber' is %d" otherNumber
+
     // When mutating a value, use '<-' to assign a new value.
     //
     // Note that '=' is not the same as this.  '=' is used to test equality.
     otherNumber <- otherNumber + 1
+
+    printfn "'otherNumber' changed to be %d" otherNumber
 
 
 /// Much of F# programming consists of defining functions that transform input data to produce
@@ -241,6 +245,8 @@ module PipelinesAndComposition =
         let squares = List.map square odds
         let result = List.map addOne squares
         result
+
+    printfn "processing %A through 'squareOddValuesAndAddOne' produces: %A" numbers (squareOddValuesAndAddOne numbers)
     
     /// A shorter way to write 'squareOddValuesAndAddOne' is to nest each
     /// sub-result into the function calls themselves.
@@ -249,6 +255,8 @@ module PipelinesAndComposition =
     /// order in which the data is processed.
     let squareOddValuesAndAddOneNested values = 
         List.map addOne (List.map square (List.filter isOdd values))
+
+    printfn "processing %A through 'squareOddValuesAndAddOneNested' produces: %A" numbers (squareOddValuesAndAddOneNested numbers)
 
     /// A preferred way to write 'squareOddValuesAndAddOne' is to use F# pipe operators.
     /// This allows you to avoid creating intermediate results, but is much more readable
@@ -259,6 +267,8 @@ module PipelinesAndComposition =
         |> List.map square
         |> List.map addOne
 
+    printfn "processing %A through 'squareOddValuesAndAddOnePipeline' produces: %A" numbers (squareOddValuesAndAddOnePipeline numbers)
+
     /// You can shorten 'squareOddValuesAndAddOnePipeline' by moving the second `List.map` call
     /// into the first, using a Lambda Function.
     ///
@@ -268,6 +278,8 @@ module PipelinesAndComposition =
         values
         |> List.filter isOdd
         |> List.map(fun x -> x |> square |> addOne)
+
+    printfn "processing %A through 'squareOddValuesAndAddOneShorterPipeline' produces: %A" numbers (squareOddValuesAndAddOneShorterPipeline numbers)
 
     /// Lastly, you can eliminate the need to explicitly take 'values' in as a parameter by using '>>'
     /// to compose the two core operations: filtering out even numbers, then squaring and adding one.
@@ -284,6 +296,8 @@ module PipelinesAndComposition =
     /// the signatures of the functions we're using.
     let squareOddValuesAndAddOneComposition =
         List.filter isOdd >> List.map (square >> addOne)
+
+    printfn "processing %A through 'squareOddValuesAndAddOneComposition' produces: %A" numbers (squareOddValuesAndAddOneComposition numbers)
 
 
 /// Lists are ordered, immutable, singly-linked lists.  They are eager in their evaluation.
@@ -826,7 +840,7 @@ module UnitsOfMeasure =
 
 
 /// Classes are a way of defining new object types in F#, and support standard Object-oriented constructs.
-/// Classes can have a variety of members (methods, properties, events, etc.)
+/// They can have a variety of members (methods, properties, events, etc.)
 ///
 /// To learn more about Classes, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/classes
 ///
@@ -864,7 +878,7 @@ module DefiningClasses =
 
 
 /// Generic classes allow types to be defined with respect to a set of type parameters.
-/// In the followiung, 'T is the type parameter for the class.
+/// In the following, 'T is the type parameter for the class.
 ///
 /// To learn more, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/generics/
 module DefiningGenericClasses = 
@@ -895,7 +909,7 @@ module DefiningGenericClasses =
 /// Object types and object expressions can implement interfaces.
 ///
 /// To learn more, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/interfaces
-module ImplementingInterfaces = 
+module ImplementingInterfaces =
 
     /// This is a type that implements IDisposable.
     type ReadFile() =
@@ -921,7 +935,7 @@ module ImplementingInterfaces =
 /// you use some functions for parallel processing over arrays.
 ///
 /// To learn more, see: https://msdn.microsoft.com/en-us/visualfsharpdocs/conceptual/array.parallel-module-%5Bfsharp%5D
-module ParallelArrayProgramming = 
+module ParallelArrayProgramming =
               
     /// First, an array of inputs.
     let oneBigArray = [| 0 .. 100000 |]
@@ -941,10 +955,10 @@ module ParallelArrayProgramming =
 
 
 
-/// Events are a common idiom for .NET programming.
+/// Events are a common idiom for .NET programming, especially with WinForms or WPF applications.
 ///
 /// To learn more, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/members/events
-module Events = 
+module Events =
 
     /// First, create instance of Event object that consists of subscription point (event.Publish) and event trigger (event.Trigger).
     let simpleEvent = new Event<int>() 
