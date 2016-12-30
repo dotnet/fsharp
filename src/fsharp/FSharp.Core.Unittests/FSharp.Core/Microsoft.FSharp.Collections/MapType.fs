@@ -107,7 +107,9 @@ type MapType() =
         // Empty ID
         let id = (Map.empty : Map<int,int>) :> IDictionary
         Assert.IsFalse(id.Contains(box 5))
-        CheckThrowsKeyNotFoundException(fun () -> id.[1] |> ignore)
+        // IDictionary specifies .Item[x] should return null when the key isn't
+        // found, rather than raising KeyNotFoundException.
+        Assert.IsNull(id.[1])
         CollectionAssert.AreEqual(id.Keys,   [| |] )
         CollectionAssert.AreEqual(id.Values, [| |] )
     
