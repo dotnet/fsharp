@@ -18,17 +18,12 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 
 [<Shared>]
 [<ExportLanguageService(typeof<ILanguageDebugInfoService>, FSharpCommonConstants.FSharpLanguageName)>]
-type internal FSharpLanguageDebugInfoService 
-    [<ImportingConstructor>]
-    (
-        projectInfoManager: ProjectInfoManager
-    ) =
+type internal FSharpLanguageDebugInfoService [<ImportingConstructor>](projectInfoManager: ProjectInfoManager) =
 
     static member GetDataTipInformation(sourceText: SourceText, position: int, tokens: List<ClassifiedSpan>): TextSpan option =
         let tokenIndex = tokens |> Seq.tryFindIndex(fun t -> t.TextSpan.Contains(position))
 
-        if tokenIndex.IsNone then
-            None
+        if tokenIndex.IsNone then None
         else
             let token = tokens.[tokenIndex.Value]
         
@@ -63,10 +58,8 @@ type internal FSharpLanguageDebugInfoService
                 let tokens = CommonHelpers.getColorizationData(document.Id, sourceText, textSpan, Some(document.Name), defines, cancellationToken)
                 let result = 
                      match FSharpLanguageDebugInfoService.GetDataTipInformation(sourceText, position, tokens) with
-                     | None -> 
-                        DebugDataTipInfo()
-                     | Some textSpan -> 
-                        DebugDataTipInfo(textSpan, sourceText.GetSubText(textSpan).ToString())
+                     | None -> DebugDataTipInfo()
+                     | Some textSpan -> DebugDataTipInfo(textSpan, sourceText.GetSubText(textSpan).ToString())
                 return result
             }
             |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)

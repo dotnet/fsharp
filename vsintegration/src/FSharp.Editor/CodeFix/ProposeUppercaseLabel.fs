@@ -28,4 +28,4 @@ type internal FSharpProposeUpperCaseLabelCodeFixProvider
             context.RegisterCodeFix(
                 CodeAction.Create(title, solutionChanger, title),
                 (context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id)).ToImmutableArray())
-        } |> Async.ignore |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+        } |> Async.Ignore |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

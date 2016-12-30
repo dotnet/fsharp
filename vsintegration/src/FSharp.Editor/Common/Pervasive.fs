@@ -185,12 +185,6 @@ module Async =
             return f a
         }
 
-    let ignore (a: Async<'T>) : Async<unit> =
-        async {
-            let! _ = a 
-            return () 
-        }
-
     /// Creates an asynchronous workflow that runs the asynchronous workflow given as an argument at most once. 
     /// When the returned workflow is started for the second time, it reuses the result of the previous execution.
     let cache (input : Async<'T>) =
