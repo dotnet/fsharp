@@ -36,7 +36,7 @@
 ///    To learn more, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/xml-documentation
 
 
-// Open namespaces using the 'open' directive.
+// Open namespaces using the 'open' keyword.
 //
 // To learn more, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/import-declarations-the-open-keyword
 open System
@@ -64,8 +64,30 @@ module IntegersAndNumbers =
     /// This is a list of all tuples containing all the numbers from 0 to 99 and their squares.
     let sampleTableOfSquares = [ for i in 0 .. 99 -> (i, i*i) ]
 
-    // The next line prints a list that includes tuples, using %A for generic printing.
+    // The next line prints a list that includes tuples, using '%A' for generic printing.
     printfn "The table of squares from 0 to 99 is:\n%A" sampleTableOfSquares
+
+
+/// Values in F# are immutable by default (save for Arrays).  They cannot be changed
+/// in the course of a program's execution unless explicitly marked as mutable.
+///
+/// To learn more, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/values/index#why-immutable
+module Immutability =
+
+    /// Binding a value to a name via 'let' makes it immutable.
+    ///
+    /// The second line of code fails to compile because 'number' is immutable and bound.
+    /// Re-defining 'number' to be a different value is not allowed in F#.
+    let number = 2
+    // let number = 3
+
+    /// A mutable binding.  This is required to be able to mutate the value of 'otherNumber'.
+    let mutable otherNumber = 2
+
+    // When mutating a value, use '<-' to assign a new value.
+    //
+    // Note that '=' is not the same as this.  '=' is used to test equality.
+    otherNumber <- otherNumber + 1
 
 
 /// Much of F# programming consists of defining functions that transform input data to produce
@@ -94,7 +116,7 @@ module BasicFunctions =
 
     /// Conditionals use if/then/elid/elif/else.
     ///
-    /// Note that F# uses whitespace indentation-aware syntax, similar to languages like Python or Ruby.
+    /// Note that F# uses whitespace indentation-aware syntax, similar to languages like Python.
     let sampleFunction3 x = 
         if x < 100.0 then 
             2.0*x*x - x/5.0 + 3.0
@@ -192,6 +214,78 @@ module Tuples =
     printfn "Struct Tuple: %A\nReference tuple made from the Struct Tuple: %A" sampleStructTuple (sampleStructTuple |> convertFromStructTuple)
 
 
+/// The F# pipe operators ('|>', '<|', etc.) and F# composition operators ('>>', '<<')
+/// are used extensively when processing data.  These operators are themselves functions
+/// which make use of Partial Application.
+///
+/// To learn more about these operators, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/functions/#function-composition-and-pipelining
+/// To learn more about Partial Application, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/functions/#partial-application-of-arguments
+module PipelinesAndComposition =
+
+    /// Squares a value.
+    let square x = x * x
+
+    /// Adds 1 to a value.
+    let addOne x = x + 1
+
+    /// Tests if an integer value is odd via modulo.
+    let isOdd x = x % 2 <> 0
+
+    /// A list of 5 numbers.  More on lists later.
+    let numbers = [ 1; 2; 3; 4; 5 ]
+
+    /// Given a list of integers, it filters out the even numbers,
+    /// squares the resulting odds, and adds 1 to the squared odds.
+    let squareOddValuesAndAddOne values = 
+        let odds = List.filter isOdd values
+        let squares = List.map square odds
+        let result = List.map addOne squares
+        result
+    
+    /// A shorter way to write 'squareOddValuesAndAddOne' is to nest each
+    /// sub-result into the function calls themselves.
+    ///
+    /// This makes the function much shorter, but it's difficult to see the
+    /// order in which the data is processed.
+    let squareOddValuesAndAddOneNested values = 
+        List.map addOne (List.map square (List.filter isOdd values))
+
+    /// A preferred way to write 'squareOddValuesAndAddOne' is to use F# pipe operators.
+    /// This allows you to avoid creating intermediate results, but is much more readable
+    /// than nesting function calls like 'squareOddValuesAndAddOneNested'
+    let squareOddValuesAndAddOnePipeline values =
+        values
+        |> List.filter isOdd
+        |> List.map square
+        |> List.map addOne
+
+    /// You can shorten 'squareOddValuesAndAddOnePipeline' by moving the second `List.map` call
+    /// into the first, using a Lambda Function.
+    ///
+    /// Note that pipelines are also being used inside the lambda function.  F# pipe operators
+    /// can be used for single values as well.  This makes them very powerful for processing data.
+    let squareOddValuesAndAddOneShorterPipeline values =
+        values
+        |> List.filter isOdd
+        |> List.map(fun x -> x |> square |> addOne)
+
+    /// Lastly, you can eliminate the need to explicitly take 'values' in as a parameter by using '>>'
+    /// to compose the two core operations: filtering out even numbers, then squaring and adding one.
+    /// Likewise, the 'fun x -> ...' bit of the lambda expression is also not needed, because 'x' is simply
+    /// being defined in that scope so that it can be passed to a functional pipeline.  Thus, '>>' can be used
+    /// there as well.
+    ///
+    /// The result of 'squareOddValuesAndAddOneComposition' is itself another function which takes a
+    /// list of integers as its input.  If you execute 'squareOddValuesAndAddOneComposition' with a list
+    /// of integers, you'll notice that it produces the same results as previous functions.
+    ///
+    /// This is using what is known as function composition.  This is possible because functions in F#
+    /// use Partial Application and the input and output types of each data processing operation match
+    /// the signatures of the functions we're using.
+    let squareOddValuesAndAddOneComposition =
+        List.filter isOdd >> List.map (square >> addOne)
+
+
 /// Lists are ordered, immutable, singly-linked lists.  They are eager in their evaluation.
 /// 
 /// This module shows various ways to generate lists and process lists with some functions
@@ -203,8 +297,15 @@ module Lists =
     /// Lists are defined using [ ... ].  This is an empty list.
     let list1 = [ ]  
 
-    /// This is a list with 3 elements.  ';' is used to separate elements.
+    /// This is a list with 3 elements.  ';' is used to separate elements on the same line.
     let list2 = [ 1; 2; 3 ]
+
+    /// You can also separate elements by placing them on their own lines.
+    let list3 = [
+        1
+        2
+        3
+    ]
 
     /// This is a list of integers from 1 to 1000
     let numberList = [ 1 .. 1000 ]  
@@ -706,7 +807,7 @@ module UnitsOfMeasure =
     open Microsoft.FSharp.Data.UnitSystems.SI.UnitNames
 
     /// Define a unitized constant
-    let sampelValue1 = 1600.0<meter>          
+    let sampleValue1 = 1600.0<meter>          
 
     /// Next, define a new unit type
     [<Measure>]
@@ -721,7 +822,7 @@ module UnitsOfMeasure =
     let sampleValue3 = sampleValue2 * mile.asMeter   
 
     // Values using Units of Measure can be used just like the primitive numeric type for things like printing.
-    printfn "After a %f race I would walk %f miles which would be %f meters" sampelValue1 sampleValue2 sampleValue3
+    printfn "After a %f race I would walk %f miles which would be %f meters" sampleValue1 sampleValue2 sampleValue3
 
 
 /// Classes are a way of defining new object types in F#, and support standard Object-oriented constructs.
