@@ -76,7 +76,8 @@ module Immutability =
 
     /// Binding a value to a name via 'let' makes it immutable.
     ///
-    /// The second line of code fails to compile because 'number' is immutable.
+    /// The second line of code fails to compile because 'number' is immutable and bound.
+    /// Re-defining 'number' to be a different value is not allowed in F#.
     let number = 2
     // let number = 3
 
@@ -270,6 +271,9 @@ module PipelinesAndComposition =
 
     /// Lastly, you can eliminate the need to explicitly take 'values' in as a parameter by using '>>'
     /// to compose the two core operations: filtering out even numbers, then squaring and adding one.
+    /// Likewise, the 'fun x -> ...' bit of the lambda expression is also not needed, because 'x' is simply
+    /// being defined in that scope so that it can be passed to a functional pipeline.  Thus, '>>' can be used
+    /// there as well.
     ///
     /// The result of 'squareOddValuesAndAddOneComposition' is itself another function which takes a
     /// list of integers as its input.  If you execute 'squareOddValuesAndAddOneComposition' with a list
@@ -279,7 +283,7 @@ module PipelinesAndComposition =
     /// use Partial Application and the input and output types of each data processing operation match
     /// the signatures of the functions we're using.
     let squareOddValuesAndAddOneComposition =
-        List.filter isOdd >> List.map(fun x -> x |> square |> addOne)
+        List.filter isOdd >> List.map (square >> addOne)
 
 
 /// Lists are ordered, immutable, singly-linked lists.  They are eager in their evaluation.
