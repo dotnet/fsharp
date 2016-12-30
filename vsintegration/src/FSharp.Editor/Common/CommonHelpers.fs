@@ -417,14 +417,19 @@ module internal Extensions =
             with _ -> path
 
     type FSharpChecker with
+        member this.ParseDocument(document: Document, options: FSharpProjectOptions, sourceText: string) =
+            asyncMaybe {
+                let! fileParseResults = this.ParseFileInProject(document.FilePath, sourceText, options) |> liftAsync
+                return! fileParseResults.ParseTree
+            }
+
         member this.ParseDocument(document: Document, options: FSharpProjectOptions, ?sourceText: SourceText) =
             asyncMaybe {
                 let! sourceText =
                     match sourceText with
                     | Some x -> Task.FromResult x
                     | None -> document.GetTextAsync()
-                let! fileParseResults = this.ParseFileInProject(document.FilePath, sourceText.ToString(), options) |> liftAsync
-                return! fileParseResults.ParseTree
+                return! this.ParseDocument(document, options, sourceText.ToString())
             }
 
         member this.ParseAndCheckDocument(filePath: string, textVersionHash: int, sourceText: string, options: FSharpProjectOptions) : Async<(Ast.ParsedInput * FSharpCheckFileResults) option> =
