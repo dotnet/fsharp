@@ -25,7 +25,8 @@ type internal FSharpFindReferencesService
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager
+        projectInfoManager: ProjectInfoManager,
+        lexer: Lexer
     ) =
     
     // File can be included in more than one project, hence single `range` may results with multiple `Document`s.
@@ -67,7 +68,7 @@ type internal FSharpFindReferencesService
                 let lineNumber = sourceText.Lines.GetLinePosition(position).Line + 1
                 let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.FilePath, options.OtherOptions |> Seq.toList)
                 
-                match CommonHelpers.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Fuzzy) with
+                match lexer.GetSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Fuzzy) with
                 | Some symbol -> 
                     let! symbolUse = checkFileResults.GetSymbolUseAtLocation(lineNumber, symbol.RightColumn, textLine, [symbol.Text])
                     match symbolUse with

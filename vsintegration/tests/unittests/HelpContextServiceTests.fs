@@ -58,7 +58,7 @@ type HelpContextServiceTests() =
             let span = TextSpan(marker, 0)
             let textLine = sourceText.Lines.GetLineFromPosition(marker)
             let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-            let tokens = CommonHelpers.getColorizationData(documentId, sourceText, textLine.Span, Some "test.fs", [], CancellationToken.None)
+            let tokens = Lexer().GetColorizationData(documentId, sourceText, textLine.Span, Some "test.fs", [], CancellationToken.None)
 
             yield FSharpHelpContextService.GetHelpTerm(FSharpChecker.Instance, sourceText, fileName,  newOptions, span, tokens, version)
                   |> Async.RunSynchronously

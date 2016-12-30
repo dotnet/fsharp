@@ -39,7 +39,13 @@ type internal FSharpHighlightSpan =
 
 [<Shared>]
 [<ExportLanguageService(typeof<IDocumentHighlightsService>, FSharpCommonConstants.FSharpLanguageName)>]
-type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerProvider: FSharpCheckerProvider, projectInfoManager: ProjectInfoManager) =
+type internal FSharpDocumentHighlightsService 
+    [<ImportingConstructor>] 
+    (
+        checkerProvider: FSharpCheckerProvider, 
+        projectInfoManager: ProjectInfoManager,
+        lexer: Lexer
+    ) =
 
     /// Fix invalid spans if they appear to have redundant suffix and prefix.
     static let fixInvalidSymbolSpans (sourceText: SourceText) (lastIdent: string) (spans: FSharpHighlightSpan []) =
@@ -67,14 +73,14 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
         |> Seq.distinctBy (fun span -> span.TextSpan.Start)
         |> Seq.toArray
 
-    static member GetDocumentHighlights(checker: FSharpChecker, documentKey: DocumentId, sourceText: SourceText, filePath: string, position: int, 
+    static member GetDocumentHighlights(lexer: Lexer, checker: FSharpChecker, documentKey: DocumentId, sourceText: SourceText, filePath: string, position: int, 
                                         defines: string list, options: FSharpProjectOptions, textVersionHash: int) : Async<FSharpHighlightSpan[]> =
         async {
             let textLine = sourceText.Lines.GetLineFromPosition(position)
             let textLinePos = sourceText.Lines.GetLinePosition(position)
             let fcsTextLineNumber = textLinePos.Line + 1
             
-            match CommonHelpers.getSymbolAtPosition(documentKey, sourceText, position, filePath, defines, SymbolLookupKind.Fuzzy) with
+            match lexer.GetSymbolAtPosition(documentKey, sourceText, position, filePath, defines, SymbolLookupKind.Fuzzy) with
             | Some symbol -> 
                 let! _parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
                 match checkFileAnswer with
@@ -101,7 +107,7 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
                      let! sourceText = document.GetTextAsync(cancellationToken)
                      let! textVersion = document.GetTextVersionAsync(cancellationToken) 
                      let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
-                     let! spans = FSharpDocumentHighlightsService.GetDocumentHighlights(checkerProvider.Checker, document.Id, sourceText, document.FilePath, 
+                     let! spans = FSharpDocumentHighlightsService.GetDocumentHighlights(lexer, checkerProvider.Checker, document.Id, sourceText, document.FilePath, 
                                                                                         position, defines, options, textVersion.GetHashCode())
                      let highlightSpans = spans |> Array.map (fun span ->
                         let kind = if span.IsDefinition then HighlightSpanKind.Definition else HighlightSpanKind.Reference

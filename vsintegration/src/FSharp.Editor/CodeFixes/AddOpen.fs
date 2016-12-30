@@ -178,34 +178,37 @@ type internal FSharpAddOpenCodeFixProvider
                 | None, _
                 | _, FSharpCheckFileAnswer.Aborted -> ()
                 | Some parsedInput, FSharpCheckFileAnswer.Succeeded checkFileResults ->
-                    let textLinePos = sourceText.Lines.GetLinePosition context.Span.Start
-                    let defines = CompilerEnvironment.GetCompilationDefinesForEditing(context.Document.FilePath, options.OtherOptions |> Seq.toList)
-                    let symbol = CommonHelpers.getSymbolAtPosition(context.Document.Id, sourceText, context.Span.Start, context.Document.FilePath, defines, SymbolLookupKind.Fuzzy)
-                    match symbol with
-                    | Some symbol ->
-                        let pos = Pos.fromZ textLinePos.Line textLinePos.Character
-                        let isAttribute = UntypedParseImpl.GetEntityKind(pos, parsedInput) = Some EntityKind.Attribute
-                        let entities =
-                            assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies checkFileResults
-                            |> List.map (fun e -> 
-                                 [ yield e.TopRequireQualifiedAccessParent, e.AutoOpenParent, e.Namespace, e.CleanedIdents
-                                   if isAttribute then
-                                       let lastIdent = e.CleanedIdents.[e.CleanedIdents.Length - 1]
-                                       if lastIdent.EndsWith "Attribute" && e.Kind LookupType.Precise = EntityKind.Attribute then
-                                           yield 
-                                               e.TopRequireQualifiedAccessParent, 
-                                               e.AutoOpenParent,
-                                               e.Namespace,
-                                               e.CleanedIdents 
-                                               |> Array.replace (e.CleanedIdents.Length - 1) (lastIdent.Substring(0, lastIdent.Length - 9)) ])
-                            |> List.concat
+                    let unresolvedIdentRange = CommonRoslynHelpers.TextSpanToFSharpRange(context.Document.FilePath, sourceText, context.Span)
+                    let isAttribute = UntypedParseImpl.GetEntityKind(unresolvedIdentRange.Start, parsedInput) = Some EntityKind.Attribute
+                    let entities =
+                        assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies checkFileResults
+                        |> List.collect (fun e -> 
+                             [ yield e.TopRequireQualifiedAccessParent, e.AutoOpenParent, e.Namespace, e.CleanedIdents
+                               if isAttribute then
+                                   let lastIdent = e.CleanedIdents.[e.CleanedIdents.Length - 1]
+                                   if lastIdent.EndsWith "Attribute" && e.Kind LookupType.Precise = EntityKind.Attribute then
+                                       yield 
+                                           e.TopRequireQualifiedAccessParent, 
+                                           e.AutoOpenParent,
+                                           e.Namespace,
+                                           e.CleanedIdents 
+                                           |> Array.replace (e.CleanedIdents.Length - 1) (lastIdent.Substring(0, lastIdent.Length - 9)) ])
 
-                        let idents = ParsedInput.getLongIdentAt parsedInput (Range.mkPos pos.Line symbol.RightColumn)
-                        match idents with
-                        | Some idents ->
-                            let createEntity = ParsedInput.tryFindInsertionContext pos.Line parsedInput idents
-                            return entities |> Seq.map createEntity |> Seq.concat |> Seq.toList |> getSuggestions context
-                        | None -> ()
+                    let longIdent = UntypedParseImpl.GetLongIdentAt(parsedInput, unresolvedIdentRange.End)
+
+                    let maybeUnresolvedIdents =
+                        longIdent 
+                        |> Option.map (fun longIdent ->
+                            longIdent
+                            |> List.map (fun ident ->
+                                { Ident = ident.idText
+                                  Resolved = not (ident.idRange = unresolvedIdentRange) })
+                            |> List.toArray)
+                    
+                    match maybeUnresolvedIdents with
+                    | Some maybeUnresolvedIdents ->
+                        let createEntity = ParsedInput.tryFindInsertionContext unresolvedIdentRange.StartLine parsedInput maybeUnresolvedIdents
+                        return entities |> Seq.map createEntity |> Seq.concat |> Seq.toList |> getSuggestions context
                     | None -> ()
             | None -> ()
         } |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

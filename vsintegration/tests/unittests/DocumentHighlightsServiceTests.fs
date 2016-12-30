@@ -50,7 +50,7 @@ let internal options = {
 
 let private getSpans (sourceText: SourceText) (caretPosition: int) =
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-    FSharpDocumentHighlightsService.GetDocumentHighlights(FSharpChecker.Instance, documentId, sourceText, filePath, caretPosition, [], options, 0)
+    FSharpDocumentHighlightsService.GetDocumentHighlights(Lexer(), FSharpChecker.Instance, documentId, sourceText, filePath, caretPosition, [], options, 0)
     |> Async.RunSynchronously
 
 let private span sourceText isDefinition (startLine, startCol) (endLine, endCol) =

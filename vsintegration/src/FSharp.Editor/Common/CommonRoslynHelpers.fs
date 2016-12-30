@@ -27,6 +27,13 @@ module internal CommonRoslynHelpers =
             //Assert.Exception(e)
             None
 
+    let TextSpanToFSharpRange(fileName: string, sourceText: SourceText, span: TextSpan) : range =
+        let startLinePos = sourceText.Lines.GetLinePosition span.Start
+        let startPos = Pos.fromZ startLinePos.Line startLinePos.Character
+        let endLinePos = sourceText.Lines.GetLinePosition span.End
+        let endPos = Pos.fromZ endLinePos.Line endLinePos.Character
+        Range.mkRange fileName startPos endPos
+
     let GetCompletedTaskResult(task: Task<'TResult>) =
         if task.Status = TaskStatus.RanToCompletion then
             task.Result

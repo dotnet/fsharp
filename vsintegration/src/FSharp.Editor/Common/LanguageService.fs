@@ -174,6 +174,7 @@ type internal FSharpCheckerWorkspaceService =
     inherit Microsoft.CodeAnalysis.Host.IWorkspaceService
     abstract Checker: FSharpChecker
     abstract ProjectInfoManager: ProjectInfoManager
+    abstract Lexer: Lexer
 
 type internal RoamingProfileStorageLocation(keyName: string) =
     inherit OptionStorageLocation()
@@ -193,13 +194,15 @@ type internal FSharpCheckerWorkspaceServiceFactory
     [<Composition.ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager
+        projectInfoManager: ProjectInfoManager,
+        lexer: Lexer
     ) =
     interface Microsoft.CodeAnalysis.Host.Mef.IWorkspaceServiceFactory with
         member this.CreateService(_workspaceServices) =
             upcast { new FSharpCheckerWorkspaceService with
                 member this.Checker = checkerProvider.Checker
-                member this.ProjectInfoManager = projectInfoManager }
+                member this.ProjectInfoManager = projectInfoManager 
+                member this.Lexer = lexer }
 
 [<Guid(FSharpCommonConstants.languageServiceGuidString)>]
 [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fs")>]

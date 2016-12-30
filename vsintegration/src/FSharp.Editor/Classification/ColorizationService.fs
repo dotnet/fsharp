@@ -23,7 +23,8 @@ type internal FSharpColorizationService
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager
+        projectInfoManager: ProjectInfoManager,
+        lexer: Lexer
     ) =
     interface IEditorClassificationService with
         // Do not perform classification if we don't have project options (#defines matter)
@@ -33,7 +34,7 @@ type internal FSharpColorizationService
             async {
                 let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
                 let! sourceText = document.GetTextAsync(cancellationToken)
-                result.AddRange(CommonHelpers.getColorizationData(document.Id, sourceText, textSpan, Some(document.FilePath), defines, cancellationToken))
+                result.AddRange(lexer.GetColorizationData(document.Id, sourceText, textSpan, Some(document.FilePath), defines, cancellationToken))
             } |> CommonRoslynHelpers.StartAsyncUnitAsTask cancellationToken
 
         member this.AddSemanticClassificationsAsync(document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
@@ -44,16 +45,13 @@ type internal FSharpColorizationService
                     let! textVersion = document.GetTextVersionAsync(cancellationToken)
                     let! _parseResults, checkResultsAnswer = checkerProvider.Checker.ParseAndCheckFileInProject(document.FilePath, textVersion.GetHashCode(), sourceText.ToString(), options)
 
-                    let extraColorizationData = 
-                        match checkResultsAnswer with
-                        | FSharpCheckFileAnswer.Aborted -> [| |]
-                        | FSharpCheckFileAnswer.Succeeded(results) -> 
-                            [| for (range, tokenColorKind)  in results.GetExtraColorizationsAlternate() do
-                                  let span = CommonHelpers.fixupSpan(sourceText, CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
-                                  if textSpan.Contains(span.Start) || textSpan.Contains(span.End - 1) || span.Contains(textSpan) then
-                                      yield ClassifiedSpan(span, CommonHelpers.compilerTokenToRoslynToken(tokenColorKind)) |]
-
-                    result.AddRange(extraColorizationData)
+                    match checkResultsAnswer with
+                    | FSharpCheckFileAnswer.Aborted -> ()
+                    | FSharpCheckFileAnswer.Succeeded(results) -> 
+                        for (range, tokenColorKind)  in results.GetExtraColorizationsAlternate() do
+                           let span = CommonHelpers.fixupSpan(sourceText, CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
+                           if textSpan.Contains(span.Start) || textSpan.Contains(span.End - 1) || span.Contains(textSpan) then
+                               result.Add(ClassifiedSpan(span, CommonHelpers.compilerTokenToRoslynToken(tokenColorKind)))
                 | None -> ()
             } |> CommonRoslynHelpers.StartAsyncUnitAsTask cancellationToken
 

@@ -64,13 +64,14 @@ type internal FSharpQuickInfoProvider
         [<System.ComponentModel.Composition.Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider,
         classificationFormatMapService: IClassificationFormatMapService,
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager
+        projectInfoManager: ProjectInfoManager,
+        lexer: Lexer
     ) =
 
     let xmlMemberIndexService = serviceProvider.GetService(typeof<SVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
     
-    static member ProvideQuickInfo(checker: FSharpChecker, documentId: DocumentId, sourceText: SourceText, filePath: string, position: int, options: FSharpProjectOptions, textVersionHash: int) =
+    static member ProvideQuickInfo(lexer: Lexer, checker: FSharpChecker, documentId: DocumentId, sourceText: SourceText, filePath: string, position: int, options: FSharpProjectOptions, textVersionHash: int) =
         async {
             let! _parseResults, checkResultsAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
             let checkFileResults = 
@@ -83,7 +84,7 @@ type internal FSharpQuickInfoProvider
             //let qualifyingNames, partialName = QuickParse.GetPartialLongNameEx(textLine.ToString(), textLineColumn - 1)
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing(filePath, options.OtherOptions |> Seq.toList)
             
-            match CommonHelpers.getSymbolAtPosition(documentId, sourceText, position, filePath, defines, SymbolLookupKind.Fuzzy) with 
+            match lexer.GetSymbolAtPosition(documentId, sourceText, position, filePath, defines, SymbolLookupKind.Fuzzy) with 
             | Some symbol -> 
                 let! res = checkFileResults.GetToolTipTextAlternate(textLineNumber, symbol.RightColumn, textLine.ToString(), [symbol.Text], FSharpTokenTag.IDENT)
                 return 
@@ -100,12 +101,12 @@ type internal FSharpQuickInfoProvider
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
 
-                match CommonHelpers.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Fuzzy) with
+                match lexer.GetSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Fuzzy) with
                 | Some _ ->
                     match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document) with 
                     | Some options ->
                         let! textVersion = document.GetTextVersionAsync(cancellationToken)
-                        let! quickInfoResult = FSharpQuickInfoProvider.ProvideQuickInfo(checkerProvider.Checker, document.Id, sourceText, document.FilePath, position, options, textVersion.GetHashCode())
+                        let! quickInfoResult = FSharpQuickInfoProvider.ProvideQuickInfo(lexer, checkerProvider.Checker, document.Id, sourceText, document.FilePath, position, options, textVersion.GetHashCode())
                         match quickInfoResult with
                         | Some(toolTipElement, textSpan) ->
                             let dataTipText = XmlDocumentation.BuildDataTipText(documentationBuilder, toolTipElement)
