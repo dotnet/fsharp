@@ -178,14 +178,8 @@ type internal FSharpAddOpenCodeFixProvider
                 | None, _
                 | _, FSharpCheckFileAnswer.Aborted -> ()
                 | Some parsedInput, FSharpCheckFileAnswer.Succeeded checkFileResults ->
-                    let unresolvedIdentRange =
-                        let startLinePos = sourceText.Lines.GetLinePosition context.Span.Start
-                        let startPos = Pos.fromZ startLinePos.Line startLinePos.Character
-                        let endLinePos = sourceText.Lines.GetLinePosition context.Span.End
-                        let endPos = Pos.fromZ endLinePos.Line endLinePos.Character
-                        Range.mkRange context.Document.FilePath startPos endPos
-                        let isAttribute = UntypedParseImpl.GetEntityKind(pos, parsedInput) = Some EntityKind.Attribute
-                    let isAttribute = ParsedInput.getEntityKind parsedInput unresolvedIdentRange.Start = Some EntityKind.Attribute
+                    let unresolvedIdentRange = CommonRoslynHelpers.TextSpanToFSharpRange(context.Document.FilePath, sourceText, context.Span)
+                    let isAttribute = UntypedParseImpl.GetEntityKind(unresolvedIdentRange.Start, parsedInput) = Some EntityKind.Attribute
                     let entities =
                         assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies checkFileResults
                         |> List.collect (fun e -> 
@@ -200,7 +194,7 @@ type internal FSharpAddOpenCodeFixProvider
                                            e.CleanedIdents 
                                            |> Array.replace (e.CleanedIdents.Length - 1) (lastIdent.Substring(0, lastIdent.Length - 9)) ])
 
-                    let longIdent = ParsedInput.getLongIdentAt parsedInput unresolvedIdentRange.End
+                    let longIdent = UntypedParseImpl.GetLongIdentAt(parsedInput, unresolvedIdentRange.End)
 
                     let maybeUnresolvedIdents =
                         longIdent 

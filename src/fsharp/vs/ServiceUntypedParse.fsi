@@ -92,6 +92,8 @@ module internal UntypedParseImpl =
     val TryFindExpressionIslandInPosition : pos * ParsedInput option -> string option
     val TryGetCompletionContext : pos * FSharpParseFileResults option -> CompletionContext option
     val GetEntityKind: pos * ParsedInput -> EntityKind option
+    val GetLongIdents: ParsedInput option -> IDictionary<pos, LongIdent>
+    val GetLongIdentAt: ParsedInput * pos -> LongIdent option
 
 // implementation details used by other code in the compiler    
 module internal SourceFileImpl =
