@@ -553,11 +553,17 @@
     <Compile Include="..\vs\ServiceAssemblyContent.fs">
       <Link>Service/ServiceAssemblyContent.fs</Link>
     </Compile>
+    <Compile Include="..\vs\ServiceXmlDocParser.fs">
+      <Link>Service/ServiceXmlDocParser.fs</Link>
+    </Compile>
     <Compile Include="..\vs\service.fsi">
       <Link>Service/service.fsi</Link>
     </Compile>
     <Compile Include="..\vs\service.fs">
       <Link>Service/service.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceInterfaceStubGenerator.fs">
+      <Link>Service/ServiceInterfaceStubGenerator.fs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

@@ -22,7 +22,7 @@ echo           ^<proto^|protofx^>
 echo           ^<ci^|ci_part1^|ci_part2^|ci_part3^|microbuild^>
 echo           ^<debug^|release^>
 echo           ^<diag^|publicsign^>
-echo           ^<test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-pcl-coreunit^|test-net40-fsharp^|test-net40-fsharpqa^>
+echo           ^<test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-pcl-coreunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^>
 echo           ^<include tag^>
 echo.
 echo No arguments default to 'default', meaning this (no testing)

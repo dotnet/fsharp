@@ -18,6 +18,8 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Diagnostics
 open Microsoft.CodeAnalysis.Editor.Options
+open Microsoft.CodeAnalysis.Completion
+open Microsoft.CodeAnalysis.Options
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Editor
 open Microsoft.VisualStudio.Text
@@ -48,7 +50,7 @@ type internal FSharpCheckerProvider
     ) =
     let checker = 
         lazy
-            let checker = FSharpChecker.Create()
+            let checker = FSharpChecker.Create(projectCacheSize = 200, keepAllBackgroundResolutions = false)
 
             // This is one half of the bridge between the F# background builder and the Roslyn analysis engine.
             // When the F# background builder refreshes the background semantic build context for a file,
@@ -115,7 +117,6 @@ type internal ProjectInfoManager
         checkerProvider.Checker.InvalidateConfiguration(options)
         projectTable.[projectId] <- options
 
-
     /// Get compilation defines relevant for syntax processing.  
     /// Quicker then TryGetOptionsForDocumentOrProject as it doesn't need to recompute the exact project 
     /// options for a script.
@@ -146,7 +147,7 @@ type internal ProjectInfoManager
             let loadTime,_ = singleFileProjectTable.[projectId]
             let fileName = document.FilePath
             let! cancellationToken = Async.CancellationToken
-            let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+            let! sourceText = document.GetTextAsync(cancellationToken)
             let! options = this.ComputeSingleFileOptions (fileName, loadTime, sourceText.ToString(), document.Project.Solution.Workspace)
             singleFileProjectTable.[projectId] <- (loadTime, options)
             return Some options
@@ -174,6 +175,18 @@ type internal FSharpCheckerWorkspaceService =
     abstract Checker: FSharpChecker
     abstract ProjectInfoManager: ProjectInfoManager
 
+type internal RoamingProfileStorageLocation(keyName: string) =
+    inherit OptionStorageLocation()
+    
+    member __.GetKeyNameForLanguage(languageName: string) =
+        let unsubstitutedKeyName = keyName
+ 
+        match languageName with
+        | null -> unsubstitutedKeyName
+        | _ ->
+            let substituteLanguageName = if languageName = FSharpCommonConstants.FSharpLanguageName then "FSharp" else languageName
+            unsubstitutedKeyName.Replace("%LANGUAGE%", substituteLanguageName)
+ 
 [<Composition.Shared>]
 [<Microsoft.CodeAnalysis.Host.Mef.ExportWorkspaceServiceFactory(typeof<FSharpCheckerWorkspaceService>, Microsoft.CodeAnalysis.Host.Mef.ServiceLayer.Default)>]
 type internal FSharpCheckerWorkspaceServiceFactory
@@ -305,6 +318,13 @@ type internal FSharpLanguageService(package : FSharpPackage) as this =
         workspace.Options <- workspace.Options.WithChangedOption(NavigationBarOptions.ShowNavigationBar, FSharpCommonConstants.FSharpLanguageName, true)
         let textViewAdapter = this.Package.ComponentModel.GetService<IVsEditorAdaptersFactoryService>()
         
+        let blockForCompletionOption = 
+            PerLanguageOption<bool>(
+                "CompletionOptions", "BlockForCompletionItems", defaultValue = true,
+                storageLocations = [| RoamingProfileStorageLocation("TextEditor.%%LANGUAGE%%.Specific.CompletionOptions - BlockForCompletionItems") |])
+
+        workspace.Options <- workspace.Options.WithChangedOption(blockForCompletionOption, FSharpCommonConstants.FSharpLanguageName, false)
+
         match textView.GetBuffer() with
         | (VSConstants.S_OK, textLines) ->
             let filename = VsTextLines.GetFilename textLines

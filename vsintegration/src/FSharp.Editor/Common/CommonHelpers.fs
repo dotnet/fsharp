@@ -325,14 +325,48 @@ module internal CommonHelpers =
                   Text = lineStr.Substring(token.Token.LeftColumn, token.Token.FullMatchedLength)
                   FileName = fileName })
 
+    let private getCachedSourceLineData(documentKey: DocumentId, sourceText: SourceText, position: int, fileName: string, defines: string list) = 
+        let textLine = sourceText.Lines.GetLineFromPosition(position)
+        let textLinePos = sourceText.Lines.GetLinePosition(position)
+        let lineNumber = textLinePos.Line + 1 // FCS line number
+        let sourceTokenizer = FSharpSourceTokenizer(defines, Some fileName)
+        let lines = sourceText.Lines
+        // We keep incremental data per-document. When text changes we correlate text line-by-line (by hash codes of lines)
+        let sourceTextData = dataCache.GetValue(documentKey, fun key -> SourceTextData(lines.Count))
+        // Go backwards to find the last cached scanned line that is valid
+        let scanStartLine = 
+            let mutable i = lineNumber
+            while i > 0 && (match sourceTextData.[i-1] with Some data -> not (data.IsValid(lines.[i])) | None -> true)  do
+                i <- i - 1
+            i
+        let lexState = if scanStartLine = 0 then 0L else sourceTextData.[scanStartLine - 1].Value.LexStateAtEndOfLine
+        let lineContents = textLine.Text.ToString(textLine.Span)
+        
+        // We can reuse the old data when 
+        //   1. the line starts at the same overall position
+        //   2. the hash codes match
+        //   3. the start-of-line lex states are the same
+        match sourceTextData.[lineNumber] with 
+        | Some data when data.IsValid(textLine) && data.LexStateAtStartOfLine = lexState -> 
+            data, textLinePos, lineContents
+        | _ -> 
+            // Otherwise, we recompute
+            let newData = scanSourceLine(sourceTokenizer, textLine, lineContents, lexState)
+            sourceTextData.[lineNumber] <- Some newData
+            newData, textLinePos, lineContents
+           
+    let tokenizeLine (documentKey, sourceText, position, fileName, defines) =
+        try
+            let lineData, _, _ = getCachedSourceLineData(documentKey, sourceText, position, fileName, defines)
+            lineData.Tokens   
+        with 
+        |  ex -> 
+            Assert.Exception(ex)
+            []
+
     let getSymbolAtPosition(documentKey: DocumentId, sourceText: SourceText, position: int, fileName: string, defines: string list, lookupKind: SymbolLookupKind) : LexerSymbol option =
         try
-            let textLine = sourceText.Lines.GetLineFromPosition(position)
-            let textLinePos = sourceText.Lines.GetLinePosition(position)
-            let sourceLineDatas = getSourceLineDatas(documentKey, sourceText, textLinePos.Line, textLinePos.Line, Some fileName, defines, CancellationToken.None)
-            assert(sourceLineDatas.Count = 1)
-            let lineContents = textLine.Text.ToString(textLine.Span)
-            getSymbolFromTokens(fileName, sourceLineDatas.[0].Tokens, textLinePos, lineContents, lookupKind)
+            let lineData, textLinePos, lineContents = getCachedSourceLineData(documentKey, sourceText, position, fileName, defines)
         with 
         | :? System.OperationCanceledException -> reraise()
         |  ex -> 
@@ -388,6 +422,20 @@ module internal Extensions =
         static member GetFullPathSafe path =
             try Path.GetFullPath path
             with _ -> path
+
+    type FSharpChecker with
+        member this.ParseAndCheckDocument(document: Document, options: FSharpProjectOptions) : Async<(Ast.ParsedInput * FSharpCheckFileResults) option> =
+            async {
+                let! cancellationToken = Async.CancellationToken
+                let! sourceText = document.GetTextAsync()
+                let! textVersion = document.GetTextVersionAsync(cancellationToken)
+                let! parseResults, checkFileAnswer = this.ParseAndCheckFileInProject(document.FilePath, textVersion.GetHashCode(), sourceText.ToString(), options)
+                return
+                    match parseResults.ParseTree, checkFileAnswer with
+                    | _, FSharpCheckFileAnswer.Aborted 
+                    | None, _ -> None
+                    | Some parsedInput, FSharpCheckFileAnswer.Succeeded checkResults -> Some (parsedInput, checkResults)
+            }
 
     type FSharpSymbol with
         member this.IsInternalToProject =
@@ -484,23 +532,4 @@ module internal Extensions =
         | GlyphMajor.Error -> Glyph.Error
         | _ -> Glyph.None
 
-    type Async<'a> with
-        /// Creates an asynchronous workflow that runs the asynchronous workflow given as an argument at most once. 
-        /// When the returned workflow is started for the second time, it reuses the result of the previous execution.
-        static member Cache (input : Async<'T>) =
-            let agent = MailboxProcessor<AsyncReplyChannel<_>>.Start <| fun agent ->
-                async {
-                    let! replyCh = agent.Receive ()
-                    let! res = input
-                    replyCh.Reply res
-                    while true do
-                        let! replyCh = agent.Receive ()
-                        replyCh.Reply res 
-                }
-            async { return! agent.PostAndAsyncReply id }
-
-        static member inline Map (f: 'a -> 'b) (input: Async<'a>) : Async<'b> = 
-            async {
-                let! result = input
-                return f result 
-            }
+    

@@ -69,24 +69,22 @@ type ErrorLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, nameFo
     inherit ErrorLogger(nameForDebugging)
 
     let mutable errors = 0
-    let mutable errorNumbers = []
-    let mutable warningNumbers = []
 
     /// Called when an error or warning occurs
-    abstract HandleIssue : tcConfigB : TcConfigBuilder * error : PhasedError * isWarning : bool -> unit
+    abstract HandleIssue: tcConfigB: TcConfigBuilder * error: PhasedDiagnostic * isError: bool -> unit
     /// Called when 'too many errors' has occured
-    abstract HandleTooManyErrors : text : string -> unit
+    abstract HandleTooManyErrors: text: string -> unit
 
     override x.ErrorCount = errors
-    override x.ErrorSinkImpl(err) = 
+    override x.DiagnosticSink(err, isError) = 
+      if isError || ReportWarningAsError (tcConfigB.globalWarnLevel, tcConfigB.specificWarnOff, tcConfigB.specificWarnOn, tcConfigB.specificWarnAsError, tcConfigB.specificWarnAsWarn, tcConfigB.globalWarnAsError) err then 
         if errors >= tcConfigB.maxErrors then 
             x.HandleTooManyErrors(FSComp.SR.fscTooManyErrors())
             exiter.Exit 1
 
-        x.HandleIssue(tcConfigB, err, false)
+        x.HandleIssue(tcConfigB, err, true)
 
         errors <- errors + 1
-        errorNumbers <- (GetErrorNumber err) :: errorNumbers
 
         match err.Exception with 
         | InternalError _ 
@@ -97,63 +95,31 @@ type ErrorLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, nameFo
             | None -> Debug.Assert(false, sprintf "Bug seen in compiler: %s" (err.ToString()))
         | _ -> 
             ()
-
-    override x.WarnSinkImpl(err) =  
-        if ReportWarningAsError (tcConfigB.globalWarnLevel, tcConfigB.specificWarnOff, tcConfigB.specificWarnOn, tcConfigB.specificWarnAsError, tcConfigB.specificWarnAsWarn, tcConfigB.globalWarnAsError) err then
-            x.ErrorSink(err)
-        elif ReportWarning (tcConfigB.globalWarnLevel, tcConfigB.specificWarnOff, tcConfigB.specificWarnOn) err then
-            x.HandleIssue(tcConfigB, err, true)
-            warningNumbers <-  (GetErrorNumber err) :: warningNumbers
+      elif ReportWarning (tcConfigB.globalWarnLevel, tcConfigB.specificWarnOff, tcConfigB.specificWarnOn) err then
+          x.HandleIssue(tcConfigB, err, isError)
     
-    override x.WarningNumbers = warningNumbers
-    override x.ErrorNumbers = errorNumbers
 
 /// Create an error logger that counts and prints errors 
 let ConsoleErrorLoggerUpToMaxErrors (tcConfigB:TcConfigBuilder, exiter : Exiter) : ErrorLogger = 
     { new ErrorLoggerUpToMaxErrors(tcConfigB, exiter, "ConsoleErrorLoggerUpToMaxErrors") with
             
             member this.HandleTooManyErrors(text : string) = 
-                DoWithErrorColor true (fun () -> Printf.eprintfn "%s" text)
+                DoWithErrorColor false (fun () -> Printf.eprintfn "%s" text)
 
-            member this.HandleIssue(tcConfigB, err, isWarning) =
-                DoWithErrorColor isWarning (fun () -> 
-                    (writeViaBufferWithEnvironmentNewLines stderr (OutputErrorOrWarning (tcConfigB.implicitIncludeDir, tcConfigB.showFullPaths, tcConfigB.flatErrors, tcConfigB.errorStyle, isWarning)) err
+            member this.HandleIssue(tcConfigB, err, isError) =
+                DoWithErrorColor isError (fun () -> 
+                    (writeViaBufferWithEnvironmentNewLines stderr (OutputDiagnostic (tcConfigB.implicitIncludeDir, tcConfigB.showFullPaths, tcConfigB.flatErrors, tcConfigB.errorStyle, isError)) err
                      stderr.WriteLine()))
     } :> _
 
-/// This error logger delays the messages it receives. At the end, call ForwardDelayedErrorsAndWarnings
+/// This error logger delays the messages it receives. At the end, call ForwardDelayedDiagnostics
 /// to send the held messages.     
 type DelayAndForwardErrorLogger(exiter: Exiter, errorLoggerProvider: ErrorLoggerProvider) =
-    inherit ErrorLogger("DelayAndForwardErrorLogger")
+    inherit CapturingErrorLogger("DelayAndForwardErrorLogger")
 
-    let delayed = new ResizeArray<_>()
-    let mutable errors = 0
-
-    override x.ErrorSinkImpl(e) = 
-        errors <- errors + 1
-        delayed.Add (e, true)
-
-    override x.ErrorCount = delayed |> Seq.filter snd |> Seq.length
-
-    override x.WarnSinkImpl(e) = delayed.Add(e, false)
-
-    member x.ForwardDelayedErrorsAndWarnings(errorLogger:ErrorLogger) = 
-        // Eagerly grab all the errors and warnings from the mutable collection
-        let errors = delayed |> Seq.toList
-        // Now report them
-        for (e, isError) in errors do
-            if isError then errorLogger.ErrorSink(e) else errorLogger.WarnSink(e)
-        // Clear errors just reported. Keep errors count.
-        delayed.Clear()
-
-    member x.ForwardDelayedErrorsAndWarnings(tcConfigB:TcConfigBuilder) = 
+    member x.ForwardDelayedDiagnostics(tcConfigB:TcConfigBuilder) = 
         let errorLogger =  errorLoggerProvider.CreateErrorLoggerUpToMaxErrors(tcConfigB, exiter)
-        x.ForwardDelayedErrorsAndWarnings(errorLogger)
-
-    member x.FullErrorCount = errors
-
-    override x.WarningNumbers = delayed |> Seq.filter (snd >> not) |> Seq.map (fst >> GetErrorNumber) |> Seq.toList
-    override x.ErrorNumbers = delayed |> Seq.filter snd |> Seq.map (fst >> GetErrorNumber) |> Seq.toList
+        x.CommitDelayedDiagnostics(errorLogger)
 
 and [<AbstractClass>]
     ErrorLoggerProvider() =
@@ -161,6 +127,8 @@ and [<AbstractClass>]
     abstract CreateErrorLoggerUpToMaxErrors : tcConfigBuilder : TcConfigBuilder * exiter : Exiter -> ErrorLogger
 
     
+/// Part of LegacyHostedCompilerForTesting
+///
 /// Yet another ErrorLogger implementation, capturing the messages but only up to the maxerrors maximum
 type InProcErrorLoggerProvider() = 
     let errors = ResizeArray()
@@ -169,10 +137,10 @@ type InProcErrorLoggerProvider() =
         { new ErrorLoggerProvider() with
            member log.CreateErrorLoggerUpToMaxErrors(tcConfigBuilder, exiter) =
             { new ErrorLoggerUpToMaxErrors(tcConfigBuilder, exiter, "InProcCompilerErrorLoggerUpToMaxErrors") with
-                    member this.HandleTooManyErrors(text) = warnings.Add(ErrorOrWarning.Short(false, text))
-                    member this.HandleIssue(tcConfigBuilder, err, isWarning) = 
-                        let errs = CollectErrorOrWarning(tcConfigBuilder.implicitIncludeDir, tcConfigBuilder.showFullPaths, tcConfigBuilder.flatErrors, tcConfigBuilder.errorStyle, isWarning, err)
-                        let container = if isWarning then warnings else errors
+                    member this.HandleTooManyErrors(text) = warnings.Add(Diagnostic.Short(false, text))
+                    member this.HandleIssue(tcConfigBuilder, err, isError) = 
+                        let errs = CollectDiagnostic(tcConfigBuilder.implicitIncludeDir, tcConfigBuilder.showFullPaths, tcConfigBuilder.flatErrors, tcConfigBuilder.errorStyle, isError, err)
+                        let container = if isError then errors else warnings 
                         container.AddRange(errs) } 
             :> ErrorLogger }
     member __.CapturedErrors = errors.ToArray()
@@ -251,8 +219,7 @@ let AdjustForScriptCompile(tcConfigB:TcConfigBuilder, commandLineSourceFiles, le
             references |> List.iter (fun r-> tcConfigB.AddReferencedAssemblyByPath(r.originalReference.Range, r.resolvedPath))
             closure.NoWarns |> List.map(fun (n, ms)->ms|>List.map(fun m->m, n)) |> List.concat |> List.iter tcConfigB.TurnWarningOff
             closure.SourceFiles |> List.map fst |> List.iter AddIfNotPresent
-            closure.RootWarnings |> List.iter warnSink
-            closure.RootErrors |> List.iter errorSink
+            closure.AllRootFileDiagnostics |> List.iter diagnosticSink
             
             else AddIfNotPresent(filename)
          
@@ -1727,7 +1694,7 @@ let main0(argv, referenceResolver, bannerAlreadyPrinted, exiter:Exiter, errorLog
 
         with e -> 
             errorRecovery e rangeStartup
-            delayForFlagsLogger.ForwardDelayedErrorsAndWarnings(tcConfigB)
+            delayForFlagsLogger.ForwardDelayedDiagnostics(tcConfigB)
             exiter.Exit 1 
     
     tcConfigB.sqmNumOfSourceFiles <- sourceFiles.Length
@@ -1740,12 +1707,12 @@ let main0(argv, referenceResolver, bannerAlreadyPrinted, exiter:Exiter, errorLog
             tcConfigB.DecideNames sourceFiles 
         with e ->
             errorRecovery e rangeStartup
-            delayForFlagsLogger.ForwardDelayedErrorsAndWarnings(tcConfigB)
+            delayForFlagsLogger.ForwardDelayedDiagnostics(tcConfigB)
             exiter.Exit 1 
                     
     // DecideNames may give "no inputs" error. Abort on error at this point. bug://3911
-    if not tcConfigB.continueAfterParseFailure && delayForFlagsLogger.FullErrorCount > 0 then
-        delayForFlagsLogger.ForwardDelayedErrorsAndWarnings(tcConfigB)
+    if not tcConfigB.continueAfterParseFailure && delayForFlagsLogger.ErrorCount > 0 then
+        delayForFlagsLogger.ForwardDelayedDiagnostics(tcConfigB)
         exiter.Exit 1
     
     // If there's a problem building TcConfig, abort    
@@ -1753,7 +1720,7 @@ let main0(argv, referenceResolver, bannerAlreadyPrinted, exiter:Exiter, errorLog
         try
             TcConfig.Create(tcConfigB, validate=false)
         with e ->
-            delayForFlagsLogger.ForwardDelayedErrorsAndWarnings(tcConfigB)
+            delayForFlagsLogger.ForwardDelayedDiagnostics(tcConfigB)
             exiter.Exit 1
     
     let errorLogger =  errorLoggerProvider.CreateErrorLoggerUpToMaxErrors(tcConfigB, exiter)
@@ -1762,7 +1729,7 @@ let main0(argv, referenceResolver, bannerAlreadyPrinted, exiter:Exiter, errorLog
     let _unwindEL_2 = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
     
     // Forward all errors from flags
-    delayForFlagsLogger.ForwardDelayedErrorsAndWarnings(errorLogger)
+    delayForFlagsLogger.CommitDelayedDiagnostics(errorLogger)
 
     if not tcConfigB.continueAfterParseFailure then 
         AbortOnError(errorLogger, exiter)

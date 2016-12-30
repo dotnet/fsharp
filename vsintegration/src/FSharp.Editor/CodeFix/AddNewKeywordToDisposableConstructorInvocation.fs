@@ -19,13 +19,13 @@ type internal FSharpAddNewKeywordCodeFixProvider() =
 
     override this.RegisterCodeFixesAsync context : Task =
         async {
-            let title = "Add \"new\" keyword"
+            let title = SR.AddNewKeyword.Value
             context.RegisterCodeFix(
                 CodeAction.Create(
                     title,
                     (fun (cancellationToken: CancellationToken) ->
                         async {
-                            let! sourceText = context.Document.GetTextAsync() |> Async.AwaitTask
+                            let! sourceText = context.Document.GetTextAsync()
                             return context.Document.WithText(sourceText.WithChanges(TextChange(TextSpan(context.Span.Start, 0), "new ")))
                         } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)),
                     title), (context.Diagnostics |> Seq.filter (fun x -> this.FixableDiagnosticIds.Contains x.Id)).ToImmutableArray())

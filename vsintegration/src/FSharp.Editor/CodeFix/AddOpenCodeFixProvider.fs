@@ -9,7 +9,6 @@ open System.Collections.Generic
 open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
-open System.Linq
 open System.Runtime.CompilerServices
 open System.Windows
 open System.Windows.Controls
@@ -119,7 +118,7 @@ type internal FSharpAddOpenCodeFixProvider
             fixUnderscoresInMenuText fullName,
             fun (cancellationToken: CancellationToken) -> 
                 async {
-                    let! sourceText = context.Document.GetTextAsync() |> Async.AwaitTask
+                    let! sourceText = context.Document.GetTextAsync()
                     return context.Document.WithText(sourceText.Replace(context.Span, qualifier))
                 } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken))
 
@@ -130,7 +129,7 @@ type internal FSharpAddOpenCodeFixProvider
             fixUnderscoresInMenuText displayText,
             (fun (cancellationToken: CancellationToken) -> 
                 async {
-                    let! sourceText = context.Document.GetTextAsync() |> Async.AwaitTask
+                    let! sourceText = context.Document.GetTextAsync()
                     return context.Document.WithText(InsertContext.insertOpenDeclaration sourceText ctx ns)
                 } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)),
             displayText)
@@ -164,7 +163,7 @@ type internal FSharpAddOpenCodeFixProvider
             |> Seq.toList
 
         for codeFix in openNamespaceFixes @ quilifySymbolFixes do
-            context.RegisterCodeFix(codeFix, (context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds.Contains x.Id)).ToImmutableArray())
+            context.RegisterCodeFix(codeFix, (context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id)).ToImmutableArray())
 
     override __.FixableDiagnosticIds = fixableDiagnosticIds.ToImmutableArray()
 
@@ -172,8 +171,8 @@ type internal FSharpAddOpenCodeFixProvider
         async {
             match projectInfoManager.TryGetOptionsForEditingDocumentOrProject context.Document with 
             | Some options ->
-                let! sourceText = context.Document.GetTextAsync(context.CancellationToken) |> Async.AwaitTask
-                let! textVersion = context.Document.GetTextVersionAsync(context.CancellationToken) |> Async.AwaitTask
+                let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
+                let! textVersion = context.Document.GetTextVersionAsync(context.CancellationToken)
                 let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(context.Document.FilePath, textVersion.GetHashCode(), sourceText.ToString(), options)
                 match parseResults.ParseTree, checkFileAnswer with
                 | None, _
@@ -185,7 +184,7 @@ type internal FSharpAddOpenCodeFixProvider
                     match symbol with
                     | Some symbol ->
                         let pos = Pos.fromZ textLinePos.Line textLinePos.Character
-                        let isAttribute = ParsedInput.getEntityKind parsedInput pos = Some EntityKind.Attribute
+                        let isAttribute = UntypedParseImpl.GetEntityKind(pos, parsedInput) = Some EntityKind.Attribute
                         let entities =
                             assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies checkFileResults
                             |> List.map (fun e -> 
