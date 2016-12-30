@@ -110,7 +110,7 @@ type AsyncMaybeBuilder () =
         Some () |> async.Return
 
     [<DebuggerStepThrough>]
-    member __.Delay (f : unit -> Async<'T option>) : Async<'T option> = f ()
+    member __.Delay (f : unit -> Async<'T option>) : Async<'T option> = async.Delay f
 
     [<DebuggerStepThrough>]
     member __.Combine (r1, r2 : Async<'T option>) : Async<'T option> =
