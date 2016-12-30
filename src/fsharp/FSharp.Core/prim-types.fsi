@@ -713,9 +713,9 @@ namespace Microsoft.FSharp.Core
 
     [<AttributeUsage(AttributeTargets.Method,AllowMultiple=false)>]
     [<Sealed>]
-    type TailRecursionAttribute =
+    type TailCallAttribute =
         inherit System.Attribute
-        new : unit -> TailRecursionAttribute
+        new : unit -> TailCallAttribute
 
     //-------------------------------------------------------------------------
     // Units of measure

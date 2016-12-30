@@ -385,7 +385,7 @@ namespace Microsoft.FSharp.Core
     
     [<AttributeUsage(AttributeTargets.Method,AllowMultiple=false)>]
     [<Sealed>]
-    type TailRecursionAttribute() =
+    type TailCallAttribute() =
         inherit System.Attribute()
 
     [<MeasureAnnotatedAbbreviation>] type float<[<Measure>] 'Measure> = float 

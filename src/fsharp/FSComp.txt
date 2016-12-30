@@ -1332,3 +1332,4 @@ tcTupleStructMismatch,"One tuple type is a struct tuple, the other is a referenc
 3211,DefaultParameterValueNotAppropriateForArgument,"The default value does not have the same type as the argument. The DefaultParameterValue attribute and any Optional attribute will be ignored. Note: 'null' needs to be annotated with the correct type, e.g. 'DefaultParameterValue(null:obj)'."
 tcGlobalsSystemTypeNotFound,"The system type '%s' was required but no referenced system DLL contained this type"
 3213,typrelMemberHasMultiplePossibleDispatchSlots,"The member '%s' matches multiple overloads of the same method.\nPlease restrict it to one of the following:%s."
+3212,chkNotTailRecursive,"The member or function '%s' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way."
