@@ -417,6 +417,26 @@ module internal Extensions =
             with _ -> path
 
     type FSharpChecker with
+        member this.ParseDocument(document: Document, options: FSharpProjectOptions, ?sourceText: SourceText) =
+            asyncMaybe {
+                let! sourceText =
+                    match sourceText with
+                    | Some x -> Task.FromResult x
+                    | None -> document.GetTextAsync()
+                let! fileParseResults = this.ParseFileInProject(document.FilePath, sourceText.ToString(), options) |> liftAsync
+                return! fileParseResults.ParseTree
+            }
+
+        member this.ParseAndCheckDocument(filePath: string, textVersionHash: int, sourceText: string, options: FSharpProjectOptions) : Async<(Ast.ParsedInput * FSharpCheckFileResults) option> =
+            async {
+                let! parseResults, checkFileAnswer = this.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText, options)
+                return
+                    match parseResults.ParseTree, checkFileAnswer with
+                    | _, FSharpCheckFileAnswer.Aborted 
+                    | None, _ -> None
+                    | Some parsedInput, FSharpCheckFileAnswer.Succeeded checkResults -> Some (parsedInput, checkResults)
+            }
+
         member this.ParseAndCheckDocument(document: Document, options: FSharpProjectOptions, ?sourceText: SourceText) : Async<(Ast.ParsedInput * FSharpCheckFileResults) option> =
             async {
                 let! cancellationToken = Async.CancellationToken
@@ -425,12 +445,7 @@ module internal Extensions =
                     | Some x -> Task.FromResult x
                     | None -> document.GetTextAsync()
                 let! textVersion = document.GetTextVersionAsync(cancellationToken)
-                let! parseResults, checkFileAnswer = this.ParseAndCheckFileInProject(document.FilePath, textVersion.GetHashCode(), sourceText.ToString(), options)
-                return
-                    match parseResults.ParseTree, checkFileAnswer with
-                    | _, FSharpCheckFileAnswer.Aborted 
-                    | None, _ -> None
-                    | Some parsedInput, FSharpCheckFileAnswer.Succeeded checkResults -> Some (parsedInput, checkResults)
+                return! this.ParseAndCheckDocument(document.FilePath, textVersion.GetHashCode(), sourceText.ToString(), options)
             }
 
     type FSharpSymbol with
@@ -502,30 +517,4 @@ module internal Extensions =
                 | Some declRange -> declRange.FileName = this.RangeAlternate.FileName
                 | _ -> false
             
-            isPrivate && declaredInTheFile
-
-    let glyphMajorToRoslynGlyph = function
-        | GlyphMajor.Class -> Glyph.ClassPublic
-        | GlyphMajor.Constant -> Glyph.ConstantPublic
-        | GlyphMajor.Delegate -> Glyph.DelegatePublic
-        | GlyphMajor.Enum -> Glyph.EnumPublic
-        | GlyphMajor.EnumMember -> Glyph.FieldPublic
-        | GlyphMajor.Event -> Glyph.EventPublic
-        | GlyphMajor.Exception -> Glyph.ClassPublic
-        | GlyphMajor.FieldBlue -> Glyph.FieldPublic
-        | GlyphMajor.Interface -> Glyph.InterfacePublic
-        | GlyphMajor.Method -> Glyph.MethodPublic
-        | GlyphMajor.Method2 -> Glyph.MethodPublic
-        | GlyphMajor.Module -> Glyph.ModulePublic
-        | GlyphMajor.NameSpace -> Glyph.Namespace
-        | GlyphMajor.Property -> Glyph.PropertyPublic
-        | GlyphMajor.Struct -> Glyph.StructurePublic
-        | GlyphMajor.Typedef -> Glyph.ClassPublic
-        | GlyphMajor.Type -> Glyph.ClassPublic
-        | GlyphMajor.Union -> Glyph.EnumPublic
-        | GlyphMajor.Variable -> Glyph.FieldPublic
-        | GlyphMajor.ValueType -> Glyph.StructurePublic
-        | GlyphMajor.Error -> Glyph.Error
-        | _ -> Glyph.None
-
-    
+            isPrivate && declaredInTheFile   

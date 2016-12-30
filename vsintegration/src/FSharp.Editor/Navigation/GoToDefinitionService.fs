@@ -12,17 +12,11 @@ open System.Threading.Tasks
 open System.Runtime.CompilerServices
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Editor.Host
 open Microsoft.CodeAnalysis.Navigation
-open Microsoft.CodeAnalysis.Editor.Shared.Utilities
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
-
-open Microsoft.VisualStudio.FSharp.LanguageService
-open Microsoft.VisualStudio.Text
-open Microsoft.VisualStudio.Text.Tagging
 
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
@@ -49,23 +43,17 @@ type internal FSharpGoToDefinitionService
     ) =
 
     static member FindDefinition(checker: FSharpChecker, documentKey: DocumentId, sourceText: SourceText, filePath: string, position: int, defines: string list, options: FSharpProjectOptions, textVersionHash: int) : Async<Option<range>> = 
-        async {
+        asyncMaybe {
             let textLine = sourceText.Lines.GetLineFromPosition(position)
             let textLinePos = sourceText.Lines.GetLinePosition(position)
             let fcsTextLineNumber = textLinePos.Line + 1 // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
-            match CommonHelpers.getSymbolAtPosition(documentKey, sourceText, position, filePath, defines, SymbolLookupKind.Fuzzy) with 
-            | Some symbol -> 
-                let! _parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
-                match checkFileAnswer with
-                | FSharpCheckFileAnswer.Aborted -> return None
-                | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> 
+            let! symbol = CommonHelpers.getSymbolAtPosition(documentKey, sourceText, position, filePath, defines, SymbolLookupKind.Fuzzy)
+            let! _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options)
+            let! declarations = checkFileResults.GetDeclarationLocationAlternate (fcsTextLineNumber, symbol.RightColumn, textLine.ToString(), [symbol.Text], false) |> liftAsync
             
-                let! declarations = checkFileResults.GetDeclarationLocationAlternate (fcsTextLineNumber, symbol.RightColumn, textLine.ToString(), [symbol.Text], false)
-            
-                match declarations with
-                | FSharpFindDeclResult.DeclFound(range) -> return Some(range)
-                | _ -> return None
-            | None -> return None
+            match declarations with
+            | FSharpFindDeclResult.DeclFound(range) -> return range
+            | _ -> return! None
         }
     
     // FSROSLYNTODO: Since we are not integrated with the Roslyn project system yet, the below call
@@ -73,31 +61,26 @@ type internal FSharpGoToDefinitionService
     // Either Roslyn INavigableItem needs to be extended to allow arbitary full paths, or we need to
     // fully integrate with their project system.
     member this.FindDefinitionsAsyncAux(document: Document, position: int, cancellationToken: CancellationToken) =
-        async {
+        asyncMaybe {
             let results = List<INavigableItem>()
-            match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)  with 
-            | Some options ->
-                let! sourceText = document.GetTextAsync(cancellationToken)
-                let! textVersion = document.GetTextVersionAsync(cancellationToken)
-                let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
-                let! definition = FSharpGoToDefinitionService.FindDefinition(checkerProvider.Checker, document.Id, sourceText, document.FilePath, position, defines, options, textVersion.GetHashCode())
-
-                match definition with
-                | Some(range) ->
-                    // REVIEW: 
-                    let fileName = try System.IO.Path.GetFullPath(range.FileName) with _ -> range.FileName
-                    let refDocumentIds = document.Project.Solution.GetDocumentIdsWithFilePath(fileName)
-                    if not refDocumentIds.IsEmpty then 
-                        let refDocumentId = refDocumentIds.First()
-                        let refDocument = document.Project.Solution.GetDocument(refDocumentId)
-                        let! refSourceText = refDocument.GetTextAsync(cancellationToken)
-                        let refTextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(refSourceText, range)
-                        results.Add(FSharpNavigableItem(refDocument, refTextSpan))
-
-                | None -> ()
-            | None -> ()
+            let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+            let! sourceText = document.GetTextAsync(cancellationToken)
+            let! textVersion = document.GetTextVersionAsync(cancellationToken)
+            let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
+            let! range = FSharpGoToDefinitionService.FindDefinition(checkerProvider.Checker, document.Id, sourceText, document.FilePath, position, defines, options, textVersion.GetHashCode())
+            // REVIEW: 
+            let fileName = try System.IO.Path.GetFullPath(range.FileName) with _ -> range.FileName
+            let refDocumentIds = document.Project.Solution.GetDocumentIdsWithFilePath(fileName)
+            if not refDocumentIds.IsEmpty then 
+                let refDocumentId = refDocumentIds.First()
+                let refDocument = document.Project.Solution.GetDocument(refDocumentId)
+                let! refSourceText = refDocument.GetTextAsync(cancellationToken)
+                let refTextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(refSourceText, range)
+                results.Add(FSharpNavigableItem(refDocument, refTextSpan))
             return results.AsEnumerable()
-         } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
+         }
+         |> Async.map (Option.defaultValue Seq.empty)
+         |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
 
     interface IGoToDefinitionService with
         member this.FindDefinitionsAsync(document: Document, position: int, cancellationToken: CancellationToken) =
@@ -126,5 +109,4 @@ type internal FSharpGoToDefinitionService
                 //    presenter.DisplayResult(navigableItem.DisplayString, definitionTask.Result)
                 //true
 
-            else
-                false
+            else false
