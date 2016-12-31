@@ -1279,7 +1279,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                                      (propsAndFields 
                                       |> Array.map 
                                         (fun m -> 
-                                            ((if m.MemberType = MemberTypes.Field then tagField m.Name else tagProperty m.Name),
+                                            ((if m :? FieldInfo then tagField m.Name else tagProperty m.Name),
                                                 (try Some (objL nDepth Precedence.BracketIfTuple ((getProperty ty obj m.Name), ty)) 
                                                  with _ -> try Some (objL nDepth Precedence.BracketIfTuple ((getField obj (m :?> FieldInfo)), ty)) 
                                                            with _ -> None)))
