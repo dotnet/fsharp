@@ -7,27 +7,17 @@ open System.Composition
 open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
-open System.Runtime.CompilerServices
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Editor
-open Microsoft.CodeAnalysis.Host
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
 
-open Microsoft.VisualStudio.FSharp.LanguageService
-open Microsoft.VisualStudio.Text
-open Microsoft.VisualStudio.Shell.Interop
-
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
-
-open System.Windows.Documents
-open Microsoft.VisualStudio.FSharp.Editor.Structure
 
 [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module internal InsertContext =
@@ -158,15 +148,20 @@ type internal FSharpAddOpenCodeFixProvider
         asyncMaybe {
             let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject context.Document
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
-            let! parsedInput, checkFileResults = checker.ParseAndCheckDocument(context.Document, options, sourceText)
-            let textLinePos = sourceText.Lines.GetLinePosition context.Span.Start
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing(context.Document.FilePath, options.OtherOptions |> Seq.toList)
-            let! symbol = CommonHelpers.getSymbolAtPosition(context.Document.Id, sourceText, context.Span.Start, context.Document.FilePath, defines, SymbolLookupKind.Fuzzy)
-            let pos = Pos.fromZ textLinePos.Line textLinePos.Character
-            let isAttribute = UntypedParseImpl.GetEntityKind(pos, parsedInput) = Some EntityKind.Attribute
+            let! parsedInput, checkResults = checker.ParseAndCheckDocument(context.Document, options, sourceText)
+            
+            let unresolvedIdentRange =
+                let startLinePos = sourceText.Lines.GetLinePosition context.Span.Start
+                let startPos = Pos.fromZ startLinePos.Line startLinePos.Character
+                let endLinePos = sourceText.Lines.GetLinePosition context.Span.End
+                let endPos = Pos.fromZ endLinePos.Line endLinePos.Character
+                Range.mkRange context.Document.FilePath startPos endPos
+            
+            let isAttribute = UntypedParseImpl.GetEntityKind(unresolvedIdentRange.Start, parsedInput) = Some EntityKind.Attribute
+            
             let entities =
-                assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies checkFileResults
-                |> List.map (fun e -> 
+                assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies checkResults
+                |> List.collect (fun e -> 
                      [ yield e.TopRequireQualifiedAccessParent, e.AutoOpenParent, e.Namespace, e.CleanedIdents
                        if isAttribute then
                            let lastIdent = e.CleanedIdents.[e.CleanedIdents.Length - 1]
@@ -177,12 +172,21 @@ type internal FSharpAddOpenCodeFixProvider
                                    e.Namespace,
                                    e.CleanedIdents 
                                    |> Array.replace (e.CleanedIdents.Length - 1) (lastIdent.Substring(0, lastIdent.Length - 9)) ])
-                |> List.concat
 
-            let! idents = ParsedInput.getLongIdentAt parsedInput (Range.mkPos pos.Line symbol.RightColumn)
-            let createEntity = ParsedInput.tryFindInsertionContext pos.Line parsedInput idents
+            let longIdent = ParsedInput.getLongIdentAt parsedInput unresolvedIdentRange.End
+
+            let! maybeUnresolvedIdents =
+                longIdent 
+                |> Option.map (fun longIdent ->
+                    longIdent
+                    |> List.map (fun ident ->
+                        { Ident = ident.idText
+                          Resolved = not (ident.idRange = unresolvedIdentRange) })
+                    |> List.toArray)
+            
+            let createEntity = ParsedInput.tryFindInsertionContext unresolvedIdentRange.StartLine parsedInput maybeUnresolvedIdents
             return entities |> Seq.map createEntity |> Seq.concat |> Seq.toList |> getSuggestions context
         } 
-        |> Async.Ignore
+        |> Async.Ignore 
         |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
  
