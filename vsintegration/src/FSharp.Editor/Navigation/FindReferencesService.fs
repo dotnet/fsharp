@@ -109,7 +109,9 @@ type internal FSharpFindReferencesService
                                 let projectsToCheck =
                                     match scope with
                                     | Some (SymbolDeclarationLocation.Projects (declProjects, false)) ->
-                                        declProjects |> List.collect (fun x -> x.GetDependentProjects())
+                                       [ for declProject in declProjects do
+                                           yield declProject
+                                           yield! declProject.GetDependentProjects() ]
                                     | Some (SymbolDeclarationLocation.Projects (declProjects, true)) -> declProjects
                                     // The symbol is declared in .NET framework, an external assembly or in a C# project within the solution.
                                     // In order to find all its usages we have to check all F# projects.
