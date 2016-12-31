@@ -37,7 +37,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
     /// Data representing structured layouts of terms.  
 #if RUNTIME  // FSharp.Core.dll makes things internal and hides representations
     type internal Layout
-    type TaggedText
+    type internal TaggedText
 #else  // FSharp.Compiler.dll, FSharp.Compiler-proto.dll, FSharp.PowerPack.dll
     // FSharp.PowerPack.dll: reveals representations
     // FSharp.Compiler-proto.dll, FSharp.Compiler.dll: the F# compiler likes to see these representations
@@ -120,11 +120,12 @@ namespace Microsoft.FSharp.Text.StructuredFormat
      | Attr of string * (string * string) list * Layout
 #endif
 
-#if COMPILER 
-    module internal TaggedTextOps =
+    module
+#if RUNTIME || COMPILER
+        internal
 #else
-    module TaggedTextOps =
 #endif
+            TaggedTextOps =
         val tagAlias : string -> TaggedText
         val tagClass : string -> TaggedText
         val tagUnionCase : string -> TaggedText
@@ -168,7 +169,6 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             val equals : TaggedText
             val arrow : TaggedText
             val questionMark : TaggedText
-
 
 #if RUNTIME   // FSharp.Core.dll doesn't use PrintIntercepts
 #else  // FSharp.Compiler.dll, FSharp.Compiler-proto.dll, FSharp.PowerPack.dll
