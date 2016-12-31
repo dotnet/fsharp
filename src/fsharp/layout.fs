@@ -431,7 +431,7 @@ let taggedTextListR collector =
 let channelR (chan:TextWriter) =
   { new LayoutRenderer<NoResult,NoState> with 
       member r.Start () = NoState
-      member r.AddText z s = chan.Write s; z
+      member r.AddText z s = chan.Write s.Value; z
       member r.AddBreak z n = chan.WriteLine(); chan.Write (spaces n); z
       member r.AddTag z (tag,attrs,start) =  z
       member r.Finish z = NoResult }
