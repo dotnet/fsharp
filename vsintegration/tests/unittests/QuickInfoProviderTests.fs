@@ -46,6 +46,7 @@ let internal options = {
     IsIncompleteTypeCheckEnvironment = true
     UseScriptResolutionRules = false
     LoadTime = DateTime.MaxValue
+    OriginalLoadReferences = []
     UnresolvedReferences = None
     ExtraProjectInfo = None
 }

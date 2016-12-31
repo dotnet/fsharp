@@ -335,8 +335,10 @@ type internal FSharpProjectOptions =
       /// This ensures that a complete reload of the project or script type checking
       /// context occurs on project or script unload/reload.
       LoadTime : DateTime
-      /// Unused in this API and should be 'None'
+      /// Unused in this API and should be 'None' when used as user-specified input
       UnresolvedReferences : UnresolvedReferencesSet option
+      /// Unused in this API and should be '[]' when used as user-specified input
+      OriginalLoadReferences: (range * string) list
       /// Extra information passed back on event trigger
       ExtraProjectInfo : obj option
     }
@@ -619,7 +621,7 @@ type internal FSharpChecker =
 type internal FsiInteractiveChecker =
     internal new : ops: IReactorOperations * tcConfig: TcConfig * tcGlobals: TcGlobals * tcImports: TcImports * tcState: TcState * loadClosure: LoadClosure option ->  FsiInteractiveChecker 
     member internal ParseAndCheckInteraction : source:string -> FSharpParseFileResults * FSharpCheckFileResults * FSharpCheckProjectResults
-    static member internal CreateErrorInfos : tcConfig: TcConfig * allErrors:bool * mainInputFileName : string * seq<ErrorLogger.PhasedError * FSharpErrorSeverity> -> FSharpErrorInfo[]
+    static member internal CreateErrorInfos : tcConfig: TcConfig * allErrors:bool * mainInputFileName : string * seq<ErrorLogger.PhasedDiagnostic * FSharpErrorSeverity> -> FSharpErrorInfo[]
 
 /// Information about the compilation environment 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]   
