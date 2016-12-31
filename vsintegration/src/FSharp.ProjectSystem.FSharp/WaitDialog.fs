@@ -6,7 +6,7 @@ open System
 open System.Runtime.InteropServices
 open Microsoft.VisualStudio.Shell.Interop
 
-type WaitDialogOptions =
+type internal WaitDialogOptions =
     {
         WaitCaption : string
         WaitMessage : string
@@ -18,7 +18,7 @@ type WaitDialogOptions =
         ShowMarqueeProgress : bool
     }
 
-module WaitDialog =
+module internal WaitDialog =
 
     let start (sp : IServiceProvider) (options : WaitDialogOptions) =
         let waitDialogFactory = sp.GetService(typeof<SVsThreadedWaitDialogFactory>) :?> IVsThreadedWaitDialogFactory

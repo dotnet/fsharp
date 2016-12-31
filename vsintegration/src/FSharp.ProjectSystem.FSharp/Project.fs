@@ -1627,7 +1627,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     VSConstants.E_NOTIMPL
             end
         
-    type ActiveCfgBatchUpdateState =
+    type internal ActiveCfgBatchUpdateState =
         | NonBatch
         | BatchWaiting
         | BatchDone
