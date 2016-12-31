@@ -73,6 +73,13 @@ module internal CommonHelpers =
                 data.[i] <- None
                 i <- i + 1
 
+        /// Go backwards to find the last cached scanned line that is valid.
+        member x.GetLastValidCachedLine (startLine: int,  sourceLines: TextLineCollection) : int =
+            let mutable i = startLine
+            while i > 0 && (match x.[i] with Some data -> not (data.IsValid(sourceLines.[i])) | None -> true)  do
+                i <- i - 1
+            i
+
     let private dataCache = ConditionalWeakTable<DocumentId, SourceTextData>()
 
     let internal compilerTokenToRoslynToken(colorKind: FSharpTokenColorKind) : string = 
@@ -126,54 +133,41 @@ module internal CommonHelpers =
 
         SourceLineData(textLine.Start, lexState, previousLexState.Value, lineContents.GetHashCode(), classifiedSpans, List.ofSeq tokens)
 
-    let getColorizationData(documentKey: DocumentId, sourceText: SourceText, textSpan: TextSpan, fileName: string option, defines: string list, 
-                            cancellationToken: CancellationToken) : List<ClassifiedSpan> =
-        try
-            let sourceTokenizer = FSharpSourceTokenizer(defines, fileName)
-            let lines = sourceText.Lines
-            // We keep incremental data per-document.  When text changes we correlate text line-by-line (by hash codes of lines)
-            let sourceTextData = dataCache.GetValue(documentKey, fun key -> SourceTextData(lines.Count))
-
-            let startLine = lines.GetLineFromPosition(textSpan.Start).LineNumber
-            let endLine = lines.GetLineFromPosition(textSpan.End).LineNumber
+    let private getSourceLineDatas(documentKey: DocumentId, sourceText: SourceText, startLine: int, endLine: int, fileName: string option, defines: string list, 
+                                   cancellationToken: CancellationToken) : ResizeArray<SourceLineData> =
+        let sourceTokenizer = FSharpSourceTokenizer(defines, fileName)
+        let lines = sourceText.Lines
+        // We keep incremental data per-document.  When text changes we correlate text line-by-line (by hash codes of lines)
+        let sourceTextData = dataCache.GetValue(documentKey, fun key -> SourceTextData(lines.Count))
+        let scanStartLine = sourceTextData.GetLastValidCachedLine(startLine, lines)
             
-            // Go backwards to find the last cached scanned line that is valid
-            let scanStartLine = 
-                let mutable i = startLine
-                while i > 0 && (match sourceTextData.[i-1] with Some data -> not (data.IsValid(lines.[i])) | None -> true)  do
-                    i <- i - 1
-                i
+        // Rescan the lines if necessary and report the information
+        let result = ResizeArray()
+        let mutable lexState = if scanStartLine = 0 then 0L else sourceTextData.[scanStartLine].Value.LexStateAtEndOfLine
+
+        for i = scanStartLine to endLine do
+            cancellationToken.ThrowIfCancellationRequested()
+            let textLine = lines.[i]
+            let lineContents = textLine.Text.ToString(textLine.Span)
+
+            let lineData = 
+                // We can reuse the old data when 
+                //   1. the line starts at the same overall position
+                //   2. the hash codes match
+                //   3. the start-of-line lex states are the same
+                match sourceTextData.[i] with 
+                | Some data when data.IsValid(textLine) && data.LexStateAtStartOfLine = lexState -> 
+                    data
+                | _ -> 
+                    // Otherwise, we recompute
+                    let newData = scanSourceLine(sourceTokenizer, textLine, lineContents, lexState)
+                    sourceTextData.[i] <- Some newData
+                    newData
                 
-            // Rescan the lines if necessary and report the information
-            let result = new List<ClassifiedSpan>()
-            let mutable lexState = if scanStartLine = 0 then 0L else sourceTextData.[scanStartLine - 1].Value.LexStateAtEndOfLine
+            lexState <- lineData.LexStateAtEndOfLine
 
-            for i = scanStartLine to endLine do
-                cancellationToken.ThrowIfCancellationRequested()
-                let textLine = lines.[i]
-                let lineContents = textLine.Text.ToString(textLine.Span)
-
-                let lineData = 
-                    // We can reuse the old data when 
-                    //   1. the line starts at the same overall position
-                    //   2. the hash codes match
-                    //   3. the start-of-line lex states are the same
-                    match sourceTextData.[i] with 
-                    | Some data when data.IsValid(textLine) && data.LexStateAtStartOfLine = lexState -> 
-                        data
-                    | _ -> 
-                        // Otherwise, we recompute
-                        let newData = scanSourceLine(sourceTokenizer, textLine, lineContents, lexState)
-                        sourceTextData.[i] <- Some newData
-                        newData
-                    
-                lexState <- lineData.LexStateAtEndOfLine
-
-                if startLine <= i then
-                    result.AddRange(lineData.ClassifiedSpans |> Seq.filter(fun token ->
-                        textSpan.Contains(token.TextSpan.Start) ||
-                        textSpan.Contains(token.TextSpan.End - 1) ||
-                        (token.TextSpan.Start <= textSpan.Start && textSpan.End <= token.TextSpan.End)))
+            if startLine <= i then
+                result.Add(lineData)
 
             // If necessary, invalidate all subsequent lines after endLine
             if endLine < lines.Count - 1 then 
@@ -183,6 +177,22 @@ module internal CommonHelpers =
                         sourceTextData.ClearFrom (endLine+1)
                 | None -> ()
 
+        result
+
+    let getColorizationData(documentKey: DocumentId, sourceText: SourceText, textSpan: TextSpan, fileName: string option, defines: string list, 
+                            cancellationToken: CancellationToken) : List<ClassifiedSpan> =
+        try
+            let lines = sourceText.Lines
+            let startLine = lines.GetLineFromPosition(textSpan.Start).LineNumber
+            let endLine = lines.GetLineFromPosition(textSpan.End).LineNumber
+            
+            // Rescan the lines if necessary and report the information
+            let result = new List<ClassifiedSpan>()
+            for lineData in getSourceLineDatas(documentKey, sourceText, startLine, endLine, fileName, defines, cancellationToken) do
+                result.AddRange(lineData.ClassifiedSpans |> Seq.filter(fun token ->
+                    textSpan.Contains(token.TextSpan.Start) ||
+                    textSpan.Contains(token.TextSpan.End - 1) ||
+                    (token.TextSpan.Start <= textSpan.Start && textSpan.End <= token.TextSpan.End)))
             result
         with 
         | :? System.OperationCanceledException -> reraise()
@@ -318,20 +328,14 @@ module internal CommonHelpers =
     let private getCachedSourceLineData(documentKey: DocumentId, sourceText: SourceText, position: int, fileName: string, defines: string list) = 
         let textLine = sourceText.Lines.GetLineFromPosition(position)
         let textLinePos = sourceText.Lines.GetLinePosition(position)
-        let lineNumber = textLinePos.Line + 1 // FCS line number
+        let lineNumber = textLinePos.Line
         let sourceTokenizer = FSharpSourceTokenizer(defines, Some fileName)
         let lines = sourceText.Lines
         // We keep incremental data per-document. When text changes we correlate text line-by-line (by hash codes of lines)
         let sourceTextData = dataCache.GetValue(documentKey, fun key -> SourceTextData(lines.Count))
-
         // Go backwards to find the last cached scanned line that is valid
-        let scanStartLine = 
-            let mutable i = lineNumber
-            while i > 0 && (match sourceTextData.[i-1] with Some data -> not (data.IsValid(lines.[i])) | None -> true)  do
-                i <- i - 1
-            i
-                
-        let lexState = if scanStartLine = 0 then 0L else sourceTextData.[scanStartLine - 1].Value.LexStateAtEndOfLine
+        let scanStartLine = sourceTextData.GetLastValidCachedLine(lineNumber, lines)
+        let lexState = if scanStartLine = 0 then 0L else sourceTextData.[scanStartLine].Value.LexStateAtEndOfLine
         let lineContents = textLine.Text.ToString(textLine.Span)
         
         // We can reuse the old data when 
@@ -500,29 +504,3 @@ module internal Extensions =
                 | _ -> false
             
             isPrivate && declaredInTheFile
-
-    let glyphMajorToRoslynGlyph = function
-        | GlyphMajor.Class -> Glyph.ClassPublic
-        | GlyphMajor.Constant -> Glyph.ConstantPublic
-        | GlyphMajor.Delegate -> Glyph.DelegatePublic
-        | GlyphMajor.Enum -> Glyph.EnumPublic
-        | GlyphMajor.EnumMember -> Glyph.FieldPublic
-        | GlyphMajor.Event -> Glyph.EventPublic
-        | GlyphMajor.Exception -> Glyph.ClassPublic
-        | GlyphMajor.FieldBlue -> Glyph.FieldPublic
-        | GlyphMajor.Interface -> Glyph.InterfacePublic
-        | GlyphMajor.Method -> Glyph.MethodPublic
-        | GlyphMajor.Method2 -> Glyph.MethodPublic
-        | GlyphMajor.Module -> Glyph.ModulePublic
-        | GlyphMajor.NameSpace -> Glyph.Namespace
-        | GlyphMajor.Property -> Glyph.PropertyPublic
-        | GlyphMajor.Struct -> Glyph.StructurePublic
-        | GlyphMajor.Typedef -> Glyph.ClassPublic
-        | GlyphMajor.Type -> Glyph.ClassPublic
-        | GlyphMajor.Union -> Glyph.EnumPublic
-        | GlyphMajor.Variable -> Glyph.FieldPublic
-        | GlyphMajor.ValueType -> Glyph.StructurePublic
-        | GlyphMajor.Error -> Glyph.Error
-        | _ -> Glyph.None
-
-    
