@@ -974,7 +974,7 @@ module private PrintTypes =
                 match argInfo.Name, isOptionalArg, isParamArray, tryDestOptionTy denv.g ty with 
                 // Layout an optional argument 
                 | Some(id), true, _, Some ty -> 
-                    leftL  (tagPunctuation "?") ^^ sepL (tagParameter id.idText) ^^ RightL.colon ^^ layoutTypeWithInfoAndPrec denv env 2 ty 
+                    leftL  (tagPunctuation "?") ^^ sepL (tagParameter id.idText) ^^ SepL.colon ^^ layoutTypeWithInfoAndPrec denv env 2 ty 
                 // Layout an unnamed argument 
                 | None, _,_, _ -> 
                     layoutTypeWithInfoAndPrec denv env 2 ty
@@ -1064,7 +1064,7 @@ module private PrintTypes =
     let layoutMemberSig denv  (memberToParentInst,nm,methTypars,argInfos,retTy) = 
         let niceMethodTypars,tauL = layoutMemberTypeCore denv memberToParentInst (methTypars, argInfos, retTy)
         let nameL = 
-            let nameL = DemangleOperatorNameAsTagged tagMember nm |> List.map wordL |> List.reduce (^^)
+            let nameL = DemangleOperatorNameAsLayout tagMember nm
             let nameL = if denv.showTyparBinding then layoutTyparDecls denv nameL true niceMethodTypars else nameL
             nameL
         nameL ^^ wordL (tagPunctuation ":") ^^ tauL
@@ -1089,8 +1089,7 @@ module private PrintTastMemberOrVals =
         let stat = PrintTypes.layoutMemberFlags membInfo.MemberFlags
         let _tps,argInfos,rty,_ = GetTypeOfMemberInFSharpForm denv.g v
         let mkNameL niceMethodTypars name =       
-            let name  = DemangleOperatorNameAsTagged tagMember name
-            let nameL = name |> List.map wordL |> List.reduce (^^)
+            let nameL  = DemangleOperatorNameAsLayout tagMember name
             let nameL = 
                 if denv.showMemberContainers then 
                     layoutTyconRef denv v.MemberApparentParent ^^ SepL.dot ^^ nameL
@@ -1398,7 +1397,7 @@ module private TastDefinitionPrinting =
             sepListL (wordL (tagPunctuation "*")) (List.mapi (layoutUnionOrExceptionField denv isGenerated) fields)
 
     let layoutUnionCase denv  prefixL (ucase:UnionCase) =
-        let nmL = DemangleOperatorNameAsTagged tagUnionCase ucase.Id.idText |> List.map wordL |> List.reduce (^^)
+        let nmL = DemangleOperatorNameAsLayout tagUnionCase ucase.Id.idText
         //let nmL = layoutAccessibility denv ucase.Accessibility nmL
         match ucase.RecdFields with
         | []     -> (prefixL ^^ nmL)

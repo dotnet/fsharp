@@ -15,6 +15,7 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
     open System.Collections.Concurrent
 
     module TaggedTextOps = Internal.Utilities.StructuredFormat.TaggedTextOps
+    module LayoutOps = Internal.Utilities.StructuredFormat.LayoutOps
 
 #if FX_RESHAPED_REFLECTION
     open Microsoft.FSharp.Core.ReflectionAdapters
@@ -290,13 +291,14 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
         let nm = DecompileOpName nm
         if IsOpName nm then "( " + nm + " )"
         else nm
+    
+    open LayoutOps
 
-    let DemangleOperatorNameAsTagged nonOpTagged nm =
+    let DemangleOperatorNameAsLayout nonOpTagged nm =
         let nm = DecompileOpName nm
-        if IsOpName nm then [TaggedTextOps.tagPunctuation "("; TaggedTextOps.tagSpace " "; TaggedTextOps.tagOperator nm; TaggedTextOps.tagSpace " "; TaggedTextOps.tagPunctuation ")" ]
-        else [nonOpTagged nm]
+        if IsOpName nm then wordL (TaggedTextOps.tagPunctuation "(") ^^ wordL (TaggedTextOps.tagOperator nm) ^^ wordL (TaggedTextOps.tagPunctuation ")")
+        else LayoutOps.wordL (nonOpTagged nm)
 
-                  
     let opNameCons = CompileOpName "::"
     let opNameNil = CompileOpName "[]"
     let opNameEquals = CompileOpName "="
