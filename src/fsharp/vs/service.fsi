@@ -25,9 +25,13 @@ type internal FSharpMethodGroupItemParameter =
     /// A key that can be used for sorting the parameters, used to help sort overloads.
     member CanonicalTypeTextForSorting: string
 
+    /// The structured representation for the parameter including its name, its type and visual indicators of other
+    /// information such as whether it is optional.
+    member StructuredDisplay: Layout
+
     /// The text to display for the parameter including its name, its type and visual indicators of other
     /// information such as whether it is optional.
-    member Display: Layout
+    member Display: string
 
     /// Is the parameter optional
     member IsOptional: bool
@@ -40,11 +44,17 @@ type internal FSharpMethodGroupItem =
     /// The documentation for the item
     member XmlDoc : FSharpXmlDoc
 
+    /// The structured description representation for the method (or other item)
+    member StructuredDescription : FSharpStructuredToolTipText
+
     /// The formatted description text for the method (or other item)
-    member Description : FSharpToolTipText<Layout>
+    member Description : FSharpToolTipText
+
+    /// The The structured description representation for the method (or other item)
+    member StructuredTypeText: Layout
 
     /// The formatted type text for the method (or other item)
-    member TypeText: Layout
+    member TypeText: string
 
     /// The parameters of the method in the overload set
     member Parameters: FSharpMethodGroupItemParameter[]
@@ -208,7 +218,16 @@ type internal FSharpCheckFileResults =
     /// <param name="lineText">The text of the line where the information is being requested.</param>
     /// <param name="names">The identifiers at the location where the information is being requested.</param>
     /// <param name="tokenTag">Used to discriminate between 'identifiers', 'strings' and others. For strings, an attempt is made to give a tooltip for a #r "..." location. Use a value from FSharpTokenInfo.Tag, or FSharpTokenTag.Identifier, unless you have other information available.</param>
-    member GetToolTipTextAlternate : line:int * colAtEndOfNames:int * lineText:string * names:string list * tokenTag:int -> Async<FSharpToolTipText<Layout>>
+    member GetStructuredToolTipTextAlternate : line:int * colAtEndOfNames:int * lineText:string * names:string list * tokenTag:int -> Async<FSharpStructuredToolTipText>
+
+    /// <summary>Compute a formatted tooltip for the given location</summary>
+    ///
+    /// <param name="line">The line number where the information is being requested.</param>
+    /// <param name="colAtEndOfNames">The column number at the end of the identifiers where the information is being requested.</param>
+    /// <param name="lineText">The text of the line where the information is being requested.</param>
+    /// <param name="names">The identifiers at the location where the information is being requested.</param>
+    /// <param name="tokenTag">Used to discriminate between 'identifiers', 'strings' and others. For strings, an attempt is made to give a tooltip for a #r "..." location. Use a value from FSharpTokenInfo.Tag, or FSharpTokenTag.Identifier, unless you have other information available.</param>
+    member GetToolTipTextAlternate : line:int * colAtEndOfNames:int * lineText:string * names:string list * tokenTag:int -> Async<FSharpToolTipText>
 
     /// <summary>Compute the Visual Studio F1-help key identifier for the given location, based on name resolution results</summary>
     ///

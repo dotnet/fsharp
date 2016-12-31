@@ -67,7 +67,8 @@ module EnvMisc =
 type FSharpMethodGroupItemParameter(name: string, canonicalTypeTextForSorting: string, display: Layout, isOptional: bool) = 
     member __.ParameterName = name
     member __.CanonicalTypeTextForSorting = canonicalTypeTextForSorting
-    member __.Display = display
+    member __.StructuredDisplay = display
+    member __.Display = showL display
     member __.IsOptional = isOptional
 
 /// Format parameters for Intellisense completion
@@ -89,7 +90,7 @@ module internal Params =
     
     let ParamOfUnionCaseField g denv isGenerated (i : int) f = 
         let initial = ParamOfRecdField g denv f
-        let display = if isGenerated i f then initial.Display else NicePrint.layoutOfParamData denv (ParamData(false, false, NotOptional, NoCallerInfo, Some f.rfield_id, ReflectedArgInfo.None, f.rfield_type)) 
+        let display = if isGenerated i f then initial.StructuredDisplay else NicePrint.layoutOfParamData denv (ParamData(false, false, NotOptional, NoCallerInfo, Some f.rfield_id, ReflectedArgInfo.None, f.rfield_type)) 
         FSharpMethodGroupItemParameter(
           name=initial.ParameterName, 
           canonicalTypeTextForSorting=initial.CanonicalTypeTextForSorting, 
@@ -224,7 +225,7 @@ module internal Params =
                     FSharpMethodGroupItemParameter(
                       name = spName,
                       canonicalTypeTextForSorting = showL spKind,
-                      display = (if spOpt then SepL.questionMark else emptyL) ^^ wordL (TaggedTextOps.tagParameter spName) ^^ spKind,
+                      display = (if spOpt then SepL.questionMark else emptyL) ^^ wordL (TaggedTextOps.tagParameter spName) ^^ RightL.colon ^^ spKind,
                       //display = sprintf "%s%s: %s" (if spOpt then "?" else "") spName spKind,
                       isOptional=spOpt))
 #endif
@@ -310,9 +311,11 @@ module internal Params =
 [<Sealed; NoEquality; NoComparison>]
 // Note: instances of this type do not hold any references to any compiler resources.
 type FSharpMethodGroupItem(description: FSharpToolTipText<Layout>, xmlDoc: FSharpXmlDoc, typeText: Layout, parameters: FSharpMethodGroupItemParameter[], hasParameters: bool, hasParamArrayArg: bool, staticParameters: FSharpMethodGroupItemParameter[]) = 
-    member __.Description = description
+    member __.StructuredDescription = description
+    member __.Description = Tooltips.ToFSharpToolTipText description
     member __.XmlDoc = xmlDoc
-    member __.TypeText = typeText
+    member __.StructuredTypeText = typeText
+    member __.TypeText = showL typeText
     member __.Parameters = parameters
     member __.HasParameters = hasParameters
     member __.HasParamArrayArg = hasParamArrayArg
@@ -338,7 +341,7 @@ type FSharpMethodGroup( name: string, unsortedMethods: FSharpMethodGroupItem[] )
         |> Array.map (fun meth -> 
             let parms = meth.Parameters
             if parms.Length = 1 && parms.[0].CanonicalTypeTextForSorting="Microsoft.FSharp.Core.Unit" then 
-                FSharpMethodGroupItem(meth.Description, meth.XmlDoc, meth.TypeText, [||], true, meth.HasParamArrayArg, meth.StaticParameters) 
+                FSharpMethodGroupItem(meth.StructuredDescription, meth.XmlDoc, meth.StructuredTypeText, [||], true, meth.HasParamArrayArg, meth.StaticParameters) 
             else 
                 meth)
         // Fix the order of methods, to be stable for unit testing.
@@ -389,8 +392,8 @@ type FSharpMethodGroup( name: string, unsortedMethods: FSharpMethodGroupItem[] )
                 let methods = 
                     items |> Array.ofList |> Array.map (fun item -> 
                         FSharpMethodGroupItem(
-                          description = FSharpToolTipText [FormatDescriptionOfItem true infoReader m denv item],
-                          typeText = FormatReturnTypeOfItem infoReader m denv item,
+                          description = FSharpToolTipText [FormatStructuredDescriptionOfItem true infoReader m denv item],
+                          typeText = FormatStructuredReturnTypeOfItem infoReader m denv item,
                           xmlDoc = GetXmlCommentForItem infoReader m item,
                           parameters = (Params.ParamsOfItem infoReader m denv item |> Array.ofList),
                           hasParameters = (match item with Params.ItemIsProvidedTypeWithStaticArguments m g _ -> false | _ -> true),
@@ -1218,7 +1221,7 @@ type TypeCheckInfo
             (fun _msg -> [])
             
     /// Get the "reference resolution" tooltip for at a location
-    member scope.GetReferenceResolutionToolTipText(line,col) = 
+    member scope.GetReferenceResolutionStructuredToolTipText(line,col) = 
         let pos = mkPos line col
         let isPosMatch(pos, ar:AssemblyReference) : bool = 
             let isRangeMatch = (Range.rangeContainsPos ar.Range pos) 
@@ -1240,18 +1243,17 @@ type TypeCheckInfo
             | resolved::_ // Take the first seen
             | [resolved] -> 
                 let tip = wordL (TaggedTextOps.tagStringLiteral((resolved.prepareToolTip ()).TrimEnd([|'\n'|])))
-                FSharpToolTipText [FSharpToolTipElement.Single(tip ,FSharpXmlDoc.None)]
+                FSharpStructuredToolTipText.FSharpToolTipText [FSharpStructuredToolTipElement.Single(tip ,FSharpXmlDoc.None)]
 
-            | [] -> FSharpToolTipText []
+            | [] -> FSharpStructuredToolTipText.FSharpToolTipText []
                                     
         ErrorScope.Protect 
             Range.range0 
             dataTipOfReferences
-            (fun err -> FSharpToolTipText [FSharpToolTipElement.CompositionError err])
+            (fun err -> FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError err])
 
     // GetToolTipText: return the "pop up" (or "Quick Info") text given a certain context.
-    member x.GetToolTipText line lineStr colAtEndOfNames names = 
-        
+    member x.GetStructuredToolTipText line lineStr colAtEndOfNames names = 
         let Compute() = 
             ErrorScope.Protect 
                 Range.range0 
@@ -1259,8 +1261,8 @@ type TypeCheckInfo
                     match GetDeclItemsForNamesAtPosition(None,Some(names),None,line,lineStr,colAtEndOfNames,ResolveTypeNamesToCtors,ResolveOverloads.Yes,fun _ -> false) with
                     | None -> FSharpToolTipText []
                     | Some(items,denv,m) ->
-                         FSharpToolTipText(items |> List.map (FormatDescriptionOfItem false infoReader m denv )))
-                (fun err -> FSharpToolTipText [FSharpToolTipElement.CompositionError err])
+                         FSharpToolTipText(items |> List.map (FormatStructuredDescriptionOfItem false infoReader m denv )))
+                (fun err -> FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError err])
                
         // See devdiv bug 646520 for rationale behind truncating and caching these quick infos (they can be big!)
         let key = line,colAtEndOfNames,lineStr
@@ -1270,6 +1272,11 @@ type TypeCheckInfo
              let res = Compute()
              getToolTipTextCache.Put(key,res)
              res
+
+    // GetToolTipText: return the "pop up" (or "Quick Info") text given a certain context.
+    member x.GetToolTipText line lineStr colAtEndOfNames names = 
+        x.GetStructuredToolTipText line lineStr colAtEndOfNames names
+        |> Tooltips.ToFSharpToolTipText
 
     member x.GetF1Keyword (line, lineStr, colAtEndOfNames, names) : string option =
        ErrorScope.Protect
@@ -1963,15 +1970,19 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
         reactorOp "GetDeclarationListSymbols" List.empty (fun scope -> scope.GetDeclarationListSymbols(parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, hasTextChangedSinceLastTypecheck))
 
     /// Resolve the names at the given location to give a data tip 
-    member info.GetToolTipTextAlternate(line, colAtEndOfNames, lineStr, names, tokenTag) = 
+    member info.GetStructuredToolTipTextAlternate(line, colAtEndOfNames, lineStr, names, tokenTag) = 
         let dflt = FSharpToolTipText []
         match tokenTagToTokenId tokenTag with 
         | TOKEN_IDENT -> 
-            reactorOp "GetToolTipText" dflt (fun scope -> scope.GetToolTipText line lineStr colAtEndOfNames names)
+            reactorOp "GetToolTipText" dflt (fun scope -> scope.GetStructuredToolTipText line lineStr colAtEndOfNames names)
         | TOKEN_STRING | TOKEN_STRING_TEXT -> 
-            reactorOp "GetReferenceResolutionToolTipText" dflt (fun scope -> scope.GetReferenceResolutionToolTipText(line, colAtEndOfNames) )
+            reactorOp "GetReferenceResolutionToolTipText" dflt (fun scope -> scope.GetReferenceResolutionStructuredToolTipText(line, colAtEndOfNames) )
         | _ -> 
             async.Return dflt
+
+    member info.GetToolTipTextAlternate(line, colAtEndOfNames, lineStr, names, tokenTag) = 
+        info.GetStructuredToolTipTextAlternate(line, colAtEndOfNames, lineStr, names, tokenTag)
+        |> Tooltips.Map Tooltips.ToFSharpToolTipText
 
     member info.GetF1KeywordAlternate (line, colAtEndOfNames, lineStr, names) =
         reactorOp "GetF1Keyword" None (fun scope -> 

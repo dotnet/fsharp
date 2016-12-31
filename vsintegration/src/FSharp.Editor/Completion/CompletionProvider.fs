@@ -142,7 +142,7 @@ type internal FSharpCompletionProvider
         async {
             let exists, declarationItem = declarationItemsCache.TryGetValue(completionItem.DisplayText)
             if exists then
-                let! description = declarationItem.DescriptionTextAsync
+                let! description = declarationItem.StructuredDescriptionTextAsync
                 let documentation = List()
                 let collector = CommonRoslynHelpers.CollectTaggedText documentation
                 // mix main description and xmldoc by using one collector

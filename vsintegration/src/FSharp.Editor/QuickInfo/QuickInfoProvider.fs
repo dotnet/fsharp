@@ -86,11 +86,11 @@ type internal FSharpQuickInfoProvider
             
             match CommonHelpers.getSymbolAtPosition(documentId, sourceText, position, filePath, defines, SymbolLookupKind.Fuzzy) with 
             | Some symbol -> 
-                let! res = checkFileResults.GetToolTipTextAlternate(textLineNumber, symbol.RightColumn, textLine.ToString(), [symbol.Text], FSharpTokenTag.IDENT)
+                let! res = checkFileResults.GetStructuredToolTipTextAlternate(textLineNumber, symbol.RightColumn, textLine.ToString(), [symbol.Text], FSharpTokenTag.IDENT)
                 return 
                     match res with
                     | FSharpToolTipText [] 
-                    | FSharpToolTipText [FSharpToolTipElement.None] -> None
+                    | FSharpToolTipText [FSharpStructuredToolTipElement.None] -> None
                     | _ -> Some(res, CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbol.Range))
             | None -> return None
         }

@@ -331,7 +331,7 @@ module internal XmlDocumentation =
         
 
     /// Build a data tip text string with xml comments injected.
-    let BuildTipText(documentationProvider:IDocumentationBuilder, dataTipText:FSharpToolTipElement<Layout> list, textCollector, xmlCollector, showText, showExceptions, showParameters, showOverloadText) = 
+    let BuildTipText(documentationProvider:IDocumentationBuilder, dataTipText: FSharpStructuredToolTipElement list, textCollector, xmlCollector, showText, showExceptions, showParameters, showOverloadText) = 
         let textCollector: ITaggedTextCollector = TextSanitizingCollector(textCollector, lineLimit = 45) :> _
         let xmlCollector: ITaggedTextCollector = TextSanitizingCollector(xmlCollector, lineLimit = 45) :> _
 
@@ -340,22 +340,22 @@ module internal XmlDocumentation =
                 AddSeparator textCollector
                 AddSeparator xmlCollector
 
-        let Process add (dataTipElement:FSharpToolTipElement<_>) =
+        let Process add (dataTipElement: FSharpStructuredToolTipElement) =
             match dataTipElement with 
-            | FSharpToolTipElement.None -> false
-            | FSharpToolTipElement.Single (text, xml) ->
+            | FSharpStructuredToolTipElement.None -> false
+            | FSharpStructuredToolTipElement.Single (text, xml) ->
                 addSeparatorIfNecessary add
                 if showText then 
                     renderL (taggedTextListR textCollector.Add) text |> ignore
                 AppendXmlComment(documentationProvider, xmlCollector, xml, showExceptions, showParameters, None)
                 true
-            | FSharpToolTipElement.SingleParameter(text, xml, paramName) ->
+            | FSharpStructuredToolTipElement.SingleParameter(text, xml, paramName) ->
                 addSeparatorIfNecessary add
                 if showText then
                     renderL (taggedTextListR textCollector.Add) text |> ignore
                 AppendXmlComment(documentationProvider, xmlCollector, xml, showExceptions, showParameters, Some paramName)
                 true
-            | FSharpToolTipElement.Group (overloads) -> 
+            | FSharpStructuredToolTipElement.Group (overloads) -> 
                 let overloads = Array.ofList overloads
                 let len = Array.length overloads
                 if len >= 1 then
@@ -381,7 +381,7 @@ module internal XmlDocumentation =
                 else
                     false
 
-            | FSharpToolTipElement.CompositionError(errText) -> 
+            | FSharpStructuredToolTipElement.CompositionError(errText) -> 
                 textCollector.Add(tagText errText)
                 true
 

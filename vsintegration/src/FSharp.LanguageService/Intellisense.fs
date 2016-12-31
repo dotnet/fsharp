@@ -67,16 +67,16 @@ type internal FSharpMethodListForAMethodTip(documentationBuilder: IDocumentation
 
     override x.GetDescription(methodIndex) = safe methodIndex "" (fun m -> 
         let buf = Text.StringBuilder()
-        XmlDocumentation.BuildMethodOverloadTipText(documentationBuilder, TaggedText.appendTo buf, TaggedText.appendTo buf, m.Description, true)
+        XmlDocumentation.BuildMethodOverloadTipText(documentationBuilder, TaggedText.appendTo buf, TaggedText.appendTo buf, m.StructuredDescription, true)
         buf.ToString()
         )
             
-    override x.GetType(methodIndex) = safe methodIndex "" (fun m -> Layout.showL m.TypeText)
+    override x.GetType(methodIndex) = safe methodIndex "" (fun m -> m.TypeText)
 
     override x.GetParameterCount(methodIndex) =  safe methodIndex 0 (fun m -> getParameters(m).Length)
             
     override x.GetParameterInfo(methodIndex, parameterIndex, nameOut, displayOut, descriptionOut) =
-        let name,display = safe methodIndex ("","") (fun m -> let p = getParameters(m).[parameterIndex] in p.ParameterName, Layout.showL p.Display )
+        let name,display = safe methodIndex ("","") (fun m -> let p = getParameters(m).[parameterIndex] in p.ParameterName, p.Display )
            
         nameOut <- name
         displayOut <- display
@@ -149,7 +149,7 @@ type internal FSharpDeclarations(documentationBuilder, declarations: FSharpDecla
         let decls = trimmedDeclarations filterText
         if (index >= 0 && index < decls.Length) then
             let buf = Text.StringBuilder()
-            XmlDocumentation.BuildDataTipText(documentationBuilder, TaggedText.appendTo buf, TaggedText.appendTo buf, decls.[index].DescriptionText) 
+            XmlDocumentation.BuildDataTipText(documentationBuilder, TaggedText.appendTo buf, TaggedText.appendTo buf, decls.[index].StructuredDescriptionText) 
             buf.ToString()
         else ""
 
@@ -393,10 +393,10 @@ type internal FSharpIntellisenseInfo
                                                 
                             // Correct the identifier (e.g. to correctly handle active pattern names that end with "BAR" token)
                             let tokenTag = QuickParse.CorrectIdentifierToken s tokenTag
-                            let dataTip = typedResults.GetToolTipTextAlternate(Range.Line.fromZ line, colAtEndOfNames, lineText, qualId, tokenTag) |> Async.RunSynchronously
+                            let dataTip = typedResults.GetStructuredToolTipTextAlternate(Range.Line.fromZ line, colAtEndOfNames, lineText, qualId, tokenTag) |> Async.RunSynchronously
 
                             match dataTip with
-                            | FSharpToolTipText.FSharpToolTipText [] when makeSecondAttempt -> getDataTip true
+                            | FSharpStructuredToolTipText.FSharpToolTipText [] when makeSecondAttempt -> getDataTip true
                             | _ -> 
                                 let buf = Text.StringBuilder()
                                 XmlDocumentation.BuildDataTipText(documentationBuilder, TaggedText.appendTo buf, TaggedText.appendTo buf, dataTip)

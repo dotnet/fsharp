@@ -2919,10 +2919,10 @@ module DebugPrint = begin
     open PrettyTypes
     let layoutRanges = ref false  
 
-    let squareAngleL x = leftL  (tagPunctuation "[<") ^^ x ^^ rightL (tagPunctuation ">]")
+    let squareAngleL x = LeftL.leftBracketAngle ^^ x ^^ RightL.rightBracketAngle
     let angleL x = sepL Literals.leftAngle ^^ x ^^ rightL Literals.rightAngle
     let braceL x = leftL Literals.leftBrace  ^^ x ^^ rightL Literals.rightBrace
-    let boolL = function true -> wordL (tagKeyword "true") | false -> wordL (tagKeyword "false")
+    let boolL = function true -> WordL.keywordTrue | false -> WordL.keywordFalse
 
     let intL (n:int)          = wordL (tagNumericLiteral (string n ))
     let int64L (n:int64)          = wordL (tagNumericLiteral (string n ))

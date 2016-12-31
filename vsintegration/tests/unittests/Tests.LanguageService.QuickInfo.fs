@@ -1094,7 +1094,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         // The <summary> arises because the xml doc mechanism places these before handing them to VS for processing.
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"XX","module XXX")
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"YY","module YYY\n\nfrom XXX")
-        this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"ZZ","module ZZZ\n\nfrom XXX<summary>\n\nDoc</summary>")
+        this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"ZZ","module ZZZ\n\nfrom XXX<summary>\nDoc</summary>")
 
     [<Test>]
     member public this.``IdentifierWithTick``() = 

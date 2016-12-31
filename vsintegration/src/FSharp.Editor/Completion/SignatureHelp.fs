@@ -176,7 +176,7 @@ type internal FSharpSignatureHelpProvider
             // Create the documentation. Note, do this on the background thread, since doing it in the documentationBuild fails to build the XML index
             let mainDescription = List()
             let documentation = List()
-            XmlDocumentation.BuildMethodOverloadTipText(documentationBuilder, CommonRoslynHelpers.CollectTaggedText mainDescription, CommonRoslynHelpers.CollectTaggedText documentation, method.Description, false)
+            XmlDocumentation.BuildMethodOverloadTipText(documentationBuilder, CommonRoslynHelpers.CollectTaggedText mainDescription, CommonRoslynHelpers.CollectTaggedText documentation, method.StructuredDescription, false)
 
             let parameters = 
                 let parameters = if isStaticArgTip then method.StaticParameters else method.Parameters
@@ -184,48 +184,11 @@ type internal FSharpSignatureHelpProvider
                       let doc = List()
                       // FSROSLYNTODO: compute the proper help text for parameters, c.f. AppendParameter in XmlDocumentation.fs
                       XmlDocumentation.BuildMethodParamText(documentationBuilder, CommonRoslynHelpers.CollectTaggedText doc, method.XmlDoc, p.ParameterName) 
-                      //let doc = if String.IsNullOrWhiteSpace(paramDoc) then [||]
-                      //          else [| TaggedText(TextTags.Text, paramDoc) |]
-                      //let parameterParts =
-                      //    if isStaticArgTip then
-                      //        [| TaggedText(TextTags.Class, p.Display) |]                                
-                      //    else
-                      //        let str = p.Display
-                      //        match str.IndexOf(':') with
-                      //        | -1 -> [| TaggedText(TextTags.Parameter, str) |]                                
-                      //        | 0 -> 
-                      //          [| TaggedText(TextTags.Punctuation, ":"); 
-                      //             TaggedText(TextTags.Class, str.[1..]) |]
-                      //        | i -> 
-                      //          [| TaggedText(TextTags.Parameter, str.[..i-1]); 
-                      //             TaggedText(TextTags.Punctuation, ":"); 
-                      //             TaggedText(TextTags.Class, str.[i+1..]) |]
                       let parts = List()
-                      renderL (taggedTextListR (CommonRoslynHelpers.CollectTaggedText parts)) p.Display |> ignore
+                      renderL (taggedTextListR (CommonRoslynHelpers.CollectTaggedText parts)) p.StructuredDisplay |> ignore
                       yield (p.ParameterName, p.IsOptional, doc, parts) 
                 |]
 
-            //let hasParamComments (pcs: (string*bool*TaggedText[]*TaggedText[])[]) =
-            //    pcs |> Array.exists (fun (_, _, doc, _) -> doc.Length > 0)
-
-            //let summaryText =                 
-            //    let doc = 
-            //        if String.IsNullOrWhiteSpace summaryDoc then
-            //            String.Empty
-            //        elif hasParamComments parameters then 
-            //            summaryDoc + "\n" 
-            //        else 
-            //            summaryDoc
-            //    [| TaggedText(TextTags.Text, doc) |]
-                
-            //// Prepare the text to display
-            //let descriptionParts = 
-            //    let str = method.TypeText
-            //    if str.StartsWith(":", StringComparison.OrdinalIgnoreCase) then
-            //        [| TaggedText(TextTags.Punctuation, ":"); 
-            //           TaggedText(TextTags.Class, str.[1..]) |]
-            //    else
-            //        [| TaggedText(TextTags.Text, str) |]
             let prefixParts = 
                 [| TaggedText(TextTags.Method, methodGroup.MethodName);  
                    TaggedText(TextTags.Punctuation, (if isStaticArgTip then "<" else "(")) |]
