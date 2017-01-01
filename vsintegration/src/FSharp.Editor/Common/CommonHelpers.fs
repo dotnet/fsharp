@@ -421,17 +421,40 @@ module internal Extensions =
             with _ -> path
 
     type FSharpChecker with
-        member this.ParseAndCheckDocument(document: Document, options: FSharpProjectOptions) : Async<(Ast.ParsedInput * FSharpCheckFileResults) option> =
+        member this.ParseDocument(document: Document, options: FSharpProjectOptions, sourceText: string) =
+            asyncMaybe {
+                let! fileParseResults = this.ParseFileInProject(document.FilePath, sourceText, options) |> liftAsync
+                return! fileParseResults.ParseTree
+            }
+
+        member this.ParseDocument(document: Document, options: FSharpProjectOptions, ?sourceText: SourceText) =
+            asyncMaybe {
+                let! sourceText =
+                    match sourceText with
+                    | Some x -> Task.FromResult x
+                    | None -> document.GetTextAsync()
+                return! this.ParseDocument(document, options, sourceText.ToString())
+            }
+
+        member this.ParseAndCheckDocument(filePath: string, textVersionHash: int, sourceText: string, options: FSharpProjectOptions) : Async<(Ast.ParsedInput * FSharpCheckFileResults) option> =
             async {
-                let! cancellationToken = Async.CancellationToken
-                let! sourceText = document.GetTextAsync()
-                let! textVersion = document.GetTextVersionAsync(cancellationToken)
-                let! parseResults, checkFileAnswer = this.ParseAndCheckFileInProject(document.FilePath, textVersion.GetHashCode(), sourceText.ToString(), options)
+                let! parseResults, checkFileAnswer = this.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText, options)
                 return
                     match parseResults.ParseTree, checkFileAnswer with
                     | _, FSharpCheckFileAnswer.Aborted 
                     | None, _ -> None
                     | Some parsedInput, FSharpCheckFileAnswer.Succeeded checkResults -> Some (parsedInput, checkResults)
+            }
+
+        member this.ParseAndCheckDocument(document: Document, options: FSharpProjectOptions, ?sourceText: SourceText) : Async<(Ast.ParsedInput * FSharpCheckFileResults) option> =
+            async {
+                let! cancellationToken = Async.CancellationToken
+                let! sourceText =
+                    match sourceText with
+                    | Some x -> Task.FromResult x
+                    | None -> document.GetTextAsync()
+                let! textVersion = document.GetTextVersionAsync(cancellationToken)
+                return! this.ParseAndCheckDocument(document.FilePath, textVersion.GetHashCode(), sourceText.ToString(), options)
             }
 
     type FSharpSymbol with
@@ -503,4 +526,4 @@ module internal Extensions =
                 | Some declRange -> declRange.FileName = this.RangeAlternate.FileName
                 | _ -> false
             
-            isPrivate && declaredInTheFile
+            isPrivate && declaredInTheFile   
