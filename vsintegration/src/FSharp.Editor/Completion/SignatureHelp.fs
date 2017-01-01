@@ -5,22 +5,14 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.Text.RegularExpressions
 open System.Composition
-open System.Collections.Concurrent
 open System.Collections.Generic
-open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Classification
-open Microsoft.CodeAnalysis.Editor
-open Microsoft.CodeAnalysis.Editor.Implementation.Debugging
-open Microsoft.CodeAnalysis.Editor.Shared.Utilities
-open Microsoft.CodeAnalysis.Formatting
-open Microsoft.CodeAnalysis.Host
 open Microsoft.CodeAnalysis.Host.Mef
-open Microsoft.CodeAnalysis.Options
 open Microsoft.CodeAnalysis.SignatureHelp
 open Microsoft.CodeAnalysis.Text
 
@@ -211,37 +203,34 @@ type internal FSharpSignatureHelpProvider
         member this.IsRetriggerCharacter(c) = c = ')' || c = '>' || c = '='
 
         member this.GetItemsAsync(document, position, triggerInfo, cancellationToken) = 
-            async {
+            asyncMaybe {
               try
-                match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)  with 
-                | Some options ->
-                    let! sourceText = document.GetTextAsync(cancellationToken)
-                    let! textVersion = document.GetTextVersionAsync(cancellationToken)
+                let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                let! sourceText = document.GetTextAsync(cancellationToken)
+                let! textVersion = document.GetTextVersionAsync(cancellationToken)
 
-                    let triggerTypedChar = 
-                        if triggerInfo.TriggerCharacter.HasValue && triggerInfo.TriggerReason = SignatureHelpTriggerReason.TypeCharCommand then
-                            Some triggerInfo.TriggerCharacter.Value
-                        else None
+                let triggerTypedChar = 
+                    if triggerInfo.TriggerCharacter.HasValue && triggerInfo.TriggerReason = SignatureHelpTriggerReason.TypeCharCommand then
+                        Some triggerInfo.TriggerCharacter.Value
+                    else None
 
-                    let! methods = FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(checkerProvider.Checker, documentationBuilder, sourceText, position, options, triggerTypedChar, document.FilePath, textVersion.GetHashCode())
-                    match methods with 
-                    | None -> return null
-                    | Some (results,applicableSpan,argumentIndex,argumentCount,argumentName) -> 
-                        let items = 
-                            results 
-                            |> Array.map (fun (hasParamArrayArg, doc, prefixParts, separatorParts, suffixParts, parameters, descriptionParts) ->
-                                    let parameters = parameters 
-                                                     |> Array.map (fun (paramName, isOptional, paramDoc, displayParts) -> 
-                                                        SignatureHelpParameter(paramName,isOptional,documentationFactory=(fun _ -> paramDoc :> seq<_>),displayParts=displayParts))
-                                    SignatureHelpItem(isVariadic=hasParamArrayArg, documentationFactory=(fun _ -> doc :> seq<_>),prefixParts=prefixParts,separatorParts=separatorParts,suffixParts=suffixParts,parameters=parameters,descriptionParts=descriptionParts))
+                let! (results,applicableSpan,argumentIndex,argumentCount,argumentName) = 
+                    FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(checkerProvider.Checker, documentationBuilder, sourceText, position, options, triggerTypedChar, document.FilePath, textVersion.GetHashCode())
+                let items = 
+                    results 
+                    |> Array.map (fun (hasParamArrayArg, doc, prefixParts, separatorParts, suffixParts, parameters, descriptionParts) ->
+                            let parameters = parameters 
+                                                |> Array.map (fun (paramName, isOptional, paramDoc, displayParts) -> 
+                                                SignatureHelpParameter(paramName,isOptional,documentationFactory=(fun _ -> paramDoc :> seq<_>),displayParts=displayParts))
+                            SignatureHelpItem(isVariadic=hasParamArrayArg, documentationFactory=(fun _ -> doc :> seq<_>),prefixParts=prefixParts,separatorParts=separatorParts,suffixParts=suffixParts,parameters=parameters,descriptionParts=descriptionParts))
 
-                        return SignatureHelpItems(items,applicableSpan,argumentIndex,argumentCount,Option.toObj argumentName)
-                | None -> 
-                    return null 
+                return SignatureHelpItems(items,applicableSpan,argumentIndex,argumentCount,Option.toObj argumentName)
               with ex -> 
                 Assert.Exception(ex)
-                return null
-            } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
+                return! None
+            } 
+            |> Async.map Option.toObj
+            |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
 
 open System.ComponentModel.Composition
 open Microsoft.VisualStudio.Utilities

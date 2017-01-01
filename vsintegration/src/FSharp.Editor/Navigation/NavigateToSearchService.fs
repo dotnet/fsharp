@@ -213,26 +213,26 @@ type internal FSharpNavigateToSearchService
 
     interface INavigateToSearchService with
         member __.SearchProjectAsync(project, searchPattern, cancellationToken) : Task<ImmutableArray<INavigateToSearchResult>> =
-            async {
-                match projectInfoManager.TryGetOptionsForProject(project.Id) with
-                | Some options ->
-                    let! items =
-                        project.Documents
-                        |> Seq.map (fun document -> getCachedIndexedNavigableItems(document, options, cancellationToken))
-                        |> Async.Parallel
-
-                    return (items |> Array.map (fun items -> items.Find(searchPattern)) |> Array.concat).ToImmutableArray()
-
-                | None -> return ImmutableArray<INavigateToSearchResult>.Empty
-            } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
+            asyncMaybe {
+                let! options = projectInfoManager.TryGetOptionsForProject(project.Id)
+                let! items =
+                    project.Documents
+                    |> Seq.map (fun document -> getCachedIndexedNavigableItems(document, options, cancellationToken))
+                    |> Async.Parallel
+                    |> liftAsync
+                return items |> Array.map (fun items -> items.Find(searchPattern)) |> Array.concat
+            } 
+            |> Async.map (Option.defaultValue [||])
+            |> Async.map (fun x -> x.ToImmutableArray())
+            |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
 
 
         member __.SearchDocumentAsync(document, searchPattern, cancellationToken) : Task<ImmutableArray<INavigateToSearchResult>> =
-            async {
+            asyncMaybe {
                 let! options = projectInfoManager.TryGetOptionsForDocumentOrProject(document)
-                match options with
-                | Some options ->
-                    let! items = getCachedIndexedNavigableItems(document, options, cancellationToken)
-                    return items.Find(searchPattern).ToImmutableArray()
-                | None -> return ImmutableArray<INavigateToSearchResult>.Empty
-            } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
+                let! items = getCachedIndexedNavigableItems(document, options, cancellationToken) |> liftAsync
+                return items.Find(searchPattern)
+            }
+            |> Async.map (Option.defaultValue [||])
+            |> Async.map (fun x -> x.ToImmutableArray())
+            |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)

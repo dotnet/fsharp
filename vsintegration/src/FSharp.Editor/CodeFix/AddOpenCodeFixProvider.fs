@@ -4,43 +4,20 @@ namespace rec Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Composition
-open System.Collections.Concurrent
-open System.Collections.Generic
 open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
-open System.Runtime.CompilerServices
-open System.Windows
-open System.Windows.Controls
-open System.Windows.Media
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Completion
-open Microsoft.CodeAnalysis.Classification
-open Microsoft.CodeAnalysis.Editor
-open Microsoft.CodeAnalysis.Editor.Shared.Utilities
-open Microsoft.CodeAnalysis.Formatting
-open Microsoft.CodeAnalysis.Host
 open Microsoft.CodeAnalysis.Host.Mef
-open Microsoft.CodeAnalysis.Options
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
-
-open Microsoft.VisualStudio.FSharp.LanguageService
-open Microsoft.VisualStudio.Text
-open Microsoft.VisualStudio.Text.Classification
-open Microsoft.VisualStudio.Text.Tagging
-open Microsoft.VisualStudio.Text.Formatting
-open Microsoft.VisualStudio.Shell.Interop
 
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
-
-open System.Windows.Documents
-open Microsoft.VisualStudio.FSharp.Editor.Structure
 
 [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module internal InsertContext =
@@ -168,55 +145,48 @@ type internal FSharpAddOpenCodeFixProvider
     override __.FixableDiagnosticIds = fixableDiagnosticIds.ToImmutableArray()
 
     override __.RegisterCodeFixesAsync context : Task =
-        async {
-            match projectInfoManager.TryGetOptionsForEditingDocumentOrProject context.Document with 
-            | Some options ->
-                let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
-                let! textVersion = context.Document.GetTextVersionAsync(context.CancellationToken)
-                let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(context.Document.FilePath, textVersion.GetHashCode(), sourceText.ToString(), options)
-                match parseResults.ParseTree, checkFileAnswer with
-                | None, _
-                | _, FSharpCheckFileAnswer.Aborted -> ()
-                | Some parsedInput, FSharpCheckFileAnswer.Succeeded checkFileResults ->
-                    let unresolvedIdentRange =
-                        let startLinePos = sourceText.Lines.GetLinePosition context.Span.Start
-                        let startPos = Pos.fromZ startLinePos.Line startLinePos.Character
-                        let endLinePos = sourceText.Lines.GetLinePosition context.Span.End
-                        let endPos = Pos.fromZ endLinePos.Line endLinePos.Character
-                        Range.mkRange context.Document.FilePath startPos endPos
-                    
-                    let isAttribute = UntypedParseImpl.GetEntityKind(unresolvedIdentRange.Start, parsedInput) = Some EntityKind.Attribute
-                    
-                    let entities =
-                        assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies checkFileResults
-                        |> List.collect (fun e -> 
-                             [ yield e.TopRequireQualifiedAccessParent, e.AutoOpenParent, e.Namespace, e.CleanedIdents
-                               if isAttribute then
-                                   let lastIdent = e.CleanedIdents.[e.CleanedIdents.Length - 1]
-                                   if lastIdent.EndsWith "Attribute" && e.Kind LookupType.Precise = EntityKind.Attribute then
-                                       yield 
-                                           e.TopRequireQualifiedAccessParent, 
-                                           e.AutoOpenParent,
-                                           e.Namespace,
-                                           e.CleanedIdents 
-                                           |> Array.replace (e.CleanedIdents.Length - 1) (lastIdent.Substring(0, lastIdent.Length - 9)) ])
+        asyncMaybe {
+            let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject context.Document
+            let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
+            let! parsedInput, checkResults = checker.ParseAndCheckDocument(context.Document, options, sourceText)
+            
+            let unresolvedIdentRange =
+                let startLinePos = sourceText.Lines.GetLinePosition context.Span.Start
+                let startPos = Pos.fromZ startLinePos.Line startLinePos.Character
+                let endLinePos = sourceText.Lines.GetLinePosition context.Span.End
+                let endPos = Pos.fromZ endLinePos.Line endLinePos.Character
+                Range.mkRange context.Document.FilePath startPos endPos
+            
+            let isAttribute = UntypedParseImpl.GetEntityKind(unresolvedIdentRange.Start, parsedInput) = Some EntityKind.Attribute
+            
+            let entities =
+                assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies checkResults
+                |> List.collect (fun e -> 
+                     [ yield e.TopRequireQualifiedAccessParent, e.AutoOpenParent, e.Namespace, e.CleanedIdents
+                       if isAttribute then
+                           let lastIdent = e.CleanedIdents.[e.CleanedIdents.Length - 1]
+                           if lastIdent.EndsWith "Attribute" && e.Kind LookupType.Precise = EntityKind.Attribute then
+                               yield 
+                                   e.TopRequireQualifiedAccessParent, 
+                                   e.AutoOpenParent,
+                                   e.Namespace,
+                                   e.CleanedIdents 
+                                   |> Array.replace (e.CleanedIdents.Length - 1) (lastIdent.Substring(0, lastIdent.Length - 9)) ])
 
-                    let longIdent = ParsedInput.getLongIdentAt parsedInput unresolvedIdentRange.End
+            let longIdent = ParsedInput.getLongIdentAt parsedInput unresolvedIdentRange.End
 
-                    let maybeUnresolvedIdents =
-                        longIdent 
-                        |> Option.map (fun longIdent ->
-                            longIdent
-                            |> List.map (fun ident ->
-                                { Ident = ident.idText
-                                  Resolved = not (ident.idRange = unresolvedIdentRange) })
-                            |> List.toArray)
-                    
-                    match maybeUnresolvedIdents with
-                    | Some maybeUnresolvedIdents ->
-                        let createEntity = ParsedInput.tryFindInsertionContext unresolvedIdentRange.StartLine parsedInput maybeUnresolvedIdents
-                        return entities |> Seq.map createEntity |> Seq.concat |> Seq.toList |> getSuggestions context
-                    | None -> ()
-            | None -> ()
-        } |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+            let! maybeUnresolvedIdents =
+                longIdent 
+                |> Option.map (fun longIdent ->
+                    longIdent
+                    |> List.map (fun ident ->
+                        { Ident = ident.idText
+                          Resolved = not (ident.idRange = unresolvedIdentRange) })
+                    |> List.toArray)
+            
+            let createEntity = ParsedInput.tryFindInsertionContext unresolvedIdentRange.StartLine parsedInput maybeUnresolvedIdents
+            return entities |> Seq.map createEntity |> Seq.concat |> Seq.toList |> getSuggestions context
+        } 
+        |> Async.Ignore 
+        |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
  
