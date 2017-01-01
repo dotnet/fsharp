@@ -4,27 +4,15 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Composition
-open System.Collections.Concurrent
-open System.Collections.Generic
 open System.Threading
 open System.Threading.Tasks
-open System.Linq
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Editor.Implementation.BraceMatching
-open Microsoft.CodeAnalysis.Editor.Shared.Utilities
 open Microsoft.CodeAnalysis.Formatting
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
-
-open Microsoft.VisualStudio.FSharp.LanguageService
-open Microsoft.VisualStudio.Text
-open Microsoft.VisualStudio.Text.Tagging
-
-open Microsoft.FSharp.Compiler.Parser
-open Microsoft.FSharp.Compiler.SourceCodeServices
 
 [<Shared>]
 [<ExportLanguageService(typeof<ISynchronousIndentationService>, FSharpCommonConstants.FSharpLanguageName)>]
@@ -33,8 +21,7 @@ type internal FSharpIndentationService() =
     static member GetDesiredIndentation(sourceText: SourceText, lineNumber: int, tabSize: int): Option<int> =        
         // Match indentation with previous line
         let rec tryFindPreviousNonEmptyLine l =
-            if l <= 0 then
-                None
+            if l <= 0 then None
             else
                 let previousLine = sourceText.Lines.[l - 1]
                 if not (String.IsNullOrEmpty(previousLine.ToString())) then                    
@@ -42,8 +29,7 @@ type internal FSharpIndentationService() =
                 else
                     tryFindPreviousNonEmptyLine (l - 1)
         // No indentation on the first line of a document
-        if lineNumber = 0 then
-            None
+        if lineNumber = 0 then None
         else
             match tryFindPreviousNonEmptyLine lineNumber with
             | None -> Some 0
@@ -60,15 +46,13 @@ type internal FSharpIndentationService() =
 
     interface ISynchronousIndentationService with
         member this.GetDesiredIndentation(document: Document, lineNumber: int, cancellationToken: CancellationToken): Nullable<IndentationResult> =
-            let sourceTextTask = document.GetTextAsync(cancellationToken)
-            sourceTextTask.Wait(cancellationToken)
-            let sourceText = CommonRoslynHelpers.GetCompletedTaskResult(sourceTextTask)
-
-            let optionsTask = document.GetOptionsAsync(cancellationToken)
-            optionsTask.Wait(cancellationToken)
-            let options = CommonRoslynHelpers.GetCompletedTaskResult(optionsTask)
-            let tabSize = options.GetOption(FormattingOptions.TabSize, FSharpCommonConstants.FSharpLanguageName)
-
-            match FSharpIndentationService.GetDesiredIndentation(sourceText, lineNumber, tabSize) with
-            | None -> Nullable<IndentationResult>()
-            | Some(indentation) -> Nullable<IndentationResult>(IndentationResult(sourceText.Lines.[lineNumber].Start, indentation))
+            async {
+                 let! sourceText = document.GetTextAsync(cancellationToken)
+                 let! options = document.GetOptionsAsync(cancellationToken)
+                 let tabSize = options.GetOption(FormattingOptions.TabSize, FSharpCommonConstants.FSharpLanguageName)
+                 
+                 return 
+                    match FSharpIndentationService.GetDesiredIndentation(sourceText, lineNumber, tabSize) with
+                    | None -> Nullable()
+                    | Some(indentation) -> Nullable<IndentationResult>(IndentationResult(sourceText.Lines.[lineNumber].Start, indentation))
+            } |> Async.RunSynchronously

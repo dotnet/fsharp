@@ -4,23 +4,13 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Composition
-open System.Collections.Concurrent
-open System.Collections.Generic
 open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
-open System.Linq
 open System.Runtime.CompilerServices
-open System.Windows
-open System.Windows.Controls
-open System.Windows.Media
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Completion
-open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Editor
-open Microsoft.CodeAnalysis.Editor.Shared.Utilities
-open Microsoft.CodeAnalysis.Formatting
 open Microsoft.CodeAnalysis.Host
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Options
@@ -30,11 +20,9 @@ open Microsoft.CodeAnalysis.Structure
 open Microsoft.VisualStudio.FSharp
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.Text
-open Microsoft.VisualStudio.Text.Classification
 open Microsoft.VisualStudio.Text.Tagging
-open Microsoft.VisualStudio.Text.Formatting
 open Microsoft.VisualStudio.Shell
-open Microsoft.VisualStudio.Shell.Interop          
+
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
@@ -42,9 +30,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 open System.Windows.Documents
 open Microsoft.VisualStudio.FSharp.Editor.Structure
 
-
 module internal BlockStructure =
- 
     let scopeToBlockType = function
     | Scope.Open -> BlockTypes.Imports
     | Scope.Namespace
@@ -95,7 +81,6 @@ module internal BlockStructure =
     | Scope.Comment
     | Scope.XmlDocComment -> BlockTypes.Comment
 
-
     let createBlockSpans (sourceText:SourceText) (parsedInput:Ast.ParsedInput) =
         let linetext = sourceText.Lines |> Seq.map (fun x -> x.ToString()) |> Seq.toArray
         
@@ -117,10 +102,8 @@ module internal BlockStructure =
                 Some <| (BlockSpan(scopeToBlockType scopeRange.Scope, true, textSpan,hintSpan,bannerText):BlockSpan)
             | _, _ -> None
         )
-        
 
 open BlockStructure
-
  
 type internal FSharpBlockStructureService(checker: FSharpChecker, projectInfoManager: ProjectInfoManager) =
     inherit BlockStructureService()
@@ -128,19 +111,16 @@ type internal FSharpBlockStructureService(checker: FSharpChecker, projectInfoMan
     override __.Language = FSharpCommonConstants.FSharpLanguageName
  
     override __.GetBlockStructureAsync(document, cancellationToken) : Task<BlockStructure> =
-        async {
-            match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document) with 
-            | Some options ->
-                let! sourceText = document.GetTextAsync(cancellationToken)
-                let! fileParseResults = checker.ParseFileInProject(document.FilePath, sourceText.ToString(), options)
-                match fileParseResults.ParseTree with
-                | Some parsedInput ->
-                    let blockSpans = createBlockSpans sourceText parsedInput
-                    return BlockStructure(blockSpans.ToImmutableArray())
-                | None -> return BlockStructure(ImmutableArray<_>.Empty)
-            | None -> return BlockStructure(ImmutableArray<_>.Empty)
-        } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
-
+        asyncMaybe {
+            let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+            let! sourceText = document.GetTextAsync(cancellationToken)
+            let! parsedInput = checker.ParseDocument(document, options, sourceText)
+            let blockSpans = createBlockSpans sourceText parsedInput
+            return blockSpans.ToImmutableArray()
+        } 
+        |> Async.map (Option.defaultValue ImmutableArray<_>.Empty)
+        |> Async.map BlockStructure
+        |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
 
 [<ExportLanguageServiceFactory(typeof<BlockStructureService>, FSharpCommonConstants.FSharpLanguageName); Shared>]
 type internal FSharpBlockStructureServiceFactory [<ImportingConstructor>](checkerProvider: FSharpCheckerProvider, projectInfoManager: ProjectInfoManager) =

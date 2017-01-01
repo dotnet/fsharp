@@ -43,43 +43,40 @@ type internal FSharpNavigationBarItemService
 
     interface INavigationBarItemService with
         member __.GetItemsAsync(document, cancellationToken) : Task<IList<NavigationBarItem>> = 
-            async {
-                match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)  with 
-                | Some options ->
-                    let! sourceText = document.GetTextAsync(cancellationToken)
-                    let! fileParseResults = checkerProvider.Checker.ParseFileInProject(document.FilePath, sourceText.ToString(), options)
-                    match fileParseResults.ParseTree with
-                    | Some parsedInput ->
-                        let navItems = NavigationImpl.getNavigation parsedInput
-                        let rangeToTextSpan range = 
-                            try Some(CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
-                            with _ -> None
-                        return 
-                            navItems.Declarations
-                            |> Array.choose (fun topLevelDecl ->
-                                rangeToTextSpan(topLevelDecl.Declaration.Range)
-                                |> Option.map (fun topLevelTextSpan ->
-                                    let childItems =
-                                        topLevelDecl.Nested
-                                        |> Array.choose (fun decl ->
-                                            rangeToTextSpan(decl.Range)
-                                            |> Option.map(fun textSpan ->
-                                                NavigationBarSymbolItem(
-                                                    decl.Name, 
-                                                    CommonHelpers.glyphMajorToRoslynGlyph(decl.GlyphMajor), 
-                                                    [| textSpan |],
-                                                    null)
-                                                :> NavigationBarItem))
-                                    
-                                    NavigationBarSymbolItem(
-                                        topLevelDecl.Declaration.Name, 
-                                        CommonHelpers.glyphMajorToRoslynGlyph(topLevelDecl.Declaration.GlyphMajor),
-                                        [| topLevelTextSpan |],
-                                        childItems)
-                                    :> NavigationBarItem)) :> IList<_>
-                    | None -> return emptyResult
-                | None -> return emptyResult
-            } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
+            asyncMaybe {
+                let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                let! sourceText = document.GetTextAsync(cancellationToken)
+                let! parsedInput = checkerProvider.Checker.ParseDocument(document, options, sourceText)
+                let navItems = NavigationImpl.getNavigation parsedInput
+                let rangeToTextSpan range = 
+                    try Some(CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
+                    with _ -> None
+                return 
+                    navItems.Declarations
+                    |> Array.choose (fun topLevelDecl ->
+                        rangeToTextSpan(topLevelDecl.Declaration.Range)
+                        |> Option.map (fun topLevelTextSpan ->
+                            let childItems =
+                                topLevelDecl.Nested
+                                |> Array.choose (fun decl ->
+                                    rangeToTextSpan(decl.Range)
+                                    |> Option.map(fun textSpan ->
+                                        NavigationBarSymbolItem(
+                                            decl.Name, 
+                                            CommonHelpers.glyphMajorToRoslynGlyph(decl.GlyphMajor), 
+                                            [| textSpan |],
+                                            null)
+                                        :> NavigationBarItem))
+                            
+                            NavigationBarSymbolItem(
+                                topLevelDecl.Declaration.Name, 
+                                CommonHelpers.glyphMajorToRoslynGlyph(topLevelDecl.Declaration.GlyphMajor),
+                                [| topLevelTextSpan |],
+                                childItems)
+                            :> NavigationBarItem)) :> IList<_>
+            } 
+            |> Async.map (Option.defaultValue emptyResult)
+            |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
         
         member __.ShowItemGrayedIfNear (_item) : bool = false
         

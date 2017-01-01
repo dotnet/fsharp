@@ -17,25 +17,23 @@ type internal FSharpBraceMatchingService
         projectInfoManager: ProjectInfoManager
     ) =
 
-    static member GetBraceMatchingResult(checker: FSharpChecker, sourceText, fileName, options, position: int) = async {
-        let! matchedBraces = checker.MatchBracesAlternate(fileName, sourceText.ToString(), options)
-
-        let isPositionInRange range = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range).Contains(position)
-        return matchedBraces |> Array.tryFind(fun (left, right) -> isPositionInRange left || isPositionInRange right)
-    }
+    static member GetBraceMatchingResult(checker: FSharpChecker, sourceText, fileName, options, position: int) = 
+        async {
+            let! matchedBraces = checker.MatchBracesAlternate(fileName, sourceText.ToString(), options)
+            let isPositionInRange range = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range).Contains(position)
+            return matchedBraces |> Array.tryFind(fun (left, right) -> isPositionInRange left || isPositionInRange right)
+        }
         
     interface IBraceMatcher with
         member this.FindBracesAsync(document, position, cancellationToken) = 
-            async {
-                match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)  with 
-                | Some options ->
-                    let! sourceText = document.GetTextAsync(cancellationToken)
-                    let! result = FSharpBraceMatchingService.GetBraceMatchingResult(checkerProvider.Checker, sourceText, document.Name, options, position)
-                    return match result with
-                           | None -> Nullable()
-                           | Some(left, right) ->
-                               Nullable(BraceMatchingResult(
-                                           CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, left),
-                                           CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, right)))
-                | None -> return Nullable()
-            } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
+            asyncMaybe {
+                let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                let! sourceText = document.GetTextAsync(cancellationToken)
+                let! (left, right) = FSharpBraceMatchingService.GetBraceMatchingResult(checkerProvider.Checker, sourceText, document.Name, options, position)
+                return 
+                    BraceMatchingResult(
+                        CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, left),
+                        CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, right))
+            } 
+            |> Async.map Option.toNullable
+            |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken

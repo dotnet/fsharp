@@ -91,39 +91,40 @@ type internal FSharpCompletionProvider
                 | ClassificationTypeNames.NumericLiteral -> false
                 | _ -> true // anything else is a valid classification type
 
-    static member ProvideCompletionsAsyncAux(checker: FSharpChecker, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, textVersionHash: int) = async {
-        let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
-        match parseResults.ParseTree, checkFileAnswer with
-        | _, FSharpCheckFileAnswer.Aborted
-        | None, _ -> return List()
-        | Some parsedInput, FSharpCheckFileAnswer.Succeeded(checkFileResults) ->
-            let textLines = sourceText.Lines
-            let caretLinePos = textLines.GetLinePosition(caretPosition)
-            let entityKind = UntypedParseImpl.GetEntityKind(Pos.fromZ caretLinePos.Line caretLinePos.Character, parsedInput)
-            
-            let caretLine = textLines.GetLineFromPosition(caretPosition)
-            let fcsCaretLineNumber = Line.fromZ caretLinePos.Line  // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
-            let caretLineColumn = caretLinePos.Character
-            
-            let qualifyingNames, partialName = QuickParse.GetPartialLongNameEx(caretLine.ToString(), caretLineColumn - 1) 
-            let! declarations = checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLineColumn, caretLine.ToString(), qualifyingNames, partialName)
-            
-            let results = List<CompletionItem>()
-            
-            for declarationItem in declarations.Items do
-                let glyph = CommonRoslynHelpers.FSharpGlyphToRoslynGlyph declarationItem.GlyphMajor
-                let name = 
-                    match entityKind with
-                    | Some EntityKind.Attribute when declarationItem.IsAttribute && declarationItem.Name.EndsWith "Attribute"  ->
-                        declarationItem.Name.[0..declarationItem.Name.Length - attributeSuffixLength - 1] 
-                    | _ -> declarationItem.Name
-                let completionItem = CommonCompletionItem.Create(name, glyph = Nullable glyph)
-                declarationItemsCache.Remove(completionItem.DisplayText) |> ignore // clear out stale entries if they exist
-                declarationItemsCache.Add(completionItem.DisplayText, declarationItem)
-                results.Add(completionItem)
-            
-            return results
-    }
+    static member ProvideCompletionsAsyncAux(checker: FSharpChecker, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, textVersionHash: int) = 
+        async {
+            let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
+            match parseResults.ParseTree, checkFileAnswer with
+            | _, FSharpCheckFileAnswer.Aborted
+            | None, _ -> return None
+            | Some parsedInput, FSharpCheckFileAnswer.Succeeded(checkFileResults) ->
+                let textLines = sourceText.Lines
+                let caretLinePos = textLines.GetLinePosition(caretPosition)
+                let entityKind = UntypedParseImpl.GetEntityKind(Pos.fromZ caretLinePos.Line caretLinePos.Character, parsedInput)
+                
+                let caretLine = textLines.GetLineFromPosition(caretPosition)
+                let fcsCaretLineNumber = Line.fromZ caretLinePos.Line  // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
+                let caretLineColumn = caretLinePos.Character
+                
+                let qualifyingNames, partialName = QuickParse.GetPartialLongNameEx(caretLine.ToString(), caretLineColumn - 1) 
+                let! declarations = checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLineColumn, caretLine.ToString(), qualifyingNames, partialName)
+                
+                let results = List<CompletionItem>()
+                
+                for declarationItem in declarations.Items do
+                    let glyph = CommonRoslynHelpers.FSharpGlyphToRoslynGlyph declarationItem.GlyphMajor
+                    let name = 
+                        match entityKind with
+                        | Some EntityKind.Attribute when declarationItem.IsAttribute && declarationItem.Name.EndsWith "Attribute"  ->
+                            declarationItem.Name.[0..declarationItem.Name.Length - attributeSuffixLength - 1] 
+                        | _ -> declarationItem.Name
+                    let completionItem = CommonCompletionItem.Create(name, glyph = Nullable glyph)
+                    declarationItemsCache.Remove(completionItem.DisplayText) |> ignore // clear out stale entries if they exist
+                    declarationItemsCache.Add(completionItem.DisplayText, declarationItem)
+                    results.Add(completionItem)
+                
+                return Some results
+        }
 
     override this.ShouldTriggerCompletion(sourceText: SourceText, caretPosition: int, trigger: CompletionTrigger, _: OptionSet) =
         let getInfo() = 
@@ -135,15 +136,13 @@ type internal FSharpCompletionProvider
         FSharpCompletionProvider.ShouldTriggerCompletionAux(sourceText, caretPosition, trigger.Kind, getInfo)
     
     override this.ProvideCompletionsAsync(context: Microsoft.CodeAnalysis.Completion.CompletionContext) =
-        async {
-            match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(context.Document)  with 
-            | Some options ->
-                let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
-                let! textVersion = context.Document.GetTextVersionAsync(context.CancellationToken)
-                let! results = FSharpCompletionProvider.ProvideCompletionsAsyncAux(checkerProvider.Checker, sourceText, context.Position, options, context.Document.FilePath, textVersion.GetHashCode())
-                context.AddItems(results)
-            | None -> ()
-        } |> CommonRoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
+        asyncMaybe {
+            let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(context.Document)
+            let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
+            let! textVersion = context.Document.GetTextVersionAsync(context.CancellationToken)
+            let! results = FSharpCompletionProvider.ProvideCompletionsAsyncAux(checkerProvider.Checker, sourceText, context.Position, options, context.Document.FilePath, textVersion.GetHashCode())
+            context.AddItems(results)
+        } |> Async.Ignore |> CommonRoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
         
 
     override this.GetDescriptionAsync(_: Document, completionItem: CompletionItem, cancellationToken: CancellationToken): Task<CompletionDescription> =
@@ -172,8 +171,6 @@ type internal FSharpCompletionService
     override this.Language = FSharpCommonConstants.FSharpLanguageName
     override this.GetBuiltInProviders() = builtInProviders
     override this.GetRules() = completionRules
-
-
 
 [<Shared>]
 [<ExportLanguageServiceFactory(typeof<CompletionService>, FSharpCommonConstants.FSharpLanguageName)>]

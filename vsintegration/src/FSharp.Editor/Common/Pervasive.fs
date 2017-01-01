@@ -110,7 +110,7 @@ type AsyncMaybeBuilder () =
         Some () |> async.Return
 
     [<DebuggerStepThrough>]
-    member __.Delay (f : unit -> Async<'T option>) : Async<'T option> = f ()
+    member __.Delay (f : unit -> Async<'T option>) : Async<'T option> = async.Delay f
 
     [<DebuggerStepThrough>]
     member __.Combine (r1, r2 : Async<'T option>) : Async<'T option> =
@@ -183,12 +183,6 @@ module Async =
         async {
             let! a = a
             return f a
-        }
-
-    let ignore (a: Async<'T>) : Async<unit> =
-        async {
-            let! _ = a 
-            return () 
         }
 
     /// Creates an asynchronous workflow that runs the asynchronous workflow given as an argument at most once. 
