@@ -506,7 +506,7 @@ module internal Extensions =
         member this.IsPrivateToFile = 
             let isPrivate =
                 match this.Symbol with
-                | :? FSharpMemberOrFunctionOrValue as m -> not m.IsModuleValueOrMember
+                | :? FSharpMemberOrFunctionOrValue as m -> not m.IsModuleValueOrMember || m.Accessibility.IsPrivate
                 | :? FSharpEntity as m -> m.Accessibility.IsPrivate
                 | :? FSharpGenericParameter -> true
                 | :? FSharpUnionCase as m -> m.Accessibility.IsPrivate
