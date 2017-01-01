@@ -266,6 +266,30 @@ type UsingMSBuild() =
         this.CheckTooltip(source, "x``|>", true, checkTooltip "x")
 
     [<Test>]
+    member public this.QuickInfoForTypesWithHiddenRepresentation() =
+        let source = """
+            let x = Async.AsBeginEnd
+            1
+        """
+        let expectedTooltip = """
+type Async =
+  static member AsBeginEnd : computation:('Arg -> Async<'T>) -> ('Arg * AsyncCallback * obj -> IAsyncResult) * (IAsyncResult -> 'T) * (IAsyncResult -> unit)
+  static member AwaitEvent : event:IEvent<'Del,'T> * ?cancelAction:(unit -> unit) -> Async<'T> (requires delegate and 'Del :> Delegate)
+  static member AwaitIAsyncResult : iar:IAsyncResult * ?millisecondsTimeout:int -> Async<bool>
+  static member AwaitTask : task:Task -> Async<unit>
+  static member AwaitTask : task:Task<'T> -> Async<'T>
+  static member AwaitWaitHandle : waitHandle:WaitHandle * ?millisecondsTimeout:int -> Async<bool>
+  static member CancelDefaultToken : unit -> unit
+  static member Catch : computation:Async<'T> -> Async<Choice<'T,exn>>
+  static member Choice : computations:seq<Async<'T option>> -> Async<'T option>
+  static member FromBeginEnd : beginAction:(AsyncCallback * obj -> IAsyncResult) * endAction:(IAsyncResult -> 'T) * ?cancelAction:(unit -> unit) -> Async<'T>
+  ...
+
+Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
+
+        this.CheckTooltip(source, "Asyn", false, checkTooltip expectedTooltip)
+
+    [<Test>]
     [<Category("TypeProvider")>]
     member public this.``TypeProviders.NestedTypesOrder``() = 
         let code = "type t = N1.TypeWithNestedTypes(*M*)"

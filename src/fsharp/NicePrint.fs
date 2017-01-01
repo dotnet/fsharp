@@ -1633,7 +1633,9 @@ module private TastDefinitionPrinting =
       let memberLs = memberImplementLs @ memberCtorLs @ memberInstanceLs @ memberStaticLs
       let addMembersAsWithEnd reprL = 
           if isNil memberLs then reprL
-          elif simplified then reprL @@ aboveListL memberLs
+          else
+          let memberLs = applyMaxMembers denv.maxMembers memberLs
+          if simplified then reprL @@-- aboveListL memberLs
           else reprL @@ (WordL.keywordWith @@-- aboveListL memberLs) @@ WordL.keywordEnd
 
       let reprL = 
@@ -1728,7 +1730,7 @@ module private TastDefinitionPrinting =
           | _ -> 
               match tycon.TypeAbbrev with
               | None   -> 
-                  addMembersAsWithEnd lhsL 
+                  addMembersAsWithEnd (lhsL ^^ WordL.equals)
               | Some a -> 
                   (lhsL ^^ WordL.equals) --- (layoutType { denv with shortTypeNames = false } a)
       layoutAttribs denv tycon.TypeOrMeasureKind tycon.Attribs reprL
