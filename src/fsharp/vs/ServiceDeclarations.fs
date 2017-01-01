@@ -947,7 +947,7 @@ module internal ItemDescriptionsImpl =
                 else FSComp.SR.typeInfoNamespaceOrModule()
             
             let layout = 
-                wordL (tagText kind) ^^
+                wordL (tagKeyword kind) ^^
                 wordL (if definiteNamespace then tagNamespace (fullDisplayTextOfModRef modref) else (tagModule modref.DemangledModuleOrNamespaceName))
             if not definiteNamespace then
                 let namesToAdd = 
