@@ -191,23 +191,42 @@ module NavigationImpl =
                   
         // Returns class-members for the right dropdown                  
         and processMembers members: (range * list<FSharpNavigationDeclarationItem * int>) = 
-            let members = members |> List.map (fun memb ->
-               (memb.Range,
-                match memb with
-                | SynMemberDefn.LetBindings(binds, _, _, _) -> List.collect (processBinding false) binds
-                | SynMemberDefn.Member(bind, _) -> processBinding true bind
-                | SynMemberDefn.ValField(Field(_, _, Some(rcid), ty, _, _, _, _), _) ->
-                    [ createMember(rcid, FieldDecl, GlyphMajor.FieldBlue, ty.Range) ]
-                | SynMemberDefn.AutoProperty(_attribs,_isStatic,id,_tyOpt,_propKind,_,_xmlDoc,_access,_synExpr, _, _) -> 
-                    [ createMember(id, FieldDecl, GlyphMajor.FieldBlue, id.idRange) ]
-                | SynMemberDefn.AbstractSlot(ValSpfn(_, id, _, ty, _, _, _, _, _, _, _), _, _) ->
-                    [ createMember(id, MethodDecl, GlyphMajor.Method2, ty.Range) ]
-                | SynMemberDefn.NestedType _ -> failwith "tycon as member????" //processTycon tycon                
-                | SynMemberDefn.Interface(_, Some(membs), _) ->
-                    processMembers membs |> snd
-                | _ -> []  )) 
-            ((members |> Seq.map fst |> Seq.fold unionRangesChecked range.Zero),
-             (members |> List.map snd |> List.concat))
+            let members = 
+                members 
+                |> List.groupBy (fun x -> x.Range)
+                |> List.map (fun (range, members) ->
+                    range,
+                    (match members with
+                     | [memb] ->
+                         match memb with
+                         | SynMemberDefn.LetBindings(binds, _, _, _) -> List.collect (processBinding false) binds
+                         | SynMemberDefn.Member(bind, _) -> processBinding true bind
+                         | SynMemberDefn.ValField(Field(_, _, Some(rcid), ty, _, _, _, _), _) ->
+                             [ createMember(rcid, FieldDecl, GlyphMajor.FieldBlue, ty.Range) ]
+                         | SynMemberDefn.AutoProperty(_attribs,_isStatic,id,_tyOpt,_propKind,_,_xmlDoc,_access,_synExpr, _, _) -> 
+                             [ createMember(id, FieldDecl, GlyphMajor.FieldBlue, id.idRange) ]
+                         | SynMemberDefn.AbstractSlot(ValSpfn(_, id, _, ty, _, _, _, _, _, _, _), _, _) ->
+                             [ createMember(id, MethodDecl, GlyphMajor.Method2, ty.Range) ]
+                         | SynMemberDefn.NestedType _ -> failwith "tycon as member????" //processTycon tycon                
+                         | SynMemberDefn.Interface(_, Some(membs), _) ->
+                             processMembers membs |> snd
+                         | _ -> [] 
+                     // can happen if one is a getter and one is a setter
+                     | [SynMemberDefn.Member(memberDefn=Binding(headPat=SynPat.LongIdent(lid1, Some(info1),_,_,_,_)) as binding1)
+                        SynMemberDefn.Member(memberDefn=Binding(headPat=SynPat.LongIdent(lid2, Some(info2),_,_,_,_)) as binding2)] ->
+                         // ensure same long id
+                         assert((lid1.Lid,lid2.Lid) ||> List.forall2 (fun x y -> x.idText = y.idText))
+                         // ensure one is getter, other is setter
+                         assert((info1.idText = "set" && info2.idText = "get") ||
+                                (info2.idText = "set" && info1.idText = "get"))
+                         // both binding1 and binding2 have same range, so just try the first one, else try the second one
+                         match processBinding true binding1 with
+                         | [] -> processBinding true binding2
+                         | x -> x
+                     | _ -> [])) 
+            
+            (members |> Seq.map fst |> Seq.fold unionRangesChecked range.Zero),
+            (members |> List.map snd |> List.concat)
 
         // Process declarations in a module that belong to the right drop-down (let bindings)
         let processNestedDeclarations decls = decls |> List.collect (function
