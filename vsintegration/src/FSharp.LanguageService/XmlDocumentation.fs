@@ -325,10 +325,10 @@ module internal XmlDocumentation =
             documentationProvider.AppendDocumentationFromProcessedXML(sink, processedXml, showExceptions, showParameters, paramName)
 
     let private AddSeparator (collector: ITaggedTextCollector) =
-        collector.Add Literals.lineBreak
-        collector.Add (tagText "-------------")
-        collector.Add Literals.lineBreak
-        
+        if not collector.IsEmpty then
+            EnsureHardLine collector
+            collector.Add (tagText "-------------")
+            AppendHardLine collector
 
     /// Build a data tip text string with xml comments injected.
     let BuildTipText(documentationProvider:IDocumentationBuilder, dataTipText: FSharpStructuredToolTipElement list, textCollector, xmlCollector, showText, showExceptions, showParameters, showOverloadText) = 
