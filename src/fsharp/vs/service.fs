@@ -1407,6 +1407,19 @@ type TypeCheckInfo
 
     // Not, this does not have to be a SyncOp, it can be called from any thread
     member scope.GetExtraColorizations() =
+        let (|LegitTypeOccurence|_|) = function
+            | ItemOccurence.UseInType
+            | ItemOccurence.UseInAttribute
+            | ItemOccurence.Use _
+            | ItemOccurence.Binding _
+            | ItemOccurence.Pattern _ -> Some()
+            | _ -> None
+
+        let inline (|OptionalArgumentAttribute|_|) ttype =
+            match ttype with
+            | TType.TType_app(tref, _) when tref.Stamp = g.attrib_OptionalArgumentAttribute.TyconRef.Stamp -> Some()
+            | _ -> None
+
         sResolutions.CapturedNameResolutions
         |> Seq.choose (fun cnr ->
             match cnr with
@@ -1421,22 +1434,13 @@ type TypeCheckInfo
                 Some (m, FSharpTokenColorKind.Keyword)
             // types get colored as types when they occur in syntactic types or custom attributes
             // typevariables get colored as types when they occur in syntactic types custom builders, custom operations get colored as keywords
-            | CNR(_, ( Item.TypeVar _
-                     | Item.Types _
-                     | Item.UnqualifiedType _
-                     | Item.CtorGroup _),
-                     ( ItemOccurence.UseInType
-                     | ItemOccurence.UseInAttribute
-                     | ItemOccurence.Use _
-                     | ItemOccurence.Binding _
-                     | ItemOccurence.Pattern _), _, _, _, m) ->
+            | CNR(_, Item.Types (_, [OptionalArgumentAttribute]), LegitTypeOccurence, _, _, _, _) -> None
+            | CNR(_, Item.CtorGroup(_, [MethInfo.FSMeth(_, OptionalArgumentAttribute, _, _)]), LegitTypeOccurence, _, _, _, _) -> None
+            | CNR(_, Item.Types _, LegitTypeOccurence, _, _, _, m) -> 
                 Some (m, FSharpTokenColorKind.TypeName)
-            | CNR(_, Item.ModuleOrNamespaces refs, 
-                     ( ItemOccurence.UseInType   
-                     | ItemOccurence.UseInAttribute
-                     | ItemOccurence.Use _
-                     | ItemOccurence.Binding _
-                     | ItemOccurence.Pattern _), _, _, _, m) when refs |> List.exists (fun x -> x.IsModule) ->
+            | CNR(_, (Item.TypeVar _ | Item.UnqualifiedType _ | Item.CtorGroup _), LegitTypeOccurence, _, _, _, m) ->
+                Some (m, FSharpTokenColorKind.TypeName)
+            | CNR(_, Item.ModuleOrNamespaces refs, LegitTypeOccurence, _, _, _, m) when refs |> List.exists (fun x -> x.IsModule) ->
                 Some (m, FSharpTokenColorKind.TypeName)
             | _ -> None)
         |> Seq.toArray
