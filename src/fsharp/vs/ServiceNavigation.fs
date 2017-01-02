@@ -118,7 +118,7 @@ module NavigationImpl =
                 | _ -> synExpr.Range
 
             match synPat, memebrOpt with
-            | SynPat.LongIdent(LongIdentWithDots(lid,_), _, _, _, _, _), Some(flags) when isMember -> 
+            | SynPat.LongIdent(longDotId=LongIdentWithDots(lid,_)), Some(flags) when isMember -> 
                 let icon, kind =
                   match flags.MemberKind with
                   | MemberKind.ClassConstructor
@@ -135,9 +135,10 @@ module NavigationImpl =
                   | _ -> (lid, m)
                 [ createMemberLid(lidShow, kind, icon, unionRanges rangeMerge m) ]
             | SynPat.LongIdent(LongIdentWithDots(lid,_), _, _, _, _, _), _ -> 
-                [ createMemberLid(lid, FieldDecl, GlyphMajor.Constant, unionRanges (List.head lid).idRange m) ]
+                [ createMemberLid(lid, FieldDecl, GlyphMajor.FieldBlue, unionRanges (List.head lid).idRange m) ]
             | SynPat.Named(_, id, _, _, _), _ -> 
-                [ createMember(id, FieldDecl, GlyphMajor.Method, unionRanges id.idRange m) ]
+                let glyph = if isMember then GlyphMajor.Method else GlyphMajor.FieldBlue
+                [ createMember(id, FieldDecl, glyph, unionRanges id.idRange m) ]
             | _ -> []
         
         // Process a class declaration or F# type declaration
