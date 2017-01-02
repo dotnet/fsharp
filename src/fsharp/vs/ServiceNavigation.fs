@@ -112,14 +112,14 @@ module NavigationImpl =
             FSharpNavigationDeclarationItem.Create(id.idText, kind, baseGlyph, m, m, false, access), (addItemName(id.idText))
 
         // Process let-binding
-        let processBinding isMember (Binding(access, _, _, _, _, _, SynValData(memebrOpt, _, _), synPat, _, synExpr, _, _)) =
+        let processBinding isMember (Binding(_, _, _, _, _, _, SynValData(memebrOpt, _, _), synPat, _, synExpr, _, _)) =
             let m = 
                 match synExpr with 
                 | SynExpr.Typed(e, _, _) -> e.Range // fix range for properties with type annotations
                 | _ -> synExpr.Range
 
             match synPat, memebrOpt with
-            | SynPat.LongIdent(longDotId=LongIdentWithDots(lid,_)), Some(flags) when isMember -> 
+            | SynPat.LongIdent(longDotId=LongIdentWithDots(lid,_); accessibility=access), Some(flags) when isMember -> 
                 let icon, kind =
                   match flags.MemberKind with
                   | MemberKind.ClassConstructor
@@ -135,9 +135,9 @@ module NavigationImpl =
                   | hd::_ -> (lid, hd.idRange) 
                   | _ -> (lid, m)
                 [ createMemberLid(lidShow, kind, icon, unionRanges rangeMerge m, access) ]
-            | SynPat.LongIdent(LongIdentWithDots(lid,_), _, _, _, _, _), _ -> 
+            | SynPat.LongIdent(LongIdentWithDots(lid,_), _, _, _, access, _), _ -> 
                 [ createMemberLid(lid, FieldDecl, GlyphMajor.FieldBlue, unionRanges (List.head lid).idRange m, access) ]
-            | SynPat.Named(_, id, _, _, _), _ -> 
+            | SynPat.Named(_, id, _, access, _), _ -> 
                 let glyph = if isMember then GlyphMajor.Method else GlyphMajor.FieldBlue
                 [ createMember(id, FieldDecl, glyph, unionRanges id.idRange m, access) ]
             | _ -> []
