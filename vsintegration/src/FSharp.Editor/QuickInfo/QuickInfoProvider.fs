@@ -62,9 +62,10 @@ type internal FSharpQuickInfoProvider
     [<System.ComponentModel.Composition.ImportingConstructor>] 
     (
         [<System.ComponentModel.Composition.Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider,
-        classificationFormatMapService: IClassificationFormatMapService,
+        _classificationFormatMapService: IClassificationFormatMapService,
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager
+        projectInfoManager: ProjectInfoManager,
+        typeMap: Shared.Utilities.ClassificationTypeMap
     ) =
 
     let xmlMemberIndexService = serviceProvider.GetService(typeof<SVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
@@ -78,11 +79,11 @@ type internal FSharpQuickInfoProvider
             //let qualifyingNames, partialName = QuickParse.GetPartialLongNameEx(textLine.ToString(), textLineColumn - 1)
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing(filePath, options.OtherOptions |> Seq.toList)
             let! symbol = CommonHelpers.getSymbolAtPosition(documentId, sourceText, position, filePath, defines, SymbolLookupKind.Fuzzy)
-            let! res = checkFileResults.GetToolTipTextAlternate(textLineNumber, symbol.RightColumn, textLine.ToString(), [symbol.Text], FSharpTokenTag.IDENT) |> liftAsync
+            let! res = checkFileResults.GetStructuredToolTipTextAlternate(textLineNumber, symbol.RightColumn, textLine.ToString(), [symbol.Text], FSharpTokenTag.IDENT) |> liftAsync
             return! 
                 match res with
                 | FSharpToolTipText [] 
-                | FSharpToolTipText [FSharpToolTipElement.None] -> None
+                | FSharpToolTipText [FSharpStructuredToolTipElement.None] -> None
                 | _ -> Some(res, CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbol.Range))
         }
     
@@ -95,9 +96,27 @@ type internal FSharpQuickInfoProvider
                 let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                 let! textVersion = document.GetTextVersionAsync(cancellationToken)
                 let! toolTipElement, textSpan = FSharpQuickInfoProvider.ProvideQuickInfo(checkerProvider.Checker, document.Id, sourceText, document.FilePath, position, options, textVersion.GetHashCode())
-                let dataTipText = XmlDocumentation.BuildDataTipText(documentationBuilder, toolTipElement)
-                let textProperties = classificationFormatMapService.GetClassificationFormatMap("tooltip").DefaultTextProperties
-                return QuickInfoItem(textSpan, FSharpDeferredQuickInfoContent(dataTipText, textProperties))
+                let mainDescription = Collections.Generic.List()
+                let documentation = Collections.Generic.List()
+                XmlDocumentation.BuildDataTipText(
+                    documentationBuilder, 
+                    CommonRoslynHelpers.CollectTaggedText mainDescription, 
+                    CommonRoslynHelpers.CollectTaggedText documentation, 
+                    toolTipElement)
+                let empty = ClassifiableDeferredContent(Array.Empty<TaggedText>(), typeMap);
+                let content = 
+                    QuickInfoDisplayDeferredContent
+                        (
+                            symbolGlyph = null,//SymbolGlyphDeferredContent(),
+                            warningGlyph = null,
+                            mainDescription = ClassifiableDeferredContent(mainDescription, typeMap),
+                            documentation = ClassifiableDeferredContent(documentation, typeMap),
+                            typeParameterMap = empty,
+                            anonymousTypes = empty,
+                            usageText = empty,
+                            exceptionText = empty
+                        )
+                return QuickInfoItem(textSpan, content)
             } 
             |> Async.map Option.toObj
             |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)

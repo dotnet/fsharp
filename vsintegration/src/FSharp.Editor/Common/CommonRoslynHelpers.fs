@@ -4,10 +4,12 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Collections.Immutable
+open System.Collections.Generic
 open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.Layout
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons
 open Microsoft.FSharp.Compiler.Range
@@ -33,6 +35,44 @@ module internal CommonRoslynHelpers =
         else
             Assert.Exception(task.Exception.GetBaseException())
             raise(task.Exception.GetBaseException())
+
+    let TaggedTextToRoslyn t =
+        match t with
+        | TaggedText.ActivePatternCase t
+        | TaggedText.ActivePatternResult t -> TaggedText(TextTags.Enum, t)
+        | TaggedText.Alias t -> TaggedText(TextTags.Class, t)
+        | TaggedText.Class t -> TaggedText(TextTags.Class, t)
+        | TaggedText.Delegate t -> TaggedText(TextTags.Delegate, t)
+        | TaggedText.Enum t -> TaggedText(TextTags.Enum, t)
+        | TaggedText.Event t -> TaggedText(TextTags.Event, t)
+        | TaggedText.Field t -> TaggedText(TextTags.Field, t)
+        | TaggedText.Interface t -> TaggedText(TextTags.Interface, t)
+        | TaggedText.Keyword t -> TaggedText(TextTags.Keyword, t)
+        | TaggedText.LineBreak t -> TaggedText(TextTags.LineBreak, t)
+        | TaggedText.Local t -> TaggedText(TextTags.Local, t)
+        | TaggedText.Member t -> TaggedText(TextTags.Property, t)
+        | TaggedText.Method t -> TaggedText(TextTags.Method, t)
+        | TaggedText.Module t -> TaggedText(TextTags.Module, t)
+        | TaggedText.ModuleBinding t -> TaggedText(TextTags.Property, t)
+        | TaggedText.Namespace t -> TaggedText(TextTags.Namespace, t)
+        | TaggedText.NumericLiteral t -> TaggedText(TextTags.NumericLiteral, t)
+        | TaggedText.Operator t -> TaggedText(TextTags.Operator, t)
+        | TaggedText.Parameter t -> TaggedText(TextTags.Parameter, t)
+        | TaggedText.Property t -> TaggedText(TextTags.Property, t)
+        | TaggedText.Punctuation t -> TaggedText(TextTags.Punctuation, t)
+        | TaggedText.Record t -> TaggedText(TextTags.Class, t)
+        | TaggedText.RecordField t -> TaggedText(TextTags.Property, t)
+        | TaggedText.Space t -> TaggedText(TextTags.Space, t)
+        | TaggedText.StringLiteral t -> TaggedText(TextTags.StringLiteral, t)
+        | TaggedText.Struct t -> TaggedText(TextTags.Struct, t)
+        | TaggedText.Text t -> TaggedText(TextTags.Text, t)
+        | TaggedText.TypeParameter t -> TaggedText(TextTags.TypeParameter, t)
+        | TaggedText.Union t -> TaggedText(TextTags.Class, t)
+        | TaggedText.UnionCase t -> TaggedText(TextTags.Property, t)
+        | TaggedText.UnknownEntity t -> TaggedText(TextTags.Property, t)
+        | TaggedText.UnknownType t -> TaggedText(TextTags.Class, t)
+
+    let CollectTaggedText (list: List<_>) t = list.Add(TaggedTextToRoslyn t)
 
     let StartAsyncAsTask cancellationToken computation =
         let computation =
