@@ -81,23 +81,24 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
                 }
             
             let results = 
-              (errors |> Seq.choose(fun error ->
-                if error.StartLineAlternate = 0 || error.EndLineAlternate = 0 then
-                    // F# error line numbers are one-based. Compiler returns 0 for global errors (reported by ProjectDiagnosticAnalyzer)
-                    None
-                else
-                    // Roslyn line numbers are zero-based
-                    let linePositionSpan = LinePositionSpan(LinePosition(error.StartLineAlternate - 1, error.StartColumn),LinePosition(error.EndLineAlternate - 1, error.EndColumn))
-                    let textSpan = sourceText.Lines.GetTextSpan(linePositionSpan)
-                    
-                    // F# compiler report errors at end of file if parsing fails. It should be corrected to match Roslyn boundaries
-                    let correctedTextSpan = 
-                        if textSpan.End < sourceText.Length then textSpan 
-                        else TextSpan.FromBounds(max 0 (sourceText.Length - 1), sourceText.Length)
-                    
-                    let location = Location.Create(filePath, correctedTextSpan , linePositionSpan)
-                    Some(CommonRoslynHelpers.ConvertError(error, location)))
-              ).ToImmutableArray()
+              (HashSet(errors, errorInfoEqualityComparer)
+               |> Seq.choose(fun error ->
+                    if error.StartLineAlternate = 0 || error.EndLineAlternate = 0 then
+                        // F# error line numbers are one-based. Compiler returns 0 for global errors (reported by ProjectDiagnosticAnalyzer)
+                        None
+                    else
+                        // Roslyn line numbers are zero-based
+                        let linePositionSpan = LinePositionSpan(LinePosition(error.StartLineAlternate - 1, error.StartColumn), LinePosition(error.EndLineAlternate - 1, error.EndColumn))
+                        let textSpan = sourceText.Lines.GetTextSpan(linePositionSpan)
+                        
+                        // F# compiler report errors at end of file if parsing fails. It should be corrected to match Roslyn boundaries
+                        let correctedTextSpan =
+                            if textSpan.End < sourceText.Length then textSpan 
+                            else TextSpan.FromBounds(max 0 (sourceText.Length - 1), sourceText.Length)
+                        
+                        let location = Location.Create(filePath, correctedTextSpan , linePositionSpan)
+                        Some(CommonRoslynHelpers.ConvertError(error, location)))
+                  ).ToImmutableArray()
             return results
         }
 
@@ -105,26 +106,29 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
 
     override this.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
         let projectInfoManager = getProjectInfoManager document
-        async {
-            match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)  with 
-            | Some options ->
-                let! sourceText = document.GetTextAsync(cancellationToken)
-                let! textVersion = document.GetTextVersionAsync(cancellationToken)
-                return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(getChecker document, document.FilePath, sourceText, textVersion.GetHashCode(), options, DiagnosticsType.Syntax)
-            | None -> return ImmutableArray<Diagnostic>.Empty
-        } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
+        asyncMaybe {
+            let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+            let! sourceText = document.GetTextAsync(cancellationToken)
+            let! textVersion = document.GetTextVersionAsync(cancellationToken)
+            return! 
+                FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(getChecker document, document.FilePath, sourceText, textVersion.GetHashCode(), options, DiagnosticsType.Syntax)
+                |> liftAsync
+        } 
+        |> Async.map (Option.defaultValue ImmutableArray<Diagnostic>.Empty)
+        |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
 
     override this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
         let projectInfoManager = getProjectInfoManager document
-        async {
-            let! optionsOpt = projectInfoManager.TryGetOptionsForDocumentOrProject(document) 
-            match optionsOpt with 
-            | Some options ->
-                let! sourceText = document.GetTextAsync(cancellationToken)
-                let! textVersion = document.GetTextVersionAsync(cancellationToken)
-                return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(getChecker document, document.FilePath, sourceText, textVersion.GetHashCode(), options, DiagnosticsType.Semantic)
-            | None -> return ImmutableArray<Diagnostic>.Empty
-        } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
+        asyncMaybe {
+            let! options = projectInfoManager.TryGetOptionsForDocumentOrProject(document) 
+            let! sourceText = document.GetTextAsync(cancellationToken)
+            let! textVersion = document.GetTextVersionAsync(cancellationToken)
+            return! 
+                FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(getChecker document, document.FilePath, sourceText, textVersion.GetHashCode(), options, DiagnosticsType.Semantic)
+                |> liftAsync
+        }
+        |> Async.map (Option.defaultValue ImmutableArray<Diagnostic>.Empty)
+        |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
 
     interface IBuiltInAnalyzer with
         member __.GetAnalyzerCategory() : DiagnosticAnalyzerCategory = DiagnosticAnalyzerCategory.SemanticDocumentAnalysis

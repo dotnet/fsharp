@@ -440,6 +440,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             let mutable updateSolnEventsHandle = 0u
             let mutable updateSolnEventsHandle2 = 0u
             let mutable updateSolnEventsHandle3 = 0u
+            let mutable updateSolnEventsHandle4 = 0u
 
             let mutable trackProjectRetargetingCookie = 0u
             
@@ -586,14 +587,26 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 let listener = new SolutionEventsListener(this)
 
                 let buildMgr = this.Site.GetService(typeof<SVsSolutionBuildManager>) :?> IVsSolutionBuildManager
+                if updateSolnEventsHandle <> 0u then
+                    buildMgr.UnadviseUpdateSolutionEvents(updateSolnEventsHandle) |> ignore
                 buildMgr.AdviseUpdateSolutionEvents((listener :> IVsUpdateSolutionEvents), &updateSolnEventsHandle) |> ignore
                 let buildMgr2 = this.Site.GetService(typeof<SVsSolutionBuildManager>) :?> IVsSolutionBuildManager2
+                if updateSolnEventsHandle2 <> 0u then
+                    buildMgr2.UnadviseUpdateSolutionEvents(updateSolnEventsHandle2) |> ignore
                 buildMgr2.AdviseUpdateSolutionEvents((listener :> IVsUpdateSolutionEvents2), &updateSolnEventsHandle2) |> ignore
                 let buildMgr3 = this.Site.GetService(typeof<SVsSolutionBuildManager>) :?> IVsSolutionBuildManager3
+                if updateSolnEventsHandle3 <> 0u then
+                    buildMgr3.UnadviseUpdateSolutionEvents3(updateSolnEventsHandle3) |> ignore
                 buildMgr3.AdviseUpdateSolutionEvents3((listener :> IVsUpdateSolutionEvents3), &updateSolnEventsHandle3) |> ignore
+                let buildMgr5 = this.Site.GetService(typeof<SVsSolutionBuildManager>) :?> IVsSolutionBuildManager5
+                if updateSolnEventsHandle4 <> 0u then
+                    buildMgr5.UnadviseUpdateSolutionEvents4(updateSolnEventsHandle4) |> ignore
+                buildMgr5.AdviseUpdateSolutionEvents4((listener :> IVsUpdateSolutionEvents4), &updateSolnEventsHandle4) |> ignore
 
                 // Register for project retargeting events
                 let sTrackProjectRetargeting = this.Site.GetService(typeof<SVsTrackProjectRetargeting>) :?> IVsTrackProjectRetargeting
+                if trackProjectRetargetingCookie <> 0u then
+                    sTrackProjectRetargeting.UnadviseTrackProjectRetargetingEvents(trackProjectRetargetingCookie) |> ignore
                 sTrackProjectRetargeting.AdviseTrackProjectRetargetingEvents((listener :> IVsTrackProjectRetargetingEvents), &trackProjectRetargetingCookie) |> ignore
 
                 isInCommandLineMode <-
@@ -616,6 +629,8 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 buildMgr2.UnadviseUpdateSolutionEvents(updateSolnEventsHandle2) |> ignore
                 let buildMgr3 = this.Site.GetService(typeof<SVsSolutionBuildManager>) :?> IVsSolutionBuildManager3
                 buildMgr3.UnadviseUpdateSolutionEvents3(updateSolnEventsHandle3) |> ignore
+                let buildMgr5 = this.Site.GetService(typeof<SVsSolutionBuildManager>) :?> IVsSolutionBuildManager5
+                buildMgr5.UnadviseUpdateSolutionEvents4(updateSolnEventsHandle4) |> ignore
 
                 let documentTracker = this.Site.GetService(typeof<SVsTrackProjectDocuments>) :?> IVsTrackProjectDocuments2
                 documentTracker.UnadviseTrackProjectDocumentsEvents(trackDocumentsHandle) |> ignore
@@ -1328,12 +1343,27 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                         yield System.IO.Path.GetFullPath(System.IO.Path.Combine(projectFolder, i.EvaluatedInclude))
                 |]
             member x.GetCompileItems() = let sources,_ = sourcesAndFlags.Value in sources
-            member x.GetCompileFlags() =  let _,flags = sourcesAndFlags.Value in flags
+            member x.GetCompileFlags() = let _,flags = sourcesAndFlags.Value in flags
 
             override x.ComputeSourcesAndFlags() =
+
                 if x.IsInBatchUpdate || box x.BuildProject = null then ()
                 else
                 if not(inMidstOfReloading) && not(VsBuildManagerAccessorExtensionMethods.IsInProgress(accessor)) then
+
+                    use waitDialog =
+                        {
+                            WaitCaption = FSharpSR.GetString FSharpSR.ProductName
+                            WaitMessage = FSharpSR.GetString FSharpSR.ComputingSourcesAndFlags
+                            ProgressText = Some x.ProjectFile
+                            StatusBmpAnim = null
+                            StatusBarText = None
+                            DelayToShowDialogSecs = 1
+                            IsCancelable = false
+                            ShowMarqueeProgress = true
+                        }
+                        |> WaitDialog.start x.Site
+                
                     // REVIEW CompilerFlags will be stale since last 'save' of MSBuild .fsproj file - can we do better?
                     try
                         actuallyBuild <- false 
@@ -1357,10 +1387,11 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                         // If property is not set - msbuild will resolve only primary dependencies,
                         // and compiler will be very unhappy when during processing of referenced assembly it will discover that all fundamental types should be
                         // taken from System.Runtime that is not supplied
-                        let _ = x.InvokeMsBuild("Compile", isBeingCalledByComputeSourcesAndFlags = true, extraProperties = [KeyValuePair("_ResolveReferenceDependencies", "true")])
+                        
+                        let _ = x.InvokeMsBuild("Compile", extraProperties = [KeyValuePair("_ResolveReferenceDependencies", "true")])
                         sourcesAndFlagsNotifier.Notify()
                     finally
-                        actuallyBuild <- true 
+                        actuallyBuild <- true
 
             member internal x.DetermineRuntimeAndSKU(targetFrameworkMoniker : string) =
                 let frameworkName = new System.Runtime.Versioning.FrameworkName(targetFrameworkMoniker)
@@ -1439,7 +1470,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     member ips.DescriptionOfProject() = 
                         let sources,flags = sourcesAndFlags.Value
                         sprintf "Project System: flags(%A) sources:\n%A" flags sources
-                    member ips.CompilerFlags() = let _,flags = sourcesAndFlags.Value in flags
+                    member ips.CompilerFlags() = x.GetCompileFlags()
                     member ips.ProjectFileName() = MSBuildProject.GetFullPath(x.BuildProject)
                     member ips.ErrorListTaskProvider() = Some(x.TaskProvider)
                     member ips.ErrorListTaskReporter() = Some(x.TaskReporter)
@@ -1595,6 +1626,11 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 member x.SetSpecificEditorProperty(_mkDocument:string, _propid:int, _value:obj ) =
                     VSConstants.E_NOTIMPL
             end
+        
+    type internal ActiveCfgBatchUpdateState =
+        | NonBatch
+        | BatchWaiting
+        | BatchDone
 
     // Why is this a separate class, rather than an interface implemented on
     // FSharpProjectNode?  Because, at the time of initial registration of this
@@ -1605,7 +1641,14 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
     // class means we have a separate object to CCW wrap, avoiding the problematic
     // "double CCW-wrapping" of the same object.
     type internal SolutionEventsListener(projNode) =
-            let mutable queuedWork : option<list<FSharpProjectNode>> = None
+
+            let mutable waitDialog : IDisposable option = None
+
+            // During batch active project configuration changes, make sure we only run CSAF once
+            // per batch. Before this change, OnActiveProjectCfgChange was being called twice per
+            // batch per project.
+            let mutable batchState = NonBatch
+            
             // The CCW wrapper seems to prevent an object-identity test, so we determine whether
             // two IVsHierarchy objects are equal by comparing their captions.  (It's ok if this
             // occasionally yields false positives, as this just means we may do a little extra
@@ -1620,14 +1663,16 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                         o :?> System.String
                     else
                         null : System.String
+
             let OnActiveProjectCfgChange(pIVsHierarchy) =
-                if GetCaption(pIVsHierarchy) = GetCaption(projNode.InteropSafeIVsHierarchy) then
+                if GetCaption(pIVsHierarchy) = GetCaption(projNode.InteropSafeIVsHierarchy) && batchState <> BatchDone then
                     projNode.SetProjectFileDirty(projNode.IsProjectFileDirty)
-                    projNode.ComputeSourcesAndFlags() // REVIEW: It looks like ComputeSourcesAndFlags is called twice. Once on this line and then again because it is added to 'queuedWork' below.
-                    match queuedWork with
-                    | Some(l) -> queuedWork <- Some( projNode :: l )
-                    | None -> ()
+                    projNode.ComputeSourcesAndFlags()
+                    
+                    if batchState = BatchWaiting then
+                        batchState <- BatchDone
                 VSConstants.S_OK
+
             let UpdateConfig(pHierProj) =
                 // By default, the F# project system keeps its own internal Configuration and Platform in sync with the current active
                 // Configuration and Platform by listening for OnActiveProjectCfgChange events.  However there is one case where the
@@ -1640,6 +1685,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     MSBuildProject.SetGlobalProperty(projNode.BuildProject, ProjectFileConstants.Configuration, currentConfigName.ConfigName)
                     MSBuildProject.SetGlobalProperty(projNode.BuildProject, ProjectFileConstants.Platform, currentConfigName.MSBuildPlatform)
                     projNode.UpdateMSBuildState()
+
             interface IVsUpdateSolutionEvents with
                 member x.UpdateSolution_Begin(pfCancelUpdate) =
                     VSConstants.S_OK
@@ -1651,6 +1697,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     VSConstants.S_OK
                 member x.OnActiveProjectCfgChange(pIVsHierarchy) =
                     OnActiveProjectCfgChange(pIVsHierarchy)
+
             interface IVsUpdateSolutionEvents2 with
                 member x.UpdateSolution_Begin(pfCancelUpdate) =
                     VSConstants.S_OK
@@ -1668,17 +1715,51 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 member x.UpdateProjectCfg_Done(pHierProj, _pCfgProj, _pCfgSln, _dwAction, _fSuccess, _fCancel) =
                     UpdateConfig(pHierProj)
                     VSConstants.S_OK
+
             interface IVsUpdateSolutionEvents3 with
                 member x.OnBeforeActiveSolutionCfgChange(_oldCfg, _newCfg) =
-                    queuedWork <- Some( [] )
-                    VSConstants.S_OK
-                member x.OnAfterActiveSolutionCfgChange(_oldCfg, _newCfg) =
-                    match queuedWork with
-                    | Some(l) -> l |> List.iter (fun projNode -> projNode.ComputeSourcesAndFlags())
-                    | None -> ()
-                    queuedWork <- None
+                    // this will be called for each project, but wait dialogs cannot 'stack'
+                    // i.e. if a wait dialog is already open, subsequent calls to StartWaitDialog
+                    // will not override the current open dialog
+                    waitDialog <-
+                        {
+                            WaitCaption = FSharpSR.GetString FSharpSR.ProductName
+                            WaitMessage = FSharpSR.GetString FSharpSR.UpdatingSolutionConfiguration
+                            ProgressText = None
+                            StatusBmpAnim = null
+                            StatusBarText = None
+                            DelayToShowDialogSecs = 1
+                            IsCancelable = false
+                            ShowMarqueeProgress = true
+                        }
+                        |> WaitDialog.start projNode.Site
+                        |> Some
+
                     VSConstants.S_OK
 
+                member x.OnAfterActiveSolutionCfgChange(_oldCfg, _newCfg) =
+                    match waitDialog with
+                    | Some x ->
+                        x.Dispose()
+                        waitDialog <- None
+                    | None -> ()
+                    VSConstants.S_OK
+              
+            interface IVsUpdateSolutionEvents4 with
+                member x.OnActiveProjectCfgChangeBatchBegin() =
+                    batchState <- BatchWaiting
+                member x.OnActiveProjectCfgChangeBatchEnd() =
+                    batchState <- NonBatch
+                member x.UpdateSolution_BeginFirstUpdateAction() =
+                    ()
+                member x.UpdateSolution_BeginUpdateAction(_dwAction) =
+                    ()
+                member x.UpdateSolution_EndLastUpdateAction() =
+                    ()
+                member x.UpdateSolution_EndUpdateAction(_dwAction) =
+                    ()
+                member x.UpdateSolution_QueryDelayFirstUpdateAction(_pfDelay) =
+                    ()
 
             interface IVsTrackProjectRetargetingEvents with
                 override this.OnRetargetingBeforeChange

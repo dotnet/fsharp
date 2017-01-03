@@ -55,7 +55,8 @@ open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.TcGlobals
 
 open Internal.Utilities.Collections
-open Internal.Utilities.StructuredFormat
+
+type FormatOptions = Internal.Utilities.StructuredFormat.FormatOptions
 
 //----------------------------------------------------------------------------
 // Hardbinding dependencies should we NGEN fsi.exe
@@ -256,10 +257,10 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, g: TcGlobals,
                           // the maximum length
                           (1+fsi.PrintLength/3) 
               let makeListL itemLs =
-                (leftL "[") ^^
-                sepListL (rightL ";") itemLs ^^
-                (rightL "]")
-              Some(wordL "dict" --- makeListL itemLs)
+                (leftL (TaggedTextOps.tagText "[")) ^^
+                sepListL (rightL (TaggedTextOps.tagText ";")) itemLs ^^
+                (rightL (TaggedTextOps.tagText "]"))
+              Some(wordL (TaggedTextOps.tagText "dict") --- makeListL itemLs)
           finally
              match it with 
              | :? System.IDisposable as d -> d.Dispose()
@@ -285,7 +286,7 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, g: TcGlobals,
                                    | _ when aty.IsAssignableFrom(obj.GetType())  ->  
                                        match printer obj with 
                                        | null -> None
-                                       | s -> Some (wordL s) 
+                                       | s -> Some (wordL (TaggedTextOps.tagText s)) 
                                    | _ -> None)
                                    
                          | Choice2Of2 (aty: System.Type, converter) -> 
@@ -340,14 +341,14 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, g: TcGlobals,
                   anyToLayoutCall.AnyToLayout(opts, x, ty)
         with 
 #if !FX_REDUCED_EXCEPTIONS
-        | :? ThreadAbortException -> Layout.wordL ""
+        | :? ThreadAbortException -> Layout.wordL (TaggedTextOps.tagText "")
 #endif
         | e ->
 #if DEBUG
           printf "\n\nPrintValue: x = %+A and ty=%s\n" x (ty.FullName)
 #endif
           printf "%s" (FSIstrings.SR.fsiExceptionDuringPrettyPrinting(e.ToString())); 
-          Layout.wordL ""
+          Layout.wordL (TaggedTextOps.tagText "")
             
     /// Display the signature of an F# value declaration, along with its actual value.
     member valuePrinter.InvokeDeclLayout (emEnv, ilxGenerator: IlxAssemblyGenerator, v:Val) =
@@ -403,7 +404,7 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, g: TcGlobals,
         let fullL = if Option.isNone rhsL || isEmptyL rhsL.Value then
                       NicePrint.layoutValOrMember denv vref (* the rhs was suppressed by the printer, so no value to print *)
                     else
-                      (NicePrint.layoutValOrMember denv vref ++ wordL "=") --- rhsL.Value
+                      (NicePrint.layoutValOrMember denv vref ++ wordL (TaggedTextOps.tagText "=")) --- rhsL.Value
         Internal.Utilities.StructuredFormat.Display.output_layout opts outWriter fullL;  
         outWriter.WriteLine()
     
