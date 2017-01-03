@@ -95,8 +95,8 @@ type internal FSharpHelpContextService
         }
 
     interface IHelpContextService with
-        member this.Language = FSharpCommonConstants.FSharpLanguageName
-        member this.Product = FSharpCommonConstants.FSharpLanguageName
+        member this.Language = "fsharp"
+        member this.Product = "fsharp"
 
         member this.GetHelpTermAsync(document, textSpan, cancellationToken) = 
             asyncMaybe {
