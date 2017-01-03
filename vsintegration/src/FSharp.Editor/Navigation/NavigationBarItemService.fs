@@ -61,18 +61,9 @@ type internal FSharpNavigationBarItemService
                                 |> Array.choose (fun decl ->
                                     rangeToTextSpan(decl.Range)
                                     |> Option.map(fun textSpan ->
-                                        NavigationBarSymbolItem(
-                                            decl.Name, 
-                                            CommonHelpers.glyphMajorToRoslynGlyph(decl.GlyphMajor), 
-                                            [| textSpan |],
-                                            null)
-                                        :> NavigationBarItem))
+                                        NavigationBarSymbolItem(decl.Name, decl.RoslynGlyph, [| textSpan |], null) :> NavigationBarItem))
                             
-                            NavigationBarSymbolItem(
-                                topLevelDecl.Declaration.Name, 
-                                CommonHelpers.glyphMajorToRoslynGlyph(topLevelDecl.Declaration.GlyphMajor),
-                                [| topLevelTextSpan |],
-                                childItems)
+                            NavigationBarSymbolItem(topLevelDecl.Declaration.Name, topLevelDecl.Declaration.RoslynGlyph, [| topLevelTextSpan |], childItems)
                             :> NavigationBarItem)) :> IList<_>
             } 
             |> Async.map (Option.defaultValue emptyResult)
