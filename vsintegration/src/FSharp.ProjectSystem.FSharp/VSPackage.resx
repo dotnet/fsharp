@@ -206,13 +206,13 @@
     <value>Build</value>
   </data>
   <data name="1" xml:space="preserve">
-    <value></value>
+    <value />
   </data>
   <data name="2" xml:space="preserve">
-    <value></value>
+    <value />
   </data>
   <data name="3" xml:space="preserve">
-    <value></value>
+    <value />
   </data>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="300" type="System.Resources.ResXFileRef, System.Windows.Forms">
@@ -517,11 +517,17 @@
   </data>
   <data name="AddReferenceAssemblyPageDialogRetargetingText" xml:space="preserve">
     <value>The project will be retargeted, and its targeted frameworks will be reduced.</value>
-  </data>  
+  </data>
   <data name="AddReferenceAssemblyPageDialogNoItemsText" xml:space="preserve">
     <value>All of the Framework assemblies are already referenced. Please use the Object Browser to explore the references in the Framework.</value>
   </data>
   <data name="FSharpCoreVersionIsNotLegacyCompatible" xml:space="preserve">
     <value>Referencing this version of FSharp.Core will cause your project to be incompatible with older versions of Visual Studio.  Do you want to continue?</value>
+  </data>
+  <data name="ComputingSourcesAndFlags" xml:space="preserve">
+    <value>Updating compilation sources and flags...</value>
+  </data>
+  <data name="UpdatingSolutionConfiguration" xml:space="preserve">
+    <value>Updating solution configuration...</value>
   </data>
 </root>

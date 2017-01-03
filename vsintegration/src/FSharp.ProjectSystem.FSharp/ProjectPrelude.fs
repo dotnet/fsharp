@@ -158,6 +158,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         [<Literal>] 
         let   OutputTypeDescription = "OutputTypeDescription"
         [<Literal>] 
+        let   ProductName = "ProductName"
+        [<Literal>] 
         let   Project = "Project"
         [<Literal>] 
         let   ProjectFile = "ProjectFile"
@@ -215,6 +217,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         let AddReferenceAssemblyPageDialogNoItemsText = "AddReferenceAssemblyPageDialogNoItemsText";
         [<Literal>]
         let FSharpCoreVersionIsNotLegacyCompatible = "FSharpCoreVersionIsNotLegacyCompatible";
+        [<Literal>]
+        let ComputingSourcesAndFlags = "ComputingSourcesAndFlags"
+        [<Literal>]
+        let UpdatingSolutionConfiguration = "UpdatingSolutionConfiguration"
 
 
         type private TypeInThisAssembly = class end

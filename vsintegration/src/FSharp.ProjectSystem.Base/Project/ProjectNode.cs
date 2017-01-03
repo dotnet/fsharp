@@ -2268,7 +2268,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 this.SetCurrentConfiguration();
                 this.UpdateMSBuildState();
-                var result = this.InvokeMsBuild(ProjectFileConstants.AllProjectOutputGroups, false);
+                var result = this.InvokeMsBuild(ProjectFileConstants.AllProjectOutputGroups);
                 if (result.ProjectInstance != null) return result.ProjectInstance.GetPropertyValue(propertyName);
             };
             return this.GetProjectProperty(propertyName, true);
@@ -2947,9 +2947,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 this.ProcessCustomBuildActions();
 
                 this.ProcessFilesAndFolders();
-
-
-
+                
                 this.LoadNonBuildInformation();
 
                 this.InitSccInfo();
@@ -3143,11 +3141,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         [SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "Ms")]
         internal virtual BuildResult InvokeMsBuild(string target, IEnumerable<KeyValuePair<string, string>> extraProperties = null)
         {
-            return InvokeMsBuild(target, false, extraProperties);
-        }
-
-        internal virtual BuildResult InvokeMsBuild(string target, bool isBeingCalledByComputeSourcesAndFlags, IEnumerable<KeyValuePair<string, string>> extraProperties = null)
-        {
             UIThread.MustBeCalledFromUIThread();
             ProjectInstance projectInstance = null;
 
@@ -3156,10 +3149,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             if (submission != null)
             {
                 MSBuildResult result = (submission.BuildResult.OverallResult == BuildResultCode.Success) ? MSBuildResult.Successful : MSBuildResult.Failed;
-                if (!isBeingCalledByComputeSourcesAndFlags)
-                {
-                    this.ComputeSourcesAndFlags();
-                }
                 return new BuildResult(result, projectInstance);
             }
             else

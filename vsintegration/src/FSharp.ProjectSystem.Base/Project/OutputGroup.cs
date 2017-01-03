@@ -113,7 +113,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             var result = new BuildResult(MSBuildResult.Failed, null);
             if (project.ProjectMgr.BuildProject.Targets.ContainsKey(ProjectFileConstants.AllProjectOutputGroups))
             {
-                result = project.InvokeMsBuild(ProjectFileConstants.AllProjectOutputGroups, false /*isBeingCalledByComputeSourcesAndFlags*/);
+                result = project.InvokeMsBuild(ProjectFileConstants.AllProjectOutputGroups);
                 if (!result.IsSuccessful)
                 {
                     // we could not compute it, probably because there is a real build going on right now
