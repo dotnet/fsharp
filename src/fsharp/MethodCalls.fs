@@ -597,7 +597,9 @@ let BuildFSharpMethodApp g m (vref: ValRef) vexp vexprty (args: Exprs) =
             match arity,args with 
             | (0|1),[] when typeEquiv g (domainOfFunTy g fty) g.unit_ty -> mkUnit g m, (args, rangeOfFunTy g fty)
             | 0,(arg::argst)-> 
-                warning(InternalError(sprintf "Unexpected zero arity, args = %s" (Layout.showL (Layout.sepListL (Layout.rightL ";") (List.map exprL args))),m));
+                
+                
+                warning(InternalError(sprintf "Unexpected zero arity, args = %s" (Layout.showL (Layout.sepListL (Layout.rightL (Layout.TaggedTextOps.tagText ";")) (List.map exprL args))),m));
                 arg, (argst, rangeOfFunTy g fty)
             | 1,(arg :: argst) -> arg, (argst, rangeOfFunTy g fty)
             | 1,[] -> error(InternalError("expected additional arguments here",m))

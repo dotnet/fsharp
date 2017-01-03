@@ -22,6 +22,7 @@ open Microsoft.VisualStudio.Text.Tagging
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 
+open Microsoft.FSharp.Compiler.Layout
 open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
@@ -165,60 +166,28 @@ type internal FSharpSignatureHelpProvider
 
         for method in methods do
             // Create the documentation. Note, do this on the background thread, since doing it in the documentationBuild fails to build the XML index
-            let summaryDoc = XmlDocumentation.BuildMethodOverloadTipText(documentationBuilder, method.Description, false)
+            let mainDescription = List()
+            let documentation = List()
+            XmlDocumentation.BuildMethodOverloadTipText(documentationBuilder, CommonRoslynHelpers.CollectTaggedText mainDescription, CommonRoslynHelpers.CollectTaggedText documentation, method.StructuredDescription, false)
 
             let parameters = 
                 let parameters = if isStaticArgTip then method.StaticParameters else method.Parameters
                 [| for p in parameters do 
+                      let doc = List()
                       // FSROSLYNTODO: compute the proper help text for parameters, c.f. AppendParameter in XmlDocumentation.fs
-                      let paramDoc = XmlDocumentation.BuildMethodParamText(documentationBuilder, method.XmlDoc, p.ParameterName) 
-                      let doc = if String.IsNullOrWhiteSpace(paramDoc) then [||]
-                                else [| TaggedText(TextTags.Text, paramDoc) |]
-                      let parameterParts =
-                          if isStaticArgTip then
-                              [| TaggedText(TextTags.Class, p.Display) |]                                
-                          else
-                              let str = p.Display
-                              match str.IndexOf(':') with
-                              | -1 -> [| TaggedText(TextTags.Parameter, str) |]                                
-                              | 0 -> 
-                                [| TaggedText(TextTags.Punctuation, ":"); 
-                                   TaggedText(TextTags.Class, str.[1..]) |]
-                              | i -> 
-                                [| TaggedText(TextTags.Parameter, str.[..i-1]); 
-                                   TaggedText(TextTags.Punctuation, ":"); 
-                                   TaggedText(TextTags.Class, str.[i+1..]) |]
-                      yield (p.ParameterName, p.IsOptional, doc, parameterParts) 
+                      XmlDocumentation.BuildMethodParamText(documentationBuilder, CommonRoslynHelpers.CollectTaggedText doc, method.XmlDoc, p.ParameterName) 
+                      let parts = List()
+                      renderL (taggedTextListR (CommonRoslynHelpers.CollectTaggedText parts)) p.StructuredDisplay |> ignore
+                      yield (p.ParameterName, p.IsOptional, doc, parts) 
                 |]
 
-            let hasParamComments (pcs: (string*bool*TaggedText[]*TaggedText[])[]) =
-                pcs |> Array.exists (fun (_, _, doc, _) -> doc.Length > 0)
-
-            let summaryText =                 
-                let doc = 
-                    if String.IsNullOrWhiteSpace summaryDoc then
-                        String.Empty
-                    elif hasParamComments parameters then 
-                        summaryDoc + "\n" 
-                    else 
-                        summaryDoc
-                [| TaggedText(TextTags.Text, doc) |]
-                
-            // Prepare the text to display
-            let descriptionParts = 
-                let str = method.TypeText
-                if str.StartsWith(":", StringComparison.OrdinalIgnoreCase) then
-                    [| TaggedText(TextTags.Punctuation, ":"); 
-                       TaggedText(TextTags.Class, str.[1..]) |]
-                else
-                    [| TaggedText(TextTags.Text, str) |]
             let prefixParts = 
                 [| TaggedText(TextTags.Method, methodGroup.MethodName);  
                    TaggedText(TextTags.Punctuation, (if isStaticArgTip then "<" else "(")) |]
-            let separatorParts = [| TaggedText(TextTags.Punctuation, ", ") |]
+            let separatorParts = [| TaggedText(TextTags.Punctuation, ","); TaggedText(TextTags.Space, " ") |]
             let suffixParts = [| TaggedText(TextTags.Punctuation, (if isStaticArgTip then ">" else ")")) |]
 
-            let completionItem = (method.HasParamArrayArg, summaryText, prefixParts, separatorParts, suffixParts, parameters, descriptionParts)
+            let completionItem = (method.HasParamArrayArg, documentation, prefixParts, separatorParts, suffixParts, parameters, mainDescription)
             // FSROSLYNTODO: Do we need a cache like for completion?
             //declarationItemsCache.Remove(completionItem.DisplayText) |> ignore // clear out stale entries if they exist
             //declarationItemsCache.Add(completionItem.DisplayText, declarationItem)
@@ -251,9 +220,9 @@ type internal FSharpSignatureHelpProvider
                     results 
                     |> Array.map (fun (hasParamArrayArg, doc, prefixParts, separatorParts, suffixParts, parameters, descriptionParts) ->
                             let parameters = parameters 
-                                             |> Array.map (fun (paramName, isOptional, paramDoc, displayParts) -> 
+                                                |> Array.map (fun (paramName, isOptional, paramDoc, displayParts) -> 
                                                 SignatureHelpParameter(paramName,isOptional,documentationFactory=(fun _ -> paramDoc :> seq<_>),displayParts=displayParts))
-                            SignatureHelpItem(isVariadic=hasParamArrayArg ,documentationFactory=(fun _ -> doc :> seq<_>),prefixParts=prefixParts,separatorParts=separatorParts,suffixParts=suffixParts,parameters=parameters,descriptionParts=descriptionParts))
+                            SignatureHelpItem(isVariadic=hasParamArrayArg, documentationFactory=(fun _ -> doc :> seq<_>),prefixParts=prefixParts,separatorParts=separatorParts,suffixParts=suffixParts,parameters=parameters,descriptionParts=descriptionParts))
 
                 return SignatureHelpItems(items,applicableSpan,argumentIndex,argumentCount,Option.toObj argumentName)
               with ex -> 

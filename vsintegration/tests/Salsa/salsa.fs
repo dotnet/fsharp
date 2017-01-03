@@ -1487,13 +1487,18 @@ module internal Salsa =
             let tm = box (VsMocks.createTextManager())
             let documentationProvider = 
                 { new IDocumentationBuilder with
-                    override doc.AppendDocumentationFromProcessedXML(appendTo:StringBuilder,processedXml:string,showExceptions, showReturns, paramName) = 
-                        appendTo.AppendLine(processedXml)|> ignore 
-                    override doc.AppendDocumentation(appendTo:StringBuilder,filename:string,signature:string, showExceptions, showReturns, paramName) = 
-                        appendTo.AppendLine(sprintf "[Filename:%s]" filename).AppendLine(sprintf "[Signature:%s]" signature) |> ignore 
-                        if paramName.IsSome then appendTo.AppendLine(sprintf "[ParamName: %s]" paramName.Value) |> ignore
+                    override doc.AppendDocumentationFromProcessedXML(appendTo,processedXml:string,showExceptions, showReturns, paramName) = 
+                        appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.tagText processedXml)
+                        appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.Literals.lineBreak)
+                    override doc.AppendDocumentation(appendTo,filename:string,signature:string, showExceptions, showReturns, paramName) = 
+                        appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.tagText (sprintf "[Filename:%s]" filename))
+                        appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.Literals.lineBreak)
+                        appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.tagText (sprintf "[Signature:%s]" signature))
+                        appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.Literals.lineBreak)
+                        if paramName.IsSome then
+                            appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.tagText (sprintf "[ParamName: %s]" paramName.Value))
+                            appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.Literals.lineBreak)
                 } 
- 
 
             let sp2 = 
                { new System.IServiceProvider with 
