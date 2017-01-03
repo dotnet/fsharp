@@ -145,8 +145,12 @@ type TheTests() =
             MSBuildProject.SetGlobalProperty(project.BuildProject, "UTF8Output", forceUTF8)
             project
         with 
-        | e -> project.Close() |> ignore
-               reraise()
+        | e ->
+            try
+                project.Close() |> ignore
+            with closeExc ->
+                raise <| AggregateException("An exception occurred during cleanup after a project creation failure", [e; closeExc])
+            reraise()
 
     static member internal CreateProject(filename : string) =
         let sp, configChangeNotifier = VsMocks.MakeMockServiceProviderAndConfigChangeNotifier()
