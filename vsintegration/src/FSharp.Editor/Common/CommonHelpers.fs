@@ -377,30 +377,6 @@ module internal CommonHelpers =
         | -1 | 0 -> span
         | index -> TextSpan(span.Start + index + 1, text.Length - index - 1)
 
-    let glyphMajorToRoslynGlyph = function
-        | GlyphMajor.Class
-        | GlyphMajor.Typedef
-        | GlyphMajor.Type
-        | GlyphMajor.Exception -> Glyph.ClassPublic
-        | GlyphMajor.Constant -> Glyph.ConstantPublic
-        | GlyphMajor.Delegate -> Glyph.DelegatePublic
-        | GlyphMajor.Union
-        | GlyphMajor.Enum -> Glyph.EnumPublic
-        | GlyphMajor.EnumMember
-        | GlyphMajor.Variable
-        | GlyphMajor.FieldBlue -> Glyph.FieldPublic
-        | GlyphMajor.Event -> Glyph.EventPublic
-        | GlyphMajor.Interface -> Glyph.InterfacePublic
-        | GlyphMajor.Method
-        | GlyphMajor.Method2 -> Glyph.MethodPublic
-        | GlyphMajor.Module -> Glyph.ModulePublic
-        | GlyphMajor.NameSpace -> Glyph.Namespace
-        | GlyphMajor.Property -> Glyph.PropertyPublic
-        | GlyphMajor.Struct
-        | GlyphMajor.ValueType -> Glyph.StructurePublic
-        | GlyphMajor.Error -> Glyph.Error
-        | _ -> Glyph.None
-
 [<RequireQualifiedAccess; NoComparison>] 
 type internal SymbolDeclarationLocation = 
     | CurrentDocument
@@ -410,6 +386,7 @@ type internal SymbolDeclarationLocation =
 module internal Extensions =
     open System
     open System.IO
+    open Microsoft.FSharp.Compiler.Ast
 
     type System.IServiceProvider with
         member x.GetService<'T>() = x.GetService(typeof<'T>) :?> 'T
@@ -527,3 +504,73 @@ module internal Extensions =
                 | _ -> false
             
             isPrivate && declaredInTheFile   
+
+    type FSharpNavigationDeclarationItem with
+        member x.RoslynGlyph : Glyph =
+            match x.GlyphMajor with
+            | GlyphMajor.Class
+            | GlyphMajor.Typedef
+            | GlyphMajor.Type
+            | GlyphMajor.Exception ->
+                match x.Access with
+                | Some SynAccess.Private -> Glyph.ClassPrivate
+                | Some SynAccess.Internal -> Glyph.ClassInternal
+                | _ -> Glyph.ClassPublic
+            | GlyphMajor.Constant -> 
+                match x.Access with
+                | Some SynAccess.Private -> Glyph.ConstantPrivate
+                | Some SynAccess.Internal -> Glyph.ConstantInternal
+                | _ -> Glyph.ConstantPublic
+            | GlyphMajor.Delegate -> 
+                match x.Access with
+                | Some SynAccess.Private -> Glyph.DelegatePrivate
+                | Some SynAccess.Internal -> Glyph.DelegateInternal
+                | _ -> Glyph.DelegatePublic
+            | GlyphMajor.Union
+            | GlyphMajor.Enum -> 
+                match x.Access with
+                | Some SynAccess.Private -> Glyph.EnumPrivate
+                | Some SynAccess.Internal -> Glyph.EnumInternal
+                | _ -> Glyph.EnumPublic
+            | GlyphMajor.EnumMember
+            | GlyphMajor.Variable
+            | GlyphMajor.FieldBlue -> 
+                match x.Access with
+                | Some SynAccess.Private -> Glyph.FieldPrivate
+                | Some SynAccess.Internal -> Glyph.FieldInternal
+                | _ -> Glyph.FieldPublic
+            | GlyphMajor.Event -> 
+                match x.Access with
+                | Some SynAccess.Private -> Glyph.EventPrivate
+                | Some SynAccess.Internal -> Glyph.EventInternal
+                | _ -> Glyph.EventPublic
+            | GlyphMajor.Interface -> 
+                match x.Access with
+                | Some SynAccess.Private -> Glyph.InterfacePrivate
+                | Some SynAccess.Internal -> Glyph.InterfaceInternal
+                | _ -> Glyph.InterfacePublic
+            | GlyphMajor.Method
+            | GlyphMajor.Method2 -> 
+                match x.Access with
+                | Some SynAccess.Private -> Glyph.MethodPrivate
+                | Some SynAccess.Internal -> Glyph.MethodInternal
+                | _ -> Glyph.MethodPublic
+            | GlyphMajor.Module -> 
+                match x.Access with
+                | Some SynAccess.Private -> Glyph.ModulePrivate
+                | Some SynAccess.Internal -> Glyph.ModuleInternal
+                | _ -> Glyph.ModulePublic
+            | GlyphMajor.NameSpace -> Glyph.Namespace
+            | GlyphMajor.Property -> 
+                match x.Access with
+                | Some SynAccess.Private -> Glyph.PropertyPrivate
+                | Some SynAccess.Internal -> Glyph.PropertyInternal
+                | _ -> Glyph.PropertyPublic
+            | GlyphMajor.Struct
+            | GlyphMajor.ValueType -> 
+                match x.Access with
+                | Some SynAccess.Private -> Glyph.StructurePrivate
+                | Some SynAccess.Internal -> Glyph.StructureInternal
+                | _ -> Glyph.StructurePublic
+            | GlyphMajor.Error -> Glyph.Error
+            | _ -> Glyph.None
