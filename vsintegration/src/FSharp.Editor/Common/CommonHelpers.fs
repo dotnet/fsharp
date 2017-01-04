@@ -2,6 +2,8 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
+#nowarn "1182"
+
 open System
 open System.Collections.Generic
 open System.Threading
@@ -139,7 +141,7 @@ module internal CommonHelpers =
              // Go backwards to find the last cached scanned line that is valid
              let scanStartLine = 
                  let mutable i = startLine
-                 while i > 0 && (match sourceTextData.[i-1] with Some data -> not (data.IsValid(lines.[i])) | None -> true)  do
+                 while i > 0 && (match sourceTextData.[i] with Some data -> not (data.IsValid(lines.[i])) | None -> true)  do
                      i <- i - 1
                  i
              // Rescan the lines if necessary and report the information
@@ -173,13 +175,13 @@ module internal CommonHelpers =
                          textSpan.Contains(token.TextSpan.End - 1) ||
                          (token.TextSpan.Start <= textSpan.Start && textSpan.End <= token.TextSpan.End)))
 
-                  // If necessary, invalidate all subsequent lines after endLine
+             // If necessary, invalidate all subsequent lines after endLine
              if endLine < lines.Count - 1 then 
                  match sourceTextData.[endLine+1] with 
                  | Some data  -> 
                      if data.LexStateAtStartOfLine <> lexState then
                           sourceTextData.ClearFrom (endLine+1)
-                  | None -> ()
+                 | None -> ()
              result
          with 
          | :? System.OperationCanceledException -> reraise()
@@ -322,9 +324,13 @@ module internal CommonHelpers =
         let sourceTextData = dataCache.GetValue(documentKey, fun key -> SourceTextData(lines.Count))
         // Go backwards to find the last cached scanned line that is valid
         let scanStartLine = 
-             let mutable i = lineNumber - 1
-             while i > 0 && (match sourceTextData.[i-1] with Some data -> not (data.IsValid(lines.[i])) | None -> true)  do
-                 i <- i - 1
+             let mutable i = lineNumber
+             while i > 0 && i < lines.Count - 1 &&
+                (match sourceTextData.[i] with 
+                 | Some data -> not (data.IsValid(lines.[i])) 
+                 | None -> true
+                ) do  
+                i <- i - 1
              i
         let lexState = if scanStartLine = 0 then 0L else sourceTextData.[scanStartLine - 1].Value.LexStateAtEndOfLine
         let lineContents = textLine.Text.ToString(textLine.Span)
@@ -354,6 +360,7 @@ module internal CommonHelpers =
     let getSymbolAtPosition(documentKey: DocumentId, sourceText: SourceText, position: int, fileName: string, defines: string list, lookupKind: SymbolLookupKind) : LexerSymbol option =
         try
             let lineData, textLinePos, lineContents = getCachedSourceLineData(documentKey, sourceText, position, fileName, defines)
+            let sourceTokenizer = FSharpSourceTokenizer(defines, Some fileName)
             getSymbolFromTokens(fileName, lineData.Tokens, textLinePos, lineContents, lookupKind)
         with 
         | :? System.OperationCanceledException -> reraise()
