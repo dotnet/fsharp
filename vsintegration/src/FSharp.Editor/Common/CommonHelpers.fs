@@ -322,7 +322,7 @@ module internal CommonHelpers =
         let sourceTextData = dataCache.GetValue(documentKey, fun key -> SourceTextData(lines.Count))
         // Go backwards to find the last cached scanned line that is valid
         let scanStartLine = 
-             let mutable i = lineNumber
+             let mutable i = lineNumber - 1
              while i > 0 && (match sourceTextData.[i-1] with Some data -> not (data.IsValid(lines.[i])) | None -> true)  do
                  i <- i - 1
              i
