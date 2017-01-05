@@ -2517,7 +2517,8 @@ let fullNameOfEntityRef nmF xref =
     | Some pathText -> pathText +.+ nmF xref
 
 let tagEntityRefName (xref: EntityRef) name =
-    if xref.IsNamespace then tagNamespace name
+    if Set.contains name Lexhelp.Keywords.keywordTypes then tagKeyword name
+    else if xref.IsNamespace then tagNamespace name
     else if xref.IsModule then tagModule name
     else if xref.IsTypeAbbrev then tagAlias name
     else if xref.IsFSharpDelegateTycon then tagDelegate name
