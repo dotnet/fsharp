@@ -14,6 +14,7 @@ open Microsoft.CodeAnalysis.Editor.Host
 open Microsoft.CodeAnalysis.Navigation
 open Microsoft.CodeAnalysis.FindSymbols
 open Microsoft.CodeAnalysis.FindReferences
+open Microsoft.CodeAnalysis.Completion
 
 open Microsoft.VisualStudio.FSharp.LanguageService
 
@@ -62,6 +63,7 @@ type internal FSharpFindReferencesService
             let! symbol = CommonHelpers.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Fuzzy)
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(lineNumber, symbol.RightColumn, textLine, [symbol.Text])
             let! declaration = checkFileResults.GetDeclarationLocationAlternate (lineNumber, symbol.RightColumn, textLine, [symbol.Text], false) |> liftAsync
+            let tags = GlyphTags.GetTags(CommonRoslynHelpers.GetGlyphForSymbol symbolUse.Symbol)
             
             let declarationRange = 
                 match declaration with
@@ -77,14 +79,14 @@ type internal FSharpFindReferencesService
                 match declarationSpans with 
                 | [] -> 
                     [ DefinitionItem.CreateNonNavigableItem(
-                          ImmutableArray<string>.Empty, 
+                          tags,
                           [TaggedText(TextTags.Text, symbolUse.Symbol.FullName)].ToImmutableArray(),
                           [TaggedText(TextTags.Assembly, symbolUse.Symbol.Assembly.SimpleName)].ToImmutableArray()) ]
                 | _ ->
                     declarationSpans
                     |> List.map (fun span ->
                         DefinitionItem.Create(
-                            ImmutableArray<string>.Empty, 
+                            tags, 
                             [TaggedText(TextTags.Text, symbolUse.Symbol.FullName)].ToImmutableArray(), 
                             span))
             
