@@ -127,6 +127,80 @@ module internal CommonRoslynHelpers =
         | GlyphMajor.Error -> Glyph.Error
         | _ -> Glyph.ClassPublic
 
+    let inline (|Public|Internal|Protected|Private|) (a: FSharpAccessibility) =
+        if a.IsPublic then Public
+        elif a.IsInternal then Internal
+        elif a.IsPrivate then Private
+        else Protected
+
+    let GetGlyphForSymbol (symbol: FSharpSymbol) =
+        match symbol with
+        | :? FSharpUnionCase as x ->
+            match x.Accessibility with
+            | Public -> Glyph.EnumPublic
+            | Internal -> Glyph.EnumInternal
+            | Protected -> Glyph.EnumProtected
+            | Private -> Glyph.EnumPrivate
+        | :? FSharpActivePatternCase -> Glyph.EnumPublic
+        | :? FSharpField as x ->
+            match x.Accessibility with
+            | Public -> Glyph.FieldPublic
+            | Internal -> Glyph.FieldInternal
+            | Protected -> Glyph.FieldProtected
+            | Private -> Glyph.FieldPrivate
+        | :? FSharpParameter -> Glyph.Parameter
+        | :? FSharpMemberOrFunctionOrValue as x ->
+            if x.IsExtensionMember then
+                match x.Accessibility with
+                | Public -> Glyph.ExtensionMethodPublic
+                | Internal -> Glyph.ExtensionMethodInternal
+                | Protected -> Glyph.ExtensionMethodProtected
+                | Private -> Glyph.ExtensionMethodPrivate
+            elif x.IsProperty || x.IsPropertyGetterMethod || x.IsPropertySetterMethod then
+                match x.Accessibility with
+                | Public -> Glyph.PropertyPublic
+                | Internal -> Glyph.PropertyInternal
+                | Protected -> Glyph.PropertyProtected
+                | Private -> Glyph.PropertyPrivate
+            elif x.IsEvent then
+                match x.Accessibility with
+                | Public -> Glyph.EventPublic
+                | Internal -> Glyph.EventInternal
+                | Protected -> Glyph.EventProtected
+                | Private -> Glyph.EventPrivate
+            else
+                match x.Accessibility with
+                | Public -> Glyph.MethodPublic
+                | Internal -> Glyph.MethodInternal
+                | Protected -> Glyph.MethodProtected
+                | Private -> Glyph.MethodPrivate
+        | :? FSharpEntity as x ->
+            if x.IsFSharpModule then
+                match x.Accessibility with
+                | Public -> Glyph.ModulePublic
+                | Internal -> Glyph.ModuleInternal
+                | Protected -> Glyph.ModuleProtected
+                | Private -> Glyph.ModulePrivate
+            elif x.IsEnum || x.IsFSharpUnion then
+                match x.Accessibility with
+                | Public -> Glyph.EnumPublic
+                | Internal -> Glyph.EnumInternal
+                | Protected -> Glyph.EnumProtected
+                | Private -> Glyph.EnumPrivate
+            elif x.IsInterface then
+                match x.Accessibility with
+                | Public -> Glyph.InterfacePublic
+                | Internal -> Glyph.InterfaceInternal
+                | Protected -> Glyph.InterfaceProtected
+                | Private -> Glyph.InterfacePrivate
+            else
+                match x.Accessibility with
+                | Public -> Glyph.ClassPublic
+                | Internal -> Glyph.ClassInternal
+                | Protected -> Glyph.ClassProtected
+                | Private -> Glyph.ClassPrivate
+        | _ -> Glyph.None
+
 [<AutoOpen>]
 module internal RoslynExtensions =
     type Project with
