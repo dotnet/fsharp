@@ -324,14 +324,14 @@ module internal CommonHelpers =
         let sourceTextData = dataCache.GetValue(documentKey, fun key -> SourceTextData(lines.Count))
         // Go backwards to find the last cached scanned line that is valid
         let scanStartLine = 
-             let mutable i = lineNumber
-             while i > 0 && i < lines.Count - 1 &&
-                (match sourceTextData.[i] with 
-                 | Some data -> not (data.IsValid(lines.[i])) 
-                 | None -> true
-                ) do  
-                i <- i - 1
-             i
+            let mutable i = min (lines.Count - 1) lineNumber
+            while i > 0 &&
+               (match sourceTextData.[i] with 
+                | Some data -> not (data.IsValid(lines.[i])) 
+                | None -> true
+               ) do  
+               i <- i - 1
+            i
         let lexState = if scanStartLine = 0 then 0L else sourceTextData.[scanStartLine - 1].Value.LexStateAtEndOfLine
         let lineContents = textLine.Text.ToString(textLine.Span)
         
