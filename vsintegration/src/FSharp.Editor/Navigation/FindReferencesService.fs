@@ -80,15 +80,12 @@ type internal FSharpFindReferencesService
                 | [] -> 
                     [ DefinitionItem.CreateNonNavigableItem(
                           tags,
-                          [TaggedText(TextTags.Text, symbolUse.Symbol.FullName)].ToImmutableArray(),
-                          [TaggedText(TextTags.Assembly, symbolUse.Symbol.Assembly.SimpleName)].ToImmutableArray()) ]
+                          ImmutableArray.Create(TaggedText(TextTags.Text, symbol.Text)),
+                          ImmutableArray.Create(TaggedText(TextTags.Assembly, symbolUse.Symbol.Assembly.SimpleName))) ]
                 | _ ->
                     declarationSpans
                     |> List.map (fun span ->
-                        DefinitionItem.Create(
-                            tags, 
-                            [TaggedText(TextTags.Text, symbolUse.Symbol.FullName)].ToImmutableArray(), 
-                            span))
+                        DefinitionItem.Create(tags, ImmutableArray.Create(TaggedText(TextTags.Text, symbol.Text)), span))
             
             for definitionItem in definitionItems do
                 do! context.OnDefinitionFoundAsync(definitionItem) |> Async.AwaitTask |> liftAsync
