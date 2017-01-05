@@ -467,9 +467,9 @@ module internal Entity =
         | _ ->
             partiallyQualifiedName
             |> Array.heads
-            // the last part must be unresolved, otherwise we show false positive suggestions like
+            // long ident must contain an unresolved part, otherwise we show false positive suggestions like
             // "open System" for `let _ = System.DateTime.Naaaw`. Here only "Naaw" is unresolved.
-            |> Array.filter (fun x -> not (x.[x.Length - 1].Resolved))
+            |> Array.filter (fun x -> x |> Array.exists (fun x -> not x.Resolved))
             |> Array.choose (fun parts ->
                 let parts = parts |> Array.map (fun x -> x.Ident)
                 if not (candidate |> Array.endsWith parts) then None
