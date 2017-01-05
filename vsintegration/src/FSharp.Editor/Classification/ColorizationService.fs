@@ -2,8 +2,6 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-#nowarn "1182"
-
 open System
 open System.Composition
 open System.Collections.Generic
