@@ -70,22 +70,25 @@ type internal FSharpFindReferencesService
                 | FSharpFindDeclResult.DeclFound range -> Some range
                 | _ -> None
             
-            let! declarationSpans =
-                match declarationRange with
-                | Some range -> rangeToDocumentSpans(document.Project.Solution, range, context.CancellationToken) |> liftAsync
-                | None -> async.Return None
-            
-            let definitionItems =
-                match declarationSpans with 
-                | [] -> 
-                    [ DefinitionItem.CreateNonNavigableItem(
-                          tags,
-                          ImmutableArray.Create(TaggedText(TextTags.Text, symbol.Text)),
-                          ImmutableArray.Create(TaggedText(TextTags.Assembly, symbolUse.Symbol.Assembly.SimpleName))) ]
-                | _ ->
-                    declarationSpans
-                    |> List.map (fun span ->
-                        DefinitionItem.Create(tags, ImmutableArray.Create(TaggedText(TextTags.Text, symbol.Text)), span))
+            let! definitionItems =
+                async {
+                    let! declarationSpans =
+                        match declarationRange with
+                        | Some range -> rangeToDocumentSpans(document.Project.Solution, range, context.CancellationToken)
+                        | None -> async.Return []
+                    
+                    return 
+                        match declarationSpans with 
+                        | [] -> 
+                            [ DefinitionItem.CreateNonNavigableItem(
+                                tags,
+                                ImmutableArray.Create(TaggedText(TextTags.Text, symbol.Text)),
+                                ImmutableArray.Create(TaggedText(TextTags.Assembly, symbolUse.Symbol.Assembly.SimpleName))) ]
+                        | _ ->
+                            declarationSpans
+                            |> List.map (fun span ->
+                                DefinitionItem.Create(tags, ImmutableArray.Create(TaggedText(TextTags.Text, symbol.Text)), span))
+                } |> liftAsync
             
             for definitionItem in definitionItems do
                 do! context.OnDefinitionFoundAsync(definitionItem) |> Async.AwaitTask |> liftAsync
