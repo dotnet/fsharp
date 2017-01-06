@@ -23,6 +23,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 type internal InterfaceState =
     { InterfaceData: InterfaceData 
       EndPosOfWith: pos option
+      AppendBracketAt: int option
       Tokens: FSharpTokenInfo list }
 
 [<ExportCodeFixProvider(FSharpCommonConstants.FSharpLanguageName, Name = "ImplementInterface"); Shared>]
@@ -36,20 +37,22 @@ type internal FSharpImplementInterfaceCodeFixProvider
     let fixableDiagnosticIds = ["FS0366"]
     let checker = checkerProvider.Checker
 
-    let queryInterfaceState (pos: pos) tokens (ast: Ast.ParsedInput) =
-        async {
+    let queryInterfaceState appendBracketAt (pos: pos) tokens (ast: Ast.ParsedInput) =
+        asyncMaybe {
             let line = pos.Line - 1
             let column = pos.Column
-            match InterfaceStubGenerator.tryFindInterfaceDeclaration pos ast with
-            | None -> return None
-            | Some iface ->
-                let endPosOfWidth =
-                    tokens 
-                    |> List.tryPick (fun (t: FSharpTokenInfo) ->
-                            if t.CharClass = FSharpTokenCharKind.Keyword && t.LeftColumn >= column && t.TokenName = "WITH" then
-                                Some (Pos.fromZ line (t.RightColumn + 1))
-                            else None)
-                return Some { InterfaceData = iface; EndPosOfWith = endPosOfWidth; Tokens = tokens } 
+            let! iface = InterfaceStubGenerator.tryFindInterfaceDeclaration pos ast
+            let endPosOfWidth =
+                tokens 
+                |> List.tryPick (fun (t: FSharpTokenInfo) ->
+                        if t.CharClass = FSharpTokenCharKind.Keyword && t.LeftColumn >= column && t.TokenName = "WITH" then
+                            Some (Pos.fromZ line (t.RightColumn + 1))
+                        else None)
+            let appendBracketAt =
+                match iface, appendBracketAt with
+                | InterfaceData.ObjExpr _, Some _ -> appendBracketAt
+                | _ -> None
+            return { InterfaceData = iface; EndPosOfWith = endPosOfWidth; AppendBracketAt = appendBracketAt; Tokens = tokens } 
         }
         
     let getLineIdent (lineStr: string) =
@@ -75,7 +78,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
                 // There is no reference point, we indent the content at the start column of the interface
                 |> Option.defaultValue iface.Range.StartColumn
 
-    let handleImplementInterface (sourceText: SourceText) state displayContext implementedMemberSignatures entity indentSize verboseMode = 
+    let applyImplementInterface (sourceText: SourceText) state displayContext implementedMemberSignatures entity indentSize verboseMode = 
         let startColumn = inferStartColumn indentSize state sourceText
         let objectIdentifier = "this"
         let defaultBody = "raise (System.NotImplementedException())"
@@ -85,15 +88,21 @@ type internal FSharpImplementInterfaceCodeFixProvider
                            startColumn indentSize typeParams objectIdentifier defaultBody
                            displayContext implementedMemberSignatures entity verboseMode
             stub.TrimEnd(Environment.NewLine.ToCharArray())
-        match state.EndPosOfWith with
-        | Some pos -> 
-            let currentPos = sourceText.Lines.[pos.Line-1].Start + pos.Column
-            TextChange(TextSpan(currentPos, 0), stub)
+        let stubChange =
+            match state.EndPosOfWith with
+            | Some pos -> 
+                let currentPos = sourceText.Lines.[pos.Line-1].Start + pos.Column
+                TextChange(TextSpan(currentPos, 0), stub)                
+            | None ->
+                let range = state.InterfaceData.Range
+                let currentPos = sourceText.Lines.[range.EndLine-1].Start + range.EndColumn
+                TextChange(TextSpan(currentPos, 0), " with" + stub)                
+        match state.AppendBracketAt with
+        | Some index ->
+            sourceText.WithChanges(stubChange, TextChange(TextSpan(index, 0), " }"))
         | None ->
-            let range = state.InterfaceData.Range
-            let currentPos = sourceText.Lines.[range.EndLine-1].Start + range.EndColumn
-            TextChange(TextSpan(currentPos, 0), " with" + stub)
-            
+            sourceText.WithChanges(stubChange)
+
     let registerSuggestions (context: CodeFixContext, results: FSharpCheckFileResults, state: InterfaceState, displayContext, entity, indentSize) =
         if InterfaceStubGenerator.hasNoInterfaceMember entity then 
             ()
@@ -116,8 +125,8 @@ type internal FSharpImplementInterfaceCodeFixProvider
                                         results.GetSymbolUseAtLocation(range.EndLine, range.EndColumn, lineStr, [name])
                                     let! implementedMemberSignatures =
                                         InterfaceStubGenerator.getImplementedMemberSignatures getMemberByLocation displayContext state.InterfaceData    
-                                    let textChange = handleImplementInterface sourceText state displayContext implementedMemberSignatures entity indentSize verboseMode
-                                    return context.Document.WithText(sourceText.WithChanges textChange)
+                                    let newSourceText = applyImplementInterface sourceText state displayContext implementedMemberSignatures entity indentSize verboseMode
+                                    return context.Document.WithText(newSourceText)
                                 } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)),
                             title)                
                     context.RegisterCodeFix(codeAction, diagnostics)
@@ -130,54 +139,52 @@ type internal FSharpImplementInterfaceCodeFixProvider
     override __.FixableDiagnosticIds = fixableDiagnosticIds.ToImmutableArray()
 
     override __.RegisterCodeFixesAsync context : Task =
-        async {
-            match projectInfoManager.TryGetOptionsForEditingDocumentOrProject context.Document with 
-            | Some options ->
-                let cancellationToken = context.CancellationToken
-                let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                let! textVersion = context.Document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
-                let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(context.Document.FilePath, textVersion.GetHashCode(), sourceText.ToString(), options)
-                match parseResults.ParseTree, checkFileAnswer with
-                | None, _
-                | _, FSharpCheckFileAnswer.Aborted -> ()
-                | Some parsedInput, FSharpCheckFileAnswer.Succeeded checkFileResults ->
-                    let textLine = sourceText.Lines.GetLineFromPosition context.Span.Start
-                    let defines = CompilerEnvironment.GetCompilationDefinesForEditing(context.Document.FilePath, options.OtherOptions |> Seq.toList)
-                    // Notice that context.Span doesn't return reliable ranges to find tokens at exact positions.
-                    // That's why we tokenize the line and try to find the last successive identifier token
-                    let tokens = CommonHelpers.tokenizeLine(context.Document.Id, sourceText, context.Span.Start, context.Document.FilePath, defines)
-                    let rec tryFindIdentifierToken acc tokens =
-                       match tokens with
-                       | t :: remainingTokens when t.Tag = FSharpTokenTag.Identifier ->
-                           tryFindIdentifierToken (Some t) remainingTokens
-                       | t :: remainingTokens when t.Tag = FSharpTokenTag.DOT || Option.isNone acc ->
-                           tryFindIdentifierToken acc remainingTokens
-                       | _ :: _ 
-                       | [] -> acc
-                    match tryFindIdentifierToken None tokens with
-                    | Some token ->
-                        let fixupPosition = textLine.Start + token.RightColumn
-                        let interfacePos = Pos.fromZ textLine.LineNumber token.RightColumn
-                        let! interfaceState = queryInterfaceState interfacePos tokens parsedInput                        
-                        let symbol = CommonHelpers.getSymbolAtPosition(context.Document.Id, sourceText, fixupPosition, context.Document.FilePath, defines, SymbolLookupKind.Fuzzy)
-                        match interfaceState, symbol with
-                        | Some state, Some symbol ->                                
-                            let fcsTextLineNumber = textLine.LineNumber + 1
-                            let lineContents = textLine.ToString()                            
-                            let! options = context.Document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
-                            let tabSize = options.GetOption(FormattingOptions.TabSize, FSharpCommonConstants.FSharpLanguageName)
-                            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.RightColumn, lineContents, [symbol.Text])
-                            symbolUse
-                            |> Option.bind (fun symbolUse ->
-                                match symbolUse.Symbol with
-                                | :? FSharpEntity as entity -> 
-                                    if InterfaceStubGenerator.isInterface entity then
-                                        Some (entity, symbolUse.DisplayContext)
-                                    else None
-                                | _ -> None)
-                            |> Option.iter (fun (entity, displayContext) ->                                
-                                registerSuggestions (context, checkFileResults, state, displayContext, entity, tabSize))
-                        | _ -> ()
-                    | None -> ()
-            | None -> ()
-        } |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+        asyncMaybe {
+            let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject context.Document
+            let cancellationToken = context.CancellationToken
+            let! sourceText = context.Document.GetTextAsync(cancellationToken)
+            let! parsedInput, checkFileResults = checker.ParseAndCheckDocument(context.Document, options, sourceText)
+            let textLine = sourceText.Lines.GetLineFromPosition context.Span.Start
+            let defines = CompilerEnvironment.GetCompilationDefinesForEditing(context.Document.FilePath, options.OtherOptions |> Seq.toList)
+            // Notice that context.Span doesn't return reliable ranges to find tokens at exact positions.
+            // That's why we tokenize the line and try to find the last successive identifier token
+            let tokens = CommonHelpers.tokenizeLine(context.Document.Id, sourceText, context.Span.Start, context.Document.FilePath, defines)
+            let startLeftColumn = context.Span.Start - textLine.Start
+            let rec tryFindIdentifierToken acc tokens =
+               match tokens with
+               | t :: remainingTokens when t.LeftColumn < startLeftColumn ->
+                   // Skip all the tokens starting before the context
+                   tryFindIdentifierToken acc remainingTokens
+               | t :: remainingTokens when t.Tag = FSharpTokenTag.Identifier ->
+                   tryFindIdentifierToken (Some t) remainingTokens
+               | t :: remainingTokens when t.Tag = FSharpTokenTag.DOT || Option.isNone acc ->
+                   tryFindIdentifierToken acc remainingTokens
+               | _ :: _ 
+               | [] -> acc
+            let! token = tryFindIdentifierToken None tokens
+            let fixupPosition = textLine.Start + token.RightColumn
+            let interfacePos = Pos.fromZ textLine.LineNumber token.RightColumn
+            // We rely on the observation that the lastChar of the context should be '}' if that character is present
+            let appendBracketAt =
+                match sourceText.[context.Span.End-1] with
+                | '}' -> None
+                | _ -> 
+                    Some context.Span.End
+            let! interfaceState = queryInterfaceState appendBracketAt interfacePos tokens parsedInput                        
+            let! symbol = CommonHelpers.getSymbolAtPosition(context.Document.Id, sourceText, fixupPosition, context.Document.FilePath, defines, SymbolLookupKind.Fuzzy)
+            let fcsTextLineNumber = textLine.LineNumber + 1
+            let lineContents = textLine.ToString()                            
+            let! options = context.Document.GetOptionsAsync(cancellationToken)
+            let tabSize = options.GetOption(FormattingOptions.TabSize, FSharpCommonConstants.FSharpLanguageName)
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.RightColumn, lineContents, [symbol.Text])
+            let! entity, displayContext = 
+                match symbolUse.Symbol with
+                | :? FSharpEntity as entity -> 
+                    if InterfaceStubGenerator.isInterface entity then
+                        Some (entity, symbolUse.DisplayContext)
+                    else None
+                | _ -> None
+            registerSuggestions (context, checkFileResults, interfaceState, displayContext, entity, tabSize)
+        } 
+        |> Async.Ignore
+        |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

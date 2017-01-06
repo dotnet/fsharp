@@ -18,6 +18,8 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Diagnostics
 open Microsoft.CodeAnalysis.Editor.Options
+open Microsoft.CodeAnalysis.Completion
+open Microsoft.CodeAnalysis.Options
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Editor
 open Microsoft.VisualStudio.Text
@@ -48,7 +50,7 @@ type internal FSharpCheckerProvider
     ) =
     let checker = 
         lazy
-            let checker = FSharpChecker.Create()
+            let checker = FSharpChecker.Create(projectCacheSize = 200, keepAllBackgroundResolutions = false)
 
             // This is one half of the bridge between the F# background builder and the Roslyn analysis engine.
             // When the F# background builder refreshes the background semantic build context for a file,
@@ -115,7 +117,6 @@ type internal ProjectInfoManager
         checkerProvider.Checker.InvalidateConfiguration(options)
         projectTable.[projectId] <- options
 
-
     /// Get compilation defines relevant for syntax processing.  
     /// Quicker then TryGetOptionsForDocumentOrProject as it doesn't need to recompute the exact project 
     /// options for a script.
@@ -174,6 +175,18 @@ type internal FSharpCheckerWorkspaceService =
     abstract Checker: FSharpChecker
     abstract ProjectInfoManager: ProjectInfoManager
 
+type internal RoamingProfileStorageLocation(keyName: string) =
+    inherit OptionStorageLocation()
+    
+    member __.GetKeyNameForLanguage(languageName: string) =
+        let unsubstitutedKeyName = keyName
+ 
+        match languageName with
+        | null -> unsubstitutedKeyName
+        | _ ->
+            let substituteLanguageName = if languageName = FSharpCommonConstants.FSharpLanguageName then "FSharp" else languageName
+            unsubstitutedKeyName.Replace("%LANGUAGE%", substituteLanguageName)
+ 
 [<Composition.Shared>]
 [<Microsoft.CodeAnalysis.Host.Mef.ExportWorkspaceServiceFactory(typeof<FSharpCheckerWorkspaceService>, Microsoft.CodeAnalysis.Host.Mef.ServiceLayer.Default)>]
 type internal FSharpCheckerWorkspaceServiceFactory
@@ -207,6 +220,10 @@ type internal FSharpLanguageService(package : FSharpPackage) as this =
     let checkerProvider = this.Package.ComponentModel.DefaultExportProvider.GetExport<FSharpCheckerProvider>().Value
     let projectInfoManager = this.Package.ComponentModel.DefaultExportProvider.GetExport<ProjectInfoManager>().Value
 
+    let projectDisplayNameOf projectFileName = 
+        if String.IsNullOrWhiteSpace projectFileName then projectFileName
+        else Path.GetFileNameWithoutExtension projectFileName
+
     /// Sync the information for the project 
     member this.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, site: IProjectSite, forceUpdate) =
 
@@ -235,16 +252,13 @@ type internal FSharpLanguageService(package : FSharpPackage) as this =
             let projectGuid = Guid(site.ProjectGuid)
             let projectFileName = site.ProjectFileName()
 
-            let projectDisplayName = 
-                if String.IsNullOrWhiteSpace projectFileName then projectFileName
-                else Path.GetFileNameWithoutExtension projectFileName
+            let projectDisplayName = projectDisplayNameOf projectFileName
 
             let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
 
             projectInfoManager.UpdateProjectInfo(projectId, site, workspace)
 
-            match workspace.ProjectTracker.GetProject(projectId) with
-            | null ->
+            if isNull (workspace.ProjectTracker.GetProject projectId) then
                 let projectContextFactory = this.Package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
                 let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
                 
@@ -264,7 +278,6 @@ type internal FSharpLanguageService(package : FSharpPackage) as this =
                 for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider) do
                     let referencedProjectId = setup referencedSite                    
                     project.AddProjectReference(ProjectReference referencedProjectId)
-            | _ -> ()
             projectId
         setup (siteProvider.GetProjectSite()) |> ignore
 
@@ -273,14 +286,17 @@ type internal FSharpLanguageService(package : FSharpPackage) as this =
         let loadTime = DateTime.Now
         let options = projectInfoManager.ComputeSingleFileOptions (fileName, loadTime, fileContents, workspace) |> Async.RunSynchronously
 
-        let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(options.ProjectFileName, options.ProjectFileName)
+        let projectFileName = fileName
+        let projectDisplayName = projectDisplayNameOf projectFileName
+
+        let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
         projectInfoManager.AddSingleFileProject(projectId, (loadTime, options))
 
-        if obj.ReferenceEquals(workspace.ProjectTracker.GetProject(projectId), null) then
+        if isNull (workspace.ProjectTracker.GetProject projectId) then
             let projectContextFactory = this.Package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
             let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
 
-            let projectContext = projectContextFactory.CreateProjectContext(FSharpCommonConstants.FSharpLanguageName, options.ProjectFileName, options.ProjectFileName, projectId.Id, hier, null, errorReporter)
+            let projectContext = projectContextFactory.CreateProjectContext(FSharpCommonConstants.FSharpLanguageName, projectDisplayName, projectFileName, projectId.Id, hier, null, errorReporter)
             projectContext.AddSourceFile(fileName)
             
             let project = projectContext :?> AbstractProject
@@ -305,6 +321,13 @@ type internal FSharpLanguageService(package : FSharpPackage) as this =
         workspace.Options <- workspace.Options.WithChangedOption(NavigationBarOptions.ShowNavigationBar, FSharpCommonConstants.FSharpLanguageName, true)
         let textViewAdapter = this.Package.ComponentModel.GetService<IVsEditorAdaptersFactoryService>()
         
+        let blockForCompletionOption = 
+            PerLanguageOption<bool>(
+                "CompletionOptions", "BlockForCompletionItems", defaultValue = true,
+                storageLocations = [| RoamingProfileStorageLocation("TextEditor.%%LANGUAGE%%.Specific.CompletionOptions - BlockForCompletionItems") |])
+
+        workspace.Options <- workspace.Options.WithChangedOption(blockForCompletionOption, FSharpCommonConstants.FSharpLanguageName, false)
+
         match textView.GetBuffer() with
         | (VSConstants.S_OK, textLines) ->
             let filename = VsTextLines.GetFilename textLines

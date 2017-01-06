@@ -89,7 +89,7 @@ neg06.fs(124,9,124,10): typecheck error FS0953: This type definition involves an
 
 neg06.fs(128,19,128,46): typecheck error FS0700: 'new' constraints must take one argument of type 'unit' and return the constructed type
 
-neg06.fs(128,53,128,61): typecheck error FS0043: A type parameter is missing a constraint 'when 'a : (new : unit ->  'a)'
+neg06.fs(128,53,128,61): typecheck error FS0043: A type parameter is missing a constraint 'when 'a : (new : unit -> 'a)'
 
 neg06.fs(141,10,141,18): typecheck error FS0954: This type definition involves an immediate cyclic reference through a struct field or inheritance relation
 

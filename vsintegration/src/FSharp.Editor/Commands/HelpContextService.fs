@@ -24,11 +24,9 @@ type internal FSharpHelpContextService
         projectInfoManager: ProjectInfoManager
     ) =
 
-    static member GetHelpTerm(checker: FSharpChecker, sourceText : SourceText, fileName, options, span: TextSpan, tokens: List<ClassifiedSpan>, textVersion) = async {
-        let! _parse,check = checker.ParseAndCheckFileInProject(fileName, textVersion, sourceText.ToString(), options)
-        match check with
-        | FSharpCheckFileAnswer.Aborted -> return None
-        | FSharpCheckFileAnswer.Succeeded(check) ->
+    static member GetHelpTerm(checker: FSharpChecker, sourceText : SourceText, fileName, options, span: TextSpan, tokens: List<ClassifiedSpan>, textVersion) : Async<string option> = 
+        asyncMaybe {
+            let! _, check = checker.ParseAndCheckDocument(fileName, textVersion, sourceText.ToString(), options)
             let textLines = sourceText.Lines
             let lineInfo = textLines.GetLineFromPosition(span.Start)
             let line = lineInfo.LineNumber
@@ -42,8 +40,7 @@ type internal FSharpHelpContextService
                 match token.ClassificationType with
                 | ClassificationTypeNames.Text
                 | ClassificationTypeNames.WhiteSpace -> true
-                | ClassificationTypeNames.Operator when
-                       content = "." -> true
+                | ClassificationTypeNames.Operator when content = "." -> true
                 | _ -> false
           
             let tokenInformation, col =
@@ -75,48 +72,44 @@ type internal FSharpHelpContextService
                 | otherwise -> otherwise, col
 
             match tokenInformation with
-            |   None -> return None
-            |   Some token ->
-                    match token.ClassificationType with
-                    |   ClassificationTypeNames.Keyword
-                    |   ClassificationTypeNames.Operator
-                    |   ClassificationTypeNames.PreprocessorKeyword ->
-                            return Some (sourceText.GetSubText(token.TextSpan).ToString() + "_FS")
-                    |   ClassificationTypeNames.Comment -> return Some "comment_FS"
-                    |   ClassificationTypeNames.Identifier ->
-                            try
-                                let possibleIdentifier = QuickParse.GetCompleteIdentifierIsland false lineText col
-                                match possibleIdentifier with
-                                |   None -> return None
-                                |   Some(s,colAtEndOfNames, _) ->
-                                        if check.HasFullTypeCheckInfo then 
-                                            let qualId = PrettyNaming.GetLongNameFromString s
-                                            return! check.GetF1KeywordAlternate(Line.fromZ line, colAtEndOfNames, lineText, qualId)
-                                        else 
-                                            return None
-                            with e ->
-                                Assert.Exception e
-                                return None
-                    | _ -> return None
-    }
+            | None -> return! None
+            | Some token ->
+                match token.ClassificationType with
+                | ClassificationTypeNames.Keyword
+                | ClassificationTypeNames.Operator
+                | ClassificationTypeNames.PreprocessorKeyword ->
+                      return sourceText.GetSubText(token.TextSpan).ToString() + "_FS"
+                | ClassificationTypeNames.Comment -> return "comment_FS"
+                | ClassificationTypeNames.Identifier ->
+                    try
+                        let! (s,colAtEndOfNames, _) = QuickParse.GetCompleteIdentifierIsland false lineText col
+                        if check.HasFullTypeCheckInfo then 
+                            let qualId = PrettyNaming.GetLongNameFromString s
+                            return! check.GetF1KeywordAlternate(Line.fromZ line, colAtEndOfNames, lineText, qualId)
+                        else 
+                            return! None
+                    with e ->
+                        Assert.Exception e
+                        return! None
+                | _ -> return! None
+        }
 
     interface IHelpContextService with
-        member this.Language = "fsharp"
-        member this.Product = "fsharp"
+        member this.Language = FSharpCommonConstants.FSharpLanguageLongName
+        member this.Product = FSharpCommonConstants.FSharpLanguageLongName
 
         member this.GetHelpTermAsync(document, textSpan, cancellationToken) = 
-            async {
-                match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document) with 
-                | Some options ->
-                    let! sourceText = document.GetTextAsync(cancellationToken)
-                    let! textVersion = document.GetTextVersionAsync(cancellationToken)
-                    let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
-                    let textLine = sourceText.Lines.GetLineFromPosition(textSpan.Start)
-                    let tokens = CommonHelpers.getColorizationData(document.Id, sourceText, textLine.Span, Some document.Name, defines, cancellationToken)
-                    let! keyword = FSharpHelpContextService.GetHelpTerm(checkerProvider.Checker, sourceText, document.FilePath, options, textSpan, tokens, textVersion.GetHashCode())
-                    return defaultArg keyword String.Empty
-                | None -> return String.Empty
-            } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
+            asyncMaybe {
+                let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                let! sourceText = document.GetTextAsync(cancellationToken)
+                let! textVersion = document.GetTextVersionAsync(cancellationToken)
+                let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
+                let textLine = sourceText.Lines.GetLineFromPosition(textSpan.Start)
+                let tokens = CommonHelpers.getColorizationData(document.Id, sourceText, textLine.Span, Some document.Name, defines, cancellationToken)
+                return! FSharpHelpContextService.GetHelpTerm(checkerProvider.Checker, sourceText, document.FilePath, options, textSpan, tokens, textVersion.GetHashCode())
+            } 
+            |> Async.map (Option.defaultValue "")
+            |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
 
         member this.FormatSymbol(_symbol) = Unchecked.defaultof<_>
         

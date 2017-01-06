@@ -31,6 +31,7 @@ open Microsoft.FSharp.Compiler.Tastops.DebugPrint
 open Microsoft.FSharp.Compiler.TypeChecker
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Layout
+open Microsoft.FSharp.Compiler.Layout.TaggedTextOps
 open Microsoft.FSharp.Compiler.TypeRelations
 
 open System.Collections.Generic
@@ -148,29 +149,29 @@ type ImplFileOptimizationInfo = LazyModuleInfo
 type CcuOptimizationInfo = LazyModuleInfo
 
 #if DEBUG
-let braceL x = leftL "{" ^^ x ^^ rightL "}"  
+let braceL x = leftL (tagText "{") ^^ x ^^ rightL (tagText "}")
 let seqL xL xs = Seq.fold (fun z x -> z @@ xL x)  emptyL xs
 let namemapL xL xmap = NameMap.foldBack (fun nm x z -> xL nm x @@ z)  xmap emptyL
 
 let rec exprValueInfoL g = function
   | ConstValue (x,ty)         -> NicePrint.layoutConst g ty x
-  | UnknownValue             -> wordL "?"
+  | UnknownValue             -> wordL (tagText "?")
   | SizeValue (_,vinfo)      -> exprValueInfoL g vinfo
-  | ValValue (vr,vinfo)      -> bracketL ((valRefL vr ^^ wordL "alias") --- exprValueInfoL g vinfo)
+  | ValValue (vr,vinfo)      -> bracketL ((valRefL vr ^^ wordL (tagText "alias")) --- exprValueInfoL g vinfo)
   | TupleValue vinfos    -> bracketL (exprValueInfosL g vinfos)
   | RecdValue (_,vinfos)     -> braceL   (exprValueInfosL g vinfos)
   | UnionCaseValue (ucr,vinfos) -> unionCaseRefL ucr ^^ bracketL (exprValueInfosL g vinfos)
-  | CurriedLambdaValue(_lambdaId,_arities,_bsize,expr',_ety) -> wordL "lam" ++ exprL expr' (* (sprintf "lam(size=%d)" bsize) *)
+  | CurriedLambdaValue(_lambdaId,_arities,_bsize,expr',_ety) -> wordL (tagText "lam") ++ exprL expr' (* (sprintf "lam(size=%d)" bsize) *)
   | ConstExprValue (_size,x)  -> exprL x
 and exprValueInfosL g vinfos = commaListL (List.map (exprValueInfoL g) (Array.toList vinfos))
 and moduleInfoL g (x:LazyModuleInfo) = 
     let x = x.Force()
-    braceL ((wordL "Modules: " @@ (x.ModuleOrNamespaceInfos |> namemapL (fun nm x -> wordL nm ^^ moduleInfoL g x) ) )
-            @@ (wordL "Values:" @@ (x.ValInfos.Entries |> seqL (fun (vref,x) -> valRefL vref ^^ valInfoL g x) )))
+    braceL ((wordL (tagText "Modules: ") @@ (x.ModuleOrNamespaceInfos |> namemapL (fun nm x -> wordL (tagText nm) ^^ moduleInfoL g x) ) )
+            @@ (wordL (tagText "Values:") @@ (x.ValInfos.Entries |> seqL (fun (vref,x) -> valRefL vref ^^ valInfoL g x) )))
 
 and valInfoL g (x:ValInfo) = 
-    braceL ((wordL "ValExprInfo: " @@ exprValueInfoL g x.ValExprInfo) 
-            @@ (wordL "ValMakesNoCriticalTailcalls:" @@ wordL (if x.ValMakesNoCriticalTailcalls then "true" else "false")))
+    braceL ((wordL (tagText "ValExprInfo: ") @@ exprValueInfoL g x.ValExprInfo) 
+            @@ (wordL (tagText "ValMakesNoCriticalTailcalls:") @@ wordL (tagText (if x.ValMakesNoCriticalTailcalls then "true" else "false"))))
 #endif
 
 type Summary<'Info> =
@@ -2500,7 +2501,7 @@ and TryDevirtualizeApplication cenv env (f,tyargs,args,m) =
     | _ -> None
 
 /// Attempt to inline an application of a known value at callsites
-and TryInlineApplication cenv env (_f0',finfo) (tyargs: TType list,args: Expr list,m) =
+and TryInlineApplication cenv env finfo (tyargs: TType list,args: Expr list,m) =
     // Considering inlining app 
     match finfo.Info with 
     | StripLambdaValue (lambdaId,arities,size,f2,f2ty) when
@@ -2522,6 +2523,8 @@ and TryInlineApplication cenv env (_f0',finfo) (tyargs: TType list,args: Expr li
                               match args.[0] with
                               | Expr.Val(vref,_,_) when vref.BaseOrThisInfo = BaseVal -> true
                               | _ -> false
+        
+        if isBaseCall then None else
 
         // Since Lazy`1 moved from FSharp.Core to mscorlib on .NET 4.0, inlining Lazy values from 2.0 will
         // confuse the optimizer if the assembly is referenced on 4.0, since there will be no value to tie back
@@ -2539,15 +2542,23 @@ and TryInlineApplication cenv env (_f0',finfo) (tyargs: TType list,args: Expr li
                             | _ -> false
                     | _ -> false
                 | _ -> false                                          
-                              
+        
+        if isValFromLazyExtensions then None else
+
         let isSecureMethod =
           match finfo.Info with
           |  ValValue(vref,_) ->
                 vref.Attribs |> List.exists (fun a -> (IsSecurityAttribute cenv.g cenv.amap cenv.casApplied a m) || (IsSecurityCriticalAttribute cenv.g a))
           | _ -> false                              
 
-        if isBaseCall || isSecureMethod || isValFromLazyExtensions then None
-        else
+        if isSecureMethod then None else
+
+        let isGetHashCode =
+            match finfo.Info with
+            | ValValue(vref,_) -> vref.DisplayName = "GetHashCode" && vref.IsCompilerGenerated
+            | _ -> false
+
+        if isGetHashCode then None else
 
         // Inlining lambda 
   (* ----------       printf "Inlining lambda near %a = %s\n"  outputRange m (showL (exprL f2))  (* JAMES: *) ----------*)
@@ -2577,7 +2588,7 @@ and OptimizeApplication cenv env (f0,f0ty,tyargs,args,m) =
         res
     | None -> 
     let newf0,finfo = OptimizeExpr cenv env f0
-    match TryInlineApplication cenv env (newf0,finfo) (tyargs,args,m) with 
+    match TryInlineApplication cenv env finfo (tyargs,args,m) with 
     | Some res -> 
         // inlined
         res

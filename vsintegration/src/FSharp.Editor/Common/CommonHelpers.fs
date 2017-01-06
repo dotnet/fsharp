@@ -2,6 +2,8 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
+#nowarn "1182"
+
 open System
 open System.Collections.Generic
 open System.Threading
@@ -128,67 +130,64 @@ module internal CommonHelpers =
 
     let getColorizationData(documentKey: DocumentId, sourceText: SourceText, textSpan: TextSpan, fileName: string option, defines: string list, 
                             cancellationToken: CancellationToken) : List<ClassifiedSpan> =
-        try
-            let sourceTokenizer = FSharpSourceTokenizer(defines, fileName)
-            let lines = sourceText.Lines
-            // We keep incremental data per-document.  When text changes we correlate text line-by-line (by hash codes of lines)
-            let sourceTextData = dataCache.GetValue(documentKey, fun key -> SourceTextData(lines.Count))
+         try
+             let sourceTokenizer = FSharpSourceTokenizer(defines, fileName)
+             let lines = sourceText.Lines
+             // We keep incremental data per-document.  When text changes we correlate text line-by-line (by hash codes of lines)
+             let sourceTextData = dataCache.GetValue(documentKey, fun key -> SourceTextData(lines.Count))
+ 
+             let startLine = lines.GetLineFromPosition(textSpan.Start).LineNumber
+             let endLine = lines.GetLineFromPosition(textSpan.End).LineNumber
+             // Go backwards to find the last cached scanned line that is valid
+             let scanStartLine = 
+                 let mutable i = startLine
+                 while i > 0 && (match sourceTextData.[i] with Some data -> not (data.IsValid(lines.[i])) | None -> true)  do
+                     i <- i - 1
+                 i
+             // Rescan the lines if necessary and report the information
+             let result = new List<ClassifiedSpan>()
+             let mutable lexState = if scanStartLine = 0 then 0L else sourceTextData.[scanStartLine - 1].Value.LexStateAtEndOfLine
+ 
+             for i = scanStartLine to endLine do
+                 cancellationToken.ThrowIfCancellationRequested()
+                 let textLine = lines.[i]
+                 let lineContents = textLine.Text.ToString(textLine.Span)
+ 
+                 let lineData = 
+                     // We can reuse the old data when 
+                     //   1. the line starts at the same overall position
+                     //   2. the hash codes match
+                     //   3. the start-of-line lex states are the same
+                     match sourceTextData.[i] with 
+                     | Some data when data.IsValid(textLine) && data.LexStateAtStartOfLine = lexState -> 
+                         data
+                     | _ -> 
+                         // Otherwise, we recompute
+                         let newData = scanSourceLine(sourceTokenizer, textLine, lineContents, lexState)
+                         sourceTextData.[i] <- Some newData
+                         newData
+                     
+                 lexState <- lineData.LexStateAtEndOfLine
+ 
+                 if startLine <= i then
+                     result.AddRange(lineData.ClassifiedSpans |> Seq.filter(fun token ->
+                         textSpan.Contains(token.TextSpan.Start) ||
+                         textSpan.Contains(token.TextSpan.End - 1) ||
+                         (token.TextSpan.Start <= textSpan.Start && textSpan.End <= token.TextSpan.End)))
 
-            let startLine = lines.GetLineFromPosition(textSpan.Start).LineNumber
-            let endLine = lines.GetLineFromPosition(textSpan.End).LineNumber
-            
-            // Go backwards to find the last cached scanned line that is valid
-            let scanStartLine = 
-                let mutable i = startLine
-                while i > 0 && (match sourceTextData.[i-1] with Some data -> not (data.IsValid(lines.[i])) | None -> true)  do
-                    i <- i - 1
-                i
-                
-            // Rescan the lines if necessary and report the information
-            let result = new List<ClassifiedSpan>()
-            let mutable lexState = if scanStartLine = 0 then 0L else sourceTextData.[scanStartLine - 1].Value.LexStateAtEndOfLine
-
-            for i = scanStartLine to endLine do
-                cancellationToken.ThrowIfCancellationRequested()
-                let textLine = lines.[i]
-                let lineContents = textLine.Text.ToString(textLine.Span)
-
-                let lineData = 
-                    // We can reuse the old data when 
-                    //   1. the line starts at the same overall position
-                    //   2. the hash codes match
-                    //   3. the start-of-line lex states are the same
-                    match sourceTextData.[i] with 
-                    | Some data when data.IsValid(textLine) && data.LexStateAtStartOfLine = lexState -> 
-                        data
-                    | _ -> 
-                        // Otherwise, we recompute
-                        let newData = scanSourceLine(sourceTokenizer, textLine, lineContents, lexState)
-                        sourceTextData.[i] <- Some newData
-                        newData
-                    
-                lexState <- lineData.LexStateAtEndOfLine
-
-                if startLine <= i then
-                    result.AddRange(lineData.ClassifiedSpans |> Seq.filter(fun token ->
-                        textSpan.Contains(token.TextSpan.Start) ||
-                        textSpan.Contains(token.TextSpan.End - 1) ||
-                        (token.TextSpan.Start <= textSpan.Start && textSpan.End <= token.TextSpan.End)))
-
-            // If necessary, invalidate all subsequent lines after endLine
-            if endLine < lines.Count - 1 then 
-                match sourceTextData.[endLine+1] with 
-                | Some data  -> 
-                    if data.LexStateAtStartOfLine <> lexState then
-                        sourceTextData.ClearFrom (endLine+1)
-                | None -> ()
-
-            result
-        with 
-        | :? System.OperationCanceledException -> reraise()
-        |  ex -> 
-            Assert.Exception(ex)
-            List<ClassifiedSpan>()
+             // If necessary, invalidate all subsequent lines after endLine
+             if endLine < lines.Count - 1 then 
+                 match sourceTextData.[endLine+1] with 
+                 | Some data  -> 
+                     if data.LexStateAtStartOfLine <> lexState then
+                          sourceTextData.ClearFrom (endLine+1)
+                 | None -> ()
+             result
+         with 
+         | :? System.OperationCanceledException -> reraise()
+         |  ex -> 
+             Assert.Exception(ex)
+             List<ClassifiedSpan>()
 
     type private DraftToken =
         { Kind: LexerSymbolKind
@@ -323,14 +322,16 @@ module internal CommonHelpers =
         let lines = sourceText.Lines
         // We keep incremental data per-document. When text changes we correlate text line-by-line (by hash codes of lines)
         let sourceTextData = dataCache.GetValue(documentKey, fun key -> SourceTextData(lines.Count))
-
         // Go backwards to find the last cached scanned line that is valid
         let scanStartLine = 
-            let mutable i = lineNumber
-            while i > 0 && (match sourceTextData.[i-1] with Some data -> not (data.IsValid(lines.[i])) | None -> true)  do
-                i <- i - 1
+            let mutable i = min (lines.Count - 1) lineNumber
+            while i > 0 &&
+               (match sourceTextData.[i] with 
+                | Some data -> not (data.IsValid(lines.[i])) 
+                | None -> true
+               ) do  
+               i <- i - 1
             i
-                
         let lexState = if scanStartLine = 0 then 0L else sourceTextData.[scanStartLine - 1].Value.LexStateAtEndOfLine
         let lineContents = textLine.Text.ToString(textLine.Span)
         
@@ -359,6 +360,7 @@ module internal CommonHelpers =
     let getSymbolAtPosition(documentKey: DocumentId, sourceText: SourceText, position: int, fileName: string, defines: string list, lookupKind: SymbolLookupKind) : LexerSymbol option =
         try
             let lineData, textLinePos, lineContents = getCachedSourceLineData(documentKey, sourceText, position, fileName, defines)
+            let sourceTokenizer = FSharpSourceTokenizer(defines, Some fileName)
             getSymbolFromTokens(fileName, lineData.Tokens, textLinePos, lineContents, lookupKind)
         with 
         | :? System.OperationCanceledException -> reraise()
@@ -373,30 +375,6 @@ module internal CommonHelpers =
         | -1 | 0 -> span
         | index -> TextSpan(span.Start + index + 1, text.Length - index - 1)
 
-    let glyphMajorToRoslynGlyph = function
-        | GlyphMajor.Class
-        | GlyphMajor.Typedef
-        | GlyphMajor.Type
-        | GlyphMajor.Exception -> Glyph.ClassPublic
-        | GlyphMajor.Constant -> Glyph.ConstantPublic
-        | GlyphMajor.Delegate -> Glyph.DelegatePublic
-        | GlyphMajor.Union
-        | GlyphMajor.Enum -> Glyph.EnumPublic
-        | GlyphMajor.EnumMember
-        | GlyphMajor.Variable
-        | GlyphMajor.FieldBlue -> Glyph.FieldPublic
-        | GlyphMajor.Event -> Glyph.EventPublic
-        | GlyphMajor.Interface -> Glyph.InterfacePublic
-        | GlyphMajor.Method
-        | GlyphMajor.Method2 -> Glyph.MethodPublic
-        | GlyphMajor.Module -> Glyph.ModulePublic
-        | GlyphMajor.NameSpace -> Glyph.Namespace
-        | GlyphMajor.Property -> Glyph.PropertyPublic
-        | GlyphMajor.Struct
-        | GlyphMajor.ValueType -> Glyph.StructurePublic
-        | GlyphMajor.Error -> Glyph.Error
-        | _ -> Glyph.None
-
 [<RequireQualifiedAccess; NoComparison>] 
 type internal SymbolDeclarationLocation = 
     | CurrentDocument
@@ -406,6 +384,7 @@ type internal SymbolDeclarationLocation =
 module internal Extensions =
     open System
     open System.IO
+    open Microsoft.FSharp.Compiler.Ast
 
     type System.IServiceProvider with
         member x.GetService<'T>() = x.GetService(typeof<'T>) :?> 'T
@@ -415,6 +394,43 @@ module internal Extensions =
         static member GetFullPathSafe path =
             try Path.GetFullPath path
             with _ -> path
+
+    type FSharpChecker with
+        member this.ParseDocument(document: Document, options: FSharpProjectOptions, sourceText: string) =
+            asyncMaybe {
+                let! fileParseResults = this.ParseFileInProject(document.FilePath, sourceText, options) |> liftAsync
+                return! fileParseResults.ParseTree
+            }
+
+        member this.ParseDocument(document: Document, options: FSharpProjectOptions, ?sourceText: SourceText) =
+            asyncMaybe {
+                let! sourceText =
+                    match sourceText with
+                    | Some x -> Task.FromResult x
+                    | None -> document.GetTextAsync()
+                return! this.ParseDocument(document, options, sourceText.ToString())
+            }
+
+        member this.ParseAndCheckDocument(filePath: string, textVersionHash: int, sourceText: string, options: FSharpProjectOptions) : Async<(Ast.ParsedInput * FSharpCheckFileResults) option> =
+            async {
+                let! parseResults, checkFileAnswer = this.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText, options)
+                return
+                    match parseResults.ParseTree, checkFileAnswer with
+                    | _, FSharpCheckFileAnswer.Aborted 
+                    | None, _ -> None
+                    | Some parsedInput, FSharpCheckFileAnswer.Succeeded checkResults -> Some (parsedInput, checkResults)
+            }
+
+        member this.ParseAndCheckDocument(document: Document, options: FSharpProjectOptions, ?sourceText: SourceText) : Async<(Ast.ParsedInput * FSharpCheckFileResults) option> =
+            async {
+                let! cancellationToken = Async.CancellationToken
+                let! sourceText =
+                    match sourceText with
+                    | Some x -> Task.FromResult x
+                    | None -> document.GetTextAsync()
+                let! textVersion = document.GetTextVersionAsync(cancellationToken)
+                return! this.ParseAndCheckDocument(document.FilePath, textVersion.GetHashCode(), sourceText.ToString(), options)
+            }
 
     type FSharpSymbol with
         member this.IsInternalToProject =
@@ -465,7 +481,7 @@ module internal Extensions =
         member this.IsPrivateToFile = 
             let isPrivate =
                 match this.Symbol with
-                | :? FSharpMemberOrFunctionOrValue as m -> not m.IsModuleValueOrMember
+                | :? FSharpMemberOrFunctionOrValue as m -> not m.IsModuleValueOrMember || m.Accessibility.IsPrivate
                 | :? FSharpEntity as m -> m.Accessibility.IsPrivate
                 | :? FSharpGenericParameter -> true
                 | :? FSharpUnionCase as m -> m.Accessibility.IsPrivate
@@ -485,58 +501,74 @@ module internal Extensions =
                 | Some declRange -> declRange.FileName = this.RangeAlternate.FileName
                 | _ -> false
             
-            isPrivate && declaredInTheFile
+            isPrivate && declaredInTheFile   
 
-    let glyphMajorToRoslynGlyph = function
-        | GlyphMajor.Class -> Glyph.ClassPublic
-        | GlyphMajor.Constant -> Glyph.ConstantPublic
-        | GlyphMajor.Delegate -> Glyph.DelegatePublic
-        | GlyphMajor.Enum -> Glyph.EnumPublic
-        | GlyphMajor.EnumMember -> Glyph.FieldPublic
-        | GlyphMajor.Event -> Glyph.EventPublic
-        | GlyphMajor.Exception -> Glyph.ClassPublic
-        | GlyphMajor.FieldBlue -> Glyph.FieldPublic
-        | GlyphMajor.Interface -> Glyph.InterfacePublic
-        | GlyphMajor.Method -> Glyph.MethodPublic
-        | GlyphMajor.Method2 -> Glyph.MethodPublic
-        | GlyphMajor.Module -> Glyph.ModulePublic
-        | GlyphMajor.NameSpace -> Glyph.Namespace
-        | GlyphMajor.Property -> Glyph.PropertyPublic
-        | GlyphMajor.Struct -> Glyph.StructurePublic
-        | GlyphMajor.Typedef -> Glyph.ClassPublic
-        | GlyphMajor.Type -> Glyph.ClassPublic
-        | GlyphMajor.Union -> Glyph.EnumPublic
-        | GlyphMajor.Variable -> Glyph.FieldPublic
-        | GlyphMajor.ValueType -> Glyph.StructurePublic
-        | GlyphMajor.Error -> Glyph.Error
-        | _ -> Glyph.None
-
-    type Async<'a> with
-        /// Creates an asynchronous workflow that runs the asynchronous workflow given as an argument at most once. 
-        /// When the returned workflow is started for the second time, it reuses the result of the previous execution.
-        static member Cache (input : Async<'T>) =
-            let agent = MailboxProcessor<AsyncReplyChannel<_>>.Start <| fun agent ->
-                async {
-                    let! replyCh = agent.Receive ()
-                    let! res = input
-                    replyCh.Reply res
-                    while true do
-                        let! replyCh = agent.Receive ()
-                        replyCh.Reply res 
-                }
-            async { return! agent.PostAndAsyncReply id }
-
-        static member inline Map (f: 'a -> 'b) (input: Async<'a>) : Async<'b> = 
-            async {
-                let! result = input
-                return f result 
-            }
-
-    type AsyncBuilder with
-        member __.Bind(computation: System.Threading.Tasks.Task<'a>, binder: 'a -> Async<'b>): Async<'b> =
-            async {
-                let! a = Async.AwaitTask computation
-                return! binder a
-            }
-
-        member __.ReturnFrom(computation: System.Threading.Tasks.Task<'a>): Async<'a> = Async.AwaitTask computation
+    type FSharpNavigationDeclarationItem with
+        member x.RoslynGlyph : Glyph =
+            match x.GlyphMajor with
+            | GlyphMajor.Class
+            | GlyphMajor.Typedef
+            | GlyphMajor.Type
+            | GlyphMajor.Exception ->
+                match x.Access with
+                | Some SynAccess.Private -> Glyph.ClassPrivate
+                | Some SynAccess.Internal -> Glyph.ClassInternal
+                | _ -> Glyph.ClassPublic
+            | GlyphMajor.Constant -> 
+                match x.Access with
+                | Some SynAccess.Private -> Glyph.ConstantPrivate
+                | Some SynAccess.Internal -> Glyph.ConstantInternal
+                | _ -> Glyph.ConstantPublic
+            | GlyphMajor.Delegate -> 
+                match x.Access with
+                | Some SynAccess.Private -> Glyph.DelegatePrivate
+                | Some SynAccess.Internal -> Glyph.DelegateInternal
+                | _ -> Glyph.DelegatePublic
+            | GlyphMajor.Union
+            | GlyphMajor.Enum -> 
+                match x.Access with
+                | Some SynAccess.Private -> Glyph.EnumPrivate
+                | Some SynAccess.Internal -> Glyph.EnumInternal
+                | _ -> Glyph.EnumPublic
+            | GlyphMajor.EnumMember
+            | GlyphMajor.Variable
+            | GlyphMajor.FieldBlue -> 
+                match x.Access with
+                | Some SynAccess.Private -> Glyph.FieldPrivate
+                | Some SynAccess.Internal -> Glyph.FieldInternal
+                | _ -> Glyph.FieldPublic
+            | GlyphMajor.Event -> 
+                match x.Access with
+                | Some SynAccess.Private -> Glyph.EventPrivate
+                | Some SynAccess.Internal -> Glyph.EventInternal
+                | _ -> Glyph.EventPublic
+            | GlyphMajor.Interface -> 
+                match x.Access with
+                | Some SynAccess.Private -> Glyph.InterfacePrivate
+                | Some SynAccess.Internal -> Glyph.InterfaceInternal
+                | _ -> Glyph.InterfacePublic
+            | GlyphMajor.Method
+            | GlyphMajor.Method2 -> 
+                match x.Access with
+                | Some SynAccess.Private -> Glyph.MethodPrivate
+                | Some SynAccess.Internal -> Glyph.MethodInternal
+                | _ -> Glyph.MethodPublic
+            | GlyphMajor.Module -> 
+                match x.Access with
+                | Some SynAccess.Private -> Glyph.ModulePrivate
+                | Some SynAccess.Internal -> Glyph.ModuleInternal
+                | _ -> Glyph.ModulePublic
+            | GlyphMajor.NameSpace -> Glyph.Namespace
+            | GlyphMajor.Property -> 
+                match x.Access with
+                | Some SynAccess.Private -> Glyph.PropertyPrivate
+                | Some SynAccess.Internal -> Glyph.PropertyInternal
+                | _ -> Glyph.PropertyPublic
+            | GlyphMajor.Struct
+            | GlyphMajor.ValueType -> 
+                match x.Access with
+                | Some SynAccess.Private -> Glyph.StructurePrivate
+                | Some SynAccess.Internal -> Glyph.StructureInternal
+                | _ -> Glyph.StructurePublic
+            | GlyphMajor.Error -> Glyph.Error
+            | _ -> Glyph.None
