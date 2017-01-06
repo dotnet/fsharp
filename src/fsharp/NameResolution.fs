@@ -1661,7 +1661,7 @@ let rec ResolveLongIndentAsModuleOrNamespace atMostOne amap m fullyQualified (ne
                 moduleOrNamespaces
                 |> Seq.collect (fun kv -> kv.Value)
                 |> Seq.filter (fun modref -> IsEntityAccessible amap m ad modref)
-                |> Seq.map (fun e -> e.DisplayName)
+                |> Seq.collect (fun e -> [e.DisplayName; e.DemangledModuleOrNamespaceName])
                 |> Set.ofSeq
 
             UndefinedName(0,FSComp.SR.undefinedNameNamespaceOrModule,id,suggestModulesAndNamespaces))
@@ -1674,7 +1674,7 @@ let rec ResolveLongIndentAsModuleOrNamespace atMostOne amap m fullyQualified (ne
                 let suggestNames() =
                     mty.ModulesAndNamespacesByDemangledName
                     |> Seq.filter (fun kv -> IsEntityAccessible amap m ad (modref.NestedTyconRef kv.Value))
-                    |> Seq.map (fun e -> e.Value.DisplayName)
+                    |> Seq.collect (fun e -> [e.Value.DisplayName; e.Value.DemangledModuleOrNamespaceName])
                     |> Set.ofSeq
                 
                 let error = raze (UndefinedName(depth,FSComp.SR.undefinedNameNamespace,id,suggestNames))
@@ -2462,7 +2462,7 @@ let rec ResolvePatternLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv num
                     let submodules =
                         mty.ModulesAndNamespacesByDemangledName
                         |> Seq.filter (fun kv -> IsEntityAccessible ncenv.amap m ad (modref.NestedTyconRef kv.Value))
-                        |> Seq.map (fun e -> e.Value.DisplayName)
+                        |> Seq.collect (fun e -> [e.Value.DisplayName; e.Value.DemangledModuleOrNamespaceName])
                         |> Set.ofSeq
                     submodules // TODO: suggest types and ctors
                 | _ -> Set.empty
@@ -2598,7 +2598,7 @@ let SuggestTypeLongIdentInModuleOrNamespace depth (modref:ModuleOrNamespaceRef) 
         | AccessibleFrom _ ->
             modref.ModuleOrNamespaceType.AllEntities
             |> Seq.filter (fun e -> IsEntityAccessible amap m ad (modref.NestedTyconRef e))
-            |> Seq.map (fun e -> e.DisplayName)
+            |> Seq.collect (fun e -> [e.DisplayName; e.DemangledModuleOrNamespaceName])
             |> Set.ofSeq
         | _ -> Set.empty
 
@@ -2628,7 +2628,7 @@ let rec private ResolveTypeLongIdentInModuleOrNamespace (ncenv:NameResolver) (ty
                     | AccessibleFrom _ ->
                         modref.ModuleOrNamespaceType.ModulesAndNamespacesByDemangledName
                         |> Seq.filter (fun kv -> IsEntityAccessible ncenv.amap m ad (modref.NestedTyconRef kv.Value))
-                        |> Seq.map (fun e -> e.Value.DisplayName)
+                        |> Seq.collect (fun e -> [e.Value.DisplayName; e.Value.DemangledModuleOrNamespaceName])
                         |> Set.ofSeq
                     | _ -> Set.empty
                 raze (UndefinedName(depth,FSComp.SR.undefinedNameNamespaceOrModule,id,suggestPossibleModules))
@@ -2676,9 +2676,10 @@ let rec ResolveTypeLongIdentPrim (ncenv:NameResolver) occurence fullyQualified m
                             match occurence with
                             | ItemOccurence.UseInAttribute -> 
                                 [yield e.Value.DisplayName
+                                 yield e.Value.DemangledModuleOrNamespaceName
                                  if e.Value.DisplayName.EndsWith "Attribute" then
                                     yield e.Value.DisplayName.Replace("Attribute","")]
-                            | _ -> [e.Value.DisplayName])
+                            | _ -> [e.Value.DisplayName; e.Value.DemangledModuleOrNamespaceName])
                         |> Set.ofSeq
                     | _ -> Set.empty
                 
