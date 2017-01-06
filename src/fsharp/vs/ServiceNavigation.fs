@@ -26,10 +26,10 @@ type FSharpNavigationDeclarationItemKind =
 
 /// Represents an item to be displayed in the navigation bar
 [<Sealed>]
-type FSharpNavigationDeclarationItem(uniqueName: string, name: string, kind: FSharpNavigationDeclarationItemKind, glyph: GlyphMajor, range: range, bodyRange: range, singleTopLevel:bool) = 
+type FSharpNavigationDeclarationItem(uniqueName: string, name: string, kind: FSharpNavigationDeclarationItemKind, glyph: GlyphMajor, range: range, 
+                                     bodyRange: range, singleTopLevel: bool, access: SynAccess option) = 
     
     member x.bodyRange = bodyRange
-    
     member x.UniqueName = uniqueName
     member x.Name = name
     member x.Glyph = int glyph * 6
@@ -38,10 +38,11 @@ type FSharpNavigationDeclarationItem(uniqueName: string, name: string, kind: FSh
     member x.Range = range
     member x.BodyRange = bodyRange 
     member x.IsSingleTopLevel = singleTopLevel
+    member x.Access = access
     member x.WithUniqueName(uniqueName: string) =
-      FSharpNavigationDeclarationItem(uniqueName, name, kind, glyph, range, bodyRange, singleTopLevel)
-    static member Create(name: string, kind, glyph: GlyphMajor, range: range, bodyRange: range, singleTopLevel:bool) = 
-      FSharpNavigationDeclarationItem("", name, kind, glyph, range, bodyRange, singleTopLevel)
+      FSharpNavigationDeclarationItem(uniqueName, name, kind, glyph, range, bodyRange, singleTopLevel, access)
+    static member Create(name: string, kind, glyph: GlyphMajor, range: range, bodyRange: range, singleTopLevel: bool, access: SynAccess option) = 
+      FSharpNavigationDeclarationItem("", name, kind, glyph, range, bodyRange, singleTopLevel, access)
 
 /// Represents top-level declarations (that should be in the type drop-down)
 /// with nested declarations (that can be shown in the member drop-down)
@@ -93,22 +94,22 @@ module NavigationImpl =
             sprintf "%s_%d_of_%d" name idx total
 
         // Create declaration (for the left dropdown)                
-        let createDeclLid(baseName, lid, kind, baseGlyph, m, bodym, nested) =
+        let createDeclLid(baseName, lid, kind, baseGlyph, m, bodym, nested, access) =
             let name = (if baseName <> "" then baseName + "." else "") + (textOfLid lid)
             FSharpNavigationDeclarationItem.Create
-              (name, kind, baseGlyph, m, bodym, false), (addItemName name), nested
+              (name, kind, baseGlyph, m, bodym, false, access), (addItemName name), nested
             
-        let createDecl(baseName, id:Ident, kind, baseGlyph, m, bodym, nested) =
+        let createDecl(baseName, id:Ident, kind, baseGlyph, m, bodym, nested, access) =
             let name = (if baseName <> "" then baseName + "." else "") + (id.idText)
             FSharpNavigationDeclarationItem.Create
-              (name, kind, baseGlyph, m, bodym, false), (addItemName name), nested
+              (name, kind, baseGlyph, m, bodym, false, access), (addItemName name), nested
          
         // Create member-kind-of-thing for the right dropdown
-        let createMemberLid(lid, kind, baseGlyph, m) =
-            FSharpNavigationDeclarationItem.Create(textOfLid lid, kind, baseGlyph, m, m, false), (addItemName(textOfLid lid))
+        let createMemberLid(lid, kind, baseGlyph, m, access) =
+            FSharpNavigationDeclarationItem.Create(textOfLid lid, kind, baseGlyph, m, m, false, access), (addItemName(textOfLid lid))
 
-        let createMember(id:Ident, kind, baseGlyph, m) =
-            FSharpNavigationDeclarationItem.Create(id.idText, kind, baseGlyph, m, m, false), (addItemName(id.idText))
+        let createMember(id:Ident, kind, baseGlyph, m, access) =
+            FSharpNavigationDeclarationItem.Create(id.idText, kind, baseGlyph, m, m, false, access), (addItemName(id.idText))
 
         // Process let-binding
         let processBinding isMember (Binding(_, _, _, _, _, _, SynValData(memebrOpt, _, _), synPat, _, synExpr, _, _)) =
@@ -118,7 +119,7 @@ module NavigationImpl =
                 | _ -> synExpr.Range
 
             match synPat, memebrOpt with
-            | SynPat.LongIdent(LongIdentWithDots(lid,_), _, _, _, _, _), Some(flags) when isMember -> 
+            | SynPat.LongIdent(longDotId=LongIdentWithDots(lid,_); accessibility=access), Some(flags) when isMember -> 
                 let icon, kind =
                   match flags.MemberKind with
                   | MemberKind.ClassConstructor
@@ -133,24 +134,25 @@ module NavigationImpl =
                   | _thisVar::nm::_ -> (List.tail lid, nm.idRange) 
                   | hd::_ -> (lid, hd.idRange) 
                   | _ -> (lid, m)
-                [ createMemberLid(lidShow, kind, icon, unionRanges rangeMerge m) ]
-            | SynPat.LongIdent(LongIdentWithDots(lid,_), _, _, _, _, _), _ -> 
-                [ createMemberLid(lid, FieldDecl, GlyphMajor.Constant, unionRanges (List.head lid).idRange m) ]
-            | SynPat.Named(_, id, _, _, _), _ -> 
-                [ createMember(id, FieldDecl, GlyphMajor.Method, unionRanges id.idRange m) ]
+                [ createMemberLid(lidShow, kind, icon, unionRanges rangeMerge m, access) ]
+            | SynPat.LongIdent(LongIdentWithDots(lid,_), _, _, _, access, _), _ -> 
+                [ createMemberLid(lid, FieldDecl, GlyphMajor.FieldBlue, unionRanges (List.head lid).idRange m, access) ]
+            | SynPat.Named(_, id, _, access, _), _ -> 
+                let glyph = if isMember then GlyphMajor.Method else GlyphMajor.FieldBlue
+                [ createMember(id, FieldDecl, glyph, unionRanges id.idRange m, access) ]
             | _ -> []
         
         // Process a class declaration or F# type declaration
-        let rec processExnDefnRepr baseName nested (SynExceptionDefnRepr(_, (UnionCase(_, id, fldspec, _, _, _)), _, _, _, m)) =
+        let rec processExnDefnRepr baseName nested (SynExceptionDefnRepr(_, (UnionCase(_, id, fldspec, _, _, _)), _, _, access, m)) =
             // Exception declaration
-            [ createDecl(baseName, id, ExnDecl, GlyphMajor.Exception, m, fldspecRange fldspec, nested) ] 
+            [ createDecl(baseName, id, ExnDecl, GlyphMajor.Exception, m, fldspecRange fldspec, nested, access) ] 
 
         // Process a class declaration or F# type declaration
         and processExnDefn baseName (SynExceptionDefn(repr, membDefns, _)) =  
             let nested = processMembers membDefns |> snd
             processExnDefnRepr baseName nested repr
 
-        and processTycon baseName (TypeDefn(ComponentInfo(_, _, _, lid, _, _, _, _), repr, membDefns, m)) =
+        and processTycon baseName (TypeDefn(ComponentInfo(_, _, _, lid, _, _, access, _), repr, membDefns, m)) =
             let topMembers = processMembers membDefns |> snd
             match repr with
             | SynTypeDefnRepr.Exception repr -> processExnDefnRepr baseName [] repr
@@ -158,31 +160,31 @@ module NavigationImpl =
                 // F# class declaration
                 let members = processMembers membDefns |> snd
                 let nested = members@topMembers
-                ([ createDeclLid(baseName, lid, TypeDecl, GlyphMajor.Class, m, bodyRange mb nested, nested) ]: ((FSharpNavigationDeclarationItem * int * _) list))
+                ([ createDeclLid(baseName, lid, TypeDecl, GlyphMajor.Class, m, bodyRange mb nested, nested, access) ]: ((FSharpNavigationDeclarationItem * int * _) list))
             | SynTypeDefnRepr.Simple(simple, _) ->
                 // F# type declaration
                 match simple with
                 | SynTypeDefnSimpleRepr.Union(_, cases, mb) ->
                     let cases = 
                         [ for (UnionCase(_, id, fldspec, _, _, _)) in cases -> 
-                            createMember(id, OtherDecl, GlyphMajor.ValueType, unionRanges (fldspecRange fldspec) id.idRange) ]
+                            createMember(id, OtherDecl, GlyphMajor.ValueType, unionRanges (fldspecRange fldspec) id.idRange, access) ]
                     let nested = cases@topMembers              
-                    [ createDeclLid(baseName, lid, TypeDecl, GlyphMajor.Union, m, bodyRange mb nested, nested) ]
+                    [ createDeclLid(baseName, lid, TypeDecl, GlyphMajor.Union, m, bodyRange mb nested, nested, access) ]
                 | SynTypeDefnSimpleRepr.Enum(cases, mb) -> 
                     let cases = 
                         [ for (EnumCase(_, id, _, _, m)) in cases ->
-                            createMember(id, FieldDecl, GlyphMajor.EnumMember, m) ]
+                            createMember(id, FieldDecl, GlyphMajor.EnumMember, m, access) ]
                     let nested = cases@topMembers
-                    [ createDeclLid(baseName, lid, TypeDecl, GlyphMajor.Enum, m, bodyRange mb nested, nested) ]
+                    [ createDeclLid(baseName, lid, TypeDecl, GlyphMajor.Enum, m, bodyRange mb nested, nested, access) ]
                 | SynTypeDefnSimpleRepr.Record(_, fields, mb) ->
                     let fields = 
                         [ for (Field(_, _, id, _, _, _, _, m)) in fields do
                             if (id.IsSome) then
-                              yield createMember(id.Value, FieldDecl, GlyphMajor.FieldBlue, m) ]
+                              yield createMember(id.Value, FieldDecl, GlyphMajor.FieldBlue, m, access) ]
                     let nested = fields@topMembers
-                    [ createDeclLid(baseName, lid, TypeDecl, GlyphMajor.Type, m, bodyRange mb nested, nested) ]
+                    [ createDeclLid(baseName, lid, TypeDecl, GlyphMajor.Type, m, bodyRange mb nested, nested, access) ]
                 | SynTypeDefnSimpleRepr.TypeAbbrev(_, _, mb) ->
-                    [ createDeclLid(baseName, lid, TypeDecl, GlyphMajor.Typedef, m, bodyRange mb topMembers, topMembers) ]
+                    [ createDeclLid(baseName, lid, TypeDecl, GlyphMajor.Typedef, m, bodyRange mb topMembers, topMembers, access) ]
                           
                 //| SynTypeDefnSimpleRepr.General of TyconKind * (SynType * range * ident option) list * (valSpfn * MemberFlags) list * fieldDecls * bool * bool * range 
                 //| SynTypeDefnSimpleRepr.LibraryOnlyILAssembly of ILType * range
@@ -191,23 +193,42 @@ module NavigationImpl =
                   
         // Returns class-members for the right dropdown                  
         and processMembers members: (range * list<FSharpNavigationDeclarationItem * int>) = 
-            let members = members |> List.map (fun memb ->
-               (memb.Range,
-                match memb with
-                | SynMemberDefn.LetBindings(binds, _, _, _) -> List.collect (processBinding false) binds
-                | SynMemberDefn.Member(bind, _) -> processBinding true bind
-                | SynMemberDefn.ValField(Field(_, _, Some(rcid), ty, _, _, _, _), _) ->
-                    [ createMember(rcid, FieldDecl, GlyphMajor.FieldBlue, ty.Range) ]
-                | SynMemberDefn.AutoProperty(_attribs,_isStatic,id,_tyOpt,_propKind,_,_xmlDoc,_access,_synExpr, _, _) -> 
-                    [ createMember(id, FieldDecl, GlyphMajor.FieldBlue, id.idRange) ]
-                | SynMemberDefn.AbstractSlot(ValSpfn(_, id, _, ty, _, _, _, _, _, _, _), _, _) ->
-                    [ createMember(id, MethodDecl, GlyphMajor.Method2, ty.Range) ]
-                | SynMemberDefn.NestedType _ -> failwith "tycon as member????" //processTycon tycon                
-                | SynMemberDefn.Interface(_, Some(membs), _) ->
-                    processMembers membs |> snd
-                | _ -> []  )) 
-            ((members |> Seq.map fst |> Seq.fold unionRangesChecked range.Zero),
-             (members |> List.map snd |> List.concat))
+            let members = 
+                members 
+                |> List.groupBy (fun x -> x.Range)
+                |> List.map (fun (range, members) ->
+                    range,
+                    (match members with
+                     | [memb] ->
+                         match memb with
+                         | SynMemberDefn.LetBindings(binds, _, _, _) -> List.collect (processBinding false) binds
+                         | SynMemberDefn.Member(bind, _) -> processBinding true bind
+                         | SynMemberDefn.ValField(Field(_, _, Some(rcid), ty, _, _, access, _), _) ->
+                             [ createMember(rcid, FieldDecl, GlyphMajor.FieldBlue, ty.Range, access) ]
+                         | SynMemberDefn.AutoProperty(_attribs,_isStatic,id,_tyOpt,_propKind,_,_xmlDoc, access,_synExpr, _, _) -> 
+                             [ createMember(id, FieldDecl, GlyphMajor.FieldBlue, id.idRange, access) ]
+                         | SynMemberDefn.AbstractSlot(ValSpfn(_, id, _, ty, _, _, _, _, access, _, _), _, _) ->
+                             [ createMember(id, MethodDecl, GlyphMajor.Method2, ty.Range, access) ]
+                         | SynMemberDefn.NestedType _ -> failwith "tycon as member????" //processTycon tycon                
+                         | SynMemberDefn.Interface(_, Some(membs), _) ->
+                             processMembers membs |> snd
+                         | _ -> [] 
+                     // can happen if one is a getter and one is a setter
+                     | [SynMemberDefn.Member(memberDefn=Binding(headPat=SynPat.LongIdent(lid1, Some(info1),_,_,_,_)) as binding1)
+                        SynMemberDefn.Member(memberDefn=Binding(headPat=SynPat.LongIdent(lid2, Some(info2),_,_,_,_)) as binding2)] ->
+                         // ensure same long id
+                         assert((lid1.Lid,lid2.Lid) ||> List.forall2 (fun x y -> x.idText = y.idText))
+                         // ensure one is getter, other is setter
+                         assert((info1.idText = "set" && info2.idText = "get") ||
+                                (info2.idText = "set" && info1.idText = "get"))
+                         // both binding1 and binding2 have same range, so just try the first one, else try the second one
+                         match processBinding true binding1 with
+                         | [] -> processBinding true binding2
+                         | x -> x
+                     | _ -> [])) 
+            
+            (members |> Seq.map fst |> Seq.fold unionRangesChecked range.Zero),
+            (members |> List.map snd |> List.concat)
 
         // Process declarations in a module that belong to the right drop-down (let bindings)
         let processNestedDeclarations decls = decls |> List.collect (function
@@ -218,16 +239,16 @@ module NavigationImpl =
         // (such as type declarations, nested modules etc.)                            
         let rec processFSharpNavigationTopLevelDeclarations(baseName, decls) = decls |> List.collect (function
             | SynModuleDecl.ModuleAbbrev(id, lid, m) ->
-                [ createDecl(baseName, id, ModuleDecl, GlyphMajor.Module, m, rangeOfLid lid, []) ]
+                [ createDecl(baseName, id, ModuleDecl, GlyphMajor.Module, m, rangeOfLid lid, [], None) ]
                 
-            | SynModuleDecl.NestedModule(ComponentInfo(_, _, _, lid, _, _, _, _), _isRec, decls, _, m) ->                
+            | SynModuleDecl.NestedModule(ComponentInfo(_, _, _, lid, _, _, access, _), _isRec, decls, _, m) ->
                 // Find let bindings (for the right dropdown)
                 let nested = processNestedDeclarations(decls)
                 let newBaseName = (if (baseName = "") then "" else baseName+".") + (textOfLid lid)
                 
                 // Get nested modules and types (for the left dropdown)
                 let other = processFSharpNavigationTopLevelDeclarations(newBaseName, decls)
-                createDeclLid(baseName, lid, ModuleDecl, GlyphMajor.Module, m, unionRangesChecked (rangeOfDecls nested) (moduleRange (rangeOfLid lid) other), nested)::other
+                createDeclLid(baseName, lid, ModuleDecl, GlyphMajor.Module, m, unionRangesChecked (rangeOfDecls nested) (moduleRange (rangeOfLid lid) other), nested, access) :: other
                   
             | SynModuleDecl.Types(tydefs, _) -> tydefs |> List.collect (processTycon baseName)                                    
             | SynModuleDecl.Exception (defn,_) -> processExnDefn baseName defn
@@ -237,7 +258,7 @@ module NavigationImpl =
         let items = 
             // Show base name for this module only if it's not the root one
             let singleTopLevel = (modules.Length = 1)
-            modules |> List.collect (fun (SynModuleOrNamespace(id, _isRec, isModule, decls, _, _, _, m)) ->
+            modules |> List.collect (fun (SynModuleOrNamespace(id, _isRec, isModule, decls, _, _, access, m)) ->
                 let baseName = if (not singleTopLevel) then textOfLid id else ""
                 // Find let bindings (for the right dropdown)
                 let nested = processNestedDeclarations(decls)
@@ -250,7 +271,7 @@ module NavigationImpl =
                         (textOfLid id, (if isModule then ModuleFileDecl else NamespaceDecl),
                             GlyphMajor.Module, m, 
                             unionRangesChecked (rangeOfDecls nested) (moduleRange (rangeOfLid id) other), 
-                            singleTopLevel), (addItemName(textOfLid id)), nested
+                            singleTopLevel, access), (addItemName(textOfLid id)), nested
                 decl::other)
                   
         let items = 
@@ -276,28 +297,28 @@ module NavigationImpl =
             sprintf "%s_%d_of_%d" name idx total
 
         // Create declaration (for the left dropdown)                
-        let createDeclLid(baseName, lid, kind, baseGlyph, m, bodym, nested) =
+        let createDeclLid(baseName, lid, kind, baseGlyph, m, bodym, nested, access) =
             let name = (if baseName <> "" then baseName + "." else "") + (textOfLid lid)
             FSharpNavigationDeclarationItem.Create
-              (name, kind, baseGlyph, m, bodym, false), (addItemName name), nested
+              (name, kind, baseGlyph, m, bodym, false, access), (addItemName name), nested
             
-        let createDecl(baseName, id:Ident, kind, baseGlyph, m, bodym, nested) =
+        let createDecl(baseName, id:Ident, kind, baseGlyph, m, bodym, nested, access) =
             let name = (if baseName <> "" then baseName + "." else "") + (id.idText)
             FSharpNavigationDeclarationItem.Create
-              (name, kind, baseGlyph, m, bodym, false), (addItemName name), nested
+              (name, kind, baseGlyph, m, bodym, false, access), (addItemName name), nested
          
-        let createMember(id:Ident, kind, baseGlyph, m) =
-            FSharpNavigationDeclarationItem.Create(id.idText, kind, baseGlyph, m, m, false), (addItemName(id.idText))
+        let createMember(id:Ident, kind, baseGlyph, m, access) =
+            FSharpNavigationDeclarationItem.Create(id.idText, kind, baseGlyph, m, m, false, access), (addItemName(id.idText))
 
-        let rec processExnRepr baseName nested (SynExceptionDefnRepr(_, (UnionCase(_, id, fldspec, _, _, _)), _, _, _, m)) =
+        let rec processExnRepr baseName nested (SynExceptionDefnRepr(_, (UnionCase(_, id, fldspec, _, _, _)), _, _, access, m)) =
             // Exception declaration
-            [ createDecl(baseName, id, ExnDecl, GlyphMajor.Exception, m, fldspecRange fldspec, nested) ] 
+            [ createDecl(baseName, id, ExnDecl, GlyphMajor.Exception, m, fldspecRange fldspec, nested, access) ] 
         
         and processExnSig baseName (SynExceptionSig(repr, memberSigs, _)) =  
             let nested = processSigMembers memberSigs
             processExnRepr baseName nested repr
 
-        and processTycon baseName (TypeDefnSig(ComponentInfo(_, _, _, lid, _, _, _, _), repr, membDefns, m)) =
+        and processTycon baseName (TypeDefnSig(ComponentInfo(_, _, _, lid, _, _, access, _), repr, membDefns, m)) =
             let topMembers = processSigMembers membDefns
             match repr with
             | SynTypeDefnSigRepr.Exception repr -> processExnRepr baseName [] repr
@@ -305,31 +326,31 @@ module NavigationImpl =
                 // F# class declaration
                 let members = processSigMembers membDefns
                 let nested = members @ topMembers
-                ([ createDeclLid(baseName, lid, TypeDecl, GlyphMajor.Class, m, bodyRange mb nested, nested) ]: ((FSharpNavigationDeclarationItem * int * _) list))
+                ([ createDeclLid(baseName, lid, TypeDecl, GlyphMajor.Class, m, bodyRange mb nested, nested, access) ]: ((FSharpNavigationDeclarationItem * int * _) list))
             | SynTypeDefnSigRepr.Simple(simple, _) ->
                 // F# type declaration
                 match simple with
                 | SynTypeDefnSimpleRepr.Union(_, cases, mb) ->
                     let cases = 
                         [ for (UnionCase(_, id, fldspec, _, _, _)) in cases -> 
-                            createMember(id, OtherDecl, GlyphMajor.ValueType, unionRanges (fldspecRange fldspec) id.idRange) ]
+                            createMember(id, OtherDecl, GlyphMajor.ValueType, unionRanges (fldspecRange fldspec) id.idRange, access) ]
                     let nested = cases@topMembers              
-                    [ createDeclLid(baseName, lid, TypeDecl, GlyphMajor.Union, m, bodyRange mb nested, nested) ]
+                    [ createDeclLid(baseName, lid, TypeDecl, GlyphMajor.Union, m, bodyRange mb nested, nested, access) ]
                 | SynTypeDefnSimpleRepr.Enum(cases, mb) -> 
                     let cases = 
                         [ for (EnumCase(_, id, _, _, m)) in cases ->
-                            createMember(id, FieldDecl, GlyphMajor.EnumMember, m) ]
+                            createMember(id, FieldDecl, GlyphMajor.EnumMember, m, access) ]
                     let nested = cases@topMembers
-                    [ createDeclLid(baseName, lid, TypeDecl, GlyphMajor.Enum, m, bodyRange mb nested, nested) ]
+                    [ createDeclLid(baseName, lid, TypeDecl, GlyphMajor.Enum, m, bodyRange mb nested, nested, access) ]
                 | SynTypeDefnSimpleRepr.Record(_, fields, mb) ->
                     let fields = 
                         [ for (Field(_, _, id, _, _, _, _, m)) in fields do
                             if (id.IsSome) then
-                              yield createMember(id.Value, FieldDecl, GlyphMajor.FieldBlue, m) ]
+                              yield createMember(id.Value, FieldDecl, GlyphMajor.FieldBlue, m, access) ]
                     let nested = fields@topMembers
-                    [ createDeclLid(baseName, lid, TypeDecl, GlyphMajor.Type, m, bodyRange mb nested, nested) ]
+                    [ createDeclLid(baseName, lid, TypeDecl, GlyphMajor.Type, m, bodyRange mb nested, nested, access) ]
                 | SynTypeDefnSimpleRepr.TypeAbbrev(_, _, mb) ->
-                    [ createDeclLid(baseName, lid, TypeDecl, GlyphMajor.Typedef, m, bodyRange mb topMembers, topMembers) ]
+                    [ createDeclLid(baseName, lid, TypeDecl, GlyphMajor.Typedef, m, bodyRange mb topMembers, topMembers, access) ]
                           
                 //| SynTypeDefnSimpleRepr.General of TyconKind * (SynType * range * ident option) list * (valSpfn * MemberFlags) list * fieldDecls * bool * bool * range 
                 //| SynTypeDefnSimpleRepr.LibraryOnlyILAssembly of ILType * range
@@ -339,32 +360,32 @@ module NavigationImpl =
         and processSigMembers (members: SynMemberSig list): list<FSharpNavigationDeclarationItem * int> = 
             [ for memb in members do
                  match memb with
-                 | SynMemberSig.Member(SynValSig.ValSpfn(_, id, _, _, _, _, _, _, _, _, m), _, _) ->
-                     yield createMember(id, MethodDecl, GlyphMajor.Method, m)
-                 | SynMemberSig.ValField(Field(_, _, Some(rcid), ty, _, _, _, _), _) ->
-                     yield createMember(rcid, FieldDecl, GlyphMajor.FieldBlue, ty.Range)
+                 | SynMemberSig.Member(SynValSig.ValSpfn(_, id, _, _, _, _, _, _, access, _, m), _, _) ->
+                     yield createMember(id, MethodDecl, GlyphMajor.Method, m, access)
+                 | SynMemberSig.ValField(Field(_, _, Some(rcid), ty, _, _, access, _), _) ->
+                     yield createMember(rcid, FieldDecl, GlyphMajor.FieldBlue, ty.Range, access)
                  | _ -> () ]
 
         // Process declarations in a module that belong to the right drop-down (let bindings)
         let processNestedSigDeclarations decls = decls |> List.collect (function
-            | SynModuleSigDecl.Val(SynValSig.ValSpfn(_, id, _, _, _, _, _, _, _, _, m), _) ->
-                [ createMember(id, MethodDecl, GlyphMajor.Method, m) ]
+            | SynModuleSigDecl.Val(SynValSig.ValSpfn(_, id, _, _, _, _, _, _, access, _, m), _) ->
+                [ createMember(id, MethodDecl, GlyphMajor.Method, m, access) ]
             | _ -> [] )        
 
         // Process declarations nested in a module that should be displayed in the left dropdown
         // (such as type declarations, nested modules etc.)                            
         let rec processFSharpNavigationTopLevelSigDeclarations(baseName, decls) = decls |> List.collect (function
             | SynModuleSigDecl.ModuleAbbrev(id, lid, m) ->
-                [ createDecl(baseName, id, ModuleDecl, GlyphMajor.Module, m, rangeOfLid lid, []) ]
+                [ createDecl(baseName, id, ModuleDecl, GlyphMajor.Module, m, rangeOfLid lid, [], None) ]
                 
-            | SynModuleSigDecl.NestedModule(ComponentInfo(_, _, _, lid, _, _, _, _), _, decls, m) ->                
+            | SynModuleSigDecl.NestedModule(ComponentInfo(_, _, _, lid, _, _, access, _), _, decls, m) ->                
                 // Find let bindings (for the right dropdown)
                 let nested = processNestedSigDeclarations(decls)
                 let newBaseName = (if (baseName = "") then "" else baseName+".") + (textOfLid lid)
                 
                 // Get nested modules and types (for the left dropdown)
                 let other = processFSharpNavigationTopLevelSigDeclarations(newBaseName, decls)
-                createDeclLid(baseName, lid, ModuleDecl, GlyphMajor.Module, m, unionRangesChecked (rangeOfDecls nested) (moduleRange (rangeOfLid lid) other), nested)::other
+                createDeclLid(baseName, lid, ModuleDecl, GlyphMajor.Module, m, unionRangesChecked (rangeOfDecls nested) (moduleRange (rangeOfLid lid) other), nested, access)::other
                   
             | SynModuleSigDecl.Types(tydefs, _) -> tydefs |> List.collect (processTycon baseName)                                    
             | SynModuleSigDecl.Exception (defn,_) -> processExnSig baseName defn
@@ -374,7 +395,7 @@ module NavigationImpl =
         let items = 
             // Show base name for this module only if it's not the root one
             let singleTopLevel = (modules.Length = 1)
-            modules |> List.collect (fun (SynModuleOrNamespaceSig(id, _isRec, isModule, decls, _, _, _, m)) ->
+            modules |> List.collect (fun (SynModuleOrNamespaceSig(id, _isRec, isModule, decls, _, _, access, m)) ->
                 let baseName = if (not singleTopLevel) then textOfLid id else ""
                 // Find let bindings (for the right dropdown)
                 let nested = processNestedSigDeclarations(decls)
@@ -387,7 +408,7 @@ module NavigationImpl =
                         (textOfLid id, (if isModule then ModuleFileDecl else NamespaceDecl),
                             GlyphMajor.Module, m, 
                             unionRangesChecked (rangeOfDecls nested) (moduleRange (rangeOfLid id) other), 
-                            singleTopLevel), (addItemName(textOfLid id)), nested
+                            singleTopLevel, access), (addItemName(textOfLid id)), nested
                 decl::other)
         
         let items = 
