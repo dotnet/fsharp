@@ -32,6 +32,7 @@ type internal FSharpNavigationDeclarationItem =
     member Range : Range.range
     member BodyRange : Range.range
     member IsSingleTopLevel : bool
+    member Access : Ast.SynAccess option
 
 /// Represents top-level declarations (that should be in the type drop-down)
 /// with nested declarations (that can be shown in the member drop-down)

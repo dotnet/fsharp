@@ -220,6 +220,10 @@ type internal FSharpLanguageService(package : FSharpPackage) as this =
     let checkerProvider = this.Package.ComponentModel.DefaultExportProvider.GetExport<FSharpCheckerProvider>().Value
     let projectInfoManager = this.Package.ComponentModel.DefaultExportProvider.GetExport<ProjectInfoManager>().Value
 
+    let projectDisplayNameOf projectFileName = 
+        if String.IsNullOrWhiteSpace projectFileName then projectFileName
+        else Path.GetFileNameWithoutExtension projectFileName
+
     /// Sync the information for the project 
     member this.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, site: IProjectSite, forceUpdate) =
 
@@ -248,16 +252,13 @@ type internal FSharpLanguageService(package : FSharpPackage) as this =
             let projectGuid = Guid(site.ProjectGuid)
             let projectFileName = site.ProjectFileName()
 
-            let projectDisplayName = 
-                if String.IsNullOrWhiteSpace projectFileName then projectFileName
-                else Path.GetFileNameWithoutExtension projectFileName
+            let projectDisplayName = projectDisplayNameOf projectFileName
 
             let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
 
             projectInfoManager.UpdateProjectInfo(projectId, site, workspace)
 
-            match workspace.ProjectTracker.GetProject(projectId) with
-            | null ->
+            if isNull (workspace.ProjectTracker.GetProject projectId) then
                 let projectContextFactory = this.Package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
                 let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
                 
@@ -277,7 +278,6 @@ type internal FSharpLanguageService(package : FSharpPackage) as this =
                 for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider) do
                     let referencedProjectId = setup referencedSite                    
                     project.AddProjectReference(ProjectReference referencedProjectId)
-            | _ -> ()
             projectId
         setup (siteProvider.GetProjectSite()) |> ignore
 
@@ -286,14 +286,17 @@ type internal FSharpLanguageService(package : FSharpPackage) as this =
         let loadTime = DateTime.Now
         let options = projectInfoManager.ComputeSingleFileOptions (fileName, loadTime, fileContents, workspace) |> Async.RunSynchronously
 
-        let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(options.ProjectFileName, options.ProjectFileName)
+        let projectFileName = fileName
+        let projectDisplayName = projectDisplayNameOf projectFileName
+
+        let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
         projectInfoManager.AddSingleFileProject(projectId, (loadTime, options))
 
-        if obj.ReferenceEquals(workspace.ProjectTracker.GetProject(projectId), null) then
+        if isNull (workspace.ProjectTracker.GetProject projectId) then
             let projectContextFactory = this.Package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
             let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
 
-            let projectContext = projectContextFactory.CreateProjectContext(FSharpCommonConstants.FSharpLanguageName, options.ProjectFileName, options.ProjectFileName, projectId.Id, hier, null, errorReporter)
+            let projectContext = projectContextFactory.CreateProjectContext(FSharpCommonConstants.FSharpLanguageName, projectDisplayName, projectFileName, projectId.Id, hier, null, errorReporter)
             projectContext.AddSourceFile(fileName)
             
             let project = projectContext :?> AbstractProject

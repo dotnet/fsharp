@@ -23,3 +23,5 @@ module internal FSharpCommonConstants =
     let FSharpSignatureHelpContentTypeName = "F# Signature Help"
     [<Literal>]
     let FSharpLanguageServiceCallbackName = "F# Language Service"
+    [<Literal>]
+    let FSharpLanguageLongName = "FSharp"
