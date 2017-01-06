@@ -22,12 +22,9 @@ Test 3=================================================
 Hello
 World
 -the end
-
 namespace FSI_0002
 
-
 namespace FSI_0002
-
 
 namespace FSI_0002
 
