@@ -44,8 +44,8 @@ type internal DocumentLocations =
 
 type internal InlineRenameLocationSet(locationsByDocument: DocumentLocations [], originalSolution: Solution) =
     interface IInlineRenameLocationSet with
-        member __.Locations : IList<InlineRenameLocation> = 
-            [| for doc in locationsByDocument do yield! doc.Locations |] :> _
+        member __.Locations : ImmutableArray<InlineRenameLocation> =
+            [| for doc in locationsByDocument do yield! doc.Locations |].ToImmutableArray()
         
         member this.GetReplacementsAsync(replacementText, _optionSet, cancellationToken) : Task<IInlineRenameReplacementInfo> =
             let rec applyChanges i (solution: Solution) =
