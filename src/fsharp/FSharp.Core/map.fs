@@ -435,6 +435,7 @@ namespace Microsoft.FSharp.Collections
 #endif
     [<Sealed>]
     [<CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix")>]
+    [<StructuredFormatDisplay("{StructuredFormat}")>]
     [<CompiledName("FSharpMap`2")>]
     type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditionalOn>]'Value when 'Key : comparison >(comparer: IComparer<'Key>, tree: MapTree<'Key,'Value>) =
 
@@ -748,13 +749,19 @@ namespace Microsoft.FSharp.Collections
                     true
 #endif
 
-        override x.ToString() = 
+        #if !FX_NO_DEBUG_DISPLAYS
+        [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+        #endif
+        member x.StructuredFormat =
            match List.ofSeq (Seq.truncate 4 x) with 
            | [] -> "map []"
            | [KeyValue h1] -> System.Text.StringBuilder().Append("map [").Append(LanguagePrimitives.anyToStringShowingNull h1).Append("]").ToString()
            | [KeyValue h1;KeyValue h2] -> System.Text.StringBuilder().Append("map [").Append(LanguagePrimitives.anyToStringShowingNull h1).Append("; ").Append(LanguagePrimitives.anyToStringShowingNull h2).Append("]").ToString()
            | [KeyValue h1;KeyValue h2;KeyValue h3] -> System.Text.StringBuilder().Append("map [").Append(LanguagePrimitives.anyToStringShowingNull h1).Append("; ").Append(LanguagePrimitives.anyToStringShowingNull h2).Append("; ").Append(LanguagePrimitives.anyToStringShowingNull h3).Append("]").ToString()
            | KeyValue h1 :: KeyValue h2 :: KeyValue h3 :: _ -> System.Text.StringBuilder().Append("map [").Append(LanguagePrimitives.anyToStringShowingNull h1).Append("; ").Append(LanguagePrimitives.anyToStringShowingNull h2).Append("; ").Append(LanguagePrimitives.anyToStringShowingNull h3).Append("; ... ]").ToString() 
+
+        override x.ToString() = 
+            x.StructuredFormat
 
 
 #if !FX_NO_DEBUG_PROXIES

@@ -518,6 +518,7 @@ namespace Microsoft.FSharp.Collections
 #if !FX_NO_DEBUG_DISPLAYS
     [<DebuggerDisplay("Count = {Count}")>]
 #endif
+    [<StructuredFormatDisplay("{StructuredFormat}")>]
     [<CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix")>]
     type Set<[<EqualityConditionalOn>]'T when 'T : comparison >(comparer:IComparer<'T>, tree: SetTree<'T>) = 
 
@@ -782,7 +783,10 @@ namespace Microsoft.FSharp.Collections
             let comparer = LanguagePrimitives.FastGenericComparer<'T>
             new Set<_>(comparer,SetTree.ofArray comparer arr)
 
-        override x.ToString() = 
+        #if !FX_NO_DEBUG_DISPLAYS
+        [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+        #endif
+        member x.StructuredFormat =
            match List.ofSeq (Seq.truncate 4 x) with 
            | [] -> "set []"
            | [h1] -> System.Text.StringBuilder().Append("set [").Append(LanguagePrimitives.anyToStringShowingNull h1).Append("]").ToString()
@@ -790,6 +794,9 @@ namespace Microsoft.FSharp.Collections
            | [h1;h2;h3] -> System.Text.StringBuilder().Append("set [").Append(LanguagePrimitives.anyToStringShowingNull h1).Append("; ").Append(LanguagePrimitives.anyToStringShowingNull h2).Append("; ").Append(LanguagePrimitives.anyToStringShowingNull h3).Append("]").ToString()
            | h1 :: h2 :: h3 :: _ -> System.Text.StringBuilder().Append("set [").Append(LanguagePrimitives.anyToStringShowingNull h1).Append("; ").Append(LanguagePrimitives.anyToStringShowingNull h2).Append("; ").Append(LanguagePrimitives.anyToStringShowingNull h3).Append("; ... ]").ToString() 
 
+        override x.ToString() = 
+            x.StructuredFormat
+           
     and 
         [<Sealed>]
         SetDebugView<'T when 'T : comparison>(v: Set<'T>)  =  
