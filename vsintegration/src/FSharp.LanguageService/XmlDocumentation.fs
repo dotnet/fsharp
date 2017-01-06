@@ -40,11 +40,13 @@ type internal TextSanitizingCollector(collector, ?lineLimit: int) =
 
     let reportTextLines (s: string) =
         let mutable pos = 0
-        // skip newlines at the beginning
-        while pos < s.Length && isCROrLF s.[pos] do
+        // skip newlines and whitespaces at the beginning
+        while pos < s.Length && (Char.IsWhiteSpace s.[pos] || isCROrLF s.[pos]) do
             pos <- pos + 1
+        // keep single leading space
+        if pos > 0 && Char.IsWhiteSpace s.[pos - 1] then pos <- pos - 1
         
-        // skip newlines whitespaces at the end
+        // skip newlines and whitespaces at the end
         let mutable endPos = s.Length - 1
         while endPos >= pos && (Char.IsWhiteSpace s.[endPos] || isCROrLF s.[endPos])do
             endPos <- endPos - 1
@@ -53,14 +55,19 @@ type internal TextSanitizingCollector(collector, ?lineLimit: int) =
             buf.Clear() |> ignore
             while (pos < s.Length) do
                 match s.[pos] with
-                | '\r' -> ()
+                | '\r' -> pos <- pos + 1
                 | '\n' -> 
                     if buf.Length > 0 then
                         addTaggedTextEntry (tagText (buf.ToString()))
                         addTaggedTextEntry Literals.lineBreak
                         buf.Clear() |> ignore
-                | c -> buf.Append(c) |> ignore
-                pos <- pos + 1
+                    while pos < s.Length && Char.IsWhiteSpace s.[pos] do
+                        pos <- pos + 1
+                    // keep single leading space
+                    if pos > 0 && Char.IsWhiteSpace s.[pos - 1] then pos <- pos - 1
+                | c -> 
+                    buf.Append(c) |> ignore
+                    pos <- pos + 1
             // flush the rest
             if buf.Length > 0 then
                 addTaggedTextEntry (tagText (buf.ToString()))
