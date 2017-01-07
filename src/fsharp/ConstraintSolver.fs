@@ -1992,7 +1992,7 @@ and ArgsEquivInsideUndo (csenv:ConstraintSolverEnv) isConstraint calledArg (Call
     if not (typeEquiv csenv.g calledArgTy callerArgTy) then ErrorD(Error(FSComp.SR.csArgumentTypesDoNotMatch(),m)) else
     CompleteD
 
-and ReportNoCandidatesError (csenv:ConstraintSolverEnv) (nUnnamedCallerArgs,nNamedCallerArgs) methodName ad (calledMethGroup:CalledMeth<'T> list) (isSequential:'T -> bool) =
+and ReportNoCandidatesError (csenv:ConstraintSolverEnv) (nUnnamedCallerArgs,nNamedCallerArgs) methodName ad (calledMethGroup:CalledMeth<_> list) isSequential =
 
     let amap = csenv.amap
     let m    = csenv.m
