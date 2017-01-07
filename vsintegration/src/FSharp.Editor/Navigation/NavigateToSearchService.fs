@@ -92,11 +92,7 @@ module private Index =
             
             member __.GetHashCode(x: INavigateToSearchResult) =
                 if isNull x then 0
-                else
-                    let mutable hash = 17
-                    hash <- hash * 23 + x.NavigableItem.Document.Id.GetHashCode()
-                    hash <- hash * 23 + x.NavigableItem.SourceSpan.GetHashCode()
-                    hash }
+                else 23 * (17 * 23 + x.NavigableItem.Document.Id.GetHashCode()) + x.NavigableItem.SourceSpan.GetHashCode() }
 
     let build (items: seq<NavigableItem>) =
         let entries = ResizeArray()
