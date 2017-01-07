@@ -246,11 +246,3 @@ type internal FSharpSignatureHelpClassifierProvider [<ImportingConstructor>] (ty
     interface IClassifierProvider with
         override __.GetClassifier (buffer: ITextBuffer) =
             buffer.Properties.GetOrCreateSingletonProperty(fun _ -> SignatureHelpClassifier(buffer, typeMap) :> _)
-
-[<Export(typeof<IClassifierProvider>)>]
-[<ContentType("FSharpInteractive")>]
-type internal FSharpInteractiveClassifierProvider [<ImportingConstructor>] (typeMap) =
-    interface IClassifierProvider with
-        override __.GetClassifier (buffer: ITextBuffer) =
-            System.Windows.Forms.MessageBox.Show("OK") |> ignore
-            buffer.Properties.GetOrCreateSingletonProperty(fun _ -> SignatureHelpClassifier(buffer, typeMap) :> _)
