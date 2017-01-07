@@ -44,11 +44,11 @@ type internal TextSanitizingCollector(collector, ?lineLimit: int) =
         while pos < s.Length && (Char.IsWhiteSpace s.[pos] || isCROrLF s.[pos]) do
             pos <- pos + 1
         // keep single leading space
-        if pos > 0 && Char.IsWhiteSpace s.[pos - 1] then pos <- pos - 1
+        if pos > 0 && s.[pos - 1] = ' ' then pos <- pos - 1
         
         // skip newlines and whitespaces at the end
         let mutable endPos = s.Length - 1
-        while endPos >= pos && (Char.IsWhiteSpace s.[endPos] || isCROrLF s.[endPos])do
+        while endPos >= pos && (s.[endPos] = ' ' || isCROrLF s.[endPos])do
             endPos <- endPos - 1
 
         if pos < endPos then
@@ -63,8 +63,6 @@ type internal TextSanitizingCollector(collector, ?lineLimit: int) =
                         buf.Clear() |> ignore
                     while pos < s.Length && Char.IsWhiteSpace s.[pos] do
                         pos <- pos + 1
-                    // keep single leading space
-                    if pos > 0 && Char.IsWhiteSpace s.[pos - 1] then pos <- pos - 1
                 | c -> 
                     buf.Append(c) |> ignore
                     pos <- pos + 1
@@ -340,12 +338,13 @@ module internal XmlDocumentation =
     /// Build a data tip text string with xml comments injected.
     let BuildTipText(documentationProvider:IDocumentationBuilder, dataTipText: FSharpStructuredToolTipElement list, textCollector, xmlCollector, showText, showExceptions, showParameters, showOverloadText) = 
         let textCollector: ITaggedTextCollector = TextSanitizingCollector(textCollector, lineLimit = 45) :> _
-        let xmlCollector: ITaggedTextCollector = TextSanitizingCollector(xmlCollector, lineLimit = 45) :> _
+        let xmlTaggedText = ResizeArray()
+        let xmlTaggedTextCollector: ITaggedTextCollector = TextSanitizingCollector(xmlTaggedText.Add, lineLimit = 45) :> _
 
         let addSeparatorIfNecessary add =
             if add then
                 AddSeparator textCollector
-                AddSeparator xmlCollector
+                AddSeparator xmlTaggedTextCollector
 
         let Process add (dataTipElement: FSharpStructuredToolTipElement) =
             match dataTipElement with 
@@ -354,13 +353,13 @@ module internal XmlDocumentation =
                 addSeparatorIfNecessary add
                 if showText then 
                     renderL (taggedTextListR textCollector.Add) text |> ignore
-                AppendXmlComment(documentationProvider, xmlCollector, xml, showExceptions, showParameters, None)
+                AppendXmlComment(documentationProvider, xmlTaggedTextCollector, xml, showExceptions, showParameters, None)
                 true
             | FSharpStructuredToolTipElement.SingleParameter(text, xml, paramName) ->
                 addSeparatorIfNecessary add
                 if showText then
                     renderL (taggedTextListR textCollector.Add) text |> ignore
-                AppendXmlComment(documentationProvider, xmlCollector, xml, showExceptions, showParameters, Some paramName)
+                AppendXmlComment(documentationProvider, xmlTaggedTextCollector, xml, showExceptions, showParameters, Some paramName)
                 true
             | FSharpStructuredToolTipElement.Group (overloads) -> 
                 let overloads = Array.ofList overloads
@@ -392,8 +391,17 @@ module internal XmlDocumentation =
                 textCollector.Add(tagText errText)
                 true
 
-        List.fold Process false dataTipText
-        |> ignore
+        List.fold Process false dataTipText |> ignore
+
+        // remove trailing line breaks and empty strings
+        xmlTaggedText.Reverse()
+        xmlTaggedText
+        |> Seq.skipWhile (function
+            | TaggedText.LineBreak _ -> true
+            | TaggedText.Text text -> String.IsNullOrWhiteSpace text
+            | _ -> false)
+        |> Seq.rev
+        |> Seq.iter xmlCollector
 
     let BuildDataTipText(documentationProvider, textCollector, xmlCollector, FSharpToolTipText(dataTipText)) = 
         BuildTipText(documentationProvider, dataTipText, textCollector, xmlCollector, true, true, false, true) 
