@@ -249,8 +249,8 @@ and
     internal FSharpLanguageService(package : FSharpPackage) as this =
     inherit AbstractLanguageService<FSharpPackage, FSharpLanguageService>(package)
 
-    let checkerProvider = this.Package.ComponentModel.DefaultExportProvider.GetExport<FSharpCheckerProvider>().Value
-    let projectInfoManager = this.Package.ComponentModel.DefaultExportProvider.GetExport<ProjectInfoManager>().Value
+    let checkerProvider = package.ComponentModel.DefaultExportProvider.GetExport<FSharpCheckerProvider>().Value
+    let projectInfoManager = package.ComponentModel.DefaultExportProvider.GetExport<ProjectInfoManager>().Value
 
     let projectDisplayNameOf projectFileName = 
         if String.IsNullOrWhiteSpace projectFileName then projectFileName
@@ -260,7 +260,7 @@ and
       Events.SolutionEvents.OnAfterOpenProject.Add (fun (args: Events.OpenProjectEventArgs) -> 
         match args.Hierarchy with
         | :? IProvideProjectSite as siteProvider ->
-            let workspace = this.Package.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
+            let workspace = package.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
             this.SetupProjectFile(siteProvider, workspace)
         | _ -> ())
         
@@ -299,7 +299,7 @@ and
             projectInfoManager.UpdateProjectInfo(projectId, site, workspace)
 
             if isNull (workspace.ProjectTracker.GetProject projectId) then
-                let projectContextFactory = this.Package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
+                let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
                 let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
                 
                 let projectContext = 
@@ -333,7 +333,7 @@ and
         projectInfoManager.AddSingleFileProject(projectId, (loadTime, options))
 
         if isNull (workspace.ProjectTracker.GetProject projectId) then
-            let projectContextFactory = this.Package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
+            let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
             let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
 
             let projectContext = projectContextFactory.CreateProjectContext(FSharpCommonConstants.FSharpLanguageName, projectDisplayName, projectFileName, projectId.Id, hier, null, errorReporter)
@@ -357,9 +357,9 @@ and
 
     override this.SetupNewTextView(textView) =
         base.SetupNewTextView(textView)
-        let workspace = this.Package.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
+        let workspace = package.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
         workspace.Options <- workspace.Options.WithChangedOption(NavigationBarOptions.ShowNavigationBar, FSharpCommonConstants.FSharpLanguageName, true)
-        let textViewAdapter = this.Package.ComponentModel.GetService<IVsEditorAdaptersFactoryService>()
+        let textViewAdapter = package.ComponentModel.GetService<IVsEditorAdaptersFactoryService>()
         
         let blockForCompletionOption = 
             PerLanguageOption<bool>(
