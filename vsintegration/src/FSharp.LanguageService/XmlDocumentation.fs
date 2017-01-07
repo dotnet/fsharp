@@ -37,14 +37,15 @@ type internal TextSanitizingCollector(collector, ?lineLimit: int) =
             collector text
     
     let splitTextRegex = Regex(@"\s*\n\s*\n\s*")
+    let normalizeSpacesRegex = Regex(@"\s+")
 
     let reportTextLines (s: string) =
         // treat _double_ newlines as line breaks and remove all \n after that
         let paragraphs = splitTextRegex.Split(s.Replace("\r", ""))
         paragraphs
-        |> Array.iteri (fun i paragraph -> 
-            let line = paragraph.Replace("\n", "").Replace("  ", " ").TrimStart()
-            addTaggedTextEntry (tagText line)
+        |> Array.iteri (fun i paragraph ->
+            let paragraph = normalizeSpacesRegex.Replace(paragraph.Replace("\n", " "), " ")
+            addTaggedTextEntry (tagText paragraph)
             if i < paragraphs.Length - 1 then
                 // insert two line breaks to separate paragraphs
                 addTaggedTextEntry Literals.lineBreak
