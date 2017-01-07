@@ -18,11 +18,13 @@ type internal ITaggedTextCollector =
     abstract Add: text: TaggedText -> unit
     abstract EndsWithLineBreak: bool
     abstract IsEmpty: bool
+    abstract StartXMLDoc: unit -> unit
 
 type internal TextSanitizingCollector(collector, ?lineLimit: int) =
     let mutable isEmpty = true 
     let mutable endsWithLineBreak = false
     let mutable count = 0
+    let mutable startXmlDoc = false
 
     let addTaggedTextEntry text =
         match lineLimit with
@@ -36,8 +38,8 @@ type internal TextSanitizingCollector(collector, ?lineLimit: int) =
             if endsWithLineBreak then count <- count + 1
             collector text
     
-    let splitTextRegex = Regex(@"\s*\n\s*\n\s*")
-    let normalizeSpacesRegex = Regex(@"\s+")
+    static let splitTextRegex = Regex(@"\s*\n\s*\n\s*", RegexOptions.Compiled ||| RegexOptions.ExplicitCapture)
+    static let normalizeSpacesRegex = Regex(@"\s+", RegexOptions.Compiled ||| RegexOptions.ExplicitCapture))
 
     let reportTextLines (s: string) =
         // treat _double_ newlines as line breaks and remove all \n after that
@@ -45,6 +47,15 @@ type internal TextSanitizingCollector(collector, ?lineLimit: int) =
         paragraphs
         |> Array.iteri (fun i paragraph ->
             let paragraph = normalizeSpacesRegex.Replace(paragraph, " ")
+            let paragraph = 
+                // it's the first line of XML Doc. It often has heading '\n' and spaces, we should remove it.
+                // We should not remove them from subsequent lines, because spaces may be proper delimiters 
+                // between plane text and formatted code.
+                if startXmlDoc then 
+                    startXmlDoc <- false
+                    paragraph.TrimStart() 
+                else paragraph
+                
             addTaggedTextEntry (tagText paragraph)
             if i < paragraphs.Length - 1 then
                 // insert two line breaks to separate paragraphs
@@ -60,6 +71,7 @@ type internal TextSanitizingCollector(collector, ?lineLimit: int) =
 
         member this.IsEmpty = isEmpty
         member this.EndsWithLineBreak = isEmpty || endsWithLineBreak
+        member this.StartXMLDoc() = startXmlDoc <- true
 
 /// XmlDocumentation builder, using the VS interfaces to build documentation.  An interface is used
 /// to allow unit testing to give an alternative implementation which captures the documentation.
@@ -250,6 +262,7 @@ module internal XmlDocumentation =
 
         let AppendMemberData(collector: ITaggedTextCollector, xmlDocReader: XmlDocReader,showExceptions:bool,showParameters:bool) =
             AppendHardLine collector
+            collector.StartXMLDoc()
             xmlDocReader.CollectSummary(collector)
 //          AppendParameters appendTo memberData
 //          AppendTypeParameters appendTo memberData
