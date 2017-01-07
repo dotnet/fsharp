@@ -41,7 +41,7 @@ type internal TextSanitizingCollector(collector, ?lineLimit: int) =
 
     let reportTextLines (s: string) =
         // treat _double_ newlines as line breaks and remove all \n after that
-        let paragraphs = splitTextRegex.Split(s.Replace("\r", ""))
+        let paragraphs = splitTextRegex.Split(s.Replace("\r", "")) |> Array.filter (not << String.IsNullOrWhiteSpace)
         paragraphs
         |> Array.iteri (fun i paragraph ->
             let paragraph = normalizeSpacesRegex.Replace(paragraph, " ")
