@@ -246,7 +246,7 @@ and
     [<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".fsscript", 97)>]
     [<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".ml", 97)>]
     [<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".mli", 97)>]
-    internal FSharpLanguageService(package : FSharpPackage) as this =
+    internal FSharpLanguageService(package : FSharpPackage) =
     inherit AbstractLanguageService<FSharpPackage, FSharpLanguageService>(package)
 
     let checkerProvider = package.ComponentModel.DefaultExportProvider.GetExport<FSharpCheckerProvider>().Value
@@ -256,13 +256,21 @@ and
         if String.IsNullOrWhiteSpace projectFileName then projectFileName
         else Path.GetFileNameWithoutExtension projectFileName
 
+    let openedProjects = Queue<IProvideProjectSite>()
+
     do
       Events.SolutionEvents.OnAfterOpenProject.Add (fun (args: Events.OpenProjectEventArgs) -> 
         match args.Hierarchy with
         | :? IProvideProjectSite as siteProvider ->
-            let workspace = package.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
-            this.SetupProjectFile(siteProvider, workspace)
+            openedProjects.Enqueue(siteProvider)            
         | _ -> ())
+        
+    member this.BatchSetupProjects() =    
+        if openedProjects.Count > 0 then    
+            let workspace = package.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
+            for siteProvider in openedProjects do
+                this.SetupProjectFile(siteProvider, workspace)
+            openedProjects.Clear()
         
     /// Sync the information for the project 
     member this.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, site: IProjectSite, forceUpdate) =
@@ -403,4 +411,10 @@ and
             wpfTextView.GotAggregateFocus.AddHandler(onGotFocus)
             wpfTextView.Closed.AddHandler(onViewClosed)
         | _ -> ()
+
+        // When the text view is opened, setup all remaining projects on the background.
+        async {
+            do this.BatchSetupProjects()
+        }
+        |> Async.StartImmediate
             
