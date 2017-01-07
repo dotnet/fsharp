@@ -7,14 +7,10 @@ open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast
 
 module internal Structure =
-
-
-
-/// Set of visitor utilities, designed for the express purpose of fetching ranges
-/// from an untyped AST for the purposes of block structure.
+    /// Set of visitor utilities, designed for the express purpose of fetching ranges
+    /// from an untyped AST for the purposes of block structure.
     [<RequireQualifiedAccess>]
     module private Range =
-
         let inline union (r1:range) (r2:range) =
             let startPos =
                 if r1.StartLine <= r2.StartLine
@@ -458,7 +454,7 @@ module internal Structure =
         seq {
             match d with
             | SynMemberDefn.Member
-                (SynBinding.Binding (_,_kind,_,_,attrs,_,
+               (SynBinding.Binding (_,_kind,_,_,attrs,_,
                     SynValData (Some{MemberKind=MemberKind.Constructor},_,_),synPat,_,_e,_lhsr,_)
                         as binding,_r) as _memb ->
                let collapse = Range.endToEnd synPat.Range d.Range
@@ -540,14 +536,6 @@ module internal Structure =
             let genericRange = rangeOfTypeArgsElse r typeArgs
             let collapse = Range.endToEnd (Range.modEnd 1 genericRange) fullrange
             match objectModel with
-            // matches against a type declaration with <'T,...> and (args,...)
-            | SynTypeDefnRepr.ObjectModel
-                (SynTypeDefnKind.TyconUnspecified,
-                    SynMemberDefn.ImplicitCtor(_,_,synPatList,_,r)::typeMembers,_) ->
-                    let declRange = rangeOfSynPatsElse r synPatList
-                    let collapse = Range.endToEnd (Range.union genericRange declRange) fullrange
-                    yield! Seq.collect parseSynMemberDefn typeMembers
-                    yield! rcheck Scope.Type Collapse.Below fullrange collapse
             | SynTypeDefnRepr.ObjectModel (defnKind, objMembers, _) ->
                 match defnKind with
                 | SynTypeDefnKind.TyconAugmentation ->
