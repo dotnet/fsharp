@@ -2106,13 +2106,13 @@ and ReportNoCandidatesError (csenv:ConstraintSolverEnv) (nUnnamedCallerArgs,nNam
         Error (msg,m)
     |> ErrorD
 
-and ReportNoCandidatesErrorExpr (csenv:ConstraintSolverEnv) (nUnnamedCallerArgs,nNamedCallerArgs) methodName ad (calledMethGroup:CalledMeth<Expr> list) =
-    let isSequential c = match c with | Expr.Sequential (_,_,_,_,_) -> true | _ -> false
-    ReportNoCandidatesError csenv (nUnnamedCallerArgs,nNamedCallerArgs) methodName ad calledMethGroup isSequential
+and ReportNoCandidatesErrorExpr csenv callerArgCounts methodName ad calledMethGroup =
+    let isSequential e = match e with | Expr.Sequential (_,_,_,_,_) -> true | _ -> false
+    ReportNoCandidatesError csenv callerArgCounts methodName ad calledMethGroup isSequential
 
-and ReportNoCandidatesErrorSynExpr (csenv:ConstraintSolverEnv) (nUnnamedCallerArgs,nNamedCallerArgs) methodName ad (calledMethGroup:CalledMeth<SynExpr> list) =
-    let isSequential c = match c with | SynExpr.Sequential (_,_,_,_,_) -> true | _ -> false
-    ReportNoCandidatesError csenv (nUnnamedCallerArgs,nNamedCallerArgs) methodName ad calledMethGroup isSequential
+and ReportNoCandidatesErrorSynExpr csenv callerArgCounts methodName ad calledMethGroup =
+    let isSequential e = match e with | SynExpr.Sequential (_,_,_,_,_) -> true | _ -> false
+    ReportNoCandidatesError csenv callerArgCounts methodName ad calledMethGroup isSequential
 
 // Resolve the overloading of a method 
 // This is used after analyzing the types of arguments 
