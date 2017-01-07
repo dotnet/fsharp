@@ -201,20 +201,162 @@ type internal FSharpCheckerWorkspaceServiceFactory
                 member this.Checker = checkerProvider.Checker
                 member this.ProjectInfoManager = projectInfoManager }
 
-[<Guid(FSharpCommonConstants.languageServiceGuidString)>]
-[<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fs")>]
-[<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsi")>]
-[<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsx")>]
-[<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsscript")>]
-[<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".ml")>]
-[<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".mli")>]
-[<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".fs", 97)>]
-[<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".fsi", 97)>]
-[<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".fsx", 97)>]
-[<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".fsscript", 97)>]
-[<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".ml", 97)>]
-[<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".mli", 97)>]
-type internal FSharpLanguageService(package : FSharpPackage) as this =
+type internal ProjectChangedEventArgs(hier: IVsHierarchy, isNew: bool) =
+    inherit EventArgs()
+    member __.Hierarchy = hier
+    member __.IsNew = isNew
+
+type
+    [<Guid(FSharpCommonConstants.packageGuidString)>]
+    [<ProvideLanguageService(languageService = typeof<FSharpLanguageService>,
+                             strLanguageName = FSharpCommonConstants.FSharpLanguageName,
+                             languageResourceID = 100,
+                             MatchBraces = true,
+                             MatchBracesAtCaret = true,
+                             ShowCompletion = true,
+                             ShowMatchingBrace = true,
+                             ShowSmartIndent = true,
+                             EnableAsyncCompletion = true,
+                             QuickInfo = true,
+                             DefaultToInsertSpaces  = true,
+                             CodeSense = true,
+                             DefaultToNonHotURLs = true,
+                             EnableCommenting = true,
+                             CodeSenseDelay = 100)>]
+    internal FSharpPackage() =
+    inherit AbstractPackage<FSharpPackage, FSharpLanguageService>()
+    
+    let mutable solutionEventsCookie = 0u
+    let mutable solution = null
+
+    let projectOpened = Event<_>()
+
+    override this.Initialize() =
+        base.Initialize()
+        try
+            solution <- this.GetService<SVsSolution>() :?> IVsSolution
+            if not (isNull solution) then 
+                solution.AdviseSolutionEvents(this, &solutionEventsCookie) |> ignore
+        with ex ->
+            Assert.Exception ex
+
+    override this.RoslynLanguageName = FSharpCommonConstants.FSharpLanguageName
+
+    override this.CreateWorkspace() = this.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
+
+    override this.CreateLanguageService() = 
+        FSharpLanguageService(this)        
+
+    override this.CreateEditorFactories() = Seq.empty<IVsEditorFactory>
+
+    override this.RegisterMiscellaneousFilesWorkspaceInformation(_) = ()
+    
+    [<CLIEvent>]
+    member this.ProjectOpened = projectOpened.Publish
+
+    interface IDisposable with
+        member __.Dispose () =
+            if solutionEventsCookie <> 0u && not (isNull solution) then
+                solution.UnadviseSolutionEvents(solutionEventsCookie) |> ignore
+                solutionEventsCookie <- 0u
+    
+    interface IVsSolutionEvents with
+        member this.OnAfterLoadProject(_pStubHierarchy: IVsHierarchy, _pRealHierarchy: IVsHierarchy): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnAfterOpenProject(pHierarchy: IVsHierarchy, fAdded: int): int = 
+            let hr, canonicalName = pHierarchy.GetCanonicalName(VSConstants.VSITEMID_ROOT)
+            System.Windows.Forms.MessageBox.Show("Open " + if Com.Succeeded hr then canonicalName else System.String.Empty) |> ignore
+            let isNew = fAdded = 1
+            projectOpened.Trigger(ProjectChangedEventArgs(pHierarchy, isNew))
+            VSConstants.S_OK
+        member this.OnBeforeCloseProject(_pHierarchy: IVsHierarchy, _fRemoved: int): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnBeforeUnloadProject(_pRealHierarchy: IVsHierarchy, _pStubHierarchy: IVsHierarchy): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnQueryCloseProject(_pHierarchy: IVsHierarchy, _fRemoving: int, pfCancel: byref<int>): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnQueryUnloadProject(_pRealHierarchy: IVsHierarchy, pfCancel: byref<int>): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnAfterCloseSolution(_pUnkReserved: obj): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnAfterOpenSolution(_pUnkReserved: obj, _fNewSolution: int): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnBeforeCloseSolution(_pUnkReserved: obj): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnQueryCloseSolution(_pUnkReserved: obj, pfCancel: byref<int>): int = 
+            VSConstants.E_NOTIMPL
+
+    interface IVsSolutionEvents2 with
+        member this.OnAfterMergeSolution(_pUnkReserved: obj): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnAfterOpenSolution(_pUnkReserved: obj, _fNewSolution: int): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnBeforeCloseSolution(_pUnkReserved: obj): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnQueryCloseSolution(_pUnkReserved: obj, pfCancel: byref<int>): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnAfterCloseSolution(_pUnkReserved: obj): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnAfterLoadProject(_pStubHierarchy: IVsHierarchy, _pRealHierarchy: IVsHierarchy): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnAfterOpenProject(_pHierarchy: IVsHierarchy, _fAdded: int): int = 
+            VSConstants.S_OK
+        member this.OnBeforeCloseProject(_pHierarchy: IVsHierarchy, _fRemoved: int): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnBeforeUnloadProject(_pRealHierarchy: IVsHierarchy, _pStubHierarchy: IVsHierarchy): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnQueryCloseProject(_pHierarchy: IVsHierarchy, _fRemoving: int, pfCancel: byref<int>): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnQueryUnloadProject(_pRealHierarchy: IVsHierarchy, pfCancel: byref<int>): int = 
+            VSConstants.E_NOTIMPL
+
+    interface IVsSolutionEvents3 with
+        override this.OnAfterCloseSolution(_pUnkReserved: obj): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnAfterClosingChildren(_pHierarchy: IVsHierarchy): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnAfterLoadProject(_pStubHierarchy: IVsHierarchy, _pRealHierarchy: IVsHierarchy): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnAfterMergeSolution(_pUnkReserved: obj): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnAfterOpenProject(_pHierarchy: IVsHierarchy, _fAdded: int): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnAfterOpenSolution(_pUnkReserved: obj, _fNewSolution: int): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnAfterOpeningChildren(_pHierarchy: IVsHierarchy): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnBeforeCloseProject(_pHierarchy: IVsHierarchy, _fRemoved: int): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnBeforeCloseSolution(_pUnkReserved: obj): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnBeforeClosingChildren(_pHierarchy: IVsHierarchy): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnBeforeOpeningChildren(_pHierarchy: IVsHierarchy): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnBeforeUnloadProject(_pRealHierarchy: IVsHierarchy, _pStubHierarchy: IVsHierarchy): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnQueryCloseProject(_pHierarchy: IVsHierarchy, _fRemoving: int, pfCancel: byref<int>): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnQueryCloseSolution(_pUnkReserved: obj, pfCancel: byref<int>): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnQueryUnloadProject(_pRealHierarchy: IVsHierarchy, pfCancel: byref<int>): int = 
+            VSConstants.E_NOTIMPL 
+
+and 
+    [<Guid(FSharpCommonConstants.languageServiceGuidString)>]
+    [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fs")>]
+    [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsi")>]
+    [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsx")>]
+    [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsscript")>]
+    [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".ml")>]
+    [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".mli")>]
+    [<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".fs", 97)>]
+    [<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".fsi", 97)>]
+    [<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".fsx", 97)>]
+    [<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".fsscript", 97)>]
+    [<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".ml", 97)>]
+    [<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".mli", 97)>]
+    internal FSharpLanguageService(package : FSharpPackage) as this =
     inherit AbstractLanguageService<FSharpPackage, FSharpLanguageService>(package)
 
     let checkerProvider = this.Package.ComponentModel.DefaultExportProvider.GetExport<FSharpCheckerProvider>().Value
@@ -224,6 +366,13 @@ type internal FSharpLanguageService(package : FSharpPackage) as this =
         if String.IsNullOrWhiteSpace projectFileName then projectFileName
         else Path.GetFileNameWithoutExtension projectFileName
 
+    do package.ProjectOpened.Add (fun (args: ProjectChangedEventArgs) -> 
+        match args.Hierarchy with
+        | :? IProvideProjectSite as siteProvider ->
+            let workspace = this.Package.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
+            this.SetupProjectFile(siteProvider, workspace)
+        | _ -> ())
+        
     /// Sync the information for the project 
     member this.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, site: IProjectSite, forceUpdate) =
 
@@ -327,7 +476,7 @@ type internal FSharpLanguageService(package : FSharpPackage) as this =
                 storageLocations = [| RoamingProfileStorageLocation("TextEditor.%%LANGUAGE%%.Specific.CompletionOptions - BlockForCompletionItems") |])
 
         workspace.Options <- workspace.Options.WithChangedOption(blockForCompletionOption, FSharpCommonConstants.FSharpLanguageName, false)
-
+               
         match textView.GetBuffer() with
         | (VSConstants.S_OK, textLines) ->
             let filename = VsTextLines.GetFilename textLines
@@ -363,33 +512,4 @@ type internal FSharpLanguageService(package : FSharpPackage) as this =
             wpfTextView.GotAggregateFocus.AddHandler(onGotFocus)
             wpfTextView.Closed.AddHandler(onViewClosed)
         | _ -> ()
-
-and [<Guid(FSharpCommonConstants.packageGuidString)>]
-    [<ProvideLanguageService(languageService = typeof<FSharpLanguageService>,
-                             strLanguageName = FSharpCommonConstants.FSharpLanguageName,
-                             languageResourceID = 100,
-                             MatchBraces = true,
-                             MatchBracesAtCaret = true,
-                             ShowCompletion = true,
-                             ShowMatchingBrace = true,
-                             ShowSmartIndent = true,
-                             EnableAsyncCompletion = true,
-                             QuickInfo = true,
-                             DefaultToInsertSpaces  = true,
-                             CodeSense = true,
-                             DefaultToNonHotURLs = true,
-                             EnableCommenting = true,
-                             CodeSenseDelay = 100)>]
-        internal FSharpPackage() =
-    inherit AbstractPackage<FSharpPackage, FSharpLanguageService>()
-
-    override this.RoslynLanguageName = FSharpCommonConstants.FSharpLanguageName
-
-    override this.CreateWorkspace() = this.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
-
-    override this.CreateLanguageService() = new FSharpLanguageService(this)
-
-    override this.CreateEditorFactories() = Seq.empty<IVsEditorFactory>
-
-    override this.RegisterMiscellaneousFilesWorkspaceInformation(_) = ()
-
+            
