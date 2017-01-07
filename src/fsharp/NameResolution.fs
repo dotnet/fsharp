@@ -2152,7 +2152,7 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv (typeN
 
             match tyconSearch +++ moduleSearch +++ unionSearch with
             | Result [] ->
-                let suggestPossibleTypes() =
+                let suggestPossibleTypesAndNames() =
                     match ad with
                     | AccessibleFrom _ ->
                         let types = 
@@ -2177,13 +2177,13 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv (typeN
                                     tycon.UnionCasesArray)
                             |> Seq.map (fun uc -> uc.DisplayName)
                             |> Set.ofSeq
-
+                            
                         types
                         |> Set.union submodules
                         |> Set.union unions
                     | _ -> Set.empty
 
-                raze (UndefinedName(depth,FSComp.SR.undefinedNameValueConstructorNamespaceOrType,id,suggestPossibleTypes))
+                raze (UndefinedName(depth,FSComp.SR.undefinedNameValueConstructorNamespaceOrType,id,suggestPossibleTypesAndNames))
             | results -> AtMostOneResult id.idRange results
 
 /// An identifier has resolved to a type name in an expression (corresponding to one or more TyconRefs). 
@@ -2267,7 +2267,6 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad n
                       else 
                           NoResultsOrUsefulErrors
 
-
                   ctorSearch +++ implicitOpSearch
 
               let resInfo,item,rest = 
@@ -2278,11 +2277,20 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad n
                           match !typeError with
                           | Some e -> raze e
                           | _ ->
-                              let suggestNames() =
-                                  nenv.eUnqualifiedItems
-                                  |> Seq.map (fun e -> e.Value.DisplayName)
-                                  |> Set.ofSeq
-                              raze (UndefinedName(0,FSComp.SR.undefinedNameValueOfConstructor,id,suggestNames)) // TODO: suggest ctors
+                              let suggestNamesAndTypes() =
+                                  let suggestedNames =
+                                      nenv.eUnqualifiedItems
+                                      |> Seq.map (fun e -> e.Value.DisplayName)
+                                      |> Set.ofSeq
+
+                                  let suggestedTypes =
+                                      nenv.TyconsByDemangledNameAndArity fullyQualified
+                                      |> Seq.map (fun e -> e.Value.DisplayName)
+                                      |> Set.ofSeq
+
+                                  Set.union suggestedNames suggestedTypes
+
+                              raze (UndefinedName(0,FSComp.SR.undefinedNameValueOfConstructor,id,suggestNamesAndTypes))
                       ForceRaise failingCase
 
               ResolutionInfo.SendToSink(sink,ncenv,nenv,ItemOccurence.Use,ad,resInfo,ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
@@ -2488,7 +2496,13 @@ let rec ResolvePatternLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv num
                         |> Seq.filter (fun kv -> IsEntityAccessible ncenv.amap m ad (modref.NestedTyconRef kv.Value))
                         |> Seq.collect (fun e -> [e.Value.DisplayName; e.Value.DemangledModuleOrNamespaceName])
                         |> Set.ofSeq
-                    submodules // TODO: suggest types and ctors
+                    
+                    let suggestedTypes =
+                        nenv.TyconsByDemangledNameAndArity FullyQualifiedFlag.OpenQualified
+                        |> Seq.map (fun e -> e.Value.DisplayName)
+                        |> Set.ofSeq
+
+                    Set.union submodules suggestedTypes
                 | _ -> Set.empty
 
             raze (UndefinedName(depth,FSComp.SR.undefinedNameConstructorModuleOrNamespace,id,suggestPossibleTypes))
@@ -2588,7 +2602,13 @@ let rec ResolveTypeLongIdentInTyconRefPrim (ncenv:NameResolver) (typeNameResInfo
         let tcrefs = CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, typeNameResInfo, genOk, m) 
         match tcrefs with 
         | tcref :: _ -> success tcref
-        | [] -> raze (UndefinedName(depth,FSComp.SR.undefinedNameType,id,NoSuggestions)) // TODO: suggest types
+        | [] ->
+            let suggestTypes() =
+                tcref.ModuleOrNamespaceType.TypesByDemangledNameAndArity id.idRange
+                |> Seq.map (fun e -> e.Value.DisplayName)
+                |> Set.ofSeq
+
+            raze (UndefinedName(depth,FSComp.SR.undefinedNameType,id,suggestTypes))
     | id::rest ->
 #if EXTENSIONTYPING
         // No dotting through type generators to get to a nested type!
@@ -2603,7 +2623,13 @@ let rec ResolveTypeLongIdentInTyconRefPrim (ncenv:NameResolver) (typeNameResInfo
             let tcrefs = CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, typeNameResInfo.DropStaticArgsInfo, genOk, m)
             match tcrefs with 
             | _ :: _ -> tcrefs |> CollectAtMostOneResult (fun (resInfo,tcref) -> ResolveTypeLongIdentInTyconRefPrim ncenv typeNameResInfo ad resInfo genOk (depth+1) m tcref rest)
-            | [] -> raze (UndefinedName(depth,FSComp.SR.undefinedNameType,id,NoSuggestions)) // TODO: suggest types
+            | [] -> 
+                let suggestTypes() =
+                    tcref.ModuleOrNamespaceType.TypesByDemangledNameAndArity id.idRange
+                    |> Seq.map (fun e -> e.Value.DisplayName)
+                    |> Set.ofSeq
+
+                raze (UndefinedName(depth,FSComp.SR.undefinedNameType,id,suggestTypes))
             
         AtMostOneResult m tyconSearch
 
@@ -2661,7 +2687,13 @@ let rec private ResolveTypeLongIdentInModuleOrNamespace (ncenv:NameResolver) (ty
             let tcrefs = LookupTypeNameInEntityMaybeHaveArity (ncenv.amap, id.idRange, ad, id.idText, TypeNameResolutionStaticArgsInfo.Indefinite, modref)
             match tcrefs with 
             | _ :: _ -> tcrefs |> CollectResults (fun tcref -> ResolveTypeLongIdentInTyconRefPrim ncenv typeNameResInfo ad resInfo genOk (depth+1) m tcref rest)
-            | [] -> raze (UndefinedName(depth,FSComp.SR.undefinedNameType,id,NoSuggestions)) // TODO: suggest ctors
+            | [] ->
+                let suggestTypes() =
+                    modref.ModuleOrNamespaceType.TypesByDemangledNameAndArity id.idRange
+                    |> Seq.map (fun e -> e.Value.DisplayName)
+                    |> Set.ofSeq
+
+                raze (UndefinedName(depth,FSComp.SR.undefinedNameType,id,suggestTypes))
         tyconSearch +++ modulSearch
 
 /// Resolve a long identifier representing a type 

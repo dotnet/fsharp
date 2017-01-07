@@ -10,10 +10,10 @@ let minStringLengthForThreshold = 3
 
 /// We report a candidate if its edit distance is <= the threshold.
 /// The threshhold is set to about a quarter of the number of characters the user entered.
-let IsInEditDistanceProximity unknownIdent suggestion =
-    let editDistance = Internal.Utilities.EditDistance.CalcEditDistance(unknownIdent,suggestion)
+let IsInEditDistanceProximity userEntered suggestion =
+    let editDistance = Internal.Utilities.EditDistance.CalcEditDistance(userEntered,suggestion)
     let threshold =
-        match unknownIdent.Length with
+        match userEntered.Length with
         | x when x < 5 -> 1
         | x when x < 7 -> 2
         | x -> x / 4 + 1
@@ -21,17 +21,18 @@ let IsInEditDistanceProximity unknownIdent suggestion =
     editDistance <= threshold
 
 /// Filters predictions based on edit distance to the given unknown identifier.
-let FilterPredictions (unknownIdent:string) (suggestionF:ErrorLogger.Suggestions) =    
-    let unknownIdent = unknownIdent.ToUpperInvariant()
+let FilterPredictions (userEntered:string) (suggestionF:ErrorLogger.Suggestions) =    
+    let uppercaseText = userEntered.ToUpperInvariant()
     suggestionF()
     |> Seq.choose (fun suggestion ->
+        if suggestion = userEntered then None else
         let suggestedText = suggestion.ToUpperInvariant()
-        let similarity = Internal.Utilities.EditDistance.JaroWinklerDistance unknownIdent suggestedText
+        let similarity = Internal.Utilities.EditDistance.JaroWinklerDistance uppercaseText suggestedText
         if similarity >= highConfidenceThreshold then
             Some(similarity,suggestion)
         elif similarity < minThresholdForSuggestions && suggestedText.Length > minStringLengthForThreshold then
             None
-        elif IsInEditDistanceProximity unknownIdent suggestedText then
+        elif IsInEditDistanceProximity uppercaseText suggestedText then
             Some(similarity,suggestion)
         else
             None)
