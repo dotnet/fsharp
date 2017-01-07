@@ -2367,16 +2367,40 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad n
 
                       search +++ moduleSearch +++ tyconSearch
 
+                  let suggestEverythingInScope() = 
+                      let suggestedModulesAndNamespaces =
+                          nenv.ModulesAndNamespaces fullyQualified
+                          |> Seq.collect (fun kv -> kv.Value)
+                          |> Seq.filter (fun modref -> IsEntityAccessible ncenv.amap m ad modref)
+                          |> Seq.collect (fun e -> [e.DisplayName; e.DemangledModuleOrNamespaceName])
+                          |> Set.ofSeq
+                      
+                      let suggestedTypes =
+                          nenv.TyconsByDemangledNameAndArity fullyQualified
+                          |> Seq.map (fun e -> e.Value.DisplayName)
+                          |> Set.ofSeq
+
+                      let suggestedNames =
+                          nenv.eUnqualifiedItems
+                          |> Seq.map (fun e -> e.Value.DisplayName)
+                          |> Set.ofSeq
+                      
+                      suggestedNames
+                      |> Set.union suggestedTypes
+                      |> Set.union suggestedModulesAndNamespaces
+
                   match innerSearch with
+                  | Exception (UndefinedName(0,_,id1,suggestionsF)) when id.idRange = id1.idRange ->
+                        let mergeSuggestions() =
+                            suggestEverythingInScope()
+                            |> Set.union (suggestionsF())
+
+                        let failingCase = raze (UndefinedName(0,FSComp.SR.undefinedNameValueNamespaceTypeOrModule,id,mergeSuggestions))
+                        ForceRaise failingCase
                   | Exception err -> ForceRaise(Exception err)
                   | Result (res :: _) -> ForceRaise(Result res)
                   | Result [] ->
-                        let suggestNames() =
-                            nenv.eUnqualifiedItems
-                            |> Seq.map (fun e -> e.Value.DisplayName)
-                            |> Set.ofSeq
-
-                        let failingCase = raze (UndefinedName(0,FSComp.SR.undefinedNameValueNamespaceTypeOrModule,id,suggestNames)) // TODO: suggest modules and types
+                        let failingCase = raze (UndefinedName(0,FSComp.SR.undefinedNameValueNamespaceTypeOrModule,id,suggestEverythingInScope))
                         ForceRaise failingCase
 
           ResolutionInfo.SendToSink(sink,ncenv,nenv,ItemOccurence.Use,ad,resInfo,ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
