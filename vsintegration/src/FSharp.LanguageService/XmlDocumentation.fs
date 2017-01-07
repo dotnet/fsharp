@@ -39,7 +39,7 @@ type internal TextSanitizingCollector(collector, ?lineLimit: int) =
             collector text
     
     static let splitTextRegex = Regex(@"\s*\n\s*\n\s*", RegexOptions.Compiled ||| RegexOptions.ExplicitCapture)
-    static let normalizeSpacesRegex = Regex(@"\s+", RegexOptions.Compiled ||| RegexOptions.ExplicitCapture))
+    static let normalizeSpacesRegex = Regex(@"\s+", RegexOptions.Compiled ||| RegexOptions.ExplicitCapture)
 
     let reportTextLines (s: string) =
         // treat _double_ newlines as line breaks and remove all \n after that
