@@ -44,7 +44,7 @@ type internal TextSanitizingCollector(collector, ?lineLimit: int) =
         let paragraphs = splitTextRegex.Split(s.Replace("\r", ""))
         paragraphs
         |> Array.iteri (fun i paragraph ->
-            let paragraph = normalizeSpacesRegex.Replace(paragraph.Replace("\n", " "), " ")
+            let paragraph = normalizeSpacesRegex.Replace(paragraph, " ")
             addTaggedTextEntry (tagText paragraph)
             if i < paragraphs.Length - 1 then
                 // insert two line breaks to separate paragraphs
