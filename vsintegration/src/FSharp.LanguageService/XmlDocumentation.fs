@@ -5,6 +5,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 open System
 open System.Text
 open System.Collections.Generic
+open System.Text.RegularExpressions
 open Internal.Utilities.Collections
 open EnvDTE
 open EnvDTE80
@@ -35,37 +36,19 @@ type internal TextSanitizingCollector(collector, ?lineLimit: int) =
             if endsWithLineBreak then count <- count + 1
             collector text
     
-    let reportTextLines (s: string) =
-        let mutable pos = 0
-        // skip newlines and whitespaces at the beginning
-        while pos < s.Length && Char.IsWhiteSpace s.[pos] do
-            pos <- pos + 1
-        // keep single leading space
-        if pos > 0 && s.[pos - 1] = ' ' then pos <- pos - 1
-        
-        // skip newlines and whitespaces at the end
-        let mutable endPos = s.Length - 1
-        while endPos >= pos && Char.IsWhiteSpace s.[endPos] do
-            endPos <- endPos - 1
+    let splitTextRegex = Regex(@"\s*\n\s*\n\s*")
 
-        if pos < endPos then
-            let buf = StringBuilder()
-            while pos < s.Length do
-                match s.[pos] with
-                | '\r' -> pos <- pos + 1
-                | '\n' -> 
-                    if buf.Length > 0 then
-                        addTaggedTextEntry (tagText (buf.ToString()))
-                        addTaggedTextEntry Literals.lineBreak
-                        buf.Clear() |> ignore
-                    while pos < s.Length && Char.IsWhiteSpace s.[pos] do
-                        pos <- pos + 1
-                | c -> 
-                    buf.Append(c) |> ignore
-                    pos <- pos + 1
-            // flush the rest
-            if buf.Length > 0 then
-                addTaggedTextEntry (tagText (buf.ToString()))
+    let reportTextLines (s: string) =
+        // treat _double_ newlines as line breaks and remove all \n after that
+        let paragraphs = splitTextRegex.Split(s.Replace("\r", ""))
+        paragraphs
+        |> Array.iteri (fun i paragraph -> 
+            let line = paragraph.Replace('\n', ' ').Replace("  ", " ").Trim()
+            addTaggedTextEntry (tagText line)
+            if i < paragraphs.Length - 1 then
+                // insert two line breaks to separate paragraphs
+                addTaggedTextEntry Literals.lineBreak
+                addTaggedTextEntry Literals.lineBreak)
 
     interface ITaggedTextCollector with
         member this.Add text = 
@@ -333,13 +316,12 @@ module internal XmlDocumentation =
     /// Build a data tip text string with xml comments injected.
     let BuildTipText(documentationProvider:IDocumentationBuilder, dataTipText: FSharpStructuredToolTipElement list, textCollector, xmlCollector, showText, showExceptions, showParameters, showOverloadText) = 
         let textCollector: ITaggedTextCollector = TextSanitizingCollector(textCollector, lineLimit = 45) :> _
-        let xmlTaggedText = ResizeArray()
-        let xmlTaggedTextCollector: ITaggedTextCollector = TextSanitizingCollector(xmlTaggedText.Add, lineLimit = 45) :> _
+        let xmlCollector: ITaggedTextCollector = TextSanitizingCollector(xmlCollector, lineLimit = 45) :> _
 
         let addSeparatorIfNecessary add =
             if add then
                 AddSeparator textCollector
-                AddSeparator xmlTaggedTextCollector
+                AddSeparator xmlCollector
 
         let Process add (dataTipElement: FSharpStructuredToolTipElement) =
             match dataTipElement with 
@@ -348,13 +330,13 @@ module internal XmlDocumentation =
                 addSeparatorIfNecessary add
                 if showText then 
                     renderL (taggedTextListR textCollector.Add) text |> ignore
-                AppendXmlComment(documentationProvider, xmlTaggedTextCollector, xml, showExceptions, showParameters, None)
+                AppendXmlComment(documentationProvider, xmlCollector, xml, showExceptions, showParameters, None)
                 true
             | FSharpStructuredToolTipElement.SingleParameter(text, xml, paramName) ->
                 addSeparatorIfNecessary add
                 if showText then
                     renderL (taggedTextListR textCollector.Add) text |> ignore
-                AppendXmlComment(documentationProvider, xmlTaggedTextCollector, xml, showExceptions, showParameters, Some paramName)
+                AppendXmlComment(documentationProvider, xmlCollector, xml, showExceptions, showParameters, Some paramName)
                 true
             | FSharpStructuredToolTipElement.Group (overloads) -> 
                 let overloads = Array.ofList overloads
@@ -387,16 +369,6 @@ module internal XmlDocumentation =
                 true
 
         List.fold Process false dataTipText |> ignore
-
-        // remove trailing line breaks and empty strings
-        xmlTaggedText.Reverse()
-        xmlTaggedText
-        |> Seq.skipWhile (function
-            | TaggedText.LineBreak _ -> true
-            | TaggedText.Text text -> String.IsNullOrWhiteSpace text
-            | _ -> false)
-        |> Seq.rev
-        |> Seq.iter xmlCollector
 
     let BuildDataTipText(documentationProvider, textCollector, xmlCollector, FSharpToolTipText(dataTipText)) = 
         BuildTipText(documentationProvider, dataTipText, textCollector, xmlCollector, true, true, false, true) 
