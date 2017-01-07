@@ -23,37 +23,34 @@ type internal TextSanitizingCollector(collector, ?lineLimit: int) =
     let mutable endsWithLineBreak = false
     let mutable count = 0
 
-    let buf = StringBuilder()
-
-    let addTaggedTextEntry t =
-        if lineLimit.IsNone || count < lineLimit.Value then 
-            isEmpty <- false
-            endsWithLineBreak <- match t with TaggedText.LineBreak _ -> true | _ -> false
-            if endsWithLineBreak then count <- count + 1
-            collector t
-        if lineLimit.IsSome && lineLimit.Value = count then
+    let addTaggedTextEntry text =
+        match lineLimit with
+        | Some lineLimit when lineLimit = count ->
             // add ... when line limit is reached
             collector (tagText "...")
             count <- count + 1
+        | _ ->
+            isEmpty <- false
+            endsWithLineBreak <- match text with TaggedText.LineBreak _ -> true | _ -> false
+            if endsWithLineBreak then count <- count + 1
+            collector text
     
-    let isCROrLF c = c = '\r' || c = '\n'
-
     let reportTextLines (s: string) =
         let mutable pos = 0
         // skip newlines and whitespaces at the beginning
-        while pos < s.Length && (Char.IsWhiteSpace s.[pos] || isCROrLF s.[pos]) do
+        while pos < s.Length && Char.IsWhiteSpace s.[pos] do
             pos <- pos + 1
         // keep single leading space
         if pos > 0 && s.[pos - 1] = ' ' then pos <- pos - 1
         
         // skip newlines and whitespaces at the end
         let mutable endPos = s.Length - 1
-        while endPos >= pos && (s.[endPos] = ' ' || isCROrLF s.[endPos])do
+        while endPos >= pos && Char.IsWhiteSpace s.[endPos] do
             endPos <- endPos - 1
 
         if pos < endPos then
-            buf.Clear() |> ignore
-            while (pos < s.Length) do
+            let buf = StringBuilder()
+            while pos < s.Length do
                 match s.[pos] with
                 | '\r' -> pos <- pos + 1
                 | '\n' -> 
@@ -69,8 +66,6 @@ type internal TextSanitizingCollector(collector, ?lineLimit: int) =
             // flush the rest
             if buf.Length > 0 then
                 addTaggedTextEntry (tagText (buf.ToString()))
-
-        buf.Clear() |> ignore
 
     interface ITaggedTextCollector with
         member this.Add text = 
