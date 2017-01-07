@@ -201,11 +201,6 @@ type internal FSharpCheckerWorkspaceServiceFactory
                 member this.Checker = checkerProvider.Checker
                 member this.ProjectInfoManager = projectInfoManager }
 
-type internal ProjectChangedEventArgs(hier: IVsHierarchy, isNew: bool) =
-    inherit EventArgs()
-    member __.Hierarchy = hier
-    member __.IsNew = isNew
-
 type
     [<Guid(FSharpCommonConstants.packageGuidString)>]
     [<ProvideLanguageService(languageService = typeof<FSharpLanguageService>,
@@ -218,7 +213,7 @@ type
                              ShowSmartIndent = true,
                              EnableAsyncCompletion = true,
                              QuickInfo = true,
-                             DefaultToInsertSpaces  = true,
+                             DefaultToInsertSpaces = true,
                              CodeSense = true,
                              DefaultToNonHotURLs = true,
                              EnableCommenting = true,
@@ -226,20 +221,6 @@ type
     internal FSharpPackage() =
     inherit AbstractPackage<FSharpPackage, FSharpLanguageService>()
     
-    let mutable solutionEventsCookie = 0u
-    let mutable solution = null
-
-    let projectOpened = Event<_>()
-
-    override this.Initialize() =
-        base.Initialize()
-        try
-            solution <- this.GetService<SVsSolution>() :?> IVsSolution
-            if not (isNull solution) then 
-                solution.AdviseSolutionEvents(this, &solutionEventsCookie) |> ignore
-        with ex ->
-            Assert.Exception ex
-
     override this.RoslynLanguageName = FSharpCommonConstants.FSharpLanguageName
 
     override this.CreateWorkspace() = this.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
@@ -251,97 +232,6 @@ type
 
     override this.RegisterMiscellaneousFilesWorkspaceInformation(_) = ()
     
-    [<CLIEvent>]
-    member this.ProjectOpened = projectOpened.Publish
-
-    interface IDisposable with
-        member __.Dispose () =
-            if solutionEventsCookie <> 0u && not (isNull solution) then
-                solution.UnadviseSolutionEvents(solutionEventsCookie) |> ignore
-                solutionEventsCookie <- 0u
-    
-    interface IVsSolutionEvents with
-        member this.OnAfterLoadProject(_pStubHierarchy: IVsHierarchy, _pRealHierarchy: IVsHierarchy): int = 
-            VSConstants.E_NOTIMPL
-        member this.OnAfterOpenProject(pHierarchy: IVsHierarchy, fAdded: int): int = 
-            let hr, canonicalName = pHierarchy.GetCanonicalName(VSConstants.VSITEMID_ROOT)
-            System.Windows.Forms.MessageBox.Show("Open " + if Com.Succeeded hr then canonicalName else System.String.Empty) |> ignore
-            let isNew = fAdded = 1
-            projectOpened.Trigger(ProjectChangedEventArgs(pHierarchy, isNew))
-            VSConstants.S_OK
-        member this.OnBeforeCloseProject(_pHierarchy: IVsHierarchy, _fRemoved: int): int = 
-            VSConstants.E_NOTIMPL
-        member this.OnBeforeUnloadProject(_pRealHierarchy: IVsHierarchy, _pStubHierarchy: IVsHierarchy): int = 
-            VSConstants.E_NOTIMPL
-        member this.OnQueryCloseProject(_pHierarchy: IVsHierarchy, _fRemoving: int, pfCancel: byref<int>): int = 
-            VSConstants.E_NOTIMPL
-        member this.OnQueryUnloadProject(_pRealHierarchy: IVsHierarchy, pfCancel: byref<int>): int = 
-            VSConstants.E_NOTIMPL
-        member this.OnAfterCloseSolution(_pUnkReserved: obj): int = 
-            VSConstants.E_NOTIMPL
-        member this.OnAfterOpenSolution(_pUnkReserved: obj, _fNewSolution: int): int = 
-            VSConstants.E_NOTIMPL
-        member this.OnBeforeCloseSolution(_pUnkReserved: obj): int = 
-            VSConstants.E_NOTIMPL
-        member this.OnQueryCloseSolution(_pUnkReserved: obj, pfCancel: byref<int>): int = 
-            VSConstants.E_NOTIMPL
-
-    interface IVsSolutionEvents2 with
-        member this.OnAfterMergeSolution(_pUnkReserved: obj): int = 
-            VSConstants.E_NOTIMPL
-        member this.OnAfterOpenSolution(_pUnkReserved: obj, _fNewSolution: int): int = 
-            VSConstants.E_NOTIMPL
-        member this.OnBeforeCloseSolution(_pUnkReserved: obj): int = 
-            VSConstants.E_NOTIMPL
-        member this.OnQueryCloseSolution(_pUnkReserved: obj, pfCancel: byref<int>): int = 
-            VSConstants.E_NOTIMPL
-        member this.OnAfterCloseSolution(_pUnkReserved: obj): int = 
-            VSConstants.E_NOTIMPL
-        member this.OnAfterLoadProject(_pStubHierarchy: IVsHierarchy, _pRealHierarchy: IVsHierarchy): int = 
-            VSConstants.E_NOTIMPL
-        member this.OnAfterOpenProject(_pHierarchy: IVsHierarchy, _fAdded: int): int = 
-            VSConstants.S_OK
-        member this.OnBeforeCloseProject(_pHierarchy: IVsHierarchy, _fRemoved: int): int = 
-            VSConstants.E_NOTIMPL
-        member this.OnBeforeUnloadProject(_pRealHierarchy: IVsHierarchy, _pStubHierarchy: IVsHierarchy): int = 
-            VSConstants.E_NOTIMPL
-        member this.OnQueryCloseProject(_pHierarchy: IVsHierarchy, _fRemoving: int, pfCancel: byref<int>): int = 
-            VSConstants.E_NOTIMPL
-        member this.OnQueryUnloadProject(_pRealHierarchy: IVsHierarchy, pfCancel: byref<int>): int = 
-            VSConstants.E_NOTIMPL
-
-    interface IVsSolutionEvents3 with
-        override this.OnAfterCloseSolution(_pUnkReserved: obj): int = 
-            VSConstants.E_NOTIMPL
-        member this.OnAfterClosingChildren(_pHierarchy: IVsHierarchy): int = 
-            VSConstants.E_NOTIMPL
-        member this.OnAfterLoadProject(_pStubHierarchy: IVsHierarchy, _pRealHierarchy: IVsHierarchy): int = 
-            VSConstants.E_NOTIMPL
-        member this.OnAfterMergeSolution(_pUnkReserved: obj): int = 
-            VSConstants.E_NOTIMPL
-        member this.OnAfterOpenProject(_pHierarchy: IVsHierarchy, _fAdded: int): int = 
-            VSConstants.E_NOTIMPL
-        member this.OnAfterOpenSolution(_pUnkReserved: obj, _fNewSolution: int): int = 
-            VSConstants.E_NOTIMPL
-        member this.OnAfterOpeningChildren(_pHierarchy: IVsHierarchy): int = 
-            VSConstants.E_NOTIMPL
-        member this.OnBeforeCloseProject(_pHierarchy: IVsHierarchy, _fRemoved: int): int = 
-            VSConstants.E_NOTIMPL
-        member this.OnBeforeCloseSolution(_pUnkReserved: obj): int = 
-            VSConstants.E_NOTIMPL
-        member this.OnBeforeClosingChildren(_pHierarchy: IVsHierarchy): int = 
-            VSConstants.E_NOTIMPL
-        member this.OnBeforeOpeningChildren(_pHierarchy: IVsHierarchy): int = 
-            VSConstants.E_NOTIMPL
-        member this.OnBeforeUnloadProject(_pRealHierarchy: IVsHierarchy, _pStubHierarchy: IVsHierarchy): int = 
-            VSConstants.E_NOTIMPL
-        member this.OnQueryCloseProject(_pHierarchy: IVsHierarchy, _fRemoving: int, pfCancel: byref<int>): int = 
-            VSConstants.E_NOTIMPL
-        member this.OnQueryCloseSolution(_pUnkReserved: obj, pfCancel: byref<int>): int = 
-            VSConstants.E_NOTIMPL
-        member this.OnQueryUnloadProject(_pRealHierarchy: IVsHierarchy, pfCancel: byref<int>): int = 
-            VSConstants.E_NOTIMPL 
-
 and 
     [<Guid(FSharpCommonConstants.languageServiceGuidString)>]
     [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fs")>]
@@ -366,7 +256,8 @@ and
         if String.IsNullOrWhiteSpace projectFileName then projectFileName
         else Path.GetFileNameWithoutExtension projectFileName
 
-    do package.ProjectOpened.Add (fun (args: ProjectChangedEventArgs) -> 
+    do
+      Events.SolutionEvents.OnAfterOpenProject.Add (fun (args: Events.OpenProjectEventArgs) -> 
         match args.Hierarchy with
         | :? IProvideProjectSite as siteProvider ->
             let workspace = this.Package.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
