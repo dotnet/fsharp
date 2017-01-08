@@ -2301,7 +2301,24 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad n
                                       |> Seq.map (fun e -> e.Value.DisplayName)
                                       |> Set.ofSeq
 
-                                  Set.union suggestedNames suggestedTypes
+                                  let unions =
+                                      // check if the user forgot to use qualified access
+                                      nenv.eTyconsByDemangledNameAndArity
+                                      |> Seq.choose (fun e ->
+                                          let hasRequireQualifiedAccessAttribute = HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute e.Value.Attribs
+                                          if not hasRequireQualifiedAccessAttribute then 
+                                              None
+                                          else
+                                              if e.Value.UnionCasesArray |> Array.exists (fun c -> c.DisplayName = id.idText) then
+                                                  Some e.Value
+                                              else
+                                                  None)
+                                      |> Seq.map (fun t -> t.DisplayName + "." + id.idText)
+                                      |> Set.ofSeq
+                                
+                                  suggestedNames
+                                  |> Set.union suggestedTypes
+                                  |> Set.union unions
 
                               raze (UndefinedName(0,FSComp.SR.undefinedNameValueOfConstructor,id,suggestNamesAndTypes))
                       ForceRaise failingCase
