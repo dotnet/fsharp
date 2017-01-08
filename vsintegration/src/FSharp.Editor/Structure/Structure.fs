@@ -245,7 +245,14 @@ module internal Structure =
             | SynExpr.ForEach (_,_,_,_,_,e,r) ->
                 yield! rcheck Scope.For Collapse.Below r r
                 yield! parseExpr e
-            | SynExpr.LetOrUse (_,_,bindings, body,_r) ->
+            | SynExpr.LetOrUse (_,_,bindings, body, r) ->
+                
+
+
+                yield! rcheck Scope.LetOrUse Collapse.Same r r
+                
+                
+                
                 yield! parseBindings bindings
                 yield! parseExpr body
             | SynExpr.Match (seqPointAtBinding,_expr,clauses,_,r) ->
@@ -387,10 +394,15 @@ module internal Structure =
             | _ -> ()
         }
 
-    and private parseMatchClause (SynMatchClause. Clause (synPat,_,e,_r,_) as clause) =
+    and private parseMatchClause (SynMatchClause.Clause(synPat,_,e,_r,_) as clause) =
+        let rec getLastPat = function
+            | SynPat.Or(_, pat, _) -> getLastPat pat
+            | x -> x
+
         seq {
+            let synPat = getLastPat synPat
             let collapse  = Range.endToEnd synPat.Range clause.Range // Collapse the scope starting with `->`
-            yield! rcheck Scope.MatchClause Collapse.Same clause.Range collapse
+            yield! rcheck Scope.MatchClause Collapse.Same e.Range collapse
             yield! parseExpr e
         }
 
@@ -849,7 +861,6 @@ module internal Structure =
             | _ -> ()
         }
 
-
     let private parseModuleOrNamespaceSigs moduleOrNamespaceSig =
         seq {
             let (SynModuleOrNamespaceSig.SynModuleOrNamespaceSig(longId,_,isModule,decls,_,attribs,_,r)) =  moduleOrNamespaceSig
@@ -866,19 +877,17 @@ module internal Structure =
             yield! Seq.collect parseModuleSigDeclaration decls
         }
 
-
     let getOutliningRanges (sourceLines: string []) (parsedInput: ParsedInput) =
-            match parsedInput with
-            | ParsedInput.ImplFile implFile ->
-                let (ParsedImplFileInput (_, _, _, _, _, modules, _)) = implFile
-                let astBasedRanges = Seq.collect parseModuleOrNamespace modules
-                let commentRanges = getCommentRanges sourceLines
-                Seq.append astBasedRanges commentRanges
-            | ParsedInput.SigFile sigFile ->
-                let (ParsedSigFileInput(_,_,_,_,moduleSigs )) = sigFile
-                let astBasedRanges = Seq.collect parseModuleOrNamespaceSigs moduleSigs
-                let commentRanges = getCommentRanges sourceLines
-                Seq.append astBasedRanges commentRanges
-
-
-
+        let astStr = sprintf "%+A" parsedInput
+        let _x = astStr
+        match parsedInput with
+        | ParsedInput.ImplFile implFile ->
+            let (ParsedImplFileInput (_, _, _, _, _, modules, _)) = implFile
+            let astBasedRanges = Seq.collect parseModuleOrNamespace modules
+            let commentRanges = getCommentRanges sourceLines
+            Seq.append astBasedRanges commentRanges
+        | ParsedInput.SigFile sigFile ->
+            let (ParsedSigFileInput(_,_,_,_,moduleSigs )) = sigFile
+            let astBasedRanges = Seq.collect parseModuleOrNamespaceSigs moduleSigs
+            let commentRanges = getCommentRanges sourceLines
+            Seq.append astBasedRanges commentRanges
