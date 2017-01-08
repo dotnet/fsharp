@@ -157,13 +157,20 @@ module internal Utilities =
                 member r.AddText z s =
                     let color =
                         match s with
-                        | Keyword _ -> ConsoleColor.Blue
-                        | TypeParameter _
-                        | Alias _
-                        | Struct _
-                        | Class _ -> ConsoleColor.Cyan
-                        | StringLiteral _ -> ConsoleColor.Red
-                        | NumericLiteral _ -> ConsoleColor.Magenta
+                        | TaggedText.Keyword _ -> ConsoleColor.White
+                        | TaggedText.TypeParameter _
+                        | TaggedText.Alias _
+                        | TaggedText.Class _ 
+                        | TaggedText.Module _
+                        | TaggedText.ModuleBinding _
+                        | TaggedText.Interface _
+                        | TaggedText.Record _
+                        | TaggedText.Struct _
+                        | TaggedText.Union _ -> ConsoleColor.Cyan
+                        | TaggedText.UnionCase _
+                        | TaggedText.ActivePatternCase _ -> ConsoleColor.Magenta
+                        | TaggedText.StringLiteral _ -> ConsoleColor.Yellow
+                        | TaggedText.NumericLiteral _ -> ConsoleColor.Green
                         | _ -> Console.ForegroundColor
 
                     DoWithColor color (fun () -> outWriter.Write s.Value)
