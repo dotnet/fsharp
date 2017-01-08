@@ -129,7 +129,6 @@ module internal Structure =
         | UnionCase
         | EnumCase
         | RecordField
-        | SimpleType
         | RecordDefn
         | UnionDefn
         | Comment
@@ -177,7 +176,6 @@ module internal Structure =
             | UnionCase             -> "UnionCase"
             | EnumCase              -> "EnumCase"
             | RecordField           -> "RecordField"
-            | SimpleType            -> "SimpleType"
             | RecordDefn            -> "RecordDefn"
             | UnionDefn             -> "UnionDefn"
             | Comment               -> "Comment"
@@ -450,36 +448,40 @@ module internal Structure =
 
     and private parseExprInterfaces (intfs:SynInterfaceImpl list) = Seq.collect parseExprInterface intfs
 
-    and private parseSynMemberDefn d =
+    and private parseSynMemberDefn (objectModelRange: range) d =
         seq {
             match d with
-            | SynMemberDefn.Member
-               (SynBinding.Binding (_,_kind,_,_,attrs,_,
-                    SynValData (Some{MemberKind=MemberKind.Constructor},_,_),synPat,_,_e,_lhsr,_)
-                        as binding,_r) as _memb ->
-               let collapse = Range.endToEnd synPat.Range d.Range
-               yield! rcheck Scope.New Collapse.Below d.Range collapse
+            | SynMemberDefn.Member(SynBinding.Binding (attrs=attrs; valData=valData; headPat=synPat; range=bindingRange) as binding,_) ->
+               match valData with
+               | SynValData (Some { MemberKind=MemberKind.Constructor },_,_) ->
+                  let collapse = Range.endToEnd synPat.Range d.Range
+                  yield! rcheck Scope.New Collapse.Below d.Range collapse
+               | SynValData (Some { MemberKind=MemberKind.PropertyGet | MemberKind.PropertySet },_,_) ->
+                  let collapse = Range.endToEnd bindingRange d.Range
+                  let range = 
+                    Range.mkRange 
+                        d.Range.FileName 
+                        (Range.mkPos d.Range.StartLine objectModelRange.StartColumn)
+                        d.Range.End
+                  yield! rcheck Scope.Member Collapse.Below range collapse
+               | _ ->
+                  let collapse = Range.endToEnd bindingRange d.Range
+                  yield! rcheck Scope.Member Collapse.Below d.Range collapse
                yield! parseAttributes attrs
                yield! parseBinding binding
-            | SynMemberDefn.Member
-                (SynBinding.Binding (_,_kind,_,_,attrs,_,SynValData(_memberFlags,_,_),_synPat,_,_e,lhsr,_)as binding,_r) as _memb ->
-                let collapse = Range.endToEnd lhsr d.Range
-                yield! rcheck Scope.Member Collapse.Below d.Range collapse
-                yield! parseAttributes attrs
-                yield! parseBinding binding
-            | SynMemberDefn.LetBindings (bindings,_,_,_r) ->
+            | SynMemberDefn.LetBindings (bindings,_,_,_) ->
                 yield! parseBindings bindings
-            | SynMemberDefn.Interface (tp,iMembers,_) ->
+            | SynMemberDefn.Interface (tp, iMembers, r) ->
                 yield! rcheck Scope.Interface Collapse.Below d.Range <| Range.endToEnd tp.Range d.Range
                 match iMembers with
                 | Some members ->
-                    yield! Seq.collect parseSynMemberDefn members
+                    yield! Seq.collect (parseSynMemberDefn r) members
                 | None -> ()
-            | SynMemberDefn.NestedType (td, _, _r) ->
+            | SynMemberDefn.NestedType (td, _, _) ->
                 yield! parseTypeDefn td //d.Range
-            | SynMemberDefn.AbstractSlot (ValSpfn(_, _, _, synt, _, _, _, _, _, _, _), _, r) ->
-                yield! rcheck Scope.Member Collapse.Below d.Range <| Range.startToEnd synt.Range r
-            | SynMemberDefn.AutoProperty (_, _, _, _, (*memkind*)_, _, _, _, e, _, r) ->
+            | SynMemberDefn.AbstractSlot (ValSpfn(synType=synt), _, r) ->
+                yield! rcheck Scope.Member Collapse.Below d.Range (Range.startToEnd synt.Range r)
+            | SynMemberDefn.AutoProperty (synExpr=e; range=r) ->
                 yield! rcheck Scope.Member Collapse.Below d.Range r
                 yield! parseExpr e
             | _ -> ()
@@ -496,36 +498,22 @@ module internal Structure =
                          |  Path of string
     *)
     and private parseSimpleRepr simple =
-        let _accessRange (opt:SynAccess option) =
-            match opt with
-            | None -> 0
-            | Some synacc ->
-                match synacc with
-                | SynAccess.Public -> 6
-                | SynAccess.Private -> 7
-                | SynAccess.Internal -> 8
         seq {
             match simple with
             | SynTypeDefnSimpleRepr.Enum (cases,_er) ->
-                yield!
-                    cases
-                    |> Seq.collect (fun (SynEnumCase.EnumCase (attrs, _, _, _, cr)) ->
-                        seq { yield! rcheck Scope.EnumCase Collapse.Below cr cr
-                              yield! parseAttributes attrs })
-            | SynTypeDefnSimpleRepr.Record (_opt,fields,rr) ->
+                for SynEnumCase.EnumCase (attrs, _, _, _, cr) in cases do
+                    yield! rcheck Scope.EnumCase Collapse.Below cr cr
+                    yield! parseAttributes attrs
+            | SynTypeDefnSimpleRepr.Record (_,fields,rr) ->
                 yield! rcheck Scope.RecordDefn Collapse.Same rr rr //<| Range.modBoth rr 1 1
-                yield! fields
-                    |> Seq.collect (fun (SynField.Field (attrs,_,_,_,_,_,_,fr)) ->
-                    seq{yield! rcheck Scope.RecordField Collapse.Below fr fr
-                        yield! parseAttributes attrs
-                    })
-            | SynTypeDefnSimpleRepr.Union (_opt,cases,ur) ->
+                for SynField.Field (attrs,_,_,_,_,_,_,fr) in fields do
+                    yield! rcheck Scope.RecordField Collapse.Below fr fr
+                    yield! parseAttributes attrs
+            | SynTypeDefnSimpleRepr.Union (_,cases,ur) ->
                 yield! rcheck Scope.UnionDefn Collapse.Same ur ur
-                yield! cases
-                    |> Seq.collect (fun (SynUnionCase.UnionCase (attrs,_,_,_,_,cr)) ->
-                    seq{yield! rcheck Scope.UnionCase Collapse.Below cr cr
-                        yield! parseAttributes attrs
-                    })
+                for SynUnionCase.UnionCase (attrs,_,_,_,_,cr) in cases do
+                    yield! rcheck Scope.UnionCase Collapse.Below cr cr
+                    yield! parseAttributes attrs
             | _ -> ()
         }
 
@@ -536,19 +524,19 @@ module internal Structure =
             let genericRange = rangeOfTypeArgsElse r typeArgs
             let collapse = Range.endToEnd (Range.modEnd 1 genericRange) fullrange
             match objectModel with
-            | SynTypeDefnRepr.ObjectModel (defnKind, objMembers, _) ->
+            | SynTypeDefnRepr.ObjectModel (defnKind, objMembers, r) ->
                 match defnKind with
                 | SynTypeDefnKind.TyconAugmentation ->
                     yield! rcheck Scope.TypeExtension Collapse.Below fullrange collapse
                 | _ ->
                     yield! rcheck Scope.Type Collapse.Below fullrange collapse
-                yield! Seq.collect parseSynMemberDefn objMembers
+                yield! Seq.collect (parseSynMemberDefn r) objMembers
                 // visit the members of a type extension
-                yield! Seq.collect parseSynMemberDefn members
-            | SynTypeDefnRepr.Simple (simpleRepr,_r) ->
+                yield! Seq.collect (parseSynMemberDefn r) members
+            | SynTypeDefnRepr.Simple (simpleRepr, r) ->
                 yield! rcheck Scope.Type Collapse.Below fullrange collapse
                 yield! parseSimpleRepr simpleRepr
-                yield! Seq.collect parseSynMemberDefn members
+                yield! Seq.collect (parseSynMemberDefn r) members
             | SynTypeDefnRepr.Exception _ -> ()
         }
 
@@ -578,7 +566,6 @@ module internal Structure =
 
         decls |> (List.choose predicate >> groupConsecutiveDecls >> List.choose selectRanges)
 
-
     let collectOpens = getConsecutiveModuleDecls (function SynModuleDecl.Open (_, r) -> Some r | _ -> None) Scope.Open
 
     let collectHashDirectives =
@@ -589,18 +576,17 @@ module internal Structure =
                 Some (Range.mkRange "" (Range.mkPos r.StartLine prefixLength) r.End)
             | _ -> None) Scope.HashDirective
 
-
     let rec private parseDeclaration (decl: SynModuleDecl) =
         seq {
             match decl with
             | SynModuleDecl.Let (_,bindings,r) ->
-                yield! bindings |> Seq.collect (fun binding ->
+                for binding in bindings do
                     let collapse = Range.endToEnd binding.RangeOfBindingSansRhs r
-                    rcheck Scope.LetOrUse Collapse.Below r collapse
-                )
+                    yield! rcheck Scope.LetOrUse Collapse.Below r collapse
                 yield! parseBindings bindings
             | SynModuleDecl.Types (types,_r) ->
-                yield! Seq.collect (fun t -> parseTypeDefn t ) types
+                for t in types do
+                    yield! parseTypeDefn t
             // Fold the attributes above a module
             | SynModuleDecl.NestedModule (SynComponentInfo.ComponentInfo (attrs,_,_,_,_,_,_,cmpRange),_, decls,_,_) ->
 //                cmpInfo.
@@ -876,17 +862,17 @@ module internal Structure =
 
 
     let getOutliningRanges (sourceLines: string []) (parsedInput: ParsedInput) =
-        match parsedInput with
-        | ParsedInput.ImplFile implFile ->
-            let (ParsedImplFileInput (_, _, _, _, _, modules, _)) = implFile
-            let astBasedRanges = Seq.collect parseModuleOrNamespace modules
-            let commentRanges = getCommentRanges sourceLines
-            Seq.append astBasedRanges commentRanges
-        | ParsedInput.SigFile sigFile ->
-            let (ParsedSigFileInput(_,_,_,_,moduleSigs )) = sigFile
-            let astBasedRanges = Seq.collect parseModuleOrNamespaceSigs moduleSigs
-            let commentRanges = getCommentRanges sourceLines
-            Seq.append astBasedRanges commentRanges
+            match parsedInput with
+            | ParsedInput.ImplFile implFile ->
+                let (ParsedImplFileInput (_, _, _, _, _, modules, _)) = implFile
+                let astBasedRanges = Seq.collect parseModuleOrNamespace modules
+                let commentRanges = getCommentRanges sourceLines
+                Seq.append astBasedRanges commentRanges
+            | ParsedInput.SigFile sigFile ->
+                let (ParsedSigFileInput(_,_,_,_,moduleSigs )) = sigFile
+                let astBasedRanges = Seq.collect parseModuleOrNamespaceSigs moduleSigs
+                let commentRanges = getCommentRanges sourceLines
+                Seq.append astBasedRanges commentRanges
 
 
 
