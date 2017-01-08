@@ -866,8 +866,6 @@ module internal Structure =
         }
 
     let getOutliningRanges (sourceLines: string []) (parsedInput: ParsedInput) =
-        let astStr = sprintf "%+A" parsedInput
-        let _x = astStr
         match parsedInput with
         | ParsedInput.ImplFile implFile ->
             let (ParsedImplFileInput (_, _, _, _, _, modules, _)) = implFile
