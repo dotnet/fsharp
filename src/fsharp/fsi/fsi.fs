@@ -166,7 +166,7 @@ module internal Utilities =
                         | TaggedText.Record _
                         | TaggedText.Struct _
                         | TaggedText.Union _
-                        | TaggedText.UnknownType -> ConsoleColor.Cyan
+                        | TaggedText.UnknownType _ -> ConsoleColor.Cyan
                         | TaggedText.UnionCase _
                         | TaggedText.ActivePatternCase _ -> ConsoleColor.Magenta
                         | TaggedText.StringLiteral _ -> ConsoleColor.Yellow
