@@ -2415,12 +2415,15 @@ let rec ResolvePatternLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv num
         | Some vspec  when IsValAccessible ad (mkNestedValRef modref vspec) -> 
             success(resInfo,Item.Value (mkNestedValRef modref vspec),rest)
         | _ ->
+        let tcrefs = lazy (
+            LookupTypeNameInEntityMaybeHaveArity (ncenv.amap, id.idRange, ad, id.idText, TypeNameResolutionStaticArgsInfo.Indefinite, modref)
+            |> List.map (fun tcref -> (resInfo,tcref)))
+
         // Something in a type? e.g. a literal field 
-        let tcrefs = LookupTypeNameInEntityMaybeHaveArity (ncenv.amap, id.idRange, ad, id.idText, TypeNameResolutionStaticArgsInfo.Indefinite, modref)
-        let tcrefs = tcrefs |> List.map (fun tcref -> (resInfo,tcref))
         let tyconSearch = 
             match lid with 
-            | _tn:: rest when not (isNil rest) ->
+            | _ :: rest when not (isNil rest) ->
+                let tcrefs = tcrefs.Force()
                 ResolveLongIdentInTyconRefs ResultCollectionSettings.AtMostOneResult (ncenv:NameResolver) nenv LookupKind.Pattern (depth+1) m ad rest numTyArgsOpt id.idRange tcrefs
             | _ -> 
                 NoResultsOrUsefulErrors
@@ -2431,8 +2434,8 @@ let rec ResolvePatternLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv num
 
         // Constructor of a type? 
         let ctorSearch = 
-            if isNil rest then 
-                tcrefs 
+            if isNil rest then
+                tcrefs.Force()
                 |> List.map (fun (resInfo,tcref) -> (resInfo,FreshenTycon ncenv m tcref)) 
                 |> CollectAtMostOneResult (fun (resInfo,typ) -> ResolveObjectConstructorPrim ncenv nenv.eDisplayEnv resInfo id.idRange ad typ) 
                 |> MapResults (fun (resInfo,item) -> (resInfo,item,[]))
