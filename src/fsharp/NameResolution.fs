@@ -2177,10 +2177,24 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv (typeN
                                     tycon.UnionCasesArray)
                             |> Seq.map (fun uc -> uc.DisplayName)
                             |> Set.ofSeq
+
+                        let vals = 
+                            modref.ModuleOrNamespaceType.AllValsByLogicalName
+                            |> Seq.filter (fun e -> IsValAccessible ad (mkNestedValRef modref e.Value))
+                            |> Seq.map (fun e -> e.Value.DisplayName)
+                            |> Set.ofSeq
+                         
+                        let exns =
+                            modref.ModuleOrNamespaceType.ExceptionDefinitionsByDemangledName
+                            |> Seq.filter (fun e -> IsTyconReprAccessible ncenv.amap m ad (modref.NestedTyconRef e.Value))
+                            |> Seq.map (fun e -> e.Value.DisplayName)
+                            |> Set.ofSeq
                             
                         types
                         |> Set.union submodules
                         |> Set.union unions
+                        |> Set.union vals
+                        |> Set.union exns
                     | _ -> Set.empty
 
                 raze (UndefinedName(depth,FSComp.SR.undefinedNameValueConstructorNamespaceOrType,id,suggestPossibleTypesAndNames))
@@ -2203,8 +2217,7 @@ let ChooseTyconRefInExpr (ncenv:NameResolver, m, ad, nenv, id:Ident, typeNameRes
 
 /// Resolve F# "A.B.C" syntax in expressions
 /// Not all of the sequence will necessarily be swallowed, i.e. we return some identifiers 
-/// that may represent further actions, e.g. further lookups. 
-
+/// that may represent further actions, e.g. further lookups.
 let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad nenv (typeNameResInfo:TypeNameResolutionInfo) lid =
     let resInfo = ResolutionInfo.Empty
     match lid with 
