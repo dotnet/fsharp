@@ -160,6 +160,7 @@ module internal Utilities =
                         | Keyword _ -> ConsoleColor.Blue
                         | TypeParameter _
                         | Alias _
+                        | Struct _
                         | Class _ -> ConsoleColor.Cyan
                         | StringLiteral _ -> ConsoleColor.Red
                         | NumericLiteral _ -> ConsoleColor.Magenta
