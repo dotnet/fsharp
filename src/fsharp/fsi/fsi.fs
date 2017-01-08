@@ -162,7 +162,6 @@ module internal Utilities =
                         | TaggedText.Alias _
                         | TaggedText.Class _ 
                         | TaggedText.Module _
-                        | TaggedText.ModuleBinding _
                         | TaggedText.Interface _
                         | TaggedText.Record _
                         | TaggedText.Struct _
