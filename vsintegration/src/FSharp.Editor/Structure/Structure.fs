@@ -246,13 +246,6 @@ module internal Structure =
                 yield! rcheck Scope.For Collapse.Below r r
                 yield! parseExpr e
             | SynExpr.LetOrUse (_,_,bindings, body, r) ->
-                
-
-
-                yield! rcheck Scope.LetOrUse Collapse.Same r r
-                
-                
-                
                 yield! parseBindings bindings
                 yield! parseExpr body
             | SynExpr.Match (seqPointAtBinding,_expr,clauses,_,r) ->
@@ -535,30 +528,28 @@ module internal Structure =
             | _ -> ()
         }
 
-    and private parseTypeDefn
-        (TypeDefn
-            (SynComponentInfo.ComponentInfo(_attribs,typeArgs,_constraints,_longId,_doc,_b,_access,r)
-                as _componentInfo, objectModel,  members, fullrange)) = seq {
-            let genericRange = rangeOfTypeArgsElse r typeArgs
-            let collapse = Range.endToEnd (Range.modEnd 1 genericRange) fullrange
-            match objectModel with
-            | SynTypeDefnRepr.ObjectModel (defnKind, objMembers, r) ->
-                match defnKind with
-                | SynTypeDefnKind.TyconAugmentation ->
-                    yield! rcheck Scope.TypeExtension Collapse.Below fullrange collapse
-                | _ ->
-                    yield! rcheck Scope.Type Collapse.Below fullrange collapse
-                yield! Seq.collect (parseSynMemberDefn r) objMembers
-                // visit the members of a type extension
-                yield! Seq.collect (parseSynMemberDefn r) members
-            | SynTypeDefnRepr.Simple (simpleRepr, r) ->
-                yield! rcheck Scope.Type Collapse.Below fullrange collapse
-                yield! parseSimpleRepr simpleRepr
-                yield! Seq.collect (parseSynMemberDefn r) members
-            | SynTypeDefnRepr.Exception _ -> ()
+    and private parseTypeDefn (TypeDefn(SynComponentInfo.ComponentInfo(_,typeArgs,_,_,_,_,_,r), objectModel, members, fullrange)) = 
+        seq {
+           let genericRange = rangeOfTypeArgsElse r typeArgs
+           let collapse = Range.endToEnd (Range.modEnd 1 genericRange) fullrange
+           match objectModel with
+           | SynTypeDefnRepr.ObjectModel (defnKind, objMembers, r) ->
+               match defnKind with
+               | SynTypeDefnKind.TyconAugmentation ->
+                   yield! rcheck Scope.TypeExtension Collapse.Below fullrange collapse
+               | _ ->
+                   yield! rcheck Scope.Type Collapse.Below fullrange collapse
+               yield! Seq.collect (parseSynMemberDefn r) objMembers
+               // visit the members of a type extension
+               yield! Seq.collect (parseSynMemberDefn r) members
+           | SynTypeDefnRepr.Simple (simpleRepr, r) ->
+               yield! rcheck Scope.Type Collapse.Below fullrange collapse
+               yield! parseSimpleRepr simpleRepr
+               yield! Seq.collect (parseSynMemberDefn r) members
+           | SynTypeDefnRepr.Exception _ -> ()
         }
 
-    let private getConsecutiveModuleDecls (predicate: SynModuleDecl -> range option) (scope:Scope) (decls: SynModuleDecls) =
+    let private getConsecutiveModuleDecls (predicate: SynModuleDecl -> range option) (scope: Scope) (decls: SynModuleDecls) =
         let groupConsecutiveDecls input =
             let rec loop (input: range list) (res: range list list) currentBulk =
                 match input, currentBulk with
@@ -622,12 +613,9 @@ module internal Structure =
             | _ -> ()
         }
 
-    let private parseModuleOrNamespace moduleOrNs =
+    let private parseModuleOrNamespace (SynModuleOrNamespace.SynModuleOrNamespace (longId,_,isModule,decls,_,attribs,_,r)) =
         seq {
-            let (SynModuleOrNamespace.SynModuleOrNamespace (longId,_,isModule,decls,_,attribs,_,r)) = moduleOrNs
             yield! parseAttributes attribs
-            
-
             let fullrange = Range.startToEnd (longIdentRange longId) r  
             let collapse = Range.endToEnd (longIdentRange longId) r 
             if isModule then
