@@ -457,12 +457,18 @@ module internal Structure =
                   let collapse = Range.endToEnd synPat.Range d.Range
                   yield! rcheck Scope.New Collapse.Below d.Range collapse
                | SynValData (Some { MemberKind=MemberKind.PropertyGet | MemberKind.PropertySet },_,_) ->
-                  let collapse = Range.endToEnd bindingRange d.Range
                   let range = 
                     Range.mkRange 
                         d.Range.FileName 
                         (Range.mkPos d.Range.StartLine objectModelRange.StartColumn)
                         d.Range.End
+                  
+                  let collapse =
+                    match synPat with
+                    | SynPat.LongIdent(longDotId=longIdent) ->
+                       Range.endToEnd longIdent.Range d.Range
+                    | _ -> Range.endToEnd bindingRange d.Range
+
                   yield! rcheck Scope.Member Collapse.Below range collapse
                | _ ->
                   let collapse = Range.endToEnd bindingRange d.Range
