@@ -1409,8 +1409,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                 match item with 
                 | [Item.Value _]
                 | [Item.MethodGroup(_,[_],_)] -> 
-                    let isOpName = IsOpName nm
-                    isOpName && nm.[0] = '(' && nm.[nm.Length-1] = ')'
+                    IsOpName nm && nm.[0] = '(' && nm.[nm.Length-1] = ')'
                 | [Item.UnionCase _] -> IsOpName nm
                 | _ -> false              
 

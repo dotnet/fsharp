@@ -125,10 +125,10 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
             t.Add(c) |> ignore
         t
         
-    let IsOpName (name:string) =
-        let nameLen = name.Length
-        let rec loop i = (i < nameLen && (opCharSet.Contains(name.[i]) || loop (i+1)))
-        loop 0
+    let IsOpName (name: string) =
+        let name = if name.StartsWith "( " then name.[2..name.Length - 3] else name
+        let res = name |> Seq.forall (fun c -> opCharSet.Contains c && c <> ' ')
+        res
 
     let IsMangledOpName (n:string) =
         n.StartsWith (opNamePrefix, System.StringComparison.Ordinal)
