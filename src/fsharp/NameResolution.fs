@@ -2309,7 +2309,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad n
                                           if not hasRequireQualifiedAccessAttribute then 
                                               None
                                           else
-                                              if e.Value.UnionCasesArray |> Array.exists (fun c -> c.DisplayName = id.idText) then
+                                              if e.Value.IsUnionTycon && e.Value.UnionCasesArray |> Array.exists (fun c -> c.DisplayName = id.idText) then
                                                   Some e.Value
                                               else
                                                   None)
@@ -2898,34 +2898,51 @@ let SuggestOtherLabelsOfSameRecordType g (nenv:NameResolutionEnv) typ (id:Ident)
     Set.difference labelsOfPossibleRecord givenFields
     
       
-let SuggestLabelsOfRelatedRecords (nenv:NameResolutionEnv) (id:Ident) (allFields:Ident list) =
-    let suggestLabels() =                         
+let SuggestLabelsOfRelatedRecords g (nenv:NameResolutionEnv) (id:Ident) (allFields:Ident list) =
+    let suggestLabels() =
         let givenFields = allFields |> List.map (fun fld -> fld.idText) |> List.filter ((<>) id.idText) |> Set.ofList
-        if Set.isEmpty givenFields then 
-            // return labels from all records
-            NameMap.domainL nenv.eFieldLabels |> Set.ofList |> Set.remove "contents"
-        else
-            let possibleRecords =
-                [for fld in givenFields do
-                    match Map.tryFind fld nenv.eFieldLabels with
-                    | None -> ()
-                    | Some recordTypes -> yield! (recordTypes |> List.map (fun r -> r.TyconRef.DisplayName, fld)) ]
-                |> List.groupBy fst
-                |> List.map (fun (r,fields) -> r, fields |> List.map snd |> Set.ofList)
-                |> List.filter (fun (_,fields) -> Set.isSubset givenFields fields)
-                |> List.map fst
-                |> Set.ofList
+        let fullyQualfied =
+            if Set.isEmpty givenFields then 
+                // return labels from all records
+                NameMap.domainL nenv.eFieldLabels |> Set.ofList |> Set.remove "contents"
+            else
+                let possibleRecords =
+                    [for fld in givenFields do
+                        match Map.tryFind fld nenv.eFieldLabels with
+                        | None -> ()
+                        | Some recordTypes -> yield! (recordTypes |> List.map (fun r -> r.TyconRef.DisplayName, fld)) ]
+                    |> List.groupBy fst
+                    |> List.map (fun (r,fields) -> r, fields |> List.map snd |> Set.ofList)
+                    |> List.filter (fun (_,fields) -> Set.isSubset givenFields fields)
+                    |> List.map fst
+                    |> Set.ofList
 
-            let labelsOfPossibleRecords =
-                nenv.eFieldLabels
-                |> Seq.filter (fun kv -> 
-                    kv.Value 
-                    |> List.map (fun r -> r.TyconRef.DisplayName)
-                    |> List.exists possibleRecords.Contains)
-                |> Seq.map (fun kv -> kv.Key)
-                |> Set.ofSeq
+                let labelsOfPossibleRecords =
+                    nenv.eFieldLabels
+                    |> Seq.filter (fun kv -> 
+                        kv.Value 
+                        |> List.map (fun r -> r.TyconRef.DisplayName)
+                        |> List.exists possibleRecords.Contains)
+                    |> Seq.map (fun kv -> kv.Key)
+                    |> Set.ofSeq
 
-            Set.difference labelsOfPossibleRecords givenFields
+                Set.difference labelsOfPossibleRecords givenFields
+        
+        if not (Set.isEmpty fullyQualfied) then fullyQualfied else
+
+        // check if the user forgot to use qualified access
+        nenv.eTyconsByDemangledNameAndArity
+        |> Seq.choose (fun e ->
+            let hasRequireQualifiedAccessAttribute = HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute e.Value.Attribs
+            if not hasRequireQualifiedAccessAttribute then 
+                None
+            else
+                if e.Value.IsRecordTycon && e.Value.AllFieldsArray |> Seq.exists (fun x -> x.Name = id.idText) then
+                    Some e.Value
+                else
+                    None)
+        |> Seq.map (fun t -> t.DisplayName + "." + id.idText)
+        |> Set.ofSeq
 
     UndefinedName(0,FSComp.SR.undefinedNameRecordLabel, id, suggestLabels)
 
@@ -2941,7 +2958,7 @@ let ResolveFieldPrim (ncenv:NameResolver) nenv ad typ (mp,id:Ident) allFields =
                 try Map.find id.idText nenv.eFieldLabels 
                 with :? KeyNotFoundException ->
                     // record label is unknown -> suggest related labels and give a hint to the user
-                    error(SuggestLabelsOfRelatedRecords nenv id allFields)
+                    error(SuggestLabelsOfRelatedRecords g nenv id allFields)
 
             // Eliminate duplicates arising from multiple 'open' 
             frefs 
