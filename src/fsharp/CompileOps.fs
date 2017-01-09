@@ -1640,7 +1640,7 @@ let GetFSharpCoreReferenceUsedByCompiler(useSimpleResolution) =
     let fscCoreLocation = 
         let fscLocation = typeof<TypeInThisAssembly>.Assembly.Location
         Path.Combine(Path.GetDirectoryName(fscLocation), fsCoreName + ".dll")
-    if File.Exists(fscCoreLocation) then fsCoreName + ".dll"
+    if File.Exists(fscCoreLocation) then fscCoreLocation
     else failwithf "Internal error: Could not find %s" fsCoreName
 #else
     // TODO:  Remove this when we do out of GAC for DEV 15 because above code will work everywhere.
