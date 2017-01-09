@@ -4,20 +4,36 @@
 module internal Microsoft.FSharp.Compiler.ErrorResolutionHints
 
 let maxSuggestions = 5
-
+let minThresholdForSuggestions = 0.7
+let highConfidenceThreshold = 0.85
 let minStringLengthForThreshold = 3
 
-let thresholdForSuggestions = 0.7
+/// We report a candidate if its edit distance is <= the threshold.
+/// The threshhold is set to about a quarter of the number of characters the user entered.
+let IsInEditDistanceProximity userEntered suggestion =
+    let editDistance = Internal.Utilities.EditDistance.CalcEditDistance(userEntered,suggestion)
+    let threshold =
+        match userEntered.Length with
+        | x when x < 5 -> 1
+        | x when x < 7 -> 2
+        | x -> x / 4 + 1
+    
+    editDistance <= threshold
 
 /// Filters predictions based on edit distance to the given unknown identifier.
-let FilterPredictions (unknownIdent:string) (predictionsF:ErrorLogger.Suggestions) =    
-    let unknownIdent = unknownIdent.ToUpperInvariant()
-    let useThreshold = unknownIdent.Length >= minStringLengthForThreshold
-    predictionsF()
-    |> Seq.choose (fun p -> 
-        let similarity = Internal.Utilities.EditDistance.JaroWinklerDistance unknownIdent (p.ToUpperInvariant())
-        if not useThreshold || similarity >= thresholdForSuggestions || p.Contains unknownIdent then
-            Some(similarity,p)
+let FilterPredictions (userEntered:string) (suggestionF:ErrorLogger.Suggestions) =    
+    let uppercaseText = userEntered.ToUpperInvariant()
+    suggestionF()
+    |> Seq.choose (fun suggestion ->
+        if suggestion = userEntered then None else
+        let suggestedText = suggestion.ToUpperInvariant()
+        let similarity = Internal.Utilities.EditDistance.JaroWinklerDistance uppercaseText suggestedText
+        if similarity >= highConfidenceThreshold then
+            Some(similarity,suggestion)
+        elif similarity < minThresholdForSuggestions && suggestedText.Length > minStringLengthForThreshold then
+            None
+        elif IsInEditDistanceProximity uppercaseText suggestedText then
+            Some(similarity,suggestion)
         else
             None)
     |> Seq.sortByDescending fst
