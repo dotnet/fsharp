@@ -104,6 +104,7 @@ type internal FSharpFindReferencesService
                             [ for declProject in declProjects do
                                 yield declProject
                                 yield! declProject.GetDependentProjects() ]
+                            |> List.distinct
                         | Some (SymbolDeclarationLocation.Projects (declProjects, true)) -> declProjects
                         // The symbol is declared in .NET framework, an external assembly or in a C# project within the solution.
                         // In order to find all its usages we have to check all F# projects.
