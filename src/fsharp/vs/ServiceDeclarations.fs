@@ -1416,7 +1416,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
 
             let isFSharpList nm = (nm = "[]") // list shows up as a Type and a UnionCase, only such entity with a symbolic name, but want to filter out of intellisense
 
-            items3 |> List.filter (fun (nm,_items) -> not (isOpItem(nm,items)) && not(isFSharpList nm)) 
+            items3 |> List.filter (fun (nm,items) -> not (isOpItem(nm,items)) && not(isFSharpList nm)) 
 
 
         let decls = 
