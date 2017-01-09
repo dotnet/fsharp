@@ -12769,12 +12769,16 @@ module MutRecBindingChecking =
                 // Class members can access protected members of the implemented type 
                 // Class members can access private members in the typ
                 let isExtrinsic = (declKind = ExtrinsicExtensionBinding)
-                let envForTycon = MakeInnerEnvForTyconRef cenv envForDecls tcref isExtrinsic 
+                let innitalEnvForTycon = MakeInnerEnvForTyconRef cenv envForDecls tcref isExtrinsic 
 
                 // Re-add the type constructor to make it take precedence for record label field resolutions
                 // This does not apply to extension members: in those cases the relationship between the record labels
                 // and the type is too extruded
-                let envForTycon = if isExtrinsic then envForTycon else AddLocalTyconRefs true cenv.g cenv.amap tcref.Range [tcref] envForTycon
+                let envForTycon = 
+                    if isExtrinsic then 
+                        innitalEnvForTycon
+                    else
+                        AddLocalTyconRefs true cenv.g cenv.amap tcref.Range [tcref] innitalEnvForTycon
 
                 // Make fresh version of the class type for type checking the members and lets *
                 let _,copyOfTyconTypars,_,objTy,thisTy = FreshenObjectArgType cenv tcref.Range TyparRigidity.WillBeRigid tcref isExtrinsic declaredTyconTypars
