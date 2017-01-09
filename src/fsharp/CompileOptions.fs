@@ -145,7 +145,7 @@ let PrintCompilerOptionBlocks blocks =
     if Set.contains heading doneHeadings then
       doneHeadings
     else
-      let headingOptions = List.filter (fst >> equals heading) publicBlocks |> List.map snd |> List.concat
+      let headingOptions = List.filter (fst >> equals heading) publicBlocks |> List.collect snd
       PrintPublicOptions (heading,headingOptions)
       Set.add heading doneHeadings
   List.fold consider Set.empty publicBlocks |> ignore<Set<string>>
