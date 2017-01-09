@@ -159,6 +159,9 @@ type internal FSharpCompletionProvider
                 return CompletionDescription.Empty
         } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
 
+    override this.GetChangeAsync(_document, item, _commitKey, _cancellationToken) :  Task<CompletionChange> =
+        Task.FromResult(CompletionChange.Create(new TextChange(item.Span, item.DisplayText)))
+
 type internal FSharpCompletionService
     (
         workspace: Workspace,

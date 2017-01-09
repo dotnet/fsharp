@@ -1310,7 +1310,7 @@ module internal ItemDescriptionsImpl =
      
 /// An intellisense declaration
 [<Sealed>]
-type FSharpDeclarationListItem(name: string, glyphMajor: GlyphMajor, glyphMinor: GlyphMinor, info, isAttribute: bool) =
+type FSharpDeclarationListItem(name: string, glyphMajor: GlyphMajor, glyphMinor: GlyphMinor, info, isAttribute: bool, backTicked: bool) =
     let mutable descriptionTextHolder:FSharpToolTipText<_> option = None
     let mutable task = null
 
@@ -1365,6 +1365,7 @@ type FSharpDeclarationListItem(name: string, glyphMajor: GlyphMajor, glyphMinor:
     member decl.GlyphMajor = glyphMajor 
     member decl.GlyphMinor = glyphMinor
     member decl.IsAttribute = isAttribute
+    member decl.BackTicked = backTicked
       
 /// A table of declarations for Intellisense completion 
 [<Sealed>]
@@ -1379,7 +1380,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
         // Sort by name. For things with the same name, 
         //     - show types with fewer generic parameters first
         //     - show types before over other related items - they usually have very useful XmlDocs 
-        let items1 = 
+        let items = 
             items |> List.sortBy (fun d -> 
                 let n = 
                     match d with  
@@ -1393,19 +1394,17 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                 (d.DisplayName,n))
 
         // Remove all duplicates. We've put the types first, so this removes the DelegateCtor and DefaultStructCtor's.
-        let items2 = items1 |> RemoveDuplicateItems g
+        let items = items |> RemoveDuplicateItems g
 
         if verbose then dprintf "service.ml: mkDecls: %d found groups after filtering\n" (List.length items); 
 
         // Group by display name
-        let items3 = items2 |> List.groupBy (fun d -> d.DisplayName) 
+        let items = items |> List.groupBy (fun d -> d.DisplayName) 
 
         // Filter out operators (and list)
-        let items4 = 
+        let items = 
             // Check whether this item looks like an operator.
-            let isOpItem(nm,item) = 
-                let i2 = item
-                let __x = i2
+            let isOpItem(nm, item) = 
                 match item with 
                 | [Item.Value _]
                 | [Item.MethodGroup(_,[_],_)] -> 
@@ -1415,21 +1414,22 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
 
             let isFSharpList nm = (nm = "[]") // list shows up as a Type and a UnionCase, only such entity with a symbolic name, but want to filter out of intellisense
 
-            items3 |> List.filter (fun (nm,items) -> not (isOpItem(nm,items)) && not(isFSharpList nm)) 
+            items |> List.filter (fun (nm, items) -> not (isOpItem(nm,items)) && not(isFSharpList nm)) 
 
 
         let decls = 
             // Filter out duplicate names
-            items4 |> List.map (fun (nm,itemsWithSameName) -> 
+            items |> List.map (fun (nm,itemsWithSameName) -> 
                 match itemsWithSameName with
                 | [] -> failwith "Unexpected empty bag"
                 | items -> 
                     let glyphMajor, glyphMinor = GlyphOfItem(denv,items.Head)
-                    new FSharpDeclarationListItem(nm, glyphMajor, glyphMinor, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), IsAttribute infoReader items.Head))
+                    new FSharpDeclarationListItem(nm, glyphMajor, glyphMinor, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), IsAttribute infoReader items.Head, false))
 
         new FSharpDeclarationListInfo(Array.ofList decls)
     
     static member Error msg = 
         new FSharpDeclarationListInfo(
-                [| new FSharpDeclarationListItem("<Note>", GlyphMajor.Error, GlyphMinor.Normal, Choice2Of2 (FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError msg]), false) |] )
+                [| new FSharpDeclarationListItem("<Note>", GlyphMajor.Error, GlyphMinor.Normal, 
+                                                 Choice2Of2 (FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError msg]), false, false) |] )
     static member Empty = new FSharpDeclarationListInfo([| |])
