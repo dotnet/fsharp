@@ -2153,49 +2153,46 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv (typeN
             match tyconSearch +++ moduleSearch +++ unionSearch with
             | Result [] ->
                 let suggestPossibleTypesAndNames() =
-                    match ad with
-                    | AccessibleFrom _ ->
-                        let types = 
-                            modref.ModuleOrNamespaceType.AllEntities
-                            |> Seq.filter (fun e -> IsEntityAccessible ncenv.amap m ad (modref.NestedTyconRef e))
-                            |> Seq.map (fun e -> e.DisplayName)
-                            |> Set.ofSeq
+                    let types = 
+                        modref.ModuleOrNamespaceType.AllEntities
+                        |> Seq.filter (fun e -> IsEntityAccessible ncenv.amap m ad (modref.NestedTyconRef e))
+                        |> Seq.map (fun e -> e.DisplayName)
+                        |> Set.ofSeq
 
-                        let submodules =
-                            mty.ModulesAndNamespacesByDemangledName
-                            |> Seq.filter (fun kv -> IsEntityAccessible ncenv.amap m ad (modref.NestedTyconRef kv.Value))
-                            |> Seq.map (fun e -> e.Value.DisplayName)
-                            |> Set.ofSeq
+                    let submodules =
+                        mty.ModulesAndNamespacesByDemangledName
+                        |> Seq.filter (fun kv -> IsEntityAccessible ncenv.amap m ad (modref.NestedTyconRef kv.Value))
+                        |> Seq.map (fun e -> e.Value.DisplayName)
+                        |> Set.ofSeq
                         
-                        let unions =
-                            modref.ModuleOrNamespaceType.AllEntities
-                            |> Seq.collect (fun tycon ->
-                                let hasRequireQualifiedAccessAttribute = HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute tycon.Attribs
-                                if hasRequireQualifiedAccessAttribute then
-                                    [||]
-                                else
-                                    tycon.UnionCasesArray)
-                            |> Seq.map (fun uc -> uc.DisplayName)
-                            |> Set.ofSeq
+                    let unions =
+                        modref.ModuleOrNamespaceType.AllEntities
+                        |> Seq.collect (fun tycon ->
+                            let hasRequireQualifiedAccessAttribute = HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute tycon.Attribs
+                            if hasRequireQualifiedAccessAttribute then
+                                [||]
+                            else
+                                tycon.UnionCasesArray)
+                        |> Seq.map (fun uc -> uc.DisplayName)
+                        |> Set.ofSeq
 
-                        let vals = 
-                            modref.ModuleOrNamespaceType.AllValsByLogicalName
-                            |> Seq.filter (fun e -> IsValAccessible ad (mkNestedValRef modref e.Value))
-                            |> Seq.map (fun e -> e.Value.DisplayName)
-                            |> Set.ofSeq
+                    let vals = 
+                        modref.ModuleOrNamespaceType.AllValsByLogicalName
+                        |> Seq.filter (fun e -> IsValAccessible ad (mkNestedValRef modref e.Value))
+                        |> Seq.map (fun e -> e.Value.DisplayName)
+                        |> Set.ofSeq
                          
-                        let exns =
-                            modref.ModuleOrNamespaceType.ExceptionDefinitionsByDemangledName
-                            |> Seq.filter (fun e -> IsTyconReprAccessible ncenv.amap m ad (modref.NestedTyconRef e.Value))
-                            |> Seq.map (fun e -> e.Value.DisplayName)
-                            |> Set.ofSeq
+                    let exns =
+                        modref.ModuleOrNamespaceType.ExceptionDefinitionsByDemangledName
+                        |> Seq.filter (fun e -> IsTyconReprAccessible ncenv.amap m ad (modref.NestedTyconRef e.Value))
+                        |> Seq.map (fun e -> e.Value.DisplayName)
+                        |> Set.ofSeq
                             
-                        types
-                        |> Set.union submodules
-                        |> Set.union unions
-                        |> Set.union vals
-                        |> Set.union exns
-                    | _ -> Set.empty
+                    types
+                    |> Set.union submodules
+                    |> Set.union unions
+                    |> Set.union vals
+                    |> Set.union exns
 
                 raze (UndefinedName(depth,FSComp.SR.undefinedNameValueConstructorNamespaceOrType,id,suggestPossibleTypesAndNames))
             | results -> AtMostOneResult id.idRange results
@@ -2298,6 +2295,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad n
 
                                   let suggestedTypes =
                                       nenv.TyconsByDemangledNameAndArity fullyQualified
+                                      |> Seq.filter (fun e -> IsEntityAccessible ncenv.amap m ad e.Value)
                                       |> Seq.map (fun e -> e.Value.DisplayName)
                                       |> Set.ofSeq
 
@@ -2398,6 +2396,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad n
                       
                       let suggestedTypes =
                           nenv.TyconsByDemangledNameAndArity fullyQualified
+                          |> Seq.filter (fun e -> IsEntityAccessible ncenv.amap m ad e.Value)
                           |> Seq.map (fun e -> e.Value.DisplayName)
                           |> Set.ofSeq
 
@@ -2505,21 +2504,19 @@ let rec ResolvePatternLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv num
         match tyconSearch +++ ctorSearch +++ moduleSearch with
         | Result [] -> 
             let suggestPossibleTypes() =
-                match ad with
-                | AccessibleFrom _ ->
-                    let submodules =
-                        mty.ModulesAndNamespacesByDemangledName
-                        |> Seq.filter (fun kv -> IsEntityAccessible ncenv.amap m ad (modref.NestedTyconRef kv.Value))
-                        |> Seq.collect (fun e -> [e.Value.DisplayName; e.Value.DemangledModuleOrNamespaceName])
-                        |> Set.ofSeq
+                let submodules =
+                    mty.ModulesAndNamespacesByDemangledName
+                    |> Seq.filter (fun kv -> IsEntityAccessible ncenv.amap m ad (modref.NestedTyconRef kv.Value))
+                    |> Seq.collect (fun e -> [e.Value.DisplayName; e.Value.DemangledModuleOrNamespaceName])
+                    |> Set.ofSeq
                     
-                    let suggestedTypes =
-                        nenv.TyconsByDemangledNameAndArity FullyQualifiedFlag.OpenQualified
-                        |> Seq.map (fun e -> e.Value.DisplayName)
-                        |> Set.ofSeq
+                let suggestedTypes =
+                    nenv.TyconsByDemangledNameAndArity FullyQualifiedFlag.OpenQualified
+                    |> Seq.filter (fun e -> IsEntityAccessible ncenv.amap m ad e.Value)
+                    |> Seq.map (fun e -> e.Value.DisplayName)
+                    |> Set.ofSeq
 
-                    Set.union submodules suggestedTypes
-                | _ -> Set.empty
+                Set.union submodules suggestedTypes
 
             raze (UndefinedName(depth,FSComp.SR.undefinedNameConstructorModuleOrNamespace,id,suggestPossibleTypes))
         | results -> AtMostOneResult id.idRange results
@@ -2660,13 +2657,10 @@ let ResolveTypeLongIdentInTyconRef sink (ncenv:NameResolver) nenv typeNameResInf
 /// Create an UndefinedName error with details 
 let SuggestTypeLongIdentInModuleOrNamespace depth (modref:ModuleOrNamespaceRef) amap ad m (id:Ident) =
     let suggestPossibleTypes() =
-        match ad with
-        | AccessibleFrom _ ->
-            modref.ModuleOrNamespaceType.AllEntities
-            |> Seq.filter (fun e -> IsEntityAccessible amap m ad (modref.NestedTyconRef e))
-            |> Seq.collect (fun e -> [e.DisplayName; e.DemangledModuleOrNamespaceName])
-            |> Set.ofSeq
-        | _ -> Set.empty
+        modref.ModuleOrNamespaceType.AllEntities
+        |> Seq.filter (fun e -> IsEntityAccessible amap m ad (modref.NestedTyconRef e))
+        |> Seq.collect (fun e -> [e.DisplayName; e.DemangledModuleOrNamespaceName])
+        |> Set.ofSeq
 
     let errorTextF s = FSComp.SR.undefinedNameTypeIn(s,fullDisplayTextOfModRef modref)    
     UndefinedName(depth,errorTextF,id,suggestPossibleTypes)
@@ -2690,13 +2684,10 @@ let rec private ResolveTypeLongIdentInModuleOrNamespace (ncenv:NameResolver) (ty
                 ResolveTypeLongIdentInModuleOrNamespace ncenv typeNameResInfo ad genOk resInfo (depth+1) m submodref submodref.ModuleOrNamespaceType rest
             | _ ->
                 let suggestPossibleModules() =
-                    match ad with
-                    | AccessibleFrom _ ->
-                        modref.ModuleOrNamespaceType.ModulesAndNamespacesByDemangledName
-                        |> Seq.filter (fun kv -> IsEntityAccessible ncenv.amap m ad (modref.NestedTyconRef kv.Value))
-                        |> Seq.collect (fun e -> [e.Value.DisplayName; e.Value.DemangledModuleOrNamespaceName])
-                        |> Set.ofSeq
-                    | _ -> Set.empty
+                    modref.ModuleOrNamespaceType.ModulesAndNamespacesByDemangledName
+                    |> Seq.filter (fun kv -> IsEntityAccessible ncenv.amap m ad (modref.NestedTyconRef kv.Value))
+                    |> Seq.collect (fun e -> [e.Value.DisplayName; e.Value.DemangledModuleOrNamespaceName])
+                    |> Set.ofSeq
                 raze (UndefinedName(depth,FSComp.SR.undefinedNameNamespaceOrModule,id,suggestPossibleModules))
 
         let tyconSearch = 
@@ -2740,21 +2731,18 @@ let rec ResolveTypeLongIdentPrim (ncenv:NameResolver) occurence fullyQualified m
                 success(ResolutionInfo.Empty,tcref)
             | [] -> 
                 let suggestPossibleTypes() =
-                    match ad with
-                    | AccessibleFrom _ ->
-                        nenv.TyconsByDemangledNameAndArity(fullyQualified)
-                        |> Seq.filter (fun kv -> IsEntityAccessible ncenv.amap m ad kv.Value)
-                        |> Seq.collect (fun e -> 
-                            match occurence with
-                            | ItemOccurence.UseInAttribute -> 
-                                [yield e.Value.DisplayName
-                                 yield e.Value.DemangledModuleOrNamespaceName
-                                 if e.Value.DisplayName.EndsWith "Attribute" then
-                                    yield e.Value.DisplayName.Replace("Attribute","")]
-                            | _ -> [e.Value.DisplayName; e.Value.DemangledModuleOrNamespaceName])
-                        |> Set.ofSeq
-                    | _ -> Set.empty
-                
+                    nenv.TyconsByDemangledNameAndArity(fullyQualified)
+                    |> Seq.filter (fun kv -> IsEntityAccessible ncenv.amap m ad kv.Value)
+                    |> Seq.collect (fun e -> 
+                        match occurence with
+                        | ItemOccurence.UseInAttribute -> 
+                            [yield e.Value.DisplayName
+                             yield e.Value.DemangledModuleOrNamespaceName
+                             if e.Value.DisplayName.EndsWith "Attribute" then
+                                 yield e.Value.DisplayName.Replace("Attribute","")]
+                        | _ -> [e.Value.DisplayName; e.Value.DemangledModuleOrNamespaceName])
+                    |> Set.ofSeq
+
                 raze (UndefinedName(0,FSComp.SR.undefinedNameType,id,suggestPossibleTypes))
 
     | id::rest ->
