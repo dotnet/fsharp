@@ -1379,7 +1379,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
         // Sort by name. For things with the same name, 
         //     - show types with fewer generic parameters first
         //     - show types before over other related items - they usually have very useful XmlDocs 
-        let items = 
+        let items1 = 
             items |> List.sortBy (fun d -> 
                 let n = 
                     match d with  
@@ -1393,32 +1393,35 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                 (d.DisplayName,n))
 
         // Remove all duplicates. We've put the types first, so this removes the DelegateCtor and DefaultStructCtor's.
-        let items = items |> RemoveDuplicateItems g
+        let items2 = items1 |> RemoveDuplicateItems g
 
         if verbose then dprintf "service.ml: mkDecls: %d found groups after filtering\n" (List.length items); 
 
         // Group by display name
-        let items = items |> List.groupBy (fun d -> d.DisplayName) 
+        let items3 = items2 |> List.groupBy (fun d -> d.DisplayName) 
 
         // Filter out operators (and list)
-        let items = 
+        let items4 = 
             // Check whether this item looks like an operator.
             let isOpItem(nm,item) = 
+                let i2 = item
+                let __x = i2
                 match item with 
                 | [Item.Value _]
                 | [Item.MethodGroup(_,[_],_)] -> 
-                    (IsOpName nm) && nm.[0]='(' && nm.[nm.Length-1]=')'
+                    let isOpName = IsOpName nm
+                    isOpName && nm.[0] = '(' && nm.[nm.Length-1] = ')'
                 | [Item.UnionCase _] -> IsOpName nm
                 | _ -> false              
 
             let isFSharpList nm = (nm = "[]") // list shows up as a Type and a UnionCase, only such entity with a symbolic name, but want to filter out of intellisense
 
-            items |> List.filter (fun (nm,items) -> not (isOpItem(nm,items)) && not(isFSharpList nm)) 
+            items3 |> List.filter (fun (nm,_items) -> not (isOpItem(nm,items)) && not(isFSharpList nm)) 
 
 
         let decls = 
             // Filter out duplicate names
-            items |> List.map (fun (nm,itemsWithSameName) -> 
+            items4 |> List.map (fun (nm,itemsWithSameName) -> 
                 match itemsWithSameName with
                 | [] -> failwith "Unexpected empty bag"
                 | items -> 
