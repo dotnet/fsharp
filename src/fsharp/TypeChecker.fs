@@ -12583,7 +12583,7 @@ module IncrClassChecking =
         // Now deal with all the 'let' and 'member' declarations
         let initActions,reps = List.mapFold TransDec reps decs
         let cctorInitActions2, ctorInitActions2,methodBinds2 = List.unzip3 initActions
-        let cctorInitActions = cctorInitActions1 @  List.concat cctorInitActions2
+        let cctorInitActions = cctorInitActions1 @ List.concat cctorInitActions2
         let ctorInitActions = ctorInitActions1 @ List.concat ctorInitActions2
         let methodBinds = methodBinds1 @ List.concat methodBinds2
 
@@ -12759,7 +12759,7 @@ module MutRecBindingChecking =
                    [ for (RecDefnBindingInfo(a,b,c,bind)) in recBinds do 
                        yield NormalizedRecBindingDefn(a,b,c,BindingNormalization.NormalizeBinding ValOrMemberBinding cenv envForDecls bind) ]
                 let bindsAndValues,(tpenv,recBindIdx) = ((tpenv,recBindIdx), normRecDefns) ||> List.mapFold (AnalyzeAndMakeAndPublishRecursiveValue ErrorOnOverrides false cenv envForDecls) 
-                let binds = bindsAndValues |> List.map fst |> List.concat
+                let binds = bindsAndValues |> List.collect fst
 
                 let defnAs = MutRecShape.Lets binds
                 defnAs,(tpenv,recBindIdx,List.rev binds @ uncheckedBindsRev)
@@ -14114,7 +14114,7 @@ module TcExceptionDeclarations =
 
         let defns = [MutRecShape.Tycon(MutRecDefnsPhase2DataForTycon(Some exnc, parent, ModuleOrMemberBinding, mkLocalEntityRef exnc, None, NoSafeInitInfo, [], aug, m, NoNewSlots, (fun () -> ())))]
         let binds2,envFinal = TcMutRecDefns_Phase2 cenv envInitial m scopem None envMutRec defns
-        let binds2flat = binds2 |> MutRecShapes.collectTycons |> List.map snd |> List.concat
+        let binds2flat = binds2 |> MutRecShapes.collectTycons |> List.collect snd
         // Augment types with references to values that implement the pre-baked semantics of the type
         let binds3 = AddAugmentationDeclarations.AddGenericEqualityBindings cenv envFinal exnc
         binds1 @ binds2flat @ binds3,exnc,envFinal
