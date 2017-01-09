@@ -3397,8 +3397,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
             let minfos = 
                 let addersAndRemovers = 
                     pinfoItems 
-                    |> List.map (function Item.Event(FSEvent(_,_,addValRef,removeValRef)) -> [addValRef.LogicalName;removeValRef.LogicalName] | _ -> [])
-                    |> List.concat
+                    |> List.collect (function Item.Event(FSEvent(_,_,addValRef,removeValRef)) -> [addValRef.LogicalName;removeValRef.LogicalName] | _ -> [])
                     |> set
 
                 if addersAndRemovers.IsEmpty then minfos
@@ -3614,7 +3613,7 @@ let rec ResolvePartialLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv is
           |> List.map (modref.NestedTyconRef >> ItemOfTyconRef ncenv m) )
 
        @ (tycons 
-          |> List.map (modref.NestedTyconRef >> InfosForTyconConstructors ncenv m ad) |> List.concat)
+          |> List.collect (modref.NestedTyconRef >> InfosForTyconConstructors ncenv m ad))
 
     | id :: rest  -> 
 
