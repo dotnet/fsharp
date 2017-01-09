@@ -3556,18 +3556,17 @@ let rec ResolvePartialLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv is
     let g = ncenv.g
     let mty = modref.ModuleOrNamespaceType
     
-    let tycons = 
-        mty.TypeDefinitions
-        |> List.filter (fun tcref -> not (tcref.LogicalName.Contains(",")))
-        |> List.filter (fun tycon -> not (IsTyconUnseen ad g ncenv.amap m (modref.NestedTyconRef tycon)))
-
-    let ilTyconNames = 
-        mty.TypesByAccessNames.Values
-        |> List.choose (fun (tycon:Tycon) -> if tycon.IsILTycon then Some tycon.DisplayName else None)
-        |> Set.ofList
-    
     match plid with 
     | [] -> 
+         let tycons = 
+             mty.TypeDefinitions
+             |> List.filter (fun tcref -> not (tcref.LogicalName.Contains(",")))
+             |> List.filter (fun tycon -> not (IsTyconUnseen ad g ncenv.amap m (modref.NestedTyconRef tycon)))
+
+         let ilTyconNames = 
+             mty.TypesByAccessNames.Values
+             |> List.choose (fun (tycon:Tycon) -> if tycon.IsILTycon then Some tycon.DisplayName else None)
+             |> Set.ofList
 
          // Collect up the accessible values in the module, excluding the members
          (mty.AllValsAndMembers
