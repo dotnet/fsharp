@@ -13834,7 +13834,7 @@ module TyconConstraintInference =
                            match structuralTypes |> List.tryFind (fst >> checkIfFieldTypeSupportsComparison tycon >> not) with
                            | None -> 
                                assert false
-                               failwith "unreachble"
+                               failwith "unreachable"
                            | Some (ty,_) -> 
                                if isTyparTy g ty then 
                                    errorR(Error(FSComp.SR.tcStructuralComparisonNotSatisfied1(tycon.DisplayName,NicePrint.prettyStringOfTy denv ty),tycon.Range)) 
@@ -13847,7 +13847,7 @@ module TyconConstraintInference =
                            match structuralTypes |> List.tryFind (fst >> checkIfFieldTypeSupportsComparison tycon >> not) with
                            | None -> 
                                assert false
-                               failwith "unreachble"
+                               failwith "unreachable"
                            | Some (ty,_) -> 
                                // NOTE: these warnings are off by default - they are level 4 informational warnings
                                // PERF: this call to prettyStringOfTy is always being executed, even when the warning
@@ -13961,7 +13961,7 @@ module TyconConstraintInference =
                                match structuralTypes |> List.tryFind (fst >> checkIfFieldTypeSupportsEquality tycon >> not) with
                                | None -> 
                                    assert false
-                                   failwith "unreachble"
+                                   failwith "unreachable"
                                | Some (ty,_) -> 
                                    if isTyparTy g ty then 
                                        errorR(Error(FSComp.SR.tcStructuralEqualityNotSatisfied1(tycon.DisplayName,NicePrint.prettyStringOfTy denv ty),tycon.Range)) 
@@ -13976,7 +13976,7 @@ module TyconConstraintInference =
                                match structuralTypes |> List.tryFind (fst >> checkIfFieldTypeSupportsEquality tycon >> not) with
                                | None -> 
                                    assert false
-                                   failwith "unreachble"
+                                   failwith "unreachable"
                                | Some (ty,_) -> 
                                    if isTyparTy g ty then 
                                        warning(Error(FSComp.SR.tcNoEqualityNeeded1(tycon.DisplayName, NicePrint.prettyStringOfTy denv ty, tycon.DisplayName),tycon.Range)) 
