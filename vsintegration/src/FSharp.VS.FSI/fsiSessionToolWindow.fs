@@ -19,7 +19,8 @@ open EnvDTE
 open Microsoft.VisualStudio.ComponentModelHost
 open Microsoft.VisualStudio.Editor
 open Microsoft.VisualStudio.Text.Editor
-
+open Microsoft.VisualStudio.Text
+open Microsoft.VisualStudio.Utilities
 
 type VSStd2KCmdID = VSConstants.VSStd2KCmdID // nested type
 type VSStd97CmdID = VSConstants.VSStd97CmdID // nested type
@@ -86,14 +87,14 @@ type internal FsiToolWindow() as this =
     
     let providerGlobal = Package.GetGlobalService(typeof<IOleServiceProvider>) :?> IOleServiceProvider
     let provider       = new ServiceProvider(providerGlobal) :> System.IServiceProvider
-    let textViewAdapter =
+    let textViewAdapter, contentTypeRegistry =
         // end of 623708 workaround. 
         let componentModel = provider.GetService(typeof<SComponentModel>) :?> IComponentModel
-        componentModel.GetService<IVsEditorAdaptersFactoryService>()
+        componentModel.GetService<IVsEditorAdaptersFactoryService>(), componentModel.GetService<IContentTypeRegistryService>()
 
     // REVIEW: trap provider nulls?    
     let providerNative = provider.GetService(typeof<IOleServiceProvider>) :?> IOleServiceProvider            
-    let textLines      = Util.CreateObjectT<VsTextBufferClass,IVsTextLines> provider            
+    let textLines      = Util.CreateObjectT<VsTextBufferClass,IVsTextLines> provider  
     do  setSiteForObjectWithSite textLines providerNative
     do  textLines.InitializeContent("", 0) |> throwOnFailure0
     let textView       = Util.CreateObjectT<VsTextViewClass,IVsTextView> provider
@@ -123,7 +124,7 @@ type internal FsiToolWindow() as this =
     do  codeWinMan.OnNewView(textView)  |> throwOnFailure0
 
     //  Create the stream on top of the text buffer.
-    let textStream = new TextBufferStream(textViewAdapter.GetDataBuffer(textLines))
+    let textStream = new TextBufferStream(textViewAdapter.GetDataBuffer(textLines), contentTypeRegistry)
     let synchronizationContext = System.Threading.SynchronizationContext.Current
     let win32win = { new System.Windows.Forms.IWin32Window with member this.Handle = textView.GetWindowHandle()}
     let mutable textView       = textView
