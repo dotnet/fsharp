@@ -341,7 +341,7 @@ b.Do(1, 1)
     //This is an verify action test & example
     member public this.``TestErrorMessage``() =
         let fileContent = """Console.WriteLine("test")"""
-        let expectedStr = "The namespace or module 'Console' is not defined"
+        let expectedStr = "The value, namespace, type or module 'Console' is not defined"
         this.VerifyErrorListContainedExpectedString(fileContent,expectedStr)
     
     [<Test>]

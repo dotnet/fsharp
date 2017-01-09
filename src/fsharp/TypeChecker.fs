@@ -4410,8 +4410,9 @@ and TcTyparOrMeasurePar optKind cenv (env:TcEnv) newOk tpenv (Typar(id,_,_) as t
                         |> Set.ofSeq
 
                 Set.union predictions1 predictions2
-
-            error (UndefinedName(0,FSComp.SR.undefinedNameTypeParameter,id,predictTypeParameters))
+            
+            let reportedId = Ident("'" + id.idText,id.idRange)
+            error (UndefinedName(0,FSComp.SR.undefinedNameTypeParameter,reportedId,predictTypeParameters))
         
         // OK, this is an implicit declaration of a type parameter 
         // The kind defaults to Type
