@@ -19,14 +19,15 @@ open Util
 open Microsoft.VisualStudio.Editor
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Text.Editor
+open Microsoft.VisualStudio.Utilities
 
 // This type wraps the IVsTextLines which contains the FSI session (output and input).
 // It provides the API for writing directly to the read-only part of the buffer.
 // It extends the read-only marker on the buffer (making the written text read-only).
 //
-type internal TextBufferStream(textLines:ITextBuffer) = 
+type internal TextBufferStream(textLines:ITextBuffer, contentTypeRegistry: IContentTypeRegistryService) = 
     do if null = textLines then raise (new ArgumentNullException("textLines"))
-
+    do textLines.ChangeContentType(contentTypeRegistry.GetContentType Guids.fsiContentTypeName, Guid Guids.guidFsiLanguageService)
     let mutable readonlyRegion  = null : IReadOnlyRegion
 
     let extendReadOnlyRegion position =
