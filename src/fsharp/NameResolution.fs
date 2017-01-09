@@ -220,7 +220,7 @@ type Item =
         | Item.Types(nm,_) -> DemangleGenericTypeName nm
         | Item.UnqualifiedType(tcref :: _) -> tcref.DisplayName
         | Item.TypeVar (nm,_) -> nm
-        | Item.ModuleOrNamespaces(modref :: _) ->  modref.DemangledModuleOrNamespaceName
+        | Item.ModuleOrNamespaces(modref :: _) -> modref.DemangledModuleOrNamespaceName
         | Item.ArgName (id, _, _)  -> id.idText
         | Item.SetterArg (id, _) -> id.idText
         | Item.CustomOperation (customOpName,_,_) -> customOpName
@@ -3601,8 +3601,9 @@ let rec ResolvePartialLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv is
          // Collect up the accessible sub-modules 
        @ (mty.ModulesAndNamespacesByDemangledName 
           |> NameMap.range 
-          |> List.filter (fun x -> x.DemangledModuleOrNamespaceName |> notFakeContainerModule ilTyconNames)
-          |> List.filter (fun x -> x.DemangledModuleOrNamespaceName |> IsInterestingModuleName)
+          |> List.filter (fun x -> 
+                let demangledName = x.DemangledModuleOrNamespaceName
+                notFakeContainerModule ilTyconNames demangledName && IsInterestingModuleName demangledName)
           |> List.map modref.NestedTyconRef
           |> List.filter (IsTyconUnseen ad g ncenv.amap m >> not)
           |> List.filter (EntityRefContainsSomethingAccessible ncenv m ad)
@@ -3637,7 +3638,7 @@ let rec ResolvePartialLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv is
 let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionEnv) isApplicableMeth fullyQualified m ad plid allowObsolete = 
     let g = ncenv.g
 
-    match  plid with
+    match plid with
     |  id :: plid when id = "global" -> // this is deliberately not the mangled name
 
        ResolvePartialLongIdentPrim ncenv nenv isApplicableMeth FullyQualified m ad plid allowObsolete
@@ -3669,8 +3670,9 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
        let moduleAndNamespaceItems = 
            nenv.ModulesAndNamespaces(fullyQualified)
            |> NameMultiMap.range 
-           |> List.filter (fun x -> x.DemangledModuleOrNamespaceName |> IsInterestingModuleName  )
-           |> List.filter (fun x -> x.DemangledModuleOrNamespaceName |> notFakeContainerModule ilTyconNames)
+           |> List.filter (fun x -> 
+                let demangledName = x.DemangledModuleOrNamespaceName
+                IsInterestingModuleName demangledName && notFakeContainerModule ilTyconNames demangledName)
            |> List.filter (EntityRefContainsSomethingAccessible ncenv m ad)
            |> List.filter (IsTyconUnseen ad g ncenv.amap m >> not)
            |> List.map ItemForModuleOrNamespaceRef
@@ -3748,8 +3750,9 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForRecordFields (ncenv: NameRe
         // Collect up the accessible sub-modules 
        (mty.ModulesAndNamespacesByDemangledName 
           |> NameMap.range 
-          |> List.filter (fun x -> x.DemangledModuleOrNamespaceName |> notFakeContainerModule ilTyconNames)
-          |> List.filter (fun x -> x.DemangledModuleOrNamespaceName |> IsInterestingModuleName)
+          |> List.filter (fun x -> 
+                let demangledName = x.DemangledModuleOrNamespaceName
+                notFakeContainerModule ilTyconNames demangledName && IsInterestingModuleName demangledName)
           |> List.map modref.NestedTyconRef
           |> List.filter (IsTyconUnseen ad g ncenv.amap m >> not)
           |> List.filter (EntityRefContainsSomethingAccessible ncenv m ad)
@@ -3812,8 +3815,9 @@ and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: 
        let mods = 
            nenv.ModulesAndNamespaces(fullyQualified)
            |> NameMultiMap.range 
-           |> List.filter (fun x -> x.DemangledModuleOrNamespaceName |> IsInterestingModuleName  )
-           |> List.filter (fun x -> x.DemangledModuleOrNamespaceName |> notFakeContainerModule iltyconNames)
+           |> List.filter (fun x -> 
+                let demangledName = x.DemangledModuleOrNamespaceName
+                IsInterestingModuleName demangledName && notFakeContainerModule iltyconNames demangledName)
            |> List.filter (EntityRefContainsSomethingAccessible ncenv m ad)
            |> List.filter (IsTyconUnseen ad g ncenv.amap m >> not)
            |> List.map ItemForModuleOrNamespaceRef
