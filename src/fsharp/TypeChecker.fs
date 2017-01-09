@@ -13795,7 +13795,7 @@ module TyconConstraintInference =
                     | SpecialComparableHeadType g tinst -> 
                         tinst |> List.forall (checkIfFieldTypeSupportsComparison  tycon)
 
-                    // Otherwise its a nominal type
+                    // Otherwise it's a nominal type
                     | _ -> 
 
                         if isAppTy g ty then 
