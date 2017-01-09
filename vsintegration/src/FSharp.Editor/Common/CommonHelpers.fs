@@ -468,7 +468,7 @@ module internal Extensions =
                         Some (SymbolDeclarationLocation.Projects ([currentDocument.Project], isSymbolLocalForProject))
                     else
                         let projects =
-                            currentDocument.Project.Solution.GetDocumentIdsWithFilePath(currentDocument.FilePath)
+                            currentDocument.Project.Solution.GetDocumentIdsWithFilePath(filePath)
                             |> Seq.map (fun x -> x.ProjectId)
                             |> Seq.distinct
                             |> Seq.map currentDocument.Project.Solution.GetProject
