@@ -3580,8 +3580,7 @@ let rec ResolvePartialLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv is
          // Collect up the accessible discriminated union cases in the module 
        @ (UnionCaseRefsInModuleOrNamespace modref 
           |> List.filter (IsUnionCaseUnseen ad g ncenv.amap m >> not)
-          |> List.map GeneralizeUnionCaseRef 
-          |> List.map (fun x -> Item.UnionCase(x,false)))
+          |> List.map (fun x -> Item.UnionCase(GeneralizeUnionCaseRef x,false)))
 
          // Collect up the accessible active patterns in the module 
        @ (ActivePatternElemsOfModuleOrNamespace modref 
@@ -3731,21 +3730,21 @@ let ResolvePartialLongIdent ncenv nenv isApplicableMeth m ad plid allowObsolete 
 let rec ResolvePartialLongIdentInModuleOrNamespaceForRecordFields (ncenv: NameResolver) nenv m ad (modref:ModuleOrNamespaceRef) plid allowObsolete =
     let g = ncenv.g
     let mty = modref.ModuleOrNamespaceType
-    
-    // get record type constructors
-    let tycons = 
-        mty.TypeDefinitions
-        |> List.filter (fun tcref -> not (tcref.LogicalName.Contains(",")))
-        |> List.filter (fun tycon -> tycon.IsRecordTycon)
-        |> List.filter (fun tycon -> not (IsTyconUnseen ad g ncenv.amap m (modref.NestedTyconRef tycon)))
 
-    let ilTyconNames = 
-        mty.TypesByAccessNames.Values
-        |> List.choose (fun (tycon:Tycon) -> if tycon.IsILTycon then Some tycon.DisplayName else None)
-        |> Set.ofList
-    
     match plid with 
     | [] -> 
+       // get record type constructors
+       let tycons = 
+           mty.TypeDefinitions
+           |> List.filter (fun tcref -> not (tcref.LogicalName.Contains(",")))
+           |> List.filter (fun tycon -> tycon.IsRecordTycon)
+           |> List.filter (fun tycon -> not (IsTyconUnseen ad g ncenv.amap m (modref.NestedTyconRef tycon)))
+
+       let ilTyconNames = 
+           mty.TypesByAccessNames.Values
+           |> List.choose (fun (tycon:Tycon) -> if tycon.IsILTycon then Some tycon.DisplayName else None)
+           |> Set.ofList
+    
         // Collect up the accessible sub-modules 
        (mty.ModulesAndNamespacesByDemangledName 
           |> NameMap.range 
@@ -3785,8 +3784,7 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForRecordFields (ncenv: NameRe
                 |> List.collect (fun tycon ->
                     let tcref = modref.NestedTyconRef tycon
                     let ttype = FreshenTycon ncenv m tcref
-                    ncenv.InfoReader.GetRecordOrClassFieldsOfType(None, ad, m, ttype                    )
-                    )
+                    ncenv.InfoReader.GetRecordOrClassFieldsOfType(None, ad, m, ttype))
                 |> List.map Item.RecdField
             | _ -> []
         )
@@ -3833,8 +3831,7 @@ and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: 
            |> Seq.collect (fun (KeyValue(_, v)) -> v)
            |> Seq.map (fun fref -> 
                 let typeInsts = fref.TyconRef.TyparsNoRange |> List.map (fun tyar -> tyar.AsType)
-                Item.RecdField(RecdFieldInfo(typeInsts, fref))
-            )
+                Item.RecdField(RecdFieldInfo(typeInsts, fref)))
            |> List.ofSeq
 
        mods @ recdTyCons @ recdFields
@@ -3856,8 +3853,7 @@ and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: 
                 tycons
                 |> List.collect (fun tcref ->
                     let ttype = FreshenTycon ncenv m tcref
-                    ncenv.InfoReader.GetRecordOrClassFieldsOfType(None, ad, m, ttype)
-                    )
+                    ncenv.InfoReader.GetRecordOrClassFieldsOfType(None, ad, m, ttype))
                 |> List.map Item.RecdField
             | _-> []
         modsOrNs @ qualifiedFields
