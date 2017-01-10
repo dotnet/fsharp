@@ -1347,11 +1347,6 @@ module InfoMemberPrinting =
     #endif
 
     let layoutPropInfoToFreeStyle g amap m denv (pinfo: PropInfo) =
-        //match pinfo with 
-        //| FSProp(_,_, Some vref,_)
-        //| FSProp(_,_,_, Some vref) ->
-        //    vref.Deref |> PrintTastMemberOrVals.layoutValOrMember { denv with showMemberContainers=true }
-        //| _ ->
         let rty = pinfo.GetPropertyType(amap,m) 
         let rty = if pinfo.IsIndexer then mkRefTupledTy g (pinfo.GetParamTypes(amap, m)) --> rty else  rty 
         let _, rty, _ = PrettyTypes.PrettifyTypes1 g rty
