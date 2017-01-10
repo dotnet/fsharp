@@ -23,9 +23,11 @@ let IsInEditDistanceProximity userEntered suggestion =
 /// Filters predictions based on edit distance to the given unknown identifier.
 let FilterPredictions (userEntered:string) (suggestionF:ErrorLogger.Suggestions) =    
     let uppercaseText = userEntered.ToUpperInvariant()
-    suggestionF()
+    let allSuggestions = suggestionF()
+
+    if allSuggestions.Contains userEntered then [] else // some other parsing error occurred
+    allSuggestions
     |> Seq.choose (fun suggestion ->
-        if suggestion = userEntered then None else
         let suggestedText = suggestion.ToUpperInvariant()
         let similarity = Internal.Utilities.EditDistance.JaroWinklerDistance uppercaseText suggestedText
         if similarity >= highConfidenceThreshold || suggestion.EndsWith ("." + userEntered) then
