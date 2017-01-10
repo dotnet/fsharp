@@ -15,7 +15,7 @@
   </PropertyGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
-    <PackageNuspec Include="..\FSharp.Core\Microsoft.FSharp.Core.netcore.nuspec" />
+    <PackageNuspec Include="Microsoft.FSharp.Core.netcore.nuspec" />
     <PackageNuspec Include="Microsoft.FSharp.Compiler.netcore.nuspec" />
     <PackageNuspec Include="Microsoft.FSharp.Interactive.netcore.nuspec" />
     <PackageNuspec Include="Microsoft.FSharp.Compiler.Host.netcore.nuspec" />
@@ -50,7 +50,9 @@
       <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)"</PackageProperties>
     </PropertyGroup>
     <MakeDir Directories="$(FSharpSourcesRoot.TrimEnd('\'))\..\$(Configuration)\artifacts" />
+    <MakeDir Directories="$(FSharpSourcesRoot.TrimEnd('\'))\..\artifacts" />
     <Exec Command='$(MSBuildThisFileDirectory)..\..\..\.nuget\nuget.exe pack @(PackageNuspec) -BasePath $(OutputPath.TrimEnd("\")) -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory $(FSharpSourcesRoot.TrimEnd("\"))\..\$(Configuration)\artifacts' />
+    <Exec Command='$(MSBuildThisFileDirectory)..\..\..\.nuget\nuget.exe pack @(PackageNuspec) -BasePath $(OutputPath.TrimEnd("\")) -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory $(FSharpSourcesRoot.TrimEnd("\"))\..\artifacts' />
   </Target>
 
 </Project>

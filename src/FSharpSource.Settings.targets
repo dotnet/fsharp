@@ -109,7 +109,7 @@
   <PropertyGroup> 
     <BuildRevision>$([System.DateTime]::Now.ToString(`yyMMdd`))</BuildRevision>
     <NuGetReleaseVersion>1.0.0</NuGetReleaseVersion> 
-    <NuGetPreReleaseVersion>$(NuGetReleaseVersion)-rc</NuGetPreReleaseVersion> 
+    <NuGetPreReleaseVersion>$(NuGetReleaseVersion)-rc</NuGetPreReleaseVersion>
     <NuGetPerBuildPreReleaseVersion Condition="'$(BuildRevision)' != ''">$(NuGetPreReleaseVersion)-$(BuildRevision.Trim())</NuGetPerBuildPreReleaseVersion> 
   </PropertyGroup> 
 
