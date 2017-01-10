@@ -9,11 +9,11 @@ let highConfidenceThreshold = 0.85
 let minStringLengthForThreshold = 3
 
 /// We report a candidate if its edit distance is <= the threshold.
-/// The threshhold is set to about a quarter of the number of characters the user entered.
-let IsInEditDistanceProximity userEntered suggestion =
-    let editDistance = Internal.Utilities.EditDistance.CalcEditDistance(userEntered,suggestion)
+/// The threshhold is set to about a quarter of the number of characters.
+let IsInEditDistanceProximity idText suggestion =
+    let editDistance = Internal.Utilities.EditDistance.CalcEditDistance(idText,suggestion)
     let threshold =
-        match userEntered.Length with
+        match idText.Length with
         | x when x < 5 -> 1
         | x when x < 7 -> 2
         | x -> x / 4 + 1
@@ -21,16 +21,16 @@ let IsInEditDistanceProximity userEntered suggestion =
     editDistance <= threshold
 
 /// Filters predictions based on edit distance to the given unknown identifier.
-let FilterPredictions (userEntered:string) (suggestionF:ErrorLogger.Suggestions) =    
-    let uppercaseText = userEntered.ToUpperInvariant()
+let FilterPredictions (idText:string) (suggestionF:ErrorLogger.Suggestions) =    
+    let uppercaseText = idText.ToUpperInvariant()
     let allSuggestions = suggestionF()
 
-    if allSuggestions.Contains userEntered then [] else // some other parsing error occurred
+    if allSuggestions.Contains idText then [] else // some other parsing error occurred
     allSuggestions
     |> Seq.choose (fun suggestion ->
         let suggestedText = suggestion.ToUpperInvariant()
         let similarity = Internal.Utilities.EditDistance.JaroWinklerDistance uppercaseText suggestedText
-        if similarity >= highConfidenceThreshold || suggestion.EndsWith ("." + userEntered) then
+        if similarity >= highConfidenceThreshold || suggestion.EndsWith ("." + idText) then
             Some(similarity,suggestion)
         elif similarity < minThresholdForSuggestions && suggestedText.Length > minStringLengthForThreshold then
             None
