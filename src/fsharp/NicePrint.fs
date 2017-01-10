@@ -1354,10 +1354,11 @@ module InfoMemberPrinting =
             let rty = pinfo.GetPropertyType(amap,m) 
             let rty = if pinfo.IsIndexer then mkRefTupledTy g (pinfo.GetParamTypes(amap, m)) --> rty else  rty 
             let _, rty, _ = PrettyTypes.PrettifyTypes1 g rty
+            let nameL = DemangleOperatorNameAsLayout tagProperty pinfo.PropertyName
             wordL (tagText (FSComp.SR.typeInfoProperty())) ^^
             layoutTyconRef denv (tcrefOfAppTy g pinfo.EnclosingType) ^^
             SepL.dot ^^
-            wordL (tagProperty pinfo.PropertyName) ^^
+            nameL ^^
             RightL.colon ^^
             layoutTy denv rty
 
