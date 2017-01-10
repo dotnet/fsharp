@@ -1475,7 +1475,6 @@ let textOfId (id:Ident) = id.idText
 let pathOfLid lid = List.map textOfId lid
 let arrPathOfLid lid = Array.ofList (pathOfLid lid)
 let textOfPath path = String.concat "." path
-let textOfArrPath path = String.concat "." (List.ofArray path)
 let textOfLid lid = textOfPath (pathOfLid lid)
 
 let rangeOfLid (lid: Ident list) =
