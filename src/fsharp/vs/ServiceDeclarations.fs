@@ -1310,11 +1310,12 @@ module internal ItemDescriptionsImpl =
      
 /// An intellisense declaration
 [<Sealed>]
-type FSharpDeclarationListItem(name: string, glyphMajor: GlyphMajor, glyphMinor: GlyphMinor, info, isAttribute: bool, backTicked: bool) =
+type FSharpDeclarationListItem(name: string, nameInCode: string, glyphMajor: GlyphMajor, glyphMinor: GlyphMinor, info, isAttribute: bool) =
     let mutable descriptionTextHolder:FSharpToolTipText<_> option = None
     let mutable task = null
 
     member decl.Name = name
+    member decl.NameInCode = nameInCode
 
     member decl.StructuredDescriptionTextAsync = 
             match info with
@@ -1365,7 +1366,6 @@ type FSharpDeclarationListItem(name: string, glyphMajor: GlyphMajor, glyphMinor:
     member decl.GlyphMajor = glyphMajor 
     member decl.GlyphMinor = glyphMinor
     member decl.IsAttribute = isAttribute
-    member decl.BackTicked = backTicked
       
 /// A table of declarations for Intellisense completion 
 [<Sealed>]
@@ -1422,12 +1422,19 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                 | [] -> failwith "Unexpected empty bag"
                 | items -> 
                     let glyphMajor, glyphMinor = GlyphOfItem(denv,items.Head)
-                    new FSharpDeclarationListItem(nm, glyphMajor, glyphMinor, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), IsAttribute infoReader items.Head, false))
+                    let name, nameInCode =
+                        if nm.StartsWith "( " && nm.EndsWith " )" then
+                            let cleanName = nm.[2..nm.Length - 3]
+                            cleanName, 
+                            if IsOperatorName nm then cleanName else "``" + cleanName + "``"
+                        else nm, nm
+
+                    new FSharpDeclarationListItem(name, nameInCode, glyphMajor, glyphMinor, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), IsAttribute infoReader items.Head))
 
         new FSharpDeclarationListInfo(Array.ofList decls)
     
     static member Error msg = 
         new FSharpDeclarationListInfo(
-                [| new FSharpDeclarationListItem("<Note>", GlyphMajor.Error, GlyphMinor.Normal, 
-                                                 Choice2Of2 (FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError msg]), false, false) |] )
+                [| new FSharpDeclarationListItem("<Note>", "<Note>", GlyphMajor.Error, GlyphMinor.Normal, 
+                                                 Choice2Of2 (FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError msg]), false) |])
     static member Empty = new FSharpDeclarationListInfo([| |])

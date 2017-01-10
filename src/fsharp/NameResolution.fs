@@ -212,7 +212,9 @@ type Item =
         | Item.NewDef id -> id.idText
         | Item.ILField finfo -> finfo.FieldName
         | Item.Event einfo -> einfo.EventName
-        | Item.Property(_, FSProp(_,_, Some v,_) :: _) -> v.DisplayName
+        | Item.Property(_, FSProp(_,_, Some v,_) :: _)
+        | Item.Property(_, FSProp(_,_,_, Some v) :: _) -> v.DisplayName
+        | Item.Property(_, info :: _) -> info.PropertyName
         | Item.Property(nm, _) -> nm
         | Item.MethodGroup(_, (FSMeth(_,_, v,_) :: _), _) -> v.DisplayName
         | Item.MethodGroup(nm, _, _) -> nm
