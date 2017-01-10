@@ -1,5 +1,5 @@
 // #Warnings
-//<Expects status="Error" id="FS0039">The value or constructor 'N' is not defined.$</Expects>
+//<Expects status="Error" id="FS0599">Missing qualification after '.'</Expects>
 
 module N =
     let name = "hallo"
