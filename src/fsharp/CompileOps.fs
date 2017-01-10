@@ -2940,7 +2940,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
             // In the grouped reference, store the index of the last use of the reference.
             let groupedReferences = 
                 originalReferences
-                |> List.mapi (fun index reference -> (index, reference))
+                |> List.indexed
                 |> Seq.groupBy(fun (_, reference) -> reference.Text)
                 |> Seq.map(fun (assemblyName,assemblyAndIndexGroup)->
                     let assemblyAndIndexGroup = assemblyAndIndexGroup |> List.ofSeq
@@ -3035,7 +3035,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                     |> Array.concat                                  
                     |> Array.sortBy fst
                     |> Array.map snd
-                    |> List.ofArray   
+                    |> List.ofArray
                     |> List.concat                                                 
                     
             // O(N^2) here over a small set of referenced assemblies.

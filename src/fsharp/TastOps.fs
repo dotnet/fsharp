@@ -2477,19 +2477,19 @@ let layoutOfPath p =
 let fullNameOfParentOfPubPath pp = 
     match pp with 
     | PubPath([| _ |]) -> None 
-    | pp -> Some(textOfPath (Array.toList pp.EnclosingPath))
+    | pp -> Some(textOfPath  pp.EnclosingPath)
 
 let fullNameOfParentOfPubPathAsLayout pp = 
     match pp with 
     | PubPath([| _ |]) -> None 
     | pp -> Some(layoutOfPath (Array.toList pp.EnclosingPath))
 
-let fullNameOfPubPath (PubPath(p)) = textOfPath (Array.toList p) 
+let fullNameOfPubPath (PubPath(p)) = textOfPath p
 let fullNameOfPubPathAsLayout (PubPath(p)) = layoutOfPath (Array.toList p)
 
 let fullNameOfParentOfNonLocalEntityRef (nlr: NonLocalEntityRef) = 
     if nlr.Path.Length = 0 || nlr.Path.Length = 1 then None
-    else Some (textOfArrPath nlr.EnclosingMangledPath)  // <--- BAD BAD BAD: this is a mangled path. This is wrong for nested modules
+    else Some (textOfPath nlr.EnclosingMangledPath)  // <--- BAD BAD BAD: this is a mangled path. This is wrong for nested modules
 
 let fullNameOfParentOfNonLocalEntityRefAsLayout (nlr: NonLocalEntityRef) = 
     if nlr.Path.Length = 0 || nlr.Path.Length = 1 then None
@@ -4596,7 +4596,7 @@ and remapParentRef tyenv p =
     | Parent x -> Parent (x |> remapTyconRef tyenv.tyconRefRemap)
 
 and mapImmediateValsAndTycons ft fv (x:ModuleOrNamespaceType) = 
-    let vals = x.AllValsAndMembers      |> QueueList.map fv
+    let vals = x.AllValsAndMembers |> QueueList.map fv
     let tycons = x.AllEntities |> QueueList.map ft
     new ModuleOrNamespaceType(x.ModuleOrNamespaceKind, vals, tycons)
     
@@ -5997,7 +5997,7 @@ let permuteExprList (sigma:int[]) (exprs: Expr list) (typ: TType list) (names:st
         else
             expri, rbinds
  
-    let newExprs, reversedBinds = List.mapFold rewrite [] (exprs |> List.mapi (fun i x -> (i,x)))
+    let newExprs, reversedBinds = List.mapFold rewrite [] (exprs |> List.indexed)
     let binds = List.rev reversedBinds
     let reorderedExprs  = permute sigma (Array.ofList newExprs)
     binds,Array.toList reorderedExprs
@@ -6016,12 +6016,12 @@ let mkRecordExpr g (lnk,tcref,tinst,rfrefs:RecdFieldRef list,args,m) =
     // Remove any abbreviations 
     let tcref,tinst = destAppTy g (mkAppTy tcref tinst)
     
-    let rfrefsArray = rfrefs |> List.mapi (fun i x -> (i,x)) |> Array.ofList
-    rfrefsArray |> Array.sortInPlaceBy (fun (_,r) -> r.Index) ;
+    let rfrefsArray = rfrefs |> List.indexed |> Array.ofList
+    rfrefsArray |> Array.sortInPlaceBy (fun (_,r) -> r.Index)
     let sigma = Array.create rfrefsArray.Length -1
     Array.iteri (fun j (i,_) -> 
-        if sigma.[i] <> -1 then error(InternalError("bad permutation",m));
-        sigma.[i] <- j)  rfrefsArray;
+        if sigma.[i] <> -1 then error(InternalError("bad permutation",m))
+        sigma.[i] <- j)  rfrefsArray
     
     let argTyps     = List.map (fun rfref  -> actualTyOfRecdFieldRef rfref tinst) rfrefs
     let names       = rfrefs |> List.map (fun rfref -> rfref.FieldName)

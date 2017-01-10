@@ -77,7 +77,7 @@ let ChooseParamNames fieldNamesAndTypes =
         let ilParamName = if takenFieldNames.Contains(lowerPropName) then ilPropName else lowerPropName 
         ilParamName,ilFieldName,ilPropType)
 
-let markup s = s |> Seq.mapi (fun i x -> i,x) 
+let markup s = Seq.indexed s
 
 // Approximation for purposes of optimization and giving a warning when compiling definition-only files as EXEs 
 let rec CheckCodeDoesSomething (code: ILCode) = 
