@@ -862,19 +862,8 @@ module internal ItemDescriptionsImpl =
             FSharpStructuredToolTipElement.Single(layout, xml)
 
         // F# and .NET properties
-        | Item.Property(_,pinfos) -> 
-            let pinfo = pinfos.Head
-            let rty = pinfo.GetPropertyType(amap,m) 
-            let rty = if pinfo.IsIndexer then mkRefTupledTy g (pinfo.GetParamTypes(amap, m)) --> rty else  rty 
-            let _, rty, _ = PrettyTypes.PrettifyTypes1 g rty
-            let layout =
-                wordL (tagText (FSComp.SR.typeInfoProperty())) ^^
-                NicePrint.layoutTyconRef denv (tcrefOfAppTy g pinfo.EnclosingType) ^^
-                SepL.dot ^^
-                wordL (tagProperty pinfo.PropertyName) ^^
-                RightL.colon ^^
-                NicePrint.layoutTy denv rty
-
+        | Item.Property(_, pinfo :: _) -> 
+            let layout = NicePrint.layoutPropInfoToFreeStyle g amap m denv pinfo
             FSharpStructuredToolTipElement.Single(layout, xml)
 
         // Custom operations in queries
