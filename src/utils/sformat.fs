@@ -733,7 +733,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         // showL
         // ------------------------------------------------------------------------
 
-        let combine strs = System.String.Concat(Array.ofList(strs) : string[])
+        let combine (strs: string list) = System.String.Concat strs
         let showL opts leafFormatter layout =
             let push x rstrs = x::rstrs
             let z0 = [],0

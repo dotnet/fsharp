@@ -28,7 +28,7 @@ let FilterPredictions (userEntered:string) (suggestionF:ErrorLogger.Suggestions)
         if suggestion = userEntered then None else
         let suggestedText = suggestion.ToUpperInvariant()
         let similarity = Internal.Utilities.EditDistance.JaroWinklerDistance uppercaseText suggestedText
-        if similarity >= highConfidenceThreshold then
+        if similarity >= highConfidenceThreshold || suggestion.EndsWith ("." + userEntered) then
             Some(similarity,suggestion)
         elif similarity < minThresholdForSuggestions && suggestedText.Length > minStringLengthForThreshold then
             None

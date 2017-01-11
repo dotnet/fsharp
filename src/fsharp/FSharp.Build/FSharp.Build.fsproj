@@ -21,7 +21,7 @@
       <HasLceComments>false</HasLceComments>
       <InProject>false</InProject>
     </FilesToLocalize>
-    <PackageNuspec Include="Microsoft.FSharp.Build.netcore.nuspec" Condition="'$(TargetFramework)' == 'coreclr'" />
+    <PackageNuspec Include="FSharp.Build.netcore.nuspec" Condition="'$(TargetFramework)' == 'coreclr'" />
   </ItemGroup>
   <ItemGroup>
     <FsSrGen Include="FSBuild.txt">

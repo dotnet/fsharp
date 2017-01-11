@@ -6,7 +6,7 @@
     "emitEntryPoint": true
   },
   "dependencies": {
-    "Microsoft.FSharp.Compiler.netcore": "1.0.0-alpha-*",
+    "Microsoft.FSharp.Interactive.netcore": "1.0.0-rc-*",
   },
   "runtimes": {
     "win7-x86": { },
