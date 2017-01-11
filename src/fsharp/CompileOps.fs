@@ -609,8 +609,8 @@ let getErrorString key = SR.GetString key
 
 let (|InvalidArgument|_|) (exn:exn) = match exn with :? ArgumentException as e -> Some e.Message | _ -> None
 
-let OutputPhasedErrorR errorStyle (os:System.Text.StringBuilder) (err:PhasedDiagnostic) =
-    let rec OutputExceptionR (os:System.Text.StringBuilder) error = 
+let OutputPhasedErrorR errorStyle (os:StringBuilder) (err:PhasedDiagnostic) =
+    let rec OutputExceptionR (os:StringBuilder) error = 
       match error with
       | ConstraintSolverTupleDiffLengths(_,tl1,tl2,m,m2) -> 
           os.Append(ConstraintSolverTupleDiffLengthsE().Format tl1.Length tl2.Length) |> ignore
