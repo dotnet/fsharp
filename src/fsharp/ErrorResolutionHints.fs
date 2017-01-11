@@ -33,9 +33,17 @@ let FilterPredictions (idText:string) (suggestionF:ErrorLogger.Suggestions) =
             cleanName
         else nm
 
+    /// Returns `true` if given string is an operator display name, e.g. ( |>> )
+    let IsOperatorName (name: string) =
+        if not (name.StartsWith "( " && name.EndsWith " )") then false else
+        let name =  name.[2..name.Length - 3]
+        let res = name |> Seq.forall (fun c -> c <> ' ')
+        res        
+
     if allSuggestions.Contains idText then [] else // some other parsing error occurred
     allSuggestions
     |> Seq.choose (fun suggestion ->
+        if IsOperatorName suggestion then None else
         let suggestion:string = demangle suggestion
         let suggestedText = suggestion.ToUpperInvariant()
         let similarity = EditDistance.JaroWinklerDistance uppercaseText suggestedText
