@@ -8,6 +8,7 @@ open System.Collections.Generic
 open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
+open Microsoft.CodeAnalysis.Diagnostics
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Layout
 open Microsoft.FSharp.Compiler.SourceCodeServices
@@ -98,7 +99,11 @@ module internal CommonRoslynHelpers =
         let emptyString = LocalizableString.op_Implicit("")
         let description = LocalizableString.op_Implicit(error.Message)
         let severity = if error.Severity = FSharpErrorSeverity.Error then DiagnosticSeverity.Error else DiagnosticSeverity.Warning
-        let descriptor = new DiagnosticDescriptor(id, emptyString, description, error.Subcategory, severity, true, emptyString, String.Empty, null)
+        let customTags = 
+            match error.ErrorNumber with
+            | 1182 -> DiagnosticCustomTags.Unnecessary
+            | _ -> null
+        let descriptor = new DiagnosticDescriptor(id, emptyString, description, error.Subcategory, severity, true, emptyString, String.Empty, customTags)
         Diagnostic.Create(descriptor, location)
 
     let FSharpGlyphToRoslynGlyph = function
