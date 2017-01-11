@@ -20,8 +20,8 @@ type private LineHash = int
 type internal RemoveQualificationDiagnosticAnalyzer() =
     inherit DocumentDiagnosticAnalyzer()
     
-    let getProjectInfoManager(document: Document) =
-        document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().ProjectInfoManager
+    let getProjectInfoManager (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().ProjectInfoManager
+    let getChecker (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().Checker
 
     static let Descriptor = 
         DiagnosticDescriptor(IDEDiagnosticIds.RemoveQualificationDiagnosticId, "Simplify name", "", "", DiagnosticSeverity.Hidden, true, "", "", DiagnosticCustomTags.Unnecessary)
@@ -29,24 +29,21 @@ type internal RemoveQualificationDiagnosticAnalyzer() =
     override __.SupportedDiagnostics = ImmutableArray.Create Descriptor
 
     override this.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken) =
-        async {
+        asyncMaybe {
             match getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document) with 
-            | Some _options ->
-                let! sourceText = document.GetTextAsync() |> Async.AwaitTask
-                //let lines = sourceText.Lines
-                //let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.FilePath, Seq.toList options.OtherOptions)
-
+            | Some options ->
+                let! sourceText = document.GetTextAsync()
+                let checker = getChecker document
+                let! _, checkResults = checker.ParseAndCheckDocument(document, options, sourceText)
+                let! symbolUses = checkResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
                 return 
-                    [ 
-                      let linePositionSpan = LinePositionSpan(LinePosition(0, 0), LinePosition(0, 10))
-                      let textSpan = sourceText.Lines.GetTextSpan linePositionSpan
-                      let location = Location.Create(document.FilePath, textSpan, linePositionSpan)
-                      yield Diagnostic.Create(Descriptor, location) 
+                    [ for symbolUse in symbolUses do
+                        yield Diagnostic.Create(Descriptor, CommonRoslynHelpers.RangeToLocation(symbolUse.RangeAlternate, sourceText, document.FilePath))
                     ]
-                    .ToImmutableArray()
-
-            | None -> return ImmutableArray.Empty
-        } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
+            | None -> return []
+        } 
+        |> Async.map (fun xs -> (xs |> Option.defaultValue []).ToImmutableArray())
+        |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
 
     override this.AnalyzeSemanticsAsync(_, _) = Task.FromResult ImmutableArray<Diagnostic>.Empty
 
