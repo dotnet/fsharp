@@ -47,6 +47,7 @@
     <Compile Include="Debugging\LanguageDebugInfoService.fs" />
     <Compile Include="Diagnostics\DocumentDiagnosticAnalyzer.fs" />
     <Compile Include="Diagnostics\ProjectDiagnosticAnalyzer.fs" />
+    <Compile Include="Diagnostics\RemoveQualificationDiagnosticAnalyzer.fs" />
     <Compile Include="Completion\CompletionProvider.fs" />
     <Compile Include="Completion\SignatureHelp.fs" />
     <Compile Include="QuickInfo\QuickInfoProvider.fs" />
