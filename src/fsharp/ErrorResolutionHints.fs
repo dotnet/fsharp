@@ -27,9 +27,16 @@ let FilterPredictions (idText:string) (suggestionF:ErrorLogger.Suggestions) =
     let uppercaseText = idText.ToUpperInvariant()
     let allSuggestions = suggestionF()
 
+    let demangle (nm:string) =
+        if nm.StartsWith "( " && nm.EndsWith " )" then
+            let cleanName = nm.[2..nm.Length - 3]
+            cleanName
+        else nm
+
     if allSuggestions.Contains idText then [] else // some other parsing error occurred
     allSuggestions
     |> Seq.choose (fun suggestion ->
+        let suggestion:string = demangle suggestion
         let suggestedText = suggestion.ToUpperInvariant()
         let similarity = EditDistance.JaroWinklerDistance uppercaseText suggestedText
         if similarity >= highConfidenceThreshold || suggestion.EndsWith ("." + idText) then
