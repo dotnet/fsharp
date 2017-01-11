@@ -38,7 +38,8 @@ type internal RemoveQualificationDiagnosticAnalyzer() =
                 let! symbolUses = checkResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
                 return 
                     [ for symbolUse in symbolUses do
-                        yield Diagnostic.Create(Descriptor, CommonRoslynHelpers.RangeToLocation(symbolUse.RangeAlternate, sourceText, document.FilePath))
+                        if not symbolUse.IsFromDefinition then
+                            yield Diagnostic.Create(Descriptor, CommonRoslynHelpers.RangeToLocation(symbolUse.RangeAlternate, sourceText, document.FilePath))
                     ]
             | None -> return []
         } 
