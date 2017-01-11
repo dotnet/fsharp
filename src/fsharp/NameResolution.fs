@@ -2303,6 +2303,13 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad n
                                       |> Seq.map (fun e -> e.Value.DisplayName)
                                       |> Set.ofSeq
 
+                                  let suggestedModulesAndNamespaces =
+                                      nenv.ModulesAndNamespaces fullyQualified
+                                      |> Seq.collect (fun kv -> kv.Value)
+                                      |> Seq.filter (fun modref -> IsEntityAccessible ncenv.amap m ad modref)
+                                      |> Seq.collect (fun e -> [e.DisplayName; e.DemangledModuleOrNamespaceName])
+                                      |> Set.ofSeq
+
                                   let unions =
                                       // check if the user forgot to use qualified access
                                       nenv.eTyconsByDemangledNameAndArity
@@ -2320,6 +2327,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad n
                                 
                                   suggestedNames
                                   |> Set.union suggestedTypes
+                                  |> Set.union suggestedModulesAndNamespaces
                                   |> Set.union unions
 
                               raze (UndefinedName(0,FSComp.SR.undefinedNameValueOfConstructor,id,suggestNamesAndTypes))
@@ -2407,7 +2415,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad n
 
                       search +++ moduleSearch +++ tyconSearch
 
-                  let suggestEverythingInScope() = 
+                  let suggestEverythingInScope() =
                       let suggestedModulesAndNamespaces =
                           nenv.ModulesAndNamespaces fullyQualified
                           |> Seq.collect (fun kv -> kv.Value)
