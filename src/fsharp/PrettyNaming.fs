@@ -125,10 +125,18 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
             t.Add(c) |> ignore
         t
         
-    let IsOpName (name:string) =
+    /// Returns `true` if given string is an operator or double backticked name, e.g. ( |>> ) or ( long identifier ).
+    /// (where ( long identifier ) is the display name for ``long identifier``).
+    let IsOperatorOrBacktickedName (name: string) =
         let nameLen = name.Length
         let rec loop i = (i < nameLen && (opCharSet.Contains(name.[i]) || loop (i+1)))
         loop 0
+
+    /// Returns `true` if given string is an operator display name, e.g. ( |>> )
+    let IsOperatorName (name: string) =
+        let name = if name.StartsWith "( " && name.EndsWith " )" then name.[2..name.Length - 3] else name
+        let res = name |> Seq.forall (fun c -> opCharSet.Contains c && c <> ' ')
+        res
 
     let IsMangledOpName (n:string) =
         n.StartsWith (opNamePrefix, System.StringComparison.Ordinal)
@@ -192,7 +200,7 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
             match standardOpNames.TryGetValue op with
             | true, x -> x
             | false, _ ->
-                if IsOpName op then
+                if IsOperatorOrBacktickedName op then
                     compileCustomOpName op
                 else op
 
@@ -289,14 +297,14 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
 
     let DemangleOperatorName nm =
         let nm = DecompileOpName nm
-        if IsOpName nm then "( " + nm + " )"
+        if IsOperatorOrBacktickedName nm then "( " + nm + " )"
         else nm
     
     open LayoutOps
 
     let DemangleOperatorNameAsLayout nonOpTagged nm =
         let nm = DecompileOpName nm
-        if IsOpName nm then wordL (TaggedTextOps.tagPunctuation "(") ^^ wordL (TaggedTextOps.tagOperator nm) ^^ wordL (TaggedTextOps.tagPunctuation ")")
+        if IsOperatorOrBacktickedName nm then wordL (TaggedTextOps.tagPunctuation "(") ^^ wordL (TaggedTextOps.tagOperator nm) ^^ wordL (TaggedTextOps.tagPunctuation ")")
         else LayoutOps.wordL (nonOpTagged nm)
 
     let opNameCons = CompileOpName "::"

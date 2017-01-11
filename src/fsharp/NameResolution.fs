@@ -202,7 +202,7 @@ type Item =
         let minfos = minfos |> List.sortBy (fun minfo -> minfo.NumArgs |> List.sum)
         Item.CtorGroup (nm,minfos)
 
-    member d.DisplayName = 
+    member d.DisplayName =
         match d with
         | Item.Value v -> v.DisplayName
         | Item.ActivePatternCase apref -> apref.Name
@@ -212,8 +212,11 @@ type Item =
         | Item.NewDef id -> id.idText
         | Item.ILField finfo -> finfo.FieldName
         | Item.Event einfo -> einfo.EventName
-        | Item.Property(nm,_) -> nm
-        | Item.MethodGroup(nm,_,_) -> nm
+        | Item.Property(_, FSProp(_,_, Some v,_) :: _)
+        | Item.Property(_, FSProp(_,_,_, Some v) :: _) -> v.DisplayName
+        | Item.Property(nm, _) -> PrettyNaming.DemangleOperatorName nm
+        | Item.MethodGroup(_, (FSMeth(_,_, v,_) :: _), _) -> v.DisplayName
+        | Item.MethodGroup(nm, _, _) -> PrettyNaming.DemangleOperatorName nm
         | Item.CtorGroup(nm,_) -> DemangleGenericTypeName nm
         | Item.FakeInterfaceCtor (AbbrevOrAppTy tcref)
         | Item.DelegateCtor (AbbrevOrAppTy tcref) -> DemangleGenericTypeName tcref.DisplayName
@@ -226,6 +229,7 @@ type Item =
         | Item.CustomOperation (customOpName,_,_) -> customOpName
         | Item.CustomBuilder (nm,_) -> nm
         | _ ->  ""
+
 let valRefHash (vref: ValRef) = 
     match vref.TryDeref with 
     | None -> 0 
