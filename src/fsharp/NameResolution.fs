@@ -209,9 +209,9 @@ type Item =
         | Item.UnionCase(uinfo,_) -> DecompileOpName uinfo.UnionCase.DisplayName
         | Item.ExnCase tcref -> tcref.LogicalName
         | Item.RecdField rfinfo -> DecompileOpName rfinfo.RecdField.Name
-        | Item.NewDef id -> PrettyNaming.DemangleOperatorName id.idText
+        | Item.NewDef id -> id.idText
         | Item.ILField finfo -> finfo.FieldName
-        | Item.Event einfo -> PrettyNaming.DemangleOperatorName einfo.EventName
+        | Item.Event einfo -> einfo.EventName
         | Item.Property(_, FSProp(_,_, Some v,_) :: _)
         | Item.Property(_, FSProp(_,_,_, Some v) :: _) -> v.DisplayName
         | Item.Property(nm, _) -> nm
