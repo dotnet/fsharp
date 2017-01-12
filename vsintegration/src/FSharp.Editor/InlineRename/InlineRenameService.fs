@@ -104,7 +104,7 @@ type internal InlineRenameInfo
         member __.DisplayName = symbolUse.Symbol.DisplayName
         member __.FullDisplayName = try symbolUse.Symbol.FullName with _ -> symbolUse.Symbol.DisplayName
         member __.Glyph = Glyph.MethodPublic
-        member __.GetFinalSymbolName replacementText = replacementText
+        member __.GetFinalSymbolName replacementText = Lexhelp.Keywords.NormalizeIdentifierBackticks replacementText
 
         member __.GetReferenceEditSpan(location, cancellationToken) =
             let text = getDocumentText location.Document cancellationToken
