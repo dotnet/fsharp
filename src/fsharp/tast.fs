@@ -489,7 +489,7 @@ type Entity =
             args.Length > 0 
 #endif
 
-    member x.GetDisplayName(withStaticParameters, withUnderscoreTypars) =
+    member x.GetDisplayName(withStaticParameters, withUnderscoreTypars) = 
         let nm = x.LogicalName
         let getName () =
             match x.TyparsNoRange with 
@@ -509,10 +509,10 @@ type Entity =
             else
                 nm
         else
-            PrettyNaming.DemangleOperatorName (getName())
+            getName ()
 #else
         ignore withStaticParameters
-        PrettyNaming.DemangleOperatorName (getName())
+        getName ()
 #endif
 
 
