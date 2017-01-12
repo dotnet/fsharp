@@ -83,7 +83,7 @@ module internal PrintUtilities =
             if isAttribute then 
                 defaultArg (String.tryDropSuffix name "Attribute") name 
             else name
-        let tyconTextL = wordL (tagEntityRefName tcref demangled)
+        let tyconTextL = DemangleOperatorNameAsLayout (tagEntityRefName tcref) demangled
         if denv.shortTypeNames then 
             tyconTextL
         else
@@ -1388,7 +1388,7 @@ module private TastDefinitionPrinting =
         aboveListL (List.map (layoutExtensionMember denv) vs)    
 
     let layoutRecdField addAccess denv  (fld:RecdField) =
-        let lhs = wordL (tagRecordField fld.Name)
+        let lhs = DemangleOperatorNameAsLayout tagRecordField fld.Name
         let lhs = (if addAccess then layoutAccessibility denv fld.Accessibility lhs else lhs)
         let lhs = if fld.IsMutable then wordL (tagKeyword "mutable") --- lhs else lhs
         (lhs ^^ RightL.colon) --- layoutType denv fld.FormalType
