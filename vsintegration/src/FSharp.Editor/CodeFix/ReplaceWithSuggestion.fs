@@ -40,7 +40,7 @@ type internal FSharpReplaceWithSuggestionCodeFixProvider() =
                 let parts = message.Split([| maybeString |], StringSplitOptions.None)
                 if parts.Length > 1 then
                     let suggestions = 
-                        parts.[1].Split([| '\r'; '\n'|], StringSplitOptions.RemoveEmptyEntries) 
+                        parts.[1].Split([| '\r'; '\n' |], StringSplitOptions.RemoveEmptyEntries) 
                         |> Array.map (fun s -> s.Trim())
                     
                     let diagnostics = [| diagnostic |].ToImmutableArray()
