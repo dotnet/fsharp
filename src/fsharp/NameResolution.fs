@@ -3890,3 +3890,18 @@ and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: 
                 |> List.map Item.RecdField
             | _-> []
         modsOrNs @ qualifiedFields
+
+let GetVisibleNamespacesAndModulesAtPoint (ncenv: NameResolver) (nenv: NameResolutionEnv) m ad =
+    let ilTyconNames =
+        nenv.TyconsByAccessNames(FullyQualifiedFlag.OpenQualified).Values
+        |> List.choose (fun tyconRef -> if tyconRef.IsILTycon then Some tyconRef.DisplayName else None)
+        |> Set.ofList
+
+    nenv.ModulesAndNamespaces(FullyQualifiedFlag.OpenQualified)
+    |> NameMultiMap.range 
+    |> List.filter (fun x -> 
+         let demangledName = x.DemangledModuleOrNamespaceName
+         IsInterestingModuleName demangledName && notFakeContainerModule ilTyconNames demangledName)
+    |> List.filter (EntityRefContainsSomethingAccessible ncenv m ad)
+    |> List.filter (IsTyconUnseen ad ncenv.g ncenv.amap m >> not)
+    |> List.map ItemForModuleOrNamespaceRef

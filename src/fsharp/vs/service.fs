@@ -1112,7 +1112,12 @@ type TypeCheckInfo
             else 
                 items
 
+
     static let keywordTypes = Lexhelp.Keywords.keywordTypes
+
+    member x.GetVisibleNamespacesAndModulesAtPosition(cursorPos: pos) : Item list =
+        let (nenv, ad), m = GetBestEnvForPos cursorPos
+        NameResolution.GetVisibleNamespacesAndModulesAtPoint ncenv nenv m ad
 
     /// Get the auto-complete items at a location
     member x.GetDeclarations (parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, hasTextChangedSinceLastTypecheck) =
@@ -2041,6 +2046,8 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
                  if itemOcc <> ItemOccurence.RelatedText then
                   yield FSharpSymbolUse(scope.TcGlobals, denv, symbol, itemOcc, m) |])
 
+    member info.GetVisibleNamespacesAndModulesAtPoint(pos: pos) : Async<Item []> = 
+        reactorOp "GetDeclarations" [| |] (fun scope -> scope.GetVisibleNamespacesAndModulesAtPosition(pos) |> List.toArray)
     
 //----------------------------------------------------------------------------
 // BackgroundCompiler
