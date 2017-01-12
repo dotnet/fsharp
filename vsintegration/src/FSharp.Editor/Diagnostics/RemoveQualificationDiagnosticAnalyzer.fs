@@ -36,14 +36,17 @@ type internal RemoveQualificationDiagnosticAnalyzer() =
                 let checker = getChecker document
                 let! _, checkResults = checker.ParseAndCheckDocument(document, options, sourceText)
                 let! symbolUses = checkResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
-                return 
-                    [ for symbolUse in symbolUses do
-                        if not symbolUse.IsFromDefinition then
-                            yield Diagnostic.Create(Descriptor, CommonRoslynHelpers.RangeToLocation(symbolUse.RangeAlternate, sourceText, document.FilePath))
-                    ]
-            | None -> return []
+                let mutable result = ResizeArray()
+                
+                for symbolUse in symbolUses do
+                    if not symbolUse.IsFromDefinition then
+                        let! _visibleNamespacesAndModules = checkResults.GetVisibleNamespacesAndModulesAtPoint symbolUse.RangeAlternate.Start |> liftAsync
+                        result.Add (Diagnostic.Create(Descriptor, CommonRoslynHelpers.RangeToLocation(symbolUse.RangeAlternate, sourceText, document.FilePath)))
+                
+                return result.ToImmutableArray()
+            | None -> return ImmutableArray.Empty
         } 
-        |> Async.map (fun xs -> (xs |> Option.defaultValue []).ToImmutableArray())
+        |> Async.map (Option.defaultValue ImmutableArray.Empty)
         |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
 
     override this.AnalyzeSemanticsAsync(_, _) = Task.FromResult ImmutableArray<Diagnostic>.Empty
