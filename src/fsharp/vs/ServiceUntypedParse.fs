@@ -345,12 +345,7 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
                 
                 match locations |> List.filter (fun m -> rangeContainsPos m pos) with
                 | [] -> Seq.tryHead locations
-                | first::rest -> 
-                    let smallest = ref first
-                    for current in rest do
-                        if rangeContainsRange !smallest current then
-                            smallest := current
-                    Some !smallest)
+                | locations -> Seq.tryLast locations)
             (fun _msg -> None)  
             
     /// When these files appear or disappear the configuration for the current project is invalidated.
