@@ -107,8 +107,8 @@ module internal CommonRoslynHelpers =
         Diagnostic.Create(descriptor, location)
 
     let FSharpGlyphToRoslynGlyph = function
-        // FSROSLYNTODO: This doesn't yet reflect pulbic/private/internal into the glyph
-        // FSROSLYNTODO: We should really use FSharpSymbol information here.  But GetDeclarationListInfo doesn't provide it, and switch to GetDeclarationListSymbols is a bit large at the moment
+        // FSROSLYNTODO: This doesn't yet reflect public/private/internal into the glyph
+        // FSROSLYNTODO: We should really use FSharpSymbol information here. But GetDeclarationListInfo doesn't provide it, and switch to GetDeclarationListSymbols is a bit large at the moment
         | GlyphMajor.Class -> Glyph.ClassPublic
         | GlyphMajor.Constant -> Glyph.ConstantPublic
         | GlyphMajor.Delegate -> Glyph.DelegatePublic
