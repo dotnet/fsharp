@@ -50,7 +50,7 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
                 x.ErrorNumber = y.ErrorNumber
             member __.GetHashCode x =
                 let mutable hash = 17
-                hash <- hash * 23 + x.EndLineAlternate.GetHashCode()
+                hash <- hash * 23 + x.StartLineAlternate.GetHashCode()
                 hash <- hash * 23 + x.EndLineAlternate.GetHashCode()
                 hash <- hash * 23 + x.StartColumn.GetHashCode()
                 hash <- hash * 23 + x.EndColumn.GetHashCode()
