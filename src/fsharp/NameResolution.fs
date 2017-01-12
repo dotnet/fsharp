@@ -3901,7 +3901,6 @@ let GetVisibleNamespacesAndModulesAtPoint (ncenv: NameResolver) (nenv: NameResol
     |> NameMultiMap.range 
     |> List.filter (fun x -> 
          let demangledName = x.DemangledModuleOrNamespaceName
-         IsInterestingModuleName demangledName && notFakeContainerModule ilTyconNames demangledName)
-    |> List.filter (EntityRefContainsSomethingAccessible ncenv m ad)
-    |> List.filter (IsTyconUnseen ad ncenv.g ncenv.amap m >> not)
-    |> List.map ItemForModuleOrNamespaceRef
+         IsInterestingModuleName demangledName && notFakeContainerModule ilTyconNames demangledName
+         && EntityRefContainsSomethingAccessible ncenv m ad  x
+         && not (IsTyconUnseen ad ncenv.g ncenv.amap m x))

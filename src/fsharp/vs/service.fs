@@ -1115,7 +1115,7 @@ type TypeCheckInfo
 
     static let keywordTypes = Lexhelp.Keywords.keywordTypes
 
-    member x.GetVisibleNamespacesAndModulesAtPosition(cursorPos: pos) : Item list =
+    member x.GetVisibleNamespacesAndModulesAtPosition(cursorPos: pos) : ModuleOrNamespaceRef list =
         let (nenv, ad), m = GetBestEnvForPos cursorPos
         NameResolution.GetVisibleNamespacesAndModulesAtPoint ncenv nenv m ad
 
@@ -2046,7 +2046,7 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
                  if itemOcc <> ItemOccurence.RelatedText then
                   yield FSharpSymbolUse(scope.TcGlobals, denv, symbol, itemOcc, m) |])
 
-    member info.GetVisibleNamespacesAndModulesAtPoint(pos: pos) : Async<Item []> = 
+    member info.GetVisibleNamespacesAndModulesAtPoint(pos: pos) : Async<ModuleOrNamespaceRef []> = 
         reactorOp "GetDeclarations" [| |] (fun scope -> scope.GetVisibleNamespacesAndModulesAtPosition(pos) |> List.toArray)
     
 //----------------------------------------------------------------------------
