@@ -11,6 +11,3 @@ module N =
 open N
 
 let x = N.MyUnion.``My Case2``
-
-
-exit 0
