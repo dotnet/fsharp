@@ -83,7 +83,14 @@ module internal PrintUtilities =
             if isAttribute then 
                 defaultArg (String.tryDropSuffix name "Attribute") name 
             else name
-        let tyconTextL = DemangleOperatorNameAsLayout (tagEntityRefName tcref) demangled
+        
+        let tyconTextL =
+            // do not demangle array, othewise they will show as "int ( [] )", which is wrong.
+            if isArrayTyconRef denv.g tcref then
+                wordL (tagEntityRefName tcref demangled)
+            else
+                DemangleOperatorNameAsLayout (tagEntityRefName tcref) demangled
+
         if denv.shortTypeNames then 
             tyconTextL
         else
