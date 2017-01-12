@@ -131,10 +131,20 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
         let nameLen = name.Length
         let rec loop i = (i < nameLen && (opCharSet.Contains(name.[i]) || loop (i+1)))
         loop 0
+    
+    /// Returns the plain name of a given identifier, operator or double backticked name, 
+    /// e.g. "|>>" instead of "( |>> )" or "long identifier" instead of "( long identifier )".
+    let DemangleBacktickedName (name:string) =
+        if name.StartsWith "( " && name.EndsWith " )" then
+            name.[2..name.Length - 3]
+        else name
+    
+    /// Wraps double backticks around a name if it contains a space.
+    let NameUsedInCode (name:string) = if name.Contains " " then "``" + name + "``" else name
 
     /// Returns `true` if given string is an operator display name, e.g. ( |>> )
     let IsOperatorName (name: string) =
-        let name = if name.StartsWith "( " && name.EndsWith " )" then name.[2..name.Length - 3] else name
+        let name = DemangleBacktickedName name
         let res = name |> Seq.forall (fun c -> opCharSet.Contains c && c <> ' ')
         res
 

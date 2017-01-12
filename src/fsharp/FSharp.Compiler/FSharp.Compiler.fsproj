@@ -152,6 +152,9 @@
     <Compile Include="..\ErrorLogger.fs">
       <Link>ErrorLogging\ErrorLogger.fs</Link>
     </Compile>
+    <Compile Include="..\PrettyNaming.fs">
+      <Link>ErrorLogging\PrettyNaming.fs</Link>
+    </Compile>
     <Compile Include="..\ErrorResolutionHints.fs">
       <Link>ErrorLogging\ErrorResolutionHints.fs</Link>
     </Compile>
@@ -240,9 +243,6 @@
     </Compile>
     <Compile Include="..\..\utils\CompilerLocationUtils.fs">
       <Link>CompilerLocation\CompilerLocationUtils.fs</Link>
-    </Compile>
-    <Compile Include="..\PrettyNaming.fs">
-      <Link>PrettyNaming\PrettyNaming.fs</Link>
     </Compile>
     <Compile Include="..\..\ilx\ilxsettings.fs">
       <Link>ILXErase\ilxsettings.fs</Link>
