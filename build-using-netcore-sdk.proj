@@ -1,0 +1,68 @@
+<Project ToolsVersion="15.0" InitialTargets="CheckPrereqs" DefaultTargets="All">
+
+    <Target Name="Init">
+        <!-- Define global properties -->
+
+        <PropertyGroup>
+            <RepoRoot>$(MSBuildThisFileDirectory)</RepoRoot>
+            <NuGetPackageRoot>$(RepoRoot)/packages</NuGetPackageRoot>
+        </PropertyGroup>
+    </Target>
+
+    <Import Project="build/CheckPrereqs.proj" />
+    <Import Project="build/Prepare.proj" />
+    <Import Project="build/Compile.proj" />
+    <Import Project="build/Package.proj" />
+    <Import Project="build/Test.E2E.proj" />
+
+    <Target Name="All"
+            DependsOnTargets="Prepare;
+                              Compile;
+                              Package;
+                              TestE2E;" />
+    <Target Name="Clean"
+            DependsOnTargets="CleanSrcLockFiles;
+                              CleanCompile;
+                              CleanPackage;
+                              CleanTestE2E;" />
+
+    <!--
+
+# MAIN TARGETS
+
+- `CheckPrereqs` check prerequisites, always runs as the first target
+- `Prepare` restore projects
+- `Compile` build all projects
+- `Package` create the nuget packages
+- `TestE2E` run End to End tests, using built nupkgs
+- `Clean` remove all build artifacts
+
+Build pipeline (target `All`) is:
+
+    CheckPrereqs -> Prepare -> Compile -> Package -> TestE2E
+
+
+# PARAMETERS
+
+these can be passed as msbuild properties (/p) or env var
+If not set, defaults are used.
+
+| Name                 | Description                                  | Example                                 |
+|~~~~~~~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|
+| PackageVersion       | Full version to use for nupkgs               | "1.0.0-rc-170124"                       |
+| Packages             | List of nupkgs to generate, by default all.  | "Microsoft.FSharp.Compiler.Sdk.netcore" |
+| NupkgOutputDirectory | Output Dir of generated nupkgs               | A directory full path                   |
+
+
+# TARGETS
+
+- `RestoreSrcPackages` restore the /src projects
+- `CleanSrcLockFiles` clean the nuget restore lock files (so `RestoreSrcPackages` can be run again)
+- `BuildFsc` compile fsc
+- `PublishFsc` publish fsc as framework dependent deployment (ready for `dotnet /path/to/fsc.dll`)
+- `RunPackageTests` test the built packages in real projects E2E
+- the `RestoreTestPackages` and `CleanTestLockFiles` manage the restore of test projects
+
+    -->
+
+</Project>

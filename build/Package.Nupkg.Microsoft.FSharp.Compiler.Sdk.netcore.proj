@@ -1,0 +1,57 @@
+<Project ToolsVersion="15.0">
+
+    <ItemGroup>
+        <SetupNugetPackagesDependsOn Include="SetupNugetPackages_MicrosoftFSharpCompilerSdknetcore" />
+    </ItemGroup>
+
+    <Target Name="SetupNugetPackages_MicrosoftFSharpCompilerSdknetcore"
+            Condition=" '$(Packages)' == '' or $(Packages.Contains('Microsoft.FSharp.Compiler.Sdk.netcore'))"
+            DependsOnTargets="Init;RequireCoreclrBin;PublishFsc" >
+        <PropertyGroup>
+            <_PackageProjectDir>$(RepoRoot)/src/fsharp/FSharp.Compiler.Sdk.netcore.nuget</_PackageProjectDir>
+            <_PackageName>Microsoft.FSharp.Compiler.Sdk.netcore</_PackageName>
+        </PropertyGroup>
+        <!-- Specify the 'Microsoft.FSharp.Compiler.Sdk.netcore' nuget package content -->
+
+        <!-- Package content -->
+        <ItemGroup>
+            <!-- the published fsc for netcoreapp1.0 -->
+            <_FscPublishOutputFiles Include="$(FscPublishDirectoryNetCoreApp1_0)/**/*" />
+            <_FsharpBuildFiles Include="$(CoreclrReleaseDir)/FSharp.Build.*" />
+            <_PackageProjectFiles Include="$(_PackageProjectDir)/**/*"
+                                  Exclude="$(_PackageProjectDir)/*.nuspec;$(_PackageProjectDir)/bin/**/*" />
+
+            <!-- the fsc published (netcoreapp1.0) files -->
+            <NugetPackageLayout Include="@(_FscPublishOutputFiles)">
+                <PackageName>$(_PackageName)</PackageName>
+                <PackageRelativePath>build/netcoreapp1.0/%(RecursiveDir)%(FileName)%(Extension)</PackageRelativePath>
+            </NugetPackageLayout>
+
+            <!-- the FSharp.Build assembly who contains msbuild tasks -->
+            <NugetPackageLayout Include="@(_FsharpBuildFiles)">
+                <PackageName>$(_PackageName)</PackageName>
+                <PackageRelativePath>build/netcoreapp1.0/%(RecursiveDir)%(FileName)%(Extension)</PackageRelativePath>
+            </NugetPackageLayout>
+
+            <!-- The package content files, except the nuspec -->
+            <NugetPackageLayout Include="@(_PackageProjectFiles)">
+                <PackageName>$(_PackageName)</PackageName>
+                <PackageRelativePath>%(RecursiveDir)%(FileName)%(Extension)</PackageRelativePath>
+            </NugetPackageLayout>
+        </ItemGroup>
+
+        <PropertyGroup>
+            <PackageVersion Condition="'$(PackageVersion)' == ''" >$(NuGetPerBuildPreReleaseVersion)</PackageVersion>
+        </PropertyGroup>
+
+        <!-- Package metadata -->
+        <ItemGroup>
+            <NugetPackageDef Include="$(_PackageName)">
+                <NuspecFile>$(_PackageProjectDir)/$(_PackageName).nuspec</NuspecFile>
+                <Version>$(PackageVersion)</Version>
+            </NugetPackageDef>
+        </ItemGroup>
+
+    </Target>
+
+</Project>

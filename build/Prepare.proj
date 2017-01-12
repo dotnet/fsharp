@@ -1,0 +1,37 @@
+<Project ToolsVersion="15.0">
+
+    <Target Name="Prepare"
+            DependsOnTargets="RestoreSrcPackages" />
+
+    <Target Name="SetupRestoreSrcPackagesInputsOutputs"
+            DependsOnTargets="Init" >
+        <!-- List of src projects to restore -->
+
+        <ItemGroup>
+            <RestoreSrcPackagesInput Include="$(RepoRoot)/src/fsharp/Fsc/Fsc.netcore.fsproj" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="RestoreSrcPackages"
+            DependsOnTargets="Init;SetupRestoreSrcPackagesInputsOutputs"
+            Inputs="@(RestoreSrcPackagesInput)"
+            Outputs="@(RestoreSrcPackagesInput->'%(RelativeDir)/obj/project.assets.json');@(RestoreSrcPackagesInput->'%(RelativeDir)/obj/%(Filename).fsproj.nuget.g.props')">
+        <!-- Restore src projects, if needed (with lock files up-to-date check) -->
+
+        <CallTarget Targets="CleanSrcLockFiles" />
+
+        <Exec Command='dotnet restore "%(RestoreSrcPackagesInput.FullPath)" --packages "$(NuGetPackageRoot)" --no-cache --configfile "$(RepoRoot)/src/fsharp/Fsc/Fsc.netcore.NuGet.Config"' />
+    </Target>
+
+    <Target Name="CleanSrcLockFiles" 
+            DependsOnTargets="Init">
+        <!-- Cleanup restore lock files of src projects -->
+
+        <ItemGroup>
+            <SrcLockFiles Include="$(RepoRoot)/src/**/obj/project.assets.json" />
+            <SrcLockFiles Include="$(RepoRoot)/src/**/obj/*.fsproj.nuget.g.props" />
+        </ItemGroup>
+        <Delete Files="@(SrcLockFiles)" />
+    </Target>
+
+</Project>

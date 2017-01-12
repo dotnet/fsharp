@@ -107,3 +107,6 @@ times
 source_link.json
 .vs/
 /VSRelease/net40/bin
+.dotnetsdk
+scripts/dotnet-install.*.ps1
+src/fsharp/FSharp.Compiler.Sdk.netcore.nuget/bin

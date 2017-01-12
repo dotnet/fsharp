@@ -1,0 +1,10 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup> 
+    <BuildRevision>$([System.DateTime]::Now.ToString(`yyMMdd`))</BuildRevision>
+    <NuGetReleaseVersion>1.0.0</NuGetReleaseVersion> 
+    <NuGetPreReleaseVersion>$(NuGetReleaseVersion)-rc</NuGetPreReleaseVersion>
+    <NuGetPerBuildPreReleaseVersion Condition="'$(BuildRevision)' != ''">$(NuGetPreReleaseVersion)-$(BuildRevision.Trim())</NuGetPerBuildPreReleaseVersion> 
+  </PropertyGroup>
+
+</Project>

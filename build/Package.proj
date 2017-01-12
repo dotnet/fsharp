@@ -1,0 +1,90 @@
+<Project ToolsVersion="15.0">
+
+    <Import Project="../src/FSharp.nugets.props" />
+    
+    <!-- Import all nuget package definitions -->
+    <Import Project="Package.Nupkg.Microsoft.FSharp.Compiler.Sdk.netcore.proj" />
+
+    <Target Name="Package"
+            DependsOnTargets="Prepare;
+                              Compile;
+                              GenerateNugetPackages" />
+
+    <Target Name="SetupNugetPackagesProperties"
+            DependsOnTargets="Init" >
+        <!-- Global properties required for nuget packages creation, like output dir and layout dir -->
+
+        <PropertyGroup>
+            <NupkgOutputDirectory Condition=" '$(NupkgOutputDirectory)' == '' ">$(RepoRoot)/$(Configuration)/artifacts</NupkgOutputDirectory>
+            <PackagingBuildBasePath>$(RepoRoot)/$(Configuration)/forPackaging</PackagingBuildBasePath>
+        </PropertyGroup>
+    </Target>
+
+    <Target Name="SetupNugetPackages"
+            DependsOnTargets="Init;
+                              SetupNugetPackagesProperties;
+                              @(SetupNugetPackagesDependsOn)" />
+
+    <Target Name="LayoutNugetPackages"
+            DependsOnTargets="Init;SetupNugetPackagesProperties;SetupNugetPackages"
+            Outputs="%(NugetPackageLayout.PackageName)" >
+        <!-- Create the directory with the content of nuget packages, ready for nuget pack -->
+
+        <PropertyGroup>
+            <_PackageName>%(NugetPackageLayout.PackageName)</_PackageName>
+        </PropertyGroup>
+
+        <Copy SourceFiles="%(NugetPackageLayout.Identity)"
+              Condition=" '%(PackageName)' == '$(_PackageName)' "
+              DestinationFiles="$(PackagingBuildBasePath)/%(PackageName)/%(PackageRelativePath)"
+              SkipUnchangedFiles="true" />
+    </Target>
+
+    <Target Name="GenerateNugetPackages"
+            DependsOnTargets="Init;LayoutNugetPackages"
+            Outputs="$(NupkgDirectory)/%(NugetPackageDef.Identity).%(NugetPackageDef.Version).nupkg" >
+        <!-- Generate the nuget packages, doing nuget pack of prepared layour dir and setting metadata -->
+
+        <PropertyGroup>
+            <PackageLicenceUrl Condition="'$(PackageLicenceUrl)' == ''">https://github.com/Microsoft/visualfsharp/blob/master/License.txt</PackageLicenceUrl>
+            <PackageProjectUrl Condition="'$(PackageProjectUrl)' == ''">https://github.com/Microsoft/visualfsharp</PackageProjectUrl>
+            <PackageVersion    Condition="'$(PackageVersion)' == ''"   >$(NuGetPerBuildPreReleaseVersion)</PackageVersion>
+            <PackageAuthors    Condition="'$(PackageAuthors)' == ''"   >Microsoft</PackageAuthors>
+            <PackageTags       Condition="'$(PackageTags)' == ''"      >Visual F# Compiler FSharp coreclr functional programming</PackageTags>
+        </PropertyGroup>
+
+        <PropertyGroup>
+            <_CurrentPackageName>%(NugetPackageDef.Identity)</_CurrentPackageName>
+        </PropertyGroup>
+
+        <!-- Prepare args for nuget pack -->
+
+        <ItemGroup>
+            <_NuspecProperties Include='licenseUrl="$(PackageLicenceUrl)"' />
+            <_NuspecProperties Include='projectUrl="$(PackageProjectUrl)"' />
+            <_NuspecProperties Include='version=$(PackageVersion)' />
+            <_NuspecProperties Include='authors="$(PackageAuthors)"' />
+            <_NuspecProperties Include='tags="$(PackageTags)"' />
+        </ItemGroup>
+
+        <PropertyGroup>
+            <!-- the nuget pack output path must be relative, absolute is ignored -->
+            <_NupkgDirectory>.$([MSBuild]::MakeRelative( $(MSBuildProjectDirectory), "$(NupkgOutputDirectory)/" ))</_NupkgDirectory>
+            
+            <!-- the nuget pack command fails if there is a trailing directory separator -->
+            <_NupkgDirectory>$(_NupkgDirectory.TrimEnd('\').TrimEnd('/'))</_NupkgDirectory>
+        </PropertyGroup>
+
+        <Exec Command="dotnet nuget pack &quot;@(NugetPackageDef -> '%(NuspecFile)')&quot; --base-path &quot;$(PackagingBuildBasePath)/$(_CurrentPackageName)&quot; --exclude-empty-directories --properties @(_NuspecProperties) --output-directory &quot;$(_NupkgDirectory)&quot;"
+              Condition=" '$(_CurrentPackageName)' == '%(NugetPackageDef.Identity)' "
+              />
+    </Target>
+
+    <Target Name="CleanPackage"
+            DependsOnTargets="Init;SetupNugetPackagesProperties;">
+
+        <RemoveDir Directories="$(PackagingBuildBasePath)"
+                   Condition=" '$(PackagingBuildBasePath)' != '' " />
+    </Target>
+
+</Project>

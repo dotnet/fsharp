@@ -1,0 +1,21 @@
+<!--
+***********************************************************************************************
+Microsoft.FSharp.Compiler.Sdk.netcore.props
+
+WARNING:  You CAN MODIFY this file, doesnt matter if you are not knowledgeable about MSBuild and
+          without a backup copy.
+          Incorrect changes to this file will make it impossible to load or build your projects
+          from the command-line or the IDE. 
+          Just remove Microsoft.FSharp.Compiler.netcore package from nuget cache and re-restore.
+
+***********************************************************************************************
+-->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <FscTaskAssemblyPath>$(MSBuildThisFileDirectory)..\build\netcoreapp1.0\FSharp.Build.dll</FscTaskAssemblyPath>
+    <FscToolPath>$(MSBuildThisFileDirectory)..\build\netcoreapp1.0</FscToolPath>
+    <FscToolExe>fsc.dll</FscToolExe>
+  </PropertyGroup>
+
+</Project>
