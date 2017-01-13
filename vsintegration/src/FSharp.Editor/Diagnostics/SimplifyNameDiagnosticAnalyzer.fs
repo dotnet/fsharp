@@ -62,7 +62,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
                         // so we have to calculate plid's start ourselves.
                         let plidStartCol = symbolUse.RangeAlternate.EndColumn - name.Length - (getPlidLength plid)
                         symbolUse, plid, plidStartCol, name)
-                    |> Array.filter (fun (_, plid, _, _) -> match plid with [] | [_] -> false | _ -> true)
+                    |> Array.filter (fun (_, plid, _, _) -> not (List.isEmpty plid))
                     |> Array.groupBy (fun (symbolUse, _, plidStartCol, _) -> symbolUse.RangeAlternate.StartLine, plidStartCol)
                     |> Array.map (fun (_, xs) -> xs |> Array.maxBy (fun (symbolUse, _, _, _) -> symbolUse.RangeAlternate.EndColumn))
 
