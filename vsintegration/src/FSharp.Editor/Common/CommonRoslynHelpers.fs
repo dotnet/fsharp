@@ -206,6 +206,11 @@ module internal CommonRoslynHelpers =
                 | Private -> Glyph.ClassPrivate
         | _ -> Glyph.None
 
+    let RangeToLocation (r: range, sourceText: SourceText, filePath: string) : Location =
+        let linePositionSpan = LinePositionSpan(LinePosition(Line.toZ r.StartLine, r.StartColumn), LinePosition(Line.toZ r.EndLine, r.EndColumn))
+        let textSpan = sourceText.Lines.GetTextSpan linePositionSpan
+        Location.Create(filePath, textSpan, linePositionSpan)
+
 [<AutoOpen>]
 module internal RoslynExtensions =
     type Project with
