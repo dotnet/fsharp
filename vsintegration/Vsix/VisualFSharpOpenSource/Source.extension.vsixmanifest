@@ -2,7 +2,7 @@
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
-    <Identity Id="VisualFSharp" Version="15.4.1.9055" Language="en-US" Publisher="Microsoft.VisualFSharpTools" />
+    <Identity Id="VisualFSharp" Version="42.42.42.42" Language="en-US" Publisher="Microsoft.VisualFSharpTools" />
     <DisplayName>Visual F# Tools</DisplayName>
     <Description xml:space="preserve">Deploy Visual F# Tools templates to Visual Studio</Description>
     <PackageId>Microsoft.FSharp.VSIX.OpenSource.Core</PackageId>
