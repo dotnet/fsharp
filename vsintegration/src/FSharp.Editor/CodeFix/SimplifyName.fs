@@ -33,7 +33,5 @@ type internal FSharpRemoveQualificationCodeFixProvider() =
     override __.RegisterCodeFixesAsync context : Task =
        async {
            let diagnostics = (context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id)).ToImmutableArray()
-           let! sourceText = context.Document.GetTextAsync()
-           let longIdent = sourceText.ToString(context.Span) 
-           context.RegisterCodeFix(createCodeFix(sprintf "%s '%s'" SR.SimplifyName.Value longIdent, context, TextChange(context.Span, "")), diagnostics)
+           context.RegisterCodeFix(createCodeFix(SR.SimplifyName.Value, context, TextChange(context.Span, "")), diagnostics)
         } |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
