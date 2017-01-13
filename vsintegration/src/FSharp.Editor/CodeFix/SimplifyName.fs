@@ -14,9 +14,9 @@ open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
 
 [<ExportCodeFixProvider(FSharpCommonConstants.FSharpLanguageName, Name = PredefinedCodeFixProviderNames.SimplifyNames); Shared>]
-type internal FSharpRemoveQualificationCodeFixProvider() =
+type internal FSharpSimplifyNameCodeFixProvider() =
     inherit CodeFixProvider()
-    let fixableDiagnosticIds = [IDEDiagnosticIds.RemoveQualificationDiagnosticId]
+    let fixableDiagnosticId = IDEDiagnosticIds.SimplifyNamesDiagnosticId
         
     let createCodeFix (title: string, context: CodeFixContext, textChange: TextChange) =
         CodeAction.Create(
@@ -28,10 +28,18 @@ type internal FSharpRemoveQualificationCodeFixProvider() =
                 } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)),
             title)
 
-    override __.FixableDiagnosticIds = fixableDiagnosticIds.ToImmutableArray()
+    override __.FixableDiagnosticIds = ImmutableArray.Create(fixableDiagnosticId)
 
-    override __.RegisterCodeFixesAsync context : Task =
+    override __.RegisterCodeFixesAsync(context: CodeFixContext) : Task =
        async {
-           let diagnostics = (context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id)).ToImmutableArray()
-           context.RegisterCodeFix(createCodeFix(SR.SimplifyName.Value, context, TextChange(context.Span, "")), diagnostics)
-        } |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+           for diagnostic in context.Diagnostics |> Seq.filter (fun x -> x.Id = fixableDiagnosticId) do
+               let title =
+                   match diagnostic.Properties.TryGetValue(SimplifyNameDiagnosticAnalyzer.LongIdentPropertyKey) with
+                   | true, longIdent -> sprintf "%s '%s'" SR.SimplifyName.Value longIdent
+                   | _ -> SR.SimplifyName.Value
+
+               context.RegisterCodeFix(
+                   createCodeFix(title, context, TextChange(context.Span, "")), 
+                   ImmutableArray.Create(diagnostic))
+       } 
+       |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

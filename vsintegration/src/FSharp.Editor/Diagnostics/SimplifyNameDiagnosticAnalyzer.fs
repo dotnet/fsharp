@@ -20,17 +20,18 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 type private LineHash = int
 
 [<DiagnosticAnalyzer(FSharpCommonConstants.FSharpLanguageName)>]
-type internal RemoveQualificationDiagnosticAnalyzer() =
+type internal SimplifyNameDiagnosticAnalyzer() =
     inherit DocumentDiagnosticAnalyzer()
     
     let getProjectInfoManager (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().ProjectInfoManager
     let getChecker (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().Checker
-
-    static let Descriptor = 
-        DiagnosticDescriptor(IDEDiagnosticIds.RemoveQualificationDiagnosticId, SR.SimplifyName.Value, "", "", DiagnosticSeverity.Hidden, true, "", "", DiagnosticCustomTags.Unnecessary)
-
     let getPlidLength (plid: string list) = (plid |> List.sumBy String.length) + plid.Length
 
+    static let Descriptor = 
+        DiagnosticDescriptor(IDEDiagnosticIds.SimplifyNamesDiagnosticId, SR.SimplifyName.Value, "", "", DiagnosticSeverity.Hidden, true, "", "", DiagnosticCustomTags.Unnecessary)
+
+    static member LongIdentPropertyKey = "FullName"
+    
     override __.SupportedDiagnostics = ImmutableArray.Create Descriptor
 
     override this.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken) =
@@ -48,16 +49,22 @@ type internal RemoveQualificationDiagnosticAnalyzer() =
                         let lineStr = sourceText.Lines.[Line.toZ symbolUse.RangeAlternate.StartLine].ToString()
                         // for `System.DateTime.Now` it returns ([|"System"; "DateTime"|], "Now")
                         let plid, name = QuickParse.GetPartialLongNameEx(lineStr, symbolUse.RangeAlternate.EndColumn - 1) 
-                        
-                        let rec getNecessaryPlid (plid: string list) : Async<string list> =
-                            async {
-                                match plid with
-                                | [] -> return plid
-                                | _ :: t ->
-                                    let! res = checkResults.IsRelativeNameResolvable(symbolUse.RangeAlternate.Start, t, symbolUse.Symbol.Item) 
-                                    if res then return! getNecessaryPlid t
-                                    else return plid
-                            }
+                        let posAtStartOfName =
+                            let r = symbolUse.RangeAlternate
+                            if r.StartLine = r.EndLine then Range.mkPos r.StartLine (r.EndColumn - name.Length)
+                            else r.Start
+
+                        let getNecessaryPlid (plid: string list) : Async<string list> =
+                            let rec loop (rest: string list) (current: string list) =
+                                async {
+                                    match rest with
+                                    | [] -> return current
+                                    | headIdent :: restPlid ->
+                                        let! res = checkResults.IsRelativeNameResolvable(posAtStartOfName, current, symbolUse.Symbol.Item) 
+                                        if res then return current
+                                        else return! loop restPlid (headIdent :: current)
+                                }
+                            loop (List.rev plid) [] |> Async.map List.rev
                            
                         let! necessaryPlid = getNecessaryPlid plid |> liftAsync
                             
@@ -73,9 +80,26 @@ type internal RemoveQualificationDiagnosticAnalyzer() =
                             let unnecessaryRange = 
                                 Range.mkRange r.FileName (Range.mkPos r.StartLine plidStartCol) (Range.mkPos r.EndLine necessaryPlidStartCol)
                             
-                            result.Add (Diagnostic.Create(Descriptor, CommonRoslynHelpers.RangeToLocation(unnecessaryRange, sourceText, document.FilePath)))
-                
-                return result.ToImmutableArray()
+                            let relativeName = (String.concat "." plid) + "." + name
+                            result.Add(symbolUse.RangeAlternate.EndColumn, unnecessaryRange, relativeName)
+                return
+                    (result
+                     |> Seq.groupBy (fun (_, r, _) -> r.Start)
+                     |> Seq.map (fun (_, relativeNames) ->
+                          let maxEndCol = relativeNames |> Seq.map (fun (endCol, _, _) -> endCol) |> Seq.max
+                          
+                          let unnecessaryRange, relativeName =
+                              relativeNames 
+                              |> Seq.filter (fun (pos, _, _) -> pos = maxEndCol)
+                              |> Seq.maxBy (fun (_, _, name) -> name.Length)
+                              |> fun (_, r, name) -> r, name
+                         
+                          Diagnostic.Create(
+                               Descriptor,
+                               CommonRoslynHelpers.RangeToLocation(unnecessaryRange, sourceText, document.FilePath),
+                               properties = (dict [SimplifyNameDiagnosticAnalyzer.LongIdentPropertyKey, relativeName]).ToImmutableDictionary()))
+                    ).ToImmutableArray()
+            
             | None -> return ImmutableArray.Empty
         } 
         |> Async.map (Option.defaultValue ImmutableArray.Empty)
