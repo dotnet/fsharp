@@ -832,6 +832,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             // copying logic from C#'s project system, langref.cpp: IsProjectReferenceReferenceable()
             var otherFrameworkName = GetProjectTargetFrameworkName(thisProject.Site, referencedProjectGuid);
+            if (otherFrameworkName == null)
+                return FrameworkCompatibility.Ok;
+
             if (String.Compare(otherFrameworkName.Identifier, ".NETPortable", StringComparison.OrdinalIgnoreCase) == 0)
             {
                  // we always allow references to projects that are targeted to the Portable/".NETPortable" fx family
@@ -867,8 +870,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             var hierarchy = VsShellUtilities.GetHierarchy(serviceProvider, referencedProjectGuid);
             if (hierarchy == null)
                 return null;
-                
+
             object otherTargetFrameworkMonikerObj;
+
             hierarchy.GetProperty(VSConstants.VSITEMID_ROOT, (int)__VSHPROPID4.VSHPROPID_TargetFrameworkMoniker, out otherTargetFrameworkMonikerObj);
 
             string targetFrameworkMoniker = (string)otherTargetFrameworkMonikerObj;
