@@ -28,7 +28,16 @@ type internal SimplifyNameDiagnosticAnalyzer() =
     let getPlidLength (plid: string list) = (plid |> List.sumBy String.length) + plid.Length
 
     static let Descriptor = 
-        DiagnosticDescriptor(IDEDiagnosticIds.SimplifyNamesDiagnosticId, SR.SimplifyName.Value, "", "", DiagnosticSeverity.Hidden, true, "", "", DiagnosticCustomTags.Unnecessary)
+        DiagnosticDescriptor(
+            IDEDiagnosticIds.SimplifyNamesDiagnosticId, 
+            SR.SimplifyName.Value, 
+            SR.NameCanBeSimplified.Value, 
+            SR.StyleCategory.Value, 
+            DiagnosticSeverity.Hidden, 
+            true, 
+            "", 
+            "", 
+            DiagnosticCustomTags.Unnecessary)
 
     static member LongIdentPropertyKey = "FullName"
     

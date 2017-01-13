@@ -135,4 +135,10 @@
   <data name="SimplifyName" xml:space="preserve">
     <value>Simplify name</value>
   </data>
+  <data name="NameCanBeSimplified" xml:space="preserve">
+    <value>Name can be simplified.</value>
+  </data>
+  <data name="StyleCategory" xml:space="preserve">
+    <value>Style</value>
+  </data>
 </root>

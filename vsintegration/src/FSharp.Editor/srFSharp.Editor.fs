@@ -19,3 +19,5 @@ module SR =
     let ImplementInterface = lazy ( GetString "ImplementInterface" ) 
     let ImplementInterfaceWithoutTypeAnnotation = lazy ( GetString "ImplementInterfaceWithoutTypeAnnotation" ) 
     let SimplifyName = lazy ( GetString "SimplifyName")
+    let StyleCategory = lazy ( GetString "StyleCategory")
+    let NameCanBeSimplified = lazy ( GetString "NameCanBeSimplified")
