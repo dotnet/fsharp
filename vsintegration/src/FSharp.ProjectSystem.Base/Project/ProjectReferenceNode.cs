@@ -865,6 +865,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         private static System.Runtime.Versioning.FrameworkName GetProjectTargetFrameworkName(System.IServiceProvider serviceProvider, Guid referencedProjectGuid)
         {
             var hierarchy = VsShellUtilities.GetHierarchy(serviceProvider, referencedProjectGuid);
+            if (hierarchy == null)
+                return null;
+                
             object otherTargetFrameworkMonikerObj;
             hierarchy.GetProperty(VSConstants.VSITEMID_ROOT, (int)__VSHPROPID4.VSHPROPID_TargetFrameworkMoniker, out otherTargetFrameworkMonikerObj);
 
