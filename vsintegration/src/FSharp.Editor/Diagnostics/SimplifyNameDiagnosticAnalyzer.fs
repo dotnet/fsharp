@@ -10,7 +10,6 @@ open System.Threading.Tasks
 open System.Runtime.CompilerServices
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Diagnostics
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
@@ -28,7 +27,7 @@ type internal RemoveQualificationDiagnosticAnalyzer() =
     let getChecker (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().Checker
 
     static let Descriptor = 
-        DiagnosticDescriptor(IDEDiagnosticIds.RemoveQualificationDiagnosticId, "Simplify name", "", "", DiagnosticSeverity.Hidden, true, "", "", DiagnosticCustomTags.Unnecessary)
+        DiagnosticDescriptor(IDEDiagnosticIds.RemoveQualificationDiagnosticId, SR.SimplifyName.Value, "", "", DiagnosticSeverity.Hidden, true, "", "", DiagnosticCustomTags.Unnecessary)
 
     let getPlidLength (plid: string list) = (plid |> List.sumBy String.length) + plid.Length
 
@@ -50,15 +49,19 @@ type internal RemoveQualificationDiagnosticAnalyzer() =
                         // for `System.DateTime.Now` it returns ([|"System"; "DateTime"|], "Now")
                         let plid, name = QuickParse.GetPartialLongNameEx(lineStr, symbolUse.RangeAlternate.EndColumn - 1) 
 
-                        let rec getNecessaryPlid (plid: string list) : string list =
-                            match plid with
-                            | [] -> plid
-                            | _ :: t ->
-                                if checkResults.IsRelativeNameResolvable(symbolUse.RangeAlternate.Start, t, name) then
-                                    getNecessaryPlid t
-                                else plid
+                        let rec getNecessaryPlid (plid: string list) : Async<string list> =
+                            async {
+                                match plid with
+                                | [] -> return plid
+                                | _ :: t ->
+                                    let! res = checkResults.IsRelativeNameResolvable(symbolUse.RangeAlternate.Start, t, name) 
+                                    if res then return! getNecessaryPlid t
+                                    else return plid
+                            }
+                           
+                        let! necessaryPlid = getNecessaryPlid plid |> liftAsync
                             
-                        match getNecessaryPlid plid with
+                        match necessaryPlid with
                         | necessaryPlid when necessaryPlid = plid -> ()
                         | necessaryPlid ->
                             let r = symbolUse.RangeAlternate

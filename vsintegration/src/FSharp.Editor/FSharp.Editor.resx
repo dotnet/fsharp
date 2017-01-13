@@ -132,4 +132,7 @@
   <data name="RenameValueToUnderscore" xml:space="preserve">
     <value>Rename value to '_'</value>
   </data>
+  <data name="SimplifyName" xml:space="preserve">
+    <value>Simplify name</value>
+  </data>
 </root>

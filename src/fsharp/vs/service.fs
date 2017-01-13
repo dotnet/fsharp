@@ -2056,11 +2056,8 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
     member info.GetVisibleNamespacesAndModulesAtPoint(pos: pos) : Async<ModuleOrNamespaceRef []> = 
         reactorOp "GetDeclarations" [| |] (fun scope -> scope.GetVisibleNamespacesAndModulesAtPosition(pos) |> List.toArray)
 
-    member info.IsRelativeNameResolvable(pos: pos, plid: string list, name: string) : bool = 
-        threadSafeOp 
-            (fun () -> failwith "not available") 
-            (fun (scope, _builder, _reactor) -> 
-                scope.IsRelativeNameResolvable(pos, plid, name))
+    member info.IsRelativeNameResolvable(pos: pos, plid: string list, name: string) : Async<bool> = 
+        reactorOp "IsRelativeNameResolvable" true (fun scope -> scope.IsRelativeNameResolvable(pos, plid, name))
     
 //----------------------------------------------------------------------------
 // BackgroundCompiler

@@ -47,7 +47,7 @@
     <Compile Include="Debugging\LanguageDebugInfoService.fs" />
     <Compile Include="Diagnostics\DocumentDiagnosticAnalyzer.fs" />
     <Compile Include="Diagnostics\ProjectDiagnosticAnalyzer.fs" />
-    <Compile Include="Diagnostics\RemoveQualificationDiagnosticAnalyzer.fs" />
+    <Compile Include="Diagnostics\SimplifyNameDiagnosticAnalyzer.fs" />
     <Compile Include="Completion\CompletionProvider.fs" />
     <Compile Include="Completion\SignatureHelp.fs" />
     <Compile Include="QuickInfo\QuickInfoProvider.fs" />
@@ -69,6 +69,7 @@
     <Compile Include="CodeFix\ReplaceWithSuggestion.fs" />
     <Compile Include="CodeFix\PrefixUnusedValueWithUnderscore.fs" />
     <Compile Include="CodeFix\ImplementInterfaceCodeFixProvider.fs" />
+    <Compile Include="CodeFix\SimplifyName.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">

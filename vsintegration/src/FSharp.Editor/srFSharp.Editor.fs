@@ -18,3 +18,4 @@ module SR =
     let RenameValueToUnderscore = lazy ( GetString "RenameValueToUnderscore" )               // "Rename value to '_'"
     let ImplementInterface = lazy ( GetString "ImplementInterface" ) 
     let ImplementInterfaceWithoutTypeAnnotation = lazy ( GetString "ImplementInterfaceWithoutTypeAnnotation" ) 
+    let SimplifyName = lazy ( GetString "SimplifyName")
