@@ -131,11 +131,13 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
 
                   yield! walkExpr (isFunction || (match spInfo with SequencePointAtBinding _ -> false | _-> true)) synExpr ]
 
-            and walkExprs es = [ for e in es do yield! walkExpr false e ]
-            and walkBinds es = [ for e in es do yield! walkBind e ]
+            and walkExprs es = List.collect (walkExpr false) es
+            and walkBinds es = List.collect walkBind es
             and walkMatchClauses cl = 
                 [ for (Clause(_,whenExpr,e,_,_)) in cl do 
-                    match whenExpr with Some e -> yield! walkExpr false e | _ -> ()
+                    match whenExpr with 
+                    | Some e -> yield! walkExpr false e 
+                    | _ -> ()
                     yield! walkExpr true e ]
 
             and walkExprOpt (spAlways:bool) eOpt = [ match eOpt with Some e -> yield! walkExpr spAlways e | _ -> () ]
@@ -323,16 +325,15 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
                   | _ ->
                       () ] 
                       
-            // Collect all the items  
+            // Collect all the items in a module  
             let walkModule (SynModuleOrNamespace(_,_,_,decls,_,_,_,m)) =
-                if rangeContainsPos m pos then 
-                    [ for d in decls do yield! walkDecl d ]
+                if rangeContainsPos m pos then
+                    List.collect walkDecl decls
                 else
                     []
                       
            /// Get information for implementation file        
-            let walkImplFile (modules:SynModuleOrNamespace list) =
-                [ for x in modules do yield! walkModule x ]
+            let walkImplFile (modules:SynModuleOrNamespace list) = List.collect walkModule modules
                      
             match input with
             | Some(ParsedInput.ImplFile(ParsedImplFileInput(_,_,_,_,_,modules,_))) -> walkImplFile modules 
