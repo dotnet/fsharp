@@ -750,7 +750,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
                 |> List.filter (fun (_, tcref, _) -> tcref.CanDeref) 
                 |> List.map (fun (_, tcref, builder) -> tcref.Stamp, builder) 
                 |> Dictionary.ofList 
-            (fun tcref2 tinst -> 
+            (fun (tcref2:EntityRef) tinst -> 
                  let dict = dict.Value
                  let key = tcref2.Stamp
                  if dict.ContainsKey key then Some(dict.[key] tinst)

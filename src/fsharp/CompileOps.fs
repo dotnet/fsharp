@@ -1521,7 +1521,7 @@ let CollectDiagnostic (implicitIncludeDir,showFullPaths,flattenErrors,errorStyle
                             sprintf "%s(%d,%d,%d,%d): " file m.StartLine m.StartColumn m.EndLine m.EndColumn, m, file
                         else
                             "", m, file
-            { Range = m; TextRepresentation = text; IsEmpty = false; File = file }
+            { Range = m; TextRepresentation = text; IsEmpty = false; File = file } : ErrorLocation
 
     match err.Exception with 
     | ReportedError _ -> 
