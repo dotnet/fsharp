@@ -340,8 +340,13 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
  
         ErrorScope.Protect 
             Range.range0 
-            (fun () -> findBreakPoints() |> List.tryLast)
-            (fun _msg -> None)   
+            (fun () -> 
+                let locations = findBreakPoints()
+                
+                match locations |> List.filter (fun m -> rangeContainsPos m pos) with
+                | [] -> Seq.tryHead locations
+                | locations -> Seq.tryLast locations)
+            (fun _msg -> None)  
             
     /// When these files appear or disappear the configuration for the current project is invalidated.
     member scope.DependencyFiles = dependencyFiles
