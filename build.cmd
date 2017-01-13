@@ -22,7 +22,7 @@ echo           ^<proto^|protofx^>
 echo           ^<ci^|ci_part1^|ci_part2^|ci_part3^|microbuild^>
 echo           ^<debug^|release^>
 echo           ^<diag^|publicsign^>
-echo           ^<test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-pcl-coreunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^>
+echo           ^<test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-pcl-coreunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^|init-tools^>
 echo           ^<include tag^>
 echo.
 echo No arguments default to 'default', meaning this (no testing)
@@ -53,6 +53,7 @@ if /i '%FSC_BUILD_SETUP%' == '' (set FSC_BUILD_SETUP=1)
 rem by default don't build coreclr lkg.  However allow configuration by setting an environment variable : set BUILD_PROTO_WITH_CORECLR_LKG = 1
 if '%BUILD_PROTO_WITH_CORECLR_LKG%' =='' (set BUILD_PROTO_WITH_CORECLR_LKG=0) 
 
+set INIT_TOOLS=0
 set BUILD_PROTO=0
 set BUILD_PHASE=1
 set BUILD_NET40=0
@@ -103,6 +104,7 @@ if /i '%_autoselect_tests%' == '1' (
     )
 
     if /i '%BUILD_CORECLR%' == '1' (
+        set INIT_TOOLS=1
         set BUILD_NET40=1
         set TEST_CORECLR_FSHARP_SUITE=1
         set TEST_CORECLR_COREUNIT_SUITE=1
@@ -132,10 +134,15 @@ if /i '%ARG%' == 'net40' (
     set BUILD_NET40=1
 )
 
+if /i '%ARG%' == 'init-tools' (
+    set INIT_TOOLS=1
+)
+
 if /i '%ARG%' == 'coreclr' (
     set _autoselect=0
     set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_CORECLR=1
+    set INIT_TOOLS=1
 )
 
 if /i '%ARG%' == 'pcls' (
@@ -161,6 +168,7 @@ if /i '%ARG%' == 'all' (
     set BUILD_PROTO=1
     set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_NET40=1
+    set INIT_TOOLS=1
     set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
@@ -173,6 +181,7 @@ if /i '%ARG%' == 'microbuild' (
     set BUILD_PROTO=1
     set BUILD_NET40=1
     set BUILD_PROTO_WITH_CORECLR_LKG=1
+    set INIT_TOOLS=1
     set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
@@ -211,8 +220,6 @@ if /i '%ARG%' == 'ci_part2' (
     set _autoselect=0
 
     REM what we do
-    set BUILD_PROTO_WITH_CORECLR_LKG=1
-    set BUILD_PROTO=1
     set BUILD_NET40=1
     set BUILD_PORTABLE=1
 
@@ -227,6 +234,7 @@ if /i '%ARG%' == 'ci_part3' (
     set _autoselect=0
 
     REM what we do
+    set INIT_TOOLS=1
     set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_PROTO=1
     set BUILD_NET40=1
@@ -302,6 +310,7 @@ if /i '%ARG%' == 'test-net40-coreunit' (
 
 if /i '%ARG%' == 'test-coreclr-coreunit' (
     set BUILD_PROTO_WITH_CORECLR_LKG=1
+    set INIT_TOOLS=1
     set BUILD_CORECLR=1
     set TEST_CORECLR_COREUNIT_SUITE=1
 )
@@ -340,6 +349,8 @@ REM after this point, ARG variable should not be used, use only BUILD_* or TEST_
 
 echo Build/Tests configuration:
 echo.
+
+echo INIT_TOOLS=%INIT_TOOLS%
 echo BUILD_PROTO=%BUILD_PROTO%
 echo BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG%
 echo BUILD_NET40=%BUILD_NET40%
@@ -450,6 +461,15 @@ set _ngenexe="%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\ngen.exe"
 if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 
 echo ---------------- Done with prepare, starting package restore ----------------
+if '%INIT_TOOLS%' == '1' (
+    :: Restore the Tools directory
+    call %~dp0init-tools.cmd
+    if errorlevel 1 (
+        Echo Error installing tools 
+        goto :failure
+    )
+)
+
 set _nugetexe="%~dp0.nuget\NuGet.exe"
 set _nugetconfig="%~dp0.nuget\NuGet.Config"
 
@@ -468,11 +488,6 @@ if '%RestorePackages%' == 'true' (
         %_nugetexe% restore setup\packages.config -PackagesDirectory packages -ConfigFile %_nugetconfig%
         @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
     )
-)
-
-if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
-    :: Restore the Tools directory
-    call %~dp0init-tools.cmd
 )
 
 set _dotnetexe=%~dp0Tools\dotnetcli\dotnet.exe
@@ -503,8 +518,8 @@ if '%BUILD_PROTO%' == '1' (
 
     pushd .\lkg\fsc & %_dotnetexe% restore & popd & if ERRORLEVEL 1 echo Error:%errorlevel% dotnet restore failed & goto :failure
     pushd .\lkg\fsi & %_dotnetexe% restore & popd & if ERRORLEVEL 1 echo Error:%errorlevel% dotnet restore failed & goto :failure
-    pushd .\lkg\fsc & %_dotnetexe% publish project.json --no-build -o %~dp0Tools\lkg -r !_architecture! & popd & if ERRORLEVEL 1 echo Error: dotnet publish failed  & goto :failure
-    pushd .\lkg\fsi & %_dotnetexe% publish project.json --no-build -o %~dp0Tools\lkg -r !_architecture! & popd & if ERRORLEVEL 1 echo Error: dotnet publish failed  & goto :failure
+    pushd .\lkg\fsc & %_dotnetexe% publish fsc.csproj -o %~dp0Tools\lkg -r !_architecture! & popd & if ERRORLEVEL 1 echo Error: dotnet publish failed  & goto :failure
+    pushd .\lkg\fsi & %_dotnetexe% publish fsi.csproj -o %~dp0Tools\lkg -r !_architecture! & popd & if ERRORLEVEL 1 echo Error: dotnet publish failed  & goto :failure
 
     echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
          %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
