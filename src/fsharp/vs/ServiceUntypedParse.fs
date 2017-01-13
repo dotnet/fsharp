@@ -107,8 +107,6 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
             (fun _ -> NavigationImpl.empty)   
             
     member private scope.ValidateBreakpointLocationImpl(pos) =
-
-        
         // Process let-binding
         let findBreakPoints () = 
             let checkRange m = [ if rangeContainsPos m pos || m.StartLine = pos.Line then yield m ]
@@ -281,15 +279,17 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
                       yield! walkExpr true e2 ]
             
             // Process a class declaration or F# type declaration
-            let rec walkTycon (TypeDefn(ComponentInfo(_, _, _, _, _, _, _, _), repr, membDefns, _)) =
-                [ for m in membDefns do yield! walkMember m 
+            let rec walkTycon (TypeDefn(ComponentInfo(_, _, _, _, _, _, _, _), repr, membDefns, m)) =
+                if not (rangeContainsPos m pos) then [] else
+                [ for memb in membDefns do yield! walkMember memb
                   match repr with
                   | SynTypeDefnRepr.ObjectModel(_, membDefns, _) -> 
-                      for m in membDefns do yield! walkMember m 
+                      for memb in membDefns do yield! walkMember memb
                   | _ -> () ]
                       
             // Returns class-members for the right dropdown                  
-            and walkMember memb  = 
+            and walkMember memb =
+                if not (rangeContainsPos memb.Range pos) then [] else
                 [ match memb with
                   | SynMemberDefn.LetBindings(binds, _, _, _) -> yield! walkBinds binds
                   | SynMemberDefn.AutoProperty(_attribs, _isStatic, _id, _tyOpt, _propKind, _, _xmlDoc, _access, synExpr, _, _) -> yield! walkExpr true synExpr
@@ -305,25 +305,20 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
             // (such as type declarations, nested modules etc.)                            
             let rec walkDecl decl = 
                 [ match decl with 
-                  | SynModuleDecl.Let(_, binds, m) -> 
-                      if rangeContainsPos m pos then 
-                          yield! walkBinds binds
-                  | SynModuleDecl.DoExpr(spExpr,expr, _) ->  
+                  | SynModuleDecl.Let(_, binds, m) when rangeContainsPos m pos -> 
+                      yield! walkBinds binds
+                  | SynModuleDecl.DoExpr(spExpr,expr, m) when rangeContainsPos m pos ->  
                       yield! walkBindSeqPt spExpr
                       yield! walkExpr false expr
-                  | SynModuleDecl.ModuleAbbrev _ -> 
-                      ()
-                  | SynModuleDecl.NestedModule(_, _isRec, decls, _, m) ->                
-                      if rangeContainsPos m pos then 
-                          for d in decls do yield! walkDecl d
-                  | SynModuleDecl.Types(tydefs, m) -> 
-                      if rangeContainsPos m pos then 
-                          for d in tydefs do yield! walkTycon d
-                  | SynModuleDecl.Exception(SynExceptionDefn(SynExceptionDefnRepr(_, _, _, _, _, _), membDefns, _), m) ->
-                      if rangeContainsPos m pos then 
-                          for m in membDefns do yield! walkMember m
-                  | _ ->
-                      () ] 
+                  | SynModuleDecl.ModuleAbbrev _ -> ()
+                  | SynModuleDecl.NestedModule(_, _isRec, decls, _, m) when rangeContainsPos m pos ->
+                      for d in decls do yield! walkDecl d
+                  | SynModuleDecl.Types(tydefs, m) when rangeContainsPos m pos -> 
+                      for d in tydefs do yield! walkTycon d
+                  | SynModuleDecl.Exception(SynExceptionDefn(SynExceptionDefnRepr(_, _, _, _, _, _), membDefns, _), m) 
+                        when rangeContainsPos m pos ->
+                      for m in membDefns do yield! walkMember m
+                  | _ -> () ] 
                       
             // Collect all the items in a module  
             let walkModule (SynModuleOrNamespace(_,_,_,decls,_,_,_,m)) =
@@ -344,6 +339,7 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
             (fun () -> 
                 let locations = findBreakPoints()
                 
+                printfn "%A" locations
                 match locations |> List.filter (fun m -> rangeContainsPos m pos) with
                 | [] -> Seq.tryHead locations
                 | locations -> Seq.tryLast locations)
