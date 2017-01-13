@@ -1119,6 +1119,13 @@ type TypeCheckInfo
         let (nenv, ad), m = GetBestEnvForPos cursorPos
         NameResolution.GetVisibleNamespacesAndModulesAtPoint ncenv nenv m ad
 
+    member x.IsRelativeNameResolvable(cursorPos: pos, plid: string list, name: string) : bool =
+        let items, _, _ = GetEnvironmentLookupResolutions(cursorPos, plid, TypeNameResolutionFlag.ResolveTypeNamesToCtors, true) 
+        items
+        |> List.filter (fun item -> item.DisplayName = name)
+        |> List.isEmpty 
+        |> not
+
     /// Get the auto-complete items at a location
     member x.GetDeclarations (parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, hasTextChangedSinceLastTypecheck) =
         let isInterfaceFile = SourceFileImpl.IsInterfaceFile mainInputFileName
@@ -2048,6 +2055,12 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
 
     member info.GetVisibleNamespacesAndModulesAtPoint(pos: pos) : Async<ModuleOrNamespaceRef []> = 
         reactorOp "GetDeclarations" [| |] (fun scope -> scope.GetVisibleNamespacesAndModulesAtPosition(pos) |> List.toArray)
+
+    member info.IsRelativeNameResolvable(pos: pos, plid: string list, name: string) : bool = 
+        threadSafeOp 
+            (fun () -> failwith "not available") 
+            (fun (scope, _builder, _reactor) -> 
+                scope.IsRelativeNameResolvable(pos, plid, name))
     
 //----------------------------------------------------------------------------
 // BackgroundCompiler

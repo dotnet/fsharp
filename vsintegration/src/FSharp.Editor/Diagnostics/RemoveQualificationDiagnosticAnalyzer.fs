@@ -12,7 +12,11 @@ open System.Runtime.CompilerServices
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Diagnostics
+open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
+
+open Microsoft.VisualStudio.FSharp.LanguageService
 
 type private LineHash = int
 
@@ -25,6 +29,8 @@ type internal RemoveQualificationDiagnosticAnalyzer() =
 
     static let Descriptor = 
         DiagnosticDescriptor(IDEDiagnosticIds.RemoveQualificationDiagnosticId, "Simplify name", "", "", DiagnosticSeverity.Hidden, true, "", "", DiagnosticCustomTags.Unnecessary)
+
+    let getPlidLength (plid: string list) = (plid |> List.sumBy String.length) + plid.Length
 
     override __.SupportedDiagnostics = ImmutableArray.Create Descriptor
 
@@ -40,8 +46,31 @@ type internal RemoveQualificationDiagnosticAnalyzer() =
                 
                 for symbolUse in symbolUses do
                     if not symbolUse.IsFromDefinition then
-                        let! _visibleNamespacesAndModules = checkResults.GetVisibleNamespacesAndModulesAtPoint symbolUse.RangeAlternate.Start |> liftAsync
-                        result.Add (Diagnostic.Create(Descriptor, CommonRoslynHelpers.RangeToLocation(symbolUse.RangeAlternate, sourceText, document.FilePath)))
+                        let lineStr = sourceText.Lines.[Line.toZ symbolUse.RangeAlternate.StartLine].ToString()
+                        // for `System.DateTime.Now` it returns ([|"System"; "DateTime"|], "Now")
+                        let plid, name = QuickParse.GetPartialLongNameEx(lineStr, symbolUse.RangeAlternate.EndColumn - 1) 
+
+                        let rec getNecessaryPlid (plid: string list) : string list =
+                            match plid with
+                            | [] -> plid
+                            | _ :: t ->
+                                if checkResults.IsRelativeNameResolvable(symbolUse.RangeAlternate.Start, t, name) then
+                                    getNecessaryPlid t
+                                else plid
+                            
+                        match getNecessaryPlid plid with
+                        | necessaryPlid when necessaryPlid = plid -> ()
+                        | necessaryPlid ->
+                            let r = symbolUse.RangeAlternate
+                            // `symbolUse.RangeAlternate.Start` does not point to the start of plid, it points to start of `name`,
+                            // so we have to calculate plid's start ourselves.
+                            let plidStartCol = r.EndColumn - name.Length - (getPlidLength plid)
+                            let necessaryPlidStartCol = r.EndColumn - name.Length - (getPlidLength necessaryPlid)
+
+                            let unnecessaryRange = 
+                                Range.mkRange r.FileName (Range.mkPos r.StartLine plidStartCol) (Range.mkPos r.EndLine necessaryPlidStartCol)
+                            
+                            result.Add (Diagnostic.Create(Descriptor, CommonRoslynHelpers.RangeToLocation(unnecessaryRange, sourceText, document.FilePath)))
                 
                 return result.ToImmutableArray()
             | None -> return ImmutableArray.Empty

@@ -285,6 +285,8 @@ type internal FSharpCheckFileResults =
 
     member GetVisibleNamespacesAndModulesAtPoint : pos -> Async<Tast.ModuleOrNamespaceRef[]>
 
+    member IsRelativeNameResolvable: cursorPos : pos * plid : string list * name : string -> bool
+
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]
 type internal FSharpCheckProjectResults =
