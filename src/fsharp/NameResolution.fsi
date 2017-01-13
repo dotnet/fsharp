@@ -417,3 +417,5 @@ type ResolveCompletionTargets =
 
 /// Resolve a (possibly incomplete) long identifier to a set of possible resolutions, qualified by type.
 val ResolveCompletionsInType       : NameResolver -> NameResolutionEnv -> ResolveCompletionTargets -> Range.range -> AccessorDomain -> bool -> TType -> Item list
+
+val GetVisibleNamespacesAndModulesAtPoint : NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> ModuleOrNamespaceRef list
