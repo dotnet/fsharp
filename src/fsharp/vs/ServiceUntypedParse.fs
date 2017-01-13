@@ -107,11 +107,11 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
             (fun _ -> NavigationImpl.empty)   
             
     member private scope.ValidateBreakpointLocationImpl(pos) =
+        let isMatchRange m = rangeContainsPos m pos || m.StartLine = pos.Line
 
-        
         // Process let-binding
         let findBreakPoints () = 
-            let checkRange m = [ if rangeContainsPos m pos || m.StartLine = pos.Line then yield m ]
+            let checkRange m = [ if isMatchRange m then yield m ]
             let walkBindSeqPt sp = [ match sp with SequencePointAtBinding m -> yield! checkRange m | _ -> () ]
             let walkForSeqPt sp = [ match sp with SequencePointAtForLoop m -> yield! checkRange m | _ -> () ]
             let walkWhileSeqPt sp = [ match sp with SequencePointAtWhileLoop m -> yield! checkRange m | _ -> () ]
@@ -131,22 +131,35 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
 
                   yield! walkExpr (isFunction || (match spInfo with SequencePointAtBinding _ -> false | _-> true)) synExpr ]
 
-            and walkExprs es = [ for e in es do yield! walkExpr false e ]
-            and walkBinds es = [ for e in es do yield! walkBind e ]
+            and walkExprs es = List.collect (walkExpr false) es
+            and walkBinds es = List.collect walkBind es
             and walkMatchClauses cl = 
                 [ for (Clause(_,whenExpr,e,_,_)) in cl do 
-                    match whenExpr with Some e -> yield! walkExpr false e | _ -> ()
+                    match whenExpr with 
+                    | Some e -> yield! walkExpr false e 
+                    | _ -> ()
                     yield! walkExpr true e ]
 
             and walkExprOpt (spAlways:bool) eOpt = [ match eOpt with Some e -> yield! walkExpr spAlways e | _ -> () ]
             
+            and IsBreakableExpression e =
+                match e with
+                | SynExpr.Match _
+                | SynExpr.IfThenElse _
+                | SynExpr.For _
+                | SynExpr.ForEach _
+                | SynExpr.While _ -> true
+                | _ -> not (IsControlFlowExpression e)
+
             // Determine the breakpoint locations for an expression. spAlways indicates we always
             // emit a breakpoint location for the expression unless it is a syntactic control flow construct
-            and walkExpr (spAlways:bool)  e = 
-                [ if spAlways && not (IsControlFlowExpression e) then 
-                      yield! checkRange e.Range
-                  match e with 
+            and walkExpr (spAlways:bool)  e =
+                let m = e.Range
+                if not (isMatchRange m) then [] else
+                [ if spAlways && IsBreakableExpression e then 
+                      yield! checkRange m
 
+                  match e with
                   | SynExpr.ArbitraryAfterError _ 
                   | SynExpr.LongIdent _
                   | SynExpr.LibraryOnlyILAssembly _
@@ -279,15 +292,17 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
                       yield! walkExpr true e2 ]
             
             // Process a class declaration or F# type declaration
-            let rec walkTycon (TypeDefn(ComponentInfo(_, _, _, _, _, _, _, _), repr, membDefns, _)) =
-                [ for m in membDefns do yield! walkMember m 
+            let rec walkTycon (TypeDefn(ComponentInfo(_, _, _, _, _, _, _, _), repr, membDefns, m)) =
+                if not (isMatchRange m) then [] else
+                [ for memb in membDefns do yield! walkMember memb
                   match repr with
                   | SynTypeDefnRepr.ObjectModel(_, membDefns, _) -> 
-                      for m in membDefns do yield! walkMember m 
+                      for memb in membDefns do yield! walkMember memb
                   | _ -> () ]
                       
             // Returns class-members for the right dropdown                  
-            and walkMember memb  = 
+            and walkMember memb =
+                if not (rangeContainsPos memb.Range pos) then [] else
                 [ match memb with
                   | SynMemberDefn.LetBindings(binds, _, _, _) -> yield! walkBinds binds
                   | SynMemberDefn.AutoProperty(_attribs, _isStatic, _id, _tyOpt, _propKind, _, _xmlDoc, _access, synExpr, _, _) -> yield! walkExpr true synExpr
@@ -303,36 +318,30 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
             // (such as type declarations, nested modules etc.)                            
             let rec walkDecl decl = 
                 [ match decl with 
-                  | SynModuleDecl.Let(_, binds, m) -> 
-                      if rangeContainsPos m pos then 
-                          yield! walkBinds binds
-                  | SynModuleDecl.DoExpr(spExpr,expr, _) ->  
+                  | SynModuleDecl.Let(_, binds, m) when isMatchRange m -> 
+                      yield! walkBinds binds
+                  | SynModuleDecl.DoExpr(spExpr,expr, m) when isMatchRange m ->  
                       yield! walkBindSeqPt spExpr
                       yield! walkExpr false expr
-                  | SynModuleDecl.ModuleAbbrev _ -> 
-                      ()
-                  | SynModuleDecl.NestedModule(_, _isRec, decls, _, m) ->                
-                      if rangeContainsPos m pos then 
-                          for d in decls do yield! walkDecl d
-                  | SynModuleDecl.Types(tydefs, m) -> 
-                      if rangeContainsPos m pos then 
-                          for d in tydefs do yield! walkTycon d
-                  | SynModuleDecl.Exception(SynExceptionDefn(SynExceptionDefnRepr(_, _, _, _, _, _), membDefns, _), m) ->
-                      if rangeContainsPos m pos then 
-                          for m in membDefns do yield! walkMember m
-                  | _ ->
-                      () ] 
+                  | SynModuleDecl.ModuleAbbrev _ -> ()
+                  | SynModuleDecl.NestedModule(_, _isRec, decls, _, m) when isMatchRange m ->
+                      for d in decls do yield! walkDecl d
+                  | SynModuleDecl.Types(tydefs, m) when isMatchRange m -> 
+                      for d in tydefs do yield! walkTycon d
+                  | SynModuleDecl.Exception(SynExceptionDefn(SynExceptionDefnRepr(_, _, _, _, _, _), membDefns, _), m) 
+                        when isMatchRange m ->
+                      for m in membDefns do yield! walkMember m
+                  | _ -> () ] 
                       
-            // Collect all the items  
+            // Collect all the items in a module  
             let walkModule (SynModuleOrNamespace(_,_,_,decls,_,_,_,m)) =
-                if rangeContainsPos m pos then 
-                    [ for d in decls do yield! walkDecl d ]
+                if isMatchRange m then
+                    List.collect walkDecl decls
                 else
                     []
                       
            /// Get information for implementation file        
-            let walkImplFile (modules:SynModuleOrNamespace list) =
-                [ for x in modules do yield! walkModule x ]
+            let walkImplFile (modules:SynModuleOrNamespace list) = List.collect walkModule modules
                      
             match input with
             | Some(ParsedInput.ImplFile(ParsedImplFileInput(_,_,_,_,_,modules,_))) -> walkImplFile modules 
@@ -344,9 +353,12 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
                 let locations = findBreakPoints()
                 
                 match locations |> List.filter (fun m -> rangeContainsPos m pos) with
-                | [] -> Seq.tryHead locations
-                | locations -> Seq.tryLast locations)
-            (fun _msg -> None)  
+                | [] ->
+                    match locations |> List.filter (fun m -> rangeBeforePos m pos |> not) with
+                    | [] -> Seq.tryHead locations
+                    | locationsAfterPos -> Seq.tryHead locationsAfterPos
+                | coveringLocations -> Seq.tryLast coveringLocations)
+            (fun _msg -> None)
             
     /// When these files appear or disappear the configuration for the current project is invalidated.
     member scope.DependencyFiles = dependencyFiles
