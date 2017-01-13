@@ -43,12 +43,22 @@ type internal SimplifyNameDiagnosticAnalyzer() =
                 let! _, checkResults = checker.ParseAndCheckDocument(document, options, sourceText)
                 let! symbolUses = checkResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
                 let mutable result = ResizeArray()
-                
-                for symbolUse in symbolUses do
-                    if not symbolUse.IsFromDefinition then
+                let symbolUses =
+                    symbolUses
+                    |> Array.Parallel.map (fun symbolUse ->
                         let lineStr = sourceText.Lines.[Line.toZ symbolUse.RangeAlternate.StartLine].ToString()
                         // for `System.DateTime.Now` it returns ([|"System"; "DateTime"|], "Now")
-                        let plid, name = QuickParse.GetPartialLongNameEx(lineStr, symbolUse.RangeAlternate.EndColumn - 1) 
+                        let plid, name = QuickParse.GetPartialLongNameEx(lineStr, symbolUse.RangeAlternate.EndColumn - 1)
+                        // `symbolUse.RangeAlternate.Start` does not point to the start of plid, it points to start of `name`,
+                        // so we have to calculate plid's start ourselves.
+                        let plidStartCol = symbolUse.RangeAlternate.EndColumn - name.Length - (getPlidLength plid)
+                        symbolUse, plid, plidStartCol, name)
+                    |> Array.filter (fun (_, plid, _, _) -> match plid with [] | [_] -> false | _ -> true)
+                    |> Array.groupBy (fun (symbolUse, _, plidStartCol, _) -> symbolUse.RangeAlternate.StartLine, plidStartCol)
+                    |> Array.map (fun (_, xs) -> xs |> Array.maxBy (fun (symbolUse, _, _, _) -> symbolUse.RangeAlternate.EndColumn))
+
+                for symbolUse, plid, plidStartCol, name in symbolUses do
+                    if not symbolUse.IsFromDefinition then
                         let posAtStartOfName =
                             let r = symbolUse.RangeAlternate
                             if r.StartLine = r.EndLine then Range.mkPos r.StartLine (r.EndColumn - name.Length)
@@ -64,7 +74,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
                                         if res then return current
                                         else return! loop restPlid (headIdent :: current)
                                 }
-                            loop (List.rev plid) [] |> Async.map List.rev
+                            loop (List.rev plid) []
                            
                         let! necessaryPlid = getNecessaryPlid plid |> liftAsync
                             
@@ -72,34 +82,19 @@ type internal SimplifyNameDiagnosticAnalyzer() =
                         | necessaryPlid when necessaryPlid = plid -> ()
                         | necessaryPlid ->
                             let r = symbolUse.RangeAlternate
-                            // `symbolUse.RangeAlternate.Start` does not point to the start of plid, it points to start of `name`,
-                            // so we have to calculate plid's start ourselves.
-                            let plidStartCol = r.EndColumn - name.Length - (getPlidLength plid)
                             let necessaryPlidStartCol = r.EndColumn - name.Length - (getPlidLength necessaryPlid)
 
                             let unnecessaryRange = 
                                 Range.mkRange r.FileName (Range.mkPos r.StartLine plidStartCol) (Range.mkPos r.EndLine necessaryPlidStartCol)
                             
                             let relativeName = (String.concat "." plid) + "." + name
-                            result.Add(symbolUse.RangeAlternate.EndColumn, unnecessaryRange, relativeName)
-                return
-                    (result
-                     |> Seq.groupBy (fun (_, r, _) -> r.Start)
-                     |> Seq.map (fun (_, relativeNames) ->
-                          let maxEndCol = relativeNames |> Seq.map (fun (endCol, _, _) -> endCol) |> Seq.max
-                          
-                          let unnecessaryRange, relativeName =
-                              relativeNames 
-                              |> Seq.filter (fun (pos, _, _) -> pos = maxEndCol)
-                              |> Seq.maxBy (fun (_, _, name) -> name.Length)
-                              |> fun (_, r, name) -> r, name
-                         
-                          Diagnostic.Create(
-                               Descriptor,
-                               CommonRoslynHelpers.RangeToLocation(unnecessaryRange, sourceText, document.FilePath),
-                               properties = (dict [SimplifyNameDiagnosticAnalyzer.LongIdentPropertyKey, relativeName]).ToImmutableDictionary()))
-                    ).ToImmutableArray()
-            
+                            result.Add(
+                                Diagnostic.Create(
+                                   Descriptor,
+                                   CommonRoslynHelpers.RangeToLocation(unnecessaryRange, sourceText, document.FilePath),
+                                   properties = (dict [SimplifyNameDiagnosticAnalyzer.LongIdentPropertyKey, relativeName]).ToImmutableDictionary()))
+
+                return result.ToImmutableArray()
             | None -> return ImmutableArray.Empty
         } 
         |> Async.map (Option.defaultValue ImmutableArray.Empty)
