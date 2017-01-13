@@ -1119,12 +1119,9 @@ type TypeCheckInfo
         let (nenv, ad), m = GetBestEnvForPos cursorPos
         NameResolution.GetVisibleNamespacesAndModulesAtPoint ncenv nenv m ad
 
-    member x.IsRelativeNameResolvable(cursorPos: pos, plid: string list, name: string) : bool =
+    member x.IsRelativeNameResolvable(cursorPos: pos, plid: string list, item: Item) : bool =
         let items, _, _ = GetEnvironmentLookupResolutions(cursorPos, plid, TypeNameResolutionFlag.ResolveTypeNamesToCtors, true) 
-        items
-        |> List.filter (fun item -> item.DisplayName = name)
-        |> List.isEmpty 
-        |> not
+        items |> List.exists (ItemsAreEffectivelyEqual g item)
 
     /// Get the auto-complete items at a location
     member x.GetDeclarations (parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, hasTextChangedSinceLastTypecheck) =
@@ -2056,8 +2053,8 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
     member info.GetVisibleNamespacesAndModulesAtPoint(pos: pos) : Async<ModuleOrNamespaceRef []> = 
         reactorOp "GetDeclarations" [| |] (fun scope -> scope.GetVisibleNamespacesAndModulesAtPosition(pos) |> List.toArray)
 
-    member info.IsRelativeNameResolvable(pos: pos, plid: string list, name: string) : Async<bool> = 
-        reactorOp "IsRelativeNameResolvable" true (fun scope -> scope.IsRelativeNameResolvable(pos, plid, name))
+    member info.IsRelativeNameResolvable(pos: pos, plid: string list, item: Item) : Async<bool> = 
+        reactorOp "IsRelativeNameResolvable" true (fun scope -> scope.IsRelativeNameResolvable(pos, plid, item))
     
 //----------------------------------------------------------------------------
 // BackgroundCompiler

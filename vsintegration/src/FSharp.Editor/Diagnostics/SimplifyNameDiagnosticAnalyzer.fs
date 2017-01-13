@@ -48,13 +48,13 @@ type internal RemoveQualificationDiagnosticAnalyzer() =
                         let lineStr = sourceText.Lines.[Line.toZ symbolUse.RangeAlternate.StartLine].ToString()
                         // for `System.DateTime.Now` it returns ([|"System"; "DateTime"|], "Now")
                         let plid, name = QuickParse.GetPartialLongNameEx(lineStr, symbolUse.RangeAlternate.EndColumn - 1) 
-
+                        
                         let rec getNecessaryPlid (plid: string list) : Async<string list> =
                             async {
                                 match plid with
                                 | [] -> return plid
                                 | _ :: t ->
-                                    let! res = checkResults.IsRelativeNameResolvable(symbolUse.RangeAlternate.Start, t, name) 
+                                    let! res = checkResults.IsRelativeNameResolvable(symbolUse.RangeAlternate.Start, t, symbolUse.Symbol.Item) 
                                     if res then return! getNecessaryPlid t
                                     else return plid
                             }
