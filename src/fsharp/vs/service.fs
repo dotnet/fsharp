@@ -1120,7 +1120,10 @@ type TypeCheckInfo
         NameResolution.GetVisibleNamespacesAndModulesAtPoint ncenv nenv m ad
 
     member x.IsRelativeNameResolvable(cursorPos: pos, plid: string list, item: Item) : bool =
-        let items, _, _ = GetEnvironmentLookupResolutions(cursorPos, plid, TypeNameResolutionFlag.ResolveTypeNamesToTypeRefs, true) 
+        /// Find items in the best naming environment.
+        let (nenv, ad), m = GetBestEnvForPos cursorPos
+        let items = NameResolution.ResolvePartialLongIdent ncenv nenv (ConstraintSolver.IsApplicableMethApprox g amap m) m ad plid true
+         
         items |> List.exists (ItemsAreEffectivelyEqual g item)
 
     /// Get the auto-complete items at a location
