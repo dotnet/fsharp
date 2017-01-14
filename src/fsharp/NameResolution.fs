@@ -1730,8 +1730,8 @@ let private ResolveObjectConstructorPrim (ncenv:NameResolver) edenv resInfo m ad
     if isDelegateTy g typ then 
         success (resInfo,Item.DelegateCtor typ)
     else 
-        let ctorInfos =  GetIntrinsicConstructorInfosOfType ncenv.InfoReader m typ
-        if isInterfaceTy g typ && isNil ctorInfos then 
+        let ctorInfos = GetIntrinsicConstructorInfosOfType ncenv.InfoReader m typ
+        if isNil ctorInfos && isInterfaceTy g typ then 
             success (resInfo, Item.FakeInterfaceCtor typ)
         else 
             let defaultStructCtorInfo = 
@@ -4272,11 +4272,16 @@ let rec private GetCompletionForItem (ncenv: NameResolver) (nenv: NameResolution
                    |> NameMap.range
                    |> List.filter (function Item.ActivePatternCase _v -> true | _ -> false)
 
-           | _ ->
+           | Item.DelegateCtor _
+           | Item.FakeInterfaceCtor _
+           | Item.CtorGroup _ 
+           | Item.UnqualifiedType _ ->
                for tcref in nenv.TyconsByDemangledNameAndArity(OpenQualified).Values do
                    if not (IsTyconUnseen ad g ncenv.amap m tcref)
                    then yield! InfosForTyconConstructors ncenv m ad tcref
-        
+            
+           | _ -> ()
+
         | id :: rest -> 
         
             // Look in the namespaces 'id' 
