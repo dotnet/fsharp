@@ -3232,9 +3232,9 @@ let IsTyconUnseenObsoleteSpec ad g amap m (x:TyconRef) allowObsolete =
 let IsTyconUnseen ad g amap m (x:TyconRef) = IsTyconUnseenObsoleteSpec ad g amap m x false
 
 let IsValUnseen ad g m (v:ValRef) = 
-    not (IsValAccessible ad v) ||
     v.IsCompilerGenerated ||
     v.Deref.IsClassConstructor ||
+    not (IsValAccessible ad v) ||
     CheckFSharpAttributesForUnseen g v.Attribs m
 
 let IsUnionCaseUnseen ad g amap m (ucref:UnionCaseRef) = 
@@ -4240,10 +4240,12 @@ let rec private GetCompletionForItem (ncenv: NameResolver) (nenv: NameResolution
         |  [] -> 
 
            /// Include all the entries in the eUnqualifiedItems table. 
-           yield!
-               nenv.eUnqualifiedItems.Values
-               |> List.filter (function Item.UnqualifiedType _ -> false | _ -> true)
-               |> List.filter (ItemIsUnseen ad g ncenv.amap m >> not)
+           for uitem in nenv.eUnqualifiedItems.Values do
+               match uitem with
+               | Item.UnqualifiedType _ -> ()
+               | _ when not (ItemIsUnseen ad g ncenv.amap m uitem) ->
+                   yield uitem
+               | _ -> ()
 
            match item with
            | Item.ModuleOrNamespaces _ ->
@@ -4267,10 +4269,11 @@ let rec private GetCompletionForItem (ncenv: NameResolver) (nenv: NameResolution
                    then yield ItemOfTyconRef ncenv m tcref
 
            | Item.ActivePatternCase _ ->
-               yield!
-                   nenv.ePatItems
-                   |> NameMap.range
-                   |> List.filter (function Item.ActivePatternCase _v -> true | _ -> false)
+               for pitem in NameMap.range nenv.ePatItems do
+                   match pitem with
+                   | Item.ActivePatternCase _ ->
+                       yield pitem
+                   | _ -> ()
 
            | Item.DelegateCtor _
            | Item.FakeInterfaceCtor _
