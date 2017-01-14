@@ -3905,6 +3905,7 @@ let GetVisibleNamespacesAndModulesAtPoint (ncenv: NameResolver) (nenv: NameResol
          && EntityRefContainsSomethingAccessible ncenv m ad  x
          && not (IsTyconUnseen ad ncenv.g ncenv.amap m x))
 
+(* Determining if an `Item` is resolvable at point by given `plid`. It's optimized by being lazy and early returning according to the given `Item` *)
 
 let private ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics typ (item: Item) : seq<Item> =
     seq {
@@ -4205,6 +4206,28 @@ let rec private ResolvePartialLongIdentInModuleOrNamespaceForItem (ncenv: NameRe
                      yield! tcref |> generalizedTyconRef |> ResolvePartialLongIdentInTypeForItem ncenv nenv m ad true rest item
     }
 
+let rec private PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLazy f plid (modref: ModuleOrNamespaceRef) =
+    let mty = modref.ModuleOrNamespaceType
+    match plid with 
+    | [] -> f modref
+    | id :: rest -> 
+        match mty.ModulesAndNamespacesByDemangledName.TryFind id with
+        | Some mty -> 
+            PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLazy f rest (modref.NestedTyconRef mty) 
+        | None -> Seq.empty
+
+let private PartialResolveLongIndentAsModuleOrNamespaceThenLazy (nenv:NameResolutionEnv) plid f =
+    seq {
+        match plid with 
+        | id :: rest -> 
+            match Map.tryFind id nenv.eModulesAndNamespaces with
+            | Some modrefs -> 
+                for modref in modrefs do
+                    yield! PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLazy f rest modref
+            | None -> ()
+        | [] -> ()
+    }
+
 let rec private GetCompletionForItem (ncenv: NameResolver) (nenv: NameResolutionEnv) m ad plid (item: Item) : seq<Item> =
     seq {
         let g = ncenv.g
@@ -4258,10 +4281,10 @@ let rec private GetCompletionForItem (ncenv: NameResolver) (nenv: NameResolution
         
             // Look in the namespaces 'id' 
             yield!
-                PartialResolveLongIndentAsModuleOrNamespaceThen nenv [id] (fun modref -> 
+                PartialResolveLongIndentAsModuleOrNamespaceThenLazy nenv [id] (fun modref -> 
                     if EntityRefContainsSomethingAccessible ncenv m ad modref then 
-                        ResolvePartialLongIdentInModuleOrNamespaceForItem ncenv nenv m ad modref rest item |> Seq.toList
-                    else [])
+                        ResolvePartialLongIdentInModuleOrNamespaceForItem ncenv nenv m ad modref rest item
+                    else Seq.empty)
             
             // Look for values called 'id' that accept the dot-notation 
             let values, isItemVal = 
