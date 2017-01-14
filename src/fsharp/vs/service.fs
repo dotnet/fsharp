@@ -520,19 +520,19 @@ type TypeCheckInfo
     /// Find the most precise naming environment for the given line and column
     let GetBestEnvForPos cursorPos  =
         
-        let bestSoFar = ref None
+        let mutable bestSoFar = None
 
         // Find the most deeply nested enclosing scope that contains given position
         sResolutions.CapturedEnvs |> ResizeArray.iter (fun (possm,env,ad) -> 
             if rangeContainsPos possm cursorPos then
-                match !bestSoFar with 
+                match bestSoFar with 
                 | Some (bestm,_,_) -> 
                     if rangeContainsRange bestm possm then 
-                      bestSoFar := Some (possm,env,ad)
+                      bestSoFar <- Some (possm,env,ad)
                 | None -> 
-                    bestSoFar := Some (possm,env,ad))
+                    bestSoFar <- Some (possm,env,ad))
 
-        let mostDeeplyNestedEnclosingScope = !bestSoFar 
+        let mostDeeplyNestedEnclosingScope = bestSoFar 
         
         // Look for better subtrees on the r.h.s. of the subtree to the left of where we are 
         // Should really go all the way down the r.h.s. of the subtree to the left of where we are 
@@ -1122,9 +1122,10 @@ type TypeCheckInfo
     member x.IsRelativeNameResolvable(cursorPos: pos, plid: string list, item: Item) : bool =
         /// Find items in the best naming environment.
         let (nenv, ad), m = GetBestEnvForPos cursorPos
-        let items = NameResolution.ResolvePartialLongIdent ncenv nenv (ConstraintSolver.IsApplicableMethApprox g amap m) m ad plid true
-         
-        items |> List.exists (ItemsAreEffectivelyEqual g item)
+        NameResolution.IsItemResolvable ncenv nenv m ad plid item
+        
+        //let items = NameResolution.ResolvePartialLongIdent ncenv nenv (fun _ _ -> true) m ad plid true
+        //items |> List.exists (ItemsAreEffectivelyEqual g item)
 
     /// Get the auto-complete items at a location
     member x.GetDeclarations (parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, hasTextChangedSinceLastTypecheck) =
