@@ -518,12 +518,13 @@ type TypeCheckInfo
     let ncenv = new NameResolver(g,amap,infoReader,NameResolution.FakeInstantiationGenerator)
     
     /// Find the most precise naming environment for the given line and column
-    let GetBestEnvForPos cursorPos  =
+    let GetBestEnvForPos (envsByLine: ResizeArray<range * NameResolutionEnv * AccessorDomain> []) (cursorPos: pos) =
         
+        // Find all scopes those contain given position
         let mutable bestSoFar = None
 
         // Find the most deeply nested enclosing scope that contains given position
-        sResolutions.CapturedEnvs |> ResizeArray.iter (fun (possm,env,ad) -> 
+        envsByLine.[cursorPos.Line] |> ResizeArray.iter (fun (possm, env, ad) ->
             if rangeContainsPos possm cursorPos then
                 match bestSoFar with 
                 | Some (bestm,_,_) -> 
@@ -540,36 +541,35 @@ type TypeCheckInfo
         // We guarantee to only refine to a more nested environment.  It may not be strictly  
         // the right environment, but will alwauys be at least as rich 
 
-        let bestAlmostIncludedSoFar = ref None 
+        let mutable bestAlmostIncludedSoFar = None 
 
-        sResolutions.CapturedEnvs |> ResizeArray.iter (fun (possm,env,ad) -> 
+        envsByLine.[cursorPos.Line] |> ResizeArray.iter (fun (possm, env, ad) ->
             // take only ranges that strictly do not include cursorPos (all ranges that touch cursorPos were processed during 'Strict Inclusion' part)
-            if rangeBeforePos possm cursorPos && not (posEq possm.End cursorPos) then 
+            if not (posEq possm.End cursorPos) && rangeBeforePos possm cursorPos then 
                 let contained = 
                     match mostDeeplyNestedEnclosingScope with 
                     | Some (bestm,_,_) -> rangeContainsRange bestm possm 
                     | None -> true 
                 
                 if contained then 
-                    match  !bestAlmostIncludedSoFar with 
-                    | Some (rightm:range,_,_) -> 
+                    match bestAlmostIncludedSoFar with 
+                    | Some (rightm: range,_,_) -> 
                         if posGt possm.End rightm.End || 
                           (posEq possm.End rightm.End && posGt possm.Start rightm.Start) then
-                            bestAlmostIncludedSoFar := Some (possm,env,ad)
-                    | _ -> bestAlmostIncludedSoFar := Some (possm,env,ad))
+                            bestAlmostIncludedSoFar <- Some (possm,env,ad)
+                    | _ -> bestAlmostIncludedSoFar <- Some (possm,env,ad))
         
         let resEnv = 
-            match !bestAlmostIncludedSoFar with 
-            | Some (_m,env,ad) -> 
+            match bestAlmostIncludedSoFar with 
+            | Some (_,env,ad) -> 
                 env,ad
             | None -> 
                 match mostDeeplyNestedEnclosingScope with 
-                | Some (_m,env,ad) -> 
+                | Some (_,env,ad) -> 
                     env,ad
                 | None -> 
-                    (sFallback,AccessibleFromSomeFSharpCode)
+                    (sFallback, AccessibleFromSomeFSharpCode)
         let pm = mkRange mainInputFileName cursorPos cursorPos 
-
         resEnv,pm
 
     /// The items that come back from ResolveCompletionsInType are a bit
@@ -789,9 +789,17 @@ type TypeCheckInfo
                 if textChanged then GetPreciseCompletionListFromExprTypingsResult.NoneBecauseTypecheckIsStaleAndTextChanged
                 else GetPreciseCompletionListFromExprTypingsResult.None
 
+    let GetEnvsByLine() : ResizeArray<range * NameResolutionEnv * AccessorDomain> [] =
+        let maxLine = sResolutions.CapturedEnvs |> Seq.maxBy (fun (m, _, _) -> m.EndLine) |> fun (m, _, _) -> m.EndLine
+        let envsByLine = Array.init (maxLine + 1) (fun _ -> ResizeArray())
+        for (m,_,_) as env in sResolutions.CapturedEnvs do
+            for line in m.StartLine..m.EndLine do
+                envsByLine.[line].Add env
+        envsByLine
+
     /// Find items in the best naming environment.
     let GetEnvironmentLookupResolutions(cursorPos, plid, filterCtors, showObsolete) = 
-        let (nenv,ad),m = GetBestEnvForPos cursorPos
+        let (nenv,ad),m = GetBestEnvForPos (GetEnvsByLine()) cursorPos
         let items = NameResolution.ResolvePartialLongIdent ncenv nenv (ConstraintSolver.IsApplicableMethApprox g amap m) m ad plid showObsolete
         let items = items |> RemoveDuplicateItems g 
         let items = items |> RemoveExplicitlySuppressed g
@@ -801,7 +809,7 @@ type TypeCheckInfo
 
     /// Find record fields in the best naming environment.
     let GetClassOrRecordFieldsEnvironmentLookupResolutions(cursorPos, plid, (_residue : string option)) = 
-        let (nenv, ad),m = GetBestEnvForPos cursorPos
+        let (nenv, ad),m = GetBestEnvForPos (GetEnvsByLine()) cursorPos
         let items = NameResolution.ResolvePartialLongIdentToClassOrRecdFields ncenv nenv m ad plid false
         let items = items |> RemoveDuplicateItems g 
         let items = items |> RemoveExplicitlySuppressed g
@@ -994,7 +1002,7 @@ type TypeCheckInfo
 
     /// Get the auto-complete items at a particular location.
     let GetDeclItemsForNamesAtPosition(parseResultsOpt: FSharpParseFileResults option, origLongIdentOpt: string list option, residueOpt:string option, line:int, lineStr:string, colAtEndOfNamesAndResidue, filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck: (obj * range -> bool)) = 
-
+        
         let loc = 
             match colAtEndOfNamesAndResidue with
             | pastEndOfLine when pastEndOfLine >= lineStr.Length -> lineStr.Length
@@ -1025,7 +1033,7 @@ type TypeCheckInfo
 
         // Completion at ' { XXX = ... } "
         | Some(CompletionContext.RecordField(RecordContext.New(plid, residue))) ->
-            Some(GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid, residue))
+            Some(GetClassOrRecordFieldsEnvironmentLookupResolutions( mkPos line loc, plid, residue))
 
         // Completion at ' { XXX = ... with ... } "
         | Some(CompletionContext.RecordField(RecordContext.CopyOnUpdate(r, (plid, residue)))) -> 
@@ -1112,16 +1120,18 @@ type TypeCheckInfo
             else 
                 items
 
-
     static let keywordTypes = Lexhelp.Keywords.keywordTypes
 
+    member x.GetSortedNameResolutionEnvironments() = GetEnvsByLine()
+
     member x.GetVisibleNamespacesAndModulesAtPosition(cursorPos: pos) : ModuleOrNamespaceRef list =
-        let (nenv, ad), m = GetBestEnvForPos cursorPos
+        let (nenv, ad), m = GetBestEnvForPos (GetEnvsByLine()) cursorPos
         NameResolution.GetVisibleNamespacesAndModulesAtPoint ncenv nenv m ad
 
-    member x.IsRelativeNameResolvable(cursorPos: pos, plid: string list, item: Item) : bool =
+
+    member x.IsRelativeNameResolvable(cursorPos: pos, plid: string list, item: Item, envsByLine: ResizeArray<range * NameResolutionEnv * AccessorDomain> []) : bool =
         /// Find items in the best naming environment.
-        let (nenv, ad), m = GetBestEnvForPos cursorPos
+        let (nenv, ad), m = GetBestEnvForPos envsByLine cursorPos
         NameResolution.IsItemResolvable ncenv nenv m ad plid item
         
         //let items = NameResolution.ResolvePartialLongIdent ncenv nenv (fun _ _ -> true) m ad plid true
@@ -2057,8 +2067,11 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
     member info.GetVisibleNamespacesAndModulesAtPoint(pos: pos) : Async<ModuleOrNamespaceRef []> = 
         reactorOp "GetDeclarations" [| |] (fun scope -> scope.GetVisibleNamespacesAndModulesAtPosition(pos) |> List.toArray)
 
-    member info.IsRelativeNameResolvable(pos: pos, plid: string list, item: Item) : Async<bool> = 
-        reactorOp "IsRelativeNameResolvable" true (fun scope -> scope.IsRelativeNameResolvable(pos, plid, item))
+    member info.GetNameResolutionEnvironmentsByLine() : Async<ResizeArray<range * NameResolutionEnv * AccessorDomain> []> = 
+        reactorOp "IsRelativeNameResolvable" [||] (fun scope -> scope.GetSortedNameResolutionEnvironments())
+
+    member info.IsRelativeNameResolvable(pos: pos, plid: string list, item: Item, nenvsByLine: ResizeArray<range * NameResolutionEnv * AccessorDomain> []) : Async<bool> = 
+        reactorOp "IsRelativeNameResolvable" true (fun scope -> scope.IsRelativeNameResolvable(pos, plid, item, nenvsByLine))
     
 //----------------------------------------------------------------------------
 // BackgroundCompiler

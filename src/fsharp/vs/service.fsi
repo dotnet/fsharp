@@ -14,6 +14,7 @@ open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.CompileOps
+open Microsoft.FSharp.Compiler.AccessibilityLogic
 
 /// Represents one parameter for one method (or other item) in a group. 
 [<Sealed>]
@@ -285,7 +286,9 @@ type internal FSharpCheckFileResults =
 
     member GetVisibleNamespacesAndModulesAtPoint : pos -> Async<Tast.ModuleOrNamespaceRef[]>
 
-    member IsRelativeNameResolvable: cursorPos : pos * plid : string list * item: Item -> Async<bool>
+    member IsRelativeNameResolvable: cursorPos : pos * plid : string list * item: Item * ResizeArray<range * NameResolutionEnv * AccessorDomain> [] -> Async<bool>
+
+    member GetNameResolutionEnvironmentsByLine : unit -> Async<ResizeArray<range * NameResolutionEnv * AccessorDomain> []>
 
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]
