@@ -293,18 +293,18 @@ let computeAccessRights eAccessPath eInternalsVisibleCompPaths eFamilyType =
 
 let emptyTcEnv g  =
     let cpath = compPathInternal // allow internal access initially
-    { eNameResEnv = NameResolutionEnv.Empty(g)
-      eUngeneralizableItems=[]
-      ePath=[]
-      eCompPath=cpath // dummy 
-      eAccessPath=cpath // dummy 
-      eAccessRights=computeAccessRights cpath [] None // compute this field 
-      eInternalsVisibleCompPaths=[]
-      eContextInfo=ContextInfo.NoContext
-      eModuleOrNamespaceTypeAccumulator= ref (NewEmptyModuleOrNamespaceType Namespace)
-      eFamilyType=None
-      eCtorInfo=None
-      eCallerMemberName=None}
+    { eNameResEnv = NameResolutionEnv.Empty g
+      eUngeneralizableItems = []
+      ePath = []
+      eCompPath = cpath // dummy 
+      eAccessPath = cpath // dummy 
+      eAccessRights = computeAccessRights cpath [] None // compute this field 
+      eInternalsVisibleCompPaths = []
+      eContextInfo = ContextInfo.NoContext
+      eModuleOrNamespaceTypeAccumulator = ref (NewEmptyModuleOrNamespaceType Namespace)
+      eFamilyType = None
+      eCtorInfo = None
+      eCallerMemberName = None }
 
 //-------------------------------------------------------------------------
 // Helpers related to determining if we're in a constructor and/or a class
@@ -312,22 +312,22 @@ let emptyTcEnv g  =
 //------------------------------------------------------------------------- 
 
 let InitialExplicitCtorInfo (safeThisValOpt, safeInitInfo) =
-    { ctorShapeCounter=3 
+    { ctorShapeCounter = 3 
       safeThisValOpt = safeThisValOpt
       safeInitInfo = safeInitInfo
-      ctorIsImplicit=false} 
+      ctorIsImplicit = false} 
 
 let InitialImplicitCtorInfo () =
-    { ctorShapeCounter=0 
+    { ctorShapeCounter = 0 
       safeThisValOpt = None 
       safeInitInfo = NoSafeInitInfo
-      ctorIsImplicit=true }
+      ctorIsImplicit = true }
       
 let EnterFamilyRegion tcref env = 
     let eFamilyType = Some tcref
     { env with 
-             eAccessRights = computeAccessRights env.eAccessPath env.eInternalsVisibleCompPaths eFamilyType // update this computed field
-             eFamilyType = eFamilyType }
+        eAccessRights = computeAccessRights env.eAccessPath env.eInternalsVisibleCompPaths eFamilyType // update this computed field
+        eFamilyType = eFamilyType }
 
 let ExitFamilyRegion env = 
     let eFamilyType = None
@@ -335,8 +335,8 @@ let ExitFamilyRegion env =
     | None -> env  // optimization to avoid reallocation  
     | _ -> 
         { env with 
-                eAccessRights = computeAccessRights env.eAccessPath env.eInternalsVisibleCompPaths eFamilyType  // update this computed field
-                eFamilyType = eFamilyType }
+            eAccessRights = computeAccessRights env.eAccessPath env.eInternalsVisibleCompPaths eFamilyType  // update this computed field
+            eFamilyType = eFamilyType }
 
 let AreWithinCtorShape         env = match env.eCtorInfo with None -> false    | Some ctorInfo -> ctorInfo.ctorShapeCounter > 0
 let AreWithinImplicitCtor      env = match env.eCtorInfo with None -> false    | Some ctorInfo -> ctorInfo.ctorIsImplicit
@@ -379,9 +379,9 @@ let AddValListToNameEnv vs nenv =
 let addInternalsAccessibility env (ccu:CcuThunk) =
     let compPath = CompPath (ccu.ILScopeRef,[])    
     let eInternalsVisibleCompPaths = compPath :: env.eInternalsVisibleCompPaths
-    {env with 
-           eAccessRights = computeAccessRights env.eAccessPath eInternalsVisibleCompPaths env.eFamilyType // update this computed field
-           eInternalsVisibleCompPaths = compPath :: env.eInternalsVisibleCompPaths }
+    { env with 
+        eAccessRights = computeAccessRights env.eAccessPath eInternalsVisibleCompPaths env.eFamilyType // update this computed field
+        eInternalsVisibleCompPaths = compPath :: env.eInternalsVisibleCompPaths }
 
 let ModifyNameResEnv f env = { env with eNameResEnv = f env.eNameResEnv } 
 
