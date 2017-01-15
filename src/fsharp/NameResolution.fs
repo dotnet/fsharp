@@ -561,8 +561,12 @@ let AddTyconsByDemangledNameAndArity (bulkAddMode: BulkAdd) (tcrefs: TyconRef[])
     | BulkAdd.No -> (tab,entries) ||> Array.fold (fun tab (KeyValue(k,v)) -> tab.Add(k,v))
 
 /// Add type definitions to the sub-table of the environment indexed by access name 
-let AddTyconByAccessNames bulkAddMode (tcrefs:TyconRef[]) (tab: LayeredMultiMap<string,_>) = 
-    let entries = tcrefs |> Array.collect (fun tcref -> KeyTyconByAccessNames tcref.LogicalName tcref)
+let AddTyconByAccessNames bulkAddMode (tcrefs:TyconRef[]) (tab: LayeredMultiMap<string,_>) =
+    if tcrefs.Length = 0 then tab else
+    let entries = 
+        tcrefs
+        |> Array.collect (fun tcref -> KeyTyconByAccessNames tcref.LogicalName tcref)
+
     match bulkAddMode with
     | BulkAdd.Yes -> tab.AddAndMarkAsCollapsible entries
     | BulkAdd.No -> (tab,entries) ||> Array.fold (fun tab (KeyValue(k,v)) -> tab.Add (k,v))
