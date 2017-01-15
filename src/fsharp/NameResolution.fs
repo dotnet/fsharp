@@ -1735,8 +1735,12 @@ let private ResolveObjectConstructorPrim (ncenv:NameResolver) edenv resInfo m ad
             success (resInfo, Item.FakeInterfaceCtor typ)
         else 
             let defaultStructCtorInfo = 
-                if (isStructTy g typ && not (isRecdTy g typ) && not (isUnionTy g typ) && not(ctorInfos |> List.exists (fun x -> x.IsNullary))) then 
-                    [DefaultStructCtor(g,typ)] 
+                if (not (ctorInfos |> List.exists (fun x -> x.IsNullary)) &&
+                    isStructTy g typ && 
+                    not (isRecdTy g typ) && 
+                    not (isUnionTy g typ)) 
+                then 
+                    [DefaultStructCtor(g,typ)]
                 else []
             if (isNil defaultStructCtorInfo && isNil ctorInfos) || not (isAppTy g typ) then 
                 raze (Error(FSComp.SR.nrNoConstructorsAvailableForType(NicePrint.minimalStringOfType edenv typ),m))
