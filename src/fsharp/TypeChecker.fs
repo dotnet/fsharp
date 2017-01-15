@@ -1399,20 +1399,32 @@ let ComputeAccessAndCompPath env declKindOpt m vis overrideVis actualParent =
     vis,cpath 
 
 let CheckForAbnormalOperatorNames cenv (idRange:range) opName isMember =    
-    if (idRange.EndColumn - idRange.StartColumn <= 5) && not cenv.g.compilingFslib  then 
-        
-        match opName, isMember with 
-        | PrettyNaming.Relational   ,true  -> warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidMethodNameForRelationalOperator(opName, (CompileOpName opName)),idRange))
-        | PrettyNaming.Equality ,true  -> warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidMethodNameForEquality(opName, (CompileOpName opName)),idRange))
-        | PrettyNaming.Control,true  -> warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidMemberName(opName, (CompileOpName opName)),idRange))
-        | PrettyNaming.FixedTypes,true  -> warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidMemberNameFixedTypes(opName),idRange))
-        | PrettyNaming.Indexer,true  -> ()
-        | PrettyNaming.Relational  ,false -> warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidOperatorDefinitionRelational(opName),idRange))
-        | PrettyNaming.Equality ,false -> warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidOperatorDefinitionEquality(opName),idRange))
-        | PrettyNaming.Control,false -> warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidOperatorDefinition(opName),idRange))
-        | PrettyNaming.Indexer,false -> error(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidIndexOperatorDefinition(opName),idRange))
-        | PrettyNaming.FixedTypes,_ -> ()
-        | PrettyNaming.Other,_ -> ()
+    if (idRange.EndColumn - idRange.StartColumn <= 5) && 
+        not cenv.g.compilingFslib 
+    then
+        match opName with 
+        | PrettyNaming.Relational ->
+            if isMember then
+                warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidMethodNameForRelationalOperator(opName, (CompileOpName opName)),idRange))
+            else
+                warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidOperatorDefinitionRelational(opName),idRange))
+        | PrettyNaming.Equality -> 
+            if isMember then
+                warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidMethodNameForEquality(opName, (CompileOpName opName)),idRange))
+            else
+                warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidOperatorDefinitionEquality(opName),idRange))
+        | PrettyNaming.Control -> 
+            if isMember then
+                warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidMemberName(opName, (CompileOpName opName)),idRange))
+            else
+                warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidOperatorDefinition(opName),idRange))
+        | PrettyNaming.Indexer -> 
+            if not isMember then
+                error(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidIndexOperatorDefinition(opName),idRange))
+        | PrettyNaming.FixedTypes -> 
+            if isMember then
+                warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidMemberNameFixedTypes(opName),idRange))
+        | PrettyNaming.Other -> ()
 
 let MakeAndPublishVal cenv env (altActualParent,inSig,declKind,vrec,(ValScheme(id,typeScheme,topValData,memberInfoOpt,isMutable,inlineFlag,baseOrThis,vis,compgen,isIncrClass,isTyFunc,hasDeclaredTypars)),attrs,doc,konst,isGeneratedEventVal) =
     let ty = GeneralizedTypeForTypeScheme typeScheme
