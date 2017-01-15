@@ -1322,8 +1322,7 @@ let ItemsAreEffectivelyEqual g orig other =
         (id1.idText = id2.idText && id1.idRange = id2.idRange)
 
     | (Item.ArgName (id,_, _), ValUse vref) | (ValUse vref, Item.ArgName (id, _, _)) -> 
-        (id.idText = vref.DisplayName && 
-         (id.idRange = vref.DefinitionRange || id.idRange = vref.SigRange))
+        ((id.idRange = vref.DefinitionRange || id.idRange = vref.SigRange) && id.idText = vref.DisplayName)
 
     | ILFieldUse f1, ILFieldUse f2 -> 
         ILFieldInfo.ILFieldInfosUseIdenticalDefinitions f1 f2 
@@ -1911,7 +1910,7 @@ let DecodeFSharpEvent (pinfos:PropInfo list) ad g (ncenv:NameResolver) m =
         | _ -> 
             // FOUND PROPERTY-AS-EVENT BUT DIDN'T FIND CORRESPONDING ADD/REMOVE METHODS
             Some(Item.Property (nm,pinfos))
-    | pinfo::_ when not (isNil pinfos) -> 
+    | pinfo :: _ -> 
         let nm = CoreDisplayName(pinfo)
         Some(Item.Property (nm,pinfos))
     | _ -> 
@@ -1924,8 +1923,7 @@ let GetRecordLabelsForType g nenv typ =
         nenv.eFieldLabels
         |> Seq.filter (fun kv -> 
             kv.Value 
-            |> List.map (fun r -> r.TyconRef.DisplayName)
-            |> List.exists ((=) typeName))
+            |> List.exists (fun r -> r.TyconRef.DisplayName = typeName))
         |> Seq.map (fun kv -> kv.Key)
         |> Set.ofSeq
     else
