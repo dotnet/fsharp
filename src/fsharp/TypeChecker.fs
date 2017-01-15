@@ -599,17 +599,18 @@ let UnifyTypes cenv (env: TcEnv) m expectedTy actualTy =
 let MakeInitialEnv env = 
     // Note: here we allocate a new module type accumulator 
     let mtypeAcc = ref (NewEmptyModuleOrNamespaceType Namespace)
-    { env with eModuleOrNamespaceTypeAccumulator = mtypeAcc  },mtypeAcc
+    { env with eModuleOrNamespaceTypeAccumulator = mtypeAcc },mtypeAcc
 
 let MakeInnerEnvWithAcc env nm mtypeAcc modKind = 
     let path = env.ePath @ [nm]
     let cpath = env.eCompPath.NestedCompPath nm.idText modKind
-    { env with ePath = path 
-               eCompPath = cpath
-               eAccessPath = cpath
-               eAccessRights = computeAccessRights cpath env.eInternalsVisibleCompPaths env.eFamilyType // update this computed field
-               eNameResEnv = { env.eNameResEnv with eDisplayEnv = env.DisplayEnv.AddOpenPath (pathOfLid path) }
-               eModuleOrNamespaceTypeAccumulator = mtypeAcc  }
+    { env with 
+        ePath = path 
+        eCompPath = cpath
+        eAccessPath = cpath
+        eAccessRights = computeAccessRights cpath env.eInternalsVisibleCompPaths env.eFamilyType // update this computed field
+        eNameResEnv = { env.eNameResEnv with eDisplayEnv = env.DisplayEnv.AddOpenPath (pathOfLid path) }
+        eModuleOrNamespaceTypeAccumulator = mtypeAcc }
 
 let MakeInnerEnv env nm modKind = 
     // Note: here we allocate a new module type accumulator 
