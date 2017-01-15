@@ -1173,6 +1173,14 @@ type ITypecheckResultsSink =
     abstract NotifyNameResolution : pos * Item * Item * ItemOccurence * Tastops.DisplayEnv * NameResolutionEnv * AccessorDomain * range * bool -> unit
     abstract NotifyFormatSpecifierLocation : range -> unit
     abstract CurrentSource : string option
+    
+let NoOpTypecheckResultSink =
+    { new ITypecheckResultsSink with
+        member __.NotifyEnvWithScope (_,_,_) = ()
+        member __.NotifyExprHasType (_,_,_,_,_,_) = ()
+        member __.NotifyNameResolution (_,_,_,_,_,_,_,_,_) = ()
+        member __.NotifyFormatSpecifierLocation _ = ()
+        member __.CurrentSource = None }
 
 let (|ValRefOfProp|_|) (pi : PropInfo) = pi.ArbitraryValRef
 let (|ValRefOfMeth|_|) (mi : MethInfo) = mi.ArbitraryValRef
@@ -1442,46 +1450,40 @@ type TcResultsSinkImpl(g, ?source: string) =
 
 /// An abstract type for reporting the results of name resolution and type checking, and which allows
 /// temporary suspension and/or redirection of reporting.
-type TcResultsSink = 
-    { mutable CurrentSink : ITypecheckResultsSink option }
-    static member NoSink =  { CurrentSink = None }
-    static member WithSink sink = { CurrentSink = Some sink }
+type TcResultsSink =
+    { mutable CurrentSink : ITypecheckResultsSink }
+
+module TcResultsSink =
+    let NoSink = { CurrentSink = NoOpTypecheckResultSink }
+    let WithSink sink = { CurrentSink = sink }
 
 /// Temporarily redirect reporting of name resolution and type checking results
 let WithNewTypecheckResultsSink (newSink : ITypecheckResultsSink, sink:TcResultsSink) = 
     let old = sink.CurrentSink
-    sink.CurrentSink <- Some newSink
+    sink.CurrentSink <- newSink
     { new System.IDisposable with member x.Dispose() = sink.CurrentSink <- old }
 
 /// Temporarily suspend reporting of name resolution and type checking results
 let TemporarilySuspendReportingTypecheckResultsToSink (sink:TcResultsSink) = 
     let old = sink.CurrentSink
-    sink.CurrentSink <- None
+    sink.CurrentSink <- NoOpTypecheckResultSink
     { new System.IDisposable with member x.Dispose() = sink.CurrentSink <- old }
 
 
 /// Report the active name resolution environment for a specific source range
 let CallEnvSink (sink:TcResultsSink) (scopem,nenv,ad) = 
-    match sink.CurrentSink with 
-    | None -> () 
-    | Some sink -> sink.NotifyEnvWithScope(scopem,nenv,ad)
+    sink.CurrentSink.NotifyEnvWithScope(scopem,nenv,ad)
 
 /// Report a specific name resolution at a source range
 let CallNameResolutionSink (sink:TcResultsSink) (m:range,nenv,item,itemMethodGroup,occurenceType,denv,ad) = 
-    match sink.CurrentSink with 
-    | None -> () 
-    | Some sink -> sink.NotifyNameResolution(m.End,item,itemMethodGroup,occurenceType,denv,nenv,ad,m,false)  
+    sink.CurrentSink.NotifyNameResolution(m.End,item,itemMethodGroup,occurenceType,denv,nenv,ad,m,false)  
 
 let CallNameResolutionSinkReplacing (sink:TcResultsSink) (m:range,nenv,item,itemMethodGroup,occurenceType,denv,ad) = 
-    match sink.CurrentSink with 
-    | None -> () 
-    | Some sink -> sink.NotifyNameResolution(m.End,item,itemMethodGroup,occurenceType,denv,nenv,ad,m,true)  
+    sink.CurrentSink.NotifyNameResolution(m.End,item,itemMethodGroup,occurenceType,denv,nenv,ad,m,true)  
 
 /// Report a specific expression typing at a source range
 let CallExprHasTypeSink (sink:TcResultsSink) (m:range,nenv,typ,denv,ad) = 
-    match sink.CurrentSink with 
-    | None -> () 
-    | Some sink -> sink.NotifyExprHasType(m.End,typ,denv,nenv,ad,m)
+    sink.CurrentSink.NotifyExprHasType(m.End,typ,denv,nenv,ad,m)
 
 //-------------------------------------------------------------------------
 // Check inferability of type parameters in resolved items.
@@ -3144,14 +3146,14 @@ let ResolveLongIdentAsExprAndComputeRange (sink:TcResultsSink) (ncenv:NameResolv
         if not isFakeIdents then
             CallNameResolutionSink sink (itemRange, nenv, refinedItem, item, ItemOccurence.Use, nenv.DisplayEnv, ad)
     let afterOverloadResolution =
-        match sink.CurrentSink with
-        |   None -> AfterOverloadResolution.DoNothing
-        |   Some _ ->
-              if NeedsOverloadResolution item then
-                  AfterOverloadResolution.SendToSink(callSink, (fun () -> callSink item) |> IfOverloadResolutionFails)
-              else
-                 callSink item
-                 AfterOverloadResolution.DoNothing
+        if sink.CurrentSink = NoOpTypecheckResultSink then
+            AfterOverloadResolution.DoNothing
+        else
+            if NeedsOverloadResolution item then
+                AfterOverloadResolution.SendToSink(callSink, (fun () -> callSink item) |> IfOverloadResolutionFails)
+            else
+               callSink item
+               AfterOverloadResolution.DoNothing
     item, itemRange, rest, afterOverloadResolution
 
 let (|NonOverridable|_|) namedItem =
@@ -3175,32 +3177,31 @@ let ResolveExprDotLongIdentAndComputeRange (sink:TcResultsSink) (ncenv:NameResol
     
     // Record the precise resolution of the field for intellisense/goto definition
     let afterOverloadResolution =
-      match sink.CurrentSink with 
-      |   None -> AfterOverloadResolution.DoNothing // do not retypecheck if nobody listens
-      |   Some _ ->
-              // resolution for goto definition
-              let unrefinedItem,itemRange,overrides = 
-                  match findFlag, item with
-                  |   FindMemberFlag.PreferOverrides, _ 
-                  |   _,                              NonOverridable() -> item,itemRange,false
-                  |   FindMemberFlag.IgnoreOverrides,_ -> 
-                          let _,item,_,itemRange = resolveExpr FindMemberFlag.PreferOverrides                
-                          item, itemRange,true
-              let sendToSink refinedItem = 
-                  let staticOnly = thisIsActuallyATyAppNotAnExpr
-                  let refinedItem = FilterMethodGroups ncenv itemRange refinedItem staticOnly
-                  let unrefinedItem = FilterMethodGroups ncenv itemRange unrefinedItem staticOnly
-                  CallNameResolutionSink sink (itemRange, nenv, refinedItem, unrefinedItem, ItemOccurence.Use, nenv.DisplayEnv, ad)                                
-              match overrides,NeedsOverloadResolution unrefinedItem with
-              |     false, true -> 
-                        AfterOverloadResolution.SendToSink(sendToSink, IfOverloadResolutionFails(fun () -> sendToSink unrefinedItem))
-              |     true, true  -> 
-                        AfterOverloadResolution.ReplaceWithOverrideAndSendToSink(unrefinedItem,sendToSink, IfOverloadResolutionFails(fun () -> sendToSink unrefinedItem))
-              |     _ , false   -> 
-                        sendToSink unrefinedItem
-                        AfterOverloadResolution.DoNothing
+        if sink.CurrentSink = NoOpTypecheckResultSink then
+            AfterOverloadResolution.DoNothing // do not retypecheck if nobody listens
+        else
+            // resolution for goto definition
+            let unrefinedItem,itemRange,overrides = 
+                match findFlag, item with
+                | FindMemberFlag.PreferOverrides, _ 
+                | _,                              NonOverridable() -> item,itemRange,false
+                | FindMemberFlag.IgnoreOverrides,_ -> 
+                      let _,item,_,itemRange = resolveExpr FindMemberFlag.PreferOverrides                
+                      item, itemRange,true
+            let sendToSink refinedItem = 
+                let staticOnly = thisIsActuallyATyAppNotAnExpr
+                let refinedItem = FilterMethodGroups ncenv itemRange refinedItem staticOnly
+                let unrefinedItem = FilterMethodGroups ncenv itemRange unrefinedItem staticOnly
+                CallNameResolutionSink sink (itemRange, nenv, refinedItem, unrefinedItem, ItemOccurence.Use, nenv.DisplayEnv, ad)                                
+            match overrides,NeedsOverloadResolution unrefinedItem with
+            | false, true -> 
+                  AfterOverloadResolution.SendToSink(sendToSink, IfOverloadResolutionFails(fun () -> sendToSink unrefinedItem))
+            | true, true  -> 
+                  AfterOverloadResolution.ReplaceWithOverrideAndSendToSink(unrefinedItem,sendToSink, IfOverloadResolutionFails(fun () -> sendToSink unrefinedItem))
+            | _ , false   -> 
+                  sendToSink unrefinedItem
+                  AfterOverloadResolution.DoNothing
     item, itemRange, rest, afterOverloadResolution
-
 
 //-------------------------------------------------------------------------
 // Given an nenv resolve partial paths to sets of names, used by interactive

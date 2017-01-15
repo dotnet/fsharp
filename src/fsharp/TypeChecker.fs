@@ -1495,14 +1495,14 @@ let MakeAndPublishVal cenv env (altActualParent,inSig,declKind,vrec,(ValScheme(i
     PublishValueDefn cenv env declKind vspec
 
     begin 
-        match cenv.tcSink.CurrentSink with 
-        | None -> ()
-        | Some _ -> 
-            if not vspec.IsCompilerGenerated && not (String.hasPrefix vspec.LogicalName "_") then 
-                let nenv = AddFakeNamedValRefToNameEnv vspec.DisplayName env.NameEnv (mkLocalValRef vspec) 
-                CallEnvSink cenv.tcSink (vspec.Range,nenv,env.eAccessRights)
-                let item = Item.Value(mkLocalValRef vspec)
-                CallNameResolutionSink cenv.tcSink (vspec.Range,nenv,item,item,ItemOccurence.Binding,env.DisplayEnv,env.eAccessRights)
+        if cenv.tcSink.CurrentSink <> NameResolution.NoOpTypecheckResultSink 
+           && not vspec.IsCompilerGenerated 
+           && not (String.hasPrefix vspec.LogicalName "_") then 
+           
+           let nenv = AddFakeNamedValRefToNameEnv vspec.DisplayName env.NameEnv (mkLocalValRef vspec) 
+           CallEnvSink cenv.tcSink (vspec.Range,nenv,env.eAccessRights)
+           let item = Item.Value(mkLocalValRef vspec)
+           CallNameResolutionSink cenv.tcSink (vspec.Range,nenv,item,item,ItemOccurence.Binding,env.DisplayEnv,env.eAccessRights)
     end
 
     vspec
@@ -6641,34 +6641,31 @@ and TcObjectExpr cenv overallTy env tpenv (synObjTy,argopt,binds,extraImpls,mNew
 and TcConstStringExpr cenv overallTy env m tpenv s  =
 
     if (AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy cenv.g.string_ty) then 
-      mkString cenv.g m s,tpenv
-    else 
-      let aty = NewInferenceType ()
-      let bty = NewInferenceType ()
-      let cty = NewInferenceType ()
-      let dty = NewInferenceType ()
-      let ety = NewInferenceType ()
-      let ty' = mkPrintfFormatTy cenv.g aty bty cty dty ety
-      if (not (isObjTy cenv.g overallTy) && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy ty') then 
-        // Parse the format string to work out the phantom types 
-        let source = match cenv.tcSink.CurrentSink with None -> None | Some sink -> sink.CurrentSource
-        let normalizedString = (s.Replace("\r\n", "\n").Replace("\r", "\n"))
-        
-        let (aty',ety'), specifierLocations = (try CheckFormatStrings.ParseFormatString m cenv.g source normalizedString bty cty dty with Failure s -> error (Error(FSComp.SR.tcUnableToParseFormatString(s),m)))
-
-        match cenv.tcSink.CurrentSink with 
-        | None -> () 
-        | Some sink  -> 
-            for specifierLocation in specifierLocations do
-                sink.NotifyFormatSpecifierLocation specifierLocation
-
-        UnifyTypes cenv env m aty aty'
-        UnifyTypes cenv env m ety ety'
-        mkCallNewFormat cenv.g m aty bty cty dty ety (mkString cenv.g m s),tpenv
-      else 
-        UnifyTypes cenv env m overallTy cenv.g.string_ty
         mkString cenv.g m s,tpenv
-
+    else 
+        let aty = NewInferenceType ()
+        let bty = NewInferenceType ()
+        let cty = NewInferenceType ()
+        let dty = NewInferenceType ()
+        let ety = NewInferenceType ()
+        let ty' = mkPrintfFormatTy cenv.g aty bty cty dty ety
+        if (not (isObjTy cenv.g overallTy) && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy ty') then 
+            // Parse the format string to work out the phantom types 
+            let source = cenv.tcSink.CurrentSink.CurrentSource
+            let normalizedString = (s.Replace("\r\n", "\n").Replace("\r", "\n"))
+            
+            let (aty',ety'), specifierLocations = (try CheckFormatStrings.ParseFormatString m cenv.g source normalizedString bty cty dty with Failure s -> error (Error(FSComp.SR.tcUnableToParseFormatString(s),m)))
+            
+            for specifierLocation in specifierLocations do
+                cenv.tcSink.CurrentSink.NotifyFormatSpecifierLocation specifierLocation
+            
+            UnifyTypes cenv env m aty aty'
+            UnifyTypes cenv env m ety ety'
+            mkCallNewFormat cenv.g m aty bty cty dty ety (mkString cenv.g m s),tpenv
+        else 
+          UnifyTypes cenv env m overallTy cenv.g.string_ty
+          mkString cenv.g m s,tpenv
+        
 //-------------------------------------------------------------------------
 // TcConstExpr
 //------------------------------------------------------------------------- 

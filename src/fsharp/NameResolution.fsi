@@ -285,9 +285,13 @@ type internal TcResultsSinkImpl =
 /// An abstract type for reporting the results of name resolution and type checking, and which allows
 /// temporary suspension and/or redirection of reporting.
 type TcResultsSink = 
-    { mutable CurrentSink : ITypecheckResultsSink option }
-    static member NoSink : TcResultsSink
-    static member WithSink : ITypecheckResultsSink -> TcResultsSink
+    { mutable CurrentSink : ITypecheckResultsSink }
+
+module internal TcResultsSink =
+    val NoSink : TcResultsSink
+    val WithSink : ITypecheckResultsSink -> TcResultsSink
+
+val internal NoOpTypecheckResultSink : ITypecheckResultsSink
 
 /// Temporarily redirect reporting of name resolution and type checking results
 val internal WithNewTypecheckResultsSink : ITypecheckResultsSink * TcResultsSink -> System.IDisposable
