@@ -1388,7 +1388,7 @@ type TcResultsSinkImpl(g, ?source: string) =
     let capturedNameResolutions = ResizeArray<_>()
     let capturedFormatSpecifierLocations = ResizeArray<_>()
     let capturedNameResolutionIdentifiers = 
-        new System.Collections.Generic.Dictionary<pos * string, unit>
+        new System.Collections.Generic.HashSet<pos * string>
             ( { new IEqualityComparer<_> with 
                     member __.GetHashCode((p:pos,i)) = p.Line + 101 * p.Column + hash i
                     member __.Equals((p1,i1),(p2,i2)) = posEq p1 p2 && i1 =  i2 } )
@@ -1423,10 +1423,7 @@ type TcResultsSinkImpl(g, ?source: string) =
 
                 let alreadyDone = 
                     match keyOpt with
-                    | Some key ->
-                        let res = capturedNameResolutionIdentifiers.ContainsKey key
-                        if not res then capturedNameResolutionIdentifiers.Add (key, ()) |> ignore
-                        res
+                    | Some key -> not (capturedNameResolutionIdentifiers.Add key)
                     | _ -> false
                 
                 if replace then 
