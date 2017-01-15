@@ -1351,7 +1351,7 @@ let PublishValueDefn cenv env declKind (vspec:Val) =
     | _ -> ()
 
     match vspec.MemberInfo with 
-    | Some _memberInfo when 
+    | Some _ when 
         (not vspec.IsCompilerGenerated && 
          // Extrinsic extensions don't get added to the tcaug
          not (declKind = ExtrinsicExtensionBinding)) -> 
@@ -1365,9 +1365,12 @@ let PublishValueDefn cenv env declKind (vspec:Val) =
     |  _ -> ()
 
 let CombineVisibilityAttribs vis1 vis2 m = 
-   if Option.isSome vis1 && Option.isSome vis2 then 
-        errorR(Error(FSComp.SR.tcMultipleVisibilityAttributes(),m))
-   if Option.isSome vis1 then vis1 else vis2
+    match vis1 with
+    | Some _ ->
+        if Option.isSome vis2 then 
+            errorR(Error(FSComp.SR.tcMultipleVisibilityAttributes(),m))
+        vis1
+    | _ -> vis2
 
 let ComputeAccessAndCompPath env declKindOpt m vis overrideVis actualParent = 
     let accessPath = env.eAccessPath
