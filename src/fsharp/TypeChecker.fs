@@ -666,10 +666,12 @@ let BuildRootModuleExpr enclosingNamespacePath (cpath:CompilationPath) mexpr =
 
 let TryStripPrefixPath (g:TcGlobals) (enclosingNamespacePath: Ident list) = 
     match enclosingNamespacePath with 
-    | p::rest when  g.isInteractive &&
-                    p.idText.StartsWith(FsiDynamicModulePrefix,System.StringComparison.Ordinal) && 
-                    p.idText.[FsiDynamicModulePrefix.Length..] |> String.forall System.Char.IsDigit &&
-                    rest.Length > 0 -> Some(p,rest)
+    | p::rest when
+        g.isInteractive &&
+        not (isNil rest) &&
+        p.idText.StartsWith(FsiDynamicModulePrefix,System.StringComparison.Ordinal) && 
+        p.idText.[FsiDynamicModulePrefix.Length..] |> String.forall System.Char.IsDigit 
+        -> Some(p,rest)
     | _ -> None
 
 let ImplicitlyOpenOwnNamespace tcSink g amap scopem enclosingNamespacePath env = 
