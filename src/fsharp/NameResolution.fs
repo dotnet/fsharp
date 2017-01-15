@@ -400,7 +400,12 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap:Import.Import
         let minfos = GetImmediateIntrinsicMethInfosOfType (None, AccessorDomain.AccessibleFromSomeFSharpCode) g amap m typ
         [ for minfo in minfos do
             // Method must be static, have 'Extension' attribute, must not be curried, must have at least one argument
-            if not minfo.IsInstance && not minfo.IsExtensionMember && MethInfoHasAttribute g m g.attrib_ExtensionAttribute minfo && minfo.NumArgs.Length = 1 && minfo.NumArgs.Head >= 1 then
+            if not minfo.IsInstance && 
+               not minfo.IsExtensionMember && 
+               minfo.NumArgs.Length = 1 && 
+               minfo.NumArgs.Head >= 1 && 
+               MethInfoHasAttribute g m g.attrib_ExtensionAttribute minfo
+            then
                 let ilExtMem = ILExtMem (tcrefOfStaticClass, minfo, pri)
 
                 // The results are indexed by the TyconRef of the first 'this' argument, if any.
@@ -443,7 +448,7 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap:Import.Import
                 match thisTyconRef with
                 | None -> ()
                 | Some (Some tcref) -> yield Choice1Of2(tcref, ilExtMem)
-                | Some None -> yield Choice2Of2 ilExtMem  ]
+                | Some None -> yield Choice2Of2 ilExtMem ]
     else
         []       
 
