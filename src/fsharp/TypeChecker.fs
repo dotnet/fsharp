@@ -357,7 +357,7 @@ let isEmptyFreeTyvars ftyvs =
 let addFreeItemOfTy typ eUngeneralizableItems = 
     let fvs = freeInType CollectAllNoCaching typ
     if isEmptyFreeTyvars fvs then eUngeneralizableItems 
-    else UngeneralizableItem(fun () -> freeInType CollectAllNoCaching typ) :: eUngeneralizableItems
+    else UngeneralizableItem(fun () -> fvs) :: eUngeneralizableItems
 
 let rec addFreeInModuleTy (mtyp:ModuleOrNamespaceType) acc =
     QueueList.foldBack (typeOfVal >> accFreeInType CollectAllNoCaching) mtyp.AllValsAndMembers
@@ -367,7 +367,7 @@ let freeInModuleTy mtyp = addFreeInModuleTy mtyp emptyFreeTyvars
 let addFreeItemOfModuleTy mtyp eUngeneralizableItems = 
     let fvs = freeInModuleTy mtyp
     if isEmptyFreeTyvars fvs then eUngeneralizableItems 
-    else UngeneralizableItem(fun () -> freeInModuleTy mtyp) :: eUngeneralizableItems
+    else UngeneralizableItem(fun () -> fvs) :: eUngeneralizableItems
 
 let AddValMapToNameEnv vs nenv = 
     NameMap.foldBackRange (fun v nenv -> AddValRefToNameEnv nenv (mkLocalValRef v)) vs nenv
