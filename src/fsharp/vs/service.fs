@@ -1134,7 +1134,7 @@ type TypeCheckInfo
 
     static let keywordTypes = Lexhelp.Keywords.keywordTypes
 
-    member x.GetSortedNameResolutionEnvironments() = GetEnvsByLine()
+    member x.GetNameResolutionEnvironmentsByLine() = GetEnvsByLine()
 
     member x.GetVisibleNamespacesAndModulesAtPosition(cursorPos: pos) : ModuleOrNamespaceRef list =
         let (nenv, ad), m = GetBestEnvForPos (GetEnvsByLine()) cursorPos
@@ -2080,7 +2080,7 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
         reactorOp "GetDeclarations" [| |] (fun scope -> scope.GetVisibleNamespacesAndModulesAtPosition(pos) |> List.toArray)
 
     member info.GetNameResolutionEnvironmentsByLine() : Async<ResizeArray<range * NameResolutionEnv * AccessorDomain> []> = 
-        reactorOp "IsRelativeNameResolvable" [||] (fun scope -> scope.GetSortedNameResolutionEnvironments())
+        reactorOp "IsRelativeNameResolvable" [||] (fun scope -> scope.GetNameResolutionEnvironmentsByLine())
 
     member info.IsRelativeNameResolvable(pos: pos, plid: string list, item: Item, nenvsByLine: ResizeArray<range * NameResolutionEnv * AccessorDomain> []) : Async<bool> = 
         reactorOp "IsRelativeNameResolvable" true (fun scope -> scope.IsRelativeNameResolvable(pos, plid, item, nenvsByLine))
