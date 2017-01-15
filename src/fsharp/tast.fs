@@ -3020,15 +3020,14 @@ and
       mutable binding: NonNullSlot<Val>
       /// Indicates a reference to something bound in another CCU 
       nlr: NonLocalValOrMemberRef }
-    member x.IsLocalRef = match box x.nlr with null -> true | _ -> false
-    member x.IsResolved = match box x.binding with null -> false | _ -> true
+    member x.IsLocalRef = obj.ReferenceEquals(x.nlr, null)
+    member x.IsResolved = not (obj.ReferenceEquals(x.binding, null))
     member x.PrivateTarget = x.binding
     member x.ResolvedTarget = x.binding
 
     /// Dereference the ValRef to a Val.
     member vr.Deref = 
-        match box vr.binding with 
-        | null ->
+        if obj.ReferenceEquals(vr.binding, null) then
             let res = 
                 let nlr = vr.nlr 
                 let e =  nlr.EnclosingEntity.Deref 
@@ -3038,12 +3037,11 @@ and
                 | Some h -> h
             vr.binding <- nullableSlotFull res 
             res 
-        | _ -> vr.binding
+        else vr.binding
 
     /// Dereference the ValRef to a Val option.
     member vr.TryDeref = 
-        match box vr.binding with 
-        | null -> 
+        if obj.ReferenceEquals(vr.binding, null) then
             let resOpt = 
                 vr.nlr.EnclosingEntity.TryDeref |> Option.bind (fun e -> 
                     e.ModuleOrNamespaceType.TryLinkVal(vr.nlr.EnclosingEntity.nlr.Ccu, vr.nlr.ItemKey))
@@ -3052,8 +3050,7 @@ and
             | Some res -> 
                 vr.binding <- nullableSlotFull res 
             resOpt
-        | _ -> 
-            Some vr.binding
+        else Some vr.binding
 
     /// The type of the value. May be a TType_forall for a generic value. 
     /// May be a type variable or type containing type variables during type inference. 
