@@ -454,8 +454,9 @@ let AddRootModuleOrNamespaceRefs g amap m env modrefs =
 let AddNonLocalCcu g amap scopem env assemblyName  (ccu:CcuThunk, internalsVisibleToAttributes)  = 
 
     let internalsVisible = 
-        internalsVisibleToAttributes |> List.exists (fun visibleTo ->             
-            try                    
+        internalsVisibleToAttributes 
+        |> List.exists (fun visibleTo ->             
+            try
                 System.Reflection.AssemblyName(visibleTo).Name = assemblyName                
             with e ->
                 warning(InvalidInternalsVisibleToAssemblyName(visibleTo,ccu.FileName))
