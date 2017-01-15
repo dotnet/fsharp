@@ -1321,17 +1321,17 @@ let UpdateAccModuleOrNamespaceType cenv env f =
 let PublishModuleDefn cenv env mspec = 
     UpdateAccModuleOrNamespaceType cenv env (fun intoFslibCcu mty -> 
        if intoFslibCcu then mty
-       else mty.AddEntity(mspec))
+       else mty.AddEntity mspec)
     let item = Item.ModuleOrNamespaces([mkLocalModRef mspec])
     CallNameResolutionSink cenv.tcSink (mspec.Range,env.NameEnv,item,item,ItemOccurence.Binding,env.DisplayEnv,env.eAccessRights)
 
 let PublishTypeDefn cenv env tycon = 
     UpdateAccModuleOrNamespaceType cenv env (fun _ mty -> 
-       mty.AddEntity(tycon))
+       mty.AddEntity tycon)
 
 let PublishValueDefnPrim cenv env (vspec:Val) = 
     UpdateAccModuleOrNamespaceType cenv env (fun _ mty -> 
-        mty.AddVal(vspec))
+        mty.AddVal vspec)
 
 let PublishValueDefn cenv env declKind (vspec:Val) =
     if (declKind = ModuleOrMemberBinding) && 
