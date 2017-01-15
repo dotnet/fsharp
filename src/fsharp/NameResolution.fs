@@ -109,8 +109,9 @@ let ActivePatternElemsOfVal modref vspec =
 let ActivePatternElemsOfModuleOrNamespace (modref:ModuleOrNamespaceRef) : NameMap<ActivePatternElemRef> = 
     let mtyp = modref.ModuleOrNamespaceType
     cacheOptRef mtyp.ActivePatternElemRefLookupTable (fun () ->
-       let aprefs = [ for x in mtyp.AllValsAndMembers do yield! ActivePatternElemsOfVal modref x ]
-       (Map.empty,aprefs) ||> List.fold (fun acc apref -> NameMap.add apref.Name apref acc) )
+        mtyp.AllValsAndMembers 
+        |> Seq.collect (ActivePatternElemsOfVal modref) 
+        |> Seq.fold (fun acc apref -> NameMap.add apref.Name apref acc) Map.empty)
 
 //---------------------------------------------------------------------------
 // Name Resolution Items
