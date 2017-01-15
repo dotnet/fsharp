@@ -441,11 +441,14 @@ let AddLocalTyconsAndReport tcSink scopem g amap m tycons env =
 //------------------------------------------------------------------------- 
 
 let OpenModulesOrNamespaces tcSink g amap scopem root env mvvs =
-    let env = ModifyNameResEnv (fun nenv -> AddModulesAndNamespacesContentsToNameEnv g amap env.eAccessRights scopem root nenv mvvs)  env
+    let env =
+        if isNil mvvs then env else
+        ModifyNameResEnv (fun nenv -> AddModulesAndNamespacesContentsToNameEnv g amap env.eAccessRights scopem root nenv mvvs) env
     CallEnvSink tcSink (scopem,env.NameEnv,env.eAccessRights)
     env
 
-let AddRootModuleOrNamespaceRefs g amap m env modrefs  = 
+let AddRootModuleOrNamespaceRefs g amap m env modrefs =
+    if isNil modrefs then env else
     ModifyNameResEnv (fun nenv -> AddModuleOrNamespaceRefsToNameEnv g amap m true env.eAccessRights nenv modrefs) env 
 
 let AddNonLocalCcu g amap scopem env assemblyName  (ccu:CcuThunk, internalsVisibleToAttributes)  = 
