@@ -343,20 +343,20 @@ type NameResolutionEnv =
     } 
 
     /// The initial, empty name resolution environment. The mother of all things.
-    static member Empty(g) =
-        { eDisplayEnv=DisplayEnv.Empty g
-          eModulesAndNamespaces=Map.empty
+    static member Empty g =
+        { eDisplayEnv = DisplayEnv.Empty g
+          eModulesAndNamespaces = Map.empty
           eFullyQualifiedModulesAndNamespaces = Map.empty
-          eFieldLabels=Map.empty
-          eUnqualifiedItems=LayeredMap.Empty
-          ePatItems=Map.empty
-          eTyconsByAccessNames= LayeredMultiMap.Empty
-          eTyconsByDemangledNameAndArity=LayeredMap.Empty
-          eFullyQualifiedTyconsByAccessNames=LayeredMultiMap.Empty
-          eFullyQualifiedTyconsByDemangledNameAndArity=LayeredMap.Empty
-          eIndexedExtensionMembers=TyconRefMultiMap<_>.Empty
-          eUnindexedExtensionMembers=[]
-          eTypars=Map.empty }
+          eFieldLabels = Map.empty
+          eUnqualifiedItems = LayeredMap.Empty
+          ePatItems = Map.empty
+          eTyconsByAccessNames = LayeredMultiMap.Empty
+          eTyconsByDemangledNameAndArity = LayeredMap.Empty
+          eFullyQualifiedTyconsByAccessNames = LayeredMultiMap.Empty
+          eFullyQualifiedTyconsByDemangledNameAndArity = LayeredMap.Empty
+          eIndexedExtensionMembers = TyconRefMultiMap<_>.Empty
+          eUnindexedExtensionMembers = []
+          eTypars = Map.empty }
 
     member nenv.DisplayEnv = nenv.eDisplayEnv
 
