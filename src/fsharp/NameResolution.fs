@@ -1102,9 +1102,8 @@ let LookupTypeNameInEntityMaybeHaveArity (amap, m, ad, nm, staticResInfo:TypeNam
     let tcrefs = 
         match staticResInfo with 
         | TypeNameResolutionStaticArgsInfo.Indefinite -> 
-            match LookupTypeNameInEntityNoArity m nm mtyp with
-            | [] -> []
-            | tycons -> tycons |> List.map modref.NestedTyconRef 
+            LookupTypeNameInEntityNoArity m nm mtyp
+            |> List.map modref.NestedTyconRef 
         | TypeNameResolutionStaticArgsInfo.Definite _ -> 
             match LookupTypeNameInEntityHaveArity nm staticResInfo mtyp with
             | Some tycon -> [modref.NestedTyconRef tycon] 
