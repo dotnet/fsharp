@@ -387,24 +387,32 @@ let ModifyNameResEnv f env = { env with eNameResEnv = f env.eNameResEnv }
 
 let AddLocalValPrimitive (v:Val) env =
     let env = ModifyNameResEnv (fun nenv -> AddValRefToNameEnv nenv (mkLocalValRef v)) env
-    {env with eUngeneralizableItems =  addFreeItemOfTy v.Type env.eUngeneralizableItems   } 
+    { env with eUngeneralizableItems = addFreeItemOfTy v.Type env.eUngeneralizableItems } 
 
 
 let AddLocalValMap tcSink scopem (vals:Val NameMap) env =
-    let env = ModifyNameResEnv (AddValMapToNameEnv vals) env
-    let env = {env with eUngeneralizableItems =  NameMap.foldBackRange (typeOfVal >> addFreeItemOfTy) vals env.eUngeneralizableItems   }
+    let env = 
+        if vals.IsEmpty then 
+            env
+        else
+            let env = ModifyNameResEnv (AddValMapToNameEnv vals) env
+            { env with eUngeneralizableItems = NameMap.foldBackRange (typeOfVal >> addFreeItemOfTy) vals env.eUngeneralizableItems }
     CallEnvSink tcSink (scopem,env.NameEnv,env.eAccessRights)
     env
 
 let AddLocalVals tcSink scopem (vals:Val list) env =
-    let env = ModifyNameResEnv (AddValListToNameEnv vals) env
-    let env = {env with eUngeneralizableItems =  List.foldBack (typeOfVal >> addFreeItemOfTy) vals env.eUngeneralizableItems   }
+    let env = 
+        if isNil vals then 
+            env
+        else
+            let env = ModifyNameResEnv (AddValListToNameEnv vals) env
+            { env with eUngeneralizableItems = List.foldBack (typeOfVal >> addFreeItemOfTy) vals env.eUngeneralizableItems }
     CallEnvSink tcSink (scopem,env.NameEnv,env.eAccessRights)
     env
 
 let AddLocalVal tcSink scopem v env = 
     let env = ModifyNameResEnv (fun nenv -> AddValRefToNameEnv nenv (mkLocalValRef v)) env
-    let env = {env with eUngeneralizableItems =  addFreeItemOfTy v.Type env.eUngeneralizableItems   }
+    let env = {env with eUngeneralizableItems = addFreeItemOfTy v.Type env.eUngeneralizableItems }
     CallEnvSink tcSink (scopem,env.NameEnv,env.eAccessRights)
     env
 
@@ -415,11 +423,13 @@ let AddLocalExnDefnAndReport tcSink scopem env (exnc:Tycon) =
     CallEnvSink tcSink (scopem,env.NameEnv,env.eAccessRights)
     env
  
-let AddLocalTyconRefs ownDefinition g amap m tcrefs env = 
-     env |> ModifyNameResEnv (fun nenv -> AddTyconRefsToNameEnv BulkAdd.No ownDefinition g amap m false nenv tcrefs) 
+let AddLocalTyconRefs ownDefinition g amap m tcrefs env =
+    if isNil tcrefs then env else
+    env |> ModifyNameResEnv (fun nenv -> AddTyconRefsToNameEnv BulkAdd.No ownDefinition g amap m false nenv tcrefs) 
 
-let AddLocalTycons g amap m (tycons: Tycon list) env = 
-     env |> AddLocalTyconRefs false g amap m (List.map mkLocalTyconRef tycons) 
+let AddLocalTycons g amap m (tycons: Tycon list) env =
+    if isNil tycons then env else
+    env |> AddLocalTyconRefs false g amap m (List.map mkLocalTyconRef tycons) 
 
 let AddLocalTyconsAndReport tcSink scopem g amap m tycons env = 
     let env = AddLocalTycons g amap m tycons env
