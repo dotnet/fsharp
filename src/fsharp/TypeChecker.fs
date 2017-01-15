@@ -642,12 +642,13 @@ let SetCurrAccumulatedModuleOrNamespaceType env x =  env.eModuleOrNamespaceTypeA
 /// Set up the initial environment 
 let LocateEnv ccu env enclosingNamespacePath =
     let cpath = compPathOfCcu ccu
-    let env = {env with 
-                   ePath = []
-                   eCompPath = cpath 
-                   eAccessPath=cpath 
-                   // update this computed field
-                   eAccessRights = computeAccessRights cpath env.eInternalsVisibleCompPaths env.eFamilyType }
+    let env = 
+        {env with 
+            ePath = []
+            eCompPath = cpath 
+            eAccessPath = cpath 
+            // update this computed field
+            eAccessRights = computeAccessRights cpath env.eInternalsVisibleCompPaths env.eFamilyType }
     let env = List.fold (fun env id -> MakeInnerEnv env id Namespace |> fst) env enclosingNamespacePath
     env
 
