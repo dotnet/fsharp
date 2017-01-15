@@ -506,10 +506,12 @@ let AddLocalSubModuleAndReport tcSink scopem g amap m env (modul:ModuleOrNamespa
     CallEnvSink tcSink (scopem,env.NameEnv,env.eAccessRights)
     env
  
-let RegisterDeclaredTypars typars env = 
-    {env with eUngeneralizableItems =  List.foldBack (mkTyparTy >> addFreeItemOfTy) typars env.eUngeneralizableItems }
+let RegisterDeclaredTypars typars env =
+    if isNil typars then env else
+    { env with eUngeneralizableItems = List.foldBack (mkTyparTy >> addFreeItemOfTy) typars env.eUngeneralizableItems }
 
-let AddDeclaredTypars check typars env = 
+let AddDeclaredTypars check typars env =
+    if isNil typars then env else
     let env = ModifyNameResEnv (fun nenv -> AddDeclaredTyparsToNameEnv check nenv typars) env
     RegisterDeclaredTypars typars env
 
