@@ -1289,7 +1289,7 @@ let UpdateAccModuleOrNamespaceType cenv env f =
     if cenv.compilingCanonicalFslibModuleType then 
         let nleref = mkNonLocalEntityRef cenv.topCcu (arrPathOfLid env.ePath)
         let modul = nleref.Deref
-        modul.Data.entity_modul_contents <- notlazy (f true modul.ModuleOrNamespaceType)
+        modul.Data.entity_modul_contents <- MaybeLazy.Strict (f true modul.ModuleOrNamespaceType)
     SetCurrAccumulatedModuleOrNamespaceType env (f false (GetCurrAccumulatedModuleOrNamespaceType env))
   
 let PublishModuleDefn cenv env mspec = 
@@ -13326,13 +13326,13 @@ module MutRecBindingChecking =
     let TcMutRecDefns_UpdateNSContents mutRecNSInfo =
         match mutRecNSInfo with 
         | Some (Some (mspecNS: ModuleOrNamespace), mtypeAcc) -> 
-            mspecNS.Data.entity_modul_contents <- notlazy !mtypeAcc
+            mspecNS.Data.entity_modul_contents <- MaybeLazy.Strict !mtypeAcc
         | _ -> ()  
 
     /// Updates the types of the modules to contain the contents so far
     let TcMutRecDefns_UpdateModuleContents mutRecNSInfo defns =
         defns |> MutRecShapes.iterModules (fun (MutRecDefnsPhase2DataForModule (mtypeAcc, mspec), _) -> 
-              mspec.Data.entity_modul_contents <- notlazy !mtypeAcc)  
+              mspec.Data.entity_modul_contents <- MaybeLazy.Strict !mtypeAcc)  
 
         TcMutRecDefns_UpdateNSContents mutRecNSInfo
     
@@ -14285,7 +14285,7 @@ module EstablishTypeDefinitionCores =
         CheckNamespaceModuleOrTypeName cenv.g id
 
         let envForDecls, mtypeAcc = MakeInnerEnv envInitial id modKind    
-        let mspec = NewModuleOrNamespace (Some envInitial.eCompPath) vis id (xml.ToXmlDoc()) modAttrs (notlazy (NewEmptyModuleOrNamespaceType modKind))
+        let mspec = NewModuleOrNamespace (Some envInitial.eCompPath) vis id (xml.ToXmlDoc()) modAttrs (MaybeLazy.Strict (NewEmptyModuleOrNamespaceType modKind))
         let innerParent = Parent (mkLocalModRef mspec)
         let typeNames = TypeNamesInMutRecDecls compDecls
         MutRecDefnsPhase2DataForModule (mtypeAcc, mspec), (innerParent, typeNames, envForDecls)
@@ -14326,7 +14326,7 @@ module EstablishTypeDefinitionCores =
         let visOfRepr,_ = ComputeAccessAndCompPath env None id.idRange synVisOfRepr None parent
         let visOfRepr = combineAccess vis visOfRepr 
         // If we supported nested types and modules then additions would be needed here
-        let lmtyp = notlazy (NewEmptyModuleOrNamespaceType ModuleOrType)
+        let lmtyp = MaybeLazy.Strict (NewEmptyModuleOrNamespaceType ModuleOrType)
 
         NewTycon(cpath, id.idText, id.idRange, vis, visOfRepr, TyparKind.Type, LazyWithContext.NotLazy checkedTypars, doc.ToXmlDoc(), preferPostfix, preEstablishedHasDefaultCtor, hasSelfReferentialCtor, lmtyp)
 
@@ -16039,11 +16039,11 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
                 // Now typecheck the signature, accumulating and then recording the submodule description. 
                 let id = ident (modName, id.idRange)
 
-                let mspec = NewModuleOrNamespace  (Some env.eCompPath) vis id (xml.ToXmlDoc()) attribs (notlazy (NewEmptyModuleOrNamespaceType modKind)) 
+                let mspec = NewModuleOrNamespace  (Some env.eCompPath) vis id (xml.ToXmlDoc()) attribs (MaybeLazy.Strict (NewEmptyModuleOrNamespaceType modKind)) 
 
                 let! (mtyp,_) = TcModuleOrNamespaceSignatureElementsNonMutRec cenv (Parent (mkLocalModRef mspec)) env (id,modKind,mdefs,m,xml)
 
-                mspec.Data.entity_modul_contents <- notlazy mtyp 
+                mspec.Data.entity_modul_contents <- MaybeLazy.Strict mtyp 
                 let scopem = unionRanges m endm
                 PublishModuleDefn cenv env mspec
                 let env = AddLocalSubModuleAndReport cenv.tcSink scopem cenv.g cenv.amap m env mspec
@@ -16359,13 +16359,13 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv:cenv) parent typeNames scopem 
     
               // Create the new module specification to hold the accumulated results of the type of the module 
               // Also record this in the environment as the accumulator 
-              let mspec = NewModuleOrNamespace (Some env.eCompPath) vis id (xml.ToXmlDoc()) modAttrs (notlazy (NewEmptyModuleOrNamespaceType modKind))
+              let mspec = NewModuleOrNamespace (Some env.eCompPath) vis id (xml.ToXmlDoc()) modAttrs (MaybeLazy.Strict (NewEmptyModuleOrNamespaceType modKind))
 
               // Now typecheck. 
               let! mexpr, topAttrsNew, envAtEnd = TcModuleOrNamespaceElements cenv (Parent (mkLocalModRef mspec)) endm envForModule xml None mdefs 
 
               // Get the inferred type of the decls and record it in the mspec. 
-              mspec.Data.entity_modul_contents <- notlazy !mtypeAcc  
+              mspec.Data.entity_modul_contents <- MaybeLazy.Strict !mtypeAcc  
               let modDefn = TMDefRec(false,[],[ModuleOrNamespaceBinding.Module(mspec,mexpr)],m)
               PublishModuleDefn cenv env mspec 
               let env = AddLocalSubModuleAndReport cenv.tcSink scopem cenv.g cenv.amap m env mspec
@@ -16552,7 +16552,7 @@ and TcMutRecDefsFinish cenv defs m =
                 binds |> List.map ModuleOrNamespaceBinding.Binding 
             | MutRecShape.Module ((MutRecDefnsPhase2DataForModule(mtypeAcc, mspec), _),mdefs) -> 
                 let mexpr = TcMutRecDefsFinish cenv mdefs m
-                mspec.Data.entity_modul_contents <- notlazy !mtypeAcc  
+                mspec.Data.entity_modul_contents <- MaybeLazy.Strict !mtypeAcc  
                 [ ModuleOrNamespaceBinding.Module(mspec,mexpr) ])
 
     TMDefRec(true,tycons,binds,m)

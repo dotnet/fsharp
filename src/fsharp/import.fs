@@ -436,7 +436,7 @@ let rec ImportILTypeDef amap m scoref (cpath:CompilationPath) enc nm (tdef:ILTyp
         // Make sure we reraise the original exception one occurs - see findOriginalException.
         (LazyWithContext.Create((fun m -> ImportILGenericParameters amap m scoref [] tdef.GenericParams), ErrorLogger.findOriginalException))
         (scoref,enc,tdef) 
-        lazyModuleOrNamespaceTypeForNestedTypes 
+        (MaybeLazy.Lazy lazyModuleOrNamespaceTypeForNestedTypes)
        
 
 /// Import a list of (possibly nested) IL types as a new ModuleOrNamespaceType node
@@ -455,7 +455,7 @@ and ImportILTypeDefList amap m (cpath:CompilationPath) enc items =
         |> multisetDiscriminateAndMap 
             (fun n tgs ->
                 let modty = lazy (ImportILTypeDefList amap m (cpath.NestedCompPath n Namespace) enc tgs)
-                NewModuleOrNamespace (Some cpath) taccessPublic (mkSynId m n) XmlDoc.Empty [] modty)
+                NewModuleOrNamespace (Some cpath) taccessPublic (mkSynId m n) XmlDoc.Empty [] (MaybeLazy.Lazy modty))
             (fun (n,info:Lazy<_>) -> 
                 let (scoref2,_,lazyTypeDef:Lazy<ILTypeDef>) = info.Force()
                 ImportILTypeDef amap m scoref2 cpath enc n (lazyTypeDef.Force()))

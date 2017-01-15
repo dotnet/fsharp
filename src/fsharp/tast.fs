@@ -970,6 +970,17 @@ type Entity =
     /// Sets the structness of a record or union type definition
     member x.SetIsStructRecordOrUnion b  = let x = x.Data in let flags = x.entity_flags in x.entity_flags <- EntityFlags(flags.IsPrefixDisplay, flags.IsModuleOrNamespace, flags.PreEstablishedHasDefaultConstructor, flags.HasSelfReferentialConstructor, b)
 
+and [<RequireQualifiedAccess>] MaybeLazy<'T> =
+    | Strict of 'T
+    | Lazy of Lazy<'T>
+    member this.Value : 'T =
+        match this with
+        | Strict x -> x
+        | Lazy x -> x.Value
+    member this.Force() : 'T =
+        match this with
+        | Strict x -> x
+        | Lazy x -> x.Force()
 
 and 
     [<NoEquality; NoComparison;RequireQualifiedAccess>]
@@ -1033,7 +1044,7 @@ and
       //
       // MUTABILITY: only used during creation and remapping  of tycons and 
       // when compiling fslib to fixup compiler forward references to internal items 
-      mutable entity_modul_contents: Lazy<ModuleOrNamespaceType>     
+      mutable entity_modul_contents: MaybeLazy<ModuleOrNamespaceType>     
 
       /// The declared documentation for the type or module 
       entity_xmldoc : XmlDoc
@@ -1745,7 +1756,7 @@ and Construct =
             entity_tycon_repr_accessibility = TAccess([])
             entity_exn_info=TExnNone
             entity_tycon_tcaug=TyconAugmentation.Create()
-            entity_modul_contents = lazy new ModuleOrNamespaceType(Namespace, QueueList.ofList [], QueueList.ofList [])
+            entity_modul_contents = MaybeLazy.Lazy (lazy new ModuleOrNamespaceType(Namespace, QueueList.ofList [], QueueList.ofList []))
             // Generated types get internal accessibility
             entity_accessiblity= access
             entity_xmldoc =  XmlDoc [||] // fetched on demand via est.fs API
@@ -2596,7 +2607,7 @@ and NonLocalEntityRef    =
                                 Construct.NewModuleOrNamespace 
                                     (Some cpath) 
                                     (TAccess []) (ident(path.[k],m)) XmlDoc.Empty [] 
-                                    (notlazy (Construct.NewEmptyModuleOrNamespaceType Namespace)) 
+                                    (MaybeLazy.Strict (Construct.NewEmptyModuleOrNamespaceType Namespace)) 
                             entity.ModuleOrNamespaceType.AddModuleOrNamespaceByMutation(newEntity)
                             injectNamespacesFromIToJ newEntity (k+1)
                     let newEntity = injectNamespacesFromIToJ entity i
@@ -4606,7 +4617,7 @@ let NewExn cpath (id:Ident) access repr attribs doc =
         entity_pubpath=cpath |> Option.map (fun (cp:CompilationPath) -> cp.NestedPublicPath id)
         entity_accessiblity=access
         entity_tycon_repr_accessibility=access
-        entity_modul_contents = notlazy (NewEmptyModuleOrNamespaceType ModuleOrType)
+        entity_modul_contents = MaybeLazy.Strict (NewEmptyModuleOrNamespaceType ModuleOrType)
         entity_cpath= cpath
         entity_typars=LazyWithContext.NotLazy []
         entity_tycon_abbrev = None
@@ -4694,7 +4705,7 @@ let NewVal (logicalName:string,m:range,compiledName,ty,isMutable,isCompGen,arity
 
 
 let NewCcuContents sref m nm mty =
-    NewModuleOrNamespace (Some(CompPath(sref,[]))) taccessPublic (ident(nm,m)) XmlDoc.Empty [] (notlazy mty)
+    NewModuleOrNamespace (Some(CompPath(sref,[]))) taccessPublic (ident(nm,m)) XmlDoc.Empty [] (MaybeLazy.Strict mty)
       
 
 //--------------------------------------------------------------------------
@@ -4716,7 +4727,7 @@ let NewModifiedTycon f (orig:Tycon) =
 /// contents of the module. 
 let NewModifiedModuleOrNamespace f orig = 
     orig |> NewModifiedTycon (fun d -> 
-        { d with entity_modul_contents = notlazy (f (d.entity_modul_contents.Force())) }) 
+        { d with entity_modul_contents = MaybeLazy.Strict (f (d.entity_modul_contents.Force())) }) 
 
 /// Create a Val based on an existing one using the function 'f'. 
 /// We require that we be given the parent for the new Val. 
@@ -4771,7 +4782,7 @@ let CombineCcuContentFragments m l =
                         { data1 with 
                              entity_xmldoc = XmlDoc.Merge entity1.XmlDoc entity2.XmlDoc
                              entity_attribs = entity1.Attribs @ entity2.Attribs
-                             entity_modul_contents=lazy (CombineModuleOrNamespaceTypes (path@[entity2.DemangledModuleOrNamespaceName]) entity2.Range entity1.ModuleOrNamespaceType entity2.ModuleOrNamespaceType) }) 
+                             entity_modul_contents = MaybeLazy.Lazy (lazy (CombineModuleOrNamespaceTypes (path@[entity2.DemangledModuleOrNamespaceName]) entity2.Range entity1.ModuleOrNamespaceType entity2.ModuleOrNamespaceType)) }) 
         | false,false -> 
             error(Error(FSComp.SR.tastDuplicateTypeDefinitionInAssembly(entity2.LogicalName, textOfPath path),entity2.Range))
         | _,_ -> 
