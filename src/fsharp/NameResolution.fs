@@ -1016,7 +1016,7 @@ let LookupTypeNameInEnvNoArity fq nm (nenv: NameResolutionEnv) =
 
 /// Qualified lookup of type names in an entity
 let LookupTypeNameInEntityNoArity m nm (mtyp:ModuleOrNamespaceType) = 
-    LookupTypeNameNoArity nm (mtyp.TypesByDemangledNameAndArity(m)) mtyp.TypesByAccessNames 
+    LookupTypeNameNoArity nm (mtyp.TypesByDemangledNameAndArity m) mtyp.TypesByAccessNames 
 
 /// Qualified lookup of type names in an entity where we may know a generic argument count
 let LookupTypeNameInEnvMaybeHaveArity fq nm (typeNameResInfo: TypeNameResolutionInfo) nenv = 
@@ -1065,8 +1065,8 @@ let ResolveProvidedTypeNameInEntity (amap, m, typeName, modref: ModuleOrNamespac
     match modref.TypeReprInfo with
     | TProvidedNamespaceExtensionPoint(resolutionEnvironment,resolvers) ->
         match modref.Deref.PublicPath with
-        | Some(PubPath(path)) ->
-            let matches = resolvers |> List.map (fun r->ExtensionTyping.TryResolveProvidedType(r,m,path,typeName)) 
+        | Some(PubPath path) ->
+            let matches = resolvers |> List.map (fun r-> ExtensionTyping.TryResolveProvidedType(r,m,path,typeName)) 
             let tcrefs = 
                 [ for st in matches do 
                       match st with 
