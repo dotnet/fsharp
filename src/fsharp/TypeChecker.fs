@@ -1083,14 +1083,14 @@ let MakeMemberDataAndMangledNameForMemberVal(g,tcref,isExtrinsic,attrs,optImplSl
     if not isCompGen && IsMangledOpName id.idText && IsInfixOperator id.idText then 
         let m = id.idRange
         let name = DecompileOpName id.idText
-        let opTakesThreeArgs = PrettyNaming.IsTernaryOperator(name)
         // Check symbolic members. Expect valSynData implied arity to be [[2]].
         match SynInfo.AritiesOfArgs valSynData with
         | [] | [0] -> warning(Error(FSComp.SR.memberOperatorDefinitionWithNoArguments(name),m))
         | n :: otherArgs ->
-                if n<>2 && not opTakesThreeArgs then warning(Error(FSComp.SR.memberOperatorDefinitionWithNonPairArgument(name,n),m))
-                if n<>3 && opTakesThreeArgs then warning(Error(FSComp.SR.memberOperatorDefinitionWithNonTripleArgument(name,n),m))
-                if not (isNil otherArgs) then warning(Error(FSComp.SR.memberOperatorDefinitionWithCurriedArguments(name),m))
+            let opTakesThreeArgs = PrettyNaming.IsTernaryOperator name
+            if n<>2 && not opTakesThreeArgs then warning(Error(FSComp.SR.memberOperatorDefinitionWithNonPairArgument(name,n),m))
+            if n<>3 && opTakesThreeArgs then warning(Error(FSComp.SR.memberOperatorDefinitionWithNonTripleArgument(name,n),m))
+            if not (isNil otherArgs) then warning(Error(FSComp.SR.memberOperatorDefinitionWithCurriedArguments(name),m))
 
     if IsMangledOpName id.idText && isExtrinsic then 
         warning(Error(FSComp.SR.tcMemberOperatorDefinitionInExtrinsic(),id.idRange))
