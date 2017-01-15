@@ -773,7 +773,8 @@ and AddModuleOrNamespaceContentsToNameEnv (g:TcGlobals) amap (ad:AccessorDomain)
         |> List.choose (fun x -> if IsAccessible ad x.Accessibility then TryMkValRefInModRef modref x else None)
         |> List.toArray
     let nenv = AddValRefsToNameEnvWithPriority BulkAdd.Yes pri nenv vrefs
-    let nenv = (nenv,MakeNestedModuleRefs modref) ||> AddModuleOrNamespaceRefsToNameEnv g amap m root ad 
+    let nestedModules = MakeNestedModuleRefs modref
+    let nenv = (nenv,nestedModules) ||> AddModuleOrNamespaceRefsToNameEnv g amap m root ad 
     nenv
 
 /// Add a set of modules or namespaces to the name resolution environment
@@ -803,14 +804,14 @@ let AddDeclaredTyparsToNameEnv check nenv typars =
     let typarmap = 
       List.foldBack 
         (fun (tp:Typar) sofar -> 
-          begin match check with 
+          match check with
           | CheckForDuplicateTypars -> 
-              if Map.containsKey tp.Name sofar then errorR (Duplicate("type parameter",tp.DisplayName,tp.Range))
-          | NoCheckForDuplicateTypars -> 
-              ()
-          end
+              if Map.containsKey tp.Name sofar then 
+                errorR (Duplicate("type parameter",tp.DisplayName,tp.Range))
+          | NoCheckForDuplicateTypars -> ()
+
           Map.add tp.Name tp sofar) typars Map.empty 
-    {nenv with eTypars=NameMap.layer typarmap nenv.eTypars }
+    {nenv with eTypars = NameMap.layer typarmap nenv.eTypars }
 
 
 //-------------------------------------------------------------------------
@@ -1011,7 +1012,7 @@ let LookupTypeNameNoArity nm (byDemangledNameAndArity: LayeredMap<NameArityPair,
 
 /// Qualified lookup of type names in the environment
 let LookupTypeNameInEnvNoArity fq nm (nenv: NameResolutionEnv) = 
-    LookupTypeNameNoArity nm (nenv.TyconsByDemangledNameAndArity(fq)) (nenv.TyconsByAccessNames(fq))
+    LookupTypeNameNoArity nm (nenv.TyconsByDemangledNameAndArity fq) (nenv.TyconsByAccessNames fq)
 
 /// Qualified lookup of type names in an entity
 let LookupTypeNameInEntityNoArity m nm (mtyp:ModuleOrNamespaceType) = 
