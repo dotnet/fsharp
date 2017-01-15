@@ -1133,8 +1133,8 @@ let MakeNestedType (ncenv:NameResolver) (tinst:TType list) m (tcrefNested:TyconR
 let GetNestedTypesOfType (ad, ncenv:NameResolver, optFilter, staticResInfo, checkForGenerated, m) typ =
     let g = ncenv.g
     ncenv.InfoReader.GetPrimaryTypeHierachy(AllowMultiIntfInstantiations.Yes,m,typ) |> List.collect (fun typ -> 
-        if isAppTy g typ then 
-            let tcref,tinst = destAppTy g typ
+        match typ with 
+        | AppTy g (tcref,tinst) ->
             let tycon = tcref.Deref
             let mty = tycon.ModuleOrNamespaceType
             // No dotting through type generators to get to a nested type!
@@ -1163,7 +1163,7 @@ let GetNestedTypesOfType (ad, ncenv:NameResolver, optFilter, staticResInfo, chec
                     mty.TypesByAccessNames.Values
                         |> List.map (tcref.NestedTyconRef >> MakeNestedType ncenv tinst m)
                         |> List.filter (IsTypeAccessible g ncenv.amap m ad)
-        else [])
+        | _ -> [])
 
 //-------------------------------------------------------------------------
 // Report environments to visual studio. We stuff intermediary results 
