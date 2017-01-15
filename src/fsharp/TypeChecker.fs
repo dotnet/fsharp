@@ -1380,7 +1380,8 @@ let ComputeAccessAndCompPath env declKindOpt m vis overrideVis actualParent =
         | Some declKind -> DeclKind.IsAccessModifierPermitted declKind
 
     if Option.isSome vis && not accessModPermitted then 
-        errorR(Error(FSComp.SR.tcMultipleVisibilityAttributesWithLet(),m)) 
+        errorR(Error(FSComp.SR.tcMultipleVisibilityAttributesWithLet(),m))
+
     let vis = 
         match overrideVis, vis with 
         | Some v,_ -> v
@@ -1392,10 +1393,9 @@ let ComputeAccessAndCompPath env declKindOpt m vis overrideVis actualParent =
     let vis = 
         match actualParent with 
         | ParentNone -> vis 
-        | Parent tcref -> 
-             combineAccess vis tcref.Accessibility
-    let cpath = env.eCompPath
-    let cpath = (if accessModPermitted then Some cpath else None)
+        | Parent tcref -> combineAccess vis tcref.Accessibility
+        
+    let cpath = if accessModPermitted then Some env.eCompPath else None
     vis,cpath 
 
 let CheckForAbnormalOperatorNames cenv (idRange:range) opName isMember =    
