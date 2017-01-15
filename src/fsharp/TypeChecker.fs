@@ -984,7 +984,7 @@ let TcFieldInit (_m:range) lit =
 // Adjust the arities that came from the parsing of the toptyp (arities) to be a valSynData. 
 // This means replacing the "[unitArg]" arising from a "unit -> ty" with a "[]".
 let AdjustValSynInfoInSignature g ty (SynValInfo(argsData,retData) as sigMD) = 
-    if isFunTy g ty && typeEquiv g g.unit_ty (domainOfFunTy g ty) && argsData.Length = 1 && argsData.Head.Length = 1  then 
+    if argsData.Length = 1 && argsData.Head.Length = 1 && isFunTy g ty && typeEquiv g g.unit_ty (domainOfFunTy g ty) then 
         SynValInfo(argsData.Head.Tail :: argsData.Tail, retData)
     else 
         sigMD 
