@@ -493,16 +493,17 @@ let AddValRefToExtensionMembers pri (eIndexedExtensionMembers: TyconRefMultiMap<
 
 /// This entrypoint is used to add some extra items to the environment for Visual Studio, e.g. static members 
 let AddFakeNamedValRefToNameEnv nm nenv vref =
-    {nenv with eUnqualifiedItems= nenv.eUnqualifiedItems.Add (nm, Item.Value vref) }
+    {nenv with eUnqualifiedItems = nenv.eUnqualifiedItems.Add (nm, Item.Value vref) }
 
 /// This entrypoint is used to add some extra items to the environment for Visual Studio, e.g. record members
 let AddFakeNameToNameEnv nm nenv item =
-    {nenv with eUnqualifiedItems= nenv.eUnqualifiedItems.Add (nm, item) }
+    {nenv with eUnqualifiedItems = nenv.eUnqualifiedItems.Add (nm, item) }
 
 /// Add an F# value to the table of available active patterns
 let AddValRefsToActivePatternsNameEnv ePatItems (vref:ValRef) =
     let ePatItems = 
-        (ActivePatternElemsOfValRef vref, ePatItems) ||> List.foldBack (fun apref tab -> 
+        (ActivePatternElemsOfValRef vref, ePatItems) 
+        ||> List.foldBack (fun apref tab -> 
             NameMap.add apref.Name (Item.ActivePatternCase apref) tab)
 
     // Add literal constants to the environment available for resolving items in patterns 
