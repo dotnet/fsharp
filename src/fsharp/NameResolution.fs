@@ -3280,10 +3280,10 @@ let PartialResolveLongIndentAsModuleOrNamespaceThen (nenv:NameResolutionEnv) pli
             []
     | [] -> []
 
-/// returns fields for the given class or record
+/// Returns fields for the given class or record
 let ResolveRecordOrClassFieldsOfType (ncenv: NameResolver) m ad typ statics = 
     ncenv.InfoReader.GetRecordOrClassFieldsOfType(None,ad,m,typ)
-    |> List.filter (fun rfref -> rfref.IsStatic = statics  &&  IsFieldInfoAccessible ad rfref)
+    |> List.filter (fun rfref -> rfref.IsStatic = statics && IsFieldInfoAccessible ad rfref)
     |> List.map Item.RecdField
 
 [<RequireQualifiedAccess>]
@@ -3302,10 +3302,10 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
     
     let rfinfos = 
         ncenv.InfoReader.GetRecordOrClassFieldsOfType(None,ad,m,typ)
-        |> List.filter (fun rfref -> rfref.IsStatic = statics  &&  IsFieldInfoAccessible ad rfref)
+        |> List.filter (fun rfref -> rfref.IsStatic = statics && IsFieldInfoAccessible ad rfref)
 
     let ucinfos = 
-        if completionTargets.ResolveAll && statics  && isAppTy g typ then 
+        if completionTargets.ResolveAll && statics && isAppTy g typ then 
             let tc,tinst = destAppTy g typ
             tc.UnionCasesAsRefList 
             |> List.filter (IsUnionCaseUnseen ad g ncenv.amap m >> not)
