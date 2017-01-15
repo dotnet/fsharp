@@ -1344,12 +1344,11 @@ let PublishValueDefn cenv env declKind (vspec:Val) =
            errorR(Error(FSComp.SR.tcNamespaceCannotContainExtensionMembers(),vspec.Range))
 
     // Publish the value to the module type being generated. 
-    if (match declKind with 
-        | ModuleOrMemberBinding -> true
-        | ExtrinsicExtensionBinding -> true
-        | IntrinsicExtensionBinding -> true
-        | _ -> false) then 
-        PublishValueDefnPrim cenv env vspec
+    match declKind with 
+    | ModuleOrMemberBinding
+    | ExtrinsicExtensionBinding
+    | IntrinsicExtensionBinding -> PublishValueDefnPrim cenv env vspec
+    | _ -> ()
 
     match vspec.MemberInfo with 
     | Some _memberInfo when 
