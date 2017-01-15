@@ -692,7 +692,7 @@ let AddExceptionDeclsToNameEnv bulkAddMode nenv (ecref:TyconRef) =
     assert ecref.IsExceptionDecl
     let item = Item.ExnCase ecref
     {nenv with 
-       eUnqualifiedItems=
+       eUnqualifiedItems =
             match bulkAddMode with 
             | BulkAdd.Yes -> 
                 nenv.eUnqualifiedItems.AddAndMarkAsCollapsible [| KeyValuePair(ecref.LogicalName, item) |]
@@ -702,9 +702,9 @@ let AddExceptionDeclsToNameEnv bulkAddMode nenv (ecref:TyconRef) =
        ePatItems = nenv.ePatItems.Add (ecref.LogicalName, item) }
 
 /// Add a module abbreviation to the name resolution environment 
-let AddModuleAbbrevToNameEnv (id:Ident) nenv modrefs = 
+let AddModuleAbbrevToNameEnv (id:Ident) nenv modrefs =
     {nenv with
-       eModulesAndNamespaces=
+       eModulesAndNamespaces =
          let add old nw = nw @ old
          NameMap.layerAdditive add (Map.add id.idText modrefs Map.empty) nenv.eModulesAndNamespaces }
 
@@ -721,6 +721,7 @@ let MakeNestedModuleRefs (modref: ModuleOrNamespaceRef) =
 //
 // Recursive because of "AutoOpen", i.e. adding a module reference may automatically open further modules
 let rec AddModuleOrNamespaceRefsToNameEnv g amap m root ad nenv (modrefs: ModuleOrNamespaceRef list) =
+    if isNil modrefs then nenv else
     let modrefsMap = modrefs |> NameMap.ofKeyedList (fun modref -> modref.DemangledModuleOrNamespaceName)
     let addModrefs tab = 
          let add old nw = 
@@ -731,11 +732,12 @@ let rec AddModuleOrNamespaceRefsToNameEnv g amap m root ad nenv (modrefs: Module
          NameMap.layerAdditive add modrefsMap tab
     let nenv = 
         {nenv with
-           eModulesAndNamespaces= addModrefs  nenv.eModulesAndNamespaces
+           eModulesAndNamespaces = addModrefs nenv.eModulesAndNamespaces
            eFullyQualifiedModulesAndNamespaces =
-             (if root  
-              then addModrefs  nenv.eFullyQualifiedModulesAndNamespaces
-              else nenv.eFullyQualifiedModulesAndNamespaces) } 
+              if root then 
+                  addModrefs nenv.eFullyQualifiedModulesAndNamespaces
+              else 
+                  nenv.eFullyQualifiedModulesAndNamespaces } 
     let nenv = 
         (nenv,modrefs) ||> List.fold (fun nenv modref ->  
             if modref.IsModule && TryFindFSharpBoolAttribute g g.attrib_AutoOpenAttribute modref.Attribs = Some true then
