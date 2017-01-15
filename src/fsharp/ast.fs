@@ -135,9 +135,9 @@ type ParserDetail =
 
 // PERFORMANCE: consider making this a struct.
 [<System.Diagnostics.DebuggerDisplay("{idText}")>]
-[<Sealed>]
+[<Struct>]
 [<NoEquality; NoComparison>]
-type Ident (text,range) =
+type Ident (text: string, range: range) =
      member x.idText = text
      member x.idRange = range
      override x.ToString() = text
