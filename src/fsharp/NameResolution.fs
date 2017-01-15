@@ -666,19 +666,25 @@ let TryFindPatternByName name {ePatItems = patternMap} =
     NameMap.tryFind name patternMap
 
 /// Add a set of type definitions to the name resolution environment 
-let AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap m  root nenv tcrefs =
+let AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap m root nenv tcrefs =
     if isNil tcrefs then nenv else
     let env = List.fold (AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition g amap m) nenv tcrefs
     // Add most of the contents of the tycons en-masse, then flatten the tables if we're opening a module or namespace
     let tcrefs = Array.ofList tcrefs
     { env with
-        eFullyQualifiedTyconsByDemangledNameAndArity= 
-            (if root  then AddTyconsByDemangledNameAndArity bulkAddMode tcrefs nenv.eFullyQualifiedTyconsByDemangledNameAndArity else nenv.eFullyQualifiedTyconsByDemangledNameAndArity) 
-        eFullyQualifiedTyconsByAccessNames= 
-            (if root then AddTyconByAccessNames bulkAddMode tcrefs nenv.eFullyQualifiedTyconsByAccessNames else nenv.eFullyQualifiedTyconsByAccessNames)
-        eTyconsByDemangledNameAndArity= 
+        eFullyQualifiedTyconsByDemangledNameAndArity = 
+            if root then 
+                AddTyconsByDemangledNameAndArity bulkAddMode tcrefs nenv.eFullyQualifiedTyconsByDemangledNameAndArity
+            else 
+                nenv.eFullyQualifiedTyconsByDemangledNameAndArity
+        eFullyQualifiedTyconsByAccessNames = 
+            if root then 
+                AddTyconByAccessNames bulkAddMode tcrefs nenv.eFullyQualifiedTyconsByAccessNames
+            else
+                nenv.eFullyQualifiedTyconsByAccessNames
+        eTyconsByDemangledNameAndArity = 
             AddTyconsByDemangledNameAndArity bulkAddMode tcrefs nenv.eTyconsByDemangledNameAndArity 
-        eTyconsByAccessNames= 
+        eTyconsByAccessNames = 
             AddTyconByAccessNames bulkAddMode tcrefs nenv.eTyconsByAccessNames } 
 
 /// Add an F# exception definition to the name resolution environment 
