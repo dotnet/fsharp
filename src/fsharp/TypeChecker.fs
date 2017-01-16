@@ -5977,7 +5977,7 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
     | SynExpr.TraitCall(tps,memSpfn,arg,m) ->
         let synTypes =  tps |> List.map (fun tp -> SynType.Var(tp,m))
         let (TTrait(_,logicalCompiledName,_,argtys,returnTy,_) as traitInfo),tpenv = TcPseudoMemberSpec cenv NewTyparsOK env synTypes tpenv memSpfn m
-        if List.contains logicalCompiledName BakedInTraitConstraintNames then 
+        if BakedInTraitConstraintNames.Contains logicalCompiledName then 
             warning(BakedInMemberConstraintName(logicalCompiledName,m))
         
         let returnTy = GetFSharpViewOfReturnType cenv.g returnTy

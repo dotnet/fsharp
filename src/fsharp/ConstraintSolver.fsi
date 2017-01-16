@@ -94,7 +94,7 @@ type ConstraintSolverState =
 
 type ConstraintSolverEnv 
 
-val BakedInTraitConstraintNames : string list
+val BakedInTraitConstraintNames : Set<string>
 
 val MakeConstraintSolverEnv : ContextInfo -> ConstraintSolverState -> range -> DisplayEnv -> ConstraintSolverEnv
 

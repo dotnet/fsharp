@@ -298,7 +298,8 @@ let BakedInTraitConstraintNames =
       "op_OnesComplement"; "Abs"; "Sqrt"; "Sin"; "Cos"; "Tan";
       "Sinh";  "Cosh"; "Tanh"; "Atan"; "Acos"; "Asin"; "Exp"; "Ceiling"; "Floor"; "Round"; "Log10"; "Log"; "Sqrt";
       "Truncate"; "op_Explicit";
-      "Pow"; "Atan2" ]
+      "Pow"; "Atan2" ] 
+    |> Set.ofList
     
 //-------------------------------------------------------------------------
 // Run the constraint solver with undo (used during method overload resolution)
