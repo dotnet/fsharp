@@ -1437,10 +1437,10 @@ let MakeAndPublishVal cenv env (altActualParent,inSig,declKind,vrec,(ValScheme(i
         | IntrinsicExtensionBinding -> true
         | _ -> false
 
-    let isExtrinsic = (declKind=ExtrinsicExtensionBinding)
+    let isExtrinsic = (declKind = ExtrinsicExtensionBinding)
     let actualParent, overrideVis = 
         // Use the parent of the member if it's available 
-        // If it's an extrinsic extension member or not a member then use the containing module. 
+        // If it's an extrinsic extension member or not a member then use the containing module.
         match memberInfoOpt with 
         | Some (ValMemberInfoTransient(memberInfo,_,_)) when not isExtrinsic -> 
             if memberInfo.ApparentParent.IsModuleOrNamespace then 
@@ -1479,7 +1479,7 @@ let MakeAndPublishVal cenv env (altActualParent,inSig,declKind,vrec,(ValScheme(i
                 inlineFlag
 
     // CompiledName not allowed on virtual/abstract/override members        
-    let compiledNameAttrib  = TryFindFSharpStringAttribute cenv.g cenv.g.attrib_CompiledNameAttribute attrs
+    let compiledNameAttrib = TryFindFSharpStringAttribute cenv.g cenv.g.attrib_CompiledNameAttribute attrs
     if Option.isSome compiledNameAttrib then
         match memberInfoOpt with 
         | Some (ValMemberInfoTransient(memberInfo,_,_)) -> 
@@ -1534,16 +1534,15 @@ let MakeAndPublishVal cenv env (altActualParent,inSig,declKind,vrec,(ValScheme(i
 
     PublishValueDefn cenv env declKind vspec
 
-    begin 
-        match cenv.tcSink.CurrentSink with 
-        | None -> ()
-        | Some _ -> 
-            if not vspec.IsCompilerGenerated && not (String.hasPrefix vspec.LogicalName "_") then 
-                let nenv = AddFakeNamedValRefToNameEnv vspec.DisplayName env.NameEnv (mkLocalValRef vspec) 
-                CallEnvSink cenv.tcSink (vspec.Range,nenv,env.eAccessRights)
-                let item = Item.Value(mkLocalValRef vspec)
-                CallNameResolutionSink cenv.tcSink (vspec.Range,nenv,item,item,ItemOccurence.Binding,env.DisplayEnv,env.eAccessRights)
-    end
+    
+    match cenv.tcSink.CurrentSink with 
+    | None -> ()
+    | Some _ -> 
+        if not vspec.IsCompilerGenerated && not (String.hasPrefix vspec.LogicalName "_") then 
+            let nenv = AddFakeNamedValRefToNameEnv vspec.DisplayName env.NameEnv (mkLocalValRef vspec) 
+            CallEnvSink cenv.tcSink (vspec.Range,nenv,env.eAccessRights)
+            let item = Item.Value(mkLocalValRef vspec)
+            CallNameResolutionSink cenv.tcSink (vspec.Range,nenv,item,item,ItemOccurence.Binding,env.DisplayEnv,env.eAccessRights)
 
     vspec
 
