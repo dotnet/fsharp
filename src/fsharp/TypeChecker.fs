@@ -3179,12 +3179,15 @@ let (|JoinRelation|_|) cenv env (e:SynExpr) =
 
 
 /// Detect a named argument at a callsite
-let TryGetNamedArg e = 
+let inline TryGetNamedArg e = 
     match e with 
-    | SimpleEqualsExpr(LongOrSingleIdent(isOpt,LongIdentWithDots([a],_),None,_),b)  -> Some(isOpt,a,b)
+    | SimpleEqualsExpr(LongOrSingleIdent(isOpt,LongIdentWithDots([a],_),None,_),b) -> Some(isOpt,a,b)
     | _ -> None 
 
-let inline IsNamedArg e = Option.isSome (TryGetNamedArg e)
+let inline IsNamedArg e = 
+    match e with 
+    | SimpleEqualsExpr(LongOrSingleIdent(_,LongIdentWithDots([_],_),None,_),_) -> true
+    | _ -> false
 
 /// Get the method arguments at a callsite, taking into account named and optional arguments
 let GetMethodArgs arg =
