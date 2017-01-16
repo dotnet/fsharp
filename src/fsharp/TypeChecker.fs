@@ -3379,12 +3379,12 @@ let AnalyzeArbitraryExprAsEnumerable cenv (env: TcEnv) localAlloc m exprty expr 
     let exprTyAsSeq = mkSeqTy cenv.g enumElemTy
     
     match probe exprTyAsSeq with
-    |   Some res -> res
-    |   None ->
+    | Some res -> res
+    | None ->
     let ienumerable = mkAppTy cenv.g.tcref_System_Collections_IEnumerable []
     match probe ienumerable with
-    |   Some res -> res
-    |   None ->
+    | Some res -> res
+    | None ->
     raise e
 
 
@@ -3392,7 +3392,7 @@ let AnalyzeArbitraryExprAsEnumerable cenv (env: TcEnv) localAlloc m exprty expr 
 let ConvertArbitraryExprToEnumerable cenv ty (env: TcEnv) (expr:Expr) =
     let m = expr.Range
     let enumElemTy = NewInferenceType ()
-    if (AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m ( mkSeqTy cenv.g enumElemTy) ty) then 
+    if AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m ( mkSeqTy cenv.g enumElemTy) ty then 
         expr,enumElemTy
     else          
         let enumerableVar,enumerableExpr = mkCompGenLocal m "inputSequence" ty
@@ -3462,7 +3462,7 @@ let compileSeqExprMatchClauses cenv env inputExprMark (pat':Pattern, vspecs) inn
 let elimFastIntegerForLoop (spBind,id,start,dir,finish,innerExpr,m) = 
     let pseudoEnumExpr = 
         if dir then mkSynInfix m start ".." finish
-        else  mkSynTrifix m ".. .." start (SynExpr.Const(SynConst.Int32 -1, start.Range)) finish
+        else mkSynTrifix m ".. .." start (SynExpr.Const(SynConst.Int32 -1, start.Range)) finish
     SynExpr.ForEach (spBind,SeqExprOnly false,true,mkSynPatVar None id,pseudoEnumExpr,innerExpr,m)
 
 let (|ExprAsPat|_|) (f:SynExpr) =    
