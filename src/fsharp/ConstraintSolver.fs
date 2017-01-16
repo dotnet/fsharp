@@ -413,13 +413,13 @@ let FindPreferredTypar vs =
         match vs with
         | [] -> vs
         | (v:Typar,e)::vs ->
-           match find vs with
+            match find vs with
             | [] -> [(v,e)]
             | (v',e')::vs' -> 
                 if PreferUnifyTypar v v'
                 then (v, e) :: vs
                 else (v',e') :: (v,e) :: vs' 
-    find    vs
+    find vs
   
 let SubstMeasure (r:Typar) ms = 
     if r.Rigidity = TyparRigidity.Rigid then error(InternalError("SubstMeasure: rigid",r.Range)); 
@@ -432,7 +432,7 @@ let SubstMeasure (r:Typar) ms =
 
 let rec TransactStaticReq (csenv:ConstraintSolverEnv) (trace:OptionalTrace) (tpr:Typar) req = 
     let m = csenv.m
-    if (tpr.Rigidity.ErrorIfUnified && tpr.StaticReq <> req) then 
+    if tpr.Rigidity.ErrorIfUnified && tpr.StaticReq <> req then 
         ErrorD(ConstraintSolverError(FSComp.SR.csTypeCannotBeResolvedAtCompileTime(tpr.Name),m,m)) 
     else
         let orig = tpr.StaticReq
@@ -455,7 +455,7 @@ and SolveTypStaticReq (csenv:ConstraintSolverEnv) trace req ty =
           IterateD (fun ((tpr:Typar),_) -> SolveTypStaticReqTypar csenv trace req tpr) vs
 
         | _ -> 
-          if (isAnyParTy csenv.g ty) then 
+          if isAnyParTy csenv.g ty then 
             let tpr = destAnyParTy csenv.g ty
             SolveTypStaticReqTypar csenv trace req tpr
           else CompleteD
@@ -469,7 +469,7 @@ and SolveTypDynamicReq (csenv:ConstraintSolverEnv) trace req ty =
     match req with 
     | TyparDynamicReq.No -> CompleteD
     | TyparDynamicReq.Yes -> 
-        if (isAnyParTy csenv.g ty) then 
+        if isAnyParTy csenv.g ty then 
             let tpr = destAnyParTy csenv.g ty
             if tpr.DynamicReq <> TyparDynamicReq.Yes then TransactDynamicReq trace tpr TyparDynamicReq.Yes else CompleteD
         else CompleteD
