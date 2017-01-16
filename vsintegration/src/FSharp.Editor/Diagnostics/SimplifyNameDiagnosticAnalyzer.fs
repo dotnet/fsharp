@@ -44,8 +44,9 @@ type internal SimplifyNameDiagnosticAnalyzer() =
     static member LongIdentPropertyKey = "FullName"
     
     override __.SupportedDiagnostics = ImmutableArray.Create Descriptor
+    override this.AnalyzeSyntaxAsync(_, _) = Task.FromResult ImmutableArray<Diagnostic>.Empty
 
-    override this.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken) =
+    override this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken) =
         asyncMaybe {
             match getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document) with 
             | Some options ->
@@ -123,8 +124,6 @@ type internal SimplifyNameDiagnosticAnalyzer() =
         } 
         |> Async.map (Option.defaultValue ImmutableArray.Empty)
         |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
-
-    override this.AnalyzeSemanticsAsync(_, _) = Task.FromResult ImmutableArray<Diagnostic>.Empty
 
     interface IBuiltInAnalyzer with
         member __.OpenFileOnly _ = true
