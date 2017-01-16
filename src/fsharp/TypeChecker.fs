@@ -2037,28 +2037,28 @@ let rec ApplyUnionCaseOrExn (makerForUnionCase,makerForExnTag) m cenv env overal
         CheckEntityAttributes cenv.g ecref m  |> CommitOperationResult
         UnifyTypes cenv env m overallTy cenv.g.exn_ty
         CheckTyconAccessible cenv.amap m ad ecref |> ignore
-        let mkf = makerForExnTag(ecref)
+        let mkf = makerForExnTag ecref
         mkf,recdFieldTysOfExnDefRef ecref, [ for f in (recdFieldsOfExnDefRef ecref) -> f.Id ]
 
-    | Item.UnionCase(ucinfo,showDeprecated) ->   
+    | Item.UnionCase(ucinfo,showDeprecated) ->
         if showDeprecated then
             warning(Deprecated(FSComp.SR.nrUnionTypeNeedsQualifiedAccess(ucinfo.Name,ucinfo.Tycon.DisplayName) |> snd,m))
  
         let ucref = ucinfo.UnionCaseRef 
-        CheckUnionCaseAttributes cenv.g ucref m  |> CommitOperationResult
+        CheckUnionCaseAttributes cenv.g ucref m |> CommitOperationResult
         CheckUnionCaseAccessible cenv.amap m ad ucref |> ignore
         let gtyp2 = actualResultTyOfUnionCase ucinfo.TypeInst ucref 
         let inst = mkTyparInst ucref.TyconRef.TyparsNoRange ucinfo.TypeInst
         UnifyTypes cenv env m overallTy gtyp2
         let mkf = makerForUnionCase(ucref,ucinfo.TypeInst)
-        mkf,actualTysOfUnionCaseFields inst ucref, ([ for f in ucref.AllFieldsAsList -> f.Id ])
+        mkf,actualTysOfUnionCaseFields inst ucref, [ for f in ucref.AllFieldsAsList -> f.Id ]
     | _ -> invalidArg "item" "not a union case or exception reference"
 
 let ApplyUnionCaseOrExnTypes m cenv env overallTy c = 
   ApplyUnionCaseOrExn ((fun (a,b) mArgs args -> mkUnionCaseExpr(a,b,args,unionRanges m mArgs)),
                        (fun a mArgs args -> mkExnExpr (a,args,unionRanges m mArgs))) m cenv env overallTy c
       
-let ApplyUnionCaseOrExnTypesForPat  m cenv env overallTy c = 
+let ApplyUnionCaseOrExnTypesForPat m cenv env overallTy c = 
   ApplyUnionCaseOrExn ((fun (a,b) mArgs args -> TPat_unioncase(a,b,args,unionRanges m mArgs)),
                        (fun a mArgs args -> TPat_exnconstr(a,args,unionRanges m mArgs))) m cenv env overallTy c
 
@@ -2153,11 +2153,11 @@ module GeneralizationHelpers =
 
         | Expr.Op(op,_,args,_) ->
             match op with 
-            | TOp.Tuple _  -> true
+            | TOp.Tuple _ -> true
             | TOp.UnionCase uc -> not (isUnionCaseRefAllocObservable uc)
             | TOp.Recd(ctorInfo,tcref) -> 
                 match ctorInfo with 
-                | RecdExpr ->  not (isRecdOrUnionOrStructTyconRefAllocObservable g tcref)
+                | RecdExpr -> not (isRecdOrUnionOrStructTyconRefAllocObservable g tcref)
                 | RecdExprIsObjInit -> false
             | TOp.Array -> isNil args
             | TOp.ExnConstr ec -> not (isExnAllocObservable ec)
@@ -2174,11 +2174,9 @@ module GeneralizationHelpers =
             IsGeneralizableValue g bind.Expr &&
             IsGeneralizableValue g body
 
-
         // Applications of type functions are _not_ normally generalizable unless explicitly marked so 
         | Expr.App(Expr.Val (vref,_,_),_,_,[],_) when vref.IsTypeFunction -> 
             HasFSharpAttribute g g.attrib_GeneralizableValueAttribute vref.Attribs
-             
         
         | Expr.App(e1,_,_,[],_) -> IsGeneralizableValue g e1
         | Expr.TyChoose(_,b,_) -> IsGeneralizableValue g b
@@ -2208,9 +2206,10 @@ module GeneralizationHelpers =
             List.partition (fun x -> not (Zset.contains x freeInEnv)) generalizedTypars
 
         // Some situations, e.g. implicit class constructions that represent functions as fields, 
-        // do not allow generalisation over constrained typars. (since they can not be represented as fields 
+        // do not allow generalisation over constrained typars. (since they can not be represented as fields)
         let generalizedTypars,ungeneralizableTypars3 = 
-            generalizedTypars |> List.partition (fun tp -> 
+            generalizedTypars 
+            |> List.partition (fun tp -> 
                 genConstrainedTyparFlag = CanGeneralizeConstrainedTypars || 
                 tp.Constraints.IsEmpty) 
 
@@ -2304,15 +2303,16 @@ module GeneralizationHelpers =
         let allDeclaredTypars = NormalizeDeclaredTyparsForEquiRecursiveInference cenv.g allDeclaredTypars
         let typarsToAttemptToGeneralize = 
             if (match exprOpt with None -> true | Some e -> IsGeneralizableValue cenv.g e) 
-            then (ListSet.unionFavourLeft typarEq  allDeclaredTypars maxInferredTypars)
+            then (ListSet.unionFavourLeft typarEq allDeclaredTypars maxInferredTypars)
             else allDeclaredTypars
 
         let generalizedTypars,freeInEnv = 
             TrimUngeneralizableTypars genConstrainedTyparFlag inlineFlag typarsToAttemptToGeneralize freeInEnv
 
-        allDeclaredTypars |> List.iter (fun tp -> 
-              if Zset.memberOf freeInEnv tp then
-                let ty =  mkTyparTy tp
+        allDeclaredTypars 
+        |> List.iter (fun tp -> 
+            if Zset.memberOf freeInEnv tp then
+                let ty = mkTyparTy tp
                 error(Error(FSComp.SR.tcNotSufficientlyGenericBecauseOfScope(NicePrint.prettyStringOfTy denv ty),m)))
             
         let generalizedTypars = CondenseTypars(cenv, denv, generalizedTypars, tauTy, m)    
