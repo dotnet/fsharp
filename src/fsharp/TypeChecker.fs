@@ -3179,7 +3179,7 @@ let (|JoinRelation|_|) cenv env (e:SynExpr) =
 
 
 /// Detect a named argument at a callsite
-let inline TryGetNamedArg e = 
+let TryGetNamedArg e = 
     match e with 
     | SimpleEqualsExpr(LongOrSingleIdent(isOpt,LongIdentWithDots([a],_),None,_),b) -> Some(isOpt,a,b)
     | _ -> None 
