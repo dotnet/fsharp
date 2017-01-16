@@ -4191,16 +4191,16 @@ let rec TcTyparConstraint ridx cenv newOk checkCxs occ (env: TcEnv) tpenv c =
     | WhereTyparDefaultsToType(tp,ty,m) ->
         let ty',tpenv = TcTypeAndRecover cenv newOk checkCxs occ env tpenv ty
         let tp',tpenv = TcTypar cenv env newOk tpenv tp
-        let csenv = (MakeConstraintSolverEnv env.eContextInfo cenv.css m env.DisplayEnv)
+        let csenv = MakeConstraintSolverEnv env.eContextInfo cenv.css m env.DisplayEnv
         AddConstraint csenv 0 m NoTrace tp' (TyparConstraint.DefaultsTo(ridx,ty',m)) |> CommitOperationResult
         tpenv
 
     | WhereTyparSubtypeOfType(tp,ty,m) ->
         let ty',tpenv = TcTypeAndRecover cenv newOk checkCxs ItemOccurence.UseInType env tpenv ty
         let tp',tpenv = TcTypar cenv env newOk tpenv tp
-        if (newOk = NoNewTypars) && isSealedTy cenv.g ty' then 
+        if newOk = NoNewTypars && isSealedTy cenv.g ty' then 
             errorR(Error(FSComp.SR.tcInvalidConstraintTypeSealed(),m))
-        AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace  ty' (mkTyparTy tp') 
+        AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace ty' (mkTyparTy tp') 
         tpenv
 
     | WhereTyparSupportsNull(tp,m) -> checkSimpleConstraint tp m AddCxTypeMustSupportNull
@@ -4209,7 +4209,7 @@ let rec TcTyparConstraint ridx cenv newOk checkCxs occ (env: TcEnv) tpenv c =
 
     | WhereTyparIsEquatable(tp,m) -> checkSimpleConstraint tp m AddCxTypeMustSupportEquality 
 
-    | WhereTyparIsReferenceType(tp,m) ->checkSimpleConstraint tp m AddCxTypeIsReferenceType
+    | WhereTyparIsReferenceType(tp,m) -> checkSimpleConstraint tp m AddCxTypeIsReferenceType
 
     | WhereTyparIsValueType(tp,m) -> checkSimpleConstraint tp m AddCxTypeIsValueType
        
@@ -4243,7 +4243,7 @@ let rec TcTyparConstraint ridx cenv newOk checkCxs occ (env: TcEnv) tpenv c =
     | WhereTyparSupportsMember(tps,memSpfn,m) ->
         let traitInfo,tpenv = TcPseudoMemberSpec cenv newOk env tps tpenv memSpfn m
         match traitInfo with 
-        | TTrait(objtys,".ctor",memberFlags,argtys,returnTy,_) when (memberFlags.MemberKind=MemberKind.Constructor) ->
+        | TTrait(objtys,".ctor",memberFlags,argtys,returnTy,_) when  memberFlags.MemberKind = MemberKind.Constructor ->
             match objtys,argtys with 
             | [ty],[] when typeEquiv cenv.g ty (GetFSharpViewOfReturnType cenv.g returnTy) ->
                 AddCxTypeMustSupportDefaultCtor env.DisplayEnv cenv.css m NoTrace ty 
@@ -4300,7 +4300,7 @@ and TcValSpec cenv env declKind newOk containerInfo memFlagsOpt thisTyOpt tpenv 
             enclosingDeclaredTypars,Some(tcref),Some thisTy,declKind
         | None -> 
             [],None,thisTyOpt, ModuleOrMemberBinding
-    let allDeclaredTypars = (enclosingDeclaredTypars@declaredTypars)
+    let allDeclaredTypars = enclosingDeclaredTypars @ declaredTypars
     let envinner = AddDeclaredTypars NoCheckForDuplicateTypars allDeclaredTypars env
     let checkCxs = CheckCxs
     let tpenv = TcTyparConstraints cenv newOk checkCxs ItemOccurence.UseInType envinner tpenv synTyparConstraints
