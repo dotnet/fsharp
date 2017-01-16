@@ -2538,7 +2538,7 @@ module BindingNormalization =
             match pat with 
             | SynPat.FromParseError(p,_) -> normPattern p
             | SynPat.LongIdent (LongIdentWithDots(longId,_), toolId, tyargs, SynConstructorArgs.Pats args, vis, m) ->
-                let typars = (match tyargs with None -> inferredTyparDecls | Some typars -> typars)
+                let typars = match tyargs with None -> inferredTyparDecls | Some typars -> typars
                 match memberFlagsOpt with 
                 | None ->                
                     match ResolvePatternLongIdent cenv.tcSink nameResolver AllIdsOK true m ad env.eNameResEnv TypeNameResolutionInfo.Default longId with
@@ -2546,7 +2546,7 @@ module BindingNormalization =
                         if id.idText = opNameCons  then
                             NormalizedBindingPat(pat,rhsExpr,valSynData,typars)
                         else
-                            if (isObjExprBinding = ObjExprBinding) then 
+                            if isObjExprBinding = ObjExprBinding then 
                                 errorR(Deprecated(FSComp.SR.tcObjectExpressionFormDeprecated(),m))
                             MakeNormalizedStaticOrValBinding cenv isObjExprBinding id vis typars args rhsExpr valSynData
                     | _ -> 
@@ -2610,7 +2610,7 @@ module EventDeclarationNormalization =
        SynValInfo(argInfos,retInfo)
 
     // THe property x.P becomes methods x.add_P and x.remove_P
-    let ConvertMemberFlags  memberFlags = { memberFlags with MemberKind= MemberKind.Member } 
+    let ConvertMemberFlags memberFlags = { memberFlags with MemberKind = MemberKind.Member } 
 
     let private ConvertMemberFlagsOpt m memberFlagsOpt =
         match memberFlagsOpt with 
@@ -2623,7 +2623,7 @@ module EventDeclarationNormalization =
         let valSynInfo = ConvertSynInfo m valSynInfo
         SynValData(memberFlagsOpt,valSynInfo,thisIdOpt)
      
-    let rec private  RenameBindingPattern f declPattern = 
+    let rec private RenameBindingPattern f declPattern = 
         match declPattern with  
         | SynPat.FromParseError(p,_) -> RenameBindingPattern f p
         | SynPat.Typed(pat',_,_) -> RenameBindingPattern f pat'
@@ -2850,7 +2850,7 @@ let LightweightTcValForUsingInBuildMethodCall g (vref:ValRef) vrefFlags (vrefTyp
       match v.LiteralValue with 
       | Some c -> 
           let _,_,tau = FreshenPossibleForallTy g m TyparRigidity.Flexible vty 
-          Expr.Const(c,m,tau),tau  
+          Expr.Const(c,m,tau),tau
       | None -> 
               // Instantiate the value 
               let tau = 
@@ -3008,7 +3008,7 @@ let BuildPossiblyConditionalMethodCall cenv env isMutable m isProp minfo valUseF
     let conditionalCallDefineOpt = TryFindMethInfoStringAttribute cenv.g m cenv.g.attrib_ConditionalAttribute minfo 
 
     match conditionalCallDefineOpt with 
-    | Some(d) when not (List.contains d cenv.conditionalDefines) -> 
+    | Some d when not (List.contains d cenv.conditionalDefines) -> 
 
         // Methods marked with 'Conditional' must return 'unit' 
         UnifyTypes cenv env m cenv.g.unit_ty (minfo.GetFSharpReturnTy(cenv.amap, m, minst))
@@ -3048,7 +3048,7 @@ let BuildDisposableCleanup cenv env m (v:Val) =
 
     // For struct types the test is simpler: we can determine if IDisposable is supported, and even when it is, we can avoid doing the type test 
     // Note this affects the elaborated form seen by quotations etc.
-    if isStructTy cenv.g v.Type  then 
+    if isStructTy cenv.g v.Type then 
         if TypeFeasiblySubsumesType 0 cenv.g cenv.amap m cenv.g.system_IDisposable_typ CanCoerce v.Type then
             // We can use NeverMutates here because the variable is going out of scope, there is no need to take a defensive
             // copy of it.
@@ -3058,7 +3058,7 @@ let BuildDisposableCleanup cenv env m (v:Val) =
             mkUnit cenv.g m
     else
         let disposeObjVar,disposeObjExpr = Tastops.mkCompGenLocal m "objectToDispose" cenv.g.system_IDisposable_typ
-        let disposeExpr,_ = BuildPossiblyConditionalMethodCall cenv env PossiblyMutates   m false disposeMethod NormalValUse [] [disposeObjExpr] []
+        let disposeExpr,_ = BuildPossiblyConditionalMethodCall cenv env PossiblyMutates m false disposeMethod NormalValUse [] [disposeObjExpr] []
         let inpe = mkCoerceExpr(exprForVal v.Range v,cenv.g.obj_ty,m,v.Type)
         mkIsInstConditional cenv.g m cenv.g.system_IDisposable_typ inpe disposeObjVar disposeExpr (mkUnit cenv.g m) 
 
@@ -3149,12 +3149,13 @@ let (|SimpleEqualsExpr|_|) e =
 // For join clauses that join on nullable, we syntactically insert the creation of nullable values on the appropriate side of the condition,
 // then pull the syntax apart again
 let (|JoinRelation|_|) cenv env (e:SynExpr) = 
+    let m = e.Range
+    let ad = env.eAccessRights
+
     let isOpName opName vref s =
         (s = opName) &&
-        let m = e.Range
-        let ad = env.eAccessRights
         match ResolveExprLongIdent cenv.tcSink cenv.nameResolver m ad env.eNameResEnv TypeNameResolutionInfo.Default [ident(opName,m)] with
-        | Item.Value vref2, [] -> valRefEq cenv.g vref vref2  
+        | Item.Value vref2, [] -> valRefEq cenv.g vref vref2
         | _ -> false
 
     match e with 
