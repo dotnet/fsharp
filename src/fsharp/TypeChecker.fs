@@ -4717,12 +4717,13 @@ and TcTyparConstraints cenv newOk checkCxs occ env tpenv wcs =
 #if EXTENSIONTYPING
 and TcStaticConstantParameter cenv (env:TcEnv) tpenv kind (v:SynType) idOpt container =
     let fail() = error(Error(FSComp.SR.etInvalidStaticArgument(NicePrint.minimalStringOfType env.DisplayEnv kind),v.Range)) 
-    let record(ttype) =
+    let record ttype =
         match idOpt with
         | Some id ->
-            let item = Item.ArgName (id, ttype, Some(container))
+            let item = Item.ArgName (id, ttype, Some container)
             CallNameResolutionSink cenv.tcSink (id.idRange,env.NameEnv,item,item,ItemOccurence.Use,env.DisplayEnv,env.eAccessRights)
         | _ -> ()
+
     match v with 
     | SynType.StaticConstant(sc, _) ->
         let v =
@@ -4782,14 +4783,16 @@ and TcStaticConstantParameter cenv (env:TcEnv) tpenv kind (v:SynType) idOpt cont
 and CrackStaticConstantArgs cenv env tpenv (staticParameters: Tainted<ProvidedParameterInfo>[], args: SynType list, container, containerName, m) =
     let args = 
         args |> List.map (function 
-            | SynType.StaticConstantNamed(SynType.LongIdent(LongIdentWithDots([id],_)),v,_) -> (Some id, v)
-            | v -> (None, v))
+            | SynType.StaticConstantNamed(SynType.LongIdent(LongIdentWithDots([id],_)),v,_) -> Some id, v
+            | v -> None, v)
+
     let unnamedArgs = args |> Seq.takeWhile (fst >> Option.isNone) |> Seq.toArray |> Array.map snd
     let otherArgs = args |> List.skipWhile (fst >> Option.isNone)
     let namedArgs = otherArgs |> List.takeWhile (fst >> Option.isSome) |> List.map (map1Of2 Option.get)
     let otherArgs = otherArgs |> List.skipWhile (fst >> Option.isSome)
     if not otherArgs.IsEmpty then 
         error (Error(FSComp.SR.etBadUnnamedStaticArgs(),m))
+
     for (n,_) in namedArgs do
          match staticParameters |> Array.toList |> List.mapi (fun j x -> (j,x)) |> List.filter (fun (j,sp) -> j >= unnamedArgs.Length && n.idText = sp.PUntaint((fun sp -> sp.Name), m)) with
          | [] -> 
@@ -4867,7 +4870,7 @@ and TcProvidedMethodAppToStaticConstantArgs cenv env tpenv (minfo, methBeforeArg
     let providedMethAfterStaticArguments = 
         match ExtensionTyping.TryApplyProvidedMethod(methBeforeArguments, argsInStaticParameterOrderIncludingDefaults, m) with 
         | None -> error(Error(FSComp.SR.etErrorApplyingStaticArgumentsToMethod(),m))
-        | Some meth-> meth
+        | Some meth -> meth
 
     providedMethAfterStaticArguments        
 
