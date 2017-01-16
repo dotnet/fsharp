@@ -2189,7 +2189,6 @@ module GeneralizationHelpers =
 
         // Compute the type variables in 'retTy'
         let returnTypeFreeTypars = freeInTypeLeftToRight cenv.g false retTy
-        let allUntupledArgTysWithFreeVars = allUntupledArgTys |> List.map (fun ty -> (ty, freeInTypeLeftToRight cenv.g false ty))
 
         let relevantUniqueSubtypeConstraint (tp:Typar) = 
             // Find a single subtype constraint
@@ -2224,7 +2223,7 @@ module GeneralizationHelpers =
             // A condensation typar can't be used in the constraints of any candidate condensation typars
             not (ListSet.contains typarEq tp lhsConstraintTypars) &&
             // A condensation typar must occur precisely once in tyIJ, and must not occur free in any other tyIJ
-            (match allUntupledArgTysWithFreeVars |> List.partition (fun (ty,_) -> isTyparTy cenv.g ty && typarEq (destTyparTy cenv.g ty) tp) with
+            (match allUntupledArgTys |> List.partition (fun ty -> isTyparTy cenv.g ty && typarEq (destTyparTy cenv.g ty) tp) with
              | [_], rest -> not (rest |> List.exists (fun (_,fvs) -> ListSet.contains typarEq tp fvs))
              | _ -> false)
              
