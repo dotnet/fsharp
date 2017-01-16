@@ -2000,7 +2000,7 @@ let BuildFieldMap cenv env isPartial ty flds m =
                 // We're going to get an error of some kind below. 
                 // Just choose one field ref and let the error come later 
                 let (_,frefSet1,_) = List.head frefSets
-                let (FieldResolution(fref1,_))= List.head frefSet1
+                let (FieldResolution(fref1,_)) = List.head frefSet1
                 fref1.TyconRef
     
     let fldsmap,rfldsList = 
@@ -2013,19 +2013,20 @@ let BuildFieldMap cenv env isPartial ty flds m =
                     CallNameResolutionSink cenv.tcSink ((snd fld).idRange,env.NameEnv,item,item,ItemOccurence.Use,env.DisplayEnv,ad)
 
                     CheckRecdFieldAccessible cenv.amap m env.eAccessRights fref2 |> ignore
-                    CheckFSharpAttributes cenv.g fref2.PropertyAttribs m |> CommitOperationResult        
-                    if  Map.containsKey fref2.FieldName fs then 
+                    CheckFSharpAttributes cenv.g fref2.PropertyAttribs m |> CommitOperationResult
+                    if Map.containsKey fref2.FieldName fs then 
                         errorR (Error(FSComp.SR.tcFieldAppearsTwiceInRecord(fref2.FieldName),m))
                     if showDeprecated then
                         warning(Deprecated(FSComp.SR.nrRecordTypeNeedsQualifiedAccess(fref2.FieldName,fref2.Tycon.DisplayName) |> snd,m))
                         
-                    if  not (tyconRefEq cenv.g tcref fref2.TyconRef) then 
+                    if not (tyconRefEq cenv.g tcref fref2.TyconRef) then 
                         let (_,frefSet1,_) = List.head frefSets
                         let (FieldResolution(fref1,_)) = List.head frefSet1
                         errorR (FieldsFromDifferentTypes(env.DisplayEnv,fref1,fref2,m))
-                        (fs,rfldsList)
-                    else (Map.add fref2.FieldName fldExpr fs,
-                          (fref2.FieldName,fldExpr)::rfldsList)
+                        fs,rfldsList
+                    else
+                        Map.add fref2.FieldName fldExpr fs,(fref2.FieldName,fldExpr)::rfldsList
+
                 | _ -> error(Error(FSComp.SR.tcRecordFieldInconsistentTypes(),m)))
     tcref,fldsmap,List.rev rfldsList
 
