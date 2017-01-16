@@ -615,18 +615,22 @@ module internal Structure =
 
     let private parseModuleOrNamespace (SynModuleOrNamespace.SynModuleOrNamespace (longId,_,isModule,decls,_,attribs,_,r)) =
         seq {
-            yield! parseAttributes attribs
-            let fullrange = Range.startToEnd (longIdentRange longId) r  
-            let collapse = Range.endToEnd (longIdentRange longId) r 
-            if isModule then
-                yield! rcheck Scope.Module Collapse.Below fullrange collapse
-            //else
-            //    //yield! rcheck Scope.Namespace Collapse.Below (Range.modEnd -1 fullrange) (Range.modEnd -1 collapse)
-            //    yield! rcheck Scope.Namespace Collapse.Below (fullrange) (collapse)
+            match longId with
+            | [] -> ()
+            | _ ->
+                yield! parseAttributes attribs
+                let idRange = longIdentRange longId
+                let fullrange = Range.startToEnd idRange r  
+                let collapse = Range.endToEnd idRange r 
+                if isModule then
+                    yield! rcheck Scope.Module Collapse.Below fullrange collapse
+                //else
+                //    //yield! rcheck Scope.Namespace Collapse.Below (Range.modEnd -1 fullrange) (Range.modEnd -1 collapse)
+                //    yield! rcheck Scope.Namespace Collapse.Below (fullrange) (collapse)
 
-            yield! collectHashDirectives decls
-            yield! collectOpens decls
-            yield! Seq.collect parseDeclaration decls
+                yield! collectHashDirectives decls
+                yield! collectOpens decls
+                yield! Seq.collect parseDeclaration decls
         }
 
     type private LineNum = int
