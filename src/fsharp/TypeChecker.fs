@@ -1981,8 +1981,9 @@ let BuildFieldMap cenv env isPartial ty flds m =
         |> List.map (fun (fld,fldExpr) ->
             let frefSet = ResolveField cenv.tcSink cenv.nameResolver env.eNameResEnv ad ty fld allFields
             fld,frefSet,fldExpr)
+
     let relevantTypeSets = 
-        frefSets |> List.map (fun (_,frefSet,_) -> frefSet |> List.choose (fun (FieldResolution(rfref,_)) -> Some rfref.TyconRef))
+        frefSets |> List.map (fun (_,frefSet,_) -> frefSet |> List.map (fun (FieldResolution(rfref,_)) -> rfref.TyconRef))
     
     let tcref = 
         match List.fold (ListSet.intersect (tyconRefEq cenv.g)) (List.head relevantTypeSets) (List.tail relevantTypeSets) with
