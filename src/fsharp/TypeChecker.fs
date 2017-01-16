@@ -4386,7 +4386,7 @@ and TcValSpec cenv env declKind newOk containerInfo memFlagsOpt thisTyOpt tpenv 
                     | Some tcref -> 
                         let isExtrinsic = (declKind = ExtrinsicExtensionBinding)
                         let memberInfoTransient = MakeMemberDataAndMangledNameForMemberVal(cenv.g,tcref,isExtrinsic,attrs,[],memberFlags,valSynInfo,id,false)
-                        Some(memberInfoTransient)
+                        Some memberInfoTransient
                     | None -> 
                         None
             
@@ -4479,7 +4479,7 @@ and TcTypar cenv env newOk tpenv tp =
     TcTyparOrMeasurePar (Some TyparKind.Type) cenv env newOk tpenv tp
 
 and TcTyparDecl cenv env (TyparDecl(synAttrs,(Typar(id,_,_) as stp))) =
-    let attrs = TcAttributes cenv env AttributeTargets.GenericParameter  synAttrs
+    let attrs = TcAttributes cenv env AttributeTargets.GenericParameter synAttrs
     let hasMeasureAttr = HasFSharpAttribute cenv.g cenv.g.attrib_MeasureAttribute attrs
     let hasEqDepAttr = HasFSharpAttribute cenv.g cenv.g.attrib_EqualityConditionalOnAttribute attrs
     let hasCompDepAttr = HasFSharpAttribute cenv.g cenv.g.attrib_ComparisonConditionalOnAttribute attrs
@@ -4705,7 +4705,7 @@ and TcTypesOrMeasures optKinds cenv newOk checkCxs occ env tpenv args m =
     | Some kinds ->
         if List.length kinds = List.length args then 
             List.mapFold (fun tpenv (arg,kind) -> TcTypeOrMeasure (Some kind) cenv newOk checkCxs occ env tpenv arg) tpenv (List.zip args kinds)
-        elif kinds.Length = 0 then error(Error(FSComp.SR.tcUnexpectedTypeArguments(), m))
+        elif isNil kinds then error(Error(FSComp.SR.tcUnexpectedTypeArguments(), m))
         else error(Error(FSComp.SR.tcTypeParameterArityMismatch((List.length kinds), (List.length args)), m))
 
 and TcTyparConstraints cenv newOk checkCxs occ env tpenv wcs =
