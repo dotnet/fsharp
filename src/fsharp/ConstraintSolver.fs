@@ -172,11 +172,11 @@ type ConstraintSolverState =
     }
 
     static member New(g,amap,infoReader, tcVal) = 
-          { g=g 
-            amap=amap 
-            ExtraCxs= HashMultiMap(10, HashIdentity.Structural)
-            InfoReader=infoReader
-            TcVal = tcVal } 
+        { g = g 
+          amap = amap 
+          ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
+          InfoReader = infoReader
+          TcVal = tcVal } 
 
 
 type ConstraintSolverEnv = 
@@ -193,12 +193,12 @@ type ConstraintSolverEnv =
     member csenv.amap = csenv.SolverState.amap
     
 let MakeConstraintSolverEnv contextInfo css m denv = 
-    { SolverState=css
-      m=m
+    { SolverState = css
+      m = m
       eContextInfo = contextInfo
       // Indicates that when unifiying ty1 = ty2, only type variables in ty1 may be solved 
-      MatchingOnly=false
-      EquivEnv=TypeEquivEnv.Empty 
+      MatchingOnly = false
+      EquivEnv = TypeEquivEnv.Empty 
       DisplayEnv = denv }
 
 
