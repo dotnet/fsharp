@@ -3691,7 +3691,7 @@ let EliminateInitializationGraphs
     let recursiveVals = 
         let hash = ValHash<Val>.Create()
         let add (pgrbind: PreInitializationGraphEliminationBinding) = let c = pgrbind.Binding.Var in hash.Add(c,c)
-        fixupsAndBindingsWithoutLaziness |> MutRecShapes.iterTyconsAndLets (getTyconBinds  >> List.iter add) (getLetBinds >> List.iter add) 
+        fixupsAndBindingsWithoutLaziness |> MutRecShapes.iterTyconsAndLets (getTyconBinds >> List.iter add) (getLetBinds >> List.iter add) 
         hash
 
     // The output of the analysis
@@ -3904,7 +3904,7 @@ let CheckAndRewriteObjectCtor g env (ctorLambaExpr:Expr) =
                    Expr.Sequential(recdExpr,setExpr,ThenDoSeq,SuppressSequencePointOnExprOfSequential,m)
            let recdExpr =                        
                match ctorInfo.safeInitInfo with 
-               | NoSafeInitInfo ->  recdExpr
+               | NoSafeInitInfo -> recdExpr
                | SafeInitField (rfref, _) -> 
                    let thisTy = tyOfExpr g recdExpr
                    let thisExpr = mkGetArg0 m thisTy
@@ -3964,7 +3964,7 @@ let CheckAndRewriteObjectCtor g env (ctorLambaExpr:Expr) =
            let isCtor = 
                match vref.MemberInfo with 
                | None -> false
-               | Some(memberInfo) -> (memberInfo.MemberFlags.MemberKind = MemberKind.Constructor)
+               | Some memberInfo -> memberInfo.MemberFlags.MemberKind = MemberKind.Constructor
 
            if not isCtor then 
                error expr 
@@ -4066,7 +4066,9 @@ type ContainerInfo =
           ParentRef *  
           // For members:
           MemberOrValContainerInfo option
-    member x.ParentRef = (let (ContainerInfo(v,_)) = x in v)
+    member x.ParentRef =
+        let (ContainerInfo(v,_)) = x 
+        v
     
 /// Indicates a declaration is contained in an expression 
 let ExprContainerInfo = ContainerInfo(ParentNone,None)
