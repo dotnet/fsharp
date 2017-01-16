@@ -4364,7 +4364,7 @@ and TcValSpec cenv env declKind newOk containerInfo memFlagsOpt thisTyOpt tpenv 
                     TranslateTopValSynInfo id.idRange (TcAttributes cenv env) valSynInfo
 
 
-                // Fold in the optional arugment information 
+                // Fold in the optional argument information 
                 // Resort to using the syntactic argument information since that is what tells us 
                 // what is optional and what is not. 
                 let ty' = 
