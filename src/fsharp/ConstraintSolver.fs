@@ -558,21 +558,21 @@ let rec SimplifyMeasuresInType g resultFirst ((generalizable, generalized) as pa
 
 and SimplifyMeasuresInTypes g param tys = 
     match tys with
-    | [] ->  param
+    | [] -> param
     | ty::tys -> 
         let param' = SimplifyMeasuresInType g false param ty 
         SimplifyMeasuresInTypes g param' tys
 
 let SimplifyMeasuresInConstraint g param c =
     match c with
-      | TyparConstraint.DefaultsTo (_,ty,_) | TyparConstraint.CoercesTo(ty,_) -> SimplifyMeasuresInType g false param ty
-      | TyparConstraint.SimpleChoice (tys,_) -> SimplifyMeasuresInTypes g param tys
-      | TyparConstraint.IsDelegate (ty1,ty2,_) -> SimplifyMeasuresInTypes g param [ty1;ty2]
-      | _ -> param
+    | TyparConstraint.DefaultsTo (_,ty,_) | TyparConstraint.CoercesTo(ty,_) -> SimplifyMeasuresInType g false param ty
+    | TyparConstraint.SimpleChoice (tys,_) -> SimplifyMeasuresInTypes g param tys
+    | TyparConstraint.IsDelegate (ty1,ty2,_) -> SimplifyMeasuresInTypes g param [ty1;ty2]
+    | _ -> param
 
 let rec SimplifyMeasuresInConstraints g param cs = 
     match cs with
-    | [] ->  param
+    | [] -> param
     | c::cs ->
         let param' = SimplifyMeasuresInConstraint g param c
         SimplifyMeasuresInConstraints g param' cs
@@ -590,7 +590,7 @@ let rec GetMeasureVarGcdInType v ty =
 
 and GetMeasureVarGcdInTypes v tys =
     match tys with
-    | [] ->  ZeroRational
+    | [] -> ZeroRational
     | ty::tys -> GcdRational (GetMeasureVarGcdInType v ty) (GetMeasureVarGcdInTypes v tys)
   
 // Normalize the exponents on generalizable variables in a type
@@ -657,11 +657,11 @@ let CheckWarnIfRigid (csenv:ConstraintSolverEnv) ty1 (r:Typar) ty =
          not tp2.IsCompilerGenerated &&
          (r.IsCompilerGenerated || 
           // exclude this warning for two identically named user-specified type parameters, e.g. from different mutually recursive functions or types
-          r.DisplayName <> tp2.DisplayName )))  then 
-        
+          r.DisplayName <> tp2.DisplayName )))
+    then
         // NOTE: we grab the name eagerly to make sure the type variable prints as a type variable 
         let tpnmOpt = if r.IsCompilerGenerated then None else Some r.Name 
-        WarnD(NonRigidTypar(denv,tpnmOpt,r.Range,ty1,ty,csenv.m  )) 
+        WarnD(NonRigidTypar(denv,tpnmOpt,r.Range,ty1,ty,csenv.m)) 
     else 
         CompleteD
 
@@ -888,7 +888,7 @@ and SolveTypSubsumesTyp (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
         // may feasibly convert to Head. 
 
         else 
-            match (FindUniqueFeasibleSupertype g amap m ty1 ty2) with 
+            match FindUniqueFeasibleSupertype g amap m ty1 ty2 with 
             | None -> ErrorD(ConstraintSolverTypesNotInSubsumptionRelation(denv,ty1,ty2,m,m2))
             | Some t -> SolveTypSubsumesTyp csenv ndeep m2 trace cxsln ty1 t
 
@@ -911,7 +911,7 @@ and SolveTyparSubtypeOfType (csenv:ConstraintSolverEnv) ndeep m2 trace tp ty1 =
     elif isSealedTy g ty1 then 
         SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace (mkTyparTy tp) ty1
     else 
-        AddConstraint csenv ndeep m2 trace tp  (TyparConstraint.CoercesTo(ty1,m))
+        AddConstraint csenv ndeep m2 trace tp (TyparConstraint.CoercesTo(ty1,m))
 
 and DepthCheck ndeep m = 
   if ndeep > 300 then error(Error(FSComp.SR.csTypeInferenceMaxDepth(),m)) else CompleteD
@@ -1263,7 +1263,7 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
               match recdPropSearch, methOverloadResult with 
               | Some (rfinfo, isSetProp), None -> 
                   // OK, the constraint is solved by a record property. Assert that the return types match.
-                  let rty2 = if isSetProp then  g.unit_ty else rfinfo.FieldType
+                  let rty2 = if isSetProp then g.unit_ty else rfinfo.FieldType
                   SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty rty2 ++ (fun () -> 
                   ResultD (TTraitSolvedRecdProp(rfinfo, isSetProp)))
               | None, Some (calledMeth:CalledMeth<_>) -> 
