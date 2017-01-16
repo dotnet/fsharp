@@ -1663,7 +1663,6 @@ let GetAllUsesOfRecValue cenv vrefTgt =
 //------------------------------------------------------------------------- 
 
 let ChooseCanonicalDeclaredTyparsAfterInference g denv declaredTypars m =
-
     declaredTypars |> List.iter (fun tp -> 
       let ty = mkTyparTy tp
       if not (isAnyParTy g ty) then 
@@ -1712,7 +1711,7 @@ let GeneralizeVal cenv denv enclosingDeclaredTypars generalizedTyparsForThisBind
     // multiple generic items, where each item does not use all the polymorphism 
     // of the r.h.s. , e.g. let x,y = None,[] 
     let computeRelevantTypars thruFlag = 
-        let ftps = (freeInTypeLeftToRight cenv.g thruFlag ty)
+        let ftps = freeInTypeLeftToRight cenv.g thruFlag ty
         let generalizedTypars = generalizedTyparsForThisBinding |> List.filter (fun tp -> ListSet.contains typarEq tp ftps)
         // Put declared typars first 
         let generalizedTypars = PlaceTyparsInDeclarationOrder allDeclaredTypars generalizedTypars  
@@ -1723,7 +1722,8 @@ let GeneralizeVal cenv denv enclosingDeclaredTypars generalizedTyparsForThisBind
     // Check stability of existence and ordering of type parameters under erasure of type abbreviations
     let generalizedTyparsLookingThroughTypeAbbreviations = computeRelevantTypars true
     if not (generalizedTypars.Length = generalizedTyparsLookingThroughTypeAbbreviations.Length && 
-            List.forall2 typarEq generalizedTypars generalizedTyparsLookingThroughTypeAbbreviations) then
+            List.forall2 typarEq generalizedTypars generalizedTyparsLookingThroughTypeAbbreviations)
+    then
         warning(Error(FSComp.SR.tcTypeParametersInferredAreNotStable(),m))
 
     let hasDeclaredTypars = not (isNil declaredTypars)
@@ -1921,8 +1921,9 @@ let FreshenTyconRef m rigid (tcref:TyconRef) declaredTyconTypars =
     (TType_app(tcref,List.map mkTyparTy tpsorig), tps, renaming, TType_app(tcref,tinst))
     
 let FreshenPossibleForallTy g m rigid ty = 
-    let tpsorig,tau =  tryDestForallTy g ty
-    if isNil tpsorig then [],[],tau
+    let tpsorig,tau = tryDestForallTy g ty
+    if isNil tpsorig then 
+        [],[],tau
     else
         // tps may be have been equated to other tps in equi-recursive type inference and units-of-measure type inference. Normalize them here 
         let tpsorig = NormalizeDeclaredTyparsForEquiRecursiveInference g tpsorig
@@ -1930,7 +1931,7 @@ let FreshenPossibleForallTy g m rigid ty =
         tps,tinst,instType renaming tau
 
 let infoOfTyconRef m (tcref:TyconRef) = 
-    let tps,renaming,tinst = FreshenTypeInst m (tcref.Typars(m))
+    let tps,renaming,tinst = FreshenTypeInst m (tcref.Typars m)
     tps,renaming,tinst,TType_app (tcref,tinst)
 
 
@@ -1946,7 +1947,9 @@ let FreshenAbstractSlot g amap m synTyparDecls absMethInfo =
         
         match synTyparDecls with 
         | SynValTyparDecls(synTypars,infer,_) -> 
-            if not (isNil synTypars) && infer then errorR(Error(FSComp.SR.tcOverridingMethodRequiresAllOrNoTypeParameters(),m))
+            if infer && not (isNil synTypars) then 
+                errorR(Error(FSComp.SR.tcOverridingMethodRequiresAllOrNoTypeParameters(),m))
+
             isNil synTypars
             
     let (CompiledSig (argtys,retTy,fmtps,_)) = CompiledSigOfMeth g amap m absMethInfo
@@ -1955,12 +1958,12 @@ let FreshenAbstractSlot g amap m synTyparDecls absMethInfo =
     let typarsFromAbsSlot,typarInstFromAbsSlot,_ = 
         let ttps = absMethInfo.GetFormalTyparsOfDeclaringType m 
         let ttinst = argsOfAppTy g absMethInfo.EnclosingType
-        let rigid = (if typarsFromAbsSlotAreRigid then TyparRigidity.Rigid else TyparRigidity.Flexible)
+        let rigid = if typarsFromAbsSlotAreRigid then TyparRigidity.Rigid else TyparRigidity.Flexible
         ConstraintSolver.FreshenAndFixupTypars m rigid ttps ttinst fmtps
 
     // Work out the required type of the member 
     let argTysFromAbsSlot = argtys |> List.mapSquared (instType typarInstFromAbsSlot) 
-    let retTyFromAbsSlot = retTy  |> GetFSharpViewOfReturnType g |> instType typarInstFromAbsSlot 
+    let retTyFromAbsSlot = retTy |> GetFSharpViewOfReturnType g |> instType typarInstFromAbsSlot 
     typarsFromAbsSlotAreRigid,typarsFromAbsSlot,argTysFromAbsSlot, retTyFromAbsSlot
 
 
@@ -1974,7 +1977,8 @@ let BuildFieldMap cenv env isPartial ty flds m =
    
     let frefSets = 
         let allFields = flds |> List.map (fun ((_,ident),_) -> ident)
-        flds |> List.map (fun (fld,fldExpr) -> 
+        flds 
+        |> List.map (fun (fld,fldExpr) ->
             let frefSet = ResolveField cenv.tcSink cenv.nameResolver env.eNameResEnv ad ty fld allFields
             fld,frefSet,fldExpr)
     let relevantTypeSets = 

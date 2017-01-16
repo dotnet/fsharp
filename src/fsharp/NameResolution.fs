@@ -3031,9 +3031,11 @@ let ResolveField sink ncenv nenv ad typ (mp,id) allFields =
     let res = ResolveFieldPrim ncenv nenv ad typ (mp,id) allFields
     // Register the results of any field paths "Module.Type" in "Module.Type.field" as a name resolution. (Note, the path resolution
     // info is only non-empty if there was a unique resolution of the field)
-    for (resInfo,_rfref) in res do
-        ResolutionInfo.SendToSink(sink,ncenv,nenv,ItemOccurence.UseInType, ad,resInfo,ResultTyparChecker(fun () -> true))
-    res |> List.map snd
+    let checker = ResultTyparChecker(fun () -> true)
+    res 
+    |> List.map (fun (resInfo,rfref) ->
+        ResolutionInfo.SendToSink(sink,ncenv,nenv,ItemOccurence.UseInType,ad,resInfo,checker)
+        rfref)
 
 /// Generate a new reference to a record field with a fresh type instantiation
 let FreshenRecdFieldRef (ncenv:NameResolver) m (rfref:RecdFieldRef) =
