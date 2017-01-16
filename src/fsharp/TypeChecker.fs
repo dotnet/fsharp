@@ -3199,14 +3199,16 @@ let GetMethodArgs arg =
     let unnamedCallerArgs,namedCallerArgs = 
         args |> List.takeUntil IsNamedArg
     let namedCallerArgs = 
-        namedCallerArgs |> List.choose (fun e -> 
-          if not (IsNamedArg e) then
-              // ignore errors to avoid confusing error messages in cases like foo(a = 1,) 
-              // do not abort overload resolution in case if named arguments are mixed with errors
-              match e with
-              | SynExpr.ArbitraryAfterError _ -> ()
-              | _ -> error(Error(FSComp.SR.tcNameArgumentsMustAppearLast(), e.Range)) 
-          TryGetNamedArg e)
+        namedCallerArgs 
+        |> List.choose (fun e -> 
+              match TryGetNamedArg e with
+              | None ->
+                  // ignore errors to avoid confusing error messages in cases like foo(a = 1,) 
+                  // do not abort overload resolution in case if named arguments are mixed with errors
+                  match e with
+                  | SynExpr.ArbitraryAfterError _ -> None
+                  | _ -> error(Error(FSComp.SR.tcNameArgumentsMustAppearLast(), e.Range)) 
+              | namedArg -> namedArg)
     unnamedCallerArgs, namedCallerArgs
 
 
