@@ -2360,21 +2360,21 @@ module GeneralizationHelpers =
     /// Also check they don't declare explicit typars. 
     let ComputeCanInferExtraGeneralizableTypars (parentRef, canInferTypars, memFlagsOpt) =  
         canInferTypars &&
-        (match parentRef with 
-         | Parent tcref -> not tcref.IsFSharpDelegateTycon 
-         | _ -> true) &&  // no generic paramters inferred for 'Invoke' method
         (match memFlagsOpt with 
          | None -> true
          | Some memberFlags -> 
             match memberFlags.MemberKind with 
             // can't infer extra polymorphism for properties 
-            | MemberKind.PropertyGet | MemberKind.PropertySet  -> false
+            | MemberKind.PropertyGet | MemberKind.PropertySet -> false
             // can't infer extra polymorphism for class constructors 
             | MemberKind.ClassConstructor ->  false
             // can't infer extra polymorphism for constructors 
             | MemberKind.Constructor -> false
             // feasible to infer extra polymorphism 
-            | _ -> true)
+            | _ -> true) &&
+        (match parentRef with 
+         | Parent tcref -> not tcref.IsFSharpDelegateTycon 
+         | _ -> true) // no generic paramters inferred for 'Invoke' method
 
         
 
