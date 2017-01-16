@@ -3838,7 +3838,7 @@ let CheckAndRewriteObjectCtor g env (ctorLambaExpr:Expr) =
 
     // Build an assignment into the safeThisValOpt mutable reference cell that holds recursive references to 'this' 
     // Build an assignment into the safeInitInfo mutable field that indicates that partial initialization is successful
-    let rewriteContruction recdExpr = 
+    let rewriteConstruction recdExpr = 
        match env.eCtorInfo with 
        | None -> recdExpr
        | Some ctorInfo -> 
@@ -3866,7 +3866,7 @@ let CheckAndRewriteObjectCtor g env (ctorLambaExpr:Expr) =
         match expr with 
         // <ctor-body> = { fields } 
         // The constructor ends in an object initialization expression - good 
-        | Expr.Op(TOp.Recd(RecdExprIsObjInit,_),_,_,_) -> rewriteContruction expr
+        | Expr.Op(TOp.Recd(RecdExprIsObjInit,_),_,_,_) -> rewriteConstruction expr
 
         // <ctor-body> = "a; <ctor-body>" 
         | Expr.Sequential(a,body,NormalSeq,spSeq,b)  -> Expr.Sequential(a,checkAndRewrite body,NormalSeq,spSeq,b) 
@@ -3888,7 +3888,7 @@ let CheckAndRewriteObjectCtor g env (ctorLambaExpr:Expr) =
             // The application had better be an application of a ctor 
             let f = checkAndRewriteCtorUsage f
             let expr = Expr.App(f,b,c,d,m)
-            rewriteContruction expr 
+            rewriteConstruction expr 
 
         | _ -> 
             error(expr)
