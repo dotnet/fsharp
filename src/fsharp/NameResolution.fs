@@ -3129,11 +3129,17 @@ type AfterOverloadResolution =
 ///
 /// Called for 'TypeName.Bar' - for VS IntelliSense, we can filter out instance members from method groups
 let ResolveLongIdentAsExprAndComputeRange (sink:TcResultsSink) (ncenv:NameResolver) wholem ad nenv typeNameResInfo lid = 
-    let item,rest = ResolveExprLongIdent sink ncenv wholem ad nenv typeNameResInfo lid
+    let item1,rest = ResolveExprLongIdent sink ncenv wholem ad nenv typeNameResInfo lid
     let itemRange = ComputeItemRange wholem lid rest
     
     // Record the precise resolution of the field for intellisense
-    let item = FilterMethodGroups ncenv itemRange item true
+    let item = FilterMethodGroups ncenv itemRange item1 true
+
+    match item1,item with
+    | Item.MethodGroup(name, minfos1, _), Item.MethodGroup(_, [], _) when not (isNil minfos1) -> 
+        error(Error(FSComp.SR.methodIsNotStatic(name),wholem))
+    | _ -> ()
+
     // Fake idents e.g. 'Microsoft.FSharp.Core.None' have identical ranges for each part
     let isFakeIdents =
         match lid with
