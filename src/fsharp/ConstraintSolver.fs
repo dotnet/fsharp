@@ -248,7 +248,7 @@ let rec isIntegerOrIntegerEnumTy g ty =
     isUnsignedIntegerTy g ty || 
     (isEnumTy g ty && isIntegerOrIntegerEnumTy g (underlyingTypeOfEnumTy g ty))
     
-let rec isIntegerTy g ty =
+let isIntegerTy g ty =
     isSignedIntegerTy g ty || 
     isUnsignedIntegerTy g ty 
     
