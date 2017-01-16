@@ -4736,8 +4736,11 @@ and CrackStaticConstantArgs cenv env tpenv (staticParameters: Tainted<ProvidedPa
     let otherArgs = otherArgs |> List.skipWhile (fst >> Option.isSome)
     if not otherArgs.IsEmpty then 
         error (Error(FSComp.SR.etBadUnnamedStaticArgs(),m))
+
+    let indexedStaticParameters = staticParameters |> Array.toList |> List.indexed
+    
     for (n,_) in namedArgs do
-         match staticParameters |> Array.toList |> List.mapi (fun j x -> (j,x)) |> List.filter (fun (j,sp) -> j >= unnamedArgs.Length && n.idText = sp.PUntaint((fun sp -> sp.Name), m)) with
+         match indexedStaticParameters |> List.filter (fun (j,sp) -> j >= unnamedArgs.Length && n.idText = sp.PUntaint((fun sp -> sp.Name), m)) with
          | [] -> 
              if staticParameters |> Array.exists (fun sp -> n.idText = sp.PUntaint((fun sp -> sp.Name), n.idRange)) then 
                  error (Error(FSComp.SR.etStaticParameterAlreadyHasValue n.idText,n.idRange))
