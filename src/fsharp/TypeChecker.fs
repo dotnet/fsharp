@@ -4365,7 +4365,7 @@ and TcValSpec cenv env declKind newOk containerInfo memFlagsOpt thisTyOpt tpenv 
 
 
                 // Fold in the optional arugment information 
-                // Resort to using the syntactic arugment information since that is what tells us 
+                // Resort to using the syntactic argument information since that is what tells us 
                 // what is optional and what is not. 
                 let ty' = 
 
@@ -5203,7 +5203,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv,names,takenNames) ty pat
                     // See FSharp 1.0 3502
                     let dtys,rty = stripFunTy cenv.g vexpty
                     
-                    if dtys.Length = args.Length + 1 && isOptionTy cenv.g rty &&  isUnitTy cenv.g (destOptionTy cenv.g rty)  then 
+                    if dtys.Length = args.Length + 1 && isOptionTy cenv.g rty && isUnitTy cenv.g (destOptionTy cenv.g rty) then 
                         args,SynPat.Const(SynConst.Unit,m) 
                     else 
                         List.frontAndBack args
