@@ -1534,7 +1534,6 @@ let MakeAndPublishVal cenv env (altActualParent,inSig,declKind,vrec,(ValScheme(i
 
     PublishValueDefn cenv env declKind vspec
 
-    
     match cenv.tcSink.CurrentSink with 
     | None -> ()
     | Some _ -> 
@@ -1554,13 +1553,14 @@ let MakeAndPublishVals cenv env (altActualParent,inSig,declKind,vrec,valSchemes,
         Map.empty
 
 let MakeAndPublishBaseVal cenv env baseIdOpt ty = 
-    baseIdOpt |> Option.map (fun (id:Ident) ->
+    baseIdOpt
+    |> Option.map (fun (id:Ident) ->
        let valscheme = ValScheme(id,NonGenericTypeScheme(ty),None,None,false,ValInline.Never,BaseVal,None,false,false,false,false)
        MakeAndPublishVal cenv env (ParentNone,false,ExpressionBinding,ValNotInRecScope,valscheme,[],XmlDoc.Empty,None,false))
 
 let InstanceMembersNeedSafeInitCheck cenv m thisTy = 
     ExistsInEntireHierarchyOfType 
-        (fun ty -> not(isStructTy cenv.g ty) && isAppTy cenv.g ty && (tcrefOfAppTy cenv.g ty).HasSelfReferentialConstructor)
+        (fun ty -> not (isStructTy cenv.g ty) && isAppTy cenv.g ty && (tcrefOfAppTy cenv.g ty).HasSelfReferentialConstructor)
         cenv.g 
         cenv.amap
         m 
@@ -1573,7 +1573,7 @@ let MakeSafeInitField (g: TcGlobals) env m isStatic =
     NewRecdField isStatic None id g.int_ty true true [] [] XmlDoc.Empty taccess true
 
 // Make the "delayed reference" boolean value recording the safe initialization of a type in a hierarchy where there is a HasSelfReferentialConstructor
-let ComputeInstanceSafeInitInfo cenv env m  thisTy = 
+let ComputeInstanceSafeInitInfo cenv env m thisTy = 
     if InstanceMembersNeedSafeInitCheck cenv m thisTy then 
         let rfield =  MakeSafeInitField cenv.g env m false
         let tcref = tcrefOfAppTy cenv.g thisTy
@@ -1611,21 +1611,22 @@ let AdjustAndForgetUsesOfRecValue cenv (vrefTgt: ValRef) (valScheme : ValScheme)
         // Find all the uses of this recursive binding and use mutation to adjust the expressions 
         // at those points in order to record the inferred type parameters. 
         let recUses = cenv.recUses.Find lvrefTgt
-        recUses |> List.iter  (fun (fixupPoint,m,isComplete) -> 
-          if not isComplete then 
-              // Keep any values for explicit type arguments 
-              let fixedUpExpr = 
-                  let vrefFlags,tyargs0 = 
-                      match !fixupPoint with 
-                      | Expr.App(Expr.Val (_,vrefFlags,_),_,tyargs0,[],_) -> vrefFlags,tyargs0
-                      | Expr.Val(_,vrefFlags,_) -> vrefFlags,[] 
-                      | _ -> 
-                          errorR(Error(FSComp.SR.tcUnexpectedExprAtRecInfPoint(),m)) 
-                          NormalValUse,[]
+        recUses 
+        |> List.iter (fun (fixupPoint,m,isComplete) -> 
+              if not isComplete then 
+                  // Keep any values for explicit type arguments 
+                  let fixedUpExpr = 
+                      let vrefFlags,tyargs0 = 
+                          match !fixupPoint with 
+                          | Expr.App(Expr.Val (_,vrefFlags,_),_,tyargs0,[],_) -> vrefFlags,tyargs0
+                          | Expr.Val(_,vrefFlags,_) -> vrefFlags,[] 
+                          | _ -> 
+                              errorR(Error(FSComp.SR.tcUnexpectedExprAtRecInfPoint(),m)) 
+                              NormalValUse,[]
                   
-                  let ityargs = generalizeTypars (List.drop (List.length tyargs0) generalizedTypars)
-                  primMkApp (Expr.Val (vrefTgt,vrefFlags,m),fty) (tyargs0 @ ityargs) [] m
-              fixupPoint :=   fixedUpExpr)
+                      let ityargs = generalizeTypars (List.drop (List.length tyargs0) generalizedTypars)
+                      primMkApp (Expr.Val (vrefTgt,vrefFlags,m),fty) (tyargs0 @ ityargs) [] m
+                  fixupPoint := fixedUpExpr)
 
     vrefTgt.Deref.SetValRec ValNotInRecScope
     cenv.recUses <- cenv.recUses.Remove vrefTgt.Deref 
