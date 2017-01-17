@@ -1178,12 +1178,10 @@ module private PrintTastMemberOrVals =
                 let tprenaming,ptau,cxs = PrettyTypes.PrettifyTypes1 denv.g tau
                 let ptps = 
                     tps  
-                        |> generalizeTypars 
-                        // Badly formed code may instantiate rigid declared typars to types, e.g. see bug
-                        // Hence we double check here that the thing is really a type variable
-                        |> List.map (instType tprenaming)
-                        |> List.filter (isAnyParTy denv.g) 
-                        |> List.map (destAnyParTy denv.g)
+                    |> generalizeTypars 
+                    // Badly formed code may instantiate rigid declared typars to types, e.g. see bug
+                    // Hence we double check here that the thing is really a type variable
+                    |> List.choose (instType tprenaming >> tryAnyParTy denv.g)
                 layoutNonMemberVal denv (ptps,v,ptau,cxs)
             | Some _ -> 
                 layoutMember denv v

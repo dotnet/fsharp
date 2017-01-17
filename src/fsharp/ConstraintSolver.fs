@@ -455,10 +455,9 @@ and SolveTypStaticReq (csenv:ConstraintSolverEnv) trace req ty =
           IterateD (fun ((tpr:Typar),_) -> SolveTypStaticReqTypar csenv trace req tpr) vs
 
         | _ -> 
-          if isAnyParTy csenv.g ty then 
-            let tpr = destAnyParTy csenv.g ty
-            SolveTypStaticReqTypar csenv trace req tpr
-          else CompleteD
+          match tryAnyParTy csenv.g ty with
+          | Some tpr -> SolveTypStaticReqTypar csenv trace req tpr
+          | None -> CompleteD
       
 let rec TransactDynamicReq (trace:OptionalTrace) (tpr:Typar) req = 
     let orig = tpr.DynamicReq
@@ -469,10 +468,10 @@ and SolveTypDynamicReq (csenv:ConstraintSolverEnv) trace req ty =
     match req with 
     | TyparDynamicReq.No -> CompleteD
     | TyparDynamicReq.Yes -> 
-        if isAnyParTy csenv.g ty then 
-            let tpr = destAnyParTy csenv.g ty
-            if tpr.DynamicReq <> TyparDynamicReq.Yes then TransactDynamicReq trace tpr TyparDynamicReq.Yes else CompleteD
-        else CompleteD
+        match tryAnyParTy csenv.g ty with
+        | Some tpr when tpr.DynamicReq <> TyparDynamicReq.Yes ->
+            TransactDynamicReq trace tpr TyparDynamicReq.Yes
+        | _ -> CompleteD
 
 let SubstMeasureWarnIfRigid (csenv:ConstraintSolverEnv) trace (v:Typar) ms =
     if v.Rigidity.WarnIfUnified && not (isAnyParTy csenv.g (TType_measure ms)) then         
@@ -651,14 +650,17 @@ let freshMeasure () = Measure.Var (NewInferenceMeasurePar ())
 let CheckWarnIfRigid (csenv:ConstraintSolverEnv) ty1 (r:Typar) ty =
     let g = csenv.g
     let denv = csenv.DisplayEnv
-    if r.Rigidity.WarnIfUnified && 
-       (not (isAnyParTy g ty) ||
-        (let tp2 = destAnyParTy g ty 
-         not tp2.IsCompilerGenerated &&
-         (r.IsCompilerGenerated || 
-          // exclude this warning for two identically named user-specified type parameters, e.g. from different mutually recursive functions or types
-          r.DisplayName <> tp2.DisplayName )))
-    then
+    if not r.Rigidity.WarnIfUnified then CompleteD else
+    let needsWarning =
+        match tryAnyParTy g ty with
+        | None -> true
+        | Some tp2 ->
+            not tp2.IsCompilerGenerated &&
+                (r.IsCompilerGenerated || 
+                 // exclude this warning for two identically named user-specified type parameters, e.g. from different mutually recursive functions or types
+                 r.DisplayName <> tp2.DisplayName)
+
+    if needsWarning then
         // NOTE: we grab the name eagerly to make sure the type variable prints as a type variable 
         let tpnmOpt = if r.IsCompilerGenerated then None else Some r.Name 
         WarnD(NonRigidTypar(denv,tpnmOpt,r.Range,ty1,ty,csenv.m)) 
@@ -1403,11 +1405,11 @@ and GetRelevantMethodsForTrait (csenv:ConstraintSolverEnv) permitWeakResolution 
 
 /// The nominal support of the member constraint 
 and GetSupportOfMemberConstraint (csenv:ConstraintSolverEnv) (TTrait(tys,_,_,_,_,_)) =
-    tys |> List.choose (fun ty -> if isAnyParTy csenv.g ty then Some (destAnyParTy csenv.g ty) else  None)
+    tys |> List.choose (tryAnyParTy csenv.g)
     
 /// All the typars relevant to the member constraint *)
 and GetFreeTyparsOfMemberConstraint (csenv:ConstraintSolverEnv) (TTrait(tys,_,_,argtys,rty,_)) =
-    (freeInTypesLeftToRightSkippingConstraints csenv.g (tys@argtys@ Option.toList rty))
+    freeInTypesLeftToRightSkippingConstraints csenv.g (tys@argtys@ Option.toList rty)
 
 /// Re-solve the global constraints involving any of the given type variables. 
 /// Trait constraints can't always be solved using the pessimistic rules. We only canonicalize 
@@ -1418,10 +1420,10 @@ and SolveRelevantMemberConstraints (csenv:ConstraintSolverEnv) ndeep permitWeakR
             tps |> AtLeastOneD (fun tp -> 
                 /// Normalize the typar 
                 let ty = mkTyparTy tp
-                if isAnyParTy csenv.g ty then 
-                    let tp = destAnyParTy csenv.g ty
+                match tryAnyParTy csenv.g ty with
+                | Some tp ->
                     SolveRelevantMemberConstraintsForTypar csenv ndeep permitWeakResolution trace tp
-                else
+                | None -> 
                     ResultD false)) 
 
 and SolveRelevantMemberConstraintsForTypar (csenv:ConstraintSolverEnv) ndeep permitWeakResolution (trace:OptionalTrace) tp =

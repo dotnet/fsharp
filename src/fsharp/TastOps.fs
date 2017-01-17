@@ -716,6 +716,7 @@ let isAppTy   g ty = ty |> stripTyEqns g |> (function TType_app _ -> true | _ ->
 let destAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref,tinst) -> tcref,tinst | _ -> failwith "destAppTy") 
 let tcrefOfAppTy   g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tcref | _ -> failwith "tcrefOfAppTy") 
 let tryDestAppTy   g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> Some tcref | _ -> None) 
+let tryAnyParTy    g ty = ty |> stripTyEqns g |> (function TType_var v -> Some v | TType_measure unt -> Some(destUnitParMeasure g unt) | _ -> None)
 let (|AppTy|_|) g ty = ty |> stripTyEqns g |> (function TType_app(tcref,tinst) -> Some (tcref,tinst) | _ -> None) 
 let (|RefTupleTy|_|) g ty = ty |> stripTyEqns g |> (function TType_tuple(tupInfo,tys) when not (evalTupInfoIsStruct tupInfo) -> Some tys | _ -> None)
 let (|FunTy|_|) g ty = ty |> stripTyEqns g |> (function TType_fun(dty, rty) -> Some (dty, rty) | _ -> None)
@@ -1141,11 +1142,13 @@ let NormalizeDeclaredTyparsForEquiRecursiveInference g tps =
     match tps with 
     | [] -> []
     | tps -> 
-        tps |> List.map (fun tp -> 
-          let ty =  mkTyparTy tp
-          if isAnyParTy g ty then destAnyParTy g ty else tp)
+        tps |> List.map (fun tp ->
+          let ty = mkTyparTy tp
+          match tryAnyParTy g ty with
+          | Some anyParTy -> anyParTy 
+          | None -> tp)
  
-type TypeScheme = TypeScheme of Typars  * TType    
+type TypeScheme = TypeScheme of Typars * TType    
   
 let mkGenericBindRhs g m generalizedTyparsForRecursiveBlock typeScheme bodyExpr = 
     let (TypeScheme(generalizedTypars,tauType)) = typeScheme

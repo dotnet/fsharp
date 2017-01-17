@@ -416,6 +416,7 @@ val isFSharpObjModelTy : TcGlobals -> TType -> bool
 val isRecdTy           : TcGlobals -> TType -> bool
 val isTyparTy          : TcGlobals -> TType -> bool
 val isAnyParTy         : TcGlobals -> TType -> bool
+val tryAnyParTy        : TcGlobals -> TType -> Typar option
 val isMeasureTy        : TcGlobals -> TType -> bool
 
 val mkAppTy : TyconRef -> TypeInst -> TType
