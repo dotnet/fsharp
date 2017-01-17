@@ -758,10 +758,6 @@ module NameMap =
 
     let iter f (l : NameMap<'T>) = Map.iter (fun _k v -> f v) l
 
-    let iteri f (l : NameMap<'T>) = Map.iter f l
-
-    let mapi f (l : NameMap<'T>) = Map.map f l
-
     let partition f (l : NameMap<'T>) = Map.filter (fun _ x-> f x) l, Map.filter (fun _ x -> not (f x)) l
 
     let mem v (m: NameMap<'T>) = Map.containsKey v m

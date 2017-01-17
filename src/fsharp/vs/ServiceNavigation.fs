@@ -264,15 +264,18 @@ module NavigationImpl =
                 let nested = processNestedDeclarations(decls)
                 // Get nested modules and types (for the left dropdown)
                 let other = processFSharpNavigationTopLevelDeclarations(baseName, decls)
-                
+
                 // Create explicitly - it can be 'single top level' thing that is hidden
-                let decl =
-                    FSharpNavigationDeclarationItem.Create
-                        (textOfLid id, (if isModule then ModuleFileDecl else NamespaceDecl),
-                            GlyphMajor.Module, m, 
-                            unionRangesChecked (rangeOfDecls nested) (moduleRange (rangeOfLid id) other), 
-                            singleTopLevel, access), (addItemName(textOfLid id)), nested
-                decl::other)
+                match id with
+                | [] -> other
+                | _ ->
+                    let decl =
+                        FSharpNavigationDeclarationItem.Create
+                            (textOfLid id, (if isModule then ModuleFileDecl else NamespaceDecl),
+                                GlyphMajor.Module, m, 
+                                unionRangesChecked (rangeOfDecls nested) (moduleRange (rangeOfLid id) other), 
+                                singleTopLevel, access), (addItemName(textOfLid id)), nested
+                    decl::other)
                   
         let items = 
             items 
