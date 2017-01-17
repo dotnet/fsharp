@@ -198,6 +198,14 @@ module internal CommonRoslynHelpers =
                 | Internal -> Glyph.InterfaceInternal
                 | Protected -> Glyph.InterfaceProtected
                 | Private -> Glyph.InterfacePrivate
+            elif x.IsNamespace then
+                Glyph.Namespace
+            elif x.IsValueType then
+                match x.Accessibility with
+                | Public -> Glyph.StructurePublic
+                | Internal -> Glyph.StructureInternal
+                | Protected -> Glyph.StructureProtected
+                | Private -> Glyph.StructurePrivate
             else
                 match x.Accessibility with
                 | Public -> Glyph.ClassPublic
