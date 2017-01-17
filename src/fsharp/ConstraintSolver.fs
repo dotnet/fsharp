@@ -1390,7 +1390,7 @@ and GetRelevantMethodsForTrait (csenv:ConstraintSolverEnv) permitWeakResolution 
             /// between potential overloads because a generic instantiation derived from the left hand type differs 
             /// to a generic instantiation for an operator based on the right hand type. 
             
-            let minfos = List.fold (ListSet.unionFavourLeft MethInfo.MethInfosUseIdenticalDefinitions) (List.head minfos) (List.tail minfos)
+            let minfos = List.reduce (ListSet.unionFavourLeft MethInfo.MethInfosUseIdenticalDefinitions) minfos
             minfos
         else 
             []
