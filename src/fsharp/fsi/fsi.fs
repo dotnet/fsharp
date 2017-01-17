@@ -55,6 +55,7 @@ open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.TcGlobals
 
 open Internal.Utilities.Collections
+open Internal.Utilities.StructuredFormat
 
 type FormatOptions = Internal.Utilities.StructuredFormat.FormatOptions
 
@@ -148,6 +149,53 @@ module internal Utilities =
         let m = match typeArgs with [||] -> m | _ -> m.MakeGenericMethod(typeArgs)
         m.Invoke(obj, [|v1;v2;v3|]) |> unbox
 
+    let colorPrintL (outWriter : TextWriter) opts layout =
+        let renderer =
+            { new LayoutRenderer<NoResult,NoState> with
+                member r.Start () = NoState
+
+                member r.AddText z s =
+                    let color =
+                        match s with
+                        | TaggedText.Keyword _ -> ConsoleColor.White
+                        | TaggedText.TypeParameter _
+                        | TaggedText.Alias _
+                        | TaggedText.Class _ 
+                        | TaggedText.Module _
+                        | TaggedText.Interface _
+                        | TaggedText.Record _
+                        | TaggedText.Struct _
+                        | TaggedText.Union _
+                        | TaggedText.UnknownType _ -> ConsoleColor.Cyan
+                        | TaggedText.UnionCase _
+                        | TaggedText.ActivePatternCase _ -> ConsoleColor.Magenta
+                        | TaggedText.StringLiteral _ -> ConsoleColor.Yellow
+                        | TaggedText.NumericLiteral _ -> ConsoleColor.Green
+                        | _ -> Console.ForegroundColor
+
+                    DoWithColor color (fun () -> outWriter.Write s.Value)
+
+                    z
+
+                member r.AddBreak z n =
+                    outWriter.WriteLine()
+                    outWriter.Write (String.replicate n " ")
+                    z
+
+                member r.AddTag z (tag,attrs,start) = z
+
+                member r.Finish z =
+                    outWriter.WriteLine()
+                    NoResult
+            }
+
+        layout
+        |> Internal.Utilities.StructuredFormat.Display.squash_layout opts
+        |> Layout.renderL renderer
+        |> ignore
+
+        outWriter.WriteLine()
+
 let referencedAssemblies = Dictionary<string, DateTime>()
 
 #if FX_RESHAPED_REFLECTION
@@ -237,7 +285,7 @@ type public FsiEvaluationSessionHostConfig () =
 
 /// Used to print value signatures along with their values, according to the current
 /// set of pretty printers installed in the system, and default printing rules.
-type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, g: TcGlobals, generateDebugInfo, resolvePath, outWriter) = 
+type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, g: TcGlobals, generateDebugInfo, resolvePath, outWriter: TextWriter) = 
 
     /// This printer is used by F# Interactive if no other printers apply.
     let DefaultPrintingIntercept (ienv: Internal.Utilities.StructuredFormat.IEnvironment) (obj:obj) = 
@@ -405,10 +453,8 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, g: TcGlobals,
                       NicePrint.layoutValOrMember denv vref (* the rhs was suppressed by the printer, so no value to print *)
                     else
                       (NicePrint.layoutValOrMember denv vref ++ wordL (TaggedTextOps.tagText "=")) --- rhsL.Value
-        Internal.Utilities.StructuredFormat.Display.output_layout opts outWriter fullL;  
-        outWriter.WriteLine()
-    
 
+        Utilities.colorPrintL outWriter opts fullL
 
 /// Used to make a copy of input in order to include the input when displaying the error text.
 type internal FsiStdinSyphon(errorWriter: TextWriter) = 
@@ -450,10 +496,9 @@ type internal FsiStdinSyphon(errorWriter: TextWriter) =
         Utilities.ignoreAllErrors (fun () -> 
             let isError = true
             DoWithErrorColor isError (fun () ->
-                errorWriter.WriteLine();
                 writeViaBufferWithEnvironmentNewLines errorWriter (OutputDiagnosticContext "  " syphon.GetLine) err; 
                 writeViaBufferWithEnvironmentNewLines errorWriter (OutputDiagnostic (tcConfig.implicitIncludeDir,tcConfig.showFullPaths,tcConfig.flatErrors,tcConfig.errorStyle,isError))  err;
-                errorWriter.WriteLine()
+                errorWriter.WriteLine("\n")
                 errorWriter.Flush()))
 
 
@@ -498,7 +543,7 @@ type internal ErrorLoggerThatStopsOnFirstError(tcConfigB:TcConfigBuilder, fsiStd
                 fsiConsoleOutput.Error.WriteLine()
                 writeViaBufferWithEnvironmentNewLines fsiConsoleOutput.Error (OutputDiagnosticContext "  " fsiStdinSyphon.GetLine) err
                 writeViaBufferWithEnvironmentNewLines fsiConsoleOutput.Error (OutputDiagnostic (tcConfigB.implicitIncludeDir,tcConfigB.showFullPaths,tcConfigB.flatErrors,tcConfigB.errorStyle,isError)) err
-                fsiConsoleOutput.Error.WriteLine())
+                fsiConsoleOutput.Error.WriteLine("\n"))
 
     override x.ErrorCount = errorCount
 
@@ -1049,12 +1094,9 @@ type internal FsiDynamicCompiler
 
             for (TImplFile(_qname,_,mexpr,_,_)) in declaredImpls do
                 let responseL = NicePrint.layoutInferredSigOfModuleExpr false denv infoReader AccessibleFromSomewhere rangeStdin mexpr 
-                if not (Layout.isEmptyL responseL) then      
-                    fsiConsoleOutput.uprintfn "";
+                if not (Layout.isEmptyL responseL) then
                     let opts = valuePrinter.GetFsiPrintOptions()
-                    let responseL = Internal.Utilities.StructuredFormat.Display.squash_layout opts responseL
-                    Layout.renderL (Layout.channelR outWriter) responseL |> ignore
-                    fsiConsoleOutput.uprintfnn ""
+                    Utilities.colorPrintL outWriter opts responseL |> ignore
 
         // Build the new incremental state.
         let istate = {istate with  optEnv    = optEnv;
@@ -1741,7 +1783,7 @@ type internal FsiInteractionProcessor
                              initialInteractiveState) = 
 
     let mutable currState = initialInteractiveState
-    let event = Event<unit>()
+    let event = Control.Event<unit>()
     let setCurrState s = currState <- s; event.Trigger()
     let runCodeOnEventLoop errorLogger f istate = 
         try 

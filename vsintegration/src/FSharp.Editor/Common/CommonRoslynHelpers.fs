@@ -8,6 +8,7 @@ open System.Collections.Generic
 open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
+open Microsoft.CodeAnalysis.Diagnostics
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Layout
 open Microsoft.FSharp.Compiler.SourceCodeServices
@@ -98,12 +99,16 @@ module internal CommonRoslynHelpers =
         let emptyString = LocalizableString.op_Implicit("")
         let description = LocalizableString.op_Implicit(error.Message)
         let severity = if error.Severity = FSharpErrorSeverity.Error then DiagnosticSeverity.Error else DiagnosticSeverity.Warning
-        let descriptor = new DiagnosticDescriptor(id, emptyString, description, error.Subcategory, severity, true, emptyString, String.Empty, null)
+        let customTags = 
+            match error.ErrorNumber with
+            | 1182 -> DiagnosticCustomTags.Unnecessary
+            | _ -> null
+        let descriptor = new DiagnosticDescriptor(id, emptyString, description, error.Subcategory, severity, true, emptyString, String.Empty, customTags)
         Diagnostic.Create(descriptor, location)
 
     let FSharpGlyphToRoslynGlyph = function
-        // FSROSLYNTODO: This doesn't yet reflect pulbic/private/internal into the glyph
-        // FSROSLYNTODO: We should really use FSharpSymbol information here.  But GetDeclarationListInfo doesn't provide it, and switch to GetDeclarationListSymbols is a bit large at the moment
+        // FSROSLYNTODO: This doesn't yet reflect public/private/internal into the glyph
+        // FSROSLYNTODO: We should really use FSharpSymbol information here. But GetDeclarationListInfo doesn't provide it, and switch to GetDeclarationListSymbols is a bit large at the moment
         | GlyphMajor.Class -> Glyph.ClassPublic
         | GlyphMajor.Constant -> Glyph.ConstantPublic
         | GlyphMajor.Delegate -> Glyph.DelegatePublic
@@ -201,11 +206,15 @@ module internal CommonRoslynHelpers =
                 | Private -> Glyph.ClassPrivate
         | _ -> Glyph.None
 
+    let RangeToLocation (r: range, sourceText: SourceText, filePath: string) : Location =
+        let linePositionSpan = LinePositionSpan(LinePosition(Line.toZ r.StartLine, r.StartColumn), LinePosition(Line.toZ r.EndLine, r.EndColumn))
+        let textSpan = sourceText.Lines.GetTextSpan linePositionSpan
+        Location.Create(filePath, textSpan, linePositionSpan)
+
 [<AutoOpen>]
 module internal RoslynExtensions =
     type Project with
         /// The list of all other projects within the same solution that reference this project.
         member this.GetDependentProjects() =
-            [ for project in this.Solution.Projects do
-                if project.ProjectReferences |> Seq.exists (fun ref -> ref.ProjectId = this.Id) then 
-                    yield project ]
+            this.Solution.GetProjectDependencyGraph().GetProjectsThatDirectlyDependOnThisProject(this.Id)
+            |> Seq.map this.Solution.GetProject

@@ -4410,8 +4410,9 @@ and TcTyparOrMeasurePar optKind cenv (env:TcEnv) newOk tpenv (Typar(id,_,_) as t
                         |> Set.ofSeq
 
                 Set.union predictions1 predictions2
-
-            error (UndefinedName(0,FSComp.SR.undefinedNameTypeParameter,id,predictTypeParameters))
+            
+            let reportedId = Ident("'" + id.idText,id.idRange)
+            error (UndefinedName(0,FSComp.SR.undefinedNameTypeParameter,reportedId,predictTypeParameters))
         
         // OK, this is an implicit declaration of a type parameter 
         // The kind defaults to Type
@@ -12582,7 +12583,7 @@ module IncrClassChecking =
         // Now deal with all the 'let' and 'member' declarations
         let initActions,reps = List.mapFold TransDec reps decs
         let cctorInitActions2, ctorInitActions2,methodBinds2 = List.unzip3 initActions
-        let cctorInitActions = cctorInitActions1 @  List.concat cctorInitActions2
+        let cctorInitActions = cctorInitActions1 @ List.concat cctorInitActions2
         let ctorInitActions = ctorInitActions1 @ List.concat ctorInitActions2
         let methodBinds = methodBinds1 @ List.concat methodBinds2
 
@@ -12758,7 +12759,7 @@ module MutRecBindingChecking =
                    [ for (RecDefnBindingInfo(a,b,c,bind)) in recBinds do 
                        yield NormalizedRecBindingDefn(a,b,c,BindingNormalization.NormalizeBinding ValOrMemberBinding cenv envForDecls bind) ]
                 let bindsAndValues,(tpenv,recBindIdx) = ((tpenv,recBindIdx), normRecDefns) ||> List.mapFold (AnalyzeAndMakeAndPublishRecursiveValue ErrorOnOverrides false cenv envForDecls) 
-                let binds = bindsAndValues |> List.map fst |> List.concat
+                let binds = bindsAndValues |> List.collect fst
 
                 let defnAs = MutRecShape.Lets binds
                 defnAs,(tpenv,recBindIdx,List.rev binds @ uncheckedBindsRev)
@@ -12768,12 +12769,16 @@ module MutRecBindingChecking =
                 // Class members can access protected members of the implemented type 
                 // Class members can access private members in the typ
                 let isExtrinsic = (declKind = ExtrinsicExtensionBinding)
-                let envForTycon = MakeInnerEnvForTyconRef cenv envForDecls tcref isExtrinsic 
+                let innitalEnvForTycon = MakeInnerEnvForTyconRef cenv envForDecls tcref isExtrinsic 
 
                 // Re-add the type constructor to make it take precedence for record label field resolutions
                 // This does not apply to extension members: in those cases the relationship between the record labels
                 // and the type is too extruded
-                let envForTycon = if isExtrinsic then envForTycon else AddLocalTyconRefs true cenv.g cenv.amap tcref.Range [tcref] envForTycon
+                let envForTycon = 
+                    if isExtrinsic then 
+                        innitalEnvForTycon
+                    else
+                        AddLocalTyconRefs true cenv.g cenv.amap tcref.Range [tcref] innitalEnvForTycon
 
                 // Make fresh version of the class type for type checking the members and lets *
                 let _,copyOfTyconTypars,_,objTy,thisTy = FreshenObjectArgType cenv tcref.Range TyparRigidity.WillBeRigid tcref isExtrinsic declaredTyconTypars
@@ -13794,7 +13799,7 @@ module TyconConstraintInference =
                     | SpecialComparableHeadType g tinst -> 
                         tinst |> List.forall (checkIfFieldTypeSupportsComparison  tycon)
 
-                    // Otherwise its a nominal type
+                    // Otherwise it's a nominal type
                     | _ -> 
 
                         if isAppTy g ty then 
@@ -13833,7 +13838,7 @@ module TyconConstraintInference =
                            match structuralTypes |> List.tryFind (fst >> checkIfFieldTypeSupportsComparison tycon >> not) with
                            | None -> 
                                assert false
-                               failwith "unreachble"
+                               failwith "unreachable"
                            | Some (ty,_) -> 
                                if isTyparTy g ty then 
                                    errorR(Error(FSComp.SR.tcStructuralComparisonNotSatisfied1(tycon.DisplayName,NicePrint.prettyStringOfTy denv ty),tycon.Range)) 
@@ -13846,7 +13851,7 @@ module TyconConstraintInference =
                            match structuralTypes |> List.tryFind (fst >> checkIfFieldTypeSupportsComparison tycon >> not) with
                            | None -> 
                                assert false
-                               failwith "unreachble"
+                               failwith "unreachable"
                            | Some (ty,_) -> 
                                // NOTE: these warnings are off by default - they are level 4 informational warnings
                                // PERF: this call to prettyStringOfTy is always being executed, even when the warning
@@ -13960,7 +13965,7 @@ module TyconConstraintInference =
                                match structuralTypes |> List.tryFind (fst >> checkIfFieldTypeSupportsEquality tycon >> not) with
                                | None -> 
                                    assert false
-                                   failwith "unreachble"
+                                   failwith "unreachable"
                                | Some (ty,_) -> 
                                    if isTyparTy g ty then 
                                        errorR(Error(FSComp.SR.tcStructuralEqualityNotSatisfied1(tycon.DisplayName,NicePrint.prettyStringOfTy denv ty),tycon.Range)) 
@@ -13975,7 +13980,7 @@ module TyconConstraintInference =
                                match structuralTypes |> List.tryFind (fst >> checkIfFieldTypeSupportsEquality tycon >> not) with
                                | None -> 
                                    assert false
-                                   failwith "unreachble"
+                                   failwith "unreachable"
                                | Some (ty,_) -> 
                                    if isTyparTy g ty then 
                                        warning(Error(FSComp.SR.tcNoEqualityNeeded1(tycon.DisplayName, NicePrint.prettyStringOfTy denv ty, tycon.DisplayName),tycon.Range)) 
@@ -14113,7 +14118,7 @@ module TcExceptionDeclarations =
 
         let defns = [MutRecShape.Tycon(MutRecDefnsPhase2DataForTycon(Some exnc, parent, ModuleOrMemberBinding, mkLocalEntityRef exnc, None, NoSafeInitInfo, [], aug, m, NoNewSlots, (fun () -> ())))]
         let binds2,envFinal = TcMutRecDefns_Phase2 cenv envInitial m scopem None envMutRec defns
-        let binds2flat = binds2 |> MutRecShapes.collectTycons |> List.map snd |> List.concat
+        let binds2flat = binds2 |> MutRecShapes.collectTycons |> List.collect snd
         // Augment types with references to values that implement the pre-baked semantics of the type
         let binds3 = AddAugmentationDeclarations.AddGenericEqualityBindings cenv envFinal exnc
         binds1 @ binds2flat @ binds3,exnc,envFinal

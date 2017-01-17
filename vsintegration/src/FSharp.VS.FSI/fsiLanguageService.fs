@@ -16,6 +16,8 @@ open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.Package
 open Microsoft.VisualStudio.TextManager.Interop
+open System.ComponentModel.Composition
+open Microsoft.VisualStudio.Utilities
 
 open Util
 open System.ComponentModel
@@ -24,6 +26,11 @@ open Microsoft.VisualStudio.FSharp.Interactive.Session
 module SP = Microsoft.VisualStudio.FSharp.Interactive.Session.SessionsProperties
 
 
+module internal ContentType = 
+    [<Export>]
+    [<Name(Guids.fsiContentTypeName)>]
+    [<BaseDefinition("code")>]
+    let FSharpContentTypeDefinition = ContentTypeDefinition()
 
 // FsiPropertyPage
 [<ComVisible(true)>]
