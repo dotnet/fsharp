@@ -334,7 +334,8 @@ module List =
     let mapFold (f:'a -> 'b -> 'c * 'a) (s:'a) (l:'b list) : 'c list * 'a = 
         match l with
         | [] -> [], s
-        | [h] -> let h',s' = f s h
+        | [h] -> let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
+                 let h',s' = f.Invoke(s, h)
                  [h'], s'
         | _ -> 
             List.mapFold f s l
