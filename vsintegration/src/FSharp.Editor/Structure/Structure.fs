@@ -11,21 +11,13 @@ module internal Structure =
     /// from an untyped AST for the purposes of block structure.
     [<RequireQualifiedAccess>]
     module private Range =
-        let inline union (r1:range) (r2:range) =
-            let startPos =
-                if r1.StartLine <= r2.StartLine
-                 && r1.StartColumn <= r2.StartColumn then r1.Start else r2.Start
-            let endPos =
-                if r1.EndLine >= r2.EndLine
-                 && r1.EndColumn >= r2.EndColumn then r1.End else r2.End
-            mkFileIndexRange r1.FileIndex startPos endPos
 
         let unionOpts (r1:range option) (r2:range option) =
             match r1 , r2 with
             | None, None -> None
             | Some r, None -> Some r
             | None , Some r -> Some r
-            | Some r1, Some r2 -> union r1 r2|> Some
+            | Some r1, Some r2 -> unionRanges r1 r2 |> Some
 
         /// Create a range starting at the end of r1 and finishing at the end of r2
         let inline endToEnd (r1: range) (r2: range) = mkFileIndexRange r1.FileIndex r1.End   r2.End
@@ -66,7 +58,7 @@ module internal Structure =
         | [] -> other
         | ls ->
             ls|> List.map (fun (TyparDecl (_,typarg)) -> typarg.Range)
-            |> List.reduce Range.union
+            |> List.reduce Range.unionRanges
 
     let rangeOfSynPatsElse other (synPats:SynSimplePat list) =
         match synPats with
@@ -76,7 +68,7 @@ module internal Structure =
                 fun ( SynSimplePat.Attrib (range=r)
                     | SynSimplePat.Id (range=r)
                     | SynSimplePat.Typed (range=r)) -> r)
-            |> List.reduce Range.union
+            |> List.reduce Range.unionRanges
 
 
     /// Scope indicates the way a range/snapshot should be collapsed. |Scope.Scope.Same| is for a scope inside
