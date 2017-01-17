@@ -1955,12 +1955,15 @@ and OptimizeConst cenv env expr (c,m,ty) =
 // Optimize/analyze a record lookup. 
 //------------------------------------------------------------------------- 
 
-and TryOptimizeRecordFieldGet cenv _env (e1info,r:RecdFieldRef,_tinst,m) =
+and TryOptimizeRecordFieldGet cenv _env (e1info, (RFRef (rtcref,_) as r),_tinst,m) =
     match destRecdValue e1info.Info with
     | Some finfos when cenv.settings.EliminateRecdFieldGet() && not e1info.HasEffect ->
-        let n = r.Index
-        if n >= finfos.Length then errorR(InternalError( "TryOptimizeRecordFieldGet: term argument out of range",m))
-        Some finfos.[n]   (* Uses INVARIANT on record ValInfos that exprs are in defn order *)
+        match TryFindFSharpAttribute cenv.g cenv.g.attrib_CLIMutableAttribute rtcref.Attribs with
+        | Some _ -> None
+        | None ->
+            let n = r.Index
+            if n >= finfos.Length then errorR(InternalError( "TryOptimizeRecordFieldGet: term argument out of range",m))
+            Some finfos.[n]   (* Uses INVARIANT on record ValInfos that exprs are in defn order *)
     | _ -> None
   
 and TryOptimizeTupleFieldGet cenv _env (_tupInfo,e1info,tys,n,m) =

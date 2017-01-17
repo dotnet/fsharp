@@ -5,6 +5,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 open System
 open System.Text
 open System.Collections.Generic
+open System.Text.RegularExpressions
 open Internal.Utilities.Collections
 open EnvDTE
 open EnvDTE80
@@ -17,55 +18,49 @@ type internal ITaggedTextCollector =
     abstract Add: text: TaggedText -> unit
     abstract EndsWithLineBreak: bool
     abstract IsEmpty: bool
+    abstract StartXMLDoc: unit -> unit
 
 type internal TextSanitizingCollector(collector, ?lineLimit: int) =
     let mutable isEmpty = true 
     let mutable endsWithLineBreak = false
     let mutable count = 0
+    let mutable startXmlDoc = false
 
-    let buf = StringBuilder()
-
-    let addTaggedTextEntry t =
-        if lineLimit.IsNone || count < lineLimit.Value then 
-            isEmpty <- false
-            endsWithLineBreak <- match t with TaggedText.LineBreak _ -> true | _ -> false
-            if endsWithLineBreak then count <- count + 1
-            collector t
-        if lineLimit.IsSome && lineLimit.Value = count then
+    let addTaggedTextEntry text =
+        match lineLimit with
+        | Some lineLimit when lineLimit = count ->
             // add ... when line limit is reached
             collector (tagText "...")
             count <- count + 1
+        | _ ->
+            isEmpty <- false
+            endsWithLineBreak <- match text with TaggedText.LineBreak _ -> true | _ -> false
+            if endsWithLineBreak then count <- count + 1
+            collector text
     
-    let isCROrLF c = c = '\r' || c = '\n'
+    static let splitTextRegex = Regex(@"\s*\n\s*\n\s*", RegexOptions.Compiled ||| RegexOptions.ExplicitCapture)
+    static let normalizeSpacesRegex = Regex(@"\s+", RegexOptions.Compiled ||| RegexOptions.ExplicitCapture)
 
     let reportTextLines (s: string) =
-        let mutable pos = 0
-        // skip newlines at the beginning
-        while pos < s.Length && isCROrLF s.[pos] do
-            pos <- pos + 1
-        
-        // skip newlines whitespaces at the end
-        let mutable endPos = s.Length - 1
-        while endPos >= pos && (Char.IsWhiteSpace s.[endPos] || isCROrLF s.[endPos])do
-            endPos <- endPos - 1
-
-        if pos < endPos then
-            buf.Clear() |> ignore
-            while (pos < s.Length) do
-                match s.[pos] with
-                | '\r' -> ()
-                | '\n' -> 
-                    if buf.Length > 0 then
-                        addTaggedTextEntry (tagText (buf.ToString()))
-                        addTaggedTextEntry Literals.lineBreak
-                        buf.Clear() |> ignore
-                | c -> buf.Append(c) |> ignore
-                pos <- pos + 1
-            // flush the rest
-            if buf.Length > 0 then
-                addTaggedTextEntry (tagText (buf.ToString()))
-
-        buf.Clear() |> ignore
+        // treat _double_ newlines as line breaks and remove all \n after that
+        let paragraphs = splitTextRegex.Split(s.Replace("\r", "")) |> Array.filter (not << String.IsNullOrWhiteSpace)
+        paragraphs
+        |> Array.iteri (fun i paragraph ->
+            let paragraph = normalizeSpacesRegex.Replace(paragraph, " ")
+            let paragraph = 
+                // it's the first line of XML Doc. It often has heading '\n' and spaces, we should remove it.
+                // We should not remove them from subsequent lines, because spaces may be proper delimiters 
+                // between plane text and formatted code.
+                if startXmlDoc then 
+                    startXmlDoc <- false
+                    paragraph.TrimStart() 
+                else paragraph
+                
+            addTaggedTextEntry (tagText paragraph)
+            if i < paragraphs.Length - 1 then
+                // insert two line breaks to separate paragraphs
+                addTaggedTextEntry Literals.lineBreak
+                addTaggedTextEntry Literals.lineBreak)
 
     interface ITaggedTextCollector with
         member this.Add text = 
@@ -76,6 +71,7 @@ type internal TextSanitizingCollector(collector, ?lineLimit: int) =
 
         member this.IsEmpty = isEmpty
         member this.EndsWithLineBreak = isEmpty || endsWithLineBreak
+        member this.StartXMLDoc() = startXmlDoc <- true
 
 /// XmlDocumentation builder, using the VS interfaces to build documentation.  An interface is used
 /// to allow unit testing to give an alternative implementation which captures the documentation.
@@ -266,6 +262,7 @@ module internal XmlDocumentation =
 
         let AppendMemberData(collector: ITaggedTextCollector, xmlDocReader: XmlDocReader,showExceptions:bool,showParameters:bool) =
             AppendHardLine collector
+            collector.StartXMLDoc()
             xmlDocReader.CollectSummary(collector)
 //          AppendParameters appendTo memberData
 //          AppendTypeParameters appendTo memberData
@@ -385,8 +382,7 @@ module internal XmlDocumentation =
                 textCollector.Add(tagText errText)
                 true
 
-        List.fold Process false dataTipText
-        |> ignore
+        List.fold Process false dataTipText |> ignore
 
     let BuildDataTipText(documentationProvider, textCollector, xmlCollector, FSharpToolTipText(dataTipText)) = 
         BuildTipText(documentationProvider, dataTipText, textCollector, xmlCollector, true, true, false, true) 

@@ -198,6 +198,7 @@ module internal QuickParse =
         | StartIdentifier of string list * bool
 
     /// Get the partial long name of the identifier to the left of index.
+    /// For example, for `System.DateTime.Now` it returns ([|"System"; "DateTime"|], "Now").
     let GetPartialLongNameEx(line:string,index) : (string list * string) =
         if isNull line then defaultName
         elif index < 0 then defaultName

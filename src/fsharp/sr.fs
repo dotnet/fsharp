@@ -136,7 +136,7 @@ namespace Microsoft.FSharp.Compiler
                             pos <- pos'
                     pos <- pos + 1
                 // the sort should be unnecessary, but better safe than sorry
-                nHoles,Set.toList order |> List.sort |> List.rev
+                nHoles,Set.toList order |> List.sortDescending
 
             let countFormatPlaceholders (s : string) =
                 // strip any escaped % characters - yes, this will fail if given %%%...

@@ -4,7 +4,7 @@
 
 //<Expects status="error" id="FS0039" span="(9,40-9,46)">The value or constructor 'Object' is not defined</Expects>
 //<Expects status="error" id="FS0039" span="(14,33-14,34)">The value or constructor 'T' is not defined</Expects>
-//<Expects status="error" id="FS0039" span="(17,49-17,57)">The namespace or module 'DateTime' is not defined</Expects>
+//<Expects status="error" id="FS0039" span="(17,49-17,57)">The value, namespace, type or module 'DateTime' is not defined</Expects>
 
 type System.Object with member x.Foo = Object()
 

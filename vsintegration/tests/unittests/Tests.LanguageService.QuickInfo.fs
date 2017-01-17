@@ -399,7 +399,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
                                 let a = typeof<N.T(*Marker*)> """
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
-         "This is a synthetic type Localized!  ኤፍ ሻርፕ",
+         "This is a synthetic type Localized! ኤፍ ሻርፕ",
          addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
    
     [<Test>]
@@ -463,7 +463,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
                                 let foo = new N.T(*Marker*)() """
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
-         "This is a synthetic .ctor Localized!  ኤፍ ሻርፕ for N.T",
+         "This is a synthetic .ctor Localized! ኤፍ ሻርፕ for N.T",
          addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
         
 
@@ -492,7 +492,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
                                 t.Event1(*Marker*)"""
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "Event1(*Marker*)", 
-         "This is a synthetic *event* Localized!  ኤፍ ሻርፕ for N.T",
+         "This is a synthetic *event* Localized! ኤፍ ሻርፕ for N.T",
          addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
    
     [<Test>]
@@ -571,7 +571,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
                                 let t = new N.T.M(*Marker*)()"""
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "M(*Marker*)", 
-         "This is a synthetic *method* Localized!  ኤፍ ሻርፕ",
+         "This is a synthetic *method* Localized! ኤፍ ሻርፕ",
          addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
    
     [<Test>]
@@ -637,7 +637,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
                                 let p = N.T.StaticProp(*Marker*)"""
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "StaticProp(*Marker*)", 
-         "This is a synthetic *property* Localized!  ኤፍ ሻርፕ for N.T",
+         "This is a synthetic *property* Localized! ኤፍ ሻርፕ for N.T",
          addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
    
     [<Test>]
@@ -1118,7 +1118,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         // The <summary> arises because the xml doc mechanism places these before handing them to VS for processing.
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"XX","module XXX")
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"YY","module YYY\n\nfrom XXX")
-        this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"ZZ","module ZZZ\n\nfrom XXX<summary>\nDoc</summary>")
+        this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"ZZ","module ZZZ\n\nfrom XXX<summary>\n\nDoc</summary>")
 
     [<Test>]
     member public this.``IdentifierWithTick``() = 

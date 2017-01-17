@@ -232,7 +232,7 @@ let x: float = 1.2(*start*).(*end*)3
 let gDateTime (arr: (*start*)DateTime(*end*)[]) =
     arr.[0]
             """,
-            expectedMessage = "The type 'DateTime' is not defined. Maybe you want one of the following:\r\n   nativeint\r\n   DelegateEvent")
+            expectedMessage = "The type 'DateTime' is not defined.")
             
     [<Test>]
     member public this.Error_CyclicalDeclarationDoesNotCrash() = 

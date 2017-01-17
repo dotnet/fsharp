@@ -63,7 +63,7 @@ let executeCompiler references =
         log "%s %s @fsc.cmd.args" coreRunExe fscExe
     File.WriteAllLines(OutputDir ++ "fsc.cmd.args", arguments)
     File.WriteAllLines(OutputDir ++ (TestName + ".runtimeconfig.json"), runtimeConfigLines)
-    CopyDlls.Split(';') |> Array.iter(fun s -> if not (System.String.IsNullOrWhiteSpace(s)) then File.Copy(s, OutputDir ++ Path.GetFileName(s)))
+    CopyDlls.Split(';') |> Array.iter(fun s -> if not (System.String.IsNullOrWhiteSpace(s)) then File.Copy(s, OutputDir ++ Path.GetFileName(s), true))
     executeProcess coreRunExe arguments2
 
 exit (executeCompiler dependencies)

@@ -145,7 +145,7 @@ let PrintCompilerOptionBlocks blocks =
     if Set.contains heading doneHeadings then
       doneHeadings
     else
-      let headingOptions = List.filter (fst >> equals heading) publicBlocks |> List.map snd |> List.concat
+      let headingOptions = List.filter (fst >> equals heading) publicBlocks |> List.collect snd
       PrintPublicOptions (heading,headingOptions)
       Set.add heading doneHeadings
   List.fold consider Set.empty publicBlocks |> ignore<Set<string>>
@@ -1347,27 +1347,34 @@ let GetGeneratedILModuleName (t:CompilerTarget) (s:string) =
     let ext = match t with | Dll -> "dll" | Module -> "netmodule" | _ -> "exe"
     s + "." + ext
 
-
 let ignoreFailureOnMono1_1_16 f = try f() with _ -> ()
 
-let DoWithErrorColor isError f =
-    if not enableConsoleColoring then
+let foreBackColor () =
+    try
+        let c = Console.ForegroundColor // may fail, perhaps on Mac, and maybe ForegroundColor is Black
+        let b = Console.BackgroundColor // may fail, perhaps on Mac, and maybe BackgroundColor is White
+        Some (c,b)
+    with
+        e -> None
+
+let DoWithColor newColor f =
+    match enableConsoleColoring, foreBackColor() with
+    | false, _
+    | true, None ->
+        // could not get console colours, so no attempt to change colours, can not set them back
         f()
-    else
-        let foreBackColor =
-            try
-                let c = Console.ForegroundColor // may fail, perhaps on Mac, and maybe ForegroundColor is Black
-                let b = Console.BackgroundColor // may fail, perhaps on Mac, and maybe BackgroundColor is White
-                Some (c,b)
-            with
-                e -> None
-        match foreBackColor with
-          | None -> f() (* could not get console colours, so no attempt to change colours, can not set them back *)
-          | Some (c,_) ->
-              try
-                let warnColor  = if Console.BackgroundColor = ConsoleColor.White then ConsoleColor.DarkBlue else ConsoleColor.Cyan
-                let errorColor = ConsoleColor.Red
-                ignoreFailureOnMono1_1_16 (fun () -> Console.ForegroundColor <- (if isError then errorColor else warnColor))
-                f()
-              finally
-                ignoreFailureOnMono1_1_16 (fun () -> Console.ForegroundColor <- c)
+    | true, Some (c,_) ->
+        try
+            ignoreFailureOnMono1_1_16 (fun () -> Console.ForegroundColor <- newColor)
+            f()
+        finally
+            ignoreFailureOnMono1_1_16 (fun () -> Console.ForegroundColor <- c)
+
+let DoWithErrorColor isError f =
+    match foreBackColor() with
+    | None -> f()
+    | Some (_, backColor) ->
+        let warnColor = if backColor = ConsoleColor.White then ConsoleColor.DarkBlue else ConsoleColor.Cyan
+        let errorColor = ConsoleColor.Red
+        let color = if isError then errorColor else warnColor 
+        DoWithColor color f
