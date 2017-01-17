@@ -148,14 +148,27 @@ module internal CommonRoslynHelpers =
             | Private -> Glyph.EnumPrivate
         | :? FSharpActivePatternCase -> Glyph.EnumPublic
         | :? FSharpField as x ->
-            match x.Accessibility with
-            | Public -> Glyph.FieldPublic
-            | Internal -> Glyph.FieldInternal
-            | Protected -> Glyph.FieldProtected
-            | Private -> Glyph.FieldPrivate
+            if x.IsLiteral then
+                match x.Accessibility with
+                | Public -> Glyph.ConstantPublic
+                | Internal -> Glyph.ConstantInternal
+                | Protected -> Glyph.ConstantProtected
+                | Private -> Glyph.ConstantPrivate
+            else
+                match x.Accessibility with
+                | Public -> Glyph.FieldPublic
+                | Internal -> Glyph.FieldInternal
+                | Protected -> Glyph.FieldProtected
+                | Private -> Glyph.FieldPrivate
         | :? FSharpParameter -> Glyph.Parameter
         | :? FSharpMemberOrFunctionOrValue as x ->
-            if x.IsExtensionMember then
+            if x.LiteralValue.IsSome then
+                match x.Accessibility with
+                | Public -> Glyph.ConstantPublic
+                | Internal -> Glyph.ConstantInternal
+                | Protected -> Glyph.ConstantProtected
+                | Private -> Glyph.ConstantPrivate
+            elif x.IsExtensionMember then
                 match x.Accessibility with
                 | Public -> Glyph.ExtensionMethodPublic
                 | Internal -> Glyph.ExtensionMethodInternal
@@ -198,6 +211,12 @@ module internal CommonRoslynHelpers =
                 | Internal -> Glyph.InterfaceInternal
                 | Protected -> Glyph.InterfaceProtected
                 | Private -> Glyph.InterfacePrivate
+            elif x.IsDelegate then
+                match x.Accessibility with
+                | Public -> Glyph.DelegatePublic
+                | Internal -> Glyph.DelegateInternal
+                | Protected -> Glyph.DelegateProtected
+                | Private -> Glyph.DelegatePrivate
             elif x.IsNamespace then
                 Glyph.Namespace
             elif x.IsValueType then
