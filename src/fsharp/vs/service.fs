@@ -1112,7 +1112,16 @@ type TypeCheckInfo
             else 
                 items
 
+
     static let keywordTypes = Lexhelp.Keywords.keywordTypes
+
+    member x.GetVisibleNamespacesAndModulesAtPosition(cursorPos: pos) : ModuleOrNamespaceRef list =
+        let (nenv, ad), m = GetBestEnvForPos cursorPos
+        NameResolution.GetVisibleNamespacesAndModulesAtPoint ncenv nenv m ad
+
+    member x.IsRelativeNameResolvable(cursorPos: pos, plid: string list, item: Item) : bool =
+        let items, _, _ = GetEnvironmentLookupResolutions(cursorPos, plid, TypeNameResolutionFlag.ResolveTypeNamesToTypeRefs, true) 
+        items |> List.exists (ItemsAreEffectivelyEqual g item)
 
     /// Get the auto-complete items at a location
     member x.GetDeclarations (parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, hasTextChangedSinceLastTypecheck) =
@@ -1173,9 +1182,8 @@ type TypeCheckInfo
                         let isOpItem(nm,item) = 
                             match item with 
                             | [Item.Value _]
-                            | [Item.MethodGroup(_,[_],_)] -> 
-                                (IsOpName nm) && nm.[0]='(' && nm.[nm.Length-1]=')'
-                            | [Item.UnionCase _] -> IsOpName nm
+                            | [Item.MethodGroup(_,[_],_)] -> IsOperatorName nm
+                            | [Item.UnionCase _] -> IsOperatorName nm
                             | _ -> false              
 
                         let isFSharpList nm = (nm = "[]") // list shows up as a Type and a UnionCase, only such entity with a symbolic name, but want to filter out of intellisense
@@ -2042,6 +2050,11 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
                  if itemOcc <> ItemOccurence.RelatedText then
                   yield FSharpSymbolUse(scope.TcGlobals, denv, symbol, itemOcc, m) |])
 
+    member info.GetVisibleNamespacesAndModulesAtPoint(pos: pos) : Async<ModuleOrNamespaceRef []> = 
+        reactorOp "GetDeclarations" [| |] (fun scope -> scope.GetVisibleNamespacesAndModulesAtPosition(pos) |> List.toArray)
+
+    member info.IsRelativeNameResolvable(pos: pos, plid: string list, item: Item) : Async<bool> = 
+        reactorOp "IsRelativeNameResolvable" true (fun scope -> scope.IsRelativeNameResolvable(pos, plid, item))
     
 //----------------------------------------------------------------------------
 // BackgroundCompiler

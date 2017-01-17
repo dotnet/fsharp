@@ -215,9 +215,9 @@ let AdjustForScriptCompile(tcConfigB:TcConfigBuilder, commandLineSourceFiles, le
             let closure = LoadClosure.ComputeClosureOfSourceFiles(tcConfig, [filename, rangeStartup], CodeContext.Compilation, lexResourceManager=lexResourceManager)
             // Record the references from the analysis of the script. The full resolutions are recorded as the corresponding #I paths used to resolve them
             // are local to the scripts and not added to the tcConfigB (they are added to localized clones of the tcConfigB).
-            let references = closure.References |> List.map snd |> List.concat |> List.filter (fun r->r.originalReference.Range<>range0 && r.originalReference.Range<>rangeStartup)
+            let references = closure.References |> List.collect snd |> List.filter (fun r->r.originalReference.Range<>range0 && r.originalReference.Range<>rangeStartup)
             references |> List.iter (fun r-> tcConfigB.AddReferencedAssemblyByPath(r.originalReference.Range, r.resolvedPath))
-            closure.NoWarns |> List.map(fun (n, ms)->ms|>List.map(fun m->m, n)) |> List.concat |> List.iter tcConfigB.TurnWarningOff
+            closure.NoWarns |> List.collect (fun (n, ms) -> ms|>List.map(fun m->m, n)) |> List.iter tcConfigB.TurnWarningOff
             closure.SourceFiles |> List.map fst |> List.iter AddIfNotPresent
             closure.AllRootFileDiagnostics |> List.iter diagnosticSink
             

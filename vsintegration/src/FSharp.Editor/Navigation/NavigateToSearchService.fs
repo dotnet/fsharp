@@ -82,6 +82,18 @@ module private Index =
     type IIndexedNavigableItems =
         abstract Find: searchValue: string -> INavigateToSearchResult []
 
+    let private navigateToSearchResultComparer =
+        { new IEqualityComparer<INavigateToSearchResult> with 
+            member __.Equals(x: INavigateToSearchResult, y: INavigateToSearchResult) =
+                match x, y with
+                | null, _ | _, null -> false
+                | _ -> x.NavigableItem.Document.Id = y.NavigableItem.Document.Id &&
+                       x.NavigableItem.SourceSpan = y.NavigableItem.SourceSpan
+            
+            member __.GetHashCode(x: INavigateToSearchResult) =
+                if isNull x then 0
+                else 23 * (17 * 23 + x.NavigableItem.Document.Id.GetHashCode()) + x.NavigableItem.SourceSpan.GetHashCode() }
+
     let build (items: seq<NavigableItem>) =
         let entries = ResizeArray()
 
@@ -97,7 +109,7 @@ module private Index =
         entries.Sort(indexEntryComparer)
         { new IIndexedNavigableItems with
               member __.Find (searchValue) =
-                  let result = ResizeArray()
+                  let result = HashSet(navigateToSearchResultComparer)
                   if entries.Count > 0 then 
                      let entryToFind = IndexEntry(searchValue, 0, Unchecked.defaultof<_>, Unchecked.defaultof<_>)
                      
@@ -113,7 +125,7 @@ module private Index =
                                  else NavigateToMatchKind.Prefix
                              else NavigateToMatchKind.Substring
                          let item = entry.Item
-                         result.Add (NavigateToSearchResult(item, matchKind) :> INavigateToSearchResult)
+                         result.Add (NavigateToSearchResult(item, matchKind) :> INavigateToSearchResult) |> ignore
                     
                      // in case if there are multiple matching items binary search might return not the first one.
                      // in this case we'll walk backwards searching for the applicable answers
@@ -127,7 +139,7 @@ module private Index =
                      while pos < entries.Count && entries.[pos].StartsWith searchValue do
                          handle pos
                          pos <- pos + 1
-                  result.ToArray() }
+                  Seq.toArray result }
 
 module private Utils =
     let navigateToItemKindToRoslynKind = function
@@ -207,6 +219,7 @@ type internal FSharpNavigateToSearchService
             | _ ->
                 let! items = getNavigableItems(document, options, cancellationToken)
                 let indexedItems = Index.build items
+                itemsByDocumentId.Remove(document.Id) |> ignore
                 itemsByDocumentId.Add(document.Id, (textVersionHash, indexedItems))
                 return indexedItems
         }

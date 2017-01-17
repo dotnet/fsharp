@@ -29,7 +29,7 @@
       <HasLceComments>false</HasLceComments>
       <InProject>false</InProject>
     </FilesToLocalize>
-    <PackageNuspec Include="Microsoft.FSharp.Compiler.netcore.nuspec" Condition="'$(TargetFramework)' == 'coreclr'" />
+    <PackageNuspec Include="FSharp.Compiler.netcore.nuspec" Condition="'$(TargetFramework)' == 'coreclr'" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.dll.fs">

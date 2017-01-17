@@ -283,7 +283,9 @@ type internal FSharpCheckFileResults =
     /// Get the textual usages that resolved to the given symbol throughout the file
     member GetUsesOfSymbolInFile : symbol:FSharpSymbol -> Async<FSharpSymbolUse[]>
 
+    member GetVisibleNamespacesAndModulesAtPoint : pos -> Async<Tast.ModuleOrNamespaceRef[]>
 
+    member IsRelativeNameResolvable: cursorPos : pos * plid : string list * item: Item -> Async<bool>
 
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]

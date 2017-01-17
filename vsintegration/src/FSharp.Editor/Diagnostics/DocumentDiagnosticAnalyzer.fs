@@ -50,7 +50,7 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
                 x.ErrorNumber = y.ErrorNumber
             member __.GetHashCode x =
                 let mutable hash = 17
-                hash <- hash * 23 + x.EndLineAlternate.GetHashCode()
+                hash <- hash * 23 + x.StartLineAlternate.GetHashCode()
                 hash <- hash * 23 + x.EndLineAlternate.GetHashCode()
                 hash <- hash * 23 + x.StartColumn.GetHashCode()
                 hash <- hash * 23 + x.EndColumn.GetHashCode()
@@ -93,8 +93,14 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
                         
                         // F# compiler report errors at end of file if parsing fails. It should be corrected to match Roslyn boundaries
                         let correctedTextSpan =
-                            if textSpan.End < sourceText.Length then textSpan 
-                            else TextSpan.FromBounds(max 0 (sourceText.Length - 1), sourceText.Length)
+                            if textSpan.End <= sourceText.Length then 
+                                textSpan 
+                            else 
+                                let start =
+                                    min textSpan.Start (sourceText.Length - 1)
+                                    |> max 0
+
+                                TextSpan.FromBounds(start, sourceText.Length)
                         
                         let location = Location.Create(filePath, correctedTextSpan , linePositionSpan)
                         Some(CommonRoslynHelpers.ConvertError(error, location)))

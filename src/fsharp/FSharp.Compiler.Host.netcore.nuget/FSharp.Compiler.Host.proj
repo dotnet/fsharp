@@ -1,7 +1,6 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
   </PropertyGroup>
 
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
@@ -16,7 +15,9 @@
   </PropertyGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
+    <PackageNuspec Include="Microsoft.FSharp.Core.netcore.nuspec" />
     <PackageNuspec Include="Microsoft.FSharp.Compiler.netcore.nuspec" />
+    <PackageNuspec Include="Microsoft.FSharp.Interactive.netcore.nuspec" />
     <PackageNuspec Include="Microsoft.FSharp.Compiler.Host.netcore.nuspec" />
   </ItemGroup>
 
@@ -41,12 +42,17 @@
   <Target Name="Build" Outputs="$(TargetPath)"  DependsOnTargets="$(nugetpack)" />
   <Target Name="Rebuild"  DependsOnTargets="$(nugetpack)" />
 
-  <Target Name="nugetpack" AfterTargets="Build" Condition="'$(TargetFramework)' == 'coreclr' "
-          Inputs="@(PackageNuspec)" Outputs='$(OutputPath.TrimEnd("\"))\nuget\"%(PackageNuspec.Filename)).nupkg'>
+  <Target Name="nugetpack" AfterTargets="Build" 
+          Condition="'$(TargetFramework)' == 'coreclr' "
+          Inputs="@(PackageNuspec)" 
+          Outputs='$(FSharpSourcesRoot.TrimEnd("\"))\..\$(Configuration)\artifacts\"%(PackageNuspec.Filename)).nupkg'>
     <PropertyGroup>
       <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)"</PackageProperties>
     </PropertyGroup>
-    <Exec Command='$(MSBuildThisFileDirectory)..\..\..\.nuget\nuget.exe pack %(PackageNuspec.Filename)%(PackageNuspec.Extension) -BasePath "$(OutputPath.TrimEnd("\"))" -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory "$(FSharpSourcesRoot.TrimEnd("\"))\..\artifacts"' />
+    <MakeDir Directories="$(FSharpSourcesRoot.TrimEnd('\'))\..\$(Configuration)\artifacts" />
+    <MakeDir Directories="$(FSharpSourcesRoot.TrimEnd('\'))\..\artifacts" />
+    <Exec Command='$(MSBuildThisFileDirectory)..\..\..\.nuget\nuget.exe pack @(PackageNuspec) -BasePath $(OutputPath.TrimEnd("\")) -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory $(FSharpSourcesRoot.TrimEnd("\"))\..\$(Configuration)\artifacts' />
+    <Exec Command='$(MSBuildThisFileDirectory)..\..\..\.nuget\nuget.exe pack @(PackageNuspec) -BasePath $(OutputPath.TrimEnd("\")) -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory $(FSharpSourcesRoot.TrimEnd("\"))\..\artifacts' />
   </Target>
 
 </Project>
