@@ -20,7 +20,7 @@ module internal Structure =
             | Some r1, Some r2 -> unionRanges r1 r2 |> Some
 
         /// Create a range starting at the end of r1 and finishing at the end of r2
-        let inline endToEnd (r1: range) (r2: range) = mkFileIndexRange r1.FileIndex r1.End   r2.End
+        let inline endToEnd (r1: range) (r2: range) = mkFileIndexRange r1.FileIndex r1.End r2.End
 
         /// Create a range starting at the end of r1 and finishing at the start of r2
         let inline endToStart (r1: range) (r2: range) = mkFileIndexRange r1.FileIndex r1.End r2.Start
@@ -58,17 +58,20 @@ module internal Structure =
         match typeArgs with
         | [] -> other
         | ls ->
-            ls|> List.map (fun (TyparDecl (_,typarg)) -> typarg.Range)
+            ls
+            |> List.map (fun (TyparDecl (_,typarg)) -> typarg.Range)
             |> List.reduce Range.unionRanges
 
     let rangeOfSynPatsElse other (synPats:SynSimplePat list) =
         match synPats with
         | [] -> other
         | ls ->
-            ls |> List.map (
-                fun ( SynSimplePat.Attrib (range=r)
-                    | SynSimplePat.Id (range=r)
-                    | SynSimplePat.Typed (range=r)) -> r)
+            ls 
+            |> List.map (fun x ->
+                    match x with
+                    | SynSimplePat.Attrib(range = r)
+                    | SynSimplePat.Id(range = r)
+                    | SynSimplePat.Typed(range = r) -> r)
             |> List.reduce Range.unionRanges
 
 
@@ -339,10 +342,7 @@ module internal Structure =
                         // This is not the best way to establish the position of `else`
                         // the AST doesn't provide an easy way to find the position of the keyword
                         // as such `else` will be left out of block structuring and outlining until a
-                        // a suitible approach is determined
-//                        let elseRange = Range.endToEnd elseExpr.Range r
-//                        let elseCollapse = Range.startToEnd elseExpr.Range r
-//                        yield! rcheck Scope.ElseInIfThenElse Collapse.Same elseExpr.Range elseExpr.Range
+                        // a suitable approach is determined
                         yield! parseExpr elseExpr
                 | None -> ()
             | SynExpr.While (_,_,e,r) ->
