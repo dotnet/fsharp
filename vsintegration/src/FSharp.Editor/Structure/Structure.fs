@@ -49,9 +49,10 @@ module internal Structure =
             let rEnd   = Range.mkPos r.EndLine   (r.EndColumn - modEnd)
             mkFileIndexRange r.FileIndex rStart rEnd
 
-
     let longIdentRange (longId:LongIdent) =
-        Range.startToEnd (List.head longId).idRange (List.last longId).idRange
+        match longId with 
+        | [] -> Range.range0
+        | head::_ -> Range.startToEnd head.idRange (List.last longId).idRange
 
     let rangeOfTypeArgsElse other (typeArgs:SynTyparDecl list) =
         match typeArgs with
@@ -608,11 +609,7 @@ module internal Structure =
     let private parseModuleOrNamespace (SynModuleOrNamespace.SynModuleOrNamespace (longId,_,isModule,decls,_,attribs,_,r)) =
         seq {
             yield! parseAttributes attribs
-            let idRange = 
-                match longId with
-                | [] -> Range.range0
-                | _ -> longIdentRange longId
-
+            let idRange = longIdentRange longId
             let fullrange = Range.startToEnd idRange r  
             let collapse = Range.endToEnd idRange r 
             if isModule then
