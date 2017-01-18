@@ -1,6 +1,6 @@
 // #Regression #Conformance #DataExpressions 
 // Verify that nameof doesn't work on applied functions
-//<Expects id="FS3197" span="(7,9)" status="error">This expression does not have a name.</Expects>
+//<Expects id="FS3199" span="(7,9)" status="error">This expression does not have a name.</Expects>
 
 let f x y = x y
 let z x = 1 * x
