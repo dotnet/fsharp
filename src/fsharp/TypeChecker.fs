@@ -8241,19 +8241,27 @@ and delayRest rest mPrior delayed =
 //------------------------------------------------------------------------- 
 
 and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (synArg: SynExpr) atomicFlag delayed = 
-    
     let denv = env.DisplayEnv
     let mArg = synArg.Range
     let mFunExpr = expr.Range
+
+    let (|LastIdentOfLongIdentStripPars|_|) expr =
+        let rec stripParens expr =
+            match expr with
+            | SynExpr.Paren(expr, _, _, _) -> stripParens expr
+            | _ -> expr
+
+        match stripParens expr with
+        | SynExpr.LongIdent(_, LongIdentWithDots(idents, _), _, _) -> List.tryLast idents
+        | _ -> None
+
     // If the type of 'synArg' unifies as a function type, then this is a function application, otherwise
     // it is an error or a computation expression
     match UnifyFunctionTypeUndoIfFailed cenv denv mFunExpr exprty with
     | Some (domainTy,resultTy) -> 
         match expr, synArg with
-        | (ApplicableExpr(_, Expr.Val(vref,_,_), _), SynExpr.LongIdent(_, LongIdentWithDots(idents, _), _, _))
-          when valRefEq cenv.g vref cenv.g.nameof_vref && not (isNil idents) ->
-          
-            let argIdent = List.last idents
+        | (ApplicableExpr(_, Expr.App(Expr.Val(vref,_,_),_,_,_,_), _), LastIdentOfLongIdentStripPars argIdent)
+          when valRefEq cenv.g vref cenv.g.nameof_vref ->
             let r = expr.Range
             // generate fake `range` for the constant the `nameof(..)` we are substituting
             let constRange = mkRange r.FileName r.Start (mkPos r.StartLine (r.StartColumn + argIdent.idText.Length + 2)) // `2` are for quotes
