@@ -8271,6 +8271,17 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (
         | SynExpr.CompExpr (false,_isNotNakedRefCell,comp,_m) -> 
             let bodyOfCompExpr,tpenv = TcComputationOrSequenceExpression cenv env overallTy mFunExpr (Some(expr.Expr,exprty)) tpenv comp
             TcDelayed cenv overallTy env tpenv mExprAndArg (MakeApplicableExprNoFlex cenv bodyOfCompExpr) (tyOfExpr cenv.g bodyOfCompExpr) ExprAtomicFlag.NonAtomic delayed 
+        | SynExpr.LongIdent(_, LongIdentWithDots(idents, _), _, _) when not (isNil idents) ->
+            match expr with
+            // `nameof` operator
+            | ApplicableExpr (_, Expr.App(Expr.Const(Const.String("nameof"), _, _), _, _, _, _), _) -> // no idea really what shape we should match on here, will check in debugger
+                let argIdent = List.last idents
+                let r = expr.Range
+                // generate fake `range` for the constant the `nameof(..)` we are substituting
+                let constRange = mkRange r.FileName r.Start (mkPos r.StartLine (r.StartColumn + argIdent.idText.Length + 2)) // `2` are for quotes
+                TcDelayed cenv overallTy env tpenv mExprAndArg (ApplicableExpr(cenv, Expr.Const(Const.String(argIdent.idText), constRange, cenv.g.string_ty), true)) cenv.g.string_ty ExprAtomicFlag.Atomic delayed
+            | _ ->
+                error (NotAFunction(denv,overallTy,mFunExpr,mArg)) 
         | _ -> 
             error (NotAFunction(denv,overallTy,mFunExpr,mArg)) 
 
