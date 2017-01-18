@@ -351,6 +351,10 @@ let CheckFSharpAttributesForHidden g attribs =
             // when mlCompatibility is set.
             v && not (messageNumber = 62 && g.mlCompatibility)
         | _ -> false)
+    || 
+    (match TryFindFSharpAttribute g g.attrib_ComponentModelEditorBrowsableAttribute attribs with
+     | Some(Attrib(_,_,[AttribInt32Arg state],_,_,_,_)) -> state = int System.ComponentModel.EditorBrowsableState.Never
+     | _ -> false)
 
 /// Indicate if a list of F# attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.
 let CheckFSharpAttributesForObsolete g attribs = 

@@ -46,6 +46,7 @@ type internal FSharpCompletionProvider
 
     static let completionTriggers = [| '.' |]
     static let declarationItemsCache = ConditionalWeakTable<string, FSharpDeclarationListItem>()
+    static let [<Literal>] NameInCodePropName = "NameInCode"
     
     let xmlMemberIndexService = serviceProvider.GetService(typeof<IVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
@@ -113,12 +114,18 @@ type internal FSharpCompletionProvider
                 
                 for declarationItem in declarations.Items do
                     let glyph = CommonRoslynHelpers.FSharpGlyphToRoslynGlyph declarationItem.GlyphMajor
-                    let name = 
+                    let name =
                         match entityKind with
                         | Some EntityKind.Attribute when declarationItem.IsAttribute && declarationItem.Name.EndsWith "Attribute"  ->
                             declarationItem.Name.[0..declarationItem.Name.Length - attributeSuffixLength - 1] 
                         | _ -> declarationItem.Name
                     let completionItem = CommonCompletionItem.Create(name, glyph = Nullable glyph)
+                    
+                    let completionItem =
+                        if declarationItem.Name <> declarationItem.NameInCode then
+                            completionItem.AddProperty(NameInCodePropName, declarationItem.NameInCode)
+                        else completionItem
+
                     declarationItemsCache.Remove(completionItem.DisplayText) |> ignore // clear out stale entries if they exist
                     declarationItemsCache.Add(completionItem.DisplayText, declarationItem)
                     results.Add(completionItem)
@@ -158,6 +165,14 @@ type internal FSharpCompletionProvider
             else
                 return CompletionDescription.Empty
         } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
+
+    override this.GetChangeAsync(_, item, _, _) : Task<CompletionChange> =
+        let nameInCode =
+            match item.Properties.TryGetValue NameInCodePropName with
+            | true, x -> x
+            | _ -> item.DisplayText
+
+        Task.FromResult(CompletionChange.Create(new TextChange(item.Span, nameInCode)))
 
 type internal FSharpCompletionService
     (

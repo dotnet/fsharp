@@ -1088,8 +1088,9 @@ module private PrintTastMemberOrVals =
         let membInfo = Option.get v.MemberInfo
         let stat = PrintTypes.layoutMemberFlags membInfo.MemberFlags
         let _tps,argInfos,rty,_ = GetTypeOfMemberInFSharpForm denv.g v
-        let mkNameL niceMethodTypars name =       
-            let nameL  = DemangleOperatorNameAsLayout tagMember name
+        
+        let mkNameL niceMethodTypars tagFunction name =       
+            let nameL  = DemangleOperatorNameAsLayout tagFunction name
             let nameL = 
                 if denv.showMemberContainers then 
                     layoutTyconRef denv v.MemberApparentParent ^^ SepL.dot ^^ nameL
@@ -1102,7 +1103,7 @@ module private PrintTastMemberOrVals =
         match membInfo.MemberFlags.MemberKind with 
         | MemberKind.Member -> 
             let niceMethodTypars,tauL = layoutMemberType denv v argInfos rty
-            let nameL = mkNameL niceMethodTypars v.LogicalName
+            let nameL = mkNameL niceMethodTypars tagMember v.LogicalName
             stat --- (nameL ^^ WordL.colon ^^ tauL)
         | MemberKind.ClassConstructor  
         | MemberKind.Constructor -> 
@@ -1111,10 +1112,11 @@ module private PrintTastMemberOrVals =
             stat ++ newL ^^ wordL (tagPunctuation ":") ^^ tauL
         | MemberKind.PropertyGetSet -> stat
         | MemberKind.PropertyGet -> 
-            if isNil argInfos then 
+            if isNil argInfos then
                 // use error recovery because intellisense on an incomplete file will show this
-                errorR(Error(FSComp.SR.tastInvalidFormForPropertyGetter(),v.Id.idRange));
-                stat --- wordL (tagProperty v.PropertyName) --- (WordL.keywordWith ^^ WordL.keywordGet)
+                errorR(Error(FSComp.SR.tastInvalidFormForPropertyGetter(),v.Id.idRange))
+                let nameL = mkNameL [] tagProperty v.CoreDisplayName
+                stat --- nameL --- (WordL.keywordWith ^^ WordL.keywordGet)
             else
                 let argInfos = 
                     match argInfos with 
@@ -1122,17 +1124,18 @@ module private PrintTastMemberOrVals =
                     | _ -> argInfos
 
                 let niceMethodTypars,tauL = layoutMemberType denv v argInfos rty
-                let nameL = mkNameL niceMethodTypars v.PropertyName
+                let nameL = mkNameL niceMethodTypars tagProperty v.CoreDisplayName
                 stat --- (nameL ^^ WordL.colon ^^ (if isNil argInfos then tauL else tauL --- (WordL.keywordWith ^^ WordL.keywordGet)))
         | MemberKind.PropertySet -> 
             if argInfos.Length <> 1 || isNil argInfos.Head then 
                 // use error recovery because intellisense on an incomplete file will show this
-                errorR(Error(FSComp.SR.tastInvalidFormForPropertySetter(),v.Id.idRange));
-                stat --- wordL (tagProperty v.PropertyName) --- (WordL.keywordWith ^^ WordL.keywordSet)
+                errorR(Error(FSComp.SR.tastInvalidFormForPropertySetter(),v.Id.idRange))
+                let nameL = mkNameL [] tagProperty v.CoreDisplayName
+                stat --- nameL --- (WordL.keywordWith ^^ WordL.keywordSet)
             else 
                 let argInfos,valueInfo = List.frontAndBack argInfos.Head
                 let niceMethodTypars,tauL = layoutMemberType denv v (if isNil argInfos then [] else [argInfos]) (fst valueInfo)
-                let nameL = mkNameL niceMethodTypars v.PropertyName
+                let nameL = mkNameL niceMethodTypars tagProperty v.CoreDisplayName
                 stat --- (nameL ^^ wordL (tagPunctuation ":") ^^ (tauL --- (WordL.keywordWith ^^ WordL.keywordSet)))
 
     let private layoutNonMemberVal denv  (tps,v:Val,tau,cxs) =
@@ -1342,6 +1345,18 @@ module InfoMemberPrinting =
         | ProvidedMeth _  -> 
             layoutMethInfoCSharpStyle amap m denv minfo minfo.FormalMethodInst
     #endif
+
+    let layoutPropInfoToFreeStyle g amap m denv (pinfo: PropInfo) =
+        let rty = pinfo.GetPropertyType(amap,m) 
+        let rty = if pinfo.IsIndexer then mkRefTupledTy g (pinfo.GetParamTypes(amap, m)) --> rty else  rty 
+        let _, rty, _ = PrettyTypes.PrettifyTypes1 g rty
+        let nameL = DemangleOperatorNameAsLayout tagProperty pinfo.PropertyName
+        wordL (tagText (FSComp.SR.typeInfoProperty())) ^^
+        layoutTyconRef denv (tcrefOfAppTy g pinfo.EnclosingType) ^^
+        SepL.dot ^^
+        nameL ^^
+        RightL.colon ^^
+        layoutTy denv rty
 
     let formatMethInfoToBufferFreeStyle amap m denv os minfo = 
         layoutMethInfoToFreeStyle amap m denv minfo |> bufferL os
@@ -1901,6 +1916,9 @@ let stringOfQualifiedValOrMember denv v = PrintTastMemberOrVals.layoutValOrMembe
 /// Convert a MethInfo to a string
 let formatMethInfoToBufferFreeStyle amap m denv buf d = InfoMemberPrinting.formatMethInfoToBufferFreeStyle amap m denv buf d
 let layoutMethInfoFreeStyle amap m denv d = InfoMemberPrinting.layoutMethInfoToFreeStyle amap m denv d
+
+/// Convert a PropInfo to a string
+let layoutPropInfoToFreeStyle g amap m denv d = InfoMemberPrinting.layoutPropInfoToFreeStyle g amap m denv d
 
 /// Convert a MethInfo to a string
 let stringOfMethInfo amap m denv d = bufs (fun buf -> InfoMemberPrinting.formatMethInfoToBufferFreeStyle amap m denv buf d)

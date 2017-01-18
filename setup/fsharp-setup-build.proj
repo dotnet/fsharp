@@ -38,17 +38,7 @@
         </CreateItem>
 
         <CreateItem Include="@(SetupLanguages)"
-                    AdditionalMetadata="ProjectPath=Swix\Microsoft.FSharp.Vsix.Resources\Microsoft.FSharp.Vsix.Resources.swixproj;VSSku=Desktop">
-            <Output ItemName="SwixSetupProjects" TaskParameter="Include"/>
-        </CreateItem>
-
-        <CreateItem Include="@(SetupLanguages)"
-                    AdditionalMetadata="ProjectPath=Swix\Microsoft.FSharp.Vsix.Resources\Microsoft.FSharp.Vsix.Resources.swixproj;VSSku=Full">
-            <Output ItemName="SwixSetupProjects" TaskParameter="Include"/>
-        </CreateItem>
-
-        <CreateItem Include="@(SetupLanguages)"
-                    AdditionalMetadata="ProjectPath=Swix\Microsoft.FSharp.Vsix.Resources\Microsoft.FSharp.Vsix.Resources.swixproj;VSSku=Web">
+                    AdditionalMetadata="ProjectPath=Swix\Microsoft.FSharp.Vsix.Resources\Microsoft.FSharp.Vsix.Resources.swixproj">
             <Output ItemName="SwixSetupProjects" TaskParameter="Include"/>
         </CreateItem>
 
@@ -68,13 +58,13 @@
         <!-- Wix targets files doesn't handle localization parameters correctly. Cleaning before building files accross languages -->
         <MSBuild Projects="%(WixSetupProjects.ProjectPath)"
                  Targets="Clean;Build"
-                 Properties="LocaleCode=%(WixSetupProjects.LocaleCode);LocaleId=%(WixSetupProjects.LocaleId);LocaleParentCulture=%(WixSetupProjects.LocaleParentCulture);LocaleSpecificCulture=%(WixSetupProjects.LocaleSpecificCulture);IsLangPack=%(WixSetupProjects.IsLangPack);VSSku=%(WixSetupProjects.VSSku);FSharpPackageVersion=$(FSharpPackageVersion)"/>
+                 Properties="LocaleCode=%(WixSetupProjects.LocaleCode);LocaleId=%(WixSetupProjects.LocaleId);LocaleParentCulture=%(WixSetupProjects.LocaleParentCulture);LocaleSpecificCulture=%(WixSetupProjects.LocaleSpecificCulture);IsLangPack=%(WixSetupProjects.IsLangPack);FSharpPackageVersion=$(FSharpPackageVersion)"/>
         <MSBuild Projects="%(VsixProjects.ProjectPath)"
                  Targets="Build"
                  Properties="IsLangPack=%(VsixProjects.IsLangPack);FSharpPackageVersion=$(FSharpPackageVersion);OutputPath=$(InsertionDir)"/>
         <MSBuild Projects="%(SwixSetupProjects.ProjectPath)"
                  Targets="Build"
-                 Properties="LocaleCode=%(SwixSetupProjects.LocaleCode);LocaleId=%(SwixSetupProjects.LocaleId);LocaleParentCulture=%(SwixSetupProjects.LocaleParentCulture);LocaleSpecificCulture=%(SwixSetupProjects.LocaleSpecificCulture);IsLangPack=%(SwixSetupProjects.IsLangPack);VSSku=%(SwixSetupProjects.VSSku);FSharpPackageVersion=$(FSharpPackageVersion)"/>
+                 Properties="LocaleCode=%(SwixSetupProjects.LocaleCode);LocaleId=%(SwixSetupProjects.LocaleId);LocaleParentCulture=%(SwixSetupProjects.LocaleParentCulture);LocaleSpecificCulture=%(SwixSetupProjects.LocaleSpecificCulture);IsLangPack=%(SwixSetupProjects.IsLangPack);FSharpPackageVersion=$(FSharpPackageVersion)"/>
 
         <!-- copy json stuff -->
         <Copy SourceFiles="@(InsertionItems)" DestinationFolder="$(InsertionDir)" />

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
     <metadata>
-        <id>Microsoft.FSharp.Compiler.Interactive.Settings.netcore</id>
+        <id>FSharp.Compiler.Interactive.Settings.netcore</id>
         <description>
             .NET Core compatible version of the fsharp compiler interactive settings dll
             Supported Platforms: - .NET Core (netstandard1.6)

@@ -1044,6 +1044,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val attrib_SecurityAttribute                      = tryFindSysAttrib "System.Security.Permissions.SecurityAttribute"
   member val attrib_SecurityCriticalAttribute              = findSysAttrib "System.Security.SecurityCriticalAttribute"
   member val attrib_SecuritySafeCriticalAttribute          = findSysAttrib "System.Security.SecuritySafeCriticalAttribute"
+  member val attrib_ComponentModelEditorBrowsableAttribute = findSysAttrib "System.ComponentModel.EditorBrowsableAttribute"
   member val attrib_TailCallAttribute                      = mk_MFCore_attrib "TailCallAttribute"
 
   member __.better_tcref_map = betterTyconRefMap
