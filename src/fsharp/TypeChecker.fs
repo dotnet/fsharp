@@ -8249,22 +8249,32 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (
     // it is an error or a computation expression
     match UnifyFunctionTypeUndoIfFailed cenv denv mFunExpr exprty with
     | Some (domainTy,resultTy) -> 
-
-        // Notice the special case 'seq { ... }'. In this case 'seq' is actually a function in the F# library.
-        // Set a flag in the syntax tree to say we noticed a leading 'seq'
-        match synArg with 
-        | SynExpr.CompExpr (false,isNotNakedRefCell,_comp,_m) -> 
-            isNotNakedRefCell := 
-                !isNotNakedRefCell
-                || 
-                (match expr with 
-                 | ApplicableExpr(_,Expr.Op(TOp.Coerce,_,[Expr.App(Expr.Val(vf,_,_),_,_,_,_)],_),_) when valRefEq cenv.g vf cenv.g.seq_vref -> true 
-                 | _ -> false)
-        | _ -> ()
-
-        let arg,tpenv = TcExpr cenv domainTy env tpenv synArg
-        let exprAndArg = buildApp cenv expr exprty arg mExprAndArg
-        TcDelayed cenv overallTy env tpenv mExprAndArg exprAndArg resultTy atomicFlag delayed
+        match expr, synArg with
+        | (ApplicableExpr(_, Expr.Val(vref,_,_), _), SynExpr.LongIdent(_, LongIdentWithDots(idents, _), _, _))
+          when valRefEq cenv.g vref cenv.g.nameof_vref && not (isNil idents) ->
+          
+            let argIdent = List.last idents
+            let r = expr.Range
+            // generate fake `range` for the constant the `nameof(..)` we are substituting
+            let constRange = mkRange r.FileName r.Start (mkPos r.StartLine (r.StartColumn + argIdent.idText.Length + 2)) // `2` are for quotes
+            TcDelayed cenv overallTy env tpenv mExprAndArg (ApplicableExpr(cenv, Expr.Const(Const.String(argIdent.idText), constRange, cenv.g.string_ty), true)) cenv.g.string_ty ExprAtomicFlag.Atomic delayed
+        | _ ->
+            // Notice the special case 'seq { ... }'. In this case 'seq' is actually a function in the F# library.
+            // Set a flag in the syntax tree to say we noticed a leading 'seq'
+            match synArg with 
+            | SynExpr.CompExpr (false,isNotNakedRefCell,_comp,_m) -> 
+                isNotNakedRefCell := 
+                    !isNotNakedRefCell
+                    || 
+                    (match expr with 
+                     | ApplicableExpr(_,Expr.Op(TOp.Coerce,_,[Expr.App(Expr.Val(vf,_,_),_,_,_,_)],_),_) when valRefEq cenv.g vf cenv.g.seq_vref -> true 
+                     | _ -> false)
+            | _ -> ()
+            
+            let arg,tpenv = TcExpr cenv domainTy env tpenv synArg
+            let exprAndArg = buildApp cenv expr exprty arg mExprAndArg
+            TcDelayed cenv overallTy env tpenv mExprAndArg exprAndArg resultTy atomicFlag delayed
+            
     | None -> 
         // OK, 'expr' doesn't have function type, but perhaps 'expr' is a computation expression builder, and 'arg' is '{ ... }' 
         match synArg with 

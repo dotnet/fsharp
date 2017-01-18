@@ -2884,6 +2884,16 @@ let isSizeOfValRef g vref =
     // There is an internal version of typeof defined in prim-types.fs that needs to be detected
     || (g.compilingFslib && vref.LogicalName = "sizeof") 
 
+let isNameOfValRef g vref = 
+    valRefEq g vref g.nameof_vref 
+    // There is an internal version of typeof defined in prim-types.fs that needs to be detected
+    || (g.compilingFslib && vref.LogicalName = "nameof") 
+
+let isTypeNameOfValRef g vref = 
+    valRefEq g vref g.typenameof_vref
+    // There is an internal version of typeof defined in prim-types.fs that needs to be detected
+    || (g.compilingFslib && vref.LogicalName = "typenameof") 
+
 let isTypeDefOfValRef g vref = 
     valRefEq g vref g.typedefof_vref 
     // There is an internal version of typedefof defined in prim-types.fs that needs to be detected
@@ -2909,7 +2919,15 @@ let (|TypeDefOfExpr|_|) g expr =
     | Expr.App(Expr.Val(vref,_,_),_,[ty],[],_) when isTypeDefOfValRef g vref ->  Some ty
     | _ -> None
 
+let (|NameOfExpr|_|) g expr = 
+    match expr with 
+    | Expr.App(Expr.Val(vref,_,_),_,[ty],[],_) when isNameOfValRef g vref  -> Some ty
+    | _ -> None
 
+let (|TypeNameOfExpr|_|) g expr = 
+    match expr with 
+    | Expr.App(Expr.Val(vref,_,_),_,[ty],[],_) when isTypeNameOfValRef g vref  -> Some ty
+    | _ -> None
 
 //--------------------------------------------------------------------------
 // DEBUG layout
