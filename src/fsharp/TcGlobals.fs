@@ -162,10 +162,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
                       // The helper to find system types amongst referenced DLLs
                       tryFindSysTypeCcu, 
                       emitDebugInfoInQuotations: bool, usesMscorlib: bool, noDebugData: bool) =
-      nameof_info               : IntrinsicValRef
-      nameof_vref               : ValRef
-      typenameof_info           : IntrinsicValRef
-      typenameof_vref           : ValRef
       
   let vara = NewRigidTypar "a" envRange
   let varb = NewRigidTypar "b" envRange
@@ -573,8 +569,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_typeof_info                = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "typeof"                               , None                 , Some "TypeOf" , [vara],     ([], v_system_Type_typ))  
   let v_methodhandleof_info        = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "methodhandleof"                       , None                 , Some "MethodHandleOf", [vara;varb], ([[varaTy --> varbTy]], v_system_RuntimeMethodHandle_typ))
   let v_sizeof_info                = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "sizeof"                               , None                 , Some "SizeOf" , [vara],     ([], v_int_ty))  
-  let typenameof_info            = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "typenameof"                           ,None                 ,Some "TypeNameOf" ,[vara],     ([],string_ty))
-  let nameof_info                = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "nameof"                               ,None                 ,Some "NameOf" ,[vara],     ([[varaTy]],string_ty))
   let v_unchecked_defaultof_info   = makeIntrinsicValRef(fslib_MFOperatorsUnchecked_nleref,                    "defaultof"                            , None                 , Some "DefaultOf", [vara],     ([], varaTy))  
   let v_typedefof_info             = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "typedefof"                            , None                 , Some "TypeDefOf", [vara],     ([], v_system_Type_typ))  
   let v_enum_info                  = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "enum"                                 , None                 , Some "ToEnum" , [vara],     ([[v_int_ty]], varaTy))  
@@ -916,10 +910,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val system_MarshalByRefObject_typ = tryMkSysNonGenericTy sys "MarshalByRefObject"
 
   member __.system_Reflection_MethodInfo_typ = v_system_Reflection_MethodInfo_typ
-    nameof_info                = nameof_info
-    nameof_vref                = ValRefForIntrinsic nameof_info
-    typenameof_info            = typenameof_info
-    typenameof_vref            = ValRefForIntrinsic typenameof_info
     
   member val system_Array_tcref  = findSysTyconRef sys "Array"
   member val system_Object_tcref  = findSysTyconRef sys "Object"

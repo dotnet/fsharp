@@ -1179,7 +1179,6 @@ val mkCallTypeTest      : TcGlobals -> range -> TType -> Expr -> Expr
 val canUseTypeTestFast : TcGlobals -> TType -> bool
 
 val mkCallTypeOf      : TcGlobals -> range -> TType -> Expr
-val mkCallTypeNameOf  : TcGlobals -> range -> TType -> Expr
 val mkCallTypeDefOf   : TcGlobals -> range -> TType -> Expr 
 
 val mkCallCreateInstance     : TcGlobals -> range -> TType -> Expr

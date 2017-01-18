@@ -507,27 +507,6 @@ let CheckMultipleInterfaceInstantiations cenv interfaces m =
 let rec CheckExprNoByrefs (cenv:cenv) (env:env) expr =
     CheckExpr cenv env expr NoByrefs
 
-// tries to extract the name of an expression
-let tryExtractNameOf args =
-    match args with
-    | [Expr.App(Expr.Val(r,_,_),_,_,Expr.Const(constant,_,_)::_,_)] -> 
-        if r.CompiledName.StartsWith("get_") && constant = Const.Unit then // TODO: We need a better way to find static property getters
-            Some(r.CompiledName.Substring(4))
-        else
-            None  // the function was applied
-    | [Expr.App(Expr.Val(r,_,_),_,_,[],_)] -> Some(r.CompiledName)
-    | [Expr.App(Expr.Val(r,_,_),_,_,_,_)] ->
-        if r.CompiledName.StartsWith("get_") then // TODO: We need a better way to find member property getters
-            Some(r.CompiledName.Substring(4))
-        else
-            None  // the function was applied
-    | [Expr.Let(_,Expr.Val(r,_,_),_,_)] -> Some(r.CompiledName)
-    | [Expr.Let(_,Expr.Lambda(_,_,_,_,Expr.App(Expr.Val(r,_,_),_,_,_,_),_,_),_,_)] -> Some(r.CompiledName)
-    | [Expr.Lambda(_,_,_,_,Expr.App(Expr.Val(r,_,_),_,_,_,_),_,_)] -> Some(r.CompiledName)
-    | [Expr.Op(TOp.ValFieldGet(r),_,_,_)] -> Some(r.FieldName)
-    | [Expr.Lambda(_,_,_,_,Expr.Op(TOp.ILCall(_,_,_,_,_,_,_,r,_,_,_),_,_,_),_,_)] -> Some(r.Name)
-    | _ -> None
-
 /// Check a value
 and CheckVal (cenv:cenv) (env:env) v m context = 
     if cenv.reportErrors then 
@@ -557,18 +536,8 @@ and CheckExpr (cenv:cenv) (env:env) expr (context:ByrefContext) =
         CheckExpr cenv env body context
 
     | Expr.Const (_,m,ty) -> 
-        CheckTypePermitByrefs cenv env m ty
-
-    | Expr.App(Expr.Val (v,_,_),_,_,args,m) -> 
-        if cenv.reportErrors then
-            if valRefEq cenv.g v cenv.g.nameof_vref && tryExtractNameOf args = None then
-                errorR(Error(FSComp.SR.expressionHasNoName(), m))
-            match args with
-            | [_;Expr.App(Expr.Val (v,_,_),_,_,args,m)] ->
-                if valRefEq cenv.g v cenv.g.nameof_vref && tryExtractNameOf args = None then
-                    errorR(Error(FSComp.SR.nameofNotPermitted(), m))
-            | _ -> ()
-
+        CheckTypePermitByrefs cenv env m ty 
+            
     | Expr.Val (v,vFlags,m) -> 
           if cenv.reportErrors then 
               if v.BaseOrThisInfo = BaseVal then 
