@@ -7763,7 +7763,9 @@ let IsSimpleSyntacticConstantExpr g inputExpr =
         | Expr.Op (TOp.UnionCase _,_,[],_)         // Nullary union cases
         | UncheckedDefaultOfExpr g _ 
         | SizeOfExpr g _ 
-        | TypeOfExpr g _ -> true
+        | TypeOfExpr g _ 
+        | NameOfExpr g _ 
+        | TypeNameOfExpr g _ -> true
         // All others are not simple constant expressions
         | _ -> false
 
