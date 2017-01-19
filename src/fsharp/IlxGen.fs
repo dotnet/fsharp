@@ -1459,7 +1459,7 @@ type CodeGenBuffer(m:range,
                 instrs
 
         let codeLabels =
-            let dict = new Dictionary<_,_>(codeLabelToPC.Count + codeLabelToCodeLabel.Count)
+            let dict = Dictionary.newWithSize (codeLabelToPC.Count + codeLabelToCodeLabel.Count)
             for kvp in codeLabelToPC        do dict.Add(kvp.Key, lab2pc 0 kvp.Key)
             for kvp in codeLabelToCodeLabel do dict.Add(kvp.Key, lab2pc 0 kvp.Key)
             dict

@@ -440,6 +440,11 @@ module String =
 
     let dropSuffix s t = match (tryDropSuffix s t) with Some(res) -> res | None -> failwith "dropSuffix"
 
+module Dictionary = 
+
+    let inline newWithSize (size: int) = System.Collections.Generic.Dictionary<_,_>(size, HashIdentity.Structural)
+        
+
 module Lazy = 
     let force (x: Lazy<'T>) = x.Force()
 

@@ -919,7 +919,7 @@ module ProvidedMethodCalls =
         let varConv =
             // note: using paramVars.Length as assumed initial size, but this might not 
             // be the optimal value; this wasn't checked before obsoleting Dictionary.ofList
-            let dict = new System.Collections.Generic.Dictionary<_,_>(paramVars.Length)
+            let dict = Dictionary.newWithSize paramVars.Length
             for v,e in Seq.zip (paramVars |> Seq.map (fun x -> x.PUntaint(id,m))) (Option.toList thisArg @ allArgs) do
                 dict.Add(v,(None,e))
             dict

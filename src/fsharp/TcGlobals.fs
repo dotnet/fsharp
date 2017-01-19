@@ -729,7 +729,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
             // Make it lazy to avoid dereferencing while setting up the base imports. 
             let dict = 
                 lazy (
-                    let dict = new Dictionary<_,_>(entries.Length)
+                    let dict = Dictionary.newWithSize entries.Length
                     for nm, tcref, builder in entries do
                         dict.Add(nm, fun tcref2 tinst -> if tyconRefEq tcref tcref2 then Some(builder tinst) else None)
                     dict
@@ -748,7 +748,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
             // Make it lazy to avoid dereferencing while setting up the base imports. 
             let dict = 
               lazy
-                let dict = new Dictionary<_,_>(entries.Length)
+                let dict = Dictionary.newWithSize entries.Length
                 for _, tcref, builder in entries do
                   if tcref.CanDeref then
                     dict.Add(tcref.Stamp, builder)

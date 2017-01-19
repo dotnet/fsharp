@@ -759,7 +759,7 @@ let isNoArgInstr i =
 
 let ILCmpInstrMap = 
     lazy (
-        let dict = new System.Collections.Generic.Dictionary<_,_>(12)
+        let dict = Dictionary.newWithSize 12
         dict.Add (BI_beq     , i_beq     )
         dict.Add (BI_bgt     , i_bgt     )
         dict.Add (BI_bgt_un  , i_bgt_un  )
@@ -777,7 +777,7 @@ let ILCmpInstrMap =
 
 let ILCmpInstrRevMap = 
   lazy (
-      let dict = new System.Collections.Generic.Dictionary<_,_>(12)
+      let dict = Dictionary.newWithSize 12
       dict.Add ( BI_beq     , i_beq_s     )
       dict.Add ( BI_bgt     , i_bgt_s     )
       dict.Add ( BI_bgt_un  , i_bgt_un_s  )
