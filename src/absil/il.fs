@@ -2496,7 +2496,7 @@ let prependInstrsToCode (instrs: ILInstr list) (c2: ILCode) =
     // If there is a sequence point as the first instruction then keep it at the front
     | I_seqpoint _ as i0 -> 
         { c2 with Labels = Dictionary.ofList [ for kvp in c2.Labels -> (kvp.Key, if kvp.Value = 0 then 0 else kvp.Value + n) ]
-                  Instrs = Array.concat [| i0 ;instrs; c2.Instrs.[1..] |] }
+                  Instrs = Array.concat [| [|i0|] ; instrs ; c2.Instrs.[1..] |] }
     | _ -> 
         { c2 with Labels = Dictionary.ofList [ for kvp in c2.Labels -> (kvp.Key, kvp.Value + n) ]
                   Instrs = Array.append instrs c2.Instrs }
