@@ -1335,4 +1335,3 @@ tcGlobalsSystemTypeNotFound,"The system type '%s' was required but no referenced
 3214,methodIsNotStatic,"Method or object constructor '%s' is not static"
 3215,expressionHasNoName,"This expression does not have a name."
 3216,nameofNotPermitted,"The nameof operator is not allowed in this position."
-3217,wrongNameofArgument,"Only identifiers are allowed as argument for nameof operator."
