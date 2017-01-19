@@ -2889,11 +2889,6 @@ let isNameOfValRef g vref =
     // There is an internal version of typeof defined in prim-types.fs that needs to be detected
     || (g.compilingFslib && vref.LogicalName = "nameof") 
 
-let isTypeNameOfValRef g vref = 
-    valRefEq g vref g.typenameof_vref
-    // There is an internal version of namef defined in prim-types.fs that needs to be detected
-    || (g.compilingFslib && vref.LogicalName = "typenameof") 
-
 let isTypeDefOfValRef g vref = 
     valRefEq g vref g.typedefof_vref 
     // There is an internal version of typenameof defined in prim-types.fs that needs to be detected
@@ -2922,11 +2917,6 @@ let (|TypeDefOfExpr|_|) g expr =
 let (|NameOfExpr|_|) g expr = 
     match expr with 
     | Expr.App(Expr.Val(vref,_,_),_,[ty],[],_) when isNameOfValRef g vref  -> Some ty
-    | _ -> None
-
-let (|TypeNameOfExpr|_|) g expr = 
-    match expr with 
-    | Expr.App(Expr.Val(vref,_,_),_,[ty],[],_) when isTypeNameOfValRef g vref  -> Some ty
     | _ -> None
 
 let (|SeqExpr|_|) g expr = 
@@ -7764,8 +7754,7 @@ let IsSimpleSyntacticConstantExpr g inputExpr =
         | UncheckedDefaultOfExpr g _ 
         | SizeOfExpr g _ 
         | TypeOfExpr g _ 
-        | NameOfExpr g _ 
-        | TypeNameOfExpr g _ -> true
+        | NameOfExpr g _ -> true
         // All others are not simple constant expressions
         | _ -> false
 

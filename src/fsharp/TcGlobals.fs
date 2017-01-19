@@ -569,7 +569,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_typeof_info                = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "typeof"                               , None                 , Some "TypeOf" , [vara],     ([], v_system_Type_typ))  
   let v_methodhandleof_info        = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "methodhandleof"                       , None                 , Some "MethodHandleOf", [vara;varb], ([[varaTy --> varbTy]], v_system_RuntimeMethodHandle_typ))
   let v_sizeof_info                = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "sizeof"                               , None                 , Some "SizeOf" , [vara],     ([], v_int_ty))  
-  let v_typenameof_info            = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "typenameof"                           , None                 , Some "TypeNameOf" ,[vara],  ([], v_string_ty))
   let v_nameof_info                = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "nameof"                               , None                 , Some "NameOf" , [vara],     ([[varaTy]], v_string_ty))
 
   let v_unchecked_defaultof_info   = makeIntrinsicValRef(fslib_MFOperatorsUnchecked_nleref,                    "defaultof"                            , None                 , Some "DefaultOf", [vara],     ([], varaTy))  
@@ -1125,7 +1124,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val typeof_vref                = ValRefForIntrinsic v_typeof_info
   member val sizeof_vref                = ValRefForIntrinsic v_sizeof_info
   member val nameof_vref                = ValRefForIntrinsic v_nameof_info
-  member val typenameof_vref            = ValRefForIntrinsic v_typenameof_info
   member val typedefof_vref             = ValRefForIntrinsic v_typedefof_info
   member val enum_vref                  = ValRefForIntrinsic v_enum_info
   member val enumOfValue_vref           = ValRefForIntrinsic v_enumOfValue_info
@@ -1152,15 +1150,15 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val unbox_fast_vref            = ValRefForIntrinsic v_unbox_fast_info
   member val istype_vref                = ValRefForIntrinsic v_istype_info
   member val istype_fast_vref           = ValRefForIntrinsic v_istype_fast_info
-  member val query_source_vref            = ValRefForIntrinsic v_query_source_info
-  member val query_value_vref            = ValRefForIntrinsic v_query_value_info
-  member val query_run_value_vref            = ValRefForIntrinsic v_query_run_value_info
-  member val query_run_enumerable_vref            = ValRefForIntrinsic v_query_run_enumerable_info
-  member val query_for_vref            = ValRefForIntrinsic v_query_for_value_info
-  member val query_yield_vref            = ValRefForIntrinsic v_query_yield_value_info
-  member val query_yield_from_vref        = ValRefForIntrinsic v_query_yield_from_value_info
-  member val query_select_vref            = ValRefForIntrinsic v_query_select_value_info
-  member val query_where_vref            = ValRefForIntrinsic v_query_where_value_info
+  member val query_source_vref          = ValRefForIntrinsic v_query_source_info
+  member val query_value_vref           = ValRefForIntrinsic v_query_value_info
+  member val query_run_value_vref       = ValRefForIntrinsic v_query_run_value_info
+  member val query_run_enumerable_vref  = ValRefForIntrinsic v_query_run_enumerable_info
+  member val query_for_vref             = ValRefForIntrinsic v_query_for_value_info
+  member val query_yield_vref           = ValRefForIntrinsic v_query_yield_value_info
+  member val query_yield_from_vref      = ValRefForIntrinsic v_query_yield_from_value_info
+  member val query_select_vref          = ValRefForIntrinsic v_query_select_value_info
+  member val query_where_vref           = ValRefForIntrinsic v_query_where_value_info
   member val query_zero_vref            = ValRefForIntrinsic v_query_zero_value_info
 
   member __.seq_collect_info           = v_seq_collect_info
