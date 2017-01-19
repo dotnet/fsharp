@@ -719,7 +719,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
               "ValueTuple`7" ,       v_struct_tuple7_tcr , decodeTupleTy tupInfoStruct
               "ValueTuple`8" ,       v_struct_tuple8_tcr , decodeTupleTy tupInfoStruct |] 
 
-        let entries = Array.append entries1 entries2        
+        let entries = Array.append entries1 entries2
         if compilingFslib then 
             // This map is for use when building FSharp.Core.dll. The backing Tycon's may not yet exist for
             // the TyconRef's we have in our hands, hence we can't dereference them to find their stamps.
