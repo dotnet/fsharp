@@ -8253,6 +8253,7 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (
 
         match stripParens expr with
         | SynExpr.Ident ident -> Some ident
+        | SynExpr.TypeApp(expr = SynExpr.Ident(ident)) -> Some ident
         | SynExpr.LongIdent(_, LongIdentWithDots(idents, _), _, _) -> List.tryLast idents
         | _ -> None
 

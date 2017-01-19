@@ -2891,7 +2891,7 @@ let isNameOfValRef g vref =
 
 let isTypeDefOfValRef g vref = 
     valRefEq g vref g.typedefof_vref 
-    // There is an internal version of typenameof defined in prim-types.fs that needs to be detected
+    // There is an internal version of typedefof defined in prim-types.fs that needs to be detected
     || (g.compilingFslib && vref.LogicalName = "typedefof") 
 
 let (|UncheckedDefaultOfExpr|_|) g expr = 

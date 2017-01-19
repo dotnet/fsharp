@@ -130,7 +130,7 @@ type FrameworkMethodTests() =
     [<Test>]
     member this.``library function name`` () =
         let b = nameof(List.map)
-        Assert.AreEqual("Map",b)
+        Assert.AreEqual("map",b)
 
     [<Test>]
     member this.``static class function name`` () =
@@ -142,46 +142,12 @@ type CustomUnionType =
 | OptionB of int * string
 
 [<TestFixture>]
-type NameOfOperatorForTypes() =
-    [<Test>]
-    member this.``use typenameof on Int32`` () =
-        let b = typenameof<System.Int32>
-        Assert.AreEqual("System.Int32",b)
-
-    [<Test>]
-    member this.``use typenameof on a custom type`` () =
-        let b = typenameof<NameOfOperatorForTypes>
-        Assert.AreEqual("FSharp.Core.Unittests.NameOfOperatorForTypes",b)
-
-    [<Test>]
-    member this.``use typenameof on a custom union type`` () =
-        let b = typenameof<CustomUnionType>
-        Assert.AreEqual("FSharp.Core.Unittests.CustomUnionType",b)
-//
-//    [<Test>]
-//    member this.``use typenameof on a custom union case`` () =
-//        let b = typenameof<CustomUnionType.OptionB>
-//        Assert.AreEqual("FSharp.Core.Unittests.CustomUnionType.OptionB",b)
-
-    [<Test>]
-    member this.``use typenameof on List<string>`` () =
-        let b = typenameof<System.Collections.Generic.List<string>>
-        Assert.AreEqual("System.Collections.Generic.List`1",b)
-
-    [<Test>]
-    member this.``use typenameof on generic List`` () =
-        let b = typenameof<System.Collections.Generic.List<_>>
-        Assert.AreEqual("System.Collections.Generic.List`1",b)
-
-
-
-[<TestFixture>]
 type OperatorNameTests() =    
 
     [<Test>]
     member this.``lookup name of typeof operator`` () =
         let b = nameof(typeof<int>)
-        Assert.AreEqual("TypeOf",b)
+        Assert.AreEqual("typeof",b)
 
     [<Test>]
     member this.``lookup name of + operator`` () =
@@ -198,7 +164,7 @@ type OperatorNameTests() =
     [<Test>]
     member this.``lookup name of nameof operator`` () =
         let b = nameof(nameof)
-        Assert.AreEqual("NameOf",b)
+        Assert.AreEqual("nameof",b)
 
 [<TestFixture>]
 type PatternMatchingOfOperatorNameTests() =    
