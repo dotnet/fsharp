@@ -392,7 +392,7 @@ let NextExtensionMethodPriority() = uint64 (newStamp())
 let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap:Import.ImportMap) m  (tcrefOfStaticClass:TyconRef) = 
     let g = amap.g
     // Type must be non-generic and have 'Extension' attribute
-    if tcrefOfStaticClass.Typars(m).Length = 0 && TyconRefHasAttribute g m g.attrib_ExtensionAttribute tcrefOfStaticClass then
+    if isNil(tcrefOfStaticClass.Typars(m)) && TyconRefHasAttribute g m g.attrib_ExtensionAttribute tcrefOfStaticClass then
         let pri = NextExtensionMethodPriority()
         let typ = generalizedTyconRef tcrefOfStaticClass
         
