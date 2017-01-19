@@ -43,12 +43,12 @@ type internal FSharpQuickInfoProvider
             let textLineNumber = textLine.LineNumber + 1 // Roslyn line numbers are zero-based
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing(filePath, options.OtherOptions |> Seq.toList)
             let! symbol = CommonHelpers.getSymbolAtPosition(documentId, sourceText, position, filePath, defines, SymbolLookupKind.Fuzzy)
-            let! res = checkFileResults.GetStructuredToolTipTextAlternate(textLineNumber, symbol.RightColumn, textLine.ToString(), [symbol.Text], FSharpTokenTag.IDENT) |> liftAsync
+            let! res = checkFileResults.GetStructuredToolTipTextAlternate(textLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland, FSharpTokenTag.IDENT) |> liftAsync
             match res with
             | FSharpToolTipText [] 
             | FSharpToolTipText [FSharpStructuredToolTipElement.None] -> return! None
             | _ -> 
-                let! symbolUse = checkFileResults.GetSymbolUseAtLocation(textLineNumber, symbol.RightColumn, textLine.ToString(), [symbol.Text])
+                let! symbolUse = checkFileResults.GetSymbolUseAtLocation(textLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland)
                 return! Some(res, CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbol.Range), symbolUse.Symbol)
         }
     

@@ -16,6 +16,7 @@ open Microsoft.CodeAnalysis.Text
 
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons
 
@@ -29,13 +30,11 @@ type internal LexerSymbolKind =
 
 type internal LexerSymbol =
     { Kind: LexerSymbolKind
-      Line: int
-      LeftColumn: int
-      RightColumn: int
-      Text: string 
-      FileName: string }
-    member x.Range: Range.range = 
-        Range.mkRange x.FileName (Range.mkPos (x.Line + 1) x.LeftColumn) (Range.mkPos (x.Line + 1) x.RightColumn)
+      /// Last part of `LongIdent`
+      Ident: Ident
+      /// All parts of `LongIdent`
+      FullIsland: string list }
+    member x.Range: Range.range = x.Ident.idRange
 
 [<RequireQualifiedAccess>]
 type internal SymbolLookupKind =
@@ -289,12 +288,17 @@ module internal CommonHelpers =
             | first :: _ ->
                 tryFindStartColumn decreasingTokens
                 |> Option.map (fun leftCol ->
+                    let plid, _ = QuickParse.GetPartialLongNameEx(lineStr, first.RightColumn)
+                    let identStr = lineStr.[leftCol..first.RightColumn]
                     { Kind = LexerSymbolKind.Ident
-                      Line = linePos.Line
-                      LeftColumn = leftCol
-                      RightColumn = first.RightColumn + 1
-                      Text = lineStr.[leftCol..first.RightColumn]
-                      FileName = fileName })
+                      Ident = 
+                        Ident 
+                            (identStr, 
+                             Range.mkRange 
+                                fileName 
+                                (Range.mkPos (linePos.Line + 1) leftCol)
+                                (Range.mkPos (linePos.Line + 1) (first.RightColumn + 1))) 
+                      FullIsland = plid @ [identStr] })
         | SymbolLookupKind.Fuzzy 
         | SymbolLookupKind.ByRightColumn ->
             // Select IDENT token. If failed, select OPERATOR token.
@@ -307,12 +311,17 @@ module internal CommonHelpers =
                 | _ -> false) 
             |> Option.orElseWith (fun _ -> tokensUnderCursor |> List.tryFind (fun { DraftToken.Kind = k } -> k = LexerSymbolKind.Operator))
             |> Option.map (fun token ->
+                let plid, _ = QuickParse.GetPartialLongNameEx(lineStr, token.RightColumn)
+                let identStr = lineStr.Substring(token.Token.LeftColumn, token.Token.FullMatchedLength)
                 { Kind = token.Kind
-                  Line = linePos.Line
-                  LeftColumn = token.Token.LeftColumn
-                  RightColumn = token.RightColumn + 1
-                  Text = lineStr.Substring(token.Token.LeftColumn, token.Token.FullMatchedLength)
-                  FileName = fileName })
+                  Ident = 
+                    Ident 
+                        (identStr, 
+                         Range.mkRange 
+                            fileName 
+                            (Range.mkPos (linePos.Line + 1) token.Token.LeftColumn)
+                            (Range.mkPos (linePos.Line + 1) (token.RightColumn + 1))) 
+                  FullIsland = plid @ [identStr] })
 
     let private getCachedSourceLineData(documentKey: DocumentId, sourceText: SourceText, position: int, fileName: string, defines: string list) = 
         let textLine = sourceText.Lines.GetLineFromPosition(position)

@@ -152,7 +152,7 @@ type internal InlineRenameService
             let fcsTextLineNumber = textLinePos.Line + 1 // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
             let! symbol = CommonHelpers.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Fuzzy)
             let! _parseResults, checkFileResults = checker.ParseAndCheckDocument(document, options)
-            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.RightColumn, textLine.Text.ToString(), [symbol.Text])
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.Text.ToString(), symbol.FullIsland)
             let! declLoc = symbolUse.GetDeclarationLocation(document)
             return InlineRenameInfo(checker, projectInfoManager, document, sourceText, symbolUse, declLoc, checkFileResults) :> IInlineRenameInfo
         }

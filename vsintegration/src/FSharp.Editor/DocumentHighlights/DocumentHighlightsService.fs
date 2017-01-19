@@ -59,13 +59,13 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
             let fcsTextLineNumber = textLinePos.Line + 1
             let! symbol = CommonHelpers.getSymbolAtPosition(documentKey, sourceText, position, filePath, defines, SymbolLookupKind.Fuzzy)
             let! _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options)
-            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.RightColumn, textLine.ToString(), [symbol.Text])
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland)
             let! symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol) |> liftAsync
             return 
                 [| for symbolUse in symbolUses do
                      yield { IsDefinition = symbolUse.IsFromDefinition
                              TextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate) } |]
-                |> fixInvalidSymbolSpans sourceText symbol.Text
+                |> fixInvalidSymbolSpans sourceText symbol.Ident.idText
         }
 
     interface IDocumentHighlightsService with
