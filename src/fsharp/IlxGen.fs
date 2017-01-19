@@ -1457,10 +1457,15 @@ type CodeGenBuffer(m:range,
                 instrs |> Array.mapi (fun idx i2 -> if idx = 0 then i else if i === i2 then AI_nop else i2)
             | _ -> 
                 instrs
+
+        let codeLabels =
+            let dict = new Dictionary<_,_>(codeLabelToPC.Count + codeLabelToCodeLabel.Count)
+            for kvp in codeLabelToPC        do dict.Add(kvp.Key, lab2pc 0 kvp.Key)
+            for kvp in codeLabelToCodeLabel do dict.Add(kvp.Key, lab2pc 0 kvp.Key)
+            dict
         ResizeArray.toList locals ,
         maxStack,
-        (Dictionary.ofList [ for kvp in codeLabelToPC -> (kvp.Key, lab2pc 0 kvp.Key) 
-                             for kvp in codeLabelToCodeLabel -> (kvp.Key, lab2pc 0 kvp.Key) ] ),
+        codeLabels,
         instrs,
         ResizeArray.toList exnSpecs,
         Option.isSome seqpoint

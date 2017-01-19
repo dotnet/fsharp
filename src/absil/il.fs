@@ -2494,11 +2494,19 @@ let prependInstrsToCode (instrs: ILInstr list) (c2: ILCode) =
     let n = instrs.Length
     match c2.Instrs.[0] with 
     // If there is a sequence point as the first instruction then keep it at the front
-    | I_seqpoint _ as i0 -> 
-        { c2 with Labels = Dictionary.ofList [ for kvp in c2.Labels -> (kvp.Key, if kvp.Value = 0 then 0 else kvp.Value + n) ]
-                  Instrs = Array.append [| i0 |] (Array.append instrs c2.Instrs.[1..]) }
-    | _ -> 
-        { c2 with Labels = Dictionary.ofList [ for kvp in c2.Labels -> (kvp.Key, kvp.Value + n) ]
+    | I_seqpoint _ as i0 ->
+        let labels = 
+            let dict = Dictionary<_,_>(c2.Labels.Count)
+            for kvp in c2.Labels do dict.Add(kvp.Key, if kvp.Value = 0 then 0 else kvp.Value + n)
+            dict
+        { c2 with Labels = labels
+                  Instrs = Array.concat [| [|i0|] ; instrs ; c2.Instrs.[1..] |] }
+    | _ ->
+        let labels =
+            let dict = Dictionary<_,_>(c2.Labels.Count)
+            for kvp in c2.Labels do dict.Add(kvp.Key, kvp.Value + n)
+            dict
+        { c2 with Labels = labels
                   Instrs = Array.append instrs c2.Instrs }
 
 let prependInstrsToMethod new_code md  = 

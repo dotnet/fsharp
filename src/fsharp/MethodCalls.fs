@@ -916,11 +916,11 @@ module ProvidedMethodCalls =
                                                          paramVars:Tainted<ProvidedVar>[],
                                                          g,amap,mut,isProp,isSuperInit,m,
                                                          expr:Tainted<ProvidedExpr>) = 
-        let varConv = 
-            [ for (v,e) in Seq.zip (paramVars |> Seq.map (fun x -> x.PUntaint(id,m))) (Option.toList thisArg @ allArgs) do
-                 yield (v,(None,e)) ]
-            |> Dictionary.ofList 
-
+        let varConv =
+            let dict = new System.Collections.Generic.Dictionary<_,_>()
+            for v,e in Seq.zip (paramVars |> Seq.map (fun x -> x.PUntaint(id,m))) (Option.toList thisArg @ allArgs) do
+                dict.Add(v,(None,e))
+            dict
         let rec exprToExprAndWitness top (ea:Tainted<ProvidedExpr>) =
             let fail() = error(Error(FSComp.SR.etUnsupportedProvidedExpression(ea.PUntaint((fun etree -> etree.UnderlyingExpressionString), m)),m))
             match ea with
