@@ -1602,7 +1602,10 @@ module private TastDefinitionPrinting =
       let lhsL =
           let tps = tycon.TyparsNoRange
           let tpsL = layoutTyparDecls denv nameL tycon.IsPrefixDisplay tps
-          let typewordL = typewordL |> Option.defaultValue preciseTypewordL
+          let typewordL = 
+            match typewordL with
+            | Some x -> x
+            | None -> preciseTypewordL
           typewordL ^^ tpsL
       let start = Option.map tagKeyword start
 #if EXTENSIONTYPING
