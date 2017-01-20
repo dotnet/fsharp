@@ -135,7 +135,8 @@ type internal InlineRenameInfo
         member __.TryOnBeforeGlobalSymbolRenamed(_workspace, _changedDocumentIDs, _replacementText) = true
         member __.TryOnAfterGlobalSymbolRenamed(_workspace, _changedDocumentIDs, _replacementText) = true
 
-[<ExportLanguageService(typeof<IEditorInlineRenameService>, FSharpCommonConstants.FSharpLanguageName); Shared>]
+// Temporarily disabled due to https://github.com/Microsoft/visualfsharp/issues/2303
+//[<ExportLanguageService(typeof<IEditorInlineRenameService>, FSharpCommonConstants.FSharpLanguageName); Shared>]
 type internal InlineRenameService 
     [<ImportingConstructor>]
     (
