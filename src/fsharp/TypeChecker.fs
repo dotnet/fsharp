@@ -14357,7 +14357,8 @@ module EstablishTypeDefinitionCores =
         let isStructRecordOrUnionType = 
             match synTyconRepr with
             | SynTypeDefnSimpleRepr.Record _ 
-            | SynTypeDefnSimpleRepr.Union _ -> 
+            | SynTypeDefnSimpleRepr.Union _
+            | SynTypeDefnSimpleRepr.TypeAbbrev _ -> 
                 HasFSharpAttribute cenv.g cenv.g.attrib_StructAttribute attrs
             | _ -> 
                 false

@@ -2518,15 +2518,15 @@ let fullNameOfEntityRef nmF xref =
 
 let tagEntityRefName (xref: EntityRef) name =
     if Set.contains name Lexhelp.Keywords.keywordTypes then tagKeyword name
-    else if xref.IsNamespace then tagNamespace name
-    else if xref.IsModule then tagModule name
-    else if xref.IsTypeAbbrev then tagAlias name
-    else if xref.IsFSharpDelegateTycon then tagDelegate name
-    else if xref.IsILEnumTycon || xref.IsFSharpEnumTycon then tagEnum name
-    else if xref.IsStructOrEnumTycon then tagStruct name
-    else if xref.IsFSharpInterfaceTycon then tagInterface name
-    else if xref.IsUnionTycon then tagUnion name
-    else if xref.IsRecordTycon then tagRecord name
+    elif xref.IsNamespace then tagNamespace name
+    elif xref.IsModule then tagModule name
+    elif xref.IsTypeAbbrev then tagAlias name
+    elif xref.IsFSharpDelegateTycon then tagDelegate name
+    elif xref.IsILEnumTycon || xref.IsFSharpEnumTycon then tagEnum name
+    elif xref.IsStructOrEnumTycon then tagStruct name
+    elif xref.IsFSharpInterfaceTycon then tagInterface name
+    elif xref.IsUnionTycon then tagUnion name
+    elif xref.IsRecordTycon then tagRecord name
     else tagClass name
 
 let fullNameOfEntityRefAsLayout nmF (xref: EntityRef) =
