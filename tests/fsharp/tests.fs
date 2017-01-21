@@ -1433,7 +1433,7 @@ module RegressionTests =
     let ``tuple-bug-1`` () = singleTestBuildAndRun "regression/tuple-bug-1" FSC_BASIC
 
     [<Test >]
-    let ``struct tuple-bug-1`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSI_BASIC
+    let ``struct-tuple-bug-1`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSI_BASIC
 
 
 

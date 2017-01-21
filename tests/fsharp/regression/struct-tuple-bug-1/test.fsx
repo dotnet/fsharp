@@ -1,14 +1,20 @@
 // #Regression 
 let failures = ref false
-let report_failure () = 
-  System.Console.Error.WriteLine "NO"; failures := true
+let report_failure msg = 
+  printfn "%A" msg
+  failures := true
 
-let struct (_x,_y) = struct (1,2)
+try
+    let struct (_x,_y) = struct (1,2)
+    ()
+with ex -> report_failure (ex.ToString())
 
-let _ = 
-  if !failures then (System.Console.Out.WriteLine "Test Failed"; exit 1) 
-  else
-      (System.Console.Out.WriteLine "Test Passed"; 
-       System.IO.File.WriteAllText("test.ok", "ok"); 
-       exit 0)
-
+let _ =
+    if !failures then 
+        printfn "Test Failed"
+        exit 1
+    else
+        printfn "Test Passed"
+        System.IO.File.WriteAllText("test.ok", "ok")
+        exit 0
+()
