@@ -1432,6 +1432,10 @@ module RegressionTests =
     [<Test >]
     let ``tuple-bug-1`` () = singleTestBuildAndRun "regression/tuple-bug-1" FSC_BASIC
 
+    [<Test >]
+    let ``struct tuple-bug-1`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSI_BASIC
+
+
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
 module OptimizationTests =
