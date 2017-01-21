@@ -1581,6 +1581,8 @@ let isClassTy g ty =
 
 let isStructOrEnumTyconTy g ty = isAppTy g ty && (tyconOfAppTy g ty).IsStructOrEnumTycon
 
+let isStructRecordOrUnionTyconTy g ty = isAppTy g ty && (tyconOfAppTy g ty).IsStructRecordOrUnionTycon
+
 let isStructTy g ty = 
     isStructOrEnumTyconTy g ty || isStructTupleTy g ty
 
