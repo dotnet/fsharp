@@ -63,8 +63,9 @@ let main argv =
                     match symbolUse with
                     | Some symbolUse ->
                         printfn "Found symbol %s" symbolUse.Symbol.FullName
+                        let sw = Stopwatch.StartNew()
                         let! symbolUses = projectResults.GetUsesOfSymbol(symbolUse.Symbol)
-                        printfn "Found %d symbol uses" symbolUses.Length
+                        printfn "Found %d symbol uses in %O" symbolUses.Length sw.Elapsed
                         return symbolUses
                     | None -> 
                         printfn "Symbol '%s' was not found at (%d, %d) in %s" options.SymbolText options.SymbolPos.Line options.SymbolPos.Column options.FileToCheck
@@ -93,7 +94,7 @@ let main argv =
     let rec loop (fileVersion: int) =
         match Console.ReadKey().Key with
         | ConsoleKey.C -> 
-            checkProject() |> ignore
+            checkProject() |> Async.RunSynchronously |> ignore
             loop fileVersion
         | ConsoleKey.G -> 
             printfn "GC is running..."
