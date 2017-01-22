@@ -109,8 +109,10 @@ let main argv =
             loop fileVersion
         | ConsoleKey.W ->
             wasteMemory()
+            loop fileVersion
         | ConsoleKey.M ->
             waste.Clear()
+            loop fileVersion
         | ConsoleKey.Enter -> ()
         | _ -> loop fileVersion
     loop 0
