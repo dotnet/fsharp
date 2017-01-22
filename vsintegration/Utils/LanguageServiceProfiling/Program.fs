@@ -5,11 +5,25 @@ open System.IO
 open LanguageServiceProfiling
 open System.Diagnostics
 open System.Collections.Generic
+// ---- taken from QuickInfoProviderTests.fs
+let normalizeLineEnds (s: string) = s.Replace("\r\n", "\n").Replace("\n\n", "\n")
+let internal getQuickInfoText (FSharpToolTipText.FSharpToolTipText elements) : string =
+    let rec parseElement = function
+        | FSharpToolTipElement.None -> ""
+        | FSharpToolTipElement.Single(text, _) -> text
+        | FSharpToolTipElement.SingleParameter(text, _, _) -> text
+        | FSharpToolTipElement.Group(xs) -> xs |> List.map fst |> String.concat "\n"
+        | FSharpToolTipElement.CompositionError(error) -> error
+    elements |> List.map (parseElement) |> String.concat "\n" |> normalizeLineEnds
 
 [<EntryPoint>]
 let main argv = 
     let rootDir = argv.[0]
     let options = Options.get rootDir
+    let getFileLines () = File.ReadAllLines(options.FileToCheck)
+    let getFileText () = File.ReadAllText(options.FileToCheck)
+    let getLine line = (getFileLines ()).[line]
+
     printfn "Found options for %s." options.Options.ProjectFileName
     let checker = FSharpChecker.Create()
     let waste = new ResizeArray<int array>()
@@ -58,7 +72,7 @@ let main argv =
                         fileResults.GetSymbolUseAtLocation(
                             options.SymbolPos.Line, 
                             options.SymbolPos.Column, 
-                            File.ReadAllLines(options.FileToCheck).[options.SymbolPos.Line],
+                            getLine(options.SymbolPos.Line),
                             [options.SymbolText])
                     match symbolUse with
                     | Some symbolUse ->
@@ -77,7 +91,33 @@ let main argv =
                 printfn "No project results for %s" options.Options.ProjectFileName
                 return [||]
         }
+    let getDeclarations (fileVersion: int) =
+        async {
+            let! projectResults = checkProject()
+            match projectResults with
+            | Some projectResults ->
+                let! fileResults = checkFile fileVersion
+                match fileResults with
+                | Some fileResults ->
+                    let! parseResult = checker.ParseFileInProject(options.FileToCheck, getFileText(), options.Options) 
+                    for completion in options.CompletionPositions do
+                        printfn "querying %A %s" completion.QualifyingNames completion.PartialName
+                        let! listInfo =
+                            fileResults.GetDeclarationListInfo(
+                                Some parseResult
+                                , completion.Position.Line
+                                , completion.Position.Column
+                                , getLine (completion.Position.Line)
+                                , completion.QualifyingNames
+                                , completion.PartialName)
+                           
+                        for i in listInfo.Items do
+                            printfn "%s" (getQuickInfoText i.DescriptionText)
 
+                | None -> printfn "no declarations"
+            | None -> printfn "no declarations"
+        }
+    
     let wasteMemory () =
         waste.Add(Array.zeroCreate (1024 * 1024 * 25))
 
@@ -87,6 +127,7 @@ let main argv =
 <G> for GC.Collect(2)
 <F> for check TypeChecker.fs (you need to change it before rechecking)
 <R> for find all references
+<L> for completion lists
 <W> for wasting 100M of memory
 <M> to reclaim waste
 <Enter> for exit."""
@@ -107,6 +148,9 @@ let main argv =
             loop (fileVersion + 1)
         | ConsoleKey.R ->
             findAllReferences fileVersion |> Async.RunSynchronously |> ignore
+            loop fileVersion
+        | ConsoleKey.L ->
+            getDeclarations fileVersion |> Async.RunSynchronously
             loop fileVersion
         | ConsoleKey.W ->
             wasteMemory()

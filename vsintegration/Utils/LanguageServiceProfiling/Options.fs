@@ -8,11 +8,18 @@ open System.IO
 
 let private (</>) x y = Path.Combine(x, y)
 
+type CompletionPosition = {
+    Position: pos
+    QualifyingNames : string list
+    PartialName : string
+}
+
 type Options =
     { Options: FSharpProjectOptions
       FileToCheck: string
       SymbolText: string
-      SymbolPos: pos }
+      SymbolPos: pos
+      CompletionPositions: CompletionPosition list }
          
 let get (repositoryDir: string) : Options =
     match DirectoryInfo(repositoryDir).Name.ToLower() with
@@ -281,7 +288,8 @@ let FCS (repositoryDir: string) : Options =
          ExtraProjectInfo = None }
       FileToCheck = repositoryDir </> @"src\fsharp\TypeChecker.fs"
       SymbolText = "Some"
-      SymbolPos = mkPos 120 7 }
+      SymbolPos = mkPos 120 7
+      CompletionPositions = [] }
 
 let VFPT (repositoryDir: string) : Options =
     { Options =
@@ -389,4 +397,11 @@ let VFPT (repositoryDir: string) : Options =
          ExtraProjectInfo = None }
       FileToCheck = repositoryDir </> @"src\FSharp.Editing\CodeGeneration\RecordStubGenerator.fs"
       SymbolText = "option"
-      SymbolPos = mkPos 19 23 }
+      SymbolPos = mkPos 19 23 
+      CompletionPositions = 
+        [{
+            Position = mkPos 20 4
+            QualifyingNames = []
+            PartialName = ""
+        }]
+      }
