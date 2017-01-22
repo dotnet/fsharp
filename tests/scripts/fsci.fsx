@@ -56,8 +56,8 @@ let executeFsi references =
     let arguments2 = sprintf @"%s %s" fsiExe (String.concat " " arguments)
     if isVerbose then 
         log "%s %s" coreRunExe arguments2
-        log "%s %s @fsc.cmd.args" coreRunExe fsiExe
-    File.WriteAllLines(OutputDir ++ "fsc.cmd.args", arguments)
+        log "%s %s @fsi.cmd.args" coreRunExe fsiExe
+    File.WriteAllLines(OutputDir ++ "fsi.cmd.args", arguments)
     File.WriteAllLines(OutputDir ++ (TestName + ".runtimeconfig.json"), runtimeConfigLines)
     CopyDlls.Split(';') |> Array.iter(fun s -> if not (System.String.IsNullOrWhiteSpace(s)) then File.Copy(s, OutputDir ++ Path.GetFileName(s), true))
     executeProcess coreRunExe arguments2
