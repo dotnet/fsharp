@@ -43,18 +43,14 @@ set /p DOTNET_VERSION=< "%~dp0DotnetCLIVersion.txt"
 if exist "%DOTNET_CMD%" goto :afterdotnetrestore
 
 echo Installing dotnet cli...
-if NOT exist "%DOTNET_PATH%" mkdir "%DOTNET_PATH%"
-if [%PROCESSOR_ARCHITECTURE%]==[x86] (set DOTNET_ZIP_NAME=dotnet-dev-win-x86.%DOTNET_VERSION%.zip) else (set DOTNET_ZIP_NAME=dotnet-dev-win-x64.%DOTNET_VERSION%.zip)
-set DOTNET_REMOTE_PATH=https://dotnetcli.blob.core.windows.net/dotnet/Sdk/%DOTNET_VERSION%/%DOTNET_ZIP_NAME%
-set DOTNET_LOCAL_PATH=%DOTNET_PATH%%DOTNET_ZIP_NAME%
-echo Installing '%DOTNET_REMOTE_PATH%' to '%DOTNET_LOCAL_PATH%' >> "%INIT_TOOLS_LOG%"
-powershell -NoProfile -ExecutionPolicy unrestricted -Command "$retryCount = 0; $success = $false; do { try { $wc = New-Object System.Net.WebClient; $wc.Proxy = [System.Net.WebRequest]::DefaultWebProxy; $wc.Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials; $wc.DownloadFile('%DOTNET_REMOTE_PATH%', '%DOTNET_LOCAL_PATH%'); $success = $true; } catch { if ($retryCount -ge 6) { throw; } else { $retryCount++; Start-Sleep -Seconds (5 * $retryCount); } } } while ($success -eq $false); Add-Type -Assembly 'System.IO.Compression.FileSystem' -ErrorVariable AddTypeErrors; if ($AddTypeErrors.Count -eq 0) { [System.IO.Compression.ZipFile]::ExtractToDirectory('%DOTNET_LOCAL_PATH%', '%DOTNET_PATH%') } else { (New-Object -com shell.application).namespace('%DOTNET_PATH%').CopyHere((new-object -com shell.application).namespace('%DOTNET_LOCAL_PATH%').Items(),16) }" >> "%INIT_TOOLS_LOG%"
-if NOT exist "%DOTNET_LOCAL_PATH%" (
-  echo ERROR: Could not install dotnet cli correctly. See '%INIT_TOOLS_LOG%' for more details.
-  set TOOLS_INIT_RETURN_CODE=1
-  goto :DONE
+echo The dotnet cli is a large file it may take a few minutes ...
+echo powershell -ExecutionPolicy unrestricted -NoProfile -Command ".\dotnet-install.ps1 -InstallDir %DOTNET_PATH% -Architecture x64 -Version %DOTNET_VERSION% -NoPath true; exit $LastExitCode;"
+powershell -ExecutionPolicy unrestricted -NoProfile -Command ".\dotnet-install.ps1 -InstallDir %DOTNET_PATH% -Architecture x64 -Version %DOTNET_VERSION% -NoPath true; exit $LastExitCode;"
+if errorlevel 1 (
+   echo ERROR: Could not install dotnet cli correctly.
+   set TOOLS_INIT_RETURN_CODE=1
+   goto :DONE
 )
-
 :afterdotnetrestore
 
 if exist "%BUILD_TOOLS_PATH%" goto :afterbuildtoolsrestore
