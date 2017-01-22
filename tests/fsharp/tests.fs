@@ -1378,6 +1378,13 @@ module ToolsTests =
 
 
 module RegressionTests = 
+
+    [<Test >]
+    let ``struct-tuple-bug-1-FSC_BASIC`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSC_BASIC
+
+    [<Test >]
+    let ``tuple-bug-1`` () = singleTestBuildAndRun "regression/tuple-bug-1" FSC_BASIC
+
     [<Test>]
     let ``26`` () = singleTestBuildAndRun "regression/26" FSC_BASIC
 
@@ -1425,20 +1432,12 @@ module RegressionTests =
         fsc cfg "%s -r:Category.dll -a -o:petshop.dll" cfg.fsc_flags ["Category.ml"]
 
         peverify cfg "petshop.dll"
-                
+
     [<Test >]
     let ``86`` () = singleTestBuildAndRun "regression/86" FSC_BASIC
 
     [<Test >]
-    let ``tuple-bug-1`` () = singleTestBuildAndRun "regression/tuple-bug-1" FSC_BASIC
-
-    [<Test >]
-    let ``struct-tuple-bug-1-FSC_BASIC`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSC_BASIC
-
-    [<Test >]
-    let ``struct-tuple-bug-1=FSI_BASIC`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSI_BASIC
-
-
+    let ``struct-tuple-bug-1-FSI_BASIC`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSI_BASIC
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
 module OptimizationTests =
