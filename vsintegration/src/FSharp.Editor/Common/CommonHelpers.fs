@@ -2,8 +2,6 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-#nowarn "1182"
-
 open System
 open System.Collections.Generic
 open System.Threading
@@ -360,7 +358,6 @@ module internal CommonHelpers =
     let getSymbolAtPosition(documentKey: DocumentId, sourceText: SourceText, position: int, fileName: string, defines: string list, lookupKind: SymbolLookupKind) : LexerSymbol option =
         try
             let lineData, textLinePos, lineContents = getCachedSourceLineData(documentKey, sourceText, position, fileName, defines)
-            let sourceTokenizer = FSharpSourceTokenizer(defines, Some fileName)
             getSymbolFromTokens(fileName, lineData.Tokens, textLinePos, lineContents, lookupKind)
         with 
         | :? System.OperationCanceledException -> reraise()

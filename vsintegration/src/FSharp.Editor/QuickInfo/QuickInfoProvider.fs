@@ -49,7 +49,7 @@ type internal FSharpQuickInfoProvider
             | FSharpToolTipText [FSharpStructuredToolTipElement.None] -> return! None
             | _ -> 
                 let! symbolUse = checkFileResults.GetSymbolUseAtLocation(textLineNumber, symbol.RightColumn, textLine.ToString(), [symbol.Text])
-                return! Some(res, CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbol.Range), symbolUse.Symbol)
+                return! Some(res, CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbol.Range), symbolUse.Symbol, symbol.Kind)
         }
     
     interface IQuickInfoProvider with
@@ -60,7 +60,7 @@ type internal FSharpQuickInfoProvider
                 let! _ = CommonHelpers.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Fuzzy)
                 let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                 let! textVersion = document.GetTextVersionAsync(cancellationToken)
-                let! toolTipElement, textSpan, symbol = 
+                let! toolTipElement, textSpan, symbol, symbolKind = 
                     FSharpQuickInfoProvider.ProvideQuickInfo(checkerProvider.Checker, document.Id, sourceText, document.FilePath, position, options, textVersion.GetHashCode())
                 let mainDescription = Collections.Generic.List()
                 let documentation = Collections.Generic.List()
@@ -73,7 +73,7 @@ type internal FSharpQuickInfoProvider
                 let content = 
                     QuickInfoDisplayDeferredContent
                         (
-                            symbolGlyph = SymbolGlyphDeferredContent(CommonRoslynHelpers.GetGlyphForSymbol(symbol), glyphService),
+                            symbolGlyph = SymbolGlyphDeferredContent(CommonRoslynHelpers.GetGlyphForSymbol(symbol, symbolKind), glyphService),
                             warningGlyph = null,
                             mainDescription = ClassifiableDeferredContent(mainDescription, typeMap),
                             documentation = ClassifiableDeferredContent(documentation, typeMap),
