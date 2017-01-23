@@ -319,6 +319,7 @@ if /i '%ARG%' == 'test-net40-fsharp' (
 
 if /i '%ARG%' == 'test-coreclr-fsharp' (
     set BUILD_NET40=1
+    set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_CORECLR=1
     set TEST_CORECLR_FSHARP_SUITE=1
 )
