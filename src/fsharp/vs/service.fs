@@ -1954,14 +1954,24 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
     member info.HasFullTypeCheckInfo = details.IsSome
     
     /// Intellisense autocompletions
-    member info.GetDeclarationListInfo(parseResultsOpt, line, colAtEndOfNamesAndResidue, lineStr, qualifyingNames, partialName, ?hasTextChangedSinceLastTypecheck) = 
-        let hasTextChangedSinceLastTypecheck = defaultArg hasTextChangedSinceLastTypecheck (fun _ -> false)
-        reactorOp "GetDeclarations" FSharpDeclarationListInfo.Empty (fun scope -> 
-            let sw = System.Diagnostics.Stopwatch.StartNew()
-            let r = scope.GetDeclarations(parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, hasTextChangedSinceLastTypecheck)
-            System.IO.File.WriteAllText(@"e:\___3.txt", sprintf "scope.GetDeclarations: %O" sw.Elapsed)
-            r
-            )
+    //member info.GetDeclarationListInfo(parseResultsOpt, line, colAtEndOfNamesAndResidue, lineStr, qualifyingNames, partialName, ?hasTextChangedSinceLastTypecheck) = 
+    //    let hasTextChangedSinceLastTypecheck = defaultArg hasTextChangedSinceLastTypecheck (fun _ -> false)
+    //    reactorOp "GetDeclarations" FSharpDeclarationListInfo.Empty (fun scope -> 
+    //        let sw = System.Diagnostics.Stopwatch.StartNew()
+    //        let r = scope.GetDeclarations(parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, hasTextChangedSinceLastTypecheck)
+    //        System.IO.File.WriteAllText(@"e:\___3.txt", sprintf "scope.GetDeclarations: %O" sw.Elapsed)
+    //        r
+    //        )
+    
+    member info.GetDeclarationListInfo(parseResultsOpt, line, colAtEndOfNamesAndResidue, lineStr, qualifyingNames, partialName, ?hasTextChangedSinceLastTypecheck) =
+        async {
+            let hasTextChangedSinceLastTypecheck = defaultArg hasTextChangedSinceLastTypecheck (fun _ -> false)
+            return
+                threadSafeOp 
+                    (fun () -> failwith "not available") 
+                    (fun (scope, _builder, _reactor) -> 
+                        scope.GetDeclarations(parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, hasTextChangedSinceLastTypecheck))
+        }
 
     member info.GetDeclarationListSymbols(parseResultsOpt, line, colAtEndOfNamesAndResidue, lineStr, qualifyingNames, partialName, ?hasTextChangedSinceLastTypecheck) = 
         let hasTextChangedSinceLastTypecheck = defaultArg hasTextChangedSinceLastTypecheck (fun _ -> false)
