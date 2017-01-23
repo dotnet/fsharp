@@ -1998,9 +1998,14 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
 
     // Resolve the names at the given location to a set of methods
     member info.GetMethodsAlternate(line, colAtEndOfNames, lineStr, names) =
-        let dflt = FSharpMethodGroup("",[| |])
-        reactorOp "GetMethods" dflt (fun scope-> 
-            scope.GetMethods (line, lineStr, colAtEndOfNames, names))
+        async {
+            let dflt = FSharpMethodGroup("",[| |])
+            return 
+                threadSafeOp
+                    (fun () -> dflt)
+                    (fun (scope, _, _) -> 
+                        scope.GetMethods (line, lineStr, colAtEndOfNames, names))
+        }
             
     member info.GetDeclarationLocationAlternate (line, colAtEndOfNames, lineStr, names, ?preferFlag) = 
         let dflt = FSharpFindDeclResult.DeclNotFound FSharpFindDeclFailureReason.Unknown
