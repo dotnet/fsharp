@@ -94,11 +94,24 @@ type internal FSharpCompletionProvider
 
     static member ProvideCompletionsAsyncAux(checker: FSharpChecker, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, textVersionHash: int) = 
         async {
-            let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
-            match parseResults.ParseTree, checkFileAnswer with
-            | _, FSharpCheckFileAnswer.Aborted
-            | None, _ -> return None
-            | Some parsedInput, FSharpCheckFileAnswer.Succeeded(checkFileResults) ->
+            let! results =
+                async {
+                    match checker.TryGetRecentCheckResultsForFile(filePath, options) with
+                    | Some (parseResults, checkFileResults, _) -> 
+                        match parseResults.ParseTree with
+                        | Some parsedInput -> return Some (parseResults, parsedInput, checkFileResults)
+                        | None -> return None
+                    | None ->
+                        let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
+                        match parseResults.ParseTree, checkFileAnswer with
+                        | _, FSharpCheckFileAnswer.Aborted
+                        | None, _ -> return None
+                        | Some parsedInput, FSharpCheckFileAnswer.Succeeded(checkFileResults) ->
+                            return Some (parseResults, parsedInput, checkFileResults)
+                }
+
+            match results with
+            | Some (parseResults, parsedInput, checkFileResults) ->
                 let textLines = sourceText.Lines
                 let caretLinePos = textLines.GetLinePosition(caretPosition)
                 let entityKind = UntypedParseImpl.GetEntityKind(Pos.fromZ caretLinePos.Line caretLinePos.Character, parsedInput)
@@ -131,6 +144,7 @@ type internal FSharpCompletionProvider
                     results.Add(completionItem)
                 
                 return Some results
+            | None -> return None
         }
 
     override this.ShouldTriggerCompletion(sourceText: SourceText, caretPosition: int, trigger: CompletionTrigger, _: OptionSet) =
