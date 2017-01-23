@@ -19,7 +19,7 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 
 type private LineHash = int
 
-[<DiagnosticAnalyzer(FSharpCommonConstants.FSharpLanguageName)>]
+//[<DiagnosticAnalyzer(FSharpCommonConstants.FSharpLanguageName)>]
 type internal SimplifyNameDiagnosticAnalyzer() =
     inherit DocumentDiagnosticAnalyzer()
     

@@ -35,6 +35,11 @@ open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons
 
+open Microsoft.VisualStudio.FSharp.Editor.Logging
+open System.Diagnostics
+
+#nowarn "1182"
+
 type internal FSharpCompletionProvider
     (
         workspace: Workspace,
@@ -52,57 +57,75 @@ type internal FSharpCompletionProvider
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
     static let attributeSuffixLength = "Attribute".Length
     
+    static let time msg (f: unit -> 'a) : 'a = 
+        let sw = Stopwatch.StartNew()
+        let r = f()
+        Logging.logInfof "[%s] %O" msg sw.Elapsed
+        r
+
+    static let asyncTime msg (f: unit -> Async<'a>) : Async<'a> = 
+        async {
+            let sw = Stopwatch.StartNew()
+            let! r = f()
+            Logging.logInfof "[%s] %O" msg sw.Elapsed
+            return r
+        }
+    
     static member ShouldTriggerCompletionAux(sourceText: SourceText, caretPosition: int, trigger: CompletionTriggerKind, getInfo: (unit -> DocumentId * string * string list)) =
         // Skip if we are at the start of a document
         if caretPosition = 0 then
             false
-
+        
         // Skip if it was triggered by an operation other than insertion
         elif not (trigger = CompletionTriggerKind.Insertion) then
             false
-
+        
         // Skip if we are not on a completion trigger
         else
-          let triggerPosition = caretPosition - 1
-          let c = sourceText.[triggerPosition]
-          
-          if not (completionTriggers |> Array.contains c) then
-            false
-          
-          // do not trigger completion if it's not single dot, i.e. range expression
-          elif triggerPosition > 0 && sourceText.[triggerPosition - 1] = '.' then
-            false
+            let triggerPosition = caretPosition - 1
+            let c = sourceText.[triggerPosition]
+            
+            if not (completionTriggers |> Array.contains c) then
+                false
+            
+            // do not trigger completion if it's not single dot, i.e. range expression
+            elif triggerPosition > 0 && sourceText.[triggerPosition - 1] = '.' then
+                false
+            
+            // Trigger completion if we are on a valid classification type
+            else
+                let documentId, filePath, defines = time "getInfo" <| getInfo
+                let textLines = time "Lines" <| fun _ -> sourceText.Lines
+                let triggerLine = time "getLineFromPosition" <| fun _ -> textLines.GetLineFromPosition(triggerPosition)
 
-          // Trigger completion if we are on a valid classification type
-          else
-            let documentId, filePath,  defines = getInfo()
-            let textLines = sourceText.Lines
-            let triggerLine = textLines.GetLineFromPosition(triggerPosition)
-            let classifiedSpanOption =
-                CommonHelpers.getColorizationData(documentId, sourceText, triggerLine.Span, Some(filePath), defines, CancellationToken.None)
-                |> Seq.tryFind(fun classifiedSpan -> classifiedSpan.TextSpan.Contains(triggerPosition))
-
-            match classifiedSpanOption with
-            | None -> false
-            | Some(classifiedSpan) ->
-                match classifiedSpan.ClassificationType with
-                | ClassificationTypeNames.Comment
-                | ClassificationTypeNames.StringLiteral
-                | ClassificationTypeNames.ExcludedCode
-                | ClassificationTypeNames.NumericLiteral -> false
-                | _ -> true // anything else is a valid classification type
+                let classifiedSpanOption = time "getColorizationData" <| fun _ ->
+                    CommonHelpers.getColorizationData(documentId, sourceText, triggerLine.Span, Some(filePath), defines, CancellationToken.None)
+                    |> Seq.tryFind(fun classifiedSpan -> classifiedSpan.TextSpan.Contains(triggerPosition))
+                
+                match classifiedSpanOption with
+                | None -> false
+                | Some(classifiedSpan) ->
+                    match classifiedSpan.ClassificationType with
+                    | ClassificationTypeNames.Comment
+                    | ClassificationTypeNames.StringLiteral
+                    | ClassificationTypeNames.ExcludedCode
+                    | ClassificationTypeNames.NumericLiteral -> false
+                    | _ -> true // anything else is a valid classification type
 
     static member ProvideCompletionsAsyncAux(checker: FSharpChecker, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, textVersionHash: int) = 
         async {
-            let! results =
+            let! results = asyncTime "getParseAndCheck results" <| fun _ ->
                 async {
+                    let sw = Stopwatch()
                     match checker.TryGetRecentCheckResultsForFile(filePath, options) with
-                    | Some (parseResults, checkFileResults, _) -> 
+                    | Some (parseResults, checkFileResults, _) ->
+                        Logging.logInfof "Got CACHED results in %O" sw.Elapsed
                         match parseResults.ParseTree with
                         | Some parsedInput -> return Some (parseResults, parsedInput, checkFileResults)
                         | None -> return None
                     | None ->
-                        let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
+                        Logging.logInfof "Has NOT got cached results, checking..."
+                        let! parseResults, checkFileAnswer = asyncTime "Checking" <| fun _ -> checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
                         match parseResults.ParseTree, checkFileAnswer with
                         | _, FSharpCheckFileAnswer.Aborted
                         | None, _ -> return None
@@ -121,7 +144,9 @@ type internal FSharpCompletionProvider
                 let caretLineColumn = caretLinePos.Character
                 
                 let qualifyingNames, partialName = QuickParse.GetPartialLongNameEx(caretLine.ToString(), caretLineColumn - 1) 
-                let! declarations = checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLineColumn, caretLine.ToString(), qualifyingNames, partialName)
+                
+                let! declarations = asyncTime "GetDeclarationListInfo" <| fun _ ->
+                    checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLineColumn, caretLine.ToString(), qualifyingNames, partialName)
                 
                 let results = List<CompletionItem>()
                 
