@@ -42,7 +42,7 @@ type internal FSharpQuickInfoProvider
             let textLine = sourceText.Lines.GetLineFromPosition(position)
             let textLineNumber = textLine.LineNumber + 1 // Roslyn line numbers are zero-based
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing(filePath, options.OtherOptions |> Seq.toList)
-            let! symbol = CommonHelpers.getSymbolAtPosition(documentId, sourceText, position, filePath, defines, SymbolLookupKind.Fuzzy)
+            let! symbol = CommonHelpers.getSymbolAtPosition(documentId, sourceText, position, filePath, defines, SymbolLookupKind.Precise)
             let! res = checkFileResults.GetStructuredToolTipTextAlternate(textLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland, FSharpTokenTag.IDENT) |> liftAsync
             match res with
             | FSharpToolTipText [] 
@@ -57,7 +57,7 @@ type internal FSharpQuickInfoProvider
             asyncMaybe {
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
-                let! _ = CommonHelpers.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Fuzzy)
+                let! _ = CommonHelpers.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Precise)
                 let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                 let! textVersion = document.GetTextVersionAsync(cancellationToken)
                 let! toolTipElement, textSpan, symbol = 
