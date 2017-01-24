@@ -39,7 +39,7 @@ type internal FSharpColorizationService
             asyncMaybe {
                 let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                 let! sourceText = document.GetTextAsync(cancellationToken)
-                let! _, checkResults = checkerProvider.Checker.ParseAndCheckDocument(document, options, sourceText) 
+                let! _, _, checkResults = checkerProvider.Checker.ParseAndCheckDocument(document, options, sourceText, false) 
                 // it's crucial to not return duplicated or overlapping `ClassifiedSpan`s because Find Usages service crashes.
                 let colorizationData = checkResults.GetExtraColorizationsAlternate() |> Array.distinctBy fst
                 for (range, tokenColorKind) in colorizationData do

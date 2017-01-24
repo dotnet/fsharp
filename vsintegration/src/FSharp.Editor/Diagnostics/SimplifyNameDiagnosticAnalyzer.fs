@@ -49,8 +49,8 @@ type internal SimplifyNameDiagnosticAnalyzer() =
             | Some options ->
                 let! sourceText = document.GetTextAsync()
                 let checker = getChecker document
-                let! _, checkResults = checker.ParseAndCheckDocument(document, options, sourceText)
-                let! symbolUses = checkResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
+                let! _, _, checkResults = checker.ParseAndCheckDocument(document, options, sourceText)
+                let symbolUses = checkResults.GetAllUsesOfAllSymbolsInFile()
                 let mutable result = ResizeArray()
                 let symbolUses =
                     symbolUses
@@ -79,7 +79,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
                                     match rest with
                                     | [] -> return current
                                     | headIdent :: restPlid ->
-                                        let! res = checkResults.IsRelativeNameResolvable(posAtStartOfName, current, symbolUse.Symbol.Item) 
+                                        let res = checkResults.IsRelativeNameResolvable(posAtStartOfName, current, symbolUse.Symbol.Item) 
                                         if res then return current
                                         else return! loop restPlid (headIdent :: current)
                                 }

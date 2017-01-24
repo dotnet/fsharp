@@ -540,7 +540,7 @@ module internal InterfaceStubGenerator =
     ///  (1) Crack ASTs to get member names and their associated ranges
     ///  (2) Check symbols of those members based on ranges
     ///  (3) If any symbol found, capture its member signature 
-    let getImplementedMemberSignatures (getMemberByLocation: string * range -> Async<FSharpSymbolUse option>) displayContext interfaceData = 
+    let getImplementedMemberSignatures (getMemberByLocation: string * range -> FSharpSymbolUse option) displayContext interfaceData = 
         let formatMemberSignature (symbolUse: FSharpSymbolUse) =            
             match symbolUse.Symbol with
             | :? FSharpMemberOrFunctionOrValue as m ->
@@ -557,14 +557,12 @@ module internal InterfaceStubGenerator =
             | _ ->
                 //fail "Should only accept symbol uses of members."
                 None
-        async {
-            let! symbolUses = 
-                getMemberNameAndRanges interfaceData
-                |> List.toArray
-                |> Array.mapAsync getMemberByLocation
-            return symbolUses |> Array.choose (Option.bind formatMemberSignature >> Option.map String.Concat)
-                              |> Set.ofArray
-        }
+        let symbolUses = 
+            getMemberNameAndRanges interfaceData
+            |> List.toArray
+            |> Array.map getMemberByLocation
+        symbolUses |> Array.choose (Option.bind formatMemberSignature >> Option.map String.Concat)
+                   |> Set.ofArray
 
     /// Check whether an entity is an interface or type abbreviation of an interface
     let rec isInterface (e: FSharpEntity) =

@@ -26,7 +26,7 @@ module internal SymbolHelpers =
             let! symbolUses =
                 match declLoc with
                 | SymbolDeclarationLocation.CurrentDocument ->
-                    checkFileResults.GetUsesOfSymbolInFile(symbol)
+                    async.Return (checkFileResults.GetUsesOfSymbolInFile(symbol))
                 | SymbolDeclarationLocation.Projects (projects, isInternalToProject) -> 
                     let projects =
                         if isInternalToProject then projects
@@ -71,7 +71,7 @@ module internal SymbolHelpers =
             let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
             let! symbol = CommonHelpers.getSymbolAtPosition(document.Id, sourceText, symbolSpan.Start, document.FilePath, defines, SymbolLookupKind.Fuzzy)
-            let! _, checkFileResults = checker.ParseAndCheckDocument(document, options)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options)
             let textLine = sourceText.Lines.GetLineFromPosition(symbolSpan.Start)
             let textLinePos = sourceText.Lines.GetLinePosition(symbolSpan.Start)
             let fcsTextLineNumber = textLinePos.Line + 1

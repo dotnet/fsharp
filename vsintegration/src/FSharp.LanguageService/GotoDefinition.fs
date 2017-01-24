@@ -63,7 +63,7 @@ module internal GotoDefinition =
                         Strings.Errors.GotoDefinitionFailed_NotIdentifier ()
                         |> GotoDefinitionResult.MakeError
                     else
-                      match typedResults.GetDeclarationLocationAlternate (line+1, colIdent, lineStr, qualId, false) |> Async.RunSynchronously with
+                      match typedResults.GetDeclarationLocationAlternate (line+1, colIdent, lineStr, qualId, false) with
                       | FSharpFindDeclResult.DeclFound m -> 
                           let span = TextSpan (iStartLine = m.StartLine-1, iEndLine = m.StartLine-1, iStartIndex = m.StartColumn, iEndIndex = m.StartColumn) 
                           GotoDefinitionResult.MakeSuccess(m.FileName, span)

@@ -185,7 +185,7 @@ type internal FSharpCheckFileResults =
     ///    and assume that we're going to repeat the operation later on.
     /// </param>
 
-    member GetDeclarationListInfo : ParsedFileResultsOpt:FSharpParseFileResults option * line: int * colAtEndOfPartialName: int * lineText:string * qualifyingNames: string list * partialName: string * ?hasTextChangedSinceLastTypecheck: (obj * range -> bool) -> Async<FSharpDeclarationListInfo>
+    member GetDeclarationListInfo : ParsedFileResultsOpt:FSharpParseFileResults option * line: int * colAtEndOfPartialName: int * lineText:string * qualifyingNames: string list * partialName: string * ?hasTextChangedSinceLastTypecheck: (obj * range -> bool) -> FSharpDeclarationListInfo
 
     /// <summary>Get the items for a declaration list in FSharpSymbol format</summary>
     ///
@@ -208,7 +208,7 @@ type internal FSharpCheckFileResults =
     ///    callback to the client to check if the text has changed. If it has, then give up
     ///    and assume that we're going to repeat the operation later on.
     /// </param>
-    member GetDeclarationListSymbols : ParsedFileResultsOpt:FSharpParseFileResults option * line: int * colAtEndOfPartialName: int * lineText:string * qualifyingNames: string list * partialName: string * ?hasTextChangedSinceLastTypecheck: (obj * range -> bool) -> Async<FSharpSymbolUse list list>
+    member GetDeclarationListSymbols : ParsedFileResultsOpt:FSharpParseFileResults option * line: int * colAtEndOfPartialName: int * lineText:string * qualifyingNames: string list * partialName: string * ?hasTextChangedSinceLastTypecheck: (obj * range -> bool) -> FSharpSymbolUse list list
 
 
     /// <summary>Compute a formatted tooltip for the given location</summary>
@@ -218,7 +218,7 @@ type internal FSharpCheckFileResults =
     /// <param name="lineText">The text of the line where the information is being requested.</param>
     /// <param name="names">The identifiers at the location where the information is being requested.</param>
     /// <param name="tokenTag">Used to discriminate between 'identifiers', 'strings' and others. For strings, an attempt is made to give a tooltip for a #r "..." location. Use a value from FSharpTokenInfo.Tag, or FSharpTokenTag.Identifier, unless you have other information available.</param>
-    member GetStructuredToolTipTextAlternate : line:int * colAtEndOfNames:int * lineText:string * names:string list * tokenTag:int -> Async<FSharpStructuredToolTipText>
+    member GetStructuredToolTipTextAlternate : line:int * colAtEndOfNames:int * lineText:string * names:string list * tokenTag:int -> FSharpStructuredToolTipText
 
     /// <summary>Compute a formatted tooltip for the given location</summary>
     ///
@@ -227,7 +227,7 @@ type internal FSharpCheckFileResults =
     /// <param name="lineText">The text of the line where the information is being requested.</param>
     /// <param name="names">The identifiers at the location where the information is being requested.</param>
     /// <param name="tokenTag">Used to discriminate between 'identifiers', 'strings' and others. For strings, an attempt is made to give a tooltip for a #r "..." location. Use a value from FSharpTokenInfo.Tag, or FSharpTokenTag.Identifier, unless you have other information available.</param>
-    member GetToolTipTextAlternate : line:int * colAtEndOfNames:int * lineText:string * names:string list * tokenTag:int -> Async<FSharpToolTipText>
+    member GetToolTipTextAlternate : line:int * colAtEndOfNames:int * lineText:string * names:string list * tokenTag:int -> FSharpToolTipText
 
     /// <summary>Compute the Visual Studio F1-help key identifier for the given location, based on name resolution results</summary>
     ///
@@ -235,7 +235,7 @@ type internal FSharpCheckFileResults =
     /// <param name="colAtEndOfNames">The column number at the end of the identifiers where the information is being requested.</param>
     /// <param name="lineText">The text of the line where the information is being requested.</param>
     /// <param name="names">The identifiers at the location where the information is being requested.</param>
-    member GetF1KeywordAlternate                   : line:int * colAtEndOfNames:int * lineText:string * names:string list -> Async<string option>
+    member GetF1KeywordAlternate : line:int * colAtEndOfNames:int * lineText:string * names:string list -> string option
 
 
     /// <summary>Compute a set of method overloads to show in a dialog relevant to the given code location.</summary>
@@ -244,14 +244,14 @@ type internal FSharpCheckFileResults =
     /// <param name="colAtEndOfNames">The column number at the end of the identifiers where the information is being requested.</param>
     /// <param name="lineText">The text of the line where the information is being requested.</param>
     /// <param name="names">The identifiers at the location where the information is being requested.</param>
-    member GetMethodsAlternate              : line:int * colAtEndOfNames:int * lineText:string * names:string list option -> Async<FSharpMethodGroup>
+    member GetMethodsAlternate : line:int * colAtEndOfNames:int * lineText:string * names:string list option -> FSharpMethodGroup
 
     /// <summary>Compute a set of method overloads to show in a dialog relevant to the given code location.  The resulting method overloads are returned as symbols.</summary>
     /// <param name="line">The line number where the information is being requested.</param>
     /// <param name="colAtEndOfNames">The column number at the end of the identifiers where the information is being requested.</param>
     /// <param name="lineText">The text of the line where the information is being requested.</param>
     /// <param name="names">The identifiers at the location where the information is being requested.</param>
-    member GetMethodsAsSymbols : line:int * colAtEndOfNames:int * lineText:string * names:string list -> Async<FSharpSymbolUse list option>
+    member GetMethodsAsSymbols : line:int * colAtEndOfNames:int * lineText:string * names:string list -> FSharpSymbolUse list option
 
     /// <summary>Resolve the names at the given location to the declaration location of the corresponding construct.</summary>
     ///
@@ -260,7 +260,7 @@ type internal FSharpCheckFileResults =
     /// <param name="lineText">The text of the line where the information is being requested.</param>
     /// <param name="names">The identifiers at the location where the information is being requested.</param>
     /// <param name="preferFlag">If not given, then get the location of the symbol. If false, then prefer the location of the corresponding symbol in the implementation of the file (rather than the signature if present). If true, prefer the location of the corresponding symbol in the signature of the file (rather than the implementation).</param>
-    member GetDeclarationLocationAlternate         : line:int * colAtEndOfNames:int * lineText:string * names:string list * ?preferFlag:bool -> Async<FSharpFindDeclResult>
+    member GetDeclarationLocationAlternate : line:int * colAtEndOfNames:int * lineText:string * names:string list * ?preferFlag:bool -> FSharpFindDeclResult
 
 
     /// <summary>Resolve the names at the given location to a use of symbol.</summary>
@@ -269,7 +269,7 @@ type internal FSharpCheckFileResults =
     /// <param name="colAtEndOfNames">The column number at the end of the identifiers where the information is being requested.</param>
     /// <param name="lineText">The text of the line where the information is being requested.</param>
     /// <param name="names">The identifiers at the location where the information is being requested.</param>
-    member GetSymbolUseAtLocation  : line:int * colAtEndOfNames:int * lineText:string * names:string list -> Async<FSharpSymbolUse option>
+    member GetSymbolUseAtLocation : line:int * colAtEndOfNames:int * lineText:string * names:string list -> FSharpSymbolUse option
 
     /// <summary>Get any extra colorization info that is available after the typecheck</summary>
     member GetExtraColorizationsAlternate : unit -> (range * FSharpTokenColorKind)[]
@@ -278,14 +278,14 @@ type internal FSharpCheckFileResults =
     member GetFormatSpecifierLocations : unit -> range[]
 
     /// Get all textual usages of all symbols throughout the file
-    member GetAllUsesOfAllSymbolsInFile : unit -> Async<FSharpSymbolUse[]>
+    member GetAllUsesOfAllSymbolsInFile : unit -> FSharpSymbolUse[]
 
     /// Get the textual usages that resolved to the given symbol throughout the file
-    member GetUsesOfSymbolInFile : symbol:FSharpSymbol -> Async<FSharpSymbolUse[]>
+    member GetUsesOfSymbolInFile : symbol:FSharpSymbol -> FSharpSymbolUse[]
 
-    member GetVisibleNamespacesAndModulesAtPoint : pos -> Async<Tast.ModuleOrNamespaceRef[]>
+    member GetVisibleNamespacesAndModulesAtPoint : pos -> Tast.ModuleOrNamespaceRef[]
 
-    member IsRelativeNameResolvable: cursorPos : pos * plid : string list * item: Item -> Async<bool>
+    member IsRelativeNameResolvable: cursorPos : pos * plid : string list * item: Item -> bool
 
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]

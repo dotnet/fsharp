@@ -123,7 +123,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
                                     let getMemberByLocation(name, range: range) =
                                         let lineStr = sourceText.Lines.[range.EndLine-1].ToString()
                                         results.GetSymbolUseAtLocation(range.EndLine, range.EndColumn, lineStr, [name])
-                                    let! implementedMemberSignatures =
+                                    let implementedMemberSignatures =
                                         InterfaceStubGenerator.getImplementedMemberSignatures getMemberByLocation displayContext state.InterfaceData    
                                     let newSourceText = applyImplementInterface sourceText state displayContext implementedMemberSignatures entity indentSize verboseMode
                                     return context.Document.WithText(newSourceText)
@@ -143,7 +143,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
             let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject context.Document
             let cancellationToken = context.CancellationToken
             let! sourceText = context.Document.GetTextAsync(cancellationToken)
-            let! parsedInput, checkFileResults = checker.ParseAndCheckDocument(context.Document, options, sourceText)
+            let! _, parsedInput, checkFileResults = checker.ParseAndCheckDocument(context.Document, options, sourceText)
             let textLine = sourceText.Lines.GetLineFromPosition context.Span.Start
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing(context.Document.FilePath, options.OtherOptions |> Seq.toList)
             // Notice that context.Span doesn't return reliable ranges to find tokens at exact positions.

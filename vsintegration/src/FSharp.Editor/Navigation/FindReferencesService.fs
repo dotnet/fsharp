@@ -55,14 +55,14 @@ type internal FSharpFindReferencesService
             let! sourceText = document.GetTextAsync(context.CancellationToken)
             let checker = checkerProvider.Checker
             let! options = projectInfoManager.TryGetOptionsForDocumentOrProject(document)
-            let! _, checkFileResults = checker.ParseAndCheckDocument(document, options, sourceText)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, sourceText)
             let textLine = sourceText.Lines.GetLineFromPosition(position).ToString()
             let lineNumber = sourceText.Lines.GetLinePosition(position).Line + 1
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.FilePath, options.OtherOptions |> Seq.toList)
             
             let! symbol = CommonHelpers.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Fuzzy)
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(lineNumber, symbol.RightColumn, textLine, [symbol.Text])
-            let! declaration = checkFileResults.GetDeclarationLocationAlternate (lineNumber, symbol.RightColumn, textLine, [symbol.Text], false) |> liftAsync
+            let declaration = checkFileResults.GetDeclarationLocationAlternate (lineNumber, symbol.RightColumn, textLine, [symbol.Text], false)
             let tags = GlyphTags.GetTags(CommonRoslynHelpers.GetGlyphForSymbol symbolUse.Symbol)
             
             let declarationRange = 
@@ -96,7 +96,7 @@ type internal FSharpFindReferencesService
             let! symbolUses =
                 match symbolUse.GetDeclarationLocation document with
                 | Some SymbolDeclarationLocation.CurrentDocument ->
-                    checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol) |> liftAsync
+                    async.Return(Some(checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)))
                 | scope ->
                     let projectsToCheck =
                         match scope with

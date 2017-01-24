@@ -65,7 +65,7 @@ type internal FSharpSignatureHelpProvider
         let lidEnd = nwpl.LongIdEndLocation
 
         // Get the methods
-        let! methodGroup = checkFileResults.GetMethodsAlternate(lidEnd.Line, lidEnd.Column, "", Some names)
+        let methodGroup = checkFileResults.GetMethodsAlternate(lidEnd.Line, lidEnd.Column, "", Some names)
 
         let methods = methodGroup.Methods
 
