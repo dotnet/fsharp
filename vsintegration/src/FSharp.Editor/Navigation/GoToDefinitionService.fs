@@ -48,8 +48,8 @@ type internal FSharpGoToDefinitionService
             let textLinePos = sourceText.Lines.GetLinePosition(position)
             let fcsTextLineNumber = textLinePos.Line + 1 // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
             let! symbol = CommonHelpers.getSymbolAtPosition(documentKey, sourceText, position, filePath, defines, SymbolLookupKind.Fuzzy)
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options)
-            let declarations = checkFileResults.GetDeclarationLocationAlternate (fcsTextLineNumber, symbol.RightColumn, textLine.ToString(), [symbol.Text], false)
+            let! _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options)
+            let! declarations = checkFileResults.GetDeclarationLocationAlternate (fcsTextLineNumber, symbol.RightColumn, textLine.ToString(), [symbol.Text], false) |> liftAsync
             
             match declarations with
             | FSharpFindDeclResult.DeclFound(range) -> return range

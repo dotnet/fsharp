@@ -26,7 +26,7 @@ module internal SymbolHelpers =
             let! symbolUses =
                 match declLoc with
                 | SymbolDeclarationLocation.CurrentDocument ->
-                    async.Return (checkFileResults.GetUsesOfSymbolInFile(symbol))
+                    checkFileResults.GetUsesOfSymbolInFile(symbol)
                 | SymbolDeclarationLocation.Projects (projects, isInternalToProject) -> 
                     let projects =
                         if isInternalToProject then projects

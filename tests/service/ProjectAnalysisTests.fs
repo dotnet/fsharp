@@ -300,7 +300,7 @@ let ``Test project1 xxx symbols`` () =
         checker.GetBackgroundCheckResultsForFileInProject(Project1.fileName1, Project1.options) 
         |> Async.RunSynchronously
 
-    let xSymbolUseOpt = backgroundTypedParse1.GetSymbolUseAtLocation(9,9,"",["xxx"])
+    let xSymbolUseOpt = backgroundTypedParse1.GetSymbolUseAtLocation(9,9,"",["xxx"]) |> Async.RunSynchronously
     let xSymbolUse = xSymbolUseOpt.Value
     let xSymbol = xSymbolUse.Symbol
     xSymbol.ToString() |> shouldEqual "val xxx"
@@ -539,16 +539,16 @@ let ``Test file explicit parse symbols`` () =
         |> Async.RunSynchronously
         |> function FSharpCheckFileAnswer.Succeeded x ->  x | _ -> failwith "unexpected aborted"
 
-    let xSymbolUse2Opt = checkResults1.GetSymbolUseAtLocation(9,9,"",["xxx"])
+    let xSymbolUse2Opt = checkResults1.GetSymbolUseAtLocation(9,9,"",["xxx"]) |> Async.RunSynchronously
     let xSymbol2 = xSymbolUse2Opt.Value.Symbol
     let usesOfXSymbol2 = 
         [| for s in wholeProjectResults.GetUsesOfSymbol(xSymbol2) |> Async.RunSynchronously -> (Project1.cleanFileName s.FileName, tupsZ s.RangeAlternate) |] 
 
     let usesOfXSymbol21 = 
-        [| for s in checkResults1.GetUsesOfSymbolInFile(xSymbol2) -> (Project1.cleanFileName s.FileName, tupsZ s.RangeAlternate) |] 
+        [| for s in checkResults1.GetUsesOfSymbolInFile(xSymbol2) |> Async.RunSynchronously -> (Project1.cleanFileName s.FileName, tupsZ s.RangeAlternate) |] 
 
     let usesOfXSymbol22 = 
-        [| for s in checkResults2.GetUsesOfSymbolInFile(xSymbol2) -> (Project1.cleanFileName s.FileName, tupsZ s.RangeAlternate) |] 
+        [| for s in checkResults2.GetUsesOfSymbolInFile(xSymbol2) |> Async.RunSynchronously -> (Project1.cleanFileName s.FileName, tupsZ s.RangeAlternate) |] 
 
     usesOfXSymbol2
          |> shouldEqual [|("file1", ((6, 4), (6, 7)));
@@ -585,7 +585,7 @@ let ``Test file explicit parse all symbols`` () =
         |> Async.RunSynchronously
         |> function FSharpCheckFileAnswer.Succeeded x ->  x | _ -> failwith "unexpected aborted"
 
-    let usesOfSymbols = checkResults1.GetAllUsesOfAllSymbolsInFile()
+    let usesOfSymbols = checkResults1.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronously
     let cleanedUsesOfSymbols = 
          [ for s in usesOfSymbols -> s.Symbol.DisplayName, Project1.cleanFileName s.FileName, tupsZ s.RangeAlternate, attribsOfSymbol s.Symbol ]
 
@@ -1333,14 +1333,14 @@ let ``Test project4 T symbols`` () =
         checker.GetBackgroundCheckResultsForFileInProject(Project4.fileName1, Project4.options) 
         |> Async.RunSynchronously
 
-    let tSymbolUse2 = backgroundTypedParse1.GetSymbolUseAtLocation(4,19,"",["T"])
+    let tSymbolUse2 = backgroundTypedParse1.GetSymbolUseAtLocation(4,19,"",["T"]) |> Async.RunSynchronously
     tSymbolUse2.IsSome |> shouldEqual true
     let tSymbol2 = tSymbolUse2.Value.Symbol 
     tSymbol2.ToString() |> shouldEqual "generic parameter T"
 
     tSymbol2.ImplementationLocation.IsSome |> shouldEqual true
 
-    let uses = backgroundTypedParse1.GetAllUsesOfAllSymbolsInFile()
+    let uses = backgroundTypedParse1.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronously
     let allUsesOfAllSymbols = 
         [ for s in uses -> s.Symbol.ToString(), (if s.FileName = Project4.fileName1 then "file1" else "??"), tupsZ s.RangeAlternate ]
     allUsesOfAllSymbols |> shouldEqual
@@ -1362,7 +1362,7 @@ let ``Test project4 T symbols`` () =
            ("val twice", "file1", ((5, 11), (5, 16)));
            ("M", "file1", ((1, 7), (1, 8)))]
 
-    let tSymbolUse3 = backgroundTypedParse1.GetSymbolUseAtLocation(4,11,"",["T"])
+    let tSymbolUse3 = backgroundTypedParse1.GetSymbolUseAtLocation(4,11,"",["T"]) |> Async.RunSynchronously
     tSymbolUse3.IsSome |> shouldEqual true
     let tSymbol3 = tSymbolUse3.Value.Symbol
     tSymbol3.ToString() |> shouldEqual "generic parameter T"
@@ -1386,7 +1386,7 @@ let ``Test project4 T symbols`` () =
 
     usesOfTSymbol3 |> shouldEqual usesOfTSymbol2
 
-    let uSymbolUse2 = backgroundTypedParse1.GetSymbolUseAtLocation(6,23,"",["U"])
+    let uSymbolUse2 = backgroundTypedParse1.GetSymbolUseAtLocation(6,23,"",["U"]) |> Async.RunSynchronously
     uSymbolUse2.IsSome |> shouldEqual true
     let uSymbol2 = uSymbolUse2.Value.Symbol
     uSymbol2.ToString() |> shouldEqual "generic parameter U"
@@ -1531,7 +1531,7 @@ let ``Test complete active patterns' exact ranges from uses of symbols`` () =
         checker.GetBackgroundCheckResultsForFileInProject(Project5.fileName1, Project5.options) 
         |> Async.RunSynchronously
 
-    let oddSymbolUse = backgroundTypedParse1.GetSymbolUseAtLocation(11,8,"",["Odd"])
+    let oddSymbolUse = backgroundTypedParse1.GetSymbolUseAtLocation(11,8,"",["Odd"]) |> Async.RunSynchronously
     oddSymbolUse.IsSome |> shouldEqual true  
     let oddSymbol = oddSymbolUse.Value.Symbol
     oddSymbol.ToString() |> shouldEqual "symbol Odd"
@@ -1546,7 +1546,7 @@ let ``Test complete active patterns' exact ranges from uses of symbols`` () =
     let oddEntity = oddGroup.EnclosingEntity.Value
     oddEntity.ToString() |> shouldEqual "ActivePatterns"
 
-    let evenSymbolUse = backgroundTypedParse1.GetSymbolUseAtLocation(10,9,"",["Even"])
+    let evenSymbolUse = backgroundTypedParse1.GetSymbolUseAtLocation(10,9,"",["Even"]) |> Async.RunSynchronously
     evenSymbolUse.IsSome |> shouldEqual true  
     let evenSymbol = evenSymbolUse.Value.Symbol
     evenSymbol.ToString() |> shouldEqual "symbol Even"
@@ -1589,7 +1589,7 @@ let ``Test partial active patterns' exact ranges from uses of symbols`` () =
         checker.GetBackgroundCheckResultsForFileInProject(Project5.fileName1, Project5.options) 
         |> Async.RunSynchronously    
 
-    let floatSymbolUse = backgroundTypedParse1.GetSymbolUseAtLocation(22,10,"",["Float"])
+    let floatSymbolUse = backgroundTypedParse1.GetSymbolUseAtLocation(22,10,"",["Float"]) |> Async.RunSynchronously
     floatSymbolUse.IsSome |> shouldEqual true  
     let floatSymbol = floatSymbolUse.Value.Symbol 
     floatSymbol.ToString() |> shouldEqual "symbol Float"
@@ -1616,6 +1616,7 @@ let ``Test partial active patterns' exact ranges from uses of symbols`` () =
     // Should also return its definition
     let floatSymUseOpt = 
         backgroundTypedParse1.GetSymbolUseAtLocation(14,11,"",["Float"])
+        |> Async.RunSynchronously
 
     floatSymUseOpt.IsSome |> shouldEqual true
 
@@ -1956,6 +1957,7 @@ let ``Test Project10 all symbols`` () =
 
     let querySymbolUseOpt = 
         backgroundTypedParse1.GetSymbolUseAtLocation(7,23,"",["query"]) 
+        |> Async.RunSynchronously
 
     let querySymbolUse = querySymbolUseOpt.Value
     let querySymbol = querySymbolUse.Symbol
@@ -1963,6 +1965,7 @@ let ``Test Project10 all symbols`` () =
 
     let querySymbolUse2Opt = 
         backgroundTypedParse1.GetSymbolUseAtLocation(7,22,"",["query"])
+        |> Async.RunSynchronously
 
     let querySymbolUse2 = querySymbolUse2Opt.Value
     let querySymbol2 = querySymbolUse2.Symbol
@@ -2554,8 +2557,8 @@ let ``Test Project16 sig symbols are equal to impl symbols`` () =
             | _ -> failwithf "Parsing aborted unexpectedly..." 
 
 
-    let symbolsSig = checkResultsSig.GetAllUsesOfAllSymbolsInFile()
-    let symbolsImpl = checkResultsImpl.GetAllUsesOfAllSymbolsInFile()
+    let symbolsSig = checkResultsSig.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronously
+    let symbolsImpl = checkResultsImpl.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronously
 
     // Test that all 'definition' symbols in the signature (or implementation) have a matching symbol in the 
     // implementation (or signature).
@@ -3281,6 +3284,7 @@ let ``Test Project24 all symbols`` () =
 
     let allUses  = 
         backgroundTypedParse1.GetAllUsesOfAllSymbolsInFile() 
+        |> Async.RunSynchronously
         |> Array.map (fun s -> (s.Symbol.DisplayName, Project24.cleanFileName s.FileName, tups s.RangeAlternate, attribsOfSymbolUse s, attribsOfSymbol s.Symbol))
 
     allUses |> shouldEqual 
@@ -3392,6 +3396,7 @@ let ``Test symbol uses of properties with both getters and setters`` () =
 
     let getAllSymbolUses = 
         backgroundTypedParse1.GetAllUsesOfAllSymbolsInFile() 
+        |> Async.RunSynchronously
         |> Array.map (fun s -> (s.Symbol.DisplayName, Project24.cleanFileName s.FileName, tups s.RangeAlternate, attribsOfSymbol s.Symbol))
 
     getAllSymbolUses |> shouldEqual
@@ -3480,11 +3485,13 @@ let ``Test symbol uses of properties with both getters and setters`` () =
 
     let getSampleSymbolUseOpt = 
         backgroundTypedParse1.GetSymbolUseAtLocation(9,20,"",["NameGet"]) 
+        |> Async.RunSynchronously
 
     let getSampleSymbol = getSampleSymbolUseOpt.Value.Symbol
     
     let usesOfGetSampleSymbol = 
         backgroundTypedParse1.GetUsesOfSymbolInFile(getSampleSymbol) 
+        |> Async.RunSynchronously
         |> Array.map (fun s -> (Project24.cleanFileName s.FileName, tups s.RangeAlternate))
 
     usesOfGetSampleSymbol |> shouldEqual [|("file1", ((9, 13), (9, 20))); ("file1", ((36, 9), (36, 37)))|]
@@ -4105,7 +4112,7 @@ let ``Test Project32 should be able to find sig symbols`` () =
         checker.GetBackgroundCheckResultsForFileInProject(Project32.sigFileName1, Project32.options) 
         |> Async.RunSynchronously
 
-    let sigSymbolUseOpt = sigBackgroundTypedParse1.GetSymbolUseAtLocation(4,5,"",["func"])
+    let sigSymbolUseOpt = sigBackgroundTypedParse1.GetSymbolUseAtLocation(4,5,"",["func"]) |> Async.RunSynchronously
     let sigSymbol = sigSymbolUseOpt.Value.Symbol
     
     let usesOfSigSymbol = 
@@ -4124,7 +4131,7 @@ let ``Test Project32 should be able to find impl symbols`` () =
         checker.GetBackgroundCheckResultsForFileInProject(Project32.fileName1, Project32.options) 
         |> Async.RunSynchronously
 
-    let implSymbolUseOpt = implBackgroundTypedParse1.GetSymbolUseAtLocation(3,5,"",["func"])
+    let implSymbolUseOpt = implBackgroundTypedParse1.GetSymbolUseAtLocation(3,5,"",["func"]) |> Async.RunSynchronously
     let implSymbol = implSymbolUseOpt.Value.Symbol
     
     let usesOfImplSymbol = 

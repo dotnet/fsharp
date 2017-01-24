@@ -62,7 +62,7 @@ type internal FSharpFindReferencesService
             
             let! symbol = CommonHelpers.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Fuzzy)
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(lineNumber, symbol.RightColumn, textLine, [symbol.Text])
-            let declaration = checkFileResults.GetDeclarationLocationAlternate (lineNumber, symbol.RightColumn, textLine, [symbol.Text], false)
+            let! declaration = checkFileResults.GetDeclarationLocationAlternate (lineNumber, symbol.RightColumn, textLine, [symbol.Text], false) |> liftAsync
             let tags = GlyphTags.GetTags(CommonRoslynHelpers.GetGlyphForSymbol symbolUse.Symbol)
             
             let declarationRange = 
@@ -96,7 +96,7 @@ type internal FSharpFindReferencesService
             let! symbolUses =
                 match symbolUse.GetDeclarationLocation document with
                 | Some SymbolDeclarationLocation.CurrentDocument ->
-                    async.Return(Some(checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)))
+                    checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol) |> liftAsync
                 | scope ->
                     let projectsToCheck =
                         match scope with

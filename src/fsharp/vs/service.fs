@@ -52,7 +52,7 @@ module EnvMisc =
     let maxTypeCheckErrorsOutOfProjectContext = GetEnvInteger "FCS_MaxErrorsOutOfProjectContext" 3
     let braceMatchCacheSize = GetEnvInteger "FCS_BraceMatchCacheSize" 5
     let parseFileInProjectCacheSize = GetEnvInteger "FCS_ParseFileInProjectCacheSize" 2
-    let incrementalTypeCheckCacheSize = GetEnvInteger "FCS_IncrementalTypeCheckCacheSize" 3
+    let incrementalTypeCheckCacheSize = GetEnvInteger "FCS_IncrementalTypeCheckCacheSize" 5
 
     let projectCacheSizeDefault   = GetEnvInteger "FCS_ProjectCacheSizeDefault" 3
     let frameworkTcImportsCacheStrongSize = GetEnvInteger "FCS_frameworkTcImportsCacheStrongSizeDefault" 8
@@ -1918,6 +1918,22 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
                reactor.EnqueueOp ("Dispose", fun () -> decrementer.Dispose())
            | _ -> () 
 
+    // Run an operation that needs to be run in the reactor thread
+    let reactorOp desc dflt f = 
+      async {
+        match details with
+        | None -> 
+            return dflt
+        | Some (_ , Some builder, _) when not builder.IsAlive -> 
+            System.Diagnostics.Debug.Assert(false,"unexpected dead builder") 
+            return dflt
+        | Some (scope, builderOpt, reactor) -> 
+            // Ensure the builder doesn't get released while running operations asynchronously. 
+            use _unwind = match builderOpt with Some builder -> builder.IncrementUsageCount() | None -> { new System.IDisposable with member __.Dispose() = () }
+            let! res = reactor.EnqueueAndAwaitOpAsync(desc, fun _ct ->  f scope)
+            return res
+      }
+
     // Run an operation that can be called from any thread
     let threadSafeOp dflt f = 
         match details with
@@ -1926,8 +1942,8 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
         | Some (_ , Some builder, _) when not builder.IsAlive -> 
             System.Diagnostics.Debug.Assert(false,"unexpected dead builder") 
             dflt()
-        | Some (scope, _, _) -> 
-            f scope
+        | Some (scope, builderOpt, ops) -> 
+            f(scope, builderOpt, ops)
 
     // At the moment we only dispose on finalize - we never explicitly dispose these objects. Explicitly disposing is not
     // really worth much since the underlying project builds are likely to still be in the incrementalBuilder cache.
@@ -1938,97 +1954,122 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
     member info.HasFullTypeCheckInfo = details.IsSome
     
     /// Intellisense autocompletions
+    //member info.GetDeclarationListInfo(parseResultsOpt, line, colAtEndOfNamesAndResidue, lineStr, qualifyingNames, partialName, ?hasTextChangedSinceLastTypecheck) = 
+    //    let hasTextChangedSinceLastTypecheck = defaultArg hasTextChangedSinceLastTypecheck (fun _ -> false)
+    //    reactorOp "GetDeclarations" FSharpDeclarationListInfo.Empty (fun scope -> 
+    //        let sw = System.Diagnostics.Stopwatch.StartNew()
+    //        let r = scope.GetDeclarations(parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, hasTextChangedSinceLastTypecheck)
+    //        System.IO.File.WriteAllText(@"e:\___3.txt", sprintf "scope.GetDeclarations: %O" sw.Elapsed)
+    //        r
+    //        )
+    
     member info.GetDeclarationListInfo(parseResultsOpt, line, colAtEndOfNamesAndResidue, lineStr, qualifyingNames, partialName, ?hasTextChangedSinceLastTypecheck) =
-        let hasTextChangedSinceLastTypecheck = defaultArg hasTextChangedSinceLastTypecheck (fun _ -> false)
-        threadSafeOp 
-            (fun () -> failwith "not available") 
-            (fun scope -> 
-                scope.GetDeclarations(parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, hasTextChangedSinceLastTypecheck))
+        async {
+            let hasTextChangedSinceLastTypecheck = defaultArg hasTextChangedSinceLastTypecheck (fun _ -> false)
+            return
+                threadSafeOp 
+                    (fun () -> failwith "not available") 
+                    (fun (scope, _builder, _reactor) -> 
+                        scope.GetDeclarations(parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, hasTextChangedSinceLastTypecheck))
+        }
 
     member info.GetDeclarationListSymbols(parseResultsOpt, line, colAtEndOfNamesAndResidue, lineStr, qualifyingNames, partialName, ?hasTextChangedSinceLastTypecheck) = 
         let hasTextChangedSinceLastTypecheck = defaultArg hasTextChangedSinceLastTypecheck (fun _ -> false)
-        threadSafeOp 
-            (fun () -> [])
-            (fun scope -> scope.GetDeclarationListSymbols(parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, hasTextChangedSinceLastTypecheck))
+        reactorOp "GetDeclarationListSymbols" List.empty (fun scope -> scope.GetDeclarationListSymbols(parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, hasTextChangedSinceLastTypecheck))
 
     /// Resolve the names at the given location to give a data tip 
     member info.GetStructuredToolTipTextAlternate(line, colAtEndOfNames, lineStr, names, tokenTag) = 
         let dflt = FSharpToolTipText []
         match tokenTagToTokenId tokenTag with 
         | TOKEN_IDENT -> 
-            threadSafeOp (fun () -> dflt) (fun scope -> scope.GetStructuredToolTipText line lineStr colAtEndOfNames names)
+            reactorOp "GetToolTipText" dflt (fun scope -> scope.GetStructuredToolTipText line lineStr colAtEndOfNames names)
         | TOKEN_STRING | TOKEN_STRING_TEXT -> 
-            threadSafeOp (fun () -> dflt) (fun scope -> scope.GetReferenceResolutionStructuredToolTipText(line, colAtEndOfNames))
+            reactorOp "GetReferenceResolutionToolTipText" dflt (fun scope -> scope.GetReferenceResolutionStructuredToolTipText(line, colAtEndOfNames) )
         | _ -> 
-            dflt
+            async.Return dflt
 
     member info.GetToolTipTextAlternate(line, colAtEndOfNames, lineStr, names, tokenTag) = 
         info.GetStructuredToolTipTextAlternate(line, colAtEndOfNames, lineStr, names, tokenTag)
-        |> Tooltips.ToFSharpToolTipText
+        |> Tooltips.Map Tooltips.ToFSharpToolTipText
 
     member info.GetF1KeywordAlternate (line, colAtEndOfNames, lineStr, names) =
-        threadSafeOp (fun () -> None) (fun scope -> scope.GetF1Keyword (line, lineStr, colAtEndOfNames, names))
+        reactorOp "GetF1Keyword" None (fun scope -> 
+            scope.GetF1Keyword (line, lineStr, colAtEndOfNames, names))
 
     // Resolve the names at the given location to a set of methods
     member info.GetMethodsAlternate(line, colAtEndOfNames, lineStr, names) =
-        threadSafeOp (fun () -> FSharpMethodGroup("", [||])) (fun scope -> 
+        let dflt = FSharpMethodGroup("",[| |])
+        reactorOp "GetMethods" dflt (fun scope-> 
             scope.GetMethods (line, lineStr, colAtEndOfNames, names))
             
     member info.GetDeclarationLocationAlternate (line, colAtEndOfNames, lineStr, names, ?preferFlag) = 
         let dflt = FSharpFindDeclResult.DeclNotFound FSharpFindDeclFailureReason.Unknown
-        threadSafeOp (fun () -> dflt) (fun scope -> 
+        reactorOp "GetDeclarationLocation" dflt (fun scope -> 
             scope.GetDeclarationLocation (line, lineStr, colAtEndOfNames, names, preferFlag))
 
     member info.GetSymbolUseAtLocation (line, colAtEndOfNames, lineStr, names) = 
-        threadSafeOp (fun () -> None) (fun scope -> 
+        reactorOp "GetSymbolUseAtLocation" None (fun scope -> 
             scope.GetSymbolUseAtLocation (line, lineStr, colAtEndOfNames, names)
             |> Option.map (fun (sym,denv,m) -> FSharpSymbolUse(scope.TcGlobals,denv,sym,ItemOccurence.Use,m)))
 
     member info.GetMethodsAsSymbols (line, colAtEndOfNames, lineStr, names) = 
-        threadSafeOp (fun () -> None) (fun scope -> 
+        reactorOp "GetMethodsAsSymbols" None (fun scope -> 
             scope.GetMethodsAsSymbols (line, lineStr, colAtEndOfNames, names)
             |> Option.map (fun (symbols,denv,m) ->
                 symbols |> List.map (fun sym -> FSharpSymbolUse(scope.TcGlobals,denv,sym,ItemOccurence.Use,m))))
 
     member info.GetSymbolAtLocationAlternate (line, colAtEndOfNames, lineStr, names) = 
-        threadSafeOp (fun () -> None) (fun scope -> 
+        reactorOp "GetSymbolUseAtLocation" None (fun scope -> 
             scope.GetSymbolUseAtLocation (line, lineStr, colAtEndOfNames, names)
             |> Option.map (fun (sym,_,_) -> sym))
 
+
     member info.GetFormatSpecifierLocations() = 
-        threadSafeOp (fun () -> [||]) (fun scope -> scope.GetFormatSpecifierLocations())
+        threadSafeOp 
+           (fun () -> [| |]) 
+           (fun (scope, _builder, _reactor) -> 
+            // This operation is not asynchronous - GetFormatSpecifierLocations can be run on the calling thread
+            scope.GetFormatSpecifierLocations())
 
     member info.GetExtraColorizationsAlternate() = 
-        threadSafeOp (fun () -> [||]) (fun scope -> scope.GetExtraColorizations())
+        threadSafeOp 
+           (fun () -> [| |]) 
+           (fun (scope, _builder, _reactor) -> 
+            // This operation is not asynchronous - GetExtraColorizations can be run on the calling thread
+            scope.GetExtraColorizations())
      
     member info.PartialAssemblySignature = 
         threadSafeOp 
             (fun () -> failwith "not available") 
-            (fun scope -> scope.PartialAssemblySignature())
+            (fun (scope, _builder, _reactor) -> 
+            // This operation is not asynchronous - PartialAssemblySignature can be run on the calling thread
+            scope.PartialAssemblySignature())
 
     member info.ProjectContext = 
         threadSafeOp 
             (fun () -> failwith "not available") 
-            (fun scope -> FSharpProjectContext(scope.ThisCcu, scope.GetReferencedAssemblies(), scope.AccessRights))
+            (fun (scope, _builder, _reactor) -> 
+               // This operation is not asynchronous - GetReferencedAssemblies can be run on the calling thread
+                FSharpProjectContext(scope.ThisCcu, scope.GetReferencedAssemblies(), scope.AccessRights))
 
     member info.GetAllUsesOfAllSymbolsInFile() = 
-        threadSafeOp (fun () -> [||]) (fun scope -> 
+        reactorOp "GetAllUsesOfAllSymbolsInFile" [| |] (fun scope -> 
             [| for (item,itemOcc,denv,m) in scope.ScopeSymbolUses.GetAllUsesOfSymbols() do
                  if itemOcc <> ItemOccurence.RelatedText then
                   let symbol = FSharpSymbol.Create(scope.TcGlobals, scope.ThisCcu, scope.TcImports, item)
                   yield FSharpSymbolUse(scope.TcGlobals, denv, symbol, itemOcc, m) |])
 
     member info.GetUsesOfSymbolInFile(symbol:FSharpSymbol) = 
-        threadSafeOp (fun () -> [||]) (fun scope -> 
+        reactorOp "GetUsesOfSymbolInFile" [| |] (fun scope -> 
             [| for (itemOcc,denv,m) in scope.ScopeSymbolUses.GetUsesOfSymbol(symbol.Item) |> Seq.distinctBy (fun (itemOcc,_denv,m) -> itemOcc, m) do
                  if itemOcc <> ItemOccurence.RelatedText then
                   yield FSharpSymbolUse(scope.TcGlobals, denv, symbol, itemOcc, m) |])
 
-    member info.GetVisibleNamespacesAndModulesAtPoint(pos: pos) = 
-        threadSafeOp (fun () -> [||]) (fun scope -> scope.GetVisibleNamespacesAndModulesAtPosition(pos) |> List.toArray)
+    member info.GetVisibleNamespacesAndModulesAtPoint(pos: pos) : Async<ModuleOrNamespaceRef []> = 
+        reactorOp "GetDeclarations" [| |] (fun scope -> scope.GetVisibleNamespacesAndModulesAtPosition(pos) |> List.toArray)
 
-    member info.IsRelativeNameResolvable(pos: pos, plid: string list, item: Item) = 
-        threadSafeOp (fun () -> true) (fun scope -> scope.IsRelativeNameResolvable(pos, plid, item))
+    member info.IsRelativeNameResolvable(pos: pos, plid: string list, item: Item) : Async<bool> = 
+        reactorOp "IsRelativeNameResolvable" true (fun scope -> scope.IsRelativeNameResolvable(pos, plid, item))
     
 //----------------------------------------------------------------------------
 // BackgroundCompiler

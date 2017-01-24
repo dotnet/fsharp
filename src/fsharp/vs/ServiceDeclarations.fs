@@ -1303,16 +1303,37 @@ type FSharpDeclarationListItem(name: string, nameInCode: string, glyphMajor: Gly
     let mutable descriptionTextHolder:FSharpToolTipText<_> option = None
     let mutable task = null
 
-    let getStructuredDescriptionText() = 
-        match info with
-        | Choice1Of2 (items, infoReader, m, denv, _: IReactorOperations, checkAlive) -> 
-           if checkAlive() then FSharpToolTipText(items |> Seq.toList |> List.map (FormatStructuredDescriptionOfItem true infoReader m denv))
-           else FSharpToolTipText [ FSharpStructuredToolTipElement.Single(wordL (tagText (FSComp.SR.descriptionUnavailable())), FSharpXmlDoc.None) ]
-        | Choice2Of2 result -> 
-           result
-
     member decl.Name = name
     member decl.NameInCode = nameInCode
+
+    //member decl.StructuredDescriptionTextAsync = 
+    //        match info with
+    //        | Choice1Of2 (items, infoReader, m, denv, reactor:IReactorOperations, checkAlive) -> 
+    //                // reactor causes the lambda to execute on the background compiler thread, through the Reactor
+    //                reactor.EnqueueAndAwaitOpAsync ("DescriptionTextAsync", fun _ct -> 
+    //                      // This is where we do some work which may touch TAST data structures owned by the IncrementalBuilder - infoReader, item etc. 
+    //                      // It is written to be robust to a disposal of an IncrementalBuilder, in which case it will just return the empty string. 
+    //                      // It is best to think of this as a "weak reference" to the IncrementalBuilder, i.e. this code is written to be robust to its
+    //                      // disposal. Yes, you are right to scratch your head here, but this is ok.
+    //                          if checkAlive() then FSharpToolTipText(items |> Seq.toList |> List.map (FormatStructuredDescriptionOfItem true infoReader m denv))
+    //                          else FSharpToolTipText [ FSharpStructuredToolTipElement.Single(wordL (tagText (FSComp.SR.descriptionUnavailable())), FSharpXmlDoc.None) ])
+    //        | Choice2Of2 result -> 
+    //            async.Return result
+
+    member decl.StructuredDescriptionTextAsync = 
+        async {
+            match info with
+            | Choice1Of2 (items, infoReader, m, denv, _: IReactorOperations, checkAlive) -> 
+                  return 
+                      if checkAlive() then FSharpToolTipText(items |> Seq.toList |> List.map (FormatStructuredDescriptionOfItem true infoReader m denv))
+                      else FSharpToolTipText [ FSharpStructuredToolTipElement.Single(wordL (tagText (FSComp.SR.descriptionUnavailable())), FSharpXmlDoc.None) ]
+            | Choice2Of2 result -> 
+                return result
+        }
+
+    member decl.DescriptionTextAsync = 
+        decl.StructuredDescriptionTextAsync
+        |> Tooltips.Map Tooltips.ToFSharpToolTipText
 
     member decl.StructuredDescriptionText = 
         match descriptionTextHolder with
@@ -1326,7 +1347,8 @@ type FSharpDeclarationListItem(name: string, nameInCode: string, glyphMajor: Gly
                 if isNull task then
                     // kick off the actual (non-cooperative) work
                     task <- System.Threading.Tasks.Task.Factory.StartNew(fun() -> 
-                        descriptionTextHolder <- Some(getStructuredDescriptionText())) 
+                        let text = decl.StructuredDescriptionTextAsync |> Async.RunSynchronously
+                        descriptionTextHolder <- Some text) 
 
                 // The dataTipSpinWaitTime limits how long we block the UI thread while a tooltip pops up next to a selected item in an IntelliSense completion list.
                 // This time appears to be somewhat amortized by the time it takes the VS completion UI to actually bring up the tooltip after selecting an item in the first place.
@@ -1338,7 +1360,7 @@ type FSharpDeclarationListItem(name: string, nameInCode: string, glyphMajor: Gly
             | Choice2Of2 result -> 
                 result
 
-    member decl.DescriptionText = Tooltips.ToFSharpToolTipText(decl.StructuredDescriptionText)
+    member decl.DescriptionText = decl.StructuredDescriptionText |> Tooltips.ToFSharpToolTipText
 
     member decl.Glyph = 6 * int glyphMajor + int glyphMinor
     member decl.GlyphMajor = glyphMajor 

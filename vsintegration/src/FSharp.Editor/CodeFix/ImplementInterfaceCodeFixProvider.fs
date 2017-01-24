@@ -123,7 +123,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
                                     let getMemberByLocation(name, range: range) =
                                         let lineStr = sourceText.Lines.[range.EndLine-1].ToString()
                                         results.GetSymbolUseAtLocation(range.EndLine, range.EndColumn, lineStr, [name])
-                                    let implementedMemberSignatures =
+                                    let! implementedMemberSignatures =
                                         InterfaceStubGenerator.getImplementedMemberSignatures getMemberByLocation displayContext state.InterfaceData    
                                     let newSourceText = applyImplementInterface sourceText state displayContext implementedMemberSignatures entity indentSize verboseMode
                                     return context.Document.WithText(newSourceText)

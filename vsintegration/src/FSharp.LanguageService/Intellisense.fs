@@ -269,7 +269,7 @@ type internal FSharpIntellisenseInfo
                         // This can happen e.g. if you are typing quickly and the typecheck results are stale enough that you don't have a captured resolution for
                         // the name you just typed, but fresh enough that you do have the right name-resolution-environment to look up the name.
                         let lidEnd = nwpl.LongIdEndLocation
-                        let methods = typedResults.GetMethodsAlternate(lidEnd.Line, lidEnd.Column, "", Some names)
+                        let methods = typedResults.GetMethodsAlternate(lidEnd.Line, lidEnd.Column, "", Some names)  |> Async.RunSynchronously
                         
                         // If the name is an operator ending with ">" then it is a mistake 
                         // we can't tell whether "  >(" is a generic method call or an operator use 
@@ -393,7 +393,7 @@ type internal FSharpIntellisenseInfo
                                                 
                             // Correct the identifier (e.g. to correctly handle active pattern names that end with "BAR" token)
                             let tokenTag = QuickParse.CorrectIdentifierToken s tokenTag
-                            let dataTip = typedResults.GetStructuredToolTipTextAlternate(Range.Line.fromZ line, colAtEndOfNames, lineText, qualId, tokenTag)
+                            let dataTip = typedResults.GetStructuredToolTipTextAlternate(Range.Line.fromZ line, colAtEndOfNames, lineText, qualId, tokenTag) |> Async.RunSynchronously
 
                             match dataTip with
                             | FSharpStructuredToolTipText.FSharpToolTipText [] when makeSecondAttempt -> getDataTip true
@@ -475,7 +475,7 @@ type internal FSharpIntellisenseInfo
                                 let oldTextSnapshot = oldTextSnapshotInfo :?> ITextSnapshot
                                 hasTextChangedSinceLastTypecheck (textSnapshot, oldTextSnapshot, Range.Range.toZ range)
 
-                            let decls = typedResults.GetDeclarationListInfo(untypedParseInfoOpt, Range.Line.fromZ line, col, lineText, fst plid, snd plid, detectTextChange) 
+                            let! decls = typedResults.GetDeclarationListInfo(untypedParseInfoOpt, Range.Line.fromZ line, col, lineText, fst plid, snd plid, detectTextChange) 
                             return (new FSharpDeclarations(documentationBuilder, decls.Items, reason) :> Declarations) 
                     else
                         // no TypeCheckInfo in ParseResult.
@@ -535,7 +535,7 @@ type internal FSharpIntellisenseInfo
                                     |   Some(s,colAtEndOfNames, _) ->
                                             if typedResults.HasFullTypeCheckInfo then 
                                                 let qualId = PrettyNaming.GetLongNameFromString s
-                                                match typedResults.GetF1KeywordAlternate(Range.Line.fromZ line,colAtEndOfNames, lineText, qualId) with
+                                                match typedResults.GetF1KeywordAlternate(Range.Line.fromZ line,colAtEndOfNames, lineText, qualId) |> Async.RunSynchronously with
                                                 | Some s -> Some s
                                                 | None -> None 
                                             else None                           

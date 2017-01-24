@@ -387,7 +387,7 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
 
     //---------------- Get a symbol from project 1 and look up its uses in both projects --------------------
 
-    let xSymbolUse = backgroundTypedParse1.GetSymbolUseAtLocation(3, 4, "", ["x"])
+    let xSymbolUse = backgroundTypedParse1.GetSymbolUseAtLocation(3, 4, "", ["x"]) |> Async.RunSynchronously
     xSymbolUse.IsSome |> shouldEqual true  
     let xSymbol = xSymbolUse.Value.Symbol
 
@@ -443,7 +443,7 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
         checker.GetBackgroundCheckResultsForFileInProject(MultiProjectDirty1.fileName1, proj1options) 
         |> Async.RunSynchronously    
 
-    let xSymbolUseAfterChange1 = backgroundTypedParse1AfterChange1.GetSymbolUseAtLocation(4, 4, "", ["x"])
+    let xSymbolUseAfterChange1 = backgroundTypedParse1AfterChange1.GetSymbolUseAtLocation(4, 4, "", ["x"]) |> Async.RunSynchronously
     xSymbolUseAfterChange1.IsSome |> shouldEqual true  
     let xSymbolAfterChange1 = xSymbolUseAfterChange1.Value.Symbol
 
@@ -502,7 +502,7 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
         checker.GetBackgroundCheckResultsForFileInProject(MultiProjectDirty1.fileName1, proj1options) 
         |> Async.RunSynchronously    
 
-    let xSymbolUseAfterChange2 = backgroundTypedParse1AfterChange2.GetSymbolUseAtLocation(4, 4, "", ["x"])
+    let xSymbolUseAfterChange2 = backgroundTypedParse1AfterChange2.GetSymbolUseAtLocation(4, 4, "", ["x"]) |> Async.RunSynchronously
     xSymbolUseAfterChange2.IsSome |> shouldEqual true  
     let xSymbolAfterChange2 = xSymbolUseAfterChange2.Value.Symbol
 
@@ -716,7 +716,7 @@ let ``Test active patterns' XmlDocSig declared in referenced projects`` () =
         checker.GetBackgroundCheckResultsForFileInProject(MultiProject3.fileName1, MultiProject3.options) 
         |> Async.RunSynchronously    
 
-    let divisibleBySymbolUse = backgroundTypedParse1.GetSymbolUseAtLocation(7,7,"",["DivisibleBy"])
+    let divisibleBySymbolUse = backgroundTypedParse1.GetSymbolUseAtLocation(7,7,"",["DivisibleBy"]) |> Async.RunSynchronously
     divisibleBySymbolUse.IsSome |> shouldEqual true  
     let divisibleBySymbol = divisibleBySymbolUse.Value.Symbol 
     divisibleBySymbol.ToString() |> shouldEqual "symbol DivisibleBy"
