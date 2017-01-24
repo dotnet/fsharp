@@ -52,7 +52,7 @@ module EnvMisc =
     let maxTypeCheckErrorsOutOfProjectContext = GetEnvInteger "FCS_MaxErrorsOutOfProjectContext" 3
     let braceMatchCacheSize = GetEnvInteger "FCS_BraceMatchCacheSize" 5
     let parseFileInProjectCacheSize = GetEnvInteger "FCS_ParseFileInProjectCacheSize" 2
-    let incrementalTypeCheckCacheSize = GetEnvInteger "FCS_IncrementalTypeCheckCacheSize" 5
+    let incrementalTypeCheckCacheSize = GetEnvInteger "FCS_IncrementalTypeCheckCacheSize" 3
 
     let projectCacheSizeDefault   = GetEnvInteger "FCS_ProjectCacheSizeDefault" 3
     let frameworkTcImportsCacheStrongSize = GetEnvInteger "FCS_frameworkTcImportsCacheStrongSizeDefault" 8

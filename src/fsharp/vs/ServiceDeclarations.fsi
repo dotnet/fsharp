@@ -83,9 +83,6 @@ type internal FSharpDeclarationListItem =
     member StructuredDescriptionText : FSharpStructuredToolTipText
     member DescriptionText : FSharpToolTipText
 
-    /// Get the description text, asynchronously.  Never returns "Loading...".
-    member StructuredDescriptionTextAsync : Async<FSharpStructuredToolTipText>
-    member DescriptionTextAsync : Async<FSharpToolTipText>
     /// Get the glyph integer for the declaration as used by Visual Studio.
     member Glyph : int
     member GlyphMajor : ItemDescriptionIcons.GlyphMajor
