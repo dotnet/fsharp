@@ -501,6 +501,8 @@ type Eventually<'T> =
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Eventually = 
+    open System.Threading
+
     let rec box e = 
         match e with 
         | Done x -> Done (Operators.box x) 
@@ -518,7 +520,7 @@ module Eventually =
         
     /// Keep running the computation bit by bit until a time limit is reached.
     /// The runner gets called each time the computation is restarted
-    let repeatedlyProgressUntilDoneOrTimeShareOver timeShareInMilliseconds runner e = 
+    let repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled timeShareInMilliseconds (cancellationToken: CancellationToken) runner e = 
         let sw = new System.Diagnostics.Stopwatch() 
         let rec runTimeShare e = 
           runner (fun () -> 
@@ -527,8 +529,8 @@ module Eventually =
             let rec loop(e) = 
                 match e with 
                 | Done _ -> e
-                | NotYetDone work -> 
-                    if sw.ElapsedMilliseconds > timeShareInMilliseconds then 
+                | NotYetDone work ->
+                    if cancellationToken.IsCancellationRequested || sw.ElapsedMilliseconds > timeShareInMilliseconds then 
                         sw.Stop();
                         NotYetDone(fun () -> runTimeShare e) 
                     else 

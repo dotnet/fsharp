@@ -279,3 +279,6 @@ module internal IncrementalBuild =
         /// Set the conrete inputs for this build. 
         member GetInitialPartialBuild : vectorinputs: BuildInput list -> PartialBuild
 
+type internal CompilationGlobalsScope =
+    new : ErrorLogger * BuildPhase * string -> CompilationGlobalsScope
+    interface IDisposable
