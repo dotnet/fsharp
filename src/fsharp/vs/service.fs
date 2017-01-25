@@ -2024,7 +2024,6 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
             scope.GetSymbolUseAtLocation (line, lineStr, colAtEndOfNames, names)
             |> Option.map (fun (sym,_,_) -> sym))
 
-
     member info.GetFormatSpecifierLocations() = 
         threadSafeOp 
            (fun () -> [| |]) 
@@ -2067,7 +2066,7 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
                   yield FSharpSymbolUse(scope.TcGlobals, denv, symbol, itemOcc, m) |])
 
     member info.GetVisibleNamespacesAndModulesAtPoint(pos: pos) : Async<ModuleOrNamespaceRef []> = 
-        reactorOp "GetDeclarations" [| |] (fun scope -> scope.GetVisibleNamespacesAndModulesAtPosition(pos) |> List.toArray)
+        reactorOp "GetVisibleNamespacesAndModulesAtPoint" [| |] (fun scope -> scope.GetVisibleNamespacesAndModulesAtPosition(pos) |> List.toArray)
 
     member info.IsRelativeNameResolvable(pos: pos, plid: string list, item: Item) : Async<bool> = 
         reactorOp "IsRelativeNameResolvable" true (fun scope -> scope.IsRelativeNameResolvable(pos, plid, item))
