@@ -421,11 +421,11 @@ module internal Extensions =
                 let file = Path.GetFileName filePath
                 Printf.kprintf (fun s -> Logging.logInfof "[ParseAndCheckDocument(%s)] %s" file s)
             async {
-                use ready = new SemaphoreSlim(0)
                 let! freshResults =
                     async {
-                        let! worker = 
+                        let worker = 
                             async {
+                                use! __ = Async.OnCancel(fun _ -> log "child has cancelled")
                                 log "--> ParseAndCheckFileInProject"
                                 let! parseResults, checkFileAnswer = this.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText, options)
                                 log "<-- ParseAndCheckFileInProject"
@@ -435,18 +435,16 @@ module internal Extensions =
                                         None
                                     | FSharpCheckFileAnswer.Succeeded(checkFileResults) ->
                                         Some (parseResults, checkFileResults)
-                                ready.Release() |> ignore
-                                log "`ready` released "
                                 return result
-                            } |> Async.StartChild
-                        log "waiting for result for 2 seconds"
-                        let! gotResult = ready.WaitAsync(TimeSpan.FromSeconds 2.) |> Async.AwaitTask
-                        if gotResult then
-                            log "got result in 2 seconds"
+                            }
+                        try
+                            log "waiting for result for 1 second"
+                            let! worker = Async.StartChild(worker, 1000)
+                            log "got result in 1 second"
                             let! result = worker 
                             return Ready result
-                        else
-                            log "DID NOT get result in 2 seconds"
+                        with :? TimeoutException ->
+                            log "DID NOT get result in 1 second"
                             return StillRunning worker
                     }
                     
