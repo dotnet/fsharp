@@ -385,6 +385,7 @@ module internal Extensions =
     open System
     open System.IO
     open Microsoft.FSharp.Compiler.Ast
+    open Microsoft.VisualStudio.FSharp.Editor.Logging
 
     type System.IServiceProvider with
         member x.GetService<'T>() = x.GetService(typeof<'T>) :?> 'T
@@ -416,13 +417,18 @@ module internal Extensions =
             }
 
         member this.ParseAndCheckDocument(filePath: string, textVersionHash: int, sourceText: string, options: FSharpProjectOptions, allowStaleResults: bool) : Async<(FSharpParseFileResults * Ast.ParsedInput * FSharpCheckFileResults) option> =
+            let log = 
+                let file = Path.GetFileName filePath
+                Printf.kprintf (fun s -> Logging.logInfof "[ParseAndCheckDocument(%s)] %s" file s)
             async {
+                use ready = new SemaphoreSlim(0)
                 let! freshResults =
                     async {
-                        use ready = new SemaphoreSlim(1)
                         let! worker = 
                             async {
+                                log "--> ParseAndCheckFileInProject"
                                 let! parseResults, checkFileAnswer = this.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText, options)
+                                log "<-- ParseAndCheckFileInProject"
                                 let result =
                                     match checkFileAnswer with
                                     | FSharpCheckFileAnswer.Aborted -> 
@@ -430,12 +436,18 @@ module internal Extensions =
                                     | FSharpCheckFileAnswer.Succeeded(checkFileResults) ->
                                         Some (parseResults, checkFileResults)
                                 ready.Release() |> ignore
+                                log "`ready` released "
                                 return result
-                            } |> Async.StartChildAsTask
+                            } |> Async.StartChild
+                        log "waiting for result for 2 seconds"
                         let! gotResult = ready.WaitAsync(TimeSpan.FromSeconds 2.) |> Async.AwaitTask
-                        if gotResult then 
-                            return Ready worker.Result
-                        else return StillRunning (Async.AwaitTask worker)
+                        if gotResult then
+                            log "got result in 2 seconds"
+                            let! result = worker 
+                            return Ready result
+                        else
+                            log "DID NOT get result in 2 seconds"
+                            return StillRunning worker
                     }
                     
                 let! results = 
@@ -445,8 +457,10 @@ module internal Extensions =
                         async {
                             match allowStaleResults, this.TryGetRecentCheckResultsForFile(filePath, options) with
                             | true, Some (parseResults, checkFileResults, _) ->
+                                log "returning stale results"
                                 return Some (parseResults, checkFileResults)
                             | _ ->
+                                log "stale results cannot be returned, waiting for `worker` to complete"
                                 return! worker
                         }
 
