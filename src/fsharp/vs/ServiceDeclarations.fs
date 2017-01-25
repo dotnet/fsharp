@@ -1306,30 +1306,19 @@ type FSharpDeclarationListItem(name: string, nameInCode: string, glyphMajor: Gly
     member decl.Name = name
     member decl.NameInCode = nameInCode
 
-    //member decl.StructuredDescriptionTextAsync = 
-    //        match info with
-    //        | Choice1Of2 (items, infoReader, m, denv, reactor:IReactorOperations, checkAlive) -> 
-    //                // reactor causes the lambda to execute on the background compiler thread, through the Reactor
-    //                reactor.EnqueueAndAwaitOpAsync ("DescriptionTextAsync", fun _ct -> 
-    //                      // This is where we do some work which may touch TAST data structures owned by the IncrementalBuilder - infoReader, item etc. 
-    //                      // It is written to be robust to a disposal of an IncrementalBuilder, in which case it will just return the empty string. 
-    //                      // It is best to think of this as a "weak reference" to the IncrementalBuilder, i.e. this code is written to be robust to its
-    //                      // disposal. Yes, you are right to scratch your head here, but this is ok.
-    //                          if checkAlive() then FSharpToolTipText(items |> Seq.toList |> List.map (FormatStructuredDescriptionOfItem true infoReader m denv))
-    //                          else FSharpToolTipText [ FSharpStructuredToolTipElement.Single(wordL (tagText (FSComp.SR.descriptionUnavailable())), FSharpXmlDoc.None) ])
-    //        | Choice2Of2 result -> 
-    //            async.Return result
-
     member decl.StructuredDescriptionTextAsync = 
-        async {
             match info with
-            | Choice1Of2 (items, infoReader, m, denv, _: IReactorOperations, checkAlive) -> 
-                  return 
-                      if checkAlive() then FSharpToolTipText(items |> Seq.toList |> List.map (FormatStructuredDescriptionOfItem true infoReader m denv))
-                      else FSharpToolTipText [ FSharpStructuredToolTipElement.Single(wordL (tagText (FSComp.SR.descriptionUnavailable())), FSharpXmlDoc.None) ]
+            | Choice1Of2 (items, infoReader, m, denv, reactor:IReactorOperations, checkAlive) -> 
+                    // reactor causes the lambda to execute on the background compiler thread, through the Reactor
+                    reactor.EnqueueAndAwaitOpAsync ("StructuredDescriptionTextAsync", fun _ct -> 
+                          // This is where we do some work which may touch TAST data structures owned by the IncrementalBuilder - infoReader, item etc. 
+                          // It is written to be robust to a disposal of an IncrementalBuilder, in which case it will just return the empty string. 
+                          // It is best to think of this as a "weak reference" to the IncrementalBuilder, i.e. this code is written to be robust to its
+                          // disposal. Yes, you are right to scratch your head here, but this is ok.
+                              if checkAlive() then FSharpToolTipText(items |> Seq.toList |> List.map (FormatStructuredDescriptionOfItem true infoReader m denv))
+                              else FSharpToolTipText [ FSharpStructuredToolTipElement.Single(wordL (tagText (FSComp.SR.descriptionUnavailable())), FSharpXmlDoc.None) ])
             | Choice2Of2 result -> 
-                return result
-        }
+                async.Return result
 
     member decl.DescriptionTextAsync = 
         decl.StructuredDescriptionTextAsync
