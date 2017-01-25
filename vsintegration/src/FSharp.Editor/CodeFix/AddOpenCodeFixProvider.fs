@@ -148,7 +148,7 @@ type internal FSharpAddOpenCodeFixProvider
         asyncMaybe {
             let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject context.Document
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
-            let! _, parsedInput, checkResults = checker.ParseAndCheckDocument(context.Document, options, sourceText)
+            let! _, parsedInput, checkResults = checker.ParseAndCheckDocument(context.Document, options, allowStaleResults = true, sourceText = sourceText)
             
             let unresolvedIdentRange =
                 let startLinePos = sourceText.Lines.GetLinePosition context.Span.Start

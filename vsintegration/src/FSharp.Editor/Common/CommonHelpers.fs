@@ -411,9 +411,9 @@ module internal Extensions =
                 return! this.ParseDocument(document, options, sourceText.ToString())
             }
 
-        member this.ParseAndCheckDocument(filePath: string, textVersionHash: int, sourceText: string, options: FSharpProjectOptions, ?allowStaleResults: bool) : Async<(FSharpParseFileResults * Ast.ParsedInput * FSharpCheckFileResults) option> =
+        member this.ParseAndCheckDocument(filePath: string, textVersionHash: int, sourceText: string, options: FSharpProjectOptions, allowStaleResults: bool) : Async<(FSharpParseFileResults * Ast.ParsedInput * FSharpCheckFileResults) option> =
             async {
-                match defaultArg allowStaleResults true, this.TryGetRecentCheckResultsForFile(filePath, options) with
+                match allowStaleResults, this.TryGetRecentCheckResultsForFile(filePath, options) with
                 | true, Some (parseResults, checkFileResults, _) ->
                     match parseResults.ParseTree with
                     | Some parsedInput -> return Some (parseResults, parsedInput, checkFileResults)
@@ -427,7 +427,7 @@ module internal Extensions =
                         return Some (parseResults, parsedInput, checkFileResults)
             }
 
-        member this.ParseAndCheckDocument(document: Document, options: FSharpProjectOptions, ?sourceText: SourceText, ?allowStaleResults: bool) : Async<(FSharpParseFileResults * Ast.ParsedInput * FSharpCheckFileResults) option> =
+        member this.ParseAndCheckDocument(document: Document, options: FSharpProjectOptions, allowStaleResults: bool, ?sourceText: SourceText) : Async<(FSharpParseFileResults * Ast.ParsedInput * FSharpCheckFileResults) option> =
             async {
                 let! cancellationToken = Async.CancellationToken
                 let! sourceText =
@@ -435,7 +435,7 @@ module internal Extensions =
                     | Some x -> Task.FromResult x
                     | None -> document.GetTextAsync()
                 let! textVersion = document.GetTextVersionAsync(cancellationToken)
-                return! this.ParseAndCheckDocument(document.FilePath, textVersion.GetHashCode(), sourceText.ToString(), options, ?allowStaleResults = allowStaleResults)
+                return! this.ParseAndCheckDocument(document.FilePath, textVersion.GetHashCode(), sourceText.ToString(), options, allowStaleResults)
             }
 
     type FSharpSymbol with
