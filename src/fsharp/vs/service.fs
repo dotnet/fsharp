@@ -1740,8 +1740,10 @@ module internal Parser =
                             
                             let! result = 
                                 TypeCheckOneInputAndFinishEventually(checkForErrors,tcConfig, tcImports, tcGlobals, None, TcResultsSink.WithSink sink, tcState, parsedMainInput)
-                                //|> Eventually.repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled
-                                //    50L
+                                |> Eventually.repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled
+                                    50L
+                                    cancellationToken
+                                    (fun f -> f())
                                 |> Eventually.forceAsync 
                                     cancellationToken
                                     (fun (work: unit -> Eventually<_>) ->

@@ -518,18 +518,6 @@ module Eventually =
 
     let force e = Option.get (forceWhile (fun () -> true) e)
 
-    let forceAsync (cancellationToken: CancellationToken) (executor: (unit -> Eventually<'T>) -> Async<Eventually<'T>>) (e: Eventually<'T>) : Async<'T option> =
-        let rec loop (e: Eventually<'T>) =
-            async {
-                match e with 
-                | Done x -> return Some x
-                | NotYetDone work ->
-                    if cancellationToken.IsCancellationRequested then return None
-                    else
-                        let! r = executor work
-                        return! loop r
-            }
-        loop e
         
     /// Keep running the computation bit by bit until a time limit is reached.
     /// The runner gets called each time the computation is restarted
@@ -550,6 +538,19 @@ module Eventually =
                         loop(work())
             loop(e))
         runTimeShare e
+    
+    let forceAsync (cancellationToken: CancellationToken) (executor: (unit -> Eventually<'T>) -> Async<Eventually<'T>>) (e: Eventually<'T>) : Async<'T option> =
+        let rec loop (e: Eventually<'T>) =
+            async {
+                match e with 
+                | Done x -> return Some x
+                | NotYetDone work ->
+                    if cancellationToken.IsCancellationRequested then return None
+                    else
+                        let! r = executor work
+                        return! loop r
+            }
+        loop e
 
     let rec bind k e = 
         match e with 
