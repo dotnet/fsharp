@@ -521,7 +521,7 @@ module Eventually =
         
     /// Keep running the computation bit by bit until a time limit is reached.
     /// The runner gets called each time the computation is restarted
-    let repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled timeShareInMilliseconds (cancellationToken: CancellationToken) runner e = 
+    let repeatedlyProgressUntilDoneOrTimeShareOver timeShareInMilliseconds runner e = 
         let sw = new System.Diagnostics.Stopwatch() 
         let rec runTimeShare e = 
           runner (fun () -> 
@@ -531,7 +531,7 @@ module Eventually =
                 match e with 
                 | Done _ -> e
                 | NotYetDone work ->
-                    if cancellationToken.IsCancellationRequested || sw.ElapsedMilliseconds > timeShareInMilliseconds then 
+                    if sw.ElapsedMilliseconds > timeShareInMilliseconds then 
                         sw.Stop();
                         NotYetDone(fun () -> runTimeShare e) 
                     else 
@@ -539,16 +539,14 @@ module Eventually =
             loop(e))
         runTimeShare e
     
-    let forceAsync (cancellationToken: CancellationToken) (executor: (unit -> Eventually<'T>) -> Async<Eventually<'T>>) (e: Eventually<'T>) : Async<'T option> =
+    let forceAsync (runner: (unit -> Eventually<'T>) -> Async<Eventually<'T>>) (e: Eventually<'T>) : Async<'T option> =
         let rec loop (e: Eventually<'T>) =
             async {
                 match e with 
                 | Done x -> return Some x
                 | NotYetDone work ->
-                    if cancellationToken.IsCancellationRequested then return None
-                    else
-                        let! r = executor work
-                        return! loop r
+                    let! r = runner work
+                    return! loop r
             }
         loop e
 

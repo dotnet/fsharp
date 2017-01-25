@@ -1643,7 +1643,6 @@ module internal Parser =
                    
             // Run the type checker...
             | Some parsedMainInput ->
-                let! cancellationToken = Async.CancellationToken
                 // Initialize the error handler 
                 let errHandler = new ErrorHandler(true, mainInputFileName, tcConfig, source)
             
@@ -1730,22 +1729,14 @@ module internal Parser =
                             let checkForErrors() = (parseResults.ParseHadErrors || errHandler.ErrorCount > 0)
                             // Typecheck is potentially a long running operation. We chop it up here with an Eventually continuation and, at each slice, give a chance
                             // for the client to claim the result as obsolete and have the typecheck abort.
-                            //let computation = TypeCheckOneInputAndFinishEventually(checkForErrors,tcConfig, tcImports, tcGlobals, None, TcResultsSink.WithSink sink, tcState, parsedMainInput)
-                            //match computation |> Eventually.forceWhile (fun () -> not cancellationToken.IsCancellationRequested) with
-                            //| Some((tcEnvAtEnd,_,typedImplFiles),tcState) -> Some (tcEnvAtEnd, typedImplFiles, tcState)
-                            //| None -> None // Means 'aborted'
                             let projectDir = Path.GetDirectoryName(projectFileName)
                             let capturingErrorLogger = CompilationErrorLogger("TypeCheckOneFile", tcConfig)
                             let errorLogger = GetErrorLoggerFilteringByScopedPragmas(false,GetScopedPragmasForInput(parsedMainInput), capturingErrorLogger)
                             
                             let! result = 
                                 TypeCheckOneInputAndFinishEventually(checkForErrors,tcConfig, tcImports, tcGlobals, None, TcResultsSink.WithSink sink, tcState, parsedMainInput)
-                                |> Eventually.repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled
-                                    50L
-                                    cancellationToken
-                                    (fun f -> f())
+                                |> Eventually.repeatedlyProgressUntilDoneOrTimeShareOver 50L (fun f -> f())
                                 |> Eventually.forceAsync 
-                                    cancellationToken
                                     (fun (work: unit -> Eventually<_>) ->
                                         reactorOps.EnqueueAndAwaitOpAsync("TypeCheckOneFile", 
                                             fun _ -> 

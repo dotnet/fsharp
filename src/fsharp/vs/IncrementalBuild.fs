@@ -1497,9 +1497,8 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
             if ensureReactive then 
                 let timeSlicedComputation = 
                     fullComputation |> 
-                        Eventually.repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled
+                        Eventually.repeatedlyProgressUntilDoneOrTimeShareOver
                             maxTimeShareMilliseconds
-                            CancellationToken.None
                             (fun f -> 
                                 // Reinstall the compilation globals each time we start or restart
                                 use unwind = new CompilationGlobalsScope (errorLogger, BuildPhase.TypeCheck, projectDirectory) 
