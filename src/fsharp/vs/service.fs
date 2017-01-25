@@ -1722,6 +1722,7 @@ module internal Parser =
                 
                 // Typecheck the real input.  
                 let sink = TcResultsSinkImpl(tcGlobals, source = source)
+                let! ct = Async.CancellationToken
             
                 let! tcEnvAtEndOpt =
                     async {
@@ -1735,7 +1736,7 @@ module internal Parser =
                             
                             let! result = 
                                 TypeCheckOneInputAndFinishEventually(checkForErrors,tcConfig, tcImports, tcGlobals, None, TcResultsSink.WithSink sink, tcState, parsedMainInput)
-                                |> Eventually.repeatedlyProgressUntilDoneOrTimeShareOver 50L (fun f -> f())
+                                |> Eventually.repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled 50L ct (fun f -> f())
                                 |> Eventually.forceAsync 
                                     (fun (work: unit -> Eventually<_>) ->
                                         reactorOps.EnqueueAndAwaitOpAsync("TypeCheckOneFile", 

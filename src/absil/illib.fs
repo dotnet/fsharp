@@ -494,7 +494,7 @@ module ResultOrException =
 ///      captured by the NotYetDone closure. Computations do not need to be restartable.
 ///
 ///    - The key thing is that you can take an Eventually value and run it with 
-///      Eventually.repeatedlyProgressUntilDoneOrTimeShareOver
+///      Eventually.repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled
 type Eventually<'T> = 
     | Done of 'T 
     | NotYetDone of (unit -> Eventually<'T>)
@@ -521,7 +521,7 @@ module Eventually =
         
     /// Keep running the computation bit by bit until a time limit is reached.
     /// The runner gets called each time the computation is restarted
-    let repeatedlyProgressUntilDoneOrTimeShareOver timeShareInMilliseconds runner e = 
+    let repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled timeShareInMilliseconds (ct: CancellationToken) runner e = 
         let sw = new System.Diagnostics.Stopwatch() 
         let rec runTimeShare e = 
           runner (fun () -> 
@@ -531,7 +531,7 @@ module Eventually =
                 match e with 
                 | Done _ -> e
                 | NotYetDone work ->
-                    if sw.ElapsedMilliseconds > timeShareInMilliseconds then 
+                    if ct.IsCancellationRequested || sw.ElapsedMilliseconds > timeShareInMilliseconds then 
                         sw.Stop();
                         NotYetDone(fun () -> runTimeShare e) 
                     else 
