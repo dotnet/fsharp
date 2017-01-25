@@ -2840,28 +2840,30 @@ type FsiInteractiveChecker(reactorOps: IReactorOperations, tcConfig, tcGlobals, 
         Parser.CreateErrorInfos(tcConfig, allErrors, mainInputFileName, errors)
 
     member __.ParseAndCheckInteraction (source) =
-
-        let mainInputFileName = "stdin.fsx" 
-        // Note: projectSourceFiles is only used to compute isLastCompiland, and is ignored if Build.IsScript(mainInputFileName) is true (which it is in this case).
-        let projectSourceFiles = [ ]
-        let parseErrors, _matchPairs, inputOpt, anyErrors = Parser.ParseOneFile (source, false, true, mainInputFileName, projectSourceFiles, tcConfig)
-        let dependencyFiles = [] // interactions have no dependencies
-        let parseResults = FSharpParseFileResults(parseErrors, inputOpt, parseHadErrors = anyErrors, dependencyFiles = dependencyFiles)
-
-        let backgroundDiagnostics = []
-        
-        let tcErrors, tcFileResult = 
-            Parser.TypeCheckOneFile(parseResults,source,mainInputFileName,"project",tcConfig,tcGlobals,tcImports,  tcState,
-                                    loadClosure,backgroundDiagnostics,reactorOps,(fun () -> true),None) |> Async.RunSynchronously
-
-        match tcFileResult with 
-        | Parser.TypeCheckAborted.No scope ->
-            let errors = [|  yield! parseErrors; yield! tcErrors |]
-            let typeCheckResults = FSharpCheckFileResults (errors,Some scope, None, reactorOps)   
-            let projectResults = FSharpCheckProjectResults (keepAssemblyContents, errors, Some(tcGlobals, tcImports, scope.ThisCcu, scope.CcuSig, [scope.ScopeSymbolUses], None, None, mkSimpleAssRef "stdin", tcState.TcEnvFromImpls.AccessRights, None), reactorOps)
-            parseResults, typeCheckResults, projectResults
-        | _ -> 
-            failwith "unexpected aborted"
+        async {
+            let mainInputFileName = "stdin.fsx" 
+            // Note: projectSourceFiles is only used to compute isLastCompiland, and is ignored if Build.IsScript(mainInputFileName) is true (which it is in this case).
+            let projectSourceFiles = [ ]
+            let parseErrors, _matchPairs, inputOpt, anyErrors = Parser.ParseOneFile (source, false, true, mainInputFileName, projectSourceFiles, tcConfig)
+            let dependencyFiles = [] // interactions have no dependencies
+            let parseResults = FSharpParseFileResults(parseErrors, inputOpt, parseHadErrors = anyErrors, dependencyFiles = dependencyFiles)
+            
+            let backgroundDiagnostics = []
+            
+            let! tcErrors, tcFileResult = 
+                Parser.TypeCheckOneFile(parseResults,source,mainInputFileName,"project",tcConfig,tcGlobals,tcImports,  tcState,
+                                        loadClosure,backgroundDiagnostics,reactorOps,(fun () -> true),None)
+            
+            return 
+                match tcFileResult with 
+                | Parser.TypeCheckAborted.No scope ->
+                    let errors = [|  yield! parseErrors; yield! tcErrors |]
+                    let typeCheckResults = FSharpCheckFileResults (errors,Some scope, None, reactorOps)   
+                    let projectResults = FSharpCheckProjectResults (keepAssemblyContents, errors, Some(tcGlobals, tcImports, scope.ThisCcu, scope.CcuSig, [scope.ScopeSymbolUses], None, None, mkSimpleAssRef "stdin", tcState.TcEnvFromImpls.AccessRights, None), reactorOps)
+                    parseResults, typeCheckResults, projectResults
+                | _ -> 
+                    failwith "unexpected aborted"
+        }
                 
 //----------------------------------------------------------------------------
 // CompilerEnvironment, DebuggerEnvironment
