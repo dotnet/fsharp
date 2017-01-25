@@ -395,6 +395,10 @@ module internal Extensions =
             try Path.GetFullPath path
             with _ -> path
 
+    type CheckResults =
+        | Ready of (FSharpParseFileResults * FSharpCheckFileResults) option
+        | StillRunning of Async<(FSharpParseFileResults * FSharpCheckFileResults) option>
+
     type FSharpChecker with
         member this.ParseDocument(document: Document, options: FSharpProjectOptions, sourceText: string) =
             asyncMaybe {
@@ -413,18 +417,46 @@ module internal Extensions =
 
         member this.ParseAndCheckDocument(filePath: string, textVersionHash: int, sourceText: string, options: FSharpProjectOptions, allowStaleResults: bool) : Async<(FSharpParseFileResults * Ast.ParsedInput * FSharpCheckFileResults) option> =
             async {
-                match allowStaleResults, this.TryGetRecentCheckResultsForFile(filePath, options) with
-                | true, Some (parseResults, checkFileResults, _) ->
-                    match parseResults.ParseTree with
-                    | Some parsedInput -> return Some (parseResults, parsedInput, checkFileResults)
-                    | None -> return None
-                | _ ->
-                    let! parseResults, checkFileAnswer = this.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText, options)
-                    match parseResults.ParseTree, checkFileAnswer with
-                    | _, FSharpCheckFileAnswer.Aborted
-                    | None, _ -> return None
-                    | Some parsedInput, FSharpCheckFileAnswer.Succeeded(checkFileResults) ->
-                        return Some (parseResults, parsedInput, checkFileResults)
+                let! freshResults =
+                    async {
+                        use ready = new SemaphoreSlim(1)
+                        let! worker = 
+                            async {
+                                let! parseResults, checkFileAnswer = this.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText, options)
+                                let result =
+                                    match checkFileAnswer with
+                                    | FSharpCheckFileAnswer.Aborted -> 
+                                        None
+                                    | FSharpCheckFileAnswer.Succeeded(checkFileResults) ->
+                                        Some (parseResults, checkFileResults)
+                                ready.Release() |> ignore
+                                return result
+                            } |> Async.StartChildAsTask
+                        let! gotResult = ready.WaitAsync(TimeSpan.FromSeconds 2.) |> Async.AwaitTask
+                        if gotResult then 
+                            return Ready worker.Result
+                        else return StillRunning (Async.AwaitTask worker)
+                    }
+                    
+                let! results = 
+                    match freshResults with
+                    | Ready x -> async.Return x
+                    | StillRunning worker ->
+                        async {
+                            match allowStaleResults, this.TryGetRecentCheckResultsForFile(filePath, options) with
+                            | true, Some (parseResults, checkFileResults, _) ->
+                                return Some (parseResults, checkFileResults)
+                            | _ ->
+                                return! worker
+                        }
+
+                return 
+                    match results with
+                    | Some (parseResults, checkResults) ->
+                        match parseResults.ParseTree with
+                        | Some parsedInput -> Some (parseResults, parsedInput, checkResults)
+                        | None -> None
+                    | None -> None
             }
 
         member this.ParseAndCheckDocument(document: Document, options: FSharpProjectOptions, allowStaleResults: bool, ?sourceText: SourceText) : Async<(FSharpParseFileResults * Ast.ParsedInput * FSharpCheckFileResults) option> =
