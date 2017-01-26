@@ -2255,7 +2255,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
     let withFileCheckLock(key: FilePath * ProjectPath * FileVersion) (f: Async<'T>) : Async<'T> =
         async {
             while not (beingCheckedFileCache.TryAdd(key, ())) do
-                do! Async.Sleep 1000
+                do! Async.Sleep 100
             try
                 return! f
             finally
