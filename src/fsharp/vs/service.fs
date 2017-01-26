@@ -2124,7 +2124,13 @@ module Helpers =
     let AreSubsumable3((fileName1:string,_,o1:FSharpProjectOptions),(fileName2:string,_,o2:FSharpProjectOptions)) =
         (fileName1 = fileName2)
         && FSharpProjectOptions.AreSubsumable(o1,o2)
-        
+
+type FileName = string
+type Source = string        
+type FilePath = string
+type ProjectPath = string
+type FileVersion = int
+
 // There is only one instance of this type, held in FSharpChecker
 type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContents, keepAllBackgroundResolutions) as self =
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.backgroundCompiler.reactor: The one and only Reactor
@@ -2238,10 +2244,35 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
 
     // Also keyed on source. This can only be out of date if the antecedent is out of date
     let parseAndCheckFileInProjectCache = 
-        MruCache<string * string * FSharpProjectOptions, FSharpParseFileResults * FSharpCheckFileResults * int * DateTime>
+        MruCache<FileName * Source * FSharpProjectOptions, FSharpParseFileResults * FSharpCheckFileResults * FileVersion * DateTime>
             (keepStrongly=incrementalTypeCheckCacheSize,
              areSame=AreSameForChecking3,
              areSameForSubsumption=AreSubsumable3)
+
+    /// Holds keys for files being currently checked. It's used to prevent checking same file in parallel (interliveing chunck queued to Reactor).
+    let beingCheckedFileCache = 
+        System.Collections.Concurrent.ConcurrentDictionary<FilePath * ProjectPath * FileVersion, unit>(
+            { new IEqualityComparer<FilePath * ProjectPath * FileVersion> with
+                member __.Equals((f1, p1, v1), (f2, p2, v2)) = f1 = f2 && p1 = p2 && v1 = v2
+                member __.GetHashCode((f, p, v)) =
+                    let mutable hash = 17
+                    hash <- hash * 23 + f.GetHashCode()
+                    hash <- hash * 23 + p.GetHashCode()
+                    hash <- hash * 23 + v.GetHashCode()
+                    hash
+            })
+
+    /// Ensure that `f` is not called in parallel for given (file * project * version).
+    let withFileCheckLock(key: FilePath * ProjectPath * FileVersion) (f: Async<'T>) : Async<'T> =
+        async {
+            while not (beingCheckedFileCache.TryAdd(key, ())) do
+                do! Async.Sleep 1000
+            try
+                return! f
+            finally
+                let dummy = ref ()
+                beingCheckedFileCache.TryRemove(key, dummy) |> ignore
+        }
 
     let lockObj = obj()
     let locked f = lock lockObj f
@@ -2388,8 +2419,9 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                     let checkAlive () = builder.IsAlive
                     // Run the type checking.
                     let! tcErrors, tcFileResult = 
-                        Parser.TypeCheckOneFile(parseResults,source,filename,options.ProjectFileName,tcPrior.TcConfig,tcPrior.TcGlobals,tcPrior.TcImports,tcPrior.TcState,
-                                                loadClosure,tcPrior.Errors,reactorOps,checkAlive,textSnapshotInfo)
+                        withFileCheckLock (filename, options.ProjectFileName, fileVersion) <|
+                            Parser.TypeCheckOneFile(parseResults,source,filename,options.ProjectFileName,tcPrior.TcConfig,tcPrior.TcGlobals,tcPrior.TcImports,tcPrior.TcState,
+                                                    loadClosure,tcPrior.Errors,reactorOps,checkAlive,textSnapshotInfo)
                 
                     let checkAnswer = MakeCheckFileAnswer(tcFileResult, options, builder, creationErrors, parseResults.Errors, tcErrors)
                     bc.RecordTypeCheckFileInProjectResults(filename,options,parseResults,fileVersion,tcPrior.TimeStamp,Some checkAnswer,source)
@@ -2416,8 +2448,9 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                     let! tcPrior = execWithReactorAsync <| fun _ -> builder.GetCheckResultsBeforeFileInProject (filename, ct)
                     let! loadClosure = execWithReactorAsync <| fun _ -> scriptClosureCache.TryGet options 
                     let! tcErrors, tcFileResult = 
-                        Parser.TypeCheckOneFile(parseResults,source,filename,options.ProjectFileName,tcPrior.TcConfig,tcPrior.TcGlobals,tcPrior.TcImports,tcPrior.TcState,
-                                                loadClosure,tcPrior.Errors,reactorOps,(fun () -> builder.IsAlive),textSnapshotInfo)
+                        withFileCheckLock (filename, options.ProjectFileName, fileVersion) <|
+                            Parser.TypeCheckOneFile(parseResults,source,filename,options.ProjectFileName,tcPrior.TcConfig,tcPrior.TcGlobals,tcPrior.TcImports,tcPrior.TcState,
+                                                    loadClosure,tcPrior.Errors,reactorOps,(fun () -> builder.IsAlive),textSnapshotInfo)
                     let checkAnswer = MakeCheckFileAnswer(tcFileResult, options, builder, creationErrors, parseResults.Errors, tcErrors)
                     bc.RecordTypeCheckFileInProjectResults(filename,options,parseResults,fileVersion,tcPrior.TimeStamp,Some checkAnswer,source)
                     bc.ImplicitlyStartCheckProjectInBackground(options)
@@ -2450,8 +2483,9 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                     let! loadClosure = execWithReactorAsync <| fun _ -> scriptClosureCache.TryGet options 
                     
                     let! tcErrors, tcFileResult = 
-                        Parser.TypeCheckOneFile(parseResults,source,filename,options.ProjectFileName,tcPrior.TcConfig,tcPrior.TcGlobals,tcPrior.TcImports,  tcPrior.TcState,
-                                                loadClosure,tcPrior.Errors,reactorOps,(fun () -> builder.IsAlive),textSnapshotInfo)
+                        withFileCheckLock (filename, options.ProjectFileName, fileVersion) <|
+                            Parser.TypeCheckOneFile(parseResults,source,filename,options.ProjectFileName,tcPrior.TcConfig,tcPrior.TcGlobals,tcPrior.TcImports,  tcPrior.TcState,
+                                                    loadClosure,tcPrior.Errors,reactorOps,(fun () -> builder.IsAlive),textSnapshotInfo)
 
                     let checkAnswer = MakeCheckFileAnswer(tcFileResult, options, builder, creationErrors, parseResults.Errors, tcErrors)
                     bc.RecordTypeCheckFileInProjectResults(filename,options,parseResults,fileVersion,tcPrior.TimeStamp,Some checkAnswer,source)

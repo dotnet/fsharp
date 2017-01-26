@@ -440,7 +440,7 @@ module internal Extensions =
                     try
                         log "waiting for result for %d ms" timeout
                         let! worker = Async.StartChild(parseAndCheckFile, timeout)
-                        log "got result in %d md" timeout
+                        log "got result in %d ms" timeout
                         let! result = worker 
                         return Ready result
                     with :? TimeoutException ->
