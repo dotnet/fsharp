@@ -518,18 +518,12 @@ type TypeCheckInfo
     let ncenv = new NameResolver(g,amap,infoReader,NameResolution.FakeInstantiationGenerator)
     
     /// Find the most precise naming environment for the given line and column
-    let GetBestEnvForPos (cursorPos: pos) =
+    let GetBestEnvForPos cursorPos  =
         
-        let getEnvsOnLine line =    
-            if line < 0 then ResizeArray()
-            elif line > sResolutions.CapturedEnvsByLine.Count - 1 then ResizeArray()
-            else sResolutions.CapturedEnvsByLine.[line]
- 
-        let envsOnLine = getEnvsOnLine cursorPos.Line
         let bestSoFar = ref None
 
         // Find the most deeply nested enclosing scope that contains given position
-        envsOnLine |> ResizeArray.iter (fun (possm,env,ad) -> 
+        sResolutions.CapturedEnvs |> ResizeArray.iter (fun (possm,env,ad) -> 
             if rangeContainsPos possm cursorPos then
                 match !bestSoFar with 
                 | Some (bestm,_,_) -> 
@@ -546,14 +540,9 @@ type TypeCheckInfo
         // We guarantee to only refine to a more nested environment.  It may not be strictly  
         // the right environment, but will alwauys be at least as rich 
 
-        let bestAlmostIncludedSoFar = ref None
+        let bestAlmostIncludedSoFar = ref None 
 
-        let evnsOnLineAndPreviousLine = 
-            let envs = getEnvsOnLine (cursorPos.Line - 1)
-            envs.AddRange(envsOnLine)
-            envs
-
-        evnsOnLineAndPreviousLine |> ResizeArray.iter (fun (possm,env,ad) -> 
+        sResolutions.CapturedEnvs |> ResizeArray.iter (fun (possm,env,ad) -> 
             // take only ranges that strictly do not include cursorPos (all ranges that touch cursorPos were processed during 'Strict Inclusion' part)
             if rangeBeforePos possm cursorPos && not (posEq possm.End cursorPos) then 
                 let contained = 

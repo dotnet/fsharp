@@ -1351,14 +1351,14 @@ type CapturedNameResolution(p:pos, i:Item, io:ItemOccurence, de:DisplayEnv, nre:
 
 /// Represents container for all name resolutions that were met so far when typechecking some particular file
 type TcResolutions
-    (capturedEnvsByLine : ResizeArray<ResizeArray<range * NameResolutionEnv * AccessorDomain>>,
+    (capturedEnvs : ResizeArray<range * NameResolutionEnv * AccessorDomain>,
      capturedExprTypes : ResizeArray<pos * TType * DisplayEnv * NameResolutionEnv * AccessorDomain * range>,
      capturedNameResolutions : ResizeArray<CapturedNameResolution>,
      capturedMethodGroupResolutions : ResizeArray<CapturedNameResolution>) = 
 
     static let empty = TcResolutions(ResizeArray(0),ResizeArray(0),ResizeArray(0),ResizeArray(0))
     
-    member this.CapturedEnvsByLine = capturedEnvsByLine
+    member this.CapturedEnvs = capturedEnvs
     member this.CapturedExpressionTypings = capturedExprTypes
     member this.CapturedNameResolutions = capturedNameResolutions
     member this.CapturedMethodGroupResolutions = capturedMethodGroupResolutions
@@ -1383,7 +1383,7 @@ type TcSymbolUses(g, capturedNameResolutions : ResizeArray<CapturedNameResolutio
 
 /// An accumulator for the results being emitted into the tcSink.
 type TcResultsSinkImpl(g, ?source: string) =
-    let capturedEnvsByLine = ResizeArray<ResizeArray<range * NameResolutionEnv * AccessorDomain>>()
+    let capturedEnvs = ResizeArray<_>()
     let capturedExprTypings = ResizeArray<_>()
     let capturedNameResolutions = ResizeArray<_>()
     let capturedFormatSpecifierLocations = ResizeArray<_>()
@@ -1396,18 +1396,15 @@ type TcResultsSinkImpl(g, ?source: string) =
     let allowedRange (m:range) = not m.IsSynthetic       
 
     member this.GetResolutions() = 
-        TcResolutions(capturedEnvsByLine, capturedExprTypings, capturedNameResolutions, capturedMethodGroupResolutions)
+        TcResolutions(capturedEnvs, capturedExprTypings, capturedNameResolutions, capturedMethodGroupResolutions)
 
     member this.GetSymbolUses() = 
         TcSymbolUses(g, capturedNameResolutions, capturedFormatSpecifierLocations.ToArray())
 
     interface ITypecheckResultsSink with
-        member sink.NotifyEnvWithScope(m, nenv, ad) = 
-            if allowedRange m then
-                for i in capturedEnvsByLine.Count..m.EndLine do
-                    capturedEnvsByLine.Add(ResizeArray())
-                for line in m.StartLine..m.EndLine do
-                    capturedEnvsByLine.[line].Add(m, nenv, ad)
+        member sink.NotifyEnvWithScope(m,nenv,ad) = 
+            if allowedRange m then 
+                capturedEnvs.Add((m,nenv,ad)) 
 
         member sink.NotifyExprHasType(endPos,ty,denv,nenv,ad,m) = 
             if allowedRange m then 

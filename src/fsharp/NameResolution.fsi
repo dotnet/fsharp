@@ -219,9 +219,9 @@ type internal CapturedNameResolution =
 [<Class>]
 type internal TcResolutions = 
 
-    /// Name resolution environments indexed by line number. 
-    /// Regions may overlap, in which case the smallest region applicable should be used.
-    member CapturedEnvsByLine : ResizeArray<ResizeArray<range * NameResolutionEnv * AccessorDomain>>
+    /// Name resolution environments for every interesting region in the file. These regions may
+    /// overlap, in which case the smallest region applicable should be used.
+    member CapturedEnvs : ResizeArray<range * NameResolutionEnv * AccessorDomain>
 
     /// Information of exact types found for expressions, that can be to the left of a dot.
     /// typ - the inferred type for an expression
