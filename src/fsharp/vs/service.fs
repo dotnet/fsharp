@@ -2251,27 +2251,16 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                     hash
             })
 
-    static let fileLock = obj()
-    
-    static let log (file, _, version) msg =
-        lock fileLock <| fun _ ->
-            File.AppendAllText(@"e:\withFileCheckLock.txt", sprintf "%O (%s, %d): %s\n" DateTime.Now (Path.GetFileName file) version msg)
-
     /// Ensure that `f` is not called in parallel for given (file * project * version).
     let withFileCheckLock(key: FilePath * ProjectPath * FileVersion) (f: Async<'T>) : Async<'T> =
         async {
-            log key "spinning trying to add"
             while not (beingCheckedFileCache.TryAdd(key, ())) do
                 do! Async.Sleep 1000
-            log key "added"
             try
-                log key "calling fun"
                 return! f
             finally
-                log key "removing"
                 let dummy = ref ()
                 beingCheckedFileCache.TryRemove(key, dummy) |> ignore
-                log key "removed"
         }
 
     let lockObj = obj()
@@ -2391,6 +2380,15 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                 Some (parseResults,checkResults)
             | _ -> None
 
+    /// 1. Asynchronously waits for file "lock"
+    ///
+    /// 2. Checks that cached results become available until we were waiting
+    ///
+    /// 3. Type checks the file
+    ///
+    /// 4. Records results in the cache
+    ///
+    /// 5. Starts whole project background compilation
     member private bc.CheckOneFile
         (parseResults: FSharpParseFileResults,
          source: string,

@@ -417,16 +417,9 @@ module internal Extensions =
             }
 
         member this.ParseAndCheckDocument(filePath: string, textVersionHash: int, sourceText: string, options: FSharpProjectOptions, allowStaleResults: bool) : Async<(FSharpParseFileResults * Ast.ParsedInput * FSharpCheckFileResults) option> =
-            let log x = 
-                let file = Path.GetFileName filePath
-                Printf.kprintf (fun s -> Logging.logInfof "[ParseAndCheckDocument(%s)] %s" file s) x
-            
             let parseAndCheckFile =
                 async {
-                    use! __ = Async.OnCancel(fun _ -> log "parseAndCheckFile has been cancelled")
-                    log "--> ParseAndCheckFileInProject"
                     let! parseResults, checkFileAnswer = this.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText, options)
-                    log "<-- ParseAndCheckFileInProject"
                     return
                         match checkFileAnswer with
                         | FSharpCheckFileAnswer.Aborted -> 
@@ -438,13 +431,10 @@ module internal Extensions =
             let tryGetFreshResultsWithTimeout(timeout: int) : Async<CheckResults> =
                 async {
                     try
-                        log "waiting for result for %d ms" timeout
                         let! worker = Async.StartChild(parseAndCheckFile, timeout)
-                        log "got result in %d ms" timeout
                         let! result = worker 
                         return Ready result
                     with :? TimeoutException ->
-                        log "DID NOT get result in %d ms" timeout
                         return StillRunning parseAndCheckFile
                 }
 
@@ -467,10 +457,8 @@ module internal Extensions =
                             async {
                                 match allowStaleResults, this.TryGetRecentCheckResultsForFile(filePath, options) with
                                 | true, Some (parseResults, checkFileResults, _) ->
-                                    log "returning stale results"
                                     return Some (parseResults, checkFileResults)
                                 | _ ->
-                                    log "stale results cannot be returned, waiting for `worker` to complete"
                                     return! worker
                             }
                     return bindParsedInput results
