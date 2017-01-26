@@ -417,59 +417,65 @@ module internal Extensions =
             }
 
         member this.ParseAndCheckDocument(filePath: string, textVersionHash: int, sourceText: string, options: FSharpProjectOptions, allowStaleResults: bool) : Async<(FSharpParseFileResults * Ast.ParsedInput * FSharpCheckFileResults) option> =
-            let log = 
+            let log x = 
                 let file = Path.GetFileName filePath
-                Printf.kprintf (fun s -> Logging.logInfof "[ParseAndCheckDocument(%s)] %s" file s)
-            async {
-                let! freshResults =
-                    async {
-                        let worker = 
-                            async {
-                                use! __ = Async.OnCancel(fun _ -> log "child has cancelled")
-                                log "--> ParseAndCheckFileInProject"
-                                let! parseResults, checkFileAnswer = this.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText, options)
-                                log "<-- ParseAndCheckFileInProject"
-                                let result =
-                                    match checkFileAnswer with
-                                    | FSharpCheckFileAnswer.Aborted -> 
-                                        None
-                                    | FSharpCheckFileAnswer.Succeeded(checkFileResults) ->
-                                        Some (parseResults, checkFileResults)
-                                return result
-                            }
-                        try
-                            log "waiting for result for 1 second"
-                            let! worker = Async.StartChild(worker, 1000)
-                            log "got result in 1 second"
-                            let! result = worker 
-                            return Ready result
-                        with :? TimeoutException ->
-                            log "DID NOT get result in 1 second"
-                            return StillRunning worker
-                    }
-                    
-                let! results = 
-                    match freshResults with
-                    | Ready x -> async.Return x
-                    | StillRunning worker ->
-                        async {
-                            match allowStaleResults, this.TryGetRecentCheckResultsForFile(filePath, options) with
-                            | true, Some (parseResults, checkFileResults, _) ->
-                                log "returning stale results"
-                                return Some (parseResults, checkFileResults)
-                            | _ ->
-                                log "stale results cannot be returned, waiting for `worker` to complete"
-                                return! worker
-                        }
+                Printf.kprintf (fun s -> Logging.logInfof "[ParseAndCheckDocument(%s)] %s" file s) x
+            
+            let parseAndCheckFile =
+                async {
+                    use! __ = Async.OnCancel(fun _ -> log "parseAndCheckFile has been cancelled")
+                    log "--> ParseAndCheckFileInProject"
+                    let! parseResults, checkFileAnswer = this.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText, options)
+                    log "<-- ParseAndCheckFileInProject"
+                    return
+                        match checkFileAnswer with
+                        | FSharpCheckFileAnswer.Aborted -> 
+                            None
+                        | FSharpCheckFileAnswer.Succeeded(checkFileResults) ->
+                            Some (parseResults, checkFileResults)
+                }
 
-                return 
-                    match results with
-                    | Some (parseResults, checkResults) ->
-                        match parseResults.ParseTree with
-                        | Some parsedInput -> Some (parseResults, parsedInput, checkResults)
-                        | None -> None
+            let tryGetFreshResultsWithTimeout(timeout: int) : Async<CheckResults> =
+                async {
+                    try
+                        log "waiting for result for %d ms" timeout
+                        let! worker = Async.StartChild(parseAndCheckFile, timeout)
+                        log "got result in %d md" timeout
+                        let! result = worker 
+                        return Ready result
+                    with :? TimeoutException ->
+                        log "DID NOT get result in %d ms" timeout
+                        return StillRunning parseAndCheckFile
+                }
+
+            let bindParsedInput(results: (FSharpParseFileResults * FSharpCheckFileResults) option) =
+                match results with
+                | Some(parseResults, checkResults) ->
+                    match parseResults.ParseTree with
+                    | Some parsedInput -> Some (parseResults, parsedInput, checkResults)
                     | None -> None
-            }
+                | None -> None
+
+            if allowStaleResults then
+                async {
+                    let! freshResults = tryGetFreshResultsWithTimeout 1000
+                    
+                    let! results =
+                        match freshResults with
+                        | Ready x -> async.Return x
+                        | StillRunning worker ->
+                            async {
+                                match allowStaleResults, this.TryGetRecentCheckResultsForFile(filePath, options) with
+                                | true, Some (parseResults, checkFileResults, _) ->
+                                    log "returning stale results"
+                                    return Some (parseResults, checkFileResults)
+                                | _ ->
+                                    log "stale results cannot be returned, waiting for `worker` to complete"
+                                    return! worker
+                            }
+                    return bindParsedInput results
+                }
+            else parseAndCheckFile |> Async.map bindParsedInput
 
         member this.ParseAndCheckDocument(document: Document, options: FSharpProjectOptions, allowStaleResults: bool, ?sourceText: SourceText) : Async<(FSharpParseFileResults * Ast.ParsedInput * FSharpCheckFileResults) option> =
             async {
