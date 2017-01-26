@@ -2392,9 +2392,8 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                                                 loadClosure,tcPrior.Errors,reactorOps,checkAlive,textSnapshotInfo)
                 
                     let checkAnswer = MakeCheckFileAnswer(tcFileResult, options, builder, creationErrors, parseResults.Errors, tcErrors)
-                    do! execWithReactorAsync <| fun _ -> 
-                        bc.RecordTypeCheckFileInProjectResults(filename,options,parseResults,fileVersion,tcPrior.TimeStamp,Some checkAnswer,source)
-                        bc.ImplicitlyStartCheckProjectInBackground(options)
+                    bc.RecordTypeCheckFileInProjectResults(filename,options,parseResults,fileVersion,tcPrior.TimeStamp,Some checkAnswer,source)
+                    bc.ImplicitlyStartCheckProjectInBackground(options)
                     return Some checkAnswer
                 | None -> return None  // the incremental builder was not up to date
        }
@@ -2420,9 +2419,8 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                         Parser.TypeCheckOneFile(parseResults,source,filename,options.ProjectFileName,tcPrior.TcConfig,tcPrior.TcGlobals,tcPrior.TcImports,tcPrior.TcState,
                                                 loadClosure,tcPrior.Errors,reactorOps,(fun () -> builder.IsAlive),textSnapshotInfo)
                     let checkAnswer = MakeCheckFileAnswer(tcFileResult, options, builder, creationErrors, parseResults.Errors, tcErrors)
-                    do! execWithReactorAsync <| fun _ -> 
-                        bc.RecordTypeCheckFileInProjectResults(filename,options,parseResults,fileVersion,tcPrior.TimeStamp,Some checkAnswer,source)
-                        bc.ImplicitlyStartCheckProjectInBackground(options)
+                    bc.RecordTypeCheckFileInProjectResults(filename,options,parseResults,fileVersion,tcPrior.TimeStamp,Some checkAnswer,source)
+                    bc.ImplicitlyStartCheckProjectInBackground(options)
                     return checkAnswer 
         }
 
@@ -2456,9 +2454,8 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                                                 loadClosure,tcPrior.Errors,reactorOps,(fun () -> builder.IsAlive),textSnapshotInfo)
 
                     let checkAnswer = MakeCheckFileAnswer(tcFileResult, options, builder, creationErrors, parseResults.Errors, tcErrors)
-                    do! execWithReactorAsync <| fun _ -> 
-                        bc.RecordTypeCheckFileInProjectResults(filename,options,parseResults,fileVersion,tcPrior.TimeStamp,Some checkAnswer,source)
-                        bc.ImplicitlyStartCheckProjectInBackground(options)
+                    bc.RecordTypeCheckFileInProjectResults(filename,options,parseResults,fileVersion,tcPrior.TimeStamp,Some checkAnswer,source)
+                    bc.ImplicitlyStartCheckProjectInBackground(options)
                     return parseResults, checkAnswer
         }
 
