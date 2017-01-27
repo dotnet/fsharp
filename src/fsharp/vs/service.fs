@@ -2278,7 +2278,10 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
         | Some (FSharpCheckFileAnswer.Succeeded typedResults) -> 
             foregroundTypeCheckCount <- foregroundTypeCheckCount + 1
             locked (fun () -> 
-                parseAndCheckFileInProjectCachePossiblyStale.Set((filename,options),(parseResults,typedResults,fileVersion))            
+                parseAndCheckFileInProjectCachePossiblyStale.Set((filename,options),(parseResults,typedResults,fileVersion))  
+                
+                Console.WriteLine(sprintf "parseAndCheckFileInProjectCache SET key = %+A" (filename,source,options))
+                
                 parseAndCheckFileInProjectCache.Set((filename,source,options),(parseResults,typedResults,fileVersion,priorTimeStamp))
                 parseFileInProjectCache.Set((filename,source,options),parseResults))
 
@@ -2351,6 +2354,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
     member bc.GetCachedCheckFileResult(builder: IncrementalBuilder,filename,source,options) =
             // Check the cache. We can only use cached results when there is no work to do to bring the background builder up-to-date
             let cachedResults = locked (fun () -> parseAndCheckFileInProjectCache.TryGet((filename,source,options)))
+
             match cachedResults with 
 //            | Some (parseResults, checkResults, _, _) when builder.AreCheckResultsBeforeFileInProjectReady(filename) -> 
             | Some (parseResults, checkResults,_,priorTimeStamp) 
@@ -2411,7 +2415,6 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                                                             tcPrior.TcState, loadClosure, tcPrior.Errors, reactorOps, (fun () -> builder.IsAlive), textSnapshotInfo)
                                 let checkAnswer = MakeCheckFileAnswer(tcFileResult, options, builder, creationErrors, parseResults.Errors, tcErrors)
                                 bc.RecordTypeCheckFileInProjectResults(fileName, options, parseResults, fileVersion, tcPrior.TimeStamp, Some checkAnswer, source)
-                                bc.ImplicitlyStartCheckProjectInBackground(options)
                                 return checkAnswer
                             finally
                                 let dummy = ref ()
@@ -2430,24 +2433,27 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
     member bc.CheckFileInProjectIfReady(parseResults: FSharpParseFileResults, filename, fileVersion, source, options, textSnapshotInfo: obj option) =
         let execWithReactorAsync action = reactor.EnqueueAndAwaitOpAsync("CheckFileInProjectIfReady " + filename, action)
         async {
-            let! cachedResults = execWithReactorAsync <| fun _ ->
-                match incrementalBuildersCache.TryGetAny options with
-                | Some (Some builder, creationErrors, _) ->
-                    match bc.GetCachedCheckFileResult(builder, filename, source, options) with
-                    | Some (_, checkResults) -> Some (builder, creationErrors, Some (FSharpCheckFileAnswer.Succeeded checkResults))
-                    | _ -> Some (builder, creationErrors, None)
-                | _ -> None // the builder wasn't ready
-                    
-            match cachedResults with
-            | None -> return None
-            | Some (_, _, Some x) -> return Some x
-            | Some (builder, creationErrors, None) ->
-                let! tcPrior = execWithReactorAsync <| fun _ -> builder.GetCheckResultsBeforeFileInProjectIfReady filename
-                match tcPrior with
-                | Some tcPrior -> 
-                    let! checkResults = bc.CheckOneFile(parseResults, source, filename, options, textSnapshotInfo, fileVersion, builder, tcPrior, creationErrors)
-                    return Some checkResults
-                | None -> return None  // the incremental builder was not up to date
+            try
+                let! cachedResults = execWithReactorAsync <| fun _ ->
+                    match incrementalBuildersCache.TryGetAny options with
+                    | Some (Some builder, creationErrors, _) ->
+                        match bc.GetCachedCheckFileResult(builder, filename, source, options) with
+                        | Some (_, checkResults) -> Some (builder, creationErrors, Some (FSharpCheckFileAnswer.Succeeded checkResults))
+                        | _ -> Some (builder, creationErrors, None)
+                    | _ -> None // the builder wasn't ready
+                        
+                match cachedResults with
+                | None -> return None
+                | Some (_, _, Some x) -> return Some x
+                | Some (builder, creationErrors, None) ->
+                    let! tcPrior = execWithReactorAsync <| fun _ -> builder.GetCheckResultsBeforeFileInProjectIfReady filename
+                    match tcPrior with
+                    | Some tcPrior -> 
+                        let! checkResults = bc.CheckOneFile(parseResults, source, filename, options, textSnapshotInfo, fileVersion, builder, tcPrior, creationErrors)
+                        return Some checkResults
+                    | None -> return None  // the incremental builder was not up to date
+            finally 
+                bc.ImplicitlyStartCheckProjectInBackground(options)
         }
 
     /// Type-check the result obtained by parsing. Force the evaluation of the antecedent type checking context if needed.
@@ -2466,7 +2472,9 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                 | Some (_, checkResults) -> return FSharpCheckFileAnswer.Succeeded checkResults
                 | _ ->
                     let! tcPrior = execWithReactorAsync <| fun _ -> builder.GetCheckResultsBeforeFileInProject (filename, ct)
-                    return! bc.CheckOneFile(parseResults, source, filename, options, textSnapshotInfo, fileVersion, builder, tcPrior, creationErrors)
+                    let! checkAnswer = bc.CheckOneFile(parseResults, source, filename, options, textSnapshotInfo, fileVersion, builder, tcPrior, creationErrors)
+                    bc.ImplicitlyStartCheckProjectInBackground(options)
+                    return checkAnswer
         }
 
     /// Parses and checks the source file and returns untyped AST and check results.
@@ -2495,6 +2503,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                      
                     let parseResults = FSharpParseFileResults(parseErrors, inputOpt, anyErrors, builder.Dependencies)
                     let! checkResults = bc.CheckOneFile(parseResults, source, filename, options, textSnapshotInfo, fileVersion, builder, tcPrior, creationErrors)
+                    bc.ImplicitlyStartCheckProjectInBackground(options)
                     return parseResults, checkResults
         }
 
