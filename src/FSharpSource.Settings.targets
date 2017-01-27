@@ -121,9 +121,9 @@
     <FsiToolExe>fsi.exe</FsiToolExe>
     <FsLexToolExe>fslex.exe</FsLexToolExe>
     <FsYaccToolExe>fsyacc.exe</FsYaccToolExe>
-    <RoslynVersion>2.0.0-rc3-61225-01</RoslynVersion>
-    <RoslynVSBinariesVersion>14.0</RoslynVSBinariesVersion>
-    <RoslynVSPackagesVersion>14.3.25407</RoslynVSPackagesVersion>
+    <RoslynVersion>2.0.0-rc4-61324-09</RoslynVersion>
+    <RoslynVSBinariesVersion>15.0</RoslynVSBinariesVersion>
+    <RoslynVSPackagesVersion>15.0.26105-RC3</RoslynVSPackagesVersion>
 
     <!-- FSharp.Compiler.Tools is currently only used to get a working FSI.EXE to execute some scripts during the build -->
     <!-- The LKG FSI.EXE requires MSBuild 15 to be installed, which is painful -->
