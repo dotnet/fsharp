@@ -431,7 +431,7 @@ module internal Extensions =
                             Some (parseResults, checkFileResults)
                 }
 
-            let tryGetFreshResultsWithTimeout(timeout: int) : Async<CheckResults> =
+            let tryGetFreshResultsWithTimeout() : Async<CheckResults> =
                 async {
                     try
                         let! worker = Async.StartChild(parseAndCheckFile, getFreshFileCheckResultsTimeoutMillis)
@@ -451,7 +451,7 @@ module internal Extensions =
 
             if allowStaleResults then
                 async {
-                    let! freshResults = tryGetFreshResultsWithTimeout 1000
+                    let! freshResults = tryGetFreshResultsWithTimeout()
                     
                     let! results =
                         match freshResults with
