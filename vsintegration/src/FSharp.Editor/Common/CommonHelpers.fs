@@ -385,6 +385,7 @@ module internal Extensions =
     open System
     open System.IO
     open Microsoft.FSharp.Compiler.Ast
+    open Microsoft.FSharp.Compiler.Lib
     open Microsoft.VisualStudio.FSharp.Editor.Logging
 
     type System.IServiceProvider with
@@ -400,6 +401,8 @@ module internal Extensions =
         | Ready of (FSharpParseFileResults * FSharpCheckFileResults) option
         | StillRunning of Async<(FSharpParseFileResults * FSharpCheckFileResults) option>
 
+    let getFreshFileCheckResultsTimeoutMillis = GetEnvInteger "VFT_GetFreshFileCheckResultsTimeoutMillis" 1000
+    
     type FSharpChecker with
         member this.ParseDocument(document: Document, options: FSharpProjectOptions, sourceText: string) =
             asyncMaybe {
@@ -431,7 +434,7 @@ module internal Extensions =
             let tryGetFreshResultsWithTimeout(timeout: int) : Async<CheckResults> =
                 async {
                     try
-                        let! worker = Async.StartChild(parseAndCheckFile, timeout)
+                        let! worker = Async.StartChild(parseAndCheckFile, getFreshFileCheckResultsTimeoutMillis)
                         let! result = worker 
                         return Ready result
                     with :? TimeoutException ->
