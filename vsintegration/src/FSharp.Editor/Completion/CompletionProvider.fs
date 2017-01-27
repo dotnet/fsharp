@@ -35,6 +35,11 @@ open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons
 
+open Microsoft.VisualStudio.FSharp.Editor.Logging
+open System.Diagnostics
+
+#nowarn "1182"
+
 type internal FSharpCompletionProvider
     (
         workspace: Workspace,
@@ -46,6 +51,7 @@ type internal FSharpCompletionProvider
 
     static let completionTriggers = [| '.' |]
     static let declarationItemsCache = ConditionalWeakTable<string, FSharpDeclarationListItem>()
+    static let [<Literal>] NameInCodePropName = "NameInCode"
     
     let xmlMemberIndexService = serviceProvider.GetService(typeof<IVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
@@ -55,75 +61,81 @@ type internal FSharpCompletionProvider
         // Skip if we are at the start of a document
         if caretPosition = 0 then
             false
-
+        
         // Skip if it was triggered by an operation other than insertion
         elif not (trigger = CompletionTriggerKind.Insertion) then
             false
-
+        
         // Skip if we are not on a completion trigger
         else
-          let triggerPosition = caretPosition - 1
-          let c = sourceText.[triggerPosition]
-          
-          if not (completionTriggers |> Array.contains c) then
-            false
-          
-          // do not trigger completion if it's not single dot, i.e. range expression
-          elif triggerPosition > 0 && sourceText.[triggerPosition - 1] = '.' then
-            false
+            let triggerPosition = caretPosition - 1
+            let c = sourceText.[triggerPosition]
+            
+            if not (completionTriggers |> Array.contains c) then
+                false
+            
+            // do not trigger completion if it's not single dot, i.e. range expression
+            elif triggerPosition > 0 && sourceText.[triggerPosition - 1] = '.' then
+                false
+            
+            // Trigger completion if we are on a valid classification type
+            else
+                let documentId, filePath, defines = getInfo()
+                let textLines = sourceText.Lines
+                let triggerLine = textLines.GetLineFromPosition(triggerPosition)
 
-          // Trigger completion if we are on a valid classification type
-          else
-            let documentId, filePath,  defines = getInfo()
-            let textLines = sourceText.Lines
-            let triggerLine = textLines.GetLineFromPosition(triggerPosition)
-            let classifiedSpanOption =
-                CommonHelpers.getColorizationData(documentId, sourceText, triggerLine.Span, Some(filePath), defines, CancellationToken.None)
-                |> Seq.tryFind(fun classifiedSpan -> classifiedSpan.TextSpan.Contains(triggerPosition))
-
-            match classifiedSpanOption with
-            | None -> false
-            | Some(classifiedSpan) ->
-                match classifiedSpan.ClassificationType with
-                | ClassificationTypeNames.Comment
-                | ClassificationTypeNames.StringLiteral
-                | ClassificationTypeNames.ExcludedCode
-                | ClassificationTypeNames.NumericLiteral -> false
-                | _ -> true // anything else is a valid classification type
+                let classifiedSpanOption =
+                    CommonHelpers.getColorizationData(documentId, sourceText, triggerLine.Span, Some(filePath), defines, CancellationToken.None)
+                    |> Seq.tryFind(fun classifiedSpan -> classifiedSpan.TextSpan.Contains(triggerPosition))
+                
+                match classifiedSpanOption with
+                | None -> false
+                | Some(classifiedSpan) ->
+                    match classifiedSpan.ClassificationType with
+                    | ClassificationTypeNames.Comment
+                    | ClassificationTypeNames.StringLiteral
+                    | ClassificationTypeNames.ExcludedCode
+                    | ClassificationTypeNames.NumericLiteral -> false
+                    | _ -> true // anything else is a valid classification type
 
     static member ProvideCompletionsAsyncAux(checker: FSharpChecker, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, textVersionHash: int) = 
-        async {
-            let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
-            match parseResults.ParseTree, checkFileAnswer with
-            | _, FSharpCheckFileAnswer.Aborted
-            | None, _ -> return None
-            | Some parsedInput, FSharpCheckFileAnswer.Succeeded(checkFileResults) ->
-                let textLines = sourceText.Lines
-                let caretLinePos = textLines.GetLinePosition(caretPosition)
-                let entityKind = UntypedParseImpl.GetEntityKind(Pos.fromZ caretLinePos.Line caretLinePos.Character, parsedInput)
+        asyncMaybe {
+            let! parseResults, parsedInput, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true)
+
+            let textLines = sourceText.Lines
+            let caretLinePos = textLines.GetLinePosition(caretPosition)
+            let entityKind = UntypedParseImpl.GetEntityKind(Pos.fromZ caretLinePos.Line caretLinePos.Character, parsedInput)
+            
+            let caretLine = textLines.GetLineFromPosition(caretPosition)
+            let fcsCaretLineNumber = Line.fromZ caretLinePos.Line  // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
+            let caretLineColumn = caretLinePos.Character
+            
+            let qualifyingNames, partialName = QuickParse.GetPartialLongNameEx(caretLine.ToString(), caretLineColumn - 1) 
+            
+            let! declarations =
+                checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLineColumn, caretLine.ToString(), qualifyingNames, partialName) |> liftAsync
+            
+            let results = List<CompletionItem>()
+            
+            for declarationItem in declarations.Items do
+                let glyph = CommonRoslynHelpers.FSharpGlyphToRoslynGlyph declarationItem.GlyphMajor
+                let name =
+                    match entityKind with
+                    | Some EntityKind.Attribute when declarationItem.IsAttribute && declarationItem.Name.EndsWith "Attribute"  ->
+                        declarationItem.Name.[0..declarationItem.Name.Length - attributeSuffixLength - 1] 
+                    | _ -> declarationItem.Name
+                let completionItem = CommonCompletionItem.Create(name, glyph = Nullable glyph)
                 
-                let caretLine = textLines.GetLineFromPosition(caretPosition)
-                let fcsCaretLineNumber = Line.fromZ caretLinePos.Line  // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
-                let caretLineColumn = caretLinePos.Character
-                
-                let qualifyingNames, partialName = QuickParse.GetPartialLongNameEx(caretLine.ToString(), caretLineColumn - 1) 
-                let! declarations = checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLineColumn, caretLine.ToString(), qualifyingNames, partialName)
-                
-                let results = List<CompletionItem>()
-                
-                for declarationItem in declarations.Items do
-                    let glyph = CommonRoslynHelpers.FSharpGlyphToRoslynGlyph declarationItem.GlyphMajor
-                    let name = 
-                        match entityKind with
-                        | Some EntityKind.Attribute when declarationItem.IsAttribute && declarationItem.Name.EndsWith "Attribute"  ->
-                            declarationItem.Name.[0..declarationItem.Name.Length - attributeSuffixLength - 1] 
-                        | _ -> declarationItem.Name
-                    let completionItem = CommonCompletionItem.Create(name, glyph = Nullable glyph)
-                    declarationItemsCache.Remove(completionItem.DisplayText) |> ignore // clear out stale entries if they exist
-                    declarationItemsCache.Add(completionItem.DisplayText, declarationItem)
-                    results.Add(completionItem)
-                
-                return Some results
+                let completionItem =
+                    if declarationItem.Name <> declarationItem.NameInCode then
+                        completionItem.AddProperty(NameInCodePropName, declarationItem.NameInCode)
+                    else completionItem
+
+                declarationItemsCache.Remove(completionItem.DisplayText) |> ignore // clear out stale entries if they exist
+                declarationItemsCache.Add(completionItem.DisplayText, declarationItem)
+                results.Add(completionItem)
+            
+            return results
         }
 
     override this.ShouldTriggerCompletion(sourceText: SourceText, caretPosition: int, trigger: CompletionTrigger, _: OptionSet) =
@@ -158,6 +170,14 @@ type internal FSharpCompletionProvider
             else
                 return CompletionDescription.Empty
         } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
+
+    override this.GetChangeAsync(_, item, _, _) : Task<CompletionChange> =
+        let nameInCode =
+            match item.Properties.TryGetValue NameInCodePropName with
+            | true, x -> x
+            | _ -> item.DisplayText
+
+        Task.FromResult(CompletionChange.Create(new TextChange(item.Span, nameInCode)))
 
 type internal FSharpCompletionService
     (

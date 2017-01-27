@@ -1992,7 +1992,7 @@ and ArgsEquivInsideUndo (csenv:ConstraintSolverEnv) isConstraint calledArg (Call
     if not (typeEquiv csenv.g calledArgTy callerArgTy) then ErrorD(Error(FSComp.SR.csArgumentTypesDoNotMatch(),m)) else
     CompleteD
 
-and ReportNoCandidatesError (csenv:ConstraintSolverEnv) (nUnnamedCallerArgs,nNamedCallerArgs) methodName ad (calledMethGroup:CalledMeth<_> list) =
+and ReportNoCandidatesError (csenv:ConstraintSolverEnv) (nUnnamedCallerArgs,nNamedCallerArgs) methodName ad (calledMethGroup:CalledMeth<_> list) isSequential =
 
     let amap = csenv.amap
     let m    = csenv.m
@@ -2054,7 +2054,7 @@ and ReportNoCandidatesError (csenv:ConstraintSolverEnv) (nUnnamedCallerArgs,nNam
                         cmeth.ArgSets
                         |> List.exists (fun argSet ->
                             argSet.UnnamedCallerArgs 
-                            |> List.exists (fun c -> c.Expr.ToString().EndsWith "Sequential"))
+                            |> List.exists (fun c -> isSequential c.Expr))
 
                     if couldBeNameArgs then
                         Error (FSComp.SR.csCtorSignatureMismatchArityProp(methodName, nReqd, nActual, signature), m)
@@ -2106,6 +2106,13 @@ and ReportNoCandidatesError (csenv:ConstraintSolverEnv) (nUnnamedCallerArgs,nNam
         Error (msg,m)
     |> ErrorD
 
+and ReportNoCandidatesErrorExpr csenv callerArgCounts methodName ad calledMethGroup =
+    let isSequential e = match e with | Expr.Sequential (_,_,_,_,_) -> true | _ -> false
+    ReportNoCandidatesError csenv callerArgCounts methodName ad calledMethGroup isSequential
+
+and ReportNoCandidatesErrorSynExpr csenv callerArgCounts methodName ad calledMethGroup =
+    let isSequential e = match e with | SynExpr.Sequential (_,_,_,_,_) -> true | _ -> false
+    ReportNoCandidatesError csenv callerArgCounts methodName ad calledMethGroup isSequential
 
 // Resolve the overloading of a method 
 // This is used after analyzing the types of arguments 
@@ -2138,7 +2145,7 @@ and ResolveOverloading
             None, ErrorD (Error (FSComp.SR.csMethodNotFound(methodName),m)), NoTrace
 
         | _,[] when not isOpConversion -> 
-            None, ReportNoCandidatesError csenv callerArgCounts methodName ad calledMethGroup, NoTrace
+            None, ReportNoCandidatesErrorExpr csenv callerArgCounts methodName ad calledMethGroup, NoTrace
             
         | _,_ -> 
 
@@ -2447,7 +2454,7 @@ let UnifyUniqueOverloading
     | [],_ -> 
         ErrorD (Error (FSComp.SR.csMethodNotFound(methodName),m))
     | _,[] -> 
-        ReportNoCandidatesError csenv callerArgCounts methodName ad calledMethGroup 
+        ReportNoCandidatesErrorSynExpr csenv callerArgCounts methodName ad calledMethGroup 
         ++ (fun () -> ResultD false)
     | _ -> 
         ResultD false

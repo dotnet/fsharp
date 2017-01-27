@@ -35,10 +35,8 @@ let AssertContainsInOrder(s:string,cs:string list) =
             containsInOrderFrom index expects
     containsInOrderFrom 0 cs
     
-let AssertContains(s:string,c) =
-    if not (s.Contains(c)) then
-        printf "Expected:\n%s\n\nto contain:\n%s" s c
-        Assert.Fail()
+let AssertContains(value: string, substring: string) =
+    Assert.That(value, Contains.Substring substring)
         
 let AssertArrayContainsPartialMatchOf(a:string array,c) =
     let found = ref false

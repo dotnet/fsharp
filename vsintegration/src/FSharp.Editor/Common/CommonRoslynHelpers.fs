@@ -8,6 +8,7 @@ open System.Collections.Generic
 open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
+open Microsoft.CodeAnalysis.Diagnostics
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Layout
 open Microsoft.FSharp.Compiler.SourceCodeServices
@@ -98,12 +99,16 @@ module internal CommonRoslynHelpers =
         let emptyString = LocalizableString.op_Implicit("")
         let description = LocalizableString.op_Implicit(error.Message)
         let severity = if error.Severity = FSharpErrorSeverity.Error then DiagnosticSeverity.Error else DiagnosticSeverity.Warning
-        let descriptor = new DiagnosticDescriptor(id, emptyString, description, error.Subcategory, severity, true, emptyString, String.Empty, null)
+        let customTags = 
+            match error.ErrorNumber with
+            | 1182 -> DiagnosticCustomTags.Unnecessary
+            | _ -> null
+        let descriptor = new DiagnosticDescriptor(id, emptyString, description, error.Subcategory, severity, true, emptyString, String.Empty, customTags)
         Diagnostic.Create(descriptor, location)
 
     let FSharpGlyphToRoslynGlyph = function
-        // FSROSLYNTODO: This doesn't yet reflect pulbic/private/internal into the glyph
-        // FSROSLYNTODO: We should really use FSharpSymbol information here.  But GetDeclarationListInfo doesn't provide it, and switch to GetDeclarationListSymbols is a bit large at the moment
+        // FSROSLYNTODO: This doesn't yet reflect public/private/internal into the glyph
+        // FSROSLYNTODO: We should really use FSharpSymbol information here. But GetDeclarationListInfo doesn't provide it, and switch to GetDeclarationListSymbols is a bit large at the moment
         | GlyphMajor.Class -> Glyph.ClassPublic
         | GlyphMajor.Constant -> Glyph.ConstantPublic
         | GlyphMajor.Delegate -> Glyph.DelegatePublic
@@ -127,11 +132,89 @@ module internal CommonRoslynHelpers =
         | GlyphMajor.Error -> Glyph.Error
         | _ -> Glyph.ClassPublic
 
+    let inline (|Public|Internal|Protected|Private|) (a: FSharpAccessibility) =
+        if a.IsPublic then Public
+        elif a.IsInternal then Internal
+        elif a.IsPrivate then Private
+        else Protected
+
+    let GetGlyphForSymbol (symbol: FSharpSymbol) =
+        match symbol with
+        | :? FSharpUnionCase as x ->
+            match x.Accessibility with
+            | Public -> Glyph.EnumPublic
+            | Internal -> Glyph.EnumInternal
+            | Protected -> Glyph.EnumProtected
+            | Private -> Glyph.EnumPrivate
+        | :? FSharpActivePatternCase -> Glyph.EnumPublic
+        | :? FSharpField as x ->
+            match x.Accessibility with
+            | Public -> Glyph.FieldPublic
+            | Internal -> Glyph.FieldInternal
+            | Protected -> Glyph.FieldProtected
+            | Private -> Glyph.FieldPrivate
+        | :? FSharpParameter -> Glyph.Parameter
+        | :? FSharpMemberOrFunctionOrValue as x ->
+            if x.IsExtensionMember then
+                match x.Accessibility with
+                | Public -> Glyph.ExtensionMethodPublic
+                | Internal -> Glyph.ExtensionMethodInternal
+                | Protected -> Glyph.ExtensionMethodProtected
+                | Private -> Glyph.ExtensionMethodPrivate
+            elif x.IsProperty || x.IsPropertyGetterMethod || x.IsPropertySetterMethod then
+                match x.Accessibility with
+                | Public -> Glyph.PropertyPublic
+                | Internal -> Glyph.PropertyInternal
+                | Protected -> Glyph.PropertyProtected
+                | Private -> Glyph.PropertyPrivate
+            elif x.IsEvent then
+                match x.Accessibility with
+                | Public -> Glyph.EventPublic
+                | Internal -> Glyph.EventInternal
+                | Protected -> Glyph.EventProtected
+                | Private -> Glyph.EventPrivate
+            else
+                match x.Accessibility with
+                | Public -> Glyph.MethodPublic
+                | Internal -> Glyph.MethodInternal
+                | Protected -> Glyph.MethodProtected
+                | Private -> Glyph.MethodPrivate
+        | :? FSharpEntity as x ->
+            if x.IsFSharpModule then
+                match x.Accessibility with
+                | Public -> Glyph.ModulePublic
+                | Internal -> Glyph.ModuleInternal
+                | Protected -> Glyph.ModuleProtected
+                | Private -> Glyph.ModulePrivate
+            elif x.IsEnum || x.IsFSharpUnion then
+                match x.Accessibility with
+                | Public -> Glyph.EnumPublic
+                | Internal -> Glyph.EnumInternal
+                | Protected -> Glyph.EnumProtected
+                | Private -> Glyph.EnumPrivate
+            elif x.IsInterface then
+                match x.Accessibility with
+                | Public -> Glyph.InterfacePublic
+                | Internal -> Glyph.InterfaceInternal
+                | Protected -> Glyph.InterfaceProtected
+                | Private -> Glyph.InterfacePrivate
+            else
+                match x.Accessibility with
+                | Public -> Glyph.ClassPublic
+                | Internal -> Glyph.ClassInternal
+                | Protected -> Glyph.ClassProtected
+                | Private -> Glyph.ClassPrivate
+        | _ -> Glyph.None
+
+    let RangeToLocation (r: range, sourceText: SourceText, filePath: string) : Location =
+        let linePositionSpan = LinePositionSpan(LinePosition(Line.toZ r.StartLine, r.StartColumn), LinePosition(Line.toZ r.EndLine, r.EndColumn))
+        let textSpan = sourceText.Lines.GetTextSpan linePositionSpan
+        Location.Create(filePath, textSpan, linePositionSpan)
+
 [<AutoOpen>]
 module internal RoslynExtensions =
     type Project with
         /// The list of all other projects within the same solution that reference this project.
         member this.GetDependentProjects() =
-            [ for project in this.Solution.Projects do
-                if project.ProjectReferences |> Seq.exists (fun ref -> ref.ProjectId = this.Id) then 
-                    yield project ]
+            this.Solution.GetProjectDependencyGraph().GetProjectsThatDirectlyDependOnThisProject(this.Id)
+            |> Seq.map this.Solution.GetProject

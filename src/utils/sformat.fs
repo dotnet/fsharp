@@ -194,7 +194,37 @@ namespace Microsoft.FSharp.Text.StructuredFormat
     module TaggedTextOps =
 #endif
         let tagAlias = TaggedText.Alias
-        let tagClass = TaggedText.Class
+        let keywordTypes = 
+          [
+            "array";
+            "bigint";
+            "bool";
+            "byref";
+            "byte";
+            "char";
+            "decimal";
+            "double";
+            "float";
+            "float32";
+            "int";
+            "int16";
+            "int32";
+            "int64";
+            "list";
+            "nativeint";
+            "obj";
+            "sbyte";
+            "seq";
+            "single";
+            "string";
+            "unit";
+            "uint";
+            "uint16";
+            "uint32";
+            "uint64";
+            "unativeint";
+          ] |> Set.ofList
+        let tagClass name = if Set.contains name keywordTypes then TaggedText.Keyword name else TaggedText.Class name
         let tagUnionCase = TaggedText.UnionCase
         let tagDelegate = TaggedText.Delegate
         let tagEnum = TaggedText.Enum
@@ -216,7 +246,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         let tagProperty = TaggedText.Property
         let tagSpace = TaggedText.Space
         let tagStringLiteral = TaggedText.StringLiteral
-        let tagStruct = TaggedText.Struct
+        let tagStruct name = if Set.contains name keywordTypes then TaggedText.Keyword name else TaggedText.Struct name
         let tagTypeParameter = TaggedText.TypeParameter
         let tagText = TaggedText.Text
         let tagPunctuation = TaggedText.Punctuation
@@ -703,7 +733,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         // showL
         // ------------------------------------------------------------------------
 
-        let combine strs = System.String.Concat(Array.ofList(strs) : string[])
+        let combine (strs: string list) = System.String.Concat strs
         let showL opts leafFormatter layout =
             let push x rstrs = x::rstrs
             let z0 = [],0
@@ -1390,5 +1420,5 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 
 #if COMPILER
         /// Called 
-        let fsi_any_to_layout opts x = anyL ShowTopLevelBinding BindingFlags.Public opts x 
+        let fsi_any_to_layout opts x = anyL ShowTopLevelBinding BindingFlags.Public opts x
 #endif  

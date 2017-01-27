@@ -862,19 +862,8 @@ module internal ItemDescriptionsImpl =
             FSharpStructuredToolTipElement.Single(layout, xml)
 
         // F# and .NET properties
-        | Item.Property(_,pinfos) -> 
-            let pinfo = pinfos.Head
-            let rty = pinfo.GetPropertyType(amap,m) 
-            let rty = if pinfo.IsIndexer then mkRefTupledTy g (pinfo.GetParamTypes(amap, m)) --> rty else  rty 
-            let _, rty, _ = PrettyTypes.PrettifyTypes1 g rty
-            let layout =
-                wordL (tagText (FSComp.SR.typeInfoProperty())) ^^
-                NicePrint.layoutTyconRef denv (tcrefOfAppTy g pinfo.EnclosingType) ^^
-                SepL.dot ^^
-                wordL (tagProperty pinfo.PropertyName) ^^
-                RightL.colon ^^
-                NicePrint.layoutTy denv rty
-
+        | Item.Property(_, pinfo :: _) -> 
+            let layout = NicePrint.layoutPropInfoToFreeStyle g amap m denv pinfo
             FSharpStructuredToolTipElement.Single(layout, xml)
 
         // Custom operations in queries
@@ -1310,17 +1299,18 @@ module internal ItemDescriptionsImpl =
      
 /// An intellisense declaration
 [<Sealed>]
-type FSharpDeclarationListItem(name: string, glyphMajor: GlyphMajor, glyphMinor: GlyphMinor, info, isAttribute: bool) =
+type FSharpDeclarationListItem(name: string, nameInCode: string, glyphMajor: GlyphMajor, glyphMinor: GlyphMinor, info, isAttribute: bool) =
     let mutable descriptionTextHolder:FSharpToolTipText<_> option = None
     let mutable task = null
 
     member decl.Name = name
+    member decl.NameInCode = nameInCode
 
     member decl.StructuredDescriptionTextAsync = 
             match info with
             | Choice1Of2 (items, infoReader, m, denv, reactor:IReactorOperations, checkAlive) -> 
                     // reactor causes the lambda to execute on the background compiler thread, through the Reactor
-                    reactor.EnqueueAndAwaitOpAsync ("DescriptionTextAsync", fun _ct -> 
+                    reactor.EnqueueAndAwaitOpAsync ("StructuredDescriptionTextAsync", fun _ct -> 
                           // This is where we do some work which may touch TAST data structures owned by the IncrementalBuilder - infoReader, item etc. 
                           // It is written to be robust to a disposal of an IncrementalBuilder, in which case it will just return the empty string. 
                           // It is best to think of this as a "weak reference" to the IncrementalBuilder, i.e. this code is written to be robust to its
@@ -1380,9 +1370,9 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
         //     - show types with fewer generic parameters first
         //     - show types before over other related items - they usually have very useful XmlDocs 
         let items = 
-            items |> List.sortBy (fun d -> 
-                let n = 
-                    match d with  
+            items |> List.sortBy (fun x -> 
+                let name = 
+                    match x with  
                     | Item.Types (_,(TType_app(tcref,_) :: _)) -> 1 + tcref.TyparsNoRange.Length
                     // Put delegate ctors after types, sorted by #typars. RemoveDuplicateItems will remove FakeInterfaceCtor and DelegateCtor if an earlier type is also reported with this name
                     | Item.FakeInterfaceCtor (TType_app(tcref,_)) 
@@ -1390,7 +1380,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                     // Put type ctors after types, sorted by #typars. RemoveDuplicateItems will remove DefaultStructCtors if a type is also reported with this name
                     | Item.CtorGroup (_, (cinfo :: _)) -> 1000 + 10 * (tcrefOfAppTy g cinfo.EnclosingType).TyparsNoRange.Length 
                     | _ -> 0
-                (d.DisplayName,n))
+                x.DisplayName, name)
 
         // Remove all duplicates. We've put the types first, so this removes the DelegateCtor and DefaultStructCtor's.
         let items = items |> RemoveDuplicateItems g
@@ -1398,23 +1388,21 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
         if verbose then dprintf "service.ml: mkDecls: %d found groups after filtering\n" (List.length items); 
 
         // Group by display name
-        let items = items |> List.groupBy (fun d -> d.DisplayName) 
+        let items = items |> List.groupBy (fun x -> x.DisplayName) 
 
         // Filter out operators (and list)
         let items = 
             // Check whether this item looks like an operator.
-            let isOpItem(nm,item) = 
+            let isOperatorItem(name, item) = 
                 match item with 
                 | [Item.Value _]
-                | [Item.MethodGroup(_,[_],_)] -> 
-                    (IsOpName nm) && nm.[0]='(' && nm.[nm.Length-1]=')'
-                | [Item.UnionCase _] -> IsOpName nm
+                | [Item.MethodGroup(_,[_],_)] -> IsOperatorName name
+                | [Item.UnionCase _] -> IsOperatorName name
                 | _ -> false              
 
-            let isFSharpList nm = (nm = "[]") // list shows up as a Type and a UnionCase, only such entity with a symbolic name, but want to filter out of intellisense
+            let isFSharpList name = (name = "[]") // list shows up as a Type and a UnionCase, only such entity with a symbolic name, but want to filter out of intellisense
 
-            items |> List.filter (fun (nm,items) -> not (isOpItem(nm,items)) && not(isFSharpList nm)) 
-
+            items |> List.filter (fun (name, items) -> not (isOperatorItem(name, items)) && not (isFSharpList name)) 
 
         let decls = 
             // Filter out duplicate names
@@ -1423,11 +1411,19 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                 | [] -> failwith "Unexpected empty bag"
                 | items -> 
                     let glyphMajor, glyphMinor = GlyphOfItem(denv,items.Head)
-                    new FSharpDeclarationListItem(nm, glyphMajor, glyphMinor, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), IsAttribute infoReader items.Head))
+                    let name, nameInCode =
+                        if nm.StartsWith "( " && nm.EndsWith " )" then
+                            let cleanName = nm.[2..nm.Length - 3]
+                            cleanName, 
+                            if IsOperatorName nm then cleanName else "``" + cleanName + "``"
+                        else nm, nm
+
+                    new FSharpDeclarationListItem(name, nameInCode, glyphMajor, glyphMinor, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), IsAttribute infoReader items.Head))
 
         new FSharpDeclarationListInfo(Array.ofList decls)
     
     static member Error msg = 
         new FSharpDeclarationListInfo(
-                [| new FSharpDeclarationListItem("<Note>", GlyphMajor.Error, GlyphMinor.Normal, Choice2Of2 (FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError msg]), false) |] )
+                [| new FSharpDeclarationListItem("<Note>", "<Note>", GlyphMajor.Error, GlyphMinor.Normal, 
+                                                 Choice2Of2 (FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError msg]), false) |])
     static member Empty = new FSharpDeclarationListInfo([| |])

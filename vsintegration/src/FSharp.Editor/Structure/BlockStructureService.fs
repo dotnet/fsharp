@@ -38,7 +38,6 @@ module internal BlockStructure =
     | Scope.Record
     | Scope.Interface
     | Scope.TypeExtension
-    | Scope.SimpleType
     | Scope.RecordDefn
     | Scope.CompExpr
     | Scope.ObjExpr
