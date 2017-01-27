@@ -114,17 +114,6 @@ type internal ProjectInfoManager
     member this.UpdateProjectInfo(projectId: ProjectId, site: IProjectSite, workspace: Workspace) =
         let extraProjectInfo = Some(box workspace)
         let options = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(site, site.ProjectFileName(), extraProjectInfo, serviceProvider)
-
-        //lock this <| fun _ ->
-        //    let fileName = sprintf @"e:\%s.options" (Path.GetFileName(site.ProjectFileName()))
-        //    File.WriteAllText(fileName, sprintf "%+A" options)
-        //    File.AppendAllText(fileName,
-        //        let sb =
-        //            options.ProjectFileNames 
-        //            |> Seq.fold (fun (sb: Text.StringBuilder) file -> sb.AppendLine().AppendFormat("\"{0}\"", file)) 
-        //               (Text.StringBuilder().AppendLine().AppendLine("ALL PROJECT FILE NAMES =").AppendLine("[|"))
-        //        sb.AppendLine("|]").ToString())
-
         checkerProvider.Checker.InvalidateConfiguration(options)
         projectTable.[projectId] <- options
 

@@ -14,7 +14,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>LanguageServiceProfiling</RootNamespace>
     <AssemblyName>LanguageServiceProfiling</AssemblyName>
-    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <TargetFSharpCoreVersion>4.4.1.0</TargetFSharpCoreVersion>
     <Name>LanguageServiceProfiling</Name>
