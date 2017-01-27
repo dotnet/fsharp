@@ -2241,7 +2241,10 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
 
     /// Holds keys for files being currently checked. It's used to prevent checking same file in parallel (interliveing chunck queued to Reactor).
     let beingCheckedFileTable = 
-        System.Collections.Concurrent.ConcurrentDictionary<FilePath * ProjectPath * FileVersion, unit>()
+        System.Collections.Concurrent.ConcurrentDictionary<FilePath * FSharpProjectOptions * FileVersion, unit>
+            (HashIdentity.FromFunctions
+                hash
+                (fun (f1, o1, v1) (f2, o2, v2) -> f1 = f2 && v1 = v2 && FSharpProjectOptions.AreSameForChecking(o1, o2)))
 
     let lockObj = obj()
     let locked f = lock lockObj f
@@ -2385,7 +2388,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
          creationErrors : FSharpErrorInfo list) = 
     
         async {
-            let beingCheckedFileKey = fileName, options.ProjectFileName, fileVersion
+            let beingCheckedFileKey = fileName, options, fileVersion
             let stopwatch = Diagnostics.Stopwatch.StartNew()
             let rec loop() =
                 async {
