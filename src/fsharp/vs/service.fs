@@ -1112,6 +1112,7 @@ type TypeCheckInfo
             else 
                 items
 
+
     static let keywordTypes = Lexhelp.Keywords.keywordTypes
 
     member x.GetVisibleNamespacesAndModulesAtPosition(cursorPos: pos) : ModuleOrNamespaceRef list =
@@ -2239,29 +2240,8 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
              areSameForSubsumption=AreSubsumable3)
 
     /// Holds keys for files being currently checked. It's used to prevent checking same file in parallel (interliveing chunck queued to Reactor).
-    let beingCheckedFileCache = 
-        System.Collections.Concurrent.ConcurrentDictionary<FilePath * ProjectPath * FileVersion, unit>(
-            { new IEqualityComparer<FilePath * ProjectPath * FileVersion> with
-                member __.Equals((f1, p1, v1), (f2, p2, v2)) = f1 = f2 && p1 = p2 && v1 = v2
-                member __.GetHashCode((f, p, v)) =
-                    let mutable hash = 17
-                    hash <- hash * 23 + f.GetHashCode()
-                    hash <- hash * 23 + p.GetHashCode()
-                    hash <- hash * 23 + v.GetHashCode()
-                    hash
-            })
-
-    /// Ensure that `f` is not called in parallel for given (file * project * version).
-    let withFileCheckLock(key: FilePath * ProjectPath * FileVersion) (f: Async<'T>) : Async<'T> =
-        async {
-            while not (beingCheckedFileCache.TryAdd(key, ())) do
-                do! Async.Sleep 100
-            try
-                return! f
-            finally
-                let dummy = ref ()
-                beingCheckedFileCache.TryRemove(key, dummy) |> ignore
-        }
+    let beingCheckedFileTable = 
+        System.Collections.Concurrent.ConcurrentDictionary<FilePath * ProjectPath * FileVersion, unit>()
 
     let lockObj = obj()
     let locked f = lock lockObj f
@@ -2380,15 +2360,19 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                 Some (parseResults,checkResults)
             | _ -> None
 
-    /// 1. Asynchronously waits for file "lock"
+    /// 1. Repeatedly try to get cached file check results or get file "lock". 
+    /// 
+    /// 2. If it've got cached results, returns them.
     ///
-    /// 2. Checks that cached results become available until we were waiting
+    /// 3. If it've not got the lock for 1 munute, returns `FSharpCheckFileAnswer.Aborted`.
     ///
-    /// 3. Type checks the file
+    /// 4. Type checks the file.
     ///
-    /// 4. Records results in the cache
+    /// 5. Records results in `BackgroundCompiler` caches.
     ///
-    /// 5. Starts whole project background compilation
+    /// 6. Starts whole project background compilation.
+    ///
+    /// 7. Releases the file "lock".
     member private bc.CheckOneFile
         (parseResults: FSharpParseFileResults,
          source: string,
@@ -2400,28 +2384,44 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
          tcPrior : PartialCheckResults,
          creationErrors : FSharpErrorInfo list) = 
     
-        withFileCheckLock (fileName, options.ProjectFileName, fileVersion)
-            (async {
-                // results may appear while we were waiting for the lock, let's recheck if it's the case
-                let! cachedResults = 
-                    reactor.EnqueueAndAwaitOpAsync(
-                        "GetCachedCheckFileResult " + fileName, 
-                        (fun _ -> bc.GetCachedCheckFileResult(builder, fileName, source, options)))
-
-                match cachedResults with
-                | Some (_, checkResults) -> return FSharpCheckFileAnswer.Succeeded checkResults
-                | None ->
-                    // Get additional script #load closure information if applicable.
-                    // For scripts, this will have been recorded by GetProjectOptionsFromScript.
-                    let! loadClosure = reactor.EnqueueAndAwaitOpAsync("Try get from GetScriptClosureCache", (fun _ -> scriptClosureCache.TryGet options))
-                    let! tcErrors, tcFileResult = 
-                        Parser.TypeCheckOneFile(parseResults, source, fileName, options.ProjectFileName, tcPrior.TcConfig, tcPrior.TcGlobals, tcPrior.TcImports, 
-                                                tcPrior.TcState, loadClosure, tcPrior.Errors, reactorOps, (fun () -> builder.IsAlive), textSnapshotInfo)
-                    let checkAnswer = MakeCheckFileAnswer(tcFileResult, options, builder, creationErrors, parseResults.Errors, tcErrors)
-                    bc.RecordTypeCheckFileInProjectResults(fileName, options, parseResults, fileVersion, tcPrior.TimeStamp, Some checkAnswer, source)
-                    bc.ImplicitlyStartCheckProjectInBackground(options)
-                    return checkAnswer
-            })
+        async {
+            let beingCheckedFileKey = fileName, options.ProjectFileName, fileVersion
+            let stopwatch = Diagnostics.Stopwatch.StartNew()
+            let rec loop() =
+                async {
+                    // results may appear while we were waiting for the lock, let's recheck if it's the case
+                    let! cachedResults = 
+                        reactor.EnqueueAndAwaitOpAsync(
+                            "GetCachedCheckFileResult " + fileName, 
+                            (fun _ -> bc.GetCachedCheckFileResult(builder, fileName, source, options)))
+            
+                    match cachedResults with
+                    | Some (_, checkResults) -> return FSharpCheckFileAnswer.Succeeded checkResults
+                    | None ->
+                        if beingCheckedFileTable.TryAdd(beingCheckedFileKey, ()) then
+                            try
+                                // Get additional script #load closure information if applicable.
+                                // For scripts, this will have been recorded by GetProjectOptionsFromScript.
+                                let! loadClosure = reactor.EnqueueAndAwaitOpAsync("Try get from GetScriptClosureCache", (fun _ -> scriptClosureCache.TryGet options))
+                                let! tcErrors, tcFileResult = 
+                                    Parser.TypeCheckOneFile(parseResults, source, fileName, options.ProjectFileName, tcPrior.TcConfig, tcPrior.TcGlobals, tcPrior.TcImports, 
+                                                            tcPrior.TcState, loadClosure, tcPrior.Errors, reactorOps, (fun () -> builder.IsAlive), textSnapshotInfo)
+                                let checkAnswer = MakeCheckFileAnswer(tcFileResult, options, builder, creationErrors, parseResults.Errors, tcErrors)
+                                bc.RecordTypeCheckFileInProjectResults(fileName, options, parseResults, fileVersion, tcPrior.TimeStamp, Some checkAnswer, source)
+                                bc.ImplicitlyStartCheckProjectInBackground(options)
+                                return checkAnswer
+                            finally
+                                let dummy = ref ()
+                                beingCheckedFileTable.TryRemove(beingCheckedFileKey, dummy) |> ignore
+                        else 
+                            do! Async.Sleep 100
+                            if stopwatch.Elapsed > TimeSpan.FromMinutes 1. then 
+                                return FSharpCheckFileAnswer.Aborted
+                            else
+                                return! loop()
+                }
+            return! loop()
+        }
 
     /// Type-check the result obtained by parsing, but only if the antecedent type checking context is available. 
     member bc.CheckFileInProjectIfReady(parseResults: FSharpParseFileResults, filename, fileVersion, source, options, textSnapshotInfo: obj option) =

@@ -539,6 +539,8 @@ module Eventually =
             loop(e))
         runTimeShare e
     
+    /// Keep running the asynchronous computation bit by bit. The runner gets called each time the computation is restarted.
+    /// Can be cancelled in the normal way.
     let forceAsync (runner: (unit -> Eventually<'T>) -> Async<Eventually<'T>>) (e: Eventually<'T>) : Async<'T option> =
         let rec loop (e: Eventually<'T>) =
             async {

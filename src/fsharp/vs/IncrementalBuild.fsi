@@ -279,6 +279,9 @@ module internal IncrementalBuild =
         /// Set the conrete inputs for this build. 
         member GetInitialPartialBuild : vectorinputs: BuildInput list -> PartialBuild
 
+/// This represents the global state established as each task function runs as part of the build.
+///
+/// Use to reset error and warning handlers.
 type internal CompilationGlobalsScope =
     new : ErrorLogger * BuildPhase * string -> CompilationGlobalsScope
     interface IDisposable
