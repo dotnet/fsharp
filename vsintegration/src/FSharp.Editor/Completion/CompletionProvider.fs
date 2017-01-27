@@ -57,20 +57,6 @@ type internal FSharpCompletionProvider
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
     static let attributeSuffixLength = "Attribute".Length
     
-    static let time msg (f: unit -> 'a) : 'a = 
-        let sw = Stopwatch.StartNew()
-        let r = f()
-        Logging.logInfof "[%s] %O" msg sw.Elapsed
-        r
-
-    static let asyncTime msg (f: unit -> Async<'a>) : Async<'a> = 
-        async {
-            let sw = Stopwatch.StartNew()
-            let! r = f()
-            Logging.logInfof "[%s] %O" msg sw.Elapsed
-            return r
-        }
-    
     static member ShouldTriggerCompletionAux(sourceText: SourceText, caretPosition: int, trigger: CompletionTriggerKind, getInfo: (unit -> DocumentId * string * string list)) =
         // Skip if we are at the start of a document
         if caretPosition = 0 then
@@ -94,11 +80,11 @@ type internal FSharpCompletionProvider
             
             // Trigger completion if we are on a valid classification type
             else
-                let documentId, filePath, defines = time "getInfo" <| getInfo
-                let textLines = time "Lines" <| fun _ -> sourceText.Lines
-                let triggerLine = time "getLineFromPosition" <| fun _ -> textLines.GetLineFromPosition(triggerPosition)
+                let documentId, filePath, defines = getInfo()
+                let textLines = sourceText.Lines
+                let triggerLine = textLines.GetLineFromPosition(triggerPosition)
 
-                let classifiedSpanOption = time "getColorizationData" <| fun _ ->
+                let classifiedSpanOption =
                     CommonHelpers.getColorizationData(documentId, sourceText, triggerLine.Span, Some(filePath), defines, CancellationToken.None)
                     |> Seq.tryFind(fun classifiedSpan -> classifiedSpan.TextSpan.Contains(triggerPosition))
                 
