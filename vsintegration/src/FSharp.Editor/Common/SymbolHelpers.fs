@@ -71,7 +71,7 @@ module internal SymbolHelpers =
             let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
             let! symbol = CommonHelpers.getSymbolAtPosition(document.Id, sourceText, symbolSpan.Start, document.FilePath, defines, SymbolLookupKind.Greedy)
-            let! _, checkFileResults = checker.ParseAndCheckDocument(document, options)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, allowStaleResults = true)
             let textLine = sourceText.Lines.GetLineFromPosition(symbolSpan.Start)
             let textLinePos = sourceText.Lines.GetLinePosition(symbolSpan.Start)
             let fcsTextLineNumber = textLinePos.Line + 1
