@@ -1,0 +1,9 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <FscToolPath>$(MSBuildThisFileDirectory)..\Proto\net40\bin</FscToolPath>
+    <FscToolExe>fsc-proto.exe</FscToolExe>
+    <DontRunFscWithDotnet>true</DontRunFscWithDotnet>
+  </PropertyGroup>
+
+</Project>

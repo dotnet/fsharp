@@ -17,7 +17,7 @@ echo Build and run a subset of test suites
 echo.
 echo Usage:
 echo.
-echo build.cmd ^<all^|net40^|coreclr^|pcls^|vs^>
+echo build.cmd ^<all^|net40^|coreclr^|netcoresdk^|pcls^|vs^>
 echo           ^<proto^|protofx^>
 echo           ^<ci^|ci_part1^|ci_part2^|ci_part3^|microbuild^>
 echo           ^<debug^|release^>
@@ -40,6 +40,7 @@ echo.    build.cmd net40 test       (build and test net40)
 echo.    build.cmd coreclr test     (build and test net40)
 echo.    build.cmd vs test          (build and test net40)
 echo.    build.cmd all test         (build and test net40)
+echo.    build.cmd coreclr netcoresdk  (build compiler for .NET Core using .NET Core Sdk)
 echo.    build.cmd nobuild test include Conformance (run only tests marked with Conformance category)
 echo.    build.cmd nobuild test include Expensive (run only tests marked with Expensive category)
 echo.
@@ -57,6 +58,7 @@ set BUILD_PROTO=0
 set BUILD_PHASE=1
 set BUILD_NET40=0
 set BUILD_CORECLR=0
+set BUILD_CORECLR_USING_NETCORESDK=0
 set BUILD_PORTABLE=0
 set BUILD_VS=0
 set BUILD_CONFIG=release
@@ -231,6 +233,7 @@ if /i '%ARG%' == 'ci_part3' (
     set BUILD_PROTO=1
     set BUILD_NET40=1
     set BUILD_CORECLR=1
+    set BUILD_CORECLR_USING_NETCORESDK=1
 
     set TEST_CORECLR_FSHARP_SUITE=1
     set TEST_CORECLR_COREUNIT_SUITE=1
@@ -328,6 +331,10 @@ if /i '%ARG%' == 'publicsign' (
     set BUILD_PUBLICSIGN=1
 )
 
+if /i '%ARG%' == 'netcoresdk' (
+    set BUILD_CORECLR_USING_NETCORESDK=1
+)
+
 goto :EOF
 :: Note: "goto :EOF" returns from an in-batchfile "call" command
 :: in preference to returning from the entire batch file.
@@ -345,6 +352,7 @@ echo BUILD_PROTO=%BUILD_PROTO%
 echo BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG%
 echo BUILD_NET40=%BUILD_NET40%
 echo BUILD_CORECLR=%BUILD_CORECLR%
+echo BUILD_CORECLR_USING_NETCORESDK=%BUILD_CORECLR_USING_NETCORESDK%
 echo BUILD_PORTABLE=%BUILD_PORTABLE%
 echo BUILD_VS=%BUILD_VS%
 echo BUILD_SETUP=%BUILD_SETUP%
@@ -540,6 +548,26 @@ if '%BUILD_PHASE%' == '1' (
    echo %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
         %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
    @if ERRORLEVEL 1 echo Error: '%_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG%  /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%' failed && goto :failure
+)
+
+echo ---------------- Done with build, building using .net core sdk -----------
+
+if '%BUILD_CORECLR_USING_NETCORESDK%' == '1' (
+
+   setlocal enableDelayedExpansion
+
+   call .\scripts\use_dotnet_core_sdk.bat
+   @if ERRORLEVEL 1 echo Error: scripts\use_dotnet_core_sdk.bat && endlocal && goto :failure
+
+   echo .NET Core Sdk version:
+   dotnet --version
+   @if ERRORLEVEL 1 echo Error: dotnet --version && endlocal && goto :failure
+
+   dotnet msbuild build-using-netcore-sdk.proj /p:Configuration=%BUILD_CONFIG% /t:All /v:n
+   @if ERRORLEVEL 1 echo Error: dotnet msbuild build-using-netcore-sdk.proj && endlocal && goto :failure
+
+   endlocal
+
 )
 
 echo ---------------- Done with build, starting update/prepare ---------------

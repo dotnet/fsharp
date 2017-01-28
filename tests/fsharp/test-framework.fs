@@ -4,9 +4,9 @@ open Microsoft.Win32
 open System
 open System.IO
 open System.Text.RegularExpressions
+open System.Runtime.InteropServices
 open Scripting
 open NUnit.Framework
-
 
 [<RequireQualifiedAccess>]
 module Commands =
@@ -36,6 +36,11 @@ module Commands =
         log "rm %s" path
         let p = path |> getfullpath dir
         if File.Exists(p) then File.Delete(p)
+
+    let rmDir workDir path =
+        log "rmdir %s" path
+        let p = path |> getfullpath workDir
+        if Directory.Exists(p) then Directory.Delete(p, true)
 
     let pathAddBackslash (p: FilePath) = 
         if String.IsNullOrWhiteSpace (p) then p
@@ -93,6 +98,44 @@ module Commands =
         Directory.CreateDirectory path |> ignore
         path
 
+    let dotnet exec dotnetExe flags =
+        exec dotnetExe flags
+
+    let copyDirectory target source =
+        let rec copyDirectoryInner (target: DirectoryInfo) (source: DirectoryInfo) =
+            for dir in source.GetDirectories() do
+                copyDirectoryInner dir (target.CreateSubdirectory(dir.Name))
+
+            for file in source.GetFiles() do
+                file.CopyTo(Path.Combine(target.FullName, file.Name)) |> ignore
+
+        log "copy '%s/**/*' '%s'" source target
+        (DirectoryInfo source) |> copyDirectoryInner (DirectoryInfo target)
+
+    let which exec cmd =
+        let whichCmd =
+#if NETCOREAPP1_0 || NETSTANDARD1_6
+            if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
+                "where"
+            else
+                "which"
+#else
+            //TODO add same if condition for .NET Framework
+            "where"
+#endif
+
+        let o = Path.GetTempFileName()
+        match exec o whichCmd cmd with
+        | CmdResult.ErrorLevel _ -> []
+        | CmdResult.Success ->
+            try
+                match File.ReadAllText(o) with
+                | null -> []
+                | v -> 
+                    v.Split([| Environment.NewLine |], StringSplitOptions.RemoveEmptyEntries)
+                    |> List.ofArray
+            with _ ->
+                []
 
 type TestConfig = 
     { EnvironmentVariables : Map<string, string>
@@ -230,6 +273,7 @@ let logConfig (cfg: TestConfig) =
     log "ILDASM              =%s" cfg.ILDASM
     log "NGEN                =%s" cfg.NGEN
     log "PEVERIFY            =%s" cfg.PEVERIFY
+    log "DOTNET              =%s" cfg.DotNetExe
     log "---------------------------------------------------------------"
 
 
@@ -270,6 +314,8 @@ let initializeSuite () =
 
 let suiteHelpers = lazy (initializeSuite ())
 
+#if !NO_NUNIT
+
 [<AttributeUsage(AttributeTargets.Assembly)>]
 type public InitializeSuiteAttribute () =
     inherit TestActionAttribute()
@@ -287,6 +333,8 @@ type public InitializeSuiteAttribute () =
 [<assembly:ParallelizableAttribute(ParallelScope.Fixtures)>]
 [<assembly:InitializeSuite()>]
 ()
+
+#endif
 
 let fsharpSuiteDirectory = __SOURCE_DIRECTORY__
 
@@ -311,6 +359,19 @@ type FileGuard(path: string) =
     interface IDisposable with
         member x.Dispose () = remove path
         
+
+[<AllowNullLiteral>]
+type HelperDirectory(path: string) =
+    let remove path = if Directory.Exists(path) then Commands.rmDir (Path.GetTempPath()) path
+    let create path = Commands.mkdir_p (Path.GetTempPath()) path
+    do if not (Path.IsPathRooted(path)) then failwithf "path '%s' must be absolute" path
+    do remove path
+    do create path
+    member x.Path = path
+    member x.Exists = x.Path |> Directory.Exists
+
+    interface IDisposable with
+        member x.Dispose () = remove path
 
 type RedirectToType = 
     | Overwrite of FilePath
@@ -439,6 +500,7 @@ let fsi cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI)
 let fsiExpectFail cfg = Printf.ksprintf (Commands.fsi (execExpectFail cfg) cfg.FSI)
 let fsiAppendIgnoreExitCode cfg stdoutPath stderrPath = Printf.ksprintf (Commands.fsi (execAppendIgnoreExitCode cfg stdoutPath stderrPath) cfg.FSI)
 let fileguard cfg = (Commands.getfullpath cfg.Directory) >> (fun x -> new FileGuard(x))
+let helperDir cfg = (Commands.getfullpath cfg.Directory) >> (fun x -> new HelperDirectory(x))
 let getfullpath cfg = Commands.getfullpath cfg.Directory
 let fileExists cfg = Commands.fileExists cfg.Directory >> Option.isSome
 let fsiStdin cfg stdinPath = Printf.ksprintf (Commands.fsi (execStdin cfg stdinPath) cfg.FSI)
@@ -446,6 +508,7 @@ let fsiStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath = Print
 let rm cfg x = Commands.rm cfg.Directory x
 let mkdir cfg = Commands.mkdir_p cfg.Directory
 let copy_y cfg f = Commands.copy_y cfg.Directory f >> checkResult
+let dotnet cfg arg = Printf.ksprintf (Commands.dotnet (exec cfg) cfg.DotNetExe) arg
 
 let diff normalize path1 path2 =
     let result = System.Text.StringBuilder()
@@ -501,3 +564,9 @@ let requireENCulture () =
     match System.Globalization.CultureInfo.CurrentCulture.TwoLetterISOLanguageName with
     | "en" -> true
     | _ -> false
+
+let which envVars cmd =
+    let exec o = Command.exec (Path.GetTempPath ()) envVars ({ execArgs with Output = Output(Overwrite(o)) })
+    Commands.which exec cmd
+
+let resolveCmdFromPATH envVars cmd = which envVars cmd |> List.tryHead

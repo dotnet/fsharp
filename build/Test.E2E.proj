@@ -1,0 +1,68 @@
+<Project ToolsVersion="15.0">
+
+    <Target Name="TestE2E"
+            DependsOnTargets="Prepare;
+                              Compile;
+                              Package;
+                              RunTestsE2E" />
+
+    <Target Name="RunTestsE2E"
+            DependsOnTargets="RunPackageTests;" />
+
+    <Target Name="RunPackageTests"
+            DependsOnTargets="Init;Package;RestoreTestPackages" >
+        <!-- Test built nuget packages, to check these works to build new projects -->
+
+        <PropertyGroup>
+            <_CompilerSdkPackageVersion Condition=" '%(NugetPackageDef.Identity)' == 'Microsoft.FSharp.Compiler.Sdk.netcore' ">%(NugetPackageDef.Version)</_CompilerSdkPackageVersion>
+            <_CommandText><![CDATA[
+set TEST_COMPILERSDK_PACKAGE=$(_CompilerSdkPackageVersion)
+dotnet run -p "$(RepoRoot)/tests/projects/dotnetcoresdk/FSharp.Tests.DotnetCoreSdk.fsproj" -c $(Configuration)
+            ]]></_CommandText>
+        </PropertyGroup>
+
+        <!-- TODO use dotnet test instead of dotnet run when vstest/trx logging is configured -->
+        <Exec Command='$(_CommandText)' />
+    </Target>
+
+    <Target Name="SetupRestoreTestPackagesInputsOutputs"
+            DependsOnTargets="Init" >
+        <!-- List of test projects to restore -->
+
+        <ItemGroup>
+            <RestoreTestPackagesInput Include="$(RepoRoot)/tests/projects/dotnetcoresdk/FSharp.Tests.DotnetCoreSdk.fsproj">
+                <NugetConfigFile>$(RepoRoot)/tests/projects/assets/dotnetcoresdk/dotnetcoresdk.NuGet.Config</NugetConfigFile>
+            </RestoreTestPackagesInput>
+        </ItemGroup>
+    </Target>
+
+    <Target Name="RestoreTestPackages"
+            DependsOnTargets="Init;SetupRestoreTestPackagesInputsOutputs"
+            Inputs="@(RestoreTestPackagesInput)"
+            Outputs="@(RestoreTestPackagesInput->'%(RelativeDir)/obj/project.assets.json');@(RestoreTestPackagesInput->'%(RelativeDir)/obj/%(Filename).fsproj.nuget.g.props')">
+        <!-- Restore test projects, if needed (with lock files up-to-date check) -->
+
+        <CallTarget Targets="CleanTestLockFiles" />
+
+        <Exec Command='dotnet restore "%(RestoreTestPackagesInput.FullPath)" --packages "$(NuGetPackageRoot)" --no-cache --configfile "%(RestoreTestPackagesInput.NugetConfigFile)"' />
+    </Target>
+
+    <Target Name="CleanTestLockFiles" 
+            DependsOnTargets="Init">
+        <!-- Cleanup restore lock files of test projects -->
+
+        <ItemGroup>
+            <_TestLockFiles Include="$(RepoRoot)/tests/projects/**/obj/project.assets.json" />
+            <_TestLockFiles Include="$(RepoRoot)/tests/projects/**/obj/*.fsproj.nuget.g.props" />
+        </ItemGroup>
+        <Delete Files="@(_TestLockFiles)" />
+    </Target>
+
+    <Target Name="CleanTestE2E"
+            DependsOnTargets="Init">
+
+        <RemoveDir Directories="$(RepoRoot)/tests/projects/dotnetcoresdk/obj" />
+        <RemoveDir Directories="$(RepoRoot)/tests/projects/dotnetcoresdk/bin" />
+    </Target>
+
+</Project>

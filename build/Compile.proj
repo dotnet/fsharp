@@ -1,0 +1,42 @@
+<Project ToolsVersion="15.0">
+
+    <Target Name="Compile"
+            DependsOnTargets="Prepare;
+                              BuildFsc" />
+
+    <Target Name="BuildFsc"
+            DependsOnTargets="Init;
+                              RequireCoreclrBin" > <!-- the fsc proj expect the FSharp.Core already built -->
+
+        <Exec Command='dotnet build "$(RepoRoot)/src/fsharp/Fsc/Fsc.netcore.fsproj" -c $(Configuration)' />
+    </Target>
+
+    <Target Name="PublishFsc"
+            DependsOnTargets="Init;RequireCoreclrBin;BuildFsc" >
+        <!-- Create a framework dependent version of fsc -->
+        <!-- DEFINE $(FscPublishDirectoryNetCoreApp1_0): The directory who contains the framework dependent version of fsc -->
+
+        <Exec Command='dotnet publish "$(RepoRoot)/src/fsharp/Fsc/Fsc.netcore.fsproj" -c $(Configuration)' />
+
+        <PropertyGroup>
+            <FscPublishDirectoryNetCoreApp1_0>$(RepoRoot)/src/fsharp/Fsc/bin/$(Configuration)/netcoreapp1.0/publish</FscPublishDirectoryNetCoreApp1_0>
+        </PropertyGroup>
+
+        <!-- REMARK: The generated fsc.dll doesnt work yet. 
+                     Reuse the fsc.exe already built until it's fixed -->
+        <Copy SourceFiles="$(CoreclrReleaseDir)/fsc.exe;
+                           $(CoreclrReleaseDir)/fsc.pdb;"
+              DestinationFiles="$(FscPublishDirectoryNetCoreApp1_0)/fsc.dll;
+                                $(FscPublishDirectoryNetCoreApp1_0)/fsc.pdb;"
+              OverwriteReadOnlyFiles="true" />
+
+    </Target>
+
+    <Target Name="CleanCompile"
+            DependsOnTargets="Init">
+
+        <RemoveDir Directories="$(RepoRoot)/src/fsharp/Fsc/bin" /> 
+        <RemoveDir Directories="$(RepoRoot)/src/fsharp/Fsc/obj" /> 
+    </Target>
+
+</Project>

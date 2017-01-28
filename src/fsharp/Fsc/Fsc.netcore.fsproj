@@ -1,0 +1,103 @@
+<Project Sdk="FSharp.NET.Sdk;Microsoft.NET.Sdk" ToolsVersion="15.0">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp1.0</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <NoWarn>$(NoWarn);62</NoWarn>
+    <AssemblyName>fsc</AssemblyName>
+    <DefineConstants>
+      EXTENSIONTYPING;
+      COMPILER;
+      $(DefineConstants);
+    </DefineConstants>
+    <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="InternalsVisibleTo.fs" />
+    <Compile Include="..\..\assemblyinfo\assemblyinfo.fsc.exe.fs">
+      <Link>Resources/assemblyinfo.fsc.exe.fs</Link>
+    </Compile>
+    <Compile Include="..\fscmain.fs">
+      <Link>fscmain.fs</Link>
+    </Compile>
+    <Content Include="..\..\windows\default.win32manifest">
+      <Link>default.win32manifest</Link>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETCore.App" Version="1.0.1" />
+    <!--"System.Linq.Expressions": "4.1.0",-->
+    <!--"System.Reflection.Metadata": "1.4.1-beta-24227-04",-->
+    <!--"System.Runtime.Loader": "4.0.0",-->
+
+    <Reference Include="$(FSharpSourcesRoot)\..\$(Configuration)\coreclr\bin\FSharp.Compiler.dll" />
+    <!--"NETStandard.Library": "1.6.0",-->
+    <!--"System.Collections.Immutable":"1.2.0",-->
+    <!--"System.Diagnostics.Process": "4.1.0",-->
+    <PackageReference Include="System.Diagnostics.TraceSource" Version="4.0.0" />
+    <!--"System.Linq.Expressions": "4.1.0",-->
+    <!--"System.Linq.Queryable": "4.0.1",-->
+    <!--"System.Net.Requests": "4.0.11",-->
+    <PackageReference Include="System.Reflection.Emit" Version="4.0.1" />
+    <PackageReference Include="System.Reflection.Metadata" Version="1.4.1-beta-24227-04" />
+    <!--"System.Reflection.TypeExtensions": "4.1.0",-->
+    <PackageReference Include="System.Runtime.InteropServices" Version="4.1.0" />
+    <!--"System.Runtime.Loader": "4.0.0",-->
+    <!--"System.Security.Cryptography.Algorithms": "4.2.0",-->
+    <!--"System.Threading.Tasks.Parallel": "4.0.1",-->
+    <!--"System.Threading.Thread": "4.0.0",-->
+    <!--"System.Threading.ThreadPool": "4.0.10",-->
+    <PackageReference Include="Microsoft.DiaSymReader.PortablePdb" Version="1.1.0" />
+    <PackageReference Include="Microsoft.DiaSymReader" Version="1.0.8" />
+    <PackageReference Include="System.ValueTuple" Version="4.0.0-rc3-24212-01" />
+
+    <Reference Include="$(FSharpSourcesRoot)\..\$(Configuration)\coreclr\bin\FSharp.Core.dll" />
+    <!--"Microsoft.NETCore.Platforms": "1.0.1",--> <!-- NOTE Included by the .NETStandard v1.6 pkg -->
+    <!--"Microsoft.NETCore.Runtime.CoreCLR": "1.0.2",-->  <!-- NOTE included by .NETCore.App, but is 1.0.4 -->
+    <!--"System.Collections": "4.0.11",-->  <!-- NOTE The .NETStandard v1.6 pkg depends on version 4.3.0 -->
+    <PackageReference Include="System.Console" Version="4.0.0" />
+    <!--"System.Diagnostics.Debug": "4.0.11",--> <!-- NOTE The .NETStandard v1.6 pkg depends on version 4.3.0 -->
+    <!--"System.Diagnostics.Tools": "4.0.1",--> <!-- NOTE The .NETStandard v1.6 pkg depends on version 4.3.0 -->
+    <!--"System.Globalization": "4.0.11",--> <!-- NOTE The .NETStandard v1.6 pkg depends on version 4.3.0 -->
+    <!--"System.IO": "4.1.0",--> <!-- NOTE The .NETStandard v1.6 pkg depends on version 4.3.0 -->
+    <!--"System.Linq": "4.1.0",--> <!-- NOTE The .NETStandard v1.6 pkg depends on version 4.3.0 -->
+    <!--"System.Linq.Expressions": "4.1.0",--> <!-- NOTE The .NETStandard v1.6 pkg depends on version 4.3.0 -->
+    <PackageReference Include="System.Linq.Queryable" Version="4.0.1" />
+    <!--"System.Net.Requests": "4.0.11",--> <!-- NOTE included by .NETCore.App -->
+    <!--"System.Reflection": "4.1.0",--> <!-- NOTE The .NETStandard v1.6 pkg depends on version 4.3.0 -->
+    <!--"System.Reflection.Extensions": "4.0.1",--> <!-- NOTE The .NETStandard v1.6 pkg depends on version 4.3.0 -->
+    <!--"System.Resources.ResourceManager":"4.0.1",--> <!-- NOTE The .NETStandard v1.6 pkg depends on version 4.3.0 -->
+    <!--"System.Runtime": "4.1.0",--> <!-- NOTE The .NETStandard v1.6 pkg depends on version 4.3.0 -->
+    <!--"System.Runtime.Extensions": "4.1.0",--> <!-- NOTE The .NETStandard v1.6 pkg depends on version 4.3.0 -->
+    <PackageReference Include="System.Runtime.Numerics" Version="4.0.1" />
+    <!--"System.Text.RegularExpressions": "4.1.0",--> <!-- NOTE The .NETStandard v1.6 pkg depends on version 4.3.0 -->
+    <!--"System.Threading": "4.0.11",--> <!-- NOTE The .NETStandard v1.6 pkg depends on version 4.3.0 -->
+    <!--"System.Threading.Tasks": "4.0.11",--> <!-- NOTE The .NETStandard v1.6 pkg depends on version 4.3.0 -->
+    <!--"System.Threading.Tasks.Parallel": "4.0.1",--> <!-- NOTE included by .NETCore.App -->
+    <!--"System.Threading.Thread": "4.0.0",--> <!-- NOTE included by .NETCore.App -->
+    <!--"System.Threading.ThreadPool": "4.0.10",--> <!-- NOTE included by .NETCore.App -->
+    <PackageReference Include="System.Threading.Timer" Version="4.0.1" />
+
+  </ItemGroup>
+
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.netcore.props" />
+
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.UseProtoFsc.net40.props" />
+
+  <ItemGroup>
+    <PackageReference Include="FSharp.NET.Sdk" Version="1.0.0-char-*">
+      <PrivateAssets>All</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>

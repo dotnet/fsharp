@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+    <metadata>
+        <id>Microsoft.FSharp.Compiler.Sdk.netcore</id>
+        <description>
+            .NET Core compatible version of the fsharp compiler fsc.exe.
+            Supported Platforms: - .NET Core (.netstandard1.6)
+        </description>
+        <language>en-US</language>
+        <requireLicenseAcceptance>true</requireLicenseAcceptance>
+        <version>$version$</version>
+        <authors>$authors$</authors>
+        <licenseUrl>$licenseUrl$</licenseUrl>
+        <projectUrl>$projectUrl$</projectUrl>
+        <tags>$tags$</tags>
+        <dependencies>
+        </dependencies>
+    </metadata>
+    <files>
+        <file src="build\**\*"                 target="build" />
+        <file src="buildCrossTargeting\**\*"   target="buildCrossTargeting" />
+    </files>
+</package>

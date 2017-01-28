@@ -1,0 +1,34 @@
+<Project ToolsVersion="15.0">
+
+    <Target Name="CheckPrereqs">
+        <!-- Check .NET Core SDK is avaiable in PATH -->
+
+        <Exec Command="dotnet --version" ConsoleToMSBuild="true">
+            <Output TaskParameter="ConsoleOutput" PropertyName="InstalledDotnetCoreSdkVersion" />
+        </Exec>
+
+        <Message Text="Installed sdk version $(InstalledDotnetCoreSdkVersion)" Importance="High" />
+
+        <!-- Check the .NET Core SDK version is compatible (same branch) with required version -->
+        <PropertyGroup>
+            <_ExpectedDotnetCoreSdkBranch>1.0.0-preview4</_ExpectedDotnetCoreSdkBranch>
+        </PropertyGroup>
+
+        <Error Text="Expected .NET Core Sdk ~$(_ExpectedDotnetCoreSdkBranch) but was $(InstalledDotnetCoreSdkVersion)"
+               Condition=" !$(InstalledDotnetCoreSdkVersion.StartsWith('$(_ExpectedDotnetCoreSdkBranch)')) " />
+    </Target>
+
+    <Target Name="RequireCoreclrBin"
+            DependsOnTargets="Init">
+        <!-- Check the coreclr binaries built with main build script is avaiable  -->
+        <!-- DEFINE $(CoreclrReleaseDir): The directory of coreclr binaries built by main script  -->
+
+        <PropertyGroup>
+            <CoreclrReleaseDir>$(RepoRoot)/$(Configuration)/coreclr/bin</CoreclrReleaseDir>
+        </PropertyGroup>
+
+        <Error Text="The '$(CoreclrReleaseDir)' is required, build it using `build.cmd coreclr` "
+               Condition=" !Exists('$(CoreclrReleaseDir)') " />
+    </Target>
+
+</Project>
