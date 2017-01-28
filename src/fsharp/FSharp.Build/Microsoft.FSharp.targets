@@ -19,7 +19,6 @@ this file.
 
     <UsingTask TaskName="Fsc" AssemblyFile="FSharp.Build{BuildSuffix}.dll"/>
     <UsingTask TaskName="CreateFSharpManifestResourceName" AssemblyFile="FSharp.Build{BuildSuffix}.dll"/>
-    <UsingTask TaskName="SetEnv" AssemblyFile="FSharp.Build{BuildSuffix}.dll"/>
 
   <PropertyGroup>
         <ImportByWildcardBeforeMicrosoftFSharpTargets Condition="'$(ImportByWildcardBeforeMicrosoftFSharpTargets)' == ''">true</ImportByWildcardBeforeMicrosoftFSharpTargets>

@@ -23,10 +23,18 @@
     <OtherFlags Condition=" '$(TargetFramework)'=='portable78'">$(OtherFlags)  --compiling-fslib-40 --compiling-fslib-nobigint</OtherFlags>
     <OtherFlags Condition=" '$(TargetFramework)'=='portable259'">$(OtherFlags) --compiling-fslib-40 --compiling-fslib-nobigint</OtherFlags>
   </PropertyGroup>
+
+  <!-- Nuget packaging configuration -->
   <ItemGroup>
     <PackageNuspec Include="FSharp.Core.netcore.nuspec" Condition="'$(TargetFramework)' == 'coreclr'" />
     <None Include="FSharp.Core.runtimeconfig.json"      Condition="'$(TargetFramework)' == 'coreclr'" ><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></None>
   </ItemGroup>
+  <PropertyGroup>
+    <PackageVersion    Condition="'$(PreReleaseLabel)' == ''">$(NuGeReleaseVersion)</PackageVersion>
+    <PackageVersion    Condition="'$(PackageVersionMinor)' != ''">$(PackageVersionMajor)-$(PackageVersionMinor)</PackageVersion>
+    <PackageVersion    Condition="'$(PackageVersionMinor)' == ''">$(NuGetPerBuildPreReleaseVersion)-0</PackageVersion>
+  </PropertyGroup>
+
   <ItemGroup>
     <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
       <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(AssemblyName).dll.lcl</TranslationFile>
@@ -231,7 +239,6 @@
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
 
   <!-- Hook compilation phase to do custom work -->
-
   <Target Name="CopyToBuiltBin" BeforeTargets="AfterCompile" AfterTargets="CoreCompile" >
     <ItemGroup>
       <BuiltProjectOutputGroupKeyOutput Include="$(IntermediateOutputPath)\FSharp.Core.sigdata" />
