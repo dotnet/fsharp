@@ -1134,17 +1134,18 @@ type TypeCheckInfo
 
     static let keywordTypes = Lexhelp.Keywords.keywordTypes
 
+    /// Get `NameResolutionEnv`s indexed by line.
     member x.GetNameResolutionEnvironmentsByLine() = GetEnvsByLine()
 
-    member x.GetVisibleNamespacesAndModulesAtPosition(cursorPos: pos) : ModuleOrNamespaceRef list =
-        let (nenv, ad), m = GetBestEnvForPos (GetEnvsByLine()) cursorPos
-        NameResolution.GetVisibleNamespacesAndModulesAtPoint ncenv nenv m ad
-
-
+    /// Determines if a long ident is resolvable at a specific point.
     member x.IsRelativeNameResolvable(cursorPos: pos, plid: string list, item: Item, envsByLine: ResizeArray<range * NameResolutionEnv * AccessorDomain> []) : bool =
-        /// Find items in the best naming environment.
-        let (nenv, ad), m = GetBestEnvForPos envsByLine cursorPos
-        NameResolution.IsItemResolvable ncenv nenv m ad plid item
+        ErrorScope.Protect
+            Range.range0
+            (fun () ->
+                /// Find items in the best naming environment.
+                let (nenv, ad), m = GetBestEnvForPos envsByLine cursorPos
+                NameResolution.IsItemResolvable ncenv nenv m ad plid item)
+            (fun _ -> false)
         
         //let items = NameResolution.ResolvePartialLongIdent ncenv nenv (fun _ _ -> true) m ad plid true
         //items |> List.exists (ItemsAreEffectivelyEqual g item)
@@ -2088,9 +2089,6 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
             [| for (itemOcc,denv,m) in scope.ScopeSymbolUses.GetUsesOfSymbol(symbol.Item) |> Seq.distinctBy (fun (itemOcc,_denv,m) -> itemOcc, m) do
                  if itemOcc <> ItemOccurence.RelatedText then
                   yield FSharpSymbolUse(scope.TcGlobals, denv, symbol, itemOcc, m) |])
-
-    member info.GetVisibleNamespacesAndModulesAtPoint(pos: pos) : Async<ModuleOrNamespaceRef []> = 
-        reactorOp "GetVisibleNamespacesAndModulesAtPoint" [| |] (fun scope -> scope.GetVisibleNamespacesAndModulesAtPosition(pos) |> List.toArray)
 
     member info.GetNameResolutionEnvironmentsByLine() : Async<ResizeArray<range * NameResolutionEnv * AccessorDomain> []> = 
         reactorOp "IsRelativeNameResolvable" [||] (fun scope -> scope.GetNameResolutionEnvironmentsByLine())
