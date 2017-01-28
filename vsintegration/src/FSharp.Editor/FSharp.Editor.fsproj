@@ -40,6 +40,8 @@
     <Compile Include="Common\LanguageService.fs" />
     <Compile Include="Common\SymbolHelpers.fs" />
     <Compile Include="Common\AssemblyContentProvider.fs" />
+    <Compile Include="Classification\ClassificationColorManager.fs" />
+    <Compile Include="Classification\ClassificationTypes.fs" />
     <Compile Include="Classification\ColorizationService.fs" />
     <Compile Include="Formatting\BraceMatchingService.fs" />
     <Compile Include="Formatting\IndentationService.fs" />
@@ -100,6 +102,8 @@
   <ItemGroup>
     <Reference Include="mscorlib" />
     <Reference Include="PresentationFramework" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Xml" />
     <Reference Include="WindowsBase" />
     <Reference Include="System" />
     <Reference Include="PresentationCore" />

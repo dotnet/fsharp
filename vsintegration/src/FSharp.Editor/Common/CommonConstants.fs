@@ -5,7 +5,9 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.Configuration
 open System.Diagnostics
+open Microsoft.CodeAnalysis.Classification
 
+[<RequireQualifiedAccess>]
 module internal FSharpCommonConstants =
     [<Literal>]
     let packageGuidString = "871D2A70-12A2-4e42-9440-425DD92A4116"
@@ -25,3 +27,15 @@ module internal FSharpCommonConstants =
     let FSharpLanguageServiceCallbackName = "F# Language Service"
     [<Literal>]
     let FSharpLanguageLongName = "FSharp"
+
+[<RequireQualifiedAccess>]
+module internal FSharpClassificationTypes =
+    let [<Literal>] PatternCase = "FSharp.PatternCase"
+    let [<Literal>] Function = "FSharp.Function"
+    let [<Literal>] MutableVar = "FSharp.MutableVar"
+    let [<Literal>] Printf = "FSharp.Printf"
+    let [<Literal>] ReferenceType = ClassificationTypeNames.ClassName
+    let [<Literal>] Module = ClassificationTypeNames.ClassName
+    let [<Literal>] ValueType = ClassificationTypeNames.StructName
+    let [<Literal>] Keyword = ClassificationTypeNames.Keyword
+    let [<Literal>] Enum = ClassificationTypeNames.EnumName

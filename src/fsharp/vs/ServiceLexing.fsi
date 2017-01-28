@@ -52,7 +52,6 @@ type internal FSharpTokenColorKind =
     | PreprocessorKeyword = 8
     | Number = 9
     | Operator = 10
-    | TypeName = 11
     
 /// Gives an indication of what should happen when the token is typed in an IDE
 type internal FSharpTokenTriggerClass =
