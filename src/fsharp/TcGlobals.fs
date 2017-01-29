@@ -207,7 +207,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_nativeptr_tcr  = mk_MFCore_tcref fslibCcu "nativeptr`1"
   let v_ilsigptr_tcr   = mk_MFCore_tcref fslibCcu "ilsigptr`1"
   let v_fastFunc_tcr   = mk_MFCore_tcref fslibCcu "FSharpFunc`2"
-  let v_refcell_tcr_canon = mk_MFCore_tcref fslibCcu "FSharpRef`1"
+  let v_refcell_tcr_canon = mk_MFCore_tcref fslibCcu "Ref`1"
   let v_refcell_tcr_nice  = mk_MFCore_tcref fslibCcu "ref`1"
 
   let dummyAssemblyNameCarryingUsefulErrorInformation path typeName = 
