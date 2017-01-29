@@ -1432,6 +1432,10 @@ type TypeCheckInfo
             // 'seq' in 'seq { ... }' gets colored as keywords
             | CNR(_, (Item.Value vref), ItemOccurence.Use, _, _, _, m) when valRefEq g g.seq_vref vref ->
                 Some (m, SemanticClassificationType.ComputationExpression)
+            | CNR(_, (Item.Value vref), _, _, _, _, m) when valRefEq g g.seq_vref vref ->
+                Some (m, SemanticClassificationType.ComputationExpression)
+            | CNR(_, (Item.Value vref), _, _, _, _, m) when vref.IsMutable ->
+                Some (m, SemanticClassificationType.MutableVar)
             // custom builders, custom operations get colored as keywords
             | CNR(_, (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use, _, _, _, m) ->
                 Some (m, SemanticClassificationType.ComputationExpression)

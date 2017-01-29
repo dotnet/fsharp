@@ -207,6 +207,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_nativeptr_tcr  = mk_MFCore_tcref fslibCcu "nativeptr`1"
   let v_ilsigptr_tcr   = mk_MFCore_tcref fslibCcu "ilsigptr`1"
   let v_fastFunc_tcr   = mk_MFCore_tcref fslibCcu "FSharpFunc`2"
+  let v_fsharpref_tcr  = mk_MFCore_tcref fslibCcu "FSharpRef`1"
 
   let dummyAssemblyNameCarryingUsefulErrorInformation path typeName = 
       FSComp.SR.tcGlobalsSystemTypeNotFound (String.concat "." path + "." + typeName)
@@ -600,6 +601,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_lazy_create_info           = makeIntrinsicValRef(fslib_MFLazyExtensions_nleref,                        "Create"                               , Some "Lazy`1"        , None                          , [vara],     ([[v_unit_ty --> varaTy]], mkLazyTy varaTy))
 
   let v_seq_info                   = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "seq"                                  , None                 , Some "CreateSequence"         , [vara],     ([[mkSeqTy varaTy]], mkSeqTy varaTy))
+  let v_fsharpref_info             = makeIntrinsicValRef(fslib_MFCore_nleref,                                  "ref"                                  , None                 , None                          , [vara],     ([[varaTy]], v_fsharpref_ty))
   let v_splice_expr_info           = makeIntrinsicValRef(fslib_MFExtraTopLevelOperators_nleref,                "op_Splice"                            , None                 , None                          , [vara],     ([[mkQuotedExprTy varaTy]], varaTy))
   let v_splice_raw_expr_info       = makeIntrinsicValRef(fslib_MFExtraTopLevelOperators_nleref,                "op_SpliceUntyped"                     , None                 , None                          , [vara],     ([[mkRawQuotedExprTy]], varaTy))
   let v_new_decimal_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "MakeDecimal"                          , None                 , None                          , [],         ([[v_int_ty]; [v_int_ty]; [v_int_ty]; [v_bool_ty]; [v_byte_ty]], v_decimal_ty))
@@ -815,6 +817,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.nativeptr_tcr  = v_nativeptr_tcr
   member __.ilsigptr_tcr   = v_ilsigptr_tcr
   member __.fastFunc_tcr = v_fastFunc_tcr
+  member __.fsharpref_tcr = v_fsharpref_tcr
   member __.tcref_IQueryable = v_tcref_IQueryable
   member __.tcref_IObservable      = v_tcref_IObservable
   member __.tcref_IObserver      = v_tcref_IObserver
@@ -1050,6 +1053,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.new_decimal_info = v_new_decimal_info
   member __.seq_info    = v_seq_info
   member val seq_vref    = (ValRefForIntrinsic v_seq_info) 
+  member val fsharpref_vref = (ValRefForIntrinsic v_fsharpref_info)
   member val and_vref    = (ValRefForIntrinsic v_and_info) 
   member val and2_vref   = (ValRefForIntrinsic v_and2_info)
   member val addrof_vref = (ValRefForIntrinsic v_addrof_info)
