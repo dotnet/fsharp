@@ -19,7 +19,6 @@ open System.Drawing
 open Microsoft.Win32
 open EnvDTE
 open System.Runtime.InteropServices
-open Microsoft.VisualStudio.FSharp.Editor.Reflection
 open Microsoft.VisualStudio.PlatformUI
 
 type VisualStudioTheme =
@@ -83,7 +82,7 @@ type ClassificationColorManager
         [ 
           FSharpClassificationTypes.ReferenceType, Color.FromRgb(43uy, 145uy, 175uy)
           FSharpClassificationTypes.ValueType, Color.FromRgb(43uy, 145uy, 175uy)
-          FSharpClassificationTypes.PatternCase, Colors.Black
+          FSharpClassificationTypes.UnionCase, Colors.Black
           FSharpClassificationTypes.Function, Colors.Black
           FSharpClassificationTypes.MutableVar, Colors.Black
           FSharpClassificationTypes.Module, Color.FromRgb(43uy, 145uy, 175uy)
@@ -94,7 +93,7 @@ type ClassificationColorManager
         [ 
           FSharpClassificationTypes.ReferenceType, Color.FromRgb(78uy, 201uy, 176uy)
           FSharpClassificationTypes.ValueType, Color.FromRgb(78uy, 201uy, 176uy)
-          FSharpClassificationTypes.PatternCase, Color.FromRgb(220uy, 220uy, 220uy)
+          FSharpClassificationTypes.UnionCase, Color.FromRgb(220uy, 220uy, 220uy)
           FSharpClassificationTypes.Function, Color.FromRgb(220uy, 220uy, 220uy)
           FSharpClassificationTypes.MutableVar, Color.FromRgb(220uy, 220uy, 220uy)
           FSharpClassificationTypes.Module, Color.FromRgb(78uy, 201uy, 176uy)

@@ -151,7 +151,7 @@ type internal FSharpSymbolUse =
 type internal SemanticClassificationType =
     | ReferenceType
     | ValueType
-    | PatternCase
+    | UnionCase
     | Function
     | MutableVar
     | Module

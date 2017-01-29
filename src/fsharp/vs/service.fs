@@ -481,7 +481,7 @@ type FSharpSymbolUse(g:TcGlobals, denv: DisplayEnv, symbol:FSharpSymbol, itemOcc
 type SemanticClassificationType =
     | ReferenceType
     | ValueType
-    | PatternCase
+    | UnionCase
     | Function
     | MutableVar
     | Module
@@ -1448,8 +1448,8 @@ type TypeCheckInfo
                 Some (m, SemanticClassificationType.ReferenceType)
             | CNR(_, Item.ModuleOrNamespaces refs, LegitTypeOccurence, _, _, _, m) when refs |> List.exists (fun x -> x.IsModule) ->
                 Some (m, SemanticClassificationType.ReferenceType)
-            | CNR(_, (Item.ActivePatternCase _ | Item.UnionCase _), _, _, _, _, m) ->
-                Some (m, SemanticClassificationType.PatternCase)
+            | CNR(_, (Item.ActivePatternCase _ | Item.UnionCase _ | Item.ActivePatternResult _), _, _, _, _, m) ->
+                Some (m, SemanticClassificationType.UnionCase)
             | _ -> None)
         |> Seq.toArray
 
