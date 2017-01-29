@@ -1452,6 +1452,7 @@ type TypeCheckInfo
                 Some (m, SemanticClassificationType.UnionCase)
             | _ -> None)
         |> Seq.toArray
+        |> Array.append (sSymbolUses.GetFormatSpecifierLocations() |> Array.map (fun m -> m, SemanticClassificationType.Printf))
 
     member x.ScopeResolutions = sResolutions
     member x.ScopeSymbolUses = sSymbolUses
