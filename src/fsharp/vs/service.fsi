@@ -153,6 +153,7 @@ type internal SemanticClassificationType =
     | ValueType
     | UnionCase
     | Function
+    | Property
     | MutableVar
     | Module
     | Printf

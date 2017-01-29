@@ -31,6 +31,9 @@ module internal ClassificationTypes =
     [<Export; Name(FSharpClassificationTypes.Printf); BaseDefinition("identifier")>]
     let FSharpPrintfClassificationType : ClassificationTypeDefinition = null
 
+    [<Export; Name(FSharpClassificationTypes.Property); BaseDefinition("identifier")>]
+    let FSharpPropertyClassificationType : ClassificationTypeDefinition = null
+
     [<Export(typeof<EditorFormatDefinition>)>]
     [<ClassificationType(ClassificationTypeNames = FSharpClassificationTypes.UnionCase)>]
     [<Name(FSharpClassificationTypes.UnionCase)>]
@@ -75,7 +78,17 @@ module internal ClassificationTypes =
         do self.DisplayName <- "F# Printf Format"
            self.ForegroundColor <- colorManager.GetDefaultColors(FSharpClassificationTypes.Printf)
     
-    
+    [<Export(typeof<EditorFormatDefinition>)>]
+    [<ClassificationType(ClassificationTypeNames = FSharpClassificationTypes.Property)>]
+    [<Name(FSharpClassificationTypes.Property)>]
+    [<UserVisible(true)>]
+    [<Order(After = PredefinedClassificationTypeNames.String)>] 
+    type internal FSharpPropertyFormat [<ImportingConstructor>](colorManager: ClassificationColorManager) as self =
+        inherit ClassificationFormatDefinition()
+        
+        do self.DisplayName <- "F# Properties"
+           self.ForegroundColor <- colorManager.GetDefaultColors(FSharpClassificationTypes.Printf)
+
     let getClassificationTypeName = function
         | SemanticClassificationType.ReferenceType
         | SemanticClassificationType.Module -> FSharpClassificationTypes.Module
@@ -87,3 +100,4 @@ module internal ClassificationTypes =
         | SemanticClassificationType.ComputationExpression
         | SemanticClassificationType.IntrinsicType -> FSharpClassificationTypes.Keyword
         | SemanticClassificationType.Enumeration -> FSharpClassificationTypes.Enum
+        | SemanticClassificationType.Property -> FSharpClassificationTypes.Property

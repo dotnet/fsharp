@@ -483,6 +483,7 @@ type SemanticClassificationType =
     | ValueType
     | UnionCase
     | Function
+    | Property
     | MutableVar
     | Module
     | Printf
@@ -1432,10 +1433,23 @@ type TypeCheckInfo
             // 'seq' in 'seq { ... }' gets colored as keywords
             | CNR(_, (Item.Value vref), ItemOccurence.Use, _, _, _, m) when valRefEq g g.seq_vref vref ->
                 Some (m, SemanticClassificationType.ComputationExpression)
-            | CNR(_, (Item.Value vref), _, _, _, _, m) when valRefEq g g.seq_vref vref ->
-                Some (m, SemanticClassificationType.ComputationExpression)
             | CNR(_, (Item.Value vref), _, _, _, _, m) when vref.IsMutable ->
                 Some (m, SemanticClassificationType.MutableVar)
+            | CNR(_, (Item.Value vref), _, _, _, _, m) when isFunction g vref.Type ->
+                if vref.IsPropertyGetterMethod || vref.IsPropertySetterMethod then
+                    Some (m, SemanticClassificationType.Property)
+                elif not (IsOperatorName vref.DisplayName) then
+                    Some (m, SemanticClassificationType.Function)
+                else None
+            //| CNR(_, (Item.Value vref), _, _, _, _, m) ->
+            //    match vref.TauType with
+            //    | TType.TType_app(tref, _) ->  //  g.refcell_tcr_canon.t _refcell_tcr_canon canon.Deref.type vref ->
+            //        if g.refcell_tcr_canon.Deref.Stamp = tref.Deref.Stamp then
+            //            Some (m, SemanticClassificationType.MutableVar)
+            //        else None
+            //    | _ -> None
+            | CNR(_, Item.MethodGroup(_, _, _), _, _, _, _, m) ->
+                Some (m, SemanticClassificationType.Function)
             // custom builders, custom operations get colored as keywords
             | CNR(_, (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use, _, _, _, m) ->
                 Some (m, SemanticClassificationType.ComputationExpression)

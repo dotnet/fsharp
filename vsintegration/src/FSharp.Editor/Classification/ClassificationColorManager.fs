@@ -80,24 +80,20 @@ type ClassificationColorManager
 
     let lightAndBlueColors =
         [ 
-          FSharpClassificationTypes.ReferenceType, Color.FromRgb(43uy, 145uy, 175uy)
-          FSharpClassificationTypes.ValueType, Color.FromRgb(43uy, 145uy, 175uy)
-          FSharpClassificationTypes.UnionCase, Colors.Black
+          FSharpClassificationTypes.UnionCase, Colors.Purple
           FSharpClassificationTypes.Function, Colors.Black
           FSharpClassificationTypes.MutableVar, Colors.Black
-          FSharpClassificationTypes.Module, Color.FromRgb(43uy, 145uy, 175uy)
           FSharpClassificationTypes.Printf, Color.FromRgb(43uy, 145uy, 175uy)
+          FSharpClassificationTypes.Property, Colors.Black
         ] |> Map.ofList
 
     let _darkColors =
         [ 
-          FSharpClassificationTypes.ReferenceType, Color.FromRgb(78uy, 201uy, 176uy)
-          FSharpClassificationTypes.ValueType, Color.FromRgb(78uy, 201uy, 176uy)
-          FSharpClassificationTypes.UnionCase, Color.FromRgb(220uy, 220uy, 220uy)
+          FSharpClassificationTypes.UnionCase, Colors.Purple
           FSharpClassificationTypes.Function, Color.FromRgb(220uy, 220uy, 220uy)
           FSharpClassificationTypes.MutableVar, Color.FromRgb(220uy, 220uy, 220uy)
-          FSharpClassificationTypes.Module, Color.FromRgb(78uy, 201uy, 176uy)
           FSharpClassificationTypes.Printf, Color.FromRgb(78uy, 220uy, 176uy)
+          FSharpClassificationTypes.Property, Color.FromRgb(220uy, 220uy, 220uy)
         ] |> Map.ofList
 
     // Theme changed event may fire even though the same theme is still in use.

@@ -15,3 +15,4 @@ module internal FSharpClassificationTypes =
     let [<Literal>] ValueType = ClassificationTypeNames.StructName
     let [<Literal>] Keyword = ClassificationTypeNames.Keyword
     let [<Literal>] Enum = ClassificationTypeNames.EnumName
+    let [<Literal>] Property = "FSharp.Property"
