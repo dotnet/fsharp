@@ -20,6 +20,7 @@ open Microsoft.CodeAnalysis.Options
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.NavigateTo
 open Microsoft.CodeAnalysis.Navigation
+open Microsoft.CodeAnalysis.PatternMatching
 
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.Text
@@ -81,6 +82,7 @@ module private Index =
 
     type IIndexedNavigableItems =
         abstract Find: searchValue: string -> INavigateToSearchResult []
+        abstract AllItems: NavigableItem []
 
     let private navigateToSearchResultComparer =
         { new IEqualityComparer<INavigateToSearchResult> with 
@@ -94,7 +96,7 @@ module private Index =
                 if isNull x then 0
                 else 23 * (17 * 23 + x.NavigableItem.Document.Id.GetHashCode()) + x.NavigableItem.SourceSpan.GetHashCode() }
 
-    let build (items: seq<NavigableItem>) =
+    let build (items: NavigableItem []) =
         let entries = ResizeArray()
 
         for item in items do
@@ -139,7 +141,8 @@ module private Index =
                      while pos < entries.Count && entries.[pos].StartsWith searchValue do
                          handle pos
                          pos <- pos + 1
-                  Seq.toArray result }
+                  Seq.toArray result 
+              member __.AllItems = items }
 
 module private Utils =
     let navigateToItemKindToRoslynKind = function
@@ -224,6 +227,14 @@ type internal FSharpNavigateToSearchService
                 return indexedItems
         }
 
+    let patternMatchKindToNavigaToMatchKind = function
+        | PatternMatchKind.Exact -> NavigateToMatchKind.Exact
+        | PatternMatchKind.Prefix -> NavigateToMatchKind.Prefix
+        | PatternMatchKind.Substring -> NavigateToMatchKind.Substring
+        | PatternMatchKind.CamelCase -> NavigateToMatchKind.Regular
+        | PatternMatchKind.Fuzzy -> NavigateToMatchKind.Regular
+        | _ -> NavigateToMatchKind.Regular
+
     interface INavigateToSearchService with
         member __.SearchProjectAsync(project, searchPattern, cancellationToken) : Task<ImmutableArray<INavigateToSearchResult>> =
             asyncMaybe {
@@ -233,7 +244,17 @@ type internal FSharpNavigateToSearchService
                     |> Seq.map (fun document -> getCachedIndexedNavigableItems(document, options, cancellationToken))
                     |> Async.Parallel
                     |> liftAsync
-                return items |> Array.map (fun items -> items.Find(searchPattern)) |> Array.concat
+                return 
+                    [| yield! items |> Array.map (fun items -> items.Find(searchPattern)) |> Array.concat
+                       use patternMatcher = new PatternMatcher(searchPattern, allowFuzzyMatching = true)
+                       yield! items
+                              |> Array.collect (fun item -> item.AllItems)
+                              |> Array.Parallel.collect (fun x -> 
+                                  patternMatcher.GetMatches(x.Name)
+                                  |> Seq.map (fun pm ->
+                                      NavigateToSearchResult(x, patternMatchKindToNavigaToMatchKind pm.Kind) :> INavigateToSearchResult)
+                                  |> Seq.toArray) |]
+                    |> Array.distinctBy (fun x -> x.NavigableItem)
             } 
             |> Async.map (Option.defaultValue [||])
             |> Async.map (fun x -> x.ToImmutableArray())
