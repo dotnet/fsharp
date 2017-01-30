@@ -96,6 +96,11 @@
       <Project>{991dcf75-c2eb-42b6-9a0d-aa1d2409d519}</Project>
       <Private>True</Private>
     </ProjectReference>
+    <ProjectReference Include="..\PatternMatcher\PatternMatcher.csproj">
+      <Name>PatternMatcher</Name>
+      <Project>{0305f516-f3ef-48ea-a410-c45eb9611588}</Project>
+      <Private>True</Private>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
