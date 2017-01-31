@@ -412,18 +412,16 @@
 
   <!-- Hook up .NET Core to enable solution refresh of packages -->
   <PropertyGroup Condition="'$(TargetFramework)'=='coreclr'">
-    
-    <NuGetPackagesPath Condition="'$(NuGetPackagesPath)' == ''">$(FSharpSourcesRoot)\..\packages</NuGetPackagesPath>
 
     <!-- Implicitly needed by packageresolve.targets.  Should file a bug for a better error message here -->
-    <PackagesDir>$(NuGetPackagesPath)\</PackagesDir>
+    <PackagesDir>$(NUGET_PACKAGES)</PackagesDir>
 
     <NuGetToolPath Condition="'$(NuGetToolPath)' == ''">$(FSharpSourcesRoot)\..\.nuget\</NuGetToolPath>
     <NuGetConfigCommandLine>-ConfigFile "$(NuGetConfigFile)"</NuGetConfigCommandLine>
 
-    <NugetRestoreCommand>"$(NuGetToolPath)NuGet.exe install -OutputDirectory "$(NuGetPackagesPath)" -Config "$(NuGetToolPath)NuGet.Config"</NugetRestoreCommand>
+    <NugetRestoreCommand>"$(NuGetToolPath)NuGet.exe install -OutputDirectory "$(PackagesDir)" -Config "$(NuGetToolPath)NuGet.Config"</NugetRestoreCommand>
 
-    <DnuRestoreCommand>"$(NuGetToolPath)NuGet.exe" restore -OutputDirectory "$(NuGetPackagesPath)" -Config "$(NuGetToolPath)NuGet.Config"</DnuRestoreCommand>
+    <DnuRestoreCommand>"$(NuGetToolPath)NuGet.exe" restore -OutputDirectory "$(PackagesDir)" -Config "$(NuGetToolPath)NuGet.Config"</DnuRestoreCommand>
 
     <!-- Current version of .NET Core does not support all semantics used in our packages, 
          so we ignore the pre-calculation in the lock file and calculate asset applicability in the build task -->
@@ -473,32 +471,27 @@
   </Target>
 
   <Target Name="dotnetrestore" BeforeTargets="Build" Condition=" '$(TargetFramework)' == 'coreclr' ">
-    <Exec Command="$(MSBuildThisFileDirectory)..\.nuget\nuget.exe restore -PackagesDirectory $(MSBuildThisFileDirectory)..\packages -Config $(MSBuildThisFileDirectory)..\.nuget\NuGet.Config project.json" />
-  </Target>
-
-  <Target Name="nugetpack" AfterTargets="Build" Condition="'$(TargetFramework)' == 'coreclr' "
-          Inputs="@(PackageNuspec)" Outputs='$(OutputPath.TrimEnd("\"))\nuget\"%(PackageNuspec.Filename)).nupkg'>
-    <PropertyGroup>
-      <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)"</PackageProperties>
-    </PropertyGroup>
-
-    <Exec Command='$(MSBuildThisFileDirectory)..\.nuget\nuget.exe pack %(PackageNuspec.Filename)%(PackageNuspec.Extension) -BasePath "$(OutputPath.TrimEnd("\"))" -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory "$(MSBuildThisFileDirectory)..\artifacts' />
+   <Exec Command="$(MSBuildThisFileDirectory)..\.nuget\nuget.exe restore -PackagesDirectory $(PackagesDir) -Config $(MSBuildThisFileDirectory)..\.nuget\NuGet.Config project.json" />
   </Target>
 
   <Target Name="dotnetrestore" BeforeTargets="Build" Condition=" '$(DOTNET_PUBLISH)' == 'true' ">
+    <SetEnvVar Name="NUGET_PACKAGES" Value="$(NUGET_PACKAGES)" />
     <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe restore --configfile $(MSBuildThisFileDirectory)..\.nuget\NuGet.Config project.json"/>
   </Target>
 
   <Target Name="dotnetpublish" AfterTargets="Build" Condition=" '$(DOTNET_PUBLISH)' == 'true' ">
+    <SetEnvVar Name="NUGET_PACKAGES" Value="$(NUGET_PACKAGES)" />
     <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe --verbose publish --no-build project.json -r $(DOTNET_PUBLISH_PLATFORM) -c $(Configuration) -o $(DOTNET_PUBLISH_PATH)"/>
   </Target>
 
   <Target Name="dotnetpublishfsccompiler" AfterTargets="CopyFilesToOutputDirectory" Condition=" '$(DOTNET_PUBLISH_FSC)' == 'true' ">
+    <SetEnvVar Name="NUGET_PACKAGES" Value="$(NUGET_PACKAGES)" />
     <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe restore DeployCompiler\fsc\project.json"/>
     <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe --verbose publish --no-build DeployCompiler\fsc\project.json -r $(DOTNET_PUBLISH_PLATFORM) -c $(Configuration) -o $(DOTNET_PUBLISH_FSC_PATH)"/>
   </Target>
 
   <Target Name="dotnetpublishfsicompiler" AfterTargets="CopyFilesToOutputDirectory" Condition=" '$(DOTNET_PUBLISH_FSI)' == 'true' ">
+    <SetEnvVar Name="NUGET_PACKAGES" Value="$(NUGET_PACKAGES)" />
     <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe restore DeployCompiler\fsi\project.json"/>
     <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe --verbose publish --no-build DeployCompiler\fsi\project.json -r $(DOTNET_PUBLISH_PLATFORM) -c $(Configuration) -o $(DOTNET_PUBLISH_FSI_PATH)"/>
   </Target>
@@ -516,6 +509,68 @@
       <Output TaskParameter="ConsoleOutput" PropertyName="LatestCommit" />
     </Exec>
     <WriteLinesToFile File="$(IntermediateOutputPath)source_link.json" Overwrite="true" Lines='{"documents": { "$(SrcRootDirectory)/*" : "$(RemoteUri.Replace(".git", "").Replace("github.com", "raw.githubusercontent.com"))/$(LatestCommit)/*" }}' />
+  </Target>
+
+    <!-- If BuildVersionFilePath not specified then do nothing  -->
+  <Target Name="CleanVersionFile" Condition ="'$(BuildVersionFilePath)' != '' ">
+    <PropertyGroup>
+        <BuildVersionFileDir>$([System.IO.Path]::GetDirectoryName($(BuildVersionFilePath)))</BuildVersionFileDir>
+    </PropertyGroup>
+    <RemoveDir Condition="Exists('$(BuildVersionFileDir)')" Directories="$(BuildVersionFileDir)" />
+  </Target>
+
+    <!-- If BuildVersionFilePath not specified then do nothing  -->
+  <Target Name="CreateOrUpdateBuildVersionFile" Condition ="'$(BuildVersionFilePath)' != '' ">
+    <PropertyGroup>
+        <BuildVersionFileDir>$([System.IO.Path]::GetDirectoryName($(BuildVersionFilePath)))</BuildVersionFileDir>
+        <PackageVersionMajor Condition="'$(PackageVersionMajor)' == ''" >$(NuGetPerBuildPreReleaseVersion)</PackageVersionMajor>
+        <PackageVersionMinor Condition="'$(PackageVersionMinor)' != ''" >$([MSBuild]::Add($(PackageVersionMinor), 1))</PackageVersionMinor>
+        <PackageVersionMinor Condition="'$(PackageVersionMinor)' == ''" >1</PackageVersionMinor>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <CurrentVersionLines Include="%3C%3Fxml version=%221.0%22 encoding=%22utf-8%22%3F%3E" />
+      <CurrentVersionLines Include="%3C!-- This is a generated file. $(VersionSeedSourceComment) Seed Date is $(VersionSeedDate). --%3E" />
+      <CurrentVersionLines Include="%3CProject xmlns=%22http://schemas.microsoft.com/developer/msbuild/2003%22%3E" />
+      <CurrentVersionLines Include="%3CPropertyGroup%3E" />
+      <CurrentVersionLines Include="%3CPackageVersionMajor Condition=%22%27%24(PackageVersionMajor)%27==%27%27%22%3E$(NuGetPerBuildPreReleaseVersion)%3C/PackageVersionMajor%3E" />
+      <CurrentVersionLines Include="%3CPackageVersionMinor Condition=%22%27%24(PackageVersionMinor)%27==%27%27%22%3E$(PackageVersionMinor)%3C/PackageVersionMinor%3E" />
+      <CurrentVersionLines Include="%3C/PropertyGroup%3E" />
+      <CurrentVersionLines Include="%3C/Project%3E" />
+    </ItemGroup>
+
+    <!-- Since by default the file will get dropped at the obj dir, make sure that the dir is created already or else WriteLinesToFile will error. -->
+    <MakeDir Condition="!Exists('$(BuildVersionFileDir)')" Directories="$(BuildVersionFileDir)" />
+
+    <WriteLinesToFile
+      ContinueOnError="WarnAndContinue"
+      File="$(BuildVersionFilePath)"
+      Lines="@(CurrentVersionLines)"
+      Overwrite="true" />
+
+    <!-- Delete old BuildVersion.props files -->
+    <ItemGroup>
+      <OldBuildVersionFiles Include="$(BuildVersionFilePath)BuildVersions-*.props" Exclude="$(BuildVersionFilePath)%(BuildVersionFileItem.Filename).props" />
+    </ItemGroup>
+    <Delete Files="@(OldBuildVersionFiles)" TreatErrorsAsWarnings="true"/>
+  </Target>
+
+  <Target Name="nugetpack"
+          DependsOnTargets="CreateOrUpdateBuildVersionFile"
+          AfterTargets="Build"
+          Condition="'$(TargetFramework)' == 'coreclr' "
+          Inputs="@(PackageNuspec)" 
+          Outputs='$(FSharpSourcesRoot.TrimEnd("\"))\..\$(Configuration)\artifacts\"%(PackageNuspec.Filename)).nupkg'>
+
+    <PropertyGroup>
+      <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)"</PackageProperties>
+    </PropertyGroup>
+
+    <MakeDir Directories="$(FSharpSourcesRoot.TrimEnd('\'))\..\$(Configuration)\artifacts" />
+    <MakeDir Directories="$(FSharpSourcesRoot.TrimEnd('\'))\..\artifacts" />
+    <SetEnvVar Name="NUGET_PACKAGES" Value="$(NUGET_PACKAGES)" />
+    <Exec Command='$(MSBuildThisFileDirectory)..\.nuget\nuget.exe pack @(PackageNuspec) -BasePath $(OutputPath.TrimEnd("\")) -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory $(FSharpSourcesRoot.TrimEnd("\"))\..\$(Configuration)\artifacts' />
+    <Exec Command='$(MSBuildThisFileDirectory)..\.nuget\nuget.exe pack @(PackageNuspec) -BasePath $(OutputPath.TrimEnd("\")) -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory $(FSharpSourcesRoot.TrimEnd("\"))\..\artifacts' />
   </Target>
 
   <UsingTask TaskName="ReplaceFileText" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
@@ -541,4 +596,19 @@
     </Task>
   </UsingTask>
 
-</Project>
+  <UsingTask TaskName="SetEnvVar" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
+    <ParameterGroup>
+      <Name  ParameterType="System.String" Required="true" />
+      <Value ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System" />
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+          Environment.SetEnvironmentVariable(Name, Value);
+        ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+
+  </Project>
