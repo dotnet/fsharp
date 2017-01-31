@@ -67,20 +67,20 @@ module internal ColorStateLookup =
 type internal FSharpScanner(makeLineTokenizer : string -> FSharpLineTokenizer) =
     let mutable lineTokenizer = makeLineTokenizer ""
 
-    let mutable extraColorizations : IDictionary<Line0, (range * FSharpTokenColorKind)[] > option = None
+    let mutable extraColorizations : IDictionary<Line0, (range * SemanticClassificationType)[] > option = None
 
-    let tryFindExtraInfo (line, c1, c2) =
-        match extraColorizations with
-        | None -> None
-        | Some (table:IDictionary<_,_>) ->
-             match table.TryGetValue line with
-             | false,_ -> None
-             | true,entries ->
-                 entries |> Array.tryPick (fun (range: Range.range,t) ->
-                     if range.StartColumn = c1 &&  c2+1 = range.EndColumn then
-                         Some t
-                     else
-                         None)
+    //let tryFindExtraInfo (line, c1, c2) =
+    //    match extraColorizations with
+    //    | None -> None
+    //    | Some (table:IDictionary<_,_>) ->
+    //         match table.TryGetValue line with
+    //         | false,_ -> None
+    //         | true,entries ->
+    //             entries |> Array.tryPick (fun (range: Range.range,t) ->
+    //                 if range.StartColumn = c1 &&  c2+1 = range.EndColumn then
+    //                     Some t
+    //                 else
+    //                     None)
 
     /// Decode compiler FSharpTokenColorKind into VS TokenColor.
     let lookupTokenColor colorKind =
@@ -121,21 +121,21 @@ type internal FSharpScanner(makeLineTokenizer : string -> FSharpLineTokenizer) =
         colorInfoOption
 
     /// Scan a token from a line and write information about it into the tokeninfo object.
-    member ws.ScanTokenAndProvideInfoAboutIt(line, tokenInfo:TokenInfo, lexState) =
+    member ws.ScanTokenAndProvideInfoAboutIt(_line, tokenInfo:TokenInfo, lexState) =
         let colorInfoOption, newLexState = lineTokenizer.ScanToken(!lexState)
         lexState := newLexState
         match colorInfoOption with
         | None -> false
         | Some colorInfo ->
-            let color =
+            let color = colorInfo.ColorClass
                 // Upgrade identifiers to keywords based on extra info
-                match colorInfo.ColorClass with
-                | FSharpTokenColorKind.Identifier
-                | FSharpTokenColorKind.UpperIdentifier ->
-                    match tryFindExtraInfo (line, colorInfo.LeftColumn, colorInfo.RightColumn) with
-                    | None -> FSharpTokenColorKind.Identifier
-                    | Some info -> info // extra info found
-                | c -> c
+                //match colorInfo.ColorClass with
+                //| SemanticClassificationType.ReferenceType
+                //| SemanticClassificationType.ValueType ->
+                //    match tryFindExtraInfo (line, colorInfo.LeftColumn, colorInfo.RightColumn) with
+                //    | None -> FSharpTokenColorKind.Identifier
+                //    | Some info -> info // extra info found
+                //| c -> c
 
             tokenInfo.Trigger <- enum (int32 colorInfo.FSharpTokenTriggerClass) // cast one enum to another
             tokenInfo.StartIndex <- colorInfo.LeftColumn
@@ -150,7 +150,7 @@ type internal FSharpScanner(makeLineTokenizer : string -> FSharpLineTokenizer) =
         lineTokenizer <- makeLineTokenizer lineText
 
     /// Adjust the set of extra colorizations and return a sorted list of affected lines.
-    member __.SetExtraColorizations (tokens: (Range.range * FSharpTokenColorKind)[]) =
+    member __.SetExtraColorizations (tokens: (Range.range * SemanticClassificationType)[]) =
         if tokens.Length = 0 && extraColorizations.IsNone then
             [| |]
         else
