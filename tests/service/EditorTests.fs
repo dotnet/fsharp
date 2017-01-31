@@ -487,7 +487,7 @@ let _ = debug "[LanguageService] Type checking fails for '%s' with content=%A an
     |> Array.map (fun range -> range.StartLine, range.StartColumn, range.EndLine, range.EndColumn)
     |> shouldEqual [|(3, 24, 3, 26); 
                      (3, 29, 3, 31);
-                     (4, 58, 4, 60); (4, 75, 4, 77); (4, 82, 4, 84); (4, 108, 4, 1109)|]
+                     (4, 58, 4, 60); (4, 75, 4, 77); (4, 82, 4, 84); (4, 108, 4, 110)|]
 
 [<Test>]
 let ``should not report format specifiers for illformed format strings`` () = 
