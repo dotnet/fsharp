@@ -38,7 +38,7 @@ module internal ClassificationTypes =
     [<ClassificationType(ClassificationTypeNames = FSharpClassificationTypes.UnionCase)>]
     [<Name(FSharpClassificationTypes.UnionCase)>]
     [<UserVisible(true)>]
-    [<Order(After = PredefinedClassificationTypeNames.String)>] 
+    [<Order(After = PredefinedClassificationTypeNames.Keyword)>]
     type internal FSharpUnionCaseFormat [<ImportingConstructor>](colorManager: ClassificationColorManager) as self =
         inherit ClassificationFormatDefinition()
         
@@ -49,7 +49,7 @@ module internal ClassificationTypes =
     [<ClassificationType(ClassificationTypeNames = FSharpClassificationTypes.Function)>]
     [<Name(FSharpClassificationTypes.Function)>]
     [<UserVisible(true)>]
-    [<Order(After = PredefinedClassificationTypeNames.String)>] 
+    [<Order(After = PredefinedClassificationTypeNames.Keyword)>]
     type internal FSharpFunctionTypeFormat [<ImportingConstructor>](colorManager: ClassificationColorManager) as self =
         inherit ClassificationFormatDefinition()
         
@@ -60,7 +60,7 @@ module internal ClassificationTypes =
     [<ClassificationType(ClassificationTypeNames = FSharpClassificationTypes.MutableVar)>]
     [<Name(FSharpClassificationTypes.MutableVar)>]
     [<UserVisible(true)>]
-    [<Order(After = PredefinedClassificationTypeNames.String)>] 
+    [<Order(After = PredefinedClassificationTypeNames.Keyword)>]
     type internal FSharpMutableVarTypeFormat [<ImportingConstructor>](colorManager: ClassificationColorManager) as self =
         inherit ClassificationFormatDefinition()
         
@@ -71,7 +71,7 @@ module internal ClassificationTypes =
     [<ClassificationType(ClassificationTypeNames = FSharpClassificationTypes.Printf)>]
     [<Name(FSharpClassificationTypes.Printf)>]
     [<UserVisible(true)>]
-    [<Order(After = PredefinedClassificationTypeNames.String)>] 
+    [<Order(After = PredefinedClassificationTypeNames.String)>]
     type internal FSharpPrintfTypeFormat [<ImportingConstructor>](colorManager: ClassificationColorManager) as self =
         inherit ClassificationFormatDefinition()
         
@@ -82,7 +82,7 @@ module internal ClassificationTypes =
     [<ClassificationType(ClassificationTypeNames = FSharpClassificationTypes.Property)>]
     [<Name(FSharpClassificationTypes.Property)>]
     [<UserVisible(true)>]
-    [<Order(After = PredefinedClassificationTypeNames.String)>] 
+    [<Order(After = PredefinedClassificationTypeNames.Keyword)>]
     type internal FSharpPropertyFormat [<ImportingConstructor>](colorManager: ClassificationColorManager) as self =
         inherit ClassificationFormatDefinition()
         
