@@ -6,6 +6,7 @@ open System
 open System.Composition
 open System.Collections.Generic
 open System.Collections.Immutable
+open System.Linq
 open System.Threading
 open System.Threading.Tasks
 
@@ -44,8 +45,8 @@ type internal DocumentLocations =
 
 type internal InlineRenameLocationSet(locationsByDocument: DocumentLocations [], originalSolution: Solution) =
     interface IInlineRenameLocationSet with
-        member __.Locations : IList<InlineRenameLocation> = 
-            [| for doc in locationsByDocument do yield! doc.Locations |] :> _
+        member __.Locations : IList<InlineRenameLocation> =
+            upcast [| for doc in locationsByDocument do yield! doc.Locations |].ToList()
         
         member this.GetReplacementsAsync(replacementText, _optionSet, cancellationToken) : Task<IInlineRenameReplacementInfo> =
             let rec applyChanges i (solution: Solution) =
