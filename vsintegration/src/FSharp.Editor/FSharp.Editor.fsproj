@@ -40,8 +40,6 @@
     <Compile Include="Common\LanguageService.fs" />
     <Compile Include="Common\SymbolHelpers.fs" />
     <Compile Include="Common\AssemblyContentProvider.fs" />
-    <Compile Include="Classification\ClassificationTypes.fs" />
-    <Compile Include="Classification\ClassificationColorManager.fs" />
     <Compile Include="Classification\ClassificationDefinitions.fs" />
     <Compile Include="Classification\ColorizationService.fs" />
     <Compile Include="Formatting\BraceMatchingService.fs" />

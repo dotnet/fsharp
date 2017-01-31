@@ -45,7 +45,7 @@ type internal FSharpColorizationService
                 for (range, classificationType) in colorizationData do
                     let span = CommonHelpers.fixupSpan(sourceText, CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
                     if textSpan.Contains(span.Start) || textSpan.Contains(span.End - 1) || span.Contains(textSpan) then
-                        result.Add(ClassifiedSpan(span, ClassificationTypes.getClassificationTypeName(classificationType)))
+                        result.Add(ClassifiedSpan(span, FSharpClassificationTypes.getClassificationTypeName(classificationType)))
             } |> Async.Ignore |> CommonRoslynHelpers.StartAsyncUnitAsTask cancellationToken
 
         // Do not perform classification if we don't have project options (#defines matter)

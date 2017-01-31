@@ -2,26 +2,43 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open Microsoft.VisualStudio.Language.StandardClassification
-//open Microsoft.VisualStudio.PlatformUI
-open Microsoft.VisualStudio.Shell
-open Microsoft.VisualStudio.Text
-open Microsoft.VisualStudio.Text.Classification
-open Microsoft.VisualStudio.Text.Editor
-open Microsoft.VisualStudio.Text.Formatting
-open Microsoft.VisualStudio.Text.Tagging
-open Microsoft.VisualStudio.Utilities
 open System
-open System.Collections.Generic
 open System.ComponentModel.Composition
 open System.Windows.Media
-open Microsoft.FSharp.Compiler.SourceCodeServices
+
+open Microsoft.VisualStudio.Language.StandardClassification
+open Microsoft.VisualStudio.Text.Classification
+open Microsoft.VisualStudio.Utilities
 open Microsoft.CodeAnalysis.Classification
 
-module internal ClassificationTypes =
-    [<Export; Name(FSharpClassificationTypes.UnionCase); BaseDefinition("identifier")>]
-    let FSharpPatternCaseClassificationType : ClassificationTypeDefinition = null
+open Microsoft.FSharp.Compiler.SourceCodeServices
 
+[<RequireQualifiedAccess>]
+module internal FSharpClassificationTypes =
+    let [<Literal>] Function = "FSharp.Function"
+    let [<Literal>] MutableVar = "FSharp.MutableVar"
+    let [<Literal>] Printf = "FSharp.Printf"
+    let [<Literal>] ReferenceType = ClassificationTypeNames.ClassName
+    let [<Literal>] Module = ClassificationTypeNames.ModuleName
+    let [<Literal>] ValueType = ClassificationTypeNames.StructName
+    let [<Literal>] Keyword = ClassificationTypeNames.Keyword
+    let [<Literal>] Enum = ClassificationTypeNames.EnumName
+    let [<Literal>] Property = "FSharp.Property"
+
+    let getClassificationTypeName = function
+        | SemanticClassificationType.ReferenceType
+        | SemanticClassificationType.Module -> Module
+        | SemanticClassificationType.ValueType -> ValueType
+        | SemanticClassificationType.Function -> Function
+        | SemanticClassificationType.MutableVar -> MutableVar
+        | SemanticClassificationType.Printf -> Printf
+        | SemanticClassificationType.ComputationExpression
+        | SemanticClassificationType.IntrinsicType -> Keyword
+        | SemanticClassificationType.UnionCase
+        | SemanticClassificationType.Enumeration -> Enum
+        | SemanticClassificationType.Property -> Property
+
+module internal ClassificationDefinitions =
     [<Export; Name(FSharpClassificationTypes.Function); BaseDefinition("identifier")>]
     let FSharpFunctionClassificationType : ClassificationTypeDefinition = null
 
@@ -35,69 +52,45 @@ module internal ClassificationTypes =
     let FSharpPropertyClassificationType : ClassificationTypeDefinition = null
 
     [<Export(typeof<EditorFormatDefinition>)>]
-    [<ClassificationType(ClassificationTypeNames = FSharpClassificationTypes.UnionCase)>]
-    [<Name(FSharpClassificationTypes.UnionCase)>]
-    [<UserVisible(true)>]
-    [<Order(After = PredefinedClassificationTypeNames.Keyword)>]
-    type internal FSharpUnionCaseFormat [<ImportingConstructor>](colorManager: ClassificationColorManager) as self =
-        inherit ClassificationFormatDefinition()
-        
-        do self.DisplayName <- "F# Unions / Active Patterns"
-           self.ForegroundColor <- colorManager.GetDefaultColors(FSharpClassificationTypes.UnionCase)
-
-    [<Export(typeof<EditorFormatDefinition>)>]
     [<ClassificationType(ClassificationTypeNames = FSharpClassificationTypes.Function)>]
     [<Name(FSharpClassificationTypes.Function)>]
     [<UserVisible(true)>]
     [<Order(After = PredefinedClassificationTypeNames.Keyword)>]
-    type internal FSharpFunctionTypeFormat [<ImportingConstructor>](colorManager: ClassificationColorManager) as self =
+    type internal FSharpFunctionTypeFormat() as self =
         inherit ClassificationFormatDefinition()
         
         do self.DisplayName <- "F# Functions / Methods"
-           self.ForegroundColor <- colorManager.GetDefaultColors(FSharpClassificationTypes.Function)
+           self.ForegroundColor <- Nullable Colors.Navy
 
     [<Export(typeof<EditorFormatDefinition>)>]
     [<ClassificationType(ClassificationTypeNames = FSharpClassificationTypes.MutableVar)>]
     [<Name(FSharpClassificationTypes.MutableVar)>]
     [<UserVisible(true)>]
     [<Order(After = PredefinedClassificationTypeNames.Keyword)>]
-    type internal FSharpMutableVarTypeFormat [<ImportingConstructor>](colorManager: ClassificationColorManager) as self =
+    type internal FSharpMutableVarTypeFormat() as self =
         inherit ClassificationFormatDefinition()
         
         do self.DisplayName <- "F# Mutable Variables / Reference Cells"
-           self.ForegroundColor <- colorManager.GetDefaultColors(FSharpClassificationTypes.MutableVar)
+           self.ForegroundColor <- Nullable Colors.Red
 
     [<Export(typeof<EditorFormatDefinition>)>]
     [<ClassificationType(ClassificationTypeNames = FSharpClassificationTypes.Printf)>]
     [<Name(FSharpClassificationTypes.Printf)>]
     [<UserVisible(true)>]
     [<Order(After = PredefinedClassificationTypeNames.String)>]
-    type internal FSharpPrintfTypeFormat [<ImportingConstructor>](colorManager: ClassificationColorManager) as self =
+    type internal FSharpPrintfTypeFormat() as self =
         inherit ClassificationFormatDefinition()
         
         do self.DisplayName <- "F# Printf Format"
-           self.ForegroundColor <- colorManager.GetDefaultColors(FSharpClassificationTypes.Printf)
+           self.ForegroundColor <- Nullable (Color.FromRgb(43uy, 145uy, 175uy))
     
     [<Export(typeof<EditorFormatDefinition>)>]
     [<ClassificationType(ClassificationTypeNames = FSharpClassificationTypes.Property)>]
     [<Name(FSharpClassificationTypes.Property)>]
     [<UserVisible(true)>]
     [<Order(After = PredefinedClassificationTypeNames.Keyword)>]
-    type internal FSharpPropertyFormat [<ImportingConstructor>](colorManager: ClassificationColorManager) as self =
+    type internal FSharpPropertyFormat() as self =
         inherit ClassificationFormatDefinition()
         
         do self.DisplayName <- "F# Properties"
-           self.ForegroundColor <- colorManager.GetDefaultColors(FSharpClassificationTypes.Printf)
-
-    let getClassificationTypeName = function
-        | SemanticClassificationType.ReferenceType
-        | SemanticClassificationType.Module -> FSharpClassificationTypes.Module
-        | SemanticClassificationType.ValueType -> FSharpClassificationTypes.ValueType
-        | SemanticClassificationType.UnionCase -> FSharpClassificationTypes.UnionCase
-        | SemanticClassificationType.Function -> FSharpClassificationTypes.Function
-        | SemanticClassificationType.MutableVar -> FSharpClassificationTypes.MutableVar
-        | SemanticClassificationType.Printf -> FSharpClassificationTypes.Printf
-        | SemanticClassificationType.ComputationExpression
-        | SemanticClassificationType.IntrinsicType -> FSharpClassificationTypes.Keyword
-        | SemanticClassificationType.Enumeration -> FSharpClassificationTypes.Enum
-        | SemanticClassificationType.Property -> FSharpClassificationTypes.Property
+           self.ForegroundColor <- Nullable Colors.Black
