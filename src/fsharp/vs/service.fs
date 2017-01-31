@@ -1448,6 +1448,8 @@ type TypeCheckInfo
             //            Some (m, SemanticClassificationType.MutableVar)
             //        else None
             //    | _ -> None
+            | CNR(_, Item.RecdField rfinfo, _, _, _, _, m) when rfinfo.RecdField.IsMutable -> 
+                Some (m, SemanticClassificationType.MutableVar)
             | CNR(_, Item.MethodGroup(_, _, _), _, _, _, _, m) ->
                 Some (m, SemanticClassificationType.Function)
             // custom builders, custom operations get colored as keywords
