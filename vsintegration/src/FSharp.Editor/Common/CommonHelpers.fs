@@ -2,8 +2,6 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-#nowarn "1182"
-
 open System
 open System.Collections.Generic
 open System.Threading
@@ -89,7 +87,6 @@ module internal CommonHelpers =
         | FSharpTokenColorKind.InactiveCode -> ClassificationTypeNames.ExcludedCode 
         | FSharpTokenColorKind.PreprocessorKeyword -> ClassificationTypeNames.PreprocessorKeyword 
         | FSharpTokenColorKind.Operator -> ClassificationTypeNames.Operator
-        | FSharpTokenColorKind.TypeName  -> ClassificationTypeNames.ClassName
         | FSharpTokenColorKind.Default 
         | _ -> ClassificationTypeNames.Text
 
@@ -360,7 +357,6 @@ module internal CommonHelpers =
     let getSymbolAtPosition(documentKey: DocumentId, sourceText: SourceText, position: int, fileName: string, defines: string list, lookupKind: SymbolLookupKind) : LexerSymbol option =
         try
             let lineData, textLinePos, lineContents = getCachedSourceLineData(documentKey, sourceText, position, fileName, defines)
-            let sourceTokenizer = FSharpSourceTokenizer(defines, Some fileName)
             getSymbolFromTokens(fileName, lineData.Tokens, textLinePos, lineContents, lookupKind)
         with 
         | :? System.OperationCanceledException -> reraise()
@@ -390,7 +386,7 @@ module internal Extensions =
 
     type System.IServiceProvider with
         member x.GetService<'T>() = x.GetService(typeof<'T>) :?> 'T
-        member x.GetService<'S, 'T>() = x.GetService(typeof<'S>) :?> 'T
+        member x.GetService<'T, 'S>() = x.GetService(typeof<'S>) :?> 'T
 
     type Path with
         static member GetFullPathSafe path =
