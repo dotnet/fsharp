@@ -1433,14 +1433,15 @@ type TypeCheckInfo
             // 'seq' in 'seq { ... }' gets colored as keywords
             | CNR(_, (Item.Value vref), ItemOccurence.Use, _, _, _, m) when valRefEq g g.seq_vref vref ->
                 Some (m, SemanticClassificationType.ComputationExpression)
-            | CNR(_, (Item.Value vref), _, _, _, _, m) when vref.IsMutable ->
-                Some (m, SemanticClassificationType.MutableVar)
+            
             | CNR(_, (Item.Value vref), _, _, _, _, m) when isFunction g vref.Type ->
                 if vref.IsPropertyGetterMethod || vref.IsPropertySetterMethod then
                     Some (m, SemanticClassificationType.Property)
                 elif not (IsOperatorName vref.DisplayName) then
                     Some (m, SemanticClassificationType.Function)
                 else None
+            | CNR(_, (Item.Value vref), _, _, _, _, m) when vref.IsMutable ->
+                Some (m, SemanticClassificationType.MutableVar)
             // todo here we should check if a `vref` is of type `ref`1`
             // (the commented code does not work)
 
@@ -1451,7 +1452,7 @@ type TypeCheckInfo
             //            Some (m, SemanticClassificationType.MutableVar)
             //        else None
             //    | _ -> None
-            | CNR(_, Item.RecdField rfinfo, _, _, _, _, m) when rfinfo.RecdField.IsMutable -> 
+            | CNR(_, Item.RecdField rfinfo, _, _, _, _, m) when rfinfo.RecdField.IsMutable && rfinfo.LiteralValue.IsNone -> 
                 Some (m, SemanticClassificationType.MutableVar)
             | CNR(_, Item.MethodGroup(_, _, _), _, _, _, _, m) ->
                 Some (m, SemanticClassificationType.Function)
@@ -2241,7 +2242,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                  requiredToKeep=(fun (builderOpt,_,_) -> match builderOpt with None -> false | Some b -> b.IsBeingKeptAliveApartFromCacheEntry),
                  onDiscard = (fun (_, _, decrement) -> decrement.Dispose()))
 
-    let getOrCreateBuilder (options, ct) =  
+    let getOrCreateBuilder (options, ct) =
         match incrementalBuildersCache.TryGet options with
         | Some b -> b
         | None -> 
@@ -2521,7 +2522,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
         let execWithReactorAsync action = reactor.EnqueueAndAwaitOpAsync("ParseAndCheckFileInProject " + filename, action)
         async {
             let! ct = Async.CancellationToken
-            let builderOpt,creationErrors,_ = getOrCreateBuilder (options, ct) // Q: Whis it it ok to ignore creationErrors in the build cache? A: These errors will be appended into the typecheck results
+            let! builderOpt,creationErrors,_ = execWithReactorAsync <| fun _ -> getOrCreateBuilder (options, ct) // Q: Whis it it ok to ignore creationErrors in the build cache? A: These errors will be appended into the typecheck results
             use _unwind = IncrementalBuilder.KeepBuilderAlive builderOpt
             match builderOpt with
             | None -> 
