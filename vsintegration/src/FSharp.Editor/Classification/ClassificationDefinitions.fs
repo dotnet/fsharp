@@ -59,7 +59,7 @@ module internal ClassificationDefinitions =
     type internal FSharpFunctionTypeFormat() as self =
         inherit ClassificationFormatDefinition()
         
-        do self.DisplayName <- "F# Functions / Methods"
+        do self.DisplayName <- SR.FSharpFunctionsOrMethodsClassificationType.Value
            self.ForegroundColor <- Nullable Colors.Navy
 
     [<Export(typeof<EditorFormatDefinition>)>]
@@ -70,7 +70,7 @@ module internal ClassificationDefinitions =
     type internal FSharpMutableVarTypeFormat() as self =
         inherit ClassificationFormatDefinition()
         
-        do self.DisplayName <- "F# Mutable Variables / Reference Cells"
+        do self.DisplayName <- SR.FSharpMutableVarsClassificationType.Value
            self.ForegroundColor <- Nullable Colors.Red
 
     [<Export(typeof<EditorFormatDefinition>)>]
@@ -81,7 +81,7 @@ module internal ClassificationDefinitions =
     type internal FSharpPrintfTypeFormat() as self =
         inherit ClassificationFormatDefinition()
         
-        do self.DisplayName <- "F# Printf Format"
+        do self.DisplayName <- SR.FSharpPrintfFormatClassificationType.Value
            self.ForegroundColor <- Nullable (Color.FromRgb(43uy, 145uy, 175uy))
     
     [<Export(typeof<EditorFormatDefinition>)>]
@@ -92,5 +92,5 @@ module internal ClassificationDefinitions =
     type internal FSharpPropertyFormat() as self =
         inherit ClassificationFormatDefinition()
         
-        do self.DisplayName <- "F# Properties"
+        do self.DisplayName <- SR.FSharpPropertiesClassificationType.Value
            self.ForegroundColor <- Nullable Colors.Black

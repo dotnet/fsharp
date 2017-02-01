@@ -69,19 +69,6 @@ type internal FSharpScanner(makeLineTokenizer : string -> FSharpLineTokenizer) =
 
     let mutable extraColorizations : IDictionary<Line0, (range * SemanticClassificationType)[] > option = None
 
-    //let tryFindExtraInfo (line, c1, c2) =
-    //    match extraColorizations with
-    //    | None -> None
-    //    | Some (table:IDictionary<_,_>) ->
-    //         match table.TryGetValue line with
-    //         | false,_ -> None
-    //         | true,entries ->
-    //             entries |> Array.tryPick (fun (range: Range.range,t) ->
-    //                 if range.StartColumn = c1 &&  c2+1 = range.EndColumn then
-    //                     Some t
-    //                 else
-    //                     None)
-
     /// Decode compiler FSharpTokenColorKind into VS TokenColor.
     let lookupTokenColor colorKind =
         match colorKind with
@@ -128,15 +115,6 @@ type internal FSharpScanner(makeLineTokenizer : string -> FSharpLineTokenizer) =
         | None -> false
         | Some colorInfo ->
             let color = colorInfo.ColorClass
-                // Upgrade identifiers to keywords based on extra info
-                //match colorInfo.ColorClass with
-                //| SemanticClassificationType.ReferenceType
-                //| SemanticClassificationType.ValueType ->
-                //    match tryFindExtraInfo (line, colorInfo.LeftColumn, colorInfo.RightColumn) with
-                //    | None -> FSharpTokenColorKind.Identifier
-                //    | Some info -> info // extra info found
-                //| c -> c
-
             tokenInfo.Trigger <- enum (int32 colorInfo.FSharpTokenTriggerClass) // cast one enum to another
             tokenInfo.StartIndex <- colorInfo.LeftColumn
             tokenInfo.EndIndex <- colorInfo.RightColumn

@@ -1441,6 +1441,9 @@ type TypeCheckInfo
                 elif not (IsOperatorName vref.DisplayName) then
                     Some (m, SemanticClassificationType.Function)
                 else None
+            // todo here we should check if a `vref` is of type `ref`1`
+            // (the commented code does not work)
+
             //| CNR(_, (Item.Value vref), _, _, _, _, m) ->
             //    match vref.TauType with
             //    | TType.TType_app(tref, _) ->  //  g.refcell_tcr_canon.t _refcell_tcr_canon canon.Deref.type vref ->
