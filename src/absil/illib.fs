@@ -442,11 +442,9 @@ module String =
 
 module Dictionary = 
 
-    let inline ofList l = 
-        let dict = new System.Collections.Generic.Dictionary<_,_>(List.length l, HashIdentity.Structural)
-        l |> List.iter (fun (k,v) -> dict.Add(k,v))
-        dict
+    let inline newWithSize (size: int) = System.Collections.Generic.Dictionary<_,_>(size, HashIdentity.Structural)
         
+
 module Lazy = 
     let force (x: Lazy<'T>) = x.Force()
 

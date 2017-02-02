@@ -477,6 +477,20 @@ type FSharpSymbolUse(g:TcGlobals, denv: DisplayEnv, symbol:FSharpSymbol, itemOcc
     member __.Range = Range.toZ range
     member __.RangeAlternate = range
 
+[<RequireQualifiedAccess>]
+type SemanticClassificationType =
+    | ReferenceType
+    | ValueType
+    | UnionCase
+    | Function
+    | Property
+    | MutableVar
+    | Module
+    | Printf
+    | ComputationExpression
+    | IntrinsicType
+    | Enumeration
+
 // A scope represents everything we get back from the typecheck of a file.
 // It acts like an in-memory database about the file.
 // It is effectively immutable and not updated: when we re-typecheck we just drop the previous
@@ -1403,7 +1417,7 @@ type TypeCheckInfo
          sSymbolUses.GetFormatSpecifierLocations() 
 
     // Not, this does not have to be a SyncOp, it can be called from any thread
-    member scope.GetExtraColorizations() =
+    member scope.GetSemanticClassification() : (range * SemanticClassificationType) [] =
         let (|LegitTypeOccurence|_|) = function
             | ItemOccurence.UseInType
             | ItemOccurence.UseInAttribute
@@ -1422,25 +1436,51 @@ type TypeCheckInfo
             match cnr with
             // 'seq' in 'seq { ... }' gets colored as keywords
             | CNR(_, (Item.Value vref), ItemOccurence.Use, _, _, _, m) when valRefEq g g.seq_vref vref ->
-                Some (m, FSharpTokenColorKind.Keyword)
+                Some (m, SemanticClassificationType.ComputationExpression)
+            
+            | CNR(_, (Item.Value vref), _, _, _, _, m) when isFunction g vref.Type ->
+                if vref.IsPropertyGetterMethod || vref.IsPropertySetterMethod then
+                    Some (m, SemanticClassificationType.Property)
+                elif not (IsOperatorName vref.DisplayName) then
+                    Some (m, SemanticClassificationType.Function)
+                else None
+            | CNR(_, (Item.Value vref), _, _, _, _, m) when vref.IsMutable ->
+                Some (m, SemanticClassificationType.MutableVar)
+            // todo here we should check if a `vref` is of type `ref`1`
+            // (the commented code does not work)
+
+            //| CNR(_, (Item.Value vref), _, _, _, _, m) ->
+            //    match vref.TauType with
+            //    | TType.TType_app(tref, _) ->  //  g.refcell_tcr_canon.t _refcell_tcr_canon canon.Deref.type vref ->
+            //        if g.refcell_tcr_canon.Deref.Stamp = tref.Deref.Stamp then
+            //            Some (m, SemanticClassificationType.MutableVar)
+            //        else None
+            //    | _ -> None
+            | CNR(_, Item.RecdField rfinfo, _, _, _, _, m) when rfinfo.RecdField.IsMutable && rfinfo.LiteralValue.IsNone -> 
+                Some (m, SemanticClassificationType.MutableVar)
+            | CNR(_, Item.MethodGroup(_, _, _), _, _, _, _, m) ->
+                Some (m, SemanticClassificationType.Function)
             // custom builders, custom operations get colored as keywords
             | CNR(_, (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use, _, _, _, m) ->
-                Some (m, FSharpTokenColorKind.Keyword)
+                Some (m, SemanticClassificationType.ComputationExpression)
             // well known type aliases get colored as keywords
             | CNR(_, (Item.Types (n, _)), _, _, _, _, m) when keywordTypes.Contains(n) ->
-                Some (m, FSharpTokenColorKind.Keyword)
+                Some (m, SemanticClassificationType.IntrinsicType)
             // types get colored as types when they occur in syntactic types or custom attributes
             // typevariables get colored as types when they occur in syntactic types custom builders, custom operations get colored as keywords
             | CNR(_, Item.Types (_, [OptionalArgumentAttribute]), LegitTypeOccurence, _, _, _, _) -> None
             | CNR(_, Item.CtorGroup(_, [MethInfo.FSMeth(_, OptionalArgumentAttribute, _, _)]), LegitTypeOccurence, _, _, _, _) -> None
             | CNR(_, Item.Types _, LegitTypeOccurence, _, _, _, m) -> 
-                Some (m, FSharpTokenColorKind.TypeName)
+                Some (m, SemanticClassificationType.ReferenceType)
             | CNR(_, (Item.TypeVar _ | Item.UnqualifiedType _ | Item.CtorGroup _), LegitTypeOccurence, _, _, _, m) ->
-                Some (m, FSharpTokenColorKind.TypeName)
+                Some (m, SemanticClassificationType.ReferenceType)
             | CNR(_, Item.ModuleOrNamespaces refs, LegitTypeOccurence, _, _, _, m) when refs |> List.exists (fun x -> x.IsModule) ->
-                Some (m, FSharpTokenColorKind.TypeName)
+                Some (m, SemanticClassificationType.ReferenceType)
+            | CNR(_, (Item.ActivePatternCase _ | Item.UnionCase _ | Item.ActivePatternResult _), _, _, _, _, m) ->
+                Some (m, SemanticClassificationType.UnionCase)
             | _ -> None)
         |> Seq.toArray
+        |> Array.append (sSymbolUses.GetFormatSpecifierLocations() |> Array.map (fun m -> m, SemanticClassificationType.Printf))
 
     member x.ScopeResolutions = sResolutions
     member x.ScopeSymbolUses = sSymbolUses
@@ -2044,12 +2084,12 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
             // This operation is not asynchronous - GetFormatSpecifierLocations can be run on the calling thread
             scope.GetFormatSpecifierLocations())
 
-    member info.GetExtraColorizationsAlternate() = 
+    member info.GetSemanticClassification() =
         threadSafeOp 
            (fun () -> [| |]) 
            (fun (scope, _builder, _reactor) -> 
             // This operation is not asynchronous - GetExtraColorizations can be run on the calling thread
-            scope.GetExtraColorizations())
+            scope.GetSemanticClassification())
      
     member info.PartialAssemblySignature = 
         threadSafeOp 
@@ -2231,7 +2271,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                  requiredToKeep=(fun (builderOpt,_,_) -> match builderOpt with None -> false | Some b -> b.IsBeingKeptAliveApartFromCacheEntry),
                  onDiscard = (fun (_, _, decrement) -> decrement.Dispose()))
 
-    let getOrCreateBuilder (ctok, options, ct) =  
+    let getOrCreateBuilder (ctok, options, ct) =
         RequireCompilationThread ctok
         match incrementalBuildersCache.TryGet (ctok, options) with
         | Some b -> b
@@ -2517,7 +2557,9 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
         let execWithReactorAsync action = reactor.EnqueueAndAwaitOpAsync("ParseAndCheckFileInProject " + filename, action)
         async {
             let! ct = Async.CancellationToken
-            let builderOpt,creationErrors,_ = getOrCreateBuilder (BUG_NotOnCompilationThread(), options, ct) // Q: Whis it it ok to ignore creationErrors in the build cache? A: These errors will be appended into the typecheck results
+            let! builderOpt,creationErrors,_ = 
+                execWithReactorAsync <| fun ctok _ -> 
+                    getOrCreateBuilder (ctok, options, ct) // Q: Whis it it ok to ignore creationErrors in the build cache? A: These errors will be appended into the typecheck results
             use _unwind = IncrementalBuilder.KeepBuilderAlive builderOpt
             match builderOpt with
             | None -> 
