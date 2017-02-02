@@ -52,9 +52,9 @@ type internal ErrorScope =
 /// Lookup the global static cache for building the FrameworkTcImports
 type internal FrameworkImportsCache = 
     new : size: int -> FrameworkImportsCache
-    member Get : TcConfig -> TcGlobals * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list
-    member Clear: unit -> unit
-    member Downsize: unit -> unit
+    member Get : CompilationThreadToken * TcConfig -> TcGlobals * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list
+    member Clear: CompilationThreadToken -> unit
+    member Downsize: CompilationThreadToken -> unit
   
 /// Used for unit testing
 module internal IncrementalBuilderEventTesting =
@@ -144,51 +144,55 @@ type internal IncrementalBuilder =
       member ThereAreLiveTypeProviders : bool
 #endif
       /// Perform one step in the F# build. Return true if the background work is finished.
-      member Step : ct: CancellationToken -> bool
+      member Step : CompilationThreadToken * ct: CancellationToken -> bool
 
       /// Get the preceding typecheck state of a slot, without checking if it is up-to-date w.r.t.
       /// the timestamps on files and referenced DLLs prior to this one. Return None if the result is not available.
       /// This is a very quick operation.
+      ///
+      /// This is safe for use from non-compiler threads but the objects returned must in many cases be accessed only from the compiler thread.
       member GetCheckResultsBeforeFileInProjectIfReady: filename:string -> PartialCheckResults option
 
       /// Get the preceding typecheck state of a slot, but only if it is up-to-date w.r.t.
       /// the timestamps on files and referenced DLLs prior to this one. Return None if the result is not available.
       /// This is a relatively quick operation.
+      ///
+      /// This is safe for use from non-compiler threads
       member AreCheckResultsBeforeFileInProjectReady: filename:string -> bool
 
       /// Get the preceding typecheck state of a slot. Compute the entire type check of the project up
       /// to the necessary point if the result is not available. This may be a long-running operation.
       ///
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetCheckResultsBeforeFileInProject : filename:string * ct: CancellationToken -> PartialCheckResults 
+      member GetCheckResultsBeforeFileInProject : CompilationThreadToken * filename:string * ct: CancellationToken -> PartialCheckResults 
 
       /// Get the typecheck state after checking a file. Compute the entire type check of the project up
       /// to the necessary point if the result is not available. This may be a long-running operation.
       ///
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetCheckResultsAfterFileInProject : filename:string * ct: CancellationToken -> PartialCheckResults 
+      member GetCheckResultsAfterFileInProject : CompilationThreadToken * filename:string * ct: CancellationToken -> PartialCheckResults 
 
       /// Get the typecheck result after the end of the last file. The typecheck of the project is not 'completed'.
       /// This may be a long-running operation.
       ///
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetCheckResultsAfterLastFileInProject : ct: CancellationToken  -> PartialCheckResults 
+      member GetCheckResultsAfterLastFileInProject : CompilationThreadToken * ct: CancellationToken  -> PartialCheckResults 
 
       /// Get the final typecheck result. If 'generateTypedImplFiles' was set on Create then the TypedAssemblyAfterOptimization will contain implementations.
       /// This may be a long-running operation.
       ///
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetCheckResultsAndImplementationsForProject : ct: CancellationToken  -> PartialCheckResults * IL.ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option
+      member GetCheckResultsAndImplementationsForProject : CompilationThreadToken * ct: CancellationToken  -> PartialCheckResults * IL.ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option
 
       /// Get the logical time stamp that is associated with the output of the project if it were gully built immediately
-      member GetLogicalTimeStampForProject: unit -> DateTime
+      member GetLogicalTimeStampForProject: CompilationThreadToken -> DateTime
 
       /// Await the untyped parse results for a particular slot in the vector of parse results.
       ///
       /// This may be a marginally long-running operation (parses are relatively quick, only one file needs to be parsed)
-      member GetParseResultsForFile : filename:string * ct: CancellationToken -> Ast.ParsedInput option * Range.range * string * (PhasedDiagnostic * FSharpErrorSeverity) list
+      member GetParseResultsForFile : CompilationThreadToken * filename:string * ct: CancellationToken -> Ast.ParsedInput option * Range.range * string * (PhasedDiagnostic * FSharpErrorSeverity) list
 
-      static member TryCreateBackgroundBuilderForProjectOptions : ReferenceResolver.Resolver * FrameworkImportsCache * scriptClosureOptions:LoadClosure option * sourceFiles:string list * commandLineArgs:string list * projectReferences: IProjectReference list * projectDirectory:string * useScriptResolutionRules:bool * keepAssemblyContents: bool * keepAllBackgroundResolutions: bool -> IncrementalBuilder option * FSharpErrorInfo list 
+      static member TryCreateBackgroundBuilderForProjectOptions : CompilationThreadToken * ReferenceResolver.Resolver * FrameworkImportsCache * scriptClosureOptions:LoadClosure option * sourceFiles:string list * commandLineArgs:string list * projectReferences: IProjectReference list * projectDirectory:string * useScriptResolutionRules:bool * keepAssemblyContents: bool * keepAllBackgroundResolutions: bool -> IncrementalBuilder option * FSharpErrorInfo list 
 
       static member KeepBuilderAlive : IncrementalBuilder option -> IDisposable
       member IsBeingKeptAliveApartFromCacheEntry : bool
@@ -283,5 +287,5 @@ module internal IncrementalBuild =
 ///
 /// Use to reset error and warning handlers.
 type internal CompilationGlobalsScope =
-    new : ErrorLogger * BuildPhase * string -> CompilationGlobalsScope
+    new : CompilationThreadToken * ErrorLogger * BuildPhase * string -> CompilationGlobalsScope
     interface IDisposable

@@ -124,6 +124,28 @@ let rec AttachRange m (exn:exn) =
         | notARangeDual -> notARangeDual
 
 //----------------------------------------------------------------------------
+// Singe threaded execution
+
+type CompilationThreadToken = | CompilationThreadToken
+let RequireCompilationThread (_ctok: CompilationThreadToken) = ()
+let DoesNotSpecificallyRequireCompilerThreadAndCouldLikelyBeConcurrent (_ctok: CompilationThreadToken) = ()
+let AssumeOnCompilationThread () = CompilationThreadToken
+let BUG_NotOnCompilationThread () = CompilationThreadToken
+
+type CallerThreadToken = | CallerThreadToken
+let RequireCallerThread (_ctok: CallerThreadToken) = ()
+let CouldAvoidCallerThread (_ctok: CallerThreadToken) = ()
+let AssumeSomeCallerThread () = CallerThreadToken
+
+type LockedResourceToken = | LockedResourceToken
+let RequireLockThread (_ctok: LockedResourceToken) = ()
+let AssumeLockThread () = LockedResourceToken
+
+type Lock() = 
+    let lockObj = obj()
+    member __.Acquire f = lock lockObj (fun () -> f (AssumeLockThread()))
+
+//----------------------------------------------------------------------------
 // Error logger interface
 
 type Exiter = 

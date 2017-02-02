@@ -8,18 +8,19 @@ open System.Threading
 open Microsoft.FSharp.Control
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Lib
+open Microsoft.FSharp.Compiler.ErrorLogger
 
 /// Represents the capability to schedule work in the compiler service operations queue for the compilation thread
 type internal IReactorOperations = 
-    abstract EnqueueAndAwaitOpAsync : string * (CancellationToken -> 'T) -> Async<'T>
-    abstract EnqueueOp: string * (unit -> unit) -> unit
+    abstract EnqueueAndAwaitOpAsync : string * (CompilationThreadToken -> CancellationToken -> 'T) -> Async<'T>
+    abstract EnqueueOp: string * (CompilationThreadToken -> unit) -> unit
 
 [<NoEquality; NoComparison>]
 type internal ReactorCommands = 
     /// Kick off a build.
-    | SetBackgroundOp of (unit -> bool)  option
+    | SetBackgroundOp of (CompilationThreadToken -> bool)  option
     /// Do some work not synchronized in the mailbox.
-    | Op of string * CancellationToken * (unit -> unit) * (unit -> unit)
+    | Op of string * CancellationToken * (CompilationThreadToken -> unit) * (unit -> unit)
     /// Finish the background building
     | WaitForBackgroundOpCompletion of AsyncReplyChannel<unit>            
     /// Finish all the queued ops
@@ -43,7 +44,8 @@ type Reactor() =
 
         // Async workflow which receives messages and dispatches to worker functions.
         let rec loop (bgOpOpt, onComplete, bg) = 
-            async { Trace.TraceInformation("Reactor: receiving..., remaining {0}, mem {1}, gc2 {2}", inbox.CurrentQueueLength, GC.GetTotalMemory(false)/1000000L, GC.CollectionCount(2))
+            async { let ctok = AssumeOnCompilationThread()
+                    Trace.TraceInformation("Reactor: receiving..., remaining {0}, mem {1}, gc2 {2}", inbox.CurrentQueueLength, GC.GetTotalMemory(false)/1000000L, GC.CollectionCount(2))
 
                     // Messages always have priority over the background op.
                     let! msg = 
@@ -69,7 +71,7 @@ type Reactor() =
                         if ct.IsCancellationRequested then ccont() else
                         Trace.TraceInformation("Reactor: --> {0}, remaining {1}, mem {2}, gc2 {3}", desc, inbox.CurrentQueueLength, GC.GetTotalMemory(false)/1000000L, GC.CollectionCount(2))
                         let time = System.DateTime.Now
-                        op()
+                        op ctok
                         let span = System.DateTime.Now - time
                         //if span.TotalMilliseconds > 100.0 then 
                         Trace.TraceInformation("Reactor: <-- {0}, remaining {1}, took {2}ms", desc, inbox.CurrentQueueLength, span.TotalMilliseconds)
@@ -78,7 +80,7 @@ type Reactor() =
                         Trace.TraceInformation("Reactor: --> wait for background (debug only), remaining {0}, mem {1}, gc2 {2}", inbox.CurrentQueueLength, GC.GetTotalMemory(false)/1000000L, GC.CollectionCount(2))
                         match bgOpOpt with 
                         | None -> ()
-                        | Some bgOp -> while bgOp() do ()
+                        | Some bgOp -> while bgOp ctok do ()
                         channel.Reply(())
                         return! loop (None, onComplete, false)
                     | Some (CompleteAllQueuedOps channel) -> 
@@ -90,7 +92,7 @@ type Reactor() =
                         | Some bgOp, None -> 
                             Trace.TraceInformation("Reactor: --> background step, remaining {0}, mem {1}, gc2 {2}", inbox.CurrentQueueLength, GC.GetTotalMemory(false)/1000000L, GC.CollectionCount(2))
                             let time = System.DateTime.Now
-                            let res = bgOp()
+                            let res = bgOp ctok
                             let span = System.DateTime.Now - time
                             //if span.TotalMilliseconds > 100.0 then 
                             Trace.TraceInformation("Reactor: <-- background step, remaining {0}, took {1}ms", inbox.CurrentQueueLength, span.TotalMilliseconds)
@@ -136,10 +138,10 @@ type Reactor() =
             let! ct = Async.CancellationToken
             let resultCell = AsyncUtil.AsyncResultCell<_>()
             r.EnqueueOpPrim(desc, ct,
-                op=(fun () ->
+                op=(fun ctok ->
                     let result =
                         try
-                            f ct |> AsyncUtil.AsyncOk
+                            f ctok ct |> AsyncUtil.AsyncOk
                         with
                         |   :? OperationCanceledException as e -> AsyncUtil.AsyncCanceled e
                         |   e -> e |> AsyncUtil.AsyncException
