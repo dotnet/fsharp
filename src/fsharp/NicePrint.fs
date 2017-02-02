@@ -41,7 +41,7 @@ module internal PrintUtilities =
     let bracketIfL x lyt = if x then bracketL lyt else lyt
     let squareAngleL x = LeftL.leftBracketAngle ^^ x ^^ RightL.rightBracketAngle
     let angleL x = sepL Literals.leftAngle ^^ x ^^ rightL Literals.rightAngle
-    let braceL x = leftL Literals.leftBrace ^^ x ^^ rightL Literals.rightBrace
+    let braceL x = leftL Literals.leftBrace ^^ sepL Literals.space ^^ x ^^ sepL Literals.space ^^ rightL Literals.rightBrace
 
     let comment str = wordL (tagText (sprintf "(* %s *)" str))
 
@@ -729,11 +729,11 @@ module private PrintTypes =
             | _  -> squareAngleL (sepListL (rightL (tagPunctuation ";")) (List.map (layoutAttrib denv) attrs)) @@ 
                     restL
         elif isStructRecordOrUnionTyconTy then
-            squareAngleL (wordL (tagText "Struct")) @@ restL
+            squareAngleL (wordL (tagClass "Struct")) @@ restL
         else
             match kind with 
             | TyparKind.Type -> restL
-            | TyparKind.Measure -> squareAngleL (wordL (tagText "Measure")) @@ restL
+            | TyparKind.Measure -> squareAngleL (wordL (tagClass "Measure")) @@ restL
 
     and layoutTyparAttribs denv kind attrs restL =         
         match attrs, kind with
@@ -1671,7 +1671,7 @@ module private TastDefinitionPrinting =
                   let denv = denv.AddAccessibility tycon.TypeReprAccessibility 
                   match repr with 
                   | TRecdRepr _ ->
-                      let recdFieldRefL fld = layoutRecdField false denv fld ^^ rightL (tagPunctuation ";")
+                      let recdFieldRefL fld = layoutRecdField false denv fld
                       let recdL = tycon.TrueFieldsAsList |> List.map recdFieldRefL |> applyMaxMembers denv.maxMembers |> aboveListL |> braceL
                       Some (addMembersAsWithEnd (addReprAccessL recdL))
                         
