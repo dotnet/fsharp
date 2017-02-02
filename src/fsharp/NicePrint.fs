@@ -41,7 +41,7 @@ module internal PrintUtilities =
     let bracketIfL x lyt = if x then bracketL lyt else lyt
     let squareAngleL x = LeftL.leftBracketAngle ^^ x ^^ RightL.rightBracketAngle
     let angleL x = sepL Literals.leftAngle ^^ x ^^ rightL Literals.rightAngle
-    let braceL x = leftL Literals.leftBrace ^^ sepL Literals.space ^^ x ^^ sepL Literals.space ^^ rightL Literals.rightBrace
+    let braceL x = leftL Literals.leftBrace ^^ x ^^ rightL Literals.rightBrace
 
     let comment str = wordL (tagText (sprintf "(* %s *)" str))
 
@@ -1671,7 +1671,7 @@ module private TastDefinitionPrinting =
                   let denv = denv.AddAccessibility tycon.TypeReprAccessibility 
                   match repr with 
                   | TRecdRepr _ ->
-                      let recdFieldRefL fld = layoutRecdField false denv fld
+                      let recdFieldRefL fld = layoutRecdField false denv fld ^^ rightL (tagPunctuation ";")
                       let recdL = tycon.TrueFieldsAsList |> List.map recdFieldRefL |> applyMaxMembers denv.maxMembers |> aboveListL |> braceL
                       Some (addMembersAsWithEnd (addReprAccessL recdL))
                         
