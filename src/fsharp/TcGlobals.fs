@@ -683,47 +683,47 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let betterTyconRefMap = 
        begin 
         let entries1 = 
-         [ "Int32", v_int_tcr 
-           "IntPtr", v_nativeint_tcr 
-           "UIntPtr", v_unativeint_tcr
-           "Int16", v_int16_tcr 
-           "Int64", v_int64_tcr 
-           "UInt16", v_uint16_tcr
-           "UInt32", v_uint32_tcr
-           "UInt64", v_uint64_tcr
-           "SByte", v_sbyte_tcr
-           "Decimal", v_decimal_tcr
-           "Byte", v_byte_tcr
-           "Boolean", v_bool_tcr
-           "String", v_string_tcr
-           "Object", v_obj_tcr
-           "Exception", v_exn_tcr
-           "Char", v_char_tcr
-           "Double", v_float_tcr
-           "Single", v_float32_tcr] 
-             |> List.map (fun (nm, tcr) -> 
+         [| "Int32"    , v_int_tcr 
+            "IntPtr"   , v_nativeint_tcr 
+            "UIntPtr"  , v_unativeint_tcr
+            "Int16"    , v_int16_tcr 
+            "Int64"    , v_int64_tcr 
+            "UInt16"   , v_uint16_tcr
+            "UInt32"   , v_uint32_tcr
+            "UInt64"   , v_uint64_tcr
+            "SByte"    , v_sbyte_tcr
+            "Decimal"  , v_decimal_tcr
+            "Byte"     , v_byte_tcr
+            "Boolean"  , v_bool_tcr
+            "String"   , v_string_tcr
+            "Object"   , v_obj_tcr
+            "Exception", v_exn_tcr
+            "Char"     , v_char_tcr
+            "Double"   , v_float_tcr
+            "Single"   , v_float32_tcr |] 
+             |> Array.map (fun (nm, tcr) -> 
                    let ty = mkNonGenericTy tcr 
                    nm, findSysTyconRef sys nm, (fun _ -> ty)) 
 
         let entries2 =
-            [ "FSharpFunc`2",    v_fastFunc_tcr, (fun tinst -> mkFunTy (List.item 0 tinst) (List.item 1 tinst))
-              "Tuple`2",       v_ref_tuple2_tcr, decodeTupleTy tupInfoRef
-              "Tuple`3",       v_ref_tuple3_tcr, decodeTupleTy tupInfoRef
-              "Tuple`4",       v_ref_tuple4_tcr, decodeTupleTy tupInfoRef
-              "Tuple`5",       v_ref_tuple5_tcr, decodeTupleTy tupInfoRef
-              "Tuple`6",       v_ref_tuple6_tcr, decodeTupleTy tupInfoRef
-              "Tuple`7",       v_ref_tuple7_tcr, decodeTupleTy tupInfoRef
-              "Tuple`8",       v_ref_tuple8_tcr, decodeTupleTy tupInfoRef
-              "ValueTuple`2",       v_struct_tuple2_tcr, decodeTupleTy tupInfoStruct
-              "ValueTuple`3",       v_struct_tuple3_tcr, decodeTupleTy tupInfoStruct
-              "ValueTuple`4",       v_struct_tuple4_tcr, decodeTupleTy tupInfoStruct
-              "ValueTuple`5",       v_struct_tuple5_tcr, decodeTupleTy tupInfoStruct
-              "ValueTuple`6",       v_struct_tuple6_tcr, decodeTupleTy tupInfoStruct
-              "ValueTuple`7",       v_struct_tuple7_tcr, decodeTupleTy tupInfoStruct
-              "ValueTuple`8",       v_struct_tuple8_tcr, decodeTupleTy tupInfoStruct] 
+            [| 
+              "FSharpFunc`2" ,       v_fastFunc_tcr      , (fun tinst -> mkFunTy (List.item 0 tinst) (List.item 1 tinst))
+              "Tuple`2"      ,       v_ref_tuple2_tcr    , decodeTupleTy tupInfoRef
+              "Tuple`3"      ,       v_ref_tuple3_tcr    , decodeTupleTy tupInfoRef
+              "Tuple`4"      ,       v_ref_tuple4_tcr    , decodeTupleTy tupInfoRef
+              "Tuple`5"      ,       v_ref_tuple5_tcr    , decodeTupleTy tupInfoRef
+              "Tuple`6"      ,       v_ref_tuple6_tcr    , decodeTupleTy tupInfoRef
+              "Tuple`7"      ,       v_ref_tuple7_tcr    , decodeTupleTy tupInfoRef
+              "Tuple`8"      ,       v_ref_tuple8_tcr    , decodeTupleTy tupInfoRef
+              "ValueTuple`2" ,       v_struct_tuple2_tcr , decodeTupleTy tupInfoStruct
+              "ValueTuple`3" ,       v_struct_tuple3_tcr , decodeTupleTy tupInfoStruct
+              "ValueTuple`4" ,       v_struct_tuple4_tcr , decodeTupleTy tupInfoStruct
+              "ValueTuple`5" ,       v_struct_tuple5_tcr , decodeTupleTy tupInfoStruct
+              "ValueTuple`6" ,       v_struct_tuple6_tcr , decodeTupleTy tupInfoStruct
+              "ValueTuple`7" ,       v_struct_tuple7_tcr , decodeTupleTy tupInfoStruct
+              "ValueTuple`8" ,       v_struct_tuple8_tcr , decodeTupleTy tupInfoStruct |] 
 
-        let entries = (entries1 @ entries2)
-        
+        let entries = Array.append entries1 entries2
         if compilingFslib then 
             // This map is for use when building FSharp.Core.dll. The backing Tycon's may not yet exist for
             // the TyconRef's we have in our hands, hence we can't dereference them to find their stamps.
@@ -732,10 +732,12 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
             //
             // Make it lazy to avoid dereferencing while setting up the base imports. 
             let dict = 
-              lazy
-                entries 
-                |> List.map (fun (nm, tcref, builder) -> nm, (fun tcref2 tinst -> if tyconRefEq tcref tcref2 then Some(builder tinst) else None)) 
-                |> Dictionary.ofList  
+                lazy (
+                    let dict = Dictionary.newWithSize entries.Length
+                    for nm, tcref, builder in entries do
+                        dict.Add(nm, fun tcref2 tinst -> if tyconRefEq tcref tcref2 then Some(builder tinst) else None)
+                    dict
+                )
             (fun (tcref: EntityRef) tinst -> 
                  let dict = dict.Value
                  let key = tcref.LogicalName
@@ -750,10 +752,11 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
             // Make it lazy to avoid dereferencing while setting up the base imports. 
             let dict = 
               lazy
-                entries  
-                |> List.filter (fun (_, tcref, _) -> tcref.CanDeref) 
-                |> List.map (fun (_, tcref, builder) -> tcref.Stamp, builder) 
-                |> Dictionary.ofList 
+                let dict = Dictionary.newWithSize entries.Length
+                for _, tcref, builder in entries do
+                  if tcref.CanDeref then
+                    dict.Add(tcref.Stamp, builder)
+                dict
             (fun tcref2 tinst -> 
                  let dict = dict.Value
                  let key = tcref2.Stamp
