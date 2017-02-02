@@ -25,3 +25,4 @@ module SR =
     let FSharpMutableVarsClassificationType = lazy (GetString "FSharpMutableVarsClassificationType")
     let FSharpPrintfFormatClassificationType = lazy (GetString "FSharpPrintfFormatClassificationType")
     let FSharpPropertiesClassificationType = lazy (GetString "FSharpPropertiesClassificationType")
+    let TheValueIsUnused = lazy (GetString "TheValueIsUnused")

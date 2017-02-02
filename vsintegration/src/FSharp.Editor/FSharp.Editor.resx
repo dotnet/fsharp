@@ -153,4 +153,7 @@
   <data name="FSharpPropertiesClassificationType" xml:space="preserve">
     <value>F# Properties</value>
   </data>
+  <data name="TheValueIsUnused" xml:space="preserve">
+    <value>The value is unused</value>
+  </data>
 </root>
