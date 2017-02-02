@@ -2,8 +2,6 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-#nowarn "1182"
-
 open System
 open System.Collections.Generic
 open System.Threading
@@ -16,6 +14,7 @@ open Microsoft.CodeAnalysis.Text
 
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons
 
@@ -29,19 +28,18 @@ type internal LexerSymbolKind =
 
 type internal LexerSymbol =
     { Kind: LexerSymbolKind
-      Line: int
-      LeftColumn: int
-      RightColumn: int
-      Text: string 
-      FileName: string }
-    member x.Range: Range.range = 
-        Range.mkRange x.FileName (Range.mkPos (x.Line + 1) x.LeftColumn) (Range.mkPos (x.Line + 1) x.RightColumn)
+      /// Last part of `LongIdent`
+      Ident: Ident
+      /// All parts of `LongIdent`
+      FullIsland: string list }
+    member x.Range: Range.range = x.Ident.idRange
 
 [<RequireQualifiedAccess>]
 type internal SymbolLookupKind =
-    | Fuzzy
-    | ByRightColumn
-    | ByLongIdent
+    /// Position must lay inside symbol range.
+    | Precise
+    /// Position may lay one column outside of symbol range to the right.
+    | Greedy
 
 module internal CommonHelpers =
     type private SourceLineData(lineStart: int, lexStateAtStartOfLine: FSharpTokenizerLexState, lexStateAtEndOfLine: FSharpTokenizerLexState, 
@@ -89,7 +87,6 @@ module internal CommonHelpers =
         | FSharpTokenColorKind.InactiveCode -> ClassificationTypeNames.ExcludedCode 
         | FSharpTokenColorKind.PreprocessorKeyword -> ClassificationTypeNames.PreprocessorKeyword 
         | FSharpTokenColorKind.Operator -> ClassificationTypeNames.Operator
-        | FSharpTokenColorKind.TypeName  -> ClassificationTypeNames.ClassName
         | FSharpTokenColorKind.Default 
         | _ -> ClassificationTypeNames.Text
 
@@ -222,15 +219,17 @@ module internal CommonHelpers =
         // and FullMathedLength (for "^type" which is tokenized as (INFIX_AT_HAT_OP, left=2) + (IDENT, left=3, length=4) 
         // we'll get (IDENT, left=2, length=5).
         let tokens = 
+            let tokensCount = tokens.Length
             tokens
-            |> List.fold (fun (acc, lastToken) (token: FSharpTokenInfo) ->
+            |> List.foldi (fun (acc, lastToken) index (token: FSharpTokenInfo) ->
                 match lastToken with
                 | Some t when token.LeftColumn <= t.RightColumn -> acc, lastToken
                 | _ ->
+                    let isLastToken = index = tokensCount - 1
                     match token with
-                    | GenericTypeParameterPrefix -> acc, Some (DraftToken.Create LexerSymbolKind.GenericTypeParameter token)
-                    | StaticallyResolvedTypeParameterPrefix -> acc, Some (DraftToken.Create LexerSymbolKind.StaticallyResolvedTypeParameter token)
-                    | Other ->
+                    | GenericTypeParameterPrefix when not isLastToken -> acc, Some (DraftToken.Create LexerSymbolKind.GenericTypeParameter token)
+                    | StaticallyResolvedTypeParameterPrefix when not isLastToken -> acc, Some (DraftToken.Create LexerSymbolKind.StaticallyResolvedTypeParameter token)
+                    | _ ->
                         let draftToken =
                             match lastToken with
                             | Some { Kind = LexerSymbolKind.GenericTypeParameter | LexerSymbolKind.StaticallyResolvedTypeParameter as kind } when isIdentifier token ->
@@ -253,66 +252,34 @@ module internal CommonHelpers =
            
         // One or two tokens that in touch with the cursor (for "let x|(g) = ()" the tokens will be "x" and "(")
         let tokensUnderCursor = 
-            match lookupKind with
-            | SymbolLookupKind.Fuzzy ->
-                tokens |> List.filter (fun x -> x.Token.LeftColumn <= linePos.Character && x.RightColumn + 1 >= linePos.Character)
-            | SymbolLookupKind.ByRightColumn ->
-                tokens |> List.filter (fun x -> x.RightColumn = linePos.Character)
-            | SymbolLookupKind.ByLongIdent ->
-                tokens |> List.filter (fun x -> x.Token.LeftColumn <= linePos.Character)
-                
-        //printfn "Filtered tokens: %+A" tokensUnderCursor
-        match lookupKind with
-        | SymbolLookupKind.ByLongIdent ->
-            // Try to find start column of the long identifiers
-            // Assume that tokens are ordered in an decreasing order of start columns
-            let rec tryFindStartColumn tokens =
-               match tokens with
-               | { DraftToken.Kind = LexerSymbolKind.Ident; Token = t1 } :: {Kind = LexerSymbolKind.Operator; Token = t2 } :: remainingTokens ->
-                    if t2.Tag = FSharpTokenTag.DOT then
-                        tryFindStartColumn remainingTokens
-                    else
-                        Some t1.LeftColumn
-               | { Kind = LexerSymbolKind.Ident; Token = t } :: _ ->
-                   Some t.LeftColumn
-               | _ :: _ | [] ->
-                   None
-            let decreasingTokens =
-                match tokensUnderCursor |> List.sortBy (fun token -> - token.Token.LeftColumn) with
-                // Skip the first dot if it is the start of the identifier
-                | {Kind = LexerSymbolKind.Operator; Token = t} :: remainingTokens when t.Tag = FSharpTokenTag.DOT ->
-                    remainingTokens
-                | newTokens -> newTokens
+            let rightColumnCorrection = 
+                match lookupKind with 
+                | SymbolLookupKind.Precise -> 0
+                | SymbolLookupKind.Greedy -> 1
             
-            match decreasingTokens with
-            | [] -> None
-            | first :: _ ->
-                tryFindStartColumn decreasingTokens
-                |> Option.map (fun leftCol ->
-                    { Kind = LexerSymbolKind.Ident
-                      Line = linePos.Line
-                      LeftColumn = leftCol
-                      RightColumn = first.RightColumn + 1
-                      Text = lineStr.[leftCol..first.RightColumn]
-                      FileName = fileName })
-        | SymbolLookupKind.Fuzzy 
-        | SymbolLookupKind.ByRightColumn ->
-            // Select IDENT token. If failed, select OPERATOR token.
-            tokensUnderCursor
-            |> List.tryFind (fun { DraftToken.Kind = k } -> 
-                match k with 
-                | LexerSymbolKind.Ident 
-                | LexerSymbolKind.GenericTypeParameter 
-                | LexerSymbolKind.StaticallyResolvedTypeParameter -> true 
-                | _ -> false) 
-            |> Option.orElseWith (fun _ -> tokensUnderCursor |> List.tryFind (fun { DraftToken.Kind = k } -> k = LexerSymbolKind.Operator))
-            |> Option.map (fun token ->
-                { Kind = token.Kind
-                  Line = linePos.Line
-                  LeftColumn = token.Token.LeftColumn
-                  RightColumn = token.RightColumn + 1
-                  Text = lineStr.Substring(token.Token.LeftColumn, token.Token.FullMatchedLength)
-                  FileName = fileName })
+            tokens |> List.filter (fun x -> x.Token.LeftColumn <= linePos.Character && (x.RightColumn + rightColumnCorrection) >= linePos.Character)
+                
+        // Select IDENT token. If failed, select OPERATOR token.
+        tokensUnderCursor
+        |> List.tryFind (fun { DraftToken.Kind = k } -> 
+            match k with 
+            | LexerSymbolKind.Ident 
+            | LexerSymbolKind.GenericTypeParameter 
+            | LexerSymbolKind.StaticallyResolvedTypeParameter -> true 
+            | _ -> false) 
+        |> Option.orElseWith (fun _ -> tokensUnderCursor |> List.tryFind (fun { DraftToken.Kind = k } -> k = LexerSymbolKind.Operator))
+        |> Option.map (fun token ->
+            let plid, _ = QuickParse.GetPartialLongNameEx(lineStr, token.RightColumn)
+            let identStr = lineStr.Substring(token.Token.LeftColumn, token.Token.FullMatchedLength)
+            { Kind = token.Kind
+              Ident = 
+                Ident 
+                    (identStr, 
+                     Range.mkRange 
+                        fileName 
+                        (Range.mkPos (linePos.Line + 1) token.Token.LeftColumn)
+                        (Range.mkPos (linePos.Line + 1) (token.RightColumn + 1))) 
+              FullIsland = plid @ [identStr] })
 
     let private getCachedSourceLineData(documentKey: DocumentId, sourceText: SourceText, position: int, fileName: string, defines: string list) = 
         let textLine = sourceText.Lines.GetLineFromPosition(position)
@@ -360,7 +327,6 @@ module internal CommonHelpers =
     let getSymbolAtPosition(documentKey: DocumentId, sourceText: SourceText, position: int, fileName: string, defines: string list, lookupKind: SymbolLookupKind) : LexerSymbol option =
         try
             let lineData, textLinePos, lineContents = getCachedSourceLineData(documentKey, sourceText, position, fileName, defines)
-            let sourceTokenizer = FSharpSourceTokenizer(defines, Some fileName)
             getSymbolFromTokens(fileName, lineData.Tokens, textLinePos, lineContents, lookupKind)
         with 
         | :? System.OperationCanceledException -> reraise()
@@ -390,7 +356,7 @@ module internal Extensions =
 
     type System.IServiceProvider with
         member x.GetService<'T>() = x.GetService(typeof<'T>) :?> 'T
-        member x.GetService<'S, 'T>() = x.GetService(typeof<'S>) :?> 'T
+        member x.GetService<'T, 'S>() = x.GetService(typeof<'S>) :?> 'T
 
     type Path with
         static member GetFullPathSafe path =

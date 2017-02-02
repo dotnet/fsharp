@@ -76,7 +76,7 @@ module FSharpTokenTag =
 /// It is not clear it is a primary logical classification that should be being used in the 
 /// more recent language service work.
 type FSharpTokenColorKind =
-      Default = 0
+    | Default = 0
     | Text = 0
     | Keyword = 1
     | Comment = 2
@@ -87,7 +87,6 @@ type FSharpTokenColorKind =
     | PreprocessorKeyword = 8
     | Number = 9
     | Operator = 10
-    | TypeName = 11
 
 /// Categorize an action the editor should take in response to a token, e.g. brace matching
 /// 

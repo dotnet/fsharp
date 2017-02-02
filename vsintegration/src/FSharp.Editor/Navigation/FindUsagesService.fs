@@ -61,9 +61,9 @@ type internal FSharpFindUsagesService
             let lineNumber = sourceText.Lines.GetLinePosition(position).Line + 1
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.FilePath, options.OtherOptions |> Seq.toList)
             
-            let! symbol = CommonHelpers.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Fuzzy)
-            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(lineNumber, symbol.RightColumn, textLine, [symbol.Text])
-            let! declaration = checkFileResults.GetDeclarationLocationAlternate (lineNumber, symbol.RightColumn, textLine, [symbol.Text], false) |> liftAsync
+            let! symbol = CommonHelpers.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy)
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(lineNumber, symbol.Ident.idRange.EndColumn, textLine, symbol.FullIsland)
+            let! declaration = checkFileResults.GetDeclarationLocationAlternate (lineNumber, symbol.Ident.idRange.EndColumn, textLine, symbol.FullIsland, false) |> liftAsync
             let tags = GlyphTags.GetTags(CommonRoslynHelpers.GetGlyphForSymbol symbolUse.Symbol)
             
             let declarationRange = 
@@ -83,12 +83,12 @@ type internal FSharpFindUsagesService
                         | [] -> 
                             [ DefinitionItem.CreateNonNavigableItem(
                                 tags,
-                                ImmutableArray.Create(TaggedText(TextTags.Text, symbol.Text)),
+                                ImmutableArray.Create(TaggedText(TextTags.Text, symbol.Ident.idText)),
                                 ImmutableArray.Create(TaggedText(TextTags.Assembly, symbolUse.Symbol.Assembly.SimpleName))) ]
                         | _ ->
                             declarationSpans
                             |> List.map (fun span ->
-                                DefinitionItem.Create(tags, ImmutableArray.Create(TaggedText(TextTags.Text, symbol.Text)), span))
+                                DefinitionItem.Create(tags, ImmutableArray.Create(TaggedText(TextTags.Text, symbol.Ident.idText)), span))
                 } |> liftAsync
             
             for definitionItem in definitionItems do
