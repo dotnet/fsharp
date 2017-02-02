@@ -212,3 +212,12 @@ type AsyncBuilder with
 module Option =
     let guard (x: bool) : Option<unit> =
         if x then Some() else None
+
+module List =
+    let foldi (folder : 'State -> int -> 'T -> 'State) (state : 'State) (xs : 'T list) =
+        let mutable state = state
+        let mutable i = 0
+        for x in xs do
+            state <- folder state i x
+            i <- i + 1
+        state

@@ -744,7 +744,7 @@ module internal ItemDescriptionsImpl =
             | _ -> false
         with _ -> false
 
-    /// Output a the description of a language item
+    /// Output the description of a language item
     let rec FormatItemDescriptionToToolTipElement isDecl (infoReader:InfoReader) m denv d = 
         let g = infoReader.g
         let amap = infoReader.amap

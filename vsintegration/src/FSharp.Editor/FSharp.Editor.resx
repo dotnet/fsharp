@@ -141,4 +141,16 @@
   <data name="StyleCategory" xml:space="preserve">
     <value>Style</value>
   </data>
+  <data name="FSharpFunctionsOrMethodsClassificationType" xml:space="preserve">
+    <value>F# Functions / Methods</value>
+  </data>
+  <data name="FSharpMutableVarsClassificationType" xml:space="preserve">
+    <value>F# Mutable Variables</value>
+  </data>
+  <data name="FSharpPrintfFormatClassificationType" xml:space="preserve">
+    <value>F# Printf Format</value>
+  </data>
+  <data name="FSharpPropertiesClassificationType" xml:space="preserve">
+    <value>F# Properties</value>
+  </data>
 </root>

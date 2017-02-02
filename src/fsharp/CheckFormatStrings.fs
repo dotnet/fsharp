@@ -201,12 +201,12 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) (source: string option) f
                       specifierLocations.Add(
                         Range.mkFileIndexRange m.FileIndex 
                                 (Range.mkPos m.StartLine (startCol + offset)) 
-                                (Range.mkPos m.StartLine (relCol + offset)))
+                                (Range.mkPos m.StartLine (relCol + offset + 1)))
                   | _ ->
                       specifierLocations.Add(
                         Range.mkFileIndexRange m.FileIndex 
                                 (Range.mkPos (m.StartLine + relLine) startCol) 
-                                (Range.mkPos (m.StartLine + relLine) relCol))
+                                (Range.mkPos (m.StartLine + relLine) (relCol + 1)))
 
               let ch = fmt.[i]
               match ch with

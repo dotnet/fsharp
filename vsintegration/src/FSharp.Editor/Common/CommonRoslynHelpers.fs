@@ -69,7 +69,7 @@ module internal CommonRoslynHelpers =
         | TaggedText.Text t -> TaggedText(TextTags.Text, t)
         | TaggedText.TypeParameter t -> TaggedText(TextTags.TypeParameter, t)
         | TaggedText.Union t -> TaggedText(TextTags.Class, t)
-        | TaggedText.UnionCase t -> TaggedText(TextTags.Property, t)
+        | TaggedText.UnionCase t -> TaggedText(TextTags.Enum, t)
         | TaggedText.UnknownEntity t -> TaggedText(TextTags.Property, t)
         | TaggedText.UnknownType t -> TaggedText(TextTags.Class, t)
 
