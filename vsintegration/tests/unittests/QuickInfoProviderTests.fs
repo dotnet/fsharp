@@ -93,7 +93,7 @@ Full name: System.Console"
     let y = 2
     System.Console.WriteLine(x + y)
     """
-        let caretPosition = fileContents.IndexOf(symbol) + 1
+        let caretPosition = fileContents.IndexOf(symbol)
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
         let getInfo() = documentId, filePath, []
         

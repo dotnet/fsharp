@@ -147,6 +147,20 @@ type internal FSharpSymbolUse =
     /// The range of text representing the reference to the symbol
     member RangeAlternate: range
 
+[<RequireQualifiedAccess>]
+type internal SemanticClassificationType =
+    | ReferenceType
+    | ValueType
+    | UnionCase
+    | Function
+    | Property
+    | MutableVar
+    | Module
+    | Printf
+    | ComputationExpression
+    | IntrinsicType
+    | Enumeration
+
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]
 type internal FSharpCheckFileResults =
@@ -272,7 +286,7 @@ type internal FSharpCheckFileResults =
     member GetSymbolUseAtLocation  : line:int * colAtEndOfNames:int * lineText:string * names:string list -> Async<FSharpSymbolUse option>
 
     /// <summary>Get any extra colorization info that is available after the typecheck</summary>
-    member GetExtraColorizationsAlternate : unit -> (range * FSharpTokenColorKind)[]
+    member GetSemanticClassification : unit -> (range * SemanticClassificationType)[]
 
     /// <summary>Get the locations of format specifiers</summary>
     member GetFormatSpecifierLocations : unit -> range[]
