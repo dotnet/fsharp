@@ -67,5 +67,6 @@ module Keywords =
     val KeywordOrIdentifierToken : lexargs -> UnicodeLexing.Lexbuf -> string -> Parser.token
     val IdentifierToken : lexargs -> UnicodeLexing.Lexbuf -> string -> Parser.token
     val QuoteIdentifierIfNeeded : string -> string
+    val NormalizeIdentifierBackticks : string -> string
     val keywordNames : string list
     val keywordTypes : Set<string>
