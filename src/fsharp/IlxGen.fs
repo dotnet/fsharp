@@ -4657,7 +4657,7 @@ and GenBindAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec,rhsExpr,_)) =
         GenExpr cenv cgbuf eenv SPSuppress rhsExpr discard
 
     // The initialization code for static 'let' and 'do' bindings gets compiled into the initialization .cctor for the whole file
-    | _ when vspec.IsClassConstructor && vspec.TopValActualParent.TyparsNoRange.Length = 0 ->
+    | _ when vspec.IsClassConstructor && isNil vspec.TopValActualParent.TyparsNoRange ->
         let tps,_,_,_,cctorBody,_ = IteratedAdjustArityOfLambda cenv.g cenv.amap vspec.ValReprInfo.Value rhsExpr
         let eenv = EnvForTypars tps eenv
         GenExpr cenv cgbuf eenv SPSuppress cctorBody discard
