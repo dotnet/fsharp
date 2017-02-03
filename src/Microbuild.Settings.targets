@@ -226,6 +226,28 @@
       <Compile Include="@(TempCompile)" />
     </ItemGroup>
   </Target>
-  
+
+  <Target Name="GetVsixPackageVersion" Outputs="$(VsixPackageVersion)">
+   <PropertyGroup>
+     <!--
+
+     Given $(BUILD_BUILDNUMBER) = '20161225.1'
+     Given $(MicroBuildAssemblyVersion) = '15.4.1.0'
+
+     Then $(BuildTimeStamp_Day) = 161225
+     Then $(BuildTimeStamp_Number) = 01
+     Then $(BuildTimeStamp) = 16122501
+     Then $(MicroBuildAssemblyVersion_WithoutRevision) = 15.4.1
+     Then $(VsixPackageVersion) = 15.4.1.16122501
+
+     -->
+     <BuildTimeStamp_Day>$(BUILD_BUILDNUMBER.Split('.')[0].Substring(2))</BuildTimeStamp_Day>
+     <BuildTimeStamp_Number>$(BUILD_BUILDNUMBER.Split('.')[1].PadLeft(2, '0'))</BuildTimeStamp_Number>
+     <BuildTimeStamp>$(BuildTimeStamp_Day)$(BuildTimeStamp_Number)</BuildTimeStamp>
+     <MicroBuildAssemblyVersion_WithoutRevision>$(MicroBuildAssemblyVersion.Substring(0, $(MicroBuildAssemblyVersion.LastIndexOf('.'))))</MicroBuildAssemblyVersion_WithoutRevision>
+     <VsixPackageVersion>$(MicroBuildAssemblyVersion_WithoutRevision).$(BuildTimeStamp)</VsixPackageVersion>
+   </PropertyGroup>
+ </Target>
+
   <Import Project="..\packages\MicroBuild.Core.$(MicroBuildCoreVersion)\build\MicroBuild.Core.targets" />
 </Project>
