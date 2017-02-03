@@ -1348,7 +1348,7 @@ let destForallTy g ty =
     tps,tau
 
 let tryDestForallTy g ty = 
-    if isForallTy g ty then destForallTy g ty else ([],ty) 
+    if isForallTy g ty then destForallTy g ty else [],ty
 
 
 let rec stripFunTy g ty = 
