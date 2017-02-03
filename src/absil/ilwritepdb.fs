@@ -294,7 +294,7 @@ let generatePortablePdb fixupSPs (embedAllSource:bool) (embedSourceList:string l
     let documentIndex =
         let includeSource file =
             let isInList =
-                if embedSourceList.Length = 0 then false
+                if isNil embedSourceList then false
                 else
                     embedSourceList |> List.tryFind(fun f -> String.Compare(file, f, StringComparison.OrdinalIgnoreCase ) = 0) |> Option.isSome
 

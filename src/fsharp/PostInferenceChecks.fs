@@ -1530,7 +1530,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
                   setterArgs.Length <> getterArgs.Length)
                 || 
                  (let nargs = pinfo.GetParamTypes(cenv.amap,m).Length
-                  others |> List.exists (fun pinfo2 -> (pinfo2.GetParamTypes(cenv.amap,m).Length = 0) <> (nargs = 0)))) then 
+                  others |> List.exists (fun pinfo2 -> (isNil(pinfo2.GetParamTypes(cenv.amap,m))) <> (nargs = 0)))) then 
                   
                   errorR(Error(FSComp.SR.chkPropertySameNameIndexer(nm),m))
 

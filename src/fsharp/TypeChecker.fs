@@ -4651,7 +4651,7 @@ and TcTypesOrMeasures optKinds cenv newOk checkCxs occ env tpenv args m =
     | Some kinds ->
         if List.length kinds = List.length args then 
             List.mapFold (fun tpenv (arg,kind) -> TcTypeOrMeasure (Some kind) cenv newOk checkCxs occ env tpenv arg) tpenv (List.zip args kinds)
-        elif kinds.Length = 0 then error(Error(FSComp.SR.tcUnexpectedTypeArguments(), m))
+        elif isNil kinds then error(Error(FSComp.SR.tcUnexpectedTypeArguments(), m))
         else error(Error(FSComp.SR.tcTypeParameterArityMismatch((List.length kinds), (List.length args)), m))
 
 and TcTyparConstraints cenv newOk checkCxs occ env tpenv wcs =

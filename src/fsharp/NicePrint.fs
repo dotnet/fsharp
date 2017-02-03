@@ -1256,7 +1256,7 @@ module InfoMemberPrinting =
         let paramDatas = minfo.GetParamDatas(amap, m, minst)
         let layout =
             layout ^^
-                if (List.concat paramDatas).Length = 0 then
+                if isNil (List.concat paramDatas) then
                     WordL.structUnit
                 else
                     sepListL WordL.arrow (List.map ((List.map (layoutParamData denv)) >> sepListL WordL.star) paramDatas)

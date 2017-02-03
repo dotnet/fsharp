@@ -2714,7 +2714,7 @@ let mkILTypeDefForGlobalFunctions ilg (methods,fields) = mkILSimpleClass ilg (ty
 let destTypeDefsWithGlobalFunctionsFirst ilg (tdefs: ILTypeDefs) = 
   let l = tdefs.AsList
   let top,nontop = l |> List.partition (fun td -> td.Name = typeNameForGlobalFunctions)
-  let top2 = if top.Length = 0 then [ mkILTypeDefForGlobalFunctions ilg (emptyILMethods, emptyILFields) ] else top
+  let top2 = if isNil top then [ mkILTypeDefForGlobalFunctions ilg (emptyILMethods, emptyILFields) ] else top
   top2@nontop
 
 let mkILSimpleModule assname modname dll subsystemVersion useHighEntropyVA tdefs hashalg locale flags exportedTypes metadataVersion = 
