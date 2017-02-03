@@ -12,7 +12,7 @@ try
     exit 1
 with
     | :? System.ArgumentException as e -> 
-        let expected = "Type mismatch when splicing expression into quotation literal. The type of the expression tree being inserted doesn't match the type expected by the splicing operation. Expected 'System.String', but received type 'System.Object'. Consider type-annotating with the expected expression type, e.g., (%% x : string) or (%x : string)."
+        let expected = "Type mismatch when splicing expression into quotation literal. The type of the expression tree being inserted doesn't match the type expected by the splicing operation. Expected 'System.String', but received type 'System.Object'. Consider type-annotating with the expected expression type, e.g., (%% x : System.String) or (%x : System.String)."
         if not (e.Message.Contains(expected)) then 
             printfn "%A" (e.Message)
             exit 1
