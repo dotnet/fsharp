@@ -758,36 +758,40 @@ let isNoArgInstr i =
   | _ -> false
 
 let ILCmpInstrMap = 
-   lazy
-    (Dictionary.ofList
-        [ BI_beq , i_beq
-          BI_bgt , i_bgt
-          BI_bgt_un , i_bgt_un
-          BI_bge , i_bge
-          BI_bge_un , i_bge_un
-          BI_ble , i_ble
-          BI_ble_un , i_ble_un
-          BI_blt , i_blt
-          BI_blt_un , i_blt_un
-          BI_bne_un , i_bne_un
-          BI_brfalse , i_brfalse
-          BI_brtrue , i_brtrue ])
+    lazy (
+        let dict = Dictionary.newWithSize 12
+        dict.Add (BI_beq     , i_beq     )
+        dict.Add (BI_bgt     , i_bgt     )
+        dict.Add (BI_bgt_un  , i_bgt_un  )
+        dict.Add (BI_bge     , i_bge     )
+        dict.Add (BI_bge_un  , i_bge_un  )
+        dict.Add (BI_ble     , i_ble     )
+        dict.Add (BI_ble_un  , i_ble_un  )
+        dict.Add (BI_blt     , i_blt     )
+        dict.Add (BI_blt_un  , i_blt_un  )
+        dict.Add (BI_bne_un  , i_bne_un  )
+        dict.Add (BI_brfalse , i_brfalse )
+        dict.Add (BI_brtrue  , i_brtrue  )
+        dict
+    )
 
 let ILCmpInstrRevMap = 
-  lazy
-    (Dictionary.ofList
-        [ BI_beq , i_beq_s
-          BI_bgt , i_bgt_s
-          BI_bgt_un , i_bgt_un_s
-          BI_bge , i_bge_s
-          BI_bge_un , i_bge_un_s
-          BI_ble , i_ble_s
-          BI_ble_un , i_ble_un_s
-          BI_blt , i_blt_s
-          BI_blt_un , i_blt_un_s
-          BI_bne_un , i_bne_un_s
-          BI_brfalse , i_brfalse_s
-          BI_brtrue , i_brtrue_s ])
+  lazy (
+      let dict = Dictionary.newWithSize 12
+      dict.Add ( BI_beq     , i_beq_s     )
+      dict.Add ( BI_bgt     , i_bgt_s     )
+      dict.Add ( BI_bgt_un  , i_bgt_un_s  )
+      dict.Add ( BI_bge     , i_bge_s     )
+      dict.Add ( BI_bge_un  , i_bge_un_s  )
+      dict.Add ( BI_ble     , i_ble_s     )
+      dict.Add ( BI_ble_un  , i_ble_un_s  )
+      dict.Add ( BI_blt     , i_blt_s     )
+      dict.Add ( BI_blt_un  , i_blt_un_s  )
+      dict.Add ( BI_bne_un  , i_bne_un_s  )
+      dict.Add ( BI_brfalse , i_brfalse_s )
+      dict.Add ( BI_brtrue  , i_brtrue_s  )
+      dict
+  )
 
 // From corhdr.h 
 

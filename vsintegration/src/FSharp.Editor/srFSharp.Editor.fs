@@ -21,3 +21,7 @@ module SR =
     let SimplifyName = lazy ( GetString "SimplifyName")
     let StyleCategory = lazy ( GetString "StyleCategory")
     let NameCanBeSimplified = lazy ( GetString "NameCanBeSimplified")
+    let FSharpFunctionsOrMethodsClassificationType = lazy (GetString "FSharpFunctionsOrMethodsClassificationType")
+    let FSharpMutableVarsClassificationType = lazy (GetString "FSharpMutableVarsClassificationType")
+    let FSharpPrintfFormatClassificationType = lazy (GetString "FSharpPrintfFormatClassificationType")
+    let FSharpPropertiesClassificationType = lazy (GetString "FSharpPropertiesClassificationType")

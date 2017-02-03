@@ -28,7 +28,6 @@
     <Compile Include="..\FSharp.Build\CreateFSharpManifestResourceName.fs" >
        <Link>CreateFSharpManifestResourceName.fs</Link>
     </Compile>
-
     <Compile Include="..\FSharp.Build\Fsc.fsi">
       <Link>Fsc.fsi</Link>
     </Compile>
@@ -36,16 +35,16 @@
       <Link>Fsc.fs</Link>
     </Compile>
     <CopyAndSubstituteText Include="..\FSharp.Build\Microsoft.FSharp.targets">
-		<Link>Microsoft.FSharp-proto.targets</Link>
-		<TargetFilename>Microsoft.FSharp-proto.targets</TargetFilename>
-		<Pattern1>{BuildSuffix}</Pattern1>
-		<Replacement1>-proto</Replacement1>
-	</CopyAndSubstituteText>
-	<CopyAndSubstituteText Include="..\FSharp.Build\Microsoft.Portable.FSharp.targets">
-		<Link>Microsoft.Portable.FSharp-proto.targets</Link>
-		<TargetFilename>Microsoft.Portable.FSharp-proto.targets</TargetFilename>
-		<Pattern1>{BuildSuffix}</Pattern1>
-		<Replacement1>-proto</Replacement1>
+      <Link>Microsoft.FSharp-proto.targets</Link>
+      <TargetFilename>Microsoft.FSharp-proto.targets</TargetFilename>
+      <Pattern1>{BuildSuffix}</Pattern1>
+      <Replacement1>-proto</Replacement1>
+    </CopyAndSubstituteText>
+    <CopyAndSubstituteText Include="..\FSharp.Build\Microsoft.Portable.FSharp.targets">
+      <Link>Microsoft.Portable.FSharp-proto.targets</Link>
+      <TargetFilename>Microsoft.Portable.FSharp-proto.targets</TargetFilename>
+      <Pattern1>{BuildSuffix}</Pattern1>
+      <Replacement1>-proto</Replacement1>
     </CopyAndSubstituteText>
   </ItemGroup>
   <ItemGroup>

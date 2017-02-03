@@ -24,6 +24,7 @@ echo           ^<debug^|release^>
 echo           ^<diag^|publicsign^>
 echo           ^<test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-pcl-coreunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^>
 echo           ^<include tag^>
+echo           ^<init^>
 echo.
 echo No arguments default to 'default', meaning this (no testing)
 echo.
@@ -177,7 +178,7 @@ if /i '%ARG%' == 'microbuild' (
     set BUILD_PORTABLE=1
     set BUILD_VS=1
     set BUILD_SETUP=%FSC_BUILD_SETUP%
-    
+
     set TEST_NET40_COMPILERUNIT_SUITE=1
     set TEST_NET40_COREUNIT_SUITE=1
     set TEST_NET40_FSHARP_SUITE=1
@@ -188,7 +189,6 @@ if /i '%ARG%' == 'microbuild' (
     set TEST_VS_IDEUNIT_SUITE=1
     set CI=1
 )
-
 
 REM These divide 'ci' into two chunks which can be done in parallel
 if /i '%ARG%' == 'ci_part1' (
@@ -204,7 +204,6 @@ if /i '%ARG%' == 'ci_part1' (
     set TEST_NET40_FSHARPQA_SUITE=1
     set TEST_VS_IDEUNIT_SUITE=1
     set CI=1
-
 )
 
 if /i '%ARG%' == 'ci_part2' (
@@ -319,12 +318,17 @@ if /i '%ARG%' == 'test-net40-fsharp' (
 
 if /i '%ARG%' == 'test-coreclr-fsharp' (
     set BUILD_NET40=1
+    set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_CORECLR=1
     set TEST_CORECLR_FSHARP_SUITE=1
 )
 
 if /i '%ARG%' == 'publicsign' (
     set BUILD_PUBLICSIGN=1
+)
+
+if /i '%ARG%' == 'init' (
+    set BUILD_PROTO_WITH_CORECLR_LKG=1
 )
 
 goto :EOF
@@ -370,7 +374,7 @@ echo .
 echo .
 
 echo ---------------- Done with arguments, starting preparation -----------------
-set BuildToolsPackage=Microsoft.VSSDK.BuildTools.15.0.25929-RC2
+set BuildToolsPackage=Microsoft.VSSDK.BuildTools.15.0.26124-RC3
 if '%VSSDKInstall%'=='' (
      set VSSDKInstall=%~dp0packages\%BuildToolsPackage%\tools\vssdk
 )
@@ -476,6 +480,7 @@ if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
 )
 
 set _dotnetexe=%~dp0Tools\dotnetcli\dotnet.exe
+set NUGET_PACKAGES=%~dp0Packages
 
 set _fsiexe="packages\FSharp.Compiler.Tools.4.0.1.19\tools\fsi.exe"
 if not exist %_fsiexe% echo Error: Could not find %_fsiexe% && goto :failure
@@ -493,7 +498,6 @@ if NOT EXIST Proto\net40\bin\fsc-proto.exe (
 
 set _dotnetexe=%~dp0Tools\dotnetcli\dotnet.exe
 set _architecture=win7-x64
-
 
 rem Build Proto
 if '%BUILD_PROTO%' == '1' (

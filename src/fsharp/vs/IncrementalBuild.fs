@@ -1161,9 +1161,9 @@ type internal CompilationErrorLogger (debugName:string, tcConfig:TcConfig) =
         [ for (e,isError) in diagnostics -> e, (if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning) ]
 
 
-/// This represents the global state established as each task function runs as part of the build
+/// This represents the global state established as each task function runs as part of the build.
 ///
-/// Use to reset error and warning handlers            
+/// Use to reset error and warning handlers.
 type CompilationGlobalsScope(errorLogger:ErrorLogger,phase,projectDirectory) = 
     do ignore projectDirectory
     let unwindEL = PushErrorLoggerPhaseUntilUnwind(fun _ -> errorLogger)
@@ -1497,8 +1497,9 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
             if ensureReactive then 
                 let timeSlicedComputation = 
                     fullComputation |> 
-                        Eventually.repeatedlyProgressUntilDoneOrTimeShareOver 
+                        Eventually.repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled
                             maxTimeShareMilliseconds
+                            CancellationToken.None
                             (fun f -> 
                                 // Reinstall the compilation globals each time we start or restart
                                 use unwind = new CompilationGlobalsScope (errorLogger, BuildPhase.TypeCheck, projectDirectory) 

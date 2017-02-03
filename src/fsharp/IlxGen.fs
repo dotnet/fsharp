@@ -1457,10 +1457,15 @@ type CodeGenBuffer(m:range,
                 instrs |> Array.mapi (fun idx i2 -> if idx = 0 then i else if i === i2 then AI_nop else i2)
             | _ -> 
                 instrs
+
+        let codeLabels =
+            let dict = Dictionary.newWithSize (codeLabelToPC.Count + codeLabelToCodeLabel.Count)
+            for kvp in codeLabelToPC        do dict.Add(kvp.Key, lab2pc 0 kvp.Key)
+            for kvp in codeLabelToCodeLabel do dict.Add(kvp.Key, lab2pc 0 kvp.Key)
+            dict
         ResizeArray.toList locals ,
         maxStack,
-        (Dictionary.ofList [ for kvp in codeLabelToPC -> (kvp.Key, lab2pc 0 kvp.Key) 
-                             for kvp in codeLabelToCodeLabel -> (kvp.Key, lab2pc 0 kvp.Key) ] ),
+        codeLabels,
         instrs,
         ResizeArray.toList exnSpecs,
         Option.isSome seqpoint
@@ -4652,7 +4657,7 @@ and GenBindAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec,rhsExpr,_)) =
         GenExpr cenv cgbuf eenv SPSuppress rhsExpr discard
 
     // The initialization code for static 'let' and 'do' bindings gets compiled into the initialization .cctor for the whole file
-    | _ when vspec.IsClassConstructor && vspec.TopValActualParent.TyparsNoRange.Length = 0 ->
+    | _ when vspec.IsClassConstructor && isNil vspec.TopValActualParent.TyparsNoRange ->
         let tps,_,_,_,cctorBody,_ = IteratedAdjustArityOfLambda cenv.g cenv.amap vspec.ValReprInfo.Value rhsExpr
         let eenv = EnvForTypars tps eenv
         GenExpr cenv cgbuf eenv SPSuppress cctorBody discard

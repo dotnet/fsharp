@@ -22,7 +22,7 @@ let (>>>&) (x:int32) (n:int32) = int32 (uint32 x >>> n)
 
 let notlazy v = Lazy<_>.CreateFromValue v
 
-let inline isNil x = List.isEmpty x
+let inline isNil l = List.isEmpty l
 let inline isNonNull x = not (isNull x)
 let inline nonNull msg x = if isNull x then failwith ("null: " ^ msg) else x
 let (===) x y = LanguagePrimitives.PhysicalEquality x y
@@ -442,11 +442,9 @@ module String =
 
 module Dictionary = 
 
-    let inline ofList l = 
-        let dict = new System.Collections.Generic.Dictionary<_,_>(List.length l, HashIdentity.Structural)
-        l |> List.iter (fun (k,v) -> dict.Add(k,v))
-        dict
+    let inline newWithSize (size: int) = System.Collections.Generic.Dictionary<_,_>(size, HashIdentity.Structural)
         
+
 module Lazy = 
     let force (x: Lazy<'T>) = x.Force()
 
@@ -494,13 +492,15 @@ module ResultOrException =
 ///      captured by the NotYetDone closure. Computations do not need to be restartable.
 ///
 ///    - The key thing is that you can take an Eventually value and run it with 
-///      Eventually.repeatedlyProgressUntilDoneOrTimeShareOver
+///      Eventually.repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled
 type Eventually<'T> = 
     | Done of 'T 
     | NotYetDone of (unit -> Eventually<'T>)
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Eventually = 
+    open System.Threading
+
     let rec box e = 
         match e with 
         | Done x -> Done (Operators.box x) 
@@ -515,10 +515,11 @@ module Eventually =
             else forceWhile check (work()) 
 
     let force e = Option.get (forceWhile (fun () -> true) e)
+
         
     /// Keep running the computation bit by bit until a time limit is reached.
     /// The runner gets called each time the computation is restarted
-    let repeatedlyProgressUntilDoneOrTimeShareOver timeShareInMilliseconds runner e = 
+    let repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled timeShareInMilliseconds (ct: CancellationToken) runner e = 
         let sw = new System.Diagnostics.Stopwatch() 
         let rec runTimeShare e = 
           runner (fun () -> 
@@ -527,14 +528,27 @@ module Eventually =
             let rec loop(e) = 
                 match e with 
                 | Done _ -> e
-                | NotYetDone work -> 
-                    if sw.ElapsedMilliseconds > timeShareInMilliseconds then 
+                | NotYetDone work ->
+                    if ct.IsCancellationRequested || sw.ElapsedMilliseconds > timeShareInMilliseconds then 
                         sw.Stop();
                         NotYetDone(fun () -> runTimeShare e) 
                     else 
                         loop(work())
             loop(e))
         runTimeShare e
+    
+    /// Keep running the asynchronous computation bit by bit. The runner gets called each time the computation is restarted.
+    /// Can be cancelled in the normal way.
+    let forceAsync (runner: (unit -> Eventually<'T>) -> Async<Eventually<'T>>) (e: Eventually<'T>) : Async<'T option> =
+        let rec loop (e: Eventually<'T>) =
+            async {
+                match e with 
+                | Done x -> return Some x
+                | NotYetDone work ->
+                    let! r = runner work
+                    return! loop r
+            }
+        loop e
 
     let rec bind k e = 
         match e with 

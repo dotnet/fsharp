@@ -167,10 +167,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             var hr = solution.GetProjectOfGuid(ref referencedProjectGuid, out hier);
             if (!ErrorHandler.Succeeded(hr))
                 return; // check if project is missing or non-loaded!
-
+            
             object obj;
             hr = hier.GetProperty(VSConstants.VSITEMID_ROOT, (int)__VSHPROPID.VSHPROPID_ExtObject, out obj);
-            ErrorHandler.ThrowOnFailure(hr);
+            if (!ErrorHandler.Succeeded(hr))
+                return;
 
             EnvDTE.Project prj = obj as EnvDTE.Project;
             if (prj == null) 
