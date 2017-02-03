@@ -514,7 +514,6 @@ and CheckVal (cenv:cenv) (env:env) v m context =
         if isSpliceOperator cenv.g v then errorR(Error(FSComp.SR.chkNoFirstClassSplicing(), m))
         if valRefEq cenv.g v cenv.g.addrof_vref  then errorR(Error(FSComp.SR.chkNoFirstClassAddressOf(), m))
         if valRefEq cenv.g v cenv.g.reraise_vref then errorR(Error(FSComp.SR.chkNoFirstClassRethrow(), m))
-        if valRefEq cenv.g v cenv.g.nameof_vref then errorR(Error(FSComp.SR.chkNoFirstClassNameOf(), m))
         if noByrefs context && isByrefLikeTy cenv.g v.Type then 
             // byref typed val can only occur in permitting contexts 
             errorR(Error(FSComp.SR.chkNoByrefAtThisPoint(v.DisplayName), m))

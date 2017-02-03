@@ -8313,12 +8313,33 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (
         | SynExpr.LongIdent(_, LongIdentWithDots(idents, _), _, _) -> List.tryLast idents
         | _ -> None
 
+    let (|NameOfExpr|_|) expr = 
+        match expr with 
+        | Expr.App(Expr.Val(vref,_,_),_,_,[],_) when vref.CompiledName = "nameof" -> Some ()
+        | _ -> None
+
     // If the type of 'synArg' unifies as a function type, then this is a function application, otherwise
     // it is an error or a computation expression
     match UnifyFunctionTypeUndoIfFailed cenv denv mFunExpr exprty with
     | Some (domainTy,resultTy) -> 
+        // Notice the special case 'seq { ... }'. In this case 'seq' is actually a function in the F# library.
+        // Set a flag in the syntax tree to say we noticed a leading 'seq'
+        match synArg with 
+        | SynExpr.CompExpr (false,isNotNakedRefCell,_comp,_m) -> 
+            isNotNakedRefCell := 
+                !isNotNakedRefCell
+                || 
+                (match expr with 
+                 | ApplicableExpr(_,Expr.Op(TOp.Coerce,_,[SeqExpr cenv.g],_),_) -> true 
+                 | _ -> false)
+        | _ -> ()
+        
+        let arg,tpenv = TcExpr cenv domainTy env tpenv synArg
+        let exprAndArg = buildApp cenv expr exprty arg mExprAndArg
+        TcDelayed cenv overallTy env tpenv mExprAndArg exprAndArg resultTy atomicFlag delayed
+    | None -> 
         match expr with
-        | ApplicableExpr(_, NameOfExpr cenv.g _, _) ->
+        | ApplicableExpr(_, NameOfExpr, _) ->
             match synArg with
             | LastPartOfLongIdentStripParens argIdent ->
                 let r = expr.Range
@@ -8327,30 +8348,13 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (
                 TcDelayed cenv overallTy env tpenv mExprAndArg (ApplicableExpr(cenv, Expr.Const(Const.String(argIdent.idText), constRange, cenv.g.string_ty), true)) cenv.g.string_ty ExprAtomicFlag.Atomic delayed
             | _ -> error (Error(FSComp.SR.expressionHasNoName(), expr.Range))
         | _ ->
-            // Notice the special case 'seq { ... }'. In this case 'seq' is actually a function in the F# library.
-            // Set a flag in the syntax tree to say we noticed a leading 'seq'
+            // OK, 'expr' doesn't have function type, but perhaps 'expr' is a computation expression builder, and 'arg' is '{ ... }' 
             match synArg with 
-            | SynExpr.CompExpr (false,isNotNakedRefCell,_comp,_m) -> 
-                isNotNakedRefCell := 
-                    !isNotNakedRefCell
-                    || 
-                    (match expr with 
-                     | ApplicableExpr(_,Expr.Op(TOp.Coerce,_,[SeqExpr cenv.g],_),_) -> true 
-                     | _ -> false)
-            | _ -> ()
-            
-            let arg,tpenv = TcExpr cenv domainTy env tpenv synArg
-            let exprAndArg = buildApp cenv expr exprty arg mExprAndArg
-            TcDelayed cenv overallTy env tpenv mExprAndArg exprAndArg resultTy atomicFlag delayed
-            
-    | None -> 
-        // OK, 'expr' doesn't have function type, but perhaps 'expr' is a computation expression builder, and 'arg' is '{ ... }' 
-        match synArg with 
-        | SynExpr.CompExpr (false,_isNotNakedRefCell,comp,_m) -> 
-            let bodyOfCompExpr,tpenv = TcComputationOrSequenceExpression cenv env overallTy mFunExpr (Some(expr.Expr,exprty)) tpenv comp
-            TcDelayed cenv overallTy env tpenv mExprAndArg (MakeApplicableExprNoFlex cenv bodyOfCompExpr) (tyOfExpr cenv.g bodyOfCompExpr) ExprAtomicFlag.NonAtomic delayed 
-        | _ -> 
-            error (NotAFunction(denv,overallTy,mFunExpr,mArg)) 
+            | SynExpr.CompExpr (false,_isNotNakedRefCell,comp,_m) -> 
+                let bodyOfCompExpr,tpenv = TcComputationOrSequenceExpression cenv env overallTy mFunExpr (Some(expr.Expr,exprty)) tpenv comp
+                TcDelayed cenv overallTy env tpenv mExprAndArg (MakeApplicableExprNoFlex cenv bodyOfCompExpr) (tyOfExpr cenv.g bodyOfCompExpr) ExprAtomicFlag.NonAtomic delayed 
+            | _ -> 
+                error (NotAFunction(denv,overallTy,mFunExpr,mArg)) 
 
 //-------------------------------------------------------------------------
 // TcLongIdentThen : Typecheck "A.B.C<D>.E.F ... " constructs
