@@ -2,7 +2,7 @@
 
 using System;
 using System.Collections.Immutable;
-using Microsoft.CodeAnalysis.Text;
+using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.PatternMatching
 {
