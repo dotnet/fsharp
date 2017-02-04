@@ -2884,6 +2884,11 @@ let isSizeOfValRef g vref =
     // There is an internal version of typeof defined in prim-types.fs that needs to be detected
     || (g.compilingFslib && vref.LogicalName = "sizeof") 
 
+let isNameOfValRef g vref = 
+    valRefEq g vref g.nameof_vref 
+    // There is an internal version of typeof defined in prim-types.fs that needs to be detected
+    || (g.compilingFslib && vref.LogicalName = "nameof") 
+
 let isTypeDefOfValRef g vref = 
     valRefEq g vref g.typedefof_vref 
     // There is an internal version of typedefof defined in prim-types.fs that needs to be detected
@@ -2907,6 +2912,11 @@ let (|SizeOfExpr|_|) g expr =
 let (|TypeDefOfExpr|_|) g expr = 
     match expr with 
     | Expr.App(Expr.Val(vref,_,_),_,[ty],[],_) when isTypeDefOfValRef g vref ->  Some ty
+    | _ -> None
+
+let (|NameOfExpr|_|) g expr = 
+    match expr with 
+    | Expr.App(Expr.Val(vref,_,_),_,[ty],[],_) when isNameOfValRef g vref  -> Some ty
     | _ -> None
 
 let (|SeqExpr|_|) g expr = 
@@ -7743,7 +7753,8 @@ let IsSimpleSyntacticConstantExpr g inputExpr =
         | Expr.Op (TOp.UnionCase _,_,[],_)         // Nullary union cases
         | UncheckedDefaultOfExpr g _ 
         | SizeOfExpr g _ 
-        | TypeOfExpr g _ -> true
+        | TypeOfExpr g _ 
+        | NameOfExpr g _ -> true
         // All others are not simple constant expressions
         | _ -> false
 

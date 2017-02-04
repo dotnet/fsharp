@@ -572,7 +572,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_typeof_info                = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "typeof"                               , None                 , Some "TypeOf" , [vara],     ([], v_system_Type_typ))  
   let v_methodhandleof_info        = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "methodhandleof"                       , None                 , Some "MethodHandleOf", [vara;varb], ([[varaTy --> varbTy]], v_system_RuntimeMethodHandle_typ))
   let v_sizeof_info                = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "sizeof"                               , None                 , Some "SizeOf" , [vara],     ([], v_int_ty))  
-  
+  let v_nameof_info                = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "nameof"                               , None                 , Some "NameOf" , [vara],     ([[varaTy]], v_string_ty))
+
   let v_unchecked_defaultof_info   = makeIntrinsicValRef(fslib_MFOperatorsUnchecked_nleref,                    "defaultof"                            , None                 , Some "DefaultOf", [vara],     ([], varaTy))  
   let v_typedefof_info             = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "typedefof"                            , None                 , Some "TypeDefOf", [vara],     ([], v_system_Type_typ))  
   let v_enum_info                  = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "enum"                                 , None                 , Some "ToEnum" , [vara],     ([[v_int_ty]], varaTy))  
@@ -1130,6 +1131,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val methodhandleof_vref        = ValRefForIntrinsic v_methodhandleof_info
   member val typeof_vref                = ValRefForIntrinsic v_typeof_info
   member val sizeof_vref                = ValRefForIntrinsic v_sizeof_info
+  member val nameof_vref                = ValRefForIntrinsic v_nameof_info
   member val typedefof_vref             = ValRefForIntrinsic v_typedefof_info
   member val enum_vref                  = ValRefForIntrinsic v_enum_info
   member val enumOfValue_vref           = ValRefForIntrinsic v_enumOfValue_info
