@@ -192,7 +192,7 @@ type internal IncrementalBuilder =
       /// This may be a marginally long-running operation (parses are relatively quick, only one file needs to be parsed)
       member GetParseResultsForFile : CompilationThreadToken * filename:string * ct: CancellationToken -> Ast.ParsedInput option * Range.range * string * (PhasedDiagnostic * FSharpErrorSeverity) list
 
-      static member TryCreateBackgroundBuilderForProjectOptions : CompilationThreadToken * ReferenceResolver.Resolver * FrameworkImportsCache * scriptClosureOptions:LoadClosure option * sourceFiles:string list * commandLineArgs:string list * projectReferences: IProjectReference list * projectDirectory:string * useScriptResolutionRules:bool * keepAssemblyContents: bool * keepAllBackgroundResolutions: bool -> IncrementalBuilder option * FSharpErrorInfo list 
+      static member TryCreateBackgroundBuilderForProjectOptions : CompilationThreadToken * ReferenceResolver.Resolver * FrameworkImportsCache * scriptClosureOptions:LoadClosure option * sourceFiles:string list * commandLineArgs:string list * projectReferences: IProjectReference list * projectDirectory:string * useScriptResolutionRules:bool * keepAssemblyContents: bool * keepAllBackgroundResolutions: bool * maxTimeShareMilliseconds: int64 -> IncrementalBuilder option * FSharpErrorInfo list 
 
       static member KeepBuilderAlive : IncrementalBuilder option -> IDisposable
       member IsBeingKeptAliveApartFromCacheEntry : bool
@@ -234,15 +234,15 @@ module internal IncrementalBuild =
     /// Only required for unit testing.
     module Vector = 
         /// Maps one vector to another using the given function.    
-        val Map : string -> ('I -> 'O) -> Vector<'I> -> Vector<'O>
+        val Map : string -> (CompilationThreadToken -> 'I -> 'O) -> Vector<'I> -> Vector<'O>
         /// Updates the creates a new vector with the same items but with 
         /// timestamp specified by the passed-in function.  
-        val Stamp : string -> ('I -> System.DateTime) -> Vector<'I> -> Vector<'I>
+        val Stamp : string -> (CompilationThreadToken -> 'I -> System.DateTime) -> Vector<'I> -> Vector<'I>
         /// Apply a function to each element of the vector, threading an accumulator argument
         /// through the computation. Returns intermediate results in a vector.
-        val ScanLeft : string -> ('A -> 'I -> Eventually<'A>) -> Scalar<'A> -> Vector<'I> -> Vector<'A>
+        val ScanLeft : string -> (CompilationThreadToken -> 'A -> 'I -> Eventually<'A>) -> Scalar<'A> -> Vector<'I> -> Vector<'A>
         /// Apply a function to a vector to get a scalar value.
-        val Demultiplex : string -> ('I[] -> 'O)->Vector<'I> -> Scalar<'O>
+        val Demultiplex : string -> (CompilationThreadToken -> 'I[] -> 'O)->Vector<'I> -> Scalar<'O>
         /// Convert a Vector into a Scalar.
         val AsScalar: string -> Vector<'I> -> Scalar<'I[]> 
 
@@ -252,13 +252,13 @@ module internal IncrementalBuild =
     val LocallyInjectCancellationFault : unit -> IDisposable
     
     /// Evaluate a build. Only required for unit testing.
-    val Eval : (PartialBuild -> unit) -> CancellationToken -> INode -> PartialBuild -> PartialBuild
+    val Eval : CompilationThreadToken -> (CompilationThreadToken -> PartialBuild -> unit) -> CancellationToken -> INode -> PartialBuild -> PartialBuild
 
     /// Evaluate a build for a vector up to a limit. Only required for unit testing.
-    val EvalUpTo : (PartialBuild -> unit) -> CancellationToken -> INode * int -> PartialBuild -> PartialBuild
+    val EvalUpTo : CompilationThreadToken -> (CompilationThreadToken -> PartialBuild -> unit) -> CancellationToken -> INode * int -> PartialBuild -> PartialBuild
 
     /// Do one step in the build. Only required for unit testing.
-    val Step : (PartialBuild -> unit) -> CancellationToken -> Target -> PartialBuild -> PartialBuild option
+    val Step : CompilationThreadToken -> (CompilationThreadToken -> PartialBuild -> unit) -> CancellationToken -> Target -> PartialBuild -> PartialBuild option
     /// Get a scalar vector. Result must be available. Only required for unit testing.
     val GetScalarResult : Scalar<'T> * PartialBuild -> ('T * System.DateTime) option
     /// Get a result vector. All results must be available or thrown an exception. Only required for unit testing.
@@ -287,5 +287,5 @@ module internal IncrementalBuild =
 ///
 /// Use to reset error and warning handlers.
 type internal CompilationGlobalsScope =
-    new : CompilationThreadToken * ErrorLogger * BuildPhase * string -> CompilationGlobalsScope
+    new : ErrorLogger * BuildPhase * string -> CompilationGlobalsScope
     interface IDisposable

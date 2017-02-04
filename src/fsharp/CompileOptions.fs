@@ -204,7 +204,7 @@ module ResponseFile =
 
 
 let ParseCompilerOptions (collectOtherArgument : string -> unit, blocks: CompilerOptionBlock list, args) =
-  use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parameter)
+  use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
   
   let specs = List.collect GetOptionsOfBlock blocks
           
@@ -355,7 +355,7 @@ let ParseCompilerOptions (collectOtherArgument : string -> unit, blocks: Compile
               reportDeprecatedOption d
               let al = getOptionArgList compilerOption argString
               if al <> [] then
-                  List.iter (fun s -> f s) (getOptionArgList compilerOption argString)
+                  List.iter f (getOptionArgList compilerOption argString)
               t
           | (CompilerOption(s, _, OptionStringListSwitch f, d, _) as compilerOption :: _) when getSwitchOpt(optToken) = s -> 
               reportDeprecatedOption d
@@ -567,7 +567,7 @@ let errorsAndWarningsFlags (tcConfigB : TcConfigBuilder) =
                                                      else error(Error(FSComp.SR.optsInvalidWarningLevel(n),rangeCmdArgs))), None,
                             Some (FSComp.SR.optsWarn()));
            
-        CompilerOption("nowarn", tagWarnList, OptionStringList (fun n -> tcConfigB.TurnWarningOff(rangeCmdArgs,n)), None,
+        CompilerOption("nowarn", tagWarnList, OptionStringList (fun n -> tcConfigB.TurnWarningOff(rangeCmdArgs, n)), None,
                             Some (FSComp.SR.optsNowarn())); 
 
         CompilerOption("warnon", tagWarnList, OptionStringList (fun n -> tcConfigB.TurnWarningOn(rangeCmdArgs,n)), None,
@@ -1333,12 +1333,12 @@ let GenerateIlxCode (ilxBackend, isInteractiveItExpr, isInteractiveOnMono, tcCon
 // by the same references. Only used for static linking.
 //----------------------------------------------------------------------------
 
-let NormalizeAssemblyRefs (tcImports:TcImports) scoref =
+let NormalizeAssemblyRefs (ctok, tcImports:TcImports) scoref =
     match scoref with 
     | ILScopeRef.Local 
     | ILScopeRef.Module _ -> scoref
     | ILScopeRef.Assembly aref -> 
-        match tcImports.TryFindDllInfo (Range.rangeStartup,aref.Name,lookupOnly=false) with 
+        match tcImports.TryFindDllInfo (ctok, Range.rangeStartup, aref.Name, lookupOnly=false) with 
         | Some dllInfo -> dllInfo.ILScopeRef
         | None -> scoref
 

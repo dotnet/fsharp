@@ -14508,7 +14508,12 @@ module EstablishTypeDefinitionCores =
 
             let isRootGenerated,rootProvAssemStaticLinkInfoOpt = 
                 let stRootAssembly = theRootTypeWithRemapping.PApply((fun st -> st.Assembly),m)
-                cenv.amap.assemblyLoader.GetProvidedAssemblyInfo (m, stRootAssembly)
+
+                // Explanation: We are currently assuming that the callback GetProvidedAssemblyInfo is only called on the compilation thread
+                let ctok = AssumeCompilationThreadWithoutEvidence() 
+
+                cenv.amap.assemblyLoader.GetProvidedAssemblyInfo (ctok, m, stRootAssembly)
+
             let isRootGenerated = isRootGenerated || theRootTypeWithRemapping.PUntaint((fun st -> not st.IsErased),m)
 
             if not isRootGenerated then 
@@ -14547,7 +14552,8 @@ module EstablishTypeDefinitionCores =
                 // Check the type is a generated type
                 let isGenerated,provAssemStaticLinkInfoOpt = 
                     let stAssembly = st.PApply((fun st -> st.Assembly),m)
-                    cenv.amap.assemblyLoader.GetProvidedAssemblyInfo (m, stAssembly)
+                    let ctok = AssumeCompilationThreadWithoutEvidence()
+                    cenv.amap.assemblyLoader.GetProvidedAssemblyInfo (ctok, m, stAssembly)
 
                 let isGenerated = isGenerated || st.PUntaint((fun st -> not st.IsErased),m)
 

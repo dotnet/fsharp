@@ -794,9 +794,9 @@ module internal ToolLocationHelper =
 //    let setPropertyValue instance propName propValue=
 //        instance.GetType().GetPropserty(propName, BindingFlags.Public).SetValue(instance, propValue, null)
 
-    type ResolveAssemblyReference () =
+    type FindCcuFromAssemblyRef () =
         let assembly = Assembly.Load(new AssemblyName("Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"))
-        let resolveAssemblyReferenceType = assembly.GetType("Microsoft.Build.Tasks.ResolveAssemblyReference")
+        let resolveAssemblyReferenceType = assembly.GetType("Microsoft.Build.Tasks.FindCcuFromAssemblyRef")
         let instance = Activator.CreateInstance(resolveAssemblyReferenceType)
 
         member this.BuildEngine

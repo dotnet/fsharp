@@ -9,6 +9,7 @@ open Microsoft.FSharp.Control
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.ErrorLogger
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 
 /// Represents the capability to schedule work in the compiler service operations queue for the compilation thread
 type internal IReactorOperations = 
@@ -44,8 +45,10 @@ type Reactor() =
 
         // Async workflow which receives messages and dispatches to worker functions.
         let rec loop (bgOpOpt, onComplete, bg) = 
-            async { let ctok = AssumeOnCompilationThread()
-                    Trace.TraceInformation("Reactor: receiving..., remaining {0}, mem {1}, gc2 {2}", inbox.CurrentQueueLength, GC.GetTotalMemory(false)/1000000L, GC.CollectionCount(2))
+            async { Trace.TraceInformation("Reactor: receiving..., remaining {0}, mem {1}, gc2 {2}", inbox.CurrentQueueLength, GC.GetTotalMemory(false)/1000000L, GC.CollectionCount(2))
+
+                    // Explanation: The reactor thread acts as the compilation thread in hosted scenarios
+                    let ctok = AssumeCompilationThreadWithoutEvidence()
 
                     // Messages always have priority over the background op.
                     let! msg = 
@@ -80,7 +83,9 @@ type Reactor() =
                         Trace.TraceInformation("Reactor: --> wait for background (debug only), remaining {0}, mem {1}, gc2 {2}", inbox.CurrentQueueLength, GC.GetTotalMemory(false)/1000000L, GC.CollectionCount(2))
                         match bgOpOpt with 
                         | None -> ()
-                        | Some bgOp -> while bgOp ctok do ()
+                        | Some bgOp -> 
+                            while bgOp ctok do 
+                                ()
                         channel.Reply(())
                         return! loop (None, onComplete, false)
                     | Some (CompleteAllQueuedOps channel) -> 

@@ -214,7 +214,7 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
             lineIfExists resolvedPath
             + lineIfExists fusionName  
 
-    /// Perform assembly resolution by instantiating the ResolveAssemblyReference task directly from the MSBuild SDK.
+    /// Perform assembly resolution by instantiating the FindCcuFromAssemblyRef task directly from the MSBuild SDK.
     let ResolveCore(resolutionEnvironment: ResolutionEnvironment,
                     references:(string*(*baggage*)string)[], 
                     targetFrameworkVersion: string, 
@@ -308,7 +308,7 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
                item |]
 #endif
         let rar = 
-            ResolveAssemblyReference(BuildEngine=engine, TargetFrameworkDirectories=targetFrameworkDirectories,
+            FindCcuFromAssemblyRef(BuildEngine=engine, TargetFrameworkDirectories=targetFrameworkDirectories,
                                      FindRelatedFiles=false, FindDependencies=false, FindSatellites=false, 
                                      FindSerializationAssemblies=false, Assemblies=assemblies, 
                                      SearchPaths=searchPaths, 
@@ -322,8 +322,8 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
         // The properties TargetedRuntimeVersion and CopyLocalDependenciesWhenParentReferenceInGac 
         // are not available on Mono. So we only set them if available (to avoid a compile-time dependency). 
         if not Microsoft.FSharp.Compiler.AbstractIL.IL.runningOnMono then  
-            typeof<ResolveAssemblyReference>.InvokeMember("TargetedRuntimeVersion",(BindingFlags.Instance ||| BindingFlags.SetProperty ||| BindingFlags.Public),null,rar,[| box targetedRuntimeVersionValue |])  |> ignore 
-            typeof<ResolveAssemblyReference>.InvokeMember("CopyLocalDependenciesWhenParentReferenceInGac",(BindingFlags.Instance ||| BindingFlags.SetProperty ||| BindingFlags.Public),null,rar,[| box true |])  |> ignore 
+            typeof<FindCcuFromAssemblyRef>.InvokeMember("TargetedRuntimeVersion",(BindingFlags.Instance ||| BindingFlags.SetProperty ||| BindingFlags.Public),null,rar,[| box targetedRuntimeVersionValue |])  |> ignore 
+            typeof<FindCcuFromAssemblyRef>.InvokeMember("CopyLocalDependenciesWhenParentReferenceInGac",(BindingFlags.Instance ||| BindingFlags.SetProperty ||| BindingFlags.Public),null,rar,[| box true |])  |> ignore 
 #else
         rar.TargetedRuntimeVersion <- targetedRuntimeVersionValue
         rar.CopyLocalDependenciesWhenParentReferenceInGac <- true

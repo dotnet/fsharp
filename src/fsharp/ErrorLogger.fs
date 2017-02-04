@@ -6,6 +6,7 @@ module internal Microsoft.FSharp.Compiler.ErrorLogger
 open Internal.Utilities
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Range
 open System
@@ -123,27 +124,6 @@ let rec AttachRange m (exn:exn) =
         | :? System.ArgumentException as exn -> InternalError(exn.Message + " (ArgumentException)",m)
         | notARangeDual -> notARangeDual
 
-//----------------------------------------------------------------------------
-// Singe threaded execution
-
-type CompilationThreadToken = | CompilationThreadToken
-let RequireCompilationThread (_ctok: CompilationThreadToken) = ()
-let DoesNotSpecificallyRequireCompilerThreadAndCouldLikelyBeConcurrent (_ctok: CompilationThreadToken) = ()
-let AssumeOnCompilationThread () = CompilationThreadToken
-let BUG_NotOnCompilationThread () = CompilationThreadToken
-
-type CallerThreadToken = | CallerThreadToken
-let RequireCallerThread (_ctok: CallerThreadToken) = ()
-let CouldAvoidCallerThread (_ctok: CallerThreadToken) = ()
-let AssumeSomeCallerThread () = CallerThreadToken
-
-type LockedResourceToken = | LockedResourceToken
-let RequireLockThread (_ctok: LockedResourceToken) = ()
-let AssumeLockThread () = LockedResourceToken
-
-type Lock() = 
-    let lockObj = obj()
-    member __.Acquire f = lock lockObj (fun () -> f (AssumeLockThread()))
 
 //----------------------------------------------------------------------------
 // Error logger interface
@@ -416,7 +396,9 @@ module ErrorLoggerExtensions =
 /// NOTE: The change will be undone when the returned "unwind" object disposes
 let PushThreadBuildPhaseUntilUnwind (phase:BuildPhase) =
     let oldBuildPhase = CompileThreadStatic.BuildPhaseUnchecked
+    
     CompileThreadStatic.BuildPhase <- phase
+
     { new System.IDisposable with 
          member x.Dispose() = CompileThreadStatic.BuildPhase <- oldBuildPhase (* maybe null *) }
 
@@ -429,7 +411,9 @@ let PushErrorLoggerPhaseUntilUnwind(errorLoggerTransformer : ErrorLogger -> #Err
     let chkErrorLogger = { new ErrorLogger("PushErrorLoggerPhaseUntilUnwind") with
                              member x.DiagnosticSink(phasedError, isError) = newIsInstalled(); newErrorLogger.DiagnosticSink(phasedError, isError)
                              member x.ErrorCount   = newIsInstalled(); newErrorLogger.ErrorCount }
+
     CompileThreadStatic.ErrorLogger <- chkErrorLogger
+
     { new System.IDisposable with 
          member x.Dispose() =       
             CompileThreadStatic.ErrorLogger <- oldErrorLogger
