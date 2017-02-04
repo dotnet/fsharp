@@ -95,7 +95,7 @@ type XmlDoc =
                      ["</summary>"]
 
         let lines = processLines (Array.toList lines)
-        if lines.Length = 0 then XmlDoc.Empty
+        if isNil lines then XmlDoc.Empty
         else XmlDoc (Array.ofList lines)
 
 // Discriminated unions can't contain statics, so we use a separate type

@@ -342,12 +342,16 @@ module Keywords =
             | _ -> 
                 IdentifierToken args lexbuf s
 
+    let inline private DoesIdentifierNeedQuotation (s : string) : bool =
+        not (String.forall IsIdentifierPartCharacter s)              // if it has funky chars
+        || s.Length > 0 && (not(IsIdentifierFirstCharacter s.[0]))  // or if it starts with a non-(letter-or-underscore)
+        || keywordTable.ContainsKey s                               // or if it's a language keyword like "type"
+
     /// A utility to help determine if an identifier needs to be quoted 
     let QuoteIdentifierIfNeeded (s : string) : string =
-        if not (String.forall IsIdentifierPartCharacter s)              // if it has funky chars
-            || s.Length > 0 && (not(IsIdentifierFirstCharacter s.[0]))  // or if it starts with a non-(letter-or-underscore)
-            || keywordTable.ContainsKey s                               // or if it's a language keyword like "type"
-        then "``"+s+"``"  // then it needs to be ``quoted``
-        else s
+        if DoesIdentifierNeedQuotation s then "``" + s + "``" else s
 
-
+    /// Quote identifier with double backticks if needed, remove unnecessary double backticks quotation.
+    let NormalizeIdentifierBackticks (s : string) : string =
+        let s = if s.StartsWith "``" && s.EndsWith "``" then s.[2..s.Length - 3] else s
+        QuoteIdentifierIfNeeded s

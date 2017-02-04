@@ -1348,7 +1348,7 @@ let destForallTy g ty =
     tps,tau
 
 let tryDestForallTy g ty = 
-    if isForallTy g ty then destForallTy g ty else ([],ty) 
+    if isForallTy g ty then destForallTy g ty else [],ty
 
 
 let rec stripFunTy g ty = 
@@ -6815,7 +6815,7 @@ let AdjustPossibleSubsumptionExpr g (expr: Expr) (suppliedArgs: Expr list) : (Ex
                     // rather than 
                     //   (fun b -> let clo = f (b :> A) in clo)   
                     let exprApp = 
-                        if argTysWithoutNiceNames.Length = 0 then 
+                        if isNil argTysWithoutNiceNames then 
                             mkApps g ((exprWithActualTy,actualTy),[],inpsAsArgs,appm)
                         else
                             mkInvisibleLet appm 
