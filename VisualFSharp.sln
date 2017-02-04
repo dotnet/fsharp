@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26009.0
+VisualStudioVersion = 15.0.26127.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler", "src\fsharp\FSharp.Compiler\FSharp.Compiler.fsproj", "{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}"
 EndProject
@@ -121,11 +121,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TextFile", "vsintegration\ItemTemplates\TextFile\TextFile.csproj", "{D11FC318-8F5D-4C8C-9287-AB40A016D13C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XMLFile", "vsintegration\ItemTemplates\XMLFile\XMLFile.csproj", "{1FB1DD07-06AA-45B4-B5AC-20FF5BEE98B6}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{A83A9A70-8C33-4253-BF6F-3AADB509F21C}"
-	ProjectSection(SolutionItems) = preProject
-		Performance1.psess = Performance1.psess
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Vsix", "Vsix", "{141F6C23-E1B1-4D89-9F10-F0B8AD58E71F}"
 EndProject
