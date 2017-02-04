@@ -1333,5 +1333,5 @@ tcTupleStructMismatch,"One tuple type is a struct tuple, the other is a referenc
 tcGlobalsSystemTypeNotFound,"The system type '%s' was required but no referenced system DLL contained this type"
 3213,typrelMemberHasMultiplePossibleDispatchSlots,"The member '%s' matches multiple overloads of the same method.\nPlease restrict it to one of the following:%s."
 3214,methodIsNotStatic,"Method or object constructor '%s' is not static"
-3215,expressionHasNoName,"This expression does not have a name."
+3215,expressionHasNoName,"Expression does not have a name."
 3216,chkNoFirstClassNameOf,"First-class uses of the 'nameof' operator is not permitted."

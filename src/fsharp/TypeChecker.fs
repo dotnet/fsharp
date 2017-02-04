@@ -8302,19 +8302,18 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (
     let mFunExpr = expr.Range
 
     let (|LastPartOfLongIdentStripParens|_|) expr =
-        let rec stripParens expr =
-            match expr with
-            | SynExpr.Paren(expr, _, _, _) -> stripParens expr
-            | _ -> expr
-
         let rec findIdents expr =
             match expr with
             | SynExpr.Ident ident -> Some ([ident], ident)
             | SynExpr.TypeApp (expr = expr) -> findIdents expr
             | SynExpr.LongIdent(_, LongIdentWithDots(idents, _), _, _) when not (List.isEmpty idents) -> Some (idents, List.last idents)
             | _ -> None
-        
-        findIdents (stripParens expr)
+        findIdents expr
+
+    let rec stripParens expr =
+        match expr with
+        | SynExpr.Paren(expr, _, _, _) -> stripParens expr
+        | _ -> expr
 
     // If the type of 'synArg' unifies as a function type, then this is a function application, otherwise
     // it is an error or a computation expression
@@ -8322,7 +8321,8 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (
     | Some (domainTy,resultTy) -> 
         match expr with
         | ApplicableExpr(_, NameOfExpr cenv.g _, _) ->
-            match synArg with
+            let cleanSynArg = stripParens synArg
+            match cleanSynArg with
             | LastPartOfLongIdentStripParens (idents, lastIdent) ->
                 // Try to resolve the `nameof` operator argument to prevent passing anything to it.
                 ResolveExprLongIdent cenv.tcSink cenv.nameResolver mArg env.eAccessRights env.eNameResEnv TypeNameResolutionInfo.Default idents |> ignore
@@ -8331,7 +8331,7 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (
                 // generate fake `range` for the constant the `nameof(..)` we are substituting
                 let constRange = mkRange r.FileName r.Start (mkPos r.StartLine (r.StartColumn + lastIdent.idText.Length + 2)) // `2` are for quotes
                 TcDelayed cenv overallTy env tpenv mExprAndArg (ApplicableExpr(cenv, Expr.Const(Const.String(lastIdent.idText), constRange, cenv.g.string_ty), true)) cenv.g.string_ty ExprAtomicFlag.Atomic delayed
-            | _ -> error (Error(FSComp.SR.expressionHasNoName(), expr.Range))
+            | _ -> error (Error(FSComp.SR.expressionHasNoName(), cleanSynArg.Range))
         | _ ->
             // Notice the special case 'seq { ... }'. In this case 'seq' is actually a function in the F# library.
             // Set a flag in the syntax tree to say we noticed a leading 'seq'
