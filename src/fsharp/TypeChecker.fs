@@ -4793,8 +4793,9 @@ and CrackStaticConstantArgs cenv env tpenv (staticParameters: Tainted<ProvidedPa
     if not otherArgs.IsEmpty then 
         error (Error(FSComp.SR.etBadUnnamedStaticArgs(),m))
 
+    let indexedStaticParameters = staticParameters |> Array.toList |> List.indexed
     for (n,_) in namedArgs do
-         match staticParameters |> Array.toList |> List.mapi (fun j x -> (j,x)) |> List.filter (fun (j,sp) -> j >= unnamedArgs.Length && n.idText = sp.PUntaint((fun sp -> sp.Name), m)) with
+         match indexedStaticParameters |> List.filter (fun (j,sp) -> j >= unnamedArgs.Length && n.idText = sp.PUntaint((fun sp -> sp.Name), m)) with
          | [] -> 
              if staticParameters |> Array.exists (fun sp -> n.idText = sp.PUntaint((fun sp -> sp.Name), n.idRange)) then 
                  error (Error(FSComp.SR.etStaticParameterAlreadyHasValue n.idText,n.idRange))
@@ -5395,10 +5396,9 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv,names,takenNames) ty pat
         let ftys = fields |> List.map (fun fsp -> actualTyOfRecdField inst fsp,fsp) 
         let fldsmap',acc = 
           ((tpenv,names,takenNames), ftys) ||> List.mapFold (fun s (ty,fsp) -> 
-              if Map.containsKey fsp.rfield_id.idText  fldsmap then 
-                TcPat warnOnUpper cenv env None vFlags s ty (Map.find fsp.rfield_id.idText fldsmap)
-              else 
-                (fun _ -> TPat_wild m),s)
+              match Map.tryFind fsp.rfield_id.idText fldsmap with
+              | Some v -> TcPat warnOnUpper cenv env None vFlags s ty v
+              | None -> (fun _ -> TPat_wild m),s)
         (fun values -> TPat_recd (tcref,tinst,List.map (fun f -> f values) fldsmap',m)), 
         acc
 
