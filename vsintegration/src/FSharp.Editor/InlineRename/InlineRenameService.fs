@@ -6,6 +6,7 @@ open System
 open System.Composition
 open System.Collections.Generic
 open System.Collections.Immutable
+open System.Linq
 open System.Threading
 open System.Threading.Tasks
 
@@ -44,8 +45,8 @@ type internal DocumentLocations =
 
 type internal InlineRenameLocationSet(locationsByDocument: DocumentLocations [], originalSolution: Solution) =
     interface IInlineRenameLocationSet with
-        member __.Locations : IList<InlineRenameLocation> = 
-            [| for doc in locationsByDocument do yield! doc.Locations |] :> _
+        member __.Locations : IList<InlineRenameLocation> =
+            upcast [| for doc in locationsByDocument do yield! doc.Locations |].ToList()
         
         member this.GetReplacementsAsync(replacementText, _optionSet, cancellationToken) : Task<IInlineRenameReplacementInfo> =
             let rec applyChanges i (solution: Solution) =
@@ -104,7 +105,7 @@ type internal InlineRenameInfo
         member __.DisplayName = symbolUse.Symbol.DisplayName
         member __.FullDisplayName = try symbolUse.Symbol.FullName with _ -> symbolUse.Symbol.DisplayName
         member __.Glyph = Glyph.MethodPublic
-        member __.GetFinalSymbolName replacementText = replacementText
+        member __.GetFinalSymbolName replacementText = Lexhelp.Keywords.NormalizeIdentifierBackticks replacementText
 
         member __.GetReferenceEditSpan(location, cancellationToken) =
             let text = getDocumentText location.Document cancellationToken
@@ -150,9 +151,9 @@ type internal InlineRenameService
             let textLine = sourceText.Lines.GetLineFromPosition(position)
             let textLinePos = sourceText.Lines.GetLinePosition(position)
             let fcsTextLineNumber = textLinePos.Line + 1 // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
-            let! symbol = CommonHelpers.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Fuzzy)
+            let! symbol = CommonHelpers.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy)
             let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, allowStaleResults = true)
-            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.RightColumn, textLine.Text.ToString(), [symbol.Text])
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.Text.ToString(), symbol.FullIsland)
             let! declLoc = symbolUse.GetDeclarationLocation(document)
             return InlineRenameInfo(checker, projectInfoManager, document, sourceText, symbolUse, declLoc, checkFileResults) :> IInlineRenameInfo
         }
