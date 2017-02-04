@@ -8307,11 +8307,14 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (
             | SynExpr.Paren(expr, _, _, _) -> stripParens expr
             | _ -> expr
 
-        match stripParens expr with
-        | SynExpr.Ident ident -> Some ([ident], ident)
-        | SynExpr.TypeApp(expr = SynExpr.Ident(ident)) -> Some ([ident], ident)
-        | SynExpr.LongIdent(_, LongIdentWithDots(idents, _), _, _) when not (List.isEmpty idents) -> Some (idents, List.last idents)
-        | _ -> None
+        let rec findIdents expr =
+            match expr with
+            | SynExpr.Ident ident -> Some ([ident], ident)
+            | SynExpr.TypeApp (expr = expr) -> findIdents expr
+            | SynExpr.LongIdent(_, LongIdentWithDots(idents, _), _, _) when not (List.isEmpty idents) -> Some (idents, List.last idents)
+            | _ -> None
+        
+        findIdents (stripParens expr)
 
     // If the type of 'synArg' unifies as a function type, then this is a function application, otherwise
     // it is an error or a computation expression

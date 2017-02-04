@@ -195,6 +195,11 @@ type NameOfOperatorForGenerics() =
         let b = nameof(fullyGeneric)
         Assert.AreEqual("fullyGeneric",b)
 
+    [<Test>]
+    member this.``lookup name of a generic class`` () =
+        let b = nameof System.Collections.Generic.List<int>
+        Assert.AreEqual("List",b)
+
 [<TestFixture>]
 type UserDefinedNameOfTests() =
     [<Test>]
