@@ -8314,9 +8314,9 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (
                 if not isTypeApp then
                     TcExprOfUnknownType cenv env tpenv expr |> ignore
                 Some ident
-            | SynExpr.TypeApp (expr, _, typeNames, _, _, _, m) -> 
-                TcExprOfUnknownType cenv env tpenv expr |> ignore
-                TcTypesOrMeasures None cenv ImplictlyBoundTyparsAllowed.NewTyparsOK CheckConstraints.NoCheckCxs ItemOccurence.Use env tpenv typeNames m |> ignore
+            | SynExpr.TypeApp (expr, _, typeArgs, _, _, mTypeArgs, m) -> 
+                TcExprOfUnknownTypeThen cenv env tpenv expr [ DelayedTypeApp (typeArgs, mTypeArgs, m) ] |> ignore
+                //TcTypesOrMeasures None cenv ImplictlyBoundTyparsAllowed.NewTyparsOK CheckConstraints.NoCheckCxs ItemOccurence.Use env tpenv typeNames m |> ignore
                 findIdents expr true
             | SynExpr.LongIdent(_, LongIdentWithDots(idents, _), _, _) when not (List.isEmpty idents) -> 
                 if not isTypeApp then
