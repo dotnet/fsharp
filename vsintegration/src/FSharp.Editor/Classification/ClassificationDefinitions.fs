@@ -39,16 +39,16 @@ module internal FSharpClassificationTypes =
         | SemanticClassificationType.Property -> Property
 
 module internal ClassificationDefinitions =
-    [<Export; Name(FSharpClassificationTypes.Function); BaseDefinition("identifier")>]
+    [<Export; Name(FSharpClassificationTypes.Function); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
     let FSharpFunctionClassificationType : ClassificationTypeDefinition = null
 
-    [<Export; Name(FSharpClassificationTypes.MutableVar); BaseDefinition("identifier")>]
+    [<Export; Name(FSharpClassificationTypes.MutableVar); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
     let FSharpMutableVarClassificationType : ClassificationTypeDefinition = null
 
-    [<Export; Name(FSharpClassificationTypes.Printf); BaseDefinition("identifier")>]
+    [<Export; Name(FSharpClassificationTypes.Printf); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
     let FSharpPrintfClassificationType : ClassificationTypeDefinition = null
 
-    [<Export; Name(FSharpClassificationTypes.Property); BaseDefinition("identifier")>]
+    [<Export; Name(FSharpClassificationTypes.Property); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
     let FSharpPropertyClassificationType : ClassificationTypeDefinition = null
 
     [<Export(typeof<EditorFormatDefinition>)>]
@@ -58,9 +58,8 @@ module internal ClassificationDefinitions =
     [<Order(After = PredefinedClassificationTypeNames.Keyword)>]
     type internal FSharpFunctionTypeFormat() as self =
         inherit ClassificationFormatDefinition()
-        
+        // Not setting any colors here, so it will inherit from "Plain Text" by default
         do self.DisplayName <- SR.FSharpFunctionsOrMethodsClassificationType.Value
-           self.ForegroundColor <- Nullable Colors.Black
 
     [<Export(typeof<EditorFormatDefinition>)>]
     [<ClassificationType(ClassificationTypeNames = FSharpClassificationTypes.MutableVar)>]
@@ -93,4 +92,3 @@ module internal ClassificationDefinitions =
         inherit ClassificationFormatDefinition()
         
         do self.DisplayName <- SR.FSharpPropertiesClassificationType.Value
-           self.ForegroundColor <- Nullable Colors.Black
