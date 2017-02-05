@@ -8325,7 +8325,9 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (
             match cleanSynArg with
             | LastPartOfLongIdentStripParens (idents, lastIdent) ->
                 // Try to resolve the `nameof` operator argument to prevent passing anything to it.
-                ResolveExprLongIdent cenv.tcSink cenv.nameResolver mArg env.eAccessRights env.eNameResEnv TypeNameResolutionInfo.Default idents |> ignore
+                let item, _ = ResolveExprLongIdent cenv.tcSink cenv.nameResolver mArg env.eAccessRights env.eNameResEnv TypeNameResolutionInfo.Default idents
+                // Notify name resolution sink about the resolved argument in order to not loose symbol use, which is used in IDE.
+                CallNameResolutionSink cenv.tcSink (cleanSynArg.Range, env.eNameResEnv, item, item, ItemOccurence.Use, env.DisplayEnv, env.eAccessRights)
 
                 let r = expr.Range
                 // generate fake `range` for the constant the `nameof(..)` we are substituting
