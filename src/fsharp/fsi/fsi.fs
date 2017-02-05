@@ -2452,10 +2452,10 @@ let internal DriveFsiEventLoop (fsi: FsiEvaluationSessionHostConfig, fsiConsoleO
 /// The primary type, representing a full F# Interactive session, reading from the given
 /// text input, writing to the given text output and error writers.
 type internal FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], inReader:TextReader, outWriter:TextWriter, errorWriter: TextWriter) = 
+
 #if !FX_NO_HEAPTERMINATION
     do if not runningOnMono then Lib.UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption() (* SDL recommendation *)
 #endif
-#if FX_LCIDFROMCODEPAGE
 
     // Explanation: When FsiEvaluationSession.Create is called we do a bunch of processing. For fsi.exe
     // and fsiAnyCpu.exe there are no other active threads at this point, so we can assume this is the
@@ -2464,6 +2464,8 @@ type internal FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:st
     //
     // We later switch to doing interaction-by-interaction processing on the "event loop" thread.
     let ctokStartup = AssumeCompilationThreadWithoutEvidence ()
+
+#if FX_LCIDFROMCODEPAGE
 
     // See Bug 735819 
     let lcidFromCodePage = 
@@ -2475,6 +2477,7 @@ type internal FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:st
         else
             None
 #endif
+
     let timeReporter = FsiTimeReporter(outWriter)
 
 #if !FX_RESHAPED_CONSOLE

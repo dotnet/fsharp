@@ -287,5 +287,5 @@ module internal IncrementalBuild =
 ///
 /// Use to reset error and warning handlers.
 type internal CompilationGlobalsScope =
-    new : ErrorLogger * BuildPhase * string -> CompilationGlobalsScope
+    new : ErrorLogger * BuildPhase -> CompilationGlobalsScope
     interface IDisposable

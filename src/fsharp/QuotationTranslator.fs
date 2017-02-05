@@ -906,6 +906,8 @@ and IsILTypeRefStaticLinkLocal cenv m (tr:ILTypeRef) =
             when not cenv.g.isInteractive &&
                  aref.Name <> cenv.g.ilg.primaryAssemblyName && // optimization to avoid this check in the common case
 
+                 // Explanation: This represents an unchecked invariant in the hosted compiler: that any operations
+                 // which import types (and resolve assemblies from the tcImports tables) happen on the compilation thread.
                  let ctok = AssumeCompilationThreadWithoutEvidence() 
 
                  (match cenv.amap.assemblyLoader.FindCcuFromAssemblyRef (ctok, m,aref) with 

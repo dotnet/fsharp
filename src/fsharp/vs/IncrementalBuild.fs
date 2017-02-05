@@ -840,7 +840,7 @@ module internal IncrementalBuild =
     let GetVectorResult<'T>(node:Vector<'T>,bt): 'T[] = 
         match GetTopLevelExprByName(bt,node.Name) with 
         | ScalarBuildRule _ -> failwith "Expected vector."
-        | VectorBuildRule ve -> AvailableAllResultsOfExpr bt ve |> List.map (unbox) |> Array.ofList
+        | VectorBuildRule ve -> AvailableAllResultsOfExpr bt ve |> List.map unbox |> Array.ofList
         
     /// Get an element of vector result or None if there were no results.
     let GetVectorResultBySlot<'T>(node:Vector<'T>,slot,bt): ('T*DateTime) option = 
@@ -1174,8 +1174,7 @@ type internal CompilationErrorLogger (debugName:string, tcConfig:TcConfig) =
 /// This represents the global state established as each task function runs as part of the build.
 ///
 /// Use to reset error and warning handlers.
-type CompilationGlobalsScope(errorLogger:ErrorLogger, phase: BuildPhase, projectDirectory) = 
-    do ignore projectDirectory
+type CompilationGlobalsScope(errorLogger:ErrorLogger, phase: BuildPhase) = 
     let unwindEL = PushErrorLoggerPhaseUntilUnwind(fun _ -> errorLogger)
     let unwindBP = PushThreadBuildPhaseUntilUnwind phase
     // Return the disposable object that cleans up
@@ -1298,7 +1297,7 @@ type IncrementalBuilder(ctokCtor: CompilationThreadToken, frameworkTcImportsCach
         // This is ok because not much can actually go wrong here.
         let errorLogger = CompilationErrorLogger("nonFrameworkAssemblyInputs", tcConfig)
         // Return the disposable object that cleans up
-        use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter, projectDirectory) 
+        use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter) 
 
         [ for r in nonFrameworkResolutions do
             let originalTimeStamp = 
@@ -1353,11 +1352,11 @@ type IncrementalBuilder(ctokCtor: CompilationThreadToken, frameworkTcImportsCach
     /// parsed inputs. 
     let ParseTask ctok (sourceRange:range,filename:string,isLastCompiland) =
         assertNotDisposed()
-        DoesNotSpecificallyRequireCompilerThreadAndCouldLikelyBeConcurrent ctok
+        DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
 
         let errorLogger = CompilationErrorLogger("ParseTask", tcConfig)
         // Return the disposable object that cleans up
-        use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parse, projectDirectory)
+        use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parse)
 
         try  
             IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed filename)
@@ -1374,12 +1373,12 @@ type IncrementalBuilder(ctokCtor: CompilationThreadToken, frameworkTcImportsCach
     /// Timestamps of referenced assemblies are taken from the file's timestamp.
     let TimestampReferencedAssemblyTask ctok (assemblyReference, originalTimeStamp) =
         assertNotDisposed()
-        DoesNotSpecificallyRequireCompilerThreadAndCouldLikelyBeConcurrent ctok
+        DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
 
         // Note: we are not calling errorLogger.GetErrors() anywhere. Not a problem because timestamping can't really fail
         let errorLogger = CompilationErrorLogger("TimestampReferencedAssemblyTask", tcConfig)
         // Return the disposable object that cleans up
-        use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter, projectDirectory) // Parameter because -r reference
+        use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter) // Parameter because -r reference
 
         let timestamp = 
             try
@@ -1405,7 +1404,7 @@ type IncrementalBuilder(ctokCtor: CompilationThreadToken, frameworkTcImportsCach
         assertNotDisposed()
         let errorLogger = CompilationErrorLogger("CombineImportedAssembliesTask", tcConfig)
         // Return the disposable object that cleans up
-        use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter, projectDirectory)
+        use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter)
 
         let tcImports = 
             try
@@ -1511,7 +1510,7 @@ type IncrementalBuilder(ctokCtor: CompilationThreadToken, frameworkTcImportsCach
                             CancellationToken.None
                             (fun ctok f -> 
                                 // Reinstall the compilation globals each time we start or restart
-                                use unwind = new CompilationGlobalsScope (errorLogger, BuildPhase.TypeCheck, projectDirectory) 
+                                use unwind = new CompilationGlobalsScope (errorLogger, BuildPhase.TypeCheck) 
                                 f ctok)
                                
             timeSlicedComputation
@@ -1524,10 +1523,10 @@ type IncrementalBuilder(ctokCtor: CompilationThreadToken, frameworkTcImportsCach
     /// Finish up the typechecking to produce outputs for the rest of the compilation process
     let FinalizeTypeCheckTask ctok (tcStates:TypeCheckAccumulator[]) = 
         assertNotDisposed()
-        DoesNotSpecificallyRequireCompilerThreadAndCouldLikelyBeConcurrent ctok
+        DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
 
         let errorLogger = CompilationErrorLogger("CombineImportedAssembliesTask", tcConfig)
-        use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.TypeCheck, projectDirectory)
+        use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.TypeCheck)
 
         // Get the state at the end of the type-checking of the last file
         let finalAcc = tcStates.[tcStates.Length-1]

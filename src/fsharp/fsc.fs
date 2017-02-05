@@ -1941,7 +1941,7 @@ let main4 (Args (ctok, tcConfig, errorLogger: ErrorLogger, ilGlobals, ilxMainMod
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Output
     let outfile = tcConfig.MakePathAbsolute outfile
 
-    DoesNotSpecificallyRequireCompilerThreadAndCouldLikelyBeConcurrent ctok
+    DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
 
     let pdbfile = pdbfile |> Option.map (tcConfig.MakePathAbsolute >> Path.GetFullPath)
     begin

@@ -592,7 +592,7 @@ type internal FSharpChecker =
     member CurrentQueueLength : int
 
     /// This function is called when a project has been cleaned/rebuilt, and thus any live type providers should be refreshed.
-    member NotifyProjectCleaned: options: FSharpProjectOptions -> unit    
+    member NotifyProjectCleaned: options: FSharpProjectOptions -> Async<unit>
     
     /// Notify the host that the logical type checking context for a file has now been updated internally
     /// and that the file has become eligible to be re-typechecked for errors.

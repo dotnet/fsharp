@@ -65,7 +65,8 @@ let CanImportILScopeRef (env:ImportMap) m scoref =
     | ILScopeRef.Module _ -> true
     | ILScopeRef.Assembly assref -> 
 
-        // Explanation: We are currently assuming that the callback FindCcuFromAssemblyRef is only called on the compilation thread
+        // Explanation: This represents an unchecked invariant in the hosted compiler: that any operations
+        // which import types (and resolve assemblies from the tcImports tables) happen on the compilation thread.
         let ctok = AssumeCompilationThreadWithoutEvidence() 
 
         match env.assemblyLoader.FindCcuFromAssemblyRef (ctok, m, assref) with
@@ -76,6 +77,8 @@ let CanImportILScopeRef (env:ImportMap) m scoref =
 /// Import a reference to a type definition, given the AbstractIL data for the type reference
 let ImportTypeRefData (env:ImportMap) m (scoref,path,typeName) = 
     
+    // Explanation: This represents an unchecked invariant in the hosted compiler: that any operations
+    // which import types (and resolve assemblies from the tcImports tables) happen on the compilation thread.
     let ctok = AssumeCompilationThreadWithoutEvidence()
 
     let ccu =  
@@ -242,7 +245,7 @@ let rec ImportProvidedTypeAsILType (env:ImportMap) (m:range) (st:Tainted<Provide
 /// Import a provided type as an F# type.
 let rec ImportProvidedType (env:ImportMap) (m:range) (* (tinst:TypeInst) *) (st:Tainted<ProvidedType>) = 
 
-    // Explanation: The two calls below represent a major unchecked invariant of the hosted compiler: 
+    // Explanation: The two calls below represent am unchecked invariant of the hosted compiler: 
     // that type providers are only activated on the CompilationThread. This invariant is not currently checked 
     // via CompilationThreadToken passing. We leave the two calls below as a reminder of this.
     //

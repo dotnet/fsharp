@@ -469,9 +469,9 @@ let RequireCompilationThread (_ctok: CompilationThreadToken) = ()
 
 /// Represnts a place in the compiler codebase where we are passed a CompilationThreadToken unnecessarily.
 /// This reprents code that may potentially not need to be executed on the compilation thread.
-let DoesNotSpecificallyRequireCompilerThreadAndCouldLikelyBeConcurrent (_ctok: CompilationThreadToken) = ()
+let DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  (_ctok: CompilationThreadToken) = ()
 
-/// Represnts a place in the compiler codebase where we assume we are executing on a compiation thread
+/// Represnts a place in the compiler codebase where we assume we are executing on a compilation thread
 let AssumeCompilationThreadWithoutEvidence () = Unchecked.defaultof<CompilationThreadToken>
 
 /// Represents a token that indicates execution on a any of several potential user threads calling the F# compiler services.
@@ -486,7 +486,7 @@ let AssumeLockWithoutEvidence<'LockTokenType when 'LockTokenType :> LockToken> (
 /// Encapsulates a lock associated with a particular token-type representing the acquisition of that lock.
 type Lock<'LockTokenType when 'LockTokenType :> LockToken>() = 
     let lockObj = obj()
-    member __.AcquireLock f = lock lockObj (fun () -> f (AssumeLockWithoutEvidence()))
+    member __.AcquireLock f = lock lockObj (fun () -> f (AssumeLockWithoutEvidence<'LockTokenType>()))
 
 //---------------------------------------------------
 // Misc
@@ -608,7 +608,7 @@ module Eventually =
                 | Result cont -> catch cont
                 | Exception e -> Done(Exception e))
     
-    let delay f = NotYetDone f
+    let delay (f: unit -> Eventually<'T>) = NotYetDone (fun _ctok -> f())
 
     let tryFinally e compensation =    
         catch (e) 
