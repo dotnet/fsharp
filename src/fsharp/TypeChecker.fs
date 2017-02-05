@@ -8301,14 +8301,29 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (
     let mArg = synArg.Range
     let mFunExpr = expr.Range
 
+    /// Finds last ident of LongIdent in SynExpr.Ident, LongIdent or TypeApp.
+    /// Type checkes the whole thing as it goes in order to:
+    ///
+    /// * ensure we pass well typed things to `nameof`
+    ///
+    /// * not to loose `FSharpSymbolUse` for `nameof` argument, because we erase it with `Expr.Const(Const.String ...)` further in this function.
     let (|LastPartOfLongIdentStripParens|_|) expr =
-        let rec findIdents expr =
+        let rec findIdents expr (isTypeApp : bool) =
             match expr with
-            | SynExpr.Ident ident -> Some ([ident], ident)
-            | SynExpr.TypeApp (expr = expr) -> findIdents expr
-            | SynExpr.LongIdent(_, LongIdentWithDots(idents, _), _, _) when not (List.isEmpty idents) -> Some (idents, List.last idents)
+            | SynExpr.Ident ident ->
+                if not isTypeApp then
+                    TcExprOfUnknownType cenv env tpenv expr |> ignore
+                Some ident
+            | SynExpr.TypeApp (expr, _, typeNames, _, _, _, m) -> 
+                TcExprOfUnknownType cenv env tpenv expr |> ignore
+                TcTypesOrMeasures None cenv ImplictlyBoundTyparsAllowed.NewTyparsOK CheckConstraints.NoCheckCxs ItemOccurence.Use env tpenv typeNames m |> ignore
+                findIdents expr true
+            | SynExpr.LongIdent(_, LongIdentWithDots(idents, _), _, _) when not (List.isEmpty idents) -> 
+                if not isTypeApp then
+                    TcExprOfUnknownType cenv env tpenv expr |> ignore
+                List.tryLast idents
             | _ -> None
-        findIdents expr
+        findIdents expr false
 
     let rec stripParens expr =
         match expr with
@@ -8323,12 +8338,7 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (
         | ApplicableExpr(_, NameOfExpr cenv.g _, _) ->
             let cleanSynArg = stripParens synArg
             match cleanSynArg with
-            | LastPartOfLongIdentStripParens (idents, lastIdent) ->
-                // Try to resolve the `nameof` operator argument to prevent passing anything to it.
-                let item, _ = ResolveExprLongIdent cenv.tcSink cenv.nameResolver mArg env.eAccessRights env.eNameResEnv TypeNameResolutionInfo.Default idents
-                // Notify name resolution sink about the resolved argument in order to not loose symbol use, which is used in IDE.
-                CallNameResolutionSink cenv.tcSink (cleanSynArg.Range, env.eNameResEnv, item, item, ItemOccurence.Use, env.DisplayEnv, env.eAccessRights)
-
+            | LastPartOfLongIdentStripParens lastIdent ->
                 let r = expr.Range
                 // generate fake `range` for the constant the `nameof(..)` we are substituting
                 let constRange = mkRange r.FileName r.Start (mkPos r.StartLine (r.StartColumn + lastIdent.idText.Length + 2)) // `2` are for quotes
