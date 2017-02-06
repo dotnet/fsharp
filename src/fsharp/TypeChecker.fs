@@ -8308,22 +8308,35 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (
     ///
     /// * not to loose `FSharpSymbolUse` for `nameof` argument, because we erase it with `Expr.Const(Const.String ...)` further in this function.
     let (|LastPartOfLongIdentStripParens|_|) expr =
-        let rec findIdents expr (isTypeApp : bool) =
+        let rec findIdents expr =
             match expr with
-            | SynExpr.Ident ident ->
-                if not isTypeApp then
-                    TcExprOfUnknownType cenv env tpenv expr |> ignore
-                Some ident
-            | SynExpr.TypeApp (expr, _, typeArgs, _, _, mTypeArgs, m) -> 
-                TcExprOfUnknownTypeThen cenv env tpenv expr [ DelayedTypeApp (typeArgs, mTypeArgs, m) ] |> ignore
-                //TcTypesOrMeasures None cenv ImplictlyBoundTyparsAllowed.NewTyparsOK CheckConstraints.NoCheckCxs ItemOccurence.Use env tpenv typeNames m |> ignore
-                findIdents expr true
-            | SynExpr.LongIdent(_, LongIdentWithDots(idents, _), _, _) when not (List.isEmpty idents) -> 
-                if not isTypeApp then
-                    TcExprOfUnknownType cenv env tpenv expr |> ignore
-                List.tryLast idents
+            | SynExpr.Ident ident -> Some ident
+            | SynExpr.TypeApp (expr = expr) -> findIdents expr
+            | SynExpr.LongIdent(_, LongIdentWithDots(idents, _), _, _) -> List.tryLast idents
             | _ -> None
-        findIdents expr false
+        findIdents expr
+
+    let tcExpr = function
+        | SynExpr.Ident _
+        | SynExpr.LongIdent(_, LongIdentWithDots _, _, _) as expr ->
+            ignore (TcExprOfUnknownType cenv env tpenv expr)
+        | SynExpr.TypeApp (expr, _, types, _, _, _, m) as fullExpr ->
+            let idents =
+                match expr with
+                | SynExpr.LongIdent(_, LongIdentWithDots(idents, _), _, _) -> idents
+                | SynExpr.Ident ident -> [ident]
+                | _ -> []
+            match idents with
+            | [] -> ()
+            | idents ->
+                // try to type check it as type application, like A.B.C<D<G>>
+                match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInType OpenQualified env.eNameResEnv env.eAccessRights idents (TypeNameResolutionStaticArgsInfo.FromTyArgs types.Length) PermitDirectReferenceToGeneratedType.No with
+                | ResultOrException.Result tcref ->
+                    ignore (TcTypeApp cenv NewTyparsOK NoCheckCxs ItemOccurence.UseInType env tpenv m tcref [] types)
+                | _ ->
+                    // now try to check it as generic function, like func<D<G>>
+                    ignore (TcExprOfUnknownType cenv env tpenv fullExpr)
+        | _ -> ()
 
     let rec stripParens expr =
         match expr with
@@ -8339,6 +8352,7 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (
             let cleanSynArg = stripParens synArg
             match cleanSynArg with
             | LastPartOfLongIdentStripParens lastIdent ->
+                tcExpr cleanSynArg
                 let r = expr.Range
                 // generate fake `range` for the constant the `nameof(..)` we are substituting
                 let constRange = mkRange r.FileName r.Start (mkPos r.StartLine (r.StartColumn + lastIdent.idText.Length + 2)) // `2` are for quotes
