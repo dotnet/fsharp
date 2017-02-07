@@ -466,12 +466,91 @@ let definitionLocationOfProvidedItem (p : Tainted<#IProvidedCustomAttributeProvi
 /// Represents a type definition, exception definition, module definition or namespace definition.
 [<RequireQualifiedAccess>] 
 type Entity = 
-    { mutable Data: EntityData }
+    { /// The declared type parameters of the type  
+      // MUTABILITY; used only during creation and remapping  of tycons 
+      mutable entity_typars: LazyWithContext<Typars, range>        
+
+      // MUTABILITY; used only when establishing tycons. 
+      mutable entity_kind : TyparKind
+      
+      mutable entity_flags : EntityFlags
+      
+      /// The unique stamp of the "tycon blob". Note the same tycon in signature and implementation get different stamps 
+      mutable entity_stamp: Stamp
+
+      /// The name of the type, possibly with `n mangling 
+      mutable entity_logical_name: string
+
+      /// The name of the type, possibly with `n mangling 
+      // MUTABILITY; used only when establishing tycons. 
+      mutable entity_compiled_name: string option
+
+      /// The declaration location for the type constructor 
+      mutable entity_range: range
+      
+      // MUTABILITY: the signature is adjusted when it is checked
+      /// If this field is populated, this is the implementation range for an item in a signature, otherwise it is 
+      /// the signature range for an item in an implementation
+      mutable entity_other_range: (range * bool) option
+      
+      /// The declared accessibility of the representation, not taking signatures into account 
+      mutable entity_tycon_repr_accessibility: Accessibility
+      
+      /// The declared attributes for the type 
+      // MUTABILITY; used during creation and remapping of tycons 
+      // MUTABILITY; used when propagating signature attributes into the implementation.
+      mutable entity_attribs: Attribs     
+                
+      /// The declared representation of the type, i.e. record, union, class etc. 
+      //
+      // MUTABILITY; used only during creation and remapping of tycons 
+      mutable entity_tycon_repr: TyconRepresentation 
+
+      /// If non-None, indicates the type is an abbreviation for another type. 
+      //
+      // MUTABILITY; used only during creation and remapping of tycons 
+      mutable entity_tycon_abbrev: TType option             
+      
+      /// The methods and properties of the type 
+      //
+      // MUTABILITY; used only during creation and remapping of tycons 
+      mutable entity_tycon_tcaug: TyconAugmentation      
+      
+      /// Field used when the 'tycon' is really an exception definition
+      // 
+      // MUTABILITY; used only during creation and remapping of tycons 
+      mutable entity_exn_info: ExceptionInfo     
+      
+      /// This field is used when the 'tycon' is really a module definition. It holds statically nested type definitions and nested modules 
+      //
+      // MUTABILITY: only used during creation and remapping  of tycons and 
+      // when compiling fslib to fixup compiler forward references to internal items 
+      mutable entity_modul_contents: Lazy<ModuleOrNamespaceType>     
+
+      /// The declared documentation for the type or module 
+      mutable entity_xmldoc : XmlDoc
+      
+      /// The XML document signature for this entity
+      mutable entity_xmldocsig : string
+
+      /// The stable path to the type, e.g. Microsoft.FSharp.Core.FSharpFunc`2 
+      // REVIEW: it looks like entity_cpath subsumes this 
+      mutable entity_pubpath : PublicPath option 
+
+      /// Indicates how visible is the entity is.
+      mutable entity_accessiblity: Accessibility   
+ 
+      /// The stable path to the type, e.g. Microsoft.FSharp.Core.FSharpFunc`2 
+      mutable entity_cpath : CompilationPath option 
+
+      /// Used during codegen to hold the ILX representation indicating how to access the type 
+      mutable entity_il_repr_cache : CompiledTypeRepr cache
+    }
     /// The name of the namespace, module or type, possibly with mangling, e.g. List`1, List or FailureException 
-    member x.LogicalName = x.Data.entity_logical_name
+    member x.LogicalName = x.entity_logical_name
 
     /// The compiled name of the namespace, module or type, e.g. FSharpList`1, ListModule or FailureException 
-    member x.CompiledName = match x.Data.entity_compiled_name with None -> x.LogicalName | Some s -> s
+    member x.CompiledName = match x.entity_compiled_name with None -> x.LogicalName | Some s -> s
 
     /// The display name of the namespace, module or type, e.g. List instead of List`1, and no static parameters
     member x.DisplayName = x.GetDisplayName(false, false)
@@ -523,32 +602,32 @@ type Entity =
         | TProvidedTypeExtensionPoint info ->
             match definitionLocationOfProvidedItem info.ProvidedType with
             |   Some range -> range
-            |   None -> x.Data.entity_range
+            |   None -> x.entity_range
         | _ -> 
 #endif
-        x.Data.entity_range
+        x.entity_range
 
     /// The range in the implementation, adjusted for an item in a signature
     member x.DefinitionRange = 
-        match x.Data.entity_other_range with 
+        match x.entity_other_range with 
         | Some (r, true) -> r
         | _ -> x.Range
 
     member x.SigRange = 
-        match x.Data.entity_other_range with 
+        match x.entity_other_range with 
         | Some (r, false) -> r
         | _ -> x.Range
 
-    member x.SetOtherRange m                              = x.Data.entity_other_range <- Some m
+    member x.SetOtherRange m                              = x.entity_other_range <- Some m
 
     /// A unique stamp for this module, namespace or type definition within the context of this compilation. 
     /// Note that because of signatures, there are situations where in a single compilation the "same" 
     /// module, namespace or type may have two distinct Entity objects that have distinct stamps.
-    member x.Stamp = x.Data.entity_stamp
+    member x.Stamp = x.entity_stamp
 
     /// The F#-defined custom attributes of the entity, if any. If the entity is backed by Abstract IL or provided metadata
     /// then this does not include any attributes from those sources.
-    member x.Attribs = x.Data.entity_attribs
+    member x.Attribs = x.entity_attribs
 
     /// The XML documentation of the entity, if any. If the entity is backed by provided metadata
     /// then this _does_ include this documentation. If the entity is backed by Abstract IL metadata
@@ -560,31 +639,31 @@ type Entity =
         | TProvidedTypeExtensionPoint info -> XmlDoc (info.ProvidedType.PUntaintNoFailure(fun st -> (st :> IProvidedCustomAttributeProvider).GetXmlDocAttributes(info.ProvidedType.TypeProvider.PUntaintNoFailure(id))))
         | _ -> 
 #endif
-        x.Data.entity_xmldoc
+        x.entity_xmldoc
 
     /// The XML documentation sig-string of the entity, if any, to use to lookup an .xml doc file. This also acts
     /// as a cache for this sig-string computation.
     member x.XmlDocSig 
-        with get() = x.Data.entity_xmldocsig
-        and set v = x.Data.entity_xmldocsig <- v
+        with get() = x.entity_xmldocsig
+        and set v = x.entity_xmldocsig <- v
 
     /// The logical contents of the entity when it is a module or namespace fragment.
-    member x.ModuleOrNamespaceType = x.Data.entity_modul_contents.Force()
+    member x.ModuleOrNamespaceType = x.entity_modul_contents.Force()
 
     /// The logical contents of the entity when it is a type definition.
-    member x.TypeContents = x.Data.entity_tycon_tcaug
+    member x.TypeContents = x.entity_tycon_tcaug
 
     /// The kind of the type definition - is it a measure definition or a type definition?
-    member x.TypeOrMeasureKind = x.Data.entity_kind
+    member x.TypeOrMeasureKind = x.entity_kind
 
     /// The identifier at the point of declaration of the type definition.
     member x.Id = ident(x.LogicalName, x.Range)
 
     /// The information about the r.h.s. of a type definition, if any. For example, the r.h.s. of a union or record type.
-    member x.TypeReprInfo = x.Data.entity_tycon_repr
+    member x.TypeReprInfo = x.entity_tycon_repr
 
     /// The information about the r.h.s. of an F# exception definition, if any. 
-    member x.ExceptionInfo = x.Data.entity_exn_info
+    member x.ExceptionInfo = x.entity_exn_info
 
     /// Indicates if the entity represents an F# exception declaration.
     member x.IsExceptionDecl = match x.ExceptionInfo with TExnNone -> false | _ -> true
@@ -602,34 +681,34 @@ type Entity =
     /// Get the type parameters for an entity that is a type declaration, otherwise return the empty list.
     /// 
     /// Lazy because it may read metadata, must provide a context "range" in case error occurs reading metadata.
-    member x.Typars m = x.Data.entity_typars.Force m
+    member x.Typars m = x.entity_typars.Force m
 
     /// Get the type parameters for an entity that is a type declaration, otherwise return the empty list.
     member x.TyparsNoRange = x.Typars x.Range
 
     /// Get the type abbreviated by this type definition, if it is an F# type abbreviation definition
-    member x.TypeAbbrev = x.Data.entity_tycon_abbrev
+    member x.TypeAbbrev = x.entity_tycon_abbrev
 
     /// Indicates if this entity is an F# type abbreviation definition
     member x.IsTypeAbbrev = x.TypeAbbrev.IsSome
 
     /// Get the value representing the accessibility of the r.h.s. of an F# type definition.
-    member x.TypeReprAccessibility = x.Data.entity_tycon_repr_accessibility
+    member x.TypeReprAccessibility = x.entity_tycon_repr_accessibility
 
     /// Get the cache of the compiled ILTypeRef representation of this module or type.
-    member x.CompiledReprCache = x.Data.entity_il_repr_cache
+    member x.CompiledReprCache = x.entity_il_repr_cache
 
     /// Get a blob of data indicating how this type is nested in other namespaces, modules or types.
-    member x.PublicPath = x.Data.entity_pubpath
+    member x.PublicPath = x.entity_pubpath
 
     /// Get the value representing the accessibility of an F# type definition or module.
-    member x.Accessibility = x.Data.entity_accessiblity
+    member x.Accessibility = x.entity_accessiblity
 
     /// Indicates the type prefers the "tycon<a,b>" syntax for display etc. 
-    member x.IsPrefixDisplay = x.Data.entity_flags.IsPrefixDisplay
+    member x.IsPrefixDisplay = x.entity_flags.IsPrefixDisplay
 
     /// Indicates the "tycon blob" is actually a module 
-    member x.IsModuleOrNamespace = x.Data.entity_flags.IsModuleOrNamespace
+    member x.IsModuleOrNamespace = x.entity_flags.IsModuleOrNamespace
 
     /// Indicates if the entity is a namespace
     member x.IsNamespace = x.IsModuleOrNamespace && (match x.ModuleOrNamespaceType.ModuleOrNamespaceKind with Namespace -> true | _ -> false)
@@ -672,7 +751,7 @@ type Entity =
 #endif
 
     /// Get a blob of data indicating how this type is nested inside other namespaces, modules and types.
-    member x.CompilationPathOpt = x.Data.entity_cpath 
+    member x.CompilationPathOpt = x.entity_cpath 
 
     /// Get a blob of data indicating how this type is nested inside other namespaces, modules and types.
     member x.CompilationPath = 
@@ -745,17 +824,59 @@ type Entity =
 
     
     /// Create a new entity with empty, unlinked data. Only used during unpickling of F# metadata.
-    static member NewUnlinked() : Entity = { Data = nullableSlotEmpty() }
+    static member NewUnlinked() : Entity = 
+        { entity_typars = Unchecked.defaultof<_>
+          entity_kind = Unchecked.defaultof<_>
+          entity_flags = Unchecked.defaultof<_>
+          entity_stamp = Unchecked.defaultof<_>
+          entity_logical_name = Unchecked.defaultof<_> 
+          entity_compiled_name = Unchecked.defaultof<_>
+          entity_range = Unchecked.defaultof<_> 
+          entity_other_range = Unchecked.defaultof<_>
+          entity_tycon_repr_accessibility = Unchecked.defaultof<_>
+          entity_attribs = Unchecked.defaultof<_>
+          entity_tycon_repr= Unchecked.defaultof<_>
+          entity_tycon_abbrev= Unchecked.defaultof<_>
+          entity_tycon_tcaug= Unchecked.defaultof<_>
+          entity_exn_info= Unchecked.defaultof<_>
+          entity_modul_contents= Unchecked.defaultof<_>
+          entity_xmldoc = Unchecked.defaultof<_>
+          entity_xmldocsig = Unchecked.defaultof<_>
+          entity_pubpath = Unchecked.defaultof<_>
+          entity_accessiblity= Unchecked.defaultof<_>
+          entity_cpath = Unchecked.defaultof<_>
+          entity_il_repr_cache = Unchecked.defaultof<_> }
 
     /// Create a new entity with the given backing data. Only used during unpickling of F# metadata.
-    static member New _reason (data: EntityData) : Entity  = 
-        { Data = data }
+    static member New _reason (data: Entity) : Entity  = data
 
     /// Link an entity based on empty, unlinked data to the given data. Only used during unpickling of F# metadata.
-    member x.Link tg = x.Data <- nullableSlotFull(tg)
+    member x.Link tg = x <- nullableSlotFull(tg)
+        x.entity_typars <- t.entity_typars 
+          entity_kind = Unchecked.defaultof<_>
+          entity_flags = Unchecked.defaultof<_>
+          entity_stamp = Unchecked.defaultof<_>
+          entity_logical_name = Unchecked.defaultof<_> 
+          entity_compiled_name = Unchecked.defaultof<_>
+          entity_range = Unchecked.defaultof<_> 
+          entity_other_range = Unchecked.defaultof<_>
+          entity_tycon_repr_accessibility = Unchecked.defaultof<_>
+          entity_attribs = Unchecked.defaultof<_>
+          entity_tycon_repr= Unchecked.defaultof<_>
+          entity_tycon_abbrev= Unchecked.defaultof<_>
+          entity_tycon_tcaug= Unchecked.defaultof<_>
+          entity_exn_info= Unchecked.defaultof<_>
+          entity_modul_contents= Unchecked.defaultof<_>
+          entity_xmldoc = Unchecked.defaultof<_>
+          entity_xmldocsig = Unchecked.defaultof<_>
+          entity_pubpath = Unchecked.defaultof<_>
+          entity_accessiblity= Unchecked.defaultof<_>
+          entity_cpath = Unchecked.defaultof<_>
+          entity_il_repr_cache = Unchecked.defaultof<_> }
+
 
     /// Indicates if the entity is linked to backing data. Only used during unpickling of F# metadata.
-    member x.IsLinked = match box x.Data with null -> false | _ -> true 
+    member x.IsLinked = match box x with null -> false | _ -> true 
 
     override x.ToString() = x.LogicalName
 
@@ -779,7 +900,7 @@ type Entity =
     member x.IsRecordTycon = match x.TypeReprInfo with | TRecdRepr _ -> true |  _ -> false
 
     /// Indicates if this is an F# type definition whose r.h.s. is known to be a record type definition that is a value type.
-    member x.IsStructRecordOrUnionTycon = match x.TypeReprInfo with TRecdRepr _ | TUnionRepr _ -> x.Data.entity_flags.IsStructRecordOrUnionType | _ -> false
+    member x.IsStructRecordOrUnionTycon = match x.TypeReprInfo with TRecdRepr _ | TUnionRepr _ -> x.entity_flags.IsStructRecordOrUnionType | _ -> false
 
     /// Indicates if this is an F# type definition whose r.h.s. is known to be some kind of F# object model definition
     member x.IsFSharpObjectModelTycon = match x.TypeReprInfo with | TFSharpObjectRepr _ -> true |  _ -> false
@@ -959,101 +1080,17 @@ type Entity =
 
 
     /// Indicates if we have pre-determined that a type definition has a default constructor.
-    member x.PreEstablishedHasDefaultConstructor = x.Data.entity_flags.PreEstablishedHasDefaultConstructor
+    member x.PreEstablishedHasDefaultConstructor = x.entity_flags.PreEstablishedHasDefaultConstructor
 
     /// Indicates if we have pre-determined that a type definition has a self-referential constructor using 'as x'
-    member x.HasSelfReferentialConstructor = x.Data.entity_flags.HasSelfReferentialConstructor
+    member x.HasSelfReferentialConstructor = x.entity_flags.HasSelfReferentialConstructor
 
     /// Set the custom attributes on an F# type definition.
-    member x.SetAttribs attribs = x.Data.entity_attribs <- attribs
+    member x.SetAttribs attribs = x.entity_attribs <- attribs
 
     /// Sets the structness of a record or union type definition
-    member x.SetIsStructRecordOrUnion b  = let x = x.Data in let flags = x.entity_flags in x.entity_flags <- EntityFlags(flags.IsPrefixDisplay, flags.IsModuleOrNamespace, flags.PreEstablishedHasDefaultConstructor, flags.HasSelfReferentialConstructor, b)
+    member x.SetIsStructRecordOrUnion b  = let x = x in let flags = x.entity_flags in x.entity_flags <- EntityFlags(flags.IsPrefixDisplay, flags.IsModuleOrNamespace, flags.PreEstablishedHasDefaultConstructor, flags.HasSelfReferentialConstructor, b)
 
-
-and 
-    [<NoEquality; NoComparison;RequireQualifiedAccess>]
-    EntityData =
-    { /// The declared type parameters of the type  
-      // MUTABILITY; used only during creation and remapping  of tycons 
-      mutable entity_typars: LazyWithContext<Typars, range>        
-
-      // MUTABILITY; used only when establishing tycons. 
-      mutable entity_kind : TyparKind
-      
-      mutable entity_flags : EntityFlags
-      
-      /// The unique stamp of the "tycon blob". Note the same tycon in signature and implementation get different stamps 
-      entity_stamp: Stamp
-
-      /// The name of the type, possibly with `n mangling 
-      entity_logical_name: string
-
-      /// The name of the type, possibly with `n mangling 
-      // MUTABILITY; used only when establishing tycons. 
-      mutable entity_compiled_name: string option
-
-      /// The declaration location for the type constructor 
-      entity_range: range
-      
-      // MUTABILITY: the signature is adjusted when it is checked
-      /// If this field is populated, this is the implementation range for an item in a signature, otherwise it is 
-      /// the signature range for an item in an implementation
-      mutable entity_other_range: (range * bool) option
-      
-      /// The declared accessibility of the representation, not taking signatures into account 
-      entity_tycon_repr_accessibility: Accessibility
-      
-      /// The declared attributes for the type 
-      // MUTABILITY; used during creation and remapping of tycons 
-      // MUTABILITY; used when propagating signature attributes into the implementation.
-      mutable entity_attribs: Attribs     
-                
-      /// The declared representation of the type, i.e. record, union, class etc. 
-      //
-      // MUTABILITY; used only during creation and remapping of tycons 
-      mutable entity_tycon_repr: TyconRepresentation 
-
-      /// If non-None, indicates the type is an abbreviation for another type. 
-      //
-      // MUTABILITY; used only during creation and remapping of tycons 
-      mutable entity_tycon_abbrev: TType option             
-      
-      /// The methods and properties of the type 
-      //
-      // MUTABILITY; used only during creation and remapping of tycons 
-      mutable entity_tycon_tcaug: TyconAugmentation      
-      
-      /// Field used when the 'tycon' is really an exception definition
-      // 
-      // MUTABILITY; used only during creation and remapping of tycons 
-      mutable entity_exn_info: ExceptionInfo     
-      
-      /// This field is used when the 'tycon' is really a module definition. It holds statically nested type definitions and nested modules 
-      //
-      // MUTABILITY: only used during creation and remapping  of tycons and 
-      // when compiling fslib to fixup compiler forward references to internal items 
-      mutable entity_modul_contents: Lazy<ModuleOrNamespaceType>     
-
-      /// The declared documentation for the type or module 
-      entity_xmldoc : XmlDoc
-      
-      /// The XML document signature for this entity
-      mutable entity_xmldocsig : string
-
-      /// The stable path to the type, e.g. Microsoft.FSharp.Core.FSharpFunc`2 
-      // REVIEW: it looks like entity_cpath subsumes this 
-      entity_pubpath : PublicPath option 
-
-      /// Indicates how visible is the entity is.
-      entity_accessiblity: Accessibility   
- 
-      /// The stable path to the type, e.g. Microsoft.FSharp.Core.FSharpFunc`2 
-      entity_cpath : CompilationPath option 
-
-      /// Used during codegen to hold the ILX representation indicating how to access the type 
-      entity_il_repr_cache : CompiledTypeRepr cache
-    }
 
 and ParentRef = 
     | Parent of EntityRef
