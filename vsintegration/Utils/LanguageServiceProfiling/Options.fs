@@ -1,4 +1,4 @@
-﻿module internal rec LanguageServiceProfiling.Options
+﻿module internal  LanguageServiceProfiling.Options
 
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
@@ -21,18 +21,13 @@ type Options =
       SymbolPos: pos
       CompletionPositions: CompletionPosition list }
          
-let get (repositoryDir: string) : Options =
-    match DirectoryInfo(repositoryDir).Name.ToLower() with
-    | "fsharp.compiler.service" -> FCS(repositoryDir)
-    | "fsharpvspowertools" -> VFPT(repositoryDir)
-    | _ -> failwithf "%s is not supported" repositoryDir
 
 let FCS (repositoryDir: string) : Options =
     { Options =
         {ProjectFileName = repositoryDir </> @"src\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj"
          ProjectFileNames =
-          [| @"src\fsharp\FSharp.Compiler.Service\obj\Debug\FSComp.fs"
-             @"src\fsharp\FSharp.Compiler.Service\obj\Debug\FSIstrings.fs"
+          [| @"src\fsharp\FSharp.Compiler.Service\obj\Release\FSComp.fs"
+             @"src\fsharp\FSharp.Compiler.Service\obj\Release\FSIstrings.fs"
              @"src\assemblyinfo\assemblyinfo.FSharp.Compiler.Service.dll.fs"
              @"src\assemblyinfo\assemblyinfo.shared.fs"
              @"src\utils\reshapedreflection.fs"
@@ -201,7 +196,7 @@ let FCS (repositoryDir: string) : Options =
              @"src\fsharp\fsi\fsi.fs" |]
              |> Array.map (fun x -> repositoryDir </> x)
          OtherOptions =
-          [|@"-o:obj\Debug\FSharp.Compiler.Service.dll"; "-g"; "--noframework";
+          [|@"-o:obj\Release\FSharp.Compiler.Service.dll"; "-g"; "--noframework";
             @"--baseaddress:0x06800000"; "--define:DEBUG";
             @"--define:CROSS_PLATFORM_COMPILER"; "--define:FX_ATLEAST_45";
             @"--define:FX_ATLEAST_40"; "--define:BE_SECURITY_TRANSPARENT";
@@ -219,6 +214,7 @@ let FCS (repositoryDir: string) : Options =
             @"-r:" + (repositoryDir </> @"packages\Microsoft.DiaSymReader.PortablePdb\lib\net45\Microsoft.DiaSymReader.PortablePdb.dll");
             @"-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\mscorlib.dll";
             @"-r:" + (repositoryDir </> @"packages\System.Collections.Immutable\lib\netstandard1.0\System.Collections.Immutable.dll");
+            @"-r:" + (repositoryDir </> @"packages\FSharp.Core\lib\net40\FSharp.Core.dll");
             @"-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\System.Core.dll";
             @"-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\System.dll";
             @"-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\System.Numerics.dll";
@@ -405,3 +401,11 @@ let VFPT (repositoryDir: string) : Options =
             PartialName = ""
         }]
       }
+
+let get (repositoryDir: string) : Options =
+    let repositoryDir = Path.GetFullPath(repositoryDir)
+    match DirectoryInfo(Path.GetFullPath(repositoryDir)).Name.ToLower() with
+    | "fsharp.compiler.service" -> FCS(repositoryDir)
+    | "fsharpvspowertools" -> VFPT(repositoryDir)
+    | _ -> failwithf "%s is not supported" repositoryDir
+
