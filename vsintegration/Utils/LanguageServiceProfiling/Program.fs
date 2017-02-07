@@ -1,10 +1,10 @@
 ﻿(*
 
-Background check a project "SCGS" (Stats, Check, GC, Stats)
+Background check a project "CXGSCGS" (Check, Flush, GC, Stats, Check, GC, Stats)
 
-  .\Release\net40\bin\LanguageServiceProfiling.exe ..\FSharp.Compiler.Service SCGS 
+  .\Release\net40\bin\LanguageServiceProfiling.exe ..\FSharp.Compiler.Service CXGSCGS 
 
-Foreground check new versions of multiple files in an already-checked project and keep intellisense info "CGSFGS" (Check, Collect, Stats, File, Collect, Stats)
+Foreground check new versions of multiple files in an already-checked project and keep intellisense info "CGSFGS" (Check, GC, Stats, File, GC, Stats)
 
   .\Release\net40\bin\LanguageServiceProfiling.exe ..\FSharp.Compiler.Service CGSFGS 
 
@@ -29,10 +29,10 @@ Use the following to collect memory usage stats, appending to the existing stats
 Results look like this:
 
   Background FCS project:
-    statistics:     TimeDelta: 26.50     MemDelta:  275     G0:  893     G1:  694     G2:   12
+    master:     TimeDelta: 24.70     MemDelta:  318     G0:  880     G1:  696     G2:    8
 
   Background FCS project (with keepAllBackgroundResolutions=true) :
-    statistics:     TimeDelta: 27.48     MemDelta:  328     G0:  899     G1:  668     G2:   15
+    master:     TimeDelta: 23.84     MemDelta:  448     G0:  877     G1:  702     G2:    6
 
   Multiple foreground files from FCS project keeping all results:
     statistics:     TimeDelta: 8.58     MemDelta:  143     G0:  260     G1:  192     G2:    4
@@ -194,6 +194,7 @@ let main argv =
 <R> for find all references
 <L> for completion lists
 <W> for wasting 100M of memory
+<X> to clear all caches
 <M> to reclaim waste
 <Enter> for exit."""
 
@@ -248,6 +249,9 @@ let main argv =
         | 'S' ->
             stats()
             fileVersion
+        | 'X' ->
+            checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients() 
+            fileVersion
         | _ -> fileVersion
 
     let rec console fileVersion = 
@@ -259,6 +263,7 @@ let main argv =
         | ConsoleKey.L -> processCmd fileVersion 'L' |> console
         | ConsoleKey.W -> processCmd fileVersion 'W' |> console            
         | ConsoleKey.M -> processCmd fileVersion 'M' |> console
+        | ConsoleKey.X -> processCmd fileVersion 'X' |> console
         | ConsoleKey.Enter -> ()
         | _ -> console fileVersion
 
