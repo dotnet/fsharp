@@ -391,7 +391,8 @@ type NameResolutionEnv =
 
     // Don't re-derive on-demand
     member nenv.Keep(f) = 
-        { f nenv with eDerivation =  [] }
+        let res = f nenv
+        { res with eDerivation =  [ (fun _ -> res) ] }
 
     static member Reconstitute(ops,g) = List.foldBack (fun f x -> f x) ops (NameResolutionEnv.Empty(g))
 
