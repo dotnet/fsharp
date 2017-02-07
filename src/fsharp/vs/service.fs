@@ -2320,8 +2320,6 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
             locked (fun () -> 
                 parseAndCheckFileInProjectCachePossiblyStale.Set((filename,options),(parseResults,typedResults,fileVersion))  
                 
-                Console.WriteLine(sprintf "parseAndCheckFileInProjectCache SET key = %+A" (filename,source,options))
-                
                 parseAndCheckFileInProjectCache.Set((filename,source,options),(parseResults,typedResults,fileVersion,priorTimeStamp))
                 parseFileInProjectCache.Set((filename,source,options),parseResults))
 
