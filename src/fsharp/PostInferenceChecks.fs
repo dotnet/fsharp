@@ -188,10 +188,11 @@ let BindVal cenv env (v:Val) =
        not alreadyDone &&
        cenv.reportErrors && 
        not v.HasBeenReferenced && 
-       not v.IsCompiledAsTopLevel && 
-       not (v.DisplayName.StartsWith("_", System.StringComparison.Ordinal)) && 
-       not v.IsCompilerGenerated then 
-
+       not v.IsCompiledAsTopLevel &&
+       not (v.DisplayName.StartsWith("_", System.StringComparison.Ordinal)) &&
+       not v.IsCompilerGenerated &&
+       not v.IsLinked
+    then
         match v.BaseOrThisInfo with 
         | ValBaseOrThisInfo.CtorThisVal ->
             warning (Error(FSComp.SR.chkUnusedThisVariable v.DisplayName, v.Range))
