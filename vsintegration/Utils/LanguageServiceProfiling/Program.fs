@@ -195,6 +195,7 @@ let main argv =
 <L> for completion lists
 <W> for wasting 100M of memory
 <X> to clear all caches
+<P> to pause for key entry
 <M> to reclaim waste
 <Enter> for exit."""
 
@@ -252,6 +253,10 @@ let main argv =
         | 'X' ->
             checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients() 
             fileVersion
+        | 'P' ->
+            eprintfn "pausing (press any key)...";
+            System.Console.ReadKey() |> ignore
+            fileVersion
         | _ -> fileVersion
 
     let rec console fileVersion = 
@@ -264,6 +269,7 @@ let main argv =
         | ConsoleKey.W -> processCmd fileVersion 'W' |> console            
         | ConsoleKey.M -> processCmd fileVersion 'M' |> console
         | ConsoleKey.X -> processCmd fileVersion 'X' |> console
+        | ConsoleKey.P -> processCmd fileVersion 'P' |> console
         | ConsoleKey.Enter -> ()
         | _ -> console fileVersion
 
