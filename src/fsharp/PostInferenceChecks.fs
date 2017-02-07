@@ -213,7 +213,7 @@ let rec CheckTypeDeep ((visitTyp,visitTyconRefOpt,visitAppTyOpt,visitTraitSoluti
     // In an ideal world we would, instead, record the solutions to these constraints as "witness variables" in expressions,
     // rather than solely in types. 
     match typ with 
-    | TType_var tp  when tp.Solution.IsSome  -> 
+    | TType_var tp  when tp.IsSolved -> 
         tp.Constraints |> List.iter (fun cx -> 
             match cx with 
             | TyparConstraint.MayResolveMember((TTrait(_,_,_,_,_,soln)),_) -> 

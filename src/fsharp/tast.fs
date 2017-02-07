@@ -1819,7 +1819,7 @@ and
       mutable typar_attribs: Attribs                      
        
        /// An inferred equivalence for a type inference variable. 
-      mutable typar_solution: TType option
+      mutable typar_solution: NonNullSlot<TType>
        
        /// The inferred constraints for the type inference variable 
       mutable typar_constraints: TyparConstraint list 
@@ -1848,7 +1848,7 @@ and
     member x.Stamp               = x.Data.typar_stamp
 
     /// The inferred equivalence for the type inference variable, if any.
-    member x.Solution            = x.Data.typar_solution
+    member x.Solution            = let sln = x.Data.typar_solution in match box sln with null -> None | _ -> Some sln
 
     /// The inferred constraints for the type inference variable, if any
     member x.Constraints         = x.Data.typar_constraints
@@ -1912,8 +1912,8 @@ and
 
     /// Indicates if a type variable has been solved.
     member x.IsSolved = 
-        match x.Solution with 
-        | None -> false
+        match box x.Data.typar_solution with 
+        | null -> false
         | _ -> true
 
     /// Sets the identifier associated with a type variable
@@ -4282,15 +4282,15 @@ let copyTypars tps = List.map copyTypar tps
     
 let tryShortcutSolvedUnitPar canShortcut (r:Typar) = 
     if r.Kind = TyparKind.Type then failwith "tryShortcutSolvedUnitPar: kind=type"
-    match r.Solution with
-    | Some (TType_measure unt) -> 
+    match r.Data.typar_solution with
+    | TType_measure unt -> 
         if canShortcut then 
             match unt with 
             | Measure.Var r2 -> 
-               match r2.Solution with
-               | None -> ()
-               | Some _ as soln -> 
-                  r.Data.typar_solution <- soln
+               match box r2.Data.typar_solution with 
+               | null -> ()
+               | _ -> 
+                  r.Data.typar_solution <- r2.Data.typar_solution
             | _ -> () 
         unt
     | _ -> 
@@ -4304,8 +4304,10 @@ let rec stripUnitEqnsAux canShortcut unt =
 let rec stripTyparEqnsAux canShortcut ty = 
     match ty with 
     | TType_var r -> 
-        match r.Solution with
-        | Some soln -> 
+        let soln = r.Data.typar_solution
+        match box soln with
+        | null -> ty
+        | _ -> 
             if canShortcut then 
                 match soln with 
                 // We avoid shortcutting when there are additional constraints on the type variable we're trying to cut out
@@ -4313,14 +4315,13 @@ let rec stripTyparEqnsAux canShortcut ty =
                 // those attached to _solved_ type variables. In an ideal world this would never be needed - see the notes
                 // on IterType.
                 | TType_var r2 when r2.Constraints.IsEmpty -> 
-                   match r2.Solution with
-                   | None -> ()
-                   | Some _ as soln2 -> 
+                   let soln2 = r2.Data.typar_solution
+                   match box soln2 with
+                   | null -> ()
+                   | _ -> 
                       r.Data.typar_solution <- soln2
                 | _ -> () 
             stripTyparEqnsAux canShortcut soln
-        | None -> 
-            ty
     | TType_measure unt -> 
         TType_measure (stripUnitEqnsAux canShortcut unt)
     | _ -> ty
@@ -4571,7 +4572,7 @@ let NewTypar (kind,rigid,Typar(id,staticReq,isCompGen),isFromError,dynamicReq,at
         typar_stamp = newStamp() 
         typar_flags= TyparFlags(kind,rigid,isFromError,isCompGen,staticReq,dynamicReq,eqDep,compDep) 
         typar_attribs= attribs 
-        typar_solution = None
+        typar_solution = nullableSlotEmpty()
         typar_constraints=[]
         typar_xmldoc = XmlDoc.Empty } 
 

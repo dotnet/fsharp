@@ -1536,7 +1536,7 @@ let u_typar_spec_data st =
       typar_attribs=c;
       typar_flags=TyparFlags(int32 d);
       typar_constraints=e;
-      typar_solution=None;
+      typar_solution=nullableSlotEmpty();
       typar_xmldoc=g }
 
 let u_typar_spec st = 

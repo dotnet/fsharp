@@ -527,10 +527,14 @@ let normalizeMeasure g ms =
 let tryNormalizeMeasureInType g ty =
     match ty with
     | TType_measure (Measure.Var v) ->
-      match v.Solution with
-      | Some (TType_measure ms) ->
-        (v.Data.typar_solution <- Some (TType_measure (normalizeMeasure g ms)); ty)
-      | _ -> ty
+      let soln = v.Data.typar_solution
+      match box soln with
+      | null -> ty
+      | _ -> 
+         match soln with 
+         | TType_measure ms ->
+            v.Data.typar_solution <- nullableSlotFull (TType_measure (normalizeMeasure g ms)); ty
+         | _ -> ty
       
     | _ -> ty
 

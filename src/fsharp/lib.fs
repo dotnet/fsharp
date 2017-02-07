@@ -359,6 +359,7 @@ type Graph<'Data, 'Id when 'Id : comparison and 'Id : equality>
 //#else
 type NonNullSlot<'T> = 'T
 let nullableSlotEmpty() = Unchecked.defaultof<'T>
+let nullableSlotIsEmpty(x:NonNullSlot<'T>) = match box x with null -> true | _ -> false
 let nullableSlotFull x = x
 //#endif    
 
