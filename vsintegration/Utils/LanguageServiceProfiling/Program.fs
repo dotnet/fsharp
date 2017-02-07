@@ -1,5 +1,14 @@
 ﻿(*
 
+Background check a project "SCGS" (Stats, Check, GC, Stats)
+
+  .\Release\net40\bin\LanguageServiceProfiling.exe ..\FSharp.Compiler.Service SCGS 
+
+Foreground check new versions of multiple files in an already-checked project and keep intellisense info "CGSFGS" (Check, Collect, Stats, File, Collect, Stats)
+
+  .\Release\net40\bin\LanguageServiceProfiling.exe ..\FSharp.Compiler.Service CGSFGS 
+
+
 
 Use the following to collect memory usage stats, appending to the existing stats files:
 
@@ -14,21 +23,21 @@ Use the following to collect memory usage stats, appending to the existing stats
 
   echo %gitrev%
 
-Check a project "SCGS" (Stats, Check, GC, Stats)
-
-  .\Release\net40\bin\LanguageServiceProfiling.exe tests\scripts\tmp\FSharp.Compiler.Service SCGS %gitrev% >> tests\scripts\service-fcs-project-check-mem-results.txt
-
-Check a file in an already-checked project "CGSFGS" (Check, Collect, Stats, File, Collect, Stats)
-
-  .\Release\net40\bin\LanguageServiceProfiling.exe tests\scripts\tmp\FSharp.Compiler.Service CGSFGS %gitrev% >> tests\scripts\service-fcs-file-check-mem-results.txt
+  .\Release\net40\bin\LanguageServiceProfiling.exe ..\FSharp.Compiler.Service SCGS   %gitrev% >> tests\scripts\service-fcs-project-check-mem-results.txt
+  .\Release\net40\bin\LanguageServiceProfiling.exe ..\FSharp.Compiler.Service CGSFGS %gitrev% >> tests\scripts\service-fcs-file-check-mem-results.txt
 
 Results look like this:
 
-  a58b5011c989bbca049502bf0759cbde3380d352     TimeDelta: 26.95    MemDelta:  500     G0:  886     G1:  740     G2:   15
+  Background FCS project:
+    statistics:     TimeDelta: 26.50     MemDelta:  275     G0:  893     G1:  694     G2:   12
 
-or
+  Background FCS project (with keepAllBackgroundResolutions=true) :
+    statistics:     TimeDelta: 27.48     MemDelta:  328     G0:  899     G1:  668     G2:   15
 
-  a58b5011c989bbca049502bf0759cbde3380d352     TimeDelta: 2.89     MemDelta:   41     G0:   77     G1:   56     G2:    1
+  Multiple foreground files from FCS project keeping all results:
+    statistics:     TimeDelta: 8.58     MemDelta:  143     G0:  260     G1:  192     G2:    4
+
+
 
 *)
 
@@ -62,7 +71,7 @@ let main argv =
     let getLine line = (getFileLines ()).[line]
 
     eprintfn "Found options for %s." options.Options.ProjectFileName
-    let checker = FSharpChecker.Create()
+    let checker = FSharpChecker.Create(projectCacheSize = 200, keepAllBackgroundResolutions = false)
     let waste = new ResizeArray<int array>()
     
     let checkProject() : Async<FSharpCheckProjectResults option> =
@@ -94,6 +103,24 @@ let main argv =
                 else 
                     eprintfn "Finished successfully in %O" sw.Elapsed
                     return Some results
+        }
+    
+    let checkFiles (fileVersion: int) =
+        async {
+            eprintfn "multiple ParseAndCheckFileInProject(...)..." 
+            let sw = Stopwatch.StartNew()
+            let answers = 
+               options.FilesToCheck |> List.map (fun file -> 
+                   eprintfn "doing %s" file
+                   checker.ParseAndCheckFileInProject(file, fileVersion, File.ReadAllText file, options.Options) |> Async.RunSynchronously)
+            for _,answer in answers do 
+                match answer with
+                | FSharpCheckFileAnswer.Aborted ->
+                    eprintfn "Aborted!" 
+                | FSharpCheckFileAnswer.Succeeded results ->
+                    if results.Errors |> Array.exists (fun x -> x.Severity = FSharpErrorSeverity.Error) then
+                        eprintfn "Finished with ERRORS: %+A" results.Errors
+            eprintfn "Finished in %O" sw.Elapsed
         }
     
     let findAllReferences (fileVersion: int) : Async<FSharpSymbolUse[]> =
@@ -204,7 +231,7 @@ let main argv =
             eprintfn "GC is done in %O" sw.Elapsed
             fileVersion
         | 'F' ->
-            checkFile fileVersion |> Async.RunSynchronously |> ignore
+            checkFiles fileVersion |> Async.RunSynchronously |> ignore
             (fileVersion + 1)
         | 'R' ->
             findAllReferences fileVersion |> Async.RunSynchronously |> ignore

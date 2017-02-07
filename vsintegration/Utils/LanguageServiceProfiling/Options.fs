@@ -17,15 +17,14 @@ type CompletionPosition = {
 type Options =
     { Options: FSharpProjectOptions
       FileToCheck: string
+      FilesToCheck: string list
       SymbolText: string
       SymbolPos: pos
       CompletionPositions: CompletionPosition list }
          
 
 let FCS (repositoryDir: string) : Options =
-    { Options =
-        {ProjectFileName = repositoryDir </> @"src\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj"
-         ProjectFileNames =
+    let files =
           [| @"src\fsharp\FSharp.Compiler.Service\obj\Release\FSComp.fs"
              @"src\fsharp\FSharp.Compiler.Service\obj\Release\FSIstrings.fs"
              @"src\assemblyinfo\assemblyinfo.FSharp.Compiler.Service.dll.fs"
@@ -194,7 +193,10 @@ let FCS (repositoryDir: string) : Options =
              @"src\fsharp\vs\SimpleServices.fs"
              @"src\fsharp\fsi\fsi.fsi"
              @"src\fsharp\fsi\fsi.fs" |]
-             |> Array.map (fun x -> repositoryDir </> x)
+
+    { Options =
+        {ProjectFileName = repositoryDir </> @"src\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj"
+         ProjectFileNames = files |> Array.map (fun x -> repositoryDir </> x)
          OtherOptions =
           [|@"-o:obj\Release\FSharp.Compiler.Service.dll"; "-g"; "--noframework";
             @"--baseaddress:0x06800000"; "--define:DEBUG";
@@ -282,6 +284,17 @@ let FCS (repositoryDir: string) : Options =
          UnresolvedReferences = None;
          OriginalLoadReferences = []
          ExtraProjectInfo = None }
+      FilesToCheck = 
+          files 
+          |> Array.filter (fun s -> s.Contains "TypeChecker.fs" || 
+                                    s.Contains "Optimizer.fs" || 
+                                    s.Contains "IlxGen.fs" || 
+                                    s.Contains "TastOps.fs" || 
+                                    s.Contains "TcGlobals.fs" || 
+                                    s.Contains "CompileOps.fs" || 
+                                    s.Contains "CompileOptions.fs") 
+          |>  Array.map (fun x -> repositoryDir </> x) 
+          |> Array.toList
       FileToCheck = repositoryDir </> @"src\fsharp\TypeChecker.fs"
       SymbolText = "Some"
       SymbolPos = mkPos 120 7
@@ -391,6 +404,7 @@ let VFPT (repositoryDir: string) : Options =
          UnresolvedReferences = None
          OriginalLoadReferences = []
          ExtraProjectInfo = None }
+      FilesToCheck = []
       FileToCheck = repositoryDir </> @"src\FSharp.Editing\CodeGeneration\RecordStubGenerator.fs"
       SymbolText = "option"
       SymbolPos = mkPos 19 23 
