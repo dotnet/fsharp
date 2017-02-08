@@ -8501,9 +8501,9 @@ and TcItemThen cenv overallTy env tpenv (item,mItem,rest,afterOverloadResolution
                         let lam = mkMultiLambda mItem vs (constrApp, tyOfExpr cenv.g constrApp)
                         lam)
             UnionCaseOrExnCheck env nargtys nargs mItem
-            let expr = mkExpr()
-            let exprTy = tyOfExpr cenv.g expr
-            PropagateThenTcDelayed cenv overallTy env tpenv mItem (MakeApplicableExprNoFlex cenv expr) exprTy ExprAtomicFlag.Atomic delayed 
+            let expr = MakeApplicableExprWithFlex cenv env (mkExpr())
+            let exprTy = expr.Type
+            PropagateThenTcDelayed cenv overallTy env tpenv mItem expr exprTy ExprAtomicFlag.Atomic delayed 
 
     | Item.Types(nm,(typ::_)) -> 
     
