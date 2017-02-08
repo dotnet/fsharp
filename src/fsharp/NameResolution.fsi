@@ -83,22 +83,8 @@ type FieldResolution = FieldResolution of RecdFieldRef * bool
 type ExtensionMember 
 
 /// The environment of information used to resolve names
-[<NoEquality; NoComparison>]
+[<NoEquality; NoComparison; Sealed>]
 type NameResolutionEnv =
-    {eDisplayEnv: DisplayEnv
-     eUnqualifiedItems: LayeredMap<string,Item>
-     ePatItems: NameMap<Item>
-     eModulesAndNamespaces: NameMultiMap<ModuleOrNamespaceRef>
-     eFullyQualifiedModulesAndNamespaces: NameMultiMap<ModuleOrNamespaceRef>
-     eFieldLabels: NameMultiMap<RecdFieldRef>
-     eTyconsByAccessNames: LayeredMultiMap<string,TyconRef>
-     eFullyQualifiedTyconsByAccessNames: LayeredMultiMap<string,TyconRef>
-     eTyconsByDemangledNameAndArity: LayeredMap<NameArityPair,TyconRef>
-     eFullyQualifiedTyconsByDemangledNameAndArity: LayeredMap<NameArityPair,TyconRef>
-     eIndexedExtensionMembers: TyconRefMultiMap<ExtensionMember>
-     eUnindexedExtensionMembers: ExtensionMember list
-     eTypars: NameMap<Typar>
-     eDerivation: NameResolutionEnvDerivation }
     static member Empty : g:TcGlobals -> NameResolutionEnv
     member DisplayEnv : DisplayEnv
     member FindUnqualifiedItem : string -> Item
@@ -112,9 +98,6 @@ type FullyQualifiedFlag =
 
 [<RequireQualifiedAccess>]
 type BulkAdd = Yes | No
-
-/// Lookup patterns in name resolution environment
-val internal TryFindPatternByName : string -> NameResolutionEnv -> Item option
 
 /// Add extra items to the environment for Visual Studio, e.g. static members 
 val internal AddFakeNamedValRefToNameEnv : haveSink: bool -> string -> NameResolutionEnv -> ValRef -> NameResolutionEnv
@@ -154,6 +137,15 @@ type CheckForDuplicateTyparFlag =
 
 /// Add some declared type parameters to the name resolution environment
 val internal AddDeclaredTyparsToNameEnv : haveSink: bool -> CheckForDuplicateTyparFlag -> NameResolutionEnv -> Typar list -> NameResolutionEnv
+
+/// Lookup patterns in name resolution environment
+val internal TryFindPatternByName : string -> NameResolutionEnv -> Item option
+
+/// Lookup type parameters in name resolution environment
+val internal ResolveTypar : string -> NameResolutionEnv -> Typar option
+
+/// Get all declared type parameters 
+val internal GetAllTyparsInScope : NameResolutionEnv -> Set<string>
 
 /// Qualified lookup of type names in the environment
 val internal LookupTypeNameInEnvNoArity : FullyQualifiedFlag -> string -> NameResolutionEnv -> TyconRef list
@@ -299,6 +291,8 @@ val internal WithNewTypecheckResultsSink : ITypecheckResultsSink * TcResultsSink
 
 /// Temporarily suspend reporting of name resolution and type checking results
 val internal TemporarilySuspendReportingTypecheckResultsToSink : TcResultsSink -> System.IDisposable
+
+val internal AddOpenPath : haveSink: bool -> NameResolutionEnv -> string list -> NameResolutionEnv
 
 /// Report the active name resolution environment for a source range
 val internal CallEnvSink                : TcResultsSink -> range * NameResolutionEnv * AccessorDomain -> unit

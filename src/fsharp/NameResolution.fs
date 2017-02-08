@@ -339,6 +339,9 @@ type NameResolutionEnv =
       /// Typars (always available by unqualified names). Further typars can be 
       /// in the tpenv, a structure folded through each top-level definition. 
       eTypars: NameMap<Typar>
+
+      /// The operations needed to reconstruct this object (the series of closures is a more memory compact representation
+      /// than the object itself)
       eDerivation: NameResolutionEnvDerivation
 
     } 
@@ -485,6 +488,8 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap:Import.Import
 [<RequireQualifiedAccess>]
 type BulkAdd = Yes | No
 
+let AddOpenPath haveSink (nenv: NameResolutionEnv) path = 
+    nenv.Derive haveSink (fun nenv -> { nenv with eDisplayEnv = nenv.eDisplayEnv.AddOpenPath path })
 
 /// bulkAddMode: true when adding the values from the 'open' of a namespace
 /// or module, when we collapse the value table down to a dictionary.
@@ -1714,6 +1719,13 @@ let CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities
 
     tcrefs    
 
+
+/// Lookup type parameters in name resolution environment
+let ResolveTypar key nenv =
+    nenv.eTypars.TryFind key 
+
+/// Get all declared type parameters 
+let GetAllTyparsInScope nenv = nenv.eTypars |> Seq.map (fun p -> p.Key) |> Set.ofSeq
 
 //-------------------------------------------------------------------------
 // Consume ids that refer to a namespace

@@ -609,7 +609,7 @@ let MakeInnerEnvWithAcc env nm mtypeAcc modKind =
         eCompPath = cpath
         eAccessPath = cpath
         eAccessRights = computeAccessRights cpath env.eInternalsVisibleCompPaths env.eFamilyType // update this computed field
-        eNameResEnv = { env.eNameResEnv with eDisplayEnv = env.DisplayEnv.AddOpenPath (pathOfLid path) }
+        eNameResEnv = AddOpenPath true env.eNameResEnv (pathOfLid path)
         eModuleOrNamespaceTypeAccumulator = mtypeAcc }
 
 let MakeInnerEnv env nm modKind = 
@@ -4443,7 +4443,7 @@ and TcTyparOrMeasurePar optKind cenv (env:TcEnv) newOk tpenv (Typar(id,_,_) as t
             // CallNameResolutionSink cenv.tcSink (tp.Range.StartRange,env.NameEnv,item,item,ItemOccurence.UseInType,env.DisplayEnv,env.eAccessRights)
             res, tpenv
     let key = id.idText
-    match env.eNameResEnv.eTypars.TryFind key with
+    match ResolveTypar key env.eNameResEnv with
     | Some res -> checkRes res
     | None -> 
     match TryFindUnscopedTypar key tpenv with
@@ -4452,9 +4452,8 @@ and TcTyparOrMeasurePar optKind cenv (env:TcEnv) newOk tpenv (Typar(id,_,_) as t
         if newOk = NoNewTypars then
             let predictTypeParameters() =
                 let predictions1 =
-                    env.eNameResEnv.eTypars
-                    |> Seq.map (fun p -> "'" + p.Key)
-                    |> Set.ofSeq
+                    GetAllTyparsInScope env.eNameResEnv
+                    |> Set.map (fun p -> "'" + p)
 
                 let predictions2 =
                     match tpenv with
