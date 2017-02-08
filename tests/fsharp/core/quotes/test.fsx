@@ -1764,7 +1764,7 @@ module FlexibleUnionConstructorTests =
     test "check struct flexible union constructor"   
         (<@ testList |> A @> |> testFunction "A")
     
-    test "check struct flexible union constructor"   
+    test "check flexible union constructor"   
         (<@ testList |> B @> |> testFunction "B")
 
 
