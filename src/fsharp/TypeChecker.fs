@@ -369,11 +369,11 @@ let addFreeItemOfModuleTy mtyp eUngeneralizableItems =
     if isEmptyFreeTyvars fvs then eUngeneralizableItems 
     else UngeneralizableItem(fun () -> freeInModuleTy mtyp) :: eUngeneralizableItems
 
-let AddValMapToNameEnv vs nenv = 
-    NameMap.foldBackRange (fun v nenv -> AddValRefToNameEnv nenv (mkLocalValRef v)) vs nenv
+let AddValMapToNameEnv (tcSink: TcResultsSink) vs nenv = 
+    NameMap.foldBackRange (fun v nenv -> AddValRefToNameEnv tcSink.HaveSink nenv (mkLocalValRef v)) vs nenv
 
-let AddValListToNameEnv vs nenv = 
-    List.foldBack (fun v nenv -> AddValRefToNameEnv nenv (mkLocalValRef v)) vs nenv
+let AddValListToNameEnv (tcSink: TcResultsSink) vs nenv = 
+    List.foldBack (fun v nenv -> AddValRefToNameEnv tcSink.HaveSink nenv (mkLocalValRef v)) vs nenv
     
     
 let addInternalsAccessibility env (ccu:CcuThunk) =
@@ -385,54 +385,54 @@ let addInternalsAccessibility env (ccu:CcuThunk) =
 
 let ModifyNameResEnv f env = { env with eNameResEnv = f env.eNameResEnv } 
 
-let AddLocalValPrimitive (v:Val) env =
-    let env = ModifyNameResEnv (fun nenv -> AddValRefToNameEnv nenv (mkLocalValRef v)) env
+let AddLocalValPrimitive (tcSink: TcResultsSink) (v:Val) env =
+    let env = ModifyNameResEnv (fun nenv -> AddValRefToNameEnv tcSink.HaveSink nenv (mkLocalValRef v)) env
     { env with eUngeneralizableItems = addFreeItemOfTy v.Type env.eUngeneralizableItems } 
 
 
-let AddLocalValMap tcSink scopem (vals:Val NameMap) env =
+let AddLocalValMap (tcSink: TcResultsSink) scopem (vals:Val NameMap) env =
     let env = 
         if vals.IsEmpty then 
             env
         else
-            let env = ModifyNameResEnv (AddValMapToNameEnv vals) env
+            let env = ModifyNameResEnv (AddValMapToNameEnv tcSink vals) env
             { env with eUngeneralizableItems = NameMap.foldBackRange (typeOfVal >> addFreeItemOfTy) vals env.eUngeneralizableItems }
     CallEnvSink tcSink (scopem,env.NameEnv,env.eAccessRights)
     env
 
-let AddLocalVals tcSink scopem (vals:Val list) env =
+let AddLocalVals (tcSink: TcResultsSink) scopem (vals:Val list) env =
     let env = 
         if isNil vals then 
             env
         else
-            let env = ModifyNameResEnv (AddValListToNameEnv vals) env
+            let env = ModifyNameResEnv (AddValListToNameEnv tcSink vals) env
             { env with eUngeneralizableItems = List.foldBack (typeOfVal >> addFreeItemOfTy) vals env.eUngeneralizableItems }
     CallEnvSink tcSink (scopem,env.NameEnv,env.eAccessRights)
     env
 
-let AddLocalVal tcSink scopem v env = 
-    let env = ModifyNameResEnv (fun nenv -> AddValRefToNameEnv nenv (mkLocalValRef v)) env
+let AddLocalVal (tcSink: TcResultsSink) scopem v env = 
+    let env = ModifyNameResEnv (fun nenv -> AddValRefToNameEnv tcSink.HaveSink nenv (mkLocalValRef v)) env
     let env = {env with eUngeneralizableItems = addFreeItemOfTy v.Type env.eUngeneralizableItems }
     CallEnvSink tcSink (scopem,env.NameEnv,env.eAccessRights)
     env
 
-let AddLocalExnDefnAndReport tcSink scopem env (exnc:Tycon) =
-    let env = ModifyNameResEnv (fun nenv -> AddExceptionDeclsToNameEnv BulkAdd.No nenv (mkLocalEntityRef exnc)) env
+let AddLocalExnDefnAndReport (tcSink: TcResultsSink) scopem env (exnc:Tycon) =
+    let env = ModifyNameResEnv (fun nenv -> AddExceptionDeclsToNameEnv tcSink.HaveSink BulkAdd.No nenv (mkLocalEntityRef exnc)) env
     (* Also make VisualStudio think there is an identifier in scope at the range of the identifier text of its binding location *)
     CallEnvSink tcSink (exnc.Range,env.NameEnv,env.eAccessRights)
     CallEnvSink tcSink (scopem,env.NameEnv,env.eAccessRights)
     env
  
-let AddLocalTyconRefs ownDefinition g amap m tcrefs env =
+let AddLocalTyconRefs (tcSink: TcResultsSink) ownDefinition g amap m tcrefs env =
     if isNil tcrefs then env else
-    env |> ModifyNameResEnv (fun nenv -> AddTyconRefsToNameEnv BulkAdd.No ownDefinition g amap m false nenv tcrefs) 
+    env |> ModifyNameResEnv (fun nenv -> AddTyconRefsToNameEnv tcSink.HaveSink BulkAdd.No ownDefinition g amap m false nenv tcrefs) 
 
-let AddLocalTycons g amap m (tycons: Tycon list) env =
+let AddLocalTycons tcSink g amap m (tycons: Tycon list) env =
     if isNil tycons then env else
-    env |> AddLocalTyconRefs false g amap m (List.map mkLocalTyconRef tycons) 
+    env |> AddLocalTyconRefs tcSink false g amap m (List.map mkLocalTyconRef tycons) 
 
 let AddLocalTyconsAndReport tcSink scopem g amap m tycons env = 
-    let env = AddLocalTycons g amap m tycons env
+    let env = AddLocalTycons tcSink g amap m tycons env
     CallEnvSink tcSink (scopem,env.NameEnv,env.eAccessRights)
     env
 
@@ -470,11 +470,11 @@ let AddNonLocalCcu g amap scopem env assemblyName  (ccu:CcuThunk, internalsVisib
     let env = AddRootModuleOrNamespaceRefs g amap scopem env modrefs
     let env =
         if isNil tcrefs then env else
-        ModifyNameResEnv (fun nenv -> AddTyconRefsToNameEnv BulkAdd.Yes false g amap scopem true nenv tcrefs) env
+        ModifyNameResEnv (fun nenv -> AddTyconRefsToNameEnv true BulkAdd.Yes false g amap scopem true nenv tcrefs) env
     //CallEnvSink tcSink (scopem,env.NameEnv,env.eAccessRights)
     env
 
-let AddLocalRootModuleOrNamespace tcSink g amap scopem env (mtyp:ModuleOrNamespaceType) = 
+let AddLocalRootModuleOrNamespace (tcSink: TcResultsSink) g amap scopem env (mtyp:ModuleOrNamespaceType) = 
     // Compute the top-rooted module or namespace references
     let modrefs = mtyp.ModuleAndNamespaceDefinitions |> List.map mkLocalModRef
     // Compute the top-rooted type definitions
@@ -482,15 +482,15 @@ let AddLocalRootModuleOrNamespace tcSink g amap scopem env (mtyp:ModuleOrNamespa
     let env = AddRootModuleOrNamespaceRefs g amap scopem env modrefs
     let env =
         if isNil tcrefs then env else
-        ModifyNameResEnv (fun nenv -> AddTyconRefsToNameEnv BulkAdd.No false g amap scopem true nenv tcrefs) env
+        ModifyNameResEnv (fun nenv -> AddTyconRefsToNameEnv tcSink.HaveSink BulkAdd.No false g amap scopem true nenv tcrefs) env
     let env = { env with eUngeneralizableItems = addFreeItemOfModuleTy mtyp env.eUngeneralizableItems }
     CallEnvSink tcSink (scopem,env.NameEnv,env.eAccessRights)
     env
 
-let AddModuleAbbreviationAndReport tcSink scopem id modrefs env =
+let AddModuleAbbreviationAndReport (tcSink: TcResultsSink) scopem id modrefs env =
     let env = 
         if isNil modrefs then env else
-        ModifyNameResEnv (fun nenv -> AddModuleAbbrevToNameEnv id nenv modrefs) env
+        ModifyNameResEnv (fun nenv -> AddModuleAbbrevToNameEnv tcSink.HaveSink id nenv modrefs) env
     CallEnvSink tcSink (scopem,env.NameEnv,env.eAccessRights)
     let item = Item.ModuleOrNamespaces modrefs
     CallNameResolutionSink tcSink (id.idRange,env.NameEnv,item,item,ItemOccurence.Use,env.DisplayEnv,env.eAccessRights)
@@ -510,9 +510,9 @@ let RegisterDeclaredTypars typars env =
     if isNil typars then env else
     { env with eUngeneralizableItems = List.foldBack (mkTyparTy >> addFreeItemOfTy) typars env.eUngeneralizableItems }
 
-let AddDeclaredTypars check typars env =
+let AddDeclaredTypars (tcSink: TcResultsSink) check typars env =
     if isNil typars then env else
-    let env = ModifyNameResEnv (fun nenv -> AddDeclaredTyparsToNameEnv check nenv typars) env
+    let env = ModifyNameResEnv (fun nenv -> AddDeclaredTyparsToNameEnv tcSink.HaveSink check nenv typars) env
     RegisterDeclaredTypars typars env
 
 /// Compilation environment for typechecking a compilation unit. Contains the
@@ -1538,7 +1538,7 @@ let MakeAndPublishVal cenv env (altActualParent,inSig,declKind,vrec,(ValScheme(i
     | None -> ()
     | Some _ -> 
         if not vspec.IsCompilerGenerated && not (String.hasPrefix vspec.LogicalName "_") then 
-            let nenv = AddFakeNamedValRefToNameEnv vspec.DisplayName env.NameEnv (mkLocalValRef vspec) 
+            let nenv = AddFakeNamedValRefToNameEnv cenv.tcSink.HaveSink vspec.DisplayName env.NameEnv (mkLocalValRef vspec) 
             CallEnvSink cenv.tcSink (vspec.Range,nenv,env.eAccessRights)
             let item = Item.Value(mkLocalValRef vspec)
             CallNameResolutionSink cenv.tcSink (vspec.Range,nenv,item,item,ItemOccurence.Binding,env.DisplayEnv,env.eAccessRights)
@@ -1891,7 +1891,7 @@ let MakeAndPublishSimpleVals cenv env m names mergeNamesInOneNameresEnv =
                     ((env.NameEnv, m1), nameResolutions) ||> Seq.fold (fun (nenv, merged) (_pos, item, _b, _occurence, _denv, _nenv, _ad, m, _) ->
                         // MakeAndPublishVal creates only Item.Value
                         let item = match item with Item.Value(item) -> item | _ -> failwith "impossible"
-                        (AddFakeNamedValRefToNameEnv item.DisplayName nenv item), (unionRanges m merged)
+                        (AddFakeNamedValRefToNameEnv cenv.tcSink.HaveSink item.DisplayName nenv item), (unionRanges m merged)
                         )
                 // send notification about mergedNameEnv
                 CallEnvSink cenv.tcSink (mergedRange, mergedNameEnv, ad)
@@ -4301,7 +4301,7 @@ and TcValSpec cenv env declKind newOk containerInfo memFlagsOpt thisTyOpt tpenv 
         | None -> 
             [],None,thisTyOpt, ModuleOrMemberBinding
     let allDeclaredTypars = enclosingDeclaredTypars @ declaredTypars
-    let envinner = AddDeclaredTypars NoCheckForDuplicateTypars allDeclaredTypars env
+    let envinner = AddDeclaredTypars cenv.tcSink NoCheckForDuplicateTypars allDeclaredTypars env
     let checkCxs = CheckCxs
     let tpenv = TcTyparConstraints cenv newOk checkCxs ItemOccurence.UseInType envinner tpenv synTyparConstraints
     
@@ -7170,7 +7170,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
     /// the query.
     let env = 
         env |> ModifyNameResEnv (fun nenv -> (nenv, customOperationMethods) ||> Seq.fold (fun nenv (nm, _, _, _, _, _, _, _, methInfo) -> 
-                 AddFakeNameToNameEnv nm nenv (Item.CustomOperation (nm, (fun () -> customOpUsageText (ident (nm,mBuilderVal))), Some methInfo))))
+                 AddFakeNameToNameEnv cenv.tcSink.HaveSink nm nenv (Item.CustomOperation (nm, (fun () -> customOpUsageText (ident (nm,mBuilderVal))), Some methInfo))))
 
     // Environment is needed for completions
     CallEnvSink cenv.tcSink (comp.Range, env.NameEnv, ad)
@@ -10087,7 +10087,7 @@ and TcAndBuildFixedExpr cenv env (overallPatTy, fixedExpr, overallExprTy, mBindi
 
 /// Binding checking code, for all bindings including let bindings, let-rec bindings, member bindings and object-expression bindings and 
 and TcNormalizedBinding declKind (cenv:cenv) env tpenv overallTy safeThisValOpt safeInitInfo (enclosingDeclaredTypars,(ExplicitTyparInfo(_,declaredTypars,_) as flex)) bind =
-    let envinner = AddDeclaredTypars NoCheckForDuplicateTypars (enclosingDeclaredTypars@declaredTypars) env
+    let envinner = AddDeclaredTypars cenv.tcSink NoCheckForDuplicateTypars (enclosingDeclaredTypars@declaredTypars) env
 
     match bind with 
 
@@ -10217,7 +10217,7 @@ and TcNormalizedBinding declKind (cenv:cenv) env tpenv overallTy safeThisValOpt 
                     let item = Item.ActivePatternResult(apinfo, cenv.g.unit_ty, i, tagRange)
                     CallNameResolutionSink cenv.tcSink (tagRange,env.NameEnv,item,item,ItemOccurence.Binding,env.DisplayEnv,env.eAccessRights))
 
-                ModifyNameResEnv (fun nenv -> AddActivePatternResultTagsToNameEnv apinfo nenv ty m) envinner 
+                ModifyNameResEnv (fun nenv -> AddActivePatternResultTagsToNameEnv cenv.tcSink.HaveSink apinfo nenv ty m) envinner 
             | None -> 
                 envinner
         
@@ -10287,7 +10287,7 @@ and TcLiteral cenv overallTy env tpenv (attrs,synLiteralValExpr) =
     
 and TcBindingTyparDecls alwaysRigid cenv env tpenv (SynValTyparDecls(synTypars,infer,synTyparConstraints)) = 
     let declaredTypars = TcTyparDecls cenv env synTypars
-    let envinner = AddDeclaredTypars CheckForDuplicateTypars declaredTypars env
+    let envinner = AddDeclaredTypars cenv.tcSink CheckForDuplicateTypars declaredTypars env
     let tpenv = TcTyparConstraints cenv NoNewTypars CheckCxs ItemOccurence.UseInType envinner tpenv synTyparConstraints
 
     let rigidCopyOfDeclaredTypars = 
@@ -10864,7 +10864,7 @@ and AnalyzeRecursiveStaticMemberOrValDecl (cenv, envinner: TcEnv, tpenv, declKin
 
         let isExtrinsic = (declKind = ExtrinsicExtensionBinding)
         let _,enclosingDeclaredTypars,_,objTy,thisTy = FreshenObjectArgType cenv mBinding TyparRigidity.WillBeRigid tcref isExtrinsic declaredTyconTypars
-        let envinner = AddDeclaredTypars CheckForDuplicateTypars enclosingDeclaredTypars envinner
+        let envinner = AddDeclaredTypars cenv.tcSink CheckForDuplicateTypars enclosingDeclaredTypars envinner
         let envinner = MakeInnerEnvForTyconRef cenv envinner tcref isExtrinsic 
 
         let safeThisValOpt, baseValOpt = 
@@ -10930,7 +10930,7 @@ and AnalyzeRecursiveInstanceMemberDecl (cenv,envinner: TcEnv, tpenv, declKind, s
          let isExtrinsic = (declKind = ExtrinsicExtensionBinding)
          let tcrefObjTy,enclosingDeclaredTypars,renaming,objTy,thisTy = FreshenObjectArgType cenv mBinding TyparRigidity.WillBeRigid tcref isExtrinsic declaredTyconTypars
 
-         let envinner = AddDeclaredTypars CheckForDuplicateTypars enclosingDeclaredTypars envinner
+         let envinner = AddDeclaredTypars cenv.tcSink CheckForDuplicateTypars enclosingDeclaredTypars envinner
 
          // If private, the member's accessibility is related to 'tcref' 
          let envinner = MakeInnerEnvForTyconRef cenv envinner tcref isExtrinsic 
@@ -11036,7 +11036,7 @@ and AnalyzeAndMakeAndPublishRecursiveValue overridesOK isGeneratedEventVal cenv 
     // Typecheck the typar decls, if any
     let flex, tpenv = TcBindingTyparDecls false cenv env tpenv synTyparDecls
     let (ExplicitTyparInfo(_,declaredTypars,_)) = flex
-    let envinner = AddDeclaredTypars CheckForDuplicateTypars declaredTypars env
+    let envinner = AddDeclaredTypars cenv.tcSink CheckForDuplicateTypars declaredTypars env
     
     // OK, analyze the declaration and return lots of information about it
     let envinner,tpenv,bindingId,toolIdOpt,memberInfoOpt,vis,vis2,safeThisValOpt,enclosingDeclaredTypars,baseValOpt,flex,bindingRhs,declaredTypars = 
@@ -11991,7 +11991,7 @@ module IncrClassChecking =
             | None -> None
 
         // Add class typars to env 
-        let env = AddDeclaredTypars CheckForDuplicateTypars copyOfTyconTypars env
+        let env = AddDeclaredTypars cenv.tcSink CheckForDuplicateTypars copyOfTyconTypars env
 
         // Type check arguments by processing them as 'simple' patterns 
         //     NOTE: if we allow richer patterns here this is where we'd process those patterns 
@@ -12834,7 +12834,7 @@ module MutRecBindingChecking =
                     if isExtrinsic then 
                         innitalEnvForTycon
                     else
-                        AddLocalTyconRefs true cenv.g cenv.amap tcref.Range [tcref] innitalEnvForTycon
+                        AddLocalTyconRefs cenv.tcSink true cenv.g cenv.amap tcref.Range [tcref] innitalEnvForTycon
 
                 // Make fresh version of the class type for type checking the members and lets *
                 let _,copyOfTyconTypars,_,objTy,thisTy = FreshenObjectArgType cenv tcref.Range TyparRigidity.WillBeRigid tcref isExtrinsic declaredTyconTypars
@@ -12863,7 +12863,7 @@ module MutRecBindingChecking =
                             // Phase2A: make incrClassCtorLhs - ctorv, thisVal etc, type depends on argty(s) 
                             let incrClassCtorLhs = TcImplictCtorLhs_Phase2A(cenv,envForTycon,tpenv,tcref,vis,attrs,spats,thisIdOpt,baseValOpt,safeInitInfo,m,copyOfTyconTypars,objTy,thisTy)
                             // Phase2A: Add copyOfTyconTypars from incrClassCtorLhs - or from tcref 
-                            let envForTycon = AddDeclaredTypars CheckForDuplicateTypars incrClassCtorLhs.InstanceCtorDeclaredTypars envForTycon
+                            let envForTycon = AddDeclaredTypars cenv.tcSink CheckForDuplicateTypars incrClassCtorLhs.InstanceCtorDeclaredTypars envForTycon
                             let innerState = (Some incrClassCtorLhs, envForTycon, tpenv, recBindIdx, uncheckedBindsRev)
 
                             [Phase2AIncrClassCtor incrClassCtorLhs],innerState
@@ -13026,7 +13026,7 @@ module MutRecBindingChecking =
                 
                 let isExtrinsic = (declKind = ExtrinsicExtensionBinding)
                 let envForTycon = MakeInnerEnvForTyconRef cenv envForDecls tcref isExtrinsic 
-                let envForTycon = if isExtrinsic then envForTycon else AddLocalTyconRefs true cenv.g cenv.amap tcref.Range [tcref] envForTycon
+                let envForTycon = if isExtrinsic then envForTycon else AddLocalTyconRefs cenv.tcSink true cenv.g cenv.amap tcref.Range [tcref] envForTycon
                 // Set up the environment so use-before-definition warnings are given, at least 
                 // until we reach a Phase2AIncrClassCtorJustAfterSuperInit. 
                 let envForTycon = { envForTycon with eCtorInfo = Some (InitialImplicitCtorInfo())  }
@@ -13053,12 +13053,12 @@ module MutRecBindingChecking =
                         // with the implicit ctor args.
                         | Phase2AIncrClassCtor incrClassCtorLhs ->
 
-                            let envInstance = AddDeclaredTypars CheckForDuplicateTypars incrClassCtorLhs.InstanceCtorDeclaredTypars envInstance
-                            let envStatic = AddDeclaredTypars CheckForDuplicateTypars incrClassCtorLhs.InstanceCtorDeclaredTypars envStatic
+                            let envInstance = AddDeclaredTypars cenv.tcSink CheckForDuplicateTypars incrClassCtorLhs.InstanceCtorDeclaredTypars envInstance
+                            let envStatic = AddDeclaredTypars cenv.tcSink CheckForDuplicateTypars incrClassCtorLhs.InstanceCtorDeclaredTypars envStatic
                             let envInstance = match incrClassCtorLhs.InstanceCtorSafeThisValOpt with Some v -> AddLocalVal cenv.tcSink scopem v envInstance | None -> envInstance
-                            let envInstance = List.foldBack AddLocalValPrimitive incrClassCtorLhs.InstanceCtorArgs envInstance 
+                            let envInstance = List.foldBack (AddLocalValPrimitive cenv.tcSink) incrClassCtorLhs.InstanceCtorArgs envInstance 
                             let envNonRec   = match incrClassCtorLhs.InstanceCtorSafeThisValOpt with Some v -> AddLocalVal cenv.tcSink scopem v envNonRec | None -> envNonRec
-                            let envNonRec   = List.foldBack AddLocalValPrimitive incrClassCtorLhs.InstanceCtorArgs envNonRec
+                            let envNonRec   = List.foldBack (AddLocalValPrimitive cenv.tcSink) incrClassCtorLhs.InstanceCtorArgs envNonRec
                             let safeThisValBindOpt = TcLetrecComputeCtorSafeThisValBind cenv incrClassCtorLhs.InstanceCtorSafeThisValOpt
 
                             let innerState = (tpenv,envInstance,envStatic,envNonRec,generalizedRecBinds,preGeneralizationRecBinds,uncheckedRecBindsTable)
@@ -13097,7 +13097,7 @@ module MutRecBindingChecking =
                                         |> List.unzip
                                     List.concat binds,bindRs,env,tpenv
 
-                            let envNonRec = (envNonRec,binds) ||> List.fold (fun acc bind -> AddLocalValPrimitive bind.Var acc)
+                            let envNonRec = (envNonRec,binds) ||> List.fold (fun acc bind -> AddLocalValPrimitive cenv.tcSink bind.Var acc)
 
                             // Check to see that local bindings and members don't have the same name and check some other adhoc conditions
                             for bind in binds do 
@@ -13433,7 +13433,7 @@ module MutRecBindingChecking =
                 // Process the 'open' declarations                
                 let envForDecls = (envForDecls, opens) ||> List.fold (fun env (mp,m) -> TcOpenDecl cenv.tcSink cenv.g cenv.amap m scopem env mp)
                 // Add the type definitions being defined
-                let envForDecls = (if report then AddLocalTyconsAndReport cenv.tcSink scopem else AddLocalTycons) cenv.g cenv.amap m tycons envForDecls 
+                let envForDecls = (if report then AddLocalTyconsAndReport cenv.tcSink scopem else AddLocalTycons cenv.tcSink) cenv.g cenv.amap m tycons envForDecls 
                 // Add the exception definitions being defined
                 let envForDecls = (envForDecls, exns) ||> List.fold (AddLocalExnDefnAndReport cenv.tcSink scopem)
                 // Add the modules again (but don't report them a second time)
@@ -13590,7 +13590,7 @@ let TcMutRecDefns_Phase2 cenv envInitial bindsm scopem mutRecNSInfo (envMutRec: 
                   if tcref.IsEnumTycon then error(Error(FSComp.SR.tcEnumerationsCannotHaveInterfaceDeclaration(),m))
 
                   let ity' = 
-                      let envinner = AddDeclaredTypars CheckForDuplicateTypars declaredTyconTypars envForTycon
+                      let envinner = AddDeclaredTypars cenv.tcSink CheckForDuplicateTypars declaredTyconTypars envForTycon
                       TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInType  envinner emptyUnscopedTyparEnv ity |> fst
                   if not (isInterfaceTy cenv.g ity') then errorR(Error(FSComp.SR.tcTypeIsNotInterfaceType0(),ity.Range))
                   
@@ -14170,7 +14170,7 @@ module TcExceptionDeclarations =
 
     let TcExnDefn cenv envInitial parent (SynExceptionDefn(core,aug,m),scopem) = 
         let binds1,exnc = TcExnDefnCore cenv envInitial parent core
-        let envMutRec =  AddLocalExnDefnAndReport cenv.tcSink scopem (AddLocalTycons cenv.g cenv.amap scopem [exnc] envInitial) exnc 
+        let envMutRec =  AddLocalExnDefnAndReport cenv.tcSink scopem (AddLocalTycons cenv.tcSink cenv.g cenv.amap scopem [exnc] envInitial) exnc 
 
         let defns = [MutRecShape.Tycon(MutRecDefnsPhase2DataForTycon(Some exnc, parent, ModuleOrMemberBinding, mkLocalEntityRef exnc, None, NoSafeInitInfo, [], aug, m, NoNewSlots, (fun () -> ())))]
         let binds2,envFinal = TcMutRecDefns_Phase2 cenv envInitial m scopem None envMutRec defns
@@ -14181,7 +14181,7 @@ module TcExceptionDeclarations =
 
     let TcExnSignature cenv envInitial parent tpenv (SynExceptionSig(core,aug,_),scopem) = 
         let binds,exnc = TcExnDefnCore cenv envInitial parent core
-        let envMutRec =  AddLocalExnDefnAndReport cenv.tcSink scopem (AddLocalTycons cenv.g cenv.amap scopem [exnc] envInitial) exnc 
+        let envMutRec =  AddLocalExnDefnAndReport cenv.tcSink scopem (AddLocalTycons cenv.tcSink cenv.g cenv.amap scopem [exnc] envInitial) exnc 
         let ecref = mkLocalEntityRef exnc
         let vals,_ = TcTyconMemberSpecs cenv envMutRec (ContainerInfo(parent,Some(MemberOrValContainerInfo(ecref,None,None,NoSafeInitInfo,[])))) ModuleOrMemberBinding tpenv aug
         binds,vals,ecref,envMutRec
@@ -14266,7 +14266,7 @@ module EstablishTypeDefinitionCores =
     let private GetStructuralElementsOfTyconDefn cenv env tpenv (MutRecDefnsPhase1DataForTycon(_,synTyconRepr,_,_,_,_)) tycon = 
         let thisTyconRef = mkLocalTyconRef tycon
         let m = tycon.Range
-        let env = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars(m)) env
+        let env = AddDeclaredTypars cenv.tcSink CheckForDuplicateTypars (tycon.Typars(m)) env
         let env = MakeInnerEnvForTyconRef cenv env thisTyconRef false 
         [ match synTyconRepr with 
           | SynTypeDefnSimpleRepr.None _ -> ()
@@ -14700,7 +14700,7 @@ module EstablishTypeDefinitionCores =
 
             let hasMeasureAttr = HasFSharpAttribute cenv.g cenv.g.attrib_MeasureAttribute attrs
             let hasMeasureableAttr = HasFSharpAttribute cenv.g cenv.g.attrib_MeasureableAttribute attrs
-            let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars(m)) envinner
+            let envinner = AddDeclaredTypars cenv.tcSink CheckForDuplicateTypars (tycon.Typars(m)) envinner
             let envinner = MakeInnerEnvForTyconRef cenv envinner thisTyconRef false 
 
             match synTyconRepr with 
@@ -14762,7 +14762,7 @@ module EstablishTypeDefinitionCores =
                 let (MutRecDefnsPhase1DataForTycon(_,synTyconRepr,explicitImplements,_,_,_)) = typeDefCore
                 let m = tycon.Range
                 let tcref = mkLocalTyconRef tycon
-                let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars(m)) envinner
+                let envinner = AddDeclaredTypars cenv.tcSink CheckForDuplicateTypars (tycon.Typars(m)) envinner
                 let envinner = MakeInnerEnvForTyconRef cenv envinner tcref false 
                 
                 let implementedTys,_ = List.mapFold (mapFoldFst (TcTypeAndRecover cenv NoNewTypars checkCxs ItemOccurence.UseInType envinner)) tpenv explicitImplements
@@ -14923,7 +14923,7 @@ module EstablishTypeDefinitionCores =
                 | _ -> ()
 
                 
-            let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars(m)) envinner
+            let envinner = AddDeclaredTypars cenv.tcSink CheckForDuplicateTypars (tycon.Typars(m)) envinner
             let envinner = MakeInnerEnvForTyconRef cenv envinner thisTyconRef false 
 
 
@@ -14935,7 +14935,7 @@ module EstablishTypeDefinitionCores =
                 for fspec in fields do
                     if not fspec.IsCompilerGenerated then
                         let info = RecdFieldInfo(thisTyInst, thisTyconRef.MakeNestedRecdFieldRef fspec)
-                        let nenv' = AddFakeNameToNameEnv fspec.Name nenv (Item.RecdField info) 
+                        let nenv' = AddFakeNameToNameEnv cenv.tcSink.HaveSink fspec.Name nenv (Item.RecdField info) 
                         // Name resolution gives better info for tooltips
                         let item = FreshenRecdFieldRef cenv.nameResolver m (thisTyconRef.MakeNestedRecdFieldRef fspec)
                         CallNameResolutionSink cenv.tcSink (fspec.Range,nenv,item,item,ItemOccurence.Binding,envinner.DisplayEnv,ad)
@@ -14948,7 +14948,7 @@ module EstablishTypeDefinitionCores =
                 // Constructors should be visible from IntelliSense, so add fake names for them 
                 for unionCase in unionCases do
                     let info = UnionCaseInfo(thisTyInst,mkUnionCaseRef thisTyconRef unionCase.Id.idText)
-                    let nenv' = AddFakeNameToNameEnv unionCase.Id.idText nenv (Item.UnionCase(info,false)) 
+                    let nenv' = AddFakeNameToNameEnv cenv.tcSink.HaveSink unionCase.Id.idText nenv (Item.UnionCase(info,false)) 
                     // Report to both - as in previous function
                     let item = Item.UnionCase(info,false)
                     CallNameResolutionSink cenv.tcSink (unionCase.Range,nenv,item,item,ItemOccurence.Binding,envinner.DisplayEnv,ad)
@@ -15396,7 +15396,7 @@ module EstablishTypeDefinitionCores =
                | (typeDefCore,_,_), Some (tycon:Tycon) -> 
                 let (MutRecDefnsPhase1DataForTycon(synTyconInfo,_,_,_,_,_)) = typeDefCore
                 let (ComponentInfo(_,_, synTyconConstraints,_,_,_, _,_)) = synTyconInfo
-                let envForTycon = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars(m)) envForDecls
+                let envForTycon = AddDeclaredTypars cenv.tcSink CheckForDuplicateTypars (tycon.Typars(m)) envForDecls
                 let thisTyconRef = mkLocalTyconRef tycon
                 let envForTycon = MakeInnerEnvForTyconRef cenv envForTycon thisTyconRef false 
                 try TcTyparConstraints cenv NoNewTypars checkCxs ItemOccurence.UseInType envForTycon tpenv  synTyconConstraints |> ignore
@@ -15620,7 +15620,7 @@ module TcDeclarations =
                     error(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
 
                 let declaredTypars = TcTyparDecls cenv envForDecls typars
-                let envForTycon = AddDeclaredTypars CheckForDuplicateTypars declaredTypars envForDecls
+                let envForTycon = AddDeclaredTypars cenv.tcSink CheckForDuplicateTypars declaredTypars envForDecls
                 let _tpenv = TcTyparConstraints cenv NoNewTypars CheckCxs ItemOccurence.UseInType envForTycon emptyUnscopedTyparEnv cs
                 declaredTypars |> List.iter (SetTyparRigid cenv.g envForDecls.DisplayEnv m)
                 if not (typarsAEquiv cenv.g TypeEquivEnv.Empty reqTypars declaredTypars) then 
@@ -16007,7 +16007,7 @@ module TcDeclarations =
                 let (ComponentInfo(_,typars,cs,longPath, _, _, _,m)) = synTyconInfo
                 let declKind,tcref,declaredTyconTypars = ComputeTyconDeclKind tyconOpt isAtOriginalTyconDefn cenv envForDecls true m typars cs longPath
 
-                let envForTycon = AddDeclaredTypars CheckForDuplicateTypars declaredTyconTypars envForDecls
+                let envForTycon = AddDeclaredTypars cenv.tcSink CheckForDuplicateTypars declaredTyconTypars envForDecls
                 let envForTycon = MakeInnerEnvForTyconRef cenv envForTycon tcref (declKind = ExtrinsicExtensionBinding) 
 
                 TcTyconMemberSpecs cenv envForTycon (TyconContainerInfo(innerParent, tcref, declaredTyconTypars, NoSafeInitInfo)) declKind tpenv members)

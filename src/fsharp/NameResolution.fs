@@ -383,16 +383,17 @@ type NameResolutionEnv =
         | OpenQualified -> nenv.eModulesAndNamespaces 
 
     // Rederive on-demand
-    member nenv.Derive(f) = 
-        // NOTE: THis does _not_ capture nenv itself in the derivation
-        // NOTE: All operations building a nenv must be added to this list
+    member nenv.Derive haveSink f = 
+        // NOTE: THis does _not_ capture nenv itself in the derivation. That's the point.
+        // NOTE: All operations building a nenv must be added to the derivation list.
         // TODO: Only store the list of derivation closures when there is a editor sink for captured name resolutions
-        {f nenv with eDerivation = (f :: nenv.eDerivation ) }
+        let res = f nenv
+        if haveSink  then { res with eDerivation = (f :: nenv.eDerivation ) } else res
 
     // Don't re-derive on-demand
-    member nenv.Keep(f) = 
+    member nenv.Keep f = 
         let res = f nenv
-        { res with eDerivation =  [ (fun _ -> res) ] }
+        { res with eDerivation =  [ (fun _ -> res) ] } 
 
     static member Reconstitute(ops,g) = List.foldBack (fun f x -> f x) ops (NameResolutionEnv.Empty(g))
 
@@ -510,12 +511,16 @@ let AddValRefToExtensionMembers pri (eIndexedExtensionMembers: TyconRefMultiMap<
 
 
 /// This entrypoint is used to add some extra items to the environment for Visual Studio, e.g. static members 
-let AddFakeNamedValRefToNameEnv nm nenv vref =
-    {nenv with eUnqualifiedItems = nenv.eUnqualifiedItems.Add (nm, Item.Value vref) }
+let AddFakeNamedValRefToNameEnv haveSink nm (nenv: NameResolutionEnv) vref =
+    nenv.Derive haveSink (fun nenv -> 
+        {nenv with eUnqualifiedItems = nenv.eUnqualifiedItems.Add (nm, Item.Value vref) }
+    )
 
 /// This entrypoint is used to add some extra items to the environment for Visual Studio, e.g. record members
-let AddFakeNameToNameEnv nm nenv item =
-    {nenv with eUnqualifiedItems = nenv.eUnqualifiedItems.Add (nm, item) }
+let AddFakeNameToNameEnv haveSink nm (nenv: NameResolutionEnv) item =
+    nenv.Derive haveSink (fun nenv -> 
+       {nenv with eUnqualifiedItems = nenv.eUnqualifiedItems.Add (nm, item) }
+    )
 
 /// Add an F# value to the table of available active patterns
 let AddValRefsToActivePatternsNameEnv ePatItems (vref:ValRef) =
@@ -533,37 +538,39 @@ let AddValRefsToActivePatternsNameEnv ePatItems (vref:ValRef) =
     ePatItems
 
 /// Add a set of F# values to the environment.
-let AddValRefsToNameEnvWithPriority bulkAddMode pri (nenv: NameResolutionEnv) (vrefs: ValRef []) =
+let AddValRefsToNameEnvWithPriority haveSink bulkAddMode pri (nenv: NameResolutionEnv) (vrefs: ValRef []) =
     if vrefs.Length = 0 then nenv else
-    nenv.Derive (fun nenv -> 
+    nenv.Derive haveSink (fun nenv -> 
      { nenv with 
         eUnqualifiedItems = AddValRefsToItems bulkAddMode nenv.eUnqualifiedItems vrefs
         eIndexedExtensionMembers = (nenv.eIndexedExtensionMembers,vrefs) ||> Array.fold (AddValRefToExtensionMembers pri)
         ePatItems = (nenv.ePatItems,vrefs) ||> Array.fold AddValRefsToActivePatternsNameEnv })
 
 /// Add a single F# value to the environment.
-let AddValRefToNameEnv (nenv: NameResolutionEnv) (vref:ValRef) = 
-  nenv.Derive (fun nenv -> 
-    let pri = NextExtensionMethodPriority()
-    { nenv with 
-        eUnqualifiedItems = 
-            if vref.MemberInfo.IsNone then 
-                nenv.eUnqualifiedItems.Add (vref.LogicalName, Item.Value vref) 
-            else
-                nenv.eUnqualifiedItems
-        eIndexedExtensionMembers = AddValRefToExtensionMembers pri nenv.eIndexedExtensionMembers vref
-        ePatItems = AddValRefsToActivePatternsNameEnv nenv.ePatItems vref })
+let AddValRefToNameEnv haveSink (nenv: NameResolutionEnv) (vref:ValRef) = 
+    nenv.Derive haveSink (fun nenv -> 
+        let pri = NextExtensionMethodPriority()
+        { nenv with 
+            eUnqualifiedItems = 
+                if vref.MemberInfo.IsNone then 
+                    nenv.eUnqualifiedItems.Add (vref.LogicalName, Item.Value vref) 
+                else
+                    nenv.eUnqualifiedItems
+            eIndexedExtensionMembers = AddValRefToExtensionMembers pri nenv.eIndexedExtensionMembers vref
+            ePatItems = AddValRefsToActivePatternsNameEnv nenv.ePatItems vref }
+    )
 
 
 /// Add a set of active pattern result tags to the environment.
-let AddActivePatternResultTagsToNameEnv (apinfo: PrettyNaming.ActivePatternInfo) (nenv: NameResolutionEnv) ty m =
-  nenv.Derive (fun nenv -> 
-    if apinfo.Names.Length = 0 then nenv else
-    let apresl = List.indexed apinfo.Names
-    { nenv with
-        eUnqualifiedItems = 
-            (apresl,nenv.eUnqualifiedItems) 
-            ||> List.foldBack (fun (j,nm) acc -> acc.Add(nm, Item.ActivePatternResult(apinfo,ty,j,m))) } )
+let AddActivePatternResultTagsToNameEnv haveSink (apinfo: PrettyNaming.ActivePatternInfo) (nenv: NameResolutionEnv) ty m =
+    nenv.Derive haveSink (fun nenv -> 
+        if apinfo.Names.Length = 0 then nenv else
+        let apresl = List.indexed apinfo.Names
+        { nenv with
+            eUnqualifiedItems = 
+                (apresl,nenv.eUnqualifiedItems) 
+                ||> List.foldBack (fun (j,nm) acc -> acc.Add(nm, Item.ActivePatternResult(apinfo,ty,j,m))) } 
+    )
 
 /// Generalize a union case, from Cons --> List<T>.Cons
 let GeneralizeUnionCaseRef (ucref:UnionCaseRef) = 
@@ -618,8 +625,6 @@ let AddUnionCases2 bulkAddMode (eUnqualifiedItems: LayeredMap<_,_>) (ucrefs :Uni
 
 /// Add any implied contents of a type definition to the environment.
 let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g:TcGlobals) amap m  (nenv: NameResolutionEnv) (tcref:TyconRef) = 
-  nenv.Derive (fun nenv -> 
-
     let isIL = tcref.IsILTycon
     let ucrefs = if isIL then [] else tcref.UnionCasesAsList |> List.map tcref.MakeNestedUnionCaseRef 
     let flds =  if isIL then [| |] else tcref.AllFieldsArray
@@ -682,14 +687,14 @@ let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g:TcGlobals) 
         eUnqualifiedItems = eUnqualifiedItems
         ePatItems = ePatItems
         eIndexedExtensionMembers = eIndexedExtensionMembers 
-        eUnindexedExtensionMembers = eUnindexedExtensionMembers })
+        eUnindexedExtensionMembers = eUnindexedExtensionMembers }
 
 let TryFindPatternByName name {ePatItems = patternMap} =
     NameMap.tryFind name patternMap
 
 /// Add a set of type definitions to the name resolution environment 
-let AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap m root (nenv: NameResolutionEnv) tcrefs =
-  nenv.Derive (fun nenv -> 
+let AddTyconRefsToNameEnv haveSink bulkAddMode ownDefinition g amap m root (nenv: NameResolutionEnv) tcrefs =
+  nenv.Derive haveSink (fun nenv -> 
     if isNil tcrefs then nenv else
     let env = List.fold (AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition g amap m) nenv tcrefs
     // Add most of the contents of the tycons en-masse, then flatten the tables if we're opening a module or namespace
@@ -711,8 +716,8 @@ let AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap m root (nenv: NameRes
             AddTyconByAccessNames bulkAddMode tcrefs nenv.eTyconsByAccessNames } )
 
 /// Add an F# exception definition to the name resolution environment 
-let AddExceptionDeclsToNameEnv bulkAddMode (nenv: NameResolutionEnv) (ecref:TyconRef) = 
-  nenv.Derive (fun nenv -> 
+let AddExceptionDeclsToNameEnv haveSink bulkAddMode (nenv: NameResolutionEnv) (ecref:TyconRef) = 
+  nenv.Derive haveSink (fun nenv -> 
     assert ecref.IsExceptionDecl
     let item = Item.ExnCase ecref
     {nenv with 
@@ -726,8 +731,8 @@ let AddExceptionDeclsToNameEnv bulkAddMode (nenv: NameResolutionEnv) (ecref:Tyco
        ePatItems = nenv.ePatItems.Add (ecref.LogicalName, item) })
 
 /// Add a module abbreviation to the name resolution environment 
-let AddModuleAbbrevToNameEnv (id:Ident) (nenv: NameResolutionEnv) modrefs =
-  nenv.Derive (fun nenv -> 
+let AddModuleAbbrevToNameEnv haveSink (id:Ident) (nenv: NameResolutionEnv) modrefs =
+  nenv.Derive haveSink (fun nenv -> 
     {nenv with
        eModulesAndNamespaces =
          let add old nw = nw @ old
@@ -782,7 +787,7 @@ and AddModuleOrNamespaceContentsToNameEnvAux (g:TcGlobals) amap (ad:AccessorDoma
         for exnc in mty.ExceptionDefinitions do
            let tcref = modref.NestedTyconRef exnc
            if IsEntityAccessible amap m ad tcref then 
-               state <- AddExceptionDeclsToNameEnv BulkAdd.Yes state tcref
+               state <- AddExceptionDeclsToNameEnv false BulkAdd.Yes state tcref
 
         state
 
@@ -792,12 +797,12 @@ and AddModuleOrNamespaceContentsToNameEnvAux (g:TcGlobals) amap (ad:AccessorDoma
            let tcref = modref.NestedTyconRef tycon
            if IsEntityAccessible amap m ad tcref then Some(tcref) else None)
 
-    let nenv = (nenv,tcrefs) ||> AddTyconRefsToNameEnv BulkAdd.Yes false g amap m false 
+    let nenv = (nenv,tcrefs) ||> AddTyconRefsToNameEnv false BulkAdd.Yes false g amap m false 
     let vrefs = 
         mty.AllValsAndMembers.ToList() 
         |> List.choose (fun x -> if IsAccessible ad x.Accessibility then TryMkValRefInModRef modref x else None)
         |> List.toArray
-    let nenv = AddValRefsToNameEnvWithPriority BulkAdd.Yes pri nenv vrefs
+    let nenv = AddValRefsToNameEnvWithPriority false BulkAdd.Yes pri nenv vrefs
     let nestedModules = MakeNestedModuleRefs modref
     let nenv = (nenv,nestedModules) ||> AddModuleOrNamespaceRefsToNameEnvAux g amap m root ad 
     nenv
@@ -815,15 +820,18 @@ and AddModulesAndNamespacesContentsToNameEnvAux g amap ad m root nenv modrefs =
 
 /// Add a single modules or namespace to the name resolution environment
 let AddModuleOrNamespaceRefToNameEnv g amap m root ad (nenv: NameResolutionEnv) (modref:EntityRef) =  
+    // Note we don't re-derive the name environments that arise from 'AddModulesAndNamespace*'
     nenv.Keep (fun nenv -> 
       AddModuleOrNamespaceRefsToNameEnvAux g amap m root ad nenv [modref])
 
 /// Add a single modules or namespace to the name resolution environment
 let AddModuleOrNamespaceRefsToNameEnv g amap m root ad (nenv: NameResolutionEnv) (modref:EntityRef list) =  
+    // Note we don't re-derive the name environments that arise from 'AddModulesAndNamespace*'
     nenv.Keep (fun nenv -> 
       AddModuleOrNamespaceRefsToNameEnvAux g amap m root ad nenv modref)
 
 let AddModulesAndNamespacesContentsToNameEnv g amap ad m root (nenv: NameResolutionEnv) modrefs =
+    // Note we don't re-derive the name environments that arise from 'AddModulesAndNamespace*'
     nenv.Keep (fun nenv -> 
       AddModulesAndNamespacesContentsToNameEnvAux g amap ad m root nenv modrefs)
   
@@ -834,8 +842,8 @@ type CheckForDuplicateTyparFlag =
     | NoCheckForDuplicateTypars
 
 /// Add some declared type parameters to the name resolution environment
-let AddDeclaredTyparsToNameEnv check (nenv: NameResolutionEnv) typars = 
-  nenv.Derive (fun nenv -> 
+let AddDeclaredTyparsToNameEnv haveSink check (nenv: NameResolutionEnv) typars = 
+  nenv.Derive haveSink (fun nenv -> 
     let typarmap = 
       List.foldBack 
         (fun (tp:Typar) sofar -> 
@@ -1428,17 +1436,17 @@ type TcResolutions
 type TcSymbolUses(g, capturedNameResolutions : ResizeArray<CapturedNameResolution>, formatSpecifierLocations: range[]) = 
     
     // Make sure we only capture the information we really need to report symbol uses
-    let cnrs = [| for cnr in capturedNameResolutions  -> struct (cnr.Item, cnr.ItemOccurence, cnr.DisplayEnv, cnr.Range) |]
+    let cnrs = [| for cnr in capturedNameResolutions  -> (* struct *) (cnr.Item, cnr.ItemOccurence, cnr.DisplayEnv, cnr.Range) |]
     let capturedNameResolutions = () 
     do ignore capturedNameResolutions // don't capture this!
 
     member this.GetUsesOfSymbol(item) = 
-        [| for (struct (cnrItem,occ,denv,m)) in cnrs do
+        [| for ((* struct *) (cnrItem,occ,denv,m)) in cnrs do
                if protectAssemblyExploration false (fun () -> ItemsAreEffectivelyEqual g item cnrItem) then
                   yield occ, denv, m |]
 
     member this.GetAllUsesOfSymbols() = 
-        [| for (struct (cnrItem,occ,denv,m)) in cnrs do
+        [| for ((* struct *) (cnrItem,occ,denv,m)) in cnrs do
               yield (cnrItem, occ, denv, m) |]
 
     member this.GetFormatSpecifierLocations() =  formatSpecifierLocations
@@ -1512,6 +1520,7 @@ type TcResultsSink =
     { mutable CurrentSink : ITypecheckResultsSink option }
     static member NoSink =  { CurrentSink = None }
     static member WithSink sink = { CurrentSink = Some sink }
+    member s.HaveSink = s.CurrentSink.IsSome
 
 /// Temporarily redirect reporting of name resolution and type checking results
 let WithNewTypecheckResultsSink (newSink : ITypecheckResultsSink, sink:TcResultsSink) = 
