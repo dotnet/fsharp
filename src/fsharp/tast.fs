@@ -1876,7 +1876,7 @@ and
       mutable typar_constraints: TyparConstraint list 
 
       /// A cached TAST type used when this type variable is used as type.
-      mutable AsType: TType }
+      mutable typar_astype: TType }
 
     /// The name of the type parameter 
     member x.Name                = x.typar_id.idText
@@ -1937,24 +1937,18 @@ and
 
     /// Creates a type variable that contains empty data, and is not yet linked. Only used during unpickling of F# metadata.
     static member NewUnlinked() : Typar  = 
-        let res : Typar = 
-            { typar_id = Unchecked.defaultof<_>
-              typar_il_name = Unchecked.defaultof<_>
-              typar_flags = Unchecked.defaultof<_>
-              typar_stamp = Unchecked.defaultof<_>
-              typar_xmldoc = Unchecked.defaultof<_>
-              typar_attribs = Unchecked.defaultof<_>       
-              typar_solution = Unchecked.defaultof<_>
-              typar_constraints = Unchecked.defaultof<_>
-              AsType = Unchecked.defaultof<_>}
-
-        res.AsType <- TType_var res
-        res
+        { typar_id = Unchecked.defaultof<_>
+          typar_il_name = Unchecked.defaultof<_>
+          typar_flags = Unchecked.defaultof<_>
+          typar_stamp = Unchecked.defaultof<_>
+          typar_xmldoc = Unchecked.defaultof<_>
+          typar_attribs = Unchecked.defaultof<_>       
+          typar_solution = Unchecked.defaultof<_>
+          typar_constraints = Unchecked.defaultof<_>
+          typar_astype = Unchecked.defaultof<_> }
 
     /// Creates a type variable based on the given data. Only used during unpickling of F# metadata.
-    static member New data : Typar = 
-        data.AsType <- TType_var data
-        data
+    static member New (data: TyparData) : Typar = data
 
     /// Links a previously unlinked type variable to the given data. Only used during unpickling of F# metadata.
     member x.Link (tg: TyparData) = 
@@ -1966,6 +1960,16 @@ and
         x.typar_attribs <- tg.typar_attribs
         x.typar_solution <- tg.typar_solution
         x.typar_constraints <- tg.typar_constraints
+
+    /// Links a previously unlinked type variable to the given data. Only used during unpickling of F# metadata.
+    member x.AsType = 
+        let ty = x.typar_astype
+        match box ty with 
+        | null -> 
+            let ty2 = TType_var x
+            x.typar_astype <- ty2
+            ty2
+        | _ -> ty
 
     /// Indicates if a type variable has been linked. Only used during unpickling of F# metadata.
     member x.IsLinked = match box x.typar_attribs with null -> false | _ -> true 
@@ -4374,7 +4378,7 @@ let mkTyparTy (tp:Typar) =
     | TyparKind.Type -> tp.AsType 
     | TyparKind.Measure -> TType_measure (Measure.Var tp)
 
-let copyTypar (tp: Typar) = Typar.New { tp with typar_stamp=newStamp() }
+let copyTypar (tp: Typar) = Typar.New { tp with typar_stamp=newStamp(); typar_astype=Unchecked.defaultof<_> }
 let copyTypars tps = List.map copyTypar tps
 
 //--------------------------------------------------------------------------
@@ -4675,7 +4679,7 @@ let NewTypar (kind,rigid,Typar(id,staticReq,isCompGen),isFromError,dynamicReq,at
         typar_solution = None
         typar_constraints=[]
         typar_xmldoc = XmlDoc.Empty 
-        AsType = Unchecked.defaultof<_>} 
+        typar_astype = Unchecked.defaultof<_>} 
 
 let NewRigidTypar nm m = NewTypar (TyparKind.Type,TyparRigidity.Rigid,Typar(mkSynId m nm,NoStaticReq,true),false,TyparDynamicReq.Yes,[],false,false)
 

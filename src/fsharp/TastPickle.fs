@@ -1538,7 +1538,7 @@ let u_typar_spec_data st =
       typar_constraints=e;
       typar_solution=None;
       typar_xmldoc=g;
-      AsType = Unchecked.defaultof<_> }
+      typar_astype= Unchecked.defaultof<_> }
 
 let u_typar_spec st = 
     u_osgn_decl st.itypars u_typar_spec_data st 
