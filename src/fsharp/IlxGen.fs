@@ -2307,7 +2307,7 @@ and GenSetUnionCaseField cenv cgbuf eenv (e,ucref,tyargs,n,e2,m) sequel =
     GenExpr cenv cgbuf eenv SPSuppress e Continue
     let cuspec,idx = GenUnionCaseSpec cenv.amap m eenv.tyenv ucref tyargs
     //let avoidHelpers = entityRefInThisAssembly cenv.g.compilingFslib ucref.TyconRef
-    EraseUnions.emitCastData cenv.g.ilg (UnionCodeGen cgbuf) (cenv.opts.unverifiableOk,avoidHelpers,cuspec,idx)
+    EraseUnions.emitCastData cenv.g.ilg (UnionCodeGen cgbuf) (cenv.opts.unverifiableOk,cuspec,idx)
     CG.EmitInstrs cgbuf (pop 1) (Push [cuspec.EnclosingType]) [ ] // push/pop to match the line above
     GenExpr cenv cgbuf eenv SPSuppress e2 Continue
     CG.EmitInstrs cgbuf (pop 2) Push0 (EraseUnions.mkStData (cuspec, idx, n))
