@@ -155,24 +155,6 @@ neg20.fs(99,26,99,33): typecheck error FS0001: This expression was expected to h
 but here has type
     'A'    
 
-neg20.fs(108,12,108,16): typecheck error FS0001: Type mismatch. Expecting a
-    'B * B -> 'a'    
-but given a
-    'A * A -> Data'    
-The type 'B' does not match the type 'A'
-
-neg20.fs(109,12,109,16): typecheck error FS0001: Type mismatch. Expecting a
-    'A * B -> 'a'    
-but given a
-    'A * A -> Data'    
-The type 'B' does not match the type 'A'
-
-neg20.fs(110,12,110,16): typecheck error FS0001: Type mismatch. Expecting a
-    'B * A -> 'a'    
-but given a
-    'A * A -> Data'    
-The type 'B' does not match the type 'A'
-
 neg20.fs(128,19,128,22): typecheck error FS0001: This expression was expected to have type
     'string'    
 but here has type
