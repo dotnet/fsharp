@@ -1427,8 +1427,8 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
                 errorLogger.Warning(e)
                 frameworkTcImports           
 
-        let tcEnvAtEndOfFile = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
-        let tcState = GetInitialTcState (rangeStartup, assemblyName, tcConfig, tcGlobals, tcImports, niceNameGen, tcEnvAtEndOfFile)
+        let tcInitial = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
+        let tcState = GetInitialTcState (rangeStartup, assemblyName, tcConfig, tcGlobals, tcImports, niceNameGen, tcInitial)
         let loadClosureErrors = 
            [ match loadClosureOpt with 
              | None -> ()
@@ -1442,7 +1442,7 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
               tcImports=tcImports
               tcState=tcState
               tcConfig=tcConfig
-              tcEnvAtEndOfFile=tcEnvAtEndOfFile
+              tcEnvAtEndOfFile=tcInitial
               tcResolutions=[]
               tcSymbolUses=[]
               topAttribs=None
@@ -1479,6 +1479,7 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
                     /// Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
                     let typedImplFiles = if keepAssemblyContents then typedImplFiles else []
                     let tcResolutions = if keepAllBackgroundResolutions then sink.GetResolutions() else TcResolutions.Empty
+                    let tcEnvAtEndOfFile = (if keepAllBackgroundResolutions then tcEnvAtEndOfFile else tcState.TcEnvFromImpls)
                     let tcSymbolUses = sink.GetSymbolUses()  
                     fileChecked.Trigger (filename)
                     return {tcAcc with tcState=tcState 
