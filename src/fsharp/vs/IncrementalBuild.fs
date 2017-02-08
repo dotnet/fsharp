@@ -1606,7 +1606,7 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
     let parseTreesNode              = Vector.Map "ParseTrees" ParseTask stampedFileNamesNode
     let tcStatesNode                = Vector.ScanLeft "TypeCheckingStates" TypeCheckTask initialTcAccNode stampedFileNamesNode
 #else
-    let tcStatesNode                = Vector.ScanLeft "TypeCheckingStates" (fun tcAcc n -> TypeCheckTask tcAcc (ParseTask n)) initialTcAccNode stampedFileNamesNode
+    let tcStatesNode                = Vector.ScanLeft "TypeCheckingStates" (fun ctok tcAcc n -> TypeCheckTask ctok tcAcc (ParseTask ctok n)) initialTcAccNode stampedFileNamesNode
 #endif
     let finalizedTypeCheckNode      = Vector.Demultiplex "FinalizeTypeCheck" FinalizeTypeCheckTask tcStatesNode
 
