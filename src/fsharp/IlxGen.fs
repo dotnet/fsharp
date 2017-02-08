@@ -3383,7 +3383,7 @@ and GenGenericParam cenv eenv (tp:Typar) =
           // use the CompiledName if given
           // Inference variables get given an IL name "TA, TB" etc.
           let nm = 
-              match tp.Data.typar_il_name with 
+              match tp.typar_il_name with 
               | None -> tp.Name  
               | Some nm -> nm
           // Some special rules apply when compiling Fsharp.Core.dll to avoid a proliferation of [<CompiledName>] attributes on type parameters
@@ -5193,7 +5193,7 @@ and GenMethodForBinding
                // active pattern names
                mdef.Name.StartsWith("|",System.StringComparison.Ordinal) ||
                // event add/remove method
-               v.Data.val_flags.IsGeneratedEventVal then
+               v.val_flags.IsGeneratedEventVal then
                 {mdef with IsSpecialName=true} 
             else 
                 mdef

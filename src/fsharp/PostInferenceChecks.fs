@@ -156,7 +156,7 @@ let BindTypars g env (tps:Typar list) =
     let nms = PrettyTypes.PrettyTyparNames (fun _ -> true) env.boundTyparNames tps
     (tps,nms) ||> List.iter2 (fun tp nm -> 
             if PrettyTypes.NeedsPrettyTyparName tp  then 
-                tp.Data.typar_id <- ident (nm,tp.Range))      
+                tp.typar_id <- ident (nm,tp.Range))      
     List.fold BindTypar env tps 
 
 /// Set the set of vals which are arguments in the active lambda. We are allowed to return 
@@ -1195,7 +1195,7 @@ and CheckBinding cenv env alwaysCheckNoReraise (TBind(v,bindRhs,_) as bind) =
 
                 // If we've already recorded a definition then skip this 
                 match v.ReflectedDefinition with 
-                | None -> v.Data.val_defn <- Some bindRhs
+                | None -> v.val_defn <- Some bindRhs
                 | Some _ -> ()
                 // Run the conversion process over the reflected definition to report any errors in the
                 // front end rather than the back end. We currently re-run this during ilxgen.fs but there's

@@ -424,9 +424,8 @@ let SubstMeasure (r:Typar) ms =
     if r.Rigidity = TyparRigidity.Rigid then error(InternalError("SubstMeasure: rigid",r.Range)); 
     if r.Kind = TyparKind.Type then error(InternalError("SubstMeasure: kind=type",r.Range));
 
-    let tp = r.Data
-    match tp.typar_solution with
-    | None -> tp.typar_solution <- Some (TType_measure ms)
+    match r.typar_solution with
+    | None -> r.typar_solution <- Some (TType_measure ms)
     | Some _ -> error(InternalError("already solved",r.Range));
 
 let rec TransactStaticReq (csenv:ConstraintSolverEnv) (trace:OptionalTrace) (tpr:Typar) req = 
@@ -684,8 +683,7 @@ let rec SolveTyparEqualsTyp (csenv:ConstraintSolverEnv) ndeep m2 (trace:Optional
       // Record the solution before we solve the constraints, since 
       // We may need to make use of the equation when solving the constraints. 
       // Record a entry in the undo trace if one is provided 
-      let tpdata = r.Data
-      trace.Exec (fun () -> tpdata.typar_solution <- Some ty) (fun () -> tpdata.typar_solution <- None)
+      trace.Exec (fun () -> r.typar_solution <- Some ty) (fun () -> r.typar_solution <- None)
       
   (*   dprintf "setting typar %d to type %s at %a\n" r.Stamp ((DebugPrint.showType ty)) outputRange m; *)
 
@@ -1626,9 +1624,8 @@ and AddConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace tp newConstraint  =
 
         // Write the constraint into the type variable 
         // Record a entry in the undo trace if one is provided 
-        let d = tp.Data
-        let orig = d.typar_constraints
-        trace.Exec (fun () -> d.typar_constraints <- newConstraints) (fun () -> d.typar_constraints <- orig)
+        let orig = tp.typar_constraints
+        trace.Exec (fun () -> tp.typar_constraints <- newConstraints) (fun () -> tp.typar_constraints <- orig)
 
         CompleteD)))
 
