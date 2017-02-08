@@ -4218,7 +4218,11 @@ let x = query { for bbbb in abbbbc(*D0*) do
         SaveFileToDisk file2      
         TakeCoffeeBreak(this.VS)
         
+#if FCS_RETAIN_BACKGROUND_PARSE_RESULTS
         gpatcc.AssertExactly(notAA[file2], notAA[file2;file3])
+#else
+        gpatcc.AssertExactly(notAA[file2; file3], notAA[file2;file3])
+#endif
 
     /// FEATURE: References added to the project bring corresponding new .NET and F# items into scope.
     [<Test;Category("ReproX")>]
