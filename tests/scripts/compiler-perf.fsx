@@ -123,7 +123,7 @@ let build(cloneUrl,sha:string,baseSha,ref,prNumber) =
 
     let logFile = "compiler-perf-results.txt"
     let logHeader = sprintf "url ref  sha base build %s" timesHeaderText
-    let logLine = sprintf "%s %s %s %s %0.2f %s" cloneUrl ref sha baseSha buildTime.TotalSeconds timesText
+    let logLine = sprintf "%s %-28s %s %s %0.2f %s" cloneUrl ref sha baseSha buildTime.TotalSeconds timesText
     let existing = if File.Exists logFile then File.ReadAllLines(logFile) else [| logHeader |]
     printfn "writing results %s"  logLine
 

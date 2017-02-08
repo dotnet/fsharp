@@ -1426,15 +1426,20 @@ type TcResolutions
 
 /// Represents container for all name resolutions that were met so far when typechecking some particular file
 type TcSymbolUses(g, capturedNameResolutions : ResizeArray<CapturedNameResolution>, formatSpecifierLocations: range[]) = 
+    
+    // Make sure we only capture the information we really need to report symbol uses
+    let cnrs = [| for cnr in capturedNameResolutions  -> struct (cnr.Item, cnr.ItemOccurence, cnr.DisplayEnv, cnr.Range) |]
+    let capturedNameResolutions = () 
+    do ignore capturedNameResolutions // don't capture this!
 
     member this.GetUsesOfSymbol(item) = 
-        [| for cnr in capturedNameResolutions do
-               if protectAssemblyExploration false (fun () -> ItemsAreEffectivelyEqual g item cnr.Item) then
-                  yield cnr.ItemOccurence, cnr.DisplayEnv, cnr.Range |]
+        [| for (struct (cnrItem,occ,denv,m)) in cnrs do
+               if protectAssemblyExploration false (fun () -> ItemsAreEffectivelyEqual g item cnrItem) then
+                  yield occ, denv, m |]
 
     member this.GetAllUsesOfSymbols() = 
-        [| for cnr in capturedNameResolutions do
-              yield (cnr.Item, cnr.ItemOccurence, cnr.DisplayEnv, cnr.Range) |]
+        [| for (struct (cnrItem,occ,denv,m)) in cnrs do
+              yield (cnrItem, occ, denv, m) |]
 
     member this.GetFormatSpecifierLocations() =  formatSpecifierLocations
 
