@@ -1,0 +1,10 @@
+use vs
+
+package name=Microsoft.FSharp.SDK.Resources
+        version=$(FSharpPackageVersion)
+        vs.package.type=msi
+        vs.package.language=$(LocaleSpecificCulture)
+        vs.package.installSize=13854720
+
+vs.payloads
+  vs.payload source="$(BinariesFolder)\msi\Microsoft.FSharp.SDK.Resources.$(LocaleCode).msi"

@@ -72,14 +72,17 @@ type UsingMSBuild() as this =
                 printf "  message = <<<%s> \n" e.Message 
             AssertEqual(0,count)
 
-    let AssertExactlyOneErrorSeenContaining(project:OpenProject,text) =
+    let AssertExactlyCountErrorSeenContaining(project:OpenProject,text,expectedCount) =
         let nMatching = (GetErrors(project)) |> List.filter (fun e ->e.ToString().Contains(text)) |> List.length
         match nMatching with
         | 0 -> 
             failwith (sprintf "No errors containing \"%s\"" text)
-        | 1 -> ()
+        | x when x = expectedCount -> ()
         | _ -> 
             failwith (sprintf "Multiple errors containing \"%s\"" text)
+
+    let AssertExactlyOneErrorSeenContaining(project:OpenProject,text) =
+        AssertExactlyCountErrorSeenContaining(project,text,1)
 
     /// Assert that a given squiggle is an Error (or warning) containing the given text        
     let AssertSquiggleIsErrorContaining,AssertSquiggleIsWarningContaining, AssertSquiggleIsErrorNotContaining,AssertSquiggleIsWarningNotContaining =         
@@ -155,7 +158,7 @@ type UsingMSBuild() as this =
                                        "#r \"Nonexistent\""
                                        ]
         let (project, _) = createSingleFileFsxFromLines code
-        AssertExactlyOneErrorSeenContaining(project, "Nonexistent")   // ...and not an error on the first line.
+        AssertExactlyCountErrorSeenContaining(project, "Nonexistent", 2)   // ...and not an error on the first line.
         
     [<Test>]
     member public this.``Fsx.InvalidHashLoad.ShouldBeASquiggle.Bug3012``() =  
@@ -559,34 +562,13 @@ type UsingMSBuild() as this =
 
     [<Test>]
     [<Category("fsx closure")>]
-    // 'mscorcfg' is loaded from the GAC _and_ it is available on XP and above.
+    // 'CustomMarshalers' is loaded from the GAC _and_ it is available on XP and above.
     member public this.``Fsx.NoError.HashR.ResolveFromGAC``() =  
         let fileContent = """
             #light
-            #r "mscorcfg"
+            #r "CustomMarshalers"
             """
         this.VerifyFSXNoErrorList(fileContent)
-
-    [<Test>]
-    [<Category("fsx closure")>]
-
-    // 'Microsoft.VisualStudio.QualityTools.Common.dll' is resolved via AssemblyFoldersEx over recent VS releases
-    member public this.``Fsx.NoError.HashR.ResolveFromAssemblyFoldersEx``() =  
-        let fileContent = """
-            #light
-            #r "Microsoft.VisualStudio.QualityTools.Common.dll"
-            """
-        this.VerifyFSXNoErrorList(fileContent)
-
-    [<Test>]
-    [<Category("fsx closure")>]
-    // Can be any assembly that is in AssemblyFolders but not AssemblyFoldersEx
-    member public this.``Fsx.NoError.HashR.ResolveFromAssemblyFolders``() = 
-        let fileContent = """
-            #light
-            #r "Microsoft.SqlServer.SString"
-            """
-        this.VerifyFSXNoErrorList(fileContent) 
 
     [<Test>]
     [<Category("fsx closure")>]
@@ -974,27 +956,9 @@ type UsingMSBuild() as this =
     [<Category("fsx closure")>]
     member public this.``Fsx.HashR_QuickInfo.ResolveFromGAC``() = 
         this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile
-            """#r "mscorcfg" """        // 'mscorcfg' is loaded from the GAC _and_ it is available on XP and above.
-            "#r \"mscor" "Global Assembly Cache"
+            """#r "CustomMarshalers" """        // 'mscorcfg' is loaded from the GAC _and_ it is available on XP and above.
+            "#r \"Custo" ".NET Framework"
 
-    // // Disabled because it seems Microsoft.VisualStudio.QualityTools.Common.dll is no longer always available on CI installs in the same way
-    // // as it used to be.
-    // [<Test;Category("fsx closure"); Category("NO_CI")>] 
-    // member public this.``Fsx.HashR_QuickInfo.ResolveFromAssemblyFoldersEx``() = 
-    //     let fileContent = """#r "Microsoft.VisualStudio.QualityTools.Common.dll" """     // 'Microsoft.VisualStudio.QualityTools.Common.dll' is located via AssemblyFoldersEx
-    //     let marker = "#r \"Microsoft.Vis"
-    //     this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Microsoft.VisualStudio.QualityTools.Common, Version="
-    //     this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Microsoft.VisualStudio.QualityTools.Common.dll"
-
-    // // Disabled because it seems Microsoft.SqlServer.SString.dll is no longer always available on CI installs in the same way
-    //[<Test>]
-    //[<Category("fsx closure")>]
-    //member public this.``Fsx.HashR_QuickInfo.ResolveFromAssemblyFolders``() =
-    //    let fileContent = """#r "Microsoft.SqlServer.SString" """       // Can be any assembly that is in AssemblyFolders but not AssemblyFoldersEx
-    //    let marker = "#r \"Microsoft.SqlSe"
-    //    this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Microsoft.SqlServer.SString.dll"
-    //    this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Found by AssemblyFolders registry key"
-        
     [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.HashR_QuickInfo.ResolveFromFullyQualifiedPath``() = 
@@ -1003,7 +967,7 @@ type UsingMSBuild() as this =
         let fileContent = "#r @\"" + fullyqualifiepathtoddll + "\""
         let marker = "#r @\"" + fullyqualifiepathtoddll.Substring(0,fullyqualifiepathtoddll.Length/2)       // somewhere in the middle of the string
         this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker expectedtooltip
-        this.AssertQuickInfoNotContainsAtEndOfMarkerInFsxFile fileContent marker ".dll"
+        //this.AssertQuickInfoNotContainsAtEndOfMarkerInFsxFile fileContent marker ".dll"
 
     [<Test>]
     member public this.``Fsx.InvalidHashReference.ShouldBeASquiggle.Bug3012``() =  
@@ -1237,25 +1201,19 @@ type UsingMSBuild() as this =
         Assert.AreEqual(Path.Combine(projectFolder,"File1.fsx"), fas.ProjectFileNames.[0])
         Assert.AreEqual(1, fas.ProjectFileNames.Length)
 
-#if OPEN_BUILD
-#else
 
     /// FEATURE: #reference against a strong name should work.
     [<Test>]
     member public this.``Fsx.HashReferenceAgainstStrongName``() = 
         let code =
                                             ["#light"
-#if FX_ATLEAST_40                                            
-                                             sprintf "#reference \"System.Core, Version=%s, Culture=neutral, PublicKeyToken=b77a5c561934e089\"" Microsoft.BuildSettings.Version.OfAssembly
-#else
-                                             "#reference \"System.Core, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089\""
-#endif                                             
+                                             sprintf "#reference \"System.Core, Version=%s, Culture=neutral, PublicKeyToken=b77a5c561934e089\"" (System.Environment.Version.ToString())
                                              "open System."]
         let (_, file) = createSingleFileFsxFromLines code
         MoveCursorToEndOfMarker(file,"open System.") 
         let completions = AutoCompleteAtCursor file
         AssertCompListContains(completions,"Linq")   
-#endif
+
 
     /// Try out some bogus file names in #r, #I and #load.
     [<Test>]

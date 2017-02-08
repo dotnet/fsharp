@@ -2,6 +2,7 @@
 
 namespace Microsoft.FSharp.Collections
 
+    open System
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
     open Microsoft.FSharp.Core.Operators
@@ -284,6 +285,9 @@ namespace Microsoft.FSharp.Collections
         let filter comparer f s = filterAux comparer f s SetEmpty
 
         let rec diffAux comparer m acc = 
+            match acc with
+            | SetEmpty -> acc
+            | _ ->
             match m with 
             | SetNode(k,l,r,_) -> diffAux comparer l (diffAux comparer r (remove comparer k acc))
             | SetOne(k) -> remove comparer k acc
@@ -399,8 +403,8 @@ namespace Microsoft.FSharp.Collections
           
         let mkIterator s = { stack = collapseLHS [s]; started = false }
 
-        let notStarted() = raise (new System.InvalidOperationException(SR.GetString(SR.enumerationNotStarted)))
-        let alreadyFinished() = raise (new System.InvalidOperationException(SR.GetString(SR.enumerationAlreadyFinished)))
+        let notStarted() = raise (InvalidOperationException(SR.GetString(SR.enumerationNotStarted)))
+        let alreadyFinished() = raise (InvalidOperationException(SR.GetString(SR.enumerationAlreadyFinished)))
 
         let current i =
             if i.started then
@@ -426,13 +430,13 @@ namespace Microsoft.FSharp.Collections
         let mkIEnumerator s = 
             let i = ref (mkIterator s) 
             { new IEnumerator<_> with 
-                  member x.Current = current !i
+                  member __.Current = current !i
               interface IEnumerator with 
-                  member x.Current = box (current !i)
-                  member x.MoveNext() = moveNext !i
-                  member x.Reset() = i :=  mkIterator s
+                  member __.Current = box (current !i)
+                  member __.MoveNext() = moveNext !i
+                  member __.Reset() = i :=  mkIterator s
               interface System.IDisposable with 
-                  member x.Dispose() = () }
+                  member __.Dispose() = () }
 
         //--------------------------------------------------------------------------
         // Set comparison.  This can be expensive.
@@ -508,19 +512,16 @@ namespace Microsoft.FSharp.Collections
 
     [<Sealed>]
     [<CompiledName("FSharpSet`1")>]
-#if FX_NO_DEBUG_PROXIES
-#else
-    [<System.Diagnostics.DebuggerTypeProxy(typedefof<SetDebugView<_>>)>]
+#if !FX_NO_DEBUG_PROXIES
+    [<DebuggerTypeProxy(typedefof<SetDebugView<_>>)>]
 #endif
-#if FX_NO_DEBUG_DISPLAYS
-#else
-    [<System.Diagnostics.DebuggerDisplay("Count = {Count}")>]
+#if !FX_NO_DEBUG_DISPLAYS
+    [<DebuggerDisplay("Count = {Count}")>]
 #endif
     [<CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix")>]
     type Set<[<EqualityConditionalOn>]'T when 'T : comparison >(comparer:IComparer<'T>, tree: SetTree<'T>) = 
 
-#if FX_NO_BINARY_SERIALIZATION
-#else
+#if !FX_NO_BINARY_SERIALIZATION
         [<System.NonSerialized>]
         // NOTE: This type is logically immutable. This field is only mutated during deserialization. 
         let mutable comparer = comparer 
@@ -543,8 +544,7 @@ namespace Microsoft.FSharp.Collections
             let comparer = LanguagePrimitives.FastGenericComparer<'T> 
             new Set<'T>(comparer, SetEmpty)
 
-#if FX_NO_BINARY_SERIALIZATION
-#else
+#if !FX_NO_BINARY_SERIALIZATION
         [<System.Runtime.Serialization.OnSerializingAttribute>]
         member __.OnSerializing(context: System.Runtime.Serialization.StreamingContext) =
             ignore(context)
@@ -563,16 +563,14 @@ namespace Microsoft.FSharp.Collections
             serializedData <- null
 #endif
 
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
 #endif
         member internal set.Comparer = comparer
         //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
         member internal set.Tree : SetTree<'T> = tree
 
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
 #endif
         static member Empty : Set<'T> = empty
@@ -606,8 +604,7 @@ namespace Microsoft.FSharp.Collections
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             SetTree.fold (fun x z -> f.Invoke(z, x)) z s.Tree 
 
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
 #endif
         member s.IsEmpty  = SetTree.isEmpty s.Tree
@@ -670,20 +667,17 @@ namespace Microsoft.FSharp.Collections
 
         static member Compare(a: Set<'T>, b: Set<'T>) = SetTree.compare a.Comparer  a.Tree b.Tree
 
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
 #endif
         member x.Choose = SetTree.choose x.Tree
 
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
 #endif
         member x.MinimumElement = SetTree.minimumElement x.Tree
 
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
 #endif
         member x.MaximumElement = SetTree.maximumElement x.Tree
@@ -758,21 +752,16 @@ namespace Microsoft.FSharp.Collections
         [<Sealed>]
         SetDebugView<'T when 'T : comparison>(v: Set<'T>)  =  
 
-#if FX_NO_DEBUG_DISPLAYS
-#else
-             [<System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.RootHidden)>]
+#if !FX_NO_DEBUG_DISPLAYS
+             [<DebuggerBrowsable(DebuggerBrowsableState.RootHidden)>]
 #endif
              member x.Items = v |> Seq.truncate 1000 |> Seq.toArray 
 
 namespace Microsoft.FSharp.Collections
 
     open Microsoft.FSharp.Core
-    open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
     open Microsoft.FSharp.Core.Operators
     open Microsoft.FSharp.Collections
-    open System.Collections
-    open System.Collections.Generic
-    open System.Diagnostics
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     [<RequireQualifiedAccess>]

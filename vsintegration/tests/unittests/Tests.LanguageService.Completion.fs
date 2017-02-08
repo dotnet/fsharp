@@ -106,13 +106,8 @@ type UsingMSBuild() as this  =
         "distinct"; "exists"; "find"; "all"; "head"; "nth"; "skip"; "skipWhile"; "sumBy"; "take"
         "takeWhile"; "sortByNullable"; "sortByNullableDescending"; "thenByNullable"; "thenByNullableDescending"]
 
-#if FX_ATLEAST_45
     let AA l = Some(System.IO.Path.Combine(System.IO.Path.GetTempPath(), ".NETFramework,Version=v4.0.AssemblyAttributes.fs")), l
     let notAA l = None,l
-#else
-    let AA l = None, l
-    let notAA l = None,l
-#endif
     let stopWatch = new System.Diagnostics.Stopwatch()
     let ResetStopWatch() = stopWatch.Reset(); stopWatch.Start()
     let time1 op a message = 
@@ -472,6 +467,22 @@ type UsingMSBuild() as this  =
         AssertCtrlSpaceCompleteContains code "b a" ["aaa"; "bbb"] []
         AssertCtrlSpaceCompleteContains code "a b" ["aaa"; "bbb"] []
 
+    [<Test>]
+    member this.``AutoCompletion.OnTypeConstraintError``() =
+        let code =
+            [
+                "type Foo = Foo"
+                "    with"
+                "        member __.Bar = 1"
+                "        member __.PublicMethodForIntellisense() = 2"
+                "        member internal __.InternalMethod() = 3"
+                "        member private __.PrivateProperty = 4"
+                ""
+                "let u: Unit ="
+                "    [ Foo ]"
+                "    |> List.map (fun abcd -> abcd.)"
+            ]
+        AssertCtrlSpaceCompleteContains code "abcd." ["Bar"; "Equals"; "GetHashCode"; "GetType"; "InternalMethod"; "PublicMethodForIntellisense"; "ToString"] []
 
     [<Test>]
     [<Category("RangeOperator")>]
@@ -3465,7 +3476,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
     member public this.``Attribute.WhenAttachedToLet.Bug70080``() =        
         this.AutoCompleteBug70080Helper @"
                     open System
-                    [<Attr     // expect AttributeUsageAttribute from System namespace
+                    [<Attr     // expect AttributeUsage from System namespace
                     let f() = 4"
 
     [<Test>]
@@ -4418,26 +4429,25 @@ let x = query { for bbbb in abbbbc(*D0*) do
               | "A",_,_,DeclarationType.EnumMember -> ()
               | "B",_,_,DeclarationType.EnumMember -> ()
               | "C",_,_,DeclarationType.EnumMember -> ()
-              | "Function",_,_,DeclarationType.Constant -> ()
+              | "Function",_,_,_ -> ()
               | "Enum",_,_,DeclarationType.Enum -> ()
-              | "Constant",_,_,DeclarationType.Constant -> ()
-              | "Function",_,_,DeclarationType.FunctionValue -> ()
+              | "Constant",_,_,_ -> ()
               | "FunctionValue",_,_,DeclarationType.FunctionValue -> ()
               | "OutOfRange",_,_,DeclarationType.Exception -> ()
               | "OutOfRangeException",_,_,DeclarationType.Class -> ()
               | "Interface",_,_,DeclarationType.Interface -> ()
               | "Struct",_,_,DeclarationType.ValueType -> ()
-              | "Tuple",_,_,DeclarationType.Constant -> ()
+              | "Tuple",_,_,_ -> ()
               | "Submodule",_,_,DeclarationType.Module -> ()
               | "Record",_,_,DeclarationType.Record -> ()
               | "DiscriminatedUnion",_,_,DeclarationType.DiscriminatedUnion -> ()
               | "AsmType",_,_,DeclarationType.RareType -> ()
               | "FunctionType",_,_,DeclarationType.FunctionType -> ()
-              | "TupleType",_,_,DeclarationType.ValueType -> ()
+              | "TupleType",_,_,DeclarationType.Class -> ()
               | "ValueType",_,_,DeclarationType.ValueType -> ()
               | "Class",_,_,DeclarationType.Class -> ()
               | "Int32",_,_,DeclarationType.Method -> ()
-              | "TupleTypeAbbreviation",_,_,DeclarationType.Constant -> ()
+              | "TupleTypeAbbreviation",_,_,_ -> ()
               | name,_,_,x -> failwith (sprintf "Unexpected module member %s seen with declaration type %A" name x)
 
         MoveCursorToEndOfMarker(file,"AbbreviationModule.")
@@ -4458,7 +4468,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
               | "RecordAbbreviation",_,_,DeclarationType.Record -> ()
               | "DiscriminatedUnionAbbreviation",_,_,DeclarationType.DiscriminatedUnion -> ()
               | "AsmTypeAbbreviation",_,_,DeclarationType.RareType -> ()
-              | "TupleTypeAbbreviation",_,_,DeclarationType.ValueType -> ()
+              | "TupleTypeAbbreviation",_,_,_ -> ()
               | name,_,_,x -> failwith (sprintf "Unexpected union member %s seen with declaration type %A" name x)
         
     [<Test>]
@@ -4478,7 +4488,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
               | "Cons",_,_,DeclarationType.Method -> ()
               | "Equals",_,_,DeclarationType.Method -> ()
               | "Empty",_,_,DeclarationType.Property -> () 
-              | "empty",_,_,DeclarationType.Constant -> () 
+              | "empty",_,_,_ -> () 
               | _,_,_,DeclarationType.FunctionValue -> ()
               | name,_,_,x -> failwith (sprintf "Unexpected item %s seen with declaration type %A" name x)
 
@@ -4522,6 +4532,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         for completion in completions do 
             let _,_,descfunc,_ = completion
             let desc = descfunc()
+            printfn "MemberInfoCompileErrorsShowInDataTip: desc = <<<%s>>>" desc
             AssertContains(desc,"Simulated compiler error")
 
     // Bunch of crud in empty list. This test asserts that unwanted things don't exist at the top level.
@@ -5755,7 +5766,7 @@ let rec f l =
                 type IFoo =
                     abstract DoStuff  : unit -> string
                     abstract DoStuff2 : int * int -> string -> string
-                // Implement an interface in a class (This is kind of lame if you don’t want to actually declare a class)
+                // Implement an interface in a class (This is kind of lame if you don't want to actually declare a class)
                 type Foo() =
                     interface IFoo with
                         member this.DoStuff () = "Return a string"

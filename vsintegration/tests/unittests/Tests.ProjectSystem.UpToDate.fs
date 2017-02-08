@@ -11,6 +11,7 @@ open System.Text
 open System.Text.RegularExpressions
 
 // VS namespaces 
+open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.FSharp.ProjectSystem

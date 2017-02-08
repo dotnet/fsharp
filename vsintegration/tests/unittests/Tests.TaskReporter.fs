@@ -7,7 +7,6 @@ open System
 open System.IO
 open System.Diagnostics
 open Microsoft.FSharp.Build
-open Microsoft.Build.BuildEngine
 open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 open UnitTests.TestLib.Utils

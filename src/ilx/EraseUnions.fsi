@@ -25,10 +25,10 @@ val mkLdDataAddr : bool * IlxUnionSpec * int * int -> ILInstr list
 val mkStData : IlxUnionSpec * int * int -> ILInstr list
 
 /// Make the instruction sequence for a "brisnotdata" operation
-val mkBrIsNotData : ILGlobals -> avoidHelpers:bool * IlxUnionSpec * int * ILCodeLabel -> ILInstr list
+val mkBrIsData : ILGlobals -> sense: bool -> avoidHelpers:bool * IlxUnionSpec * int * ILCodeLabel -> ILInstr list
 
 /// Make the type definition for a union type
-val mkClassUnionDef : ILGlobals -> ILTypeRef -> ILTypeDef -> IlxUnionInfo -> ILTypeDef
+val mkClassUnionDef : addMethodGeneratedAttrs:(ILMethodDef -> ILMethodDef) * addPropertyGeneratedAttrs:(ILPropertyDef -> ILPropertyDef) * addPropertyNeverAttrs:(ILPropertyDef -> ILPropertyDef) * addFieldGeneratedAttrs:(ILFieldDef -> ILFieldDef) * addFieldNeverAttrs:(ILFieldDef -> ILFieldDef) * mkDebuggerTypeProxyAttribute:(ILType -> ILAttribute) -> ilg:ILGlobals -> tref:ILTypeRef -> td:ILTypeDef -> cud:IlxUnionInfo -> ILTypeDef    
 
 /// Make the IL type for a union type alternative
 val GetILTypeForAlternative : IlxUnionSpec -> int -> ILType
@@ -41,6 +41,7 @@ type ICodeGen<'Mark> =
     abstract SetMarkToHere: 'Mark  -> unit
     abstract EmitInstr : ILInstr -> unit
     abstract EmitInstrs : ILInstr list -> unit
+    abstract MkInvalidCastExnNewobj : unit -> ILInstr
 
 /// Emit the instruction sequence for a "castdata" operation
 val emitCastData : ILGlobals -> ICodeGen<'Mark> -> unverifiableOk: bool * IlxUnionSpec * int -> unit

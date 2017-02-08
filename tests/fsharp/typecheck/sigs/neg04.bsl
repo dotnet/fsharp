@@ -11,7 +11,7 @@ neg04.fs(22,8,22,17): typecheck error FS0912: This declaration element is not pe
 
 neg04.fs(26,8,26,17): typecheck error FS0912: This declaration element is not permitted in an augmentation
 
-neg04.fs(32,8,32,11): typecheck error FS0039: The field, constructor or member 'Nan' is not defined
+neg04.fs(32,8,32,11): typecheck error FS0039: The field, constructor or member 'Nan' is not defined. Maybe you want one of the following: IsNaN
 
 neg04.fs(46,69,46,94): typecheck error FS0001: Type mismatch. Expecting a
     ''a * 'b * 'c * 'e'    
@@ -24,6 +24,14 @@ neg04.fs(46,99,46,107): typecheck error FS0001: Type mismatch. Expecting a
 but given a
     ''a * 'b * 'c'    
 The tuples have differing lengths of 4 and 3
+
+neg04.fs(47,30,47,51): typecheck error FS0001: Type mismatch. Expecting a
+    'seq<'a> -> 'f'    
+but given a
+    ''g list -> 'h'    
+The type 'seq<'a>' does not match the type ''f list'
+
+neg04.fs(47,49,47,51): typecheck error FS0784: This numeric literal requires that a module 'NumericLiteralN' defining functions FromZero, FromOne, FromInt32, FromInt64 and FromString be in scope
 
 neg04.fs(47,30,47,51): typecheck error FS0001: Type mismatch. Expecting a
     'seq<'a> -> 'f'    
@@ -59,7 +67,7 @@ but here has type
 
 neg04.fs(83,39,83,46): typecheck error FS0752: The operator 'expr.[idx]' has been used on an object of indeterminate type based on information prior to this program point. Consider adding further type constraints
 
-neg04.fs(85,47,85,52): typecheck error FS0039: The field, constructor or member 'Item' is not defined
+neg04.fs(85,47,85,52): typecheck error FS0039: The field, constructor or member 'Item' is not defined.
 
 neg04.fs(87,73,87,78): typecheck error FS0752: The operator 'expr.[idx]' has been used on an object of indeterminate type based on information prior to this program point. Consider adding further type constraints
 

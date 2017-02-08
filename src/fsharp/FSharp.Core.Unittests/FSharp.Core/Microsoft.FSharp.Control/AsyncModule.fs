@@ -9,7 +9,7 @@ open System
 open System.Threading
 open FSharp.Core.Unittests.LibraryTestFx
 open NUnit.Framework
-#if !(FSHARP_CORE_PORTABLE || FSHARP_CORE_NETCORE_PORTABLE)
+#if !(FSCORE_PORTABLE_OLD || FSCORE_PORTABLE_NEW)
 open FsCheck
 #endif
 
@@ -19,7 +19,7 @@ type [<Struct>] Dummy (x: int) =
     member this.Dispose () = ()
 
 
-#if !(FSHARP_CORE_PORTABLE || FSHARP_CORE_NETCORE_PORTABLE)
+#if !(FSCORE_PORTABLE_OLD || FSCORE_PORTABLE_NEW)
 [<AutoOpen>]
 module ChoiceUtils =
 
@@ -227,7 +227,7 @@ type AsyncModule() =
     [<Test>]
     member this.``AwaitWaitHandle.Timeout``() = 
         use waitHandle = new System.Threading.ManualResetEvent(false)
-        let startMs = DateTime.Now.Millisecond
+        let startTime = DateTime.Now
 
         let r = 
             Async.AwaitWaitHandle(waitHandle, 500)
@@ -235,9 +235,9 @@ type AsyncModule() =
 
         Assert.IsFalse(r, "Timeout expected")
 
-        let endMs = DateTime.Now.Millisecond
-        let delta = endMs - startMs
-        Assert.IsTrue(abs ((abs delta) - 500) < 400, sprintf "Delta is too big %d" delta)
+        let endTime = DateTime.Now
+        let delta = endTime - startTime
+        Assert.IsTrue(delta.TotalMilliseconds < 1100.0, sprintf "Expected faster timeout than %.0f ms" delta.TotalMilliseconds)
 
     [<Test>]
     member this.``AwaitWaitHandle.TimeoutWithCancellation``() = 
@@ -284,20 +284,47 @@ type AsyncModule() =
     [<Test>]
     member this.``OnCancel.RaceBetweenCancellationHandlerAndDisposingHandlerRegistration``() = 
         let test() = 
-            let flag = ref 0
-            let isSet() = lock flag (fun() -> !flag = 1)
+            use flag = new ManualResetEvent(false)
+            use cancelHandlerRegistered = new ManualResetEvent(false)
             let cts = new System.Threading.CancellationTokenSource()
             let go = async {
-                use! holder = Async.OnCancel(fun() -> lock flag (fun() -> flag := 1) |> ignore)
+                use! holder = Async.OnCancel(fun() -> lock flag (fun() -> flag.Set()) |> ignore)
+                let _ = cancelHandlerRegistered.Set()
                 while true do
                     do! Async.Sleep 50
                 }
+
             Async.Start (go, cancellationToken = cts.Token)
-            sleep(100)
+            //wait until we are sure the Async.OnCancel has run:
+            Assert.IsTrue(cancelHandlerRegistered.WaitOne(TimeSpan.FromSeconds 5.))
+            //now cancel:
             cts.Cancel()
-            sleep(100)
-            Assert.IsTrue(isSet())
-        for _i = 1 to 3 do test()
+            //cancel handler should have run:
+            Assert.IsTrue(flag.WaitOne(TimeSpan.FromSeconds 5.))
+
+        for _i = 1 to 300 do test()
+
+    [<Test>]
+    member this.``OnCancel.RaceBetweenCancellationAndDispose``() = 
+        let flag = ref 0
+        let cts = new System.Threading.CancellationTokenSource()
+        let go = async {
+            use disp =
+                cts.Cancel()
+                { new IDisposable with
+                    override __.Dispose() = incr flag }
+            while true do
+                do! Async.Sleep 50
+            }
+        try
+            Async.RunSynchronously (go, cancellationToken = cts.Token)
+        with
+#if FX_NO_OPERATION_CANCELLED
+            _ -> ()
+#else
+            :? System.OperationCanceledException -> ()
+#endif
+        Assert.AreEqual(1, !flag)
 
     [<Test>]
     member this.``OnCancel.CancelThatWasSignalledBeforeRunningTheComputation``() = 
@@ -326,7 +353,7 @@ type AsyncModule() =
         for _i = 1 to 3 do test()
 
 
-    [<Test; Category("Expensive")>]
+    [<Test; Category("Expensive"); Explicit>]
     member this.``Async.AwaitWaitHandle does not leak memory`` () =
         // This test checks that AwaitWaitHandle does not leak continuations (described in #131),
         // We only test the worst case - when the AwaitWaitHandle is already set.
@@ -388,9 +415,7 @@ type AsyncModule() =
                 Assert.Fail("TimeoutException expected")
             with
                 :? System.TimeoutException -> ()
-#if FSHARP_CORE_PORTABLE
-// do nothing
-#else
+#if !FSCORE_PORTABLE_OLD
     [<Test>]
     member this.``RunSynchronously.NoThreadJumpsAndTimeout.DifferentSyncContexts``() = 
         let run syncContext =
@@ -420,10 +445,11 @@ type AsyncModule() =
     member this.``RaceBetweenCancellationAndError.Sleep``() =
         testErrorAndCancelRace (Async.Sleep (-5))
 
-#if !(FSHARP_CORE_PORTABLE || FSHARP_CORE_NETCORE_PORTABLE)
-    [<Test; Category("Expensive")>] // takes 3 minutes!
+#if !(FSCORE_PORTABLE_OLD || FSCORE_PORTABLE_NEW || coreclr)
+    [<Test; Category("Expensive"); Explicit>] // takes 3 minutes!
     member this.``Async.Choice specification test``() =
-        Check.QuickThrowOnFailure (normalize >> runChoice)
+        ThreadPool.SetMinThreads(100,100) |> ignore
+        Check.One ({Config.QuickThrowOnFailure with EndSize = 20}, normalize >> runChoice)
 #endif
 
     [<Test>]
@@ -471,9 +497,7 @@ type AsyncModule() =
             }
         Async.RunSynchronously(test)
         
-#if FSHARP_CORE_NETCORE_PORTABLE
-// nothing
-#else
+#if !FSCORE_PORTABLE_NEW
     [<Test>]
     member this.``FromContinuationsCanTailCallCurrentThread``() = 
         let cnt = ref 0
@@ -551,12 +575,7 @@ type AsyncModule() =
         Assert.AreEqual("boom", !r)
 
 
-#if FSHARP_CORE_PORTABLE
-// nothing
-#else
-#if FSHARP_CORE_NETCORE_PORTABLE
-// nothing
-#else
+#if !FSCORE_PORTABLE_OLD && !FSCORE_PORTABLE_NEW
     [<Test>]
     member this.``SleepContinuations``() = 
         let okCount = ref 0
@@ -583,97 +602,4 @@ type AsyncModule() =
         for i = 1 to 3 do test()
         Assert.AreEqual(0, !okCount)
         Assert.AreEqual(0, !errCount)
-#endif
-#endif
-
-#if FSHARP_CORE_PORTABLE
-// nothing
-#else
-#if FSHARP_CORE_2_0
-// nothing
-#else
-#if FSHARP_CORE_NETCORE_PORTABLE || coreclr
-//nothing
-#else
-// we are on the desktop
-    member this.RunExeAndExpectOutput(exeName, expected:string) =
-        let curDir = (new Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase)).LocalPath |> System.IO.Path.GetDirectoryName
-        let psi = System.Diagnostics.ProcessStartInfo(exeName)
-        psi.WorkingDirectory <- curDir
-        psi.RedirectStandardOutput <- true
-        psi.UseShellExecute <- false
-        let p = System.Diagnostics.Process.Start(psi)
-        let out = p.StandardOutput.ReadToEnd()
-        p.WaitForExit()
-        let out = out.Replace("\r\n", "\n")
-        let expected = expected.Replace("\r\n", "\n")
-        Assert.AreEqual(expected, out)
-#if OPEN_BUILD
-#else
-    [<Test>]
-    member this.``ContinuationsThreadingDetails.AsyncWithSyncContext``() =
-        this.RunExeAndExpectOutput("AsyncWithSyncContext.exe", """
-EmptyParallel [|("ok", true); ("caught:boom", true)|]
-NonEmptyParallel [|("ok", true); ("form exception:boom", true)|]
-ParallelSeqArgumentThrows [|("error", true)|]
-Sleep1Return [|("ok", true); ("form exception:boom", true)|]
-Sleep0Return [|("ok", true); ("form exception:boom", true)|]
-Return [|("ok", true); ("caught:boom", true)|]
-FromContinuationsSuccess [|("ok", true); ("caught:boom", true)|]
-FromContinuationsError [|("error", true)|]
-FromContinuationsCancel [|("cancel", true)|]
-FromContinuationsThrows [|("error", true)|]
-FromContinuationsSchedulesFutureSuccess [|("ok", false); ("unhandled", false)|]
-FromContinuationsSchedulesFutureError [|("error", false)|]
-FromContinuationsSchedulesFutureCancel [|("cancel", false)|]
-FromContinuationsSchedulesFutureSuccessAndThrowsQuickly [|("error", true); ("unhandled", false)|]
-FromContinuationsSchedulesFutureErrorAndThrowsQuickly [|("error", true); ("unhandled", false)|]
-FromContinuationsSchedulesFutureCancelAndThrowsQuickly [|("error", true); ("unhandled", false)|]
-FromContinuationsSchedulesFutureSuccessAndThrowsSlowly [|("ok", false); ("unhandled", false);
-  ("caught:A continuation provided by Async.FromContinuations was invoked multiple times",
-   true)|]
-FromContinuationsSchedulesFutureErrorAndThrowsSlowly [|("error", false);
-  ("caught:A continuation provided by Async.FromContinuations was invoked multiple times",
-   true)|]
-FromContinuationsSchedulesFutureCancelAndThrowsSlowly [|("cancel", false);
-  ("caught:A continuation provided by Async.FromContinuations was invoked multiple times",
-   true)|]
-AwaitWaitHandleAlreadySignaled0 [|("ok", true); ("caught:boom", true)|]
-AwaitWaitHandleAlreadySignaled1 [|("ok", true); ("form exception:boom", true)|]
-"""               )
-    [<Test>]
-    member this.``ContinuationsThreadingDetails.AsyncSansSyncContext``() =
-        this.RunExeAndExpectOutput("AsyncSansSyncContext.exe", """
-EmptyParallel [|("ok", true); ("caught:boom", true)|]
-NonEmptyParallel [|("ok", false); ("unhandled", false)|]
-ParallelSeqArgumentThrows [|("error", true)|]
-Sleep1Return [|("ok", false); ("unhandled", false)|]
-Sleep0Return [|("ok", false); ("unhandled", false)|]
-Return [|("ok", true); ("caught:boom", true)|]
-FromContinuationsSuccess [|("ok", true); ("caught:boom", true)|]
-FromContinuationsError [|("error", true)|]
-FromContinuationsCancel [|("cancel", true)|]
-FromContinuationsThrows [|("error", true)|]
-FromContinuationsSchedulesFutureSuccess [|("ok", false); ("unhandled", false)|]
-FromContinuationsSchedulesFutureError [|("error", false)|]
-FromContinuationsSchedulesFutureCancel [|("cancel", false)|]
-FromContinuationsSchedulesFutureSuccessAndThrowsQuickly [|("error", true); ("unhandled", false)|]
-FromContinuationsSchedulesFutureErrorAndThrowsQuickly [|("error", true); ("unhandled", false)|]
-FromContinuationsSchedulesFutureCancelAndThrowsQuickly [|("error", true); ("unhandled", false)|]
-FromContinuationsSchedulesFutureSuccessAndThrowsSlowly [|("ok", false); ("unhandled", false);
-  ("caught:A continuation provided by Async.FromContinuations was invoked multiple times",
-   true)|]
-FromContinuationsSchedulesFutureErrorAndThrowsSlowly [|("error", false);
-  ("caught:A continuation provided by Async.FromContinuations was invoked multiple times",
-   true)|]
-FromContinuationsSchedulesFutureCancelAndThrowsSlowly [|("cancel", false);
-  ("caught:A continuation provided by Async.FromContinuations was invoked multiple times",
-   true)|]
-AwaitWaitHandleAlreadySignaled0 [|("ok", true); ("caught:boom", true)|]
-AwaitWaitHandleAlreadySignaled1 [|("ok", false); ("unhandled", false)|]
-"""               )
-#endif
-
-#endif
-#endif
 #endif

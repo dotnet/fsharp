@@ -62,12 +62,12 @@
     IL_0006:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
     IL_000b:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
     IL_0010:  pop
-    .line 6,6 : 5,20 ''
+    .line 6,6 : 5,20
     IL_0011:  ldstr      "World"
     IL_0016:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
     IL_001b:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
     IL_0020:  pop
-    .line 7,7 : 5,8 ''
+    .line 7,7 : 5,8
     IL_0021:  ldc.i4.3
     IL_0022:  ldc.i4.4
     IL_0023:  add
@@ -82,21 +82,21 @@
              [1] int32 x,
              [2] class [mscorlib]System.Exception V_2,
              [3] class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string> V_3)
-    .line 10,10 : 5,8 ''
+    .line 10,10 : 5,8
     IL_0000:  nop
     .try
     {
       IL_0001:  nop
-      .line 11,11 : 8,31 ''
+      .line 11,11 : 8,31
       IL_0002:  call       int32 TestFunction3b::TestFunction1()
       IL_0007:  stloc.1
-      .line 12,12 : 8,24 ''
+      .line 12,12 : 8,24
       IL_0008:  ldstr      "hello"
       IL_000d:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::FailWith<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(string)
       IL_0012:  stloc.0
       IL_0013:  leave.s    IL_0046
 
-      .line 13,13 : 5,9 ''
+      .line 13,13 : 5,9
     }  // end .try
     catch [mscorlib]System.Object 
     {
@@ -112,21 +112,21 @@
 
       IL_0027:  br.s       IL_003b
 
-      .line 14,14 : 8,23 ''
+      .line 14,14 : 8,23
       IL_0029:  ldstr      "World"
       IL_002e:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
       IL_0033:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
       IL_0038:  stloc.0
       IL_0039:  leave.s    IL_0046
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_003b:  rethrow
       IL_003d:  ldnull
       IL_003e:  unbox.any  [FSharp.Core]Microsoft.FSharp.Core.Unit
       IL_0043:  stloc.0
       IL_0044:  leave.s    IL_0046
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
     }  // end handler
     IL_0046:  ldloc.0
     IL_0047:  pop

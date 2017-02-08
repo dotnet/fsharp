@@ -2,7 +2,7 @@
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <FSharpSourcesRoot>..\..</FSharpSourcesRoot>
+    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
   <PropertyGroup>
@@ -10,7 +10,6 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OutputType>Library</OutputType>
     <AssemblyName>FSharp.Compiler</AssemblyName>
-    <DefineConstants Condition="'$(TargetFramework)'=='coreclr'">$(DefineConstants);PREFERRED_UI_LANG</DefineConstants>
     <DefineConstants>EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
     <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
     <DefineConstants>INCLUDE_METADATA_READER;$(DefineConstants)</DefineConstants>
@@ -21,6 +20,7 @@
     <BaseAddress>0x06800000</BaseAddress>
     <OtherFlags>$(OtherFlags) /warnon:1182 /unverifiable</OtherFlags>
     <OtherFlags Condition=" '$(TargetFramework)'=='coreclr'">$(OtherFlags) --targetprofile:netcore</OtherFlags>
+    <OtherFlags>$(OtherFlags) /warnon:1182</OtherFlags>
   </PropertyGroup>
   <!-- References -->
   <Import Project="$(FSharpSourcesRoot)\.nuget\NuGet.targets" Condition="Exists('$(FSharpSourcesRoot)\.nuget\NuGet.targets')" />
@@ -32,6 +32,17 @@
       <InProject>false</InProject>
     </FilesToLocalize>
   </ItemGroup>
+
+  <!-- Nuget packaging configuration -->
+  <ItemGroup>
+    <PackageNuspec Include="FSharp.Compiler.netcore.nuspec" Condition="'$(TargetFramework)' == 'coreclr'" />
+  </ItemGroup>
+  <PropertyGroup>
+    <PackageVersion    Condition="'$(PreReleaseLabel)' == ''">$(NuGeReleaseVersion)</PackageVersion>
+    <PackageVersion    Condition="'$(PackageVersionMinor)' != ''">$(PackageVersionMajor)-$(PackageVersionMinor)</PackageVersion>
+    <PackageVersion    Condition="'$(PackageVersionMinor)' == ''">$(NuGetPerBuildPreReleaseVersion)-0</PackageVersion>
+  </PropertyGroup>
+
   <ItemGroup>
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.dll.fs">
       <Link>assemblyinfo.FSharp.Compiler.dll.fs</Link>
@@ -93,9 +104,6 @@
     <Compile Include="..\..\utils\TaggedCollections.fs">
       <Link>Utilities\TaggedCollections.fs</Link>
     </Compile>
-    <Compile Include="..\FlatList.fs">
-      <Link>Utilities\FlatList.fs</Link>
-    </Compile>
     <Compile Include="..\..\absil\ildiag.fsi">
       <Link>Utilities\ildiag.fsi</Link>
     </Compile>
@@ -141,12 +149,6 @@
     <Compile Include="..\lib.fs">
       <Link>Utilities\lib.fs</Link>
     </Compile>
-    <Compile Include="..\TraceCall.fsi">
-      <Link>Utilities\TraceCall.fsi</Link>
-    </Compile>
-    <Compile Include="..\TraceCall.fs">
-      <Link>Utilities\TraceCall.fs</Link>
-    </Compile>
     <Compile Include="..\rational.fsi">
       <Link>Utilities\rational.fsi</Link>
     </Compile>
@@ -165,20 +167,15 @@
     <Compile Include="..\ErrorResolutionHints.fs">
       <Link>ErrorLogging\ErrorResolutionHints.fs</Link>
     </Compile>
-    <Compile Include="..\ReferenceResolution.fsi">
-      <Link>ReferenceResolution\ReferenceResolution.fsi</Link>
-    </Compile>
-    <Compile Include="..\ReferenceResolution.fs">
-      <Link>ReferenceResolution\ReferenceResolution.fs</Link>
+    <Compile Include="..\ReferenceResolver.fs">
+      <Link>ReferenceResolution\ReferenceResolver.fs</Link>
     </Compile>
     <FsLex Include="..\..\absil\illex.fsl">
-      <OtherFlags>--lexlib Internal.Utilities.Text.Lexing</OtherFlags>
+      <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
       <Link>AbsIL\illex.fsl</Link>
     </FsLex>
     <FsYacc Include="..\..\absil\ilpars.fsy">
-      <Module>Microsoft.FSharp.Compiler.AbstractIL.Internal.AsciiParser</Module>
-      <Open>Microsoft.FSharp.Compiler.AbstractIL</Open>
-      <OtherFlags>--internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <OtherFlags>--module Microsoft.FSharp.Compiler.AbstractIL.Internal.AsciiParser --open Microsoft.FSharp.Compiler.AbstractIL --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>AbsIL\ilpars.fsy</Link>
     </FsYacc>
     <Compile Include="..\..\absil\il.fsi">
@@ -275,23 +272,19 @@
       <Link>ILXErase\EraseUnions.fs</Link>
     </Compile>
     <FsLex Include="..\pplex.fsl">
-      <OtherFlags>--lexlib Internal.Utilities.Text.Lexing</OtherFlags>
+      <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
       <Link>ParserAndUntypedAST\pplex.fsl</Link>
     </FsLex>
     <FsYacc Include="..\pppars.fsy">
-      <Module>Microsoft.FSharp.Compiler.PPParser</Module>
-      <Open>Microsoft.FSharp.Compiler</Open>
-      <OtherFlags>--internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <OtherFlags>--module Microsoft.FSharp.Compiler.PPParser --open Microsoft.FSharp.Compiler --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>ParserAndUntypedAST\pppars.fsy</Link>
     </FsYacc>
     <FsLex Include="..\lex.fsl">
-      <OtherFlags>--lexlib Internal.Utilities.Text.Lexing</OtherFlags>
+      <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
       <Link>ParserAndUntypedAST\lex.fsl</Link>
     </FsLex>
     <FsYacc Include="..\pars.fsy">
-      <Module>Microsoft.FSharp.Compiler.Parser</Module>
-      <Open>Microsoft.FSharp.Compiler</Open>
-      <OtherFlags>--internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <OtherFlags>--module Microsoft.FSharp.Compiler.Parser --open Microsoft.FSharp.Compiler --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>ParserAndUntypedAST\pars.fsy</Link>
     </FsYacc>
     <Compile Include="..\UnicodeLexing.fsi">
@@ -498,15 +491,16 @@
     <Compile Include="..\fsc.fs">
       <Link>Driver\fsc.fs</Link>
     </Compile>
-    <Compile Include="..\vs\IncrementalBuild.fsi">
-      <Link>Driver\IncrementalBuild.fsi</Link>
-    </Compile>
-    <Compile Include="..\vs\IncrementalBuild.fs">
-      <Link>Driver\IncrementalBuild.fs</Link>
+    <Compile Include="..\MSBuildReferenceResolver.fs">
+      <Link>MSBuildReferenceResolver.fs</Link>
     </Compile>
     <Compile Include="InternalsVisibleTo.fs" Condition="'$(TargetFramework)' != 'coreclr'">
       <Link>InternalsVisibleTo.fs</Link>
     </Compile>
+    <Compile Include="..\LegacyHostedCompilerForTesting.fs">
+      <Link>LegacyHostedCompilerForTesting.fs</Link>
+    </Compile>
+    
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
     <None Include="project.json" />
@@ -516,18 +510,40 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
-    <Reference Include="System.Windows.Forms" />
     <Reference Include="ISymWrapper, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.Build.Engine, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.Build, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.Build.Utilities.$(MSBuildVersionSuffix), Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.Build.Tasks.$(MSBuildVersionSuffix), Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Framework.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Build, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Build.Utilities.Core, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Utilities.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Build.Tasks.Core, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Tasks.Core.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.DiaSymReader.PortablePdb"><HintPath>..\..\..\packages\Microsoft.DiaSymReader.PortablePdb.1.1.0\lib\portable-net45+win8\Microsoft.DiaSymReader.PortablePdb.dll</HintPath></Reference>
     <Reference Include="Microsoft.DiaSymReader"><HintPath>..\..\..\packages\Microsoft.DiaSymReader.1.0.8\lib\portable-net45+win8\Microsoft.DiaSymReader.dll</HintPath></Reference>
     <Reference Include="System.Reflection.Metadata"><HintPath>..\..\..\packages\System.Reflection.Metadata.1.4.1-beta-24227-04\lib\portable-net45+win8\System.Reflection.Metadata.dll</HintPath></Reference>
-    <Reference Include="System.Collections.Immutable"><HintPath>..\..\..\packages\System.Collections.Immutable.1.2.0\lib\portable-net45+win8+wp8+wpa81</HintPath></Reference>
+    <Reference Include="System.Collections.Immutable"><HintPath>..\..\..\packages\System.Collections.Immutable.1.2.0\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath></Reference>
+    <Reference Include="System.ValueTuple"><HintPath>..\..\..\packages\System.ValueTuple.4.3.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath><Private>true</Private></Reference>
   </ItemGroup>
+  <Target Name="CopyToBuiltBin" BeforeTargets="BuiltProjectOutputGroup" AfterTargets="CoreCompile" >
+    <ItemGroup>
+      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.Build.Framework.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.Build.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.Build.Conversion.Core.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.Build.Engine.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.Build.Utilities.Core.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.Build.Tasks.Core.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.DiaSymReader.PortablePdb.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.DiaSymReader.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\System.Reflection.Metadata.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\System.Collections.Immutable.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\System.ValueTuple.dll" />
+    </ItemGroup>
+  </Target>
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
@@ -536,9 +552,8 @@
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\.nuget\NuGet.targets" Condition="Exists('$(FSharpSourcesRoot)\.nuget\NuGet.targets')" />
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
-  <Import Project="$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin\FSharp.PowerPack.targets" />
-  
-  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize">
+  <Import Project="$(FsLexToolPath)\FsLexYacc.targets" />
+  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
     <ItemGroup>
       <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />
       <BinariesToBeSigned Include="$(OutDir)localize\**\$(AssemblyName).resources.dll" />

@@ -10,7 +10,6 @@ using System.Globalization;
 using System.Collections;
 using System.IO;
 using System.Linq;
-using MSBuild = Microsoft.Build.BuildEngine;
 using System.Collections.Generic;
 using Microsoft.VisualStudio.FSharp.LanguageService;
 

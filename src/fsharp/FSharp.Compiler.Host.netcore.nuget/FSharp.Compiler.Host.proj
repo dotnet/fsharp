@@ -1,25 +1,51 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <FSharpSourcesRoot>..\..</FSharpSourcesRoot>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
+    <PreReleaseLabel>rc</PreReleaseLabel>
+    <BuildVersionFilePath Condition="'$(BuildVersionFilePath)'==''" >obj\BuildVersionFile.props</BuildVersionFilePath>
   </PropertyGroup>
 
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
 
   <PropertyGroup>
-    <pkgversion  Condition=" '$(PKGVersion)' == '' ">$(NuGetPerBuildPreReleaseVersion)</pkgversion>
-    <OutDir>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin</OutDir>
-    <Net40FsiToolPath>$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin</Net40FsiToolPath>
+    <PackageLicenceUrl Condition="'$(PackageLicenceUrl)' == ''">https://github.com/Microsoft/visualfsharp/blob/master/License.txt</PackageLicenceUrl>
+    <PackageProjectUrl Condition="'$(PackageProjectUrl)' == ''">https://github.com/Microsoft/visualfsharp</PackageProjectUrl>
+    <PackageVersion    Condition="'$(PreReleaseLabel)' == ''">$(NuGeReleaseVersion)</PackageVersion>
+    <PackageVersion    Condition="'$(PackageVersionMinor)' != ''">$(PackageVersionMajor)-$(PackageVersionMinor)</PackageVersion>
+    <PackageVersion    Condition="'$(PackageVersionMinor)' == ''">$(NuGetPerBuildPreReleaseVersion)-0</PackageVersion>
+    <PackageAuthors    Condition="'$(PackageAuthors)' == ''"   >Microsoft</PackageAuthors>
+    <PackageTags       Condition="'$(PackageTags)' == ''"      >Visual F# Compiler FSharp coreclr functional programming</PackageTags>
+    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\coreclr\bin</OutputPath>
   </PropertyGroup>
 
-  <!-- TODO: Switch to using lkg coreclr fsi and remove dependency on building net40 fsi after fixing #1168 -->
-  
-  <Target Name="Build" Outputs="$(TargetPath)"  DependsOnTargets="$(BuildDependsOn)">
-    <MSBuild Projects="$(FSharpSourcesRoot)\fsharp\fsi\Fsi.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=net40" />
-    <Exec Command="$(Net40FsiToolPath)\$(FsiToolExe) --exec layoutfschostnuget.fsx --nuspec:.\Microsoft.FSharp.Compiler.Host.netcore.nuspec --bindir:$(OutDir)"/>
-    <Exec Command="$(Net40FsiToolPath)\$(FsiToolExe) --exec ..\..\buildtools\buildnugets.fsx --version:$(pkgversion) --nuspec:.\Microsoft.FSharp.Compiler.Host.netcore.nuspec --bindir:$(OutDir)"/>
-  </Target>
+  <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
+    <PackageNuspec Include="Microsoft.FSharp.Core.netcore.nuspec" />
+    <PackageNuspec Include="Microsoft.FSharp.Compiler.netcore.nuspec" />
+    <PackageNuspec Include="Microsoft.FSharp.Interactive.netcore.nuspec" />
+    <PackageNuspec Include="Microsoft.FSharp.Compiler.Host.netcore.nuspec" />
+  </ItemGroup>
 
-  <Target Name="Rebuild"  DependsOnTargets="Build" />
+  <ItemGroup>
+    <ProjectReference Include="..\fsi\Fsi.fsproj">
+      <Name>fsi</Name>
+      <Project>{d0e98c0d-490b-4c61-9329-0862f6e87645}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Fsc\Fsc.fsproj">
+      <Name>Fsc</Name>
+      <Project>{C94C257C-3C0A-4858-B5D8-D746498D1F08}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\fsiAnyCpu\FsiAnyCPU.fsproj">
+      <Name>FsiAnyCPU.fsproj</Name>
+      <Project>{8b3e283d-b5fe-4055-9d80-7e3a32f3967b}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+  </ItemGroup>
 
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+
+  <Target Name="Build" Outputs="$(TargetPath)" DependsOnTargets="$(nugetpack)" />
+  <Target Name="Rebuild"  DependsOnTargets="$(nugetpack)" />
+  <Target Name="Clean"    DependsOnTargets="CleanVersionFile" />
 </Project>

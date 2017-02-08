@@ -18,12 +18,12 @@ CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\MethodImplAttribute
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\Misc
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\Mutation
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\Operators
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\QueryExpressionStepping
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\SeqExpressionStepping
+Retry,CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\QueryExpressionStepping
+Retry,CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\SeqExpressionStepping
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\SeqExpressionTailCalls
 CodeGen01,NoMT,CodeGen,NoHostedCompiler,SerializableAttribute				CodeGen\EmittedIL\SerializableAttribute
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\StaticInit
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\SteppingMatch
+Retry,CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\SteppingMatch
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\TailCalls
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\TestFunctions
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\Tuples
@@ -46,7 +46,7 @@ CompilerOptions01,NoMT				CompilerOptions\fsc\noframework
 CompilerOptions01,NoMT				CompilerOptions\fsc\nologo
 CompilerOptions01,NoMT				CompilerOptions\fsc\optimize
 CompilerOptions01,NoMT				CompilerOptions\fsc\out
-CompilerOptions01,NoMT				CompilerOptions\fsc\pdb
+CompilerOptions01,NoMT,pdbs				CompilerOptions\fsc\pdb
 CompilerOptions01,NoMT				CompilerOptions\fsc\platform
 CompilerOptions01,NoMT				CompilerOptions\fsc\reference
 CompilerOptions01,NoMT				CompilerOptions\fsc\Removed
@@ -105,6 +105,7 @@ Conformance02			Conformance\DeclarationElements\MemberDefinitions\ImplementingDi
 Conformance02			Conformance\DeclarationElements\MemberDefinitions\MethodsAndProperties
 Conformance02			Conformance\DeclarationElements\MemberDefinitions\NamedArguments
 Conformance02			Conformance\DeclarationElements\MemberDefinitions\OptionalArguments
+Conformance02			Conformance\DeclarationElements\MemberDefinitions\OptionalDefaultParameterValueArguments
 Conformance02			Conformance\DeclarationElements\MemberDefinitions\OverloadingMembers
 Conformance02			Conformance\DeclarationElements\ModuleAbbreviations
 Conformance02			Conformance\DeclarationElements\ObjectConstructors
@@ -242,7 +243,7 @@ Misc01			ClrFx\PseudoCustomAttributes\AssemblyAlgorithmId
 Misc01			ClrFx\PseudoCustomAttributes\AssemblyConfiguration
 Misc01			ClrFx\PseudoCustomAttributes\AssemblyVersion
 Misc01			Diagnostics\async
-Misc01			Diagnostics\General
+Misc01,Diagnostics			Diagnostics\General
 Misc01			Diagnostics\NONTERM
 Misc01			Diagnostics\ParsingAtEOF
 Misc01			EntryPoint
@@ -260,6 +261,7 @@ Misc01			Libraries\Core\Reflection
 Misc01			Libraries\Core\Unchecked
 Misc01			Warnings
 Misc01			ErrorMessages\NameResolution
+Misc01			ErrorMessages\UnitGenericAbstractType
 
 Misc02			Libraries\Portable
 Misc02			Misc
@@ -277,4 +279,3 @@ Misc02			Stress
 Misc02			XmlDoc\Basic
 Misc02			XmlDoc\OCamlDoc
 Misc02			XmlDoc\UnitOfMeasure
-Diagnostics		Diagnostics\General

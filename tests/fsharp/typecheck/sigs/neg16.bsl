@@ -1,5 +1,5 @@
 
-neg16.fs(7,13,7,16): typecheck error FS0644: Namespaces cannot contain extension members except in the same file and namespace where the type is defined. Consider using a module to hold declarations of extension members.
+neg16.fs(7,13,7,16): typecheck error FS0644: Namespaces cannot contain extension members except in the same file and namespace declaration group where the type is defined. Consider using a module to hold declarations of extension members.
 
 neg16.fs(23,10,23,11): typecheck error FS0935: Types with the 'AllowNullLiteral' attribute may only inherit from or implement types which also allow the use of the null literal
 
@@ -61,13 +61,13 @@ neg16.fs(78,11,78,31): typecheck error FS0001: This expression was expected to h
 but here has type
     'string'    
 
-neg16.fs(85,8,85,18): typecheck error FS0039: The pattern discriminator 'FooA++' is not defined
+neg16.fs(85,8,85,18): typecheck error FS0039: The pattern discriminator 'FooA++' is not defined.
 
-neg16.fs(87,50,87,54): typecheck error FS0039: The value or constructor 'OneA' is not defined
+neg16.fs(87,50,87,54): typecheck error FS0039: The value or constructor 'OneA' is not defined.
 
-neg16.fs(87,60,87,69): typecheck error FS0039: The value or constructor 'TwoA+' is not defined
+neg16.fs(87,60,87,69): typecheck error FS0039: The value or constructor 'TwoA+' is not defined.
 
-neg16.fs(90,8,90,18): typecheck error FS0039: The pattern discriminator 'FooB++' is not defined
+neg16.fs(90,8,90,18): typecheck error FS0039: The pattern discriminator 'FooB++' is not defined.
 
 neg16.fs(97,15,97,16): typecheck error FS0823: The 'VolatileField' attribute may only be used on 'let' bindings in classes
 

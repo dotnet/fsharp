@@ -28,13 +28,13 @@ let mkFlexibleFormatTypar m tys dflt =
     tp.FixupConstraints [ TyparConstraint.SimpleChoice (tys,m); TyparConstraint.DefaultsTo (lowestDefaultPriority,dflt,m)]
     copyAndFixupFormatTypar m tp
 
-let mkFlexibleIntFormatTypar g m = 
+let mkFlexibleIntFormatTypar (g: TcGlobals) m = 
     mkFlexibleFormatTypar m [ g.byte_ty; g.int16_ty; g.int32_ty; g.int64_ty;  g.sbyte_ty; g.uint16_ty; g.uint32_ty; g.uint64_ty;g.nativeint_ty;g.unativeint_ty; ] g.int_ty
 
-let mkFlexibleDecimalFormatTypar g m =
+let mkFlexibleDecimalFormatTypar (g: TcGlobals) m =
     mkFlexibleFormatTypar m [ g.decimal_ty ] g.decimal_ty
     
-let mkFlexibleFloatFormatTypar g m = 
+let mkFlexibleFloatFormatTypar (g: TcGlobals) m = 
     mkFlexibleFormatTypar m [ g.float_ty; g.float32_ty; g.decimal_ty ] g.float_ty
 
 let isDigit c = ('0' <= c && c <= '9')
@@ -51,7 +51,7 @@ let newInfo ()=
     addZeros       = false
     precision      = false}
 
-let parseFormatStringInternal (m:range) g (source: string option) fmt bty cty = 
+let parseFormatStringInternal (m:range) (g: TcGlobals) (source: string option) fmt bty cty = 
     // Offset is used to adjust ranges depending on whether input string is regular, verbatim or triple-quote.
     // We construct a new 'fmt' string since the current 'fmt' string doesn't distinguish between "\n" and escaped "\\n".
     let (offset, fmt) = 
@@ -201,12 +201,12 @@ let parseFormatStringInternal (m:range) g (source: string option) fmt bty cty =
                       specifierLocations.Add(
                         Range.mkFileIndexRange m.FileIndex 
                                 (Range.mkPos m.StartLine (startCol + offset)) 
-                                (Range.mkPos m.StartLine (relCol + offset)))
+                                (Range.mkPos m.StartLine (relCol + offset + 1)))
                   | _ ->
                       specifierLocations.Add(
                         Range.mkFileIndexRange m.FileIndex 
                                 (Range.mkPos (m.StartLine + relLine) startCol) 
-                                (Range.mkPos (m.StartLine + relLine) relCol))
+                                (Range.mkPos (m.StartLine + relLine) (relCol + 1)))
 
               let ch = fmt.[i]
               match ch with
@@ -296,7 +296,7 @@ let parseFormatStringInternal (m:range) g (source: string option) fmt bty cty =
 let ParseFormatString m g source fmt bty cty dty = 
     let argtys, specifierLocations = parseFormatStringInternal m g source fmt bty cty
     let aty = List.foldBack (-->) argtys dty
-    let ety = mkTupledTy g argtys
+    let ety = mkRefTupledTy g argtys
     (aty, ety), specifierLocations 
 
 let TryCountFormatStringArguments m g fmt bty cty =

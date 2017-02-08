@@ -7,7 +7,6 @@ using Microsoft.VisualStudio.Shell.Interop;
 using OleConstants = Microsoft.VisualStudio.OLE.Interop.Constants;
 using VsCommands = Microsoft.VisualStudio.VSConstants.VSStd97CmdID;
 using VsCommands2K = Microsoft.VisualStudio.VSConstants.VSStd2KCmdID;
-using MSBuild = Microsoft.Build.BuildEngine;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem

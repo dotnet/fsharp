@@ -2,7 +2,6 @@
 
 namespace Microsoft.FSharp.Linq.RuntimeHelpers
 
-#if FX_ATLEAST_LINQ
 #nowarn "49" // no warning for uppercase variable names
 open Microsoft.FSharp.Core
 
@@ -167,4 +166,3 @@ type AnonymousObject<'T1, 'T2, 'T3, 'T4, 'T5, 'T6, 'T7, 'T8> =
     member x.Item8 = x.item8
 
     new (Item1, Item2, Item3, Item4, Item5, Item6, Item7, Item8) = { item1 = Item1; item2 = Item2; item3 = Item3; item4 = Item4 ; item5 = Item5 ; item6 = Item6  ; item7 = Item7; item8 = Item8  }
-#endif

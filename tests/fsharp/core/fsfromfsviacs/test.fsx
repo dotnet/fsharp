@@ -1,5 +1,6 @@
 // #Conformance #Interop #Unions 
 open Lib
+open FSharpOptionalTests
 
 let mutable failures = false
 let report_failure () = 
@@ -48,6 +49,25 @@ let _ = test "structunion394b25" (Lib.NestedStructUnionsTests.testPattern2mut(u2
 let _ = test "structunion394b36" (Lib.NestedStructUnionsTests.testPattern3mut(u2))
 
 
+// F# option implicit converter tests
+
+let testFsOpt() =
+    let testOpt (t : 'T option) =
+        test (sprintf "fsimplicitconv (%A)" t) (ApiWrapper.ConsumeOptionalParam<'T>(t) = t)
+
+    testOpt(Option<int>.None)
+    testOpt(Some 42)
+
+    // check that implicit conversion of optionals does 
+    // differentiate between 'null' and 'Some null'
+    testOpt(Option<string>.None)
+    testOpt(Option<string>.Some null)
+    testOpt(Some "")
+    testOpt(Some "test")
+
+testFsOpt()
+
+
 module NestedStructPatternMatchingAcrossAssemblyBoundaries = 
     open Lib.NestedStructUnionsTests
 
@@ -91,6 +111,12 @@ module NestedStructPatternMatchingAcrossAssemblyBoundaries =
     let _ = test "structunion394b2e" (testPattern2mut(u2))
     let _ = test "structunion394b3f" (testPattern3mut(u2))
 
+
+let TestAccessibility() = 
+     let x = new Newtonsoft.Json.Converters.SomeClass()
+     let x2 = new Newtonsoft.Json.Converters.ContainerClass.SomeClass()
+     Newtonsoft.Json.Converters.SomeClass.SomeMethod()
+     Newtonsoft.Json.Converters.ContainerClass.SomeClass.SomeMethod()
 
 (*
     public Lib.discr1_0 d10a = Lib.discr1_0.MkDiscr1_0_A();

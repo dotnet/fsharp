@@ -93,7 +93,7 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
-      .line 4,4 : 6,7 ''
+      .line 4,4 : 6,7
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  ldarg.1
@@ -111,7 +111,7 @@
       .maxstack  5
       .locals init ([0] valuetype StaticInit_Struct01/C V_0,
                [1] valuetype StaticInit_Struct01/C& V_1)
-      .line 4,4 : 6,7 ''
+      .line 4,4 : 6,7
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  unbox.any  StaticInit_Struct01/C
@@ -137,7 +137,7 @@
       // Code size       32 (0x20)
       .maxstack  7
       .locals init ([0] int32 V_0)
-      .line 4,4 : 6,7 ''
+      .line 4,4 : 6,7
       IL_0000:  nop
       IL_0001:  ldc.i4.0
       IL_0002:  stloc.0
@@ -167,7 +167,7 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       13 (0xd)
       .maxstack  8
-      .line 4,4 : 6,7 ''
+      .line 4,4 : 6,7
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
@@ -216,12 +216,12 @@
     {
       // Code size       9 (0x9)
       .maxstack  8
-      .line 4,4 : 8,9 ''
+      .line 4,4 : 8,9
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  ldarg.1
       IL_0003:  stfld      valuetype [mscorlib]System.DateTime StaticInit_Struct01/C::s
-      .line 4,4 : 6,7 ''
+      .line 4,4 : 6,7
       IL_0008:  ret
     } // end of method C::.ctor
 
@@ -230,7 +230,7 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       42 (0x2a)
       .maxstack  8
-      .line 7,7 : 23,37 ''
+      .line 7,7 : 23,37
       IL_0000:  nop
       IL_0001:  volatile.
       IL_0003:  ldsfld     int32 StaticInit_Struct01/C::init@4
@@ -241,15 +241,15 @@
 
       IL_000d:  br.s       IL_0018
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_000f:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
       IL_0014:  nop
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0015:  nop
       IL_0016:  br.s       IL_0019
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
+      .line 100001,100001 : 0,0
       IL_0018:  nop
       IL_0019:  ldsfld     int32 StaticInit_Struct01/C::x
       IL_001e:  ldstr      "2"
@@ -265,7 +265,7 @@
       // Code size       24 (0x18)
       .maxstack  4
       .locals init ([0] valuetype StaticInit_Struct01/C& V_0)
-      .line 4,4 : 6,7 ''
+      .line 4,4 : 6,7
       IL_0000:  nop
       IL_0001:  ldarga.s   obj
       IL_0003:  stloc.0
@@ -310,7 +310,7 @@
     {
       // Code size       13 (0xd)
       .maxstack  8
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0000:  ldc.i4.0
       IL_0001:  stsfld     int32 '<StartupCode$StaticInit_Struct01>'.$StaticInit_Struct01::init@
       IL_0006:  ldsfld     int32 '<StartupCode$StaticInit_Struct01>'.$StaticInit_Struct01::init@
@@ -334,7 +334,7 @@
   {
     // Code size       25 (0x19)
     .maxstack  8
-    .line 6,6 : 12,30 ''
+    .line 6,6 : 12,30
     IL_0000:  nop
     IL_0001:  ldstr      "1"
     IL_0006:  callvirt   instance int32 [mscorlib]System.String::get_Length()
@@ -342,7 +342,7 @@
     IL_0010:  ldc.i4.1
     IL_0011:  volatile.
     IL_0013:  stsfld     int32 StaticInit_Struct01/C::init@4
-    .line 4,4 : 6,7 ''
+    .line 4,4 : 6,7
     IL_0018:  ret
   } // end of method $StaticInit_Struct01::.cctor
 

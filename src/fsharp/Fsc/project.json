@@ -3,7 +3,8 @@
     "Microsoft.NETCore.Platforms": "1.0.1",
     "NETStandard.Library": "1.6.0",
     "System.Linq.Expressions": "4.1.0",
-    "System.Reflection.Metadata": "1.4.1-beta-24227-04"
+    "System.Reflection.Metadata": "1.4.1-beta-24227-04",
+    "System.Runtime.Loader": "4.0.0"
   },
   "runtimes": {
     "win7-x86": { },
@@ -12,6 +13,14 @@
     "ubuntu.14.04-x64": { }
   },
   "frameworks": {
-    "netstandard1.6": { }
+    "netcoreapp1.0": {
+      "dependencies": {
+        "Microsoft.NETCore.App": {
+          "type": "platform",
+          "version": "1.0.1"
+        }
+      },
+      "imports": [ "netstandard1.1", "netstandard1.6", "portable-net45+win8+wp8+wpa81" ]
+    }
   }
 }

@@ -14,7 +14,6 @@ open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.OLE.Interop
-open Microsoft.Build.BuildEngine
 open System.Diagnostics
 open Microsoft.Build.Execution
 open Microsoft.Build.Framework
@@ -1442,6 +1441,7 @@ module internal VsMocks =
 
         let add1, remove1, enumerate1 = mkEventsStorage()
         let add2, remove2, _ = mkEventsStorage()
+        let add4, remove4, _ = mkEventsStorage()
         let configDict = new Dictionary<IVsHierarchy,string>()
         let configChangeNotifier(h : IVsHierarchy, s : string) = 
             if configDict.ContainsKey(h) then
@@ -1518,8 +1518,30 @@ module internal VsMocks =
                 member x.QueryBuildManagerBusyEx(a) = err(__LINE__)
                 member x.UnadviseUpdateSolutionEvents3(a) =
                     0
+              interface IVsSolutionBuildManager5 with
+                member x.AdviseUpdateSolutionEvents4(pIVsUpdateSolutionEvents, pdwCookie) =
+                    pdwCookie <- add4 pIVsUpdateSolutionEvents
+                member x.AdviseUpdateSolutionEventsAsync(a,b) = err(__LINE__) |> ignore
+                member x.FindActiveProjectCfgName(a,b) = err(__LINE__)
+                member x.UnadviseUpdateSolutionEventsAsync(a) = err(__LINE__) |> ignore
+                member x.UnadviseUpdateSolutionEvents4(dwCookie) =
+                    remove4 dwCookie
         }
         vsSolutionBuildManager, configChangeNotifier
+    
+    let vsThreadedWaitDialogFactory =
+        { new IVsThreadedWaitDialogFactory with
+            override x.CreateInstance(vsThreadedWaitDialog) =
+                vsThreadedWaitDialog <-
+                    { new IVsThreadedWaitDialog2 with
+                        override x.EndWaitDialog(_) = 0
+                        override x.HasCanceled(_) = 0
+                        override x.StartWaitDialog(_, _, _, _, _, _, _, _) = 0
+                        override x.StartWaitDialogWithPercentageProgress(_, _, _, _, _, _, _, _, _) = 0
+                        override x.UpdateProgress(_, _, _, _, _, _, _) = 0
+                    }
+                0
+        }
         
     let MakeMockServiceProviderAndConfigChangeNotifierNoTargetFrameworkAssembliesService() = 
         let vsSolutionBuildManager, configChangeNotifier = MakeVsSolutionBuildManagerAndConfigChangeNotifier()
@@ -1539,6 +1561,7 @@ module internal VsMocks =
         sp.AddService(typeof<SVsRunningDocumentTable>, box vsRunningDocumentTable, false)
         sp.AddService(typeof<Microsoft.VisualStudio.Shell.Interop.SVsBuildManagerAccessor>, box (MockVsBuildManagerAccessor()), false)
         sp.AddService(typeof<SVsTrackProjectRetargeting>, box vsTrackProjectRetargeting, false)
+        sp.AddService(typeof<SVsThreadedWaitDialogFactory>, box vsThreadedWaitDialogFactory, false)
         sp, configChangeNotifier
 
     let MakeMockServiceProviderAndConfigChangeNotifier20() =
@@ -1600,26 +1623,29 @@ module internal VsActual =
     // Since the editor exports MEF components, we can use those components directly from unit tests without having to load too many heavy
     // VS assemblies.  Use editor MEF components directly from the VS product.
 
+    open System.IO
     open System.ComponentModel.Composition.Hosting
     open System.ComponentModel.Composition.Primitives
     open Microsoft.VisualStudio.Text
 
     let vsInstallDir =
+        // use the environment variable to find the VS installdir
 #if VS_VERSION_DEV12
-        let key = @"SOFTWARE\Microsoft\VisualStudio\12.0"
+        let vsvar = System.Environment.GetEnvironmentVariable("VS120COMNTOOLS")
+        if String.IsNullOrEmpty vsvar then failwith "VS120COMNTOOLS environment variable was not found."
 #endif
 #if VS_VERSION_DEV14
-        let key = @"SOFTWARE\Microsoft\VisualStudio\14.0"
+        let vsvar = System.Environment.GetEnvironmentVariable("VS140COMNTOOLS")
+        if String.IsNullOrEmpty vsvar then failwith "VS140COMNTOOLS environment variable was not found."
 #endif
 #if VS_VERSION_DEV15
-        let key = @"SOFTWARE\Microsoft\VisualStudio\15.0"
+        let vsvar = System.Environment.GetEnvironmentVariable("VS150COMNTOOLS")
+        if String.IsNullOrEmpty vsvar then failwith "VS150COMNTOOLS environment variable was not found."
 #endif
-        let hklm = Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, Microsoft.Win32.RegistryView.Registry32)
-        let rkey = hklm.OpenSubKey(key)
-        rkey.GetValue("InstallDir") :?> string
+        Path.Combine(vsvar, "..")
 
     let CreateEditorCatalog() =
-        let root = vsInstallDir + @"\CommonExtensions\Microsoft\Editor"
+        let root = Path.Combine(vsInstallDir, @"IDE\CommonExtensions\Microsoft\Editor")
         let CreateAssemblyCatalog(root, file) =
             let fullPath = System.IO.Path.Combine(root, file)
             if System.IO.File.Exists(fullPath) then
@@ -1627,16 +1653,6 @@ module internal VsActual =
             else
                 failwith("could not find " + fullPath)
 
-        // copy this private assembly next to unit tests, otherwise assembly loader cannot find it
-        let neededLocalAssem = vsInstallDir + @"\PrivateAssemblies\Microsoft.VisualStudio.Platform.VSEditor.Interop.dll"
-#if NUNIT_2
-        let curDir = System.IO.Path.GetDirectoryName((new System.Uri(System.Reflection.Assembly.Load("nunit.util").EscapedCodeBase)).LocalPath)
-#else
-        let curDir = System.IO.Path.GetDirectoryName((new System.Uri(System.Reflection.Assembly.Load("nunit.framework").EscapedCodeBase)).LocalPath)
-#endif
-        let localCopy = System.IO.Path.Combine(curDir, System.IO.Path.GetFileName(neededLocalAssem))
-        System.IO.File.Copy(neededLocalAssem, localCopy, true)
-        
         let list = new ResizeArray<ComposablePartCatalog>()
         list.Add(CreateAssemblyCatalog(root, "Microsoft.VisualStudio.Platform.VSEditor.dll"))
 

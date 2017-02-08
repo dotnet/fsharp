@@ -4,7 +4,7 @@
 // in the bug are already part of the FSHARP suite.
 //<Expects status="error" id="FS0039" span="(11,20-11,26)">The type 'string' is not defined</Expects>
 
-//<Expects status="error" id="FS0039" span="(17,16-17,23)">The namespace or module 'Array2D' is not define</Expects>
+//<Expects status="error" id="FS0039" span="(17,16-17,23)">The value, namespace, type or module 'Array2D' is not defined</Expects>
 
 
 let f (x : string) = ()         // ok

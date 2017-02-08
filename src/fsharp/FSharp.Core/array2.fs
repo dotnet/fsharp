@@ -2,12 +2,10 @@
 
 namespace Microsoft.FSharp.Collections
 
-    open System.Diagnostics
-    open Microsoft.FSharp.Collections
+    open System
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
     open Microsoft.FSharp.Core.Operators
-    open Microsoft.FSharp.Primitives.Basics
     open Microsoft.FSharp.Core.Operators.Checked
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -39,14 +37,14 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("ZeroCreate")>]
         let zeroCreate (n:int) (m:int) = 
-            if n < 0 then invalidArg "n" (SR.GetString(SR.inputMustBeNonNegative))
-            if m < 0 then invalidArg "m" (SR.GetString(SR.inputMustBeNonNegative))
+            if n < 0 then invalidArgInputMustBeNonNegative "length1" n 
+            if m < 0 then invalidArgInputMustBeNonNegative "length2" m 
             (# "newarr.multi 2 !0" type ('T) n m : 'T[,] #)
 
         [<CompiledName("ZeroCreateBased")>]
         let zeroCreateBased (b1:int) (b2:int) (n1:int) (n2:int) = 
             if (b1 = 0 && b2 = 0) then 
-#if FX_ATLEAST_PORTABLE
+#if FX_PORTABLE_OR_NETSTANDARD
                 zeroCreate n1 n2
 #else                
                 // Note: this overload is available on Compact Framework and Silverlight, but not Portable
@@ -54,9 +52,9 @@ namespace Microsoft.FSharp.Collections
 #endif                
             else
 #if FX_NO_BASED_ARRAYS
-                raise (new System.NotSupportedException(SR.GetString(SR.nonZeroBasedDisallowed)))
+                raise (NotSupportedException(SR.GetString(SR.nonZeroBasedDisallowed)))
 #else
-                (System.Array.CreateInstance(typeof<'T>, [|n1;n2|],[|b1;b2|]) :?> 'T[,])
+                (Array.CreateInstance(typeof<'T>, [|n1;n2|],[|b1;b2|]) :?> 'T[,])
 #endif
 
         [<CompiledName("CreateBased")>]
@@ -132,17 +130,27 @@ namespace Microsoft.FSharp.Collections
             init (length1 array) (length2 array) (fun i j -> array.[b1+i,b2+j])
 
         [<CompiledName("CopyTo")>]
-        let blit (source : 'T[,])  sourceIndex1 sourceIndex2 (target : 'T[,]) targetIndex1 targetIndex2 count1 count2 = 
+        let blit (source : 'T[,])  sourceIndex1 sourceIndex2 (target: 'T[,]) targetIndex1 targetIndex2 count1 count2 = 
             checkNonNull "source" source
             checkNonNull "target" target
-            if sourceIndex1 < source.GetLowerBound(0) then invalidArg "sourceIndex1" (SR.GetString(SR.outOfRange))
-            if sourceIndex2 < source.GetLowerBound(1) then invalidArg "sourceIndex2" (SR.GetString(SR.outOfRange))
-            if targetIndex1 < target.GetLowerBound(0) then invalidArg "targetIndex1" (SR.GetString(SR.outOfRange))
-            if targetIndex2 < target.GetLowerBound(1) then invalidArg "targetIndex2" (SR.GetString(SR.outOfRange))
-            if sourceIndex1 + count1 > (length1 source) + source.GetLowerBound(0) then invalidArg "count1" (SR.GetString(SR.outOfRange))
-            if sourceIndex2 + count2 > (length2 source) + source.GetLowerBound(1) then invalidArg "count2" (SR.GetString(SR.outOfRange))
-            if targetIndex1 + count1 > (length1 target) + target.GetLowerBound(0) then invalidArg "count1" (SR.GetString(SR.outOfRange))
-            if targetIndex2 + count2 > (length2 target) + target.GetLowerBound(1) then invalidArg "count2" (SR.GetString(SR.outOfRange))
+
+            let sourceX0, sourceY0 = source.GetLowerBound 0     , source.GetLowerBound 1
+            let sourceXN, sourceYN = (length1 source) + sourceX0, (length2 source) + sourceY0  
+            let targetX0, targetY0 = target.GetLowerBound 0     , target.GetLowerBound 1
+            let targetXN, targetYN = (length1 target) + targetX0, (length2 target) + targetY0  
+
+            if sourceIndex1 < sourceX0 then invalidArgOutOfRange "sourceIndex1" sourceIndex1 "source axis-0 lower bound" sourceX0
+            if sourceIndex2 < sourceY0 then invalidArgOutOfRange "sourceIndex2" sourceIndex2 "source axis-1 lower bound" sourceY0
+            if targetIndex1 < targetX0 then invalidArgOutOfRange "targetIndex1" targetIndex1 "target axis-0 lower bound" targetX0
+            if targetIndex2 < targetY0 then invalidArgOutOfRange "targetIndex2" targetIndex2 "target axis-1 lower bound" targetY0
+            if sourceIndex1 + count1 > sourceXN then 
+                invalidArgOutOfRange "count1" count1 ("source axis-0 end index = " + string(sourceIndex1+count1) + " source axis-0 upper bound") sourceXN
+            if sourceIndex2 + count2 > sourceYN then 
+                invalidArgOutOfRange "count2" count2 ("source axis-1 end index = " + string(sourceIndex2+count2) + " source axis-1 upper bound") sourceYN
+            if targetIndex1 + count1 > targetXN then 
+                invalidArgOutOfRange "count1" count1 ("target axis-0 end index = " + string(targetIndex1+count1) + " target axis-0 upper bound") targetXN
+            if targetIndex2 + count2 > targetYN then 
+                invalidArgOutOfRange "count2" count2 ("target axis-1 end index = " + string(targetIndex2+count2) + " target axis-1 upper bound") targetYN
 
             for i = 0 to count1 - 1 do
                 for j = 0 to count2 - 1 do

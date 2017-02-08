@@ -16,7 +16,6 @@ using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Shell;
 using System.Net;
-using MSBuild = Microsoft.Build.BuildEngine;
 using IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider;
 using IServiceProvider = System.IServiceProvider;
 

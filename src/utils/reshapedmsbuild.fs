@@ -5,7 +5,7 @@ namespace Microsoft.Build.Utilities
 namespace Microsoft.Build.Framework
 namespace Microsoft.Build.BuildEngine
 
-#if RESHAPED_MSBUILD
+#if FX_RESHAPED_MSBUILD
 
 namespace Microsoft.Build.Framework
 open System.Collections
@@ -83,7 +83,9 @@ module internal MsBuildAdapters =
     | Version45 = 5
     | Version451 = 6
     | Version46 = 7
-    | VersionLatest = 7  //TargetDotNetFrameworkVersion.Version46
+    | Version461 = 8
+    | Version452 = 9
+    | VersionLatest = 8  //TargetDotNetFrameworkVersion.Version461
 
     /// <summary>
     /// Used to specify the targeted bitness of the .NET Framework for some methods of ToolLocationHelper
@@ -110,7 +112,9 @@ module internal ToolLocationHelper =
     let dotNetFrameworkVersion40  = Version(4, 0)
     let dotNetFrameworkVersion45  = Version(4, 5)
     let dotNetFrameworkVersion451 = Version(4, 5, 1)
+    let dotNetFrameworkVersion452 = Version(4, 5, 2)
     let dotNetFrameworkVersion46  = Version(4, 6)
+    let dotNetFrameworkVersion461  = Version(4, 6, 1)
 
     // visual studio versions.
     let visualStudioVersion100 = new Version(10, 0);
@@ -199,7 +203,9 @@ module internal ToolLocationHelper =
         | TargetDotNetFrameworkVersion.Version40 -> dotNetFrameworkVersion40
         | TargetDotNetFrameworkVersion.Version45 -> dotNetFrameworkVersion45
         | TargetDotNetFrameworkVersion.Version451 -> dotNetFrameworkVersion451
+        | TargetDotNetFrameworkVersion.Version452 -> dotNetFrameworkVersion452
         | TargetDotNetFrameworkVersion.Version46 -> dotNetFrameworkVersion46
+        | TargetDotNetFrameworkVersion.Version461 -> dotNetFrameworkVersion461
         | _ -> raise (getArgumentException version)
 
     let complusInstallRoot = Environment.GetEnvironmentVariable("COMPLUS_INSTALLROOT")
@@ -212,9 +218,10 @@ module internal ToolLocationHelper =
         let dotNetFrameworkFolderPrefix = dotNetFrameworkVersionFolderPrefix
         let frameworkName = FrameworkName(dotNetFrameworkIdentifier, version)
 
-#if NO_WIN_REGISTRY
+#if FX_NO_WIN_REGISTRY
 #else
         let findRegistryValueUnderKey registryBaseKeyName registryKeyName registryView =
+         try
             use baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, registryView)
             use subKey = baseKey.OpenSubKey(registryBaseKeyName)
             match subKey with
@@ -224,10 +231,11 @@ module internal ToolLocationHelper =
                 match keyValue with
                 | null -> None
                 | _ as x -> Some (x.ToString())
+         with _ -> None
 #endif
 
         let findRegistryValueUnderKey registryBaseKeyName registryKeyName =
-#if NO_WIN_REGISTRY
+#if FX_NO_WIN_REGISTRY
             ignore registryBaseKeyName 
             ignore registryKeyName 
             None
@@ -735,8 +743,9 @@ module internal ToolLocationHelper =
             CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion40  visualStudioVersion100     // v4.0
             CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion45  visualStudioVersion110     // v4.5
             CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion451 visualStudioVersion120     // v4.5.1
+            CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion452 visualStudioVersion150     // v4.5.2
             CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion46  visualStudioVersion140     // v4.6
-            CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion46  visualStudioVersion150     // v4.6
+            CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion461 visualStudioVersion150     // v4.6.1
         |]
         array.ToDictionary<DotNetFrameworkSpec, Version>(fun spec -> spec.Version)
 
@@ -814,7 +823,6 @@ module internal ToolLocationHelper =
             with get ():bool = (instance.GetPropertyValue("FindSerializationAssemblies") :?> bool)
             and set (value:bool) = (instance.SetPropertyValue("FindSerializationAssemblies", value)); ()
 
-#if !BUILDING_WITH_LKG
         member this.TargetedRuntimeVersion
             with get ():string = (instance.GetPropertyValue("TargetedRuntimeVersion") :?> string)
             and set (value:string) = (instance.SetPropertyValue("TargetedRuntimeVersion", value)); ()
@@ -826,30 +834,33 @@ module internal ToolLocationHelper =
         member this.CopyLocalDependenciesWhenParentReferenceInGac
             with get ():bool = (instance.GetPropertyValue("CopyLocalDependenciesWhenParentReferenceInGac") :?> bool)
             and set (value:bool) = (instance.SetPropertyValue("CopyLocalDependenciesWhenParentReferenceInGac", value)); ()
-#endif
+
         member this.AllowedAssemblyExtensions
             with get () :string[] = (instance.GetPropertyValue("AllowedAssemblyExtensions") :?> string[])
             and set (value:string[]) =  (instance.SetPropertyValue("AllowedAssemblyExtensions", value)); ()
+
         member this.Assemblies
             with get ():ITaskItem[] = (instance.GetPropertyValue("Assemblies") :?> ITaskItem[])
             and set (value:ITaskItem[]) = (instance.SetPropertyValue("Assemblies", value)); ()
-        member this.CopyLocalFiles
-            with get ():ITaskItem[] = (instance.GetPropertyValue("CopyLocalFiles") :?> ITaskItem[])
-        member this.RelatedFiles
-            with get ():ITaskItem[] = (instance.GetPropertyValue("RelatedFiles") :?> ITaskItem[])
-        member this.ResolvedFiles
-            with get ():ITaskItem[] = (instance.GetPropertyValue("ResolvedFiles") :?> ITaskItem[])
-        member this.ResolvedDependencyFiles
-            with get ():ITaskItem[] = (instance.GetPropertyValue("ResolvedDependencyFiles") :?> ITaskItem[])
-        member this.SatelliteFiles
-            with get ():ITaskItem[] = (instance.GetPropertyValue("SatelliteFiles") :?> ITaskItem[])
-        member this.ScatterFiles
-            with get ():ITaskItem[] = (instance.GetPropertyValue("ScatterFiles") :?> ITaskItem[])
-        member this.SuggestedRedirects
-            with get ():ITaskItem[] = (instance.GetPropertyValue("SuggestedRedirects") :?> ITaskItem[])
+
+        member this.CopyLocalFiles = (instance.GetPropertyValue("CopyLocalFiles") :?> ITaskItem[])
+
+        member this.RelatedFiles = (instance.GetPropertyValue("RelatedFiles") :?> ITaskItem[])
+
+        member this.ResolvedFiles = (instance.GetPropertyValue("ResolvedFiles") :?> ITaskItem[])
+
+        member this.ResolvedDependencyFiles = (instance.GetPropertyValue("ResolvedDependencyFiles") :?> ITaskItem[])
+
+        member this.SatelliteFiles = (instance.GetPropertyValue("SatelliteFiles") :?> ITaskItem[])
+
+        member this.ScatterFiles = (instance.GetPropertyValue("ScatterFiles") :?> ITaskItem[])
+
+        member this.SuggestedRedirects = (instance.GetPropertyValue("SuggestedRedirects") :?> ITaskItem[])
+
         member this.SearchPaths
             with get () :string[] = (instance.GetPropertyValue("SearchPaths") :?> string[])
             and set (value:string[]) =  (instance.SetPropertyValue("SearchPaths", value)); ()
+
         member this.Execute () =
             let m = instance.GetType().GetMethod("Execute", [| |])
             m.Invoke(instance, [||]) :?> bool

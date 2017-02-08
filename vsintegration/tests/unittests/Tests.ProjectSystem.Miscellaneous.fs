@@ -11,6 +11,7 @@ open System.Text
 open System.Text.RegularExpressions
 
 // VS namespaces 
+open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.FSharp.ProjectSystem
@@ -506,9 +507,7 @@ type Miscellaneous() =
             configChangeNotifier(project, "Foo|AnyCPU")  // switch to Foo mode - <Error> should go away, project should start behaving as normal
             let expected = [| "foo.fs"; "bar.fs" |] |> Array.map (fun filename -> Path.Combine(project.ProjectFolder, filename))
             let actual = ips.SourceFilesOnDisk()
-#if FX_ATLEAST_45
             let actual = if actual.Length > 0 then actual |> Seq.skip 1 |> Seq.toArray else actual // On Dev10, first file will be AssemblyAttributes.fs
-#endif
             Assert.AreEqual(expected, actual, "project site did not report expected set of source files after recovery")
         )
 
@@ -516,8 +515,6 @@ type Miscellaneous() =
     member public this.TestBuildActions () =
         DoWithTempFile "Test.fsproj" (fun file ->
             let text = TheTests.FsprojTextWithProjectReferences(["foo.fs";"Bar.resx"; "Bar.de.resx"; "Xyz\Baz.ru.resx"; "Abc.resources"],[],[],"<Import Project=\"My.targets\" />")
-            // Use toolsversion 2.0 project to have predictable default set of BuildActions
-            let text = text.Replace("ToolsVersion='4.0'", "ToolsVersion='2.0'") 
             
             File.AppendAllText(file, text)
             let dirName = Path.GetDirectoryName(file)
@@ -630,11 +627,7 @@ type Miscellaneous() =
                 project.ComputeSourcesAndFlags()
                 let items = project.GetCompileItems() |> Array.toList
                 match items with
-#if FX_ATLEAST_45
                 | [ _; fn ] -> // first file is AssemblyAttributes.fs
-#else
-                | [ fn ] ->
-#endif
                     AssertEqual fileName fn
                 | _ ->
                     sprintf "wring set of compile items %A" items |> Assert.Fail

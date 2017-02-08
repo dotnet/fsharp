@@ -75,6 +75,9 @@ module internal Guids =
     
     let guidFsharpLanguageService       = Guid("BC6DD5A5-D4D6-4dab-A00D-A51242DBAF1B")  // The F# source file lang service
 
+    [<Literal>]
+    let fsiContentTypeName              = "FSharpInteractive"
+
 module internal Util =
     /// Utility function to create an instance of a class from the local registry. [From Iron Python].
     let CreateObject (globalProvider:System.IServiceProvider) (classType:Type,interfaceType:Type) =
@@ -110,7 +113,7 @@ module internal Util =
         /// returns Some(value) if key/value exists, None otherwise
         let tryReadHKCU<'t> subkey valueName =
             use key = Registry.CurrentUser.OpenSubKey(subkey)
-            if key = null then None else
+            if isNull key then None else
             match key.GetValue(valueName) with
             | :? 't as valTyped -> Some(valTyped)
             | _ -> None

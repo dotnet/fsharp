@@ -18,7 +18,6 @@ open System.Text
 open System.Collections.Generic 
 open System.Runtime.InteropServices
 open System.Threading
-open Internal.Utilities.Debug
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.FSharp.ProjectSystem
@@ -49,8 +48,6 @@ module internal Salsa =
 #else
         member th.Compile(compile:System.Converter<int,int>, flags:string[], sources:string[]) = 
 #endif
-            use t = Trace.Call("MSBuild", "Compile", fun _ -> "Host compile invoke by Fsc task")
-            Trace.PrintLine("MSBuild", fun _ -> sprintf "flags=%A" flags)
             capturedFlags <- flags 
             capturedSources <- sources
             if actuallyBuild then
@@ -79,20 +76,9 @@ module internal Salsa =
             let engine = Utilities.InitializeMsBuildEngine(null)
             if not hasAttachedLogger then 
                 hasAttachedLogger<-true
-                let logRegular = Trace.ShouldLog("MSBuild")
-                let logPerf = Trace.ShouldLog("MSBuildPerf")
-                if logRegular || logPerf then
-                    let l = if logRegular then 
-                                Trace.PrintLine("MSBuild", fun () -> "Detailed logging.")
-                                new Microsoft.Build.BuildEngine.ConsoleLogger(LoggerVerbosity.Detailed)
-                            else 
-                                Trace.PrintLine("MSBuild", fun () -> "Quiet logging.")
-                                new Microsoft.Build.BuildEngine.ConsoleLogger(LoggerVerbosity.Quiet)
-                    Trace.PrintLine("MSBuild", fun () -> "About to attach MSBuild console logger.")
-                    // For Dev10 build we pass the logger to the Build call on the project object.
-                    theAttachedLogger <- l
-                    Trace.PrintLine("MSBuild", fun () -> "Attached MSBuild console logger.")
-                    if logPerf then l.ApplyParameter("PERFORMANCESUMMARY", null)        
+                let l = new Microsoft.Build.Logging.ConsoleLogger(LoggerVerbosity.Detailed)
+                // For Dev10 build we pass the logger to the Build call on the project object.
+                theAttachedLogger <- l
             engine
             
         /// Set a global property on the given project.    
@@ -113,7 +99,6 @@ module internal Salsa =
                                   | _ -> failwith "multiple projects found"
                     match project with
                     | null ->
-                        use t = Trace.Call("MSBuildPerf","Creating new project", fun _-> projectFileName)
                         let project = GlobalEngine().LoadProject(projectFileName)
                         // Set global properties.
                         SetGlobalProperty(project,"BuildingInsideVisualStudio", "true")
@@ -126,7 +111,6 @@ module internal Salsa =
                         hostObjectCachePerFilename.[projectFileName] <- theHostObject
                         project, true, theHostObject 
                     | project-> 
-                        use t = Trace.Call("MSBuildPerf","Using existing project", fun _-> projectFileName)
                         match hostObjectCachePerFilename.TryGetValue(projectFileName) with
                         | true, theHostObject ->
                             project, false, theHostObject
@@ -148,10 +132,7 @@ module internal Salsa =
             if p = null then "" else p
 
         let items (project:Project) name =  
-            let l = project.GetItems(name) |> Seq.map (fun i -> i.EvaluatedInclude) |> Seq.toList
-            //use t = Trace.Call("MSBuild","items", fun _ -> sprintf " %s: %A" name l)
-            l
-
+            project.GetItems(name) |> Seq.map (fun i -> i.EvaluatedInclude) |> Seq.toList
 
         let oneItem (project:Project) name = 
             match (items project name) with
@@ -166,8 +147,7 @@ module internal Salsa =
             true
             
         /// Build the given target on the given project. Return the name of the main output assembly.   
-        let Build(projectFileName, target, configuration, platform) : BuildResult =         
-            use t = Trace.Call("MSBuild","build", fun _-> sprintf " target=%s project=%s configruation=%s platform=%s" target projectFileName configuration platform)
+        let Build(projectFileName, target:string, configuration, platform) : BuildResult =         
             let project,_,_ = GetProject(projectFileName, configuration, platform)
             let projectInstance = project.CreateProjectInstance()
             let buildResult = projectInstance.Build(target, Seq.append project.ProjectCollection.Loggers (if theAttachedLogger=null then [] else [theAttachedLogger]))
@@ -182,7 +162,6 @@ module internal Salsa =
             
         /// Return the name of the main output assembly but don't build
         let GetMainOutputAssembly(projectFileName, configuration, platform) : string =         
-            use t = Trace.Call("MSBuild","GetMainOutputAssembly", fun _-> sprintf " project=%s configruation=%s platform=%s" projectFileName configuration platform)
             let project,_,_ = GetProject(projectFileName, configuration, platform)
             let baseName = Path.GetFileNameWithoutExtension(projectFileName)+".exe"
             let projectInstance = project.CreateProjectInstance()
@@ -193,7 +172,6 @@ module internal Salsa =
         
         let CreateFSharpManifestResourceName(projectFileName,configuration, platform) : (string * string) list=
             let targetName = "CreateManifestResourceNames"
-            use t = Trace.Call("MSBuild", targetName, fun _-> sprintf " target=%s project=%s configruation=%s platform=%s" targetName projectFileName configuration platform)
             let project,_,_ = GetProject(projectFileName, configuration, platform)
             SetGlobalProperty(project, "CreateManifestResourceNamesDependsOn", "SplitResourcesByCulture")
             let projectInstance = project.CreateProjectInstance()
@@ -216,15 +194,10 @@ module internal Salsa =
         /// Compute the Flags and Sources 
         let GetFlagsAndSources(project:Project, host:HostCompile) : BuildFlags = 
             let result =
-                use t = Trace.Call("MSBuildPerf","Calling compile to get flags", fun _-> "")
                 use xx = host.CaptureSourcesAndFlagsWithoutBuildingForABit()
                 project.IsBuildEnabled <- true
                     
-                let loggers = 
-                    if Trace.ShouldLog("MSBuild") then
-                        seq { yield (new Microsoft.Build.BuildEngine.ConsoleLogger(LoggerVerbosity.Detailed) :> ILogger) }
-                    else 
-                        [] :> seq<ILogger>
+                let loggers = seq { yield (new Microsoft.Build.Logging.ConsoleLogger(LoggerVerbosity.Detailed) :> ILogger) }
                             
                 let r = project.Build("Compile", loggers)
                 if not(r) then
@@ -243,16 +216,13 @@ module internal Salsa =
               sources = result.sources |> List.map Canonicalize }
             
         let CrackProject(projectFileName, configuration, platform) =
-            use t = Trace.Call("MSBuild","crackProject", fun _-> sprintf " project=%s" projectFileName)
             
             let project,created,host = GetProject(projectFileName, configuration, platform)
-            Trace.PrintLine("MSBuild", fun _ -> sprintf "Project text:\n %s " (File.ReadAllText(projectFileName)))
 
             try        
                 try 
-                    let result = GetFlagsAndSources(project,host)
-                    Trace.PrintLine("MSBuild", fun _ -> sprintf "Resolved flags and sources:\n %A \n %A" result.flags result.sources)
-                    result
+                    let flagsAndSources = GetFlagsAndSources(project,host)
+                    (project, flagsAndSources)
                 with e -> 
                     System.Diagnostics.Debug.Assert(false, sprintf "Bug seen in MSBuild CrackProject: %s %s %s\n" (e.GetType().Name) e.Message (e.StackTrace))
                     reraise()
@@ -285,11 +255,11 @@ module internal Salsa =
                    || flags = None 
                    || prevConfig <> curConfig
                    || prevPlatform <> curPlatform then
-                Trace.PrintLine("ProjectSite", fun _ -> sprintf "Timestamp of %s changed. New timestamp=%A, old timestamp=%A" projectfile newtimestamp timestamp) 
                 timestamp <- newtimestamp
                 prevConfig <- curConfig
                 prevPlatform <- curPlatform
-                flags <- Some(MSBuild.CrackProject(projectfile, prevConfig, prevPlatform))
+                let projectObj, projectObjFlags = MSBuild.CrackProject(projectfile, prevConfig, prevPlatform)
+                flags <- Some(projectObjFlags)
             match flags with
             | Some flags -> flags
             | _ -> raise Error.Bug
@@ -312,7 +282,6 @@ module internal Salsa =
           member this.CompilerFlags() = 
               let flags = GetFlags()
               let result = flags.flags
-              Trace.PrintLine("ProjectSite", fun _ -> sprintf "MSBuild flags were %A." result) 
               result |> List.toArray 
           member this.ProjectFileName() = 
               projectfile
@@ -320,10 +289,15 @@ module internal Salsa =
           member this.ErrorListTaskReporter() = None
           member this.AdviseProjectSiteChanges(callbackOwnerKey,callback) = changeHandlers.[callbackOwnerKey] <- callback
           member this.AdviseProjectSiteCleaned(callbackOwnerKey,callback) = () // no unit testing support here
+          member this.AdviseProjectSiteClosed(callbackOwnerKey,callback) = () // no unit testing support here
           member this.IsIncompleteTypeCheckEnvironment = false
           member this.TargetFrameworkMoniker = ""
           member this.LoadTime = System.DateTime(2000,1,1)
-        
+          member this.ProjectGuid = 
+                let projectObj, projectObjFlags = MSBuild.CrackProject(projectfile, configurationFunc(), platformFunc())
+                projectObj.GetProperty(ProjectFileConstants.ProjectGuid).EvaluatedValue
+          member this.ProjectProvider = None
+
     // Attempt to treat as MSBuild project.
     let internal NewMSBuildProjectSite(configurationFunc, platformFunc, msBuildProjectName) = 
         let newProjectSite = new MSBuildProjectSite(msBuildProjectName,configurationFunc,platformFunc)
@@ -648,7 +622,7 @@ module internal Salsa =
                  versionFile,
                  otherFlags:string,
                  otherProjMisc:string,
-                 targetFrameworkVersion:string) =        
+                 targetFrameworkVersion:string) =
 
             // Determine which FSharp.targets file to use. If we use the installed
             // targets file then we check the registry for F#'s install path. Otherwise
@@ -660,14 +634,13 @@ module internal Salsa =
             
             let sb = new System.Text.StringBuilder()
             let Append (text:string) = 
-                Trace.PrintLine("VisualFSharp.Salsa", fun _ -> text)
                 sb.Append(text+"\r\n") |> ignore
             Append "<Project ToolsVersion='4.0' DefaultTargets='Build' xmlns='http://schemas.microsoft.com/developer/msbuild/2003'>"
             Append "    <PropertyGroup>"
 //            The salsa layer does Configuration/Platform in a kind of hacky way
 //            Append "        <Configuration Condition=\" '$(Configuration)' == '' \">Debug</Configuration>"
 //            Append "        <Platform Condition=\" '$(Platform)' == '' \">AnyCPU</Platform>"
-            Append "        <OutputPath>bin\Debug\</OutputPath>"  
+            Append "        <OutputPath>bin\Debug\</OutputPath>"
             if versionFile<>null then Append (sprintf "        <VersionFile>%s</VersionFile>" versionFile)
             if otherFlags<>null then Append (sprintf "        <OtherFlags>%s --resolutions</OtherFlags>" otherFlags)
             if targetFrameworkVersion<>null then
@@ -724,11 +697,10 @@ module internal Salsa =
                 
             Append "    </ItemGroup>"
             Append otherProjMisc
-            
-            Append (sprintf "    <Import Project=\"%s\\Microsoft.FSharp.targets\"/>" targetsFileFolder)
+
+            let t = targetsFileFolder.TrimEnd([|'\\'|])
+            Append (sprintf "    <Import Project=\"%s\\Microsoft.FSharp.targets\"/>" t)
             Append "</Project>"
-            Trace.PrintLine("VisualFSharp.Salsa", fun _ -> sprintf "Project text:\n%s" (sb.ToString()) )
-            
             sb.ToString()
 
         type MSBuildBehaviorHooks(useInstalledTargets) = 
@@ -744,13 +716,10 @@ module internal Salsa =
             let Plat() = let _,p = ConfPlat() in p
             interface ProjectBehaviorHooks with 
                 member x.CreateProjectHook (projectName, files, references, projectReferences, disabledWarnings, defines, versionFile, otherFlags, preImportXml, targetFrameworkVersion : string) =
-                    use t = Trace.Call("VisualFSharp.Salsa", "CreateMsBuildProject", fun _ -> sprintf " projectName=%s" projectName)
                     if File.Exists(projectName) then File.Delete(projectName)
-
                     let text = CreateMsBuildProjectText useInstalledTargets (files, references, projectReferences, disabledWarnings, defines, versionFile, otherFlags, preImportXml, targetFrameworkVersion)
-                    Trace.PrintLine("VisualFSharp.Salsa", fun _ -> text)
-                    File.AppendAllText(projectName,text+"\r\n")
-            
+                    File.WriteAllText(projectName,text+"\r\n")
+
                 member x.InitializeProjectHook op = openProject <- Some(op:?>IOpenProject)
                 member x.MakeHierarchyHook (projdir, fullname, projectname, configChangeNotifier, serviceProvider) = 
                     let projectSite = NewMSBuildProjectSite(Conf, Plat, fullname)
@@ -835,7 +804,6 @@ module internal Salsa =
                  
             member vs.IsShiftKeyDown = shiftKeyDown
             member vs.PushUndo(u) = 
-                Trace.PrintLine("SalsaUndo", fun _ -> sprintf "Pushing cleanup action %A" u)
                 undoStack<-u::undoStack
             member vs.GetColorizer(view:IVsTextView) =
                     let _,buffer = view.GetBuffer()
@@ -886,7 +854,7 @@ module internal Salsa =
                     vs.LanguageService.OnIdle()
                     match focusFile with
                     | Some(focusFile) -> focusFile.OnIdle()
-                    | None -> Trace.PrintLine("ChangeEvents", fun _ -> "In TakeCoffeeBreak there was no focus file to idle.")                 
+                    | None -> ()
                 member vs.ShiftKeyDown() = shiftKeyDown <- true
                 member vs.ShiftKeyUp() = shiftKeyDown <- false
                 member vs.TakeCoffeeBreak() = 
@@ -911,14 +879,12 @@ module internal Salsa =
                         undoActions |>
                             List.iter(function
                                       DeleteFile f -> 
-                                        Trace.PrintLine("SalsaUndo", fun _ -> sprintf "Performing undo action: DeleteFile %s" f)
                                         try
                                             File.Delete(f)
                                         with e->
                                             printf "Failed to Delete file '%s'" f
                                             raise e
                                     | RemoveFolder f -> 
-                                        Trace.PrintLine("SalsaUndo", fun _ -> sprintf "Performing undo action: RemoveFolder %s" f)
                                         try 
                                             if Directory.Exists(f) then Directory.Delete(f,true)
                                         with 
@@ -1521,13 +1487,18 @@ module internal Salsa =
             let tm = box (VsMocks.createTextManager())
             let documentationProvider = 
                 { new IDocumentationBuilder with
-                    override doc.AppendDocumentationFromProcessedXML(appendTo:StringBuilder,processedXml:string,showExceptions, showReturns, paramName) = 
-                        appendTo.AppendLine(processedXml)|> ignore 
-                    override doc.AppendDocumentation(appendTo:StringBuilder,filename:string,signature:string, showExceptions, showReturns, paramName) = 
-                        appendTo.AppendLine(sprintf "[Filename:%s]" filename).AppendLine(sprintf "[Signature:%s]" signature) |> ignore 
-                        if paramName.IsSome then appendTo.AppendLine(sprintf "[ParamName: %s]" paramName.Value) |> ignore
+                    override doc.AppendDocumentationFromProcessedXML(appendTo,processedXml:string,showExceptions, showReturns, paramName) = 
+                        appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.tagText processedXml)
+                        appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.Literals.lineBreak)
+                    override doc.AppendDocumentation(appendTo,filename:string,signature:string, showExceptions, showReturns, paramName) = 
+                        appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.tagText (sprintf "[Filename:%s]" filename))
+                        appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.Literals.lineBreak)
+                        appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.tagText (sprintf "[Signature:%s]" signature))
+                        appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.Literals.lineBreak)
+                        if paramName.IsSome then
+                            appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.tagText (sprintf "[ParamName: %s]" paramName.Value))
+                            appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.Literals.lineBreak)
                 } 
- 
 
             let sp2 = 
                { new System.IServiceProvider with 

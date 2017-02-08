@@ -38,20 +38,20 @@
 }
 .mresource public FSharpSignatureData.Linq101Aggregates01
 {
-  // Offset: 0x00000000 Length: 0x0000060A
+  // Offset: 0x00000000 Length: 0x0000060C
 }
 .mresource public FSharpOptimizationData.Linq101Aggregates01
 {
   // Offset: 0x00000610 Length: 0x00000211
 }
 .module Linq101Aggregates01.exe
-// MVID: {56D01D45-D281-4783-A745-0383451DD056}
+// MVID: {58067926-D281-4783-A745-038326790658}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00E60000
+// Image base: 0x00AC0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -116,7 +116,7 @@
       // Code size       196 (0xc4)
       .maxstack  6
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 100001,100001 : 0,0 'c:\\KevinRansom\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101Aggregates01.fs'
+      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101Aggregates01.fs'
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 Linq101Aggregates01/uniqueFactors@12::pc
       IL_0006:  ldc.i4.1
@@ -801,6 +801,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -1194,6 +1196,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -1222,6 +1226,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@) cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -1259,6 +1265,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -1285,6 +1293,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -1689,6 +1699,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -1718,6 +1730,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@) cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -1853,6 +1867,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -2258,6 +2274,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -2651,6 +2669,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -2679,6 +2699,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@) cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -2716,6 +2738,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -2742,6 +2766,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -3146,6 +3172,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -3175,6 +3203,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@) cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -3237,6 +3267,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -3276,6 +3308,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@) cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -3313,6 +3347,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -3339,6 +3375,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -3773,6 +3811,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor(valuetype [mscorlib]System.Decimal min) cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -3808,6 +3848,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@) cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -3840,7 +3882,7 @@
       IL_0014:  call       valuetype [mscorlib]System.Decimal [System.Core]System.Linq.Enumerable::Min<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>,
                                                                                                                                    class [mscorlib]System.Func`2<!!0,valuetype [mscorlib]System.Decimal>)
       IL_0019:  stloc.1
-      .line 69,69 : 13,29 ''
+      .line 70,70 : 9,41 ''
       IL_001a:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
       IL_001f:  stloc.3
       IL_0020:  ldloc.3
@@ -3885,6 +3927,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -4294,6 +4338,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -4687,6 +4733,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -4715,6 +4763,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@) cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -4752,6 +4802,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -4778,6 +4830,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -5182,6 +5236,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -5211,6 +5267,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@) cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -5273,6 +5331,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -5312,6 +5372,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@) cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -5349,6 +5411,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -5375,6 +5439,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -5779,6 +5845,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -6184,6 +6252,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor(valuetype [mscorlib]System.Decimal maxPrice) cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -6219,6 +6289,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@) cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -6263,7 +6335,7 @@
       IL_001f:  callvirt   instance !!2 [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::MaxBy<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,valuetype [mscorlib]System.Decimal>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                              class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
       IL_0024:  stloc.1
-      .line 94,94 : 13,34 ''
+      .line 95,95 : 9,46 ''
       IL_0025:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
       IL_002a:  stloc.s    V_4
       IL_002c:  ldloc.s    V_4
@@ -6308,6 +6380,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -6717,6 +6791,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -6744,6 +6820,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@) cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -6790,6 +6868,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -6825,6 +6905,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@) cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -6862,6 +6944,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -6888,6 +6972,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -7292,6 +7378,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -7321,6 +7409,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@) cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -7520,6 +7610,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0

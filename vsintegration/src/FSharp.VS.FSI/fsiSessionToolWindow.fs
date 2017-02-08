@@ -19,7 +19,8 @@ open EnvDTE
 open Microsoft.VisualStudio.ComponentModelHost
 open Microsoft.VisualStudio.Editor
 open Microsoft.VisualStudio.Text.Editor
-
+open Microsoft.VisualStudio.Text
+open Microsoft.VisualStudio.Utilities
 
 type VSStd2KCmdID = VSConstants.VSStd2KCmdID // nested type
 type VSStd97CmdID = VSConstants.VSStd97CmdID // nested type
@@ -86,26 +87,19 @@ type internal FsiToolWindow() as this =
     
     let providerGlobal = Package.GetGlobalService(typeof<IOleServiceProvider>) :?> IOleServiceProvider
     let provider       = new ServiceProvider(providerGlobal) :> System.IServiceProvider
-    let editorAdaptersFactory =
+    let textViewAdapter, contentTypeRegistry =
         // end of 623708 workaround. 
         let componentModel = provider.GetService(typeof<SComponentModel>) :?> IComponentModel
-        componentModel.GetService<IVsEditorAdaptersFactoryService>()
+        componentModel.GetService<IVsEditorAdaptersFactoryService>(), componentModel.GetService<IContentTypeRegistryService>()
 
     // REVIEW: trap provider nulls?    
     let providerNative = provider.GetService(typeof<IOleServiceProvider>) :?> IOleServiceProvider            
-    let textLines      = Util.CreateObjectT<VsTextBufferClass,IVsTextLines> provider            
+    let textLines      = Util.CreateObjectT<VsTextBufferClass,IVsTextLines> provider  
     do  setSiteForObjectWithSite textLines providerNative
     do  textLines.InitializeContent("", 0) |> throwOnFailure0
     let textView       = Util.CreateObjectT<VsTextViewClass,IVsTextView> provider
     do  setSiteForObjectWithSite textView  providerNative
-
-    // We want to disable zooming in the VFSI window. This code does that.
-    let userData = textView :?> IVsUserData
-    do if userData <> null then
-           let roles = "ANALYZABLE,INTERACTIVE"
-           let mutable guid_VsTextViewRoles = new Guid("{297078ff-81a2-43d8-9ca3-4489c53c99ba}")
-           userData.SetData(&guid_VsTextViewRoles, roles) |> throwOnFailure0
-
+    
     do  textView.Initialize(textLines,
                             IntPtr.Zero,
                             uint32 TextViewInitFlags.VIF_VSCROLL ||| uint32 TextViewInitFlags.VIF_HSCROLL ||| uint32 TextViewInitFlags3.VIF_NO_HWND_SUPPORT,
@@ -116,7 +110,7 @@ type internal FsiToolWindow() as this =
 
     // The IP sample called GetService() to obtain the LanguageService.
     let fsiLangService = provider.GetService(typeof<FsiLanguageService>) |> unbox : FsiLanguageService
-    do  if box fsiLangService = null then
+    do  if isNull(box fsiLangService) then
             // This would be unexpected, since this package provides the service.
             System.Windows.Forms.MessageBox.Show(VFSIstrings.SR.couldNotObtainFSharpLS()) |> ignore
             failwith "No FsiLanguageService"
@@ -130,7 +124,7 @@ type internal FsiToolWindow() as this =
     do  codeWinMan.OnNewView(textView)  |> throwOnFailure0
 
     //  Create the stream on top of the text buffer.
-    let textStream = new TextBufferStream(editorAdaptersFactory.GetDataBuffer(textLines))
+    let textStream = new TextBufferStream(textViewAdapter.GetDataBuffer(textLines), contentTypeRegistry)
     let synchronizationContext = System.Threading.SynchronizationContext.Current
     let win32win = { new System.Windows.Forms.IWin32Window with member this.Handle = textView.GetWindowHandle()}
     let mutable textView       = textView
@@ -152,7 +146,7 @@ type internal FsiToolWindow() as this =
     //
     // REVIEW: Next question, can WORD-WRAP be toggled on by default? Do we want that? Maybe not!
     let setTextViewProperties() =
-          let wpfTextView = editorAdaptersFactory.GetWpfTextView(textView)
+          let wpfTextView = textViewAdapter.GetWpfTextView(textView)
           // Enable find in the text view without implementing the IVsFindTarget interface (by allowing                
           // the active text view to directly respond to the find manager via the locate find target                
           // command)  
@@ -185,11 +179,11 @@ type internal FsiToolWindow() as this =
             let horizontalScrollbar = 0
             let verticalScrollbar   = 1                
             // Make sure that the last line of the buffer is visible. [ignore errors].            
-            let buffer = editorAdaptersFactory.GetDataBuffer(textLines)
+            let buffer = textViewAdapter.GetDataBuffer(textLines)
             let lastLine = buffer.CurrentSnapshot.LineCount - 1
             if lastLine >= 0 then
                 let lineStart = buffer.CurrentSnapshot.GetLineFromLineNumber(lastLine).Start
-                let wpfTextView = editorAdaptersFactory.GetWpfTextView(textView)
+                let wpfTextView = textViewAdapter.GetWpfTextView(textView)
                 wpfTextView.DisplayTextLineContainingBufferPosition(lineStart, 0.0, ViewRelativePosition.Bottom)
 
     let setScrollToStartOfLine() =
@@ -443,7 +437,7 @@ type internal FsiToolWindow() as this =
         let fsiProcId = sessions.ProcessID
         let dte = provider.GetService(typeof<DTE>) :?> DTE
 
-        if dte.Debugger.DebuggedProcesses = null || dte.Debugger.DebuggedProcesses.Count = 0 then
+        if isNull dte.Debugger.DebuggedProcesses || dte.Debugger.DebuggedProcesses.Count = 0 then
             FsiDebuggerState.NotRunning, None
         else
             let debuggedFsi =
@@ -478,7 +472,7 @@ type internal FsiToolWindow() as this =
             let fsiProcId = sessions.ProcessID
             let dte = provider.GetService(typeof<DTE>) :?> DTE
             let fsiProc = 
-                if dte.Debugger.LocalProcesses = null then None else
+                if isNull dte.Debugger.LocalProcesses then None else
                 dte.Debugger.LocalProcesses
                 |> Seq.cast<Process>
                 |> Seq.tryFind (fun p -> p.ProcessID = fsiProcId)
@@ -684,9 +678,9 @@ type internal FsiToolWindow() as this =
             let originalFilter = textView.AddCommandFilter(this :> IOleCommandTarget) |> throwOnFailure1
             // Create a command service that will use the previous command target
             // as parent target and will route to it the commands that it can not handle.
-            if commandService = null then
+            if isNull commandService then
                 commandService <-             
-                    if (null = originalFilter) then                    
+                    if isNull originalFilter then                    
                         new OleMenuCommandService(this)            
                     else
                         new OleMenuCommandService(this, originalFilter)
@@ -784,7 +778,7 @@ type internal FsiToolWindow() as this =
         member this.QueryStatus (guid, cCmds, prgCmds, pCmdText)=
 
             // Added to prevent command processing when the zoom control in the margin is focused
-            let wpfTextView = editorAdaptersFactory.GetWpfTextView(textView)
+            let wpfTextView = textViewAdapter.GetWpfTextView(textView)
 
             // Can't search in the F# Interactive window
             // InterceptsCommandRouting property denotes whether this element requires normal input as opposed to VS commands

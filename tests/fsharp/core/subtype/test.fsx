@@ -1,5 +1,5 @@
 // #Conformance #TypeInference #TypeConstraints #UnitsOfMeasure #Regression #Operators #Mutable 
-#if Portable
+#if TESTS_AS_APP
 module Core_subtype
 #endif
 
@@ -14,20 +14,6 @@ let check s v1 v2 = test s (v1 = v2)
 (* TEST SUITE FOR SUBTYPE CONSTRAINTS *)
 
 
-#if NetCore
-#else
-let argv = System.Environment.GetCommandLineArgs() 
-let SetCulture() = 
-  if argv.Length > 2 && argv.[1] = "--culture" then  begin
-    let cultureString = argv.[2] in 
-    let culture = new System.Globalization.CultureInfo(cultureString) in 
-    stdout.WriteLine ("Running under culture "+culture.ToString()+"...");
-    System.Threading.Thread.CurrentThread.CurrentCulture <-  culture
-  end 
-
-do SetCulture()    
-#endif
-
 open System
 open System.IO
 
@@ -37,8 +23,7 @@ open System.Collections.Generic
 let f1 (x: 'a[]) = (x :> ICollection<'a>) 
 do let x = f1 [| 3;4; |] in test "test239809" (x.Contains(3))
 
-#if Portable
-#else
+#if !FX_PORTABLE_OR_NETSTANDARD
 (* 'a[] :> IReadOnlyCollection<'a> *)
 let f1ReadOnly (x: 'a[]) = (x :> IReadOnlyCollection<'a>) 
 do let x = f1ReadOnly [| 3;4; |] in test "test239809ReadOnly" (x.Count = 2)
@@ -48,8 +33,7 @@ do let x = f1ReadOnly [| 3;4; |] in test "test239809ReadOnly" (x.Count = 2)
 let f2 (x: 'a[]) = (x :> IList<'a>) 
 do let x = f2 [| 3;4; |] in test "test239810" (x.Item(1) = 4)
 
-#if Portable
-#else
+#if !FX_PORTABLE_OR_NETSTANDARD
 (* 'a[] :> IReadOnlyList<'a> *)
 let f2ReadOnly (x: 'a[]) = (x :> IReadOnlyList<'a>) 
 do let x = f2ReadOnly [| 3;4; |] in test "test239810ReadOnly" (x.Item(1) = 4)
@@ -63,8 +47,7 @@ do let x = f3 [| 3;4; |] in for x in x do (Printf.printf "val %d\n" x) done
 let f4 (x: 'a[]) = (x :> IList<'a>) 
 do let x = f4 [| 31;42; |] in for x in x do (Printf.printf "val %d\n" x) done
 
-#if Portable
-#else
+#if !FX_PORTABLE_OR_NETSTANDARD
 (* Call 'foreachG' using an IReadOnlyList<int> (solved to IEnumerable<int>) *)
 let f4ReadOnly (x: 'a[]) = (x :> IReadOnlyList<'a>) 
 do let x = f4ReadOnly [| 31;42; |] in for x in x do (Printf.printf "val %d\n" x) done
@@ -74,8 +57,7 @@ do let x = f4ReadOnly [| 31;42; |] in for x in x do (Printf.printf "val %d\n" x)
 let f5 (x: 'a[]) = (x :> ICollection<'a>) 
 do let x = f5 [| 31;42; |] in for x in x do (Printf.printf "val %d\n" x) done
 
-#if Portable
-#else
+#if !FX_PORTABLE_OR_NETSTANDARD
 (* Call 'foreachG' using an IReadOnlyCollection<int> (solved to IEnumerable<int>) *)
 let f5ReadOnly (x: 'a[]) = (x :> IReadOnlyCollection<'a>) 
 do let x = f5ReadOnly [| 31;42; |] in for x in x do (Printf.printf "val %d\n" x) done
@@ -116,8 +98,7 @@ let testUpcastToEnum1 (x: System.AttributeTargets) = (x :> System.Enum)
 let testUpcastToEnum6 (x: System.Enum) = (x :> System.Enum) 
 
 // these delegates don't exist in portable
-#if Portable
-#else
+#if !FX_PORTABLE_OR_NETSTANDARD
 let testUpcastToDelegate1 (x: System.Threading.ThreadStart) = (x :> System.Delegate) 
 
 let testUpcastToMulticastDelegate1 (x: System.Threading.ThreadStart) = (x :> System.MulticastDelegate) 
@@ -1372,8 +1353,7 @@ module CoercivePipingTest =
     check "clwcweki" (f8 3) (box 3)
     check "clwcweki" (f9 3) (box 3)
 
-#if NetCore
-#else
+#if !FX_RESHAPED_REFLECTION
     // this was the actual repro
     let f (info: System.Reflection.MethodInfo) = 
       System.Attribute.GetCustomAttribute(info, typeof<ReflectedDefinitionAttribute>)
@@ -1725,6 +1705,53 @@ module GenericPropertyConstraintSolvedByRecord =
 
     let v = print_foo_memb { foo=1 } 
 
+
+module SRTPFix = 
+
+    open System
+
+    let inline konst x _ = x
+
+    type CFunctor() = 
+      static member inline fmap (f : ^a -> ^b, a : ^a list) = List.map f a
+      static member inline fmap (f : ^a -> ^b, a : ^a option) =
+        match a with
+        | None -> None
+        | Some x -> Some (f x)
+
+      // default implementation of replace
+      static member inline replace< ^a, ^b, ^c, ^d, ^e when ^a :> CFunctor and (^a or ^d) : (static member fmap : (^b -> ^c) * ^d -> ^e) > (a, f) =
+        ((^a or ^d) : (static member fmap : (^b -> ^c) * ^d -> ^e) (konst a, f))
+
+      // call overridden replace if present
+      static member inline replace< ^a, ^b, ^c when ^b : (static member replace : ^a * ^b -> ^c)>(a : ^a, f : ^b) =
+        (^b : (static member replace : ^a * ^b -> ^c) (a, f))
+
+    let inline replace_instance< ^a, ^b, ^c, ^d when (^a or ^c) : (static member replace : ^b * ^c -> ^d)> (a : ^b, f : ^c) =
+      ((^a or ^c) : (static member replace : ^b * ^c -> ^d) (a, f))
+
+    let inline fmap_instance< ^a, ^b, ^c, ^d, ^e when (^a or ^d) : (static member fmap : (^b -> ^c) * ^d -> ^e)>(f : ^b -> ^c, a : ^d) =
+      ((^a or ^d) : (static member fmap : (^b -> ^c) * ^d -> ^e) (f, a))
+
+    let inline fmap (f : ^a -> ^b) (a : ^c) =
+      fmap_instance<CFunctor, _, _, _, _> (f, a)
+
+    let inline replace (a : ^a) (f : ^b) : ^a0 when (CFunctor or  ^b) : (static member replace :  ^a *  ^b ->  ^a0) =
+      replace_instance<CFunctor, _, _, _> (a, f)
+
+    (*
+    type test(arg : string) = class
+      member __.data = arg
+      static member inline fmap (f : char -> char, a : test) = String.map f a.data
+      static member inline replace (a : char, f : test) = test.fmap (konst a, f)
+    end
+
+    let _ =
+      printfn "%A" <| fmap id [1;2;3];
+      printfn "%A" <| replace 5 [1;2;3];
+      printfn "%A" <| fmap ((+) 1) (Some 2);
+      printfn "%A" <| replace 'q' (test("HI"))
+     *)
 let aa =
   if not failures.IsEmpty then (printfn "Test Failed, failures = %A" failures; exit 1) 
 

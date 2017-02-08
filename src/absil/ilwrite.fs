@@ -2,6 +2,9 @@
 
 module internal Microsoft.FSharp.Compiler.AbstractIL.ILBinaryWriter 
 
+open System.Collections.Generic 
+open System.IO
+
 open Internal.Utilities
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.ILAsciiWriter 
@@ -13,17 +16,13 @@ open Microsoft.FSharp.Compiler.AbstractIL.Internal.BinaryConstants
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Support 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 open Microsoft.FSharp.Compiler.AbstractIL.ILPdbWriter
-
+open Microsoft.FSharp.Compiler.DiagnosticMessage
+open Microsoft.FSharp.Compiler.ErrorLogger
+open Microsoft.FSharp.Compiler.Range
 #if FX_NO_CORHOST_SIGNER
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.StrongNameSign
 #endif
 
-open Microsoft.FSharp.Compiler.DiagnosticMessage
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Range
-
-open System.Collections.Generic 
-open System.IO
 
 #if DEBUG
 let showEntryLookups = false
@@ -507,7 +506,7 @@ type MethodDefKey(tidx:int,garity:int,nm:string,rty:ILType,argtys:ILTypes,isStat
             nm = y.Name && 
             // note: these next two use structural equality on AbstractIL ILType values
             rty = y.ReturnType && 
-            ILList.lengthsEqAndForall2 (fun a b -> a = b) argtys y.ArgTypes &&
+            List.lengthsEqAndForall2 (fun a b -> a = b) argtys y.ArgTypes &&
             isStatic = y.IsStatic
         | _ -> false
 
@@ -549,8 +548,7 @@ type MetadataTable =
 
 [<NoEquality; NoComparison>]
 type cenv = 
-    { primaryAssembly: ILScopeRef
-      ilg: ILGlobals
+    { ilg: ILGlobals
       emitTailcalls: bool
       showTimes: bool
       desiredMetadataVersion: ILVersionInfo
@@ -740,7 +738,7 @@ and GetModuleRefAsFileIdx cenv mref =
 
 let isScopeRefLocal scoref = (scoref = ILScopeRef.Local) 
 let isTypeRefLocal (tref:ILTypeRef) = isScopeRefLocal tref.Scope
-let isTypeLocal (typ:ILType) = typ.IsNominal && typ.GenericArgs.Length = 0 && isTypeRefLocal typ.TypeRef
+let isTypeLocal (typ:ILType) = typ.IsNominal && isNil typ.GenericArgs && isTypeRefLocal typ.TypeRef
 
 // -------------------------------------------------------------------- 
 // Scopes to Implementation elements.
@@ -828,7 +826,7 @@ let callconvToByte ntypars (Callconv (hasthis,bcc)) =
 
 // REVIEW: write into an accumuating buffer
 let rec EmitTypeSpec cenv env (bb: ByteBuffer) (et,tspec:ILTypeSpec) = 
-    if ILList.isEmpty tspec.GenericArgs then 
+    if isNil tspec.GenericArgs then 
         bb.EmitByte et
         emitTypeInfoAsTypeDefOrRefEncoded cenv bb (tspec.Scope,tspec.Enclosing,tspec.Name)
     else  
@@ -842,7 +840,7 @@ and GetTypeAsTypeDefOrRef cenv env (ty:ILType) =
     if isTypeLocal ty then 
         let tref = ty.TypeRef
         (tdor_TypeDef, GetIdxForTypeDef cenv (TdKey(tref.Enclosing,tref.Name)))
-    elif ty.IsNominal && ILList.isEmpty ty.GenericArgs then
+    elif ty.IsNominal && isNil ty.GenericArgs then
         (tdor_TypeRef, GetTypeRefAsTypeRefIdx cenv ty.TypeRef)
     else 
         (tdor_TypeSpec, GetTypeAsTypeSpecIdx cenv env ty)
@@ -925,20 +923,20 @@ and EmitCallsig cenv env bb (callconv,args:ILTypes,ret,varargs:ILVarArgs,genarit
     if genarity > 0 then bb.EmitZ32 genarity
     bb.EmitZ32 ((args.Length + (match varargs with None -> 0 | Some l -> l.Length)))
     EmitType cenv env bb ret
-    args |> ILList.iter (EmitType cenv env bb)
+    args |> List.iter (EmitType cenv env bb)
     match varargs with 
      | None -> ()// no extra arg = no sentinel 
      | Some tys -> 
-         if ILList.isEmpty tys then () // no extra arg = no sentinel 
+         if isNil tys then () // no extra arg = no sentinel 
          else 
             bb.EmitByte et_SENTINEL
-            ILList.iter (EmitType cenv env bb) tys
+            List.iter (EmitType cenv env bb) tys
 
 and GetCallsigAsBytes cenv env x = emitBytesViaBuffer (fun bb -> EmitCallsig cenv env bb x)
 
 // REVIEW: write into an accumuating buffer
 and EmitTypes cenv env bb (inst: ILTypes) = 
-    inst |> ILList.iter (EmitType cenv env bb) 
+    inst |> List.iter (EmitType cenv env bb) 
 
 let GetTypeAsMemberRefParent cenv env ty =
     match GetTypeAsTypeDefOrRef cenv env ty with 
@@ -1205,22 +1203,22 @@ and GenTypeDefPass2 pidx enc cenv (td:ILTypeDef) =
 
       // Add entries to auxiliary mapping tables, e.g. Nested, PropertyMap etc. 
       // Note Nested is organised differntly to the others... 
-      if nonNil enc then 
+      if not (isNil enc) then
           AddUnsharedRow cenv TableNames.Nested 
               (UnsharedRow 
                   [| SimpleIndex (TableNames.TypeDef, tidx) 
                      SimpleIndex (TableNames.TypeDef, pidx) |]) |> ignore
       let props = td.Properties.AsList
-      if nonNil props then 
+      if not (isNil props) then 
           AddUnsharedRow cenv TableNames.PropertyMap (GetTypeDefAsPropertyMapRow cenv tidx) |> ignore 
       let events = td.Events.AsList
-      if nonNil events then 
+      if not (isNil events) then 
           AddUnsharedRow cenv TableNames.EventMap (GetTypeDefAsEventMapRow cenv tidx) |> ignore
 
       // Now generate or assign index numbers for tables referenced by the maps. 
       // Don't yet generate contents of these tables - leave that to pass3, as 
       // code may need to embed these entries. 
-      td.Implements |> ILList.iter (GenImplementsPass2 cenv env tidx)
+      td.Implements |> List.iter (GenImplementsPass2 cenv env tidx)
       props |> List.iter (GenPropertyDefPass2 cenv tidx)
       events |> List.iter (GenEventDefPass2 cenv tidx)
       td.Fields.AsList |> List.iter (GenFieldDefPass2 cenv tidx)
@@ -1249,7 +1247,7 @@ let FindMethodDefIdx cenv mdkey =
                 if i = tidx2 then 
                     if sofar = None then 
                         Some tkey2 
-                    else failwith "mutiple type names map to index" 
+                    else failwith "multiple type names map to index" 
                 else sofar)  None) with 
           | Some x -> x
           | None -> raise MethodDefNotFound 
@@ -1308,9 +1306,9 @@ let GetMethodRefInfoAsMemberRefIdx cenv env  ((_,typ,_,_,_,_,_) as minfo) =
     FindOrAddSharedRow cenv TableNames.MemberRef (MethodRefInfoAsMemberRefRow cenv env fenv  minfo)
 
 let GetMethodRefInfoAsMethodRefOrDef isAlwaysMethodDef cenv env ((nm,typ:ILType,cc,args,ret,varargs,genarity) as minfo) =
-    if isNone varargs && (isAlwaysMethodDef || isTypeLocal typ) then
+    if Option.isNone varargs && (isAlwaysMethodDef || isTypeLocal typ) then
         if not typ.IsNominal then failwith "GetMethodRefInfoAsMethodRefOrDef: unexpected local tref-typ"
-        try (mdor_MethodDef, GetMethodRefAsMethodDefIdx cenv (mkILMethRefRaw(typ.TypeRef, cc, nm, genarity, args,ret)))
+        try (mdor_MethodDef, GetMethodRefAsMethodDefIdx cenv (mkILMethRef (typ.TypeRef, cc, nm, genarity, args,ret)))
         with MethodDefNotFound -> (mdor_MemberRef, GetMethodRefInfoAsMemberRefIdx cenv env minfo)
     else (mdor_MemberRef, GetMethodRefInfoAsMemberRefIdx cenv env minfo)
 
@@ -1325,7 +1323,7 @@ let rec GetMethodSpecInfoAsMethodSpecIdx cenv env (nm,typ,cc,args,ret,varargs,mi
         emitBytesViaBuffer (fun bb -> 
             bb.EmitByte e_IMAGE_CEE_CS_CALLCONV_GENERICINST
             bb.EmitZ32 minst.Length
-            minst |> ILList.iter (EmitType cenv env bb))
+            minst |> List.iter (EmitType cenv env bb))
     FindOrAddSharedRow cenv TableNames.MethodSpec 
       (SharedRow 
           [| MethodDefOrRef (mdorTag,mdorRow)
@@ -1502,7 +1500,7 @@ let GetCallsigAsStandAloneSigIdx cenv env info =
 let EmitLocalSig cenv env (bb: ByteBuffer) (locals: ILLocals) = 
     bb.EmitByte e_IMAGE_CEE_CS_CALLCONV_LOCAL_SIG
     bb.EmitZ32 locals.Length
-    locals |> ILList.iter (EmitLocalInfo cenv env bb)
+    locals |> List.iter (EmitLocalInfo cenv env bb)
 
 let GetLocalSigAsBlobHeapIdx cenv env locals = 
     GetBytesAsBlobIdx cenv (emitBytesViaBuffer (fun bb -> EmitLocalSig cenv env bb locals))
@@ -2027,22 +2025,22 @@ module Codebuf =
             if (shape = ILArrayShape.SingleDimensional) then   
                 emitTypeInstr cenv codebuf env i_newarr ty
             else
-                let args = ILList.init shape.Rank (fun _ -> cenv.ilg.typ_int32)
-                emitMethodSpecInfoInstr cenv codebuf env i_newobj (".ctor",mkILArrTy(ty,shape),ILCallingConv.Instance,args,ILType.Void,None,emptyILGenericArgs)
+                let args = List.init shape.Rank (fun _ -> cenv.ilg.typ_Int32)
+                emitMethodSpecInfoInstr cenv codebuf env i_newobj (".ctor",mkILArrTy(ty,shape),ILCallingConv.Instance,args,ILType.Void,None,[])
 
         | I_stelem_any (shape,ty) -> 
             if (shape = ILArrayShape.SingleDimensional) then   
                 emitTypeInstr cenv codebuf env i_stelem_any ty  
             else 
-                let args = ILList.init (shape.Rank+1) (fun i -> if i < shape.Rank then  cenv.ilg.typ_int32 else ty)
-                emitMethodSpecInfoInstr cenv codebuf env i_call ("Set",mkILArrTy(ty,shape),ILCallingConv.Instance,args,ILType.Void,None,emptyILGenericArgs)
+                let args = List.init (shape.Rank+1) (fun i -> if i < shape.Rank then  cenv.ilg.typ_Int32 else ty)
+                emitMethodSpecInfoInstr cenv codebuf env i_call ("Set",mkILArrTy(ty,shape),ILCallingConv.Instance,args,ILType.Void,None,[])
 
         | I_ldelem_any (shape,ty) -> 
             if (shape = ILArrayShape.SingleDimensional) then   
                 emitTypeInstr cenv codebuf env i_ldelem_any ty  
             else 
-                let args = ILList.init shape.Rank (fun _ -> cenv.ilg.typ_int32)
-                emitMethodSpecInfoInstr cenv codebuf env i_call ("Get",mkILArrTy(ty,shape),ILCallingConv.Instance,args,ty,None,emptyILGenericArgs)
+                let args = List.init shape.Rank (fun _ -> cenv.ilg.typ_Int32)
+                emitMethodSpecInfoInstr cenv codebuf env i_call ("Get",mkILArrTy(ty,shape),ILCallingConv.Instance,args,ty,None,[])
 
         | I_ldelema  (ro,_isNativePtr,shape,ty) -> 
             if (ro = ReadonlyAddress) then
@@ -2050,8 +2048,8 @@ module Codebuf =
             if (shape = ILArrayShape.SingleDimensional) then   
                 emitTypeInstr cenv codebuf env i_ldelema ty
             else 
-                let args = ILList.init shape.Rank (fun _ -> cenv.ilg.typ_int32)
-                emitMethodSpecInfoInstr cenv codebuf env i_call ("Address",mkILArrTy(ty,shape),ILCallingConv.Instance,args,ILType.Byref ty,None,emptyILGenericArgs)
+                let args = List.init shape.Rank (fun _ -> cenv.ilg.typ_Int32)
+                emitMethodSpecInfoInstr cenv codebuf env i_call ("Address",mkILArrTy(ty,shape),ILCallingConv.Instance,args,ILType.Byref ty,None,[])
 
         | I_castclass  ty -> emitTypeInstr cenv codebuf env i_castclass ty
         | I_isinst  ty -> emitTypeInstr cenv codebuf env i_isinst ty
@@ -2070,13 +2068,13 @@ module Codebuf =
         | I_sizeof  ty -> emitTypeInstr cenv codebuf env i_sizeof ty
         | EI_ldlen_multi (_,m)    -> 
             emitShortInt32Instr codebuf (i_ldc_i4_s,i_ldc_i4) m
-            emitInstr cenv codebuf env (mkNormalCall(mkILNonGenericMethSpecInTy(cenv.ilg.typ_Array, ILCallingConv.Instance, "GetLength", [(cenv.ilg.typ_int32)], (cenv.ilg.typ_int32))))
+            emitInstr cenv codebuf env (mkNormalCall(mkILNonGenericMethSpecInTy(cenv.ilg.typ_Array, ILCallingConv.Instance, "GetLength", [(cenv.ilg.typ_Int32)], (cenv.ilg.typ_Int32))))
 
         |  _ -> failwith "an IL instruction cannot be emitted"
 
 
     let mkScopeNode cenv (localSigs: _[]) (startOffset,endOffset,ls: ILLocalDebugMapping list,childScopes) = 
-        if (isNil ls || not cenv.generatePdb) then childScopes
+        if isNil ls || not cenv.generatePdb then childScopes
         else
           [ { Children= Array.ofList childScopes
               StartOffset=startOffset
@@ -2241,7 +2239,7 @@ let GetFieldDefTypeAsBlobIdx cenv env ty =
 let GenILMethodBody mname cenv env (il: ILMethodBody) =
     let localSigs = 
       if cenv.generatePdb then 
-        il.Locals |> ILList.toArray |> Array.map (fun l -> 
+        il.Locals |> List.toArray |> Array.map (fun l -> 
             // Write a fake entry for the local signature headed by e_IMAGE_CEE_CS_CALLCONV_FIELD. This is referenced by the PDB file
             ignore (FindOrAddSharedRow cenv TableNames.StandAloneSig (SharedRow [| Blob (GetFieldDefTypeAsBlobIdx cenv env l.Type) |]))
             // Now write the type
@@ -2253,7 +2251,7 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
     let codeSize = code.Length
     let methbuf = ByteBuffer.Create (codeSize * 3)
     // Do we use the tiny format? 
-    if ILList.isEmpty il.Locals && il.MaxStack <= 8 && isNil seh && codeSize < 64 then
+    if isNil il.Locals && il.MaxStack <= 8 && isNil seh && codeSize < 64 then
         // Use Tiny format 
         let alignedCodeSize = align 4 (codeSize + 1)
         let codePadding =  (alignedCodeSize - (codeSize + 1))
@@ -2270,7 +2268,7 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
             (if il.IsZeroInit then e_CorILMethod_InitLocals else 0x0uy)
 
         let localToken = 
-            if ILList.isEmpty il.Locals then 0x0 else 
+            if isNil il.Locals then 0x0 else 
             getUncodedToken TableNames.StandAloneSig
               (FindOrAddSharedRow cenv TableNames.StandAloneSig (GetLocalSigAsStandAloneSigIdx cenv env il.Locals))
 
@@ -2285,7 +2283,7 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
         methbuf.EmitBytes code
         methbuf.EmitPadding codePadding
 
-        if nonNil seh then 
+        if not (isNil seh) then 
             // Can we use the small exception handling table format? 
             let smallSize = (seh.Length * 12 + 4)
             let canUseSmall = 
@@ -2443,7 +2441,7 @@ and GenGenericParamPass3 cenv env idx owner gp =
 and GenGenericParamPass4 cenv env idx owner gp = 
     let gpidx = FindOrAddSharedRow cenv TableNames.GenericParam (GetGenericParamAsGenericParamRow cenv env idx owner gp)
     GenCustomAttrsPass3Or4 cenv (hca_GenericParam, gpidx) gp.CustomAttrs
-    gp.Constraints |> ILList.iter (GenGenericParamConstraintPass4 cenv env gpidx) 
+    gp.Constraints |> List.iter (GenGenericParamConstraintPass4 cenv env gpidx) 
 
 // -------------------------------------------------------------------- 
 // param and return --> Param Row
@@ -2463,7 +2461,7 @@ let rec GetParamAsParamRow cenv _env seq (param: ILParameter)  =
            StringE (GetStringHeapIdxOption cenv param.Name) |]  
 
 and GenParamPass3 cenv env seq (param: ILParameter) = 
-    if param.IsIn=false && param.IsOut=false && param.IsOptional=false && isNone param.Default && isNone param.Name && isNone param.Marshal 
+    if not param.IsIn && not param.IsOut && not param.IsOptional && Option.isNone param.Default && Option.isNone param.Name && Option.isNone param.Marshal 
     then ()
     else    
       let pidx = AddUnsharedRow cenv TableNames.Param (GetParamAsParamRow cenv env seq param)
@@ -2474,6 +2472,15 @@ and GenParamPass3 cenv env seq (param: ILParameter) =
       | Some ntyp -> 
           AddUnsharedRow cenv TableNames.FieldMarshal 
                 (UnsharedRow [| HasFieldMarshal (hfm_ParamDef, pidx); Blob (GetNativeTypeAsBlobIdx cenv ntyp) |]) |> ignore
+      // Write Contant table for DefaultParameterValue attr
+      match param.Default with
+      | None -> ()
+      | Some i -> 
+        AddUnsharedRow cenv TableNames.Constant 
+              (UnsharedRow 
+                  [| GetFieldInitFlags i
+                     HasConstant (hc_ParamDef, pidx)
+                     Blob (GetFieldInitAsBlobIdx cenv i) |]) |> ignore
 
 let GenReturnAsParamRow (returnv : ILReturn) = 
     let flags = (if returnv.Marshal <> None then 0x2000 else 0x0000)
@@ -2483,7 +2490,7 @@ let GenReturnAsParamRow (returnv : ILReturn) =
            StringE 0 |]  
 
 let GenReturnPass3 cenv (returnv: ILReturn) = 
-    if isSome returnv.Marshal || nonNil  returnv.CustomAttrs.AsList then
+    if Option.isSome returnv.Marshal || not (isNil returnv.CustomAttrs.AsList) then
         let pidx = AddUnsharedRow cenv TableNames.Param (GenReturnAsParamRow returnv)
         GenCustomAttrsPass3Or4 cenv (hca_ParamDef,pidx) returnv.CustomAttrs
         match returnv.Marshal with 
@@ -2504,7 +2511,7 @@ let GetMethodDefSigAsBytes cenv env (mdef: ILMethodDef) =
       if mdef.GenericParams.Length > 0 then bb.EmitZ32 mdef.GenericParams.Length
       bb.EmitZ32 mdef.Parameters.Length
       EmitType cenv env bb mdef.Return.Type
-      mdef.ParameterTypes |> ILList.iter (EmitType cenv env bb))
+      mdef.ParameterTypes |> List.iter (EmitType cenv env bb))
 
 let GenMethodDefSigAsBlobIdx cenv env mdef = 
     GetBytesAsBlobIdx cenv (GetMethodDefSigAsBytes cenv env mdef)
@@ -2603,7 +2610,7 @@ let GenMethodDefPass3 cenv env (md:ILMethodDef) =
     let idx2 = AddUnsharedRow cenv TableNames.Method (GenMethodDefAsRow cenv env midx md)
     if midx <> idx2 then failwith "index of method def on pass 3 does not match index on pass 2"
     GenReturnPass3 cenv md.Return  
-    md.Parameters |> ILList.iteri (fun n param -> GenParamPass3 cenv env (n+1) param) 
+    md.Parameters |> List.iteri (fun n param -> GenParamPass3 cenv env (n+1) param) 
     md.CustomAttrs |> GenCustomAttrsPass3Or4 cenv (hca_MethodDef,midx) 
     md.SecurityDecls.AsList |> GenSecurityDeclsPass3 cenv (hds_MethodDef,midx)
     md.GenericParams |> List.iteri (fun n gp -> GenGenericParamPass3 cenv env n (tomd_MethodDef, midx) gp) 
@@ -2666,7 +2673,7 @@ and GetPropertySigAsBytes cenv env prop =
         bb.EmitByte b
         bb.EmitZ32 prop.Args.Length
         EmitType cenv env bb prop.Type
-        prop.Args |> ILList.iter (EmitType cenv env bb))
+        prop.Args |> List.iter (EmitType cenv env bb))
 
 and GetPropertyAsPropertyRow cenv env (prop:ILPropertyDef) = 
     let flags = 
@@ -2770,7 +2777,7 @@ let rec GenTypeDefPass3 enc cenv (td:ILTypeDef) =
       match td.Layout with 
       | ILTypeDefLayout.Auto -> ()
       | ILTypeDefLayout.Sequential layout | ILTypeDefLayout.Explicit layout ->  
-          if isSome layout.Pack || isSome layout.Size then 
+          if Option.isSome layout.Pack || Option.isSome layout.Size then 
             AddUnsharedRow cenv TableNames.ClassLayout
                 (UnsharedRow 
                     [| UShort (match layout.Pack with None -> uint16 0x0 | Some p -> p)
@@ -2806,6 +2813,9 @@ let rec GenTypeDefPass4 enc cenv (td:ILTypeDef) =
 
 and GenTypeDefsPass4 enc cenv tds =
     List.iter (GenTypeDefPass4 enc cenv) tds
+
+
+let timestamp = absilWriteGetTimeStamp ()
 
 // -------------------------------------------------------------------- 
 // ILExportedTypesAndForwarders --> ILExportedTypeOrForwarder table 
@@ -2859,17 +2869,16 @@ and GetManifsetAsAssemblyRow cenv m =
           UShort (match m.Version with None -> 0us | Some (_,_,_,w) -> w)
           ULong 
             ( (match m.AssemblyLongevity with 
-              | ILAssemblyLongevity.Unspecified -> 0x0000
-              | ILAssemblyLongevity.Library -> 0x0002 
+              | ILAssemblyLongevity.Unspecified ->       0x0000
+              | ILAssemblyLongevity.Library ->           0x0002 
               | ILAssemblyLongevity.PlatformAppDomain -> 0x0004
-              | ILAssemblyLongevity.PlatformProcess -> 0x0006
-              | ILAssemblyLongevity.PlatformSystem -> 0x0008) |||
+              | ILAssemblyLongevity.PlatformProcess ->   0x0006
+              | ILAssemblyLongevity.PlatformSystem ->    0x0008) |||
               (if m.Retargetable then 0x100 else 0x0) |||
               // Setting these causes peverify errors. Hence both ilread and ilwrite ignore them and refuse to set them.
               // Any debugging customattributes will automatically propagate
-              // REVIEW: No longer appears to be the case...
-              (if m.JitTracking then 0x8000 else 0x0) ||| 
-              (if m.DisableJitOptimizations then 0x4000 else 0x0) ||| 
+              // REVIEW: No longer appears to be the case
+              (if m.JitTracking then                     0x8000 else 0x0) ||| 
               (match m.PublicKey with None -> 0x0000 | Some _ -> 0x0001) ||| 0x0000)
           (match m.PublicKey with None -> Blob 0 | Some x -> Blob (GetBytesAsBlobIdx cenv x))
           StringE (GetStringHeapIdx cenv m.Name)
@@ -2888,7 +2897,7 @@ and GenManifestPass3 cenv m =
     | None -> ()
 
 and newGuid (modul: ILModuleDef) = 
-    let n = absilWriteGetTimeStamp ()
+    let n = timestamp
     let m = hash n
     let m2 = hash modul.Name
     [| b0 m; b1 m; b2 m; b3 m; b0 m2; b1 m2; b2 m2; b3 m2; 0xa7uy; 0x45uy; 0x03uy; 0x83uy; b0 n; b1 n; b2 n; b3 n |]
@@ -2923,8 +2932,6 @@ let SortTableRows tab (rows:GenericRow[]) =
         |> Array.ofList
         //|> Array.map SharedRow
 
-let timestamp = absilWriteGetTimeStamp ()
-
 let GenModule (cenv : cenv) (modul: ILModuleDef) = 
     let midx = AddUnsharedRow cenv TableNames.Module (GetModuleAsRow cenv modul)
     List.iter (GenResourcePass3 cenv) modul.Resources.AsList 
@@ -2946,14 +2953,13 @@ let GenModule (cenv : cenv) (modul: ILModuleDef) =
     GenTypeDefsPass4 [] cenv tds
     reportTime cenv.showTimes "Module Generation Pass 4"
 
-let generateIL requiredDataFixups (desiredMetadataVersion,generatePdb, ilg : ILGlobals, emitTailcalls,showTimes)  (m : ILModuleDef) noDebugData cilStartAddress =
+let generateIL requiredDataFixups (desiredMetadataVersion,generatePdb, ilg : ILGlobals, emitTailcalls,showTimes)  (m : ILModuleDef) cilStartAddress =
     let isDll = m.IsDLL
 
     let cenv = 
-        { primaryAssembly=ilg.traits.ScopeRef
-          emitTailcalls=emitTailcalls
+        { emitTailcalls=emitTailcalls
           showTimes=showTimes
-          ilg = mkILGlobals ilg.traits None noDebugData // assumes mscorlib is Scope_assembly _ ILScopeRef 
+          ilg = ilg
           desiredMetadataVersion=desiredMetadataVersion
           requiredDataFixups= requiredDataFixups
           requiredStringFixups = []
@@ -3053,10 +3059,6 @@ let generateIL requiredDataFixups (desiredMetadataVersion,generatePdb, ilg : ILG
 //=====================================================================
 // TABLES+BLOBS --> PHYSICAL METADATA+BLOBS
 //=====================================================================
-type BinaryChunk = 
-    { size: int32 
-      addr: int32 }
-
 let chunk sz next = ({addr=next; size=sz},next + sz) 
 let nochunk next = ({addr= 0x0;size= 0x0; } ,next)
 
@@ -3090,7 +3092,7 @@ module FileSystemUtilites =
 #endif
         ()
 
-let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls,showTimes) modul noDebugData cilStartAddress = 
+let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls,showTimes) modul cilStartAddress = 
 
     // When we know the real RVAs of the data section we fixup the references for the FieldRVA table. 
     // These references are stored as offsets into the metadata we return from this function 
@@ -3099,7 +3101,7 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
     let next = cilStartAddress
 
     let strings,userStrings,blobs,guids,tables,entryPointToken,code,requiredStringFixups,data,resources,pdbData,mappings = 
-      generateIL requiredDataFixups (desiredMetadataVersion,generatePdb,ilg,emitTailcalls,showTimes) modul noDebugData cilStartAddress
+      generateIL requiredDataFixups (desiredMetadataVersion,generatePdb,ilg,emitTailcalls,showTimes) modul cilStartAddress
 
     reportTime showTimes "Generated Tables and Code"
     let tableSize (tab: TableName) = tables.[tab.Index].Count
@@ -3540,8 +3542,8 @@ let writeDirectory os dict =
 
 let writeBytes (os: BinaryWriter) (chunk:byte[]) = os.Write(chunk,0,chunk.Length)  
 
-let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: ILStrongNameSigner option, portablePDB, 
-                                  fixupOverlappingSequencePoints, emitTailcalls, showTimes, dumpDebugInfo) modul noDebugData =
+let writeBinaryAndReportMappings (outfile, ilg: ILGlobals, pdbfile: string option, signer: ILStrongNameSigner option, portablePDB, embeddedPDB, embedAllSource, embedSourceList,
+                                  sourceLink, fixupOverlappingSequencePoints, emitTailcalls, showTimes, dumpDebugInfo) modul =
     // Store the public key from the signer into the manifest.  This means it will be written 
     // to the binary and also acts as an indicator to leave space for delay sign 
 
@@ -3589,7 +3591,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
         with e -> 
             failwith ("Could not open file for writing (binary mode): " + outfile)    
 
-    let pdbData,debugDirectoryChunk,debugDataChunk,textV2P,mappings =
+    let pdbData,pdbOpt,debugDirectoryChunk,debugDataChunk,debugEmbeddedPdbChunk,textV2P,mappings =
         try 
 
           let imageBaseReal = modul.ImageBase // FIXED CHOICE
@@ -3648,7 +3650,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
             if modul.MetadataVersion <> "" then
                 parseILVersion modul.MetadataVersion
             else
-                match ilg.traits.ScopeRef with 
+                match ilg.primaryAssemblyScopeRef with 
                 | ILScopeRef.Local -> failwith "Expected mscorlib to be ILScopeRef.Assembly was ILScopeRef.Local" 
                 | ILScopeRef.Module(_) -> failwith "Expected mscorlib to be ILScopeRef.Assembly was ILScopeRef.Module"
                 | ILScopeRef.Assembly(aref) ->
@@ -3658,7 +3660,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
                     | None -> failwith "Expected msorlib to have a version number"
 
           let entryPointToken,code,codePadding,metadata,data,resources,requiredDataFixups,pdbData,mappings = 
-            writeILMetadataAndCode ((pdbfile <> None), desiredMetadataVersion, ilg,emitTailcalls,showTimes) modul noDebugData next
+            writeILMetadataAndCode ((pdbfile <> None), desiredMetadataVersion, ilg,emitTailcalls,showTimes) modul next
 
           reportTime showTimes "Generated IL and metadata";
           let _codeChunk,next = chunk code.Length next
@@ -3682,7 +3684,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           let importLookupTableChunk,next = chunk 0x14 next
           let importNameHintTableChunk,next = chunk 0x0e next
           let mscoreeStringChunk,next = chunk 0x0c next
-          
+
           let next = align 0x10 (next + 0x05) - 0x05
           let importTableChunk = { addr=importTableChunk.addr; size = next - importTableChunk.addr}
           let importTableChunkPadding = importTableChunk.size - (0x28 + 0x14 + 0x0e + 0x0c)
@@ -3690,8 +3692,22 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           let next = next + 0x03
           let entrypointCodeChunk,next = chunk 0x06 next
           let globalpointerCodeChunk,next = chunk (if isItanium then 0x8 else 0x0) next
-          
-          let debugDirectoryChunk,next = chunk (if pdbfile = None then 0x0 else sizeof_IMAGE_DEBUG_DIRECTORY) next
+
+          let pdbOpt =
+            match portablePDB with
+            | true  -> 
+                let (uncompressedLength, contentId, stream) as pdbStream = generatePortablePdb fixupOverlappingSequencePoints embedAllSource embedSourceList sourceLink showTimes pdbData 
+                if embeddedPDB then Some (compressPortablePdbStream uncompressedLength contentId stream)
+                else Some (pdbStream)
+            | _ -> None
+          let debugDirectoryChunk,next = 
+            chunk (if pdbfile = None then 
+                       0x0
+                   else if embeddedPDB && portablePDB then
+                       sizeof_IMAGE_DEBUG_DIRECTORY * 2
+                   else
+                       sizeof_IMAGE_DEBUG_DIRECTORY
+                  ) next
           // The debug data is given to us by the PDB writer and appears to 
           // typically be the type of the data plus the PDB file name.  We fill 
           // this in after we've written the binary. We approximate the size according 
@@ -3699,11 +3715,19 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           let debugDataJustInCase = 40
           let debugDataChunk,next = 
               chunk (align 0x4 (match pdbfile with 
-                                | None -> 0x0 
+                                | None -> 0
                                 | Some f -> (24 
                                             + System.Text.Encoding.Unicode.GetByteCount(f) // See bug 748444
                                             + debugDataJustInCase))) next
 
+          let debugEmbeddedPdbChunk,next = 
+              let streamLength = 
+                    match pdbOpt with
+                    | Some (_,_,stream) -> int(stream.Length)
+                    | None -> 0
+              chunk (align 0x4 (match embeddedPDB with 
+                                | true -> 8 + streamLength
+                                | _ -> 0 )) next
 
           let textSectionSize = next - textSectionAddr
           let nextPhys = align alignPhys (textSectionPhysLoc + textSectionSize)
@@ -3811,14 +3835,14 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           write (Some peFileHeaderChunk.addr) os "pe file header" [| |];
           
           if (modul.Platform = Some(AMD64)) then
-            writeInt32AsUInt16 os 0x8664 // Machine - IMAGE_FILE_MACHINE_AMD64 
+            writeInt32AsUInt16 os 0x8664    // Machine - IMAGE_FILE_MACHINE_AMD64 
           elif isItanium then
             writeInt32AsUInt16 os 0x200
           else
-            writeInt32AsUInt16 os 0x014c; // Machine - IMAGE_FILE_MACHINE_I386 
+            writeInt32AsUInt16 os 0x014c;   // Machine - IMAGE_FILE_MACHINE_I386 
             
-          writeInt32AsUInt16 os numSections; 
-          writeInt32 os timestamp; // date since 1970 
+          writeInt32AsUInt16 os numSections;
+          writeInt32 os timestamp   // date since 1970 
           writeInt32 os 0x00; // Pointer to Symbol Table Always 0 
        // 00000090 
           writeInt32 os 0x00; // Number of Symbols Always 0 
@@ -4093,16 +4117,18 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           if isItanium then 
               write (Some (textV2P globalpointerCodeChunk.addr)) os " itanium global pointer"
                    [| 0x0uy; 0x0uy; 0x0uy; 0x0uy; 0x0uy; 0x0uy; 0x0uy; 0x0uy |]
-          
+
           if pdbfile.IsSome then 
-              write (Some (textV2P debugDirectoryChunk.addr)) os "debug directory" (Array.create sizeof_IMAGE_DEBUG_DIRECTORY 0x0uy)
+              write (Some (textV2P debugDirectoryChunk.addr)) os "debug directory" (Array.create debugDirectoryChunk.size 0x0uy)
               write (Some (textV2P debugDataChunk.addr)) os "debug data" (Array.create debugDataChunk.size 0x0uy)
-          
+
+          if embeddedPDB then
+              write (Some (textV2P debugEmbeddedPdbChunk.addr)) os "debug data" (Array.create debugEmbeddedPdbChunk.size 0x0uy)
+
           writePadding os "end of .text" (dataSectionPhysLoc - textSectionPhysLoc - textSectionSize)
           
           // DATA SECTION 
-#if FX_NO_LINKEDRESOURCES
-#else
+#if !FX_NO_LINKEDRESOURCES
           match nativeResources with
           | [||] -> ()
           | resources ->
@@ -4144,7 +4170,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
               FileSystemUtilites.setExecutablePermission outfile
           with _ -> 
               ()
-          pdbData,debugDirectoryChunk,debugDataChunk,textV2P,mappings
+          pdbData,pdbOpt,debugDirectoryChunk,debugDataChunk,debugEmbeddedPdbChunk,textV2P,mappings
 
         // Looks like a finally
         with e ->   
@@ -4168,14 +4194,17 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
     | Some fpdb -> 
         try 
             let idd = 
+                match pdbOpt with 
+                | Some (originalLength, contentId, stream) ->
+                    if embeddedPDB then
+                        embedPortablePdbInfo originalLength contentId stream showTimes fpdb debugDataChunk debugEmbeddedPdbChunk
+                    else
+                        writePortablePdbInfo contentId stream showTimes fpdb debugDataChunk
+                | None ->
 #if FX_NO_PDB_WRITER
-                ignore portablePDB
-                writePortablePdbInfo fixupOverlappingSequencePoints showTimes fpdb pdbData
+                    Array.empty<idd>
 #else
-                if portablePDB then 
-                    writePortablePdbInfo fixupOverlappingSequencePoints showTimes fpdb pdbData
-                else
-                    writePdbInfo fixupOverlappingSequencePoints showTimes outfile fpdb pdbData
+                    writePdbInfo fixupOverlappingSequencePoints showTimes outfile fpdb pdbData debugDataChunk
 #endif
             reportTime showTimes "Generate PDB Info"
 
@@ -4185,19 +4214,22 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
             try 
                 // write the IMAGE_DEBUG_DIRECTORY 
                 os2.BaseStream.Seek (int64 (textV2P debugDirectoryChunk.addr), SeekOrigin.Begin) |> ignore
-                writeInt32 os2 idd.iddCharacteristics           // IMAGE_DEBUG_DIRECTORY.Characteristics 
-                writeInt32 os2 timestamp
-                writeInt32AsUInt16 os2 idd.iddMajorVersion
-                writeInt32AsUInt16 os2 idd.iddMinorVersion
-                writeInt32 os2 idd.iddType
-                writeInt32 os2 idd.iddData.Length               // IMAGE_DEBUG_DIRECTORY.SizeOfData 
-                writeInt32 os2 debugDataChunk.addr              // IMAGE_DEBUG_DIRECTORY.AddressOfRawData 
-                writeInt32 os2 (textV2P debugDataChunk.addr)    // IMAGE_DEBUG_DIRECTORY.PointerToRawData 
+                for i in idd do
+                    writeInt32 os2 i.iddCharacteristics           // IMAGE_DEBUG_DIRECTORY.Characteristics
+                    writeInt32 os2 i.iddTimestamp
+                    writeInt32AsUInt16 os2 i.iddMajorVersion
+                    writeInt32AsUInt16 os2 i.iddMinorVersion
+                    writeInt32 os2 i.iddType
+                    writeInt32 os2 i.iddData.Length               // IMAGE_DEBUG_DIRECTORY.SizeOfData 
+                    writeInt32 os2 i.iddChunk.addr                // IMAGE_DEBUG_DIRECTORY.AddressOfRawData 
+                    writeInt32 os2 (textV2P i.iddChunk.addr)      // IMAGE_DEBUG_DIRECTORY.PointerToRawData 
 
-                // write the debug raw data as given us by the PDB writer 
-                os2.BaseStream.Seek (int64 (textV2P debugDataChunk.addr), SeekOrigin.Begin) |> ignore
-                if debugDataChunk.size < idd.iddData.Length then failwith "Debug data area is not big enough.  Debug info may not be usable"
-                writeBytes os2 idd.iddData
+                // Write the Debug Data
+                for i in idd do
+                    // write the debug raw data as given us by the PDB writer 
+                    os2.BaseStream.Seek (int64 (textV2P i.iddChunk.addr), SeekOrigin.Begin) |> ignore
+                    if i.iddChunk.size < i.iddData.Length then failwith "Debug data area is not big enough.  Debug info may not be usable"
+                    writeBytes os2 i.iddData
                 os2.Dispose()
             with e -> 
                 failwith ("Error while writing debug directory entry: "+e.Message)
@@ -4208,6 +4240,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
 
     end      
     ignore debugDataChunk
+    ignore debugEmbeddedPdbChunk
     reportTime showTimes "Finalize PDB"
 
     /// Sign the binary.  No further changes to binary allowed past this point! 
@@ -4227,19 +4260,23 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
     //Finished writing and signing the binary and debug info...
     mappings
 
-
 type options =
    { ilg: ILGlobals;
      pdbfile: string option
      portablePDB: bool
+     embeddedPDB: bool
+     embedAllSource: bool
+     embedSourceList: string list
+     sourceLink: string
      signer: ILStrongNameSigner option
      fixupOverlappingSequencePoints: bool
      emitTailcalls : bool
      showTimes: bool
      dumpDebugInfo:bool }
 
+let WriteILBinary (outfile, (args: options), modul) =
+    writeBinaryAndReportMappings (outfile, args.ilg, args.pdbfile, args.signer, args.portablePDB, args.embeddedPDB, 
+                                  args.embedAllSource, args.embedSourceList, args.sourceLink, args.fixupOverlappingSequencePoints, 
+                                  args.emitTailcalls, args.showTimes, args.dumpDebugInfo) modul 
+    |> ignore
 
-let WriteILBinary (outfile, (args: options), modul, noDebugData) =
-    ignore (writeBinaryAndReportMappings (outfile, args.ilg, args.pdbfile, args.signer, args.portablePDB, 
-                                          args.fixupOverlappingSequencePoints, args.emitTailcalls, args.showTimes, 
-                                          args.dumpDebugInfo) modul noDebugData)

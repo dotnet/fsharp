@@ -266,6 +266,30 @@ type UsingMSBuild() =
         this.CheckTooltip(source, "x``|>", true, checkTooltip "x")
 
     [<Test>]
+    member public this.QuickInfoForTypesWithHiddenRepresentation() =
+        let source = """
+            let x = Async.AsBeginEnd
+            1
+        """
+        let expectedTooltip = """
+type Async =
+  static member AsBeginEnd : computation:('Arg -> Async<'T>) -> ('Arg * AsyncCallback * obj -> IAsyncResult) * (IAsyncResult -> 'T) * (IAsyncResult -> unit)
+  static member AwaitEvent : event:IEvent<'Del,'T> * ?cancelAction:(unit -> unit) -> Async<'T> (requires delegate and 'Del :> Delegate)
+  static member AwaitIAsyncResult : iar:IAsyncResult * ?millisecondsTimeout:int -> Async<bool>
+  static member AwaitTask : task:Task -> Async<unit>
+  static member AwaitTask : task:Task<'T> -> Async<'T>
+  static member AwaitWaitHandle : waitHandle:WaitHandle * ?millisecondsTimeout:int -> Async<bool>
+  static member CancelDefaultToken : unit -> unit
+  static member Catch : computation:Async<'T> -> Async<Choice<'T,exn>>
+  static member Choice : computations:seq<Async<'T option>> -> Async<'T option>
+  static member FromBeginEnd : beginAction:(AsyncCallback * obj -> IAsyncResult) * endAction:(IAsyncResult -> 'T) * ?cancelAction:(unit -> unit) -> Async<'T>
+  ...
+
+Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
+
+        this.CheckTooltip(source, "Asyn", false, checkTooltip expectedTooltip)
+
+    [<Test>]
     [<Category("TypeProvider")>]
     member public this.``TypeProviders.NestedTypesOrder``() = 
         let code = "type t = N1.TypeWithNestedTypes(*M*)"
@@ -375,7 +399,7 @@ type UsingMSBuild() =
                                 let a = typeof<N.T(*Marker*)> """
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
-         "This is a synthetic type Localized!  ኤፍ ሻርፕ",
+         "This is a synthetic type Localized! ኤፍ ሻርፕ",
          addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
    
     [<Test>]
@@ -439,7 +463,7 @@ type UsingMSBuild() =
                                 let foo = new N.T(*Marker*)() """
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
-         "This is a synthetic .ctor Localized!  ኤፍ ሻርፕ for N.T",
+         "This is a synthetic .ctor Localized! ኤፍ ሻርፕ for N.T",
          addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
         
 
@@ -468,7 +492,7 @@ type UsingMSBuild() =
                                 t.Event1(*Marker*)"""
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "Event1(*Marker*)", 
-         "This is a synthetic *event* Localized!  ኤፍ ሻርፕ for N.T",
+         "This is a synthetic *event* Localized! ኤፍ ሻርፕ for N.T",
          addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
    
     [<Test>]
@@ -547,7 +571,7 @@ type UsingMSBuild() =
                                 let t = new N.T.M(*Marker*)()"""
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "M(*Marker*)", 
-         "This is a synthetic *method* Localized!  ኤፍ ሻርፕ",
+         "This is a synthetic *method* Localized! ኤፍ ሻርፕ",
          addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
    
     [<Test>]
@@ -613,7 +637,7 @@ type UsingMSBuild() =
                                 let p = N.T.StaticProp(*Marker*)"""
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "StaticProp(*Marker*)", 
-         "This is a synthetic *property* Localized!  ኤፍ ሻርፕ for N.T",
+         "This is a synthetic *property* Localized! ኤፍ ሻርፕ for N.T",
          addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
    
     [<Test>]
@@ -1052,18 +1076,18 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         ShiftKeyUp(this.VS)
         MoveCursorToEndOfMarker(file, "MyLi")
         let tooltip = time1 GetQuickInfoAtCursor file "Time of first tooltip"
-        AssertMatchesRegex '\n' "module MyLibrary\n[Filename:.*\bin\Debug\testlib.exe]\n[Signature:T:MyLibrary]" tooltip  
+        AssertMatchesRegex '\n' "module MyLibrary[Filename:.*\\bin\\Debug\\testlib.exe]\n[Signature:T:MyLibrary]" tooltip  
 
         MoveCursorToEndOfMarker(file, "Nes")
         let tooltip = time1 GetQuickInfoAtCursor file "Time of first tooltip"
-        AssertMatchesRegex '\n' "module Nested\n\nfrom MyLibrary\n[Filename:.*\bin\Debug\testlib.exe]\n[Signature:T:MyLibrary.Nested]" tooltip
+        AssertMatchesRegex '\n' "module Nested\n\nfrom MyLibrary[Filename:.*\\bin\Debug\\testlib.exe]\n[Signature:T:MyLibrary.Nested]" tooltip
 
         MoveCursorToEndOfMarker(file, "Dee")
         let tooltip = time1 GetQuickInfoAtCursor file "Time of first tooltip"
-        AssertMatchesRegex '\n' "module Deeper\n\nfrom MyLibrary.Nested\n[Filename:.*\bin\Debug\testlib.exe]\n[Signature:T:MyLibrary.Nested]" tooltip
+        AssertMatchesRegex '\n' "module Deeper\n\nfrom MyLibrary.Nested[Filename:.*\\bin\\Debug\\testlib.exe]\n[Signature:T:MyLibrary.Nested]" tooltip
 
         gpatcc.AssertExactly(0,0)
-            
+
     (* ------------------------------------------------------------------------------------- *)
 
 
@@ -1094,7 +1118,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         // The <summary> arises because the xml doc mechanism places these before handing them to VS for processing.
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"XX","module XXX")
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"YY","module YYY\n\nfrom XXX")
-        this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"ZZ","module ZZZ\n\nfrom XXX\n<summary>\n\nDoc</summary>")
+        this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"ZZ","module ZZZ\n\nfrom XXX<summary>\n\nDoc</summary>")
 
     [<Test>]
     member public this.``IdentifierWithTick``() = 

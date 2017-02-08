@@ -532,8 +532,7 @@ namespace System
 #if TUPLE_STRUXT
     // NOTE: Tuple`2 is a struct type. 
     // WARNING: If you change additional tuple types to be structs then you must change 'highestTupleStructType' in tastops.ml
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
     [<DebuggerDisplay("({Item1},{Item2})")>]
 #endif
     [<Struct>]
@@ -550,8 +549,7 @@ namespace System
         interface IComparable 
 #endif
 
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
     [<DebuggerDisplay("({Item1},{Item2},{Item3})")>]
 #endif
     type Tuple<'T1,'T2,'T3>(t1:'T1,t2:'T2,t3:'T3) =       
@@ -562,8 +560,7 @@ namespace System
         interface IStructuralEquatable 
         interface IComparable 
 
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
     [<DebuggerDisplay("({Item1},{Item2},{Item3},{Item4})")>]
 #endif
     type Tuple<'T1,'T2,'T3,'T4>(t1:'T1,t2:'T2,t3:'T3,t4:'T4) = 
@@ -575,8 +572,7 @@ namespace System
         interface IStructuralEquatable 
         interface IComparable 
 
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
     [<DebuggerDisplay("({Item1},{Item2},{Item3},{Item4},{Item5})")>]
 #endif
     type Tuple<'T1,'T2,'T3,'T4,'T5>(t1:'T1,t2:'T2,t3:'T3,t4:'T4,t5:'T5) = 
@@ -589,8 +585,7 @@ namespace System
         interface IStructuralEquatable 
         interface IComparable 
 
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
     [<DebuggerDisplay("({Item1},{Item2},{Item3},{Item4},{Item5},{Item6})")>]
 #endif
     type Tuple<'T1,'T2,'T3,'T4,'T5,'T6>(t1:'T1,t2:'T2,t3:'T3,t4:'T4,t5:'T5,t6:'T6) = 
@@ -604,8 +599,7 @@ namespace System
         interface IStructuralEquatable 
         interface IComparable 
 
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
     [<DebuggerDisplay("({Item1},{Item2},{Item3},{Item4},{Item5},{Item6},{Item7})")>]
 #endif
     type Tuple<'T1,'T2,'T3,'T4,'T5,'T6,'T7>(t1:'T1,t2:'T2,t3:'T3,t4:'T4,t5:'T5,t6:'T6,t7:'T7) = 
@@ -620,8 +614,7 @@ namespace System
         interface IStructuralEquatable 
         interface IComparable 
             
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
     [<DebuggerDisplay("({Item1},{Item2},{Item3},{Item4},{Item5},{Item6},{Item7},{Rest})")>]
 #endif
     type Tuple<'T1,'T2,'T3,'T4,'T5,'T6,'T7,'TRest>(t1:'T1,t2:'T2,t3:'T3,t4:'T4,t5:'T5,t6:'T6,t7:'T7,rest:'TRest) = 
@@ -638,7 +631,6 @@ namespace System
         interface IComparable 
 #else   
 #endif
-
 
 namespace Microsoft.FSharp.Core
 
@@ -3404,16 +3396,14 @@ namespace Microsoft.FSharp.Core
     // Refs
     //-------------------------------------------------------------------------
 
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
     [<DebuggerDisplay("{contents}")>]
 #endif
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpRef`1")>]
     type Ref<'T> = 
         { 
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
           [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
 #endif
           mutable contents: 'T }
@@ -3428,8 +3418,7 @@ namespace Microsoft.FSharp.Core
     //-------------------------------------------------------------------------
 
     [<DefaultAugmentation(false)>]
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
     [<DebuggerDisplay("Some({Value})")>]
 #endif
     [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
@@ -3443,25 +3432,24 @@ namespace Microsoft.FSharp.Core
         [<CompilationRepresentation(CompilationRepresentationFlags.Instance)>]
         member x.Value = match x with Some x -> x | None -> raise (new System.InvalidOperationException("Option.Value"))
 
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
 #endif
         member x.IsNone = match x with None -> true | _ -> false
 
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
 #endif
         member x.IsSome = match x with Some _ -> true | _ -> false
 
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
 #endif
         static member None : 'T option = None
 
         static member Some(x) : 'T option = Some(x)
+
+        static member op_Implicit(x) : 'T option = Some(x)
 
         override x.ToString() = 
            // x is non-null, hence Some
@@ -3469,6 +3457,13 @@ namespace Microsoft.FSharp.Core
 
     and 'T option = Option<'T> 
 
+
+    [<StructuralEquality; StructuralComparison>]
+    [<CompiledName("FSharpResult`2")>]
+    [<Struct>]
+    type Result<'T,'TError> = 
+      | Ok of ResultValue:'T 
+      | Error of ErrorValue:'TError
 
 
 //============================================================================
@@ -3488,12 +3483,10 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Core.BasicInlinedOperations
 
     [<DefaultAugmentation(false)>]
-#if FX_NO_DEBUG_PROXIES
-#else
+#if !FX_NO_DEBUG_PROXIES
     [<System.Diagnostics.DebuggerTypeProxyAttribute(typedefof<ListDebugView<_>>)>]
 #endif
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
     [<DebuggerDisplay("{DebugDisplay,nq}")>]
 #endif
     [<CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix")>]
@@ -3504,6 +3497,10 @@ namespace Microsoft.FSharp.Collections
        | (::)  : Head: 'T * Tail: 'T list -> 'T list
        interface System.Collections.Generic.IEnumerable<'T>
        interface System.Collections.IEnumerable
+
+#if !FSCORE_PORTABLE_OLD
+       interface System.Collections.Generic.IReadOnlyCollection<'T>
+#endif
         
     and 'T list = List<'T>
 
@@ -3520,8 +3517,7 @@ namespace Microsoft.FSharp.Collections
                | [] -> n 
                | _::t -> if n > ListDebugViewMaxLength then n else count t (n+1) 
 
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
            [<DebuggerBrowsable(DebuggerBrowsableState.RootHidden)>]
 #endif
            member x.Items =
@@ -3609,7 +3605,7 @@ namespace Microsoft.FSharp.Collections
             match l with 
             | [] -> raise (new System.ArgumentException(SR.GetString(SR.indexOutOfBounds),"n"))
             | h::t -> 
-               if n < 0 then raise (new System.ArgumentException(SR.GetString(SR.inputMustBeNonNegative),"n"))
+               if n < 0 then raise (new System.ArgumentException((SR.GetString(SR.inputMustBeNonNegative)),"n"))
                elif n = 0 then h
                else nth t (n - 1)
 
@@ -3645,14 +3641,12 @@ namespace Microsoft.FSharp.Collections
             loop n l
 
     type List<'T> with
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
 #endif
         member l.Length = PrivateListHelpers.lengthAcc 0 l
 
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
 #endif
         member l.DebugDisplay = 
@@ -3665,15 +3659,13 @@ namespace Microsoft.FSharp.Collections
         member l.Head   = match l with a :: _ -> a | [] -> raise (System.InvalidOperationException(SR.GetString(SR.inputListWasEmpty)))
         member l.Tail   = match l with _ :: b -> b | [] -> raise (System.InvalidOperationException(SR.GetString(SR.inputListWasEmpty)))
 
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
 #endif
         member l.IsEmpty  = match l with [] -> true | _ -> false
         member l.Item with get(index) = PrivateListHelpers.nth l index
 
-#if FX_NO_DEBUG_DISPLAYS
-#else
+#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
 #endif
         static member Empty       : 'T list = []
@@ -3701,6 +3693,11 @@ namespace Microsoft.FSharp.Collections
 
         interface System.Collections.IEnumerable with
             member l.GetEnumerator() = (PrivateListHelpers.mkListEnumerator l :> System.Collections.IEnumerator)
+
+#if !FSCORE_PORTABLE_OLD
+        interface IReadOnlyCollection<'T> with
+            member l.Count = l.Length
+#endif
 
     type seq<'T> = IEnumerable<'T>
 
@@ -3795,6 +3792,12 @@ namespace Microsoft.FSharp.Core
             match value with 
             | null -> true 
             | _ -> false
+
+        [<CompiledName("IsNotNull")>]
+        let inline internal isNotNull (value : 'T) = 
+            match value with 
+            | null -> false 
+            | _ -> true
 
         [<CompiledName("Raise")>]
         let raise (e: exn) = (# "throw" e : 'T #)
@@ -4114,7 +4117,7 @@ namespace Microsoft.FSharp.Core
 #if FX_NO_CHAR_PARSE
         // replace System.Char.Parse
         let inline charParse (s: string) =
-            if s = null then raise (System.ArgumentNullException())
+            if isNull s then raise (System.ArgumentNullException())
             elif s.Length = 1 then s.[0]
             else raise (System.FormatException "String must be exactly one character long.")
 #endif
@@ -4137,8 +4140,7 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("Decrement")>]
         let decr x = x.contents <- x.contents - 1
-#if FX_NO_EXIT
-#else
+#if !FX_NO_EXIT
         [<CompiledName("Exit")>]
         let exit (n:int) = System.Environment.Exit(n); failwith "System.Environment.Exit did not exit!"
 #endif
@@ -4696,14 +4698,12 @@ namespace Microsoft.FSharp.Core
         module Attributes = 
             open System.Runtime.CompilerServices
 
-#if FX_NO_DEFAULT_DEPENDENCY_TYPE
-#else
+#if !FX_NO_DEFAULT_DEPENDENCY_TYPE
             [<Dependency("FSharp.Core",LoadHint.Always)>] 
             [<assembly: System.Runtime.CompilerServices.DefaultDependency(System.Runtime.CompilerServices.LoadHint.Always)>] 
 #endif
 
-#if FX_NO_COMVISIBLE
-#else
+#if !FX_NO_COMVISIBLE
             [<assembly: System.Runtime.InteropServices.ComVisible(false)>]
 #endif            
             [<assembly: System.CLSCompliant(true)>]
@@ -4712,13 +4712,9 @@ namespace Microsoft.FSharp.Core
             [<assembly: System.Security.SecurityTransparent>] // assembly is fully transparent
             [<assembly: System.Security.SecurityRules(System.Security.SecurityRuleSet.Level2)>] // v4 transparency; soon to be the default, but not yet
 #else
-#if FX_NO_SECURITY_PERMISSIONS
-#else
-#if FX_SIMPLE_SECURITY_PERMISSIONS
+#if !FX_NO_SECURITY_PERMISSIONS
             // REVIEW: Need to choose a specific permission for the action to be applied to
             [<assembly: System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.RequestMinimum)>]
-#else
-#endif
 #endif
 #endif
             do ()
@@ -5310,12 +5306,13 @@ namespace Microsoft.FSharp.Core
                             // is undefined prior to the first call of MoveNext and post called to MoveNext
                             // that return false (see https://msdn.microsoft.com/en-us/library/58e146b7%28v=vs.110%29.aspx)
                             // so we should be able to just return value here, which would be faster
-                            if !value < n then
+                            let derefValue = !value
+                            if derefValue < n then
                                 notStarted ()
-                            elif !value > m then
+                            elif derefValue > m then
                                 alreadyFinished ()
                             else 
-                                !value
+                                derefValue
 
                         { new IEnumerator<'T> with
                             member __.Dispose () = ()
@@ -5325,11 +5322,12 @@ namespace Microsoft.FSharp.Core
                             member __.Current = box (current ())
                             member __.Reset () = value := n - LanguagePrimitives.GenericOne
                             member __.MoveNext () =
-                                if !value < m then
-                                    value := !value + LanguagePrimitives.GenericOne
+                                let derefValue = !value
+                                if derefValue < m then
+                                    value := derefValue + LanguagePrimitives.GenericOne
                                     true
-                                elif !value = m then 
-                                    value := m + LanguagePrimitives.GenericOne
+                                elif derefValue = m then 
+                                    value := derefValue + LanguagePrimitives.GenericOne
                                     false
                                 else false }
 
@@ -6424,7 +6422,7 @@ namespace Microsoft.FSharp.Control
     type Handler<'Args> =  delegate of sender:obj * args:'Args -> unit 
 
     type IEvent<'Args> = IEvent<Handler<'Args>, 'Args>
-    
+
     // FxCop suppressions 
     open System.Diagnostics.CodeAnalysis
     [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_Addition`3(!!0,!!1)",Justification="This is an F# primitive operator name")>]
@@ -6453,15 +6451,14 @@ namespace Microsoft.FSharp.Control
     [<assembly: SuppressMessage("Microsoft.Naming", "CA1721:PropertyNamesShouldNotMatchGetMethods", Scope="member", Target="Microsoft.FSharp.Quotations.FSharpVar.#Type",Justification="This appears to be a false warning from FxCop")>]
     [<assembly: SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix", Scope="member", Target="Microsoft.FSharp.Control.FSharpEvent`1.#Publish",Justification="")>]
     [<assembly: SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix", Scope="type", Target="Microsoft.FSharp.Collections.FSharpSet`1",Justification="Adding suffix 'Collection' would break the simple user model of this type, akin to 'List'")>]
-    
+
     [<assembly: SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix", Scope="type", Target="Microsoft.FSharp.Collections.FSharpList`1+_Empty",Justification="This is a compilation residue from a public discrimianted union, which are allowed in FSharp.Core.dll")>]
     [<assembly: SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix", Scope="type", Target="Microsoft.FSharp.Collections.FSharpList`1+_Cons",Justification="This is a compilation residue from a public discrimianted union, which are allowed in FSharp.Core.dll")>]
     [<assembly: SuppressMessage("Microsoft.Usage", "CA2224:OverrideEqualsOnOverloadingOperatorEquals", Scope="type", Target="Microsoft.FSharp.Core.Operators",Justification="This is from the use of op_Equality as a primitive F# operator name. We do not need any override")>]
     [<assembly: SuppressMessage("Microsoft.Design", "CA1009:DeclareEventHandlersCorrectly", Scope="member", Target="Microsoft.FSharp.Control.FSharpEvent`1.#Publish",Justification="This appears to be a false warning from FxCop")>]
     [<assembly: SuppressMessage("Microsoft.Design", "CA1030:UseEventsWhereAppropriate", Scope="member", Target="Microsoft.FSharp.Core.Operators.#Raise`1(System.Exception)",Justification="No event required here")>]
     [<assembly: SuppressMessage("Microsoft.Naming", "CA1724:TypeNamesShouldNotMatchNamespaces", Scope="type", Target="Microsoft.FSharp.Text.StructuredPrintfImpl.Layout",Justification="This functionality is scheduled for deletion from FSharp.Core.dll")>]
-    
-    
+
     [<assembly: SuppressMessage("Microsoft.Naming", "CA1719:ParameterNamesShouldNotMatchMemberNames", Scope="member", Target="Microsoft.FSharp.Quotations.FSharpExpr.#Value(System.Object,System.Type)", MessageId="0#")>]
     [<assembly: SuppressMessage("Microsoft.Naming", "CA1719:ParameterNamesShouldNotMatchMemberNames", Scope="member", Target="Microsoft.FSharp.Quotations.FSharpExpr.#Value`1(!!0)", MessageId="0#")>]
 
@@ -6568,4 +6565,3 @@ namespace Microsoft.FSharp.Control
     [<assembly: SuppressMessage("Microsoft.Design", "CA1032:ImplementStandardExceptionConstructors", Scope="type", Target="Microsoft.FSharp.Core.MatchFailureException",Justification="Like F# record types, F# exception declarations implement one primary constructor which accepts initial values for all fields")>]
     [<assembly:CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1051:DoNotDeclareVisibleInstanceFields", Scope="member", Target="Microsoft.FSharp.Core.FSharpRef`1.#contents@")>]
     do()
-

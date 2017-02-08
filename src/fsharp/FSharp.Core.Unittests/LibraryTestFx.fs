@@ -77,7 +77,7 @@ module SurfaceArea =
     // gets string form of public surface area for the currently-loaded FSharp.Core
     let private getActual () =
     
-        // get current fsharp.core
+        // get current FSharp.Core
         let asm = 
             #if portable7 || portable78 || portable259 || coreclr
             typeof<int list>.GetTypeInfo().Assembly
@@ -126,12 +126,7 @@ module SurfaceArea =
     
     // verify public surface area matches expected
     let verify expected platform fileName =  
-        let workDir =
-            #if OPEN_BUILD
-            TestContext.CurrentContext.WorkDirectory
-            #else
-            ""
-            #endif
+        let workDir = TestContext.CurrentContext.WorkDirectory
         let logFile = sprintf "%s\\CoreUnit_%s_Xml.xml" workDir platform
         let normalize (s:string) =
             Regex.Replace(s, "(\\r\\n|\\n)+", "\r\n").Trim([|'\r';'\n'|])
@@ -139,4 +134,4 @@ module SurfaceArea =
         let actual = actualNotNormalized |> normalize
         let expected = expected |> normalize
         
-        Assert.AreEqual(expected, actual, sprintf "\r\nAssembly: %A\r\n\r\n%s\r\n\r\n Expected and actual surface area don't match. To see the delta, run\r\nwindiff %s %s" asm actual fileName logFile)
+        Assert.AreEqual(expected, actual, sprintf "\r\nAssembly: %A\r\n--------------------- ACTUAL -------------------\r\n%s\r\n--------------------EXPECTED--------------------\r\n%s\r\n-----------------\r\n Expected and actual surface area don't match. To see the delta, run\r\nwindiff %s %s" asm actual expected fileName logFile)

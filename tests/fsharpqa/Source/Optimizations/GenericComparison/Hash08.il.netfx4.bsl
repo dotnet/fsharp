@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.17376
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:3:0:0
+  .ver 4:4:1:0
 }
 .assembly Hash08
 {
@@ -22,27 +22,27 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 00 00 00 00 00 ) 
+  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 02 00 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.Hash08
 {
-  // Offset: 0x00000000 Length: 0x000006EF
+  // Offset: 0x00000000 Length: 0x000006D3
 }
 .mresource public FSharpOptimizationData.Hash08
 {
-  // Offset: 0x000006F8 Length: 0x000003B3
+  // Offset: 0x000006D8 Length: 0x000003B3
 }
 .module Hash08.dll
-// MVID: {4F20E46A-9642-77BC-A745-03836AE4204F}
+// MVID: {5772F679-9642-77BC-A745-038379F67257}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x000000C130600000
+// Image base: 0x011B0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -203,7 +203,7 @@
         // Code size       14 (0xe)
         .maxstack  8
         .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-        .line 4,4 : 10,14 
+        .line 4,4 : 10,14 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\Optimizations\\GenericComparison\\Hash08.fsx'
         IL_0000:  nop
         IL_0001:  ldarg.0
         IL_0002:  ldarg.1
@@ -223,7 +223,7 @@
                  [1] int32 V_1,
                  [2] int32 V_2,
                  [3] int32 V_3)
-        .line 4,4 : 10,14 
+        .line 4,4 : 10,14 ''
         IL_0000:  nop
         IL_0001:  ldarg.1
         IL_0002:  unbox.any  Hash08/HashMicroPerfAndCodeGenerationTests/KeyR
@@ -360,7 +360,7 @@
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       13 (0xd)
         .maxstack  8
-        .line 4,4 : 10,14 
+        .line 4,4 : 10,14 ''
         IL_0000:  nop
         IL_0001:  ldarg.0
         IL_0002:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
@@ -502,13 +502,13 @@
       .maxstack  4
       .locals init ([0] int32 i,
                [1] int32 V_1)
-      .line 7,7 : 8,32 
+      .line 7,7 : 8,32 ''
       IL_0000:  nop
       IL_0001:  ldc.i4.0
       IL_0002:  stloc.0
       IL_0003:  br.s       IL_001b
 
-      .line 8,8 : 12,49 
+      .line 8,8 : 12,49 ''
       IL_0005:  ldc.i4.1
       IL_0006:  ldc.i4.2
       IL_0007:  newobj     instance void Hash08/HashMicroPerfAndCodeGenerationTests/KeyR::.ctor(int32,
@@ -520,7 +520,7 @@
       IL_0018:  ldc.i4.1
       IL_0019:  add
       IL_001a:  stloc.0
-      .line 7,7 : 21,29 
+      .line 7,7 : 8,32 ''
       IL_001b:  ldloc.0
       IL_001c:  ldc.i4     0x989681
       IL_0021:  blt.s      IL_0005

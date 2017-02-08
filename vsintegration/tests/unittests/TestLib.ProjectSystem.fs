@@ -9,7 +9,6 @@ open System.Runtime.Serialization
 open System.Collections.Generic
 open System.Text.RegularExpressions
 open System.Diagnostics
-open Internal.Utilities.Debug
 open System.IO
 open System.Text
 open System.Xml.Linq
@@ -17,10 +16,10 @@ open Salsa
 
 open Microsoft.Win32
 
+open Microsoft.VisualStudio
 open Microsoft.VisualStudio.FSharp.ProjectSystem
 open Microsoft.VisualStudio.Shell.Interop
 
-open Microsoft.Build.BuildEngine
 open Microsoft.Build.Execution
 open Microsoft.Build.Framework
         
@@ -146,8 +145,12 @@ type TheTests() =
             MSBuildProject.SetGlobalProperty(project.BuildProject, "UTF8Output", forceUTF8)
             project
         with 
-        | e -> project.Close() |> ignore
-               reraise()
+        | e ->
+            try
+                project.Close() |> ignore
+            with closeExc ->
+                raise <| AggregateException("An exception occurred during cleanup after a project creation failure", [e; closeExc])
+            reraise()
 
     static member internal CreateProject(filename : string) =
         let sp, configChangeNotifier = VsMocks.MakeMockServiceProviderAndConfigChangeNotifier()

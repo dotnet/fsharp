@@ -138,7 +138,7 @@ let g (t : T) = t.Count()
                 "#r \"System2\""
             ]
         TakeCoffeeBreak(this.VS)
-        checkErrors 1
+        checkErrors 2
 
         ReplaceFileInMemory file <|
             [
@@ -341,7 +341,7 @@ b.Do(1, 1)
     //This is an verify action test & example
     member public this.``TestErrorMessage``() =
         let fileContent = """Console.WriteLine("test")"""
-        let expectedStr = "The namespace or module 'Console' is not defined"
+        let expectedStr = "The value, namespace, type or module 'Console' is not defined"
         this.VerifyErrorListContainedExpectedString(fileContent,expectedStr)
     
     [<Test>]

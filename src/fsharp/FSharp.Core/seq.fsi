@@ -161,17 +161,16 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Collect")>]
         val collect: mapping:('T -> 'Collection) -> source:seq<'T> -> seq<'U>  when 'Collection :> seq<'U>
 
-        /// <summary>Compares two sequences using the given comparison function, element by element.
-        /// Returns the first non-zero result from the comparison function.  If the end of a sequence
-        /// is reached it returns a -1 if the first sequence is shorter and a 1 if the second sequence
-        /// is shorter.</summary>
+        /// <summary>Compares two sequences using the given comparison function, element by element.</summary>
         ///
         /// <param name="comparer">A function that takes an element from each sequence and returns an int.
         /// If it evaluates to a non-zero value iteration is stopped and that value is returned.</param>
         /// <param name="source1">The first input sequence.</param>
         /// <param name="source2">The second input sequence.</param>
         ///
-        /// <returns>The first non-zero value from the comparison function.</returns>
+        /// <returns>Returns the first non-zero result from the comparison function.  If the end of a sequence
+        /// is reached it returns a -1 if the first sequence is shorter and a 1 if the second sequence
+        /// is shorter.</returns>
         ///
         /// <exception cref="System.ArgumentNullException">Thrown when either of the input sequences
         /// is null.</exception>

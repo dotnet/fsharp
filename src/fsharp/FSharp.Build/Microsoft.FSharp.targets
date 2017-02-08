@@ -20,7 +20,7 @@ this file.
     <UsingTask TaskName="Fsc" AssemblyFile="FSharp.Build{BuildSuffix}.dll"/>
     <UsingTask TaskName="CreateFSharpManifestResourceName" AssemblyFile="FSharp.Build{BuildSuffix}.dll"/>
 
-    <PropertyGroup>
+  <PropertyGroup>
         <ImportByWildcardBeforeMicrosoftFSharpTargets Condition="'$(ImportByWildcardBeforeMicrosoftFSharpTargets)' == ''">true</ImportByWildcardBeforeMicrosoftFSharpTargets>
         <ImportByWildcardAfterMicrosoftFSharpTargets Condition="'$(ImportByWildcardAfterMicrosoftFSharpTargets)' == ''">true</ImportByWildcardAfterMicrosoftFSharpTargets>
     </PropertyGroup>
@@ -37,7 +37,7 @@ this file.
         <!-- Visual studio requires a non-empty RootNamespace value for "Add New Item" to work. -->
         <RootNamespace Condition="'$(RootNamespace)'==''">RootNamespace</RootNamespace>
         <Actual32Bit Condition="'$(TargetFrameworkVersion)'=='v2.0' or '$(TargetFrameworkVersion)'=='v3.0' or '$(TargetFrameworkVersion)'=='v3.5' or '$(TargetFrameworkVersion)'=='v4.0'">false</Actual32Bit>
-        <Actual32Bit Condition="!('$(TargetFrameworkVersion)'=='v2.0' or '$(TargetFrameworkVersion)'=='v3.0' or '$(TargetFrameworkVersion)'=='v3.5' or '$(TargetFrameworkVersion)'=='v4.0')">$(Prefer32Bit)</Actual32Bit>    
+        <Actual32Bit Condition="!('$(TargetFrameworkVersion)'=='v2.0' or '$(TargetFrameworkVersion)'=='v3.0' or '$(TargetFrameworkVersion)'=='v3.5' or '$(TargetFrameworkVersion)'=='v4.0')">$(Prefer32Bit)</Actual32Bit>
     </PropertyGroup>
 
     <!--
@@ -63,6 +63,12 @@ this file.
     <PropertyGroup>
         <CreateManifestResourceNamesDependsOn></CreateManifestResourceNamesDependsOn>
     </PropertyGroup>
+
+    <PropertyGroup>
+        <UsingXBuild>false</UsingXBuild>
+        <UsingXBuild Condition="$(MSBuildExtensionsPath32.Contains('xbuild'))">true</UsingXBuild>
+    </PropertyGroup>
+
     <Target
         Name="CreateManifestResourceNames"
         Condition="'@(EmbeddedResource)' != ''"
@@ -73,11 +79,48 @@ this file.
             <_Temporary Remove="@(_Temporary)" />
         </ItemGroup>
 
+        <!-- START XBUILD -->
+
+        <!-- This is the implementation of CreateManifestResourceNames which is compatible with the way -->
+        <!-- xbuild processes resource names -->
+
+        <CreateFSharpManifestResourceName
+             Condition="'@(ResxWithNoCulture)' != '' AND '$(UsingXBuild)' == 'true'"
+         ResourceFiles="@(ResxWithNoCulture)" RootNamespace="$(RootNamespace)">
+            <Output TaskParameter = "ManifestResourceNames" ItemName = "ManifestResourceWithNoCultureName" />
+        </CreateFSharpManifestResourceName>
+
+        <CreateFSharpManifestResourceName
+             Condition="'@(NonResxWithNoCulture)' != '' AND '$(UsingXBuild)' == 'true'"
+         ResourceFiles="@(NonResxWithNoCulture)" RootNamespace="$(RootNamespace)">
+            <Output TaskParameter = "ManifestResourceNames" ItemName = "ManifestNonResxWithNoCulture" />
+        </CreateFSharpManifestResourceName>
+
+        <CreateFSharpManifestResourceName
+             Condition="'@(ResxWithCulture)' != '' AND '$(UsingXBuild)' == 'true'"
+             ResourceFiles="@(ResxWithCulture)" RootNamespace="$(RootNamespace)">
+            <Output TaskParameter = "ManifestResourceNames" ItemName = "ManifestResourceWithCultureName" />
+        </CreateFSharpManifestResourceName>
+
+        <CreateFSharpManifestResourceName
+             Condition="'@(NonResxWithCulture)' != '' AND '$(UsingXBuild)' == 'true'"
+             ResourceFiles="@(NonResxWithCulture)" RootNamespace="$(RootNamespace)">
+            <Output TaskParameter = "ManifestResourceNames" ItemName = "ManifestNonResxWithCulture" />
+        </CreateFSharpManifestResourceName>
+
+        <!-- END XBUILD -->
+
+
+        <!-- START MSBUILD -->
+
+        <!-- This is the implementation of CreateManifestResourceNames which is compatible with the way -->
+        <!-- msbuild processes resource names -->
+
         <!-- Create manifest names for culture and non-culture Resx files, and for non-culture Non-Resx resources -->
         <CreateFSharpManifestResourceName
               ResourceFiles="@(EmbeddedResource)"
               RootNamespace="$(RootNamespace)"
-              Condition="'%(EmbeddedResource.ManifestResourceName)' == '' and ('%(EmbeddedResource.WithCulture)' == 'false' or '%(EmbeddedResource.Type)' == 'Resx')">
+              Condition="'%(EmbeddedResource.ManifestResourceName)' == '' and ('%(EmbeddedResource.WithCulture)' == 'false' or '%(EmbeddedResource.Type)' == 'Resx') AND '$(UsingXBuild)' == 'false'">
 
             <Output TaskParameter="ResourceFilesWithManifestResourceNames" ItemName="_Temporary" />
 
@@ -88,11 +131,13 @@ this file.
               ResourceFiles="@(EmbeddedResource)"
               RootNamespace="$(RootNamespace)"
               PrependCultureAsDirectory="false"
-              Condition="'%(EmbeddedResource.ManifestResourceName)' == '' and '%(EmbeddedResource.WithCulture)' == 'true' and '%(EmbeddedResource.Type)' == 'Non-Resx'">
+              Condition="'%(EmbeddedResource.ManifestResourceName)' == '' and '%(EmbeddedResource.WithCulture)' == 'true' and '%(EmbeddedResource.Type)' == 'Non-Resx' AND '$(UsingXBuild)' == 'false'">
 
             <Output TaskParameter="ResourceFilesWithManifestResourceNames" ItemName="_Temporary" />
 
         </CreateFSharpManifestResourceName>
+        <!-- END MSBUILD -->
+
 
         <ItemGroup>
             <EmbeddedResource Remove="@(EmbeddedResource)" Condition="'%(EmbeddedResource.ManifestResourceName)' == ''"/>
@@ -122,6 +167,7 @@ this file.
                 @(Compile);                               
                 @(CompileAfter);
                 @(_CoreCompileResourceInputs);
+                @(ManifestNonResxWithNoCultureOnDisk);
                 $(ApplicationIcon);
                 $(AssemblyOriginatorKeyFile);
                 @(ReferencePath);
@@ -160,6 +206,8 @@ this file.
               DefineConstants="$(DefineConstants)"
               DisabledWarnings="$(NoWarn)"
               DocumentationFile="$(DocumentationFile)"
+              EmbedAllSources="$(EmbedAllSources)"
+              Embed="$(Embed)"
               GenerateInterfaceFile="$(GenerateInterfaceFile)"
               KeyFile="$(KeyOriginatorFile)"
               LCID="$(LCID)"
@@ -173,6 +221,7 @@ this file.
               References="@(ReferencePath)"
               ReferencePath="$(ReferencePath)"
               Resources="@(_CoreCompileResourceInputs);@(CompiledLicenseFile);@(AdditionalEmbeddedResource)"
+              SourceLink="$(SourceLink)"
               Sources="@(CompileBefore);@(Compile);@(CompileAfter)"
               Tailcalls="$(Tailcalls)"
               TargetType="$(OutputType)"
@@ -189,7 +238,7 @@ this file.
               SubsystemVersion="$(SubsystemVersion)"
               HighEntropyVA="$(HighEntropyVA)"
               TargetProfile="$(TargetProfile)"
-              SqmSessionGuid="$(SqmSessionGuid)"
+              DotnetFscCompilerPath="$(DotnetFscCompilerPath)"
         />
 
         <ItemGroup>
@@ -201,7 +250,7 @@ this file.
 
     <Import Project="$(MSBuildBinPath)\Microsoft.Common.targets"/>
 
-        <!--
+    <!--
             ============================================================
             GenerateTargetFrameworkMonikerAttribute
 

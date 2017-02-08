@@ -110,7 +110,7 @@ type LanguagePrimitivesModule() =
         Assert.AreEqual(1, resultRef)
 
 
-#if FX_ATLEAST_PORTABLE
+#if FX_PORTABLE_OR_NETSTANDARD
 // TODO named #define ?
 #else  
     [<Test>]
@@ -467,8 +467,7 @@ type LanguagePrimitivesModule() =
         CheckThrowsArgumentNullException2 "float" (fun () -> float s |> ignore)
         CheckThrowsArgumentNullException2 "decimal" (fun () -> decimal s |> ignore)
         // SL and Portable Runtimes are compiled with FX_NO_CHAR_PARSE
-#if FX_NO_CHAR_PARSE
-#else        
+#if !FX_NO_CHAR_PARSE
         CheckThrowsArgumentNullException2 "char" (fun () -> char s |> ignore)
 #endif        
 
@@ -612,7 +611,7 @@ type UnitType() =
         CheckThrowsNullRefException(fun() ->u.Equals(null) |>ignore) 
         
 
-#if FX_ATLEAST_PORTABLE
+#if FX_PORTABLE_OR_NETSTANDARD
 // TODO named #define ?
 #else     
 [<TestFixture>]

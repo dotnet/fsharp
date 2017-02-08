@@ -27,10 +27,12 @@ type internal FSharpNavigationDeclarationItem =
     member Name : string
     member UniqueName : string
     member Glyph : int
+    member GlyphMajor : ItemDescriptionIcons.GlyphMajor
     member Kind : FSharpNavigationDeclarationItemKind
     member Range : Range.range
     member BodyRange : Range.range
     member IsSingleTopLevel : bool
+    member Access : Ast.SynAccess option
 
 /// Represents top-level declarations (that should be in the type drop-down)
 /// with nested declarations (that can be shown in the member drop-down)
@@ -49,5 +51,42 @@ type internal FSharpNavigationItems =
 // implementation details used by other code in the compiler    
 module internal NavigationImpl =
     val internal getNavigationFromImplFile : Ast.SynModuleOrNamespace list -> FSharpNavigationItems
+    val internal getNavigationFromSigFile : Ast.SynModuleOrNamespaceSig list -> FSharpNavigationItems
+    val internal getNavigation : Ast.ParsedInput -> FSharpNavigationItems
     val internal empty : FSharpNavigationItems
 
+module internal NavigateTo =
+    [<RequireQualifiedAccess>]
+    type internal NavigableItemKind =
+        | Module
+        | ModuleAbbreviation
+        | Exception
+        | Type
+        | ModuleValue
+        | Field
+        | Property
+        | Constructor
+        | Member
+        | EnumCase
+        | UnionCase
+
+    [<RequireQualifiedAccess>]
+    type internal ContainerType =
+        | File
+        | Namespace
+        | Module
+        | Type
+        | Exception
+
+    type internal Container =
+        { Type: ContainerType
+          Name: string }
+    
+    type internal NavigableItem = 
+        { Name: string
+          Range: Range.range
+          IsSignature: bool
+          Kind: NavigableItemKind
+          Container: Container }
+
+    val internal getNavigableItems : Ast.ParsedInput -> NavigableItem []

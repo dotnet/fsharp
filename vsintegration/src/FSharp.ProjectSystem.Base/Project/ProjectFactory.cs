@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using MSBuild = Microsoft.Build.BuildEngine;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Shell;
@@ -103,7 +102,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 throw new NotSupportedException(SR.GetString(SR.NoZeroImpactProjects));
             }
 
-#if FX_ATLEAST_45
             if ((flags & ((uint)__VSCREATEPROJFLAGS.CPF_OPENFILE)) != 0)
             {
                 if (new ProjectInspector(fileName).IsPoisoned(Site))
@@ -113,7 +111,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     ErrorHandler.ThrowOnFailure(ehr);
                 }
             }
-#endif
 
             // Get the list of GUIDs from the project/template
             string guidsList = this.ProjectTypeGuids(fileName);
@@ -171,7 +168,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return guids;
         }
 
-#if FX_ATLEAST_45
 
         private class ProjectInspector
         {
@@ -184,7 +180,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 {
                     xmlProj = Microsoft.Build.Construction.ProjectRootElement.Open(filename);
                 }
-                catch (Microsoft.Build.BuildEngine.InvalidProjectFileException)
+                catch (Microsoft.Build.Exceptions.InvalidProjectFileException)
                 {
                     // leave xmlProj non-initialized, other methods will check its state in prologue
                 }                
@@ -259,8 +255,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-#endif
-
         private IProjectEvents GetProjectEventsProvider()
         {
             ProjectPackage projectPackage = this.package as ProjectPackage;
@@ -328,7 +322,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             var project = ProjectRootElement.Open(projectFileName);
             // enable Side-by-Side and CopyBackup support
             upgradeCapabilityFlags = (uint)(__VSPPROJECTUPGRADEVIAFACTORYFLAGS.PUVFF_BACKUPSUPPORTED | __VSPPROJECTUPGRADEVIAFACTORYFLAGS.PUVFF_COPYBACKUP | __VSPPROJECTUPGRADEVIAFACTORYFLAGS.PUVFF_SXSBACKUP);
-#if FX_ATLEAST_45
 
             if (this.buildEngine.GetLoadedProjects(projectFileName).Count > 0)
             {
@@ -343,10 +336,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 upgradeRequired = __VSPPROJECTUPGRADEVIAFACTORYREPAIRFLAGS.VSPUVF_PROJECT_NOREPAIR;
                 return VSConstants.S_OK;
             }
-#endif
 
             // only upgrade known tool versions.
-#if FX_ATLEAST_45
             if (string.Equals("4.0", project.ToolsVersion, StringComparison.Ordinal))
             {
                 // For 4.0, we need to take a deeper look.  The logic is in 
@@ -369,7 +360,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
             }
             else 
-#endif
             if (string.Equals("3.5", project.ToolsVersion, StringComparison.Ordinal) 
                      || string.Equals("2.0", project.ToolsVersion, StringComparison.Ordinal))
 

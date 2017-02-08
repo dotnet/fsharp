@@ -14,7 +14,6 @@ using System.Threading;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.OLE.Interop;
-using MSBuild = Microsoft.Build.BuildEngine;
 using Microsoft.Build.Utilities;
 using VSConstants = Microsoft.VisualStudio.VSConstants;
 using Task = Microsoft.VisualStudio.Shell.Task;
@@ -168,10 +167,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             var hr = solution.GetProjectOfGuid(ref referencedProjectGuid, out hier);
             if (!ErrorHandler.Succeeded(hr))
                 return; // check if project is missing or non-loaded!
-
+            
             object obj;
             hr = hier.GetProperty(VSConstants.VSITEMID_ROOT, (int)__VSHPROPID.VSHPROPID_ExtObject, out obj);
-            ErrorHandler.ThrowOnFailure(hr);
+            if (!ErrorHandler.Succeeded(hr))
+                return;
 
             EnvDTE.Project prj = obj as EnvDTE.Project;
             if (prj == null) 
@@ -833,6 +833,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             // copying logic from C#'s project system, langref.cpp: IsProjectReferenceReferenceable()
             var otherFrameworkName = GetProjectTargetFrameworkName(thisProject.Site, referencedProjectGuid);
+            if (otherFrameworkName == null)
+                return FrameworkCompatibility.Ok;
+
             if (String.Compare(otherFrameworkName.Identifier, ".NETPortable", StringComparison.OrdinalIgnoreCase) == 0)
             {
                  // we always allow references to projects that are targeted to the Portable/".NETPortable" fx family
@@ -866,7 +869,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         private static System.Runtime.Versioning.FrameworkName GetProjectTargetFrameworkName(System.IServiceProvider serviceProvider, Guid referencedProjectGuid)
         {
             var hierarchy = VsShellUtilities.GetHierarchy(serviceProvider, referencedProjectGuid);
+            if (hierarchy == null)
+                return null;
+
             object otherTargetFrameworkMonikerObj;
+
             hierarchy.GetProperty(VSConstants.VSITEMID_ROOT, (int)__VSHPROPID4.VSHPROPID_TargetFrameworkMoniker, out otherTargetFrameworkMonikerObj);
 
             string targetFrameworkMoniker = (string)otherTargetFrameworkMonikerObj;

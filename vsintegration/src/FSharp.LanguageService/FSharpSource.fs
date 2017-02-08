@@ -262,10 +262,8 @@ type internal FSharpIntelliSenseToAppearAdornment(view: IWpfTextView, cursorPoin
                     let sp = new System.Windows.Controls.StackPanel(Orientation=System.Windows.Controls.Orientation.Horizontal)
                     System.Windows.Documents.TextElement.SetForeground(sp, excludedCodeForegroundColorBrush.GetAsFrozen() :?> System.Windows.Media.Brush)
                     sp.Margin <- System.Windows.Thickness(3.0)
-#if FX_ATLEAST_45
                     let sa = new Microsoft.Internal.VisualStudio.PlatformUI.SpinAnimationControl(Width=pointSize, Height=pointSize, IsSpinning=true)
                     sp.Children.Add(sa) |> ignore
-#endif
                     sp.Children.Add(new System.Windows.Controls.Canvas(Width=4.0)) |> ignore // spacing between
                     sp.Children.Add(tb) |> ignore
                     let border = new System.Windows.Controls.Border()
@@ -330,7 +328,9 @@ type internal FSharpSource(service:LanguageService, textLines, colorizer, vsFile
                   IsIncompleteTypeCheckEnvironment = true
                   UseScriptResolutionRules = false
                   LoadTime = new System.DateTime(2000,1,1)   // dummy data, just enough to get a parse
-                  UnresolvedReferences = None }
+                  UnresolvedReferences = None
+                  OriginalLoadReferences = []
+                  ExtraProjectInfo=None }
 
             ic.ParseFileInProject(fileName, source.GetText(), co) |> Async.RunSynchronously
 
@@ -438,7 +438,7 @@ type internal FSharpSource(service:LanguageService, textLines, colorizer, vsFile
         member source.HandleCompletionResponse(req) =
             match req with
             | null -> source.ResetFSharpIntelliSenseToAppearAdornment()
-            | _ when req.View = null || req.ResultIntellisenseInfo = null -> source.ResetFSharpIntelliSenseToAppearAdornment()
+            | _ when isNull req.View || isNull req.ResultIntellisenseInfo -> source.ResetFSharpIntelliSenseToAppearAdornment()
             | _ when (req.Timestamp <> source.ChangeCount) -> source.ResetFSharpIntelliSenseToAppearAdornment()
             | _ ->
                   source.HandleResponseHelper(req)
@@ -448,7 +448,7 @@ type internal FSharpSource(service:LanguageService, textLines, colorizer, vsFile
                   async {
                       let! decls = req.ResultIntellisenseInfo.GetDeclarations(req.Snapshot, req.Line, req.Col, reason)
                       do! Async.SwitchToContext UIThread.TheSynchronizationContext
-                      if (decls = null || decls.IsEmpty()) && req.Timestamp <> req.ResultTimestamp then
+                      if (isNull decls || decls.IsEmpty()) && req.Timestamp <> req.ResultTimestamp then
                           // Second chance intellisense: we didn't get any result and the basis typecheck was stale. We need to retrigger the completion.
                           source.Completion(req.View, req.TokenInfo, req.Reason, RequireFreshResults.Yes)
                       else

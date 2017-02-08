@@ -2,8 +2,6 @@
 
 namespace Microsoft.FSharp.Linq.RuntimeHelpers
 
-#if QUERIES_IN_FSLIB
-
 open System
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.Operators
@@ -57,10 +55,8 @@ module internal Adapters =
                 System.Threading.Monitor.Exit(d)
 
 #else    
-         let d = new System.Collections.Concurrent.ConcurrentDictionary<Type,_>(HashIdentity.Structural)        
-         fun x -> 
-             let mutable res = Unchecked.defaultof<_> 
-             if d.TryGetValue(x ,&res) then res else let res = f x in d.[x] <- res; res
+         let d = new System.Collections.Concurrent.ConcurrentDictionary<Type,'b>(HashIdentity.Structural)        
+         fun x -> d.GetOrAdd(x, fun r -> f r)
 #endif               
 
     let isPartiallyImmutableRecord : Type -> bool = 
@@ -316,4 +312,3 @@ module internal Adapters =
     let MakeSeqConv conv = match conv with NoConv -> NoConv | _ -> SeqConv conv
 
 
-#endif

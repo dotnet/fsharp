@@ -2,3 +2,5 @@
 module Test
 let rec f () = f () : int byref;;
 
+let x = (1.0 = 1)
+

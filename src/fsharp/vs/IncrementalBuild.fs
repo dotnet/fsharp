@@ -6,12 +6,15 @@ namespace Microsoft.FSharp.Compiler
 open System
 open System.IO
 open System.Collections.Generic
+open System.Threading
+open System.Threading.Tasks
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.IL
+open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 open Microsoft.FSharp.Compiler.CompileOps
@@ -746,12 +749,26 @@ module internal IncrementalBuild =
                 PartialBuild(bt.Rules, Map.add id (VectorResult(results)) bt.Results)
             | _ -> failwith "Unexpected"
         
-    let ExecuteApply (action:Action) bt = 
+    let mutable injectCancellationFault = false
+    let LocallyInjectCancellationFault() = 
+        injectCancellationFault <- true
+        { new IDisposable with member __.Dispose() =  injectCancellationFault <- false }
+
+    /// Apply the result, and call the 'save' function to update the build.  
+    ///
+    /// Will throw OperationCanceledException if the cancellation token has been set.
+    let ExecuteApply save (ct: CancellationToken) (action:Action) bt = 
+        ct.ThrowIfCancellationRequested()
+        if (injectCancellationFault) then raise (OperationCanceledException("injected fault"))
         let actionResult = action.Execute()
-        ApplyResult(actionResult,bt)
+        let newBt = ApplyResult(actionResult,bt)
+        save newBt
+        newBt
 
     /// Evaluate the result of a single output
-    let EvalLeafsFirst target bt =
+    ///
+    /// Will throw OperationCanceledException if the cancellation token has been set.
+    let EvalLeafsFirst save (ct: CancellationToken) target bt =
 
         let rec eval(bt,gen) =
             #if DEBUG
@@ -759,31 +776,40 @@ module internal IncrementalBuild =
             // Possibly could detect this case directly.
             if gen>5000 then failwith "Infinite loop in incremental builder?"
             #endif
-            let newBt = ForeachAction target bt ExecuteApply bt
-            if newBt=bt then bt else eval(newBt,gen+1)
+            let newBt = ForeachAction target bt (ExecuteApply save ct) bt
+            if newBt=bt then  bt else eval(newBt,gen+1)
         eval(bt,0)
         
-    let Step target (bt:PartialBuild) = 
+    /// Evaluate one step of the build.  Call the 'save' function to save the intermediate result.
+    ///
+    /// Will throw OperationCanceledException if the cancellation token has been set.
+    let Step save ct target (bt:PartialBuild) = 
         
         // Hey look, we're building up the whole list, executing one thing and then throwing
         // the list away. What about saving the list inside the Build instance?
         let worklist = ForeachAction target bt (fun a l -> a :: l) []
             
         match worklist with 
-        | action::_ -> Some (ExecuteApply action bt)
+        | action::_ -> Some (ExecuteApply save ct action bt)
         | _ -> None
             
     /// Evaluate an output of the build.
-    let Eval node bt = EvalLeafsFirst (Target(node,None)) bt
+    ///
+    /// Will throw OperationCanceledException if the cancellation token has been set.  Intermediate
+    /// progrewss along the way may be saved through the use of the 'save' function.
+    let Eval save ct node bt = EvalLeafsFirst save ct (Target(node,None)) bt
 
     /// Evaluate an output of the build.
-    let EvalUpTo (node, n) bt = EvalLeafsFirst (Target(node, Some n)) bt
+    ///
+    /// Will throw OperationCanceledException if the cancellation token has been set.  Intermediate
+    /// progrewss along the way may be saved through the use of the 'save' function.
+    let EvalUpTo save ct (node, n) bt = EvalLeafsFirst save ct (Target(node, Some n)) bt
 
     /// Check if an output is up-to-date and ready
     let IsReady target bt = 
         let worklist = ForeachAction target bt (fun a l -> a :: l) []
         worklist.IsEmpty
-
+        
     /// Check if an output is up-to-date and ready
     let MaxTimeStampInDependencies target bt = 
         ComputeMaxTimeStamp target bt DateTime.MinValue 
@@ -944,16 +970,16 @@ type FSharpErrorInfo(fileName, s:pos, e:pos, severity: FSharpErrorSeverity, mess
     override __.ToString()= sprintf "%s (%d,%d)-(%d,%d) %s %s %s" fileName (int s.Line) (s.Column + 1) (int e.Line) (e.Column + 1) subcategory (if severity=FSharpErrorSeverity.Warning then "warning" else "error")  message
             
     /// Decompose a warning or error into parts: position, severity, message, error number
-    static member (*internal*) CreateFromException(exn,warn,trim:bool,fallbackRange:range) = 
-        let m = match GetRangeOfError exn with Some m -> m | None -> fallbackRange 
+    static member (*internal*) CreateFromException(exn, isError, trim:bool, fallbackRange:range) = 
+        let m = match GetRangeOfDiagnostic exn with Some m -> m | None -> fallbackRange 
         let e = if trim then m.Start else m.End
-        let msg = bufs (fun buf -> OutputPhasedError buf exn false)
-        let errorNum = GetErrorNumber exn
-        FSharpErrorInfo(m.FileName, m.Start, e, (if warn then FSharpErrorSeverity.Warning else FSharpErrorSeverity.Error), msg, exn.Subcategory(), errorNum)
+        let msg = bufs (fun buf -> OutputPhasedDiagnostic ErrorLogger.ErrorStyle.DefaultErrors buf exn false)
+        let errorNum = GetDiagnosticNumber exn
+        FSharpErrorInfo(m.FileName, m.Start, e, (if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning), msg, exn.Subcategory(), errorNum)
         
     /// Decompose a warning or error into parts: position, severity, message, error number
-    static member internal CreateFromExceptionAndAdjustEof(exn,warn,trim:bool,fallbackRange:range, (linesCount:int, lastLength:int)) = 
-        let r = FSharpErrorInfo.CreateFromException(exn,warn,trim,fallbackRange)
+    static member internal CreateFromExceptionAndAdjustEof(exn, isError, trim:bool, fallbackRange:range, (linesCount:int, lastLength:int)) = 
+        let r = FSharpErrorInfo.CreateFromException(exn,isError,trim,fallbackRange)
                 
         // Adjust to make sure that errors reported at Eof are shown at the linesCount        
         let startline, schange = min (r.StartLineAlternate, false) (linesCount, true)
@@ -974,17 +1000,16 @@ type ErrorScope()  =
     let unwindEL =        
         PushErrorLoggerPhaseUntilUnwind (fun _oldLogger -> 
             { new ErrorLogger("ErrorScope") with 
-                member x.WarnSinkImpl(exn) = 
-                      errors <- FSharpErrorInfo.CreateFromException(exn,true,false,range.Zero):: errors
-                member x.ErrorSinkImpl(exn) = 
-                      let err = FSharpErrorInfo.CreateFromException(exn,false,false,range.Zero)
+                member x.DiagnosticSink(exn, isError) = 
+                      let err = FSharpErrorInfo.CreateFromException(exn,isError,false,range.Zero)
                       errors <- err :: errors
-                      mostRecentError <- Some err
+                      if isError then 
+                          mostRecentError <- Some err
                 member x.ErrorCount = errors.Length })
         
     member x.Errors = errors |> List.filter (fun error -> error.Severity = FSharpErrorSeverity.Error)
     member x.Warnings = errors |> List.filter (fun error -> error.Severity = FSharpErrorSeverity.Warning)
-    member x.ErrorsAndWarnings = errors
+    member x.Diagnostics = errors
     member x.TryGetFirstErrorText() =
         match x.Errors with 
         | error :: _ -> Some error.Message
@@ -1063,8 +1088,6 @@ module IncrementalBuilderEventTesting =
 
 module Tc = Microsoft.FSharp.Compiler.TypeChecker
 
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
-open Internal.Utilities.Debug
 
 /// Accumulated results of type checking.
 [<NoEquality; NoComparison>]
@@ -1078,11 +1101,11 @@ type TypeCheckAccumulator =
       tcSymbolUses: TcSymbolUses list
       topAttribs:TopAttribs option
       typedImplFiles:TypedImplFile list
-      tcErrors:(PhasedError * FSharpErrorSeverity) list } // errors=true, warnings=false
+      tcErrors:(PhasedDiagnostic * FSharpErrorSeverity) list } // errors=true, warnings=false
 
       
 /// Global service state
-type FrameworkImportsCacheKey = (*resolvedpath*)string list * string * (*ClrRoot*)string list* (*fsharpBinaries*)string
+type FrameworkImportsCacheKey = (*resolvedpath*)string list * string * (*TargetFrameworkDirectories*)string list* (*fsharpBinaries*)string
 
 type FrameworkImportsCache(keepStrongly) = 
     let frameworkTcImportsCache = AgedLookup<FrameworkImportsCacheKey,(TcGlobals * TcImports)>(keepStrongly, areSame=(fun (x,y) -> x = y)) 
@@ -1097,6 +1120,7 @@ type FrameworkImportsCache(keepStrongly) =
             frameworkDLLs 
             |> List.map (fun ar->ar.resolvedPath) // The cache key. Just the minimal data.
             |> List.sort  // Sort to promote cache hits.
+
         let tcGlobals,frameworkTcImports = 
             // Prepare the frameworkTcImportsCache
             //
@@ -1105,7 +1129,7 @@ type FrameworkImportsCache(keepStrongly) =
             // FSharp.Core.dll and mscorlib.dll) must be logically invariant of all the other compiler configuration parameters.
             let key = (frameworkDLLsKey,
                         tcConfig.primaryAssembly.Name, 
-                        tcConfig.ClrRoot,
+                        tcConfig.TargetFrameworkDirectories,
                         tcConfig.fsharpBinariesDir)
             match frameworkTcImportsCache.TryGet key with 
             | Some res -> res
@@ -1121,28 +1145,25 @@ type FrameworkImportsCache(keepStrongly) =
 type internal CompilationErrorLogger (debugName:string, tcConfig:TcConfig) = 
     inherit ErrorLogger("CompilationErrorLogger("+debugName+")")
             
-    let warningsSeenInScope = new ResizeArray<_>()
-    let errorsSeenInScope = new ResizeArray<_>()
-            
-    let warningOrError warn exn = 
-        let warn = warn && not (ReportWarningAsError (tcConfig.globalWarnLevel, tcConfig.specificWarnOff, tcConfig.specificWarnOn, tcConfig.specificWarnAsError, tcConfig.specificWarnAsWarn, tcConfig.globalWarnAsError) exn)                
-        if not warn then
-            errorsSeenInScope.Add(exn)
-        else if ReportWarning (tcConfig.globalWarnLevel, tcConfig.specificWarnOff, tcConfig.specificWarnOn) exn then 
-            warningsSeenInScope.Add(exn)
+    let mutable errorCount = 0
+    let diagnostics = new ResizeArray<_>()
 
-    override x.WarnSinkImpl(exn) = warningOrError true exn
-    override x.ErrorSinkImpl(exn) = warningOrError false exn
-    override x.ErrorCount = errorsSeenInScope.Count
+    override x.DiagnosticSink(exn, isError) = 
+        if isError || ReportWarningAsError (tcConfig.globalWarnLevel, tcConfig.specificWarnOff, tcConfig.specificWarnOn, tcConfig.specificWarnAsError, tcConfig.specificWarnAsWarn, tcConfig.globalWarnAsError) exn then
+            diagnostics.Add(exn, isError)
+            errorCount <- errorCount + 1
+        else if ReportWarning (tcConfig.globalWarnLevel, tcConfig.specificWarnOff, tcConfig.specificWarnOn) exn then 
+            diagnostics.Add(exn, isError)
+
+    override x.ErrorCount = errorCount
 
     member x.GetErrors() = 
-        [ for e in errorsSeenInScope -> e,FSharpErrorSeverity.Error 
-          for e in warningsSeenInScope -> e,FSharpErrorSeverity.Warning ]
+        [ for (e,isError) in diagnostics -> e, (if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning) ]
 
 
-/// This represents the global state established as each task function runs as part of the build
+/// This represents the global state established as each task function runs as part of the build.
 ///
-/// Use to reset error and warning handlers            
+/// Use to reset error and warning handlers.
 type CompilationGlobalsScope(errorLogger:ErrorLogger,phase,projectDirectory) = 
     do ignore projectDirectory
     let unwindEL = PushErrorLoggerPhaseUntilUnwind(fun _ -> errorLogger)
@@ -1168,7 +1189,7 @@ type PartialCheckResults =
       TcGlobals: TcGlobals 
       TcConfig: TcConfig 
       TcEnvAtEnd: TcEnv 
-      Errors: (PhasedError * FSharpErrorSeverity) list 
+      Errors: (PhasedDiagnostic * FSharpErrorSeverity) list 
       TcResolutions: TcResolutions list 
       TcSymbolUses: TcSymbolUses list 
       TopAttribs: TopAttribs option
@@ -1233,8 +1254,9 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig,tcGlobals,tcState:Tc
 
 
 /// Manages an incremental build graph for the build of a single F# project
-type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig: TcConfig, projectDirectory, outfile, assemblyName, niceNameGen: Ast.NiceNameGenerator, lexResourceManager,
-                        sourceFiles, projectReferences: IProjectReference list, ensureReactive, 
+type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig: TcConfig, projectDirectory, outfile, 
+                        assemblyName, niceNameGen: Ast.NiceNameGenerator, lexResourceManager,
+                        sourceFiles, projectReferences: IProjectReference list, loadClosureOpt: LoadClosure option, ensureReactive, 
                         keepAssemblyContents, keepAllBackgroundResolutions) =
 
     /// Maximum time share for a piece of background work before it should (cooperatively) yield
@@ -1247,10 +1269,10 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
 
     let tcConfigP = TcConfigProvider.Constant(tcConfig)
     let importsInvalidated = new Event<string>()
-    let fileParsed = new Event<_>()
-    let beforeTypeCheckFile = new Event<_>()
-    let fileChecked = new Event<_>()
-    let projectChecked = new Event<_>()
+    let fileParsed = new Event<string>()
+    let beforeFileChecked = new Event<string>()
+    let fileChecked = new Event<string>()
+    let projectChecked = new Event<unit>()
 
     // Resolve assemblies and create the framework TcImports. This is done when constructing the
     // builder itself, rather than as an incremental task. This caches a level of "system" references. No type providers are 
@@ -1336,7 +1358,7 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
         try  
             IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed filename)
             let result = ParseOneInputFile(tcConfig,lexResourceManager, [], filename ,isLastCompiland,errorLogger,(*retryLocked*)true)
-            fileParsed.Trigger filename
+            fileParsed.Trigger (filename)
             result,sourceRange,filename,errorLogger.GetErrors ()
         with exn -> 
             System.Diagnostics.Debug.Assert(false, sprintf "unexpected failure in IncrementalFSharpBuild.Parse\nerror = %s" (exn.ToString()))
@@ -1407,6 +1429,14 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
 
         let tcEnvAtEndOfFile = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
         let tcState = GetInitialTcState (rangeStartup, assemblyName, tcConfig, tcGlobals, tcImports, niceNameGen, tcEnvAtEndOfFile)
+        let loadClosureErrors = 
+           [ match loadClosureOpt with 
+             | None -> ()
+             | Some loadClosure -> 
+                for inp in loadClosure.Inputs do
+                    for (err, isError) in inp.MetaCommandDiagnostics do 
+                        yield err,(if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning) ]
+
         let tcAcc = 
             { tcGlobals=tcGlobals
               tcImports=tcImports
@@ -1417,7 +1447,7 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
               tcSymbolUses=[]
               topAttribs=None
               typedImplFiles=[]
-              tcErrors=errorLogger.GetErrors() }   
+              tcErrors = loadClosureErrors @ errorLogger.GetErrors() }   
         tcAcc
                 
     /// This is a build task function that gets placed into the build rules as the computation for a Vector.ScanLeft
@@ -1432,7 +1462,7 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
             let errorLogger = GetErrorLoggerFilteringByScopedPragmas(false,GetScopedPragmasForInput(input),capturingErrorLogger)
             let fullComputation = 
                 eventually {
-                    beforeTypeCheckFile.Trigger filename
+                    beforeFileChecked.Trigger (filename)
 
                     ApplyMetaCommandsFromInputToTcConfig tcConfig (input, Path.GetDirectoryName filename) |> ignore
                     let sink = TcResultsSinkImpl(tcAcc.tcGlobals)
@@ -1450,7 +1480,7 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
                     let typedImplFiles = if keepAssemblyContents then typedImplFiles else []
                     let tcResolutions = if keepAllBackgroundResolutions then sink.GetResolutions() else TcResolutions.Empty
                     let tcSymbolUses = sink.GetSymbolUses()  
-                    fileChecked.Trigger filename
+                    fileChecked.Trigger (filename)
                     return {tcAcc with tcState=tcState 
                                        tcEnvAtEndOfFile=tcEnvAtEndOfFile
                                        topAttribs=Some topAttribs
@@ -1467,8 +1497,9 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
             if ensureReactive then 
                 let timeSlicedComputation = 
                     fullComputation |> 
-                        Eventually.repeatedlyProgressUntilDoneOrTimeShareOver 
+                        Eventually.repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled
                             maxTimeShareMilliseconds
+                            CancellationToken.None
                             (fun f -> 
                                 // Reinstall the compilation globals each time we start or restart
                                 use unwind = new CompilationGlobalsScope (errorLogger, BuildPhase.TypeCheck, projectDirectory) 
@@ -1513,15 +1544,15 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
                 let publicKey = 
                     try 
                         let signingInfo = Driver.ValidateKeySigningAttributes (tcConfig, tcGlobals, topAttrs)
-                        match Driver.GetSigner signingInfo with 
+                        match Driver.GetStrongNameSigner signingInfo with 
                         | None -> None
                         | Some s -> Some (PublicKey.KeyAsToken(s.PublicKey))
                     with e -> 
                         errorRecoveryNoRange e
                         None
-                let locale = TryFindStringAttribute tcGlobals (mkMscorlibAttrib tcGlobals "System.Reflection.AssemblyCultureAttribute") topAttrs.assemblyAttrs
+                let locale = TryFindStringAttribute tcGlobals (tcGlobals.FindSysAttrib  "System.Reflection.AssemblyCultureAttribute") topAttrs.assemblyAttrs
                 let assemVerFromAttrib = 
-                    TryFindStringAttribute tcGlobals (mkMscorlibAttrib tcGlobals "System.Reflection.AssemblyVersionAttribute") topAttrs.assemblyAttrs 
+                    TryFindStringAttribute tcGlobals (tcGlobals.FindSysAttrib "System.Reflection.AssemblyVersionAttribute") topAttrs.assemblyAttrs 
                     |> Option.bind  (fun v -> try Some (parseILVersion v) with _ -> None)
                 let ver = 
                     match assemVerFromAttrib with 
@@ -1610,10 +1641,7 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
     // This is the initial representation of progress through the build, i.e. we have made no progress.
     let mutable partialBuild = buildDescription.GetInitialPartialBuild buildInputs
 
-    let EvalAndKeepOutput f = 
-        let newPartialBuild = f partialBuild
-        partialBuild <- newPartialBuild
-        newPartialBuild
+    let SavePartialBuild b = partialBuild <- b
 
     let MaxTimeStampInDependencies (output:INode) = 
         IncrementalBuild.MaxTimeStampInDependencies output.Name partialBuild 
@@ -1634,7 +1662,7 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
 
     member __.TcConfig = tcConfig
     member __.FileParsed = fileParsed.Publish
-    member __.BeforeTypeCheckFile = beforeTypeCheckFile.Publish
+    member __.BeforeFileChecked = beforeFileChecked.Publish
     member __.FileChecked = fileChecked.Publish
     member __.ProjectChecked = projectChecked.Publish
     member __.ImportedCcusInvalidated = importsInvalidated.Publish
@@ -1650,16 +1678,15 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
         | _ -> true                
 #endif
 
-    member __.Step () =  
-        match IncrementalBuild.Step (Target(tcStatesNode, None)) partialBuild with 
+    member __.Step (ct) =  
+        match IncrementalBuild.Step SavePartialBuild ct (Target(tcStatesNode, None)) partialBuild with 
         | None -> 
             projectChecked.Trigger()
             false
-        | Some newPartialBuild -> 
-            partialBuild <- newPartialBuild
+        | Some _ -> 
             true
     
-    member ib.GetCheckResultsBeforeFileInProjectIfReady filename: PartialCheckResults option  = 
+    member ib.GetCheckResultsBeforeFileInProjectIfReady (filename): PartialCheckResults option  = 
         let slotOfFile = ib.GetSlotOfFileName filename
         let result = 
             match slotOfFile with
@@ -1677,33 +1704,33 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
         | (*first file*) 0 -> IncrementalBuild.IsReady (Target(initialTcAccNode, None)) partialBuild 
         | _ -> IncrementalBuild.IsReady (Target(tcStatesNode, Some (slotOfFile-1))) partialBuild  
         
-    member ib.GetCheckResultsBeforeFileInProject filename = 
+    member ib.GetCheckResultsBeforeFileInProject (filename, ct) = 
         let slotOfFile = ib.GetSlotOfFileName filename
-        ib.GetTypeCheckResultsBeforeSlotInProject slotOfFile
+        ib.GetTypeCheckResultsBeforeSlotInProject (slotOfFile, ct)
 
-    member ib.GetCheckResultsAfterFileInProject filename = 
+    member ib.GetCheckResultsAfterFileInProject (filename, ct) = 
         let slotOfFile = ib.GetSlotOfFileName filename + 1
-        ib.GetTypeCheckResultsBeforeSlotInProject slotOfFile
+        ib.GetTypeCheckResultsBeforeSlotInProject (slotOfFile, ct)
 
-    member ib.GetTypeCheckResultsBeforeSlotInProject slotOfFile = 
+    member ib.GetTypeCheckResultsBeforeSlotInProject (slotOfFile, ct) = 
         let result = 
             match slotOfFile with
             | (*first file*) 0 -> 
-                let build = EvalAndKeepOutput (IncrementalBuild.Eval initialTcAccNode)  
+                let build = IncrementalBuild.Eval SavePartialBuild ct initialTcAccNode partialBuild
                 GetScalarResult(initialTcAccNode,build)
             | _ -> 
-                let build = EvalAndKeepOutput (IncrementalBuild.EvalUpTo (tcStatesNode, (slotOfFile-1))) 
+                let build = IncrementalBuild.EvalUpTo SavePartialBuild ct (tcStatesNode, (slotOfFile-1)) partialBuild
                 GetVectorResultBySlot(tcStatesNode,slotOfFile-1,build)  
         
         match result with
         | Some (tcAcc,timestamp) -> PartialCheckResults.Create (tcAcc,timestamp)
         | None -> failwith "Build was not evaluated, expected the results to be ready after 'Eval'."
 
-    member b.GetCheckResultsAfterLastFileInProject () = 
-        b.GetTypeCheckResultsBeforeSlotInProject(b.GetSlotsCount()) 
+    member b.GetCheckResultsAfterLastFileInProject (ct) = 
+        b.GetTypeCheckResultsBeforeSlotInProject(b.GetSlotsCount(), ct) 
 
-    member __.GetCheckResultsAndImplementationsForProject() = 
-        let build = EvalAndKeepOutput (IncrementalBuild.Eval finalizedTypeCheckNode)
+    member __.GetCheckResultsAndImplementationsForProject(ct) = 
+        let build = IncrementalBuild.Eval SavePartialBuild ct finalizedTypeCheckNode partialBuild
         match GetScalarResult(finalizedTypeCheckNode,build) with
         | Some ((ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, tcAcc), timestamp) -> 
             PartialCheckResults.Create (tcAcc,timestamp), ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt
@@ -1731,12 +1758,12 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
         | Some (VectorResult vr) -> vr.Size
         | _ -> failwith "Failed to find sizes"
       
-    member ib.GetParseResultsForFile filename =
+    member ib.GetParseResultsForFile (filename, ct) =
         let slotOfFile = ib.GetSlotOfFileName filename
         match GetVectorResultBySlot(parseTreesNode,slotOfFile,partialBuild) with
         | Some (results, _) -> results
         | None -> 
-            let build = EvalAndKeepOutput (IncrementalBuild.EvalUpTo (parseTreesNode, slotOfFile))  
+            let build = IncrementalBuild.EvalUpTo SavePartialBuild ct (parseTreesNode, slotOfFile) partialBuild  
             match GetVectorResultBySlot(parseTreesNode,slotOfFile,build) with
             | Some (results, _) -> results
             | None -> failwith "Build was not evaluated, expcted the results to be ready after 'Eval'."
@@ -1745,7 +1772,7 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
 
     /// CreateIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.
-    static member TryCreateBackgroundBuilderForProjectOptions (frameworkTcImportsCache, scriptClosureOptions:LoadClosure option, sourceFiles:string list, commandLineArgs:string list, projectReferences, projectDirectory, useScriptResolutionRules, isIncompleteTypeCheckEnvironment, keepAssemblyContents, keepAllBackgroundResolutions) =
+    static member TryCreateBackgroundBuilderForProjectOptions (referenceResolver, frameworkTcImportsCache, loadClosureOpt:LoadClosure option, sourceFiles:string list, commandLineArgs:string list, projectReferences, projectDirectory, useScriptResolutionRules, keepAssemblyContents, keepAllBackgroundResolutions) =
     
         // Trap and report warnings and errors from creation.
         use errorScope = new ErrorScope()
@@ -1762,15 +1789,15 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
                     
                 // see also fsc.fs:runFromCommandLineToImportingAssemblies(), as there are many similarities to where the PS creates a tcConfigB
                 let tcConfigB = 
-                    TcConfigBuilder.CreateNew(defaultFSharpBinariesDir, implicitIncludeDir=projectDirectory, 
+                    TcConfigBuilder.CreateNew(referenceResolver, defaultFSharpBinariesDir, implicitIncludeDir=projectDirectory, 
                                                 optimizeForMemory=true, isInteractive=false, isInvalidationSupported=true) 
                 // The following uses more memory but means we don'T take read-exclusions on the DLLs we reference 
                 // Could detect well-known assemblies--ie System.dll--and open them with read-locks 
                 tcConfigB.openBinariesInMemory <- true
                 tcConfigB.resolutionEnvironment 
                     <- if useScriptResolutionRules 
-                        then MSBuildResolver.DesigntimeLike  
-                        else MSBuildResolver.CompileTimeLike
+                        then ReferenceResolver.DesignTimeLike  
+                        else ReferenceResolver.CompileTimeLike
                 
                 tcConfigB.conditionalCompilationDefines <- 
                     let define = if useScriptResolutionRules then "INTERACTIVE" else "COMPILED"
@@ -1794,26 +1821,22 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
         
                 tcConfigB, sourceFilesNew
 
-            match scriptClosureOptions with
-            | Some closure -> 
+            match loadClosureOpt with
+            | Some loadClosure -> 
                 let dllReferences = 
                     [for reference in tcConfigB.referencedDLLs do
                         // If there's (one or more) resolutions of closure references then yield them all
-                        match closure.References  |> List.tryFind (fun (resolved,_)->resolved=reference.Text) with
+                        match loadClosure.References  |> List.tryFind (fun (resolved,_)->resolved=reference.Text) with
                         | Some (resolved,closureReferences) -> 
                             for closureReference in closureReferences do
                                 yield AssemblyReference(closureReference.originalReference.Range, resolved, None)
                         | None -> yield reference]
-                tcConfigB.referencedDLLs<-[]
+                tcConfigB.referencedDLLs <- []
                 // Add one by one to remove duplicates
                 for dllReference in dllReferences do
                     tcConfigB.AddReferencedAssemblyByPath(dllReference.Range,dllReference.Text)
-                tcConfigB.knownUnresolvedReferences<-closure.UnresolvedReferences
+                tcConfigB.knownUnresolvedReferences <- loadClosure.UnresolvedReferences
             | None -> ()
-
-            // Make sure System.Numerics is referenced for out-of-project .fs files
-            if isIncompleteTypeCheckEnvironment then 
-                tcConfigB.addVersionSpecificFrameworkReferences <- true 
 
             let tcConfig = TcConfig.Create(tcConfigB,validate=true)
 
@@ -1824,7 +1847,7 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
             let builder = 
                 new IncrementalBuilder(frameworkTcImportsCache,
                                         tcConfig, projectDirectory, outfile, assemblyName, niceNameGen,
-                                        resourceManager, sourceFilesNew, projectReferences, ensureReactive=true, 
+                                        resourceManager, sourceFilesNew, projectReferences, loadClosureOpt, ensureReactive=true, 
                                         keepAssemblyContents=keepAssemblyContents, 
                                         keepAllBackgroundResolutions=keepAllBackgroundResolutions)
             Some builder
@@ -1832,7 +1855,7 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
             errorRecoveryNoRange e
             None
 
-        builderOpt, errorScope.ErrorsAndWarnings
+        builderOpt, errorScope.Diagnostics
 
     static member KeepBuilderAlive (builderOpt: IncrementalBuilder option) = 
         match builderOpt with 

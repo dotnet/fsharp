@@ -1173,6 +1173,5 @@ namespace Internal.Utilities.Collections.Tagged
         override this.GetHashCode() = this.ComputeHashCode()
 
 
-    type Map<'Key,'T> = Map<'Key, 'T, IComparer<'Key>>    
-    type Set<'T> = Set<'T, IComparer<'T>>    
-
+    type internal Map<'Key,'T> = Map<'Key, 'T, IComparer<'Key>>
+    type internal Set<'T> = Set<'T, IComparer<'T>>

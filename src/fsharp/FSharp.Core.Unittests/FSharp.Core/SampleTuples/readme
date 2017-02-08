@@ -1,0 +1,9 @@
+Readme for Tuple samples
+=========================
+
+Used to verify interop between C# Value tuples and the F# struct tuple type.
+
+Sampletuple.dll is checked in directly and is compiled against the System.Runtime.dll contracts.  So should be completely portable.
+
+
+

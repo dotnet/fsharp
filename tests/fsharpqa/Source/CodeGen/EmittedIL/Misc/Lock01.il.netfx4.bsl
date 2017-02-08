@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.16774
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.81.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:0:0:0
+  .ver 4:4:1:0
 }
 .assembly Lock01
 {
@@ -22,27 +22,27 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 01 00 00 00 00 ) 
+  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 00 01 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.Lock01
 {
-  // Offset: 0x00000000 Length: 0x000001A8
+  // Offset: 0x00000000 Length: 0x00000184
 }
 .mresource public FSharpOptimizationData.Lock01
 {
-  // Offset: 0x000001B0 Length: 0x00000064
+  // Offset: 0x00000188 Length: 0x00000064
 }
 .module Lock01.exe
-// MVID: {4DAC0DE4-2BCA-B308-A745-0383E40DAC4D}
+// MVID: {5775BA45-2BCA-B308-A745-038345BA7557}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x0000000000700000
+// Image base: 0x01160000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -57,6 +57,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -70,7 +72,7 @@
       // Code size       3 (0x3)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 20,20 : 19,21 
+      .line 20,20 : 19,21 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Misc\\Lock01.fs'
       IL_0000:  nop
       IL_0001:  ldnull
       IL_0002:  ret
@@ -113,13 +115,13 @@
              [2] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_2,
              [3] bool V_3,
              [4] class [FSharp.Core]Microsoft.FSharp.Core.Unit V_4)
-    .line 19,19 : 1,28 
+    .line 19,19 : 1,28
     IL_0000:  nop
     IL_0001:  newobj     instance void [mscorlib]System.Object::.ctor()
     IL_0006:  dup
     IL_0007:  stsfld     object '<StartupCode$Lock01>'.$Lock01::o@19
     IL_000c:  stloc.0
-    .line 20,20 : 1,23 
+    .line 20,20 : 1,23
     IL_000d:  call       object Lock01::get_o()
     IL_0012:  stloc.1
     IL_0013:  newobj     instance void Lock01/clo@20::.ctor()
@@ -148,17 +150,17 @@
 
       IL_0033:  br.s       IL_003e
 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0
       IL_0035:  ldloc.1
       IL_0036:  call       void [mscorlib]System.Threading.Monitor::Exit(object)
       IL_003b:  ldnull
       IL_003c:  pop
       IL_003d:  endfinally
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0
       IL_003e:  ldnull
       IL_003f:  pop
       IL_0040:  endfinally
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0
     }  // end handler
     IL_0041:  ldloc.s    V_4
     IL_0043:  pop

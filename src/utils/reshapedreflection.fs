@@ -24,6 +24,9 @@ module internal XmlAdapters =
 module internal ReflectionAdapters = 
     open System
     open System.Reflection
+#if FX_RESHAPED_REFLECTION_CORECLR
+    open System.Runtime.Loader
+#endif
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
     open Microsoft.FSharp.Collections
     open PrimReflectionAdapters
@@ -48,7 +51,7 @@ module internal ReflectionAdapters =
     let exit (_n:int) = failwith "System.Environment.Exit does not exist!"
 #endif
 
-#if !FX_HAS_TYPECODE
+#if FX_NO_TYPECODE
     [<System.Flags>]
     type TypeCode = 
         | Int32     = 0
@@ -80,7 +83,7 @@ module internal ReflectionAdapters =
         | _ -> raise (AmbiguousMatchException())
 
     let canUseAccessor (accessor : MethodInfo) nonPublic = 
-        box accessor <> null && (accessor.IsPublic || nonPublic)
+        (not (isNull (box accessor))) && (accessor.IsPublic || nonPublic)
 
     type System.Type with
         member this.GetTypeInfo() = IntrospectionExtensions.GetTypeInfo(this)
@@ -121,7 +124,7 @@ module internal ReflectionAdapters =
             let bindingFlags = defaultArg bindingFlags publicFlags
             (if isDeclaredFlag bindingFlags then this.GetTypeInfo().DeclaredProperties else this.GetRuntimeProperties())
             |> Seq.filter (fun pi-> 
-                let mi = if pi.GetMethod <> null then pi.GetMethod else pi.SetMethod
+                let mi = match pi.GetMethod with | null -> pi.SetMethod | _ -> pi.GetMethod
                 if mi = null then false
                 else isAcceptable bindingFlags mi.IsStatic mi.IsPublic
                 )
@@ -176,8 +179,9 @@ module internal ReflectionAdapters =
 #if FX_RESHAPED_REFLECTION_CORECLR
         member this.InvokeMember(memberName, bindingFlags, _binder, target:obj, arguments:obj[], _cultureInfo) =
             let m = this.GetMethod(memberName, (arguments |> Seq.map(fun x -> x.GetType()) |> Seq.toArray), bindingFlags)
-            if m <> null then m.Invoke(target, arguments)
-            else raise <| System.MissingMethodException(String.Format("Method '{0}.{1}' not found.", this.FullName, memberName))
+            match m with
+            | null -> raise <| System.MissingMethodException(String.Format("Method '{0}.{1}' not found.", this.FullName, memberName))
+            | _ -> m.Invoke(target, arguments)
 #endif
         member this.IsGenericType = this.GetTypeInfo().IsGenericType
         member this.IsGenericTypeDefinition = this.GetTypeInfo().IsGenericTypeDefinition
@@ -313,7 +317,14 @@ module internal ReflectionAdapters =
         member this.GetSetMethod() = this.SetMethod
 
 #if FX_RESHAPED_REFLECTION_CORECLR
-    let globalLoadContext = System.Runtime.Loader.AssemblyLoadContext.Default
+
+    type CustomAssemblyResolver() =
+        inherit AssemblyLoadContext()
+        override this.Load (assemblyName:AssemblyName):Assembly =
+            this.LoadFromAssemblyName(assemblyName)
+
+    let globalLoadContext = new CustomAssemblyResolver()
+
 #endif
     type System.Reflection.Assembly with
         member this.GetTypes() = 
@@ -330,10 +341,10 @@ module internal ReflectionAdapters =
 
 #if FX_RESHAPED_REFLECTION_CORECLR
         static member LoadFrom(filename:string) =
-            globalLoadContext.LoadFromAssemblyName(System.Runtime.Loader.AssemblyLoadContext.GetAssemblyName(filename))
+            globalLoadContext.LoadFromAssemblyPath(filename)
 
         static member UnsafeLoadFrom(filename:string) =
-            globalLoadContext.LoadFromAssemblyName(System.Runtime.Loader.AssemblyLoadContext.GetAssemblyName(filename))
+            globalLoadContext.LoadFromAssemblyPath(filename)
 
     type System.Reflection.AssemblyName with
         static member GetAssemblyName(path) = 

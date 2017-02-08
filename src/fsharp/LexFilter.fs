@@ -534,7 +534,6 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
         new LexbufState(lexbuf.StartPos, lexbuf.EndPos, lexbuf.IsPastEndOfStream)  
 
     let setLexbufState (p:LexbufState) =
-        // if debug then dprintf "SET lex state to; %a\n" output_any p;  
         lexbuf.StartPos <- p.StartPos  
         lexbuf.EndPos <- p.EndPos
         lexbuf.IsPastEndOfStream <- p.PastEOF
@@ -927,6 +926,7 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
                     | MINUS 
                     | GLOBAL 
                     | CONST
+                    | KEYWORD_STRING _
                     | NULL
                     | INT8 _ | INT16 _ | INT32 _ | INT64 _ | NATIVEINT _ 
                     | UINT8 _ | UINT16 _ | UINT32 _ | UINT64 _ | UNATIVEINT _
@@ -1153,7 +1153,7 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
         // Balancing rule. Every 'done' terminates all surrounding blocks up to a CtxtDo, and will be swallowed by 
         // terminating the corresponding CtxtDo in the rule below. 
         let tokenForcesHeadContextClosure token stack = 
-            nonNil stack &&
+            not (isNil stack) &&
             match token with 
             | Parser.EOF _ -> true
             | SEMICOLON_SEMICOLON  -> not (tokenBalancesHeadContext token stack) 

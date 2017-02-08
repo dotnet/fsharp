@@ -1,3 +1,13 @@
+# Many tests create the following test artifacts
+tmptest.exe
+tmptest.fs
+tmptest.fsi
+tmptest1.exe
+
+# Other tests create signing artifacts
+*.sn.out
+
+access/fsc.cmd.args
 
 forwarders/orig
 forwarders/split

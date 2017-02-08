@@ -75,6 +75,7 @@ let UseMyFileSystem() =
 let ``FileSystem compilation test``() = 
   if System.Environment.OSVersion.Platform = System.PlatformID.Win32NT then // file references only valid on Windows 
     use myFileSystem =  UseMyFileSystem()
+    let programFilesx86Folder = System.Environment.GetEnvironmentVariable("PROGRAMFILES(X86)")
 
     let projectOptions = 
         let allFlags = 
@@ -88,9 +89,9 @@ let ``FileSystem compilation test``() =
                yield "--fullpaths"; 
                yield "--flaterrors"; 
                yield "--target:library"; 
-               for r in [ @"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.0\mscorlib.dll"; 
-                          @"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.0\System.dll"; 
-                          @"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.0\System.Core.dll"] do 
+               for r in [ programFilesx86Folder + @"\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.0\mscorlib.dll"; 
+                          programFilesx86Folder + @"\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.0\System.dll"; 
+                          programFilesx86Folder + @"\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.0\System.Core.dll"] do 
                      yield "-r:" + r |]
  
         { ProjectFileName = @"c:\mycode\compilation.fsproj" // Make a name that is unique in this directory.
@@ -100,7 +101,9 @@ let ``FileSystem compilation test``() =
           IsIncompleteTypeCheckEnvironment = false
           UseScriptResolutionRules = true 
           LoadTime = System.DateTime.Now // Not 'now', we don't want to force reloading
-          UnresolvedReferences = None }
+          UnresolvedReferences = None 
+          OriginalLoadReferences = []
+          ExtraProjectInfo = None }
 
     let results = checker.ParseAndCheckProject(projectOptions) |> Async.RunSynchronously
 

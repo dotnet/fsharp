@@ -280,13 +280,13 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
              let einfos = ComputeImmediateIntrinsicEventsOfType (optFilter,ad) m typ 
              let rfinfos = GetImmediateIntrinsicRecdOrClassFieldsOfType (optFilter,ad) m typ 
              match acc with 
-             | Some(MethodItem(inheritedMethSets)) when nonNil minfos -> Some(MethodItem (minfos::inheritedMethSets))
-             | _ when nonNil minfos -> Some(MethodItem ([minfos]))
-             | Some(PropertyItem(inheritedPropSets)) when nonNil pinfos -> Some(PropertyItem(pinfos::inheritedPropSets))
-             | _ when nonNil pinfos -> Some(PropertyItem([pinfos]))
-             | _ when nonNil finfos -> Some(ILFieldItem(finfos))
-             | _ when nonNil einfos -> Some(EventItem(einfos))
-             | _ when nonNil rfinfos -> 
+             | Some(MethodItem(inheritedMethSets)) when not (isNil minfos) -> Some(MethodItem (minfos::inheritedMethSets))
+             | _ when not (isNil minfos) -> Some(MethodItem ([minfos]))
+             | Some(PropertyItem(inheritedPropSets)) when not (isNil pinfos) -> Some(PropertyItem(pinfos::inheritedPropSets))
+             | _ when not (isNil pinfos) -> Some(PropertyItem([pinfos]))
+             | _ when not (isNil finfos) -> Some(ILFieldItem(finfos))
+             | _ when not (isNil einfos) -> Some(EventItem(einfos))
+             | _ when not (isNil rfinfos) -> 
                 match rfinfos with
                 | [single] -> Some(RecdFieldItem(single))
                 | _ -> failwith "Unexpected multiple fields with the same name" // Because an explicit name (i.e., nm) was supplied, there will be only one element at most.
@@ -682,7 +682,7 @@ let TryDestStandardDelegateTyp (infoReader:InfoReader) m ad delTy =
     let g = infoReader.g
     let (SigOfFunctionForDelegate(_,compiledViewOfDelArgTys,delRetTy,_)) = GetSigOfFunctionForDelegate infoReader delTy m ad
     match compiledViewOfDelArgTys with 
-    | senderTy :: argTys when (isObjTy g senderTy) && not (List.exists (isByrefTy g) argTys)  -> Some(mkTupledTy g argTys,delRetTy)
+    | senderTy :: argTys when (isObjTy g senderTy) && not (List.exists (isByrefTy g) argTys)  -> Some(mkRefTupledTy g argTys,delRetTy)
     | _ -> None
 
 

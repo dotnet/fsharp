@@ -7,8 +7,7 @@
 
 |            |Debug (Build only)|Release (Tests Part 1)|Release (Tests Part 2)|
 |:----------:|:----------------:|:------------------:|:-----------------------:|
-|**master**  |[![Build Status](http://dotnet-ci.cloudapp.net/buildStatus/icon?job=Microsoft_visualfsharp/master/debug_windows_nt)](http://dotnet-ci.cloudapp.net/job/Microsoft_visualfsharp/job/master/job/debug_windows_nt/)|[![Build Status](http://dotnet-ci.cloudapp.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ci_part1_windows_nt)](http://dotnet-ci.cloudapp.net/job/Microsoft_visualfsharp/job/master/job/release_ci_part1_windows_nt/)|[![Build Status](http://dotnet-ci.cloudapp.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ci_part2_windows_nt)](http://dotnet-ci.cloudapp.net/job/Microsoft_visualfsharp/job/master/job/release_ci_part2_windows_nt/)|
-|**roslyn**  |[![Build Status](http://dotnet-ci.cloudapp.net/buildStatus/icon?job=Microsoft_visualfsharp/roslyn/debug_windows_nt)](http://dotnet-ci.cloudapp.net/job/Microsoft_visualfsharp/job/roslyn/job/debug_windows_nt/)|[![Build Status](http://dotnet-ci.cloudapp.net/buildStatus/icon?job=Microsoft_visualfsharp/roslyn/release_ci_part1_windows_nt)](http://dotnet-ci.cloudapp.net/job/Microsoft_visualfsharp/job/roslyn/job/release_ci_part1_windows_nt/)|[![Build Status](http://dotnet-ci.cloudapp.net/buildStatus/icon?job=Microsoft_visualfsharp/roslyn/release_ci_part2_windows_nt)](http://dotnet-ci.cloudapp.net/job/Microsoft_visualfsharp/job/roslyn/job/release_ci_part2_windows_nt/)|
+|**master**  |[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/debug_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/debug_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ci_part1_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/release_ci_part1_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ci_part2_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/release_ci_part2_windows_nt/)|
 
 ###Contributing to the F# Language, Library, and Tools
 
@@ -31,27 +30,28 @@ This project is subject to the Apache Licence, Version 2.0. A copy of the licens
 ###Development and Testing
 
 See [DEVGUIDE.md](DEVGUIDE.md) and [TESTGUIDE.md](TESTGUIDE.md) in the root of the repo for details on build, development, and testing.
-Quickstart guides for build and test can be found [here](https://github.com/Microsoft/visualfsharp/wiki/Build-Quickstart) and [here](https://github.com/Microsoft/visualfsharp/wiki/Test-Quickstart), respectively.
  
 ###Required Tools for Windows Development and Testing
 
 ####Development tools
 
-For F# 4.0 development
+For F# Compiler on Windows (``build net40``)
 
-- [Visual Studio 2015](http://www.visualstudio.com/en-us/downloads/visual-studio-2015-downloads-vs)
-  - Select Visual C++ / Common Tools For Visual C++
-  - Visual F#
-  - Visual Studio Extensibility Tools
-- [Visual Studio 2015 SDK](http://www.visualstudio.com/en-us/downloads/visual-studio-2015-downloads-vs)
+- [.NET 4.5.1](http://www.microsoft.com/en-us/download/details.aspx?id=40779)
+- [MSBuild 12.0](http://www.microsoft.com/en-us/download/details.aspx?id=40760)
 
-For F# 4.1 development
+For F# Compiler on OSX and Linux (see .travis.yml for build steps)
 
-- [Visual Studio 15](https://www.visualstudio.com/en-us/downloads/visual-studio-next-downloads-vs.aspx)
-  - Select Visual C++ / Common Tools For Visual C++
-  - Visual F#
-  - Visual Studio Extensibility Tools
-- [Visual Studio 15 SDK](https://www.visualstudio.com/en-us/downloads/visual-studio-next-downloads-vs.aspx)
+- [Mono latest](http://www.mono-project.com/download/#download-lin)
+- If building for .NET Core, then .NET Core will be downloaded from Linux packages
+
+
+For Visual F# IDE Tools 4.1 development (Windows)
+
+- [Visual Studio 2017 RC](https://www.visualstudio.com/vs/visual-studio-2017-rc/#downloadvs)
+  - Under the "Windows" workloads, select ".NET desktop development".
+    - Select "F# language suport" under the optional components.
+  - Under the "Other Toolsets" workloads, select "Visual Studio extension development".
 
 ####Additional frameworks
 
@@ -65,13 +65,13 @@ For F# 4.1 development
 - [Windows 7 SDK](http://www.microsoft.com/en-us/download/details.aspx?id=8279)
 - [Windows 8 SDK](http://msdn.microsoft.com/en-us/windows/desktop/hh852363.aspx)
 - [Windows 8.1 SDK](http://msdn.microsoft.com/en-us/library/windows/desktop/bg162891.aspx)
+- [Windows 10 SDK](https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk)
 
 ####Contributing
 
-Guidelines for contributions to the Visual F# compiler, library, and tools can be found [here](CONTRIBUTING.md).
+Guidelines for contributions to the F# compiler, library, and Visual F# IDE tools can be found [here](CONTRIBUTING.md).
 
 How we label issues and PRs:  https://github.com/dotnet/roslyn/wiki/Labels-used-for-issues  
-
 
 This project has adopted the code of conduct defined by the [Contributor Covenant](http://contributor-covenant.org/) to clarify expected behavior in our community. This code of conduct has been [adopted by many other projects](http://contributor-covenant.org/adopters/). For more information see the [Code of conduct](https://github.com/Microsoft/visualfsharp/wiki/Code-of-Conduct).
 
@@ -85,13 +85,13 @@ To download the bits for the latest CI builds see [these instructions](https://g
 
 ###Code Flow to Other Platforms
 
-Currently, this repository only enables development and testing on the Windows platform. If you are using Linux, OSX, Android, or iOS, and would like to contribute, please see the instructions provided at the [Open Edition repo](https://github.com/fsharp/fsharp/#the-open-edition-of-the-f-compiler-core-library--tools).
+This repository enables development on Windows, Linux and OSX.  It enables automated CI testing primarily on Windows.
+
+If using Android, or iOS, and would like to contribute, please see the instructions provided at the [Open Edition repo](https://github.com/fsharp/fsharp/#the-open-edition-of-the-f-compiler-core-library--tools).
 
 Although the primary focus of this repo is F# for Windows and the Visual Studio F# tools, contributions here flow directly to the F# Open Edition repo.  More details can be found [here](https://github.com/Microsoft/visualfsharp/wiki/Code-Flow-to-Open-Edition).
 
 ###Get In Touch
 
 Keep up with the Visual F# Team and the development of the Visual F# Tools by following us [@VisualFSharp](https://twitter.com/VisualFSharp) or subscribing to our [team blog](http://blogs.msdn.com/b/fsharpteam/).
-
-
 

@@ -32,7 +32,7 @@ val NewInferenceType : unit -> TType
 val NewErrorType : unit -> TType
 
 /// Create an inference type variable representing an error condition when checking a measure
-val NewErrorMeasure : unit -> MeasureExpr
+val NewErrorMeasure : unit -> Measure
 
 /// Create a list of inference type variables, one for each element in the input list
 val NewInferenceTypes : 'a list -> TType list
@@ -53,9 +53,9 @@ type ContextInfo =
 /// No context was given.
 | NoContext
 /// The type equation comes from an omitted else branch.
-| OmittedElseBranch
-/// The type equation comes from checking an else branch.
-| ElseBranch
+| OmittedElseBranch of range
+/// The type equation comes from a type check of the result of an else branch.
+| ElseBranchResult of range
 /// The type equation comes from the verification of record fields.
 | RecordFields
 /// The type equation comes from the verification of a tuple in record fields.
@@ -71,13 +71,13 @@ type ContextInfo =
 
 exception ConstraintSolverTupleDiffLengths              of DisplayEnv * TType list * TType list * range * range
 exception ConstraintSolverInfiniteTypes                 of ContextInfo * DisplayEnv * TType * TType * range * range
-exception ConstraintSolverTypesNotInEqualityRelation    of DisplayEnv * TType * TType * range * range
+exception ConstraintSolverTypesNotInEqualityRelation    of DisplayEnv * TType * TType * range * range * ContextInfo
 exception ConstraintSolverTypesNotInSubsumptionRelation of DisplayEnv * TType * TType * range * range
 exception ConstraintSolverMissingConstraint             of DisplayEnv * Typar * TyparConstraint * range * range
 exception ConstraintSolverError                         of string * range * range
 exception ConstraintSolverRelatedInformation            of string option * range * exn
 exception ErrorFromApplyingDefault                      of TcGlobals * DisplayEnv * Typar * TType * exn * range
-exception ErrorFromAddingTypeEquation                   of TcGlobals * DisplayEnv * TType * TType * exn * ContextInfo * range
+exception ErrorFromAddingTypeEquation                   of TcGlobals * DisplayEnv * TType * TType * exn * range
 exception ErrorsFromAddingSubsumptionConstraint         of TcGlobals * DisplayEnv * TType * TType * exn * ContextInfo * range
 exception ErrorFromAddingConstraint                     of DisplayEnv * exn * range
 exception UnresolvedConversionOperator                  of DisplayEnv * TType * TType * range
@@ -98,7 +98,8 @@ val BakedInTraitConstraintNames : string list
 
 val MakeConstraintSolverEnv : ContextInfo -> ConstraintSolverState -> range -> DisplayEnv -> ConstraintSolverEnv
 
-type Trace = Trace of (unit -> unit) list ref
+[<Sealed; NoEquality; NoComparison>]
+type Trace 
 
 type OptionalTrace =
   | NoTrace
@@ -108,7 +109,7 @@ val SimplifyMeasuresInTypeScheme             : TcGlobals -> bool -> Typars -> TT
 val SolveTyparEqualsTyp                      : ConstraintSolverEnv -> int -> range -> OptionalTrace -> TType -> TType -> OperationResult<unit>
 val SolveTypEqualsTypKeepAbbrevs             : ConstraintSolverEnv -> int -> range -> OptionalTrace -> TType -> TType -> OperationResult<unit>
 val CanonicalizeRelevantMemberConstraints    : ConstraintSolverEnv -> int -> OptionalTrace -> Typars -> OperationResult<unit>
-val ResolveOverloading                       : ConstraintSolverEnv -> OptionalTrace -> string -> ndeep: int -> bool -> int * int -> AccessorDomain -> CalledMeth<Expr> list ->  bool -> TType option -> CalledMeth<Expr> option * OperationResult<unit>
+val ResolveOverloading                       : ConstraintSolverEnv -> OptionalTrace -> string -> ndeep: int -> TraitConstraintInfo option -> int * int -> AccessorDomain -> CalledMeth<Expr> list ->  bool -> TType option -> CalledMeth<Expr> option * OperationResult<unit>
 val UnifyUniqueOverloading                   : ConstraintSolverEnv -> int * int -> string -> AccessorDomain -> CalledMeth<SynExpr> list -> TType -> OperationResult<bool> 
 val EliminateConstraintsForGeneralizedTypars : ConstraintSolverEnv -> OptionalTrace -> Typars -> unit 
 

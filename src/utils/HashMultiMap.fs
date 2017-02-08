@@ -10,15 +10,15 @@ open Microsoft.FSharp.Collections
 // one entry. So use two hash tables: one for the main entries and one for the overflow.
 [<Sealed>]
 type internal HashMultiMap<'Key,'Value>(n: int, hasheq: IEqualityComparer<'Key>) = 
-    let firstEntries = new Dictionary<_,_>(n,hasheq);
-    let rest = new Dictionary<_,_>(3,hasheq);
+    let firstEntries = Dictionary<_,_>(n,hasheq)
+    let rest = Dictionary<_,_>(3,hasheq)
  
-    new (hasheq : IEqualityComparer<'Key>) = new HashMultiMap<'Key,'Value>(11, hasheq)
+    new (hasheq : IEqualityComparer<'Key>) = HashMultiMap<'Key,'Value>(11, hasheq)
     new (seq : seq<'Key * 'Value>, hasheq : IEqualityComparer<'Key>) as x = 
         new HashMultiMap<'Key,'Value>(11, hasheq)
         then seq |> Seq.iter (fun (k,v) -> x.Add(k,v))
 
-    member x.GetRest(k) = 
+    member x.GetRest(k) =
         let mutable res = []
         let ok = rest.TryGetValue(k,&res)
         if ok then res else []
@@ -37,9 +37,10 @@ type internal HashMultiMap<'Key,'Value>(n: int, hasheq: IEqualityComparer<'Key>)
     member x.FirstEntries = firstEntries
     member x.Rest = rest
     member x.Copy() = 
-        let res = new HashMultiMap<'Key,'Value>(firstEntries.Count,firstEntries.Comparer) 
+        let res = HashMultiMap<'Key,'Value>(firstEntries.Count,firstEntries.Comparer)
         for kvp in firstEntries do 
              res.FirstEntries.Add(kvp.Key,kvp.Value)
+
         for kvp in rest do 
              res.Rest.Add(kvp.Key,kvp.Value)
         res
@@ -48,7 +49,7 @@ type internal HashMultiMap<'Key,'Value>(n: int, hasheq: IEqualityComparer<'Key>)
         with get(y : 'Key) = 
             let mutable res = Unchecked.defaultof<'Value>
             let ok = firstEntries.TryGetValue(y,&res)
-            if ok then res else raise (new System.Collections.Generic.KeyNotFoundException("The item was not found in collection"))
+            if ok then res else raise (KeyNotFoundException("The item was not found in collection"))
         and set (y:'Key) (z:'Value) = 
             x.Replace(y,z)
 
@@ -61,7 +62,7 @@ type internal HashMultiMap<'Key,'Value>(n: int, hasheq: IEqualityComparer<'Key>)
         let mutable res = acc
         for kvp in firstEntries do
             res <- f kvp.Key kvp.Value res
-            match x.GetRest(kvp.Key)  with
+            match x.GetRest(kvp.Key) with
             | [] -> ()
             | rest -> 
                 for z in rest do
@@ -71,7 +72,7 @@ type internal HashMultiMap<'Key,'Value>(n: int, hasheq: IEqualityComparer<'Key>)
     member x.Iterate(f) =  
         for kvp in firstEntries do
             f kvp.Key kvp.Value
-            match x.GetRest(kvp.Key)  with
+            match x.GetRest(kvp.Key) with
             | [] -> ()
             | rest -> 
                 for z in rest do
@@ -105,7 +106,7 @@ type internal HashMultiMap<'Key,'Value>(n: int, hasheq: IEqualityComparer<'Key>)
     member x.Replace(y,z) = 
         firstEntries.[y] <- z
 
-    member x.TryFind(y) = 
+    member x.TryFind(y) =
         let mutable res = Unchecked.defaultof<'Value>
         let ok = firstEntries.TryGetValue(y,&res)
         if ok then Some(res) else None
@@ -114,7 +115,7 @@ type internal HashMultiMap<'Key,'Value>(n: int, hasheq: IEqualityComparer<'Key>)
 
     interface IEnumerable<KeyValuePair<'Key, 'Value>> with
         member s.GetEnumerator() = 
-            let elems = new System.Collections.Generic.List<_>(firstEntries.Count + rest.Count)
+            let elems = List<_>(firstEntries.Count + rest.Count)
             for kvp in firstEntries do
                 elems.Add(kvp)
                 for z in s.GetRest(kvp.Key) do

@@ -29,8 +29,7 @@ type UnionCaseInfo =
     /// <returns>An array of custom attributes.</returns>
     member GetCustomAttributes: attributeType:System.Type -> obj[]
 
-#if FX_NO_CUSTOMATTRIBUTEDATA
-#else
+#if !FX_NO_CUSTOMATTRIBUTEDATA
     /// <summary>Returns the custom attributes data associated with the case.</summary>
     /// <returns>An list of custom attribute data items.</returns>
     member GetCustomAttributesData: unit -> System.Collections.Generic.IList<CustomAttributeData>
@@ -324,6 +323,16 @@ type FSharpType =
     /// <returns>The type representing the tuple containing the input elements.</returns>
     static member MakeTupleType: types:Type[] -> Type
 
+    /// <summary>Returns a <c>System.Type</c> representing an F# tuple type with the given element types</summary>
+    /// <param name="types">An array of types for the tuple elements.</param>
+    /// <returns>The type representing the tuple containing the input elements.</returns>
+    static member MakeTupleType: asm:Assembly * types:Type[] -> Type
+
+    /// <summary>Returns a <c>System.Type</c> representing an F# struct tuple type with the given element types</summary>
+    /// <param name="types">An array of types for the tuple elements.</param>
+    /// <returns>The type representing the struct tuple containing the input elements.</returns>
+    static member MakeStructTupleType: asm:Assembly * types:Type[] -> Type
+
     /// <summary>Return true if the <c>typ</c> is a representation of an F# tuple type </summary>
     /// <param name="typ">The type to check.</param>
     /// <returns>True if the type check succeeds.</returns>
@@ -522,7 +531,7 @@ open Microsoft.FSharp.Core
 
 module internal ReflectionUtils = 
 #if FX_RESHAPED_REFLECTION
-    type BindingFlags = ReflectionAdapters.BindingFlags
+    type internal BindingFlags = ReflectionAdapters.BindingFlags
 #else
     type BindingFlags = System.Reflection.BindingFlags
 #endif

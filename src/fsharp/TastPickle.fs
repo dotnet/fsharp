@@ -425,19 +425,7 @@ let p_array f (x: 'T[]) st =
  
 let p_list f x st = p_array f (Array.ofList x) st
 
-
-#if FLAT_LIST_AS_LIST
-#else
-let p_FlatList f (x: FlatList<'T>) st = p_list f x st 
-#endif
-#if FLAT_LIST_AS_ARRAY_STRUCT
-//#else
-let p_FlatList f (x: FlatList<'T>) st = p_array f (match x.array with null -> [| |] | _ -> x.array) st
-#endif
-#if FLAT_LIST_AS_ARRAY
-//#else
-let p_FlatList f (x: FlatList<'T>) st = p_array f x st
-#endif
+let p_List f (x: 'T list) st = p_list f x st 
 
 let p_wrap (f: 'T -> 'U) (p : 'U pickler) : 'T pickler = (fun x st -> p (f x) st)
 let p_option f x st =
@@ -503,15 +491,15 @@ let u_list f st = Array.toList (u_array f st)
 
 #if FLAT_LIST_AS_LIST
 #else
-let u_FlatList f st = u_list f st // new FlatList<_> (u_array f st)
+let u_List f st = u_list f st // new List<_> (u_array f st)
 #endif
 #if FLAT_LIST_AS_ARRAY_STRUCT
 //#else
-let u_FlatList f st = FlatList(u_array f st)
+let u_List f st = List(u_array f st)
 #endif
 #if FLAT_LIST_AS_ARRAY
 //#else
-let u_FlatList f st = u_array f st
+let u_List f st = u_array f st
 #endif
 
 let u_array_revi f st =
@@ -872,7 +860,7 @@ let rec p_ILType ty st =
     | ILType.TypeVar n                -> p_byte 7 st; p_uint16 n st
     | ILType.Modified (req,tref,ty) -> p_byte 8 st; p_tup3 p_bool p_ILTypeRef p_ILType (req,tref,ty) st
 
-and p_ILTypes tys = p_list p_ILType (ILList.toList tys)
+and p_ILTypes tys = p_list p_ILType tys
 
 and p_ILBasicCallConv x st = 
     p_byte (match x with 
@@ -927,7 +915,7 @@ let rec u_ILType st =
     | 7 -> u_uint16 st                            |> mkILTyvarTy
     | 8 -> u_tup3 u_bool u_ILTypeRef u_ILType  st |> ILType.Modified 
     | _ -> ufailwith st "u_ILType"
-and u_ILTypes st = ILList.ofList (u_list u_ILType st)
+and u_ILTypes st = u_list u_ILType st
 and u_ILCallSig = u_wrap (fun (a,b,c) -> {CallingConv=a; ArgTypes=b; ReturnType=c}) (u_tup3 u_ILCallConv u_ILTypes u_ILType)
 and u_ILTypeSpec st = let a,b = u_tup2 u_ILTypeRef u_ILTypes st in ILTypeSpec.Create(a,b)
 
@@ -1420,8 +1408,8 @@ let p_measure_one = p_byte 4
 // Pickle a unit-of-measure variable or constructor
 let p_measure_varcon unt st =
      match unt with 
-     | MeasureCon tcref   -> p_measure_con tcref st
-     | MeasureVar v       -> p_measure_var v st
+     | Measure.Con tcref   -> p_measure_con tcref st
+     | Measure.Var v       -> p_measure_var v st
      | _                  -> pfailwith st ("p_measure_varcon: expected measure variable or constructor")
 
 // Pickle a positive integer power of a unit-of-measure variable or constructor
@@ -1449,12 +1437,12 @@ let rec p_measure_power unt q st =
 let rec p_normalized_measure unt st =
      let unt = stripUnitEqnsAux false unt 
      match unt with 
-     | MeasureCon tcref   -> p_measure_con tcref st
-     | MeasureInv x       -> p_byte 1 st; p_normalized_measure x st
-     | MeasureProd(x1,x2) -> p_byte 2 st; p_normalized_measure x1 st; p_normalized_measure x2 st
-     | MeasureVar v       -> p_measure_var v st
-     | MeasureOne         -> p_measure_one st
-     | MeasureRationalPower(x,q) -> p_measure_power x q st
+     | Measure.Con tcref   -> p_measure_con tcref st
+     | Measure.Inv x       -> p_byte 1 st; p_normalized_measure x st
+     | Measure.Prod(x1,x2) -> p_byte 2 st; p_normalized_measure x1 st; p_normalized_measure x2 st
+     | Measure.Var v       -> p_measure_var v st
+     | Measure.One         -> p_measure_one st
+     | Measure.RationalPower(x,q) -> p_measure_power x q st
 
 // By normalizing the unit-of-measure and treating integer powers as a special case, 
 // we ensure that the pickle format for rational powers of units (byte 5 followed by 
@@ -1472,12 +1460,12 @@ let u_rational st =
 let rec u_measure_expr st =
     let tag = u_byte st
     match tag with
-    | 0 -> let a = u_tcref st in MeasureCon a
-    | 1 -> let a = u_measure_expr st in MeasureInv a
-    | 2 -> let a,b = u_tup2 u_measure_expr u_measure_expr st in MeasureProd (a,b)
-    | 3 -> let a = u_tpref st in MeasureVar a
-    | 4 -> MeasureOne
-    | 5 -> let a = u_measure_expr st in let b = u_rational st in MeasureRationalPower (a,b)
+    | 0 -> let a = u_tcref st in Measure.Con a
+    | 1 -> let a = u_measure_expr st in Measure.Inv a
+    | 2 -> let a,b = u_tup2 u_measure_expr u_measure_expr st in Measure.Prod (a,b)
+    | 3 -> let a = u_tpref st in Measure.Var a
+    | 4 -> Measure.One
+    | 5 -> let a = u_measure_expr st in let b = u_rational st in Measure.RationalPower (a,b)
     | _ -> ufailwith st "u_measure_expr"
 
 #if INCLUDE_METADATA_WRITER
@@ -1561,7 +1549,11 @@ let u_typar_specs = (u_list u_typar_spec)
 let _ = fill_p_typ (fun ty st ->
     let ty = stripTyparEqns ty
     match ty with 
-    | TType_tuple l                       -> p_byte 0 st; p_typs l st
+    | TType_tuple (tupInfo,l) -> 
+          if evalTupInfoIsStruct tupInfo then 
+              p_byte 8 st; p_typs l st
+          else
+              p_byte 0 st; p_typs l st
     | TType_app(ERefNonLocal nleref,[])  -> p_byte 1 st; p_simpletyp nleref st
     | TType_app (tc,tinst)                -> p_byte 2 st; p_tup2 (p_tcref "typ") p_typs (tc,tinst) st
     | TType_fun (d,r)                     -> p_byte 3 st; p_tup2 p_typ p_typ (d,r) st
@@ -1575,7 +1567,7 @@ let _ = fill_p_typ (fun ty st ->
 let _ = fill_u_typ (fun st ->
     let tag = u_byte st
     match tag with
-    | 0 -> let l = u_typs st                               in TType_tuple l
+    | 0 -> let l = u_typs st                               in TType_tuple (tupInfoRef, l)
     | 1 -> u_simpletyp st 
     | 2 -> let tc = u_tcref st in let tinst = u_typs st    in TType_app (tc,tinst)
     | 3 -> let d = u_typ st    in let r = u_typ st         in TType_fun (d,r)
@@ -1583,6 +1575,7 @@ let _ = fill_u_typ (fun st ->
     | 5 -> let tps = u_typar_specs st in let r = u_typ st  in TType_forall (tps,r)
     | 6 -> let unt = u_measure_expr st                     in TType_measure unt
     | 7 -> let uc = u_ucref st in let tinst = u_typs st    in TType_ucase (uc,tinst)
+    | 8 -> let l = u_typs st                               in TType_tuple (tupInfoStruct, l)
     | _ -> ufailwith st "u_typ")
   
 
@@ -1683,7 +1676,7 @@ and p_tycon_repr x st =
             p_byte 0 st; false
         else
             // Pickle generated type definitions as a TAsmRepr
-            p_byte 1 st; p_byte 2 st; p_ILType (mkILBoxedType(ILTypeSpec.Create(ExtensionTyping.GetILTypeRefOfProvidedType(info.ProvidedType ,range0),emptyILGenericArgs))) st; true
+            p_byte 1 st; p_byte 2 st; p_ILType (mkILBoxedType(ILTypeSpec.Create(ExtensionTyping.GetILTypeRefOfProvidedType(info.ProvidedType ,range0),[]))) st; true
     | TProvidedNamespaceExtensionPoint _ -> p_byte 0 st; false
 #endif
     | TILObjectRepr (_,_,td) -> error (Failure("Unexpected IL type definition"+td.Name))
@@ -2288,7 +2281,11 @@ and p_op x st =
     match x with 
     | TOp.UnionCase c                   -> p_byte 0 st; p_ucref c st
     | TOp.ExnConstr c               -> p_byte 1 st; p_tcref "op"  c st
-    | TOp.Tuple                     -> p_byte 2 st
+    | TOp.Tuple tupInfo             -> 
+         if evalTupInfoIsStruct tupInfo then 
+              p_byte 29 st
+         else 
+              p_byte 2 st
     | TOp.Recd (a,b)                -> p_byte 3 st; p_tup2 p_recdInfo (p_tcref "recd op") (a,b) st
     | TOp.ValFieldSet (a)            -> p_byte 4 st; p_rfref a st
     | TOp.ValFieldGet (a)            -> p_byte 5 st; p_rfref a st
@@ -2297,7 +2294,11 @@ and p_op x st =
     | TOp.UnionCaseFieldSet (a,b)     -> p_byte 8 st; p_tup2 p_ucref p_int (a,b) st
     | TOp.ExnFieldGet (a,b) -> p_byte 9 st; p_tup2 (p_tcref "exn op") p_int (a,b) st
     | TOp.ExnFieldSet (a,b) -> p_byte 10 st; p_tup2 (p_tcref "exn op")  p_int (a,b) st
-    | TOp.TupleFieldGet (a)       -> p_byte 11 st; p_int a st
+    | TOp.TupleFieldGet (tupInfo,a)       -> 
+         if evalTupInfoIsStruct tupInfo then 
+              p_byte 30 st; p_int a st
+         else 
+              p_byte 11 st; p_int a st
     | TOp.ILAsm (a,b)                 -> p_byte 12 st; p_tup2 (p_list p_ILInstr) p_typs (a,b) st
     | TOp.RefAddrGet              -> p_byte 13 st
     | TOp.UnionCaseProof (a)           -> p_byte 14 st; p_ucref a st
@@ -2316,6 +2317,8 @@ and p_op x st =
     | TOp.UInt16s arr               -> p_byte 26 st; p_array p_uint16 arr st
     | TOp.Reraise                   -> p_byte 27 st
     | TOp.UnionCaseFieldGetAddr (a,b)     -> p_byte 28 st; p_tup2 p_ucref p_int (a,b) st
+       // Note tag byte 29 is taken for struct tuples, see above
+       // Note tag byte 30 is taken for struct tuples, see above
     | TOp.Goto _ | TOp.Label _ | TOp.Return -> failwith "unexpected backend construct in pickled TAST"
 #endif
 
@@ -2326,7 +2329,7 @@ and u_op st =
            TOp.UnionCase a
     | 1 -> let a = u_tcref st
            TOp.ExnConstr a
-    | 2 -> TOp.Tuple 
+    | 2 -> TOp.Tuple tupInfoRef
     | 3 -> let b = u_tcref st
            TOp.Recd (RecdExpr,b) 
     | 4 -> let a = u_rfref st
@@ -2348,7 +2351,7 @@ and u_op st =
             let b = u_int st
             TOp.ExnFieldSet (a,b) 
     | 11 -> let a = u_int st
-            TOp.TupleFieldGet a 
+            TOp.TupleFieldGet (tupInfoRef, a) 
     | 12 -> let a = (u_list u_ILInstr) st
             let b = u_typs st
             TOp.ILAsm (a,b) 
@@ -2380,6 +2383,9 @@ and u_op st =
     | 28 -> let a = u_ucref st
             let b = u_int st
             TOp.UnionCaseFieldGetAddr (a,b) 
+    | 29 -> TOp.Tuple tupInfoStruct
+    | 30 -> let a = u_int st
+            TOp.TupleFieldGet (tupInfoStruct, a) 
     | _ -> ufailwith st "u_op" 
 
 #if INCLUDE_METADATA_WRITER
@@ -2517,26 +2523,26 @@ and u_intf st = u_tup2 u_typ u_methods st
 and u_intfs st = u_list u_intf st
 
 #if INCLUDE_METADATA_WRITER
-let _ = fill_p_binds (p_FlatList p_bind)
+let _ = fill_p_binds (p_List p_bind)
 let _ = fill_p_targets (p_array p_target)
 let _ = fill_p_constraints (p_list p_static_optimization_constraint)
 let _ = fill_p_Exprs (p_list p_expr)
 let _ = fill_p_expr_fwd p_expr
-let _ = fill_p_FlatExprs (p_FlatList p_expr)
+let _ = fill_p_FlatExprs (p_List p_expr)
 let _ = fill_p_attribs (p_list p_attrib)
 let _ = fill_p_Vals (p_list p_Val)
-let _ = fill_p_FlatVals (p_FlatList p_Val)
+let _ = fill_p_FlatVals (p_List p_Val)
 #endif
 
-let _ = fill_u_binds (u_FlatList u_bind)
+let _ = fill_u_binds (u_List u_bind)
 let _ = fill_u_targets (u_array u_target)
 let _ = fill_u_constraints (u_list u_static_optimization_constraint)
 let _ = fill_u_Exprs (u_list u_expr)
 let _ = fill_u_expr_fwd u_expr
-let _ = fill_u_FlatExprs (u_FlatList u_expr)
+let _ = fill_u_FlatExprs (u_List u_expr)
 let _ = fill_u_attribs (u_list u_attrib)
 let _ = fill_u_Vals (u_list u_Val)
-let _ = fill_u_FlatVals (u_FlatList u_Val)
+let _ = fill_u_FlatVals (u_List u_Val)
 
 //---------------------------------------------------------------------------
 // Pickle/unpickle F# interface data 
