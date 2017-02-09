@@ -650,8 +650,6 @@ if '%TEST_NET40_FSHARP_SUITE%' == '1' (
     echo "!NUNIT3_CONSOLE!" --verbose "!FSCBINPATH!\FSharp.Tests.FSharpSuite.dll" --framework:V4.0 --work:"!FSCBINPATH!"  !OUTPUTARG! !ERRORARG! --result:"!XMLFILE!;format=nunit3" !WHERE_ARG_NUNIT!
          "!NUNIT3_CONSOLE!" --verbose "!FSCBINPATH!\FSharp.Tests.FSharpSuite.dll" --framework:V4.0 --work:"!FSCBINPATH!"  !OUTPUTARG! !ERRORARG! --result:"!XMLFILE!;format=nunit3" !WHERE_ARG_NUNIT!
 
-    call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
-
     if NOT '!saved_errorlevel!' == '0' (
         type "!ERRORFILE!"
         echo -----------------------------------------------------------------
@@ -722,8 +720,6 @@ if '%TEST_NET40_COMPILERUNIT_SUITE%' == '1' (
     echo "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG!  !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\..\..\net40\bin\FSharp.Compiler.Unittests.dll" !WHERE_ARG_NUNIT!
          "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG!  !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\..\..\net40\bin\FSharp.Compiler.Unittests.dll" !WHERE_ARG_NUNIT!
 
-    call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
-
     if NOT '!saved_errorlevel!' == '0' (
         echo -----------------------------------------------------------------
         type "!OUTPUTFILE!"
@@ -755,7 +751,6 @@ if '%TEST_NET40_COREUNIT_SUITE%' == '1' (
     echo "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
          "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
 
-    call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
     if NOT '!saved_errorlevel!' == '0' (
         echo -----------------------------------------------------------------
         type "!OUTPUTFILE!"
@@ -787,7 +782,6 @@ if '%TEST_PORTABLE_COREUNIT_SUITE%' == '1' (
     echo "!NUNIT3_CONSOLE!" /framework:V4.0 /result="!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! /work="!FSCBINPATH!" "!FSCBINPATH!\..\..\portable7\bin\FSharp.Core.Unittests.dll" "!FSCBINPATH!\..\..\portable47\bin\FSharp.Core.Unittests.dll" "!FSCBINPATH!\..\..\portable78\bin\FSharp.Core.Unittests.dll" "!FSCBINPATH!\..\..\portable259\bin\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
          "!NUNIT3_CONSOLE!" /framework:V4.0 /result="!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! /work="!FSCBINPATH!" "!FSCBINPATH!\..\..\portable7\bin\FSharp.Core.Unittests.dll" "!FSCBINPATH!\..\..\portable47\bin\FSharp.Core.Unittests.dll" "!FSCBINPATH!\..\..\portable78\bin\FSharp.Core.Unittests.dll" "!FSCBINPATH!\..\..\portable259\bin\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
 
-	call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
     if NOT '!saved_errorlevel!' == '0' (
         echo -----------------------------------------------------------------
         type "!OUTPUTFILE!"
@@ -834,9 +828,6 @@ if '%TEST_CORECLR_FSHARP_SUITE%' == '1' (
     echo "%_dotnetexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.Unittests\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
          "%_dotnetexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Tests.FSharpSuite.DrivingCoreCLR\FSharp.Tests.FSharpSuite.DrivingCoreCLR.dll" !WHERE_ARG_NUNIT!
 
-
-
-    call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
     if NOT '!saved_errorlevel!' == '0' (
         echo -----------------------------------------------------------------
         echo Error: Running tests coreclr-fsharp failed, see logs above-- FAILED
@@ -848,24 +839,22 @@ if '%TEST_CORECLR_FSHARP_SUITE%' == '1' (
 REM ---------------- vs-ideunit  -----------------------
 
 if '%TEST_VS_IDEUNIT_SUITE%' == '1' (
-
     set OUTPUTARG=
     set ERRORARG=
     set OUTPUTFILE=
     set ERRORFILE=
-	set XMLFILE=!RESULTSDIR!\test-vs-ideunit-results.xml
+    set XMLFILE=!RESULTSDIR!\test-vs-ideunit-results.xml
     if '%CI%' == '1' (
-    	set OUTPUTFILE=!RESULTSDIR!\test-vs-ideunit-output.log
-	    set ERRORFILE=!RESULTSDIR!\test-vs-ideunit-errors.log
+        set OUTPUTFILE=!RESULTSDIR!\test-vs-ideunit-output.log
+        set ERRORFILE=!RESULTSDIR!\test-vs-ideunit-errors.log
         set ERRORARG=--err:"!ERRORFILE!" 
         set OUTPUTARG=--output:"!OUTPUTFILE!" 
-	)
+    )
 
-	pushd !FSCBINPATH!
+    pushd !FSCBINPATH!
     echo "!NUNIT3_CONSOLE!" --verbose --x86 --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!"  --workers=1 --agents=1 --full "!FSCBINPATH!\VisualFSharp.Unittests.dll" !WHERE_ARG_NUNIT!
          "!NUNIT3_CONSOLE!" --verbose --x86 --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!"  --workers=1 --agents=1 --full "!FSCBINPATH!\VisualFSharp.Unittests.dll" !WHERE_ARG_NUNIT!
-	popd
-	call :UPLOAD_TEST_RESULTS "!XMLFILE!" "!OUTPUTFILE!"  "!ERRORFILE!"
+    popd
     if NOT '!saved_errorlevel!' == '0' (
         echo --------begin vs-ide-unit output ---------------------
         type "!OUTPUTFILE!"
@@ -880,28 +869,8 @@ if '%TEST_VS_IDEUNIT_SUITE%' == '1' (
 )
 
 goto :success
-REM ------ upload test results procedure -------------------------------------
-
-:UPLOAD_TEST_RESULTS
-
-set saved_errorlevel=%errorlevel%
-echo Saved errorlevel %saved_errorlevel%
-
-rem See <http://www.appveyor.com/docs/environment-variables>
-if not defined APPVEYOR goto :SKIP_APPVEYOR_UPLOAD
-
-echo powershell -File Upload-Results.ps1 "%~1"
-     powershell -File Upload-Results.ps1 "%~1"
-
-:SKIP_APPVEYOR_UPLOAD
-
-goto :EOF
-:: Note: "goto :EOF" returns from an in-batchfile "call" command
-:: in preference to returning from the entire batch file.
 
 REM ------ exit -------------------------------------
-
-
 :failure
 endlocal
 exit /b 1
