@@ -214,7 +214,7 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
             lineIfExists resolvedPath
             + lineIfExists fusionName  
 
-    /// Perform assembly resolution by instantiating the ResolveAssemblyReference task directly from the MSBuild SDK.
+    /// Perform assembly resolution by instantiating the ResolveAssembly task directly from the MSBuild SDK.
     let ResolveCore(resolutionEnvironment: ResolutionEnvironment,
                     references:(string*(*baggage*)string)[], 
                     targetFrameworkVersion: string, 

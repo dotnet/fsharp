@@ -11,10 +11,10 @@ open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX
 type IlxCallImplementation = 
   | VirtEntriesVirtCode
 
-//++GLOBAL MUTABLE STATE
+//++GLOBAL MUTABLE STATE (concurrency-safe because assigned only during F# library compilation)
 let ilxCompilingFSharpCoreLib = ref false
 
-//++GLOBAL MUTABLE STATE
+//++GLOBAL MUTABLE STATE (concurrency-safe because assigned only during F# library compilation)
 let ilxFsharpCoreLibAssemRef = ref (None : ILAssemblyRef option)
 
 /// Scope references for FSharp.Core.dll

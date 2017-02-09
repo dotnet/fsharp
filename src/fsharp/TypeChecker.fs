@@ -14539,6 +14539,8 @@ module EstablishTypeDefinitionCores =
 
     /// Check and establish a 'type X = ABC<...>' provided type definition
     let private TcTyconDefnCore_Phase1C_EstablishDeclarationForGeneratedSetOfTypes cenv inSig (tycon:Tycon, rhsType:SynType, tcrefForContainer:TyconRef, theRootType:Tainted<ProvidedType>, checkTypeName, args, m) =
+        // Explanation: We are definitely on the compilation thread here, we just have not propagated the token this far.
+        let ctok = AssumeCompilationThreadWithoutEvidence()
 
         let tcref = mkLocalTyconRef tycon
         try 
@@ -14564,7 +14566,9 @@ module EstablishTypeDefinitionCores =
 
             let isRootGenerated,rootProvAssemStaticLinkInfoOpt = 
                 let stRootAssembly = theRootTypeWithRemapping.PApply((fun st -> st.Assembly),m)
-                cenv.amap.assemblyLoader.GetProvidedAssemblyInfo (m, stRootAssembly)
+
+                cenv.amap.assemblyLoader.GetProvidedAssemblyInfo (ctok, m, stRootAssembly)
+
             let isRootGenerated = isRootGenerated || theRootTypeWithRemapping.PUntaint((fun st -> not st.IsErased),m)
 
             if not isRootGenerated then 
@@ -14594,7 +14598,6 @@ module EstablishTypeDefinitionCores =
                 let ilTgtRootTyRef = tycon.CompiledRepresentationForNamedType
                 theRootTypeWithRemapping.PUntaint ((fun st -> ignore(lookupILTypeRef.Remove(st.RawSystemType)) ; lookupILTypeRef.Add(st.RawSystemType, ilTgtRootTyRef)), m)
 
-
             // Iterate all nested types and force their embedding, to populate the mapping from System.Type --> TyconRef/ILTypeRef.
             // This is only needed for generated types, because for other types the System.Type objects self-describe
             // their corresponding F# type.
@@ -14603,7 +14606,7 @@ module EstablishTypeDefinitionCores =
                 // Check the type is a generated type
                 let isGenerated,provAssemStaticLinkInfoOpt = 
                     let stAssembly = st.PApply((fun st -> st.Assembly),m)
-                    cenv.amap.assemblyLoader.GetProvidedAssemblyInfo (m, stAssembly)
+                    cenv.amap.assemblyLoader.GetProvidedAssemblyInfo (ctok, m, stAssembly)
 
                 let isGenerated = isGenerated || st.PUntaint((fun st -> not st.IsErased),m)
 

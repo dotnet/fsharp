@@ -34,20 +34,20 @@ open Microsoft.FSharp.Core.CompilerServices
 
 /// Unique name generator for stamps attached to lambdas and object expressions
 type Unique = int64
-//++GLOBAL MUTABLE STATE
+//++GLOBAL MUTABLE STATE (concurrency-safe)
 let newUnique = let i = ref 0L in fun () -> System.Threading.Interlocked.Increment(i)
 type Stamp = int64
 
 /// Unique name generator for stamps attached to to val_specs, tycon_specs etc.
-//++GLOBAL MUTABLE STATE
+//++GLOBAL MUTABLE STATE (concurrency-safe)
 let newStamp = let i = ref 0L in fun () -> System.Threading.Interlocked.Increment(i)
 
 /// A global generator of compiler generated names
-// ++GLOBAL MUTABLE STATE
+// ++GLOBAL MUTABLE STATE (concurrency safe  by locking inside NiceNameGenerator)
 let globalNng = NiceNameGenerator()
 
 /// A global generator of stable compiler generated names
-// ++GLOBAL MUTABLE STATE
+// ++GLOBAL MUTABLE STATE (concurrency safe by locking inside StableNiceNameGenerator)
 let globalStableNameGenerator = StableNiceNameGenerator ()
 
 type StampMap<'T> = Map<Stamp,'T>

@@ -499,7 +499,7 @@ type TcConfig =
 
 
     member ComputeLightSyntaxInitialStatus : string -> bool
-    member TargetFrameworkDirectories : string list
+    member GetTargetFrameworkDirectories : unit -> string list
     
     /// Get the loaded sources that exist and issue a warning for the ones that don't
     member GetAvailableLoadedSources : unit -> (range*string) list
@@ -507,7 +507,8 @@ type TcConfig =
     member ComputeCanContainEntryPoint : sourceFiles:string list -> bool list *bool 
 
     /// File system query based on TcConfig settings
-    member ResolveSourceFile : range * string * string -> string
+    member ResolveSourceFile : range * filename: string * pathLoadedFrom: string -> string
+
     /// File system query based on TcConfig settings
     member MakePathAbsolute : string -> string
 
@@ -525,7 +526,7 @@ type TcConfig =
 [<Sealed>]
 type TcConfigProvider = 
 
-    member Get : unit -> TcConfig
+    member Get : CompilationThreadToken -> TcConfig
 
     /// Get a TcConfigProvider which will return only the exact TcConfig.
     static member Constant : TcConfig -> TcConfigProvider
@@ -569,8 +570,8 @@ type ImportedAssembly =
 type TcAssemblyResolutions = 
     member GetAssemblyResolutions : unit -> AssemblyResolution list
 
-    static member SplitNonFoundationalResolutions  : TcConfig -> AssemblyResolution list * AssemblyResolution list * UnresolvedAssemblyReference list
-    static member BuildFromPriorResolutions     : TcConfig * AssemblyResolution list * UnresolvedAssemblyReference list -> TcAssemblyResolutions 
+    static member SplitNonFoundationalResolutions  : CompilationThreadToken * TcConfig -> AssemblyResolution list * AssemblyResolution list * UnresolvedAssemblyReference list
+    static member BuildFromPriorResolutions     : CompilationThreadToken * TcConfig * AssemblyResolution list * UnresolvedAssemblyReference list -> TcAssemblyResolutions 
     
 
 
@@ -584,32 +585,32 @@ type TcImports =
     member GetCcusInDeclOrder : unit -> CcuThunk list
     /// This excludes any framework imports (which may be shared between multiple builds)
     member GetCcusExcludingBase : unit -> CcuThunk list 
-    member FindDllInfo : range * string -> ImportedBinary
-    member TryFindDllInfo : range * string * lookupOnly: bool -> option<ImportedBinary>
-    member FindCcuFromAssemblyRef : range * ILAssemblyRef -> CcuResolutionResult
+    member FindDllInfo : CompilationThreadToken * range * string -> ImportedBinary
+    member TryFindDllInfo : CompilationThreadToken * range * string * lookupOnly: bool -> option<ImportedBinary>
+    member FindCcuFromAssemblyRef : CompilationThreadToken * range * ILAssemblyRef -> CcuResolutionResult
 #if EXTENSIONTYPING
     member ProviderGeneratedTypeRoots : ProviderGeneratedType list
 #endif
     member GetImportMap : unit -> Import.ImportMap
 
     /// Try to resolve a referenced assembly based on TcConfig settings.
-    member TryResolveAssemblyReference : AssemblyReference * ResolveAssemblyReferenceMode -> OperationResult<AssemblyResolution list>
+    member TryResolveAssemblyReference : CompilationThreadToken * AssemblyReference * ResolveAssemblyReferenceMode -> OperationResult<AssemblyResolution list>
 
     /// Resolve a referenced assembly and report an error if the resolution fails.
-    member ResolveAssemblyReference : AssemblyReference * ResolveAssemblyReferenceMode -> AssemblyResolution list
+    member ResolveAssemblyReference : CompilationThreadToken * AssemblyReference * ResolveAssemblyReferenceMode -> AssemblyResolution list
     /// Try to find the given assembly reference.
     member TryFindExistingFullyQualifiedPathFromAssemblyRef : ILAssemblyRef -> string option
 #if EXTENSIONTYPING
     /// Try to find a provider-generated assembly
-    member TryFindProviderGeneratedAssemblyByName : assemblyName:string -> System.Reflection.Assembly option
+    member TryFindProviderGeneratedAssemblyByName : CompilationThreadToken * assemblyName:string -> System.Reflection.Assembly option
 #endif
     /// Report unresolved references that also weren't consumed by any type providers.
     member ReportUnresolvedAssemblyReferences : UnresolvedAssemblyReference list -> unit
     member SystemRuntimeContainsType : string -> bool
 
-    static member BuildFrameworkTcImports      : TcConfigProvider * AssemblyResolution list * AssemblyResolution list -> TcGlobals * TcImports
-    static member BuildNonFrameworkTcImports   : TcConfigProvider * TcGlobals * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list -> TcImports
-    static member BuildTcImports               : TcConfigProvider -> TcGlobals * TcImports
+    static member BuildFrameworkTcImports      : CompilationThreadToken * TcConfigProvider * AssemblyResolution list * AssemblyResolution list -> TcGlobals * TcImports
+    static member BuildNonFrameworkTcImports   : CompilationThreadToken * TcConfigProvider * TcGlobals * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list -> TcImports
+    static member BuildTcImports               : CompilationThreadToken * TcConfigProvider -> TcGlobals * TcImports
 
 //----------------------------------------------------------------------------
 // Special resources in DLLs
@@ -638,19 +639,19 @@ val WriteOptimizationData :  TcGlobals * string * CcuThunk * Optimizer.LazyModul
 
 /// Process #r in F# Interactive.
 /// Adds the reference to the tcImports and add the ccu to the type checking environment.
-val RequireDLL : TcImports * TcEnv * thisAssemblyName: string * referenceRange: range * file: string -> TcEnv * (ImportedBinary list * ImportedAssembly list)
+val RequireDLL : CompilationThreadToken * TcImports * TcEnv * thisAssemblyName: string * referenceRange: range * file: string -> TcEnv * (ImportedBinary list * ImportedAssembly list)
 
 /// Processing # commands
 val ProcessMetaCommandsFromInput : 
-              ('T -> range * string -> 'T) * 
-              ('T -> range * string -> 'T) * 
-              ('T -> range * string -> unit) -> TcConfigBuilder -> Ast.ParsedInput -> string -> 'T -> 'T
+    (('T -> range * string -> 'T) * ('T -> range * string -> 'T) * ('T -> range * string -> unit)) 
+    -> TcConfigBuilder * Ast.ParsedInput * string * 'T 
+    -> 'T
 
 /// Process all the #r, #I etc. in an input
-val ApplyMetaCommandsFromInputToTcConfig : TcConfig -> (Ast.ParsedInput * string) -> TcConfig
+val ApplyMetaCommandsFromInputToTcConfig : TcConfig * Ast.ParsedInput * string -> TcConfig
 
 /// Process the #nowarn in an input
-val ApplyNoWarnsToTcConfig : TcConfig -> (Ast.ParsedInput * string) -> TcConfig
+val ApplyNoWarnsToTcConfig : TcConfig * Ast.ParsedInput * string -> TcConfig
 
 //----------------------------------------------------------------------------
 // Scoped pragmas
@@ -704,7 +705,7 @@ val GetInitialTcState :
 
 /// Check one input, returned as an Eventually computation
 val TypeCheckOneInputEventually :
-    (unit -> bool) * TcConfig * TcImports * TcGlobals * Ast.LongIdent option * NameResolution.TcResultsSink * TcState * Ast.ParsedInput  
+    checkForErrors:(unit -> bool) * TcConfig * TcImports * TcGlobals * Ast.LongIdent option * NameResolution.TcResultsSink * TcState * Ast.ParsedInput  
            -> Eventually<(TcEnv * TopAttribs * TypedImplFile list) * TcState>
 
 /// Finish the checking of multiple inputs 
@@ -714,11 +715,11 @@ val TypeCheckMultipleInputsFinish : (TcEnv * TopAttribs * 'T list) list * TcStat
 val TypeCheckClosedInputSetFinish : TypedImplFile list * TcState -> TcState * TypedImplFile list
 
 /// Check a closed set of inputs 
-val TypeCheckClosedInputSet :(unit -> bool) * TcConfig * TcImports * TcGlobals * Ast.LongIdent option * TcState * Ast.ParsedInput  list  -> TcState * TopAttribs * TypedImplFile list * TcEnv
+val TypeCheckClosedInputSet : CompilationThreadToken * checkForErrors: (unit -> bool) * TcConfig * TcImports * TcGlobals * Ast.LongIdent option * TcState * Ast.ParsedInput  list  -> TcState * TopAttribs * TypedImplFile list * TcEnv
 
 /// Check a single input and finish the checking
 val TypeCheckOneInputAndFinishEventually :
-    (unit -> bool) * TcConfig * TcImports * TcGlobals * Ast.LongIdent option * NameResolution.TcResultsSink * TcState * Ast.ParsedInput 
+    checkForErrors: (unit -> bool) * TcConfig * TcImports * TcGlobals * Ast.LongIdent option * NameResolution.TcResultsSink * TcState * Ast.ParsedInput 
         -> Eventually<(TcEnv * TopAttribs * TypedImplFile list) * TcState>
 
 /// Indicates if we should report a warning
@@ -775,7 +776,7 @@ type LoadClosure =
       LoadClosureRootFileDiagnostics : (PhasedDiagnostic * bool) list }   
 
     // Used from service.fs, when editing a script file
-    static member ComputeClosureOfSourceText : referenceResolver: ReferenceResolver.Resolver * filename: string * source: string * implicitDefines:CodeContext * useSimpleResolution: bool * useFsiAuxLib: bool * lexResourceManager: Lexhelp.LexResourceManager * applyCompilerOptions: (TcConfigBuilder -> unit) * assumeDotNetFramework : bool -> LoadClosure
+    static member ComputeClosureOfSourceText : CompilationThreadToken * referenceResolver: ReferenceResolver.Resolver * filename: string * source: string * implicitDefines:CodeContext * useSimpleResolution: bool * useFsiAuxLib: bool * lexResourceManager: Lexhelp.LexResourceManager * applyCompilerOptions: (TcConfigBuilder -> unit) * assumeDotNetFramework : bool -> LoadClosure
 
     /// Used from fsi.fs and fsc.fs, for #load and command line. The resulting references are then added to a TcConfig.
-    static member ComputeClosureOfSourceFiles : tcConfig:TcConfig * (string * range) list * implicitDefines:CodeContext * lexResourceManager : Lexhelp.LexResourceManager -> LoadClosure
+    static member ComputeClosureOfSourceFiles : CompilationThreadToken * tcConfig:TcConfig * (string * range) list * implicitDefines:CodeContext * lexResourceManager : Lexhelp.LexResourceManager -> LoadClosure

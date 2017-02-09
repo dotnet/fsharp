@@ -72,7 +72,7 @@ let mkLexargs (_filename,defines,lightSyntaxStatus,resourceManager,ifdefStack,er
 
 /// Register the lexbuf and call the given function
 let reusingLexbufForParsing lexbuf f = 
-    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parse)
+    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
     LexbufLocalXmlDocStore.ClearXmlDoc lexbuf
     try
       f () 

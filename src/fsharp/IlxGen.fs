@@ -6789,7 +6789,7 @@ type IlxGenResults =
 
 let GenerateCode (cenv, eenv, TypedAssemblyAfterOptimization fileImpls, assemAttribs, moduleAttribs) =
 
-    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.IlxGen)
+    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.IlxGen
 
     // Generate the implementations into the mgbuf 
     let mgbuf= new AssemblyBuilder(cenv)

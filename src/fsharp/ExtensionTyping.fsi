@@ -13,6 +13,7 @@ module internal ExtensionTyping =
     open System.Collections.Generic
     open Microsoft.FSharp.Core.CompilerServices
     open Microsoft.FSharp.Compiler.AbstractIL.IL
+    open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
     open Microsoft.FSharp.Compiler.Range
 
     type TypeProviderDesignation = TypeProviderDesignation of string

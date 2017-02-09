@@ -10,6 +10,7 @@ open System
 open System.IO
 open System.Collections.Generic
 open Microsoft.FSharp.Compiler.AbstractIL.Internal  
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library  
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
 open Microsoft.FSharp.Compiler.Parser
@@ -554,7 +555,8 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
         | Some(value) -> resetLexbufPos value lexbuf
      
     member x.ScanToken(lexintInitial) : Option<FSharpTokenInfo> * FSharpTokenizerLexState = 
-        use unwindBP = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parse)
+
+        use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
         use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> DiscardErrorsLogger)
 
         let lightSyntaxStatusInital, lexcontInitial = LexerStateEncoding.decodeLexInt lexintInitial 
