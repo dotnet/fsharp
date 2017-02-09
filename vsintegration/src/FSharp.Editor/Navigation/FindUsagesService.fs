@@ -123,6 +123,8 @@ type internal FSharpFindUsagesService
                             |> Async.Parallel
                             |> liftAsync
 
+                        // FCS may return several `FSharpSymbolUse`s for same range, which have different `ItemOccurrence`s (Use, UseInAttribute, UseInType, etc.)
+                        // We don't care about the occurrence type here, so we distinct by range.
                         return symbolUses |> Array.concat |> Array.distinctBy (fun x -> x.RangeAlternate)
                     }
 
