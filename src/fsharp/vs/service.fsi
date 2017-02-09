@@ -286,7 +286,7 @@ type internal FSharpCheckFileResults =
     member GetSymbolUseAtLocation  : line:int * colAtEndOfNames:int * lineText:string * names:string list -> Async<FSharpSymbolUse option>
 
     /// <summary>Get any extra colorization info that is available after the typecheck</summary>
-    member GetSemanticClassification : unit -> (range * SemanticClassificationType)[]
+    member GetSemanticClassification : range option -> (range * SemanticClassificationType)[]
 
     /// <summary>Get the locations of format specifiers</summary>
     member GetFormatSpecifierLocations : unit -> range[]

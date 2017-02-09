@@ -41,7 +41,8 @@ type internal FSharpColorizationService
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! _, _, checkResults = checkerProvider.Checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = false) 
                 // it's crucial to not return duplicated or overlapping `ClassifiedSpan`s because Find Usages service crashes.
-                let colorizationData = checkResults.GetSemanticClassification() |> Array.distinctBy fst
+                let targetRange = CommonRoslynHelpers.TextSpanToFSharpRange(document.FilePath, textSpan, sourceText)
+                let colorizationData = checkResults.GetSemanticClassification (Some targetRange) |> Array.distinctBy fst
                 for (range, classificationType) in colorizationData do
                     let span = CommonHelpers.fixupSpan(sourceText, CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
                     if textSpan.Contains(span.Start) || textSpan.Contains(span.End - 1) || span.Contains(textSpan) then
