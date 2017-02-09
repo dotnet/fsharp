@@ -369,12 +369,8 @@ and
         workspace.Options <- workspace.Options.WithChangedOption(NavigationBarOptions.ShowNavigationBar, FSharpCommonConstants.FSharpLanguageName, true)
         let textViewAdapter = package.ComponentModel.GetService<IVsEditorAdaptersFactoryService>()
         
-        let blockForCompletionOption = 
-            PerLanguageOption<bool>(
-                "CompletionOptions", "BlockForCompletionItems", defaultValue = true,
-                storageLocations = [| RoamingProfileStorageLocation("TextEditor.%%LANGUAGE%%.Specific.CompletionOptions - BlockForCompletionItems") |])
-
-        workspace.Options <- workspace.Options.WithChangedOption(blockForCompletionOption, FSharpCommonConstants.FSharpLanguageName, false)
+        workspace.Options <- workspace.Options.WithChangedOption(Completion.CompletionOptions.BlockForCompletionItems, FSharpCommonConstants.FSharpLanguageName, false)
+        workspace.Options <- workspace.Options.WithChangedOption(Shared.Options.ServiceFeatureOnOffOptions.ClosedFileDiagnostic, FSharpCommonConstants.FSharpLanguageName, Nullable false)
                
         match textView.GetBuffer() with
         | (VSConstants.S_OK, textLines) ->
