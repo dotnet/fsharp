@@ -43,11 +43,12 @@ type internal FSharpColorizationService
                 // it's crucial to not return duplicated or overlapping `ClassifiedSpan`s because Find Usages service crashes.
                 let targetRange = CommonRoslynHelpers.TextSpanToFSharpRange(document.FilePath, textSpan, sourceText)
                 let colorizationData = checkResults.GetSemanticClassification (Some targetRange) |> Array.distinctBy fst
+                
                 for (range, classificationType) in colorizationData do
                     let span = CommonHelpers.fixupSpan(sourceText, CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
-                    if textSpan.Contains(span.Start) || textSpan.Contains(span.End - 1) || span.Contains(textSpan) then
-                        result.Add(ClassifiedSpan(span, FSharpClassificationTypes.getClassificationTypeName(classificationType)))
-            } |> Async.Ignore |> CommonRoslynHelpers.StartAsyncUnitAsTask cancellationToken
+                    result.Add(ClassifiedSpan(span, FSharpClassificationTypes.getClassificationTypeName(classificationType)))
+            } 
+            |> Async.Ignore |> CommonRoslynHelpers.StartAsyncUnitAsTask cancellationToken
 
         // Do not perform classification if we don't have project options (#defines matter)
         member this.AdjustStaleClassification(_: SourceText, classifiedSpan: ClassifiedSpan) : ClassifiedSpan = classifiedSpan
