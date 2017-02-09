@@ -123,7 +123,7 @@ type internal FSharpFindUsagesService
                             |> Async.Parallel
                             |> liftAsync
 
-                        return symbolUses |> Array.concat
+                        return symbolUses |> Array.concat |> Array.distinctBy (fun x -> x.RangeAlternate)
                     }
 
             for symbolUse in symbolUses do
