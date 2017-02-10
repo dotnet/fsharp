@@ -348,10 +348,10 @@ and
             projectContext.AddSourceFile(fileName)
             
             let project = projectContext :?> AbstractProject
-            let id = project.GetCurrentDocumentFromPath(fileName).Id
+            let documentId = project.GetCurrentDocumentFromPath(fileName).Id
 
             let rec onDocumentClosed = EventHandler<DocumentEventArgs> (fun _ args ->
-                if args.Document.Id = id then
+                if args.Document.Id = documentId then
                     projectInfoManager.RemoveSingleFileProject(projectId)
                     project.Disconnect()
                     workspace.DocumentClosed.RemoveHandler(onDocumentClosed)
