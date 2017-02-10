@@ -448,6 +448,46 @@ module Dictionary =
 module Lazy = 
     let force (x: Lazy<'T>) = x.Force()
 
+//----------------------------------------------------------------------------
+// Singe threaded execution and mutual exclusion
+
+/// Represents a permission active at this point in execution
+type ExecutionToken = interface end
+
+/// Represents a token that indicates execution on the compilation thread, i.e. 
+///   - we have full access to the (partially mutable) TAST and TcImports data structures
+///   - compiler execution may result in type provider invocations when resolving types and members
+///   - we can access various caches in the SourceCodeServices
+///
+/// Like other execution tokens this should be passed via argument passing and not captured/stored beyond
+/// the lifetime of stack-based calls. This is not checked, it is a discipline withinn the compiler code. 
+type CompilationThreadToken() = interface ExecutionToken
+
+/// Represnts a place where we are stating that execution on the compilation thread is required.  The
+/// reason why will be documented in a comment in the code at the callsite.
+let RequireCompilationThread (_ctok: CompilationThreadToken) = ()
+
+/// Represnts a place in the compiler codebase where we are passed a CompilationThreadToken unnecessarily.
+/// This reprents code that may potentially not need to be executed on the compilation thread.
+let DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  (_ctok: CompilationThreadToken) = ()
+
+/// Represnts a place in the compiler codebase where we assume we are executing on a compilation thread
+let AssumeCompilationThreadWithoutEvidence () = Unchecked.defaultof<CompilationThreadToken>
+
+/// Represents a token that indicates execution on a any of several potential user threads calling the F# compiler services.
+type AnyCallerThreadToken() = interface ExecutionToken
+let AssumeAnyCallerThreadWithoutEvidence () = Unchecked.defaultof<AnyCallerThreadToken>
+
+/// A base type for various types of tokens that must be passed when a lock is taken.
+/// Each different static lock should declare a new subtype of this type.
+type LockToken = inherit ExecutionToken
+let AssumeLockWithoutEvidence<'LockTokenType when 'LockTokenType :> LockToken> () = Unchecked.defaultof<'LockTokenType>
+
+/// Encapsulates a lock associated with a particular token-type representing the acquisition of that lock.
+type Lock<'LockTokenType when 'LockTokenType :> LockToken>() = 
+    let lockObj = obj()
+    member __.AcquireLock f = lock lockObj (fun () -> f (AssumeLockWithoutEvidence<'LockTokenType>()))
+
 //---------------------------------------------------
 // Misc
 
@@ -495,7 +535,7 @@ module ResultOrException =
 ///      Eventually.repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled
 type Eventually<'T> = 
     | Done of 'T 
-    | NotYetDone of (unit -> Eventually<'T>)
+    | NotYetDone of (CompilationThreadToken -> Eventually<'T>)
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Eventually = 
@@ -504,42 +544,42 @@ module Eventually =
     let rec box e = 
         match e with 
         | Done x -> Done (Operators.box x) 
-        | NotYetDone (work) -> NotYetDone (fun () -> box (work()))
+        | NotYetDone (work) -> NotYetDone (fun ctok -> box (work ctok))
 
-    let rec forceWhile check e  = 
+    let rec forceWhile ctok check e  = 
         match e with 
         | Done x -> Some(x)
         | NotYetDone (work) -> 
             if not(check()) 
             then None
-            else forceWhile check (work()) 
+            else forceWhile ctok check (work ctok) 
 
-    let force e = Option.get (forceWhile (fun () -> true) e)
+    let force ctok e = Option.get (forceWhile ctok (fun () -> true) e)
 
         
     /// Keep running the computation bit by bit until a time limit is reached.
     /// The runner gets called each time the computation is restarted
     let repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled timeShareInMilliseconds (ct: CancellationToken) runner e = 
         let sw = new System.Diagnostics.Stopwatch() 
-        let rec runTimeShare e = 
-          runner (fun () -> 
+        let rec runTimeShare ctok e = 
+          runner ctok (fun ctok -> 
             sw.Reset()
             sw.Start(); 
-            let rec loop(e) = 
-                match e with 
-                | Done _ -> e
+            let rec loop ctok ev2 = 
+                match ev2 with 
+                | Done _ -> ev2
                 | NotYetDone work ->
                     if ct.IsCancellationRequested || sw.ElapsedMilliseconds > timeShareInMilliseconds then 
                         sw.Stop();
-                        NotYetDone(fun () -> runTimeShare e) 
+                        NotYetDone(fun ctok -> runTimeShare ctok ev2) 
                     else 
-                        loop(work())
-            loop(e))
-        runTimeShare e
+                        loop ctok (work ctok)
+            loop ctok e)
+        NotYetDone (fun ctok -> runTimeShare ctok e)
     
     /// Keep running the asynchronous computation bit by bit. The runner gets called each time the computation is restarted.
     /// Can be cancelled in the normal way.
-    let forceAsync (runner: (unit -> Eventually<'T>) -> Async<Eventually<'T>>) (e: Eventually<'T>) : Async<'T option> =
+    let forceAsync (runner: (CompilationThreadToken -> Eventually<'T>) -> Async<Eventually<'T>>) (e: Eventually<'T>) : Async<'T option> =
         let rec loop (e: Eventually<'T>) =
             async {
                 match e with 
@@ -553,7 +593,7 @@ module Eventually =
     let rec bind k e = 
         match e with 
         | Done x -> k x 
-        | NotYetDone work -> NotYetDone (fun () -> bind k (work()))
+        | NotYetDone work -> NotYetDone (fun ctok -> bind k (work ctok))
 
     let fold f acc seq = 
         (Done acc,seq) ||> Seq.fold  (fun acc x -> acc |> bind (fun acc -> f acc x))
@@ -562,13 +602,13 @@ module Eventually =
         match e with 
         | Done x -> Done(Result x)
         | NotYetDone work -> 
-            NotYetDone (fun () -> 
-                let res = try Result(work()) with | e -> Exception e 
+            NotYetDone (fun ctok -> 
+                let res = try Result(work ctok) with | e -> Exception e 
                 match res with 
                 | Result cont -> catch cont
                 | Exception e -> Done(Exception e))
     
-    let delay f = NotYetDone (fun () -> f())
+    let delay (f: unit -> Eventually<'T>) = NotYetDone (fun _ctok -> f())
 
     let tryFinally e compensation =    
         catch (e) 
@@ -580,6 +620,10 @@ module Eventually =
     let tryWith e handler =    
         catch e 
         |> bind (function Result v -> Done v | Exception e -> handler e)
+    
+    // All eventually computations carry a CompiationThreadToken
+    let token =    
+        NotYetDone (fun ctok -> Done ctok)
     
 type EventuallyBuilder() = 
     member x.Bind(e,k) = Eventually.bind k e
