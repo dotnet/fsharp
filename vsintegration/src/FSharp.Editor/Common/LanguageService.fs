@@ -299,14 +299,11 @@ and
         let  rec setup (site: IProjectSite) =
             let projectGuid = Guid(site.ProjectGuid)
             let projectFileName = site.ProjectFileName()
-
             let projectDisplayName = projectDisplayNameOf projectFileName
-
             let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
 
-            projectInfoManager.UpdateProjectInfo(projectId, site, workspace)
-
             if isNull (workspace.ProjectTracker.GetProject projectId) then
+                projectInfoManager.UpdateProjectInfo(projectId, site, workspace)
                 let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
                 let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
                 
