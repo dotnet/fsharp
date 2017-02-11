@@ -14,7 +14,6 @@ open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.CompileOps
-open Microsoft.FSharp.Compiler.AccessibilityLogic
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 
 /// Represents one parameter for one method (or other item) in a group. 
@@ -299,12 +298,8 @@ type internal FSharpCheckFileResults =
     /// Get the textual usages that resolved to the given symbol throughout the file
     member GetUsesOfSymbolInFile : symbol:FSharpSymbol -> Async<FSharpSymbolUse[]>
 
-    /// Get `NameResolutionEnv`s indexed by line.
-    member GetNameResolutionEnvironmentsByLine : unit -> Async<ResizeArray<range * NameResolutionEnv * AccessorDomain> []>
-    
     /// Determines if a long ident is resolvable at a specific point.
-    member IsRelativeNameResolvable: cursorPos : pos * plid : string list * item: Item * ResizeArray<range * NameResolutionEnv * AccessorDomain> [] -> Async<bool>
-
+    member IsRelativeNameResolvable: cursorPos : pos * plid : string list * item: Item -> Async<bool>
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]
 type internal FSharpCheckProjectResults =

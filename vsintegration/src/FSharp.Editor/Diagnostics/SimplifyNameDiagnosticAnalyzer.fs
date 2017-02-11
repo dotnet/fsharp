@@ -76,8 +76,6 @@ type internal SimplifyNameDiagnosticAnalyzer() =
                             |> Array.groupBy (fun (symbolUse, _, plidStartCol, _) -> symbolUse.RangeAlternate.StartLine, plidStartCol)
                             |> Array.map (fun (_, xs) -> xs |> Array.maxBy (fun (symbolUse, _, _, _) -> symbolUse.RangeAlternate.EndColumn))
                         
-                        let! nenvsByLine = checkResults.GetNameResolutionEnvironmentsByLine() |> liftAsync
-
                         for symbolUse, plid, plidStartCol, name in symbolUses do
                             if not symbolUse.IsFromDefinition then
                                 let posAtStartOfName =
@@ -91,7 +89,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
                                             match rest with
                                             | [] -> return current
                                             | headIdent :: restPlid ->
-                                                let! res = checkResults.IsRelativeNameResolvable(posAtStartOfName, current, symbolUse.Symbol.Item, nenvsByLine)
+                                                let! res = checkResults.IsRelativeNameResolvable(posAtStartOfName, current, symbolUse.Symbol.Item) 
                                                 if res then return current
                                                 else return! loop restPlid (headIdent :: current)
                                         }
