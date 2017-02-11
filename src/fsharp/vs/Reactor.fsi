@@ -3,15 +3,17 @@
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
 open System.Threading
+open Microsoft.FSharp.Compiler.ErrorLogger
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 
 /// Represents the capability to schedule work in the compiler service operations queue for the compilation thread
 type internal IReactorOperations = 
 
     /// Put the operation in thq queue, and return an async handle to its result. 
-    abstract EnqueueAndAwaitOpAsync : description: string * action: (CancellationToken -> 'T) -> Async<'T>
+    abstract EnqueueAndAwaitOpAsync : description: string * action: (CompilationThreadToken -> CancellationToken -> 'T) -> Async<'T>
 
     /// Enqueue an operation and return immediately. 
-    abstract EnqueueOp: description: string * action: (unit -> unit) -> unit
+    abstract EnqueueOp: description: string * action: (CompilationThreadToken -> unit) -> unit
 
 /// Reactor is intended for long-running but interruptible operations, interleaved
 /// with one-off asynchronous operations. 
@@ -24,7 +26,7 @@ type internal Reactor =
 
     /// Set the background building function, which is called repeatedly
     /// until it returns 'false'.  If None then no background operation is used.
-    member SetBackgroundOp : build:(unit -> bool) option -> unit
+    member SetBackgroundOp : build:(CompilationThreadToken -> bool) option -> unit
 
     /// Block until the current implicit background build is complete. Unit test only.
     member WaitForBackgroundOpCompletion : unit -> unit
@@ -33,13 +35,13 @@ type internal Reactor =
     member CompleteAllQueuedOps : unit -> unit
 
     /// Enqueue an uncancellable operation and return immediately. 
-    member EnqueueOp : description: string * op:(unit -> unit) -> unit
+    member EnqueueOp : description: string * op:(CompilationThreadToken -> unit) -> unit
 
     /// For debug purposes
     member CurrentQueueLength : int
 
     /// Put the operation in the queue, and return an async handle to its result. 
-    member EnqueueAndAwaitOpAsync : description: string * (CancellationToken -> 'T) -> Async<'T>
+    member EnqueueAndAwaitOpAsync : description: string * (CompilationThreadToken -> CancellationToken -> 'T) -> Async<'T>
 
     /// The timespan in milliseconds before background work begins after the operations queue is empty
     member PauseBeforeBackgroundWork : int with get, set

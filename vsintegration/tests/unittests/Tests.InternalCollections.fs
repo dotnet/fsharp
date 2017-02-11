@@ -112,6 +112,8 @@ type MruCache =
         printfn "discarded = %A" discarded.Value
         Assert.IsTrue(discarded.Value = ["y";"x";"Apple";"Banana"], "Check6")                                      
 #endif
+
+type AccessToken() = class end
             
 [<TestFixture>] 
 type AgedLookup() = 
@@ -119,21 +121,22 @@ type AgedLookup() =
     let mutable hold198 : byte [] = null
     let mutable hold199 : byte [] = null
 
+    let atok = AccessToken()
     let WeakRefTest n = 
-        let al = AgedLookup<int,byte[]>(n, (fun (x,y) -> x = y))
+        let al = AgedLookup<AccessToken,int,byte[]>(n, (fun (x,y) -> x = y))
             
         let AssertCached(i,o:byte array) = 
-            match al.TryPeekKeyValue(i) with
+            match al.TryPeekKeyValue(atok,i) with
             | Some(_,x) -> Assert.IsTrue(obj.ReferenceEquals(o,x), sprintf "Object in cache (%d) does not agree with expectation (%d)" x.[0] i)
             | None -> Assert.IsTrue(false, "Object fell out of cache")
                 
         let AssertExistsInCached(i) = 
-            match al.TryPeekKeyValue(i) with
+            match al.TryPeekKeyValue(atok,i) with
             | Some _ -> ()
             | None -> Assert.IsTrue(false, "Object fell out of cache")                
                 
         let AssertNotCached(i) = 
-            match al.TryPeekKeyValue(i) with
+            match al.TryPeekKeyValue(atok,i) with
             | Some _ -> Assert.IsTrue(false, "Expected key to have fallen out of cache")     
             | None -> ()         
             
@@ -145,7 +148,7 @@ type AgedLookup() =
                     if i = 197 then hold197<-large
                     if i = 198 then hold198<-large
                     if i = 199 then hold199<-large
-                    al.Put(i, large)
+                    al.Put(atok, i, large)
                     large<-null
             finally
                 printfn "ensure these objects are never on the stack of the top-level test"
@@ -208,7 +211,7 @@ type AgedLookup() =
         f()            
             
         // Let go of everything else.
-        al.Clear()
+        al.Clear(atok)
         GC.Collect()
         
         

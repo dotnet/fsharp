@@ -6,6 +6,7 @@ module internal Microsoft.FSharp.Compiler.ErrorLogger
 open Internal.Utilities
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Range
 open System
@@ -122,6 +123,7 @@ let rec AttachRange m (exn:exn) =
         | Failure(msg) -> InternalError(msg^" (Failure)",m)
         | :? System.ArgumentException as exn -> InternalError(exn.Message + " (ArgumentException)",m)
         | notARangeDual -> notARangeDual
+
 
 //----------------------------------------------------------------------------
 // Error logger interface
@@ -394,7 +396,9 @@ module ErrorLoggerExtensions =
 /// NOTE: The change will be undone when the returned "unwind" object disposes
 let PushThreadBuildPhaseUntilUnwind (phase:BuildPhase) =
     let oldBuildPhase = CompileThreadStatic.BuildPhaseUnchecked
+    
     CompileThreadStatic.BuildPhase <- phase
+
     { new System.IDisposable with 
          member x.Dispose() = CompileThreadStatic.BuildPhase <- oldBuildPhase (* maybe null *) }
 
@@ -407,7 +411,9 @@ let PushErrorLoggerPhaseUntilUnwind(errorLoggerTransformer : ErrorLogger -> #Err
     let chkErrorLogger = { new ErrorLogger("PushErrorLoggerPhaseUntilUnwind") with
                              member x.DiagnosticSink(phasedError, isError) = newIsInstalled(); newErrorLogger.DiagnosticSink(phasedError, isError)
                              member x.ErrorCount   = newIsInstalled(); newErrorLogger.ErrorCount }
+
     CompileThreadStatic.ErrorLogger <- chkErrorLogger
+
     { new System.IDisposable with 
          member x.Dispose() =       
             CompileThreadStatic.ErrorLogger <- oldErrorLogger

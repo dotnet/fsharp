@@ -80,10 +80,10 @@ let rec splitNamespaceAux (nm:string) =
         s1::splitNamespaceAux s2 
 
 /// Global State. All namespace splits ever seen
-// ++GLOBAL MUTABLE STATE
+// ++GLOBAL MUTABLE STATE (concurrency-safe)
 let memoizeNamespaceTable = new ConcurrentDictionary<string,string list>()
 
-//  ++GLOBAL MUTABLE STATE
+//  ++GLOBAL MUTABLE STATE (concurrency-safe)
 let memoizeNamespaceRightTable = new ConcurrentDictionary<string,string option * string>()
 
 
@@ -92,7 +92,7 @@ let splitNamespace nm =
 
 let splitNamespaceMemoized nm = splitNamespace nm
 
-// ++GLOBAL MUTABLE STATE
+// ++GLOBAL MUTABLE STATE (concurrency-safe)
 let memoizeNamespaceArrayTable = 
     Concurrent.ConcurrentDictionary<string,string[]>()
 
@@ -1865,15 +1865,9 @@ let andTailness x y =
 
 let formatCodeLabel (x:int) = "L"+string x
 
-let new_generator () = 
-    let i = ref 0
-    fun _n -> 
-      incr i; !i
-
-//  ++GLOBAL MUTABLE STATE
-let codeLabelGenerator = (new_generator () : unit -> ILCodeLabel) 
-let generateCodeLabel x  = codeLabelGenerator x
-
+//  ++GLOBAL MUTABLE STATE (concurrency safe)
+let codeLabelCount = ref 0
+let generateCodeLabel() = System.Threading.Interlocked.Increment(codeLabelCount)
 
 let instrIsRet i = 
     match i with 
@@ -2714,7 +2708,7 @@ let mkILTypeDefForGlobalFunctions ilg (methods,fields) = mkILSimpleClass ilg (ty
 let destTypeDefsWithGlobalFunctionsFirst ilg (tdefs: ILTypeDefs) = 
   let l = tdefs.AsList
   let top,nontop = l |> List.partition (fun td -> td.Name = typeNameForGlobalFunctions)
-  let top2 = if top.Length = 0 then [ mkILTypeDefForGlobalFunctions ilg (emptyILMethods, emptyILFields) ] else top
+  let top2 = if isNil top then [ mkILTypeDefForGlobalFunctions ilg (emptyILMethods, emptyILFields) ] else top
   top2@nontop
 
 let mkILSimpleModule assname modname dll subsystemVersion useHighEntropyVA tdefs hashalg locale flags exportedTypes metadataVersion = 
