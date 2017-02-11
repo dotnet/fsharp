@@ -40,7 +40,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     open Microsoft.VisualStudio.Shell
     open Microsoft.VisualStudio.Shell.Interop
     open Microsoft.VisualStudio.OLE.Interop
-    open Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
+    open Microsoft.VisualStudioTools
+    open Microsoft.VisualStudioTools.Project
     open Microsoft.VisualStudio
     open Microsoft.VisualStudio.FSharp.LanguageService
     open EnvDTE
@@ -116,8 +117,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             GetService2<'service,'service>(serviceProvider)
 
         let GetProvider(node: HierarchyNode) = 
-            let serviceProvider = node.OleServiceProvider
-            new Microsoft.VisualStudio.Shell.ServiceProvider(serviceProvider,true)
+            new Microsoft.VisualStudio.Shell.ServiceProvider(node,true)
                 
     open Helpers
 

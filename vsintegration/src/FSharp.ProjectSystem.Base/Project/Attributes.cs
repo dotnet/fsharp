@@ -13,6 +13,7 @@ using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using System.Xml;
 using System.Diagnostics;
+using Microsoft.VisualStudio.FSharp.LanguageService.Resources;
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 { 

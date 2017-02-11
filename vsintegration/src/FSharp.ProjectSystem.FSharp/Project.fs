@@ -34,12 +34,14 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
     open Microsoft.VisualStudio.OLE.Interop
     open Microsoft.VisualStudio.FSharp.ProjectSystem
     open Microsoft.VisualStudio.FSharp.LanguageService
-    open Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
-    open Microsoft.VisualStudio.FSharp.Editor
+    open Microsoft.VisualStudioTools.Project.Automation
+    //open Microsoft.VisualStudioTools.Project
     open Microsoft.VisualStudio.Editors
     open Microsoft.VisualStudio.Editors.PropertyPages
     
     open EnvDTE
+    open Microsoft.VisualStudioTools
+    open Microsoft.VisualStudioTools.Project
 
     module internal VSHiveUtilities =
             /// For a given sub-hive, check to see if a 3rd party has specified any
@@ -413,13 +415,13 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
     /// Factory for creating our editor, creates FSharp Projects
     [<Guid(GuidList.guidFSharpProjectFactoryString)>]
     type internal FSharpProjectFactory(package:FSharpProjectPackage ) =  
-            inherit ProjectFactory(package)
+            inherit ProjectFactory(package :> System.IServiceProvider)
 
             override this.CreateProject() =
 
                 // Then create the project to load.
-                let project = new FSharpProjectNode(this.Package :?> FSharpProjectPackage)
-                project.SetSite(GetService<IOleServiceProvider>(this.Package :> System.IServiceProvider)) |> ignore
+                let project = new FSharpProjectNode(this.Site :?> FSharpProjectPackage)
+                project.SetSite(GetService<IOleServiceProvider>(package :> System.IServiceProvider)) |> ignore
                 (project :> ProjectNode)
 
 
@@ -431,7 +433,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
     [<Guid("C15CF2F6-9005-44AD-9991-683808A8E5EA")>]
     type internal FSharpProjectNode(package:FSharpProjectPackage) as this = 
-            inherit ProjectNode() 
+            inherit CommonProjectNode(package :> System.IServiceProvider, null) 
 
             let mutable vsProject : VSLangProj.VSProject = null
             let mutable trackDocumentsHandle = 0u
@@ -481,9 +483,9 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             //Store the number of images in ProjectNode so we know the offset of the F# icons.
             do FSharpProjectNode.imageOffset <- this.ImageHandler.ImageList.Images.Count
             do this.CanFileNodesHaveChilds <- false
-            do this.OleServiceProvider.AddService(typeof<VSLangProj.VSProject>, new OleServiceProvider.ServiceCreatorCallback(this.CreateServices), false)
+            do this.AddService(typeof<VSLangProj.VSProject>, new OleServiceProvider.ServiceCreatorCallback(this.CreateServices), false)
             do this.SupportsProjectDesigner <- true
-            do this.Package <- package
+            do this.Site <- package
             do   
                 // Add in correct order, as defined by the "FSharpImageName" enum
                 this.ImageHandler.AddImage(FSharpSR.GetObject("4101") :?> System.Drawing.Bitmap) // 4005 = CodeFile
@@ -909,7 +911,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                      (String.Compare(Path.GetExtension(strFileName), ".fsx", StringComparison.OrdinalIgnoreCase) = 0)
                   || (String.Compare(Path.GetExtension(strFileName), ".fsscript", StringComparison.OrdinalIgnoreCase) = 0)
 
-            override x.DefaultBuildAction(strFileName:string ) =
+            member x.DefaultBuildAction(strFileName:string ) =
                 // Briefly, we just want out-of-the-box defaults to be like C#, without all their complicated logic, so we just hardcode a few values to be like C# and then otherwise default to NONE
                 
                 // Compile
@@ -1216,11 +1218,11 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                                                 | _ -> () |]
                                     if nodes.Length = references.Length then
                                         try
-                                            self.BeginBatchUpdate()
+                                            self.StartBatchEdit() |> ignore
                                             for node in nodes do
                                                 node.Remove(false)
                                         finally
-                                            self.EndBatchUpdate()
+                                            self.EndBatchEdit() |> ignore
                                         returnVal <- __VSREFERENCECHANGEOPERATIONRESULT.VSREFERENCECHANGEOPERATIONRESULT_ALLOW
                                     else
                                         System.Diagnostics.Debug.Assert(false, "remove assembly\file reference, when would this happen?")
@@ -1238,11 +1240,11 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                                                 | _ -> () |]
                                     if nodes.Length = projectReferenceProviderContext.References.Length then
                                         try
-                                            self.BeginBatchUpdate()
+                                            self.StartBatchEdit() |> ignore
                                             for node in nodes do
                                                 node.Remove(false)
                                         finally
-                                            self.EndBatchUpdate()
+                                            self.EndBatchEdit() |> ignore
                                         returnVal <- __VSREFERENCECHANGEOPERATIONRESULT.VSREFERENCECHANGEOPERATIONRESULT_ALLOW
                                     else
                                         System.Diagnostics.Debug.Assert(false, "remove project reference, when would this happen?")
@@ -1259,11 +1261,11 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                                                 | _ -> () |]
                                     if nodes.Length = comReferenceProviderContext.References.Length then
                                         try
-                                            self.BeginBatchUpdate()
+                                            self.StartBatchEdit() |> ignore
                                             for node in nodes do
                                                 node.Remove(false)
                                         finally
-                                            self.EndBatchUpdate()
+                                            self.EndBatchEdit() |> ignore
                                         returnVal <- __VSREFERENCECHANGEOPERATIONRESULT.VSREFERENCECHANGEOPERATIONRESULT_ALLOW
                                     else
                                         System.Diagnostics.Debug.Assert(false, "remove COM reference, when would this happen?")
@@ -1282,7 +1284,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     // Let the project know it can show itself in the Add Project Reference Dialog page
                     this.ShowProjectInSolutionPage <- true
 
-            override x.CreateConfigProvider() = new ConfigProvider(this)
+            override x.CreateConfigProvider() = CommonConfigProvider(this)
             
             /// Creates the services exposed by this project.
             member x.CreateServices(serviceType:Type) =
@@ -2048,7 +2050,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
     /// Represents most (non-reference) nodes in the solution hierarchy of an F# project (e.g. foo.fs, bar.fsi, app.config)
     type internal FSharpFileNode(root:FSharpProjectNode, e:ProjectElement, hierarchyId) = 
-            inherit LinkedFileNode(root,e, hierarchyId)
+            inherit FileNode(root,e, hierarchyId)
 
             static let protectVisualState (root : FSharpProjectNode) (node : HierarchyNode) f = 
                 let uiWin = UIHierarchyUtilities.GetUIHierarchyWindow(root.Site, HierarchyNode.SolutionExplorer)
@@ -2080,7 +2082,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                         
             override x.IsNonMemberItem with get() = false
 
-            override x.RenameFileNode(oldname, newname, parentId) =
+            override x.RenameFileNode(oldname, newname) =
                 // The base class will move to bottom of solution explorer after renaming, so we need to move it back.
                 // remember where we are now
                 let mutable relative : HierarchyNode = null  // a file above or below us we can use as a benchmark/anchor to get back to same order/place

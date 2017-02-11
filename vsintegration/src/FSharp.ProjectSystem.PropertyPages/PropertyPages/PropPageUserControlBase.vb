@@ -1318,7 +1318,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
                 'Get the Extender Objects for the properties
                 'This must done after getting the DTE so that ServiceProvider can be obtained
 
-                Dim aem As Microsoft.VisualStudio.Editors.PropertyPages.AutomationExtenderManager = _
+                Dim aem As Microsoft.VisualStudio.Editors.PropertyPages.AutomationExtenderManager =
                     Microsoft.VisualStudio.Editors.PropertyPages.AutomationExtenderManager.GetAutomationExtenderManager(ServiceProvider)
 
                 '... First for the actual objects passed in to SetObjects

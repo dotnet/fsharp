@@ -30,7 +30,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     open Microsoft.VisualStudio.OLE.Interop
     open Microsoft.VisualStudio.FSharp.ProjectSystem
     open Microsoft.VisualStudio.FSharp.LanguageService
-    open Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
+    open Microsoft.VisualStudioTools
+    open Microsoft.VisualStudioTools.Project
     open Microsoft.VisualStudio.Editors
     open Microsoft.VisualStudio.Editors.PropertyPages
     open Microsoft.VisualStudio.TextManager.Interop
@@ -57,8 +58,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     // We cannot find the document. Create a resource for it and add it to the RDT.
                     if docData <> IntPtr.Zero then Marshal.Release(docData) |> ignore
                     
-                    let file = project.NodeFromItemId(itemid)
-                    let projectResources = file :> IVsProjectResources
+                    //let file = project.NodeFromItemId(itemid)
+                    let projectResources = null :> IVsProjectResources // file :> IVsProjectResources
                     if projectResources = null then
                         (VSConstants.E_NOINTERFACE, IntPtr.Zero, 0u)
                     else
@@ -119,7 +120,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         
             try
                 project <- p
-                let specialFiles = p.InteropSafeIVsHierarchy :?> IVsProjectSpecialFiles
+                let specialFiles = null :> IVsProjectSpecialFiles // p.InteropSafeIVsHierarchy :?> IVsProjectSpecialFiles
                 if specialFiles = null then
                     hr <- VSConstants.E_NOINTERFACE
                 else
@@ -131,7 +132,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     
                     if ErrorHandler.Succeeded(hrres) then
                         if itemid = VSConstants.VSITEMID_NIL then
-                            hr <- NativeMethods.STG_E_FILENOTFOUND
+                            hr <- 0 // NativeMethods.STG_E_FILENOTFOUND
                         else
                             hr <- x.InitDocData(itemid, filename)
                             if ErrorHandler.Succeeded(hr) then
@@ -372,7 +373,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 let fsCoreAttributes = 
                     [
                         xname "name", "FSharp.Core"
-                        xname "publicKeyToken", Microsoft.VisualStudio.FSharp.ProjectSystem.Utilities.FsCorePublicKeyToken
+                        xname "publicKeyToken", Microsoft.VisualStudioTools.Project.Utilities.FsCorePublicKeyToken
                         xname "culture", "neutral"
                     ]
 
