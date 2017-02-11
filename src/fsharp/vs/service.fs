@@ -1435,7 +1435,7 @@ type TypeCheckInfo
             | TType.TType_app(tref, _) when tref.Stamp = g.attrib_OptionalArgumentAttribute.TyconRef.Stamp -> Some()
             | _ -> None
 
-        let resolustions =
+        let resolutions =
             match range with
             | Some range ->
                 sResolutions.CapturedNameResolutions
@@ -1443,7 +1443,7 @@ type TypeCheckInfo
             | None -> 
                 sResolutions.CapturedNameResolutions :> seq<_>
 
-        resolustions
+        resolutions
         |> Seq.choose (fun cnr ->
             match cnr with
             // 'seq' in 'seq { ... }' gets colored as keywords
