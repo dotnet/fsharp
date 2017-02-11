@@ -1070,5 +1070,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             return childNodes;
         }
+
+        public override __VSPROVISIONALVIEWINGSTATUS ProvisionalViewingStatus => __VSPROVISIONALVIEWINGSTATUS.PVS_Enabled;
     }
 }
