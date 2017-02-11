@@ -94,8 +94,7 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
     
     /// Get declared items and the selected item at the specified location
     member private scope.GetNavigationItemsImpl() =
-       ErrorScope.Protect 
-            Range.range0 
+       ErrorScope.Protect Range.range0 
             (fun () -> 
                 match input with
                 | Some(ParsedInput.ImplFile(ParsedImplFileInput(_modname,_isScript,_qualName,_pragmas,_hashDirectives,modules,_isLastCompiland))) ->
@@ -347,8 +346,7 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
             | Some(ParsedInput.ImplFile(ParsedImplFileInput(_,_,_,_,_,modules,_))) -> walkImplFile modules 
             | _ -> []
  
-        ErrorScope.Protect 
-            Range.range0 
+        ErrorScope.Protect Range.range0 
             (fun () -> 
                 let locations = findBreakPoints()
                 
