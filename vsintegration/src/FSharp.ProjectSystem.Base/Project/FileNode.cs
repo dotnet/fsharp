@@ -466,16 +466,16 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 switch ((VsCommands)cmd)
                 {
                     case VsCommands.ViewCode:
-                        return ((FileDocumentManager)this.GetDocumentManager()).Open(false, false, VSConstants.LOGVIEWID_Code, VSConstants.LOGVIEWID_Code, out windowFrame, WindowFrameShowAction.Show);
+                        return ((FileDocumentManager)this.GetDocumentManager()).Open(false, false, VSConstants.LOGVIEWID_Code, out windowFrame, WindowFrameShowAction.Show);
 
                     case VsCommands.ViewForm:
-                        return ((FileDocumentManager)this.GetDocumentManager()).Open(false, false, VSConstants.LOGVIEWID_Designer, VSConstants.LOGVIEWID_Designer, out windowFrame, WindowFrameShowAction.Show);
+                        return ((FileDocumentManager)this.GetDocumentManager()).Open(false, false, VSConstants.LOGVIEWID_Designer, out windowFrame, WindowFrameShowAction.Show);
 
                     case VsCommands.Open:
                         return ((FileDocumentManager)this.GetDocumentManager()).Open(false, false, WindowFrameShowAction.Show);
 
                     case VsCommands.OpenWith:
-                        return ((FileDocumentManager)this.GetDocumentManager()).Open(false, true, VSConstants.LOGVIEWID_UserChooseView, VSConstants.LOGVIEWID_UserChooseView, out windowFrame, WindowFrameShowAction.Show);
+                        return ((FileDocumentManager)this.GetDocumentManager()).Open(false, true, VSConstants.LOGVIEWID_UserChooseView, out windowFrame, WindowFrameShowAction.Show);
                 }
             }
 

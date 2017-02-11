@@ -2167,10 +2167,11 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 let manager = (x.GetDocumentManager() :?> FileDocumentManager)
                 Debug.Assert(manager <> null, "Could not get the FileDocumentManager")
 
-                let viewGuid = (if x.IsFormSubType then VSConstants.LOGVIEWID_Designer else VSConstants.LOGVIEWID_Primary)
-                let fallbackViewGuid = (if x.IsFormSubType then VSConstants.LOGVIEWID_Primary else VSConstants.LOGVIEWID_Designer)
-                let mutable frame : IVsWindowFrame = null
-                manager.Open(false, false, viewGuid, fallbackViewGuid, &frame, WindowFrameShowAction.Show) |> ignore
+                //let viewGuid = (if x.IsFormSubType then VSConstants.LOGVIEWID_Designer else VSConstants.LOGVIEWID_Primary)
+                //let fallbackViewGuid = (if x.IsFormSubType then VSConstants.LOGVIEWID_Primary else VSConstants.LOGVIEWID_Designer)
+                //let mutable frame : IVsWindowFrame = null
+                //manager.Open(false, false, viewGuid, &frame, WindowFrameShowAction.Show) |> ignore
+                manager.Open(false, false, WindowFrameShowAction.Show) |> ignore
 
             /// In solution explorer, move the last of my siblings to just above me, return the moved FSharpFileNode
             static member MoveLastToAbove(target : HierarchyNode, root : FSharpProjectNode) : FSharpFileNode =
