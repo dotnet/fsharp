@@ -40,6 +40,7 @@
     <Compile Include="Common\LanguageService.fs" />
     <Compile Include="Common\SymbolHelpers.fs" />
     <Compile Include="Common\AssemblyContentProvider.fs" />
+    <Compile Include="Classification\ClassificationDefinitions.fs" />
     <Compile Include="Classification\ColorizationService.fs" />
     <Compile Include="Formatting\BraceMatchingService.fs" />
     <Compile Include="Formatting\IndentationService.fs" />
@@ -56,7 +57,7 @@
     <Compile Include="Navigation\GoToDefinitionService.fs" />
     <Compile Include="Navigation\NavigationBarItemService.fs" />
     <Compile Include="Navigation\NavigateToSearchService.fs" />
-    <Compile Include="Navigation\FindReferencesService.fs" />
+    <Compile Include="Navigation\FindUsagesService.fs" />
     <Compile Include="BlockComment\CommentUncommentService.fs" />
     <Compile Include="Structure\Structure.fs" />
     <Compile Include="Structure\BlockStructureService.fs" />
@@ -100,6 +101,8 @@
   <ItemGroup>
     <Reference Include="mscorlib" />
     <Reference Include="PresentationFramework" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Xml" />
     <Reference Include="WindowsBase" />
     <Reference Include="System" />
     <Reference Include="PresentationCore" />

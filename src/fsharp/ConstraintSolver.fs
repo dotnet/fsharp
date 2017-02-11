@@ -2461,7 +2461,8 @@ let UnifyUniqueOverloading
 
 let EliminateConstraintsForGeneralizedTypars csenv (trace:OptionalTrace) (generalizedTypars: Typars) =
     // Remove the global constraints where this type variable appears in the support of the constraint 
-    generalizedTypars |> List.iter (fun tp -> 
+    generalizedTypars 
+    |> List.iter (fun tp -> 
         let tpn = tp.Stamp
         let cxst = csenv.SolverState.ExtraCxs
         let cxs = cxst.FindAll tpn

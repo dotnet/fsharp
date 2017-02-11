@@ -8,21 +8,22 @@ open System.Collections.Immutable
 open System.Composition
 
 open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Editor
+open Microsoft.CodeAnalysis.Editor.FindUsages
 open Microsoft.CodeAnalysis.Editor.Host
 open Microsoft.CodeAnalysis.Navigation
 open Microsoft.CodeAnalysis.FindSymbols
-open Microsoft.CodeAnalysis.FindReferences
-open Microsoft.CodeAnalysis.Completion
+open Microsoft.CodeAnalysis.FindUsages
 
 open Microsoft.VisualStudio.FSharp.LanguageService
 
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
-[<ExportLanguageService(typeof<IStreamingFindReferencesService>, FSharpCommonConstants.FSharpLanguageName); Shared>]
-type internal FSharpFindReferencesService
+[<ExportLanguageService(typeof<IFindUsagesService>, FSharpCommonConstants.FSharpLanguageName); Shared>]
+type internal FSharpFindUsagesService
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider,
@@ -50,7 +51,7 @@ type internal FSharpFindReferencesService
                 return spans |> Array.choose id |> Array.toList
         }
 
-    let findReferencedSymbolsAsync(document: Document, position: int, context: FindReferencesContext) : Async<unit> =
+    let findReferencedSymbolsAsync(document: Document, position: int, context: IFindUsagesContext, allReferences: bool) : Async<unit> =
         asyncMaybe {
             let! sourceText = document.GetTextAsync(context.CancellationToken)
             let checker = checkerProvider.Checker
@@ -60,9 +61,9 @@ type internal FSharpFindReferencesService
             let lineNumber = sourceText.Lines.GetLinePosition(position).Line + 1
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.FilePath, options.OtherOptions |> Seq.toList)
             
-            let! symbol = CommonHelpers.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Fuzzy)
-            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(lineNumber, symbol.RightColumn, textLine, [symbol.Text])
-            let! declaration = checkFileResults.GetDeclarationLocationAlternate (lineNumber, symbol.RightColumn, textLine, [symbol.Text], false) |> liftAsync
+            let! symbol = CommonHelpers.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy)
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(lineNumber, symbol.Ident.idRange.EndColumn, textLine, symbol.FullIsland)
+            let! declaration = checkFileResults.GetDeclarationLocationAlternate (lineNumber, symbol.Ident.idRange.EndColumn, textLine, symbol.FullIsland, false) |> liftAsync
             let tags = GlyphTags.GetTags(CommonRoslynHelpers.GetGlyphForSymbol symbolUse.Symbol)
             
             let declarationRange = 
@@ -82,12 +83,12 @@ type internal FSharpFindReferencesService
                         | [] -> 
                             [ DefinitionItem.CreateNonNavigableItem(
                                 tags,
-                                ImmutableArray.Create(TaggedText(TextTags.Text, symbol.Text)),
+                                ImmutableArray.Create(TaggedText(TextTags.Text, symbol.Ident.idText)),
                                 ImmutableArray.Create(TaggedText(TextTags.Assembly, symbolUse.Symbol.Assembly.SimpleName))) ]
                         | _ ->
                             declarationSpans
                             |> List.map (fun span ->
-                                DefinitionItem.Create(tags, ImmutableArray.Create(TaggedText(TextTags.Text, symbol.Text)), span))
+                                DefinitionItem.Create(tags, ImmutableArray.Create(TaggedText(TextTags.Text, symbol.Ident.idText)), span))
                 } |> liftAsync
             
             for definitionItem in definitionItems do
@@ -129,20 +130,25 @@ type internal FSharpFindReferencesService
                 match declarationRange with
                 | Some declRange when declRange = symbolUse.RangeAlternate -> ()
                 | _ ->
-                    let! referenceDocSpans = rangeToDocumentSpans(document.Project.Solution, symbolUse.RangeAlternate, context.CancellationToken) |> liftAsync
-                    match referenceDocSpans with
-                    | [] -> ()
-                    | _ ->
-                        for referenceDocSpan in referenceDocSpans do
-                            for definitionItem in definitionItems do
-                                let referenceItem = SourceReferenceItem(definitionItem, referenceDocSpan)
-                                do! context.OnReferenceFoundAsync(referenceItem) |> Async.AwaitTask |> liftAsync
+                    // report a reference if we're interested in all _or_ if we're looking at an implementation
+                    if allReferences || symbolUse.IsFromDispatchSlotImplementation then
+                        let! referenceDocSpans = rangeToDocumentSpans(document.Project.Solution, symbolUse.RangeAlternate, context.CancellationToken) |> liftAsync
+                        match referenceDocSpans with
+                        | [] -> ()
+                        | _ ->
+                            for referenceDocSpan in referenceDocSpans do
+                                for definitionItem in definitionItems do
+                                    let referenceItem = SourceReferenceItem(definitionItem, referenceDocSpan)
+                                    do! context.OnReferenceFoundAsync(referenceItem) |> Async.AwaitTask |> liftAsync
             
-            do! context.OnCompletedAsync() |> Async.AwaitTask |> liftAsync
+            ()
         } |> Async.Ignore
 
-    interface IStreamingFindReferencesService with
+    interface IFindUsagesService with
         member __.FindReferencesAsync(document, position, context) =
-            findReferencedSymbolsAsync(document, position, context)
+            findReferencedSymbolsAsync(document, position, context, true)
+            |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+        member __.FindImplementationsAsync(document, position, context) =
+            findReferencedSymbolsAsync(document, position, context, false)
             |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
  
