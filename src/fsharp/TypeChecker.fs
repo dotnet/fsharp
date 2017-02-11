@@ -1534,14 +1534,14 @@ let MakeAndPublishVal cenv env (altActualParent,inSig,declKind,vrec,(ValScheme(i
 
     PublishValueDefn cenv env declKind vspec
 
-        if cenv.tcSink.CurrentSink <> NameResolution.NoOpTypecheckResultSink 
-           && not vspec.IsCompilerGenerated 
-           && not (String.hasPrefix vspec.LogicalName "_") then 
-           
-           let nenv = AddFakeNamedValRefToNameEnv vspec.DisplayName env.NameEnv (mkLocalValRef vspec) 
-           CallEnvSink cenv.tcSink (vspec.Range,nenv,env.eAccessRights)
-           let item = Item.Value(mkLocalValRef vspec)
-           CallNameResolutionSink cenv.tcSink (vspec.Range,nenv,item,item,ItemOccurence.Binding,env.DisplayEnv,env.eAccessRights)
+    if cenv.tcSink.CurrentSink <> NameResolution.NoOpTypecheckResultSink 
+        && not vspec.IsCompilerGenerated 
+        && not (String.hasPrefix vspec.LogicalName "_") then 
+        
+        let nenv = AddFakeNamedValRefToNameEnv vspec.DisplayName env.NameEnv (mkLocalValRef vspec) 
+        CallEnvSink cenv.tcSink (vspec.Range,nenv,env.eAccessRights)
+        let item = Item.Value(mkLocalValRef vspec)
+        CallNameResolutionSink cenv.tcSink (vspec.Range,nenv,item,item,ItemOccurence.Binding,env.DisplayEnv,env.eAccessRights)
 
     vspec
 

@@ -2154,20 +2154,13 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
 
     member info.GetNameResolutionEnvironmentsByLine() : Async<ResizeArray<range * NameResolutionEnv * AccessorDomain> []> = 
         reactorOp "IsRelativeNameResolvable" [||] (fun ctok scope -> 
-        	DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
-
-        	scope.GetNameResolutionEnvironmentsByLine())
-
             DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
-
-            scope.GetVisibleNamespacesAndModulesAtPosition(pos) |> List.toArray)
+            scope.GetNameResolutionEnvironmentsByLine())
 
     member info.IsRelativeNameResolvable(pos: pos, plid: string list, item: Item, nenvsByLine: ResizeArray<range * NameResolutionEnv * AccessorDomain> []) : Async<bool> = 
         reactorOp "IsRelativeNameResolvable" true (fun ctok scope ->
-
             DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
-
-	    scope.IsRelativeNameResolvable(pos, plid, item, nenvsByLine)))
+            scope.IsRelativeNameResolvable(pos, plid, item, nenvsByLine))
     
 //----------------------------------------------------------------------------
 // BackgroundCompiler
