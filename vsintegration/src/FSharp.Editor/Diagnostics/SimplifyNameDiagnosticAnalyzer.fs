@@ -19,7 +19,8 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 
 type private TextVersionHash = int
 
-[<DiagnosticAnalyzer(FSharpCommonConstants.FSharpLanguageName)>]
+// TODO Turn it on when user settings dialog is ready to switch it on and off.
+// [<DiagnosticAnalyzer(FSharpCommonConstants.FSharpLanguageName)>]
 type internal SimplifyNameDiagnosticAnalyzer() =
     inherit DocumentDiagnosticAnalyzer()
     
