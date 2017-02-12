@@ -27,28 +27,15 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     /// </summary>
     internal abstract class DocumentManager
     {
-        #region fields
         private readonly HierarchyNode node = null;
-        #endregion
 
-        #region properties
-        protected HierarchyNode Node
-        {
-            get
-            {
-                return this.node;
-            }
-        }
-        #endregion
+        protected HierarchyNode Node => this.node;
 
-        #region ctors
+
         protected DocumentManager(HierarchyNode node)
         {
             this.node = node;
         }
-        #endregion
-
-        #region virtual methods
 
         /// <summary>
         /// Open a document using the standard editor. This method has no implementation since a document is abstract in this context
@@ -106,9 +93,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public virtual int Close(__FRAMECLOSE closeFlag)
         {
             if (this.node == null || this.node.ProjectMgr == null || this.node.ProjectMgr.IsClosed)
-            {
                 return VSConstants.E_FAIL;
-            }
 
             if (IsOpenedByUs)
             {
@@ -122,9 +107,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 ErrorHandler.ThrowOnFailure(shell.IsDocumentOpen(this.Node.ProjectMgr, this.Node.ID, this.Node.Url, ref logicalView, grfIDO, out pHierOpen, itemIdOpen, out windowFrame, out fOpen));
 
                 if (windowFrame != null)
-                {
                     return windowFrame.CloseFrame((uint)closeFlag);
-                }
             }
 
             return VSConstants.S_OK;
@@ -139,7 +122,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             if (saveIfDirty && IsDirty)
             {
-                IVsPersistDocData persistDocData = DocData;
+                var persistDocData = DocData;
+
                 if (persistDocData != null)
                 {
                     string name;
@@ -149,8 +133,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        #endregion
-
         /// <summary>
         /// Queries the RDT to see if the document is currently edited and not saved.
         /// </summary>
@@ -158,20 +140,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             get
             {
-#if DEV12_OR_LATER
-            var docTable = (IVsRunningDocumentTable4)node.ProjectMgr.GetService(typeof(SVsRunningDocumentTable));
-            if (!docTable.IsMonikerValid(node.GetMkDocument())) {
-                return false;
-            }
+               var docTable = (IVsRunningDocumentTable4)node.ProjectMgr.GetService(typeof(SVsRunningDocumentTable));
 
-            return docTable.IsDocumentDirty(docTable.GetDocumentCookie(node.GetMkDocument()));
-#else
-                bool isOpen, isDirty, isOpenedByUs;
-                uint docCookie;
-                IVsPersistDocData persistDocData;
-                GetDocInfo(out isOpen, out isDirty, out isOpenedByUs, out docCookie, out persistDocData);
-                return isDirty;
-#endif
+                if (!docTable.IsMonikerValid(node.GetMkDocument()))
+                   return false;
+
+               return docTable.IsDocumentDirty(docTable.GetDocumentCookie(node.GetMkDocument()));
             }
         }
 
@@ -182,28 +156,19 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             get
             {
-#if DEV12_OR_LATER
-            var docTable = (IVsRunningDocumentTable4)node.ProjectMgr.GetService(typeof(SVsRunningDocumentTable));
-            if (!docTable.IsMonikerValid(node.GetMkDocument())) {
-                return false;
-            }
+                var docTable = (IVsRunningDocumentTable4)node.ProjectMgr.GetService(typeof(SVsRunningDocumentTable));
 
-            IVsHierarchy hierarchy;
-            uint itemId;
-            docTable.GetDocumentHierarchyItem(
-                docTable.GetDocumentCookie(node.GetMkDocument()),
-                out hierarchy,
-                out itemId
-            );
-            return Utilities.IsSameComObject(node.ProjectMgr, hierarchy);
-#else
-                bool isOpen, isDirty, isOpenedByUs;
-                uint docCookie;
-                IVsPersistDocData persistDocData;
-                GetDocInfo(out isOpen, out isDirty, out isOpenedByUs, out docCookie, out persistDocData);
-                return isOpenedByUs;
-#endif
+                if (!docTable.IsMonikerValid(node.GetMkDocument()))
+                    return false;
 
+                IVsHierarchy hierarchy;
+                uint itemId;
+                docTable.GetDocumentHierarchyItem(
+                    docTable.GetDocumentCookie(node.GetMkDocument()),
+                    out hierarchy,
+                    out itemId
+                );
+                return Utilities.IsSameComObject(node.ProjectMgr, hierarchy);
             }
         }
 
@@ -214,20 +179,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             get
             {
-#if DEV12_OR_LATER
-            var docTable = (IVsRunningDocumentTable4)node.ProjectMgr.GetService(typeof(SVsRunningDocumentTable));
-            if (!docTable.IsMonikerValid(node.GetMkDocument())) {
-                return (uint)ShellConstants.VSDOCCOOKIE_NIL;
-            }
+                var docTable = (IVsRunningDocumentTable4)node.ProjectMgr.GetService(typeof(SVsRunningDocumentTable));
 
-            return docTable.GetDocumentCookie(node.GetMkDocument());
-#else
-                bool isOpen, isDirty, isOpenedByUs;
-                uint docCookie;
-                IVsPersistDocData persistDocData;
-                GetDocInfo(out isOpen, out isDirty, out isOpenedByUs, out docCookie, out persistDocData);
-                return docCookie;
-#endif
+                if (!docTable.IsMonikerValid(node.GetMkDocument()))
+                    return (uint)ShellConstants.VSDOCCOOKIE_NIL;
+
+                return docTable.GetDocumentCookie(node.GetMkDocument());
             }
         }
 
@@ -238,26 +195,15 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             get
             {
-#if DEV12_OR_LATER
-            var docTable = (IVsRunningDocumentTable4)node.ProjectMgr.GetService(typeof(SVsRunningDocumentTable));
-            if (!docTable.IsMonikerValid(node.GetMkDocument())) {
-                return null;
-            }
+                var docTable = (IVsRunningDocumentTable4)node.ProjectMgr.GetService(typeof(SVsRunningDocumentTable));
 
-            return docTable.GetDocumentData(docTable.GetDocumentCookie(node.GetMkDocument())) as IVsPersistDocData;
-#else
-                bool isOpen, isDirty, isOpenedByUs;
-                uint docCookie;
-                IVsPersistDocData persistDocData;
-                GetDocInfo(out isOpen, out isDirty, out isOpenedByUs, out docCookie, out persistDocData);
-                return persistDocData;
-#endif
+                if (!docTable.IsMonikerValid(node.GetMkDocument()))
+                    return null;
+
+                return docTable.GetDocumentData(docTable.GetDocumentCookie(node.GetMkDocument())) as IVsPersistDocData;
             }
         }
 
-        #region helper methods
-
-#if !DEV12_OR_LATER
         /// <summary>
         /// Get document properties from RDT
         /// </summary>
@@ -301,7 +247,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 isDirty = (isDocDataDirty != 0);
             }
         }
-#endif
 
         protected string GetOwnerCaption()
         {
@@ -330,7 +275,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         protected string GetFullPathForDocument()
         {
-            string fullPath = String.Empty;
+            var fullPath = String.Empty;
 
             // Get the URL representing the item
             fullPath = this.node.GetMkDocument();
@@ -339,9 +284,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return fullPath;
         }
 
-        #endregion
-
-        #region static methods
         /// <summary>
         /// Updates the caption for all windows associated to the document.
         /// </summary>
@@ -351,36 +293,30 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public static void UpdateCaption(IServiceProvider site, string caption, IntPtr docData)
         {
             if (String.IsNullOrEmpty(caption))
-            {
-                throw new ArgumentException(SR.GetString(SR.ParameterCannotBeNullOrEmpty), "caption");
-            }
+                throw new ArgumentException(SR.GetString(SR.ParameterCannotBeNullOrEmpty), nameof(caption));
 
-            IVsUIShell uiShell = site.GetService(typeof(SVsUIShell)) as IVsUIShell;
+            var uiShell = site.GetService(typeof(SVsUIShell)) as IVsUIShell;
 
             // We need to tell the windows to update their captions. 
             IEnumWindowFrames windowFramesEnum;
             ErrorHandler.ThrowOnFailure(uiShell.GetDocumentWindowEnum(out windowFramesEnum));
-            IVsWindowFrame[] windowFrames = new IVsWindowFrame[1];
+            var windowFrames = new IVsWindowFrame[1];
             uint fetched;
             while (windowFramesEnum.Next(1, windowFrames, out fetched) == VSConstants.S_OK && fetched == 1)
             {
-                IVsWindowFrame windowFrame = windowFrames[0];
+                var windowFrame = windowFrames[0];
                 object data;
                 ErrorHandler.ThrowOnFailure(windowFrame.GetProperty((int)__VSFPROPID.VSFPROPID_DocData, out data));
-                IntPtr ptr = Marshal.GetIUnknownForObject(data);
+                var ptr = Marshal.GetIUnknownForObject(data);
                 try
                 {
                     if (ptr == docData)
-                    {
                         ErrorHandler.ThrowOnFailure(windowFrame.SetProperty((int)__VSFPROPID.VSFPROPID_OwnerCaption, caption));
-                    }
                 }
                 finally
                 {
                     if (ptr != IntPtr.Zero)
-                    {
                         Marshal.Release(ptr);
-                    }
                 }
             }
         }
@@ -395,21 +331,15 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public static void RenameDocument(IServiceProvider site, string oldName, string newName, uint newItemId)
         {
             if (String.IsNullOrEmpty(oldName))
-            {
-                throw new ArgumentException(SR.GetString(SR.ParameterCannotBeNullOrEmpty), "oldName");
-            }
+                throw new ArgumentException(SR.GetString(SR.ParameterCannotBeNullOrEmpty), nameof(oldName));
 
             if (String.IsNullOrEmpty(newName))
-            {
-                throw new ArgumentException(SR.GetString(SR.ParameterCannotBeNullOrEmpty), "newName");
-            }
+                throw new ArgumentException(SR.GetString(SR.ParameterCannotBeNullOrEmpty), nameof(newName));
 
             if (newItemId == VSConstants.VSITEMID_NIL)
-            {
-                throw new ArgumentNullException("newItemId");
-            }
+                throw new ArgumentNullException(nameof(newItemId));
 
-            IVsRunningDocumentTable pRDT = site.GetService(typeof(SVsRunningDocumentTable)) as IVsRunningDocumentTable;
+            var pRDT = site.GetService(typeof(SVsRunningDocumentTable)) as IVsRunningDocumentTable;
 
             if (pRDT == null)
                 return;
@@ -424,8 +354,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 try
                 {
-                    IntPtr pUnk = Marshal.GetIUnknownForObject(pIVsHierarchy);
-                    Guid iid = typeof(IVsHierarchy).GUID;
+                    var pUnk = Marshal.GetIUnknownForObject(pIVsHierarchy);
+                    var iid = typeof(IVsHierarchy).GUID;
                     IntPtr pHier;
                     Marshal.QueryInterface(pUnk, ref iid, out pHier);
                     try
@@ -446,6 +376,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
             }
         }
-        #endregion
     }
 }

@@ -27,15 +27,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     /// </summary>
     internal class FileDocumentManager : DocumentManager
     {
-        #region ctors
-
         public FileDocumentManager(FileNode node)
             : base(node)
         {
         }
-        #endregion
-
-        #region overriden methods
 
         /// <summary>
         /// Open a file using the standard editor
@@ -90,9 +85,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return Open(newFile, openWith, editorFlags, ref editorType, physicalView, ref logicalView, docDataExisting, out windowFrame, windowFrameAction, reopen: true);
         }
 
-        #endregion
-
-        #region public methods
         /// <summary>
         /// Open a file in a document window with a std editor
         /// </summary>
@@ -102,7 +94,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <returns>If the method succeeds, it returns S_OK. If it fails, it returns an error code.</returns>
         public int Open(bool newFile, bool openWith, WindowFrameShowAction windowFrameAction)
         {
-            Guid logicalView = Guid.Empty;
+            var logicalView = Guid.Empty;
             IVsWindowFrame windowFrame = null;
             return this.Open(newFile, openWith, logicalView, out windowFrame, windowFrameAction);
         }
@@ -119,21 +111,20 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public int Open(bool newFile, bool openWith, Guid logicalView, out IVsWindowFrame frame, WindowFrameShowAction windowFrameAction)
         {
             frame = null;
-            IVsRunningDocumentTable rdt = this.Node.ProjectMgr.Site.GetService(typeof(SVsRunningDocumentTable)) as IVsRunningDocumentTable;
+            var rdt = this.Node.ProjectMgr.Site.GetService(typeof(SVsRunningDocumentTable)) as IVsRunningDocumentTable;
             Debug.Assert(rdt != null, " Could not get running document table from the services exposed by this project");
+
             if (rdt == null)
-            {
                 return VSConstants.E_FAIL;
-            }
 
             // First we see if someone else has opened the requested view of the file.
             _VSRDTFLAGS flags = _VSRDTFLAGS.RDT_NoLock;
             uint itemid;
-            IntPtr docData = IntPtr.Zero;
+            var docData = IntPtr.Zero;
             IVsHierarchy ivsHierarchy;
             uint docCookie;
-            string path = this.GetFullPathForDocument();
-            int returnValue = VSConstants.S_OK;
+            var path = this.GetFullPathForDocument();
+            var returnValue = VSConstants.S_OK;
 
             try
             {
@@ -148,17 +139,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             finally
             {
                 if (docData != IntPtr.Zero)
-                {
                     Marshal.Release(docData);
-                }
             }
 
             return returnValue;
         }
 
-        #endregion
-
-        #region virtual methods
         /// <summary>
         /// Open a file in a document window
         /// </summary>
@@ -172,13 +158,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public virtual int Open(bool newFile, bool openWith, ref Guid logicalView, IntPtr docDataExisting, out IVsWindowFrame windowFrame, WindowFrameShowAction windowFrameAction)
         {
             windowFrame = null;
-            Guid editorType = Guid.Empty;
+            var editorType = Guid.Empty;
             return this.Open(newFile, openWith, 0, ref editorType, null, ref logicalView, docDataExisting, out windowFrame, windowFrameAction);
         }
-
-        #endregion
-
-        #region helper methods
 
         private int Open(bool newFile, bool openWith, uint editorFlags, ref Guid editorType, string physicalView, ref Guid logicalView, IntPtr docDataExisting, out IVsWindowFrame windowFrame, WindowFrameShowAction windowFrameAction, bool reopen = false)
         {
@@ -188,23 +170,17 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             Debug.Assert(this.Node is FileNode, "Node is not FileNode object");
 
             if (this.Node == null || this.Node.ProjectMgr == null || this.Node.ProjectMgr.IsClosed)
-            {
                 return VSConstants.E_FAIL;
-            }
 
-            int returnValue = VSConstants.S_OK;
-            string caption = this.GetOwnerCaption();
-            string fullPath = this.GetFullPathForDocument();
+            var returnValue = VSConstants.S_OK;
+            var caption = this.GetOwnerCaption();
+            var fullPath = this.GetFullPathForDocument();
 
-            IVsUIShellOpenDocument uiShellOpenDocument = this.Node.ProjectMgr.Site.GetService(typeof(SVsUIShellOpenDocument)) as IVsUIShellOpenDocument;
-            IOleServiceProvider serviceProvider = this.Node.ProjectMgr.Site.GetService(typeof(IOleServiceProvider)) as IOleServiceProvider;
+            var uiShellOpenDocument = this.Node.ProjectMgr.Site.GetService(typeof(SVsUIShellOpenDocument)) as IVsUIShellOpenDocument;
+            var serviceProvider = this.Node.ProjectMgr.Site.GetService(typeof(IOleServiceProvider)) as IOleServiceProvider;
 
-#if DEV11_OR_LATER
-        var openState = uiShellOpenDocument as IVsUIShellOpenDocument3;
-        bool showDialog = !reopen && (openState == null || !((__VSNEWDOCUMENTSTATE)openState.NewDocumentState).HasFlag(__VSNEWDOCUMENTSTATE.NDS_Provisional));
-#else
-            bool showDialog = !reopen;
-#endif
+            var openState = uiShellOpenDocument as IVsUIShellOpenDocument3;
+            bool showDialog = !reopen && (openState == null || !((__VSNEWDOCUMENTSTATE)openState.NewDocumentState).HasFlag(__VSNEWDOCUMENTSTATE.NDS_Provisional));
 
             // Make sure that the file is on disk before we open the editor and display message if not found
             if (!((FileNode)this.Node).IsFileOnDisk(showDialog))
@@ -218,7 +194,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             try
             {
                 this.Node.ProjectMgr.OnOpenItem(fullPath);
-                int result = VSConstants.E_FAIL;
+                var result = VSConstants.E_FAIL;
 
                 if (openWith)
                 {
@@ -227,10 +203,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 else
                 {
                     __VSOSEFLAGS openFlags = 0;
+
                     if (newFile)
-                    {
                         openFlags |= __VSOSEFLAGS.OSE_OpenAsNewFile;
-                    }
 
                     //NOTE: we MUST pass the IVsProject in pVsUIHierarchy and the itemid
                     // of the node being opened, otherwise the debugger doesn't work.
@@ -246,9 +221,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
 
                 if (result != VSConstants.S_OK && result != VSConstants.S_FALSE && result != VSConstants.OLE_E_PROMPTSAVECANCELLED)
-                {
                     return result;
-                }
 
                 if (windowFrame != null)
                 {
@@ -266,17 +239,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     this.Node.DocCookie = (uint)(int)var;
 
                     if (windowFrameAction == WindowFrameShowAction.Show)
-                    {
                         ErrorHandler.ThrowOnFailure(windowFrame.Show());
-                    }
                     else if (windowFrameAction == WindowFrameShowAction.ShowNoActivate)
-                    {
                         ErrorHandler.ThrowOnFailure(windowFrame.ShowNoActivate());
-                    }
                     else if (windowFrameAction == WindowFrameShowAction.Hide)
-                    {
                         ErrorHandler.ThrowOnFailure(windowFrame.Hide());
-                    }
                 }
             }
             catch (COMException e)
@@ -289,16 +256,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return returnValue;
         }
 
-
-        #endregion
-
-        private new FileNode Node
-        {
-            get
-            {
-                return (FileNode)base.Node;
-            }
-        }
-
+        private new FileNode Node => (FileNode)base.Node;
     }
 }
