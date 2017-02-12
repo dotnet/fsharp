@@ -92,6 +92,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return caption;
             }
         }
+
         public override int ImageIndex
         {
             get

@@ -2151,16 +2151,19 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     base.Dispose(disposing)                
 
             override x.ImageIndex =
-                    if (x.IsFormSubType) then 
-                        int32 ProjectNode.ImageName.WindowsForm
-                    elif (FSharpProjectNode.IsFSharpCodeFileIconwise(x.FileName)) then 
-                        FSharpProjectNode.ImageOffset + int32 FSharpImageName.FsFile
-                    elif (FSharpProjectNode.IsFSharpSignatureFileIconwise(x.FileName)) then 
-                        FSharpProjectNode.ImageOffset + int32 FSharpImageName.FsiFile
-                    elif (FSharpProjectNode.IsFSharpScriptFileIconwise(x.FileName)) then 
-                        FSharpProjectNode.ImageOffset + int32 FSharpImageName.FsxFile
-                    else
-                        base.ImageIndex
+                // Check if the file is there.
+                if not (x.CanShowDefaultIcon()) then
+                    int ProjectNode.ImageName.MissingFile
+                elif x.IsFormSubType then 
+                    int ProjectNode.ImageName.WindowsForm
+                elif (FSharpProjectNode.IsFSharpCodeFileIconwise(x.FileName)) then 
+                    FSharpProjectNode.ImageOffset + int FSharpImageName.FsFile
+                elif (FSharpProjectNode.IsFSharpSignatureFileIconwise(x.FileName)) then 
+                    FSharpProjectNode.ImageOffset + int FSharpImageName.FsiFile
+                elif (FSharpProjectNode.IsFSharpScriptFileIconwise(x.FileName)) then 
+                    FSharpProjectNode.ImageOffset + int FSharpImageName.FsxFile
+                else
+                    base.ImageIndex
 
             /// Open a file depending on the SubType property associated with the file item in the project file
             override x.DoDefaultAction() =
