@@ -500,6 +500,7 @@ type SemanticClassificationType =
     | ComputationExpression
     | IntrinsicType
     | Enumeration
+    | Interface
 
 // A scope represents everything we get back from the typecheck of a file.
 // It acts like an in-memory database about the file.
@@ -1474,6 +1475,10 @@ type TypeCheckInfo
             // typevariables get colored as types when they occur in syntactic types custom builders, custom operations get colored as keywords
             | CNR(_, Item.Types (_, [OptionalArgumentAttribute]), LegitTypeOccurence, _, _, _, _) -> None
             | CNR(_, Item.CtorGroup(_, [MethInfo.FSMeth(_, OptionalArgumentAttribute, _, _)]), LegitTypeOccurence, _, _, _, _) -> None
+            | CNR(_, Item.Types(_, types), LegitTypeOccurence, _, _, _, m) when types |> List.exists (isInterfaceTy g) -> 
+                Some (m, SemanticClassificationType.Interface)
+            | CNR(_, Item.Types(_, types), LegitTypeOccurence, _, _, _, m) when types |> List.exists (isStructTy g) -> 
+                Some (m, SemanticClassificationType.ValueType)
             | CNR(_, Item.Types _, LegitTypeOccurence, _, _, _, m) -> 
                 Some (m, SemanticClassificationType.ReferenceType)
             | CNR(_, (Item.TypeVar _ | Item.UnqualifiedType _ | Item.CtorGroup _), LegitTypeOccurence, _, _, _, m) ->
