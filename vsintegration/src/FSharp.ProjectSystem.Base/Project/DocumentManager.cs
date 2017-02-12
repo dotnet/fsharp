@@ -7,7 +7,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Security;
-using System.Windows; 
+using System.Windows;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 using System.Drawing;
@@ -27,12 +27,17 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     /// </summary>
     internal abstract class DocumentManager
     {
-        private readonly HierarchyNode node = null;
+        private HierarchyNode node = null;
 
-        protected HierarchyNode Node => this.node;
+        public HierarchyNode Node
+        {
+            get
+            {
+                return this.node;
+            }
+        }
 
-
-        protected DocumentManager(HierarchyNode node)
+        public DocumentManager(HierarchyNode node)
         {
             this.node = node;
         }
@@ -69,23 +74,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Open a document using a specific editor. This method has no implementation.
-        /// </summary>
-        /// <param name="editorFlags">Specifies actions to take when opening a specific editor. Possible editor flags are defined in the enumeration Microsoft.VisualStudio.Shell.Interop.__VSOSPEFLAGS</param>
-        /// <param name="editorType">Unique identifier of the editor type</param>
-        /// <param name="physicalView">Name of the physical view. If null, the environment calls MapLogicalView on the editor factory to determine the physical view that corresponds to the logical view. In this case, null does not specify the primary view, but rather indicates that you do not know which view corresponds to the logical view</param>
-        /// <param name="logicalView">In MultiView case determines view to be activated by IVsMultiViewDocumentView. For a list of logical view GUIDS, see constants starting with LOGVIEWID_ defined in NativeMethods class</param>
-        /// <param name="docDataExisting">IntPtr to the IUnknown interface of the existing document data object</param>
-        /// <param name="frame">A reference to the window frame that is mapped to the document</param>
-        /// <param name="windowFrameAction">Determine the UI action on the document window</param>
-        /// <returns>NotImplementedException</returns>
-        /// <remarks>See FileDocumentManager for an implementation of this method</remarks>
-        public virtual int ReOpenWithSpecific(uint editorFlags, ref Guid editorType, string physicalView, ref Guid logicalView, IntPtr docDataExisting, out IVsWindowFrame frame, WindowFrameShowAction windowFrameAction)
-        {
-            return OpenWithSpecific(editorFlags, ref editorType, physicalView, ref logicalView, docDataExisting, out frame, windowFrameAction);
-        }
-
-        /// <summary>
         /// Close an open document window
         /// </summary>
         /// <param name="closeFlag">Decides how to close the document</param>
@@ -93,9 +81,17 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public virtual int Close(__FRAMECLOSE closeFlag)
         {
             if (this.node == null || this.node.ProjectMgr == null || this.node.ProjectMgr.IsClosed)
+            {
                 return VSConstants.E_FAIL;
+            }
 
-            if (IsOpenedByUs)
+            // Get info about the document
+            bool isDirty, isOpen, isOpenedByUs;
+            uint docCookie;
+            IVsPersistDocData ppIVsPersistDocData;
+            this.GetDocInfo(out isOpen, out isDirty, out isOpenedByUs, out docCookie, out ppIVsPersistDocData);
+
+            if (isOpenedByUs)
             {
                 IVsUIShellOpenDocument shell = this.Node.ProjectMgr.Site.GetService(typeof(IVsUIShellOpenDocument)) as IVsUIShellOpenDocument;
                 Guid logicalView = Guid.Empty;
@@ -104,10 +100,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 uint[] itemIdOpen = new uint[1];
                 IVsWindowFrame windowFrame;
                 int fOpen;
-                ErrorHandler.ThrowOnFailure(shell.IsDocumentOpen(this.Node.ProjectMgr, this.Node.ID, this.Node.Url, ref logicalView, grfIDO, out pHierOpen, itemIdOpen, out windowFrame, out fOpen));
+                ErrorHandler.ThrowOnFailure(shell.IsDocumentOpen(this.Node.ProjectMgr.InteropSafeIVsUIHierarchy, this.Node.ID, this.Node.Url, ref logicalView, grfIDO, out pHierOpen, itemIdOpen, out windowFrame, out fOpen));
 
                 if (windowFrame != null)
+                {
+                    docCookie = 0;
                     return windowFrame.CloseFrame((uint)closeFlag);
+                }
             }
 
             return VSConstants.S_OK;
@@ -120,83 +119,22 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <remarks>The call to SaveDocData may return Microsoft.VisualStudio.Shell.Interop.PFF_RESULTS.STG_S_DATALOSS to indicate some characters could not be represented in the current codepage</remarks>
         public virtual void Save(bool saveIfDirty)
         {
-            if (saveIfDirty && IsDirty)
+            bool isDirty, isOpen, isOpenedByUs;
+            uint docCookie;
+            IVsPersistDocData persistDocData;
+            this.GetDocInfo(out isOpen, out isDirty, out isOpenedByUs, out docCookie, out persistDocData);
+            if (isDirty && saveIfDirty && persistDocData != null)
             {
-                var persistDocData = DocData;
-
-                if (persistDocData != null)
-                {
-                    string name;
-                    int cancelled;
-                    ErrorHandler.ThrowOnFailure(persistDocData.SaveDocData(VSSAVEFLAGS.VSSAVE_SilentSave, out name, out cancelled));
-                }
-            }
-        }
-
-        /// <summary>
-        /// Queries the RDT to see if the document is currently edited and not saved.
-        /// </summary>
-        public bool IsDirty
-        {
-            get
-            {
-                bool isOpen, isDirty, isOpenedByUs;
-                uint docCookie;
-                IVsPersistDocData persistDocData;
-                GetDocInfo(out isOpen, out isDirty, out isOpenedByUs, out docCookie, out persistDocData);
-                return isDirty;
-            }
-        }
-
-        /// <summary>
-        /// Queries the RDT to see if the document was opened by our project.
-        /// </summary>
-        public bool IsOpenedByUs
-        {
-            get
-            {
-                bool isOpen, isDirty, isOpenedByUs;
-                uint docCookie;
-                IVsPersistDocData persistDocData;
-                GetDocInfo(out isOpen, out isDirty, out isOpenedByUs, out docCookie, out persistDocData);
-                return isOpenedByUs;
-            }
-        }
-
-        /// <summary>
-        /// Returns the doc cookie in the RDT for the associated file.
-        /// </summary>
-        public uint DocCookie
-        {
-            get
-            {
-                bool isOpen, isDirty, isOpenedByUs;
-                uint docCookie;
-                IVsPersistDocData persistDocData;
-                GetDocInfo(out isOpen, out isDirty, out isOpenedByUs, out docCookie, out persistDocData);
-                return docCookie;
-            }
-        }
-
-        /// <summary>
-        /// Returns the IVsPersistDocData associated with the document, or null if there isn't one.
-        /// </summary>
-        public IVsPersistDocData DocData
-        {
-            get
-            {
-                bool isOpen, isDirty, isOpenedByUs;
-                uint docCookie;
-                IVsPersistDocData persistDocData;
-                GetDocInfo(out isOpen, out isDirty, out isOpenedByUs, out docCookie, out persistDocData);
-                return persistDocData;
+                string name;
+                int cancelled;
+                ErrorHandler.ThrowOnFailure(persistDocData.SaveDocData(VSSAVEFLAGS.VSSAVE_SilentSave, out name, out cancelled));
             }
         }
 
         /// <summary>
         /// Get document properties from RDT
         /// </summary>
-        internal void GetDocInfo(
+        public void GetDocInfo(
             out bool isOpen,     // true if the doc is opened
             out bool isDirty,    // true if the doc is dirty
             out bool isOpenedByUs, // true if opened by our project
@@ -237,17 +175,17 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        protected string GetOwnerCaption()
+        public string GetOwnerCaption()
         {
             Debug.Assert(this.node != null, "No node has been initialized for the document manager");
 
             object pvar;
-            ErrorHandler.ThrowOnFailure(node.ProjectMgr.GetProperty(node.ID, (int)__VSHPROPID.VSHPROPID_Caption, out pvar));
+            ErrorHandler.ThrowOnFailure(this.node.GetProperty(this.node.ID, (int)__VSHPROPID.VSHPROPID_Caption, out pvar));
 
             return (pvar as string);
         }
 
-        protected static void CloseWindowFrame(ref IVsWindowFrame windowFrame)
+        public void CloseWindowFrame(ref IVsWindowFrame windowFrame)
         {
             if (windowFrame != null)
             {
@@ -262,9 +200,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        protected string GetFullPathForDocument()
+        public string GetFullPathForDocument()
         {
-            var fullPath = String.Empty;
+            string fullPath = String.Empty;
+
+            Debug.Assert(this.node != null, "No node has been initialized for the document manager");
 
             // Get the URL representing the item
             fullPath = this.node.GetMkDocument();
@@ -281,31 +221,42 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="docData">The IUnknown interface to a document data object associated with a registered document.</param>
         public static void UpdateCaption(IServiceProvider site, string caption, IntPtr docData)
         {
-            if (String.IsNullOrEmpty(caption))
-                throw new ArgumentException(SR.GetString(SR.ParameterCannotBeNullOrEmpty), nameof(caption));
+            if (site == null)
+            {
+                throw new ArgumentNullException("site");
+            }
 
-            var uiShell = site.GetService(typeof(SVsUIShell)) as IVsUIShell;
+            if (String.IsNullOrEmpty(caption))
+            {
+                throw new ArgumentException(SR.GetString(SR.ParameterCannotBeNullOrEmpty, CultureInfo.CurrentUICulture), "caption");
+            }
+
+            IVsUIShell uiShell = site.GetService(typeof(SVsUIShell)) as IVsUIShell;
 
             // We need to tell the windows to update their captions. 
             IEnumWindowFrames windowFramesEnum;
             ErrorHandler.ThrowOnFailure(uiShell.GetDocumentWindowEnum(out windowFramesEnum));
-            var windowFrames = new IVsWindowFrame[1];
+            IVsWindowFrame[] windowFrames = new IVsWindowFrame[1];
             uint fetched;
             while (windowFramesEnum.Next(1, windowFrames, out fetched) == VSConstants.S_OK && fetched == 1)
             {
-                var windowFrame = windowFrames[0];
+                IVsWindowFrame windowFrame = windowFrames[0];
                 object data;
                 ErrorHandler.ThrowOnFailure(windowFrame.GetProperty((int)__VSFPROPID.VSFPROPID_DocData, out data));
-                var ptr = Marshal.GetIUnknownForObject(data);
+                IntPtr ptr = Marshal.GetIUnknownForObject(data);
                 try
                 {
                     if (ptr == docData)
+                    {
                         ErrorHandler.ThrowOnFailure(windowFrame.SetProperty((int)__VSFPROPID.VSFPROPID_OwnerCaption, caption));
+                    }
                 }
                 finally
                 {
                     if (ptr != IntPtr.Zero)
+                    {
                         Marshal.Release(ptr);
+                    }
                 }
             }
         }
@@ -313,38 +264,54 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Rename document in the running document table from oldName to newName.
         /// </summary>
-        /// <param name="provider">The service provider.</param>
-        /// <param name="oldName">Full path to the old name of the document.</param>
-        /// <param name="newName">Full path to the new name of the document.</param>
-        /// <param name="newItemId">The new item id of the document</param>
+        /// <param name="site">The service provider.</param>
+        /// <param name="oldName">Full path to the old name of the document.</param>        
+        /// <param name="newName">Full path to the new name of the document.</param>        
+        /// <param name="newItemId">The new item id of the document</param>        
         public static void RenameDocument(IServiceProvider site, string oldName, string newName, uint newItemId)
         {
+            if (site == null)
+            {
+                throw new ArgumentNullException("site");
+            }
+
             if (String.IsNullOrEmpty(oldName))
-                throw new ArgumentException(SR.GetString(SR.ParameterCannotBeNullOrEmpty), nameof(oldName));
+            {
+                throw new ArgumentException(SR.GetString(SR.ParameterCannotBeNullOrEmpty, CultureInfo.CurrentUICulture), "oldName");
+            }
 
             if (String.IsNullOrEmpty(newName))
-                throw new ArgumentException(SR.GetString(SR.ParameterCannotBeNullOrEmpty), nameof(newName));
+            {
+                throw new ArgumentException(SR.GetString(SR.ParameterCannotBeNullOrEmpty, CultureInfo.CurrentUICulture), "newName");
+            }
 
             if (newItemId == VSConstants.VSITEMID_NIL)
-                throw new ArgumentNullException(nameof(newItemId));
+            {
+                throw new ArgumentNullException("newItemId");
+            }
 
-            var pRDT = site.GetService(typeof(SVsRunningDocumentTable)) as IVsRunningDocumentTable;
+            IVsRunningDocumentTable pRDT = site.GetService(typeof(SVsRunningDocumentTable)) as IVsRunningDocumentTable;
 
-            if (pRDT == null)
-                return;
+            if (pRDT == null) return;
 
             IVsHierarchy pIVsHierarchy;
             uint itemId;
-            IntPtr docData;
+            IntPtr docData = IntPtr.Zero;
             uint uiVsDocCookie;
-            ErrorHandler.ThrowOnFailure(pRDT.FindAndLockDocument((uint)_VSRDTFLAGS.RDT_NoLock, oldName, out pIVsHierarchy, out itemId, out docData, out uiVsDocCookie));
-
-            if (docData != IntPtr.Zero && pIVsHierarchy != null)
+            try
             {
-                try
+                int hr = pRDT.FindAndLockDocument((uint)_VSRDTFLAGS.RDT_NoLock, oldName, out pIVsHierarchy, out itemId, out docData, out uiVsDocCookie);
+                ErrorHandler.ThrowOnFailure(hr);
+
+                if (pIVsHierarchy == null)
                 {
-                    var pUnk = Marshal.GetIUnknownForObject(pIVsHierarchy);
-                    var iid = typeof(IVsHierarchy).GUID;
+                    // the doc is not in the RDT yet, e.g. user never opened this doc.
+                    // nothing to do then.
+                }
+                else
+                {
+                    IntPtr pUnk = Marshal.GetIUnknownForObject(pIVsHierarchy);
+                    Guid iid = typeof(IVsHierarchy).GUID;
                     IntPtr pHier;
                     Marshal.QueryInterface(pUnk, ref iid, out pHier);
                     try
@@ -359,7 +326,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                             Marshal.Release(pUnk);
                     }
                 }
-                finally
+            }
+            finally
+            {
+                if (docData != IntPtr.Zero)
                 {
                     Marshal.Release(docData);
                 }
