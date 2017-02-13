@@ -1412,14 +1412,9 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                 | [] -> failwith "Unexpected empty bag"
                 | items -> 
                     let glyphMajor, glyphMinor = GlyphOfItem(denv,items.Head)
-                    let name, nameInCode =
-                        if nm.StartsWith "( " && nm.EndsWith " )" then
-                            let cleanName = nm.[2..nm.Length - 3]
-                            cleanName, 
-                            if IsOperatorName nm then cleanName else "``" + cleanName + "``"
-                        else nm, nm
-
-                    new FSharpDeclarationListItem(name, nameInCode, glyphMajor, glyphMinor, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), IsAttribute infoReader items.Head))
+                    let name = DemangleBacktickedName nm
+                    
+                    new FSharpDeclarationListItem(name, NameUsedInCode name, glyphMajor, glyphMinor, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), IsAttribute infoReader items.Head))
 
         new FSharpDeclarationListInfo(Array.ofList decls)
     
