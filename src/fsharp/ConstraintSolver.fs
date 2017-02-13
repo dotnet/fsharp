@@ -276,8 +276,7 @@ let GetMeasureOfType g ty =
     match ty with 
     | AppTy g (tcref,[tyarg]) ->
         match stripTyEqns g tyarg with  
-        | TType_measure ms -> 
-          if measureEquiv g ms Measure.One then None else Some (tcref,ms)
+        | TType_measure ms when not (measureEquiv g ms Measure.One) -> Some (tcref,ms)
         | _ -> None
     | _ -> None
 
@@ -451,13 +450,12 @@ and SolveTypStaticReq (csenv:ConstraintSolverEnv) trace req ty =
         // requires that a type constructor be known at compile time 
         match stripTyparEqns ty with
         | TType_measure ms ->
-          let vs = ListMeasureVarOccsWithNonZeroExponents ms
-          IterateD (fun ((tpr:Typar),_) -> SolveTypStaticReqTypar csenv trace req tpr) vs
-
+            let vs = ListMeasureVarOccsWithNonZeroExponents ms
+            IterateD (fun ((tpr:Typar),_) -> SolveTypStaticReqTypar csenv trace req tpr) vs
         | _ -> 
-          match tryAnyParTy csenv.g ty with
-          | Some tpr -> SolveTypStaticReqTypar csenv trace req tpr
-          | None -> CompleteD
+            match tryAnyParTy csenv.g ty with
+            | Some tpr -> SolveTypStaticReqTypar csenv trace req tpr
+            | None -> CompleteD
       
 let rec TransactDynamicReq (trace:OptionalTrace) (tpr:Typar) req = 
     let orig = tpr.DynamicReq
@@ -475,18 +473,18 @@ and SolveTypDynamicReq (csenv:ConstraintSolverEnv) trace req ty =
 
 let SubstMeasureWarnIfRigid (csenv:ConstraintSolverEnv) trace (v:Typar) ms =
     if v.Rigidity.WarnIfUnified && not (isAnyParTy csenv.g (TType_measure ms)) then         
-      // NOTE: we grab the name eagerly to make sure the type variable prints as a type variable 
-      let tpnmOpt = if v.IsCompilerGenerated then None else Some v.Name 
-      SolveTypStaticReq csenv trace v.StaticReq (TType_measure ms) ++ (fun () -> 
-      SubstMeasure v ms;
-      WarnD(NonRigidTypar(csenv.DisplayEnv,tpnmOpt,v.Range,TType_measure (Measure.Var v), TType_measure ms,csenv.m)))
+        // NOTE: we grab the name eagerly to make sure the type variable prints as a type variable 
+        let tpnmOpt = if v.IsCompilerGenerated then None else Some v.Name 
+        SolveTypStaticReq csenv trace v.StaticReq (TType_measure ms) ++ (fun () -> 
+        SubstMeasure v ms;
+        WarnD(NonRigidTypar(csenv.DisplayEnv,tpnmOpt,v.Range,TType_measure (Measure.Var v), TType_measure ms,csenv.m)))
     else 
-      // Propagate static requirements from 'tp' to 'ty' 
-      SolveTypStaticReq csenv trace v.StaticReq (TType_measure ms) ++ (fun () -> 
-      SubstMeasure v ms;
-      if v.Rigidity = TyparRigidity.Anon && measureEquiv csenv.g ms Measure.One then 
-        WarnD(Error(FSComp.SR.csCodeLessGeneric(),v.Range))
-      else CompleteD)
+        // Propagate static requirements from 'tp' to 'ty'
+        SolveTypStaticReq csenv trace v.StaticReq (TType_measure ms) ++ (fun () -> 
+        SubstMeasure v ms;
+        if v.Rigidity = TyparRigidity.Anon && measureEquiv csenv.g ms Measure.One then 
+            WarnD(Error(FSComp.SR.csCodeLessGeneric(),v.Range))
+        else CompleteD)
 
 /// Imperatively unify the unit-of-measure expression ms against 1.
 /// There are three cases
@@ -501,15 +499,14 @@ let UnifyMeasureWithOne (csenv:ConstraintSolverEnv) trace ms =
     // If there is at least one non-rigid variable v with exponent e, then we can unify 
     match FindPreferredTypar nonRigidVars with
     | (v,e)::vs ->
-      let unexpandedCons = ListMeasureConOccsWithNonZeroExponents csenv.g false ms
-      let newms = ProdMeasures (List.map (fun (c,e') -> Measure.RationalPower (Measure.Con c, NegRational (DivRational e' e))) unexpandedCons 
-                              @ List.map (fun (v,e') -> Measure.RationalPower (Measure.Var v, NegRational (DivRational e' e))) (vs @ rigidVars))
+        let unexpandedCons = ListMeasureConOccsWithNonZeroExponents csenv.g false ms
+        let newms = ProdMeasures (List.map (fun (c,e') -> Measure.RationalPower (Measure.Con c, NegRational (DivRational e' e))) unexpandedCons 
+                                @ List.map (fun (v,e') -> Measure.RationalPower (Measure.Var v, NegRational (DivRational e' e))) (vs @ rigidVars))
 
-      SubstMeasureWarnIfRigid csenv trace v newms
+        SubstMeasureWarnIfRigid csenv trace v newms
 
     // Otherwise we require ms to be 1
-    | [] ->
-      if measureEquiv csenv.g ms Measure.One then CompleteD else localAbortD
+    | [] -> if measureEquiv csenv.g ms Measure.One then CompleteD else localAbortD
     
 /// Imperatively unify unit-of-measure expression ms1 against ms2
 let UnifyMeasures (csenv:ConstraintSolverEnv) trace ms1 ms2 = 
@@ -599,12 +596,12 @@ and GetMeasureVarGcdInTypes v tys =
 let NormalizeExponentsInTypeScheme uvars ty =
   uvars |> List.map (fun v ->
     let expGcd = AbsRational (GetMeasureVarGcdInType v ty)
-    if expGcd = OneRational || expGcd = ZeroRational
-    then v 
-     else
-      let v' = NewAnonTypar (TyparKind.Measure,v.Range,TyparRigidity.Flexible,v.StaticReq,v.DynamicReq)
-      SubstMeasure v (Measure.RationalPower (Measure.Var v', DivRational OneRational expGcd))
-      v')
+    if expGcd = OneRational || expGcd = ZeroRational then
+        v 
+    else
+        let v' = NewAnonTypar (TyparKind.Measure,v.Range,TyparRigidity.Flexible,v.StaticReq,v.DynamicReq)
+        SubstMeasure v (Measure.RationalPower (Measure.Var v', DivRational OneRational expGcd))
+        v')
     
   
 // We normalize unit-of-measure-polymorphic type schemes. There  
@@ -636,7 +633,8 @@ let NormalizeExponentsInTypeScheme uvars ty =
 let SimplifyMeasuresInTypeScheme g resultFirst (generalizable:Typar list) ty constraints =
     // Only bother if we're generalizing over at least one unit-of-measure variable 
     let uvars, vars = 
-        generalizable |> List.partition (fun v -> v.Kind = TyparKind.Measure && v.Rigidity <> TyparRigidity.Rigid) 
+        generalizable
+        |> List.partition (fun v -> v.Kind = TyparKind.Measure && v.Rigidity <> TyparRigidity.Rigid) 
  
     match uvars with
     | [] -> generalizable
@@ -656,7 +654,7 @@ let CheckWarnIfRigid (csenv:ConstraintSolverEnv) ty1 (r:Typar) ty =
         | None -> true
         | Some tp2 ->
             not tp2.IsCompilerGenerated &&
-                (r.IsCompilerGenerated || 
+                (r.IsCompilerGenerated ||
                  // exclude this warning for two identically named user-specified type parameters, e.g. from different mutually recursive functions or types
                  r.DisplayName <> tp2.DisplayName)
 
@@ -722,17 +720,17 @@ and solveTypMeetsTyparConstraints (csenv:ConstraintSolverEnv) ndeep m2 trace ty 
           if not (isTyparTy g ty) || typeEquiv g ty dty then CompleteD else
           AddConstraint csenv ndeep m2 trace (destTyparTy g ty)  (TyparConstraint.DefaultsTo(priority,dty,m))
           
-      | TyparConstraint.SupportsNull m2               -> SolveTypSupportsNull               csenv ndeep m2 trace ty
-      | TyparConstraint.IsEnum(underlying, m2)        -> SolveTypIsEnum                     csenv ndeep m2 trace ty underlying
-      | TyparConstraint.SupportsComparison(m2)        -> SolveTypeSupportsComparison        csenv ndeep m2 trace ty
-      | TyparConstraint.SupportsEquality(m2)          -> SolveTypSupportsEquality           csenv ndeep m2 trace ty
-      | TyparConstraint.IsDelegate(aty,bty, m2)       -> SolveTypIsDelegate                 csenv ndeep m2 trace ty aty bty
-      | TyparConstraint.IsNonNullableStruct m2     -> SolveTypIsNonNullableValueType     csenv ndeep m2 trace ty
-      | TyparConstraint.IsUnmanaged m2                -> SolveTypIsUnmanaged                csenv ndeep m2 trace ty
-      | TyparConstraint.IsReferenceType m2            -> SolveTypIsReferenceType            csenv ndeep m2 trace ty
-      | TyparConstraint.RequiresDefaultConstructor m2 -> SolveTypRequiresDefaultConstructor csenv ndeep m2 trace ty
-      | TyparConstraint.SimpleChoice(tys,m2)          -> SolveTypChoice                     csenv ndeep m2 trace ty tys
-      | TyparConstraint.CoercesTo(ty2,m2)         -> SolveTypSubsumesTypKeepAbbrevs     csenv ndeep m2 trace None ty2 ty
+      | TyparConstraint.SupportsNull m2                -> SolveTypSupportsNull               csenv ndeep m2 trace ty
+      | TyparConstraint.IsEnum(underlying, m2)         -> SolveTypIsEnum                     csenv ndeep m2 trace ty underlying
+      | TyparConstraint.SupportsComparison(m2)         -> SolveTypeSupportsComparison        csenv ndeep m2 trace ty
+      | TyparConstraint.SupportsEquality(m2)           -> SolveTypSupportsEquality           csenv ndeep m2 trace ty
+      | TyparConstraint.IsDelegate(aty,bty, m2)        -> SolveTypIsDelegate                 csenv ndeep m2 trace ty aty bty
+      | TyparConstraint.IsNonNullableStruct m2         -> SolveTypIsNonNullableValueType     csenv ndeep m2 trace ty
+      | TyparConstraint.IsUnmanaged m2                 -> SolveTypIsUnmanaged                csenv ndeep m2 trace ty
+      | TyparConstraint.IsReferenceType m2             -> SolveTypIsReferenceType            csenv ndeep m2 trace ty
+      | TyparConstraint.RequiresDefaultConstructor m2  -> SolveTypRequiresDefaultConstructor csenv ndeep m2 trace ty
+      | TyparConstraint.SimpleChoice(tys,m2)           -> SolveTypChoice                     csenv ndeep m2 trace ty tys
+      | TyparConstraint.CoercesTo(ty2,m2)              -> SolveTypSubsumesTypKeepAbbrevs     csenv ndeep m2 trace None ty2 ty
       | TyparConstraint.MayResolveMember(traitInfo,m2) -> 
           SolveMemberConstraint csenv false false ndeep m2 trace traitInfo ++ (fun _ -> CompleteD) 
     )))
@@ -868,16 +866,15 @@ and SolveTypSubsumesTyp (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
         // 'a[] :> IReadOnlyCollection<'b>   ---> 'a = 'b  
         // Note we don't support co-variance on array types nor 
         // the special .NET conversions for these types 
-        if 
-            (isArray1DTy g ty2 &&  
-             isAppTy g ty1 && 
-             (let tcr1 = tcrefOfAppTy g ty1
-              tyconRefEq g tcr1 g.tcref_System_Collections_Generic_IList || 
-              tyconRefEq g tcr1 g.tcref_System_Collections_Generic_ICollection || 
-              tyconRefEq g tcr1 g.tcref_System_Collections_Generic_IReadOnlyList || 
-              tyconRefEq g tcr1 g.tcref_System_Collections_Generic_IReadOnlyCollection || 
-              tyconRefEq g tcr1 g.tcref_System_Collections_Generic_IEnumerable)) then
-
+        if (isArray1DTy g ty2 &&  
+            isAppTy g ty1 && 
+            (let tcr1 = tcrefOfAppTy g ty1
+             tyconRefEq g tcr1 g.tcref_System_Collections_Generic_IList || 
+             tyconRefEq g tcr1 g.tcref_System_Collections_Generic_ICollection || 
+             tyconRefEq g tcr1 g.tcref_System_Collections_Generic_IReadOnlyList || 
+             tyconRefEq g tcr1 g.tcref_System_Collections_Generic_IReadOnlyCollection || 
+             tyconRefEq g tcr1 g.tcref_System_Collections_Generic_IEnumerable))
+        then
           let _,tinst = destAppTy g ty1
           match tinst with 
           | [ty1arg] -> 
@@ -888,7 +885,6 @@ and SolveTypSubsumesTyp (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
         // D<inst> :> Head<_> --> C<inst'> :> Head<_> for the 
         // first interface or super-class C supported by D which 
         // may feasibly convert to Head. 
-
         else 
             match FindUniqueFeasibleSupertype g amap m ty1 ty2 with 
             | None -> ErrorD(ConstraintSolverTypesNotInSubsumptionRelation(denv,ty1,ty2,m,m2))
@@ -921,10 +917,10 @@ and DepthCheck ndeep m =
 // If this is a type that's parameterized on a unit-of-measure (expected to be numeric), unify its measure with 1
 and SolveDimensionlessNumericType (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
     match GetMeasureOfType csenv.g ty with
-    | Some (tcref, _) ->
-      SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace ty (mkAppTy tcref [TType_measure Measure.One])
+    | Some (tcref, _) -> 
+        SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace ty (mkAppTy tcref [TType_measure Measure.One])
     | None ->
-      CompleteD
+        CompleteD
 
 /// We do a bunch of fakery to pretend that primitive types have certain members. 
 /// We pretend int and other types support a number of operators.  In the actual IL for mscorlib they 
