@@ -1575,14 +1575,14 @@ and AddConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace tp newConstraint  =
     let existingConstraints = tp.Constraints
 
     let allCxs = newConstraint :: List.rev existingConstraints
-     
-    let rec enforceMutualConsistency i cxs = 
-        match cxs with 
-        | [] ->  CompleteD
-        | cx :: rest -> IterateIdxD (fun j cx2 -> if i = j then CompleteD else consistent cx cx2) allCxs ++ (fun () -> enforceMutualConsistency (i+1) rest)
+    begin 
+        let rec enforceMutualConsistency i cxs = 
+            match cxs with 
+            | [] ->  CompleteD
+            | cx :: rest -> IterateIdxD (fun j cx2 -> if i = j then CompleteD else consistent cx cx2) allCxs ++ (fun () -> enforceMutualConsistency (i+1) rest)
 
-    enforceMutualConsistency 0 allCxs 
-    ++ (fun ()  ->
+        enforceMutualConsistency 0 allCxs 
+    end ++ (fun ()  ->
     
     let impliedByExistingConstraints = existingConstraints |> List.exists (fun tpc2 -> implies tpc2 newConstraint) 
     
@@ -1596,7 +1596,7 @@ and AddConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace tp newConstraint  =
     elif tp.Rigidity = TyparRigidity.Rigid then 
         ErrorD (ConstraintSolverMissingConstraint(denv,tp,newConstraint,m,m2)) 
     else
-        // It is important that we give a warning if a constraint is missing from a 
+       (// It is important that we give a warning if a constraint is missing from a 
         // will-be-made-rigid type variable. This is because the existence of these warnings
         // is relevant to the overload resolution rules (see 'candidateWarnCount' in the overload resolution
         // implementation). See also FSharp 1.0 bug 5461
@@ -1606,24 +1606,25 @@ and AddConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace tp newConstraint  =
             CompleteD) ++ (fun () -> 
 
         let newConstraints = 
-            // Eliminate any constraints where one constraint implies another 
-            // Keep constraints in the left-to-right form according to the order they are asserted. 
-            // NOTE: QUADRATIC 
-            let rec eliminateRedundant cxs acc = 
-                match cxs with 
-                | [] -> acc
-                | cx :: rest -> 
-                    eliminateRedundant rest (if List.exists (fun cx2 -> implies cx2 cx) acc then acc else (cx::acc))
+              // Eliminate any constraints where one constraint implies another 
+              // Keep constraints in the left-to-right form according to the order they are asserted. 
+              // NOTE: QUADRATIC 
+              let rec eliminateRedundant cxs acc = 
+                  match cxs with 
+                  | [] -> acc
+                  | cx :: rest -> 
+                      eliminateRedundant rest (if List.exists (fun cx2 -> implies cx2 cx) acc then acc else (cx::acc))
                   
-            eliminateRedundant allCxs []
+              eliminateRedundant allCxs []
               
+
         // Write the constraint into the type variable 
         // Record a entry in the undo trace if one is provided 
         let d = tp.Data
         let orig = d.typar_constraints
         trace.Exec (fun () -> d.typar_constraints <- newConstraints) (fun () -> d.typar_constraints <- orig)
 
-        CompleteD))
+        CompleteD)))
 
 and SolveTypSupportsNull (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
     let g = csenv.g
