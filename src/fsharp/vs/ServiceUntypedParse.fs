@@ -1182,7 +1182,7 @@ module UntypedParseImpl =
                         match List.tryLast idents with
                         | Some lastIdent when pos.Line = lastIdent.idRange.EndLine ->
                             let stringBetweenModuleNameAndPos = lineStr.[lastIdent.idRange.EndColumn..pos.Column - 1]
-                            if stringBetweenModuleNameAndPos |> Seq.forall (fun x -> x = ' ' || x = '=' || x = '.') then
+                            if stringBetweenModuleNameAndPos |> Seq.forall (fun x -> x = ' ' || x = '.') then
                                 Some CompletionContext.Invalid
                             else None
                         | _ -> None }
