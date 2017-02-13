@@ -1034,7 +1034,7 @@ module private PrintTypes =
     let layoutMemberTypeAndConstraints denv argInfos retTy parentTyparTys = 
         let _,(parentTyparTys,argInfos,retTy),cxs = PrettyTypes.PrettifyTypesNM1 denv.g (parentTyparTys,argInfos,retTy)
         // Filter out the parent typars, which don't get shown in the member signature 
-        let cxs = cxs |> List.filter (fun (tp,_) -> not (parentTyparTys |> List.exists (fun ty -> isTyparTy denv.g ty && typarEq tp (destTyparTy denv.g ty)))) 
+        let cxs = cxs |> List.filter (fun (tp,_) -> not (parentTyparTys |> List.exists (fun ty -> match tryDestTyparTy denv.g ty with Some destTypar -> typarEq tp destTypar | None -> false))) 
         layoutPrettifiedTypesAndConstraints denv argInfos retTy cxs
 
     // Layout: type spec - class, datatype, record, abbrev 

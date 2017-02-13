@@ -884,7 +884,7 @@ and SolveTypSubsumesTyp (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
           match tinst with 
           | [ty1arg] -> 
               let ty2arg = destArrayTy g ty2
-              SolveTypEqualsTypKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ty1arg  ty2arg
+              SolveTypEqualsTypKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ty1arg ty2arg
           | _ -> error(InternalError("destArrayTy",m));
 
         // D<inst> :> Head<_> --> C<inst'> :> Head<_> for the 

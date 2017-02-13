@@ -2252,12 +2252,12 @@ module GeneralizationHelpers =
 
         let lhsConstraintTypars = 
             allUntupledArgTys |> List.collect (fun ty -> 
-                if isTyparTy cenv.g ty then 
-                    let tp = destTyparTy cenv.g ty 
+                match tryDestTyparTy cenv.g ty with
+                | Some tp ->
                     match relevantUniqueSubtypeConstraint tp with 
                     | Some cxty -> freeInTypeLeftToRight cenv.g false cxty
                     | None -> []
-                else [])
+                | None -> [])
 
         let IsCondensationTypar (tp:Typar) = 
             // A condensation typar may not a user-generated type variable nor has it been unified with any user type variable
@@ -2269,7 +2269,7 @@ module GeneralizationHelpers =
             // A condensation typar can't be used in the constraints of any candidate condensation typars
             not (ListSet.contains typarEq tp lhsConstraintTypars) &&
             // A condensation typar must occur precisely once in tyIJ, and must not occur free in any other tyIJ
-            (match allUntupledArgTysWithFreeVars |> List.partition (fun (ty,_) -> isTyparTy cenv.g ty && typarEq (destTyparTy cenv.g ty) tp) with
+            (match allUntupledArgTysWithFreeVars |> List.partition (fun (ty,_) -> match tryDestTyparTy cenv.g ty with Some destTypar -> typarEq destTypar tp | _ -> false) with
              | [_], rest -> not (rest |> List.exists (fun (_,fvs) -> ListSet.contains typarEq tp fvs))
              | _ -> false)
              
@@ -13833,9 +13833,8 @@ module TyconConstraintInference =
             let rec checkIfFieldTypeSupportsComparison (tycon: Tycon) (ty: TType) =
                 
                 // Is the field type a type parameter?
-                if isTyparTy cenv.g ty then 
-                    let tp = (destTyparTy cenv.g ty)
-
+                match tryDestTyparTy cenv.g ty with
+                | Some tp ->
                     // Look for an explicit 'comparison' constraint
                     if tp.Constraints |> List.exists (function TyparConstraint.SupportsComparison _ -> true | _ -> false) then 
                         true
@@ -13848,8 +13847,7 @@ module TyconConstraintInference =
                     
                     else
                         false
-                
-                else 
+                | None ->
                     match ty with 
                     // Look for array, UIntPtr and IntPtr types
                     | SpecialComparableHeadType g tinst -> 
@@ -13960,9 +13958,8 @@ module TyconConstraintInference =
             // Checks if a field type supports the 'equality' constraint based on the assumptions about the type constructors
             // and type parameters.
             let rec checkIfFieldTypeSupportsEquality (tycon:Tycon) (ty: TType) =
-                if isTyparTy cenv.g ty then 
-                    let tp = (destTyparTy cenv.g ty)
-
+                match tryDestTyparTy cenv.g ty with
+                | Some tp ->
                     // Look for an explicit 'equality' constraint
                     if tp.Constraints |> List.exists (function TyparConstraint.SupportsEquality _ -> true | _ -> false) then 
                         true
@@ -13974,8 +13971,7 @@ module TyconConstraintInference =
                         true
                     else
                         false
-
-                else 
+                | None ->
                     match ty with 
                     | SpecialEquatableHeadType g tinst -> 
                         tinst |> List.forall (checkIfFieldTypeSupportsEquality tycon)
@@ -15330,9 +15326,12 @@ module EstablishTypeDefinitionCores =
                         // The special case of "static field S<'a> in struct S<'a>" is permitted. (so no (S,S) edge to be collected).
                         fspec.IsStatic &&
                         (structTycon === tycon2) && 
-                        (structTyInst,tinst2) ||> List.lengthsEqAndForall2 (fun ty1 ty2 -> isTyparTy cenv.g ty1 &&
-                                                                                           isTyparTy cenv.g ty2 &&
-                                                                                           typarEq (destTyparTy cenv.g ty1) (destTyparTy cenv.g ty2))
+                        (structTyInst,tinst2) ||> List.lengthsEqAndForall2 (fun ty1 ty2 -> match tryDestTyparTy cenv.g ty1 with
+                                                                                           | Some destTypar1 ->
+                                                                                              match tryDestTyparTy cenv.g ty2 with
+                                                                                              | Some destTypar2 -> typarEq destTypar1 destTypar2
+                                                                                              | _ -> false
+                                                                                           | _ -> false)
                     if specialCaseStaticField then
                         doneTypes,acc // no edge collected, no recursion.
                     else
