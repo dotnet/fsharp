@@ -1171,5 +1171,10 @@ module UntypedParseImpl =
                             | None -> Some (CompletionContext.Invalid) // A $ .B -> no completion list
                         | _ -> None 
                         
-                    member this.VisitBinding(defaultTraverse, synBinding) = defaultTraverse synBinding }
+                    member this.VisitBinding(defaultTraverse, synBinding) = defaultTraverse synBinding 
+                    
+                    member this.VisitHashDirective(range) = 
+                        if rangeContainsPos range pos then Some CompletionContext.Invalid 
+                        else None }
+
         AstTraversal.Traverse(pos, pt, walker)
