@@ -943,14 +943,13 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
     let traitInfo = TTrait(tys,nm,memFlags,argtys,rty,sln)
     let rty = GetFSharpViewOfReturnType g rty    
     
-    // Assert the object type if the constraint is for an instance member
-    begin
-        if memFlags.IsInstance then 
-            match tys, argtys with 
-            | [ty], (h :: _) -> SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace h ty
-            | _ -> ErrorD (ConstraintSolverError(FSComp.SR.csExpectedArguments(), m,m2))
-        else CompleteD
-    end ++ (fun () -> 
+    // Assert the object type if the constraint is for an instance member    
+    if memFlags.IsInstance then 
+        match tys, argtys with 
+        | [ty], (h :: _) -> SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace h ty
+        | _ -> ErrorD (ConstraintSolverError(FSComp.SR.csExpectedArguments(), m,m2))
+    else CompleteD
+    ++ (fun () -> 
     
     // Trait calls are only supported on pseudo type (variables) 
     tys |> IterateD (SolveTypStaticReq csenv trace HeadTypeStaticReq)) ++ (fun () -> 
