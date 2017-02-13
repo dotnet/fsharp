@@ -1562,7 +1562,7 @@ let MakeAndPublishBaseVal cenv env baseIdOpt ty =
 
 let InstanceMembersNeedSafeInitCheck cenv m thisTy = 
     ExistsInEntireHierarchyOfType 
-        (fun ty -> not (isStructTy cenv.g ty) && isAppTy cenv.g ty && (tcrefOfAppTy cenv.g ty).HasSelfReferentialConstructor)
+        (fun ty -> not (isStructTy cenv.g ty) && (match tryDestAppTy cenv.g ty with Some tcref when tcref.HasSelfReferentialConstructor -> true | _ -> false))
         cenv.g 
         cenv.amap
         m 
@@ -6083,13 +6083,11 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
             FoldPrimaryHierarchyOfType (fun typ acc -> 
                 match acc with
                 | None ->
-                    let isNominal = isAppTy cenv.g typ
-                    if isNominal then 
-                        let tcref = tcrefOfAppTy cenv.g typ
+                    match tryDestAppTy cenv.g typ with
+                    | Some tcref ->
                         TryFindTyconRefStringAttribute cenv.g mWholeExpr cenv.g.attrib_DefaultMemberAttribute tcref 
-
-                     else
-                        match AllPropInfosOfTypeInScope cenv.infoReader env.NameEnv (Some("Item"), ad) IgnoreOverrides mWholeExpr typ with
+                    | None ->
+                        match AllPropInfosOfTypeInScope cenv.infoReader env.NameEnv (Some "Item", ad) IgnoreOverrides mWholeExpr typ with
                         | [] -> None
                         | _ -> Some "Item"
                  | _ -> acc)
@@ -6570,20 +6568,23 @@ and TcObjectExpr cenv overallTy env tpenv (synObjTy,argopt,binds,extraImpls,mNew
     let mObjTy = synObjTy.Range
 
     let objTy,tpenv = TcType cenv NewTyparsOK  CheckCxs ItemOccurence.UseInType  env tpenv synObjTy
-    if not (isAppTy cenv.g objTy) then error(Error(FSComp.SR.tcNewMustBeUsedWithNamedType(),mNewExpr))
-    if not (isRecdTy cenv.g objTy) && not (isInterfaceTy cenv.g objTy) && isSealedTy cenv.g objTy then errorR(Error(FSComp.SR.tcCannotCreateExtensionOfSealedType(),mNewExpr))
+    match tryDestAppTy cenv.g objTy with
+    | None -> error(Error(FSComp.SR.tcNewMustBeUsedWithNamedType(),mNewExpr))
+    | Some tcref ->
+    let isRecordTy = isRecdTy cenv.g objTy
+    if not isRecordTy && not (isInterfaceTy cenv.g objTy) && isSealedTy cenv.g objTy then errorR(Error(FSComp.SR.tcCannotCreateExtensionOfSealedType(),mNewExpr))
     
     CheckSuperType cenv objTy synObjTy.Range 
 
     // Add the object type to the ungeneralizable items 
-    let env = {env with eUngeneralizableItems =  addFreeItemOfTy objTy env.eUngeneralizableItems   } 
+    let env = {env with eUngeneralizableItems =  addFreeItemOfTy objTy env.eUngeneralizableItems } 
        
     // Object expression members can access protected members of the implemented type 
-    let env = EnterFamilyRegion (tcrefOfAppTy cenv.g objTy) env
+    let env = EnterFamilyRegion tcref env
     let ad = env.eAccessRights
     
     if // record construction ?
-       (isRecdTy cenv.g objTy) || 
+       isRecordTy || 
        // object construction?
        (isFSharpObjModelTy cenv.g objTy && not (isInterfaceTy cenv.g objTy) && Option.isNone argopt) then  
 
@@ -11180,18 +11181,19 @@ and TcLetrecBinding
     | Some reqdThisValTy -> 
         let reqdThisValTy, actualThisValTy, rangeForCheck =
             match GetInstanceMemberThisVariable (vspec, checkedBind.Expr) with
-               | None -> 
-                   let reqdThisValTy = if isByrefTy cenv.g reqdThisValTy then destByrefTy cenv.g reqdThisValTy else reqdThisValTy
-                   let enclosingTyconRef = tcrefOfAppTy cenv.g reqdThisValTy
-                   reqdThisValTy, (mkAppTy enclosingTyconRef (List.map mkTyparTy enclosingDeclaredTypars)), vspec.Range
-               | Some thisVal -> 
-                   reqdThisValTy, thisVal.Type, thisVal.Range
+            | None -> 
+                let reqdThisValTy = if isByrefTy cenv.g reqdThisValTy then destByrefTy cenv.g reqdThisValTy else reqdThisValTy
+                let enclosingTyconRef = tcrefOfAppTy cenv.g reqdThisValTy
+                reqdThisValTy, (mkAppTy enclosingTyconRef (List.map mkTyparTy enclosingDeclaredTypars)), vspec.Range
+            | Some thisVal -> 
+                reqdThisValTy, thisVal.Type, thisVal.Range
         if not (AddCxTypeEqualsTypeUndoIfFailed envRec.DisplayEnv cenv.css rangeForCheck actualThisValTy reqdThisValTy) then 
             errorR (Error(FSComp.SR.tcNonUniformMemberUse vspec.DisplayName,vspec.Range))
 
-    let preGeneralizationRecBind =  { RecBindingInfo = rbind.RecBindingInfo 
-                                      CheckedBinding= checkedBind 
-                                      ExtraGeneralizableTypars= extraGeneralizableTypars }
+    let preGeneralizationRecBind =  
+        { RecBindingInfo = rbind.RecBindingInfo 
+          CheckedBinding= checkedBind
+          ExtraGeneralizableTypars= extraGeneralizableTypars }
 
     // Remove one binding from the unchecked list
     let uncheckedRecBindsTable = 

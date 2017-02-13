@@ -651,7 +651,7 @@ module private PrintTypes =
     and layoutAttrib denv (Attrib(_,k,args,_props,_,_,_)) = 
         let argsL = bracketL (layoutAttribArgs denv args)
         match k with 
-        | (ILAttrib(ilMethRef)) -> 
+        | ILAttrib ilMethRef -> 
             let trimmedName = 
                 let name = ilMethRef.EnclosingTypeRef.Name
                 match String.tryDropSuffix name "Attribute" with 
@@ -660,8 +660,7 @@ module private PrintTypes =
             let tref = ilMethRef.EnclosingTypeRef
             let tref = ILTypeRef.Create(scope= tref.Scope, enclosing=tref.Enclosing, name=trimmedName)
             PrintIL.layoutILTypeRef denv tref ++ argsL
-
-        | (FSAttrib(vref)) -> 
+        | FSAttrib vref -> 
             // REVIEW: this is not trimming "Attribute" 
             let _,_,rty,_ = GetTypeOfMemberInMemberForm denv.g vref
             let rty = GetFSharpViewOfReturnType denv.g rty
@@ -1276,9 +1275,10 @@ module InfoMemberPrinting =
             else emptyL
         let layout = 
             layout ^^
-                if isAppTy amap.g minfo.EnclosingType then 
-                    PrintTypes.layoutTyconRef denv (tcrefOfAppTy amap.g minfo.EnclosingType)
-                else
+                match tryDestAppTy amap.g minfo.EnclosingType with
+                | Some tcref ->
+                    PrintTypes.layoutTyconRef denv tcref
+                | None ->
                     PrintTypes.layoutType denv minfo.EnclosingType
         let layout = 
             layout ^^
