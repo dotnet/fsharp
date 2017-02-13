@@ -2225,7 +2225,8 @@ and ResolveOverloading
             | [] ->
                 // OK, we failed. Collect up the errors from overload resolution and the possible overloads
                 let errors = 
-                    (candidates |> List.choose (fun calledMeth -> 
+                    candidates 
+                    |> List.choose (fun calledMeth -> 
                             match CollectThenUndo (fun newTrace -> 
                                          let cxsln = Option.map (fun traitInfo -> (traitInfo, MemberConstraintSolutionOfMethInfo csenv.SolverState m calledMeth.Method calledMeth.CalledTyArgs)) cx
                                          CanMemberSigsMatchUpToCheck 
@@ -2238,7 +2239,7 @@ and ResolveOverloading
                                              reqdRetTyOpt 
                                              calledMeth) with 
                             | OkResult _ -> None
-                            | ErrorResult(_,exn) -> Some (calledMeth, exn)))
+                            | ErrorResult(_,exn) -> Some (calledMeth, exn))
 
                 None,ErrorD (failOverloading (FSComp.SR.csNoOverloadsFound methodName) errors), NoTrace
 
@@ -2310,10 +2311,9 @@ and ResolveOverloading
 
                     // check regular args. The argument counts will only be different if one is using param args
                     let c = 
-                        if (candidate.TotalNumUnnamedCalledArgs = other.TotalNumUnnamedCalledArgs) then 
-                           
+                        if candidate.TotalNumUnnamedCalledArgs = other.TotalNumUnnamedCalledArgs then
                            // For extension members, we also include the object argument type, if any in the comparison set
-                           // THis matches C#, where all extension members are treated and resolved as "static" methods calls
+                           // This matches C#, where all extension members are treated and resolved as "static" methods calls
                            let cs = 
                                (if candidate.Method.IsExtensionMember && other.Method.IsExtensionMember then 
                                    let objArgTys1 = candidate.CalledObjArgTys(m) 
