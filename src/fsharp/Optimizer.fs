@@ -3087,7 +3087,7 @@ and OptimizeModuleExpr cenv env x =
                 mty
             and elimModSpec (mspec:ModuleOrNamespace) = 
                 let mtyp = elimModTy mspec.ModuleOrNamespaceType 
-                mspec.Data.entity_modul_contents <- notlazy mtyp
+                mspec.Data.entity_modul_contents <- MaybeLazy.Strict mtyp
 
             let rec elimModDef x =                  
                 match x with 

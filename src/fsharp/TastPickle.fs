@@ -436,8 +436,7 @@ let p_option f x st =
 // Pickle lazy values in such a way that they can, in some future F# compiler version, be read back
 // lazily. However, a lazy reader is not used in this version because the value may contain the definitions of some
 // OSGN nodes. 
-let p_lazy p x st = 
-    let v = Lazy.force x
+let private p_lazy_impl p v st = 
     let fixupPos1 = st.os.Position
     // We fix these up after
     prim_p_int32 0 st;
@@ -472,6 +471,12 @@ let p_lazy p x st =
     st.os.FixupInt32 fixupPos5 otyparsIdx2;
     st.os.FixupInt32 fixupPos6 ovalsIdx1;
     st.os.FixupInt32 fixupPos7 ovalsIdx2
+
+let p_lazy p x st = 
+    p_lazy_impl p (Lazy.force x) st
+
+let p_maybe_lazy p (x: MaybeLazy<_>) st = 
+    p_lazy_impl p x.Value st
 
 let p_hole () = 
     let h = ref (None : 'T pickler option)
@@ -1727,7 +1732,7 @@ and p_entity_spec_data (x:EntityData) st =
       p_kind x.entity_kind st
       p_int64 (x.entity_flags.PickledBits ||| (if flagBit then EntityFlags.ReservedBitForPickleFormatTyconReprFlag else 0L)) st
       p_option p_cpath x.entity_cpath st
-      p_lazy p_modul_typ x.entity_modul_contents st
+      p_maybe_lazy p_modul_typ x.entity_modul_contents st
       p_exnc_repr x.entity_exn_info st
       p_space 1 space st
 
@@ -2012,7 +2017,7 @@ and u_entity_spec_data st : EntityData =
       entity_kind=x10b;
       entity_flags=EntityFlags(x11);
       entity_cpath=x12;
-      entity_modul_contents= x13;
+      entity_modul_contents=MaybeLazy.Lazy x13;
       entity_exn_info=x14;
       entity_il_repr_cache=newCache();  
       } 
