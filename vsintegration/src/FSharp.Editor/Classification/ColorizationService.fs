@@ -24,6 +24,7 @@ type internal FSharpColorizationService
         checkerProvider: FSharpCheckerProvider,
         projectInfoManager: ProjectInfoManager
     ) =
+
     interface IEditorClassificationService with
         // Do not perform classification if we don't have project options (#defines matter)
         member this.AddLexicalClassifications(_: SourceText, _: TextSpan, _: List<ClassifiedSpan>, _: CancellationToken) = ()

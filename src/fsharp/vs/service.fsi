@@ -161,6 +161,7 @@ type internal SemanticClassificationType =
     | ComputationExpression
     | IntrinsicType
     | Enumeration
+    | Interface
 
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]
