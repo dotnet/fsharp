@@ -729,13 +729,15 @@ let UnifyStructTupleType contextInfo cenv denv m ty ps =
 /// Optimized unification routine that avoids creating new inference 
 /// variables unnecessarily
 let UnifyFunctionTypeUndoIfFailed cenv denv m ty =
-    if isFunTy cenv.g ty then Some(destFunTy cenv.g ty) else
-    let domainTy = NewInferenceType ()
-    let resultTy = NewInferenceType ()
-    if AddCxTypeEqualsTypeUndoIfFailed denv cenv.css m ty (domainTy --> resultTy) then 
-        Some(domainTy,resultTy)
-    else 
-        None
+    match tryDestFunTy cenv.g ty with
+    | None ->
+        let domainTy = NewInferenceType ()
+        let resultTy = NewInferenceType ()
+        if AddCxTypeEqualsTypeUndoIfFailed denv cenv.css m ty (domainTy --> resultTy) then 
+            Some(domainTy,resultTy)
+        else 
+            None
+    | r -> r
 
 /// Optimized unification routine that avoids creating new inference 
 /// variables unnecessarily
