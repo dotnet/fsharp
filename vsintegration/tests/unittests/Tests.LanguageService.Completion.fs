@@ -7728,11 +7728,11 @@ let rec f l =
     member this.``Verify no completion after module definition``() = 
         this.VerifyCtrlSpaceCompListIsEmptyAtEndOfMarker(
             fileContents = """
-                module BasicTest (*Marker*)
+                module BasicTest 
 
                 let foo x = x
                 let bar = 1""",
-            marker = "(*Marker*)")
+            marker = "module BasicTest ")
 
     [<Test>]
     member this.``Verify no completion in hash derictives``() =
