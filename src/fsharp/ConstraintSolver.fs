@@ -1232,7 +1232,7 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
                       let err = 
                           match opName with 
                           | "?>="  | "?>"  | "?<="  | "?<"  | "?="  | "?<>" 
-                          |  ">=?" |  ">?" |  "<=?" |  "<?" | "=?"  |  "<>?" 
+                          | ">=?"  | ">?"  | "<=?"  | "<?"  | "=?"  | "<>?" 
                           | "?>=?" | "?>?" | "?<=?" | "?<?" | "?=?" | "?<>?" ->
                              if tys.Length = 1 then FSComp.SR.csTypeDoesNotSupportOperatorNullable(tyString,opName)
                              else FSComp.SR.csTypesDoNotSupportOperatorNullable(tyString,opName)
@@ -1264,8 +1264,7 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
                   SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty rty2 ++ (fun () -> 
                   ResultD (TTraitSolvedRecdProp(rfinfo, isSetProp)))
               | None, Some (calledMeth:CalledMeth<_>) -> 
-                  // OK, the constraint is solved. 
-                  
+                  // OK, the constraint is solved.
                   let minfo = calledMeth.Method
 
                   errors ++ (fun () -> 
@@ -1280,13 +1279,12 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
                           ResultD (TTraitSolved (minfo,calledMeth.CalledTyArgs))))
                           
               | _ ->
-
-                  let support =  GetSupportOfMemberConstraint csenv traitInfo
-                  let frees =  GetFreeTyparsOfMemberConstraint csenv traitInfo
+                  let support = GetSupportOfMemberConstraint csenv traitInfo
+                  let frees = GetFreeTyparsOfMemberConstraint csenv traitInfo
 
                   // If there's nothing left to learn then raise the errors 
                   (if (permitWeakResolution && isNil support) || isNil frees then errors  
-                  // Otherwise re-record the trait waiting for canonicalization 
+                   // Otherwise re-record the trait waiting for canonicalization 
                    else AddMemberConstraint csenv ndeep m2 trace traitInfo support frees) ++ (fun () -> 
                        match errors with
                        | ErrorResult (_,UnresolvedOverloading _) when not ignoreUnresolvedOverload && (not (nm = "op_Explicit" || nm = "op_Implicit")) -> ErrorD LocallyAbortOperationThatFailsToResolveOverload
@@ -1298,8 +1296,7 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
 
 /// Record the solution to a member constraint in the mutable reference cell attached to 
 /// each member constraint.
-and RecordMemberConstraintSolution css m trace traitInfo res = 
-            
+and RecordMemberConstraintSolution css m trace traitInfo res =
     match res with 
     | TTraitUnsolved -> 
         ResultD false
@@ -1359,8 +1356,7 @@ and MemberConstraintSolutionOfMethInfo css m minfo minst =
 
 #endif
 
-and MemberConstraintSolutionOfRecdFieldInfo rfinfo isSet = 
- 
+and MemberConstraintSolutionOfRecdFieldInfo rfinfo isSet =
     FSRecdFieldSln(rfinfo.TypeInst,rfinfo.RecdFieldRef,isSet)
 
 /// Write into the reference cell stored in the TAST and add to the undo trace if necessary
@@ -1435,8 +1431,7 @@ and SolveRelevantMemberConstraintsForTypar (csenv:ConstraintSolverEnv) ndeep per
         SolveMemberConstraint csenv true permitWeakResolution (ndeep+1) m2 trace traitInfo)
 
 and CanonicalizeRelevantMemberConstraints (csenv:ConstraintSolverEnv) ndeep trace tps =
-    SolveRelevantMemberConstraints csenv ndeep true trace tps 
-
+    SolveRelevantMemberConstraints csenv ndeep true trace tps
   
 and AddMemberConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace traitInfo support frees =
     let g = csenv.g
@@ -1454,7 +1449,7 @@ and AddMemberConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace traitInfo sup
         // check the constraint is not already listed for this type variable
         if not (cxs |> List.exists (fun (traitInfo2,_) -> traitsAEquiv g aenv traitInfo traitInfo2)) then 
             trace.Exec (fun () -> csenv.SolverState.ExtraCxs.Add (tpn,(traitInfo,m2))) (fun () -> csenv.SolverState.ExtraCxs.Remove tpn)
-    );
+    )
 
     // Associate the constraint with each type variable in the support, so if the type variable
     // gets generalized then this constraint is attached at the binding site.
@@ -1468,7 +1463,6 @@ and AddConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace tp newConstraint  =
     let amap = csenv.amap
     let denv = csenv.DisplayEnv
     let m = csenv.m
-
 
     // Type variable sets may not have two trait constraints with the same name, nor
     // be constrained by different instantiations of the same interface type.
@@ -1494,16 +1488,14 @@ and AddConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace tp newConstraint  =
                          CompleteD))
           
         | (TyparConstraint.CoercesTo(ty1,_), 
-           TyparConstraint.CoercesTo(ty2,_)) -> 
-
-
+           TyparConstraint.CoercesTo(ty2,_)) ->
               // Record at most one subtype constraint for each head type. 
               // That is, we forbid constraints by both I<string> and I<int>. 
               // This works because the types on the r.h.s. of subtype 
               // constraints are head-types and so any further inferences are equational. 
               let collect ty = 
                   let res = ref [] 
-                  IterateEntireHierarchyOfType (fun x -> res := x :: !res) g amap m AllowMultiIntfInstantiations.No ty; 
+                  IterateEntireHierarchyOfType (fun x -> res := x :: !res) g amap m AllowMultiIntfInstantiations.No ty
                   List.rev !res
               let parents1 = collect ty1
               let parents2 = collect ty2
