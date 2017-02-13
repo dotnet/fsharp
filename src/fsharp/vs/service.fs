@@ -1422,7 +1422,7 @@ type TypeCheckInfo
          sSymbolUses.GetFormatSpecifierLocations() 
 
     // Not, this does not have to be a SyncOp, it can be called from any thread
-    member scope.GetSemanticClassification() : (range * SemanticClassificationType) [] =
+    member scope.GetSemanticClassification(range: range option) : (range * SemanticClassificationType) [] =
         let (|LegitTypeOccurence|_|) = function
             | ItemOccurence.UseInType
             | ItemOccurence.UseInAttribute
@@ -1436,7 +1436,15 @@ type TypeCheckInfo
             | TType.TType_app(tref, _) when tref.Stamp = g.attrib_OptionalArgumentAttribute.TyconRef.Stamp -> Some()
             | _ -> None
 
-        sResolutions.CapturedNameResolutions
+        let resolutions =
+            match range with
+            | Some range ->
+                sResolutions.CapturedNameResolutions
+                |> Seq.filter (fun cnr -> rangeContainsPos range cnr.Range.Start || rangeContainsPos range cnr.Range.End)
+            | None -> 
+                sResolutions.CapturedNameResolutions :> seq<_>
+
+        resolutions
         |> Seq.choose (fun cnr ->
             match cnr with
             // 'seq' in 'seq { ... }' gets colored as keywords
@@ -2090,12 +2098,12 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
             // This operation is not asynchronous - GetFormatSpecifierLocations can be run on the calling thread
             scope.GetFormatSpecifierLocations())
 
-    member info.GetSemanticClassification() =
+    member info.GetSemanticClassification(range: range option) =
         threadSafeOp 
            (fun () -> [| |]) 
            (fun (scope, _builder, _reactor) -> 
             // This operation is not asynchronous - GetExtraColorizations can be run on the calling thread
-            scope.GetSemanticClassification())
+            scope.GetSemanticClassification(range))
      
     member info.PartialAssemblySignature = 
         threadSafeOp 

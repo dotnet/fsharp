@@ -74,6 +74,9 @@ module internal AstTraversal =
         // VisitRecordField allows overriding behavior when visiting l.h.s. of constructed record instances
         abstract VisitRecordField : TraversePath * SynExpr option * LongIdentWithDots option -> 'T option
         default this.VisitRecordField (_path, _copyOpt, _recordField) = None
+        // VisitHashDirective allows overriding behavior when visiting hash directives in FSX scripts, like #r, #load and #I.
+        abstract VisitHashDirective : range -> 'T option
+        default this.VisitHashDirective (_) = None
 
     let dive node range project =
         range,(fun() -> project node)
@@ -143,7 +146,7 @@ module internal AstTraversal =
                 | SynModuleDecl.Exception(_synExceptionDefn, _range) -> None
                 | SynModuleDecl.Open(_longIdent, _range) -> None
                 | SynModuleDecl.Attributes(_synAttributes, _range) -> None
-                | SynModuleDecl.HashDirective(_parsedHashDirective, _range) -> None
+                | SynModuleDecl.HashDirective(_parsedHashDirective, range) -> visitor.VisitHashDirective range
                 | SynModuleDecl.NamespaceFragment(synModuleOrNamespace) -> traverseSynModuleOrNamespace path synModuleOrNamespace
             visitor.VisitModuleDecl(defaultTraverse, decl)
 
