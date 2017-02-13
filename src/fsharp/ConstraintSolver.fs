@@ -2575,10 +2575,11 @@ let AddCxTypeIsDelegate denv css m trace ty aty bty =
     |> RaiseOperationResult
 
 let CodegenWitnessThatTypSupportsTraitConstraint tcVal g amap m (traitInfo:TraitConstraintInfo) argExprs = 
-    let css = { g=g;amap=amap;
+    let css = { g = g
+                amap = amap;
                 TcVal = tcVal
-                ExtraCxs=HashMultiMap(10, HashIdentity.Structural)
-                InfoReader=new InfoReader(g,amap) }
+                ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
+                InfoReader = new InfoReader(g,amap) }
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
     SolveMemberConstraint csenv true true 0 m NoTrace traitInfo ++ (fun _res -> 
         let sln = 
@@ -2699,7 +2700,6 @@ let IsApplicableMethApprox g amap m (minfo:MethInfo) availObjTy =
         let minst = FreshenMethInfo m minfo
         match minfo.GetObjArgTypes(amap, m, minst) with
         | [reqdObjTy] -> 
-
             TryD (fun () -> SolveTypSubsumesTyp csenv 0 m NoTrace None reqdObjTy availObjTy ++ (fun () -> ResultD true))
                  (fun _err -> ResultD false)
             |> CommitOperationResult
