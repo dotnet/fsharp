@@ -287,7 +287,7 @@ type TraitConstraintSolution =
     | TTraitSolved of MethInfo * TypeInst
     | TTraitSolvedRecdProp of RecdFieldInfo * bool
 
-let BakedInTraitConstraintNames = 
+let BakedInTraitConstraintNames =
     [ "op_Division" ; "op_Multiply"; "op_Addition" 
       "op_Equality" ; "op_Inequality"; "op_GreaterThan" ; "op_LessThan"; "op_LessThanOrEqual"; "op_GreaterThanOrEqual"
       "op_Subtraction"; "op_Modulus"; 
@@ -298,8 +298,8 @@ let BakedInTraitConstraintNames =
       "op_OnesComplement"; "Abs"; "Sqrt"; "Sin"; "Cos"; "Tan";
       "Sinh";  "Cosh"; "Tanh"; "Atan"; "Acos"; "Asin"; "Exp"; "Ceiling"; "Floor"; "Round"; "Log10"; "Log"; "Sqrt";
       "Truncate"; "op_Explicit";
-      "Pow"; "Atan2" ] 
-    |> Set.ofList
+      "Pow"; "Atan2" ]
+    |> System.Collections.Generic.HashSet<_>
     
 //-------------------------------------------------------------------------
 // Run the constraint solver with undo (used during method overload resolution)
