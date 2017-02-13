@@ -1397,14 +1397,14 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
             let isOperatorItem(name, item) = 
                 match item with 
                 | [Item.Value _]
-                | [Item.MethodGroup(_,[_],_)] -> IsOperatorName name
+                | [Item.MethodGroup _ ] -> IsOperatorName name
                 | [Item.UnionCase _] -> IsOperatorName name
                 | _ -> false              
 
             let isFSharpList name = (name = "[]") // list shows up as a Type and a UnionCase, only such entity with a symbolic name, but want to filter out of intellisense
 
             items |> List.filter (fun (name, items) -> not (isOperatorItem(name, items)) && not (isFSharpList name)) 
-
+            
         let decls = 
             // Filter out duplicate names
             items |> List.map (fun (nm,itemsWithSameName) -> 

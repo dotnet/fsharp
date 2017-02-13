@@ -135,7 +135,8 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
     /// Returns `true` if given string is an operator display name, e.g. ( |>> )
     let IsOperatorName (name: string) =
         let name = if name.StartsWith "( " && name.EndsWith " )" then name.[2..name.Length - 3] else name
-        let res = name |> Seq.forall (fun c -> opCharSet.Contains c && c <> ' ')
+        // there is single operator containing a space - range operator with step: `.. ..`
+        let res = name = ".. .." || name |> Seq.forall (fun c -> opCharSet.Contains c && c <> ' ')
         res
 
     let IsMangledOpName (n:string) =
