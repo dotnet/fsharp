@@ -563,6 +563,6 @@ type internal FSharpIntellisenseInfo
 
         // This is called on the UI thread after fresh full typecheck results are available
         member this.OnParseFileOrCheckFileComplete(source: IFSharpSource) =
-            for line in colorizer.Value.SetExtraColorizations(typedResults.GetSemanticClassification()) do
+            for line in colorizer.Value.SetExtraColorizations(typedResults.GetSemanticClassification None) do
                 source.RecolorizeLine line
 
