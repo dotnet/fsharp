@@ -27,7 +27,11 @@ open Microsoft.VisualStudio.Utilities
 //
 type internal TextBufferStream(textLines:ITextBuffer, contentTypeRegistry: IContentTypeRegistryService) = 
     do if null = textLines then raise (new ArgumentNullException("textLines"))
-    do textLines.ChangeContentType(contentTypeRegistry.GetContentType Guids.fsiContentTypeName, Guid Guids.guidFsiLanguageService)
+    // The following line causes unhandled excepiton on a background thread, see https://github.com/Microsoft/visualfsharp/issues/2318#issuecomment-279340343
+    // It seems we should provide a Quick Info Provider at the same time as uncommenting it.
+    
+    //do textLines.ChangeContentType(contentTypeRegistry.GetContentType Guids.fsiContentTypeName, Guid Guids.guidFsiLanguageService)
+    
     let mutable readonlyRegion  = null : IReadOnlyRegion
 
     let extendReadOnlyRegion position =
