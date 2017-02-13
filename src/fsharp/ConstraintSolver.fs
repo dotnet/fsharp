@@ -1542,28 +1542,27 @@ and AddConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace tp newConstraint  =
           TyparConstraint.MayResolveMember(trait2,_) -> 
             traitsAEquiv g aenv trait1 trait2
 
-        | TyparConstraint.CoercesTo(ty1,_),TyparConstraint.CoercesTo(ty2,_) -> 
+        | TyparConstraint.CoercesTo(ty1,_), TyparConstraint.CoercesTo(ty2,_) -> 
               ExistsSameHeadTypeInHierarchy g amap m ty1 ty2
 
-        | TyparConstraint.IsEnum(u1,_),TyparConstraint.IsEnum(u2,_) -> typeEquiv g u1 u2
+        | TyparConstraint.IsEnum(u1,_), TyparConstraint.IsEnum(u2,_) -> typeEquiv g u1 u2
 
-        | TyparConstraint.IsDelegate(aty1,bty1,_),TyparConstraint.IsDelegate(aty2,bty2,_) -> 
+        | TyparConstraint.IsDelegate(aty1,bty1,_), TyparConstraint.IsDelegate(aty2,bty2,_) -> 
             typeEquiv g aty1 aty2 && typeEquiv g bty1 bty2 
 
-        | TyparConstraint.SupportsComparison _,TyparConstraint.SupportsComparison _  
-        | TyparConstraint.SupportsEquality _,TyparConstraint.SupportsEquality _  
+        | TyparConstraint.SupportsComparison _, TyparConstraint.SupportsComparison _
+        | TyparConstraint.SupportsEquality _, TyparConstraint.SupportsEquality _
         // comparison implies equality
-        | TyparConstraint.SupportsComparison _,TyparConstraint.SupportsEquality _  
-        | TyparConstraint.SupportsNull _,TyparConstraint.SupportsNull _  
-        | TyparConstraint.IsNonNullableStruct _,TyparConstraint.IsNonNullableStruct _     
+        | TyparConstraint.SupportsComparison _, TyparConstraint.SupportsEquality _
+        | TyparConstraint.SupportsNull _, TyparConstraint.SupportsNull _
+        | TyparConstraint.IsNonNullableStruct _, TyparConstraint.IsNonNullableStruct _
         | TyparConstraint.IsUnmanaged _, TyparConstraint.IsUnmanaged _
-        | TyparConstraint.IsReferenceType _,TyparConstraint.IsReferenceType _ 
-        | TyparConstraint.RequiresDefaultConstructor _,TyparConstraint.RequiresDefaultConstructor _ -> true
-        | TyparConstraint.SimpleChoice (tys1,_),TyparConstraint.SimpleChoice (tys2,_) -> ListSet.isSubsetOf (typeEquiv g) tys1 tys2
+        | TyparConstraint.IsReferenceType _, TyparConstraint.IsReferenceType _
+        | TyparConstraint.RequiresDefaultConstructor _, TyparConstraint.RequiresDefaultConstructor _ -> true
+        | TyparConstraint.SimpleChoice (tys1,_), TyparConstraint.SimpleChoice (tys2,_) -> ListSet.isSubsetOf (typeEquiv g) tys1 tys2
         | TyparConstraint.DefaultsTo (priority1,dty1,_), TyparConstraint.DefaultsTo (priority2,dty2,_) -> 
              (priority1 = priority2) && typeEquiv g dty1 dty2
         | _ -> false
-
         
     
     // First ensure constraint conforms with existing constraints 
@@ -1571,14 +1570,14 @@ and AddConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace tp newConstraint  =
     let existingConstraints = tp.Constraints
 
     let allCxs = newConstraint :: List.rev existingConstraints
-    begin 
-        let rec enforceMutualConsistency i cxs = 
-            match cxs with 
-            | [] ->  CompleteD
-            | cx :: rest -> IterateIdxD (fun j cx2 -> if i = j then CompleteD else consistent cx cx2) allCxs ++ (fun () -> enforceMutualConsistency (i+1) rest)
+     
+    let rec enforceMutualConsistency i cxs = 
+        match cxs with 
+        | [] ->  CompleteD
+        | cx :: rest -> IterateIdxD (fun j cx2 -> if i = j then CompleteD else consistent cx cx2) allCxs ++ (fun () -> enforceMutualConsistency (i+1) rest)
 
-        enforceMutualConsistency 0 allCxs 
-    end ++ (fun ()  ->
+    enforceMutualConsistency 0 allCxs 
+    ++ (fun ()  ->
     
     let impliedByExistingConstraints = existingConstraints |> List.exists (fun tpc2 -> implies tpc2 newConstraint) 
     
@@ -1592,7 +1591,7 @@ and AddConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace tp newConstraint  =
     elif tp.Rigidity = TyparRigidity.Rigid then 
         ErrorD (ConstraintSolverMissingConstraint(denv,tp,newConstraint,m,m2)) 
     else
-       (// It is important that we give a warning if a constraint is missing from a 
+        // It is important that we give a warning if a constraint is missing from a 
         // will-be-made-rigid type variable. This is because the existence of these warnings
         // is relevant to the overload resolution rules (see 'candidateWarnCount' in the overload resolution
         // implementation). See also FSharp 1.0 bug 5461
@@ -1602,25 +1601,24 @@ and AddConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace tp newConstraint  =
             CompleteD) ++ (fun () -> 
 
         let newConstraints = 
-              // Eliminate any constraints where one constraint implies another 
-              // Keep constraints in the left-to-right form according to the order they are asserted. 
-              // NOTE: QUADRATIC 
-              let rec eliminateRedundant cxs acc = 
-                  match cxs with 
-                  | [] ->  acc
-                  | cx :: rest -> 
-                      eliminateRedundant rest (if List.exists (fun cx2 -> implies cx2 cx) acc then acc else (cx::acc))
+            // Eliminate any constraints where one constraint implies another 
+            // Keep constraints in the left-to-right form according to the order they are asserted. 
+            // NOTE: QUADRATIC 
+            let rec eliminateRedundant cxs acc = 
+                match cxs with 
+                | [] ->  acc
+                | cx :: rest -> 
+                    eliminateRedundant rest (if List.exists (fun cx2 -> implies cx2 cx) acc then acc else (cx::acc))
                   
-              eliminateRedundant allCxs []
+            eliminateRedundant allCxs []
               
-
         // Write the constraint into the type variable 
         // Record a entry in the undo trace if one is provided 
         let d = tp.Data
         let orig = d.typar_constraints
         trace.Exec (fun () -> d.typar_constraints <- newConstraints) (fun () -> d.typar_constraints <- orig)
 
-        CompleteD)))
+        CompleteD))
 
 and SolveTypSupportsNull (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
     let g = csenv.g
