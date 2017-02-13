@@ -5217,8 +5217,8 @@ module Repro_3947 = begin
   do  check "Bug3947.Internal%+A" (sprintf "%+A (%+A)" ITA (ITB 2)) "ITA (ITB 2)"
 
   // The follow are not very useful outputs, but adding regression tests to pick up any changes...
-  do  check "Bug3947.Internal%A.ITA" true (let str = sprintf "%A" ITA     in str.EndsWith("InternalType+_ITA"))
-  do  check "Bug3947.Internal%A.ITB" true (let str = sprintf "%A" (ITB 2) in str.EndsWith("InternalType+ITB"))
+  do  check "Bug3947.Internal%A.ITA" (sprintf "%A" ITA) "ITA"
+  do  check "Bug3947.Internal%A.ITB" (sprintf "%A" (ITB 2)) "ITB 2"
 end
 
 

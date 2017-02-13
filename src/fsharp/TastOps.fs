@@ -7686,10 +7686,22 @@ type Entity with
                                          argInfos.Length = 1 && 
                                          List.lengthsEqAndForall2 (typeEquiv g) (List.map fst (List.head argInfos)) argtys  &&  
                                          membInfo.MemberFlags.IsOverrideOrExplicitImpl) 
+    
+    member tycon.HasMember g nm argtys = 
+        tycon.TypeContents.tcaug_adhoc 
+        |> NameMultiMap.find nm
+        |> List.exists (fun vref -> 
+                          match vref.MemberInfo with 
+                          | None -> false 
+                          | _ -> let argInfos = ArgInfosOfMember g vref 
+                                 argInfos.Length = 1 && 
+                                 List.lengthsEqAndForall2 (typeEquiv g) (List.map fst (List.head argInfos)) argtys) 
+
 
 type EntityRef with 
     member tcref.HasInterface g ty = tcref.Deref.HasInterface g ty
     member tcref.HasOverride g nm argtys = tcref.Deref.HasOverride g nm argtys
+    member tcref.HasMember g nm argtys = tcref.Deref.HasMember g nm argtys
 
 let mkFastForLoop g (spLet,m,idv:Val,start,dir,finish,body) =
     let dir = if dir then FSharpForLoopUp else FSharpForLoopDown 
