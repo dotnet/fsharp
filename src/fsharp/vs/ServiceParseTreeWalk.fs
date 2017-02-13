@@ -154,7 +154,7 @@ module internal AstTraversal =
             visitor.VisitModuleDecl(defaultTraverse, decl)
 
         and traverseSynModuleOrNamespace path (SynModuleOrNamespace(_longIdent, _isRec, _isModule, synModuleDecls, _preXmlDoc, _synAttributes, _synAccessOpt, range) as mors) =
-            match visitor.VisitModuleOrNamespace(path, mors) with
+            match visitor.VisitModuleOrNamespace(mors) with
             | Some x -> Some x
             | None ->
                 let path = TraverseStep.ModuleOrNamespace mors :: path
