@@ -299,14 +299,11 @@ and
         let  rec setup (site: IProjectSite) =
             let projectGuid = Guid(site.ProjectGuid)
             let projectFileName = site.ProjectFileName()
-
             let projectDisplayName = projectDisplayNameOf projectFileName
-
             let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
 
-            projectInfoManager.UpdateProjectInfo(projectId, site, workspace)
-
             if isNull (workspace.ProjectTracker.GetProject projectId) then
+                projectInfoManager.UpdateProjectInfo(projectId, site, workspace)
                 let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
                 let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
                 
@@ -369,12 +366,8 @@ and
         workspace.Options <- workspace.Options.WithChangedOption(NavigationBarOptions.ShowNavigationBar, FSharpCommonConstants.FSharpLanguageName, true)
         let textViewAdapter = package.ComponentModel.GetService<IVsEditorAdaptersFactoryService>()
         
-        let blockForCompletionOption = 
-            PerLanguageOption<bool>(
-                "CompletionOptions", "BlockForCompletionItems", defaultValue = true,
-                storageLocations = [| RoamingProfileStorageLocation("TextEditor.%%LANGUAGE%%.Specific.CompletionOptions - BlockForCompletionItems") |])
-
-        workspace.Options <- workspace.Options.WithChangedOption(blockForCompletionOption, FSharpCommonConstants.FSharpLanguageName, false)
+        workspace.Options <- workspace.Options.WithChangedOption(Completion.CompletionOptions.BlockForCompletionItems, FSharpCommonConstants.FSharpLanguageName, false)
+        workspace.Options <- workspace.Options.WithChangedOption(Shared.Options.ServiceFeatureOnOffOptions.ClosedFileDiagnostic, FSharpCommonConstants.FSharpLanguageName, Nullable false)
                
         match textView.GetBuffer() with
         | (VSConstants.S_OK, textLines) ->
