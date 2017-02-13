@@ -2441,7 +2441,9 @@ and GenApp cenv cgbuf eenv (f,fty,tyargs,args,m) sequel =
          arityInfo.Length = args.Length
         ) &&
         (* no tailcall out of exception handler, etc. *)
-        (match sequelIgnoringEndScopesAndDiscard sequel with Return | ReturnVoid -> true | _ -> false))
+        (match sequelIgnoringEndScopesAndDiscard sequel with 
+        | Return | ReturnVoid -> true 
+        | _ -> false))
     -> 
         let (kind,mark) = ListAssoc.find cenv.g.valRefEq v eenv.innerVals
         let ntmargs = 

@@ -711,6 +711,12 @@ namespace Microsoft.FSharp.Core
         /// <returns>AutoOpenAttribute</returns>
         new : path:string-> AutoOpenAttribute
 
+    [<AttributeUsage(AttributeTargets.Method,AllowMultiple=false)>]
+    [<Sealed>]
+    type TailCallAttribute =
+        inherit System.Attribute
+        new : unit -> TailCallAttribute
+
     //-------------------------------------------------------------------------
     // Units of measure
 
