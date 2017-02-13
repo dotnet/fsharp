@@ -1439,6 +1439,14 @@ module RegressionTests =
     [<Test >]
     let ``struct-tuple-bug-1-FSI_BASIC`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSI_BASIC
 
+    [<Test>]
+    let ``struct-measure-bug-1`` () = 
+        let cfg = testConfig "regression/struct-measure-bug-1"
+
+        fsc cfg "%s --optimize- -o:test.exe -g" cfg.fsc_flags ["test.fs"]
+
+        peverify cfg "test.exe"
+
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
 module OptimizationTests =
 
