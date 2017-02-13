@@ -2508,9 +2508,8 @@ let AddCxTypeEqualsTypeUndoIfFailed denv css m ty1 ty2 =
     UndoIfFailed (fun trace -> SolveTypEqualsTypKeepAbbrevs (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m (WithTrace(trace)) ty1 ty2)
 
 let AddCxTypeEqualsTypeMatchingOnlyUndoIfFailed denv css m ty1 ty2 =
-    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    let csenv = { csenv with MatchingOnly = true }
-    UndoIfFailed (fun trace -> SolveTypEqualsTypKeepAbbrevs csenv 0 m (WithTrace(trace)) ty1 ty2)
+    let csenv = { MakeConstraintSolverEnv ContextInfo.NoContext css m denv with MatchingOnly = true }
+    UndoIfFailed (fun trace -> SolveTypEqualsTypKeepAbbrevs csenv 0 m (WithTrace trace) ty1 ty2)
 
 let AddCxTypeMustSubsumeTypeUndoIfFailed denv css m ty1 ty2 = 
     UndoIfFailed (fun trace -> SolveTypSubsumesTypKeepAbbrevs (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m (WithTrace(trace)) None ty1 ty2)
