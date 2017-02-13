@@ -1175,13 +1175,14 @@ module UntypedParseImpl =
                     
                     member this.VisitHashDirective(range) = 
                         if rangeContainsPos range pos then Some CompletionContext.Invalid 
+                        
                         else None 
                         
                     member this.VisitModuleOrNamespace(SynModuleOrNamespace(longId = idents)) =
                         match List.tryLast idents with
                         | Some lastIdent when pos.Line = lastIdent.idRange.EndLine ->
-                            let stringBetweenModuleNameAndPos = lineStr.[lastIdent.idRange.EndColumn..pos.Column]
-                            if stringBetweenModuleNameAndPos |> Seq.forall (fun x -> x = ' ' || x = '=') then
+                            let stringBetweenModuleNameAndPos = lineStr.[lastIdent.idRange.EndColumn..pos.Column - 1]
+                            if stringBetweenModuleNameAndPos |> Seq.forall (fun x -> x = ' ' || x = '=' || x = '.') then
                                 Some CompletionContext.Invalid
                             else None
                         | _ -> None }
