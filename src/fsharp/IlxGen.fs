@@ -5372,6 +5372,7 @@ and GenBindRhs cenv cgbuf eenv sp (vspec:Val) e =
                      TType_var(typar) -> match typar.Solution with Some(TType_app(t,_))-> t.IsStructOrEnumTycon | _ -> false
                      | _ -> false))
             ) ->
+            // type lambda with erased type arguments that is stored as local variable (not method or property)- inline body
             GenExpr cenv cgbuf eenv sp body Continue
         | _ ->
             let selfv = if isLocalTypeFunc then None else Some (mkLocalValRef vspec)
