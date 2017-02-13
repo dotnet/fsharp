@@ -5364,13 +5364,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             DocumentManager documentManager = n.GetDocumentManager();
             if (documentManager != null)
             {
-                // Always pass Primary logical view to avoid same file being opened in two editor tabs, because:
-                // * When user double click on Solution Explorer, Primary logical view Guid is passed.
-                // * When user performs Go to Definition, Go to Symbol and other Roslyn actions, LOGVIEWID_TextView is passed
-                //   and we cannot control it. 
-                // It turnes out that a distinct editor tab is opened for each logical view kind for same file, which we
-                // want to avoid.
-                logicalView = VSConstants.LOGVIEWID_Primary;
                 return documentManager.Open(ref logicalView, punkDocDataExisting, out frame, WindowFrameShowAction.DontShow);
             }
 
