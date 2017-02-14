@@ -7168,11 +7168,17 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
         | Some (_nm, _maintainsVarSpaceUsingBind, _maintainsVarSpace, allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, _methInfo) ->  allowInto 
 
     let customOpUsageText nm = 
-        match nm with 
-        | nm when customOperationIsLikeGroupJoin nm -> Some (FSComp.SR.customOperationTextLikeGroupJoin(nm.idText,customOperationJoinConditionWord nm,customOperationJoinConditionWord nm))
-        | nm when customOperationIsLikeJoin nm -> Some (FSComp.SR.customOperationTextLikeJoin(nm.idText,customOperationJoinConditionWord nm,customOperationJoinConditionWord nm))
-        | nm when customOperationIsLikeZip nm -> Some (FSComp.SR.customOperationTextLikeZip(nm.idText))
-        | _ -> None
+        match tryGetDataForCustomOperation nm with
+        | None -> None 
+        | Some (_nm, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, isLikeZip, isLikeJoin, isLikeGroupJoin, _joinConditionWord, _methInfo) ->
+            if isLikeGroupJoin then
+                Some (FSComp.SR.customOperationTextLikeGroupJoin(nm.idText,customOperationJoinConditionWord nm,customOperationJoinConditionWord nm))
+            elif isLikeJoin then
+                Some (FSComp.SR.customOperationTextLikeJoin(nm.idText,customOperationJoinConditionWord nm,customOperationJoinConditionWord nm))
+            elif isLikeZip then
+                Some (FSComp.SR.customOperationTextLikeZip(nm.idText))
+            else
+                None
 
     /// Inside the 'query { ... }' use a modified name environment that contains fake 'CustomOperation' entries
     /// for all custom operations. This adds them to the completion lists and prevents them being used as values inside
