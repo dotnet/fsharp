@@ -1822,29 +1822,10 @@ let CollectTyparsAndLocals = // CollectAll
       includeRecdFields = false
       includeUnionCases = false }
 
+  
 let CollectTypars = CollectTyparsAndLocals
-(*
-        { canCache=false; 
-          collectInTypes=true;
-          includeTypars=true; 
-          includeLocals=false; 
-          includeLocalTycons=false;
-          includeLocalTyconReprs=false;
-          includeRecdFields =false; 
-          includeUnionCases=false;}
-*)
 
 let CollectLocals = CollectTyparsAndLocals
-(*
-        { canCache=false; 
-          collectInTypes=false;
-          includeLocalTycons=false;
-          includeLocalTyconReprs=false;
-          includeRecdFields =false; 
-          includeUnionCases=false;
-          includeTypars=false; 
-          includeLocals=true }
-*)
 
 
 let accFreeLocalTycon opts x acc = 
