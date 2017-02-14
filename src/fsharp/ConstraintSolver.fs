@@ -1832,26 +1832,24 @@ and SolveTypRequiresDefaultConstructor (csenv:ConstraintSolverEnv) ndeep m2 trac
     | None ->
         if isStructTy g ty && TypeHasDefaultValue g m ty then 
             CompleteD
-        elif
-            GetIntrinsicConstructorInfosOfType csenv.InfoReader m ty 
-            |> List.exists (fun x -> IsMethInfoAccessible amap m AccessibleFromEverywhere x && x.IsNullary)
-               then 
-           match tryDestAppTy g ty with
-           | Some tcref when HasFSharpAttribute g g.attrib_AbstractClassAttribute tcref.Attribs ->
-             ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresNonAbstract(NicePrint.minimalStringOfType denv typ),m,m2))
-           | _ ->
-             CompleteD
-        elif isAppTy g ty && 
-            (
-                let tcref = tcrefOfAppTy g ty
-                tcref.PreEstablishedHasDefaultConstructor || 
-                // F# 3.1 feature: records with CLIMutable attribute should satisfy 'default constructor' constraint
-                (tcref.IsRecordTycon && HasFSharpAttribute g g.attrib_CLIMutableAttribute tcref.Attribs)
-            )
-            then
-            CompleteD
-        else 
-            ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresPublicDefaultConstructor(NicePrint.minimalStringOfType denv typ),m,m2))
+        else
+            if GetIntrinsicConstructorInfosOfType csenv.InfoReader m ty 
+               |> List.exists (fun x -> IsMethInfoAccessible amap m AccessibleFromEverywhere x && x.IsNullary)
+            then 
+                match tryDestAppTy g ty with
+                | Some tcref when HasFSharpAttribute g g.attrib_AbstractClassAttribute tcref.Attribs ->
+                    ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresNonAbstract(NicePrint.minimalStringOfType denv typ),m,m2))
+                | _ ->
+                    CompleteD
+            else
+                match tryDestAppTy g ty with
+                | Some tcref when
+                    tcref.PreEstablishedHasDefaultConstructor || 
+                    // F# 3.1 feature: records with CLIMutable attribute should satisfy 'default constructor' constraint
+                    (tcref.IsRecordTycon && HasFSharpAttribute g g.attrib_CLIMutableAttribute tcref.Attribs) ->
+                    CompleteD
+                | _ -> 
+                    ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresPublicDefaultConstructor(NicePrint.minimalStringOfType denv typ),m,m2))
 
 // Parameterized compatibility relation between member signatures.  The real work
 // is done by "equateTypes" and "subsumeTypes" and "subsumeArg"
