@@ -814,18 +814,15 @@ and private SolveTypEqualsTypKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ty1
                 | err -> ErrorD err)
 
 and SolveTypEqualsTypEqns csenv ndeep m2 trace cxsln origl1 origl2 = 
-   match origl1,origl2 with 
-   | [],[] -> CompleteD 
-   | _ -> 
-       // We unwind Iterate2D by hand here for performance reasons.
-       let rec loop l1 l2 = 
-           match l1,l2 with 
-           | [],[] -> CompleteD 
-           | h1::t1, h2::t2 -> 
-               SolveTypEqualsTypKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln h1 h2 ++ (fun () -> loop t1 t2) 
-           | _ -> 
-               ErrorD(ConstraintSolverTupleDiffLengths(csenv.DisplayEnv,origl1,origl2,csenv.m,m2)) 
-       loop origl1 origl2
+    // We unwind Iterate2D by hand here for performance reasons.
+    let rec loop l1 l2 = 
+        match l1,l2 with 
+        | [],[] -> CompleteD 
+        | h1::t1, h2::t2 -> 
+            SolveTypEqualsTypKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln h1 h2 ++ (fun () -> loop t1 t2) 
+        | _ -> 
+            ErrorD(ConstraintSolverTupleDiffLengths(csenv.DisplayEnv,origl1,origl2,csenv.m,m2)) 
+    loop origl1 origl2
 
 and SolveFunTypEqn csenv ndeep m2 trace cxsln d1 d2 r1 r2 = 
     SolveTypEqualsTypKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln d1 d2 ++ (fun () -> 
