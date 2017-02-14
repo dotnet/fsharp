@@ -2006,8 +2006,7 @@ and TypesMustSubsumeOrConvertInsideUndo (csenv:ConstraintSolverEnv) ndeep trace 
 
 and ArgsEquivInsideUndo (csenv:ConstraintSolverEnv) isConstraint calledArg (CallerArg(callerArgTy,m,_,_) as callerArg) = 
     let calledArgTy = AdjustCalledArgType csenv.InfoReader isConstraint calledArg callerArg
-    if not (typeEquiv csenv.g calledArgTy callerArgTy) then ErrorD(Error(FSComp.SR.csArgumentTypesDoNotMatch(),m)) else
-    CompleteD
+    if typeEquiv csenv.g calledArgTy callerArgTy then CompleteD else ErrorD(Error(FSComp.SR.csArgumentTypesDoNotMatch(),m))
 
 and ReportNoCandidatesError (csenv:ConstraintSolverEnv) (nUnnamedCallerArgs,nNamedCallerArgs) methodName ad (calledMethGroup:CalledMeth<_> list) isSequential =
 
@@ -2019,7 +2018,7 @@ and ReportNoCandidatesError (csenv:ConstraintSolverEnv) (nUnnamedCallerArgs,nNam
           (calledMethGroup |> List.partition (fun cmeth -> cmeth.HasCorrectObjArgs(m))),
           (calledMethGroup |> List.partition (fun cmeth -> cmeth.HasCorrectArity)),
           (calledMethGroup |> List.partition (fun cmeth -> cmeth.HasCorrectGenericArity)),
-          (calledMethGroup  |> List.partition (fun cmeth -> cmeth.AssignsAllNamedArgs)) with
+          (calledMethGroup |> List.partition (fun cmeth -> cmeth.AssignsAllNamedArgs)) with
 
     // No version accessible 
     | ([],others),_,_,_,_ ->  
@@ -2149,7 +2148,7 @@ and ResolveOverloading
     let amap = csenv.amap
     let m    = csenv.m
     let denv = csenv.DisplayEnv
-    let isOpConversion = (methodName = "op_Explicit" || methodName = "op_Implicit")
+    let isOpConversion = methodName = "op_Explicit" || methodName = "op_Implicit"
     // See what candidates we have based on name and arity 
     let candidates = calledMethGroup |> List.filter (fun cmeth -> cmeth.IsCandidate(m,ad))
     let calledMethOpt, errors, calledMethTrace = 
@@ -2328,7 +2327,7 @@ and ResolveOverloading
                                        []
                                 else 
                                     []) @
-                               ((candidate.AllUnnamedCalledArgs, other.AllUnnamedCalledArgs) ||> List.map2 compareArg ) 
+                               ((candidate.AllUnnamedCalledArgs, other.AllUnnamedCalledArgs) ||> List.map2 compareArg) 
                            // "all args are at least as good, and one argument is actually better"
                            if cs |> List.forall (fun x -> x >= 0) && cs |> List.exists (fun x -> x > 0) then 
                                1
@@ -2387,6 +2386,7 @@ and ResolveOverloading
                                 | [] -> candidates
                                 | m -> m |> List.map (fun (x,_,_) -> x)
                             | m -> m |> List.map (fun (x,_,_) -> x)
+
                         methods
                         |> List.map (fun cmeth -> NicePrint.stringOfMethInfo amap m denv cmeth.Method)
                         |> List.sort
@@ -2401,7 +2401,7 @@ and ResolveOverloading
     // Allow subsumption on arguments. Include the return type.
     // Unify return types.
     match calledMethOpt with 
-    | Some(calledMeth) -> 
+    | Some calledMeth -> 
         calledMethOpt,
         errors ++ (fun () -> 
                         let cxsln = Option.map (fun traitInfo -> (traitInfo, MemberConstraintSolutionOfMethInfo csenv.SolverState m calledMeth.Method calledMeth.CalledTyArgs)) cx
@@ -2426,7 +2426,7 @@ and ResolveOverloading
                             // Unify return type
                             match reqdRetTyOpt with 
                             | None -> CompleteD 
-                            | Some _  when calledMeth.Method.IsConstructor -> CompleteD 
+                            | _  when calledMeth.Method.IsConstructor -> CompleteD 
                             | Some reqdRetTy ->
                                 let methodRetTy = 
                                     if isNil calledMeth.UnnamedCalledOutArgs then 
