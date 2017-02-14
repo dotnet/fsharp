@@ -2622,8 +2622,8 @@ let superOfTycon (g:TcGlobals) (tycon:Tycon) =
 
 // AbsIL view of attributes (we read these from .NET binaries) 
 let isILAttribByName (tencl:string list, tname: string) (attr: ILAttribute) = 
-    attr.Method.EnclosingType.TypeSpec.Name = tname &&
-    attr.Method.EnclosingType.TypeSpec.Enclosing = tencl
+    (attr.Method.EnclosingType.TypeSpec.Name = tname) &&
+    (attr.Method.EnclosingType.TypeSpec.Enclosing = tencl)
 
 // AbsIL view of attributes (we read these from .NET binaries) 
 let isILAttrib (tref:ILTypeRef) (attr: ILAttribute) = 
