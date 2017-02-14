@@ -2774,7 +2774,7 @@ let isRefCellTy g ty   =
 
 let destRefCellTy g ty = 
     match ty |> stripTyEqns g with
-    | TType_app(tcref,x::_) when tyconRefEq g g.refcell_tcr_canon tcref -> x
+    | TType_app(tcref,[x]) when tyconRefEq g g.refcell_tcr_canon tcref -> x
     | _ -> failwith "destRefCellTy: not a ref type"
 
 let StripSelfRefCell(g:TcGlobals,baseOrThisInfo:ValBaseOrThisInfo,tau: TType) : TType =
