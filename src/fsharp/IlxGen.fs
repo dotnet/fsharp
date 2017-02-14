@@ -6459,7 +6459,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                  if not isStructRecord && (isCLIMutable || (TryFindFSharpBoolAttribute cenv.g cenv.g.attrib_ComVisibleAttribute tycon.Attribs = Some true)) then
                      yield mkILSimpleStorageCtor(None, Some cenv.g.ilg.typ_Object.TypeSpec, ilThisTy, [], reprAccess) 
                  
-                 if (not <| tycon.HasMember cenv.g "ToString" []) then
+                 if not (tycon.HasMember cenv.g "ToString" []) then
                     yield! genToString ilThisTy
               | TFSharpObjectRepr r when tycon.IsFSharpDelegateTycon ->
 
@@ -6479,7 +6479,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                         yield { ilMethodDef with Access=reprAccess }
                  | _ -> 
                      ()
-              | TUnionRepr _ when (not <| tycon.HasMember cenv.g "ToString" []) -> 
+              | TUnionRepr _ when not (tycon.HasMember cenv.g "ToString" []) -> 
                   yield! genToString ilThisTy
               | _ -> () ]
               

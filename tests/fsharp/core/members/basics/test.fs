@@ -1109,8 +1109,10 @@ module ToStringOnUnionTest = begin
   type MyUnion = A of string | B
 
   let a1 = A "FOO"
-  do test "union-tostring-def" (a1.ToString() = "A \"FOO\"")
-  do test "union-sprintfO-def" ((sprintf "%O" a1) = "A \"FOO\"")
+  let expected = "A \"FOO\""
+
+  do test "union-tostring-def" (a1.ToString() = expected)
+  do test "union-sprintfO-def" ((sprintf "%O" a1) = expected)
 
 end
 
@@ -1121,8 +1123,36 @@ module ToStringOnUnionTestOverride = begin
       override x.ToString() = "MyUnion"
 
   let a1 = A "FOO"
-  do test "union-tostring-with-override" (a1.ToString() = "MyUnion")
-  do test "union-sprintfO-with-override" ((sprintf "%O" a1) = "MyUnion")
+  let expected = "MyUnion"
+
+  do test "union-tostring-with-override" (a1.ToString() = expected)
+  do test "union-sprintfO-with-override" ((sprintf "%O" a1) = expected)
+
+end
+
+module ToStringOnRecordTest = begin
+
+  type MyRecord = { A: string; B: int }
+
+  let a1 = {A = "201"; B = 7}
+  let expected = "{A = \"201\";\n B = 7;}"
+
+  do test "record-tostring-def" (a1.ToString() = expected)
+  do test "record-sprintfO-def" ((sprintf "%O" a1) = expected)
+
+end
+
+module ToStringOnRecordTestOverride = begin
+
+  type MyRecord = { A: string; B: int }
+    with
+      override x.ToString() = "MyRecord"
+
+  let a1 = {A = "201"; B = 7}
+  let expected = "MyRecord"
+
+  do test "record-tostring-with-override" (a1.ToString() = expected)
+  do test "record-sprintfO-with-override" ((sprintf "%O" a1) = expected)
 
 end
 
