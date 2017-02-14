@@ -1464,7 +1464,7 @@ let destArrayTy (g:TcGlobals) ty =
     | _ -> failwith "destArrayTy"
 
 let destListTy (g:TcGlobals) ty =
-    match argsOfAppTy g ty  with
+    match argsOfAppTy g ty with
     | [ty] -> ty
     | _ -> failwith "destListTy"
 
@@ -1486,7 +1486,7 @@ let isArray1DTy  g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> t
 let isUnitTy     g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tyconRefEq g g.unit_tcr_canon tcref      | _ -> false) 
 let isObjTy      g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tyconRefEq g g.system_Object_tcref tcref | _ -> false) 
 let isVoidTy     g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tyconRefEq g g.system_Void_tcref tcref   | _ -> false) 
-let isILAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tcref.IsILTycon                        | _ -> false) 
+let isILAppTy    g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tcref.IsILTycon                          | _ -> false) 
 let isNativePtrTy    g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tyconRefEq g g.nativeptr_tcr tcref           | _ -> false) 
 let isByrefTy    g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tyconRefEq g g.byref_tcr tcref           | _ -> false) 
 let isByrefLikeTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> isByrefLikeTyconRef g tcref          | _ -> false) 
@@ -1521,11 +1521,11 @@ let metadataOfTy g ty =
     | _ -> 
 #endif
     if isILAppTy g ty then 
-       let tcref,_ = destAppTy g ty
-       let scoref,_,tdef = tcref.ILTyconInfo
-       ILTypeMetadata (scoref,tdef)
+        let tcref,_ = destAppTy g ty
+        let scoref,_,tdef = tcref.ILTyconInfo
+        ILTypeMetadata (scoref,tdef)
     else 
-       FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata 
+        FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata 
 
 
 let isILReferenceTy g ty = 
@@ -1553,9 +1553,20 @@ let isFSharpObjModelRefTy g ty =
     | TTyconClass | TTyconInterface   | TTyconDelegate _ -> true
     | TTyconStruct | TTyconEnum -> false
 
-let isFSharpClassTy     g ty = isAppTy g ty && (tyconOfAppTy g ty).IsFSharpClassTycon
-let isFSharpStructTy    g ty = isAppTy g ty && (tyconOfAppTy g ty).IsFSharpStructOrEnumTycon
-let isFSharpInterfaceTy g ty = isAppTy g ty && (tyconOfAppTy g ty).IsFSharpInterfaceTycon
+let isFSharpClassTy g ty =
+    match tryDestAppTy g ty with
+    | Some tcref -> tcref.Deref.IsFSharpClassTycon
+    | _ -> false
+
+let isFSharpStructTy g ty =
+    match tryDestAppTy g ty with
+    | Some tcref -> tcref.Deref.IsFSharpStructOrEnumTycon
+    | _ -> false
+
+let isFSharpInterfaceTy g ty = 
+    match tryDestAppTy g ty with
+    | Some tcref -> tcref.Deref.IsFSharpInterfaceTycon
+    | _ -> false
 
 let isDelegateTy g ty = 
     match metadataOfTy g ty with 
@@ -1563,8 +1574,10 @@ let isDelegateTy g ty =
     | ProvidedTypeMetadata info -> info.IsDelegate ()
 #endif
     | ILTypeMetadata (_,td) -> (td.tdKind = ILTypeDefKind.Delegate)
-    | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
-        isAppTy g ty && (tyconOfAppTy g ty).IsFSharpDelegateTycon
+    | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
+        match tryDestAppTy g ty with
+        | Some tcref -> tcref.Deref.IsFSharpDelegateTycon
+        | _ -> false
 
 let isInterfaceTy g ty = 
     match metadataOfTy g ty with 
@@ -1582,10 +1595,12 @@ let isClassTy g ty =
     | ILTypeMetadata (_,td) -> (td.tdKind = ILTypeDefKind.Class)
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> isFSharpClassTy g ty
 
-let isStructOrEnumTyconTy g ty = isAppTy g ty && (tyconOfAppTy g ty).IsStructOrEnumTycon
+let isStructOrEnumTyconTy g ty = 
+    match tryDestAppTy g ty with
+    | Some tcref -> tcref.Deref.IsStructOrEnumTycon
+    | _ -> false
 
-let isStructTy g ty = 
-    isStructOrEnumTyconTy g ty || isStructTupleTy g ty
+let isStructTy g ty = isStructOrEnumTyconTy g ty || isStructTupleTy g ty
 
 let isRefTy g ty = 
     not (isStructOrEnumTyconTy g ty) &&
