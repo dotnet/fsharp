@@ -7197,11 +7197,9 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
         | Some (_nm, __maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, methInfo) -> 
             match methInfo with 
             | FSMeth(_,_,vref,_) -> 
-                let curriedArgInfos = ArgInfosOfMember cenv.g vref 
-                if curriedArgInfos.Length = 1  then // one for the actual argument group
-                    Some curriedArgInfos.Head
-                else
-                   None
+                match ArgInfosOfMember cenv.g vref with
+                | [curriedArgInfo] -> Some curriedArgInfo // one for the actual argument group
+                | _ -> None
             | _ -> None
 
     let expectedArgCountForCustomOperator  (nm:Ident) = 
