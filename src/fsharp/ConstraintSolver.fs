@@ -832,14 +832,14 @@ and SolveTypSubsumesTyp (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
     // 'a :> obj ---> <solved> 
     let ndeep = ndeep + 1
     let g = csenv.g
-    let amap = csenv.amap
-    let aenv = csenv.EquivEnv
-    let denv = csenv.DisplayEnv
-    let m = csenv.m
     if isObjTy g ty1 then CompleteD else 
     let canShortcut = not trace.HasTrace
     let sty1 = stripTyEqnsA csenv.g canShortcut ty1
     let sty2 = stripTyEqnsA csenv.g canShortcut ty2
+
+    let amap = csenv.amap
+    let aenv = csenv.EquivEnv
+    let denv = csenv.DisplayEnv
     match sty1, sty2 with 
     | TType_var tp1, _ when aenv.EquivTypars.ContainsKey tp1 -> 
         SolveTypSubsumesTyp csenv ndeep m2 trace cxsln aenv.EquivTypars.[tp1] ty2 
@@ -870,6 +870,8 @@ and SolveTypSubsumesTyp (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
 
         // C :> obj ---> <solved> 
         if isObjTy g ty1 then CompleteD else
+        
+        let m = csenv.m
 
         // 'a[] :> IList<'b>   ---> 'a = 'b  
         // 'a[] :> ICollection<'b>   ---> 'a = 'b  
@@ -878,26 +880,23 @@ and SolveTypSubsumesTyp (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
         // 'a[] :> IReadOnlyCollection<'b>   ---> 'a = 'b  
         // Note we don't support co-variance on array types nor 
         // the special .NET conversions for these types 
-        if (isArray1DTy g ty2 &&  
-            isAppTy g ty1 && 
-            (let tcr1 = tcrefOfAppTy g ty1
-             tyconRefEq g tcr1 g.tcref_System_Collections_Generic_IList || 
-             tyconRefEq g tcr1 g.tcref_System_Collections_Generic_ICollection || 
-             tyconRefEq g tcr1 g.tcref_System_Collections_Generic_IReadOnlyList || 
-             tyconRefEq g tcr1 g.tcref_System_Collections_Generic_IReadOnlyCollection || 
-             tyconRefEq g tcr1 g.tcref_System_Collections_Generic_IEnumerable))
-        then
-          let _,tinst = destAppTy g ty1
-          match tinst with 
-          | [ty1arg] -> 
-              let ty2arg = destArrayTy g ty2
-              SolveTypEqualsTypKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ty1arg ty2arg
-          | _ -> error(InternalError("destArrayTy",m));
-
-        // D<inst> :> Head<_> --> C<inst'> :> Head<_> for the 
-        // first interface or super-class C supported by D which 
-        // may feasibly convert to Head. 
-        else 
+        match tryFullDestAppTy g ty1 with
+        | Some(tcr1,tinst) when
+            isArray1DTy g ty2 &&
+                (tyconRefEq g tcr1 g.tcref_System_Collections_Generic_IList || 
+                 tyconRefEq g tcr1 g.tcref_System_Collections_Generic_ICollection || 
+                 tyconRefEq g tcr1 g.tcref_System_Collections_Generic_IReadOnlyList || 
+                 tyconRefEq g tcr1 g.tcref_System_Collections_Generic_IReadOnlyCollection || 
+                 tyconRefEq g tcr1 g.tcref_System_Collections_Generic_IEnumerable) ->
+            match tinst with 
+            | [ty1arg] -> 
+                let ty2arg = destArrayTy g ty2
+                SolveTypEqualsTypKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ty1arg ty2arg
+            | _ -> error(InternalError("destArrayTy",m))
+        | _ ->
+            // D<inst> :> Head<_> --> C<inst'> :> Head<_> for the 
+            // first interface or super-class C supported by D which 
+            // may feasibly convert to Head. 
             match FindUniqueFeasibleSupertype g amap m ty1 ty2 with 
             | None -> ErrorD(ConstraintSolverTypesNotInSubsumptionRelation(denv,ty1,ty2,m,m2))
             | Some t -> SolveTypSubsumesTyp csenv ndeep m2 trace cxsln ty1 t
@@ -915,13 +914,12 @@ and SolveTypSubsumesTypKeepAbbrevs csenv ndeep m2 trace cxsln ty1 ty2 =
       
 and SolveTyparSubtypeOfType (csenv:ConstraintSolverEnv) ndeep m2 trace tp ty1 = 
     let g = csenv.g
-    let m = csenv.m
     if isObjTy g ty1 then CompleteD
     elif typeEquiv g ty1 (mkTyparTy tp) then CompleteD
     elif isSealedTy g ty1 then 
         SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace (mkTyparTy tp) ty1
-    else 
-        AddConstraint csenv ndeep m2 trace tp (TyparConstraint.CoercesTo(ty1,m))
+    else
+        AddConstraint csenv ndeep m2 trace tp (TyparConstraint.CoercesTo(ty1,csenv.m))
 
 and DepthCheck ndeep m = 
   if ndeep > 300 then error(Error(FSComp.SR.csTypeInferenceMaxDepth(),m)) else CompleteD

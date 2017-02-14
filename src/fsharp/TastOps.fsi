@@ -429,6 +429,7 @@ val destAppTy      : TcGlobals -> TType -> TyconRef * TypeInst
 val tcrefOfAppTy   : TcGlobals -> TType -> TyconRef
 val tyconOfAppTy   : TcGlobals -> TType -> Tycon
 val tryDestAppTy   : TcGlobals -> TType -> TyconRef option
+val tryFullDestAppTy : TcGlobals -> TType -> (TyconRef * TypeInst) option
 val tryDestTyparTy : TcGlobals -> TType -> Typar option
 val tryDestFunTy : TcGlobals -> TType -> (TType * TType) option
 val argsOfAppTy    : TcGlobals -> TType -> TypeInst
