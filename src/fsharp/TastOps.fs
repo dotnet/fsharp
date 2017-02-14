@@ -1429,11 +1429,13 @@ let GetTopValTypeInFSharpForm g (ValReprInfo(_,argInfos,retInfo) as topValInfo) 
     tps,argtysl,rty,retInfo
 
 
-let IsCompiledAsStaticProperty g (v:Val) = 
-    (Option.isSome v.ValReprInfo &&
-     match GetTopValTypeInFSharpForm g v.ValReprInfo.Value v.Type v.Range with 
-     | [],[], _,_ when not v.IsMember -> true
-     | _ -> false) 
+let IsCompiledAsStaticProperty g (v:Val) =
+    match v.ValReprInfo with
+    | Some valReprInfoValue ->
+         match GetTopValTypeInFSharpForm g valReprInfoValue v.Type v.Range with 
+         | [],[], _,_ when not v.IsMember -> true
+         | _ -> false
+    | _ -> false
 
 let IsCompiledAsStaticPropertyWithField g (v:Val) = 
     (not v.IsCompiledAsStaticPropertyWithoutField && IsCompiledAsStaticProperty g v) 
