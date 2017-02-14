@@ -1933,8 +1933,8 @@ and CanMemberSigsMatchUpToCheck
         // - Never take into account return type information for constructors 
         match reqdRetTyOpt with 
         | None -> CompleteD 
-        | Some _  when minfo.IsConstructor -> CompleteD 
-        | Some _  when not alwaysCheckReturn && isNil unnamedCalledOutArgs -> CompleteD 
+        | _ when minfo.IsConstructor -> CompleteD 
+        | _ when not alwaysCheckReturn && isNil unnamedCalledOutArgs -> CompleteD 
         | Some reqdRetTy -> 
             let methodRetTy = 
                 if isNil unnamedCalledOutArgs then 
