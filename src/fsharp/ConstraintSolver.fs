@@ -1453,7 +1453,8 @@ and AddMemberConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace traitInfo sup
     // Write the constraint into the global table. That is,
     // associate the constraint with each type variable in the free variables of the constraint.
     // This will mean the constraint gets resolved whenever one of these free variables gets solved.
-    frees |> List.iter (fun tp -> 
+    frees 
+    |> List.iter (fun tp -> 
         let tpn = tp.Stamp
 
         let cxs = cxst.FindAll tpn
@@ -1555,7 +1556,7 @@ and AddConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace tp newConstraint  =
             traitsAEquiv g aenv trait1 trait2
 
         | TyparConstraint.CoercesTo(ty1,_), TyparConstraint.CoercesTo(ty2,_) -> 
-              ExistsSameHeadTypeInHierarchy g amap m ty1 ty2
+            ExistsSameHeadTypeInHierarchy g amap m ty1 ty2
 
         | TyparConstraint.IsEnum(u1,_), TyparConstraint.IsEnum(u2,_) -> typeEquiv g u1 u2
 
@@ -1668,18 +1669,18 @@ and SolveTypeSupportsComparison (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
             | _ -> 
                // Check the basic requirement - IComparable or IStructuralComparable or assumed
                if ExistsSameHeadTypeInHierarchy g amap m2 ty g.mk_IComparable_ty  ||
-                  ExistsSameHeadTypeInHierarchy g amap m2 ty g.mk_IStructuralComparable_ty   then 
-
+                  ExistsSameHeadTypeInHierarchy g amap m2 ty g.mk_IStructuralComparable_ty
+               then 
                    // The type is comparable because it implements IComparable
-                    if isAppTy g ty then 
-                        let tcref,tinst = destAppTy g ty 
+                    match tryFullDestAppTy g ty with
+                    | Some (tcref,tinst) ->
                         // Check the (possibly inferred) structural dependencies
                         (tinst, tcref.TyparsNoRange) ||> Iterate2D (fun ty tp -> 
                             if tp.ComparisonConditionalOn then 
                                 SolveTypeSupportsComparison (csenv:ConstraintSolverEnv) ndeep m2 trace ty 
                             else 
                                 CompleteD) 
-                    else
+                    | None ->
                         CompleteD
 
                // Give a good error for structural types excluded from the comparison relation because of their fields

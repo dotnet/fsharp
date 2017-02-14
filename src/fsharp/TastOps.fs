@@ -895,7 +895,7 @@ and measureAEquiv g aenv un1 un2 =
 
 
 and typesAEquivAux erasureFlag g aenv l1 l2 = List.lengthsEqAndForall2 (typeAEquivAux erasureFlag g aenv) l1 l2
-and typeEquivAux erasureFlag g ty1 ty2 =  typeAEquivAux erasureFlag g TypeEquivEnv.Empty ty1 ty2
+and typeEquivAux erasureFlag g ty1 ty2 = typeAEquivAux erasureFlag g TypeEquivEnv.Empty ty1 ty2
 
 let typeAEquiv g aenv ty1 ty2 = typeAEquivAux EraseNone g aenv ty1 ty2
 let typeEquiv g ty1 ty2 = typeEquivAux EraseNone g ty1 ty2
