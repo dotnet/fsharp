@@ -4,21 +4,16 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Composition
-open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
-open System.Linq
 open System.Runtime.CompilerServices
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Editor
-open Microsoft.CodeAnalysis.Editor.Implementation.Debugging
-open Microsoft.CodeAnalysis.Editor.Shared.Utilities
-open Microsoft.CodeAnalysis.Formatting
 open Microsoft.CodeAnalysis.Host
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Options
@@ -38,6 +33,8 @@ open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons
 open Microsoft.VisualStudio.FSharp.Editor.Logging
 open System.Diagnostics
 
+#nowarn "1182"
+
 type internal FSharpCompletionProvider
     (
         workspace: Workspace,
@@ -47,12 +44,54 @@ type internal FSharpCompletionProvider
     ) =
     inherit CompletionProvider()
 
+    static let completionTriggers = [| '.' |]
     static let declarationItemsCache = ConditionalWeakTable<string, FSharpDeclarationListItem>()
     static let [<Literal>] NameInCodePropName = "NameInCode"
     
     let xmlMemberIndexService = serviceProvider.GetService(typeof<IVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
     static let attributeSuffixLength = "Attribute".Length
+    
+    static member ShouldTriggerCompletionAux(sourceText: SourceText, caretPosition: int, trigger: CompletionTriggerKind, getInfo: (unit -> DocumentId * string * string list)) =
+        // Skip if we are at the start of a document
+        if caretPosition = 0 then
+            false
+        
+        // Skip if it was triggered by an operation other than insertion
+        elif not (trigger = CompletionTriggerKind.Insertion) then
+            false
+        
+        // Skip if we are not on a completion trigger
+        else
+            let triggerPosition = caretPosition - 1
+            let c = sourceText.[triggerPosition]
+            
+            if not (completionTriggers |> Array.contains c) then
+                false
+            
+            // do not trigger completion if it's not single dot, i.e. range expression
+            elif triggerPosition > 0 && sourceText.[triggerPosition - 1] = '.' then
+                false
+            
+            // Trigger completion if we are on a valid classification type
+            else
+                let documentId, filePath, defines = getInfo()
+                let textLines = sourceText.Lines
+                let triggerLine = textLines.GetLineFromPosition(triggerPosition)
+
+                let classifiedSpanOption =
+                    CommonHelpers.getColorizationData(documentId, sourceText, triggerLine.Span, Some(filePath), defines, CancellationToken.None)
+                    |> Seq.tryFind(fun classifiedSpan -> classifiedSpan.TextSpan.Contains(triggerPosition))
+                
+                match classifiedSpanOption with
+                | None -> false
+                | Some(classifiedSpan) ->
+                    match classifiedSpan.ClassificationType with
+                    | ClassificationTypeNames.Comment
+                    | ClassificationTypeNames.StringLiteral
+                    | ClassificationTypeNames.ExcludedCode
+                    | ClassificationTypeNames.NumericLiteral -> false
+                    | _ -> true // anything else is a valid classification type
 
     static member ProvideCompletionsAsyncAux(checker: FSharpChecker, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, textVersionHash: int) = 
         asyncMaybe {
@@ -101,7 +140,7 @@ type internal FSharpCompletionProvider
             let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
             (documentId, document.FilePath, defines)
 
-        CompletionUtils.shouldTriggerCompletion(sourceText, caretPosition, trigger.Kind, getInfo)
+        FSharpCompletionProvider.ShouldTriggerCompletionAux(sourceText, caretPosition, trigger.Kind, getInfo)
     
     override this.ProvideCompletionsAsync(context: Microsoft.CodeAnalysis.Completion.CompletionContext) =
         asyncMaybe {
