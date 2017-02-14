@@ -483,12 +483,12 @@ let SubstMeasureWarnIfRigid (csenv:ConstraintSolverEnv) trace (v:Typar) ms =
         // NOTE: we grab the name eagerly to make sure the type variable prints as a type variable 
         let tpnmOpt = if v.IsCompilerGenerated then None else Some v.Name 
         SolveTypStaticReq csenv trace v.StaticReq (TType_measure ms) ++ (fun () -> 
-        SubstMeasure v ms;
+        SubstMeasure v ms
         WarnD(NonRigidTypar(csenv.DisplayEnv,tpnmOpt,v.Range,TType_measure (Measure.Var v), TType_measure ms,csenv.m)))
     else 
         // Propagate static requirements from 'tp' to 'ty'
         SolveTypStaticReq csenv trace v.StaticReq (TType_measure ms) ++ (fun () -> 
-        SubstMeasure v ms;
+        SubstMeasure v ms
         if v.Rigidity = TyparRigidity.Anon && measureEquiv csenv.g ms Measure.One then 
             WarnD(Error(FSComp.SR.csCodeLessGeneric(),v.Range))
         else CompleteD)
@@ -501,7 +501,9 @@ let SubstMeasureWarnIfRigid (csenv:ConstraintSolverEnv) trace (v:Typar) ms =
 ///   the most general unifier is then simply v := ms' ^ -(1/e)
 let UnifyMeasureWithOne (csenv:ConstraintSolverEnv) trace ms = 
     // Gather the rigid and non-rigid unit variables in this measure expression together with their exponents
-    let (rigidVars,nonRigidVars) = (ListMeasureVarOccsWithNonZeroExponents ms) |> List.partition (fun (v,_) -> v.Rigidity = TyparRigidity.Rigid) 
+    let rigidVars,nonRigidVars = 
+        ListMeasureVarOccsWithNonZeroExponents ms
+        |> List.partition (fun (v,_) -> v.Rigidity = TyparRigidity.Rigid) 
 
     // If there is at least one non-rigid variable v with exponent e, then we can unify 
     match FindPreferredTypar nonRigidVars with
@@ -535,7 +537,7 @@ let SimplifyMeasure g vars ms =
           let newvarExpr = if SignRational e < 0 then Measure.Inv (Measure.Var newvar) else Measure.Var newvar
           let newms = (ProdMeasures (List.map (fun (c,e') -> Measure.RationalPower (Measure.Con c, NegRational (DivRational e' e))) (ListMeasureConOccsWithNonZeroExponents g false ms)
                                    @ List.map (fun (v',e') -> if typarEq v v' then newvarExpr else Measure.RationalPower (Measure.Var v', NegRational (DivRational e' e))) (ListMeasureVarOccsWithNonZeroExponents ms)));
-          SubstMeasure v newms;
+          SubstMeasure v newms
           match vs with 
           | [] -> (remainingvars, Some newvar) 
           | _ -> simp (newvar::remainingvars)
@@ -554,7 +556,7 @@ let rec SimplifyMeasuresInType g resultFirst ((generalizable, generalized) as pa
     | TType_var _   -> param
     | TType_forall (_,tau) -> SimplifyMeasuresInType g resultFirst param tau
     | TType_measure unt -> 
-        let (generalizable', newlygeneralized) = SimplifyMeasure g generalizable unt   
+        let generalizable', newlygeneralized = SimplifyMeasure g generalizable unt   
         match newlygeneralized with
         | None -> (generalizable', generalized)
         | Some v -> (generalizable', v::generalized)
@@ -568,7 +570,8 @@ and SimplifyMeasuresInTypes g param tys =
 
 let SimplifyMeasuresInConstraint g param c =
     match c with
-    | TyparConstraint.DefaultsTo (_,ty,_) | TyparConstraint.CoercesTo(ty,_) -> SimplifyMeasuresInType g false param ty
+    | TyparConstraint.DefaultsTo (_,ty,_) 
+    | TyparConstraint.CoercesTo(ty,_) -> SimplifyMeasuresInType g false param ty
     | TyparConstraint.SimpleChoice (tys,_) -> SimplifyMeasuresInTypes g param tys
     | TyparConstraint.IsDelegate (ty1,ty2,_) -> SimplifyMeasuresInTypes g param [ty1;ty2]
     | _ -> param
@@ -695,7 +698,7 @@ let rec SolveTyparEqualsTyp (csenv:ConstraintSolverEnv) ndeep m2 (trace:Optional
       let tpdata = r.Data
       trace.Exec (fun () -> tpdata.typar_solution <- Some ty) (fun () -> tpdata.typar_solution <- None)
       
-  (*   dprintf "setting typar %d to type %s at %a\n" r.Stamp ((DebugPrint.showType ty)) outputRange m; *)
+      (* dprintf "setting typar %d to type %s at %a\n" r.Stamp ((DebugPrint.showType ty)) outputRange m; *)
 
       // Only solve constraints if this is not an error var 
       if r.IsFromError then CompleteD else
@@ -792,7 +795,7 @@ and SolveTypEqualsTyp (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace
     | TType_measure ms1   ,TType_measure ms2   -> UnifyMeasures csenv trace ms1 ms2
     | TType_forall(tps1,rty1), TType_forall(tps2,rty2) -> 
         if tps1.Length <> tps2.Length then localAbortD else
-        let aenv = aenv.BindEquivTypars  tps1 tps2 
+        let aenv = aenv.BindEquivTypars tps1 tps2 
         let csenv = {csenv with EquivEnv = aenv }
         if not (typarsAEquiv g aenv tps1 tps2) then localAbortD else
         SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty1 rty2 
@@ -1420,7 +1423,8 @@ and GetFreeTyparsOfMemberConstraint (csenv:ConstraintSolverEnv) (TTrait(tys,_,_,
 and SolveRelevantMemberConstraints (csenv:ConstraintSolverEnv) ndeep permitWeakResolution trace tps =
     RepeatWhileD ndeep
         (fun ndeep -> 
-            tps |> AtLeastOneD (fun tp -> 
+            tps 
+            |> AtLeastOneD (fun tp -> 
                 /// Normalize the typar 
                 let ty = mkTyparTy tp
                 match tryAnyParTy csenv.g ty with
@@ -1438,7 +1442,8 @@ and SolveRelevantMemberConstraintsForTypar (csenv:ConstraintSolverEnv) ndeep per
     trace.Exec (fun () -> cxs |> List.iter (fun _ -> cxst.Remove tpn)) (fun () -> cxs |> List.iter (fun cx -> cxst.Add(tpn,cx)))
     assert (isNil (cxst.FindAll tpn)) 
 
-    cxs |> AtLeastOneD (fun (traitInfo,m2) -> 
+    cxs 
+    |> AtLeastOneD (fun (traitInfo,m2) -> 
         let csenv = { csenv with m = m2 }
         SolveMemberConstraint csenv true permitWeakResolution (ndeep+1) m2 trace traitInfo)
 
