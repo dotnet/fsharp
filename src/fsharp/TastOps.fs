@@ -2757,15 +2757,25 @@ let TyconRefHasAttribute g m attribSpec tcref  =
 // List and reference types...
 //------------------------------------------------------------------------- 
 
-let destByrefTy g ty   = if isByrefTy g ty then List.head (argsOfAppTy g ty) else failwith "destByrefTy: not a byref type"
-let destNativePtrTy g ty   = if isNativePtrTy g ty then List.head (argsOfAppTy g ty) else failwith "destNativePtrTy: not a native ptr type"
+let destByrefTy g ty = 
+    match ty |> stripTyEqns g with
+    | TType_app(tcref,x::_) when tyconRefEq g g.byref_tcr tcref -> x
+    | _ -> failwith "destByrefTy: not a byref type"
+
+let destNativePtrTy g ty =
+    match ty |> stripTyEqns g with
+    | TType_app(tcref,x::_) when tyconRefEq g g.nativeptr_tcr tcref -> x
+    | _ -> failwith "destNativePtrTy: not a native ptr type"
 
 let isRefCellTy g ty   = 
     match tryDestAppTy g ty with 
     | None -> false
     | Some tcref -> tyconRefEq g g.refcell_tcr_canon tcref
 
-let destRefCellTy g ty = if isRefCellTy g ty then List.head (argsOfAppTy g ty) else failwith "destRefCellTy: not a ref type"
+let destRefCellTy g ty = 
+    match ty |> stripTyEqns g with
+    | TType_app(tcref,x::_) when tyconRefEq g g.refcell_tcr_canon tcref -> x
+    | _ -> failwith "destRefCellTy: not a ref type"
 
 let StripSelfRefCell(g:TcGlobals,baseOrThisInfo:ValBaseOrThisInfo,tau: TType) : TType =
     if baseOrThisInfo = CtorThisVal && isRefCellTy g tau 
