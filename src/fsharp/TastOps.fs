@@ -2759,12 +2759,12 @@ let TyconRefHasAttribute g m attribSpec tcref  =
 
 let destByrefTy g ty = 
     match ty |> stripTyEqns g with
-    | TType_app(tcref,x::_) when tyconRefEq g g.byref_tcr tcref -> x
+    | TType_app(tcref,[x]) when tyconRefEq g g.byref_tcr tcref -> x
     | _ -> failwith "destByrefTy: not a byref type"
 
 let destNativePtrTy g ty =
     match ty |> stripTyEqns g with
-    | TType_app(tcref,x::_) when tyconRefEq g g.nativeptr_tcr tcref -> x
+    | TType_app(tcref,[x]) when tyconRefEq g g.nativeptr_tcr tcref -> x
     | _ -> failwith "destNativePtrTy: not a native ptr type"
 
 let isRefCellTy g ty   = 
