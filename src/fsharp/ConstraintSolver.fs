@@ -1936,8 +1936,8 @@ and CanMemberSigsMatchUpToCheck
         // - Never take into account return type information for constructors 
         match reqdRetTyOpt with 
         | None -> CompleteD 
-        | _ when minfo.IsConstructor -> CompleteD 
-        | _ when not alwaysCheckReturn && isNil unnamedCalledOutArgs -> CompleteD 
+        | Some _  when minfo.IsConstructor -> CompleteD 
+        | Some _  when not alwaysCheckReturn && isNil unnamedCalledOutArgs -> CompleteD 
         | Some reqdRetTy -> 
             let methodRetTy = 
                 if isNil unnamedCalledOutArgs then 
@@ -2429,7 +2429,7 @@ and ResolveOverloading
                             // Unify return type
                             match reqdRetTyOpt with 
                             | None -> CompleteD 
-                            | _  when calledMeth.Method.IsConstructor -> CompleteD 
+                            | Some _  when calledMeth.Method.IsConstructor -> CompleteD 
                             | Some reqdRetTy ->
                                 let methodRetTy = 
                                     if isNil calledMeth.UnnamedCalledOutArgs then 
