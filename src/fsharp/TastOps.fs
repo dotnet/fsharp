@@ -1678,10 +1678,10 @@ let returnTyOfMethod g (TObjExprMethod((TSlotSig(_,parentTy,_,_,_,_) as ss),_,me
 /// Is the type 'abstract' in C#-speak
 let isAbstractTycon (tycon:Tycon) = 
     if tycon.IsFSharpObjectModelTycon then 
-      not tycon.IsFSharpDelegateTycon && 
-      tycon.TypeContents.tcaug_abstract 
+        not tycon.IsFSharpDelegateTycon && 
+        tycon.TypeContents.tcaug_abstract 
     else 
-      tycon.IsILTycon && tycon.ILTyconRawMetadata.IsAbstract
+        tycon.IsILTycon && tycon.ILTyconRawMetadata.IsAbstract
 
 //---------------------------------------------------------------------------
 // Determine if a member/Val/ValRef is an explicit impl
@@ -1691,7 +1691,7 @@ let MemberIsExplicitImpl g (membInfo:ValMemberInfo) =
    membInfo.MemberFlags.IsOverrideOrExplicitImpl &&
    match membInfo.ImplementedSlotSigs with 
    | [] -> false
-   | slotsigs -> slotsigs |> List.forall (fun slotsig -> isInterfaceTy g slotsig.ImplementedType )
+   | slotsigs -> slotsigs |> List.forall (fun slotsig -> isInterfaceTy g slotsig.ImplementedType)
 
 let ValIsExplicitImpl g (v:Val) = 
     match v.MemberInfo with 
@@ -1740,10 +1740,10 @@ let unionFreeTypars s1 s2 =
     else Zset.union s1 s2
 
 let emptyFreeTyvars =  
-    { FreeTycons=emptyFreeTycons; 
+    { FreeTycons = emptyFreeTycons; 
       /// The summary of values used as trait solutions
-      FreeTraitSolutions=emptyFreeLocals;
-      FreeTypars=emptyFreeTypars}
+      FreeTraitSolutions = emptyFreeLocals
+      FreeTypars = emptyFreeTypars}
 
 let unionFreeTyvars fvs1 fvs2 = 
     if fvs1 === emptyFreeTyvars then fvs2 else 
@@ -1753,75 +1753,74 @@ let unionFreeTyvars fvs1 fvs2 =
       FreeTypars           = unionFreeTypars fvs1.FreeTypars fvs2.FreeTypars }
 
 type FreeVarOptions = 
-    { canCache: bool;
+    { canCache: bool
       collectInTypes: bool
-      includeLocalTycons: bool;
-      includeTypars: bool; 
-      includeLocalTyconReprs: bool;
-      includeRecdFields : bool; 
-      includeUnionCases : bool;
+      includeLocalTycons: bool
+      includeTypars: bool
+      includeLocalTyconReprs: bool
+      includeRecdFields : bool
+      includeUnionCases : bool
       includeLocals : bool }
       
 let CollectAllNoCaching = 
-        { canCache=false;
-          collectInTypes=true;
-          includeLocalTycons=true;
-          includeLocalTyconReprs=true;
-          includeRecdFields =true; 
-          includeUnionCases=true;
-          includeTypars=true; 
-          includeLocals=true }
+    { canCache = false
+      collectInTypes = true
+      includeLocalTycons = true
+      includeLocalTyconReprs = true
+      includeRecdFields = true
+      includeUnionCases = true
+      includeTypars = true; 
+      includeLocals = true }
 
 let CollectTyparsNoCaching = 
-        { canCache=false;
-          collectInTypes=true;
-          includeLocalTycons=false;
-          includeTypars=true; 
-          includeLocalTyconReprs=false;
-          includeRecdFields =false; 
-          includeUnionCases=false;
-          includeLocals=false }
+    { canCache = false
+      collectInTypes = true
+      includeLocalTycons = false
+      includeTypars = true
+      includeLocalTyconReprs = false
+      includeRecdFields = false
+      includeUnionCases = false
+      includeLocals = false }
 
 let CollectLocalsNoCaching = 
-        { canCache=false;
-          collectInTypes=false;
-          includeLocalTycons=false;
-          includeTypars=false; 
-          includeLocalTyconReprs=false;
-          includeRecdFields =false; 
-          includeUnionCases=false;
-          includeLocals=true }
+    { canCache = false
+      collectInTypes = false
+      includeLocalTycons = false
+      includeTypars = false
+      includeLocalTyconReprs = false
+      includeRecdFields = false 
+      includeUnionCases = false
+      includeLocals = true }
 
 let CollectTyparsAndLocalsNoCaching = 
-        { canCache=false;
-          collectInTypes=true;
-          includeLocalTycons=false;
-          includeLocalTyconReprs=false;
-          includeRecdFields =false; 
-          includeUnionCases=false;
-          includeTypars=true; 
-          includeLocals=true }
+    { canCache = false
+      collectInTypes = true
+      includeLocalTycons = false
+      includeLocalTyconReprs = false
+      includeRecdFields = false 
+      includeUnionCases = false
+      includeTypars = true
+      includeLocals = true }
 
 let CollectAll =
-        { canCache=false; 
-          collectInTypes=true;
-          includeLocalTycons=true;
-          includeLocalTyconReprs=true;
-          includeRecdFields =true; 
-          includeUnionCases=true;
-          includeTypars=true; 
-          includeLocals=true }
+    { canCache = false
+      collectInTypes = true
+      includeLocalTycons = true
+      includeLocalTyconReprs = true
+      includeRecdFields = true 
+      includeUnionCases = true
+      includeTypars = true; 
+      includeLocals = true }
     
 let CollectTyparsAndLocals = // CollectAll
-        { canCache=true; // only cache for this one
-          collectInTypes=true;
-          includeTypars=true; 
-          includeLocals=true;
-          includeLocalTycons=false;
-          includeLocalTyconReprs=false;
-          includeRecdFields =false; 
-          includeUnionCases=false; }
-
+    { canCache = true // only cache for this one
+      collectInTypes = true
+      includeTypars = true
+      includeLocals = true
+      includeLocalTycons = false
+      includeLocalTyconReprs = false
+      includeRecdFields = false
+      includeUnionCases = false }
 
 let CollectTypars = CollectTyparsAndLocals
 (*
