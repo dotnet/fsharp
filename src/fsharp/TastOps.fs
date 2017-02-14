@@ -2029,10 +2029,9 @@ let valsOfBinds (binds:Bindings) = binds |> List.map (fun b -> b.Var)
 // Review: Should GetMemberTypeInFSharpForm have any other direct callers? 
 let GetMemberTypeInFSharpForm g memberFlags arities ty m = 
     let tps,argInfos,rty,retInfo = GetTopValTypeInFSharpForm g arities ty m
-    let numObjArgs = if memberFlags.IsInstance then 1 else 0    
 
     let argInfos = 
-        if numObjArgs = 1 then 
+        if memberFlags.IsInstance then 
             match argInfos with
             | [] -> 
                 errorR(InternalError("value does not have a valid member type",m))
