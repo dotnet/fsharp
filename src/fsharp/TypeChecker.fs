@@ -7191,7 +7191,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
     CallEnvSink cenv.tcSink (comp.Range, env.NameEnv, ad)
 
     // Check for the [<ProjectionParameter>] attribute on an argument position
-    let tryGetArgInfosForCustomOperator  (nm:Ident) = 
+    let tryGetArgInfosForCustomOperator (nm:Ident) = 
         match tryGetDataForCustomOperation nm with 
         | None -> None
         | Some (_nm, __maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, methInfo) -> 
@@ -7202,14 +7202,14 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                 | _ -> None
             | _ -> None
 
-    let expectedArgCountForCustomOperator  (nm:Ident) = 
+    let expectedArgCountForCustomOperator (nm:Ident) = 
         match tryGetArgInfosForCustomOperator nm with 
         | None -> 0
         | Some argInfos -> max (argInfos.Length - 1) 0  // drop the computation context argument
 
     // Check for the [<ProjectionParameter>] attribute on an argument position
-    let isCustomOperationProjectionParameter  i (nm:Ident) = 
-        match tryGetArgInfosForCustomOperator nm with 
+    let isCustomOperationProjectionParameter i (nm:Ident) = 
+        match tryGetArgInfosForCustomOperator nm with
         | None -> false
         | Some argInfos ->
             i < argInfos.Length && 
@@ -7224,7 +7224,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
 
     let (|CustomOpId|_|) predicate e = 
         match e with 
-        | SingleIdent nm when isCustomOperation nm  && predicate nm -> Some nm
+        | SingleIdent nm when isCustomOperation nm && predicate nm -> Some nm
         | _ -> None
 
     // e1 in e2  ('in' is parsed as 'JOIN_IN')
@@ -7312,8 +7312,8 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
     let (|GroupJoinExpr|_|) (e:SynExpr) = 
         match e with 
         | InExpr (GroupJoinOp (nm, innerSourcePat, _, alreadyGivenError), intoExpr, mGroupJoinCore) ->
-            let (onExpr,intoPat,alreadyGivenError) = MatchIntoSuffixOrRecover alreadyGivenError nm intoExpr 
-            let (innerSource, keySelectors) = MatchOnExprOrRecover alreadyGivenError nm onExpr
+            let onExpr,intoPat,alreadyGivenError = MatchIntoSuffixOrRecover alreadyGivenError nm intoExpr 
+            let innerSource, keySelectors = MatchOnExprOrRecover alreadyGivenError nm onExpr
             Some (nm, innerSourcePat, innerSource, keySelectors, intoPat, mGroupJoinCore)
         | GroupJoinOp (nm, innerSourcePat, mGroupJoinCore, alreadyGivenError) ->
             if alreadyGivenError then 
@@ -7337,7 +7337,6 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
         // zip intoPat in secondSource 
         | InExpr (SynExpr.App(_,_,CustomOpId customOperationIsLikeZip nm,ExprAsPat secondSourcePat,_),secondSource,mZipCore) -> 
                 Some(nm, secondSourcePat, secondSource, None, None, mZipCore)
-
 
         // zip (without secondSource or in - gives error)
         | CustomOpId customOperationIsLikeZip nm  -> 
