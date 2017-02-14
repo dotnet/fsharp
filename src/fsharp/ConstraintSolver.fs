@@ -1713,15 +1713,13 @@ and SolveTypSupportsEquality (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
                 ErrorD (ConstraintSolverError(FSComp.SR.csTypeDoesNotSupportEquality2(NicePrint.minimalStringOfType denv ty),m,m2))
             | _ -> 
                // The type is equatable because it has Object.Equals(...)
-               if isAppTy g ty then 
-                   let tcref,tinst = destAppTy g ty 
-
+               match tryFullDestAppTy g ty with
+               | Some (tcref,tinst) ->
                    // Give a good error for structural types excluded from the equality relation because of their fields
-                   if (AugmentWithHashCompare.TyconIsCandidateForAugmentationWithEquals g tcref.Deref && 
-                       Option.isNone tcref.GeneratedHashAndEqualsWithComparerValues) then
-
+                   if AugmentWithHashCompare.TyconIsCandidateForAugmentationWithEquals g tcref.Deref && 
+                       Option.isNone tcref.GeneratedHashAndEqualsWithComparerValues 
+                   then
                        ErrorD (ConstraintSolverError(FSComp.SR.csTypeDoesNotSupportEquality3(NicePrint.minimalStringOfType denv ty),m,m2))
-
                    else
                        // Check the (possibly inferred) structural dependencies
                        (tinst, tcref.TyparsNoRange) ||> Iterate2D (fun ty tp -> 
@@ -1729,7 +1727,7 @@ and SolveTypSupportsEquality (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
                                SolveTypSupportsEquality (csenv:ConstraintSolverEnv) ndeep m2 trace ty 
                            else 
                                CompleteD) 
-               else
+               | None ->
                    CompleteD
            
 and SolveTypIsEnum (csenv:ConstraintSolverEnv) ndeep m2 trace ty underlying =
