@@ -1138,6 +1138,7 @@ module ToStringOnUnionTestOverride = begin
       override x.ToString() = expected2
 
   let a1 = A "FOO"
+  let c1 = C "FOO"
 
   do test "union-tostring-with-override" (a1.ToString() = expected1)
   do test "union-sprintfO-with-override" ((sprintf "%O" a1) = expected1)
