@@ -2450,7 +2450,7 @@ let UnifyUniqueOverloading
          (calledMethGroup:CalledMeth<SynExpr> list) 
          reqdRetTy    // The expected return type, if known 
    =
-    let m    = csenv.m
+    let m = csenv.m
     // See what candidates we have based on name and arity 
     let candidates = calledMethGroup |> List.filter (fun cmeth -> cmeth.IsCandidate(m,ad)) 
     let ndeep = 0
@@ -2501,30 +2501,34 @@ let AddCxTypeEqualsType contextInfo denv css m ty1 ty2 =
 let UndoIfFailed f =
     let trace = Trace.New()
     let res = 
-        try f trace |> CheckNoErrorsAndGetWarnings
+        try 
+            f trace 
+            |> CheckNoErrorsAndGetWarnings
         with e -> None
     match res with 
     | None -> 
         // Don't report warnings if we failed
-        trace.Undo(); false
+        trace.Undo()
+        false
     | Some warns -> 
         // Report warnings if we succeeded
-        ReportWarnings warns; true
+        ReportWarnings warns
+        true
 
 let AddCxTypeEqualsTypeUndoIfFailed denv css m ty1 ty2 =
-    UndoIfFailed (fun trace -> SolveTypEqualsTypKeepAbbrevs (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m (WithTrace(trace)) ty1 ty2)
+    UndoIfFailed (fun trace -> SolveTypEqualsTypKeepAbbrevs (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m (WithTrace trace) ty1 ty2)
 
 let AddCxTypeEqualsTypeMatchingOnlyUndoIfFailed denv css m ty1 ty2 =
     let csenv = { MakeConstraintSolverEnv ContextInfo.NoContext css m denv with MatchingOnly = true }
     UndoIfFailed (fun trace -> SolveTypEqualsTypKeepAbbrevs csenv 0 m (WithTrace trace) ty1 ty2)
 
 let AddCxTypeMustSubsumeTypeUndoIfFailed denv css m ty1 ty2 = 
-    UndoIfFailed (fun trace -> SolveTypSubsumesTypKeepAbbrevs (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m (WithTrace(trace)) None ty1 ty2)
+    UndoIfFailed (fun trace -> SolveTypSubsumesTypKeepAbbrevs (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m (WithTrace trace) None ty1 ty2)
 
 let AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed denv css m ty1 ty2 = 
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
     let csenv = { csenv with MatchingOnly = true }
-    UndoIfFailed (fun trace -> SolveTypSubsumesTypKeepAbbrevs csenv 0 m (WithTrace(trace)) None ty1 ty2)
+    UndoIfFailed (fun trace -> SolveTypSubsumesTypKeepAbbrevs csenv 0 m (WithTrace trace) None ty1 ty2)
 
 let AddCxTypeMustSubsumeType contextInfo denv css m trace ty1 ty2 = 
     SolveTypSubsumesTypWithReport (MakeConstraintSolverEnv contextInfo css m denv) 0 m trace None ty1 ty2
@@ -2581,11 +2585,13 @@ let AddCxTypeIsDelegate denv css m trace ty aty bty =
     |> RaiseOperationResult
 
 let CodegenWitnessThatTypSupportsTraitConstraint tcVal g amap m (traitInfo:TraitConstraintInfo) argExprs = 
-    let css = { g = g
-                amap = amap;
-                TcVal = tcVal
-                ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
-                InfoReader = new InfoReader(g,amap) }
+    let css = 
+        { g = g
+          amap = amap
+          TcVal = tcVal
+          ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
+          InfoReader = new InfoReader(g,amap) }
+
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
     SolveMemberConstraint csenv true true 0 m NoTrace traitInfo ++ (fun _res -> 
         let sln = 
@@ -2684,12 +2690,11 @@ let ChooseTyparSolutionAndSolve css denv tp =
 let CheckDeclaredTypars denv css m typars1 typars2 = 
     TryD (fun () -> 
             CollectThenUndo (fun trace -> 
-               SolveTypEqualsTypEqns (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m (WithTrace(trace)) None 
+               SolveTypEqualsTypEqns (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m (WithTrace trace) None 
                    (List.map mkTyparTy typars1) 
                    (List.map mkTyparTy typars2)))
          (fun res -> ErrorD (ErrorFromAddingConstraint(denv,res,m)))
     |> RaiseOperationResult
-
 
 /// An approximation used during name resolution for intellisense to eliminate extension members which will not
 /// apply to a particular object argument. This is given as the isApplicableMeth argument to the partial name resolution
@@ -2698,10 +2703,12 @@ let IsApplicableMethApprox g amap m (minfo:MethInfo) availObjTy =
     // Prepare an instance of a constraint solver
     // If it's an instance method, then try to match the object argument against the required object argument
     if minfo.IsExtensionMember then 
-        let css = { g=g;amap=amap;
-                    TcVal = (fun _ -> failwith "should not be called")
-                    ExtraCxs=HashMultiMap(10, HashIdentity.Structural)
-                    InfoReader=new InfoReader(g,amap) }
+        let css = 
+            { g = g
+              amap = amap
+              TcVal = (fun _ -> failwith "should not be called")
+              ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
+              InfoReader = new InfoReader(g,amap) }
         let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
         let minst = FreshenMethInfo m minfo
         match minfo.GetObjArgTypes(amap, m, minst) with
