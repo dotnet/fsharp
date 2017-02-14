@@ -7014,6 +7014,9 @@ and TcComputationOrSequenceExpression cenv (env: TcEnv) overallTy m interpValOpt
         TcComputationExpression cenv env overallTy m interpExpr builderTy tpenv comp
     | None -> 
         TcSequenceExpression cenv env tpenv comp overallTy m
+ 
+/// Ignores an attribute
+and IgnoreAttribute _ = None
 
 // Used for all computation expressions except sequence expressions
 and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv comp = 
@@ -7021,7 +7024,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
     //dprintfn "TcComputationOrSequenceExpression, comp = \n%A\n-------------------\n" comp
     let ad = env.eAccessRights
 
-    let mkSynDelay2 (e: SynExpr) =  mkSynDelay (e.Range.MakeSynthetic()) e
+    let mkSynDelay2 (e: SynExpr) = mkSynDelay (e.Range.MakeSynthetic()) e
     
     let builderValName = CompilerGeneratedName "builder"
     let mBuilderVal = interpExpr.Range
@@ -7067,30 +7070,33 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                 if not (IsMethInfoAccessible cenv.amap mBuilderVal ad methInfo) then None else
                 let nameSearch = 
                     TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo 
-                                 (fun _ -> None) // We do not respect this attribute for IL methods
-                                 (function (Attrib(_,_,[ AttribStringArg msg ],_,_,_,_)) -> Some msg | _ -> None)
-                                 (fun _ -> None) // We do not respect this attribute for provided methods
+                        IgnoreAttribute // We do not respect this attribute for IL methods
+                        (function (Attrib(_,_,[ AttribStringArg msg ],_,_,_,_)) -> Some msg | _ -> None)
+                        IgnoreAttribute // We do not respect this attribute for provided methods
 
-                let joinConditionWord =
-                    TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo 
-                                 (fun _ -> None) // We do not respect this attribute for IL methods
-                                 (function (Attrib(_,_,_,ExtractAttribNamedArg "JoinConditionWord" (AttribStringArg s),_,_,_)) -> Some s | _ -> None)
-                                 (fun _ -> None) // We do not respect this attribute for provided methods
-                let flagSearch (propName:string) = 
-                    TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo 
-                                 (fun _ -> None) // We do not respect this attribute for IL methods
-                                 (function (Attrib(_,_,_,ExtractAttribNamedArg propName (AttribBoolArg b),_,_,_)) -> Some b | _ -> None)
-                                 (fun _ -> None)// We do not respect this attribute for provided methods
-                let maintainsVarSpaceUsingBind = defaultArg (flagSearch "MaintainsVariableSpaceUsingBind") false
-                let maintainsVarSpace = defaultArg (flagSearch "MaintainsVariableSpace") false
-                let allowInto = defaultArg (flagSearch "AllowIntoPattern") false
-                let isLikeZip = defaultArg (flagSearch "IsLikeZip") false
-                let isLikeJoin = defaultArg (flagSearch "IsLikeJoin" ) false
-                let isLikeGroupJoin = defaultArg (flagSearch "IsLikeGroupJoin" ) false
-
-                match nameSearch with  
+                match nameSearch with
                 | None -> None
-                | Some nm -> Some (nm, maintainsVarSpaceUsingBind, maintainsVarSpace, allowInto, isLikeZip, isLikeJoin, isLikeGroupJoin, joinConditionWord, methInfo))
+                | Some nm ->
+                    let joinConditionWord =
+                        TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo 
+                            IgnoreAttribute // We do not respect this attribute for IL methods
+                            (function (Attrib(_,_,_,ExtractAttribNamedArg "JoinConditionWord" (AttribStringArg s),_,_,_)) -> Some s | _ -> None)
+                            IgnoreAttribute // We do not respect this attribute for provided methods
+
+                    let flagSearch (propName:string) = 
+                        TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo 
+                            IgnoreAttribute // We do not respect this attribute for IL methods
+                            (function (Attrib(_,_,_,ExtractAttribNamedArg propName (AttribBoolArg b),_,_,_)) -> Some b | _ -> None)
+                            IgnoreAttribute // We do not respect this attribute for provided methods
+
+                    let maintainsVarSpaceUsingBind = defaultArg (flagSearch "MaintainsVariableSpaceUsingBind") false
+                    let maintainsVarSpace = defaultArg (flagSearch "MaintainsVariableSpace") false
+                    let allowInto = defaultArg (flagSearch "AllowIntoPattern") false
+                    let isLikeZip = defaultArg (flagSearch "IsLikeZip") false
+                    let isLikeJoin = defaultArg (flagSearch "IsLikeJoin") false
+                    let isLikeGroupJoin = defaultArg (flagSearch "IsLikeGroupJoin") false
+
+                    Some (nm, maintainsVarSpaceUsingBind, maintainsVarSpace, allowInto, isLikeZip, isLikeJoin, isLikeGroupJoin, joinConditionWord, methInfo))
 
     let customOperationMethodsIndexedByKeyword = 
         customOperationMethods
