@@ -1626,8 +1626,8 @@ let isRefTy g ty =
 // [Note: Constructed types and type-parameters are never unmanaged-types. end note]
 let rec isUnmanagedTy g ty =
     let ty = stripTyEqnsAndMeasureEqns g ty
-    if isAppTy g ty then
-        let tcref = tcrefOfAppTy g ty
+    match tryDestAppTy g ty with
+    | Some tcref ->
         let isEq tcref2  = tyconRefEq g tcref tcref2 
         if          isEq g.nativeptr_tcr || isEq g.nativeint_tcr ||
                     isEq g.sbyte_tcr || isEq g.byte_tcr || 
@@ -1649,7 +1649,7 @@ let rec isUnmanagedTy g ty =
                 | [] -> tycon.AllInstanceFieldsAsList |> List.forall (fun r -> isUnmanagedTy g r.rfield_type) 
                 | _ -> false // generic structs are never 
             else false
-    else
+    | None ->
         false
 
 let isInterfaceTycon x = 
