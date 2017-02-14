@@ -1907,7 +1907,7 @@ and accFreeInType opts ty acc  =
     match stripTyparEqns ty with 
     | TType_tuple (tupInfo,l) -> accFreeInTypes opts l (accFreeInTupInfo opts tupInfo acc)
     | TType_app (tc,tinst) -> 
-        let acc = accFreeTycon opts tc  acc
+        let acc = accFreeTycon opts tc acc
         match tinst with 
         | [] -> acc  // optimization to avoid unneeded call
         | [h] -> accFreeInType opts h acc // optimization to avoid unneeded call
@@ -1983,17 +1983,17 @@ and accFreeInTraitLeftToRight g cxFlag thruFlag acc (TTrait(typs,_,_,argtys,rty,
     acc
 
 and accFreeTyparRefLeftToRight g cxFlag thruFlag acc (tp:Typar) = 
-    if ListSet.contains typarEq tp acc 
-    then acc
+    if ListSet.contains typarEq tp acc then 
+        acc
     else 
-        let acc = (ListSet.insert typarEq tp acc)
+        let acc = ListSet.insert typarEq tp acc
         if cxFlag then 
             accFreeInTyparConstraintsLeftToRight g cxFlag thruFlag acc tp.Constraints
         else 
             acc
 
 and accFreeInTypeLeftToRight g cxFlag thruFlag acc ty  = 
-    if verbose then  dprintf "--> accFreeInTypeLeftToRight \n";
+    if verbose then dprintf "--> accFreeInTypeLeftToRight \n"
     match (if thruFlag then stripTyEqns g ty else stripTyparEqns ty) with 
     | TType_tuple (tupInfo, l) -> 
         let acc = accFreeInTupInfoLeftToRight g cxFlag thruFlag acc tupInfo 
@@ -2035,7 +2035,7 @@ let GetMemberTypeInFSharpForm g memberFlags arities ty m =
         if numObjArgs = 1 then 
             match argInfos with
             | [] -> 
-                errorR(InternalError("value does not have a valid member type",m)); 
+                errorR(InternalError("value does not have a valid member type",m))
                 argInfos
             | _::t -> t
         else argInfos
@@ -2047,7 +2047,7 @@ let checkMemberVal membInfo arity m =
     match membInfo, arity with 
     | None,_ -> error(InternalError("checkMemberVal - no membInfo" , m))
     | _,None -> error(InternalError("checkMemberVal - no arity", m))
-    | Some membInfo,Some arity ->  (membInfo,arity)
+    | Some membInfo,Some arity -> (membInfo,arity)
 
 let checkMemberValRef (vref:ValRef) =
     checkMemberVal vref.MemberInfo vref.ValReprInfo vref.Range
@@ -2067,7 +2067,7 @@ let GetTopValTypeInCompiledForm g topValInfo typ m =
             [objInfo; []]
         | _ -> 
             paramArgInfos
-    let rty = (if isUnitTy g rty then None else Some rty)
+    let rty = if isUnitTy g rty then None else Some rty
     (tps,paramArgInfos,rty,retInfo)
      
 // Pull apart the type for an F# value that represents an object model method
@@ -2093,7 +2093,7 @@ let GetMemberTypeInMemberForm g memberFlags topValInfo typ m =
             [[]]
         | _ -> 
             paramArgInfos
-    let rty = (if isUnitTy g rty then None else Some rty)
+    let rty = if isUnitTy g rty then None else Some rty
     (tps,paramArgInfos,rty,retInfo)
 
 let GetTypeOfMemberInMemberForm g (vref:ValRef) =
@@ -2214,8 +2214,7 @@ let prefixOfRigidTypar (typar:Typar) =
 
 type TyparConstraintsWithTypars = (Typar * TyparConstraint) list
 
-module PrettyTypes = begin
-
+module PrettyTypes =
     let newPrettyTypar (tp:Typar) nm = 
         NewTypar (tp.Kind, tp.Rigidity,Typar(ident(nm, tp.Range),tp.StaticReq,false),false,TyparDynamicReq.Yes,[],false,false)
 
@@ -2325,12 +2324,8 @@ module PrettyTypes = begin
     let PrettifyTypesNN1   g x = PrettifyTypes g (fun f -> foldPair (List.fold (List.fold f),f)) (fun f -> mapPair (List.mapSquared f,f)) x
     let PrettifyTypesN1  g (x:UncurriedArgInfos * TType) = PrettifyTypes g (fun f -> foldPair (List.fold (fold1Of2  f), f)) (fun f -> mapPair (List.map (map1Of2  f),f)) x
     let PrettifyTypesNM1 g (x:TType list * CurriedArgInfos * TType) = PrettifyTypes g (fun f -> foldTriple (List.fold f, List.fold (List.fold (fold1Of2 f)),f)) (fun f -> mapTriple (List.map f, List.mapSquared (map1Of2  f), f)) x
-
-end
-
-
  
-module SimplifyTypes = begin
+module SimplifyTypes =
 
     // CAREFUL! This function does NOT walk constraints 
     let rec foldTypeButNotConstraints f z typ =
@@ -2392,8 +2387,6 @@ module SimplifyTypes = begin
         }
     let CollectInfo simplify tys cxs = 
         categorizeConstraints simplify (accTyparCountsMulti emptyTyparCounts tys) cxs 
-        
-end
 
 //--------------------------------------------------------------------------
 // Print Signatures/Types
