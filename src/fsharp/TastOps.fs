@@ -2353,13 +2353,13 @@ module SimplifyTypes =
     let accTyparCountsMulti acc l = List.fold accTyparCounts acc l
 
     type TypeSimplificationInfo =
-        { singletons         : Typar Zset;
-          inplaceConstraints :  Zmap<Typar,TType>;
+        { singletons         : Typar Zset
+          inplaceConstraints :  Zmap<Typar,TType>
           postfixConstraints : (Typar * TyparConstraint) list; }
           
     let typeSimplificationInfo0 = 
-        { singletons         = Zset.empty typarOrder;
-          inplaceConstraints = Zmap.empty typarOrder;
+        { singletons         = Zset.empty typarOrder
+          inplaceConstraints = Zmap.empty typarOrder
           postfixConstraints = [] }
 
     let categorizeConstraints simplify m cxs =
@@ -2380,10 +2380,9 @@ module SimplifyTypes =
             tp.Constraints.Length = 1)
         let inplace = inplace |> List.map (function (tp,TyparConstraint.CoercesTo(ty,_)) -> tp,ty | _ -> failwith "not isTTyparCoercesToType")
         
-        { singletons         = singletons;
-          inplaceConstraints = Zmap.ofList typarOrder inplace;
-          postfixConstraints = postfix;
-        }
+        { singletons         = singletons
+          inplaceConstraints = Zmap.ofList typarOrder inplace
+          postfixConstraints = postfix }
     let CollectInfo simplify tys cxs = 
         categorizeConstraints simplify (accTyparCountsMulti emptyTyparCounts tys) cxs 
 
@@ -2393,60 +2392,59 @@ module SimplifyTypes =
 
 [<NoEquality; NoComparison>]
 type DisplayEnv = 
-    { includeStaticParametersInTypeNames : bool;
-      openTopPathsSorted: Lazy<string list list>; 
-      openTopPathsRaw: string list list; 
-      shortTypeNames: bool;
-      suppressNestedTypes: bool;
-      maxMembers : int option;
-      showObsoleteMembers: bool; 
-      showHiddenMembers: bool; 
-      showTyparBinding: bool; 
-      showImperativeTyparAnnotations: bool;
-      suppressInlineKeyword: bool;
-      suppressMutableKeyword: bool;
-      showMemberContainers:bool;
-      shortConstraints:bool;
-      useColonForReturnType:bool;
-      showAttributes:bool;
-      showOverrides:bool;
-      showConstraintTyparAnnotations: bool;
-      abbreviateAdditionalConstraints: bool;
-      showTyparDefaultConstraints : bool;
-      g: TcGlobals;
-      contextAccessibility: Accessibility;
-      generatedValueLayout:(Val -> layout option);    
-      }
+    { includeStaticParametersInTypeNames : bool
+      openTopPathsSorted : Lazy<string list list>
+      openTopPathsRaw : string list list
+      shortTypeNames : bool
+      suppressNestedTypes : bool
+      maxMembers : int option
+      showObsoleteMembers : bool
+      showHiddenMembers : bool
+      showTyparBinding : bool 
+      showImperativeTyparAnnotations : bool
+      suppressInlineKeyword : bool
+      suppressMutableKeyword : bool
+      showMemberContainers : bool
+      shortConstraints : bool
+      useColonForReturnType : bool
+      showAttributes : bool
+      showOverrides : bool
+      showConstraintTyparAnnotations : bool
+      abbreviateAdditionalConstraints : bool
+      showTyparDefaultConstraints : bool
+      g : TcGlobals
+      contextAccessibility : Accessibility
+      generatedValueLayout : (Val -> layout option) }
 
     member x.SetOpenPaths(paths) = 
         { x with 
-             openTopPathsSorted = (lazy (paths |> List.sortWith (fun p1 p2 -> -(compare p1 p2))));
+             openTopPathsSorted = (lazy (paths |> List.sortWith (fun p1 p2 -> -(compare p1 p2))))
              openTopPathsRaw = paths 
         }
 
     static member Empty tcGlobals = 
-      { includeStaticParametersInTypeNames=false;
-        openTopPathsRaw = []; 
-        openTopPathsSorted = notlazy []; 
-        shortTypeNames=false;
-        suppressNestedTypes=false;
-        maxMembers=None;
-        showObsoleteMembers=false;
-        showHiddenMembers=false;
-        showTyparBinding = false;
-        showImperativeTyparAnnotations=false;
-        suppressInlineKeyword=false;
-        suppressMutableKeyword=false;
-        showMemberContainers=false;
-        showAttributes=false;
-        showOverrides=true;
-        showConstraintTyparAnnotations=true;
-        abbreviateAdditionalConstraints=false;
-        showTyparDefaultConstraints=false;
-        shortConstraints=false;
-        useColonForReturnType=false;
-        g=tcGlobals;
-        contextAccessibility = taccessPublic;
+      { includeStaticParametersInTypeNames = false
+        openTopPathsRaw = []
+        openTopPathsSorted = notlazy []
+        shortTypeNames = false
+        suppressNestedTypes = false
+        maxMembers = None
+        showObsoleteMembers = false
+        showHiddenMembers = false
+        showTyparBinding = false
+        showImperativeTyparAnnotations = false
+        suppressInlineKeyword = false
+        suppressMutableKeyword = false
+        showMemberContainers = false
+        showAttributes = false
+        showOverrides = true
+        showConstraintTyparAnnotations = true
+        abbreviateAdditionalConstraints = false
+        showTyparDefaultConstraints = false
+        shortConstraints = false
+        useColonForReturnType = false
+        g = tcGlobals
+        contextAccessibility = taccessPublic
         generatedValueLayout = (fun _ -> None) }
 
 
@@ -2459,7 +2457,7 @@ type DisplayEnv =
     member denv.AddAccessibility access =     
         { denv with contextAccessibility = combineAccess denv.contextAccessibility access }
 
-let (+.+) s1 s2 = (if s1 = "" then s2 else s1+"."+s2)
+let (+.+) s1 s2 = if s1 = "" then s2 else s1+"."+s2
 
 let layoutOfPath p =     
     sepListL SepL.dot (List.map (tagNamespace >> wordL) p)
@@ -2467,7 +2465,7 @@ let layoutOfPath p =
 let fullNameOfParentOfPubPath pp = 
     match pp with 
     | PubPath([| _ |]) -> None 
-    | pp -> Some(textOfPath  pp.EnclosingPath)
+    | pp -> Some(textOfPath pp.EnclosingPath)
 
 let fullNameOfParentOfPubPathAsLayout pp = 
     match pp with 
@@ -2508,15 +2506,15 @@ let fullNameOfEntityRef nmF xref =
 
 let tagEntityRefName (xref: EntityRef) name =
     if Set.contains name Lexhelp.Keywords.keywordTypes then tagKeyword name
-    else if xref.IsNamespace then tagNamespace name
-    else if xref.IsModule then tagModule name
-    else if xref.IsTypeAbbrev then tagAlias name
-    else if xref.IsFSharpDelegateTycon then tagDelegate name
-    else if xref.IsILEnumTycon || xref.IsFSharpEnumTycon then tagEnum name
-    else if xref.IsStructOrEnumTycon then tagStruct name
-    else if xref.IsFSharpInterfaceTycon then tagInterface name
-    else if xref.IsUnionTycon then tagUnion name
-    else if xref.IsRecordTycon then tagRecord name
+    elif xref.IsNamespace then tagNamespace name
+    elif xref.IsModule then tagModule name
+    elif xref.IsTypeAbbrev then tagAlias name
+    elif xref.IsFSharpDelegateTycon then tagDelegate name
+    elif xref.IsILEnumTycon || xref.IsFSharpEnumTycon then tagEnum name
+    elif xref.IsStructOrEnumTycon then tagStruct name
+    elif xref.IsFSharpInterfaceTycon then tagInterface name
+    elif xref.IsUnionTycon then tagUnion name
+    elif xref.IsRecordTycon then tagRecord name
     else tagClass name
 
 let fullNameOfEntityRefAsLayout nmF (xref: EntityRef) =
