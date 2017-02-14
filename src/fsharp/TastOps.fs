@@ -2355,7 +2355,7 @@ module SimplifyTypes =
     type TypeSimplificationInfo =
         { singletons         : Typar Zset
           inplaceConstraints :  Zmap<Typar,TType>
-          postfixConstraints : (Typar * TyparConstraint) list; }
+          postfixConstraints : (Typar * TyparConstraint) list }
           
     let typeSimplificationInfo0 = 
         { singletons         = Zset.empty typarOrder
@@ -2363,7 +2363,7 @@ module SimplifyTypes =
           postfixConstraints = [] }
 
     let categorizeConstraints simplify m cxs =
-        let singletons = if simplify then Zmap.chooseL (fun tp n -> if n=1 then Some tp else None) m else []
+        let singletons = if simplify then Zmap.chooseL (fun tp n -> if n = 1 then Some tp else None) m else []
         let singletons = Zset.addList singletons (Zset.empty typarOrder)
         // Here, singletons are typars that occur once in the type.
         // However, they may also occur in a type constraint.
@@ -2599,12 +2599,13 @@ let rec firstRem p1 p2 =
    match p1 with [] -> p2 | _::t1 -> firstRem t1 (List.tail p2)
 
 let trimPathByDisplayEnv denv path =
-    let findOpenedNamespace opened_path = 
-        if  firstEq opened_path path then 
-          let t2 = firstRem opened_path path
-          if t2 <> [] then Some(textOfPath t2+".")
-          else Some("")
+    let findOpenedNamespace openedPath = 
+        if firstEq openedPath path then 
+            let t2 = firstRem openedPath path
+            if t2 <> [] then Some(textOfPath t2 + ".")
+            else Some("")
         else None
+
     match List.tryPick findOpenedNamespace (denv.openTopPathsSorted.Force()) with
     | Some s -> s
     | None ->  if isNil path then "" else textOfPath path + "."
@@ -2621,8 +2622,8 @@ let superOfTycon (g:TcGlobals) (tycon:Tycon) =
 
 // AbsIL view of attributes (we read these from .NET binaries) 
 let isILAttribByName (tencl:string list, tname: string) (attr: ILAttribute) = 
-    (attr.Method.EnclosingType.TypeSpec.Name = tname) &&
-    (attr.Method.EnclosingType.TypeSpec.Enclosing = tencl)
+    attr.Method.EnclosingType.TypeSpec.Name = tname &&
+    attr.Method.EnclosingType.TypeSpec.Enclosing = tencl
 
 // AbsIL view of attributes (we read these from .NET binaries) 
 let isILAttrib (tref:ILTypeRef) (attr: ILAttribute) = 
@@ -2641,7 +2642,8 @@ let TryDecodeILAttribute (g:TcGlobals) tref (attrs: ILAttributes) =
 
 // This one is done by name to ensure the compiler doesn't take a dependency on dereferencing a type that only exists in .NET 3.5
 let ILThingHasExtensionAttribute (attrs : ILAttributes) = 
-    attrs.AsList |> List.exists (fun attr -> 
+    attrs.AsList 
+    |> List.exists (fun attr -> 
         attr.Method.EnclosingType.TypeSpec.Name = "System.Runtime.CompilerServices.ExtensionAttribute")
     
 // F# view of attributes (these get converted to AbsIL attributes in ilxgen) 
