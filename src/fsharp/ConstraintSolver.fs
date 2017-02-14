@@ -883,8 +883,8 @@ and SolveTypSubsumesTyp (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
         // 'a[] :> IReadOnlyCollection<'b>   ---> 'a = 'b  
         // Note we don't support co-variance on array types nor 
         // the special .NET conversions for these types 
-        match tryFullDestAppTy g ty1 with
-        | Some(tcr1,tinst) when
+        match ty1 with
+        | AppTy g (tcr1,tinst) when
             isArray1DTy g ty2 &&
                 (tyconRefEq g tcr1 g.tcref_System_Collections_Generic_IList || 
                  tyconRefEq g tcr1 g.tcref_System_Collections_Generic_ICollection || 
@@ -1675,15 +1675,15 @@ and SolveTypeSupportsComparison (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
                   ExistsSameHeadTypeInHierarchy g amap m2 ty g.mk_IStructuralComparable_ty
                then 
                    // The type is comparable because it implements IComparable
-                    match tryFullDestAppTy g ty with
-                    | Some (tcref,tinst) ->
+                    match ty with
+                    | AppTy g (tcref,tinst) ->
                         // Check the (possibly inferred) structural dependencies
                         (tinst, tcref.TyparsNoRange) ||> Iterate2D (fun ty tp -> 
                             if tp.ComparisonConditionalOn then 
                                 SolveTypeSupportsComparison (csenv:ConstraintSolverEnv) ndeep m2 trace ty 
                             else 
                                 CompleteD) 
-                    | None ->
+                    | _ ->
                         CompleteD
 
                // Give a good error for structural types excluded from the comparison relation because of their fields
@@ -1716,8 +1716,8 @@ and SolveTypSupportsEquality (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
                 ErrorD (ConstraintSolverError(FSComp.SR.csTypeDoesNotSupportEquality2(NicePrint.minimalStringOfType denv ty),m,m2))
             | _ -> 
                // The type is equatable because it has Object.Equals(...)
-               match tryFullDestAppTy g ty with
-               | Some (tcref,tinst) ->
+               match ty with
+               | AppTy g (tcref,tinst) ->
                    // Give a good error for structural types excluded from the equality relation because of their fields
                    if AugmentWithHashCompare.TyconIsCandidateForAugmentationWithEquals g tcref.Deref && 
                        Option.isNone tcref.GeneratedHashAndEqualsWithComparerValues 
@@ -1730,7 +1730,7 @@ and SolveTypSupportsEquality (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
                                SolveTypSupportsEquality (csenv:ConstraintSolverEnv) ndeep m2 trace ty 
                            else 
                                CompleteD) 
-               | None ->
+               | _ ->
                    CompleteD
            
 and SolveTypIsEnum (csenv:ConstraintSolverEnv) ndeep m2 trace ty underlying =
@@ -2687,7 +2687,6 @@ let ChooseTyparSolutionAndSolve css denv tp =
     TryD (fun () -> SolveTyparEqualsTyp csenv 0 m NoTrace (mkTyparTy tp) max)
          (fun err -> ErrorD(ErrorFromApplyingDefault(g,denv,tp,max,err,m)))
     |> RaiseOperationResult
-
 
 
 let CheckDeclaredTypars denv css m typars1 typars2 = 
