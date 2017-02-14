@@ -2366,11 +2366,11 @@ and ResolveOverloading
                              let res = better candidate other
                              //eprintfn "\n-------\nCandidate: %s\nOther: %s\nResult: %d\n" (NicePrint.stringOfMethInfo amap m denv (fst candidate).Method) (NicePrint.stringOfMethInfo amap m denv (fst other).Method) res
                              res > 0) then 
-                           Some(candidate)
+                           Some candidate
                         else 
                            None) 
                 match bestMethods with 
-                | [(calledMeth,_,t)] -> Some(calledMeth), CompleteD, WithTrace t
+                | [(calledMeth,_,t)] -> Some calledMeth, CompleteD, WithTrace t
                 | bestMethods -> 
                     let methodNames =
                         let methods = 
