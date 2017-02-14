@@ -1459,13 +1459,13 @@ let rankOfArrayTyconRef (g:TcGlobals) tcr =
 //------------------------------------------------------------------------- 
 
 let destArrayTy (g:TcGlobals) ty =
-    match argsOfAppTy g ty with 
-    | [ty] -> ty
+    match ty with
+    | AppTy g (tcref,[ty]) when isArrayTyconRef g tcref -> ty
     | _ -> failwith "destArrayTy"
 
 let destListTy (g:TcGlobals) ty =
-    match argsOfAppTy g ty with
-    | [ty] -> ty
+    match ty with
+    | AppTy g (tcref,[ty]) when tyconRefEq g tcref g.list_tcr_canon -> ty
     | _ -> failwith "destListTy"
 
 let isTypeConstructorEqualToOptional g tcOpt tc = 
