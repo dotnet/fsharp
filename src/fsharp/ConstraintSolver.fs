@@ -305,23 +305,29 @@ let BakedInTraitConstraintNames =
 
 type Trace = 
     { mutable actions:  ((unit -> unit) * (unit -> unit)) list }
+    
     static member New () =  { actions = [] }
+
     member t.Undo () = List.iter (fun (_, a) -> a ()) t.actions
     member t.Push f undo = t.actions <- (f, undo) :: t.actions
 
 type OptionalTrace = 
     | NoTrace
     | WithTrace of Trace
+
     member x.HasTrace = match x with NoTrace -> false | WithTrace _ -> true
+
     member t.Exec f undo = 
         match t with        
         | WithTrace trace -> trace.Push f undo; f()
         | NoTrace -> f()
+
     member t.AddFromReplay source =
         source.actions |> List.rev |>
             match t with        
             | WithTrace trace -> List.iter (fun (action, undo) -> trace.Push action undo; action())
             | NoTrace         -> List.iter (fun (action, _   ) -> action())
+
     member t.CollectThenUndoOrCommit predicate f =
         let newTrace = Trace.New()
         let res = f newTrace
@@ -334,15 +340,16 @@ type OptionalTrace =
 let CollectThenUndo f = 
     let trace = Trace.New()
     let res = f trace
-    trace.Undo(); 
+    trace.Undo()
     res
 
 let FilterEachThenUndo f meths = 
-    meths |> List.choose (fun calledMeth -> 
+    meths 
+    |> List.choose (fun calledMeth -> 
         let trace = Trace.New()        
         let res = f trace calledMeth
         trace.Undo()
-        match res |> CheckNoErrorsAndGetWarnings with 
+        match CheckNoErrorsAndGetWarnings res with 
         | None -> None 
         | Some warns -> Some (calledMeth,warns.Length,trace))
 
@@ -417,7 +424,7 @@ let FindPreferredTypar vs =
             | (v',e')::vs' -> 
                 if PreferUnifyTypar v v'
                 then (v, e) :: vs
-                else (v',e') :: (v,e) :: vs' 
+                else (v',e') :: (v,e) :: vs'
     find vs
   
 let SubstMeasure (r:Typar) ms = 
