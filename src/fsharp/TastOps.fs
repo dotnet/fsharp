@@ -714,7 +714,8 @@ let mkAppTy tcref tyargs = TType_app(tcref,tyargs)
 let mkProvenUnionCaseTy ucref tyargs = TType_ucase(ucref,tyargs)
 let isAppTy   g ty = ty |> stripTyEqns g |> (function TType_app _ -> true | _ -> false) 
 let destAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref,tinst) -> tcref,tinst | _ -> failwith "destAppTy")
-let tcrefOfAppTy   g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tcref | _ -> failwith "tcrefOfAppTy") 
+let tcrefOfAppTy  g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tcref | _ -> failwith "tcrefOfAppTy") 
+let argsOfAppTy   g ty = ty |> stripTyEqns g |> (function TType_app(_,tinst) -> tinst | _ -> [])
 let tryDestTyparTy g ty = ty |> stripTyEqns g |> (function TType_var v -> Some v | _ -> None)
 let tryDestFunTy   g ty = ty |> stripTyEqns g |> (function TType_fun (tyv,tau) -> Some(tyv,tau) | _ -> None)
 let tryDestAppTy   g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> Some tcref | _ -> None)
@@ -722,7 +723,6 @@ let tryAnyParTy    g ty = ty |> stripTyEqns g |> (function TType_var v -> Some v
 let (|AppTy|_|) g ty = ty |> stripTyEqns g |> (function TType_app(tcref,tinst) -> Some (tcref,tinst) | _ -> None) 
 let (|RefTupleTy|_|) g ty = ty |> stripTyEqns g |> (function TType_tuple(tupInfo,tys) when not (evalTupInfoIsStruct tupInfo) -> Some tys | _ -> None)
 let (|FunTy|_|) g ty = ty |> stripTyEqns g |> (function TType_fun(dty, rty) -> Some (dty, rty) | _ -> None)
-let argsOfAppTy   g ty = ty |> stripTyEqns g |> (function TType_app(_,tinst) -> tinst | _ -> [])
 let tyconOfAppTy   g ty = (tcrefOfAppTy g ty).Deref
 
 let tryNiceEntityRefOfTy  ty = 
@@ -749,10 +749,9 @@ let (|ByrefTy|_|) g ty =
     | _ -> None
 
 let mkInstForAppTy g typ = 
-    if isAppTy g typ then 
-      let tcref,tinst = destAppTy g typ
-      mkTyconRefInst tcref tinst
-    else []
+    match typ with
+    | AppTy g (tcref,tinst) -> mkTyconRefInst tcref tinst
+    | _ -> []
 
 let domainOfFunTy g ty = fst(destFunTy g ty)
 let rangeOfFunTy  g ty = snd(destFunTy g ty)
@@ -1460,16 +1459,14 @@ let rankOfArrayTyconRef (g:TcGlobals) tcr =
 //------------------------------------------------------------------------- 
 
 let destArrayTy (g:TcGlobals) ty =
-    let _,tinst = destAppTy g ty
-    match tinst with 
+    match argsOfAppTy g ty with 
     | [ty] -> ty
-    | _ -> failwith "destArrayTy";
+    | _ -> failwith "destArrayTy"
 
 let destListTy (g:TcGlobals) ty =
-    let _,tinst = destAppTy g ty
-    match tinst with
+    match argsOfAppTy g ty  with
     | [ty] -> ty
-    | _ -> failwith "destListTy";
+    | _ -> failwith "destListTy"
 
 let isTypeConstructorEqualToOptional g tcOpt tc = 
     match tcOpt with
