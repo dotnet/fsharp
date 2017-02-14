@@ -420,7 +420,7 @@ type internal FSharpChecker =
     //      source code in the editor. Type checking is abandoned when this returns 'true'.
     /// </param>
     /// <param name="textSnapshotInfo">
-    ///     An item passed back to 'hasTextChangedSinceLastTypecheck' to help determine if 
+    ///     An item passed back to 'hasTextChangedSinceLastTypecheck' (from some calls made on 'FSharpCheckFileResults') to help determine if 
     ///     an approximate intellisense resolution is inaccurate because a range of text has changed. This 
     ///     can be used to marginally increase accuracy of intellisense results in some situations.
     /// </param>
@@ -450,7 +450,7 @@ type internal FSharpChecker =
     //      source code in the editor. Type checking is abandoned when this returns 'true'.
     /// </param>
     /// <param name="textSnapshotInfo">
-    ///     An item passed back to 'hasTextChangedSinceLastTypecheck' to help determine if 
+    ///     An item passed back to 'hasTextChangedSinceLastTypecheck' (from some calls made on 'FSharpCheckFileResults') to help determine if 
     ///     an approximate intellisense resolution is inaccurate because a range of text has changed. This 
     ///     can be used to marginally increase accuracy of intellisense results in some situations.
     /// </param>
@@ -479,7 +479,7 @@ type internal FSharpChecker =
     //      source code in the editor. Type checking is abandoned when this returns 'true'.
     /// </param>
     /// <param name="textSnapshotInfo">
-    ///     An item passed back to 'hasTextChangedSinceLastTypecheck' to help determine if 
+    ///     An item passed back to 'hasTextChangedSinceLastTypecheck' (from some calls made on 'FSharpCheckFileResults') to help determine if 
     ///     an approximate intellisense resolution is inaccurate because a range of text has changed. This 
     ///     can be used to marginally increase accuracy of intellisense results in some situations.
     /// </param>
