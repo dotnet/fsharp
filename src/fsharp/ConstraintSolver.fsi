@@ -94,7 +94,7 @@ type ConstraintSolverState =
 
 type ConstraintSolverEnv 
 
-val BakedInTraitConstraintNames : System.Collections.Generic.HashSet<string>
+val BakedInTraitConstraintNames : Set<string>
 
 val MakeConstraintSolverEnv : ContextInfo -> ConstraintSolverState -> range -> DisplayEnv -> ConstraintSolverEnv
 

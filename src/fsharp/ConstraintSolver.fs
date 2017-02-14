@@ -298,7 +298,7 @@ let BakedInTraitConstraintNames =
       "Sinh";  "Cosh"; "Tanh"; "Atan"; "Acos"; "Asin"; "Exp"; "Ceiling"; "Floor"; "Round"; "Log10"; "Log"; "Sqrt";
       "Truncate"; "op_Explicit";
       "Pow"; "Atan2" ]
-    |> System.Collections.Generic.HashSet<_>
+    |> set
     
 //-------------------------------------------------------------------------
 // Run the constraint solver with undo (used during method overload resolution)
