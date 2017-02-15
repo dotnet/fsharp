@@ -14,6 +14,7 @@ open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.CompileOps
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 
 /// Represents one parameter for one method (or other item) in a group. 
 [<Sealed>]
@@ -160,6 +161,7 @@ type internal SemanticClassificationType =
     | ComputationExpression
     | IntrinsicType
     | Enumeration
+    | Interface
 
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]
@@ -286,7 +288,7 @@ type internal FSharpCheckFileResults =
     member GetSymbolUseAtLocation  : line:int * colAtEndOfNames:int * lineText:string * names:string list -> Async<FSharpSymbolUse option>
 
     /// <summary>Get any extra colorization info that is available after the typecheck</summary>
-    member GetSemanticClassification : unit -> (range * SemanticClassificationType)[]
+    member GetSemanticClassification : range option -> (range * SemanticClassificationType)[]
 
     /// <summary>Get the locations of format specifiers</summary>
     member GetFormatSpecifierLocations : unit -> range[]
@@ -297,10 +299,8 @@ type internal FSharpCheckFileResults =
     /// Get the textual usages that resolved to the given symbol throughout the file
     member GetUsesOfSymbolInFile : symbol:FSharpSymbol -> Async<FSharpSymbolUse[]>
 
-    member GetVisibleNamespacesAndModulesAtPoint : pos -> Async<Tast.ModuleOrNamespaceRef[]>
-
+    /// Determines if a long ident is resolvable at a specific point.
     member IsRelativeNameResolvable: cursorPos : pos * plid : string list * item: Item -> Async<bool>
-
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]
 type internal FSharpCheckProjectResults =
@@ -415,12 +415,8 @@ type internal FSharpChecker =
     /// <param name="fileversion">An integer that can be used to indicate the version of the file. This will be returned by TryGetRecentCheckResultsForFile when looking up the file.</param>
     /// <param name="source">The full source for the file.</param>
     /// <param name="options">The options for the project or script.</param>
-    /// <param name="isResultObsolete">
-    ///     A callback to check if a requested result is already obsolete, e.g. because of changed 
-    //      source code in the editor. Type checking is abandoned when this returns 'true'.
-    /// </param>
     /// <param name="textSnapshotInfo">
-    ///     An item passed back to 'hasTextChangedSinceLastTypecheck' to help determine if 
+    ///     An item passed back to 'hasTextChangedSinceLastTypecheck' (from some calls made on 'FSharpCheckFileResults') to help determine if 
     ///     an approximate intellisense resolution is inaccurate because a range of text has changed. This 
     ///     can be used to marginally increase accuracy of intellisense results in some situations.
     /// </param>
@@ -436,7 +432,7 @@ type internal FSharpChecker =
     /// </para>
     /// <para>
     ///   Return FSharpCheckFileAnswer.Aborted if a parse tree was not available or if the check
-    ////  was abandoned due to isResultObsolete returning 'true' at some checkpoint during type checking.
+    ////  was abandoned due to some checkpoint during type checking.
     /// </para>
     /// </summary>
     ///
@@ -445,12 +441,8 @@ type internal FSharpChecker =
     /// <param name="fileversion">An integer that can be used to indicate the version of the file. This will be returned by TryGetRecentCheckResultsForFile when looking up the file.</param>
     /// <param name="source">The full source for the file.</param>
     /// <param name="options">The options for the project or script.</param>
-    /// <param name="isResultObsolete">
-    ///     A callback to check if a requested result is already obsolete, e.g. because of changed 
-    //      source code in the editor. Type checking is abandoned when this returns 'true'.
-    /// </param>
     /// <param name="textSnapshotInfo">
-    ///     An item passed back to 'hasTextChangedSinceLastTypecheck' to help determine if 
+    ///     An item passed back to 'hasTextChangedSinceLastTypecheck' (from some calls made on 'FSharpCheckFileResults') to help determine if 
     ///     an approximate intellisense resolution is inaccurate because a range of text has changed. This 
     ///     can be used to marginally increase accuracy of intellisense results in some situations.
     /// </param>
@@ -466,7 +458,7 @@ type internal FSharpChecker =
     /// </para>
     /// <para>
     ///   Return FSharpCheckFileAnswer.Aborted if a parse tree was not available or if the check
-    ////  was abandoned due to isResultObsolete returning 'true' at some checkpoint during type checking.
+    ////  was abandoned due to some checkpoint during type checking.
     /// </para>
     /// </summary>
     ///
@@ -474,12 +466,8 @@ type internal FSharpChecker =
     /// <param name="fileversion">An integer that can be used to indicate the version of the file. This will be returned by TryGetRecentCheckResultsForFile when looking up the file.</param>
     /// <param name="source">The full source for the file.</param>
     /// <param name="options">The options for the project or script.</param>
-    /// <param name="isResultObsolete">
-    ///     A callback to check if a requested result is already obsolete, e.g. because of changed 
-    //      source code in the editor. Type checking is abandoned when this returns 'true'.
-    /// </param>
     /// <param name="textSnapshotInfo">
-    ///     An item passed back to 'hasTextChangedSinceLastTypecheck' to help determine if 
+    ///     An item passed back to 'hasTextChangedSinceLastTypecheck' (from some calls made on 'FSharpCheckFileResults') to help determine if 
     ///     an approximate intellisense resolution is inaccurate because a range of text has changed. This 
     ///     can be used to marginally increase accuracy of intellisense results in some situations.
     /// </param>
@@ -591,7 +579,7 @@ type internal FSharpChecker =
     member CurrentQueueLength : int
 
     /// This function is called when a project has been cleaned/rebuilt, and thus any live type providers should be refreshed.
-    member NotifyProjectCleaned: options: FSharpProjectOptions -> unit    
+    member NotifyProjectCleaned: options: FSharpProjectOptions -> Async<unit>
     
     /// Notify the host that the logical type checking context for a file has now been updated internally
     /// and that the file has become eligible to be re-typechecked for errors.
@@ -636,7 +624,7 @@ type internal FSharpChecker =
 // Used internally to provide intellisense over F# Interactive.
 type internal FsiInteractiveChecker =
     internal new : ops: IReactorOperations * tcConfig: TcConfig * tcGlobals: TcGlobals * tcImports: TcImports * tcState: TcState * loadClosure: LoadClosure option ->  FsiInteractiveChecker 
-    member internal ParseAndCheckInteraction : source:string -> Async<FSharpParseFileResults * FSharpCheckFileResults * FSharpCheckProjectResults>
+    member internal ParseAndCheckInteraction : CompilationThreadToken * source:string -> Async<FSharpParseFileResults * FSharpCheckFileResults * FSharpCheckProjectResults>
     static member internal CreateErrorInfos : tcConfig: TcConfig * allErrors:bool * mainInputFileName : string * seq<ErrorLogger.PhasedDiagnostic * FSharpErrorSeverity> -> FSharpErrorInfo[]
 
 /// Information about the compilation environment 

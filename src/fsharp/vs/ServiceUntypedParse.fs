@@ -94,8 +94,7 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
     
     /// Get declared items and the selected item at the specified location
     member private scope.GetNavigationItemsImpl() =
-       ErrorScope.Protect 
-            Range.range0 
+       ErrorScope.Protect Range.range0 
             (fun () -> 
                 match input with
                 | Some(ParsedInput.ImplFile(ParsedImplFileInput(_modname,_isScript,_qualName,_pragmas,_hashDirectives,modules,_isLastCompiland))) ->
@@ -347,8 +346,7 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
             | Some(ParsedInput.ImplFile(ParsedImplFileInput(_,_,_,_,_,modules,_))) -> walkImplFile modules 
             | _ -> []
  
-        ErrorScope.Protect 
-            Range.range0 
+        ErrorScope.Protect Range.range0 
             (fun () -> 
                 let locations = findBreakPoints()
                 
@@ -913,7 +911,7 @@ module UntypedParseImpl =
     type internal TS = AstTraversal.TraverseStep
 
     /// Try to determine completion context for the given pair (row, columns)
-    let TryGetCompletionContext (pos, untypedParseOpt: FSharpParseFileResults option) : CompletionContext option = 
+    let TryGetCompletionContext (pos, untypedParseOpt: FSharpParseFileResults option, lineStr: string) : CompletionContext option = 
         let parsedInputOpt =
             match untypedParseOpt with
             | Some upi -> upi.ParseTree
@@ -1173,5 +1171,20 @@ module UntypedParseImpl =
                             | None -> Some (CompletionContext.Invalid) // A $ .B -> no completion list
                         | _ -> None 
                         
-                    member this.VisitBinding(defaultTraverse, synBinding) = defaultTraverse synBinding }
+                    member this.VisitBinding(defaultTraverse, synBinding) = defaultTraverse synBinding 
+                    
+                    member this.VisitHashDirective(range) = 
+                        if rangeContainsPos range pos then Some CompletionContext.Invalid 
+                        
+                        else None 
+                        
+                    member this.VisitModuleOrNamespace(SynModuleOrNamespace(longId = idents)) =
+                        match List.tryLast idents with
+                        | Some lastIdent when pos.Line = lastIdent.idRange.EndLine ->
+                            let stringBetweenModuleNameAndPos = lineStr.[lastIdent.idRange.EndColumn..pos.Column - 1]
+                            if stringBetweenModuleNameAndPos |> Seq.forall (fun x -> x = ' ' || x = '.') then
+                                Some CompletionContext.Invalid
+                            else None
+                        | _ -> None }
+
         AstTraversal.Traverse(pos, pt, walker)

@@ -336,7 +336,7 @@ type cenv =
     { ilg: ILGlobals
       tryFindSysILTypeRef : string -> ILTypeRef option
       generatePdb: bool
-      resolvePath: (ILAssemblyRef -> Choice<string,System.Reflection.Assembly> option) }
+      resolveAssemblyRef: (ILAssemblyRef -> Choice<string,System.Reflection.Assembly> option) }
 
 /// Convert an Abstract IL type reference to Reflection.Emit System.Type value.
 // This ought to be an adequate substitute for this whole function, but it needs 
@@ -350,7 +350,7 @@ let convTypeRefAux (cenv:cenv) (tref:ILTypeRef) =
     match tref.Scope with
     | ILScopeRef.Assembly asmref ->
         let assembly = 
-            match cenv.resolvePath asmref with                     
+            match cenv.resolveAssemblyRef asmref with                     
             | Some (Choice1Of2 path) ->
                 FileSystem.AssemblyLoadFrom(path)              
             | Some (Choice2Of2 assembly) ->
@@ -2003,8 +2003,8 @@ let mkDynamicAssemblyAndModule (assemblyName, optimize, debugInfo, collectible) 
     let modB = asmB.DefineDynamicModuleAndLog(assemblyName,filename,debugInfo)
     asmB,modB
 
-let emitModuleFragment (ilg, emEnv, asmB : AssemblyBuilder, modB : ModuleBuilder, modul : IL.ILModuleDef, debugInfo : bool, resolvePath, tryFindSysILTypeRef) =
-    let cenv = { ilg = ilg ; generatePdb = debugInfo; resolvePath=resolvePath; tryFindSysILTypeRef=tryFindSysILTypeRef }
+let emitModuleFragment (ilg, emEnv, asmB : AssemblyBuilder, modB : ModuleBuilder, modul : IL.ILModuleDef, debugInfo : bool, resolveAssemblyRef, tryFindSysILTypeRef) =
+    let cenv = { ilg = ilg ; generatePdb = debugInfo; resolveAssemblyRef=resolveAssemblyRef; tryFindSysILTypeRef=tryFindSysILTypeRef }
 
     let emEnv = buildModuleFragment cenv emEnv asmB modB modul
     match modul.Manifest with 
