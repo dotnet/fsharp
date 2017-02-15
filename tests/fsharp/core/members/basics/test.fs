@@ -1108,21 +1108,86 @@ module ToStringOnUnionTest = begin
 
   type MyUnion = A of string | B
 
+  [<Struct>]
+  type MyStructUnion = C of string | D
+
   let a1 = A "FOO"
-  do test "union-tostring-def" (a1.ToString() = "A \"FOO\"")
-  do test "union-sprintfO-def" ((sprintf "%O" a1) = "A \"FOO\"")
+  let c1 = C "FOO"
+
+  let expected1 = "A \"FOO\""
+  let expected2 = "C \"FOO\""
+
+  do test "union-tostring-def" (a1.ToString() = expected1)
+  do test "union-sprintfO-def" ((sprintf "%O" a1) = expected1)
+  do test "struct-union-tostring-def" (c1.ToString() = expected2)
+  do test "struct-union-sprintfO-def" ((sprintf "%O" c1) = expected2)
 
 end
 
 module ToStringOnUnionTestOverride = begin
+  let expected1 = "MyUnion"
 
   type MyUnion = A of string | B
     with
-      override x.ToString() = "MyUnion"
+      override x.ToString() = expected1
+  
+  let expected2 = "MyStructUnion"
+
+  type MyStructUnion = C of string | D
+    with
+      override x.ToString() = expected2
 
   let a1 = A "FOO"
-  do test "union-tostring-with-override" (a1.ToString() = "MyUnion")
-  do test "union-sprintfO-with-override" ((sprintf "%O" a1) = "MyUnion")
+  let c1 = C "FOO"
+
+  do test "union-tostring-with-override" (a1.ToString() = expected1)
+  do test "union-sprintfO-with-override" ((sprintf "%O" a1) = expected1)
+  do test "struct-union-tostring-with-override" (c1.ToString() = expected2)
+  do test "struct-union-sprintfO-with-override" ((sprintf "%O" c1) = expected2)
+
+end
+
+module ToStringOnRecordTest = begin
+
+  type MyRecord = { A: string; B: int }
+
+  [<Struct>]
+  type MyStructRecord = { C: string; D: int }
+
+  let a1 = {A = "201"; B = 7}
+  let c1 = {C = "20"; D = 17}
+  let expected1 = "{A = \"201\";\n B = 7;}"
+  let expected2 = "{C = \"20\";\n D = 17;}"
+
+  do test "record-tostring-def" (a1.ToString() = expected1)
+  do test "record-sprintfO-def" ((sprintf "%O" a1) = expected1)
+  do test "struct-record-tostring-def" (c1.ToString() = expected2)
+  do test "struct-record-sprintfO-def" ((sprintf "%O" c1) = expected2)
+
+end
+
+module ToStringOnRecordTestOverride = begin
+
+  let expected1 = "MyRecord"
+
+  type MyRecord = { A: string; B: int }
+    with
+      override x.ToString() = expected1
+  
+  let expected2 = "MyStructRecord"
+
+  [<Struct>]
+  type MyStructRecord = { C: string; D: int }
+    with
+      override x.ToString() = expected2
+  
+  let a1 = {A = "201"; B = 7}
+  let c1 = {C = "20"; D = 17}
+
+  do test "record-tostring-with-override" (a1.ToString() = expected1)
+  do test "record-sprintfO-with-override" ((sprintf "%O" a1) = expected1)
+  do test "struct-record-tostring-with-override" (c1.ToString() = expected2)
+  do test "struct-record-sprintfO-with-override" ((sprintf "%O" c1) = expected2)
 
 end
 
