@@ -77,6 +77,9 @@ module internal AstTraversal =
         // VisitHashDirective allows overriding behavior when visiting hash directives in FSX scripts, like #r, #load and #I.
         abstract VisitHashDirective : range -> 'T option
         default this.VisitHashDirective (_) = None
+        // VisitModuleOrNamespace allows overriding behavior when visiting module or namespaces
+        abstract VisitModuleOrNamespace : SynModuleOrNamespace -> 'T option
+        default this.VisitModuleOrNamespace (_) = None
 
     let dive node range project =
         range,(fun() -> project node)
@@ -151,8 +154,12 @@ module internal AstTraversal =
             visitor.VisitModuleDecl(defaultTraverse, decl)
 
         and traverseSynModuleOrNamespace path (SynModuleOrNamespace(_longIdent, _isRec, _isModule, synModuleDecls, _preXmlDoc, _synAttributes, _synAccessOpt, range) as mors) =
-            let path = TraverseStep.ModuleOrNamespace mors :: path
-            synModuleDecls |> List.map (fun x -> dive x x.Range (traverseSynModuleDecl path)) |> pick range mors
+            match visitor.VisitModuleOrNamespace(mors) with
+            | Some x -> Some x
+            | None ->
+                let path = TraverseStep.ModuleOrNamespace mors :: path
+                synModuleDecls |> List.map (fun x -> dive x x.Range (traverseSynModuleDecl path)) |> pick range mors
+
         and traverseSynExpr path (expr:SynExpr) =
             let pick = pick expr.Range
             let defaultTraverse e = 

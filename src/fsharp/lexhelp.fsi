@@ -71,3 +71,5 @@ module Keywords =
     val NormalizeIdentifierBackticks : string -> string
     val keywordNames : string list
     val keywordTypes : Set<string>
+    /// Keywords paired with their descriptions. Used in completion and quick info.
+    val keywordsWithDescription : (string * string) list

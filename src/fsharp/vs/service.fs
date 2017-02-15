@@ -500,6 +500,7 @@ type SemanticClassificationType =
     | ComputationExpression
     | IntrinsicType
     | Enumeration
+    | Interface
 
 // A scope represents everything we get back from the typecheck of a file.
 // It acts like an in-memory database about the file.
@@ -544,19 +545,19 @@ type TypeCheckInfo
     /// Find the most precise naming environment for the given line and column
     let GetBestEnvForPos cursorPos  =
         
-        let bestSoFar = ref None
+        let mutable bestSoFar = None
 
         // Find the most deeply nested enclosing scope that contains given position
         sResolutions.CapturedEnvs |> ResizeArray.iter (fun (possm,env,ad) -> 
             if rangeContainsPos possm cursorPos then
-                match !bestSoFar with 
+                match bestSoFar with 
                 | Some (bestm,_,_) -> 
                     if rangeContainsRange bestm possm then 
-                      bestSoFar := Some (possm,env,ad)
+                      bestSoFar <- Some (possm,env,ad)
                 | None -> 
-                    bestSoFar := Some (possm,env,ad))
+                    bestSoFar <- Some (possm,env,ad))
 
-        let mostDeeplyNestedEnclosingScope = !bestSoFar 
+        let mostDeeplyNestedEnclosingScope = bestSoFar 
         
         // Look for better subtrees on the r.h.s. of the subtree to the left of where we are 
         // Should really go all the way down the r.h.s. of the subtree to the left of where we are 
@@ -1028,7 +1029,7 @@ type TypeCheckInfo
             | otherwise -> otherwise - 1
 
         // Look for a "special" completion context
-        match UntypedParseImpl.TryGetCompletionContext(mkPos line colAtEndOfNamesAndResidue, parseResultsOpt) with
+        match UntypedParseImpl.TryGetCompletionContext(mkPos line colAtEndOfNamesAndResidue, parseResultsOpt, lineStr) with
 
         // Invalid completion locations
         | Some CompletionContext.Invalid -> None
@@ -1140,13 +1141,18 @@ type TypeCheckInfo
 
     static let keywordTypes = Lexhelp.Keywords.keywordTypes
 
-    member x.GetVisibleNamespacesAndModulesAtPosition(cursorPos: pos) : ModuleOrNamespaceRef list =
-        let (nenv, ad), m = GetBestEnvForPos cursorPos
-        NameResolution.GetVisibleNamespacesAndModulesAtPoint ncenv nenv m ad
-
     member x.IsRelativeNameResolvable(cursorPos: pos, plid: string list, item: Item) : bool =
-        let items, _, _ = GetEnvironmentLookupResolutions(cursorPos, plid, TypeNameResolutionFlag.ResolveTypeNamesToTypeRefs, true) 
-        items |> List.exists (ItemsAreEffectivelyEqual g item)
+    /// Determines if a long ident is resolvable at a specific point.
+        ErrorScope.Protect
+            Range.range0
+            (fun () ->
+                /// Find items in the best naming environment.
+                let (nenv, ad), m = GetBestEnvForPos cursorPos
+                NameResolution.IsItemResolvable ncenv nenv m ad plid item)
+            (fun _ -> false)
+        
+        //let items = NameResolution.ResolvePartialLongIdent ncenv nenv (fun _ _ -> true) m ad plid true
+        //items |> List.exists (ItemsAreEffectivelyEqual g item)
 
     /// Get the auto-complete items at a location
     member x.GetDeclarations (ctok, parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, hasTextChangedSinceLastTypecheck) =
@@ -1482,6 +1488,10 @@ type TypeCheckInfo
             // typevariables get colored as types when they occur in syntactic types custom builders, custom operations get colored as keywords
             | CNR(_, Item.Types (_, [OptionalArgumentAttribute]), LegitTypeOccurence, _, _, _, _) -> None
             | CNR(_, Item.CtorGroup(_, [MethInfo.FSMeth(_, OptionalArgumentAttribute, _, _)]), LegitTypeOccurence, _, _, _, _) -> None
+            | CNR(_, Item.Types(_, types), LegitTypeOccurence, _, _, _, m) when types |> List.exists (isInterfaceTy g) -> 
+                Some (m, SemanticClassificationType.Interface)
+            | CNR(_, Item.Types(_, types), LegitTypeOccurence, _, _, _, m) when types |> List.exists (isStructTy g) -> 
+                Some (m, SemanticClassificationType.ValueType)
             | CNR(_, Item.Types _, LegitTypeOccurence, _, _, _, m) -> 
                 Some (m, SemanticClassificationType.ReferenceType)
             | CNR(_, (Item.TypeVar _ | Item.UnqualifiedType _ | Item.CtorGroup _), LegitTypeOccurence, _, _, _, m) ->
@@ -2133,18 +2143,9 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
                  if itemOcc <> ItemOccurence.RelatedText then
                   yield FSharpSymbolUse(scope.TcGlobals, denv, symbol, itemOcc, m) |])
 
-    member info.GetVisibleNamespacesAndModulesAtPoint(pos: pos) : Async<ModuleOrNamespaceRef []> = 
-        reactorOp "GetVisibleNamespacesAndModulesAtPoint" [| |] (fun ctok scope -> 
-
-            DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
-
-            scope.GetVisibleNamespacesAndModulesAtPosition(pos) |> List.toArray)
-
     member info.IsRelativeNameResolvable(pos: pos, plid: string list, item: Item) : Async<bool> = 
         reactorOp "IsRelativeNameResolvable" true (fun ctok scope -> 
-
             DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
-
             scope.IsRelativeNameResolvable(pos, plid, item))
     
 //----------------------------------------------------------------------------

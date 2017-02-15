@@ -980,7 +980,7 @@ let ensureCcuHasModuleOrNamespaceAtPath (ccu:CcuThunk) path (CompPath(_,cpath)) 
         | (hpath::tpath),((_,mkind)::tcpath)  -> 
             let modName = hpath.idText 
             if not (Map.containsKey modName mtype.AllEntitiesByCompiledAndLogicalMangledNames) then 
-                let smodul = NewModuleOrNamespace (Some(CompPath(scoref,prior_cpath))) taccessPublic hpath xml [] (notlazy (NewEmptyModuleOrNamespaceType mkind))
+                let smodul = NewModuleOrNamespace (Some(CompPath(scoref,prior_cpath))) taccessPublic hpath xml [] (MaybeLazy.Strict (NewEmptyModuleOrNamespaceType mkind))
                 mtype.AddModuleOrNamespaceByMutation(smodul);
             let modul = Map.find modName mtype.AllEntitiesByCompiledAndLogicalMangledNames 
             loop (prior_cpath@[(modName,Namespace)]) tpath tcpath modul 
@@ -3566,7 +3566,7 @@ end
 //--------------------------------------------------------------------------
 
 let wrapModuleOrNamespaceType id cpath mtyp = 
-    NewModuleOrNamespace (Some cpath)  taccessPublic  id  XmlDoc.Empty  [] (notlazy mtyp)
+    NewModuleOrNamespace (Some cpath)  taccessPublic  id  XmlDoc.Empty  [] (MaybeLazy.Strict mtyp)
 
 let wrapModuleOrNamespaceTypeInNamespace id cpath mtyp = 
     let mspec = wrapModuleOrNamespaceType id cpath mtyp
@@ -4972,9 +4972,8 @@ and copyAndRemapAndBindTyconsAndVals g compgen tmenv tycons vs =
         tcd'.entity_tycon_repr           <- tcd.entity_tycon_repr    |> remapTyconRepr g tmenvinner2;
         tcd'.entity_tycon_abbrev         <- tcd.entity_tycon_abbrev  |> Option.map (remapType tmenvinner2) ;
         tcd'.entity_tycon_tcaug          <- tcd.entity_tycon_tcaug   |> remapTyconAug tmenvinner2 ;
-        tcd'.entity_modul_contents <- notlazy (tcd.entity_modul_contents 
-                                              |> Lazy.force 
-                                              |> mapImmediateValsAndTycons lookupTycon lookupVal);
+        tcd'.entity_modul_contents <- MaybeLazy.Strict (tcd.entity_modul_contents.Value 
+                                                        |> mapImmediateValsAndTycons lookupTycon lookupVal);
         tcd'.entity_exn_info      <- tcd.entity_exn_info      |> remapTyconExnInfo g tmenvinner2) ;
     tycons',vs', tmenvinner
 
@@ -7637,10 +7636,8 @@ let rec remapEntityDataToNonLocal g tmenv (d: EntityData) =
           entity_tycon_abbrev         = d.entity_tycon_abbrev         |> Option.map (remapType tmenvinner) ;
           entity_tycon_tcaug          = d.entity_tycon_tcaug          |> remapTyconAug tmenvinner ;
           entity_modul_contents = 
-              notlazy (d.entity_modul_contents 
-                       |> Lazy.force 
-                       |> mapImmediateValsAndTycons (remapTyconToNonLocal g tmenv) 
-                                                                  (remapValToNonLocal g tmenv));
+              MaybeLazy.Strict (d.entity_modul_contents.Value
+                                |> mapImmediateValsAndTycons (remapTyconToNonLocal g tmenv) (remapValToNonLocal g tmenv));
           entity_exn_info      = d.entity_exn_info      |> remapTyconExnInfo g tmenvinner}
 
 and remapTyconToNonLocal g tmenv x = 
@@ -7686,10 +7683,22 @@ type Entity with
                                          argInfos.Length = 1 && 
                                          List.lengthsEqAndForall2 (typeEquiv g) (List.map fst (List.head argInfos)) argtys  &&  
                                          membInfo.MemberFlags.IsOverrideOrExplicitImpl) 
+    
+    member tycon.HasMember g nm argtys = 
+        tycon.TypeContents.tcaug_adhoc 
+        |> NameMultiMap.find nm
+        |> List.exists (fun vref -> 
+                          match vref.MemberInfo with 
+                          | None -> false 
+                          | _ -> let argInfos = ArgInfosOfMember g vref 
+                                 argInfos.Length = 1 && 
+                                 List.lengthsEqAndForall2 (typeEquiv g) (List.map fst (List.head argInfos)) argtys) 
+
 
 type EntityRef with 
     member tcref.HasInterface g ty = tcref.Deref.HasInterface g ty
     member tcref.HasOverride g nm argtys = tcref.Deref.HasOverride g nm argtys
+    member tcref.HasMember g nm argtys = tcref.Deref.HasMember g nm argtys
 
 let mkFastForLoop g (spLet,m,idv:Val,start,dir,finish,body) =
     let dir = if dir then FSharpForLoopUp else FSharpForLoopDown 
