@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.Linq;
@@ -100,7 +99,7 @@ namespace Microsoft.CodeAnalysis.PatternMatching
             return _invalidPattern || string.IsNullOrWhiteSpace(candidate);
         }
 
-        public ImmutableArray<PatternMatch> GetMatches(string candidate)
+        public PatternMatch[] GetMatches(string candidate)
         {
             return GetMatches(candidate, includeMatchSpans: false);
         }
@@ -113,15 +112,15 @@ namespace Microsoft.CodeAnalysis.PatternMatching
         /// <param name="includeMatchSpans">Whether or not the matched spans should be included with results</param>
         /// <returns>If this was a match, a set of match types that occurred while matching the
         /// patterns. If it was not a match, it returns null.</returns>
-        public ImmutableArray<PatternMatch> GetMatches(string candidate, bool includeMatchSpans)
+        public PatternMatch[] GetMatches(string candidate, bool includeMatchSpans)
         {
             if (SkipMatch(candidate))
             {
-                return ImmutableArray<PatternMatch>.Empty;
+                return new PatternMatch[0];
             }
 
             var result = MatchSegment(candidate, includeMatchSpans, _fullPatternSegment, fuzzyMatch: true);
-            if (!result.IsEmpty)
+            if (result.Length > 0)
             {
                 return result;
             }
@@ -129,15 +128,15 @@ namespace Microsoft.CodeAnalysis.PatternMatching
             return MatchSegment(candidate, includeMatchSpans, _fullPatternSegment, fuzzyMatch: false);
         }
 
-        public ImmutableArray<PatternMatch> GetMatchesForLastSegmentOfPattern(string candidate)
+        public PatternMatch[] GetMatchesForLastSegmentOfPattern(string candidate)
         {
             if (SkipMatch(candidate))
             {
-                return ImmutableArray<PatternMatch>.Empty;
+                return new PatternMatch[0];
             }
 
             var result = MatchSegment(candidate, includeMatchSpans: false, segment: _dotSeparatedSegments.Last(), fuzzyMatch: false);
-            if (!result.IsEmpty)
+            if (result.Length > 0)
             {
                 return result;
             }
@@ -191,7 +190,7 @@ namespace Microsoft.CodeAnalysis.PatternMatching
             // candidate.  If not, then there's no point in proceeding and doing the more
             // expensive work.
             var candidateMatch = MatchSegment(candidate, includeMatchSpans, _dotSeparatedSegments.Last(), fuzzyMatch);
-            if (candidateMatch.IsDefaultOrEmpty)
+            if (candidateMatch == null || candidateMatch.Length == 0)
             {
                 return PatternMatches.Empty;
             }
@@ -211,35 +210,28 @@ namespace Microsoft.CodeAnalysis.PatternMatching
 
             // So far so good.  Now break up the container for the candidate and check if all
             // the dotted parts match up correctly.
-            var containerMatches = ArrayBuilder<PatternMatch>.GetInstance();
+            var containerMatches = new List<PatternMatch>();
 
-            try
+            // Don't need to check the last segment.  We did that as the very first bail out step.
+            for (int i = 0, j = containerParts.Length - relevantDotSeparatedSegmentLength;
+                 i < relevantDotSeparatedSegmentLength;
+                 i++, j++)
             {
-                // Don't need to check the last segment.  We did that as the very first bail out step.
-                for (int i = 0, j = containerParts.Length - relevantDotSeparatedSegmentLength;
-                     i < relevantDotSeparatedSegmentLength;
-                     i++, j++)
+                var segment = _dotSeparatedSegments[i];
+                var containerName = containerParts[j];
+                var containerMatch = MatchSegment(containerName, includeMatchSpans, segment, fuzzyMatch);
+                if (containerMatch == null || containerMatch.Length == 0)
                 {
-                    var segment = _dotSeparatedSegments[i];
-                    var containerName = containerParts[j];
-                    var containerMatch = MatchSegment(containerName, includeMatchSpans, segment, fuzzyMatch);
-                    if (containerMatch.IsDefaultOrEmpty)
-                    {
-                        // This container didn't match the pattern piece.  So there's no match at all.
-                        return PatternMatches.Empty;
-                    }
-
-                    containerMatches.AddRange(containerMatch);
+                    // This container didn't match the pattern piece.  So there's no match at all.
+                    return PatternMatches.Empty;
                 }
 
-                // Success, this symbol's full name matched against the dotted name the user was asking
-                // about.
-                return new PatternMatches(candidateMatch, containerMatches.ToImmutable());
+                containerMatches.AddRange(containerMatch);
             }
-            finally
-            {
-                containerMatches.Free();
-            }
+
+            // Success, this symbol's full name matched against the dotted name the user was asking
+            // about.
+            return new PatternMatches(candidateMatch, containerMatches.ToArray());
         }
 
         /// <summary>
@@ -417,11 +409,11 @@ namespace Microsoft.CodeAnalysis.PatternMatching
             return null;
         }
 
-        private ImmutableArray<TextSpan> GetMatchedSpans(bool includeMatchSpans, List<TextSpan> matchedSpans)
+        private TextSpan[] GetMatchedSpans(bool includeMatchSpans, List<TextSpan> matchedSpans)
         {
             return includeMatchSpans
-                ? new NormalizedTextSpanCollection(matchedSpans).ToImmutableArray()
-                : ImmutableArray<TextSpan>.Empty;
+                ? new NormalizedTextSpanCollection(matchedSpans).ToArray()
+                : new TextSpan[0];
         }
 
         private static TextSpan? GetMatchedSpan(bool includeMatchSpans, int start, int length)
@@ -443,19 +435,19 @@ namespace Microsoft.CodeAnalysis.PatternMatching
             return false;
         }
 
-        private ImmutableArray<PatternMatch> MatchSegment(
+        private PatternMatch[] MatchSegment(
             string candidate, bool includeMatchSpans, Segment segment, bool fuzzyMatch)
         {
             if (fuzzyMatch && !_allowFuzzyMatching)
             {
-                return ImmutableArray<PatternMatch>.Empty;
+                return new PatternMatch[0];
             }
 
             var singleMatch = MatchSegment(candidate, includeMatchSpans, segment,
                 wantAllMatches: true, fuzzyMatch: fuzzyMatch, allMatches: out var matches);
             if (singleMatch.HasValue)
             {
-                return ImmutableArray.Create(singleMatch.Value);
+                return new[] { singleMatch.Value };
             }
 
             return matches;
@@ -483,9 +475,9 @@ namespace Microsoft.CodeAnalysis.PatternMatching
             Segment segment,
             bool wantAllMatches,
             bool fuzzyMatch,
-            out ImmutableArray<PatternMatch> allMatches)
+            out PatternMatch[] allMatches)
         {
-            allMatches = ImmutableArray<PatternMatch>.Empty;
+            allMatches = new PatternMatch[0];
 
             if (fuzzyMatch && !_allowFuzzyMatching)
             {
@@ -547,36 +539,30 @@ namespace Microsoft.CodeAnalysis.PatternMatching
             // Only if all words have some sort of match is the pattern considered matched.
 
             var subWordTextChunks = segment.SubWordTextChunks;
-            var matches = ArrayBuilder<PatternMatch>.GetInstance();
+            var matches = new List<PatternMatch>();
 
-            try
+            foreach (var subWordTextChunk in subWordTextChunks)
             {
-                foreach (var subWordTextChunk in subWordTextChunks)
+                // Try to match the candidate with this word
+                var result = MatchTextChunk(candidate, includeMatchSpans,
+                    subWordTextChunk, punctuationStripped: true, fuzzyMatch: fuzzyMatch);
+
+                if (result == null)
                 {
-                    // Try to match the candidate with this word
-                    var result = MatchTextChunk(candidate, includeMatchSpans,
-                        subWordTextChunk, punctuationStripped: true, fuzzyMatch: fuzzyMatch);
-                    if (result == null)
-                    {
-                        return null;
-                    }
-
-                    if (!wantAllMatches || subWordTextChunks.Length == 1)
-                    {
-                        // Stop at the first word
-                        return result;
-                    }
-
-                    matches.Add(result.Value);
+                    return null;
                 }
 
-                allMatches = matches.ToImmutable();
-                return null;
+                if (!wantAllMatches || subWordTextChunks.Length == 1)
+                {
+                    // Stop at the first word
+                    return result;
+                }
+
+                matches.Add(result.Value);
             }
-            finally
-            {
-                matches.Free();
-            }
+
+            allMatches = matches.ToArray();
+            return null;
         }
 
         private static bool IsWordChar(char ch, bool verbatimIdentifierPrefixIsWordCharacter)

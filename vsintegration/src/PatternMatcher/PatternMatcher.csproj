@@ -36,20 +36,20 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>$(FSharpSourcesRoot)\fsharp\msft.pubkey</AssemblyOriginatorKeyFile>
+    <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
+    <StrongNames>true</StrongNames>
+    <DelaySign>true</DelaySign>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="System.Collections.Immutable">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\System.Collections.Immutable.1.2.0\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
-      <SpecificVersion>False</SpecificVersion>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ArrayBuilder.cs" />
-    <Compile Include="ArrayBuilder.Enumerator.cs" />
     <Compile Include="ArraySlice.cs" />
     <Compile Include="BKTree.Builder.cs" />
     <Compile Include="BKTree.cs" />
@@ -58,7 +58,6 @@
     <Compile Include="EditDistance.cs" />
     <Compile Include="Hash.cs" />
     <Compile Include="IDictionaryExtensions.cs" />
-    <Compile Include="ImmutableArrayExtensions.cs" />
     <Compile Include="IObjectWritable.cs" />
     <Compile Include="NormalizedTextSpanCollection.cs" />
     <Compile Include="ObjectPool.cs" />
