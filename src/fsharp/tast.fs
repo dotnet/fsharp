@@ -34,20 +34,20 @@ open Microsoft.FSharp.Core.CompilerServices
 
 /// Unique name generator for stamps attached to lambdas and object expressions
 type Unique = int64
-//++GLOBAL MUTABLE STATE
+//++GLOBAL MUTABLE STATE (concurrency-safe)
 let newUnique = let i = ref 0L in fun () -> System.Threading.Interlocked.Increment(i)
 type Stamp = int64
 
 /// Unique name generator for stamps attached to to val_specs, tycon_specs etc.
-//++GLOBAL MUTABLE STATE
+//++GLOBAL MUTABLE STATE (concurrency-safe)
 let newStamp = let i = ref 0L in fun () -> System.Threading.Interlocked.Increment(i)
 
 /// A global generator of compiler generated names
-// ++GLOBAL MUTABLE STATE
+// ++GLOBAL MUTABLE STATE (concurrency safe  by locking inside NiceNameGenerator)
 let globalNng = NiceNameGenerator()
 
 /// A global generator of stable compiler generated names
-// ++GLOBAL MUTABLE STATE
+// ++GLOBAL MUTABLE STATE (concurrency safe by locking inside StableNiceNameGenerator)
 let globalStableNameGenerator = StableNiceNameGenerator ()
 
 type StampMap<'T> = Map<Stamp,'T>
@@ -970,6 +970,17 @@ type Entity =
     /// Sets the structness of a record or union type definition
     member x.SetIsStructRecordOrUnion b  = let x = x.Data in let flags = x.entity_flags in x.entity_flags <- EntityFlags(flags.IsPrefixDisplay, flags.IsModuleOrNamespace, flags.PreEstablishedHasDefaultConstructor, flags.HasSelfReferentialConstructor, b)
 
+and [<RequireQualifiedAccess>] MaybeLazy<'T> =
+    | Strict of 'T
+    | Lazy of Lazy<'T>
+    member this.Value : 'T =
+        match this with
+        | Strict x -> x
+        | Lazy x -> x.Value
+    member this.Force() : 'T =
+        match this with
+        | Strict x -> x
+        | Lazy x -> x.Force()
 
 and 
     [<NoEquality; NoComparison;RequireQualifiedAccess>]
@@ -1033,7 +1044,7 @@ and
       //
       // MUTABILITY: only used during creation and remapping  of tycons and 
       // when compiling fslib to fixup compiler forward references to internal items 
-      mutable entity_modul_contents: Lazy<ModuleOrNamespaceType>     
+      mutable entity_modul_contents: MaybeLazy<ModuleOrNamespaceType>     
 
       /// The declared documentation for the type or module 
       entity_xmldoc : XmlDoc
@@ -1745,7 +1756,7 @@ and Construct =
             entity_tycon_repr_accessibility = TAccess([])
             entity_exn_info=TExnNone
             entity_tycon_tcaug=TyconAugmentation.Create()
-            entity_modul_contents = lazy new ModuleOrNamespaceType(Namespace, QueueList.ofList [], QueueList.ofList [])
+            entity_modul_contents = MaybeLazy.Lazy (lazy new ModuleOrNamespaceType(Namespace, QueueList.ofList [], QueueList.ofList []))
             // Generated types get internal accessibility
             entity_accessiblity= access
             entity_xmldoc =  XmlDoc [||] // fetched on demand via est.fs API
@@ -2596,7 +2607,7 @@ and NonLocalEntityRef    =
                                 Construct.NewModuleOrNamespace 
                                     (Some cpath) 
                                     (TAccess []) (ident(path.[k],m)) XmlDoc.Empty [] 
-                                    (notlazy (Construct.NewEmptyModuleOrNamespaceType Namespace)) 
+                                    (MaybeLazy.Strict (Construct.NewEmptyModuleOrNamespaceType Namespace)) 
                             entity.ModuleOrNamespaceType.AddModuleOrNamespaceByMutation(newEntity)
                             injectNamespacesFromIToJ newEntity (k+1)
                     let newEntity = injectNamespacesFromIToJ entity i
@@ -3020,15 +3031,14 @@ and
       mutable binding: NonNullSlot<Val>
       /// Indicates a reference to something bound in another CCU 
       nlr: NonLocalValOrMemberRef }
-    member x.IsLocalRef = match box x.nlr with null -> true | _ -> false
-    member x.IsResolved = match box x.binding with null -> false | _ -> true
+    member x.IsLocalRef = obj.ReferenceEquals(x.nlr, null)
+    member x.IsResolved = not (obj.ReferenceEquals(x.binding, null))
     member x.PrivateTarget = x.binding
     member x.ResolvedTarget = x.binding
 
     /// Dereference the ValRef to a Val.
     member vr.Deref = 
-        match box vr.binding with 
-        | null ->
+        if obj.ReferenceEquals(vr.binding, null) then
             let res = 
                 let nlr = vr.nlr 
                 let e =  nlr.EnclosingEntity.Deref 
@@ -3038,12 +3048,11 @@ and
                 | Some h -> h
             vr.binding <- nullableSlotFull res 
             res 
-        | _ -> vr.binding
+        else vr.binding
 
     /// Dereference the ValRef to a Val option.
     member vr.TryDeref = 
-        match box vr.binding with 
-        | null -> 
+        if obj.ReferenceEquals(vr.binding, null) then
             let resOpt = 
                 vr.nlr.EnclosingEntity.TryDeref |> Option.bind (fun e -> 
                     e.ModuleOrNamespaceType.TryLinkVal(vr.nlr.EnclosingEntity.nlr.Ccu, vr.nlr.ItemKey))
@@ -3052,8 +3061,7 @@ and
             | Some res -> 
                 vr.binding <- nullableSlotFull res 
             resOpt
-        | _ -> 
-            Some vr.binding
+        else Some vr.binding
 
     /// The type of the value. May be a TType_forall for a generic value. 
     /// May be a type variable or type containing type variables during type inference. 
@@ -4511,7 +4519,7 @@ let fullCompPathOfModuleOrNamespace (m:ModuleOrNamespace) =
     CompPath(scoref,cpath@[(m.LogicalName, m.ModuleOrNamespaceType.ModuleOrNamespaceKind)])
 
 // Can cpath2 be accessed given a right to access cpath1. That is, is cpath2 a nested type or namespace of cpath1. Note order of arguments.
-let canAccessCompPathFrom (CompPath(scoref1,cpath1)) (CompPath(scoref2,cpath2)) =
+let inline canAccessCompPathFrom (CompPath(scoref1,cpath1)) (CompPath(scoref2,cpath2)) =
     let rec loop p1 p2  = 
         match p1,p2 with 
         | (a1,k1)::rest1, (a2,k2)::rest2 -> (a1=a2) && (k1=k2) && loop rest1 rest2
@@ -4609,7 +4617,7 @@ let NewExn cpath (id:Ident) access repr attribs doc =
         entity_pubpath=cpath |> Option.map (fun (cp:CompilationPath) -> cp.NestedPublicPath id)
         entity_accessiblity=access
         entity_tycon_repr_accessibility=access
-        entity_modul_contents = notlazy (NewEmptyModuleOrNamespaceType ModuleOrType)
+        entity_modul_contents = MaybeLazy.Strict (NewEmptyModuleOrNamespaceType ModuleOrType)
         entity_cpath= cpath
         entity_typars=LazyWithContext.NotLazy []
         entity_tycon_abbrev = None
@@ -4697,7 +4705,7 @@ let NewVal (logicalName:string,m:range,compiledName,ty,isMutable,isCompGen,arity
 
 
 let NewCcuContents sref m nm mty =
-    NewModuleOrNamespace (Some(CompPath(sref,[]))) taccessPublic (ident(nm,m)) XmlDoc.Empty [] (notlazy mty)
+    NewModuleOrNamespace (Some(CompPath(sref,[]))) taccessPublic (ident(nm,m)) XmlDoc.Empty [] (MaybeLazy.Strict mty)
       
 
 //--------------------------------------------------------------------------
@@ -4719,7 +4727,7 @@ let NewModifiedTycon f (orig:Tycon) =
 /// contents of the module. 
 let NewModifiedModuleOrNamespace f orig = 
     orig |> NewModifiedTycon (fun d -> 
-        { d with entity_modul_contents = notlazy (f (d.entity_modul_contents.Force())) }) 
+        { d with entity_modul_contents = MaybeLazy.Strict (f (d.entity_modul_contents.Force())) }) 
 
 /// Create a Val based on an existing one using the function 'f'. 
 /// We require that we be given the parent for the new Val. 
@@ -4774,7 +4782,7 @@ let CombineCcuContentFragments m l =
                         { data1 with 
                              entity_xmldoc = XmlDoc.Merge entity1.XmlDoc entity2.XmlDoc
                              entity_attribs = entity1.Attribs @ entity2.Attribs
-                             entity_modul_contents=lazy (CombineModuleOrNamespaceTypes (path@[entity2.DemangledModuleOrNamespaceName]) entity2.Range entity1.ModuleOrNamespaceType entity2.ModuleOrNamespaceType) }) 
+                             entity_modul_contents = MaybeLazy.Lazy (lazy (CombineModuleOrNamespaceTypes (path@[entity2.DemangledModuleOrNamespaceName]) entity2.Range entity1.ModuleOrNamespaceType entity2.ModuleOrNamespaceType)) }) 
         | false,false -> 
             error(Error(FSComp.SR.tastDuplicateTypeDefinitionInAssembly(entity2.LogicalName, textOfPath path),entity2.Range))
         | _,_ -> 

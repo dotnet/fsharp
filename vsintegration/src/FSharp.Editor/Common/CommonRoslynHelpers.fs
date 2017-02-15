@@ -30,6 +30,14 @@ module internal CommonRoslynHelpers =
             //Assert.Exception(e)
             None
 
+    let TextSpanToFSharpRange(fileName: string, textSpan: TextSpan, sourceText: SourceText) : range =
+        let startLine = sourceText.Lines.GetLineFromPosition textSpan.Start
+        let endLine = sourceText.Lines.GetLineFromPosition textSpan.End
+        mkRange 
+            fileName 
+            (Pos.fromZ startLine.LineNumber (textSpan.Start - startLine.Start))
+            (Pos.fromZ endLine.LineNumber (textSpan.End - endLine.Start))
+
     let GetCompletedTaskResult(task: Task<'TResult>) =
         if task.Status = TaskStatus.RanToCompletion then
             task.Result
@@ -69,7 +77,7 @@ module internal CommonRoslynHelpers =
         | TaggedText.Text t -> TaggedText(TextTags.Text, t)
         | TaggedText.TypeParameter t -> TaggedText(TextTags.TypeParameter, t)
         | TaggedText.Union t -> TaggedText(TextTags.Class, t)
-        | TaggedText.UnionCase t -> TaggedText(TextTags.Property, t)
+        | TaggedText.UnionCase t -> TaggedText(TextTags.Enum, t)
         | TaggedText.UnknownEntity t -> TaggedText(TextTags.Property, t)
         | TaggedText.UnknownType t -> TaggedText(TextTags.Class, t)
 

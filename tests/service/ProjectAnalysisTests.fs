@@ -4817,7 +4817,11 @@ let ``Test request for parse and check doesn't check whole project`` () =
     backgroundCheckCount.Value |> shouldEqual 0
     let checkResults1 = checker.CheckFileInProject(parseResults1, ProjectBig.fileNames.[5], 0, ProjectBig.fileSources2.[5], ProjectBig.options)  |> Async.RunSynchronously
     let pD, tD = FSharpChecker.GlobalForegroundParseCountStatistic, FSharpChecker.GlobalForegroundTypeCheckCountStatistic
-    backgroundParseCount.Value |> shouldEqual 10 // This could be reduced to 5 - the whole project gets parsed 
+#if FCS_RETAIN_BACKGROUND_PARSE_RESULTS
+    backgroundParseCount.Value |> shouldEqual 10
+#else
+    backgroundParseCount.Value |> shouldEqual 5
+#endif
     backgroundCheckCount.Value |> shouldEqual 5
     (pD - pC) |> shouldEqual 0
     (tD - tC) |> shouldEqual 1
@@ -4826,7 +4830,11 @@ let ``Test request for parse and check doesn't check whole project`` () =
     let pE, tE = FSharpChecker.GlobalForegroundParseCountStatistic, FSharpChecker.GlobalForegroundTypeCheckCountStatistic
     (pE - pD) |> shouldEqual 0
     (tE - tD) |> shouldEqual 1
+#if FCS_RETAIN_BACKGROUND_PARSE_RESULTS
     backgroundParseCount.Value |> shouldEqual 10 // but note, the project does not get reparsed
+#else
+    backgroundParseCount.Value |> shouldEqual 7 // but note, the project does not get reparsed
+#endif
     backgroundCheckCount.Value |> shouldEqual 7 // only two extra typechecks of files
 
     // A subsequent ParseAndCheck of identical source code doesn't do any more anything
@@ -4834,7 +4842,11 @@ let ``Test request for parse and check doesn't check whole project`` () =
     let pF, tF = FSharpChecker.GlobalForegroundParseCountStatistic, FSharpChecker.GlobalForegroundTypeCheckCountStatistic
     (pF - pE) |> shouldEqual 0  // note, no new parse of the file
     (tF - tE) |> shouldEqual 0  // note, no new typecheck of the file
+#if FCS_RETAIN_BACKGROUND_PARSE_RESULTS
     backgroundParseCount.Value |> shouldEqual 10 // but note, the project does not get reparsed
+#else
+    backgroundParseCount.Value |> shouldEqual 7 // but note, the project does not get reparsed
+#endif
     backgroundCheckCount.Value |> shouldEqual 7 // only two extra typechecks of files
 
     ()

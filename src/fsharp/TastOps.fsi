@@ -1400,10 +1400,12 @@ val IsGenericValWithGenericContraints: TcGlobals -> Val -> bool
 type Entity with 
     member HasInterface : TcGlobals -> TType -> bool
     member HasOverride : TcGlobals -> string -> TType list -> bool
+    member HasMember : TcGlobals -> string -> TType list -> bool
 
 type EntityRef with 
     member HasInterface : TcGlobals -> TType -> bool
     member HasOverride : TcGlobals -> string -> TType list -> bool
+    member HasMember : TcGlobals -> string -> TType list -> bool
 
 val (|AttribBitwiseOrExpr|_|) : TcGlobals -> Expr -> (Expr * Expr) option
 val (|EnumExpr|_|) : TcGlobals -> Expr -> Expr option
