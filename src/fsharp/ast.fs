@@ -61,8 +61,8 @@ type XmlDocCollector() =
         check()
         savedLines.Add(line,pos)
 
-    member x.LinesBefore(grabPointPos) =
-
+    member x.LinesBefore(grabPointPos) = 
+      try
         let lines = savedLinesAsArray.Force()
         let grabPoints = savedGrabPointsAsArray.Force()
         let firstLineIndexAfterGrabPoint = Array.findFirstIndexWhereTrue lines (fun (_,pos) -> posGeq pos grabPointPos)
@@ -76,6 +76,9 @@ type XmlDocCollector() =
                 Array.findFirstIndexWhereTrue lines (fun (_,pos) -> posGeq pos prevGrabPointPos)
         //printfn "#lines = %d, firstLineIndexAfterPrevGrabPoint = %d, firstLineIndexAfterGrabPoint = %d" lines.Length firstLineIndexAfterPrevGrabPoint  firstLineIndexAfterGrabPoint
         lines.[firstLineIndexAfterPrevGrabPoint..firstLineIndexAfterGrabPoint-1] |> Array.map fst
+      with e -> 
+          //printfn "unexpected error in LinesBefore:\n%s" (e.ToString())
+          [| |]
 
 type XmlDoc =
     | XmlDoc of string[]
