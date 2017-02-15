@@ -1029,7 +1029,7 @@ type TypeCheckInfo
             | otherwise -> otherwise - 1
 
         // Look for a "special" completion context
-        match UntypedParseImpl.TryGetCompletionContext(mkPos line colAtEndOfNamesAndResidue, parseResultsOpt) with
+        match UntypedParseImpl.TryGetCompletionContext(mkPos line colAtEndOfNamesAndResidue, parseResultsOpt, lineStr) with
 
         // Invalid completion locations
         | Some CompletionContext.Invalid -> None

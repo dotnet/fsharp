@@ -7714,6 +7714,35 @@ let rec f l =
         this.VerifyDotCompListContainAllAtStartOfMarker(fileContents, "(*Marker*)", 
             ["Chars";"Length"], queryAssemblyRefs )
 
+    [<Test>]
+    member this.``Verify no completion on dot after module definition``() = 
+        this.VerifyDotCompListIsEmptyAtStartOfMarker(
+            fileContents = """
+                module BasicTest(*Marker*)
+
+                let foo x = x
+                let bar = 1""",
+            marker = "(*Marker*)")
+
+    [<Test>]
+    member this.``Verify no completion after module definition``() = 
+        this.VerifyCtrlSpaceCompListIsEmptyAtEndOfMarker(
+            fileContents = """
+                module BasicTest 
+
+                let foo x = x
+                let bar = 1""",
+            marker = "module BasicTest ")
+
+    [<Test>]
+    member this.``Verify no completion in hash derictives``() =
+        this.VerifyCtrlSpaceCompListIsEmptyAtEndOfMarker(
+            fileContents = """
+                #r (*Marker*)
+
+                let foo x = x
+                let bar = 1""",
+            marker = "(*Marker*)")
 
 // Context project system
 [<TestFixture>] 
