@@ -364,25 +364,19 @@ module internal CommonHelpers =
         let isFixableIdentifier (s: string) = 
             not (String.IsNullOrEmpty s) && Lexhelp.Keywords.NormalizeIdentifierBackticks s |> isIdentifier
         
-        let forbiddenChars = ["."; "+"; "$"; "&"; "["; "]"; "/"; "\\"; "*"; "\""]
+        let forbiddenChars = [| '.'; '+'; '$'; '&'; '['; ']'; '/'; '\\'; '*'; '\'' |]
         
         let isTypeNameIdent (s: string) =
-            not (String.IsNullOrEmpty s) &&
-            forbiddenChars |> Seq.forall (fun c -> not (s.Contains c)) &&
-            isFixableIdentifier s 
+            not (String.IsNullOrEmpty s) && s.IndexOfAny forbiddenChars = -1 && isFixableIdentifier s 
         
         let isUnionCaseIdent (s: string) =
-            isTypeNameIdent s &&    
-            Char.IsUpper(s.Replace(doubleBackTickDelimiter, "").[0])
+            isTypeNameIdent s && Char.IsUpper(s.Replace(doubleBackTickDelimiter, "").[0])
         
         let isTypeParameter (prefix: char) (s: string) =
-            match s.Length with
-            | 0 | 1 -> false
-            | _ -> s.[0] = prefix && isIdentifier s.[1..]
+            s.Length >= 2 && s.[0] = prefix && isIdentifier s.[1..]
         
         let isGenericTypeParameter = isTypeParameter '''
         let isStaticallyResolvedTypeParameter = isTypeParameter '^'
-        
         
         match lexerSymbolKind, symbol with
         | _, :? FSharpUnionCase -> isUnionCaseIdent name
