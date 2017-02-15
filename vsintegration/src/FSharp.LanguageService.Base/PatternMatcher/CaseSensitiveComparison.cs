@@ -7,7 +7,7 @@ using System.Text;
 
 namespace Microsoft.CodeAnalysis.Utilities
 {
-    public static class CaseInsensitiveComparison
+    internal static class CaseInsensitiveComparison
     {
         // PERF: Cache a TextInfo for Unicode ToLower since this will be accessed very frequently
         private static readonly TextInfo s_unicodeCultureTextInfo = GetUnicodeCulture().TextInfo;

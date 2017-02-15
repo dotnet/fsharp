@@ -5,7 +5,7 @@ namespace Microsoft.CodeAnalysis.PatternMatching
     /// <summary>
     /// Note(cyrusn): this enum is ordered from strongest match type to weakest match type.
     /// </summary>
-    public enum PatternMatchKind
+    internal enum PatternMatchKind
     {
         /// <summary>
         /// The candidate string matched the pattern exactly.

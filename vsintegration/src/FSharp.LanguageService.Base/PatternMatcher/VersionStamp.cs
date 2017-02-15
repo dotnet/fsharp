@@ -8,7 +8,7 @@ namespace Microsoft.CodeAnalysis
     /// <summary>
     /// VersionStamp should be only used to compare versions returned by same API.
     /// </summary>
-    public struct VersionStamp : IEquatable<VersionStamp>, IObjectWritable
+    internal struct VersionStamp : IEquatable<VersionStamp>, IObjectWritable
     {
         public static VersionStamp Default => default(VersionStamp);
 
