@@ -2151,26 +2151,28 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     base.Dispose(disposing)                
 
             override x.ImageIndex =
-                    if (x.IsFormSubType) then 
-                        int32 ProjectNode.ImageName.WindowsForm
-                    elif (FSharpProjectNode.IsFSharpCodeFileIconwise(x.FileName)) then 
-                        FSharpProjectNode.ImageOffset + int32 FSharpImageName.FsFile
-                    elif (FSharpProjectNode.IsFSharpSignatureFileIconwise(x.FileName)) then 
-                        FSharpProjectNode.ImageOffset + int32 FSharpImageName.FsiFile
-                    elif (FSharpProjectNode.IsFSharpScriptFileIconwise(x.FileName)) then 
-                        FSharpProjectNode.ImageOffset + int32 FSharpImageName.FsxFile
-                    else
-                        base.ImageIndex
+                // Check if the file is there.
+                if not (x.CanShowDefaultIcon()) then
+                    int ProjectNode.ImageName.MissingFile
+                elif x.IsFormSubType then 
+                    int ProjectNode.ImageName.WindowsForm
+                elif (FSharpProjectNode.IsFSharpCodeFileIconwise(x.FileName)) then 
+                    FSharpProjectNode.ImageOffset + int FSharpImageName.FsFile
+                elif (FSharpProjectNode.IsFSharpSignatureFileIconwise(x.FileName)) then 
+                    FSharpProjectNode.ImageOffset + int FSharpImageName.FsiFile
+                elif (FSharpProjectNode.IsFSharpScriptFileIconwise(x.FileName)) then 
+                    FSharpProjectNode.ImageOffset + int FSharpImageName.FsxFile
+                else
+                    base.ImageIndex
 
             /// Open a file depending on the SubType property associated with the file item in the project file
             override x.DoDefaultAction() =
                 let manager = (x.GetDocumentManager() :?> FileDocumentManager)
                 Debug.Assert(manager <> null, "Could not get the FileDocumentManager")
 
-                let viewGuid = (if x.IsFormSubType then VSConstants.LOGVIEWID_Designer else VSConstants.LOGVIEWID_Primary)
-                let fallbackViewGuid = (if x.IsFormSubType then VSConstants.LOGVIEWID_Primary else VSConstants.LOGVIEWID_Designer)
+                let viewGuid = (if x.IsFormSubType then VSConstants.LOGVIEWID_Designer else VSConstants.LOGVIEWID_TextView)
                 let mutable frame : IVsWindowFrame = null
-                manager.Open(false, false, viewGuid, fallbackViewGuid, &frame, WindowFrameShowAction.Show) |> ignore
+                manager.Open(false, false, viewGuid, &frame, WindowFrameShowAction.Show) |> ignore
 
             /// In solution explorer, move the last of my siblings to just above me, return the moved FSharpFileNode
             static member MoveLastToAbove(target : HierarchyNode, root : FSharpProjectNode) : FSharpFileNode =

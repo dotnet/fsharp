@@ -97,7 +97,9 @@ type internal FSharpGoToDefinitionService
                 let workspace = document.Project.Solution.Workspace
                 let navigationService = workspace.Services.GetService<IDocumentNavigationService>()
                 ignore presenters
-                navigationService.TryNavigateToSpan(workspace, navigableItem.Document.Id, navigableItem.SourceSpan)
+                // prefer open documents in the preview tab
+                let options = workspace.Options.WithChangedOption(NavigationOptions.PreferProvisionalTab, true)
+                navigationService.TryNavigateToSpan(workspace, navigableItem.Document.Id, navigableItem.SourceSpan, options)
 
                 // FSROSLYNTODO: potentially display multiple results here
                 // If GotoDef returns one result then it should try to jump to a discovered location. If it returns multiple results then it should use 

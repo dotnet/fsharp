@@ -7,7 +7,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Security;
-using System.Windows; 
+using System.Windows;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 using System.Drawing;
@@ -36,7 +36,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return this.node;
             }
         }
-        
+
         public DocumentManager(HierarchyNode node)
         {
             this.node = node;
@@ -184,7 +184,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return (pvar as string);
         }
-        
+
         public void CloseWindowFrame(ref IVsWindowFrame windowFrame)
         {
             if (windowFrame != null)

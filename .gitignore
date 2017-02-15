@@ -107,3 +107,5 @@ times
 source_link.json
 .vs/
 /VSRelease/net40/bin
+System.ValueTuple.dll
+tests/fsharpqa/testenv/bin/System.ValueTuple.dll
