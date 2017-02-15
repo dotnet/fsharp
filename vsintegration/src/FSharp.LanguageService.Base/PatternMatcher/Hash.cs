@@ -2,6 +2,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Utilities;
 
 namespace Roslyn.Utilities
@@ -78,6 +80,32 @@ namespace Roslyn.Utilities
             for (int i = 0; i < maxSize; i++)
             {
                 T value = values[i];
+
+                // Should end up with a constrained virtual call to object.GetHashCode (i.e. avoid boxing where possible).
+                if (value != null)
+                {
+                    hashCode = Hash.Combine(value.GetHashCode(), hashCode);
+                }
+            }
+
+            return hashCode;
+        }
+
+        internal static int CombineValues<T>(ImmutableArray<T> values, int maxItemsToHash = int.MaxValue)
+        {
+            if (values.IsDefaultOrEmpty)
+            {
+                return 0;
+            }
+
+            var hashCode = 0;
+            var count = 0;
+            foreach (var value in values)
+            {
+                if (count++ >= maxItemsToHash)
+                {
+                    break;
+                }
 
                 // Should end up with a constrained virtual call to object.GetHashCode (i.e. avoid boxing where possible).
                 if (value != null)
@@ -172,6 +200,24 @@ namespace Roslyn.Utilities
             return hashCode;
         }
 #endif
+
+        /// <summary>
+        /// Compute the FNV-1a hash of a sequence of bytes
+        /// See http://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
+        /// </summary>
+        /// <param name="data">The sequence of bytes</param>
+        /// <returns>The FNV-1a hash of <paramref name="data"/></returns>
+        internal static int GetFNVHashCode(ImmutableArray<byte> data)
+        {
+            int hashCode = Hash.FnvOffsetBias;
+
+            for (int i = 0; i < data.Length; i++)
+            {
+                hashCode = unchecked((hashCode ^ data[i]) * Hash.FnvPrime);
+            }
+
+            return hashCode;
+        }
 
         /// <summary>
         /// Compute the hashcode of a sub-string using FNV-1a

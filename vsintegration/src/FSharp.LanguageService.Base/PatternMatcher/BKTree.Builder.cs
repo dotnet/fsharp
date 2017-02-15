@@ -3,6 +3,7 @@
 using Microsoft.CodeAnalysis.Utilities;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 
@@ -117,20 +118,23 @@ namespace Roslyn.Utilities
             internal BKTree Create()
             {
                 for (var i = 0; i < _wordSpans.Length; i++)
+                {
                     Add(_wordSpans[i], insertionIndex: i);
+                }
 
-                var nodes = new List<Node>(_builderNodes.Length);
+                var nodes = ImmutableArray.CreateBuilder<Node>(_builderNodes.Length);
 
-                // There will be one less edge in the graph than nodes.  Each node (except for the root) will have a single edge pointing to it.
-                var edges = new List<Edge>(Math.Max(0, _builderNodes.Length - 1));
-                var nodesAndEdges = BuildArrays();
-                return new BKTree(_concatenatedLowerCaseWords, nodesAndEdges.Item1, nodesAndEdges.Item2);
+                // There will be one less edge in the graph than nodes.  Each node (except for the
+                // root) will have a single edge pointing to it.
+                var edges = ImmutableArray.CreateBuilder<Edge>(Math.Max(0, _builderNodes.Length - 1));
+
+                BuildArrays(nodes, edges);
+
+                return new BKTree(_concatenatedLowerCaseWords, nodes.MoveToImmutable(), edges.MoveToImmutable());
             }
 
-            Tuple<Node[], Edge[]> BuildArrays()
+            private void BuildArrays(ImmutableArray<Node>.Builder nodes, ImmutableArray<Edge>.Builder edges)
             {
-                var nodes = new List<Node>();
-                var edges = new List<Edge>();
                 var currentEdgeIndex = 0;
                 for (var i = 0; i < _builderNodes.Length; i++)
                 {
@@ -167,7 +171,6 @@ namespace Roslyn.Utilities
 
                 Debug.Assert(currentEdgeIndex == edges.Capacity);
                 Debug.Assert(currentEdgeIndex == edges.Count);
-                return Tuple.Create(nodes.ToArray(), edges.ToArray());
             }
 
             private void Add(TextSpan characterSpan, int insertionIndex)

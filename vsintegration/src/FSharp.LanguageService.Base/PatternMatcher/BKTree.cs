@@ -1,8 +1,11 @@
 ﻿// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Utilities;
+using System;
 
 namespace Roslyn.Utilities
 {
@@ -24,8 +27,8 @@ namespace Roslyn.Utilities
 
         public static readonly BKTree Empty = new BKTree(
             _emptyArray,
-            new Node[0],
-            new Edge[0]);
+            ImmutableArray<Node>.Empty,
+            ImmutableArray<Edge>.Empty);
 
         // We have three completely flat arrays of structs.  These arrays fully represent the 
         // BK tree.  The structure is as follows:
@@ -49,10 +52,10 @@ namespace Roslyn.Utilities
         // wants to work on top of raw char[]s (both for speed, and so it can pool arrays
         // to prevent lots of garbage).  Because of that we just keep this as a char[].
         private readonly char[] _concatenatedLowerCaseWords;
-        private readonly Node[] _nodes;
-        private readonly Edge[] _edges;
+        private readonly ImmutableArray<Node> _nodes;
+        private readonly ImmutableArray<Edge> _edges;
 
-        private BKTree(char[] concatenatedLowerCaseWords, Node[] nodes, Edge[] edges)
+        private BKTree(char[] concatenatedLowerCaseWords, ImmutableArray<Node> nodes, ImmutableArray<Edge> edges)
         {
             _concatenatedLowerCaseWords = concatenatedLowerCaseWords;
             _nodes = nodes;

@@ -124,6 +124,10 @@
     <Reference Include="Microsoft.VisualStudio.ComponentModelHost, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Roslyn.Microsoft.VisualStudio.ComponentModelHost.0.0.2\lib\net46\Microsoft.VisualStudio.ComponentModelHost.dll</HintPath>
     </Reference>
+    <Reference Include="System.Collections.Immutable">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\System.Collections.Immutable.1.2.0\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
       <Name>FSharp.Core</Name>
@@ -141,6 +145,8 @@
     <Compile Include="ExpansionProvider.cs" />
     <Compile Include="ExternDll.cs" />
     <Compile Include="LanguageService.cs" />
+    <Compile Include="PatternMatcher\ArrayBuilder.cs" />
+    <Compile Include="PatternMatcher\ArrayBuilder.Enumerator.cs" />
     <Compile Include="PatternMatcher\ArraySlice.cs" />
     <Compile Include="PatternMatcher\BKTree.Builder.cs" />
     <Compile Include="PatternMatcher\BKTree.cs" />
@@ -150,6 +156,7 @@
     <Compile Include="PatternMatcher\EditDistance.cs" />
     <Compile Include="PatternMatcher\Hash.cs" />
     <Compile Include="PatternMatcher\IDictionaryExtensions.cs" />
+    <Compile Include="PatternMatcher\ImmutableArrayExtensions.cs" />
     <Compile Include="PatternMatcher\IObjectWritable.cs" />
     <Compile Include="PatternMatcher\NormalizedTextSpanCollection.cs" />
     <Compile Include="PatternMatcher\ObjectPool.cs" />

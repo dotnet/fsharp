@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System;
+using System.Collections.Immutable;
 using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.PatternMatching
@@ -26,7 +27,7 @@ namespace Microsoft.CodeAnalysis.PatternMatching
         /// The spans in the original text that were matched.  Only returned if the 
         /// pattern matcher is asked to collect these spans.
         /// </summary>
-        public TextSpan[] MatchedSpans { get; }
+        public ImmutableArray<TextSpan> MatchedSpans { get; }
 
         private readonly bool _punctuationStripped;
 
@@ -37,7 +38,7 @@ namespace Microsoft.CodeAnalysis.PatternMatching
             TextSpan? matchedSpan,
             int? camelCaseWeight = null)
             : this(resultType, punctuationStripped, isCaseSensitive,
-                   matchedSpan == null ? new TextSpan[0] : new[] { matchedSpan.Value },
+                   matchedSpan == null ? ImmutableArray<TextSpan>.Empty : ImmutableArray.Create(matchedSpan.Value),
                    camelCaseWeight)
         {
         }
@@ -46,7 +47,7 @@ namespace Microsoft.CodeAnalysis.PatternMatching
             PatternMatchKind resultType,
             bool punctuationStripped,
             bool isCaseSensitive,
-            TextSpan[] matchedSpans,
+            ImmutableArray<TextSpan> matchedSpans,
             int? camelCaseWeight = null)
             : this()
         {

@@ -1,7 +1,9 @@
 ﻿// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System;
+using System.Collections.Immutable;
 using System.Linq;
+using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.PatternMatching
 {
@@ -12,19 +14,20 @@ namespace Microsoft.CodeAnalysis.PatternMatching
     /// </summary>
     internal struct PatternMatches
     {
-        public static readonly PatternMatches Empty = new PatternMatches(null, null);
+        public static readonly PatternMatches Empty = new PatternMatches(
+            ImmutableArray<PatternMatch>.Empty, ImmutableArray<PatternMatch>.Empty);
 
-        public readonly PatternMatch[] CandidateMatches;
-        public readonly PatternMatch[] ContainerMatches;
+        public readonly ImmutableArray<PatternMatch> CandidateMatches;
+        public readonly ImmutableArray<PatternMatch> ContainerMatches;
 
-        public PatternMatches(PatternMatch[] candidateMatches,
-                              PatternMatch[] containerMatches = null)
+        public PatternMatches(ImmutableArray<PatternMatch> candidateMatches,
+                              ImmutableArray<PatternMatch> containerMatches = default(ImmutableArray<PatternMatch>))
         {
-            CandidateMatches = candidateMatches ?? new PatternMatch[0];
-            ContainerMatches = containerMatches ?? new PatternMatch[0];
+            CandidateMatches = candidateMatches.NullToEmpty();
+            ContainerMatches = containerMatches.NullToEmpty();
         }
 
-        public bool IsEmpty => CandidateMatches.Length == 0 && ContainerMatches.Length == 0;
+        public bool IsEmpty => CandidateMatches.IsEmpty && ContainerMatches.IsEmpty;
 
         internal bool All(Func<PatternMatch, bool> predicate)
         {
