@@ -254,7 +254,7 @@ type internal FSharpNavigateToSearchService
                                   |> Seq.map (fun pm ->
                                       NavigateToSearchResult(x, patternMatchKindToNavigateToMatchKind pm.Kind) :> INavigateToSearchResult)
                                   |> Seq.toArray) |]
-                    |> Array.distinctBy (fun x -> x.NavigableItem.Document, x.NavigableItem.SourceSpan)
+                    |> Array.distinctBy (fun x -> x.NavigableItem.Document.Id, x.NavigableItem.SourceSpan)
             } 
             |> Async.map (Option.defaultValue [||])
             |> Async.map (fun x -> x.ToImmutableArray())
