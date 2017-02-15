@@ -261,8 +261,9 @@ namespace Microsoft.CodeAnalysis.PatternMatching
                 return null;
             }
 
-            return MatchSegment(candidate, inludeMatchSpans, _fullPatternSegment, wantAllMatches: false, allMatches: out var ignored, fuzzyMatch: false) ??
-                   MatchSegment(candidate, inludeMatchSpans, _fullPatternSegment, wantAllMatches: false, allMatches: out ignored, fuzzyMatch: true);
+            ImmutableArray<PatternMatch> ignored;
+            var result = MatchSegment(candidate, inludeMatchSpans, _fullPatternSegment, wantAllMatches: false, allMatches: out ignored, fuzzyMatch: false);
+            return result != null ? result : MatchSegment(candidate, inludeMatchSpans, _fullPatternSegment, wantAllMatches: false, allMatches: out ignored, fuzzyMatch: true);
         }
 
         private StringBreaks GetWordSpans(string word)
@@ -367,7 +368,8 @@ namespace Microsoft.CodeAnalysis.PatternMatching
                 if (chunk.CharacterSpans.Count > 0)
                 {
                     var candidateParts = GetWordSpans(candidate);
-                    var camelCaseWeight = TryCamelCaseMatch(candidate, includeMatchSpans, candidateParts, chunk, CompareOptions.None, out var matchedSpans);
+                    List<TextSpan> matchedSpans;
+                    var camelCaseWeight = TryCamelCaseMatch(candidate, includeMatchSpans, candidateParts, chunk, CompareOptions.None, out matchedSpans);
                     if (camelCaseWeight.HasValue)
                     {
                         return new PatternMatch(
@@ -451,8 +453,9 @@ namespace Microsoft.CodeAnalysis.PatternMatching
                 return ImmutableArray<PatternMatch>.Empty;
             }
 
+            ImmutableArray<PatternMatch> matches;
             var singleMatch = MatchSegment(candidate, includeMatchSpans, segment,
-                wantAllMatches: true, fuzzyMatch: fuzzyMatch, allMatches: out var matches);
+                wantAllMatches: true, fuzzyMatch: fuzzyMatch, allMatches: out matches);
             if (singleMatch.HasValue)
             {
                 return ImmutableArray.Create(singleMatch.Value);

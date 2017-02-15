@@ -57,7 +57,8 @@ namespace Microsoft.CodeAnalysis.Shared.Utilities
         {
             Debug.Assert(text != null);
             Debug.Assert(spanGenerator != null);
-            return TryEncodeSpans(text, spanGenerator, out var encodedSpans)
+            EncodedSpans encodedSpans;
+            return TryEncodeSpans(text, spanGenerator, out encodedSpans)
                 ? new StringBreaks(encodedSpans)
                 : new StringBreaks(CreateFallbackList(text, spanGenerator));
         }

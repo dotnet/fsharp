@@ -199,8 +199,8 @@ namespace Roslyn.Utilities
                         // So the edit distance should always be non-zero.
                         throw new InvalidOperationException();
                     }
-
-                    if (TryGetChildIndex(currentNode, currentNodeIndex, editDistance, out var childNodeIndex))
+                    int childNodeIndex;
+                    if (TryGetChildIndex(currentNode, currentNodeIndex, editDistance, out childNodeIndex))
                     {
                         // Edit distances collide.  Move to this child and add this word to it.
                         currentNodeIndex = childNodeIndex;

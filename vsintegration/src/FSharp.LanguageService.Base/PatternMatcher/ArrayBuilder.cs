@@ -402,7 +402,8 @@ namespace Microsoft.CodeAnalysis
             {
                 var item = this[i];
                 var key = keySelector(item);
-                if (!accumulator.TryGetValue(key, out var bucket))
+                ArrayBuilder<T> bucket;
+                if (!accumulator.TryGetValue(key, out bucket))
                 {
                     bucket = ArrayBuilder<T>.GetInstance();
                     accumulator.Add(key, bucket);
