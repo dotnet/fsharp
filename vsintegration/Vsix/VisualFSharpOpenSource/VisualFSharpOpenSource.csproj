@@ -311,12 +311,6 @@
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\PatternMatcher\PatternMatcher.csproj">
-      <Project>{0305F516-F3EF-48EA-A410-C45EB9611588}</Project>
-      <Name>PatternMatcher</Name>
-      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
-      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.tools.targets" />
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
