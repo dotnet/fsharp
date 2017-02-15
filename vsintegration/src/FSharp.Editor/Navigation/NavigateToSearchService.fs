@@ -227,7 +227,7 @@ type internal FSharpNavigateToSearchService
                 return indexedItems
         }
 
-    let patternMatchKindToNavigaToMatchKind = function
+    let patternMatchKindToNavigateToMatchKind = function
         | PatternMatchKind.Exact -> NavigateToMatchKind.Exact
         | PatternMatchKind.Prefix -> NavigateToMatchKind.Prefix
         | PatternMatchKind.Substring -> NavigateToMatchKind.Substring
@@ -252,9 +252,9 @@ type internal FSharpNavigateToSearchService
                               |> Array.Parallel.collect (fun x -> 
                                   patternMatcher.GetMatches(x.Name)
                                   |> Seq.map (fun pm ->
-                                      NavigateToSearchResult(x, patternMatchKindToNavigaToMatchKind pm.Kind) :> INavigateToSearchResult)
+                                      NavigateToSearchResult(x, patternMatchKindToNavigateToMatchKind pm.Kind) :> INavigateToSearchResult)
                                   |> Seq.toArray) |]
-                    |> Array.distinctBy (fun x -> x.NavigableItem)
+                    |> Array.distinctBy (fun x -> x.NavigableItem.Document, x.NavigableItem.SourceSpan)
             } 
             |> Async.map (Option.defaultValue [||])
             |> Async.map (fun x -> x.ToImmutableArray())
