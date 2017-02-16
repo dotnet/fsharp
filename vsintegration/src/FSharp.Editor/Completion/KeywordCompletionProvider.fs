@@ -28,7 +28,8 @@ type internal FSharpKeywordCompletionProvider
 
     let completionItems =
         Lexhelp.Keywords.keywordsWithDescription
-        |> List.map (fun (keyword, description) -> 
+        |> List.filter (fun (keyword, _) -> not (PrettyNaming.IsOperatorName keyword))
+        |> List.map (fun (keyword, description) ->
              CommonCompletionItem.Create(keyword, Nullable(Glyph.Keyword)).AddProperty("description", description))
 
     static member ShouldTriggerCompletionAux(sourceText: SourceText, caretPosition: int, trigger: CompletionTriggerKind, getInfo: (unit -> DocumentId * string * string list)) =
