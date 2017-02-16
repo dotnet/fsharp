@@ -5362,11 +5362,15 @@ and GenBindRhs cenv cgbuf eenv sp (vspec:Val) e =
     | Expr.TyLambda _ | Expr.Lambda _ -> 
         let isLocalTypeFunc = IsNamedLocalTypeFuncVal cenv.g vspec e
          
-        match e, isLocalTypeFunc with
-        | Expr.TyLambda(_, tyargs, body, _, _), true when 
+        match e with
+        | Expr.TyLambda(_, tyargs, body, _, ttype) when 
             (
                 tyargs |> List.forall (fun tp -> tp.IsErased) &&
-                (match StorageForVal vspec.Range vspec eenv with Local _ -> true | _ -> false)
+                (match StorageForVal vspec.Range vspec eenv with Local _ -> true | _ -> false) && 
+                (isLocalTypeFunc || 
+                    (match ttype with 
+                     TType_var(typar) -> match typar.Solution with Some(TType_app(t,_))-> t.IsStructOrEnumTycon | _ -> false
+                     | _ -> false))
             ) ->
             // type lambda with erased type arguments that is stored as local variable (not method or property)- inline body
             GenExpr cenv cgbuf eenv sp body Continue
@@ -6062,6 +6066,46 @@ and GenAbstractBinding cenv eenv tref (vref:ValRef) =
         [],[],[]
 
 and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
+    let genToString ilThisTy = 
+        [
+        match (eenv.valsInScope.TryFind cenv.g.sprintf_vref.Deref,
+               eenv.valsInScope.TryFind cenv.g.new_format_vref.Deref) with
+        | Some(Lazy(Method(_,_,sprintfMethSpec,_,_,_))), Some(Lazy(Method(_,_,newFormatMethSpec,_,_,_))) ->
+               // The type returned by the 'sprintf' call
+               let funcTy = EraseClosures.mkILFuncTy cenv.g.ilxPubCloEnv ilThisTy cenv.g.ilg.typ_String
+               // Give the instantiation of the printf format object, i.e. a Format`5 object compatible with StringFormat<ilThisTy>
+               let newFormatMethSpec = mkILMethSpec(newFormatMethSpec.MethodRef,AsObject,
+                                               [// 'T -> string'
+                                               funcTy 
+                                               // rest follow from 'StringFormat<T>'
+                                               GenUnitTy cenv eenv m  
+                                               cenv.g.ilg.typ_String 
+                                               cenv.g.ilg.typ_String 
+                                               ilThisTy],[])
+               // Instantiate with our own type
+               let sprintfMethSpec = mkILMethSpec(sprintfMethSpec.MethodRef,AsObject,[],[funcTy])
+               // Here's the body of the method. Call printf, then invoke the function it returns
+               let callInstrs = EraseClosures.mkCallFunc cenv.g.ilxPubCloEnv (fun _ -> 0us) eenv.tyenv.Count Normalcall (Apps_app(ilThisTy, Apps_done cenv.g.ilg.typ_String))
+               let ilMethodDef = mkILNonGenericVirtualMethod ("ToString",ILMemberAccess.Public,[],
+                                           mkILReturn cenv.g.ilg.typ_String,
+                                           mkMethodBody (true,[],2,nonBranchingInstrsToCode 
+                                                   ([ // load the hardwired format string
+                                                       yield I_ldstr "%+A"  
+                                                       // make the printf format object
+                                                       yield mkNormalNewobj newFormatMethSpec
+                                                       // call sprintf
+                                                       yield mkNormalCall sprintfMethSpec 
+                                                       // call the function returned by sprintf
+                                                       yield mkLdarg0 
+                                                       if ilThisTy.Boxity = ILBoxity.AsValue then
+                                                           yield mkNormalLdobj ilThisTy  ] @
+                                                       callInstrs),
+                                                   None))
+               let mdef = { ilMethodDef with CustomAttrs = mkILCustomAttrs [ cenv.g.CompilerGeneratedAttribute ] }
+               yield mdef
+        | None,_ -> ()
+        | _,None -> ()
+        | _ -> ()]
     let tcref = mkLocalTyconRef tycon
     if tycon.IsTypeAbbrev then () else
     match tycon.TypeReprInfo with 
@@ -6418,7 +6462,9 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                  // Records that are value types do not create a default constructor with CLIMutable or ComVisible
                  if not isStructRecord && (isCLIMutable || (TryFindFSharpBoolAttribute cenv.g cenv.g.attrib_ComVisibleAttribute tycon.Attribs = Some true)) then
                      yield mkILSimpleStorageCtor(None, Some cenv.g.ilg.typ_Object.TypeSpec, ilThisTy, [], reprAccess) 
-
+                 
+                 if not (tycon.HasMember cenv.g "ToString" []) then
+                    yield! genToString ilThisTy
               | TFSharpObjectRepr r when tycon.IsFSharpDelegateTycon ->
 
                  // Build all the methods that go with a delegate type 
@@ -6437,47 +6483,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                         yield { ilMethodDef with Access=reprAccess }
                  | _ -> 
                      ()
-              | TUnionRepr _ when (not <| tycon.HasMember cenv.g "ToString" []) -> 
-                  match (eenv.valsInScope.TryFind cenv.g.sprintf_vref.Deref,
-                         eenv.valsInScope.TryFind cenv.g.new_format_vref.Deref) with
-                  | Some(Lazy(Method(_,_,sprintfMethSpec,_,_,_))), Some(Lazy(Method(_,_,newFormatMethSpec,_,_,_))) ->
-                      // The type returned by the 'sprintf' call
-                      let funcTy = EraseClosures.mkILFuncTy cenv.g.ilxPubCloEnv ilThisTy cenv.g.ilg.typ_String
-                      // Give the instantiation of the printf format object, i.e. a Format`5 object compatible with StringFormat<ilThisTy>
-                      let newFormatMethSpec = mkILMethSpec(newFormatMethSpec.MethodRef,AsObject,
-                                                      [// 'T -> string'
-                                                       funcTy 
-                                                       // rest follow from 'StringFormat<T>'
-                                                       GenUnitTy cenv eenv m  
-                                                       cenv.g.ilg.typ_String 
-                                                       cenv.g.ilg.typ_String 
-                                                       ilThisTy],[])
-                      // Instantiate with our own type
-                      let sprintfMethSpec = mkILMethSpec(sprintfMethSpec.MethodRef,AsObject,[],[funcTy])
-                      // Here's the body of the method. Call printf, then invoke the function it returns
-                      let callInstrs = EraseClosures.mkCallFunc cenv.g.ilxPubCloEnv (fun _ -> 0us) eenv.tyenv.Count Normalcall (Apps_app(ilThisTy, Apps_done cenv.g.ilg.typ_String))
-                      let ilMethodDef = mkILNonGenericVirtualMethod ("ToString",ILMemberAccess.Public,[],
-                                                   mkILReturn cenv.g.ilg.typ_String,
-                                                   mkMethodBody 
-                                                         (true,[],2,
-                                                          nonBranchingInstrsToCode 
-                                                            ([ // load the hardwired format string
-                                                               yield I_ldstr "%+A"  
-                                                               // make the printf format object
-                                                               yield mkNormalNewobj newFormatMethSpec
-                                                               // call sprintf
-                                                               yield mkNormalCall sprintfMethSpec 
-                                                               // call the function returned by sprintf
-                                                               yield mkLdarg0 
-                                                               if ilThisTy.Boxity = ILBoxity.AsValue then
-                                                                  yield mkNormalLdobj ilThisTy  ] @
-                                                             callInstrs),
-                                                          None))
-                      let mdef = { ilMethodDef with CustomAttrs = mkILCustomAttrs [ cenv.g.CompilerGeneratedAttribute ] }
-                      yield mdef
-                  | None,_ -> ()
-                  | _,None -> ()
-                  | _ -> ()
+              | TUnionRepr _ when not (tycon.HasMember cenv.g "ToString" []) -> 
+                  yield! genToString ilThisTy
               | _ -> () ]
               
         let ilMethods = methodDefs @ augmentOverrideMethodDefs @ abstractMethodDefs

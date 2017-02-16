@@ -54,6 +54,8 @@ module internal Structure =
         | [] -> Range.range0
         | head::_ -> Range.startToEnd head.idRange (List.last longId).idRange
 
+    /// Caclulate the range of the provided type arguments (<'a,...,'z>) 
+    /// or return the range `other` when `typeArgs` = []
     let rangeOfTypeArgsElse other (typeArgs:SynTyparDecl list) =
         match typeArgs with
         | [] -> other
@@ -75,13 +77,14 @@ module internal Structure =
             |> List.reduce Range.unionRanges
 
 
-    /// Scope indicates the way a range/snapshot should be collapsed. |Scope.Scope.Same| is for a scope inside
-    /// some kind of scope delimiter, e.g. `[| ... |]`, `[ ... ]`, `{ ... }`, etc.  |Scope.Below| is for expressions
+    /// Collapse indicates the way a range/snapshot should be collapsed. `Same` is for a scope inside
+    /// some kind of scope delimiter, e.g. `[| ... |]`, `[ ... ]`, `{ ... }`, etc.  `Below` is for expressions
     /// following a binding or the right hand side of a pattern, e.g. `let x = ...`
     type Collapse =
         | Below
         | Same
 
+    /// Tag to identify the constuct that can be stored alongside its associated ranges
     type Scope =
         | Open
         | Namespace
@@ -177,6 +180,8 @@ module internal Structure =
             | Comment               -> "Comment"
             | XmlDocComment         -> "XmlDocComment"
 
+    /// Stores the range for a construct, the sub-range that should be collapsed for outlinging,
+    /// a tag for the construct type, and a tag for the collapse style
     [<NoComparison>]
     type ScopeRange = {
         Scope: Scope
@@ -187,7 +192,7 @@ module internal Structure =
         CollapseRange:range
     }
 
-    // Only yield a range that spans 2 or more lines
+    /// Validation function to ensure that ranges yielded for outlinging span 2 or more lines
     let inline private rcheck scope collapse (fullRange:range) (collapseRange:range)  = seq {
         if fullRange.StartLine <> fullRange.EndLine then yield {
             Scope = scope
@@ -208,8 +213,8 @@ module internal Structure =
             | SynExpr.Upcast (e,_,_)
             | SynExpr.Downcast (e,_,_)
             | SynExpr.AddressOf(_,e,_,_)
-            | SynExpr.InferredDowncast (e,_) // add scope for this?
-            | SynExpr.InferredUpcast (e,_)   // add scope for this?
+            | SynExpr.InferredDowncast (e,_)
+            | SynExpr.InferredUpcast (e,_)
             | SynExpr.DotGet (e,_,_,_)
             | SynExpr.Do (e,_)
             | SynExpr.DotSet (e,_,_,_)
@@ -482,7 +487,7 @@ module internal Structure =
                     yield! Seq.collect (parseSynMemberDefn r) members
                 | None -> ()
             | SynMemberDefn.NestedType (td, _, _) ->
-                yield! parseTypeDefn td //d.Range
+                yield! parseTypeDefn td 
             | SynMemberDefn.AbstractSlot (ValSpfn(synType=synt), _, r) ->
                 yield! rcheck Scope.Member Collapse.Below d.Range (Range.startToEnd synt.Range r)
             | SynMemberDefn.AutoProperty (synExpr=e; range=r) ->
@@ -509,7 +514,7 @@ module internal Structure =
                     yield! rcheck Scope.EnumCase Collapse.Below cr cr
                     yield! parseAttributes attrs
             | SynTypeDefnSimpleRepr.Record (_,fields,rr) ->
-                yield! rcheck Scope.RecordDefn Collapse.Same rr rr //<| Range.modBoth rr 1 1
+                yield! rcheck Scope.RecordDefn Collapse.Same rr rr 
                 for SynField.Field (attrs,_,_,_,_,_,_,fr) in fields do
                     yield! rcheck Scope.RecordField Collapse.Below fr fr
                     yield! parseAttributes attrs
@@ -523,8 +528,8 @@ module internal Structure =
 
     and private parseTypeDefn (TypeDefn(SynComponentInfo.ComponentInfo(_,typeArgs,_,_,_,_,_,r), objectModel, members, fullrange)) = 
         seq {
-           let genericRange = rangeOfTypeArgsElse r typeArgs
-           let collapse = Range.endToEnd (Range.modEnd 1 genericRange) fullrange
+           let typeArgsRange = rangeOfTypeArgsElse r typeArgs
+           let collapse = Range.endToEnd (Range.modEnd 1 typeArgsRange) fullrange
            match objectModel with
            | SynTypeDefnRepr.ObjectModel (defnKind, objMembers, r) ->
                match defnKind with
@@ -590,8 +595,7 @@ module internal Structure =
                 for t in types do
                     yield! parseTypeDefn t
             // Fold the attributes above a module
-            | SynModuleDecl.NestedModule (SynComponentInfo.ComponentInfo (attrs,_,_,_,_,_,_,cmpRange),_, decls,_,_) ->
-//                cmpInfo.
+            | SynModuleDecl.NestedModule (SynComponentInfo.ComponentInfo (attrs,_,_,_,_,_,_,cmpRange),_, decls,_,_) ->                
                 // Outline the full scope of the module
                 let r = Range.endToEnd cmpRange decl.Range
                 yield! rcheck Scope.Module Collapse.Below decl.Range r
@@ -622,7 +626,7 @@ module internal Structure =
 
     type private LineNum = int
     type private LineStr = string
-    type private CommentType = Regular | XmlDoc
+    type private CommentType = SingleLine | XmlDoc
 
     [<NoComparison>]
     type private CommentList =
@@ -631,9 +635,10 @@ module internal Structure =
         static member New ty lineStr =
             { Type = ty; Lines = ResizeArray [| lineStr |] }
 
+    /// Determine if a line is a single line or xml docummentation comment
     let private (|Comment|_|) (line: string) =
         if line.StartsWith "///" then Some XmlDoc
-        elif line.StartsWith "//" then Some Regular
+        elif line.StartsWith "//" then Some SingleLine
         else None
 
     let getCommentRanges (lines: string[]) =
@@ -674,7 +679,7 @@ module internal Structure =
 
             let scopeType =
                 match comment.Type with
-                | Regular -> Scope.Comment
+                | SingleLine -> Scope.Comment
                 | XmlDoc -> Scope.XmlDocComment
 
             let range = Range.mkRange "" (Range.mkPos (startLine + 1) startCol) (Range.mkPos (endLine + 1) endCol)
@@ -689,6 +694,14 @@ module internal Structure =
      //     Signature File AST Traversal      //
     //=======================================//
 
+    (*
+        The following helper functions are necessary due to a bug in the Parsed UAST within a 
+        signature file that causes the scopes to extend past the end of the construct and overlap
+        with the following construct. This necessitates inspecting the children of the construct and
+        finding the end of the last child's range to use instead.
+
+        Detailed further in - https://github.com/Microsoft/visualfsharp/issues/2094
+    *)
 
     let lastMemberSigRangeElse r memberSigs =
         match memberSigs with
@@ -738,15 +751,15 @@ module internal Structure =
         }
 
 
-    and  private parseTypeDefnSig
+    and private parseTypeDefnSig
       (TypeDefnSig (SynComponentInfo.ComponentInfo(attribs,typeArgs,_constraints,longId,_doc,_b,_access,r)
                 as _componentInfo, objectModel,  memberSigs, _)) = seq {
             yield! parseAttributes attribs
 
             let makeRanges memberSigs =
-                let genericRange = rangeOfTypeArgsElse r typeArgs
+                let typeArgsRange = rangeOfTypeArgsElse r typeArgs
                 let rangeEnd = lastMemberSigRangeElse r memberSigs
-                let collapse = Range.endToEnd (Range.modEnd 1 genericRange) rangeEnd
+                let collapse = Range.endToEnd (Range.modEnd 1 typeArgsRange) rangeEnd
                 let fullrange = Range.startToEnd (longIdentRange longId) rangeEnd
                 fullrange, collapse
 

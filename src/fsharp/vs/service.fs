@@ -248,11 +248,11 @@ module internal Params =
         | Item.Value vref -> 
             let getParamsOfTypes() = 
                 let _, tau = vref.TypeScheme
-                if isFunTy denv.g tau then 
-                    let arg,rtau = destFunTy denv.g tau 
+                match tryDestFunTy denv.g tau with
+                | Some(arg,rtau) ->
                     let args = tryDestRefTupleTy denv.g arg 
                     ParamsOfTypes g denv args rtau
-                else []
+                | None -> []
             match vref.ValReprInfo with
             | None -> 
                 // ValReprInfo = None i.e. in let bindings defined in types or in local functions
@@ -500,6 +500,7 @@ type SemanticClassificationType =
     | ComputationExpression
     | IntrinsicType
     | Enumeration
+    | Interface
 
 // A scope represents everything we get back from the typecheck of a file.
 // It acts like an in-memory database about the file.
@@ -1028,7 +1029,7 @@ type TypeCheckInfo
             | otherwise -> otherwise - 1
 
         // Look for a "special" completion context
-        match UntypedParseImpl.TryGetCompletionContext(mkPos line colAtEndOfNamesAndResidue, parseResultsOpt) with
+        match UntypedParseImpl.TryGetCompletionContext(mkPos line colAtEndOfNamesAndResidue, parseResultsOpt, lineStr) with
 
         // Invalid completion locations
         | Some CompletionContext.Invalid -> None
@@ -1487,6 +1488,10 @@ type TypeCheckInfo
             // typevariables get colored as types when they occur in syntactic types custom builders, custom operations get colored as keywords
             | CNR(_, Item.Types (_, [OptionalArgumentAttribute]), LegitTypeOccurence, _, _, _, _) -> None
             | CNR(_, Item.CtorGroup(_, [MethInfo.FSMeth(_, OptionalArgumentAttribute, _, _)]), LegitTypeOccurence, _, _, _, _) -> None
+            | CNR(_, Item.Types(_, types), LegitTypeOccurence, _, _, _, m) when types |> List.exists (isInterfaceTy g) -> 
+                Some (m, SemanticClassificationType.Interface)
+            | CNR(_, Item.Types(_, types), LegitTypeOccurence, _, _, _, m) when types |> List.exists (isStructTy g) -> 
+                Some (m, SemanticClassificationType.ValueType)
             | CNR(_, Item.Types _, LegitTypeOccurence, _, _, _, m) -> 
                 Some (m, SemanticClassificationType.ReferenceType)
             | CNR(_, (Item.TypeVar _ | Item.UnqualifiedType _ | Item.CtorGroup _), LegitTypeOccurence, _, _, _, m) ->
