@@ -651,7 +651,7 @@ module private PrintTypes =
     and layoutAttrib denv (Attrib(_,k,args,_props,_,_,_)) = 
         let argsL = bracketL (layoutAttribArgs denv args)
         match k with 
-        | (ILAttrib(ilMethRef)) -> 
+        | ILAttrib ilMethRef -> 
             let trimmedName = 
                 let name = ilMethRef.EnclosingTypeRef.Name
                 match String.tryDropSuffix name "Attribute" with 
@@ -660,8 +660,7 @@ module private PrintTypes =
             let tref = ilMethRef.EnclosingTypeRef
             let tref = ILTypeRef.Create(scope= tref.Scope, enclosing=tref.Enclosing, name=trimmedName)
             PrintIL.layoutILTypeRef denv tref ++ argsL
-
-        | (FSAttrib(vref)) -> 
+        | FSAttrib vref -> 
             // REVIEW: this is not trimming "Attribute" 
             let _,_,rty,_ = GetTypeOfMemberInMemberForm denv.g vref
             let rty = GetFSharpViewOfReturnType denv.g rty
@@ -1034,7 +1033,7 @@ module private PrintTypes =
     let layoutMemberTypeAndConstraints denv argInfos retTy parentTyparTys = 
         let _,(parentTyparTys,argInfos,retTy),cxs = PrettyTypes.PrettifyTypesNM1 denv.g (parentTyparTys,argInfos,retTy)
         // Filter out the parent typars, which don't get shown in the member signature 
-        let cxs = cxs |> List.filter (fun (tp,_) -> not (parentTyparTys |> List.exists (fun ty -> isTyparTy denv.g ty && typarEq tp (destTyparTy denv.g ty)))) 
+        let cxs = cxs |> List.filter (fun (tp,_) -> not (parentTyparTys |> List.exists (fun ty -> match tryDestTyparTy denv.g ty with Some destTypar -> typarEq tp destTypar | None -> false))) 
         layoutPrettifiedTypesAndConstraints denv argInfos retTy cxs
 
     // Layout: type spec - class, datatype, record, abbrev 
@@ -1178,12 +1177,10 @@ module private PrintTastMemberOrVals =
                 let tprenaming,ptau,cxs = PrettyTypes.PrettifyTypes1 denv.g tau
                 let ptps = 
                     tps  
-                        |> generalizeTypars 
-                        // Badly formed code may instantiate rigid declared typars to types, e.g. see bug
-                        // Hence we double check here that the thing is really a type variable
-                        |> List.map (instType tprenaming)
-                        |> List.filter (isAnyParTy denv.g) 
-                        |> List.map (destAnyParTy denv.g)
+                    |> generalizeTypars 
+                    // Badly formed code may instantiate rigid declared typars to types, e.g. see bug
+                    // Hence we double check here that the thing is really a type variable
+                    |> List.choose (instType tprenaming >> tryAnyParTy denv.g)
                 layoutNonMemberVal denv (ptps,v,ptau,cxs)
             | Some _ -> 
                 layoutMember denv v
@@ -1278,9 +1275,10 @@ module InfoMemberPrinting =
             else emptyL
         let layout = 
             layout ^^
-                if isAppTy amap.g minfo.EnclosingType then 
-                    PrintTypes.layoutTyconRef denv (tcrefOfAppTy amap.g minfo.EnclosingType)
-                else
+                match tryDestAppTy amap.g minfo.EnclosingType with
+                | Some tcref ->
+                    PrintTypes.layoutTyconRef denv tcref
+                | None ->
                     PrintTypes.layoutType denv minfo.EnclosingType
         let layout = 
             layout ^^
