@@ -164,19 +164,19 @@ type internal IncrementalBuilder =
       /// to the necessary point if the result is not available. This may be a long-running operation.
       ///
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetCheckResultsBeforeFileInProject : CompilationThreadToken * filename:string -> PartialCheckResults 
+      member GetCheckResultsBeforeFileInProject : CompilationThreadToken * filename:string * ct: CancellationToken -> PartialCheckResults 
 
       /// Get the typecheck state after checking a file. Compute the entire type check of the project up
       /// to the necessary point if the result is not available. This may be a long-running operation.
       ///
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetCheckResultsAfterFileInProject : CompilationThreadToken * filename:string -> PartialCheckResults 
+      member GetCheckResultsAfterFileInProject : CompilationThreadToken * filename:string * ct: CancellationToken -> PartialCheckResults 
 
       /// Get the typecheck result after the end of the last file. The typecheck of the project is not 'completed'.
       /// This may be a long-running operation.
       ///
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetCheckResultsAfterLastFileInProject : CompilationThreadToken -> PartialCheckResults 
+      member GetCheckResultsAfterLastFileInProject : CompilationThreadToken * ct: CancellationToken  -> PartialCheckResults 
 
       /// Get the final typecheck result. If 'generateTypedImplFiles' was set on Create then the TypedAssemblyAfterOptimization will contain implementations.
       /// This may be a long-running operation.

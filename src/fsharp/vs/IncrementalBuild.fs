@@ -1719,30 +1719,30 @@ type IncrementalBuilder(ctokCtor: CompilationThreadToken, frameworkTcImportsCach
         | (*first file*) 0 -> IncrementalBuild.IsReady (Target(initialTcAccNode, None)) partialBuild 
         | _ -> IncrementalBuild.IsReady (Target(tcStatesNode, Some (slotOfFile-1))) partialBuild  
         
-    member builder.GetCheckResultsBeforeFileInProject (ctok: CompilationThreadToken, filename) = 
+    member builder.GetCheckResultsBeforeFileInProject (ctok: CompilationThreadToken, filename, ct) = 
         let slotOfFile = builder.GetSlotOfFileName filename
-        builder.GetCheckResultsBeforeSlotInProject (ctok, slotOfFile)
+        builder.GetCheckResultsBeforeSlotInProject (ctok, slotOfFile, ct)
 
-    member builder.GetCheckResultsAfterFileInProject (ctok: CompilationThreadToken, filename) = 
+    member builder.GetCheckResultsAfterFileInProject (ctok: CompilationThreadToken, filename, ct) = 
         let slotOfFile = builder.GetSlotOfFileName filename + 1
-        builder.GetCheckResultsBeforeSlotInProject (ctok, slotOfFile)
+        builder.GetCheckResultsBeforeSlotInProject (ctok, slotOfFile, ct)
 
-    member builder.GetCheckResultsBeforeSlotInProject (ctok: CompilationThreadToken, slotOfFile) = 
+    member builder.GetCheckResultsBeforeSlotInProject (ctok: CompilationThreadToken, slotOfFile, ct) = 
         let result = 
             match slotOfFile with
             | (*first file*) 0 -> 
-                let build = IncrementalBuild.Eval ctok SavePartialBuild CancellationToken.None initialTcAccNode partialBuild
+                let build = IncrementalBuild.Eval ctok SavePartialBuild ct initialTcAccNode partialBuild
                 GetScalarResult(initialTcAccNode,build)
             | _ -> 
-                let build = IncrementalBuild.EvalUpTo ctok SavePartialBuild CancellationToken.None (tcStatesNode, (slotOfFile-1)) partialBuild
+                let build = IncrementalBuild.EvalUpTo ctok SavePartialBuild ct (tcStatesNode, (slotOfFile-1)) partialBuild
                 GetVectorResultBySlot(tcStatesNode,slotOfFile-1,build)  
         
         match result with
         | Some (tcAcc,timestamp) -> PartialCheckResults.Create (tcAcc,timestamp)
         | None -> failwith "Build was not evaluated, expected the results to be ready after 'Eval'."
 
-    member builder.GetCheckResultsAfterLastFileInProject (ctok: CompilationThreadToken) = 
-        builder.GetCheckResultsBeforeSlotInProject(ctok, builder.GetSlotsCount()) 
+    member builder.GetCheckResultsAfterLastFileInProject (ctok: CompilationThreadToken, ct) = 
+        builder.GetCheckResultsBeforeSlotInProject(ctok, builder.GetSlotsCount(), ct) 
 
     member __.GetCheckResultsAndImplementationsForProject(ctok: CompilationThreadToken, ct) = 
         let build = IncrementalBuild.Eval ctok SavePartialBuild ct finalizedTypeCheckNode partialBuild
