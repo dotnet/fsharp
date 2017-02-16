@@ -2559,6 +2559,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                 match cachedResults with
                 | Some (_, checkResults) -> return FSharpCheckFileAnswer.Succeeded checkResults
                 | _ ->
+                    let! ct = Async.CancellationToken
                     let! tcPrior = execWithReactorAsync <| fun ctok _ -> builder.GetCheckResultsBeforeFileInProject (ctok, filename, ct)
                     let! checkAnswer = bc.CheckOneFile(parseResults, source, filename, options, textSnapshotInfo, fileVersion, builder, tcPrior, creationErrors)
                     bc.ImplicitlyStartCheckProjectInBackground(options)
@@ -2587,6 +2588,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                 | _ ->
                     // todo this blocks the Reactor queue until all files up to the current are type checked. It's OK while editing the file,
                     // but results with non cooperative blocking when a firts file from a project opened.
+                    let! ct = Async.CancellationToken
                     let! tcPrior = execWithReactorAsync <| fun ctok _ -> builder.GetCheckResultsBeforeFileInProject (ctok, filename, ct)
                     
                     // Do the parsing.
