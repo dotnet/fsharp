@@ -507,7 +507,7 @@ module internal IncrementalBuild =
     /// Visit each executable action necessary to evaluate the given output (with an optional slot in a
     /// vector output). Call actionFunc with the given accumulator.
     let ForeachAction ctok (Target(output, optSlot)) bt (actionFunc:Action -> 'T -> 'T) (acc:'T) =
-        let seen = Dictionary<Id,bool>()
+        let seen = System.Collections.Concurrent.ConcurrentDictionary<Id,bool>()
         let isSeen id = 
             if seen.ContainsKey id then true
             else 
