@@ -4296,15 +4296,20 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
     member tcImports.RegisterAndImportReferencedAssemblies (ctok, nms:AssemblyResolution list) =
         CheckDisposed()
 
+        let rec tryRegisterAndPrepareReferencedDll attempt nm =
+            try
+                Some(tcImports.RegisterAndPrepareToImportReferencedDll (ctok, nm))
+            with 
+            | :? OperationCanceledException when attempt < 10 ->
+                tryRegisterAndPrepareReferencedDll (attempt + 1) nm
+            | e ->
+                errorR(Error(FSComp.SR.buildProblemReadingAssembly(nm.resolvedPath, sprintf "%s (after %d attempts)" e.Message attempt), nm.originalReference.Range))
+                None
+
         let dllinfos,phase2s = 
-           nms |> List.choose 
-                    (fun nm ->
-                        try
-                            Some(tcImports.RegisterAndPrepareToImportReferencedDll (ctok, nm))
-                        with e ->
-                            errorR(Error(FSComp.SR.buildProblemReadingAssembly(nm.resolvedPath, e.Message),nm.originalReference.Range))
-                            None)
+           nms |> List.choose (tryRegisterAndPrepareReferencedDll 0)
                |> List.unzip
+
         let ccuinfos = (List.collect (fun phase2 -> phase2()) phase2s) 
         dllinfos,ccuinfos
       
