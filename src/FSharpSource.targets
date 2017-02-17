@@ -390,7 +390,7 @@
     <When Condition="'$(BuildWith)' == '' AND ('$(TargetFramework)'=='portable47' OR '$(TargetFramework)'=='portable7' OR '$(TargetFramework)'=='portable78' OR '$(TargetFramework)'=='portable259' OR '$(TargetFramework)'=='coreclr')">
       <!-- Compiling portable/coreclr with Proto, currently always use a .NET Framework/Mono proto -->
       <PropertyGroup>
-        <OutputPath Condition=" '$(CustomOutputPath)' != 'true' ">$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFrameworkOutputDirectory)\bin</OutputPath>
+        <OutputPath Condition=" '$(CustomOutputPath)' != 'true' ">$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin</OutputPath>
         <FscToolPath>$(FSharpSourcesRoot)\..\Proto\$(ProtoFlavour)\bin</FscToolPath>
         <FscToolExe>fsc-proto.exe</FscToolExe>
         <FSharpTargetsPath>..\Proto\$(ProtoFlavour)\bin\Microsoft.Portable.FSharp-proto.targets</FSharpTargetsPath>
@@ -399,7 +399,7 @@
 	<Otherwise>
       <!-- Compiling net40 with Proto -->
       <PropertyGroup>
-        <OutputPath Condition=" '$(CustomOutputPath)' != 'true' ">$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFrameworkOutputDirectory)\bin</OutputPath>
+        <OutputPath Condition=" '$(CustomOutputPath)' != 'true' ">$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin</OutputPath>
         <FscToolPath>$(FSharpSourcesRoot)\..\Proto\$(ProtoFlavour)\bin</FscToolPath>
         <FscToolExe>fsc-proto.exe</FscToolExe>
         <FSharpTargetsPath>..\Proto\$(ProtoFlavour)\bin\Microsoft.FSharp-proto.targets</FSharpTargetsPath>
