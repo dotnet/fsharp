@@ -6,6 +6,7 @@ module internal Microsoft.FSharp.Compiler.ErrorLogger
 open Internal.Utilities
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Range
 open System
@@ -122,6 +123,7 @@ let rec AttachRange m (exn:exn) =
         | Failure(msg) -> InternalError(msg^" (Failure)",m)
         | :? System.ArgumentException as exn -> InternalError(exn.Message + " (ArgumentException)",m)
         | notARangeDual -> notARangeDual
+
 
 //----------------------------------------------------------------------------
 // Error logger interface
@@ -394,7 +396,9 @@ module ErrorLoggerExtensions =
 /// NOTE: The change will be undone when the returned "unwind" object disposes
 let PushThreadBuildPhaseUntilUnwind (phase:BuildPhase) =
     let oldBuildPhase = CompileThreadStatic.BuildPhaseUnchecked
+    
     CompileThreadStatic.BuildPhase <- phase
+
     { new System.IDisposable with 
          member x.Dispose() = CompileThreadStatic.BuildPhase <- oldBuildPhase (* maybe null *) }
 
@@ -407,7 +411,9 @@ let PushErrorLoggerPhaseUntilUnwind(errorLoggerTransformer : ErrorLogger -> #Err
     let chkErrorLogger = { new ErrorLogger("PushErrorLoggerPhaseUntilUnwind") with
                              member x.DiagnosticSink(phasedError, isError) = newIsInstalled(); newErrorLogger.DiagnosticSink(phasedError, isError)
                              member x.ErrorCount   = newIsInstalled(); newErrorLogger.ErrorCount }
+
     CompileThreadStatic.ErrorLogger <- chkErrorLogger
+
     { new System.IDisposable with 
          member x.Dispose() =       
             CompileThreadStatic.ErrorLogger <- oldErrorLogger
@@ -485,29 +491,42 @@ let ErrorD err = ErrorResult([],err)
 let WarnD err = OkResult([err],())
 let CompleteD = OkResult([],())
 let ResultD x = OkResult([],x)
-let CheckNoErrorsAndGetWarnings res  = match res with OkResult (warns,_) -> Some warns | ErrorResult _ -> None 
+let CheckNoErrorsAndGetWarnings res = 
+    match res with 
+    | OkResult (warns,_) -> Some warns
+    | ErrorResult _ -> None 
 
 /// The bind in the monad. Stop on first error. Accumulate warnings and continue. 
 let (++) res f = 
     match res with 
     | OkResult([],res) -> (* tailcall *) f res 
     | OkResult(warns,res) -> 
-        begin match f res with 
+        match f res with 
         | OkResult(warns2,res2) -> OkResult(warns@warns2, res2)
         | ErrorResult(warns2,err) -> ErrorResult(warns@warns2, err)
-        end
     | ErrorResult(warns,err) -> 
         ErrorResult(warns,err)
         
 /// Stop on first error. Accumulate warnings and continue. 
-let rec IterateD f xs = match xs with [] -> CompleteD | h :: t -> f h ++ (fun () -> IterateD f t)
+let rec IterateD f xs = 
+    match xs with
+    | [] -> CompleteD 
+    | h :: t -> f h ++ (fun () -> IterateD f t)
+
 let rec WhileD gd body = if gd() then body() ++ (fun () -> WhileD gd body) else CompleteD
-let MapD f xs = let rec loop acc xs = match xs with [] -> ResultD (List.rev acc) | h :: t -> f h ++ (fun x -> loop (x::acc) t) in loop [] xs
+
+let MapD f xs = 
+    let rec loop acc xs = 
+        match xs with
+        | [] -> ResultD (List.rev acc) 
+        | h :: t -> f h ++ (fun x -> loop (x::acc) t)
+
+    loop [] xs
 
 type TrackErrorsBuilder() =
     member x.Bind(res,k) = res ++ k
-    member x.Return(res) = ResultD(res)
-    member x.ReturnFrom(res) = res
+    member x.Return res = ResultD res
+    member x.ReturnFrom res = res
     member x.For(seq,k) = IterateD k seq
     member x.While(gd,k) = WhileD gd k
     member x.Zero()  = CompleteD
@@ -515,7 +534,10 @@ type TrackErrorsBuilder() =
 let trackErrors = TrackErrorsBuilder()
     
 /// Stop on first error. Accumulate warnings and continue. 
-let OptionD f xs = match xs with None -> CompleteD | Some(h) -> f h 
+let OptionD f xs = 
+    match xs with 
+    | None -> CompleteD 
+    | Some h -> f h 
 
 /// Stop on first error. Report index 
 let IterateIdxD f xs = 
@@ -534,13 +556,13 @@ let TryD f g =
     | ErrorResult(warns,err) ->  (OkResult(warns,())) ++ (fun () -> g err)
     | res -> res
 
-let rec RepeatWhileD ndeep body = body ndeep ++ (function true -> RepeatWhileD (ndeep+1) body | false -> CompleteD) 
+let rec RepeatWhileD ndeep body = body ndeep ++ (fun x -> if x then RepeatWhileD (ndeep+1) body else CompleteD) 
 let AtLeastOneD f l = MapD f l ++ (fun res -> ResultD (List.exists id res))
 
 
 // Code below is for --flaterrors flag that is only used by the IDE
 
-let stringThatIsAProxyForANewlineInFlatErrors = new System.String[|char 29 |]
+let stringThatIsAProxyForANewlineInFlatErrors = new System.String [|char 29 |]
 
 let NewlineifyErrorString (message:string) = message.Replace(stringThatIsAProxyForANewlineInFlatErrors, Environment.NewLine)
 

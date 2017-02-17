@@ -341,6 +341,56 @@ module internal CommonHelpers =
         | -1 | 0 -> span
         | index -> TextSpan(span.Start + index + 1, text.Length - index - 1)
 
+    let isValidNameForSymbol (lexerSymbolKind: LexerSymbolKind, symbol: FSharpSymbol, name: string) : bool =
+        let doubleBackTickDelimiter = "``"
+        
+        let isDoubleBacktickIdent (s: string) =
+            let doubledDelimiter = 2 * doubleBackTickDelimiter.Length
+            if s.StartsWith(doubleBackTickDelimiter) && s.EndsWith(doubleBackTickDelimiter) && s.Length > doubledDelimiter then
+                let inner = s.Substring(doubleBackTickDelimiter.Length, s.Length - doubledDelimiter)
+                not (inner.Contains(doubleBackTickDelimiter))
+            else false
+        
+        let isIdentifier (ident: string) =
+            if isDoubleBacktickIdent ident then
+                true
+            else
+                ident 
+                |> Seq.mapi (fun i c -> i, c)
+                |> Seq.forall (fun (i, c) -> 
+                     if i = 0 then PrettyNaming.IsIdentifierFirstCharacter c 
+                     else PrettyNaming.IsIdentifierPartCharacter c) 
+        
+        let isFixableIdentifier (s: string) = 
+            not (String.IsNullOrEmpty s) && Lexhelp.Keywords.NormalizeIdentifierBackticks s |> isIdentifier
+        
+        let forbiddenChars = [| '.'; '+'; '$'; '&'; '['; ']'; '/'; '\\'; '*'; '\'' |]
+        
+        let isTypeNameIdent (s: string) =
+            not (String.IsNullOrEmpty s) && s.IndexOfAny forbiddenChars = -1 && isFixableIdentifier s 
+        
+        let isUnionCaseIdent (s: string) =
+            isTypeNameIdent s && Char.IsUpper(s.Replace(doubleBackTickDelimiter, "").[0])
+        
+        let isTypeParameter (prefix: char) (s: string) =
+            s.Length >= 2 && s.[0] = prefix && isIdentifier s.[1..]
+        
+        let isGenericTypeParameter = isTypeParameter '''
+        let isStaticallyResolvedTypeParameter = isTypeParameter '^'
+        
+        match lexerSymbolKind, symbol with
+        | _, :? FSharpUnionCase -> isUnionCaseIdent name
+        | _, :? FSharpActivePatternCase -> 
+            // Different from union cases, active patterns don't accept double-backtick identifiers
+            isFixableIdentifier name && not (String.IsNullOrEmpty name) && Char.IsUpper(name.[0]) 
+        | LexerSymbolKind.Operator, _ -> PrettyNaming.IsOperatorName name
+        | LexerSymbolKind.GenericTypeParameter, _ -> isGenericTypeParameter name
+        | LexerSymbolKind.StaticallyResolvedTypeParameter, _ -> isStaticallyResolvedTypeParameter name
+        | (LexerSymbolKind.Ident | LexerSymbolKind.Other), _ ->
+            match symbol with
+            | :? FSharpEntity as e when e.IsClass || e.IsFSharpRecord || e.IsFSharpUnion || e.IsValueType || e.IsFSharpModule || e.IsInterface -> isTypeNameIdent name
+            | _ -> isFixableIdentifier name
+
 [<RequireQualifiedAccess; NoComparison>] 
 type internal SymbolDeclarationLocation = 
     | CurrentDocument

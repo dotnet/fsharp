@@ -395,20 +395,20 @@ val recdFieldTysOfExnDefRef : TyconRef -> TType list
 // inference equations, i.e. are "stripped"
 //------------------------------------------------------------------------- 
 
-val destForallTy     : TcGlobals -> TType -> Typars * TType
-val destFunTy        : TcGlobals -> TType -> TType * TType
+val destForallTy      : TcGlobals -> TType -> Typars * TType
+val destFunTy         : TcGlobals -> TType -> TType * TType
 val destAnyTupleTy    : TcGlobals -> TType -> TupInfo * TTypes
 val destRefTupleTy    : TcGlobals -> TType -> TTypes
-val destStructTupleTy    : TcGlobals -> TType -> TTypes
-val destTyparTy      : TcGlobals -> TType -> Typar
-val destAnyParTy     : TcGlobals -> TType -> Typar
-val destMeasureTy    : TcGlobals -> TType -> Measure
-val tryDestForallTy  : TcGlobals -> TType -> Typars * TType
+val destStructTupleTy : TcGlobals -> TType -> TTypes
+val destTyparTy       : TcGlobals -> TType -> Typar
+val destAnyParTy      : TcGlobals -> TType -> Typar
+val destMeasureTy     : TcGlobals -> TType -> Measure
+val tryDestForallTy   : TcGlobals -> TType -> Typars * TType
 
 val isFunTy            : TcGlobals -> TType -> bool
 val isForallTy         : TcGlobals -> TType -> bool
-val isAnyTupleTy          : TcGlobals -> TType -> bool
-val isRefTupleTy          : TcGlobals -> TType -> bool
+val isAnyTupleTy       : TcGlobals -> TType -> bool
+val isRefTupleTy       : TcGlobals -> TType -> bool
 val isStructTupleTy    : TcGlobals -> TType -> bool
 val isUnionTy          : TcGlobals -> TType -> bool
 val isReprHiddenTy     : TcGlobals -> TType -> bool
@@ -416,6 +416,7 @@ val isFSharpObjModelTy : TcGlobals -> TType -> bool
 val isRecdTy           : TcGlobals -> TType -> bool
 val isTyparTy          : TcGlobals -> TType -> bool
 val isAnyParTy         : TcGlobals -> TType -> bool
+val tryAnyParTy        : TcGlobals -> TType -> Typar option
 val isMeasureTy        : TcGlobals -> TType -> bool
 
 val mkAppTy : TyconRef -> TypeInst -> TType
@@ -428,6 +429,8 @@ val destAppTy      : TcGlobals -> TType -> TyconRef * TypeInst
 val tcrefOfAppTy   : TcGlobals -> TType -> TyconRef
 val tyconOfAppTy   : TcGlobals -> TType -> Tycon
 val tryDestAppTy   : TcGlobals -> TType -> TyconRef option
+val tryDestTyparTy : TcGlobals -> TType -> Typar option
+val tryDestFunTy : TcGlobals -> TType -> (TType * TType) option
 val argsOfAppTy    : TcGlobals -> TType -> TypeInst
 val mkInstForAppTy  : TcGlobals -> TType -> TyparInst
 
@@ -1400,10 +1403,12 @@ val IsGenericValWithGenericContraints: TcGlobals -> Val -> bool
 type Entity with 
     member HasInterface : TcGlobals -> TType -> bool
     member HasOverride : TcGlobals -> string -> TType list -> bool
+    member HasMember : TcGlobals -> string -> TType list -> bool
 
 type EntityRef with 
     member HasInterface : TcGlobals -> TType -> bool
     member HasOverride : TcGlobals -> string -> TType list -> bool
+    member HasMember : TcGlobals -> string -> TType list -> bool
 
 val (|AttribBitwiseOrExpr|_|) : TcGlobals -> Expr -> (Expr * Expr) option
 val (|EnumExpr|_|) : TcGlobals -> Expr -> Expr option
