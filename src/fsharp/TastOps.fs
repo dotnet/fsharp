@@ -278,7 +278,7 @@ and copyAndRemapAndBindTyparsFull remapAttrib tyenv tps =
       let tyenv = { tyenv with tpinst = bindTypars tps (generalizeTypars tps') tyenv.tpinst } 
       (tps,tps') ||> List.iter2 (fun tporig tp -> 
          tp.FixupConstraints (remapTyparConstraintsAux tyenv  tporig.Constraints);
-         tp.Data.typar_attribs  <- tporig.Data.typar_attribs |> remapAttrib) ;
+         tp.typar_attribs  <- tporig.typar_attribs |> remapAttrib) ;
       tps',tyenv
 
 // copies bound typars, extends tpinst 
@@ -529,7 +529,7 @@ let tryNormalizeMeasureInType g ty =
     | TType_measure (Measure.Var v) ->
       match v.Solution with
       | Some (TType_measure ms) ->
-        (v.Data.typar_solution <- Some (TType_measure (normalizeMeasure g ms)); ty)
+        (v.typar_solution <- Some (TType_measure (normalizeMeasure g ms)); ty)
       | _ -> ty
       
     | _ -> ty
@@ -1928,7 +1928,7 @@ and accFreeInTypes opts tys acc =
     | h :: t -> accFreeInTypes opts t (accFreeInType opts h acc)
 and freeInType opts ty = accFreeInType opts ty emptyFreeTyvars
 
-and accFreeInVal opts (v:Val) acc = accFreeInType opts v.Data.val_type acc
+and accFreeInVal opts (v:Val) acc = accFreeInType opts v.val_type acc
 
 let freeInTypes opts tys = accFreeInTypes opts tys emptyFreeTyvars
 let freeInVal opts v = accFreeInVal opts v emptyFreeTyvars
@@ -2230,8 +2230,8 @@ module PrettyTypes =
     // Finally, we skip any names already in use
     let NeedsPrettyTyparName (tp:Typar) = 
         tp.IsCompilerGenerated && 
-        tp.Data.typar_il_name.IsNone && 
-        (tp.Data.typar_id.idText = unassignedTyparName) 
+        tp.typar_il_name.IsNone && 
+        (tp.typar_id.idText = unassignedTyparName) 
 
     let PrettyTyparNames pred alreadyInUse tps = 
         let rec choose (tps:Typar list) (typeIndex, measureIndex) acc = 
@@ -4579,7 +4579,7 @@ and remapArgData g tmenv (argInfo : ArgReprInfo) : ArgReprInfo =
 and remapValReprInfo g tmenv (ValReprInfo(tpNames,arginfosl,retInfo)) =
     ValReprInfo(tpNames,List.mapSquared (remapArgData g tmenv) arginfosl, remapArgData g tmenv retInfo)
 
-and remapValData g tmenv d =
+and remapValData g tmenv (d: ValData) =
     let ty = d.val_type
     let topValInfo = d.val_repr_info
     let ty' = ty |> remapPossibleForallTy g tmenv
@@ -4610,7 +4610,9 @@ and fixupValData g compgen tmenv (v2:Val) =
     match compgen with 
     | OnlyCloneExprVals when v2.IsMemberOrModuleBinding -> ()
     | _ ->  
-        v2.Data <- remapValData g tmenv v2.Data |> markAsCompGen compgen
+        let newData = remapValData g tmenv v2 |> markAsCompGen compgen
+        // uses the same stamp
+        v2.SetData newData
     
 and copyAndRemapAndBindVals g compgen tmenv vs = 
     let vs2 = vs |> List.map (copyVal compgen)
@@ -4963,9 +4965,7 @@ and copyAndRemapAndBindTyconsAndVals g compgen tmenv tycons vs =
                 mkLocalTyconRef tycon
         tcref.Deref
              
-    (tycons,tycons') ||> List.iter2 (fun tc tc' -> 
-        let tcd = tc.Data
-        let tcd' = tc'.Data
+    (tycons,tycons') ||> List.iter2 (fun tcd tcd' -> 
         let tps',tmenvinner2 = tmenvCopyRemapAndBindTypars (remapAttribs g tmenvinner) tmenvinner (tcd.entity_typars.Force(tcd.entity_range))
         tcd'.entity_typars         <- LazyWithContext.NotLazy tps';
         tcd'.entity_attribs        <- tcd.entity_attribs |> remapAttribs g tmenvinner2;
@@ -6864,12 +6864,12 @@ let NormalizeAndAdjustPossibleSubsumptionExprs g inputExpr =
 // polymorphic things bound in complex matches at top level require eta expansion of the 
 // type function to ensure the r.h.s. of the binding is indeed a type function 
 let etaExpandTypeLambda g m tps (tm,ty) = 
-  if isNil tps then tm else mkTypeLambda m tps (mkApps g ((tm,ty),[(List.map mkTyparTy tps)],[],m),ty)
+    if isNil tps then tm else mkTypeLambda m tps (mkApps g ((tm,ty),[(List.map mkTyparTy tps)],[],m),ty)
 
 let AdjustValToTopVal (tmp:Val) parent valData =
-        tmp.SetValReprInfo (Some valData);  
-        tmp.Data.val_actual_parent <- parent;  
-        tmp.SetIsMemberOrModuleBinding()
+    tmp.SetValReprInfo (Some valData);  
+    tmp.val_actual_parent <- parent;  
+    tmp.SetIsMemberOrModuleBinding()
 
 /// For match with only one non-failing target T0, the other targets, T1... failing (say, raise exception).
 ///   tree, T0(v0,..,vN) => rhs ; T1() => fail ; ...
@@ -7626,7 +7626,7 @@ let MakeExportRemapping viewedCcu (mspec:ModuleOrNamespace) =
 //------------------------------------------------------------------------ 
 
 
-let rec remapEntityDataToNonLocal g tmenv (d: EntityData) = 
+let rec remapEntityDataToNonLocal g tmenv (d: Entity) = 
     let tps',tmenvinner = tmenvCopyRemapAndBindTypars (remapAttribs g tmenv) tmenv (d.entity_typars.Force(d.entity_range))
 
     { d with 
@@ -7644,6 +7644,7 @@ and remapTyconToNonLocal g tmenv x =
     x |> NewModifiedTycon (remapEntityDataToNonLocal g tmenv)  
 
 and remapValToNonLocal g  tmenv inp = 
+    // creates a new stamp
     inp |> NewModifiedVal (remapValData g tmenv)
 
 let ApplyExportRemappingToEntity g tmenv x = remapTyconToNonLocal g tmenv x
