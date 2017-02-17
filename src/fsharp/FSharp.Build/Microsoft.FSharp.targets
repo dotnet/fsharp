@@ -221,7 +221,7 @@ this file.
               Prefer32Bit="$(Actual32Bit)"
               References="@(ReferencePath)"
               ReferencePath="$(ReferencePath)"
-              Resources="@(_CoreCompileResourceInputs);@(ManifestResourceWithNoCulture);@(ManifestNonResxWithNoCultureOnDisk);@(CompiledLicenseFile);@(AdditionalEmbeddedResource)"
+              Resources="@(_CoreCompileResourceInputs);@(CompiledLicenseFile);@(AdditionalEmbeddedResource)"
               SourceLink="$(SourceLink)"
               Sources="@(CompileBefore);@(Compile);@(CompileAfter)"
               Tailcalls="$(Tailcalls)"
