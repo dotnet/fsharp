@@ -108,7 +108,7 @@
   </PropertyGroup>
 
 
-  <PropertyGroup Condition="'$(MonoPackaging)' == 'false'">
+  <PropertyGroup Condition="'$(MonoPackaging)' != 'true'">
     <DefineConstants>MSBUILD_AT_LEAST_14;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
 
