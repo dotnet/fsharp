@@ -31,18 +31,21 @@
     <WarningsAsErrors />
     <MonoPackaging>false</MonoPackaging>
 
-	  <FX_NO_LOADER Condition=" '$(FX_NO_LOADER)'==''">false</FX_NO_LOADER>
+    <FX_NO_LOADER Condition=" '$(FX_NO_LOADER)'==''">false</FX_NO_LOADER>
     <VSSDK_BUILDTOOLS_VERSION>Microsoft.VSSDK.BuildTools.15.0.26124-RC3</VSSDK_BUILDTOOLS_VERSION>
 
 	  <!-- Always qualify the IntermediateOutputPath by the TargetFramework if any exists -->
     <IntermediateOutputPath>obj\$(Configuration)\$(TargetFramework)\</IntermediateOutputPath>
     <IntermediateOutputPath Condition="'$(PortableProfileBeingReferenced)' != ''">obj\$(Configuration)\$(TargetFramework)\$(PortableProfileBeingReferenced)\</IntermediateOutputPath>
-    <UseMicroBuild>true</UseMicroBuild>
-    <UseMicroBuild Condition="'$(MonoPackaging)' == 'true' ">false</UseMicroBuild>
   
-</PropertyGroup>
+  </PropertyGroup>
 
-  <PropertyGroup Condition="'$(MonoPackaging)' == 'false' AND '$(OS)' != 'Unix'">
+  <PropertyGroup Condition="'$(OS)' == 'Unix'">
+    <UseMicroBuild>false</UseMicroBuild>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(OS)' != 'Unix'">
+    <UseMicroBuild>true</UseMicroBuild>
     <UseSourceLink>true</UseSourceLink>
     <UseGatherBinaries>true</UseGatherBinaries>
     <AddVsSdkAttributesToSomeCoreComponents>true</AddVsSdkAttributesToSomeCoreComponents>
@@ -52,7 +55,7 @@
     <VsixSchemaPath Condition=" '$(VsixSchemaPath)' == '' ">$(MSBuildThisFileDirectory)..\packages\$(VSSDK_BUILDTOOLS_VERSION)\tools\vssdk\schemas\VSIXManifestSchema.xsd</VsixSchemaPath>
   </PropertyGroup>
 
-	<PropertyGroup Condition=" '$(ProjectLanguage)' == 'FSharp' ">
+  <PropertyGroup Condition=" '$(ProjectLanguage)' == 'FSharp' ">
     <!-- Things we do only for F# projects -->
     <OtherFlags>$(OtherFlags) --times</OtherFlags>
     <NoWarn>$(NoWarn);69;65;54;61;75</NoWarn>
@@ -128,7 +131,7 @@
     <RoslynVSBinariesVersion>14.0</RoslynVSBinariesVersion>
     <RoslynVSPackagesVersion>14.3.25407</RoslynVSPackagesVersion>
     <MSBuildVersionSuffix>v12.0</MSBuildVersionSuffix>
-	<MSBuildVersionFull>$(VisualStudioVersion).0.0</MSBuildVersionFull>	  
+    <MSBuildVersionFull>$(VisualStudioVersion).0.0</MSBuildVersionFull>	  
     <MSBuildVersionSuffix Condition="'$(MonoPackaging)' == 'true'">v12.0"</MSBuildVersionSuffix>
     <MSBuildVersionFull Condition="'$(MonoPackaging)' == 'true'">12.0.0.0</MSBuildVersionFull>	  
     <!-- FSharp.Compiler.Tools is currently only used to get a working FSI.EXE to execute some scripts during the build -->
