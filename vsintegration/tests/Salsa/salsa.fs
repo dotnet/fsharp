@@ -629,7 +629,7 @@ module internal Salsa =
             // we look in the same directory as the Unit Tests assembly.
             let targetsFileFolder =
                 if useInstalledTargets 
-                then Option.get Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None)
+                then Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None).Value
                 else System.AppDomain.CurrentDomain.BaseDirectory
             
             let sb = new System.Text.StringBuilder()
