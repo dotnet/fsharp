@@ -8,12 +8,6 @@
     <FSCoreVersion Condition="'$(TargetFramework)' == 'portable47'">3.47.41.0</FSCoreVersion>
     <FSCoreVersion Condition="'$(TargetFramework)' == 'portable78'">3.78.41.0</FSCoreVersion>
     <FSCoreVersion Condition="'$(TargetFramework)' == 'portable259'">3.259.41.0</FSCoreVersion>
-    <FSCoreVersion Condition="'$(TargetFramework)' == 'monodroid' ">3.98.41.0</FSCoreVersion>
-    <FSCoreVersion Condition="'$(TargetFramework)' == 'monotouch' ">3.98.41.0</FSCoreVersion>
-    <FSCoreVersion Condition="'$(TargetFramework)' == 'xamarinwatchos' ">3.98.41.0</FSCoreVersion>
-    <FSCoreVersion Condition="'$(TargetFramework)' == 'xamarintvos' ">3.98.41.0</FSCoreVersion>
-    <FSCoreVersion Condition="'$(TargetFramework)' == 'xamarinmacmobile' ">3.99.41.0</FSCoreVersion>
-    <FSCoreVersion Condition="'$(TargetFramework)' == 'xamarinmacfull' ">3.100.41.0</FSCoreVersion>
 
   </PropertyGroup>
   <Choose>
@@ -134,7 +128,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)'=='net40'">
-    <DefineConstants Condition="'$(IsMicrosoftBuild)' == 'false'">$(DefineConstants);CROSS_PLATFORM_COMPILER</DefineConstants>
+    <DefineConstants Condition="'$(MonoPackaging)' == 'true'">$(DefineConstants);CROSS_PLATFORM_COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
     <DefineConstants>$(DefineConstants);BE_SECURITY_TRANSPARENT</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_LCIDFROMCODEPAGE</DefineConstants>
@@ -145,55 +139,7 @@
     <!-- MSbuild works out the assembly references -->
   </PropertyGroup>
 
-
-  <!-- MonoAndroid, MonoTouch, XamarinWatchOS, XamarinTVOS -->
-	<PropertyGroup Condition="('$(TargetFramework)'=='monodroid') OR ('$(TargetFramework)'=='monotouch') OR ('$(TargetFramework)'=='xamarinwatchos') OR ('$(TargetFramework)'=='xamarintvos')">
-		<!-- Although Reflection Emit is available on MonoAndroid, we don't use it for FSharp.Core -->
-		<!-- because we want the FSharp.Core DLLs to be identical for MonoAndroid and MonoTouch -->
-		<DefineConstants>$(DefineConstants);FX_NO_REFLECTION_EMIT</DefineConstants>
-		<DefineConstants>$(DefineConstants);FX_NO_BIGINT</DefineConstants>
-		<DefineConstants>$(DefineConstants);FX_NO_STRUCTURAL_EQUALITY</DefineConstants>
-		<AssemblySearchPaths>$(FSharpSourcesRoot)\..\dependencies\mono\2.1\XamarinWatchOS;$(AssemblySearchPaths)</AssemblySearchPaths>
-
-	</PropertyGroup>
-
-	<!-- Target MonoAndroid -->
-	<PropertyGroup Condition="'$(TargetFramework)'=='monodroid'">
-		<AssemblySearchPaths>$(FSharpSourcesRoot)\..\dependencies\mono\2.1\MonoAndroid;$(AssemblySearchPaths)</AssemblySearchPaths>
-
-	</PropertyGroup>
-
-	<!-- Target MonoTouch: identical to MonoAndroid configurations, though we sanity check by building against the MonoTouch mscorlib -->
-	<PropertyGroup Condition="'$(TargetFramework)'=='monotouch'">
-		<AssemblySearchPaths>$(FSharpSourcesRoot)\..\dependencies\mono\2.1\MonoTouch;$(AssemblySearchPaths)</AssemblySearchPaths>
-
-	</PropertyGroup>
-
-	<!-- Target XamarinWatchOS: identical to MonoTouch configurations, though we sanity check by building against the Xamarin.WatchOS mscorlib -->
-	<PropertyGroup Condition="'$(TargetFramework)'=='xamarinwatchos'">
-		<AssemblySearchPaths>$(FSharpSourcesRoot)\..\dependencies\mono\2.1\XamarinWatchOS;$(AssemblySearchPaths)</AssemblySearchPaths>
-
-	</PropertyGroup>
-
-	<!-- Target XamarinTVOS: identical to MonoTouch configurations, though we sanity check by building against the Xamarin.TVOS mscorlib -->
-	<PropertyGroup Condition="'$(TargetFramework)'=='xamarintvos'">
-		<AssemblySearchPaths>$(FSharpSourcesRoot)\..\dependencies\mono\2.1\XamarinTVOS;$(AssemblySearchPaths)</AssemblySearchPaths>
-
-	</PropertyGroup>
-
-	<!-- Target xamarinmacmobile similar to monotouch configurations, with Reflection.emit, structural equality, and BigInt -->
-	<PropertyGroup Condition="'$(TargetFramework)'=='xamarinmacmobile'">
-		<AssemblySearchPaths>$(FSharpSourcesRoot)\..\dependencies\mono\2.1\XamarinMac;$(AssemblySearchPaths)</AssemblySearchPaths>
-
-	</PropertyGroup>
-
-	<!-- Target xamarinmacfull should be identical to desktop with missing System.Config, System.Drawing etc -->
-	<PropertyGroup Condition="'$(TargetFramework)'=='xamarinmacfull'">
-		<AssemblySearchPaths>$(FSharpSourcesRoot)\..\dependencies\mono\4.5\XamarinMac;$(AssemblySearchPaths)</AssemblySearchPaths>
-
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(TargetFramework)'=='coreclr'">
+  <PropertyGroup Condition="'$(TargetFramework)'=='coreclr'">
     <DefineConstants>$(DefineConstants);FX_PORTABLE_OR_NETSTANDARD</DefineConstants>
     <DefineConstants>$(DefineConstants);NETSTANDARD1_6</DefineConstants>
     <DefineConstants>$(DefineConstants);PREFERRED_UI_LANG</DefineConstants>
@@ -579,7 +525,7 @@
     </Exec>
 
     <!-- https://raw.githubusercontent.com/KevinRansom/visualfsharp/98e8c9a2ca09a36ebd024eb424fc050a831053cd/build.cmd  -->
-	<Exec Command="git rev-parse HEAD" ConsoleToMsBuild="true">
+    <Exec Command="git rev-parse HEAD" ConsoleToMsBuild="true">
       <Output TaskParameter="ConsoleOutput" PropertyName="LatestCommit" />
     </Exec>
     <WriteLinesToFile File="$(IntermediateOutputPath)source_link.json" Overwrite="true" Lines='{"documents": { "$(SrcRootDirectory)/*" : "$(RemoteUri.Replace(".git", "").Replace("github.com", "raw.githubusercontent.com"))/$(LatestCommit)/*" }}' />

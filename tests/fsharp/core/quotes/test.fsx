@@ -1125,28 +1125,24 @@ module MoreTests =
     test "test3932g" (isMeth <@ ClassOneArg.TestStaticMethodTwoArgs(3,4) @>)
 
     test "test3932qA" (isPropGet <@ ClassOneArg(3).TestInstanceProp @>)
-    // Disabled, see https://github.com/fsharp/fsharp/issues/517
-    (*
     test "test3932qB" (isPropGet <@ ClassOneArg(3).TestInstanceIndexProp(4) @>)
     test "test3932qC" (isPropSet <@ ClassOneArg(3).TestInstanceSettableIndexProp(4) <- 5 @>)
     test "test3932qD" (isPropSet <@ ClassOneArg(3).TestInstanceSettableIndexProp2(4,5) <- 6 @>)
     test "test3932q77" (match <@ ClassOneArg(3).TestInstanceSettableIndexProp2(4,5) <- 6 @> with 
                         | PropertySet(Some _, _, [Int32(4); Int32(5)], Int32(6)) -> true 
                         | _ -> false)
-    *)
 
     test "test3932wA" (isMeth <@ ClassOneArg(3).TestInstanceMethodNoArgs() @>)
     test "test3932wB" (isMeth <@ ClassOneArg(3).TestInstanceMethodOneArg(3) @>)
     test "test3932e" (isMeth <@ ClassOneArg(3).TestInstanceMethodTwoArgs(3,4) @>)
 
     test "test3932q1" (isPropSet <@ ClassOneArg(3).Setter <- 3 @>)
-    // Disabled, see https://github.com/fsharp/fsharp/issues/517
-    // test "test3932q2" (isPropGet <@ ClassOneArg(3).GetterIndexer(3) @>)
-    // test "test3932q3" (isPropGet <@ ClassOneArg(3).[3] @>)
-    // test "test3932q4" (isPropGet <@ ClassOneArg(3).TupleGetterIndexer((3,4)) @>)
-    // test "test3932q5" (isPropSet <@ ClassOneArg(3).SetterIndexer(3) <- 3 @>)
-    // test "test3932q61" (isPropSet <@ ClassOneArg(3).[3] <- 3 @>)
-    // test "test3932q62" (match <@ ClassOneArg(3).[4] <- 5 @> with PropertySet(Some _,_, [Int32(4)], Int32(5)) -> true | _ -> false)
+    test "test3932q2" (isPropGet <@ ClassOneArg(3).GetterIndexer(3) @>)
+    test "test3932q3" (isPropGet <@ ClassOneArg(3).[3] @>)
+    test "test3932q4" (isPropGet <@ ClassOneArg(3).TupleGetterIndexer((3,4)) @>)
+    test "test3932q5" (isPropSet <@ ClassOneArg(3).SetterIndexer(3) <- 3 @>)
+    test "test3932q61" (isPropSet <@ ClassOneArg(3).[3] <- 3 @>)
+    test "test3932q62" (match <@ ClassOneArg(3).[4] <- 5 @> with PropertySet(Some _,_, [Int32(4)], Int32(5)) -> true | _ -> false)
     test "test3932q7" (isPropSet <@ ClassOneArg(3).TupleSetter <- (3,4) @>)
 
 
@@ -1155,8 +1151,7 @@ module MoreTests =
     
     printfn "res = %A" <@ ClassNoArg.TestStaticSettableProp <- 5 @> 
     test "test3932q63" (match <@ ClassNoArg.TestStaticSettableProp <- 5 @> with PropertySet(None, _, [], Int32(5)) -> true | _ -> false)
-    // Disabled, see https://github.com/fsharp/fsharp/issues/517
-    // test "test3932q64" (match <@ ClassNoArg.TestStaticSettableIndexProp(4) <- 5 @> with PropertySet(None, _, [Int32(4)], Int32(5)) -> true | _ -> false)
+    test "test3932q64" (match <@ ClassNoArg.TestStaticSettableIndexProp(4) <- 5 @> with PropertySet(None, _, [Int32(4)], Int32(5)) -> true | _ -> false)
     test "test3932r" (isMeth <@ ClassNoArg.TestStaticMethodOneArg(3) @>)
     test "test3932r" (isMeth <@ ClassNoArg.TestStaticMethodOneTupledArg((3,2)) @>)
     test "test3932r" (isMeth <@ ClassNoArg.TestStaticMethodOneTupledArg(p) @>)
@@ -1164,13 +1159,10 @@ module MoreTests =
     test "test3932y" (isMeth <@ ClassNoArg.TestStaticMethodTwoArgs(3,4) @>)
 
     test "test3932u" (isPropGet <@ ClassNoArg().TestInstanceProp @>)
-    // Disabled, see https://github.com/fsharp/fsharp/issues/517
-    (*
     test "test3932u" (isPropGet <@ ClassNoArg().TestInstanceIndexProp(4) @>)
     test "test3932q65" (match <@ ClassNoArg().TestInstanceIndexProp(4) @> with PropertyGet(Some _, _, [(Int32(4))]) -> true | _ -> false)
     test "test3932u" (isPropSet <@ ClassNoArg().TestInstanceSettableIndexProp(4) <- 5 @>)
     test "test3932q66" (match <@ ClassNoArg().TestInstanceSettableIndexProp(4) <- 5 @> with PropertySet(Some _, _, [(Int32(4))], Int32(5)) -> true | _ -> false)
-    *)
     test "test3932i" (isMeth <@ ClassNoArg().TestInstanceMethodNoArgs() @>)
     test "test3932i" (isMeth <@ ClassNoArg().TestInstanceMethodOneArg(3) @>)
     test "test3932i" (isMeth <@ ClassNoArg().TestInstanceMethodOneTupledArg((3,4)) @>)
@@ -1185,11 +1177,8 @@ module MoreTests =
     test "test3932yg" (isMeth <@ GenericClassNoArg<int>.TestStaticMethodTwoArgs(3,4) @>)
 
     test "test3932ug" (isPropGet <@ (GenericClassNoArg<int>()).TestInstanceProp @>)
-    // Disabled, see https://github.com/fsharp/fsharp/issues/517
-    (*
     test "test3932ug" (isPropGet <@ (GenericClassNoArg<int>()).TestInstanceIndexProp(4) @>)
     test "test3932ug" (match <@ (GenericClassNoArg<int>()).TestInstanceIndexProp(4) @> with PropertyGet(Some _, _, [Int32(4)]) -> true | _ -> false)
-    *)
 
     test "test3932ig" (isMeth <@ (GenericClassNoArg<int>()).TestInstanceMethodNoArgs() @>)
     test "test3932ig" (isMeth <@ (GenericClassNoArg<int>()).TestInstanceMethodOneArg(3) @>)
@@ -1383,21 +1372,19 @@ module CheckRlectedMembers =
     test "testReflect3932o" (isMeth <@ ClassNoArg().TestInstanceMethodTwoArgs(3,4) @>)
 
     test "testReflect3932q1" (isPropSet <@ ClassOneArg(3).Setter <- 3 @>)
-    // Disabled, see https://github.com/fsharp/fsharp/issues/517
-    // test "testReflect3932q2" (isPropGet <@ ClassOneArg(3).GetterIndexer(3) @>)
-    // test "testReflect3932q3" (isPropGet <@ ClassOneArg(3).[3] @>)
-    // test "testReflect3932q4" (isPropGet <@ ClassOneArg(3).TupleGetterIndexer((3,4)) @>)
-    // test "testReflect3932q5" (isPropSet <@ ClassOneArg(3).SetterIndexer(3) <- 3 @>)
-    // test "testReflect3932q6" (isPropSet <@ ClassOneArg(3).[3] <- 3 @>)
+    test "testReflect3932q2" (isPropGet <@ ClassOneArg(3).GetterIndexer(3) @>)
+    test "testReflect3932q3" (isPropGet <@ ClassOneArg(3).[3] @>)
+    test "testReflect3932q4" (isPropGet <@ ClassOneArg(3).TupleGetterIndexer((3,4)) @>)
+    test "testReflect3932q5" (isPropSet <@ ClassOneArg(3).SetterIndexer(3) <- 3 @>)
+    test "testReflect3932q6" (isPropSet <@ ClassOneArg(3).[3] <- 3 @>)
     test "testReflect3932q7" (isPropSet <@ ClassOneArg(3).TupleSetter <- (3,4) @>)
 
     test "testReflect3932q1x" (isPropSet <@ ClassOneArgOuterAttribute(3).Setter <- 3 @>)
-    // Disabled, see https://github.com/fsharp/fsharp/issues/517
-    // test "testReflect3932q2x" (isPropGet <@ ClassOneArgOuterAttribute(3).GetterIndexer(3) @>)
-    // test "testReflect3932q3x" (isPropGet <@ ClassOneArgOuterAttribute(3).[3] @>)
-    // test "testReflect3932q4x" (isPropGet <@ ClassOneArgOuterAttribute(3).TupleGetterIndexer((3,4)) @>)
-    // test "testReflect3932q5x" (isPropSet <@ ClassOneArgOuterAttribute(3).SetterIndexer(3) <- 3 @>)
-    // test "testReflect3932q6x" (isPropSet <@ ClassOneArgOuterAttribute(3).[3] <- 3 @>)
+    test "testReflect3932q2x" (isPropGet <@ ClassOneArgOuterAttribute(3).GetterIndexer(3) @>)
+    test "testReflect3932q3x" (isPropGet <@ ClassOneArgOuterAttribute(3).[3] @>)
+    test "testReflect3932q4x" (isPropGet <@ ClassOneArgOuterAttribute(3).TupleGetterIndexer((3,4)) @>)
+    test "testReflect3932q5x" (isPropSet <@ ClassOneArgOuterAttribute(3).SetterIndexer(3) <- 3 @>)
+    test "testReflect3932q6x" (isPropSet <@ ClassOneArgOuterAttribute(3).[3] <- 3 @>)
     test "testReflect3932q7x" (isPropSet <@ ClassOneArgOuterAttribute(3).TupleSetter <- (3,4) @>)
 
     test "testReflect3932rg" (isMeth <@ GenericClassNoArg<int>.TestStaticMethodOneArg(3) @>)
@@ -1675,8 +1662,7 @@ module QuotationConstructionTests =
 #if !TESTS_AS_APP && !FX_PORTABLE_OR_NETSTANDARD
     check "vcknwwe099" (Expr.PropertySet(<@@ (new System.Windows.Forms.Form()) @@>, setof <@@ (new System.Windows.Forms.Form()).Text <- "2" @@>, <@@ "3" @@> )) <@@ (new System.Windows.Forms.Form()).Text <- "3" @@>
 #endif
-    // Disabled, see https://github.com/fsharp/fsharp/issues/517
-    // check "vcknwwe099" (Expr.PropertySet(<@@ (new Foo()) @@>, setof <@@ (new Foo()).[3] <- 1 @@>, <@@ 2 @@> , [ <@@ 3 @@> ] )) <@@ (new Foo()).[3] <- 2 @@>
+    check "vcknwwe099" (Expr.PropertySet(<@@ (new Foo()) @@>, setof <@@ (new Foo()).[3] <- 1 @@>, <@@ 2 @@> , [ <@@ 3 @@> ] )) <@@ (new Foo()).[3] <- 2 @@>
 #if FSHARP_CORE_31
 #else
     check "vcknwwe0qq1" (Expr.QuoteRaw(<@ "1" @>)) <@@ <@@ "1" @@> @@>
@@ -2032,8 +2018,6 @@ module TestQuotationOfCOnstructors =
         | _ -> false)
 
 
-// Disabled, see https://github.com/fsharp/fsharp/issues/517
-(*
 module IndexedPropertySetTest = 
     open System
     open Microsoft.FSharp.Quotations
@@ -2068,7 +2052,6 @@ module IndexedPropertySetTest =
         else printfn "Test KO."
 
     do testExprPropertySet ()
-*)
 
 
 

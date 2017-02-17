@@ -453,11 +453,9 @@ module LeafExpressionEvaluationTests =
 
 
         checkEval "vrewoinrv091" (<@ farr.[0] @>) 0.0
-        // Disabled, see https://github.com/fsharp/fsharp/issues/517
-        // checkEval "vrewoinrv092" (<@ flist.[0] @>) 0.0
+        checkEval "vrewoinrv092" (<@ flist.[0] @>) 0.0
         checkEval "vrewoinrv093" (<@ iarr.[0] @>) 0
-        // Disabled, see https://github.com/fsharp/fsharp/issues/517
-        // checkEval "vrewoinrv094" (<@ ilist.[0] @>) 0
+        checkEval "vrewoinrv094" (<@ ilist.[0] @>) 0
 
 
         checkEval "vrewoinrv09r" (<@ Array.average farr @>) (Array.average farr)

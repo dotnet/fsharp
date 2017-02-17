@@ -3557,7 +3557,19 @@ module SlicingTests =
     (3).[..4,*]
     (3).[*,*]
 
-module Bug_FSharp_1_0_3246 =
+    type Foo() =
+        member this.GetSlice(lb1:int option, ub1:int option) = [1]
+        member this.SetSlice(lb1:int option, ub1:int option, v2D: int list) = ()
+ 
+    let f = new Foo()
+ 
+    let vs = f.[1 .. 3]
+    f.[1..3] <- [3]
+    f.[..3] <- [3]
+    f.[1..] <- [3]
+    f.[*] <- [3]
+ 
+ module Bug_FSharp_1_0_3246 =
     type r1 =  
         { x : int }
         static member Empty = { x = 3 } 
