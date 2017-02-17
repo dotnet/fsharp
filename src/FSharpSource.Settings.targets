@@ -29,7 +29,6 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <BuildToolsTargets45>true</BuildToolsTargets45>
     <WarningsAsErrors />
-    <MonoPackaging>false</MonoPackaging>
 
     <FX_NO_LOADER Condition=" '$(FX_NO_LOADER)'==''">false</FX_NO_LOADER>
     <VSSDK_BUILDTOOLS_VERSION>Microsoft.VSSDK.BuildTools.15.0.26124-RC3</VSSDK_BUILDTOOLS_VERSION>
@@ -40,11 +39,7 @@
   
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(OS)' == 'Unix'">
-    <UseMicroBuild>false</UseMicroBuild>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(OS)' != 'Unix'">
+  <PropertyGroup Condition="'$(MonoPackaging)' == 'false' AND '$(OS)' != 'Unix'">
     <UseMicroBuild>true</UseMicroBuild>
     <UseSourceLink>true</UseSourceLink>
     <UseGatherBinaries>true</UseGatherBinaries>
