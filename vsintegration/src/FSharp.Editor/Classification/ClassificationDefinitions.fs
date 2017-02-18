@@ -3,7 +3,6 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Composition
 open System.ComponentModel.Composition
 open System.Windows.Media
 
@@ -46,11 +45,9 @@ module internal FSharpClassificationTypes =
         | SemanticClassificationType.Property -> Property
         | SemanticClassificationType.Interface -> Interface
 
-
-
 module internal ClassificationDefinitions =
 
-    [<Export; Shared>]
+    [<Export>]
     type internal ThemeColors
         [<ImportingConstructor>]
         (
@@ -99,7 +96,7 @@ module internal ClassificationDefinitions =
         do VSColorTheme.add_ThemeChanged handler
         interface IDisposable with member __.Dispose() = VSColorTheme.remove_ThemeChanged handler
 
-        member __.getColor(ctype) =
+        member __.GetColor(ctype) =
             let light, dark = colorData |> Map.ofList |> Map.find ctype
             match getCurrentThemeId() with
             | LighTheme -> Nullable light
@@ -127,7 +124,7 @@ module internal ClassificationDefinitions =
         inherit ClassificationFormatDefinition()
 
         do self.DisplayName <- SR.FSharpFunctionsOrMethodsClassificationType.Value
-           self.ForegroundColor <- theme.getColor FSharpClassificationTypes.Function
+           self.ForegroundColor <- theme.GetColor FSharpClassificationTypes.Function
 
     [<Export(typeof<EditorFormatDefinition>)>]
     [<ClassificationType(ClassificationTypeNames = FSharpClassificationTypes.MutableVar)>]
@@ -138,7 +135,7 @@ module internal ClassificationDefinitions =
         inherit ClassificationFormatDefinition()
 
         do self.DisplayName <- SR.FSharpMutableVarsClassificationType.Value
-           self.ForegroundColor <- theme.getColor FSharpClassificationTypes.MutableVar
+           self.ForegroundColor <- theme.GetColor FSharpClassificationTypes.MutableVar
 
     [<Export(typeof<EditorFormatDefinition>)>]
     [<ClassificationType(ClassificationTypeNames = FSharpClassificationTypes.Printf)>]
@@ -149,7 +146,7 @@ module internal ClassificationDefinitions =
         inherit ClassificationFormatDefinition()
 
         do self.DisplayName <- SR.FSharpPrintfFormatClassificationType.Value
-           self.ForegroundColor <- theme.getColor FSharpClassificationTypes.Printf
+           self.ForegroundColor <- theme.GetColor FSharpClassificationTypes.Printf
 
     [<Export(typeof<EditorFormatDefinition>)>]
     [<ClassificationType(ClassificationTypeNames = FSharpClassificationTypes.Property)>]
@@ -160,4 +157,4 @@ module internal ClassificationDefinitions =
         inherit ClassificationFormatDefinition()
 
         do self.DisplayName <- SR.FSharpPropertiesClassificationType.Value
-           self.ForegroundColor <- theme.getColor FSharpClassificationTypes.Property
+           self.ForegroundColor <- theme.GetColor FSharpClassificationTypes.Property
