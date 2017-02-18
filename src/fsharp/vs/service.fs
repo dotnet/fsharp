@@ -501,6 +501,7 @@ type SemanticClassificationType =
     | IntrinsicType
     | Enumeration
     | Interface
+    | TypeArgument
 
 // A scope represents everything we get back from the typecheck of a file.
 // It acts like an in-memory database about the file.
@@ -1494,7 +1495,9 @@ type TypeCheckInfo
                 Some (m, SemanticClassificationType.ValueType)
             | CNR(_, Item.Types _, LegitTypeOccurence, _, _, _, m) -> 
                 Some (m, SemanticClassificationType.ReferenceType)
-            | CNR(_, (Item.TypeVar _ | Item.UnqualifiedType _ | Item.CtorGroup _), LegitTypeOccurence, _, _, _, m) ->
+            | CNR(_, (Item.TypeVar _ ), LegitTypeOccurence, _, _, _, m) ->
+                Some (m, SemanticClassificationType.TypeArgument)
+            | CNR(_, (Item.UnqualifiedType _ | Item.CtorGroup _), LegitTypeOccurence, _, _, _, m) ->
                 Some (m, SemanticClassificationType.ReferenceType)
             | CNR(_, Item.ModuleOrNamespaces refs, LegitTypeOccurence, _, _, _, m) when refs |> List.exists (fun x -> x.IsModule) ->
                 Some (m, SemanticClassificationType.ReferenceType)

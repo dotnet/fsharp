@@ -162,6 +162,7 @@ type internal SemanticClassificationType =
     | IntrinsicType
     | Enumeration
     | Interface
+    | TypeArgument
 
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]

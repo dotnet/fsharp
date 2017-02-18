@@ -25,6 +25,7 @@ module internal FSharpClassificationTypes =
     let [<Literal>] Enum = ClassificationTypeNames.EnumName
     let [<Literal>] Property = "FSharp.Property"
     let [<Literal>] Interface = ClassificationTypeNames.InterfaceName
+    let [<Literal>] TypeArgument = ClassificationTypeNames.TypeParameterName
 
     let getClassificationTypeName = function
         | SemanticClassificationType.ReferenceType -> ReferenceType
@@ -39,6 +40,7 @@ module internal FSharpClassificationTypes =
         | SemanticClassificationType.Enumeration -> Enum
         | SemanticClassificationType.Property -> Property
         | SemanticClassificationType.Interface -> Interface
+        | SemanticClassificationType.TypeArgument -> TypeArgument
 
 module internal ClassificationDefinitions =
     [<Export; Name(FSharpClassificationTypes.Function); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
