@@ -26,7 +26,9 @@ type internal FSharpBraceMatchingService
         
     interface IBraceMatcher with
         member this.FindBracesAsync(document, position, cancellationToken) = 
+            Logging.Logging.logInfof "=> FSharpBraceMatchingService.FindBracesAsync\n%s" Environment.StackTrace
             asyncMaybe {
+                use! __ = Async.OnCancel(fun () -> Logging.Logging.logInfof "CANCELLED FSharpBraceMatchingService.FindBracesAsync\n%s" Environment.StackTrace) |> liftAsync
                 let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! (left, right) = FSharpBraceMatchingService.GetBraceMatchingResult(checkerProvider.Checker, sourceText, document.Name, options, position)

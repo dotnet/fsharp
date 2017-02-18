@@ -46,13 +46,15 @@ type internal FSharpIndentationService() =
 
     interface ISynchronousIndentationService with
         member this.GetDesiredIndentation(document: Document, lineNumber: int, cancellationToken: CancellationToken): Nullable<IndentationResult> =
+            Logging.Logging.logInfof "=> FSharpIndentationService.GetDesiredIndentation\n%s" Environment.StackTrace
             async {
-                 let! sourceText = document.GetTextAsync(cancellationToken)
-                 let! options = document.GetOptionsAsync(cancellationToken)
-                 let tabSize = options.GetOption(FormattingOptions.TabSize, FSharpCommonConstants.FSharpLanguageName)
-                 
-                 return 
-                    match FSharpIndentationService.GetDesiredIndentation(sourceText, lineNumber, tabSize) with
-                    | None -> Nullable()
-                    | Some(indentation) -> Nullable<IndentationResult>(IndentationResult(sourceText.Lines.[lineNumber].Start, indentation))
+                use! __ = Async.OnCancel(fun () -> Logging.Logging.logInfof "CANCELLED FSharpIndentationService.GetDesiredIndentation\n%s" Environment.StackTrace)
+                let! sourceText = document.GetTextAsync(cancellationToken)
+                let! options = document.GetOptionsAsync(cancellationToken)
+                let tabSize = options.GetOption(FormattingOptions.TabSize, FSharpCommonConstants.FSharpLanguageName)
+                
+                return 
+                   match FSharpIndentationService.GetDesiredIndentation(sourceText, lineNumber, tabSize) with
+                   | None -> Nullable()
+                   | Some(indentation) -> Nullable<IndentationResult>(IndentationResult(sourceText.Lines.[lineNumber].Start, indentation))
             } |> Async.RunSynchronously
