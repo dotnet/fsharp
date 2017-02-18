@@ -635,3 +635,9 @@ module internal Extensions =
                 | _ -> Glyph.StructurePublic
             | GlyphMajor.Error -> Glyph.Error
             | _ -> Glyph.None
+
+module Cancellation =
+    let track method (ct: CancellationToken) =
+        Logging.Logging.logInfof "=> %s\n%s" method Environment.StackTrace
+        let __ = ct.Register((fun () -> Logging.Logging.logInfof "CANCELLED %s\n%s" method Environment.StackTrace), true)
+        ()

@@ -764,6 +764,7 @@ module internal IncrementalBuild =
     ///
     /// Will throw OperationCanceledException if the cancellation ctok has been set.
     let ExecuteApply (ctok: CompilationThreadToken) save (ct: CancellationToken) (action:Action) bt = 
+        if ct.IsCancellationRequested then Diagnostics.Debug.Assert(false, "!!! ThrowIfCancellationRequested !!!")
         ct.ThrowIfCancellationRequested()
         if (injectCancellationFault) then raise (OperationCanceledException("injected fault"))
         let actionResult = action.Execute(ctok)

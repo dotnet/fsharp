@@ -43,9 +43,8 @@ type internal FSharpNavigationBarItemService
 
     interface INavigationBarItemService with
         member __.GetItemsAsync(document, cancellationToken) : Task<IList<NavigationBarItem>> =
-            Logging.Logging.logInfof "=> FSharpNavigationBarItemService.GetItemsAsync\n%s" Environment.StackTrace
+            Cancellation.track "FSharpNavigationBarItemService.GetItemsAsync" cancellationToken
             asyncMaybe {
-                use! __ = Async.OnCancel(fun () -> Logging.Logging.logInfof "CANCELLED FSharpNavigationBarItemService.GetItemsAsync\n%s" Environment.StackTrace) |> liftAsync
                 let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! parsedInput = checkerProvider.Checker.ParseDocument(document, options, sourceText)

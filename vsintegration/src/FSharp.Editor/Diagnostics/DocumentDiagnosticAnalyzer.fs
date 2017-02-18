@@ -112,9 +112,8 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
 
     override this.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
         let projectInfoManager = getProjectInfoManager document
-        Logging.Logging.logInfof "=> DocumentDiagnosticAnalyzer.AnalyzeSyntaxAsync\n%s" Environment.StackTrace
+        Cancellation.track "DocumentDiagnosticAnalyzer.AnalyzeSyntaxAsync" cancellationToken
         asyncMaybe {
-            use! __ = Async.OnCancel(fun () -> Logging.Logging.logInfof "CANCELLED DocumentDiagnosticAnalyzer.AnalyzeSyntaxAsync\n%s" Environment.StackTrace) |> liftAsync
             let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
             let! sourceText = document.GetTextAsync(cancellationToken)
             let! textVersion = document.GetTextVersionAsync(cancellationToken)
@@ -127,9 +126,8 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
 
     override this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
         let projectInfoManager = getProjectInfoManager document
-        Logging.Logging.logInfof "=> DocumentDiagnosticAnalyzer.AnalyzeSemanticsAsync\n%s" Environment.StackTrace
         asyncMaybe {
-            use! __ = Async.OnCancel(fun () -> Logging.Logging.logInfof "CANCELLED DocumentDiagnosticAnalyzer.AnalyzeSemanticsAsync\n%s" Environment.StackTrace) |> liftAsync
+            Cancellation.track "DocumentDiagnosticAnalyzer.AnalyzeSyntaxAsync" cancellationToken
             let! options = projectInfoManager.TryGetOptionsForDocumentOrProject(document) 
             let! sourceText = document.GetTextAsync(cancellationToken)
             let! textVersion = document.GetTextVersionAsync(cancellationToken)

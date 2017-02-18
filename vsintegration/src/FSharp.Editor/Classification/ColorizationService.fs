@@ -30,18 +30,16 @@ type internal FSharpColorizationService
         member this.AddLexicalClassifications(_: SourceText, _: TextSpan, _: List<ClassifiedSpan>, _: CancellationToken) = ()
         
         member this.AddSyntacticClassificationsAsync(document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
-            Logging.Logging.logInfof "=> FSharpColorizationService.GetItemsAsync\n%s" Environment.StackTrace
+            Cancellation.track "FSharpColorizationService.AddSyntacticClassificationsAsync" cancellationToken
             async {
-                use! __ = Async.OnCancel(fun () -> Logging.Logging.logInfof "CANCELLED FSharpColorizationService.AddSyntacticClassificationsAsync\n%s" Environment.StackTrace)
                 let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 result.AddRange(CommonHelpers.getColorizationData(document.Id, sourceText, textSpan, Some(document.FilePath), defines, cancellationToken))
             } |> CommonRoslynHelpers.StartAsyncUnitAsTask cancellationToken
 
         member this.AddSemanticClassificationsAsync(document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
-            Logging.Logging.logInfof "=> FSharpColorizationService.AddSemanticClassificationsAsync\n%s" Environment.StackTrace
+            Cancellation.track "FSharpColorizationService.AddSemanticClassificationsAsync" cancellationToken
             asyncMaybe {
-                use! __ = Async.OnCancel(fun () -> Logging.Logging.logInfof "CANCELLED FSharpColorizationService.AddSemanticClassificationsAsync\n%s" Environment.StackTrace) |> liftAsync
                 let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! _, _, checkResults = checkerProvider.Checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = false) 

@@ -70,9 +70,8 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
 
     interface IDocumentHighlightsService with
         member __.GetDocumentHighlightsAsync(document, position, _documentsToSearch, cancellationToken) : Task<ImmutableArray<DocumentHighlights>> =
-            Logging.Logging.logInfof "=> FSharpDocumentHighlightsService.GetDocumentHighlightsAsync\n%s" Environment.StackTrace
+            Cancellation.track "FSharpDocumentHighlightsService.GetDocumentHighlightsAsync" cancellationToken
             asyncMaybe {
-                use! __ = Async.OnCancel(fun () -> Logging.Logging.logInfof "CANCELLED FSharpDocumentHighlightsService.GetDocumentHighlightsAsync\n%s" Environment.StackTrace) |> liftAsync
                 let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! textVersion = document.GetTextVersionAsync(cancellationToken) 
