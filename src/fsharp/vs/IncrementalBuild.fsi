@@ -144,7 +144,7 @@ type internal IncrementalBuilder =
       member ThereAreLiveTypeProviders : bool
 #endif
       /// Perform one step in the F# build. Return true if the background work is finished.
-      member Step : CompilationThreadToken * ct: CancellationToken -> bool
+      member Step : CompilationThreadToken -> Async<bool>
 
       /// Get the preceding typecheck state of a slot, without checking if it is up-to-date w.r.t.
       /// the timestamps on files and referenced DLLs prior to this one. Return None if the result is not available.
@@ -164,25 +164,25 @@ type internal IncrementalBuilder =
       /// to the necessary point if the result is not available. This may be a long-running operation.
       ///
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetCheckResultsBeforeFileInProject : CompilationThreadToken * filename:string * ct: CancellationToken -> Async<PartialCheckResults option>
+      member GetCheckResultsBeforeFileInProject : CompilationThreadToken * filename:string -> Async<PartialCheckResults option>
 
       /// Get the typecheck state after checking a file. Compute the entire type check of the project up
       /// to the necessary point if the result is not available. This may be a long-running operation.
       ///
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetCheckResultsAfterFileInProject : CompilationThreadToken * filename:string * ct: CancellationToken -> Async<PartialCheckResults option>
+      member GetCheckResultsAfterFileInProject : CompilationThreadToken * filename:string -> Async<PartialCheckResults option>
 
       /// Get the typecheck result after the end of the last file. The typecheck of the project is not 'completed'.
       /// This may be a long-running operation.
       ///
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetCheckResultsAfterLastFileInProject : CompilationThreadToken * ct: CancellationToken  -> PartialCheckResults 
+      member GetCheckResultsAfterLastFileInProject : CompilationThreadToken -> Async<PartialCheckResults option>
 
       /// Get the final typecheck result. If 'generateTypedImplFiles' was set on Create then the TypedAssemblyAfterOptimization will contain implementations.
       /// This may be a long-running operation.
       ///
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetCheckResultsAndImplementationsForProject : CompilationThreadToken * ct: CancellationToken  -> PartialCheckResults * IL.ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option
+      member GetCheckResultsAndImplementationsForProject : CompilationThreadToken -> Async<(PartialCheckResults * IL.ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option) option>
 
       /// Get the logical time stamp that is associated with the output of the project if it were gully built immediately
       member GetLogicalTimeStampForProject: CompilationThreadToken -> DateTime
@@ -190,7 +190,7 @@ type internal IncrementalBuilder =
       /// Await the untyped parse results for a particular slot in the vector of parse results.
       ///
       /// This may be a marginally long-running operation (parses are relatively quick, only one file needs to be parsed)
-      member GetParseResultsForFile : CompilationThreadToken * filename:string * ct: CancellationToken -> Ast.ParsedInput option * Range.range * string * (PhasedDiagnostic * FSharpErrorSeverity) list
+      member GetParseResultsForFile : CompilationThreadToken * filename:string -> Async<(Ast.ParsedInput option * Range.range * string * (PhasedDiagnostic * FSharpErrorSeverity) list) option>
 
       static member TryCreateBackgroundBuilderForProjectOptions : CompilationThreadToken * ReferenceResolver.Resolver * FrameworkImportsCache * scriptClosureOptions:LoadClosure option * sourceFiles:string list * commandLineArgs:string list * projectReferences: IProjectReference list * projectDirectory:string * useScriptResolutionRules:bool * keepAssemblyContents: bool * keepAllBackgroundResolutions: bool * maxTimeShareMilliseconds: int64 -> IncrementalBuilder option * FSharpErrorInfo list 
 
@@ -252,13 +252,13 @@ module internal IncrementalBuild =
     val LocallyInjectCancellationFault : unit -> IDisposable
     
     /// Evaluate a build. Only required for unit testing.
-    val Eval : CompilationThreadToken -> (CompilationThreadToken -> PartialBuild -> unit) -> CancellationToken -> INode -> PartialBuild -> Async<PartialBuild>
+    val Eval : CompilationThreadToken -> (CompilationThreadToken -> PartialBuild -> unit) -> INode -> PartialBuild -> Async<PartialBuild>
 
     /// Evaluate a build for a vector up to a limit. Only required for unit testing.
-    val EvalUpTo : CompilationThreadToken -> (CompilationThreadToken -> PartialBuild -> unit) -> CancellationToken -> INode * int -> PartialBuild -> Async<PartialBuild>
+    val EvalUpTo : CompilationThreadToken -> (CompilationThreadToken -> PartialBuild -> unit) -> INode * int -> PartialBuild -> Async<PartialBuild>
 
     /// Do one step in the build. Only required for unit testing.
-    val Step : CompilationThreadToken -> (CompilationThreadToken -> PartialBuild -> unit) -> CancellationToken -> Target -> PartialBuild -> Async<PartialBuild option>
+    val Step : CompilationThreadToken -> (CompilationThreadToken -> PartialBuild -> unit) -> Target -> PartialBuild -> Async<PartialBuild option>
     /// Get a scalar vector. Result must be available. Only required for unit testing.
     val GetScalarResult : Scalar<'T> * PartialBuild -> ('T * System.DateTime) option
     /// Get a result vector. All results must be available or thrown an exception. Only required for unit testing.

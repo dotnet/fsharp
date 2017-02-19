@@ -802,7 +802,7 @@ module internal IncrementalBuild =
     /// Apply the result, and call the 'save' function to update the build.  
     ///
     /// Will throw OperationCanceledException if the cancellation ctok has been set.
-    let ExecuteApply (ctok: CompilationThreadToken) save (ct: CancellationToken) (action:Action) bt =
+    let ExecuteApply (ctok: CompilationThreadToken) save (action:Action) bt =
         async {
             if (injectCancellationFault) then raise (OperationCanceledException("injected fault"))
             let actionResult = action.Execute(ctok)
@@ -814,7 +814,7 @@ module internal IncrementalBuild =
     /// Evaluate the result of a single output
     ///
     /// Will throw OperationCanceledException if the cancellation ctok has been set.
-    let EvalLeafsFirst ctok save (ct: CancellationToken) target bt =
+    let EvalLeafsFirst ctok save target bt =
         let rec eval(bt,gen) =
             async {
                 #if DEBUG
@@ -822,7 +822,7 @@ module internal IncrementalBuild =
                 // Possibly could detect this case directly.
                 if gen>5000 then failwith "Infinite loop in incremental builder?"
                 #endif
-                let! newBt = ForeachAction ctok target bt (ExecuteApply ctok save ct) bt
+                let! newBt = ForeachAction ctok target bt (ExecuteApply ctok save) bt
                 if newBt=bt then return bt 
                 else return! eval(newBt, gen+1)
             }
@@ -831,7 +831,7 @@ module internal IncrementalBuild =
     /// Evaluate one step of the build.  Call the 'save' function to save the intermediate result.
     ///
     /// Will throw OperationCanceledException if the cancellation ctok has been set.
-    let Step ctok save ct target (bt:PartialBuild) = 
+    let Step ctok save target (bt:PartialBuild) = 
         async {
             // REVIEW: we're building up the whole list of actions on the fringe of the work tree, 
             // executing one thing and then throwing the list away. What about saving the list inside the Build instance?
@@ -839,7 +839,7 @@ module internal IncrementalBuild =
                 
             match worklist with 
             | action :: _ -> 
-                let! r = ExecuteApply ctok save ct action bt
+                let! r = ExecuteApply ctok save action bt
                 return Some r
             | _ -> return None
         }    
@@ -847,13 +847,13 @@ module internal IncrementalBuild =
     ///
     /// Will throw OperationCanceledException if the cancellation ctok has been set.  Intermediate
     /// progrewss along the way may be saved through the use of the 'save' function.
-    let Eval ctok save ct node bt = EvalLeafsFirst ctok save ct (Target(node,None)) bt
+    let Eval ctok save node bt = EvalLeafsFirst ctok save (Target(node,None)) bt
 
     /// Evaluate an output of the build.
     ///
     /// Will throw OperationCanceledException if the cancellation ctok has been set.  Intermediate
     /// progrewss along the way may be saved through the use of the 'save' function.
-    let EvalUpTo ctok save ct (node, n) bt = EvalLeafsFirst ctok save ct (Target(node, Some n)) bt
+    let EvalUpTo ctok save (node, n) bt = EvalLeafsFirst ctok save (Target(node, Some n)) bt
 
     /// Check if an output is up-to-date and ready
     let IsReady target bt =
@@ -1739,9 +1739,9 @@ type IncrementalBuilder(ctokCtor: CompilationThreadToken, frameworkTcImportsCach
         | _ -> true                
 #endif
 
-    member __.Step (ctok: CompilationThreadToken, ct) =  
+    member __.Step (ctok: CompilationThreadToken) =  
         async {
-            let! r = IncrementalBuild.Step ctok SavePartialBuild ct (Target(tcStatesNode, None)) partialBuild
+            let! r = IncrementalBuild.Step ctok SavePartialBuild (Target(tcStatesNode, None)) partialBuild
             match r with 
             | None -> 
                 projectChecked.Trigger()
@@ -1768,24 +1768,24 @@ type IncrementalBuilder(ctokCtor: CompilationThreadToken, frameworkTcImportsCach
         | (*first file*) 0 -> IncrementalBuild.IsReady (Target(initialTcAccNode, None)) partialBuild 
         | _ -> IncrementalBuild.IsReady (Target(tcStatesNode, Some (slotOfFile-1))) partialBuild  
         
-    member builder.GetCheckResultsBeforeFileInProject (ctok: CompilationThreadToken, filename, ct) = 
+    member builder.GetCheckResultsBeforeFileInProject (ctok: CompilationThreadToken, filename) = 
         let slotOfFile = builder.GetSlotOfFileName filename
-        builder.GetCheckResultsBeforeSlotInProject (ctok, slotOfFile, ct)
+        builder.GetCheckResultsBeforeSlotInProject (ctok, slotOfFile)
 
-    member builder.GetCheckResultsAfterFileInProject (ctok: CompilationThreadToken, filename, ct) = 
+    member builder.GetCheckResultsAfterFileInProject (ctok: CompilationThreadToken, filename) = 
         let slotOfFile = builder.GetSlotOfFileName filename + 1
-        builder.GetCheckResultsBeforeSlotInProject (ctok, slotOfFile, ct)
+        builder.GetCheckResultsBeforeSlotInProject (ctok, slotOfFile)
 
-    member builder.GetCheckResultsBeforeSlotInProject (ctok: CompilationThreadToken, slotOfFile, ct) = 
+    member builder.GetCheckResultsBeforeSlotInProject (ctok: CompilationThreadToken, slotOfFile) = 
         async {
             let! result = 
                 async {
                     match slotOfFile with
                     | (*first file*) 0 -> 
-                        let! build = IncrementalBuild.Eval ctok SavePartialBuild ct initialTcAccNode partialBuild
+                        let! build = IncrementalBuild.Eval ctok SavePartialBuild initialTcAccNode partialBuild
                         return GetScalarResult(initialTcAccNode,build)
                     | _ -> 
-                        let! build = IncrementalBuild.EvalUpTo ctok SavePartialBuild ct (tcStatesNode, (slotOfFile-1)) partialBuild
+                        let! build = IncrementalBuild.EvalUpTo ctok SavePartialBuild (tcStatesNode, (slotOfFile-1)) partialBuild
                         return GetVectorResultBySlot(tcStatesNode,slotOfFile-1,build)  
                 }
             
@@ -1794,12 +1794,12 @@ type IncrementalBuilder(ctokCtor: CompilationThreadToken, frameworkTcImportsCach
             | None -> return None // failwith "Build was not evaluated, expected the results to be ready after 'Eval'."
         }
 
-    member builder.GetCheckResultsAfterLastFileInProject (ctok: CompilationThreadToken, ct) = 
-        builder.GetCheckResultsBeforeSlotInProject(ctok, builder.GetSlotsCount(), ct) 
+    member builder.GetCheckResultsAfterLastFileInProject (ctok: CompilationThreadToken) = 
+        builder.GetCheckResultsBeforeSlotInProject(ctok, builder.GetSlotsCount()) 
 
-    member __.GetCheckResultsAndImplementationsForProject(ctok: CompilationThreadToken, ct) = 
+    member __.GetCheckResultsAndImplementationsForProject(ctok: CompilationThreadToken) = 
         async {
-            let! build = IncrementalBuild.Eval ctok SavePartialBuild ct finalizedTypeCheckNode partialBuild
+            let! build = IncrementalBuild.Eval ctok SavePartialBuild finalizedTypeCheckNode partialBuild
             match GetScalarResult(finalizedTypeCheckNode,build) with
             | Some ((ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, tcAcc), timestamp) -> 
                 return Some (PartialCheckResults.Create (tcAcc,timestamp), ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt)
@@ -1828,7 +1828,7 @@ type IncrementalBuilder(ctokCtor: CompilationThreadToken, frameworkTcImportsCach
         | Some (VectorResult vr) -> vr.Size
         | _ -> failwith "Failed to find sizes"
       
-    member builder.GetParseResultsForFile (ctok: CompilationThreadToken, filename, ct) =
+    member builder.GetParseResultsForFile (ctok: CompilationThreadToken, filename) =
         async {
             let slotOfFile = builder.GetSlotOfFileName filename
     #if FCS_RETAIN_BACKGROUND_PARSE_RESULTS
@@ -1845,7 +1845,7 @@ type IncrementalBuilder(ctokCtor: CompilationThreadToken, frameworkTcImportsCach
                     match GetVectorResultBySlot(stampedFileNamesNode,slotOfFile,partialBuild) with
                     | Some (results, _) -> return Some results
                     | None -> 
-                        let! build = IncrementalBuild.EvalUpTo ctok SavePartialBuild ct (stampedFileNamesNode, slotOfFile) partialBuild  
+                        let! build = IncrementalBuild.EvalUpTo ctok SavePartialBuild (stampedFileNamesNode, slotOfFile) partialBuild  
                         match GetVectorResultBySlot(stampedFileNamesNode,slotOfFile,build) with
                         | Some (results, _) -> return Some results
                         | None -> return None // failwith "Build was not evaluated, expcted the results to be ready after 'Eval'."
