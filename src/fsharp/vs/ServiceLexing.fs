@@ -207,7 +207,7 @@ module internal TokenClassifications =
           -> (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.ParamNext)
               
         | DOT 
-          -> (FSharpTokenColorKind.Operator,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.MemberSelect)
+          -> (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.MemberSelect)
               
         | BAR
           -> (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.None (* FSharpTokenTriggerClass.ChoiceSelect *))              
@@ -218,9 +218,9 @@ module internal TokenClassifications =
           -> (FSharpTokenColorKind.Identifier ,FSharpTokenCharKind.Identifier,FSharpTokenTriggerClass.None)
 
         | LESS  _
-          -> (FSharpTokenColorKind.Operator,FSharpTokenCharKind.Operator,FSharpTokenTriggerClass.ParamStart)  // for type provider static arguments
+          -> (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Operator,FSharpTokenTriggerClass.ParamStart)  // for type provider static arguments
         | GREATER _ 
-          -> (FSharpTokenColorKind.Operator,FSharpTokenCharKind.Operator,FSharpTokenTriggerClass.ParamEnd)    // for type provider static arguments
+          -> (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Operator,FSharpTokenTriggerClass.ParamEnd)    // for type provider static arguments
               
         | LPAREN
           // We need 'ParamStart' to trigger the 'GetDeclarations' method to show param info automatically
