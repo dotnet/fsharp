@@ -163,7 +163,7 @@ module internal TokenClassifications =
 
         // 'in' when used in a 'join' in a query expression
         | JOIN_IN ->
-                    (FSharpTokenColorKind.Identifier,FSharpTokenCharKind.Identifier,FSharpTokenTriggerClass.None)  
+             (FSharpTokenColorKind.Identifier,FSharpTokenCharKind.Identifier,FSharpTokenTriggerClass.None)  
         | DECIMAL _
         | BIGNUM _ | INT8 _  | UINT8 _ | INT16 _  | UINT16 _ | INT32 _ | UINT32 _ | INT64 _ | UINT64 _ 
         | UNATIVEINT _ | NATIVEINT _ | IEEE32 _ |  IEEE64 _
@@ -182,16 +182,14 @@ module internal TokenClassifications =
         | DOLLAR | COLON_GREATER  | COLON_COLON  
         | PERCENT_OP _ | PLUS_MINUS_OP _ | PREFIX_OP _ | COLON_QMARK_GREATER   
         | AMP   | AMP_AMP  | BAR_BAR  | QMARK | QMARK_QMARK | COLON_QMARK
-        | QUOTE   | STAR  | HIGH_PRECEDENCE_TYAPP 
+        | HIGH_PRECEDENCE_TYAPP 
         | COLON_EQUALS   | EQUALS | RQUOTE_DOT _
         | MINUS | ADJACENT_PREFIX_OP _  
           -> (FSharpTokenColorKind.Operator,FSharpTokenCharKind.Operator,FSharpTokenTriggerClass.None)
-        | COLON    
-          -> (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.None)
-
+          
         | INFIX_COMPARE_OP _ // This is a whole family: .< .> .= .!= .$
         | FUNKY_OPERATOR_NAME _ // This is another whole family, including: .[] and .()
-        | INFIX_AT_HAT_OP _
+        //| INFIX_AT_HAT_OP _
         | INFIX_STAR_STAR_OP _
         | INFIX_AMP_OP _
         | INFIX_BAR_OP _
@@ -211,10 +209,12 @@ module internal TokenClassifications =
               
         | BAR
           -> (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.None (* FSharpTokenTriggerClass.ChoiceSelect *))              
-        | HASH 
-        | SEMICOLON    | SEMICOLON_SEMICOLON
+
+        | HASH | STAR | SEMICOLON  | SEMICOLON_SEMICOLON | COLON  
           -> (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.None)
-        | UNDERSCORE   
+
+        | QUOTE | UNDERSCORE 
+        | INFIX_AT_HAT_OP _        
           -> (FSharpTokenColorKind.Identifier ,FSharpTokenCharKind.Identifier,FSharpTokenTriggerClass.None)
 
         | LESS  _
