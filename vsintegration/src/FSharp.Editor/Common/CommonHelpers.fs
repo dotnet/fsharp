@@ -22,6 +22,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons
 type internal LexerSymbolKind =
     | Ident
     | Operator
+    | Punctuation
     | GenericTypeParameter
     | StaticallyResolvedTypeParameter
     | Other
@@ -87,8 +88,8 @@ module internal CommonHelpers =
         | FSharpTokenColorKind.InactiveCode -> ClassificationTypeNames.ExcludedCode 
         | FSharpTokenColorKind.PreprocessorKeyword -> ClassificationTypeNames.PreprocessorKeyword 
         | FSharpTokenColorKind.Operator -> ClassificationTypeNames.Operator
-        | FSharpTokenColorKind.Default 
-        | _ -> ClassificationTypeNames.Text
+        | FSharpTokenColorKind.Punctuation -> ClassificationTypeNames.Punctuation
+        | FSharpTokenColorKind.Default | _ -> ClassificationTypeNames.Text
 
     let private scanSourceLine(sourceTokenizer: FSharpSourceTokenizer, textLine: TextLine, lineContents: string, lexState: FSharpTokenizerLexState) : SourceLineData =
         let colorMap = Array.create textLine.Span.Length ClassificationTypeNames.Text
@@ -197,6 +198,7 @@ module internal CommonHelpers =
     let private getSymbolFromTokens (fileName: string, tokens: FSharpTokenInfo list, linePos: LinePosition, lineStr: string, lookupKind: SymbolLookupKind) : LexerSymbol option =
         let isIdentifier t = t.CharClass = FSharpTokenCharKind.Identifier
         let isOperator t = t.ColorClass = FSharpTokenColorKind.Operator
+        let isPunctuation t = t.ColorClass = FSharpTokenColorKind.Punctuation
     
         let inline (|GenericTypeParameterPrefix|StaticallyResolvedTypeParameterPrefix|Other|) (token: FSharpTokenInfo) =
             if token.Tag = FSharpTokenTag.QUOTE then GenericTypeParameterPrefix
@@ -243,6 +245,7 @@ module internal CommonHelpers =
                                 let kind = 
                                     if isOperator token then LexerSymbolKind.Operator 
                                     elif isIdentifier token then LexerSymbolKind.Ident 
+                                    elif isPunctuation token then LexerSymbolKind.Punctuation
                                     else LexerSymbolKind.Other
 
                                 DraftToken.Create kind token
@@ -384,6 +387,7 @@ module internal CommonHelpers =
             // Different from union cases, active patterns don't accept double-backtick identifiers
             isFixableIdentifier name && not (String.IsNullOrEmpty name) && Char.IsUpper(name.[0]) 
         | LexerSymbolKind.Operator, _ -> PrettyNaming.IsOperatorName name
+        | LexerSymbolKind.Punctuation, _ -> PrettyNaming.IsPunctuation name
         | LexerSymbolKind.GenericTypeParameter, _ -> isGenericTypeParameter name
         | LexerSymbolKind.StaticallyResolvedTypeParameter, _ -> isStaticallyResolvedTypeParameter name
         | (LexerSymbolKind.Ident | LexerSymbolKind.Other), _ ->
