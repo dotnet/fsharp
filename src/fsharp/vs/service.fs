@@ -1140,7 +1140,7 @@ type TypeCheckInfo
                 items
 
 
-    static let keywordTypes = Lexhelp.Keywords.keywordTypes
+    //static let keywordTypes = Lexhelp.Keywords.keywordTypes
 
     member x.IsRelativeNameResolvable(cursorPos: pos, plid: string list, item: Item) : bool =
     /// Determines if a long ident is resolvable at a specific point.
@@ -1483,8 +1483,8 @@ type TypeCheckInfo
             | CNR(_, (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use, _, _, _, m) ->
                 Some (m, SemanticClassificationType.ComputationExpression)
             // well known type aliases get colored as keywords
-            | CNR(_, (Item.Types (n, _)), _, _, _, _, m) when keywordTypes.Contains(n) ->
-                Some (m, SemanticClassificationType.IntrinsicType)
+            //| CNR(_, (Item.Types (n, _)), _, _, _, _, m) when keywordTypes.Contains(n) ->
+            //    Some (m, SemanticClassificationType.IntrinsicType)
             // types get colored as types when they occur in syntactic types or custom attributes
             // typevariables get colored as types when they occur in syntactic types custom builders, custom operations get colored as keywords
             | CNR(_, Item.Types (_, [OptionalArgumentAttribute]), LegitTypeOccurence, _, _, _, _) -> None
