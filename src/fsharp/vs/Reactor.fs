@@ -21,7 +21,7 @@ type internal ReactorCommands =
     /// Kick off a build.
     | SetBackgroundOp of (CompilationThreadToken -> bool)  option
     /// Do some work not synchronized in the mailbox.
-    | Op of string * CancellationToken * (CompilationThreadToken -> unit) * (unit -> unit)
+    | Op of string * CancellationToken * (CompilationThreadToken -> Async<unit>) * (unit -> unit)
     /// Finish the background building
     | WaitForBackgroundOpCompletion of AsyncReplyChannel<unit>            
     /// Finish all the queued ops
@@ -74,7 +74,7 @@ type Reactor() =
                         if ct.IsCancellationRequested then ccont() else
                         Trace.TraceInformation("Reactor: --> {0}, remaining {1}, mem {2}, gc2 {3}", desc, inbox.CurrentQueueLength, GC.GetTotalMemory(false)/1000000L, GC.CollectionCount(2))
                         let time = System.DateTime.Now
-                        op ctok
+                        do! op ctok
                         let span = System.DateTime.Now - time
                         //if span.TotalMilliseconds > 100.0 then 
                         Trace.TraceInformation("Reactor: <-- {0}, remaining {1}, took {2}ms", desc, inbox.CurrentQueueLength, span.TotalMilliseconds)
@@ -138,19 +138,21 @@ type Reactor() =
         Trace.TraceInformation("Reactor: enqueue wait for all ops, length {0}", builder.CurrentQueueLength)
         builder.PostAndReply CompleteAllQueuedOps
 
-    member r.EnqueueAndAwaitOpAsync (desc, f) = 
+    member r.EnqueueAndAwaitOpAsync (desc, f: CompilationThreadToken -> Async<'T>) = 
         async { 
             let! ct = Async.CancellationToken
             let resultCell = AsyncUtil.AsyncResultCell<_>()
             r.EnqueueOpPrim(desc, ct,
                 op=(fun ctok ->
-                    let result =
-                        try
-                            f ctok ct |> AsyncUtil.AsyncOk
-                        with
-                        |   :? OperationCanceledException as e -> AsyncUtil.AsyncCanceled e
-                        |   e -> e |> AsyncUtil.AsyncException
-                    resultCell.RegisterResult(result)),
+                        async {
+                            try
+                                let! r = f ctok
+                                resultCell.RegisterResult(AsyncUtil.AsyncOk r)
+                            with
+                            |   :? OperationCanceledException as e -> 
+                                resultCell.RegisterResult(AsyncUtil.AsyncCanceled e)
+                            |   e -> resultCell.RegisterResult(AsyncUtil.AsyncException e)
+                        }),
                     ccont=(fun () -> resultCell.RegisterResult (AsyncUtil.AsyncCanceled(OperationCanceledException())) )
 
             )

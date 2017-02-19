@@ -35,13 +35,13 @@ type internal Reactor =
     member CompleteAllQueuedOps : unit -> unit
 
     /// Enqueue an uncancellable operation and return immediately. 
-    member EnqueueOp : description: string * op:(CompilationThreadToken -> unit) -> unit
+    member EnqueueOp : description: string * op:(CompilationThreadToken -> Async<unit>) -> unit
 
     /// For debug purposes
     member CurrentQueueLength : int
 
     /// Put the operation in the queue, and return an async handle to its result. 
-    member EnqueueAndAwaitOpAsync : description: string * (CompilationThreadToken -> CancellationToken -> 'T) -> Async<'T>
+    member EnqueueAndAwaitOpAsync : description: string * (CompilationThreadToken -> Async<'T>) -> Async<'T>
 
     /// The timespan in milliseconds before background work begins after the operations queue is empty
     member PauseBeforeBackgroundWork : int with get, set
