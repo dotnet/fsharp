@@ -817,11 +817,11 @@ module internal IncrementalBuild =
     let EvalLeafsFirst ctok save target bt =
         let rec eval(bt,gen) =
             async {
-                #if DEBUG
+#if DEBUG
                 // This can happen, for example, if there is a task whose timestamp never stops increasing.
                 // Possibly could detect this case directly.
                 if gen>5000 then failwith "Infinite loop in incremental builder?"
-                #endif
+#endif
                 let! newBt = ForeachAction ctok target bt (ExecuteApply ctok save) bt
                 if newBt=bt then return bt 
                 else return! eval(newBt, gen+1)
@@ -1831,7 +1831,7 @@ type IncrementalBuilder(ctokCtor: CompilationThreadToken, frameworkTcImportsCach
     member builder.GetParseResultsForFile (ctok: CompilationThreadToken, filename) =
         async {
             let slotOfFile = builder.GetSlotOfFileName filename
-    #if FCS_RETAIN_BACKGROUND_PARSE_RESULTS
+#if FCS_RETAIN_BACKGROUND_PARSE_RESULTS
             match GetVectorResultBySlot(parseTreesNode,slotOfFile,partialBuild) with
             | Some (results, _) -> results
             | None -> 
@@ -1839,7 +1839,7 @@ type IncrementalBuilder(ctokCtor: CompilationThreadToken, frameworkTcImportsCach
                 match GetVectorResultBySlot(parseTreesNode,slotOfFile,build) with
                 | Some (results, _) -> results
                 | None -> failwith "Build was not evaluated, expcted the results to be ready after 'Eval'."
-    #else
+#else
             let! results = 
                 async {
                     match GetVectorResultBySlot(stampedFileNamesNode,slotOfFile,partialBuild) with
@@ -1854,7 +1854,7 @@ type IncrementalBuilder(ctokCtor: CompilationThreadToken, frameworkTcImportsCach
             match results with
             | Some x -> return Some (ParseTask ctok x)
             | None -> return None
-    #endif
+#endif
         }
 
     member __.ProjectFileNames  = sourceFiles  |> List.map (fun (_,f,_) -> f)
