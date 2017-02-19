@@ -10,10 +10,10 @@ open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 type internal IReactorOperations = 
 
     /// Put the operation in thq queue, and return an async handle to its result. 
-    abstract EnqueueAndAwaitOpAsync : description: string * action: (CompilationThreadToken -> CancellationToken -> 'T) -> Async<'T>
+    abstract EnqueueAndAwaitOpAsync : description: string * action: (CompilationThreadToken -> Async<'T>) -> Async<'T>
 
     /// Enqueue an operation and return immediately. 
-    abstract EnqueueOp: description: string * action: (CompilationThreadToken -> unit) -> unit
+    abstract EnqueueOp: description: string * action: (CompilationThreadToken -> Async<unit>) -> unit
 
 /// Reactor is intended for long-running but interruptible operations, interleaved
 /// with one-off asynchronous operations. 

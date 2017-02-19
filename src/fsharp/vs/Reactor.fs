@@ -13,7 +13,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 
 /// Represents the capability to schedule work in the compiler service operations queue for the compilation thread
 type internal IReactorOperations = 
-    abstract EnqueueAndAwaitOpAsync : string * (CompilationThreadToken -> CancellationToken -> 'T) -> Async<'T>
+    abstract EnqueueAndAwaitOpAsync : string * (CompilationThreadToken -> Async<'T>) -> Async<'T>
     abstract EnqueueOp: string * (CompilationThreadToken -> unit) -> unit
 
 [<NoEquality; NoComparison>]
