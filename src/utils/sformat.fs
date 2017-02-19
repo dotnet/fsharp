@@ -194,37 +194,8 @@ namespace Microsoft.FSharp.Text.StructuredFormat
     module TaggedTextOps =
 #endif
         let tagAlias = TaggedText.Alias
-        let keywordTypes = 
-          [
-            "array";
-            "bigint";
-            "bool";
-            "byref";
-            "byte";
-            "char";
-            "decimal";
-            "double";
-            "float";
-            "float32";
-            "int";
-            "int16";
-            "int32";
-            "int64";
-            "list";
-            "nativeint";
-            "obj";
-            "sbyte";
-            "seq";
-            "single";
-            "string";
-            "unit";
-            "uint";
-            "uint16";
-            "uint32";
-            "uint64";
-            "unativeint";
-          ] |> Set.ofList
-        let tagClass name = if Set.contains name keywordTypes then TaggedText.Keyword name else TaggedText.Class name
+        let keywordFunctions = set ["raise"; "reraise"; "typeof"; "typedefof"]
+        let tagClass = TaggedText.Class
         let tagUnionCase = TaggedText.UnionCase
         let tagDelegate = TaggedText.Delegate
         let tagEnum = TaggedText.Enum
@@ -238,7 +209,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         let tagRecordField = TaggedText.RecordField
         let tagMethod = TaggedText.Method
         let tagModule = TaggedText.Module
-        let tagModuleBinding = TaggedText.ModuleBinding
+        let tagModuleBinding name = if keywordFunctions.Contains name then TaggedText.Keyword name else TaggedText.ModuleBinding name
         let tagNamespace = TaggedText.Namespace
         let tagNumericLiteral = TaggedText.NumericLiteral
         let tagOperator = TaggedText.Operator
@@ -246,7 +217,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         let tagProperty = TaggedText.Property
         let tagSpace = TaggedText.Space
         let tagStringLiteral = TaggedText.StringLiteral
-        let tagStruct name = if Set.contains name keywordTypes then TaggedText.Keyword name else TaggedText.Struct name
+        let tagStruct = TaggedText.Struct
         let tagTypeParameter = TaggedText.TypeParameter
         let tagText = TaggedText.Text
         let tagPunctuation = TaggedText.Punctuation

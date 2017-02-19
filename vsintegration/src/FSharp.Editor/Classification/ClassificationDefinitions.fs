@@ -35,7 +35,7 @@ module internal FSharpClassificationTypes =
         | SemanticClassificationType.MutableVar -> MutableVar
         | SemanticClassificationType.Printf -> Printf
         | SemanticClassificationType.ComputationExpression
-        | SemanticClassificationType.IntrinsicType -> Keyword
+        | SemanticClassificationType.IntrinsicFunction -> Keyword
         | SemanticClassificationType.UnionCase
         | SemanticClassificationType.Enumeration -> Enum
         | SemanticClassificationType.Property -> Property

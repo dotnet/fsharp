@@ -159,7 +159,7 @@ type internal SemanticClassificationType =
     | Module
     | Printf
     | ComputationExpression
-    | IntrinsicType
+    | IntrinsicFunction
     | Enumeration
     | Interface
     | TypeArgument
