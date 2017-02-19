@@ -375,8 +375,9 @@ module internal IncrementalBuild =
 
     let GetVectorWidthById (bt:PartialBuild) seek = 
         match GetExprById(bt,seek) with 
-        | ScalarBuildRule _ ->failwith "Attempt to get width of scalar." 
-        | VectorBuildRule ve -> Option.get (GetVectorWidthByExpr(bt,ve))
+        | ScalarBuildRule _ -> 
+            failwith "Attempt to get width of scalar." 
+        | VectorBuildRule ve -> GetVectorWidthByExpr(bt,ve).Value
 
     let GetScalarExprResult (bt:PartialBuild, se:ScalarBuildRule) =
         match bt.Results.TryFind (se.Id) with 
@@ -504,197 +505,235 @@ module internal IncrementalBuild =
         
     type Target = Target of INode * int option
 
+    module List =
+        let rec private foldImpl (folder, pending : 'T list, state : 'State) =
+            async {
+            match pending with
+            | [] -> return state
+            | el :: pending ->
+                let! state = folder state el
+                return! foldImpl (folder, pending, state)
+            }
+        
+        let foldAsync (folder : 'State -> 'T -> Async<'State>) (state : 'State) (list : 'T list) : Async<'State> =
+            foldImpl (folder, list, state)
+
     /// Visit each executable action necessary to evaluate the given output (with an optional slot in a
     /// vector output). Call actionFunc with the given accumulator.
-    let ForeachAction ctok (Target(output, optSlot)) bt (actionFunc:Action -> 'T -> 'T) (acc:'T) =
-        let seen = System.Collections.Concurrent.ConcurrentDictionary<Id,bool>()
-        let isSeen id = 
-            if seen.ContainsKey id then true
-            else 
-                seen.[id] <- true
-                false
-                 
-        let shouldEvaluate(bt,currentsig:InputSignature,id) =
-            if currentsig.IsEvaluated then 
-                currentsig <> Signature(bt,id)
-            else false
+    let ForeachAction ctok (Target(output, optSlot)) bt (actionFunc:Action -> 'T -> Async<'T>) (acc:'T) : Async<'T> =
+        async {
+            let seen = System.Collections.Concurrent.ConcurrentDictionary<Id,bool>()
+            let isSeen id = 
+                if seen.ContainsKey id then true
+                else 
+                    seen.[id] <- true
+                    false
+                     
+            let shouldEvaluate(bt,currentsig:InputSignature,id) =
+                if currentsig.IsEvaluated then 
+                    currentsig <> Signature(bt,id)
+                else false
+                
+            /// Make sure the result vector saved matches the size of expr
+            let resizeVectorExpr(ve:VectorBuildRule,acc)  = 
+                async {
+                    match GetVectorWidthByExpr(bt,ve) with
+                    | Some expectedWidth ->
+                        match bt.Results.TryFind ve.Id with
+                        | Some found ->
+                            match found with
+                            | VectorResult rv ->
+                                if rv.Size <> expectedWidth then 
+                                    return! actionFunc (ResizeResultAction(ve.Id ,expectedWidth)) acc
+                                else return acc
+                            | _ -> return acc
+                        | None -> return acc
+                    | None -> return acc
+                }
             
-        /// Make sure the result vector saved matches the size of expr
-        let resizeVectorExpr(ve:VectorBuildRule,acc)  = 
-            match GetVectorWidthByExpr(bt,ve) with
-            | Some expectedWidth ->
-                match bt.Results.TryFind ve.Id with
-                | Some found ->
-                    match found with
-                    | VectorResult rv ->
-                        if rv.Size <> expectedWidth then 
-                            actionFunc (ResizeResultAction(ve.Id ,expectedWidth)) acc
-                        else acc
-                    | _ -> acc
-                | None -> acc        
-            | None -> acc           
-        
-        let rec visitVector optSlot (ve: VectorBuildRule) acc =
-        
-            if isSeen ve.Id then acc
-            else
-                let acc = resizeVectorExpr(ve,acc)        
-                match ve with
-                | VectorInput _ -> acc
-                | VectorScanLeft(id,taskname,accumulatorExpr,inputExpr,func) ->
-                    let acc =
-                        match GetVectorWidthByExpr(bt,ve) with
-                        | Some cardinality ->                    
-                            let limit = match optSlot with None -> cardinality | Some slot -> (slot+1)
+            let rec visitVector optSlot (ve: VectorBuildRule) acc =
+                async {
+                    if isSeen ve.Id then return acc
+                    else
+                        let! acc = resizeVectorExpr(ve,acc)        
+                        match ve with
+                        | VectorInput _ -> return acc
+                        | VectorScanLeft(id,taskname,accumulatorExpr,inputExpr,func) ->
+                            let! acc =
+                                async {
+                                    match GetVectorWidthByExpr(bt,ve) with
+                                    | Some cardinality ->                    
+                                        let limit = match optSlot with None -> cardinality | Some slot -> (slot+1)
+                                    
+                                        let Scan slot =
+                                            let accumulatorResult = 
+                                                if slot=0 then GetScalarExprResult (bt,accumulatorExpr) 
+                                                else GetVectorExprResult (bt,ve,slot-1)
+                                    
+                                            let inputResult = GetVectorExprResult (bt,inputExpr,slot)
+                                            match accumulatorResult,inputResult with 
+                                            | Available(accumulator,accumulatortimesamp,_accumulatorInputSig),Available(input,inputtimestamp,_inputSig) ->
+                                                let inputtimestamp = max inputtimestamp accumulatortimesamp
+                                                let prevoutput = GetVectorExprResult (bt,ve,slot)
+                                                let outputtimestamp = prevoutput.Timestamp
+                                                let scanOpOpt = 
+                                                    if inputtimestamp <> outputtimestamp then
+                                                        Some (fun ctok -> func ctok accumulator input)
+                                                    elif prevoutput.ResultIsInProgress then
+                                                        Some prevoutput.GetInProgressContinuation
+                                                    else 
+                                                        // up-to-date and complete, no work required
+                                                        None
+                                                match scanOpOpt with 
+                                                | Some scanOp -> Some (actionFunc (IndexedAction(id,taskname,slot,cardinality,inputtimestamp,scanOp)) acc)
+                                                | None -> None
+                                            | _ -> None                            
+                                            
+                                        match [0..limit-1] |> List.tryPick Scan with
+                                        | Some (acc) -> return! acc 
+                                        | None -> return acc
+                                    | None -> return acc
+                                }
+                            
+                            // Check each slot for an action that may be performed.
+                            let! r = visitScalar accumulatorExpr acc
+                            return! visitVector None inputExpr r
+                    
+                        | VectorMap(id, taskname, inputExpr, func) ->
+                            let! acc =
+                                async {
+                                    match GetVectorWidthByExpr(bt,ve) with
+                                    | Some cardinality ->       
+                                        if cardinality=0 then
+                                            // For vector length zero, just propagate the prior timestamp.
+                                            let inputtimestamp = MaxTimestamp(bt,inputExpr.Id)
+                                            let outputtimestamp = MaxTimestamp(bt,id)
+                                            if inputtimestamp <> outputtimestamp then
+                                                return! actionFunc (VectorAction(id,taskname,inputtimestamp,EmptyTimeStampedInput inputtimestamp, fun _ ->[||])) acc
+                                            else return acc
+                                        else                                                
+                                            let MapResults acc slot =
+                                                async {
+                                                    let inputtimestamp = GetVectorExprResult(bt,inputExpr,slot).Timestamp
+                                                    let outputtimestamp = GetVectorExprResult(bt,ve,slot).Timestamp
+                                                    if inputtimestamp <> outputtimestamp then
+                                                        let OneToOneOp ctok =
+                                                            Eventually.Done (func ctok (GetVectorExprResult(bt,inputExpr,slot).GetAvailable()))
+                                                        return! actionFunc (IndexedAction(id,taskname,slot,cardinality,inputtimestamp,OneToOneOp)) acc
+                                                    else return acc
+                                                }
+                                            match optSlot with 
+                                            | None ->
+                                                return! [0..cardinality-1] |> List.foldAsync MapResults acc
+                                            | Some slot -> 
+                                                return! MapResults acc slot
+                                    | None -> return acc
+                                }
+                    
+                            return! visitVector optSlot inputExpr acc
+                    
+                        | VectorStamp (id, taskname, inputExpr, func) -> 
+                       
+                            // For every result that is available, check time stamps.
+                            let! acc =
+                                async {
+                                    match GetVectorWidthByExpr(bt,ve) with
+                                    | Some cardinality ->    
+                                        if cardinality=0 then
+                                            // For vector length zero, just propagate the prior timestamp.
+                                            let inputtimestamp = MaxTimestamp(bt,inputExpr.Id)
+                                            let outputtimestamp = MaxTimestamp(bt,id)
+                                            if inputtimestamp <> outputtimestamp then
+                                                return! actionFunc (VectorAction(id,taskname,inputtimestamp,EmptyTimeStampedInput inputtimestamp,fun _ ->[||])) acc
+                                            else return acc
+                                        else                 
+                                            let checkStamp acc slot = 
+                                                async {
+                                                    let inputresult = GetVectorExprResult (bt,inputExpr,slot)
+                                                    match inputresult with
+                                                    | Available(ires,_,_) ->
+                                                        let oldtimestamp = GetVectorExprResult(bt,ve,slot).Timestamp
+                                                        let newtimestamp = func ctok ires
+                                                        if newtimestamp <> oldtimestamp then 
+                                                            return! actionFunc (IndexedAction(id,taskname,slot,cardinality,newtimestamp, fun _ -> Eventually.Done ires)) acc
+                                                        else return acc
+                                                    | _ -> return acc
+                                                }
+                                            match optSlot with 
+                                            | None ->
+                                                return! [0..cardinality-1] |> List.foldAsync checkStamp acc
+                                            | Some slot -> 
+                                                return! checkStamp acc slot
+                                    | None -> return acc
+                                }
+                            return! visitVector optSlot inputExpr acc
+                    
+                        | VectorMultiplex(id, taskname, inputExpr, func) -> 
+                            let! acc = 
+                                async {
+                                    match GetScalarExprResult (bt,inputExpr) with
+                                    | Available(inp,inputtimestamp,inputsig) ->
+                                       let outputtimestamp = MaxTimestamp(bt,id)
+                                       if inputtimestamp <> outputtimestamp then
+                                           let MultiplexOp ctok = func ctok inp
+                                           return! actionFunc (VectorAction(id,taskname,inputtimestamp,inputsig,MultiplexOp)) acc
+                                       else return acc
+                                    | _ -> return acc
+                                }
+                            return! visitScalar inputExpr acc
+                }
+            
+            and visitScalar (se:ScalarBuildRule) (acc: 'T) : Async<'T> =
+                async {
+                    if isSeen se.Id then return acc
+                    else
+                        match se with
+                        | ScalarInput _ -> return acc
+                        | ScalarDemultiplex (id,taskname,inputExpr,func) ->
+                            let! acc = 
+                                async {
+                                    match GetVectorExprResultVector (bt,inputExpr) with
+                                    | Some inputresult ->   
+                                        let currentsig = inputresult.Signature()
+                                        if shouldEvaluate(bt,currentsig,id) then
+                                            let inputtimestamp = MaxTimestamp(bt, inputExpr.Id)
+                                            let DemultiplexOp ctok = 
+                                                let input = AvailableAllResultsOfExpr bt inputExpr |> List.toArray
+                                                func ctok input
+                                            return! actionFunc (ScalarAction(id,taskname,inputtimestamp,currentsig,DemultiplexOp)) acc
+                                        else return acc
+                                    | None -> return acc
+                                }
+                    
+                            return! visitVector None inputExpr acc
+                    
+                        | ScalarMap (id,taskname,inputExpr,func) ->
+                            let! acc = 
+                                async {
+                                    match GetScalarExprResult (bt,inputExpr) with
+                                    | Available(inp,inputtimestamp,inputsig) ->
+                                       let outputtimestamp = MaxTimestamp(bt, id)
+                                       if inputtimestamp <> outputtimestamp then
+                                           let MapOp ctok = func ctok inp
+                                           return! actionFunc (ScalarAction(id,taskname,inputtimestamp,inputsig,MapOp)) acc
+                                       else return acc
+                                    | _ -> return acc
+                                }
+                            
+                            return! visitScalar inputExpr acc
+                }
                         
-                            let Scan slot =
-                                let accumulatorResult = 
-                                    if slot=0 then GetScalarExprResult (bt,accumulatorExpr) 
-                                    else GetVectorExprResult (bt,ve,slot-1)
-
-                                let inputResult = GetVectorExprResult (bt,inputExpr,slot)
-                                match accumulatorResult,inputResult with 
-                                | Available(accumulator,accumulatortimesamp,_accumulatorInputSig),Available(input,inputtimestamp,_inputSig) ->
-                                    let inputtimestamp = max inputtimestamp accumulatortimesamp
-                                    let prevoutput = GetVectorExprResult (bt,ve,slot)
-                                    let outputtimestamp = prevoutput.Timestamp
-                                    let scanOpOpt = 
-                                        if inputtimestamp <> outputtimestamp then
-                                            Some (fun ctok -> func ctok accumulator input)
-                                        elif prevoutput.ResultIsInProgress then
-                                            Some prevoutput.GetInProgressContinuation
-                                        else 
-                                            // up-to-date and complete, no work required
-                                            None
-                                    match scanOpOpt with 
-                                    | Some scanOp -> Some (actionFunc (IndexedAction(id,taskname,slot,cardinality,inputtimestamp,scanOp)) acc)
-                                    | None -> None
-                                | _ -> None                            
-                                
-                            match ([0..limit-1]|>List.tryPick Scan) with Some (acc) ->acc | None->acc
-                        | None -> acc
-                    
-                    // Check each slot for an action that may be performed.
-                    visitVector None inputExpr (visitScalar accumulatorExpr acc)
-
-                | VectorMap(id, taskname, inputExpr, func) ->
-                    let acc =
-                        match GetVectorWidthByExpr(bt,ve) with
-                        | Some cardinality ->       
-                            if cardinality=0 then
-                                // For vector length zero, just propagate the prior timestamp.
-                                let inputtimestamp = MaxTimestamp(bt,inputExpr.Id)
-                                let outputtimestamp = MaxTimestamp(bt,id)
-                                if inputtimestamp <> outputtimestamp then
-                                    actionFunc (VectorAction(id,taskname,inputtimestamp,EmptyTimeStampedInput inputtimestamp, fun _ ->[||])) acc
-                                else acc
-                            else                                                
-                                let MapResults acc slot =
-                                    let inputtimestamp = GetVectorExprResult(bt,inputExpr,slot).Timestamp
-                                    let outputtimestamp = GetVectorExprResult(bt,ve,slot).Timestamp
-                                    if inputtimestamp <> outputtimestamp then
-                                        let OneToOneOp ctok =
-                                            Eventually.Done (func ctok (GetVectorExprResult(bt,inputExpr,slot).GetAvailable()))
-                                        actionFunc (IndexedAction(id,taskname,slot,cardinality,inputtimestamp,OneToOneOp)) acc
-                                    else acc
-                                match optSlot with 
-                                | None ->
-                                    [0..cardinality-1] |> List.fold MapResults acc                         
-                                | Some slot -> 
-                                    MapResults acc slot
-                        | None -> acc
-
-                    visitVector optSlot inputExpr acc
-
-                | VectorStamp (id, taskname, inputExpr, func) -> 
-               
-                    // For every result that is available, check time stamps.
-                    let acc =
-                        match GetVectorWidthByExpr(bt,ve) with
-                        | Some cardinality ->    
-                            if cardinality=0 then
-                                // For vector length zero, just propagate the prior timestamp.
-                                let inputtimestamp = MaxTimestamp(bt,inputExpr.Id)
-                                let outputtimestamp = MaxTimestamp(bt,id)
-                                if inputtimestamp <> outputtimestamp then
-                                    actionFunc (VectorAction(id,taskname,inputtimestamp,EmptyTimeStampedInput inputtimestamp,fun _ ->[||])) acc
-                                else acc
-                            else                 
-                                let checkStamp acc slot = 
-                                    let inputresult = GetVectorExprResult (bt,inputExpr,slot)
-                                    match inputresult with
-                                    | Available(ires,_,_) ->
-                                        let oldtimestamp = GetVectorExprResult(bt,ve,slot).Timestamp
-                                        let newtimestamp = func ctok ires
-                                        if newtimestamp <> oldtimestamp then 
-                                            actionFunc (IndexedAction(id,taskname,slot,cardinality,newtimestamp, fun _ -> Eventually.Done ires)) acc
-                                        else acc
-                                    | _ -> acc
-                                match optSlot with 
-                                | None ->
-                                    [0..cardinality-1] |> List.fold checkStamp acc
-                                | Some slot -> 
-                                    checkStamp acc slot
-                        | None -> acc
-                    visitVector optSlot inputExpr acc
-
-                | VectorMultiplex(id, taskname, inputExpr, func) -> 
-                    let acc = 
-                        match GetScalarExprResult (bt,inputExpr) with
-                         | Available(inp,inputtimestamp,inputsig) ->
-                           let outputtimestamp = MaxTimestamp(bt,id)
-                           if inputtimestamp <> outputtimestamp then
-                               let MultiplexOp ctok = func ctok inp
-                               actionFunc (VectorAction(id,taskname,inputtimestamp,inputsig,MultiplexOp)) acc
-                           else acc
-                         | _ -> acc
-                    visitScalar inputExpr acc
-
-        and visitScalar (se:ScalarBuildRule) acc =
-            if isSeen se.Id then acc
-            else
-                match se with
-                | ScalarInput _ -> acc
-                | ScalarDemultiplex (id,taskname,inputExpr,func) ->
-                    let acc = 
-                        match GetVectorExprResultVector (bt,inputExpr) with
-                        | Some inputresult ->   
-                            let currentsig = inputresult.Signature()
-                            if shouldEvaluate(bt,currentsig,id) then
-                                let inputtimestamp = MaxTimestamp(bt, inputExpr.Id)
-                                let DemultiplexOp ctok = 
-                                    let input = AvailableAllResultsOfExpr bt inputExpr |> List.toArray
-                                    func ctok input
-                                actionFunc (ScalarAction(id,taskname,inputtimestamp,currentsig,DemultiplexOp)) acc
-                            else acc
-                        | None -> acc
-
-                    visitVector None inputExpr acc
-
-                | ScalarMap (id,taskname,inputExpr,func) ->
-                    let acc = 
-                        match GetScalarExprResult (bt,inputExpr) with
-                        | Available(inp,inputtimestamp,inputsig) ->
-                           let outputtimestamp = MaxTimestamp(bt, id)
-                           if inputtimestamp <> outputtimestamp then
-                               let MapOp ctok = func ctok inp
-                               actionFunc (ScalarAction(id,taskname,inputtimestamp,inputsig,MapOp)) acc
-                           else acc
-                        | _ -> acc
-                    
-                    visitScalar inputExpr acc
-                         
-                    
-        let expr = bt.Rules.RuleList |> List.find (fun (s,_) -> s = output.Name) |> snd
-        match expr with
-        | ScalarBuildRule se -> visitScalar se acc
-        | VectorBuildRule ve -> visitVector optSlot ve acc                    
+            let expr = bt.Rules.RuleList |> List.find (fun (s,_) -> s = output.Name) |> snd
+            match expr with
+            | ScalarBuildRule se -> return! visitScalar se acc
+            | VectorBuildRule ve -> return! visitVector optSlot ve acc                    
+        }
 
     let CollectActions target (bt: PartialBuild) =
         // Explanation: This is a false reuse of 'ForeachAction' where the ctok is unused, we are
         // just iterating to determine if there is work to do. This means this is safe to call from any thread.
         let ctok = AssumeCompilationThreadWithoutEvidence ()
-        ForeachAction ctok target bt (fun a l -> a :: l) []
+        ForeachAction ctok target bt (fun a l -> async.Return(a :: l)) []
     
     /// Compute the max timestamp on all available inputs
     let ComputeMaxTimeStamp ctok output (bt: PartialBuild) acc =
@@ -763,42 +802,47 @@ module internal IncrementalBuild =
     /// Apply the result, and call the 'save' function to update the build.  
     ///
     /// Will throw OperationCanceledException if the cancellation ctok has been set.
-    let ExecuteApply (ctok: CompilationThreadToken) save (ct: CancellationToken) (action:Action) bt = 
-        ct.ThrowIfCancellationRequested()
-        if (injectCancellationFault) then raise (OperationCanceledException("injected fault"))
-        let actionResult = action.Execute(ctok)
-        let newBt = ApplyResult(actionResult,bt)
-        save ctok newBt
-        newBt
+    let ExecuteApply (ctok: CompilationThreadToken) save (ct: CancellationToken) (action:Action) bt =
+        async {
+            if (injectCancellationFault) then raise (OperationCanceledException("injected fault"))
+            let actionResult = action.Execute(ctok)
+            let newBt = ApplyResult(actionResult,bt)
+            save ctok newBt
+            return newBt
+        }
 
     /// Evaluate the result of a single output
     ///
     /// Will throw OperationCanceledException if the cancellation ctok has been set.
     let EvalLeafsFirst ctok save (ct: CancellationToken) target bt =
-
         let rec eval(bt,gen) =
-            #if DEBUG
-            // This can happen, for example, if there is a task whose timestamp never stops increasing.
-            // Possibly could detect this case directly.
-            if gen>5000 then failwith "Infinite loop in incremental builder?"
-            #endif
-            let newBt = ForeachAction ctok target bt (ExecuteApply ctok save ct) bt
-            if newBt=bt then  bt else eval(newBt,gen+1)
+            async {
+                #if DEBUG
+                // This can happen, for example, if there is a task whose timestamp never stops increasing.
+                // Possibly could detect this case directly.
+                if gen>5000 then failwith "Infinite loop in incremental builder?"
+                #endif
+                let! newBt = ForeachAction ctok target bt (ExecuteApply ctok save ct) bt
+                if newBt=bt then return bt 
+                else return! eval(newBt, gen+1)
+            }
         eval(bt,0)
         
     /// Evaluate one step of the build.  Call the 'save' function to save the intermediate result.
     ///
     /// Will throw OperationCanceledException if the cancellation ctok has been set.
     let Step ctok save ct target (bt:PartialBuild) = 
-        
-        // REVIEW: we're building up the whole list of actions on the fringe of the work tree, 
-        // executing one thing and then throwing the list away. What about saving the list inside the Build instance?
-        let worklist = CollectActions target bt 
-            
-        match worklist with 
-        | action::_ -> Some (ExecuteApply ctok save ct action bt)
-        | _ -> None
-            
+        async {
+            // REVIEW: we're building up the whole list of actions on the fringe of the work tree, 
+            // executing one thing and then throwing the list away. What about saving the list inside the Build instance?
+            let! worklist = CollectActions target bt 
+                
+            match worklist with 
+            | action :: _ -> 
+                let! r = ExecuteApply ctok save ct action bt
+                return Some r
+            | _ -> return None
+        }    
     /// Evaluate an output of the build.
     ///
     /// Will throw OperationCanceledException if the cancellation ctok has been set.  Intermediate
@@ -812,9 +856,11 @@ module internal IncrementalBuild =
     let EvalUpTo ctok save ct (node, n) bt = EvalLeafsFirst ctok save ct (Target(node, Some n)) bt
 
     /// Check if an output is up-to-date and ready
-    let IsReady target bt = 
-        let worklist = CollectActions target bt 
-        worklist.IsEmpty
+    let IsReady target bt =
+        async {
+            let! worklist = CollectActions target bt 
+            return worklist.IsEmpty
+        }
         
     /// Check if an output is up-to-date and ready
     let MaxTimeStampInDependencies ctok target bt = 
@@ -1694,12 +1740,15 @@ type IncrementalBuilder(ctokCtor: CompilationThreadToken, frameworkTcImportsCach
 #endif
 
     member __.Step (ctok: CompilationThreadToken, ct) =  
-        match IncrementalBuild.Step ctok SavePartialBuild ct (Target(tcStatesNode, None)) partialBuild with 
-        | None -> 
-            projectChecked.Trigger()
-            false
-        | Some _ -> 
-            true
+        async {
+            let! r = IncrementalBuild.Step ctok SavePartialBuild ct (Target(tcStatesNode, None)) partialBuild
+            match r with 
+            | None -> 
+                projectChecked.Trigger()
+                return false
+            | Some _ -> 
+                return true
+        }
     
     member builder.GetCheckResultsBeforeFileInProjectIfReady (filename): PartialCheckResults option  = 
         let slotOfFile = builder.GetSlotOfFileName filename
@@ -1728,28 +1777,34 @@ type IncrementalBuilder(ctokCtor: CompilationThreadToken, frameworkTcImportsCach
         builder.GetCheckResultsBeforeSlotInProject (ctok, slotOfFile, ct)
 
     member builder.GetCheckResultsBeforeSlotInProject (ctok: CompilationThreadToken, slotOfFile, ct) = 
-        let result = 
-            match slotOfFile with
-            | (*first file*) 0 -> 
-                let build = IncrementalBuild.Eval ctok SavePartialBuild ct initialTcAccNode partialBuild
-                GetScalarResult(initialTcAccNode,build)
-            | _ -> 
-                let build = IncrementalBuild.EvalUpTo ctok SavePartialBuild ct (tcStatesNode, (slotOfFile-1)) partialBuild
-                GetVectorResultBySlot(tcStatesNode,slotOfFile-1,build)  
-        
-        match result with
-        | Some (tcAcc,timestamp) -> PartialCheckResults.Create (tcAcc,timestamp)
-        | None -> failwith "Build was not evaluated, expected the results to be ready after 'Eval'."
+        async {
+            let! result = 
+                async {
+                    match slotOfFile with
+                    | (*first file*) 0 -> 
+                        let! build = IncrementalBuild.Eval ctok SavePartialBuild ct initialTcAccNode partialBuild
+                        return GetScalarResult(initialTcAccNode,build)
+                    | _ -> 
+                        let! build = IncrementalBuild.EvalUpTo ctok SavePartialBuild ct (tcStatesNode, (slotOfFile-1)) partialBuild
+                        return GetVectorResultBySlot(tcStatesNode,slotOfFile-1,build)  
+                }
+            
+            match result with
+            | Some (tcAcc,timestamp) -> return Some (PartialCheckResults.Create (tcAcc,timestamp))
+            | None -> return None // failwith "Build was not evaluated, expected the results to be ready after 'Eval'."
+        }
 
     member builder.GetCheckResultsAfterLastFileInProject (ctok: CompilationThreadToken, ct) = 
         builder.GetCheckResultsBeforeSlotInProject(ctok, builder.GetSlotsCount(), ct) 
 
     member __.GetCheckResultsAndImplementationsForProject(ctok: CompilationThreadToken, ct) = 
-        let build = IncrementalBuild.Eval ctok SavePartialBuild ct finalizedTypeCheckNode partialBuild
-        match GetScalarResult(finalizedTypeCheckNode,build) with
-        | Some ((ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, tcAcc), timestamp) -> 
-            PartialCheckResults.Create (tcAcc,timestamp), ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt
-        | None -> failwith "Build was not evaluated, expcted the results to be ready after 'Eval'."
+        async {
+            let! build = IncrementalBuild.Eval ctok SavePartialBuild ct finalizedTypeCheckNode partialBuild
+            match GetScalarResult(finalizedTypeCheckNode,build) with
+            | Some ((ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, tcAcc), timestamp) -> 
+                return Some (PartialCheckResults.Create (tcAcc,timestamp), ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt)
+            | None -> return None // failwith "Build was not evaluated, expcted the results to be ready after 'Eval'."
+        }
         
     member __.GetLogicalTimeStampForProject(ctok: CompilationThreadToken) = 
         let t1 = MaxTimeStampInDependencies ctok stampedFileNamesNode 
@@ -1774,27 +1829,33 @@ type IncrementalBuilder(ctokCtor: CompilationThreadToken, frameworkTcImportsCach
         | _ -> failwith "Failed to find sizes"
       
     member builder.GetParseResultsForFile (ctok: CompilationThreadToken, filename, ct) =
-        let slotOfFile = builder.GetSlotOfFileName filename
-#if FCS_RETAIN_BACKGROUND_PARSE_RESULTS
-        match GetVectorResultBySlot(parseTreesNode,slotOfFile,partialBuild) with
-        | Some (results, _) -> results
-        | None -> 
-            let build = IncrementalBuild.EvalUpTo ctok SavePartialBuild ct (parseTreesNode, slotOfFile) partialBuild  
-            match GetVectorResultBySlot(parseTreesNode,slotOfFile,build) with
+        async {
+            let slotOfFile = builder.GetSlotOfFileName filename
+    #if FCS_RETAIN_BACKGROUND_PARSE_RESULTS
+            match GetVectorResultBySlot(parseTreesNode,slotOfFile,partialBuild) with
             | Some (results, _) -> results
-            | None -> failwith "Build was not evaluated, expcted the results to be ready after 'Eval'."
-#else
-        let results = 
-            match GetVectorResultBySlot(stampedFileNamesNode,slotOfFile,partialBuild) with
-            | Some (results, _) ->  results
             | None -> 
-                let build = IncrementalBuild.EvalUpTo ctok SavePartialBuild ct (stampedFileNamesNode, slotOfFile) partialBuild  
-                match GetVectorResultBySlot(stampedFileNamesNode,slotOfFile,build) with
+                let build = IncrementalBuild.EvalUpTo ctok SavePartialBuild ct (parseTreesNode, slotOfFile) partialBuild  
+                match GetVectorResultBySlot(parseTreesNode,slotOfFile,build) with
                 | Some (results, _) -> results
                 | None -> failwith "Build was not evaluated, expcted the results to be ready after 'Eval'."
-        // re-parse on demand instead of retaining
-        ParseTask ctok results
-#endif
+    #else
+            let! results = 
+                async {
+                    match GetVectorResultBySlot(stampedFileNamesNode,slotOfFile,partialBuild) with
+                    | Some (results, _) -> return Some results
+                    | None -> 
+                        let! build = IncrementalBuild.EvalUpTo ctok SavePartialBuild ct (stampedFileNamesNode, slotOfFile) partialBuild  
+                        match GetVectorResultBySlot(stampedFileNamesNode,slotOfFile,build) with
+                        | Some (results, _) -> return Some results
+                        | None -> return None // failwith "Build was not evaluated, expcted the results to be ready after 'Eval'."
+                }
+            // re-parse on demand instead of retaining
+            match results with
+            | Some x -> return Some (ParseTask ctok x)
+            | None -> return None
+    #endif
+        }
 
     member __.ProjectFileNames  = sourceFiles  |> List.map (fun (_,f,_) -> f)
 

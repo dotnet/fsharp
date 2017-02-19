@@ -158,19 +158,19 @@ type internal IncrementalBuilder =
       /// This is a relatively quick operation.
       ///
       /// This is safe for use from non-compiler threads
-      member AreCheckResultsBeforeFileInProjectReady: filename:string -> bool
+      member AreCheckResultsBeforeFileInProjectReady: filename:string -> Async<bool>
 
       /// Get the preceding typecheck state of a slot. Compute the entire type check of the project up
       /// to the necessary point if the result is not available. This may be a long-running operation.
       ///
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetCheckResultsBeforeFileInProject : CompilationThreadToken * filename:string * ct: CancellationToken -> PartialCheckResults 
+      member GetCheckResultsBeforeFileInProject : CompilationThreadToken * filename:string * ct: CancellationToken -> Async<PartialCheckResults option>
 
       /// Get the typecheck state after checking a file. Compute the entire type check of the project up
       /// to the necessary point if the result is not available. This may be a long-running operation.
       ///
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetCheckResultsAfterFileInProject : CompilationThreadToken * filename:string * ct: CancellationToken -> PartialCheckResults 
+      member GetCheckResultsAfterFileInProject : CompilationThreadToken * filename:string * ct: CancellationToken -> Async<PartialCheckResults option>
 
       /// Get the typecheck result after the end of the last file. The typecheck of the project is not 'completed'.
       /// This may be a long-running operation.
@@ -252,13 +252,13 @@ module internal IncrementalBuild =
     val LocallyInjectCancellationFault : unit -> IDisposable
     
     /// Evaluate a build. Only required for unit testing.
-    val Eval : CompilationThreadToken -> (CompilationThreadToken -> PartialBuild -> unit) -> CancellationToken -> INode -> PartialBuild -> PartialBuild
+    val Eval : CompilationThreadToken -> (CompilationThreadToken -> PartialBuild -> unit) -> CancellationToken -> INode -> PartialBuild -> Async<PartialBuild>
 
     /// Evaluate a build for a vector up to a limit. Only required for unit testing.
-    val EvalUpTo : CompilationThreadToken -> (CompilationThreadToken -> PartialBuild -> unit) -> CancellationToken -> INode * int -> PartialBuild -> PartialBuild
+    val EvalUpTo : CompilationThreadToken -> (CompilationThreadToken -> PartialBuild -> unit) -> CancellationToken -> INode * int -> PartialBuild -> Async<PartialBuild>
 
     /// Do one step in the build. Only required for unit testing.
-    val Step : CompilationThreadToken -> (CompilationThreadToken -> PartialBuild -> unit) -> CancellationToken -> Target -> PartialBuild -> PartialBuild option
+    val Step : CompilationThreadToken -> (CompilationThreadToken -> PartialBuild -> unit) -> CancellationToken -> Target -> PartialBuild -> Async<PartialBuild option>
     /// Get a scalar vector. Result must be available. Only required for unit testing.
     val GetScalarResult : Scalar<'T> * PartialBuild -> ('T * System.DateTime) option
     /// Get a result vector. All results must be available or thrown an exception. Only required for unit testing.
