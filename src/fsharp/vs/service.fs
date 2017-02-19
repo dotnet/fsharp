@@ -498,7 +498,7 @@ type SemanticClassificationType =
     | Module
     | Printf
     | ComputationExpression
-    | IntrinsicType
+    | IntrinsicFunction
     | Enumeration
     | Interface
     | TypeArgument
@@ -1139,9 +1139,6 @@ type TypeCheckInfo
             else 
                 items
 
-
-    static let keywordTypes = Lexhelp.Keywords.keywordTypes
-
     member x.IsRelativeNameResolvable(cursorPos: pos, plid: string list, item: Item) : bool =
     /// Determines if a long ident is resolvable at a specific point.
         ErrorScope.Protect
@@ -1442,6 +1439,13 @@ type TypeCheckInfo
             | TType.TType_app(tref, _) when tref.Stamp = g.attrib_OptionalArgumentAttribute.TyconRef.Stamp -> Some()
             | _ -> None
 
+        let (|KeywordIntrinsicValue|_|) (vref: ValRef) =
+            if valRefEq g g.raise_vref vref ||
+               valRefEq g g.reraise_vref vref ||
+               valRefEq g g.typeof_vref vref ||
+               valRefEq g g.typedefof_vref vref then Some()
+            else None
+
         let resolutions =
             match range with
             | Some range ->
@@ -1456,7 +1460,8 @@ type TypeCheckInfo
             // 'seq' in 'seq { ... }' gets colored as keywords
             | CNR(_, (Item.Value vref), ItemOccurence.Use, _, _, _, m) when valRefEq g g.seq_vref vref ->
                 Some (m, SemanticClassificationType.ComputationExpression)
-            
+            | CNR(_, Item.Value KeywordIntrinsicValue, ItemOccurence.Use, _, _, _, m) ->
+                Some (m, SemanticClassificationType.IntrinsicFunction)
             | CNR(_, (Item.Value vref), _, _, _, _, m) when isFunction g vref.Type ->
                 if vref.IsPropertyGetterMethod || vref.IsPropertySetterMethod then
                     Some (m, SemanticClassificationType.Property)
@@ -1482,9 +1487,6 @@ type TypeCheckInfo
             // custom builders, custom operations get colored as keywords
             | CNR(_, (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use, _, _, _, m) ->
                 Some (m, SemanticClassificationType.ComputationExpression)
-            // well known type aliases get colored as keywords
-            | CNR(_, (Item.Types (n, _)), _, _, _, _, m) when keywordTypes.Contains(n) ->
-                Some (m, SemanticClassificationType.IntrinsicType)
             // types get colored as types when they occur in syntactic types or custom attributes
             // typevariables get colored as types when they occur in syntactic types custom builders, custom operations get colored as keywords
             | CNR(_, Item.Types (_, [OptionalArgumentAttribute]), LegitTypeOccurence, _, _, _, _) -> None

@@ -126,7 +126,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 #else
 #endif
             TaggedTextOps =
-        val keywordTypes : Set<string>
+        val keywordFunctions : Set<string>
         val tagAlias : string -> TaggedText
         val tagClass : string -> TaggedText
         val tagUnionCase : string -> TaggedText
