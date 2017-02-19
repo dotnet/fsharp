@@ -1443,7 +1443,8 @@ type TypeCheckInfo
             if valRefEq g g.raise_vref vref ||
                valRefEq g g.reraise_vref vref ||
                valRefEq g g.typeof_vref vref ||
-               valRefEq g g.typedefof_vref vref then Some()
+               valRefEq g g.typedefof_vref vref ||
+               valRefEq g g.sizeof_vref vref then Some()
             else None
 
         let resolutions =
