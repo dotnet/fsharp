@@ -3701,7 +3701,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         match look tcImports with
         | Some res -> Some res
         | None ->
-            tcImports.ImplicitLoadIfAllowed(ctok, m, assemblyName, lookupOnly)
+            tcImports.ImplicitLoadIfAllowed(ctok, m, assemblyName, lookupOnly) |> Async.RunSynchronously
             look tcImports
     
 
@@ -3738,7 +3738,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         match look tcImports with
         | Some res -> ResolvedImportedAssembly(res)
         | None ->
-            tcImports.ImplicitLoadIfAllowed(ctok, m, assemblyName, lookupOnly)
+            tcImports.ImplicitLoadIfAllowed(ctok, m, assemblyName, lookupOnly) |> Async.RunSynchronously
             match look tcImports with 
             | Some res -> ResolvedImportedAssembly(res)
             | None -> UnresolvedImportedAssembly(assemblyName)
@@ -4318,27 +4318,33 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
       
     member tcImports.DoRegisterAndImportReferencedAssemblies(ctok, nms) = 
         CheckDisposed()
-        tcImports.RegisterAndImportReferencedAssemblies(ctok, nms) |> ignore
+        tcImports.RegisterAndImportReferencedAssemblies(ctok, nms) |> Async.Ignore
 
-    member tcImports.ImplicitLoadIfAllowed (ctok, m, assemblyName, lookupOnly) = 
+    member tcImports.ImplicitLoadIfAllowed (ctok, m, assemblyName, lookupOnly) : Async<unit> =
+      async {
         CheckDisposed()
         // If the user is asking for the default framework then also try to resolve other implicit assemblies as they are discovered.
         // Using this flag to mean 'allow implicit discover of assemblies'.
         let tcConfig = tcConfigP.Get(ctok)
         if not lookupOnly && tcConfig.implicitlyResolveAssemblies then 
-            let tryFile speculativeFileName = 
+            let tryFile speculativeFileName =
+              async {
                 let foundFile = tcImports.TryResolveAssemblyReference (ctok, AssemblyReference (m, speculativeFileName, None), ResolveAssemblyReferenceMode.Speculative)
                 match foundFile with 
                 | OkResult (warns, res) ->
                     ReportWarnings warns
-                    tcImports.DoRegisterAndImportReferencedAssemblies(ctok,res)
-                    true
+                    do! tcImports.DoRegisterAndImportReferencedAssemblies(ctok,res)
+                    return true
                 | ErrorResult (_warns, _err) -> 
                     // Throw away warnings and errors - this is speculative loading
-                    false
+                    return false
+              }
 
-            if tryFile (assemblyName + ".dll") then ()
-            else tryFile (assemblyName + ".exe")  |> ignore
+            let! r = tryFile (assemblyName + ".dll") 
+            if not r then
+                let! _ = tryFile (assemblyName + ".exe")
+                ()
+      }
 
 #if EXTENSIONTYPING
     member tcImports.TryFindProviderGeneratedAssemblyByName(ctok, assemblyName:string) :  System.Reflection.Assembly option = 
@@ -4436,7 +4442,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         frameworkTcImports.SetILGlobals ilGlobals
 
         // Load the rest of the framework DLLs all at once (they may be mutually recursive)
-        frameworkTcImports.DoRegisterAndImportReferencedAssemblies (ctok, tcResolutions.GetAssemblyResolutions())
+        frameworkTcImports.DoRegisterAndImportReferencedAssemblies (ctok, tcResolutions.GetAssemblyResolutions()) |> Async.RunSynchronously
 
         // These are the DLLs we can search for well-known types
         let sysCcus =  
@@ -4513,7 +4519,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         let tcResolutions = TcAssemblyResolutions.BuildFromPriorResolutions(ctok, tcConfig, nonFrameworkReferences, knownUnresolved)
         let references = tcResolutions.GetAssemblyResolutions()
         let tcImports = new TcImports(tcConfigP,tcResolutions,Some baseTcImports, Some tcGlobals.ilg)
-        tcImports.DoRegisterAndImportReferencedAssemblies(ctok, references)
+        tcImports.DoRegisterAndImportReferencedAssemblies(ctok, references) |> Async.RunSynchronously
         tcImports.ReportUnresolvedAssemblyReferences(knownUnresolved)
         tcImports
       
