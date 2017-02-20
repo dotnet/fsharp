@@ -1,23 +1,24 @@
 // #Conformance #Namespaces #SignatureFiles 
+
+
 namespace Hello.Goodbye
 
+    module Utils = 
+        let failures = ref []
+
+        let report_failure (s : string) = 
+            stderr.Write" NO: "
+            stderr.WriteLine s
+            failures := !failures @ [s]
+
+        let test (s : string) b = 
+            stderr.Write(s)
+            if b then stderr.WriteLine " OK"
+            else report_failure (s)
+
+        let check s b1 b2 = test s (b1 = b2)
+
     type A = A | B | C
-
-module Utils = 
-    let failures = ref []
-
-    let report_failure (s : string) = 
-        stderr.Write" NO: "
-        stderr.WriteLine s
-        failures := !failures @ [s]
-
-    let test (s : string) b = 
-        stderr.Write(s)
-        if b then stderr.WriteLine " OK"
-        else report_failure (s)
-
-    let check s b1 b2 = test s (b1 = b2)
-
 
     module X  = 
       let x = 1 
@@ -178,17 +179,4 @@ namespace rec global
       do Hello.Goodbye.Utils.test "test292jwf" (Test.N.x.V = 4)
       do Hello.Goodbye.Utils.test "test292jwf" (N.x.V = 4)
 
-
-#if TESTS_AS_APP
-    let RUN() = !failures
-#else
-    let aa =
-      if not (!Hello.Goodbye.Utils.failures).IsEmpty then 
-          stdout.WriteLine "Test Failed"
-          exit 1
-      else   
-          stdout.WriteLine "Test Passed"
-          System.IO.File.WriteAllText("test.ok","ok")
-          exit 0
-#endif
 

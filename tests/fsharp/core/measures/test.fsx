@@ -614,9 +614,7 @@ let aa =
   match !failures with 
   | [] -> 
       stdout.WriteLine "Test Passed"
-#if !FX_PORTABLE_OR_NETSTANDARD
       System.IO.File.WriteAllText("test.ok","ok")
-#endif
       exit 0
   | _ -> 
       stdout.WriteLine "Test Failed"
