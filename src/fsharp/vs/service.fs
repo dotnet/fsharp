@@ -2388,29 +2388,29 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
         | Some (parseResults, _checkResults,_,_) ->  async.Return parseResults
         | _ -> 
         reactor.EnqueueAndAwaitOpAsync("ParseFileInProject " + filename, fun ctok -> 
-            async {
-                // Try the caches again - it may have been filled by the time this operation runs
-                match parseCacheLock.AcquireLock (fun ctok -> parseFileInProjectCache.TryGet (ctok, (filename, source, options))) with 
-                | Some parseResults -> return parseResults
-                | None -> 
-                let cachedResults = parseCacheLock.AcquireLock (fun ctok -> parseAndCheckFileInProjectCache.TryGet(ctok, (filename,source,options)))
-                match cachedResults with 
-                | Some (parseResults, _checkResults,_,_) -> return parseResults
-                | _ -> 
-                foregroundParseCount <- foregroundParseCount + 1
-                let! builderOpt,creationErrors,_ = getOrCreateBuilder (ctok, options)
-                use _unwind = IncrementalBuilder.KeepBuilderAlive builderOpt
-                match builderOpt with
-                | None -> return FSharpParseFileResults(List.toArray creationErrors, None, true, [])
-                | Some builder -> 
-                // Do the parsing.
-                let parseErrors, _matchPairs, inputOpt, anyErrors = 
-                   Parser.ParseOneFile (ctok, source, false, true, filename, builder.ProjectFileNames, builder.TcConfig)
-                     
-                let res = FSharpParseFileResults(parseErrors, inputOpt, anyErrors, builder.Dependencies )
-                parseCacheLock.AcquireLock (fun ctok -> parseFileInProjectCache.Set (ctok, (filename, source, options), res))
-                res 
-            })
+          async {
+            // Try the caches again - it may have been filled by the time this operation runs
+            match parseCacheLock.AcquireLock (fun ctok -> parseFileInProjectCache.TryGet (ctok, (filename, source, options))) with 
+            | Some parseResults -> return parseResults
+            | None -> 
+            let cachedResults = parseCacheLock.AcquireLock (fun ctok -> parseAndCheckFileInProjectCache.TryGet(ctok, (filename,source,options)))
+            match cachedResults with 
+            | Some (parseResults, _checkResults,_,_) -> return parseResults
+            | _ -> 
+            foregroundParseCount <- foregroundParseCount + 1
+            let builderOpt,creationErrors,_ = getOrCreateBuilder (ctok, options)
+            use _unwind = IncrementalBuilder.KeepBuilderAlive builderOpt
+            match builderOpt with
+            | None -> return FSharpParseFileResults(List.toArray creationErrors, None, true, [])
+            | Some builder -> 
+            // Do the parsing.
+            let parseErrors, _matchPairs, inputOpt, anyErrors = 
+               Parser.ParseOneFile (ctok, source, false, true, filename, builder.ProjectFileNames, builder.TcConfig)
+                 
+            let res = FSharpParseFileResults(parseErrors, inputOpt, anyErrors, builder.Dependencies )
+            parseCacheLock.AcquireLock (fun ctok -> parseFileInProjectCache.Set (ctok, (filename, source, options), res))
+            return res 
+          })
 
     /// Fetch the parse information from the background compiler (which checks w.r.t. the FileSystem API)
     member bc.GetBackgroundParseResultsForFileInProject(filename, options) =
