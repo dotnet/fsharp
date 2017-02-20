@@ -164,25 +164,25 @@ type internal IncrementalBuilder =
       /// to the necessary point if the result is not available. This may be a long-running operation.
       ///
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetCheckResultsBeforeFileInProject : CompilationThreadToken * filename:string -> Async<PartialCheckResults option>
+      member GetCheckResultsBeforeFileInProject : CompilationThreadToken * filename:string -> Async<Choice<PartialCheckResults, string>>
 
       /// Get the typecheck state after checking a file. Compute the entire type check of the project up
       /// to the necessary point if the result is not available. This may be a long-running operation.
       ///
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetCheckResultsAfterFileInProject : CompilationThreadToken * filename:string -> Async<PartialCheckResults option>
+      member GetCheckResultsAfterFileInProject : CompilationThreadToken * filename:string -> Async<Choice<PartialCheckResults, string>>
 
       /// Get the typecheck result after the end of the last file. The typecheck of the project is not 'completed'.
       /// This may be a long-running operation.
       ///
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetCheckResultsAfterLastFileInProject : CompilationThreadToken -> Async<PartialCheckResults option>
+      member GetCheckResultsAfterLastFileInProject : CompilationThreadToken -> Async<Choice<PartialCheckResults, string>>
 
       /// Get the final typecheck result. If 'generateTypedImplFiles' was set on Create then the TypedAssemblyAfterOptimization will contain implementations.
       /// This may be a long-running operation.
       ///
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetCheckResultsAndImplementationsForProject : CompilationThreadToken -> Async<(PartialCheckResults * IL.ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option) option>
+      member GetCheckResultsAndImplementationsForProject : CompilationThreadToken -> Async<Choice<PartialCheckResults * IL.ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option, string>>
 
       /// Get the logical time stamp that is associated with the output of the project if it were gully built immediately
       member GetLogicalTimeStampForProject: CompilationThreadToken -> DateTime

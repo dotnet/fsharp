@@ -2443,14 +2443,14 @@ type AssemblyResolution =
 
     member this.ProjectReference = this.originalReference.ProjectReference
 
-    member this.ILAssemblyRef = 
+    member this.GetILAssemblyRef() = 
         match !this.ilAssemblyRef with 
         | Some(assref) -> assref
         | None ->
             let assRefOpt = 
                 match this.ProjectReference with 
                 | Some r ->   
-                    match r.EvaluateRawContents() with 
+                    match r.EvaluateRawContents() |> Async.RunSynchronously with 
                     | None -> None
                     | Some contents -> 
                         match contents.ILScopeRef with 
@@ -3404,7 +3404,7 @@ type TcAssemblyResolutions(results : AssemblyResolution list, unresolved : Unres
     member tcResolutions.GetAssemblyResolutions() = results
     member tcResolutions.GetUnresolvedReferences() = unresolved
     member tcResolutions.TryFindByOriginalReference(assemblyReference:AssemblyReference) = originalReferenceToResolution.TryFind assemblyReference.Text
-    member tcResolution.TryFindByExactILAssemblyRef assref = results |> List.tryFind (fun ar->ar.ILAssemblyRef = assref)
+    member tcResolution.TryFindByExactILAssemblyRef assref = results |> List.tryFind (fun ar -> ar.GetILAssemblyRef() = assref)
     member tcResolutions.TryFindByResolvedPath nm = resolvedPathToResolution.TryFind nm
     member tcResolutions.TryFindByOriginalReferenceText nm = originalReferenceToResolution.TryFind nm
         
@@ -4244,14 +4244,15 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         phase2
          
 
-    member tcImports.RegisterAndPrepareToImportReferencedDll (ctok, r:AssemblyResolution) : _ * (unit -> AvailableImportedAssembly list)=
+    member tcImports.RegisterAndPrepareToImportReferencedDll (ctok, r:AssemblyResolution) : Async<_ * (unit -> AvailableImportedAssembly list)> =
+      async {
         CheckDisposed()
         let m = r.originalReference.Range
         let filename = r.resolvedPath
-        let contentsOpt = 
+        let! contentsOpt = 
             match r.ProjectReference with 
             | Some ilb -> ilb.EvaluateRawContents()
-            | None -> None
+            | None -> async.Return None
 
         let assemblyData = 
             match contentsOpt with 
@@ -4266,7 +4267,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         if tcImports.IsAlreadyRegistered ilShortAssemName then 
             let dllinfo = tcImports.FindDllInfo(ctok,m,ilShortAssemName)
             let phase2() = [tcImports.FindCcuInfo(ctok,m,ilShortAssemName,lookupOnly=true)] 
-            dllinfo,phase2
+            return dllinfo, phase2
         else 
             let dllinfo = 
                 { RawMetadata=assemblyData 
@@ -4291,22 +4292,29 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                       with e -> error(Error(FSComp.SR.buildErrorOpeningBinaryFile(filename, e.Message),m))
                 else 
                     tcImports.PrepareToImportReferencedILAssembly (ctok, m, filename, dllinfo)
-            dllinfo,phase2
+            return dllinfo, phase2
+      }
 
-    member tcImports.RegisterAndImportReferencedAssemblies (ctok, nms:AssemblyResolution list) =
+    member tcImports.RegisterAndImportReferencedAssemblies (ctok, nms: AssemblyResolution list) =
+      async {
         CheckDisposed()
 
-        let dllinfos,phase2s = 
-           nms |> List.choose 
-                    (fun nm ->
+        let! r =
+           nms 
+           |> Async.List.choose 
+                (fun nm ->
+                    async {
                         try
-                            Some(tcImports.RegisterAndPrepareToImportReferencedDll (ctok, nm))
+                            let! r = tcImports.RegisterAndPrepareToImportReferencedDll (ctok, nm)
+                            return Some r
                         with e ->
                             errorR(Error(FSComp.SR.buildProblemReadingAssembly(nm.resolvedPath, e.Message),nm.originalReference.Range))
-                            None)
-               |> List.unzip
+                            return None
+                    })
+        let  dllinfos, phase2s = List.unzip r
         let ccuinfos = (List.collect (fun phase2 -> phase2()) phase2s) 
-        dllinfos,ccuinfos
+        return dllinfos, ccuinfos
+      }
       
     member tcImports.DoRegisterAndImportReferencedAssemblies(ctok, nms) = 
         CheckDisposed()
@@ -4420,9 +4428,9 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         let primaryScopeRef = 
             let primaryAssemblyReference = tcConfig.PrimaryAssemblyDllReference()
             let primaryAssemblyResolution = frameworkTcImports.ResolveAssemblyReference(ctok, primaryAssemblyReference, ResolveAssemblyReferenceMode.ReportErrors)
-            match frameworkTcImports.RegisterAndImportReferencedAssemblies(ctok, primaryAssemblyResolution)  with
-              | (_, [ResolvedImportedAssembly(ccu)]) -> ccu.FSharpViewOfMetadata.ILScopeRef
-              | _        -> failwith "unexpected"
+            match frameworkTcImports.RegisterAndImportReferencedAssemblies(ctok, primaryAssemblyResolution) |> Async.RunSynchronously with
+            | (_, [ResolvedImportedAssembly(ccu)]) -> ccu.FSharpViewOfMetadata.ILScopeRef
+            | _        -> failwith "unexpected"
 
         let ilGlobals = mkILGlobals primaryScopeRef
         frameworkTcImports.SetILGlobals ilGlobals
@@ -4461,7 +4469,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                     
                     match resolvedAssemblyRef with 
                     | Some coreLibraryResolution -> 
-                        match frameworkTcImports.RegisterAndImportReferencedAssemblies(ctok, [coreLibraryResolution]) with
+                        match frameworkTcImports.RegisterAndImportReferencedAssemblies(ctok, [coreLibraryResolution]) |> Async.RunSynchronously with
                         | (_, [ResolvedImportedAssembly(fslibCcuInfo) ]) -> fslibCcuInfo
                         | _ -> 
                             error(InternalError("BuildFrameworkTcImports: no successful import of "+coreLibraryResolution.resolvedPath,coreLibraryResolution.originalReference.Range))
@@ -4536,7 +4544,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
 /// Adds the reference to the tcImports and add the ccu to the type checking environment.
 let RequireDLL (ctok, tcImports:TcImports, tcEnv, thisAssemblyName, m, file) = 
     let resolutions = CommitOperationResult(tcImports.TryResolveAssemblyReference(ctok, AssemblyReference(m,file,None),ResolveAssemblyReferenceMode.ReportErrors))
-    let dllinfos,ccuinfos = tcImports.RegisterAndImportReferencedAssemblies(ctok, resolutions)
+    let dllinfos,ccuinfos = tcImports.RegisterAndImportReferencedAssemblies(ctok, resolutions) |> Async.RunSynchronously
    
     let asms = 
         ccuinfos |> List.map  (function

@@ -2236,49 +2236,47 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
     /// CreateOneIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.
     let CreateOneIncrementalBuilder (ctok, options:FSharpProjectOptions) = 
-        async {
-            let projectReferences =  
-                [ for (nm,opts) in options.ReferencedProjects ->
-                    { new IProjectReference with 
-                            member x.EvaluateRawContents() =
-                                async {
-                                    let! r = self.ParseAndCheckProjectImpl(opts, ctok)
-                                    return r.RawFSharpAssemblyData 
-                                }
-                            member x.GetLogicalTimeStamp() = 
-                                self.GetLogicalTimeStampForProject(ctok, opts)
-                            member x.FileName = nm } ]
-            
-            let builderOpt, diagnostics = 
-                IncrementalBuilder.TryCreateBackgroundBuilderForProjectOptions
-                      (ctok, referenceResolver, frameworkTcImportsCache, scriptClosureCache.TryGet (ctok, options), Array.toList options.ProjectFileNames, 
-                       Array.toList options.OtherOptions, projectReferences, options.ProjectDirectory, 
-                       options.UseScriptResolutionRules, keepAssemblyContents, keepAllBackgroundResolutions, maxTimeShareMilliseconds)
-            
-            // We're putting the builder in the cache, so increment its count.
-            let decrement = IncrementalBuilder.KeepBuilderAlive builderOpt
-            
-            match builderOpt with 
-            | None -> ()
-            | Some builder -> 
-            
-                // Register the behaviour that responds to CCUs being invalidated because of type
-                // provider Invalidate events. This invalidates the configuration in the build.
-                builder.ImportedCcusInvalidated.Add (fun _ -> 
-                    self.InvalidateConfiguration options)
-            
-                // Register the callback called just before a file is typechecked by the background builder (without recording
-                // errors or intellisense information).
-                //
-                // This indicates to the UI that the file type check state is dirty. If the file is open and visible then 
-                // the UI will sooner or later request a typecheck of the file, recording errors and intellisense information.
-                builder.BeforeFileChecked.Add (fun file -> beforeFileChecked.Trigger(file, options.ExtraProjectInfo))
-                builder.FileParsed.Add (fun file -> fileParsed.Trigger(file, options.ExtraProjectInfo))
-                builder.FileChecked.Add (fun file -> fileChecked.Trigger(file, options.ExtraProjectInfo))
-                builder.ProjectChecked.Add (fun () -> projectChecked.Trigger (options.ProjectFileName, options.ExtraProjectInfo))
-            
-            return (builderOpt, diagnostics, decrement)
-        }
+        let projectReferences =  
+            [ for (nm, opts) in options.ReferencedProjects ->
+                { new IProjectReference with 
+                    member x.EvaluateRawContents() =
+                        async {
+                            let! r = self.ParseAndCheckProjectImpl(opts, ctok)
+                            return r.RawFSharpAssemblyData 
+                        }
+                    member x.GetLogicalTimeStamp() = 
+                        self.GetLogicalTimeStampForProject(ctok, opts)
+                    member x.FileName = nm } ]
+        
+        let builderOpt, diagnostics = 
+            IncrementalBuilder.TryCreateBackgroundBuilderForProjectOptions
+                  (ctok, referenceResolver, frameworkTcImportsCache, scriptClosureCache.TryGet (ctok, options), Array.toList options.ProjectFileNames, 
+                   Array.toList options.OtherOptions, projectReferences, options.ProjectDirectory, 
+                   options.UseScriptResolutionRules, keepAssemblyContents, keepAllBackgroundResolutions, maxTimeShareMilliseconds)
+        
+        // We're putting the builder in the cache, so increment its count.
+        let decrement = IncrementalBuilder.KeepBuilderAlive builderOpt
+        
+        match builderOpt with 
+        | None -> ()
+        | Some builder -> 
+        
+            // Register the behaviour that responds to CCUs being invalidated because of type
+            // provider Invalidate events. This invalidates the configuration in the build.
+            builder.ImportedCcusInvalidated.Add (fun _ -> 
+                self.InvalidateConfiguration options)
+        
+            // Register the callback called just before a file is typechecked by the background builder (without recording
+            // errors or intellisense information).
+            //
+            // This indicates to the UI that the file type check state is dirty. If the file is open and visible then 
+            // the UI will sooner or later request a typecheck of the file, recording errors and intellisense information.
+            builder.BeforeFileChecked.Add (fun file -> beforeFileChecked.Trigger(file, options.ExtraProjectInfo))
+            builder.FileParsed.Add (fun file -> fileParsed.Trigger(file, options.ExtraProjectInfo))
+            builder.FileChecked.Add (fun file -> fileChecked.Trigger(file, options.ExtraProjectInfo))
+            builder.ProjectChecked.Add (fun () -> projectChecked.Trigger (options.ProjectFileName, options.ExtraProjectInfo))
+        
+        (builderOpt, diagnostics, decrement)
 
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.backgroundCompiler.incrementalBuildersCache. This root typically holds more 
     // live information than anything else in the F# Language Service, since it holds up to 3 (projectCacheStrongSize) background project builds
@@ -2294,15 +2292,13 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                  onDiscard = (fun (_, _, decrement) -> decrement.Dispose()))
 
     let getOrCreateBuilder (ctok, options) =
-        async {
-            RequireCompilationThread ctok
-            match incrementalBuildersCache.TryGet (ctok, options) with
-            | Some b -> return b
-            | None -> 
-                let! b = CreateOneIncrementalBuilder (ctok, options)
-                incrementalBuildersCache.Set (ctok, options, b)
-                return b
-        }
+        RequireCompilationThread ctok
+        match incrementalBuildersCache.TryGet (ctok, options) with
+        | Some b -> b
+        | None -> 
+            let b = CreateOneIncrementalBuilder (ctok, options)
+            incrementalBuildersCache.Set (ctok, options, b)
+            b
 
     let parseCacheLock = Lock<ParseCacheLockToken>()
     
@@ -2654,20 +2650,22 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
         | None -> parseCacheLock.AcquireLock (fun ctok -> parseAndCheckFileInProjectCachePossiblyStale.TryGet(ctok,(filename,options)))
 
     /// Parse and typecheck the whole project (the implementation, called recursively as project graph is evaluated)
-    member private bc.ParseAndCheckProjectImpl(options, ctok, ct) : FSharpCheckProjectResults =
-        let builderOpt,creationErrors,_ = getOrCreateBuilder (ctok, options, ct)
+    member private bc.ParseAndCheckProjectImpl(options, ctok, ct) : Async<FSharpCheckProjectResults> =
+      async {
+        let builderOpt,creationErrors,_ = getOrCreateBuilder (ctok, options)
         use _unwind = IncrementalBuilder.KeepBuilderAlive builderOpt
         match builderOpt with 
         | None -> 
             FSharpCheckProjectResults (keepAssemblyContents, Array.ofList creationErrors, None, reactorOps)
         | Some builder -> 
-            let (tcProj, ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt)  = builder.GetCheckResultsAndImplementationsForProject(ctok, ct)
+            let! (tcProj, ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt)  = builder.GetCheckResultsAndImplementationsForProject(ctok)
             let errors = [| yield! creationErrors; yield! Parser.CreateErrorInfos (tcProj.TcConfig, true, Microsoft.FSharp.Compiler.TcGlobals.DummyFileNameForRangesWithoutASpecificLocation, tcProj.Errors) |]
             FSharpCheckProjectResults (keepAssemblyContents, errors, Some(tcProj.TcGlobals, tcProj.TcImports, tcProj.TcState.Ccu, tcProj.TcState.PartialAssemblySignature, tcProj.TcSymbolUses, tcProj.TopAttribs, tcAssemblyDataOpt, ilAssemRef, tcProj.TcEnvAtEnd.AccessRights, tcAssemblyExprOpt), reactorOps)
+      }
 
     /// Get the timestamp that would be on the output if fully built immediately
     member private bc.GetLogicalTimeStampForProject(ctok, options, ct) =
-        let builderOpt,_creationErrors,_ = getOrCreateBuilder (ctok, options, ct)
+        let builderOpt,_creationErrors,_ = getOrCreateBuilder (ctok, options)
         use _unwind = IncrementalBuilder.KeepBuilderAlive builderOpt
         match builderOpt with 
         | None -> None
