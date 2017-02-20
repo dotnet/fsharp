@@ -3988,7 +3988,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                 entity.ModuleOrNamespaceType.AddProvidedTypeEntity(newEntity)
             | None -> ()
 
-            entity.Data.entity_tycon_repr <-
+            entity.entity_tycon_repr <-
                 match entity.TypeReprInfo with 
                 // This is the first extension 
                 | TNoRepr -> 
