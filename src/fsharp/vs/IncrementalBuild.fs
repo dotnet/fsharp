@@ -375,9 +375,9 @@ module internal IncrementalBuild =
 
     let GetVectorWidthById (bt:PartialBuild) seek = 
         match GetExprById(bt,seek) with 
-        | ScalarBuildRule _ -> 
-            failwith "Attempt to get width of scalar." 
-        | VectorBuildRule ve -> GetVectorWidthByExpr(bt,ve).Value
+          | ScalarBuildRule _ -> 
+              failwith "Attempt to get width of scalar." 
+          | VectorBuildRule ve -> GetVectorWidthByExpr(bt,ve).Value
 
     let GetScalarExprResult (bt:PartialBuild, se:ScalarBuildRule) =
         match bt.Results.TryFind (se.Id) with 
@@ -1153,6 +1153,7 @@ type FrameworkImportsCache(keepStrongly) =
 
     /// This function strips the "System" assemblies from the tcConfig and returns a age-cached TcImports for them.
     member __.Get(ctok, tcConfig:TcConfig) =
+      async {
         // Split into installed and not installed.
         let frameworkDLLs,nonFrameworkResolutions,unresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(ctok, tcConfig)
         let frameworkDLLsKey = 
@@ -1160,7 +1161,8 @@ type FrameworkImportsCache(keepStrongly) =
             |> List.map (fun ar->ar.resolvedPath) // The cache key. Just the minimal data.
             |> List.sort  // Sort to promote cache hits.
 
-        let tcGlobals,frameworkTcImports = 
+        let! tcGlobals,frameworkTcImports =
+          async {
             // Prepare the frameworkTcImportsCache
             //
             // The data elements in this key are very important. There should be nothing else in the TcConfig that logically affects
@@ -1172,14 +1174,15 @@ type FrameworkImportsCache(keepStrongly) =
                         tcConfig.fsharpBinariesDir)
 
             match frameworkTcImportsCache.TryGet (ctok, key) with 
-            | Some res -> res
+            | Some res -> return res
             | None -> 
                 let tcConfigP = TcConfigProvider.Constant(tcConfig)
-                let ((tcGlobals,tcImports) as res) = TcImports.BuildFrameworkTcImports (ctok, tcConfigP, frameworkDLLs, nonFrameworkResolutions)
+                let! ((tcGlobals,tcImports) as res) = TcImports.BuildFrameworkTcImports (ctok, tcConfigP, frameworkDLLs, nonFrameworkResolutions)
                 frameworkTcImportsCache.Put(ctok, key, res)
-                tcGlobals,tcImports
-        tcGlobals,frameworkTcImports,nonFrameworkResolutions,unresolved
-
+                return tcGlobals,tcImports
+          }
+        return tcGlobals,frameworkTcImports,nonFrameworkResolutions,unresolved
+      }
 
 /// An error logger that capture errors, filtering them according to warning levels etc.
 type internal CompilationErrorLogger (debugName:string, tcConfig:TcConfig) = 
@@ -1293,10 +1296,11 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig,tcGlobals,tcState:Tc
 
 
 /// Manages an incremental build graph for the build of a single F# project
-type IncrementalBuilder(ctokCtor: CompilationThreadToken, frameworkTcImportsCache: FrameworkImportsCache, tcConfig: TcConfig, projectDirectory, outfile, 
+type IncrementalBuilder(tcGlobals: TcGlobals, frameworkTcImports: TcImports, nonFrameworkResolutions: AssemblyResolution list,
+                        unresolvedReferences: UnresolvedAssemblyReference list, tcConfig: TcConfig, projectDirectory, outfile, 
                         assemblyName, niceNameGen: Ast.NiceNameGenerator, lexResourceManager,
-                        sourceFiles, projectReferences: IProjectReference list, loadClosureOpt: LoadClosure option, 
-                        keepAssemblyContents, keepAllBackgroundResolutions, maxTimeShareMilliseconds) =
+                        sourceFiles, loadClosureOpt: LoadClosure option, 
+                        keepAssemblyContents, keepAllBackgroundResolutions, maxTimeShareMilliseconds, nonFrameworkAssemblyInputs) =
 
     let tcConfigP = TcConfigProvider.Constant(tcConfig)
     let importsInvalidated = new Event<string>()
@@ -1304,11 +1308,6 @@ type IncrementalBuilder(ctokCtor: CompilationThreadToken, frameworkTcImportsCach
     let beforeFileChecked = new Event<string>()
     let fileChecked = new Event<string>()
     let projectChecked = new Event<unit>()
-
-    // Resolve assemblies and create the framework TcImports. This is done when constructing the
-    // builder itself, rather than as an incremental task. This caches a level of "system" references. No type providers are 
-    // included in these references. 
-    let (tcGlobals,frameworkTcImports,nonFrameworkResolutions,unresolvedReferences) = frameworkTcImportsCache.Get(ctokCtor, tcConfig)
         
     // Check for the existence of loaded sources and prepend them to the sources list if present.
     let sourceFiles = tcConfig.GetAvailableLoadedSources() @ (sourceFiles |>List.map (fun s -> rangeStartup,s))
@@ -1317,33 +1316,6 @@ type IncrementalBuilder(ctokCtor: CompilationThreadToken, frameworkTcImportsCach
     let sourceFiles = 
         let flags, isExe = tcConfig.ComputeCanContainEntryPoint(sourceFiles |> List.map snd)
         ((sourceFiles,flags) ||> List.map2 (fun (m,nm) flag -> (m,nm,(flag, isExe))))
-
-    // Get the names and time stamps of all the non-framework referenced assemblies, which will act 
-    // as inputs to one of the nodes in the build. 
-    //
-    // This operation is done when constructing the builder itself, rather than as an incremental task. 
-    let nonFrameworkAssemblyInputs = 
-        // Note we are not calling errorLogger.GetErrors() anywhere for this task. 
-        // This is ok because not much can actually go wrong here.
-        let errorLogger = CompilationErrorLogger("nonFrameworkAssemblyInputs", tcConfig)
-        // Return the disposable object that cleans up
-        use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter) 
-
-        [ for r in nonFrameworkResolutions do
-            let originalTimeStamp = 
-                try 
-                    if FileSystem.SafeExists(r.resolvedPath) then
-                        let result = FileSystem.GetLastWriteTimeShim(r.resolvedPath)
-                        result
-                    else
-                        DateTime.Now                               
-                with e -> 
-                    // Note we are not calling errorLogger.GetErrors() anywhere for this task. This warning will not be reported...
-                    errorLogger.Warning(e)
-                    DateTime.Now                               
-            yield (Choice1Of2 r.resolvedPath,originalTimeStamp)  
-          for pr in projectReferences  do
-            yield Choice2Of2 pr, defaultArg (pr.GetLogicalTimeStamp()) DateTime.Now]
             
     // The IncrementalBuilder needs to hold up to one item that needs to be disposed, which is the tcImports for the incremental
     // build. 
@@ -1402,6 +1374,7 @@ type IncrementalBuilder(ctokCtor: CompilationThreadToken, frameworkTcImportsCach
     ///
     /// Timestamps of referenced assemblies are taken from the file's timestamp.
     let TimestampReferencedAssemblyTask ctok (assemblyReference, originalTimeStamp) =
+      async {
         assertNotDisposed()
         DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
 
@@ -1410,39 +1383,40 @@ type IncrementalBuilder(ctokCtor: CompilationThreadToken, frameworkTcImportsCach
         // Return the disposable object that cleans up
         use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter) // Parameter because -r reference
 
-        let timestamp = 
-            try
-                match assemblyReference with 
-                | Choice1Of2 (filename) -> 
-                    if FileSystem.SafeExists(filename) then
-                        FileSystem.GetLastWriteTimeShim(filename)
-                    else
-                        originalTimeStamp
-                | Choice2Of2 (pr:IProjectReference) ->
-                    defaultArg (pr.GetLogicalTimeStamp()) originalTimeStamp
-            with exn -> 
-                // Note we are not calling errorLogger.GetErrors() anywhere for this task. This warning will not be reported...
-                errorLogger.Warning exn
-                originalTimeStamp                      
-        timestamp
-                
+        try
+            match assemblyReference with 
+            | Choice1Of2 (filename) -> 
+                if FileSystem.SafeExists(filename) then
+                    return FileSystem.GetLastWriteTimeShim(filename)
+                else
+                    return originalTimeStamp
+            | Choice2Of2 (pr:IProjectReference) ->
+                let! timeStamp = pr.GetLogicalTimeStamp()
+                return defaultArg timeStamp originalTimeStamp
+        with exn -> 
+            // Note we are not calling errorLogger.GetErrors() anywhere for this task. This warning will not be reported...
+            errorLogger.Warning exn
+            return originalTimeStamp                      
+      }   
          
     /// This is a build task function that gets placed into the build rules as the computation for a Vector.Demultiplex
     ///
     // Link all the assemblies together and produce the input typecheck accumulator               
-    let CombineImportedAssembliesTask ctok _ : TypeCheckAccumulator =
+    let CombineImportedAssembliesTask ctok _ : Async<TypeCheckAccumulator> =
+      async {
         assertNotDisposed()
         let errorLogger = CompilationErrorLogger("CombineImportedAssembliesTask", tcConfig)
         // Return the disposable object that cleans up
         use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter)
 
-        let tcImports = 
+        let! tcImports = 
+          async {
             try
                 // We dispose any previous tcImports, for the case where a dependency changed which caused this part
                 // of the partial build to be re-evaluated.
                 disposeCleanupItem()
 
-                let tcImports = TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences)  
+                let! tcImports = TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences)  
 #if EXTENSIONTYPING
                 for ccu in tcImports.GetCcusExcludingBase() do
                     // When a CCU reports an invalidation, merge them together and just report a 
@@ -1456,11 +1430,12 @@ type IncrementalBuilder(ctokCtor: CompilationThreadToken, frameworkTcImportsCach
                 // of the partial build to be re-evaluated.
                 setCleanupItem tcImports
 
-                tcImports
+                return tcImports
             with e -> 
                 System.Diagnostics.Debug.Assert(false, sprintf "Could not BuildAllReferencedDllTcImports %A" e)
                 errorLogger.Warning(e)
-                frameworkTcImports           
+                return frameworkTcImports           
+          }
 
         let tcInitial = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
         let tcState = GetInitialTcState (rangeStartup, assemblyName, tcConfig, tcGlobals, tcImports, niceNameGen, tcInitial)
@@ -1483,7 +1458,8 @@ type IncrementalBuilder(ctokCtor: CompilationThreadToken, frameworkTcImportsCach
               topAttribs=None
               typedImplFiles=[]
               tcErrors = loadClosureErrors @ errorLogger.GetErrors() }   
-        tcAcc
+        return tcAcc
+      }
                 
     /// This is a build task function that gets placed into the build rules as the computation for a Vector.ScanLeft
     ///
@@ -1637,8 +1613,8 @@ type IncrementalBuilder(ctokCtor: CompilationThreadToken, frameworkTcImportsCach
         
     // Build
     let stampedFileNamesNode        = Vector.Stamp "SourceFileTimeStamps" StampFileNameTask fileNamesNode
-    let stampedReferencedAssembliesNode = Vector.Stamp "TimestampReferencedAssembly" TimestampReferencedAssemblyTask referencedAssembliesNode
-    let initialTcAccNode            = Vector.Demultiplex "CombineImportedAssemblies" CombineImportedAssembliesTask stampedReferencedAssembliesNode
+    let stampedReferencedAssembliesNode = Vector.Stamp "TimestampReferencedAssembly" (fun ctok x -> TimestampReferencedAssemblyTask ctok x |> Async.RunSynchronously) referencedAssembliesNode
+    let initialTcAccNode            = Vector.Demultiplex "CombineImportedAssemblies" (fun ctok x -> CombineImportedAssembliesTask ctok x |> Async.RunSynchronously) stampedReferencedAssembliesNode
 #if FCS_RETAIN_BACKGROUND_PARSE_RESULTS
     let parseTreesNode              = Vector.Map "ParseTrees" ParseTask stampedFileNamesNode
     let tcStatesNode                = Vector.ScanLeft "TypeCheckingStates" TypeCheckTask initialTcAccNode stampedFileNamesNode
@@ -1845,91 +1821,129 @@ type IncrementalBuilder(ctokCtor: CompilationThreadToken, frameworkTcImportsCach
 
     /// CreateIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.
-    static member TryCreateBackgroundBuilderForProjectOptions (ctok, referenceResolver, frameworkTcImportsCache, loadClosureOpt:LoadClosure option, sourceFiles:string list, commandLineArgs:string list, projectReferences, projectDirectory, useScriptResolutionRules, keepAssemblyContents, keepAllBackgroundResolutions, maxTimeShareMilliseconds) =
-    
+    static member TryCreateBackgroundBuilderForProjectOptions (ctok, referenceResolver, frameworkTcImportsCache: FrameworkImportsCache, loadClosureOpt:LoadClosure option, sourceFiles:string list, commandLineArgs:string list, projectReferences, projectDirectory, useScriptResolutionRules, keepAssemblyContents, keepAllBackgroundResolutions, maxTimeShareMilliseconds) =
+      async {
         // Trap and report warnings and errors from creation.
         use errorScope = new ErrorScope()
-        let builderOpt = 
+        let! builderOpt = 
+          async {
             try
-
-            // Create the builder.         
-            // Share intern'd strings across all lexing/parsing
-            let resourceManager = new Lexhelp.LexResourceManager() 
-
-            /// Create a type-check configuration
-            let tcConfigB, sourceFilesNew = 
-                let defaultFSharpBinariesDir = Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler.Value
-                    
-                // see also fsc.fs:runFromCommandLineToImportingAssemblies(), as there are many similarities to where the PS creates a tcConfigB
-                let tcConfigB = 
-                    TcConfigBuilder.CreateNew(referenceResolver, defaultFSharpBinariesDir, implicitIncludeDir=projectDirectory, 
-                                                optimizeForMemory=true, isInteractive=false, isInvalidationSupported=true) 
-                // The following uses more memory but means we don'T take read-exclusions on the DLLs we reference 
-                // Could detect well-known assemblies--ie System.dll--and open them with read-locks 
-                tcConfigB.openBinariesInMemory <- true
-                tcConfigB.resolutionEnvironment 
-                    <- if useScriptResolutionRules 
-                        then ReferenceResolver.DesignTimeLike  
-                        else ReferenceResolver.CompileTimeLike
+                // Create the builder.         
+                // Share intern'd strings across all lexing/parsing
+                let resourceManager = new Lexhelp.LexResourceManager() 
                 
-                tcConfigB.conditionalCompilationDefines <- 
-                    let define = if useScriptResolutionRules then "INTERACTIVE" else "COMPILED"
-                    define::tcConfigB.conditionalCompilationDefines
+                /// Create a type-check configuration
+                let tcConfigB, sourceFilesNew = 
+                    let defaultFSharpBinariesDir = Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler.Value
+                        
+                    // see also fsc.fs:runFromCommandLineToImportingAssemblies(), as there are many similarities to where the PS creates a tcConfigB
+                    let tcConfigB = 
+                        TcConfigBuilder.CreateNew(referenceResolver, defaultFSharpBinariesDir, implicitIncludeDir=projectDirectory, 
+                                                    optimizeForMemory=true, isInteractive=false, isInvalidationSupported=true) 
+                    // The following uses more memory but means we don'T take read-exclusions on the DLLs we reference 
+                    // Could detect well-known assemblies--ie System.dll--and open them with read-locks 
+                    tcConfigB.openBinariesInMemory <- true
+                    tcConfigB.resolutionEnvironment 
+                        <- if useScriptResolutionRules 
+                            then ReferenceResolver.DesignTimeLike  
+                            else ReferenceResolver.CompileTimeLike
+                    
+                    tcConfigB.conditionalCompilationDefines <- 
+                        let define = if useScriptResolutionRules then "INTERACTIVE" else "COMPILED"
+                        define::tcConfigB.conditionalCompilationDefines
+                
+                    tcConfigB.projectReferences <- projectReferences
+                
+                    // Apply command-line arguments and collect more source files if they are in the arguments
+                    let sourceFilesNew = 
+                        try
+                            let sourceFilesAcc = ResizeArray(sourceFiles)
+                            let collect name = if not (Filename.isDll name) then sourceFilesAcc.Add name
+                            ParseCompilerOptions (collect, GetCoreServiceCompilerOptions tcConfigB, commandLineArgs)
+                            sourceFilesAcc |> ResizeArray.toList
+                        with e ->
+                            errorRecovery e range0
+                            sourceFiles
+                
+                    // Never open PDB files for the language service, even if --standalone is specified
+                    tcConfigB.openDebugInformationForLaterStaticLinking <- false
+                
+                    tcConfigB, sourceFilesNew
+                
+                match loadClosureOpt with
+                | Some loadClosure -> 
+                    let dllReferences = 
+                        [for reference in tcConfigB.referencedDLLs do
+                            // If there's (one or more) resolutions of closure references then yield them all
+                            match loadClosure.References  |> List.tryFind (fun (resolved,_)->resolved=reference.Text) with
+                            | Some (resolved,closureReferences) -> 
+                                for closureReference in closureReferences do
+                                    yield AssemblyReference(closureReference.originalReference.Range, resolved, None)
+                            | None -> yield reference]
+                    tcConfigB.referencedDLLs <- []
+                    // Add one by one to remove duplicates
+                    for dllReference in dllReferences do
+                        tcConfigB.AddReferencedAssemblyByPath(dllReference.Range,dllReference.Text)
+                    tcConfigB.knownUnresolvedReferences <- loadClosure.UnresolvedReferences
+                | None -> ()
+                
+                let tcConfig = TcConfig.Create(tcConfigB, validate=true)
+                
+                let niceNameGen = NiceNameGenerator()
+                
+                let outfile, _, assemblyName = tcConfigB.DecideNames sourceFilesNew
+                // Resolve assemblies and create the framework TcImports. This is done when constructing the
+                // builder itself, rather than as an incremental task. This caches a level of "system" references. No type providers are 
+                // included in these references. 
+                let! (tcGlobals,frameworkTcImports,nonFrameworkResolutions,unresolvedReferences) = frameworkTcImportsCache.Get(ctok, tcConfig)
 
-                tcConfigB.projectReferences <- projectReferences
-
-                // Apply command-line arguments and collect more source files if they are in the arguments
-                let sourceFilesNew = 
-                    try
-                        let sourceFilesAcc = ResizeArray(sourceFiles)
-                        let collect name = if not (Filename.isDll name) then sourceFilesAcc.Add name
-                        ParseCompilerOptions (collect, GetCoreServiceCompilerOptions tcConfigB, commandLineArgs)
-                        sourceFilesAcc |> ResizeArray.toList
-                    with e ->
-                        errorRecovery e range0
-                        sourceFiles
-
-                // Never open PDB files for the language service, even if --standalone is specified
-                tcConfigB.openDebugInformationForLaterStaticLinking <- false
-        
-                tcConfigB, sourceFilesNew
-
-            match loadClosureOpt with
-            | Some loadClosure -> 
-                let dllReferences = 
-                    [for reference in tcConfigB.referencedDLLs do
-                        // If there's (one or more) resolutions of closure references then yield them all
-                        match loadClosure.References  |> List.tryFind (fun (resolved,_)->resolved=reference.Text) with
-                        | Some (resolved,closureReferences) -> 
-                            for closureReference in closureReferences do
-                                yield AssemblyReference(closureReference.originalReference.Range, resolved, None)
-                        | None -> yield reference]
-                tcConfigB.referencedDLLs <- []
-                // Add one by one to remove duplicates
-                for dllReference in dllReferences do
-                    tcConfigB.AddReferencedAssemblyByPath(dllReference.Range,dllReference.Text)
-                tcConfigB.knownUnresolvedReferences <- loadClosure.UnresolvedReferences
-            | None -> ()
-
-            let tcConfig = TcConfig.Create(tcConfigB, validate=true)
-
-            let niceNameGen = NiceNameGenerator()
-        
-            let outfile, _, assemblyName = tcConfigB.DecideNames sourceFilesNew
-        
-            let builder = 
-                new IncrementalBuilder(ctok, frameworkTcImportsCache,
-                                        tcConfig, projectDirectory, outfile, assemblyName, niceNameGen,
-                                        resourceManager, sourceFilesNew, projectReferences, loadClosureOpt,
-                                        keepAssemblyContents=keepAssemblyContents, 
-                                        keepAllBackgroundResolutions=keepAllBackgroundResolutions, 
-                                        maxTimeShareMilliseconds=maxTimeShareMilliseconds)
-            Some builder
+                // Get the names and time stamps of all the non-framework referenced assemblies, which will act 
+                // as inputs to one of the nodes in the build. 
+                //
+                // This operation is done when constructing the builder itself, rather than as an incremental task. 
+                let! nonFrameworkAssemblyInputs =
+                  async {
+                    // Note we are not calling errorLogger.GetErrors() anywhere for this task. 
+                    // This is ok because not much can actually go wrong here.
+                    let errorLogger = CompilationErrorLogger("nonFrameworkAssemblyInputs", tcConfig)
+                    // Return the disposable object that cleans up
+                    use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter) 
+                    let results = ResizeArray()
+                    for r in nonFrameworkResolutions do
+                      let originalTimeStamp = 
+                          try 
+                              if FileSystem.SafeExists(r.resolvedPath) then
+                                  let result = FileSystem.GetLastWriteTimeShim(r.resolvedPath)
+                                  result
+                              else
+                                  DateTime.Now                               
+                          with e -> 
+                              // Note we are not calling errorLogger.GetErrors() anywhere for this task. This warning will not be reported...
+                              errorLogger.Warning(e)
+                              DateTime.Now                               
+                      results.Add (Choice1Of2 r.resolvedPath,originalTimeStamp)
+                    for pr in projectReferences do
+                      let! timeStamp = pr.GetLogicalTimeStamp()
+                      results.Add (Choice2Of2 pr, defaultArg timeStamp DateTime.Now)
+                    return Seq.toList results
+                  }
+                
+                let builder = 
+                    new IncrementalBuilder(tcGlobals,frameworkTcImports,nonFrameworkResolutions,unresolvedReferences,
+                                           tcConfig, projectDirectory, outfile, assemblyName, niceNameGen,
+                                           resourceManager, sourceFilesNew, loadClosureOpt,
+                                           keepAssemblyContents=keepAssemblyContents, 
+                                           keepAllBackgroundResolutions=keepAllBackgroundResolutions, 
+                                           maxTimeShareMilliseconds=maxTimeShareMilliseconds, 
+                                           nonFrameworkAssemblyInputs=nonFrameworkAssemblyInputs)
+                return Some builder
             with e -> 
-            errorRecoveryNoRange e
-            None
+                errorRecoveryNoRange e
+                return None
+          }
 
-        builderOpt, errorScope.Diagnostics
+        return builderOpt, errorScope.Diagnostics
+      }
 
     static member KeepBuilderAlive (builderOpt: IncrementalBuilder option) = 
         match builderOpt with 

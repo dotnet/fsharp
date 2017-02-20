@@ -2019,7 +2019,7 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
         | Some (scope, builderOpt, reactor) -> 
             // Ensure the builder doesn't get released while running operations asynchronously. 
             use _unwind = match builderOpt with Some builder -> builder.IncrementUsageCount() | None -> { new System.IDisposable with member __.Dispose() = () }
-            let! res = reactor.EnqueueAndAwaitOpAsync(desc, fun ctok -> f ctok scope)
+            let! res = reactor.EnqueueAndAwaitOpAsync(desc, fun ctok -> async.Return(f ctok scope))
             return res
       }
 
@@ -2046,21 +2046,21 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
     member info.GetDeclarationListInfo(parseResultsOpt, line, colAtEndOfNamesAndResidue, lineStr, qualifyingNames, partialName, ?hasTextChangedSinceLastTypecheck) = 
         let hasTextChangedSinceLastTypecheck = defaultArg hasTextChangedSinceLastTypecheck (fun _ -> false)
         reactorOp "GetDeclarations" FSharpDeclarationListInfo.Empty (fun ctok scope -> 
-            async.Return(scope.GetDeclarations(ctok, parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, hasTextChangedSinceLastTypecheck)))
+            scope.GetDeclarations(ctok, parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, hasTextChangedSinceLastTypecheck))
 
     member info.GetDeclarationListSymbols(parseResultsOpt, line, colAtEndOfNamesAndResidue, lineStr, qualifyingNames, partialName, ?hasTextChangedSinceLastTypecheck) = 
         let hasTextChangedSinceLastTypecheck = defaultArg hasTextChangedSinceLastTypecheck (fun _ -> false)
         reactorOp "GetDeclarationListSymbols" List.empty (fun ctok scope -> 
-            async.Return(scope.GetDeclarationListSymbols(ctok, parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, hasTextChangedSinceLastTypecheck)))
+            scope.GetDeclarationListSymbols(ctok, parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, hasTextChangedSinceLastTypecheck))
 
     /// Resolve the names at the given location to give a data tip 
     member info.GetStructuredToolTipTextAlternate(line, colAtEndOfNames, lineStr, names, tokenTag) = 
         let dflt = FSharpToolTipText []
         match tokenTagToTokenId tokenTag with 
         | TOKEN_IDENT -> 
-            reactorOp "GetToolTipText" dflt (fun ctok scope -> async.Return(scope.GetStructuredToolTipText(ctok, line, lineStr, colAtEndOfNames, names)))
+            reactorOp "GetToolTipText" dflt (fun ctok scope -> scope.GetStructuredToolTipText(ctok, line, lineStr, colAtEndOfNames, names))
         | TOKEN_STRING | TOKEN_STRING_TEXT -> 
-            reactorOp "GetReferenceResolutionToolTipText" dflt (fun ctok scope -> async.Return(scope.GetReferenceResolutionStructuredToolTipText(ctok, line, colAtEndOfNames)))
+            reactorOp "GetReferenceResolutionToolTipText" dflt (fun ctok scope -> scope.GetReferenceResolutionStructuredToolTipText(ctok, line, colAtEndOfNames))
         | _ -> 
             async.Return dflt
 
@@ -2070,37 +2070,34 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
 
     member info.GetF1KeywordAlternate (line, colAtEndOfNames, lineStr, names) =
         reactorOp "GetF1Keyword" None (fun ctok scope -> 
-            async.Return(scope.GetF1Keyword (ctok, line, lineStr, colAtEndOfNames, names)))
+            scope.GetF1Keyword (ctok, line, lineStr, colAtEndOfNames, names))
 
     // Resolve the names at the given location to a set of methods
     member info.GetMethodsAlternate(line, colAtEndOfNames, lineStr, names) =
         let dflt = FSharpMethodGroup("",[| |])
         reactorOp "GetMethods" dflt (fun ctok scope -> 
-            async.Return(scope.GetMethods (ctok, line, lineStr, colAtEndOfNames, names)))
+            scope.GetMethods (ctok, line, lineStr, colAtEndOfNames, names))
             
     member info.GetDeclarationLocationAlternate (line, colAtEndOfNames, lineStr, names, ?preferFlag) = 
         let dflt = FSharpFindDeclResult.DeclNotFound FSharpFindDeclFailureReason.Unknown
         reactorOp "GetDeclarationLocation" dflt (fun ctok scope -> 
-            async.Return(scope.GetDeclarationLocation (ctok, line, lineStr, colAtEndOfNames, names, preferFlag)))
+            scope.GetDeclarationLocation (ctok, line, lineStr, colAtEndOfNames, names, preferFlag))
 
     member info.GetSymbolUseAtLocation (line, colAtEndOfNames, lineStr, names) = 
         reactorOp "GetSymbolUseAtLocation" None (fun ctok scope -> 
             scope.GetSymbolUseAtLocation (ctok, line, lineStr, colAtEndOfNames, names)
-            |> Option.map (fun (sym,denv,m) -> FSharpSymbolUse(scope.TcGlobals,denv,sym,ItemOccurence.Use,m))
-            |> async.Return)
+            |> Option.map (fun (sym,denv,m) -> FSharpSymbolUse(scope.TcGlobals,denv,sym,ItemOccurence.Use,m)))
 
     member info.GetMethodsAsSymbols (line, colAtEndOfNames, lineStr, names) = 
         reactorOp "GetMethodsAsSymbols" None (fun ctok scope -> 
             scope.GetMethodsAsSymbols (ctok, line, lineStr, colAtEndOfNames, names)
             |> Option.map (fun (symbols,denv,m) ->
-                symbols |> List.map (fun sym -> FSharpSymbolUse(scope.TcGlobals,denv,sym,ItemOccurence.Use,m)))
-            |> async.Return)
+                symbols |> List.map (fun sym -> FSharpSymbolUse(scope.TcGlobals,denv,sym,ItemOccurence.Use,m))))
 
     member info.GetSymbolAtLocationAlternate (line, colAtEndOfNames, lineStr, names) = 
         reactorOp "GetSymbolUseAtLocation" None (fun ctok scope -> 
             scope.GetSymbolUseAtLocation (ctok, line, lineStr, colAtEndOfNames, names)
-            |> Option.map (fun (sym,_,_) -> sym)
-            |> async.Return)
+            |> Option.map (fun (sym,_,_) -> sym))
 
     member info.GetFormatSpecifierLocations() = 
         threadSafeOp 
@@ -2134,7 +2131,7 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
         reactorOp "GetAllUsesOfAllSymbolsInFile" [| |] (fun ctok scope -> 
 
             DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
-            async.Return <|
+            
             [| for (item,itemOcc,denv,m) in scope.ScopeSymbolUses.GetAllUsesOfSymbols() do
                  if itemOcc <> ItemOccurence.RelatedText then
                   let symbol = FSharpSymbol.Create(scope.TcGlobals, scope.ThisCcu, scope.TcImports, item)
@@ -2144,7 +2141,7 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
         reactorOp "GetUsesOfSymbolInFile" [| |] (fun ctok scope -> 
 
             DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
-            async.Return <|
+            
             [| for (itemOcc,denv,m) in scope.ScopeSymbolUses.GetUsesOfSymbol(symbol.Item) |> Seq.distinctBy (fun (itemOcc,_denv,m) -> itemOcc, m) do
                  if itemOcc <> ItemOccurence.RelatedText then
                   yield FSharpSymbolUse(scope.TcGlobals, denv, symbol, itemOcc, m) |])
@@ -2152,8 +2149,7 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
     member info.IsRelativeNameResolvable(pos: pos, plid: string list, item: Item) : Async<bool> = 
         reactorOp "IsRelativeNameResolvable" true (fun ctok scope -> 
             DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
-            scope.IsRelativeNameResolvable(pos, plid, item)
-            |> async.Return)
+            scope.IsRelativeNameResolvable(pos, plid, item))
     
 //----------------------------------------------------------------------------
 // BackgroundCompiler
@@ -2235,7 +2231,8 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
 
     /// CreateOneIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.
-    let CreateOneIncrementalBuilder (ctok, options:FSharpProjectOptions) = 
+    let CreateOneIncrementalBuilder (ctok, options:FSharpProjectOptions) =
+      async {
         let projectReferences =  
             [ for (nm, opts) in options.ReferencedProjects ->
                 { new IProjectReference with 
@@ -2248,7 +2245,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                         self.GetLogicalTimeStampForProject(ctok, opts)
                     member x.FileName = nm } ]
         
-        let builderOpt, diagnostics = 
+        let! builderOpt, diagnostics = 
             IncrementalBuilder.TryCreateBackgroundBuilderForProjectOptions
                   (ctok, referenceResolver, frameworkTcImportsCache, scriptClosureCache.TryGet (ctok, options), Array.toList options.ProjectFileNames, 
                    Array.toList options.OtherOptions, projectReferences, options.ProjectDirectory, 
@@ -2276,7 +2273,8 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
             builder.FileChecked.Add (fun file -> fileChecked.Trigger(file, options.ExtraProjectInfo))
             builder.ProjectChecked.Add (fun () -> projectChecked.Trigger (options.ProjectFileName, options.ExtraProjectInfo))
         
-        (builderOpt, diagnostics, decrement)
+        return (builderOpt, diagnostics, decrement)
+      }
 
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.backgroundCompiler.incrementalBuildersCache. This root typically holds more 
     // live information than anything else in the F# Language Service, since it holds up to 3 (projectCacheStrongSize) background project builds
@@ -2292,16 +2290,17 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                  onDiscard = (fun (_, _, decrement) -> decrement.Dispose()))
 
     let getOrCreateBuilder (ctok, options) =
+      async {
         RequireCompilationThread ctok
         match incrementalBuildersCache.TryGet (ctok, options) with
-        | Some b -> b
+        | Some builder -> return builder
         | None -> 
-            let b = CreateOneIncrementalBuilder (ctok, options)
-            incrementalBuildersCache.Set (ctok, options, b)
-            b
+            let! builder = CreateOneIncrementalBuilder (ctok, options)
+            incrementalBuildersCache.Set (ctok, options, builder)
+            return builder
+      }
 
     let parseCacheLock = Lock<ParseCacheLockToken>()
-    
 
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.parseFileInProjectCache. Most recently used cache for parsing files.
     let parseFileInProjectCache = 
@@ -2398,7 +2397,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
             | Some (parseResults, _checkResults,_,_) -> return parseResults
             | _ -> 
             foregroundParseCount <- foregroundParseCount + 1
-            let builderOpt,creationErrors,_ = getOrCreateBuilder (ctok, options)
+            let! builderOpt,creationErrors,_ = getOrCreateBuilder (ctok, options)
             use _unwind = IncrementalBuilder.KeepBuilderAlive builderOpt
             match builderOpt with
             | None -> return FSharpParseFileResults(List.toArray creationErrors, None, true, [])
@@ -2416,7 +2415,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
     member bc.GetBackgroundParseResultsForFileInProject(filename, options) =
         reactor.EnqueueAndAwaitOpAsync("GetBackgroundParseResultsForFileInProject " + filename, fun ctok -> 
           async {
-            let builderOpt, creationErrors, _ = getOrCreateBuilder (ctok, options)
+            let! builderOpt, creationErrors, _ = getOrCreateBuilder (ctok, options)
             use _unwind = IncrementalBuilder.KeepBuilderAlive builderOpt
             match builderOpt with
             | None -> return FSharpParseFileResults(List.toArray creationErrors, None, true, [])
@@ -2433,7 +2432,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
     member bc.MatchBraces(filename:string, source, options) =
         reactor.EnqueueAndAwaitOpAsync("MatchBraces " + filename, fun ctok ->
           async {
-            let builderOpt,_,_ = getOrCreateBuilder (ctok, options)
+            let! builderOpt,_,_ = getOrCreateBuilder (ctok, options)
             use _unwind = IncrementalBuilder.KeepBuilderAlive builderOpt
             match builderOpt with
             | None -> return [| |]
@@ -2562,7 +2561,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
     member bc.CheckFileInProject(parseResults: FSharpParseFileResults, filename, fileVersion, source, options, textSnapshotInfo) =
         let execWithReactorAsync action = reactor.EnqueueAndAwaitOpAsync("CheckFileInProject " + filename, action)
         async {
-            let! builderOpt,creationErrors,_ = execWithReactorAsync <| fun ctok -> async.Return(getOrCreateBuilder (ctok, options)) // Q: Whis it it ok to ignore creationErrors in the build cache? A: These errors will be appended into the typecheck results
+            let! builderOpt,creationErrors,_ = execWithReactorAsync (fun ctok -> getOrCreateBuilder (ctok, options)) // Q: Whis it it ok to ignore creationErrors in the build cache? A: These errors will be appended into the typecheck results
             use _unwind = IncrementalBuilder.KeepBuilderAlive builderOpt
             match builderOpt with
             | None -> return FSharpCheckFileAnswer.Succeeded (MakeCheckFileResultsEmpty(creationErrors))
@@ -2589,7 +2588,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
     member bc.ParseAndCheckFileInProject(filename:string, fileVersion, source, options:FSharpProjectOptions,textSnapshotInfo) =
         let execWithReactorAsync action = reactor.EnqueueAndAwaitOpAsync("ParseAndCheckFileInProject " + filename, action)
         async {
-            let! builderOpt, creationErrors, _ = execWithReactorAsync <| fun ctok -> async.Return(getOrCreateBuilder (ctok, options)) // Q: Whis it it ok to ignore creationErrors in the build cache? A: These errors will be appended into the typecheck results
+            let! builderOpt, creationErrors, _ = execWithReactorAsync (fun ctok -> getOrCreateBuilder (ctok, options)) // Q: Whis it it ok to ignore creationErrors in the build cache? A: These errors will be appended into the typecheck results
             use _unwind = IncrementalBuilder.KeepBuilderAlive builderOpt
             match builderOpt with
             | None -> 
@@ -2628,7 +2627,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
     member bc.GetBackgroundCheckResultsForFileInProject(filename,options) =
         reactor.EnqueueAndAwaitOpAsync("GetBackgroundCheckResultsForFileInProject " + filename, fun ctok -> 
           async {
-            let builderOpt, creationErrors, _ = getOrCreateBuilder (ctok, options)
+            let! builderOpt, creationErrors, _ = getOrCreateBuilder (ctok, options)
             use _unwind = IncrementalBuilder.KeepBuilderAlive builderOpt
             
             let errorResult errors = 
@@ -2675,7 +2674,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
     /// Parse and typecheck the whole project (the implementation, called recursively as project graph is evaluated)
     member private bc.ParseAndCheckProjectImpl(options, ctok) : Async<FSharpCheckProjectResults> =
       async {
-        let builderOpt,creationErrors,_ = getOrCreateBuilder (ctok, options)
+        let! builderOpt,creationErrors,_ = getOrCreateBuilder (ctok, options)
         use _unwind = IncrementalBuilder.KeepBuilderAlive builderOpt
         match builderOpt with 
         | None -> 
@@ -2691,18 +2690,22 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
 
     /// Get the timestamp that would be on the output if fully built immediately
     member private bc.GetLogicalTimeStampForProject(ctok, options) =
-        let builderOpt,_creationErrors,_ = getOrCreateBuilder (ctok, options)
+      async {
+        let! builderOpt,_creationErrors,_ = getOrCreateBuilder (ctok, options)
         use _unwind = IncrementalBuilder.KeepBuilderAlive builderOpt
         match builderOpt with 
-        | None -> None
-        | Some builder -> Some (builder.GetLogicalTimeStampForProject(ctok))
+        | None -> return None
+        | Some builder -> return Some (builder.GetLogicalTimeStampForProject(ctok))
+      }
 
     /// Keep the projet builder alive over a scope
     member bc.KeepProjectAlive(options) =
-        reactor.EnqueueAndAwaitOpAsync("KeepProjectAlive " + options.ProjectFileName, fun ctok -> 
-            let builderOpt,_creationErrors,_ = getOrCreateBuilder (ctok, options)
+        reactor.EnqueueAndAwaitOpAsync("KeepProjectAlive " + options.ProjectFileName, fun ctok ->
+          async {
+            let! builderOpt,_creationErrors,_ = getOrCreateBuilder (ctok, options)
             // This increments, and lets the caller decrement
-            async.Return(IncrementalBuilder.KeepBuilderAlive builderOpt))
+            return IncrementalBuilder.KeepBuilderAlive builderOpt
+          })
 
     /// Parse and typecheck the whole project.
     member bc.ParseAndCheckProject(options) =
@@ -2758,7 +2761,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
             | Some (_oldBuilder, _, _) ->
                     // We do not need to decrement here - the onDiscard function is called each time an entry is pushed out of the build cache,
                     // including by SetAlternate.
-                    let builderB, errorsB, decrementB = CreateOneIncrementalBuilder (ctok, options)
+                    let! builderB, errorsB, decrementB = CreateOneIncrementalBuilder (ctok, options)
                     incrementalBuildersCache.Set(ctok, options, (builderB, errorsB, decrementB))
             if implicitlyStartBackgroundWork then 
                bc.CheckProjectInBackground(options)
@@ -2783,7 +2786,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
         reactor.SetBackgroundOp (Some (fun ctok ->
           async {
             // The individual steps of the background build can't currently be cancelled
-            let builderOpt,_,_ = getOrCreateBuilder (ctok, options)
+            let! builderOpt,_,_ = getOrCreateBuilder (ctok, options)
             use _unwind = IncrementalBuilder.KeepBuilderAlive builderOpt
             match builderOpt with 
             | None -> return false

@@ -52,7 +52,7 @@ type internal ErrorScope =
 /// Lookup the global static cache for building the FrameworkTcImports
 type internal FrameworkImportsCache = 
     new : size: int -> FrameworkImportsCache
-    member Get : CompilationThreadToken * TcConfig -> TcGlobals * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list
+    member Get : CompilationThreadToken * TcConfig -> Async<TcGlobals * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list>
     member Clear: CompilationThreadToken -> unit
     member Downsize: CompilationThreadToken -> unit
   
@@ -192,7 +192,7 @@ type internal IncrementalBuilder =
       /// This may be a marginally long-running operation (parses are relatively quick, only one file needs to be parsed)
       member GetParseResultsForFile : CompilationThreadToken * filename:string -> Async<Choice<Ast.ParsedInput option * Range.range * string * (PhasedDiagnostic * FSharpErrorSeverity) list, FSharpErrorInfo>>
 
-      static member TryCreateBackgroundBuilderForProjectOptions : CompilationThreadToken * ReferenceResolver.Resolver * FrameworkImportsCache * scriptClosureOptions:LoadClosure option * sourceFiles:string list * commandLineArgs:string list * projectReferences: IProjectReference list * projectDirectory:string * useScriptResolutionRules:bool * keepAssemblyContents: bool * keepAllBackgroundResolutions: bool * maxTimeShareMilliseconds: int64 -> IncrementalBuilder option * FSharpErrorInfo list 
+      static member TryCreateBackgroundBuilderForProjectOptions : CompilationThreadToken * ReferenceResolver.Resolver * FrameworkImportsCache * scriptClosureOptions:LoadClosure option * sourceFiles:string list * commandLineArgs:string list * projectReferences: IProjectReference list * projectDirectory:string * useScriptResolutionRules:bool * keepAssemblyContents: bool * keepAllBackgroundResolutions: bool * maxTimeShareMilliseconds: int64 -> Async<IncrementalBuilder option * FSharpErrorInfo list>
 
       static member KeepBuilderAlive : IncrementalBuilder option -> IDisposable
       member IsBeingKeptAliveApartFromCacheEntry : bool
