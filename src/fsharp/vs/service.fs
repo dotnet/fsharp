@@ -502,6 +502,7 @@ type SemanticClassificationType =
     | Enumeration
     | Interface
     | TypeArgument
+    | Operator
 
 // A scope represents everything we get back from the typecheck of a file.
 // It acts like an in-memory database about the file.
@@ -1466,9 +1467,9 @@ type TypeCheckInfo
             | CNR(_, (Item.Value vref), _, _, _, _, m) when isFunction g vref.Type ->
                 if vref.IsPropertyGetterMethod || vref.IsPropertySetterMethod then
                     Some (m, SemanticClassificationType.Property)
-                elif not (IsOperatorName vref.DisplayName) then
-                    Some (m, SemanticClassificationType.Function)
-                else None
+                elif IsOperatorName vref.DisplayName then
+                    Some (m, SemanticClassificationType.Operator)
+                else  Some (m, SemanticClassificationType.Function)
             | CNR(_, (Item.Value vref), _, _, _, _, m) when vref.IsMutable ->
                 Some (m, SemanticClassificationType.MutableVar)
             // todo here we should check if a `vref` is of type `ref`1`
