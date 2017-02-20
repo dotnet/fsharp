@@ -46,13 +46,13 @@ module internal IncrementalBuild =
         /// ScalarDemultiplex (uniqueRuleId, outputName, input, taskFunction)
         ///
         /// A build rule representing the merge of a set of inputs to a single output
-        | ScalarDemultiplex of Id * string * VectorBuildRule * (CompilationThreadToken -> obj[] -> obj)
+        | ScalarDemultiplex of Id * string * VectorBuildRule * (CompilationThreadToken -> obj[] -> Async<obj>)
 
         /// ScalarMap (uniqueRuleId, outputName, input, taskFunction)
         ///
         /// A build rule representing the transformation of a single input to a single output
         /// THIS CASE IS CURRENTLY UNUSED
-        | ScalarMap of Id * string * ScalarBuildRule * (CompilationThreadToken -> obj -> obj)
+        | ScalarMap of Id * string * ScalarBuildRule * (CompilationThreadToken -> obj -> Async<obj>)
 
         /// Get the Id for the given ScalarBuildRule.
         member  x.Id = 
@@ -87,7 +87,7 @@ module internal IncrementalBuild =
         /// VectorStamp (uniqueRuleId, outputName, inputs, stampFunction)
         ///
         /// A build rule representing pairing the inputs with a timestamp specified by the given function.  
-        | VectorStamp of Id * string * VectorBuildRule * (CompilationThreadToken -> obj -> DateTime)
+        | VectorStamp of Id * string * VectorBuildRule * (CompilationThreadToken -> obj -> Async<DateTime>)
 
         /// VectorMultiplex (uniqueRuleId, outputName, input, taskFunction)
         ///
@@ -296,7 +296,7 @@ module internal IncrementalBuild =
     [<NoEquality; NoComparison>]
     type Action = 
         | IndexedAction of Id * (*taskname*)string * int * (*slotcount*) int * DateTime * (CompilationThreadToken -> Eventually<obj>)
-        | ScalarAction of Id * (*taskname*)string * DateTime * InputSignature * (CompilationThreadToken -> obj)
+        | ScalarAction of Id * (*taskname*)string * DateTime * InputSignature * (CompilationThreadToken -> Async<obj>)
         | VectorAction of Id * (*taskname*)string * DateTime * InputSignature *  (CompilationThreadToken -> obj[])
         | ResizeResultAction of Id * (*slotcount*) int 
         /// Execute one action and return a corresponding result.
@@ -640,7 +640,7 @@ module internal IncrementalBuild =
                                     match inputresult with
                                     | Available(ires,_,_) ->
                                         let oldtimestamp = GetVectorExprResult(bt,ve,slot).Timestamp
-                                        let newtimestamp = func ctok ires
+                                        let! newtimestamp = func ctok ires
                                         if newtimestamp <> oldtimestamp then 
                                             return! actionFunc (IndexedAction(id,taskname,slot,cardinality,newtimestamp, fun _ -> Eventually.Done ires)) acc
                                         else return acc
@@ -684,9 +684,11 @@ module internal IncrementalBuild =
                             let currentsig = inputresult.Signature()
                             if shouldEvaluate(bt,currentsig,id) then
                                 let inputtimestamp = MaxTimestamp(bt, inputExpr.Id)
-                                let DemultiplexOp ctok = 
+                                let DemultiplexOp ctok =
+                                  async {
                                     let input = AvailableAllResultsOfExpr bt inputExpr |> List.toArray
-                                    func ctok input
+                                    return! func ctok input
+                                  }
                                 return! actionFunc (ScalarAction(id,taskname,inputtimestamp,currentsig,DemultiplexOp)) acc
                             else return acc
                         | None -> return acc
@@ -724,20 +726,27 @@ module internal IncrementalBuild =
     
     /// Compute the max timestamp on all available inputs
     let ComputeMaxTimeStamp ctok output (bt: PartialBuild) acc =
+      async {
         let expr = bt.Rules.RuleList |> List.find (fun (s,_) -> s = output) |> snd
         match expr with 
         | VectorBuildRule  (VectorStamp (_id, _taskname, inputExpr, func) as ve) -> 
                 match GetVectorWidthByExpr(bt,ve) with
                 | Some cardinality ->    
-                    let CheckStamp acc slot = 
+                    let CheckStamp acc slot =
+                      async {
                         match GetVectorExprResult (bt,inputExpr,slot) with
-                        | Available(ires,_,_) -> max acc (func ctok ires)
-                        | _ -> acc
-                    [0..cardinality-1] |> List.fold CheckStamp acc
-                | None -> acc
+                        | Available(ires,_,_) -> 
+                            let! r = func ctok ires
+                            return max acc r
+                        | _ -> return acc
+                      }
+                    return! [0..cardinality-1] |> Async.List.fold CheckStamp acc
+                | None -> return acc
 
-        | _ -> failwith "expected a VectorStamp"
-    
+        | _ -> 
+            failwith "expected a VectorStamp"
+            return Unchecked.defaultof<_>
+      }
 
     /// Given the result of a single action, apply that action to the Build
     let ApplyResult(actionResult:ActionResult,bt:PartialBuild) = 
@@ -950,9 +959,12 @@ module internal IncrementalBuild =
                    override pe.Expr = expr }    
             
         /// Apply a function to a vector to get a scalar value.
-        let Demultiplex (taskname:string) (task: CompilationThreadToken -> 'I[] -> 'O) (input:Vector<'I>): Scalar<'O> =
+        let Demultiplex (taskname:string) (task: CompilationThreadToken -> 'I[] -> Async<'O>) (input:Vector<'I>): Scalar<'O> =
             let BoxingDemultiplex ctok i =
-                box(task ctok (Array.map unbox i) )
+              async {
+                let! r = task ctok (Array.map unbox i)
+                return box r
+              }
             let input = input.Expr
             let expr = ScalarDemultiplex(NextId(),taskname,input,BoxingDemultiplex)
             { new Scalar<'O>
@@ -962,7 +974,7 @@ module internal IncrementalBuild =
             
         /// Creates a new vector with the same items but with 
         /// timestamp specified by the passed-in function.  
-        let Stamp (taskname:string) (task: CompilationThreadToken -> 'I -> DateTime) (input:Vector<'I>): Vector<'I> =
+        let Stamp (taskname:string) (task: CompilationThreadToken -> 'I -> Async<DateTime>) (input:Vector<'I>): Vector<'I> =
             let input = input.Expr
             let expr = VectorStamp (NextId(),taskname,input,(fun ctok x -> task ctok (unbox x)))
             { new Vector<'I>
@@ -971,7 +983,7 @@ module internal IncrementalBuild =
                    override pe.Expr = expr }    
 
         let AsScalar (taskname:string) (input:Vector<'I>): Scalar<'I array> = 
-            Demultiplex taskname (fun _ctok x -> x) input
+            Demultiplex taskname (fun _ctok x -> async.Return x) input
                   
     /// Declare build outputs and bind them to real values.
     type BuildDescriptionScope() =
@@ -1345,7 +1357,7 @@ type IncrementalBuilder(tcGlobals: TcGlobals, frameworkTcImports: TcImports, non
     /// Get the timestamp of the given file name.
     let StampFileNameTask _ctok (_m:range, filename:string, _isLastCompiland) =
         assertNotDisposed()
-        FileSystem.GetLastWriteTimeShim(filename)
+        async.Return(FileSystem.GetLastWriteTimeShim(filename))
                             
     /// This is a build task function that gets placed into the build rules as the computation for a VectorMap
     ///
@@ -1529,6 +1541,7 @@ type IncrementalBuilder(tcGlobals: TcGlobals, frameworkTcImports: TcImports, non
     ///
     /// Finish up the typechecking to produce outputs for the rest of the compilation process
     let FinalizeTypeCheckTask ctok (tcStates:TypeCheckAccumulator[]) = 
+      async {
         assertNotDisposed()
         DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
 
@@ -1599,7 +1612,8 @@ type IncrementalBuilder(tcGlobals: TcGlobals, frameworkTcImports: TcImports, non
                 tcErrors = finalAcc.tcErrors @ errorLogger.GetErrors() 
                 topAttribs = Some topAttrs
             }
-        ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, finalAccWithErrors
+        return ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, finalAccWithErrors
+      }
 
     // END OF BUILD TASK FUNCTIONS
     // ---------------------------------------------------------------------------------------------            
@@ -1613,8 +1627,8 @@ type IncrementalBuilder(tcGlobals: TcGlobals, frameworkTcImports: TcImports, non
         
     // Build
     let stampedFileNamesNode        = Vector.Stamp "SourceFileTimeStamps" StampFileNameTask fileNamesNode
-    let stampedReferencedAssembliesNode = Vector.Stamp "TimestampReferencedAssembly" (fun ctok x -> TimestampReferencedAssemblyTask ctok x |> Async.RunSynchronously) referencedAssembliesNode
-    let initialTcAccNode            = Vector.Demultiplex "CombineImportedAssemblies" (fun ctok x -> CombineImportedAssembliesTask ctok x |> Async.RunSynchronously) stampedReferencedAssembliesNode
+    let stampedReferencedAssembliesNode = Vector.Stamp "TimestampReferencedAssembly" TimestampReferencedAssemblyTask referencedAssembliesNode
+    let initialTcAccNode            = Vector.Demultiplex "CombineImportedAssemblies" CombineImportedAssembliesTask stampedReferencedAssembliesNode
 #if FCS_RETAIN_BACKGROUND_PARSE_RESULTS
     let parseTreesNode              = Vector.Map "ParseTrees" ParseTask stampedFileNamesNode
     let tcStatesNode                = Vector.ScanLeft "TypeCheckingStates" TypeCheckTask initialTcAccNode stampedFileNamesNode
@@ -1767,9 +1781,11 @@ type IncrementalBuilder(tcGlobals: TcGlobals, frameworkTcImports: TcImports, non
       }
         
     member __.GetLogicalTimeStampForProject(ctok: CompilationThreadToken) = 
-        let t1 = MaxTimeStampInDependencies ctok stampedFileNamesNode 
-        let t2 = MaxTimeStampInDependencies ctok stampedReferencedAssembliesNode 
-        max t1 t2
+      async {
+        let! t1 = MaxTimeStampInDependencies ctok stampedFileNamesNode 
+        let! t2 = MaxTimeStampInDependencies ctok stampedReferencedAssembliesNode 
+        return max t1 t2
+      }
         
     member __.GetSlotOfFileName(filename:string) =
         // Get the slot of the given file and force it to build.

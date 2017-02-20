@@ -22,7 +22,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 module internal Vector = 
     /// Convert from vector to a scalar
     let ToScalar<'I> (taskname:string) (input:Vector<'I>) : Scalar<'I array> =
-        let Identity _ inArray = inArray
+        let Identity _ inArray = async.Return inArray
         Vector.Demultiplex taskname Identity input
             
 [<AutoOpen>]
@@ -60,11 +60,13 @@ type IncrementalBuild() =
         let updateStamp = ref true
 
         let StampFile _ctok filename =
+          async {
             let result = File.GetLastWriteTime(filename)
             if !updateStamp then
                 // Here, simulate that VS is writing to our file.
                 TouchFile()
-            result
+            return result
+          }
 
         let Map _ctok filename = 
             "map:"+filename
@@ -109,7 +111,7 @@ type IncrementalBuild() =
             
         let stampAs = ref DateTime.Now
         let StampFile _ctok filename = 
-            !stampAs
+            async.Return !stampAs
                             
         let buildDesc = new BuildDescriptionScope()
         let input = InputVector<string> "InputVector"
@@ -148,9 +150,9 @@ type IncrementalBuild() =
     [<Test>]
     member public rb.aaZeroElementVector() = // Starts with 'aa' to put it at the front.
         let stamp = ref DateTime.Now
-        let Stamp ctok (s:string) = !stamp
+        let Stamp ctok (s:string) = async.Return !stamp
         let Map ctok (s:string) = s
-        let Demult ctok (a:string array) : int = a.Length
+        let Demult ctok (a:string array) : Async<int> = async.Return a.Length
             
         let buildDesc = new BuildDescriptionScope()
         let inputVector = InputVector<string> "InputVector"
@@ -190,11 +192,11 @@ type IncrementalBuild() =
         let elements = ref 1
         let timestamp = ref System.DateTime.Now
         let Input() : string array =  [| for i in 1..!elements -> sprintf "Element %d" i |]
-        let Stamp ctok s = !timestamp
+        let Stamp ctok s = async.Return !timestamp
         let Map ctok (s:string) = sprintf "Mapped %s " s
-        let Result ctok (a:string[]) : string = String.Join(",", a)
+        let Result ctok (a:string[]) : Async<string> = async.Return(String.Join(",", a))
         let now = System.DateTime.Now
-        let FixedTimestamp _ctok _  =  now
+        let FixedTimestamp _ctok _  = async.Return now
             
         let buildDesc = new BuildDescriptionScope()
         let input = InputVector<string> "InputVector"
@@ -317,7 +319,7 @@ type IncrementalBuild() =
             
         let stampAs = ref DateTime.Now
         let StampFile ctok filename =  
-            !stampAs
+            async.Return !stampAs
                             
         let buildDesc = new BuildDescriptionScope()
         let input = InputVector<string> "InputVector"
@@ -355,11 +357,11 @@ type IncrementalBuild() =
         
         let joinedResult = ref "Join1"
         let Join ctok (filenames:_[]) = 
-            !joinedResult
+            async.Return !joinedResult
             
         let stampAs = ref DateTime.Now
         let StampFile ctok filename = 
-            !stampAs
+            async.Return !stampAs
                             
         let buildDesc = new BuildDescriptionScope()
         let input = InputVector<string> "InputVector"
@@ -395,7 +397,7 @@ type IncrementalBuild() =
     /// Test that Demultiplex followed by ScanLeft works
     [<Test>]
     member public rb.DemultiplexScanLeft() =
-        let Size ctok (ar:_[]) = ar.Length
+        let Size ctok (ar:_[]) = async.Return ar.Length
         let Scan ctok acc (file :string) = eventually { return acc + file.Length }
         let buildDesc = new BuildDescriptionScope()
         let inVector = InputVector<string> "InputVector"
@@ -515,14 +517,14 @@ type IncrementalBuild() =
     member public rb.AssemblyReferenceModel() =
         let ParseTask ctok filename = sprintf "Parse(%s)" filename
         let now = System.DateTime.Now
-        let StampFileNameTask ctok filename = now 
-        let TimestampReferencedAssemblyTask ctok reference = now
+        let StampFileNameTask ctok filename = async.Return now 
+        let TimestampReferencedAssemblyTask ctok reference = async.Return now
         let ApplyMetaCommands ctok (parseResults:string[]) = "tcConfig-of("+String.Join(",",parseResults)+")"
         let GetReferencedAssemblyNames ctok (tcConfig) = [|"Assembly1.dll";"Assembly2.dll";"Assembly3.dll"|]
         let ReadAssembly ctok assemblyName = sprintf "tcImport-of(%s)" assemblyName
-        let CombineImportedAssembliesTask ctok imports = "tcAcc"
+        let CombineImportedAssembliesTask ctok imports = async.Return "tcAcc"
         let TypeCheckTask ctok tcAcc parseResults = eventually { return tcAcc }
-        let FinalizeTypeCheckTask ctok results = "finalized"
+        let FinalizeTypeCheckTask ctok results = async.Return "finalized"
 
         // Build rules.
         let buildDesc = new BuildDescriptionScope()

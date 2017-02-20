@@ -2695,7 +2695,9 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
         use _unwind = IncrementalBuilder.KeepBuilderAlive builderOpt
         match builderOpt with 
         | None -> return None
-        | Some builder -> return Some (builder.GetLogicalTimeStampForProject(ctok))
+        | Some builder -> 
+            let! timeStamp = builder.GetLogicalTimeStampForProject(ctok)
+            return Some timeStamp
       }
 
     /// Keep the projet builder alive over a scope

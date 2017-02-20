@@ -185,7 +185,7 @@ type internal IncrementalBuilder =
       member GetCheckResultsAndImplementationsForProject : CompilationThreadToken -> Async<Choice<PartialCheckResults * IL.ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option, FSharpErrorInfo>>
 
       /// Get the logical time stamp that is associated with the output of the project if it were gully built immediately
-      member GetLogicalTimeStampForProject: CompilationThreadToken -> DateTime
+      member GetLogicalTimeStampForProject: CompilationThreadToken -> Async<DateTime>
 
       /// Await the untyped parse results for a particular slot in the vector of parse results.
       ///
@@ -237,12 +237,12 @@ module internal IncrementalBuild =
         val Map : string -> (CompilationThreadToken -> 'I -> 'O) -> Vector<'I> -> Vector<'O>
         /// Updates the creates a new vector with the same items but with 
         /// timestamp specified by the passed-in function.  
-        val Stamp : string -> (CompilationThreadToken -> 'I -> System.DateTime) -> Vector<'I> -> Vector<'I>
+        val Stamp : string -> (CompilationThreadToken -> 'I -> Async<System.DateTime>) -> Vector<'I> -> Vector<'I>
         /// Apply a function to each element of the vector, threading an accumulator argument
         /// through the computation. Returns intermediate results in a vector.
         val ScanLeft : string -> (CompilationThreadToken -> 'A -> 'I -> Eventually<'A>) -> Scalar<'A> -> Vector<'I> -> Vector<'A>
         /// Apply a function to a vector to get a scalar value.
-        val Demultiplex : string -> (CompilationThreadToken -> 'I[] -> 'O)->Vector<'I> -> Scalar<'O>
+        val Demultiplex : string -> (CompilationThreadToken -> 'I[] -> Async<'O>) -> Vector<'I> -> Scalar<'O>
         /// Convert a Vector into a Scalar.
         val AsScalar: string -> Vector<'I> -> Scalar<'I[]> 
 
