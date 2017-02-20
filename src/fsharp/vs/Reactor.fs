@@ -19,7 +19,7 @@ type internal IReactorOperations =
 [<NoEquality; NoComparison>]
 type internal ReactorCommands = 
     /// Kick off a build.
-    | SetBackgroundOp of (CompilationThreadToken -> bool)  option
+    | SetBackgroundOp of (CompilationThreadToken -> Async<bool>) option
     /// Do some work not synchronized in the mailbox.
     | Op of string * (CompilationThreadToken -> Async<unit>)
     /// Finish the background building
@@ -82,9 +82,14 @@ type Reactor() =
                         Trace.TraceInformation("Reactor: --> wait for background (debug only), remaining {0}, mem {1}, gc2 {2}", inbox.CurrentQueueLength, GC.GetTotalMemory(false)/1000000L, GC.CollectionCount(2))
                         match bgOpOpt with 
                         | None -> ()
-                        | Some bgOp -> 
-                            while bgOp ctok do 
-                                ()
+                        | Some bgOp ->
+                            let rec loop () =
+                                async {
+                                    let! r = bgOp ctok
+                                    if r then return! loop ()
+                                    else return ()
+                                }
+                            do! loop()
                         channel.Reply(())
                         return! loop (None, onComplete, false)
                     | Some (CompleteAllQueuedOps channel) -> 
@@ -96,7 +101,7 @@ type Reactor() =
                         | Some bgOp, None -> 
                             Trace.TraceInformation("Reactor: --> background step, remaining {0}, mem {1}, gc2 {2}", inbox.CurrentQueueLength, GC.GetTotalMemory(false)/1000000L, GC.CollectionCount(2))
                             let time = System.DateTime.Now
-                            let res = bgOp ctok
+                            let! res = bgOp ctok
                             let span = System.DateTime.Now - time
                             //if span.TotalMilliseconds > 100.0 then 
                             Trace.TraceInformation("Reactor: <-- background step, remaining {0}, took {1}ms", inbox.CurrentQueueLength, span.TotalMilliseconds)

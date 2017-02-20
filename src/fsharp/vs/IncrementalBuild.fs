@@ -1343,7 +1343,7 @@ type IncrementalBuilder(ctokCtor: CompilationThreadToken, frameworkTcImportsCach
                     DateTime.Now                               
             yield (Choice1Of2 r.resolvedPath,originalTimeStamp)  
           for pr in projectReferences  do
-            yield Choice2Of2 pr, defaultArg (pr.GetLogicalTimeStamp() |> Async.RunSynchronously) DateTime.Now]
+            yield Choice2Of2 pr, defaultArg (pr.GetLogicalTimeStamp()) DateTime.Now]
             
     // The IncrementalBuilder needs to hold up to one item that needs to be disposed, which is the tcImports for the incremental
     // build. 
@@ -1419,7 +1419,7 @@ type IncrementalBuilder(ctokCtor: CompilationThreadToken, frameworkTcImportsCach
                     else
                         originalTimeStamp
                 | Choice2Of2 (pr:IProjectReference) ->
-                    defaultArg (pr.GetLogicalTimeStamp() |> Async.RunSynchronously) originalTimeStamp
+                    defaultArg (pr.GetLogicalTimeStamp()) originalTimeStamp
             with exn -> 
                 // Note we are not calling errorLogger.GetErrors() anywhere for this task. This warning will not be reported...
                 errorLogger.Warning exn
@@ -1775,7 +1775,7 @@ type IncrementalBuilder(ctokCtor: CompilationThreadToken, frameworkTcImportsCach
         
         match result with
         | Some (tcAcc,timestamp) -> return Choice1Of2 (PartialCheckResults.Create (tcAcc,timestamp))
-        | None -> return Choice2Of2 "Build was not evaluated, expected the results to be ready after 'Eval'."
+        | None -> return Choice2Of2 (FSharpErrorInfo.CreateFromException(PhasedDiagnostic.Create(exn "Build was not evaluated, expected the results to be ready after 'Eval'.", BuildPhase.DefaultPhase), true, true, range.Zero))
       }
 
     member builder.GetCheckResultsAfterLastFileInProject (ctok: CompilationThreadToken) = 
@@ -1787,7 +1787,7 @@ type IncrementalBuilder(ctokCtor: CompilationThreadToken, frameworkTcImportsCach
         match GetScalarResult(finalizedTypeCheckNode,build) with
         | Some ((ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, tcAcc), timestamp) -> 
             return Choice1Of2 (PartialCheckResults.Create (tcAcc,timestamp), ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt)
-        | None -> return Choice2Of2 "Build was not evaluated, expcted the results to be ready after 'Eval'."
+        | None -> return Choice2Of2 (FSharpErrorInfo.CreateFromException(PhasedDiagnostic.Create(exn "Build was not evaluated, expcted the results to be ready after 'Eval'.", BuildPhase.DefaultPhase), true, true, range.Zero))
       }
         
     member __.GetLogicalTimeStampForProject(ctok: CompilationThreadToken) = 
@@ -1819,27 +1819,27 @@ type IncrementalBuilder(ctokCtor: CompilationThreadToken, frameworkTcImportsCach
         match GetVectorResultBySlot(parseTreesNode,slotOfFile,partialBuild) with
         | Some (results, _) -> results
         | None -> 
-            let build = IncrementalBuild.EvalUpTo ctok SavePartialBuild ct (parseTreesNode, slotOfFile) partialBuild  
+            let! build = IncrementalBuild.EvalUpTo ctok SavePartialBuild ct (parseTreesNode, slotOfFile) partialBuild  
             match GetVectorResultBySlot(parseTreesNode,slotOfFile,build) with
-            | Some (results, _) -> results
-            | None -> failwith "Build was not evaluated, expcted the results to be ready after 'Eval'."
+            | Some (results, _) -> Choice1Of2 results
+            | None -> Choice2Of2 "Build was not evaluated, expcted the results to be ready after 'Eval'."
 #else
         let! results = 
           async {
             match GetVectorResultBySlot(stampedFileNamesNode,slotOfFile,partialBuild) with
-            | Some (results, _) -> return Some results
+            | Some (results, _) -> return Choice1Of2 results
             | None -> 
                 let! build = IncrementalBuild.EvalUpTo ctok SavePartialBuild (stampedFileNamesNode, slotOfFile) partialBuild  
                 match GetVectorResultBySlot(stampedFileNamesNode,slotOfFile,build) with
-                | Some (results, _) -> return Some results
-                | None -> return None // failwith "Build was not evaluated, expcted the results to be ready after 'Eval'."
+                | Some (results, _) -> return Choice1Of2 results
+                | None -> return Choice2Of2 (FSharpErrorInfo.CreateFromException(PhasedDiagnostic.Create(exn  "Build was not evaluated, expcted the results to be ready after 'Eval'.", BuildPhase.DefaultPhase), true, true, range.Zero))
           }
         // re-parse on demand instead of retaining
         match results with
-        | Some x -> return Some (ParseTask ctok x)
-        | None -> return None
+        | Choice1Of2 x -> return Choice1Of2 (ParseTask ctok x)
+        | Choice2Of2 e -> return Choice2Of2 e
 #endif
-    }
+      }
 
     member __.ProjectFileNames  = sourceFiles  |> List.map (fun (_,f,_) -> f)
 

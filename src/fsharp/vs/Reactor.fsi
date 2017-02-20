@@ -26,7 +26,7 @@ type internal Reactor =
 
     /// Set the background building function, which is called repeatedly
     /// until it returns 'false'.  If None then no background operation is used.
-    member SetBackgroundOp : build:(CompilationThreadToken -> bool) option -> unit
+    member SetBackgroundOp : build:(CompilationThreadToken -> Async<bool>) option -> unit
 
     /// Block until the current implicit background build is complete. Unit test only.
     member WaitForBackgroundOpCompletion : unit -> unit

@@ -164,25 +164,25 @@ type internal IncrementalBuilder =
       /// to the necessary point if the result is not available. This may be a long-running operation.
       ///
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetCheckResultsBeforeFileInProject : CompilationThreadToken * filename:string -> Async<Choice<PartialCheckResults, string>>
+      member GetCheckResultsBeforeFileInProject : CompilationThreadToken * filename:string -> Async<Choice<PartialCheckResults, FSharpErrorInfo>>
 
       /// Get the typecheck state after checking a file. Compute the entire type check of the project up
       /// to the necessary point if the result is not available. This may be a long-running operation.
       ///
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetCheckResultsAfterFileInProject : CompilationThreadToken * filename:string -> Async<Choice<PartialCheckResults, string>>
+      member GetCheckResultsAfterFileInProject : CompilationThreadToken * filename:string -> Async<Choice<PartialCheckResults, FSharpErrorInfo>>
 
       /// Get the typecheck result after the end of the last file. The typecheck of the project is not 'completed'.
       /// This may be a long-running operation.
       ///
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetCheckResultsAfterLastFileInProject : CompilationThreadToken -> Async<Choice<PartialCheckResults, string>>
+      member GetCheckResultsAfterLastFileInProject : CompilationThreadToken -> Async<Choice<PartialCheckResults, FSharpErrorInfo>>
 
       /// Get the final typecheck result. If 'generateTypedImplFiles' was set on Create then the TypedAssemblyAfterOptimization will contain implementations.
       /// This may be a long-running operation.
       ///
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetCheckResultsAndImplementationsForProject : CompilationThreadToken -> Async<Choice<PartialCheckResults * IL.ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option, string>>
+      member GetCheckResultsAndImplementationsForProject : CompilationThreadToken -> Async<Choice<PartialCheckResults * IL.ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option, FSharpErrorInfo>>
 
       /// Get the logical time stamp that is associated with the output of the project if it were gully built immediately
       member GetLogicalTimeStampForProject: CompilationThreadToken -> DateTime
@@ -190,7 +190,7 @@ type internal IncrementalBuilder =
       /// Await the untyped parse results for a particular slot in the vector of parse results.
       ///
       /// This may be a marginally long-running operation (parses are relatively quick, only one file needs to be parsed)
-      member GetParseResultsForFile : CompilationThreadToken * filename:string -> Async<(Ast.ParsedInput option * Range.range * string * (PhasedDiagnostic * FSharpErrorSeverity) list) option>
+      member GetParseResultsForFile : CompilationThreadToken * filename:string -> Async<Choice<Ast.ParsedInput option * Range.range * string * (PhasedDiagnostic * FSharpErrorSeverity) list, FSharpErrorInfo>>
 
       static member TryCreateBackgroundBuilderForProjectOptions : CompilationThreadToken * ReferenceResolver.Resolver * FrameworkImportsCache * scriptClosureOptions:LoadClosure option * sourceFiles:string list * commandLineArgs:string list * projectReferences: IProjectReference list * projectDirectory:string * useScriptResolutionRules:bool * keepAssemblyContents: bool * keepAllBackgroundResolutions: bool * maxTimeShareMilliseconds: int64 -> IncrementalBuilder option * FSharpErrorInfo list 
 
