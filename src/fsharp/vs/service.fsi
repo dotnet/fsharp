@@ -163,6 +163,7 @@ type internal SemanticClassificationType =
     | Enumeration
     | Interface
     | TypeArgument
+    | Operator
 
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]
