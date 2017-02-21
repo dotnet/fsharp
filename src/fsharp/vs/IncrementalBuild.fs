@@ -788,13 +788,10 @@ module internal IncrementalBuild =
             
             let! newBt = 
               (bt,worklist) ||> Cancellable.fold (fun bt action -> 
-                  cancellable { 
-                     let! ct = Cancellable.token()
-                     if injectCancellationFault || ct.IsCancellationRequested then 
-                         return! Cancellable.canceled() 
+                     if injectCancellationFault then 
+                         Cancellable.canceled() 
                      else 
-                         return! ExecuteApply ctok save action bt
-                  })
+                         ExecuteApply ctok save action bt)
 
             if newBt=bt then return bt else return! eval(newBt,gen+1)
           }
