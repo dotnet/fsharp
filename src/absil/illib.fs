@@ -532,7 +532,7 @@ type ValueOrCancelled<'TResult> =
 /// Represents a cancellable computation with explicit representation of a cancelled result.
 ///
 /// A cancellable computation is passed may be cancelled via a CancellationToken, which is propagated implicitly.  
-/// If cancellation occurs, it is propgated as data rather than by raising an OperationCancelledException.  
+/// If cancellation occurs, it is propagated as data rather than by raising an OperationCancelledException.  
 type Cancellable<'TResult> = Cancellable of (System.Threading.CancellationToken -> ValueOrCancelled<'TResult>)
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -613,19 +613,21 @@ module Cancellable =
         catch e |> bind (fun res ->  
             match res with Choice1Of2 r -> ret r | Choice2Of2 err -> handler err)
     
-    /// Run the cancellable computation within an Async commputation
-    let toAsync e =    
-        async { 
-          let! ct = Async.CancellationToken
-          return! 
-             Async.FromContinuations(fun (cont, econt, ccont) -> 
-               // Run the computation synchronously using the given cancellation token
-               let res = try Choice1Of2 (run ct e) with err -> Choice2Of2 err
-               match res with 
-               | Choice1Of2 (ValueOrCancelled.Value v) -> cont v
-               | Choice1Of2 (ValueOrCancelled.Cancelled err) -> ccont err
-               | Choice2Of2 err -> econt err) 
-        }
+    // /// Run the cancellable computation within an Async computation.  This isn't actaully used in the codebase, but left
+    // here in case we need it ni the future 
+    //
+    // let toAsync e =    
+    //     async { 
+    //       let! ct = Async.CancellationToken
+    //       return! 
+    //          Async.FromContinuations(fun (cont, econt, ccont) -> 
+    //            // Run the computation synchronously using the given cancellation token
+    //            let res = try Choice1Of2 (run ct e) with err -> Choice2Of2 err
+    //            match res with 
+    //            | Choice1Of2 (ValueOrCancelled.Value v) -> cont v
+    //            | Choice1Of2 (ValueOrCancelled.Cancelled err) -> ccont err
+    //            | Choice2Of2 err -> econt err) 
+    //     }
     
 type CancellableBuilder() = 
     member x.Bind(e,k) = Cancellable.bind k e

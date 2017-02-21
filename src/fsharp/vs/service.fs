@@ -2453,7 +2453,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
 
     member bc.GetCachedCheckFileResult(builder: IncrementalBuilder,filename,source,options) =
             // Check the cache. We can only use cached results when there is no work to do to bring the background builder up-to-date
-            let cachedResults = parseCacheLock.AcquireLock (fun ctok -> parseAndCheckFileInProjectCache.TryGet(ctok, (filename,source,options)))
+            let cachedResults = parseCacheLock.AcquireLock (fun ltok -> parseAndCheckFileInProjectCache.TryGet(ltok, (filename,source,options)))
 
             match cachedResults with 
 //            | Some (parseResults, checkResults, _, _) when builder.AreCheckResultsBeforeFileInProjectReady(filename) -> 
@@ -2497,12 +2497,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
             let rec loop() =
                 async {
                     // results may appear while we were waiting for the lock, let's recheck if it's the case
-                    let! cachedResults = 
-                        reactor.EnqueueAndAwaitOpAsync(
-                            "GetCachedCheckFileResult " + fileName, 
-                            (fun ctok -> 
-                                DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
-                                bc.GetCachedCheckFileResult(builder, fileName, source, options) |> cancellable.Return))
+                    let cachedResults = bc.GetCachedCheckFileResult(builder, fileName, source, options) 
             
                     match cachedResults with
                     | Some (_, checkResults) -> return FSharpCheckFileAnswer.Succeeded checkResults
@@ -2572,11 +2567,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
             | None -> return FSharpCheckFileAnswer.Succeeded (MakeCheckFileResultsEmpty(creationErrors))
             | Some builder -> 
                 // Check the cache. We can only use cached results when there is no work to do to bring the background builder up-to-date
-                let! cachedResults = 
-                    execWithReactorAsync <| fun ctok -> 
-                        DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
-                        bc.GetCachedCheckFileResult(builder, filename, source, options)
-                        |> cancellable.Return
+                let cachedResults = bc.GetCachedCheckFileResult(builder, filename, source, options)
 
                 match cachedResults with
                 | Some (_, checkResults) -> return FSharpCheckFileAnswer.Succeeded checkResults
@@ -2599,11 +2590,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                 return (parseResults, FSharpCheckFileAnswer.Aborted)
 
             | Some builder -> 
-                let! cachedResults = 
-                    execWithReactorAsync <| fun ctok -> 
-                        DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
-                        bc.GetCachedCheckFileResult(builder, filename, source, options)
-                        |> cancellable.Return
+                let cachedResults = bc.GetCachedCheckFileResult(builder, filename, source, options)
 
                 match cachedResults with 
                 | Some (parseResults, checkResults) -> return parseResults, FSharpCheckFileAnswer.Succeeded checkResults
