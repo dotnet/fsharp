@@ -47,9 +47,6 @@ module internal FSharpClassificationTypes =
         | SemanticClassificationType.Interface -> Interface
 
 module internal ClassificationDefinitions =
-    let private guidVSLightTheme = Guid "de3dbbcd-f642-433c-8353-8f1df4370aba"
-    let private guidVSBlueTheme = Guid "a4d6a176-b948-4b29-8c66-53c97a1ed7d0"
-    let private guidVSDarkTheme = Guid "1ded0138-47ce-435e-84ef-9ec1f439b749"
 
     [<Export>]
     type internal ThemeColors
@@ -61,8 +58,8 @@ module internal ClassificationDefinitions =
         ) =
 
         let (| LightTheme | DarkTheme | UnknownTheme |) id =
-            if id = guidVSLightTheme || id = guidVSBlueTheme then LightTheme 
-            elif id = guidVSDarkTheme then DarkTheme
+            if id = KnownColorThemes.Light || id = KnownColorThemes.Blue then LightTheme 
+            elif id = KnownColorThemes.Dark then DarkTheme
             else UnknownTheme
     
         let getCurrentThemeId() =
