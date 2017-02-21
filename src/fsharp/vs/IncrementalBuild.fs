@@ -835,8 +835,7 @@ module internal IncrementalBuild =
     let GetScalarResult<'T>(node:Scalar<'T>,bt): ('T*DateTime) option = 
         match GetTopLevelExprByName(bt,node.Name) with 
         | ScalarBuildRule se ->
-            let id = se.Id
-            match bt.Results.TryFind id with
+            match bt.Results.TryFind se.Id with
             | Some result ->
                 match result with 
                 | ScalarResult(sr) ->
@@ -1711,7 +1710,7 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
         
         match result with
         | Some (tcAcc,timestamp) -> return PartialCheckResults.Create (tcAcc,timestamp)
-        | None -> return! failwith "Build was not evaluated, expected the results to be ready after 'Eval'."
+        | None -> return! failwith "Build was not evaluated, expected the results to be ready after 'Eval' (GetCheckResultsBeforeSlotInProject)."
       }
 
     member builder.GetCheckResultsBeforeFileInProject (ctok: CompilationThreadToken, filename) = 
@@ -1733,7 +1732,11 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
         | Some ((ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, tcAcc), timestamp) -> 
             return PartialCheckResults.Create (tcAcc,timestamp), ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt
         | None -> 
-            return! failwith "Build was not evaluated, expcted the results to be ready after 'Eval'."
+            // helpers to diagnose https://github.com/Microsoft/visualfsharp/pull/2460/
+            let brname = match GetTopLevelExprByName(build,finalizedTypeCheckNode.Name) with  ScalarBuildRule se ->se.Id | _ -> Id 0xdeadbeef
+            let data = (finalizedTypeCheckNode.Name, ((build.Results :> IDictionary<_,_>).Keys |> Seq.toArray), brname, build.Results.ContainsKey brname, build.Results.TryFind brname |> Option.map (function ScalarResult(sr) -> Some(sr.TryGetAvailable().IsSome) | _ -> None))
+            let msg = sprintf "Build was not evaluated, expected the results to be ready after 'Eval' (GetCheckResultsAndImplementationsForProject, data = %A)." data
+            return! failwith  msg
       }
         
     member __.GetLogicalTimeStampForProject(cache, ctok: CompilationThreadToken) = 
@@ -1768,7 +1771,7 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
             let! build = IncrementalBuild.EvalUpTo ctok SavePartialBuild (parseTreesNode, slotOfFile) partialBuild  
             match GetVectorResultBySlot(parseTreesNode,slotOfFile,build) with
             | Some (results, _) -> return results
-            | None -> return! failwith "Build was not evaluated, expcted the results to be ready after 'Eval'."
+            | None -> return! failwith "Build was not evaluated, expected the results to be ready after 'Eval' (GetParseResultsForFile)."
 #else
         let! results = 
           cancellable {
@@ -1779,7 +1782,7 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
                 let! build = IncrementalBuild.EvalUpTo cache ctok SavePartialBuild (stampedFileNamesNode, slotOfFile) partialBuild  
                 match GetVectorResultBySlot(stampedFileNamesNode,slotOfFile,build) with
                 | Some (results, _) -> return results
-                | None -> return! failwith "Build was not evaluated, expcted the results to be ready after 'Eval'."
+                | None -> return! failwith "Build was not evaluated, expected the results to be ready after 'Eval' (GetParseResultsForFile)."
           }
         // re-parse on demand instead of retaining
         return ParseTask ctok results
