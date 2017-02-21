@@ -10,6 +10,7 @@ module internal ExtensionTyping =
     open System
     open System.IO
     open System.Collections.Generic
+    open System.Reflection
     open Microsoft.FSharp.Core.CompilerServices
     open Microsoft.FSharp.Compiler.ErrorLogger
     open Microsoft.FSharp.Compiler.Range
@@ -19,8 +20,6 @@ module internal ExtensionTyping =
 
 #if FX_RESHAPED_REFLECTION
     open Microsoft.FSharp.Core.ReflectionAdapters
-#else
-    type BindingFlags = System.Reflection.BindingFlags
 #endif
 
     type TypeProviderDesignation = TypeProviderDesignation of string
