@@ -78,8 +78,8 @@ module internal ClassificationDefinitions =
         let setColors _ =
             let fontAndColorStorage = serviceProvider.GetService(typeof<SVsFontAndColorStorage>) :?> IVsFontAndColorStorage
             let fontAndColorCacheManager = serviceProvider.GetService(typeof<SVsFontAndColorCacheManager>) :?> IVsFontAndColorCacheManager)
-            fontAndColorCacheManager.CheckCache( ref VSKnownGuids.textEditorFontCategory) |> ignore
-            fontAndColorStorage.OpenCategory(ref VSKnownGuids.textEditorFontCategory, uint32 __FCSTORAGEFLAGS.FCSF_READONLY) |> ignore
+            fontAndColorCacheManager.CheckCache( ref VSKnownGuids.TextEditorFontCategory) |> ignore
+            fontAndColorStorage.OpenCategory(ref VSKnownGuids.TextEditorFontCategory, uint32 __FCSTORAGEFLAGS.FCSF_READONLY) |> ignore
 
             let formatMap = classificationformatMapService.GetClassificationFormatMap(category = "text")
             for ctype, (light, dark) in colorData do
