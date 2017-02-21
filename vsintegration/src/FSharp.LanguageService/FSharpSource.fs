@@ -181,15 +181,15 @@ type internal FSharpSourceTestable
                 lastDependencies.Clear()
 
 module internal VSKnownGuids =
-        let StatementCompletionFC = Guid "C1614BB1-734F-4a31-BD42-5AE6275E16D2" // GUID_StatementCompletionFC
-        let TextEditorFontCategory = Guid "A27B4E24-A735-4d1d-B8E7-9716E1E3D8E0" // Guid for the code editor font and color category. GUID_TextEditorFC
+        let statementCompletionFC = Guid "C1614BB1-734F-4a31-BD42-5AE6275E16D2" // GUID_StatementCompletionFC
+        let textEditorFontCategory = Guid "A27B4E24-A735-4d1d-B8E7-9716E1E3D8E0" // Guid for the code editor font and color category. GUID_TextEditorFC
 
 [<AllowNullLiteralAttribute>]
 type internal VSFontsAndColorsHelper private(fontFamily, pointSize, excludedCodeForegroundColorBrush, backgroundBrush) =
         static let Compute(site:System.IServiceProvider) =
             UIThread.MustBeCalledFromUIThread()
             let vsFontAndColorStorage = site.GetService(typeof<SVsFontAndColorStorage>) :?> IVsFontAndColorStorage
-            vsFontAndColorStorage.OpenCategory(ref VSKnownGuids.TextEditorFontCategory, (uint32 __FCSTORAGEFLAGS.FCSF_LOADDEFAULTS) ||| (uint32 __FCSTORAGEFLAGS.FCSF_NOAUTOCOLORS) ||| (uint32 __FCSTORAGEFLAGS.FCSF_READONLY)) |> ignore
+            vsFontAndColorStorage.OpenCategory(ref VSKnownGuids.textEditorFontCategory, (uint32 __FCSTORAGEFLAGS.FCSF_LOADDEFAULTS) ||| (uint32 __FCSTORAGEFLAGS.FCSF_NOAUTOCOLORS) ||| (uint32 __FCSTORAGEFLAGS.FCSF_READONLY)) |> ignore
             let itemInfo : ColorableItemInfo[] = Array.zeroCreate 1  
             vsFontAndColorStorage.GetItem("Excluded Code", itemInfo) |> ignore
             let fgColorInfo = itemInfo.[0].crForeground 
@@ -202,7 +202,7 @@ type internal VSFontsAndColorsHelper private(fontFamily, pointSize, excludedCode
             let color = System.Windows.Media.Color.FromArgb(winFormColor.A, winFormColor.R, winFormColor.G, winFormColor.B)
             let backgroundBrush = new System.Windows.Media.SolidColorBrush(color)
             vsFontAndColorStorage.CloseCategory() |> ignore
-            vsFontAndColorStorage.OpenCategory(ref VSKnownGuids.StatementCompletionFC, (uint32 __FCSTORAGEFLAGS.FCSF_LOADDEFAULTS) ||| (uint32 __FCSTORAGEFLAGS.FCSF_NOAUTOCOLORS) ||| (uint32 __FCSTORAGEFLAGS.FCSF_READONLY)) |> ignore
+            vsFontAndColorStorage.OpenCategory(ref VSKnownGuids.statementCompletionFC, (uint32 __FCSTORAGEFLAGS.FCSF_LOADDEFAULTS) ||| (uint32 __FCSTORAGEFLAGS.FCSF_NOAUTOCOLORS) ||| (uint32 __FCSTORAGEFLAGS.FCSF_READONLY)) |> ignore
             let fontInfo : FontInfo[] = Array.zeroCreate 1
             vsFontAndColorStorage.GetFont(null, fontInfo) |> ignore
             let fontFamily = fontInfo.[0].bstrFaceName 
