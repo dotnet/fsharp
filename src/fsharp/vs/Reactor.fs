@@ -13,7 +13,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 
 /// Represents the capability to schedule work in the compiler service operations queue for the compilation thread
 type internal IReactorOperations = 
-    abstract EnqueueAndAwaitOpAsync : string * (CompilationThreadToken -> CancellationToken -> 'T) -> Async<'T>
+    abstract EnqueueAndAwaitOpAsync : string * (CompilationThreadToken -> Cancellable<'T>) -> Async<'T>
     abstract EnqueueOp: string * (CompilationThreadToken -> unit) -> unit
 
 [<NoEquality; NoComparison>]
@@ -145,11 +145,12 @@ type Reactor() =
             r.EnqueueOpPrim(desc, ct,
                 op=(fun ctok ->
                     let result =
-                        try
-                            f ctok ct |> AsyncUtil.AsyncOk
-                        with
-                        |   :? OperationCanceledException as e -> AsyncUtil.AsyncCanceled e
-                        |   e -> e |> AsyncUtil.AsyncException
+                        try 
+                          match Cancellable.run ct (f ctok) with 
+                          | ValueOrCancelled.Value r -> AsyncUtil.AsyncOk r
+                          | ValueOrCancelled.Cancelled e -> AsyncUtil.AsyncCanceled e
+                        with e -> e |> AsyncUtil.AsyncException
+
                     resultCell.RegisterResult(result)),
                     ccont=(fun () -> resultCell.RegisterResult (AsyncUtil.AsyncCanceled(OperationCanceledException())) )
 

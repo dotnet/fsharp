@@ -3253,12 +3253,12 @@ let AnalyzeArbitraryExprAsEnumerable cenv (env: TcEnv) localAlloc m exprty expr 
     let err k ty = 
         let txt = NicePrint.minimalStringOfType env.DisplayEnv ty
         let msg = if k then FSComp.SR.tcTypeCannotBeEnumerated(txt) else FSComp.SR.tcEnumTypeCannotBeEnumerated(txt)
-        ResultOrException.Exception(Error(msg,m))
+        Exception(Error(msg,m))
 
     let findMethInfo k m nm ty = 
         match TryFindIntrinsicOrExtensionMethInfo cenv env m ad nm ty with 
         | [] -> err k ty
-        | res :: _ -> ResultOrException.Result res  
+        | res :: _ -> Result res  
        
       
     // Ensure there are no curried arguments, and indeed no arguments at all
@@ -3269,16 +3269,16 @@ let AnalyzeArbitraryExprAsEnumerable cenv (env: TcEnv) localAlloc m exprty expr 
 
     let tryType (exprToSearchForGetEnumeratorAndItem,tyToSearchForGetEnumeratorAndItem) = 
         match findMethInfo true m "GetEnumerator" tyToSearchForGetEnumeratorAndItem with 
-        | ResultOrException.Exception e -> ResultOrException.Exception e
-        | ResultOrException.Result getEnumerator_minfo  ->
+        | Exception e -> Exception e
+        | Result getEnumerator_minfo  ->
 
         let getEnumerator_minst = FreshenMethInfo m getEnumerator_minfo
         let retTypeOfGetEnumerator = getEnumerator_minfo.GetFSharpReturnTy(cenv.amap, m, getEnumerator_minst)
         if hasArgs getEnumerator_minfo getEnumerator_minst then err true tyToSearchForGetEnumeratorAndItem else
 
         match findMethInfo false m "MoveNext" retTypeOfGetEnumerator with 
-        | ResultOrException.Exception e -> ResultOrException.Exception e
-        | ResultOrException.Result moveNext_minfo        ->
+        | Exception e -> Exception e
+        | Result moveNext_minfo        ->
 
         let moveNext_minst = FreshenMethInfo m moveNext_minfo
         let retTypeOfMoveNext = moveNext_minfo.GetFSharpReturnTy(cenv.amap, m, moveNext_minst)
@@ -3286,8 +3286,8 @@ let AnalyzeArbitraryExprAsEnumerable cenv (env: TcEnv) localAlloc m exprty expr 
         if hasArgs moveNext_minfo moveNext_minst then err false retTypeOfGetEnumerator else
 
         match findMethInfo false m "get_Current" retTypeOfGetEnumerator with 
-        | ResultOrException.Exception e -> ResultOrException.Exception e
-        | ResultOrException.Result get_Current_minfo ->
+        | Exception e -> Exception e
+        | Result get_Current_minfo ->
 
         let get_Current_minst = FreshenMethInfo m get_Current_minfo
         if hasArgs get_Current_minfo get_Current_minst then err false retTypeOfGetEnumerator else
@@ -3362,18 +3362,18 @@ let AnalyzeArbitraryExprAsEnumerable cenv (env: TcEnv) localAlloc m exprty expr 
         let guardExpr  ,guardTy      = BuildPossiblyConditionalMethodCall cenv env DefinitelyMutates m false moveNext_minfo      NormalValUse moveNext_minst [enumeratorExpr] []
         let currentExpr,currentTy    = BuildPossiblyConditionalMethodCall cenv env DefinitelyMutates m true get_Current_minfo   NormalValUse get_Current_minst [enumeratorExpr] []
         let betterCurrentExpr  = mkCoerceExpr(currentExpr,enumElemTy,currentExpr.Range,currentTy)
-        ResultOrException.Result(enumeratorVar, enumeratorExpr,retTypeOfGetEnumerator,enumElemTy,getEnumExpr,getEnumTy, guardExpr,guardTy, betterCurrentExpr)
+        Result(enumeratorVar, enumeratorExpr,retTypeOfGetEnumerator,enumElemTy,getEnumExpr,getEnumTy, guardExpr,guardTy, betterCurrentExpr)
 
     // First try the original known static type
-    match (if isArray1DTy cenv.g exprty then ResultOrException.Exception (Failure "") else tryType (expr,exprty)) with 
-    | ResultOrException.Result res  -> res
-    | ResultOrException.Exception e -> 
+    match (if isArray1DTy cenv.g exprty then Exception (Failure "") else tryType (expr,exprty)) with 
+    | Result res  -> res
+    | Exception e -> 
 
     let probe ty =
         if (AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m ty exprty) then 
             match tryType (mkCoerceExpr(expr,ty,expr.Range,exprty),ty) with 
-            | ResultOrException.Result res  -> Some res
-            | ResultOrException.Exception e -> raise e
+            | Result res  -> Some res
+            | Exception e -> raise e
         else None
 
     // Next try to typecheck the thing as a sequence
@@ -10421,7 +10421,7 @@ and TcAttribute canFail cenv (env: TcEnv) attrTgt (synAttr: SynAttribute)  =
                 error(Error(FSComp.SR.tcAttributeIsNotValidForLanguageElement(),mAttr))
 
         match ResolveObjectConstructor cenv.nameResolver env.DisplayEnv mAttr ad ty with 
-        | ResultOrException.Exception _ when canFail -> [ ], true
+        | Exception _ when canFail -> [ ], true
         | res -> 
         let item = ForceRaise res
         let attrib = 
