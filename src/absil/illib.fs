@@ -958,3 +958,31 @@ module Shim =
                 System.Text.Encoding.GetEncoding(n)
 
     let mutable FileSystem = DefaultFileSystem() :> IFileSystem 
+
+module Async =
+    module List =
+        let rec private foldImpl (folder, pending : 'T list, state : 'State) =
+            async {
+                match pending with
+                | [] -> return state
+                | el :: pending ->
+                    let! state = folder state el
+                    return! foldImpl (folder, pending, state)
+            }
+        
+        let fold (folder : 'State -> 'T -> Async<'State>) (state : 'State) (list : 'T list) : Async<'State> =
+            foldImpl (folder, list, state)
+
+        let rec private chooseImpl (chooser, chosen : 'U list, pending : 'T list) =
+            async {
+                match pending with
+                | [] -> return List.rev chosen
+                | el :: pending ->
+                    let! result = chooser el
+                    match result with
+                    | None -> return! chooseImpl (chooser, chosen, pending)
+                    | Some result -> return! chooseImpl (chooser, result :: chosen, pending)
+            }
+        
+        let choose (chooser : 'T -> Async<'U option>) (list : 'T list) : Async<'U list> =
+            chooseImpl (chooser, [], list)

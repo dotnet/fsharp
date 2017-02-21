@@ -52,7 +52,7 @@ type internal ErrorScope =
 /// Lookup the global static cache for building the FrameworkTcImports
 type internal FrameworkImportsCache = 
     new : size: int -> FrameworkImportsCache
-    member Get : CompilationThreadToken * TcConfig -> TcGlobals * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list
+    member Get : CompilationThreadToken * TcConfig -> Async<TcGlobals * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list>
     member Clear: CompilationThreadToken -> unit
     member Downsize: CompilationThreadToken -> unit
   
@@ -144,7 +144,7 @@ type internal IncrementalBuilder =
       member ThereAreLiveTypeProviders : bool
 #endif
       /// Perform one step in the F# build. Return true if the background work is finished.
-      member Step : CompilationThreadToken * ct: CancellationToken -> bool
+      member Step : CompilationThreadToken -> Async<bool>
 
       /// Get the preceding typecheck state of a slot, without checking if it is up-to-date w.r.t.
       /// the timestamps on files and referenced DLLs prior to this one. Return None if the result is not available.
@@ -158,41 +158,41 @@ type internal IncrementalBuilder =
       /// This is a relatively quick operation.
       ///
       /// This is safe for use from non-compiler threads
-      member AreCheckResultsBeforeFileInProjectReady: filename:string -> bool
+      member AreCheckResultsBeforeFileInProjectReady: filename:string -> Async<bool>
 
       /// Get the preceding typecheck state of a slot. Compute the entire type check of the project up
       /// to the necessary point if the result is not available. This may be a long-running operation.
       ///
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetCheckResultsBeforeFileInProject : CompilationThreadToken * filename:string * ct: CancellationToken -> PartialCheckResults 
+      member GetCheckResultsBeforeFileInProject : CompilationThreadToken * filename:string -> Async<Choice<PartialCheckResults, FSharpErrorInfo>>
 
       /// Get the typecheck state after checking a file. Compute the entire type check of the project up
       /// to the necessary point if the result is not available. This may be a long-running operation.
       ///
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetCheckResultsAfterFileInProject : CompilationThreadToken * filename:string * ct: CancellationToken -> PartialCheckResults 
+      member GetCheckResultsAfterFileInProject : CompilationThreadToken * filename:string -> Async<Choice<PartialCheckResults, FSharpErrorInfo>>
 
       /// Get the typecheck result after the end of the last file. The typecheck of the project is not 'completed'.
       /// This may be a long-running operation.
       ///
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetCheckResultsAfterLastFileInProject : CompilationThreadToken * ct: CancellationToken  -> PartialCheckResults 
+      member GetCheckResultsAfterLastFileInProject : CompilationThreadToken -> Async<Choice<PartialCheckResults, FSharpErrorInfo>>
 
       /// Get the final typecheck result. If 'generateTypedImplFiles' was set on Create then the TypedAssemblyAfterOptimization will contain implementations.
       /// This may be a long-running operation.
       ///
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetCheckResultsAndImplementationsForProject : CompilationThreadToken * ct: CancellationToken  -> PartialCheckResults * IL.ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option
+      member GetCheckResultsAndImplementationsForProject : CompilationThreadToken -> Async<Choice<PartialCheckResults * IL.ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option, FSharpErrorInfo>>
 
       /// Get the logical time stamp that is associated with the output of the project if it were gully built immediately
-      member GetLogicalTimeStampForProject: CompilationThreadToken -> DateTime
+      member GetLogicalTimeStampForProject: CompilationThreadToken -> Async<DateTime>
 
       /// Await the untyped parse results for a particular slot in the vector of parse results.
       ///
       /// This may be a marginally long-running operation (parses are relatively quick, only one file needs to be parsed)
-      member GetParseResultsForFile : CompilationThreadToken * filename:string * ct: CancellationToken -> Ast.ParsedInput option * Range.range * string * (PhasedDiagnostic * FSharpErrorSeverity) list
+      member GetParseResultsForFile : CompilationThreadToken * filename:string -> Async<Choice<Ast.ParsedInput option * Range.range * string * (PhasedDiagnostic * FSharpErrorSeverity) list, FSharpErrorInfo>>
 
-      static member TryCreateBackgroundBuilderForProjectOptions : CompilationThreadToken * ReferenceResolver.Resolver * FrameworkImportsCache * scriptClosureOptions:LoadClosure option * sourceFiles:string list * commandLineArgs:string list * projectReferences: IProjectReference list * projectDirectory:string * useScriptResolutionRules:bool * keepAssemblyContents: bool * keepAllBackgroundResolutions: bool * maxTimeShareMilliseconds: int64 -> IncrementalBuilder option * FSharpErrorInfo list 
+      static member TryCreateBackgroundBuilderForProjectOptions : CompilationThreadToken * ReferenceResolver.Resolver * FrameworkImportsCache * scriptClosureOptions:LoadClosure option * sourceFiles:string list * commandLineArgs:string list * projectReferences: IProjectReference list * projectDirectory:string * useScriptResolutionRules:bool * keepAssemblyContents: bool * keepAllBackgroundResolutions: bool * maxTimeShareMilliseconds: int64 -> Async<IncrementalBuilder option * FSharpErrorInfo list>
 
       static member KeepBuilderAlive : IncrementalBuilder option -> IDisposable
       member IsBeingKeptAliveApartFromCacheEntry : bool
@@ -237,12 +237,12 @@ module internal IncrementalBuild =
         val Map : string -> (CompilationThreadToken -> 'I -> 'O) -> Vector<'I> -> Vector<'O>
         /// Updates the creates a new vector with the same items but with 
         /// timestamp specified by the passed-in function.  
-        val Stamp : string -> (CompilationThreadToken -> 'I -> System.DateTime) -> Vector<'I> -> Vector<'I>
+        val Stamp : string -> (CompilationThreadToken -> 'I -> Async<System.DateTime>) -> Vector<'I> -> Vector<'I>
         /// Apply a function to each element of the vector, threading an accumulator argument
         /// through the computation. Returns intermediate results in a vector.
         val ScanLeft : string -> (CompilationThreadToken -> 'A -> 'I -> Eventually<'A>) -> Scalar<'A> -> Vector<'I> -> Vector<'A>
         /// Apply a function to a vector to get a scalar value.
-        val Demultiplex : string -> (CompilationThreadToken -> 'I[] -> 'O)->Vector<'I> -> Scalar<'O>
+        val Demultiplex : string -> (CompilationThreadToken -> 'I[] -> Async<'O>) -> Vector<'I> -> Scalar<'O>
         /// Convert a Vector into a Scalar.
         val AsScalar: string -> Vector<'I> -> Scalar<'I[]> 
 
@@ -252,13 +252,13 @@ module internal IncrementalBuild =
     val LocallyInjectCancellationFault : unit -> IDisposable
     
     /// Evaluate a build. Only required for unit testing.
-    val Eval : CompilationThreadToken -> (CompilationThreadToken -> PartialBuild -> unit) -> CancellationToken -> INode -> PartialBuild -> PartialBuild
+    val Eval : CompilationThreadToken -> (CompilationThreadToken -> PartialBuild -> unit) -> INode -> PartialBuild -> Async<PartialBuild>
 
     /// Evaluate a build for a vector up to a limit. Only required for unit testing.
-    val EvalUpTo : CompilationThreadToken -> (CompilationThreadToken -> PartialBuild -> unit) -> CancellationToken -> INode * int -> PartialBuild -> PartialBuild
+    val EvalUpTo : CompilationThreadToken -> (CompilationThreadToken -> PartialBuild -> unit) -> INode * int -> PartialBuild -> Async<PartialBuild>
 
     /// Do one step in the build. Only required for unit testing.
-    val Step : CompilationThreadToken -> (CompilationThreadToken -> PartialBuild -> unit) -> CancellationToken -> Target -> PartialBuild -> PartialBuild option
+    val Step : CompilationThreadToken -> (CompilationThreadToken -> PartialBuild -> unit) -> Target -> PartialBuild -> Async<PartialBuild option>
     /// Get a scalar vector. Result must be available. Only required for unit testing.
     val GetScalarResult : Scalar<'T> * PartialBuild -> ('T * System.DateTime) option
     /// Get a result vector. All results must be available or thrown an exception. Only required for unit testing.
