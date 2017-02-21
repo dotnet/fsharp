@@ -1813,7 +1813,7 @@ type IncrementalBuilder(ctokCtor: CompilationThreadToken, frameworkTcImportsCach
 
             /// Create a type-check configuration
             let tcConfigB, sourceFilesNew = 
-                let defaultFSharpBinariesDir = Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler.Value
+                let defaultFSharpBinariesDir = Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None).Value
                     
                 // see also fsc.fs:runFromCommandLineToImportingAssemblies(), as there are many similarities to where the PS creates a tcConfigB
                 let tcConfigB = 

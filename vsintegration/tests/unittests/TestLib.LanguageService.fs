@@ -360,7 +360,7 @@ type LanguageServiceBaseTests() =
     [<OneTimeSetUp>]
     member this.Init() =
 #endif
-        match Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler with 
+        match Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None) with 
         | Some(folder) -> 
             let fscPath = Path.Combine(folder,"fsc.exe")
             System.Diagnostics.Debug.Assert(File.Exists(fscPath), sprintf "Path to fsc.exe (%s) does not exist. Unittests will surely fail. Is Unittest.exe.config stale?" fscPath)

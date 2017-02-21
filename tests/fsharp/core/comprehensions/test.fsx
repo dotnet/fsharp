@@ -3,10 +3,17 @@
 module Core_comprehensions
 #endif
 #light
-let failures = ref false
-let report_failure () = 
-  stderr.WriteLine " NO"; failures := true
-let test s b = stderr.Write(s:string);  if b then stderr.WriteLine " OK" else report_failure() 
+let failures = ref []
+
+let report_failure (s : string) = 
+    stderr.Write" NO: "
+    stderr.WriteLine s
+    failures := !failures @ [s]
+
+let test (s : string) b = 
+    stderr.Write(s)
+    if b then stderr.WriteLine " OK"
+    else report_failure (s)
 
 #if FSCORE_PORTABLE_OLD
 let printfn s = printfn "%s" s
@@ -615,7 +622,7 @@ let pickering() =
 printf "Regressions: 1017\n"
 
 let fails f = try f() |> ignore; false with e -> true
-let check str x = if x then printf "OK: %s\n" str  else (printf "FAILED: %s\n" str;  report_failure ())
+let check str x = if x then printf "OK: %s\n" str  else (printf "FAILED: %s\n" str;  report_failure (str))
 
 let rec steps x dx n = if n=0 then [] else x :: steps (x+dx) dx (n-1)
 
@@ -843,9 +850,12 @@ module MoreSequenceSyntaxTests =
                             return 2 }  
         let x0m = async { printfn "hello" }
 
+#if TESTS_AS_APP
+#else
         let f103 () = 
             async { do! Async.SwitchToNewThread()
                     do! Async.SwitchToNewThread() }
+#endif
 
 
     module AmbiguityTests1 = 
@@ -940,6 +950,8 @@ module SyncMonad =
            sync { printfn "hello" }
 
 
+#if TESTS_AS_APP
+#else
     type ThreadBuilder () = 
         inherit SyncBuilder()
         member x.Run(f) = async { do! Async.SwitchToNewThread()
@@ -989,6 +1001,7 @@ module SyncMonad =
                        return 2 }  
         let x0m : unit = 
            thread { printfn "hello" }
+#endif
    
 module ContMonad = 
     type Cont<'a> = (('a -> unit) * (exn -> unit) -> unit)
@@ -1433,7 +1446,6 @@ module EnumPatternWithFunkyTypes_FSharp_1_0_13904 =
     // This is allowed - 'a is known to be "bool"
     let s = seq { for i in T true -> i }
 
-
 module SideEffectListMonad =
     type SideEffectListWithReturnBuilder(onReturn, onZero) =
         member b.Bind(x:unit,f) :list<'b> = f()
@@ -1473,8 +1485,17 @@ module SideEffectListMonad =
         test "x0b" (x0b = ([1], 1))
 
 
+#if TESTS_AS_APP
+let RUN() = !failures
+#else
 let aa =
-  if !failures then (stdout.WriteLine "Test Failed"; exit 1) 
-  else (stdout.WriteLine "Test Passed"; 
-        System.IO.File.WriteAllText("test.ok","ok"); 
-        exit 0)
+  match !failures with 
+  | [] -> 
+      stdout.WriteLine "Test Passed"
+      System.IO.File.WriteAllText("test.ok","ok")
+      exit 0
+  | _ -> 
+      stdout.WriteLine "Test Failed"
+      exit 1
+#endif
+
