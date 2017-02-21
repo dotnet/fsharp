@@ -614,7 +614,7 @@ module Cancellable =
             match res with Choice1Of2 r -> ret r | Choice2Of2 err -> handler err)
     
     // /// Run the cancellable computation within an Async computation.  This isn't actaully used in the codebase, but left
-    // here in case we need it ni the future 
+    // here in case we need it in the future 
     //
     // let toAsync e =    
     //     async { 

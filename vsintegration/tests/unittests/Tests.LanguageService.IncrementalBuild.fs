@@ -339,7 +339,7 @@ type IncrementalBuild() =
         printf "-[Step1]----------------------------------------------------------------------------------------\n"
         // Evaluate the first time.
         let cache = TimeStampCache(System.DateTime.Now)
-        let bound = Eval cachs ctok save mapped bound  |> Cancellable.runWithoutCancellation
+        let bound = Eval cache ctok save mapped bound  |> Cancellable.runWithoutCancellation
         let r = GetVectorResult (mapped,bound)
         Assert.AreEqual("File2.fs.Suffix1",r.[1])
             
