@@ -58,9 +58,9 @@ fi)
 fi)
 
 #TODO: work out how to avoid the need for this
-chmod u+x packages/FSharp.Compiler.Tools.4.0.1.19/tools/fsi.exe 
-chmod u+x packages/FsLexYacc.7.0.3/build/fslex.exe
-chmod u+x packages/FsLexYacc.7.0.3/build/fsyacc.exe
+chmod u+x packages/FSharp.Compiler.Tools.4.0.1.21/tools/fsi.exe 
+chmod u+x packages/FsLexYacc.7.0.4/build/fslex.exe
+chmod u+x packages/FsLexYacc.7.0.4/build/fsyacc.exe
 
 # The FSharp.Compiler.Tools package doesn't work correctly unless a proper install of F# has been done on the machine.
 # OSX can skip this because the OSX Mono installer includes F#.

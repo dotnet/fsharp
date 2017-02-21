@@ -2770,22 +2770,37 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
             [tcConfig.MakePathAbsolute x]
         | None -> 
 #if ENABLE_MONO_SUPPORT
-            // When running on Mono we lead everyone to believe we're doing .NET 2.0 compilation 
-            // by default. 
             if runningOnMono then 
-                [System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()]
+                [ let runtimeRoot = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
+                  let runtimeRootWithoutSlash = runtimeRoot.TrimEnd('/', '\\')
+                  let api = runtimeRootWithoutSlash + "-api"
+                  yield runtimeRoot // The defaut FSharp.Core is found in lib/mono/4.5
+                  if Directory.Exists(api) then
+                     yield api
+                     let facades = Path.Combine(api, "Facades")
+                     if Directory.Exists(facades) then
+                        yield facades
+                  let facades = Path.Combine(runtimeRoot, "Facades")
+                  if Directory.Exists(facades) then
+                     yield facades
+                ]
             else                                
 #endif
                 try 
+                  [ 
                     match tcConfig.resolutionEnvironment with
 #if !FSI_TODO_NETCORE
                     | ReferenceResolver.RuntimeLike ->
-                        [System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()] 
+                        yield System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory() 
 #endif
                     | _ -> 
                         let frameworkRoot = tcConfig.referenceResolver.DotNetFrameworkReferenceAssembliesRootDirectory
                         let frameworkRootVersion = Path.Combine(frameworkRoot,tcConfig.targetFrameworkVersion)
-                        [frameworkRootVersion]
+                        yield frameworkRootVersion
+                        let facades = Path.Combine(frameworkRootVersion, "Facades")
+                        if Directory.Exists(facades) then
+                            yield facades
+                  ]                    
                 with e -> 
                     errorRecovery e range0; [] 
 
@@ -3408,13 +3423,13 @@ type TcAssemblyResolutions(results : AssemblyResolution list, unresolved : Unres
     member tcResolutions.TryFindByResolvedPath nm = resolvedPathToResolution.TryFind nm
     member tcResolutions.TryFindByOriginalReferenceText nm = originalReferenceToResolution.TryFind nm
         
-    static member ResolveAssemblyReferences (ctok,tcConfig:TcConfig,assemblyList:AssemblyReference list, knownUnresolved:UnresolvedAssemblyReference list) : TcAssemblyResolutions =
+    static member ResolveAssemblyReferences (ctok, tcConfig:TcConfig,assemblyList:AssemblyReference list, knownUnresolved:UnresolvedAssemblyReference list) : TcAssemblyResolutions =
         let resolved,unresolved = 
             if tcConfig.useSimpleResolution then 
                 let resolutions = 
                     assemblyList 
                     |> List.map (fun assemblyReference -> 
-                           try
+                           try 
                                Choice1Of2 (tcConfig.ResolveLibWithDirectories (CcuLoadFailureAction.RaiseError, assemblyReference) |> Option.get)
                            with e -> 
                                errorRecovery e assemblyReference.Range
@@ -4767,7 +4782,7 @@ module private ScriptPreprocessClosure =
         let isInteractive = (codeContext = CodeContext.Evaluation)
         let isInvalidationSupported = (codeContext = CodeContext.Editing)
         // always use primary assembly = mscorlib for scripts
-        let tcConfigB = TcConfigBuilder.CreateNew(referenceResolver, Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler.Value, true (* optimize for memory *), projectDir, isInteractive, isInvalidationSupported) 
+        let tcConfigB = TcConfigBuilder.CreateNew(referenceResolver, Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None).Value, true (* optimize for memory *), projectDir, isInteractive, isInvalidationSupported) 
         applyCommandLineArgs tcConfigB
         match basicReferences with 
         | None -> BasicReferencesForScriptLoadClosure(useSimpleResolution, useFsiAuxLib, assumeDotNetFramework) |> List.iter(fun f->tcConfigB.AddReferencedAssemblyByPath(range0,f)) // Add script references

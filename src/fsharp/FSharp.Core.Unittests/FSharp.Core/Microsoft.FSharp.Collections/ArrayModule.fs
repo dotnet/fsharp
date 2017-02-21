@@ -529,7 +529,7 @@ type ArrayModule() =
     [<Test>]
     member this.countBy() =
         // countBy should work on empty array
-        Assert.AreEqual([||], Array.countBy (fun _ -> failwith "should not be executed") [||])
+        Assert.AreEqual(0,Array.countBy (fun _ -> failwith "should not be executed") [||] |> Array.length)
 
         // countBy should not work on null
         CheckThrowsArgumentNullException(fun () -> Array.countBy (fun _ -> failwith "should not be executed") null |> ignore)

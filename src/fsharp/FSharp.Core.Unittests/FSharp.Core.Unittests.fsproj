@@ -63,10 +63,6 @@
         <HintPath Condition="'$(TargetFramework)' != 'profile47' ">..\..\..\packages\System.ValueTuple.4.3.0\lib\portable-net40+sl4+win8+wp8\System.ValueTuple.dll</HintPath>
         <Private>True</Private>
     </Reference>
-    <Reference Include="TupleSample">
-        <HintPath>..\..\..\packages\Microsoft.FSharp.TupleSample.1.0.0-alpha-161121/lib/portable-net40+sl4+win8+wp8/TupleSample.dll</HintPath>
-        <Private>True</Private>
-    </Reference>
   </ItemGroup>
   <ItemGroup Condition="(!$(TargetFramework.Contains('portable'))) and '$(TargetFramework)' != 'coreclr'">
     <Reference Include="mscorlib" />

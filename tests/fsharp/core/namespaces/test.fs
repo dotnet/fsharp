@@ -1,13 +1,24 @@
 // #Conformance #Namespaces #SignatureFiles 
+
+
 namespace Hello.Goodbye
 
-    type A = A | B | C
-
     module Utils = 
-      let failures = ref false
-      let report_failure () = 
-        stderr.WriteLine " NO"; failures := true
-      let test s b = stderr.Write(s:string);  if b then stderr.WriteLine " OK" else report_failure() 
+        let failures = ref []
+
+        let report_failure (s : string) = 
+            stderr.Write" NO: "
+            stderr.WriteLine s
+            failures := !failures @ [s]
+
+        let test (s : string) b = 
+            stderr.Write(s)
+            if b then stderr.WriteLine " OK"
+            else report_failure (s)
+
+        let check s b1 b2 = test s (b1 = b2)
+
+    type A = A | B | C
 
     module X  = 
       let x = 1 
