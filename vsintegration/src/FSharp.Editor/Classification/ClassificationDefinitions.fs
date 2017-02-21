@@ -79,17 +79,20 @@ module internal ClassificationDefinitions =
             fontAndColorStorage.OpenCategory(ref DefGuidList.guidTextEditorFontCategory, uint32 __FCSTORAGEFLAGS.FCSF_READONLY) |> ignore
 
             let formatMap = classificationformatMapService.GetClassificationFormatMap(category = "text")
-            for ctype, (light, dark) in colorData do
-                // we don't touch the changes made by the user
-                if fontAndColorStorage.GetItem(ctype, Array.zeroCreate 1) <> VSConstants.S_OK  then
-                    let ict = classificationTypeRegistry.GetClassificationType(ctype)
-                    let oldProps = formatMap.GetTextProperties(ict)
-                    let newProps = match getCurrentThemeId() with
-                                    | LightTheme -> oldProps.SetForeground light
-                                    | DarkTheme -> oldProps.SetForeground dark
-                                    | UnknownTheme -> oldProps
-                    formatMap.SetTextProperties(ict, newProps)
-            fontAndColorStorage.CloseCategory() |> ignore
+            try 
+                formatMap.BeginBatchUpdate()
+                for ctype, (light, dark) in colorData do
+                    // we don't touch the changes made by the user
+                    if fontAndColorStorage.GetItem(ctype, Array.zeroCreate 1) <> VSConstants.S_OK  then
+                        let ict = classificationTypeRegistry.GetClassificationType(ctype)
+                        let oldProps = formatMap.GetTextProperties(ict)
+                        let newProps = match getCurrentThemeId() with
+                                        | LightTheme -> oldProps.SetForeground light
+                                        | DarkTheme -> oldProps.SetForeground dark
+                                        | UnknownTheme -> oldProps
+                        formatMap.SetTextProperties(ict, newProps)
+                fontAndColorStorage.CloseCategory() |> ignore
+            finally formatMap.EndBatchUpdate()
 
         let handler = ThemeChangedEventHandler setColors
         do VSColorTheme.add_ThemeChanged handler
