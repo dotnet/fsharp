@@ -1344,7 +1344,7 @@ type UsingMSBuild() as this =
 #if VS_VERSION_DEV15
             "4.4.1.0"
 #endif
-        let binariesFolder = match Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler with
+        let binariesFolder = match Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None) with
                              | Some(x) -> x
                              | None -> failwith "Location of binaries folder cannot be found"
 

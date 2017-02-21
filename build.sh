@@ -13,5 +13,7 @@ if [ $rc -ne 0 ]; then
 fi
 
 # This is a very, very limited build script for Mono which bootstraps the compiler
-xbuild src/fsharp-proto-build.proj 
-xbuild build-everything.proj /p:Configuration=release
+echo "xbuild src/fsharp-proto-build.proj  /p:UseMonoPackaging=true"
+xbuild src/fsharp-proto-build.proj  /p:UseMonoPackaging=true
+echo "xbuild build-everything.proj /p:Configuration=release /p:UseMonoPackaging=true"
+xbuild build-everything.proj /p:Configuration=release /p:UseMonoPackaging=true

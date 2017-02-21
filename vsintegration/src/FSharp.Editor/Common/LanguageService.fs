@@ -217,7 +217,8 @@ type
                              CodeSense = true,
                              DefaultToNonHotURLs = true,
                              EnableCommenting = true,
-                             CodeSenseDelay = 100)>]
+                             CodeSenseDelay = 100,
+                             ShowDropDownOptions = true)>]
     internal FSharpPackage() =
     inherit AbstractPackage<FSharpPackage, FSharpLanguageService>()
     
@@ -363,7 +364,6 @@ and
     override this.SetupNewTextView(textView) =
         base.SetupNewTextView(textView)
         let workspace = package.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
-        workspace.Options <- workspace.Options.WithChangedOption(NavigationBarOptions.ShowNavigationBar, FSharpCommonConstants.FSharpLanguageName, true)
         let textViewAdapter = package.ComponentModel.GetService<IVsEditorAdaptersFactoryService>()
         
         workspace.Options <- workspace.Options.WithChangedOption(Completion.CompletionOptions.BlockForCompletionItems, FSharpCommonConstants.FSharpLanguageName, false)
