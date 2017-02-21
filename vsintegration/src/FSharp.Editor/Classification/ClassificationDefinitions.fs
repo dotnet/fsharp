@@ -17,7 +17,6 @@ open Microsoft.VisualStudio.Utilities
 open Microsoft.CodeAnalysis.Classification
 
 open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.VisualStudio.FSharp.LanguageService
 
 [<RequireQualifiedAccess>]
 module internal FSharpClassificationTypes =
@@ -77,9 +76,10 @@ module internal ClassificationDefinitions =
 
         let setColors _ =
             let fontAndColorStorage = serviceProvider.GetService(typeof<SVsFontAndColorStorage>) :?> IVsFontAndColorStorage
-            let fontAndColorCacheManager = serviceProvider.GetService(typeof<SVsFontAndColorCacheManager>) :?> IVsFontAndColorCacheManager)
-            fontAndColorCacheManager.CheckCache( ref VSKnownGuids.TextEditorFontCategory) |> ignore
-            fontAndColorStorage.OpenCategory(ref VSKnownGuids.TextEditorFontCategory, uint32 __FCSTORAGEFLAGS.FCSF_READONLY) |> ignore
+            let fontAndColorCacheManager = serviceProvider.GetService(typeof<SVsFontAndColorCacheManager>) :?> IVsFontAndColorCacheManager
+            let textEditor = Guid("A27B4E24-A735-4D1D-B8E7-9716E1E3D8E0")
+            fontAndColorCacheManager.CheckCache( ref textEditor) |> ignore
+            fontAndColorStorage.OpenCategory(ref textEditor, uint32 __FCSTORAGEFLAGS.FCSF_READONLY) |> ignore
 
             let formatMap = classificationformatMapService.GetClassificationFormatMap(category = "text")
             for ctype, (light, dark) in colorData do
