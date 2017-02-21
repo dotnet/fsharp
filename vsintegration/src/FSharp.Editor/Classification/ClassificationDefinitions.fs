@@ -46,6 +46,9 @@ module internal FSharpClassificationTypes =
         | SemanticClassificationType.Interface -> Interface
 
 module internal ClassificationDefinitions =
+    let private guidVSLightTheme = Guid "de3dbbcd-f642-433c-8353-8f1df4370aba"
+    let private guidVSBlueTheme = Guid "a4d6a176-b948-4b29-8c66-53c97a1ed7d0"
+    let private guidVSDarkTheme = Guid "1ded0138-47ce-435e-84ef-9ec1f439b749"
 
     [<Export>]
     type internal ThemeColors
@@ -56,10 +59,9 @@ module internal ClassificationDefinitions =
             [<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider
         ) =
 
-        let (| LighTheme | DarkTheme | UnknownTheme |) id =
-            if id = Guid("de3dbbcd-f642-433c-8353-8f1df4370aba") ||
-               id = Guid("a4d6a176-b948-4b29-8c66-53c97a1ed7d0") then LighTheme 
-            elif id = Guid("1ded0138-47ce-435e-84ef-9ec1f439b749") then DarkTheme
+        let (| LightTheme | DarkTheme | UnknownTheme |) id =
+            if id = guidVSLightTheme || id = guidVSBlueTheme then LightTheme 
+            elif id = guidVSDarkTheme then DarkTheme
             else UnknownTheme
     
         let getCurrentThemeId() =
@@ -86,7 +88,7 @@ module internal ClassificationDefinitions =
                     let ict = classificationTypeRegistry.GetClassificationType(ctype)
                     let oldProps = formatMap.GetTextProperties(ict)
                     let newProps = match getCurrentThemeId() with
-                                    | LighTheme -> oldProps.SetForeground light
+                                    | LightTheme -> oldProps.SetForeground light
                                     | DarkTheme -> oldProps.SetForeground dark
                                     | UnknownTheme -> oldProps
                     formatMap.SetTextProperties(ict, newProps)
@@ -99,7 +101,7 @@ module internal ClassificationDefinitions =
         member __.GetColor(ctype) =
             let light, dark = colorData |> Map.ofList |> Map.find ctype
             match getCurrentThemeId() with
-            | LighTheme -> Nullable light
+            | LightTheme -> Nullable light
             | DarkTheme -> Nullable dark
             | UnknownTheme -> Nullable()
 
