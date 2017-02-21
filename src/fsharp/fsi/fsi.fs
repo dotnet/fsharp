@@ -2585,7 +2585,7 @@ type internal FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:st
 
     let tcGlobals,tcImports =  
       try 
-          TcImports.BuildTcImports(ctokStartup, tcConfigP) 
+          TcImports.BuildTcImports(ctokStartup, tcConfigP)  |> Cancellable.runWithoutCancellation
       with e -> 
           stopProcessingRecovery e range0; exit 1
 
