@@ -2247,8 +2247,8 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                             let! r = self.ParseAndCheckProjectImpl(opts, ctok)
                             return r.RawFSharpAssemblyData 
                           }
-                        member x.TryGetLogicalTimeStamp(ctok) = 
-                            self.TryGetLogicalTimeStampForProject(ctok, opts)
+                        member x.TryGetLogicalTimeStamp(cache, ctok) = 
+                            self.TryGetLogicalTimeStampForProject(cache, ctok, opts)
                         member x.FileName = nm } ]
 
         let loadClosure = scriptClosureCacheLock.AcquireLock (fun ltok -> scriptClosureCache.TryGet (ltok, options))
@@ -2665,7 +2665,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
       }
 
     /// Get the timestamp that would be on the output if fully built immediately
-    member private bc.TryGetLogicalTimeStampForProject(ctok, options) =
+    member private bc.TryGetLogicalTimeStampForProject(cache, ctok, options) =
 
         // NOTE: This creation of the background builder is currently run as uncancellable.  Creating background builders is generally
         // cheap though the timestamp computations look suspicious for transitive project references.
@@ -2673,7 +2673,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
         use _unwind = IncrementalBuilder.KeepBuilderAlive builderOpt
         match builderOpt with 
         | None -> None
-        | Some builder -> Some (builder.GetLogicalTimeStampForProject(ctok))
+        | Some builder -> Some (builder.GetLogicalTimeStampForProject(cache, ctok))
 
     /// Keep the projet builder alive over a scope
     member bc.KeepProjectAlive(options) =

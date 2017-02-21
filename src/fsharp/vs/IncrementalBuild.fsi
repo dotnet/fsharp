@@ -252,10 +252,10 @@ module internal IncrementalBuild =
     val LocallyInjectCancellationFault : unit -> IDisposable
     
     /// Evaluate a build. Only required for unit testing.
-    val Eval : CompilationThreadToken -> (CompilationThreadToken -> PartialBuild -> unit) -> INode -> PartialBuild -> Cancellable<PartialBuild>
+    val Eval : TimeStampCache -> CompilationThreadToken -> (CompilationThreadToken -> PartialBuild -> unit) -> INode -> PartialBuild -> Cancellable<PartialBuild>
 
     /// Evaluate a build for a vector up to a limit. Only required for unit testing.
-    val EvalUpTo : CompilationThreadToken -> (CompilationThreadToken -> PartialBuild -> unit) -> INode * int -> PartialBuild -> Cancellable<PartialBuild>
+    val EvalUpTo : TimeStampCache -> CompilationThreadToken -> (CompilationThreadToken -> PartialBuild -> unit) -> INode * int -> PartialBuild -> Cancellable<PartialBuild>
 
     /// Do one step in the build. Only required for unit testing.
     val Step : TimeStampCache -> CompilationThreadToken -> (CompilationThreadToken -> PartialBuild -> unit) -> Target -> PartialBuild -> Cancellable<PartialBuild option>
