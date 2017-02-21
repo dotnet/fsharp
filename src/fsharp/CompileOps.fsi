@@ -599,7 +599,7 @@ type TcImports =
     /// Resolve a referenced assembly and report an error if the resolution fails.
     member ResolveAssemblyReference : CompilationThreadToken * AssemblyReference * ResolveAssemblyReferenceMode -> AssemblyResolution list
     /// Try to find the given assembly reference.
-    member TryFindExistingFullyQualifiedPathFromAssemblyRef : ILAssemblyRef -> string option
+    member TryFindExistingFullyQualifiedPathFromAssemblyRef : CompilationThreadToken * ILAssemblyRef -> string option
 #if EXTENSIONTYPING
     /// Try to find a provider-generated assembly
     member TryFindProviderGeneratedAssemblyByName : CompilationThreadToken * assemblyName:string -> System.Reflection.Assembly option

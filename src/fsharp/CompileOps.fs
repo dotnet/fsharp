@@ -2443,6 +2443,13 @@ type AssemblyResolution =
 
     member this.ProjectReference = this.originalReference.ProjectReference
 
+    /// Compute the ILAssemblyRef for a resolved assembly.  This is done by reading the binary if necessary. The result
+    /// is cached.
+    /// 
+    /// For project references in the language service, this would result in a build of the project.
+    /// This is because ``EvaluateRawContents(ctok)`` is used.  However this path is only currently used
+    /// in fsi.fs, which does not use project references.
+    //
     member this.GetILAssemblyRef(ctok) = 
       cancellable {
         match !this.ilAssemblyRef with 
@@ -3410,9 +3417,10 @@ type TcAssemblyResolutions(results : AssemblyResolution list, unresolved : Unres
     member tcResolutions.GetUnresolvedReferences() = unresolved
     member tcResolutions.TryFindByOriginalReference(assemblyReference:AssemblyReference) = originalReferenceToResolution.TryFind assemblyReference.Text
 
-    member tcResolution.TryFindByExactILAssemblyRef assref = 
+    /// This doesn't need to be cancellable, it is only used by F# Interactive
+    member tcResolution.TryFindByExactILAssemblyRef (ctok, assref) = 
         results |> List.tryFind (fun ar->
-            let r = ar.GetILAssemblyRef(AssumeCompilationThreadWithoutEvidence()) |> Cancellable.runWithoutCancellation 
+            let r = ar.GetILAssemblyRef(ctok) |> Cancellable.runWithoutCancellation 
             r = assref)
 
     member tcResolutions.TryFindByResolvedPath nm = resolvedPathToResolution.TryFind nm
@@ -4329,6 +4337,9 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         return dllinfos,ccuinfos
       }
       
+    /// Note that implicit loading is not used for compilations from MSBuild, which passes ``--noframework``
+    /// Implicit loading is done in non-cancellation mode.  Implicit loading is never used in the langauge service, so 
+    /// no cancellation is needed.
     member tcImports.ImplicitLoadIfAllowed (ctok, m, assemblyName, lookupOnly) = 
         CheckDisposed()
         // If the user is asking for the default framework then also try to resolve other implicit assemblies as they are discovered.
@@ -4359,22 +4370,11 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         | _ -> None
 #endif
 
-    member tcImports.TryFindExistingFullyQualifiedPathFromAssemblyRef(assref:ILAssemblyRef) :  string option = 
-        match resolutions.TryFindByExactILAssemblyRef assref with 
+    /// This doesn't need to be cancellable, it is only used by F# Interactive
+    member tcImports.TryFindExistingFullyQualifiedPathFromAssemblyRef(ctok, assref:ILAssemblyRef) :  string option = 
+        match resolutions.TryFindByExactILAssemblyRef (ctok, assref) with 
         | Some r -> Some r.resolvedPath
         | None -> None
-        (*
-                // The assembly may not be in the resolutions, but may be in the load set including EST injected assemblies
-                let assemblyName = assref.Name
-                match tcImports.TryFindDllInfo (range0,assemblyName,lookupOnly=true) with 
-                | Some res -> 
-#if EXTENSIONTYPING
-                    // Provider-generated assemblies don't necessarily have an on-disk representation we can load.
-                    if res.IsProviderGenerated then None else 
-#endif
-                    Some res.FileName
-                | _ -> None
-*)
 
     member tcImports.TryResolveAssemblyReference(ctok, assemblyReference:AssemblyReference, mode:ResolveAssemblyReferenceMode) : OperationResult<AssemblyResolution list> = 
         let tcConfig = tcConfigP.Get(ctok)

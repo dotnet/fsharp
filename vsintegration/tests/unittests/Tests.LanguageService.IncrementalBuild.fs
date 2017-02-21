@@ -149,7 +149,7 @@ type IncrementalBuild() =
         let stamp = ref DateTime.Now
         let Stamp ctok (s:string) = !stamp
         let Map ctok (s:string) = s
-        let Demult ctok (a:string array) : int = a.Length  |> cancellable.Return
+        let Demult ctok (a:string[]) = a.Length  |> cancellable.Return
             
         let buildDesc = new BuildDescriptionScope()
         let inputVector = InputVector<string> "InputVector"
@@ -191,7 +191,7 @@ type IncrementalBuild() =
         let Input() : string array =  [| for i in 1..!elements -> sprintf "Element %d" i |]
         let Stamp ctok s = !timestamp
         let Map ctok (s:string) = sprintf "Mapped %s " s
-        let Result ctok (a:string[]) : string = String.Join(",", a)  |> cancellable.Return
+        let Result ctok (a:string[]) = String.Join(",", a)  |> cancellable.Return
         let now = System.DateTime.Now
         let FixedTimestamp _ctok _  =  now
             
@@ -522,7 +522,10 @@ type IncrementalBuild() =
 
         let cts = new CancellationTokenSource()
         cts.Cancel() 
-        let res = try Eval ctok save cts.Token result bound |> ignore; false with :? OperationCanceledException -> true
+        let res = 
+            match Eval ctok save result bound |> Cancellable.run cts.Token with 
+            | ValueOrCancelled.Cancelled _ -> true
+            | ValueOrCancelled.Value _ -> false
         Assert.AreEqual(res, true)
 
             
