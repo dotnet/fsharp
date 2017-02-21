@@ -72,7 +72,7 @@ module internal ClassificationDefinitions =
         inherit ClassificationFormatDefinition()
         
         do self.DisplayName <- SR.FSharpMutableVarsClassificationType.Value
-           self.ForegroundColor <- Nullable Colors.Red
+           self.ForegroundColor <- Nullable (Color.FromRgb(160uy, 128uy, 0uy))
 
     [<Export(typeof<EditorFormatDefinition>)>]
     [<ClassificationType(ClassificationTypeNames = FSharpClassificationTypes.Printf)>]
