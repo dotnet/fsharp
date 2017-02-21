@@ -26,6 +26,7 @@ type internal FSharpBraceMatchingService
         
     interface IBraceMatcher with
         member this.FindBracesAsync(document, position, cancellationToken) = 
+            Logging.Logging.logInfof "=> FSharpBraceMatchingService.FindBracesAsync\n%s" Environment.StackTrace
             asyncMaybe {
                 let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                 let! sourceText = document.GetTextAsync(cancellationToken)

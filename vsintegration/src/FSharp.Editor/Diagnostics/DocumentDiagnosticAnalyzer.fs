@@ -112,6 +112,7 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
 
     override this.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
         let projectInfoManager = getProjectInfoManager document
+        Cancellation.track "DocumentDiagnosticAnalyzer.AnalyzeSyntaxAsync" cancellationToken
         asyncMaybe {
             let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
             let! sourceText = document.GetTextAsync(cancellationToken)
@@ -126,6 +127,7 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
     override this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
         let projectInfoManager = getProjectInfoManager document
         asyncMaybe {
+            Cancellation.track "DocumentDiagnosticAnalyzer.AnalyzeSyntaxAsync" cancellationToken
             let! options = projectInfoManager.TryGetOptionsForDocumentOrProject(document) 
             let! sourceText = document.GetTextAsync(cancellationToken)
             let! textVersion = document.GetTextVersionAsync(cancellationToken)

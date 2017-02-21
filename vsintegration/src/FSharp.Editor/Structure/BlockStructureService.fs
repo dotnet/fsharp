@@ -110,6 +110,7 @@ type internal FSharpBlockStructureService(checker: FSharpChecker, projectInfoMan
     override __.Language = FSharpCommonConstants.FSharpLanguageName
  
     override __.GetBlockStructureAsync(document, cancellationToken) : Task<BlockStructure> =
+        Cancellation.track "BlockStructureService.GetBlockStructureAsync" cancellationToken
         asyncMaybe {
             let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
             let! sourceText = document.GetTextAsync(cancellationToken)

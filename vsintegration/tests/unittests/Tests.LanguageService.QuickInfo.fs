@@ -3,7 +3,7 @@
 namespace Tests.LanguageService.QuickInfo
 
 open System
-open NUnit.Framework
+open NUnit.Framework 
 open Salsa.Salsa
 open Salsa.VsOpsUtils
 open UnitTests.TestLib.Salsa

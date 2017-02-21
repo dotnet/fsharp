@@ -42,7 +42,8 @@ type internal FSharpNavigationBarItemService
     static let emptyResult: IList<NavigationBarItem> = upcast [||]
 
     interface INavigationBarItemService with
-        member __.GetItemsAsync(document, cancellationToken) : Task<IList<NavigationBarItem>> = 
+        member __.GetItemsAsync(document, cancellationToken) : Task<IList<NavigationBarItem>> =
+            Cancellation.track "FSharpNavigationBarItemService.GetItemsAsync" cancellationToken
             asyncMaybe {
                 let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                 let! sourceText = document.GetTextAsync(cancellationToken)

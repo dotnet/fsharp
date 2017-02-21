@@ -30,6 +30,7 @@ type internal FSharpColorizationService
         member this.AddLexicalClassifications(_: SourceText, _: TextSpan, _: List<ClassifiedSpan>, _: CancellationToken) = ()
         
         member this.AddSyntacticClassificationsAsync(document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
+            Cancellation.track "FSharpColorizationService.AddSyntacticClassificationsAsync" cancellationToken
             async {
                 let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
                 let! sourceText = document.GetTextAsync(cancellationToken)
@@ -37,6 +38,7 @@ type internal FSharpColorizationService
             } |> CommonRoslynHelpers.StartAsyncUnitAsTask cancellationToken
 
         member this.AddSemanticClassificationsAsync(document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
+            Cancellation.track "FSharpColorizationService.AddSemanticClassificationsAsync" cancellationToken
             asyncMaybe {
                 let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                 let! sourceText = document.GetTextAsync(cancellationToken)

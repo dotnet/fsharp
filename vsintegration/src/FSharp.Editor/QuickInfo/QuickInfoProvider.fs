@@ -54,6 +54,7 @@ type internal FSharpQuickInfoProvider
     
     interface IQuickInfoProvider with
         override this.GetItemAsync(document: Document, position: int, cancellationToken: CancellationToken): Task<QuickInfoItem> =
+            Cancellation.track "FSharpQuickInfoProvider.GetItemAsync" cancellationToken
             asyncMaybe {
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
