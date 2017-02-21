@@ -87,7 +87,7 @@ module internal IncrementalBuild =
         /// VectorStamp (uniqueRuleId, outputName, inputs, stampFunction)
         ///
         /// A build rule representing pairing the inputs with a timestamp specified by the given function.  
-        | VectorStamp of Id * string * VectorBuildRule * (CompilationThreadToken -> obj -> DateTime)
+        | VectorStamp of Id * string * VectorBuildRule * (TimeStampCache -> CompilationThreadToken -> obj -> DateTime)
 
         /// VectorMultiplex (uniqueRuleId, outputName, input, taskFunction)
         ///
@@ -508,8 +508,8 @@ module internal IncrementalBuild =
 
     /// Visit each executable action necessary to evaluate the given output (with an optional slot in a
     /// vector output). Call actionFunc with the given accumulator.
-    let ForeachAction ctok (Target(output, optSlot)) bt (actionFunc:Action -> 'T -> 'T) (acc:'T) =
-        let seen = System.Collections.Concurrent.ConcurrentDictionary<Id,bool>()
+    let ForeachAction cache ctok (Target(output, optSlot)) bt (actionFunc:Action -> 'T -> 'T) (acc:'T) =
+        let seen = Dictionary<Id,bool>()
         let isSeen id = 
             if seen.ContainsKey id then true
             else 
@@ -627,7 +627,7 @@ module internal IncrementalBuild =
                                     match inputresult with
                                     | Available(ires,_,_) ->
                                         let oldtimestamp = GetVectorExprResult(bt,ve,slot).Timestamp
-                                        let newtimestamp = func ctok ires
+                                        let newtimestamp = func cache ctok ires
                                         if newtimestamp <> oldtimestamp then 
                                             actionFunc (IndexedAction(id,taskname,slot,cardinality,newtimestamp, fun _ -> Eventually.Done ires)) acc
                                         else acc
@@ -694,14 +694,14 @@ module internal IncrementalBuild =
         | ScalarBuildRule se -> visitScalar se acc
         | VectorBuildRule ve -> visitVector optSlot ve acc                    
 
-    let CollectActions target (bt: PartialBuild) =
+    let CollectActions cache target (bt: PartialBuild) =
         // Explanation: This is a false reuse of 'ForeachAction' where the ctok is unused, we are
         // just iterating to determine if there is work to do. This means this is safe to call from any thread.
         let ctok = AssumeCompilationThreadWithoutEvidence ()
-        ForeachAction ctok target bt (fun a l -> a :: l) []
+        ForeachAction cache ctok target bt (fun a l -> a :: l) []
     
     /// Compute the max timestamp on all available inputs
-    let ComputeMaxTimeStamp ctok output (bt: PartialBuild) acc =
+    let ComputeMaxTimeStamp cache ctok output (bt: PartialBuild) acc =
         let expr = bt.Rules.RuleList |> List.find (fun (s,_) -> s = output) |> snd
         match expr with 
         | VectorBuildRule  (VectorStamp (_id, _taskname, inputExpr, func) as ve) -> 
@@ -709,7 +709,7 @@ module internal IncrementalBuild =
                 | Some cardinality ->    
                     let CheckStamp acc slot = 
                         match GetVectorExprResult (bt,inputExpr,slot) with
-                        | Available(ires,_,_) -> max acc (func ctok ires)
+                        | Available(ires,_,_) -> max acc (func cache ctok ires)
                         | _ -> acc
                     [0..cardinality-1] |> List.fold CheckStamp acc
                 | None -> acc
@@ -765,8 +765,6 @@ module internal IncrementalBuild =
         { new IDisposable with member __.Dispose() =  injectCancellationFault <- false }
 
     /// Apply the result, and call the 'save' function to update the build.  
-    ///
-    /// Will throw OperationCanceledException if the cancellation ctok has been set.
     let ExecuteApply (ctok: CompilationThreadToken) save (action:Action) bt = 
       cancellable {
         let! actionResult = action.Execute(ctok)
@@ -776,9 +774,7 @@ module internal IncrementalBuild =
       }
 
     /// Evaluate the result of a single output
-    ///
-    /// Will throw OperationCanceledException if the cancellation ctok has been set.
-    let EvalLeafsFirst ctok save target bt =
+    let EvalLeafsFirst cache ctok save target bt =
 
         let rec eval(bt,gen) =
           cancellable {
@@ -788,7 +784,7 @@ module internal IncrementalBuild =
             if gen>5000 then failwith "Infinite loop in incremental builder?"
             #endif
 
-            let worklist = CollectActions target bt 
+            let worklist = CollectActions cache target bt 
             
             let! newBt = 
               (bt,worklist) ||> Cancellable.fold (fun bt action -> 
@@ -805,13 +801,11 @@ module internal IncrementalBuild =
         eval(bt,0)
         
     /// Evaluate one step of the build.  Call the 'save' function to save the intermediate result.
-    ///
-    /// Will throw OperationCanceledException if the cancellation ctok has been set.
-    let Step ctok save target (bt:PartialBuild) = 
+    let Step cache ctok save target (bt:PartialBuild) = 
       cancellable {
         // REVIEW: we're building up the whole list of actions on the fringe of the work tree, 
         // executing one thing and then throwing the list away. What about saving the list inside the Build instance?
-        let worklist = CollectActions target bt 
+        let worklist = CollectActions cache target bt 
             
         match worklist with 
         | action::_ -> 
@@ -823,24 +817,22 @@ module internal IncrementalBuild =
             
     /// Evaluate an output of the build.
     ///
-    /// Will throw OperationCanceledException if the cancellation ctok has been set.  Intermediate
-    /// progrewss along the way may be saved through the use of the 'save' function.
-    let Eval ctok save node bt = EvalLeafsFirst ctok save (Target(node,None)) bt
+    /// Intermediate progrewss along the way may be saved through the use of the 'save' function.
+    let Eval cache ctok save node bt = EvalLeafsFirst cache ctok save (Target(node,None)) bt
 
     /// Evaluate an output of the build.
     ///
-    /// Will throw OperationCanceledException if the cancellation ctok has been set.  Intermediate
-    /// progrewss along the way may be saved through the use of the 'save' function.
-    let EvalUpTo ctok save (node, n) bt = EvalLeafsFirst ctok save (Target(node, Some n)) bt
+    /// Intermediate progrewss along the way may be saved through the use of the 'save' function.
+    let EvalUpTo cache ctok save (node, n) bt = EvalLeafsFirst cache ctok save (Target(node, Some n)) bt
 
     /// Check if an output is up-to-date and ready
-    let IsReady target bt = 
-        let worklist = CollectActions target bt 
+    let IsReady cache target bt = 
+        let worklist = CollectActions cache target bt 
         worklist.IsEmpty
         
     /// Check if an output is up-to-date and ready
-    let MaxTimeStampInDependencies ctok target bt = 
-        ComputeMaxTimeStamp ctok target bt DateTime.MinValue 
+    let MaxTimeStampInDependencies cache ctok target bt = 
+        ComputeMaxTimeStamp cache ctok target bt DateTime.MinValue 
 
     /// Get a scalar vector. Result must be available
     let GetScalarResult<'T>(node:Scalar<'T>,bt): ('T*DateTime) option = 
@@ -954,9 +946,9 @@ module internal IncrementalBuild =
             
         /// Creates a new vector with the same items but with 
         /// timestamp specified by the passed-in function.  
-        let Stamp (taskname:string) (task: CompilationThreadToken -> 'I -> DateTime) (input:Vector<'I>): Vector<'I> =
+        let Stamp (taskname:string) (task: TimeStampCache -> CompilationThreadToken -> 'I -> DateTime) (input:Vector<'I>): Vector<'I> =
             let input = input.Expr
-            let expr = VectorStamp (NextId(),taskname,input,(fun ctok x -> task ctok (unbox x)))
+            let expr = VectorStamp (NextId(),taskname,input,(fun cache ctok x -> task cache ctok (unbox x)))
             { new Vector<'I>
               interface IVector with
                    override __.Name = taskname
@@ -1311,6 +1303,8 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
         let flags, isExe = tcConfig.ComputeCanContainEntryPoint(sourceFiles |> List.map snd)
         ((sourceFiles,flags) ||> List.map2 (fun (m,nm) flag -> (m,nm,(flag, isExe))))
 
+    let defaultTimeStamp = DateTime.Now
+
     // The IncrementalBuilder needs to hold up to one item that needs to be disposed, which is the tcImports for the incremental
     // build. 
     let mutable cleanupItem = None: TcImports option
@@ -1337,9 +1331,9 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
     /// This is a build task function that gets placed into the build rules as the computation for a VectorStamp
     ///
     /// Get the timestamp of the given file name.
-    let StampFileNameTask _ctok (_m:range, filename:string, _isLastCompiland) =
+    let StampFileNameTask (cache: TimeStampCache) _ctok (_m:range, filename:string, _isLastCompiland) =
         assertNotDisposed()
-        FileSystem.GetLastWriteTimeShim(filename)
+        cache.GetFileTimeStamp filename
                             
     /// This is a build task function that gets placed into the build rules as the computation for a VectorMap
     ///
@@ -1367,30 +1361,9 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
     /// This is a build task function that gets placed into the build rules as the computation for a Vector.Stamp
     ///
     /// Timestamps of referenced assemblies are taken from the file's timestamp.
-    let TimestampReferencedAssemblyTask ctok (assemblyReference, originalTimeStamp) =
+    let StampReferencedAssemblyTask (cache: TimeStampCache) ctok (_ref, timeStamper) =
         assertNotDisposed()
-        DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
-
-        // Note: we are not calling errorLogger.GetErrors() anywhere. Not a problem because timestamping can't really fail
-        let errorLogger = CompilationErrorLogger("TimestampReferencedAssemblyTask", tcConfig)
-        // Return the disposable object that cleans up
-        use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter) // Parameter because -r reference
-
-        let timestamp = 
-            try
-                match assemblyReference with 
-                | Choice1Of2 (filename) -> 
-                    if FileSystem.SafeExists(filename) then
-                        FileSystem.GetLastWriteTimeShim(filename)
-                    else
-                        originalTimeStamp
-                | Choice2Of2 (pr:IProjectReference) ->
-                    defaultArg (pr.TryGetLogicalTimeStamp(ctok)) originalTimeStamp
-            with exn -> 
-                // Note we are not calling errorLogger.GetErrors() anywhere for this task. This warning will not be reported...
-                errorLogger.Warning exn
-                originalTimeStamp                      
-        timestamp
+        timeStamper cache ctok
                 
          
     /// This is a build task function that gets placed into the build rules as the computation for a Vector.Demultiplex
@@ -1604,11 +1577,11 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
 
     // Inputs
     let fileNamesNode               = InputVector<range*string*(bool*bool)> "FileNames"
-    let referencedAssembliesNode    = InputVector<Choice<string,IProjectReference>*DateTime> "ReferencedAssemblies"
+    let referencedAssembliesNode    = InputVector<Choice<string,IProjectReference>*(TimeStampCache -> CompilationThreadToken -> DateTime)> "ReferencedAssemblies"
         
     // Build
     let stampedFileNamesNode        = Vector.Stamp "SourceFileTimeStamps" StampFileNameTask fileNamesNode
-    let stampedReferencedAssembliesNode = Vector.Stamp "TimestampReferencedAssembly" TimestampReferencedAssemblyTask referencedAssembliesNode
+    let stampedReferencedAssembliesNode = Vector.Stamp "StampReferencedAssembly" StampReferencedAssemblyTask referencedAssembliesNode
     let initialTcAccNode            = Vector.Demultiplex "CombineImportedAssemblies" CombineImportedAssembliesTask stampedReferencedAssembliesNode
 #if FCS_RETAIN_BACKGROUND_PARSE_RESULTS
     let parseTreesNode              = Vector.Map "ParseTrees" ParseTask stampedFileNamesNode
@@ -1659,8 +1632,8 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
         RequireCompilationThread ctok // modifying state
         partialBuild <- b
 
-    let MaxTimeStampInDependencies (ctok: CompilationThreadToken) (output:INode) = 
-        IncrementalBuild.MaxTimeStampInDependencies ctok output.Name partialBuild 
+    let MaxTimeStampInDependencies cache (ctok: CompilationThreadToken) (output:INode) = 
+        IncrementalBuild.MaxTimeStampInDependencies cache ctok output.Name partialBuild 
 
     member this.IncrementUsageCount() = 
         assertNotDisposed() 
@@ -1696,7 +1669,8 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
 
     member __.Step (ctok: CompilationThreadToken) =  
       cancellable {
-        let! res = IncrementalBuild.Step ctok SavePartialBuild (Target(tcStatesNode, None)) partialBuild
+        let cache = TimeStampCache(defaultTimeStamp) // One per step
+        let! res = IncrementalBuild.Step cache ctok SavePartialBuild (Target(tcStatesNode, None)) partialBuild
         match res with 
         | None -> 
             projectChecked.Trigger()
@@ -1719,20 +1693,22 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
     
     member builder.AreCheckResultsBeforeFileInProjectReady (filename) = 
         let slotOfFile = builder.GetSlotOfFileName filename
+        let cache = TimeStampCache(defaultTimeStamp)
         match slotOfFile with
-        | (*first file*) 0 -> IncrementalBuild.IsReady (Target(initialTcAccNode, None)) partialBuild 
-        | _ -> IncrementalBuild.IsReady (Target(tcStatesNode, Some (slotOfFile-1))) partialBuild  
+        | (*first file*) 0 -> IncrementalBuild.IsReady cache (Target(initialTcAccNode, None)) partialBuild 
+        | _ -> IncrementalBuild.IsReady cache (Target(tcStatesNode, Some (slotOfFile-1))) partialBuild  
         
     member builder.GetCheckResultsBeforeSlotInProject (ctok: CompilationThreadToken, slotOfFile) = 
       cancellable {
+        let cache = TimeStampCache(defaultTimeStamp)
         let! result = 
           cancellable {
             match slotOfFile with
             | (*first file*) 0 -> 
-                let! build = IncrementalBuild.Eval ctok SavePartialBuild initialTcAccNode partialBuild
+                let! build = IncrementalBuild.Eval cache ctok SavePartialBuild initialTcAccNode partialBuild
                 return GetScalarResult(initialTcAccNode,build)
             | _ -> 
-                let! build = IncrementalBuild.EvalUpTo ctok SavePartialBuild (tcStatesNode, (slotOfFile-1)) partialBuild
+                let! build = IncrementalBuild.EvalUpTo cache ctok SavePartialBuild (tcStatesNode, (slotOfFile-1)) partialBuild
                 return GetVectorResultBySlot(tcStatesNode,slotOfFile-1,build)  
           }
         
@@ -1754,7 +1730,8 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
 
     member __.GetCheckResultsAndImplementationsForProject(ctok: CompilationThreadToken) = 
       cancellable {
-        let! build = IncrementalBuild.Eval ctok SavePartialBuild finalizedTypeCheckNode partialBuild
+        let cache = TimeStampCache(defaultTimeStamp)
+        let! build = IncrementalBuild.Eval cache ctok SavePartialBuild finalizedTypeCheckNode partialBuild
         match GetScalarResult(finalizedTypeCheckNode,build) with
         | Some ((ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, tcAcc), timestamp) -> 
             return PartialCheckResults.Create (tcAcc,timestamp), ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt
@@ -1762,9 +1739,9 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
             return! failwith "Build was not evaluated, expcted the results to be ready after 'Eval'."
       }
         
-    member __.TryGetLogicalTimeStampForProject(ctok: CompilationThreadToken) = 
-        let t1 = MaxTimeStampInDependencies ctok stampedFileNamesNode 
-        let t2 = MaxTimeStampInDependencies ctok stampedReferencedAssembliesNode 
+    member __.GetLogicalTimeStampForProject(cache, ctok: CompilationThreadToken) = 
+        let t1 = MaxTimeStampInDependencies cache ctok stampedFileNamesNode 
+        let t2 = MaxTimeStampInDependencies cache ctok stampedReferencedAssembliesNode 
         max t1 t2
         
     member __.GetSlotOfFileName(filename:string) =
@@ -1801,7 +1778,8 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
             match GetVectorResultBySlot(stampedFileNamesNode,slotOfFile,partialBuild) with
             | Some (results, _) ->  return results
             | None -> 
-                let! build = IncrementalBuild.EvalUpTo ctok SavePartialBuild (stampedFileNamesNode, slotOfFile) partialBuild  
+                let cache = TimeStampCache(defaultTimeStamp)
+                let! build = IncrementalBuild.EvalUpTo cache ctok SavePartialBuild (stampedFileNamesNode, slotOfFile) partialBuild  
                 match GetVectorResultBySlot(stampedFileNamesNode,slotOfFile,build) with
                 | Some (results, _) -> return results
                 | None -> return! failwith "Build was not evaluated, expcted the results to be ready after 'Eval'."
@@ -1905,23 +1883,18 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
             //
             // This operation is done when constructing the builder itself, rather than as an incremental task. 
             let nonFrameworkAssemblyInputs = 
+                // Note we are not calling errorLogger.GetErrors() anywhere for this task. 
+                // This is ok because not much can actually go wrong here.
+                let errorLogger = CompilationErrorLogger("nonFrameworkAssemblyInputs", tcConfig)
+                // Return the disposable object that cleans up
+                use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter) 
 
                 [ for r in nonFrameworkResolutions do
-                    let originalTimeStamp = 
-                        try 
-                            if FileSystem.SafeExists(r.resolvedPath) then
-                                let result = FileSystem.GetLastWriteTimeShim(r.resolvedPath)
-                                result
-                            else
-                                DateTime.Now                               
-                        with e -> 
-                            // Note we are not calling errorLogger.GetErrors() anywhere for this task. This warning will not be reported...
-                            errorLogger.Warning(e)
-                            DateTime.Now                               
-                    yield (Choice1Of2 r.resolvedPath,originalTimeStamp)  
-                  for pr in projectReferences do 
-                     yield Choice2Of2 pr, defaultArg (pr.TryGetLogicalTimeStamp(ctok)) DateTime.Now  
-                 ]
+                    let fileName = r.resolvedPath
+                    yield (Choice1Of2 fileName, (fun (cache: TimeStampCache) _ctokk -> cache.GetFileTimeStamp fileName))  
+
+                  for pr in projectReferences  do
+                    yield Choice2Of2 pr, (fun (cache: TimeStampCache) ctok -> cache.GetProjectReferenceTimeStamp (pr, ctok)) ]
             
             let builder = 
                 new IncrementalBuilder(tcGlobals,frameworkTcImports,nonFrameworkAssemblyInputs,nonFrameworkResolutions,unresolvedReferences,

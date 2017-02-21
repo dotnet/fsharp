@@ -541,12 +541,18 @@ module Cancellable =
     /// Bind the result of a cancellable computation
     let bind f (Cancellable f1) = 
        Cancellable (fun ct -> 
-           match f1 ct with 
-           | ValueOrCancelled.Value res1 -> 
-               let (Cancellable f2) = f res1
-               f2 ct 
-           | ValueOrCancelled.Cancelled err1 -> 
-               ValueOrCancelled.Cancelled err1)
+           if ct.IsCancellationRequested then 
+               ValueOrCancelled.Cancelled (OperationCanceledException()) 
+           else
+               match f1 ct with 
+               | ValueOrCancelled.Value res1 -> 
+                   if ct.IsCancellationRequested then 
+                       ValueOrCancelled.Cancelled (OperationCanceledException()) 
+                   else
+                       let (Cancellable f2) = f res1
+                       f2 ct 
+               | ValueOrCancelled.Cancelled err1 -> 
+                   ValueOrCancelled.Cancelled err1)
 
     /// Map the result of a cancellable computation
     let map f (Cancellable f1) = 

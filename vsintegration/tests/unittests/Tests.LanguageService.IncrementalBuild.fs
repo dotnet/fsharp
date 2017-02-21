@@ -14,6 +14,7 @@ open NUnit.Framework.Constraints
 open Salsa.Salsa
 open Salsa.VsOpsUtils               
 open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.IncrementalBuild
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
@@ -77,7 +78,8 @@ type IncrementalBuild() =
         let bound = buildDesc.GetInitialPartialBuild inputs
 
         let DoCertainStep bound = 
-            match IncrementalBuild.Step ctok save (Target(mapped,None)) bound |> Cancellable.runWithoutCancellation with
+            let cache = TimeStampCache(System.DateTime.Now)
+            match IncrementalBuild.Step cache ctok save (Target(mapped,None)) bound |> Cancellable.runWithoutCancellation with
             | Some bound -> bound
             | None -> failwith "Expected to be able to step"
 
@@ -93,7 +95,8 @@ type IncrementalBuild() =
         updateStamp:=false
         bound <- DoCertainStep bound
         bound <- DoCertainStep bound
-        match IncrementalBuild.Step ctok save (Target (mapped, None)) bound  |> Cancellable.runWithoutCancellation with
+        let cache = TimeStampCache(System.DateTime.Now)
+        match IncrementalBuild.Step cache ctok save (Target (mapped, None)) bound  |> Cancellable.runWithoutCancellation with
         | Some bound -> failwith "Build should have stopped"
         | None -> () 
 

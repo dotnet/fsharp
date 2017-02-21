@@ -185,7 +185,7 @@ type internal IncrementalBuilder =
       member GetCheckResultsAndImplementationsForProject : CompilationThreadToken -> Cancellable<PartialCheckResults * IL.ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option>
 
       /// Get the logical time stamp that is associated with the output of the project if it were gully built immediately
-      member TryGetLogicalTimeStampForProject: CompilationThreadToken -> DateTime
+      member GetLogicalTimeStampForProject: TimeStampCache * CompilationThreadToken -> DateTime
 
       /// Await the untyped parse results for a particular slot in the vector of parse results.
       ///
@@ -237,7 +237,7 @@ module internal IncrementalBuild =
         val Map : string -> (CompilationThreadToken -> 'I -> 'O) -> Vector<'I> -> Vector<'O>
         /// Updates the creates a new vector with the same items but with 
         /// timestamp specified by the passed-in function.  
-        val Stamp : string -> (CompilationThreadToken -> 'I -> System.DateTime) -> Vector<'I> -> Vector<'I>
+        val Stamp : string -> (TimeStampCache -> CompilationThreadToken -> 'I -> System.DateTime) -> Vector<'I> -> Vector<'I>
         /// Apply a function to each element of the vector, threading an accumulator argument
         /// through the computation. Returns intermediate results in a vector.
         val ScanLeft : string -> (CompilationThreadToken -> 'A -> 'I -> Eventually<'A>) -> Scalar<'A> -> Vector<'I> -> Vector<'A>
@@ -258,7 +258,7 @@ module internal IncrementalBuild =
     val EvalUpTo : CompilationThreadToken -> (CompilationThreadToken -> PartialBuild -> unit) -> INode * int -> PartialBuild -> Cancellable<PartialBuild>
 
     /// Do one step in the build. Only required for unit testing.
-    val Step : CompilationThreadToken -> (CompilationThreadToken -> PartialBuild -> unit) -> Target -> PartialBuild -> Cancellable<PartialBuild option>
+    val Step : TimeStampCache -> CompilationThreadToken -> (CompilationThreadToken -> PartialBuild -> unit) -> Target -> PartialBuild -> Cancellable<PartialBuild option>
 
     /// Get a scalar vector. Result must be available. Only required for unit testing.
     val GetScalarResult : Scalar<'T> * PartialBuild -> ('T * System.DateTime) option
