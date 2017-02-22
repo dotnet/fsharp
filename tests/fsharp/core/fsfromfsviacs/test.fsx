@@ -1,5 +1,7 @@
 // #Conformance #Interop #Unions 
+#if !NO_LIB_REFERENCE
 open Lib
+#endif
 open FSharpOptionalTests
 
 let failures = ref []
@@ -14,6 +16,11 @@ let test (s : string) b =
     if b then stderr.WriteLine " OK"
     else report_failure (s)
 
+#if NO_LIB_REFERENCE // Test for https://github.com/Microsoft/visualfsharp/issues/2453#issuecomment-280946177
+module TestExtensions = 
+    open CustomExtensions
+
+#else
 let r1 = Lib2.r1
 let r2 = Lib2.r2
 
@@ -28,6 +35,7 @@ let r3 = (Lib2.r3 : string recd3)
 let _ = test "fejio2dw" (r3.recd3field1=4)
 let _ = test "fejio2dw" (r3.recd3field2="c")
 let _ = test "fejio2dw" (LanguagePrimitives.PhysicalEquality r3.recd3field3  r3)
+
 let _ = test "fejio2dw" (Lib2.li1 = [3])
 let _ = test "fejio2dw" (Lib2.lr1 = [r1])
 let _ = test "fejio2dw" (Lib2.oi1 = Some 3)
@@ -144,10 +152,17 @@ let TestAccessibility() =
 
 *)
 
+module TestExtensions = 
+    open CustomExtensions
+    test "dfeweeon" (r1.ExtendFSharpType() = 5)
+    test "dfeweeon" (Lib2().ExtendCSharpType() = 4)
+
+#endif
+
 #if TESTS_AS_APP
 let RUN() = !failures
 #else
-let aa =
+let _ =
   match !failures with 
   | [] -> 
       stdout.WriteLine "Test Passed"
@@ -157,4 +172,3 @@ let aa =
       stdout.WriteLine "Test Failed"
       exit 1
 #endif
-
