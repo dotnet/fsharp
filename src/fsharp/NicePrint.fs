@@ -710,7 +710,7 @@ module private PrintTypes =
         PrintIL.layoutILType denv [] ty ++ argsL
 
     /// Layout '[<attribs>]' above another block 
-    and layoutAttribs denv isStructRecordOrUnionTyconTy kind attrs restL = 
+    and layoutAttribs denv ty kind attrs restL = 
         
         if denv.showAttributes then
             // Don't display DllImport attributes in generated signatures  
@@ -727,7 +727,7 @@ module private PrintTypes =
             | [] -> restL 
             | _  -> squareAngleL (sepListL (rightL (tagPunctuation ";")) (List.map (layoutAttrib denv) attrs)) @@ 
                     restL
-        elif isStructRecordOrUnionTyconTy then
+        elif Tastops.isStructRecordOrUnionTyconTy denv.g ty || HasFSharpAttribute denv.g denv.g.attrib_StructAttribute attrs then
             squareAngleL (wordL (tagClass "Struct")) @@ restL
         else
             match kind with 
@@ -1187,7 +1187,7 @@ module private PrintTastMemberOrVals =
                 layoutNonMemberVal denv (ptps,v,ptau,cxs)
             | Some _ -> 
                 layoutMember denv v
-        layoutAttribs denv false TyparKind.Type v.Attribs vL
+        layoutAttribs denv v.Type TyparKind.Type v.Attribs vL
 
 let layoutMemberSig denv x       = x |> PrintTypes.layoutMemberSig denv 
 let layoutTyparConstraint denv x = x |> PrintTypes.layoutTyparConstraint denv 
@@ -1749,7 +1749,7 @@ module private TastDefinitionPrinting =
                   addMembersAsWithEnd (lhsL ^^ WordL.equals)
               | Some a -> 
                   (lhsL ^^ WordL.equals) --- (layoutType { denv with shortTypeNames = false } a)
-      layoutAttribs denv (Tastops.isStructRecordOrUnionTyconTy g ty) tycon.TypeOrMeasureKind tycon.Attribs reprL
+      layoutAttribs denv ty tycon.TypeOrMeasureKind tycon.Attribs reprL
 
     // Layout: exception definition
     let layoutExnDefn denv  (exnc:Entity) =
