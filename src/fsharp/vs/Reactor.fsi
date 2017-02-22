@@ -10,7 +10,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 type internal IReactorOperations = 
 
     /// Put the operation in thq queue, and return an async handle to its result. 
-    abstract EnqueueAndAwaitOpAsync : description: string * action: (CompilationThreadToken -> CancellationToken -> 'T) -> Async<'T>
+    abstract EnqueueAndAwaitOpAsync : description: string * action: (CompilationThreadToken -> Cancellable<'T>) -> Async<'T>
 
     /// Enqueue an operation and return immediately. 
     abstract EnqueueOp: description: string * action: (CompilationThreadToken -> unit) -> unit
@@ -41,7 +41,7 @@ type internal Reactor =
     member CurrentQueueLength : int
 
     /// Put the operation in the queue, and return an async handle to its result. 
-    member EnqueueAndAwaitOpAsync : description: string * (CompilationThreadToken -> CancellationToken -> 'T) -> Async<'T>
+    member EnqueueAndAwaitOpAsync : description: string * (CompilationThreadToken -> Cancellable<'T>) -> Async<'T>
 
     /// The timespan in milliseconds before background work begins after the operations queue is empty
     member PauseBeforeBackgroundWork : int with get, set

@@ -94,7 +94,7 @@ type ConstraintSolverState =
 
 type ConstraintSolverEnv 
 
-val BakedInTraitConstraintNames : string list
+val BakedInTraitConstraintNames : Set<string>
 
 val MakeConstraintSolverEnv : ContextInfo -> ConstraintSolverState -> range -> DisplayEnv -> ConstraintSolverEnv
 
@@ -102,8 +102,8 @@ val MakeConstraintSolverEnv : ContextInfo -> ConstraintSolverState -> range -> D
 type Trace 
 
 type OptionalTrace =
-  | NoTrace
-  | WithTrace of Trace
+| NoTrace
+| WithTrace of Trace
 
 val SimplifyMeasuresInTypeScheme             : TcGlobals -> bool -> Typars -> TType -> TyparConstraint list -> Typars
 val SolveTyparEqualsTyp                      : ConstraintSolverEnv -> int -> range -> OptionalTrace -> TType -> TType -> OperationResult<unit>

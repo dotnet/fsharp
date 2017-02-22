@@ -492,7 +492,7 @@ let BindTypeVarsToUnknown (tps:Typar list) env =
     let nms = PrettyTypes.PrettyTyparNames (fun _ -> true) (env.typarInfos |> List.map (fun (tp,_) -> tp.Name) ) tps
     (tps,nms) ||> List.iter2 (fun tp nm -> 
             if PrettyTypes.NeedsPrettyTyparName tp  then 
-                tp.Data.typar_id <- ident (nm,tp.Range))      
+                tp.typar_id <- ident (nm,tp.Range))      
     List.fold (fun sofar arg -> BindTypeVar arg UnknownTypeValue sofar) env tps 
 
 let BindCcu (ccu:Tast.CcuThunk) mval env (_g:TcGlobals) = 
@@ -3087,7 +3087,7 @@ and OptimizeModuleExpr cenv env x =
                 mty
             and elimModSpec (mspec:ModuleOrNamespace) = 
                 let mtyp = elimModTy mspec.ModuleOrNamespaceType 
-                mspec.Data.entity_modul_contents <- MaybeLazy.Strict mtyp
+                mspec.entity_modul_contents <- MaybeLazy.Strict mtyp
 
             let rec elimModDef x =                  
                 match x with 

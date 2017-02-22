@@ -24,7 +24,8 @@ Copyright (C) Microsoft Corporation. Apache 2.0 License.
     <!-- Create the output directory in case it doesn't exist yet -->
     <MakeDir Directories="$(IntermediateOutputPath)"/>
     <!-- Run the tool -->
-    <Exec Command="&quot;$(FsiToolPath)\$(FsiToolExe)&quot; --exec &quot;$(MSBuildThisFileDirectory)fssrgen.fsx&quot; &quot;%(FsSrGen.FullPath)&quot; &quot;$(IntermediateOutputPath)%(FsSrGen.Filename).fs&quot;  &quot;$(IntermediateOutputPath)%(FsSrGen.Filename).resx&quot; $(FsSrGenProjectName)" />
+    <Exec Command="&quot;$([System.IO.Path]::GetFullPath('$(FsiToolPath)\$(FsiToolExe)'))&quot; --exec &quot;$(MSBuildThisFileDirectory)fssrgen.fsx&quot; &quot;%(FsSrGen.FullPath)&quot; &quot;$(IntermediateOutputPath)%(FsSrGen.Filename).fs&quot;  &quot;$(IntermediateOutputPath)%(FsSrGen.Filename).resx&quot; $(FsSrGenProjectName)" Condition="'$(OS)' != 'Unix'" />
+    <Exec Command="mono $([System.IO.Path]::GetFullPath('$(FsiToolPath)\$(FsiToolExe)')) --exec &quot;$(MSBuildThisFileDirectory)fssrgen.fsx&quot; &quot;%(FsSrGen.FullPath)&quot; &quot;$(IntermediateOutputPath)%(FsSrGen.Filename).fs&quot;  &quot;$(IntermediateOutputPath)%(FsSrGen.Filename).resx&quot; $(FsSrGenProjectName)" Condition="'$(OS)' == 'Unix'" />
   </Target>
 
   <!-- Process FsSrGen rules. No 'Inputs' and 'Outputs' means this rule always runs if there is any @FsSrGen, even if up-to-date. -->

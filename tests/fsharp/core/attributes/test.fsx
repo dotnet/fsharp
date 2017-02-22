@@ -15,13 +15,23 @@ module Core_attributes
 #r "cslib.dll"
 #endif
 
-let mutable failures : string list = []
-let report_failure msg = 
-  printf "\n................TEST '%s' FAILED...............\n" msg; failures <- failures @ [msg]
+let failures = ref []
+
+let report_failure (s : string) = 
+    stderr.Write" NO: "
+    stderr.WriteLine s
+    failures := !failures @ [s]
+
+let test (s : string) b = 
+    stderr.Write(s)
+    if b then stderr.WriteLine " OK"
+    else report_failure (s)
 
 let check (s:string) e r = 
   if r = e then  stdout.WriteLine (s+": YES") 
-  else (stdout.WriteLine ("\n***** "+s+": FAIL\n"); report_failure s)
+  else (stdout.Write ("\n***** "+s+": FAIL: "); 
+        printfn "Expected '%A', Got '%A'" r e
+        report_failure s)
 
 open System
 open System.Diagnostics
@@ -366,7 +376,7 @@ module CheckGenericParameterAttibutesAndNames =
     if typeof<Cases>.GetMethod("M2").GetGenericArguments().[1].Name <> "V" then report_failure "wrong name on generic parameter (C)" 
     if typeof<Cases>.GetMethod("M3").GetGenericArguments().[0].Name <> "a" then report_failure "unexpected inferred name on generic parameter (D)" 
 
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !TESTS_AS_APP && !FX_PORTABLE_OR_NETSTANDARD
 module CheckAttributesOnElementsWithSignatures = 
 
     let checkOneAttribute msg (cas: _ []) = 
@@ -501,7 +511,7 @@ module ThreadStaticTest = begin
         static val mutable private results : int list
         static member Results with get() = C.results and set v = C.results <- v
 
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !MONO && !FX_PORTABLE_OR_NETSTANDARD
     let N = 1000
     let main() = 
         let t1 = 
@@ -985,36 +995,44 @@ module TestTypeInstantiationsInAttributes =
     let attrs1 = typeof<C1>.GetCustomAttributes(typeof<System.Diagnostics.DebuggerDisplayAttribute>,false) ;
     match attrs1 with 
       | [| (:? System.Diagnostics.DebuggerDisplayAttribute as ca)  |]  -> 
-          check "test423cwo3nh01" ca.Value "{Length}"
-          check "test423cwo3nh02" ca.Target typeof<List<int>>
+          check "test423cwo3nh01a" ca.Value "{Length}"
+          check "test423cwo3nh02a" ca.Target typeof<List<int>>
       | _ -> check "no attribute found" true false
 
     let attrs2 = typeof<C2>.GetCustomAttributes(typeof<System.Diagnostics.DebuggerTypeProxyAttribute>,false) ;
     match attrs2 with 
       | [| (:? System.Diagnostics.DebuggerTypeProxyAttribute as ca)  |]  -> 
-          check "test423cwo3nq01" ca.ProxyTypeName (typeof<ListProxy<int>>).AssemblyQualifiedName
-          check "test423cwo3nq02" ca.Target typeof<List<C1>>
+#if !MONO
+          check "test423cwo3nq01b" ca.ProxyTypeName (typeof<ListProxy<int>>).AssemblyQualifiedName
+#endif
+          check "test423cwo3nq02b" ca.Target typeof<List<C1>>
       | _ -> check "no attribute found" true false
 
     let attrs3 = typeof<C3>.GetCustomAttributes(typeof<System.Diagnostics.DebuggerTypeProxyAttribute>,false) ;
     match attrs3 with 
       | [| (:? System.Diagnostics.DebuggerTypeProxyAttribute as ca)  |]  -> 
-          check "test423cwo3nw01" ca.ProxyTypeName (typeof<ListProxy<int>>).AssemblyQualifiedName
-          check "test423cwo3nw02" ca.Target typeof<List<C1[]>>
+#if !MONO
+          check "test423cwo3nw01c" ca.ProxyTypeName (typeof<ListProxy<int>>).AssemblyQualifiedName
+#endif
+          check "test423cwo3nw02c" ca.Target typeof<List<C1[]>>
       | _ -> check "no attribute found" true false
 
     let attrs4 = typeof<C4>.GetCustomAttributes(typeof<System.Diagnostics.DebuggerTypeProxyAttribute>,false) ;
     match attrs4 with 
       | [| (:? System.Diagnostics.DebuggerTypeProxyAttribute as ca)  |]  -> 
-          check "test423cwo3nd01" ca.ProxyTypeName (typeof<ListProxy<int>>).AssemblyQualifiedName
-          check "test423cwo3nd02" ca.Target typeof<List<C1>[,]>
+#if !MONO
+          check "test423cwo3nd01d" ca.ProxyTypeName (typeof<ListProxy<int>>).AssemblyQualifiedName
+#endif
+          check "test423cwo3nd02d" ca.Target typeof<List<C1>[,]>
       | _ -> check "no attribute found" true false
 
     let attrs5 = typeof<C5>.GetCustomAttributes(typeof<System.Diagnostics.DebuggerTypeProxyAttribute>,false) ;
     match attrs5 with 
       | [| (:? System.Diagnostics.DebuggerTypeProxyAttribute as ca)  |]  -> 
-          check "test423cwo3ng01" ca.ProxyTypeName (typedefof<ListProxy<_>>).AssemblyQualifiedName
-          check "test423cwo3ng02" ca.Target typedefof<List<_>>
+#if !MONO
+          check "test423cwo3ng01e" ca.ProxyTypeName (typedefof<ListProxy<_>>).AssemblyQualifiedName
+#endif
+          check "test423cwo3ng02e" ca.Target typedefof<List<_>>
       | _ -> check "no attribute found" true false
 
 module NullsInAttributes = 
@@ -1291,18 +1309,37 @@ module ParamArrayNullAttribute =
     check "vwcewecioj9" (test3()) "Attr(<null>)"
  
 
+// See https://github.com/fsharp/fsharp/issues/483
+// We do not expect an exception
+module TestFsiLoadOfNonExistentAssembly = 
+    let test() = 
+      try 
+        let log4netType = System.Type.GetType("ThisTypeDoes.Not.Exist, thisAssemblyDoesNotExist")
+        let exists = log4netType <> null
+        if exists then report_failure (sprintf "type existed!")
+        do printfn "%A" exists
+       with e -> 
+         report_failure (sprintf "exception unexpected: %s" e.Message)
+
+    do test()
+
 
 (*-------------------------------------------------------------------------
 !* Test passed?
  *------------------------------------------------------------------------- *)
 
 
+#if TESTS_AS_APP
+let RUN() = !failures
+#else
 let aa =
-  match failures with
-  | [] -> () 
-  | _ ->
-        stdout.WriteLine "Test Failed"; exit 1
+  match !failures with 
+  | [] -> 
+      stdout.WriteLine "Test Passed"
+      System.IO.File.WriteAllText("test.ok","ok")
+      exit 0
+  | _ -> 
+      stdout.WriteLine "Test Failed"
+      exit 1
+#endif
 
-do (stdout.WriteLine "Test Passed"; 
-    System.IO.File.WriteAllText("test.ok","ok"); 
-    exit 0)

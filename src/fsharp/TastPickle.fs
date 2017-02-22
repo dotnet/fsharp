@@ -115,7 +115,7 @@ type WriterState =
   { os: ByteBuffer; 
     oscope: CcuThunk;
     occus: Table<CcuReference>; 
-    otycons: NodeOutTable<EntityData,Tycon>; 
+    otycons: NodeOutTable<EntityData,Entity>; 
     otypars: NodeOutTable<TyparData,Typar>; 
     ovals: NodeOutTable<ValData,Val>;
     ostrings: Table<string>; 
@@ -672,9 +672,9 @@ let pickleObjWithDanglingCcus file g scope p x =
       { os = ByteBuffer.Create 100000; 
         oscope=scope;
         occus= Table<_>.Create "occus"; 
-        otycons=NodeOutTable<_,_>.Create((fun (tc:Tycon) -> tc.Stamp),(fun tc -> tc.LogicalName),(fun tc -> tc.Range),(fun osgn -> osgn.Data),"otycons"); 
-        otypars=NodeOutTable<_,_>.Create((fun (tp:Typar) -> tp.Stamp),(fun tp -> tp.DisplayName),(fun tp -> tp.Range),(fun osgn -> osgn.Data),"otypars"); 
-        ovals=NodeOutTable<_,_>.Create((fun (v:Val) -> v.Stamp),(fun v -> v.LogicalName),(fun v -> v.Range),(fun osgn -> osgn.Data),"ovals");
+        otycons=NodeOutTable<_,_>.Create((fun (tc:Tycon) -> tc.Stamp),(fun tc -> tc.LogicalName),(fun tc -> tc.Range),(fun osgn -> osgn),"otycons"); 
+        otypars=NodeOutTable<_,_>.Create((fun (tp:Typar) -> tp.Stamp),(fun tp -> tp.DisplayName),(fun tp -> tp.Range),(fun osgn -> osgn),"otypars"); 
+        ovals=NodeOutTable<_,_>.Create((fun (v:Val) -> v.Stamp),(fun v -> v.LogicalName),(fun v -> v.Range),(fun osgn -> osgn),"ovals");
         ostrings=Table<_>.Create "ostrings";
         onlerefs=Table<_>.Create "onlerefs";  
         opubpaths=Table<_>.Create "opubpaths";  
@@ -694,9 +694,9 @@ let pickleObjWithDanglingCcus file g scope p x =
      { os = ByteBuffer.Create 100000; 
        oscope=scope;
        occus= Table<_>.Create "occus (fake)"; 
-       otycons=NodeOutTable<_,_>.Create((fun (tc:Tycon) -> tc.Stamp),(fun tc -> tc.LogicalName),(fun tc -> tc.Range),(fun osgn -> osgn.Data),"otycons"); 
-       otypars=NodeOutTable<_,_>.Create((fun (tp:Typar) -> tp.Stamp),(fun tp -> tp.DisplayName),(fun tp -> tp.Range),(fun osgn -> osgn.Data),"otypars"); 
-       ovals=NodeOutTable<_,_>.Create((fun (v:Val) -> v.Stamp),(fun v -> v.LogicalName),(fun v -> v.Range),(fun osgn -> osgn.Data),"ovals");
+       otycons=NodeOutTable<_,_>.Create((fun (tc:Tycon) -> tc.Stamp),(fun tc -> tc.LogicalName),(fun tc -> tc.Range),(fun osgn -> osgn),"otycons"); 
+       otypars=NodeOutTable<_,_>.Create((fun (tp:Typar) -> tp.Stamp),(fun tp -> tp.DisplayName),(fun tp -> tp.Range),(fun osgn -> osgn),"otypars"); 
+       ovals=NodeOutTable<_,_>.Create((fun (v:Val) -> v.Stamp),(fun v -> v.LogicalName),(fun v -> v.Range),(fun osgn -> osgn),"ovals");
        ostrings=Table<_>.Create "ostrings (fake)";
        opubpaths=Table<_>.Create "opubpaths (fake)";
        onlerefs=Table<_>.Create "onlerefs (fake)";
@@ -1515,7 +1515,7 @@ let u_typar_constraints = (u_list_revi u_typar_constraint)
 
 
 #if INCLUDE_METADATA_WRITER
-let p_typar_spec_data (x:TyparData) st = 
+let p_typar_spec_data (x:Typar) st = 
     p_tup5
       p_ident 
       p_attribs
@@ -1542,7 +1542,8 @@ let u_typar_spec_data st =
       typar_flags=TyparFlags(int32 d);
       typar_constraints=e;
       typar_solution=None;
-      typar_xmldoc=g }
+      typar_xmldoc=g;
+      typar_astype= Unchecked.defaultof<_> }
 
 let u_typar_spec st = 
     u_osgn_decl st.itypars u_typar_spec_data st 
@@ -1716,7 +1717,7 @@ and p_recdfield_spec x st =
 and p_rfield_table x st = 
     p_list p_recdfield_spec (Array.toList x.FieldsByIndex) st
 
-and p_entity_spec_data (x:EntityData) st = 
+and p_entity_spec_data (x:Entity) st = 
       p_typar_specs (x.entity_typars.Force(x.entity_range)) st 
       p_string x.entity_logical_name st
       p_option p_string x.entity_compiled_name st
@@ -1974,7 +1975,7 @@ and u_recdfield_spec st =
 
 and u_rfield_table st = MakeRecdFieldsTable (u_list u_recdfield_spec st)
 
-and u_entity_spec_data st : EntityData = 
+and u_entity_spec_data st : Entity = 
     let x1,x2a,x2b,x2c,x3,(x4a,x4b),x6,x7f,x8,x9,x10,x10b,x11,x12,x13,x14,_space = 
        u_tup17
           u_typar_specs
