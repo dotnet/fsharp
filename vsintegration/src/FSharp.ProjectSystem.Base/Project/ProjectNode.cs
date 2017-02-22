@@ -5448,8 +5448,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 return VSConstants.E_FAIL;
             }
-            //Fail if the document names passed are null.
+            
+            // Fail if the document names passed are null.
             if (oldMkDoc == null || newMkDoc == null)
+                return VSConstants.E_INVALIDARG;
+
+            // Fail if the document names passed are equal.
+            if (oldMkDoc == newMkDoc)
                 return VSConstants.E_INVALIDARG;
 
             int hr = VSConstants.S_OK;
