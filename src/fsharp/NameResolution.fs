@@ -427,9 +427,12 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap:Import.Import
                             | firstTy :: _ -> 
                                 match firstTy with 
                                 | ILType.Boxed  tspec | ILType.Value tspec -> 
-                                    let tcref = (tspec |> rescopeILTypeSpec scoref).TypeRef |> Import.ImportILTypeRef amap m
-                                    if isCompiledTupleTyconRef g tcref || tyconRefEq g tcref g.fastFunc_tcr then None
-                                    else Some tcref
+                                    let tref = (tspec |> rescopeILTypeSpec scoref).TypeRef
+                                    if Import.CanImportILTypeRef amap m tref then
+                                        let tcref = tref |> Import.ImportILTypeRef amap m
+                                        if isCompiledTupleTyconRef g tcref || tyconRefEq g tcref g.fastFunc_tcr then None
+                                        else Some tcref
+                                    else None
                                 | _ -> None
                             | _ -> None
                         | _ -> 
