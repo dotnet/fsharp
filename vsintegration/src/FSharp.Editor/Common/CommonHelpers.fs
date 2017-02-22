@@ -566,6 +566,36 @@ module internal Extensions =
             
             isPrivate && declaredInTheFile   
 
+    type FSharpMemberOrFunctionOrValue with
+      // FullType may raise exceptions (see https://github.com/fsharp/fsharp/issues/307).
+        member x.FullTypeSafe = Option.attempt (fun _ -> x.FullType)
+        member x.IsConstructor = x.CompiledName = ".ctor"
+        member x.IsOperatorOrActivePattern =
+            let name = x.DisplayName
+            if name.StartsWith "( " && name.EndsWith " )" && name.Length > 4
+            then name.Substring (2, name.Length - 4) |> String.forall (fun c -> c <> ' ')
+            else false
+        member x.EnclosingEntitySafe =
+            try
+                Some x.EnclosingEntity
+            with :? InvalidOperationException -> None
+
+    type FSharpEntity with
+        member x.AllBaseTypes =
+            let rec allBaseTypes (entity:FSharpEntity) =
+                [
+                    match entity.TryFullName with
+                    | Some _ ->
+                        match entity.BaseType with
+                        | Some bt ->
+                            yield bt
+                            if bt.HasTypeDefinition then
+                                yield! allBaseTypes bt.TypeDefinition
+                        | _ -> ()
+                    | _ -> ()
+                ]
+            allBaseTypes x
+
     type FSharpNavigationDeclarationItem with
         member x.RoslynGlyph : Glyph =
             match x.GlyphMajor with
