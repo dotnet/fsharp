@@ -261,11 +261,16 @@ and
  
         this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Completion.CompletionOptions.BlockForCompletionItems, FSharpCommonConstants.FSharpLanguageName, false)
         this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Shared.Options.ServiceFeatureOnOffOptions.ClosedFileDiagnostic, FSharpCommonConstants.FSharpLanguageName, Nullable false)    
-
+        let openedProjects = MailboxProcessor<IProvideProjectSite>.Start <| fun inbox -> 
+            async {
+                while true do
+                let! siteProvider = inbox.Receive()
+                this.SetupProjectFile(siteProvider, this.Workspace)            
+            }
+            
         Events.SolutionEvents.OnAfterOpenProject.Add <| fun args ->
             match args.Hierarchy with
-            | :? IProvideProjectSite as siteProvider -> 
-                this.SetupProjectFile(siteProvider, this.Workspace)
+            | :? IProvideProjectSite as siteProvider -> openedProjects.Post(siteProvider)
             | _ -> ()
         
     /// Sync the information for the project 
