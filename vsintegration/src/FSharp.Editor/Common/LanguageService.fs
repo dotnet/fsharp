@@ -257,21 +257,17 @@ and
         if String.IsNullOrWhiteSpace projectFileName then projectFileName
         else Path.GetFileNameWithoutExtension projectFileName
 
-    let openedProjects = Queue<IProvideProjectSite>()
+    override this.Initialize() =
+        base.Initialize()
+ 
+        this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Completion.CompletionOptions.BlockForCompletionItems, FSharpCommonConstants.FSharpLanguageName, false)
+        this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Shared.Options.ServiceFeatureOnOffOptions.ClosedFileDiagnostic, FSharpCommonConstants.FSharpLanguageName, Nullable false)    
 
-    do
-      Events.SolutionEvents.OnAfterOpenProject.Add (fun (args: Events.OpenProjectEventArgs) -> 
-        match args.Hierarchy with
-        | :? IProvideProjectSite as siteProvider ->
-            openedProjects.Enqueue(siteProvider)            
-        | _ -> ())
-        
-    member this.BatchSetupProjects() =    
-        if openedProjects.Count > 0 then    
-            let workspace = package.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
-            for siteProvider in openedProjects do
-                this.SetupProjectFile(siteProvider, workspace)
-            openedProjects.Clear()
+        Events.SolutionEvents.OnAfterOpenProject.Add <| fun args ->
+            match args.Hierarchy with
+            | :? IProvideProjectSite as siteProvider -> 
+                this.SetupProjectFile(siteProvider, this.Workspace)
+            | _ -> ()
         
     /// Sync the information for the project 
     member this.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, site: IProjectSite, forceUpdate) =
@@ -363,11 +359,8 @@ and
 
     override this.SetupNewTextView(textView) =
         base.SetupNewTextView(textView)
-        let workspace = package.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
+
         let textViewAdapter = package.ComponentModel.GetService<IVsEditorAdaptersFactoryService>()
-        
-        workspace.Options <- workspace.Options.WithChangedOption(Completion.CompletionOptions.BlockForCompletionItems, FSharpCommonConstants.FSharpLanguageName, false)
-        workspace.Options <- workspace.Options.WithChangedOption(Shared.Options.ServiceFeatureOnOffOptions.ClosedFileDiagnostic, FSharpCommonConstants.FSharpLanguageName, Nullable false)
                
         match textView.GetBuffer() with
         | (VSConstants.S_OK, textLines) ->
@@ -376,38 +369,11 @@ and
             | Some (hier, _) ->
                 match hier with
                 | :? IProvideProjectSite as siteProvider when not (IsScript(filename)) -> 
-                    this.SetupProjectFile(siteProvider, workspace)
+                    this.SetupProjectFile(siteProvider, this.Workspace)
                 | _ -> 
                     let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
-                    this.SetupStandAloneFile(filename, fileContents, workspace, hier)
+                    this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
             | _ -> ()
         | _ -> ()
 
-        // This is the second half of the bridge between the F# IncrementalBuild analysis engine and the Roslyn analysis
-        // engine.  When a document gets the focus, we call FSharpLanguageService.Checker.StartBackgroundCompile for the
-        // project containing that file. This ensures the F# IncrementalBuild engine starts analyzing the project.
-        let wpfTextView = textViewAdapter.GetWpfTextView(textView)
-        match wpfTextView.TextBuffer.Properties.TryGetProperty<ITextDocument>(typeof<ITextDocument>) with
-        | true, textDocument ->
-            let filePath = textDocument.FilePath
-            let onGotFocus = new EventHandler(fun _ _ ->
-                for documentId in workspace.CurrentSolution.GetDocumentIdsWithFilePath(filePath) do 
-                    let document = workspace.CurrentSolution.GetDocument(documentId)
-                    match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document) with 
-                    | Some options -> checkerProvider.Checker.StartBackgroundCompile(options)
-                    | None -> ()
-            )
-            let rec onViewClosed = new EventHandler(fun _ _ -> 
-                wpfTextView.GotAggregateFocus.RemoveHandler(onGotFocus)
-                wpfTextView.Closed.RemoveHandler(onViewClosed)
-            )
-            wpfTextView.GotAggregateFocus.AddHandler(onGotFocus)
-            wpfTextView.Closed.AddHandler(onViewClosed)
-        | _ -> ()
-
-        // When the text view is opened, setup all remaining projects on the background.
-        async {
-            do this.BatchSetupProjects()
-        }
-        |> Async.StartImmediate
-            
+      
