@@ -15,6 +15,7 @@ open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
 
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open Microsoft.FSharp.Compiler.Range
 
 type internal FSharpHighlightSpan =
     { IsDefinition: bool
@@ -56,7 +57,7 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
         asyncMaybe {
             let textLine = sourceText.Lines.GetLineFromPosition(position)
             let textLinePos = sourceText.Lines.GetLinePosition(position)
-            let fcsTextLineNumber = textLinePos.Line + 1
+            let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let! symbol = CommonHelpers.getSymbolAtPosition(documentKey, sourceText, position, filePath, defines, SymbolLookupKind.Greedy)
             let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true)
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland)
