@@ -159,17 +159,10 @@ module TestExtensions =
 
 #endif
 
-
-let _ = 
-  if failures then (stdout.WriteLine "Test Failed"; exit 1) 
-  else (stdout.WriteLine "Test Passed"; 
-        System.IO.File.WriteAllText("test.ok","ok"); 
-        exit 0)
-
 #if TESTS_AS_APP
 let RUN() = !failures
 #else
-let aa =
+let _ =
   match !failures with 
   | [] -> 
       stdout.WriteLine "Test Passed"
