@@ -134,6 +134,10 @@ do test "ilistSum"          (expectedArraySum   = ilistSum      )
 do test "rangeSum"          (expectedRangeSum   = rangeSum      )
 do test "stringSum"         (expectedStringSum  = stringSum     )
 
+#if TESTS_AS_APP
+let RUN() = !failures
+#else
 let aa =
     if !failures then stdout.WriteLine "Test Failed"; exit 1
     else stdout.WriteLine "Test Passed"; System.IO.File.WriteAllText("test.ok","ok"); exit 0
+#endif

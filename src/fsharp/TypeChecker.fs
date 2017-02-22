@@ -1317,7 +1317,7 @@ let UpdateAccModuleOrNamespaceType cenv env f =
     if cenv.compilingCanonicalFslibModuleType then 
         let nleref = mkNonLocalEntityRef cenv.topCcu (arrPathOfLid env.ePath)
         let modul = nleref.Deref
-        modul.Data.entity_modul_contents <- MaybeLazy.Strict (f true modul.ModuleOrNamespaceType)
+        modul.entity_modul_contents <- MaybeLazy.Strict (f true modul.ModuleOrNamespaceType)
     SetCurrAccumulatedModuleOrNamespaceType env (f false (GetCurrAccumulatedModuleOrNamespaceType env))
   
 let PublishModuleDefn cenv env mspec = 
@@ -3253,12 +3253,12 @@ let AnalyzeArbitraryExprAsEnumerable cenv (env: TcEnv) localAlloc m exprty expr 
     let err k ty = 
         let txt = NicePrint.minimalStringOfType env.DisplayEnv ty
         let msg = if k then FSComp.SR.tcTypeCannotBeEnumerated(txt) else FSComp.SR.tcEnumTypeCannotBeEnumerated(txt)
-        ResultOrException.Exception(Error(msg,m))
+        Exception(Error(msg,m))
 
     let findMethInfo k m nm ty = 
         match TryFindIntrinsicOrExtensionMethInfo cenv env m ad nm ty with 
         | [] -> err k ty
-        | res :: _ -> ResultOrException.Result res  
+        | res :: _ -> Result res  
        
       
     // Ensure there are no curried arguments, and indeed no arguments at all
@@ -3269,16 +3269,16 @@ let AnalyzeArbitraryExprAsEnumerable cenv (env: TcEnv) localAlloc m exprty expr 
 
     let tryType (exprToSearchForGetEnumeratorAndItem,tyToSearchForGetEnumeratorAndItem) = 
         match findMethInfo true m "GetEnumerator" tyToSearchForGetEnumeratorAndItem with 
-        | ResultOrException.Exception e -> ResultOrException.Exception e
-        | ResultOrException.Result getEnumerator_minfo  ->
+        | Exception e -> Exception e
+        | Result getEnumerator_minfo  ->
 
         let getEnumerator_minst = FreshenMethInfo m getEnumerator_minfo
         let retTypeOfGetEnumerator = getEnumerator_minfo.GetFSharpReturnTy(cenv.amap, m, getEnumerator_minst)
         if hasArgs getEnumerator_minfo getEnumerator_minst then err true tyToSearchForGetEnumeratorAndItem else
 
         match findMethInfo false m "MoveNext" retTypeOfGetEnumerator with 
-        | ResultOrException.Exception e -> ResultOrException.Exception e
-        | ResultOrException.Result moveNext_minfo        ->
+        | Exception e -> Exception e
+        | Result moveNext_minfo        ->
 
         let moveNext_minst = FreshenMethInfo m moveNext_minfo
         let retTypeOfMoveNext = moveNext_minfo.GetFSharpReturnTy(cenv.amap, m, moveNext_minst)
@@ -3286,8 +3286,8 @@ let AnalyzeArbitraryExprAsEnumerable cenv (env: TcEnv) localAlloc m exprty expr 
         if hasArgs moveNext_minfo moveNext_minst then err false retTypeOfGetEnumerator else
 
         match findMethInfo false m "get_Current" retTypeOfGetEnumerator with 
-        | ResultOrException.Exception e -> ResultOrException.Exception e
-        | ResultOrException.Result get_Current_minfo ->
+        | Exception e -> Exception e
+        | Result get_Current_minfo ->
 
         let get_Current_minst = FreshenMethInfo m get_Current_minfo
         if hasArgs get_Current_minfo get_Current_minst then err false retTypeOfGetEnumerator else
@@ -3362,18 +3362,18 @@ let AnalyzeArbitraryExprAsEnumerable cenv (env: TcEnv) localAlloc m exprty expr 
         let guardExpr  ,guardTy      = BuildPossiblyConditionalMethodCall cenv env DefinitelyMutates m false moveNext_minfo      NormalValUse moveNext_minst [enumeratorExpr] []
         let currentExpr,currentTy    = BuildPossiblyConditionalMethodCall cenv env DefinitelyMutates m true get_Current_minfo   NormalValUse get_Current_minst [enumeratorExpr] []
         let betterCurrentExpr  = mkCoerceExpr(currentExpr,enumElemTy,currentExpr.Range,currentTy)
-        ResultOrException.Result(enumeratorVar, enumeratorExpr,retTypeOfGetEnumerator,enumElemTy,getEnumExpr,getEnumTy, guardExpr,guardTy, betterCurrentExpr)
+        Result(enumeratorVar, enumeratorExpr,retTypeOfGetEnumerator,enumElemTy,getEnumExpr,getEnumTy, guardExpr,guardTy, betterCurrentExpr)
 
     // First try the original known static type
-    match (if isArray1DTy cenv.g exprty then ResultOrException.Exception (Failure "") else tryType (expr,exprty)) with 
-    | ResultOrException.Result res  -> res
-    | ResultOrException.Exception e -> 
+    match (if isArray1DTy cenv.g exprty then Exception (Failure "") else tryType (expr,exprty)) with 
+    | Result res  -> res
+    | Exception e -> 
 
     let probe ty =
         if (AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m ty exprty) then 
             match tryType (mkCoerceExpr(expr,ty,expr.Range,exprty),ty) with 
-            | ResultOrException.Result res  -> Some res
-            | ResultOrException.Exception e -> raise e
+            | Result res  -> Some res
+            | Exception e -> raise e
         else None
 
     // Next try to typecheck the thing as a sequence
@@ -4489,7 +4489,7 @@ and TcTyparDecl cenv env (TyparDecl(synAttrs,(Typar(id,_,_) as stp))) =
     let tp = NewTypar ((if hasMeasureAttr then TyparKind.Measure else TyparKind.Type), TyparRigidity.WarnIfNotRigid,stp,false,TyparDynamicReq.Yes,attrs,hasEqDepAttr,hasCompDepAttr)
     match TryFindFSharpStringAttribute cenv.g cenv.g.attrib_CompiledNameAttribute attrs with 
     | Some compiledName -> 
-        tp.Data.typar_il_name <- Some compiledName
+        tp.typar_il_name <- Some compiledName
     | None ->  
         ()
     let item = Item.TypeVar(id.idText, tp)
@@ -4914,7 +4914,7 @@ and TcTypeApp cenv newOk checkCxs occ env tpenv m tcref pathTypeArgs (args: SynT
     let tps,_,tinst,_ = infoOfTyconRef m tcref
     // If we're not checking constraints, i.e. when we first assert the super/interfaces of a type definition, then just 
     // clear the constraint lists of the freshly generated type variables. A little ugly but fairly localized. 
-    if checkCxs = NoCheckCxs then tps |> List.iter (fun tp -> tp.Data.typar_constraints <- [])
+    if checkCxs = NoCheckCxs then tps |> List.iter (fun tp -> tp.typar_constraints <- [])
     if tinst.Length <> pathTypeArgs.Length + args.Length then 
         error (TyconBadArgs(env.DisplayEnv,tcref,pathTypeArgs.Length + args.Length,m))
     let args',tpenv = 
@@ -10421,7 +10421,7 @@ and TcAttribute canFail cenv (env: TcEnv) attrTgt (synAttr: SynAttribute)  =
                 error(Error(FSComp.SR.tcAttributeIsNotValidForLanguageElement(),mAttr))
 
         match ResolveObjectConstructor cenv.nameResolver env.DisplayEnv mAttr ad ty with 
-        | ResultOrException.Exception _ when canFail -> [ ], true
+        | Exception _ when canFail -> [ ], true
         | res -> 
         let item = ForceRaise res
         let attrib = 
@@ -12341,7 +12341,7 @@ module IncrClassChecking =
             let recdFields = MakeRecdFieldsTable (rfspecs @ tcref.AllFieldsAsList)
 
             // Mutate the entity_tycon_repr to publish the fields
-            tcref.Deref.Data.entity_tycon_repr <- TFSharpObjectRepr { tcref.FSharpObjectModelTypeInfo with fsobjmodel_rfields = recdFields}  
+            tcref.Deref.entity_tycon_repr <- TFSharpObjectRepr { tcref.FSharpObjectModelTypeInfo with fsobjmodel_rfields = recdFields}  
 
 
         /// Given localRep saying how locals have been represented, e.g. as fields.
@@ -13398,13 +13398,13 @@ module MutRecBindingChecking =
     let TcMutRecDefns_UpdateNSContents mutRecNSInfo =
         match mutRecNSInfo with 
         | Some (Some (mspecNS: ModuleOrNamespace), mtypeAcc) -> 
-            mspecNS.Data.entity_modul_contents <- MaybeLazy.Strict !mtypeAcc
+            mspecNS.entity_modul_contents <- MaybeLazy.Strict !mtypeAcc
         | _ -> ()  
 
     /// Updates the types of the modules to contain the contents so far
     let TcMutRecDefns_UpdateModuleContents mutRecNSInfo defns =
         defns |> MutRecShapes.iterModules (fun (MutRecDefnsPhase2DataForModule (mtypeAcc, mspec), _) -> 
-              mspec.Data.entity_modul_contents <- MaybeLazy.Strict !mtypeAcc)  
+              mspec.entity_modul_contents <- MaybeLazy.Strict !mtypeAcc)  
 
         TcMutRecDefns_UpdateNSContents mutRecNSInfo
     
@@ -14149,7 +14149,7 @@ module TcExceptionDeclarations =
           | None -> 
              TExnFresh (MakeRecdFieldsTable args')
         
-        exnc.Data.entity_exn_info <- repr 
+        exnc.entity_exn_info <- repr 
 
         let item = Item.ExnCase(mkLocalTyconRef exnc)
         CallNameResolutionSink cenv.tcSink (id.idRange,env.NameEnv,item,item,ItemOccurence.Binding,env.DisplayEnv,env.eAccessRights)
@@ -14431,10 +14431,10 @@ module EstablishTypeDefinitionCores =
         tycon.SetIsStructRecordOrUnion isStructRecordOrUnionType
 
         // Set the compiled name, if any
-        tycon.Data.entity_compiled_name <- TryFindFSharpStringAttribute cenv.g cenv.g.attrib_CompiledNameAttribute attrs 
+        tycon.entity_compiled_name <- TryFindFSharpStringAttribute cenv.g cenv.g.attrib_CompiledNameAttribute attrs 
 
         if hasMeasureAttr then 
-            tycon.Data.entity_kind <- TyparKind.Measure
+            tycon.entity_kind <- TyparKind.Measure
             if not (isNil typars) then error(Error(FSComp.SR.tcMeasureDefinitionsCannotHaveTypeParameters(),m))
 
         let repr = 
@@ -14502,7 +14502,7 @@ module EstablishTypeDefinitionCores =
                 TFSharpObjectRepr repr
 
         // OK, now fill in the (partially computed) type representation
-        tycon.Data.entity_tycon_repr <- repr
+        tycon.entity_tycon_repr <- repr
         attrs, getFinalAttrs
 
 #if EXTENSIONTYPING
@@ -14598,7 +14598,7 @@ module EstablishTypeDefinitionCores =
                                                       Import.ImportProvidedType cenv.amap m,
                                                       isSuppressRelocate, 
                                                       m=m)
-            tycon.Data.entity_tycon_repr <- repr
+            tycon.entity_tycon_repr <- repr
             // Record the details so we can map System.Type --> TyconRef
             let ilOrigRootTypeRef = GetOriginalILTypeRefOfProvidedType (theRootTypeWithRemapping, m)
             theRootTypeWithRemapping.PUntaint ((fun st -> ignore(lookupTyconRef.Remove(st.RawSystemType)) ; lookupTyconRef.Add(st.RawSystemType, tcref)), m)
@@ -14729,7 +14729,7 @@ module EstablishTypeDefinitionCores =
 #if EXTENSIONTYPING
               // Check we have not already decided that this is a generative provided type definition. If we have already done this (i.e. this is the second pass
               // for a generative provided type definition, then there is no more work to do).
-              if (match tycon.Data.entity_tycon_repr with TNoRepr -> true | _ -> false) then 
+              if (match tycon.entity_tycon_repr with TNoRepr -> true | _ -> false) then 
 
                 // Determine if this is a generative type definition.
                 match TcTyconDefnCore_TryAsGenerateDeclaration cenv envinner tpenv (tycon, rhsType) with 
@@ -14754,7 +14754,7 @@ module EstablishTypeDefinitionCores =
                             errorR(Deprecated(FSComp.SR.tcTypeAbbreviationHasTypeParametersMissingOnType(),tycon.Range))
 
                     if firstPass then
-                        tycon.Data.entity_tycon_abbrev <- Some ty
+                        tycon.entity_tycon_abbrev <- Some ty
 
             | _ -> ()
         
@@ -14781,7 +14781,7 @@ module EstablishTypeDefinitionCores =
                 let implementedTys,_ = List.mapFold (mapFoldFst (TcTypeAndRecover cenv NoNewTypars checkCxs ItemOccurence.UseInType envinner)) tpenv explicitImplements
 
                 if firstPass then 
-                    tycon.Data.entity_attribs <- attrs
+                    tycon.entity_attribs <- attrs
 
                 let implementedTys,inheritedTys = 
                     match synTyconRepr with 
@@ -14891,7 +14891,7 @@ module EstablishTypeDefinitionCores =
             if hasAbstractAttr then 
                 tycon.TypeContents.tcaug_abstract <- true
 
-            tycon.Data.entity_attribs <- attrs
+            tycon.entity_attribs <- attrs
             let noAbstractClassAttributeCheck() = 
                 if hasAbstractAttr then errorR (Error(FSComp.SR.tcOnlyClassesCanHaveAbstract(),m))
                 
@@ -15197,7 +15197,7 @@ module EstablishTypeDefinitionCores =
                               fsobjmodel_rfields= MakeRecdFieldsTable (vfld :: fields') }
                     repr, None, NoSafeInitInfo
             
-            tycon.Data.entity_tycon_repr <- typeRepr
+            tycon.entity_tycon_repr <- typeRepr
             // We check this just after establishing the representation
             if TyconHasUseNullAsTrueValueAttribute cenv.g tycon && not (CanHaveUseNullAsTrueValueAttribute cenv.g tycon) then 
                 errorR(Error(FSComp.SR.tcInvalidUseNullAsTrueValue(),m))
@@ -15267,8 +15267,8 @@ module EstablishTypeDefinitionCores =
         graph.IterateCycles (fun path -> 
             let tycon = path.Head 
             // The thing is cyclic. Set the abbreviation and representation to be "None" to stop later VS crashes
-            tycon.Data.entity_tycon_abbrev <- None
-            tycon.Data.entity_tycon_repr <- TNoRepr
+            tycon.entity_tycon_abbrev <- None
+            tycon.entity_tycon_repr <- TNoRepr
             errorR(Error(FSComp.SR.tcTypeDefinitionIsCyclic(),tycon.Range)))
 
 
@@ -15400,8 +15400,8 @@ module EstablishTypeDefinitionCores =
         graph.IterateCycles (fun path -> 
             let tycon = path.Head 
             // The thing is cyclic. Set the abbreviation and representation to be "None" to stop later VS crashes
-            tycon.Data.entity_tycon_abbrev <- None
-            tycon.Data.entity_tycon_repr <- TNoRepr
+            tycon.entity_tycon_abbrev <- None
+            tycon.entity_tycon_repr <- TNoRepr
             errorR(Error(FSComp.SR.tcTypeDefinitionIsCyclicThroughInheritance(),tycon.Range)))
         
 
@@ -15561,7 +15561,7 @@ module EstablishTypeDefinitionCores =
                 let tyconOpt, fixupFinalAttrs = 
                     match tyconAndAttrsOpt with
                     | None -> None, (fun () -> ())
-                    | Some (tycon, (_prelimAttrs, getFinalAttrs)) -> Some tycon, (fun () -> tycon.Data.entity_attribs <- getFinalAttrs())
+                    | Some (tycon, (_prelimAttrs, getFinalAttrs)) -> Some tycon, (fun () -> tycon.entity_attribs <- getFinalAttrs())
 
                 (origInfo, tyconOpt, fixupFinalAttrs, info))
                 
@@ -16118,7 +16118,7 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
 
                 let! (mtyp,_) = TcModuleOrNamespaceSignatureElementsNonMutRec cenv (Parent (mkLocalModRef mspec)) env (id,modKind,mdefs,m,xml)
 
-                mspec.Data.entity_modul_contents <- MaybeLazy.Strict mtyp 
+                mspec.entity_modul_contents <- MaybeLazy.Strict mtyp 
                 let scopem = unionRanges m endm
                 PublishModuleDefn cenv env mspec
                 let env = AddLocalSubModuleAndReport cenv.tcSink scopem cenv.g cenv.amap m env mspec
@@ -16440,7 +16440,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv:cenv) parent typeNames scopem 
               let! mexpr, topAttrsNew, envAtEnd = TcModuleOrNamespaceElements cenv (Parent (mkLocalModRef mspec)) endm envForModule xml None mdefs 
 
               // Get the inferred type of the decls and record it in the mspec. 
-              mspec.Data.entity_modul_contents <- MaybeLazy.Strict !mtypeAcc  
+              mspec.entity_modul_contents <- MaybeLazy.Strict !mtypeAcc  
               let modDefn = TMDefRec(false,[],[ModuleOrNamespaceBinding.Module(mspec,mexpr)],m)
               PublishModuleDefn cenv env mspec 
               let env = AddLocalSubModuleAndReport cenv.tcSink scopem cenv.g cenv.amap m env mspec
@@ -16627,7 +16627,7 @@ and TcMutRecDefsFinish cenv defs m =
                 binds |> List.map ModuleOrNamespaceBinding.Binding 
             | MutRecShape.Module ((MutRecDefnsPhase2DataForModule(mtypeAcc, mspec), _),mdefs) -> 
                 let mexpr = TcMutRecDefsFinish cenv mdefs m
-                mspec.Data.entity_modul_contents <- MaybeLazy.Strict !mtypeAcc  
+                mspec.entity_modul_contents <- MaybeLazy.Strict !mtypeAcc  
                 [ ModuleOrNamespaceBinding.Module(mspec,mexpr) ])
 
     TMDefRec(true,tycons,binds,m)
