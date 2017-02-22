@@ -250,7 +250,6 @@ and
     internal FSharpLanguageService(package : FSharpPackage) =
     inherit AbstractLanguageService<FSharpPackage, FSharpLanguageService>(package)
 
-    let checkerProvider = package.ComponentModel.DefaultExportProvider.GetExport<FSharpCheckerProvider>().Value
     let projectInfoManager = package.ComponentModel.DefaultExportProvider.GetExport<ProjectInfoManager>().Value
 
     let projectDisplayNameOf projectFileName = 
