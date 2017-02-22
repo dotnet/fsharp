@@ -727,7 +727,8 @@ module private PrintTypes =
             | [] -> restL 
             | _  -> squareAngleL (sepListL (rightL (tagPunctuation ";")) (List.map (layoutAttrib denv) attrs)) @@ 
                     restL
-        elif Tastops.isStructRecordOrUnionTyconTy denv.g ty || HasFSharpAttribute denv.g denv.g.attrib_StructAttribute attrs then
+        elif Tastops.isStructRecordOrUnionTyconTy denv.g ty || 
+             ((Tastops.isUnionTy denv.g ty || Tastops.isRecdTy denv.g ty) && HasFSharpAttribute denv.g denv.g.attrib_StructAttribute attrs) then
             squareAngleL (wordL (tagClass "Struct")) @@ restL
         else
             match kind with 
