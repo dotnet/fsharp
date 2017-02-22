@@ -7,9 +7,9 @@ module Core_libtest
 #nowarn "62"
 #nowarn "44"
 
-let mutable failures = []
+let failures = ref []
 let reportFailure s = 
-  stdout.WriteLine "\n................TEST FAILED...............\n"; failures <- failures @ [s]
+  stdout.WriteLine "\n................TEST FAILED...............\n"; failures := !failures @ [s]
 
 let check s e r = 
   if r = e then  stdout.WriteLine (s^": YES") 
@@ -637,6 +637,8 @@ let genericHash x =
   for i = 1 to 100 do r <- r + 1; done;
   (r - 400) + hash x
 
+#if MONO // See https://github.com/fsharp/fsharp/issues/188
+#else
 
 type T = T of int * int
 
@@ -670,6 +672,7 @@ let _ = printString "type specific hash matches generic hash (string array,12): 
 let _ = printString "type specific hash matches generic hash (byte array,12): "; if hash "abc"B = genericHash "abc"B then stdout.WriteLine "YES" else  reportFailure "basic test Q204"
 let _ = printString "type specific hash matches generic hash (byte array,12): "; if hash ""B = genericHash ""B then stdout.WriteLine "YES" else  reportFailure "basic test Q205"
 let _ = printString "type specific hash matches generic hash (byte array,12): "; if hash [| |] = genericHash [| |] then stdout.WriteLine "YES" else  reportFailure "basic test Q206"
+#endif
 
 
 (*---------------------------------------------------------------------------
@@ -1447,7 +1450,10 @@ module Pow =
              test "cnod90kma" (pown 0.5 exp = 0.5 ** float exp);
              test "cnod90kmb" (pown 1.0 exp = 1.0 ** float exp);
              test "cnod90kmc" (pown 2.0 exp = 2.0 ** float exp);
+#if MONO
+#else
              test "cnod90kmd" (pown 3.0 exp = 3.0 ** float exp)
+#endif
            done
 
         do for exp in [ 5 .. -1 .. -5 ] @ [System.Int32.MinValue;System.Int32.MaxValue] do 
@@ -5510,11 +5516,14 @@ module TripleQuoteStrings =
     check "ckjenew-0ecwe1" """Hello world""" "Hello world"
     check "ckjenew-0ecwe2" """Hello "world""" "Hello \"world"
     check "ckjenew-0ecwe3" """Hello ""world""" "Hello \"\"world"
+#if UNIX
+#else
 #if INTERACTIVE // FSI prints \r\n or \n depending on PIPE vs FEED so we'll just skip it
 #else
     if System.Environment.GetEnvironmentVariable("APPVEYOR_CI") <> "1" then
         check "ckjenew-0ecwe4" """Hello 
 ""world""" "Hello \r\n\"\"world"
+#endif
 #endif
     // cehcek there is no escaping...
     check "ckjenew-0ecwe5" """Hello \"world""" "Hello \\\"world"
@@ -5530,6 +5539,8 @@ module TripleQuoteStrings =
     check "ckjenew-0ecwe2" (* """Hello *) "world""" *) """Hello "world""" "Hello \"world"
 
 
+#if MONO
+#else
 module FloatInRegisterConvertsToFloat = 
 
     let simpleTest() = 
@@ -5539,6 +5550,8 @@ module FloatInRegisterConvertsToFloat =
         test "vw09rwejkn" equal 
 
     simpleTest()
+#endif
+
 (*---------------------------------------------------------------------------
 !* Bug 122495: Bad code generation in code involving structs/property settings/slice operator
  *--------------------------------------------------------------------------- *)  
@@ -5596,9 +5609,17 @@ module LittleTestFor823 =
 !* wrap up
  *--------------------------------------------------------------------------- *)
 
+#if TESTS_AS_APP
+let RUN() = !failures
+#else
 let aa =
-  if not failures.IsEmpty then (printfn "Test Failed, failures = %A" failures; exit 1) 
+  match !failures with 
+  | [] -> 
+      stdout.WriteLine "Test Passed"
+      System.IO.File.WriteAllText("test.ok","ok")
+      exit 0
+  | _ -> 
+      stdout.WriteLine "Test Failed"
+      exit 1
+#endif
 
-do (stdout.WriteLine "Test Passed"; 
-    System.IO.File.WriteAllText("test.ok","ok"); 
-    exit 0)

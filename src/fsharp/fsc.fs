@@ -1740,7 +1740,7 @@ let main0(ctok, argv, referenceResolver, bannerAlreadyPrinted, exiter:Exiter, er
     let sysRes, otherRes, knownUnresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(ctok, tcConfig)
     
     // Import basic assemblies
-    let tcGlobals, frameworkTcImports = TcImports.BuildFrameworkTcImports (ctok, foundationalTcConfigP, sysRes, otherRes)
+    let tcGlobals, frameworkTcImports = TcImports.BuildFrameworkTcImports (ctok, foundationalTcConfigP, sysRes, otherRes) |> Cancellable.runWithoutCancellation
 
     // Register framework tcImports to be disposed in future
     disposables.Register frameworkTcImports
@@ -1775,9 +1775,7 @@ let main0(ctok, argv, referenceResolver, bannerAlreadyPrinted, exiter:Exiter, er
 
     // Import other assemblies
     ReportTime tcConfig "Import non-system references"
-    let tcGlobals, tcImports =  
-        let tcImports = TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, tcGlobals, frameworkTcImports, otherRes, knownUnresolved)
-        tcGlobals, tcImports
+    let tcImports = TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, tcGlobals, frameworkTcImports, otherRes, knownUnresolved)  |> Cancellable.runWithoutCancellation
 
     // register tcImports to be disposed in future
     disposables.Register tcImports
