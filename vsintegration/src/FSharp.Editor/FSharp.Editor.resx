@@ -145,7 +145,7 @@
     <value>F# Functions / Methods</value>
   </data>
   <data name="FSharpMutableVarsClassificationType" xml:space="preserve">
-    <value>F# Mutable Variables</value>
+    <value>F# Mutable Variables / Reference Cells</value>
   </data>
   <data name="FSharpPrintfFormatClassificationType" xml:space="preserve">
     <value>F# Printf Format</value>
