@@ -567,14 +567,17 @@ module internal Extensions =
             isPrivate && declaredInTheFile   
 
     type FSharpMemberOrFunctionOrValue with
-      // FullType may raise exceptions (see https://github.com/fsharp/fsharp/issues/307).
+        // FullType may raise exceptions (see https://github.com/fsharp/fsharp/issues/307).
         member x.FullTypeSafe = Option.attempt (fun _ -> x.FullType)
+        
         member x.IsConstructor = x.CompiledName = ".ctor"
+        
         member x.IsOperatorOrActivePattern =
             let name = x.DisplayName
             if name.StartsWith "( " && name.EndsWith " )" && name.Length > 4
             then name.Substring (2, name.Length - 4) |> String.forall (fun c -> c <> ' ')
             else false
+
         member x.EnclosingEntitySafe =
             try
                 Some x.EnclosingEntity

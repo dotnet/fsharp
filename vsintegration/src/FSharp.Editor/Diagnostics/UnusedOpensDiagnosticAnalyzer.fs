@@ -81,7 +81,7 @@ module private UnusedOpens =
             | SymbolUse.Field f when not (isQualified (Some f.FullName)) -> 
                 getPartNamespace sym (Some f.FullName) :: entityNamespace (Some f.DeclaringEntity)
             | SymbolUse.MemberFunctionOrValue mfv when not (isQualified (Some mfv.FullName)) -> 
-                getPartNamespace sym (Some mfv.FullName) :: entityNamespace (Some mfv.EnclosingEntity)
+                getPartNamespace sym (Some mfv.FullName) :: entityNamespace mfv.EnclosingEntitySafe
             | SymbolUse.Operator op when not (isQualified (Some op.FullName)) ->
                 getPartNamespace sym (Some op.FullName) :: entityNamespace op.EnclosingEntitySafe
             | SymbolUse.ActivePattern ap when not (isQualified (Some ap.FullName)) ->
