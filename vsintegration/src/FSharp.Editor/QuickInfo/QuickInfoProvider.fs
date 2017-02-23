@@ -75,8 +75,8 @@ type internal FSharpQuickInfoProvider
                         (
                             symbolGlyph = SymbolGlyphDeferredContent(CommonRoslynHelpers.GetGlyphForSymbol(symbol), glyphService),
                             warningGlyph = null,
-                            mainDescription = ClassifiableDeferredContent(mainDescription, typeMap),
-                            documentation = ClassifiableDeferredContent(documentation, typeMap),
+                            mainDescription = FSharpDeferredContent(mainDescription, typeMap),
+                            documentation = FSharpDeferredContent(documentation, typeMap),
                             typeParameterMap = empty,
                             anonymousTypes = empty,
                             usageText = empty,

@@ -53,6 +53,7 @@
     <Compile Include="Completion\KeywordCompletionProvider.fs" />
     <Compile Include="Completion\CompletionService.fs" />
     <Compile Include="Completion\SignatureHelp.fs" />
+    <Compile Include="QuickInfo\FSharpDeferredContent.fs" />
     <Compile Include="QuickInfo\QuickInfoProvider.fs" />
     <Compile Include="InlineRename\InlineRenameService.fs" />
     <Compile Include="DocumentHighlights\DocumentHighlightsService.fs" />
