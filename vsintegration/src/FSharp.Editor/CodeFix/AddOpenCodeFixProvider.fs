@@ -133,7 +133,7 @@ type internal FSharpAddOpenCodeFixProvider
             
         let qualifiedSymbolFixes =
             candidates
-            |> Seq.filter (fun (entity,_) -> not(entity.FullRelativeName.StartsWith("op_"))) // Don't include qualified operator names. The resultant codefix won't compile because it won't be an infix operator anymore.
+            |> Seq.filter (fun (entity,_) -> not(entity.LastIdent.StartsWith "op_")) // Don't include qualified operator names. The resultant codefix won't compile because it won't be an infix operator anymore.
             |> Seq.map (fun (entity, _) -> entity.FullRelativeName, entity.Qualifier)
             |> Seq.distinct
             |> Seq.sort
