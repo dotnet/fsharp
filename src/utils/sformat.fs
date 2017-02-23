@@ -197,33 +197,35 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         let keywordFunctions = Set ["raise"; "reraise"; "typeof"; "typedefof"; "sizeof"; "nameof"]
         let keywordTypes = 
           [
-            "array";
-            "bigint";
-            "bool";
-            "byref";
-            "byte";
-            "char";
-            "decimal";
-            "double";
-            "float";
-            "float32";
-            "int";
-            "int16";
-            "int32";
-            "int64";
-            "list";
-            "nativeint";
-            "obj";
-            "sbyte";
-            "seq";
-            "single";
-            "string";
-            "unit";
-            "uint";
-            "uint16";
-            "uint32";
-            "uint64";
-            "unativeint";
+            "array"
+            "bigint"
+            "bool"
+            "byref"
+            "byte"
+            "char"
+            "decimal"
+            "double"
+            "float"
+            "float32"
+            "int"
+            "int8"
+            "int16"
+            "int32"
+            "int64"
+            "list"
+            "nativeint"
+            "obj"
+            "sbyte"
+            "seq"
+            "single"
+            "string"
+            "unit"
+            "uint"
+            "uint8"
+            "uint16"
+            "uint32"
+            "uint64"
+            "unativeint"
           ] |> Set.ofList
         let tagClass name = if Set.contains name keywordTypes then TaggedText.Keyword name else TaggedText.Class name
         let tagUnionCase = TaggedText.UnionCase
