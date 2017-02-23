@@ -437,7 +437,8 @@ type internal Entity =
     { FullRelativeName: LongIdent
       Qualifier: LongIdent
       Namespace: LongIdent option
-      Name: LongIdent }
+      Name: LongIdent
+      LastIdent: string }
     override x.ToString() = sprintf "%A" x
 
 [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
@@ -512,7 +513,8 @@ module internal Entity =
                           { FullRelativeName = String.concat "." fullRelativeName //.[0..fullRelativeName.Length - identCount - 1]
                             Qualifier = String.concat "." qualifier
                             Namespace = ns
-                            Name = match restIdents with [|_|] -> "" | _ -> String.concat "." restIdents }) 
+                            Name = match restIdents with [|_|] -> "" | _ -> String.concat "." restIdents 
+                            LastIdent = Array.tryLast restIdents |> Option.defaultValue "" }) 
 
 type internal ScopeKind =
     | Namespace
