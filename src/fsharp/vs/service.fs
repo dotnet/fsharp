@@ -499,6 +499,7 @@ type SemanticClassificationType =
     | Printf
     | ComputationExpression
     | IntrinsicType
+    | IntrinsicFunction
     | Enumeration
     | Interface
 
@@ -1441,6 +1442,17 @@ type TypeCheckInfo
             | TType.TType_app(tref, _) when tref.Stamp = g.attrib_OptionalArgumentAttribute.TyconRef.Stamp -> Some()
             | _ -> None
 
+        let (|KeywordIntrinsicValue|_|) (vref: ValRef) =
+            if valRefEq g g.raise_vref vref ||
+               valRefEq g g.reraise_vref vref ||
+               valRefEq g g.typeof_vref vref ||
+               valRefEq g g.typedefof_vref vref ||
+               valRefEq g g.sizeof_vref vref 
+               // TODO uncomment this after `nameof` operator is implemented
+               // || valRefEq g g.nameof_vref vref
+            then Some()
+            else None
+
         let resolutions =
             match range with
             | Some range ->
@@ -1457,6 +1469,8 @@ type TypeCheckInfo
                 Some (m, SemanticClassificationType.ComputationExpression)
             | CNR(_, (Item.Value vref), _, _, _, _, m) when vref.IsMutable || Tastops.isRefCellTy g vref.Type ->
                 Some (m, SemanticClassificationType.MutableVar)
+            | CNR(_, Item.Value KeywordIntrinsicValue, ItemOccurence.Use, _, _, _, m) ->
+                Some (m, SemanticClassificationType.IntrinsicFunction)
             | CNR(_, (Item.Value vref), _, _, _, _, m) when isFunction g vref.Type ->
                 if vref.IsPropertyGetterMethod || vref.IsPropertySetterMethod then
                     Some (m, SemanticClassificationType.Property)

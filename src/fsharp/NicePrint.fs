@@ -87,7 +87,7 @@ module internal PrintUtilities =
         if denv.shortTypeNames then 
             tyconTextL
         else
-            let path = demangledPathOfCompPath tcref.CompilationPath
+            let path = tcref.CompilationPath.DemangledPath
             let path =
                 if denv.includeStaticParametersInTypeNames then
                     path
