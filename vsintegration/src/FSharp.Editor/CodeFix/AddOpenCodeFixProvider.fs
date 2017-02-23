@@ -131,16 +131,16 @@ type internal FSharpAddOpenCodeFixProvider
                 openNamespaceFix context ctx name ns multipleNames)
             |> Seq.toList
             
-        let quilifySymbolFixes =
+        let qualifiedSymbolFixes =
             candidates
-            |> Seq.filter (fun (entity,_) -> not(entity.FullRelativeName.Contains("op_"))) // Don't include fully-qualified operator names. The resultant suggestion makes the code not compile.
+            |> Seq.filter (fun (entity,_) -> not(entity.FullRelativeName.StartsWith("op_"))) // Don't include qualified operator names. The resultant codefix won't compile because it won't be an infix operator anymore.
             |> Seq.map (fun (entity, _) -> entity.FullRelativeName, entity.Qualifier)
             |> Seq.distinct
             |> Seq.sort
             |> Seq.map (qualifySymbolFix context)
             |> Seq.toList
 
-        for codeFix in openNamespaceFixes @ quilifySymbolFixes do
+        for codeFix in openNamespaceFixes @ qualifiedSymbolFixes do
             context.RegisterCodeFix(codeFix, (context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id)).ToImmutableArray())
 
     override __.FixableDiagnosticIds = fixableDiagnosticIds.ToImmutableArray()
