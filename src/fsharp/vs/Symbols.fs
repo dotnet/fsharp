@@ -806,7 +806,7 @@ and FSharpAccessibility(a:Accessibility, ?isProtected) =
     member __.Contents = a
 
     override x.ToString() = 
-        let (TAccess paths) = x
+        let (TAccess paths) = a
         let mangledTextOfCompPath (CompPath(scoref,path)) = getNameOfScopeRef scoref + "/" + textOfPath (List.map fst path)  
         String.concat ";" (List.map mangledTextOfCompPath paths)
 
