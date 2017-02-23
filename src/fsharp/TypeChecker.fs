@@ -10589,7 +10589,7 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (binds,bindsm,scope
                       
                       v, pat1
 
-                | _ when mustinline(inlineFlag)  -> error(Error(FSComp.SR.tcInvalidInlineSpecification(),m))
+                | _ when inlineFlag.MustInline  -> error(Error(FSComp.SR.tcInvalidInlineSpecification(),m))
 
                 | _ -> 
                     let tmp,_ = mkCompGenLocal m "patternInput" (generalizedTypars +-> tauTy)

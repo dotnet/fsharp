@@ -137,14 +137,14 @@ module internal ItemDescriptionsImpl =
     let rangeOfPropInfo preferFlag (pinfo:PropInfo) =
         match pinfo with
 #if EXTENSIONTYPING 
-        |   ProvidedProp(_,pi,_) -> definitionLocationOfProvidedItem pi
+        |   ProvidedProp(_,pi,_) -> ComputeDefinitionLocationOfProvidedItem pi
 #endif
         |   _ -> pinfo.ArbitraryValRef |> Option.map (rangeOfValRef preferFlag)
 
     let rangeOfMethInfo (g:TcGlobals) preferFlag (minfo:MethInfo) = 
         match minfo with
 #if EXTENSIONTYPING 
-        |   ProvidedMeth(_,mi,_,_) -> definitionLocationOfProvidedItem mi
+        |   ProvidedMeth(_,mi,_,_) -> ComputeDefinitionLocationOfProvidedItem mi
 #endif
         |   DefaultStructCtor(_, AppTy g (tcref, _)) -> Some(rangeOfEntityRef preferFlag tcref)
         |   _ -> minfo.ArbitraryValRef |> Option.map (rangeOfValRef preferFlag)
@@ -152,7 +152,7 @@ module internal ItemDescriptionsImpl =
     let rangeOfEventInfo preferFlag (einfo:EventInfo) = 
         match einfo with
 #if EXTENSIONTYPING 
-        | ProvidedEvent (_,ei,_) -> definitionLocationOfProvidedItem ei
+        | ProvidedEvent (_,ei,_) -> ComputeDefinitionLocationOfProvidedItem ei
 #endif
         | _ -> einfo.ArbitraryValRef |> Option.map (rangeOfValRef preferFlag)
       
