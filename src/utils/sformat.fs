@@ -194,7 +194,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
     module TaggedTextOps =
 #endif
         let tagAlias = TaggedText.Alias
-        let keywordFunctions = set ["raise"; "reraise"; "typeof"; "typedefof"; "sizeof"; "nameof"]
+        let keywordFunctions = Set ["raise"; "reraise"; "typeof"; "typedefof"; "sizeof"; "nameof"]
         let keywordTypes = 
           [
             "array";
