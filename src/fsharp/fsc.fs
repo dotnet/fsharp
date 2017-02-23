@@ -448,19 +448,18 @@ let GenerateInterfaceData(tcConfig:TcConfig) =
     not tcConfig.standalone && not tcConfig.noSignatureData 
 
 let EncodeInterfaceData(tcConfig:TcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, isIncrementalBuild) = 
-      if GenerateInterfaceData(tcConfig) then 
-        if verbose then dprintfn "Generating interface data attribute..."
+    if GenerateInterfaceData(tcConfig) then 
         let resource = WriteSignatureData (tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile)
-        if verbose then dprintf "Generated interface data attribute!\n"
-        // REVIEW: need a better test for this
-        if (tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib) && not isIncrementalBuild then 
-            let sigDataFileName = (Filename.chopExtension outfile)+".sigdata"
-            File.WriteAllBytes(sigDataFileName, resource.Bytes)
-        let sigAttr = mkSignatureDataVersionAttr tcGlobals (IL.parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision) 
         // The resource gets written to a file for FSharp.Core
+        let useDataFiles = (tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib) && not isIncrementalBuild
         let resources = 
-            [ if not tcGlobals.compilingFslib then 
-                 yield  resource ]
+            if useDataFiles then 
+                let sigDataFileName = (Filename.chopExtension outfile)+".sigdata"
+                File.WriteAllBytes(sigDataFileName, resource.Bytes)
+                []
+            else
+                [ resource ]
+        let sigAttr = mkSignatureDataVersionAttr tcGlobals (IL.parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision) 
         [sigAttr], resources
       else 
         [], []
