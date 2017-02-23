@@ -538,45 +538,56 @@ type Cancellable<'TResult> = Cancellable of (System.Threading.CancellationToken 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Cancellable = 
 
+    /// Run a cancellable computation using the given cancellation token
+    let run (ct: System.Threading.CancellationToken) (Cancellable oper) = 
+        if ct.IsCancellationRequested then 
+            ValueOrCancelled.Cancelled (OperationCanceledException()) 
+        else
+            oper ct 
+
     /// Bind the result of a cancellable computation
-    let bind f (Cancellable f1) = 
+    let bind f comp1 = 
        Cancellable (fun ct -> 
-           if ct.IsCancellationRequested then 
-               ValueOrCancelled.Cancelled (OperationCanceledException()) 
-           else
-               match f1 ct with 
-               | ValueOrCancelled.Value res1 -> 
-                   if ct.IsCancellationRequested then 
-                       ValueOrCancelled.Cancelled (OperationCanceledException()) 
-                   else
-                       let (Cancellable f2) = f res1
-                       f2 ct 
-               | ValueOrCancelled.Cancelled err1 -> 
-                   ValueOrCancelled.Cancelled err1)
+            match run ct comp1 with 
+            | ValueOrCancelled.Value v1 -> run ct (f v1) 
+            | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
 
     /// Map the result of a cancellable computation
-    let map f (Cancellable f1) = 
+    let map f oper = 
        Cancellable (fun ct -> 
-           match f1 ct with 
-           | ValueOrCancelled.Value res1 -> ValueOrCancelled.Value (f res1)
-           | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
+           match run ct oper with 
+           | ValueOrCancelled.Value res -> ValueOrCancelled.Value (f res)
+           | ValueOrCancelled.Cancelled err -> ValueOrCancelled.Cancelled err)
                     
     /// Return a simple value as the result of a cancellable computation
     let ret x = Cancellable (fun _ -> ValueOrCancelled.Value x)
 
     /// Fold a cancellable computation along a sequence of inputs
     let fold f acc seq = 
-        (ret acc,seq) ||> Seq.fold  (fun acc x -> acc |> bind (fun acc -> f acc x))
+        Cancellable (fun ct -> 
+           (ValueOrCancelled.Value acc, seq) 
+           ||> Seq.fold (fun acc x -> 
+               match acc with 
+               | ValueOrCancelled.Value accv -> run ct (f accv x)
+               | res -> res))
     
     /// Iterate a cancellable computation over a collection
     let each f seq = 
-        ([],seq) ||> fold (fun acc x -> f x |> map (fun x2 -> x2::acc)) |> map List.rev
+        Cancellable (fun ct -> 
+           (ValueOrCancelled.Value [], seq) 
+           ||> Seq.fold (fun acc x -> 
+               match acc with 
+               | ValueOrCancelled.Value acc -> 
+                   match run ct (f x) with 
+                   | ValueOrCancelled.Value x2 -> ValueOrCancelled.Value (x2 :: acc)
+                   | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1
+               | canc -> canc)
+           |> function 
+               | ValueOrCancelled.Value acc -> ValueOrCancelled.Value (List.rev acc)
+               | canc -> canc)
     
     /// Delay a cancellable computation
     let delay (f: unit -> Cancellable<'T>) = Cancellable (fun ct -> let (Cancellable g) = f() in g ct)
-
-    /// Run a cancellable computation using the given cancellation token
-    let run ct (Cancellable f) = f ct
 
     /// Run the computation in a mode where it may not be cancelled. The computation never results in a 
     /// ValueOrCancelled.Cancelled.
