@@ -85,7 +85,7 @@ type internal FSharpAddOpenCodeFixProvider
         assemblyContentProvider: AssemblyContentProvider
     ) =
     inherit CodeFixProvider()
-    let fixableDiagnosticIds = ["FS0039"]
+    let fixableDiagnosticIds = ["FS0039"; "FS0043"]
 
     let checker = checkerProvider.Checker
     let fixUnderscoresInMenuText (text: string) = text.Replace("_", "__")
@@ -133,6 +133,7 @@ type internal FSharpAddOpenCodeFixProvider
             
         let quilifySymbolFixes =
             candidates
+            |> Seq.filter (fun (entity,_) -> not(entity.FullRelativeName.Contains("op_"))) // Don't include fully-qualified operator names. The resultant suggestion makes the code not compile.
             |> Seq.map (fun (entity, _) -> entity.FullRelativeName, entity.Qualifier)
             |> Seq.distinct
             |> Seq.sort
@@ -181,9 +182,9 @@ type internal FSharpAddOpenCodeFixProvider
                     longIdent
                     |> List.map (fun ident ->
                         { Ident = ident.idText
-                          Resolved = not (ident.idRange = unresolvedIdentRange) })
+                          Resolved = not (ident.idRange = unresolvedIdentRange)})
                     |> List.toArray)
-            
+                                                    
             let createEntity = ParsedInput.tryFindInsertionContext unresolvedIdentRange.StartLine parsedInput maybeUnresolvedIdents
             return entities |> Seq.map createEntity |> Seq.concat |> Seq.toList |> getSuggestions context
         } 
