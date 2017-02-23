@@ -59,7 +59,7 @@ val ensureCcuHasModuleOrNamespaceAtPath : CcuThunk -> Ident list -> CompilationP
 
 val stripExpr : Expr -> Expr
 
-val valsOfBinds : Bindings -> FlatVals 
+val valsOfBinds : Bindings -> Vals 
 val (|ExprValWithPossibleTypeInst|_|) : Expr -> (ValRef * ValUseFlag * TType list * range) option
 
 //-------------------------------------------------------------------------
@@ -140,7 +140,7 @@ val mkCompGenLet : range -> Val -> Expr -> Expr -> Expr
 // Invisible bindings are never given a sequence point and should never have side effects
 val mkInvisibleLet : range -> Val -> Expr -> Expr -> Expr
 val mkInvisibleBind : Val -> Expr -> Binding
-val mkInvisibleFlatBindings : FlatVals -> FlatExprs -> Bindings
+val mkInvisibleBinds : Vals -> Exprs -> Bindings
 val mkLetRecBinds : range -> Bindings -> Expr -> Expr
  
 //-------------------------------------------------------------------------
@@ -1224,7 +1224,7 @@ val mkCallFailInit           : TcGlobals -> range -> Expr
 val mkCallFailStaticInit    : TcGlobals -> range -> Expr 
 val mkCallCheckThis          : TcGlobals -> range -> TType -> Expr -> Expr 
 
-val mkCase : Test * DecisionTree -> DecisionTreeCase
+val mkCase : DecisionTreeTest * DecisionTree -> DecisionTreeCase
 
 val mkCallQuoteToLinqLambdaExpression : TcGlobals -> range -> TType -> Expr -> Expr
 
