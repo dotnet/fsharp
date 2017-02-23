@@ -194,6 +194,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
     module TaggedTextOps =
 #endif
         let tagAlias = TaggedText.Alias
+        let keywordFunctions = set ["raise"; "reraise"; "typeof"; "typedefof"; "sizeof"; "nameof"]
         let keywordTypes = 
           [
             "array";
@@ -238,7 +239,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         let tagRecordField = TaggedText.RecordField
         let tagMethod = TaggedText.Method
         let tagModule = TaggedText.Module
-        let tagModuleBinding = TaggedText.ModuleBinding
+        let tagModuleBinding name = if keywordFunctions.Contains name then TaggedText.Keyword name else TaggedText.ModuleBinding name
         let tagNamespace = TaggedText.Namespace
         let tagNumericLiteral = TaggedText.NumericLiteral
         let tagOperator = TaggedText.Operator
