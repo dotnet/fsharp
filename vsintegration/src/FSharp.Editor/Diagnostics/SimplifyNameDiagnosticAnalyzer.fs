@@ -35,7 +35,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
             IDEDiagnosticIds.SimplifyNamesDiagnosticId, 
             SR.SimplifyName.Value, 
             SR.NameCanBeSimplified.Value, 
-            SR.StyleCategory.Value, 
+            DiagnosticCategory.Style, 
             DiagnosticSeverity.Hidden, 
             true, 
             "", 

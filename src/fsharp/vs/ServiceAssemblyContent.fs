@@ -24,8 +24,8 @@ module internal Extensions =
     [<RequireQualifiedAccess>]
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module Option =
-        let inline attempt (f: unit -> 'T) = try Some (f()) with _ -> None        
-        let inline orElse v = function Some x -> Some x | None -> v
+        let attempt (f: unit -> 'T) = try Some (f()) with _ -> None        
+        let orElse v = function Some x -> Some x | None -> v
 
     [<RequireQualifiedAccess>]
     [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
