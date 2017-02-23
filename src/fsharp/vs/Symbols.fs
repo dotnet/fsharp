@@ -805,7 +805,10 @@ and FSharpAccessibility(a:Accessibility, ?isProtected) =
 
     member __.Contents = a
 
-    override x.ToString() = stringOfAccess a
+    override x.ToString() = 
+        let (TAccess paths) = x
+        let mangledTextOfCompPath (CompPath(scoref,path)) = getNameOfScopeRef scoref + "/" + textOfPath (List.map fst path)  
+        String.concat ";" (List.map mangledTextOfCompPath paths)
 
 and [<Class>] FSharpAccessibilityRights(thisCcu: CcuThunk, ad:AccessorDomain) =
     member internal __.ThisCcu = thisCcu
