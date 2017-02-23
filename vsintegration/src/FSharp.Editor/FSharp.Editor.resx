@@ -151,9 +151,9 @@
     <value>F# Properties</value>
   </data>
   <data name="RemoveUnusedOpens" xml:space="preserve">
-    <value>Remove unused open declarations</value>
+    <value>Remove unused open declaration</value>
   </data>
   <data name="UnusedOpens" xml:space="preserve">
-    <value>Open declarations can be removed.</value>
+    <value>Open declaration can be removed.</value>
   </data>
 </root>
