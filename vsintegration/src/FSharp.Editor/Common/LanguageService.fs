@@ -341,11 +341,15 @@ and
             projectContext.AddSourceFile(fileName)
             
             let project = projectContext :?> AbstractProject
-            let document = project.GetCurrentDocumentFromPath(fileName)
+            let documentId = project.GetCurrentDocumentFromPath(fileName).Id
 
-            document.Closing.Add(fun _ ->  
-                projectInfoManager.RemoveSingleFileProject(projectId)
-                project.Disconnect())
+            let rec onDocumentClosed = EventHandler<DocumentEventArgs> (fun _ args ->
+                if args.Document.Id = documentId then
+                    projectInfoManager.RemoveSingleFileProject(projectId)
+                    project.Disconnect()
+                    workspace.DocumentClosed.RemoveHandler(onDocumentClosed)
+            )
+            workspace.DocumentClosed.AddHandler(onDocumentClosed)
 
     override this.ContentTypeName = FSharpCommonConstants.FSharpContentTypeName
     override this.LanguageName = FSharpCommonConstants.FSharpLanguageName
