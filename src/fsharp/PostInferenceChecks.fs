@@ -1034,12 +1034,12 @@ and CheckDecisionTreeSwitch cenv env (e,cases,dflt,m) =
 
 and CheckDecisionTreeTest cenv env m discrim =
     match discrim with
-    | Test.UnionCase (_,tinst) -> CheckTypeInstPermitByrefs cenv env m tinst
-    | Test.ArrayLength (_,typ) -> CheckTypePermitByrefs cenv env m typ
-    | Test.Const _ -> ()
-    | Test.IsNull -> ()
-    | Test.IsInst (srcTyp,dstTyp)    -> CheckTypePermitByrefs cenv env m srcTyp; CheckTypePermitByrefs cenv env m dstTyp
-    | Test.ActivePatternCase (exp,_,_,_,_)     -> CheckExprNoByrefs cenv env exp
+    | DecisionTreeTest.UnionCase (_,tinst) -> CheckTypeInstPermitByrefs cenv env m tinst
+    | DecisionTreeTest.ArrayLength (_,typ) -> CheckTypePermitByrefs cenv env m typ
+    | DecisionTreeTest.Const _ -> ()
+    | DecisionTreeTest.IsNull -> ()
+    | DecisionTreeTest.IsInst (srcTyp,dstTyp)    -> CheckTypePermitByrefs cenv env m srcTyp; CheckTypePermitByrefs cenv env m dstTyp
+    | DecisionTreeTest.ActivePatternCase (exp,_,_,_,_)     -> CheckExprNoByrefs cenv env exp
 
 and CheckAttrib cenv env (Attrib(_,_,args,props,_,_,_)) = 
     props |> List.iter (fun (AttribNamedArg(_,_,_,expr)) -> CheckAttribExpr cenv env expr)

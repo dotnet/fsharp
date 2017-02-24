@@ -160,6 +160,7 @@ type internal SemanticClassificationType =
     | Printf
     | ComputationExpression
     | IntrinsicType
+    | IntrinsicFunction
     | Enumeration
     | Interface
 
