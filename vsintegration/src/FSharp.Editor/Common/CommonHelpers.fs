@@ -676,9 +676,21 @@ module internal SymbolUse =
         | :? FSharpActivePatternCase as ap-> ActivePatternCase(ap) |> Some
         | _ -> None
 
-    let (|Entity|_|) (symbol : FSharpSymbolUse) =
+    let (|Entity|_|) (symbol : FSharpSymbolUse) : (FSharpEntity * (* cleanFullName *) string option) option =
         match symbol.Symbol with
-        | :? FSharpEntity as ent -> Some ent
+        | :? FSharpEntity as ent -> 
+            // strip generic parameters count suffix (List`1 => List)
+            let cleanFullName =
+                // `TryFullName` for type aliases is always `None`, so we have to make one by our own
+                if ent.IsFSharpAbbreviation then
+                    Some (ent.AccessPath + "." + ent.DisplayName)
+                else
+                    ent.TryFullName
+                    |> Option.map (fun fullName ->
+                        if ent.GenericParameters.Count > 0 && fullName.Length > 2 then
+                            fullName.[0..fullName.Length - 3]
+                        else fullName)
+            Some (ent, cleanFullName)
         | _ -> None
 
     let (|Field|_|) (symbol : FSharpSymbolUse) =
@@ -719,24 +731,24 @@ module internal SymbolUse =
     //    | _ -> None
 
     let (|TypeAbbreviation|_|) = function
-        | Entity symbol when symbol.IsFSharpAbbreviation -> Some symbol
+        | Entity (entity, _) when entity.IsFSharpAbbreviation -> Some entity
         | _ -> None
 
     let (|Class|_|) = function
-        | Entity symbol when symbol.IsClass -> Some symbol
-        | Entity s when s.IsFSharp &&
-                        s.IsOpaque &&
-                        not s.IsFSharpModule &&
-                        not s.IsNamespace &&
-                        not s.IsDelegate &&
-                        not s.IsFSharpUnion &&
-                        not s.IsFSharpRecord &&
-                        not s.IsInterface &&
-                        not s.IsValueType -> Some s
+        | Entity (entity, _) when entity.IsClass -> Some entity
+        | Entity (entity, _) when entity.IsFSharp &&
+            entity.IsOpaque &&
+            not entity.IsFSharpModule &&
+            not entity.IsNamespace &&
+            not entity.IsDelegate &&
+            not entity.IsFSharpUnion &&
+            not entity.IsFSharpRecord &&
+            not entity.IsInterface &&
+            not entity.IsValueType -> Some entity
         | _ -> None
 
     let (|Delegate|_|) = function
-        | Entity symbol when symbol.IsDelegate -> Some symbol
+        | Entity (entity, _) when entity.IsDelegate -> Some entity
         | _ -> None
 
     let (|Event|_|) = function
@@ -820,31 +832,31 @@ module internal SymbolUse =
         | _ -> None
 
     let (|Enum|_|) = function
-        | Entity symbol when symbol.IsEnum -> Some symbol
+        | Entity (entity, _) when entity.IsEnum -> Some entity
         | _ -> None
 
     let (|Interface|_|) = function
-        | Entity symbol when symbol.IsInterface -> Some symbol
+        | Entity (entity, _) when entity.IsInterface -> Some entity
         | _ -> None
 
     let (|Module|_|) = function
-        | Entity symbol when symbol.IsFSharpModule -> Some symbol
+        | Entity (entity, _) when entity.IsFSharpModule -> Some entity
         | _ -> None
 
     let (|Namespace|_|) = function
-        | Entity symbol when symbol.IsNamespace -> Some symbol
+        | Entity (entity, _) when entity.IsNamespace -> Some entity
         | _ -> None
 
     let (|Record|_|) = function
-        | Entity symbol when symbol.IsFSharpRecord -> Some symbol
+        | Entity (entity, _) when entity.IsFSharpRecord -> Some entity
         | _ -> None
 
     let (|Union|_|) = function
-        | Entity symbol when symbol.IsFSharpUnion -> Some symbol
+        | Entity (entity, _) when entity.IsFSharpUnion -> Some entity
         | _ -> None
 
     let (|ValueType|_|) = function
-        | Entity symbol when symbol.IsValueType && not symbol.IsEnum -> Some symbol
+        | Entity (entity, _) when entity.IsValueType && not entity.IsEnum -> Some entity
         | _ -> None
 
     let (|ComputationExpression|_|) (symbol:FSharpSymbolUse) =
@@ -852,5 +864,5 @@ module internal SymbolUse =
         else None
         
     let (|Attribute|_|) = function
-        | Entity ent when ent.IsAttributeType -> Some ent
+        | Entity (entity, _) when entity.IsAttributeType -> Some entity
         | _ -> None

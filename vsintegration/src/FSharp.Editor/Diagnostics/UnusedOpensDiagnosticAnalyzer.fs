@@ -22,19 +22,20 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 module private UnusedOpens =
     open Microsoft.CodeAnalysis.Text
 
-    let visitModulesAndNamespaces modulesOrNss =
-        [ for moduleOrNs in modulesOrNss do
-            let SynModuleOrNamespace(decls = decls) = moduleOrNs
-
-            for decl in decls do
-                match decl with
-                | SynModuleDecl.Open(longIdentWithDots, range) -> 
-                    yield (longIdentWithDots.Lid |> List.map(fun l -> l.idText) |> String.concat "."), range
-                | _ -> () ]
+    let rec visitSynModuleOrNamespaceDecls decls =
+        [ for decl in decls do
+            match decl with
+            | SynModuleDecl.Open(longIdentWithDots, range) ->
+                yield (longIdentWithDots.Lid |> List.map(fun l -> l.idText) |> String.concat "."), range
+            | SynModuleDecl.NestedModule(_,_, decls,_,_) ->
+                yield! visitSynModuleOrNamespaceDecls decls
+            | _ -> () ]
 
     let getOpenStatements = function
         | ParsedInput.ImplFile (ParsedImplFileInput(modules = modules)) ->
-            visitModulesAndNamespaces modules
+            [ for md in modules do
+                let SynModuleOrNamespace(decls = decls) = md
+                yield! visitSynModuleOrNamespaceDecls decls ]
         | _ -> []
 
     let getAutoOpenAccessPath (ent:FSharpEntity) =
@@ -52,9 +53,21 @@ module private UnusedOpens =
         match entOpt with
         | Some ent ->
             if ent.IsFSharpModule then
-                [Some ent.QualifiedName; Some ent.LogicalName; Some ent.AccessPath]
+                [ yield Some ent.QualifiedName
+                  yield Some ent.LogicalName
+                  yield Some ent.AccessPath
+                  yield Some ent.FullName
+                  yield Some ent.DisplayName
+                  yield ent.TryGetFullDisplayName()
+                  if ent.HasFSharpModuleSuffix then
+                    yield Some (ent.AccessPath + "." + ent.DisplayName)]
             else
-                [ent.Namespace; Some ent.AccessPath; getAutoOpenAccessPath ent]
+                [ yield ent.Namespace
+                  yield Some ent.AccessPath
+                  yield getAutoOpenAccessPath ent
+                  //for path in ent.AllCompilationPaths do
+                   // yield Some path 
+                ]
         | None -> []
 
     let symbolIsFullyQualified (sourceText: SourceText) (sym: FSharpSymbolUse) (fullName: string option) =
@@ -66,8 +79,7 @@ module private UnusedOpens =
     let getUnusedOpens (sourceText: SourceText) (parsedInput: ParsedInput) (symbolUses: FSharpSymbolUse[]) =
 
         let getPartNamespace (sym:FSharpSymbolUse) (fullName:string option) =
-            // given a symbol range such as `Text.ISegment` and a full name
-            // of `MonoDevelop.Core.Text.ISegment`, return `MonoDevelop.Core`
+            // given a symbol range such as `Text.ISegment` and a full name of `MonoDevelop.Core.Text.ISegment`, return `MonoDevelop.Core`
             fullName |> Option.bind(fun fullName ->
                 let length = sym.RangeAlternate.EndColumn - sym.RangeAlternate.StartColumn
                 let lengthDiff = fullName.Length - length - 2
@@ -76,8 +88,8 @@ module private UnusedOpens =
         let getPossibleNamespaces (symbolUse: FSharpSymbolUse) =
             let isQualified = symbolIsFullyQualified sourceText symbolUse
             match symbolUse with
-            | SymbolUse.Entity ent when not (isQualified ent.TryFullName) ->
-                getPartNamespace symbolUse ent.TryFullName :: entityNamespace (Some ent)
+            | SymbolUse.Entity (ent, cleanFullName) when not (isQualified cleanFullName) ->
+                getPartNamespace symbolUse cleanFullName :: entityNamespace (Some ent)
             | SymbolUse.Field f when not (isQualified (Some f.FullName)) -> 
                 getPartNamespace symbolUse (Some f.FullName) :: entityNamespace (Some f.DeclaringEntity)
             | SymbolUse.MemberFunctionOrValue mfv when not (isQualified (Some mfv.FullName)) -> 
@@ -112,10 +124,8 @@ module private UnusedOpens =
                 | [] -> List.rev acc
             filterInner [] list Set.empty
 
-        parsedInput
-        |> getOpenStatements
-        |> filter
-        |> List.map snd
+        let openStatements = getOpenStatements parsedInput
+        openStatements |> filter |> List.map snd
 
 [<DiagnosticAnalyzer(FSharpCommonConstants.FSharpLanguageName)>]
 type internal UnusedOpensDiagnosticAnalyzer() =
