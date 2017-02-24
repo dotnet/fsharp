@@ -1789,7 +1789,6 @@ type internal FsiInteractionProcessor
                              initialInteractiveState) = 
 
     let mutable currState = initialInteractiveState
-    let mutable createdPaketFile = false
     let mutable needsPaketInstall = false
     let event = Control.Event<unit>()
     let setCurrState s = currState <- s; event.Trigger()
@@ -1861,16 +1860,33 @@ type internal FsiInteractionProcessor
             stopProcessingRecovery e range0    
             None
 
-    let tempDir = @"D:\temp\fsi"
-    let paketPrefix = "paket: "
-    let paketExePath = @"D:\temp\fsi\.paket\paket.exe"
+    let paketPrefix = "paket"
+
+    let locatePaketDepsFile = lazy(
+        let rec findDepsFile dir =
+            let fi = FileInfo(Path.Combine(dir,"paket.dependencies"))
+            if fi.Exists then
+                fi
+            elif fi.Directory.Parent <> null then
+                findDepsFile fi.Directory.Parent.FullName
+            else
+                // TODO: Create a location based on hash of the current startup dir
+                let di = Path.Combine(Path.GetTempPath(),Path.GetRandomFileName())
+                Directory.CreateDirectory di |> ignore
+                let fi = FileInfo(Path.Combine(di,"paket.dependencies"))
+                File.WriteAllText(fi.FullName,"source https://nuget.org/api/v2" + Environment.NewLine)
+                fi
+
+        findDepsFile Environment.CurrentDirectory)
+
+    let paketExePath = lazy(Path.Combine(locatePaketDepsFile.Force().Directory.FullName,".paket","paket.exe"))
 
     let resolvePaket ctok istate errorLogger m =
         if not needsPaketInstall then istate else
-
+        let workDir = locatePaketDepsFile.Force().Directory.FullName
         let startInfo = ProcessStartInfo()
-        startInfo.FileName <- paketExePath
-        startInfo.WorkingDirectory <- tempDir
+        startInfo.FileName <- paketExePath.Force()
+        startInfo.WorkingDirectory <- workDir
         startInfo.Arguments <- "install --generate-load-scripts"
         startInfo.UseShellExecute <- false
         let p = Process.Start(startInfo)
@@ -1878,9 +1894,13 @@ type internal FsiInteractionProcessor
         if p.ExitCode <> 0 then
             failwithf "Paket restore failed."
 
-        let loadScript = Path.Combine(tempDir,".paket","load","main.group.fsx")
+        let loadScript = Path.Combine(workDir,".paket","load","main.group.fsx")
         needsPaketInstall <- false
         fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, [loadScript], lexResourceManager, errorLogger)
+
+    let getPaketDepsFileText() =
+        let paketDepsFile = locatePaketDepsFile.Force()
+        File.ReadAllText paketDepsFile.FullName
 
     /// Execute a single parsed interaction. Called on the GUI/execute/main thread.
     let ExecInteraction (ctok, tcConfig:TcConfig, istate, action:ParsedFsiInteraction, errorLogger: ErrorLogger) =
@@ -1898,18 +1918,11 @@ type internal FsiInteractionProcessor
             | IHash (ParsedHashDirective("load",sourceFiles,m),_) -> 
                 fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, sourceFiles, lexResourceManager, errorLogger),Completed None
             | IHash (ParsedHashDirective(("reference" | "r"),[path],_),_) when path.StartsWith paketPrefix ->
-                let package = path.Substring(paketPrefix.Length)
-                let paketDepsFile = FileInfo(Path.Combine(tempDir,"paket.dependencies"))
-                let s = 
-                    if not createdPaketFile then
-                        Directory.CreateDirectory(paketDepsFile.Directory.FullName) |> ignore
-                        "source https://nuget.org/api/v2" + Environment.NewLine + 
-                            package + Environment.NewLine
-                    else
-                        let s = File.ReadAllText paketDepsFile.FullName
-                        s + package + Environment.NewLine
-                File.WriteAllText(paketDepsFile.FullName,s)
-                createdPaketFile <- true
+                if path <> paketPrefix then
+                    let packageName = path.Substring(paketPrefix.Length + 2)
+                
+                    let dependenciesFileContent = getPaketDepsFileText() + packageName + Environment.NewLine
+                    File.WriteAllText(locatePaketDepsFile.Force().FullName,dependenciesFileContent)
                 needsPaketInstall <- true
                 istate,Completed None
             | IHash (ParsedHashDirective(("reference" | "r"),[path],m),_) -> 
