@@ -1042,7 +1042,7 @@ type MatchBuilder(spBind,inpRange: Range.range) =
 
     member x.Close(dtree,m,ty) = primMkMatch  (spBind,inpRange,dtree,targets.ToArray(),m,ty)
 
-let mkBoolSwitch m g t e = TDSwitch(g,[TCase(Test.Const(Const.Bool(true)),t)],Some e,m)
+let mkBoolSwitch m g t e = TDSwitch(g,[TCase(DecisionTreeTest.Const(Const.Bool(true)),t)],Some e,m)
 
 let primMkCond spBind spTarget1 spTarget2 m ty e1 e2 e3 = 
     let mbuilder = new MatchBuilder(spBind,m)
@@ -1123,12 +1123,8 @@ let mkInvisibleBinds (vs: Val list) (es: Expr list) =
     if vs.Length <> es.Length then failwith "mkInvisibleBinds: invalid argument";
     List.map2 mkInvisibleBind vs es
 
-let mkInvisibleFlatBindings vs es = 
-    if List.length vs <> List.length es then failwith "mkInvisibleFlatBindings: invalid argument";
-    List.map2 mkInvisibleBind vs es
-
 let mkInvisibleLets m vs xs body = mkLetsBind m (mkInvisibleBinds vs xs) body
-let mkInvisibleLetsFromBindings m vs xs body = mkLetsFromBindings m (mkInvisibleFlatBindings vs xs) body
+let mkInvisibleLetsFromBindings m vs xs body = mkLetsFromBindings m (mkInvisibleBinds vs xs) body
 
 let mkLetRecBinds m binds body = if isNil binds then body else Expr.LetRec(binds,body, m, NewFreeVarsCache())
 
@@ -2452,7 +2448,7 @@ type DisplayEnv =
         denv.SetOpenPaths (path :: denv.openTopPathsRaw)
 
     member denv.AddOpenModuleOrNamespace (modref: ModuleOrNamespaceRef) = 
-        denv.AddOpenPath (demangledPathOfCompPath (fullCompPathOfModuleOrNamespace modref.Deref))
+        denv.AddOpenPath (fullCompPathOfModuleOrNamespace modref.Deref).DemangledPath
 
     member denv.AddAccessibility access =     
         { denv with contextAccessibility = combineAccess denv.contextAccessibility access }
@@ -2476,11 +2472,11 @@ let fullNameOfPubPath (PubPath(p)) = textOfPath p
 let fullNameOfPubPathAsLayout (PubPath(p)) = layoutOfPath (Array.toList p)
 
 let fullNameOfParentOfNonLocalEntityRef (nlr: NonLocalEntityRef) = 
-    if nlr.Path.Length = 0 || nlr.Path.Length = 1 then None
+    if nlr.Path.Length < 2 then None
     else Some (textOfPath nlr.EnclosingMangledPath)  // <--- BAD BAD BAD: this is a mangled path. This is wrong for nested modules
 
 let fullNameOfParentOfNonLocalEntityRefAsLayout (nlr: NonLocalEntityRef) = 
-    if nlr.Path.Length = 0 || nlr.Path.Length = 1 then None
+    if nlr.Path.Length < 2 then None
     else Some (layoutOfPath (List.ofArray nlr.EnclosingMangledPath))  // <--- BAD BAD BAD: this is a mangled path. This is wrong for nested modules
 
 let fullNameOfParentOfEntityRef eref = 
@@ -3534,12 +3530,12 @@ module DebugPrint = begin
 
     and dtestL x = 
         match x with 
-        |  (Test.UnionCase (c,tinst)) -> wordL(tagText "is") ^^ unionCaseRefL c ^^ instL typeL tinst
-        |  (Test.ArrayLength (n,ty)) -> wordL(tagText "length") ^^ intL n ^^ typeL ty
-        |  (Test.Const       c        ) -> wordL(tagText "is") ^^ constL c
-        |  (Test.IsNull               ) -> wordL(tagText "isnull")
-        |  (Test.IsInst (_,typ)           ) -> wordL(tagText "isinst") ^^ typeL typ
-        |  (Test.ActivePatternCase (exp,_,_,_,_)) -> wordL(tagText "query") ^^ exprL exp
+        |  (DecisionTreeTest.UnionCase (c,tinst)) -> wordL(tagText "is") ^^ unionCaseRefL c ^^ instL typeL tinst
+        |  (DecisionTreeTest.ArrayLength (n,ty)) -> wordL(tagText "length") ^^ intL n ^^ typeL ty
+        |  (DecisionTreeTest.Const       c        ) -> wordL(tagText "is") ^^ constL c
+        |  (DecisionTreeTest.IsNull               ) -> wordL(tagText "isnull")
+        |  (DecisionTreeTest.IsInst (_,typ)           ) -> wordL(tagText "isinst") ^^ typeL typ
+        |  (DecisionTreeTest.ActivePatternCase (exp,_,_,_,_)) -> wordL(tagText "query") ^^ exprL exp
             
     and targetL i (TTarget (argvs,body,_)) = leftL(tagText "T") ^^ intL i ^^ tupleL (flatValsL argvs) ^^ rightL(tagText ":") --- exprL body
     and flatValsL vs = vs |> List.map valL
@@ -4062,12 +4058,12 @@ and accFreeInSwitchCase opts (TCase(discrim,dtree)) acc =
 
 and accFreeInTest (opts:FreeVarOptions) discrim acc = 
     match discrim with 
-    | Test.UnionCase(ucref,tinst) -> accFreeUnionCaseRef opts ucref (accFreeVarsInTys opts tinst acc)
-    | Test.ArrayLength(_,ty) -> accFreeVarsInTy opts ty acc
-    | Test.Const _
-    | Test.IsNull -> acc
-    | Test.IsInst (srcty,tgty) -> accFreeVarsInTy opts srcty (accFreeVarsInTy opts tgty acc)
-    | Test.ActivePatternCase (exp, tys, activePatIdentity, _, _) -> 
+    | DecisionTreeTest.UnionCase(ucref,tinst) -> accFreeUnionCaseRef opts ucref (accFreeVarsInTys opts tinst acc)
+    | DecisionTreeTest.ArrayLength(_,ty) -> accFreeVarsInTy opts ty acc
+    | DecisionTreeTest.Const _
+    | DecisionTreeTest.IsNull -> acc
+    | DecisionTreeTest.IsInst (srcty,tgty) -> accFreeVarsInTy opts srcty (accFreeVarsInTy opts tgty acc)
+    | DecisionTreeTest.ActivePatternCase (exp, tys, activePatIdentity, _, _) -> 
         accFreeInExpr opts exp 
             (accFreeVarsInTys opts tys 
                 (Option.foldBack (fun (vref,tinst) acc -> accFreeValRef opts vref (accFreeVarsInTys opts tinst acc)) activePatIdentity acc))
@@ -4297,7 +4293,7 @@ and accFreeInTargets opts targets acc =
 and accFreeInTarget opts (TTarget(vs,e,_)) acc = 
     List.foldBack (boundLocalVal opts) vs (accFreeInExpr opts e acc)
 
-and accFreeInFlatExprs opts (es:FlatExprs) acc = List.foldBack (accFreeInExpr opts) es acc
+and accFreeInFlatExprs opts (es:Exprs) acc = List.foldBack (accFreeInExpr opts) es acc
 
 and accFreeInExprs opts (es: Exprs) acc = 
     match es with 
@@ -4788,12 +4784,12 @@ and remapDecisionTree g compgen tmenv x =
                 List.map (fun (TCase(test,y)) -> 
                   let test' = 
                     match test with 
-                    | Test.UnionCase (uc,tinst)   -> Test.UnionCase(remapUnionCaseRef tmenv.tyconRefRemap uc,remapTypes tmenv tinst)
-                    | Test.ArrayLength (n,ty)      -> Test.ArrayLength(n,remapType tmenv ty)
-                    | Test.Const _                  -> test
-                    | Test.IsInst (srcty,tgty)      -> Test.IsInst (remapType tmenv srcty,remapType tmenv tgty) 
-                    | Test.IsNull                   -> Test.IsNull 
-                    | Test.ActivePatternCase _ -> failwith "Test.ActivePatternCase should only be used during pattern match compilation"
+                    | DecisionTreeTest.UnionCase (uc,tinst)   -> DecisionTreeTest.UnionCase(remapUnionCaseRef tmenv.tyconRefRemap uc,remapTypes tmenv tinst)
+                    | DecisionTreeTest.ArrayLength (n,ty)      -> DecisionTreeTest.ArrayLength(n,remapType tmenv ty)
+                    | DecisionTreeTest.Const _                  -> test
+                    | DecisionTreeTest.IsInst (srcty,tgty)      -> DecisionTreeTest.IsInst (remapType tmenv srcty,remapType tmenv tgty) 
+                    | DecisionTreeTest.IsNull                   -> DecisionTreeTest.IsNull 
+                    | DecisionTreeTest.ActivePatternCase _ -> failwith "DecisionTreeTest.ActivePatternCase should only be used during pattern match compilation"
                   TCase(test',remapDecisionTree g compgen tmenv y)) csl, 
                 Option.map (remapDecisionTree g compgen tmenv) dflt,
                 m)
@@ -7208,7 +7204,7 @@ let mkIsInstConditional g m tgty vinpe v e2 e3 =
         let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding,m)
         let tg2 = mbuilder.AddResultTarget(e2,SuppressSequencePointAtTarget)
         let tg3 = mbuilder.AddResultTarget(e3,SuppressSequencePointAtTarget)
-        let dtree = TDSwitch(exprForVal m v,[TCase(Test.IsNull,tg3)],Some tg2,m)
+        let dtree = TDSwitch(exprForVal m v,[TCase(DecisionTreeTest.IsNull,tg3)],Some tg2,m)
         let expr = mbuilder.Close(dtree,m,tyOfExpr g e2)
         mkInvisibleLet m v (mkIsInst tgty vinpe m)  expr
 
@@ -7216,7 +7212,7 @@ let mkIsInstConditional g m tgty vinpe v e2 e3 =
         let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding,m)
         let tg2 = TDSuccess([mkCallUnbox g m tgty vinpe], mbuilder.AddTarget(TTarget([v],e2,SuppressSequencePointAtTarget)))
         let tg3 = mbuilder.AddResultTarget(e3,SuppressSequencePointAtTarget)
-        let dtree = TDSwitch(vinpe,[TCase(Test.IsInst(tyOfExpr g vinpe,tgty),tg2)],Some tg3,m)
+        let dtree = TDSwitch(vinpe,[TCase(DecisionTreeTest.IsInst(tyOfExpr g vinpe,tgty),tg2)],Some tg3,m)
         let expr = mbuilder.Close(dtree,m,tyOfExpr g e2)
         expr
 
@@ -7229,7 +7225,7 @@ let mkNullTest g m e1 e2 e3 =
         let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding,m)
         let tg2 = mbuilder.AddResultTarget(e2,SuppressSequencePointAtTarget)
         let tg3 = mbuilder.AddResultTarget(e3,SuppressSequencePointAtTarget)            
-        let dtree = TDSwitch(e1, [TCase(Test.IsNull,tg3)],Some tg2,m)
+        let dtree = TDSwitch(e1, [TCase(DecisionTreeTest.IsNull,tg3)],Some tg2,m)
         let expr = mbuilder.Close(dtree,m,tyOfExpr g e2)
         expr         
 let mkNonNullTest (g:TcGlobals) m e = mkAsmExpr ([ IL.AI_ldnull ; IL.AI_cgt_un  ],[],  [e],[g.bool_ty],m)
@@ -7759,7 +7755,7 @@ let IsSimpleSyntacticConstantExpr g inputExpr =
         | TDSwitch (e,cases,dflt,_m) -> checkExpr vrefs e && cases |> List.forall (checkDecisionTreeCase vrefs) && dflt |> Option.forall (checkDecisionTree vrefs)
         | TDBind (bind,body) -> checkExpr vrefs bind.Expr && checkDecisionTree (vrefs.Add bind.Var.Stamp) body
     and checkDecisionTreeCase vrefs (TCase(discrim,dtree)) = 
-       (match discrim with Test.Const _c -> true | _ -> false) && checkDecisionTree vrefs dtree
+       (match discrim with DecisionTreeTest.Const _c -> true | _ -> false) && checkDecisionTree vrefs dtree
     and checkDecisionTreeTarget vrefs (TTarget(vs,e,_)) = 
        let vrefs = ((vrefs, vs) ||> List.fold (fun s v -> s.Add v.Stamp)) 
        checkExpr vrefs e

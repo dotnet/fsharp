@@ -4300,7 +4300,7 @@ and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx
         let targetMarkBeforeBinds = CG.GenerateDelayMark cgbuf "targetBeforeBinds"
         let targetMarkAfterBinds = CG.GenerateDelayMark cgbuf "targetAfterBinds"
         let startScope,endScope as scopeMarks = StartDelayedLocalScope "targetBinds" cgbuf
-        let binds = mkInvisibleFlatBindings vs es
+        let binds = mkInvisibleBinds vs es
         let eenvAtTarget = AllocStorageForBinds cenv cgbuf scopeMarks eenv binds
         let targetInfo = (targetMarkBeforeBinds,targetMarkAfterBinds,eenvAtTarget,successExpr,spTarget,repeatSP,vs,binds,startScope,endScope)
         
@@ -4353,18 +4353,18 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
     repeatSP()
     match cases with 
       // optimize a test against a boolean value, i.e. the all-important if-then-else 
-      | TCase(Test.Const(Const.Bool b), successTree) :: _  ->  
+      | TCase(DecisionTreeTest.Const(Const.Bool b), successTree) :: _  ->  
        let failureTree = (match defaultTargetOpt with None -> cases.Tail.Head.CaseTree | Some d -> d)
        GenDecisionTreeTest cenv eenv.cloc cgbuf stackAtTargets e None eenv (if b then successTree else  failureTree) (if b then failureTree else successTree) targets repeatSP targetInfos sequel 
 
       // // Remove a single test for a union case . Union case tests are always exa
-      //| [ TCase(Test.UnionCase _, successTree) ] when (defaultTargetOpt.IsNone)  ->  
+      //| [ TCase(DecisionTreeTest.UnionCase _, successTree) ] when (defaultTargetOpt.IsNone)  ->  
       //  GenDecisionTreeAndTargetsInner cenv cgbuf inplabOpt stackAtTargets eenv successTree targets repeatSP targetInfos sequel
       //   //GenDecisionTree cenv eenv.cloc cgbuf stackAtTargets e (Some (pop 1, Push [cenv.g.ilg.typ_Bool], Choice1Of2 (avoidHelpers, cuspec, idx))) eenv successTree failureTree targets repeatSP targetInfos sequel
 
       // Optimize a single test for a union case to an "isdata" test - much 
       // more efficient code, and this case occurs in the generated equality testers where perf is important 
-      | TCase(Test.UnionCase(c,tyargs), successTree) :: rest when rest.Length = (match defaultTargetOpt with None -> 1 | Some _ -> 0)  ->  
+      | TCase(DecisionTreeTest.UnionCase(c,tyargs), successTree) :: rest when rest.Length = (match defaultTargetOpt with None -> 1 | Some _ -> 0)  ->  
         let failureTree = 
             match defaultTargetOpt with 
             | None -> rest.Head.CaseTree
@@ -4380,24 +4380,24 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
         match firstDiscrim with 
         // Iterated tests, e.g. exception constructors, nulltests, typetests and active patterns.
         // These should always have one positive and one negative branch 
-        | Test.IsInst _  
-        | Test.ArrayLength _
-        | Test.IsNull 
-        | Test.Const(Const.Zero) -> 
-            if List.length cases <> 1 || Option.isNone defaultTargetOpt then failwith "internal error: GenDecisionTreeSwitch: Test.IsInst/isnull/query"
+        | DecisionTreeTest.IsInst _  
+        | DecisionTreeTest.ArrayLength _
+        | DecisionTreeTest.IsNull 
+        | DecisionTreeTest.Const(Const.Zero) -> 
+            if List.length cases <> 1 || Option.isNone defaultTargetOpt then failwith "internal error: GenDecisionTreeSwitch: DecisionTreeTest.IsInst/isnull/query"
             let bi = 
               match firstDiscrim with 
-              | Test.Const(Const.Zero) ->
+              | DecisionTreeTest.Const(Const.Zero) ->
                   GenExpr cenv cgbuf eenv SPSuppress e Continue 
                   BI_brfalse
-              | Test.IsNull -> 
+              | DecisionTreeTest.IsNull -> 
                   GenExpr cenv cgbuf eenv SPSuppress e Continue 
                   let srcTy = tyOfExpr cenv.g e
                   if isTyparTy cenv.g srcTy then 
                       let ilFromTy = GenType cenv.amap m eenv.tyenv srcTy
                       CG.EmitInstr cgbuf (pop 1) (Push [cenv.g.ilg.typ_Object]) (I_box ilFromTy)
                   BI_brfalse
-              | Test.IsInst (_srcty,tgty) -> 
+              | DecisionTreeTest.IsInst (_srcty,tgty) -> 
                   let e = mkCallTypeTest cenv.g m tgty e
                   GenExpr cenv cgbuf eenv SPSuppress e Continue
                   BI_brtrue
@@ -4405,15 +4405,15 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
             CG.EmitInstr cgbuf (pop 1) Push0 (I_brcmp (bi,(List.head caseLabels).CodeLabel))
             GenDecisionTreeCases cenv cgbuf stackAtTargets eenv targets repeatSP targetInfos defaultTargetOpt caseLabels cases sequel
               
-        | Test.ActivePatternCase _ -> error(InternalError("internal error in codegen: Test.ActivePatternCase",switchm))
-        | Test.UnionCase (hdc,tyargs) -> 
+        | DecisionTreeTest.ActivePatternCase _ -> error(InternalError("internal error in codegen: DecisionTreeTest.ActivePatternCase",switchm))
+        | DecisionTreeTest.UnionCase (hdc,tyargs) -> 
             GenExpr cenv cgbuf eenv SPSuppress e Continue
             let cuspec = GenUnionSpec cenv.amap m eenv.tyenv hdc.TyconRef tyargs
             let dests = 
-              if cases.Length <> caseLabels.Length then failwith "internal error: Test.UnionCase"
+              if cases.Length <> caseLabels.Length then failwith "internal error: DecisionTreeTest.UnionCase"
               (cases , caseLabels) ||> List.map2 (fun case label  ->
                   match case with 
-                  | TCase(Test.UnionCase (c,_),_) -> (c.Index, label.CodeLabel) 
+                  | TCase(DecisionTreeTest.UnionCase (c,_),_) -> (c.Index, label.CodeLabel) 
                   | _ -> failwith "error: mixed constructor/const test?") 
             
             let avoidHelpers = entityRefInThisAssembly cenv.g.compilingFslib hdc.TyconRef
@@ -4421,7 +4421,7 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
             CG.EmitInstrs cgbuf (pop 1) Push0 [ ] // push/pop to match the line above
             GenDecisionTreeCases cenv cgbuf stackAtTargets eenv  targets repeatSP targetInfos defaultTargetOpt caseLabels cases sequel
               
-        | Test.Const c ->
+        | DecisionTreeTest.Const c ->
             GenExpr cenv cgbuf eenv SPSuppress e Continue
             match c with 
             | Const.Bool _ -> failwith "should have been done earlier"
@@ -4437,7 +4437,7 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
                   (cases,caseLabels) ||> List.map2 (fun case label  ->
                       let i = 
                         match case.Discriminator with 
-                          Test.Const c' ->
+                          DecisionTreeTest.Const c' ->
                             match c' with 
                             | Const.SByte i -> int32 i
                             | Const.Int16 i -> int32 i

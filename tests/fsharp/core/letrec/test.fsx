@@ -3,14 +3,17 @@
 module Core_letrec
 #endif
 
-let failures = ref false
-let report_failure s = 
-  stderr.WriteLine ("FAIL: "+s); failures := true
+let failures = ref []
+
+let report_failure (s : string) = 
+    stderr.Write" NO: "
+    stderr.WriteLine s
+    failures := !failures @ [s]
+
 
 let test t s1 s2 = 
   if s1 <> s2 then 
-    (stderr.WriteLine ("test "+t+" failed");
-     failures := true)
+    report_failure ("test "+t+" failed")
   else
     stdout.WriteLine ("test "+t+" succeeded")   
 
@@ -124,7 +127,7 @@ let WouldFailAtRuntimeTest2 () =
   and a3 = (fun x -> a2 + 2) 1 in 
   a2 + a3
 
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !TESTS_AS_APP && !FX_PORTABLE_OR_NETSTANDARD
 open System
 open System.Windows.Forms
 
@@ -300,7 +303,7 @@ module RecursiveInterfaceObjectExpressions = begin
   
 end
 
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !TESTS_AS_APP && !FX_PORTABLE_OR_NETSTANDARD
 module RecursiveInnerConstrainedGenerics = begin
 
     open System.Windows.Forms
@@ -624,15 +627,16 @@ module BasicPermutations =
 
 
 #if TESTS_AS_APP
-let aa = 
-    if !failures then (stdout.WriteLine "Test Failed"; exit 1) 
-    else (stdout.WriteLine "Test Passed"; exit 0)
+let RUN() = !failures
 #else
-do 
-  if !failures then (stdout.WriteLine "Test Failed"; exit 1) 
-
-
-do (stdout.WriteLine "Test Passed"; 
-    System.IO.File.WriteAllText("test.ok","ok"); 
-    exit 0)
+let aa =
+  match !failures with 
+  | [] -> 
+      stdout.WriteLine "Test Passed"
+      System.IO.File.WriteAllText("test.ok","ok")
+      exit 0
+  | _ -> 
+      stdout.WriteLine "Test Failed"
+      exit 1
 #endif
+

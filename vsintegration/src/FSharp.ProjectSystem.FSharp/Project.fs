@@ -241,7 +241,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                             member this.ListAvailableFSharpCoreVersions(_) = Array.empty }
 
                     let service = 
-                        match Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler with
+                        match Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None) with
                         | None -> nullService
                         | Some path ->
                             try

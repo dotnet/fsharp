@@ -221,3 +221,8 @@ module List =
             state <- folder state i x
             i <- i + 1
         state
+
+module Seq =
+    open System.Collections.Immutable
+
+    let toImmutableArray (xs: seq<'a>) : ImmutableArray<'a> = xs.ToImmutableArray()

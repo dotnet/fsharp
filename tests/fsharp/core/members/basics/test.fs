@@ -3,11 +3,19 @@ module Global
 
 #nowarn "62"
 
-let failures = ref false
-let report_failure () = 
-  stderr.WriteLine " NO"; failures := true
-let test s b = stderr.Write(s:string);  if b then stderr.WriteLine " OK" else report_failure() 
-let check s b1 b2 = if b1 = b2  then eprintfn "%s: OK, b1 = %A, b2 = %A" s b1 b2 else (eprintfn "FAIL %s: b1 = %A, b2 = %A" s b1 b2; report_failure())
+let failures = ref []
+
+let report_failure (s : string) = 
+    stderr.Write" NO: "
+    stderr.WriteLine s
+    failures := !failures @ [s]
+
+let test (s : string) b = 
+    stderr.Write(s)
+    if b then stderr.WriteLine " OK"
+    else report_failure (s)
+
+let check s b1 b2 = test s (b1 = b2)
 
 //--------------------------------------------------------------
 // Test defining a record using object-expression syntax
@@ -3444,9 +3452,18 @@ module AutoProps_2 = begin
     check "autoprops_262" c61.Property 44      
 end
 
-let _ = 
-  if !failures then (stdout.WriteLine "Test Failed"; exit 1) 
-  else (stdout.WriteLine "Test Passed"; 
-        System.IO.File.WriteAllText("test.ok","ok"); 
-        exit 0)
+
+#if TESTS_AS_APP
+let RUN() = !failures
+#else
+let aa =
+  match !failures with 
+  | [] -> 
+      stdout.WriteLine "Test Passed"
+      System.IO.File.WriteAllText("test.ok","ok")
+      exit 0
+  | _ -> 
+      stdout.WriteLine "Test Failed"
+      exit 1
+#endif
 
