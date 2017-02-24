@@ -505,6 +505,7 @@ type ResultOrException<'TResult> =
 module ResultOrException = 
 
     let success a = Result a
+
     let raze (b:exn) = Exception b
 
     // map
@@ -523,6 +524,135 @@ module ResultOrException =
         | Result x -> success x
         | Exception _err -> f()
 
+[<RequireQualifiedAccess>] 
+type ValueOrCancelled<'TResult> =
+    | Value of 'TResult
+    | Cancelled of OperationCanceledException
+
+/// Represents a cancellable computation with explicit representation of a cancelled result.
+///
+/// A cancellable computation is passed may be cancelled via a CancellationToken, which is propagated implicitly.  
+/// If cancellation occurs, it is propagated as data rather than by raising an OperationCancelledException.  
+type Cancellable<'TResult> = Cancellable of (System.Threading.CancellationToken -> ValueOrCancelled<'TResult>)
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module Cancellable = 
+
+    /// Run a cancellable computation using the given cancellation token
+    let run (ct: System.Threading.CancellationToken) (Cancellable oper) = 
+        if ct.IsCancellationRequested then 
+            ValueOrCancelled.Cancelled (OperationCanceledException()) 
+        else
+            oper ct 
+
+    /// Bind the result of a cancellable computation
+    let bind f comp1 = 
+       Cancellable (fun ct -> 
+            match run ct comp1 with 
+            | ValueOrCancelled.Value v1 -> run ct (f v1) 
+            | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
+
+    /// Map the result of a cancellable computation
+    let map f oper = 
+       Cancellable (fun ct -> 
+           match run ct oper with 
+           | ValueOrCancelled.Value res -> ValueOrCancelled.Value (f res)
+           | ValueOrCancelled.Cancelled err -> ValueOrCancelled.Cancelled err)
+                    
+    /// Return a simple value as the result of a cancellable computation
+    let ret x = Cancellable (fun _ -> ValueOrCancelled.Value x)
+
+    /// Fold a cancellable computation along a sequence of inputs
+    let fold f acc seq = 
+        Cancellable (fun ct -> 
+           (ValueOrCancelled.Value acc, seq) 
+           ||> Seq.fold (fun acc x -> 
+               match acc with 
+               | ValueOrCancelled.Value accv -> run ct (f accv x)
+               | res -> res))
+    
+    /// Iterate a cancellable computation over a collection
+    let each f seq = 
+        Cancellable (fun ct -> 
+           (ValueOrCancelled.Value [], seq) 
+           ||> Seq.fold (fun acc x -> 
+               match acc with 
+               | ValueOrCancelled.Value acc -> 
+                   match run ct (f x) with 
+                   | ValueOrCancelled.Value x2 -> ValueOrCancelled.Value (x2 :: acc)
+                   | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1
+               | canc -> canc)
+           |> function 
+               | ValueOrCancelled.Value acc -> ValueOrCancelled.Value (List.rev acc)
+               | canc -> canc)
+    
+    /// Delay a cancellable computation
+    let delay (f: unit -> Cancellable<'T>) = Cancellable (fun ct -> let (Cancellable g) = f() in g ct)
+
+    /// Run the computation in a mode where it may not be cancelled. The computation never results in a 
+    /// ValueOrCancelled.Cancelled.
+    let runWithoutCancellation comp = 
+        let res = run System.Threading.CancellationToken.None comp 
+        match res with 
+        | ValueOrCancelled.Cancelled _ -> failwith "unexpected cancellation" 
+        | ValueOrCancelled.Value r -> r
+
+    /// Bind the cancellation token associated with the computation
+    let token () = Cancellable (fun ct -> ValueOrCancelled.Value ct)
+
+    /// Represents a canceled computation
+    let canceled() = Cancellable (fun _ -> ValueOrCancelled.Cancelled (new OperationCanceledException()))
+
+    /// Catch exceptions in a computation
+    let private catch (Cancellable e) = 
+        Cancellable (fun ct -> 
+            try 
+                match e ct with 
+                | ValueOrCancelled.Value r -> ValueOrCancelled.Value (Choice1Of2 r) 
+                | ValueOrCancelled.Cancelled e -> ValueOrCancelled.Cancelled e 
+            with err -> 
+                ValueOrCancelled.Value (Choice2Of2 err))
+
+    /// Implement try/finally for a cancellable computation
+    let tryFinally e compensation =    
+        catch e |> bind (fun res ->  
+            compensation();
+            match res with Choice1Of2 r -> ret r | Choice2Of2 err -> raise err)
+
+    /// Implement try/with for a cancellable computation
+    let tryWith e handler =    
+        catch e |> bind (fun res ->  
+            match res with Choice1Of2 r -> ret r | Choice2Of2 err -> handler err)
+    
+    // /// Run the cancellable computation within an Async computation.  This isn't actaully used in the codebase, but left
+    // here in case we need it in the future 
+    //
+    // let toAsync e =    
+    //     async { 
+    //       let! ct = Async.CancellationToken
+    //       return! 
+    //          Async.FromContinuations(fun (cont, econt, ccont) -> 
+    //            // Run the computation synchronously using the given cancellation token
+    //            let res = try Choice1Of2 (run ct e) with err -> Choice2Of2 err
+    //            match res with 
+    //            | Choice1Of2 (ValueOrCancelled.Value v) -> cont v
+    //            | Choice1Of2 (ValueOrCancelled.Cancelled err) -> ccont err
+    //            | Choice2Of2 err -> econt err) 
+    //     }
+    
+type CancellableBuilder() = 
+    member x.Bind(e,k) = Cancellable.bind k e
+    member x.Return(v) = Cancellable.ret v
+    member x.ReturnFrom(v) = v
+    member x.Combine(e1,e2) = e1 |> Cancellable.bind (fun () -> e2)
+    member x.TryWith(e,handler) = Cancellable.tryWith e handler
+    member x.Using(resource,e) = Cancellable.tryFinally (e resource) (fun () -> (resource :> System.IDisposable).Dispose())
+    member x.TryFinally(e,compensation) =  Cancellable.tryFinally e compensation
+    member x.Delay(f) = Cancellable.delay f
+    member x.Zero() = Cancellable.ret ()
+
+let cancellable = CancellableBuilder()
+
 /// Computations that can cooperatively yield by returning a continuation
 ///
 ///    - Any yield of a NotYetDone should typically be "abandonable" without adverse consequences. No resource release
@@ -533,6 +663,8 @@ module ResultOrException =
 ///
 ///    - The key thing is that you can take an Eventually value and run it with 
 ///      Eventually.repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled
+///
+///    - Cancellation results in a suspended computation rather than complete abandonment
 type Eventually<'T> = 
     | Done of 'T 
     | NotYetDone of (CompilationThreadToken -> Eventually<'T>)
@@ -559,6 +691,8 @@ module Eventually =
         
     /// Keep running the computation bit by bit until a time limit is reached.
     /// The runner gets called each time the computation is restarted
+    ///
+    /// If cancellation happens, the operation is left half-complete, ready to resume.
     let repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled timeShareInMilliseconds (ct: CancellationToken) runner e = 
         let sw = new System.Diagnostics.Stopwatch() 
         let rec runTimeShare ctok e = 
@@ -578,7 +712,7 @@ module Eventually =
         NotYetDone (fun ctok -> runTimeShare ctok e)
     
     /// Keep running the asynchronous computation bit by bit. The runner gets called each time the computation is restarted.
-    /// Can be cancelled in the normal way.
+    /// Can be cancelled as an Async in the normal way.
     let forceAsync (runner: (CompilationThreadToken -> Eventually<'T>) -> Async<Eventually<'T>>) (e: Eventually<'T>) : Async<'T option> =
         let rec loop (e: Eventually<'T>) =
             async {

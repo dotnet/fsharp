@@ -4,7 +4,6 @@ namespace rec Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Composition
-open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
 
@@ -15,7 +14,6 @@ open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
 
 open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
@@ -112,7 +110,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
             let hasTypeCheckError = results.Errors |> Array.exists (fun e -> e.Severity = FSharpErrorSeverity.Error)                
             // This comparison is a bit expensive
             if hasTypeCheckError && List.length membersAndRanges <> Seq.length interfaceMembers then    
-                let diagnostics = (context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id)).ToImmutableArray()            
+                let diagnostics = context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id) |> Seq.toImmutableArray
                 let registerCodeFix title verboseMode =
                     let codeAction =
                         CodeAction.Create(
@@ -136,7 +134,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
             else 
                 ()
             
-    override __.FixableDiagnosticIds = fixableDiagnosticIds.ToImmutableArray()
+    override __.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
     override __.RegisterCodeFixesAsync context : Task =
         asyncMaybe {

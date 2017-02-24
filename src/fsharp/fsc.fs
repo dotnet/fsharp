@@ -448,19 +448,18 @@ let GenerateInterfaceData(tcConfig:TcConfig) =
     not tcConfig.standalone && not tcConfig.noSignatureData 
 
 let EncodeInterfaceData(tcConfig:TcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, isIncrementalBuild) = 
-      if GenerateInterfaceData(tcConfig) then 
-        if verbose then dprintfn "Generating interface data attribute..."
+    if GenerateInterfaceData(tcConfig) then 
         let resource = WriteSignatureData (tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile)
-        if verbose then dprintf "Generated interface data attribute!\n"
-        // REVIEW: need a better test for this
-        if (tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib) && not isIncrementalBuild then 
-            let sigDataFileName = (Filename.chopExtension outfile)+".sigdata"
-            File.WriteAllBytes(sigDataFileName, resource.Bytes)
-        let sigAttr = mkSignatureDataVersionAttr tcGlobals (IL.parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision) 
         // The resource gets written to a file for FSharp.Core
+        let useDataFiles = (tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib) && not isIncrementalBuild
         let resources = 
-            [ if not tcGlobals.compilingFslib then 
-                 yield  resource ]
+            if useDataFiles then 
+                let sigDataFileName = (Filename.chopExtension outfile)+".sigdata"
+                File.WriteAllBytes(sigDataFileName, resource.Bytes)
+                []
+            else
+                [ resource ]
+        let sigAttr = mkSignatureDataVersionAttr tcGlobals (IL.parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision) 
         [sigAttr], resources
       else 
         [], []
@@ -1740,7 +1739,7 @@ let main0(ctok, argv, referenceResolver, bannerAlreadyPrinted, exiter:Exiter, er
     let sysRes, otherRes, knownUnresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(ctok, tcConfig)
     
     // Import basic assemblies
-    let tcGlobals, frameworkTcImports = TcImports.BuildFrameworkTcImports (ctok, foundationalTcConfigP, sysRes, otherRes)
+    let tcGlobals, frameworkTcImports = TcImports.BuildFrameworkTcImports (ctok, foundationalTcConfigP, sysRes, otherRes) |> Cancellable.runWithoutCancellation
 
     // Register framework tcImports to be disposed in future
     disposables.Register frameworkTcImports
@@ -1775,9 +1774,7 @@ let main0(ctok, argv, referenceResolver, bannerAlreadyPrinted, exiter:Exiter, er
 
     // Import other assemblies
     ReportTime tcConfig "Import non-system references"
-    let tcGlobals, tcImports =  
-        let tcImports = TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, tcGlobals, frameworkTcImports, otherRes, knownUnresolved)
-        tcGlobals, tcImports
+    let tcImports = TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, tcGlobals, frameworkTcImports, otherRes, knownUnresolved)  |> Cancellable.runWithoutCancellation
 
     // register tcImports to be disposed in future
     disposables.Register tcImports

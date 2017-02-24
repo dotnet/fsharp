@@ -50,12 +50,12 @@
     <Compile Include="CreateFSharpManifestResourceName.fsi" />
     <Compile Include="CreateFSharpManifestResourceName.fs" />
     <CopyAndSubstituteText Include="Microsoft.FSharp.targets">
-      <TargetFilename>Microsoft.FSharp.targets</TargetFilename>
-      <Pattern1>{BuildSuffix}</Pattern1>
-      <Replacement1></Replacement1>
+        <TargetFilename>Microsoft.FSharp.Targets</TargetFilename>
+        <Pattern1>{BuildSuffix}</Pattern1>
+        <Replacement1></Replacement1>
     </CopyAndSubstituteText>
     <CopyAndSubstituteText Include="Microsoft.Portable.FSharp.targets">
-    <TargetFilename>Microsoft.Portable.FSharp.targets</TargetFilename>
+      <TargetFilename>Microsoft.Portable.FSharp.Targets</TargetFilename>
       <Pattern1>{BuildSuffix}</Pattern1>
       <Replacement1></Replacement1>
     </CopyAndSubstituteText>
@@ -63,6 +63,8 @@
   <ItemGroup Condition=" '$(TargetFramework)' != 'coreclr' ">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
+  </ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' != 'coreclr' AND '$(MonoPackaging)' != 'true' ">
     <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Framework.dll</HintPath>
     </Reference>
@@ -74,6 +76,23 @@
     </Reference>
     <Reference Include="Microsoft.Build.Tasks.Core, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Tasks.Core.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' != 'coreclr' AND '$(MonoPackaging)' == 'true' ">
+    <Reference Include="Microsoft.Build.Framework, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+        <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.Build.Engine, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+        <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.Build, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+        <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.Build.Utilities.$(MonoPackagingMSBuildVersionSuffix), Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+        <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.Build.Tasks.$(MonoPackagingMSBuildVersionSuffix), Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+        <Private>True</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>

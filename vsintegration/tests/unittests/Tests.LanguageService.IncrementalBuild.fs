@@ -14,6 +14,7 @@ open NUnit.Framework.Constraints
 open Salsa.Salsa
 open Salsa.VsOpsUtils               
 open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.IncrementalBuild
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
@@ -22,7 +23,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 module internal Vector = 
     /// Convert from vector to a scalar
     let ToScalar<'I> (taskname:string) (input:Vector<'I>) : Scalar<'I array> =
-        let Identity _ inArray = inArray
+        let Identity _ inArray = inArray |> cancellable.Return
         Vector.Demultiplex taskname Identity input
             
 [<AutoOpen>]
@@ -35,7 +36,6 @@ module internal Values =
 type IncrementalBuild() = 
     
     let save _ctok _ = ()
-    let ct = CancellationToken.None
     
     /// Called per test
     [<SetUp>]
@@ -59,7 +59,7 @@ type IncrementalBuild() =
 
         let updateStamp = ref true
 
-        let StampFile _ctok filename =
+        let StampFile _cache _ctok filename =
             let result = File.GetLastWriteTime(filename)
             if !updateStamp then
                 // Here, simulate that VS is writing to our file.
@@ -78,7 +78,8 @@ type IncrementalBuild() =
         let bound = buildDesc.GetInitialPartialBuild inputs
 
         let DoCertainStep bound = 
-            match IncrementalBuild.Step ctok save ct (Target(mapped,None)) bound with
+            let cache = TimeStampCache(System.DateTime.Now)
+            match IncrementalBuild.Step cache ctok save (Target(mapped,None)) bound |> Cancellable.runWithoutCancellation with
             | Some bound -> bound
             | None -> failwith "Expected to be able to step"
 
@@ -94,7 +95,8 @@ type IncrementalBuild() =
         updateStamp:=false
         bound <- DoCertainStep bound
         bound <- DoCertainStep bound
-        match IncrementalBuild.Step ctok save ct (Target (mapped, None)) bound with
+        let cache = TimeStampCache(System.DateTime.Now)
+        match IncrementalBuild.Step cache ctok save (Target (mapped, None)) bound  |> Cancellable.runWithoutCancellation with
         | Some bound -> failwith "Build should have stopped"
         | None -> () 
 
@@ -108,7 +110,7 @@ type IncrementalBuild() =
             eventually { return acc+"-"+filename+"-"+(!mapSuffix) }
             
         let stampAs = ref DateTime.Now
-        let StampFile _ctok filename = 
+        let StampFile _cache _ctok filename = 
             !stampAs
                             
         let buildDesc = new BuildDescriptionScope()
@@ -124,14 +126,16 @@ type IncrementalBuild() =
             
         printf "-[Step1]----------------------------------------------------------------------------------------\n"
         // Evaluate the first time.
-        let bound = Eval ctok save ct scanned bound
+        let cache = TimeStampCache(System.DateTime.Now)
+        let bound = Eval cache ctok save scanned bound  |> Cancellable.runWithoutCancellation
         let r = GetVectorResult (scanned, bound)
         Assert.AreEqual("AccVal-File1.fs-Suffix1-File2.fs-Suffix1",r.[1])
             
         printf "-[Step2]----------------------------------------------------------------------------------------\n"
         // Evaluate the second time. No change should be seen.
         mapSuffix:="Suffix2"
-        let bound = Eval ctok save ct scanned bound
+        let cache = TimeStampCache(System.DateTime.Now)
+        let bound = Eval cache ctok save scanned bound  |> Cancellable.runWithoutCancellation
         let r = GetVectorResult (scanned,bound)
         Assert.AreEqual("AccVal-File1.fs-Suffix1-File2.fs-Suffix1",r.[1])
 
@@ -139,7 +143,8 @@ type IncrementalBuild() =
         // Evaluate a third time with timestamps updated. Should cause a rebuild
         System.Threading.Thread.Sleep 10 // Sleep a little to avoid grabbing the same 'Now'
         stampAs:=DateTime.Now
-        let bound = Eval ctok save ct scanned bound
+        let cache = TimeStampCache(System.DateTime.Now)
+        let bound = Eval cache ctok save scanned bound  |> Cancellable.runWithoutCancellation
         let r = GetVectorResult (scanned,bound)
         Assert.AreEqual("AccVal-File1.fs-Suffix2-File2.fs-Suffix2",r.[1])
              
@@ -148,9 +153,9 @@ type IncrementalBuild() =
     [<Test>]
     member public rb.aaZeroElementVector() = // Starts with 'aa' to put it at the front.
         let stamp = ref DateTime.Now
-        let Stamp ctok (s:string) = !stamp
+        let Stamp _cache _ctok (s:string) = !stamp
         let Map ctok (s:string) = s
-        let Demult ctok (a:string array) : int = a.Length
+        let Demult ctok (a:string[]) = a.Length  |> cancellable.Return
             
         let buildDesc = new BuildDescriptionScope()
         let inputVector = InputVector<string> "InputVector"
@@ -165,7 +170,8 @@ type IncrementalBuild() =
         let inputs1 = [ BuildInput.VectorInput(inputVector, [""]) ]
         let build1 = buildDesc.GetInitialPartialBuild inputs1
 
-        let build1Evaled = Eval ctok save ct result build1
+        let cache = TimeStampCache(System.DateTime.Now)
+        let build1Evaled = Eval cache ctok save result build1  |> Cancellable.runWithoutCancellation
         let r1 = GetScalarResult (result, build1Evaled)
         match r1 with
         | Some(v,dt) -> Assert.AreEqual(1,v) 
@@ -176,7 +182,8 @@ type IncrementalBuild() =
         let inputs0 = [ BuildInput.VectorInput(inputVector, []) ]
         let build0 = buildDesc.GetInitialPartialBuild inputs0
 
-        let build0Evaled = Eval ctok save ct result build0
+        let cache = TimeStampCache(System.DateTime.Now)
+        let build0Evaled = Eval cache ctok save result build0  |> Cancellable.runWithoutCancellation
         let r0 = GetScalarResult (result, build0Evaled)
         match r0 with
         | Some(v,dt) -> Assert.AreEqual(0,v) 
@@ -190,11 +197,11 @@ type IncrementalBuild() =
         let elements = ref 1
         let timestamp = ref System.DateTime.Now
         let Input() : string array =  [| for i in 1..!elements -> sprintf "Element %d" i |]
-        let Stamp ctok s = !timestamp
+        let Stamp _cache ctok s = !timestamp
         let Map ctok (s:string) = sprintf "Mapped %s " s
-        let Result ctok (a:string[]) : string = String.Join(",", a)
+        let Result ctok (a:string[]) = String.Join(",", a)  |> cancellable.Return
         let now = System.DateTime.Now
-        let FixedTimestamp _ctok _  =  now
+        let FixedTimestamp _cache _ctok _  =  now
             
         let buildDesc = new BuildDescriptionScope()
         let input = InputVector<string> "InputVector"
@@ -212,7 +219,8 @@ type IncrementalBuild() =
             
         // Evaluate it with value 1
         elements := 1
-        let bound = Eval ctok save ct result bound
+        let cache = TimeStampCache(System.DateTime.Now)
+        let bound = Eval cache ctok save result bound  |> Cancellable.runWithoutCancellation
         let r1 = GetScalarResult<string>(result, bound)
         match r1 with
         | Some(s,dt) -> printfn "%s" s
@@ -223,7 +231,8 @@ type IncrementalBuild() =
         System.Threading.Thread.Sleep(100)
         timestamp := System.DateTime.Now
             
-        let bound = Eval ctok save ct result bound
+        let cache = TimeStampCache(System.DateTime.Now)
+        let bound = Eval cache ctok save result bound  |> Cancellable.runWithoutCancellation
         let r2 = GetScalarResult (result, bound)
         match r2 with
         | Some(s,dt) -> Assert.AreEqual("Mapped Input 0 ",s)
@@ -316,7 +325,7 @@ type IncrementalBuild() =
             filename+"."+(!mapSuffix)
             
         let stampAs = ref DateTime.Now
-        let StampFile ctok filename =  
+        let StampFile _cache ctok filename =  
             !stampAs
                             
         let buildDesc = new BuildDescriptionScope()
@@ -329,23 +338,26 @@ type IncrementalBuild() =
             
         printf "-[Step1]----------------------------------------------------------------------------------------\n"
         // Evaluate the first time.
-        let bound = Eval ctok save ct mapped bound
+        let cache = TimeStampCache(System.DateTime.Now)
+        let bound = Eval cache ctok save mapped bound  |> Cancellable.runWithoutCancellation
         let r = GetVectorResult (mapped,bound)
         Assert.AreEqual("File2.fs.Suffix1",r.[1])
             
         printf "-[Step2]----------------------------------------------------------------------------------------\n"
         // Evaluate the second time. No change should be seen.
         mapSuffix:="Suffix2"
-        let bound = Eval ctok save ct mapped bound
+        let cache = TimeStampCache(System.DateTime.Now)
+        let bound = Eval cache ctok save  mapped bound  |> Cancellable.runWithoutCancellation
         let r = GetVectorResult (mapped,bound)
         Assert.AreEqual("File2.fs.Suffix1",r.[1])
 
         printf "-[Step3]----------------------------------------------------------------------------------------\n"
         // Evaluate a third time with timestamps updated. Should cause a rebuild
+        let cache = TimeStampCache(System.DateTime.Now)
         while !stampAs = DateTime.Now do 
             System.Threading.Thread.Sleep 10 // Sleep a little to avoid grabbing the same 'Now'
         stampAs:=DateTime.Now
-        let bound = Eval ctok save ct mapped bound
+        let bound = Eval cache ctok save mapped bound  |> Cancellable.runWithoutCancellation
         let r = GetVectorResult (mapped,bound)
         Assert.AreEqual("File2.fs.Suffix2",r.[1])
             
@@ -355,10 +367,10 @@ type IncrementalBuild() =
         
         let joinedResult = ref "Join1"
         let Join ctok (filenames:_[]) = 
-            !joinedResult
+            !joinedResult  |> cancellable.Return
             
         let stampAs = ref DateTime.Now
-        let StampFile ctok filename = 
+        let StampFile _cache ctok filename = 
             !stampAs
                             
         let buildDesc = new BuildDescriptionScope()
@@ -371,14 +383,16 @@ type IncrementalBuild() =
             
         printf "-[Step1]----------------------------------------------------------------------------------------\n"
         // Evaluate the first time.
-        let bound = Eval ctok save ct joined bound
+        let cache = TimeStampCache(System.DateTime.Now)
+        let bound = Eval cache ctok save joined bound  |> Cancellable.runWithoutCancellation
         let (r,_) = Option.get (GetScalarResult<string>(joined,bound))
         Assert.AreEqual("Join1",r)
             
         printf "-[Step2]----------------------------------------------------------------------------------------\n"
         // Evaluate the second time. No change should be seen.
         joinedResult:="Join2"
-        let bound = Eval ctok save ct joined bound
+        let cache = TimeStampCache(System.DateTime.Now)
+        let bound = Eval cache ctok save joined bound  |> Cancellable.runWithoutCancellation
         let (r,_) = Option.get (GetScalarResult (joined,bound))
         Assert.AreEqual("Join1",r)
 
@@ -387,7 +401,8 @@ type IncrementalBuild() =
         while !stampAs = DateTime.Now do 
             System.Threading.Thread.Sleep 10 // Sleep a little to avoid grabbing the same 'Now'
         stampAs:=DateTime.Now
-        let bound = Eval ctok save ct joined bound
+        let cache = TimeStampCache(System.DateTime.Now)
+        let bound = Eval cache ctok save joined bound  |> Cancellable.runWithoutCancellation
         let (r,_) = Option.get (GetScalarResult (joined,bound))
         Assert.AreEqual("Join2",r)
             
@@ -395,7 +410,7 @@ type IncrementalBuild() =
     /// Test that Demultiplex followed by ScanLeft works
     [<Test>]
     member public rb.DemultiplexScanLeft() =
-        let Size ctok (ar:_[]) = ar.Length
+        let Size ctok (ar:_[]) = ar.Length  |> cancellable.Return
         let Scan ctok acc (file :string) = eventually { return acc + file.Length }
         let buildDesc = new BuildDescriptionScope()
         let inVector = InputVector<string> "InputVector"
@@ -406,50 +421,13 @@ type IncrementalBuild() =
         let inputs = [ BuildInput.VectorInput(inVector, ["File1.fs";"File2.fs";"File3.fs"]) ]
         let bound = buildDesc.GetInitialPartialBuild inputs
             
-        let e = Eval ctok save ct scanned bound   
+        let cache = TimeStampCache(System.DateTime.Now)
+        let e = Eval cache ctok save scanned bound     |> Cancellable.runWithoutCancellation
         let r = GetScalarResult (vectorSize,e)  
         match r with 
         | Some(r,_) -> Assert.AreEqual(3,r)
         | None -> Assert.Fail("No size was returned")       
             
-            
-    (*
-    /// Test that Scalar.Multiplex works.
-    [<Test>] 
-    member public rb.ScalarMultiplex() =
-        let MultiplexScalar inp = [|inp+":1";inp+":2";inp+":3"|]
-        
-        let buildDesc = new BuildDescriptionScope()
-        let inScalar = InputScalar<string> "Scalar"
-        let result = Scalar.Multiplex "MultiplexScalar" MultiplexScalar inScalar
-        buildDesc.DeclareVectorOutput result 
-            
-        let b = buildDesc.GetInitialPartialBuild([],["Scalar",box "A Scalar Value"])
-        let e = Eval result  b
-        let r = GetVectorResult(result,e)
-        Assert.AreEqual("A Scalar Value:2", r.[1])
-    
-            
-    /// Test that Scalar.Map works.
-    [<Test>] 
-    member public rb.ScalarMap() =
-        let MapScalar inp = "out:"+inp
-        
-        let buildDesc = new BuildDescriptionScope()
-        let inScalar = InputScalar<string> "Scalar"
-        let result  = Scalar.Map "MapScalar" MapScalar inScalar
-        buildDesc.DeclareScalarOutput  result 
-            
-        let inputs = [ BuildInput.ScalarInput(inScalar, "A Scalar Value") ]
-        let bound = buildDesc.GetInitialPartialBuild inputs
-
-        let b = buildDesc.GetInitialPartialBuild([],["Scalar",box "A Scalar Value"])
-        let e = Eval result bound
-        let r = GetScalarResult(result,e)
-        match r with 
-            | Some(r,_) -> Assert.AreEqual("out:A Scalar Value", r)
-            | None -> Assert.Fail()                 
-    *)
 
     /// Test that a simple scalar action works.
     [<Test>] 
@@ -460,7 +438,8 @@ type IncrementalBuild() =
         let inputs = [ BuildInput.ScalarInput(inScalar, "A Scalar Value") ]
         let bound = buildDesc.GetInitialPartialBuild inputs
 
-        let e = Eval ctok save ct inScalar bound
+        let cache = TimeStampCache(System.DateTime.Now)
+        let e = Eval cache ctok save inScalar bound  |> Cancellable.runWithoutCancellation
         let r = GetScalarResult(inScalar,e)
         match r with 
             | Some(r,_) -> Assert.AreEqual("A Scalar Value", r)
@@ -483,7 +462,8 @@ type IncrementalBuild() =
               BuildInput.ScalarInput(inScalar, (5,"")) ]
 
         let bound = buildDesc.GetInitialPartialBuild(inputs)
-        let e = Eval ctok save ct result bound
+        let cache = TimeStampCache(System.DateTime.Now)
+        let e = Eval cache ctok save result bound  |> Cancellable.runWithoutCancellation
         let r = GetVectorResult(result,e)
         if [| (6,"File1.fs"); (7,"File2.fs"); (8, "File3.fs") |] <> r then 
             printfn "Got %A" r
@@ -500,7 +480,8 @@ type IncrementalBuild() =
         let inputs = [ BuildInput.VectorInput(inVector, ["File1.fs";"File2.fs";"File3.fs"]) ]
         let bound = buildDesc.GetInitialPartialBuild(inputs)
 
-        let e = Eval ctok save ct result bound
+        let cache = TimeStampCache(System.DateTime.Now)
+        let e = Eval cache ctok save result bound  |> Cancellable.runWithoutCancellation
         let r = GetScalarResult (result, e)
         match r with 
         | Some(r,ts)->
@@ -523,7 +504,11 @@ type IncrementalBuild() =
 
         let cts = new CancellationTokenSource()
         cts.Cancel() 
-        let res = try Eval ctok save cts.Token result bound |> ignore; false with :? OperationCanceledException -> true
+        let res = 
+            let cache = TimeStampCache(System.DateTime.Now)
+            match Eval cache ctok save result bound |> Cancellable.run cts.Token with 
+            | ValueOrCancelled.Cancelled _ -> true
+            | ValueOrCancelled.Value _ -> false
         Assert.AreEqual(res, true)
 
             
@@ -533,14 +518,14 @@ type IncrementalBuild() =
     member public rb.AssemblyReferenceModel() =
         let ParseTask ctok filename = sprintf "Parse(%s)" filename
         let now = System.DateTime.Now
-        let StampFileNameTask ctok filename = now 
-        let TimestampReferencedAssemblyTask ctok reference = now
+        let StampFileNameTask _cache ctok filename = now 
+        let TimestampReferencedAssemblyTask _cache ctok reference = now
         let ApplyMetaCommands ctok (parseResults:string[]) = "tcConfig-of("+String.Join(",",parseResults)+")"
         let GetReferencedAssemblyNames ctok (tcConfig) = [|"Assembly1.dll";"Assembly2.dll";"Assembly3.dll"|]
         let ReadAssembly ctok assemblyName = sprintf "tcImport-of(%s)" assemblyName
-        let CombineImportedAssembliesTask ctok imports = "tcAcc"
+        let CombineImportedAssembliesTask ctok imports = "tcAcc"  |> cancellable.Return
         let TypeCheckTask ctok tcAcc parseResults = eventually { return tcAcc }
-        let FinalizeTypeCheckTask ctok results = "finalized"
+        let FinalizeTypeCheckTask ctok results = "finalized"  |> cancellable.Return
 
         // Build rules.
         let buildDesc = new BuildDescriptionScope()
@@ -572,7 +557,8 @@ type IncrementalBuild() =
             [ BuildInput.VectorInput(fileNamesNode, ["File1.fs";"File2.fs";"File3.fs"]);
               BuildInput.VectorInput(referencedAssembliesNode, [("lib1.dll", now);("lib2.dll", now)]) ]
         let bound = buildDesc.GetInitialPartialBuild(inputs)
-        let e = Eval ctok save ct finalizedTypeCheckNode bound
+        let cache = TimeStampCache(System.DateTime.Now)
+        let e = Eval cache ctok save finalizedTypeCheckNode bound  |> Cancellable.runWithoutCancellation
         let r = GetScalarResult(finalizedTypeCheckNode,e)
             
         ()
@@ -589,7 +575,8 @@ type IncrementalBuild() =
         let inputs = [ BuildInput.VectorInput(inputs, [1;2;3;4]) ]
         let bound = buildDesc.GetInitialPartialBuild inputs
 
-        let evaled = Eval ctok save ct outputs bound
+        let cache = TimeStampCache(System.DateTime.Now)
+        let evaled = Eval cache ctok save outputs bound  |> Cancellable.runWithoutCancellation
         let outputs = GetVectorResult(outputs,evaled)
         Assert.AreEqual("Transformation of 4", outputs.[3])
         ()   
@@ -614,7 +601,8 @@ type IncrementalBuild() =
         let inputs = [ BuildInput.VectorInput(inputs, [1;2;3;4]) ]
         let bound = buildDesc.GetInitialPartialBuild inputs
 
-        let evaled = Eval ctok save ct outputs bound
+        let cache = TimeStampCache(System.DateTime.Now)
+        let evaled = Eval cache ctok save outputs bound  |> Cancellable.runWithoutCancellation
         let outputs = GetVectorResult(outputs,evaled)
         Assert.AreEqual("Transformation of 4", outputs.[3])
         ()               
@@ -632,7 +620,8 @@ type IncrementalBuild() =
         let inputs = [ BuildInput.VectorInput(inputs, []) ]
         let bound = buildDesc.GetInitialPartialBuild inputs
 
-        let evaled = Eval ctok save ct outputs  bound
+        let cache = TimeStampCache(System.DateTime.Now)
+        let evaled = Eval cache ctok save outputs  bound  |> Cancellable.runWithoutCancellation
         let outputs = GetVectorResult(outputs,evaled)
         ()               
               

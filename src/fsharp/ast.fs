@@ -61,8 +61,8 @@ type XmlDocCollector() =
         check()
         savedLines.Add(line,pos)
 
-    member x.LinesBefore(grabPointPos) =
-
+    member x.LinesBefore(grabPointPos) = 
+      try
         let lines = savedLinesAsArray.Force()
         let grabPoints = savedGrabPointsAsArray.Force()
         let firstLineIndexAfterGrabPoint = Array.findFirstIndexWhereTrue lines (fun (_,pos) -> posGeq pos grabPointPos)
@@ -76,6 +76,9 @@ type XmlDocCollector() =
                 Array.findFirstIndexWhereTrue lines (fun (_,pos) -> posGeq pos prevGrabPointPos)
         //printfn "#lines = %d, firstLineIndexAfterPrevGrabPoint = %d, firstLineIndexAfterGrabPoint = %d" lines.Length firstLineIndexAfterPrevGrabPoint  firstLineIndexAfterGrabPoint
         lines.[firstLineIndexAfterPrevGrabPoint..firstLineIndexAfterGrabPoint-1] |> Array.map fst
+      with e -> 
+          //printfn "unexpected error in LinesBefore:\n%s" (e.ToString())
+          [| |]
 
 type XmlDoc =
     | XmlDoc of string[]
@@ -1505,11 +1508,23 @@ type QualifiedNameOfFile =
 
 [<NoEquality; NoComparison>]
 type ParsedImplFileInput =
-    | ParsedImplFileInput of fileName:string * isScript:bool * QualifiedNameOfFile * ScopedPragma list * ParsedHashDirective list * SynModuleOrNamespace list * (bool * bool)
+    | ParsedImplFileInput of 
+        fileName : string * 
+        isScript : bool * 
+        qualifiedNameOfFile : QualifiedNameOfFile * 
+        scopedPragmas : ScopedPragma list * 
+        hashDirectives : ParsedHashDirective list * 
+        modules : SynModuleOrNamespace list * 
+        ((* isLastCompiland *) bool * (* isExe *) bool)
 
 [<NoEquality; NoComparison>]
 type ParsedSigFileInput =
-    | ParsedSigFileInput of fileName:string * QualifiedNameOfFile * ScopedPragma list * ParsedHashDirective list * SynModuleOrNamespaceSig list
+    | ParsedSigFileInput of 
+        fileName : string * 
+        qualifiedNameOfFile : QualifiedNameOfFile * 
+        scopedPragmas : ScopedPragma list * 
+        hashDirectives : ParsedHashDirective list * 
+        modules : SynModuleOrNamespaceSig list
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type ParsedInput =
@@ -1518,8 +1533,8 @@ type ParsedInput =
 
     member inp.Range =
         match inp with
-        | ParsedInput.ImplFile (ParsedImplFileInput(_,_,_,_,_,(SynModuleOrNamespace(range=m) :: _),_))
-        | ParsedInput.SigFile (ParsedSigFileInput(_,_,_,_,(SynModuleOrNamespaceSig(range=m) :: _))) -> m
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules=SynModuleOrNamespace(range=m) :: _))
+        | ParsedInput.SigFile (ParsedSigFileInput (modules=SynModuleOrNamespaceSig(range=m) :: _)) -> m
         | ParsedInput.ImplFile (ParsedImplFileInput (fileName=filename))
         | ParsedInput.SigFile (ParsedSigFileInput (fileName=filename)) ->
 #if DEBUG

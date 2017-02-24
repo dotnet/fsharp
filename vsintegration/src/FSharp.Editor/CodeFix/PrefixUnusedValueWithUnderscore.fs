@@ -3,7 +3,6 @@
 namespace rec Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
-open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
 
@@ -11,6 +10,8 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
+
+open Microsoft.FSharp.Compiler
 
 [<ExportCodeFixProvider(FSharpCommonConstants.FSharpLanguageName, Name = "PrefixUnusedValueWithUnderscore"); Shared>]
 type internal FSharpPrefixUnusedValueWithUnderscoreCodeFixProvider() =
@@ -27,11 +28,17 @@ type internal FSharpPrefixUnusedValueWithUnderscoreCodeFixProvider() =
                 } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)),
             title)
 
-    override __.FixableDiagnosticIds = fixableDiagnosticIds.ToImmutableArray()
+    override __.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
     override __.RegisterCodeFixesAsync context : Task =
-       async {
-           let diagnostics = (context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id)).ToImmutableArray()
-           context.RegisterCodeFix(createCodeFix(SR.PrefixValueNameWithUnderscore.Value, context, TextChange(TextSpan(context.Span.Start, 0), "_")), diagnostics)
-           context.RegisterCodeFix(createCodeFix(SR.RenameValueToUnderscore.Value, context, TextChange(context.Span, "_")), diagnostics)
+        async {
+            let! sourceText = context.Document.GetTextAsync()
+            let ident = sourceText.ToString(context.Span)
+            // Prefixing operators and backticked identifiers does not make sense.
+            // We have to use the additional check for backtickes because `IsOperatorOrBacktickedName` operates on display names
+            // where backtickes are replaced with parens.
+            if not (PrettyNaming.IsOperatorOrBacktickedName ident) && not (ident.StartsWith "``") then
+                let diagnostics = context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id) |> Seq.toImmutableArray
+                context.RegisterCodeFix(createCodeFix(SR.PrefixValueNameWithUnderscore.Value, context, TextChange(TextSpan(context.Span.Start, 0), "_")), diagnostics)
+                context.RegisterCodeFix(createCodeFix(SR.RenameValueToUnderscore.Value, context, TextChange(context.Span, "_")), diagnostics)
         } |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

@@ -145,7 +145,10 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     let mutable treatWarningsAsErrors : bool = false
     let mutable warningsAsErrors : string = null
     let mutable toolPath : string = 
-        match FSharpEnvironment.BinFolderOfDefaultFSharpCompiler with
+        let locationOfThisDll = 
+            try Some(System.IO.Path.GetDirectoryName(typeof<FscCommandLineBuilder>.Assembly.Location))
+            with _ -> None
+        match FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(locationOfThisDll) with
         | Some s -> s
         | None -> ""
     let mutable versionFile : string = null

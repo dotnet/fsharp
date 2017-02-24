@@ -2,8 +2,7 @@
 
 namespace Microsoft.FSharp.Quotations
 
-#if FX_MINIMAL_REFLECTION
-#else
+#if !FX_MINIMAL_REFLECTION
 open System
 open System.IO
 open System.Reflection
@@ -25,7 +24,6 @@ open Microsoft.FSharp.Text.StructuredPrintfImpl.TaggedTextOps
 #if FX_RESHAPED_REFLECTION
 open PrimReflectionAdapters
 open ReflectionAdapters
-type internal BindingFlags = ReflectionAdapters.BindingFlags
 #endif
 
 //--------------------------------------------------------------------------

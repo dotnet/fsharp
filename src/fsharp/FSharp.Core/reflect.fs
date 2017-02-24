@@ -18,7 +18,7 @@ module internal ReflectionUtils =
 
     open Microsoft.FSharp.Core.Operators
 
-#if FX_RESHAPED_REFLECTION
+#if FX_NO_SYSTEM_BINDINGFLAGS
     type BindingFlags = Microsoft.FSharp.Core.ReflectionAdapters.BindingFlags
 #else
     type BindingFlags = System.Reflection.BindingFlags
@@ -709,7 +709,6 @@ module internal Impl =
 
 #if FX_RESHAPED_REFLECTION
 open ReflectionAdapters
-type internal BindingFlags = ReflectionAdapters.BindingFlags
 #endif
         
 [<Sealed>]

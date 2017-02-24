@@ -5,7 +5,6 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.Composition
 open System.Collections.Generic
-open System.Collections.Immutable
 open System.Linq
 open System.Threading
 open System.Threading.Tasks
@@ -14,10 +13,8 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
-open Microsoft.CodeAnalysis.Editor.Implementation.InlineRename
 
 open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 

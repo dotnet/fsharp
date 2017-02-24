@@ -938,22 +938,16 @@ let [<Literal>] localVarSize = 1
 let inline AddTotalSizes l = l |> List.sumBy (fun x -> x.TotalSize) 
 let inline AddFunctionSizes l = l |> List.sumBy (fun x -> x.FunctionSize) 
 
-let inline AddTotalSizesFlat l = l |> List.sumBy (fun x -> x.TotalSize) 
-let inline AddFunctionSizesFlat l = l |> List.sumBy (fun x -> x.FunctionSize) 
-
 //-------------------------------------------------------------------------
 // opt list/array combinators - zipping (_,_) return type
 //------------------------------------------------------------------------- 
 let inline OrEffects l = List.exists (fun x -> x.HasEffect) l
-let inline OrEffectsFlat l = List.exists (fun x -> x.HasEffect) l
 
 let inline OrTailcalls l = List.exists (fun x -> x.MightMakeCriticalTailcall) l
-let inline OrTailcallsFlat l = List.exists (fun x -> x.MightMakeCriticalTailcall) l
         
 let OptimizeList f l = l |> List.map f |> List.unzip 
 
 let NoExprs : (Expr list * list<Summary<ExprValueInfo>>) = [],[]
-let NoFlatExprs : (FlatExprs * list<Summary<ExprValueInfo>>) = [], []
 
 //-------------------------------------------------------------------------
 // Common ways of building new value infos
@@ -966,15 +960,7 @@ let CombineValueInfos einfos res =
         MightMakeCriticalTailcall = OrTailcalls einfos 
         Info = res }
 
-let CombineFlatValueInfos einfos res = 
-      { TotalSize  = AddTotalSizesFlat einfos
-        FunctionSize  = AddFunctionSizesFlat einfos
-        HasEffect = OrEffectsFlat einfos 
-        MightMakeCriticalTailcall = OrTailcallsFlat einfos 
-        Info = res }
-
 let CombineValueInfosUnknown einfos = CombineValueInfos einfos UnknownValue
-let CombineFlatValueInfosUnknown einfos = CombineFlatValueInfos einfos UnknownValue
 
 //-------------------------------------------------------------------------
 // Hide information because of a signature
@@ -2749,10 +2735,6 @@ and OptimizeExprsThenConsiderSplits cenv env exprs =
     | [] -> NoExprs 
     | _ -> OptimizeList (OptimizeExprThenConsiderSplit cenv env) exprs
 
-and OptimizeFlatExprsThenConsiderSplits cenv env exprs = 
-    match exprs with 
-    | [] -> NoFlatExprs
-    | _ -> OptimizeList (OptimizeExprThenConsiderSplit cenv env) exprs
 
 and OptimizeExprThenReshapeAndConsiderSplit cenv env (shape,e) = 
     OptimizeExprThenConsiderSplit cenv env (ReshapeExpr cenv (shape,e))
@@ -2869,8 +2851,8 @@ and OptimizeDecisionTreeTarget cenv env _m (TTarget(vs,e,spTarget)) =
 and OptimizeDecisionTree cenv env m x =
     match x with 
     | TDSuccess (es,n) -> 
-        let es', einfos = OptimizeFlatExprsThenConsiderSplits cenv env es 
-        TDSuccess(es',n),CombineFlatValueInfosUnknown einfos
+        let es', einfos = OptimizeExprsThenConsiderSplits cenv env es 
+        TDSuccess(es',n),CombineValueInfosUnknown einfos
     | TDBind(bind,rest) -> 
         let (bind,binfo),envinner = OptimizeBinding cenv false env bind 
         let rest,rinfo = OptimizeDecisionTree cenv envinner m rest 
@@ -2901,13 +2883,13 @@ and OptimizeDecisionTree cenv env m x =
 
 and TryOptimizeDecisionTreeTest cenv test vinfo = 
     match test,vinfo with 
-    | Test.UnionCase (c1,_), StripUnionCaseValue(c2,_) ->  Some(cenv.g.unionCaseRefEq c1 c2)
-    | Test.ArrayLength (_,_),  _ -> None
-    | Test.Const c1,StripConstValue(c2) -> if c1 = Const.Zero || c2 = Const.Zero then None else Some(c1=c2)
-    | Test.IsNull,StripConstValue(c2) -> Some(c2=Const.Zero)
-    | Test.IsInst (_srcty1,_tgty1), _ -> None
+    | DecisionTreeTest.UnionCase (c1,_), StripUnionCaseValue(c2,_) ->  Some(cenv.g.unionCaseRefEq c1 c2)
+    | DecisionTreeTest.ArrayLength (_,_),  _ -> None
+    | DecisionTreeTest.Const c1,StripConstValue(c2) -> if c1 = Const.Zero || c2 = Const.Zero then None else Some(c1=c2)
+    | DecisionTreeTest.IsNull,StripConstValue(c2) -> Some(c2=Const.Zero)
+    | DecisionTreeTest.IsInst (_srcty1,_tgty1), _ -> None
     // These should not occur in optimization
-    | Test.ActivePatternCase (_,_,_vrefOpt1,_,_),_ -> None
+    | DecisionTreeTest.ActivePatternCase (_,_,_vrefOpt1,_,_),_ -> None
     | _ -> None
 
 /// Optimize/analyze a switch construct from pattern matching 

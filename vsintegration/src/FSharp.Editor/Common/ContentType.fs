@@ -7,8 +7,6 @@ open System.ComponentModel.Composition
 open Microsoft.CodeAnalysis.Editor
 open Microsoft.VisualStudio.Utilities
 
-open Microsoft.VisualStudio.FSharp.LanguageService
-
 module FSharpStaticTypeDefinitions = 
     [<Export>]
     [<Name(FSharpCommonConstants.FSharpContentTypeName)>]

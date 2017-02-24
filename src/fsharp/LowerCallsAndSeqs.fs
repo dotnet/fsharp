@@ -521,10 +521,10 @@ let LowerSeqExpr g amap overallExpr =
                            [ 
                              // no disposal action for the initial state (pc = 0)
                              if isDisposal then 
-                                 yield mkCase(Test.Const(Const.Int32 pcInit),mkGotoLabelTarget noDisposeContinuationLabel) 
+                                 yield mkCase(DecisionTreeTest.Const(Const.Int32 pcInit),mkGotoLabelTarget noDisposeContinuationLabel) 
                              for pc in pcs do 
-                                 yield mkCase(Test.Const(Const.Int32 pc),mkGotoLabelTarget pc2lab.[pc])
-                             yield mkCase(Test.Const(Const.Int32 pcDone),mkGotoLabelTarget noDisposeContinuationLabel) ],
+                                 yield mkCase(DecisionTreeTest.Const(Const.Int32 pc),mkGotoLabelTarget pc2lab.[pc])
+                             yield mkCase(DecisionTreeTest.Const(Const.Int32 pcDone),mkGotoLabelTarget noDisposeContinuationLabel) ],
                            Some(mkGotoLabelTarget pc2lab.[pcInit]),
                            m)
                            
@@ -561,7 +561,7 @@ let LowerSeqExpr g amap overallExpr =
                     let addResultTarget e = mbuilder.AddResultTarget(e, SuppressSequencePointAtTarget)
                     let dtree =
                         TDSwitch(pce,
-                                    [  mkCase((Test.Const(Const.Int32 pcDone)), addResultTarget (Expr.Op(TOp.Goto doneLabel, [], [], m)) ) ],
+                                    [  mkCase((DecisionTreeTest.Const(Const.Int32 pcDone)), addResultTarget (Expr.Op(TOp.Goto doneLabel, [], [], m)) ) ],
                                     Some (addResultTarget (mkUnit g m)),
                                     m)
                     let pcIsEndStateComparison = mbuilder.Close(dtree,m,g.unit_ty)

@@ -3,10 +3,8 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Threading.Tasks
 open System.ComponentModel.Composition
 open Microsoft.CodeAnalysis.Editor
-open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
 [<ExportBraceMatcher(FSharpCommonConstants.FSharpLanguageName)>]

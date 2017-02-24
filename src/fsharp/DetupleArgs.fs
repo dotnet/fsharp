@@ -196,7 +196,7 @@ module GlobalUsageAnalysis =
          /// bound in a decision tree? 
          DecisionTreeBindings    : Zset<Val>                                    
          ///  v -> v list * recursive? -- the others in the mutual binding 
-         RecursiveBindings  : Zmap<Val,bool * FlatVals>
+         RecursiveBindings  : Zmap<Val,bool * Vals>
          TopLevelBindings : Zset<Val>
          IterationIsAtTopLevel      : bool }
 
