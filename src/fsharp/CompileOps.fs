@@ -4908,6 +4908,25 @@ module ScriptPreprocessClosure =
     let PaketToolName = "paket.exe"
     let ResolvePackages (implicitIncludeDir: string, scriptName: string, packageManagerTextLines: string list, m) =
         let appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)
+        let paketDepsFile,packageManagerTextLines =
+            let rec findDepsFile dir =
+                let fi = FileInfo(Path.Combine(dir,"paket.dependencies"))
+                if fi.Exists then
+                    fi,[ yield! Array.toList (File.ReadAllLines fi.FullName); yield! packageManagerTextLines]
+                elif fi.Directory.Parent <> null then
+                    findDepsFile fi.Directory.Parent.FullName
+                else
+                    let tempDir = Path.Combine(Path.Combine(Path.GetTempPath(),"fsharp"),"packages"+string(hash scriptName))
+                    if not (Directory.Exists tempDir) then
+                        Directory.CreateDirectory tempDir |> ignore
+                    let fi = FileInfo(Path.Combine(tempDir,"paket.dependencies"))
+                    File.WriteAllText(fi.FullName,"source https://nuget.org/api/v2" + Environment.NewLine)
+                    fi,[ yield "framework: net461"; yield "source https://nuget.org/api/v2"; yield! packageManagerTextLines]
+           
+            findDepsFile implicitIncludeDir
+
+        let workingDir = paketDepsFile.Directory.FullName
+
         let paketExePathOpt = 
             let rec loop dir = 
                 if (Directory.Exists dir) then 
@@ -4926,8 +4945,11 @@ module ScriptPreprocessClosure =
             match loop implicitIncludeDir with 
             | Some r -> Some r
             | None -> 
-                 let paketPath = Path.Combine (appData, ".paket", PaketToolName)
-                 if File.Exists paketPath then Some paketPath else None
+                match loop workingDir with 
+                | Some r -> Some r
+                | None -> 
+                     let paketPath = Path.Combine (appData, ".paket", PaketToolName)
+                     if File.Exists paketPath then Some paketPath else None
         
         match paketExePathOpt with 
         | None -> 
@@ -4935,24 +4957,6 @@ module ScriptPreprocessClosure =
             None
 
         | Some paketExePath ->
-            let paketDepsFile,packageManagerTextLines =
-                let rec findDepsFile dir =
-                    let fi = FileInfo(Path.Combine(dir,"paket.dependencies"))
-                    if fi.Exists then
-                        fi,[ yield! Array.toList (File.ReadAllLines fi.FullName); yield! packageManagerTextLines]
-                    elif fi.Directory.Parent <> null then
-                        findDepsFile fi.Directory.Parent.FullName
-                    else
-                        let tempDir = Path.Combine(Path.Combine(Path.GetTempPath(),"fsharp"),"packages"+string(hash scriptName))
-                        if not (Directory.Exists tempDir) then
-                            Directory.CreateDirectory tempDir |> ignore
-                        let fi = FileInfo(Path.Combine(tempDir,"paket.dependencies"))
-                        File.WriteAllText(fi.FullName,"source https://nuget.org/api/v2" + Environment.NewLine)
-                        fi,[ yield "framework: net461"; yield "source https://nuget.org/api/v2"; yield! packageManagerTextLines]
-           
-                findDepsFile implicitIncludeDir
-
-            let workingDir = paketDepsFile.Directory.FullName
 
             match packageManagerExecTable.TryGetValue((paketDepsFile.FullName, paketExePath)) with 
             | (true, (t, loadScript)) when File.Exists paketDepsFile.FullName && File.Exists loadScript && (t = packageManagerTextLines) -> 
