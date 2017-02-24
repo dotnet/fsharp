@@ -1863,15 +1863,15 @@ type internal FsiInteractionProcessor
 
     let tempDir = @"D:\temp\fsi"
     let paketPrefix = "paket: "
+    let paketExePath = @"D:\temp\fsi\.paket\paket.exe"
 
     let resolvePaket ctok istate errorLogger m =
         if not needsPaketInstall then istate else
-        let paketExePath = @"D:\temp\fsi\.paket\paket.exe"
 
         let startInfo = ProcessStartInfo()
         startInfo.FileName <- paketExePath
         startInfo.WorkingDirectory <- tempDir
-        startInfo.Arguments <- "install"
+        startInfo.Arguments <- "install --generate-load-scripts"
         startInfo.UseShellExecute <- false
         let p = Process.Start(startInfo)
         p.WaitForExit()
@@ -1903,8 +1903,7 @@ type internal FsiInteractionProcessor
                 let s = 
                     if not createdPaketFile then
                         Directory.CreateDirectory(paketDepsFile.Directory.FullName) |> ignore
-                        "generate_load_scripts: true" + Environment.NewLine +
-                            "source https://nuget.org/api/v2" + Environment.NewLine + 
+                        "source https://nuget.org/api/v2" + Environment.NewLine + 
                             package + Environment.NewLine
                     else
                         let s = File.ReadAllText paketDepsFile.FullName
