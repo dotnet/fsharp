@@ -1901,7 +1901,7 @@ type internal FsiInteractionProcessor
             | IHash (ParsedHashDirective("load",sourceFiles,m),_) -> 
                 fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, sourceFiles, lexResourceManager, errorLogger),Completed None
 
-            | IHash (ParsedHashDirective(("reference" | "r"),[text],_),_) when text.StartsWith "paket: " ->
+            | IHash (ParsedHashDirective(("reference" | "r"),[text],_),_) when text.StartsWith paketPrefix ->
                 fsiDynamicCompiler.EvalPackageManagerTextFragment(text)
                 istate,Completed None
 
