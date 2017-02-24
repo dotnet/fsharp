@@ -73,6 +73,8 @@ open System.Runtime.CompilerServices
 [<Dependency("FSharp.Core",LoadHint.Always)>] do ()
 #endif
 
+let paketPrefix = "paket: "
+
 //----------------------------------------------------------------------------
 // For the FSI as a service methods...
 //----------------------------------------------------------------------------
@@ -969,6 +971,9 @@ type internal FsiDynamicCompiler
     let mutable fragmentId = 0
     let mutable prevIt : ValRef option = None
 
+    let mutable packageManagerTextLines = []
+    let mutable needsPaketInstall = false
+
     let generateDebugInfo = tcConfigB.debuginfo
 
     let valuePrinter = FsiValuePrinter(fsi, tcGlobals, generateDebugInfo, resolveAssemblyRef, outWriter)
@@ -1220,6 +1225,24 @@ type internal FsiDynamicCompiler
         resolutions,
         { istate with tcState = tcState.NextStateAfterIncrementalFragment(tcEnv); optEnv = optEnv }
 
+
+    member __.EvalPackageManagerTextFragment (packageManagerText: string) = 
+        let package = packageManagerText.Substring(paketPrefix.Length)
+        packageManagerTextLines <- packageManagerTextLines @ [ package ]
+        needsPaketInstall <- true
+
+    member fsiDynamicCompiler.CommitPackageManagerText (ctok, istate: FsiDynamicCompilerState, lexResourceManager, errorLogger, m) = 
+        if not needsPaketInstall then istate else
+        needsPaketInstall <- false
+        match ScriptPreprocessClosure.ResolvePackages (tcConfigB.implicitIncludeDir, "stdin.fsx", packageManagerTextLines, m) with
+        | Some loadScript -> fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, [loadScript], lexResourceManager, errorLogger)
+        | None -> istate
+
+    //member this.EvalPackageManagerText (ctok, istate, m, packageManagerText) = 
+    //    this.EvalPackageManagerTextFragment (packageManagerText) 
+    //    this.CommitPackageManagerText (ctok, istate, m)
+
+
     member fsiDynamicCompiler.ProcessMetaCommandsFromInputAsInteractiveCommands(ctok, istate, sourceFile, inp) =
         WithImplicitHome
            (tcConfigB, directoryName sourceFile) 
@@ -1227,6 +1250,7 @@ type internal FsiDynamicCompiler
                ProcessMetaCommandsFromInput 
                    ((fun st (m,nm) -> tcConfigB.TurnWarningOff(m,nm); st),
                     (fun st (m,nm) -> snd (fsiDynamicCompiler.EvalRequireReference (ctok, st, m, nm))),
+                    (fun st (_m,nm) -> fsiDynamicCompiler.EvalPackageManagerTextFragment (nm); st),
                     (fun _ _ -> ()))  
                    (tcConfigB, inp, Path.GetDirectoryName sourceFile, istate))
       
@@ -1789,8 +1813,6 @@ type internal FsiInteractionProcessor
                              initialInteractiveState) = 
 
     let mutable currState = initialInteractiveState
-    let mutable createdPaketFile = false
-    let mutable needsPaketInstall = false
     let event = Control.Event<unit>()
     let setCurrState s = currState <- s; event.Trigger()
     let runCodeOnEventLoop errorLogger f istate = 
@@ -1861,57 +1883,28 @@ type internal FsiInteractionProcessor
             stopProcessingRecovery e range0    
             None
 
-    let tempDir = @"D:\temp\fsi"
-    let paketPrefix = "paket: "
-    let paketExePath = @"D:\temp\fsi\.paket\paket.exe"
-
-    let resolvePaket ctok istate errorLogger m =
-        if not needsPaketInstall then istate else
-
-        let startInfo = ProcessStartInfo()
-        startInfo.FileName <- paketExePath
-        startInfo.WorkingDirectory <- tempDir
-        startInfo.Arguments <- "install --generate-load-scripts"
-        startInfo.UseShellExecute <- false
-        let p = Process.Start(startInfo)
-        p.WaitForExit()
-        if p.ExitCode <> 0 then
-            failwithf "Paket restore failed."
-
-        let loadScript = Path.Combine(tempDir,".paket","load","main.group.fsx")
-        needsPaketInstall <- false
-        fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, [loadScript], lexResourceManager, errorLogger)
-
     /// Execute a single parsed interaction. Called on the GUI/execute/main thread.
     let ExecInteraction (ctok, tcConfig:TcConfig, istate, action:ParsedFsiInteraction, errorLogger: ErrorLogger) =
         istate |> InteractiveCatch errorLogger (fun istate -> 
             match action with 
             | IDefns ([  ],_) ->
                 istate,Completed None
+
             | IDefns ([  SynModuleDecl.DoExpr(_,expr,_)],m) ->
-                let istate = resolvePaket ctok istate errorLogger m
+                let istate = fsiDynamicCompiler.CommitPackageManagerText(ctok, istate, lexResourceManager, errorLogger, m) 
                 fsiDynamicCompiler.EvalParsedExpression(ctok, errorLogger, istate, expr)
+
             | IDefns (defs,m) -> 
-                let istate = resolvePaket ctok istate errorLogger m
+                let istate = fsiDynamicCompiler.CommitPackageManagerText(ctok, istate, lexResourceManager, errorLogger, m) 
                 fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, true, false, defs),Completed None
 
             | IHash (ParsedHashDirective("load",sourceFiles,m),_) -> 
                 fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, sourceFiles, lexResourceManager, errorLogger),Completed None
-            | IHash (ParsedHashDirective(("reference" | "r"),[path],_),_) when path.StartsWith paketPrefix ->
-                let package = path.Substring(paketPrefix.Length)
-                let paketDepsFile = FileInfo(Path.Combine(tempDir,"paket.dependencies"))
-                let s = 
-                    if not createdPaketFile then
-                        Directory.CreateDirectory(paketDepsFile.Directory.FullName) |> ignore
-                        "source https://nuget.org/api/v2" + Environment.NewLine + 
-                            package + Environment.NewLine
-                    else
-                        let s = File.ReadAllText paketDepsFile.FullName
-                        s + package + Environment.NewLine
-                File.WriteAllText(paketDepsFile.FullName,s)
-                createdPaketFile <- true
-                needsPaketInstall <- true
+
+            | IHash (ParsedHashDirective(("reference" | "r"),[text],_),_) when text.StartsWith "paket: " ->
+                fsiDynamicCompiler.EvalPackageManagerTextFragment(text)
                 istate,Completed None
+
             | IHash (ParsedHashDirective(("reference" | "r"),[path],m),_) -> 
                 let resolutions,istate = fsiDynamicCompiler.EvalRequireReference(ctok, istate, m, path)
                 resolutions |> List.iter (fun ar -> 
