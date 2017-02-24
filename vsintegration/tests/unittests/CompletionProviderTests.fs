@@ -48,6 +48,7 @@ let internal options = {
     IsIncompleteTypeCheckEnvironment = true
     UseScriptResolutionRules = false
     LoadTime = DateTime.MaxValue
+    OriginalLoadReferences = []
     UnresolvedReferences = None
     ExtraProjectInfo = None
 }
@@ -57,13 +58,14 @@ let VerifyCompletionList(fileContents: string, marker: string, expected: string 
     let results = 
         FSharpCompletionProvider.ProvideCompletionsAsyncAux(FSharpChecker.Instance, SourceText.From(fileContents), caretPosition, options, filePath, 0) 
         |> Async.RunSynchronously 
+        |> Option.defaultValue (ResizeArray())
         |> Seq.map(fun result -> result.DisplayText)
 
     for item in expected do
-        Assert.IsTrue(results.Contains(item), "Completions should contain '{0}'. Got '{1}'.", item, String.Join(", ", results))
+        Assert.IsTrue(results.Contains(item), sprintf "Completions should contain '%s'. Got '%s'." item (String.Join(", ", results)))
 
     for item in unexpected do
-        Assert.IsFalse(results.Contains(item), "Completions should not contain '{0}'. Got '{1}'", item, String.Join(", ", results))
+        Assert.IsFalse(results.Contains(item), sprintf "Completions should not contain '%s'. Got '{%s}'" item (String.Join(", ", results)))
     
 [<Test>]
 let ShouldTriggerCompletionAtCorrectMarkers() =

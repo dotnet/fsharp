@@ -13,6 +13,9 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
+
+module internal TaggedText =
+    let appendTo (sb: System.Text.StringBuilder) (t: Layout.TaggedText) = sb.Append t.Value |> ignore 
  
 /// Represents all the information necessary to display and navigate 
 /// within a method tip (e.g. param info, overloads, ability to move thru overloads and params)
@@ -62,14 +65,18 @@ type internal FSharpMethodListForAMethodTip(documentationBuilder: IDocumentation
 
     override x.GetCount() = methods.Length
 
-    override x.GetDescription(methodIndex) = safe methodIndex "" (fun m -> XmlDocumentation.BuildMethodOverloadTipText(documentationBuilder, m.Description, true))
+    override x.GetDescription(methodIndex) = safe methodIndex "" (fun m -> 
+        let buf = Text.StringBuilder()
+        XmlDocumentation.BuildMethodOverloadTipText(documentationBuilder, TaggedText.appendTo buf, TaggedText.appendTo buf, m.StructuredDescription, true)
+        buf.ToString()
+        )
             
     override x.GetType(methodIndex) = safe methodIndex "" (fun m -> m.TypeText)
 
     override x.GetParameterCount(methodIndex) =  safe methodIndex 0 (fun m -> getParameters(m).Length)
             
     override x.GetParameterInfo(methodIndex, parameterIndex, nameOut, displayOut, descriptionOut) =
-        let name,display = safe methodIndex ("","") (fun m -> let p = getParameters(m).[parameterIndex] in p.ParameterName,p.Display )
+        let name,display = safe methodIndex ("","") (fun m -> let p = getParameters(m).[parameterIndex] in p.ParameterName, p.Display )
            
         nameOut <- name
         displayOut <- display
@@ -141,7 +148,9 @@ type internal FSharpDeclarations(documentationBuilder, declarations: FSharpDecla
     override decl.GetDescription(filterText, index) =
         let decls = trimmedDeclarations filterText
         if (index >= 0 && index < decls.Length) then
-            XmlDocumentation.BuildDataTipText(documentationBuilder,decls.[index].DescriptionText) 
+            let buf = Text.StringBuilder()
+            XmlDocumentation.BuildDataTipText(documentationBuilder, TaggedText.appendTo buf, TaggedText.appendTo buf, decls.[index].StructuredDescriptionText) 
+            buf.ToString()
         else ""
 
     override decl.GetGlyph(filterText, index) =
@@ -384,12 +393,13 @@ type internal FSharpIntellisenseInfo
                                                 
                             // Correct the identifier (e.g. to correctly handle active pattern names that end with "BAR" token)
                             let tokenTag = QuickParse.CorrectIdentifierToken s tokenTag
-                            let dataTip = typedResults.GetToolTipTextAlternate(Range.Line.fromZ line, colAtEndOfNames, lineText, qualId, tokenTag) |> Async.RunSynchronously
+                            let dataTip = typedResults.GetStructuredToolTipTextAlternate(Range.Line.fromZ line, colAtEndOfNames, lineText, qualId, tokenTag) |> Async.RunSynchronously
 
                             match dataTip with
-                            | FSharpToolTipText.FSharpToolTipText [] when makeSecondAttempt -> getDataTip true
+                            | FSharpStructuredToolTipText.FSharpToolTipText [] when makeSecondAttempt -> getDataTip true
                             | _ -> 
-                                let dataTipText =  XmlDocumentation.BuildDataTipText(documentationBuilder, dataTip)
+                                let buf = Text.StringBuilder()
+                                XmlDocumentation.BuildDataTipText(documentationBuilder, TaggedText.appendTo buf, TaggedText.appendTo buf, dataTip)
 
                                 // The data tip is located w.r.t. the start of the last identifier
                                 let sizeFixup = if isQuotedIdentifier then 4 else 0
@@ -398,7 +408,7 @@ type internal FSharpIntellisenseInfo
                                 // This is the span of text over which the data tip is active. If the mouse moves away from it then the
                                 // data tip goes away
                                 let dataTipSpan = TextSpan(iStartLine=line, iEndLine=line, iStartIndex=max 0 (colAtEndOfNames-lastStringLength), iEndIndex=colAtEndOfNames)
-                                (dataTipText, dataTipSpan)                                
+                                (buf.ToString(), dataTipSpan)                                
                         else
                             "Bug: TypeCheckInfo option was None", diagnosticTipSpan
                 with e -> 
@@ -553,6 +563,6 @@ type internal FSharpIntellisenseInfo
 
         // This is called on the UI thread after fresh full typecheck results are available
         member this.OnParseFileOrCheckFileComplete(source: IFSharpSource) =
-            for line in colorizer.Value.SetExtraColorizations(typedResults.GetExtraColorizationsAlternate()) do
+            for line in colorizer.Value.SetExtraColorizations(typedResults.GetSemanticClassification None) do
                 source.RecolorizeLine line
 

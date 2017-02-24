@@ -9,6 +9,7 @@ namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
 open System.Collections.Generic
 open Microsoft.FSharp.Compiler 
+open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.ErrorLogger
 
@@ -74,14 +75,23 @@ type internal CompletionContext =
     // completing named parameters\setters in parameter list of constructor\method calls
     // end of name ast node * list of properties\parameters that were already set
     | ParameterList of pos * HashSet<string>
+    | AttributeApplication
+
+type internal ModuleKind = { IsAutoOpen: bool; HasModuleSuffix: bool }
+
+type internal EntityKind =
+    | Attribute
+    | Type
+    | FunctionOrValue of isActivePattern:bool
+    | Module of ModuleKind
 
 // implementation details used by other code in the compiler    
 module internal UntypedParseImpl =
-    open Microsoft.FSharp.Compiler.Ast
     val TryFindExpressionASTLeftOfDotLeftOfCursor : pos * ParsedInput option -> (pos * bool) option
     val GetRangeOfExprLeftOfDot : pos  * ParsedInput option -> range option
     val TryFindExpressionIslandInPosition : pos * ParsedInput option -> string option
-    val TryGetCompletionContext : pos * FSharpParseFileResults option -> CompletionContext option
+    val TryGetCompletionContext : pos * FSharpParseFileResults option * lineStr: string -> CompletionContext option
+    val GetEntityKind: pos * ParsedInput -> EntityKind option
 
 // implementation details used by other code in the compiler    
 module internal SourceFileImpl =

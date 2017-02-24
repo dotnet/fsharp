@@ -72,7 +72,7 @@ let mkLexargs (_filename,defines,lightSyntaxStatus,resourceManager,ifdefStack,er
 
 /// Register the lexbuf and call the given function
 let reusingLexbufForParsing lexbuf f = 
-    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parse)
+    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
     LexbufLocalXmlDocStore.ClearXmlDoc lexbuf
     try
       f () 
@@ -298,6 +298,8 @@ module Keywords =
     let keywordNames = 
         keywordList |> List.map (fun (_, w, _) -> w) 
 
+    let keywordTypes = StructuredFormat.TaggedTextOps.keywordTypes
+
     let keywordTable = 
         let tab = System.Collections.Generic.Dictionary<string,token>(100)
         for _,keyword,token in keywordList do 
@@ -340,12 +342,95 @@ module Keywords =
             | _ -> 
                 IdentifierToken args lexbuf s
 
+    let inline private DoesIdentifierNeedQuotation (s : string) : bool =
+        not (String.forall IsIdentifierPartCharacter s)              // if it has funky chars
+        || s.Length > 0 && (not(IsIdentifierFirstCharacter s.[0]))  // or if it starts with a non-(letter-or-underscore)
+        || keywordTable.ContainsKey s                               // or if it's a language keyword like "type"
+
     /// A utility to help determine if an identifier needs to be quoted 
     let QuoteIdentifierIfNeeded (s : string) : string =
-        if not (String.forall IsIdentifierPartCharacter s)              // if it has funky chars
-            || s.Length > 0 && (not(IsIdentifierFirstCharacter s.[0]))  // or if it starts with a non-(letter-or-underscore)
-            || keywordTable.ContainsKey s                               // or if it's a language keyword like "type"
-        then "``"+s+"``"  // then it needs to be ``quoted``
-        else s
+        if DoesIdentifierNeedQuotation s then "``" + s + "``" else s
 
+    /// Quote identifier with double backticks if needed, remove unnecessary double backticks quotation.
+    let NormalizeIdentifierBackticks (s : string) : string =
+        let s = if s.StartsWith "``" && s.EndsWith "``" then s.[2..s.Length - 3] else s
+        QuoteIdentifierIfNeeded s
 
+    /// Keywords paired with their descriptions. Used in completion and quick info.
+    let keywordsWithDescription : (string * string) list =
+        [ "abstract",  FSComp.SR.keywordDescriptionAbstract()
+          "and",       FSComp.SR.keyworkDescriptionAnd()
+          "as",        FSComp.SR.keywordDescriptionAs()
+          "assert",    FSComp.SR.keywordDescriptionAssert()
+          "base",      FSComp.SR.keywordDescriptionBase()
+          "begin",     FSComp.SR.keywordDescriptionBegin()
+          "class",     FSComp.SR.keywordDescriptionClass()
+          "default",   FSComp.SR.keywordDescriptionDefault()
+          "delegate",  FSComp.SR.keywordDescriptionDelegate()
+          "do",        FSComp.SR.keywordDescriptionDo()
+          "done",      FSComp.SR.keywordDescriptionDone()
+          "downcast",  FSComp.SR.keywordDescriptionDowncast()
+          "downto",    FSComp.SR.keywordDescriptionDownto()
+          "elif",      FSComp.SR.keywordDescriptionElif()
+          "else",      FSComp.SR.keywordDescriptionElse()
+          "end",       FSComp.SR.keywordDescriptionEnd()
+          "exception", FSComp.SR.keywordDescriptionException()
+          "extern",    FSComp.SR.keywordDescriptionExtern()
+          "false",     FSComp.SR.keywordDescriptionTrueFalse()
+          "finally",   FSComp.SR.keywordDescriptionFinally()
+          "for",       FSComp.SR.keywordDescriptionFor()
+          "fun",       FSComp.SR.keywordDescriptionFun()
+          "function",  FSComp.SR.keywordDescriptionFunction()
+          "global",    FSComp.SR.keywordDescriptionGlobal()
+          "if",        FSComp.SR.keywordDescriptionIf()
+          "in",        FSComp.SR.keywordDescriptionIn()
+          "inherit",   FSComp.SR.keywordDescriptionInherit()
+          "inline",    FSComp.SR.keywordDescriptionInline()
+          "interface", FSComp.SR.keywordDescriptionInterface()
+          "internal",  FSComp.SR.keywordDescriptionInternal()
+          "lazy",      FSComp.SR.keywordDescriptionLazy()
+          "let",       FSComp.SR.keywordDescriptionLet()
+          "let!",      FSComp.SR.keywordDescriptionLetBang()
+          "match",     FSComp.SR.keywordDescriptionMatch()
+          "member",    FSComp.SR.keywordDescriptionMember()
+          "module",    FSComp.SR.keywordDescriptionModule()
+          "mutable",   FSComp.SR.keywordDescriptionMutable()
+          "namespace", FSComp.SR.keywordDescriptionNamespace()
+          "new",       FSComp.SR.keywordDescriptionNew()
+          "not",       FSComp.SR.keywordDescriptionNot()
+          "null",      FSComp.SR.keywordDescriptionNull()
+          "of",        FSComp.SR.keywordDescriptionOf()
+          "open",      FSComp.SR.keywordDescriptionOpen()
+          "or",        FSComp.SR.keywordDescriptionOr()
+          "override",  FSComp.SR.keywordDescriptionOverride()
+          "private",   FSComp.SR.keywordDescriptionPrivate()
+          "public",    FSComp.SR.keywordDescriptionPublic()
+          "rec",       FSComp.SR.keywordDescriptionRec()
+          "return",    FSComp.SR.keywordDescriptionReturn()
+          "return!",   FSComp.SR.keywordDescriptionReturnBang()
+          "select",    FSComp.SR.keywordDescriptionSelect()
+          "static",    FSComp.SR.keywordDescriptionStatic()
+          "struct",    FSComp.SR.keywordDescriptionStruct()
+          "then",      FSComp.SR.keywordDescriptionThen()
+          "to",        FSComp.SR.keywordDescriptionTo()
+          "true",      FSComp.SR.keywordDescriptionTrueFalse()
+          "try",       FSComp.SR.keywordDescriptionTry()
+          "type",      FSComp.SR.keywordDescriptionType()
+          "upcast",    FSComp.SR.keywordDescriptionUpcast()
+          "use",       FSComp.SR.keywordDescriptionUse()
+          "use!",      FSComp.SR.keywordDescriptionUseBang()
+          "val",       FSComp.SR.keywordDescriptionVal()
+          "void",      FSComp.SR.keywordDescriptionVoid()
+          "when",      FSComp.SR.keywordDescriptionWhen()
+          "while",     FSComp.SR.keywordDescriptionWhile()
+          "with",      FSComp.SR.keywordDescriptionWith()
+          "yield",     FSComp.SR.keywordDescriptionYield()
+          "yield!",    FSComp.SR.keywordDescriptionYieldBang()
+          "->",        FSComp.SR.keywordDescriptionRightArrow()
+          "<-",        FSComp.SR.keywordDescriptionLeftArrow()
+          ":>",        FSComp.SR.keywordDescriptionCast()
+          ":?>",       FSComp.SR.keywordDescriptionDynamicCast()
+          "<@",        FSComp.SR.keywordDescriptionTypedQuotation()
+          "@>",        FSComp.SR.keywordDescriptionTypedQuotation()
+          "<@@",       FSComp.SR.keywordDescriptionUntypedQuotation()
+          "@@>",       FSComp.SR.keywordDescriptionUntypedQuotation() ]

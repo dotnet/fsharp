@@ -14,6 +14,7 @@ open System.IO
 open System.Runtime.InteropServices
 open System.Collections.Generic
 open Internal.Utilities
+open Internal.Utilities.Collections
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 #if !FX_NO_PDB_READER
@@ -1505,9 +1506,7 @@ let dataEndPoints ctxtH =
                 @ (if ctxt.strongnameAddr = 0x0 then [] else [("managed strongname",ctxt.strongnameAddr) ])
                 @ (if ctxt.vtableFixupsAddr = 0x0 then [] else [("managed vtable_fixups",ctxt.vtableFixupsAddr) ])
                 @ methodRVAs)))
-           // Make distinct 
-           |> Set.ofList
-           |> Set.toList
+           |> List.distinct
            |> List.sort 
       
 
@@ -3966,10 +3965,10 @@ let OpenILModuleReader infile opts =
           dispose = (fun () -> 
             ClosePdbReader pdb) }
 
-// ++GLOBAL MUTABLE STATE
-let ilModuleReaderCache = 
-    new Internal.Utilities.Collections.AgedLookup<(string * System.DateTime),ILModuleReader>(0, areSame=(fun (x,y) -> x = y))
-
+// ++GLOBAL MUTABLE STATE (concurrency safe via locking)
+type ILModuleReaderCacheLockToken() = interface LockToken
+let ilModuleReaderCache = new AgedLookup<ILModuleReaderCacheLockToken, (string * System.DateTime), ILModuleReader>(0, areSame=(fun (x,y) -> x = y))
+let ilModuleReaderCacheLock = Lock()
 
 let OpenILModuleReaderAfterReadingAllBytes infile opts = 
     // Pseudo-normalize the paths.
@@ -3981,7 +3980,7 @@ let OpenILModuleReaderAfterReadingAllBytes infile opts =
     let cacheResult = 
         if not succeeded then None // Fall back to uncached.
         else if opts.pdbPath.IsSome then None // can't used a cached entry when reading PDBs, since it makes the returned object IDisposable
-        else ilModuleReaderCache.TryGet(key) 
+        else ilModuleReaderCacheLock.AcquireLock (fun ltok -> ilModuleReaderCache.TryGet(ltok, key))
     match cacheResult with 
     | Some(ilModuleReader) -> ilModuleReader
     | None -> 
@@ -3992,7 +3991,7 @@ let OpenILModuleReaderAfterReadingAllBytes infile opts =
               ilAssemblyRefs = ilAssemblyRefs
               dispose = (fun () -> ClosePdbReader pdb) }
         if Option.isNone pdb && succeeded then 
-            ilModuleReaderCache.Put(key, ilModuleReader)
+            ilModuleReaderCacheLock.AcquireLock (fun ltok -> ilModuleReaderCache.Put(ltok, key, ilModuleReader))
         ilModuleReader
 
 let OpenILModuleReaderFromBytes fileNameForDebugOutput bytes opts = 

@@ -7,24 +7,11 @@ open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 
 exception IllegalFileNameChar of string * char
 
-/// The set of characters which may not be used in a path.
-/// This is saved here because Path.GetInvalidPathChars() allocates and returns
-/// a new array each time it's called (by necessity, for security reasons).
-/// This is only used within `checkPathForIllegalChars`, and is only read from.
-let illegalPathChars =
-    let chars = Path.GetInvalidPathChars ()
-    chars
-
-let checkPathForIllegalChars (path:string) =
-    let len = path.Length
-    for i = 0 to len - 1 do
-        let c = path.[i]
-        
-        // Determine if this character is disallowed within a path by
-        // attempting to find it in the array of illegal path characters.
-        for badChar in illegalPathChars do
-            if c = badChar then
-                raise(IllegalFileNameChar(path, c))
+let checkPathForIllegalChars  =
+    let chars = new System.Collections.Generic.HashSet<_>(Path.GetInvalidPathChars())
+    (fun (path:string) -> 
+        for c in path do
+            if chars.Contains c then raise(IllegalFileNameChar(path, c)))
 
 // Case sensitive (original behaviour preserved).
 let checkSuffix (x:string) (y:string) = x.EndsWith(y,System.StringComparison.Ordinal) 

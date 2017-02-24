@@ -29,35 +29,11 @@ neg15.fs(115,19,115,48): typecheck error FS0072: Lookup on object of indetermina
 
 neg15.fs(116,20,116,73): typecheck error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
 
-neg15.fs(122,32,122,57): typecheck error FS0039: The value, constructor, namespace or type 'InternalTagOfInternalType' is not defined
-
-Maybe you want one of the following:
-
-   InternalUnionType
-
-   InternalRecordType
-
-   UnionTypeWithPrivateRepresentation
-
-   RecordTypeWithPrivateRepresentation
-
-   Type
+neg15.fs(122,32,122,57): typecheck error FS0039: The value, constructor, namespace or type 'InternalTagOfInternalType' is not defined. Maybe you want one of the following: InternalUnionType, InternalRecordType, DefaultTagOfInternalType
 
 neg15.fs(128,31,128,61): typecheck error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
 
-neg15.fs(135,31,135,56): typecheck error FS0039: The value, constructor, namespace or type 'InternalTagOfInternalType' is not defined
-
-Maybe you want one of the following:
-
-   InternalUnionType
-
-   InternalRecordType
-
-   UnionTypeWithPrivateRepresentation
-
-   RecordTypeWithPrivateRepresentation
-
-   Type
+neg15.fs(135,31,135,56): typecheck error FS0039: The value, constructor, namespace or type 'InternalTagOfInternalType' is not defined. Maybe you want one of the following: InternalUnionType, InternalRecordType, DefaultTagOfInternalType
 
 neg15.fs(141,30,141,60): typecheck error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
 
@@ -81,4 +57,4 @@ neg15.fs(190,1,190,6): typecheck error FS0491: The member or object constructor 
 
 neg15.fs(191,1,191,8): typecheck error FS0491: The member or object constructor 'SM' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.
 
-neg15.fs(204,11,204,16): typecheck error FS0501: The member or object constructor 'X2' takes 0 argument(s) but is here given 1. The required signature is 'new : unit -> X2'.
+neg15.fs(204,11,204,16): typecheck error FS0501: The object constructor 'X2' takes 0 argument(s) but is here given 1. The required signature is 'new : unit -> X2'.

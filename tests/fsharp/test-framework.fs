@@ -111,27 +111,21 @@ type TestConfig =
       SN : string
       NGEN : string
       PEVERIFY : string
-      Directory: string }
+      Directory: string 
+      DotNetExe: string
+      DefaultPlatform: string}
 
 
 module WindowsPlatform = 
 
+    let Is64BitOperatingSystem envVars =
+        // On Windows PROCESSOR_ARCHITECTURE has the value AMD64 on 64 bit Intel Machines
+        let value =
+            let find s = envVars |> Map.tryFind s
+            [| "PROCESSOR_ARCHITECTURE" |] |> Seq.tryPick (fun s -> find s) |> function None -> "" | Some x -> x
+        value = "AMD64"
+
     let clrPaths envVars =
-
-        let regQuery path value (baseKey: RegistryKey) =
-            use regKey  = baseKey.OpenSubKey(path, false)
-   
-            if (regKey = null) then None
-            else 
-                match regKey.GetValue(value) with
-                | null -> None
-                | x -> Some x
-
-        let regQueryREG_SOFTWARE path value =
-            let hklm32 = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32)
-            match hklm32 |> regQuery path value with
-            | Some (:? string as d) -> Some d
-            | Some _ | None -> None
 
         let windir = 
             match envVars |> Map.tryFind "windir" with
@@ -145,22 +139,16 @@ module WindowsPlatform =
 
         // == Use the same runtime as our architecture
         // == ASSUMPTION: This could be a good or bad thing.
-        if Environment.Is64BitOperatingSystem then 
+        if Is64BitOperatingSystem envVars then 
             CORDIR <- CORDIR.Replace("Framework", "Framework64")
 
-        let allSDK = 
-             [ regQueryREG_SOFTWARE @"Software\WOW6432Node\Microsoft\Microsoft SDKs\NETFXSDK\4.6.2\WinSDK-NetFx40Tools" "InstallationFolder"
-               regQueryREG_SOFTWARE @"Software\WOW6432Node\Microsoft\Microsoft SDKs\NETFXSDK\4.6.1\WinSDK-NetFx40Tools" "InstallationFolder"
-               regQueryREG_SOFTWARE @"Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6\WinSDK-NetFx40Tools" "InstallationFolder"
-               regQueryREG_SOFTWARE @"Software\Microsoft\Microsoft SDKs\Windows\v8.1A\WinSDK-NetFx40Tools" "InstallationFolder"
-               regQueryREG_SOFTWARE @"Software\Microsoft\Microsoft SDKs\Windows\v8.0A\WinSDK-NetFx40Tools" "InstallationFolder"
-               regQueryREG_SOFTWARE @"Software\Microsoft\Microsoft SDKs\Windows\v7.1\WinSDK-NetFx40Tools" "InstallationFolder"
-               regQueryREG_SOFTWARE @"Software\Microsoft\Microsoft SDKs\Windows\v7.0A\WinSDK-NetFx40Tools" "InstallationFolder" ]
-
-        let mutable CORSDK = allSDK |> Seq.tryPick id |> function None -> failwith "couldn't find CORSDK" | Some d -> d
-
-        if Environment.Is64BitOperatingSystem then 
-            CORSDK <- CORSDK ++ "x64"
+        let CORSDK =
+            let find s = envVars |> Map.tryFind s
+            [| "WINSDKNETFXTOOLS"; "WindowsSDK_ExecutablePath_x64"; "WindowsSDK_ExecutablePath_x86" |] 
+            |> Seq.tryPick find 
+            |> function 
+                 | None -> @"C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.6.1 Tools\x64\"
+                 | Some x -> x
 
         CORDIR, CORSDK
 
@@ -180,8 +168,10 @@ let config configurationName envVars =
     let fsi_flags = "-r:System.Core.dll --nowarn:20  --define:INTERACTIVE --maxerrors:1 --abortonerror" 
 
     let CORDIR, CORSDK = WindowsPlatform.clrPaths envVars
-         
-    let fsiroot = if Environment.Is64BitOperatingSystem then "fsiAnyCpu" else "fsi"
+
+    let Is64BitOperatingSystem = WindowsPlatform.Is64BitOperatingSystem envVars
+
+    let fsiroot = if Is64BitOperatingSystem then "fsiAnyCpu" else "fsi"
 
     let CSC = requireFile (CORDIR ++ "csc.exe")
     let NGEN = requireFile (CORDIR ++ "ngen.exe")
@@ -191,6 +181,16 @@ let config configurationName envVars =
     let FSC = requireFile (FSCBinPath ++ "fsc.exe")
     let FSI = requireFile (FSCBinPath ++ (fsiroot+".exe"))
     let FSCOREDLLPATH = requireFile (FSCBinPath ++ "FSharp.Core.dll") 
+
+    let defaultPlatform = 
+        match Is64BitOperatingSystem with 
+//        | PlatformID.MacOSX, true -> "osx.10.10-x64"
+//        | PlatformID.Unix,true -> "ubuntu.14.04-x64"
+        | true -> "win7-x64"
+        | false -> "win7-x86"
+
+
+    let dotNetExe = SCRIPT_ROOT ++ ".." ++ ".." ++ "Tools" ++ "dotnetcli" ++ "dotnet.exe"
 
     { EnvironmentVariables = envVars
       CORDIR = CORDIR |> Commands.pathAddBackslash
@@ -208,8 +208,10 @@ let config configurationName envVars =
       csc_flags = csc_flags
       fsc_flags = fsc_flags 
       fsi_flags = fsi_flags 
-      Directory="" }
-    
+      Directory="" 
+      DotNetExe = dotNetExe
+      DefaultPlatform = defaultPlatform }
+
 let logConfig (cfg: TestConfig) =
     log "---------------------------------------------------------------"
     log "Executables"
@@ -421,7 +423,6 @@ let execAppendOutIgnoreExitCode cfg workDir outFile p = Command.exec workDir  cf
 let execAppendErrExpectFail cfg errPath p = Command.exec cfg.Directory cfg.EnvironmentVariables { execArgs with Output = Error(Overwrite(errPath)) } p >> checkErrorLevel1
 let execStdin cfg l p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = Inherit; Input = Some(RedirectInput(l)) } p >> checkResult
 let execStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = OutputAndError(Append(stdoutPath), Append(stderrPath)); Input = Some(RedirectInput(stdinPath)) } p >> alwaysSuccess
-
 let fsc cfg arg = Printf.ksprintf (Commands.fsc cfg.Directory (exec cfg) cfg.FSC) arg
 let fscIn cfg workDir arg = Printf.ksprintf (Commands.fsc workDir (execIn cfg workDir) cfg.FSC) arg
 let fscAppend cfg stdoutPath stderrPath arg = Printf.ksprintf (Commands.fsc cfg.Directory (execAppend cfg stdoutPath stderrPath) cfg.FSC) arg
@@ -449,7 +450,7 @@ let copy_y cfg f = Commands.copy_y cfg.Directory f >> checkResult
 let diff normalize path1 path2 =
     let result = System.Text.StringBuilder()
     let append s = result.AppendLine s |> ignore
-    let cwd = Environment.CurrentDirectory
+    let cwd = Directory.GetCurrentDirectory()
 
     if not <| File.Exists(path1) then failwithf "Invalid path %s" path1
     if not <| File.Exists(path2) then failwithf "Invalid path %s" path2
@@ -488,7 +489,7 @@ let fsdiff cfg a b =
     let expectedFile = System.IO.Path.Combine(cfg.Directory, b)
     let errorText = System.IO.File.ReadAllText (System.IO.Path.Combine(cfg.Directory, a))
 
-    let result = diff false actualFile expectedFile
+    let result = diff false expectedFile actualFile
     if result <> "" then
         log "%s" result
         log "New error file:"

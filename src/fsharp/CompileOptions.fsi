@@ -7,6 +7,7 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Ast
@@ -58,7 +59,6 @@ val FilterCompilerOptionBlock : (CompilerOption -> bool) -> CompilerOptionBlock 
 /// Parse and process a set of compiler options
 val ParseCompilerOptions : (string -> unit) * CompilerOptionBlock list * string list -> unit
 
-
 //----------------------------------------------------------------------------
 // Compiler Options
 //--------------------------------------------------------------------------
@@ -87,13 +87,13 @@ val CreateIlxAssemblyGenerator : TcConfig * TcImports * TcGlobals * ConstraintSo
 val GenerateIlxCode : IlxGen.IlxGenBackend * isInteractiveItExpr:bool * isInteractiveOnMono:bool * TcConfig * TypeChecker.TopAttribs * TypedAssemblyAfterOptimization * fragName:string * IlxGen.IlxAssemblyGenerator -> IlxGen.IlxGenResults
 
 // Used during static linking
-val NormalizeAssemblyRefs : TcImports -> (AbstractIL.IL.ILScopeRef -> AbstractIL.IL.ILScopeRef)
+val NormalizeAssemblyRefs : CompilationThreadToken * TcImports -> (AbstractIL.IL.ILScopeRef -> AbstractIL.IL.ILScopeRef)
 
 // Miscellany
 val ignoreFailureOnMono1_1_16 : (unit -> unit) -> unit
 val mutable enableConsoleColoring : bool
+val DoWithColor : System.ConsoleColor -> (unit -> 'a) -> 'a
 val DoWithErrorColor : bool -> (unit -> 'a) -> 'a
 val ReportTime : TcConfig -> string -> unit
 val GetAbbrevFlagSet : TcConfigBuilder -> bool -> Set<string>
 val PostProcessCompilerArgs : string Set -> string [] -> string list
-val ParseCompilerOptions : (string -> unit) * CompilerOptionBlock list * string list -> unit

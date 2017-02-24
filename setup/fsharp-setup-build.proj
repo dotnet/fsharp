@@ -8,72 +8,49 @@
         <TargetFramework Condition="'$(TargetFramework)'==''">net40</TargetFramework>
         <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
     </PropertyGroup>
-    
+
     <Import Project="FSharp.Setup.props" />
-    
-    <Target Name="CollectSetupProjects">        
+
+    <Target Name="CollectSetupProjects">
         <ItemGroup>
             <WixSetupProjects Include="FSharp.Wix.Extensions.csproj">
                 <ProjectPath>FSharp.Wix.Extensions\FSharp.Wix.Extensions.csproj</ProjectPath>
             </WixSetupProjects>
         </ItemGroup>
-        
+
         <CreateItem Include="@(SetupLanguages)"
                     AdditionalMetadata="ProjectPath=FSharp.SDK\FSharp.SDK.wixproj">
             <Output ItemName="WixSetupProjects" TaskParameter="Include"/>
         </CreateItem>
-        
+
         <ItemGroup>
             <SwixSetupProjects Include="Microsoft.FSharp.SDK.Core.swixproj">
                 <ProjectPath>Swix\Microsoft.FSharp.SDK.Core\Microsoft.FSharp.SDK.Core.swixproj</ProjectPath>
             </SwixSetupProjects>
+            <VsixProjects Include="VisualFSharpFull.csproj">
+                <ProjectPath>..\vsintegration\Vsix\VisualFSharpFull\VisualFSharpFull.csproj</ProjectPath>
+            </VsixProjects>
         </ItemGroup>
-        
+
         <CreateItem Include="@(SetupLanguages)"
                     AdditionalMetadata="ProjectPath=Swix\Microsoft.FSharp.SDK.Resources\Microsoft.FSharp.SDK.Resources.swixproj">
             <Output ItemName="SwixSetupProjects" TaskParameter="Include"/>
-        </CreateItem>     
-        
-        <ItemGroup>
-            <SwixSetupProjects Include="Microsoft.FSharp.Vsix.Core.swixproj">
-                <ProjectPath>Swix\Microsoft.FSharp.Vsix.Core\Microsoft.FSharp.Vsix.Core.swixproj</ProjectPath>
-                <VSSku>Full</VSSku>
-            </SwixSetupProjects>
-            
-            <SwixSetupProjects Include="Microsoft.FSharp.Vsix.Core.swixproj">
-                <ProjectPath>Swix\Microsoft.FSharp.Vsix.Core\Microsoft.FSharp.Vsix.Core.swixproj</ProjectPath>
-                <VSSku>Desktop</VSSku>
-            </SwixSetupProjects>
-            
-            <SwixSetupProjects Include="Microsoft.FSharp.Vsix.Core.swixproj">
-                <ProjectPath>Swix\Microsoft.FSharp.Vsix.Core\Microsoft.FSharp.Vsix.Core.swixproj</ProjectPath>
-                <VSSku>Web</VSSku>
-            </SwixSetupProjects>
-        </ItemGroup>
-        
+        </CreateItem>
+
         <CreateItem Include="@(SetupLanguages)"
-                    AdditionalMetadata="ProjectPath=Swix\Microsoft.FSharp.Vsix.Resources\Microsoft.FSharp.Vsix.Resources.swixproj;VSSku=Full">
+                    AdditionalMetadata="ProjectPath=Swix\Microsoft.FSharp.Vsix.Resources\Microsoft.FSharp.Vsix.Resources.swixproj">
             <Output ItemName="SwixSetupProjects" TaskParameter="Include"/>
         </CreateItem>
-        
-        <CreateItem Include="@(SetupLanguages)"
-                    AdditionalMetadata="ProjectPath=Swix\Microsoft.FSharp.Vsix.Resources\Microsoft.FSharp.Vsix.Resources.swixproj;VSSku=Desktop">
-            <Output ItemName="SwixSetupProjects" TaskParameter="Include"/>
-        </CreateItem>
-        
-        <CreateItem Include="@(SetupLanguages)"
-                    AdditionalMetadata="ProjectPath=Swix\Microsoft.FSharp.Vsix.Resources\Microsoft.FSharp.Vsix.Resources.swixproj;VSSku=Web">
-            <Output ItemName="SwixSetupProjects" TaskParameter="Include"/>
-        </CreateItem>
-        
+
         <ItemGroup>
             <SwixSetupProjects Include="Microsoft.FSharp.Dependencies.swixproj">
                 <ProjectPath>Swix\Microsoft.FSharp.Dependencies\Microsoft.FSharp.Dependencies.swixproj</ProjectPath>
             </SwixSetupProjects>
-            
-            <SwixSetupProjects Include="Microsoft.FSharp.vsmanproj">
-                <ProjectPath>Swix\Microsoft.FSharp.vsmanproj</ProjectPath>
-            </SwixSetupProjects>
+        </ItemGroup>
+
+        <ItemGroup>
+            <InsertionItems Include="$(VsixBuildLocation)\VisualFSharpFull.vsix" />
+            <InsertionItems Include="$(VsixBuildLocation)\Microsoft.FSharp.VSIX.Full.Core.json" />
         </ItemGroup>
     </Target>
 
@@ -81,12 +58,21 @@
         <!-- Wix targets files doesn't handle localization parameters correctly. Cleaning before building files accross languages -->
         <MSBuild Projects="%(WixSetupProjects.ProjectPath)"
                  Targets="Clean;Build"
-                 Properties="LocaleCode=%(WixSetupProjects.LocaleCode);LocaleId=%(WixSetupProjects.LocaleId);LocaleParentCulture=%(WixSetupProjects.LocaleParentCulture);LocaleSpecificCulture=%(WixSetupProjects.LocaleSpecificCulture);IsLangPack=%(WixSetupProjects.IsLangPack);VSSku=%(WixSetupProjects.VSSku);FSharpPackageVersion=$(FSharpPackageVersion)"/>
+                 Properties="LocaleCode=%(WixSetupProjects.LocaleCode);LocaleId=%(WixSetupProjects.LocaleId);LocaleParentCulture=%(WixSetupProjects.LocaleParentCulture);LocaleSpecificCulture=%(WixSetupProjects.LocaleSpecificCulture);IsLangPack=%(WixSetupProjects.IsLangPack);FSharpPackageVersion=$(FSharpPackageVersion)"/>
+        <MSBuild Projects="%(VsixProjects.ProjectPath)"
+                 Targets="Build"
+                 Properties="IsLangPack=%(VsixProjects.IsLangPack);FSharpPackageVersion=$(FSharpPackageVersion);OutputPath=$(InsertionDir)"/>
         <MSBuild Projects="%(SwixSetupProjects.ProjectPath)"
                  Targets="Build"
-                 Properties="LocaleCode=%(SwixSetupProjects.LocaleCode);LocaleId=%(SwixSetupProjects.LocaleId);LocaleParentCulture=%(SwixSetupProjects.LocaleParentCulture);LocaleSpecificCulture=%(SwixSetupProjects.LocaleSpecificCulture);IsLangPack=%(SwixSetupProjects.IsLangPack);VSSku=%(SwixSetupProjects.VSSku);FSharpPackageVersion=$(FSharpPackageVersion)"/>
+                 Properties="LocaleCode=%(SwixSetupProjects.LocaleCode);LocaleId=%(SwixSetupProjects.LocaleId);LocaleParentCulture=%(SwixSetupProjects.LocaleParentCulture);LocaleSpecificCulture=%(SwixSetupProjects.LocaleSpecificCulture);IsLangPack=%(SwixSetupProjects.IsLangPack);FSharpPackageVersion=$(FSharpPackageVersion)"/>
+
+        <!-- copy json stuff -->
+        <Copy SourceFiles="@(InsertionItems)" DestinationFolder="$(InsertionDir)" />
+
+        <MSBuild Projects="Swix\Microsoft.FSharp.vsmanproj"
+                 Targets="Build" />
     </Target>
-    
+
     <Target Name="CopyLocalizationResources" BeforeTargets="Build">
         <ItemGroup>
             <SetupLocalizationResources Include="resources\**\*.*" />
@@ -96,4 +82,3 @@
               DestinationFiles="@(SetupLocalizationResources->'$(OutputPath)\resources\%(RecursiveDir)%(Filename)%(Extension)')" />
     </Target>
 </Project>
-

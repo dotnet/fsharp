@@ -1,5 +1,5 @@
 
-neg06.fs(3,40,3,45): typecheck error FS0039: The field, constructor or member 'Ascii' is not defined
+neg06.fs(3,40,3,45): typecheck error FS0039: The field, constructor or member 'Ascii' is not defined. Maybe you want one of the following: ASCII
 
 neg06.fs(12,6,12,31): typecheck error FS0942: Struct types are always sealed
 
@@ -89,31 +89,31 @@ neg06.fs(124,9,124,10): typecheck error FS0953: This type definition involves an
 
 neg06.fs(128,19,128,46): typecheck error FS0700: 'new' constraints must take one argument of type 'unit' and return the constructed type
 
-neg06.fs(128,53,128,61): typecheck error FS0043: A type parameter is missing a constraint 'when 'a : (new : unit ->  'a)'
+neg06.fs(128,53,128,61): typecheck error FS0043: A type parameter is missing a constraint 'when 'a : (new : unit -> 'a)'
 
 neg06.fs(141,10,141,18): typecheck error FS0954: This type definition involves an immediate cyclic reference through a struct field or inheritance relation
 
-neg06.fs(148,13,148,21): typecheck error FS0039: The value or constructor 'BadType1' is not defined
+neg06.fs(148,13,148,21): typecheck error FS0039: The value or constructor 'BadType1' is not defined.
 
 neg06.fs(150,10,150,18): typecheck error FS0954: This type definition involves an immediate cyclic reference through a struct field or inheritance relation
 
-neg06.fs(157,13,157,21): typecheck error FS0039: The value or constructor 'BadType2' is not defined
+neg06.fs(157,13,157,21): typecheck error FS0039: The value or constructor 'BadType2' is not defined.
 
 neg06.fs(159,10,159,18): typecheck error FS0954: This type definition involves an immediate cyclic reference through a struct field or inheritance relation
 
-neg06.fs(166,13,166,21): typecheck error FS0039: The value or constructor 'BadType3' is not defined
+neg06.fs(166,13,166,21): typecheck error FS0039: The value or constructor 'BadType3' is not defined.
 
 neg06.fs(195,10,195,18): typecheck error FS0954: This type definition involves an immediate cyclic reference through a struct field or inheritance relation
 
-neg06.fs(203,13,203,21): typecheck error FS0039: The value or constructor 'BadType1' is not defined
+neg06.fs(203,13,203,21): typecheck error FS0039: The value or constructor 'BadType1' is not defined.
 
 neg06.fs(205,10,205,18): typecheck error FS0954: This type definition involves an immediate cyclic reference through a struct field or inheritance relation
 
-neg06.fs(213,13,213,21): typecheck error FS0039: The value or constructor 'BadType2' is not defined
+neg06.fs(213,13,213,21): typecheck error FS0039: The value or constructor 'BadType2' is not defined.
 
 neg06.fs(215,10,215,18): typecheck error FS0954: This type definition involves an immediate cyclic reference through a struct field or inheritance relation
 
-neg06.fs(223,13,223,21): typecheck error FS0039: The value or constructor 'BadType3' is not defined
+neg06.fs(223,13,223,21): typecheck error FS0039: The value or constructor 'BadType3' is not defined.
 
 neg06.fs(294,10,294,12): typecheck error FS0009: Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.
 
@@ -131,11 +131,11 @@ neg06.fs(320,10,320,12): typecheck error FS0937: Only structs and classes withou
 
 neg06.fs(326,10,326,18): typecheck error FS0954: This type definition involves an immediate cyclic reference through a struct field or inheritance relation
 
-neg06.fs(335,13,335,21): typecheck error FS0039: The value or constructor 'BadType4' is not defined
+neg06.fs(335,13,335,21): typecheck error FS0039: The value or constructor 'BadType4' is not defined.
 
 neg06.fs(340,10,340,18): typecheck error FS0954: This type definition involves an immediate cyclic reference through a struct field or inheritance relation
 
-neg06.fs(350,13,350,21): typecheck error FS0039: The value or constructor 'BadType4' is not defined
+neg06.fs(350,13,350,21): typecheck error FS0039: The value or constructor 'BadType4' is not defined.
 
 neg06.fs(375,9,375,10): typecheck error FS1197: The parameter 'x' was inferred to have byref type. Parameters of byref type must be given an explicit type annotation, e.g. 'x1: byref<int>'. When used, a byref parameter is implicitly dereferenced.
 

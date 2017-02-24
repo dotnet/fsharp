@@ -230,8 +230,7 @@ let fixupOverlappingSequencePoints fixupSPs showTimes methods =
     // length of all sequence point marks so they do not go further than 
     // the next sequence point in the source. 
     let spCounts =  methods |> Array.map (fun x -> x.SequencePoints.Length)
-    let allSps = methods |> Array.map (fun x -> x.SequencePoints)
-                         |> Array.concat 
+    let allSps = methods |> Array.collect (fun x -> x.SequencePoints)
                          |> Array.mapi (fun i sp -> i, sp)
     if fixupSPs then 
         // sort the sequence points into source order 
@@ -295,7 +294,7 @@ let generatePortablePdb fixupSPs (embedAllSource:bool) (embedSourceList:string l
     let documentIndex =
         let includeSource file =
             let isInList =
-                if embedSourceList.Length = 0 then false
+                if isNil embedSourceList then false
                 else
                     embedSourceList |> List.tryFind(fun f -> String.Compare(file, f, StringComparison.OrdinalIgnoreCase ) = 0) |> Option.isSome
 
@@ -546,10 +545,9 @@ let writePdbInfo fixupOverlappingSequencePoints showTimes f fpdb info cvChunk =
     // partition of the source code of a method.  So here we shorten the 
     // length of all sequence point marks so they do not go further than 
     // the next sequence point in the source. 
-    let spCounts =  info.Methods |> Array.map (fun x -> x.SequencePoints.Length)
-    let allSps = Array.concat (Array.map (fun x -> x.SequencePoints) info.Methods |> Array.toList)
-    let allSps = Array.mapi (fun i sp -> (i,sp)) allSps
-    if fixupOverlappingSequencePoints then 
+    let spCounts = info.Methods |> Array.map (fun x -> x.SequencePoints.Length)
+    let allSps = Array.collect (fun x -> x.SequencePoints) info.Methods |> Array.indexed
+    if fixupOverlappingSequencePoints then
         // sort the sequence points into source order 
         Array.sortInPlaceWith (fun (_,sp1) (_,sp2) -> SequencePoint.orderBySource sp1 sp2) allSps
         // shorten the ranges of any that overlap with following sequence points 

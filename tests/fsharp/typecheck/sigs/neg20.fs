@@ -367,9 +367,9 @@ module OverloadedTypeNamesSomeConstructors =
         member __.P = 1
         static member S() = 3
 
-    let t2 = 3 |> OverloadedClassName<int,int> //  CHANGE IN ERROR MESSAGE IN F# 4.x: Was "Invalid use of a type name", now "The value or constructor 'OverloadedClassName' is not defined"
+    let t2 = 3 |> OverloadedClassName<int,int> //  CHANGE IN ERROR MESSAGE IN F# 4.x: Was "Invalid use of a type name", now "No constructors are available for the type 'OverloadedClassName<'a,'b>'"
     let t3 = 3 |> OverloadedClassName // expected error - multiple types exist
-    let t2s = "3" |> OverloadedClassName<int,int> //  CHANGE IN ERROR MESSAGE IN F# 4.x: Was "Invalid use of a type name", now "The value or constructor 'OverloadedClassName' is not defined"
+    let t2s = "3" |> OverloadedClassName<int,int> //  CHANGE IN ERROR MESSAGE IN F# 4.x: Was "Invalid use of a type name", now "No constructors are available for the type 'OverloadedClassName<'a,'b>'"
     let t3s = "3" |> OverloadedClassName // expected error - multiple types exist
 
 module OverloadedTypeNamesNoConstructors = 
@@ -425,9 +425,9 @@ module OverloadedTypeNamesIncludingNonGenericTypeSomeConstructors =
         member __.P = 1
         static member S() = 3
 
-    let t2 = 3 |> OverloadedClassName<int,int> //  CHANGE IN ERROR MESSAGE IN F# 4.x: Was "Invalid use of a type name", now "The value or constructor 'OverloadedClassName' is not defined"
+    let t2 = 3 |> OverloadedClassName<int,int> //  CHANGE IN ERROR MESSAGE IN F# 4.x: Was "Invalid use of a type name", now "No constructors are available for the type 'OverloadedClassName<'a,'b>'"
     let t3 = 3 |> OverloadedClassName // NO ERROR EXPECTED
-    let t2s = "3" |> OverloadedClassName<int,int> //  CHANGE IN ERROR MESSAGE IN F# 4.x: Was "Invalid use of a type name", now "The value or constructor 'OverloadedClassName' is not defined"
+    let t2s = "3" |> OverloadedClassName<int,int> //  CHANGE IN ERROR MESSAGE IN F# 4.x: Was "Invalid use of a type name", now "No constructors are available for the type 'OverloadedClassName<'a,'b>'"
     let t3s = "3" |> OverloadedClassName // expected error - multiple types exist
 
 module OverloadedTypeNamesIncludingNonGenericTypeNoConstructors = 

@@ -127,6 +127,20 @@
       IL_0015:  ret
     } // end of method Weirdo::__DebugDisplay
 
+    .method public strict virtual instance string 
+            ToString() cil managed
+    {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      // Code size       22 (0x16)
+      .maxstack  8
+      IL_0000:  ldstr      "%+A"
+      IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class GeneralizationOnUnions01/Weirdo,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,class GeneralizationOnUnions01/Weirdo>::.ctor(string)
+      IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class GeneralizationOnUnions01/Weirdo,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
+      IL_000f:  ldarg.0
+      IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class GeneralizationOnUnions01/Weirdo,string>::Invoke(!0)
+      IL_0015:  ret
+    } // end of method Weirdo::ToString
+
     .method public hidebysig virtual final 
             instance int32  CompareTo(class GeneralizationOnUnions01/Weirdo obj) cil managed
     {
@@ -257,31 +271,22 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       23 (0x17)
       .maxstack  3
-      .locals init (int32 V_0,
-               class GeneralizationOnUnions01/Weirdo V_1)
+      .locals init (int32 V_0)
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  ldnull
       IL_0003:  cgt.un
       IL_0005:  brfalse.s  IL_0009
-
       IL_0007:  br.s       IL_000b
-
-      IL_0009:  br.s       IL_0015
-
+      IL_0009:  br.s       IL_0011
       IL_000b:  ldc.i4.0
       IL_000c:  stloc.0
       IL_000d:  ldarg.0
       IL_000e:  pop
-      IL_000f:  ldarg.0
-      IL_0010:  stloc.1
+      IL_000f:  ldc.i4.0
+      IL_0010:  ret
       IL_0011:  ldc.i4.0
-      IL_0012:  stloc.0
-      IL_0013:  ldloc.0
-      IL_0014:  ret
-
-      IL_0015:  ldc.i4.0
-      IL_0016:  ret
+      IL_0012:  ret
     } // end of method Weirdo::GetHashCode
 
     .method public hidebysig virtual final 

@@ -738,7 +738,7 @@ and GetModuleRefAsFileIdx cenv mref =
 
 let isScopeRefLocal scoref = (scoref = ILScopeRef.Local) 
 let isTypeRefLocal (tref:ILTypeRef) = isScopeRefLocal tref.Scope
-let isTypeLocal (typ:ILType) = typ.IsNominal && typ.GenericArgs.Length = 0 && isTypeRefLocal typ.TypeRef
+let isTypeLocal (typ:ILType) = typ.IsNominal && isNil typ.GenericArgs && isTypeRefLocal typ.TypeRef
 
 // -------------------------------------------------------------------- 
 // Scopes to Implementation elements.
@@ -1247,7 +1247,7 @@ let FindMethodDefIdx cenv mdkey =
                 if i = tidx2 then 
                     if sofar = None then 
                         Some tkey2 
-                    else failwith "mutiple type names map to index" 
+                    else failwith "multiple type names map to index" 
                 else sofar)  None) with 
           | Some x -> x
           | None -> raise MethodDefNotFound 

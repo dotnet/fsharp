@@ -1441,6 +1441,7 @@ module internal VsMocks =
 
         let add1, remove1, enumerate1 = mkEventsStorage()
         let add2, remove2, _ = mkEventsStorage()
+        let add4, remove4, _ = mkEventsStorage()
         let configDict = new Dictionary<IVsHierarchy,string>()
         let configChangeNotifier(h : IVsHierarchy, s : string) = 
             if configDict.ContainsKey(h) then
@@ -1517,8 +1518,30 @@ module internal VsMocks =
                 member x.QueryBuildManagerBusyEx(a) = err(__LINE__)
                 member x.UnadviseUpdateSolutionEvents3(a) =
                     0
+              interface IVsSolutionBuildManager5 with
+                member x.AdviseUpdateSolutionEvents4(pIVsUpdateSolutionEvents, pdwCookie) =
+                    pdwCookie <- add4 pIVsUpdateSolutionEvents
+                member x.AdviseUpdateSolutionEventsAsync(a,b) = err(__LINE__) |> ignore
+                member x.FindActiveProjectCfgName(a,b) = err(__LINE__)
+                member x.UnadviseUpdateSolutionEventsAsync(a) = err(__LINE__) |> ignore
+                member x.UnadviseUpdateSolutionEvents4(dwCookie) =
+                    remove4 dwCookie
         }
         vsSolutionBuildManager, configChangeNotifier
+    
+    let vsThreadedWaitDialogFactory =
+        { new IVsThreadedWaitDialogFactory with
+            override x.CreateInstance(vsThreadedWaitDialog) =
+                vsThreadedWaitDialog <-
+                    { new IVsThreadedWaitDialog2 with
+                        override x.EndWaitDialog(_) = 0
+                        override x.HasCanceled(_) = 0
+                        override x.StartWaitDialog(_, _, _, _, _, _, _, _) = 0
+                        override x.StartWaitDialogWithPercentageProgress(_, _, _, _, _, _, _, _, _) = 0
+                        override x.UpdateProgress(_, _, _, _, _, _, _) = 0
+                    }
+                0
+        }
         
     let MakeMockServiceProviderAndConfigChangeNotifierNoTargetFrameworkAssembliesService() = 
         let vsSolutionBuildManager, configChangeNotifier = MakeVsSolutionBuildManagerAndConfigChangeNotifier()
@@ -1538,6 +1561,7 @@ module internal VsMocks =
         sp.AddService(typeof<SVsRunningDocumentTable>, box vsRunningDocumentTable, false)
         sp.AddService(typeof<Microsoft.VisualStudio.Shell.Interop.SVsBuildManagerAccessor>, box (MockVsBuildManagerAccessor()), false)
         sp.AddService(typeof<SVsTrackProjectRetargeting>, box vsTrackProjectRetargeting, false)
+        sp.AddService(typeof<SVsThreadedWaitDialogFactory>, box vsThreadedWaitDialogFactory, false)
         sp, configChangeNotifier
 
     let MakeMockServiceProviderAndConfigChangeNotifier20() =
@@ -1608,12 +1632,15 @@ module internal VsActual =
         // use the environment variable to find the VS installdir
 #if VS_VERSION_DEV12
         let vsvar = System.Environment.GetEnvironmentVariable("VS120COMNTOOLS")
+        if String.IsNullOrEmpty vsvar then failwith "VS120COMNTOOLS environment variable was not found."
 #endif
 #if VS_VERSION_DEV14
         let vsvar = System.Environment.GetEnvironmentVariable("VS140COMNTOOLS")
+        if String.IsNullOrEmpty vsvar then failwith "VS140COMNTOOLS environment variable was not found."
 #endif
 #if VS_VERSION_DEV15
         let vsvar = System.Environment.GetEnvironmentVariable("VS150COMNTOOLS")
+        if String.IsNullOrEmpty vsvar then failwith "VS150COMNTOOLS environment variable was not found."
 #endif
         Path.Combine(vsvar, "..")
 

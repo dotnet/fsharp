@@ -2,8 +2,7 @@
 
 namespace Microsoft.FSharp.Quotations
 
-#if FX_MINIMAL_REFLECTION
-#else
+#if !FX_MINIMAL_REFLECTION
 open System
 open System.IO
 open System.Reflection
@@ -18,13 +17,13 @@ open Microsoft.FSharp.Reflection
 open Microsoft.FSharp.Core.Printf
 open Microsoft.FSharp.Text.StructuredPrintfImpl
 open Microsoft.FSharp.Text.StructuredPrintfImpl.LayoutOps
+open Microsoft.FSharp.Text.StructuredPrintfImpl.TaggedTextOps
 
 #nowarn "52" //  The value has been copied to ensure the original is not mutated by this operation
 
 #if FX_RESHAPED_REFLECTION
 open PrimReflectionAdapters
 open ReflectionAdapters
-type internal BindingFlags = ReflectionAdapters.BindingFlags
 #endif
 
 //--------------------------------------------------------------------------
@@ -227,22 +226,23 @@ and [<CompiledName("FSharpExpr")>]
         let expr (e:Expr ) = e.GetLayout(long)
         let exprs (es:Expr list) = es |> List.map expr
         let parens ls = bracketL (commaListL ls)
-        let pairL l1 l2 = bracketL (l1 ^^ sepL "," ^^ l2)
+        let pairL l1 l2 = bracketL (l1 ^^ sepL Literals.comma ^^ l2)
         let listL ls = squareBracketL (commaListL ls)
-        let combL nm ls = wordL nm ^^ parens ls
-        let noneL = wordL "None"
-        let someL e = combL "Some" [expr e]
-        let typeL (o: Type)  = wordL (if long then o.FullName else o.Name)
-        let objL (o: 'T)  = wordL (sprintf "%A" o)
-        let varL (v:Var) = wordL v.Name
+        let combTaggedL nm ls = wordL nm ^^ parens ls
+        let combL nm ls = combTaggedL (tagKeyword nm) ls
+        let noneL = wordL (tagProperty "None")
+        let someL e = combTaggedL (tagMethod "Some") [expr e]
+        let typeL (o: Type)  = wordL (tagClass (if long then o.FullName else o.Name))
+        let objL (o: 'T)  = wordL (tagText (sprintf "%A" o))
+        let varL (v:Var) = wordL (tagLocal v.Name)
         let (|E|) (e: Expr) = e.Tree
         let (|Lambda|_|)        (E x) = match x with LambdaTerm(a,b)  -> Some (a,b) | _ -> None 
         let (|IteratedLambda|_|) (e: Expr) = qOneOrMoreRLinear (|Lambda|_|) e
-        let ucaseL (unionCase:UnionCaseInfo) = (if long then objL unionCase else wordL unionCase.Name) 
-        let minfoL (minfo: MethodInfo) = if long then objL minfo else wordL minfo.Name 
-        let cinfoL (cinfo: ConstructorInfo) = if long then objL cinfo else wordL cinfo.DeclaringType.Name
-        let pinfoL (pinfo: PropertyInfo) = if long then objL pinfo else wordL pinfo.Name
-        let finfoL (finfo: FieldInfo) = if long then objL finfo else wordL finfo.Name
+        let ucaseL (unionCase:UnionCaseInfo) = (if long then objL unionCase else wordL (tagUnionCase unionCase.Name)) 
+        let minfoL (minfo: MethodInfo) = if long then objL minfo else wordL (tagMethod minfo.Name) 
+        let cinfoL (cinfo: ConstructorInfo) = if long then objL cinfo else wordL (tagMethod cinfo.DeclaringType.Name)
+        let pinfoL (pinfo: PropertyInfo) = if long then objL pinfo else wordL (tagProperty pinfo.Name)
+        let finfoL (finfo: FieldInfo) = if long then objL finfo else wordL (tagField finfo.Name)
         let rec (|NLambdas|_|) n (e:Expr) = 
             match e with 
             | _ when n <= 0 -> Some([],e) 
@@ -259,7 +259,7 @@ and [<CompiledName("FSharpExpr")>]
         | CombTerm(UnionCaseTestOp(unionCase),args)   -> combL "UnionCaseTest" (exprs args@ [ucaseL unionCase])
         | CombTerm(NewTupleOp _,args)            -> combL "NewTuple" (exprs args)
         | CombTerm(TupleGetOp (_,i),[arg])         -> combL "TupleGet" ([expr arg] @ [objL i])
-        | CombTerm(ValueOp(v,_,Some nm),[])               -> combL "ValueWithName" [objL v; wordL nm]
+        | CombTerm(ValueOp(v,_,Some nm),[])               -> combL "ValueWithName" [objL v; wordL (tagLocal nm)]
         | CombTerm(ValueOp(v,_,None),[])               -> combL "Value" [objL v]
         | CombTerm(WithValueOp(v,_),[defn])               -> combL "WithValue" [objL v; expr defn]
         | CombTerm(InstanceMethodCallOp(minfo),obj::args) -> combL "Call"     [someL obj; minfoL minfo; listL (exprs args)]
@@ -291,9 +291,9 @@ and [<CompiledName("FSharpExpr")>]
             | NLambdas n (vs,e) -> combL "NewDelegate" ([typeL ty] @ (vs |> List.map varL) @ [expr e])
             | _ -> combL "NewDelegate" [typeL ty; expr e]
         //| CombTerm(_,args)   -> combL "??" (exprs args)
-        | VarTerm(v)   -> wordL v.Name
+        | VarTerm(v)   -> wordL (tagLocal v.Name)
         | LambdaTerm(v,b)   -> combL "Lambda" [varL v; expr b]
-        | HoleTerm _  -> wordL "_"
+        | HoleTerm _  -> wordL (tagLocal "_")
         | CombTerm(QuoteOp _,args) -> combL "Quote" (exprs args)
         | _ -> failwithf "Unexpected term in layout %A" x.Tree
 

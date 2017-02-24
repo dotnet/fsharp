@@ -298,7 +298,7 @@ let mkExnEquality (g: TcGlobals) exnref (exnc:Tycon) =
     let expr =
         let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding,m ) 
         let cases = 
-            [ mkCase(Test.IsInst(g.exn_ty,mkAppTy exnref []),
+            [ mkCase(DecisionTreeTest.IsInst(g.exn_ty,mkAppTy exnref []),
                      mbuilder.AddResultTarget(expr,SuppressSequencePointAtTarget)) ]
         let dflt = Some(mbuilder.AddResultTarget(mkFalse g m,SuppressSequencePointAtTarget))
         let dtree = TDSwitch(thate,cases,dflt,m)
@@ -322,7 +322,7 @@ let mkExnEqualityWithComparer g exnref (exnc:Tycon) (_thisv,thise) thatobje (tha
     let expr =
         let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding,m ) 
         let cases =
-            [ mkCase(Test.IsInst(g.exn_ty,mkAppTy exnref []),
+            [ mkCase(DecisionTreeTest.IsInst(g.exn_ty,mkAppTy exnref []),
                      mbuilder.AddResultTarget(expr,SuppressSequencePointAtTarget)) ]
         let dflt = mbuilder.AddResultTarget(mkFalse g m,SuppressSequencePointAtTarget)
         let dtree = TDSwitch(thate,cases,Some dflt,m)
@@ -363,7 +363,7 @@ let mkUnionCompare g tcref (tycon:Tycon) =
                     mkCompGenLet m thisucv (mkUnionCaseProof (thise,cref,tinst,m))
                         (mkCompGenLet m thatucv (mkUnionCaseProof (thataddre,cref,tinst,m))
                             (mkCompareTestConjuncts g m (List.mapi (mkTest thisucve thatucve) rfields)))
-            Some (mkCase(Test.UnionCase(cref,tinst),mbuilder.AddResultTarget(test,SuppressSequencePointAtTarget)))
+            Some (mkCase(DecisionTreeTest.UnionCase(cref,tinst),mbuilder.AddResultTarget(test,SuppressSequencePointAtTarget)))
         
         let nullary,nonNullary = List.partition Option.isNone (List.map mkCase ucases)  
         if isNil nonNullary then mkZero g m else 
@@ -423,7 +423,7 @@ let mkUnionCompareWithComparer g tcref (tycon:Tycon) (_thisv,thise) (_thatobjv,t
                         (mkCompGenLet m thatucv (mkUnionCaseProof (thataddre,cref,tinst,m))
                             (mkCompareTestConjuncts g m (List.mapi (mkTest thisucve thatucve) rfields)))
 
-            Some (mkCase(Test.UnionCase(cref,tinst),mbuilder.AddResultTarget(test,SuppressSequencePointAtTarget)))
+            Some (mkCase(DecisionTreeTest.UnionCase(cref,tinst),mbuilder.AddResultTarget(test,SuppressSequencePointAtTarget)))
         
         let nullary,nonNullary = List.partition Option.isNone (List.map mkCase ucases)  
         if isNil nonNullary then mkZero g m else 
@@ -483,7 +483,7 @@ let mkUnionEquality g tcref (tycon:Tycon) =
                         (mkCompGenLet m thatucv (mkUnionCaseProof (thataddre,cref,tinst,m))
                             (mkEqualsTestConjuncts g m (List.mapi (mkTest thisucve thatucve) rfields)))
 
-            Some (mkCase(Test.UnionCase(cref,tinst), mbuilder.AddResultTarget(test, SuppressSequencePointAtTarget)))
+            Some (mkCase(DecisionTreeTest.UnionCase(cref,tinst), mbuilder.AddResultTarget(test, SuppressSequencePointAtTarget)))
         
         let nullary,nonNullary = List.partition Option.isNone (List.map mkCase ucases)  
         if isNil nonNullary then mkTrue g m else 
@@ -546,7 +546,7 @@ let mkUnionEqualityWithComparer g tcref (tycon:Tycon) (_thisv,thise) thatobje (t
                         (mkCompGenLet m thatucv (mkUnionCaseProof (thataddre,cref,tinst,m))
                             (mkEqualsTestConjuncts g m (List.mapi (mkTest thisucve thatucve) rfields)))
 
-            Some (mkCase(Test.UnionCase(cref,tinst), mbuilder.AddResultTarget (test, SuppressSequencePointAtTarget)))
+            Some (mkCase(DecisionTreeTest.UnionCase(cref,tinst), mbuilder.AddResultTarget (test, SuppressSequencePointAtTarget)))
         
         let nullary,nonNullary = List.partition Option.isNone (List.map mkCase ucases)  
         if isNil nonNullary then mkTrue g m else 
@@ -626,27 +626,36 @@ let mkUnionHashWithComparer g tcref (tycon:Tycon) compe =
     let mkCase i ucase1 = 
         let c1ref = tcref.MakeNestedUnionCaseRef ucase1 
         let m = c1ref.Range 
-        let mkHash thise j (rfield:RecdField) =  
-            let fty = rfield.FormalType
-            let e = mkUnionCaseFieldGetProvenViaExprAddr(thise, c1ref, tinst, j, m)
-            mkCallGenericHashWithComparerOuter g m fty compe e
+        if ucase1.IsNullary then None 
+        else
+            let mkHash thise j (rfield:RecdField) =  
+                let fty = rfield.FormalType
+                let e = mkUnionCaseFieldGetProvenViaExprAddr(thise, c1ref, tinst, j, m)
+                mkCallGenericHashWithComparerOuter g m fty compe e
 
-        let test =       
-            if tycon.IsStructOrEnumTycon then 
-                mkCompGenSequential m 
-                    (mkValSet m (mkLocalValRef accv) (mkInt g m i)) 
-                    (mkCombineHashGenerators g m (List.mapi (mkHash thise) ucase1.RecdFields) (mkLocalValRef accv) acce)
-            else
-                let ucv,ucve = mkCompGenLocal m "unionCase" (mkProvenUnionCaseTy c1ref tinst)
-                mkCompGenLet m ucv
-                    (mkUnionCaseProof (thise,c1ref,tinst,m))
-                    (mkCompGenSequential m 
+            let test =       
+                if tycon.IsStructOrEnumTycon then 
+                    mkCompGenSequential m 
                         (mkValSet m (mkLocalValRef accv) (mkInt g m i)) 
-                        (mkCombineHashGenerators g m (List.mapi (mkHash ucve) ucase1.RecdFields) (mkLocalValRef accv) acce))
+                        (mkCombineHashGenerators g m (List.mapi (mkHash thise) ucase1.RecdFields) (mkLocalValRef accv) acce)
+                else
+                    let ucv,ucve = mkCompGenLocal m "unionCase" (mkProvenUnionCaseTy c1ref tinst)
+                    mkCompGenLet m ucv
+                        (mkUnionCaseProof (thise,c1ref,tinst,m))
+                        (mkCompGenSequential m 
+                            (mkValSet m (mkLocalValRef accv) (mkInt g m i)) 
+                            (mkCombineHashGenerators g m (List.mapi (mkHash ucve) ucase1.RecdFields) (mkLocalValRef accv) acce))
+            Some(mkCase(DecisionTreeTest.UnionCase(c1ref,tinst),mbuilder.AddResultTarget(test,SuppressSequencePointAtTarget)))
 
-        mkCase(Test.UnionCase(c1ref,tinst),mbuilder.AddResultTarget(test,SuppressSequencePointAtTarget))
-
-    let dtree = TDSwitch(thise, List.mapi mkCase ucases, None,m) 
+    let nullary,nonNullary = ucases
+                             |> List.mapi mkCase
+                             |> List.partition (fun i -> i.IsNone)
+    let cases = nonNullary |> List.map (function (Some c) -> c | None -> failwith "mkUnionHash")
+    let dflt = if isNil nullary then None 
+               else 
+                   let tag = mkUnionCaseTagGetViaExprAddr (thise,tcref,tinst,m)
+                   Some(mbuilder.AddResultTarget(tag,SuppressSequencePointAtTarget))
+    let dtree = TDSwitch(thise, cases, dflt,m)
     let stmt = mbuilder.Close(dtree,m,g.int_ty)
     let expr = mkCompGenLet m accv (mkZero g m) stmt 
     let expr = if tycon.IsStructOrEnumTycon then expr else mkBindNullHash g m thise expr
@@ -1059,7 +1068,7 @@ let MakeBindingsForEqualsAugmentation (g: TcGlobals) (tycon:Tycon) =
 let rec TypeDefinitelyHasEquality g ty = 
     if isAppTy g ty && HasFSharpAttribute g g.attrib_NoEqualityAttribute (tcrefOfAppTy g ty).Attribs then
         false
-    elif isTyparTy g ty &&  (destTyparTy g ty).Constraints |> List.exists (function TyparConstraint.SupportsEquality _ -> true | _ -> false) then
+    elif isTyparTy g ty && (destTyparTy g ty).Constraints |> List.exists (function TyparConstraint.SupportsEquality _ -> true | _ -> false) then
         true
     else 
         match ty with 

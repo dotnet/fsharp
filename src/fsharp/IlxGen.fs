@@ -77,7 +77,7 @@ let ChooseParamNames fieldNamesAndTypes =
         let ilParamName = if takenFieldNames.Contains(lowerPropName) then ilPropName else lowerPropName 
         ilParamName,ilFieldName,ilPropType)
 
-let markup s = s |> Seq.mapi (fun i x -> i,x) 
+let markup s = Seq.indexed s
 
 // Approximation for purposes of optimization and giving a warning when compiling definition-only files as EXEs 
 let rec CheckCodeDoesSomething (code: ILCode) = 
@@ -1457,10 +1457,15 @@ type CodeGenBuffer(m:range,
                 instrs |> Array.mapi (fun idx i2 -> if idx = 0 then i else if i === i2 then AI_nop else i2)
             | _ -> 
                 instrs
+
+        let codeLabels =
+            let dict = Dictionary.newWithSize (codeLabelToPC.Count + codeLabelToCodeLabel.Count)
+            for kvp in codeLabelToPC        do dict.Add(kvp.Key, lab2pc 0 kvp.Key)
+            for kvp in codeLabelToCodeLabel do dict.Add(kvp.Key, lab2pc 0 kvp.Key)
+            dict
         ResizeArray.toList locals ,
         maxStack,
-        (Dictionary.ofList [ for kvp in codeLabelToPC -> (kvp.Key, lab2pc 0 kvp.Key) 
-                             for kvp in codeLabelToCodeLabel -> (kvp.Key, lab2pc 0 kvp.Key) ] ),
+        codeLabels,
         instrs,
         ResizeArray.toList exnSpecs,
         Option.isSome seqpoint
@@ -3378,7 +3383,7 @@ and GenGenericParam cenv eenv (tp:Typar) =
           // use the CompiledName if given
           // Inference variables get given an IL name "TA, TB" etc.
           let nm = 
-              match tp.Data.typar_il_name with 
+              match tp.typar_il_name with 
               | None -> tp.Name  
               | Some nm -> nm
           // Some special rules apply when compiling Fsharp.Core.dll to avoid a proliferation of [<CompiledName>] attributes on type parameters
@@ -4295,7 +4300,7 @@ and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx
         let targetMarkBeforeBinds = CG.GenerateDelayMark cgbuf "targetBeforeBinds"
         let targetMarkAfterBinds = CG.GenerateDelayMark cgbuf "targetAfterBinds"
         let startScope,endScope as scopeMarks = StartDelayedLocalScope "targetBinds" cgbuf
-        let binds = mkInvisibleFlatBindings vs es
+        let binds = mkInvisibleBinds vs es
         let eenvAtTarget = AllocStorageForBinds cenv cgbuf scopeMarks eenv binds
         let targetInfo = (targetMarkBeforeBinds,targetMarkAfterBinds,eenvAtTarget,successExpr,spTarget,repeatSP,vs,binds,startScope,endScope)
         
@@ -4348,18 +4353,18 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
     repeatSP()
     match cases with 
       // optimize a test against a boolean value, i.e. the all-important if-then-else 
-      | TCase(Test.Const(Const.Bool b), successTree) :: _  ->  
+      | TCase(DecisionTreeTest.Const(Const.Bool b), successTree) :: _  ->  
        let failureTree = (match defaultTargetOpt with None -> cases.Tail.Head.CaseTree | Some d -> d)
        GenDecisionTreeTest cenv eenv.cloc cgbuf stackAtTargets e None eenv (if b then successTree else  failureTree) (if b then failureTree else successTree) targets repeatSP targetInfos sequel 
 
       // // Remove a single test for a union case . Union case tests are always exa
-      //| [ TCase(Test.UnionCase _, successTree) ] when (defaultTargetOpt.IsNone)  ->  
+      //| [ TCase(DecisionTreeTest.UnionCase _, successTree) ] when (defaultTargetOpt.IsNone)  ->  
       //  GenDecisionTreeAndTargetsInner cenv cgbuf inplabOpt stackAtTargets eenv successTree targets repeatSP targetInfos sequel
       //   //GenDecisionTree cenv eenv.cloc cgbuf stackAtTargets e (Some (pop 1, Push [cenv.g.ilg.typ_Bool], Choice1Of2 (avoidHelpers, cuspec, idx))) eenv successTree failureTree targets repeatSP targetInfos sequel
 
       // Optimize a single test for a union case to an "isdata" test - much 
       // more efficient code, and this case occurs in the generated equality testers where perf is important 
-      | TCase(Test.UnionCase(c,tyargs), successTree) :: rest when rest.Length = (match defaultTargetOpt with None -> 1 | Some _ -> 0)  ->  
+      | TCase(DecisionTreeTest.UnionCase(c,tyargs), successTree) :: rest when rest.Length = (match defaultTargetOpt with None -> 1 | Some _ -> 0)  ->  
         let failureTree = 
             match defaultTargetOpt with 
             | None -> rest.Head.CaseTree
@@ -4375,24 +4380,24 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
         match firstDiscrim with 
         // Iterated tests, e.g. exception constructors, nulltests, typetests and active patterns.
         // These should always have one positive and one negative branch 
-        | Test.IsInst _  
-        | Test.ArrayLength _
-        | Test.IsNull 
-        | Test.Const(Const.Zero) -> 
-            if List.length cases <> 1 || Option.isNone defaultTargetOpt then failwith "internal error: GenDecisionTreeSwitch: Test.IsInst/isnull/query"
+        | DecisionTreeTest.IsInst _  
+        | DecisionTreeTest.ArrayLength _
+        | DecisionTreeTest.IsNull 
+        | DecisionTreeTest.Const(Const.Zero) -> 
+            if List.length cases <> 1 || Option.isNone defaultTargetOpt then failwith "internal error: GenDecisionTreeSwitch: DecisionTreeTest.IsInst/isnull/query"
             let bi = 
               match firstDiscrim with 
-              | Test.Const(Const.Zero) ->
+              | DecisionTreeTest.Const(Const.Zero) ->
                   GenExpr cenv cgbuf eenv SPSuppress e Continue 
                   BI_brfalse
-              | Test.IsNull -> 
+              | DecisionTreeTest.IsNull -> 
                   GenExpr cenv cgbuf eenv SPSuppress e Continue 
                   let srcTy = tyOfExpr cenv.g e
                   if isTyparTy cenv.g srcTy then 
                       let ilFromTy = GenType cenv.amap m eenv.tyenv srcTy
                       CG.EmitInstr cgbuf (pop 1) (Push [cenv.g.ilg.typ_Object]) (I_box ilFromTy)
                   BI_brfalse
-              | Test.IsInst (_srcty,tgty) -> 
+              | DecisionTreeTest.IsInst (_srcty,tgty) -> 
                   let e = mkCallTypeTest cenv.g m tgty e
                   GenExpr cenv cgbuf eenv SPSuppress e Continue
                   BI_brtrue
@@ -4400,15 +4405,15 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
             CG.EmitInstr cgbuf (pop 1) Push0 (I_brcmp (bi,(List.head caseLabels).CodeLabel))
             GenDecisionTreeCases cenv cgbuf stackAtTargets eenv targets repeatSP targetInfos defaultTargetOpt caseLabels cases sequel
               
-        | Test.ActivePatternCase _ -> error(InternalError("internal error in codegen: Test.ActivePatternCase",switchm))
-        | Test.UnionCase (hdc,tyargs) -> 
+        | DecisionTreeTest.ActivePatternCase _ -> error(InternalError("internal error in codegen: DecisionTreeTest.ActivePatternCase",switchm))
+        | DecisionTreeTest.UnionCase (hdc,tyargs) -> 
             GenExpr cenv cgbuf eenv SPSuppress e Continue
             let cuspec = GenUnionSpec cenv.amap m eenv.tyenv hdc.TyconRef tyargs
             let dests = 
-              if cases.Length <> caseLabels.Length then failwith "internal error: Test.UnionCase"
+              if cases.Length <> caseLabels.Length then failwith "internal error: DecisionTreeTest.UnionCase"
               (cases , caseLabels) ||> List.map2 (fun case label  ->
                   match case with 
-                  | TCase(Test.UnionCase (c,_),_) -> (c.Index, label.CodeLabel) 
+                  | TCase(DecisionTreeTest.UnionCase (c,_),_) -> (c.Index, label.CodeLabel) 
                   | _ -> failwith "error: mixed constructor/const test?") 
             
             let avoidHelpers = entityRefInThisAssembly cenv.g.compilingFslib hdc.TyconRef
@@ -4416,7 +4421,7 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
             CG.EmitInstrs cgbuf (pop 1) Push0 [ ] // push/pop to match the line above
             GenDecisionTreeCases cenv cgbuf stackAtTargets eenv  targets repeatSP targetInfos defaultTargetOpt caseLabels cases sequel
               
-        | Test.Const c ->
+        | DecisionTreeTest.Const c ->
             GenExpr cenv cgbuf eenv SPSuppress e Continue
             match c with 
             | Const.Bool _ -> failwith "should have been done earlier"
@@ -4432,7 +4437,7 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
                   (cases,caseLabels) ||> List.map2 (fun case label  ->
                       let i = 
                         match case.Discriminator with 
-                          Test.Const c' ->
+                          DecisionTreeTest.Const c' ->
                             match c' with 
                             | Const.SByte i -> int32 i
                             | Const.Int16 i -> int32 i
@@ -4652,7 +4657,7 @@ and GenBindAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec,rhsExpr,_)) =
         GenExpr cenv cgbuf eenv SPSuppress rhsExpr discard
 
     // The initialization code for static 'let' and 'do' bindings gets compiled into the initialization .cctor for the whole file
-    | _ when vspec.IsClassConstructor && vspec.TopValActualParent.TyparsNoRange.Length = 0 ->
+    | _ when vspec.IsClassConstructor && isNil vspec.TopValActualParent.TyparsNoRange ->
         let tps,_,_,_,cctorBody,_ = IteratedAdjustArityOfLambda cenv.g cenv.amap vspec.ValReprInfo.Value rhsExpr
         let eenv = EnvForTypars tps eenv
         GenExpr cenv cgbuf eenv SPSuppress cctorBody discard
@@ -5188,7 +5193,7 @@ and GenMethodForBinding
                // active pattern names
                mdef.Name.StartsWith("|",System.StringComparison.Ordinal) ||
                // event add/remove method
-               v.Data.val_flags.IsGeneratedEventVal then
+               v.val_flags.IsGeneratedEventVal then
                 {mdef with IsSpecialName=true} 
             else 
                 mdef
@@ -5355,16 +5360,21 @@ and GenGetVal cenv cgbuf eenv (v:ValRef,m) sequel =
 and GenBindRhs cenv cgbuf eenv sp (vspec:Val) e =   
     match e with 
     | Expr.TyLambda _ | Expr.Lambda _ -> 
+        let isLocalTypeFunc = IsNamedLocalTypeFuncVal cenv.g vspec e
+         
         match e with
-        | Expr.TyLambda(_, tyargs, body, _, _) when 
+        | Expr.TyLambda(_, tyargs, body, _, ttype) when 
             (
                 tyargs |> List.forall (fun tp -> tp.IsErased) &&
-                (match StorageForVal vspec.Range vspec eenv with Local _ -> true | _ -> false)
+                (match StorageForVal vspec.Range vspec eenv with Local _ -> true | _ -> false) && 
+                (isLocalTypeFunc || 
+                    (match ttype with 
+                     TType_var(typar) -> match typar.Solution with Some(TType_app(t,_))-> t.IsStructOrEnumTycon | _ -> false
+                     | _ -> false))
             ) ->
             // type lambda with erased type arguments that is stored as local variable (not method or property)- inline body
             GenExpr cenv cgbuf eenv sp body Continue
         | _ ->
-            let isLocalTypeFunc = IsNamedLocalTypeFuncVal cenv.g vspec e
             let selfv = if isLocalTypeFunc then None else Some (mkLocalValRef vspec)
             GenLambda cenv cgbuf eenv isLocalTypeFunc selfv e Continue 
     | _ -> 
@@ -6056,6 +6066,46 @@ and GenAbstractBinding cenv eenv tref (vref:ValRef) =
         [],[],[]
 
 and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
+    let genToString ilThisTy = 
+        [
+        match (eenv.valsInScope.TryFind cenv.g.sprintf_vref.Deref,
+               eenv.valsInScope.TryFind cenv.g.new_format_vref.Deref) with
+        | Some(Lazy(Method(_,_,sprintfMethSpec,_,_,_))), Some(Lazy(Method(_,_,newFormatMethSpec,_,_,_))) ->
+               // The type returned by the 'sprintf' call
+               let funcTy = EraseClosures.mkILFuncTy cenv.g.ilxPubCloEnv ilThisTy cenv.g.ilg.typ_String
+               // Give the instantiation of the printf format object, i.e. a Format`5 object compatible with StringFormat<ilThisTy>
+               let newFormatMethSpec = mkILMethSpec(newFormatMethSpec.MethodRef,AsObject,
+                                               [// 'T -> string'
+                                               funcTy 
+                                               // rest follow from 'StringFormat<T>'
+                                               GenUnitTy cenv eenv m  
+                                               cenv.g.ilg.typ_String 
+                                               cenv.g.ilg.typ_String 
+                                               ilThisTy],[])
+               // Instantiate with our own type
+               let sprintfMethSpec = mkILMethSpec(sprintfMethSpec.MethodRef,AsObject,[],[funcTy])
+               // Here's the body of the method. Call printf, then invoke the function it returns
+               let callInstrs = EraseClosures.mkCallFunc cenv.g.ilxPubCloEnv (fun _ -> 0us) eenv.tyenv.Count Normalcall (Apps_app(ilThisTy, Apps_done cenv.g.ilg.typ_String))
+               let ilMethodDef = mkILNonGenericVirtualMethod ("ToString",ILMemberAccess.Public,[],
+                                           mkILReturn cenv.g.ilg.typ_String,
+                                           mkMethodBody (true,[],2,nonBranchingInstrsToCode 
+                                                   ([ // load the hardwired format string
+                                                       yield I_ldstr "%+A"  
+                                                       // make the printf format object
+                                                       yield mkNormalNewobj newFormatMethSpec
+                                                       // call sprintf
+                                                       yield mkNormalCall sprintfMethSpec 
+                                                       // call the function returned by sprintf
+                                                       yield mkLdarg0 
+                                                       if ilThisTy.Boxity = ILBoxity.AsValue then
+                                                           yield mkNormalLdobj ilThisTy  ] @
+                                                       callInstrs),
+                                                   None))
+               let mdef = { ilMethodDef with CustomAttrs = mkILCustomAttrs [ cenv.g.CompilerGeneratedAttribute ] }
+               yield mdef
+        | None,_ -> ()
+        | _,None -> ()
+        | _ -> ()]
     let tcref = mkLocalTyconRef tycon
     if tycon.IsTypeAbbrev then () else
     match tycon.TypeReprInfo with 
@@ -6412,7 +6462,9 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                  // Records that are value types do not create a default constructor with CLIMutable or ComVisible
                  if not isStructRecord && (isCLIMutable || (TryFindFSharpBoolAttribute cenv.g cenv.g.attrib_ComVisibleAttribute tycon.Attribs = Some true)) then
                      yield mkILSimpleStorageCtor(None, Some cenv.g.ilg.typ_Object.TypeSpec, ilThisTy, [], reprAccess) 
-
+                 
+                 if not (tycon.HasMember cenv.g "ToString" []) then
+                    yield! genToString ilThisTy
               | TFSharpObjectRepr r when tycon.IsFSharpDelegateTycon ->
 
                  // Build all the methods that go with a delegate type 
@@ -6431,7 +6483,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                         yield { ilMethodDef with Access=reprAccess }
                  | _ -> 
                      ()
-
+              | TUnionRepr _ when not (tycon.HasMember cenv.g "ToString" []) -> 
+                  yield! genToString ilThisTy
               | _ -> () ]
               
         let ilMethods = methodDefs @ augmentOverrideMethodDefs @ abstractMethodDefs
@@ -6783,7 +6836,7 @@ type IlxGenResults =
 
 let GenerateCode (cenv, eenv, TypedAssemblyAfterOptimization fileImpls, assemAttribs, moduleAttribs) =
 
-    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.IlxGen)
+    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.IlxGen
 
     // Generate the implementations into the mgbuf 
     let mgbuf= new AssemblyBuilder(cenv)

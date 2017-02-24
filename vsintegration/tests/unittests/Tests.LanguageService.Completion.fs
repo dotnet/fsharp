@@ -3476,7 +3476,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
     member public this.``Attribute.WhenAttachedToLet.Bug70080``() =        
         this.AutoCompleteBug70080Helper @"
                     open System
-                    [<Attr     // expect AttributeUsageAttribute from System namespace
+                    [<Attr     // expect AttributeUsage from System namespace
                     let f() = 4"
 
     [<Test>]
@@ -4218,7 +4218,11 @@ let x = query { for bbbb in abbbbc(*D0*) do
         SaveFileToDisk file2      
         TakeCoffeeBreak(this.VS)
         
+#if FCS_RETAIN_BACKGROUND_PARSE_RESULTS
         gpatcc.AssertExactly(notAA[file2], notAA[file2;file3])
+#else
+        gpatcc.AssertExactly(notAA[file2; file3], notAA[file2;file3])
+#endif
 
     /// FEATURE: References added to the project bring corresponding new .NET and F# items into scope.
     [<Test;Category("ReproX")>]
@@ -4532,6 +4536,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         for completion in completions do 
             let _,_,descfunc,_ = completion
             let desc = descfunc()
+            printfn "MemberInfoCompileErrorsShowInDataTip: desc = <<<%s>>>" desc
             AssertContains(desc,"Simulated compiler error")
 
     // Bunch of crud in empty list. This test asserts that unwanted things don't exist at the top level.
@@ -7709,6 +7714,35 @@ let rec f l =
         this.VerifyDotCompListContainAllAtStartOfMarker(fileContents, "(*Marker*)", 
             ["Chars";"Length"], queryAssemblyRefs )
 
+    [<Test>]
+    member this.``Verify no completion on dot after module definition``() = 
+        this.VerifyDotCompListIsEmptyAtStartOfMarker(
+            fileContents = """
+                module BasicTest(*Marker*)
+
+                let foo x = x
+                let bar = 1""",
+            marker = "(*Marker*)")
+
+    [<Test>]
+    member this.``Verify no completion after module definition``() = 
+        this.VerifyCtrlSpaceCompListIsEmptyAtEndOfMarker(
+            fileContents = """
+                module BasicTest 
+
+                let foo x = x
+                let bar = 1""",
+            marker = "module BasicTest ")
+
+    [<Test>]
+    member this.``Verify no completion in hash derictives``() =
+        this.VerifyCtrlSpaceCompListIsEmptyAtEndOfMarker(
+            fileContents = """
+                #r (*Marker*)
+
+                let foo x = x
+                let bar = 1""",
+            marker = "(*Marker*)")
 
 // Context project system
 [<TestFixture>] 

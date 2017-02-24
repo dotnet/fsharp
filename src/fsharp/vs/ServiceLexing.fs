@@ -10,6 +10,7 @@ open System
 open System.IO
 open System.Collections.Generic
 open Microsoft.FSharp.Compiler.AbstractIL.Internal  
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library  
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
 open Microsoft.FSharp.Compiler.Parser
@@ -76,7 +77,7 @@ module FSharpTokenTag =
 /// It is not clear it is a primary logical classification that should be being used in the 
 /// more recent language service work.
 type FSharpTokenColorKind =
-      Default = 0
+    | Default = 0
     | Text = 0
     | Keyword = 1
     | Comment = 2
@@ -87,7 +88,6 @@ type FSharpTokenColorKind =
     | PreprocessorKeyword = 8
     | Number = 9
     | Operator = 10
-    | TypeName = 11
 
 /// Categorize an action the editor should take in response to a token, e.g. brace matching
 /// 
@@ -555,7 +555,8 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
         | Some(value) -> resetLexbufPos value lexbuf
      
     member x.ScanToken(lexintInitial) : Option<FSharpTokenInfo> * FSharpTokenizerLexState = 
-        use unwindBP = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parse)
+
+        use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
         use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> DiscardErrorsLogger)
 
         let lightSyntaxStatusInital, lexcontInitial = LexerStateEncoding.decodeLexInt lexintInitial 

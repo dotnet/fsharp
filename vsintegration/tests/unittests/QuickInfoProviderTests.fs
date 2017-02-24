@@ -46,20 +46,21 @@ let internal options = {
     IsIncompleteTypeCheckEnvironment = true
     UseScriptResolutionRules = false
     LoadTime = DateTime.MaxValue
+    OriginalLoadReferences = []
     UnresolvedReferences = None
     ExtraProjectInfo = None
 }
 
 let private normalizeLineEnds (s: string) = s.Replace("\r\n", "\n").Replace("\n\n", "\n")
 
-let private getQuickInfoText (FSharpToolTipText elements) : string =
+let private getQuickInfoText (FSharpStructuredToolTipText.FSharpToolTipText elements) : string =
     let rec parseElement = function
         | FSharpToolTipElement.None -> ""
         | FSharpToolTipElement.Single(text, _) -> text
         | FSharpToolTipElement.SingleParameter(text, _, _) -> text
         | FSharpToolTipElement.Group(xs) -> xs |> List.map fst |> String.concat "\n"
         | FSharpToolTipElement.CompositionError(error) -> error
-    elements |> List.map parseElement |> String.concat "\n" |> normalizeLineEnds
+    elements |> List.map (Tooltips.ToFSharpToolTipElement >> parseElement) |> String.concat "\n" |> normalizeLineEnds
 
 [<Test>]
 let ShouldShowQuickInfoAtCorrectPositions() =
@@ -92,13 +93,13 @@ Full name: System.Console"
     let y = 2
     System.Console.WriteLine(x + y)
     """
-        let caretPosition = fileContents.IndexOf(symbol) + 1
+        let caretPosition = fileContents.IndexOf(symbol)
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
         let getInfo() = documentId, filePath, []
         
         let quickInfo =
-            FSharpQuickInfoProvider.ProvideQuickInfo(FSharpChecker.Instance, documentId, SourceText.From(fileContents), filePath, caretPosition, options, 0, CancellationToken.None)
+            FSharpQuickInfoProvider.ProvideQuickInfo(FSharpChecker.Instance, documentId, SourceText.From(fileContents), filePath, caretPosition, options, 0)
             |> Async.RunSynchronously
         
-        let actual = quickInfo |> Option.map (fun (text, _) -> getQuickInfoText text)
+        let actual = quickInfo |> Option.map (fun (text, _, _) -> getQuickInfoText text)
         Assert.AreEqual(expected, actual)

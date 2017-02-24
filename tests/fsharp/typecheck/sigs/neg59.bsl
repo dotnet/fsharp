@@ -1,13 +1,13 @@
 
 neg59.fs(9,13,9,17): typecheck error FS3096: 'join' must be followed by a variable name. Usage: join var in collection on (outerKey = innerKey). Note that parentheses are required after 'on'.
 
-neg59.fs(9,39,9,40): typecheck error FS0039: The value or constructor 'j' is not defined
+neg59.fs(9,39,9,40): typecheck error FS0039: The value or constructor 'j' is not defined.
 
-neg59.fs(10,24,10,25): typecheck error FS0039: The value or constructor 'j' is not defined
+neg59.fs(10,24,10,25): typecheck error FS0039: The value or constructor 'j' is not defined. Maybe you want one of the following: i
 
 neg59.fs(15,13,15,22): typecheck error FS3096: 'groupJoin' must be followed by a variable name. Usage: groupJoin var in collection on (outerKey = innerKey) into group. Note that parentheses are required after 'on'.
 
-neg59.fs(15,44,15,45): typecheck error FS0039: The value or constructor 'j' is not defined
+neg59.fs(15,44,15,45): typecheck error FS0039: The value or constructor 'j' is not defined.
 
 neg59.fs(25,23,25,40): typecheck error FS3147: This 'let' definition may not be used in a query. Only simple value definitions may be used in queries.
 

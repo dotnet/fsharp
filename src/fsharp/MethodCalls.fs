@@ -597,7 +597,9 @@ let BuildFSharpMethodApp g m (vref: ValRef) vexp vexprty (args: Exprs) =
             match arity,args with 
             | (0|1),[] when typeEquiv g (domainOfFunTy g fty) g.unit_ty -> mkUnit g m, (args, rangeOfFunTy g fty)
             | 0,(arg::argst)-> 
-                warning(InternalError(sprintf "Unexpected zero arity, args = %s" (Layout.showL (Layout.sepListL (Layout.rightL ";") (List.map exprL args))),m));
+                
+                
+                warning(InternalError(sprintf "Unexpected zero arity, args = %s" (Layout.showL (Layout.sepListL (Layout.rightL (Layout.TaggedTextOps.tagText ";")) (List.map exprL args))),m));
                 arg, (argst, rangeOfFunTy g fty)
             | 1,(arg :: argst) -> arg, (argst, rangeOfFunTy g fty)
             | 1,[] -> error(InternalError("expected additional arguments here",m))
@@ -914,11 +916,13 @@ module ProvidedMethodCalls =
                                                          paramVars:Tainted<ProvidedVar>[],
                                                          g,amap,mut,isProp,isSuperInit,m,
                                                          expr:Tainted<ProvidedExpr>) = 
-        let varConv = 
-            [ for (v,e) in Seq.zip (paramVars |> Seq.map (fun x -> x.PUntaint(id,m))) (Option.toList thisArg @ allArgs) do
-                 yield (v,(None,e)) ]
-            |> Dictionary.ofList 
-
+        let varConv =
+            // note: using paramVars.Length as assumed initial size, but this might not 
+            // be the optimal value; this wasn't checked before obsoleting Dictionary.ofList
+            let dict = Dictionary.newWithSize paramVars.Length
+            for v,e in Seq.zip (paramVars |> Seq.map (fun x -> x.PUntaint(id,m))) (Option.toList thisArg @ allArgs) do
+                dict.Add(v,(None,e))
+            dict
         let rec exprToExprAndWitness top (ea:Tainted<ProvidedExpr>) =
             let fail() = error(Error(FSComp.SR.etUnsupportedProvidedExpression(ea.PUntaint((fun etree -> etree.UnderlyingExpressionString), m)),m))
             match ea with

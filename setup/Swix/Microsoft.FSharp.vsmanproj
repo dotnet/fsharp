@@ -2,7 +2,7 @@
 <Project ToolsVersion="15.0" DefaultTargets="Build" InitialTargets="IncludeFSharpManifests" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
     <Import Project="..\FSharp.Setup.props" />
-  
+
     <PropertyGroup>
         <FSharpSourcesRoot>..\..\src</FSharpSourcesRoot>
         <FinalizeManifest>true</FinalizeManifest>
@@ -10,23 +10,17 @@
         <IsPackage>true</IsPackage>
         <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\insertion</OutputPath>
     </PropertyGroup>
-    
+
     <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
   
     <Target Name="IncludeFSharpManifests">
         <ItemGroup>
             <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.SDK.Core.json" />
             <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.SDK.Resources.%(SetupLanguages.LocaleCode).json" />
-            
+
             <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Vsix.Full.Core.json" />
             <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Vsix.Full.Resources.%(SetupLanguages.LocaleCode).json" />
-            
-            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Vsix.Desktop.Core.json" />
-            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Vsix.Desktop.Resources.%(SetupLanguages.LocaleCode).json" />
-            
-            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Vsix.Web.Core.json" />
-            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Vsix.Web.Resources.%(SetupLanguages.LocaleCode).json" />
-            
+
             <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Dependencies.json" />
         </ItemGroup>
     </Target>

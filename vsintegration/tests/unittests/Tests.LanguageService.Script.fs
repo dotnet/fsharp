@@ -72,14 +72,17 @@ type UsingMSBuild() as this =
                 printf "  message = <<<%s> \n" e.Message 
             AssertEqual(0,count)
 
-    let AssertExactlyOneErrorSeenContaining(project:OpenProject,text) =
+    let AssertExactlyCountErrorSeenContaining(project:OpenProject,text,expectedCount) =
         let nMatching = (GetErrors(project)) |> List.filter (fun e ->e.ToString().Contains(text)) |> List.length
         match nMatching with
         | 0 -> 
             failwith (sprintf "No errors containing \"%s\"" text)
-        | 1 -> ()
+        | x when x = expectedCount -> ()
         | _ -> 
             failwith (sprintf "Multiple errors containing \"%s\"" text)
+
+    let AssertExactlyOneErrorSeenContaining(project:OpenProject,text) =
+        AssertExactlyCountErrorSeenContaining(project,text,1)
 
     /// Assert that a given squiggle is an Error (or warning) containing the given text        
     let AssertSquiggleIsErrorContaining,AssertSquiggleIsWarningContaining, AssertSquiggleIsErrorNotContaining,AssertSquiggleIsWarningNotContaining =         
@@ -155,7 +158,7 @@ type UsingMSBuild() as this =
                                        "#r \"Nonexistent\""
                                        ]
         let (project, _) = createSingleFileFsxFromLines code
-        AssertExactlyOneErrorSeenContaining(project, "Nonexistent")   // ...and not an error on the first line.
+        AssertExactlyCountErrorSeenContaining(project, "Nonexistent", 2)   // ...and not an error on the first line.
         
     [<Test>]
     member public this.``Fsx.InvalidHashLoad.ShouldBeASquiggle.Bug3012``() =  
@@ -1341,7 +1344,7 @@ type UsingMSBuild() as this =
 #if VS_VERSION_DEV15
             "4.4.1.0"
 #endif
-        let binariesFolder = match Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler with
+        let binariesFolder = match Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None) with
                              | Some(x) -> x
                              | None -> failwith "Location of binaries folder cannot be found"
 

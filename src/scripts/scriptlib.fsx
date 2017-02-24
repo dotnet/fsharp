@@ -34,7 +34,7 @@ module Scripting =
             0
 
 #if INTERACTIVE
-    let argv = Microsoft.FSharp.Compiler.Interactive.Settings.fsi.CommandLineArgs |> Array.skip 1
+    let argv = Microsoft.FSharp.Compiler.Interactive.Settings.fsi.CommandLineArgs |> Seq.skip 1 |> Seq.toArray
 
     let getCmdLineArgOptional switchName = 
         argv |> Array.filter(fun t -> t.StartsWith(switchName)) |> Array.map(fun t -> t.Remove(0, switchName.Length).Trim()) |> Array.tryHead 
@@ -63,7 +63,7 @@ module Scripting =
     let getFullPath a = Path.GetFullPath a
     let getFilename a = Path.GetFileName a
     let getDirectoryName a = Path.GetDirectoryName a
-            
+
     let copyFile source dir =
         let dest = 
             if not (Directory.Exists dir) then Directory.CreateDirectory dir |>ignore
@@ -132,7 +132,7 @@ module Scripting =
             |> Option.iter (fun _ -> p.StartInfo.RedirectStandardInput <- true)
 
             p.Start() |> ignore
-    
+
             cmdArgs.RedirectOutput |> Option.iter (fun _ -> p.BeginOutputReadLine())
             cmdArgs.RedirectError |> Option.iter (fun _ -> p.BeginErrorReadLine())
 
@@ -158,19 +158,19 @@ module Scripting =
         member x.Post (msg:string) = lock writer (fun () -> writer.WriteLine(msg))
         interface System.IDisposable with 
            member __.Dispose() = writer.Flush()
-     
+
     let redirectTo (writer: TextWriter) = new OutPipe (writer)
 
     let redirectToLog () = redirectTo System.Console.Out
 
-
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     let defaultPlatform = 
         match Environment.OSVersion.Platform, Environment.Is64BitOperatingSystem with 
-        | PlatformID.MacOSX, true -> "osx.10.10-x64"
+        | PlatformID.MacOSX, true -> "osx.10.11-x64"
         | PlatformID.Unix,true -> "ubuntu.14.04-x64"
         | _, true -> "win7-x64"
         | _, false -> "win7-x86"
-
+#endif
 
     let executeProcessNoRedirect filename arguments =
         let info = ProcessStartInfo(Arguments=arguments, UseShellExecute=false, 

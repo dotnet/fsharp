@@ -61,8 +61,8 @@ type XmlDocCollector() =
         check()
         savedLines.Add(line,pos)
 
-    member x.LinesBefore(grabPointPos) =
-
+    member x.LinesBefore(grabPointPos) = 
+      try
         let lines = savedLinesAsArray.Force()
         let grabPoints = savedGrabPointsAsArray.Force()
         let firstLineIndexAfterGrabPoint = Array.findFirstIndexWhereTrue lines (fun (_,pos) -> posGeq pos grabPointPos)
@@ -76,6 +76,9 @@ type XmlDocCollector() =
                 Array.findFirstIndexWhereTrue lines (fun (_,pos) -> posGeq pos prevGrabPointPos)
         //printfn "#lines = %d, firstLineIndexAfterPrevGrabPoint = %d, firstLineIndexAfterGrabPoint = %d" lines.Length firstLineIndexAfterPrevGrabPoint  firstLineIndexAfterGrabPoint
         lines.[firstLineIndexAfterPrevGrabPoint..firstLineIndexAfterGrabPoint-1] |> Array.map fst
+      with e -> 
+          //printfn "unexpected error in LinesBefore:\n%s" (e.ToString())
+          [| |]
 
 type XmlDoc =
     | XmlDoc of string[]
@@ -95,7 +98,7 @@ type XmlDoc =
                      ["</summary>"]
 
         let lines = processLines (Array.toList lines)
-        if lines.Length = 0 then XmlDoc.Empty
+        if isNil lines then XmlDoc.Empty
         else XmlDoc (Array.ofList lines)
 
 // Discriminated unions can't contain statics, so we use a separate type
@@ -135,9 +138,9 @@ type ParserDetail =
 
 // PERFORMANCE: consider making this a struct.
 [<System.Diagnostics.DebuggerDisplay("{idText}")>]
-[<Sealed>]
+[<Struct>]
 [<NoEquality; NoComparison>]
-type Ident (text,range) =
+type Ident (text: string, range: range) =
      member x.idText = text
      member x.idRange = range
      override x.ToString() = text
@@ -1060,24 +1063,24 @@ and
     SynBinding =
     | Binding of
         accessibility:SynAccess option *
-        SynBindingKind *
+        kind:SynBindingKind *
         mustInline:bool *
         isMutable:bool *
-        SynAttributes *
+        attrs:SynAttributes *
         xmlDoc:PreXmlDoc *
-        SynValData *
+        valData:SynValData *
         headPat:SynPat *
-        SynBindingReturnInfo option *
-        SynExpr  *
+        returnInfo:SynBindingReturnInfo option *
+        expr:SynExpr  *
         range:range *
-        SequencePointInfoForBinding
+        seqPoint:SequencePointInfoForBinding
     // no member just named "Range", as that would be confusing:
     //  - for everything else, the 'range' member that appears last/second-to-last is the 'full range' of the whole tree construct
     //  - but for Binding, the 'range' is only the range of the left-hand-side, the right-hand-side range is in the SynExpr
     //  - so we use explicit names to avoid confusion
-    member x.RangeOfBindingSansRhs = let (Binding(_,_,_,_,_,_,_,_,_,_,m,_)) = x in m
-    member x.RangeOfBindingAndRhs = let (Binding(_,_,_,_,_,_,_,_,_,e,m,_)) = x in unionRanges e.Range m
-    member x.RangeOfHeadPat = let (Binding(_,_,_,_,_,_,_,headPat,_,_,_,_)) = x in headPat.Range
+    member x.RangeOfBindingSansRhs = let (Binding(range=m)) = x in m
+    member x.RangeOfBindingAndRhs = let (Binding(expr=e; range=m)) = x in unionRanges e.Range m
+    member x.RangeOfHeadPat = let (Binding(headPat=headPat)) = x in headPat.Range
 
 and
     [<NoEquality; NoComparison>]
@@ -1178,7 +1181,7 @@ and
     [<NoEquality; NoComparison>]
     SynEnumCase =
     /// The untyped, unchecked syntax tree for one case in an enum definition.
-    | EnumCase of SynAttributes * ident:Ident * SynConst * PreXmlDoc * range:range
+    | EnumCase of attrs:SynAttributes * ident:Ident * SynConst * PreXmlDoc * range:range
     member this.Range =
         match this with
         | EnumCase (range=m) -> m
@@ -1234,7 +1237,7 @@ and
     [<NoEquality; NoComparison>]
     /// The untyped, unchecked syntax tree for a field declaration in a record or class
     SynField =
-    | Field of SynAttributes * isStatic:bool * Ident option * SynType * bool * xmlDoc:PreXmlDoc * accessibility:SynAccess option * range:range
+    | Field of attrs:SynAttributes * isStatic:bool * Ident option * SynType * bool * xmlDoc:PreXmlDoc * accessibility:SynAccess option * range:range
 
 
 and
@@ -1255,21 +1258,21 @@ and
     [<NoEquality; NoComparison>]
     SynValSig =
     | ValSpfn of
-        SynAttributes *
+        synAttributes:SynAttributes *
         ident:Ident *
         explicitValDecls:SynValTyparDecls *
-        SynType *
+        synType:SynType *
         arity:SynValInfo *
         isInline:bool *
         isMutable:bool *
         xmlDoc:PreXmlDoc *
         accessibility:SynAccess option *
-        SynExpr option *
+        synExpr:SynExpr option *
         range:range
 
-    member x.RangeOfId  = let (ValSpfn(_,id,_,_,_,_,_,_,_,_,_)) = x in id.idRange
-    member x.SynInfo = let (ValSpfn(_,_,_,_,v,_,_,_,_,_,_)) = x in v
-    member x.SynType = let (ValSpfn(_,_,_,ty,_,_,_,_,_,_,_)) = x in ty
+    member x.RangeOfId  = let (ValSpfn(ident=id)) = x in id.idRange
+    member x.SynInfo = let (ValSpfn(arity=v)) = x in v
+    member x.SynType = let (ValSpfn(synType=ty)) = x in ty
 
 /// The argument names and other metadata for a member or function
 and
@@ -1344,7 +1347,7 @@ and
     | Inherit of SynType  * Ident option * range:range
     | ValField of SynField  * range:range
     /// A feature that is not implemented
-    | NestedType of SynTypeDefn * accessibility:SynAccess option * range:range
+    | NestedType of typeDefn:SynTypeDefn * accessibility:SynAccess option * range:range
     /// SynMemberDefn.AutoProperty (attribs,isStatic,id,tyOpt,propKind,memberFlags,xmlDoc,access,synExpr,mGetSet,mWholeAutoProp).
     ///
     /// F# syntax: 'member val X = expr'
@@ -1475,7 +1478,6 @@ let textOfId (id:Ident) = id.idText
 let pathOfLid lid = List.map textOfId lid
 let arrPathOfLid lid = Array.ofList (pathOfLid lid)
 let textOfPath path = String.concat "." path
-let textOfArrPath path = String.concat "." (List.ofArray path)
 let textOfLid lid = textOfPath (pathOfLid lid)
 
 let rangeOfLid (lid: Ident list) =
@@ -2204,30 +2206,46 @@ module LexbufLocalXmlDocStore =
 
 /// Generates compiler-generated names. Each name generated also includes the StartLine number of the range passed in
 /// at the point of first generation.
+///
+/// This type may be accessed concurrently, though in practice it is only used from the compilation thread.
+/// It is made concurrency-safe since a global instance of the type is allocated in tast.fs, and it is good
+/// policy to make all globally-allocated objects concurrency safe in case future versions of the compiler
+/// are used to host mutiple concurrent instances of compilation.
 type NiceNameGenerator() =
 
+    let lockObj = obj()
     let basicNameCounts = new Dictionary<string,int>(100)
 
     member x.FreshCompilerGeneratedName (name,m:range) =
+      lock lockObj (fun () -> 
         let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
         let n = (if basicNameCounts.ContainsKey basicName then basicNameCounts.[basicName] else 0)
         let nm = CompilerGeneratedNameSuffix basicName (string m.StartLine + (match n with 0 -> "" | n -> "-" + string n))
         basicNameCounts.[basicName] <- n+1
-        nm
+        nm)
 
-    member x.Reset () = basicNameCounts.Clear()
+    member x.Reset () = 
+      lock lockObj (fun () -> 
+        basicNameCounts.Clear()
+      )
 
 
 
 /// Generates compiler-generated names marked up with a source code location, but if given the same unique value then
 /// return precisely the same name. Each name generated also includes the StartLine number of the range passed in
 /// at the point of first generation.
+///
+/// This type may be accessed concurrently, though in practice it is only used from the compilation thread.
+/// It is made concurrency-safe since a global instance of the type is allocated in tast.fs.
 type StableNiceNameGenerator() =
+
+    let lockObj = obj()
 
     let names = new Dictionary<(string * int64),string>(100)
     let basicNameCounts = new Dictionary<string,int>(100)
 
     member x.GetUniqueCompilerGeneratedName (name,m:range,uniq) =
+      lock lockObj (fun () -> 
         let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
         if names.ContainsKey (basicName,uniq) then
             names.[(basicName,uniq)]
@@ -2237,12 +2255,13 @@ type StableNiceNameGenerator() =
             names.[(basicName,uniq)] <- nm
             basicNameCounts.[basicName] <- n+1
             nm
+      )
 
     member x.Reset () =
+      lock lockObj (fun () -> 
         basicNameCounts.Clear()
         names.Clear()
-
-
+      )
 
 let rec synExprContainsError inpExpr =
     let rec walkBind (Binding(_, _, _, _, _, _, _, _, _, synExpr, _, _)) = walkExpr synExpr

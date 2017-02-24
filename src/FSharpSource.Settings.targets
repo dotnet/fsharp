@@ -18,7 +18,6 @@
     <ConfigurationGroup Condition="'$(ConfigurationGroup)'==''">Debug</ConfigurationGroup>
   </PropertyGroup>
 
-  <!-- Nuget Package properties -->
   <PropertyGroup>
     <!-- Settings used all the time -->
     <Tailcalls>true</Tailcalls>
@@ -32,22 +31,23 @@
     <WarningsAsErrors />
 
     <FX_NO_LOADER Condition=" '$(FX_NO_LOADER)'==''">false</FX_NO_LOADER>
+    <VSSDK_BUILDTOOLS_VERSION>Microsoft.VSSDK.BuildTools.15.0.26124-RC3</VSSDK_BUILDTOOLS_VERSION>
 
     <!-- Always qualify the IntermediateOutputPath by the TargetFramework if any exists -->
     <IntermediateOutputPath>obj\$(Configuration)\$(TargetFramework)\</IntermediateOutputPath>
     <IntermediateOutputPath Condition="'$(PortableProfileBeingReferenced)' != ''">obj\$(Configuration)\$(TargetFramework)\$(PortableProfileBeingReferenced)\</IntermediateOutputPath>
+  
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(OS)' != 'Unix'">
-    <!-- Things we do only on Windows right now -->
+  <PropertyGroup Condition="'$(MonoPackaging)' != 'true' AND '$(OS)' != 'Unix'">
     <UseMicroBuild>true</UseMicroBuild>
     <UseSourceLink>true</UseSourceLink>
     <UseGatherBinaries>true</UseGatherBinaries>
     <AddVsSdkAttributesToSomeCoreComponents>true</AddVsSdkAttributesToSomeCoreComponents>
-    <VsSDKInstall>$(MSBuildThisFileDirectory)..\packages\Microsoft.VSSDK.BuildTools.15.0.25907-RC2\tools\vssdk</VsSDKInstall>
-    <VsSDKToolPath>$(MSBuildThisFileDirectory)..\packages\Microsoft.VSSDK.BuildTools.15.0.25907-RC2\tools\vssdk\bin</VsSDKToolPath>
-    <VsSDKIncludes>$(MSBuildThisFileDirectory)..\packages\Microsoft.VSSDK.BuildTools.15.0.25907-RC2\tools\vssdk\inc</VsSDKIncludes>
-    <VsixSchemaPath>$(MSBuildThisFileDirectory)..\packages\Microsoft.VSSDK.BuildTools.15.0.25907-RC2\tools\vssdk\schemas\VSIXManifestSchema.xsd</VsixSchemaPath>
+    <VsSDKInstall Condition=" '$(VsSDKInstall)' == '' ">$(MSBuildThisFileDirectory)..\packages\$(VSSDK_BUILDTOOLS_VERSION)\tools\vssdk</VsSDKInstall>
+    <VsSDKToolPath Condition=" '$(VsSDKToolPath)' == '' ">$(MSBuildThisFileDirectory)..\packages\$(VSSDK_BUILDTOOLS_VERSION)\tools\vssdk\bin</VsSDKToolPath>
+    <VsSDKIncludes Condition=" '$(VsSDKIncludes)' == '' ">$(MSBuildThisFileDirectory)..\packages\$(VSSDK_BUILDTOOLS_VERSION)\tools\vssdk\inc</VsSDKIncludes>
+    <VsixSchemaPath Condition=" '$(VsixSchemaPath)' == '' ">$(MSBuildThisFileDirectory)..\packages\$(VSSDK_BUILDTOOLS_VERSION)\tools\vssdk\schemas\VSIXManifestSchema.xsd</VsixSchemaPath>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(ProjectLanguage)' == 'FSharp' ">
@@ -105,29 +105,37 @@
     <DefineConstants Condition="'$(VisualStudioVersion)'=='' AND '$(ProjectLanguage)' != 'VisualBasic'">$(DefineConstants);VS_VERSION_DEV14</DefineConstants>
   </PropertyGroup>
 
-  <PropertyGroup> 
+  <!-- Nuget Package properties -->
+  <PropertyGroup>
     <BuildRevision>$([System.DateTime]::Now.ToString(`yyMMdd`))</BuildRevision>
-    <NuGetReleaseVersion>1.0.0</NuGetReleaseVersion> 
-    <NuGetPreReleaseVersion>$(NuGetReleaseVersion)-alpha</NuGetPreReleaseVersion> 
-    <NuGetPerBuildPreReleaseVersion Condition="'$(BuildRevision)' != ''">$(NuGetPreReleaseVersion)-$(BuildRevision.Trim())</NuGetPerBuildPreReleaseVersion> 
-  </PropertyGroup> 
+    <NuGetReleaseVersion>1.0.0</NuGetReleaseVersion>
+    <NuGetPreReleaseVersion>$(NuGetReleaseVersion)-rc</NuGetPreReleaseVersion>
+    <NuGetPerBuildPreReleaseVersion Condition="'$(BuildRevision)' != ''">$(NuGetPreReleaseVersion)-$(BuildRevision.Trim())</NuGetPerBuildPreReleaseVersion>
+    <NUGET_PACKAGES Condition=" '$(NUGET_PACKAGES)' == '' ">$(MSBuildThisFileDirectory)..\packages</NUGET_PACKAGES>
+    <RestorePackagesPath>$(NUGET_PACKAGES)</RestorePackagesPath>
+  </PropertyGroup>
 
   <PropertyGroup>
     <!-- Compiler tool locations.		-->
-    <FsSrGenToolPath>$(FSharpSourcesRoot)\..\packages\fssrgen.3.1.0\lib\net46</FsSrGenToolPath>
-    <FsLexToolPath>$(FSharpSourcesRoot)\..\packages\FsLexYacc.7.0.3\build</FsLexToolPath>
-    <FsYaccToolPath>$(FSharpSourcesRoot)\..\packages\FsLexYacc.7.0.3\build</FsYaccToolPath>
+    <FsLexToolPath>$(FSharpSourcesRoot)\..\packages\FsLexYacc.7.0.4\build</FsLexToolPath>
+    <FsYaccToolPath>$(FSharpSourcesRoot)\..\packages\FsLexYacc.7.0.4\build</FsYaccToolPath>
     <FsiToolExe>fsi.exe</FsiToolExe>
     <FsLexToolExe>fslex.exe</FsLexToolExe>
     <FsYaccToolExe>fsyacc.exe</FsYaccToolExe>
-    <RoslynVersion>2.0.0-beta6-61005-05</RoslynVersion>
+    <RoslynVersion>2.0.0-rc3-61324-01</RoslynVersion>
     <RoslynVSBinariesVersion>14.0</RoslynVSBinariesVersion>
     <RoslynVSPackagesVersion>14.3.25407</RoslynVSPackagesVersion>
+      
+    <!-- The version of MSBuild assumed byt the F# compiler in the Mono packaging of F# -->
+    <MonoPackagingMSBuildVersionSuffix>v12.0"</MonoPackagingMSBuildVersionSuffix>
+    <MonoPackagingMSBuildVersionFull>12.0.0.0</MonoPackagingMSBuildVersionFull>	  
 
     <!-- FSharp.Compiler.Tools is currently only used to get a working FSI.EXE to execute some scripts during the build -->
     <!-- The LKG FSI.EXE requires MSBuild 15 to be installed, which is painful -->
-    <FsiToolPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.0.1.19\tools</FsiToolPath>
+    <FsiToolPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.0.1.21\tools</FsiToolPath>
   </PropertyGroup>
+
   <Import Project="../Tools/Build.Common.props" Condition="'$(TargetFramework)'=='coreclr'"/>
+  <Import Project="$(BuildVersionFilePath)"     Condition="Exists('$(BuildVersionFilePath)')" />
 
 </Project>

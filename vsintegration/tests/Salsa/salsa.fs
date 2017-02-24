@@ -296,7 +296,8 @@ module internal Salsa =
           member this.ProjectGuid = 
                 let projectObj, projectObjFlags = MSBuild.CrackProject(projectfile, configurationFunc(), platformFunc())
                 projectObj.GetProperty(ProjectFileConstants.ProjectGuid).EvaluatedValue
-        
+          member this.ProjectProvider = None
+
     // Attempt to treat as MSBuild project.
     let internal NewMSBuildProjectSite(configurationFunc, platformFunc, msBuildProjectName) = 
         let newProjectSite = new MSBuildProjectSite(msBuildProjectName,configurationFunc,platformFunc)
@@ -628,7 +629,7 @@ module internal Salsa =
             // we look in the same directory as the Unit Tests assembly.
             let targetsFileFolder =
                 if useInstalledTargets 
-                then Option.get Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler
+                then Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None).Value
                 else System.AppDomain.CurrentDomain.BaseDirectory
             
             let sb = new System.Text.StringBuilder()
@@ -1486,13 +1487,18 @@ module internal Salsa =
             let tm = box (VsMocks.createTextManager())
             let documentationProvider = 
                 { new IDocumentationBuilder with
-                    override doc.AppendDocumentationFromProcessedXML(appendTo:StringBuilder,processedXml:string,showExceptions, showReturns, paramName) = 
-                        appendTo.AppendLine(processedXml)|> ignore 
-                    override doc.AppendDocumentation(appendTo:StringBuilder,filename:string,signature:string, showExceptions, showReturns, paramName) = 
-                        appendTo.AppendLine(sprintf "[Filename:%s]" filename).AppendLine(sprintf "[Signature:%s]" signature) |> ignore 
-                        if paramName.IsSome then appendTo.AppendLine(sprintf "[ParamName: %s]" paramName.Value) |> ignore
+                    override doc.AppendDocumentationFromProcessedXML(appendTo,processedXml:string,showExceptions, showReturns, paramName) = 
+                        appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.tagText processedXml)
+                        appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.Literals.lineBreak)
+                    override doc.AppendDocumentation(appendTo,filename:string,signature:string, showExceptions, showReturns, paramName) = 
+                        appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.tagText (sprintf "[Filename:%s]" filename))
+                        appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.Literals.lineBreak)
+                        appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.tagText (sprintf "[Signature:%s]" signature))
+                        appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.Literals.lineBreak)
+                        if paramName.IsSome then
+                            appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.tagText (sprintf "[ParamName: %s]" paramName.Value))
+                            appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.Literals.lineBreak)
                 } 
- 
 
             let sp2 = 
                { new System.IServiceProvider with 

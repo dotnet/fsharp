@@ -26,6 +26,7 @@ open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.InfoReader
 open Microsoft.FSharp.Compiler.AttributeChecking
 open Microsoft.FSharp.Compiler.Layout
+open Microsoft.FSharp.Compiler.Layout.TaggedTextOps
 open Microsoft.FSharp.Compiler.PrettyNaming
 
 open Microsoft.FSharp.Core.Printf
@@ -35,16 +36,14 @@ open Microsoft.FSharp.Compiler.ExtensionTyping
 open Microsoft.FSharp.Core.CompilerServices
 #endif
 
-
 [<AutoOpen>]
 module internal PrintUtilities = 
     let bracketIfL x lyt = if x then bracketL lyt else lyt
-    let squareAngleL x = leftL "[<" ^^ x ^^ rightL ">]"
-    let angleL x = sepL "<" ^^ x ^^ rightL ">"  
-    let braceL x = leftL "{" ^^ x ^^ rightL "}"  
+    let squareAngleL x = LeftL.leftBracketAngle ^^ x ^^ RightL.rightBracketAngle
+    let angleL x = sepL Literals.leftAngle ^^ x ^^ rightL Literals.rightAngle
+    let braceL x = leftL Literals.leftBrace ^^ x ^^ rightL Literals.rightBrace
 
-    let commentL l = wordL "(*" ++ l ++ wordL "*)"
-    let comment str = str |> wordL |> commentL
+    let comment str = wordL (tagText (sprintf "(* %s *)" str))
 
     let layoutsL (ls : layout list) : layout =
         match ls with
@@ -58,7 +57,7 @@ module internal PrintUtilities =
 
     let applyMaxMembers maxMembers (alldecls : _ list) = 
         match maxMembers with 
-        | Some n when alldecls.Length > n -> (alldecls |> List.truncate n) @ [wordL "..."] 
+        | Some n when alldecls.Length > n -> (alldecls |> List.truncate n) @ [wordL (tagPunctuation "...")] 
         | _ -> alldecls
 
     /// fix up a name coming from IL metadata by quoting "funny" names (keywords, otherwise invalid identifiers)
@@ -69,7 +68,7 @@ module internal PrintUtilities =
     let shrinkOverloads layoutFunction resultFunction group = 
         match group with 
         | [x] -> [resultFunction x (layoutFunction x)] 
-        | (x:: rest) -> [ resultFunction x (layoutFunction x -- leftL (match rest.Length with 1 -> FSComp.SR.nicePrintOtherOverloads1() | n -> FSComp.SR.nicePrintOtherOverloadsN(n))) ] 
+        | (x:: rest) -> [ resultFunction x (layoutFunction x -- leftL (tagText (match rest.Length with 1 -> FSComp.SR.nicePrintOtherOverloads1() | n -> FSComp.SR.nicePrintOtherOverloadsN(n)))) ] 
         | _ -> []
     
     let layoutTyconRefImpl isAttribute (denv: DisplayEnv) (tcref:TyconRef) = 
@@ -84,11 +83,11 @@ module internal PrintUtilities =
             if isAttribute then 
                 defaultArg (String.tryDropSuffix name "Attribute") name 
             else name
-        let tyconTextL = wordL demangled
+        let tyconTextL = wordL (tagEntityRefName tcref demangled)
         if denv.shortTypeNames then 
             tyconTextL
         else
-            let path = demangledPathOfCompPath tcref.CompilationPath
+            let path = tcref.CompilationPath.DemangledPath
             let path =
                 if denv.includeStaticParametersInTypeNames then
                     path
@@ -97,7 +96,7 @@ module internal PrintUtilities =
                                                if i <> -1 then s.Substring(0,i)+"<...>" // apparently has static params, shorten
                                                else s)
             let pathText = trimPathByDisplayEnv denv path
-            if pathText = "" then tyconTextL else leftL pathText ^^ tyconTextL
+            if pathText = "" then tyconTextL else leftL (tagUnknownEntity pathText) ^^ tyconTextL
 
     let layoutBuiltinAttribute (denv: DisplayEnv) (attrib: BuiltinAttribInfo) =
         let tcref = attrib.TyconRef
@@ -133,10 +132,11 @@ module private PrintIL =
             | [ "System"; "Boolean"] -> ["bool"]
             | _                -> path
         let p2,n = List.frontAndBack path
+        let tagged = if n = "obj" || n = "string" then tagClass n else tagStruct n
         if denv.shortTypeNames then 
-            wordL n
+            wordL tagged
           else
-            leftL (trimPathByDisplayEnv denv p2) ^^ wordL n
+            leftL (tagNamespace (trimPathByDisplayEnv denv p2)) ^^ wordL tagged
 
     let layoutILTypeRef denv tref =
         let path = fullySplitILTypeRef tref
@@ -156,17 +156,17 @@ module private PrintIL =
         e.RemoveMethod.CallingSignature.CallingConv.IsStatic
 
     let private layoutILArrayShape (ILArrayShape sh) = 
-        sepL "[" ^^ wordL (sh |> List.tail |> List.map (fun _ -> ",") |> String.concat "") ^^ rightL "]" // drop off one "," so that a n-dimensional array has n - 1 ","'s
+        SepL.leftBracket ^^ wordL (tagPunctuation (sh |> List.tail |> List.map (fun _ -> ",") |> String.concat "")) ^^ RightL.rightBracket // drop off one "," so that a n-dimensional array has n - 1 ","'s
 
     let private  layoutILGenericParameterDefs (ps: ILGenericParameterDefs) = 
-        ps |> List.map (fun x -> "'" + x.Name |> wordL) 
+        ps |> List.map (fun x -> "'" + x.Name |> (tagTypeParameter >> wordL))
 
     let private paramsL (ps: layout list) : layout = 
         match ps with
         | [] -> emptyL
         | _  -> 
             let body = Layout.commaListL ps
-            sepL "<" ^^ body ^^ rightL ">"
+            SepL.leftAngle ^^ body ^^ RightL.rightAngle
 
     let private pruneParms (className: string) (ilTyparSubst: layout list) =
         let numParms = 
@@ -179,7 +179,7 @@ module private PrintIL =
                              
     let rec layoutILType (denv: DisplayEnv) (ilTyparSubst: layout list) (typ : ILType) : layout =
         match typ with
-        | ILType.Void               -> wordL "unit" // These are type-theoretically totally different type-theoretically `void` is Fin 0 and `unit` is Fin (S 0) ... but, this looks like as close as we can get.
+        | ILType.Void               -> WordL.structUnit // These are type-theoretically totally different type-theoretically `void` is Fin 0 and `unit` is Fin (S 0) ... but, this looks like as close as we can get.
         | ILType.Array (sh, t)      -> layoutILType denv ilTyparSubst t ^^ layoutILArrayShape sh
         | ILType.Value t
         | ILType.Boxed t            -> layoutILTypeRef denv t.TypeRef ^^ (t.GenericArgs |> List.map (layoutILType denv ilTyparSubst) |> paramsL)
@@ -201,9 +201,9 @@ module private PrintIL =
             | Some className -> layoutILTypeRefName denv (SplitNamesForILPath (ungenericizeTypeName className)) ^^ (pruneParms className ilTyparSubst |> paramsL) // special case for constructor return-type (viz., the class itself)
             | None           -> signatur.ReturnType |> layoutILType denv ilTyparSubst
         match args with
-        | []   -> wordL "unit" ^^ wordL "->" ^^ res
-        | [x]  -> x ^^ wordL "->" ^^ res
-        | _    -> sepListL (wordL "*") args ^^ wordL "->" ^^ res
+        | []   -> WordL.structUnit ^^ WordL.arrow ^^ res
+        | [x]  -> x ^^ WordL.arrow ^^ res
+        | _    -> sepListL WordL.star args ^^ WordL.arrow ^^ res
 
     /// Layout a function pointer signature using type-only-F#-style. No argument names are printed.
     //
@@ -213,13 +213,13 @@ module private PrintIL =
             let isParamArray = TryFindILAttribute denv.g.attrib_ParamArrayAttribute p.CustomAttrs
             match isParamArray, p.Name, p.IsOptional with 
             // Layout an optional argument 
-            | _, Some nm, true -> leftL ("?" + nm + ":")
+            | _, Some nm, true -> LeftL.questionMark ^^  sepL (tagParameter nm) ^^ SepL.colon
             // Layout an unnamed argument 
-            | _, None, _ -> leftL ":"
+            | _, None, _ -> LeftL.colon
             // Layout a named argument 
             | true, Some nm,_ ->      
-                layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute ^^ leftL (nm + ":")
-            | false, Some nm,_ -> leftL (nm+":")
+                layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute ^^ wordL (tagParameter nm) ^^ SepL.colon
+            | false, Some nm,_ -> leftL (tagParameter nm) ^^ SepL.colon
         preL ^^ (layoutILType denv ilTyparSubst p.Type)
        
 
@@ -234,9 +234,9 @@ module private PrintIL =
             | Some className -> layoutILTypeRefName denv (SplitNamesForILPath (ungenericizeTypeName className)) ^^ (pruneParms className ilTyparSubst |> paramsL) // special case for constructor return-type (viz., the class itself)
             | None           -> retType |> layoutILType denv ilTyparSubst
         match parameters with
-        | []   -> wordL "unit" ^^ wordL "->" ^^ res
-        | [x]  -> layoutILParameter denv ilTyparSubst x ^^ wordL "->" ^^ res
-        | args    -> sepListL (wordL "*") (List.map (layoutILParameter denv ilTyparSubst) args) ^^ wordL "->" ^^ res
+        | []   -> WordL.structUnit ^^ WordL.arrow ^^ res
+        | [x]  -> layoutILParameter denv ilTyparSubst x ^^ WordL.arrow ^^ res
+        | args    -> sepListL WordL.star (List.map (layoutILParameter denv ilTyparSubst) args) ^^ WordL.arrow ^^ res
 
 
     /// Layout a method's signature using type-only-F#-style. No argument names are printed.
@@ -255,33 +255,33 @@ module private PrintIL =
         let name            = adjustILMethodName m.Name
         let (nameL, isCons) = 
             match () with
-            | _ when m.IsConstructor -> (wordL "new",                                                            Some className) // we need the unadjusted name here to be able to grab the number of generic parameters
-            | _ when m.IsStatic      -> (wordL "static" ^^ wordL "member" ^^ wordL name ^^ (myParms |> paramsL), None)
-            | _                      -> (wordL "member" ^^ wordL name ^^ (myParms |> paramsL),                   None)
+            | _ when m.IsConstructor -> (WordL.keywordNew, Some className) // we need the unadjusted name here to be able to grab the number of generic parameters
+            | _ when m.IsStatic      -> (WordL.keywordStatic ^^ WordL.keywordMember ^^ wordL (tagMethod name) ^^ (myParms |> paramsL), None)
+            | _                      -> (WordL.keywordMember ^^ wordL (tagMethod name) ^^ (myParms |> paramsL),                   None)
         let signaturL       = (m.Parameters, m.Return.Type) |> layoutILParameters denv ilTyparSubst isCons
-        nameL ^^ wordL ":" ^^ signaturL
+        nameL ^^ WordL.colon ^^ signaturL
 
     let private layoutILFieldDef (denv: DisplayEnv) (ilTyparSubst: layout list) (f: ILFieldDef) =
-        let staticL =  if f.IsStatic then wordL "static" else emptyL
+        let staticL =  if f.IsStatic then WordL.keywordStatic else emptyL
         let name    = adjustILName f.Name
-        let nameL   = wordL name
+        let nameL   = wordL (tagField name)
         let typL    = layoutILType denv ilTyparSubst f.Type
-        staticL ^^ wordL "val" ^^ nameL ^^ wordL ":" ^^ typL  
+        staticL ^^ WordL.keywordVal ^^ nameL ^^ WordL.colon ^^ typL  
             
     let private layoutILEventDef denv  ilTyparSubst (e: ILEventDef) =
-        let staticL = if isStaticILEvent e then wordL "static" else emptyL
+        let staticL = if isStaticILEvent e then WordL.keywordStatic else emptyL
         let name = adjustILName e.Name
-        let nameL = wordL name
+        let nameL = wordL (tagEvent name)
         let typL = 
             match e.Type with
             | Some t -> layoutILType denv ilTyparSubst t
             | _ -> emptyL
-        staticL ^^ wordL "event" ^^ nameL ^^ wordL ":" ^^ typL     
+        staticL ^^ WordL.keywordEvent ^^ nameL ^^ WordL.colon ^^ typL     
        
     let private layoutILPropertyDef denv ilTyparSubst (p : ILPropertyDef) =
-        let staticL =  if p.CallingConv =  ILThisConvention.Static then wordL "static" else emptyL
+        let staticL =  if p.CallingConv =  ILThisConvention.Static then WordL.keywordStatic else emptyL
         let name    = adjustILName p.Name
-        let nameL   = wordL name 
+        let nameL   = wordL (tagProperty name)
             
         let layoutGetterType (getterRef:ILMethodRef) =
             if isNil getterRef.ArgTypes then
@@ -295,8 +295,8 @@ module private PrintIL =
                 emptyL // shouldn't happen
             else
                 let frontArgs, lastArg = List.frontAndBack argTypes
-                let argsL = frontArgs |> List.map (layoutILType denv ilTyparSubst) |> sepListL (wordL "*") 
-                argsL ^^ wordL "->" ^^ (layoutILType denv ilTyparSubst lastArg)
+                let argsL = frontArgs |> List.map (layoutILType denv ilTyparSubst) |> sepListL WordL.star 
+                argsL ^^ WordL.arrow ^^ (layoutILType denv ilTyparSubst lastArg)
             
         let typL = 
             match p.GetMethod, p.SetMethod with
@@ -308,9 +308,9 @@ module private PrintIL =
             match p.GetMethod, p.SetMethod with
             |   None,None 
             |   Some _, None -> emptyL
-            |   None, Some _ -> wordL "with" ^^ wordL " set"
-            |   Some _, Some _ -> wordL "with" ^^ wordL "get," ^^ wordL "set"
-        staticL ^^ wordL "member" ^^ nameL ^^ wordL ":" ^^ typL ^^ specGetSetL
+            |   None, Some _ -> WordL.keywordWith ^^ WordL.keywordSet
+            |   Some _, Some _ -> WordL.keywordWith ^^ WordL.keywordGet ^^ RightL.comma ^^ WordL.keywordSet
+        staticL ^^ WordL.keywordMember ^^ nameL ^^ WordL.colon ^^ typL ^^ specGetSetL
 
     let layoutILFieldInit x =
         let textOpt = 
@@ -319,35 +319,37 @@ module private PrintIL =
                 match init with
                 | ILFieldInit.Bool x   -> 
                     if x
-                    then Some "true"
-                    else Some "false"
-                | ILFieldInit.Char c   -> Some ("'" + (char c).ToString () + "'")
-                | ILFieldInit.Int16 x  -> Some ((x |> int32 |> string) + "s")
-                | ILFieldInit.Int32 x  -> Some (x |> string)
-                | ILFieldInit.Int64 x  -> Some ((x |> string) + "L")
-                | ILFieldInit.UInt16 x -> Some ((x |> int32 |> string) + "us")
-                | ILFieldInit.UInt32 x -> Some ((x |> int64 |> string) + "u")
-                | ILFieldInit.UInt64 x -> Some ((x |> int64 |> string) + "UL")
+                    then Some Literals.keywordTrue
+                    else Some Literals.keywordFalse
+                | ILFieldInit.Char c   -> ("'" + (char c).ToString () + "'") |> (tagStringLiteral >> Some)
+                | ILFieldInit.Int16 x  -> ((x |> int32 |> string) + "s") |> (tagNumericLiteral >> Some)
+                | ILFieldInit.Int32 x  -> x |> (string >> tagNumericLiteral >> Some)
+                | ILFieldInit.Int64 x  -> ((x |> string) + "L") |> (tagNumericLiteral >> Some)
+                | ILFieldInit.UInt16 x -> ((x |> int32 |> string) + "us")  |> (tagNumericLiteral >> Some)
+                | ILFieldInit.UInt32 x -> (x |> int64 |> string) + "u" |> (tagNumericLiteral >> Some)
+                | ILFieldInit.UInt64 x -> ((x |> int64 |> string) + "UL")  |> (tagNumericLiteral >> Some)
                 | ILFieldInit.Single d -> 
                     let s = d.ToString ("g12", System.Globalization.CultureInfo.InvariantCulture)
                     let s = 
                         if String.forall (fun c -> System.Char.IsDigit c || c = '-')  s 
                         then s + ".0" 
                         else s
-                    Some (s + "f")
+                    (s + "f") |> (tagNumericLiteral >> Some)
                 | ILFieldInit.Double d -> 
                       let s = d.ToString ("g12", System.Globalization.CultureInfo.InvariantCulture)
-                      if String.forall (fun c -> System.Char.IsDigit c || c = '-')  s 
-                      then Some (s + ".0")
-                      else Some s
+                      let s = 
+                          if String.forall (fun c -> System.Char.IsDigit c || c = '-')  s 
+                          then (s + ".0")
+                          else s
+                      s |> (tagNumericLiteral >> Some)
                 | _   -> None
             | None      -> None
         match textOpt with
-        | None   -> wordL "=" ^^ (comment "value unavailable")
-        | Some s -> wordL "=" ^^ wordL s
+        | None   -> WordL.equals ^^ (comment "value unavailable")
+        | Some s -> WordL.equals ^^ wordL s
 
     let layoutILEnumDefParts nm litVal =
-        wordL "|" ^^ wordL (adjustILName nm) ^^ layoutILFieldInit litVal
+        WordL.bar ^^ wordL (tagEnum (adjustILName nm)) ^^ layoutILFieldInit litVal
 
     let private layoutILEnumDef (f : ILFieldDef) = layoutILEnumDefParts f.Name f.LiteralValue
 
@@ -424,7 +426,7 @@ module private PrintIL =
             let pre = 
                 match typeDef.tdKind with
                 | ILTypeDefKind.Class     -> None
-                | ILTypeDefKind.ValueType -> Some (wordL "struct")
+                | ILTypeDefKind.ValueType -> Some WordL.keywordStruct
                 | ILTypeDefKind.Interface -> None
                 | _ -> failwith "unreachable"
             let baseT  = 
@@ -432,7 +434,7 @@ module private PrintIL =
                 | Some b -> 
                     let baseName = layoutILType denv ilTyparSubst b
                     if isShowBase baseName
-                        then [ wordL "inherit" ^^ baseName ]
+                        then [ WordL.keywordInherit ^^ baseName ]
                         else []
                 | None   -> []
 
@@ -498,7 +500,7 @@ module private PrintIL =
                 |> List.sortBy(fun t -> adjustILName t.Name)   
                 |> List.map (layoutILNestedClassDef denv)
   
-            let post   = wordL "end"
+            let post   = WordL.keywordEnd
             renderL pre (baseT @ body @ types ) post
 
         | ILTypeDefKind.Enum      -> 
@@ -515,19 +517,19 @@ module private PrintIL =
                 match typeDef.Methods.AsList |> List.filter (fun m -> m.Name = "Invoke") with // the delegate delegates to the type of `Invoke`
                 | m :: _ -> layoutILCallingSignature denv ilTyparSubst None m.CallingSignature
                 | _      -> comment "`Invoke` method could not be found"
-            wordL "delegate" ^^ wordL "of" ^^ rhs
+            WordL.keywordDelegate ^^ WordL.keywordOf ^^ rhs
           
     and layoutILNestedClassDef (denv: DisplayEnv) (typeDef : ILTypeDef) =
         let name     = adjustILName typeDef.Name
-        let nameL    = wordL name 
+        let nameL    = wordL (tagClass name)
         let ilTyparSubst    = typeDef.GenericParams |> layoutILGenericParameterDefs
         let paramsL  = pruneParms typeDef.Name ilTyparSubst |> paramsL
         if denv.suppressNestedTypes then 
-            wordL "nested" ^^ wordL "type" ^^ nameL ^^ paramsL
+            WordL.keywordNested ^^ WordL.keywordType ^^ nameL ^^ paramsL
         else 
-            let pre      = wordL "nested" ^^ wordL "type" ^^ nameL ^^ paramsL
+            let pre      = WordL.keywordNested ^^ WordL.keywordType ^^ nameL ^^ paramsL
             let body     = layoutILTypeDef denv typeDef
-            (pre ^^ wordL "=") @@-- body
+            (pre ^^ WordL.equals) @@-- body
                 
 
 module private PrintTypes = 
@@ -535,33 +537,33 @@ module private PrintTypes =
     let layoutConst g ty c =
         let str = 
             match c with
-            | Const.Bool x        -> if x then "true" else "false"
-            | Const.SByte x       -> (x |> string)+"y"
-            | Const.Byte x        -> (x |> string)+"uy"
-            | Const.Int16 x       -> (x |> string)+"s"
-            | Const.UInt16 x      -> (x |> string)+"us"
-            | Const.Int32 x       -> (x |> string)
-            | Const.UInt32 x      -> (x |> string)+"u"
-            | Const.Int64 x       -> (x |> string)+"L"
-            | Const.UInt64 x      -> (x |> string)+"UL"
-            | Const.IntPtr x      -> (x |> string)+"n"
-            | Const.UIntPtr x     -> (x |> string)+"un"
+            | Const.Bool x        -> if x then Literals.keywordTrue else Literals.keywordFalse
+            | Const.SByte x       -> (x |> string)+"y" |> tagNumericLiteral
+            | Const.Byte x        -> (x |> string)+"uy" |> tagNumericLiteral
+            | Const.Int16 x       -> (x |> string)+"s" |> tagNumericLiteral
+            | Const.UInt16 x      -> (x |> string)+"us" |> tagNumericLiteral
+            | Const.Int32 x       -> (x |> string) |> tagNumericLiteral
+            | Const.UInt32 x      -> (x |> string)+"u" |> tagNumericLiteral
+            | Const.Int64 x       -> (x |> string)+"L" |> tagNumericLiteral
+            | Const.UInt64 x      -> (x |> string)+"UL" |> tagNumericLiteral
+            | Const.IntPtr x      -> (x |> string)+"n" |> tagNumericLiteral
+            | Const.UIntPtr x     -> (x |> string)+"un" |> tagNumericLiteral
             | Const.Single d      -> 
-                 (let s = d.ToString("g12",System.Globalization.CultureInfo.InvariantCulture)
+                 ((let s = d.ToString("g12",System.Globalization.CultureInfo.InvariantCulture)
                   if String.forall (fun c -> System.Char.IsDigit(c) || c = '-')  s 
                   then s + ".0" 
-                  else s) + "f"
+                  else s) + "f") |> tagNumericLiteral
             | Const.Double d      -> 
                 let s = d.ToString("g12",System.Globalization.CultureInfo.InvariantCulture)
-                if String.forall (fun c -> System.Char.IsDigit(c) || c = '-')  s 
+                (if String.forall (fun c -> System.Char.IsDigit(c) || c = '-')  s 
                 then s + ".0" 
-                else s
-            | Const.Char c        -> "'" + c.ToString() + "'" 
-            | Const.String bs     -> "\"" + bs + "\"" 
-            | Const.Unit          -> "()" 
-            | Const.Decimal bs    -> string bs + "M" 
+                else s) |> tagNumericLiteral
+            | Const.Char c        -> "'" + c.ToString() + "'" |> tagStringLiteral
+            | Const.String bs     -> "\"" + bs + "\"" |> tagNumericLiteral
+            | Const.Unit          -> "()" |> tagPunctuation
+            | Const.Decimal bs    -> string bs + "M" |> tagNumericLiteral
             // either "null" or "the defaut value for a struct"
-            | Const.Zero       -> if isRefTy g ty then "null" else "default"
+            | Const.Zero       -> tagKeyword(if isRefTy g ty then "null" else "default")
         wordL str
 
     let layoutAccessibility (denv:DisplayEnv) accessibility itemL =   
@@ -575,9 +577,9 @@ module private PrintTypes =
             | _ when List.forall isInternalCompPath p  -> Internal 
             | _ -> Private
         match denv.contextAccessibility,accessibility with
-        | Public,Internal  -> wordL "internal" ++ itemL    // print modifier, since more specific than context
-        | Public,Private   -> wordL "private" ++ itemL     // print modifier, since more specific than context
-        | Internal,Private -> wordL "private" ++ itemL     // print modifier, since more specific than context
+        | Public,Internal  -> WordL.keywordInternal ++ itemL    // print modifier, since more specific than context
+        | Public,Private   -> WordL.keywordPrivate ++ itemL     // print modifier, since more specific than context
+        | Internal,Private -> WordL.keywordPrivate ++ itemL     // print modifier, since more specific than context
         | _ -> itemL
 
     /// Layout a reference to a type 
@@ -585,9 +587,9 @@ module private PrintTypes =
 
     /// Layout the flags of a member 
     let layoutMemberFlags memFlags = 
-        let stat = if memFlags.IsInstance || (memFlags.MemberKind = MemberKind.Constructor) then emptyL else wordL "static"
-        let stat = if memFlags.IsDispatchSlot then stat ++ wordL "abstract" 
-                    elif memFlags.IsOverrideOrExplicitImpl then stat ++ wordL "override" 
+        let stat = if memFlags.IsInstance || (memFlags.MemberKind = MemberKind.Constructor) then emptyL else WordL.keywordStatic
+        let stat = if memFlags.IsDispatchSlot then stat ++ WordL.keywordAbstract
+                    elif memFlags.IsOverrideOrExplicitImpl then stat ++ WordL.keywordOverride
                     else stat
         let stat = 
         
@@ -599,7 +601,7 @@ module private PrintTypes =
               | MemberKind.PropertyGetSet -> stat
               | MemberKind.Member 
               | MemberKind.PropertyGet 
-              | MemberKind.PropertySet -> stat ++ wordL "member"
+              | MemberKind.PropertySet -> stat ++ WordL.keywordMember
 
         // let stat = if memFlags.IsFinal then stat ++ wordL "final" else stat in  
         stat
@@ -611,37 +613,37 @@ module private PrintTypes =
         match arg with 
         | Expr.Const(c,_,ty) -> 
             if isEnumTy denv.g ty then 
-                wordL "enum" ^^ angleL (layoutType denv ty) ^^ bracketL (layoutConst denv.g ty c)
+                WordL.keywordEnum ^^ angleL (layoutType denv ty) ^^ bracketL (layoutConst denv.g ty c)
             else
                 layoutConst denv.g ty c
 
         | Expr.Op (TOp.Array,[_elemTy],args,_) ->
-            leftL "[|" ^^ semiListL (List.map (layoutAttribArg denv) args) ^^ rightL "|]"
+            LeftL.leftBracketBar ^^ semiListL (List.map (layoutAttribArg denv) args) ^^ RightL.rightBracketBar
 
         // Detect 'typeof<ty>' calls 
         | TypeOfExpr denv.g ty ->
-            leftL "typeof<" ^^ layoutType denv ty ^^ rightL ">"
+            LeftL.keywordTypeof ^^ wordL (tagPunctuation "<") ^^ layoutType denv ty ^^ rightL (tagPunctuation ">")
 
         // Detect 'typedefof<ty>' calls 
         | TypeDefOfExpr denv.g ty ->
-            leftL "typedefof<" ^^ layoutType denv ty ^^ rightL ">"
+            LeftL.keywordTypedefof ^^ wordL (tagPunctuation "<") ^^ layoutType denv ty ^^ rightL (tagPunctuation ">")
 
         | Expr.Op (TOp.Coerce,[tgTy;_],[arg2],_) ->
-            leftL "(" ^^ layoutAttribArg denv arg2 ^^ wordL ":>" ^^ layoutType denv tgTy ^^ rightL ")"
+            leftL (tagPunctuation "(") ^^ layoutAttribArg denv arg2 ^^ wordL (tagPunctuation ":>") ^^ layoutType denv tgTy ^^ rightL (tagPunctuation ")")
 
         | AttribBitwiseOrExpr denv.g (arg1, arg2) ->
-            layoutAttribArg denv arg1 ^^ wordL "|||" ^^ layoutAttribArg denv arg2
+            layoutAttribArg denv arg1 ^^ wordL (tagPunctuation "|||") ^^ layoutAttribArg denv arg2
 
         // Detect explicit enum values 
         | EnumExpr denv.g arg1 ->
-            wordL "enum" ++ bracketL (layoutAttribArg denv arg1)
+            WordL.keywordEnum ++ bracketL (layoutAttribArg denv arg1)
 
 
-        | _ -> wordL "(* unsupported attribute argument *)"
+        | _ -> comment "(* unsupported attribute argument *)"
 
     /// Layout arguments of an attribute 'arg1, ..., argN' 
     and private layoutAttribArgs denv args = 
-        sepListL (rightL ",") (List.map (fun (AttribExpr(e1,_)) -> layoutAttribArg denv e1) args)
+        sepListL (rightL (tagPunctuation ",")) (List.map (fun (AttribExpr(e1,_)) -> layoutAttribArg denv e1) args)
 
     /// Layout an attribute 'Type(arg1, ..., argN)' 
     //
@@ -649,7 +651,7 @@ module private PrintTypes =
     and layoutAttrib denv (Attrib(_,k,args,_props,_,_,_)) = 
         let argsL = bracketL (layoutAttribArgs denv args)
         match k with 
-        | (ILAttrib(ilMethRef)) -> 
+        | ILAttrib ilMethRef -> 
             let trimmedName = 
                 let name = ilMethRef.EnclosingTypeRef.Name
                 match String.tryDropSuffix name "Attribute" with 
@@ -658,8 +660,7 @@ module private PrintTypes =
             let tref = ilMethRef.EnclosingTypeRef
             let tref = ILTypeRef.Create(scope= tref.Scope, enclosing=tref.Enclosing, name=trimmedName)
             PrintIL.layoutILTypeRef denv tref ++ argsL
-
-        | (FSAttrib(vref)) -> 
+        | FSAttrib vref -> 
             // REVIEW: this is not trimming "Attribute" 
             let _,_,rty,_ = GetTypeOfMemberInMemberForm denv.g vref
             let rty = GetFSharpViewOfReturnType denv.g rty
@@ -668,44 +669,44 @@ module private PrintTypes =
 
     and layoutILAttribElement denv arg = 
         match arg with 
-        | ILAttribElem.String (Some x)  -> wordL ("\"" + x + "\"")
-        | ILAttribElem.String None      -> wordL ""
-        | ILAttribElem.Bool x           -> if x then wordL "true" else wordL "false"
-        | ILAttribElem.Char x           -> wordL ("'" + x.ToString() + "'" )
-        | ILAttribElem.SByte x          -> wordL ((x |> string)+"y")
-        | ILAttribElem.Int16 x          -> wordL ((x |> string)+"s")
-        | ILAttribElem.Int32 x          -> wordL ((x |> string))
-        | ILAttribElem.Int64 x          -> wordL ((x |> string)+"L")
-        | ILAttribElem.Byte x           -> wordL ((x |> string)+"uy")
-        | ILAttribElem.UInt16 x         -> wordL ((x |> string)+"us")
-        | ILAttribElem.UInt32 x         -> wordL ((x |> string)+"u")
-        | ILAttribElem.UInt64 x         -> wordL ((x |> string)+"UL")
+        | ILAttribElem.String (Some x)  -> wordL (tagStringLiteral ("\"" + x + "\""))
+        | ILAttribElem.String None      -> wordL (tagStringLiteral "")
+        | ILAttribElem.Bool x           -> if x then WordL.keywordTrue else WordL.keywordFalse
+        | ILAttribElem.Char x           -> wordL (tagStringLiteral ("'" + x.ToString() + "'" ))
+        | ILAttribElem.SByte x          -> wordL (tagNumericLiteral ((x |> string)+"y"))
+        | ILAttribElem.Int16 x          -> wordL (tagNumericLiteral ((x |> string)+"s"))
+        | ILAttribElem.Int32 x          -> wordL (tagNumericLiteral ((x |> string)))
+        | ILAttribElem.Int64 x          -> wordL (tagNumericLiteral ((x |> string)+"L"))
+        | ILAttribElem.Byte x           -> wordL (tagNumericLiteral ((x |> string)+"uy"))
+        | ILAttribElem.UInt16 x         -> wordL (tagNumericLiteral ((x |> string)+"us"))
+        | ILAttribElem.UInt32 x         -> wordL (tagNumericLiteral ((x |> string)+"u"))
+        | ILAttribElem.UInt64 x         -> wordL (tagNumericLiteral ((x |> string)+"UL"))
         | ILAttribElem.Single x         -> 
             let str =
                 let s = x.ToString("g12",System.Globalization.CultureInfo.InvariantCulture)
                 (if String.forall (fun c -> System.Char.IsDigit(c) || c = '-')  s 
                  then s + ".0" 
                  else s) + "f"
-            wordL str
+            wordL (tagNumericLiteral str)
         | ILAttribElem.Double x         -> 
             let str =
                 let s = x.ToString("g12",System.Globalization.CultureInfo.InvariantCulture)
                 if String.forall (fun c -> System.Char.IsDigit(c) || c = '-')  s 
                 then s + ".0" 
                 else s
-            wordL str
-        | ILAttribElem.Null             -> wordL "null"
+            wordL (tagNumericLiteral str)
+        | ILAttribElem.Null             -> wordL (tagKeyword "null")
         | ILAttribElem.Array (_, xs)     -> 
-             leftL "[|" ^^ semiListL (List.map (layoutILAttribElement denv) xs) ^^ rightL "|]"
+             leftL (tagPunctuation "[|") ^^ semiListL (List.map (layoutILAttribElement denv) xs) ^^ RightL.rightBracketBar
         | ILAttribElem.Type (Some ty)    -> 
-            leftL "typeof<" ^^ PrintIL.layoutILType denv [] ty ^^ rightL ">"
-        | ILAttribElem.Type None        -> wordL ""
+            LeftL.keywordTypeof ^^ SepL.leftAngle ^^ PrintIL.layoutILType denv [] ty ^^ RightL.rightAngle
+        | ILAttribElem.Type None        -> wordL (tagText "")
         | ILAttribElem.TypeRef (Some ty) -> 
-            leftL "typedefof<" ^^ PrintIL.layoutILTypeRef denv ty ^^ rightL ">"
-        | ILAttribElem.TypeRef None     -> wordL ""
+            LeftL.keywordTypedefof ^^ SepL.leftAngle ^^ PrintIL.layoutILTypeRef denv ty ^^ RightL.rightAngle
+        | ILAttribElem.TypeRef None     -> emptyL
 
     and layoutILAttrib denv (ty, args) = 
-        let argsL = bracketL (sepListL (rightL ",") (List.map (layoutILAttribElement denv) args))
+        let argsL = bracketL (sepListL (rightL (tagPunctuation ",")) (List.map (layoutILAttribElement denv) args))
         PrintIL.layoutILType denv [] ty ++ argsL
 
     /// Layout '[<attribs>]' above another block 
@@ -723,23 +724,23 @@ module private PrintTypes =
             let attrs = attrs |> List.filter (IsMatchingFSharpAttribute denv.g denv.g.attrib_AutoSerializableAttribute >> not)
             match attrs with
             | [] -> restL 
-            | _  -> squareAngleL (sepListL (rightL ";") (List.map (layoutAttrib denv) attrs)) @@ 
+            | _  -> squareAngleL (sepListL (rightL (tagPunctuation ";")) (List.map (layoutAttrib denv) attrs)) @@ 
                     restL
         else 
         match kind with 
         | TyparKind.Type -> restL
-        | TyparKind.Measure -> squareAngleL (wordL "Measure") @@ restL
+        | TyparKind.Measure -> squareAngleL (wordL (tagText "Measure")) @@ restL
 
     and layoutTyparAttribs denv kind attrs restL =         
         match attrs, kind with
         | [], TyparKind.Type -> restL 
-        | _, _  -> squareAngleL (sepListL (rightL ";") ((match kind with TyparKind.Type -> [] | TyparKind.Measure -> [wordL "Measure"]) @ List.map (layoutAttrib denv) attrs)) ^^ restL
+        | _, _  -> squareAngleL (sepListL (rightL (tagPunctuation ";")) ((match kind with TyparKind.Type -> [] | TyparKind.Measure -> [wordL (tagText "Measure")]) @ List.map (layoutAttrib denv) attrs)) ^^ restL
 
     and private layoutTyparRef denv (typar:Typar) =
-        wordL (sprintf "%s%s%s"
+        wordL (tagTypeParameter (sprintf "%s%s%s"
                   (if denv.showConstraintTyparAnnotations then prefixOfStaticReq typar.StaticReq else "'")
                   (if denv.showImperativeTyparAnnotations then prefixOfRigidTypar typar else "")
-                  typar.DisplayName)
+                  typar.DisplayName))
 
     /// Layout a single type parameter declaration, taking TypeSimplificationInfo into account  
     /// There are several printing-cases for a typar:
@@ -757,9 +758,9 @@ module private PrintTypes =
         match Zmap.tryFind typar env.inplaceConstraints with
         | Some (typarConstrTyp) ->
             if Zset.contains typar env.singletons then
-                leftL "#" ^^ layoutTypeWithInfo denv env typarConstrTyp
+                leftL (tagPunctuation "#") ^^ layoutTypeWithInfo denv env typarConstrTyp
             else
-                (varL ^^ sepL ":>" ^^ layoutTypeWithInfo denv env typarConstrTyp) |> bracketL
+                (varL ^^ sepL (tagPunctuation ":>") ^^ layoutTypeWithInfo denv env typarConstrTyp) |> bracketL
 
         | _ -> varL
 
@@ -784,72 +785,77 @@ module private PrintTypes =
         | [] -> emptyL 
         | _ -> 
             if denv.abbreviateAdditionalConstraints then 
-                wordL "when <constraints>"
+                wordL (tagKeyword "when") ^^ wordL(tagText "<constraints>")
             elif denv.shortConstraints then 
-                leftL "(" ^^ wordL "requires" ^^ sepListL (wordL "and") cxsL ^^ rightL ")"
+                leftL (tagPunctuation "(") ^^ wordL (tagKeyword "requires") ^^ sepListL (wordL (tagKeyword "and")) cxsL ^^ rightL (tagPunctuation ")")
             else
-                wordL "when" ^^ sepListL (wordL "and") cxsL
+                wordL (tagKeyword "when") ^^ sepListL (wordL (tagKeyword "and")) cxsL
 
     /// Layout constraints, taking TypeSimplificationInfo into account 
     and private layoutConstraintWithInfo denv env (tp,tpc) =
-        let longConstraintPrefix l = layoutTyparRefWithInfo denv env tp ^^ wordL ":" ^^ l
+        let longConstraintPrefix l = layoutTyparRefWithInfo denv env tp ^^ WordL.colon ^^ l
         match tpc with 
         | TyparConstraint.CoercesTo(tpct,_) -> 
-            [layoutTyparRefWithInfo denv env tp ^^ wordL ":>" --- layoutTypeWithInfo denv env tpct]
+            [layoutTyparRefWithInfo denv env tp ^^ wordL (tagOperator ":>") --- layoutTypeWithInfo denv env tpct]
         | TyparConstraint.MayResolveMember(traitInfo,_) ->
             [layoutTraitWithInfo denv env traitInfo]
         | TyparConstraint.DefaultsTo(_,ty,_) ->
-              if denv.showTyparDefaultConstraints then [wordL "default" ^^ layoutTyparRefWithInfo denv env tp ^^ wordL " :" ^^ layoutTypeWithInfo denv env ty]
+              if denv.showTyparDefaultConstraints then [wordL (tagKeyword "default") ^^ layoutTyparRefWithInfo denv env tp ^^ WordL.colon ^^ layoutTypeWithInfo denv env ty]
               else []
         | TyparConstraint.IsEnum(ty,_) ->
             if denv.shortConstraints then 
-                [wordL "enum"]
+                [wordL (tagKeyword "enum")]
             else
-                [longConstraintPrefix (layoutTypeAppWithInfoAndPrec denv env (wordL "enum") 2 true [ty])]
+                [longConstraintPrefix (layoutTypeAppWithInfoAndPrec denv env (wordL (tagKeyword "enum")) 2 true [ty])]
         | TyparConstraint.SupportsComparison _ ->
             if denv.shortConstraints then 
-                [wordL "comparison"]
+                [wordL (tagKeyword "comparison")]
             else
-                [wordL "comparison" |> longConstraintPrefix]
+                [wordL (tagKeyword "comparison") |> longConstraintPrefix]
         | TyparConstraint.SupportsEquality _ ->
             if denv.shortConstraints then 
-                [wordL "equality"]
+                [wordL (tagKeyword "equality")]
             else
-                [wordL "equality"  |> longConstraintPrefix]
+                [wordL (tagKeyword "equality")  |> longConstraintPrefix]
         | TyparConstraint.IsDelegate(aty,bty,_) ->
             if denv.shortConstraints then 
-                [wordL "delegate"]
+                [WordL.keywordDelegate]
             else
-                [layoutTypeAppWithInfoAndPrec denv env (wordL "delegate") 2 true [aty;bty] |> longConstraintPrefix]
+                [layoutTypeAppWithInfoAndPrec denv env (WordL.keywordDelegate) 2 true [aty;bty] |> longConstraintPrefix]
         | TyparConstraint.SupportsNull _ ->
-            [wordL "null" |> longConstraintPrefix]
+            [wordL (tagKeyword "null") |> longConstraintPrefix]
         | TyparConstraint.IsNonNullableStruct _ ->
             if denv.shortConstraints then 
-                [wordL "value type"]
+                [wordL (tagText "value type")]
             else
-                [wordL "struct" |> longConstraintPrefix]
+                [WordL.keywordStruct |> longConstraintPrefix]
         | TyparConstraint.IsUnmanaged _ ->
             if denv.shortConstraints then
-                [wordL "unmanaged"]
+                [wordL (tagKeyword "unmanaged")]
             else
-                [wordL "unmanaged" |> longConstraintPrefix]
+                [wordL (tagKeyword "unmanaged") |> longConstraintPrefix]
         | TyparConstraint.IsReferenceType _ ->
             if denv.shortConstraints then 
-                [wordL "reference type"]
+                [wordL (tagText "reference type")]
             else
-                [wordL "not struct" |> longConstraintPrefix]
+                [(wordL (tagKeyword "not") ^^ wordL(tagKeyword "struct")) |> longConstraintPrefix]
         | TyparConstraint.SimpleChoice(tys,_) ->
-            [bracketL (sepListL (sepL "|") (List.map (layoutTypeWithInfo denv env) tys)) |> longConstraintPrefix]
+            [bracketL (sepListL (sepL (tagPunctuation "|")) (List.map (layoutTypeWithInfo denv env) tys)) |> longConstraintPrefix]
         | TyparConstraint.RequiresDefaultConstructor _ -> 
             if denv.shortConstraints then 
-                [wordL "default constructor"]
+                [wordL (tagKeyword "default") ^^ wordL (tagKeyword "constructor")]
             else
-                [bracketL (wordL "new : unit -> " ^^ (layoutTyparRefWithInfo denv env tp)) |> longConstraintPrefix]
+                [bracketL (
+                    wordL (tagKeyword "new") ^^
+                    wordL (tagPunctuation ":") ^^
+                    WordL.structUnit ^^ 
+                    WordL.arrow ^^
+                    (layoutTyparRefWithInfo denv env tp)) |> longConstraintPrefix]
 
     and private layoutTraitWithInfo denv env (TTrait(tys,nm,memFlags,argtys,rty,_)) =
         let nm = DemangleOperatorName nm
         if denv.shortConstraints then 
-            wordL ("member "^nm)
+            WordL.keywordMember ^^ wordL (tagMember nm)
         else
             let rty = GetFSharpViewOfReturnType denv.g rty
             let stat = layoutMemberFlags memFlags
@@ -857,10 +863,10 @@ module private PrintTypes =
             let tysL = 
                 match tys with 
                 | [ty] -> layoutTypeWithInfo denv env ty 
-                | tys -> bracketL (layoutTypesWithInfoAndPrec denv env 2 (wordL "or") tys)
-            tysL ^^ wordL ":"  ---  
-                bracketL (stat ++ wordL nm ^^ wordL ":" ---
-                        ((layoutTypesWithInfoAndPrec denv env 2 (wordL "*") argtys --- wordL "->") --- (layoutTypeWithInfo denv env rty)))
+                | tys -> bracketL (layoutTypesWithInfoAndPrec denv env 2 (wordL (tagKeyword "or")) tys)
+            tysL ^^ wordL (tagPunctuation ":")  ---  
+                bracketL (stat ++ wordL (tagMember nm) ^^ wordL (tagPunctuation ":") ---
+                        ((layoutTypesWithInfoAndPrec denv env 2 (wordL (tagPunctuation "*")) argtys --- wordL (tagPunctuation "->")) --- (layoutTypeWithInfo denv env rty)))
 
 
     /// Layout a unit expression 
@@ -871,28 +877,28 @@ module private PrintTypes =
         let negcs,poscs = ListMeasureConOccsWithNonZeroExponents denv.g false unt |> sortCons |> List.partition (fun (_,e) -> SignRational e < 0)
         let unparL uv = layoutTyparRef denv uv
         let unconL tc = layoutTyconRef denv tc
-        let rationalL e = wordL (RationalToString e)
-        let measureToPowerL x e = if e = OneRational then x else x -- wordL "^" -- rationalL e
+        let rationalL e = wordL (tagNumericLiteral (RationalToString e))
+        let measureToPowerL x e = if e = OneRational then x else x -- wordL (tagPunctuation "^") -- rationalL e
         let prefix = spaceListL  (List.map (fun (v,e) -> measureToPowerL (unparL v) e) posvs @
                                   List.map (fun (c,e) -> measureToPowerL (unconL c) e) poscs)
         let postfix = spaceListL (List.map (fun (v,e) -> measureToPowerL (unparL v) (NegRational e)) negvs @
                                   List.map (fun (c,e) -> measureToPowerL (unconL c) (NegRational e)) negcs)
         match (negvs,negcs) with 
-        | [],[] -> (match posvs,poscs with [],[] -> wordL "1" | _ -> prefix)
-        | _ -> prefix ^^ sepL "/" ^^ (if List.length negvs + List.length negcs > 1 then sepL "(" ^^ postfix ^^ sepL ")" else postfix)
+        | [],[] -> (match posvs,poscs with [],[] -> wordL (tagNumericLiteral "1") | _ -> prefix)
+        | _ -> prefix ^^ sepL (tagPunctuation "/") ^^ (if List.length negvs + List.length negcs > 1 then sepL (tagPunctuation "(") ^^ postfix ^^ sepL (tagPunctuation ")") else postfix)
 
     /// Layout type arguments, either NAME<ty,...,ty> or (ty,...,ty) NAME *)
     and private layoutTypeAppWithInfoAndPrec denv env tcL prec prefix args =
         if prefix  then 
             match args with
             | [] -> tcL
-            | [arg] -> tcL ^^ sepL "<" ^^ (layoutTypeWithInfoAndPrec denv env 4 arg) ^^ rightL ">"
-            | args -> bracketIfL (prec <= 1) (tcL ^^ angleL (layoutTypesWithInfoAndPrec denv env 2 (sepL ",") args))
+            | [arg] -> tcL ^^ sepL (tagPunctuation "<") ^^ (layoutTypeWithInfoAndPrec denv env 4 arg) ^^ rightL (tagPunctuation">")
+            | args -> bracketIfL (prec <= 1) (tcL ^^ angleL (layoutTypesWithInfoAndPrec denv env 2 (sepL (tagPunctuation ",")) args))
         else
             match args with
             | []    -> tcL
             | [arg] ->  layoutTypeWithInfoAndPrec denv env 2 arg ^^ tcL
-            | args  -> bracketIfL (prec <= 1) (bracketL (layoutTypesWithInfoAndPrec denv env 2 (sepL ",") args) --- tcL)
+            | args  -> bracketIfL (prec <= 1) (bracketL (layoutTypesWithInfoAndPrec denv env 2 (sepL (tagPunctuation ",")) args) --- tcL)
 
     /// Layout a type, taking precedence into account to insert brackets where needed *)
     and layoutTypeWithInfoAndPrec denv env prec typ =
@@ -912,23 +918,23 @@ module private PrintTypes =
         // Layout a tuple type 
         | TType_tuple (tupInfo,t)  ->
             if evalTupInfoIsStruct tupInfo then 
-                wordL "struct" --- bracketL (layoutTypesWithInfoAndPrec denv env 2 (wordL "*") t)
+                WordL.keywordStruct --- bracketL (layoutTypesWithInfoAndPrec denv env 2 (wordL (tagPunctuation "*")) t)
             else 
-                bracketIfL (prec <= 2) (layoutTypesWithInfoAndPrec denv env 2 (wordL "*") t)
+                bracketIfL (prec <= 2) (layoutTypesWithInfoAndPrec denv env 2 (wordL (tagPunctuation "*")) t)
 
         // Layout a first-class generic type. 
         | TType_forall (tps,tau) ->
             let tauL = layoutTypeWithInfoAndPrec denv env prec tau
             match tps with 
             | []  -> tauL
-            | [h] -> layoutTyparRefWithInfo denv env h ^^ rightL "." --- tauL
-            | (h::t) -> spaceListL (List.map (layoutTyparRefWithInfo denv env) (h::t)) ^^ rightL "." --- tauL
+            | [h] -> layoutTyparRefWithInfo denv env h ^^ rightL (tagPunctuation ".") --- tauL
+            | (h::t) -> spaceListL (List.map (layoutTyparRefWithInfo denv env) (h::t)) ^^ rightL (tagPunctuation ".") --- tauL
 
         // Layout a function type. 
         | TType_fun _ ->
             let rec loop soFarL ty = 
               match stripTyparEqns ty with 
-              | TType_fun (dty,rty) -> loop (soFarL --- (layoutTypeWithInfoAndPrec denv env 4 dty ^^ wordL "->")) rty
+              | TType_fun (dty,rty) -> loop (soFarL --- (layoutTypeWithInfoAndPrec denv env 4 dty ^^ wordL (tagPunctuation "->"))) rty
               | rty -> soFarL --- layoutTypeWithInfoAndPrec denv env 5 rty
             bracketIfL (prec <= 4) (loop emptyL typ)
 
@@ -967,7 +973,7 @@ module private PrintTypes =
                 match argInfo.Name, isOptionalArg, isParamArray, tryDestOptionTy denv.g ty with 
                 // Layout an optional argument 
                 | Some(id), true, _, Some ty -> 
-                    leftL ("?"^id.idText) ^^ sepL ":" ^^ layoutTypeWithInfoAndPrec denv env 2 ty 
+                    leftL  (tagPunctuation "?") ^^ sepL (tagParameter id.idText) ^^ SepL.colon ^^ layoutTypeWithInfoAndPrec denv env 2 ty 
                 // Layout an unnamed argument 
                 | None, _,_, _ -> 
                     layoutTypeWithInfoAndPrec denv env 2 ty
@@ -975,17 +981,17 @@ module private PrintTypes =
                 | Some id,_,isParamArray,_ -> 
                     let prefix =
                         if isParamArray then    
-                            layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute ^^ leftL id.idText
+                            layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute ^^ leftL (tagParameter id.idText)
                         else
-                            leftL id.idText
-                    prefix ^^ sepL ":" ^^ layoutTypeWithInfoAndPrec denv env 2 ty
+                            leftL (tagParameter id.idText)
+                    prefix ^^ SepL.colon ^^ layoutTypeWithInfoAndPrec denv env 2 ty
                         
-            let delimitReturnValue = if denv.useColonForReturnType then ":" else "->"
+            let delimitReturnValue = tagPunctuation (if denv.useColonForReturnType then ":" else "->")
 
             let allArgsL = 
                 argInfos 
                 |> List.mapSquared argL 
-                |> List.map (sepListL (wordL "*"))
+                |> List.map (sepListL (wordL (tagPunctuation "*")))
                 |> List.map (fun x -> (x ^^ wordL delimitReturnValue)) 
             (List.foldBack (---) allArgsL rtyL) --- cxsL
 
@@ -1002,7 +1008,7 @@ module private PrintTypes =
 
         | _ -> 
             let tpcsL = layoutConstraintsWithInfo denv env tpcs
-            let coreL = sepListL (sepL ",") (List.map (layoutTyparRefWithInfo denv env) typars)
+            let coreL = sepListL (sepL (tagPunctuation ",")) (List.map (layoutTyparRefWithInfo denv env) typars)
             (if prefix || not (isNil tpcs) then nmL ^^ angleL (coreL --- tpcsL) else bracketL coreL --- nmL)
 
 
@@ -1027,7 +1033,7 @@ module private PrintTypes =
     let layoutMemberTypeAndConstraints denv argInfos retTy parentTyparTys = 
         let _,(parentTyparTys,argInfos,retTy),cxs = PrettyTypes.PrettifyTypesNM1 denv.g (parentTyparTys,argInfos,retTy)
         // Filter out the parent typars, which don't get shown in the member signature 
-        let cxs = cxs |> List.filter (fun (tp,_) -> not (parentTyparTys |> List.exists (fun ty -> isTyparTy denv.g ty && typarEq tp (destTyparTy denv.g ty)))) 
+        let cxs = cxs |> List.filter (fun (tp,_) -> not (parentTyparTys |> List.exists (fun ty -> match tryDestTyparTy denv.g ty with Some destTypar -> typarEq tp destTypar | None -> false))) 
         layoutPrettifiedTypesAndConstraints denv argInfos retTy cxs
 
     // Layout: type spec - class, datatype, record, abbrev 
@@ -1057,10 +1063,10 @@ module private PrintTypes =
     let layoutMemberSig denv  (memberToParentInst,nm,methTypars,argInfos,retTy) = 
         let niceMethodTypars,tauL = layoutMemberTypeCore denv memberToParentInst (methTypars, argInfos, retTy)
         let nameL = 
-            let nameL = wordL (DemangleOperatorName nm)
+            let nameL = DemangleOperatorNameAsLayout tagMember nm
             let nameL = if denv.showTyparBinding then layoutTyparDecls denv nameL true niceMethodTypars else nameL
             nameL
-        nameL ^^ wordL ":" ^^ tauL
+        nameL ^^ wordL (tagPunctuation ":") ^^ tauL
 
 
     let layoutPrettyType denv typ = 
@@ -1081,12 +1087,12 @@ module private PrintTastMemberOrVals =
         let membInfo = Option.get v.MemberInfo
         let stat = PrintTypes.layoutMemberFlags membInfo.MemberFlags
         let _tps,argInfos,rty,_ = GetTypeOfMemberInFSharpForm denv.g v
-        let mkNameL niceMethodTypars name =       
-            let name  = DemangleOperatorName name
-            let nameL = wordL name 
+        
+        let mkNameL niceMethodTypars tagFunction name =       
+            let nameL  = DemangleOperatorNameAsLayout tagFunction name
             let nameL = 
                 if denv.showMemberContainers then 
-                    layoutTyconRef denv v.MemberApparentParent ^^ sepL "." ^^ nameL
+                    layoutTyconRef denv v.MemberApparentParent ^^ SepL.dot ^^ nameL
                 else 
                     nameL
             let nameL = if denv.showTyparBinding then layoutTyparDecls denv nameL true niceMethodTypars else nameL
@@ -1096,19 +1102,20 @@ module private PrintTastMemberOrVals =
         match membInfo.MemberFlags.MemberKind with 
         | MemberKind.Member -> 
             let niceMethodTypars,tauL = layoutMemberType denv v argInfos rty
-            let nameL = mkNameL niceMethodTypars v.LogicalName
-            stat --- (nameL ^^ wordL ":" ^^ tauL)
+            let nameL = mkNameL niceMethodTypars tagMember v.LogicalName
+            stat --- (nameL ^^ WordL.colon ^^ tauL)
         | MemberKind.ClassConstructor  
         | MemberKind.Constructor -> 
             let _,tauL = layoutMemberType denv v argInfos rty
-            let newL = layoutAccessibility denv v.Accessibility (wordL "new")
-            stat ++ newL ^^ wordL ":" ^^ tauL
+            let newL = layoutAccessibility denv v.Accessibility WordL.keywordNew
+            stat ++ newL ^^ wordL (tagPunctuation ":") ^^ tauL
         | MemberKind.PropertyGetSet -> stat
         | MemberKind.PropertyGet -> 
-            if isNil argInfos then 
+            if isNil argInfos then
                 // use error recovery because intellisense on an incomplete file will show this
-                errorR(Error(FSComp.SR.tastInvalidFormForPropertyGetter(),v.Id.idRange));
-                stat --- wordL v.PropertyName --- wordL "with get"
+                errorR(Error(FSComp.SR.tastInvalidFormForPropertyGetter(),v.Id.idRange))
+                let nameL = mkNameL [] tagProperty v.CoreDisplayName
+                stat --- nameL --- (WordL.keywordWith ^^ WordL.keywordGet)
             else
                 let argInfos = 
                     match argInfos with 
@@ -1116,33 +1123,34 @@ module private PrintTastMemberOrVals =
                     | _ -> argInfos
 
                 let niceMethodTypars,tauL = layoutMemberType denv v argInfos rty
-                let nameL = mkNameL niceMethodTypars v.PropertyName
-                stat --- (nameL ^^ wordL ":" ^^ (if isNil argInfos then tauL else tauL --- wordL "with get"))
+                let nameL = mkNameL niceMethodTypars tagProperty v.CoreDisplayName
+                stat --- (nameL ^^ WordL.colon ^^ (if isNil argInfos then tauL else tauL --- (WordL.keywordWith ^^ WordL.keywordGet)))
         | MemberKind.PropertySet -> 
             if argInfos.Length <> 1 || isNil argInfos.Head then 
                 // use error recovery because intellisense on an incomplete file will show this
-                errorR(Error(FSComp.SR.tastInvalidFormForPropertySetter(),v.Id.idRange));
-                stat --- wordL v.PropertyName --- wordL "with set"
+                errorR(Error(FSComp.SR.tastInvalidFormForPropertySetter(),v.Id.idRange))
+                let nameL = mkNameL [] tagProperty v.CoreDisplayName
+                stat --- nameL --- (WordL.keywordWith ^^ WordL.keywordSet)
             else 
                 let argInfos,valueInfo = List.frontAndBack argInfos.Head
                 let niceMethodTypars,tauL = layoutMemberType denv v (if isNil argInfos then [] else [argInfos]) (fst valueInfo)
-                let nameL = mkNameL niceMethodTypars v.PropertyName
-                stat --- (nameL ^^ wordL ":" ^^ (tauL --- wordL "with set"))
+                let nameL = mkNameL niceMethodTypars tagProperty v.CoreDisplayName
+                stat --- (nameL ^^ wordL (tagPunctuation ":") ^^ (tauL --- (WordL.keywordWith ^^ WordL.keywordSet)))
 
     let private layoutNonMemberVal denv  (tps,v:Val,tau,cxs) =
         let env = SimplifyTypes.CollectInfo true [tau] cxs
         let cxs = env.postfixConstraints
         let argInfos,rty = GetTopTauTypeInFSharpForm denv.g (arityOfVal v).ArgInfos tau v.Range
-        let nameL = wordL v.DisplayName 
+        let nameL = wordL ((if v.IsModuleBinding then tagModuleBinding else tagUnknownEntity) v.DisplayName)
         let nameL = layoutAccessibility denv v.Accessibility nameL
         let nameL = 
             if v.IsMutable && not denv.suppressMutableKeyword then 
-                wordL "mutable" ++ nameL 
+                wordL (tagKeyword "mutable") ++ nameL 
               else 
                   nameL
         let nameL = 
             if v.MustInline && not denv.suppressInlineKeyword then 
-                wordL "inline" ++ nameL 
+                wordL (tagKeyword "inline") ++ nameL 
             else 
                 nameL
 
@@ -1152,10 +1160,10 @@ module private PrintTastMemberOrVals =
             if isTyFunction || isOverGeneric || denv.showTyparBinding then 
                 layoutTyparDecls denv nameL true tps 
             else nameL
-        let valAndTypeL = (wordL "val"  ^^ typarBindingsL --- wordL ":") --- layoutTopType denv env argInfos rty cxs
+        let valAndTypeL = (WordL.keywordVal  ^^ typarBindingsL --- wordL (tagPunctuation ":")) --- layoutTopType denv env argInfos rty cxs
         match denv.generatedValueLayout v with
           | None      -> valAndTypeL
-          | Some rhsL -> (valAndTypeL ++ wordL "=") --- rhsL
+          | Some rhsL -> (valAndTypeL ++ wordL (tagPunctuation"=")) --- rhsL
 
     let layoutValOrMember denv  (v:Val) =
         let vL = 
@@ -1169,12 +1177,10 @@ module private PrintTastMemberOrVals =
                 let tprenaming,ptau,cxs = PrettyTypes.PrettifyTypes1 denv.g tau
                 let ptps = 
                     tps  
-                        |> generalizeTypars 
-                        // Badly formed code may instantiate rigid declared typars to types, e.g. see bug
-                        // Hence we double check here that the thing is really a type variable
-                        |> List.map (instType tprenaming)
-                        |> List.filter (isAnyParTy denv.g) 
-                        |> List.map (destAnyParTy denv.g)
+                    |> generalizeTypars 
+                    // Badly formed code may instantiate rigid declared typars to types, e.g. see bug
+                    // Hence we double check here that the thing is really a type variable
+                    |> List.choose (instType tprenaming >> tryAnyParTy denv.g)
                 layoutNonMemberVal denv (ptps,v,ptau,cxs)
             | Some _ -> 
                 layoutMember denv v
@@ -1183,8 +1189,10 @@ module private PrintTastMemberOrVals =
 let layoutMemberSig denv x       = x |> PrintTypes.layoutMemberSig denv 
 let layoutTyparConstraint denv x = x |> PrintTypes.layoutTyparConstraint denv 
 let outputTy denv os x           = x |> PrintTypes.layoutType denv |> bufferL os  
+let layoutTy denv x           = x |> PrintTypes.layoutType denv
 let outputTypars denv nm os x    = x |> PrintTypes.layoutTyparDecls denv  (wordL nm) true  |> bufferL os
 let outputTyconRef denv os x     = x |> PrintTypes.layoutTyconRef denv |> bufferL os    
+let layoutTyconRef denv x     = x |> PrintTypes.layoutTyconRef denv
 let layoutConst g ty c = PrintTypes.layoutConst g ty c
 let layoutPrettifiedTypeAndConstraints denv argInfos tau = PrintTypes.layoutPrettifiedTypeAndConstraints denv argInfos tau
 
@@ -1196,77 +1204,94 @@ module InfoMemberPrinting =
     /// Format the arguments of a method to a buffer. 
     ///
     /// This uses somewhat "old fashioned" printf-style buffer printing.
-    let formatParamDataToBuffer denv os (ParamData(isParamArray, _isOutArg, optArgInfo, _callerInfoInfo, nmOpt, _reflArgInfo, pty)) =
+    let layoutParamData denv (ParamData(isParamArray, _isOutArg, optArgInfo, _callerInfoInfo, nmOpt, _reflArgInfo, pty)) =
         let isOptArg = optArgInfo.IsOptional
         match isParamArray, nmOpt, isOptArg, tryDestOptionTy denv.g pty with 
         // Layout an optional argument 
         | _, Some nm, true, ptyOpt -> 
             // detect parameter type, if ptyOpt is None - this is .NET style optional argument
             let pty = defaultArg ptyOpt pty
-            bprintf os "?%s: " nm.idText 
-            outputTy denv os pty
+            SepL.questionMark ^^
+            wordL (tagParameter nm.idText) ^^
+            RightL.colon ^^
+            PrintTypes.layoutType denv pty
         // Layout an unnamed argument 
         | _, None, _,_ -> 
-            outputTy denv os pty;
+            PrintTypes.layoutType denv pty
         // Layout a named argument 
         | true, Some nm,_,_ -> 
-            layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute |> bufferL os
-            bprintf os " %s: " nm.idText 
-            outputTy denv os pty
+            layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute ^^
+            wordL (tagParameter nm.idText) ^^
+            RightL.colon ^^
+            PrintTypes.layoutType denv pty
         | false, Some nm,_,_ -> 
-            bprintf os "%s: " nm.idText 
-            outputTy denv os pty
+            wordL (tagParameter nm.idText) ^^
+            RightL.colon ^^
+            PrintTypes.layoutType denv pty
 
+    let formatParamDataToBuffer denv os pd = layoutParamData denv pd |> bufferL os
+        
     /// Format a method info using "F# style".
     //
     // That is, this style:
     //          new : argName1:argType1 * ... * argNameN:argTypeN -> retType
     //          Method : argName1:argType1 * ... * argNameN:argTypeN -> retType
-    let private formatMethInfoToBufferFSharpStyle amap m denv os (minfo:MethInfo) minst =
-        if not minfo.IsConstructor && not minfo.IsInstance then  bprintf os "static "
-        if minfo.IsConstructor then  
-          bprintf os "new : "
-        else
-          bprintf os "member "
-          outputTypars denv minfo.LogicalName os minfo.FormalMethodTypars;
-          bprintf os " : " 
+    let private layoutMethInfoFSharpStyleCore amap m denv (minfo:MethInfo) minst =
+        let layout = 
+            if not minfo.IsConstructor && not minfo.IsInstance then WordL.keywordStatic
+            else emptyL
+        let layout = 
+            layout ^^ 
+            (
+                if minfo.IsConstructor then
+                    wordL (tagKeyword "new")
+                else
+                    WordL.keywordMember ^^
+                    PrintTypes.layoutTyparDecls denv (wordL (tagMethod minfo.LogicalName)) true minfo.FormalMethodTypars
+            ) ^^
+            WordL.colon
         let paramDatas = minfo.GetParamDatas(amap, m, minst)
-        if (List.concat paramDatas).Length = 0 then 
-           bprintf os "unit"
-        paramDatas |> List.iteri (fun i datas -> 
-            if i > 0 then bprintf os " -> "; 
-            datas |> List.iteri (fun j arg -> 
-              if j > 0 then bprintf os " * "; 
-              formatParamDataToBuffer denv os arg))
+        let layout =
+            layout ^^
+                if isNil (List.concat paramDatas) then
+                    WordL.structUnit
+                else
+                    sepListL WordL.arrow (List.map ((List.map (layoutParamData denv)) >> sepListL WordL.star) paramDatas)
         let retTy = minfo.GetFSharpReturnTy(amap, m, minst)
-        bprintf os " -> "  
-        outputTy denv os retTy
+        layout ^^
+        WordL.arrow ^^
+        PrintTypes.layoutType denv retTy
 
     /// Format a method info using "half C# style".
     //
     // That is, this style:
     //          Container(argName1:argType1, ..., argNameN:argTypeN) : retType
     //          Container.Method(argName1:argType1, ..., argNameN:argTypeN) : retType
-    let private formatMethInfoToBufferCSharpStyle amap m denv os (minfo:MethInfo) minst =
+    let private layoutMethInfoCSharpStyle amap m denv (minfo:MethInfo) minst =
         let retTy = minfo.GetFSharpReturnTy(amap, m, minst)
-        if minfo.IsExtensionMember then  
-          bprintf os "(%s) " (FSComp.SR.typeInfoExtension())
-        if isAppTy amap.g minfo.EnclosingType then 
-            outputTyconRef denv os (tcrefOfAppTy amap.g minfo.EnclosingType)
-        else
-            outputTy denv os minfo.EnclosingType
-        if minfo.IsConstructor then  
-          bprintf os "("
-        else
-          bprintf os "." 
-          outputTypars denv minfo.LogicalName os minfo.FormalMethodTypars
-          bprintf os "(" 
+        let layout = 
+            if minfo.IsExtensionMember then
+                LeftL.leftParen ^^ wordL (tagKeyword (FSComp.SR.typeInfoExtension())) ^^ RightL.rightParen
+            else emptyL
+        let layout = 
+            layout ^^
+                match tryDestAppTy amap.g minfo.EnclosingType with
+                | Some tcref ->
+                    PrintTypes.layoutTyconRef denv tcref
+                | None ->
+                    PrintTypes.layoutType denv minfo.EnclosingType
+        let layout = 
+            layout ^^
+                if minfo.IsConstructor then  
+                    SepL.leftParen
+                else
+                    SepL.dot ^^
+                    PrintTypes.layoutTyparDecls denv  (wordL (tagMethod minfo.LogicalName)) true minfo.FormalMethodTypars ^^
+                    SepL.leftParen
+
         let paramDatas = minfo.GetParamDatas (amap, m, minst)
-        paramDatas |> List.iter (List.iteri (fun i arg -> 
-              if i > 0 then bprintf os ", "; 
-              formatParamDataToBuffer denv os arg))
-        bprintf os ") : "  
-        outputTy denv os retTy
+        let layout = layout ^^ sepListL RightL.comma ((List.concat >> List.map (layoutParamData denv)) paramDatas)
+        layout ^^ RightL.rightParen ^^ WordL.colon ^^ PrintTypes.layoutType denv retTy
 
 
     // Prettify this baby
@@ -1305,24 +1330,39 @@ module InfoMemberPrinting =
     //
     // For C# extension members:
     //          ApparentContainer.Method(argName1:argType1, ..., argNameN:argTypeN) : retType
-    let formatMethInfoToBufferFreeStyle amap m denv os minfo =
+    let layoutMethInfoToFreeStyle amap m denv minfo =
         match minfo with 
         | DefaultStructCtor(g,_typ) -> 
-            outputTyconRef denv os (tcrefOfAppTy g minfo.EnclosingType)
-            bprintf os "()"
+            PrintTypes.layoutTyconRef denv (tcrefOfAppTy g minfo.EnclosingType) ^^ wordL (tagPunctuation "()")
         | FSMeth(_,_,vref,_) -> 
-            vref.Deref |> PrintTastMemberOrVals.layoutValOrMember { denv with showMemberContainers=true; } |> bufferL os
+            vref.Deref |> PrintTastMemberOrVals.layoutValOrMember { denv with showMemberContainers=true; }
         | ILMeth(_,ilminfo,_) -> 
             let minfo,minst = prettifyILMethInfo amap m minfo ilminfo
-            formatMethInfoToBufferCSharpStyle amap m denv os minfo minst
+            layoutMethInfoCSharpStyle amap m denv minfo minst
     #if EXTENSIONTYPING
         | ProvidedMeth _  -> 
-            formatMethInfoToBufferCSharpStyle amap m denv os minfo minfo.FormalMethodInst
+            layoutMethInfoCSharpStyle amap m denv minfo minfo.FormalMethodInst
     #endif
 
+    let layoutPropInfoToFreeStyle g amap m denv (pinfo: PropInfo) =
+        let rty = pinfo.GetPropertyType(amap,m) 
+        let rty = if pinfo.IsIndexer then mkRefTupledTy g (pinfo.GetParamTypes(amap, m)) --> rty else  rty 
+        let _, rty, _ = PrettyTypes.PrettifyTypes1 g rty
+        let nameL = DemangleOperatorNameAsLayout tagProperty pinfo.PropertyName
+        wordL (tagText (FSComp.SR.typeInfoProperty())) ^^
+        layoutTyconRef denv (tcrefOfAppTy g pinfo.EnclosingType) ^^
+        SepL.dot ^^
+        nameL ^^
+        RightL.colon ^^
+        layoutTy denv rty
+
+    let formatMethInfoToBufferFreeStyle amap m denv os minfo = 
+        layoutMethInfoToFreeStyle amap m denv minfo |> bufferL os
+
     /// Format a method to a layout (actually just containing a string) using "free style" (aka "standalone"). 
-    let layoutMethInfoFSharpStyle amap m denv (minfo: MethInfo) = 
-        wordL (bufs (fun buf -> formatMethInfoToBufferFSharpStyle amap m denv buf minfo minfo.FormalMethodInst))
+    let layoutMethInfoFSharpStyle amap m denv (minfo: MethInfo) =
+        layoutMethInfoFSharpStyleCore amap m denv minfo minfo.FormalMethodInst
+        //wordL (bufs (fun buf -> formatMethInfoToBufferFSharpStyle amap m denv buf minfo minfo.FormalMethodInst))
 
 
 //-------------------------------------------------------------------------
@@ -1333,23 +1373,23 @@ module private TastDefinitionPrinting =
 
     let layoutExtensionMember denv (v:Val) =
         let tycon = v.MemberApparentParent.Deref
-        let nameL = wordL tycon.DisplayName
+        let nameL = wordL (tagMethod tycon.DisplayName)
         let nameL = layoutAccessibility denv tycon.Accessibility nameL // "type-accessibility"
         let tps =
             match PartitionValTyparsForApparentEnclosingType denv.g v with
               | Some(_,memberParentTypars,_,_,_) -> memberParentTypars
               | None -> []
-        let lhsL = wordL "type" ^^ layoutTyparDecls denv nameL tycon.IsPrefixDisplay tps
-        (lhsL ^^ wordL "with") @@-- (PrintTastMemberOrVals.layoutValOrMember denv v)
+        let lhsL = WordL.keywordType ^^ layoutTyparDecls denv nameL tycon.IsPrefixDisplay tps
+        (lhsL ^^ WordL.keywordWith) @@-- (PrintTastMemberOrVals.layoutValOrMember denv v)
 
     let layoutExtensionMembers denv vs =
         aboveListL (List.map (layoutExtensionMember denv) vs)    
 
     let layoutRecdField addAccess denv  (fld:RecdField) =
-        let lhs = wordL fld.Name 
+        let lhs = wordL (tagRecordField fld.Name)
         let lhs = (if addAccess then layoutAccessibility denv fld.Accessibility lhs else lhs)
-        let lhs = if fld.IsMutable then wordL "mutable" --- lhs else lhs
-        (lhs ^^ rightL ":") --- layoutType denv fld.FormalType
+        let lhs = if fld.IsMutable then wordL (tagKeyword "mutable") --- lhs else lhs
+        (lhs ^^ RightL.colon) --- layoutType denv fld.FormalType
 
     let layoutUnionOrExceptionField denv isGenerated i (fld : RecdField) =
         if isGenerated i fld then layoutTypeWithInfoAndPrec denv SimplifyTypes.typeSimplificationInfo0 2 fld.FormalType
@@ -1367,17 +1407,17 @@ module private TastDefinitionPrinting =
         | [f] when isUnionCase -> layoutUnionOrExceptionField denv isGeneratedUnionCaseField -1 f
         | _ -> 
             let isGenerated = if isUnionCase then isGeneratedUnionCaseField else isGeneratedExceptionField
-            sepListL (wordL "*") (List.mapi (layoutUnionOrExceptionField denv isGenerated) fields)
+            sepListL (wordL (tagPunctuation "*")) (List.mapi (layoutUnionOrExceptionField denv isGenerated) fields)
 
     let layoutUnionCase denv  prefixL (ucase:UnionCase) =
-        let nmL = wordL (DemangleOperatorName ucase.Id.idText) 
+        let nmL = DemangleOperatorNameAsLayout tagUnionCase ucase.Id.idText
         //let nmL = layoutAccessibility denv ucase.Accessibility nmL
         match ucase.RecdFields with
         | []     -> (prefixL ^^ nmL)
-        | fields -> (prefixL ^^ nmL ^^ wordL "of") --- layoutUnionCaseFields denv true fields
+        | fields -> (prefixL ^^ nmL ^^ WordL.keywordOf) --- layoutUnionCaseFields denv true fields
 
     let layoutUnionCases denv  ucases =
-        let prefixL = wordL "|" // See bug://2964 - always prefix in case preceded by accessibility modifier
+        let prefixL = WordL.bar // See bug://2964 - always prefix in case preceded by accessibility modifier
         List.map (layoutUnionCase denv prefixL) ucases
 
     /// When to force a break? "type tyname = <HERE> repn"
@@ -1400,30 +1440,30 @@ module private TastDefinitionPrinting =
               
 #if EXTENSIONTYPING
     let private layoutILFieldInfo denv amap m (e: ILFieldInfo) =
-        let staticL = if e.IsStatic then wordL "static" else emptyL
-        let nameL = wordL (adjustILName e.FieldName)
+        let staticL = if e.IsStatic then WordL.keywordStatic else emptyL
+        let nameL = wordL (tagField (adjustILName e.FieldName))
         let typL = layoutType denv (e.FieldType(amap,m))
-        staticL ^^ wordL "val" ^^ nameL ^^ wordL ":" ^^ typL     
+        staticL ^^ WordL.keywordVal ^^ nameL ^^ WordL.colon ^^ typL     
 
     let private layoutEventInfo denv amap m (e: EventInfo) =
-        let staticL = if e.IsStatic then wordL "static" else emptyL
-        let nameL = wordL (adjustILName e.EventName)
+        let staticL = if e.IsStatic then WordL.keywordStatic else emptyL
+        let nameL = wordL (tagEvent (adjustILName e.EventName))
         let typL = layoutType denv (e.GetDelegateType(amap,m))
-        staticL ^^ wordL "event" ^^ nameL ^^ wordL ":" ^^ typL     
+        staticL ^^ WordL.keywordEvent ^^ nameL ^^ WordL.colon ^^ typL     
        
     let private layoutPropInfo denv amap m (p : PropInfo) =
-        let staticL =  if p.IsStatic then wordL "static" else emptyL
-        let nameL   = wordL (adjustILName p.PropertyName)
+        let staticL =  if p.IsStatic then WordL.keywordStatic else emptyL
+        let nameL   = wordL (tagProperty (adjustILName p.PropertyName))
             
         let typL = layoutType denv (p.GetPropertyType(amap,m)) // shouldn't happen
                 
         let specGetSetL =
             match p.HasGetter, p.HasSetter with
             |   false,false | true,false -> emptyL
-            |   false, true -> wordL "with" ^^ wordL " set"
-            |   true, true -> wordL "with" ^^ wordL "get," ^^ wordL "set"
+            |   false, true -> WordL.keywordWith ^^ WordL.keywordSet
+            |   true, true -> WordL.keywordWith ^^ WordL.keywordGet^^ SepL.comma ^^ WordL.keywordSet
 
-        staticL ^^ wordL "member" ^^ nameL ^^ wordL ":" ^^ typL ^^ specGetSetL
+        staticL ^^ WordL.keywordMember ^^ nameL ^^ WordL.colon ^^ typL ^^ specGetSetL
 
     /// Another re-implementation of type printing, this time based off provided info objects.
     let layoutProvidedTycon (denv:DisplayEnv) (infoReader:InfoReader) ad m start lhsL ty =
@@ -1436,7 +1476,7 @@ module private TastDefinitionPrinting =
             |> List.filter (fun x -> x.FieldName <> "value__")
             |> List.map (fun x -> PrintIL.layoutILEnumDefParts x.FieldName x.LiteralValue)
             |> aboveListL
-        (lhsL ^^ wordL "=") @@-- fieldLs
+        (lhsL ^^ WordL.equals) @@-- fieldLs
       else
         let amap = infoReader.amap
         let sortKey (v:MethInfo) = 
@@ -1465,7 +1505,7 @@ module private TastDefinitionPrinting =
             if suppressInheritanceAndInterfacesForTyInSimplifiedDisplays g amap m ty then 
                 []
             else 
-                GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty |> List.map (fun ity -> wordL (if isInterfaceTy g ty then "inherit" else "interface") --- layoutType denv ity)
+                GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty |> List.map (fun ity -> wordL (tagKeyword (if isInterfaceTy g ty then "inherit" else "interface")) --- layoutType denv ity)
 
         let props = 
             GetIntrinsicPropInfosOfType infoReader (None,ad,AllowMultiIntfInstantiations.Yes)  PreferOverrides m ty
@@ -1515,10 +1555,10 @@ module private TastDefinitionPrinting =
           | TProvidedTypeExtensionPoint info ->
                 [ 
                     for nestedType in info.ProvidedType.PApplyArray((fun sty -> sty.GetNestedTypes()), "GetNestedTypes", m) do 
-                        yield nestedType.PUntaint((fun t -> t.Name), m)
+                        yield nestedType.PUntaint((fun t -> t.IsClass, t.Name), m)
                 ] 
-                |> List.sort
-                |> List.map (fun t -> wordL "nested" ^^ wordL "type" ^^ wordL t)
+                |> List.sortBy snd
+                |> List.map (fun (isClass, t) -> WordL.keywordNested ^^ WordL.keywordType ^^ wordL ((if isClass then tagClass else tagStruct) t))
           | _ -> 
               []
 
@@ -1527,7 +1567,7 @@ module private TastDefinitionPrinting =
                 []
             else
                 match GetSuperTypeOfType g amap m ty with 
-                | Some super when not (isObjTy g super) -> [wordL  "inherit" ^^ (layoutType denv super)] 
+                | Some super when not (isObjTy g super) -> [wordL  (tagKeyword "inherit") ^^ (layoutType denv super)] 
                 | _ -> []
 
         let erasedL = 
@@ -1542,27 +1582,26 @@ module private TastDefinitionPrinting =
             lhsL
         else
             let declsL = (inherits @ iimplsLs @ ctorLs @ membLs @ nestedTypeLs @ erasedL) |> applyMaxMembers denv.maxMembers |> aboveListL 
-            let rhsL = match start with Some s -> (wordL s @@-- declsL) @@ wordL "end" | None -> declsL
-            (lhsL ^^ wordL "=") @@-- rhsL
+            let rhsL = match start with Some s -> (wordL s @@-- declsL) @@ WordL.keywordEnd | None -> declsL
+            (lhsL ^^ WordL.equals) @@-- rhsL
 #endif
 
     let layoutTycon (denv:DisplayEnv) (infoReader:InfoReader) ad m simplified typewordL (tycon:Tycon) =
       let g = denv.g
-      let nameL  = wordL tycon.DisplayName
-      let nameL = layoutAccessibility denv tycon.Accessibility nameL 
+      let _,ty = generalizeTyconRef (mkLocalTyconRef tycon) 
+      let start, name = 
+          let n = tycon.DisplayName
+          if isClassTy g ty then (if simplified then None else Some "class" ), tagClass n
+          elif isInterfaceTy g ty then Some "interface", tagInterface n
+          elif isStructTy g ty then Some "struct", tagStruct n
+          else None, tagUnknownType n
+      let nameL = layoutAccessibility denv tycon.Accessibility (wordL name)
       let denv = denv.AddAccessibility tycon.Accessibility 
       let lhsL =
           let tps = tycon.TyparsNoRange
           let tpsL = layoutTyparDecls denv nameL tycon.IsPrefixDisplay tps
           typewordL ^^ tpsL
-      let _,ty = generalizeTyconRef (mkLocalTyconRef tycon) 
-      let start = 
-          if isClassTy g ty then (if simplified then None else Some "class" )
-          elif isInterfaceTy g ty then Some "interface" 
-          elif isStructTy g ty then Some "struct" 
-          else None
-
-
+      let start = Option.map tagKeyword start
 #if EXTENSIONTYPING
       match tycon.IsProvided with 
       | true -> 
@@ -1599,7 +1638,7 @@ module private TastDefinitionPrinting =
               | _ -> tycon.ImmediateInterfacesOfFSharpTycon
           let iimpls = iimpls |> List.filter (fun (_,compgen,_) -> not compgen)
           // if TTyconInterface, the iimpls should be printed as inherited interfaces 
-          let iimplsLs = iimpls |> List.map (fun (ty,_,_) -> wordL "interface" --- layoutType denv ty)
+          let iimplsLs = iimpls |> List.map (fun (ty,_,_) -> wordL (tagKeyword "interface") --- layoutType denv ty)
           let adhocCtorsLs    = adhoc |> List.filter (fun v -> v.IsConstructor)                               |> List.map (fun vref -> PrintTastMemberOrVals.layoutValOrMember denv vref.Deref)
           let adhocInstanceLs = adhoc |> List.filter (fun v -> not v.IsConstructor && v.IsInstanceMember)     |> List.map (fun vref -> PrintTastMemberOrVals.layoutValOrMember denv vref.Deref)
           let adhocStaticLs   = adhoc |> List.filter (fun v -> not v.IsConstructor && not v.IsInstanceMember) |> List.map (fun vref -> PrintTastMemberOrVals.layoutValOrMember denv vref.Deref)
@@ -1607,8 +1646,10 @@ module private TastDefinitionPrinting =
       let memberLs = memberImplementLs @ memberCtorLs @ memberInstanceLs @ memberStaticLs
       let addMembersAsWithEnd reprL = 
           if isNil memberLs then reprL
-          elif simplified then reprL @@ aboveListL memberLs
-          else reprL @@ (wordL "with" @@-- aboveListL memberLs) @@ wordL "end"
+          else
+          let memberLs = applyMaxMembers denv.maxMembers memberLs
+          if simplified then reprL @@-- aboveListL memberLs
+          else reprL @@ (WordL.keywordWith @@-- aboveListL memberLs) @@ WordL.keywordEnd
 
       let reprL = 
           let repr = tycon.TypeReprInfo
@@ -1625,7 +1666,7 @@ module private TastDefinitionPrinting =
                   let denv = denv.AddAccessibility tycon.TypeReprAccessibility 
                   match repr with 
                   | TRecdRepr _ ->
-                      let recdFieldRefL fld = layoutRecdField false denv fld ^^ rightL ";"
+                      let recdFieldRefL fld = layoutRecdField false denv fld ^^ rightL (tagPunctuation ";")
                       let recdL = tycon.TrueFieldsAsList |> List.map recdFieldRefL |> applyMaxMembers denv.maxMembers |> aboveListL |> braceL
                       Some (addMembersAsWithEnd (addReprAccessL recdL))
                         
@@ -1633,7 +1674,7 @@ module private TastDefinitionPrinting =
                       match r.fsobjmodel_kind with 
                       | TTyconDelegate (TSlotSig(_,_, _,_,paraml, rty)) ->
                           let rty = GetFSharpViewOfReturnType denv.g rty
-                          Some (wordL "delegate of" --- layoutTopType denv SimplifyTypes.typeSimplificationInfo0 (paraml |> List.mapSquared (fun sp -> (sp.Type, ValReprInfo.unnamedTopArg1))) rty [])
+                          Some (WordL.keywordDelegate ^^ WordL.keywordOf --- layoutTopType denv SimplifyTypes.typeSimplificationInfo0 (paraml |> List.mapSquared (fun sp -> (sp.Type, ValReprInfo.unnamedTopArg1))) rty [])
                       | _ ->
                           match r.fsobjmodel_kind with
                           | TTyconEnum -> 
@@ -1641,17 +1682,20 @@ module private TastDefinitionPrinting =
                               |> List.map (fun f -> 
                                                 match f.LiteralValue with 
                                                 | None -> emptyL
-                                                | Some c -> wordL "| " ^^ wordL f.Name ^^ wordL " = " ^^ layoutConst denv.g ty c)
+                                                | Some c -> WordL.bar ^^
+                                                            wordL (tagField f.Name) ^^
+                                                            WordL.equals ^^ 
+                                                            layoutConst denv.g ty c)
                               |> aboveListL
                               |> Some
                           | _ -> 
                               let inherits = 
                                   match r.fsobjmodel_kind, tycon.TypeContents.tcaug_super with
-                                  | TTyconClass,Some super -> [wordL  "inherit" ^^ (layoutType denv super)] 
+                                  | TTyconClass,Some super -> [wordL  (tagKeyword "inherit") ^^ (layoutType denv super)] 
                                   | TTyconInterface,_ -> 
                                     tycon.ImmediateInterfacesOfFSharpTycon
                                       |> List.filter (fun (_,compgen,_) -> not compgen)
-                                      |> List.map (fun (ity,_,_) -> wordL  "inherit" ^^ (layoutType denv ity))
+                                      |> List.map (fun (ity,_,_) -> wordL  (tagKeyword "inherit") ^^ (layoutType denv ity))
                                   | _ -> []
                               let vsprs = 
                                   tycon.MembersOfFSharpTyconSorted
@@ -1661,11 +1705,11 @@ module private TastDefinitionPrinting =
                               let staticValsLs  = 
                                   tycon.TrueFieldsAsList
                                   |> List.filter (fun f -> f.IsStatic)
-                                  |> List.map (fun f -> wordL "static" ^^ wordL "val" ^^ layoutRecdField true denv f)
+                                  |> List.map (fun f -> WordL.keywordStatic ^^ WordL.keywordVal ^^ layoutRecdField true denv f)
                               let instanceValsLs  = 
                                   tycon.TrueFieldsAsList
                                   |> List.filter (fun f -> not f.IsStatic)
-                                  |> List.map (fun f -> wordL "val" ^^ layoutRecdField true denv f)
+                                  |> List.map (fun f -> WordL.keywordVal ^^ layoutRecdField true denv f)
                               let alldecls = inherits @ memberImplementLs @ memberCtorLs @ instanceValsLs @ vsprs @ memberInstanceLs @ staticValsLs @ memberStaticLs
                               if isNil alldecls then
                                   None
@@ -1674,13 +1718,13 @@ module private TastDefinitionPrinting =
                                   let emptyMeasure = match tycon.TypeOrMeasureKind with TyparKind.Measure -> isNil alldecls | _ -> false
                                   if emptyMeasure then None else 
                                   let declsL = aboveListL alldecls
-                                  let declsL = match start with Some s -> (wordL s @@-- declsL) @@ wordL "end" | None -> declsL
+                                  let declsL = match start with Some s -> (wordL s @@-- declsL) @@ wordL (tagKeyword  "end") | None -> declsL
                                   Some declsL
                   | TUnionRepr _        -> 
                       let layoutUnionCases = tycon.UnionCasesAsList |> layoutUnionCases denv |> applyMaxMembers denv.maxMembers |> aboveListL
                       Some (addMembersAsWithEnd (addReprAccessL layoutUnionCases))
                   | TAsmRepr _                      -> 
-                      Some (wordL "(# \"<Common IL Type Omitted>\" #)")
+                      Some (wordL (tagText "(# \"<Common IL Type Omitted>\" #)"))
                   | TMeasureableRepr ty                 ->
                       Some (layoutType denv ty)
                   | TILObjectRepr (_,_,td) -> 
@@ -1692,33 +1736,33 @@ module private TastDefinitionPrinting =
               | None  -> lhsL
               | Some rhsL -> 
                   if brk then 
-                      (lhsL ^^ wordL "=") @@-- rhsL 
+                      (lhsL ^^ WordL.equals) @@-- rhsL 
                   else 
-                      (lhsL ^^ wordL "=") ---  rhsL
+                      (lhsL ^^ WordL.equals) ---  rhsL
 
           | _ -> 
               match tycon.TypeAbbrev with
               | None   -> 
-                  addMembersAsWithEnd lhsL 
+                  addMembersAsWithEnd (lhsL ^^ WordL.equals)
               | Some a -> 
-                  (lhsL ^^ wordL "=") --- (layoutType { denv with shortTypeNames = false } a)
+                  (lhsL ^^ WordL.equals) --- (layoutType { denv with shortTypeNames = false } a)
       layoutAttribs denv tycon.TypeOrMeasureKind tycon.Attribs reprL
 
     // Layout: exception definition
     let layoutExnDefn denv  (exnc:Entity) =
         let nm = exnc.LogicalName
-        let nmL = wordL nm 
+        let nmL = wordL (tagClass nm)
         let nmL = layoutAccessibility denv exnc.TypeReprAccessibility nmL
-        let exnL = wordL "exception" ^^ nmL // need to tack on the Exception at the right of the name for goto definition
+        let exnL = wordL (tagKeyword "exception") ^^ nmL // need to tack on the Exception at the right of the name for goto definition
         let reprL = 
             match exnc.ExceptionInfo with 
-            | TExnAbbrevRepr ecref -> wordL "=" --- layoutTyconRef denv ecref
-            | TExnAsmRepr _     -> wordL "=" --- wordL "(# ... #)"
+            | TExnAbbrevRepr ecref -> WordL.equals --- layoutTyconRef denv ecref
+            | TExnAsmRepr _     -> WordL.equals --- wordL (tagText "(# ... #)")
             | TExnNone             -> emptyL
             | TExnFresh r          -> 
                 match r.TrueFieldsAsList with
                 | []  -> emptyL
-                | r -> wordL "of" --- layoutUnionCaseFields denv false r
+                | r -> WordL.keywordOf --- layoutUnionCaseFields denv false r
 
         exnL ^^ reprL
 
@@ -1729,8 +1773,8 @@ module private TastDefinitionPrinting =
         | [] -> emptyL
         | [h] when h.IsExceptionDecl -> layoutExnDefn denv h
         | h :: t -> 
-            let x  = layoutTycon denv infoReader ad m false (wordL "type") h
-            let xs = List.map (layoutTycon denv infoReader ad m false (wordL "and")) t
+            let x  = layoutTycon denv infoReader ad m false (WordL.keywordType) h
+            let xs = List.map (layoutTycon denv infoReader ad m false (wordL (tagKeyword "and"))) t
             aboveListL (x::xs)
 
 
@@ -1781,14 +1825,15 @@ module private InferredSigPrinting =
                 // Check if this namespace contains anything interesting
                 if isConcreteNamespace def then 
                     // This is a container namespace. We print the header when we get to the first concrete module.
-                    let headerL = wordL ("namespace " ^ (String.concat "." (innerPath |> List.map fst)))
+                    let headerL = 
+                        wordL (tagKeyword "namespace") ^^ sepListL SepL.dot (List.map (fst >> tagNamespace >> wordL) innerPath)
                     headerL @@-- basic
                 else
                     // This is a namespace that only contains namespaces. Skipt the header
                     basic
             else
                 // This is a module 
-                let nmL   = layoutAccessibility denv mspec.Accessibility (wordL nm)
+                let nmL   = layoutAccessibility denv mspec.Accessibility (wordL (tagModule nm))
                 let denv  = denv.AddAccessibility mspec.Accessibility 
                 let basic = imdefL denv def
                 // Check if its an outer module or a nested module
@@ -1799,18 +1844,18 @@ module private InferredSigPrinting =
                         // Check if this is an outer module with no namespace
                         if isNil outerPath then 
                             // If so print a "module" declaration
-                            (wordL "module" ^^ nmL) @@ basic
+                            (wordL (tagKeyword "module") ^^ nmL) @@ basic
                         else 
                             // Otherwise this is an outer module contained immediately in a namespace
                             // We already printed the namespace declaration earlier.  So just print the 
                             // module now.
-                            ((wordL "module" ^^ nmL ^^ wordL "=" ^^ wordL "begin") @@-- basic) @@ wordL "end"
+                            ((wordL (tagKeyword"module") ^^ nmL ^^ WordL.equals ^^ wordL (tagKeyword "begin")) @@-- basic) @@ WordL.keywordEnd
                     else
                         // OK, we're in F# Interactive, presumably the implicit module for each interaction.
                         basic
                 else
                     // OK, this is a nested module
-                    ((wordL "module" ^^ nmL ^^ wordL "=" ^^ wordL "begin") @@-- basic) @@ wordL "end"
+                    ((wordL (tagKeyword "module") ^^ nmL ^^ WordL.equals ^^ wordL (tagKeyword"begin")) @@-- basic) @@ WordL.keywordEnd
         imexprL denv expr
 
 //--------------------------------------------------------------------------
@@ -1825,30 +1870,30 @@ module private PrintData =
         match expr with
         | Expr.Const (c,_,ty)                          -> 
             if isEnumTy denv.g ty then 
-                wordL "enum" ^^ angleL (layoutType denv ty) ^^ bracketL (layoutConst denv.g ty c)
+                wordL (tagKeyword "enum") ^^ angleL (layoutType denv ty) ^^ bracketL (layoutConst denv.g ty c)
             else
                 layoutConst denv.g ty c
 
-        | Expr.Val (v,_,_)                         -> wordL (v.DisplayName)
+        | Expr.Val (v,_,_)                         -> wordL (tagLocal v.DisplayName)
         | Expr.Link rX                                 -> dataExprWrapL denv isAtomic (!rX)
         | Expr.Op (TOp.UnionCase(c),_,args,_)        -> 
-            if denv.g.unionCaseRefEq c denv.g.nil_ucref then wordL "[]"
+            if denv.g.unionCaseRefEq c denv.g.nil_ucref then wordL (tagPunctuation "[]")
             elif denv.g.unionCaseRefEq c denv.g.cons_ucref then 
                 let rec strip = function (Expr.Op (TOp.UnionCase _,_,[h;t],_)) -> h::strip t | _ -> []
                 listL (dataExprL denv) (strip expr)
             elif isNil args then 
-                wordL c.CaseName 
+                wordL (tagUnionCase c.CaseName)
             else 
-                (wordL c.CaseName ++ bracketL (commaListL (dataExprsL denv args)))
+                (wordL (tagUnionCase c.CaseName) ++ bracketL (commaListL (dataExprsL denv args)))
             
-        | Expr.Op (TOp.ExnConstr(c),_,args,_)           ->  (wordL c.LogicalName ++ bracketL (commaListL (dataExprsL denv args)))
+        | Expr.Op (TOp.ExnConstr(c),_,args,_)           ->  (wordL (tagMethod c.LogicalName) ++ bracketL (commaListL (dataExprsL denv args)))
         | Expr.Op (TOp.Tuple _,_,xs,_)                  -> tupleL (dataExprsL denv xs)
         | Expr.Op (TOp.Recd (_,tc),_,xs,_) -> 
             let fields = tc.TrueInstanceFieldsAsList
-            let lay fs x = (wordL fs.rfield_id.idText ^^ sepL "=") --- (dataExprL denv x)
-            leftL "{" ^^ semiListL (List.map2 lay fields xs) ^^ rightL "}" 
-        | Expr.Op (TOp.Array,[_],xs,_)                 -> leftL "[|" ^^ semiListL (dataExprsL denv xs) ^^ rightL "|]"
-        | _ -> wordL "?"
+            let lay fs x = (wordL (tagRecordField fs.rfield_id.idText) ^^ sepL (tagPunctuation "=")) --- (dataExprL denv x)
+            leftL (tagPunctuation "{") ^^ semiListL (List.map2 lay fields xs) ^^ rightL (tagPunctuation "}")
+        | Expr.Op (TOp.Array,[_],xs,_)                 -> leftL (tagPunctuation "[|") ^^ semiListL (dataExprsL denv xs) ^^ RightL.rightBracketBar
+        | _ -> wordL (tagPunctuation "?")
     and private dataExprsL denv xs = List.map (dataExprL denv) xs
 
 let dataExprL denv expr = PrintData.dataExprL denv expr
@@ -1861,32 +1906,43 @@ let dataExprL denv expr = PrintData.dataExprL denv expr
 let outputValOrMember denv os x    = x |> PrintTastMemberOrVals.layoutValOrMember denv |> bufferL os
 let stringValOrMember denv x    = x |> PrintTastMemberOrVals.layoutValOrMember denv |> showL
 /// Print members with a qualification showing the type they are contained in 
+let layoutQualifiedValOrMember denv v = PrintTastMemberOrVals.layoutValOrMember { denv with showMemberContainers=true; } v
 let outputQualifiedValOrMember denv os v = outputValOrMember { denv with showMemberContainers=true; } os v
 let outputQualifiedValSpec denv os v = outputQualifiedValOrMember denv os v
 let stringOfQualifiedValOrMember denv v = PrintTastMemberOrVals.layoutValOrMember { denv with showMemberContainers=true; } v |> showL
         
 /// Convert a MethInfo to a string
 let formatMethInfoToBufferFreeStyle amap m denv buf d = InfoMemberPrinting.formatMethInfoToBufferFreeStyle amap m denv buf d
+let layoutMethInfoFreeStyle amap m denv d = InfoMemberPrinting.layoutMethInfoToFreeStyle amap m denv d
+
+/// Convert a PropInfo to a string
+let layoutPropInfoToFreeStyle g amap m denv d = InfoMemberPrinting.layoutPropInfoToFreeStyle g amap m denv d
 
 /// Convert a MethInfo to a string
 let stringOfMethInfo amap m denv d = bufs (fun buf -> InfoMemberPrinting.formatMethInfoToBufferFreeStyle amap m denv buf d)
 
 /// Convert a ParamData to a string
 let stringOfParamData denv paramData = bufs (fun buf -> InfoMemberPrinting.formatParamDataToBuffer denv buf paramData)
+let layoutOfParamData denv paramData = InfoMemberPrinting.layoutParamData denv paramData
 let outputILTypeRef         denv os x = x |> PrintIL.layoutILTypeRef denv |> bufferL os
+let layoutILTypeRef         denv x = x |> PrintIL.layoutILTypeRef denv
 let outputExnDef            denv os x = x |> TastDefinitionPrinting.layoutExnDefn denv |> bufferL os
+let layoutExnDef            denv x = x |> TastDefinitionPrinting.layoutExnDefn denv
 let stringOfTyparConstraints denv x   = x |> PrintTypes.layoutConstraintsWithInfo denv SimplifyTypes.typeSimplificationInfo0  |> showL
-let outputTycon             denv infoReader ad m (* width *) os x = TastDefinitionPrinting.layoutTycon denv infoReader ad m true (wordL "type") x (* |> Layout.squashTo width *) |>  bufferL os
+let outputTycon             denv infoReader ad m (* width *) os x = TastDefinitionPrinting.layoutTycon denv infoReader ad m true (WordL.keywordType) x (* |> Layout.squashTo width *) |>  bufferL os
+let layoutTycon             denv infoReader ad m (* width *) x = TastDefinitionPrinting.layoutTycon denv infoReader ad m true (wordL (tagKeyword "type")) x (* |> Layout.squashTo width *)
+let layoutUnionCases        denv x    = x |> TastDefinitionPrinting.layoutUnionCaseFields denv true
 let outputUnionCases        denv os x    = x |> TastDefinitionPrinting.layoutUnionCaseFields denv true |> bufferL os
 /// Pass negative number as pos in case of single cased discriminated unions
 let isGeneratedUnionCaseField pos f     = TastDefinitionPrinting.isGeneratedUnionCaseField pos f
 let isGeneratedExceptionField pos f     = TastDefinitionPrinting.isGeneratedExceptionField pos f
 let stringOfTyparConstraint denv tpc  = stringOfTyparConstraints denv [tpc]
 let stringOfTy              denv x    = x |> PrintTypes.layoutType denv |> showL
+let prettyLayoutOfTy        denv x    = x |> PrintTypes.layoutPrettyType denv
 let prettyStringOfTy        denv x    = x |> PrintTypes.layoutPrettyType denv |> showL
 let prettyStringOfTyNoCx    denv x    = x |> PrintTypes.layoutPrettyTypeNoCx denv |> showL
 let stringOfRecdField       denv x    = x |> TastDefinitionPrinting.layoutRecdField false denv |> showL
-let stringOfUnionCase       denv x    = x |> TastDefinitionPrinting.layoutUnionCase denv (wordL "|")  |> showL
+let stringOfUnionCase       denv x    = x |> TastDefinitionPrinting.layoutUnionCase denv (WordL.bar)  |> showL
 let stringOfExnDef          denv x    = x |> TastDefinitionPrinting.layoutExnDefn denv |> showL
 
 let stringOfFSAttrib        denv x  = x |> PrintTypes.layoutAttrib denv |> squareAngleL |> showL

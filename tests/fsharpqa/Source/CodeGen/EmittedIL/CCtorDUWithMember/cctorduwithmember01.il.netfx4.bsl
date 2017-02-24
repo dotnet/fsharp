@@ -238,6 +238,20 @@
       IL_0015:  ret
     } // end of method C::__DebugDisplay
 
+    .method public strict virtual instance string 
+            ToString() cil managed
+    {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      // Code size       22 (0x16)
+      .maxstack  8
+      IL_0000:  ldstr      "%+A"
+      IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class CCtorDUWithMember01a/C,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,class CCtorDUWithMember01a/C>::.ctor(string)
+      IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class CCtorDUWithMember01a/C,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
+      IL_000f:  ldarg.0
+      IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class CCtorDUWithMember01a/C,string>::Invoke(!0)
+      IL_0015:  ret
+    } // end of method C::ToString
+
     .method public hidebysig virtual final 
             instance int32  CompareTo(class CCtorDUWithMember01a/C obj) cil managed
     {
@@ -409,57 +423,32 @@
             instance int32  GetHashCode(class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       40 (0x28)
+      // Code size       15 (0xf)
       .maxstack  3
-      .locals init (int32 V_0,
-               class CCtorDUWithMember01a/C V_1,
-               class CCtorDUWithMember01a/C V_2)
+      .locals init (int32 V_0)
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  ldnull
       IL_0003:  cgt.un
       IL_0005:  brfalse.s  IL_0009
-
       IL_0007:  br.s       IL_000b
-
-      IL_0009:  br.s       IL_0026
-
+      IL_0009:  br.s       IL_0014
       IL_000b:  ldc.i4.0
       IL_000c:  stloc.0
       IL_000d:  ldarg.0
-      IL_000e:  call       instance int32 CCtorDUWithMember01a/C::get_Tag()
-      IL_0013:  ldc.i4.0
-      IL_0014:  bne.un.s   IL_0018
-
-      IL_0016:  br.s       IL_001a
-
-      IL_0018:  br.s       IL_0020
-
-      IL_001a:  ldarg.0
-      IL_001b:  stloc.1
-      IL_001c:  ldc.i4.0
-      IL_001d:  stloc.0
-      IL_001e:  ldloc.0
-      IL_001f:  ret
-
-      IL_0020:  ldarg.0
-      IL_0021:  stloc.2
-      IL_0022:  ldc.i4.1
-      IL_0023:  stloc.0
-      IL_0024:  ldloc.0
-      IL_0025:  ret
-
-      IL_0026:  ldc.i4.0
-      IL_0027:  ret
+      IL_000e:  ldfld      int32 CCtorDUWithMember01a/C::_tag
+      IL_0013:  ret
+      IL_0014:  ldc.i4.0
+      IL_0015:  ret
     } // end of method C::GetHashCode
 
     .method public hidebysig virtual final 
             instance int32  GetHashCode() cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       13 (0xd)
+      // Code size       21 (0x15)
       .maxstack  8
-      .line 3,3 : 6,7 
+      .line 3,3 : 6,7 ''
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()

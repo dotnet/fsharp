@@ -140,7 +140,9 @@ type env =
       /// Are we in a quotation?
       quote : bool 
       /// Are we under [<ReflectedDefinition>]?
-      reflect : bool } 
+      reflect : bool
+      /// Are we in an extern declaration?
+      external : bool } 
 
 let BindTypar env (tp:Typar) = 
     { env with 
@@ -154,7 +156,7 @@ let BindTypars g env (tps:Typar list) =
     let nms = PrettyTypes.PrettyTyparNames (fun _ -> true) env.boundTyparNames tps
     (tps,nms) ||> List.iter2 (fun tp nm -> 
             if PrettyTypes.NeedsPrettyTyparName tp  then 
-                tp.Data.typar_id <- ident (nm,tp.Range))      
+                tp.typar_id <- ident (nm,tp.Range))      
     List.fold BindTypar env tps 
 
 /// Set the set of vals which are arguments in the active lambda. We are allowed to return 
@@ -178,11 +180,12 @@ type cenv =
       mutable usesQuotations : bool
       mutable entryPointGiven:bool  }
 
-let BindVal cenv (v:Val) = 
+let BindVal cenv env (v:Val) = 
     //printfn "binding %s..." v.DisplayName
     let alreadyDone = cenv.boundVals.ContainsKey v.Stamp
     cenv.boundVals.[v.Stamp] <- 1
-    if not alreadyDone &&
+    if not env.external &&
+       not alreadyDone &&
        cenv.reportErrors && 
        not v.HasBeenReferenced && 
        not v.IsCompiledAsTopLevel && 
@@ -195,7 +198,7 @@ let BindVal cenv (v:Val) =
         | _ -> 
             warning (Error(FSComp.SR.chkUnusedValue v.DisplayName, v.Range))
 
-let BindVals cenv vs = List.iter (BindVal cenv) vs
+let BindVals cenv env vs = List.iter (BindVal cenv env) vs
 
 //--------------------------------------------------------------------------
 // approx walk of type
@@ -529,7 +532,7 @@ and CheckExpr (cenv:cenv) (env:env) expr (context:ByrefContext) =
 
     | Expr.Let (bind,body,_,_) ->  
         CheckBinding cenv env false bind  
-        BindVal cenv bind.Var
+        BindVal cenv env bind.Var
         CheckExpr cenv env body context
 
     | Expr.Const (_,m,ty) -> 
@@ -700,7 +703,7 @@ and CheckExpr (cenv:cenv) (env:env) expr (context:ByrefContext) =
         CheckDecisionTreeTargets cenv env targets context
 
     | Expr.LetRec (binds,e,_,_) ->  
-        BindVals cenv (valsOfBinds binds)
+        BindVals cenv env (valsOfBinds binds)
         CheckBindings cenv env binds
         CheckExprNoByrefs cenv env e
 
@@ -943,7 +946,7 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
             restArgs |> List.iter (fun arg -> if isByrefTy cenv.g arg.Type then arg.SetHasBeenReferenced())
 
         syntacticArgs |> List.iter (CheckValSpec cenv env)
-        syntacticArgs |> List.iter (BindVal cenv)
+        syntacticArgs |> List.iter (BindVal cenv env)
 
         // Trigger a test hook
         match memInfo with 
@@ -1014,7 +1017,7 @@ and CheckDecisionTreeTargets cenv env targets context =
     targets |> Array.iter (CheckDecisionTreeTarget cenv env context) 
 
 and CheckDecisionTreeTarget cenv env context (TTarget(vs,e,_)) = 
-    BindVals cenv vs 
+    BindVals cenv env vs 
     vs |> List.iter (CheckValSpec cenv env)
     CheckExpr cenv env e context 
 
@@ -1031,12 +1034,12 @@ and CheckDecisionTreeSwitch cenv env (e,cases,dflt,m) =
 
 and CheckDecisionTreeTest cenv env m discrim =
     match discrim with
-    | Test.UnionCase (_,tinst) -> CheckTypeInstPermitByrefs cenv env m tinst
-    | Test.ArrayLength (_,typ) -> CheckTypePermitByrefs cenv env m typ
-    | Test.Const _ -> ()
-    | Test.IsNull -> ()
-    | Test.IsInst (srcTyp,dstTyp)    -> CheckTypePermitByrefs cenv env m srcTyp; CheckTypePermitByrefs cenv env m dstTyp
-    | Test.ActivePatternCase (exp,_,_,_,_)     -> CheckExprNoByrefs cenv env exp
+    | DecisionTreeTest.UnionCase (_,tinst) -> CheckTypeInstPermitByrefs cenv env m tinst
+    | DecisionTreeTest.ArrayLength (_,typ) -> CheckTypePermitByrefs cenv env m typ
+    | DecisionTreeTest.Const _ -> ()
+    | DecisionTreeTest.IsNull -> ()
+    | DecisionTreeTest.IsInst (srcTyp,dstTyp)    -> CheckTypePermitByrefs cenv env m srcTyp; CheckTypePermitByrefs cenv env m dstTyp
+    | DecisionTreeTest.ActivePatternCase (exp,_,_,_,_)     -> CheckExprNoByrefs cenv env exp
 
 and CheckAttrib cenv env (Attrib(_,_,args,props,_,_,_)) = 
     props |> List.iter (fun (AttribNamedArg(_,_,_,expr)) -> CheckAttribExpr cenv env expr)
@@ -1136,6 +1139,8 @@ and CheckBinding cenv env alwaysCheckNoReraise (TBind(v,bindRhs,_) as bind) =
     let isTop = Option.isSome bind.Var.ValReprInfo
     //printfn "visiting %s..." v.DisplayName
 
+    let env = { env with external = env.external || cenv.g.attrib_DllImportAttribute |> Option.exists (fun attr -> HasFSharpAttribute cenv.g attr v.Attribs) }
+
     // Check that active patterns don't have free type variables in their result
     match TryGetActivePatternInfo (mkLocalValRef v) with 
     | Some _apinfo when _apinfo.ActiveTags.Length > 1 -> 
@@ -1190,7 +1195,7 @@ and CheckBinding cenv env alwaysCheckNoReraise (TBind(v,bindRhs,_) as bind) =
 
                 // If we've already recorded a definition then skip this 
                 match v.ReflectedDefinition with 
-                | None -> v.Data.val_defn <- Some bindRhs
+                | None -> v.val_defn <- Some bindRhs
                 | Some _ -> ()
                 // Run the conversion process over the reflected definition to report any errors in the
                 // front end rather than the back end. We currently re-run this during ilxgen.fs but there's
@@ -1525,7 +1530,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
                   setterArgs.Length <> getterArgs.Length)
                 || 
                  (let nargs = pinfo.GetParamTypes(cenv.amap,m).Length
-                  others |> List.exists (fun pinfo2 -> (pinfo2.GetParamTypes(cenv.amap,m).Length = 0) <> (nargs = 0)))) then 
+                  others |> List.exists (fun pinfo2 -> (isNil(pinfo2.GetParamTypes(cenv.amap,m))) <> (nargs = 0)))) then 
                   
                   errorR(Error(FSComp.SR.chkPropertySameNameIndexer(nm),m))
 
@@ -1669,13 +1674,13 @@ and CheckDefnInModule cenv env x =
     match x with 
     | TMDefRec(isRec,tycons,mspecs,m) -> 
         CheckNothingAfterEntryPoint cenv m
-        if isRec then BindVals cenv (allValsOfModDef x |> Seq.toList)
+        if isRec then BindVals cenv env (allValsOfModDef x |> Seq.toList)
         CheckEntityDefns cenv env tycons
         List.iter (CheckModuleSpec cenv env) mspecs
     | TMDefLet(bind,m)  -> 
         CheckNothingAfterEntryPoint cenv m
         CheckModuleBinding cenv env bind 
-        BindVal cenv bind.Var
+        BindVal cenv env bind.Var
     | TMDefDo(e,m)  -> 
         CheckNothingAfterEntryPoint cenv m
         CheckNoReraise cenv None e
@@ -1686,7 +1691,7 @@ and CheckDefnInModule cenv env x =
 and CheckModuleSpec cenv env x =
     match x with 
     | ModuleOrNamespaceBinding.Binding bind ->
-        BindVals cenv (valsOfBinds [bind])
+        BindVals cenv env (valsOfBinds [bind])
         CheckModuleBinding cenv env bind
     | ModuleOrNamespaceBinding.Module (mspec, rhs) ->
         CheckEntityDefn cenv env mspec
@@ -1726,7 +1731,8 @@ let CheckTopImpl (g,amap,reportErrors,infoReader,internalsVisibleToPaths,viewCcu
           boundTyparNames=[]
           argVals = ValMap.Empty
           boundTypars= TyparMap.Empty
-          reflect=false }
+          reflect=false
+          external=false }
 
     CheckModuleExpr cenv env mexpr
     CheckAttribs cenv env extraAttribs

@@ -4,6 +4,8 @@
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
     <ProjectGuid>{88e2d422-6852-46e3-a740-83e391dc7973}</ProjectGuid>
+    <DOTNET_PUBLISH_TEST>true</DOTNET_PUBLISH_TEST>
+    <DOTNET_PUBLISH_COMPILERS>false</DOTNET_PUBLISH_COMPILERS>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
   <PropertyGroup>
@@ -61,26 +63,7 @@
         <HintPath Condition="'$(TargetFramework)' != 'profile47' ">..\..\..\packages\System.ValueTuple.4.3.0\lib\portable-net40+sl4+win8+wp8\System.ValueTuple.dll</HintPath>
         <Private>True</Private>
     </Reference>
-    <Reference Include="TupleSample">
-        <HintPath>..\..\..\packages\Microsoft.FSharp.TupleSample.1.0.0-alpha-161121/lib/portable-net40+sl4+win8+wp8/TupleSample.dll</HintPath>
-        <Private>True</Private>
-    </Reference>
   </ItemGroup>
-<!--
-  <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
-    <Reference Include="nunit.framework, Version=3.5.0.0, Culture=neutral, PublicKeyToken=2638cd05610744eb">
-        <SpecificVersion>true</SpecificVersion>
-        <Private>True</Private>
-        <HintPath>..\..\..\packages\NUnit.3.5.0\lib\portable-net45+win8+wp8+wpa81+Xamarin.Mac+MonoAndroid10+MonoTouch10+Xamarin.iOS10\nunit.framework.dll</HintPath>
-    </Reference>
-    <Reference Include="nunitlite, Version=3.5.0.0, Culture=neutral, PublicKeyToken=2638cd05610744eb">
-        <SpecificVersion>true</SpecificVersion>
-        <Private>True</Private>
-        <HintPath>..\..\..\packages\NUnitLite.3.5.0\lib\portable-net45+win8+wp8+wpa81+Xamarin.Mac\nunitlite.dll</HintPath>
-    </Reference>
-    <None Include="project.json" />
-  </ItemGroup>
--->
   <ItemGroup Condition="(!$(TargetFramework.Contains('portable'))) and '$(TargetFramework)' != 'coreclr'">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
@@ -138,10 +121,10 @@
     <Compile Include="SurfaceArea.$(TargetFramework).fs" />
     <Compile Include="Program.fs" Condition="'$(TargetFramework)' == 'coreclr'" />
     <CopyAndSubstituteText Include="FSharp.Core.Unittests.dll.config">
-		<TargetFilename>FSharp.Core.Unittests.dll.config</TargetFilename>
-		<Pattern1>FSCoreVersion</Pattern1>
-		<Replacement1>$(FSCoreVersion)</Replacement1>
-	</CopyAndSubstituteText>
+      <TargetFilename>FSharp.Core.Unittests.dll.config</TargetFilename>
+      <Pattern1>FSCoreVersion</Pattern1>
+      <Replacement1>$(FSCoreVersion)</Replacement1>
+    </CopyAndSubstituteText>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
 </Project>

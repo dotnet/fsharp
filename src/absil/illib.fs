@@ -22,7 +22,7 @@ let (>>>&) (x:int32) (n:int32) = int32 (uint32 x >>> n)
 
 let notlazy v = Lazy<_>.CreateFromValue v
 
-let inline isNil x = List.isEmpty x
+let inline isNil l = List.isEmpty l
 let inline isNonNull x = not (isNull x)
 let inline nonNull msg x = if isNull x then failwith ("null: " ^ msg) else x
 let (===) x y = LanguagePrimitives.PhysicalEquality x y
@@ -442,13 +442,51 @@ module String =
 
 module Dictionary = 
 
-    let inline ofList l = 
-        let dict = new System.Collections.Generic.Dictionary<_,_>(List.length l, HashIdentity.Structural)
-        l |> List.iter (fun (k,v) -> dict.Add(k,v))
-        dict
+    let inline newWithSize (size: int) = System.Collections.Generic.Dictionary<_,_>(size, HashIdentity.Structural)
         
+
 module Lazy = 
     let force (x: Lazy<'T>) = x.Force()
+
+//----------------------------------------------------------------------------
+// Singe threaded execution and mutual exclusion
+
+/// Represents a permission active at this point in execution
+type ExecutionToken = interface end
+
+/// Represents a token that indicates execution on the compilation thread, i.e. 
+///   - we have full access to the (partially mutable) TAST and TcImports data structures
+///   - compiler execution may result in type provider invocations when resolving types and members
+///   - we can access various caches in the SourceCodeServices
+///
+/// Like other execution tokens this should be passed via argument passing and not captured/stored beyond
+/// the lifetime of stack-based calls. This is not checked, it is a discipline withinn the compiler code. 
+type CompilationThreadToken() = interface ExecutionToken
+
+/// Represnts a place where we are stating that execution on the compilation thread is required.  The
+/// reason why will be documented in a comment in the code at the callsite.
+let RequireCompilationThread (_ctok: CompilationThreadToken) = ()
+
+/// Represnts a place in the compiler codebase where we are passed a CompilationThreadToken unnecessarily.
+/// This reprents code that may potentially not need to be executed on the compilation thread.
+let DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  (_ctok: CompilationThreadToken) = ()
+
+/// Represnts a place in the compiler codebase where we assume we are executing on a compilation thread
+let AssumeCompilationThreadWithoutEvidence () = Unchecked.defaultof<CompilationThreadToken>
+
+/// Represents a token that indicates execution on a any of several potential user threads calling the F# compiler services.
+type AnyCallerThreadToken() = interface ExecutionToken
+let AssumeAnyCallerThreadWithoutEvidence () = Unchecked.defaultof<AnyCallerThreadToken>
+
+/// A base type for various types of tokens that must be passed when a lock is taken.
+/// Each different static lock should declare a new subtype of this type.
+type LockToken = inherit ExecutionToken
+let AssumeLockWithoutEvidence<'LockTokenType when 'LockTokenType :> LockToken> () = Unchecked.defaultof<'LockTokenType>
+
+/// Encapsulates a lock associated with a particular token-type representing the acquisition of that lock.
+type Lock<'LockTokenType when 'LockTokenType :> LockToken>() = 
+    let lockObj = obj()
+    member __.AcquireLock f = lock lockObj (fun () -> f (AssumeLockWithoutEvidence<'LockTokenType>()))
 
 //---------------------------------------------------
 // Misc
@@ -467,6 +505,7 @@ type ResultOrException<'TResult> =
 module ResultOrException = 
 
     let success a = Result a
+
     let raze (b:exn) = Exception b
 
     // map
@@ -485,6 +524,135 @@ module ResultOrException =
         | Result x -> success x
         | Exception _err -> f()
 
+[<RequireQualifiedAccess>] 
+type ValueOrCancelled<'TResult> =
+    | Value of 'TResult
+    | Cancelled of OperationCanceledException
+
+/// Represents a cancellable computation with explicit representation of a cancelled result.
+///
+/// A cancellable computation is passed may be cancelled via a CancellationToken, which is propagated implicitly.  
+/// If cancellation occurs, it is propagated as data rather than by raising an OperationCancelledException.  
+type Cancellable<'TResult> = Cancellable of (System.Threading.CancellationToken -> ValueOrCancelled<'TResult>)
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module Cancellable = 
+
+    /// Run a cancellable computation using the given cancellation token
+    let run (ct: System.Threading.CancellationToken) (Cancellable oper) = 
+        if ct.IsCancellationRequested then 
+            ValueOrCancelled.Cancelled (OperationCanceledException()) 
+        else
+            oper ct 
+
+    /// Bind the result of a cancellable computation
+    let bind f comp1 = 
+       Cancellable (fun ct -> 
+            match run ct comp1 with 
+            | ValueOrCancelled.Value v1 -> run ct (f v1) 
+            | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
+
+    /// Map the result of a cancellable computation
+    let map f oper = 
+       Cancellable (fun ct -> 
+           match run ct oper with 
+           | ValueOrCancelled.Value res -> ValueOrCancelled.Value (f res)
+           | ValueOrCancelled.Cancelled err -> ValueOrCancelled.Cancelled err)
+                    
+    /// Return a simple value as the result of a cancellable computation
+    let ret x = Cancellable (fun _ -> ValueOrCancelled.Value x)
+
+    /// Fold a cancellable computation along a sequence of inputs
+    let fold f acc seq = 
+        Cancellable (fun ct -> 
+           (ValueOrCancelled.Value acc, seq) 
+           ||> Seq.fold (fun acc x -> 
+               match acc with 
+               | ValueOrCancelled.Value accv -> run ct (f accv x)
+               | res -> res))
+    
+    /// Iterate a cancellable computation over a collection
+    let each f seq = 
+        Cancellable (fun ct -> 
+           (ValueOrCancelled.Value [], seq) 
+           ||> Seq.fold (fun acc x -> 
+               match acc with 
+               | ValueOrCancelled.Value acc -> 
+                   match run ct (f x) with 
+                   | ValueOrCancelled.Value x2 -> ValueOrCancelled.Value (x2 :: acc)
+                   | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1
+               | canc -> canc)
+           |> function 
+               | ValueOrCancelled.Value acc -> ValueOrCancelled.Value (List.rev acc)
+               | canc -> canc)
+    
+    /// Delay a cancellable computation
+    let delay (f: unit -> Cancellable<'T>) = Cancellable (fun ct -> let (Cancellable g) = f() in g ct)
+
+    /// Run the computation in a mode where it may not be cancelled. The computation never results in a 
+    /// ValueOrCancelled.Cancelled.
+    let runWithoutCancellation comp = 
+        let res = run System.Threading.CancellationToken.None comp 
+        match res with 
+        | ValueOrCancelled.Cancelled _ -> failwith "unexpected cancellation" 
+        | ValueOrCancelled.Value r -> r
+
+    /// Bind the cancellation token associated with the computation
+    let token () = Cancellable (fun ct -> ValueOrCancelled.Value ct)
+
+    /// Represents a canceled computation
+    let canceled() = Cancellable (fun _ -> ValueOrCancelled.Cancelled (new OperationCanceledException()))
+
+    /// Catch exceptions in a computation
+    let private catch (Cancellable e) = 
+        Cancellable (fun ct -> 
+            try 
+                match e ct with 
+                | ValueOrCancelled.Value r -> ValueOrCancelled.Value (Choice1Of2 r) 
+                | ValueOrCancelled.Cancelled e -> ValueOrCancelled.Cancelled e 
+            with err -> 
+                ValueOrCancelled.Value (Choice2Of2 err))
+
+    /// Implement try/finally for a cancellable computation
+    let tryFinally e compensation =    
+        catch e |> bind (fun res ->  
+            compensation();
+            match res with Choice1Of2 r -> ret r | Choice2Of2 err -> raise err)
+
+    /// Implement try/with for a cancellable computation
+    let tryWith e handler =    
+        catch e |> bind (fun res ->  
+            match res with Choice1Of2 r -> ret r | Choice2Of2 err -> handler err)
+    
+    // /// Run the cancellable computation within an Async computation.  This isn't actaully used in the codebase, but left
+    // here in case we need it in the future 
+    //
+    // let toAsync e =    
+    //     async { 
+    //       let! ct = Async.CancellationToken
+    //       return! 
+    //          Async.FromContinuations(fun (cont, econt, ccont) -> 
+    //            // Run the computation synchronously using the given cancellation token
+    //            let res = try Choice1Of2 (run ct e) with err -> Choice2Of2 err
+    //            match res with 
+    //            | Choice1Of2 (ValueOrCancelled.Value v) -> cont v
+    //            | Choice1Of2 (ValueOrCancelled.Cancelled err) -> ccont err
+    //            | Choice2Of2 err -> econt err) 
+    //     }
+    
+type CancellableBuilder() = 
+    member x.Bind(e,k) = Cancellable.bind k e
+    member x.Return(v) = Cancellable.ret v
+    member x.ReturnFrom(v) = v
+    member x.Combine(e1,e2) = e1 |> Cancellable.bind (fun () -> e2)
+    member x.TryWith(e,handler) = Cancellable.tryWith e handler
+    member x.Using(resource,e) = Cancellable.tryFinally (e resource) (fun () -> (resource :> System.IDisposable).Dispose())
+    member x.TryFinally(e,compensation) =  Cancellable.tryFinally e compensation
+    member x.Delay(f) = Cancellable.delay f
+    member x.Zero() = Cancellable.ret ()
+
+let cancellable = CancellableBuilder()
+
 /// Computations that can cooperatively yield by returning a continuation
 ///
 ///    - Any yield of a NotYetDone should typically be "abandonable" without adverse consequences. No resource release
@@ -494,52 +662,72 @@ module ResultOrException =
 ///      captured by the NotYetDone closure. Computations do not need to be restartable.
 ///
 ///    - The key thing is that you can take an Eventually value and run it with 
-///      Eventually.repeatedlyProgressUntilDoneOrTimeShareOver
+///      Eventually.repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled
+///
+///    - Cancellation results in a suspended computation rather than complete abandonment
 type Eventually<'T> = 
     | Done of 'T 
-    | NotYetDone of (unit -> Eventually<'T>)
+    | NotYetDone of (CompilationThreadToken -> Eventually<'T>)
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Eventually = 
+    open System.Threading
+
     let rec box e = 
         match e with 
         | Done x -> Done (Operators.box x) 
-        | NotYetDone (work) -> NotYetDone (fun () -> box (work()))
+        | NotYetDone (work) -> NotYetDone (fun ctok -> box (work ctok))
 
-    let rec forceWhile check e  = 
+    let rec forceWhile ctok check e  = 
         match e with 
         | Done x -> Some(x)
         | NotYetDone (work) -> 
             if not(check()) 
             then None
-            else forceWhile check (work()) 
+            else forceWhile ctok check (work ctok) 
 
-    let force e = Option.get (forceWhile (fun () -> true) e)
+    let force ctok e = Option.get (forceWhile ctok (fun () -> true) e)
+
         
     /// Keep running the computation bit by bit until a time limit is reached.
     /// The runner gets called each time the computation is restarted
-    let repeatedlyProgressUntilDoneOrTimeShareOver timeShareInMilliseconds runner e = 
+    ///
+    /// If cancellation happens, the operation is left half-complete, ready to resume.
+    let repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled timeShareInMilliseconds (ct: CancellationToken) runner e = 
         let sw = new System.Diagnostics.Stopwatch() 
-        let rec runTimeShare e = 
-          runner (fun () -> 
+        let rec runTimeShare ctok e = 
+          runner ctok (fun ctok -> 
             sw.Reset()
             sw.Start(); 
-            let rec loop(e) = 
-                match e with 
-                | Done _ -> e
-                | NotYetDone work -> 
-                    if sw.ElapsedMilliseconds > timeShareInMilliseconds then 
+            let rec loop ctok ev2 = 
+                match ev2 with 
+                | Done _ -> ev2
+                | NotYetDone work ->
+                    if ct.IsCancellationRequested || sw.ElapsedMilliseconds > timeShareInMilliseconds then 
                         sw.Stop();
-                        NotYetDone(fun () -> runTimeShare e) 
+                        NotYetDone(fun ctok -> runTimeShare ctok ev2) 
                     else 
-                        loop(work())
-            loop(e))
-        runTimeShare e
+                        loop ctok (work ctok)
+            loop ctok e)
+        NotYetDone (fun ctok -> runTimeShare ctok e)
+    
+    /// Keep running the asynchronous computation bit by bit. The runner gets called each time the computation is restarted.
+    /// Can be cancelled as an Async in the normal way.
+    let forceAsync (runner: (CompilationThreadToken -> Eventually<'T>) -> Async<Eventually<'T>>) (e: Eventually<'T>) : Async<'T option> =
+        let rec loop (e: Eventually<'T>) =
+            async {
+                match e with 
+                | Done x -> return Some x
+                | NotYetDone work ->
+                    let! r = runner work
+                    return! loop r
+            }
+        loop e
 
     let rec bind k e = 
         match e with 
         | Done x -> k x 
-        | NotYetDone work -> NotYetDone (fun () -> bind k (work()))
+        | NotYetDone work -> NotYetDone (fun ctok -> bind k (work ctok))
 
     let fold f acc seq = 
         (Done acc,seq) ||> Seq.fold  (fun acc x -> acc |> bind (fun acc -> f acc x))
@@ -548,13 +736,13 @@ module Eventually =
         match e with 
         | Done x -> Done(Result x)
         | NotYetDone work -> 
-            NotYetDone (fun () -> 
-                let res = try Result(work()) with | e -> Exception e 
+            NotYetDone (fun ctok -> 
+                let res = try Result(work ctok) with | e -> Exception e 
                 match res with 
                 | Result cont -> catch cont
                 | Exception e -> Done(Exception e))
     
-    let delay f = NotYetDone (fun () -> f())
+    let delay (f: unit -> Eventually<'T>) = NotYetDone (fun _ctok -> f())
 
     let tryFinally e compensation =    
         catch (e) 
@@ -566,6 +754,10 @@ module Eventually =
     let tryWith e handler =    
         catch e 
         |> bind (function Result v -> Done v | Exception e -> handler e)
+    
+    // All eventually computations carry a CompiationThreadToken
+    let token =    
+        NotYetDone (fun ctok -> Done ctok)
     
 type EventuallyBuilder() = 
     member x.Bind(e,k) = Eventually.bind k e
@@ -757,10 +949,6 @@ module NameMap =
     let map f (l : NameMap<'T>) = Map.map (fun _ x -> f x) l
 
     let iter f (l : NameMap<'T>) = Map.iter (fun _k v -> f v) l
-
-    let iteri f (l : NameMap<'T>) = Map.iter f l
-
-    let mapi f (l : NameMap<'T>) = Map.map f l
 
     let partition f (l : NameMap<'T>) = Map.filter (fun _ x-> f x) l, Map.filter (fun _ x -> not (f x)) l
 

@@ -82,6 +82,25 @@ type ListType() =
         CheckThrowsInvalidOperationExn(fun () -> enum.Current |> ignore)
         Assert.AreEqual(false, enum.MoveNext())
         CheckThrowsInvalidOperationExn(fun () -> enum.Current |> ignore)
+ 
+ #if !FSCORE_PORTABLE_OLD
+    [<Test>]
+    member this.IReadOnlyCollection_T() =
+        
+        // Legit IReadOnlyCollection_T
+        let c = ['a'; 'b'; 'c'] :> IReadOnlyCollection<char>
+
+        Assert.AreEqual(c.Count, Seq.length c)
+
+        let c = [1..10] :> IReadOnlyCollection<int>
+
+        Assert.AreEqual(c.Count, 10)
+
+        // Empty IReadOnlyCollection_T
+        let c = [] :> IReadOnlyCollection<int>
+
+        Assert.AreEqual(c.Count, 0)
+#endif
     
     // Base class methods
     [<Test>]
@@ -223,7 +242,7 @@ type ListType() =
         Assert.AreEqual(lst.[1..], [2;3;4;5;6])
         Assert.AreEqual(lst.[2..], [3;4;5;6])
         Assert.AreEqual(lst.[5..], [6])
-        Assert.AreEqual(lst.[6..], ([] : int list))
+        Assert.AreEqual(lst.[6..], ([]: int list))
         CheckThrowsIndexOutRangException((fun _ -> lst.[7..] |> ignore))        
 
         CheckThrowsIndexOutRangException((fun _ -> lst.[.. -1] |> ignore))
@@ -235,8 +254,8 @@ type ListType() =
         Assert.AreEqual(lst.[..5], [1;2;3;4;5;6])
         CheckThrowsIndexOutRangException((fun _ -> lst.[..6] |> ignore))        
 
-        Assert.AreEqual(lst.[1..-1], ([] : int list))
-        Assert.AreEqual(lst.[1..0], ([] : int list))
+        Assert.AreEqual(lst.[1..-1], ([]: int list))
+        Assert.AreEqual(lst.[1..0], ([]: int list))
         Assert.AreEqual(lst.[1..1], [2])
         Assert.AreEqual(lst.[1..2], [2;3])
         Assert.AreEqual(lst.[1..3], [2;3;4])
@@ -247,17 +266,17 @@ type ListType() =
         CheckThrowsIndexOutRangException((fun _ -> lst.[-1..1] |> ignore))
         Assert.AreEqual(lst.[0..1], [1;2])
         Assert.AreEqual(lst.[1..1], [2])
-        Assert.AreEqual(lst.[2..1], ([] : int list))
-        Assert.AreEqual(lst.[3..1], ([] : int list))
-        Assert.AreEqual(lst.[4..1], ([] : int list))
+        Assert.AreEqual(lst.[2..1], ([]: int list))
+        Assert.AreEqual(lst.[3..1], ([]: int list))
+        Assert.AreEqual(lst.[4..1], ([]: int list))
 
-        Assert.AreEqual(lst.[-3..-4], ([] : int list))
+        Assert.AreEqual(lst.[-3..-4], ([]: int list))
         CheckThrowsIndexOutRangException((fun _ -> lst.[-4..-3] |> ignore))
 
         let empty : obj list = List.empty
-        Assert.AreEqual(empty.[*], [])
-        Assert.AreEqual(empty.[5..3], [])
-        Assert.AreEqual(empty.[0..], [])
+        Assert.AreEqual(empty.[*], ([]: obj list))
+        Assert.AreEqual(empty.[5..3], ([]: obj list))
+        Assert.AreEqual(empty.[0..], ([]: obj list))
         CheckThrowsIndexOutRangException((fun _ -> empty.[..0] |> ignore))
         CheckThrowsIndexOutRangException((fun _ -> empty.[0..0] |> ignore))
         CheckThrowsIndexOutRangException((fun _ -> empty.[0..1] |> ignore))

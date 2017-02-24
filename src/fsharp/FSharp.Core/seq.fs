@@ -542,7 +542,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
     module RuntimeHelpers =
 
         [<Struct; NoComparison; NoEquality>]
-        type internal StructBox<'T when 'T : equality>(value:'T) =
+        type internal StructBox<'T when 'T:equality>(value:'T) =
             member x.Value = value
             static member Comparer =
                 let gcomparer = HashIdentity.Structural<'T>

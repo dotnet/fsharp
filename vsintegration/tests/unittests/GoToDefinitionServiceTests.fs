@@ -90,6 +90,7 @@ let _ = Module1.foo 1
             IsIncompleteTypeCheckEnvironment = true
             UseScriptResolutionRules = false
             LoadTime = DateTime.MaxValue
+            OriginalLoadReferences = []
             UnresolvedReferences = None
             ExtraProjectInfo = None
         }
@@ -99,7 +100,8 @@ let _ = Module1.foo 1
         let caretPosition = fileContents.IndexOf(caretMarker) + caretMarker.Length - 1 // inside the marker
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
         let actual = 
-           FSharpGoToDefinitionService.FindDefinition(FSharpChecker.Instance, documentId, SourceText.From(fileContents), filePath, caretPosition, [], options, 0, CancellationToken.None) |> Async.RunSynchronously
+           FSharpGoToDefinitionService.FindDefinition(FSharpChecker.Instance, documentId, SourceText.From(fileContents), filePath, caretPosition, [], options, 0) 
+           |> Async.RunSynchronously
            |> Option.map (fun range -> (range.StartLine, range.EndLine, range.StartColumn, range.EndColumn))
 
         if actual <> expected then 

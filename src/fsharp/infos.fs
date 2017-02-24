@@ -183,43 +183,44 @@ let private FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref
                    (loop (ndeep+1)) 
                    (GetImmediateInterfacesOfType skipUnref g amap m typ) 
                       (loop ndeep g.obj_ty state)
-            elif isTyparTy g typ then 
-                let tp = destTyparTy g typ
-                let state = loop (ndeep+1) g.obj_ty state 
-                List.foldBack 
-                    (fun x vacc -> 
-                      match x with 
-                      | TyparConstraint.MayResolveMember _
-                      | TyparConstraint.DefaultsTo _
-                      | TyparConstraint.SupportsComparison _
-                      | TyparConstraint.SupportsEquality _
-                      | TyparConstraint.IsEnum _
-                      | TyparConstraint.IsDelegate _
-                      | TyparConstraint.SupportsNull _
-                      | TyparConstraint.IsNonNullableStruct _ 
-                      | TyparConstraint.IsUnmanaged _ 
-                      | TyparConstraint.IsReferenceType _ 
-                      | TyparConstraint.SimpleChoice _ 
-                      | TyparConstraint.RequiresDefaultConstructor _ -> vacc
-                      | TyparConstraint.CoercesTo(cty,_) -> 
-                              loop (ndeep + 1)  cty vacc) 
-                    tp.Constraints 
-                    state
-            else 
-                let state = 
-                    if followInterfaces then 
-                        List.foldBack 
-                          (loop (ndeep+1)) 
-                          (GetImmediateInterfacesOfType skipUnref g amap m typ) 
-                          state 
-                    else 
+            else
+                match tryDestTyparTy g typ with
+                | Some tp ->
+                    let state = loop (ndeep+1) g.obj_ty state 
+                    List.foldBack 
+                        (fun x vacc -> 
+                          match x with 
+                          | TyparConstraint.MayResolveMember _
+                          | TyparConstraint.DefaultsTo _
+                          | TyparConstraint.SupportsComparison _
+                          | TyparConstraint.SupportsEquality _
+                          | TyparConstraint.IsEnum _
+                          | TyparConstraint.IsDelegate _
+                          | TyparConstraint.SupportsNull _
+                          | TyparConstraint.IsNonNullableStruct _ 
+                          | TyparConstraint.IsUnmanaged _ 
+                          | TyparConstraint.IsReferenceType _ 
+                          | TyparConstraint.SimpleChoice _ 
+                          | TyparConstraint.RequiresDefaultConstructor _ -> vacc
+                          | TyparConstraint.CoercesTo(cty,_) -> 
+                                  loop (ndeep + 1)  cty vacc) 
+                        tp.Constraints 
                         state
-                let state = 
-                    Option.foldBack 
-                      (loop (ndeep+1)) 
-                      (GetSuperTypeOfType g amap m typ) 
-                      state
-                state
+                | None -> 
+                    let state = 
+                        if followInterfaces then 
+                            List.foldBack 
+                              (loop (ndeep+1)) 
+                              (GetImmediateInterfacesOfType skipUnref g amap m typ) 
+                              state 
+                        else 
+                            state
+                    let state = 
+                        Option.foldBack 
+                          (loop (ndeep+1)) 
+                          (GetSuperTypeOfType g amap m typ) 
+                          state
+                    state
         let acc = visitor typ acc
         (visitedTycon,visited,acc)
     loop 0 typ (Set.empty,TyconRefMultiMap<_>.Empty,acc)  |> p33
@@ -1052,7 +1053,10 @@ type MethInfo =
     member x.IsClassConstructor =
         match x with 
         | ILMeth(_,ilmeth,_) -> ilmeth.IsClassConstructor
-        | FSMeth _ -> false
+        | FSMeth(_,_,vref,_) -> 
+             match vref.TryDeref with
+             | Some x -> x.IsClassConstructor
+             | _ -> false
         | DefaultStructCtor _ -> false
 #if EXTENSIONTYPING
         | ProvidedMeth(_,mi,_,m) -> mi.PUntaint((fun mi -> mi.IsConstructor && mi.IsStatic), m) // Note: these are never public anyway
@@ -2354,5 +2358,3 @@ let PropInfosEquivByNameAndSig erasureFlag g amap m (pinfo:PropInfo) (pinfo2:Pro
     let retTy = pinfo.GetPropertyType(amap,m)
     let retTy2 = pinfo2.GetPropertyType(amap,m) 
     typeEquivAux erasureFlag g retTy retTy2
-
-
