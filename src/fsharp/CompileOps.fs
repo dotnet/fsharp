@@ -4907,7 +4907,6 @@ module ScriptPreprocessClosure =
 
     let PaketToolName = "paket.exe"
     let ResolvePackages (implicitIncludeDir: string, scriptName: string, packageManagerTextLines: string list, m) =
-        let tempDir = Path.Combine(Path.Combine(Path.GetTempPath(),"fsharp"),"packages"+string(hash scriptName))
         let appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)
         let paketExePathOpt = 
             let rec loop dir = 
@@ -4929,35 +4928,50 @@ module ScriptPreprocessClosure =
             | None -> 
                  let paketPath = Path.Combine (appData, ".paket", PaketToolName)
                  if File.Exists paketPath then Some paketPath else None
-
+        
         match paketExePathOpt with 
         | None -> 
             errorR(Error(FSComp.SR.packageManagerNotFound(implicitIncludeDir, appData),m))
             None
 
         | Some paketExePath ->
-            if not (Directory.Exists tempDir) then 
-                Directory.CreateDirectory tempDir |> ignore
+            let paketDepsFile,packageManagerTextLines =
+                let rec findDepsFile dir =
+                    let fi = FileInfo(Path.Combine(dir,"paket.dependencies"))
+                    if fi.Exists then
+                        fi,[ yield! Array.toList (File.ReadAllLines fi.FullName); yield! packageManagerTextLines]
+                    elif fi.Directory.Parent <> null then
+                        findDepsFile fi.Directory.Parent.FullName
+                    else
+                        let tempDir = Path.Combine(Path.Combine(Path.GetTempPath(),"fsharp"),"packages"+string(hash scriptName))
+                        if not (Directory.Exists tempDir) then
+                            Directory.CreateDirectory tempDir |> ignore
+                        let fi = FileInfo(Path.Combine(tempDir,"paket.dependencies"))
+                        File.WriteAllText(fi.FullName,"source https://nuget.org/api/v2" + Environment.NewLine)
+                        fi,[ yield "framework: net461"; yield "source https://nuget.org/api/v2"; yield! packageManagerTextLines]
+           
+                findDepsFile implicitIncludeDir
 
-            let paketDepsFile = Path.Combine(tempDir, "paket.dependencies")
-            match packageManagerExecTable.TryGetValue((paketDepsFile, paketExePath)) with 
-            | (true, (t, loadScript)) when File.Exists paketDepsFile  && File.Exists loadScript && (t = packageManagerTextLines) -> 
+            let workingDir = paketDepsFile.Directory.FullName
+
+            match packageManagerExecTable.TryGetValue((paketDepsFile.FullName, paketExePath)) with 
+            | (true, (t, loadScript)) when File.Exists paketDepsFile.FullName && File.Exists loadScript && (t = packageManagerTextLines) -> 
                 printfn "skipping running package resolution... already done that"
                 Some loadScript
 
             | _ ->
-                File.WriteAllLines(paketDepsFile, [ yield "framework: net461"; yield "source https://nuget.org/api/v2"; yield! packageManagerTextLines ])
-                printfn "running package resolution in '%s'..." tempDir
-                let startInfo = System.Diagnostics.ProcessStartInfo(FileName=paketExePath, WorkingDirectory=tempDir, Arguments="install --generate-load-scripts", UseShellExecute=false)
+                File.WriteAllLines(paketDepsFile.FullName, packageManagerTextLines)
+                printfn "running package resolution in '%s'..." workingDir
+                let startInfo = System.Diagnostics.ProcessStartInfo(FileName=paketExePath, WorkingDirectory=workingDir, Arguments="install --generate-load-scripts", UseShellExecute=false)
                 let p = System.Diagnostics.Process.Start(startInfo)
                 p.WaitForExit()
                 printfn "done running package resolution..."
                 if p.ExitCode <> 0 then
-                    errorR(Error(FSComp.SR.packageResolutionFailed(paketExePath, tempDir),m))
+                    errorR(Error(FSComp.SR.packageResolutionFailed(paketExePath, workingDir),m))
                     None
                 else
-                    let loadScript = Path.Combine(tempDir,".paket","load","main.group.fsx")
-                    packageManagerExecTable.[(paketDepsFile, paketExePath)] <- (packageManagerTextLines, loadScript)
+                    let loadScript = Path.Combine(workingDir,".paket","load","main.group.fsx")
+                    packageManagerExecTable.[(paketDepsFile.FullName, paketExePath)] <- (packageManagerTextLines, loadScript)
                     Some loadScript
 
 
