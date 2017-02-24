@@ -3,7 +3,6 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Composition
 open System.Collections.Generic
 open System.Collections.Immutable
 open System.Threading
@@ -13,27 +12,15 @@ open System.Runtime.CompilerServices
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.Classification
-open Microsoft.CodeAnalysis.Editor
-open Microsoft.CodeAnalysis.Host
-open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Options
 open Microsoft.CodeAnalysis.Text
 
 open Microsoft.VisualStudio.FSharp.LanguageService
-open Microsoft.VisualStudio.Text
-open Microsoft.VisualStudio.Text.Tagging
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 
-open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons
-
-open Microsoft.VisualStudio.FSharp.Editor.Logging
-open System.Diagnostics
-
-#nowarn "1182"
 
 type internal FSharpCompletionProvider
     (

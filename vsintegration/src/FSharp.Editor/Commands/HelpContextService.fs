@@ -3,10 +3,8 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Threading.Tasks
 open System.Collections.Generic
 open System.Composition
-open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.VisualStudio.FSharp.LanguageService

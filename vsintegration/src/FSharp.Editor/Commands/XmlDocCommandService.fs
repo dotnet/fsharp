@@ -11,13 +11,10 @@ open Microsoft.VisualStudio.Editor
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.Utilities
-open Microsoft.VisualStudio.Shell
-open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp.LanguageService
 open System.Runtime.InteropServices
-open EnvDTE
 
 type internal XmlDocCommandFilter 
      (

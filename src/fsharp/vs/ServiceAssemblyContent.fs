@@ -24,8 +24,7 @@ module internal Extensions =
     [<RequireQualifiedAccess>]
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module Option =
-        let inline attempt (f: unit -> 'T) = try Some (f()) with _ -> None        
-        let inline orElse v = function Some x -> Some x | None -> v
+        let attempt (f: unit -> 'T) = try Some (f()) with _ -> None        
 
     [<RequireQualifiedAccess>]
     [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
@@ -574,7 +573,7 @@ module internal ParsedInput =
         let addIdent (ident: Ident) =
             identsByEndPos.[ident.idRange.End] <- [ident]
     
-        let rec walkImplFileInput (ParsedImplFileInput(_, _, _, _, _, moduleOrNamespaceList, _)) =
+        let rec walkImplFileInput (ParsedImplFileInput(modules = moduleOrNamespaceList)) =
             List.iter walkSynModuleOrNamespace moduleOrNamespaceList
     
         and walkSynModuleOrNamespace (SynModuleOrNamespace(_, _, _, decls, _, attrs, _, _)) =
@@ -947,7 +946,7 @@ module internal ParsedInput =
                 |> Option.map (fun r -> r.StartColumn)
 
 
-        let rec walkImplFileInput (ParsedImplFileInput(_, _, _, _, _, moduleOrNamespaceList, _)) = 
+        let rec walkImplFileInput (ParsedImplFileInput(modules = moduleOrNamespaceList)) = 
             List.iter (walkSynModuleOrNamespace []) moduleOrNamespaceList
 
         and walkSynModuleOrNamespace (parent: LongIdent) (SynModuleOrNamespace(ident, _, isModule, decls, _, _, _, range)) =
