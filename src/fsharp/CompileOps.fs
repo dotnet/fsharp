@@ -4904,7 +4904,6 @@ module ScriptPreprocessClosure =
             let tcConfigB = tcConfig.CloneOfOriginalBuilder 
             TcConfig.Create(tcConfigB, validate=false),nowarns
     
-    let packageManagerExecTable = System.Collections.Concurrent.ConcurrentDictionary<_,_>(HashIdentity.Structural)
     let ResolvePackages (implicitIncludeDIr: string, scriptName: string, packageManagerTextLines: string list, m) =
         let tempDir = Path.Combine(Path.Combine(Path.GetTempPath(),"fsharp"),"packages"+string(hash scriptName))
         let appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)
@@ -4937,14 +4936,20 @@ module ScriptPreprocessClosure =
             if not (Directory.Exists tempDir) then 
                 Directory.CreateDirectory tempDir |> ignore
 
+            let lines = [ yield "framework: net461"; yield "source https://www.nuget.org/api/v2"; yield! packageManagerTextLines ]
             let paketDepsFile = Path.Combine(tempDir, "paket.dependencies")
-            match packageManagerExecTable.TryGetValue((paketDepsFile, paketExePath)) with 
-            | (true, (t, loadScript)) when File.Exists paketDepsFile  && File.Exists loadScript && (t = packageManagerTextLines) -> 
-                printfn "skipping running package resolution... already done that"
+            let paketLockFile = Path.Combine(tempDir, "paket.lock")
+            let loadScript = Path.Combine(tempDir,".paket","load","main.group.fsx")
+            if File.Exists paketDepsFile && 
+               (File.ReadAllLines(paketDepsFile)  |> Array.toList) = lines && 
+               File.Exists paketLockFile && 
+               File.Exists loadScript  then 
+                printfn "skipping running package resolution... already done that, both %s, %s exist" paketLockFile loadScript
                 Some loadScript
-
-            | _ ->
-                File.WriteAllLines(paketDepsFile, [ yield "framework: net461"; yield "source https://nuget.org/api/v2"; yield! packageManagerTextLines ])
+            else
+                try File.Delete(paketLockFile) with _ -> ()
+                try File.Delete(loadScript) with _ -> ()
+                File.WriteAllLines(paketDepsFile, lines)
                 printfn "running package resolution in '%s'..." tempDir
                 let startInfo = System.Diagnostics.ProcessStartInfo(FileName=paketExePath, WorkingDirectory=tempDir, Arguments="install --generate-load-scripts", UseShellExecute=false)
                 let p = System.Diagnostics.Process.Start(startInfo)
@@ -4954,8 +4959,7 @@ module ScriptPreprocessClosure =
                     errorR(Error(FSComp.SR.packageResolutionFailed(paketExePath, tempDir),m))
                     None
                 else
-                    let loadScript = Path.Combine(tempDir,".paket","load","main.group.fsx")
-                    packageManagerExecTable.[(paketDepsFile, paketExePath)] <- (packageManagerTextLines, loadScript)
+                    printfn "package resolution completed at %A" System.DateTimeOffset.UtcNow
                     Some loadScript
 
 
