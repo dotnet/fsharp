@@ -15,7 +15,7 @@ open Microsoft.CodeAnalysis.CodeActions
 type internal FSharpAddNewKeywordCodeFixProvider() =
     inherit CodeFixProvider()
 
-    override __.FixableDiagnosticIds = ["FS0760"].ToImmutableArray()
+    override __.FixableDiagnosticIds = ImmutableArray.Create "FS0760"
 
     override this.RegisterCodeFixesAsync context : Task =
         async {
@@ -28,6 +28,6 @@ type internal FSharpAddNewKeywordCodeFixProvider() =
                             let! sourceText = context.Document.GetTextAsync()
                             return context.Document.WithText(sourceText.WithChanges(TextChange(TextSpan(context.Span.Start, 0), "new ")))
                         } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)),
-                    title), (context.Diagnostics |> Seq.filter (fun x -> this.FixableDiagnosticIds.Contains x.Id)).ToImmutableArray())
+                    title), context.Diagnostics |> Seq.filter (fun x -> this.FixableDiagnosticIds.Contains x.Id) |> Seq.toImmutableArray)
         } |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
  

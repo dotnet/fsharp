@@ -4,7 +4,6 @@ open Microsoft.FSharp.Compiler.Ast
 open System.Collections.Generic
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Ast
 
 module internal Structure =
     /// Set of visitor utilities, designed for the express purpose of fetching ranges
@@ -871,13 +870,11 @@ module internal Structure =
 
     let getOutliningRanges (sourceLines: string []) (parsedInput: ParsedInput) =
         match parsedInput with
-        | ParsedInput.ImplFile implFile ->
-            let (ParsedImplFileInput (_, _, _, _, _, modules, _)) = implFile
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = modules)) ->
             let astBasedRanges = Seq.collect parseModuleOrNamespace modules
             let commentRanges = getCommentRanges sourceLines
             Seq.append astBasedRanges commentRanges
-        | ParsedInput.SigFile sigFile ->
-            let (ParsedSigFileInput(_,_,_,_,moduleSigs )) = sigFile
+        | ParsedInput.SigFile (ParsedSigFileInput (modules = moduleSigs)) ->
             let astBasedRanges = Seq.collect parseModuleOrNamespaceSigs moduleSigs
             let commentRanges = getCommentRanges sourceLines
             Seq.append astBasedRanges commentRanges

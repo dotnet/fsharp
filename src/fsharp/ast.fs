@@ -1508,11 +1508,23 @@ type QualifiedNameOfFile =
 
 [<NoEquality; NoComparison>]
 type ParsedImplFileInput =
-    | ParsedImplFileInput of fileName:string * isScript:bool * QualifiedNameOfFile * ScopedPragma list * ParsedHashDirective list * SynModuleOrNamespace list * (bool * bool)
+    | ParsedImplFileInput of 
+        fileName : string * 
+        isScript : bool * 
+        qualifiedNameOfFile : QualifiedNameOfFile * 
+        scopedPragmas : ScopedPragma list * 
+        hashDirectives : ParsedHashDirective list * 
+        modules : SynModuleOrNamespace list * 
+        ((* isLastCompiland *) bool * (* isExe *) bool)
 
 [<NoEquality; NoComparison>]
 type ParsedSigFileInput =
-    | ParsedSigFileInput of fileName:string * QualifiedNameOfFile * ScopedPragma list * ParsedHashDirective list * SynModuleOrNamespaceSig list
+    | ParsedSigFileInput of 
+        fileName : string * 
+        qualifiedNameOfFile : QualifiedNameOfFile * 
+        scopedPragmas : ScopedPragma list * 
+        hashDirectives : ParsedHashDirective list * 
+        modules : SynModuleOrNamespaceSig list
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type ParsedInput =
@@ -1521,8 +1533,8 @@ type ParsedInput =
 
     member inp.Range =
         match inp with
-        | ParsedInput.ImplFile (ParsedImplFileInput(_,_,_,_,_,(SynModuleOrNamespace(range=m) :: _),_))
-        | ParsedInput.SigFile (ParsedSigFileInput(_,_,_,_,(SynModuleOrNamespaceSig(range=m) :: _))) -> m
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules=SynModuleOrNamespace(range=m) :: _))
+        | ParsedInput.SigFile (ParsedSigFileInput (modules=SynModuleOrNamespaceSig(range=m) :: _)) -> m
         | ParsedInput.ImplFile (ParsedImplFileInput (fileName=filename))
         | ParsedInput.SigFile (ParsedSigFileInput (fileName=filename)) ->
 #if DEBUG

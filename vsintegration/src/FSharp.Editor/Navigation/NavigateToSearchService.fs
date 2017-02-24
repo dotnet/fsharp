@@ -5,7 +5,6 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.IO
 open System.Composition
-open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Collections.Immutable
 open System.Threading
@@ -14,28 +13,20 @@ open System.Runtime.CompilerServices
 open System.Globalization
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Host.Mef
-open Microsoft.CodeAnalysis.Options
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.NavigateTo
 open Microsoft.CodeAnalysis.Navigation
 open Microsoft.CodeAnalysis.PatternMatching
 
-open Microsoft.VisualStudio.FSharp.LanguageService
-open Microsoft.VisualStudio.Text
-open Microsoft.VisualStudio.Shell
-open Microsoft.VisualStudio.Shell.Interop
-
 open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
 type internal NavigableItem(document: Document, sourceSpan: TextSpan, glyph: Glyph, name: string, kind: string, additionalInfo: string) =
     interface INavigableItem with
         member __.Glyph = glyph
         /// The tagged parts to display for this item. If default, the line of text from <see cref="Document"/> is used.
-        member __.DisplayTaggedParts = [| TaggedText(TextTags.Text, name) |].ToImmutableArray()
+        member __.DisplayTaggedParts = ImmutableArray.Create (TaggedText(TextTags.Text, name))
         /// Return true to display the file path of <see cref="Document"/> and the span of <see cref="SourceSpan"/> when displaying this item.
         member __.DisplayFileLocation = true
         /// This is intended for symbols that are ordinary symbols in the language sense, and may be used by code, but that are simply declared 
@@ -257,7 +248,7 @@ type internal FSharpNavigateToSearchService
                     |> Array.distinctBy (fun x -> x.NavigableItem.Document.Id, x.NavigableItem.SourceSpan)
             } 
             |> Async.map (Option.defaultValue [||])
-            |> Async.map (fun x -> x.ToImmutableArray())
+            |> Async.map Seq.toImmutableArray
             |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
 
 
@@ -268,5 +259,5 @@ type internal FSharpNavigateToSearchService
                 return items.Find(searchPattern)
             }
             |> Async.map (Option.defaultValue [||])
-            |> Async.map (fun x -> x.ToImmutableArray())
+            |> Async.map Seq.toImmutableArray
             |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)

@@ -660,10 +660,10 @@ module internal InterfaceStubGenerator =
 
     /// Find corresponding interface declaration at a given position
     let tryFindInterfaceDeclaration (pos: pos) (parsedInput: ParsedInput) =
-        let rec walkImplFileInput (ParsedImplFileInput(_name, _isScript, _fileName, _scopedPragmas, _hashDirectives, moduleOrNamespaceList, _)) = 
+        let rec walkImplFileInput (ParsedImplFileInput(modules = moduleOrNamespaceList)) = 
             List.tryPick walkSynModuleOrNamespace moduleOrNamespaceList
 
-        and walkSynModuleOrNamespace(SynModuleOrNamespace(_, _, _, decls, _, _, _access, range)) =
+        and walkSynModuleOrNamespace(SynModuleOrNamespace(decls = decls; range = range)) =
             if not <| rangeContainsPos range pos then
                 None
             else

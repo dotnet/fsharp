@@ -238,7 +238,7 @@ module internal XmlDocParsing =
 
         and getXmlDocablesInput input =
             match input with
-            | ParsedInput.ImplFile(ParsedImplFileInput(_, _, _, _, _, symModules, _))-> 
+            | ParsedInput.ImplFile(ParsedImplFileInput(modules = symModules))-> 
                 symModules |> List.collect getXmlDocablesSynModuleOrNamespace
             | ParsedInput.SigFile _ -> []
 
