@@ -4,18 +4,15 @@ namespace rec Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Composition
-open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
 
 open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 

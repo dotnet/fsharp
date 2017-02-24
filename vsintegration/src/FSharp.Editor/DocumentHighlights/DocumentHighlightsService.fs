@@ -5,12 +5,10 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.Composition
 open System.Collections.Immutable
-open System.Threading
 open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Editor
-open Microsoft.CodeAnalysis.Editor.Implementation.ReferenceHighlighting
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
 

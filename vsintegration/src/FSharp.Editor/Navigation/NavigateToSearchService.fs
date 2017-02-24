@@ -5,7 +5,6 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.IO
 open System.Composition
-open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Collections.Immutable
 open System.Threading
@@ -14,21 +13,13 @@ open System.Runtime.CompilerServices
 open System.Globalization
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Host.Mef
-open Microsoft.CodeAnalysis.Options
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.NavigateTo
 open Microsoft.CodeAnalysis.Navigation
 open Microsoft.CodeAnalysis.PatternMatching
 
-open Microsoft.VisualStudio.FSharp.LanguageService
-open Microsoft.VisualStudio.Text
-open Microsoft.VisualStudio.Shell
-open Microsoft.VisualStudio.Shell.Interop
-
 open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
 type internal NavigableItem(document: Document, sourceSpan: TextSpan, glyph: Glyph, name: string, kind: string, additionalInfo: string) =

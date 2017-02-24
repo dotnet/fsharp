@@ -3,7 +3,6 @@
 namespace rec Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
-open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
 
@@ -12,8 +11,6 @@ open Microsoft.CodeAnalysis.Diagnostics
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
-
-open Microsoft.FSharp.Compiler
 
 [<ExportCodeFixProvider(FSharpCommonConstants.FSharpLanguageName, Name = "RemoveUnusedOpens"); Shared>]
 type internal FSharpRemoveUnusedOpensCodeFixProvider() =

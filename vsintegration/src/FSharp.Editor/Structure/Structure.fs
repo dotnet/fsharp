@@ -4,7 +4,6 @@ open Microsoft.FSharp.Compiler.Ast
 open System.Collections.Generic
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Ast
 
 module internal Structure =
     /// Set of visitor utilities, designed for the express purpose of fetching ranges
