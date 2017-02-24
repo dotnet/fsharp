@@ -3044,7 +3044,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         internal string GetProjectGuid()
         {
             string guid = projectMgr.GetProjectProperty(ProjectFileConstants.ProjectGuid) as string;
-            Debug.Assert(!String.IsNullOrEmpty(guid), "No project guid?");
             return guid;
         }
 

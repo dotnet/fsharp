@@ -6129,16 +6129,31 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return VSConstants.S_OK;
         }
 
+        public bool IsUsingMicrosoftNetSdk()
+        {
+            // Nasty hack to see if we are using dotnet sdk, the SDK team will add a property in the future.
+            var c = GetProjectProperty("MSBuildAllProjects");
+            if (!string.IsNullOrWhiteSpace(c))
+            {
+                return c.Contains("Microsoft.NET.Sdk.props");
+            }
+            return false;
+        }
+
         public int UpgradeProject(uint grfUpgradeFlags)
         {
-            var hasTargetFramework = IsTargetFrameworkInstalled();
-            if (!hasTargetFramework)
+            if (!IsUsingMicrosoftNetSdk())
             {
-                hasTargetFramework = ShowRetargetingDialog();
+                var hasTargetFramework = IsTargetFrameworkInstalled();
+                if (!hasTargetFramework)
+                {
+                    hasTargetFramework = ShowRetargetingDialog();
+                }
+                // VSConstants.OLE_E_PROMPTSAVECANCELLED causes the shell to leave project unloaded
+                return hasTargetFramework ? VSConstants.S_OK : VSConstants.OLE_E_PROMPTSAVECANCELLED;
             }
-            // VSConstants.OLE_E_PROMPTSAVECANCELLED causes the shell to leave project unloaded
-            return hasTargetFramework ? VSConstants.S_OK : VSConstants.OLE_E_PROMPTSAVECANCELLED;
-        }
+            return VSConstants.S_OK;
+}
 
         /// <summary>
         /// Initialize projectNode
