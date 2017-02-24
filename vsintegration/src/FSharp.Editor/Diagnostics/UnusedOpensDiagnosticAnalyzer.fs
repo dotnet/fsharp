@@ -3,12 +3,9 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Composition
 open System.Collections.Immutable
-open System.Collections.Generic
 open System.Threading
 open System.Threading.Tasks
-open System.Runtime.CompilerServices
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Diagnostics
@@ -16,8 +13,6 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
-
-open Microsoft.VisualStudio.FSharp.LanguageService
 
 module private UnusedOpens =
     open Microsoft.CodeAnalysis.Text
@@ -70,47 +65,50 @@ module private UnusedOpens =
                 ]
         | None -> []
 
-    let symbolIsFullyQualified (sourceText: SourceText) (sym: FSharpSymbolUse) (fullName: string option) =
-        match fullName with
-        | Some fullName ->
+    let symbolIsFullyQualified (sourceText: SourceText) (sym: FSharpSymbolUse) (fullName: string) =
             sourceText.ToString(CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, sym.RangeAlternate)) = fullName
-        | None -> true
 
     let getUnusedOpens (sourceText: SourceText) (parsedInput: ParsedInput) (symbolUses: FSharpSymbolUse[]) =
 
-        let getPartNamespace (sym:FSharpSymbolUse) (fullName:string option) =
+        let getPartNamespace (symbolUse: FSharpSymbolUse) (fullName: string) =
             // given a symbol range such as `Text.ISegment` and a full name of `MonoDevelop.Core.Text.ISegment`, return `MonoDevelop.Core`
-            fullName |> Option.bind(fun fullName ->
-                let length = sym.RangeAlternate.EndColumn - sym.RangeAlternate.StartColumn
-                let lengthDiff = fullName.Length - length - 2
-                Some fullName.[0..lengthDiff])
+            let length = symbolUse.RangeAlternate.EndColumn - symbolUse.RangeAlternate.StartColumn
+            let lengthDiff = fullName.Length - length - 2
+            Some fullName.[0..lengthDiff]
 
-        let getPossibleNamespaces (symbolUse: FSharpSymbolUse) =
+        let getPossibleNamespaces (symbolUse: FSharpSymbolUse) : string list =
             let isQualified = symbolIsFullyQualified sourceText symbolUse
-            match symbolUse with
-            | SymbolUse.Entity (ent, cleanFullName) when not (isQualified cleanFullName) ->
-                getPartNamespace symbolUse cleanFullName :: entityNamespace (Some ent)
-            | SymbolUse.Field f when not (isQualified (Some f.FullName)) -> 
-                getPartNamespace symbolUse (Some f.FullName) :: entityNamespace (Some f.DeclaringEntity)
-            | SymbolUse.MemberFunctionOrValue mfv when not (isQualified (Some mfv.FullName)) -> 
-                getPartNamespace symbolUse (Some mfv.FullName) :: entityNamespace mfv.EnclosingEntitySafe
-            | SymbolUse.Operator op when not (isQualified (Some op.FullName)) ->
-                getPartNamespace symbolUse (Some op.FullName) :: entityNamespace op.EnclosingEntitySafe
-            | SymbolUse.ActivePattern ap when not (isQualified (Some ap.FullName)) ->
-                getPartNamespace symbolUse (Some ap.FullName) :: entityNamespace ap.EnclosingEntitySafe
-            | SymbolUse.ActivePatternCase apc when not (isQualified (Some apc.FullName)) ->
-                getPartNamespace symbolUse (Some apc.FullName) :: entityNamespace apc.Group.EnclosingEntity
-            | SymbolUse.UnionCase uc when not (isQualified (Some uc.FullName)) ->
-                getPartNamespace symbolUse (Some uc.FullName) :: entityNamespace (Some uc.ReturnType.TypeDefinition)
-            | SymbolUse.Parameter p when not (isQualified (Some p.FullName)) ->
-                getPartNamespace symbolUse (Some p.FullName) :: entityNamespace (Some p.Type.TypeDefinition)
-            | _ -> [None]
+            maybe {
+                let! fullNames, declaringEntity =
+                    match symbolUse with
+                    | SymbolUse.Entity (ent, cleanFullNames) when not (cleanFullNames |> List.exists isQualified) ->
+                        Some (cleanFullNames, Some ent)
+                    | SymbolUse.Field f when not (isQualified f.FullName) -> 
+                        Some ([f.FullName], Some f.DeclaringEntity)
+                    | SymbolUse.MemberFunctionOrValue mfv when not (isQualified mfv.FullName) -> 
+                        Some ([mfv.FullName], mfv.EnclosingEntitySafe)
+                    | SymbolUse.Operator op when not (isQualified op.FullName) ->
+                        Some ([op.FullName], op.EnclosingEntitySafe)
+                    | SymbolUse.ActivePattern ap when not (isQualified ap.FullName) ->
+                        Some ([ap.FullName], ap.EnclosingEntitySafe)
+                    | SymbolUse.ActivePatternCase apc when not (isQualified apc.FullName) ->
+                        Some ([apc.FullName], apc.Group.EnclosingEntity)
+                    | SymbolUse.UnionCase uc when not (isQualified uc.FullName) ->
+                        Some ([uc.FullName], Some uc.ReturnType.TypeDefinition)
+                    | SymbolUse.Parameter p when not (isQualified p.FullName) ->
+                        Some ([p.FullName], Some p.Type.TypeDefinition)
+                    | _ -> None
+
+                return
+                    [ for name in fullNames do
+                        yield getPartNamespace symbolUse name
+                      yield! entityNamespace declaringEntity ]
+            } |> Option.toList |> List.concat |> List.choose id
 
         let namespacesInUse =
             symbolUses
             |> Seq.filter (fun (s: FSharpSymbolUse) -> not s.IsFromDefinition)
             |> Seq.collect getPossibleNamespaces
-            |> Seq.choose id
             |> Set.ofSeq
 
         let filter list: (string * Range.range) list =

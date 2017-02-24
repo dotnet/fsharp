@@ -676,21 +676,32 @@ module internal SymbolUse =
         | :? FSharpActivePatternCase as ap-> ActivePatternCase(ap) |> Some
         | _ -> None
 
-    let (|Entity|_|) (symbol : FSharpSymbolUse) : (FSharpEntity * (* cleanFullName *) string option) option =
+    let private attributeSuffixLength = "Attribute".Length
+
+    let (|Entity|_|) (symbol : FSharpSymbolUse) : (FSharpEntity * (* cleanFullNames *) string list) option =
         match symbol.Symbol with
         | :? FSharpEntity as ent -> 
             // strip generic parameters count suffix (List`1 => List)
             let cleanFullName =
                 // `TryFullName` for type aliases is always `None`, so we have to make one by our own
                 if ent.IsFSharpAbbreviation then
-                    Some (ent.AccessPath + "." + ent.DisplayName)
+                    [ent.AccessPath + "." + ent.DisplayName]
                 else
                     ent.TryFullName
-                    |> Option.map (fun fullName ->
+                    |> Option.toList
+                    |> List.map (fun fullName ->
                         if ent.GenericParameters.Count > 0 && fullName.Length > 2 then
                             fullName.[0..fullName.Length - 3]
                         else fullName)
-            Some (ent, cleanFullName)
+            
+            let cleanFullNames =
+                cleanFullName
+                |> List.collect (fun cleanFullName ->
+                    if ent.IsAttributeType then
+                        [cleanFullName; cleanFullName.[0..cleanFullName.Length - attributeSuffixLength - 1]]
+                    else [cleanFullName]
+                   )
+            Some (ent, cleanFullNames)
         | _ -> None
 
     let (|Field|_|) (symbol : FSharpSymbolUse) =
