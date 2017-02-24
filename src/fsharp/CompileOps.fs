@@ -2028,6 +2028,7 @@ type TcConfigBuilder =
       mutable conditionalCompilationDefines: string list
       mutable loadedSources: (range * string) list
       mutable referencedDLLs : AssemblyReference list
+      mutable packageManagerTextLines : string list
       mutable projectReferences : IProjectReference list
       mutable knownUnresolvedReferences : UnresolvedAssemblyReference list
       optimizeForMemory: bool
@@ -2190,6 +2191,7 @@ type TcConfigBuilder =
           framework=true
           implicitlyResolveAssemblies=true
           referencedDLLs = []
+          packageManagerTextLines = []
           projectReferences = []
           knownUnresolvedReferences = []
           loadedSources = []
@@ -2404,6 +2406,9 @@ type TcConfigBuilder =
         elif not (tcConfigB.referencedDLLs  |> List.exists (fun ar2 -> m=ar2.Range && path=ar2.Text)) then // NOTE: We keep same paths if range is different.
              let projectReference = tcConfigB.projectReferences |> List.tryPick (fun pr -> if pr.FileName = path then Some pr else None)
              tcConfigB.referencedDLLs <- tcConfigB.referencedDLLs ++ AssemblyReference(m,path,projectReference)
+             
+    member tcConfigB.AddPackageManagerText (text) = 
+        tcConfigB.packageManagerTextLines <- tcConfigB.packageManagerTextLines ++ text
              
     member tcConfigB.RemoveReferencedAssemblyByPath (m,path) =
         tcConfigB.referencedDLLs <- tcConfigB.referencedDLLs |> List.filter (fun ar-> ar.Range <> m || ar.Text <> path)
@@ -2746,6 +2751,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     member x.embedAllSource  = data.embedAllSource
     member x.embedSourceList  = data.embedSourceList
     member x.sourceLink  = data.sourceLink
+    member x.packageManagerTextLines  = data.packageManagerTextLines
     member x.ignoreSymbolStoreSequencePoints  = data.ignoreSymbolStoreSequencePoints
     member x.internConstantStrings  = data.internConstantStrings
     member x.extraOptimizationIterations  = data.extraOptimizationIterations
@@ -4619,10 +4625,12 @@ let RequireDLL (ctok, tcImports:TcImports, tcEnv, thisAssemblyName, m, file) =
     tcEnv,(dllinfos,asms)
 
        
-       
+let paketPrefix = "paket: "
+
 let ProcessMetaCommandsFromInput 
      (nowarnF: 'state -> range * string -> 'state,
       dllRequireF: 'state -> range * string -> 'state,
+      packageRequireF: 'state -> range * string -> 'state,
       loadSourceF: 'state -> range * string -> unit) 
      (tcConfig:TcConfigBuilder, inp, pathOfMetaCommandSource, state0) =
      
@@ -4650,13 +4658,17 @@ let ProcessMetaCommandsFromInput
                    state
             | ParsedHashDirective("nowarn",numbers,m) ->
                List.fold (fun state d -> nowarnF state (m,d)) state numbers
+
             | ParsedHashDirective(("reference" | "r"),args,m) -> 
                if not canHaveScriptMetaCommands then 
                    errorR(HashReferenceNotAllowedInNonScript(m))
                match args with 
                | [path] -> 
                    matchedm<-m
-                   dllRequireF state (m,path)
+                   if path.StartsWith paketPrefix then
+                       packageRequireF state (m,path)
+                   else
+                       dllRequireF state (m,path)
                | _ -> 
                    errorR(Error(FSComp.SR.buildInvalidHashrDirective(),m))
                    state
@@ -4735,8 +4747,9 @@ let ApplyNoWarnsToTcConfig (tcConfig:TcConfig, inp:ParsedInput, pathOfMetaComman
     let tcConfigB = tcConfig.CloneOfOriginalBuilder 
     let addNoWarn = fun () (m,s) -> tcConfigB.TurnWarningOff(m, s)
     let addReferencedAssemblyByPath = fun () (_m,_s) -> ()
+    let addPackageManagerText = fun () (_m,_s) -> ()
     let addLoadedSource = fun () (_m,_s) -> ()
-    ProcessMetaCommandsFromInput (addNoWarn, addReferencedAssemblyByPath, addLoadedSource) (tcConfigB, inp, pathOfMetaCommandSource, ())
+    ProcessMetaCommandsFromInput (addNoWarn, addReferencedAssemblyByPath, addPackageManagerText, addLoadedSource) (tcConfigB, inp, pathOfMetaCommandSource, ())
     TcConfig.Create(tcConfigB, validate=false)
 
 let ApplyMetaCommandsFromInputToTcConfig (tcConfig:TcConfig, inp:ParsedInput, pathOfMetaCommandSource) = 
@@ -4744,8 +4757,9 @@ let ApplyMetaCommandsFromInputToTcConfig (tcConfig:TcConfig, inp:ParsedInput, pa
     let tcConfigB = tcConfig.CloneOfOriginalBuilder 
     let getWarningNumber = fun () _ -> () 
     let addReferencedAssemblyByPath = fun () (m,s) -> tcConfigB.AddReferencedAssemblyByPath(m,s)
+    let addPackageManagerText = fun () (_m,s) -> tcConfigB.AddPackageManagerText(s)
     let addLoadedSource = fun () (m,s) -> tcConfigB.AddLoadedSource(m,s,pathOfMetaCommandSource)
-    ProcessMetaCommandsFromInput (getWarningNumber, addReferencedAssemblyByPath, addLoadedSource) (tcConfigB, inp, pathOfMetaCommandSource, ())
+    ProcessMetaCommandsFromInput (getWarningNumber, addReferencedAssemblyByPath, addPackageManagerText, addLoadedSource) (tcConfigB, inp, pathOfMetaCommandSource, ())
     TcConfig.Create(tcConfigB, validate=false)
 
 //----------------------------------------------------------------------------
@@ -4795,7 +4809,7 @@ type CodeContext =
     | Editing // in VS
     
 
-module private ScriptPreprocessClosure = 
+module ScriptPreprocessClosure = 
     open Internal.Utilities.Text.Lexing
     
     /// Represents an input to the closure finding process
@@ -4875,9 +4889,10 @@ module private ScriptPreprocessClosure =
         let nowarns = ref [] 
         let getWarningNumber = fun () (m,s) -> nowarns := (s,m) :: !nowarns
         let addReferencedAssemblyByPath = fun () (m,s) -> tcConfigB.AddReferencedAssemblyByPath(m,s)
+        let addPackageManagerText = fun () (_m,s) -> tcConfigB.AddPackageManagerText(s)
         let addLoadedSource = fun () (m,s) -> tcConfigB.AddLoadedSource(m,s,pathOfMetaCommandSource)
         try 
-            ProcessMetaCommandsFromInput (getWarningNumber, addReferencedAssemblyByPath, addLoadedSource) (tcConfigB, inp, pathOfMetaCommandSource, ())
+            ProcessMetaCommandsFromInput (getWarningNumber, addReferencedAssemblyByPath, addPackageManagerText, addLoadedSource) (tcConfigB, inp, pathOfMetaCommandSource, ())
         with ReportedError _ ->
             // Recover by using whatever did end up in the tcConfig
             ()
@@ -4889,7 +4904,62 @@ module private ScriptPreprocessClosure =
             let tcConfigB = tcConfig.CloneOfOriginalBuilder 
             TcConfig.Create(tcConfigB, validate=false),nowarns
     
-    let FindClosureFiles(closureSources, tcConfig:TcConfig, codeContext, lexResourceManager:Lexhelp.LexResourceManager) =
+    let packageManagerExecTable = System.Collections.Concurrent.ConcurrentDictionary<_,_>(HashIdentity.Structural)
+    let ResolvePackages (implicitIncludeDIr: string, scriptName: string, packageManagerTextLines: string list, m) =
+        let tempDir = Path.Combine(Path.Combine(Path.GetTempPath(),"fsharp"),"packages"+string(hash scriptName))
+        let appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)
+        let paketExePathOpt = 
+            let rec loop dir = 
+                if (Directory.Exists dir) then 
+                    let paketDir = Path.Combine (dir, ".paket")
+                    if Directory.Exists paketDir then 
+                        let paketPath = Path.Combine (paketDir, "paket.exe")
+                        if File.Exists paketPath then Some paketPath else
+                        let paketPath = Path.Combine (dir, "paket.exe")
+                        if File.Exists paketPath then  Some paketPath else
+                        None
+                    else
+                        None
+                else
+                    None
+            match loop implicitIncludeDIr with 
+            | Some r -> Some r
+            | None -> 
+                 let paketPath = Path.Combine (appData, ".paket", "paket.exe")
+                 if File.Exists paketPath then  Some paketPath else None
+
+        match paketExePathOpt with 
+        | None -> 
+            errorR(Error(FSComp.SR.packageManagerNotFound(implicitIncludeDIr, appData),m))
+            None
+
+        | Some paketExePath ->
+            if not (Directory.Exists tempDir) then 
+                Directory.CreateDirectory tempDir |> ignore
+
+            let paketDepsFile = Path.Combine(tempDir, "paket.dependencies")
+            match packageManagerExecTable.TryGetValue((paketDepsFile, paketExePath)) with 
+            | (true, (t, loadScript)) when File.Exists paketDepsFile  && File.Exists loadScript && (t = packageManagerTextLines) -> 
+                printfn "skipping running package resolution... already done that"
+                Some loadScript
+
+            | _ ->
+                File.WriteAllLines(paketDepsFile, [ yield "framework: net461"; yield "source https://nuget.org/api/v2"; yield! packageManagerTextLines ])
+                printfn "running package resolution in '%s'..." tempDir
+                let startInfo = System.Diagnostics.ProcessStartInfo(FileName=paketExePath, WorkingDirectory=tempDir, Arguments="install --generate-load-scripts", UseShellExecute=false)
+                let p = System.Diagnostics.Process.Start(startInfo)
+                p.WaitForExit()
+                printfn "done running package resolution..."
+                if p.ExitCode <> 0 then
+                    errorR(Error(FSComp.SR.packageResolutionFailed(paketExePath, tempDir),m))
+                    None
+                else
+                    let loadScript = Path.Combine(tempDir,".paket","load","main.group.fsx")
+                    packageManagerExecTable.[(paketDepsFile, paketExePath)] <- (packageManagerTextLines, loadScript)
+                    Some loadScript
+
+
+    let FindClosureFiles(mainFile, m, closureSources, tcConfig:TcConfig, codeContext, lexResourceManager:Lexhelp.LexResourceManager) =
         let tcConfig = ref tcConfig
         
         let observedSources = Observed()
@@ -4938,7 +5008,23 @@ module private ScriptPreprocessClosure =
                         //printfn "yielding non-script source %s" filename
                         yield ClosureFile(filename, m, None, [], [], []) ]
 
-        closureSources |> List.collect loop, !tcConfig
+        let sources = closureSources |> List.collect loop
+
+        // Resolve the packages
+        let extraSources = 
+            match tcConfig.Value.packageManagerTextLines with 
+            | [] -> []
+            | packageManagerTextLines ->  
+                match ResolvePackages (tcConfig.Value.implicitIncludeDir, mainFile, packageManagerTextLines, m) with 
+                | None -> []
+                | Some loadScript -> 
+                     // This may incrementally update tcConfig too with new #r references
+                     // New package text is ignored on this second phase
+                     loop (ClosureSource(loadScript,m,File.ReadAllText(loadScript),true)) 
+
+        sources @ extraSources, !tcConfig
+
+
         
     /// Reduce the full directive closure into LoadClosure
     let GetLoadClosure(ctok, rootFilename, closureFiles, tcConfig:TcConfig, codeContext) = 
@@ -5015,15 +5101,15 @@ module private ScriptPreprocessClosure =
         let tcConfig = CreateScriptSourceTcConfig(referenceResolver, filename, codeContext, useSimpleResolution, useFsiAuxLib, Some references0, applyCommmandLineArgs, assumeDotNetFramework)
 
         let closureSources = [ClosureSource(filename,range0,source,true)]
-        let closureFiles,tcConfig = FindClosureFiles(closureSources, tcConfig, codeContext, lexResourceManager)
+        let closureFiles,tcConfig = FindClosureFiles(filename, range0, closureSources, tcConfig, codeContext, lexResourceManager)
         GetLoadClosure(ctok, filename, closureFiles, tcConfig, codeContext)
         
     /// Given source filename, find the full load closure
     /// Used from fsi.fs and fsc.fs, for #load and command line
     let GetFullClosureOfScriptFiles(ctok, tcConfig:TcConfig,files:(string*range) list,codeContext,lexResourceManager:Lexhelp.LexResourceManager) = 
-        let mainFile = fst (List.last files)
+        let mainFile, mainFileRange = List.last files
         let closureSources = files |> List.collect (fun (filename,m) -> ClosureSourceOfFilename(filename,m,tcConfig.inputCodePage,true))
-        let closureFiles,tcConfig = FindClosureFiles(closureSources, tcConfig, codeContext, lexResourceManager)
+        let closureFiles,tcConfig = FindClosureFiles(mainFile, mainFileRange, closureSources, tcConfig, codeContext, lexResourceManager)
         GetLoadClosure(ctok, mainFile, closureFiles, tcConfig, codeContext)        
 
 type LoadClosure with

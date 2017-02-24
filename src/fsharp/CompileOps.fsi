@@ -260,6 +260,8 @@ type TcConfigBuilder =
       mutable loadedSources: (range * string) list
       
       mutable referencedDLLs: AssemblyReference  list
+      mutable packageManagerTextLines : string list
+
       mutable projectReferences : IProjectReference list
       mutable knownUnresolvedReferences : UnresolvedAssemblyReference list
       optimizeForMemory: bool
@@ -660,7 +662,7 @@ val RequireDLL : CompilationThreadToken * TcImports * TcEnv * thisAssemblyName: 
 
 /// Processing # commands
 val ProcessMetaCommandsFromInput : 
-    (('T -> range * string -> 'T) * ('T -> range * string -> 'T) * ('T -> range * string -> unit)) 
+    (('T -> range * string -> 'T) * ('T -> range * string -> 'T) * ('T -> range * string -> 'T) * ('T -> range * string -> unit)) 
     -> TcConfigBuilder * Ast.ParsedInput * string * 'T 
     -> 'T
 
@@ -797,3 +799,6 @@ type LoadClosure =
 
     /// Used from fsi.fs and fsc.fs, for #load and command line. The resulting references are then added to a TcConfig.
     static member ComputeClosureOfSourceFiles : CompilationThreadToken * tcConfig:TcConfig * (string * range) list * implicitDefines:CodeContext * lexResourceManager : Lexhelp.LexResourceManager -> LoadClosure
+
+module ScriptPreprocessClosure = 
+    val ResolvePackages : implicitIncludeDIr: string * scriptName: string * packageManagerText: string list * range -> string option
