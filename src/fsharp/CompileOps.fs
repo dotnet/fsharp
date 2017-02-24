@@ -4905,7 +4905,9 @@ module ScriptPreprocessClosure =
             TcConfig.Create(tcConfigB, validate=false),nowarns
     
     let packageManagerExecTable = System.Collections.Concurrent.ConcurrentDictionary<_,_>(HashIdentity.Structural)
-    let ResolvePackages (implicitIncludeDIr: string, scriptName: string, packageManagerTextLines: string list, m) =
+
+    let PaketToolName = "paket.exe"
+    let ResolvePackages (implicitIncludeDir: string, scriptName: string, packageManagerTextLines: string list, m) =
         let tempDir = Path.Combine(Path.Combine(Path.GetTempPath(),"fsharp"),"packages"+string(hash scriptName))
         let appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)
         let paketExePathOpt = 
@@ -4913,24 +4915,25 @@ module ScriptPreprocessClosure =
                 if (Directory.Exists dir) then 
                     let paketDir = Path.Combine (dir, ".paket")
                     if Directory.Exists paketDir then 
-                        let paketPath = Path.Combine (paketDir, "paket.exe")
+                        let paketPath = Path.Combine (paketDir, PaketToolName)
                         if File.Exists paketPath then Some paketPath else
-                        let paketPath = Path.Combine (dir, "paket.exe")
-                        if File.Exists paketPath then  Some paketPath else
+                        let paketPath = Path.Combine (dir, PaketToolName)
+                        if File.Exists paketPath then Some paketPath else
                         None
                     else
                         None
                 else
                     None
-            match loop implicitIncludeDIr with 
+
+            match loop implicitIncludeDir with 
             | Some r -> Some r
             | None -> 
-                 let paketPath = Path.Combine (appData, ".paket", "paket.exe")
-                 if File.Exists paketPath then  Some paketPath else None
+                 let paketPath = Path.Combine (appData, ".paket", PaketToolName)
+                 if File.Exists paketPath then Some paketPath else None
 
         match paketExePathOpt with 
         | None -> 
-            errorR(Error(FSComp.SR.packageManagerNotFound(implicitIncludeDIr, appData),m))
+            errorR(Error(FSComp.SR.packageManagerNotFound(implicitIncludeDir, appData),m))
             None
 
         | Some paketExePath ->
