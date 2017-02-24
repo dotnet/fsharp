@@ -78,11 +78,14 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
                 let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
                 let! spans = FSharpDocumentHighlightsService.GetDocumentHighlights(checkerProvider.Checker, document.Id, sourceText, document.FilePath, 
                                                                                    position, defines, options, textVersion.GetHashCode())
-                let highlightSpans = spans |> Array.map (fun span ->
-                   let kind = if span.IsDefinition then HighlightSpanKind.Definition else HighlightSpanKind.Reference
-                   HighlightSpan(span.TextSpan, kind))
+                let highlightSpans = 
+                    spans 
+                    |> Array.map (fun span ->
+                        let kind = if span.IsDefinition then HighlightSpanKind.Definition else HighlightSpanKind.Reference
+                        HighlightSpan(span.TextSpan, kind))
+                    |> Seq.toImmutableArray
                 
-                return [| DocumentHighlights(document, highlightSpans.ToImmutableArray()) |].ToImmutableArray()
+                return ImmutableArray.Create(DocumentHighlights(document, highlightSpans))
             }   
             |> Async.map (Option.defaultValue ImmutableArray<DocumentHighlights>.Empty)
             |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)

@@ -141,9 +141,9 @@ type internal FSharpAddOpenCodeFixProvider
             |> Seq.toList
 
         for codeFix in openNamespaceFixes @ qualifiedSymbolFixes do
-            context.RegisterCodeFix(codeFix, (context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id)).ToImmutableArray())
+            context.RegisterCodeFix(codeFix, context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id) |> Seq.toImmutableArray)
 
-    override __.FixableDiagnosticIds = fixableDiagnosticIds.ToImmutableArray()
+    override __.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
     override __.RegisterCodeFixesAsync context : Task =
         asyncMaybe {

@@ -30,13 +30,13 @@ type internal FSharpRemoveUnusedOpensCodeFixProvider() =
                 } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)),
             title)
 
-    override __.FixableDiagnosticIds = fixableDiagnosticIds.ToImmutableArray()
+    override __.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
     override __.RegisterCodeFixesAsync context : Task =
         async {
             let! sourceText = context.Document.GetTextAsync()
             let line = sourceText.Lines.GetLineFromPosition context.Span.Start
-            let diagnostics = (context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id)).ToImmutableArray()
+            let diagnostics = context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id) |> Seq.toImmutableArray
             context.RegisterCodeFix(createCodeFix(SR.RemoveUnusedOpens.Value, context, TextChange(line.SpanIncludingLineBreak, "")), diagnostics)
         } |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
 

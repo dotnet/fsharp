@@ -114,8 +114,7 @@ type internal FSharpBlockStructureService(checker: FSharpChecker, projectInfoMan
             let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
             let! sourceText = document.GetTextAsync(cancellationToken)
             let! parsedInput = checker.ParseDocument(document, options, sourceText)
-            let blockSpans = createBlockSpans sourceText parsedInput
-            return blockSpans.ToImmutableArray()
+            return createBlockSpans sourceText parsedInput |> Seq.toImmutableArray
         } 
         |> Async.map (Option.defaultValue ImmutableArray<_>.Empty)
         |> Async.map BlockStructure
