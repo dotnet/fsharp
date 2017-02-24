@@ -1789,6 +1789,8 @@ type internal FsiInteractionProcessor
                              initialInteractiveState) = 
 
     let mutable currState = initialInteractiveState
+    let mutable createdPaketFile = false
+    let mutable needsPaketInstall = false
     let event = Control.Event<unit>()
     let setCurrState s = currState <- s; event.Trigger()
     let runCodeOnEventLoop errorLogger f istate = 
@@ -1859,20 +1861,58 @@ type internal FsiInteractionProcessor
             stopProcessingRecovery e range0    
             None
 
+    let tempDir = @"D:\temp\fsi"
+    let paketPrefix = "paket: "
+
+    let resolvePaket ctok istate errorLogger m =
+        if not needsPaketInstall then istate else
+        let paketExePath = @"D:\temp\fsi\.paket\paket.exe"
+
+        let startInfo = ProcessStartInfo()
+        startInfo.FileName <- paketExePath
+        startInfo.WorkingDirectory <- tempDir
+        startInfo.Arguments <- "install"
+        startInfo.UseShellExecute <- false
+        let p = Process.Start(startInfo)
+        p.WaitForExit()
+        if p.ExitCode <> 0 then
+            failwithf "Paket restore failed."
+
+        let loadScript = Path.Combine(tempDir,".paket","load","main.group.fsx")
+        needsPaketInstall <- false
+        fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, [loadScript], lexResourceManager, errorLogger)
+
     /// Execute a single parsed interaction. Called on the GUI/execute/main thread.
     let ExecInteraction (ctok, tcConfig:TcConfig, istate, action:ParsedFsiInteraction, errorLogger: ErrorLogger) =
         istate |> InteractiveCatch errorLogger (fun istate -> 
             match action with 
             | IDefns ([  ],_) ->
                 istate,Completed None
-            | IDefns ([  SynModuleDecl.DoExpr(_,expr,_)],_) ->
+            | IDefns ([  SynModuleDecl.DoExpr(_,expr,_)],m) ->
+                let istate = resolvePaket ctok istate errorLogger m
                 fsiDynamicCompiler.EvalParsedExpression(ctok, errorLogger, istate, expr)
-            | IDefns (defs,_) -> 
+            | IDefns (defs,m) -> 
+                let istate = resolvePaket ctok istate errorLogger m
                 fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, true, false, defs),Completed None
 
             | IHash (ParsedHashDirective("load",sourceFiles,m),_) -> 
                 fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, sourceFiles, lexResourceManager, errorLogger),Completed None
-
+            | IHash (ParsedHashDirective(("reference" | "r"),[path],_),_) when path.StartsWith paketPrefix ->
+                let package = path.Substring(paketPrefix.Length)
+                let paketDepsFile = FileInfo(Path.Combine(tempDir,"paket.dependencies"))
+                let s = 
+                    if not createdPaketFile then
+                        Directory.CreateDirectory(paketDepsFile.Directory.FullName) |> ignore
+                        "generate_load_scripts: true" + Environment.NewLine +
+                            "source https://nuget.org/api/v2" + Environment.NewLine + 
+                            package + Environment.NewLine
+                    else
+                        let s = File.ReadAllText paketDepsFile.FullName
+                        s + package + Environment.NewLine
+                File.WriteAllText(paketDepsFile.FullName,s)
+                createdPaketFile <- true
+                needsPaketInstall <- true
+                istate,Completed None
             | IHash (ParsedHashDirective(("reference" | "r"),[path],m),_) -> 
                 let resolutions,istate = fsiDynamicCompiler.EvalRequireReference(ctok, istate, m, path)
                 resolutions |> List.iter (fun ar -> 
