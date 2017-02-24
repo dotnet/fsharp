@@ -4624,8 +4624,7 @@ let RequireDLL (ctok, tcImports:TcImports, tcEnv, thisAssemblyName, m, file) =
     let tcEnv = (tcEnv, asms) ||> List.fold (fun tcEnv asm -> AddCcuToTcEnv(g,amap,m,tcEnv,thisAssemblyName,asm.FSharpViewOfMetadata,asm.AssemblyAutoOpenAttributes,asm.AssemblyInternalsVisibleToAttributes)) 
     tcEnv,(dllinfos,asms)
 
-       
-let paketPrefix = "paket: "
+let paketPrefix = "paket"
 
 let ProcessMetaCommandsFromInput 
      (nowarnF: 'state -> range * string -> 'state,
