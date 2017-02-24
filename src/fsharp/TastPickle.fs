@@ -1358,9 +1358,9 @@ let u_MemberFlags st =
       IsFinal=x6;
       MemberKind=x7}
 
-let fill_u_expr_fwd,u_expr_fwd = u_hole()
+let fill_u_Expr_hole,u_expr_fwd = u_hole()
 #if INCLUDE_METADATA_WRITER
-let fill_p_expr_fwd,p_expr_fwd = p_hole()
+let fill_p_Expr_hole,p_expr_fwd = p_hole()
 
 let p_trait_sln sln st = 
     match sln with 
@@ -1589,19 +1589,15 @@ let _ = fill_u_typ (fun st ->
 let fill_p_binds,p_binds = p_hole()
 let fill_p_targets,p_targets = p_hole()
 let fill_p_Exprs,p_Exprs = p_hole()
-let fill_p_FlatExprs,p_FlatExprs = p_hole()
 let fill_p_constraints,p_constraints = p_hole()
 let fill_p_Vals,p_Vals = p_hole()
-let fill_p_FlatVals,p_FlatVals = p_hole()
 #endif
 
 let fill_u_binds,u_binds = u_hole()
 let fill_u_targets,u_targets = u_hole()
 let fill_u_Exprs,u_Exprs = u_hole()
-let fill_u_FlatExprs,u_FlatExprs = u_hole()
 let fill_u_constraints,u_constraints = u_hole()
 let fill_u_Vals,u_Vals = u_hole()
-let fill_u_FlatVals,u_FlatVals = u_hole()
 
 #if INCLUDE_METADATA_WRITER
 let p_ArgReprInfo (x:ArgReprInfo) st = 
@@ -2222,21 +2218,21 @@ and u_const st =
 and p_dtree x st = 
     match x with 
     | TDSwitch (a,b,c,d) -> p_byte 0 st; p_tup4 p_expr (p_list p_dtree_case) (p_option p_dtree) p_dummy_range (a,b,c,d) st
-    | TDSuccess (a,b)    -> p_byte 1 st; p_tup2 p_FlatExprs p_int (a,b) st
+    | TDSuccess (a,b)    -> p_byte 1 st; p_tup2 p_Exprs p_int (a,b) st
     | TDBind (a,b)       -> p_byte 2 st; p_tup2 p_bind p_dtree (a,b) st
 
 and p_dtree_case (TCase(a,b)) st = p_tup2 p_dtree_discrim p_dtree (a,b) st
 
 and p_dtree_discrim x st = 
     match x with 
-    | Test.UnionCase (ucref,tinst) -> p_byte 0 st; p_tup2 p_ucref p_typs (ucref,tinst) st
-    | Test.Const c                   -> p_byte 1 st; p_const c st
-    | Test.IsNull                    -> p_byte 2 st
-    | Test.IsInst (srcty,tgty)       -> p_byte 3 st; p_typ srcty st; p_typ tgty st
-    | Test.ArrayLength (n,ty)       -> p_byte 4 st; p_tup2 p_int p_typ (n,ty) st
-    | Test.ActivePatternCase _                   -> pfailwith st "Test.ActivePatternCase: only used during pattern match compilation"
+    | DecisionTreeTest.UnionCase (ucref,tinst) -> p_byte 0 st; p_tup2 p_ucref p_typs (ucref,tinst) st
+    | DecisionTreeTest.Const c                   -> p_byte 1 st; p_const c st
+    | DecisionTreeTest.IsNull                    -> p_byte 2 st
+    | DecisionTreeTest.IsInst (srcty,tgty)       -> p_byte 3 st; p_typ srcty st; p_typ tgty st
+    | DecisionTreeTest.ArrayLength (n,ty)       -> p_byte 4 st; p_tup2 p_int p_typ (n,ty) st
+    | DecisionTreeTest.ActivePatternCase _                   -> pfailwith st "DecisionTreeTest.ActivePatternCase: only used during pattern match compilation"
 
-and p_target (TTarget(a,b,_)) st = p_tup2 p_FlatVals p_expr (a,b) st
+and p_target (TTarget(a,b,_)) st = p_tup2 p_Vals p_expr (a,b) st
 and p_bind (TBind(a,b,_)) st = p_tup2 p_Val p_expr (a,b) st
 
 and p_lval_op_kind x st =
@@ -2253,7 +2249,7 @@ and u_dtree st =
     let tag = u_byte st
     match tag with
     | 0 -> u_tup4 u_expr (u_list u_dtree_case) (u_option u_dtree) u_dummy_range st |> TDSwitch 
-    | 1 -> u_tup2 u_FlatExprs u_int                                             st |> TDSuccess
+    | 1 -> u_tup2 u_Exprs u_int                                             st |> TDSuccess
     | 2 -> u_tup2 u_bind u_dtree                                                st |> TDBind
     | _ -> ufailwith st "u_dtree" 
 
@@ -2262,14 +2258,14 @@ and u_dtree_case st = let a,b = u_tup2 u_dtree_discrim u_dtree st in (TCase(a,b)
 and u_dtree_discrim st = 
     let tag = u_byte st
     match tag with
-    | 0 -> u_tup2 u_ucref u_typs st |> Test.UnionCase 
-    | 1 -> u_const st               |> Test.Const 
-    | 2 ->                             Test.IsNull 
-    | 3 -> u_tup2 u_typ u_typ st    |> Test.IsInst
-    | 4 -> u_tup2 u_int u_typ st    |> Test.ArrayLength
+    | 0 -> u_tup2 u_ucref u_typs st |> DecisionTreeTest.UnionCase 
+    | 1 -> u_const st               |> DecisionTreeTest.Const 
+    | 2 ->                             DecisionTreeTest.IsNull 
+    | 3 -> u_tup2 u_typ u_typ st    |> DecisionTreeTest.IsInst
+    | 4 -> u_tup2 u_int u_typ st    |> DecisionTreeTest.ArrayLength
     | _ -> ufailwith st "u_dtree_discrim" 
 
-and u_target st = let a,b = u_tup2 u_FlatVals u_expr st in (TTarget(a,b,SuppressSequencePointAtTarget)) 
+and u_target st = let a,b = u_tup2 u_Vals u_expr st in (TTarget(a,b,SuppressSequencePointAtTarget)) 
 
 and u_bind st = let a = u_Val st in let b = u_expr st in TBind(a,b,NoSequencePointAtStickyBinding)
 
@@ -2533,22 +2529,19 @@ let _ = fill_p_binds (p_List p_bind)
 let _ = fill_p_targets (p_array p_target)
 let _ = fill_p_constraints (p_list p_static_optimization_constraint)
 let _ = fill_p_Exprs (p_list p_expr)
-let _ = fill_p_expr_fwd p_expr
-let _ = fill_p_FlatExprs (p_List p_expr)
+let _ = fill_p_Expr_hole p_expr
+let _ = fill_p_Exprs (p_List p_expr)
 let _ = fill_p_attribs (p_list p_attrib)
 let _ = fill_p_Vals (p_list p_Val)
-let _ = fill_p_FlatVals (p_List p_Val)
 #endif
 
 let _ = fill_u_binds (u_List u_bind)
 let _ = fill_u_targets (u_array u_target)
 let _ = fill_u_constraints (u_list u_static_optimization_constraint)
 let _ = fill_u_Exprs (u_list u_expr)
-let _ = fill_u_expr_fwd u_expr
-let _ = fill_u_FlatExprs (u_List u_expr)
+let _ = fill_u_Expr_hole u_expr
 let _ = fill_u_attribs (u_list u_attrib)
 let _ = fill_u_Vals (u_list u_Val)
-let _ = fill_u_FlatVals (u_List u_Val)
 
 //---------------------------------------------------------------------------
 // Pickle/unpickle F# interface data 
