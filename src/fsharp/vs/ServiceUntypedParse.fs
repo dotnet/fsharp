@@ -97,9 +97,9 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
        ErrorScope.Protect Range.range0 
             (fun () -> 
                 match input with
-                | Some(ParsedInput.ImplFile(ParsedImplFileInput(_modname,_isScript,_qualName,_pragmas,_hashDirectives,modules,_isLastCompiland))) ->
+                | Some(ParsedInput.ImplFile(ParsedImplFileInput(modules = modules))) ->
                     NavigationImpl.getNavigationFromImplFile modules 
-                | Some(ParsedInput.SigFile(ParsedSigFileInput(_modname,_qualName,_pragmas,_hashDirectives,_modules))) ->
+                | Some(ParsedInput.SigFile(ParsedSigFileInput _)) ->
                     NavigationImpl.empty
                 | _ -> 
                     NavigationImpl.empty )
@@ -343,7 +343,7 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
             let walkImplFile (modules:SynModuleOrNamespace list) = List.collect walkModule modules
                      
             match input with
-            | Some(ParsedInput.ImplFile(ParsedImplFileInput(_,_,_,_,_,modules,_))) -> walkImplFile modules 
+            | Some(ParsedInput.ImplFile(ParsedImplFileInput(modules = modules))) -> walkImplFile modules 
             | _ -> []
  
         ErrorScope.Protect Range.range0 
@@ -363,8 +363,8 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
                     
     member scope.FileName =
       match input with
-      | Some(ParsedInput.ImplFile(ParsedImplFileInput(modname, _, _, _, _, _, _))) 
-      | Some(ParsedInput.SigFile(ParsedSigFileInput(modname, _, _, _, _))) -> modname
+      | Some(ParsedInput.ImplFile(ParsedImplFileInput(fileName = modname))) 
+      | Some(ParsedInput.SigFile(ParsedSigFileInput(fileName = modname))) -> modname
       | _ -> ""
     
     // Get items for the navigation drop down bar       
@@ -647,7 +647,7 @@ module UntypedParseImpl =
             if isPosInRange range then f()
             else None
 
-        let rec walkImplFileInput (ParsedImplFileInput(_, _, _, _, _, moduleOrNamespaceList, _)) = 
+        let rec walkImplFileInput (ParsedImplFileInput(modules = moduleOrNamespaceList)) = 
             List.tryPick (walkSynModuleOrNamespace true) moduleOrNamespaceList
 
         and walkSynModuleOrNamespace isTopLevel (SynModuleOrNamespace(_, _, _, decls, _, attrs, _, r)) =

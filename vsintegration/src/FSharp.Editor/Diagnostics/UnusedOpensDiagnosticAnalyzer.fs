@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-namespace rec Microsoft.VisualStudio.FSharp.Editor
+namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Composition
@@ -33,8 +33,8 @@ module private UnusedOpens =
                 | _ -> () ]
 
     let getOpenStatements = function
-        | ParsedInput.ImplFile implFile ->
-            let (ParsedImplFileInput(_, _, _, _, _, modules, _)) = implFile in visitModulesAndNamespaces modules
+        | ParsedInput.ImplFile (ParsedImplFileInput(modules = modules)) ->
+            visitModulesAndNamespaces modules
         | _ -> []
 
     let getAutoOpenAccessPath (ent:FSharpEntity) =
@@ -48,7 +48,7 @@ module private UnusedOpens =
             else
                 None)
 
-    let entityNamespace (entOpt:FSharpEntity option) =
+    let entityNamespace (entOpt: FSharpEntity option) =
         match entOpt with
         | Some ent ->
             if ent.IsFSharpModule then
@@ -73,25 +73,25 @@ module private UnusedOpens =
                 let lengthDiff = fullName.Length - length - 2
                 Some fullName.[0..lengthDiff])
 
-        let getPossibleNamespaces (sym: FSharpSymbolUse) =
-            let isQualified = symbolIsFullyQualified sourceText sym
-            match sym with
+        let getPossibleNamespaces (symbolUse: FSharpSymbolUse) =
+            let isQualified = symbolIsFullyQualified sourceText symbolUse
+            match symbolUse with
             | SymbolUse.Entity ent when not (isQualified ent.TryFullName) ->
-                getPartNamespace sym ent.TryFullName :: entityNamespace (Some ent)
+                getPartNamespace symbolUse ent.TryFullName :: entityNamespace (Some ent)
             | SymbolUse.Field f when not (isQualified (Some f.FullName)) -> 
-                getPartNamespace sym (Some f.FullName) :: entityNamespace (Some f.DeclaringEntity)
+                getPartNamespace symbolUse (Some f.FullName) :: entityNamespace (Some f.DeclaringEntity)
             | SymbolUse.MemberFunctionOrValue mfv when not (isQualified (Some mfv.FullName)) -> 
-                getPartNamespace sym (Some mfv.FullName) :: entityNamespace mfv.EnclosingEntitySafe
+                getPartNamespace symbolUse (Some mfv.FullName) :: entityNamespace mfv.EnclosingEntitySafe
             | SymbolUse.Operator op when not (isQualified (Some op.FullName)) ->
-                getPartNamespace sym (Some op.FullName) :: entityNamespace op.EnclosingEntitySafe
+                getPartNamespace symbolUse (Some op.FullName) :: entityNamespace op.EnclosingEntitySafe
             | SymbolUse.ActivePattern ap when not (isQualified (Some ap.FullName)) ->
-                getPartNamespace sym (Some ap.FullName) :: entityNamespace ap.EnclosingEntitySafe
+                getPartNamespace symbolUse (Some ap.FullName) :: entityNamespace ap.EnclosingEntitySafe
             | SymbolUse.ActivePatternCase apc when not (isQualified (Some apc.FullName)) ->
-                getPartNamespace sym (Some apc.FullName) :: entityNamespace apc.Group.EnclosingEntity
+                getPartNamespace symbolUse (Some apc.FullName) :: entityNamespace apc.Group.EnclosingEntity
             | SymbolUse.UnionCase uc when not (isQualified (Some uc.FullName)) ->
-                getPartNamespace sym (Some uc.FullName) :: entityNamespace (Some uc.ReturnType.TypeDefinition)
+                getPartNamespace symbolUse (Some uc.FullName) :: entityNamespace (Some uc.ReturnType.TypeDefinition)
             | SymbolUse.Parameter p when not (isQualified (Some p.FullName)) ->
-                getPartNamespace sym (Some p.FullName) :: entityNamespace (Some p.Type.TypeDefinition)
+                getPartNamespace symbolUse (Some p.FullName) :: entityNamespace (Some p.Type.TypeDefinition)
             | _ -> [None]
 
         let namespacesInUse =
@@ -103,15 +103,13 @@ module private UnusedOpens =
 
         let filter list: (string * Range.range) list =
             let rec filterInner acc list (seenNamespaces: Set<string>) = 
-                let notUsed namespc =
-                    not (namespacesInUse.Contains namespc) || seenNamespaces.Contains namespc
-
+                let notUsed ns = not (namespacesInUse.Contains ns) || seenNamespaces.Contains ns
                 match list with 
-                | (namespc, range)::xs when notUsed namespc -> 
-                    filterInner ((namespc, range)::acc) xs (seenNamespaces.Add namespc)
-                | (namespc, _)::xs ->
-                    filterInner acc xs (seenNamespaces.Add namespc)
-                | [] -> acc |> List.rev
+                | (ns, range) :: xs when notUsed ns -> 
+                    filterInner ((ns, range) :: acc) xs (seenNamespaces.Add ns)
+                | (ns, _) :: xs ->
+                    filterInner acc xs (seenNamespaces.Add ns)
+                | [] -> List.rev acc
             filterInner [] list Set.empty
 
         parsedInput
@@ -128,15 +126,13 @@ type internal UnusedOpensDiagnosticAnalyzer() =
 
     static let Descriptor = 
         DiagnosticDescriptor(
-            IDEDiagnosticIds.RemoveUnnecessaryImportsDiagnosticId, 
-            SR.RemoveUnusedOpens.Value, 
-            SR.UnusedOpens.Value, 
-            DiagnosticCategory.Style, 
-            DiagnosticSeverity.Hidden, 
-            true, 
-            "", 
-            "", 
-            DiagnosticCustomTags.Unnecessary)
+            id = IDEDiagnosticIds.RemoveUnnecessaryImportsDiagnosticId, 
+            title = SR.RemoveUnusedOpens.Value, 
+            messageFormat = SR.UnusedOpens.Value, 
+            category = DiagnosticCategory.Style, 
+            defaultSeverity = DiagnosticSeverity.Hidden, 
+            isEnabledByDefault = true, 
+            customTags = DiagnosticCustomTags.Unnecessary)
 
     override __.SupportedDiagnostics = ImmutableArray.Create Descriptor
     override this.AnalyzeSyntaxAsync(_, _) = Task.FromResult ImmutableArray<Diagnostic>.Empty
@@ -151,12 +147,12 @@ type internal UnusedOpensDiagnosticAnalyzer() =
             let unusedOpens = UnusedOpens.getUnusedOpens sourceText parsedInput symbolUses
             
             return 
-                (unusedOpens
-                 |> List.map (fun m ->
+                unusedOpens
+                |> List.map (fun m ->
                       Diagnostic.Create(
                          Descriptor,
                          CommonRoslynHelpers.RangeToLocation(m, sourceText, document.FilePath)))
-                ).ToImmutableArray()
+                |> Seq.toImmutableArray
         } 
         |> Async.map (Option.defaultValue ImmutableArray.Empty)
         |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
