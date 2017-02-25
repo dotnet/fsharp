@@ -4909,26 +4909,23 @@ module ScriptPreprocessClosure =
     let PM_SPEC_FILE = "paket.dependencies"
     let ResolvePackages (implicitIncludeDir: string, scriptName: string, packageManagerTextLines: string list, m) =
         printfn "OBJ %A" (implicitIncludeDir,scriptName)
-        let tempDir = Path.Combine(Path.GetTempPath(),"fsx-packages"+string(abs(hash (implicitIncludeDir,scriptName))))
+        let workingDir = Path.Combine(Path.GetTempPath(),"fsx-packages"+string(abs(hash (implicitIncludeDir,scriptName))))
+        let paketDepsFile = FileInfo(Path.Combine(workingDir,PM_SPEC_FILE))
+        
         let userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
+        let packageManagerTextLines = packageManagerTextLines |> List.filter (fun l -> not (String.IsNullOrWhiteSpace l))
 
-        let paketDepsFile,packageManagerTextLines =
+        let rootDir,packageManagerTextLines =
             let rec findDepsFile dir =
                 let fi = FileInfo(Path.Combine(dir,PM_SPEC_FILE))
                 if fi.Exists then
-                    fi,[ yield! Array.toList (File.ReadAllLines fi.FullName); yield! packageManagerTextLines]
+                    fi.Directory.FullName,[ yield! Array.toList (File.ReadAllLines fi.FullName); yield! packageManagerTextLines]
                 elif fi.Directory.Parent <> null then
                     findDepsFile fi.Directory.Parent.FullName
                 else
-                    if not (Directory.Exists tempDir) then
-                        Directory.CreateDirectory tempDir |> ignore
-                    let fi = FileInfo(Path.Combine(tempDir,PM_SPEC_FILE))
-                    File.WriteAllText(fi.FullName,"source https://nuget.org/api/v2" + Environment.NewLine)
-                    fi,[ yield "framework: net461"; yield "source https://nuget.org/api/v2"; yield! packageManagerTextLines]
+                    workingDir,[ yield "framework: net461"; yield "source https://nuget.org/api/v2"; yield! packageManagerTextLines]
            
             findDepsFile implicitIncludeDir
-
-        let workingDir = paketDepsFile.Directory.FullName
 
         let paketExePathOpt = 
             let rec loop dir = 
@@ -4946,7 +4943,7 @@ module ScriptPreprocessClosure =
 
             match loop implicitIncludeDir with 
             | None -> 
-                match loop workingDir with 
+                match loop rootDir with 
                 | None -> 
                     let profileExe = Path.Combine (userProfile, PM_DIR, PM_EXE)
                     if File.Exists profileExe then Some profileExe
@@ -4969,6 +4966,9 @@ module ScriptPreprocessClosure =
                 Some loadScript
             else
                 try File.Delete(loadScript) with _ -> ()
+                if not (Directory.Exists workingDir) then
+                    Directory.CreateDirectory workingDir |> ignore
+       
                 File.WriteAllLines(paketDepsFile.FullName, packageManagerTextLines)
                 printfn "running package resolution in '%s'..." workingDir
                 let startInfo = 
