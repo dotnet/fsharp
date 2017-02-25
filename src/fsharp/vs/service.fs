@@ -1472,9 +1472,9 @@ type TypeCheckInfo
             | CNR(_, (Item.Value vref), _, _, _, _, m) when isFunction g vref.Type ->
                 if vref.IsPropertyGetterMethod || vref.IsPropertySetterMethod then
                     Some (m, SemanticClassificationType.Property)
-                elif not (IsOperatorName vref.DisplayName) then
-                    Some (m, SemanticClassificationType.Function)
-                else None
+                elif IsOperatorName vref.DisplayName then
+                    Some (m, SemanticClassificationType.Operator)
+                else Some (m, SemanticClassificationType.Function)
             | CNR(_, Item.RecdField rfinfo, _, _, _, _, m) when rfinfo.RecdField.IsMutable && rfinfo.LiteralValue.IsNone -> 
                 Some (m, SemanticClassificationType.MutableVar)
             | CNR(_, Item.MethodGroup(_, _, _), _, _, _, _, m) ->
