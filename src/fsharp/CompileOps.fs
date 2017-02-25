@@ -4957,11 +4957,11 @@ module ScriptPreprocessClosure =
             None
 
         | Some paketExePath ->
-
             let loadScript = Path.Combine(workingDir,PM_DIR,"load","main.group.fsx")
             if paketDepsFile.Exists && 
-               (File.ReadAllLines(paketDepsFile.FullName)  |> Array.toList) = packageManagerTextLines && 
-               File.Exists loadScript  then 
+               (File.ReadAllLines(paketDepsFile.FullName) |> Array.toList) = packageManagerTextLines && 
+               File.Exists loadScript
+            then 
                 printfn "skipping running package resolution... already done that" 
                 Some loadScript
             else
