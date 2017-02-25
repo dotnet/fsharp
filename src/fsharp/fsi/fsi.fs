@@ -73,7 +73,7 @@ open System.Runtime.CompilerServices
 [<Dependency("FSharp.Core",LoadHint.Always)>] do ()
 #endif
 
-let packageManagerPrefix = "paket"
+let packageManagerPrefix = "paket:"
 
 //----------------------------------------------------------------------------
 // For the FSI as a service methods...
@@ -1226,8 +1226,8 @@ type internal FsiDynamicCompiler
 
 
     member __.EvalPackageManagerTextFragment (text: string) = 
-        if text <> packageManagerPrefix then
-            let text = text.Substring(packageManagerPrefix.Length + 2)
+        let text = text.Substring(packageManagerPrefix.Length + 1)
+        if not (String.IsNullOrWhiteSpace text) then
             tcConfigB.packageManagerTextLines <- tcConfigB.packageManagerTextLines @ [ text ]
         needsPackageResolution <- true
 
@@ -1897,7 +1897,7 @@ type internal FsiInteractionProcessor
             | IHash (ParsedHashDirective("load",sourceFiles,m),_) -> 
                 fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, sourceFiles, lexResourceManager, errorLogger),Completed None
 
-            | IHash (ParsedHashDirective(("reference" | "r"),[text],_),_) when text.StartsWith packageManagerPrefix && (text.Contains ":" || text = packageManagerPrefix) ->
+            | IHash (ParsedHashDirective(("reference" | "r"),[text],_),_) when text.StartsWith packageManagerPrefix ->
                 fsiDynamicCompiler.EvalPackageManagerTextFragment(text)
                 istate,Completed None
                 
