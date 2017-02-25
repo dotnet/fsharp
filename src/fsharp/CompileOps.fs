@@ -4907,6 +4907,7 @@ module ScriptPreprocessClosure =
     let PM_DIR = ".paket"
     let PM_SPEC_FILE = "paket.dependencies"
     let PM_LOCK_FILE = "paket.lock"
+    let PM_COMMAND = "install --generate-load-scripts"
 
     let userProfile = 
         let res = Environment.GetEnvironmentVariable("USERPROFILE")
@@ -4917,20 +4918,20 @@ module ScriptPreprocessClosure =
     let ResolvePackages (implicitIncludeDir: string, scriptName: string, packageManagerTextLines: string list, m) =
         printfn "OBJ %A" (implicitIncludeDir,scriptName)
         let workingDir = Path.Combine(Path.GetTempPath(),"fsx-packages", string(abs(hash (implicitIncludeDir,scriptName))))
-        let paketDepsFile = FileInfo(Path.Combine(workingDir,PM_SPEC_FILE))
+        let workingDirSpecFile = FileInfo(Path.Combine(workingDir,PM_SPEC_FILE))
         if not (Directory.Exists workingDir) then
             Directory.CreateDirectory workingDir |> ignore
 
         let packageManagerTextLines = packageManagerTextLines |> List.filter (fun l -> not (String.IsNullOrWhiteSpace l))
 
         let rootDir,packageManagerTextLines =
-            let rec findDepsFile dir =
+            let rec findSpecFile dir =
                 let fi = FileInfo(Path.Combine(dir,PM_SPEC_FILE))
                 if fi.Exists then
                     let lockFile = FileInfo(Path.Combine(fi.Directory.FullName,PM_LOCK_FILE))
                     let depsFileLines = File.ReadAllLines fi.FullName
                     if lockFile.Exists then
-                        let originalDepsFile = FileInfo(paketDepsFile.FullName + ".original")
+                        let originalDepsFile = FileInfo(workingDirSpecFile.FullName + ".original")
                         if not originalDepsFile.Exists ||
                            File.ReadAllLines originalDepsFile.FullName <> depsFileLines
                         then
@@ -4940,13 +4941,13 @@ module ScriptPreprocessClosure =
                         
                     fi.Directory.FullName, (Array.toList depsFileLines) @ packageManagerTextLines
                 elif fi.Directory.Parent <> null then
-                    findDepsFile fi.Directory.Parent.FullName
+                    findSpecFile fi.Directory.Parent.FullName
                 else
                     workingDir, "framework: net461" :: "source https://nuget.org/api/v2" :: packageManagerTextLines
            
-            findDepsFile implicitIncludeDir
+            findSpecFile implicitIncludeDir
 
-        let paketExePathOpt = 
+        let toolPathOpt = 
             let rec loop dir = 
                 if Directory.Exists dir then 
                     let dirExe = Path.Combine (dir, PM_EXE)
@@ -4959,7 +4960,7 @@ module ScriptPreprocessClosure =
                     else
                         None
                 else None
-
+            
             match loop implicitIncludeDir with 
             | None -> 
                 match loop rootDir with 
@@ -4970,31 +4971,32 @@ module ScriptPreprocessClosure =
                 | r -> r
             | r -> r
 
-        match paketExePathOpt with 
+
+        match toolPathOpt with 
         | None -> 
             errorR(Error(FSComp.SR.packageManagerNotFound(implicitIncludeDir, userProfile),m))
             None
 
-        | Some paketExePath ->
+        | Some toolPath ->
             let loadScript = Path.Combine(workingDir,PM_DIR,"load","main.group.fsx")
-            if paketDepsFile.Exists && 
-               (File.ReadAllLines(paketDepsFile.FullName) |> Array.toList) = packageManagerTextLines && 
+            if workingDirSpecFile.Exists && 
+               (File.ReadAllLines(workingDirSpecFile.FullName) |> Array.toList) = packageManagerTextLines && 
                File.Exists loadScript
             then 
                 printfn "skipping running package resolution... already done that" 
                 Some loadScript
             else
                 try File.Delete(loadScript) with _ -> ()
-       
-                File.WriteAllLines(paketDepsFile.FullName, packageManagerTextLines)
+                let toolPath = if Microsoft.FSharp.Compiler.AbstractIL.IL.runningOnMono then "mono " + toolPath else toolPath
+                File.WriteAllLines(workingDirSpecFile.FullName, packageManagerTextLines)
                 printfn "running package resolution in '%s'..." workingDir
                 let startInfo = 
                     System.Diagnostics.ProcessStartInfo(
-                        FileName = (if Microsoft.FSharp.Compiler.AbstractIL.IL.runningOnMono then "mono " + paketExePath else paketExePath),
+                        FileName = toolPath,
                         WorkingDirectory = workingDir, 
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
-                        Arguments = "install --generate-load-scripts",
+                        Arguments = PM_COMMAND,
                         CreateNoWindow = true,
                         UseShellExecute = false)
                 
@@ -5012,7 +5014,7 @@ module ScriptPreprocessClosure =
                 printfn "done running package resolution..."
                 if p.ExitCode <> 0 then
                     let msg = String.Join(Environment.NewLine, errors)
-                    errorR(Error(FSComp.SR.packageResolutionFailed(paketExePath, workingDir, Environment.NewLine, msg),m))
+                    errorR(Error(FSComp.SR.packageResolutionFailed(toolPath, workingDir, Environment.NewLine, msg),m))
                     None
                 else
                     printfn "package resolution completed at %A" System.DateTimeOffset.UtcNow
