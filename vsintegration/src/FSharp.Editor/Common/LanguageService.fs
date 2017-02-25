@@ -248,11 +248,26 @@ and
         if String.IsNullOrWhiteSpace projectFileName then projectFileName
         else Path.GetFileNameWithoutExtension projectFileName
 
+    let singleFileProjects = ConcurrentDictionary<_, AbstractProject>()
+
+    let tryRemoveSingleFileProject projectId =
+        match singleFileProjects.TryRemove(projectId) with
+        | true, project ->
+            projectInfoManager.RemoveSingleFileProject(projectId)
+            project.Disconnect()       
+        | _ -> ()
+
     override this.Initialize() =
         base.Initialize()
  
         this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Completion.CompletionOptions.BlockForCompletionItems, FSharpCommonConstants.FSharpLanguageName, false)
         this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Shared.Options.ServiceFeatureOnOffOptions.ClosedFileDiagnostic, FSharpCommonConstants.FSharpLanguageName, Nullable false)
+
+        this.Workspace.DocumentClosed.Add <| fun args ->
+            tryRemoveSingleFileProject args.Document.Project.Id
+        //because DocumentClosed doesn't fire when closing solution, we need also this:
+        Events.SolutionEvents.OnAfterCloseSolution.Add <| fun _ ->
+            for id in singleFileProjects.Keys do tryRemoveSingleFileProject id |> ignore
             
         Events.SolutionEvents.OnAfterOpenProject.Add <| fun args ->
             match args.Hierarchy with
@@ -333,15 +348,7 @@ and
             projectContext.AddSourceFile(fileName)
             
             let project = projectContext :?> AbstractProject
-            let documentId = project.GetCurrentDocumentFromPath(fileName).Id
-
-            let rec onDocumentClosed = EventHandler<DocumentEventArgs> (fun _ args ->
-                if args.Document.Id = documentId then
-                    projectInfoManager.RemoveSingleFileProject(projectId)
-                    project.Disconnect()
-                    workspace.DocumentClosed.RemoveHandler(onDocumentClosed)
-            )
-            workspace.DocumentClosed.AddHandler(onDocumentClosed)
+            singleFileProjects.[projectId] <- project
 
     override this.ContentTypeName = FSharpCommonConstants.FSharpContentTypeName
     override this.LanguageName = FSharpCommonConstants.FSharpLanguageName
