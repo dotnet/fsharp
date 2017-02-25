@@ -33,6 +33,7 @@ module internal FSharpClassificationTypes =
     let [<Literal>] Interface = ClassificationTypeNames.InterfaceName
     let [<Literal>] TypeArgument = ClassificationTypeNames.TypeParameterName
     let [<Literal>] Operator = ClassificationTypeNames.Operator
+    let [<Literal>] Disposable = "FSharp.Disposable"
 
     let getClassificationTypeName = function
         | SemanticClassificationType.ReferenceType -> ReferenceType
@@ -49,6 +50,7 @@ module internal FSharpClassificationTypes =
         | SemanticClassificationType.Interface -> Interface
         | SemanticClassificationType.TypeArgument -> TypeArgument
         | SemanticClassificationType.Operator -> Operator 
+        | SemanticClassificationType.Disposable -> Disposable
 
 module internal ClassificationDefinitions =
 
@@ -74,7 +76,9 @@ module internal ClassificationDefinitions =
           [ FSharpClassificationTypes.Function,   (Colors.Black,                     Color.FromRgb(220uy, 220uy, 220uy))
             FSharpClassificationTypes.MutableVar, (Color.FromRgb(160uy, 128uy, 0uy), Color.FromRgb(255uy, 210uy, 28uy))
             FSharpClassificationTypes.Printf,     (Color.FromRgb(43uy, 145uy, 175uy), Color.FromRgb(78uy, 220uy, 176uy))
-            FSharpClassificationTypes.Property,   (Colors.Black,                     Color.FromRgb(220uy, 220uy, 220uy)) ]
+            FSharpClassificationTypes.Property,   (Colors.Black,                     Color.FromRgb(220uy, 220uy, 220uy)) 
+            FSharpClassificationTypes.Disposable, (Color.FromRgb(43uy, 145uy, 175uy), Color.FromRgb(78uy, 220uy, 176uy)) ]
+
 
         let setColors _ =
             let fontAndColorStorage = serviceProvider.GetService(typeof<SVsFontAndColorStorage>) :?> IVsFontAndColorStorage
@@ -120,6 +124,9 @@ module internal ClassificationDefinitions =
 
     [<Export; Name(FSharpClassificationTypes.Property); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
     let FSharpPropertyClassificationType : ClassificationTypeDefinition = null
+
+    [<Export; Name(FSharpClassificationTypes.Disposable); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
+    let FSharpDisposableClassificationType : ClassificationTypeDefinition = null
 
     [<Export(typeof<EditorFormatDefinition>)>]
     [<ClassificationType(ClassificationTypeNames = FSharpClassificationTypes.Function)>]

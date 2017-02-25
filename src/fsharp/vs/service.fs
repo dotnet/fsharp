@@ -503,6 +503,7 @@ type SemanticClassificationType =
     | Interface
     | TypeArgument
     | Operator
+    | Disposable
 
 // A scope represents everything we get back from the typecheck of a file.
 // It acts like an in-memory database about the file.
@@ -1140,6 +1141,7 @@ type TypeCheckInfo
             else 
                 items
 
+
     member x.IsRelativeNameResolvable(cursorPos: pos, plid: string list, item: Item) : bool =
     /// Determines if a long ident is resolvable at a specific point.
         ErrorScope.Protect
@@ -1459,6 +1461,9 @@ type TypeCheckInfo
             | None -> 
                 sResolutions.CapturedNameResolutions :> seq<_>
 
+        let isDisposableTy (ty: TType) =
+            Infos.ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_IDisposable
+
         resolutions
         |> Seq.choose (fun cnr ->
             match cnr with
@@ -1490,6 +1495,8 @@ type TypeCheckInfo
                 Some (m, SemanticClassificationType.Interface)
             | CNR(_, Item.Types(_, types), LegitTypeOccurence, _, _, _, m) when types |> List.exists (isStructTy g) -> 
                 Some (m, SemanticClassificationType.ValueType)
+            | CNR(_, Item.Types(_, types), LegitTypeOccurence, _, _, _, m) when types |> List.exists isDisposableTy ->
+                Some (m, SemanticClassificationType.Disposable)
             | CNR(_, Item.Types _, LegitTypeOccurence, _, _, _, m) -> 
                 Some (m, SemanticClassificationType.ReferenceType)
             | CNR(_, (Item.TypeVar _ ), LegitTypeOccurence, _, _, _, m) ->

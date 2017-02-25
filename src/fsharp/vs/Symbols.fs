@@ -403,6 +403,11 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
         let ty = generalizedTyconRef entity
         Infos.ExistsHeadTypeInEntireHierarchy cenv.g cenv.amap range0 ty cenv.g.tcref_System_Attribute
         
+    member x.IsDisposableType =
+        if isUnresolved() then false else
+        let ty = generalizedTyconRef entity
+        Infos.ExistsHeadTypeInEntireHierarchy cenv.g cenv.amap range0 ty cenv.g.tcref_System_IDisposable
+
     member x.BaseType = 
         checkIsResolved()        
         GetSuperTypeOfType cenv.g cenv.amap range0 (generalizedTyconRef entity) 
