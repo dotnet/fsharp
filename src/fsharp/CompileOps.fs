@@ -4908,6 +4908,7 @@ module ScriptPreprocessClosure =
     let PM_SPEC_FILE = "paket.dependencies"
     let PM_LOCK_FILE = "paket.lock"
     let PM_COMMAND = "install --generate-load-scripts"
+    let PM_LOADSCRIPT = PM_DIR + "/load/main.group.fsx"
 
     let userProfile = 
         let res = Environment.GetEnvironmentVariable("USERPROFILE")
@@ -4978,7 +4979,7 @@ module ScriptPreprocessClosure =
             None
 
         | Some toolPath ->
-            let loadScript = Path.Combine(workingDir,PM_DIR,"load","main.group.fsx")
+            let loadScript = Path.Combine(workingDir,PM_LOADSCRIPT)
             if workingDirSpecFile.Exists && 
                (File.ReadAllLines(workingDirSpecFile.FullName) |> Array.toList) = packageManagerTextLines && 
                File.Exists loadScript
