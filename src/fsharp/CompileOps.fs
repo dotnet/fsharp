@@ -4949,7 +4949,7 @@ module ScriptPreprocessClosure =
                     let lockFile = FileInfo(Path.Combine(fi.Directory.FullName,PM_LOCK_FILE))
                     let depsFileLines = File.ReadAllLines fi.FullName
                     if lockFile.Exists then
-                        let originalDepsFile = FileInfo(paketDepsFile.FullName + ".orginal")
+                        let originalDepsFile = FileInfo(paketDepsFile.FullName + ".original")
                         if not originalDepsFile.Exists ||
                            File.ReadAllLines originalDepsFile.FullName <> depsFileLines
                         then
