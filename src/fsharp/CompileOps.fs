@@ -4981,10 +4981,13 @@ module ScriptPreprocessClosure =
                         UseShellExecute = false)
                 use p = new System.Diagnostics.Process()
                 let errors = System.Collections.Generic.List<_>()
+                let log = System.Collections.Generic.List<_>()
                 p.StartInfo <- startInfo
                 p.ErrorDataReceived.Add(fun d -> if d.Data <> null then errors.Add d.Data)
-                p.OutputDataReceived.Add(fun d -> if d.Data <> null then printfn "%A" d.Data)
+                p.OutputDataReceived.Add(fun d -> if d.Data <> null then log.Add d.Data)
                 p.Start() |> ignore
+                p.BeginErrorReadLine()
+                p.BeginOutputReadLine()
                 p.WaitForExit()
                 printfn "done running package resolution..."
                 if p.ExitCode <> 0 then
