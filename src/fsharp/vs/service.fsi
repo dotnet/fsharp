@@ -163,6 +163,7 @@ type internal SemanticClassificationType =
     | IntrinsicFunction
     | Enumeration
     | Interface
+    | Disposable
 
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]

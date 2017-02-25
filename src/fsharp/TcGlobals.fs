@@ -942,6 +942,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val tcref_System_IComparable = findSysTyconRef sys "IComparable"
   member val tcref_System_IStructuralComparable = findSysTyconRef sysCollections "IStructuralComparable"
   member val tcref_System_IStructuralEquatable  = findSysTyconRef sysCollections "IStructuralEquatable"
+  member val tcref_System_IDisposable = findSysTyconRef sys "IDisposable"
             
   member val tcref_LanguagePrimitives = mk_MFCore_tcref fslibCcu "LanguagePrimitives"
 
