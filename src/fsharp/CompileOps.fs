@@ -4903,8 +4903,7 @@ module ScriptPreprocessClosure =
             // Recover by  using a default TcConfig.
             let tcConfigB = tcConfig.CloneOfOriginalBuilder 
             TcConfig.Create(tcConfigB, validate=false),nowarns
-    
-    let PM_BOOTSTRAP_EXE = "paket.bootstrapper.exe"
+        
     let PM_EXE = "paket.exe"
     let PM_DIR = ".paket"
     let PM_SPEC_FILE = "paket.dependencies"
@@ -4937,48 +4936,25 @@ module ScriptPreprocessClosure =
                     let paketDir = Path.Combine (dir, PM_DIR)
                     let paketDirExe = Path.Combine (paketDir, PM_EXE)
                     let dirExe = Path.Combine (dir, PM_EXE)
-                    let paketDirBootstrapExe = Path.Combine (paketDir, PM_BOOTSTRAP_EXE)
-                    let dirBootstrapperExe = Path.Combine (dir, PM_BOOTSTRAP_EXE)
-                    if Directory.Exists paketDir && File.Exists paketDirExe then Choice1Of3 paketDirExe
-                    elif File.Exists dirExe then Choice1Of3 dirExe
-                    elif Directory.Exists paketDir && File.Exists paketDirBootstrapExe then Choice2Of3 paketDirBootstrapExe
-                    elif File.Exists dirBootstrapperExe then Choice2Of3 dirBootstrapperExe
+                    if Directory.Exists paketDir && File.Exists paketDirExe then Some paketDirExe
+                    elif File.Exists dirExe then Some dirExe
                     elif not (String.IsNullOrWhiteSpace (Path.GetDirectoryName(paketDir))) then 
                         loop (Path.GetDirectoryName(paketDir))
                     else
-                        Choice3Of3  ()
-                else Choice3Of3  ()
+                        None
+                else None
+
             match loop implicitIncludeDir with 
-            | Choice3Of3 () -> 
-              match loop workingDir with 
-              | Choice3Of3 () -> 
-                 let profileExe = Path.Combine (userProfile, PM_DIR, PM_EXE)
-                 let profileBootstrapExe = Path.Combine (userProfile, PM_DIR, PM_BOOTSTRAP_EXE)
-                 if File.Exists profileExe then  Choice1Of3 profileExe
-                 elif File.Exists profileBootstrapExe then  Choice2Of3 profileBootstrapExe 
-                 else Choice3Of3  ()
-              | r -> r
+            | None -> 
+                match loop workingDir with 
+                | None -> 
+                    let profileExe = Path.Combine (userProfile, PM_DIR, PM_EXE)
+                    if File.Exists profileExe then Some profileExe
+                    else None
+                | r -> r
             | r -> r
 
-        let paketExePathOptAfterBootstrap = 
-            match paketExePathOpt with 
-            | Choice1Of3 paketExe -> Some paketExe
-            | Choice2Of3 bootstrapperExe -> 
-                let bootstrapperDir = Path.GetDirectoryName(bootstrapperExe)
-                printfn "running paket.bootstrapper.exe in '%s'..." bootstrapperDir
-                let startInfo = System.Diagnostics.ProcessStartInfo(FileName=bootstrapperExe, WorkingDirectory=bootstrapperDir, Arguments="prerelease", UseShellExecute=false)
-                let p = System.Diagnostics.Process.Start(startInfo)
-                p.WaitForExit()
-                printfn "done running paket.bootstrapper.exe..."
-                if p.ExitCode <> 0 then
-                    errorR(Error(FSComp.SR.packageBootstrapFailed(bootstrapperExe, bootstrapperDir),m))
-                    None
-                else
-                    printfn "package resolution completed at %A" System.DateTimeOffset.UtcNow
-                    Some (Path.Combine(Path.GetDirectoryName(bootstrapperExe),PM_EXE))
-            | Choice3Of3 () -> None
-
-        match paketExePathOptAfterBootstrap with 
+        match paketExePathOpt with 
         | None -> 
             errorR(Error(FSComp.SR.packageManagerNotFound(implicitIncludeDir, userProfile),m))
             None
