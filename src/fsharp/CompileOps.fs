@@ -3162,8 +3162,8 @@ let GetScopedPragmasForHashDirective hd =
 let GetScopedPragmasForInput input = 
 
     match input with 
-    | ParsedInput.SigFile (ParsedSigFileInput(_,_,pragmas,_,_)) -> pragmas
-    | ParsedInput.ImplFile (ParsedImplFileInput(_,_,_,pragmas,_,_,_)) ->pragmas
+    | ParsedInput.SigFile (ParsedSigFileInput(scopedPragmas=pragmas)) -> pragmas
+    | ParsedInput.ImplFile (ParsedImplFileInput(scopedPragmas=pragmas)) -> pragmas
 
 
 
@@ -3434,7 +3434,7 @@ let ParseOneInputLexbuf (tcConfig:TcConfig,lexResourceManager,conditionalCompila
                     match res with 
                     | ParsedInput.SigFile(ParsedSigFileInput(_,_,_,_,specs)) -> 
                         dprintf "parsing yielded %d specs" (List.collect flattenModSpec specs).Length
-                    | ParsedInput.ImplFile(ParsedImplFileInput(_,_,_,_,_,impls,_)) -> 
+                    | ParsedInput.ImplFile(ParsedImplFileInput(modules = impls)) -> 
                         dprintf "parsing yielded %d definitions" (List.collect flattenModImpl impls).Length
                 res
             )
@@ -4639,7 +4639,7 @@ let ProcessMetaCommandsFromInput
     let canHaveScriptMetaCommands = 
         match inp with 
         | ParsedInput.SigFile(_) ->  false
-        | ParsedInput.ImplFile(ParsedImplFileInput(_,isScript,_,_,_,_,_)) -> isScript
+        | ParsedInput.ImplFile(ParsedImplFileInput(isScript = isScript)) -> isScript
 
     let ProcessMetaCommand state hash  =
         let mutable matchedm = range0
