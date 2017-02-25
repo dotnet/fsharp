@@ -4915,7 +4915,7 @@ module ScriptPreprocessClosure =
 
         let paketDepsFile,packageManagerTextLines =
             let rec findDepsFile dir =
-                let fi = FileInfo(Path.Combine(dir,"paket.dependencies"))
+                let fi = FileInfo(Path.Combine(dir,PM_SPEC_FILE))
                 if fi.Exists then
                     fi,[ yield! Array.toList (File.ReadAllLines fi.FullName); yield! packageManagerTextLines]
                 elif fi.Directory.Parent <> null then
@@ -4923,7 +4923,7 @@ module ScriptPreprocessClosure =
                 else
                     if not (Directory.Exists tempDir) then
                         Directory.CreateDirectory tempDir |> ignore
-                    let fi = FileInfo(Path.Combine(tempDir,"paket.dependencies"))
+                    let fi = FileInfo(Path.Combine(tempDir,PM_SPEC_FILE))
                     File.WriteAllText(fi.FullName,"source https://nuget.org/api/v2" + Environment.NewLine)
                     fi,[ yield "framework: net461"; yield "source https://nuget.org/api/v2"; yield! packageManagerTextLines]
            
