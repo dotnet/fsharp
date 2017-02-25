@@ -73,7 +73,7 @@ open System.Runtime.CompilerServices
 [<Dependency("FSharp.Core",LoadHint.Always)>] do ()
 #endif
 
-let paketPrefix = "paket"
+let packageManagerPrefix = "paket"
 
 //----------------------------------------------------------------------------
 // For the FSI as a service methods...
@@ -971,8 +971,7 @@ type internal FsiDynamicCompiler
     let mutable fragmentId = 0
     let mutable prevIt : ValRef option = None
 
-    let mutable packageManagerTextLines = []
-    let mutable needsPaketInstall = false
+    let mutable needsPackageResolution = false
 
     let generateDebugInfo = tcConfigB.debuginfo
 
@@ -1226,23 +1225,18 @@ type internal FsiDynamicCompiler
         { istate with tcState = tcState.NextStateAfterIncrementalFragment(tcEnv); optEnv = optEnv }
 
 
-    member __.EvalPackageManagerTextFragment (packageManagerText: string) = 
-        if packageManagerText <> paketPrefix then
-            let package = packageManagerText.Substring(paketPrefix.Length + 2)
-            packageManagerTextLines <- packageManagerTextLines @ [ package ]
-        needsPaketInstall <- true
+    member __.EvalPackageManagerTextFragment (text: string) = 
+        if text <> packageManagerPrefix then
+            let text = text.Substring(packageManagerPrefix.Length + 2)
+            tcConfigB.packageManagerTextLines <- tcConfigB.packageManagerTextLines @ [ text ]
+        needsPackageResolution <- true
 
     member fsiDynamicCompiler.CommitPackageManagerText (ctok, istate: FsiDynamicCompilerState, lexResourceManager, errorLogger, m) = 
-        if not needsPaketInstall then istate else
-        needsPaketInstall <- false
-        match ScriptPreprocessClosure.ResolvePackages (tcConfigB.implicitIncludeDir, "stdin.fsx", packageManagerTextLines, m) with
+        if not needsPackageResolution then istate else
+        needsPackageResolution <- false
+        match ScriptPreprocessClosure.ResolvePackages (tcConfigB.implicitIncludeDir, "stdin.fsx", tcConfigB.packageManagerTextLines, m) with
         | Some loadScript -> fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, [loadScript], lexResourceManager, errorLogger)
         | None -> istate
-
-    //member this.EvalPackageManagerText (ctok, istate, m, packageManagerText) = 
-    //    this.EvalPackageManagerTextFragment (packageManagerText) 
-    //    this.CommitPackageManagerText (ctok, istate, m)
-
 
     member fsiDynamicCompiler.ProcessMetaCommandsFromInputAsInteractiveCommands(ctok, istate, sourceFile, inp) =
         WithImplicitHome
@@ -1888,7 +1882,8 @@ type internal FsiInteractionProcessor
     let ExecInteraction (ctok, tcConfig:TcConfig, istate, action:ParsedFsiInteraction, errorLogger: ErrorLogger) =
         istate |> InteractiveCatch errorLogger (fun istate -> 
             match action with 
-            | IDefns ([  ],_) ->
+            | IDefns ([  ],m) ->
+                let istate = fsiDynamicCompiler.CommitPackageManagerText(ctok, istate, lexResourceManager, errorLogger, m) 
                 istate,Completed None
 
             | IDefns ([  SynModuleDecl.DoExpr(_,expr,_)],m) ->
@@ -1902,10 +1897,10 @@ type internal FsiInteractionProcessor
             | IHash (ParsedHashDirective("load",sourceFiles,m),_) -> 
                 fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, sourceFiles, lexResourceManager, errorLogger),Completed None
 
-            | IHash (ParsedHashDirective(("reference" | "r"),[text],_),_) when text.StartsWith paketPrefix ->
+            | IHash (ParsedHashDirective(("reference" | "r"),[text],_),_) when text.StartsWith packageManagerPrefix && (text.Contains ":" || text = packageManagerPrefix) ->
                 fsiDynamicCompiler.EvalPackageManagerTextFragment(text)
                 istate,Completed None
-
+                
             | IHash (ParsedHashDirective(("reference" | "r"),[path],m),_) -> 
                 let resolutions,istate = fsiDynamicCompiler.EvalRequireReference(ctok, istate, m, path)
                 resolutions |> List.iter (fun ar -> 

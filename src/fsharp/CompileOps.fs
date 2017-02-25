@@ -85,6 +85,8 @@ let FSharpScriptFileSuffixes = [".fsscript";".fsx"]
 let doNotRequireNamespaceOrModuleSuffixes = [".mli";".ml"] @ FSharpScriptFileSuffixes
 let FSharpLightSyntaxFileSuffixes : string list = [ ".fs";".fsscript";".fsx";".fsi" ]
 
+let packageManagerPrefix = "paket"
+
 
 //----------------------------------------------------------------------------
 // ERROR REPORTING
@@ -2408,7 +2410,9 @@ type TcConfigBuilder =
              tcConfigB.referencedDLLs <- tcConfigB.referencedDLLs ++ AssemblyReference(m,path,projectReference)
              
     member tcConfigB.AddPackageManagerText (text) = 
-        tcConfigB.packageManagerTextLines <- tcConfigB.packageManagerTextLines ++ text
+        if text <> packageManagerPrefix then
+            let text = text.Substring(packageManagerPrefix.Length + 2)
+            tcConfigB.packageManagerTextLines <- tcConfigB.packageManagerTextLines ++ text
              
     member tcConfigB.RemoveReferencedAssemblyByPath (m,path) =
         tcConfigB.referencedDLLs <- tcConfigB.referencedDLLs |> List.filter (fun ar-> ar.Range <> m || ar.Text <> path)
@@ -4624,8 +4628,6 @@ let RequireDLL (ctok, tcImports:TcImports, tcEnv, thisAssemblyName, m, file) =
     let tcEnv = (tcEnv, asms) ||> List.fold (fun tcEnv asm -> AddCcuToTcEnv(g,amap,m,tcEnv,thisAssemblyName,asm.FSharpViewOfMetadata,asm.AssemblyAutoOpenAttributes,asm.AssemblyInternalsVisibleToAttributes)) 
     tcEnv,(dllinfos,asms)
 
-let paketPrefix = "paket"
-
 let ProcessMetaCommandsFromInput 
      (nowarnF: 'state -> range * string -> 'state,
       dllRequireF: 'state -> range * string -> 'state,
@@ -4664,7 +4666,7 @@ let ProcessMetaCommandsFromInput
                match args with 
                | [path] -> 
                    matchedm<-m
-                   if path.StartsWith paketPrefix then
+                   if path.StartsWith packageManagerPrefix && (path.Contains ":" || path = packageManagerPrefix) then
                        packageRequireF state (m,path)
                    else
                        dllRequireF state (m,path)
@@ -4903,9 +4905,15 @@ module ScriptPreprocessClosure =
             let tcConfigB = tcConfig.CloneOfOriginalBuilder 
             TcConfig.Create(tcConfigB, validate=false),nowarns
     
-    let ResolvePackages (implicitIncludeDIr: string, scriptName: string, packageManagerTextLines: string list, m) =
-        let tempDir = Path.Combine(Path.Combine(Path.GetTempPath(),"fsharp"),"packages"+string(hash scriptName))
-        let appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)
+    let PM_BOOTSTRAP_EXE = "paket.bootstrapper.exe"
+    let PM_EXE = "paket.exe"
+    let PM_DIR = ".paket"
+    let PM_SPEC_FILE = "paket.dependencies"
+    let ResolvePackages (implicitIncludeDir: string, scriptName: string, packageManagerTextLines: string list, m) =
+        printfn "OBJ %A" (implicitIncludeDir,scriptName)
+        let tempDir = Path.Combine(Path.GetTempPath(),"fsx-packages"+string(abs(hash (implicitIncludeDir,scriptName))))
+        let userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
+
         let paketDepsFile,packageManagerTextLines =
             let rec findDepsFile dir =
                 let fi = FileInfo(Path.Combine(dir,"paket.dependencies"))
@@ -4914,7 +4922,6 @@ module ScriptPreprocessClosure =
                 elif fi.Directory.Parent <> null then
                     findDepsFile fi.Directory.Parent.FullName
                 else
-                    let tempDir = Path.Combine(Path.Combine(Path.GetTempPath(),"fsharp"),"packages"+string(hash scriptName))
                     if not (Directory.Exists tempDir) then
                         Directory.CreateDirectory tempDir |> ignore
                     let fi = FileInfo(Path.Combine(tempDir,"paket.dependencies"))
@@ -4927,51 +4934,69 @@ module ScriptPreprocessClosure =
 
         let paketExePathOpt = 
             let rec loop dir = 
-                if (Directory.Exists dir) then 
-                    let paketDir = Path.Combine (dir, ".paket")
-                    if Directory.Exists paketDir then 
-                        let paketPath = Path.Combine (paketDir, PaketToolName)
-                        if File.Exists paketPath then Some paketPath else
-                        let paketPath = Path.Combine (dir, PaketToolName)
-                        if File.Exists paketPath then Some paketPath else
-                        None
+                if Directory.Exists dir then 
+                    let paketDir = Path.Combine (dir, PM_DIR)
+                    let paketDirExe = Path.Combine (paketDir, PM_EXE)
+                    let dirExe = Path.Combine (dir, PM_EXE)
+                    let paketDirBootstrapExe = Path.Combine (paketDir, PM_BOOTSTRAP_EXE)
+                    let dirBootstrapperExe = Path.Combine (dir, PM_BOOTSTRAP_EXE)
+                    if Directory.Exists paketDir && File.Exists paketDirExe then Choice1Of3 paketDirExe
+                    elif File.Exists dirExe then Choice1Of3 dirExe
+                    elif Directory.Exists paketDir && File.Exists paketDirBootstrapExe then Choice2Of3 paketDirBootstrapExe
+                    elif File.Exists dirBootstrapperExe then Choice2Of3 dirBootstrapperExe
+                    elif not (String.IsNullOrWhiteSpace (Path.GetDirectoryName(paketDir))) then 
+                        loop (Path.GetDirectoryName(paketDir))
                     else
-                        None
-                else
-                    None
-
+                        Choice3Of3  ()
+                else Choice3Of3  ()
             match loop implicitIncludeDir with 
-            | Some r -> Some r
-            | None -> 
-                match loop workingDir with 
-                | Some r -> Some r
-                | None -> 
-                     let paketPath = Path.Combine (appData, ".paket", PaketToolName)
-                     if File.Exists paketPath then Some paketPath else None
-        
-        match paketExePathOpt with 
+            | Choice3Of3 () -> 
+              match loop workingDir with 
+              | Choice3Of3 () -> 
+                 let profileExe = Path.Combine (userProfile, PM_DIR, PM_EXE)
+                 let profileBootstrapExe = Path.Combine (userProfile, PM_DIR, PM_BOOTSTRAP_EXE)
+                 if File.Exists profileExe then  Choice1Of3 profileExe
+                 elif File.Exists profileBootstrapExe then  Choice2Of3 profileBootstrapExe 
+                 else Choice3Of3  ()
+              | r -> r
+            | r -> r
+
+        let paketExePathOptAfterBootstrap = 
+            match paketExePathOpt with 
+            | Choice1Of3 paketExe -> Some paketExe
+            | Choice2Of3 bootstrapperExe -> 
+                let bootstrapperDir = Path.GetDirectoryName(bootstrapperExe)
+                printfn "running paket.bootstrapper.exe in '%s'..." bootstrapperDir
+                let startInfo = System.Diagnostics.ProcessStartInfo(FileName=bootstrapperExe, WorkingDirectory=bootstrapperDir, Arguments="prerelease", UseShellExecute=false)
+                let p = System.Diagnostics.Process.Start(startInfo)
+                p.WaitForExit()
+                printfn "done running paket.bootstrapper.exe..."
+                if p.ExitCode <> 0 then
+                    errorR(Error(FSComp.SR.packageBootstrapFailed(bootstrapperExe, bootstrapperDir),m))
+                    None
+                else
+                    printfn "package resolution completed at %A" System.DateTimeOffset.UtcNow
+                    Some (Path.Combine(Path.GetDirectoryName(bootstrapperExe),PM_EXE))
+            | Choice3Of3 () -> None
+
+        match paketExePathOptAfterBootstrap with 
         | None -> 
-            errorR(Error(FSComp.SR.packageManagerNotFound(implicitIncludeDir, appData),m))
+            errorR(Error(FSComp.SR.packageManagerNotFound(implicitIncludeDir, userProfile),m))
             None
 
         | Some paketExePath ->
 
-            let lines = [ yield "framework: net461"; yield "source https://www.nuget.org/api/v2"; yield! packageManagerTextLines ]
-            let paketDepsFile = Path.Combine(tempDir, "paket.dependencies")
-            let paketLockFile = Path.Combine(tempDir, "paket.lock")
-            let loadScript = Path.Combine(tempDir,".paket","load","main.group.fsx")
-            if File.Exists paketDepsFile && 
-               (File.ReadAllLines(paketDepsFile)  |> Array.toList) = lines && 
-               File.Exists paketLockFile && 
+            let loadScript = Path.Combine(workingDir,PM_DIR,"load","main.group.fsx")
+            if paketDepsFile.Exists && 
+               (File.ReadAllLines(paketDepsFile.FullName)  |> Array.toList) = packageManagerTextLines && 
                File.Exists loadScript  then 
-                printfn "skipping running package resolution... already done that, both %s, %s exist" paketLockFile loadScript
+                printfn "skipping running package resolution... already done that" 
                 Some loadScript
             else
-                try File.Delete(paketLockFile) with _ -> ()
                 try File.Delete(loadScript) with _ -> ()
-                File.WriteAllLines(paketDepsFile, lines)
-                printfn "running package resolution in '%s'..." tempDir
-                let startInfo = System.Diagnostics.ProcessStartInfo(FileName=paketExePath, WorkingDirectory=tempDir, Arguments="install --generate-load-scripts", UseShellExecute=false)
+                File.WriteAllLines(paketDepsFile.FullName, packageManagerTextLines)
+                printfn "running package resolution in '%s'..." workingDir
+                let startInfo = System.Diagnostics.ProcessStartInfo(FileName=paketExePath, WorkingDirectory=workingDir, Arguments="install --generate-load-scripts", UseShellExecute=false)
                 let p = System.Diagnostics.Process.Start(startInfo)
                 p.WaitForExit()
                 printfn "done running package resolution..."
@@ -4983,8 +5008,8 @@ module ScriptPreprocessClosure =
                     Some loadScript
 
 
-    let FindClosureFiles(mainFile, m, closureSources, tcConfig:TcConfig, codeContext, lexResourceManager:Lexhelp.LexResourceManager) =
-        let tcConfig = ref tcConfig
+    let FindClosureFiles(mainFile, m, closureSources, origTcConfig:TcConfig, codeContext, lexResourceManager:Lexhelp.LexResourceManager) =
+        let tcConfig = ref origTcConfig
         
         let observedSources = Observed()
         let rec loop (ClosureSource(filename,m,source,parseRequired)) = 
@@ -5036,10 +5061,10 @@ module ScriptPreprocessClosure =
 
         // Resolve the packages
         let extraSources = 
-            match tcConfig.Value.packageManagerTextLines with 
-            | [] -> []
-            | packageManagerTextLines ->  
-                match ResolvePackages (tcConfig.Value.implicitIncludeDir, mainFile, packageManagerTextLines, m) with 
+            if tcConfig.Value.packageManagerTextLines = origTcConfig.packageManagerTextLines then
+                []
+            else 
+                match ResolvePackages (tcConfig.Value.implicitIncludeDir, mainFile, tcConfig.Value.packageManagerTextLines, m) with 
                 | None -> []
                 | Some loadScript -> 
                      // This may incrementally update tcConfig too with new #r references
