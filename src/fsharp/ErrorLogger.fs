@@ -182,7 +182,7 @@ type PhasedDiagnostic =
     { Exception:exn; Phase:BuildPhase }
     /// Construct a phased error
     static member Create(exn:exn,phase:BuildPhase) : PhasedDiagnostic =
-        System.Diagnostics.Debug.Assert(phase<>BuildPhase.DefaultPhase, sprintf "Compile error seen with no phase to attribute it to.%A %s %s" phase exn.Message exn.StackTrace )        
+        // System.Diagnostics.Debug.Assert(phase<>BuildPhase.DefaultPhase, sprintf "Compile error seen with no phase to attribute it to.%A %s %s" phase exn.Message exn.StackTrace )        
         {Exception = exn; Phase=phase}
     member this.DebugDisplay() =
         sprintf "%s: %s" (this.Subcategory()) this.Exception.Message
@@ -239,7 +239,7 @@ type PhasedDiagnostic =
         // Sanity check ensures that Phase matches Subcategory            
 #if DEBUG
         if isPhaseInCompile then 
-            System.Diagnostics.Debug.Assert(PhasedDiagnostic.IsSubcategoryOfCompile(pe.Subcategory()), "Subcategory did not match isPhaesInCompile=true")
+            System.Diagnostics.Debug.Assert(PhasedDiagnostic.IsSubcategoryOfCompile(pe.Subcategory()), "Subcategory did not match isPhaseInCompile=true")
         else
             System.Diagnostics.Debug.Assert(not(PhasedDiagnostic.IsSubcategoryOfCompile(pe.Subcategory())), "Subcategory did not match isPhaseInCompile=false")
 #endif            
@@ -291,14 +291,14 @@ type internal CompileThreadStatic =
     static member BuildPhase
         with get() = 
             match box CompileThreadStatic.buildPhase with
-            | null -> assert false; BuildPhase.DefaultPhase
+            | null -> BuildPhase.DefaultPhase
             | _ -> CompileThreadStatic.buildPhase
         and set v = CompileThreadStatic.buildPhase <- v
             
     static member ErrorLogger
         with get() = 
             match box CompileThreadStatic.errorLogger with
-            | null -> AssertFalseErrorLogger
+            | null -> DiscardErrorsLogger
             | _ -> CompileThreadStatic.errorLogger
         and set v = CompileThreadStatic.errorLogger <- v
 
