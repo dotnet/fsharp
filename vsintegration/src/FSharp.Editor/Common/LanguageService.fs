@@ -125,10 +125,9 @@ type internal ProjectInfoManager
 
     /// Get the options for a project
     member this.TryGetOptionsForProject(projectId: ProjectId) = 
-        if projectTable.ContainsKey(projectId) then
-            Some(projectTable.[projectId])
-        else
-            None
+        match projectTable.TryGetValue(projectId) with
+        | true, options -> Some options 
+        | _ -> None
 
     /// Get the exact options for a document or project
     member this.TryGetOptionsForDocumentOrProject(document: Document) = async { 
@@ -137,9 +136,9 @@ type internal ProjectInfoManager
         // The options for a single-file script project are re-requested each time the file is analyzed.  This is because the
         // single-file project may contain #load and #r references which are changing as the user edits, and we may need to re-analyze
         // to determine the latest settings.  FCS keeps a cache to help ensure these are up-to-date.
-        if singleFileProjectTable.ContainsKey(projectId) then 
+        match singleFileProjectTable.TryGetValue(projectId) with
+        | true, (loadTime,_) ->
           try
-            let loadTime,_ = singleFileProjectTable.[projectId]
             let fileName = document.FilePath
             let! cancellationToken = Async.CancellationToken
             let! sourceText = document.GetTextAsync(cancellationToken)
@@ -149,18 +148,16 @@ type internal ProjectInfoManager
           with ex -> 
             Assert.Exception(ex)
             return None
-        else return this.TryGetOptionsForProject(projectId) 
+        | _ -> return this.TryGetOptionsForProject(projectId) 
      }
 
     /// Get the options for a document or project relevant for syntax processing.
     /// Quicker then TryGetOptionsForDocumentOrProject as it doesn't need to recompute the exact project options for a script.
     member this.TryGetOptionsForEditingDocumentOrProject(document: Document) = 
         let projectId = document.Project.Id
-        if singleFileProjectTable.ContainsKey(projectId) then 
-            let _loadTime, originalOptions = singleFileProjectTable.[projectId]
-            Some originalOptions
-        else 
-            this.TryGetOptionsForProject(projectId) 
+        match singleFileProjectTable.TryGetValue(projectId) with 
+        | true, (_loadTime, originalOptions) -> Some originalOptions
+        | _ -> this.TryGetOptionsForProject(projectId) 
 
 // Used to expose FSharpChecker/ProjectInfo manager to diagnostic providers
 // Diagnostic providers can be executed in environment that does not use MEF so they can rely only
