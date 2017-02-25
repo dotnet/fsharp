@@ -164,6 +164,7 @@ type internal SemanticClassificationType =
     | Interface
     | TypeArgument
     | Operator
+    | Disposable
 
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]
