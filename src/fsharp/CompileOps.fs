@@ -4986,7 +4986,7 @@ module ScriptPreprocessClosure =
                 printfn "running package resolution in '%s'..." workingDir
                 let startInfo = 
                     System.Diagnostics.ProcessStartInfo(
-                        FileName = if Microsoft.FSharp.Compiler.AbstractIL.IL.runningOnMono then "mono " + paketExePath else paketExePath,
+                        FileName = (if Microsoft.FSharp.Compiler.AbstractIL.IL.runningOnMono then "mono " + paketExePath else paketExePath),
                         WorkingDirectory = workingDir, 
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
