@@ -4968,11 +4968,11 @@ module ScriptPreprocessClosure =
         let paketExePathOpt = 
             let rec loop dir = 
                 if Directory.Exists dir then 
+                    let dirExe = Path.Combine (dir, PM_EXE)
+                    if File.Exists dirExe then Some dirExe else
                     let paketDir = Path.Combine (dir, PM_DIR)
                     let paketDirExe = Path.Combine (paketDir, PM_EXE)
-                    let dirExe = Path.Combine (dir, PM_EXE)
                     if Directory.Exists paketDir && File.Exists paketDirExe then Some paketDirExe
-                    elif File.Exists dirExe then Some dirExe
                     elif not (String.IsNullOrWhiteSpace (Path.GetDirectoryName(paketDir))) then 
                         loop (Path.GetDirectoryName(paketDir))
                     else
