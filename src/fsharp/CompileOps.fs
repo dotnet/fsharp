@@ -4924,20 +4924,21 @@ module ScriptPreprocessClosure =
                 let fi = FileInfo(Path.Combine(dir,PM_SPEC_FILE))
                 if fi.Exists then
                     let lockFile = FileInfo(Path.Combine(fi.Directory.FullName,PM_LOCK_FILE))
+                    let depsFileLines = File.ReadAllLines fi.FullName
                     if lockFile.Exists then
                         let originalDepsFile = FileInfo(paketDepsFile.FullName + ".orginal")
                         if not originalDepsFile.Exists ||
-                           File.ReadAllLines originalDepsFile.FullName <> File.ReadAllLines fi.FullName
+                           File.ReadAllLines originalDepsFile.FullName <> depsFileLines
                         then
                             File.Copy(fi.FullName,originalDepsFile.FullName,true)
                             let targetLockFile = FileInfo(Path.Combine(workingDir,PM_LOCK_FILE))
                             File.Copy(lockFile.FullName,targetLockFile.FullName,true)
                         
-                    fi.Directory.FullName,[ yield! Array.toList (File.ReadAllLines fi.FullName); yield! packageManagerTextLines]
+                    fi.Directory.FullName, (Array.toList depsFileLines) @ packageManagerTextLines
                 elif fi.Directory.Parent <> null then
                     findDepsFile fi.Directory.Parent.FullName
                 else
-                    workingDir,[ yield "framework: net461"; yield "source https://nuget.org/api/v2"; yield! packageManagerTextLines]
+                    workingDir, "framework: net461" :: "source https://nuget.org/api/v2" :: packageManagerTextLines
            
             findDepsFile implicitIncludeDir
 
