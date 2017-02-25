@@ -514,6 +514,19 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
         |> List.map (fun a -> FSharpAttribute(cenv,  a))
         |> makeReadOnlyCollection
 
+    member __.AllCompilationPaths =
+        checkIsResolved()
+        let (CompilationPath.CompPath(_, parts)) = entity.CompilationPath
+        ([], parts) ||> List.fold (fun res (part, kind) ->
+            let parts =
+                match kind with
+                | ModuleOrNamespaceKind.FSharpModuleWithSuffix ->
+                    [part; part.[..part.Length - 7]]
+                | _ -> [part]
+
+            parts |> List.collect (fun part -> 
+                res |> List.map (fun path -> path + "." + part)))
+
     override x.Equals(other : obj) =
         box x === other ||
         match other with
