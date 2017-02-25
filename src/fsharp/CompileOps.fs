@@ -4908,29 +4908,11 @@ module ScriptPreprocessClosure =
     let PM_SPEC_FILE = "paket.dependencies"
     let PM_LOCK_FILE = "paket.lock"
 
-#if BUILD_CORECLR
-    module internal Environment =
-        // DOTNETCORE shim
-        type SpecialFolder =
-            | ApplicationData
-            | UserProfile
-            | LocalApplicationData
-            | ProgramFiles
-            | ProgramFilesX86
-        let GetFolderPath sf =
-            let envVar =
-                match sf with
-                | ApplicationData -> "APPDATA"
-                | UserProfile -> "USERPROFILE"
-                | LocalApplicationData -> "LocalAppData"
-                | ProgramFiles -> "PROGRAMFILES"
-                | ProgramFilesX86 -> "PROGRAMFILES(X86)"
-        
-            let res = Environment.GetEnvironmentVariable(envVar)
-            if System.String.IsNullOrEmpty res && sf = UserProfile then
-                Environment.GetEnvironmentVariable("HOME")
-            else res
-#endif
+    let userProfile = 
+        let res = Environment.GetEnvironmentVariable("USERPROFILE")
+        if System.String.IsNullOrEmpty res then
+            Environment.GetEnvironmentVariable("HOME")
+        else res
 
     let ResolvePackages (implicitIncludeDir: string, scriptName: string, packageManagerTextLines: string list, m) =
         printfn "OBJ %A" (implicitIncludeDir,scriptName)
@@ -4938,8 +4920,7 @@ module ScriptPreprocessClosure =
         let paketDepsFile = FileInfo(Path.Combine(workingDir,PM_SPEC_FILE))
         if not (Directory.Exists workingDir) then
             Directory.CreateDirectory workingDir |> ignore
-        
-        let userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
+
         let packageManagerTextLines = packageManagerTextLines |> List.filter (fun l -> not (String.IsNullOrWhiteSpace l))
 
         let rootDir,packageManagerTextLines =
