@@ -4664,7 +4664,7 @@ let ProcessMetaCommandsFromInput
                match args with 
                | [path] -> 
                    matchedm<-m
-                   if path.StartsWith packageManagerPrefix && (path.Contains ":" || path = packageManagerPrefix) then
+                   if path.StartsWith packageManagerPrefix then
                        packageRequireF state (m,path)
                    else
                        dllRequireF state (m,path)
