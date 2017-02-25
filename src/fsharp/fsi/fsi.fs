@@ -73,7 +73,7 @@ open System.Runtime.CompilerServices
 [<Dependency("FSharp.Core",LoadHint.Always)>] do ()
 #endif
 
-let paketPrefix = "paket: "
+let paketPrefix = "paket"
 
 //----------------------------------------------------------------------------
 // For the FSI as a service methods...
@@ -1227,8 +1227,9 @@ type internal FsiDynamicCompiler
 
 
     member __.EvalPackageManagerTextFragment (packageManagerText: string) = 
-        let package = packageManagerText.Substring(paketPrefix.Length)
-        packageManagerTextLines <- packageManagerTextLines @ [ package ]
+        if packageManagerText <> paketPrefix then
+            let package = packageManagerText.Substring(paketPrefix.Length + 2)
+            packageManagerTextLines <- packageManagerTextLines @ [ package ]
         needsPaketInstall <- true
 
     member fsiDynamicCompiler.CommitPackageManagerText (ctok, istate: FsiDynamicCompilerState, lexResourceManager, errorLogger, m) = 

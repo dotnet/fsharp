@@ -4624,8 +4624,7 @@ let RequireDLL (ctok, tcImports:TcImports, tcEnv, thisAssemblyName, m, file) =
     let tcEnv = (tcEnv, asms) ||> List.fold (fun tcEnv asm -> AddCcuToTcEnv(g,amap,m,tcEnv,thisAssemblyName,asm.FSharpViewOfMetadata,asm.AssemblyAutoOpenAttributes,asm.AssemblyInternalsVisibleToAttributes)) 
     tcEnv,(dllinfos,asms)
 
-       
-let paketPrefix = "paket: "
+let paketPrefix = "paket"
 
 let ProcessMetaCommandsFromInput 
      (nowarnF: 'state -> range * string -> 'state,
@@ -4907,34 +4906,55 @@ module ScriptPreprocessClosure =
     let ResolvePackages (implicitIncludeDIr: string, scriptName: string, packageManagerTextLines: string list, m) =
         let tempDir = Path.Combine(Path.Combine(Path.GetTempPath(),"fsharp"),"packages"+string(hash scriptName))
         let appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)
+        let paketDepsFile,packageManagerTextLines =
+            let rec findDepsFile dir =
+                let fi = FileInfo(Path.Combine(dir,"paket.dependencies"))
+                if fi.Exists then
+                    fi,[ yield! Array.toList (File.ReadAllLines fi.FullName); yield! packageManagerTextLines]
+                elif fi.Directory.Parent <> null then
+                    findDepsFile fi.Directory.Parent.FullName
+                else
+                    let tempDir = Path.Combine(Path.Combine(Path.GetTempPath(),"fsharp"),"packages"+string(hash scriptName))
+                    if not (Directory.Exists tempDir) then
+                        Directory.CreateDirectory tempDir |> ignore
+                    let fi = FileInfo(Path.Combine(tempDir,"paket.dependencies"))
+                    File.WriteAllText(fi.FullName,"source https://nuget.org/api/v2" + Environment.NewLine)
+                    fi,[ yield "framework: net461"; yield "source https://nuget.org/api/v2"; yield! packageManagerTextLines]
+           
+            findDepsFile implicitIncludeDir
+
+        let workingDir = paketDepsFile.Directory.FullName
+
         let paketExePathOpt = 
             let rec loop dir = 
                 if (Directory.Exists dir) then 
                     let paketDir = Path.Combine (dir, ".paket")
                     if Directory.Exists paketDir then 
-                        let paketPath = Path.Combine (paketDir, "paket.exe")
+                        let paketPath = Path.Combine (paketDir, PaketToolName)
                         if File.Exists paketPath then Some paketPath else
-                        let paketPath = Path.Combine (dir, "paket.exe")
-                        if File.Exists paketPath then  Some paketPath else
+                        let paketPath = Path.Combine (dir, PaketToolName)
+                        if File.Exists paketPath then Some paketPath else
                         None
                     else
                         None
                 else
                     None
-            match loop implicitIncludeDIr with 
+
+            match loop implicitIncludeDir with 
             | Some r -> Some r
             | None -> 
-                 let paketPath = Path.Combine (appData, ".paket", "paket.exe")
-                 if File.Exists paketPath then  Some paketPath else None
-
+                match loop workingDir with 
+                | Some r -> Some r
+                | None -> 
+                     let paketPath = Path.Combine (appData, ".paket", PaketToolName)
+                     if File.Exists paketPath then Some paketPath else None
+        
         match paketExePathOpt with 
         | None -> 
-            errorR(Error(FSComp.SR.packageManagerNotFound(implicitIncludeDIr, appData),m))
+            errorR(Error(FSComp.SR.packageManagerNotFound(implicitIncludeDir, appData),m))
             None
 
         | Some paketExePath ->
-            if not (Directory.Exists tempDir) then 
-                Directory.CreateDirectory tempDir |> ignore
 
             let lines = [ yield "framework: net461"; yield "source https://www.nuget.org/api/v2"; yield! packageManagerTextLines ]
             let paketDepsFile = Path.Combine(tempDir, "paket.dependencies")
@@ -4956,7 +4976,7 @@ module ScriptPreprocessClosure =
                 p.WaitForExit()
                 printfn "done running package resolution..."
                 if p.ExitCode <> 0 then
-                    errorR(Error(FSComp.SR.packageResolutionFailed(paketExePath, tempDir),m))
+                    errorR(Error(FSComp.SR.packageResolutionFailed(paketExePath, workingDir),m))
                     None
                 else
                     printfn "package resolution completed at %A" System.DateTimeOffset.UtcNow
