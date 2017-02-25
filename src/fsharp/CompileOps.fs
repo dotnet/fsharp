@@ -4907,10 +4907,14 @@ module ScriptPreprocessClosure =
     let PM_EXE = "paket.exe"
     let PM_DIR = ".paket"
     let PM_SPEC_FILE = "paket.dependencies"
+    let PM_LOCK_FILE = "paket.lock"
+
     let ResolvePackages (implicitIncludeDir: string, scriptName: string, packageManagerTextLines: string list, m) =
         printfn "OBJ %A" (implicitIncludeDir,scriptName)
         let workingDir = Path.Combine(Path.GetTempPath(),"fsx-packages"+string(abs(hash (implicitIncludeDir,scriptName))))
         let paketDepsFile = FileInfo(Path.Combine(workingDir,PM_SPEC_FILE))
+        if not (Directory.Exists workingDir) then
+            Directory.CreateDirectory workingDir |> ignore
         
         let userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
         let packageManagerTextLines = packageManagerTextLines |> List.filter (fun l -> not (String.IsNullOrWhiteSpace l))
@@ -4919,6 +4923,16 @@ module ScriptPreprocessClosure =
             let rec findDepsFile dir =
                 let fi = FileInfo(Path.Combine(dir,PM_SPEC_FILE))
                 if fi.Exists then
+                    let lockFile = FileInfo(Path.Combine(fi.Directory.FullName,PM_LOCK_FILE))
+                    if lockFile.Exists then
+                        let originalDepsFile = FileInfo(paketDepsFile.FullName + ".orginal")
+                        if not originalDepsFile.Exists ||
+                           File.ReadAllLines originalDepsFile.FullName <> File.ReadAllLines fi.FullName
+                        then
+                            File.Copy(fi.FullName,originalDepsFile.FullName,true)
+                            let targetLockFile = FileInfo(Path.Combine(workingDir,PM_LOCK_FILE))
+                            File.Copy(lockFile.FullName,targetLockFile.FullName,true)
+                        
                     fi.Directory.FullName,[ yield! Array.toList (File.ReadAllLines fi.FullName); yield! packageManagerTextLines]
                 elif fi.Directory.Parent <> null then
                     findDepsFile fi.Directory.Parent.FullName
@@ -4966,8 +4980,6 @@ module ScriptPreprocessClosure =
                 Some loadScript
             else
                 try File.Delete(loadScript) with _ -> ()
-                if not (Directory.Exists workingDir) then
-                    Directory.CreateDirectory workingDir |> ignore
        
                 File.WriteAllLines(paketDepsFile.FullName, packageManagerTextLines)
                 printfn "running package resolution in '%s'..." workingDir
