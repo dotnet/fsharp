@@ -1334,7 +1334,7 @@ tcGlobalsSystemTypeNotFound,"The system type '%s' was required but no referenced
 3213,typrelMemberHasMultiplePossibleDispatchSlots,"The member '%s' matches multiple overloads of the same method.\nPlease restrict it to one of the following:%s."
 3214,methodIsNotStatic,"Method or object constructor '%s' is not static"
 3215,parsUnexpectedSymbolEqualsInsteadOfIn,"Unexpected symbol '=' in expression. Did you intend to use 'for x in y .. z do' instead?"
-3216,packageResolutionFailed,"Package resolution using '%s' failed, see directory '%s'"
+3216,packageResolutionFailed,"Package resolution using '%s' failed, see directory '%s'.%sError: %s"
 3217,packageBootstrapFailed,"Package manager bootstrap failed using '%s' failed, see directory '%s'"
 3218,packageManagerNotFound,"Package manager (paket.exe or .paket/paket.exe) not found in '%s' or a parent directory, or '%s'. Please download paket.exe (version 4.0.0-beta018 or later) from https://github.com/fsprojects/paket/releases and place it in one of these locations."
 keywordDescriptionAbstract,"Indicates a method that either has no implementation in the type in which it is declared or that is virtual and has a default implementation."

@@ -4971,12 +4971,25 @@ module ScriptPreprocessClosure =
                 try File.Delete(loadScript) with _ -> ()
                 File.WriteAllLines(paketDepsFile.FullName, packageManagerTextLines)
                 printfn "running package resolution in '%s'..." workingDir
-                let startInfo = System.Diagnostics.ProcessStartInfo(FileName=paketExePath, WorkingDirectory=workingDir, Arguments="install --generate-load-scripts", UseShellExecute=false)
-                let p = System.Diagnostics.Process.Start(startInfo)
+                let startInfo = 
+                    System.Diagnostics.ProcessStartInfo(
+                        FileName = paketExePath, // TODO: add mono support
+                        WorkingDirectory = workingDir, 
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        Arguments = "install --generate-load-scripts", 
+                        UseShellExecute = false)
+                use p = new System.Diagnostics.Process()
+                let errors = System.Collections.Generic.List<_>()
+                p.StartInfo <- startInfo
+                p.ErrorDataReceived.Add(fun d -> if d.Data <> null then errors.Add d.Data)
+                p.OutputDataReceived.Add(fun d -> if d.Data <> null then printfn "%A" d.Data)
+                p.Start() |> ignore
                 p.WaitForExit()
                 printfn "done running package resolution..."
                 if p.ExitCode <> 0 then
-                    errorR(Error(FSComp.SR.packageResolutionFailed(paketExePath, workingDir),m))
+                    let msg = String.Join(Environment.NewLine, errors)
+                    errorR(Error(FSComp.SR.packageResolutionFailed(paketExePath, workingDir, Environment.NewLine, msg),m))
                     None
                 else
                     printfn "package resolution completed at %A" System.DateTimeOffset.UtcNow
