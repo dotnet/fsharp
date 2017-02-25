@@ -52,6 +52,7 @@
     <Compile Include="Diagnostics\UnusedOpensDiagnosticAnalyzer.fs" />
     <Compile Include="Completion\CompletionProvider.fs" />
     <Compile Include="Completion\KeywordCompletionProvider.fs" />
+    <Compile Include="Completion\ReferenceDirectiveCompletionProvider.fs" />
     <Compile Include="Completion\CompletionService.fs" />
     <Compile Include="Completion\SignatureHelp.fs" />
     <Compile Include="QuickInfo\QuickInfoProvider.fs" />
