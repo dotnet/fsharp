@@ -87,7 +87,6 @@ let FSharpLightSyntaxFileSuffixes : string list = [ ".fs";".fsscript";".fsx";".f
 
 let packageManagerPrefix = "paket:"
 
-
 //----------------------------------------------------------------------------
 // ERROR REPORTING
 //--------------------------------------------------------------------------
@@ -4908,6 +4907,30 @@ module ScriptPreprocessClosure =
     let PM_DIR = ".paket"
     let PM_SPEC_FILE = "paket.dependencies"
     let PM_LOCK_FILE = "paket.lock"
+
+#if BUILD_CORECLR
+    module internal Environment =
+        // DOTNETCORE shim
+        type SpecialFolder =
+            | ApplicationData
+            | UserProfile
+            | LocalApplicationData
+            | ProgramFiles
+            | ProgramFilesX86
+        let GetFolderPath sf =
+            let envVar =
+                match sf with
+                | ApplicationData -> "APPDATA"
+                | UserProfile -> "USERPROFILE"
+                | LocalApplicationData -> "LocalAppData"
+                | ProgramFiles -> "PROGRAMFILES"
+                | ProgramFilesX86 -> "PROGRAMFILES(X86)"
+        
+            let res = Environment.GetEnvironmentVariable(envVar)
+            if System.String.IsNullOrEmpty res && sf = UserProfile then
+                Environment.GetEnvironmentVariable("HOME")
+            else res
+#endif
 
     let ResolvePackages (implicitIncludeDir: string, scriptName: string, packageManagerTextLines: string list, m) =
         printfn "OBJ %A" (implicitIncludeDir,scriptName)
