@@ -85,7 +85,7 @@ let FSharpScriptFileSuffixes = [".fsscript";".fsx"]
 let doNotRequireNamespaceOrModuleSuffixes = [".mli";".ml"] @ FSharpScriptFileSuffixes
 let FSharpLightSyntaxFileSuffixes : string list = [ ".fs";".fsscript";".fsx";".fsi" ]
 
-let packageManagerPrefix = "paket"
+let packageManagerPrefix = "paket:"
 
 
 //----------------------------------------------------------------------------
@@ -2409,10 +2409,9 @@ type TcConfigBuilder =
              let projectReference = tcConfigB.projectReferences |> List.tryPick (fun pr -> if pr.FileName = path then Some pr else None)
              tcConfigB.referencedDLLs <- tcConfigB.referencedDLLs ++ AssemblyReference(m,path,projectReference)
              
-    member tcConfigB.AddPackageManagerText (text) = 
-        if text <> packageManagerPrefix then
-            let text = text.Substring(packageManagerPrefix.Length + 2)
-            tcConfigB.packageManagerTextLines <- tcConfigB.packageManagerTextLines ++ text
+    member tcConfigB.AddPackageManagerText (text:string) = 
+        let text = text.Substring(packageManagerPrefix.Length + 1)
+        tcConfigB.packageManagerTextLines <- tcConfigB.packageManagerTextLines ++ text
              
     member tcConfigB.RemoveReferencedAssemblyByPath (m,path) =
         tcConfigB.referencedDLLs <- tcConfigB.referencedDLLs |> List.filter (fun ar-> ar.Range <> m || ar.Text <> path)
