@@ -4911,7 +4911,7 @@ module ScriptPreprocessClosure =
 
     let ResolvePackages (implicitIncludeDir: string, scriptName: string, packageManagerTextLines: string list, m) =
         printfn "OBJ %A" (implicitIncludeDir,scriptName)
-        let workingDir = Path.Combine(Path.GetTempPath(),"fsx-packages"+string(abs(hash (implicitIncludeDir,scriptName))))
+        let workingDir = Path.Combine(Path.GetTempPath(),"fsx-packages", string(abs(hash (implicitIncludeDir,scriptName))))
         let paketDepsFile = FileInfo(Path.Combine(workingDir,PM_SPEC_FILE))
         if not (Directory.Exists workingDir) then
             Directory.CreateDirectory workingDir |> ignore
@@ -4986,13 +4986,14 @@ module ScriptPreprocessClosure =
                 printfn "running package resolution in '%s'..." workingDir
                 let startInfo = 
                     System.Diagnostics.ProcessStartInfo(
-                        FileName = paketExePath, // TODO: add mono support
+                        FileName = if Microsoft.FSharp.Compiler.AbstractIL.IL.runningOnMono then "mono " + paketExePath else paketExePath,
                         WorkingDirectory = workingDir, 
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
                         Arguments = "install --generate-load-scripts",
                         CreateNoWindow = true,
                         UseShellExecute = false)
+                
                 use p = new System.Diagnostics.Process()
                 let errors = System.Collections.Generic.List<_>()
                 let log = System.Collections.Generic.List<_>()
@@ -5003,6 +5004,7 @@ module ScriptPreprocessClosure =
                 p.BeginErrorReadLine()
                 p.BeginOutputReadLine()
                 p.WaitForExit()
+
                 printfn "done running package resolution..."
                 if p.ExitCode <> 0 then
                     let msg = String.Join(Environment.NewLine, errors)
