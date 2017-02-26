@@ -1,25 +1,32 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-/// Coordinating compiler operations - configuration, loading initial context, reporting errors etc.
-module internal Microsoft.FSharp.Compiler.ReferenceLoading.PaketHandler
-
+/// Paket invokation for In-Script reference loading
+module internal ReferenceLoading.PaketHandler
+// NOTE: this file is used by other parties integrating paket reference loading in scripting environments.
+// Do not add any reference to F# codebase other than FSharp.Core.
+// This file might end up in paket repository instead of F#.
 type ReferenceLoadingResult =
 | Solved of loadingScript: string
 | PackageManagerNotFound of implicitIncludeDir: string * userProfile: string
 | PackageResolutionFailed of toolPath: string * workingDir: string * msg : string
 
+let MakePackageManagerCommand scriptType packageManagerTargetFramework = 
+  sprintf "install --generate-load-scripts load-script-type %s load-script-framework %s" scriptType packageManagerTargetFramework
+
 module Internals =
     open System
     open System.IO
-    let TargetFramework = "net461"
+    //let TargetFramework = "net461"
     let PM_EXE = "paket.exe"
     let PM_DIR = ".paket"
     let PM_SPEC_FILE = "paket.dependencies"
     let PM_LOCK_FILE = "paket.lock"
-    let getPackageManagerCommand rootDir = "install --generate-load-scripts load-script-type fsx load-script-framework " + TargetFramework + " project-root \""  + Path.GetFullPath rootDir + "\""
-    let PM_LOADSCRIPT = Path.Combine(PM_DIR, "load", TargetFramework, "main.group.fsx")
+    //let PM_COMMAND = "install --generate-load-scripts load-script-type fsx load-script-framework " + TargetFramework
+    //let PM_LOADSCRIPT = PM_DIR + "/load/main.group.fsx"
+////// let getPackageManagerCommand rootDir = "install --generate-load-scripts load-script-type fsx load-script-framework " + TargetFramework + " project-root \""  + Path.GetFullPath rootDir + "\""
+////// let PM_LOADSCRIPT = Path.Combine(PM_DIR, "load", TargetFramework, "main.group.fsx")
 
-    let userProfile = 
+    let userProfile =
         let res = Environment.GetEnvironmentVariable("USERPROFILE")
         if System.String.IsNullOrEmpty res then
             Environment.GetEnvironmentVariable("HOME")
@@ -59,9 +66,15 @@ module Internals =
         |> Seq.choose getPaketAndExe
         |> Seq.tryHead
 
-    let ResolvePackages alterToolPath (implicitIncludeDir: string, scriptName: string, packageManagerTextLines: string list) =
-        printfn "OBJ %A" (implicitIncludeDir,scriptName)
-        let workingDir = Path.Combine(Path.GetTempPath(),"fsx-packages", string(abs(hash (implicitIncludeDir,scriptName))))
+    /// Resolve packages loaded into scripts using `paket:` in `#r` directives such as `#r @"paket: nuget AmazingNugetPackage"`. 
+    /// <remarks>The result is either `ReferenceLoadingResult.Solved` or some of the failing cases.</remarks>
+    /// <param name="targetFramework">A string given to paket command to fix the framewor.k</param>
+    /// <param name="getCommand">Prepares the full `paket.exe` command, given the targetFramework.</param>
+    /// <param name="getRelativeLoadScriptLocation">Resolves the path (based from the passed working dir, which is temporary) to the load script.</param>
+    /// <param name="alterToolPath">Function which prefixes the whole command, some platforms such as mono requires invocation of `mono ` as prefix to the full `paket.exe` command.</param>
+    // TODO: comment the remaining parameters
+    let ResolvePackages targetFramework getCommand getRelativeLoadScriptLocation alterToolPath (implicitIncludeDir: string, scriptName: string, packageManagerTextLines: string list) =
+        let workingDir = Path.Combine(Path.GetTempPath(), "script-packages", string(abs(hash (implicitIncludeDir,scriptName))))
         let workingDirSpecFile = FileInfo(Path.Combine(workingDir,PM_SPEC_FILE))
         if not (Directory.Exists workingDir) then
             Directory.CreateDirectory workingDir |> ignore
@@ -93,7 +106,7 @@ module Internals =
                 elif fi.Directory.Parent <> null then
                     findSpecFile fi.Directory.Parent.FullName
                 else
-                    workingDir, ("framework: " + TargetFramework) :: "source https://nuget.org/api/v2" :: packageManagerTextLines
+                    workingDir, ("framework: " + targetFramework) :: "source https://nuget.org/api/v2" :: packageManagerTextLines
            
             findSpecFile implicitIncludeDir
 
@@ -114,7 +127,8 @@ module Internals =
             PackageManagerNotFound(implicitIncludeDir, userProfile)
 
         | Some toolPath ->
-            let loadScript = Path.Combine(workingDir,PM_LOADSCRIPT)
+            //let loadScript = Path.Combine(workingDir,PM_LOADSCRIPT)
+            let loadScript = getRelativeLoadScriptLocation workingDir
             if workingDirSpecFile.Exists && 
                (File.ReadAllLines(workingDirSpecFile.FullName) |> Array.toList) = packageManagerTextLines && 
                File.Exists loadScript
@@ -132,7 +146,8 @@ module Internals =
                         WorkingDirectory = workingDir, 
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
-                        Arguments = getPackageManagerCommand rootDir,
+                        Arguments = getCommand targetFramework, //PM_COMMAND,
+////// Arguments = getPackageManagerCommand rootDir,
                         CreateNoWindow = true,
                         UseShellExecute = false)
                 
@@ -155,3 +170,16 @@ module Internals =
                     printfn "package resolution completed at %A" System.DateTimeOffset.UtcNow
                     Solved loadScript
 
+let getLoadScript baseDir packageManagerLoadScriptSubDirectory loadScriptName =
+  System.IO.Path.Combine(baseDir, packageManagerLoadScriptSubDirectory, loadScriptName)
+
+/// Resolves absolute load script location: something like
+/// baseDir/.paket/load/scriptName
+/// or
+/// baseDir/.paket/load/frameworkDir/scriptName 
+let GetPaketLoadScriptLocation baseDir optionalFrameworkDir scriptName =
+  let paketLoadFolder = System.IO.Path.Combine(Internals.PM_DIR,"load")
+  getLoadScript
+    baseDir
+    (match optionalFrameworkDir with | None -> paketLoadFolder | Some frameworkDir -> System.IO.Path.Combine(paketLoadFolder, frameworkDir))
+    scriptName

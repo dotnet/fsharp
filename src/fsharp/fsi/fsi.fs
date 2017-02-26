@@ -1230,12 +1230,20 @@ type internal FsiDynamicCompiler
         if not (String.IsNullOrWhiteSpace text) then
             tcConfigB.packageManagerTextLines <- tcConfigB.packageManagerTextLines @ [ text ]
         needsPackageResolution <- true
-
+         
     member fsiDynamicCompiler.CommitPackageManagerText (ctok, istate: FsiDynamicCompilerState, lexResourceManager, errorLogger, m) = 
         if not needsPackageResolution then istate else
         needsPackageResolution <- false
         
-        match ReferenceLoading.PaketHandler.Internals.ResolvePackages Microsoft.FSharp.Compiler.CompileOps.AlterPackageManagementToolPath (tcConfigB.implicitIncludeDir, "stdin.fsx", tcConfigB.packageManagerTextLines) with
+        let referenceLoadingResult =
+            ReferenceLoading.PaketHandler.Internals.ResolvePackages
+                Microsoft.FSharp.Compiler.ReferenceLoading.PaketHandler.targetFramework
+                Microsoft.FSharp.Compiler.ReferenceLoading.PaketHandler.GetCommandForTargetFramework
+                (fun workDir -> Microsoft.FSharp.Compiler.ReferenceLoading.PaketHandler.GetPaketLoadScriptLocation workDir (Some Microsoft.FSharp.Compiler.ReferenceLoading.PaketHandler.targetFramework))
+                Microsoft.FSharp.Compiler.ReferenceLoading.PaketHandler.AlterPackageManagementToolCommand
+                (tcConfigB.implicitIncludeDir, "stdin.fsx", tcConfigB.packageManagerTextLines)
+
+        match referenceLoadingResult with
         | ReferenceLoading.PaketHandler.ReferenceLoadingResult.Solved loadScript -> 
             fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, [loadScript], lexResourceManager, errorLogger)
         | ReferenceLoading.PaketHandler.ReferenceLoadingResult.PackageManagerNotFound (_)
