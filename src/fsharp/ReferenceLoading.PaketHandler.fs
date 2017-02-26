@@ -1,4 +1,7 @@
-module ReferenceLoading.PaketHandler
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+
+/// Coordinating compiler operations - configuration, loading initial context, reporting errors etc.
+module internal Microsoft.FSharp.Compiler.ReferenceLoading.PaketHandler
 
 type ReferenceLoadingResult =
 | Solved of loadingScript: string
