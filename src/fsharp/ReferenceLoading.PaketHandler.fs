@@ -78,8 +78,14 @@ module Internals =
                             File.Copy(fi.FullName,originalDepsFile.FullName,true)
                             let targetLockFile = FileInfo(Path.Combine(workingDir,PM_LOCK_FILE))
                             File.Copy(lockFile.FullName,targetLockFile.FullName,true)
-                        
-                    fi.Directory.FullName, (Array.toList depsFileLines) @ packageManagerTextLines
+                    
+                    let lines = 
+                        if List.isEmpty packageManagerTextLines then 
+                            Array.toList depsFileLines
+                        else
+                            (Array.toList depsFileLines) @ ("group Main" :: packageManagerTextLines)
+
+                    fi.Directory.FullName, lines
                 elif fi.Directory.Parent <> null then
                     findSpecFile fi.Directory.Parent.FullName
                 else
