@@ -18,12 +18,6 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 
 type internal ReferenceDirectiveCompletionProvider(projectInfoManager: ProjectInfoManager) =
     inherit CommonCompletionProvider()
-    
-    //let getTextChangeSpan (sringSyntaxToken stringLiteral, int position) =
-    //    return PathCompletionUtilities.GetTextChangeSpan(
-    //        quotedPath: stringLiteral.ToString(),
-    //        quotedPathStart: stringLiteral.SpanStart,
-    //        position: position);
  
     let getFileSystemDiscoveryService (textSnapshot : ITextSnapshot) : ICurrentWorkingDirectoryDiscoveryService =
         CurrentWorkingDirectoryDiscoveryService.GetService(textSnapshot)
@@ -48,10 +42,7 @@ type internal ReferenceDirectiveCompletionProvider(projectInfoManager: ProjectIn
             // first try to get the #r string literal token.  If we couldn't, then we're not in a #r reference directive and we immediately bail.
             let tokens = CommonHelpers.tokenizeLine (document.Id, sourceText, position, document.FilePath, defines) 
 
-            Logging.Logging.logInfof "tokens = %A" (tokens |> List.map (fun x -> sprintf "(%d, %d, %A)" x.LeftColumn x.RightColumn x.CharClass))
-
-            let tks = tokens
-            let _x = tks
+            //Logging.Logging.logInfof "tokens = %A" (tokens |> List.map (fun x -> sprintf "(%d, %d, %A)" x.LeftColumn x.RightColumn x.CharClass))
 
             let stripWs (tokens: FSharpTokenInfo list) = tokens |> List.skipWhile (fun x -> x.CharClass = FSharpTokenCharKind.WhiteSpace)
 
@@ -73,30 +64,9 @@ type internal ReferenceDirectiveCompletionProvider(projectInfoManager: ProjectIn
 
             let textChangeSpan = PathCompletionUtilities.GetTextChangeSpan(sourceText.ToString stringLiteralSpan, stringLiteralSpan.Start, position)
             
-            //let gacHelper = new GlobalAssemblyCacheCompletionHelper(this, textChangeSpan, itemRules: s_rules);
-            
             // Passing null to GetFileSystemDiscoveryService raises an exception.
             // Instead, return here since there is no longer snapshot for this document.
             let! snapshot = sourceText.FindCorrespondingEditorTextSnapshot() |> Option.ofObj
-            
-            //let referenceResolver = document.Project.CompilationOptions.MetadataReferenceResolver
-            
-            //ImmutableArray<string> searchPaths;
-            //RuntimeMetadataReferenceResolver rtResolver;
-            //WorkspaceMetadataFileReferenceResolver workspaceResolver;
-            
-            //if ((rtResolver = referenceResolver as RuntimeMetadataReferenceResolver) != null)
-            //{
-            //    searchPaths = rtResolver.PathResolver.SearchPaths;
-            //}
-            //else if ((workspaceResolver = referenceResolver as WorkspaceMetadataFileReferenceResolver) != null)
-            //{
-            //    searchPaths = workspaceResolver.PathResolver.SearchPaths;
-            //}
-            //else
-            //{
-            //    return;
-            //}
             
             let fileSystemHelper = 
                 FileSystemCompletionHelper(
@@ -114,9 +84,7 @@ type internal ReferenceDirectiveCompletionProvider(projectInfoManager: ProjectIn
                 PathCompletionUtilities.GetPathThroughLastSlash(sourceText.ToString stringLiteralSpan, stringLiteralSpan.Start, position)
             
             let documentPath = if document.Project.IsSubmission then null else document.FilePath
-            //context.AddItems(gacHelper.GetItems(pathThroughLastSlash, documentPath));
             context.AddItems(fileSystemHelper.GetItems(pathThroughLastSlash, documentPath))
         } 
         |> Async.Ignore
         |> CommonRoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
-    
