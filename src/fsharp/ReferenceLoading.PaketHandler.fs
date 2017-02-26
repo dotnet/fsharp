@@ -15,7 +15,7 @@ module Internals =
     let PM_DIR = ".paket"
     let PM_SPEC_FILE = "paket.dependencies"
     let PM_LOCK_FILE = "paket.lock"
-    let PM_COMMAND = "install --generate-load-scripts"
+    let PM_COMMAND = "install --generate-load-scripts load-script-type fsx"
     let PM_LOADSCRIPT = PM_DIR + "/load/main.group.fsx"
 
     let userProfile = 
