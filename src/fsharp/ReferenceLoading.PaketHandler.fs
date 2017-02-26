@@ -10,8 +10,8 @@ type ReferenceLoadingResult =
 | PackageManagerNotFound of implicitIncludeDir: string * userProfile: string
 | PackageResolutionFailed of toolPath: string * workingDir: string * msg : string
 
-let MakePackageManagerCommand scriptType packageManagerTargetFramework = 
-  sprintf "install --generate-load-scripts load-script-type %s load-script-framework %s" scriptType packageManagerTargetFramework
+let MakePackageManagerCommand scriptType packageManagerTargetFramework projectRootDirArgument = 
+  sprintf "install --generate-load-scripts load-script-type %s load-script-framework %s project-root \"%s\"" scriptType packageManagerTargetFramework (System.IO.Path.GetFullPath projectRootDirArgument)
 
 module Internals =
     open System
@@ -68,8 +68,8 @@ module Internals =
 
     /// Resolve packages loaded into scripts using `paket:` in `#r` directives such as `#r @"paket: nuget AmazingNugetPackage"`. 
     /// <remarks>The result is either `ReferenceLoadingResult.Solved` or some of the failing cases.</remarks>
-    /// <param name="targetFramework">A string given to paket command to fix the framewor.k</param>
-    /// <param name="getCommand">Prepares the full `paket.exe` command, given the targetFramework.</param>
+    /// <param name="targetFramework">A string given to paket command to fix the framework.</param>
+    /// <param name="getCommand">Prepares the full `paket.exe` command, given the targetFramework and the callsite rootDir (to pass as project-root argument to paket.exe).</param>
     /// <param name="getRelativeLoadScriptLocation">Resolves the path (based from the passed working dir, which is temporary) to the load script.</param>
     /// <param name="alterToolPath">Function which prefixes the whole command, some platforms such as mono requires invocation of `mono ` as prefix to the full `paket.exe` command.</param>
     // TODO: comment the remaining parameters
@@ -146,7 +146,7 @@ module Internals =
                         WorkingDirectory = workingDir, 
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
-                        Arguments = getCommand targetFramework, //PM_COMMAND,
+                        Arguments = getCommand targetFramework rootDir, //PM_COMMAND,
 ////// Arguments = getPackageManagerCommand rootDir,
                         CreateNoWindow = true,
                         UseShellExecute = false)
