@@ -1,4 +1,6 @@
-#r "paket: nuget XPlot.Plotly2"
+//<Expects status="Error" span="(5,6)" id="FS0039">The namespace or module 'XPlot' is not defined.</Expects>
+
+#r "paket: nuget SomeInvalidNugetPackage"
 
 open XPlot.Plotly
 
