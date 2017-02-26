@@ -254,30 +254,47 @@ and
         match singleFileProjects.TryRemove(projectId) with
         | true, project ->
             projectInfoManager.RemoveSingleFileProject(projectId)
-            project.Disconnect()       
+            project.Disconnect()
         | _ -> ()
 
     override this.Initialize() =
         base.Initialize()
- 
+
         this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Completion.CompletionOptions.BlockForCompletionItems, FSharpCommonConstants.FSharpLanguageName, false)
         this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Shared.Options.ServiceFeatureOnOffOptions.ClosedFileDiagnostic, FSharpCommonConstants.FSharpLanguageName, Nullable false)
 
         this.Workspace.DocumentClosed.Add <| fun args ->
-            tryRemoveSingleFileProject args.Document.Project.Id
-        //because DocumentClosed doesn't fire when closing solution, we need also this:
-        Events.SolutionEvents.OnAfterCloseSolution.Add <| fun _ ->
-            for id in singleFileProjects.Keys do tryRemoveSingleFileProject id |> ignore
+            tryRemoveSingleFileProject args.Document.Project.Id 
             
-        Events.SolutionEvents.OnAfterOpenProject.Add <| fun args ->
-            match args.Hierarchy with
-            | :? IProvideProjectSite as siteProvider ->
-                 this.SetupProjectFile(siteProvider, this.Workspace)
-            | _ -> ()
+        Events.SolutionEvents.OnAfterCloseSolution.Add <| fun _ ->
+            singleFileProjects.Keys |> Seq.iter tryRemoveSingleFileProject
+
+        let ctx = System.Threading.SynchronizationContext.Current
+        
+        let rec setupProjectsAfterSolutionOpen() =
+            async {
+                use openedProjects = MailboxProcessor.Start <| fun inbox ->
+                    async { 
+                        // waits for AfterOpenSolution and then starts projects setup
+                        do! Async.AwaitEvent Events.SolutionEvents.OnAfterOpenSolution |> Async.Ignore
+                        while true do
+                            let! siteProvider = inbox.Receive()
+                            do! Async.SwitchToContext ctx
+                            this.SetupProjectFile(siteProvider, this.Workspace) }
+
+                use _ = Events.SolutionEvents.OnAfterOpenProject |> Observable.subscribe ( fun args ->
+                    match args.Hierarchy with
+                    | :? IProvideProjectSite as siteProvider -> openedProjects.Post(siteProvider)
+                    | _ -> () )
+
+                do! Async.AwaitEvent Events.SolutionEvents.OnAfterCloseSolution |> Async.Ignore
+                do! setupProjectsAfterSolutionOpen() 
+            }
+        setupProjectsAfterSolutionOpen() |> Async.StartImmediate
         
     /// Sync the information for the project 
     member this.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, site: IProjectSite, forceUpdate) =
-
+      async {
         let hashSetIgnoreCase x = new HashSet<string>(x, StringComparer.OrdinalIgnoreCase)
         let updatedFiles = site.SourceFilesOnDisk() |> hashSetIgnoreCase
         let workspaceFiles = project.GetCurrentDocuments() |> Seq.map(fun file -> file.FilePath) |> hashSetIgnoreCase
@@ -297,6 +314,7 @@ and
         // update the cached options
         if updated then
             projectInfoManager.UpdateProjectInfo(project.Id, site, project.Workspace)
+      } |> Async.Start
 
     member this.SetupProjectFile(siteProvider: IProvideProjectSite, workspace: VisualStudioWorkspaceImpl) =
         let  rec setup (site: IProjectSite) =
