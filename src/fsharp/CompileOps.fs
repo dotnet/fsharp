@@ -4902,125 +4902,6 @@ module ScriptPreprocessClosure =
             // Recover by  using a default TcConfig.
             let tcConfigB = tcConfig.CloneOfOriginalBuilder 
             TcConfig.Create(tcConfigB, validate=false),nowarns
-        
-    let PM_EXE = "paket.exe"
-    let PM_DIR = ".paket"
-    let PM_SPEC_FILE = "paket.dependencies"
-    let PM_LOCK_FILE = "paket.lock"
-    let PM_COMMAND = "install --generate-load-scripts"
-    let PM_LOADSCRIPT = PM_DIR + "/load/main.group.fsx"
-
-    let userProfile = 
-        let res = Environment.GetEnvironmentVariable("USERPROFILE")
-        if System.String.IsNullOrEmpty res then
-            Environment.GetEnvironmentVariable("HOME")
-        else res
-
-    let ResolvePackages (implicitIncludeDir: string, scriptName: string, packageManagerTextLines: string list, m) =
-        printfn "OBJ %A" (implicitIncludeDir,scriptName)
-        let workingDir = Path.Combine(Path.GetTempPath(),"fsx-packages", string(abs(hash (implicitIncludeDir,scriptName))))
-        let workingDirSpecFile = FileInfo(Path.Combine(workingDir,PM_SPEC_FILE))
-        if not (Directory.Exists workingDir) then
-            Directory.CreateDirectory workingDir |> ignore
-
-        let packageManagerTextLines = packageManagerTextLines |> List.filter (fun l -> not (String.IsNullOrWhiteSpace l))
-
-        let rootDir,packageManagerTextLines =
-            let rec findSpecFile dir =
-                let fi = FileInfo(Path.Combine(dir,PM_SPEC_FILE))
-                if fi.Exists then
-                    let lockFile = FileInfo(Path.Combine(fi.Directory.FullName,PM_LOCK_FILE))
-                    let depsFileLines = File.ReadAllLines fi.FullName
-                    if lockFile.Exists then
-                        let originalDepsFile = FileInfo(workingDirSpecFile.FullName + ".original")
-                        if not originalDepsFile.Exists ||
-                           File.ReadAllLines originalDepsFile.FullName <> depsFileLines
-                        then
-                            File.Copy(fi.FullName,originalDepsFile.FullName,true)
-                            let targetLockFile = FileInfo(Path.Combine(workingDir,PM_LOCK_FILE))
-                            File.Copy(lockFile.FullName,targetLockFile.FullName,true)
-                        
-                    fi.Directory.FullName, (Array.toList depsFileLines) @ packageManagerTextLines
-                elif fi.Directory.Parent <> null then
-                    findSpecFile fi.Directory.Parent.FullName
-                else
-                    workingDir, "framework: net461" :: "source https://nuget.org/api/v2" :: packageManagerTextLines
-           
-            findSpecFile implicitIncludeDir
-
-        let toolPathOpt = 
-            let rec loop dir = 
-                if Directory.Exists dir then 
-                    let dirExe = Path.Combine (dir, PM_EXE)
-                    if File.Exists dirExe then Some dirExe else
-                    let paketDir = Path.Combine (dir, PM_DIR)
-                    let paketDirExe = Path.Combine (paketDir, PM_EXE)
-                    if Directory.Exists paketDir && File.Exists paketDirExe then Some paketDirExe
-                    elif not (String.IsNullOrWhiteSpace (Path.GetDirectoryName(paketDir))) then 
-                        loop (Path.GetDirectoryName(paketDir))
-                    else
-                        None
-                else None
-            
-            match loop implicitIncludeDir with 
-            | None -> 
-                match loop rootDir with 
-                | None -> 
-                    let profileExe = Path.Combine (userProfile, PM_DIR, PM_EXE)
-                    if File.Exists profileExe then Some profileExe
-                    else None
-                | r -> r
-            | r -> r
-
-
-        match toolPathOpt with 
-        | None -> 
-            errorR(Error(FSComp.SR.packageManagerNotFound(implicitIncludeDir, userProfile),m))
-            None
-
-        | Some toolPath ->
-            let loadScript = Path.Combine(workingDir,PM_LOADSCRIPT)
-            if workingDirSpecFile.Exists && 
-               (File.ReadAllLines(workingDirSpecFile.FullName) |> Array.toList) = packageManagerTextLines && 
-               File.Exists loadScript
-            then 
-                printfn "skipping running package resolution... already done that" 
-                Some loadScript
-            else
-                try File.Delete(loadScript) with _ -> ()
-                let toolPath = if Microsoft.FSharp.Compiler.AbstractIL.IL.runningOnMono then "mono " + toolPath else toolPath
-                File.WriteAllLines(workingDirSpecFile.FullName, packageManagerTextLines)
-                printfn "running package resolution in '%s'..." workingDir
-                let startInfo = 
-                    System.Diagnostics.ProcessStartInfo(
-                        FileName = toolPath,
-                        WorkingDirectory = workingDir, 
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true,
-                        Arguments = PM_COMMAND,
-                        CreateNoWindow = true,
-                        UseShellExecute = false)
-                
-                use p = new System.Diagnostics.Process()
-                let errors = System.Collections.Generic.List<_>()
-                let log = System.Collections.Generic.List<_>()
-                p.StartInfo <- startInfo
-                p.ErrorDataReceived.Add(fun d -> if d.Data <> null then errors.Add d.Data)
-                p.OutputDataReceived.Add(fun d -> if d.Data <> null then log.Add d.Data)
-                p.Start() |> ignore
-                p.BeginErrorReadLine()
-                p.BeginOutputReadLine()
-                p.WaitForExit()
-
-                printfn "done running package resolution..."
-                if p.ExitCode <> 0 then
-                    let msg = String.Join(Environment.NewLine, errors)
-                    errorR(Error(FSComp.SR.packageResolutionFailed(toolPath, workingDir, Environment.NewLine, msg),m))
-                    None
-                else
-                    printfn "package resolution completed at %A" System.DateTimeOffset.UtcNow
-                    Some loadScript
-
 
     let FindClosureFiles(mainFile, m, closureSources, origTcConfig:TcConfig, codeContext, lexResourceManager:Lexhelp.LexResourceManager) =
         let tcConfig = ref origTcConfig
@@ -5078,12 +4959,17 @@ module ScriptPreprocessClosure =
             if tcConfig.Value.packageManagerTextLines = origTcConfig.packageManagerTextLines then
                 []
             else 
-                match ResolvePackages (tcConfig.Value.implicitIncludeDir, mainFile, tcConfig.Value.packageManagerTextLines, m) with 
-                | None -> []
-                | Some loadScript -> 
-                     // This may incrementally update tcConfig too with new #r references
-                     // New package text is ignored on this second phase
-                     loop (ClosureSource(loadScript,m,File.ReadAllText(loadScript),true)) 
+                match ReferenceLoading.PaketHandler.Internals.ResolvePackages (tcConfig.Value.implicitIncludeDir, mainFile, tcConfig.Value.packageManagerTextLines) with 
+                | ReferenceLoading.PaketHandler.ReferenceLoadingResult.PackageManagerNotFound (implicitIncludeDir, userProfile) ->
+                    errorR(Error(FSComp.SR.packageManagerNotFound(implicitIncludeDir, userProfile),m))
+                    []
+                | ReferenceLoading.PaketHandler.ReferenceLoadingResult.PackageResolutionFailed (toolPath, workingDir, msg) ->
+                    errorR(Error(FSComp.SR.packageResolutionFailed(toolPath, workingDir, Environment.NewLine, msg),m))
+                    []
+                | ReferenceLoading.PaketHandler.ReferenceLoadingResult.Solved loadScript -> 
+                    // This may incrementally update tcConfig too with new #r references
+                    // New package text is ignored on this second phase
+                    loop (ClosureSource(loadScript,m,File.ReadAllText(loadScript),true)) 
 
         sources @ extraSources, !tcConfig
 
