@@ -1234,9 +1234,12 @@ type internal FsiDynamicCompiler
     member fsiDynamicCompiler.CommitPackageManagerText (ctok, istate: FsiDynamicCompilerState, lexResourceManager, errorLogger, m) = 
         if not needsPackageResolution then istate else
         needsPackageResolution <- false
-        match ScriptPreprocessClosure.ResolvePackages (tcConfigB.implicitIncludeDir, "stdin.fsx", tcConfigB.packageManagerTextLines, m) with
-        | Some loadScript -> fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, [loadScript], lexResourceManager, errorLogger)
-        | None -> istate
+        match ReferenceLoading.PaketHandler.Internals.ResolvePackages (tcConfigB.implicitIncludeDir, "stdin.fsx", tcConfigB.packageManagerTextLines) with
+        | ReferenceLoading.PaketHandler.ReferenceLoadingResult.Solved loadScript -> 
+            fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, [loadScript], lexResourceManager, errorLogger)
+        | ReferenceLoading.PaketHandler.ReferenceLoadingResult.PackageManagerNotFound (_)
+        | ReferenceLoading.PaketHandler.ReferenceLoadingResult.PackageResolutionFailed (_) ->
+            istate
 
     member fsiDynamicCompiler.ProcessMetaCommandsFromInputAsInteractiveCommands(ctok, istate, sourceFile, inp) =
         WithImplicitHome

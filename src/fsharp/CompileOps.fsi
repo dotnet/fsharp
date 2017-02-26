@@ -799,6 +799,3 @@ type LoadClosure =
 
     /// Used from fsi.fs and fsc.fs, for #load and command line. The resulting references are then added to a TcConfig.
     static member ComputeClosureOfSourceFiles : CompilationThreadToken * tcConfig:TcConfig * (string * range) list * implicitDefines:CodeContext * lexResourceManager : Lexhelp.LexResourceManager -> LoadClosure
-
-module ScriptPreprocessClosure = 
-    val ResolvePackages : implicitIncludeDIr: string * scriptName: string * packageManagerText: string list * range -> string option
