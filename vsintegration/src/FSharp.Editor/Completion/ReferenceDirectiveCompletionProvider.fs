@@ -2,6 +2,7 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
+open System
 open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
@@ -27,7 +28,12 @@ type internal ReferenceDirectiveCompletionProvider(projectInfoManager: ProjectIn
     let rules = CompletionItemRules.Create(filterCharacterRules = filterRules, commitCharacterRules = commitRules, enterKeyRule = EnterKeyRule.Never)
  
     override __.IsInsertionTrigger(text, characterPosition, _options) =
-        PathCompletionUtilities.IsTriggerCharacter(text, characterPosition)
+        // Bring up completion when the user types a quote (i.e.: #r "), or if they type a slash
+        // path separator character, or if they type a comma (#r "foo,version...").
+        // Also, if they're starting a word.  i.e. #r "c:\W
+        let ch = text.[characterPosition]
+        ch = '"' || ch = '\\' || ch = ',' || ch = '/' ||
+            CommonCompletionUtilities.IsStartingNewWord(text, characterPosition, (fun x -> Char.IsLetter x), (fun x -> Char.IsLetterOrDigit x))
 
     override this.ProvideCompletionsAsync(context : Microsoft.CodeAnalysis.Completion.CompletionContext) =
         asyncMaybe {
@@ -42,7 +48,9 @@ type internal ReferenceDirectiveCompletionProvider(projectInfoManager: ProjectIn
             // first try to get the #r string literal token.  If we couldn't, then we're not in a #r reference directive and we immediately bail.
             let tokens = CommonHelpers.tokenizeLine (document.Id, sourceText, position, document.FilePath, defines) 
 
-            //Logging.Logging.logInfof "tokens = %A" (tokens |> List.map (fun x -> sprintf "(%d, %d, %A)" x.LeftColumn x.RightColumn x.CharClass))
+            Logging.Logging.logInfof "caretLinePos.Character = %d, tokens = %A" 
+                                     caretLinePos.Character
+                                     (tokens |> List.map (fun x -> sprintf "(%d, %d, %A)" x.LeftColumn x.RightColumn x.CharClass))
 
             let stripWs (tokens: FSharpTokenInfo list) = tokens |> List.skipWhile (fun x -> x.CharClass = FSharpTokenCharKind.WhiteSpace)
 
@@ -61,6 +69,9 @@ type internal ReferenceDirectiveCompletionProvider(projectInfoManager: ProjectIn
                             Some r
                     range |> Option.map (fun x -> CommonRoslynHelpers.FSharpRangeToTextSpan (sourceText, x))
                 | _ -> None
+
+            // check if we are inside the string literal
+            //do! if stringLiteralSpan.Contains position then Some() else None
 
             let textChangeSpan = PathCompletionUtilities.GetTextChangeSpan(sourceText.ToString stringLiteralSpan, stringLiteralSpan.Start, position)
             
