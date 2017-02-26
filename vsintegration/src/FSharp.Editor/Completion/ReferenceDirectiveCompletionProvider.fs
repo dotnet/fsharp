@@ -44,12 +44,11 @@ type internal ReferenceDirectiveCompletionProvider(projectInfoManager: ProjectIn
             let textLines = sourceText.Lines
             let caretLinePos = textLines.GetLinePosition(position)
             let fcsCaretLineNumber = Line.fromZ caretLinePos.Line
-            let caretLineColumn = caretLinePos.Character
             let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
             // first try to get the #r string literal token.  If we couldn't, then we're not in a #r reference directive and we immediately bail.
-            let tokens = 
-                CommonHelpers.tokenizeLine (document.Id, sourceText, position, document.FilePath, defines) 
-                |> List.takeWhile (fun x -> x.RightColumn <= caretLineColumn)
+            let tokens = CommonHelpers.tokenizeLine (document.Id, sourceText, position, document.FilePath, defines) 
+
+            Logging.Logging.logInfof "tokens = %A" (tokens |> List.map (fun x -> sprintf "(%d, %d, %A)" x.LeftColumn x.RightColumn x.CharClass))
 
             let tks = tokens
             let _x = tks
@@ -62,11 +61,13 @@ type internal ReferenceDirectiveCompletionProvider(projectInfoManager: ProjectIn
                     let range = 
                         match rest |> stripWs |> List.takeWhile (fun x -> x.ColorClass = FSharpTokenColorKind.String) with
                         | [] -> None
-                        | [_leftQuote; str] ->
-                            Some (mkRange document.FilePath (mkPos fcsCaretLineNumber (str.LeftColumn - 1)) (mkPos fcsCaretLineNumber str.RightColumn))
-                        | [_leftQuote; str; rightQuote] ->
-                            Some (mkRange document.FilePath (mkPos fcsCaretLineNumber (str.LeftColumn - 1)) (mkPos fcsCaretLineNumber rightQuote.RightColumn))
-                        | _ -> None
+                        | stringTokens ->
+                            let leftQuote = List.head stringTokens
+                            let rightQuote = List.last stringTokens
+                            let r = mkRange document.FilePath (mkPos fcsCaretLineNumber leftQuote.RightColumn) (mkPos fcsCaretLineNumber (rightQuote.RightColumn + 1))
+                            let span = CommonRoslynHelpers.FSharpRangeToTextSpan (sourceText, r)
+                            Logging.Logging.logInfof "%A, text = %s" r (sourceText.ToString span)
+                            Some r
                     range |> Option.map (fun x -> CommonRoslynHelpers.FSharpRangeToTextSpan (sourceText, x))
                 | _ -> None
 
