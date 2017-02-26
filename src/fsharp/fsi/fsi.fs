@@ -1899,6 +1899,7 @@ type internal FsiInteractionProcessor
                 fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, true, false, defs),Completed None
 
             | IHash (ParsedHashDirective("load",sourceFiles,m),_) -> 
+                let istate = fsiDynamicCompiler.CommitPackageManagerText(ctok, istate, lexResourceManager, errorLogger, m) 
                 fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, sourceFiles, lexResourceManager, errorLogger),Completed None
 
             | IHash (ParsedHashDirective(("reference" | "r"),[text],_),_) when text.StartsWith packageManagerPrefix ->
