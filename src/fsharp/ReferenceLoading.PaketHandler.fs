@@ -11,11 +11,12 @@ type ReferenceLoadingResult =
 module Internals =
     open System
     open System.IO
+    let TargetFramework = "net461"
     let PM_EXE = "paket.exe"
     let PM_DIR = ".paket"
     let PM_SPEC_FILE = "paket.dependencies"
     let PM_LOCK_FILE = "paket.lock"
-    let PM_COMMAND = "install --generate-load-scripts load-script-type fsx"
+    let PM_COMMAND = "install --generate-load-scripts load-script-type fsx load-script-framework " + TargetFramework
     let PM_LOADSCRIPT = PM_DIR + "/load/main.group.fsx"
 
     let userProfile = 
@@ -92,7 +93,7 @@ module Internals =
                 elif fi.Directory.Parent <> null then
                     findSpecFile fi.Directory.Parent.FullName
                 else
-                    workingDir, "framework: net461" :: "source https://nuget.org/api/v2" :: packageManagerTextLines
+                    workingDir, ("framework: " + TargetFramework) :: "source https://nuget.org/api/v2" :: packageManagerTextLines
            
             findSpecFile implicitIncludeDir
 
