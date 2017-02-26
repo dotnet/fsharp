@@ -16,7 +16,7 @@ module Internals =
     let PM_DIR = ".paket"
     let PM_SPEC_FILE = "paket.dependencies"
     let PM_LOCK_FILE = "paket.lock"
-    let PM_COMMAND = "install --generate-load-scripts load-script-type fsx load-script-framework " + TargetFramework
+    let getPackageManagerCommand rootDir = "install --generate-load-scripts load-script-type fsx load-script-framework " + TargetFramework + " project-root \""  + Path.GetFullPath rootDir + "\""
     let PM_LOADSCRIPT = Path.Combine(PM_DIR, "load", TargetFramework, "main.group.fsx")
 
     let userProfile = 
@@ -132,7 +132,7 @@ module Internals =
                         WorkingDirectory = workingDir, 
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
-                        Arguments = PM_COMMAND,
+                        Arguments = getPackageManagerCommand rootDir,
                         CreateNoWindow = true,
                         UseShellExecute = false)
                 
