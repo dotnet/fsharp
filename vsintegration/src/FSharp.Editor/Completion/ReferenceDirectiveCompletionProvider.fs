@@ -5,6 +5,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
+open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.Completion.FileSystem
 open Microsoft.CodeAnalysis.Host
@@ -13,8 +14,9 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.Text
 
 open Microsoft.FSharp.Compiler.Range
+open Microsoft.FSharp.Compiler.SourceCodeServices
 
-type internal AbstractReferenceDirectiveCompletionProvider(projectInfoManager: ProjectInfoManager) =
+type internal ReferenceDirectiveCompletionProvider(projectInfoManager: ProjectInfoManager) =
     inherit CommonCompletionProvider()
     
     //let getTextChangeSpan (sringSyntaxToken stringLiteral, int position) =
@@ -30,16 +32,10 @@ type internal AbstractReferenceDirectiveCompletionProvider(projectInfoManager: P
     let filterRules = ImmutableArray<CharacterSetModificationRule>.Empty
     let rules = CompletionItemRules.Create(filterCharacterRules = filterRules, commitCharacterRules = commitRules, enterKeyRule = EnterKeyRule.Never)
  
-    //let getPathThroughLastSlash(stringLiteral : SyntaxToken, position : int) =
-    //    return PathCompletionUtilities.GetPathThroughLastSlash(
-    //        quotedPath: stringLiteral.ToString(),
-    //        quotedPathStart: stringLiteral.SpanStart,
-    //        position: position);
-
     override __.IsInsertionTrigger(text, characterPosition, _options) =
         PathCompletionUtilities.IsTriggerCharacter(text, characterPosition)
 
-    override __.ProvideCompletionsAsync(context : CompletionContext) =
+    override this.ProvideCompletionsAsync(context : Microsoft.CodeAnalysis.Completion.CompletionContext) =
         asyncMaybe {
             let document = context.Document
             let position = context.Position
@@ -47,36 +43,44 @@ type internal AbstractReferenceDirectiveCompletionProvider(projectInfoManager: P
             let! sourceText = document.GetTextAsync(cancellationToken)
             let textLines = sourceText.Lines
             let caretLinePos = textLines.GetLinePosition(position)
-            
-            //let caretLine = textLines.GetLineFromPosition(position)
-            //let fcsCaretLineNumber = Line.fromZ caretLinePos.Line  // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
+            let fcsCaretLineNumber = Line.fromZ caretLinePos.Line
             let caretLineColumn = caretLinePos.Character
             let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
             // first try to get the #r string literal token.  If we couldn't, then we're not in a #r reference directive and we immediately bail.
-            let tokens = CommonHelpers.tokenizeLine (document.Id, sourceText, position, document.FilePath, defines)
-            let! token = tokens |> List.tryFind (fun x -> caretLineColumn >= x.LeftColumn && caretLineColumn <= x.RightColumn)
+            let tokens = 
+                CommonHelpers.tokenizeLine (document.Id, sourceText, position, document.FilePath, defines) 
+                |> List.takeWhile (fun x -> x.RightColumn <= caretLineColumn)
+
+            let tks = tokens
+            let _x = tks
+
+            let stripWs (tokens: FSharpTokenInfo list) = tokens |> List.skipWhile (fun x -> x.CharClass = FSharpTokenCharKind.WhiteSpace)
+
+            let! stringLiteralSpan =
+                match stripWs tokens with
+                | token :: rest when token.ColorClass = FSharpTokenColorKind.PreprocessorKeyword ->
+                    let range = 
+                        match rest |> stripWs |> List.takeWhile (fun x -> x.ColorClass = FSharpTokenColorKind.String) with
+                        | [] -> None
+                        | [_leftQuote; str] ->
+                            Some (mkRange document.FilePath (mkPos fcsCaretLineNumber (str.LeftColumn - 1)) (mkPos fcsCaretLineNumber str.RightColumn))
+                        | [_leftQuote; str; rightQuote] ->
+                            Some (mkRange document.FilePath (mkPos fcsCaretLineNumber (str.LeftColumn - 1)) (mkPos fcsCaretLineNumber rightQuote.RightColumn))
+                        | _ -> None
+                    range |> Option.map (fun x -> CommonRoslynHelpers.FSharpRangeToTextSpan (sourceText, x))
+                | _ -> None
+
+            let textChangeSpan = PathCompletionUtilities.GetTextChangeSpan(sourceText.ToString stringLiteralSpan, stringLiteralSpan.Start, position)
             
-            //var textChangeSpan = this.GetTextChangeSpan(stringLiteral, position);
+            //let gacHelper = new GlobalAssemblyCacheCompletionHelper(this, textChangeSpan, itemRules: s_rules);
             
-            //var gacHelper = new GlobalAssemblyCacheCompletionHelper(this, textChangeSpan, itemRules: s_rules);
-            //var text = await document.GetTextAsync(context.CancellationToken).ConfigureAwait(false);
-            //var snapshot = text.FindCorrespondingEditorTextSnapshot();
-            //if (snapshot == null)
-            //{
-            //    // Passing null to GetFileSystemDiscoveryService raises an exception.
-            //    // Instead, return here since there is no longer snapshot for this document.
-            //    return;
-            //}
+            // Passing null to GetFileSystemDiscoveryService raises an exception.
+            // Instead, return here since there is no longer snapshot for this document.
+            let! snapshot = sourceText.FindCorrespondingEditorTextSnapshot() |> Option.ofObj
             
-            //var referenceResolver = document.Project.CompilationOptions.MetadataReferenceResolver;
+            //let referenceResolver = document.Project.CompilationOptions.MetadataReferenceResolver
             
-            //// TODO: https://github.com/dotnet/roslyn/issues/5263
-            //// Avoid dependency on a specific resolvers.
-            //// The search paths should be provided by specialized workspaces:
-            //// - InteractiveWorkspace for interactive window 
-            //// - ScriptWorkspace for loose .csx files (we don't have such workspace today)
             //ImmutableArray<string> searchPaths;
-            
             //RuntimeMetadataReferenceResolver rtResolver;
             //WorkspaceMetadataFileReferenceResolver workspaceResolver;
             
@@ -93,22 +97,24 @@ type internal AbstractReferenceDirectiveCompletionProvider(projectInfoManager: P
             //    return;
             //}
             
-            //var fileSystemHelper = new FileSystemCompletionHelper(
-            //    this, textChangeSpan,
-            //    GetFileSystemDiscoveryService(snapshot),
-            //    Glyph.OpenFolder,
-            //    Glyph.Assembly,
-            //    searchPaths: searchPaths,
-            //    allowableExtensions: new[] { ".dll", ".exe" },
-            //    exclude: path => path.Contains(","),
-            //    itemRules: s_rules);
+            let fileSystemHelper = 
+                FileSystemCompletionHelper(
+                    this, 
+                    textChangeSpan,
+                    getFileSystemDiscoveryService snapshot,
+                    Glyph.OpenFolder,
+                    Glyph.Assembly,
+                    searchPaths = ImmutableArray.Create ".",
+                    allowableExtensions = [|".dll"; ".exe" |],
+                    exclude = (fun path -> path.Contains(",")),
+                    itemRules = rules)
             
-            //var pathThroughLastSlash = GetPathThroughLastSlash(stringLiteral, position);
+            let pathThroughLastSlash = 
+                PathCompletionUtilities.GetPathThroughLastSlash(sourceText.ToString stringLiteralSpan, stringLiteralSpan.Start, position)
             
-            //var documentPath = document.Project.IsSubmission ? null : document.FilePath;
+            let documentPath = if document.Project.IsSubmission then null else document.FilePath
             //context.AddItems(gacHelper.GetItems(pathThroughLastSlash, documentPath));
-            //context.AddItems(fileSystemHelper.GetItems(pathThroughLastSlash, documentPath));
-            return null
+            context.AddItems(fileSystemHelper.GetItems(pathThroughLastSlash, documentPath))
         } 
         |> Async.Ignore
         |> CommonRoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
