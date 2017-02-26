@@ -36,7 +36,9 @@ module Internals =
             yield! allParents directory
         }
 
+    /// walks up directory structure and tries to find .paket/paket.exe
     let findPaketExe (baseDir: string) =
+
         let getPaketAndExe (directory: DirectoryInfo) =
             let dir = directory.GetDirectories(PM_DIR)
             match dir with
@@ -53,7 +55,7 @@ module Internals =
         |> Seq.choose getPaketAndExe
         |> Seq.tryHead
 
-    let ResolvePackages (implicitIncludeDir: string, scriptName: string, packageManagerTextLines: string list) =
+    let ResolvePackages alterToolPath (implicitIncludeDir: string, scriptName: string, packageManagerTextLines: string list) =
         printfn "OBJ %A" (implicitIncludeDir,scriptName)
         let workingDir = Path.Combine(Path.GetTempPath(),"fsx-packages", string(abs(hash (implicitIncludeDir,scriptName))))
         let workingDirSpecFile = FileInfo(Path.Combine(workingDir,PM_SPEC_FILE))
@@ -86,6 +88,7 @@ module Internals =
             findSpecFile implicitIncludeDir
 
         let toolPathOpt = 
+            // we try to resolve .paket/paket.exe any place up in the folder structure from current script
             match findPaketExe implicitIncludeDir with
             | Some paketExe -> Some paketExe
             | None ->
@@ -110,7 +113,7 @@ module Internals =
                 Solved loadScript
             else
                 try File.Delete(loadScript) with _ -> ()
-                let toolPath = if Microsoft.FSharp.Compiler.AbstractIL.IL.runningOnMono then "mono " + toolPath else toolPath
+                let toolPath = alterToolPath toolPath
                 File.WriteAllLines(workingDirSpecFile.FullName, packageManagerTextLines)
                 printfn "running package resolution in '%s'..." workingDir
                 let startInfo = 

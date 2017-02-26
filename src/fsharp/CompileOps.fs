@@ -4807,6 +4807,11 @@ type CodeContext =
     | Compilation  // in fsc.exe
     | Editing // in VS
     
+let AlterPackageManagementToolPath toolPath =
+    if Microsoft.FSharp.Compiler.AbstractIL.IL.runningOnMono 
+    then "mono " + toolPath
+    else toolPath
+
 
 module ScriptPreprocessClosure = 
     open Internal.Utilities.Text.Lexing
@@ -4902,7 +4907,7 @@ module ScriptPreprocessClosure =
             // Recover by  using a default TcConfig.
             let tcConfigB = tcConfig.CloneOfOriginalBuilder 
             TcConfig.Create(tcConfigB, validate=false),nowarns
-
+    
     let FindClosureFiles(mainFile, m, closureSources, origTcConfig:TcConfig, codeContext, lexResourceManager:Lexhelp.LexResourceManager) =
         let tcConfig = ref origTcConfig
         
@@ -4959,7 +4964,7 @@ module ScriptPreprocessClosure =
             if tcConfig.Value.packageManagerTextLines = origTcConfig.packageManagerTextLines then
                 []
             else 
-                match ReferenceLoading.PaketHandler.Internals.ResolvePackages (tcConfig.Value.implicitIncludeDir, mainFile, tcConfig.Value.packageManagerTextLines) with 
+                match ReferenceLoading.PaketHandler.Internals.ResolvePackages AlterPackageManagementToolPath (tcConfig.Value.implicitIncludeDir, mainFile, tcConfig.Value.packageManagerTextLines) with 
                 | ReferenceLoading.PaketHandler.ReferenceLoadingResult.PackageManagerNotFound (implicitIncludeDir, userProfile) ->
                     errorR(Error(FSComp.SR.packageManagerNotFound(implicitIncludeDir, userProfile),m))
                     []
