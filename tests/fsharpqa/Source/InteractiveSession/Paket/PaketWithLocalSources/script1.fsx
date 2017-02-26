@@ -1,6 +1,6 @@
 #r "paket: "
 
-open NUnit
+open NUnit.Framework
 
 [<Test>]
 let f = ()
