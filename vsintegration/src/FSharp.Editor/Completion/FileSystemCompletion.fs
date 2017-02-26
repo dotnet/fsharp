@@ -34,8 +34,9 @@ module internal FileSystemCompletion =
             quotedPathStart = getQuotedPathStart(text, position, quotedPathGroup),
             position = position)
 
-    let getItems(provider: CompletionProvider, document: Document, position: int, allowableExtensions: string[], directiveRegex: Regex, ct) =
+    let getItems(provider: CompletionProvider, document: Document, position: int, allowableExtensions: string[], directiveRegex: Regex) =
         asyncMaybe {
+            let! ct = liftAsync Async.CancellationToken
             let! text = document.GetTextAsync ct
             let line = text.Lines.GetLineFromPosition(position)
             let lineText = text.ToString(TextSpan.FromBounds(line.Start, position));
@@ -63,12 +64,11 @@ module internal FileSystemCompletion =
                     Glyph.None,
                     searchPaths = searchPaths,
                     allowableExtensions = allowableExtensions,
-                    itemRules = rules,
-                    exclude = fun path -> path = document.FilePath)
+                    itemRules = rules)
      
             let pathThroughLastSlash = getPathThroughLastSlash(text, position, quotedPathGroup)
             let documentPath = if document.Project.IsSubmission then null else document.FilePath
-            return helper.GetItems(pathThroughLastSlash, documentPath)
+            return helper.GetItems(pathThroughLastSlash, documentPath) 
         } |> Async.map (Option.defaultValue ImmutableArray.Empty)
 
     let isInsertionTrigger(text: SourceText, position) =
@@ -96,7 +96,7 @@ type internal LoadDirectiveCompletionProvider() =
  
     override this.ProvideCompletionsAsync(context) =
         async {
-            let! items = FileSystemCompletion.getItems(this, context.Document, context.Position, [|".fs"; ".fsx"|], directiveRegex, context.CancellationToken)
+            let! items = FileSystemCompletion.getItems(this, context.Document, context.Position, [|".fs"; ".fsx"|], directiveRegex)
             context.AddItems(items)
         } |> CommonRoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
  
@@ -114,7 +114,7 @@ type internal ReferenceDirectiveCompletionProvider() =
  
     override this.ProvideCompletionsAsync(context) =
         async {
-            let! items = FileSystemCompletion.getItems(this, context.Document, context.Position, [|".dll"; ".exe"|], directiveRegex, context.CancellationToken)
+            let! items = FileSystemCompletion.getItems(this, context.Document, context.Position, [|".dll"; ".exe"|], directiveRegex)
             context.AddItems(items)
         } |> CommonRoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
  
