@@ -425,6 +425,9 @@
     <Compile Include="..\ReferenceLoading.PaketHandler.fs">
       <Link>Driver\ReferenceLoading.PaketHandler.fs</Link>
     </Compile>
+    <Compile Include="..\ReferenceLoading.PaketHandler.FSharp.Integration.fs">
+      <Link>Driver\ReferenceLoading.PaketHandler.FSharp.Integration.fs</Link>
+    </Compile>
     <Compile Include="..\CompileOps.fsi">
       <Link>CompileOps.fsi</Link>
     </Compile>

@@ -4807,12 +4807,6 @@ type CodeContext =
     | Compilation  // in fsc.exe
     | Editing // in VS
     
-let AlterPackageManagementToolPath toolPath =
-    if Microsoft.FSharp.Compiler.AbstractIL.IL.runningOnMono 
-    then "mono " + toolPath
-    else toolPath
-
-
 module ScriptPreprocessClosure = 
     open Internal.Utilities.Text.Lexing
     
@@ -4964,7 +4958,14 @@ module ScriptPreprocessClosure =
             if tcConfig.Value.packageManagerTextLines = origTcConfig.packageManagerTextLines then
                 []
             else 
-                match ReferenceLoading.PaketHandler.Internals.ResolvePackages AlterPackageManagementToolPath (tcConfig.Value.implicitIncludeDir, mainFile, tcConfig.Value.packageManagerTextLines) with 
+                let referenceLoadingResult =
+                    ReferenceLoading.PaketHandler.Internals.ResolvePackages
+                        Microsoft.FSharp.Compiler.ReferenceLoading.PaketHandler.targetFramework
+                        Microsoft.FSharp.Compiler.ReferenceLoading.PaketHandler.GetCommandForTargetFramework
+                        (fun workDir -> Microsoft.FSharp.Compiler.ReferenceLoading.PaketHandler.GetPaketLoadScriptLocation workDir (Some Microsoft.FSharp.Compiler.ReferenceLoading.PaketHandler.targetFramework))
+                        Microsoft.FSharp.Compiler.ReferenceLoading.PaketHandler.AlterPackageManagementToolCommand
+                        (tcConfig.Value.implicitIncludeDir, mainFile, tcConfig.Value.packageManagerTextLines)
+                match referenceLoadingResult with 
                 | ReferenceLoading.PaketHandler.ReferenceLoadingResult.PackageManagerNotFound (implicitIncludeDir, userProfile) ->
                     errorR(Error(FSComp.SR.packageManagerNotFound(implicitIncludeDir, userProfile),m))
                     []
