@@ -1,10 +1,12 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
-/// Paket invokation for In-Script reference loading
-module internal ReferenceLoading.PaketHandler
 // NOTE: this file is used by other parties integrating paket reference loading in scripting environments.
 // Do not add any reference to F# codebase other than FSharp.Core.
 // This file might end up in paket repository instead of F#.
+
+/// Paket invokation for In-Script reference loading
+module internal ReferenceLoading.PaketHandler
+
+
 type ReferenceLoadingResult =
 | Solved of loadingScript: string
 | PackageManagerNotFound of implicitIncludeDir: string * userProfile: string
