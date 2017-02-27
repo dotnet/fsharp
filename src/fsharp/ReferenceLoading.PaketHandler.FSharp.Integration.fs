@@ -1,7 +1,9 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 /// Helper members to integrate ReferenceLoading.PaketHandler into F# codebase
-module internal Microsoft.FSharp.Compiler.ReferenceLoading.PaketHandler
+module internal Microsoft.FSharp.Compiler.ReferenceLoading.PaketHandlerIntegration
+
+open Microsoft.FSharp.Compiler.ReferenceLoading
 
 // NOTE: this contains mostly members whose intents are :
 // * to keep ReferenceLoading.PaketHandler usable outside of F# (so it can be used in scriptcs & others)
@@ -24,10 +26,10 @@ let AlterPackageManagementToolCommand command =
 /// or
 /// baseDir/.paket/load/frameworkDir/scriptName 
 let GetPaketLoadScriptLocation baseDir optionalFrameworkDir =
-  ReferenceLoading.PaketHandler.GetPaketLoadScriptLocation
+  PaketHandler.GetPaketLoadScriptLocation
     baseDir
     optionalFrameworkDir
     "main.group.fsx"
 
 let GetCommandForTargetFramework targetFramework =
-    ReferenceLoading.PaketHandler.MakePackageManagerCommand "fsx" targetFramework
+    PaketHandler.MakePackageManagerCommand "fsx" targetFramework

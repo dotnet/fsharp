@@ -971,8 +971,6 @@ type internal FsiDynamicCompiler
     let mutable fragmentId = 0
     let mutable prevIt : ValRef option = None
 
-    let mutable needsPackageResolution = false
-
     let generateDebugInfo = tcConfigB.debuginfo
 
     let valuePrinter = FsiValuePrinter(fsi, tcGlobals, generateDebugInfo, resolveAssemblyRef, outWriter)
@@ -1225,31 +1223,25 @@ type internal FsiDynamicCompiler
         { istate with tcState = tcState.NextStateAfterIncrementalFragment(tcEnv); optEnv = optEnv }
 
 
-    member __.EvalPackageManagerTextFragment (text: string) = 
-        let text = text.Substring(packageManagerPrefix.Length).Trim()
-        tcConfigB.packageManagerTextLines <- tcConfigB.packageManagerTextLines @ [ text ]
-        needsPackageResolution <- true
-         
-    member fsiDynamicCompiler.CommitPackageManagerText (ctok, istate: FsiDynamicCompilerState, lexResourceManager, errorLogger, m) = 
-        if not needsPackageResolution then istate else
-        needsPackageResolution <- false
-        
-        let referenceLoadingResult =
-            ReferenceLoading.PaketHandler.Internals.ResolvePackages
-                Microsoft.FSharp.Compiler.ReferenceLoading.PaketHandler.targetFramework
-                Microsoft.FSharp.Compiler.ReferenceLoading.PaketHandler.GetCommandForTargetFramework
-                (fun workDir -> Microsoft.FSharp.Compiler.ReferenceLoading.PaketHandler.GetPaketLoadScriptLocation workDir (Some Microsoft.FSharp.Compiler.ReferenceLoading.PaketHandler.targetFramework))
-                Microsoft.FSharp.Compiler.ReferenceLoading.PaketHandler.AlterPackageManagementToolCommand
-                (tcConfigB.implicitIncludeDir, "stdin.fsx", tcConfigB.packageManagerTextLines)
+    member fsiDynamicCompiler.CommitPackageManagerText (ctok, istate: FsiDynamicCompilerState, lexResourceManager, errorLogger, m) =
+        let needsResolution =
+            Microsoft.FSharp.Compiler.ReferenceLoading.GenericHandler.PragmaHandlers
+            |> List.filter (fun x -> x.HasPendingChanges)
+        if needsResolution.IsEmpty then istate else
 
-        match referenceLoadingResult with
-        | ReferenceLoading.PaketHandler.ReferenceLoadingResult.Solved(loadScript,additionalIncludeFolders) -> 
-            for folder in additionalIncludeFolders do
-                tcConfigB.AddIncludePath (m,folder, "")
-            fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, [loadScript], lexResourceManager, errorLogger)
-        | ReferenceLoading.PaketHandler.ReferenceLoadingResult.PackageManagerNotFound (_)
-        | ReferenceLoading.PaketHandler.ReferenceLoadingResult.PackageResolutionFailed (_) ->
-            istate
+        let (processedScripts, additionalIncludeFolders) =
+            needsResolution
+            |> List.choose (fun handler -> handler.ChangesToScript tcConfigB.implicitIncludeDir)
+            |> List.unzip
+
+        let additionalIncludeFolders = additionalIncludeFolders |> List.collect id
+
+        for folder in additionalIncludeFolders do
+            tcConfigB.AddIncludePath (m,folder,"")
+        match processedScripts with
+        | [] -> istate
+        | _ -> fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, processedScripts, lexResourceManager, errorLogger)
+
 
     member fsiDynamicCompiler.ProcessMetaCommandsFromInputAsInteractiveCommands(ctok, istate, sourceFile, inp) =
         WithImplicitHome
@@ -1258,7 +1250,6 @@ type internal FsiDynamicCompiler
                ProcessMetaCommandsFromInput 
                    ((fun st (m,nm) -> tcConfigB.TurnWarningOff(m,nm); st),
                     (fun st (m,nm) -> snd (fsiDynamicCompiler.EvalRequireReference (ctok, st, m, nm))),
-                    (fun st (_m,nm) -> fsiDynamicCompiler.EvalPackageManagerTextFragment (nm); st),
                     (fun _ _ -> ()))  
                    (tcConfigB, inp, Path.GetDirectoryName sourceFile, istate))
       
@@ -1910,10 +1901,6 @@ type internal FsiInteractionProcessor
             | IHash (ParsedHashDirective("load",sourceFiles,m),_) -> 
                 let istate = fsiDynamicCompiler.CommitPackageManagerText(ctok, istate, lexResourceManager, errorLogger, m) 
                 fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, sourceFiles, lexResourceManager, errorLogger),Completed None
-
-            | IHash (ParsedHashDirective(("reference" | "r"),[text],_),_) when text.StartsWith packageManagerPrefix ->
-                fsiDynamicCompiler.EvalPackageManagerTextFragment(text)
-                istate,Completed None
                 
             | IHash (ParsedHashDirective(("reference" | "r"),[path],m),_) -> 
                 let resolutions,istate = fsiDynamicCompiler.EvalRequireReference(ctok, istate, m, path)
@@ -1995,6 +1982,15 @@ type internal FsiInteractionProcessor
 
             | IHash (ParsedHashDirective("help",[],_),_) ->
                 fsiOptions.ShowHelp()
+                istate,Completed None
+
+            | IHash (ParsedHashDirective(c,[arg],_),_) when Microsoft.FSharp.Compiler.ReferenceLoading.GenericHandler.PragmaHandlers |> List.exists (fun x -> x.PragmaName = c) ->
+                let handlers =
+                    Microsoft.FSharp.Compiler.ReferenceLoading.GenericHandler.PragmaHandlers
+                    |> List.filter (fun x -> x.PragmaName = c)
+                match handlers with
+                | [handler] -> handler.ProcessArg arg
+                | _ -> ()
                 istate,Completed None
 
             | IHash (ParsedHashDirective(c,arg,_),_) -> 
