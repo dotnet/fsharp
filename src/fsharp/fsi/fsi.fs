@@ -1227,8 +1227,7 @@ type internal FsiDynamicCompiler
 
     member __.EvalPackageManagerTextFragment (text: string) = 
         let text = text.Substring(packageManagerPrefix.Length).Trim()
-        if not (String.IsNullOrWhiteSpace text) then
-            tcConfigB.packageManagerTextLines <- tcConfigB.packageManagerTextLines @ [ text ]
+        tcConfigB.packageManagerTextLines <- tcConfigB.packageManagerTextLines @ [ text ]
         needsPackageResolution <- true
          
     member fsiDynamicCompiler.CommitPackageManagerText (ctok, istate: FsiDynamicCompilerState, lexResourceManager, errorLogger, m) = 
@@ -1244,7 +1243,9 @@ type internal FsiDynamicCompiler
                 (tcConfigB.implicitIncludeDir, "stdin.fsx", tcConfigB.packageManagerTextLines)
 
         match referenceLoadingResult with
-        | ReferenceLoading.PaketHandler.ReferenceLoadingResult.Solved loadScript -> 
+        | ReferenceLoading.PaketHandler.ReferenceLoadingResult.Solved(loadScript,additionalIncludeFolders) -> 
+            for folder in additionalIncludeFolders do
+                tcConfigB.AddIncludePath (m,folder, "")
             fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, [loadScript], lexResourceManager, errorLogger)
         | ReferenceLoading.PaketHandler.ReferenceLoadingResult.PackageManagerNotFound (_)
         | ReferenceLoading.PaketHandler.ReferenceLoadingResult.PackageResolutionFailed (_) ->

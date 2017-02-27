@@ -257,7 +257,7 @@ type TcConfigBuilder =
       mutable light: bool option
       mutable conditionalCompilationDefines: string list
       /// Sources added into the build with #load
-      mutable loadedSources: (range * string) list
+      mutable loadedSources: (range * string * string) list
       
       mutable referencedDLLs: AssemblyReference  list
       mutable packageManagerTextLines : string list

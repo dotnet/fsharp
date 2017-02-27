@@ -8,12 +8,13 @@ module internal ReferenceLoading.PaketHandler
 
 
 type ReferenceLoadingResult =
-| Solved of loadingScript: string
+| Solved of loadingScript: string * additionalIncludeFolders : string list
 | PackageManagerNotFound of implicitIncludeDir: string * userProfile: string
 | PackageResolutionFailed of toolPath: string * workingDir: string * msg : string
 
 let MakePackageManagerCommand scriptType packageManagerTargetFramework projectRootDirArgument = 
-  sprintf "install --generate-load-scripts load-script-type %s load-script-framework %s project-root \"%s\"" scriptType packageManagerTargetFramework (System.IO.Path.GetFullPath projectRootDirArgument)
+    sprintf "install --generate-load-scripts load-script-type %s load-script-framework %s project-root \"%s\"" 
+      scriptType packageManagerTargetFramework (System.IO.Path.GetFullPath projectRootDirArgument)
 
 module Internals =
     open System
@@ -124,12 +125,13 @@ module Internals =
 
         | Some toolPath ->
             let loadScript = getRelativeLoadScriptLocation workingDir
+            let additionalIncludeFolders = [Path.Combine(workingDir,"paket-files")]
             if workingDirSpecFile.Exists && 
                (File.ReadAllLines(workingDirSpecFile.FullName) |> Array.toList) = packageManagerTextLines && 
                File.Exists loadScript
             then 
                 printfn "skipping running package resolution... already done that" 
-                Solved loadScript
+                Solved(loadScript,additionalIncludeFolders)
             else
                 try File.Delete(loadScript) with _ -> ()
                 let toolPath = alterToolPath toolPath
@@ -162,7 +164,7 @@ module Internals =
                     PackageResolutionFailed(toolPath, workingDir, msg)
                 else
                     printfn "package resolution completed at %A" System.DateTimeOffset.UtcNow
-                    Solved loadScript
+                    Solved(loadScript,additionalIncludeFolders)
 
 let getLoadScript baseDir packageManagerLoadScriptSubDirectory loadScriptName =
   System.IO.Path.Combine(baseDir, packageManagerLoadScriptSubDirectory, loadScriptName)
