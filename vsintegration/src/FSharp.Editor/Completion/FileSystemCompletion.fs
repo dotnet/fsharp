@@ -93,7 +93,7 @@ module internal FileSystemCompletion =
         else
             None
 
-    let private includeDirectiveCleanRegex = Regex("""#I\s+(@?"*(?<literal>[^"]*)"?)""", RegexOptions.Compiled ||| RegexOptions.ExplicitCapture)
+    let private includeDirectiveCleanRegex = Regex("""\s*#I\s+(@?"*(?<literal>[^"]*)"?)""", RegexOptions.Compiled ||| RegexOptions.ExplicitCapture)
 
     let getIncludeDirectives (document: Document, position: int) =
         async {
@@ -106,7 +106,8 @@ module internal FileSystemCompletion =
                 |> Seq.filter (fun x -> x.LineNumber <= caretLine)
                 |> Seq.choose (fun line ->
                     let lineStr = line.ToString()
-                    if not (lineStr.StartsWith "#I") then None
+                    // optimization: fail fast if the line does not start with "(optional spaces) #I"
+                    if not (lineStr.TrimStart().StartsWith "#I") then None
                     else
                         match includeDirectiveCleanRegex.Match lineStr with
                         | m when m.Success -> Some (m.Groups.["literal"].Value)
@@ -142,11 +143,11 @@ type internal HashDirectiveCompletionProvider(directiveRegex: string, allowableE
 
 
 type internal LoadDirectiveCompletionProvider() =
-    inherit HashDirectiveCompletionProvider("""#load\s+(@?"*(?<literal>"[^"]*"?))""", [".fs"; ".fsx"], useIncludeDirectives = true)
+    inherit HashDirectiveCompletionProvider("""\s*#load\s+(@?"*(?<literal>"[^"]*"?))""", [".fs"; ".fsx"], useIncludeDirectives = true)
 
 type internal ReferenceDirectiveCompletionProvider() =
-    inherit HashDirectiveCompletionProvider("""#r\s+(@?"*(?<literal>"[^"]*"?))""", [".dll"; ".exe"], useIncludeDirectives = true)
+    inherit HashDirectiveCompletionProvider("""\s*#r\s+(@?"*(?<literal>"[^"]*"?))""", [".dll"; ".exe"], useIncludeDirectives = true)
 
 type internal IncludeDirectiveCompletionProvider() =
     // we have to pass an extension that's not met in real life because if we pass empty list, it does not filter at all.
-    inherit HashDirectiveCompletionProvider("""#I\s+(@?"*(?<literal>"[^"]*"?))""", [".impossible_extension"], useIncludeDirectives = false)
+    inherit HashDirectiveCompletionProvider("""\s*#I\s+(@?"*(?<literal>"[^"]*"?))""", [".impossible_extension"], useIncludeDirectives = false)
