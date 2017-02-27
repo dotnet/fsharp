@@ -41,6 +41,7 @@ module internal FileSystemCompletion =
 
     let getItems(provider: CompletionProvider, document: Document, position: int, allowableExtensions: string[], directiveRegex: Regex) =
         asyncMaybe {
+            do! Option.guard (Path.GetExtension document.FilePath = ".fsx")
             let! ct = liftAsync Async.CancellationToken
             let! text = document.GetTextAsync ct
             let line = text.Lines.GetLineFromPosition(position)
