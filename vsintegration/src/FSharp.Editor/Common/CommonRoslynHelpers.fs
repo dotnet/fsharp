@@ -45,6 +45,7 @@ module internal CommonRoslynHelpers =
             Assert.Exception(task.Exception.GetBaseException())
             raise(task.Exception.GetBaseException())
 
+    /// Converts `TaggedText` from the F# Compiler to `Microsoft.CodeAnalysis.TaggedText` format for use in tooltips
     let TaggedTextToRoslyn t =
         match t with
         | TaggedText.ActivePatternCase t
