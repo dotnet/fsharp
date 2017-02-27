@@ -93,7 +93,7 @@ module internal FileSystemCompletion =
         else
             None
 
-    let private includeDirectiveCleanRegex = Regex("""\s*#I\s+(@?"*(?<literal>[^"]*)"?)""", RegexOptions.Compiled ||| RegexOptions.ExplicitCapture)
+    let private includeDirectiveCleanRegex = Regex("""#I\s+(@?"*(?<literal>[^"]*)"?)""", RegexOptions.Compiled ||| RegexOptions.ExplicitCapture)
 
     let getIncludeDirectives (document: Document, position: int) =
         async {
@@ -105,9 +105,9 @@ module internal FileSystemCompletion =
                 lines
                 |> Seq.filter (fun x -> x.LineNumber <= caretLine)
                 |> Seq.choose (fun line ->
-                    let lineStr = line.ToString()
+                    let lineStr = line.ToString().Trim()
                     // optimization: fail fast if the line does not start with "(optional spaces) #I"
-                    if not (lineStr.TrimStart().StartsWith "#I") then None
+                    if not (lineStr.StartsWith "#I") then None
                     else
                         match includeDirectiveCleanRegex.Match lineStr with
                         | m when m.Success -> Some (m.Groups.["literal"].Value)
