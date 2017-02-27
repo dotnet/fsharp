@@ -51,12 +51,11 @@ module Internals =
     let findPaketExe (baseDir: string) =
 
         let getPaketAndExe (directory: DirectoryInfo) =
-            let dir = directory.GetDirectories(PM_DIR)
-            match dir with
-            | [|dir|] -> 
-              match dir.GetFiles(PM_EXE) with
-              | [|exe|] -> Some exe.FullName
-              | _ -> None
+            match directory.GetDirectories(PM_DIR) with
+            | [| dir |] -> 
+                match dir.GetFiles(PM_EXE) with
+                | [|exe|] -> Some exe.FullName
+                | _ -> None
             | _ -> None
 
         let dir = DirectoryInfo baseDir
