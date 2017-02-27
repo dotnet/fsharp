@@ -125,13 +125,16 @@ module Internals =
 
         | Some toolPath ->
             let loadScript = getRelativeLoadScriptLocation workingDir
-            let additionalIncludeFolders = [Path.Combine(workingDir,"paket-files")]
+            let additionalIncludeFolders() = 
+                [Path.Combine(workingDir,"paket-files")]
+                |> List.filter Directory.Exists
+
             if workingDirSpecFile.Exists && 
                (File.ReadAllLines(workingDirSpecFile.FullName) |> Array.toList) = packageManagerTextLines && 
                File.Exists loadScript
             then 
                 printfn "skipping running package resolution... already done that" 
-                Solved(loadScript,additionalIncludeFolders)
+                Solved(loadScript,additionalIncludeFolders())
             else
                 try File.Delete(loadScript) with _ -> ()
                 let toolPath = alterToolPath toolPath
@@ -164,7 +167,7 @@ module Internals =
                     PackageResolutionFailed(toolPath, workingDir, msg)
                 else
                     printfn "package resolution completed at %A" System.DateTimeOffset.UtcNow
-                    Solved(loadScript,additionalIncludeFolders)
+                    Solved(loadScript,additionalIncludeFolders())
 
 let getLoadScript baseDir packageManagerLoadScriptSubDirectory loadScriptName =
   System.IO.Path.Combine(baseDir, packageManagerLoadScriptSubDirectory, loadScriptName)
