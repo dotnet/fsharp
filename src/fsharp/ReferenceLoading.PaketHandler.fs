@@ -18,15 +18,10 @@ let MakePackageManagerCommand scriptType packageManagerTargetFramework projectRo
 module Internals =
     open System
     open System.IO
-    //let TargetFramework = "net461"
     let PM_EXE = "paket.exe"
     let PM_DIR = ".paket"
     let PM_SPEC_FILE = "paket.dependencies"
     let PM_LOCK_FILE = "paket.lock"
-    //let PM_COMMAND = "install --generate-load-scripts load-script-type fsx load-script-framework " + TargetFramework
-    //let PM_LOADSCRIPT = PM_DIR + "/load/main.group.fsx"
-////// let getPackageManagerCommand rootDir = "install --generate-load-scripts load-script-type fsx load-script-framework " + TargetFramework + " project-root \""  + Path.GetFullPath rootDir + "\""
-////// let PM_LOADSCRIPT = Path.Combine(PM_DIR, "load", TargetFramework, "main.group.fsx")
 
     let userProfile =
         let res = Environment.GetEnvironmentVariable("USERPROFILE")
@@ -128,7 +123,6 @@ module Internals =
             PackageManagerNotFound(implicitIncludeDir, userProfile)
 
         | Some toolPath ->
-            //let loadScript = Path.Combine(workingDir,PM_LOADSCRIPT)
             let loadScript = getRelativeLoadScriptLocation workingDir
             if workingDirSpecFile.Exists && 
                (File.ReadAllLines(workingDirSpecFile.FullName) |> Array.toList) = packageManagerTextLines && 
@@ -147,8 +141,7 @@ module Internals =
                         WorkingDirectory = workingDir, 
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
-                        Arguments = getCommand targetFramework rootDir, //PM_COMMAND,
-////// Arguments = getPackageManagerCommand rootDir,
+                        Arguments = getCommand targetFramework rootDir,
                         CreateNoWindow = true,
                         UseShellExecute = false)
                 
