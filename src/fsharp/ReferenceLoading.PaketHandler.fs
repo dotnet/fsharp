@@ -69,13 +69,13 @@ module Internals =
     /// <param name="getRelativeLoadScriptLocation">Resolves the path (based from the passed working dir, which is temporary) to the load script.</param>
     /// <param name="alterToolPath">Function which prefixes the whole command, some platforms such as mono requires invocation of `mono ` as prefix to the full `paket.exe` command.</param>
     // TODO: comment the remaining parameters
-    let ResolvePackages targetFramework getCommand getRelativeLoadScriptLocation alterToolPath (implicitIncludeDir: string, scriptName: string, packageManagerTextLines: string list) =
+    let ResolvePackages targetFramework getCommand getRelativeLoadScriptLocation alterToolPath (implicitIncludeDir: string, scriptName: string, packageManagerTextLinesFromScript : string list) =
         let workingDir = Path.Combine(Path.GetTempPath(), "script-packages", string(abs(hash (implicitIncludeDir,scriptName))))
         let workingDirSpecFile = FileInfo(Path.Combine(workingDir,PM_SPEC_FILE))
         if not (Directory.Exists workingDir) then
             Directory.CreateDirectory workingDir |> ignore
 
-        let packageManagerTextLines = packageManagerTextLines |> List.filter (fun l -> not (String.IsNullOrWhiteSpace l))
+        let packageManagerTextLinesFromScript = packageManagerTextLinesFromScript |> List.filter (fun l -> not (String.IsNullOrWhiteSpace l))
 
         let rootDir,packageManagerTextLines =
             let rec findSpecFile dir =
@@ -93,16 +93,16 @@ module Internals =
                             File.Copy(lockFile.FullName,targetLockFile.FullName,true)
                     
                     let lines = 
-                        if List.isEmpty packageManagerTextLines then 
+                        if List.isEmpty packageManagerTextLinesFromScript then 
                             Array.toList depsFileLines
                         else
-                            (Array.toList depsFileLines) @ ("group Main" :: packageManagerTextLines)
+                            (Array.toList depsFileLines) @ ("group Main" :: packageManagerTextLinesFromScript)
 
                     fi.Directory.FullName, lines
                 elif fi.Directory.Parent <> null then
                     findSpecFile fi.Directory.Parent.FullName
                 else
-                    workingDir, ("framework: " + targetFramework) :: "source https://nuget.org/api/v2" :: packageManagerTextLines
+                    workingDir, ("framework: " + targetFramework) :: "source https://nuget.org/api/v2" :: packageManagerTextLinesFromScript
            
             findSpecFile implicitIncludeDir
 
