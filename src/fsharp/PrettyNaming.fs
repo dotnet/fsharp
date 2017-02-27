@@ -386,6 +386,19 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
             // by the call to String.forall; it is a fast check used to avoid the call if possible.
             || (s.[0] = '~' && String.forall (fun c -> c = '~') s)
 
+    let IsPunctuation s =
+        if System.String.IsNullOrEmpty s then false else
+        match s with
+        | "," | ";" | "|" | ":" | "." | "*"
+        | "(" | ")"
+        | "[" | "]" 
+        | "{" | "}"
+        | "<" | ">" 
+        | "[|" | "|]" 
+        | "[<" | ">]"
+            -> true
+        | _ -> false
+
     let IsTernaryOperator s = 
         (DecompileOpName s = qmarkSet)
 

@@ -159,10 +159,12 @@ type internal SemanticClassificationType =
     | Module
     | Printf
     | ComputationExpression
-    | IntrinsicType
     | IntrinsicFunction
     | Enumeration
     | Interface
+    | TypeArgument
+    | Operator
+    | Disposable
 
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]

@@ -38,7 +38,7 @@ type internal FSharpHelpContextService
                 match token.ClassificationType with
                 | ClassificationTypeNames.Text
                 | ClassificationTypeNames.WhiteSpace -> true
-                | ClassificationTypeNames.Operator when content = "." -> true
+                | (ClassificationTypeNames.Operator|ClassificationTypeNames.Punctuation)when content = "." -> true
                 | _ -> false
           
             let tokenInformation, col =
