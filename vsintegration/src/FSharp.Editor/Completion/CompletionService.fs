@@ -23,7 +23,9 @@ type internal FSharpCompletionService
 
     let builtInProviders = 
         ImmutableArray.Create<CompletionProvider>(
-            FSharpCompletionProvider(workspace, serviceProvider, checkerProvider, projectInfoManager)
+            FSharpCompletionProvider(workspace, serviceProvider, checkerProvider, projectInfoManager),
+            ReferenceDirectiveCompletionProvider(),
+            LoadDirectiveCompletionProvider()
             // we've turned off keyword completion because it does not filter suggestion depending on context.
             // FSharpKeywordCompletionProvider(workspace, projectInfoManager)
             )
