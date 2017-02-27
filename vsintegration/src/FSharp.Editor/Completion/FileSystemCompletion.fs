@@ -39,7 +39,7 @@ module internal FileSystemCompletion =
         | ".exe" | ".dll" -> Some Glyph.Assembly
         | _ -> None
 
-    let getItems(provider: CompletionProvider, document: Document, position: int, allowableExtensions: string[], directiveRegex: Regex) =
+    let getItems(provider: CompletionProvider, document: Document, position: int, allowableExtensions: string[], directiveRegex: Regex, searchPaths: string list) =
         asyncMaybe {
             do! Option.guard (Path.GetExtension document.FilePath = ".fsx")
             let! ct = liftAsync Async.CancellationToken
@@ -59,8 +59,6 @@ module internal FileSystemCompletion =
             do! Option.guard (not (isNull snapshot))
             let fileSystem = CurrentWorkingDirectoryDiscoveryService.GetService(snapshot)
             
-            let searchPaths = ImmutableArray.Create (Path.GetDirectoryName document.FilePath)
-     
             let helper = 
                 FileSystemCompletionHelper(
                     provider,
@@ -68,7 +66,7 @@ module internal FileSystemCompletion =
                     fileSystem,
                     Glyph.OpenFolder,
                     allowableExtensions |> Array.tryPick getFileGlyph |> Option.defaultValue Glyph.None,
-                    searchPaths = searchPaths,
+                    searchPaths = Seq.toImmutableArray searchPaths,
                     allowableExtensions = allowableExtensions,
                     itemRules = rules)
      
@@ -95,38 +93,32 @@ module internal FileSystemCompletion =
         else
             None
 
-type internal LoadDirectiveCompletionProvider() =
+[<AbstractClass>]
+type internal HashDirectiveCompletionProvider(directiveRegex, allowableExtensions) =
     inherit CommonCompletionProvider()
 
-    let directiveRegex = Regex("""#load\s+(@?"*(?<literal>"[^"]*"?))""", RegexOptions.Compiled ||| RegexOptions.ExplicitCapture)
+    let directiveRegex = Regex(directiveRegex, RegexOptions.Compiled ||| RegexOptions.ExplicitCapture)
  
     override this.ProvideCompletionsAsync(context) =
         async {
-            let! items = FileSystemCompletion.getItems(this, context.Document, context.Position, [|".fs"; ".fsx"|], directiveRegex)
+            let searchPath = Path.GetDirectoryName context.Document.FilePath
+            let! items = FileSystemCompletion.getItems(this, context.Document, context.Position, allowableExtensions, directiveRegex, [searchPath])
             context.AddItems(items)
         } |> CommonRoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
  
-    override __.IsInsertionTrigger(text, position, _options) = FileSystemCompletion.isInsertionTrigger(text, position)
+    override __.IsInsertionTrigger(text, position, _) = FileSystemCompletion.isInsertionTrigger(text, position)
  
     override __.GetTextChangeAsync(selectedItem, ch, cancellationToken) = 
         match FileSystemCompletion.getTextChange(selectedItem, ch) with
         | Some x -> Task.FromResult(Nullable x)
         | None -> base.GetTextChangeAsync(selectedItem, ch, cancellationToken)
+
+
+type internal LoadDirectiveCompletionProvider() =
+    inherit HashDirectiveCompletionProvider("""#load\s+(@?"*(?<literal>"[^"]*"?))""", [|".fs"; ".fsx"|])
 
 type internal ReferenceDirectiveCompletionProvider() =
-    inherit CommonCompletionProvider()
+    inherit HashDirectiveCompletionProvider("""#r\s+(@?"*(?<literal>"[^"]*"?))""", [|".dll"; ".exe"|])
 
-    let directiveRegex = Regex("""#r\s+(@?"*(?<literal>"[^"]*"?))""", RegexOptions.Compiled ||| RegexOptions.ExplicitCapture)
- 
-    override this.ProvideCompletionsAsync(context) =
-        async {
-            let! items = FileSystemCompletion.getItems(this, context.Document, context.Position, [|".dll"; ".exe"|], directiveRegex)
-            context.AddItems(items)
-        } |> CommonRoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
- 
-    override __.IsInsertionTrigger(text, position, _options) = FileSystemCompletion.isInsertionTrigger(text, position)
- 
-    override __.GetTextChangeAsync(selectedItem, ch, cancellationToken) = 
-        match FileSystemCompletion.getTextChange(selectedItem, ch) with
-        | Some x -> Task.FromResult(Nullable x)
-        | None -> base.GetTextChangeAsync(selectedItem, ch, cancellationToken)
+type internal IncludeDirectiveCompletionProvider() =
+    inherit HashDirectiveCompletionProvider("""#I\s+(@?"*(?<literal>"[^"]*"?))""", [|".impossible_extension"|])
