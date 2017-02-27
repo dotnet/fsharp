@@ -15,27 +15,33 @@ open System.Text.RegularExpressions
 open System.IO
 
 module internal FileSystemCompletion =
-    let [<Literal>] NetworkPath = "\\\\"
-    let commitRules = ImmutableArray.Create(CharacterSetModificationRule.Create(CharacterSetModificationKind.Replace, '"', '\\', ',', '/'))
-    let rules = CompletionItemRules.Create(commitCharacterRules = commitRules)
+    let [<Literal>] private NetworkPath = "\\\\"
+    let private commitRules = ImmutableArray.Create(CharacterSetModificationRule.Create(CharacterSetModificationKind.Replace, '"', '\\', ',', '/'))
+    let private rules = CompletionItemRules.Create(commitCharacterRules = commitRules)
 
-    let getQuotedPathStart(text: SourceText, position: int, quotedPathGroup: Group) =
+    let private getQuotedPathStart(text: SourceText, position: int, quotedPathGroup: Group) =
         text.Lines.GetLineFromPosition(position).Start + quotedPathGroup.Index
 
-    let getPathThroughLastSlash(text: SourceText, position: int, quotedPathGroup: Group) =
+    let private getPathThroughLastSlash(text: SourceText, position: int, quotedPathGroup: Group) =
         PathCompletionUtilities.GetPathThroughLastSlash(
             quotedPath = quotedPathGroup.Value,
             quotedPathStart = getQuotedPathStart(text, position, quotedPathGroup),
             position = position)
  
-    let getTextChangeSpan(text: SourceText, position: int, quotedPathGroup: Group) =
+    let private getTextChangeSpan(text: SourceText, position: int, quotedPathGroup: Group) =
         PathCompletionUtilities.GetTextChangeSpan(
             quotedPath = quotedPathGroup.Value,
             quotedPathStart = getQuotedPathStart(text, position, quotedPathGroup),
             position = position)
 
-    let getItems(provider: CompletionProvider, document: Document, position: int, allowableExtensions: string[], directiveRegex: Regex) =
+    let private getFileGlyph (extention: string) =
+        match extention with
+        | ".exe" | ".dll" -> Some Glyph.Assembly
+        | _ -> None
+
+    let getItems(provider: CompletionProvider, document: Document, position: int, allowableExtensions: string list, directiveRegex: Regex, searchPaths: string list) =
         asyncMaybe {
+            do! Option.guard (Path.GetExtension document.FilePath = ".fsx")
             let! ct = liftAsync Async.CancellationToken
             let! text = document.GetTextAsync ct
             let line = text.Lines.GetLineFromPosition(position)
@@ -53,16 +59,14 @@ module internal FileSystemCompletion =
             do! Option.guard (not (isNull snapshot))
             let fileSystem = CurrentWorkingDirectoryDiscoveryService.GetService(snapshot)
             
-            let searchPaths = ImmutableArray.Create (Path.GetDirectoryName document.FilePath)
-     
             let helper = 
                 FileSystemCompletionHelper(
                     provider,
                     getTextChangeSpan(text, position, quotedPathGroup),
                     fileSystem,
                     Glyph.OpenFolder,
-                    Glyph.None,
-                    searchPaths = searchPaths,
+                    allowableExtensions |> List.tryPick getFileGlyph |> Option.defaultValue Glyph.None,
+                    searchPaths = Seq.toImmutableArray searchPaths,
                     allowableExtensions = allowableExtensions,
                     itemRules = rules)
      
@@ -89,38 +93,61 @@ module internal FileSystemCompletion =
         else
             None
 
-type internal LoadDirectiveCompletionProvider() =
+    let private includeDirectiveCleanRegex = Regex("""#I\s+(@?"*(?<literal>[^"]*)"?)""", RegexOptions.Compiled ||| RegexOptions.ExplicitCapture)
+
+    let getIncludeDirectives (document: Document, position: int) =
+        async {
+            let! ct = Async.CancellationToken
+            let! text = document.GetTextAsync(ct)
+            let lines = text.Lines
+            let caretLine = text.Lines.GetLinePosition(position).Line
+            return
+                lines
+                |> Seq.filter (fun x -> x.LineNumber <= caretLine)
+                |> Seq.choose (fun line ->
+                    let lineStr = line.ToString().Trim()
+                    // optimization: fail fast if the line does not start with "(optional spaces) #I"
+                    if not (lineStr.StartsWith "#I") then None
+                    else
+                        match includeDirectiveCleanRegex.Match lineStr with
+                        | m when m.Success -> Some (m.Groups.["literal"].Value)
+                        | _ -> None
+                   )
+                |> Seq.toList
+        }
+
+[<AbstractClass>]
+type internal HashDirectiveCompletionProvider(directiveRegex: string, allowableExtensions: string list, useIncludeDirectives: bool) =
     inherit CommonCompletionProvider()
 
-    let directiveRegex = Regex("""#load\s+(@?"*(?<literal>"[^"]*"?))""", RegexOptions.Compiled ||| RegexOptions.ExplicitCapture)
+    let directiveRegex = Regex(directiveRegex, RegexOptions.Compiled ||| RegexOptions.ExplicitCapture)
  
     override this.ProvideCompletionsAsync(context) =
         async {
-            let! items = FileSystemCompletion.getItems(this, context.Document, context.Position, [|".fs"; ".fsx"|], directiveRegex)
+            let defaultSearchPath = Path.GetDirectoryName context.Document.FilePath 
+            let! extraSearchPaths = 
+                if useIncludeDirectives then
+                    FileSystemCompletion.getIncludeDirectives (context.Document, context.Position)
+                else async.Return []
+            let searchPaths = defaultSearchPath :: extraSearchPaths
+            let! items = FileSystemCompletion.getItems(this, context.Document, context.Position, allowableExtensions, directiveRegex, searchPaths)
             context.AddItems(items)
         } |> CommonRoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
  
-    override __.IsInsertionTrigger(text, position, _options) = FileSystemCompletion.isInsertionTrigger(text, position)
+    override __.IsInsertionTrigger(text, position, _) = FileSystemCompletion.isInsertionTrigger(text, position)
  
     override __.GetTextChangeAsync(selectedItem, ch, cancellationToken) = 
         match FileSystemCompletion.getTextChange(selectedItem, ch) with
         | Some x -> Task.FromResult(Nullable x)
         | None -> base.GetTextChangeAsync(selectedItem, ch, cancellationToken)
+
+
+type internal LoadDirectiveCompletionProvider() =
+    inherit HashDirectiveCompletionProvider("""\s*#load\s+(@?"*(?<literal>"[^"]*"?))""", [".fs"; ".fsx"], useIncludeDirectives = true)
 
 type internal ReferenceDirectiveCompletionProvider() =
-    inherit CommonCompletionProvider()
+    inherit HashDirectiveCompletionProvider("""\s*#r\s+(@?"*(?<literal>"[^"]*"?))""", [".dll"; ".exe"], useIncludeDirectives = true)
 
-    let directiveRegex = Regex("""#r\s+(@?"*(?<literal>"[^"]*"?))""", RegexOptions.Compiled ||| RegexOptions.ExplicitCapture)
- 
-    override this.ProvideCompletionsAsync(context) =
-        async {
-            let! items = FileSystemCompletion.getItems(this, context.Document, context.Position, [|".dll"; ".exe"|], directiveRegex)
-            context.AddItems(items)
-        } |> CommonRoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
- 
-    override __.IsInsertionTrigger(text, position, _options) = FileSystemCompletion.isInsertionTrigger(text, position)
- 
-    override __.GetTextChangeAsync(selectedItem, ch, cancellationToken) = 
-        match FileSystemCompletion.getTextChange(selectedItem, ch) with
-        | Some x -> Task.FromResult(Nullable x)
-        | None -> base.GetTextChangeAsync(selectedItem, ch, cancellationToken)
+type internal IncludeDirectiveCompletionProvider() =
+    // we have to pass an extension that's not met in real life because if we pass empty list, it does not filter at all.
+    inherit HashDirectiveCompletionProvider("""\s*#I\s+(@?"*(?<literal>"[^"]*"?))""", [".impossible_extension"], useIncludeDirectives = false)
