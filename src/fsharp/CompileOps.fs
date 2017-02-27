@@ -4967,8 +4967,9 @@ module ScriptPreprocessClosure =
 
                             let tcConfigResult, noWarns = ApplyMetaCommandsFromInputToTcConfigAndGatherNoWarn (!tcConfig, parsedScriptAst, pathOfMetaCommandSource)
                             tcConfig := tcConfigResult // We accumulate the tcConfig in order to collect assembly references
-                        
-                            yield! resolvePackageManagerSources()
+                            
+                            if filename = mainFile then
+                                yield! resolvePackageManagerSources()
 
                             let postSources = (!tcConfig).GetAvailableLoadedSources()
                             let sources = if preSources.Length < postSources.Length then postSources.[preSources.Length..] else []
