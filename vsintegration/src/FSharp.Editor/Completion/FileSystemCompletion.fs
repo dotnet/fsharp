@@ -15,24 +15,29 @@ open System.Text.RegularExpressions
 open System.IO
 
 module internal FileSystemCompletion =
-    let [<Literal>] NetworkPath = "\\\\"
-    let commitRules = ImmutableArray.Create(CharacterSetModificationRule.Create(CharacterSetModificationKind.Replace, '"', '\\', ',', '/'))
-    let rules = CompletionItemRules.Create(commitCharacterRules = commitRules)
+    let [<Literal>] private NetworkPath = "\\\\"
+    let private commitRules = ImmutableArray.Create(CharacterSetModificationRule.Create(CharacterSetModificationKind.Replace, '"', '\\', ',', '/'))
+    let private rules = CompletionItemRules.Create(commitCharacterRules = commitRules)
 
-    let getQuotedPathStart(text: SourceText, position: int, quotedPathGroup: Group) =
+    let private getQuotedPathStart(text: SourceText, position: int, quotedPathGroup: Group) =
         text.Lines.GetLineFromPosition(position).Start + quotedPathGroup.Index
 
-    let getPathThroughLastSlash(text: SourceText, position: int, quotedPathGroup: Group) =
+    let private getPathThroughLastSlash(text: SourceText, position: int, quotedPathGroup: Group) =
         PathCompletionUtilities.GetPathThroughLastSlash(
             quotedPath = quotedPathGroup.Value,
             quotedPathStart = getQuotedPathStart(text, position, quotedPathGroup),
             position = position)
  
-    let getTextChangeSpan(text: SourceText, position: int, quotedPathGroup: Group) =
+    let private getTextChangeSpan(text: SourceText, position: int, quotedPathGroup: Group) =
         PathCompletionUtilities.GetTextChangeSpan(
             quotedPath = quotedPathGroup.Value,
             quotedPathStart = getQuotedPathStart(text, position, quotedPathGroup),
             position = position)
+
+    let private getFileGlyph (extention: string) =
+        match extention with
+        | ".exe" | ".dll" -> Some Glyph.Assembly
+        | _ -> None
 
     let getItems(provider: CompletionProvider, document: Document, position: int, allowableExtensions: string[], directiveRegex: Regex) =
         asyncMaybe {
@@ -61,7 +66,7 @@ module internal FileSystemCompletion =
                     getTextChangeSpan(text, position, quotedPathGroup),
                     fileSystem,
                     Glyph.OpenFolder,
-                    Glyph.None,
+                    allowableExtensions |> Array.tryPick getFileGlyph |> Option.defaultValue Glyph.None,
                     searchPaths = searchPaths,
                     allowableExtensions = allowableExtensions,
                     itemRules = rules)
