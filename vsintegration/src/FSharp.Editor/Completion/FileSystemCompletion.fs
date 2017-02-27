@@ -39,7 +39,7 @@ module internal FileSystemCompletion =
         | ".exe" | ".dll" -> Some Glyph.Assembly
         | _ -> None
 
-    let getItems(provider: CompletionProvider, document: Document, position: int, allowableExtensions: string[], directiveRegex: Regex, searchPaths: string list) =
+    let getItems(provider: CompletionProvider, document: Document, position: int, allowableExtensions: string list, directiveRegex: Regex, searchPaths: string list) =
         asyncMaybe {
             do! Option.guard (Path.GetExtension document.FilePath = ".fsx")
             let! ct = liftAsync Async.CancellationToken
@@ -65,7 +65,7 @@ module internal FileSystemCompletion =
                     getTextChangeSpan(text, position, quotedPathGroup),
                     fileSystem,
                     Glyph.OpenFolder,
-                    allowableExtensions |> Array.tryPick getFileGlyph |> Option.defaultValue Glyph.None,
+                    allowableExtensions |> List.tryPick getFileGlyph |> Option.defaultValue Glyph.None,
                     searchPaths = Seq.toImmutableArray searchPaths,
                     allowableExtensions = allowableExtensions,
                     itemRules = rules)
@@ -93,16 +93,43 @@ module internal FileSystemCompletion =
         else
             None
 
+    let private includeDirectiveCleanRegex = Regex("""#I\s+(@?"*(?<literal>[^"]*)"?)""", RegexOptions.Compiled ||| RegexOptions.ExplicitCapture)
+
+    let getIncludeDirectives (document: Document, position: int) =
+        async {
+            let! ct = Async.CancellationToken
+            let! text = document.GetTextAsync(ct)
+            let lines = text.Lines
+            let caretLine = text.Lines.GetLinePosition(position).Line
+            return
+                lines
+                |> Seq.filter (fun x -> x.LineNumber <= caretLine)
+                |> Seq.choose (fun line ->
+                    let lineStr = line.ToString()
+                    if not (lineStr.StartsWith "#I") then None
+                    else
+                        match includeDirectiveCleanRegex.Match lineStr with
+                        | m when m.Success -> Some (m.Groups.["literal"].Value)
+                        | _ -> None
+                   )
+                |> Seq.toList
+        }
+
 [<AbstractClass>]
-type internal HashDirectiveCompletionProvider(directiveRegex, allowableExtensions) =
+type internal HashDirectiveCompletionProvider(directiveRegex: string, allowableExtensions: string list, useIncludeDirectives: bool) =
     inherit CommonCompletionProvider()
 
     let directiveRegex = Regex(directiveRegex, RegexOptions.Compiled ||| RegexOptions.ExplicitCapture)
  
     override this.ProvideCompletionsAsync(context) =
         async {
-            let searchPath = Path.GetDirectoryName context.Document.FilePath
-            let! items = FileSystemCompletion.getItems(this, context.Document, context.Position, allowableExtensions, directiveRegex, [searchPath])
+            let defaultSearchPath = Path.GetDirectoryName context.Document.FilePath 
+            let! extraSearchPaths = 
+                if useIncludeDirectives then
+                    FileSystemCompletion.getIncludeDirectives (context.Document, context.Position)
+                else async.Return []
+            let searchPaths = defaultSearchPath :: extraSearchPaths
+            let! items = FileSystemCompletion.getItems(this, context.Document, context.Position, allowableExtensions, directiveRegex, searchPaths)
             context.AddItems(items)
         } |> CommonRoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
  
@@ -115,10 +142,11 @@ type internal HashDirectiveCompletionProvider(directiveRegex, allowableExtension
 
 
 type internal LoadDirectiveCompletionProvider() =
-    inherit HashDirectiveCompletionProvider("""#load\s+(@?"*(?<literal>"[^"]*"?))""", [|".fs"; ".fsx"|])
+    inherit HashDirectiveCompletionProvider("""#load\s+(@?"*(?<literal>"[^"]*"?))""", [".fs"; ".fsx"], useIncludeDirectives = true)
 
 type internal ReferenceDirectiveCompletionProvider() =
-    inherit HashDirectiveCompletionProvider("""#r\s+(@?"*(?<literal>"[^"]*"?))""", [|".dll"; ".exe"|])
+    inherit HashDirectiveCompletionProvider("""#r\s+(@?"*(?<literal>"[^"]*"?))""", [".dll"; ".exe"], useIncludeDirectives = true)
 
 type internal IncludeDirectiveCompletionProvider() =
-    inherit HashDirectiveCompletionProvider("""#I\s+(@?"*(?<literal>"[^"]*"?))""", [|".impossible_extension"|])
+    // we have to pass an extension that's not met in real life because if we pass empty list, it does not filter at all.
+    inherit HashDirectiveCompletionProvider("""#I\s+(@?"*(?<literal>"[^"]*"?))""", [".impossible_extension"], useIncludeDirectives = false)
