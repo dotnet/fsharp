@@ -4917,12 +4917,10 @@ module ScriptPreprocessClosure =
         
         let observedSources = Observed()
 
-        let additionalSources = ref None
-
         // Resolve the packages
         let rec resolvePackageManagerSources() =
             if tcConfig.Value.packageManagerTextLines = origTcConfig.packageManagerTextLines then
-                None
+                []
             else 
                 let referenceLoadingResult =
                     ReferenceLoading.PaketHandler.Internals.ResolvePackages
@@ -4934,10 +4932,10 @@ module ScriptPreprocessClosure =
                 match referenceLoadingResult with 
                 | ReferenceLoading.PaketHandler.ReferenceLoadingResult.PackageManagerNotFound (implicitIncludeDir, userProfile) ->
                     errorR(Error(FSComp.SR.packageManagerNotFound(implicitIncludeDir, userProfile),m))
-                    None
+                    []
                 | ReferenceLoading.PaketHandler.ReferenceLoadingResult.PackageResolutionFailed (toolPath, workingDir, msg) ->
                     errorR(Error(FSComp.SR.packageResolutionFailed(toolPath, workingDir, Environment.NewLine, msg),m))
-                    None
+                    []
                 | ReferenceLoading.PaketHandler.ReferenceLoadingResult.Solved(loadScript,additionalIncludeFolders) -> 
                     // This may incrementally update tcConfig too with new #r references
                     // New package text is ignored on this second phase
@@ -4946,7 +4944,7 @@ module ScriptPreprocessClosure =
                         for folder in additionalIncludeFolders do 
                             tcConfigB.AddIncludePath(m,folder,"")
                         tcConfig := TcConfig.Create(tcConfigB, validate=false)
-                    Some (ClosureSource(loadScript,m,File.ReadAllText(loadScript),true))
+                    loop (ClosureSource(loadScript,m,File.ReadAllText(loadScript),true)) 
 
         and loop (ClosureSource(filename,m,source,parseRequired)) = 
             [   if not (observedSources.HaveSeen(filename)) then
@@ -4970,9 +4968,8 @@ module ScriptPreprocessClosure =
                             let tcConfigResult, noWarns = ApplyMetaCommandsFromInputToTcConfigAndGatherNoWarn (!tcConfig, parsedScriptAst, pathOfMetaCommandSource)
                             tcConfig := tcConfigResult // We accumulate the tcConfig in order to collect assembly references
                             
-                            
                             if filename = mainFile then
-                                additionalSources := resolvePackageManagerSources()
+                                yield! resolvePackageManagerSources()
 
                             let postSources = (!tcConfig).GetAvailableLoadedSources()
                             let sources = if preSources.Length < postSources.Length then postSources.[preSources.Length..] else []
@@ -4998,12 +4995,8 @@ module ScriptPreprocessClosure =
                         yield ClosureFile(filename, m, None, [], [], []) ]
 
         let sources = closureSources |> List.collect loop
-        let additionalSources = 
-            match !additionalSources with
-            | None -> []
-            | Some additionalSources -> loop additionalSources
 
-        additionalSources @ sources, !tcConfig
+        sources, !tcConfig
         
     /// Reduce the full directive closure into LoadClosure
     let GetLoadClosure(ctok, rootFilename, closureFiles, tcConfig:TcConfig, codeContext) = 
