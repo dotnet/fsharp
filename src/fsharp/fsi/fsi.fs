@@ -1226,7 +1226,7 @@ type internal FsiDynamicCompiler
 
 
     member __.EvalPackageManagerTextFragment (text: string) = 
-        let text = text.Substring(packageManagerPrefix.Length + 1)
+        let text = text.Substring(packageManagerPrefix.Length).Trim()
         if not (String.IsNullOrWhiteSpace text) then
             tcConfigB.packageManagerTextLines <- tcConfigB.packageManagerTextLines @ [ text ]
         needsPackageResolution <- true

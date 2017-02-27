@@ -2409,7 +2409,7 @@ type TcConfigBuilder =
              tcConfigB.referencedDLLs <- tcConfigB.referencedDLLs ++ AssemblyReference(m,path,projectReference)
              
     member tcConfigB.AddPackageManagerText (text:string) = 
-        let text = text.Substring(packageManagerPrefix.Length + 1)
+        let text = text.Substring(packageManagerPrefix.Length).Trim()
         tcConfigB.packageManagerTextLines <- tcConfigB.packageManagerTextLines ++ text
              
     member tcConfigB.RemoveReferencedAssemblyByPath (m,path) =
