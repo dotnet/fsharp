@@ -79,13 +79,12 @@ type internal HashDirectiveCompletionProvider(workspace: Workspace, projectInfoM
                 match includeDirectiveCleanRegex.Match lineStr with
                 | m when m.Success ->
                     getColorizationData(text, line.Start)
-                    |> Seq.tryFind (fun x -> x.TextSpan.IntersectsWith line.Start)
-                    |> Option.bind (fun x ->
-                        if x.ClassificationType = ClassificationTypeNames.Comment ||
-                           x.ClassificationType = ClassificationTypeNames.ExcludedCode then
-                            None
-                        else
-                            Some (m.Groups.["literal"].Value))
+                    |> Seq.tryPick (fun span -> 
+                        if span.TextSpan.IntersectsWith line.Start &&
+                           (span.ClassificationType <> ClassificationTypeNames.Comment &&
+                            span.ClassificationType <> ClassificationTypeNames.ExcludedCode) then
+                            Some (m.Groups.["literal"].Value)
+                        else None)
                 | _ -> None
            )
         |> Seq.toList
