@@ -407,14 +407,13 @@ module List =
 
     // must be tail recursive 
     let mapFold (f:'a -> 'b -> 'c * 'a) (s:'a) (l:'b list) : 'c list * 'a = 
-        // microbenchmark suggested this implementation is faster than the simpler recursive one, and this function is called a lot
-        let mutable s = s
-        let mutable r = []
-        for x in l do
-            let x',s' = f s x
-            s <- s'
-            r <- x' :: r
-        List.rev r, s
+        match l with
+        | [] -> [], s
+        | [h] -> let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
+                 let h',s' = f.Invoke(s, h)
+                 [h'], s'
+        | _ -> 
+            List.mapFold f s l
 
     // Not tail recursive 
     let rec mapFoldBack f l s = 
