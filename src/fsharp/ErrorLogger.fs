@@ -239,7 +239,7 @@ type PhasedDiagnostic =
         // Sanity check ensures that Phase matches Subcategory            
 #if DEBUG
         if isPhaseInCompile then 
-            System.Diagnostics.Debug.Assert(PhasedDiagnostic.IsSubcategoryOfCompile(pe.Subcategory()), "Subcategory did not match isPhaesInCompile=true")
+            System.Diagnostics.Debug.Assert(PhasedDiagnostic.IsSubcategoryOfCompile(pe.Subcategory()), "Subcategory did not match isPhaseInCompile=true")
         else
             System.Diagnostics.Debug.Assert(not(PhasedDiagnostic.IsSubcategoryOfCompile(pe.Subcategory())), "Subcategory did not match isPhaseInCompile=false")
 #endif            
