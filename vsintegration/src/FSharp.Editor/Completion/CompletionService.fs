@@ -24,9 +24,10 @@ type internal FSharpCompletionService
     let builtInProviders = 
         ImmutableArray.Create<CompletionProvider>(
             FSharpCompletionProvider(workspace, serviceProvider, checkerProvider, projectInfoManager),
-            ReferenceDirectiveCompletionProvider(),
-            LoadDirectiveCompletionProvider(),
-            IncludeDirectiveCompletionProvider()
+            HashDirectiveCompletionProvider(workspace, projectInfoManager,
+                [ Completion.Create("""\s*#load\s+(@?"*(?<literal>"[^"]*"?))""", [".fs"; ".fsx"], useIncludeDirectives = true)
+                  Completion.Create("""\s*#r\s+(@?"*(?<literal>"[^"]*"?))""", [".dll"; ".exe"], useIncludeDirectives = true)
+                  Completion.Create("""\s*#I\s+(@?"*(?<literal>"[^"]*"?))""", ["\x00"], useIncludeDirectives = false) ])
             // we've turned off keyword completion because it does not filter suggestion depending on context.
             // FSharpKeywordCompletionProvider(workspace, projectInfoManager)
             )
