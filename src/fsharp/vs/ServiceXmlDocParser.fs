@@ -15,20 +15,6 @@ module Array =
             array.[idx] <- t2
             array.[arrlen-idx] <- t1
 
-    /// Async implementation of Array.map.
-    let mapAsync (mapping : 'T -> Async<'U>) (array : 'T[]) : Async<'U[]> =
-        let len = Array.length array
-        let result = Array.zeroCreate len
-
-        async { // Apply the mapping function to each array element.
-            for i in 0 .. len - 1 do
-                let! mappedValue = mapping array.[i]
-                result.[i] <- mappedValue
-
-            // Return the completed results.
-            return result
-        }
-
 [<RequireQualifiedAccess>]
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module String =
@@ -96,7 +82,7 @@ module String =
         |]
 
 /// Represent an Xml documentation block in source code
-type XmlDocable =
+type internal XmlDocable =
     | XmlDocable of line:int * indent:int * paramNames:string list
 
 module internal XmlDocParsing =
@@ -242,15 +228,13 @@ module internal XmlDocParsing =
                 symModules |> List.collect getXmlDocablesSynModuleOrNamespace
             | ParsedInput.SigFile _ -> []
 
-        async {
-            // Get compiler options for the 'project' implied by a single script file
-            match input with
-            | Some input -> 
-                return getXmlDocablesInput input
-            | None ->
-                // Should not fail here, just in case 
-                return []
-        }
+        // Get compiler options for the 'project' implied by a single script file
+        match input with
+        | Some input -> 
+            getXmlDocablesInput input
+        | None ->
+            // Should not fail here, just in case 
+            []
 
 module internal XmlDocComment =
     let private ws (s: string, pos) = 
