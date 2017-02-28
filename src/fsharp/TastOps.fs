@@ -1596,7 +1596,10 @@ let isStructOrEnumTyconTy g ty =
     | Some tcref -> tcref.Deref.IsStructOrEnumTycon
     | _ -> false
 
+let isStructRecordOrUnionTyconTy g ty = isAppTy g ty && (tyconOfAppTy g ty).IsStructRecordOrUnionTycon
+
 let isStructTy g ty = isStructOrEnumTyconTy g ty || isStructTupleTy g ty
+
 
 let isRefTy g ty = 
     not (isStructOrEnumTyconTy g ty) &&
