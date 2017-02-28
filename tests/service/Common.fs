@@ -9,7 +9,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 let checker = FSharpChecker.Create()
 
 let parseAndCheckScript (file, input) = 
-    let checkOptions = checker.GetProjectOptionsFromScript(file, input) |> Async.RunSynchronously
+    let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, input) |> Async.RunSynchronously
     let parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, input, checkOptions) |> Async.RunSynchronously
     match typedRes with
     | FSharpCheckFileAnswer.Succeeded(res) -> parseResult, res
