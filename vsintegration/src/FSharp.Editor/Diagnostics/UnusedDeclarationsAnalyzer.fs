@@ -32,15 +32,13 @@ type internal UnusedDeclarationsAnalyzer() =
     
     let Descriptor = 
         DiagnosticDescriptor(
-            DescriptorId,
-            SR.TheValueIsUnused.Value,
-            SR.TheValueIsUnused.Value,
-            SR.StyleCategory.Value,
-            DiagnosticSeverity.Warning,
-            true,
-            "", 
-            "", 
-            DiagnosticCustomTags.Unnecessary)
+            id = DescriptorId,
+            title = SR.TheValueIsUnused.Value,
+            messageFormat = SR.TheValueIsUnused.Value,
+            category = DiagnosticCategory.Style,
+            defaultSeverity = DiagnosticSeverity.Warning,
+            isEnabledByDefault = true,
+            customTags = DiagnosticCustomTags.Unnecessary)
     
     let symbolUseComparer =
         { new IEqualityComparer<FSharpSymbolUse> with
