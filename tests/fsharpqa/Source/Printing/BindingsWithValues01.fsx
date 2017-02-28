@@ -32,7 +32,7 @@ type Bldg = House | Museum | Office
 let a = 1                                       // int              - val a : int = 1
 let B = "Hello"                                 // reference type   - val B : string = "Hello"
 
-let c' = { Name = "F#" }                        // record           - val c' : RecT = {Name = "F#";}
+let c' = { Name = "F#" }                        // record           - val c' : RecT = { Name = "F#" }
 
 let _d = Office                                 // disc unioin      - val _d : Bldg = Office
 
@@ -49,7 +49,7 @@ let getPointF (x, y) = System.Drawing.PointF(x, y)
 
 let h    = getPointF (1.5f, -1.5f)              // PointF structure - val h : System.Drawing.PointF = {X=1.5, Y=-1.5}
 
-let i    = (1, c', _d)                          // tuple            - val i : int * RecT * Bldg = (1, {Name = "F#";}, Office)
+let i    = (1, c', _d)                          // tuple            - val i : int * RecT * Bldg = (1, { Name = "F#" }, Office)
 
 let J_   = [| 1; 2; 3; |]                       // array            - val J_ : int array = [|1; 2; 3|]
 let j_'  = Array.create 2 1.0                   // another array    - val j_' : float array = [|1.0; 1.0|]

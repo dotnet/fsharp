@@ -710,7 +710,7 @@ module private PrintTypes =
         PrintIL.layoutILType denv [] ty ++ argsL
 
     /// Layout '[<attribs>]' above another block 
-    and layoutAttribs denv kind attrs restL = 
+    and layoutAttribs denv ty kind attrs restL = 
         
         if denv.showAttributes then
             // Don't display DllImport attributes in generated signatures  
@@ -722,14 +722,18 @@ module private PrintTypes =
             let attrs = attrs |> List.filter (IsMatchingFSharpAttribute denv.g denv.g.attrib_ReflectedDefinitionAttribute >> not)
             let attrs = attrs |> List.filter (IsMatchingFSharpAttribute denv.g denv.g.attrib_StructLayoutAttribute >> not)
             let attrs = attrs |> List.filter (IsMatchingFSharpAttribute denv.g denv.g.attrib_AutoSerializableAttribute >> not)
+            
             match attrs with
             | [] -> restL 
             | _  -> squareAngleL (sepListL (rightL (tagPunctuation ";")) (List.map (layoutAttrib denv) attrs)) @@ 
                     restL
-        else 
-        match kind with 
-        | TyparKind.Type -> restL
-        | TyparKind.Measure -> squareAngleL (wordL (tagText "Measure")) @@ restL
+        elif Tastops.isStructRecordOrUnionTyconTy denv.g ty || 
+             ((Tastops.isUnionTy denv.g ty || Tastops.isRecdTy denv.g ty) && HasFSharpAttribute denv.g denv.g.attrib_StructAttribute attrs) then
+            squareAngleL (wordL (tagClass "Struct")) @@ restL
+        else
+            match kind with 
+            | TyparKind.Type -> restL
+            | TyparKind.Measure -> squareAngleL (wordL (tagClass "Measure")) @@ restL
 
     and layoutTyparAttribs denv kind attrs restL =         
         match attrs, kind with
@@ -1184,7 +1188,7 @@ module private PrintTastMemberOrVals =
                 layoutNonMemberVal denv (ptps,v,ptau,cxs)
             | Some _ -> 
                 layoutMember denv v
-        layoutAttribs denv TyparKind.Type v.Attribs vL
+        layoutAttribs denv v.Type TyparKind.Type v.Attribs vL
 
 let layoutMemberSig denv x       = x |> PrintTypes.layoutMemberSig denv 
 let layoutTyparConstraint denv x = x |> PrintTypes.layoutTyparConstraint denv 
@@ -1591,9 +1595,9 @@ module private TastDefinitionPrinting =
       let _,ty = generalizeTyconRef (mkLocalTyconRef tycon) 
       let start, name = 
           let n = tycon.DisplayName
-          if isClassTy g ty then (if simplified then None else Some "class" ), tagClass n
+          if isStructTy g ty then Some "struct", tagStruct n
           elif isInterfaceTy g ty then Some "interface", tagInterface n
-          elif isStructTy g ty then Some "struct", tagStruct n
+          elif isClassTy g ty then (if simplified then None else Some "class" ), tagClass n
           else None, tagUnknownType n
       let nameL = layoutAccessibility denv tycon.Accessibility (wordL name)
       let denv = denv.AddAccessibility tycon.Accessibility 
@@ -1746,7 +1750,7 @@ module private TastDefinitionPrinting =
                   addMembersAsWithEnd (lhsL ^^ WordL.equals)
               | Some a -> 
                   (lhsL ^^ WordL.equals) --- (layoutType { denv with shortTypeNames = false } a)
-      layoutAttribs denv tycon.TypeOrMeasureKind tycon.Attribs reprL
+      layoutAttribs denv ty tycon.TypeOrMeasureKind tycon.Attribs reprL
 
     // Layout: exception definition
     let layoutExnDefn denv  (exnc:Entity) =
@@ -1773,7 +1777,7 @@ module private TastDefinitionPrinting =
         | [] -> emptyL
         | [h] when h.IsExceptionDecl -> layoutExnDefn denv h
         | h :: t -> 
-            let x  = layoutTycon denv infoReader ad m false (WordL.keywordType) h
+            let x  = layoutTycon denv infoReader ad m false WordL.keywordType h
             let xs = List.map (layoutTycon denv infoReader ad m false (wordL (tagKeyword "and"))) t
             aboveListL (x::xs)
 
@@ -1929,8 +1933,8 @@ let layoutILTypeRef         denv x = x |> PrintIL.layoutILTypeRef denv
 let outputExnDef            denv os x = x |> TastDefinitionPrinting.layoutExnDefn denv |> bufferL os
 let layoutExnDef            denv x = x |> TastDefinitionPrinting.layoutExnDefn denv
 let stringOfTyparConstraints denv x   = x |> PrintTypes.layoutConstraintsWithInfo denv SimplifyTypes.typeSimplificationInfo0  |> showL
-let outputTycon             denv infoReader ad m (* width *) os x = TastDefinitionPrinting.layoutTycon denv infoReader ad m true (WordL.keywordType) x (* |> Layout.squashTo width *) |>  bufferL os
-let layoutTycon             denv infoReader ad m (* width *) x = TastDefinitionPrinting.layoutTycon denv infoReader ad m true (wordL (tagKeyword "type")) x (* |> Layout.squashTo width *)
+let outputTycon             denv infoReader ad m (* width *) os x = TastDefinitionPrinting.layoutTycon denv infoReader ad m true WordL.keywordType x (* |> Layout.squashTo width *) |>  bufferL os
+let layoutTycon             denv infoReader ad m (* width *) x = TastDefinitionPrinting.layoutTycon denv infoReader ad m true WordL.keywordType x (* |> Layout.squashTo width *)
 let layoutUnionCases        denv x    = x |> TastDefinitionPrinting.layoutUnionCaseFields denv true
 let outputUnionCases        denv os x    = x |> TastDefinitionPrinting.layoutUnionCaseFields denv true |> bufferL os
 /// Pass negative number as pos in case of single cased discriminated unions

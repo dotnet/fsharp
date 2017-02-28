@@ -101,5 +101,5 @@ Full name: System.Console"
             FSharpQuickInfoProvider.ProvideQuickInfo(FSharpChecker.Instance, documentId, SourceText.From(fileContents), filePath, caretPosition, options, 0)
             |> Async.RunSynchronously
         
-        let actual = quickInfo |> Option.map (fun (text, _, _) -> getQuickInfoText text)
+        let actual = quickInfo |> Option.map (fun (text, _, _, _) -> getQuickInfoText text)
         Assert.AreEqual(expected, actual)
