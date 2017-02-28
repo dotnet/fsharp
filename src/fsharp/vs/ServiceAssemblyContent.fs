@@ -387,11 +387,22 @@ module internal AssemblyContentProvider =
                         yield! traverseEntity contentType currentParent e 
                 | _ -> () }
 
+
     let getAssemblySignatureContent contentType (signature: FSharpAssemblySignature) =
-            signature.TryGetEntities()
-            |> Seq.collect (traverseEntity contentType Parent.Empty)
-            |> Seq.distinctBy (fun {FullName = fullName; CleanedIdents = cleanIdents} -> (fullName, cleanIdents))
-            |> Seq.toList
+
+        // We ignore all diagnostics during this operation
+        //
+        // CLEANUP: this function is run on the API user's calling thread.  It potentially accesses TAST data structures 
+        // concurrently with other threads.  On an initial review this is not a problem since type provider computations
+        // are not triggered (see "if not entity.IsProvided") and the other data accessed is immutable or computed safely 
+        // on-demand.  However a more compete review may be warranted.
+
+        use _ignoreAllDiagnostics = new ErrorScope()  
+
+        signature.TryGetEntities()
+        |> Seq.collect (traverseEntity contentType Parent.Empty)
+        |> Seq.distinctBy (fun {FullName = fullName; CleanedIdents = cleanIdents} -> (fullName, cleanIdents))
+        |> Seq.toList
 
     let private getAssemblySignaturesContent contentType (assemblies: FSharpAssembly list) = 
         assemblies 
@@ -400,6 +411,15 @@ module internal AssemblyContentProvider =
 
     let getAssemblyContent (withCache: (IAssemblyContentCache -> _) -> _) 
                            contentType (fileName: string option) (assemblies: FSharpAssembly list) =
+
+        // We ignore all diagnostics during this operation
+        //
+        // CLEANUP: this function is run on the API user's calling thread.  It potentially accesses TAST data structures 
+        // concurrently with other threads.  On an initial review this is not a problem since type provider computations
+        // are not triggered (see "if not entity.IsProvided") and the other data accessed is immutable or computed safely 
+        // on-demand.  However a more compete review may be warranted.
+        use _ignoreAllDiagnostics = new ErrorScope()  
+
         match assemblies |> List.filter (fun x -> not x.IsProviderGenerated), fileName with
         | [], _ -> []
         | assemblies, Some fileName ->
@@ -904,6 +924,12 @@ module internal ParsedInput =
           Kind: ScopeKind }
 
     let tryFindInsertionContext (currentLine: int) (ast: ParsedInput) (partiallyQualifiedName: MaybeUnresolvedIdents) = 
+
+        // We ignore all diagnostics during this operation
+        //
+        // Based on an initial review, no diagnostics should be generated.  However the code should be checked more closely.
+        use _ignoreAllDiagnostics = new ErrorScope()  
+
         let result: (Scope * Point<FCS>) option ref = ref None
         let ns: string[] option ref = ref None
         let modules = ResizeArray<Idents * EndLine * Col>()  
@@ -1006,7 +1032,13 @@ module internal ParsedInput =
             |> Seq.sortBy (fun (m, _, _) -> -m.Length)
             |> Seq.toList
 
+        // CLEANUP: does this realy need to be a partial application with pre-computation?  Can this be made more expicit?
         fun (requiresQualifiedAccessParent: Idents option, autoOpenParent: Idents option, entityNamespace: Idents option, entity: Idents) ->
+
+            // We ignore all diagnostics during this operation
+            //
+            // Based on an initial review, no diagnostics should be generated.  However the code should be checked more closely.
+            use _ignoreAllDiagnostics = new ErrorScope()  
             match res with
             | None -> [||]
             | Some (scope, ns, pos) -> 
