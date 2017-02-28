@@ -9,11 +9,13 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
         
 [<AutoOpen>]
 module internal CodeGenerationUtils =
     open System.IO
     open System.CodeDom.Compiler
+
 
     type ColumnIndentedTextWriter() =
         let stringWriter = new StringWriter()

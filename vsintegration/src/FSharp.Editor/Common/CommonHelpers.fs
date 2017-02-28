@@ -571,8 +571,6 @@ module internal Extensions =
             isPrivate && declaredInTheFile   
 
     type FSharpMemberOrFunctionOrValue with
-        // FullType may raise exceptions (see https://github.com/fsharp/fsharp/issues/307).
-        member x.FullTypeSafe = Option.attempt (fun _ -> x.FullType)
         
         member x.IsConstructor = x.CompiledName = ".ctor"
         

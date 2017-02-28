@@ -97,7 +97,7 @@ type internal ProjectInfoManager
     member this.ComputeSingleFileOptions (fileName, loadTime, fileContents, workspace: Workspace) = async {
         let extraProjectInfo = Some(box workspace)
         if SourceFile.MustBeSingleFileProject(fileName) then 
-            let! options = checkerProvider.Checker.GetProjectOptionsFromScript(fileName, fileContents, loadTime, [| |], ?extraProjectInfo=extraProjectInfo) 
+            let! options, _diagnostics = checkerProvider.Checker.GetProjectOptionsFromScript(fileName, fileContents, loadTime, [| |], ?extraProjectInfo=extraProjectInfo) 
             let site = ProjectSitesAndFiles.CreateProjectSiteForScript(fileName, options)
             return ProjectSitesAndFiles.GetProjectOptionsForProjectSite(site,fileName,options.ExtraProjectInfo,serviceProvider)
         else

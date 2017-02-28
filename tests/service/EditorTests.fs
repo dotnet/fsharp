@@ -108,7 +108,7 @@ let ``Basic cancellation test`` () =
     let file = "/home/user/Test.fsx"
     async { 
         checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-        let! checkOptions = checker.GetProjectOptionsFromScript(file, input) 
+        let! checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, input) 
         let! parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, input, checkOptions) 
         return parseResult, typedRes
     } |> Async.RunSynchronously
