@@ -2,11 +2,9 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open System
 open System.Composition
 open System.Collections.Generic
 open System.Threading
-open System.Runtime.CompilerServices
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Classification
@@ -14,7 +12,6 @@ open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
 
-open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
 [<ExportLanguageService(typeof<IEditorClassificationService>, FSharpCommonConstants.FSharpLanguageName)>]
@@ -24,6 +21,7 @@ type internal FSharpColorizationService
         checkerProvider: FSharpCheckerProvider,
         projectInfoManager: ProjectInfoManager
     ) =
+
     interface IEditorClassificationService with
         // Do not perform classification if we don't have project options (#defines matter)
         member this.AddLexicalClassifications(_: SourceText, _: TextSpan, _: List<ClassifiedSpan>, _: CancellationToken) = ()
@@ -41,12 +39,14 @@ type internal FSharpColorizationService
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! _, _, checkResults = checkerProvider.Checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = false) 
                 // it's crucial to not return duplicated or overlapping `ClassifiedSpan`s because Find Usages service crashes.
-                let colorizationData = checkResults.GetSemanticClassification() |> Array.distinctBy fst
+                let targetRange = CommonRoslynHelpers.TextSpanToFSharpRange(document.FilePath, textSpan, sourceText)
+                let colorizationData = checkResults.GetSemanticClassification (Some targetRange) |> Array.distinctBy fst
+                
                 for (range, classificationType) in colorizationData do
                     let span = CommonHelpers.fixupSpan(sourceText, CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
-                    if textSpan.Contains(span.Start) || textSpan.Contains(span.End - 1) || span.Contains(textSpan) then
-                        result.Add(ClassifiedSpan(span, FSharpClassificationTypes.getClassificationTypeName(classificationType)))
-            } |> Async.Ignore |> CommonRoslynHelpers.StartAsyncUnitAsTask cancellationToken
+                    result.Add(ClassifiedSpan(span, FSharpClassificationTypes.getClassificationTypeName(classificationType)))
+            } 
+            |> Async.Ignore |> CommonRoslynHelpers.StartAsyncUnitAsTask cancellationToken
 
         // Do not perform classification if we don't have project options (#defines matter)
         member this.AdjustStaleClassification(_: SourceText, classifiedSpan: ClassifiedSpan) : ClassifiedSpan = classifiedSpan

@@ -22,6 +22,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons
 type internal LexerSymbolKind =
     | Ident
     | Operator
+    | Punctuation
     | GenericTypeParameter
     | StaticallyResolvedTypeParameter
     | Other
@@ -87,8 +88,8 @@ module internal CommonHelpers =
         | FSharpTokenColorKind.InactiveCode -> ClassificationTypeNames.ExcludedCode 
         | FSharpTokenColorKind.PreprocessorKeyword -> ClassificationTypeNames.PreprocessorKeyword 
         | FSharpTokenColorKind.Operator -> ClassificationTypeNames.Operator
-        | FSharpTokenColorKind.Default 
-        | _ -> ClassificationTypeNames.Text
+        | FSharpTokenColorKind.Punctuation -> ClassificationTypeNames.Punctuation
+        | FSharpTokenColorKind.Default | _ -> ClassificationTypeNames.Text
 
     let private scanSourceLine(sourceTokenizer: FSharpSourceTokenizer, textLine: TextLine, lineContents: string, lexState: FSharpTokenizerLexState) : SourceLineData =
         let colorMap = Array.create textLine.Span.Length ClassificationTypeNames.Text
@@ -197,6 +198,7 @@ module internal CommonHelpers =
     let private getSymbolFromTokens (fileName: string, tokens: FSharpTokenInfo list, linePos: LinePosition, lineStr: string, lookupKind: SymbolLookupKind) : LexerSymbol option =
         let isIdentifier t = t.CharClass = FSharpTokenCharKind.Identifier
         let isOperator t = t.ColorClass = FSharpTokenColorKind.Operator
+        let isPunctuation t = t.ColorClass = FSharpTokenColorKind.Punctuation
     
         let inline (|GenericTypeParameterPrefix|StaticallyResolvedTypeParameterPrefix|Other|) (token: FSharpTokenInfo) =
             if token.Tag = FSharpTokenTag.QUOTE then GenericTypeParameterPrefix
@@ -243,6 +245,7 @@ module internal CommonHelpers =
                                 let kind = 
                                     if isOperator token then LexerSymbolKind.Operator 
                                     elif isIdentifier token then LexerSymbolKind.Ident 
+                                    elif isPunctuation token then LexerSymbolKind.Punctuation
                                     else LexerSymbolKind.Other
 
                                 DraftToken.Create kind token
@@ -340,6 +343,57 @@ module internal CommonHelpers =
         match text.LastIndexOf '.' with
         | -1 | 0 -> span
         | index -> TextSpan(span.Start + index + 1, text.Length - index - 1)
+
+    let isValidNameForSymbol (lexerSymbolKind: LexerSymbolKind, symbol: FSharpSymbol, name: string) : bool =
+        let doubleBackTickDelimiter = "``"
+        
+        let isDoubleBacktickIdent (s: string) =
+            let doubledDelimiter = 2 * doubleBackTickDelimiter.Length
+            if s.StartsWith(doubleBackTickDelimiter) && s.EndsWith(doubleBackTickDelimiter) && s.Length > doubledDelimiter then
+                let inner = s.Substring(doubleBackTickDelimiter.Length, s.Length - doubledDelimiter)
+                not (inner.Contains(doubleBackTickDelimiter))
+            else false
+        
+        let isIdentifier (ident: string) =
+            if isDoubleBacktickIdent ident then
+                true
+            else
+                ident 
+                |> Seq.mapi (fun i c -> i, c)
+                |> Seq.forall (fun (i, c) -> 
+                     if i = 0 then PrettyNaming.IsIdentifierFirstCharacter c 
+                     else PrettyNaming.IsIdentifierPartCharacter c) 
+        
+        let isFixableIdentifier (s: string) = 
+            not (String.IsNullOrEmpty s) && Lexhelp.Keywords.NormalizeIdentifierBackticks s |> isIdentifier
+        
+        let forbiddenChars = [| '.'; '+'; '$'; '&'; '['; ']'; '/'; '\\'; '*'; '\'' |]
+        
+        let isTypeNameIdent (s: string) =
+            not (String.IsNullOrEmpty s) && s.IndexOfAny forbiddenChars = -1 && isFixableIdentifier s 
+        
+        let isUnionCaseIdent (s: string) =
+            isTypeNameIdent s && Char.IsUpper(s.Replace(doubleBackTickDelimiter, "").[0])
+        
+        let isTypeParameter (prefix: char) (s: string) =
+            s.Length >= 2 && s.[0] = prefix && isIdentifier s.[1..]
+        
+        let isGenericTypeParameter = isTypeParameter '''
+        let isStaticallyResolvedTypeParameter = isTypeParameter '^'
+        
+        match lexerSymbolKind, symbol with
+        | _, :? FSharpUnionCase -> isUnionCaseIdent name
+        | _, :? FSharpActivePatternCase -> 
+            // Different from union cases, active patterns don't accept double-backtick identifiers
+            isFixableIdentifier name && not (String.IsNullOrEmpty name) && Char.IsUpper(name.[0]) 
+        | LexerSymbolKind.Operator, _ -> PrettyNaming.IsOperatorName name
+        | LexerSymbolKind.Punctuation, _ -> PrettyNaming.IsPunctuation name
+        | LexerSymbolKind.GenericTypeParameter, _ -> isGenericTypeParameter name
+        | LexerSymbolKind.StaticallyResolvedTypeParameter, _ -> isStaticallyResolvedTypeParameter name
+        | (LexerSymbolKind.Ident | LexerSymbolKind.Other), _ ->
+            match symbol with
+            | :? FSharpEntity as e when e.IsClass || e.IsFSharpRecord || e.IsFSharpUnion || e.IsValueType || e.IsFSharpModule || e.IsInterface -> isTypeNameIdent name
+            | _ -> isFixableIdentifier name
 
 [<RequireQualifiedAccess; NoComparison>] 
 type internal SymbolDeclarationLocation = 
@@ -516,6 +570,37 @@ module internal Extensions =
             
             isPrivate && declaredInTheFile   
 
+    type FSharpMemberOrFunctionOrValue with
+        
+        member x.IsConstructor = x.CompiledName = ".ctor"
+        
+        member x.IsOperatorOrActivePattern =
+            let name = x.DisplayName
+            if name.StartsWith "( " && name.EndsWith " )" && name.Length > 4
+            then name.Substring (2, name.Length - 4) |> String.forall (fun c -> c <> ' ')
+            else false
+
+        member x.EnclosingEntitySafe =
+            try
+                Some x.EnclosingEntity
+            with :? InvalidOperationException -> None
+
+    type FSharpEntity with
+        member x.AllBaseTypes =
+            let rec allBaseTypes (entity:FSharpEntity) =
+                [
+                    match entity.TryFullName with
+                    | Some _ ->
+                        match entity.BaseType with
+                        | Some bt ->
+                            yield bt
+                            if bt.HasTypeDefinition then
+                                yield! allBaseTypes bt.TypeDefinition
+                        | _ -> ()
+                    | _ -> ()
+                ]
+            allBaseTypes x
+
     type FSharpNavigationDeclarationItem with
         member x.RoslynGlyph : Glyph =
             match x.GlyphMajor with
@@ -585,3 +670,212 @@ module internal Extensions =
                 | _ -> Glyph.StructurePublic
             | GlyphMajor.Error -> Glyph.Error
             | _ -> Glyph.None
+
+/// Active patterns over `FSharpSymbolUse`.
+module internal SymbolUse =
+    let (|ActivePatternCase|_|) (symbol : FSharpSymbolUse) =
+        match symbol.Symbol with
+        | :? FSharpActivePatternCase as ap-> ActivePatternCase(ap) |> Some
+        | _ -> None
+
+    let private attributeSuffixLength = "Attribute".Length
+
+    let (|Entity|_|) (symbol : FSharpSymbolUse) : (FSharpEntity * (* cleanFullNames *) string list) option =
+        match symbol.Symbol with
+        | :? FSharpEntity as ent -> 
+            // strip generic parameters count suffix (List`1 => List)
+            let cleanFullName =
+                // `TryFullName` for type aliases is always `None`, so we have to make one by our own
+                if ent.IsFSharpAbbreviation then
+                    [ent.AccessPath + "." + ent.DisplayName]
+                else
+                    ent.TryFullName
+                    |> Option.toList
+                    |> List.map (fun fullName ->
+                        if ent.GenericParameters.Count > 0 && fullName.Length > 2 then
+                            fullName.[0..fullName.Length - 3]
+                        else fullName)
+            
+            let cleanFullNames =
+                cleanFullName
+                |> List.collect (fun cleanFullName ->
+                    if ent.IsAttributeType then
+                        [cleanFullName; cleanFullName.[0..cleanFullName.Length - attributeSuffixLength - 1]]
+                    else [cleanFullName]
+                   )
+            Some (ent, cleanFullNames)
+        | _ -> None
+
+    let (|Field|_|) (symbol : FSharpSymbolUse) =
+        match symbol.Symbol with
+        | :? FSharpField as field-> Some field
+        |  _ -> None
+
+    let (|GenericParameter|_|) (symbol: FSharpSymbolUse) =
+        match symbol.Symbol with
+        | :? FSharpGenericParameter as gp -> Some gp
+        | _ -> None
+
+    let (|MemberFunctionOrValue|_|) (symbol : FSharpSymbolUse) =
+        match symbol.Symbol with
+        | :? FSharpMemberOrFunctionOrValue as func -> Some func
+        | _ -> None
+
+    let (|ActivePattern|_|) = function
+        | MemberFunctionOrValue m when m.IsActivePattern -> Some m | _ -> None
+
+    let (|Parameter|_|) (symbol : FSharpSymbolUse) =
+        match symbol.Symbol with
+        | :? FSharpParameter as param -> Some param
+        | _ -> None
+
+    let (|StaticParameter|_|) (symbol : FSharpSymbolUse) =
+        match symbol.Symbol with
+        | :? FSharpStaticParameter as sp -> Some sp
+        | _ -> None
+
+    let (|UnionCase|_|) (symbol : FSharpSymbolUse) =
+        match symbol.Symbol with
+        | :? FSharpUnionCase as uc-> Some uc
+        | _ -> None
+
+    //let (|Constructor|_|) = function
+    //    | MemberFunctionOrValue func when func.IsConstructor || func.IsImplicitConstructor -> Some func
+    //    | _ -> None
+
+    let (|TypeAbbreviation|_|) = function
+        | Entity (entity, _) when entity.IsFSharpAbbreviation -> Some entity
+        | _ -> None
+
+    let (|Class|_|) = function
+        | Entity (entity, _) when entity.IsClass -> Some entity
+        | Entity (entity, _) when entity.IsFSharp &&
+            entity.IsOpaque &&
+            not entity.IsFSharpModule &&
+            not entity.IsNamespace &&
+            not entity.IsDelegate &&
+            not entity.IsFSharpUnion &&
+            not entity.IsFSharpRecord &&
+            not entity.IsInterface &&
+            not entity.IsValueType -> Some entity
+        | _ -> None
+
+    let (|Delegate|_|) = function
+        | Entity (entity, _) when entity.IsDelegate -> Some entity
+        | _ -> None
+
+    let (|Event|_|) = function
+        | MemberFunctionOrValue symbol when symbol.IsEvent -> Some symbol
+        | _ -> None
+
+    let (|Property|_|) = function
+        | MemberFunctionOrValue symbol when symbol.IsProperty || symbol.IsPropertyGetterMethod || symbol.IsPropertySetterMethod -> Some symbol
+        | _ -> None
+
+    let inline private notCtorOrProp (symbol:FSharpMemberOrFunctionOrValue) =
+        not symbol.IsConstructor && not symbol.IsPropertyGetterMethod && not symbol.IsPropertySetterMethod
+
+    let (|Method|_|) (symbolUse:FSharpSymbolUse) =
+        match symbolUse with
+        | MemberFunctionOrValue symbol when 
+            symbol.IsModuleValueOrMember  &&
+            not symbolUse.IsFromPattern &&
+            not symbol.IsOperatorOrActivePattern &&
+            not symbol.IsPropertyGetterMethod &&
+            not symbol.IsPropertySetterMethod -> Some symbol
+        | _ -> None
+
+    let (|Function|_|) (symbolUse:FSharpSymbolUse) =
+        match symbolUse with
+        | MemberFunctionOrValue symbol when 
+            notCtorOrProp symbol  &&
+            symbol.IsModuleValueOrMember &&
+            not symbol.IsOperatorOrActivePattern &&
+            not symbolUse.IsFromPattern ->
+            
+            match symbol.FullTypeSafe with
+            | Some fullType when fullType.IsFunctionType -> Some symbol
+            | _ -> None
+        | _ -> None
+
+    let (|Operator|_|) (symbolUse:FSharpSymbolUse) =
+        match symbolUse with
+        | MemberFunctionOrValue symbol when 
+            notCtorOrProp symbol &&
+            not symbolUse.IsFromPattern &&
+            not symbol.IsActivePattern &&
+            symbol.IsOperatorOrActivePattern ->
+            
+            match symbol.FullTypeSafe with
+            | Some fullType when fullType.IsFunctionType -> Some symbol
+            | _ -> None
+        | _ -> None
+
+    let (|Pattern|_|) (symbolUse:FSharpSymbolUse) =
+        match symbolUse with
+        | MemberFunctionOrValue symbol when 
+            notCtorOrProp symbol &&
+            not symbol.IsOperatorOrActivePattern &&
+            symbolUse.IsFromPattern ->
+            
+            match symbol.FullTypeSafe with
+            | Some fullType when fullType.IsFunctionType ->Some symbol
+            | _ -> None
+        | _ -> None
+
+
+    let (|ClosureOrNestedFunction|_|) = function
+        | MemberFunctionOrValue symbol when 
+            notCtorOrProp symbol &&
+            not symbol.IsOperatorOrActivePattern &&
+            not symbol.IsModuleValueOrMember ->
+            
+            match symbol.FullTypeSafe with
+            | Some fullType when fullType.IsFunctionType -> Some symbol
+            | _ -> None
+        | _ -> None
+
+    
+    let (|Val|_|) = function
+        | MemberFunctionOrValue symbol when notCtorOrProp symbol &&
+                                            not symbol.IsOperatorOrActivePattern ->
+            match symbol.FullTypeSafe with
+            | Some _fullType -> Some symbol
+            | _ -> None
+        | _ -> None
+
+    let (|Enum|_|) = function
+        | Entity (entity, _) when entity.IsEnum -> Some entity
+        | _ -> None
+
+    let (|Interface|_|) = function
+        | Entity (entity, _) when entity.IsInterface -> Some entity
+        | _ -> None
+
+    let (|Module|_|) = function
+        | Entity (entity, _) when entity.IsFSharpModule -> Some entity
+        | _ -> None
+
+    let (|Namespace|_|) = function
+        | Entity (entity, _) when entity.IsNamespace -> Some entity
+        | _ -> None
+
+    let (|Record|_|) = function
+        | Entity (entity, _) when entity.IsFSharpRecord -> Some entity
+        | _ -> None
+
+    let (|Union|_|) = function
+        | Entity (entity, _) when entity.IsFSharpUnion -> Some entity
+        | _ -> None
+
+    let (|ValueType|_|) = function
+        | Entity (entity, _) when entity.IsValueType && not entity.IsEnum -> Some entity
+        | _ -> None
+
+    let (|ComputationExpression|_|) (symbol:FSharpSymbolUse) =
+        if symbol.IsFromComputationExpression then Some symbol
+        else None
+        
+    let (|Attribute|_|) = function
+        | Entity (entity, _) when entity.IsAttributeType -> Some entity
+        | _ -> None

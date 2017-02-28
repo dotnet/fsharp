@@ -841,24 +841,24 @@ and ConvDecisionTree cenv env tgs typR x =
         let converted = 
             (csl,acc) ||> List.foldBack (fun (TCase(discrim,dtree)) acc -> 
                   match discrim with 
-                  | Test.UnionCase (ucref, tyargs) -> 
+                  | DecisionTreeTest.UnionCase (ucref, tyargs) -> 
                       let e1R = ConvExpr cenv env e1
                       let ucR = ConvUnionCaseRef cenv ucref m
                       let tyargsR = ConvTypes cenv env m tyargs
                       QP.mkCond (QP.mkSumTagTest (ucR, tyargsR, e1R), ConvDecisionTree cenv env tgs typR dtree, acc)
-                  | Test.Const (Const.Bool true) -> 
+                  | DecisionTreeTest.Const (Const.Bool true) -> 
                       let e1R = ConvExpr cenv env e1
                       QP.mkCond (e1R, ConvDecisionTree cenv env tgs typR dtree, acc)
-                  | Test.Const (Const.Bool false) -> 
+                  | DecisionTreeTest.Const (Const.Bool false) -> 
                       let e1R = ConvExpr cenv env e1
                       // Note, reverse the branches
                       QP.mkCond (e1R, acc, ConvDecisionTree cenv env tgs typR dtree)
-                  | Test.Const c -> 
+                  | DecisionTreeTest.Const c -> 
                       let ty = tyOfExpr cenv.g e1
                       let eq = mkCallEqualsOperator cenv.g m ty e1 (Expr.Const (c, m, ty))
                       let eqR = ConvExpr cenv env eq 
                       QP.mkCond (eqR, ConvDecisionTree cenv env tgs typR dtree, acc)
-                  | Test.IsNull -> 
+                  | DecisionTreeTest.IsNull -> 
                       // Decompile cached isinst tests
                       match e1 with 
                       | Expr.Val(vref,_,_) when env.isinstVals.ContainsVal vref.Deref  ->
@@ -872,11 +872,11 @@ and ConvDecisionTree cenv env tgs typR x =
                           let eq = mkCallEqualsOperator cenv.g m ty e1 (Expr.Const (Const.Zero, m, ty))
                           let eqR = ConvExpr cenv env eq 
                           QP.mkCond (eqR, ConvDecisionTree cenv env tgs typR dtree, acc)
-                  | Test.IsInst (_srcty, tgty) -> 
+                  | DecisionTreeTest.IsInst (_srcty, tgty) -> 
                       let e1R = ConvExpr cenv env e1
                       QP.mkCond (QP.mkTypeTest (ConvType cenv env m tgty, e1R), ConvDecisionTree cenv env tgs typR dtree, acc)
-                  | Test.ActivePatternCase _ -> wfail(InternalError( "Test.ActivePatternCase test in quoted expression",m))
-                  | Test.ArrayLength _ -> wfail(Error(FSComp.SR.crefQuotationsCantContainArrayPatternMatching(), m))
+                  | DecisionTreeTest.ActivePatternCase _ -> wfail(InternalError( "DecisionTreeTest.ActivePatternCase test in quoted expression",m))
+                  | DecisionTreeTest.ArrayLength _ -> wfail(Error(FSComp.SR.crefQuotationsCantContainArrayPatternMatching(), m))
                  )
         EmitDebugInfoIfNecessary cenv env m converted
       | TDSuccess (args,n) -> 
@@ -905,7 +905,12 @@ and IsILTypeRefStaticLinkLocal cenv m (tr:ILTypeRef) =
         | ILScopeRef.Assembly aref 
             when not cenv.g.isInteractive &&
                  aref.Name <> cenv.g.ilg.primaryAssemblyName && // optimization to avoid this check in the common case
-                 (match cenv.amap.assemblyLoader.LoadAssembly (m,aref) with 
+
+                 // Explanation: This represents an unchecked invariant in the hosted compiler: that any operations
+                 // which import types (and resolve assemblies from the tcImports tables) happen on the compilation thread.
+                 let ctok = AssumeCompilationThreadWithoutEvidence() 
+
+                 (match cenv.amap.assemblyLoader.FindCcuFromAssemblyRef (ctok, m,aref) with 
                   | ResolvedCcu ccu -> ccu.IsProviderGenerated
                   | UnresolvedCcu _ -> false) 
             -> true

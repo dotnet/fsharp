@@ -8,6 +8,7 @@ open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler
 
 
@@ -69,4 +70,5 @@ module Keywords =
     val QuoteIdentifierIfNeeded : string -> string
     val NormalizeIdentifierBackticks : string -> string
     val keywordNames : string list
-    val keywordTypes : Set<string>
+    /// Keywords paired with their descriptions. Used in completion and quick info.
+    val keywordsWithDescription : (string * string) list

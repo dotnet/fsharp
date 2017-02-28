@@ -3,34 +3,9 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Collections.Concurrent
-open System.Collections.Generic
 open System.ComponentModel.Composition
-open System.Runtime.InteropServices
-open System.Linq
-open System.IO
 
-open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.SourceCodeServices
-
-open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Diagnostics
-open Microsoft.CodeAnalysis.Editor.Options
-open Microsoft.VisualStudio
-open Microsoft.VisualStudio.Editor
-open Microsoft.VisualStudio.Text
-open Microsoft.VisualStudio.TextManager.Interop
-open Microsoft.VisualStudio.LanguageServices
-open Microsoft.VisualStudio.LanguageServices.Implementation.LanguageService
-open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
-open Microsoft.VisualStudio.LanguageServices.Implementation.DebuggerIntelliSense
-open Microsoft.VisualStudio.LanguageServices.Implementation.TaskList
-open Microsoft.VisualStudio.LanguageServices.Implementation
-open Microsoft.VisualStudio.LanguageServices.ProjectSystem
-open Microsoft.VisualStudio.Shell
-open Microsoft.VisualStudio.Shell.Interop
-open Microsoft.VisualStudio.FSharp.LanguageService
-open Microsoft.VisualStudio.ComponentModelHost
 
 [<Export(typeof<AssemblyContentProvider>); Composition.Shared>]
 type internal AssemblyContentProvider () =

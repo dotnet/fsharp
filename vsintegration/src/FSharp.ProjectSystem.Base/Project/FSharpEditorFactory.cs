@@ -17,7 +17,7 @@ using IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider;
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 {
     [Guid(Constants.FSharpEditorFactoryIdString)]
-    [ProvideEditorFactory(typeof(FSharpEditorFactory), 101)]
+    [ProvideEditorFactory(typeof(FSharpEditorFactory), 101, CommonPhysicalViewAttributes = (int)__VSPHYSICALVIEWATTRIBUTES.PVA_SupportsPreview)]
     [ProvideEditorExtension(typeof(FSharpEditorFactory), ".fs", 32)]
     [ProvideEditorExtension(typeof(FSharpEditorFactory), ".fsi", 32)]
     [ProvideEditorExtension(typeof(FSharpEditorFactory), ".fsscript", 32)]

@@ -61,8 +61,8 @@ type XmlDocCollector() =
         check()
         savedLines.Add(line,pos)
 
-    member x.LinesBefore(grabPointPos) =
-
+    member x.LinesBefore(grabPointPos) = 
+      try
         let lines = savedLinesAsArray.Force()
         let grabPoints = savedGrabPointsAsArray.Force()
         let firstLineIndexAfterGrabPoint = Array.findFirstIndexWhereTrue lines (fun (_,pos) -> posGeq pos grabPointPos)
@@ -76,6 +76,9 @@ type XmlDocCollector() =
                 Array.findFirstIndexWhereTrue lines (fun (_,pos) -> posGeq pos prevGrabPointPos)
         //printfn "#lines = %d, firstLineIndexAfterPrevGrabPoint = %d, firstLineIndexAfterGrabPoint = %d" lines.Length firstLineIndexAfterPrevGrabPoint  firstLineIndexAfterGrabPoint
         lines.[firstLineIndexAfterPrevGrabPoint..firstLineIndexAfterGrabPoint-1] |> Array.map fst
+      with e -> 
+          //printfn "unexpected error in LinesBefore:\n%s" (e.ToString())
+          [| |]
 
 type XmlDoc =
     | XmlDoc of string[]
@@ -135,9 +138,9 @@ type ParserDetail =
 
 // PERFORMANCE: consider making this a struct.
 [<System.Diagnostics.DebuggerDisplay("{idText}")>]
-[<Sealed>]
+[<Struct>]
 [<NoEquality; NoComparison>]
-type Ident (text,range) =
+type Ident (text: string, range: range) =
      member x.idText = text
      member x.idRange = range
      override x.ToString() = text
@@ -1505,11 +1508,23 @@ type QualifiedNameOfFile =
 
 [<NoEquality; NoComparison>]
 type ParsedImplFileInput =
-    | ParsedImplFileInput of fileName:string * isScript:bool * QualifiedNameOfFile * ScopedPragma list * ParsedHashDirective list * SynModuleOrNamespace list * (bool * bool)
+    | ParsedImplFileInput of 
+        fileName : string * 
+        isScript : bool * 
+        qualifiedNameOfFile : QualifiedNameOfFile * 
+        scopedPragmas : ScopedPragma list * 
+        hashDirectives : ParsedHashDirective list * 
+        modules : SynModuleOrNamespace list * 
+        ((* isLastCompiland *) bool * (* isExe *) bool)
 
 [<NoEquality; NoComparison>]
 type ParsedSigFileInput =
-    | ParsedSigFileInput of fileName:string * QualifiedNameOfFile * ScopedPragma list * ParsedHashDirective list * SynModuleOrNamespaceSig list
+    | ParsedSigFileInput of 
+        fileName : string * 
+        qualifiedNameOfFile : QualifiedNameOfFile * 
+        scopedPragmas : ScopedPragma list * 
+        hashDirectives : ParsedHashDirective list * 
+        modules : SynModuleOrNamespaceSig list
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type ParsedInput =
@@ -1518,8 +1533,8 @@ type ParsedInput =
 
     member inp.Range =
         match inp with
-        | ParsedInput.ImplFile (ParsedImplFileInput(_,_,_,_,_,(SynModuleOrNamespace(range=m) :: _),_))
-        | ParsedInput.SigFile (ParsedSigFileInput(_,_,_,_,(SynModuleOrNamespaceSig(range=m) :: _))) -> m
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules=SynModuleOrNamespace(range=m) :: _))
+        | ParsedInput.SigFile (ParsedSigFileInput (modules=SynModuleOrNamespaceSig(range=m) :: _)) -> m
         | ParsedInput.ImplFile (ParsedImplFileInput (fileName=filename))
         | ParsedInput.SigFile (ParsedSigFileInput (fileName=filename)) ->
 #if DEBUG
@@ -2203,30 +2218,46 @@ module LexbufLocalXmlDocStore =
 
 /// Generates compiler-generated names. Each name generated also includes the StartLine number of the range passed in
 /// at the point of first generation.
+///
+/// This type may be accessed concurrently, though in practice it is only used from the compilation thread.
+/// It is made concurrency-safe since a global instance of the type is allocated in tast.fs, and it is good
+/// policy to make all globally-allocated objects concurrency safe in case future versions of the compiler
+/// are used to host mutiple concurrent instances of compilation.
 type NiceNameGenerator() =
 
+    let lockObj = obj()
     let basicNameCounts = new Dictionary<string,int>(100)
 
     member x.FreshCompilerGeneratedName (name,m:range) =
+      lock lockObj (fun () -> 
         let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
         let n = (if basicNameCounts.ContainsKey basicName then basicNameCounts.[basicName] else 0)
         let nm = CompilerGeneratedNameSuffix basicName (string m.StartLine + (match n with 0 -> "" | n -> "-" + string n))
         basicNameCounts.[basicName] <- n+1
-        nm
+        nm)
 
-    member x.Reset () = basicNameCounts.Clear()
+    member x.Reset () = 
+      lock lockObj (fun () -> 
+        basicNameCounts.Clear()
+      )
 
 
 
 /// Generates compiler-generated names marked up with a source code location, but if given the same unique value then
 /// return precisely the same name. Each name generated also includes the StartLine number of the range passed in
 /// at the point of first generation.
+///
+/// This type may be accessed concurrently, though in practice it is only used from the compilation thread.
+/// It is made concurrency-safe since a global instance of the type is allocated in tast.fs.
 type StableNiceNameGenerator() =
+
+    let lockObj = obj()
 
     let names = new Dictionary<(string * int64),string>(100)
     let basicNameCounts = new Dictionary<string,int>(100)
 
     member x.GetUniqueCompilerGeneratedName (name,m:range,uniq) =
+      lock lockObj (fun () -> 
         let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
         if names.ContainsKey (basicName,uniq) then
             names.[(basicName,uniq)]
@@ -2236,12 +2267,13 @@ type StableNiceNameGenerator() =
             names.[(basicName,uniq)] <- nm
             basicNameCounts.[basicName] <- n+1
             nm
+      )
 
     member x.Reset () =
+      lock lockObj (fun () -> 
         basicNameCounts.Clear()
         names.Clear()
-
-
+      )
 
 let rec synExprContainsError inpExpr =
     let rec walkBind (Binding(_, _, _, _, _, _, _, _, _, synExpr, _, _)) = walkExpr synExpr

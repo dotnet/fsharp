@@ -2,14 +2,12 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open System
 open System.Composition
 open System.Collections.Generic
 open System.Collections.Immutable
 open System.Linq
 open System.Threading
 open System.Threading.Tasks
-open System.Runtime.CompilerServices
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Editor
@@ -97,7 +95,9 @@ type internal FSharpGoToDefinitionService
                 let workspace = document.Project.Solution.Workspace
                 let navigationService = workspace.Services.GetService<IDocumentNavigationService>()
                 ignore presenters
-                navigationService.TryNavigateToSpan(workspace, navigableItem.Document.Id, navigableItem.SourceSpan)
+                // prefer open documents in the preview tab
+                let options = workspace.Options.WithChangedOption(NavigationOptions.PreferProvisionalTab, true)
+                navigationService.TryNavigateToSpan(workspace, navigableItem.Document.Id, navigableItem.SourceSpan, options)
 
                 // FSROSLYNTODO: potentially display multiple results here
                 // If GotoDef returns one result then it should try to jump to a discovered location. If it returns multiple results then it should use 

@@ -30,6 +30,14 @@ module internal CommonRoslynHelpers =
             //Assert.Exception(e)
             None
 
+    let TextSpanToFSharpRange(fileName: string, textSpan: TextSpan, sourceText: SourceText) : range =
+        let startLine = sourceText.Lines.GetLineFromPosition textSpan.Start
+        let endLine = sourceText.Lines.GetLineFromPosition textSpan.End
+        mkRange 
+            fileName 
+            (Pos.fromZ startLine.LineNumber (textSpan.Start - startLine.Start))
+            (Pos.fromZ endLine.LineNumber (textSpan.End - endLine.Start))
+
     let GetCompletedTaskResult(task: Task<'TResult>) =
         if task.Status = TaskStatus.RanToCompletion then
             task.Result
@@ -37,6 +45,7 @@ module internal CommonRoslynHelpers =
             Assert.Exception(task.Exception.GetBaseException())
             raise(task.Exception.GetBaseException())
 
+    /// Converts `TaggedText` from the F# Compiler to `Microsoft.CodeAnalysis.TaggedText` format for use in tooltips
     let TaggedTextToRoslyn t =
         match t with
         | TaggedText.ActivePatternCase t

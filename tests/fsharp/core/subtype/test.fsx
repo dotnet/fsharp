@@ -5,10 +5,18 @@ module Core_subtype
 
 #light
 
-let mutable failures = []
-let report_failure s = 
-  stderr.WriteLine " NO"; failures <- s :: failures
-let test s b = stderr.Write(s:string);  if b then stderr.WriteLine " OK" else report_failure s
+let failures = ref []
+
+let report_failure (s : string) = 
+    stderr.Write" NO: "
+    stderr.WriteLine s
+    failures := !failures @ [s]
+
+let test (s : string) b = 
+    stderr.Write(s)
+    if b then stderr.WriteLine " OK"
+    else report_failure (s)
+
 let check s v1 v2 = test s (v1 = v2)
 
 (* TEST SUITE FOR SUBTYPE CONSTRAINTS *)
@@ -98,13 +106,13 @@ let testUpcastToEnum1 (x: System.AttributeTargets) = (x :> System.Enum)
 let testUpcastToEnum6 (x: System.Enum) = (x :> System.Enum) 
 
 // these delegates don't exist in portable
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !UNIX && !FX_PORTABLE_OR_NETSTANDARD
 let testUpcastToDelegate1 (x: System.Threading.ThreadStart) = (x :> System.Delegate) 
 
 let testUpcastToMulticastDelegate1 (x: System.Threading.ThreadStart) = (x :> System.MulticastDelegate) 
-#endif
 
 do for name in Directory.GetFiles("c:\\") do stdout.WriteLine name done
+#endif
 
 let f (x : #System.IComparable<'a>) = 1
 
@@ -236,7 +244,9 @@ module SomeRandomOperatorConstraints = begin
 
     let sum64 seq : int64 = Seq.reduce (+) seq
     let sum32 seq : int64 = Seq.reduce (+) seq
+#if !FX_PORTABLE_OR_NETSTANDARD
     let sumBigInt seq : BigInteger = Seq.reduce (+) seq
+#endif
     let sumDateTime (dt : DateTime) (seq : #seq<TimeSpan>) : DateTime = Seq.fold (+) dt seq
 end
 
@@ -1705,7 +1715,6 @@ module GenericPropertyConstraintSolvedByRecord =
 
     let v = print_foo_memb { foo=1 } 
 
-
 module SRTPFix = 
 
     open System
@@ -1752,9 +1761,18 @@ module SRTPFix =
       printfn "%A" <| fmap ((+) 1) (Some 2);
       printfn "%A" <| replace 'q' (test("HI"))
      *)
-let aa =
-  if not failures.IsEmpty then (printfn "Test Failed, failures = %A" failures; exit 1) 
 
-do (stdout.WriteLine "Test Passed"; 
-    System.IO.File.WriteAllText("test.ok","ok"); 
-    exit 0)
+#if TESTS_AS_APP
+let RUN() = !failures
+#else
+let aa =
+  match !failures with 
+  | [] -> 
+      stdout.WriteLine "Test Passed"
+      System.IO.File.WriteAllText("test.ok","ok")
+      exit 0
+  | _ -> 
+      stdout.WriteLine "Test Failed"
+      exit 1
+#endif
+
