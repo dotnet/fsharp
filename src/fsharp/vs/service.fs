@@ -2698,6 +2698,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
     member bc.GetProjectOptionsFromScript(filename, source, ?loadedTimeStamp, ?otherFlags, ?useFsiAuxLib, ?assumeDotNetFramework, ?extraProjectInfo: obj) = 
         reactor.EnqueueAndAwaitOpAsync ("GetProjectOptionsFromScript " + filename, fun ctok -> 
           cancellable {
+            use errors = new ErrorScope()
             // Do we add a reference to FSharp.Compiler.Interactive.Settings by default?
             let useFsiAuxLib = defaultArg useFsiAuxLib true
             // Do we assume .NET Framework references for scripts?
@@ -2735,7 +2736,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                     ExtraProjectInfo=extraProjectInfo
                 }
             scriptClosureCacheLock.AcquireLock (fun ltok -> scriptClosureCache.Set(ltok, options, loadClosure)) // Save the full load closure for later correlation.
-            return options
+            return options, errors.Diagnostics
           })
             
     member bc.InvalidateConfiguration(options : FSharpProjectOptions) =
@@ -2977,34 +2978,6 @@ type FSharpChecker(referenceResolver, projectCacheSize, keepAssemblyContents, ke
     static member GlobalForegroundParseCountStatistic = BackgroundCompiler.GlobalForegroundParseCountStatistic
     static member GlobalForegroundTypeCheckCountStatistic = BackgroundCompiler.GlobalForegroundTypeCheckCountStatistic
           
-    // Obsolete
-    member ic.MatchBraces(filename, source, options) =
-        ic.MatchBracesAlternate(filename, source, options) 
-        |> Async.RunSynchronously
-        |> Array.map (fun (a,b) -> Range.toZ a, Range.toZ b)
-
-    member bc.ParseFile(filename, source, options) = 
-        bc.ParseFileInProject(filename, source, options) 
-        |> Async.RunSynchronously
-
-    member bc.TypeCheckSource(parseResults, filename, fileVersion, source, options, textSnapshotInfo:obj) = 
-        bc.CheckFileInProjectIfReady(parseResults, filename, fileVersion, source, options, textSnapshotInfo)
-        |> Async.RunSynchronously
-
-    member ic.GetCheckOptionsFromScriptRoot(filename, source, loadedTimeStamp) = 
-        ic.GetProjectOptionsFromScript(filename, source, loadedTimeStamp, [| |]) 
-        |> Async.RunSynchronously
-
-    member ic.GetCheckOptionsFromScriptRoot(filename, source, loadedTimeStamp, otherFlags) = 
-        ic.GetProjectOptionsFromScript(filename, source, loadedTimeStamp, otherFlags) 
-        |> Async.RunSynchronously
-
-    member ic.GetProjectOptionsFromScriptRoot(filename, source, ?loadedTimeStamp, ?otherFlags, ?useFsiAuxLib) = 
-        ic.GetProjectOptionsFromScript(filename, source, ?loadedTimeStamp=loadedTimeStamp, ?otherFlags=otherFlags, ?useFsiAuxLib=useFsiAuxLib)
-        |> Async.RunSynchronously
-
-    member ic.FileTypeCheckStateIsDirty  = backgroundCompiler.BeforeBackgroundFileCheck
-
     static member Instance = globalInstance
     member internal __.FrameworkImportsCache = backgroundCompiler.FrameworkImportsCache
 

@@ -26,13 +26,13 @@ type TempFile(ext, contents) =
 
 let getBackgroundParseResultsForScriptText (input) = 
     use file =  new TempFile("fsx", input)
-    let checkOptions = checker.GetProjectOptionsFromScript(file.Name, input) |> Async.RunSynchronously
+    let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file.Name, input) |> Async.RunSynchronously
     checker.GetBackgroundParseResultsForFileInProject(file.Name, checkOptions)  |> Async.RunSynchronously
 
 
 let getBackgroundCheckResultsForScriptText (input) = 
     use file =  new TempFile("fsx", input)
-    let checkOptions = checker.GetProjectOptionsFromScript(file.Name, input) |> Async.RunSynchronously
+    let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file.Name, input) |> Async.RunSynchronously
     checker.GetBackgroundCheckResultsForFileInProject(file.Name, checkOptions) |> Async.RunSynchronously
 
 

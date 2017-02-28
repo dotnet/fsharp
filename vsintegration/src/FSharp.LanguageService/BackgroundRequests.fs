@@ -65,14 +65,14 @@ type internal FSharpLanguageServiceBackgroundRequests
                 // ExecuteBackgroundRequest will not be called.                    
                 None 
             |   _ ->       
-                // For scripts, GetCheckOptionsFromScriptRoot involves parsing and sync op, so is run on the language service thread later
+                // For scripts, GetProjectOptionsFromScript involves parsing and sync op, so is run on the language service thread later
                 // For projects, we need to access RDT on UI thread, so do it on the GUI thread now
                 if SourceFile.MustBeSingleFileProject(fileName) then
                     let data = 
                         lazy // This portion is executed on the language service thread
                             let timestamp = if source=null then System.DateTime(2000,1,1) else source.OpenedTime // source is null in unit tests
                             let checker = getInteractiveChecker()
-                            let checkOptions = checker.GetProjectOptionsFromScript(fileName, sourceText, timestamp, [| |]) |> Async.RunSynchronously
+                            let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(fileName, sourceText, timestamp, [| |]) |> Async.RunSynchronously
                             let projectSite = ProjectSitesAndFiles.CreateProjectSiteForScript(fileName, checkOptions)
                             { ProjectSite = projectSite
                               CheckOptions = checkOptions 
