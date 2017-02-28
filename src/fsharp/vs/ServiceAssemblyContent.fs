@@ -8,10 +8,12 @@
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
 open System
-open Microsoft.FSharp.Compiler.Ast
 open System.Collections.Generic
+
 open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.Range
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 
 type internal ShortIdent = string
 type Idents = ShortIdent[]
@@ -21,70 +23,7 @@ type IsAutoOpen = bool
 
 [<AutoOpen>]
 module internal Extensions =
-    [<RequireQualifiedAccess>]
-    [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-    module Option =
-        let attempt (f: unit -> 'T) = try Some (f()) with _ -> None        
 
-    [<RequireQualifiedAccess>]
-    [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-    module Array =
-        /// Returns a new array with an element replaced with a given value.
-        let replace index value (array: _ []) =
-            if index >= array.Length then raise (IndexOutOfRangeException "index")
-            let res = Array.copy array
-            res.[index] <- value
-            res
-
-        /// Optimized arrays equality. ~100x faster than `array1 = array2` on strings.
-        /// ~2x faster for floats
-        /// ~0.8x slower for ints
-        let inline areEqual (xs: 'T []) (ys: 'T []) =
-            match xs, ys with
-            | null, null -> true
-            | [||], [||] -> true
-            | null, _ | _, null -> false
-            | _ when xs.Length <> ys.Length -> false
-            | _ ->
-                let mutable break' = false
-                let mutable i = 0
-                let mutable result = true
-                while i < xs.Length && not break' do
-                    if xs.[i] <> ys.[i] then 
-                        break' <- true
-                        result <- false
-                    i <- i + 1
-                result
-
-        /// Returns all heads of a given array.
-        /// For [|1;2;3|] it returns [|[|1; 2; 3|]; [|1; 2|]; [|1|]|]
-        let heads (array: 'T []) =
-            let res = Array.zeroCreate<'T[]> array.Length
-            for i = array.Length - 1 downto 0 do
-                res.[i] <- array.[0..i]
-            res
-
-        /// check if subArray is found in the wholeArray starting 
-        /// at the provided index
-        let inline isSubArray (subArray: 'T []) (wholeArray:'T []) index = 
-            if isNull subArray || isNull wholeArray then false
-            elif subArray.Length = 0 then true
-            elif subArray.Length > wholeArray.Length then false
-            elif subArray.Length = wholeArray.Length then areEqual subArray wholeArray else
-            let rec loop subidx idx =
-                if subidx = subArray.Length then true 
-                elif subArray.[subidx] = wholeArray.[idx] then loop (subidx+1) (idx+1) 
-                else false
-            loop 0 index
-        
-        /// Returns true if one array has another as its subset from index 0.
-        let startsWith (prefix: _ []) (whole: _ []) =
-            isSubArray prefix whole 0
-        
-        /// Returns true if one array has trailing elements equal to another's.
-        let endsWith (suffix: _ []) (whole: _ []) =
-            isSubArray suffix whole (whole.Length-suffix.Length)
-        
     type FSharpEntity with
         member x.TryGetFullName() =
             try x.TryFullName 

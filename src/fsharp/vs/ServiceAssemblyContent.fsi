@@ -155,12 +155,6 @@ module internal Extensions =
         /// API CLEANUP: this method needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
         member TryGetEntities : unit -> seq<FSharpEntity>
 
-    [<RequireQualifiedAccess>]
-    [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-    module Array =
-        /// Returns a new array with an element replaced with a given value.
-        val replace : index: int ->  value: 'T -> array: 'T[] -> 'T[]
-
 /// API CLEANUP: this module needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
 [<AutoOpen>]
 module internal Utils =
