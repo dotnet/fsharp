@@ -391,6 +391,7 @@ module internal AssemblyContentProvider =
             signature.TryGetEntities()
             |> Seq.collect (traverseEntity contentType Parent.Empty)
             |> Seq.distinctBy (fun {FullName = fullName; CleanedIdents = cleanIdents} -> (fullName, cleanIdents))
+            |> Seq.toList
 
     let private getAssemblySignaturesContent contentType (assemblies: FSharpAssembly list) = 
         assemblies 
@@ -902,7 +903,7 @@ module internal ParsedInput =
         { Idents: Idents
           Kind: ScopeKind }
 
-    let tryFindInsertionContext (currentLine: int) (ast: ParsedInput) = 
+    let tryFindInsertionContext (currentLine: int) (ast: ParsedInput) (partiallyQualifiedName: MaybeUnresolvedIdents) = 
         let result: (Scope * Point<FCS>) option ref = ref None
         let ns: string[] option ref = ref None
         let modules = ResizeArray<Idents * EndLine * Col>()  
@@ -1005,8 +1006,7 @@ module internal ParsedInput =
             |> Seq.sortBy (fun (m, _, _) -> -m.Length)
             |> Seq.toList
 
-        fun (partiallyQualifiedName: MaybeUnresolvedIdents) 
-            (requiresQualifiedAccessParent: Idents option, autoOpenParent: Idents option, entityNamespace: Idents option, entity: Idents) ->
+        fun (requiresQualifiedAccessParent: Idents option, autoOpenParent: Idents option, entityNamespace: Idents option, entity: Idents) ->
             match res with
             | None -> [||]
             | Some (scope, ns, pos) -> 
