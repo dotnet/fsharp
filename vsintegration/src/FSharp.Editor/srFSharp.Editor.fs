@@ -24,5 +24,6 @@ module SR =
     let FSharpMutableVarsClassificationType = lazy (GetString "FSharpMutableVarsClassificationType")
     let FSharpPrintfFormatClassificationType = lazy (GetString "FSharpPrintfFormatClassificationType")
     let FSharpPropertiesClassificationType = lazy (GetString "FSharpPropertiesClassificationType")
+    let FSharpDisposablesClassificationType = lazy (GetString "FSharpDisposablesClassificationType")
     let RemoveUnusedOpens = lazy (GetString "RemoveUnusedOpens")
     let UnusedOpens = lazy (GetString "UnusedOpens")

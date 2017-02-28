@@ -1596,7 +1596,10 @@ let isStructOrEnumTyconTy g ty =
     | Some tcref -> tcref.Deref.IsStructOrEnumTycon
     | _ -> false
 
+let isStructRecordOrUnionTyconTy g ty = isAppTy g ty && (tyconOfAppTy g ty).IsStructRecordOrUnionTycon
+
 let isStructTy g ty = isStructOrEnumTyconTy g ty || isStructTupleTy g ty
+
 
 let isRefTy g ty = 
     not (isStructOrEnumTyconTy g ty) &&
@@ -2501,8 +2504,7 @@ let fullNameOfEntityRef nmF xref =
     | Some pathText -> pathText +.+ nmF xref
 
 let tagEntityRefName (xref: EntityRef) name =
-    if Set.contains name Lexhelp.Keywords.keywordTypes then tagKeyword name
-    elif xref.IsNamespace then tagNamespace name
+    if xref.IsNamespace then tagNamespace name
     elif xref.IsModule then tagModule name
     elif xref.IsTypeAbbrev then tagAlias name
     elif xref.IsFSharpDelegateTycon then tagDelegate name

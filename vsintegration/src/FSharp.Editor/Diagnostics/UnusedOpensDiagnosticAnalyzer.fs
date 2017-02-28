@@ -17,20 +17,24 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 module private UnusedOpens =
     open Microsoft.CodeAnalysis.Text
 
-    let rec visitSynModuleOrNamespaceDecls decls =
+    let rec visitSynModuleOrNamespaceDecls (parent: Ast.LongIdent) decls : (Set<string> * range) list =
         [ for decl in decls do
             match decl with
-            | SynModuleDecl.Open(longIdentWithDots, range) ->
-                yield (longIdentWithDots.Lid |> List.map(fun l -> l.idText) |> String.concat "."), range
-            | SynModuleDecl.NestedModule(_,_, decls,_,_) ->
-                yield! visitSynModuleOrNamespaceDecls decls
+            | SynModuleDecl.Open(LongIdentWithDots.LongIdentWithDots(id = longId), range) ->
+                yield
+                    set [ yield (longId |> List.map(fun l -> l.idText) |> String.concat ".")
+                          // `open N.M` can open N.M module from parent module as well, if it's non empty
+                          if not (List.isEmpty parent) then
+                            yield (parent @ longId |> List.map(fun l -> l.idText) |> String.concat ".") ], range
+            | SynModuleDecl.NestedModule(SynComponentInfo.ComponentInfo(longId = longId),_, decls,_,_) ->
+                yield! visitSynModuleOrNamespaceDecls longId decls
             | _ -> () ]
 
     let getOpenStatements = function
         | ParsedInput.ImplFile (ParsedImplFileInput(modules = modules)) ->
             [ for md in modules do
-                let SynModuleOrNamespace(decls = decls) = md
-                yield! visitSynModuleOrNamespaceDecls decls ]
+                let SynModuleOrNamespace(longId = longId; decls = decls) = md
+                yield! visitSynModuleOrNamespaceDecls longId decls ]
         | _ -> []
 
     let getAutoOpenAccessPath (ent:FSharpEntity) =
@@ -111,14 +115,14 @@ module private UnusedOpens =
             |> Seq.collect getPossibleNamespaces
             |> Set.ofSeq
 
-        let filter list: (string * Range.range) list =
+        let filter list: (Set<string> * range) list =
             let rec filterInner acc list (seenNamespaces: Set<string>) = 
                 let notUsed ns = not (namespacesInUse.Contains ns) || seenNamespaces.Contains ns
                 match list with 
-                | (ns, range) :: xs when notUsed ns -> 
-                    filterInner ((ns, range) :: acc) xs (seenNamespaces.Add ns)
+                | (ns, range) :: xs when ns |> Set.forall notUsed -> 
+                    filterInner ((ns, range) :: acc) xs (seenNamespaces |> Set.union ns)
                 | (ns, _) :: xs ->
-                    filterInner acc xs (seenNamespaces.Add ns)
+                    filterInner acc xs (seenNamespaces |> Set.union ns)
                 | [] -> List.rev acc
             filterInner [] list Set.empty
 
