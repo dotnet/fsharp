@@ -239,7 +239,7 @@ type PhasedDiagnostic =
         // Sanity check ensures that Phase matches Subcategory            
 #if DEBUG
         if isPhaseInCompile then 
-            System.Diagnostics.Debug.Assert(PhasedDiagnostic.IsSubcategoryOfCompile(pe.Subcategory()), "Subcategory did not match isPhaesInCompile=true")
+            System.Diagnostics.Debug.Assert(PhasedDiagnostic.IsSubcategoryOfCompile(pe.Subcategory()), "Subcategory did not match isPhaseInCompile=true")
         else
             System.Diagnostics.Debug.Assert(not(PhasedDiagnostic.IsSubcategoryOfCompile(pe.Subcategory())), "Subcategory did not match isPhaseInCompile=false")
 #endif            
@@ -423,10 +423,17 @@ let SetThreadBuildPhaseNoUnwind(phase:BuildPhase) = CompileThreadStatic.BuildPha
 let SetThreadErrorLoggerNoUnwind(errorLogger)     = CompileThreadStatic.ErrorLogger <- errorLogger
 
 // Global functions are still used by parser and TAST ops.
+
+/// Raises an exception with error recovery and returns unit.
 let errorR  exn = CompileThreadStatic.ErrorLogger.ErrorR exn
+
+/// Raises a warning with error recovery and returns unit.
 let warning exn = CompileThreadStatic.ErrorLogger.Warning exn
+
+/// Raises a special exception and returns 'T - can be caught later at an errorRecovery point.
 let error   exn = CompileThreadStatic.ErrorLogger.Error exn
-// for test only
+
+/// Simulates an error. For test purposes only.
 let simulateError (p : PhasedDiagnostic) = CompileThreadStatic.ErrorLogger.SimulateError p
 
 let diagnosticSink (phasedError, isError) = CompileThreadStatic.ErrorLogger.DiagnosticSink (phasedError, isError)
