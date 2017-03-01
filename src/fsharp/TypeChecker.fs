@@ -8303,6 +8303,31 @@ and delayRest rest mPrior delayed =
         let mPriorAndLongId = unionRanges mPrior (rangeOfLid longId)
         DelayedDotLookup (rest,mPriorAndLongId) :: delayed
 
+//-------------------------------------------------------------------------
+// TcNameOfExpr: Typecheck "nameof" expressions
+//-------------------------------------------------------------------------
+and TcNameOfExpr cenv env tpenv expr = 
+    match expr with
+    | SynExpr.Ident _
+    | SynExpr.LongIdent(_, LongIdentWithDots _, _, _) as expr ->
+        ignore (TcExprOfUnknownType cenv env tpenv expr)
+    | SynExpr.TypeApp (expr, _, types, _, _, _, m) as fullExpr ->
+        let idents =
+            match expr with
+            | SynExpr.LongIdent(_, LongIdentWithDots(idents, _), _, _) -> idents
+            | SynExpr.Ident ident -> [ident]
+            | _ -> []
+        match idents with
+        | [] -> ()
+        | idents ->
+            // try to type check it as type application, like A.B.C<D<G>>
+            match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInType OpenQualified env.eNameResEnv env.eAccessRights idents (TypeNameResolutionStaticArgsInfo.FromTyArgs types.Length) PermitDirectReferenceToGeneratedType.No with
+            | ResultOrException.Result tcref ->
+                ignore (TcTypeApp cenv NewTyparsOK NoCheckCxs ItemOccurence.UseInType env tpenv m tcref [] types)
+            | _ ->
+                // now try to check it as generic function, like func<D<G>>
+                ignore (TcExprOfUnknownType cenv env tpenv fullExpr)
+    | _ -> ()
 
 //-------------------------------------------------------------------------
 // TcFunctionApplicationThen: Typecheck "expr x" + projections
@@ -8328,28 +8353,6 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (
             | _ -> None
         findIdents expr
 
-    let tcExpr = function
-        | SynExpr.Ident _
-        | SynExpr.LongIdent(_, LongIdentWithDots _, _, _) as expr ->
-            ignore (TcExprOfUnknownType cenv env tpenv expr)
-        | SynExpr.TypeApp (expr, _, types, _, _, _, m) as fullExpr ->
-            let idents =
-                match expr with
-                | SynExpr.LongIdent(_, LongIdentWithDots(idents, _), _, _) -> idents
-                | SynExpr.Ident ident -> [ident]
-                | _ -> []
-            match idents with
-            | [] -> ()
-            | idents ->
-                // try to type check it as type application, like A.B.C<D<G>>
-                match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInType OpenQualified env.eNameResEnv env.eAccessRights idents (TypeNameResolutionStaticArgsInfo.FromTyArgs types.Length) PermitDirectReferenceToGeneratedType.No with
-                | ResultOrException.Result tcref ->
-                    ignore (TcTypeApp cenv NewTyparsOK NoCheckCxs ItemOccurence.UseInType env tpenv m tcref [] types)
-                | _ ->
-                    // now try to check it as generic function, like func<D<G>>
-                    ignore (TcExprOfUnknownType cenv env tpenv fullExpr)
-        | _ -> ()
-
     let rec stripParens expr =
         match expr with
         | SynExpr.Paren(expr, _, _, _) -> stripParens expr
@@ -8364,7 +8367,7 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (
             let cleanSynArg = stripParens synArg
             match cleanSynArg with
             | LastPartOfLongIdentStripParens lastIdent ->
-                tcExpr cleanSynArg
+                TcNameOfExpr cenv env tpenv cleanSynArg
                 let r = expr.Range
                 // generate fake `range` for the constant the `nameof(..)` we are substituting
                 let constRange = mkRange r.FileName r.Start (mkPos r.StartLine (r.StartColumn + lastIdent.idText.Length + 2)) // `2` are for quotes

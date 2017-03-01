@@ -120,10 +120,19 @@ type MethodGroupTests() =
     member this.MethodGroup() = ()    
     member this.MethodGroup(i:int) = ()
 
+    member this.MethodGroup1(i:int, f:float, s:string) = 0
+    member this.MethodGroup1(f:float, l:int64) = "foo"
+    member this.MethodGroup1(u:unit -> unit -> int, h: unit) : unit = ()
+
     [<Test>]
-    member this.``method group name lookup`` () =
+    member this.``single argument method group name lookup`` () =
         let b = nameof(this.MethodGroup)
         Assert.AreEqual("MethodGroup",b)
+
+    [<Test>]
+    member this.``multiple argument method group name lookup`` () =
+        let b = nameof(this.MethodGroup1)
+        Assert.AreEqual("MethodGroup1",b)
 
 [<TestFixture>]
 type FrameworkMethodTests() =
