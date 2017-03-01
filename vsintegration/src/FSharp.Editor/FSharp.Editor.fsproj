@@ -33,9 +33,9 @@
     <Compile Include="Common\AssemblyInfo.fs" />
     <Compile Include="Common\Pervasive.fs" />
     <Compile Include="Common\CommonConstants.fs" />
-    <Compile Include="Common\CommonRoslynHelpers.fs" />
     <Compile Include="Common\Logging.fs" />
     <Compile Include="Common\CommonHelpers.fs" />
+    <Compile Include="Common\CommonRoslynHelpers.fs" />
     <Compile Include="Common\ContentType.fs" />
     <Compile Include="Common\LanguageService.fs" />
     <Compile Include="Common\SymbolHelpers.fs" />
@@ -49,8 +49,10 @@
     <Compile Include="Diagnostics\DocumentDiagnosticAnalyzer.fs" />
     <Compile Include="Diagnostics\ProjectDiagnosticAnalyzer.fs" />
     <Compile Include="Diagnostics\SimplifyNameDiagnosticAnalyzer.fs" />
+    <Compile Include="Diagnostics\UnusedOpensDiagnosticAnalyzer.fs" />
     <Compile Include="Completion\CompletionProvider.fs" />
     <Compile Include="Completion\KeywordCompletionProvider.fs" />
+    <Compile Include="Completion\FileSystemCompletion.fs" />
     <Compile Include="Completion\CompletionService.fs" />
     <Compile Include="Completion\SignatureHelp.fs" />
     <Compile Include="QuickInfo\QuickInfoProvider.fs" />
@@ -73,6 +75,7 @@
     <Compile Include="CodeFix\PrefixUnusedValueWithUnderscore.fs" />
     <Compile Include="CodeFix\ImplementInterfaceCodeFixProvider.fs" />
     <Compile Include="CodeFix\SimplifyName.fs" />
+    <Compile Include="CodeFix\RemoveUnusedOpens.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">

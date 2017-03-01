@@ -68,6 +68,7 @@ module FSharpTokenTag =
     let COLON_EQUALS = tagOfToken COLON_EQUALS
     let BAR_BAR = tagOfToken BAR_BAR
     let RARROW = tagOfToken RARROW
+    let LARROW = tagOfToken LARROW
     let QUOTE = tagOfToken QUOTE
 
            
@@ -88,6 +89,7 @@ type FSharpTokenColorKind =
     | PreprocessorKeyword = 8
     | Number = 9
     | Operator = 10
+    | Punctuation = 11
 
 /// Categorize an action the editor should take in response to a token, e.g. brace matching
 /// 
@@ -95,7 +97,7 @@ type FSharpTokenColorKind =
 /// It is not clear it is a primary logical classification that should be being used in the 
 /// more recent language service work.
 type FSharpTokenTriggerClass =
-      None         = 0x00000000
+    | None         = 0x00000000
     | MemberSelect = 0x00000001
     | MatchBraces  = 0x00000002 
     | ChoiceSelect = 0x00000004
@@ -111,7 +113,7 @@ type FSharpTokenTriggerClass =
 /// It is not clear it is a primary logical classification that should be being used in the 
 /// more recent language service work.
 type FSharpTokenCharKind = 
-      Default     = 0x00000000
+    | Default     = 0x00000000
     | Text        = 0x00000000
     | Keyword     = 0x00000001
     | Identifier  = 0x00000002
@@ -126,13 +128,13 @@ type FSharpTokenCharKind =
 
 /// Information about a particular token from the tokenizer
 type FSharpTokenInfo = {
-    LeftColumn:int;
-    RightColumn:int;
-    ColorClass:FSharpTokenColorKind;
-    CharClass:FSharpTokenCharKind;
-    FSharpTokenTriggerClass:FSharpTokenTriggerClass;
+    LeftColumn:int
+    RightColumn:int
+    ColorClass:FSharpTokenColorKind
+    CharClass:FSharpTokenCharKind
+    FSharpTokenTriggerClass:FSharpTokenTriggerClass
     Tag:int
-    TokenName:string;
+    TokenName:string
     FullMatchedLength: int }
 
 //----------------------------------------------------------------------------
@@ -161,7 +163,7 @@ module internal TokenClassifications =
 
         // 'in' when used in a 'join' in a query expression
         | JOIN_IN ->
-                    (FSharpTokenColorKind.Identifier,FSharpTokenCharKind.Identifier,FSharpTokenTriggerClass.None)  
+             (FSharpTokenColorKind.Identifier,FSharpTokenCharKind.Identifier,FSharpTokenTriggerClass.None)  
         | DECIMAL _
         | BIGNUM _ | INT8 _  | UINT8 _ | INT16 _  | UINT16 _ | INT32 _ | UINT32 _ | INT64 _ | UINT64 _ 
         | UNATIVEINT _ | NATIVEINT _ | IEEE32 _ |  IEEE64 _
@@ -180,14 +182,14 @@ module internal TokenClassifications =
         | DOLLAR | COLON_GREATER  | COLON_COLON  
         | PERCENT_OP _ | PLUS_MINUS_OP _ | PREFIX_OP _ | COLON_QMARK_GREATER   
         | AMP   | AMP_AMP  | BAR_BAR  | QMARK | QMARK_QMARK | COLON_QMARK
-        | QUOTE   | STAR  | HIGH_PRECEDENCE_TYAPP 
-        | COLON    | COLON_EQUALS   | LARROW | EQUALS | RQUOTE_DOT _
+        | HIGH_PRECEDENCE_TYAPP 
+        | COLON_EQUALS   | EQUALS | RQUOTE_DOT _
         | MINUS | ADJACENT_PREFIX_OP _  
           -> (FSharpTokenColorKind.Operator,FSharpTokenCharKind.Operator,FSharpTokenTriggerClass.None)
-
+          
         | INFIX_COMPARE_OP _ // This is a whole family: .< .> .= .!= .$
         | FUNKY_OPERATOR_NAME _ // This is another whole family, including: .[] and .()
-        | INFIX_AT_HAT_OP _
+        //| INFIX_AT_HAT_OP _
         | INFIX_STAR_STAR_OP _
         | INFIX_AMP_OP _
         | INFIX_BAR_OP _
@@ -200,48 +202,51 @@ module internal TokenClassifications =
             (FSharpTokenColorKind.Operator,FSharpTokenCharKind.Operator,FSharpTokenTriggerClass.MemberSelect)
 
         | COMMA
-          -> (FSharpTokenColorKind.Text,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.ParamNext)
+          -> (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.ParamNext)
               
         | DOT 
-          -> (FSharpTokenColorKind.Operator,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.MemberSelect)
+          -> (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.MemberSelect)
               
         | BAR
-          -> (FSharpTokenColorKind.Text,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.None (* FSharpTokenTriggerClass.ChoiceSelect *))
-              
-        | HASH | UNDERSCORE   
-        | SEMICOLON    | SEMICOLON_SEMICOLON
-          -> (FSharpTokenColorKind.Text,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.None)
+          -> (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.None (* FSharpTokenTriggerClass.ChoiceSelect *))              
+
+        | HASH | STAR | SEMICOLON  | SEMICOLON_SEMICOLON | COLON  
+          -> (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.None)
+
+        | QUOTE | UNDERSCORE 
+        | INFIX_AT_HAT_OP _        
+          -> (FSharpTokenColorKind.Identifier ,FSharpTokenCharKind.Identifier,FSharpTokenTriggerClass.None)
 
         | LESS  _
-          -> (FSharpTokenColorKind.Operator,FSharpTokenCharKind.Operator,FSharpTokenTriggerClass.ParamStart)  // for type provider static arguments
+          -> (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Operator,FSharpTokenTriggerClass.ParamStart)  // for type provider static arguments
         | GREATER _ 
-          -> (FSharpTokenColorKind.Operator,FSharpTokenCharKind.Operator,FSharpTokenTriggerClass.ParamEnd)    // for type provider static arguments
+          -> (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Operator,FSharpTokenTriggerClass.ParamEnd)    // for type provider static arguments
               
         | LPAREN
           // We need 'ParamStart' to trigger the 'GetDeclarations' method to show param info automatically
           // this is needed even if we don't use MPF for determining information about params
-          -> (FSharpTokenColorKind.Text,FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.ParamStart ||| FSharpTokenTriggerClass.MatchBraces)
+          -> (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.ParamStart ||| FSharpTokenTriggerClass.MatchBraces)
               
         | RPAREN | RPAREN_COMING_SOON | RPAREN_IS_HERE
-          -> (FSharpTokenColorKind.Text,FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.ParamEnd ||| FSharpTokenTriggerClass.MatchBraces)
+          -> (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.ParamEnd ||| FSharpTokenTriggerClass.MatchBraces)
               
         | LBRACK_LESS  | LBRACE_LESS
-          -> (FSharpTokenColorKind.Text,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.None )
+          -> (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.None )
           
         | LQUOTE _  | LBRACK  | LBRACE | LBRACK_BAR 
-          -> (FSharpTokenColorKind.Text,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.MatchBraces )
+          -> (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.MatchBraces )
           
         | GREATER_RBRACE   | GREATER_RBRACK  | GREATER_BAR_RBRACK
-          -> (FSharpTokenColorKind.Text,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.None )
+          -> (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.None )
 
         | RQUOTE _  | RBRACK  | RBRACE | RBRACE_COMING_SOON | RBRACE_IS_HERE | BAR_RBRACK   
-          -> (FSharpTokenColorKind.Text,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.MatchBraces )
+          -> (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.MatchBraces )
               
         | PUBLIC | PRIVATE | INTERNAL | BASE | GLOBAL
         | CONSTRAINT | INSTANCE | DELEGATE | INHERIT|CONSTRUCTOR|DEFAULT|OVERRIDE|ABSTRACT|CLASS
         | MEMBER | STATIC | NAMESPACE
         | OASSERT | OLAZY | ODECLEND | OBLOCKSEP | OEND | OBLOCKBEGIN | ORIGHT_BLOCK_END | OBLOCKEND | OBLOCKEND_COMING_SOON | OBLOCKEND_IS_HERE | OTHEN | OELSE | OLET(_) | OBINDER _ | BINDER _ | ODO | OWITH | OFUNCTION | OFUN | ORESET | ODUMMY _ | DO_BANG | ODO_BANG | YIELD _ | YIELD_BANG  _ | OINTERFACE_MEMBER
-        | ELIF | RARROW | SIG | STRUCT 
+        | ELIF | RARROW | LARROW | SIG | STRUCT 
         | UPCAST   | DOWNCAST   | NULL   | RESERVED    | MODULE    | AND    | AS   | ASSERT   | ASR
         | DOWNTO   | EXCEPTION   | FALSE   | FOR   | FUN   | FUNCTION
         | FINALLY   | LAZY   | MATCH  | MUTABLE   | NEW   | OF    | OPEN   | OR | VOID | EXTERN

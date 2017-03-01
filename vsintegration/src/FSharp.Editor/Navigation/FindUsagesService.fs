@@ -2,7 +2,6 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open System
 open System.Threading
 open System.Collections.Immutable
 open System.Composition
@@ -10,14 +9,8 @@ open System.Composition
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.Host.Mef
-open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Editor.FindUsages
-open Microsoft.CodeAnalysis.Editor.Host
-open Microsoft.CodeAnalysis.Navigation
-open Microsoft.CodeAnalysis.FindSymbols
 open Microsoft.CodeAnalysis.FindUsages
-
-open Microsoft.VisualStudio.FSharp.LanguageService
 
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
@@ -64,7 +57,7 @@ type internal FSharpFindUsagesService
             let! symbol = CommonHelpers.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy)
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(lineNumber, symbol.Ident.idRange.EndColumn, textLine, symbol.FullIsland)
             let! declaration = checkFileResults.GetDeclarationLocationAlternate (lineNumber, symbol.Ident.idRange.EndColumn, textLine, symbol.FullIsland, false) |> liftAsync
-            let tags = GlyphTags.GetTags(CommonRoslynHelpers.GetGlyphForSymbol symbolUse.Symbol)
+            let tags = GlyphTags.GetTags(CommonRoslynHelpers.GetGlyphForSymbol (symbolUse.Symbol, symbol.Kind))
             
             let declarationRange = 
                 match declaration with

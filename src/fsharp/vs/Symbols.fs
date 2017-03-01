@@ -403,6 +403,11 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
         let ty = generalizedTyconRef entity
         Infos.ExistsHeadTypeInEntireHierarchy cenv.g cenv.amap range0 ty cenv.g.tcref_System_Attribute
         
+    member x.IsDisposableType =
+        if isUnresolved() then false else
+        let ty = generalizedTyconRef entity
+        Infos.ExistsHeadTypeInEntireHierarchy cenv.g cenv.amap range0 ty cenv.g.tcref_System_IDisposable
+
     member x.BaseType = 
         checkIsResolved()        
         GetSuperTypeOfType cenv.g cenv.amap range0 (generalizedTyconRef entity) 
@@ -513,6 +518,19 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
         GetAttribInfosOfEntity cenv.g cenv.amap range0 entity
         |> List.map (fun a -> FSharpAttribute(cenv,  a))
         |> makeReadOnlyCollection
+
+    member __.AllCompilationPaths =
+        checkIsResolved()
+        let (CompilationPath.CompPath(_, parts)) = entity.CompilationPath
+        ([], parts) ||> List.fold (fun res (part, kind) ->
+            let parts =
+                match kind with
+                | ModuleOrNamespaceKind.FSharpModuleWithSuffix ->
+                    [part; part.[..part.Length - 7]]
+                | _ -> [part]
+
+            parts |> List.collect (fun part -> 
+                res |> List.map (fun path -> path + "." + part)))
 
     override x.Equals(other : obj) =
         box x === other ||
@@ -805,7 +823,10 @@ and FSharpAccessibility(a:Accessibility, ?isProtected) =
 
     member __.Contents = a
 
-    override x.ToString() = stringOfAccess a
+    override x.ToString() = 
+        let (TAccess paths) = a
+        let mangledTextOfCompPath (CompPath(scoref,path)) = getNameOfScopeRef scoref + "/" + textOfPath (List.map fst path)  
+        String.concat ";" (List.map mangledTextOfCompPath paths)
 
 and [<Class>] FSharpAccessibilityRights(thisCcu: CcuThunk, ad:AccessorDomain) =
     member internal __.ThisCcu = thisCcu
@@ -862,7 +883,7 @@ and FSharpGenericParameter(cenv, v:Typar) =
     member __.IsCompilerGenerated = v.IsCompilerGenerated
        
     member __.IsMeasure = (v.Kind = TyparKind.Measure)
-    member __.XmlDoc = v.Data.typar_xmldoc |> makeXmlDoc
+    member __.XmlDoc = v.typar_xmldoc |> makeXmlDoc
     member __.IsSolveAtCompileTime = (v.StaticReq = TyparStaticReq.HeadTypeStaticReq)
     member __.Attributes = 
          // INCOMPLETENESS: If the type parameter comes from .NET then the .NET metadata for the type parameter

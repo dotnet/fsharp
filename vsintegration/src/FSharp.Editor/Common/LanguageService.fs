@@ -9,7 +9,6 @@ open System.Collections.Concurrent
 open System.Collections.Generic
 open System.ComponentModel.Composition
 open System.Runtime.InteropServices
-open System.Linq
 open System.IO
 
 open Microsoft.FSharp.Compiler.CompileOps
@@ -17,19 +16,15 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Diagnostics
-open Microsoft.CodeAnalysis.Editor.Options
 open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.Options
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Editor
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.TextManager.Interop
-open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.LanguageServices.Implementation.LanguageService
 open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
-open Microsoft.VisualStudio.LanguageServices.Implementation.DebuggerIntelliSense
 open Microsoft.VisualStudio.LanguageServices.Implementation.TaskList
-open Microsoft.VisualStudio.LanguageServices.Implementation
 open Microsoft.VisualStudio.LanguageServices.ProjectSystem
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
@@ -102,7 +97,7 @@ type internal ProjectInfoManager
     member this.ComputeSingleFileOptions (fileName, loadTime, fileContents, workspace: Workspace) = async {
         let extraProjectInfo = Some(box workspace)
         if SourceFile.MustBeSingleFileProject(fileName) then 
-            let! options = checkerProvider.Checker.GetProjectOptionsFromScript(fileName, fileContents, loadTime, [| |], ?extraProjectInfo=extraProjectInfo) 
+            let! options, _diagnostics = checkerProvider.Checker.GetProjectOptionsFromScript(fileName, fileContents, loadTime, [| |], ?extraProjectInfo=extraProjectInfo) 
             let site = ProjectSitesAndFiles.CreateProjectSiteForScript(fileName, options)
             return ProjectSitesAndFiles.GetProjectOptionsForProjectSite(site,fileName,options.ExtraProjectInfo,serviceProvider)
         else
@@ -217,7 +212,8 @@ type
                              CodeSense = true,
                              DefaultToNonHotURLs = true,
                              EnableCommenting = true,
-                             CodeSenseDelay = 100)>]
+                             CodeSenseDelay = 100,
+                             ShowDropDownOptions = true)>]
     internal FSharpPackage() =
     inherit AbstractPackage<FSharpPackage, FSharpLanguageService>()
     
@@ -345,11 +341,15 @@ and
             projectContext.AddSourceFile(fileName)
             
             let project = projectContext :?> AbstractProject
-            let document = project.GetCurrentDocumentFromPath(fileName)
+            let documentId = project.GetCurrentDocumentFromPath(fileName).Id
 
-            document.Closing.Add(fun _ ->  
-                projectInfoManager.RemoveSingleFileProject(projectId)
-                project.Disconnect())
+            let rec onDocumentClosed = EventHandler<DocumentEventArgs> (fun _ args ->
+                if args.Document.Id = documentId then
+                    projectInfoManager.RemoveSingleFileProject(projectId)
+                    project.Disconnect()
+                    workspace.DocumentClosed.RemoveHandler(onDocumentClosed)
+            )
+            workspace.DocumentClosed.AddHandler(onDocumentClosed)
 
     override this.ContentTypeName = FSharpCommonConstants.FSharpContentTypeName
     override this.LanguageName = FSharpCommonConstants.FSharpLanguageName
@@ -363,7 +363,6 @@ and
     override this.SetupNewTextView(textView) =
         base.SetupNewTextView(textView)
         let workspace = package.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
-        workspace.Options <- workspace.Options.WithChangedOption(NavigationBarOptions.ShowNavigationBar, FSharpCommonConstants.FSharpLanguageName, true)
         let textViewAdapter = package.ComponentModel.GetService<IVsEditorAdaptersFactoryService>()
         
         workspace.Options <- workspace.Options.WithChangedOption(Completion.CompletionOptions.BlockForCompletionItems, FSharpCommonConstants.FSharpLanguageName, false)

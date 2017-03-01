@@ -3,21 +3,14 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Collections.Generic
 open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
-open System.Runtime.CompilerServices
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Text
 
-open Microsoft.VisualStudio.FSharp.LanguageService
-open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons
-
 
 module internal SymbolHelpers =
     let getSymbolUsesInSolution (symbol: FSharpSymbol, declLoc: SymbolDeclarationLocation, checkFileResults: FSharpCheckFileResults,

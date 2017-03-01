@@ -4,7 +4,7 @@ import jobs.generation.JobReport;
 def project = GithubProject
 def branch = GithubBranchName
 
-def osList = ['Windows_NT', 'Ubuntu14.04' ] //, 'OSX', 'CentOS7.1'
+def osList = ['Windows_NT', 'Ubuntu14.04']  //, 'OSX'], 'CentOS7.1'
 
 def static getBuildJobName(def configuration, def os) {
     return configuration.toLowerCase() + '_' + os.toLowerCase()

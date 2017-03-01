@@ -5,16 +5,15 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.Composition
 open System.Collections.Immutable
-open System.Threading
 open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Editor
-open Microsoft.CodeAnalysis.Editor.Implementation.ReferenceHighlighting
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
 
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open Microsoft.FSharp.Compiler.Range
 
 type internal FSharpHighlightSpan =
     { IsDefinition: bool
@@ -56,7 +55,7 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
         asyncMaybe {
             let textLine = sourceText.Lines.GetLineFromPosition(position)
             let textLinePos = sourceText.Lines.GetLinePosition(position)
-            let fcsTextLineNumber = textLinePos.Line + 1
+            let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let! symbol = CommonHelpers.getSymbolAtPosition(documentKey, sourceText, position, filePath, defines, SymbolLookupKind.Greedy)
             let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true)
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland)
@@ -77,11 +76,14 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
                 let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
                 let! spans = FSharpDocumentHighlightsService.GetDocumentHighlights(checkerProvider.Checker, document.Id, sourceText, document.FilePath, 
                                                                                    position, defines, options, textVersion.GetHashCode())
-                let highlightSpans = spans |> Array.map (fun span ->
-                   let kind = if span.IsDefinition then HighlightSpanKind.Definition else HighlightSpanKind.Reference
-                   HighlightSpan(span.TextSpan, kind))
+                let highlightSpans = 
+                    spans 
+                    |> Array.map (fun span ->
+                        let kind = if span.IsDefinition then HighlightSpanKind.Definition else HighlightSpanKind.Reference
+                        HighlightSpan(span.TextSpan, kind))
+                    |> Seq.toImmutableArray
                 
-                return [| DocumentHighlights(document, highlightSpans.ToImmutableArray()) |].ToImmutableArray()
+                return ImmutableArray.Create(DocumentHighlights(document, highlightSpans))
             }   
             |> Async.map (Option.defaultValue ImmutableArray<DocumentHighlights>.Empty)
             |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)

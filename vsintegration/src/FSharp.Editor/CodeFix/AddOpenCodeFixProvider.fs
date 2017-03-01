@@ -4,20 +4,18 @@ namespace rec Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Composition
-open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
 
 open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 
 [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module internal InsertContext =
@@ -85,7 +83,7 @@ type internal FSharpAddOpenCodeFixProvider
         assemblyContentProvider: AssemblyContentProvider
     ) =
     inherit CodeFixProvider()
-    let fixableDiagnosticIds = ["FS0039"]
+    let fixableDiagnosticIds = ["FS0039"; "FS0043"]
 
     let checker = checkerProvider.Checker
     let fixUnderscoresInMenuText (text: string) = text.Replace("_", "__")
@@ -131,18 +129,19 @@ type internal FSharpAddOpenCodeFixProvider
                 openNamespaceFix context ctx name ns multipleNames)
             |> Seq.toList
             
-        let quilifySymbolFixes =
+        let qualifiedSymbolFixes =
             candidates
+            |> Seq.filter (fun (entity,_) -> not(entity.LastIdent.StartsWith "op_")) // Don't include qualified operator names. The resultant codefix won't compile because it won't be an infix operator anymore.
             |> Seq.map (fun (entity, _) -> entity.FullRelativeName, entity.Qualifier)
             |> Seq.distinct
             |> Seq.sort
             |> Seq.map (qualifySymbolFix context)
             |> Seq.toList
 
-        for codeFix in openNamespaceFixes @ quilifySymbolFixes do
-            context.RegisterCodeFix(codeFix, (context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id)).ToImmutableArray())
+        for codeFix in openNamespaceFixes @ qualifiedSymbolFixes do
+            context.RegisterCodeFix(codeFix, context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id) |> Seq.toImmutableArray)
 
-    override __.FixableDiagnosticIds = fixableDiagnosticIds.ToImmutableArray()
+    override __.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
     override __.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
@@ -181,9 +180,9 @@ type internal FSharpAddOpenCodeFixProvider
                     longIdent
                     |> List.map (fun ident ->
                         { Ident = ident.idText
-                          Resolved = not (ident.idRange = unresolvedIdentRange) })
+                          Resolved = not (ident.idRange = unresolvedIdentRange)})
                     |> List.toArray)
-            
+                                                    
             let createEntity = ParsedInput.tryFindInsertionContext unresolvedIdentRange.StartLine parsedInput maybeUnresolvedIdents
             return entities |> Seq.map createEntity |> Seq.concat |> Seq.toList |> getSuggestions context
         } 

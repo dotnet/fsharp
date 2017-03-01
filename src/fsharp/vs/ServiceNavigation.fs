@@ -426,8 +426,8 @@ module NavigationImpl =
 
     let getNavigation (parsedInput: ParsedInput) =
         match parsedInput with
-        | ParsedInput.SigFile(ParsedSigFileInput(_, _, _, _, modules)) -> getNavigationFromSigFile modules
-        | ParsedInput.ImplFile(ParsedImplFileInput(_, _, _, _, _, modules, _)) -> getNavigationFromImplFile modules
+        | ParsedInput.SigFile(ParsedSigFileInput(modules = modules)) -> getNavigationFromSigFile modules
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = modules)) -> getNavigationFromImplFile modules
 
     let empty = FSharpNavigationItems([||])
 
@@ -612,7 +612,7 @@ module NavigateTo =
             | SynMemberSig.Inherit _
             | SynMemberSig.Interface _ -> ()
     
-        and walkImplFileInpit (ParsedImplFileInput(fileName, _, _, _, _, moduleOrNamespaceList, _)) = 
+        and walkImplFileInpit (ParsedImplFileInput(fileName = fileName; modules = moduleOrNamespaceList)) = 
             let container = { Type = ContainerType.File; Name = fileName }
             for item in moduleOrNamespaceList do
                 walkSynModuleOrNamespace item container
