@@ -54,22 +54,14 @@ let getSign32 (s:string) (p:byref<int>) l =
     else 1 
 
 let isOXB c = 
-#if FX_NO_TO_LOWER_INVARIANT
-    let c = Char.ToLower c
-#else
     let c = Char.ToLowerInvariant c
-#endif
     c = 'x' || c = 'o' || c = 'b'
 
 let is0OXB (s:string) p l = 
     l >= p + 2 && s.[p] = '0' && isOXB s.[p+1]
 let get0OXB (s:string) (p:byref<int>)  l = 
     if is0OXB s p l
-#if FX_NO_TO_LOWER_INVARIANT
-    then let r = Char.ToLower s.[p+1] in p <- p + 2; r
-#else
     then let r = Char.ToLowerInvariant s.[p+1] in p <- p + 2; r
-#endif
     else 'd' 
 
 let formatError() = raise (new System.FormatException(SR.GetString("bad format string")))
