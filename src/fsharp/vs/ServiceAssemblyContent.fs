@@ -971,25 +971,32 @@ module internal ParsedInput =
             |> Seq.sortBy (fun (m, _, _) -> -m.Length)
             |> Seq.toList
 
+        let isFSharpCore (entity: Idents) =
+            entity.Length >= 3 &&
+            entity.[0] = "Microsoft" &&
+            entity.[1] = "FSharp" &&
+            entity.[2] = "Core"
+
         // CLEANUP: does this realy need to be a partial application with pre-computation?  Can this be made more expicit?
         fun (requiresQualifiedAccessParent: Idents option, autoOpenParent: Idents option, entityNamespace: Idents option, entity: Idents) ->
-
-            // We ignore all diagnostics during this operation
-            //
-            // Based on an initial review, no diagnostics should be generated.  However the code should be checked more closely.
-            use _ignoreAllDiagnostics = new ErrorScope()  
-            match res with
-            | None -> [||]
-            | Some (scope, ns, pos) -> 
-                Entity.tryCreate(ns, scope.Idents, partiallyQualifiedName, requiresQualifiedAccessParent, autoOpenParent, entityNamespace, entity)
-                |> Array.map (fun e ->
-                    e,
-                    match modules |> List.filter (fun (m, _, _) -> entity |> Array.startsWith m ) with
-                    | [] -> { ScopeKind = scope.Kind; Pos = pos }
-                    | (_, endLine, startCol) :: _ ->
-                        //printfn "All modules: %A, Win module: %A" modules m
-                        let scopeKind =
-                            match scope.Kind with
-                            | TopModule -> NestedModule
-                            | x -> x
-                        { ScopeKind = scopeKind; Pos = Point.make (endLine + 1) startCol })
+            if isFSharpCore entity then [||]
+            else
+                // We ignore all diagnostics during this operation
+                //
+                // Based on an initial review, no diagnostics should be generated.  However the code should be checked more closely.
+                use _ignoreAllDiagnostics = new ErrorScope()  
+                match res with
+                | None -> [||]
+                | Some (scope, ns, pos) -> 
+                    Entity.tryCreate(ns, scope.Idents, partiallyQualifiedName, requiresQualifiedAccessParent, autoOpenParent, entityNamespace, entity)
+                    |> Array.map (fun e ->
+                        e,
+                        match modules |> List.filter (fun (m, _, _) -> entity |> Array.startsWith m ) with
+                        | [] -> { ScopeKind = scope.Kind; Pos = pos }
+                        | (_, endLine, startCol) :: _ ->
+                            //printfn "All modules: %A, Win module: %A" modules m
+                            let scopeKind =
+                                match scope.Kind with
+                                | TopModule -> NestedModule
+                                | x -> x
+                            { ScopeKind = scopeKind; Pos = Point.make (endLine + 1) startCol })
