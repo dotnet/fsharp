@@ -418,5 +418,8 @@ type ResolveCompletionTargets =
 /// Resolve a (possibly incomplete) long identifier to a set of possible resolutions, qualified by type.
 val ResolveCompletionsInType       : NameResolver -> NameResolutionEnv -> ResolveCompletionTargets -> Range.range -> AccessorDomain -> bool -> TType -> Item list
 
+/// Returns `true` if an `Item` is resolvable being prefixed with given `idents`.
+val IsItemResolvable : NameResolver -> NameResolutionEnv -> scope : range -> AccessorDomain -> idents : string list -> Item -> bool
 
-val IsItemResolvable : NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> string list -> Item -> bool
+/// Returns all namespaces and modules opened in given `scope`. 
+val GetVisibleNamespacesAndModulesInScope : NameResolver -> NameResolutionEnv -> scope : range -> AccessorDomain -> ModuleOrNamespaceRef list

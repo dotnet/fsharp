@@ -8,8 +8,6 @@ namespace Microsoft.FSharp.Compiler.SourceCodeServices
 open System
 open System.IO
 open System.Text
-open System.Threading
-open System.Runtime
 open System.Collections.Generic
 open System.Collections.Concurrent
 
@@ -26,7 +24,6 @@ open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.ReferenceResolver
 open Microsoft.FSharp.Compiler.PrettyNaming
 open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
@@ -34,7 +31,6 @@ open Microsoft.FSharp.Compiler.Lexhelp
 open Microsoft.FSharp.Compiler.Layout
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.Tastops.DebugPrint
 open Microsoft.FSharp.Compiler.TcGlobals 
 open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.InfoReader
@@ -1141,7 +1137,6 @@ type TypeCheckInfo
             else 
                 items
 
-
     member x.IsRelativeNameResolvable(cursorPos: pos, plid: string list, item: Item) : bool =
     /// Determines if a long ident is resolvable at a specific point.
         ErrorScope.Protect
@@ -1510,6 +1505,10 @@ type TypeCheckInfo
             | _ -> None)
         |> Seq.toArray
         |> Array.append (sSymbolUses.GetFormatSpecifierLocations() |> Array.map (fun m -> m, SemanticClassificationType.Printf))
+
+    member x.GetVisibleNamespacesAndModulesAtPosition(cursorPos: pos) : ModuleOrNamespaceRef list =
+        let (nenv, ad), scope = GetBestEnvForPos cursorPos
+        NameResolution.GetVisibleNamespacesAndModulesInScope ncenv nenv scope ad
 
     member x.ScopeResolutions = sResolutions
     member x.ScopeSymbolUses = sSymbolUses
@@ -2160,6 +2159,11 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
         reactorOp "IsRelativeNameResolvable" true (fun ctok scope -> 
             DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
             scope.IsRelativeNameResolvable(pos, plid, item))
+
+    member info.GetVisibleNamespacesAndModulesAtPosition(pos: pos) : Async<string[] list> = 
+        reactorOp "GetVisibleNamespacesAndModulesAtPoint" [] (fun ctok scope -> 
+            DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent ctok
+            scope.GetVisibleNamespacesAndModulesAtPosition(pos) |> List.map (fun x -> x.ToString().Split '.'))
     
 //----------------------------------------------------------------------------
 // BackgroundCompiler

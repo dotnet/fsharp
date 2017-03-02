@@ -304,6 +304,10 @@ type internal FSharpCheckFileResults =
 
     /// Determines if a long ident is resolvable at a specific point.
     member IsRelativeNameResolvable: cursorPos : pos * plid : string list * item: Item -> Async<bool>
+
+    /// Returns all namespaces and modules opened at given `pos`. 
+    member GetVisibleNamespacesAndModulesAtPosition : pos -> Async<string[] list>
+
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]
 type internal FSharpCheckProjectResults =

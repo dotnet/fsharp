@@ -156,32 +156,36 @@ type internal FSharpAddOpenCodeFixProvider
                 let endPos = Pos.fromZ endLinePos.Line endLinePos.Character
                 Range.mkRange context.Document.FilePath startPos endPos
             
+            let! longIdent = ParsedInput.getLongIdentAt parsedInput unresolvedIdentRange.End
             let isAttribute = UntypedParseImpl.GetEntityKind(unresolvedIdentRange.Start, parsedInput) = Some EntityKind.Attribute
+            let! visibleNamespacesAndModules = checkResults.GetVisibleNamespacesAndModulesAtPosition unresolvedIdentRange.End |> liftAsync
             
             let entities =
                 assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies checkResults
-                |> List.collect (fun e -> 
-                     [ yield e.TopRequireQualifiedAccessParent, e.AutoOpenParent, e.Namespace, e.CleanedIdents
-                       if isAttribute then
-                           let lastIdent = e.CleanedIdents.[e.CleanedIdents.Length - 1]
-                           if lastIdent.EndsWith "Attribute" && e.Kind LookupType.Precise = EntityKind.Attribute then
-                               yield 
-                                   e.TopRequireQualifiedAccessParent, 
-                                   e.AutoOpenParent,
-                                   e.Namespace,
-                                   e.CleanedIdents 
-                                   |> Array.replace (e.CleanedIdents.Length - 1) (lastIdent.Substring(0, lastIdent.Length - 9)) ])
+                |> List.collect (fun e ->
+                     [ let resolvable =
+                           visibleNamespacesAndModules |> List.exists (fun nsIdents -> 
+                               e.CleanedIdents.Length > 1 &&
+                               e.CleanedIdents.[..e.CleanedIdents.Length - 2] |> Array.areEqual nsIdents)
+                       
+                       if not resolvable then
+                           yield e.TopRequireQualifiedAccessParent, e.AutoOpenParent, e.Namespace, e.CleanedIdents
+                           if isAttribute then
+                               let lastIdent = e.CleanedIdents.[e.CleanedIdents.Length - 1]
+                               if lastIdent.EndsWith "Attribute" && e.Kind LookupType.Precise = EntityKind.Attribute then
+                                   yield 
+                                       e.TopRequireQualifiedAccessParent, 
+                                       e.AutoOpenParent,
+                                       e.Namespace,
+                                       e.CleanedIdents 
+                                       |> Array.replace (e.CleanedIdents.Length - 1) (lastIdent.Substring(0, lastIdent.Length - 9)) ])
 
-            let longIdent = ParsedInput.getLongIdentAt parsedInput unresolvedIdentRange.End
-
-            let! maybeUnresolvedIdents =
-                longIdent 
-                |> Option.map (fun longIdent ->
-                    longIdent
-                    |> List.map (fun ident ->
-                        { Ident = ident.idText
-                          Resolved = not (ident.idRange = unresolvedIdentRange)})
-                    |> List.toArray)
+            let maybeUnresolvedIdents =
+                longIdent
+                |> List.map (fun ident ->
+                    { Ident = ident.idText
+                      Resolved = not (ident.idRange = unresolvedIdentRange)})
+                |> List.toArray
                                                     
             let createEntity = ParsedInput.tryFindInsertionContext unresolvedIdentRange.StartLine parsedInput maybeUnresolvedIdents
             return entities |> Seq.map createEntity |> Seq.concat |> Seq.toList |> getSuggestions context

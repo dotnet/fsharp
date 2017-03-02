@@ -3930,6 +3930,20 @@ and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: 
             | _-> []
         modsOrNs @ qualifiedFields
 
+let GetVisibleNamespacesAndModulesInScope (ncenv: NameResolver) (nenv: NameResolutionEnv) (scope: range) ad =
+    let ilTyconNames =
+        nenv.TyconsByAccessNames(FullyQualifiedFlag.OpenQualified).Values
+        |> List.choose (fun tyconRef -> if tyconRef.IsILTycon then Some tyconRef.DisplayName else None)
+        |> Set.ofList
+
+    nenv.ModulesAndNamespaces FullyQualifiedFlag.OpenQualified
+    |> NameMultiMap.range 
+    |> List.filter (fun x -> 
+         let demangledName = x.DemangledModuleOrNamespaceName
+         IsInterestingModuleName demangledName && notFakeContainerModule ilTyconNames demangledName
+         && EntityRefContainsSomethingAccessible ncenv scope ad  x
+         && not (IsTyconUnseen ad ncenv.g ncenv.amap scope x))
+
 (* Determining if an `Item` is resolvable at point by given `plid`. It's optimized by being lazy and early returning according to the given `Item` *)
 
 let private ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics typ (item: Item) : seq<Item> =
