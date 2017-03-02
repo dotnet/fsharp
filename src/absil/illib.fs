@@ -185,7 +185,7 @@ module Array =
     /// Optimized arrays equality. ~100x faster than `array1 = array2` on strings.
     /// ~2x faster for floats
     /// ~0.8x slower for ints
-    let areEqual (xs: 'T []) (ys: 'T []) =
+    let inline areEqual (xs: 'T []) (ys: 'T []) =
         match xs, ys with
         | null, null -> true
         | [||], [||] -> true
@@ -212,7 +212,7 @@ module Array =
 
     /// check if subArray is found in the wholeArray starting 
     /// at the provided index
-    let isSubArray (subArray: 'T []) (wholeArray:'T []) index = 
+    let inline isSubArray (subArray: 'T []) (wholeArray:'T []) index = 
         if isNull subArray || isNull wholeArray then false
         elif subArray.Length = 0 then true
         elif subArray.Length > wholeArray.Length then false
