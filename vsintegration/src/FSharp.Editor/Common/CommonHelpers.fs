@@ -443,22 +443,12 @@ module internal Extensions =
             let parseAndCheckFile =
                 async {
                     let! parseResults, checkFileAnswer = this.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText, options)
-                    let res =
+                    return
                         match checkFileAnswer with
                         | FSharpCheckFileAnswer.Aborted -> 
                             None
                         | FSharpCheckFileAnswer.Succeeded(checkFileResults) ->
                             Some (parseResults, checkFileResults)
-                    
-                    Logging.Logging.logInfof 
-                                      "ParseAndCheckDocument (\nfile = %s,\ntextVersionHash = %d,\nsourceText = %s,\nallowStaleResults = %b,\nerrors = %+A)"
-                                      (Path.GetFileName filePath) 
-                                      textVersionHash 
-                                      sourceText 
-                                      allowStaleResults 
-                                      (res |> Option.map (fun (_, r) -> r.Errors))
-                    
-                    return res
                 }
 
             let tryGetFreshResultsWithTimeout() : Async<CheckResults> =
