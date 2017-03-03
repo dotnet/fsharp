@@ -94,7 +94,7 @@ type internal FSharpCompletionProvider
             let! declarations =
                 checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLineColumn, caretLine.ToString(), qualifyingNames, partialName) |> liftAsync
             
-            let results = List<CompletionItem>()
+            let results = List<Completion.CompletionItem>()
             
             for declarationItem in declarations.Items do
                 let glyph = CommonRoslynHelpers.FSharpGlyphToRoslynGlyph declarationItem.GlyphMajor
@@ -109,6 +109,11 @@ type internal FSharpCompletionProvider
                     if declarationItem.Name <> declarationItem.NameInCode then
                         completionItem.AddProperty(NameInCodePropName, declarationItem.NameInCode)
                     else completionItem
+
+                let completionItem =
+                    match declarationItem.CompletionPriority with
+                    | CompletionItemPriority.High -> completionItem.WithSortText("aaaaa" + name)
+                    | _ -> completionItem
 
                 declarationItemsCache.Remove(completionItem.DisplayText) |> ignore // clear out stale entries if they exist
                 declarationItemsCache.Add(completionItem.DisplayText, declarationItem)
@@ -126,7 +131,7 @@ type internal FSharpCompletionProvider
 
         FSharpCompletionProvider.ShouldTriggerCompletionAux(sourceText, caretPosition, trigger.Kind, getInfo)
     
-    override this.ProvideCompletionsAsync(context: Microsoft.CodeAnalysis.Completion.CompletionContext) =
+    override this.ProvideCompletionsAsync(context: Completion.CompletionContext) =
         asyncMaybe {
             let document = context.Document
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
@@ -139,7 +144,7 @@ type internal FSharpCompletionProvider
         } |> Async.Ignore |> CommonRoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
         
 
-    override this.GetDescriptionAsync(_: Document, completionItem: CompletionItem, cancellationToken: CancellationToken): Task<CompletionDescription> =
+    override this.GetDescriptionAsync(_: Document, completionItem: Completion.CompletionItem, cancellationToken: CancellationToken): Task<CompletionDescription> =
         async {
             let exists, declarationItem = declarationItemsCache.TryGetValue(completionItem.DisplayText)
             if exists then
