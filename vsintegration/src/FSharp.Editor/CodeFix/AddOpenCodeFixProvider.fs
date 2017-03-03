@@ -145,10 +145,22 @@ type internal FSharpAddOpenCodeFixProvider
 
     override __.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
-            let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject context.Document
+            let document = context.Document
+            let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
-            let! _, parsedInput, checkResults = checker.ParseAndCheckDocument(context.Document, options, allowStaleResults = true, sourceText = sourceText)
+            let! _, parsedInput, checkResults = checker.ParseAndCheckDocument(document, options, allowStaleResults = true, sourceText = sourceText)
+            let line = sourceText.Lines.GetLineFromPosition(context.Span.End)
+            let linePos = sourceText.Lines.GetLinePosition(context.Span.End)
+            let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
             
+            let! symbol = 
+                asyncMaybe {
+                    let! lexerSymbol = CommonHelpers.getSymbolAtPosition(document.Id, sourceText, context.Span.End, document.FilePath, defines, SymbolLookupKind.Greedy)
+                    return! checkResults.GetSymbolUseAtLocation(Line.fromZ linePos.Line, lexerSymbol.Ident.idRange.EndColumn, line.ToString(), lexerSymbol.FullIsland)
+                } |> liftAsync
+
+            do! Option.guard symbol.IsNone
+
             let unresolvedIdentRange =
                 let startLinePos = sourceText.Lines.GetLinePosition context.Span.Start
                 let startPos = Pos.fromZ startLinePos.Line startLinePos.Character
@@ -163,14 +175,14 @@ type internal FSharpAddOpenCodeFixProvider
                 |> List.collect (fun e -> 
                      [ yield e.TopRequireQualifiedAccessParent, e.AutoOpenParent, e.Namespace, e.CleanedIdents
                        if isAttribute then
-                           let lastIdent = e.CleanedIdents.[e.CleanedIdents.Length - 1]
-                           if lastIdent.EndsWith "Attribute" && e.Kind LookupType.Precise = EntityKind.Attribute then
-                               yield 
-                                   e.TopRequireQualifiedAccessParent, 
-                                   e.AutoOpenParent,
-                                   e.Namespace,
-                                   e.CleanedIdents 
-                                   |> Array.replace (e.CleanedIdents.Length - 1) (lastIdent.Substring(0, lastIdent.Length - 9)) ])
+                          let lastIdent = e.CleanedIdents.[e.CleanedIdents.Length - 1]
+                          if lastIdent.EndsWith "Attribute" && e.Kind LookupType.Precise = EntityKind.Attribute then
+                              yield 
+                                  e.TopRequireQualifiedAccessParent, 
+                                  e.AutoOpenParent,
+                                  e.Namespace,
+                                  e.CleanedIdents 
+                                  |> Array.replace (e.CleanedIdents.Length - 1) (lastIdent.Substring(0, lastIdent.Length - 9)) ])
 
             let longIdent = ParsedInput.getLongIdentAt parsedInput unresolvedIdentRange.End
 
