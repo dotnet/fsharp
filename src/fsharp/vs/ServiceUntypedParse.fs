@@ -1135,6 +1135,10 @@ module UntypedParseImpl =
                                 Some (CompletionContext.ParameterList args)
                             | _ -> 
                                 defaultTraverse expr
+                        
+                        | NewObjectOrMethodCall args ->
+                            Some (CompletionContext.ParameterList args)
+
                         | _ -> defaultTraverse expr
 
                     member this.VisitRecordField(path, copyOpt, field) = 
