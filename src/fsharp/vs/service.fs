@@ -445,7 +445,7 @@ type FSharpFindDeclResult =
 [<RequireQualifiedAccess>]
 [<NoEquality; NoComparison>]
 type internal NameResResult = 
-    | Members of (Item list * Item list * DisplayEnv * range)
+    | Members of (Item list * DisplayEnv * range)
     | Cancel of DisplayEnv * range
     | Empty
     | TypecheckStaleAndTextChanged
@@ -461,7 +461,7 @@ type GetPreciseCompletionListFromExprTypingsResult =
     | NoneBecauseTypecheckIsStaleAndTextChanged
     | NoneBecauseThereWereTypeErrors
     | None
-    | Some of (Item list * Item list * DisplayEnv * range)
+    | Some of (Item list * DisplayEnv * range)
 
 type Names = string list 
 
@@ -625,7 +625,7 @@ type TypeCheckInfo
             if hasTextChangedSinceLastTypecheck(textSnapshotInfo, m) then
                 NameResResult.TypecheckStaleAndTextChanged // typecheck is stale, wait for second-chance IntelliSense to bring up right result
             else
-                f([], items, denv, m) 
+                f(items, denv, m) 
         else NameResResult.Empty
 
     let GetCapturedNameResolutions endOfNamesPos resolveOverloads =
@@ -816,7 +816,7 @@ type TypeCheckInfo
                 let items = items |> RemoveDuplicateItems g
                 let items = items |> RemoveExplicitlySuppressed g
                 let items = items |> FilterItemsForCtors filterCtors 
-                GetPreciseCompletionListFromExprTypingsResult.Some([],items,denv,m)
+                GetPreciseCompletionListFromExprTypingsResult.Some(items,denv,m)
             | None -> 
                 if textChanged then GetPreciseCompletionListFromExprTypingsResult.NoneBecauseTypecheckIsStaleAndTextChanged
                 else GetPreciseCompletionListFromExprTypingsResult.None
@@ -829,7 +829,7 @@ type TypeCheckInfo
         let items = items |> RemoveExplicitlySuppressed g
         let items = items |> FilterItemsForCtors filterCtors 
          
-        [], items, nenv.DisplayEnv, m
+        items, nenv.DisplayEnv, m 
 
     /// Find record fields in the best naming environment.
     let GetClassOrRecordFieldsEnvironmentLookupResolutions(cursorPos, plid, (_residue : string option)) = 
@@ -869,26 +869,25 @@ type TypeCheckInfo
     /// This also checks that there are some remaining results 
     /// exactMatchResidueOpt = Some _ -- means that we are looking for exact matches
     let FilterRelevantItemsBy (exactMatchResidueOpt : _ option) check (items, denv, m) =
+            
         // can throw if type is in located in non-resolved CCU: i.e. bigint if reference to System.Numerics is absent
         let safeCheck item = try check item with _ -> false
                                                 
         // Are we looking for items with precisely the given name?
         if not (isNil items) && exactMatchResidueOpt.IsSome then
-            items |> FilterDeclItemsByResidue exactMatchResidueOpt.Value |> List.filter safeCheck 
+            let items = items |> FilterDeclItemsByResidue exactMatchResidueOpt.Value |> List.filter safeCheck 
+            if not (isNil items) then Some(items, denv, m) else None        
         else 
             // When (items = []) we must returns Some([],..) and not None
             // because this value is used if we want to stop further processing (e.g. let x.$ = ...)
-            items |> List.filter safeCheck
+            let items = items |> List.filter safeCheck
+            Some(items, denv, m) 
 
     /// Post-filter items to make sure they have precisely the right name
     /// This also checks that there are some remaining results 
     let (|FilterRelevantItems|_|) exactMatchResidueOpt orig =
-        let pItems, items, denv, m = orig
-        let pItems = FilterRelevantItemsBy exactMatchResidueOpt (fun _ -> true) (pItems, denv, m)
-        let items = FilterRelevantItemsBy exactMatchResidueOpt (fun _ -> true) (items, denv, m)
-        match pItems, items with
-        | [], [] -> None
-        | _ -> Some (pItems, items, denv, m)
+        FilterRelevantItemsBy exactMatchResidueOpt (fun _ -> true) orig
+
     
     /// Find the first non-whitespace postion in a line prior to the given character
     let FindFirstNonWhitespacePosition (lineStr: string) i = 
@@ -949,7 +948,7 @@ type TypeCheckInfo
                 
             match nameResItems with            
             | NameResResult.TypecheckStaleAndTextChanged -> None // second-chance intellisense will try again
-            | NameResResult.Cancel(denv,m) -> Some([], [], denv, m)
+            | NameResResult.Cancel(denv,m) -> Some([], denv, m)
             | NameResResult.Members(FilterRelevantItems exactMatchResidueOpt items) -> 
                 // lookup based on name resolution results successful
                 Some items
@@ -1008,15 +1007,15 @@ type TypeCheckInfo
                 match nameResItems, envItems, qualItems with            
             
                 // First, use unfiltered name resolution items, if they're not empty
-                | NameResResult.Members(pItems, items, denv, m), _, _ when not (isNil pItems) || not (isNil items) -> 
+                | NameResResult.Members(items, denv, m), _, _ when not (isNil items) -> 
                     // lookup based on name resolution results successful
-                    Some(pItems, items, denv, m)
+                    Some(items, denv, m)                
             
                 // If we have nonempty items from environment that were resolved from a type, then use them... 
                 // (that's better than the next case - here we'd return 'int' as a type)
-                | _, FilterRelevantItems exactMatchResidueOpt (pItems, items, denv, m), _ when not (isNil pItems) || not (isNil items) ->
+                | _, FilterRelevantItems exactMatchResidueOpt (items, denv, m), _ when not (isNil items) ->
                     // lookup based on name and environment successful
-                    Some(pItems, items, denv, m)
+                    Some(items, denv, m)
 
                 // Try again with the qualItems
                 | _, _, GetPreciseCompletionListFromExprTypingsResult.Some(FilterRelevantItems exactMatchResidueOpt items) ->
@@ -1035,9 +1034,6 @@ type TypeCheckInfo
             | atDot when lineStr.[atDot] = '.' -> atDot + 1
             | atStart when atStart = 0 -> 0
             | otherwise -> otherwise - 1
-
-        let ast = parseResultsOpt |> Option.map (fun x -> x.ParseTree) |> sprintf "%+A"
-        let _x = ast
 
         // Look for a "special" completion context
         match UntypedParseImpl.TryGetCompletionContext(mkPos line colAtEndOfNamesAndResidue, parseResultsOpt, lineStr) with
@@ -1091,7 +1087,7 @@ type TypeCheckInfo
                     |> List.filter (fun m -> not (fields.Contains m.DisplayName))
                 match declaredItems with
                 | None -> Some (items, denv, m)
-                | Some (declItems, declaredDisplayEnv, declaredRange) -> Some (filtered, declItems, declaredDisplayEnv, declaredRange)
+                | Some (declItems, declaredDisplayEnv, declaredRange) -> Some (filtered @ declItems, declaredDisplayEnv, declaredRange)
             | _ -> declaredItems
 
         | Some(CompletionContext.AttributeApplication) ->
