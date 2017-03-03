@@ -385,13 +385,15 @@ and GenTyAppAux amap m tyenv repr tinst =
         let ty = IL.instILType ilTypeInst ty
         ty
     | CompiledTypeRepr.ILAsmNamed (tref, boxity, ilTypeOpt) -> 
-        match ilTypeOpt with 
-        | None -> 
-            let ilTypeInst = GenTypeArgsAux amap m tyenv tinst
-            mkILTy boxity (mkILTySpec (tref,ilTypeInst))
-        | Some ilType -> 
-            ilType // monomorphic types include a cached ilType to avoid reallocation of an ILType node
+        GenILTyAppAux amap m tyenv (tref, boxity, ilTypeOpt) tinst
 
+and GenILTyAppAux amap m tyenv (tref, boxity, ilTypeOpt) tinst =
+    match ilTypeOpt with 
+    | None -> 
+        let ilTypeInst = GenTypeArgsAux amap m tyenv tinst
+        mkILTy boxity (mkILTySpec (tref,ilTypeInst))
+    | Some ilType -> 
+        ilType // monomorphic types include a cached ilType to avoid reallocation of an ILType node
 
 and GenNamedTyAppAux (amap:ImportMap) m tyenv ptrsOK tcref tinst = 
     let g = amap.g
@@ -420,6 +422,12 @@ and GenTypeAux amap m (tyenv: TypeReprEnv) voidOK ptrsOK ty =
     | TType_app (tcref, tinst) -> GenNamedTyAppAux amap m tyenv ptrsOK tcref tinst
     | TType_tuple (tupInfo, args) -> GenTypeAux amap m tyenv VoidNotOK ptrsOK (mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) args)
     | TType_fun (dty, returnTy) -> EraseClosures.mkILFuncTy g.ilxPubCloEnv  (GenTypeArgAux amap m tyenv dty) (GenTypeArgAux amap m tyenv returnTy)
+    | TType_anon (_ccu, _tupInfo, _nms, tinst) -> 
+        // TEMP: use mutable struct tuples
+        GenTypeAux amap m tyenv voidOK ptrsOK (TType_tuple (tupInfoStruct, tinst))
+        //let tref = GenILTypeRefForAnonRecdType (ccu, nms)
+        //let boxity = if (evalTupInfoIsStruct tupInfo) then ILBoxity.AsValue else ILBoxity.AsObject
+        //GenILTyAppAux amap m tyenv (tref, boxity, None) tinst 
 
     | TType_ucase (ucref, args) -> 
         let cuspec,idx = GenUnionCaseSpec amap m tyenv ucref args 
@@ -1828,6 +1836,8 @@ let rec GenExpr (cenv:cenv) (cgbuf:CodeGenBuffer) eenv sp expr sequel =
           GenAllocUnionCase cenv cgbuf eenv (c,tyargs,args,m) sequel
       | TOp.Recd(isCtor,tycon),_,_ -> 
           GenAllocRecd cenv cgbuf eenv isCtor (tycon,tyargs,args,m) sequel
+      | TOp.AnonRecord(ccu,tupInfo,nms),_,_ -> 
+          GenAllocAnonRecord cenv cgbuf eenv (ccu,tupInfo,nms,tyargs,args,m) sequel
       | TOp.TupleFieldGet (tupInfo,n),[e],_ -> 
           GenGetTupleField cenv cgbuf eenv (tupInfo,e,tyargs,n,m) sequel
       | TOp.ExnFieldGet(ecref,n),[e],_ -> 
@@ -2147,6 +2157,9 @@ and GenAllocRecd cenv cgbuf eenv ctorInfo (tcref,argtys,args,m) sequel =
              (mkILCtorMethSpecForTy (typ,relevantFields |> List.map (fun f -> GenType cenv.amap m tyenvinner f.FormalType) )))
         GenSequel cenv eenv.cloc cgbuf sequel
 
+and GenAllocAnonRecord cenv cgbuf eenv (_ccu,_tupInfo,_nms,tyargs,args,m) sequel =
+    // TEMP: use mutable struct tuples
+    GenAllocTuple cenv cgbuf eenv (tupInfoStruct,args,tyargs,m) sequel
 
 and GenNewArraySimple cenv cgbuf eenv (elems,elemTy,m) sequel =
     let ilElemTy = GenType cenv.amap m eenv.tyenv elemTy

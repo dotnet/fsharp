@@ -213,6 +213,7 @@ let rec occursCheck g un ty =
     match stripTyEqns g ty with 
     | TType_ucase(_,l)
     | TType_app (_,l) 
+    | TType_anon(_,_,_,l)
     | TType_tuple (_,l) -> List.exists (occursCheck g un) l
     | TType_fun (d,r) -> occursCheck g un d || occursCheck g un r
     | TType_var r   ->  typarEq un r 
@@ -549,6 +550,7 @@ let rec SimplifyMeasuresInType g resultFirst ((generalizable, generalized) as pa
     match stripTyparEqns ty with 
     | TType_ucase(_,l)
     | TType_app (_,l) 
+    | TType_anon (_,_,_,l)
     | TType_tuple (_,l) -> SimplifyMeasuresInTypes g param l
 
     | TType_fun (d,r) -> if resultFirst then SimplifyMeasuresInTypes g param [r;d] else SimplifyMeasuresInTypes g param [d;r]        
@@ -586,6 +588,7 @@ let rec GetMeasureVarGcdInType v ty =
     match stripTyparEqns ty with 
     | TType_ucase(_,l)
     | TType_app (_,l) 
+    | TType_anon (_,_,_,l)
     | TType_tuple (_,l) -> GetMeasureVarGcdInTypes v l
 
     | TType_fun (d,r) -> GcdRational (GetMeasureVarGcdInType v d) (GetMeasureVarGcdInType v r)
@@ -789,6 +792,11 @@ and SolveTypEqualsTyp (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace
     | TType_tuple (tupInfo1,l1)      ,TType_tuple (tupInfo2,l2)      -> 
         if evalTupInfoIsStruct tupInfo1 <> evalTupInfoIsStruct tupInfo2 then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m,m2)) else
         SolveTypEqualsTypEqns csenv ndeep m2 trace None l1 l2
+    | TType_anon (ccu1,tupInfo1,nms1,l1),TType_anon (ccu2,tupInfo2,nms2,l2)      -> 
+        if evalTupInfoIsStruct tupInfo1 <> evalTupInfoIsStruct tupInfo2 then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m,m2)) else
+        if not (ccuEq ccu1 ccu2) then ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecordCcuMismatch(ccu1.AssemblyName, ccu2.AssemblyName), csenv.m,m2)) else
+        if not (nms1 = nms2) then ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecordFieldNameMismatch(sprintf "%A" nms1, sprintf "%A" nms2), csenv.m,m2)) else
+        SolveTypEqualsTypEqns csenv ndeep m2 trace None l1 l2
     | TType_fun (d1,r1)   ,TType_fun (d2,r2)   -> SolveFunTypEqn csenv ndeep m2 trace None d1 d2 r1 r2
     | TType_measure ms1   ,TType_measure ms2   -> UnifyMeasures csenv trace ms1 ms2
     | TType_forall(tps1,rty1), TType_forall(tps2,rty2) -> 
@@ -850,6 +858,11 @@ and SolveTypSubsumesTyp (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
     | TType_var _ , _ ->  SolveTypEqualsTypKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ty1 ty2
     | TType_tuple (tupInfo1,l1)      ,TType_tuple (tupInfo2,l2)      -> 
         if evalTupInfoIsStruct tupInfo1 <> evalTupInfoIsStruct tupInfo2 then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m,m2)) else
+        SolveTypEqualsTypEqns csenv ndeep m2 trace cxsln l1 l2 (* nb. can unify since no variance *)
+    | TType_anon (ccu1,tupInfo1,nms1,l1), TType_anon (ccu2,tupInfo2,nms2,l2)      -> 
+        if evalTupInfoIsStruct tupInfo1 <> evalTupInfoIsStruct tupInfo2 then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m,m2)) else
+        if not (ccuEq ccu1 ccu2) then ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecordCcuMismatch(ccu1.AssemblyName, ccu2.AssemblyName), csenv.m,m2)) else
+        if not (nms1 = nms2) then ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecordFieldNameMismatch(sprintf "%A" nms1, sprintf "%A" nms2), csenv.m,m2)) else
         SolveTypEqualsTypEqns csenv ndeep m2 trace cxsln l1 l2 (* nb. can unify since no variance *)
     | TType_fun (d1,r1)  ,TType_fun (d2,r2)   -> SolveFunTypEqn csenv ndeep m2 trace cxsln d1 d2 r1 r2 (* nb. can unify since no variance *)
     | TType_measure ms1, TType_measure ms2    -> UnifyMeasures csenv trace ms1 ms2

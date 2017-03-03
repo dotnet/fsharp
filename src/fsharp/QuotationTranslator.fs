@@ -419,11 +419,17 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             let tyR = ConvType cenv env m (mkAnyTupledTy cenv.g tupInfo tyargs)
             let argsR = ConvExprs cenv env args
             QP.mkTuple(tyR,argsR) // TODO: propagate to quotations
+
         | TOp.Recd (_,tcref),_,_  -> 
             let rgtypR = ConvTyconRef cenv tcref m
             let tyargsR = ConvTypes cenv env m tyargs
             let argsR = ConvExprs cenv env args
             QP.mkRecdMk(rgtypR,tyargsR,argsR)
+
+        | TOp.AnonRecord (_ccu,_tupInfo,_nms),_,_  ->  
+            // TEMP: use mutable struct tuples
+            ConvExprCore cenv env (Expr.Op(TOp.Tuple tupInfoStruct,tyargs,args,m)) 
+
         | TOp.UnionCaseFieldGet (ucref,n),tyargs,[e] -> 
             let tyargsR = ConvTypes cenv env m tyargs
             let tcR,s = ConvUnionCaseRef cenv ucref m
@@ -796,6 +802,10 @@ and ConvType cenv env m typ =
 
     | TType_fun(a,b)          -> QP.mkFunTy(ConvType cenv env m a,ConvType cenv env m b)
     | TType_tuple(tupInfo,l)  -> ConvType cenv env m (mkCompiledTupleTy cenv.g (evalTupInfoIsStruct tupInfo) l)
+    | TType_anon(_ccu,_,_nms,tinst) -> 
+        // TEMP: use mutable struct tuples
+        ConvType cenv env m (TType_tuple (tupInfoStruct, tinst))
+        // QP.mkILNamedTy(ConvILTypeRefUnadjusted cenv m (GenILTypeRefForAnonRecdType (ccu, nms)), ConvTypes cenv env m tys)
     | TType_var(tp)           -> QP.mkVarTy(ConvTyparRef cenv env m tp)
     | TType_forall(_spec,_ty)   -> wfail(Error(FSComp.SR.crefNoInnerGenericsInQuotations(),m))
     | _ -> wfail(Error (FSComp.SR.crefQuotationsCantContainThisType(),m))

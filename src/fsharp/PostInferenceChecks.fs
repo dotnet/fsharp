@@ -242,7 +242,8 @@ let rec CheckTypeDeep ((visitTyp,visitTyconRefOpt,visitAppTyOpt,visitTraitSoluti
         | Some visitAppTy -> visitAppTy (tcref, tinst)
         | None -> ()
 
-    | TType_ucase (_,tinst) -> CheckTypesDeep f g env tinst
+    | TType_ucase (_,typs)
+    | TType_anon (_,_,_,typs) 
     | TType_tuple (_,typs) -> CheckTypesDeep f g env typs
     | TType_fun (s,t) -> CheckTypeDeep f g env s; CheckTypeDeep f g env t
     | TType_var tp -> 

@@ -177,6 +177,9 @@ module internal AstTraversal =
                 | SynExpr.Tuple(synExprList, _, _range) 
                 | SynExpr.StructTuple(synExprList, _, _range) -> synExprList |> List.map (fun x -> dive x x.Range traverseSynExpr) |> pick expr
                 | SynExpr.ArrayOrList(_, synExprList, _range) -> synExprList |> List.map (fun x -> dive x x.Range traverseSynExpr) |> pick expr
+                
+                // TODO: is this the right traversal
+                | SynExpr.AnonRecord(synExprList, _range) -> synExprList |> List.map snd |> List.map (fun x -> dive x x.Range traverseSynExpr) |> pick expr
                 | SynExpr.Record(inheritOpt,copyOpt,fields, _range) -> 
                     [
                         let diveIntoSeparator offsideColumn scPosOpt copyOpt  = 

@@ -216,7 +216,10 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
                       match copyExprOpt with
                       | Some (e,_) -> yield! walkExpr true e
                       | None -> ()
-                      yield! walkExprs (List.map (fun (_, v, _) -> v) fs |> List.choose id)
+                      yield! walkExprs (fs |> List.choose p23)
+
+                  | SynExpr.AnonRecord (fs,_) ->
+                      yield! walkExprs (fs |> List.map snd)
 
                   | SynExpr.ObjExpr (_,_,bs,is,_,_) -> 
                       yield! walkBinds bs  

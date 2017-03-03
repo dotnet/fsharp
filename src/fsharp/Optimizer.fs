@@ -1258,6 +1258,7 @@ and BindingHasEffect g bind = bind.Expr |> ExprHasEffect g
 and OpHasEffect g op = 
     match op with 
     | TOp.Tuple _ -> false
+    | TOp.AnonRecord _ -> false
     | TOp.Recd (ctor,tcref) -> 
         match ctor with 
         | RecdExprIsObjInit -> true
@@ -1858,6 +1859,10 @@ and OptimizeExprOpFallback cenv env (op,tyargs,args',m) arginfos valu =
           let isStruct = evalTupInfoIsStruct tupInfo 
           if isStruct then 0,valu 
           else 1,MakeValueInfoForTuple (Array.ofList argValues)
+      | TOp.AnonRecord (_, tupInfo, _)        -> 
+          let isStruct = evalTupInfoIsStruct tupInfo 
+          if isStruct then 0,valu 
+          else 1,valu
       | TOp.ValFieldGet _     
       | TOp.TupleFieldGet _    
       | TOp.UnionCaseFieldGet _   

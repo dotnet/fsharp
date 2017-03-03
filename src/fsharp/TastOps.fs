@@ -166,6 +166,12 @@ let rec remapTypeAux (tyenv : Remap) (ty:TType) =
       | Some tcr' ->  TType_ucase (UCRef(tcr',n),remapTypesAux tyenv tinst)
       | None -> TType_ucase (UCRef(tcr,n),remapTypesAux tyenv tinst)
 
+  | TType_anon (ccu, tupInfo, nms, l)  as ty -> 
+      let tupInfo' = remapTupInfoAux tyenv tupInfo
+      let l' = remapTypesAux tyenv l
+      if tupInfo === tupInfo' && l === l' then ty else  
+      TType_anon (ccu, tupInfo', nms, l')
+
   | TType_tuple (tupInfo, l)  as ty -> 
       let tupInfo' = remapTupInfoAux tyenv tupInfo
       let l' = remapTypesAux tyenv l
@@ -666,6 +672,7 @@ let rec stripTyEqnsAndErase eraseFuncAndTuple (g:TcGlobals) ty =
             ty
     | TType_fun(a,b) when eraseFuncAndTuple -> TType_app(g.fastFunc_tcr,[ a; b]) 
     | TType_tuple(tupInfo,l) when eraseFuncAndTuple -> mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) l
+    //| TType_anon(ccu,tupInfo,nms,l) -> TType_anon(ccu,tupInfo,nms,l) // TODO consider this
     | ty -> ty
 
 let stripTyEqnsAndMeasureEqns g ty =
@@ -866,6 +873,8 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
         typesAEquivAux erasureFlag g aenv b1 b2
     | TType_tuple (s1,l1),TType_tuple (s2,l2) -> 
         structnessAEquiv s1 s2 && typesAEquivAux erasureFlag g aenv l1 l2
+    | TType_anon (ccu1,s1,nms1,l1),TType_anon (ccu2,s2,nms2,l2) -> 
+        ccuEq ccu1 ccu2 && structnessAEquiv s1 s2 && nms1 = nms2 && typesAEquivAux erasureFlag g aenv l1 l2
     | TType_fun (dtys1,rty1),TType_fun (dtys2,rty2) -> 
         typeAEquivAux erasureFlag g aenv dtys1 dtys2 && typeAEquivAux erasureFlag g aenv rty1 rty2
     | TType_measure m1, TType_measure m2 -> 
@@ -920,7 +929,7 @@ let rec getErasedTypes g ty =
         getErasedTypes g rty
     | TType_var tp -> 
         if tp.IsErased then [ty] else []
-    | TType_app (_,b) | TType_ucase(_,b) | TType_tuple (_, b) ->
+    | TType_app (_,b) | TType_ucase(_,b) | TType_anon (_, _, _, b) | TType_tuple (_, b) ->
         List.foldBack (fun ty tys -> getErasedTypes g ty @ tys) b []
     | TType_fun (dty,rty) -> 
         getErasedTypes g dty @ getErasedTypes g rty
@@ -1905,6 +1914,7 @@ and accFreeTyparRef opts (tp:Typar) acc =
 and accFreeInType opts ty acc  = 
     match stripTyparEqns ty with 
     | TType_tuple (tupInfo,l) -> accFreeInTypes opts l (accFreeInTupInfo opts tupInfo acc)
+    | TType_anon (_ccu,tupInfo,_nms,l) -> accFreeInTypes opts l (accFreeInTupInfo opts tupInfo acc)
     | TType_app (tc,tinst) -> 
         let acc = accFreeTycon opts tc acc
         match tinst with 
@@ -1994,6 +2004,7 @@ and accFreeTyparRefLeftToRight g cxFlag thruFlag acc (tp:Typar) =
 and accFreeInTypeLeftToRight g cxFlag thruFlag acc ty  = 
     if verbose then dprintf "--> accFreeInTypeLeftToRight \n"
     match (if thruFlag then stripTyEqns g ty else stripTyparEqns ty) with 
+    | TType_anon (_, tupInfo, _, l)  
     | TType_tuple (tupInfo, l) -> 
         let acc = accFreeInTupInfoLeftToRight g cxFlag thruFlag acc tupInfo 
         accFreeInTypesLeftToRight g cxFlag thruFlag acc l 
@@ -2331,8 +2342,9 @@ module SimplifyTypes =
         let z = f z typ
         match typ with
         | TType_forall (_,body) -> foldTypeButNotConstraints f z body
-        | TType_app (_,tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_ucase (_,tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
+        | TType_app (_,typs) 
+        | TType_ucase (_,typs) 
+        | TType_anon (_,_,_,typs) 
         | TType_tuple (_,typs) -> List.fold (foldTypeButNotConstraints f) z typs
         | TType_fun (s,t)         -> foldTypeButNotConstraints f (foldTypeButNotConstraints f z s) t
         | TType_var _            -> z
@@ -2921,6 +2933,7 @@ module DebugPrint = begin
     let squareAngleL x = LeftL.leftBracketAngle ^^ x ^^ RightL.rightBracketAngle
     let angleL x = sepL Literals.leftAngle ^^ x ^^ rightL Literals.rightAngle
     let braceL x = leftL Literals.leftBrace  ^^ x ^^ rightL Literals.rightBrace
+    let braceBarL x = leftL Literals.leftBraceBar  ^^ x ^^ rightL Literals.rightBraceBar
     let boolL = function true -> WordL.keywordTrue | false -> WordL.keywordFalse
 
     let intL (n:int)          = wordL (tagNumericLiteral (string n ))
@@ -2982,6 +2995,7 @@ module DebugPrint = begin
            let prefix = tcref.IsPrefixDisplay
            let tcL = layoutTyconRef tcref
            auxTyparsL env tcL prefix tinst
+        | TType_anon (_,_,nms,typs) -> braceBarL (sepListL (wordL (tagText ";")) (List.map2 (fun nm ty -> wordL (tagField nm) --- auxTypeAtomL env ty) nms typs))
         | TType_tuple (_tupInfo,typs) -> sepListL (wordL (tagText "*")) (List.map (auxTypeAtomL env) typs) |> wrap
         | TType_fun (f,x)           -> ((auxTypeAtomL env f ^^ wordL (tagText "->")) --- auxTypeL env x) |> wrap
         | TType_var typar           -> auxTyparWrapL env isAtomic typar 
@@ -4248,6 +4262,7 @@ and accFreeInOp opts op acc =
     | TOp.TupleFieldGet _ -> acc
 
     | TOp.Tuple tupInfo -> accFreeTyvars opts accFreeInTupInfo tupInfo acc
+    | TOp.AnonRecord (_,tupInfo, _) -> accFreeTyvars opts accFreeInTupInfo tupInfo acc
     
     | TOp.UnionCaseTagGet tr -> accUsedRecdOrUnionTyconRepr opts tr.Deref acc
     
@@ -5196,6 +5211,9 @@ let mkAnyTupledTy (g:TcGlobals) tupInfo tys =
     | [h] -> h
     | _ -> TType_tuple(tupInfo, tys)
 
+let mkAnyAnonRecordTy (_g:TcGlobals) ccu tupInfo nms tys = 
+    TType_anon(ccu,tupInfo, nms, tys)
+
 let mkRefTupledTy g tys = mkAnyTupledTy g tupInfoRef tys
 let mkRefTupledVarsTy g vs = mkRefTupledTy g (typesOfVals vs)
 
@@ -5236,6 +5254,7 @@ let rec tyOfExpr g e =
         | TOp.UInt16s _ -> mkArrayType g g.uint16_ty
         | TOp.TupleFieldGet(_,i) -> List.item i tinst
         | TOp.Tuple tupInfo -> mkAnyTupledTy g tupInfo tinst
+        | TOp.AnonRecord (ccu,tupInfo,nms) -> mkAnyAnonRecordTy g ccu tupInfo nms tinst
         | (TOp.For _ | TOp.While _) -> g.unit_ty
         | TOp.Array -> (match tinst with [ty] -> mkArrayType g ty | _ -> failwith "bad TOp.Array node")
         | (TOp.TryCatch _ | TOp.TryFinally _) -> (match tinst with [ty] ->  ty | _ -> failwith "bad TOp_try node")
@@ -5943,6 +5962,9 @@ let mkAnyTupled g m tupInfo es tys =
 let mkRefTupled g m es tys = mkAnyTupled g m tupInfoRef es tys
 let mkRefTupledNoTypes g m args = mkRefTupled g m args (List.map (tyOfExpr g) args)
 let mkRefTupledVars g m vs = mkRefTupled g m (List.map (exprForVal m) vs) (typesOfVals vs)
+
+let mkAnyAnonRecord (_g:TcGlobals) m ccu tupInfo nms es tys = Expr.Op (TOp.AnonRecord (ccu,tupInfo, nms),tys,es,m)
+
 
 //--------------------------------------------------------------------------
 // Permute expressions
@@ -6985,6 +7007,13 @@ let rec typeEnc g (gtpsType,gtpsMethod) ty =
                     textOfPath (List.map DemangleGenericTypeName path)
                 | _ -> assert(false); failwith "impossible"
             tyName + tyargsEnc g (gtpsType,gtpsMethod) tinst
+
+    | TType_anon (_ccu,_tupInfo,_nms,tinst) -> 
+        // TEMP: use mutable struct tuples
+        typeEnc g (gtpsType,gtpsMethod) (TType_tuple (tupInfoStruct, tinst))        
+        //let tref = GenILTypeRefForAnonRecdType (ccu, nms) 
+        //sprintf "%s%s" tref.FullName (tyargsEnc g (gtpsType,gtpsMethod) tinst)
+
     | TType_tuple (tupInfo, typs) -> 
         if evalTupInfoIsStruct tupInfo then 
             sprintf "System.ValueTuple%s"(tyargsEnc g (gtpsType,gtpsMethod) typs)

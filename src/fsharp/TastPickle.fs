@@ -1566,8 +1566,13 @@ let _ = fill_p_typ (fun ty st ->
     | TType_var r                         -> p_byte 4 st; p_tpref r st
     | TType_forall (tps,r)                -> p_byte 5 st; p_tup2 p_typar_specs p_typ (tps,r) st
     | TType_measure unt                   -> p_byte 6 st; p_measure_expr unt st
-    | TType_ucase (uc,tinst)              -> p_byte 7 st; p_tup2 p_ucref p_typs (uc,tinst) st)
-
+    | TType_ucase (uc,tinst)              -> p_byte 7 st; p_tup2 p_ucref p_typs (uc,tinst) st
+    | TType_anon (ccu,tupInfo,nms,l) -> 
+         p_byte (if evalTupInfoIsStruct tupInfo then 9 else 10) st; 
+         p_ccuref ccu st; 
+         p_list p_string nms st; 
+         p_typs l st
+  )
 #endif
 
 let _ = fill_u_typ (fun st ->
@@ -1582,6 +1587,8 @@ let _ = fill_u_typ (fun st ->
     | 6 -> let unt = u_measure_expr st                     in TType_measure unt
     | 7 -> let uc = u_ucref st in let tinst = u_typs st    in TType_ucase (uc,tinst)
     | 8 -> let l = u_typs st                               in TType_tuple (tupInfoStruct, l)
+    | 9 -> let ccu = u_ccuref st in let nms = u_list u_string st in let l = u_typs st  in TType_anon (ccu,tupInfoStruct,nms,l)
+    | 10 -> let ccu = u_ccuref st in let nms = u_list u_string st in let l = u_typs st  in TType_anon (ccu,tupInfoRef,nms,l)
     | _ -> ufailwith st "u_typ")
   
 
@@ -2319,6 +2326,10 @@ and p_op x st =
     | TOp.UInt16s arr               -> p_byte 26 st; p_array p_uint16 arr st
     | TOp.Reraise                   -> p_byte 27 st
     | TOp.UnionCaseFieldGetAddr (a,b)     -> p_byte 28 st; p_tup2 p_ucref p_int (a,b) st
+    (* 29: TOp.Tuple when evalTupInfoIsStruct tupInfo = true *)
+    (* 30: TOp.TupleFieldGet  when evalTupInfoIsStruct tupInfo = true *)
+
+    | TOp.AnonRecord (ccu,info,nms)   -> p_byte 31 st; p_tup3 p_ccuref p_bool (p_list p_string) (ccu, evalTupInfoIsStruct info, nms) st
        // Note tag byte 29 is taken for struct tuples, see above
        // Note tag byte 30 is taken for struct tuples, see above
     | TOp.Goto _ | TOp.Label _ | TOp.Return -> failwith "unexpected backend construct in pickled TAST"
@@ -2388,6 +2399,8 @@ and u_op st =
     | 29 -> TOp.Tuple tupInfoStruct
     | 30 -> let a = u_int st
             TOp.TupleFieldGet (tupInfoStruct, a) 
+    | 31 -> let (ccu, info, nms) = u_tup3 u_ccuref u_bool (u_list u_string) st 
+            TOp.AnonRecord (ccu, TupInfo.Const info,nms)   
     | _ -> ufailwith st "u_op" 
 
 #if INCLUDE_METADATA_WRITER

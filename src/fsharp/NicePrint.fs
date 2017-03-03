@@ -42,6 +42,7 @@ module internal PrintUtilities =
     let squareAngleL x = LeftL.leftBracketAngle ^^ x ^^ RightL.rightBracketAngle
     let angleL x = sepL Literals.leftAngle ^^ x ^^ rightL Literals.rightAngle
     let braceL x = leftL Literals.leftBrace ^^ x ^^ rightL Literals.rightBrace
+    let braceBarL x = leftL Literals.leftBraceBar ^^ x ^^ rightL Literals.rightBraceBar
 
     let comment str = wordL (tagText (sprintf "(* %s *)" str))
 
@@ -918,6 +919,14 @@ module private PrintTypes =
 
         | TType_ucase (UCRef(tc,_),args) -> 
           layoutTypeAppWithInfoAndPrec denv env (layoutTyconRef denv tc) prec tc.IsPrefixDisplay args 
+
+        // Layout a tuple type 
+        | TType_anon (_ccu,tupInfo,nms,tys)  ->
+            let core = sepListL (wordL (tagPunctuation ";")) (List.map2 (fun nm ty -> wordL (tagField nm) --- layoutTypeWithInfoAndPrec denv env prec ty) nms tys)
+            if evalTupInfoIsStruct tupInfo then 
+                WordL.keywordStruct --- braceBarL core
+            else 
+                braceBarL core
 
         // Layout a tuple type 
         | TType_tuple (tupInfo,t)  ->

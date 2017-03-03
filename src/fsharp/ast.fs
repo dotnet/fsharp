@@ -154,22 +154,26 @@ type LongIdentWithDots =
     /// more freedom about typechecking these expressions.
     /// LongIdent can be empty list - it is used to denote that name of some AST element is absent (i.e. empty type name in inherit)
     | LongIdentWithDots of id:LongIdent * dotms:range list
-    with member this.Range =
-            match this with
-            | LongIdentWithDots([],_) -> failwith "rangeOfLidwd"
-            | LongIdentWithDots([id],[]) -> id.idRange
-            | LongIdentWithDots([id],[m]) -> unionRanges id.idRange m
-            | LongIdentWithDots(h::t,[]) -> unionRanges h.idRange (List.last t).idRange
-            | LongIdentWithDots(h::t,dotms) -> unionRanges h.idRange (List.last t).idRange |> unionRanges (List.last dotms)
-         member this.Lid = match this with LongIdentWithDots(lid,_) -> lid
-         member this.ThereIsAnExtraDotAtTheEnd = match this with LongIdentWithDots(lid,dots) -> lid.Length = dots.Length
-         member this.RangeSansAnyExtraDot =
-            match this with
-            | LongIdentWithDots([],_) -> failwith "rangeOfLidwd"
-            | LongIdentWithDots([id],_) -> id.idRange
-            | LongIdentWithDots(h::t,dotms) ->
-                let nonExtraDots = if dotms.Length = t.Length then dotms else List.take t.Length dotms
-                unionRanges h.idRange (List.last t).idRange |> unionRanges (List.last nonExtraDots)
+
+    member this.Range =
+        match this with
+        | LongIdentWithDots([],_) -> failwith "rangeOfLidwd"
+        | LongIdentWithDots([id],[]) -> id.idRange
+        | LongIdentWithDots([id],[m]) -> unionRanges id.idRange m
+        | LongIdentWithDots(h::t,[]) -> unionRanges h.idRange (List.last t).idRange
+        | LongIdentWithDots(h::t,dotms) -> unionRanges h.idRange (List.last t).idRange |> unionRanges (List.last dotms)
+
+    member this.Lid = match this with LongIdentWithDots(lid,_) -> lid
+
+    member this.ThereIsAnExtraDotAtTheEnd = match this with LongIdentWithDots(lid,dots) -> lid.Length = dots.Length
+
+    member this.RangeSansAnyExtraDot =
+        match this with
+        | LongIdentWithDots([],_) -> failwith "rangeOfLidwd"
+        | LongIdentWithDots([id],_) -> id.idRange
+        | LongIdentWithDots(h::t,dotms) ->
+            let nonExtraDots = if dotms.Length = t.Length then dotms else List.take t.Length dotms
+            unionRanges h.idRange (List.last t).idRange |> unionRanges (List.last nonExtraDots)
 
 //------------------------------------------------------------------------
 //  AST: the grammar of implicitly scoped type parameters
@@ -423,33 +427,48 @@ and
     // the bool is true if / rather than * follows the type
     | Tuple of typeNames:(bool*SynType) list * range:range
 
+    /// F# syntax : type * ... * type
+    // the bool is true if / rather than * follows the type
+    | AnonRecord of typeNames:(Ident * SynType) list * range:range
+
     /// F# syntax : struct (type * ... * type)
     // the bool is true if / rather than * follows the type
     | StructTuple of typeNames:(bool*SynType) list * range:range
 
     /// F# syntax : type[]
     | Array of  int * elementType:SynType * range:range
+
     /// F# syntax : type -> type
     | Fun of  argType:SynType * returnType:SynType * range:range
+
     /// F# syntax : 'Var
     | Var of genericName:SynTypar * range:range
+
     /// F# syntax : _
     | Anon of range:range
+
     /// F# syntax : typ with constraints
     | WithGlobalConstraints of typeName:SynType * constraints:SynTypeConstraint list * range:range
+
     /// F# syntax : #type
     | HashConstraint of SynType * range:range
+
     /// F# syntax : for units of measure e.g. m / s
     | MeasureDivide of dividendType:SynType * divisorType:SynType * range:range
+
     /// F# syntax : for units of measure e.g. m^3, kg^1/2
     | MeasurePower of measureType:SynType * SynRationalConst * range:range
+
     /// F# syntax : 1, "abc" etc, used in parameters to type providers
     /// For the dimensionless units i.e. 1 , and static parameters to provided types
     | StaticConstant of constant:SynConst * range:range
+
     /// F# syntax : const expr, used in static parameters to type providers
     | StaticConstantExpr of expr:SynExpr * range:range
+
     /// F# syntax : ident=1 etc., used in static parameters to type providers
     | StaticConstantNamed of expr:SynType * SynType * range:range
+
     /// Get the syntactic range of source code covered by this construct.
     member x.Range =
         match x with
@@ -458,6 +477,7 @@ and
         | SynType.Tuple (range=m)
         | SynType.StructTuple (range=m)
         | SynType.Array (range=m)
+        | SynType.AnonRecord (range=m)
         | SynType.Fun (range=m)
         | SynType.Var (range=m)
         | SynType.Anon (range=m)
@@ -497,6 +517,9 @@ and
 
     /// F# syntax: e1, ..., eN
     | Tuple of  exprs:SynExpr list * commaRanges:range list * range:range  // "range list" is for interstitial commas, these only matter for parsing/design-time tooling, the typechecker may munge/discard them
+
+    /// F# syntax: {| id1=e1; ...; idN=eN |}
+    | AnonRecord of  recordFields:(Ident * SynExpr) list * range:range
 
     /// F# syntax: struct (e1, ..., eN)
     | StructTuple of  exprs:SynExpr list * commaRanges:range list * range:range  // "range list" is for interstitial commas, these only matter for parsing/design-time tooling, the typechecker may munge/discard them
@@ -720,6 +743,7 @@ and
         | SynExpr.Const (range=m)
         | SynExpr.Typed (range=m)
         | SynExpr.Tuple (range=m)
+        | SynExpr.AnonRecord (range=m)
         | SynExpr.StructTuple (range=m)
         | SynExpr.ArrayOrList (range=m)
         | SynExpr.Record (range=m)
@@ -785,6 +809,7 @@ and
         | SynExpr.Tuple (range=m)
         | SynExpr.StructTuple (range=m)
         | SynExpr.ArrayOrList (range=m)
+        | SynExpr.AnonRecord (range=m)
         | SynExpr.Record (range=m)
         | SynExpr.New (range=m)
         | SynExpr.ObjExpr (range=m)
@@ -837,6 +862,7 @@ and
         | SynExpr.DiscardAfterMissingQualificationAfterDot (expr,_) -> expr.Range
         | SynExpr.Fixed (_,m) -> m
         | SynExpr.Ident id -> id.idRange
+
     /// Attempt to get the range of the first token or initial portion only - this is extremely ad-hoc, just a cheap way to improve a certain 'query custom operation' error range
     member e.RangeOfFirstPortion =
         match e with
@@ -847,6 +873,7 @@ and
         | SynExpr.Tuple (range=m)
         | SynExpr.StructTuple (range=m)
         | SynExpr.ArrayOrList (range=m)
+        | SynExpr.AnonRecord (range=m)
         | SynExpr.Record (range=m)
         | SynExpr.New (range=m)
         | SynExpr.ObjExpr (range=m)
@@ -2332,6 +2359,9 @@ let rec synExprContainsError inpExpr =
           | SynExpr.Tuple (es,_,_)
           | SynExpr.StructTuple (es,_,_) ->
               walkExprs es
+
+          | SynExpr.AnonRecord (flds,_) ->
+              walkExprs (List.map snd flds)
 
           | SynExpr.Record (_,_,fs,_) ->
               let flds = fs |> List.choose (fun (_, v, _) -> v)

@@ -266,6 +266,8 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             let rightBracket = tagPunctuation "]"
             let leftBrace= tagPunctuation "{"
             let rightBrace = tagPunctuation "}"
+            let leftBraceBar = tagPunctuation "{|"
+            let rightBraceBar = tagPunctuation "|}"
             let equals = tagOperator "="
             let arrow = tagPunctuation "->"
             let questionMark = tagPunctuation "?"

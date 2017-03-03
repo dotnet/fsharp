@@ -3483,6 +3483,11 @@ and
     /// Indicates the type is build from a named type and a number of type arguments
     | TType_app of TyconRef * TypeInst
 
+    /// TType_anon
+    ///
+    /// Indicates the type is an anonymous record type whose compiled representation is located in the given assembly
+    | TType_anon of CcuThunk  * TupInfo * string list * TType list
+
     /// TType_tuple(elementTypes).
     ///
     /// Indicates the type is a tuple type. elementTypes must be of length 2 or greater.
@@ -3514,7 +3519,12 @@ and
             (match tupInfo with 
              | TupInfo.Const false -> ""
              | TupInfo.Const true -> "struct ")
-             + String.concat "," (List.map string tinst) + ")"
+             + String.concat "," (List.map string tinst) 
+        | TType_anon (_, tupInfo, nms, tinst) -> 
+            (match tupInfo with 
+             | TupInfo.Const false -> ""
+             | TupInfo.Const true -> "struct ")
+             + "{|" + String.concat "," (List.map2 (fun nm ty -> nm + " " + string ty + ";") nms tinst) + ")" + "|}"
         | TType_fun (d,r) -> "(" + string d + " -> " + string r + ")"
         | TType_ucase (uc,tinst) -> "union case type " + uc.CaseName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
         | TType_var tp -> tp.DisplayName
@@ -4060,6 +4070,9 @@ and
 
     /// An operation representing the creation of a tuple value
     | Tuple of TupInfo 
+
+    /// An operation representing the creation of an anonymous record
+    | AnonRecord of CcuThunk * TupInfo * string list 
 
     /// An operation representing the creation of an array value
     | Array
@@ -5063,3 +5076,7 @@ let FSharpOptimizationDataResourceName = "FSharpOptimizationData"
 let FSharpSignatureDataResourceName = "FSharpSignatureData"
 
 
+// TEMP: use mutable struct tuples
+//let TypeNameForAnonRecdTypes = "<AnonRecordTypes>"
+//let GenILTypeRefForAnonRecdType (ccu: CcuThunk, nms) = 
+//    mkILNestedTyRef(ccu.ILScopeRef,[TypeNameForAnonRecdTypes],String.concat "-" nms)

@@ -1317,7 +1317,6 @@ val isRefTupleExpr : Expr -> bool
 val tryDestRefTupleExpr : Expr -> Exprs
 
 val mkAnyTupledTy : TcGlobals -> TupInfo -> TType list -> TType
-
 val mkAnyTupled : TcGlobals -> range -> TupInfo -> Exprs -> TType list -> Expr 
 val mkRefTupled : TcGlobals -> range -> Exprs -> TType list -> Expr 
 val mkRefTupledNoTypes : TcGlobals -> range -> Exprs -> Expr 
@@ -1325,6 +1324,14 @@ val mkRefTupledTy : TcGlobals -> TType list -> TType
 val mkRefTupledVarsTy : TcGlobals -> Val list -> TType
 val mkRefTupledVars : TcGlobals -> range -> Val list -> Expr 
 val mkMethodTy : TcGlobals -> TType list list -> TType -> TType
+
+
+//-------------------------------------------------------------------------
+// Anonymous records
+//------------------------------------------------------------------------- 
+
+val mkAnyAnonRecordTy : TcGlobals -> CcuThunk -> TupInfo -> string list -> TType list -> TType
+val mkAnyAnonRecord : TcGlobals -> range -> CcuThunk -> TupInfo -> string list -> Exprs -> TType list -> Expr 
 
 //-------------------------------------------------------------------------
 // 

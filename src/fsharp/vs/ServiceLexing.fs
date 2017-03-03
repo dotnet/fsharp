@@ -233,13 +233,13 @@ module internal TokenClassifications =
         | LBRACK_LESS  | LBRACE_LESS
           -> (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.None )
           
-        | LQUOTE _  | LBRACK  | LBRACE | LBRACK_BAR 
+        | LQUOTE _  | LBRACK  | LBRACE | LBRACK_BAR | LBRACE_BAR 
           -> (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.MatchBraces )
           
         | GREATER_RBRACE   | GREATER_RBRACK  | GREATER_BAR_RBRACK
           -> (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.None )
 
-        | RQUOTE _  | RBRACK  | RBRACE | RBRACE_COMING_SOON | RBRACE_IS_HERE | BAR_RBRACK   
+        | RQUOTE _  | RBRACK  | RBRACE | RBRACE_COMING_SOON | RBRACE_IS_HERE | BAR_RBRACK  | BAR_RBRACE
           -> (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.MatchBraces )
               
         | PUBLIC | PRIVATE | INTERNAL | BASE | GLOBAL

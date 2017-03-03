@@ -728,6 +728,15 @@ let UnifyStructTupleType contextInfo cenv denv m ty ps =
 
 /// Optimized unification routine that avoids creating new inference 
 /// variables unnecessarily
+let UnifyAnonRecordType contextInfo cenv denv m ty ccu nms = 
+    let ptys = NewInferenceTypes nms
+    let ty2 = TType_anon (ccu, tupInfoRef, nms, ptys)
+    AddCxTypeEqualsType contextInfo denv cenv.css m ty ty2
+    ptys
+
+
+/// Optimized unification routine that avoids creating new inference 
+/// variables unnecessarily
 let UnifyFunctionTypeUndoIfFailed cenv denv m ty =
     match tryDestFunTy cenv.g ty with
     | None ->
@@ -4566,6 +4575,10 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv:SyntacticUnscoped
             let args',tpenv = TcTypesAsTuple cenv newOk checkCxs occ env tpenv args m
             TType_tuple(tupInfoRef,args'),tpenv
 
+    | SynType.AnonRecord(args,m) ->   
+        let args',tpenv = TcTypesAsTuple cenv newOk checkCxs occ env tpenv (args |> List.map snd |> List.map (fun x -> (false,x))) m
+        TType_anon(cenv.topCcu, tupInfoRef, (args |> List.map (fun (nm, _) -> nm.idText)),  args'),tpenv
+
     | SynType.StructTuple(args,m) ->   
         let args',tpenv = TcTypesAsTuple cenv newOk checkCxs occ env tpenv args m
         TType_tuple(tupInfoStruct,args'),tpenv
@@ -5750,6 +5763,14 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
         let flexes = argtys |> List.map (fun _ -> false)
         let args',tpenv = TcExprs cenv env m tpenv flexes argtys args
         mkAnyTupled cenv.g m tupInfoStruct args' argtys, tpenv
+
+    | SynExpr.AnonRecord (args,m) -> 
+        let ccu = cenv.topCcu 
+        let nms = (args |> List.map (fun (x,_) -> x.idText))
+        let argtys = UnifyAnonRecordType env.eContextInfo cenv env.DisplayEnv m overallTy ccu nms
+        let flexes = argtys |> List.map (fun _ -> true)
+        let args',tpenv = TcExprs cenv env m tpenv flexes argtys (List.map snd args)
+        mkAnyAnonRecord cenv.g m cenv.topCcu tupInfoRef nms args' argtys, tpenv
 
     | SynExpr.ArrayOrList (isArray,args,m) -> 
         CallExprHasTypeSink cenv.tcSink (m,env.NameEnv,overallTy, env.DisplayEnv,env.eAccessRights)
@@ -15220,6 +15241,7 @@ module EstablishTypeDefinitionCores =
 
             let rec accInAbbrevType ty acc  = 
                 match stripTyparEqns ty with 
+                | TType_anon (_,_,_,l) 
                 | TType_tuple (_,l) -> accInAbbrevTypes l acc
                 | TType_ucase (UCRef(tc,_),tinst) 
                 | TType_app (tc,tinst) -> 
