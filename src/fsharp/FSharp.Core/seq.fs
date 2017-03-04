@@ -600,13 +600,6 @@ namespace Microsoft.FSharp.Collections
         let exactlyOne (source : seq<_>) =
             source |> toComposer |> Composer.exactlyOne
 
-                      member this.OnComplete _ = 
-                        if this.Value._1 then
-                            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-                        elif this.Value._3 then
-                            invalidArg "source" (SR.GetString(SR.inputSequenceTooLong)) })
-            |> fun one -> one.Value._2
-
         [<CompiledName("Reverse")>]
         let rev source =
             source |> toComposer |> Composer.rev |> Upcast.enumerable
