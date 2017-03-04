@@ -3774,24 +3774,30 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
                 [])
         // Look for values called 'id' that accept the dot-notation 
         let values, typ, isItemVal = 
-            (if nenv.eUnqualifiedItems.ContainsKey(id) then 
-                     // v.lookup : member of a value
-              let v = nenv.eUnqualifiedItems.[id]
-              match v with 
-              | Item.Value x -> 
-                  let typ = x.Type
-                  let typ = if x.BaseOrThisInfo = CtorThisVal && isRefCellTy g typ then destRefCellTy g typ else typ
-                  (ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest typ), Some typ, true
-              | _ -> [], None, false
-             else [], None, false)
+            (match nenv.eUnqualifiedItems |> Map.tryFind id with
+               // v.lookup : member of a value
+             | Some v ->
+                 match v with 
+                 | Item.Value x -> 
+                     let typ = x.Type
+                     let typ = if x.BaseOrThisInfo = CtorThisVal && isRefCellTy g typ then destRefCellTy g typ else typ
+                     (ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest typ), Some typ, true
+                 | _ -> [], None, false
+             | None -> [], None, false)
 
-        let staticSometingInType = 
-            [ if not isItemVal then 
-                // type.lookup : lookup a static something in a type 
-                for tcref in LookupTypeNameInEnvNoArity OpenQualified id nenv do
+        let typ, staticSometingInType = 
+            if isItemVal then typ, []
+            else
+                LookupTypeNameInEnvNoArity OpenQualified id nenv
+                |> List.fold (fun (resTyp, acc) tcref ->
+                    // type.lookup : lookup a static something in a type 
                     let tcref = ResolveNestedTypeThroughAbbreviation ncenv tcref m
                     let typ = FreshenTycon ncenv m tcref
-                    yield! ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad true rest typ ]
+                    let resTyp =
+                        match resTyp with
+                        | Some _ -> resTyp
+                        | None -> Some typ
+                    resTyp, ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad true rest typ @ acc) (typ, [])
         
         namespaces @ values @ staticSometingInType, typ
 
