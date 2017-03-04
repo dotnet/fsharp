@@ -112,7 +112,8 @@ type CompletionItemPriority =
 
 type CompletionItem =
     { Item: Item
-      Priority: CompletionItemPriority }
+      Priority: CompletionItemPriority
+      Type: TType option }
 
 [<AutoOpen>]
 module internal ItemDescriptionsImpl = 
@@ -606,6 +607,14 @@ module internal ItemDescriptionsImpl =
           member x.Equals(Wrap item1, Wrap item2) = itemComparer.Equals(Wrap item1.Item, Wrap item2.Item)
           member x.GetHashCode (Wrap item) = itemComparer.GetHashCode(Wrap item.Item) }
 
+    let ItemWithTypeDisplayPartialEquality g = 
+      let itemComparer = ItemDisplayPartialEquality g
+
+      { new IPartialEqualityComparer<WrapType<Item * _>> with
+          member x.InEqualityRelation (Wrap (item, _)) = itemComparer.InEqualityRelation (Wrap item)
+          member x.Equals(Wrap (item1, _), Wrap (item2, _)) = itemComparer.Equals(Wrap item1, Wrap item2)
+          member x.GetHashCode (Wrap (item, _)) = itemComparer.GetHashCode(Wrap item) }
+
     // Remove items containing the same module references
     let RemoveDuplicateModuleRefs modrefs  = 
         modrefs |> partialDistinctBy 
@@ -619,46 +628,42 @@ module internal ItemDescriptionsImpl =
         items |> partialDistinctBy (ItemDisplayPartialEquality g) 
 
     /// Remove all duplicate items
+    let RemoveDuplicateItemsWithType g (items: (Item * TType option) list) = 
+        items |> partialDistinctBy (ItemWithTypeDisplayPartialEquality g) 
+
+    /// Remove all duplicate items
     let RemoveDuplicateCompletionItems g items = 
         items |> partialDistinctBy (CompletionItemDisplayPartialEquality g) 
 
+    let IsExplicitlySuppressed (g: TcGlobals) (item: Item) = 
+      // This may explore assemblies that are not in the reference set.
+      // In this case just assume the item is not suppressed.
+      protectAssemblyExploration true (fun () -> 
+          match item with 
+          | Item.Types(it, [ty]) -> 
+              g.suppressed_types 
+              |> List.exists (fun supp -> 
+                   if isAppTy g ty then 
+                       // check if they are the same logical type (after removing all abbreviations)
+                       let tcr1 = tcrefOfAppTy g ty
+                       let tcr2 = tcrefOfAppTy g (generalizedTyconRef supp) 
+                       tyconRefEq g tcr1 tcr2 && 
+                       // check the display name is precisely the one we're suppressing
+                       it = supp.DisplayName
+                   else false)
+          | _ -> false)
+
     /// Filter types that are explicitly suppressed from the IntelliSense (such as uppercase "FSharpList", "Option", etc.)
     let RemoveExplicitlySuppressed (g: TcGlobals) (items: Item list) = 
-      items |> List.filter (fun item ->
-        // This may explore assemblies that are not in the reference set.
-        // In this case just assume the item is not suppressed.
-        protectAssemblyExploration true (fun () -> 
-         match item with 
-         | Item.Types(it, [ty]) -> 
-             g.suppressed_types |> List.forall (fun supp -> 
-                if isAppTy g ty then 
-                  // check if they are the same logical type (after removing all abbreviations)
-                  let tcr1 = tcrefOfAppTy g ty
-                  let tcr2 = tcrefOfAppTy g (generalizedTyconRef supp) 
-                  not(tyconRefEq g tcr1 tcr2 && 
-                      // check the display name is precisely the one we're suppressing
-                      it = supp.DisplayName)
-                else true ) 
-         | _ -> true ))
+      items |> List.filter (fun item -> not (IsExplicitlySuppressed g item))
 
     /// Filter types that are explicitly suppressed from the IntelliSense (such as uppercase "FSharpList", "Option", etc.)
     let RemoveExplicitlySuppressedCompletionItems (g: TcGlobals) (items: CompletionItem list) = 
-      items |> List.filter (fun item ->
-        // This may explore assemblies that are not in the reference set.
-        // In this case just assume the item is not suppressed.
-        protectAssemblyExploration true (fun () -> 
-         match item.Item with 
-         | Item.Types(it, [ty]) -> 
-             g.suppressed_types |> List.forall (fun supp -> 
-                if isAppTy g ty then 
-                  // check if they are the same logical type (after removing all abbreviations)
-                  let tcr1 = tcrefOfAppTy g ty
-                  let tcr2 = tcrefOfAppTy g (generalizedTyconRef supp) 
-                  not(tyconRefEq g tcr1 tcr2 && 
-                      // check the display name is precisely the one we're suppressing
-                      it = supp.DisplayName)
-                else true ) 
-         | _ -> true ))
+      items |> List.filter (fun item -> not (IsExplicitlySuppressed g item.Item))
+
+    /// Filter types that are explicitly suppressed from the IntelliSense (such as uppercase "FSharpList", "Option", etc.)
+    let RemoveExplicitlySuppressedItemsWithType (g: TcGlobals) (items: (Item * TType option) list) = 
+      items |> List.filter (fun (item, _) -> not (IsExplicitlySuppressed g item))
     
     let SimplerDisplayEnv denv _isDecl = 
         { denv with suppressInlineKeyword=true; 
@@ -1424,6 +1429,16 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                     | Item.DelegateCtor (TType_app(tcref,_)) -> { x with Priority = CompletionItemPriority.Relative (1000 + tcref.TyparsNoRange.Length) }
                     // Put type ctors after types, sorted by #typars. RemoveDuplicateItems will remove DefaultStructCtors if a type is also reported with this name
                     | Item.CtorGroup (_, (cinfo :: _)) -> { x with Priority = CompletionItemPriority.Relative (1000 + 10 * (tcrefOfAppTy g cinfo.EnclosingType).TyparsNoRange.Length) }
+                    | Item.MethodGroup(_, minfo :: _, _) ->
+                        match x.Type with
+                        | Some ty when tyconRefEq g minfo.DeclaringEntityRef (tcrefOfAppTy g ty) ->
+                            { x with Priority = CompletionItemPriority.High }
+                        | _ -> x
+                    | Item.Property(_, pinfo :: _) ->
+                        match x.Type with
+                        | Some ty when tyconRefEq g (tcrefOfAppTy g pinfo.EnclosingType) (tcrefOfAppTy g ty) ->
+                            { x with Priority = CompletionItemPriority.High }
+                        | _ -> x
                     | _ -> x)
             |> List.sortBy (fun x -> x.Priority)
             |> List.fold (fun (prevPrior, acc) x ->

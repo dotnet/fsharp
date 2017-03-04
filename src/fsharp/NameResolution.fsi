@@ -408,7 +408,7 @@ val internal ResolveExprDotLongIdentAndComputeRange : TcResultsSink -> NameResol
 val FakeInstantiationGenerator : range -> Typar list -> TType list
 
 /// Resolve a (possibly incomplete) long identifier to a set of possible resolutions.
-val ResolvePartialLongIdent : NameResolver -> NameResolutionEnv -> (MethInfo -> TType -> bool) -> range -> AccessorDomain -> string list -> bool -> Item list
+val ResolvePartialLongIdent : NameResolver -> NameResolutionEnv -> (MethInfo -> TType -> bool) -> range -> AccessorDomain -> string list -> bool -> Item list * TType option
 
 [<RequireQualifiedAccess>]
 type ResolveCompletionTargets =

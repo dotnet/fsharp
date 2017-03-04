@@ -73,7 +73,8 @@ type internal CompletionItemPriority =
 
 type internal CompletionItem =
     { Item: Item
-      Priority: CompletionItemPriority }
+      Priority: CompletionItemPriority
+      Type: TType option }
 
 [<Sealed>]
 /// Represents a declaration in F# source code, with information attached ready for display by an editor.
@@ -136,9 +137,11 @@ module internal ItemDescriptionsImpl =
     val FormatStructuredReturnTypeOfItem  : InfoReader -> range -> DisplayEnv -> Item -> Layout
     val FormatReturnTypeOfItem  : InfoReader -> range -> DisplayEnv -> Item -> string
     val RemoveDuplicateItems : TcGlobals -> Item list -> Item list
+    val RemoveDuplicateItemsWithType : TcGlobals -> (Item * TType option) list -> (Item * TType option) list
     val RemoveExplicitlySuppressed : TcGlobals -> Item list -> Item list
     val RemoveDuplicateCompletionItems : TcGlobals -> CompletionItem list -> CompletionItem list
     val RemoveExplicitlySuppressedCompletionItems : TcGlobals -> CompletionItem list -> CompletionItem list
+    val RemoveExplicitlySuppressedItemsWithType : TcGlobals -> (Item * TType option) list -> (Item * TType option) list
     val GetF1Keyword : Item -> string option
     val rangeOfItem : TcGlobals -> bool option -> Item -> range option
     val fileNameOfItem : TcGlobals -> string option -> range -> Item -> string
