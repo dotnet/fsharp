@@ -55,4 +55,7 @@ type Fsc = class
              member HighEntropyVA : bool with get,set
              member TargetProfile : string with get,set
              member DotnetFscCompilerPath : string with get,set
+             member SkipCompilerExecution : bool with get,set
+             member ProvideCommandLineArgs : bool with get,set
+             member CommandLineArgs : Microsoft.Build.Framework.ITaskItem [] with get,set
            end
