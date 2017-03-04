@@ -54,6 +54,8 @@ type internal FSharpCompletionProvider
                 | ClassificationTypeNames.NumericLiteral -> false
                 | _ -> true // anything else is a valid classification type
             ))
+
+    static let mruItems = Dictionary<string, int>()
     
     static member ShouldTriggerCompletionAux(sourceText: SourceText, caretPosition: int, trigger: CompletionTriggerKind, getInfo: (unit -> DocumentId * string * string list)) =
         // Skip if we are at the start of a document
@@ -113,18 +115,24 @@ type internal FSharpCompletionProvider
                 let sortText =
                     let prefixLength =
                         match declarationItem.Kind with
-                        | CompletionItemKind.Field -> 10
-                        | CompletionItemKind.Property -> 8
+                        | CompletionItemKind.Property -> 10
+                        | CompletionItemKind.Field -> 8
                         | CompletionItemKind.Method -> 6
                         | CompletionItemKind.Event -> 4
                         | CompletionItemKind.Argument -> 2
                         | CompletionItemKind.Other -> 0
                     
-                    let prefixLength =
-                        if declarationItem.IsOwnMember then prefixLength + 1 else prefixLength
-
+                    let prefixLength = if declarationItem.IsOwnMember then prefixLength + 1 else prefixLength
                     String.replicate prefixLength "a" + name + string declarationItem.MinorPriority
                 
+                
+                let sortText = 
+                    match mruItems.TryGetValue name with
+                    | true, hints -> String.replicate (100 + hints) "a" + sortText
+                    | _ -> sortText
+
+                //Logging.Logging.logInfof "***** %s => %s" name sortText
+
                 let completionItem = completionItem.WithSortText(sortText)
 
                 declarationItemsCache.Remove(completionItem.DisplayText) |> ignore // clear out stale entries if they exist
@@ -171,9 +179,13 @@ type internal FSharpCompletionProvider
         } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
 
     override this.GetChangeAsync(_, item, _, _) : Task<CompletionChange> =
+        match mruItems.TryGetValue item.DisplayText with
+        | true, hints -> mruItems.[item.DisplayText] <- hints + 1
+        | _ -> mruItems.[item.DisplayText] <- 1
+        
         let nameInCode =
             match item.Properties.TryGetValue NameInCodePropName with
             | true, x -> x
             | _ -> item.DisplayText
-
+        
         Task.FromResult(CompletionChange.Create(new TextChange(item.Span, nameInCode)))

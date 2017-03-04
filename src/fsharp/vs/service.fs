@@ -889,9 +889,19 @@ type TypeCheckInfo
         if p >= 0 then Some p else None
     
     let CompletionItem (ty: TType option) (item: Item) =
+        let kind = 
+            match item with
+            | Item.MethodGroup _ -> CompletionItemKind.Method 
+            | Item.RecdField _
+            | Item.Property _ -> CompletionItemKind.Property
+            | Item.Event _ -> CompletionItemKind.Event
+            | Item.ILField _ 
+            | Item.Value _ -> CompletionItemKind.Field
+            | _ -> CompletionItemKind.Other
+
         { Item = item
           MinorPriority = 0
-          Kind = CompletionItemKind.Other
+          Kind = kind
           IsOwnMember = false
           Type = ty }
 

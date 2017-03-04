@@ -1436,22 +1436,27 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                 // Put type ctors after types, sorted by #typars. RemoveDuplicateItems will remove DefaultStructCtors if a type is also reported with this name
                 | Item.CtorGroup (_, (cinfo :: _)) -> { x with MinorPriority = 1000 + 10 * (tcrefOfAppTy g cinfo.EnclosingType).TyparsNoRange.Length }
                 | Item.MethodGroup(_, minfo :: _, _) ->
-                    { x with Kind = CompletionItemKind.Method
-                             IsOwnMember = 
+                    { x with IsOwnMember = 
                                 match x.Type with
                                 | Some ty -> tyconRefEq g minfo.DeclaringEntityRef (tcrefOfAppTy g ty)
                                 | _ -> false }
                 | Item.Property(_, pinfo :: _) ->
-                    { x with Kind = CompletionItemKind.Property
-                             IsOwnMember = 
+                    { x with IsOwnMember = 
                                 match x.Type with
                                 | Some ty -> tyconRefEq g (tcrefOfAppTy g pinfo.EnclosingType) (tcrefOfAppTy g ty)
                                 | _ -> false }
                 | Item.ILField finfo ->
-                    { x with Kind = CompletionItemKind.Field
-                             IsOwnMember = 
+                    { x with IsOwnMember = 
                                 match x.Type with
                                 | Some ty -> tyconRefEq g (tcrefOfAppTy g finfo.EnclosingType) (tcrefOfAppTy g ty)
+                                | _ -> false }
+                | Item.Value vinfo ->
+                    { x with IsOwnMember =
+                                match x.Type with
+                                | Some ty -> 
+                                    let _y = ty
+                                    let _x = vinfo.TopValActualParent
+                                    true
                                 | _ -> false }
                 | _ -> x)
             |> List.sortBy (fun x -> x.MinorPriority)
