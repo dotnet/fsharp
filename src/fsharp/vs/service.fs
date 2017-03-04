@@ -890,7 +890,9 @@ type TypeCheckInfo
     
     let CompletionItem (ty: TType option) (item: Item) =
         { Item = item
-          Priority = CompletionItemPriority.Relative 0
+          MinorPriority = 0
+          Kind = CompletionItemKind.Other
+          IsOwnMember = false
           Type = ty }
 
     let DefaultCompletionItem = CompletionItem None
@@ -1093,7 +1095,12 @@ type TypeCheckInfo
                     |> RemoveDuplicateItems g
                     |> RemoveExplicitlySuppressed g
                     |> List.filter (fun m -> not (fields.Contains m.DisplayName))
-                    |> List.map (fun x -> { Item = x; Priority = CompletionItemPriority.High; Type = None })
+                    |> List.map (fun x -> 
+                        { Item = x
+                          Kind = CompletionItemKind.Argument
+                          MinorPriority = 0
+                          IsOwnMember = false
+                          Type = None })
                 match declaredItems with
                 | None -> Some (toCompletionItems (items, denv, m))
                 | Some (declItems, declaredDisplayEnv, declaredRange) -> Some (filtered @ declItems, declaredDisplayEnv, declaredRange)

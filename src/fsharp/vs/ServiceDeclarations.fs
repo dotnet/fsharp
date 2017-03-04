@@ -106,13 +106,19 @@ module internal Tooltips =
     let Map f a = async.Bind(a, f >> async.Return)
 
 [<RequireQualifiedAccess>]
-type CompletionItemPriority =
-    | Relative of int
-    | High
+type CompletionItemKind =
+    | Field
+    | Property
+    | Method
+    | Event
+    | Argument
+    | Other
 
 type CompletionItem =
     { Item: Item
-      Priority: CompletionItemPriority
+      Kind: CompletionItemKind
+      IsOwnMember: bool
+      MinorPriority: int
       Type: TType option }
 
 [<AutoOpen>]
@@ -1344,7 +1350,7 @@ module internal ItemDescriptionsImpl =
      
 /// An intellisense declaration
 [<Sealed>]
-type FSharpDeclarationListItem(name: string, nameInCode: string, glyphMajor: GlyphMajor, glyphMinor: GlyphMinor, info, isAttribute: bool, completionPriority: CompletionItemPriority) =
+type FSharpDeclarationListItem(name: string, nameInCode: string, glyphMajor: GlyphMajor, glyphMinor: GlyphMinor, info, isAttribute: bool, kind: CompletionItemKind, isOwnMember: bool, priority: int) =
     let mutable descriptionTextHolder:FSharpToolTipText<_> option = None
     let mutable task = null
 
@@ -1402,7 +1408,9 @@ type FSharpDeclarationListItem(name: string, nameInCode: string, glyphMajor: Gly
     member decl.GlyphMajor = glyphMajor 
     member decl.GlyphMinor = glyphMinor
     member decl.IsAttribute = isAttribute
-    member decl.CompletionPriority = completionPriority
+    member decl.Kind = kind
+    member decl.IsOwnMember = isOwnMember
+    member decl.MinorPriority = priority
       
 /// A table of declarations for Intellisense completion 
 [<Sealed>]
@@ -1418,43 +1426,41 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
         //     - show types with fewer generic parameters first
         //     - show types before over other related items - they usually have very useful XmlDocs 
         let _, items = 
-            items |> List.map (fun x ->
-                match x.Priority with
-                | CompletionItemPriority.High -> x
-                | CompletionItemPriority.Relative _ ->
-                    match x.Item with
-                    | Item.Types (_,(TType_app(tcref,_) :: _)) -> { x with Priority = CompletionItemPriority.Relative (1 + tcref.TyparsNoRange.Length) }
-                    // Put delegate ctors after types, sorted by #typars. RemoveDuplicateItems will remove FakeInterfaceCtor and DelegateCtor if an earlier type is also reported with this name
-                    | Item.FakeInterfaceCtor (TType_app(tcref,_)) 
-                    | Item.DelegateCtor (TType_app(tcref,_)) -> { x with Priority = CompletionItemPriority.Relative (1000 + tcref.TyparsNoRange.Length) }
-                    // Put type ctors after types, sorted by #typars. RemoveDuplicateItems will remove DefaultStructCtors if a type is also reported with this name
-                    | Item.CtorGroup (_, (cinfo :: _)) -> { x with Priority = CompletionItemPriority.Relative (1000 + 10 * (tcrefOfAppTy g cinfo.EnclosingType).TyparsNoRange.Length) }
-                    | Item.MethodGroup(_, minfo :: _, _) ->
-                        match x.Type with
-                        | Some ty when tyconRefEq g minfo.DeclaringEntityRef (tcrefOfAppTy g ty) ->
-                            { x with Priority = CompletionItemPriority.High }
-                        | _ -> x
-                    | Item.Property(_, pinfo :: _) ->
-                        match x.Type with
-                        | Some ty when tyconRefEq g (tcrefOfAppTy g pinfo.EnclosingType) (tcrefOfAppTy g ty) ->
-                            { x with Priority = CompletionItemPriority.High }
-                        | _ -> x
-                    | Item.ILField finfo ->
-                        match x.Type with
-                        | Some ty when tyconRefEq g (tcrefOfAppTy g finfo.EnclosingType) (tcrefOfAppTy g ty) ->
-                            { x with Priority = CompletionItemPriority.High }
-                        | _ -> x
-                    | _ -> x)
-            |> List.sortBy (fun x -> x.Priority)
+            items 
+            |> List.map (fun x ->
+                match x.Item with
+                | Item.Types (_,(TType_app(tcref,_) :: _)) -> { x with MinorPriority = 1 + tcref.TyparsNoRange.Length }
+                // Put delegate ctors after types, sorted by #typars. RemoveDuplicateItems will remove FakeInterfaceCtor and DelegateCtor if an earlier type is also reported with this name
+                | Item.FakeInterfaceCtor (TType_app(tcref,_)) 
+                | Item.DelegateCtor (TType_app(tcref,_)) -> { x with MinorPriority = 1000 + tcref.TyparsNoRange.Length }
+                // Put type ctors after types, sorted by #typars. RemoveDuplicateItems will remove DefaultStructCtors if a type is also reported with this name
+                | Item.CtorGroup (_, (cinfo :: _)) -> { x with MinorPriority = 1000 + 10 * (tcrefOfAppTy g cinfo.EnclosingType).TyparsNoRange.Length }
+                | Item.MethodGroup(_, minfo :: _, _) ->
+                    { x with Kind = CompletionItemKind.Method
+                             IsOwnMember = 
+                                match x.Type with
+                                | Some ty -> tyconRefEq g minfo.DeclaringEntityRef (tcrefOfAppTy g ty)
+                                | _ -> false }
+                | Item.Property(_, pinfo :: _) ->
+                    { x with Kind = CompletionItemKind.Property
+                             IsOwnMember = 
+                                match x.Type with
+                                | Some ty -> tyconRefEq g (tcrefOfAppTy g pinfo.EnclosingType) (tcrefOfAppTy g ty)
+                                | _ -> false }
+                | Item.ILField finfo ->
+                    { x with Kind = CompletionItemKind.Field
+                             IsOwnMember = 
+                                match x.Type with
+                                | Some ty -> tyconRefEq g (tcrefOfAppTy g finfo.EnclosingType) (tcrefOfAppTy g ty)
+                                | _ -> false }
+                | _ -> x)
+            |> List.sortBy (fun x -> x.MinorPriority)
             |> List.fold (fun (prevPrior, acc) x ->
-                match x.Priority with
-                | CompletionItemPriority.High -> prevPrior, x :: acc
-                | CompletionItemPriority.Relative prior ->
-                    if prior = prevPrior then
-                        prevPrior, x :: acc
-                    else
-                        let prior = prevPrior + 1
-                        prior, { x with Priority = CompletionItemPriority.Relative prior } :: acc
+                if x.MinorPriority = prevPrior then
+                    prevPrior, x :: acc
+                else
+                    let prior = prevPrior + 1
+                    prior, { x with MinorPriority = prior } :: acc
                 ) (0, [])
 
         // Remove all duplicates. We've put the types first, so this removes the DelegateCtor and DefaultStructCtor's.
@@ -1494,12 +1500,13 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                         else nm, nm
 
                     new FSharpDeclarationListItem(
-                        name, nameInCode, glyphMajor, glyphMinor, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), IsAttribute infoReader items.Head.Item, items.Head.Priority))
+                        name, nameInCode, glyphMajor, glyphMinor, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), IsAttribute infoReader items.Head.Item, 
+                        items.Head.Kind, items.Head.IsOwnMember, items.Head.MinorPriority))
 
         new FSharpDeclarationListInfo(Array.ofList decls)
     
     static member Error msg = 
         new FSharpDeclarationListInfo(
                 [| new FSharpDeclarationListItem("<Note>", "<Note>", GlyphMajor.Error, GlyphMinor.Normal, 
-                                                 Choice2Of2 (FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError msg]), false, CompletionItemPriority.Relative 0) |])
+                                                 Choice2Of2 (FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError msg]), false, CompletionItemKind.Other, false, 0) |])
     static member Empty = new FSharpDeclarationListInfo([| |])

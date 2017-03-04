@@ -7,14 +7,12 @@ open System
 open System.IO
 open System.Collections.Generic
 open System.Threading
-open System.Threading.Tasks
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 open Microsoft.FSharp.Compiler.CompileOps

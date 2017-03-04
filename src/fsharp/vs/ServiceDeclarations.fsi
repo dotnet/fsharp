@@ -67,13 +67,19 @@ module internal Tooltips =
     val Map: f: ('T1 -> 'T2) -> a: Async<'T1> -> Async<'T2>
 
 [<RequireQualifiedAccess>]
-type internal CompletionItemPriority =
-    | Relative of int
-    | High
+type internal CompletionItemKind =
+    | Field
+    | Property
+    | Method
+    | Event
+    | Argument
+    | Other
 
 type internal CompletionItem =
     { Item: Item
-      Priority: CompletionItemPriority
+      Kind: CompletionItemKind
+      IsOwnMember: bool
+      MinorPriority: int
       Type: TType option }
 
 [<Sealed>]
@@ -101,7 +107,9 @@ type internal FSharpDeclarationListItem =
     member GlyphMajor : ItemDescriptionIcons.GlyphMajor
     member GlyphMinor : ItemDescriptionIcons.GlyphMinor
     member IsAttribute : bool
-    member CompletionPriority : CompletionItemPriority
+    member Kind : CompletionItemKind
+    member IsOwnMember : bool
+    member MinorPriority : int
 
 [<Sealed>]
 /// Represents a set of declarations in F# source code, with information attached ready for display by an editor.

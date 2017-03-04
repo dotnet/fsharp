@@ -110,11 +110,22 @@ type internal FSharpCompletionProvider
                         completionItem.AddProperty(NameInCodePropName, declarationItem.NameInCode)
                     else completionItem
 
-                let completionItem =
-                    match declarationItem.CompletionPriority with
-                    | CompletionItemPriority.High -> completionItem.WithSortText("aaaaaaaaaa" + name)
-                    | CompletionItemPriority.Relative 0 -> completionItem
-                    | CompletionItemPriority.Relative priority -> completionItem.WithSortText(name + sprintf "%d" priority)
+                let sortText =
+                    let prefixLength =
+                        match declarationItem.Kind with
+                        | CompletionItemKind.Field -> 10
+                        | CompletionItemKind.Property -> 8
+                        | CompletionItemKind.Method -> 6
+                        | CompletionItemKind.Event -> 4
+                        | CompletionItemKind.Argument -> 2
+                        | CompletionItemKind.Other -> 0
+                    
+                    let prefixLength =
+                        if declarationItem.IsOwnMember then prefixLength + 1 else prefixLength
+
+                    String.replicate prefixLength "a" + name + string declarationItem.MinorPriority
+                
+                let completionItem = completionItem.WithSortText(sortText)
 
                 declarationItemsCache.Remove(completionItem.DisplayText) |> ignore // clear out stale entries if they exist
                 declarationItemsCache.Add(completionItem.DisplayText, declarationItem)
