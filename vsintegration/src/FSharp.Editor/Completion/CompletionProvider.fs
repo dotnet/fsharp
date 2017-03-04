@@ -112,8 +112,9 @@ type internal FSharpCompletionProvider
 
                 let completionItem =
                     match declarationItem.CompletionPriority with
-                    | CompletionItemPriority.High -> completionItem.WithSortText("aaaaa" + name)
-                    | _ -> completionItem
+                    | CompletionItemPriority.High -> completionItem.WithSortText("aaaaaaaaaa" + name)
+                    | CompletionItemPriority.Relative 0 -> completionItem
+                    | CompletionItemPriority.Relative priority -> completionItem.WithSortText(name + sprintf "%d" priority)
 
                 declarationItemsCache.Remove(completionItem.DisplayText) |> ignore // clear out stale entries if they exist
                 declarationItemsCache.Add(completionItem.DisplayText, declarationItem)

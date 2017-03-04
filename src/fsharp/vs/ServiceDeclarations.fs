@@ -107,8 +107,8 @@ module internal Tooltips =
 
 [<RequireQualifiedAccess>]
 type CompletionItemPriority =
-    | Default = 0
-    | High = 1
+    | Relative of int
+    | High
 
 type CompletionItem =
     { Item: Item
@@ -1409,21 +1409,33 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
         let g = infoReader.g
         let items = items |> RemoveExplicitlySuppressedCompletionItems g
         
-        // Sort by name. For things with the same name, 
+        // Adjust items priority. Sort by name. For things with the same name, 
         //     - show types with fewer generic parameters first
         //     - show types before over other related items - they usually have very useful XmlDocs 
-        let items = 
-            items |> List.sortBy (fun x -> 
-                let name = 
-                    match x.Item with  
-                    | Item.Types (_,(TType_app(tcref,_) :: _)) -> 1 + tcref.TyparsNoRange.Length
+        let _, items = 
+            items |> List.map (fun x ->
+                match x.Priority with
+                | CompletionItemPriority.High -> x
+                | CompletionItemPriority.Relative _ ->
+                    match x.Item with
+                    | Item.Types (_,(TType_app(tcref,_) :: _)) -> { x with Priority = CompletionItemPriority.Relative (1 + tcref.TyparsNoRange.Length) }
                     // Put delegate ctors after types, sorted by #typars. RemoveDuplicateItems will remove FakeInterfaceCtor and DelegateCtor if an earlier type is also reported with this name
                     | Item.FakeInterfaceCtor (TType_app(tcref,_)) 
-                    | Item.DelegateCtor (TType_app(tcref,_)) -> 1000 + tcref.TyparsNoRange.Length
+                    | Item.DelegateCtor (TType_app(tcref,_)) -> { x with Priority = CompletionItemPriority.Relative (1000 + tcref.TyparsNoRange.Length) }
                     // Put type ctors after types, sorted by #typars. RemoveDuplicateItems will remove DefaultStructCtors if a type is also reported with this name
-                    | Item.CtorGroup (_, (cinfo :: _)) -> 1000 + 10 * (tcrefOfAppTy g cinfo.EnclosingType).TyparsNoRange.Length 
-                    | _ -> 0
-                x.Item.DisplayName, name)
+                    | Item.CtorGroup (_, (cinfo :: _)) -> { x with Priority = CompletionItemPriority.Relative (1000 + 10 * (tcrefOfAppTy g cinfo.EnclosingType).TyparsNoRange.Length) }
+                    | _ -> x)
+            |> List.sortBy (fun x -> x.Priority)
+            |> List.fold (fun (prevPrior, acc) x ->
+                match x.Priority with
+                | CompletionItemPriority.High -> prevPrior, x :: acc
+                | CompletionItemPriority.Relative prior ->
+                    if prior = prevPrior then
+                        prevPrior, x :: acc
+                    else
+                        let prior = prevPrior + 1
+                        prior, { x with Priority = CompletionItemPriority.Relative prior } :: acc
+                ) (0, [])
 
         // Remove all duplicates. We've put the types first, so this removes the DelegateCtor and DefaultStructCtor's.
         let items = items |> RemoveDuplicateCompletionItems g
@@ -1469,5 +1481,5 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
     static member Error msg = 
         new FSharpDeclarationListInfo(
                 [| new FSharpDeclarationListItem("<Note>", "<Note>", GlyphMajor.Error, GlyphMinor.Normal, 
-                                                 Choice2Of2 (FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError msg]), false, CompletionItemPriority.Default) |])
+                                                 Choice2Of2 (FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError msg]), false, CompletionItemPriority.Relative 0) |])
     static member Empty = new FSharpDeclarationListInfo([| |])

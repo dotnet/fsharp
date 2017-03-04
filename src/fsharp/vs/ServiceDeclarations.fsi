@@ -68,8 +68,8 @@ module internal Tooltips =
 
 [<RequireQualifiedAccess>]
 type internal CompletionItemPriority =
-    | Default = 0
-    | High = 1
+    | Relative of int
+    | High
 
 type internal CompletionItem =
     { Item: Item

@@ -894,12 +894,8 @@ type TypeCheckInfo
     
     let DefaultCompletionItem (item: Item) =
         { Item = item
-          Priority = CompletionItemPriority.Default }
+          Priority = CompletionItemPriority.Relative 0 }
     
-    let HighPriorityCompletionItem (item: Item) =
-        { Item = item
-          Priority = CompletionItemPriority.High }
-
     let GetDeclaredItems (parseResultsOpt: FSharpParseFileResults option, lineStr: string, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, line, loc, filterCtors,resolveOverloads, hasTextChangedSinceLastTypecheck, isInRangeOperator) =
  
             // Are the last two chars (except whitespaces) = ".."
@@ -1095,7 +1091,7 @@ type TypeCheckInfo
                     |> RemoveDuplicateItems g
                     |> RemoveExplicitlySuppressed g
                     |> List.filter (fun m -> not (fields.Contains m.DisplayName))
-                    |> List.map HighPriorityCompletionItem
+                    |> List.map (fun x -> { Item = x; Priority = CompletionItemPriority.High })
                 match declaredItems with
                 | None -> Some (toCompletionItems (items, denv, m))
                 | Some (declItems, declaredDisplayEnv, declaredRange) -> Some (filtered @ declItems, declaredDisplayEnv, declaredRange)
