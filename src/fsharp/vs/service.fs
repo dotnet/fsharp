@@ -8,8 +8,6 @@ namespace Microsoft.FSharp.Compiler.SourceCodeServices
 open System
 open System.IO
 open System.Text
-open System.Threading
-open System.Runtime
 open System.Collections.Generic
 open System.Collections.Concurrent
 
@@ -26,7 +24,6 @@ open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.ReferenceResolver
 open Microsoft.FSharp.Compiler.PrettyNaming
 open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
@@ -34,7 +31,6 @@ open Microsoft.FSharp.Compiler.Lexhelp
 open Microsoft.FSharp.Compiler.Layout
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.Tastops.DebugPrint
 open Microsoft.FSharp.Compiler.TcGlobals 
 open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.InfoReader
@@ -819,7 +815,8 @@ type TypeCheckInfo
     /// Find items in the best naming environment.
     let GetEnvironmentLookupResolutions(cursorPos, plid, filterCtors, showObsolete) : (Item list * DisplayEnv * range) * TType option = 
         let (nenv,ad),m = GetBestEnvForPos cursorPos
-        let items, ty = NameResolution.ResolvePartialLongIdent ncenv nenv (ConstraintSolver.IsApplicableMethApprox g amap m) m ad plid showObsolete
+        let ty = NameResolution.ResolveType ncenv nenv m plid
+        let items = NameResolution.ResolvePartialLongIdent ncenv nenv (ConstraintSolver.IsApplicableMethApprox g amap m) m ad plid showObsolete
         let items = items |> RemoveDuplicateItems g 
         let items = items |> RemoveExplicitlySuppressed g
         let items = items |> FilterItemsForCtors filterCtors 
@@ -945,9 +942,9 @@ type TypeCheckInfo
                     // note: as above, this happens when we are called for "precise" resolution - (F1 keyword, data tip etc..)
                     let plid, residue = List.frontAndBack origLongIdent
                     plid, Some residue
-                
-            let envItems, ty = GetEnvironmentLookupResolutions(mkPos line loc, plid, filterCtors, residueOpt.IsSome)
 
+            let envItems, ty = GetEnvironmentLookupResolutions(mkPos line loc, plid, filterCtors, residueOpt.IsSome)
+            
             match nameResItems with            
             | NameResResult.TypecheckStaleAndTextChanged -> None // second-chance intellisense will try again
             | NameResResult.Cancel(denv,m) -> Some([], denv, m)
@@ -1002,7 +999,6 @@ type TypeCheckInfo
                         // Second-chance intellisense will bring up the correct list in a moment.
                         None
                     | _ ->         
-                       
                        // Use an environment lookup as the last resort
                        match nameResItems, envItems, qualItems with            
                        

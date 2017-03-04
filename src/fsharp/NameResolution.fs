@@ -3703,9 +3703,41 @@ let rec ResolvePartialLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv is
              else 
                  []))
 
+let ResolveType (ncenv: NameResolver) (nenv: NameResolutionEnv) m (plid: string list) =
+    let g = ncenv.g
+
+    match List.tryLast plid with
+    | Some id ->
+        // Look for values called 'id' that accept the dot-notation 
+        let typ, isItemVal = 
+            (match nenv.eUnqualifiedItems |> Map.tryFind id with
+               // v.lookup : member of a value
+             | Some v ->
+                 match v with 
+                 | Item.Value x -> 
+                     let typ = x.Type
+                     let typ = if x.BaseOrThisInfo = CtorThisVal && isRefCellTy g typ then destRefCellTy g typ else typ
+                     Some typ, true
+                 | _ -> None, false
+             | None -> None, false)
+        
+        if isItemVal then typ
+        else
+            LookupTypeNameInEnvNoArity OpenQualified id nenv
+            |> List.fold (fun resTyp tcref ->
+                // type.lookup : lookup a static something in a type 
+                let tcref = ResolveNestedTypeThroughAbbreviation ncenv tcref m
+                let typ = FreshenTycon ncenv m tcref
+                let resTyp =
+                    match resTyp with
+                    | Some _ -> resTyp
+                    | None -> Some typ
+                resTyp) typ
+    | _ -> None
+
 /// allowObsolete - specifies whether we should return obsolete types & modules 
 ///   as (no other obsolete items are returned)
-let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionEnv) isApplicableMeth fullyQualified m ad plid allowObsolete : Item list * TType option = 
+let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionEnv) isApplicableMeth fullyQualified m ad plid allowObsolete : Item list = 
     let g = ncenv.g
 
     match plid with
@@ -3760,7 +3792,7 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
            |> List.filter (IsTyconUnseen ad g ncenv.amap m >> not)
            |> List.collect (InfosForTyconConstructors ncenv m ad)
 
-       (unqualifiedItems @ activePatternItems @ moduleAndNamespaceItems @ tycons @ constructors), None
+       unqualifiedItems @ activePatternItems @ moduleAndNamespaceItems @ tycons @ constructors
 
     | id :: rest -> 
     
@@ -3773,7 +3805,7 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
               else 
                 [])
         // Look for values called 'id' that accept the dot-notation 
-        let values, typ, isItemVal = 
+        let values, isItemVal = 
             (match nenv.eUnqualifiedItems |> Map.tryFind id with
                // v.lookup : member of a value
              | Some v ->
@@ -3781,25 +3813,19 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
                  | Item.Value x -> 
                      let typ = x.Type
                      let typ = if x.BaseOrThisInfo = CtorThisVal && isRefCellTy g typ then destRefCellTy g typ else typ
-                     (ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest typ), Some typ, true
-                 | _ -> [], None, false
-             | None -> [], None, false)
+                     (ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest typ), true
+                 | _ -> [], false
+             | None -> [], false)
 
-        let typ, staticSometingInType = 
-            if isItemVal then typ, []
-            else
-                LookupTypeNameInEnvNoArity OpenQualified id nenv
-                |> List.fold (fun (resTyp, acc) tcref ->
-                    // type.lookup : lookup a static something in a type 
+        let staticSometingInType = 
+            [ if not isItemVal then 
+                // type.lookup : lookup a static something in a type 
+                for tcref in LookupTypeNameInEnvNoArity OpenQualified id nenv do
                     let tcref = ResolveNestedTypeThroughAbbreviation ncenv tcref m
                     let typ = FreshenTycon ncenv m tcref
-                    let resTyp =
-                        match resTyp with
-                        | Some _ -> resTyp
-                        | None -> Some typ
-                    resTyp, ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad true rest typ @ acc) (typ, [])
+                    yield! ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad true rest typ ]
         
-        namespaces @ values @ staticSometingInType, typ
+        namespaces @ values @ staticSometingInType
 
 /// Resolve a (possibly incomplete) long identifier to a set of possible resolutions.
 let ResolvePartialLongIdent ncenv nenv isApplicableMeth m ad plid allowObsolete = 

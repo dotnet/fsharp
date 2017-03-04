@@ -407,8 +407,10 @@ val internal ResolveExprDotLongIdentAndComputeRange : TcResultsSink -> NameResol
 /// A generator of type instantiations used when no more specific type instantiation is known.
 val FakeInstantiationGenerator : range -> Typar list -> TType list
 
+val ResolveType : NameResolver -> NameResolutionEnv -> range -> string list -> TType option
+
 /// Resolve a (possibly incomplete) long identifier to a set of possible resolutions.
-val ResolvePartialLongIdent : NameResolver -> NameResolutionEnv -> (MethInfo -> TType -> bool) -> range -> AccessorDomain -> string list -> bool -> Item list * TType option
+val ResolvePartialLongIdent : NameResolver -> NameResolutionEnv -> (MethInfo -> TType -> bool) -> range -> AccessorDomain -> string list -> bool -> Item list
 
 [<RequireQualifiedAccess>]
 type ResolveCompletionTargets =

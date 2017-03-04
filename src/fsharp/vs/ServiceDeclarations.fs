@@ -1439,6 +1439,11 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                         | Some ty when tyconRefEq g (tcrefOfAppTy g pinfo.EnclosingType) (tcrefOfAppTy g ty) ->
                             { x with Priority = CompletionItemPriority.High }
                         | _ -> x
+                    | Item.ILField finfo ->
+                        match x.Type with
+                        | Some ty when tyconRefEq g (tcrefOfAppTy g finfo.EnclosingType) (tcrefOfAppTy g ty) ->
+                            { x with Priority = CompletionItemPriority.High }
+                        | _ -> x
                     | _ -> x)
             |> List.sortBy (fun x -> x.Priority)
             |> List.fold (fun (prevPrior, acc) x ->
