@@ -83,24 +83,14 @@ type FieldResolution = FieldResolution of RecdFieldRef * bool
 type ExtensionMember 
 
 /// The environment of information used to resolve names
-[<NoEquality; NoComparison>]
+[<NoEquality; NoComparison; Sealed>]
 type NameResolutionEnv =
-    {eDisplayEnv: DisplayEnv
-     eUnqualifiedItems: LayeredMap<string,Item>
-     ePatItems: NameMap<Item>
-     eModulesAndNamespaces: NameMultiMap<ModuleOrNamespaceRef>
-     eFullyQualifiedModulesAndNamespaces: NameMultiMap<ModuleOrNamespaceRef>
-     eFieldLabels: NameMultiMap<RecdFieldRef>
-     eTyconsByAccessNames: LayeredMultiMap<string,TyconRef>
-     eFullyQualifiedTyconsByAccessNames: LayeredMultiMap<string,TyconRef>
-     eTyconsByDemangledNameAndArity: LayeredMap<NameArityPair,TyconRef>
-     eFullyQualifiedTyconsByDemangledNameAndArity: LayeredMap<NameArityPair,TyconRef>
-     eIndexedExtensionMembers: TyconRefMultiMap<ExtensionMember>
-     eUnindexedExtensionMembers: ExtensionMember list
-     eTypars: NameMap<Typar> }
     static member Empty : g:TcGlobals -> NameResolutionEnv
     member DisplayEnv : DisplayEnv
     member FindUnqualifiedItem : string -> Item
+    static member Reconstitute : NameResolutionEnvDerivation * TcGlobals -> NameResolutionEnv
+
+and NameResolutionEnvDerivation = (NameResolutionEnv -> NameResolutionEnv) list
 
 type FullyQualifiedFlag =
   | FullyQualified
@@ -109,35 +99,32 @@ type FullyQualifiedFlag =
 [<RequireQualifiedAccess>]
 type BulkAdd = Yes | No
 
-/// Lookup patterns in name resolution environment
-val internal TryFindPatternByName : string -> NameResolutionEnv -> Item option
-
 /// Add extra items to the environment for Visual Studio, e.g. static members 
-val internal AddFakeNamedValRefToNameEnv : string -> NameResolutionEnv -> ValRef -> NameResolutionEnv
+val internal AddFakeNamedValRefToNameEnv : haveSink: bool -> string -> NameResolutionEnv -> ValRef -> NameResolutionEnv
 
 /// Add some extra items to the environment for Visual Studio, e.g. record members
-val internal AddFakeNameToNameEnv : string -> NameResolutionEnv -> Item -> NameResolutionEnv
+val internal AddFakeNameToNameEnv : haveSink: bool -> string -> NameResolutionEnv -> Item -> NameResolutionEnv
 
 /// Add a single F# value to the environment.
-val internal AddValRefToNameEnv                    : NameResolutionEnv -> ValRef -> NameResolutionEnv
+val internal AddValRefToNameEnv                    : haveSink: bool -> NameResolutionEnv -> ValRef -> NameResolutionEnv
 
 /// Add active pattern result tags to the environment.
-val internal AddActivePatternResultTagsToNameEnv   : ActivePatternInfo -> NameResolutionEnv -> TType -> range -> NameResolutionEnv
+val internal AddActivePatternResultTagsToNameEnv   : haveSink: bool -> ActivePatternInfo -> NameResolutionEnv -> TType -> range -> NameResolutionEnv
 
 /// Add a list of type definitions to the name resolution environment 
-val internal AddTyconRefsToNameEnv                 : BulkAdd -> bool -> TcGlobals -> ImportMap -> range -> bool -> NameResolutionEnv -> TyconRef list -> NameResolutionEnv
+val internal AddTyconRefsToNameEnv                 : haveSink: bool -> BulkAdd -> bool -> TcGlobals -> ImportMap -> range -> bool -> NameResolutionEnv -> TyconRef list -> NameResolutionEnv
 
 /// Add an F# exception definition to the name resolution environment 
-val internal AddExceptionDeclsToNameEnv            : BulkAdd -> NameResolutionEnv -> TyconRef -> NameResolutionEnv
+val internal AddExceptionDeclsToNameEnv            : haveSink: bool -> BulkAdd -> NameResolutionEnv -> TyconRef -> NameResolutionEnv
 
 /// Add a module abbreviation to the name resolution environment 
-val internal AddModuleAbbrevToNameEnv              : Ident -> NameResolutionEnv -> ModuleOrNamespaceRef list -> NameResolutionEnv
+val internal AddModuleAbbrevToNameEnv              : haveSink: bool -> Ident -> NameResolutionEnv -> ModuleOrNamespaceRef list -> NameResolutionEnv
 
 /// Add a list of module or namespace to the name resolution environment, including any sub-modules marked 'AutoOpen'
-val internal AddModuleOrNamespaceRefsToNameEnv                   : TcGlobals -> ImportMap -> range -> bool -> AccessorDomain -> NameResolutionEnv -> ModuleOrNamespaceRef list -> NameResolutionEnv
+val internal AddModuleOrNamespaceRefsToNameEnv        : TcGlobals -> ImportMap -> range -> bool -> AccessorDomain -> NameResolutionEnv -> ModuleOrNamespaceRef list -> NameResolutionEnv
 
 /// Add a single modules or namespace to the name resolution environment
-val internal AddModuleOrNamespaceRefToNameEnv                    : TcGlobals -> ImportMap -> range -> bool -> AccessorDomain -> NameResolutionEnv -> ModuleOrNamespaceRef -> NameResolutionEnv
+val internal AddModuleOrNamespaceRefToNameEnv         : TcGlobals -> ImportMap -> range -> bool -> AccessorDomain -> NameResolutionEnv -> ModuleOrNamespaceRef -> NameResolutionEnv
 
 /// Add a list of modules or namespaces to the name resolution environment
 val internal AddModulesAndNamespacesContentsToNameEnv : TcGlobals -> ImportMap -> AccessorDomain -> range -> bool -> NameResolutionEnv -> ModuleOrNamespaceRef list -> NameResolutionEnv
@@ -149,7 +136,16 @@ type CheckForDuplicateTyparFlag =
   | NoCheckForDuplicateTypars
 
 /// Add some declared type parameters to the name resolution environment
-val internal AddDeclaredTyparsToNameEnv : CheckForDuplicateTyparFlag -> NameResolutionEnv -> Typar list -> NameResolutionEnv
+val internal AddDeclaredTyparsToNameEnv : haveSink: bool -> CheckForDuplicateTyparFlag -> NameResolutionEnv -> Typar list -> NameResolutionEnv
+
+/// Lookup patterns in name resolution environment
+val internal TryFindPatternByName : string -> NameResolutionEnv -> Item option
+
+/// Lookup type parameters in name resolution environment
+val internal ResolveTypar : string -> NameResolutionEnv -> Typar option
+
+/// Get all declared type parameters 
+val internal GetAllTyparsInScope : NameResolutionEnv -> Set<string>
 
 /// Qualified lookup of type names in the environment
 val internal LookupTypeNameInEnvNoArity : FullyQualifiedFlag -> string -> NameResolutionEnv -> TyconRef list
@@ -208,7 +204,7 @@ type internal CapturedNameResolution =
     member DisplayEnv : DisplayEnv
 
     /// Naming environment--for example, currently open namespaces.
-    member NameResolutionEnv : NameResolutionEnv
+    member NameResolutionEnv : NameResolutionEnvDerivation
 
     /// The access rights of code at the location
     member AccessorDomain : AccessorDomain
@@ -221,11 +217,11 @@ type internal TcResolutions =
 
     /// Name resolution environments for every interesting region in the file. These regions may
     /// overlap, in which case the smallest region applicable should be used.
-    member CapturedEnvs : ResizeArray<range * NameResolutionEnv * AccessorDomain>
+    member CapturedEnvs : ResizeArray<range * NameResolutionEnvDerivation * AccessorDomain>
 
     /// Information of exact types found for expressions, that can be to the left of a dot.
     /// typ - the inferred type for an expression
-    member CapturedExpressionTypings : ResizeArray<pos * TType * DisplayEnv * NameResolutionEnv * AccessorDomain * range>
+    member CapturedExpressionTypings : ResizeArray<pos * TType * DisplayEnv * NameResolutionEnvDerivation * AccessorDomain * range>
 
     /// Exact name resolutions
     member CapturedNameResolutions : ResizeArray<CapturedNameResolution>
@@ -288,12 +284,15 @@ type TcResultsSink =
     { mutable CurrentSink : ITypecheckResultsSink option }
     static member NoSink : TcResultsSink
     static member WithSink : ITypecheckResultsSink -> TcResultsSink
+    member HaveSink : bool
 
 /// Temporarily redirect reporting of name resolution and type checking results
 val internal WithNewTypecheckResultsSink : ITypecheckResultsSink * TcResultsSink -> System.IDisposable
 
 /// Temporarily suspend reporting of name resolution and type checking results
 val internal TemporarilySuspendReportingTypecheckResultsToSink : TcResultsSink -> System.IDisposable
+
+val internal AddOpenPath : haveSink: bool -> NameResolutionEnv -> string list -> NameResolutionEnv
 
 /// Report the active name resolution environment for a source range
 val internal CallEnvSink                : TcResultsSink -> range * NameResolutionEnv * AccessorDomain -> unit
