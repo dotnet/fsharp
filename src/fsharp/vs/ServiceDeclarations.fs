@@ -22,11 +22,10 @@ open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.InfoReader
-open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons 
 
 /// An intellisense declaration
 [<Sealed>]
-type FSharpDeclarationListItem(name: string, nameInCode: string, glyphMajor: GlyphMajor, glyphMinor: GlyphMinor, info, isAttribute: bool, accessibility: FSharpAccessibility option) =
+type FSharpDeclarationListItem(name: string, nameInCode: string, glyph: FSharpGlyph, info, isAttribute: bool, accessibility: FSharpAccessibility option) =
     let mutable descriptionTextHolder:FSharpToolTipText<_> option = None
     let mutable task = null
 
@@ -79,10 +78,7 @@ type FSharpDeclarationListItem(name: string, nameInCode: string, glyphMajor: Gly
                 result
 
     member decl.DescriptionText = decl.StructuredDescriptionText |> Tooltips.ToFSharpToolTipText
-
-    member decl.Glyph = 6 * int glyphMajor + int glyphMinor
-    member decl.GlyphMajor = glyphMajor 
-    member decl.GlyphMinor = glyphMinor
+    member decl.Glyph = glyph 
     member decl.IsAttribute = isAttribute
     member decl.Accessibility = accessibility
       
@@ -140,7 +136,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                 match itemsWithSameName with
                 | [] -> failwith "Unexpected empty bag"
                 | items -> 
-                    let glyphMajor, glyphMinor = ItemDescriptionsImpl.GlyphOfItem(denv,items.Head)
+                    let glyph = ItemDescriptionsImpl.GlyphOfItem(denv, items.Head)
                     let name, nameInCode =
                         if nm.StartsWith "( " && nm.EndsWith " )" then
                             let cleanName = nm.[2..nm.Length - 3]
@@ -149,13 +145,13 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                         else nm, nm
 
                     FSharpDeclarationListItem(
-                        name, nameInCode, glyphMajor, glyphMinor, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), 
+                        name, nameInCode, glyph, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), 
                         ItemDescriptionsImpl.IsAttribute infoReader items.Head, FSharpSymbol.Create(g, ccu, tcImports, items.Head).Accessibility))
 
         new FSharpDeclarationListInfo(Array.ofList decls)
     
     static member Error msg = 
         new FSharpDeclarationListInfo(
-                [| FSharpDeclarationListItem("<Note>", "<Note>", GlyphMajor.Error, GlyphMinor.Normal, 
-                                                 Choice2Of2 (FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError msg]), false, None) |])
+                [| FSharpDeclarationListItem("<Note>", "<Note>", FSharpGlyph.Error, Choice2Of2 (FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError msg]), false, None) |])
+    
     static member Empty = FSharpDeclarationListInfo([| |])

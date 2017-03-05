@@ -139,7 +139,7 @@ type internal FSharpDeclarations(documentationBuilder, declarations: FSharpDecla
         let decls = trimmedDeclarations filterText
         if (index >= 0 && index < decls.Length) then
             let item = decls.[index]
-            if (item.Glyph = 205) then
+            if (item.Glyph = FSharpGlyph.Error) then
                 ""
             else 
                 item.Name
@@ -157,8 +157,9 @@ type internal FSharpDeclarations(documentationBuilder, declarations: FSharpDecla
         let decls = trimmedDeclarations filterText
         //The following constants are the index of the various glyphs in the ressources of Microsoft.VisualStudio.Package.LanguageService.dll
         if (index >= 0 && index < decls.Length) then
-            let item = decls.[index]
-            item.Glyph
+            //let item = decls.[index]
+            //item.Glyph
+            0
         else 0
 
     // This method is called to get the string to commit to the source buffer.

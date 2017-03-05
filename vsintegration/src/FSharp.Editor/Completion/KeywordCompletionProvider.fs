@@ -3,10 +3,8 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Composition
 open System.Threading
 open System.Threading.Tasks
-open System.Runtime.CompilerServices
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Classification
@@ -15,8 +13,6 @@ open Microsoft.CodeAnalysis.Options
 open Microsoft.CodeAnalysis.Text
 
 open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons
 
 type internal FSharpKeywordCompletionProvider
     (

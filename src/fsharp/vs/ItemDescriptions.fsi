@@ -94,7 +94,7 @@ module internal ItemDescriptionsImpl =
     val ccuOfItem : TcGlobals -> Item -> CcuThunk option
     val mutable ToolTipFault : string option
     val FormatStructuredDescriptionOfItem : isDecl:bool -> InfoReader -> range -> DisplayEnv -> Item -> FSharpStructuredToolTipElement
-    val GlyphOfItem : DisplayEnv * Item -> ItemDescriptionIcons.GlyphMajor * ItemDescriptionIcons.GlyphMinor
+    val GlyphOfItem : DisplayEnv * Item -> FSharpGlyph
     val IsAttribute : InfoReader -> Item -> bool
 
 module EnvMisc2 =

@@ -31,7 +31,6 @@ open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.InfoReader
-open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons 
 
 /// Describe a comment as either a block of text or a file+signature reference into an intellidoc file.
 [<RequireQualifiedAccess>]
@@ -1211,87 +1210,72 @@ module internal ItemDescriptionsImpl =
         |> showL
 
     // Compute the index of the VS glyph shown with an item in the Intellisense menu
-    let GlyphOfItem(denv,d) = 
+    let GlyphOfItem(denv, item) : FSharpGlyph = 
          /// Find the glyph for the given representation.    
          let reprToGlyph repr = 
             match repr with
             | TFSharpObjectRepr om -> 
                 match om.fsobjmodel_kind with 
-                | TTyconClass -> GlyphMajor.Class
-                | TTyconInterface -> GlyphMajor.Interface
-                | TTyconStruct -> GlyphMajor.Struct
-                | TTyconDelegate _ -> GlyphMajor.Delegate
-                | TTyconEnum _ -> GlyphMajor.Enum
-            | TRecdRepr _ -> GlyphMajor.Type
-            | TUnionRepr _ -> GlyphMajor.Union
+                | TTyconClass -> FSharpGlyph.Class
+                | TTyconInterface -> FSharpGlyph.Interface
+                | TTyconStruct -> FSharpGlyph.Struct
+                | TTyconDelegate _ -> FSharpGlyph.Delegate
+                | TTyconEnum _ -> FSharpGlyph.Enum
+            | TRecdRepr _ -> FSharpGlyph.Type
+            | TUnionRepr _ -> FSharpGlyph.Union
             | TILObjectRepr(_,_,td) -> 
                 match td.tdKind with 
-                | ILTypeDefKind.Class -> GlyphMajor.Class
-                | ILTypeDefKind.ValueType -> GlyphMajor.Struct
-                | ILTypeDefKind.Interface -> GlyphMajor.Interface
-                | ILTypeDefKind.Enum -> GlyphMajor.Enum
-                | ILTypeDefKind.Delegate -> GlyphMajor.Delegate
-            | TAsmRepr _ -> GlyphMajor.Typedef
-            | TMeasureableRepr _-> GlyphMajor.Typedef 
+                | ILTypeDefKind.Class -> FSharpGlyph.Class
+                | ILTypeDefKind.ValueType -> FSharpGlyph.Struct
+                | ILTypeDefKind.Interface -> FSharpGlyph.Interface
+                | ILTypeDefKind.Enum -> FSharpGlyph.Enum
+                | ILTypeDefKind.Delegate -> FSharpGlyph.Delegate
+            | TAsmRepr _ -> FSharpGlyph.Typedef
+            | TMeasureableRepr _-> FSharpGlyph.Typedef 
 #if EXTENSIONTYPING
-            | TProvidedTypeExtensionPoint _-> GlyphMajor.Typedef 
-            | TProvidedNamespaceExtensionPoint  _-> GlyphMajor.Typedef  
+            | TProvidedTypeExtensionPoint _-> FSharpGlyph.Typedef 
+            | TProvidedNamespaceExtensionPoint  _-> FSharpGlyph.Typedef  
 #endif
-            | TNoRepr -> GlyphMajor.Class  
+            | TNoRepr -> FSharpGlyph.Class  
          
          /// Find the glyph for the given type representation.
          let typeToGlyph typ = 
             if isAppTy denv.g typ then 
                 let tcref = tcrefOfAppTy denv.g typ
                 tcref.TypeReprInfo |> reprToGlyph 
-            elif isStructTupleTy denv.g typ then GlyphMajor.Struct
-            elif isRefTupleTy denv.g typ then GlyphMajor.Class
-            elif isFunction denv.g typ then GlyphMajor.Delegate
-            elif isTyparTy denv.g typ then GlyphMajor.Struct
-            else GlyphMajor.Typedef
-
+            elif isStructTupleTy denv.g typ then FSharpGlyph.Struct
+            elif isRefTupleTy denv.g typ then FSharpGlyph.Class
+            elif isFunction denv.g typ then FSharpGlyph.Delegate
+            elif isTyparTy denv.g typ then FSharpGlyph.Struct
+            else FSharpGlyph.Typedef
             
-         /// Find the major glyph of the given named item.       
-         let namedItemToMajorGlyph item = 
-            // This may explore assemblies that are not in the reference set,
-            // e.g. for type abbreviations to types not in the reference set. 
-            // In this case just use GlyphMajor.Class.
-           protectAssemblyExploration GlyphMajor.Class (fun () ->
-              match item with 
-              | Item.Value(vref) | Item.CustomBuilder (_,vref) -> 
-                    if isFunction denv.g vref.Type then GlyphMajor.Method
-                    elif vref.LiteralValue.IsSome then  GlyphMajor.Constant
-                    else GlyphMajor.Variable
-              | Item.Types(_,typ::_) -> typeToGlyph (stripTyEqns denv.g typ)    
-              | Item.UnionCase _
-              | Item.ActivePatternCase _ -> GlyphMajor.EnumMember   
-              | Item.ExnCase _ -> GlyphMajor.Exception   
-              | Item.RecdField _ -> GlyphMajor.FieldBlue   
-              | Item.ILField _ -> GlyphMajor.FieldBlue
-              | Item.Event _ -> GlyphMajor.Event   
-              | Item.Property _ -> GlyphMajor.Property   
-              | Item.CtorGroup _ 
-              | Item.DelegateCtor _ 
-              | Item.FakeInterfaceCtor _
-              | Item.CustomOperation _ -> GlyphMajor.Method
-              | Item.MethodGroup (_, minfos, _) when minfos |> List.forall (fun minfo -> minfo.IsExtensionMember) -> GlyphMajor.ExtensionMethod
-              | Item.MethodGroup _ -> GlyphMajor.Method
-              | Item.TypeVar _ 
-              | Item.Types _ -> GlyphMajor.Class   
-              | Item.ModuleOrNamespaces(modref::_) -> 
-                    if modref.IsNamespace then GlyphMajor.NameSpace else GlyphMajor.Module
-              | Item.ArgName _ -> GlyphMajor.Variable
-              | Item.SetterArg _ -> GlyphMajor.Variable
-              | _ -> GlyphMajor.Error)
-
-         /// Find the minor glyph of the given named item.       
-         let namedItemToMinorGlyph item = 
-            // This may explore assemblies that are not in the reference set,
-            // e.g. for type abbreviations to types not in the reference set. 
-            // In this case just use GlyphMinor.Normal.
-           protectAssemblyExploration  GlyphMinor.Normal (fun () ->
-             match item with 
-              | Item.Value(vref) when isFunction denv.g vref.Type -> GlyphMinor.Special
-              | _ -> GlyphMinor.Normal)
-
-         (namedItemToMajorGlyph d, namedItemToMinorGlyph d)
+         // This may explore assemblies that are not in the reference set,
+         // e.g. for type abbreviations to types not in the reference set. 
+         // In this case just use GlyphMajor.Class.
+         protectAssemblyExploration FSharpGlyph.Class (fun () ->
+            match item with 
+            | Item.Value(vref) | Item.CustomBuilder (_,vref) -> 
+                  if isFunction denv.g vref.Type then FSharpGlyph.Method
+                  elif vref.LiteralValue.IsSome then FSharpGlyph.Constant
+                  else FSharpGlyph.Variable
+            | Item.Types(_,typ::_) -> typeToGlyph (stripTyEqns denv.g typ)    
+            | Item.UnionCase _
+            | Item.ActivePatternCase _ -> FSharpGlyph.EnumMember   
+            | Item.ExnCase _ -> FSharpGlyph.Exception   
+            | Item.RecdField _ -> FSharpGlyph.Field
+            | Item.ILField _ -> FSharpGlyph.Field
+            | Item.Event _ -> FSharpGlyph.Event   
+            | Item.Property _ -> FSharpGlyph.Property   
+            | Item.CtorGroup _ 
+            | Item.DelegateCtor _ 
+            | Item.FakeInterfaceCtor _
+            | Item.CustomOperation _ -> FSharpGlyph.Method
+            | Item.MethodGroup (_, minfos, _) when minfos |> List.forall (fun minfo -> minfo.IsExtensionMember) -> FSharpGlyph.ExtensionMethod
+            | Item.MethodGroup _ -> FSharpGlyph.Method
+            | Item.TypeVar _ 
+            | Item.Types _ -> FSharpGlyph.Class   
+            | Item.ModuleOrNamespaces(modref::_) -> 
+                  if modref.IsNamespace then FSharpGlyph.NameSpace else FSharpGlyph.Module
+            | Item.ArgName _ -> FSharpGlyph.Variable
+            | Item.SetterArg _ -> FSharpGlyph.Variable
+            | _ -> FSharpGlyph.Error)

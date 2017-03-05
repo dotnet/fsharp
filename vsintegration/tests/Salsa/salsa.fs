@@ -533,8 +533,6 @@ module internal Salsa =
         abstract GetIdentifierAtCursor: OpenFile -> (string * int) option
         abstract GetF1KeywordAtCursor: OpenFile -> string option
         abstract GotoDefinitionAtCursor: OpenFile * bool -> GotoDefnResult
-        abstract GetNavigationContentAtCursor: OpenFile -> NavigationBarResult
-        abstract GetHiddenRegionCommands: OpenFile -> list<NewHiddenRegion> * Map<uint32, TextSpan>
         abstract CreatePhysicalProjectFileInMemory : files:(string*BuildAction*string option) list * references:(string*bool) list * projectReferences:string list * disabledWarnings:string list * defines:string list * versionFile: string * otherFlags:string * otherProjMisc:string * targetFrameworkVersion:string -> string
                 
         /// True if files outside of the project cone are added as links.
@@ -1379,45 +1377,6 @@ module internal Salsa =
               currentAuthoringScope.GetF1KeywordString(span, context) 
               !keyword
 
-            member file.GetNavigationContentAtCursor () =
-              file.EnsureInitiallyFocusedInVs ()
-              let row = cursor.line - 1
-              let col = cursor.col - 1
-              let ti   = new TokenInfo ()
-              let sink = new AuthoringSink (BackgroundRequestReason.FullTypeCheck, row, col, maxErrors)
-              let snapshot = VsActual.createTextBuffer(file.CombinedLines).CurrentSnapshot 
-              let pr   = project.Solution.Vs.LanguageService.BackgroundRequests.CreateBackgroundRequest(row, col, ti, file.CombinedLines, snapshot, MethodTipMiscellany.Typing, System.IO.Path.GetFullPath file.Filename, BackgroundRequestReason.FullTypeCheck, view, sink, null, file.Source.ChangeCount, false)
-              project.Solution.Vs.LanguageService.BackgroundRequests.ExecuteBackgroundRequest(pr, file.Source) 
-              match project.Solution.Vs.LanguageService.BackgroundRequests.NavigationBarAndRegionInfo with
-              | Some(scope) ->
-                  let typesList = new Collections.ArrayList()
-                  let membersList = new Collections.ArrayList()
-                  let mutable selectedType = 0
-                  let mutable selectedMember = 0
-                  scope.SynchronizeNavigationDropDown(file.Filename, row, col, typesList, membersList, &selectedType, &selectedMember) |> ignore
-                  { TypesAndModules = (typesList.ToArray(typeof<DropDownMember>) :?> DropDownMember[])
-                    Members = (membersList.ToArray(typeof<DropDownMember>) :?> DropDownMember[])
-                    SelectedType = selectedType
-                    SelectedMember = selectedMember }
-              | _ -> 
-                  { TypesAndModules = [| |]; Members = [| |]; SelectedType = -1; SelectedMember = -1 }
-                  
-            member file.GetHiddenRegionCommands() =
-              file.EnsureInitiallyFocusedInVs ()
-              let row = cursor.line - 1
-              let col = cursor.col - 1
-              let ti   = new TokenInfo ()
-              let sink = new AuthoringSink (BackgroundRequestReason.FullTypeCheck, row, col, maxErrors)
-              let snapshot = VsActual.createTextBuffer(file.CombinedLines).CurrentSnapshot 
-              let pr   = project.Solution.Vs.LanguageService.BackgroundRequests.CreateBackgroundRequest(row, col, ti, file.CombinedLines, snapshot, MethodTipMiscellany.Typing, System.IO.Path.GetFullPath file.Filename, BackgroundRequestReason.FullTypeCheck, view, sink, null, file.Source.ChangeCount, false)
-              project.Solution.Vs.LanguageService.BackgroundRequests.ExecuteBackgroundRequest(pr, file.Source) 
-              match project.Solution.Vs.LanguageService.BackgroundRequests.NavigationBarAndRegionInfo with
-              | Some(scope) ->
-                  scope.GetHiddenRegions(file.Filename)
-              | _ -> 
-
-                  [], Map.empty
-            
             /// grab a particular line from a file
             member file.GetLineNumber n =
               file.EnsureInitiallyFocusedInVs ()
@@ -1578,8 +1537,6 @@ module internal Salsa =
             member ops.CompleteAtCursorForReason (file,reason) = OpenFileSimpl(file).CompleteAtCursorForReason(reason)
             member ops.CompletionBestMatchAtCursorFor (file, value, filterText) = (OpenFileSimpl(file)).CompletionBestMatchAtCursorFor(value, ?filterText=filterText)
             member ops.GotoDefinitionAtCursor (file, forceGen) = (OpenFileSimpl file).GotoDefinitionAtCursor forceGen
-            member ops.GetNavigationContentAtCursor file = OpenFileSimpl(file).GetNavigationContentAtCursor()
-            member ops.GetHiddenRegionCommands file = OpenFileSimpl(file).GetHiddenRegionCommands()
             member ops.GetIdentifierAtCursor file = OpenFileSimpl(file).GetIdentifierAtCursor ()
             member ops.GetF1KeywordAtCursor file = OpenFileSimpl(file).GetF1KeywordAtCursor ()
             member ops.GetLineNumber (file, n) = OpenFileSimpl(file).GetLineNumber n
