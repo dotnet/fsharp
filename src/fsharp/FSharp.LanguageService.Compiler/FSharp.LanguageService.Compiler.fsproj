@@ -508,23 +508,17 @@
     <Compile Include="..\vs\ServiceConstants.fs">
       <Link>Service/ServiceConstants.fs</Link>
     </Compile>
-    <Compile Include="..\vs\ItemDescriptions.fsi">
-      <Link>Service/ItemDescriptions.fsi</Link>
+    <Compile Include="..\vs\ServiceDeclarations.fsi">
+      <Link>Service/ServiceDeclarations.fsi</Link>
     </Compile>
-    <Compile Include="..\vs\ItemDescriptions.fs">
-      <Link>Service/ItemDescriptions.fs</Link>
+    <Compile Include="..\vs\ServiceDeclarations.fs">
+      <Link>Service/ServiceDeclarations.fs</Link>
     </Compile>
     <Compile Include="..\vs\Symbols.fsi">
       <Link>Service/Symbols.fsi</Link>
     </Compile>
     <Compile Include="..\vs\Symbols.fs">
       <Link>Service/Symbols.fs</Link>
-    </Compile>
-    <Compile Include="..\vs\ServiceDeclarations.fsi">
-      <Link>Service/ServiceDeclarations.fsi</Link>
-    </Compile>
-    <Compile Include="..\vs\ServiceDeclarations.fs">
-      <Link>Service/ServiceDeclarations.fs</Link>
     </Compile>
     <Compile Include="..\vs\ServiceLexing.fsi">
       <Link>Service/ServiceLexing.fsi</Link>
