@@ -56,6 +56,26 @@ type internal FSharpCompletionProvider
             ))
 
     static let mruItems = Dictionary<string, int>()
+
+    /// Normalizes hints to monothonically increasing sequence ("name1" => 1, "name2" => 110, "name3" => 25) to ("name1" => 1, "name2" => 3, "name3" => 2)
+    static let getNormalizedMruHints () =
+        let items = mruItems |> Seq.map (fun (KeyValue(name, hints)) -> name, hints) |> Seq.sortBy snd |> Seq.toList
+        match items with
+        | [] -> mruItems
+        | _ ->
+            items
+            |> List.fold (fun (lastRealHints, lastNormalizedHints, acc: Dictionary<_,_>) (name, hints) ->
+                if hints = lastRealHints then
+                    acc.[name] <- lastNormalizedHints
+                    lastRealHints, lastNormalizedHints, acc
+                else
+                    let lastRealHints = hints
+                    let lastNormalizedHints = lastNormalizedHints + 1
+                    acc.[name] <- lastNormalizedHints
+                    lastRealHints, lastNormalizedHints, acc
+
+            ) (1, 1, Dictionary()) // original dictionary does not contain zeros, so we start from 1
+            |> fun (_, _, acc) -> acc
     
     static member ShouldTriggerCompletionAux(sourceText: SourceText, caretPosition: int, trigger: CompletionTriggerKind, getInfo: (unit -> DocumentId * string * string list)) =
         // Skip if we are at the start of a document
@@ -98,6 +118,8 @@ type internal FSharpCompletionProvider
             
             let results = List<Completion.CompletionItem>()
             
+            let mormalizedMruItems = getNormalizedMruHints()
+
             for declarationItem in declarations.Items do
                 let glyph = CommonRoslynHelpers.FSharpGlyphToRoslynGlyph declarationItem.GlyphMajor
                 let name =
@@ -125,9 +147,8 @@ type internal FSharpCompletionProvider
                     let prefixLength = if declarationItem.IsOwnMember then prefixLength + 1 else prefixLength
                     String.replicate prefixLength "a" + name + string declarationItem.MinorPriority
                 
-                
                 let sortText = 
-                    match mruItems.TryGetValue name with
+                    match mormalizedMruItems.TryGetValue name with
                     | true, hints -> String.replicate (100 + hints) "a" + sortText
                     | _ -> sortText
 

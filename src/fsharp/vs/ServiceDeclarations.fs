@@ -1422,10 +1422,15 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
         let g = infoReader.g
         let items = items |> RemoveExplicitlySuppressedCompletionItems g
         
+        let areTyconRefsEqual (ty1: TType option) (tyconRef: TyconRef) =
+            match ty1 with
+            | Some (TType.TType_app _ as ty) -> tyconRefEq g tyconRef (tcrefOfAppTy g ty)
+            | _ -> false
+
         // Adjust items priority. Sort by name. For things with the same name, 
         //     - show types with fewer generic parameters first
         //     - show types before over other related items - they usually have very useful XmlDocs 
-        let _, items = 
+        let _, _, items = 
             items 
             |> List.map (fun x ->
                 match x.Item with
@@ -1435,38 +1440,18 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                 | Item.DelegateCtor (TType_app(tcref,_)) -> { x with MinorPriority = 1000 + tcref.TyparsNoRange.Length }
                 // Put type ctors after types, sorted by #typars. RemoveDuplicateItems will remove DefaultStructCtors if a type is also reported with this name
                 | Item.CtorGroup (_, (cinfo :: _)) -> { x with MinorPriority = 1000 + 10 * (tcrefOfAppTy g cinfo.EnclosingType).TyparsNoRange.Length }
-                | Item.MethodGroup(_, minfo :: _, _) ->
-                    { x with IsOwnMember = 
-                                match x.Type with
-                                | Some ty -> tyconRefEq g minfo.DeclaringEntityRef (tcrefOfAppTy g ty)
-                                | _ -> false }
-                | Item.Property(_, pinfo :: _) ->
-                    { x with IsOwnMember = 
-                                match x.Type with
-                                | Some ty -> tyconRefEq g (tcrefOfAppTy g pinfo.EnclosingType) (tcrefOfAppTy g ty)
-                                | _ -> false }
-                | Item.ILField finfo ->
-                    { x with IsOwnMember = 
-                                match x.Type with
-                                | Some ty -> tyconRefEq g (tcrefOfAppTy g finfo.EnclosingType) (tcrefOfAppTy g ty)
-                                | _ -> false }
-                | Item.Value vinfo ->
-                    { x with IsOwnMember =
-                                match x.Type with
-                                | Some ty -> 
-                                    let _y = ty
-                                    let _x = vinfo.TopValActualParent
-                                    true
-                                | _ -> false }
+                | Item.MethodGroup(_, minfo :: _, _) -> { x with IsOwnMember = areTyconRefsEqual x.Type minfo.DeclaringEntityRef }
+                | Item.Property(_, pinfo :: _) -> { x with IsOwnMember = areTyconRefsEqual x.Type (tcrefOfAppTy g pinfo.EnclosingType) }
+                | Item.ILField finfo -> { x with IsOwnMember = areTyconRefsEqual x.Type (tcrefOfAppTy g finfo.EnclosingType) }
                 | _ -> x)
             |> List.sortBy (fun x -> x.MinorPriority)
-            |> List.fold (fun (prevPrior, acc) x ->
-                if x.MinorPriority = prevPrior then
-                    prevPrior, x :: acc
+            |> List.fold (fun (prevRealPrior, prevNormalizedPrior, acc) x ->
+                if x.MinorPriority = prevRealPrior then
+                    prevRealPrior, prevNormalizedPrior, x :: acc
                 else
-                    let prior = prevPrior + 1
-                    prior, { x with MinorPriority = prior } :: acc
-                ) (0, [])
+                    let normalizedPrior = prevNormalizedPrior + 1
+                    x.MinorPriority, normalizedPrior, { x with MinorPriority = normalizedPrior } :: acc
+                ) (0, 0, [])
 
         // Remove all duplicates. We've put the types first, so this removes the DelegateCtor and DefaultStructCtor's.
         let items = items |> RemoveDuplicateCompletionItems g
