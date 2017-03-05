@@ -162,6 +162,7 @@ type AsyncType() =
         this.WaitASec t
         Assert.IsTrue (t.IsCompleted)
         Assert.AreEqual(s, t.Result)    
+
       
     [<Test>]
     member this.ExceptionPropagatesToTask () =
@@ -218,6 +219,102 @@ type AsyncType() =
         use t =
 #endif
             Async.StartAsTask(a, cancellationToken=token)
+//        printfn "%A" t.Status
+        ewh.WaitOne() |> Assert.IsTrue
+        cts.Cancel()
+//        printfn "%A" t.Status        
+        let mutable exceptionThrown = false
+        try
+            this.WaitASec t
+        with e -> exceptionThrown <- true
+        Assert.IsTrue (exceptionThrown)   
+        Assert.IsTrue(t.IsCanceled)      
+        Assert.IsTrue(!cancelled)      
+
+    [<Test>]
+    member this.CreateImmediateAsTask () =
+        let s = "Hello tasks!"
+        let a = async { return s }
+#if FSCORE_PORTABLE_NEW || coreclr
+        let t : Task<string> =
+#else
+        use t : Task<string> =
+#endif
+            Async.StartImmediateAsTask a
+        this.WaitASec t
+        Assert.IsTrue (t.IsCompleted)
+        Assert.AreEqual(s, t.Result)    
+        
+    [<Test>]
+    member this.StartImmediateAsTask () =
+        let s = "Hello tasks!"
+        let a = async { return s }
+#if FSCORE_PORTABLE_NEW || coreclr
+        let t = 
+#else
+        use t =
+#endif
+            Async.StartImmediateAsTask a
+        this.WaitASec t
+        Assert.IsTrue (t.IsCompleted)
+        Assert.AreEqual(s, t.Result)    
+
+      
+    [<Test>]
+    member this.ExceptionPropagatesToImmediateTask () =
+        let a = async { 
+            do raise (Exception ())
+         }
+#if FSCORE_PORTABLE_NEW || coreclr
+        let t = 
+#else
+        use t =
+#endif
+            Async.StartImmediateAsTask a
+        let mutable exceptionThrown = false
+        try 
+            this.WaitASec t
+        with 
+            e -> exceptionThrown <- true
+        Assert.IsTrue (t.IsFaulted)
+        Assert.IsTrue(exceptionThrown)
+        
+    [<Test>]
+    member this.CancellationPropagatesToImmediateTask () =
+        let a = async {
+                while true do ()
+            }
+#if FSCORE_PORTABLE_NEW || coreclr
+        let t = 
+#else
+        use t =
+#endif
+            Async.StartImmediateAsTask a
+        Async.CancelDefaultToken () 
+        let mutable exceptionThrown = false
+        try
+            this.WaitASec t
+        with e -> exceptionThrown <- true
+        Assert.IsTrue (exceptionThrown)   
+        Assert.IsTrue(t.IsCanceled)            
+        
+    [<Test>]
+    member this.CancellationPropagatesToGroupImmediate () =
+        let ewh = new ManualResetEvent(false)
+        let cancelled = ref false
+        let a = async { 
+                use! holder = Async.OnCancel (fun _ -> cancelled := true)
+                ewh.Set() |> Assert.IsTrue
+                while true do ()
+            }
+        let cts = new CancellationTokenSource()
+        let token = cts.Token
+#if FSCORE_PORTABLE_NEW || coreclr
+        let t = 
+#else
+        use t =
+#endif
+            Async.StartImmediateAsTask(a, cancellationToken=token)
 //        printfn "%A" t.Status
         ewh.WaitOne() |> Assert.IsTrue
         cts.Cancel()

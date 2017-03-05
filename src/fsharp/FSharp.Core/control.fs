@@ -1595,6 +1595,17 @@ namespace Microsoft.FSharp.Control
         static member StartWithContinuations(computation:Async<'T>, continuation, exceptionContinuation, cancellationContinuation, ?cancellationToken) : unit =
             Async.StartWithContinuationsUsingDispatchInfo(computation, continuation, (fun edi -> exceptionContinuation (edi.GetAssociatedSourceException())), cancellationContinuation, ?cancellationToken=cancellationToken)
 
+        static member StartImmediateAsTask (computation : Async<'T>, ?cancellationToken ) : Task<'T>=
+            let token = defaultArg cancellationToken defaultCancellationTokenSource.Token
+            let ts = new TaskCompletionSource<'T>()
+            let task = ts.Task
+            Async.StartWithContinuations(
+                computation, 
+                (fun (k) -> ts.SetResult(k)), 
+                (fun exn -> ts.SetException(exn)), 
+                (fun _ -> ts.SetCanceled()), 
+                token)
+            task
         static member StartImmediate(computation:Async<unit>, ?cancellationToken) : unit =
             let token = defaultArg cancellationToken defaultCancellationTokenSource.Token
             CancellationTokenOps.StartWithContinuations(token, computation, id, (fun edi -> edi.ThrowAny()), ignore)

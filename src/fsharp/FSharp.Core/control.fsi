@@ -521,6 +521,23 @@ namespace Microsoft.FSharp.Control
             computation:Async<unit> * ?cancellationToken:CancellationToken-> unit
 
 
+        /// <summary>Runs an asynchronous computation, starting immediately on the current operating system, 
+        /// but also returns the execution as <c>System.Threading.Tasks.Task</c> 
+        /// </summary>
+        /// <remarks>If no cancellation token is provided then the default cancellation token is used.
+        /// You may prefer using this method if you want to achive a similar behviour to async await in C# as 
+        /// async computation starts on the current thread with an ability to return a result.
+        /// </remarks>
+        /// <param name="computation">The asynchronous computation to execute.</param>
+        /// <param name="cancellationToken">The <c>CancellationToken</c> to associate with the computation.
+        /// The default is used if this parameter is not provided.</param>
+        /// <returns>A <c>System.Threading.Tasks.Task</c> that will be completed
+        /// in the corresponding state once the computation terminates (produces the result, throws exception or gets canceled)</returns>
+        /// </returns> 
+        static member StartImmediateAsTask: 
+            computation:Async<'T> * ?cancellationToken:CancellationToken-> Task<'T>
+
+
 
     [<CompiledName("FSharpAsyncBuilder")>]
     [<Sealed>]
