@@ -119,6 +119,7 @@ type internal FSharpCompletionProvider
             let results = List<Completion.CompletionItem>()
             
             let mormalizedMruItems = getNormalizedMruHints()
+            let longestNameLength = declarations.Items |> Array.map (fun x -> x.Name.Length) |> Array.max
 
             for declarationItem in declarations.Items do
                 let glyph = CommonRoslynHelpers.FSharpGlyphToRoslynGlyph declarationItem.GlyphMajor
@@ -145,12 +146,18 @@ type internal FSharpCompletionProvider
                         | CompletionItemKind.Other -> 0
                     
                     let prefixLength = if declarationItem.IsOwnMember then prefixLength + 1 else prefixLength
-                    String.replicate prefixLength "a" + name + string declarationItem.MinorPriority
+                    //String.replicate prefixLength "a" + name + string declarationItem.MinorPriority
                 
-                let sortText = 
-                    match mormalizedMruItems.TryGetValue name with
-                    | true, hints -> String.replicate (100 + hints) "a" + sortText
-                    | _ -> sortText
+                    let hints = 
+                        match mormalizedMruItems.TryGetValue name with
+                        | true, hints ->
+                            // for MRU items "foo" => 2, "longLongLong" => 1 to make "foo" appear on top, we 
+                            // should prefix it with as many "a" symbols as ("foo" hints + <the longest item name in entire list>.Length - "foo".Length)
+                            hints + (longestNameLength - name.Length)
+                        | _ -> 0
+
+                    let prefixLength = prefixLength + hints
+                    String.replicate prefixLength "a" + name + string declarationItem.MinorPriority
 
                 //Logging.Logging.logInfof "***** %s => %s" name sortText
 
