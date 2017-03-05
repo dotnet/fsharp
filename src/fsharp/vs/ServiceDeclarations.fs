@@ -1454,7 +1454,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                 ) (0, 0, [])
 
         // Remove all duplicates. We've put the types first, so this removes the DelegateCtor and DefaultStructCtor's.
-        let items = items |> RemoveDuplicateCompletionItems g
+        let items = items |> List.rev |> RemoveDuplicateCompletionItems g
 
         if verbose then dprintf "service.ml: mkDecls: %d found groups after filtering\n" (List.length items); 
 
