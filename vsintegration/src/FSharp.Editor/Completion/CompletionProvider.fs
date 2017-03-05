@@ -34,6 +34,7 @@ type internal FSharpCompletionProvider
     static let completionTriggers = [| '.' |]
     static let declarationItemsCache = ConditionalWeakTable<string, FSharpDeclarationListItem>()
     static let [<Literal>] NameInCodePropName = "NameInCode"
+    static let [<Literal>] FullNamePropName = "FullName"
     
     let xmlMemberIndexService = serviceProvider.GetService(typeof<IVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
@@ -55,23 +56,23 @@ type internal FSharpCompletionProvider
                 | _ -> true // anything else is a valid classification type
             ))
 
-    static let mruItems = Dictionary<string, int>()
+    static let mruItems = Dictionary<(* Item.FullName *) string, (* hints *) int>()
 
     /// Normalizes hints to monothonically increasing sequence ("name1" => 1, "name2" => 110, "name3" => 25) to ("name1" => 1, "name2" => 3, "name3" => 2)
     static let getNormalizedMruHints () =
-        let items = mruItems |> Seq.map (fun (KeyValue(name, hints)) -> name, hints) |> Seq.sortBy snd |> Seq.toList
+        let items = mruItems |> Seq.map (fun (KeyValue(fullName, hints)) -> fullName, hints) |> Seq.sortBy snd |> Seq.toList
         match items with
         | [] -> mruItems
         | _ ->
             items
-            |> List.fold (fun (lastRealHints, lastNormalizedHints, acc: Dictionary<_,_>) (name, hints) ->
+            |> List.fold (fun (lastRealHints, lastNormalizedHints, acc: Dictionary<_,_>) (fullName, hints) ->
                 if hints = lastRealHints then
-                    acc.[name] <- lastNormalizedHints
+                    acc.[fullName] <- lastNormalizedHints
                     lastRealHints, lastNormalizedHints, acc
                 else
                     let lastRealHints = hints
                     let lastNormalizedHints = lastNormalizedHints + 1
-                    acc.[name] <- lastNormalizedHints
+                    acc.[fullName] <- lastNormalizedHints
                     lastRealHints, lastNormalizedHints, acc
 
             ) (1, 1, Dictionary()) // original dictionary does not contain zeros, so we start from 1
@@ -117,9 +118,12 @@ type internal FSharpCompletionProvider
                 checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLineColumn, caretLine.ToString(), qualifyingNames, partialName) |> liftAsync
             
             let results = List<Completion.CompletionItem>()
-            
             let mormalizedMruItems = getNormalizedMruHints()
-            let longestNameLength = declarations.Items |> Array.map (fun x -> x.Name.Length) |> Array.max
+            
+            let longestNameLength = 
+                match declarations.Items with
+                | [||] -> 0
+                | items -> items |> Array.map (fun x -> x.Name.Length) |> Array.max
 
             for declarationItem in declarations.Items do
                 let glyph = CommonRoslynHelpers.FSharpGlyphToRoslynGlyph declarationItem.GlyphMajor
@@ -128,7 +132,8 @@ type internal FSharpCompletionProvider
                     | Some EntityKind.Attribute when declarationItem.IsAttribute && declarationItem.Name.EndsWith "Attribute"  ->
                         declarationItem.Name.[0..declarationItem.Name.Length - attributeSuffixLength - 1] 
                     | _ -> declarationItem.Name
-                let completionItem = CommonCompletionItem.Create(name, glyph = Nullable glyph)
+
+                let completionItem = CommonCompletionItem.Create(name, glyph = Nullable glyph).AddProperty(FullNamePropName, declarationItem.FullName)
                 
                 let completionItem =
                     if declarationItem.Name <> declarationItem.NameInCode then
@@ -149,7 +154,7 @@ type internal FSharpCompletionProvider
                     //String.replicate prefixLength "a" + name + string declarationItem.MinorPriority
                 
                     let hints = 
-                        match mormalizedMruItems.TryGetValue name with
+                        match mormalizedMruItems.TryGetValue declarationItem.FullName with
                         | true, hints ->
                             // for MRU items "foo" => 2, "longLongLong" => 1 to make "foo" appear on top, we 
                             // should prefix it with as many "a" symbols as ("foo" hints + <the longest item name in entire list>.Length - "foo".Length)
@@ -207,9 +212,12 @@ type internal FSharpCompletionProvider
         } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
 
     override this.GetChangeAsync(_, item, _, _) : Task<CompletionChange> =
-        match mruItems.TryGetValue item.DisplayText with
-        | true, hints -> mruItems.[item.DisplayText] <- hints + 1
-        | _ -> mruItems.[item.DisplayText] <- 1
+        match item.Properties.TryGetValue FullNamePropName with
+        | true, fullName ->
+            match mruItems.TryGetValue fullName with
+            | true, hints -> mruItems.[fullName] <- hints + 1
+            | _ -> mruItems.[fullName] <- 1
+        | _ -> ()
         
         let nameInCode =
             match item.Properties.TryGetValue NameInCodePropName with

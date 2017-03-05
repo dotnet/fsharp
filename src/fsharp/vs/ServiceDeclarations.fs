@@ -1350,7 +1350,7 @@ module internal ItemDescriptionsImpl =
      
 /// An intellisense declaration
 [<Sealed>]
-type FSharpDeclarationListItem(name: string, nameInCode: string, glyphMajor: GlyphMajor, glyphMinor: GlyphMinor, info, isAttribute: bool, kind: CompletionItemKind, isOwnMember: bool, priority: int) =
+type FSharpDeclarationListItem(name: string, nameInCode: string, fullName: string, glyphMajor: GlyphMajor, glyphMinor: GlyphMinor, info, isAttribute: bool, kind: CompletionItemKind, isOwnMember: bool, priority: int) =
     let mutable descriptionTextHolder:FSharpToolTipText<_> option = None
     let mutable task = null
 
@@ -1403,7 +1403,6 @@ type FSharpDeclarationListItem(name: string, nameInCode: string, glyphMajor: Gly
                 result
 
     member decl.DescriptionText = decl.StructuredDescriptionText |> Tooltips.ToFSharpToolTipText
-
     member decl.Glyph = 6 * int glyphMajor + int glyphMinor
     member decl.GlyphMajor = glyphMajor 
     member decl.GlyphMinor = glyphMinor
@@ -1411,6 +1410,7 @@ type FSharpDeclarationListItem(name: string, nameInCode: string, glyphMajor: Gly
     member decl.Kind = kind
     member decl.IsOwnMember = isOwnMember
     member decl.MinorPriority = priority
+    member decl.FullName = fullName
       
 /// A table of declarations for Intellisense completion 
 [<Sealed>]
@@ -1489,14 +1489,16 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                             if IsOperatorName nm then cleanName else "``" + cleanName + "``"
                         else nm, nm
 
+                    let fullName = ItemDescriptionsImpl.FullNameOfItem g items.Head.Item
+
                     new FSharpDeclarationListItem(
-                        name, nameInCode, glyphMajor, glyphMinor, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), IsAttribute infoReader items.Head.Item, 
+                        name, nameInCode, fullName, glyphMajor, glyphMinor, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), IsAttribute infoReader items.Head.Item, 
                         items.Head.Kind, items.Head.IsOwnMember, items.Head.MinorPriority))
 
         new FSharpDeclarationListInfo(Array.ofList decls)
     
     static member Error msg = 
         new FSharpDeclarationListInfo(
-                [| new FSharpDeclarationListItem("<Note>", "<Note>", GlyphMajor.Error, GlyphMinor.Normal, 
+                [| new FSharpDeclarationListItem("<Note>", "<Note>", "<Note>", GlyphMajor.Error, GlyphMinor.Normal, 
                                                  Choice2Of2 (FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError msg]), false, CompletionItemKind.Other, false, 0) |])
     static member Empty = new FSharpDeclarationListInfo([| |])

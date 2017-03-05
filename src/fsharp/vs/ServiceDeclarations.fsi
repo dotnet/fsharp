@@ -110,6 +110,7 @@ type internal FSharpDeclarationListItem =
     member Kind : CompletionItemKind
     member IsOwnMember : bool
     member MinorPriority : int
+    member FullName : string
 
 [<Sealed>]
 /// Represents a set of declarations in F# source code, with information attached ready for display by an editor.
