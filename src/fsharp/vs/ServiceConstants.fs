@@ -25,6 +25,7 @@ module ItemDescriptionIcons =
         | Union = 0x00016
         | Variable = 0x00017
         | ValueType = 0x00018 // Absolute = 144
+        | ExtensionMethod = 0x00019
         | Error = 0x0001f
 
 

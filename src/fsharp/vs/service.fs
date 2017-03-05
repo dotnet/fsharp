@@ -1165,7 +1165,7 @@ type TypeCheckInfo
                 | Some (items, denv, m) -> 
                     let items = items |> FilterAutoCompletesBasedOnParseContext parseResultsOpt (mkPos line colAtEndOfNamesAndResidue)
                     let items = if isInterfaceFile then items |> List.filter IsValidSignatureFileItem else items
-                    FSharpDeclarationListInfo.Create(infoReader,m,denv,items,reactorOps,checkAlive))
+                    FSharpDeclarationListInfo.Create(infoReader,m,denv,thisCcu,tcImports,items,reactorOps,checkAlive))
             (fun msg -> FSharpDeclarationListInfo.Error msg)
 
     /// Get the symbols for auto-complete items at a location

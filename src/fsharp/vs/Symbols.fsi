@@ -75,8 +75,7 @@ type [<Class>] internal FSharpSymbol =
     ///
     /// This is the relation used by GetUsesOfSymbol and GetUsesOfSymbolInFile.
     member IsEffectivelySameAs : other: FSharpSymbol -> bool
-
-
+    member Accessibility : FSharpAccessibility option
 
 /// Represents an assembly as seen by the F# language
 and [<Class>] internal FSharpAssembly = 

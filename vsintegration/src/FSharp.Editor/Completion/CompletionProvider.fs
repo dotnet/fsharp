@@ -97,7 +97,7 @@ type internal FSharpCompletionProvider
             let results = List<CompletionItem>()
             
             for declarationItem in declarations.Items do
-                let glyph = CommonRoslynHelpers.FSharpGlyphToRoslynGlyph declarationItem.GlyphMajor
+                let glyph = CommonRoslynHelpers.FSharpGlyphToRoslynGlyph (declarationItem.GlyphMajor, declarationItem.Accessibility)
                 let name =
                     match entityKind with
                     | Some EntityKind.Attribute when declarationItem.IsAttribute && declarationItem.Name.EndsWith "Attribute"  ->
