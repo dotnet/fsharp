@@ -701,8 +701,8 @@ module internal ItemDescriptionsImpl =
         | Item.FakeInterfaceCtor typ
         | Item.DelegateCtor typ
         | Item.Types(_, typ :: _) ->
-            match typ with
-            | TType.TType_app _ -> bufs (fun os -> NicePrint.outputTyconRef denv os (tcrefOfAppTy g typ))
+            match tryDestAppTy g typ with
+            | Some tcref -> bufs (fun os -> NicePrint.outputTyconRef denv os tcref)
             | _ -> ""
         | Item.ModuleOrNamespaces((modref :: _) as modrefs) -> 
             let definiteNamespace = modrefs |> List.forall (fun modref -> modref.IsNamespace)
