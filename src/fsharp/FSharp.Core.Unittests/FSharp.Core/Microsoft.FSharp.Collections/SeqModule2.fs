@@ -15,11 +15,13 @@ type SeqWindowedTestInput<'t> =
         Exception : Type option
     }
 
+
+[<Parallelizable>][<Category "Collections Tests">][<Category "Seq Tests">]
 [<TestFixture>]
-type SeqModule2() =
+module SeqModule2 =
 
     [<Test>]
-    member this.Hd() =
+    let Hd() =
              
         let IntSeq =
             seq { for i in 0 .. 9 do
@@ -41,7 +43,7 @@ type SeqModule2() =
         () 
 
     [<Test>]
-    member this.TryHead() =
+    let TryHead() =
         // int Seq     
         let IntSeq =
             seq { for i in 0 .. 9 -> i }
@@ -62,7 +64,7 @@ type SeqModule2() =
         () 
         
     [<Test>]
-    member this.Tl() =
+    let Tl() =
         // integer seq  
         let resultInt = Seq.tail <| seq { 1..10 }        
         Assert.AreEqual(Array.ofSeq (seq { 2..10 }), Array.ofSeq resultInt)
@@ -80,7 +82,7 @@ type SeqModule2() =
         ()
 
     [<Test>]
-    member this.Last() =
+    let Last() =
              
         let IntSeq =
             seq { for i in 0 .. 9 do
@@ -102,7 +104,7 @@ type SeqModule2() =
         () 
 
     [<Test>]
-    member this.TryLast() =
+    let TryLast() =
              
         let IntSeq =
             seq { for i in 0 .. 9 -> i }
@@ -124,7 +126,7 @@ type SeqModule2() =
         () 
         
     [<Test>]
-    member this.ExactlyOne() =
+    let ExactlyOne() =
              
         let IntSeq =
             seq { for i in 7 .. 7 do
@@ -151,7 +153,7 @@ type SeqModule2() =
         
                 
     [<Test>]
-    member this.Init() =
+    let Init() =
 
         let funcInt x = x
         let init_finiteInt = Seq.init 9 funcInt
@@ -176,7 +178,7 @@ type SeqModule2() =
         () 
         
     [<Test>]
-    member this.InitInfinite() =
+    let InitInfinite() =
 
         let funcInt x = x
         let init_infiniteInt = Seq.initInfinite funcInt
@@ -194,7 +196,7 @@ type SeqModule2() =
        
        
     [<Test>]
-    member this.IsEmpty() =
+    let IsEmpty() =
         
         //seq int
         let seqint = seq [1;2;3]
@@ -219,7 +221,7 @@ type SeqModule2() =
         ()
         
     [<Test>]
-    member this.Iter() =
+    let Iter() =
         //seq int
         let seqint =  seq [ 1..3]
         let cacheint = ref 0
@@ -248,7 +250,7 @@ type SeqModule2() =
         ()
         
     [<Test>]
-    member this.Iter2() =
+    let Iter2() =
     
         //seq int
         let seqint =  seq [ 1..3]
@@ -278,7 +280,7 @@ type SeqModule2() =
         ()
         
     [<Test>]
-    member this.Iteri() =
+    let Iteri() =
     
         // seq int
         let seqint =  seq [ 1..10]
@@ -308,7 +310,7 @@ type SeqModule2() =
         ()
 
     [<Test>]
-    member this.Iteri2() =
+    let Iteri2() =
 
         //seq int
         let seqint = seq [ 1..3]
@@ -351,7 +353,7 @@ type SeqModule2() =
         ()
         
     [<Test>]
-    member this.Length() =
+    let Length() =
 
          // integer seq  
         let resultInt = Seq.length {1..8}
@@ -372,7 +374,7 @@ type SeqModule2() =
         ()
         
     [<Test>]
-    member this.Map() =
+    let Map() =
 
          // integer Seq
         let funcInt x = 
@@ -403,7 +405,7 @@ type SeqModule2() =
         ()
         
     [<Test>]
-    member this.Map2() =
+    let Map2() =
          // integer Seq
         let funcInt x y = x+y
         let resultInt = Seq.map2 funcInt { 1..10 } {2..2..20} 
@@ -430,7 +432,7 @@ type SeqModule2() =
         ()
 
     [<Test>]
-    member this.Map3() = 
+    let Map3() = 
         // Integer seq
         let funcInt a b c = (a + b) * c
         let resultInt = Seq.map3 funcInt { 1..8 } { 2..9 } { 3..10 }
@@ -462,7 +464,7 @@ type SeqModule2() =
         ()
 
     [<Test>]
-    member this.MapFold() =
+    let MapFold() =
         // integer Seq
         let funcInt acc x = if x % 2 = 0 then 10*x, acc + 1 else x, acc
         let resultInt,resultIntAcc = Seq.mapFold funcInt 100 <| seq { 1..10 }
@@ -487,7 +489,7 @@ type SeqModule2() =
         ()
 
     [<Test>]
-    member this.MapFoldBack() =
+    let MapFoldBack() =
         // integer Seq
         let funcInt x acc = if acc < 105 then 10*x, acc + 2 else x, acc
         let resultInt,resultIntAcc = Seq.mapFoldBack funcInt (seq { 1..10 }) 100
@@ -511,7 +513,7 @@ type SeqModule2() =
 
         ()
 
-    member private this.MapWithSideEffectsTester (map : (int -> int) -> seq<int> -> seq<int>) expectExceptions =
+    let private MapWithSideEffectsTester (map : (int -> int) -> seq<int> -> seq<int>) expectExceptions =
         let i = ref 0
         let f x = i := !i + 1; x*x
         let e = ([1;2] |> map f).GetEnumerator()
@@ -548,7 +550,7 @@ type SeqModule2() =
         Assert.AreEqual(0,!i)
         
         
-    member private this.MapWithExceptionTester (map : (int -> int) -> seq<int> -> seq<int>) =
+    let private MapWithExceptionTester (map : (int -> int) -> seq<int> -> seq<int>) =
         let raiser x = if x > 0 then raise(NotSupportedException()) else x
         let e = (map raiser [0; 1]).GetEnumerator()
         Assert.IsTrue(e.MoveNext()) // should not throw
@@ -557,34 +559,34 @@ type SeqModule2() =
         Assert.AreEqual(0, e.Current) // should not throw
 
     [<Test>]
-    member this.MapWithSideEffects () =
-        this.MapWithSideEffectsTester Seq.map true
+    let MapWithSideEffects () =
+        MapWithSideEffectsTester Seq.map true
         
     [<Test>]
-    member this.MapWithException () =
-        this.MapWithExceptionTester Seq.map
+    let MapWithException () =
+        MapWithExceptionTester Seq.map
 
         
     [<Test>]
-    member this.SingletonCollectWithSideEffects () =
-        this.MapWithSideEffectsTester (fun f-> Seq.collect (f >> Seq.singleton)) true
+    let SingletonCollectWithSideEffects () =
+        MapWithSideEffectsTester (fun f-> Seq.collect (f >> Seq.singleton)) true
         
     [<Test>]
-    member this.SingletonCollectWithException () =
-        this.MapWithExceptionTester (fun f-> Seq.collect (f >> Seq.singleton))
+    let SingletonCollectWithException () =
+        MapWithExceptionTester (fun f-> Seq.collect (f >> Seq.singleton))
 
 #if !FX_NO_LINQ
     [<Test>]
-    member this.SystemLinqSelectWithSideEffects () =
-        this.MapWithSideEffectsTester (fun f s -> System.Linq.Enumerable.Select(s, Func<_,_>(f))) false
+    let SystemLinqSelectWithSideEffects () =
+        MapWithSideEffectsTester (fun f s -> System.Linq.Enumerable.Select(s, Func<_,_>(f))) false
         
     [<Test>]
-    member this.SystemLinqSelectWithException () =
-        this.MapWithExceptionTester (fun f s -> System.Linq.Enumerable.Select(s, Func<_,_>(f)))
+    let SystemLinqSelectWithException () =
+        MapWithExceptionTester (fun f s -> System.Linq.Enumerable.Select(s, Func<_,_>(f)))
 #endif
         
     [<Test>]
-    member this.MapiWithSideEffects () =
+    let MapiWithSideEffects () =
         let i = ref 0
         let f _ x = i := !i + 1; x*x
         let e = ([1;2] |> Seq.mapi f).GetEnumerator()
@@ -618,7 +620,7 @@ type SeqModule2() =
         Assert.AreEqual(0,!i)
         
     [<Test>]
-    member this.Map2WithSideEffects () =
+    let Map2WithSideEffects () =
         let i = ref 0
         let f x y = i := !i + 1; x*x
         let e = (Seq.map2 f [1;2] [1;2]).GetEnumerator()
@@ -652,7 +654,7 @@ type SeqModule2() =
         Assert.AreEqual(0,!i)
         
     [<Test>]
-    member this.Mapi2WithSideEffects () =
+    let Mapi2WithSideEffects () =
         let i = ref 0
         let f _ x y = i := !i + 1; x*x
         let e = (Seq.mapi2 f [1;2] [1;2]).GetEnumerator()
@@ -686,7 +688,7 @@ type SeqModule2() =
         Assert.AreEqual(0,!i)
 
     [<Test>]
-    member this.Collect() =
+    let Collect() =
          // integer Seq
         let funcInt x = seq [x+1]
         let resultInt = Seq.collect funcInt { 1..10 } 
@@ -718,7 +720,7 @@ type SeqModule2() =
         ()
         
     [<Test>]
-    member this.Mapi() =
+    let Mapi() =
 
          // integer Seq
         let funcInt x y = x+y
@@ -747,7 +749,7 @@ type SeqModule2() =
         ()
         
     [<Test>]
-    member this.Mapi2() =
+    let Mapi2() =
          // integer Seq
         let funcInt x y z = x+y+z
         let resultInt = Seq.mapi2 funcInt { 1..10 } {2..2..20}
@@ -783,7 +785,7 @@ type SeqModule2() =
         VerifySeqsEqual (seq [3;6;9;12;15;18;21;24;27;30]) (testSeqLengths longerSeq shorterSeq)
 
     [<Test>]
-    member this.Indexed() =
+    let Indexed() =
 
          // integer Seq
         let resultInt = Seq.indexed { 10..2..20 }
@@ -808,7 +810,7 @@ type SeqModule2() =
         ()
 
     [<Test>]
-    member this.Max() =
+    let Max() =
          // integer Seq
         let resultInt = Seq.max { 10..20 } 
         
@@ -829,7 +831,7 @@ type SeqModule2() =
         ()
         
     [<Test>]
-    member this.MaxBy() =
+    let MaxBy() =
     
         // integer Seq
         let funcInt x = x % 8
@@ -851,7 +853,7 @@ type SeqModule2() =
         ()
         
     [<Test>]
-    member this.MinBy() =
+    let MinBy() =
     
         // integer Seq
         let funcInt x = x % 8
@@ -874,7 +876,7 @@ type SeqModule2() =
         
           
     [<Test>]
-    member this.Min() =
+    let Min() =
 
          // integer Seq
         let resultInt = Seq.min { 10..20 } 
@@ -894,7 +896,7 @@ type SeqModule2() =
         ()
 
     [<Test>]
-    member this.Item() =
+    let Item() =
          // integer Seq
         let resultInt = Seq.item 3 { 10..20 }
         Assert.AreEqual(13, resultInt)
@@ -919,7 +921,7 @@ type SeqModule2() =
            CheckThrowsArgumentException (fun () -> Seq.item i { 10 .. 20 } |> ignore)
 
     [<Test>]
-    member this.``item should fail with correct number of missing elements``() =
+    let ``item should fail with correct number of missing elements``() =
         try
             Seq.item 0 (Array.zeroCreate<int> 0) |> ignore
             failwith "error expected"
@@ -933,7 +935,7 @@ type SeqModule2() =
         | exn when exn.Message.Contains("seq was short by 3 elements") -> ()
 
     [<Test>]
-    member this.Of_Array() =
+    let Of_Array() =
          // integer Seq
         let resultInt = Seq.ofArray [|1..10|]
         let expectedInt = {1..10}
@@ -952,7 +954,7 @@ type SeqModule2() =
         ()
         
     [<Test>]
-    member this.Of_List() =
+    let Of_List() =
          // integer Seq
         let resultInt = Seq.ofList [1..10]
         let expectedInt = {1..10}
@@ -972,7 +974,7 @@ type SeqModule2() =
         
           
     [<Test>]
-    member this.Pairwise() =
+    let Pairwise() =
          // integer Seq
         let resultInt = Seq.pairwise {1..3}
        
@@ -992,7 +994,7 @@ type SeqModule2() =
         ()
         
     [<Test>]
-    member this.Reduce() =
+    let Reduce() =
          
         // integer Seq
         let resultInt = Seq.reduce (fun x y -> x/y) (seq [5*4*3*2; 4;3;2;1])
@@ -1011,7 +1013,7 @@ type SeqModule2() =
         ()
 
     [<Test>]
-    member this.ReduceBack() =
+    let ReduceBack() =
         // int Seq
         let funcInt x y = x - y
         let IntSeq = seq { 1..4 }
@@ -1040,7 +1042,7 @@ type SeqModule2() =
         ()
 
     [<Test>]
-    member this.Rev() =
+    let Rev() =
         // integer Seq
         let resultInt = Seq.rev (seq [5;4;3;2;1])
         VerifySeqsEqual (seq[1;2;3;4;5]) resultInt
@@ -1058,7 +1060,7 @@ type SeqModule2() =
         ()
 
     [<Test>]
-    member this.Scan() =
+    let Scan() =
         // integer Seq
         let funcInt x y = x+y
         let resultInt = Seq.scan funcInt 9 {1..10}
@@ -1083,7 +1085,7 @@ type SeqModule2() =
         ()
         
     [<Test>]
-    member this.ScanBack() =
+    let ScanBack() =
         // integer Seq
         let funcInt x y = x+y
         let resultInt = Seq.scanBack funcInt { 1..10 } 9
@@ -1123,7 +1125,7 @@ type SeqModule2() =
         ()
 
     [<Test>]
-    member this.Singleton() =
+    let Singleton() =
         // integer Seq
         let resultInt = Seq.singleton 1
        
@@ -1143,7 +1145,7 @@ type SeqModule2() =
     
         
     [<Test>]
-    member this.Skip() =
+    let Skip() =
     
         // integer Seq
         let resultInt = Seq.skip 2 (seq [1;2;3;4])
@@ -1165,7 +1167,7 @@ type SeqModule2() =
         ()
        
     [<Test>]
-    member this.Skip_While() =
+    let Skip_While() =
     
         // integer Seq
         let funcInt x = (x < 3)
@@ -1188,7 +1190,7 @@ type SeqModule2() =
         ()
        
     [<Test>]
-    member this.Sort() =
+    let Sort() =
 
         // integer Seq
         let resultInt = Seq.sort (seq [1;3;2;4;6;5;7])
@@ -1210,7 +1212,7 @@ type SeqModule2() =
         ()
         
     [<Test>]
-    member this.SortBy() =
+    let SortBy() =
 
         // integer Seq
         let funcInt x = Math.Abs(x-5)
@@ -1234,7 +1236,7 @@ type SeqModule2() =
         ()
 
     [<Test>]
-    member this.SortDescending() =
+    let SortDescending() =
 
         // integer Seq
         let resultInt = Seq.sortDescending (seq [1;3;2;Int32.MaxValue;4;6;Int32.MinValue;5;7;0])
@@ -1273,7 +1275,7 @@ type SeqModule2() =
         ()
         
     [<Test>]
-    member this.SortByDescending() =
+    let SortByDescending() =
 
         // integer Seq
         let funcInt x = Math.Abs(x-5)
@@ -1309,7 +1311,7 @@ type SeqModule2() =
         CheckThrowsArgumentNullException(fun() -> Seq.sortByDescending funcInt null  |> ignore)
         ()
         
-    member this.SortWith() =
+    let SortWith() =
 
         // integer Seq
         let intComparer a b = compare (a%3) (b%3)
@@ -1332,7 +1334,7 @@ type SeqModule2() =
         ()
 
     [<Test>]
-    member this.Sum() =
+    let Sum() =
     
         // integer Seq
         let resultInt = Seq.sum (seq [1..10])
@@ -1372,7 +1374,7 @@ type SeqModule2() =
         ()
         
     [<Test>]
-    member this.SumBy() =
+    let SumBy() =
 
         // integer Seq
         let resultInt = Seq.sumBy int (seq [1..10])
@@ -1411,7 +1413,7 @@ type SeqModule2() =
         ()
         
     [<Test>]
-    member this.Take() =
+    let Take() =
         // integer Seq
         
         let resultInt = Seq.take 3 (seq [1;2;4;5;7])
@@ -1437,7 +1439,7 @@ type SeqModule2() =
         ()
         
     [<Test>]
-    member this.takeWhile() =
+    let takeWhile() =
         // integer Seq
         let funcInt x = (x < 6)
         let resultInt = Seq.takeWhile funcInt (seq [1;2;4;5;6;7])
@@ -1461,7 +1463,7 @@ type SeqModule2() =
         ()
         
     [<Test>]
-    member this.ToArray() =
+    let ToArray() =
         // integer Seq
         let resultInt = Seq.toArray(seq [1;2;4;5;7])
      
@@ -1483,32 +1485,32 @@ type SeqModule2() =
         ()
         
     [<Test>]    
-    member this.ToArrayFromICollection() =
+    let ToArrayFromICollection() =
         let inputCollection = ResizeArray(seq [1;2;4;5;7])
         let resultInt = Seq.toArray(inputCollection)
         let expectedInt = [|1;2;4;5;7|]
         Assert.AreEqual(expectedInt,resultInt)        
     
     [<Test>]    
-    member this.ToArrayEmptyInput() =
+    let ToArrayEmptyInput() =
         let resultInt = Seq.toArray(Seq.empty<int>)
         let expectedInt = Array.empty<int>
         Assert.AreEqual(expectedInt,resultInt)        
 
     [<Test>]    
-    member this.ToArrayFromArray() =
+    let ToArrayFromArray() =
         let resultInt = Seq.toArray([|1;2;4;5;7|])
         let expectedInt = [|1;2;4;5;7|]
         Assert.AreEqual(expectedInt,resultInt)        
     
     [<Test>]    
-    member this.ToArrayFromList() =
+    let ToArrayFromList() =
         let resultInt = Seq.toArray([1;2;4;5;7])
         let expectedInt = [|1;2;4;5;7|]
         Assert.AreEqual(expectedInt,resultInt)        
 
     [<Test>]
-    member this.ToList() =
+    let ToList() =
         // integer Seq
         let resultInt = Seq.toList (seq [1;2;4;5;7])
         let expectedInt = [1;2;4;5;7]
@@ -1528,7 +1530,7 @@ type SeqModule2() =
         ()
         
     [<Test>]
-    member this.Truncate() =
+    let Truncate() =
         // integer Seq
         let resultInt = Seq.truncate 3 (seq [1;2;4;5;7])
         let expectedInt = [1;2;4]
@@ -1553,7 +1555,7 @@ type SeqModule2() =
         ()
         
     [<Test>]
-    member this.tryFind() =
+    let tryFind() =
         // integer Seq
         let resultInt = Seq.tryFind (fun x -> (x%2=0)) (seq [1;2;4;5;7])
         Assert.AreEqual(Some(2), resultInt)
@@ -1580,7 +1582,7 @@ type SeqModule2() =
         ()
         
     [<Test>]
-    member this.TryFindBack() =
+    let TryFindBack() =
         // integer Seq
         let resultInt = Seq.tryFindBack (fun x -> (x%2=0)) (seq [1;2;4;5;7])
         Assert.AreEqual(Some 4, resultInt)
@@ -1606,7 +1608,7 @@ type SeqModule2() =
         ()
 
     [<Test>]
-    member this.TryFindIndex() =
+    let TryFindIndex() =
 
         // integer Seq
         let resultInt = Seq.tryFindIndex (fun x -> (x % 5 = 0)) [8; 9; 10]
@@ -1634,7 +1636,7 @@ type SeqModule2() =
         ()
         
     [<Test>]
-    member this.TryFindIndexBack() =
+    let TryFindIndexBack() =
 
         // integer Seq
         let resultInt = Seq.tryFindIndexBack (fun x -> (x % 5 = 0)) [5; 9; 10; 12]
@@ -1661,7 +1663,7 @@ type SeqModule2() =
         ()
 
     [<Test>]
-    member this.Unfold() =
+    let Unfold() =
         // integer Seq
         
         let resultInt = Seq.unfold (fun x -> if x = 1 then Some(7,2) else  None) 1
@@ -1675,7 +1677,7 @@ type SeqModule2() =
         
         
     [<Test>]
-    member this.Windowed() =
+    let Windowed() =
 
         let testWindowed config =
             try
@@ -1739,7 +1741,7 @@ type SeqModule2() =
         ()
         
     [<Test>]
-    member this.Zip() =
+    let Zip() =
     
         // integer Seq
         let resultInt = Seq.zip (seq [1..7]) (seq [11..17])
@@ -1764,7 +1766,7 @@ type SeqModule2() =
         ()
         
     [<Test>]
-    member this.Zip3() =
+    let Zip3() =
         // integer Seq
         let resultInt = Seq.zip3 (seq [1..7]) (seq [11..17]) (seq [21..27])
         let expectedInt = 
@@ -1789,7 +1791,7 @@ type SeqModule2() =
         ()
         
     [<Test>]
-    member this.tryPick() =
+    let tryPick() =
          // integer Seq
         let resultInt = Seq.tryPick (fun x-> if x = 1 then Some("got") else None) (seq [1..5])
          
@@ -1812,7 +1814,7 @@ type SeqModule2() =
         ()
 
     [<Test>]
-    member this.tryItem() =
+    let tryItem() =
         // integer Seq
         let resultInt = Seq.tryItem 3 { 10..20 }
         Assert.AreEqual(Some(13), resultInt)
