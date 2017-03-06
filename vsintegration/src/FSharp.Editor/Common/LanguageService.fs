@@ -314,7 +314,7 @@ and
         // update the cached options
         if updated then
             projectInfoManager.UpdateProjectInfo(project.Id, site, project.Workspace)
-      } |> Async.Start
+      } |> Async.StartImmediate
 
     member this.SetupProjectFile(siteProvider: IProvideProjectSite, workspace: VisualStudioWorkspaceImpl) =
         let  rec setup (site: IProjectSite) =
