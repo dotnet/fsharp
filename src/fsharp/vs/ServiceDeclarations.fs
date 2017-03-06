@@ -679,9 +679,9 @@ module internal ItemDescriptionsImpl =
                     suppressNestedTypes=true;
                     maxMembers=Some EnvMisc2.maxMembers }
 
-    let rec FullNameOfItem g d = 
+    let rec FullNameOfItem g item = 
         let denv = DisplayEnv.Empty(g)
-        match d with
+        match item with
         | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(_, vref, _)) }) 
         | Item.Value vref | Item.CustomBuilder (_,vref) -> fullDisplayTextOfValRef vref
         | Item.UnionCase (ucinfo,_) -> fullDisplayTextOfUnionCaseRef  ucinfo.UnionCaseRef
@@ -698,9 +698,12 @@ module internal ItemDescriptionsImpl =
         | Item.MethodGroup(_,_,Some minfo) -> bufs (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringEntityRef; bprintf os ".%s" minfo.DisplayName)        
         | Item.MethodGroup(_,minfo :: _,_) -> bufs (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringEntityRef; bprintf os ".%s" minfo.DisplayName)        
         | Item.UnqualifiedType (tcref :: _) -> bufs (fun os -> NicePrint.outputTyconRef denv os tcref)
-        | Item.FakeInterfaceCtor typ 
-        | Item.DelegateCtor typ 
-        | Item.Types(_,typ:: _) -> bufs (fun os -> NicePrint.outputTyconRef denv os (tcrefOfAppTy g typ))
+        | Item.FakeInterfaceCtor typ
+        | Item.DelegateCtor typ
+        | Item.Types(_, typ :: _) ->
+            match typ with
+            | TType.TType_app _ -> bufs (fun os -> NicePrint.outputTyconRef denv os (tcrefOfAppTy g typ))
+            | _ -> ""
         | Item.ModuleOrNamespaces((modref :: _) as modrefs) -> 
             let definiteNamespace = modrefs |> List.forall (fun modref -> modref.IsNamespace)
             if definiteNamespace then fullDisplayTextOfModRef modref else modref.DemangledModuleOrNamespaceName
