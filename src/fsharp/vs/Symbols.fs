@@ -2147,11 +2147,10 @@ type FSharpSymbol with
         | Item.Types _
         | Item.DelegateCtor _  -> dflt()
 
-    member this.Accessibility =
-        match this with
+    static member GetAccessibility (symbol: FSharpSymbol) =
+        match symbol with
         | :? FSharpEntity as x -> Some x.Accessibility
         | :? FSharpField as x -> Some x.Accessibility
         | :? FSharpUnionCase as x -> Some x.Accessibility
-        | :? FSharpActivePatternCase as x -> x.Accessibility
         | :? FSharpMemberFunctionOrValue as x -> Some x.Accessibility
         | _ -> None

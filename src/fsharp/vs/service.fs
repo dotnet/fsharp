@@ -623,9 +623,11 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                             if IsOperatorName nm then cleanName else "``" + cleanName + "``"
                         else nm, nm
 
+                    let symbol = FSharpSymbol.Create(g, ccu, tcImports, items.Head)
+
                     FSharpDeclarationListItem(
                         name, nameInCode, glyph, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), 
-                        ItemDescriptionsImpl.IsAttribute infoReader items.Head, FSharpSymbol.Create(g, ccu, tcImports, items.Head).Accessibility))
+                        ItemDescriptionsImpl.IsAttribute infoReader items.Head, FSharpSymbol.GetAccessibility symbol))
 
         new FSharpDeclarationListInfo(Array.ofList decls)
     
