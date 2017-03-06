@@ -314,7 +314,6 @@ and
         if updated then
             projectInfoManager.UpdateProjectInfo(project.Id, site, project.Workspace)
 
-
     member this.SetupProjectFile(siteProvider: IProvideProjectSite, workspace: VisualStudioWorkspaceImpl) =
         let  rec setup (site: IProjectSite) =
             let projectGuid = Guid(site.ProjectGuid)
