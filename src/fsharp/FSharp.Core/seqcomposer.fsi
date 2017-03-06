@@ -317,6 +317,9 @@ namespace Microsoft.FSharp.Collections
     [<CompiledName("CountByRef")>]
     val inline countByRef : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * int> when 'Key : equality and 'Key : not struct
 
+    [<CompiledName("Length")>]
+    val length: source:ISeq<'T> -> int
+
     [<CompiledName("ToArray")>]
     val toArray: source:ISeq<'T> -> array<'T>
 
@@ -334,6 +337,21 @@ namespace Microsoft.FSharp.Collections
 
     [<CompiledName("Permute")>]
     val permute: indexMap:(int->int) -> source:ISeq<'T> -> ISeq<'T>
+
+    [<CompiledName("ScanBack")>]
+    val scanBack<'T,'State> : folder:('T->'State->'State) -> source:ISeq<'T> -> state:'State -> ISeq<'State>
+
+    [<CompiledName("Zip")>]
+    val zip: source1:ISeq<'T1> -> source2:ISeq<'T2> -> ISeq<'T1 * 'T2>
+
+    [<CompiledName("ReduceBack")>]
+    val inline reduceBack: reduction:('T->'T->'T) -> source:ISeq<'T> -> 'T
+
+    [<CompiledName("FoldBack")>]
+    val inline foldBack<'T,'State> : folder:('T->'State->'State) -> source:ISeq<'T> -> state:'State -> 'State
+
+    [<CompiledName("FoldBack2")>]
+    val inline foldBack2<'T1,'T2,'State> : folder:('T1->'T2->'State->'State) -> source1:ISeq<'T1> -> source2:ISeq<'T2> -> state:'State -> 'State
 
     module internal GroupBy =
         val inline byVal : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * ISeq<'T>> when 'Key : equality

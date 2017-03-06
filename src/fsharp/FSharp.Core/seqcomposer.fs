@@ -840,6 +840,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "OfArray">]
         let ofArray (source:array<'T>) : ISeq<'T> =
+            checkNonNull "source" source
             Upcast.seq (Array.Enumerable (source, IdentityFactory.Instance, 1))
 
         [<CompiledName "OfList">]
@@ -1514,6 +1515,9 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Windowed">]
         let windowed (windowSize:int) (source:ISeq<'T>) : ISeq<'T[]> =
+            if windowSize <= 0 then
+                invalidArgFmt "windowSize" "{0}\nwindowSize = {1}" [|SR.GetString SR.inputMustBePositive; windowSize|]
+
             source.PushTransform { new TransformFactory<'T,'T[]>() with
                 member __.Compose outOfBand pipeIdx next =
                     upcast {
@@ -1630,54 +1634,52 @@ namespace Microsoft.FSharp.Collections
         let inline countByRef<'T,'Key when 'Key : equality and 'Key : not struct> (projection:'T -> 'Key) (source:ISeq<'T>) =
             CountBy.byRef projection source 
 
+        [<CompiledName("Length")>]
+        let length (source:ISeq<'T>)  =
+            source.Fold (fun _ ->
+                upcast { new Folder<'T,int,NoValue>(0,Unchecked.defaultof<_>) with
+                    override this.ProcessNext v =
+                        this.Result <- this.Result + 1
+                        Unchecked.defaultof<_> (* return value unused in Fold context *) })
+
         [<CompiledName("ToArray")>]
         let toArray (source:ISeq<'T>)  =
-            match box source with
-            | :? ('T[]) as res -> (res.Clone() :?> 'T[])
-            | :? ('T list) as res -> List.toArray res
-            | :? ICollection<'T> as res ->
-                // Directly create an array and copy ourselves.
-                // This avoids an extra copy if using ResizeArray in fallback below.
-                let arr = Array.zeroCreateUnchecked res.Count
-                res.CopyTo(arr, 0)
-                arr
-            | _ ->
-                source.Fold (fun _ ->
-                    upcast { new FolderWithPostProcessing<'T,array<'T>,_>(Unchecked.defaultof<_>,ResizeArray ()) with
-                        override this.ProcessNext v =
-                            this.State.Add v
-                            Unchecked.defaultof<_> (* return value unused in Fold context *)
-                        override this.OnComplete _ =
-                            this.Result <- this.State.ToArray ()
-                        override this.OnDispose () = () })
+            source.Fold (fun _ ->
+                upcast { new FolderWithPostProcessing<'T,array<'T>,_>(Unchecked.defaultof<_>,ResizeArray ()) with
+                    override this.ProcessNext v =
+                        this.State.Add v
+                        Unchecked.defaultof<_> (* return value unused in Fold context *)
+                    override this.OnComplete _ =
+                        this.Result <- this.State.ToArray ()
+                    override this.OnDispose () = () })
 
         [<CompiledName("SortBy")>]
         let sortBy keyf source =
             delay (fun () ->
                 let array = source |> toArray
                 Array.stableSortInPlaceBy keyf array
-                Upcast.seq (Array.Enumerable (array, IdentityFactory.Instance, 1)))
+                ofArray array)
 
         [<CompiledName("Sort")>]
         let sort source =
             delay (fun () -> 
                 let array = source |> toArray
                 Array.stableSortInPlace array
-                Upcast.seq (Array.Enumerable (array, IdentityFactory.Instance, 1)))
+                ofArray array)
 
         [<CompiledName("SortWith")>]
         let sortWith f source =
             delay (fun () ->
                 let array = source |> toArray
                 Array.stableSortInPlaceWith f array
-                Upcast.seq (Array.Enumerable (array, IdentityFactory.Instance, 1)))
+                ofArray array)
 
         [<CompiledName("Reverse")>]
         let rev source =
             delay (fun () ->
                 let array = source |> toArray
                 Array.Reverse array
-                Upcast.seq (Array.Enumerable (array, IdentityFactory.Instance, 1)))
+                ofArray array)
 
         [<CompiledName("Permute")>]
         let permute f (source:ISeq<_>) =
@@ -1685,4 +1687,39 @@ namespace Microsoft.FSharp.Collections
                 source
                 |> toArray
                 |> Array.permute f
-                |> fun array -> Upcast.seq (Array.Enumerable (array, IdentityFactory.Instance, 1)))
+                |> ofArray)
+
+        [<CompiledName("ScanBack")>]
+        let scanBack<'T,'State> f (source:ISeq<'T>) (acc:'State) : ISeq<'State> =
+            delay (fun () ->
+                let array = source |> toArray
+                Array.scanSubRight f array 0 (array.Length - 1) acc
+                |> ofArray)
+
+        let inline foldArraySubRight f (arr: 'T[]) start fin acc =
+            let mutable state = acc
+            for i = fin downto start do
+                state <- f arr.[i] state
+            state
+
+        [<CompiledName("FoldBack")>]
+        let inline foldBack<'T,'State> f (source: ISeq<'T>) (x:'State) =
+            let arr = toArray source
+            let len = arr.Length
+            foldArraySubRight f arr 0 (len - 1) x
+
+        [<CompiledName("Zip")>]
+        let zip source1 source2 =
+            map2 (fun x y -> x,y) source1 source2
+
+        [<CompiledName("FoldBack2")>]
+        let inline foldBack2<'T1,'T2,'State> f (source1:ISeq<'T1>) (source2:ISeq<'T2>) (x:'State) =
+            let zipped = zip source1 source2
+            foldBack ((<||) f) zipped x
+
+        [<CompiledName("ReduceBack")>]
+        let inline reduceBack f (source:ISeq<'T>) =
+            let arr = toArray source
+            match arr.Length with
+            | 0 -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+            | len -> foldArraySubRight f arr 0 (len - 2) arr.[len - 1]

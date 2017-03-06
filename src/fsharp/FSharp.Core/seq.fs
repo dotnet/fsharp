@@ -58,8 +58,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Unfold")>]
         let unfold (generator:'State->option<'T * 'State>) (state:'State) : seq<'T> =
-            Composer.unfold generator state
-            |> Upcast.enumerable
+            Composer.unfold generator state |> Upcast.enumerable
 
         [<CompiledName("Empty")>]
         let empty<'T> = (EmptyEnumerable :> seq<'T>)
@@ -184,7 +183,8 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Zip")>]
         let zip source1 source2  =
-            map2 (fun x y -> x,y) source1 source2
+            (source1 |> toComposer' "source1", source2 |> toComposer' "source2")
+            ||> Composer.zip |> Upcast.enumerable
 
         [<CompiledName("Zip3")>]
         let zip3 source1 source2  source3 =
@@ -244,6 +244,7 @@ namespace Microsoft.FSharp.Collections
             | :? ('T[]) as a -> a.Length
             | :? ('T list) as a -> a.Length
             | :? ICollection<'T> as a -> a.Count
+            | :? ISeq<'T> as a -> Composer.length a
             | _ ->
                 use e = source.GetEnumerator()
                 let mutable state = 0
@@ -294,7 +295,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("OfList")>]
         let ofList (source : 'T list) =
-            (source :> seq<'T>)
+            source |> Composer.ofList |> Upcast.enumerable
 
         [<CompiledName("ToList")>]
         let toList (source : seq<'T>) =
@@ -304,45 +305,42 @@ namespace Microsoft.FSharp.Collections
         // Create a new object to ensure underlying array may not be mutated by a backdoor cast
         [<CompiledName("OfArray")>]
         let ofArray (source : 'T array) =
-            checkNonNull "source" source
-            Upcast.enumerable (Composer.ofArray source)
+            source |> Composer.ofArray |> Upcast.enumerable
 
         [<CompiledName("ToArray")>]
-        let toArray (source : seq<'T>)  =
-            source |> toComposer |> Composer.toArray
-
-        let foldArraySubRight (f:OptimizedClosures.FSharpFunc<'T,_,_>) (arr: 'T[]) start fin acc =
-            let mutable state = acc
-            for i = fin downto start do
-                state <- f.Invoke(arr.[i], state)
-            state
+        let toArray (source:seq<'T>)  =
+            match source with
+            | :? ('T[]) as res -> (res.Clone() :?> 'T[])
+            | :? ('T list) as res -> List.toArray res
+            | :? ICollection<'T> as res ->
+                // Directly create an array and copy ourselves.
+                // This avoids an extra copy if using ResizeArray in fallback below.
+                let arr = Array.zeroCreateUnchecked res.Count
+                res.CopyTo(arr, 0)
+                arr
+            | :? ISeq<'T> as res -> Composer.toArray res
+            | _ ->
+                let res = ResizeArray source
+                res.ToArray ()
 
         [<CompiledName("FoldBack")>]
         let foldBack<'T,'State> f (source : seq<'T>) (x:'State) =
-            checkNonNull "source" source
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-            let arr = toArray source
-            let len = arr.Length
-            foldArraySubRight f arr 0 (len - 1) x
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt f
+            ((source |> toComposer), x) ||> Composer.foldBack (fun a b -> f.Invoke (a,b))
 
         [<CompiledName("FoldBack2")>]
         let foldBack2<'T1,'T2,'State> f (source1 : seq<'T1>) (source2 : seq<'T2>) (x:'State) =
-            let zipped = zip source1 source2
-            foldBack ((<||) f) zipped x
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt f
+            ((source1 |> toComposer' "source1"), (source2 |> toComposer' "source2"), x)
+            |||> Composer.foldBack2 (fun a b -> f.Invoke (a,b))
 
         [<CompiledName("ReduceBack")>]
         let reduceBack f (source : seq<'T>) =
-            checkNonNull "source" source
-            let arr = toArray source
-            match arr.Length with
-            | 0 -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-            | len ->
-                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-                foldArraySubRight f arr 0 (len - 2) arr.[len - 1]
-
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt f
+            source |> toComposer |> Composer.reduceBack (fun a b -> f.Invoke (a,b))
+            
         [<CompiledName("Singleton")>]
         let singleton x = mkSeq (fun () -> IEnumerator.Singleton x)
-
 
         [<CompiledName "Truncate">]
         let truncate n (source: seq<'T>) =
@@ -368,12 +366,8 @@ namespace Microsoft.FSharp.Collections
             source |> toArray |> Array.findBack f
 
         [<CompiledName("ScanBack")>]
-        let scanBack<'T,'State> f (source : seq<'T>) (acc:'State) =
-            checkNonNull "source" source
-            mkDelayedSeq(fun () ->
-                let arr = source |> toArray
-                let res = Array.scanSubRight f arr 0 (arr.Length - 1) acc
-                res :> seq<_>)
+        let scanBack<'T,'State> f (source:seq<'T>) (acc:'State) =
+            Composer.scanBack f (toComposer source) acc |> Upcast.enumerable
 
         [<CompiledName "TryFindIndex">]
         let tryFindIndex p (source:seq<_>) =
@@ -398,8 +392,6 @@ namespace Microsoft.FSharp.Collections
         // windowed : int -> seq<'T> -> seq<'T[]>
         [<CompiledName("Windowed")>]
         let windowed windowSize (source: seq<_>) =
-            if windowSize <= 0 then invalidArgFmt "windowSize" "{0}\nwindowSize = {1}"
-                                        [|SR.GetString SR.inputMustBePositive; windowSize|]
             source |> toComposer |> Composer.windowed windowSize |> Upcast.enumerable
 
         [<CompiledName("Cache")>]
