@@ -64,8 +64,9 @@ type internal FSharpCompletionProvider
         match items with
         | [] -> mruItems
         | _ ->
-            items
-            |> List.fold (fun (lastRealHints, lastNormalizedHints, acc: Dictionary<_,_>) (fullName, hints) ->
+            // items with no hints are not represented in the dictionary, so we start from 1
+            ((1, 1, Dictionary()), items)
+            ||> List.fold (fun (lastRealHints, lastNormalizedHints, acc: Dictionary<_,_>) (fullName, hints) ->
                 if hints = lastRealHints then
                     acc.[fullName] <- lastNormalizedHints
                     lastRealHints, lastNormalizedHints, acc
@@ -75,7 +76,7 @@ type internal FSharpCompletionProvider
                     acc.[fullName] <- lastNormalizedHints
                     lastRealHints, lastNormalizedHints, acc
 
-            ) (1, 1, Dictionary()) // original dictionary does not contain zeros, so we start from 1
+            ) 
             |> fun (_, _, acc) -> acc
     
     static member ShouldTriggerCompletionAux(sourceText: SourceText, caretPosition: int, trigger: CompletionTriggerKind, getInfo: (unit -> DocumentId * string * string list)) =

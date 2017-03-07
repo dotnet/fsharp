@@ -3703,7 +3703,8 @@ let rec ResolvePartialLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv is
              else 
                  []))
 
-let ResolveType (ncenv: NameResolver) (nenv: NameResolutionEnv) m (plid: string list) =
+/// Try to resolve a long identifier as type.
+let TryToResolveLongIdentAsType (ncenv: NameResolver) (nenv: NameResolutionEnv) m (plid: string list) =
     let g = ncenv.g
 
     match List.tryLast plid with

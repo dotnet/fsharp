@@ -32,6 +32,25 @@ open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.InfoReader
 
+type internal Layout = layout
+
+module EnvMisc2 =
+    let maxMembers = GetEnvInteger "FCS_MaxMembersInQuickInfo" 10
+
+    /// dataTipSpinWaitTime limits how long we block the UI thread while a tooltip pops up next to a selected item in an IntelliSense completion list.
+    /// This time appears to be somewhat amortized by the time it takes the VS completion UI to actually bring up the tooltip after selecting an item in the first place.
+    let dataTipSpinWaitTime = GetEnvInteger "FCS_ToolTipSpinWaitTime" 300
+
+//----------------------------------------------------------------------------
+// Display characteristics of typechecking items
+//--------------------------------------------------------------------------
+
+/// Interface that defines methods for comparing objects using partial equality relation
+type IPartialEqualityComparer<'T> = 
+    inherit IEqualityComparer<'T>
+    /// Can the specified object be tested for equality?
+    abstract InEqualityRelation : 'T -> bool
+
 /// Describe a comment as either a block of text or a file+signature reference into an intellidoc file.
 [<RequireQualifiedAccess>]
 type FSharpXmlDoc =
@@ -55,8 +74,6 @@ type FSharpToolTipElement<'T> =
 /// A single data tip display element with where text is expressed as string
 type FSharpToolTipElement = FSharpToolTipElement<string>
 
-type internal Layout = layout
-
 /// A single data tip display element with where text is expressed as <see cref="Layout"/>
 type internal FSharpStructuredToolTipElement = FSharpToolTipElement<Layout>
 
@@ -71,23 +88,6 @@ type FSharpToolTipText<'T> =
 type FSharpToolTipText = FSharpToolTipText<string>
 // specialization that stores data as <see cref="Layout"/>
 type internal FSharpStructuredToolTipText = FSharpToolTipText<Layout>
-
-/// Interface that defines methods for comparing objects using partial equality relation
-type IPartialEqualityComparer<'T> = 
-    inherit IEqualityComparer<'T>
-    /// Can the specified object be tested for equality?
-    abstract InEqualityRelation : 'T -> bool
-
-module EnvMisc2 =
-    let maxMembers = GetEnvInteger "FCS_MaxMembersInQuickInfo" 10
-
-    /// dataTipSpinWaitTime limits how long we block the UI thread while a tooltip pops up next to a selected item in an IntelliSense completion list.
-    /// This time appears to be somewhat amortized by the time it takes the VS completion UI to actually bring up the tooltip after selecting an item in the first place.
-    let dataTipSpinWaitTime = GetEnvInteger "FCS_ToolTipSpinWaitTime" 300
-
-//----------------------------------------------------------------------------
-// Display characteristics of typechecking items
-//--------------------------------------------------------------------------
 
 module internal Tooltips =
     let ToFSharpToolTipElement tooltip = 
@@ -1333,3 +1333,189 @@ module internal ItemDescriptionsImpl =
             | Item.ArgName _ -> FSharpGlyph.Variable
             | Item.SetterArg _ -> FSharpGlyph.Variable
             | _ -> FSharpGlyph.Error)
+
+type FSharpAccessibility(a:Accessibility, ?isProtected) = 
+    let isProtected = defaultArg isProtected  false
+
+    let isInternalCompPath x = 
+        match x with 
+        | CompPath(ILScopeRef.Local,[]) -> true 
+        | _ -> false
+
+    let (|Public|Internal|Private|) (TAccess p) = 
+        match p with 
+        | [] -> Public 
+        | _ when List.forall isInternalCompPath p  -> Internal 
+        | _ -> Private
+
+    member __.IsPublic = not isProtected && match a with Public -> true | _ -> false
+
+    member __.IsPrivate = not isProtected && match a with Private -> true | _ -> false
+
+    member __.IsInternal = not isProtected && match a with Internal -> true | _ -> false
+
+    member __.IsProtected = isProtected
+
+    member __.Contents = a
+
+    override x.ToString() = 
+        let (TAccess paths) = a
+        let mangledTextOfCompPath (CompPath(scoref,path)) = getNameOfScopeRef scoref + "/" + textOfPath (List.map fst path)  
+        String.concat ";" (List.map mangledTextOfCompPath paths)
+
+/// An intellisense declaration
+[<Sealed>]
+type FSharpDeclarationListItem(name: string, nameInCode: string, fullName: string, glyph: FSharpGlyph, info, isAttribute: bool, accessibility: FSharpAccessibility option,
+                               kind: CompletionItemKind, isOwnMember: bool, priority: int) =
+
+    let mutable descriptionTextHolder:FSharpToolTipText<_> option = None
+    let mutable task = null
+
+    member decl.Name = name
+    member decl.NameInCode = nameInCode
+
+    member decl.StructuredDescriptionTextAsync = 
+            match info with
+            | Choice1Of2 (items: CompletionItem list, infoReader, m, denv, reactor:IReactorOperations, checkAlive) -> 
+                    // reactor causes the lambda to execute on the background compiler thread, through the Reactor
+                    reactor.EnqueueAndAwaitOpAsync ("StructuredDescriptionTextAsync", fun ctok -> 
+                         RequireCompilationThread ctok
+                          // This is where we do some work which may touch TAST data structures owned by the IncrementalBuilder - infoReader, item etc. 
+                          // It is written to be robust to a disposal of an IncrementalBuilder, in which case it will just return the empty string. 
+                          // It is best to think of this as a "weak reference" to the IncrementalBuilder, i.e. this code is written to be robust to its
+                          // disposal. Yes, you are right to scratch your head here, but this is ok.
+                         cancellable.Return(
+                              if checkAlive() then FSharpToolTipText(items |> List.map (fun x -> ItemDescriptionsImpl.FormatStructuredDescriptionOfItem true infoReader m denv x.Item))
+                              else FSharpToolTipText [ FSharpStructuredToolTipElement.Single(wordL (tagText (FSComp.SR.descriptionUnavailable())), FSharpXmlDoc.None) ]))
+            | Choice2Of2 result -> 
+                async.Return result
+
+    member decl.DescriptionTextAsync = 
+        decl.StructuredDescriptionTextAsync
+        |> Tooltips.Map Tooltips.ToFSharpToolTipText
+
+    member decl.StructuredDescriptionText = 
+        match descriptionTextHolder with
+        | Some descriptionText -> descriptionText
+        | None ->
+            match info with
+            | Choice1Of2 _ -> 
+
+                // The dataTipSpinWaitTime limits how long we block the UI thread while a tooltip pops up next to a selected item in an IntelliSense completion list.
+                // This time appears to be somewhat amortized by the time it takes the VS completion UI to actually bring up the tooltip after selecting an item in the first place.
+                if isNull task then
+                    // kick off the actual (non-cooperative) work
+                    task <- System.Threading.Tasks.Task.Factory.StartNew(fun() -> 
+                        let text = decl.StructuredDescriptionTextAsync |> Async.RunSynchronously
+                        descriptionTextHolder <- Some text) 
+
+                // The dataTipSpinWaitTime limits how long we block the UI thread while a tooltip pops up next to a selected item in an IntelliSense completion list.
+                // This time appears to be somewhat amortized by the time it takes the VS completion UI to actually bring up the tooltip after selecting an item in the first place.
+                task.Wait EnvMisc2.dataTipSpinWaitTime  |> ignore
+                match descriptionTextHolder with 
+                | Some text -> text
+                | None -> FSharpToolTipText [ FSharpStructuredToolTipElement.Single(wordL (tagText (FSComp.SR.loadingDescription())), FSharpXmlDoc.None) ]
+
+            | Choice2Of2 result -> 
+                result
+
+    member decl.DescriptionText = decl.StructuredDescriptionText |> Tooltips.ToFSharpToolTipText
+    member decl.Glyph = glyph 
+    member decl.IsAttribute = isAttribute
+    member decl.Accessibility = accessibility
+    member decl.Kind = kind
+    member decl.IsOwnMember = isOwnMember
+    member decl.MinorPriority = priority
+    member decl.FullName = fullName
+
+/// A table of declarations for Intellisense completion 
+[<Sealed>]
+type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) = 
+    member self.Items = declarations
+
+    // Make a 'Declarations' object for a set of selected items
+    static member Create(infoReader:InfoReader, m, denv, accessibility, items: CompletionItem list, reactor, checkAlive) = 
+        let g = infoReader.g
+        let items = items |> ItemDescriptionsImpl.RemoveExplicitlySuppressedCompletionItems g
+        
+        let areTyconRefsEqual (ty1: TType option) (tyconRef: TyconRef) =
+            match ty1 with
+            | Some (TType.TType_app _ as ty) -> tyconRefEq g tyconRef (tcrefOfAppTy g ty)
+            | _ -> false
+
+        // Adjust items priority. Sort by name. For things with the same name, 
+        //     - show types with fewer generic parameters first
+        //     - show types before over other related items - they usually have very useful XmlDocs 
+        let _, _, items = 
+            items 
+            |> List.map (fun x ->
+                match x.Item with
+                | Item.Types (_,(TType_app(tcref,_) :: _)) -> { x with MinorPriority = 1 + tcref.TyparsNoRange.Length }
+                // Put delegate ctors after types, sorted by #typars. RemoveDuplicateItems will remove FakeInterfaceCtor and DelegateCtor if an earlier type is also reported with this name
+                | Item.FakeInterfaceCtor (TType_app(tcref,_)) 
+                | Item.DelegateCtor (TType_app(tcref,_)) -> { x with MinorPriority = 1000 + tcref.TyparsNoRange.Length }
+                // Put type ctors after types, sorted by #typars. RemoveDuplicateItems will remove DefaultStructCtors if a type is also reported with this name
+                | Item.CtorGroup (_, (cinfo :: _)) -> { x with MinorPriority = 1000 + 10 * (tcrefOfAppTy g cinfo.EnclosingType).TyparsNoRange.Length }
+                | Item.MethodGroup(_, minfo :: _, _) -> { x with IsOwnMember = areTyconRefsEqual x.Type minfo.DeclaringEntityRef }
+                | Item.Property(_, pinfo :: _) -> { x with IsOwnMember = areTyconRefsEqual x.Type (tcrefOfAppTy g pinfo.EnclosingType) }
+                | Item.ILField finfo -> { x with IsOwnMember = areTyconRefsEqual x.Type (tcrefOfAppTy g finfo.EnclosingType) }
+                | _ -> x)
+            |> List.sortBy (fun x -> x.MinorPriority)
+            |> List.fold (fun (prevRealPrior, prevNormalizedPrior, acc) x ->
+                if x.MinorPriority = prevRealPrior then
+                    prevRealPrior, prevNormalizedPrior, x :: acc
+                else
+                    let normalizedPrior = prevNormalizedPrior + 1
+                    x.MinorPriority, normalizedPrior, { x with MinorPriority = normalizedPrior } :: acc
+                ) (0, 0, [])
+
+        // Remove all duplicates. We've put the types first, so this removes the DelegateCtor and DefaultStructCtor's.
+        let items = items |> List.rev |> RemoveDuplicateCompletionItems g
+
+        if verbose then dprintf "service.ml: mkDecls: %d found groups after filtering\n" (List.length items); 
+
+        // Group by display name
+        let items = items |> List.groupBy (fun x -> x.Item.DisplayName) 
+
+        // Filter out operators (and list)
+        let items = 
+            // Check whether this item looks like an operator.
+            let isOperatorItem(name, item) = 
+                match item |> List.map (fun x -> x.Item) with
+                | [Item.Value _]
+                | [Item.MethodGroup _ ] -> IsOperatorName name
+                | [Item.UnionCase _] -> IsOperatorName name
+                | _ -> false              
+
+            let isFSharpList name = (name = "[]") // list shows up as a Type and a UnionCase, only such entity with a symbolic name, but want to filter out of intellisense
+
+            items |> List.filter (fun (name, items) -> not (isOperatorItem(name, items)) && not (isFSharpList name)) 
+            
+        let decls = 
+            // Filter out duplicate names
+            items |> List.map (fun (nm,itemsWithSameName) -> 
+                match itemsWithSameName with
+                | [] -> failwith "Unexpected empty bag"
+                | item :: _ as items -> 
+                    let glyph = ItemDescriptionsImpl.GlyphOfItem(denv, item.Item)
+                    let name, nameInCode =
+                        if nm.StartsWith "( " && nm.EndsWith " )" then
+                            let cleanName = nm.[2..nm.Length - 3]
+                            cleanName, 
+                            if IsOperatorName nm then cleanName else "``" + cleanName + "``"
+                        else nm, nm
+
+                    let fullName = ItemDescriptionsImpl.FullNameOfItem g item.Item
+
+                    FSharpDeclarationListItem(
+                        name, nameInCode, fullName, glyph, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), 
+                        ItemDescriptionsImpl.IsAttribute infoReader item.Item, accessibility, item.Kind, item.IsOwnMember, item.MinorPriority))
+
+        new FSharpDeclarationListInfo(Array.ofList decls)
+    
+    static member Error msg = 
+        new FSharpDeclarationListInfo(
+                [| FSharpDeclarationListItem("<Note>", "<Note>", "<Note>", FSharpGlyph.Error, Choice2Of2 (FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError msg]), 
+                                             false, None, CompletionItemKind.Other, false, 0) |])
+    
+    static member Empty = FSharpDeclarationListInfo([| |])
