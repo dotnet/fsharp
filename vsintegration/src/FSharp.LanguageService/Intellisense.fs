@@ -87,7 +87,7 @@ type internal FSharpMethodListForAMethodTip(documentationBuilder: IDocumentation
     override x.OpenBracket = if isThisAStaticArgumentsTip then "<" else "("
     override x.CloseBracket = if isThisAStaticArgumentsTip then ">" else ")"
 
-type ObsoleteGlyph =
+type internal ObsoleteGlyph =
     | Class = 0
     | Constant = 6
     | FunctionType = 12
