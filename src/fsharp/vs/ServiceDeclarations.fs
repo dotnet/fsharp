@@ -103,6 +103,22 @@ module internal Tooltips =
     
     let Map f a = async.Bind(a, f >> async.Return)
 
+[<RequireQualifiedAccess>]
+type CompletionItemKind =
+    | Field
+    | Property
+    | Method
+    | Event
+    | Argument
+    | Other
+
+type CompletionItem =
+    { Item: Item
+      Kind: CompletionItemKind
+      IsOwnMember: bool
+      MinorPriority: int
+      Type: TType option }
+
 [<AutoOpen>]
 module internal ItemDescriptionsImpl = 
 
@@ -586,6 +602,22 @@ module internal ItemDescriptionsImpl =
               | Wrap(Item.Event evt) -> evt.ComputeHashCode()
               | Wrap(Item.Property(_name, pis)) -> hash (pis |> List.map (fun pi -> pi.ComputeHashCode()))
               | _ -> failwith "unreachable") }
+
+    let CompletionItemDisplayPartialEquality g = 
+        let itemComparer = ItemDisplayPartialEquality g
+  
+        { new IPartialEqualityComparer<WrapType<CompletionItem>> with
+            member x.InEqualityRelation (Wrap item) = itemComparer.InEqualityRelation (Wrap item.Item)
+            member x.Equals(Wrap item1, Wrap item2) = itemComparer.Equals(Wrap item1.Item, Wrap item2.Item)
+            member x.GetHashCode (Wrap item) = itemComparer.GetHashCode(Wrap item.Item) }
+
+    let ItemWithTypeDisplayPartialEquality g = 
+        let itemComparer = ItemDisplayPartialEquality g
+        
+        { new IPartialEqualityComparer<WrapType<Item * _>> with
+            member x.InEqualityRelation (Wrap (item, _)) = itemComparer.InEqualityRelation (Wrap item)
+            member x.Equals(Wrap (item1, _), Wrap (item2, _)) = itemComparer.Equals(Wrap item1, Wrap item2)
+            member x.GetHashCode (Wrap (item, _)) = itemComparer.GetHashCode(Wrap item) }
     
     // Remove items containing the same module references
     let RemoveDuplicateModuleRefs modrefs  = 
@@ -599,25 +631,44 @@ module internal ItemDescriptionsImpl =
     let RemoveDuplicateItems g items = 
         items |> partialDistinctBy (ItemDisplayPartialEquality g) 
 
-    /// Filter types that are explicitly suppressed from the IntelliSense (such as uppercase "FSharpList", "Option", etc.)
-    let RemoveExplicitlySuppressed (g: TcGlobals) items = 
-      items |> List.filter (fun item ->
+    /// Remove all duplicate items
+    let RemoveDuplicateItemsWithType g (items: (Item * TType option) list) = 
+        items |> partialDistinctBy (ItemWithTypeDisplayPartialEquality g) 
+
+    /// Remove all duplicate items
+    let RemoveDuplicateCompletionItems g items = 
+        items |> partialDistinctBy (CompletionItemDisplayPartialEquality g) 
+
+    let IsExplicitlySuppressed (g: TcGlobals) (item: Item) = 
         // This may explore assemblies that are not in the reference set.
         // In this case just assume the item is not suppressed.
         protectAssemblyExploration true (fun () -> 
          match item with 
          | Item.Types(it, [ty]) -> 
-             g.suppressed_types |> List.forall (fun supp -> 
+             g.suppressed_types 
+             |> List.exists (fun supp -> 
                 if isAppTy g ty then 
                   // check if they are the same logical type (after removing all abbreviations)
                   let tcr1 = tcrefOfAppTy g ty
                   let tcr2 = tcrefOfAppTy g (generalizedTyconRef supp) 
-                  not(tyconRefEq g tcr1 tcr2 && 
-                      // check the display name is precisely the one we're suppressing
-                      it = supp.DisplayName)
-                else true ) 
-         | _ -> true ))
-    
+                  tyconRefEq g tcr1 tcr2 && 
+                  // check the display name is precisely the one we're suppressing
+                  it = supp.DisplayName
+                else false) 
+         | _ -> false)
+
+    /// Filter types that are explicitly suppressed from the IntelliSense (such as uppercase "FSharpList", "Option", etc.)
+    let RemoveExplicitlySuppressed (g: TcGlobals) (items: Item list) = 
+      items |> List.filter (fun item -> not (IsExplicitlySuppressed g item))
+
+    /// Filter types that are explicitly suppressed from the IntelliSense (such as uppercase "FSharpList", "Option", etc.)
+    let RemoveExplicitlySuppressedCompletionItems (g: TcGlobals) (items: CompletionItem list) = 
+      items |> List.filter (fun item -> not (IsExplicitlySuppressed g item.Item))
+
+    /// Filter types that are explicitly suppressed from the IntelliSense (such as uppercase "FSharpList", "Option", etc.)
+    let RemoveExplicitlySuppressedItemsWithType (g: TcGlobals) (items: (Item * TType option) list) = 
+      items |> List.filter (fun (item, _) -> not (IsExplicitlySuppressed g item))
+
     let SimplerDisplayEnv denv _isDecl = 
         { denv with suppressInlineKeyword=true; 
                     shortConstraints=true; 
@@ -626,9 +677,9 @@ module internal ItemDescriptionsImpl =
                     suppressNestedTypes=true;
                     maxMembers=Some EnvMisc2.maxMembers }
 
-    let rec FullNameOfItem g d = 
+    let rec FullNameOfItem g item = 
         let denv = DisplayEnv.Empty(g)
-        match d with
+        match item with
         | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(_, vref, _)) }) 
         | Item.Value vref | Item.CustomBuilder (_,vref) -> fullDisplayTextOfValRef vref
         | Item.UnionCase (ucinfo,_) -> fullDisplayTextOfUnionCaseRef  ucinfo.UnionCaseRef
@@ -647,7 +698,10 @@ module internal ItemDescriptionsImpl =
         | Item.UnqualifiedType (tcref :: _) -> bufs (fun os -> NicePrint.outputTyconRef denv os tcref)
         | Item.FakeInterfaceCtor typ 
         | Item.DelegateCtor typ 
-        | Item.Types(_,typ:: _) -> bufs (fun os -> NicePrint.outputTyconRef denv os (tcrefOfAppTy g typ))
+        | Item.Types(_,typ:: _) -> 
+            match tryDestAppTy g typ with
+            | Some tcref -> bufs (fun os -> NicePrint.outputTyconRef denv os tcref)
+            | _ -> ""
         | Item.ModuleOrNamespaces((modref :: _) as modrefs) -> 
             let definiteNamespace = modrefs |> List.forall (fun modref -> modref.IsNamespace)
             if definiteNamespace then fullDisplayTextOfModRef modref else modref.DemangledModuleOrNamespaceName

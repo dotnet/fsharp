@@ -197,6 +197,10 @@ type internal FSharpDeclarationListItem =
     member Glyph : FSharpGlyph
     member IsAttribute : bool
     member Accessibility : FSharpAccessibility option
+    member Kind : CompletionItemKind
+    member IsOwnMember : bool
+    member MinorPriority : int
+    member FullName : string
 
 [<Sealed>]
 /// Represents a set of declarations in F# source code, with information attached ready for display by an editor.
@@ -207,7 +211,7 @@ type internal FSharpDeclarationListInfo =
     member Items : FSharpDeclarationListItem[]
 
     // Implementation details used by other code in the compiler    
-    static member internal Create : infoReader:InfoReader * m:range * denv:DisplayEnv * ccu:CcuThunk * tcImports:CompileOps.TcImports * items:Item list * reactor:IReactorOperations * checkAlive:(unit -> bool) -> FSharpDeclarationListInfo
+    static member internal Create : infoReader:InfoReader * m:range * denv:DisplayEnv * ccu:CcuThunk * tcImports:CompileOps.TcImports * items:CompletionItem list * reactor:IReactorOperations * checkAlive:(unit -> bool) -> FSharpDeclarationListInfo
     static member internal Error : message:string -> FSharpDeclarationListInfo
     static member Empty : FSharpDeclarationListInfo
 
