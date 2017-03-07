@@ -2119,7 +2119,6 @@ type LexerWhitespaceContinuation =
     | StringInComment    of ifdef:LexerIfdefStackEntries * int * range:range
     | VerbatimStringInComment   of ifdef:LexerIfdefStackEntries * int * range:range
     | TripleQuoteStringInComment   of ifdef:LexerIfdefStackEntries * int * range:range
-    | MLOnly            of ifdef:LexerIfdefStackEntries * range:range
     | EndLine           of LexerEndlineContinuation
 
     member x.LexerIfdefStack =
@@ -2133,8 +2132,7 @@ type LexerWhitespaceContinuation =
         | LexCont.TripleQuoteString (ifdef=ifd)
         | LexCont.StringInComment (ifdef=ifd)
         | LexCont.VerbatimStringInComment (ifdef=ifd)
-        | LexCont.TripleQuoteStringInComment (ifdef=ifd)
-        | LexCont.MLOnly (ifdef=ifd) -> ifd
+        | LexCont.TripleQuoteStringInComment (ifdef=ifd) -> ifd
         | LexCont.EndLine endl -> endl.LexerIfdefStack
 
 and LexCont = LexerWhitespaceContinuation
