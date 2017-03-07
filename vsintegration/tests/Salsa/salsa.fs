@@ -321,20 +321,17 @@ module internal Salsa =
     type DeclarationType = 
         | Class =0
         | Constant = 6
-        | FunctionType = 12             // Like 'type FunctionType=unit->unit' 
         | Enum = 18
         | EnumMember = 24
         | Event =30
         | Exception = 36
         | Interface = 48
         | Method = 72
-        | FunctionValue = 74            // Like 'type Function x = 0'
         | Module = 84
         | Namespace = 90
         | Property = 102
         | ValueType = 108               // Like 'type ValueType=int*int' 
         | RareType = 120                // Bucket for unusual types like 'type AsmType = (# "!0[]" #)'
-        | Record = 126
         | DiscriminatedUnion = 132
         
     type BuildAction =
