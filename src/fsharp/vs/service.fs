@@ -1691,8 +1691,14 @@ type TypeCheckInfo
                 Some (m, SemanticClassificationType.ReferenceType)
             | CNR(_, (Item.TypeVar _ ), LegitTypeOccurence, _, _, _, m) ->
                 Some (m, SemanticClassificationType.TypeArgument)
-            | CNR(_, (Item.UnqualifiedType _ | Item.CtorGroup _), LegitTypeOccurence, _, _, _, m) ->
-                Some (m, SemanticClassificationType.ReferenceType)
+            | CNR(_, Item.UnqualifiedType tyconRefs, LegitTypeOccurence, _, _, _, m) ->
+                if tyconRefs |> List.exists (fun tyconRef -> tyconRef.Deref.IsStructOrEnumTycon) then
+                    Some (m, SemanticClassificationType.ValueType)
+                else Some (m, SemanticClassificationType.ReferenceType)
+            | CNR(_, Item.CtorGroup(_, minfos), LegitTypeOccurence, _, _, _, m) ->
+                if minfos |> List.exists (fun minfo -> isStructTy g minfo.EnclosingType) then
+                    Some (m, SemanticClassificationType.ValueType)
+                else Some (m, SemanticClassificationType.ReferenceType)
             | CNR(_, Item.ModuleOrNamespaces refs, LegitTypeOccurence, _, _, _, m) when refs |> List.exists (fun x -> x.IsModule) ->
                 Some (m, SemanticClassificationType.ReferenceType)
             | CNR(_, (Item.ActivePatternCase _ | Item.UnionCase _ | Item.ActivePatternResult _), _, _, _, _, m) ->
