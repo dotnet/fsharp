@@ -127,7 +127,7 @@
     <RoslynVSPackagesVersion>14.3.25407</RoslynVSPackagesVersion>
       
     <!-- The version of MSBuild assumed byt the F# compiler in the Mono packaging of F# -->
-    <MonoPackagingMSBuildVersionSuffix>v12.0"</MonoPackagingMSBuildVersionSuffix>
+    <MonoPackagingMSBuildVersionSuffix>v12.0</MonoPackagingMSBuildVersionSuffix>
     <MonoPackagingMSBuildVersionFull>12.0.0.0</MonoPackagingMSBuildVersionFull>	  
 
     <!-- FSharp.Compiler.Tools is currently only used to get a working FSI.EXE to execute some scripts during the build -->

@@ -402,7 +402,7 @@ if [ "${RestorePackages:-true}" = 'true' ]; then
     fi
 
     if [ "$BUILD_VS" = '1' ]; then
-        eval "$nugetexe restore vsintegration/packages.config -PackagesDirectory packages -ConfigFile $_nugetconfig"
+        eval "$_nugetexe restore vsintegration/packages.config -PackagesDirectory packages -ConfigFile $_nugetconfig"
         if [ $? -ne 0 ]; then
             failwith "Nuget restore failed"
         fi
@@ -447,16 +447,12 @@ if [ "$BUILD_PROTO" = '1' ]; then
         { pushd ./lkg/fsc && eval "$_dotnetexe restore" && popd; } || failwith "dotnet restore failed"
         { pushd ./lkg/fsi && eval "$_dotnetexe restore" && popd; } || failwith "dotnet restore failed"
         
-        #pushd ./lkg/fsc && $_dotnetexe publish project.json --no-build -o ${_scriptdir}Tools/lkg -r $_architecture && popd && if ERRORLEVEL 1 echo Error: dotnet publish failed  && goto :failure
-        #pushd ./lkg/fsi && $_dotnetexe publish project.json --no-build -o ${_scriptdir}Tools/lkg -r $_architecture && popd && if ERRORLEVEL 1 echo Error: dotnet publish failed  && goto :failure
+        { pushd ./lkg/fsc && eval "$_dotnetexe publish project.json --no-build -o ${_scriptdir}Tools/lkg -r $_architecture" && popd; } || failwith "dotnet publish failed"
+        { pushd ./lkg/fsi && eval "$_dotnetexe publish project.json --no-build -o ${_scriptdir}Tools/lkg -r $_architecture" && popd; } || failwith "dotnet publish failed"
 
-        #echo $_msbuildexe $msbuildflags src/fsharp-proto-build.proj
-        #    $_msbuildexe $msbuildflags src/fsharp-proto-build.proj
-        #@if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
+        { printeval "$_msbuildexe $msbuildflags src/fsharp-proto-build.proj"; } || failwith "compiler proto build failed"
 
-        #echo $_ngenexe install Proto/net40/bin/fsc-proto.exe /nologo 
-        #    $_ngenexe install Proto/net40/bin/fsc-proto.exe /nologo 
-        #@if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
+#        { printeval "$_ngenexe install Proto/net40/bin/fsc-proto.exe /nologo"; } || failwith "NGen of proto failed"
     else
         # Build proto-compiler and libs
         { printeval "$_msbuildexe $msbuildflags src/fsharp-proto-build.proj /p:UseMonoPackaging=true"; } || failwith "compiler proto build failed"
@@ -512,7 +508,7 @@ fi
 printf "WHERE_ARG_NUNIT=%s\n" "$WHERE_ARG_NUNIT"
 
 export NUNITPATH="tests/fsharpqa/testenv/bin/nunit/"
-export NUNIT3_CONSOLE="packages/NUnit.Console.3.0.0/tools/nunit3-console.exe"
+export NUNIT3_CONSOLE="${NUNITPATH}nunit3-console.exe"
 export link_exe="${_scriptdir}packages/VisualCppTools.14.0.24519-Pre/lib/native/bin/link.exe"
 if [ ! -f "$link_exe" ]; then
     failwith "failed to find '$link_exe' use nuget to restore the VisualCppTools package"
@@ -547,50 +543,16 @@ if [ "$TEST_NET40_FSHARP_SUITE" = '1' ]; then
         ERRORARG="--err:\"$ERRORFILE\""
     fi
 
-    if ! printeval "$NUNIT3_CONSOLE --verbose \"$FSCBINPATH/FSharp.Tests.FSharpSuite.dll\" --framework:V4.0 --work:\"$FSCBINPATH\"  $OUTPUTARG $ERRORARG --result:\"$XMLFILE;format=nunit3\" $WHERE_ARG_NUNIT"; then
-        # TODO: Don't need to use 'cat' here -- can just use stream redirection to write the file directly to stdout/stderr
-        cat "$ERRORFILE"
+    if ! printeval "mono $NUNIT3_CONSOLE --verbose \"$FSCBINPATH/FSharp.Tests.FSharpSuite.dll\" --framework:V4.0 --work:\"$FSCBINPATH\"  $OUTPUTARG $ERRORARG --result:\"$XMLFILE;format=nunit3\" $WHERE_ARG_NUNIT"; then
+        if [ -f "$ERRORFILE" ]; then
+            echo -----------------------------------------------------------------
+            cat "$ERRORFILE"
+        fi
         echo -----------------------------------------------------------------
         echo Error: Running tests net40-fsharp failed, see log above -- FAILED
         echo -----------------------------------------------------------------
         exit 1
     fi
-fi
-
-# ---------------- net40-fsharpqa  -----------------------
-
-OSARCH="${PROCESSOR_ARCHITECTURE:-x64}"
-
-# Set this to 1 in order to use an external compiler host process
-#    This only has an effect when running the FSHARPQA tests, but can
-#    greatly speed up execution since fsc.exe does not need to be spawned thousands of times
-HOSTED_COMPILER=1
-
-if [ "$TEST_NET40_FSHARPQA_SUITE" = '1' ]; then
-
-	export FSC="$FSCBINPATH/fsc.exe"
-	export FSCOREDLLPATH="$FSCBINPATH/FSharp.Core.dll"
-	export PATH="$FSCBINPATH;$PATH"
-
-    if ! command -v perl > /dev/null; then
-		failwith "perl is not in the PATH, it is required for the net40-fsharpqa test suite"
-	fi
-
-	OUTPUTFILE=test-net40-fsharpqa-results.log
-	ERRORFILE=test-net40-fsharpqa-errors.log
-	FAILENV=test-net40-fsharpqa-errors
-
-	{ pushd "${_scriptdir}tests/fsharpqa/source" && \
-      printeval "perl tests/fsharpqa/testenv/bin/runall.pl -resultsroot $RESULTSDIR -results $OUTPUTFILE -log $ERRORFILE -fail $FAILENV -cleanup:no $TTAGS_ARG_RUNALL $PARALLEL_ARG" && \
-      popd; } || {
-        cat "$RESULTSDIR/$OUTPUTFILE"
-        echo -----------------------------------------------------------------
-        cat "$RESULTSDIR/$ERRORFILE"
-        echo -----------------------------------------------------------------
-        echo Error: Running tests net40-fsharpqa failed, see logs above -- FAILED
-        echo -----------------------------------------------------------------
-        exit 1
-      }
 fi
 
 # ---------------- net40-compilerunit  -----------------------
@@ -608,11 +570,15 @@ if [ "$TEST_NET40_COMPILERUNIT_SUITE" = '1' ]; then
 	    OUTPUTARG="--output:\"$OUTPUTFILE\""
     fi
     
-    if ! printeval "$NUNIT3_CONSOLE --verbose --framework:V4.0 --result:\"$XMLFILE;format=nunit3\" $OUTPUTARG  $ERRORARG --work:\"$FSCBINPATH\" \"$FSCBINPATH/../../net40/bin/FSharp.Compiler.Unittests.dll\" $WHERE_ARG_NUNIT"; then
-        echo -----------------------------------------------------------------
-        cat "$OUTPUTFILE"
-        echo -----------------------------------------------------------------
-        cat "$ERRORFILE"
+    if ! printeval "mono $NUNIT3_CONSOLE --verbose --framework:V4.0 --result:\"$XMLFILE;format=nunit3\" $OUTPUTARG  $ERRORARG --work:\"$FSCBINPATH\" \"$FSCBINPATH/../../net40/bin/FSharp.Compiler.Unittests.dll\" $WHERE_ARG_NUNIT"; then
+        if [ -f "$OUTPUTFILE" ]; then
+            echo -----------------------------------------------------------------
+            cat "$OUTPUTFILE"
+        fi
+        if [ -f "$ERRORFILE" ]; then
+            echo -----------------------------------------------------------------
+            cat "$ERRORFILE"
+        fi
         echo -----------------------------------------------------------------
         echo Error: Running tests net40-compilerunit failed, see logs above -- FAILED
         echo -----------------------------------------------------------------
@@ -636,11 +602,15 @@ if [ "$TEST_NET40_COREUNIT_SUITE" = '1' ]; then
 	    OUTPUTARG="--output:\"$OUTPUTFILE\""
     fi
 
-    if ! printeval "$NUNIT3_CONSOLE --verbose --framework:V4.0 --result:\"$XMLFILE;format=nunit3\" $OUTPUTARG $ERRORARG --work:\"$FSCBINPATH\" \"$FSCBINPATH/FSharp.Core.Unittests.dll\" $WHERE_ARG_NUNIT"; then
-        echo -----------------------------------------------------------------
-        cat "$OUTPUTFILE"
-        echo -----------------------------------------------------------------
-        cat "$ERRORFILE"
+    if ! printeval "mono $NUNIT3_CONSOLE --verbose --framework:V4.0 --result:\"$XMLFILE;format=nunit3\" $OUTPUTARG $ERRORARG --work:\"$FSCBINPATH\" \"$FSCBINPATH/FSharp.Core.Unittests.dll\" $WHERE_ARG_NUNIT"; then
+        if [ -f "$OUTPUTFILE" ]; then
+            echo -----------------------------------------------------------------
+            cat "$OUTPUTFILE"
+        fi
+        if [ -f "$ERRORFILE" ]; then
+            echo -----------------------------------------------------------------
+            cat "$ERRORFILE"
+        fi
         echo -----------------------------------------------------------------
         echo Error: Running tests net40-coreunit failed, see logs above -- FAILED
         echo -----------------------------------------------------------------
@@ -665,11 +635,15 @@ if [ "$TEST_PORTABLE_COREUNIT_SUITE" = '1' ]; then
         OUTPUTARG="--output:\"$OUTPUTFILE\""
 	fi
 
-    if ! printeval "$NUNIT3_CONSOLE /framework:V4.0 /result=\"$XMLFILE;format=nunit3\" $OUTPUTARG $ERRORARG /work=\"$FSCBINPATH\" \"$FSCBINPATH/../../portable7/bin/FSharp.Core.Unittests.dll\" \"$FSCBINPATH/../../portable47/bin/FSharp.Core.Unittests.dll\" \"$FSCBINPATH/../../portable78/bin/FSharp.Core.Unittests.dll\" \"$FSCBINPATH/../../portable259/bin/FSharp.Core.Unittests.dll\" $WHERE_ARG_NUNIT"; then
-        echo -----------------------------------------------------------------
-        cat "$OUTPUTFILE"
-        echo -----------------------------------------------------------------
-        cat "$ERRORFILE"
+    if ! printeval "mono $NUNIT3_CONSOLE /framework:V4.0 /result=\"$XMLFILE;format=nunit3\" $OUTPUTARG $ERRORARG /work=\"$FSCBINPATH\" \"$FSCBINPATH/../../portable7/bin/FSharp.Core.Unittests.dll\" \"$FSCBINPATH/../../portable47/bin/FSharp.Core.Unittests.dll\" \"$FSCBINPATH/../../portable78/bin/FSharp.Core.Unittests.dll\" \"$FSCBINPATH/../../portable259/bin/FSharp.Core.Unittests.dll\" $WHERE_ARG_NUNIT"; then
+        if [ -f "$OUTPUTFILE" ]; then
+            echo -----------------------------------------------------------------
+            cat "$OUTPUTFILE"
+        fi
+        if [ -f "$ERRORFILE" ]; then
+            echo -----------------------------------------------------------------
+            cat "$ERRORFILE"
+        fi
         echo -----------------------------------------------------------------
         echo Error: Running tests portable-coreunit failed, see logs above -- FAILED
         echo -----------------------------------------------------------------
@@ -711,4 +685,45 @@ if [ "$TEST_CORECLR_FSHARP_SUITE" = '1' ]; then
         echo -----------------------------------------------------------------
         exit 1
     fi
+fi
+
+# ---------------- net40-fsharpqa  -----------------------
+
+OSARCH="${PROCESSOR_ARCHITECTURE:-x64}"
+
+# Set this to 1 in order to use an external compiler host process
+#    This only has an effect when running the FSHARPQA tests, but can
+#    greatly speed up execution since fsc.exe does not need to be spawned thousands of times
+HOSTED_COMPILER=1
+
+if [ "$TEST_NET40_FSHARPQA_SUITE" = '1' ]; then
+
+	export FSC="$FSCBINPATH/fsc.exe"
+	export FSCOREDLLPATH="$FSCBINPATH/FSharp.Core.dll"
+	export PATH="$FSCBINPATH;$PATH"
+
+    if ! command -v perl > /dev/null; then
+		failwith "perl is not in the PATH, it is required for the net40-fsharpqa test suite"
+	fi
+
+	OUTPUTFILE=test-net40-fsharpqa-results.log
+	ERRORFILE=test-net40-fsharpqa-errors.log
+	FAILENV=test-net40-fsharpqa-errors
+
+	{ pushd "${_scriptdir}tests/fsharpqa/source" && \
+      printeval "perl tests/fsharpqa/testenv/bin/runall.pl -resultsroot $RESULTSDIR -results $OUTPUTFILE -log $ERRORFILE -fail $FAILENV -cleanup:no $TTAGS_ARG_RUNALL $PARALLEL_ARG" && \
+      popd; } || {
+        if [ -f "$RESULTSDIR/$OUTPUTFILE" ]; then
+            echo -----------------------------------------------------------------
+            cat "$RESULTSDIR/$OUTPUTFILE"
+        fi
+        if [ -f "$RESULTSDIR/$ERRORFILE" ]; then
+            echo -----------------------------------------------------------------
+            cat "$RESULTSDIR/$ERRORFILE"
+        fi
+        echo -----------------------------------------------------------------
+        echo Error: Running tests net40-fsharpqa failed, see logs above -- FAILED
+        echo -----------------------------------------------------------------
+        exit 1
+      }
 fi

@@ -29,7 +29,7 @@
                 <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
               </PropertyGroup>
             </When>
-            <When Condition="'$(AssemblyName)' == 'FSharp.Core' or '$(AssemblyName)' == 'FSharp.Build' or '$(AssemblyName)' == 'FSharp.Compiler' or '$(AssemblyName)' == 'FSharp.Compiler.Interactive.Settings' or '$(AssemblyName)' == 'FSharp.Compiler.Server.Shared' or '$(AssemblyName)' == 'fsc' or '$(AssemblyName)' == 'fsi' or '$(AssemblyName)' == 'fsiAnyCpu' or '$(AssemblyName)' == 'FSharp.Compiler.Unittests' or '$(AssemblyName)' == 'HostedCompilerServer'" >
+            <When Condition="'$(AssemblyName)' == 'FSharp.Core' or '$(AssemblyName)' == 'FSharp.Build' or '$(AssemblyName)' == 'FSharp.Compiler' or '$(AssemblyName)' == 'FSharp.Compiler.Interactive.Settings' or '$(AssemblyName)' == 'FSharp.Compiler.Server.Shared' or '$(AssemblyName)' == 'fsc' or '$(AssemblyName)' == 'fsi' or '$(AssemblyName)' == 'fsiAnyCpu' or '$(AssemblyName)' == 'FSharp.Compiler.Unittests' or '$(AssemblyName)' == 'HostedCompilerServer' or '$(AssemblyName)' == 'ILComparer'" >
               <PropertyGroup Condition="'$(AssemblyName)' == 'FSharp.Core' and ('$(TargetFramework)' == 'portable47' or '$(TargetFramework)' == 'portable7' or '$(TargetFramework)' == 'portable78' or '$(TargetFramework)' == 'portable259' or '$(TargetFramework)' == 'coreclr')">
                  <IsPortableProfile>true</IsPortableProfile>
               </PropertyGroup>
