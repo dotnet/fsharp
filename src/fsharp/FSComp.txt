@@ -365,7 +365,6 @@ csSeeAvailableOverloads,"The available overloads are shown below (or in the Erro
 516,parsEofInComment,"End of file in comment begun at or before here"
 517,parsEofInStringInComment,"End of file in string embedded in comment begun at or before here"
 518,parsEofInVerbatimStringInComment,"End of file in verbatim string embedded in comment begun at or before here"
-519,parsEofInIfOcaml,"End of file in IF-OCAML section begun at or before here"
 520,parsEofInDirective,"End of file in directive begun at or before here"
 521,parsNoHashEndIfFound,"No #endif found for #if or #else"
 522,parsAttributesIgnored,"Attributes have been ignored in this construct"

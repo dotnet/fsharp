@@ -171,3 +171,15 @@ module internal ClassificationDefinitions =
 
         do self.DisplayName <- SR.FSharpPropertiesClassificationType.Value
            self.ForegroundColor <- theme.GetColor FSharpClassificationTypes.Property
+
+
+    [<Export(typeof<EditorFormatDefinition>)>]
+    [<ClassificationType(ClassificationTypeNames = FSharpClassificationTypes.Disposable)>]
+    [<Name(FSharpClassificationTypes.Disposable)>]
+    [<UserVisible(true)>]
+    [<Order(After = PredefinedClassificationTypeNames.Keyword)>]
+    type internal FSharpDisposableFormat [<ImportingConstructor>](theme: ThemeColors) as self =
+        inherit ClassificationFormatDefinition()
+
+        do self.DisplayName <- SR.FSharpDisposablesClassificationType.Value
+           self.ForegroundColor <- theme.GetColor FSharpClassificationTypes.Disposable
