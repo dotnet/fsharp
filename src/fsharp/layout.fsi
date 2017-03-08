@@ -52,7 +52,7 @@ module TaggedTextOps =
     val tagActivePatternCase : (string -> TaggedText)
     val tagActivePatternResult : (string -> TaggedText)
     val tagAlias : (string -> TaggedText)
-    val tagClass : (string -> TaggedText)
+    val tagClass : (obj option -> string -> TaggedText)
     val tagUnion : (string -> TaggedText)
     val tagUnionCase : (string -> TaggedText)
     val tagDelegate : (string -> TaggedText)

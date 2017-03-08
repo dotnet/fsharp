@@ -151,7 +151,7 @@ module internal XmlDocumentation =
         for i = 0 to parts.Length - 2 do
             collector.Add(tagNamespace parts.[i])
             collector.Add(Literals.dot)
-        collector.Add(tagClass parts.[parts.Length - 1])
+        collector.Add(tagClass None parts.[parts.Length - 1])
 
     type XmlDocReader private (doc: XElement) = 
 

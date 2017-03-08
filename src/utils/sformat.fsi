@@ -63,7 +63,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         | ActivePatternCase of string
         | ActivePatternResult of string
         | Alias of string
-        | Class of string
+        | Class of obj option * string
         | Union of string
         | UnionCase of string
         | Delegate of string
@@ -128,7 +128,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             TaggedTextOps =
         val keywordFunctions : Set<string>
         val tagAlias : string -> TaggedText
-        val tagClass : string -> TaggedText
+        val tagClass : obj option -> string -> TaggedText
         val tagUnionCase : string -> TaggedText
         val tagDelegate : string -> TaggedText
         val tagEnum : string -> TaggedText

@@ -61,7 +61,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         | ActivePatternCase of string
         | ActivePatternResult of string
         | Alias of string
-        | Class of string
+        | Class of obj option * string
         | Union of string
         | UnionCase of string
         | Delegate of string
@@ -97,7 +97,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             | ActivePatternCase t
             | ActivePatternResult t
             | Alias t
-            | Class t
+            | Class( _, t)
             | Union t
             | UnionCase t
             | Delegate t
@@ -227,7 +227,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             "uint64"
             "unativeint"
           ] |> Set.ofList
-        let tagClass name = if Set.contains name keywordTypes then TaggedText.Keyword name else TaggedText.Class name
+        let tagClass x name = if Set.contains name keywordTypes then TaggedText.Keyword name else TaggedText.Class(x, name)
         let tagUnionCase = TaggedText.UnionCase
         let tagDelegate = TaggedText.Delegate
         let tagEnum = TaggedText.Enum
@@ -1173,8 +1173,8 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                     countNodes 1
                     let name = ty.Name 
                     match recd with
-                      | []   -> (wordL (tagClass name))
-                      | recd -> (wordL (tagClass name) --- recdAtomicTupleL depthLim recd) |> bracketIfL (prec <= Precedence.BracketIfTupleOrNotAtomic)
+                      | []   -> (wordL (tagClass None name))
+                      | recd -> (wordL (tagClass None name) --- recdAtomicTupleL depthLim recd) |> bracketIfL (prec <= Precedence.BracketIfTupleOrNotAtomic)
 
                 | FunctionClosureValue ty ->
                     // Q: should function printing include the ty.Name? It does not convey much useful info to most users, e.g. "clo@0_123".    
@@ -1244,7 +1244,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                          let it = (obj :?>  System.Collections.IEnumerable).GetEnumerator() 
                          try 
                            let itemLs = boundedUnfoldL possibleKeyValueL (fun () -> if it.MoveNext() then Some(it.Current,()) else None) stopShort () (1+opts.PrintLength/12)
-                           (wordL (tagClass word) --- makeListL itemLs) |> bracketIfL (prec <= Precedence.BracketIfTupleOrNotAtomic)
+                           (wordL (tagClass None word) --- makeListL itemLs) |> bracketIfL (prec <= Precedence.BracketIfTupleOrNotAtomic)
                          finally 
                             match it with 
                             | :? System.IDisposable as e -> e.Dispose()
@@ -1262,7 +1262,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                            let ty = Option.map (fun (typ:Type) -> typ.GetGenericArguments().[0]) ty
                            try 
                              let itemLs = boundedUnfoldL (objL depthLim Precedence.BracketIfTuple) (fun () -> if it.MoveNext() then Some((it.Current, match ty with | None -> it.Current.GetType() | Some ty -> ty),()) else None) stopShort () (1+opts.PrintLength/30)
-                             (wordL (tagClass word) --- makeListL itemLs) |> bracketIfL (prec <= Precedence.BracketIfTupleOrNotAtomic)
+                             (wordL (tagClass None word) --- makeListL itemLs) |> bracketIfL (prec <= Precedence.BracketIfTupleOrNotAtomic)
                            finally 
                               match it with 
                               | :? System.IDisposable as e -> e.Dispose()

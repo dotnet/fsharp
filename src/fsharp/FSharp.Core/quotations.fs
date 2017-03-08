@@ -232,7 +232,7 @@ and [<CompiledName("FSharpExpr")>]
         let combL nm ls = combTaggedL (tagKeyword nm) ls
         let noneL = wordL (tagProperty "None")
         let someL e = combTaggedL (tagMethod "Some") [expr e]
-        let typeL (o: Type)  = wordL (tagClass (if long then o.FullName else o.Name))
+        let typeL (o: Type)  = wordL (tagClass None (if long then o.FullName else o.Name))
         let objL (o: 'T)  = wordL (tagText (sprintf "%A" o))
         let varL (v:Var) = wordL (tagLocal v.Name)
         let (|E|) (e: Expr) = e.Tree
