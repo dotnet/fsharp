@@ -64,8 +64,8 @@ type internal FSharpQuickInfoProvider
                 let documentation = Collections.Generic.List()
                 XmlDocumentation.BuildDataTipText(
                     documentationBuilder, 
-                    CommonRoslynHelpers.CollectTaggedText mainDescription, 
-                    CommonRoslynHelpers.CollectTaggedText documentation, 
+                    CommonRoslynHelpers.CollectNavigableText mainDescription, 
+                    CommonRoslynHelpers.CollectNavigableText documentation, 
                     toolTipElement)
                 let empty = ClassifiableDeferredContent(Array.Empty<TaggedText>(), typeMap);
                 let content = 
@@ -73,8 +73,8 @@ type internal FSharpQuickInfoProvider
                         (
                             symbolGlyph = SymbolGlyphDeferredContent(CommonRoslynHelpers.GetGlyphForSymbol(symbol, symbolKind), glyphService),
                             warningGlyph = null,
-                            mainDescription = ClassifiableDeferredContent(mainDescription, typeMap),
-                            documentation = ClassifiableDeferredContent(documentation, typeMap),
+                            mainDescription = FSharpDeferredContent(mainDescription, typeMap),
+                            documentation = FSharpDeferredContent(documentation, typeMap),
                             typeParameterMap = empty,
                             anonymousTypes = empty,
                             usageText = empty,
