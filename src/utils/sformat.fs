@@ -916,9 +916,9 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             match c with 
             | '\'' when isChar -> "\\\'"
             | '\"' when not isChar -> "\\\""
-            //| '\n' -> "\\n"
-            //| '\r' -> "\\r"
-            //| '\t' -> "\\t"
+            | '\n' -> "\\n"
+            | '\r' -> "\\r"
+            | '\t' -> "\\t"
             | '\\' -> "\\\\"
             | '\b' -> "\\b"
             | _ when System.Char.IsControl(c) -> 
@@ -929,11 +929,8 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             | _ -> c.ToString()
             
         let formatString (s:string) =
-            let rec check i = i < s.Length && not (System.Char.IsControl(s,i)) && s.[i] <> '\"' && check (i+1) 
-            let rec conv i acc = if i = s.Length then combine (List.rev acc) else conv (i+1) (formatChar false s.[i] :: acc)  
-            "\"" + s + "\""
-            // REVIEW: should we check for the common case of no control characters? Reinstate the following?
-            //"\"" + (if check 0 then s else conv 0 []) + "\""
+            let escaped = s |> Seq.cast<char> |> Seq.map (formatChar false) |> String.concat ""
+            "\"" + escaped + "\""
 
         let formatStringInWidth (width:int) (str:string) =
             // Return a truncated version of the string, e.g.
@@ -948,7 +945,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             let suffixLength    = 11 // turning point suffix length
             let prefixMinLength = 12 // arbitrary. If print width is reduced, want to print a minimum of information on strings...
             let prefixLength = max (width - 2 (*quotes*) - suffixLength) prefixMinLength
-            "\"" + (str.Substring(0,prefixLength)) + "\"" + "+[" + (str.Length - prefixLength).ToString() + " chars]"
+            (formatString (str.Substring (0, prefixLength))) + "+[" + (str.Length - prefixLength).ToString() + " chars]"
 
         // --------------------------------------------------------------------
         // pprinter: anyL

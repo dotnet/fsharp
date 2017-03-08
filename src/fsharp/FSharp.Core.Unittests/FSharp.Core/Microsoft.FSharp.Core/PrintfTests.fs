@@ -23,3 +23,20 @@ type PrintfTests() =
         test "%-10d" 123   "123       "
         test "%10c"  'a'   "         a"
         test "%-10c" 'a'   "a         "
+
+    [<Test>]
+    member __.``Standard characters are correctly escaped``() =
+        test "%A" "\n" "\"\\n\""
+        test "%A" "\r" "\"\\r\""
+        test "%A" "\t" "\"\\t\""
+        test "%A" "\b" "\"\\b\""
+        
+    [<Test>]
+    member __.``Quotation characters are correctly escaped``() =
+        test "%A" "\"" "\"\\\"\""
+        test "%A" '\'' "\'\\\'\'"
+
+    [<Test>]
+    member __.``Control characters are correctly escaped``() =
+        test "%A" "\0" "\"\\\000\""
+        test "%A" "\10" "\'\\\010\'"
