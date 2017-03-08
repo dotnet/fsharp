@@ -118,11 +118,15 @@ type MemMappedFile (fileName : string, memMappedFile : MemoryMappedFile) =
             // to be able to read the file while we're reading it, instead of opening it for exclusive access.
             // Don't dispose the FileStream (e.g., with a 'use' binding); the MemoryMappedFile takes ownership
             // of the stream once it's passed in and will take care of disposing it.
-            // TODO: Should we use FileShare.Read here instead of FileShare.ReadWrite (used to maintain the same functionality
-            //       implemented by a previous implementation of this class which used the win32 API)?
-            //       What do we do if another process writes to the file while we have it open?
-            let fileStream = new FileStream (fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)
-            MemoryMappedFile.CreateFromFile (fileStream, null, 0L, MemoryMappedFileAccess.Read, null, HandleInheritability.None, false)
+            let fileStream = new FileStream (fileName, FileMode.Open, FileAccess.Read, FileShare.Read)
+            MemoryMappedFile.CreateFromFile (
+                fileStream, null, 0L, MemoryMappedFileAccess.Read,
+// CoreCLR / netstandard only has the 6-argument overload of this function;
+// Mono doesn't seem to have that one, but does have the 7-argument overload.
+#if !FX_PORTABLE_OR_NETSTANDARD
+                null,
+#endif
+                HandleInheritability.None, false)
 
         new MemMappedFile (fileName, mmapFile)
 
@@ -163,15 +167,19 @@ type MemMappedFile (fileName : string, memMappedFile : MemoryMappedFile) =
             String.Empty
         | n ->
             let handle = accessor.SafeMemoryMappedViewHandle
+
+// RuntimeHelpers.PrepareConstrainedRegions () doesn't seem to be available on CoreCLR?
+#if !FX_PORTABLE_OR_NETSTANDARD
             System.Runtime.CompilerServices.RuntimeHelpers.PrepareConstrainedRegions ()
+#endif
             try
                 let mutable ptr : nativeptr<byte> = Unchecked.defaultof<_>
                 handle.AcquirePointer (&ptr)
                 System.Runtime.InteropServices.Marshal.PtrToStringAnsi(NativePtr.toNativeInt ptr, n)
 //#if FX_RESHAPED_REFLECTION
-//                System.Text.Encoding.UTF8.GetString(NativePtr.ofNativeInt (m.Addr i), n)
+//                System.Text.Encoding.UTF8.GetString(NativePtr.toNativeInt ptr, n)
 //#else
-//                new System.String(NativePtr.ofNativeInt (m.Addr i), 0, n, System.Text.Encoding.UTF8)
+//                new System.String(NativePtr.toNativeInt ptr, 0, n, System.Text.Encoding.UTF8)
 //#endif
             finally
                 handle.ReleasePointer ()
