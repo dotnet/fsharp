@@ -629,7 +629,7 @@ module internal Salsa =
             // we look in the same directory as the Unit Tests assembly.
             let targetsFileFolder =
                 if useInstalledTargets 
-                then Option.get Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler
+                then Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None).Value
                 else System.AppDomain.CurrentDomain.BaseDirectory
             
             let sb = new System.Text.StringBuilder()
@@ -1109,7 +1109,9 @@ module internal Salsa =
             
             member file.GetFileName() = filename
             member file.GetProjectOptionsOfScript() = 
-                project.Solution.Vs.LanguageService.FSharpChecker.GetProjectOptionsFromScript(filename, file.CombinedLines, System.DateTime(2000,1,1), [| |]) |> Async.RunSynchronously
+                project.Solution.Vs.LanguageService.FSharpChecker.GetProjectOptionsFromScript(filename, file.CombinedLines, System.DateTime(2000,1,1), [| |]) 
+                |> Async.RunSynchronously
+                |> fst // drop diagnostics
                  
             member file.RecolorizeWholeFile() = ()
             member file.RecolorizeLine (_line:int) = ()

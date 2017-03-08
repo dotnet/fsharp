@@ -234,8 +234,8 @@ type ListModule02() =
         Assert.AreEqual("BBC", resultStrAcc)
 
         // empty List
-        let resultEpt,resultEptAcc = List.mapFold funcInt 100 []
-        Assert.AreEqual(([] : int list), resultEpt)
+        let (resultEpt: int list),resultEptAcc = List.mapFold funcInt 100 []
+        Assert.AreEqual(([]: int list), resultEpt)
         Assert.AreEqual(100, resultEptAcc)
 
         ()
@@ -260,8 +260,8 @@ type ListModule02() =
         Assert.AreEqual("CBB", resultStrAcc)
 
         // empty List
-        let resultEpt,resultEptAcc = List.mapFoldBack funcInt [] 100
-        Assert.AreEqual(([] : int list),  resultEpt)
+        let (resultEpt: int list),resultEptAcc = List.mapFoldBack funcInt [] 100
+        Assert.AreEqual(([]: int list), resultEpt)
         Assert.AreEqual(100, resultEptAcc)
 
         ()

@@ -1,12 +1,26 @@
 // #Conformance #Interop #Unions 
+#if !NO_LIB_REFERENCE
 open Lib
+#endif
 open FSharpOptionalTests
 
-let mutable failures = false
-let report_failure () = 
-  stderr.WriteLine " NO"; failures <- true
-let test s b = stderr.Write(s:string);  if b then stderr.WriteLine " OK" else report_failure() 
+let failures = ref []
 
+let report_failure (s : string) = 
+    stderr.Write" NO: "
+    stderr.WriteLine s
+    failures := !failures @ [s]
+
+let test (s : string) b = 
+    stderr.Write(s)
+    if b then stderr.WriteLine " OK"
+    else report_failure (s)
+
+#if NO_LIB_REFERENCE // Test for https://github.com/Microsoft/visualfsharp/issues/2453#issuecomment-280946177
+module TestExtensions = 
+    open CustomExtensions
+
+#else
 let r1 = Lib2.r1
 let r2 = Lib2.r2
 
@@ -21,6 +35,7 @@ let r3 = (Lib2.r3 : string recd3)
 let _ = test "fejio2dw" (r3.recd3field1=4)
 let _ = test "fejio2dw" (r3.recd3field2="c")
 let _ = test "fejio2dw" (LanguagePrimitives.PhysicalEquality r3.recd3field3  r3)
+
 let _ = test "fejio2dw" (Lib2.li1 = [3])
 let _ = test "fejio2dw" (Lib2.lr1 = [r1])
 let _ = test "fejio2dw" (Lib2.oi1 = Some 3)
@@ -137,8 +152,23 @@ let TestAccessibility() =
 
 *)
 
-let _ = 
-  if failures then (stdout.WriteLine "Test Failed"; exit 1) 
-  else (stdout.WriteLine "Test Passed"; 
-        System.IO.File.WriteAllText("test.ok","ok"); 
-        exit 0)
+module TestExtensions = 
+    open CustomExtensions
+    test "dfeweeon" (r1.ExtendFSharpType() = 5)
+    test "dfeweeon" (Lib2().ExtendCSharpType() = 4)
+
+#endif
+
+#if TESTS_AS_APP
+let RUN() = !failures
+#else
+let _ =
+  match !failures with 
+  | [] -> 
+      stdout.WriteLine "Test Passed"
+      System.IO.File.WriteAllText("test.ok","ok")
+      exit 0
+  | _ -> 
+      stdout.WriteLine "Test Failed"
+      exit 1
+#endif

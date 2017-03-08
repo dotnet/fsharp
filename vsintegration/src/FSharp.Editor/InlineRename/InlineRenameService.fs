@@ -5,7 +5,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.Composition
 open System.Collections.Generic
-open System.Collections.Immutable
+open System.Linq
 open System.Threading
 open System.Threading.Tasks
 
@@ -13,10 +13,8 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
-open Microsoft.CodeAnalysis.Editor.Implementation.InlineRename
 
 open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
@@ -42,10 +40,10 @@ type internal DocumentLocations =
     { Document: Document
       Locations: InlineRenameLocation [] }
 
-type internal InlineRenameLocationSet(locationsByDocument: DocumentLocations [], originalSolution: Solution) =
+type internal InlineRenameLocationSet(locationsByDocument: DocumentLocations [], originalSolution: Solution, symbolKind: LexerSymbolKind, symbol: FSharpSymbol) =
     interface IInlineRenameLocationSet with
-        member __.Locations : IList<InlineRenameLocation> = 
-            [| for doc in locationsByDocument do yield! doc.Locations |] :> _
+        member __.Locations : IList<InlineRenameLocation> =
+            upcast [| for doc in locationsByDocument do yield! doc.Locations |].ToList()
         
         member this.GetReplacementsAsync(replacementText, _optionSet, cancellationToken) : Task<IInlineRenameReplacementInfo> =
             let rec applyChanges i (solution: Solution) =
@@ -65,7 +63,7 @@ type internal InlineRenameLocationSet(locationsByDocument: DocumentLocations [],
                 return 
                     { new IInlineRenameReplacementInfo with
                         member __.NewSolution = newSolution
-                        member __.ReplacementTextValid = true
+                        member __.ReplacementTextValid = CommonHelpers.isValidNameForSymbol(symbolKind, symbol, replacementText)
                         member __.DocumentIds = locationsByDocument |> Seq.map (fun doc -> doc.Document.Id)
                         member __.GetReplacements(documentId) = Seq.empty }
             }
@@ -77,6 +75,7 @@ type internal InlineRenameInfo
         projectInfoManager: ProjectInfoManager,
         document: Document,
         sourceText: SourceText, 
+        lexerSymbol: LexerSymbol,
         symbolUse: FSharpSymbolUse,
         declLoc: SymbolDeclarationLocation,
         checkFileResults: FSharpCheckFileResults
@@ -104,7 +103,7 @@ type internal InlineRenameInfo
         member __.DisplayName = symbolUse.Symbol.DisplayName
         member __.FullDisplayName = try symbolUse.Symbol.FullName with _ -> symbolUse.Symbol.DisplayName
         member __.Glyph = Glyph.MethodPublic
-        member __.GetFinalSymbolName replacementText = replacementText
+        member __.GetFinalSymbolName replacementText = Lexhelp.Keywords.NormalizeIdentifierBackticks replacementText
 
         member __.GetReferenceEditSpan(location, cancellationToken) =
             let text = getDocumentText location.Document cancellationToken
@@ -129,7 +128,7 @@ type internal InlineRenameInfo
                             return { Document = document; Locations = locations }
                         })
                     |> Async.Parallel
-                return InlineRenameLocationSet(locationsByDocument, document.Project.Solution) :> IInlineRenameLocationSet
+                return InlineRenameLocationSet(locationsByDocument, document.Project.Solution, lexerSymbol.Kind, symbolUse.Symbol) :> IInlineRenameLocationSet
             } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
         
         member __.TryOnBeforeGlobalSymbolRenamed(_workspace, _changedDocumentIDs, _replacementText) = true
@@ -149,12 +148,12 @@ type internal InlineRenameService
         asyncMaybe {
             let textLine = sourceText.Lines.GetLineFromPosition(position)
             let textLinePos = sourceText.Lines.GetLinePosition(position)
-            let fcsTextLineNumber = textLinePos.Line + 1 // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
-            let! symbol = CommonHelpers.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Fuzzy)
-            let! _parseResults, checkFileResults = checker.ParseAndCheckDocument(document, options)
-            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.RightColumn, textLine.Text.ToString(), [symbol.Text])
+            let fcsTextLineNumber = Line.fromZ textLinePos.Line
+            let! symbol = CommonHelpers.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, allowStaleResults = true)
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.Text.ToString(), symbol.FullIsland)
             let! declLoc = symbolUse.GetDeclarationLocation(document)
-            return InlineRenameInfo(checker, projectInfoManager, document, sourceText, symbolUse, declLoc, checkFileResults) :> IInlineRenameInfo
+            return InlineRenameInfo(checker, projectInfoManager, document, sourceText, symbol, symbolUse, declLoc, checkFileResults) :> IInlineRenameInfo
         }
     
     interface IEditorInlineRenameService with

@@ -1,5 +1,5 @@
 // #Regression #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties 
-//<Expects status="error" id="FS0509" span="(10,14)">Method or object constructor 'DoStuff' not found$</Expects>
+//<Expects status="error" id="FS3214" span="(10,14)">Method or object constructor 'DoStuff' is not static$</Expects>
 
 type Foo() =
     let m_val = 0

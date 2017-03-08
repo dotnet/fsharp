@@ -137,14 +137,14 @@ module internal ItemDescriptionsImpl =
     let rangeOfPropInfo preferFlag (pinfo:PropInfo) =
         match pinfo with
 #if EXTENSIONTYPING 
-        |   ProvidedProp(_,pi,_) -> definitionLocationOfProvidedItem pi
+        |   ProvidedProp(_,pi,_) -> ComputeDefinitionLocationOfProvidedItem pi
 #endif
         |   _ -> pinfo.ArbitraryValRef |> Option.map (rangeOfValRef preferFlag)
 
     let rangeOfMethInfo (g:TcGlobals) preferFlag (minfo:MethInfo) = 
         match minfo with
 #if EXTENSIONTYPING 
-        |   ProvidedMeth(_,mi,_,_) -> definitionLocationOfProvidedItem mi
+        |   ProvidedMeth(_,mi,_,_) -> ComputeDefinitionLocationOfProvidedItem mi
 #endif
         |   DefaultStructCtor(_, AppTy g (tcref, _)) -> Some(rangeOfEntityRef preferFlag tcref)
         |   _ -> minfo.ArbitraryValRef |> Option.map (rangeOfValRef preferFlag)
@@ -152,7 +152,7 @@ module internal ItemDescriptionsImpl =
     let rangeOfEventInfo preferFlag (einfo:EventInfo) = 
         match einfo with
 #if EXTENSIONTYPING 
-        | ProvidedEvent (_,ei,_) -> definitionLocationOfProvidedItem ei
+        | ProvidedEvent (_,ei,_) -> ComputeDefinitionLocationOfProvidedItem ei
 #endif
         | _ -> einfo.ArbitraryValRef |> Option.map (rangeOfValRef preferFlag)
       
@@ -207,7 +207,7 @@ module internal ItemDescriptionsImpl =
         | _ -> 
             minfo.ArbitraryValRef 
             |> Option.bind ccuOfValRef 
-            |> Option.orElse (fun () -> minfo.DeclaringEntityRef |> computeCcuOfTyconRef)
+            |> Option.orElseWith (fun () -> minfo.DeclaringEntityRef |> computeCcuOfTyconRef)
 
 
     let rec ccuOfItem (g:TcGlobals) d = 
@@ -223,7 +223,7 @@ module internal ItemDescriptionsImpl =
             pinfos |> List.tryPick (fun pinfo -> 
                 pinfo.ArbitraryValRef 
                 |> Option.bind ccuOfValRef
-                |> Option.orElse (fun () -> pinfo.EnclosingType |> tcrefOfAppTy g |> computeCcuOfTyconRef))
+                |> Option.orElseWith (fun () -> pinfo.EnclosingType |> tcrefOfAppTy g |> computeCcuOfTyconRef))
 
         | Item.ArgName (_,_,Some (ArgumentContainer.Method minfo))  -> ccuOfMethInfo g minfo
 
@@ -744,7 +744,7 @@ module internal ItemDescriptionsImpl =
             | _ -> false
         with _ -> false
 
-    /// Output a the description of a language item
+    /// Output the description of a language item
     let rec FormatItemDescriptionToToolTipElement isDecl (infoReader:InfoReader) m denv d = 
         let g = infoReader.g
         let amap = infoReader.amap
@@ -1310,13 +1310,15 @@ type FSharpDeclarationListItem(name: string, nameInCode: string, glyphMajor: Gly
             match info with
             | Choice1Of2 (items, infoReader, m, denv, reactor:IReactorOperations, checkAlive) -> 
                     // reactor causes the lambda to execute on the background compiler thread, through the Reactor
-                    reactor.EnqueueAndAwaitOpAsync ("DescriptionTextAsync", fun _ct -> 
+                    reactor.EnqueueAndAwaitOpAsync ("StructuredDescriptionTextAsync", fun ctok -> 
+                         RequireCompilationThread ctok
                           // This is where we do some work which may touch TAST data structures owned by the IncrementalBuilder - infoReader, item etc. 
                           // It is written to be robust to a disposal of an IncrementalBuilder, in which case it will just return the empty string. 
                           // It is best to think of this as a "weak reference" to the IncrementalBuilder, i.e. this code is written to be robust to its
                           // disposal. Yes, you are right to scratch your head here, but this is ok.
+                         cancellable.Return(
                               if checkAlive() then FSharpToolTipText(items |> Seq.toList |> List.map (FormatStructuredDescriptionOfItem true infoReader m denv))
-                              else FSharpToolTipText [ FSharpStructuredToolTipElement.Single(wordL (tagText (FSComp.SR.descriptionUnavailable())), FSharpXmlDoc.None) ])
+                              else FSharpToolTipText [ FSharpStructuredToolTipElement.Single(wordL (tagText (FSComp.SR.descriptionUnavailable())), FSharpXmlDoc.None) ]))
             | Choice2Of2 result -> 
                 async.Return result
 
@@ -1396,14 +1398,14 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
             let isOperatorItem(name, item) = 
                 match item with 
                 | [Item.Value _]
-                | [Item.MethodGroup(_,[_],_)] -> IsOperatorName name
+                | [Item.MethodGroup _ ] -> IsOperatorName name
                 | [Item.UnionCase _] -> IsOperatorName name
                 | _ -> false              
 
             let isFSharpList name = (name = "[]") // list shows up as a Type and a UnionCase, only such entity with a symbolic name, but want to filter out of intellisense
 
             items |> List.filter (fun (name, items) -> not (isOperatorItem(name, items)) && not (isFSharpList name)) 
-
+            
         let decls = 
             // Filter out duplicate names
             items |> List.map (fun (nm,itemsWithSameName) -> 

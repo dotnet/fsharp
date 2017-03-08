@@ -13,7 +13,6 @@ open Microsoft.VisualStudio.Utilities
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.FSharp.Interactive
-open EnvDTE
 
 type internal FsiCommandFilter(serviceProvider: System.IServiceProvider) =
 

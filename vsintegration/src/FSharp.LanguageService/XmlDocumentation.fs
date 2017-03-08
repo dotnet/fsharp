@@ -153,14 +153,17 @@ module internal XmlDocumentation =
             collector.Add(Literals.dot)
         collector.Add(tagClass parts.[parts.Length - 1])
 
-    type XmlDocReader(s: string) = 
-        let doc = XElement.Parse(ProcessXml(s))
+    type XmlDocReader private (doc: XElement) = 
+
         let tryFindParameter name = 
             doc.Descendants (XName.op_Implicit "param")
             |> Seq.tryFind (fun el -> 
                 match el.Attribute(XName.op_Implicit "name") with
                 | null -> false
                 | attr -> attr.Value = name)
+
+        static member TryCreate (xml: string) =
+            try Some (XmlDocReader(XElement.Parse(ProcessXml xml))) with _ -> None
 
         member __.CollectSummary(collector: ITaggedTextCollector) = 
             match Seq.tryHead (doc.Descendants(XName.op_Implicit "summary")) with
@@ -207,15 +210,18 @@ module internal XmlDocumentation =
                         collector.Add Literals.space
                         WriteNodes collector (p.Nodes())
 
+    type VsThreadToken() = class end
+    let vsToken = VsThreadToken()
+    
     /// Provide Xml Documentation             
     type Provider(xmlIndexService:IVsXMLMemberIndexService, dte: DTE) = 
         /// Index of assembly name to xml member index.
-        let mutable xmlCache = new AgedLookup<string,IVsXMLMemberIndex>(10,areSame=(fun (x,y) -> x = y))
+        let mutable xmlCache = new AgedLookup<VsThreadToken,string,IVsXMLMemberIndex>(10,areSame=(fun (x,y) -> x = y))
         
         let events = dte.Events :?> Events2
         let solutionEvents = events.SolutionEvents
         do solutionEvents.add_AfterClosing(fun () -> 
-            xmlCache.Clear())
+            xmlCache.Clear(vsToken))
 
     #if DEBUG // Keep under DEBUG so that it can keep building.
 
@@ -248,14 +254,14 @@ module internal XmlDocumentation =
 
         /// Retrieve the pre-existing xml index or None
         let GetMemberIndexOfAssembly(assemblyName) =
-            match xmlCache.TryGet(assemblyName) with 
+            match xmlCache.TryGet(vsToken, assemblyName) with 
             | Some(memberIndex) -> Some(memberIndex)
             | None -> 
                 let ok,memberIndex = xmlIndexService.CreateXMLMemberIndex(assemblyName)
                 if Com.Succeeded(ok) then 
                     let ok = memberIndex.BuildMemberIndex()
                     if Com.Succeeded(ok) then 
-                        xmlCache.Put(assemblyName,memberIndex)
+                        xmlCache.Put(vsToken, assemblyName,memberIndex)
                         Some(memberIndex)
                     else None
                 else None
@@ -276,12 +282,13 @@ module internal XmlDocumentation =
 
         interface IDocumentationBuilder with 
             /// Append the given processed XML formatted into the string builder
-            override this.AppendDocumentationFromProcessedXML(appendTo, processedXml, showExceptions, showParameters, paramName) = 
-                let xmlDocReader = XmlDocReader(processedXml)
-                if paramName.IsSome then
-                    xmlDocReader.CollectParameter(appendTo, paramName.Value)
-                else
-                    AppendMemberData(appendTo, xmlDocReader, showExceptions,showParameters)
+            override this.AppendDocumentationFromProcessedXML(appendTo, processedXml, showExceptions, showParameters, paramName) =
+                match XmlDocReader.TryCreate processedXml with
+                | Some xmlDocReader ->
+                    match paramName with
+                    | Some paramName -> xmlDocReader.CollectParameter(appendTo, paramName)
+                    | None -> AppendMemberData(appendTo, xmlDocReader, showExceptions,showParameters)
+                | None -> ()
 
             /// Append Xml documentation contents into the StringBuilder
             override this.AppendDocumentation

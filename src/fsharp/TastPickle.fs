@@ -115,7 +115,7 @@ type WriterState =
   { os: ByteBuffer; 
     oscope: CcuThunk;
     occus: Table<CcuReference>; 
-    otycons: NodeOutTable<EntityData,Tycon>; 
+    otycons: NodeOutTable<EntityData,Entity>; 
     otypars: NodeOutTable<TyparData,Typar>; 
     ovals: NodeOutTable<ValData,Val>;
     ostrings: Table<string>; 
@@ -436,8 +436,7 @@ let p_option f x st =
 // Pickle lazy values in such a way that they can, in some future F# compiler version, be read back
 // lazily. However, a lazy reader is not used in this version because the value may contain the definitions of some
 // OSGN nodes. 
-let p_lazy p x st = 
-    let v = Lazy.force x
+let private p_lazy_impl p v st = 
     let fixupPos1 = st.os.Position
     // We fix these up after
     prim_p_int32 0 st;
@@ -472,6 +471,12 @@ let p_lazy p x st =
     st.os.FixupInt32 fixupPos5 otyparsIdx2;
     st.os.FixupInt32 fixupPos6 ovalsIdx1;
     st.os.FixupInt32 fixupPos7 ovalsIdx2
+
+let p_lazy p x st = 
+    p_lazy_impl p (Lazy.force x) st
+
+let p_maybe_lazy p (x: MaybeLazy<_>) st = 
+    p_lazy_impl p x.Value st
 
 let p_hole () = 
     let h = ref (None : 'T pickler option)
@@ -667,9 +672,9 @@ let pickleObjWithDanglingCcus file g scope p x =
       { os = ByteBuffer.Create 100000; 
         oscope=scope;
         occus= Table<_>.Create "occus"; 
-        otycons=NodeOutTable<_,_>.Create((fun (tc:Tycon) -> tc.Stamp),(fun tc -> tc.LogicalName),(fun tc -> tc.Range),(fun osgn -> osgn.Data),"otycons"); 
-        otypars=NodeOutTable<_,_>.Create((fun (tp:Typar) -> tp.Stamp),(fun tp -> tp.DisplayName),(fun tp -> tp.Range),(fun osgn -> osgn.Data),"otypars"); 
-        ovals=NodeOutTable<_,_>.Create((fun (v:Val) -> v.Stamp),(fun v -> v.LogicalName),(fun v -> v.Range),(fun osgn -> osgn.Data),"ovals");
+        otycons=NodeOutTable<_,_>.Create((fun (tc:Tycon) -> tc.Stamp),(fun tc -> tc.LogicalName),(fun tc -> tc.Range),(fun osgn -> osgn),"otycons"); 
+        otypars=NodeOutTable<_,_>.Create((fun (tp:Typar) -> tp.Stamp),(fun tp -> tp.DisplayName),(fun tp -> tp.Range),(fun osgn -> osgn),"otypars"); 
+        ovals=NodeOutTable<_,_>.Create((fun (v:Val) -> v.Stamp),(fun v -> v.LogicalName),(fun v -> v.Range),(fun osgn -> osgn),"ovals");
         ostrings=Table<_>.Create "ostrings";
         onlerefs=Table<_>.Create "onlerefs";  
         opubpaths=Table<_>.Create "opubpaths";  
@@ -689,9 +694,9 @@ let pickleObjWithDanglingCcus file g scope p x =
      { os = ByteBuffer.Create 100000; 
        oscope=scope;
        occus= Table<_>.Create "occus (fake)"; 
-       otycons=NodeOutTable<_,_>.Create((fun (tc:Tycon) -> tc.Stamp),(fun tc -> tc.LogicalName),(fun tc -> tc.Range),(fun osgn -> osgn.Data),"otycons"); 
-       otypars=NodeOutTable<_,_>.Create((fun (tp:Typar) -> tp.Stamp),(fun tp -> tp.DisplayName),(fun tp -> tp.Range),(fun osgn -> osgn.Data),"otypars"); 
-       ovals=NodeOutTable<_,_>.Create((fun (v:Val) -> v.Stamp),(fun v -> v.LogicalName),(fun v -> v.Range),(fun osgn -> osgn.Data),"ovals");
+       otycons=NodeOutTable<_,_>.Create((fun (tc:Tycon) -> tc.Stamp),(fun tc -> tc.LogicalName),(fun tc -> tc.Range),(fun osgn -> osgn),"otycons"); 
+       otypars=NodeOutTable<_,_>.Create((fun (tp:Typar) -> tp.Stamp),(fun tp -> tp.DisplayName),(fun tp -> tp.Range),(fun osgn -> osgn),"otypars"); 
+       ovals=NodeOutTable<_,_>.Create((fun (v:Val) -> v.Stamp),(fun v -> v.LogicalName),(fun v -> v.Range),(fun osgn -> osgn),"ovals");
        ostrings=Table<_>.Create "ostrings (fake)";
        opubpaths=Table<_>.Create "opubpaths (fake)";
        onlerefs=Table<_>.Create "onlerefs (fake)";
@@ -1353,9 +1358,9 @@ let u_MemberFlags st =
       IsFinal=x6;
       MemberKind=x7}
 
-let fill_u_expr_fwd,u_expr_fwd = u_hole()
+let fill_u_Expr_hole,u_expr_fwd = u_hole()
 #if INCLUDE_METADATA_WRITER
-let fill_p_expr_fwd,p_expr_fwd = p_hole()
+let fill_p_Expr_hole,p_expr_fwd = p_hole()
 
 let p_trait_sln sln st = 
     match sln with 
@@ -1510,7 +1515,7 @@ let u_typar_constraints = (u_list_revi u_typar_constraint)
 
 
 #if INCLUDE_METADATA_WRITER
-let p_typar_spec_data (x:TyparData) st = 
+let p_typar_spec_data (x:Typar) st = 
     p_tup5
       p_ident 
       p_attribs
@@ -1537,7 +1542,8 @@ let u_typar_spec_data st =
       typar_flags=TyparFlags(int32 d);
       typar_constraints=e;
       typar_solution=None;
-      typar_xmldoc=g }
+      typar_xmldoc=g;
+      typar_astype= Unchecked.defaultof<_> }
 
 let u_typar_spec st = 
     u_osgn_decl st.itypars u_typar_spec_data st 
@@ -1583,19 +1589,15 @@ let _ = fill_u_typ (fun st ->
 let fill_p_binds,p_binds = p_hole()
 let fill_p_targets,p_targets = p_hole()
 let fill_p_Exprs,p_Exprs = p_hole()
-let fill_p_FlatExprs,p_FlatExprs = p_hole()
 let fill_p_constraints,p_constraints = p_hole()
 let fill_p_Vals,p_Vals = p_hole()
-let fill_p_FlatVals,p_FlatVals = p_hole()
 #endif
 
 let fill_u_binds,u_binds = u_hole()
 let fill_u_targets,u_targets = u_hole()
 let fill_u_Exprs,u_Exprs = u_hole()
-let fill_u_FlatExprs,u_FlatExprs = u_hole()
 let fill_u_constraints,u_constraints = u_hole()
 let fill_u_Vals,u_Vals = u_hole()
-let fill_u_FlatVals,u_FlatVals = u_hole()
 
 #if INCLUDE_METADATA_WRITER
 let p_ArgReprInfo (x:ArgReprInfo) st = 
@@ -1711,7 +1713,7 @@ and p_recdfield_spec x st =
 and p_rfield_table x st = 
     p_list p_recdfield_spec (Array.toList x.FieldsByIndex) st
 
-and p_entity_spec_data (x:EntityData) st = 
+and p_entity_spec_data (x:Entity) st = 
       p_typar_specs (x.entity_typars.Force(x.entity_range)) st 
       p_string x.entity_logical_name st
       p_option p_string x.entity_compiled_name st
@@ -1727,7 +1729,7 @@ and p_entity_spec_data (x:EntityData) st =
       p_kind x.entity_kind st
       p_int64 (x.entity_flags.PickledBits ||| (if flagBit then EntityFlags.ReservedBitForPickleFormatTyconReprFlag else 0L)) st
       p_option p_cpath x.entity_cpath st
-      p_lazy p_modul_typ x.entity_modul_contents st
+      p_maybe_lazy p_modul_typ x.entity_modul_contents st
       p_exnc_repr x.entity_exn_info st
       p_space 1 space st
 
@@ -1969,7 +1971,7 @@ and u_recdfield_spec st =
 
 and u_rfield_table st = MakeRecdFieldsTable (u_list u_recdfield_spec st)
 
-and u_entity_spec_data st : EntityData = 
+and u_entity_spec_data st : Entity = 
     let x1,x2a,x2b,x2c,x3,(x4a,x4b),x6,x7f,x8,x9,x10,x10b,x11,x12,x13,x14,_space = 
        u_tup17
           u_typar_specs
@@ -2012,7 +2014,7 @@ and u_entity_spec_data st : EntityData =
       entity_kind=x10b;
       entity_flags=EntityFlags(x11);
       entity_cpath=x12;
-      entity_modul_contents= x13;
+      entity_modul_contents=MaybeLazy.Lazy x13;
       entity_exn_info=x14;
       entity_il_repr_cache=newCache();  
       } 
@@ -2216,21 +2218,21 @@ and u_const st =
 and p_dtree x st = 
     match x with 
     | TDSwitch (a,b,c,d) -> p_byte 0 st; p_tup4 p_expr (p_list p_dtree_case) (p_option p_dtree) p_dummy_range (a,b,c,d) st
-    | TDSuccess (a,b)    -> p_byte 1 st; p_tup2 p_FlatExprs p_int (a,b) st
+    | TDSuccess (a,b)    -> p_byte 1 st; p_tup2 p_Exprs p_int (a,b) st
     | TDBind (a,b)       -> p_byte 2 st; p_tup2 p_bind p_dtree (a,b) st
 
 and p_dtree_case (TCase(a,b)) st = p_tup2 p_dtree_discrim p_dtree (a,b) st
 
 and p_dtree_discrim x st = 
     match x with 
-    | Test.UnionCase (ucref,tinst) -> p_byte 0 st; p_tup2 p_ucref p_typs (ucref,tinst) st
-    | Test.Const c                   -> p_byte 1 st; p_const c st
-    | Test.IsNull                    -> p_byte 2 st
-    | Test.IsInst (srcty,tgty)       -> p_byte 3 st; p_typ srcty st; p_typ tgty st
-    | Test.ArrayLength (n,ty)       -> p_byte 4 st; p_tup2 p_int p_typ (n,ty) st
-    | Test.ActivePatternCase _                   -> pfailwith st "Test.ActivePatternCase: only used during pattern match compilation"
+    | DecisionTreeTest.UnionCase (ucref,tinst) -> p_byte 0 st; p_tup2 p_ucref p_typs (ucref,tinst) st
+    | DecisionTreeTest.Const c                   -> p_byte 1 st; p_const c st
+    | DecisionTreeTest.IsNull                    -> p_byte 2 st
+    | DecisionTreeTest.IsInst (srcty,tgty)       -> p_byte 3 st; p_typ srcty st; p_typ tgty st
+    | DecisionTreeTest.ArrayLength (n,ty)       -> p_byte 4 st; p_tup2 p_int p_typ (n,ty) st
+    | DecisionTreeTest.ActivePatternCase _                   -> pfailwith st "DecisionTreeTest.ActivePatternCase: only used during pattern match compilation"
 
-and p_target (TTarget(a,b,_)) st = p_tup2 p_FlatVals p_expr (a,b) st
+and p_target (TTarget(a,b,_)) st = p_tup2 p_Vals p_expr (a,b) st
 and p_bind (TBind(a,b,_)) st = p_tup2 p_Val p_expr (a,b) st
 
 and p_lval_op_kind x st =
@@ -2247,7 +2249,7 @@ and u_dtree st =
     let tag = u_byte st
     match tag with
     | 0 -> u_tup4 u_expr (u_list u_dtree_case) (u_option u_dtree) u_dummy_range st |> TDSwitch 
-    | 1 -> u_tup2 u_FlatExprs u_int                                             st |> TDSuccess
+    | 1 -> u_tup2 u_Exprs u_int                                             st |> TDSuccess
     | 2 -> u_tup2 u_bind u_dtree                                                st |> TDBind
     | _ -> ufailwith st "u_dtree" 
 
@@ -2256,14 +2258,14 @@ and u_dtree_case st = let a,b = u_tup2 u_dtree_discrim u_dtree st in (TCase(a,b)
 and u_dtree_discrim st = 
     let tag = u_byte st
     match tag with
-    | 0 -> u_tup2 u_ucref u_typs st |> Test.UnionCase 
-    | 1 -> u_const st               |> Test.Const 
-    | 2 ->                             Test.IsNull 
-    | 3 -> u_tup2 u_typ u_typ st    |> Test.IsInst
-    | 4 -> u_tup2 u_int u_typ st    |> Test.ArrayLength
+    | 0 -> u_tup2 u_ucref u_typs st |> DecisionTreeTest.UnionCase 
+    | 1 -> u_const st               |> DecisionTreeTest.Const 
+    | 2 ->                             DecisionTreeTest.IsNull 
+    | 3 -> u_tup2 u_typ u_typ st    |> DecisionTreeTest.IsInst
+    | 4 -> u_tup2 u_int u_typ st    |> DecisionTreeTest.ArrayLength
     | _ -> ufailwith st "u_dtree_discrim" 
 
-and u_target st = let a,b = u_tup2 u_FlatVals u_expr st in (TTarget(a,b,SuppressSequencePointAtTarget)) 
+and u_target st = let a,b = u_tup2 u_Vals u_expr st in (TTarget(a,b,SuppressSequencePointAtTarget)) 
 
 and u_bind st = let a = u_Val st in let b = u_expr st in TBind(a,b,NoSequencePointAtStickyBinding)
 
@@ -2527,22 +2529,19 @@ let _ = fill_p_binds (p_List p_bind)
 let _ = fill_p_targets (p_array p_target)
 let _ = fill_p_constraints (p_list p_static_optimization_constraint)
 let _ = fill_p_Exprs (p_list p_expr)
-let _ = fill_p_expr_fwd p_expr
-let _ = fill_p_FlatExprs (p_List p_expr)
+let _ = fill_p_Expr_hole p_expr
+let _ = fill_p_Exprs (p_List p_expr)
 let _ = fill_p_attribs (p_list p_attrib)
 let _ = fill_p_Vals (p_list p_Val)
-let _ = fill_p_FlatVals (p_List p_Val)
 #endif
 
 let _ = fill_u_binds (u_List u_bind)
 let _ = fill_u_targets (u_array u_target)
 let _ = fill_u_constraints (u_list u_static_optimization_constraint)
 let _ = fill_u_Exprs (u_list u_expr)
-let _ = fill_u_expr_fwd u_expr
-let _ = fill_u_FlatExprs (u_List u_expr)
+let _ = fill_u_Expr_hole u_expr
 let _ = fill_u_attribs (u_list u_attrib)
 let _ = fill_u_Vals (u_list u_Val)
-let _ = fill_u_FlatVals (u_List u_Val)
 
 //---------------------------------------------------------------------------
 // Pickle/unpickle F# interface data 

@@ -8,10 +8,12 @@
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
 open System
-open Microsoft.FSharp.Compiler.Ast
 open System.Collections.Generic
+
 open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.Range
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 
 type internal ShortIdent = string
 type Idents = ShortIdent[]
@@ -21,71 +23,7 @@ type IsAutoOpen = bool
 
 [<AutoOpen>]
 module internal Extensions =
-    [<RequireQualifiedAccess>]
-    [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-    module Option =
-        let inline attempt (f: unit -> 'T) = try Some (f()) with _ -> None        
-        let inline orElse v = function Some x -> Some x | None -> v
 
-    [<RequireQualifiedAccess>]
-    [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-    module Array =
-        /// Returns a new array with an element replaced with a given value.
-        let replace index value (array: _ []) =
-            if index >= array.Length then raise (IndexOutOfRangeException "index")
-            let res = Array.copy array
-            res.[index] <- value
-            res
-
-        /// Optimized arrays equality. ~100x faster than `array1 = array2` on strings.
-        /// ~2x faster for floats
-        /// ~0.8x slower for ints
-        let inline areEqual (xs: 'T []) (ys: 'T []) =
-            match xs, ys with
-            | null, null -> true
-            | [||], [||] -> true
-            | null, _ | _, null -> false
-            | _ when xs.Length <> ys.Length -> false
-            | _ ->
-                let mutable break' = false
-                let mutable i = 0
-                let mutable result = true
-                while i < xs.Length && not break' do
-                    if xs.[i] <> ys.[i] then 
-                        break' <- true
-                        result <- false
-                    i <- i + 1
-                result
-
-        /// Returns all heads of a given array.
-        /// For [|1;2;3|] it returns [|[|1; 2; 3|]; [|1; 2|]; [|1|]|]
-        let heads (array: 'T []) =
-            let res = Array.zeroCreate<'T[]> array.Length
-            for i = array.Length - 1 downto 0 do
-                res.[i] <- array.[0..i]
-            res
-
-        /// check if subArray is found in the wholeArray starting 
-        /// at the provided index
-        let inline isSubArray (subArray: 'T []) (wholeArray:'T []) index = 
-            if isNull subArray || isNull wholeArray then false
-            elif subArray.Length = 0 then true
-            elif subArray.Length > wholeArray.Length then false
-            elif subArray.Length = wholeArray.Length then areEqual subArray wholeArray else
-            let rec loop subidx idx =
-                if subidx = subArray.Length then true 
-                elif subArray.[subidx] = wholeArray.[idx] then loop (subidx+1) (idx+1) 
-                else false
-            loop 0 index
-        
-        /// Returns true if one array has another as its subset from index 0.
-        let startsWith (prefix: _ []) (whole: _ []) =
-            isSubArray prefix whole 0
-        
-        /// Returns true if one array has trailing elements equal to another's.
-        let endsWith (suffix: _ []) (whole: _ []) =
-            isSubArray suffix whole (whole.Length-suffix.Length)
-        
     type FSharpEntity with
         member x.TryGetFullName() =
             try x.TryFullName 
@@ -388,10 +326,22 @@ module internal AssemblyContentProvider =
                         yield! traverseEntity contentType currentParent e 
                 | _ -> () }
 
+
     let getAssemblySignatureContent contentType (signature: FSharpAssemblySignature) =
-            signature.TryGetEntities()
-            |> Seq.collect (traverseEntity contentType Parent.Empty)
-            |> Seq.distinctBy (fun {FullName = fullName; CleanedIdents = cleanIdents} -> (fullName, cleanIdents))
+
+        // We ignore all diagnostics during this operation
+        //
+        // CLEANUP: this function is run on the API user's calling thread.  It potentially accesses TAST data structures 
+        // concurrently with other threads.  On an initial review this is not a problem since type provider computations
+        // are not triggered (see "if not entity.IsProvided") and the other data accessed is immutable or computed safely 
+        // on-demand.  However a more compete review may be warranted.
+
+        use _ignoreAllDiagnostics = new ErrorScope()  
+
+        signature.TryGetEntities()
+        |> Seq.collect (traverseEntity contentType Parent.Empty)
+        |> Seq.distinctBy (fun {FullName = fullName; CleanedIdents = cleanIdents} -> (fullName, cleanIdents))
+        |> Seq.toList
 
     let private getAssemblySignaturesContent contentType (assemblies: FSharpAssembly list) = 
         assemblies 
@@ -400,6 +350,15 @@ module internal AssemblyContentProvider =
 
     let getAssemblyContent (withCache: (IAssemblyContentCache -> _) -> _) 
                            contentType (fileName: string option) (assemblies: FSharpAssembly list) =
+
+        // We ignore all diagnostics during this operation
+        //
+        // CLEANUP: this function is run on the API user's calling thread.  It potentially accesses TAST data structures 
+        // concurrently with other threads.  On an initial review this is not a problem since type provider computations
+        // are not triggered (see "if not entity.IsProvided") and the other data accessed is immutable or computed safely 
+        // on-demand.  However a more compete review may be warranted.
+        use _ignoreAllDiagnostics = new ErrorScope()  
+
         match assemblies |> List.filter (fun x -> not x.IsProviderGenerated), fileName with
         | [], _ -> []
         | assemblies, Some fileName ->
@@ -437,7 +396,8 @@ type internal Entity =
     { FullRelativeName: LongIdent
       Qualifier: LongIdent
       Namespace: LongIdent option
-      Name: LongIdent }
+      Name: LongIdent
+      LastIdent: string }
     override x.ToString() = sprintf "%A" x
 
 [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
@@ -512,7 +472,8 @@ module internal Entity =
                           { FullRelativeName = String.concat "." fullRelativeName //.[0..fullRelativeName.Length - identCount - 1]
                             Qualifier = String.concat "." qualifier
                             Namespace = ns
-                            Name = match restIdents with [|_|] -> "" | _ -> String.concat "." restIdents }) 
+                            Name = match restIdents with [|_|] -> "" | _ -> String.concat "." restIdents 
+                            LastIdent = Array.tryLast restIdents |> Option.defaultValue "" }) 
 
 type internal ScopeKind =
     | Namespace
@@ -572,7 +533,7 @@ module internal ParsedInput =
         let addIdent (ident: Ident) =
             identsByEndPos.[ident.idRange.End] <- [ident]
     
-        let rec walkImplFileInput (ParsedImplFileInput(_, _, _, _, _, moduleOrNamespaceList, _)) =
+        let rec walkImplFileInput (ParsedImplFileInput(modules = moduleOrNamespaceList)) =
             List.iter walkSynModuleOrNamespace moduleOrNamespaceList
     
         and walkSynModuleOrNamespace (SynModuleOrNamespace(_, _, _, decls, _, attrs, _, _)) =
@@ -901,7 +862,13 @@ module internal ParsedInput =
         { Idents: Idents
           Kind: ScopeKind }
 
-    let tryFindInsertionContext (currentLine: int) (ast: ParsedInput) = 
+    let tryFindInsertionContext (currentLine: int) (ast: ParsedInput) (partiallyQualifiedName: MaybeUnresolvedIdents) = 
+
+        // We ignore all diagnostics during this operation
+        //
+        // Based on an initial review, no diagnostics should be generated.  However the code should be checked more closely.
+        use _ignoreAllDiagnostics = new ErrorScope()  
+
         let result: (Scope * Point<FCS>) option ref = ref None
         let ns: string[] option ref = ref None
         let modules = ResizeArray<Idents * EndLine * Col>()  
@@ -945,7 +912,7 @@ module internal ParsedInput =
                 |> Option.map (fun r -> r.StartColumn)
 
 
-        let rec walkImplFileInput (ParsedImplFileInput(_, _, _, _, _, moduleOrNamespaceList, _)) = 
+        let rec walkImplFileInput (ParsedImplFileInput(modules = moduleOrNamespaceList)) = 
             List.iter (walkSynModuleOrNamespace []) moduleOrNamespaceList
 
         and walkSynModuleOrNamespace (parent: LongIdent) (SynModuleOrNamespace(ident, _, isModule, decls, _, _, _, range)) =
@@ -1004,8 +971,13 @@ module internal ParsedInput =
             |> Seq.sortBy (fun (m, _, _) -> -m.Length)
             |> Seq.toList
 
-        fun (partiallyQualifiedName: MaybeUnresolvedIdents) 
-            (requiresQualifiedAccessParent: Idents option, autoOpenParent: Idents option, entityNamespace: Idents option, entity: Idents) ->
+        // CLEANUP: does this realy need to be a partial application with pre-computation?  Can this be made more expicit?
+        fun (requiresQualifiedAccessParent: Idents option, autoOpenParent: Idents option, entityNamespace: Idents option, entity: Idents) ->
+
+            // We ignore all diagnostics during this operation
+            //
+            // Based on an initial review, no diagnostics should be generated.  However the code should be checked more closely.
+            use _ignoreAllDiagnostics = new ErrorScope()  
             match res with
             | None -> [||]
             | Some (scope, ns, pos) -> 

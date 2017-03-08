@@ -22,7 +22,6 @@ using System.Collections.Generic;
 
 namespace Microsoft.VisualStudio.FSharp.LanguageService
 {
-
     enum RequireFreshResults
     {
         Yes = 1,

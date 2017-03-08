@@ -264,15 +264,18 @@ module NavigationImpl =
                 let nested = processNestedDeclarations(decls)
                 // Get nested modules and types (for the left dropdown)
                 let other = processFSharpNavigationTopLevelDeclarations(baseName, decls)
-                
+
                 // Create explicitly - it can be 'single top level' thing that is hidden
-                let decl =
-                    FSharpNavigationDeclarationItem.Create
-                        (textOfLid id, (if isModule then ModuleFileDecl else NamespaceDecl),
-                            GlyphMajor.Module, m, 
-                            unionRangesChecked (rangeOfDecls nested) (moduleRange (rangeOfLid id) other), 
-                            singleTopLevel, access), (addItemName(textOfLid id)), nested
-                decl::other)
+                match id with
+                | [] -> other
+                | _ ->
+                    let decl =
+                        FSharpNavigationDeclarationItem.Create
+                            (textOfLid id, (if isModule then ModuleFileDecl else NamespaceDecl),
+                                GlyphMajor.Module, m, 
+                                unionRangesChecked (rangeOfDecls nested) (moduleRange (rangeOfLid id) other), 
+                                singleTopLevel, access), (addItemName(textOfLid id)), nested
+                    decl::other)
                   
         let items = 
             items 
@@ -423,8 +426,8 @@ module NavigationImpl =
 
     let getNavigation (parsedInput: ParsedInput) =
         match parsedInput with
-        | ParsedInput.SigFile(ParsedSigFileInput(_, _, _, _, modules)) -> getNavigationFromSigFile modules
-        | ParsedInput.ImplFile(ParsedImplFileInput(_, _, _, _, _, modules, _)) -> getNavigationFromImplFile modules
+        | ParsedInput.SigFile(ParsedSigFileInput(modules = modules)) -> getNavigationFromSigFile modules
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = modules)) -> getNavigationFromImplFile modules
 
     let empty = FSharpNavigationItems([||])
 
@@ -609,7 +612,7 @@ module NavigateTo =
             | SynMemberSig.Inherit _
             | SynMemberSig.Interface _ -> ()
     
-        and walkImplFileInpit (ParsedImplFileInput(fileName, _, _, _, _, moduleOrNamespaceList, _)) = 
+        and walkImplFileInpit (ParsedImplFileInput(fileName = fileName; modules = moduleOrNamespaceList)) = 
             let container = { Type = ContainerType.File; Name = fileName }
             for item in moduleOrNamespaceList do
                 walkSynModuleOrNamespace item container

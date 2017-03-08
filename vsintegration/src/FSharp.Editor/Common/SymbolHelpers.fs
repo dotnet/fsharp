@@ -3,21 +3,14 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Collections.Generic
 open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
-open System.Runtime.CompilerServices
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Text
 
-open Microsoft.VisualStudio.FSharp.LanguageService
-open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons
-
 
 module internal SymbolHelpers =
     let getSymbolUsesInSolution (symbol: FSharpSymbol, declLoc: SymbolDeclarationLocation, checkFileResults: FSharpCheckFileResults,
@@ -70,12 +63,12 @@ module internal SymbolHelpers =
             do! Option.guard (originalText.Length > 0)
             let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
-            let! symbol = CommonHelpers.getSymbolAtPosition(document.Id, sourceText, symbolSpan.Start, document.FilePath, defines, SymbolLookupKind.Fuzzy)
-            let! _, checkFileResults = checker.ParseAndCheckDocument(document, options)
+            let! symbol = CommonHelpers.getSymbolAtPosition(document.Id, sourceText, symbolSpan.Start, document.FilePath, defines, SymbolLookupKind.Greedy)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, allowStaleResults = true)
             let textLine = sourceText.Lines.GetLineFromPosition(symbolSpan.Start)
             let textLinePos = sourceText.Lines.GetLinePosition(symbolSpan.Start)
             let fcsTextLineNumber = textLinePos.Line + 1
-            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.RightColumn, textLine.Text.ToString(), [symbol.Text])
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.Text.ToString(), symbol.FullIsland)
             let! declLoc = symbolUse.GetDeclarationLocation(document)
             let newText = textChanger originalText
             // defer finding all symbol uses throughout the solution
