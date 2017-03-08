@@ -10,16 +10,18 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.QuickInfo
+open Microsoft.CodeAnalysis.Navigation
 open Microsoft.CodeAnalysis.Text
 
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.Language.Intellisense
+open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
 
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open Microsoft.FSharp.Compiler.Range
 
-[<Shared>]
 [<ExportQuickInfoProvider(PredefinedQuickInfoProviderNames.Semantic, FSharpCommonConstants.FSharpLanguageName)>]
 type internal FSharpQuickInfoProvider 
     [<System.ComponentModel.Composition.ImportingConstructor>] 
@@ -33,6 +35,16 @@ type internal FSharpQuickInfoProvider
 
     let xmlMemberIndexService = serviceProvider.GetService(typeof<SVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
+    let navigateTo (workspace: Workspace) (range: range)  = async {
+        let documentNavigationService =workspace.Services.GetService<IDocumentNavigationService>()
+        match workspace.CurrentSolution.GetDocumentIdsWithFilePath(range.FileName) |> List.ofSeq with
+        | id :: _ ->
+            let! src = workspace.CurrentSolution.GetDocument(id).GetTextAsync()
+            match CommonRoslynHelpers.TryFSharpRangeToTextSpan(src, range) with
+            | Some span -> documentNavigationService.TryNavigateToSpan(workspace, id, span) |> ignore
+            | _ -> ()
+        | _ -> ()
+    }
     
     static member ProvideQuickInfo(checker: FSharpChecker, documentId: DocumentId, sourceText: SourceText, filePath: string, position: int, options: FSharpProjectOptions, textVersionHash: int) =
         asyncMaybe {
@@ -73,8 +85,8 @@ type internal FSharpQuickInfoProvider
                         (
                             symbolGlyph = SymbolGlyphDeferredContent(CommonRoslynHelpers.GetGlyphForSymbol(symbol, symbolKind), glyphService),
                             warningGlyph = null,
-                            mainDescription = FSharpDeferredContent(mainDescription, typeMap),
-                            documentation = FSharpDeferredContent(documentation, typeMap),
+                            mainDescription = FSharpDeferredContent(mainDescription, typeMap, navigateTo document.Project.Solution.Workspace),
+                            documentation = FSharpDeferredContent(documentation, typeMap, navigateTo document.Project.Solution.Workspace),
                             typeParameterMap = empty,
                             anonymousTypes = empty,
                             usageText = empty,

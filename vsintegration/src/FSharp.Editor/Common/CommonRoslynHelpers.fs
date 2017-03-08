@@ -45,8 +45,9 @@ module internal CommonRoslynHelpers =
             Assert.Exception(task.Exception.GetBaseException())
             raise(task.Exception.GetBaseException())
 
-    type NavigableRoslynText = NavigableRoslynText of tag: string * text: string * xref: obj option
-    with static member Create(tag, text, ?xref) = NavigableRoslynText(tag, text, xref)
+    type NavigableRoslynText = NavigableRoslynText of tag: string * text: string * xref: obj option with
+        static member Create(tag, text, xref) = NavigableRoslynText(tag, text, xref)
+        static member Create(tag, text) = NavigableRoslynText(tag, text, None)
 
     /// Converts `TaggedText` from the F# Compiler to `Microsoft.CodeAnalysis.TaggedText` format for use in tooltips
     let TaggedTextToNavigable t =

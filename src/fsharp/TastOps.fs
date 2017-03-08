@@ -2513,7 +2513,7 @@ let tagEntityRefName (xref: EntityRef) name =
     elif xref.IsFSharpInterfaceTycon then tagInterface name
     elif xref.IsUnionTycon then tagUnion name
     elif xref.IsRecordTycon then tagRecord name
-    else tagClass None name
+    else tagClass (Some (box xref.Range)) name
 
 let fullNameOfEntityRefAsLayout nmF (xref: EntityRef) =
     let n = wordL (tagEntityRefName xref (nmF xref))

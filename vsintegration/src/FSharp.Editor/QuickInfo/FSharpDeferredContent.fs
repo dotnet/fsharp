@@ -9,7 +9,7 @@ open Microsoft.CodeAnalysis.Classification
 
 open CommonRoslynHelpers
 
-type internal FSharpDeferredContent(content: NavigableRoslynText seq, typemap: ClassificationTypeMap) =
+type internal FSharpDeferredContent(content: NavigableRoslynText seq, typemap: ClassificationTypeMap, navigateToRange) =
     let formatMap = typemap.ClassificationFormatMapService.GetClassificationFormatMap("tooltip")
     let props = 
         ClassificationTags.GetClassificationTypeName
@@ -23,6 +23,7 @@ type internal FSharpDeferredContent(content: NavigableRoslynText seq, typemap: C
                         let h = Documents.Hyperlink(Documents.Run(text))
                         h.Click.Add <| fun _ ->
                             Logging.Logging.logInfof "click! %A" xref
+                            navigateToRange (xref :?> Microsoft.FSharp.Compiler.Range.range) |> Async.StartImmediate
                         h :> Documents.Inline
             DependencyObjectExtensions.SetTextProperties( inl, props tag)
             yield inl
