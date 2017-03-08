@@ -257,3 +257,4 @@ module internal RoslynExtensions =
         member this.GetDependentProjects() =
             this.Solution.GetProjectDependencyGraph().GetProjectsThatDirectlyDependOnThisProject(this.Id)
             |> Seq.map this.Solution.GetProject
+            |> Seq.toList
