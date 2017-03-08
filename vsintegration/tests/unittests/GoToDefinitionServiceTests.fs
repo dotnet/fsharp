@@ -102,7 +102,7 @@ let _ = Module1.foo 1
         let actual = 
            FSharpGoToDefinitionService.FindDefinition(FSharpChecker.Instance, documentId, SourceText.From(fileContents), filePath, caretPosition, [], options, 0) 
            |> Async.RunSynchronously
-           |> Option.map (fun range -> (range.StartLine, range.EndLine, range.StartColumn, range.EndColumn))
+           |> Option.map (fun (range, _) -> (range.StartLine, range.EndLine, range.StartColumn, range.EndColumn))
 
         if actual <> expected then 
             Assert.Fail(sprintf "Incorrect information returned for fileContents=<<<%s>>>, caretMarker=<<<%s>>>, expected =<<<%A>>>, actual = <<<%A>>>" fileContents caretMarker expected actual)

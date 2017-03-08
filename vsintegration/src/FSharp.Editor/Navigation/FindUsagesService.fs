@@ -24,21 +24,23 @@ type internal FSharpFindUsagesService
     ) =
     
     // File can be included in more than one project, hence single `range` may results with multiple `Document`s.
-    let rangeToDocumentSpans (solution: Solution, range: range, cancellationToken: CancellationToken) =
+    let rangeToDocumentSpans (solution: Solution, range: range, assembly: string, cancellationToken: CancellationToken) =
         async {
             if range.Start = range.End then return []
             else 
                 let! spans =
                     solution.GetDocumentIdsWithFilePath(range.FileName)
                     |> Seq.map (fun documentId ->
-                        async {
+                        asyncMaybe {
                             let doc = solution.GetDocument(documentId)
+                            do! Option.guard (doc.Project.AssemblyName = assembly)
                             let! sourceText = doc.GetTextAsync(cancellationToken)
                             match CommonRoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
                             | Some span ->
                                 let span = CommonHelpers.fixupSpan(sourceText, span)
-                                return Some (DocumentSpan(doc, span))
-                            | None -> return None
+                                return DocumentSpan(doc, span)
+                            | None -> return! None
+                            
                         })
                     |> Async.Parallel
                 return spans |> Array.choose id |> Array.toList
@@ -59,16 +61,16 @@ type internal FSharpFindUsagesService
             let! declaration = checkFileResults.GetDeclarationLocationAlternate (lineNumber, symbol.Ident.idRange.EndColumn, textLine, symbol.FullIsland, false) |> liftAsync
             let tags = GlyphTags.GetTags(CommonRoslynHelpers.GetGlyphForSymbol (symbolUse.Symbol, symbol.Kind))
             
-            let declarationRange = 
+            let declaration = 
                 match declaration with
-                | FSharpFindDeclResult.DeclFound range -> Some range
+                | FSharpFindDeclResult.DeclFound (range, assemblyName) -> Some (range, assemblyName)
                 | _ -> None
             
             let! definitionItems =
                 async {
                     let! declarationSpans =
-                        match declarationRange with
-                        | Some range -> rangeToDocumentSpans(document.Project.Solution, range, context.CancellationToken)
+                        match declaration with
+                        | Some (range, assembly) -> rangeToDocumentSpans(document.Project.Solution, range, assembly, context.CancellationToken)
                         | None -> async.Return []
                     
                     return 
@@ -122,12 +124,14 @@ type internal FSharpFindUsagesService
                     }
 
             for symbolUse in symbolUses do
-                match declarationRange with
-                | Some declRange when declRange = symbolUse.RangeAlternate -> ()
+                match declaration with
+                | Some (declRange, _) when declRange = symbolUse.RangeAlternate -> ()
                 | _ ->
                     // report a reference if we're interested in all _or_ if we're looking at an implementation
                     if allReferences || symbolUse.IsFromDispatchSlotImplementation then
-                        let! referenceDocSpans = rangeToDocumentSpans(document.Project.Solution, symbolUse.RangeAlternate, context.CancellationToken) |> liftAsync
+                        let! referenceDocSpans = 
+                            rangeToDocumentSpans(document.Project.Solution, symbolUse.RangeAlternate, symbolUse.Symbol.Assembly.SimpleName, context.CancellationToken) |> liftAsync
+                        
                         match referenceDocSpans with
                         | [] -> ()
                         | _ ->

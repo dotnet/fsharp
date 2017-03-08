@@ -18,6 +18,7 @@ open Microsoft.CodeAnalysis.Text
 
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open System.IO
 
 type internal FSharpNavigableItem(document: Document, textSpan: TextSpan) =
 
@@ -40,7 +41,7 @@ type internal FSharpGoToDefinitionService
         [<ImportMany>]presenters: IEnumerable<INavigableItemsPresenter>
     ) =
 
-    static member FindDefinition(checker: FSharpChecker, documentKey: DocumentId, sourceText: SourceText, filePath: string, position: int, defines: string list, options: FSharpProjectOptions, textVersionHash: int) : Async<Option<range>> = 
+    static member FindDefinition(checker: FSharpChecker, documentKey: DocumentId, sourceText: SourceText, filePath: string, position: int, defines: string list, options: FSharpProjectOptions, textVersionHash: int) = 
         asyncMaybe {
             let textLine = sourceText.Lines.GetLineFromPosition(position)
             let textLinePos = sourceText.Lines.GetLinePosition(position)
@@ -50,7 +51,7 @@ type internal FSharpGoToDefinitionService
             let! declarations = checkFileResults.GetDeclarationLocationAlternate (fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland, false) |> liftAsync
             
             match declarations with
-            | FSharpFindDeclResult.DeclFound(range) -> return range
+            | FSharpFindDeclResult.DeclFound(range, assembly) -> return range, assembly
             | _ -> return! None
         }
     
@@ -65,16 +66,19 @@ type internal FSharpGoToDefinitionService
             let! sourceText = document.GetTextAsync(cancellationToken)
             let! textVersion = document.GetTextVersionAsync(cancellationToken)
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
-            let! range = FSharpGoToDefinitionService.FindDefinition(checkerProvider.Checker, document.Id, sourceText, document.FilePath, position, defines, options, textVersion.GetHashCode())
+            let! range, assembly = FSharpGoToDefinitionService.FindDefinition(checkerProvider.Checker, document.Id, sourceText, document.FilePath, position, defines, options, textVersion.GetHashCode())
             // REVIEW: 
-            let fileName = try System.IO.Path.GetFullPath(range.FileName) with _ -> range.FileName
-            let refDocumentIds = document.Project.Solution.GetDocumentIdsWithFilePath(fileName)
-            if not refDocumentIds.IsEmpty then 
-                let refDocumentId = refDocumentIds.First()
-                let refDocument = document.Project.Solution.GetDocument(refDocumentId)
-                let! refSourceText = refDocument.GetTextAsync(cancellationToken)
-                let refTextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(refSourceText, range)
-                results.Add(FSharpNavigableItem(refDocument, refTextSpan))
+            let fileName = try Path.GetFullPath(range.FileName) with _ -> range.FileName
+            
+            let! refDocument = 
+                document.Project.Solution.GetDocumentIdsWithFilePath(fileName) 
+                |> Seq.map document.Project.Solution.GetDocument
+                |> Seq.filter (fun doc -> doc.Project.AssemblyName = assembly)
+                |> Seq.tryHead
+
+            let! refSourceText = refDocument.GetTextAsync(cancellationToken)
+            let refTextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(refSourceText, range)
+            results.Add(FSharpNavigableItem(refDocument, refTextSpan))
             return results.AsEnumerable()
          }
          |> Async.map (Option.defaultValue Seq.empty)
