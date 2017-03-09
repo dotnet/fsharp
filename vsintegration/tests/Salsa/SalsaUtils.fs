@@ -122,10 +122,6 @@ module internal VsOpsUtils =
         (opsOfFile file).GotoDefinitionAtCursor (file, false)
     let GotoDefinitionAtCursorForceGeneration file = 
         (opsOfFile file).GotoDefinitionAtCursor (file, true)
-    let GetNavigationContentAtCursor(file) = 
-        (opsOfFile file).GetNavigationContentAtCursor(file)
-    let GetHiddenRegionCommands(file) = 
-        (opsOfFile file).GetHiddenRegionCommands(file)
     let GetIdentifierAtCursor file = 
         (opsOfFile file).GetIdentifierAtCursor file
     let GetF1KeywordAtCursor file = 

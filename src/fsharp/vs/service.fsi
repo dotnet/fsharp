@@ -15,6 +15,14 @@ open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
+open Microsoft.FSharp.Compiler 
+open Microsoft.FSharp.Compiler.Range
+open Microsoft.FSharp.Compiler.TcGlobals 
+open Microsoft.FSharp.Compiler.Infos
+open Microsoft.FSharp.Compiler.NameResolution
+open Microsoft.FSharp.Compiler.InfoReader
+open Microsoft.FSharp.Compiler.Tast
+open Microsoft.FSharp.Compiler.Tastops
 
 /// Represents one parameter for one method (or other item) in a group. 
 [<Sealed>]

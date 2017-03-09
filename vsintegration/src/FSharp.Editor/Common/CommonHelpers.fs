@@ -16,7 +16,6 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons
 
 [<RequireQualifiedAccess>]
 type internal LexerSymbolKind =
@@ -603,73 +602,76 @@ module internal Extensions =
 
     type FSharpNavigationDeclarationItem with
         member x.RoslynGlyph : Glyph =
-            match x.GlyphMajor with
-            | GlyphMajor.Class
-            | GlyphMajor.Typedef
-            | GlyphMajor.Type
-            | GlyphMajor.Exception ->
+            match x.Glyph with
+            | FSharpGlyph.Class
+            | FSharpGlyph.Typedef
+            | FSharpGlyph.Type
+            | FSharpGlyph.Exception ->
                 match x.Access with
                 | Some SynAccess.Private -> Glyph.ClassPrivate
                 | Some SynAccess.Internal -> Glyph.ClassInternal
                 | _ -> Glyph.ClassPublic
-            | GlyphMajor.Constant -> 
+            | FSharpGlyph.Constant -> 
                 match x.Access with
                 | Some SynAccess.Private -> Glyph.ConstantPrivate
                 | Some SynAccess.Internal -> Glyph.ConstantInternal
                 | _ -> Glyph.ConstantPublic
-            | GlyphMajor.Delegate -> 
+            | FSharpGlyph.Delegate -> 
                 match x.Access with
                 | Some SynAccess.Private -> Glyph.DelegatePrivate
                 | Some SynAccess.Internal -> Glyph.DelegateInternal
                 | _ -> Glyph.DelegatePublic
-            | GlyphMajor.Union
-            | GlyphMajor.Enum -> 
+            | FSharpGlyph.Union
+            | FSharpGlyph.Enum -> 
                 match x.Access with
                 | Some SynAccess.Private -> Glyph.EnumPrivate
                 | Some SynAccess.Internal -> Glyph.EnumInternal
                 | _ -> Glyph.EnumPublic
-            | GlyphMajor.EnumMember
-            | GlyphMajor.Variable
-            | GlyphMajor.FieldBlue -> 
+            | FSharpGlyph.EnumMember
+            | FSharpGlyph.Variable
+            | FSharpGlyph.Field -> 
                 match x.Access with
                 | Some SynAccess.Private -> Glyph.FieldPrivate
                 | Some SynAccess.Internal -> Glyph.FieldInternal
                 | _ -> Glyph.FieldPublic
-            | GlyphMajor.Event -> 
+            | FSharpGlyph.Event -> 
                 match x.Access with
                 | Some SynAccess.Private -> Glyph.EventPrivate
                 | Some SynAccess.Internal -> Glyph.EventInternal
                 | _ -> Glyph.EventPublic
-            | GlyphMajor.Interface -> 
+            | FSharpGlyph.Interface -> 
                 match x.Access with
                 | Some SynAccess.Private -> Glyph.InterfacePrivate
                 | Some SynAccess.Internal -> Glyph.InterfaceInternal
                 | _ -> Glyph.InterfacePublic
-            | GlyphMajor.Method
-            | GlyphMajor.Method2 -> 
+            | FSharpGlyph.Method
+            | FSharpGlyph.OverridenMethod -> 
                 match x.Access with
                 | Some SynAccess.Private -> Glyph.MethodPrivate
                 | Some SynAccess.Internal -> Glyph.MethodInternal
                 | _ -> Glyph.MethodPublic
-            | GlyphMajor.Module -> 
+            | FSharpGlyph.Module -> 
                 match x.Access with
                 | Some SynAccess.Private -> Glyph.ModulePrivate
                 | Some SynAccess.Internal -> Glyph.ModuleInternal
                 | _ -> Glyph.ModulePublic
-            | GlyphMajor.NameSpace -> Glyph.Namespace
-            | GlyphMajor.Property -> 
+            | FSharpGlyph.NameSpace -> Glyph.Namespace
+            | FSharpGlyph.Property -> 
                 match x.Access with
                 | Some SynAccess.Private -> Glyph.PropertyPrivate
                 | Some SynAccess.Internal -> Glyph.PropertyInternal
                 | _ -> Glyph.PropertyPublic
-            | GlyphMajor.Struct
-            | GlyphMajor.ValueType -> 
+            | FSharpGlyph.Struct -> 
                 match x.Access with
                 | Some SynAccess.Private -> Glyph.StructurePrivate
                 | Some SynAccess.Internal -> Glyph.StructureInternal
                 | _ -> Glyph.StructurePublic
-            | GlyphMajor.Error -> Glyph.Error
-            | _ -> Glyph.None
+            | FSharpGlyph.ExtensionMethod ->
+                match x.Access with
+                | Some SynAccess.Private -> Glyph.ExtensionMethodPrivate
+                | Some SynAccess.Internal -> Glyph.ExtensionMethodInternal
+                | _ -> Glyph.ExtensionMethodPublic
+            | FSharpGlyph.Error -> Glyph.Error
 
 /// Active patterns over `FSharpSymbolUse`.
 module internal SymbolUse =

@@ -75,8 +75,7 @@ type [<Class>] internal FSharpSymbol =
     ///
     /// This is the relation used by GetUsesOfSymbol and GetUsesOfSymbolInFile.
     member IsEffectivelySameAs : other: FSharpSymbol -> bool
-
-
+    static member GetAccessibility : FSharpSymbol -> FSharpAccessibility option
 
 /// Represents an assembly as seen by the F# language
 and [<Class>] internal FSharpAssembly = 
@@ -429,17 +428,6 @@ and [<Class>] internal FSharpField =
 and [<Class>] internal FSharpAccessibilityRights =
     internal new : CcuThunk * AccessorDomain -> FSharpAccessibilityRights
     member internal Contents : AccessorDomain
-
-/// Indicates the accessibility of a symbol, as seen by the F# language
-and [<Class>] internal FSharpAccessibility = 
-    /// Indicates the symbol has public accessibility
-    member IsPublic : bool
-
-    /// Indicates the symbol has private accessibility
-    member IsPrivate : bool
-
-    /// Indicates the symbol has internal accessibility
-    member IsInternal : bool
 
 /// A subtype of FSharpSymbol that represents a generic parameter for an FSharpSymbol
 and [<Class>] internal FSharpGenericParameter = 
