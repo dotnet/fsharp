@@ -43,13 +43,15 @@ type FormatInfoRegister =
   { mutable leftJustify    : bool 
     mutable numPrefixIfPos : char option
     mutable addZeros       : bool
-    mutable precision      : bool}
+    mutable precision      : bool
+    mutable escapeStrings  : bool }
 
 let newInfo ()= 
   { leftJustify    = false
     numPrefixIfPos = None
     addZeros       = false
-    precision      = false}
+    precision      = false
+    escapeStrings  = false }
 
 let parseFormatStringInternal (m:range) (g: TcGlobals) (source: string option) fmt bty cty = 
     // Offset is used to adjust ranges depending on whether input string is regular, verbatim or triple-quote.
@@ -118,6 +120,10 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) (source: string option) f
                     if info.numPrefixIfPos <> None then failwithf "%s" <| FSComp.SR.forPrefixFlagSpacePlusSetTwice()
                     info.numPrefixIfPos <- Some ' '
                     flags(i+1)
+                | '@' ->
+                    if info.escapeStrings then failwithf "%s" <| FSComp.SR.forFlagSetTwice("@")
+                    info.escapeStrings <- true
+                    flags(i+1)
                 | '#' -> failwithf "%s" <| FSComp.SR.forHashSpecifierIsInvalid() 
                 | _ -> i
 
@@ -185,15 +191,16 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) (source: string option) f
 
               let acc = if widthArg then (Option.map ((+)1) posi, g.int_ty) :: acc else acc 
 
-              let checkNoPrecision     c = if info.precision then failwithf "%s" <| FSComp.SR.forFormatDoesntSupportPrecision(c.ToString())
-              let checkNoZeroFlag      c = if info.addZeros then failwithf "%s" <| FSComp.SR.forDoesNotSupportZeroFlag(c.ToString())
-              let checkNoNumericPrefix c = if info.numPrefixIfPos <> None then
-                                              failwithf "%s" <| FSComp.SR.forDoesNotSupportPrefixFlag(c.ToString(), (Option.get info.numPrefixIfPos).ToString())
+              let checkNoPrecision         c = if info.precision then failwithf "%s" <| FSComp.SR.forFormatDoesntSupportPrecision(c.ToString())
+              let checkNoZeroFlag          c = if info.addZeros then failwithf "%s" <| FSComp.SR.forDoesNotSupportZeroFlag(c.ToString())
+              let checkNoEscapeStringsFlag c = if info.escapeStrings then failwithf "%s" <| FSComp.SR.forDoesNotSupportEscapeStringFlag(c.ToString())
+              let checkNoNumericPrefix     c = if info.numPrefixIfPos <> None then failwithf "%s" <| FSComp.SR.forDoesNotSupportPrefixFlag(c.ToString(), (Option.get info.numPrefixIfPos).ToString())
 
               let checkOtherFlags c = 
                   checkNoPrecision c 
                   checkNoZeroFlag c 
                   checkNoNumericPrefix c
+                  checkNoEscapeStringsFlag c
 
               let collectSpecifierLocation relLine relCol = 
                   match relLine with
@@ -215,11 +222,13 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) (source: string option) f
 
               | ('d' | 'i' | 'o' | 'u' | 'x' | 'X') ->
                   if info.precision then failwithf "%s" <| FSComp.SR.forFormatDoesntSupportPrecision(ch.ToString())
+                  checkNoEscapeStringsFlag ch
                   collectSpecifierLocation relLine relCol
                   parseLoop ((posi, mkFlexibleIntFormatTypar g m) :: acc) (i+1, relLine, relCol+1)
 
               | ('l' | 'L') ->
                   if info.precision then failwithf "%s" <| FSComp.SR.forFormatDoesntSupportPrecision(ch.ToString())
+                  checkNoEscapeStringsFlag ch
                   let relCol = relCol+1
                   let i = i+1
                   
@@ -238,10 +247,12 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) (source: string option) f
                   failwithf "%s" <| FSComp.SR.forHIsUnnecessary()
 
               | 'M' ->
+                  checkNoEscapeStringsFlag ch
                   collectSpecifierLocation relLine relCol
                   parseLoop ((posi, mkFlexibleDecimalFormatTypar g m) :: acc) (i+1, relLine, relCol+1)
 
               | ('f' | 'F' | 'e' | 'E' | 'g' | 'G') ->
+                  checkNoEscapeStringsFlag ch
                   collectSpecifierLocation relLine relCol
                   parseLoop ((posi, mkFlexibleFloatFormatTypar g m) :: acc) (i+1, relLine, relCol+1)
 
@@ -266,9 +277,11 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) (source: string option) f
                   parseLoop ((posi, NewInferenceType ()) :: acc) (i+1, relLine, relCol+1)
 
               | 'A' ->
+                  checkNoPrecision ch 
+                  checkNoZeroFlag ch 
                   match info.numPrefixIfPos with
                   | None     // %A has BindingFlags=Public, %+A has BindingFlags=Public | NonPublic
-                  | Some '+' -> 
+                  | Some '+' ->
                       collectSpecifierLocation relLine relCol
                       parseLoop ((posi, NewInferenceType ()) :: acc)  (i+1, relLine, relCol+1)
                   | Some _   -> failwithf "%s" <| FSComp.SR.forDoesNotSupportPrefixFlag(ch.ToString(), (Option.get info.numPrefixIfPos).ToString())

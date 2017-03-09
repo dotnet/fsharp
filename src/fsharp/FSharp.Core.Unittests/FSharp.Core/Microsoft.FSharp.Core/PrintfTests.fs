@@ -40,3 +40,8 @@ type PrintfTests() =
     member __.``Control characters are correctly escaped``() =
         test "%A" "\0" "\"\\\000\""
         test "%A" "\10" "\'\\\010\'"
+
+    [<Test>]
+    member __.``Path-like strings are formatted as verbatim strings``() =
+        test "%A" @"C:\Program Files\Some\Path.exe" "@\"C:\\Program Files\\Some\\Path.exe\""
+        test "%A" @"C:\" "@\"C:\\\""

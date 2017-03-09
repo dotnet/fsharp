@@ -329,7 +329,8 @@ namespace Microsoft.FSharp.Text.StructuredFormat
           PrintLength : int
           PrintSize : int  
           ShowProperties : bool
-          ShowIEnumerable: bool  }
+          ShowIEnumerable : bool
+          EscapeStrings : bool }
         static member Default : FormatOptions
 
     module

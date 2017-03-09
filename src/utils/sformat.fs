@@ -397,7 +397,8 @@ namespace Microsoft.FSharp.Text.StructuredFormat
           PrintLength : int;
           PrintSize : int;        
           ShowProperties : bool;
-          ShowIEnumerable: bool; }
+          ShowIEnumerable : bool;
+          EscapeStrings : bool; }
         static member Default =
             { FormatProvider = (System.Globalization.CultureInfo.InvariantCulture :> System.IFormatProvider);
 #if RUNTIME
@@ -419,7 +420,8 @@ namespace Microsoft.FSharp.Text.StructuredFormat
               PrintLength = 100;
               PrintSize = 10000;
               ShowProperties = false;
-              ShowIEnumerable = true; }
+              ShowIEnumerable = true;
+              EscapeStrings = false; }
 
 
 
@@ -928,11 +930,21 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                  "\\" + d1.ToString() + d2.ToString() + d3.ToString()
             | _ -> c.ToString()
             
-        let formatString (s:string) =
-            let escaped = s |> Seq.cast<char> |> Seq.map (formatChar false) |> String.concat ""
-            "\"" + escaped + "\""
+        let formatString (escape:bool) (s:string) =
+            if escape then
+                let escaped = System.Text.StringBuilder(s.Length * 2 + 2)
 
-        let formatStringInWidth (width:int) (str:string) =
+                escaped.Append "\"" |> ignore
+                for c in s do
+                    escaped.Append (formatChar false c) |> ignore
+                escaped.Append "\"" |> ignore
+
+                escaped.ToString()
+            else
+                // maintain compatibility with older versions of F#
+                "\"" + s + "\""
+
+        let formatStringInWidth (escape:bool) (width:int) (str:string) =
             // Return a truncated version of the string, e.g.
             //   "This is the initial text, which has been truncated"+[12 chars]
             //
@@ -945,7 +957,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             let suffixLength    = 11 // turning point suffix length
             let prefixMinLength = 12 // arbitrary. If print width is reduced, want to print a minimum of information on strings...
             let prefixLength = max (width - 2 (*quotes*) - suffixLength) prefixMinLength
-            (formatString (str.Substring (0, prefixLength))) + "+[" + (str.Length - prefixLength).ToString() + " chars]"
+            (formatString escape (str.Substring (0, prefixLength))) + "+[" + (str.Length - prefixLength).ToString() + " chars]"
 
         // --------------------------------------------------------------------
         // pprinter: anyL
@@ -1186,15 +1198,15 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 #if COMPILER  
                         if s.Length + 2(*quotes*) <= opts.StringLimit then
                            // With the quotes, it fits within the limit.
-                           wordL (tagStringLiteral(formatString s))
+                           wordL (tagStringLiteral(formatString opts.EscapeStrings s))
                         else
                            // When a string is considered too long to print, there is a choice: what to print?
                            // a) <string>            -- follows <fun:typename>
                            // b) <string:length>     -- follows <fun:typename> and gives just the length
                            // c) "abcdefg"+[n chars] -- gives a prefix and the remaining chars
-                           wordL (tagStringLiteral(formatStringInWidth opts.StringLimit s))
+                           wordL (tagStringLiteral(formatStringInWidth opts.EscapeStrings opts.StringLimit s))
 #else
-                        wordL (tagStringLiteral (formatString s))  
+                        wordL (tagStringLiteral (formatString opts.EscapeStrings s))  
 #endif                        
                     | :? Array as arr -> 
                         let ty = arr.GetType().GetElementType()

@@ -79,6 +79,7 @@ type InteractiveSession()  =
     let mutable printSize = 10000
     let mutable showIEnumerable = true
     let mutable showProperties = true
+    let mutable escapeStrings = true
     let mutable addedPrinters = []
 
     member self.FloatingPointFormat with get() = fpfmt and set v = fpfmt <- v
@@ -91,6 +92,7 @@ type InteractiveSession()  =
     member self.ShowProperties  with get() = showProperties and set v = showProperties <- v
     member self.ShowIEnumerable with get() = showIEnumerable and set v = showIEnumerable <- v
     member self.ShowIDictionary with get() = showIDictionary and set v = showIDictionary <- v
+    member self.EscapeStrings with get() = escapeStrings and set v = escapeStrings <- v
     member self.AddedPrinters with get() = addedPrinters and set v = addedPrinters <- v
 
     [<CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1819:PropertiesShouldNotReturnArrays")>]
