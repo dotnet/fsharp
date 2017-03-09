@@ -1,4 +1,3 @@
 module AMaker
 let makeA () : A = A()
-
-//printfn "%A"( makeA())
+let makeB () = B<_>()
