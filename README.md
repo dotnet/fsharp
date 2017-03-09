@@ -51,8 +51,10 @@ For Visual F# IDE Tools 4.1 development (Windows)
 - [Visual Studio 2017](https://www.visualstudio.com/downloads/)
   - Under the "Windows" workloads, select ".NET desktop development".
     - Select "F# language suport" under the optional components.
-  - Under the "Windows" workloads, select "Desktop development with C++" (This installs the required Windows 10 SDK)
   - Under the "Other Toolsets" workloads, select "Visual Studio extension development".
+  - Under the "Individual Components" tab select "Windows 10 SDK" as shown below:
+  ![image](https://cloud.githubusercontent.com/assets/1249087/23730064/4ed6fa2e-041a-11e7-8294-0762f27b7949.png)
+
 
 ####Additional frameworks
 
