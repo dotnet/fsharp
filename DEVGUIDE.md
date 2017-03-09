@@ -105,7 +105,7 @@ Where you should set proper proxy address, user name and password.
 
 # The Visual F# IDE Tools (Windows Only)
 
-To build and test Visual F# IDE Tools, you must use the latest version of [Visual Studio 2017 RC](https://www.visualstudio.com/vs/visual-studio-2017-rc/#downloadvs).  See the section titled "Development tools" in the [readme](README.md).
+To build and test Visual F# IDE Tools, you must use the latest version of [Visual Studio 2017](https://www.visualstudio.com/downloads/).  See the section titled "Development tools" in the [readme](README.md).
 
     build.cmd vs              -- build the Visual F# IDE Tools (see below)
     build.cmd vs test         -- build Visual F# IDE Tools, run all tests (see below)
@@ -118,7 +118,7 @@ Use ``VisualFSharp.sln`` if you're building the Visual F# IDE Tools.
 At time of writing, the Visual F# IDE Tools can only be installed into the latest Visual Studio 2017 RC releases.
 The new builds of the Visual F# IDE Tools can no longer be installed into Visual Studio 2015.
 
-You can install Visual Studio 2017 RC from https://www.visualstudio.com/vs/visual-studio-2017-rc/#downloadvs.
+You can install Visual Studio 2017 from https://www.visualstudio.com/downloads/.
 
 **Note:** This step will install a VSIX extension into Visual Studio "Next" that changes the Visual F# IDE Tools 
 components installed in that VS installation.  You can revert this step by disabling or uninstalling the addin.
