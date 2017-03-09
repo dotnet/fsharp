@@ -23,7 +23,7 @@ type internal FSharpFindUsagesService
         projectInfoManager: ProjectInfoManager
     ) =
     
-    // File can be included into more than one project.
+    // File can be included in more than one project.
     let rangeToDocumentSpan (solution: Solution, range: range, cancellationToken: CancellationToken) =
         async {
             if range.Start = range.End then return []
