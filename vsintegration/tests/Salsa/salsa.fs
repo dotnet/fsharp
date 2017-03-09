@@ -1109,7 +1109,9 @@ module internal Salsa =
             
             member file.GetFileName() = filename
             member file.GetProjectOptionsOfScript() = 
-                project.Solution.Vs.LanguageService.FSharpChecker.GetProjectOptionsFromScript(filename, file.CombinedLines, System.DateTime(2000,1,1), [| |]) |> Async.RunSynchronously
+                project.Solution.Vs.LanguageService.FSharpChecker.GetProjectOptionsFromScript(filename, file.CombinedLines, System.DateTime(2000,1,1), [| |]) 
+                |> Async.RunSynchronously
+                |> fst // drop diagnostics
                  
             member file.RecolorizeWholeFile() = ()
             member file.RecolorizeLine (_line:int) = ()

@@ -298,8 +298,6 @@ module Keywords =
     let keywordNames = 
         keywordList |> List.map (fun (_, w, _) -> w) 
 
-    let keywordTypes = StructuredFormat.TaggedTextOps.keywordTypes
-
     let keywordTable = 
         let tab = System.Collections.Generic.Dictionary<string,token>(100)
         for _,keyword,token in keywordList do 

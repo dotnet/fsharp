@@ -498,10 +498,12 @@ type SemanticClassificationType =
     | Module
     | Printf
     | ComputationExpression
-    | IntrinsicType
     | IntrinsicFunction
     | Enumeration
     | Interface
+    | TypeArgument
+    | Operator
+    | Disposable
 
 // A scope represents everything we get back from the typecheck of a file.
 // It acts like an in-memory database about the file.
@@ -1140,8 +1142,6 @@ type TypeCheckInfo
                 items
 
 
-    static let keywordTypes = Lexhelp.Keywords.keywordTypes
-
     member x.IsRelativeNameResolvable(cursorPos: pos, plid: string list, item: Item) : bool =
     /// Determines if a long ident is resolvable at a specific point.
         ErrorScope.Protect
@@ -1461,32 +1461,25 @@ type TypeCheckInfo
             | None -> 
                 sResolutions.CapturedNameResolutions :> seq<_>
 
+        let isDisposableTy (ty: TType) =
+            Infos.ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_IDisposable
+
         resolutions
         |> Seq.choose (fun cnr ->
             match cnr with
             // 'seq' in 'seq { ... }' gets colored as keywords
             | CNR(_, (Item.Value vref), ItemOccurence.Use, _, _, _, m) when valRefEq g g.seq_vref vref ->
                 Some (m, SemanticClassificationType.ComputationExpression)
+            | CNR(_, (Item.Value vref), _, _, _, _, m) when vref.IsMutable || Tastops.isRefCellTy g vref.Type ->
+                Some (m, SemanticClassificationType.MutableVar)
             | CNR(_, Item.Value KeywordIntrinsicValue, ItemOccurence.Use, _, _, _, m) ->
                 Some (m, SemanticClassificationType.IntrinsicFunction)
             | CNR(_, (Item.Value vref), _, _, _, _, m) when isFunction g vref.Type ->
                 if vref.IsPropertyGetterMethod || vref.IsPropertySetterMethod then
                     Some (m, SemanticClassificationType.Property)
-                elif not (IsOperatorName vref.DisplayName) then
-                    Some (m, SemanticClassificationType.Function)
-                else None
-            | CNR(_, (Item.Value vref), _, _, _, _, m) when vref.IsMutable ->
-                Some (m, SemanticClassificationType.MutableVar)
-            // todo here we should check if a `vref` is of type `ref`1`
-            // (the commented code does not work)
-
-            //| CNR(_, (Item.Value vref), _, _, _, _, m) ->
-            //    match vref.TauType with
-            //    | TType.TType_app(tref, _) ->  //  g.refcell_tcr_canon.t _refcell_tcr_canon canon.Deref.type vref ->
-            //        if g.refcell_tcr_canon.Deref.Stamp = tref.Deref.Stamp then
-            //            Some (m, SemanticClassificationType.MutableVar)
-            //        else None
-            //    | _ -> None
+                elif IsOperatorName vref.DisplayName then
+                    Some (m, SemanticClassificationType.Operator)
+                else Some (m, SemanticClassificationType.Function)
             | CNR(_, Item.RecdField rfinfo, _, _, _, _, m) when rfinfo.RecdField.IsMutable && rfinfo.LiteralValue.IsNone -> 
                 Some (m, SemanticClassificationType.MutableVar)
             | CNR(_, Item.MethodGroup(_, _, _), _, _, _, _, m) ->
@@ -1494,9 +1487,6 @@ type TypeCheckInfo
             // custom builders, custom operations get colored as keywords
             | CNR(_, (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use, _, _, _, m) ->
                 Some (m, SemanticClassificationType.ComputationExpression)
-            // well known type aliases get colored as keywords
-            | CNR(_, (Item.Types (n, _)), _, _, _, _, m) when keywordTypes.Contains(n) ->
-                Some (m, SemanticClassificationType.IntrinsicType)
             // types get colored as types when they occur in syntactic types or custom attributes
             // typevariables get colored as types when they occur in syntactic types custom builders, custom operations get colored as keywords
             | CNR(_, Item.Types (_, [OptionalArgumentAttribute]), LegitTypeOccurence, _, _, _, _) -> None
@@ -1505,10 +1495,20 @@ type TypeCheckInfo
                 Some (m, SemanticClassificationType.Interface)
             | CNR(_, Item.Types(_, types), LegitTypeOccurence, _, _, _, m) when types |> List.exists (isStructTy g) -> 
                 Some (m, SemanticClassificationType.ValueType)
+            | CNR(_, Item.Types(_, types), LegitTypeOccurence, _, _, _, m) when types |> List.exists isDisposableTy ->
+                Some (m, SemanticClassificationType.Disposable)
             | CNR(_, Item.Types _, LegitTypeOccurence, _, _, _, m) -> 
                 Some (m, SemanticClassificationType.ReferenceType)
-            | CNR(_, (Item.TypeVar _ | Item.UnqualifiedType _ | Item.CtorGroup _), LegitTypeOccurence, _, _, _, m) ->
-                Some (m, SemanticClassificationType.ReferenceType)
+            | CNR(_, (Item.TypeVar _ ), LegitTypeOccurence, _, _, _, m) ->
+                Some (m, SemanticClassificationType.TypeArgument)
+            | CNR(_, Item.UnqualifiedType tyconRefs, LegitTypeOccurence, _, _, _, m) ->
+                if tyconRefs |> List.exists (fun tyconRef -> tyconRef.Deref.IsStructOrEnumTycon) then
+                    Some (m, SemanticClassificationType.ValueType)
+                else Some (m, SemanticClassificationType.ReferenceType)
+            | CNR(_, Item.CtorGroup(_, minfos), LegitTypeOccurence, _, _, _, m) ->
+                if minfos |> List.exists (fun minfo -> isStructTy g minfo.EnclosingType) then
+                    Some (m, SemanticClassificationType.ValueType)
+                else Some (m, SemanticClassificationType.ReferenceType)
             | CNR(_, Item.ModuleOrNamespaces refs, LegitTypeOccurence, _, _, _, m) when refs |> List.exists (fun x -> x.IsModule) ->
                 Some (m, SemanticClassificationType.ReferenceType)
             | CNR(_, (Item.ActivePatternCase _ | Item.UnionCase _ | Item.ActivePatternResult _), _, _, _, _, m) ->
@@ -2704,6 +2704,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
     member bc.GetProjectOptionsFromScript(filename, source, ?loadedTimeStamp, ?otherFlags, ?useFsiAuxLib, ?assumeDotNetFramework, ?extraProjectInfo: obj) = 
         reactor.EnqueueAndAwaitOpAsync ("GetProjectOptionsFromScript " + filename, fun ctok -> 
           cancellable {
+            use errors = new ErrorScope()
             // Do we add a reference to FSharp.Compiler.Interactive.Settings by default?
             let useFsiAuxLib = defaultArg useFsiAuxLib true
             // Do we assume .NET Framework references for scripts?
@@ -2741,7 +2742,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                     ExtraProjectInfo=extraProjectInfo
                 }
             scriptClosureCacheLock.AcquireLock (fun ltok -> scriptClosureCache.Set(ltok, options, loadClosure)) // Save the full load closure for later correlation.
-            return options
+            return options, errors.Diagnostics
           })
             
     member bc.InvalidateConfiguration(options : FSharpProjectOptions) =
@@ -2983,34 +2984,6 @@ type FSharpChecker(referenceResolver, projectCacheSize, keepAssemblyContents, ke
     static member GlobalForegroundParseCountStatistic = BackgroundCompiler.GlobalForegroundParseCountStatistic
     static member GlobalForegroundTypeCheckCountStatistic = BackgroundCompiler.GlobalForegroundTypeCheckCountStatistic
           
-    // Obsolete
-    member ic.MatchBraces(filename, source, options) =
-        ic.MatchBracesAlternate(filename, source, options) 
-        |> Async.RunSynchronously
-        |> Array.map (fun (a,b) -> Range.toZ a, Range.toZ b)
-
-    member bc.ParseFile(filename, source, options) = 
-        bc.ParseFileInProject(filename, source, options) 
-        |> Async.RunSynchronously
-
-    member bc.TypeCheckSource(parseResults, filename, fileVersion, source, options, textSnapshotInfo:obj) = 
-        bc.CheckFileInProjectIfReady(parseResults, filename, fileVersion, source, options, textSnapshotInfo)
-        |> Async.RunSynchronously
-
-    member ic.GetCheckOptionsFromScriptRoot(filename, source, loadedTimeStamp) = 
-        ic.GetProjectOptionsFromScript(filename, source, loadedTimeStamp, [| |]) 
-        |> Async.RunSynchronously
-
-    member ic.GetCheckOptionsFromScriptRoot(filename, source, loadedTimeStamp, otherFlags) = 
-        ic.GetProjectOptionsFromScript(filename, source, loadedTimeStamp, otherFlags) 
-        |> Async.RunSynchronously
-
-    member ic.GetProjectOptionsFromScriptRoot(filename, source, ?loadedTimeStamp, ?otherFlags, ?useFsiAuxLib) = 
-        ic.GetProjectOptionsFromScript(filename, source, ?loadedTimeStamp=loadedTimeStamp, ?otherFlags=otherFlags, ?useFsiAuxLib=useFsiAuxLib)
-        |> Async.RunSynchronously
-
-    member ic.FileTypeCheckStateIsDirty  = backgroundCompiler.BeforeBackgroundFileCheck
-
     static member Instance = globalInstance
     member internal __.FrameworkImportsCache = backgroundCompiler.FrameworkImportsCache
 

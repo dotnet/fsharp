@@ -1596,7 +1596,10 @@ let isStructOrEnumTyconTy g ty =
     | Some tcref -> tcref.Deref.IsStructOrEnumTycon
     | _ -> false
 
+let isStructRecordOrUnionTyconTy g ty = isAppTy g ty && (tyconOfAppTy g ty).IsStructRecordOrUnionTycon
+
 let isStructTy g ty = isStructOrEnumTyconTy g ty || isStructTupleTy g ty
+
 
 let isRefTy g ty = 
     not (isStructOrEnumTyconTy g ty) &&
@@ -2472,11 +2475,11 @@ let fullNameOfPubPath (PubPath(p)) = textOfPath p
 let fullNameOfPubPathAsLayout (PubPath(p)) = layoutOfPath (Array.toList p)
 
 let fullNameOfParentOfNonLocalEntityRef (nlr: NonLocalEntityRef) = 
-    if nlr.Path.Length = 0 || nlr.Path.Length = 1 then None
+    if nlr.Path.Length < 2 then None
     else Some (textOfPath nlr.EnclosingMangledPath)  // <--- BAD BAD BAD: this is a mangled path. This is wrong for nested modules
 
 let fullNameOfParentOfNonLocalEntityRefAsLayout (nlr: NonLocalEntityRef) = 
-    if nlr.Path.Length = 0 || nlr.Path.Length = 1 then None
+    if nlr.Path.Length < 2 then None
     else Some (layoutOfPath (List.ofArray nlr.EnclosingMangledPath))  // <--- BAD BAD BAD: this is a mangled path. This is wrong for nested modules
 
 let fullNameOfParentOfEntityRef eref = 
@@ -2501,8 +2504,7 @@ let fullNameOfEntityRef nmF xref =
     | Some pathText -> pathText +.+ nmF xref
 
 let tagEntityRefName (xref: EntityRef) name =
-    if Set.contains name Lexhelp.Keywords.keywordTypes then tagKeyword name
-    elif xref.IsNamespace then tagNamespace name
+    if xref.IsNamespace then tagNamespace name
     elif xref.IsModule then tagModule name
     elif xref.IsTypeAbbrev then tagAlias name
     elif xref.IsFSharpDelegateTycon then tagDelegate name

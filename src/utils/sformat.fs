@@ -249,7 +249,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         let tagProperty = TaggedText.Property
         let tagSpace = TaggedText.Space
         let tagStringLiteral = TaggedText.StringLiteral
-        let tagStruct name = if Set.contains name keywordTypes then TaggedText.Keyword name else TaggedText.Struct name
+        let tagStruct = TaggedText.Struct
         let tagTypeParameter = TaggedText.TypeParameter
         let tagText = TaggedText.Text
         let tagPunctuation = TaggedText.Punctuation

@@ -403,6 +403,11 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
         let ty = generalizedTyconRef entity
         Infos.ExistsHeadTypeInEntireHierarchy cenv.g cenv.amap range0 ty cenv.g.tcref_System_Attribute
         
+    member x.IsDisposableType =
+        if isUnresolved() then false else
+        let ty = generalizedTyconRef entity
+        Infos.ExistsHeadTypeInEntireHierarchy cenv.g cenv.amap range0 ty cenv.g.tcref_System_IDisposable
+
     member x.BaseType = 
         checkIsResolved()        
         GetSuperTypeOfType cenv.g cenv.amap range0 (generalizedTyconRef entity) 
@@ -513,6 +518,19 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
         GetAttribInfosOfEntity cenv.g cenv.amap range0 entity
         |> List.map (fun a -> FSharpAttribute(cenv,  a))
         |> makeReadOnlyCollection
+
+    member __.AllCompilationPaths =
+        checkIsResolved()
+        let (CompilationPath.CompPath(_, parts)) = entity.CompilationPath
+        ([], parts) ||> List.fold (fun res (part, kind) ->
+            let parts =
+                match kind with
+                | ModuleOrNamespaceKind.FSharpModuleWithSuffix ->
+                    [part; part.[..part.Length - 7]]
+                | _ -> [part]
+
+            parts |> List.collect (fun part -> 
+                res |> List.map (fun path -> path + "." + part)))
 
     override x.Equals(other : obj) =
         box x === other ||

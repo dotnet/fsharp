@@ -3,10 +3,8 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Threading.Tasks
 open System.Collections.Generic
 open System.Composition
-open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.VisualStudio.FSharp.LanguageService
@@ -40,7 +38,7 @@ type internal FSharpHelpContextService
                 match token.ClassificationType with
                 | ClassificationTypeNames.Text
                 | ClassificationTypeNames.WhiteSpace -> true
-                | ClassificationTypeNames.Operator when content = "." -> true
+                | (ClassificationTypeNames.Operator|ClassificationTypeNames.Punctuation)when content = "." -> true
                 | _ -> false
           
             let tokenInformation, col =
