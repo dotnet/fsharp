@@ -18,6 +18,8 @@ open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons
 
+type internal ISetThemeColors = abstract member SetColors: unit -> unit
+
 [<RequireQualifiedAccess>]
 type internal LexerSymbolKind =
     | Ident
