@@ -3480,7 +3480,7 @@ and
 
     /// TType_app(tyconRef, typeInstantiation).
     ///
-    /// Indicates the type is build from a named type and a number of type arguments
+    /// Indicates the type is built from a named type and a number of type arguments
     | TType_app of TyconRef * TypeInst
 
     /// TType_tuple(elementTypes).
@@ -3519,6 +3519,20 @@ and
         | TType_ucase (uc,tinst) -> "union case type " + uc.CaseName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
         | TType_var tp -> tp.DisplayName
         | TType_measure ms -> sprintf "%A" ms
+
+    /// For now, used only as a discriminant in error message.
+    /// See https://github.com/Microsoft/visualfsharp/issues/2561
+    member x.GetAssemblyName() =
+        match x with
+        | TType_forall (_tps, ty)        -> ty.GetAssemblyName()
+        | TType_app (tcref, _tinst)      -> tcref.CompilationPath.ILScopeRef.AssemblyRef.QualifiedName
+        | TType_tuple (_tupInfo, _tinst) -> ""
+        | TType_fun (_d,_r)              -> ""
+        | TType_measure _ms              -> ""
+        | TType_var tp                   -> tp.Solution |> function Some sln -> sln.GetAssemblyName() | None -> ""
+        | TType_ucase (_uc,_tinst)       ->
+            let scope,_nesting,_definition = _uc.Tycon.ILTyconInfo
+            scope.AssemblyRef.QualifiedName
 
 and TypeInst = TType list 
 and TTypes = TType list 
