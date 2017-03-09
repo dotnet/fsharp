@@ -1197,9 +1197,8 @@ type TypeCheckInfo
                 | Some (items, denv, m) -> 
                     let items = items |> FilterAutoCompletesBasedOnParseContext parseResultsOpt (mkPos line colAtEndOfNamesAndResidue)
                     let items = if isInterfaceFile then items |> List.filter (fun x -> IsValidSignatureFileItem x.Item) else items
-                    let accessibility =
-                        items |> List.tryHead |> Option.bind (fun item -> FSharpSymbol.GetAccessibility (FSharpSymbol.Create(g, thisCcu, tcImports, item.Item)))
-                    FSharpDeclarationListInfo.Create(infoReader,m,denv,accessibility,items,reactorOps,checkAlive))
+                    let getAccessibility item = FSharpSymbol.GetAccessibility (FSharpSymbol.Create(g, thisCcu, tcImports, item))
+                    FSharpDeclarationListInfo.Create(infoReader,m,denv,getAccessibility,items,reactorOps,checkAlive))
             (fun msg -> FSharpDeclarationListInfo.Error msg)
 
     /// Get the symbols for auto-complete items at a location

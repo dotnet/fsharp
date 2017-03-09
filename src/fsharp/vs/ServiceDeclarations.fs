@@ -1434,7 +1434,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
     member self.Items = declarations
 
     // Make a 'Declarations' object for a set of selected items
-    static member Create(infoReader:InfoReader, m, denv, accessibility, items: CompletionItem list, reactor, checkAlive) = 
+    static member Create(infoReader:InfoReader, m, denv, getAccessibility, items: CompletionItem list, reactor, checkAlive) = 
         let g = infoReader.g
         let items = items |> ItemDescriptionsImpl.RemoveExplicitlySuppressedCompletionItems g
         
@@ -1509,7 +1509,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
 
                     FSharpDeclarationListItem(
                         name, nameInCode, fullName, glyph, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), 
-                        ItemDescriptionsImpl.IsAttribute infoReader item.Item, accessibility, item.Kind, item.IsOwnMember, item.MinorPriority))
+                        ItemDescriptionsImpl.IsAttribute infoReader item.Item, getAccessibility item.Item, item.Kind, item.IsOwnMember, item.MinorPriority))
 
         new FSharpDeclarationListInfo(Array.ofList decls)
     
