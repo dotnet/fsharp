@@ -1539,7 +1539,7 @@ let MakeAndPublishVal cenv env (altActualParent,inSig,declKind,vrec,(ValScheme(i
     match cenv.tcSink.CurrentSink with 
     | None -> ()
     | Some _ -> 
-        if not vspec.IsCompilerGenerated && not (String.hasPrefix vspec.LogicalName "_") then 
+        if not vspec.IsCompilerGenerated then
             let nenv = AddFakeNamedValRefToNameEnv vspec.DisplayName env.NameEnv (mkLocalValRef vspec) 
             CallEnvSink cenv.tcSink (vspec.Range,nenv,env.eAccessRights)
             let item = Item.Value(mkLocalValRef vspec)
