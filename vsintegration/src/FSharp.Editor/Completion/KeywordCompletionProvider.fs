@@ -83,5 +83,5 @@ type internal FSharpKeywordCompletionProvider
         context.AddItems(completionItems)
         Task.CompletedTask
 
-    override this.GetDescriptionAsync(_: Document, completionItem: CompletionItem, _: CancellationToken): Task<CompletionDescription> =
+    override this.GetDescriptionAsync(_: Document, completionItem: Completion.CompletionItem, _: CancellationToken): Task<CompletionDescription> =
         Task.FromResult(CompletionDescription.FromText(completionItem.Properties.["description"]))

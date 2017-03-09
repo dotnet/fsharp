@@ -66,6 +66,22 @@ module internal Tooltips =
     val ToFSharpToolTipText: FSharpStructuredToolTipText -> FSharpToolTipText
     val Map: f: ('T1 -> 'T2) -> a: Async<'T1> -> Async<'T2>
 
+[<RequireQualifiedAccess>]
+type internal CompletionItemKind =
+    | Field
+    | Property
+    | Method
+    | Event
+    | Argument
+    | Other
+
+type internal CompletionItem =
+    { Item: Item
+      Kind: CompletionItemKind
+      IsOwnMember: bool
+      MinorPriority: int
+      Type: TType option }
+
 [<Sealed>]
 /// Represents a declaration in F# source code, with information attached ready for display by an editor.
 /// Returned by GetDeclarations.
@@ -91,6 +107,10 @@ type internal FSharpDeclarationListItem =
     member GlyphMajor : ItemDescriptionIcons.GlyphMajor
     member GlyphMinor : ItemDescriptionIcons.GlyphMinor
     member IsAttribute : bool
+    member Kind : CompletionItemKind
+    member IsOwnMember : bool
+    member MinorPriority : int
+    member FullName : string
 
 [<Sealed>]
 /// Represents a set of declarations in F# source code, with information attached ready for display by an editor.
@@ -101,7 +121,7 @@ type internal FSharpDeclarationListInfo =
     member Items : FSharpDeclarationListItem[]
 
     // Implementation details used by other code in the compiler    
-    static member internal Create : infoReader:InfoReader * m:range * denv:DisplayEnv * items:Item list * reactor:IReactorOperations * checkAlive:(unit -> bool) -> FSharpDeclarationListInfo
+    static member internal Create : infoReader:InfoReader * m:range * denv:DisplayEnv * items:CompletionItem list * reactor:IReactorOperations * checkAlive:(unit -> bool) -> FSharpDeclarationListInfo
     static member internal Error : message:string -> FSharpDeclarationListInfo
     static member Empty : FSharpDeclarationListInfo
 
@@ -126,7 +146,11 @@ module internal ItemDescriptionsImpl =
     val FormatStructuredReturnTypeOfItem  : InfoReader -> range -> DisplayEnv -> Item -> Layout
     val FormatReturnTypeOfItem  : InfoReader -> range -> DisplayEnv -> Item -> string
     val RemoveDuplicateItems : TcGlobals -> Item list -> Item list
+    val RemoveDuplicateItemsWithType : TcGlobals -> (Item * TType option) list -> (Item * TType option) list
     val RemoveExplicitlySuppressed : TcGlobals -> Item list -> Item list
+    val RemoveDuplicateCompletionItems : TcGlobals -> CompletionItem list -> CompletionItem list
+    val RemoveExplicitlySuppressedCompletionItems : TcGlobals -> CompletionItem list -> CompletionItem list
+    val RemoveExplicitlySuppressedItemsWithType : TcGlobals -> (Item * TType option) list -> (Item * TType option) list
     val GetF1Keyword : Item -> string option
     val rangeOfItem : TcGlobals -> bool option -> Item -> range option
     val fileNameOfItem : TcGlobals -> string option -> range -> Item -> string
