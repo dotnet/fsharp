@@ -2504,16 +2504,17 @@ let fullNameOfEntityRef nmF xref =
     | Some pathText -> pathText +.+ nmF xref
 
 let tagEntityRefName (xref: EntityRef) name =
+    let rng = Some ( box xref.DefinitionRange )
     if xref.IsNamespace then tagNamespace name
     elif xref.IsModule then tagModule name
     elif xref.IsTypeAbbrev then tagAlias name
-    elif xref.IsFSharpDelegateTycon then tagDelegate name
-    elif xref.IsILEnumTycon || xref.IsFSharpEnumTycon then tagEnum name
-    elif xref.IsStructOrEnumTycon then tagStruct name
-    elif xref.IsFSharpInterfaceTycon then tagInterface name
-    elif xref.IsUnionTycon then tagUnion name
-    elif xref.IsRecordTycon then tagRecord name
-    else tagClass (Some (box xref.Range)) name
+    elif xref.IsFSharpDelegateTycon then TaggedText.Delegate(rng, name)
+    elif xref.IsILEnumTycon || xref.IsFSharpEnumTycon then TaggedText.Enum(rng, name)
+    elif xref.IsStructOrEnumTycon then TaggedText.Struct(rng, name)
+    elif xref.IsFSharpInterfaceTycon then TaggedText.Interface(rng, name)
+    elif xref.IsUnionTycon then TaggedText.Union(rng, name)
+    elif xref.IsRecordTycon then TaggedText.Record(rng, name)
+    else TaggedText.Class(rng, name)
 
 let fullNameOfEntityRefAsLayout nmF (xref: EntityRef) =
     let n = wordL (tagEntityRefName xref (nmF xref))

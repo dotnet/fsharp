@@ -132,7 +132,7 @@ module private PrintIL =
             | [ "System"; "Boolean"] -> ["bool"]
             | _                -> path
         let p2,n = List.frontAndBack path
-        let tagged = if n = "obj" || n = "string" then tagClass None n else tagStruct n
+        let tagged = if n = "obj" || n = "string" then tagClass n else tagStruct n
         if denv.shortTypeNames then 
             wordL tagged
           else
@@ -521,7 +521,7 @@ module private PrintIL =
           
     and layoutILNestedClassDef (denv: DisplayEnv) (typeDef : ILTypeDef) =
         let name     = adjustILName typeDef.Name
-        let nameL    = wordL (tagClass None name)
+        let nameL    = wordL (tagClass name)
         let ilTyparSubst    = typeDef.GenericParams |> layoutILGenericParameterDefs
         let paramsL  = pruneParms typeDef.Name ilTyparSubst |> paramsL
         if denv.suppressNestedTypes then 
@@ -729,11 +729,11 @@ module private PrintTypes =
                     restL
         elif Tastops.isStructRecordOrUnionTyconTy denv.g ty || 
              ((Tastops.isUnionTy denv.g ty || Tastops.isRecdTy denv.g ty) && HasFSharpAttribute denv.g denv.g.attrib_StructAttribute attrs) then
-            squareAngleL (wordL (tagClass None "Struct")) @@ restL
+            squareAngleL (wordL (tagClass "Struct")) @@ restL
         else
             match kind with 
             | TyparKind.Type -> restL
-            | TyparKind.Measure -> squareAngleL (wordL (tagClass None "Measure")) @@ restL
+            | TyparKind.Measure -> squareAngleL (wordL (tagClass "Measure")) @@ restL
 
     and layoutTyparAttribs denv kind attrs restL =         
         match attrs, kind with
@@ -1562,7 +1562,7 @@ module private TastDefinitionPrinting =
                         yield nestedType.PUntaint((fun t -> t.IsClass, t.Name), m)
                 ] 
                 |> List.sortBy snd
-                |> List.map (fun (isClass, t) -> WordL.keywordNested ^^ WordL.keywordType ^^ wordL ((if isClass then tagClass None else tagStruct) t))
+                |> List.map (fun (isClass, t) -> WordL.keywordNested ^^ WordL.keywordType ^^ wordL ((if isClass then tagClass else tagStruct) t))
           | _ -> 
               []
 
@@ -1597,7 +1597,7 @@ module private TastDefinitionPrinting =
           let n = tycon.DisplayName
           if isStructTy g ty then Some "struct", tagStruct n
           elif isInterfaceTy g ty then Some "interface", tagInterface n
-          elif isClassTy g ty then (if simplified then None else Some "class" ), tagClass None n
+          elif isClassTy g ty then (if simplified then None else Some "class" ), tagClass n
           else None, tagUnknownType n
       let nameL = layoutAccessibility denv tycon.Accessibility (wordL name)
       let denv = denv.AddAccessibility tycon.Accessibility 
@@ -1755,7 +1755,7 @@ module private TastDefinitionPrinting =
     // Layout: exception definition
     let layoutExnDefn denv  (exnc:Entity) =
         let nm = exnc.LogicalName
-        let nmL = wordL (tagClass None nm)
+        let nmL = wordL (tagClass nm)
         let nmL = layoutAccessibility denv exnc.TypeReprAccessibility nmL
         let exnL = wordL (tagKeyword "exception") ^^ nmL // need to tack on the Exception at the right of the name for goto definition
         let reprL = 

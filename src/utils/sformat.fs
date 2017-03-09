@@ -62,17 +62,17 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         | ActivePatternResult of string
         | Alias of string
         | Class of obj option * string
-        | Union of string
-        | UnionCase of string
-        | Delegate of string
-        | Enum of string
-        | Event of string
+        | Union of obj option * string
+        | UnionCase of obj option * string
+        | Delegate of obj option * string
+        | Enum of obj option * string
+        | Event of obj option * string
         | Field of string
-        | Interface of string
+        | Interface of obj option * string
         | Keyword of string
         | LineBreak of string
         | Local of string
-        | Record of string
+        | Record of obj option * string
         | RecordField of string
         | Method of string
         | Member of string
@@ -85,30 +85,30 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         | Property of string
         | Space of string
         | StringLiteral of string
-        | Struct of string
+        | Struct of obj option * string
         | TypeParameter of string
         | Text of string
         | Punctuation of string
         | UnknownType of string
         | UnknownEntity of string
-        with 
+        with
         member this.Value = 
             match this with 
             | ActivePatternCase t
             | ActivePatternResult t
             | Alias t
             | Class( _, t)
-            | Union t
-            | UnionCase t
-            | Delegate t
-            | Enum t
-            | Event t
+            | Union( _, t)
+            | UnionCase( _, t)
+            | Delegate( _, t)
+            | Enum( _, t)
+            | Event( _, t)
             | Field t
-            | Interface t
+            | Interface( _, t)
             | Keyword t
             | LineBreak t
             | Local t
-            | Record t
+            | Record( _, t)
             | RecordField t
             | Method t
             | Member t
@@ -121,7 +121,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             | Property t
             | Space t
             | StringLiteral t
-            | Struct t
+            | Struct( _, t)
             | TypeParameter t
             | Text t
             | Punctuation t
@@ -227,17 +227,19 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             "uint64"
             "unativeint"
           ] |> Set.ofList
-        let tagClass x name = if Set.contains name keywordTypes then TaggedText.Keyword name else TaggedText.Class(x, name)
-        let tagUnionCase = TaggedText.UnionCase
-        let tagDelegate = TaggedText.Delegate
-        let tagEnum = TaggedText.Enum
-        let tagEvent = TaggedText.Event
+
+        let blank name = None, name
+        let tagClass name = if Set.contains name keywordTypes then TaggedText.Keyword name else TaggedText.Class(None, name)
+        let tagUnionCase = blank >> TaggedText.UnionCase
+        let tagDelegate = blank >> TaggedText.Delegate
+        let tagEnum = blank >> TaggedText.Enum
+        let tagEvent  = blank >> TaggedText.Event
         let tagField = TaggedText.Field
-        let tagInterface = TaggedText.Interface
+        let tagInterface = blank >> TaggedText.Interface
         let tagKeyword = TaggedText.Keyword
         let tagLineBreak = TaggedText.LineBreak
         let tagLocal = TaggedText.Local
-        let tagRecord = TaggedText.Record
+        let tagRecord = blank >> TaggedText.Record
         let tagRecordField = TaggedText.RecordField
         let tagMethod = TaggedText.Method
         let tagModule = TaggedText.Module
@@ -249,7 +251,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         let tagProperty = TaggedText.Property
         let tagSpace = TaggedText.Space
         let tagStringLiteral = TaggedText.StringLiteral
-        let tagStruct = TaggedText.Struct
+        let tagStruct = blank >> TaggedText.Struct
         let tagTypeParameter = TaggedText.TypeParameter
         let tagText = TaggedText.Text
         let tagPunctuation = TaggedText.Punctuation
@@ -1173,8 +1175,8 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                     countNodes 1
                     let name = ty.Name 
                     match recd with
-                      | []   -> (wordL (tagClass None name))
-                      | recd -> (wordL (tagClass None name) --- recdAtomicTupleL depthLim recd) |> bracketIfL (prec <= Precedence.BracketIfTupleOrNotAtomic)
+                      | []   -> (wordL (tagClass name))
+                      | recd -> (wordL (tagClass name) --- recdAtomicTupleL depthLim recd) |> bracketIfL (prec <= Precedence.BracketIfTupleOrNotAtomic)
 
                 | FunctionClosureValue ty ->
                     // Q: should function printing include the ty.Name? It does not convey much useful info to most users, e.g. "clo@0_123".    
@@ -1244,7 +1246,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                          let it = (obj :?>  System.Collections.IEnumerable).GetEnumerator() 
                          try 
                            let itemLs = boundedUnfoldL possibleKeyValueL (fun () -> if it.MoveNext() then Some(it.Current,()) else None) stopShort () (1+opts.PrintLength/12)
-                           (wordL (tagClass None word) --- makeListL itemLs) |> bracketIfL (prec <= Precedence.BracketIfTupleOrNotAtomic)
+                           (wordL (tagClass word) --- makeListL itemLs) |> bracketIfL (prec <= Precedence.BracketIfTupleOrNotAtomic)
                          finally 
                             match it with 
                             | :? System.IDisposable as e -> e.Dispose()
@@ -1262,7 +1264,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                            let ty = Option.map (fun (typ:Type) -> typ.GetGenericArguments().[0]) ty
                            try 
                              let itemLs = boundedUnfoldL (objL depthLim Precedence.BracketIfTuple) (fun () -> if it.MoveNext() then Some((it.Current, match ty with | None -> it.Current.GetType() | Some ty -> ty),()) else None) stopShort () (1+opts.PrintLength/30)
-                             (wordL (tagClass None word) --- makeListL itemLs) |> bracketIfL (prec <= Precedence.BracketIfTupleOrNotAtomic)
+                             (wordL (tagClass word) --- makeListL itemLs) |> bracketIfL (prec <= Precedence.BracketIfTupleOrNotAtomic)
                            finally 
                               match it with 
                               | :? System.IDisposable as e -> e.Dispose()

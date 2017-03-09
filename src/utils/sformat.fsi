@@ -64,17 +64,17 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         | ActivePatternResult of string
         | Alias of string
         | Class of obj option * string
-        | Union of string
-        | UnionCase of string
-        | Delegate of string
-        | Enum of string
-        | Event of string
+        | Union of obj option * string
+        | UnionCase of obj option * string
+        | Delegate of obj option * string
+        | Enum of obj option * string
+        | Event of obj option * string
         | Field of string
-        | Interface of string
+        | Interface of obj option * string
         | Keyword of string
         | LineBreak of string
         | Local of string
-        | Record of string
+        | Record of obj option * string
         | RecordField of string
         | Method of string
         | Member of string
@@ -87,7 +87,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         | Property of string
         | Space of string
         | StringLiteral of string
-        | Struct of string
+        | Struct of obj option * string
         | TypeParameter of string
         | Text of string
         | Punctuation of string
@@ -128,19 +128,19 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             TaggedTextOps =
         val keywordFunctions : Set<string>
         val tagAlias : string -> TaggedText
-        val tagClass : obj option -> string -> TaggedText
-        val tagUnionCase : string -> TaggedText
-        val tagDelegate : string -> TaggedText
-        val tagEnum : string -> TaggedText
-        val tagEvent : string -> TaggedText
+        val tagClass : (string -> TaggedText)
+        val tagUnionCase : (string -> TaggedText)
+        val tagDelegate : (string -> TaggedText)
+        val tagEnum : (string -> TaggedText)
+        val tagEvent : (string -> TaggedText)
         val tagField : string -> TaggedText
-        val tagInterface : string -> TaggedText
+        val tagInterface : (string -> TaggedText)
         val tagKeyword : string -> TaggedText
         val tagLineBreak : string -> TaggedText
         val tagMethod : string -> TaggedText
         val tagModuleBinding : string -> TaggedText
         val tagLocal : string -> TaggedText
-        val tagRecord : string -> TaggedText
+        val tagRecord : (string -> TaggedText)
         val tagRecordField : string -> TaggedText
         val tagModule : string -> TaggedText
         val tagNamespace : string -> TaggedText
@@ -150,7 +150,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         val tagProperty : string -> TaggedText
         val tagSpace : string -> TaggedText
         val tagStringLiteral : string -> TaggedText
-        val tagStruct : string -> TaggedText
+        val tagStruct : (string -> TaggedText)
         val tagTypeParameter : string -> TaggedText
         val tagText : string -> TaggedText
         val tagPunctuation : string -> TaggedText
