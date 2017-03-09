@@ -1,5 +1,5 @@
-//<Expects id="FS0001" status="error">'A \(liba, Version=0\.0\.0\.0,</Expects>
-//<Expects id="FS0001" status="error">'B<Microsoft.FSharp.Core.int> \(liba, Version=0\ .0\.0\.0,</Expects>
+//<Expects id="FS0001" status="error">'A \(liba, Version</Expects>
+//<Expects id="FS0001" status="error">'B<Microsoft.FSharp.Core.int> \(liba, Version</Expects>
 
 
 let a = AMaker.makeA()
