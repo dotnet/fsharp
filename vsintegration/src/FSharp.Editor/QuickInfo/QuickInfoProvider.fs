@@ -37,7 +37,8 @@ type internal FSharpQuickInfoProvider
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
     let navigateTo (workspace: Workspace) (range: range)  = async {
         let documentNavigationService =workspace.Services.GetService<IDocumentNavigationService>()
-        match workspace.CurrentSolution.GetDocumentIdsWithFilePath(range.FileName) |> List.ofSeq with
+        let filePath = System.IO.Path.GetFullPathSafe range.FileName
+        match workspace.CurrentSolution.GetDocumentIdsWithFilePath(filePath) |> List.ofSeq with
         | id :: _ ->
             let! src = workspace.CurrentSolution.GetDocument(id).GetTextAsync()
             match CommonRoslynHelpers.TryFSharpRangeToTextSpan(src, range) with

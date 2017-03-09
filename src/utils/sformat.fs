@@ -60,7 +60,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 #endif
         | ActivePatternCase of string
         | ActivePatternResult of string
-        | Alias of string
+        | Alias of obj option * string
         | Class of obj option * string
         | Union of obj option * string
         | UnionCase of obj option * string
@@ -77,7 +77,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         | Method of string
         | Member of string
         | ModuleBinding of string
-        | Module of string
+        | Module of obj option * string
         | Namespace of string
         | NumericLiteral of string
         | Operator of string
@@ -96,7 +96,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             match this with 
             | ActivePatternCase t
             | ActivePatternResult t
-            | Alias t
+            | Alias(_, t)
             | Class( _, t)
             | Union( _, t)
             | UnionCase( _, t)
@@ -112,7 +112,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             | RecordField t
             | Method t
             | Member t
-            | Module t
+            | Module( _, t)
             | ModuleBinding t
             | Namespace t
             | NumericLiteral t
@@ -193,7 +193,8 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 #else
     module TaggedTextOps =
 #endif
-        let tagAlias = TaggedText.Alias
+        let private blank name = None, name
+        let tagAlias = blank >> TaggedText.Alias
         let keywordFunctions = Set ["raise"; "reraise"; "typeof"; "typedefof"; "sizeof"; "nameof"]
         let keywordTypes = 
           [
@@ -228,7 +229,6 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             "unativeint"
           ] |> Set.ofList
 
-        let blank name = None, name
         let tagClass name = if Set.contains name keywordTypes then TaggedText.Keyword name else TaggedText.Class(None, name)
         let tagUnionCase = blank >> TaggedText.UnionCase
         let tagDelegate = blank >> TaggedText.Delegate
@@ -242,7 +242,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         let tagRecord = blank >> TaggedText.Record
         let tagRecordField = TaggedText.RecordField
         let tagMethod = TaggedText.Method
-        let tagModule = TaggedText.Module
+        let tagModule = blank >> TaggedText.Module
         let tagModuleBinding name = if keywordFunctions.Contains name then TaggedText.Keyword name else TaggedText.ModuleBinding name
         let tagNamespace = TaggedText.Namespace
         let tagNumericLiteral = TaggedText.NumericLiteral

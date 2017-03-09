@@ -54,7 +54,7 @@ module internal CommonRoslynHelpers =
         match t with
         | TaggedText.ActivePatternCase t
         | TaggedText.ActivePatternResult t -> NavigableRoslynText.Create(TextTags.Enum, t)
-        | TaggedText.Alias t -> NavigableRoslynText.Create(TextTags.Class, t)
+        | TaggedText.Alias(x, t) -> NavigableRoslynText.Create(TextTags.Class, t, x)
         | TaggedText.Class(x, t) -> NavigableRoslynText.Create(TextTags.Class, t, x)
         | TaggedText.Delegate(x, t) -> NavigableRoslynText.Create(TextTags.Delegate, t, x)
         | TaggedText.Enum(x, t) -> NavigableRoslynText.Create(TextTags.Enum, t, x)
@@ -66,7 +66,7 @@ module internal CommonRoslynHelpers =
         | TaggedText.Local t -> NavigableRoslynText.Create(TextTags.Local, t)
         | TaggedText.Member t -> NavigableRoslynText.Create(TextTags.Property, t)
         | TaggedText.Method t -> NavigableRoslynText.Create(TextTags.Method, t)
-        | TaggedText.Module t -> NavigableRoslynText.Create(TextTags.Module, t)
+        | TaggedText.Module(x, t) -> NavigableRoslynText.Create(TextTags.Module, t, x)
         | TaggedText.ModuleBinding t -> NavigableRoslynText.Create(TextTags.Property, t)
         | TaggedText.Namespace t -> NavigableRoslynText.Create(TextTags.Namespace, t)
         | TaggedText.NumericLiteral t -> NavigableRoslynText.Create(TextTags.NumericLiteral, t)

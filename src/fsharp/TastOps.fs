@@ -2506,8 +2506,8 @@ let fullNameOfEntityRef nmF xref =
 let tagEntityRefName (xref: EntityRef) name =
     let rng = Some ( box xref.DefinitionRange )
     if xref.IsNamespace then tagNamespace name
-    elif xref.IsModule then tagModule name
-    elif xref.IsTypeAbbrev then tagAlias name
+    elif xref.IsModule then TaggedText.Module(rng, name)
+    elif xref.IsTypeAbbrev then TaggedText.Alias(rng, name)
     elif xref.IsFSharpDelegateTycon then TaggedText.Delegate(rng, name)
     elif xref.IsILEnumTycon || xref.IsFSharpEnumTycon then TaggedText.Enum(rng, name)
     elif xref.IsStructOrEnumTycon then TaggedText.Struct(rng, name)
