@@ -588,14 +588,12 @@ type TypeCheckInfo
         
         let resEnv = 
             match !bestAlmostIncludedSoFar with 
-            | Some (_m,env,ad) -> 
-                env,ad
+            | Some env -> env
             | None -> 
                 match mostDeeplyNestedEnclosingScope with 
-                | Some (_m,env,ad) -> 
-                    env,ad
+                | Some env -> env
                 | None -> 
-                    (sFallback,AccessibleFromSomeFSharpCode)
+                    mkRange "" (mkPos 0 0) (mkPos 0 0), sFallback, AccessibleFromSomeFSharpCode
         let pm = mkRange mainInputFileName cursorPos cursorPos 
 
         resEnv,pm
@@ -818,22 +816,22 @@ type TypeCheckInfo
                 else GetPreciseCompletionListFromExprTypingsResult.None
 
     /// Find items in the best naming environment.
-    let GetEnvironmentLookupResolutions(cursorPos, plid, filterCtors, showObsolete) = 
-        let (nenv,ad),m = GetBestEnvForPos cursorPos
+    let GetEnvironmentLookupResolutions(cursorPos, plid, filterCtors, showObsolete) =
+        let (nenvm, nenv, ad),m = GetBestEnvForPos cursorPos
         let items = NameResolution.ResolvePartialLongIdent ncenv nenv (ConstraintSolver.IsApplicableMethApprox g amap m) m ad plid showObsolete
         let items = items |> RemoveDuplicateItems g 
         let items = items |> RemoveExplicitlySuppressed g
         let items = items |> FilterItemsForCtors filterCtors 
          
-        items, nenv.DisplayEnv, m 
+        items, nenv.DisplayEnv, m, nenvm
 
     /// Find record fields in the best naming environment.
     let GetClassOrRecordFieldsEnvironmentLookupResolutions(cursorPos, plid, (_residue : string option)) = 
-        let (nenv, ad),m = GetBestEnvForPos cursorPos
+        let (nenvm, nenv, ad),m = GetBestEnvForPos cursorPos
         let items = NameResolution.ResolvePartialLongIdentToClassOrRecdFields ncenv nenv m ad plid false
         let items = items |> RemoveDuplicateItems g 
         let items = items |> RemoveExplicitlySuppressed g
-        items, nenv.DisplayEnv,m 
+        items, nenv.DisplayEnv, m, nenvm
 
     /// Resolve a location and/or text to items.
     //   Three techniques are used
@@ -1000,8 +998,17 @@ type TypeCheckInfo
 
                 // Use an environment lookup as the last resort
                 let envItems =  GetEnvironmentLookupResolutions(mkPos line loc, plid, filterCtors, residueOpt.IsSome)
-                match nameResItems, envItems, qualItems with            
-            
+                do use writer = new StreamWriter(sprintf @"d:\Temp\ns_items\%s-%d.txt" (DateTime.Now.ToString "dd-MM-yyyy_HH-mm-ss") DateTime.Now.Ticks)
+                   let items, _, _, nenvm = envItems
+                   writer.WriteLine (sprintf "pos = (%d, %d), plid = %+A, residue = %+A, env range = %+A" line loc plid residueOpt nenvm)
+                   items
+                   |> List.sortBy (fun x -> x.DisplayName)
+                   |> List.iteri (fun i item ->
+                       writer.WriteLine(sprintf "%d) %s" i item.DisplayName))
+                   
+                let items, denv, m, _ = envItems
+                let xx = items, denv, m
+                match nameResItems, xx, qualItems with            
                 // First, use unfiltered name resolution items, if they're not empty
                 | NameResResult.Members(items, denv, m), _, _ when not (isNil items) -> 
                     // lookup based on name resolution results successful
@@ -1040,33 +1047,39 @@ type TypeCheckInfo
         // Completion at 'inherit C(...)"
         | Some (CompletionContext.Inherit(InheritanceContext.Class, (plid, _))) ->
             GetEnvironmentLookupResolutions(mkPos line loc, plid, filterCtors, false) 
+            |> fun (items, denv, m, _) -> items, denv, m
             |> FilterRelevantItemsBy None GetBaseClassCandidates
 
         // Completion at 'interface ..."
         | Some (CompletionContext.Inherit(InheritanceContext.Interface, (plid, _))) ->
             GetEnvironmentLookupResolutions(mkPos line loc, plid, filterCtors, false) 
+            |> fun (items, denv, m, _) -> items, denv, m
             |> FilterRelevantItemsBy None GetInterfaceCandidates
 
         // Completion at 'implement ..."
         | Some (CompletionContext.Inherit(InheritanceContext.Unknown, (plid, _))) ->
             GetEnvironmentLookupResolutions(mkPos line loc, plid, filterCtors, false) 
+            |> fun (items, denv, m, _) -> items, denv, m
             |> FilterRelevantItemsBy None (fun t -> GetBaseClassCandidates t || GetInterfaceCandidates t)
 
         // Completion at ' { XXX = ... } "
         | Some(CompletionContext.RecordField(RecordContext.New(plid, residue))) ->
-            Some(GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid, residue))
+            Some(GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid, residue)
+                 |> fun (items, denv, m, _) -> items, denv, m)
 
         // Completion at ' { XXX = ... with ... } "
         | Some(CompletionContext.RecordField(RecordContext.CopyOnUpdate(r, (plid, residue)))) -> 
             match GetRecdFieldsForExpr(r) with
             | None -> 
                 GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid, residue)
+                |> fun (items, denv, m, _) -> items, denv, m
                 |> Some
             | x -> x
 
         // Completion at ' { XXX = ... with ... } "
         | Some(CompletionContext.RecordField(RecordContext.Constructor(typeName))) ->
-            Some(GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, [typeName], None))
+            Some(GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, [typeName], None)
+                 |> fun (items, denv, m, _) -> items, denv, m)
 
         // Completion at ' SomeMethod( ... ) ' with named arguments 
         | Some(CompletionContext.ParameterList (endPos, fields)) ->
@@ -1148,7 +1161,7 @@ type TypeCheckInfo
             Range.range0
             (fun () ->
                 /// Find items in the best naming environment.
-                let (nenv, ad), m = GetBestEnvForPos cursorPos
+                let (_, nenv, ad), m = GetBestEnvForPos cursorPos
                 NameResolution.IsItemResolvable ncenv nenv m ad plid item)
             (fun _ -> false)
         

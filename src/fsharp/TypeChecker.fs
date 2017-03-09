@@ -13069,9 +13069,9 @@ module MutRecBindingChecking =
                             let envInstance = AddDeclaredTypars CheckForDuplicateTypars incrClassCtorLhs.InstanceCtorDeclaredTypars envInstance
                             let envStatic = AddDeclaredTypars CheckForDuplicateTypars incrClassCtorLhs.InstanceCtorDeclaredTypars envStatic
                             let envInstance = match incrClassCtorLhs.InstanceCtorSafeThisValOpt with Some v -> AddLocalVal cenv.tcSink scopem v envInstance | None -> envInstance
-                            let envInstance = List.foldBack AddLocalValPrimitive incrClassCtorLhs.InstanceCtorArgs envInstance 
+                            let envInstance = List.foldBack (AddLocalVal cenv.tcSink scopem) incrClassCtorLhs.InstanceCtorArgs envInstance 
                             let envNonRec   = match incrClassCtorLhs.InstanceCtorSafeThisValOpt with Some v -> AddLocalVal cenv.tcSink scopem v envNonRec | None -> envNonRec
-                            let envNonRec   = List.foldBack AddLocalValPrimitive incrClassCtorLhs.InstanceCtorArgs envNonRec
+                            let envNonRec   = List.foldBack (AddLocalVal cenv.tcSink scopem) incrClassCtorLhs.InstanceCtorArgs envNonRec
                             let safeThisValBindOpt = TcLetrecComputeCtorSafeThisValBind cenv incrClassCtorLhs.InstanceCtorSafeThisValOpt
 
                             let innerState = (tpenv,envInstance,envStatic,envNonRec,generalizedRecBinds,preGeneralizationRecBinds,uncheckedRecBindsTable)
