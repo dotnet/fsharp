@@ -42,7 +42,7 @@ type PrintfTests() =
         test "%A" "\b" "\"\b\""
 
     [<Test>]
-    member __.``Standard characters are correctly escaped with @ flag``() =
+    member __.``Standard characters are correctly escaped with at flag``() =
         test "%@A" "Foo\nBar" "\"Foo\\nBar\""
         test "%@A" "Foo\rBar" "\"Foo\\rBar\""
         test "%@A" "\t" "\"\\t\""
@@ -54,7 +54,7 @@ type PrintfTests() =
         test "%A" '\'' "\'\\\'\'"
 
     [<Test>]
-    member __.``Quotation characters are correctly escaped with @ flag``() =
+    member __.``Quotation characters are correctly escaped with at flag``() =
         test "%@A" "\"" "\"\\\"\""
         test "%@A" '\'' "\'\\\'\'"
 
@@ -64,7 +64,7 @@ type PrintfTests() =
         test "%A" "\10" "\'\010\'"
 
     [<Test>]
-    member __.``Control characters are correctly escaped with @ flag``() =
+    member __.``Control characters are correctly escaped with at flag``() =
         test "%@A" "\0" "\"\\\000\""
         test "%@A" "\10" "\'\\\010\'"
 
@@ -74,7 +74,7 @@ type PrintfTests() =
         test "%A" @"C:\" "\"C:\\\""
 
     [<Test>]
-    member __.``Path-like strings are formatted as verbatim strings with @ flag``() =
+    member __.``Path-like strings are formatted as verbatim strings with at flag``() =
         test "%@A" @"C:\Program Files\Some\Path.exe" "@\"C:\\Program Files\\Some\\Path.exe\""
         test "%@A" @"C:\" "@\"C:\\\""
 
@@ -88,12 +88,12 @@ type PrintfTests() =
     [<Test>]
     member __.``Object printing does not print private types`` () =
         let actual = sprintf "%A" { InnerString = "Lorem" }
-        Assert.Text.DoesNotContain ("Lorem", actual)
+        if actual.Contains "Lorem" then Assert.Fail()
         let actual = sprintf "%@A" { InnerString = "Lorem" }
-        Assert.Text.DoesNotContain ("Lorem", actual)
+        if actual.Contains "Lorem" then Assert.Fail()
 
     [<Test>]
-    member __.``Object printing prints private types with + flag`` () =
+    member __.``Object printing prints private types with plus flag`` () =
         test "%+A" { InnerString = "Lo\trem" } "{InnerString = \"Lo\trem\";}"
 
         // test escaping
@@ -101,7 +101,7 @@ type PrintfTests() =
         test "%@+A" { InnerString = "Lo\trem" } "{InnerString = \"Lo\\trem\";}"
 
     [<Test>]
-    member __.``Object printing prints public types with + flag`` () =
+    member __.``Object printing prints public types with plus flag`` () =
         test "%+A" { InnerStringPublic = "Lo\trem" } "{InnerStringPublic = \"Lo\trem\";}"
         test "%+@A" { InnerStringPublic = "Lo\trem" } "{InnerStringPublic = \"Lo\\trem\";}"
         test "%@+A" { InnerStringPublic = "Lo\trem" } "{InnerStringPublic = \"Lo\\trem\";}"
