@@ -54,9 +54,9 @@
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">12</MinimumVisualStudioVersion>
   </PropertyGroup>
   <PropertyGroup>
-    <FSharpTargetsPath Condition="'$(FSharpTargetsPath)'==''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.Portable.FSharp.Targets</FSharpTargetsPath>
+    <PortableFSharpTargetsPath Condition="'$(PortableFSharpTargetsPath)'==''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.Portable.FSharp.Targets</PortableFSharpTargetsPath>
   </PropertyGroup>
-  <Import Project="$(FSharpTargetsPath)" />
+  <Import Project="$(PortableFSharpTargetsPath)" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
