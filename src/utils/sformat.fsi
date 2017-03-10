@@ -53,6 +53,13 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         | Unbreakable
         | Breakable of int
         | Broken of int
+
+    [<NoEquality; NoComparison>]
+#if COMPILER
+    type internal BoxRange = BoxRange of obj option
+#else
+    type BoxRange = BoxRange of obj option
+#endif
     
     [<NoEquality; NoComparison>]
 #if COMPILER
@@ -62,24 +69,24 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 #endif
         | ActivePatternCase of string
         | ActivePatternResult of string
-        | Alias of obj option * string
-        | Class of obj option * string
-        | Union of obj option * string
-        | UnionCase of obj option * string
-        | Delegate of obj option * string
-        | Enum of obj option * string
-        | Event of obj option * string
+        | Alias of BoxRange * string
+        | Class of BoxRange * string
+        | Union of BoxRange * string
+        | UnionCase of BoxRange * string
+        | Delegate of BoxRange * string
+        | Enum of BoxRange * string
+        | Event of BoxRange * string
         | Field of string
-        | Interface of obj option * string
+        | Interface of BoxRange * string
         | Keyword of string
         | LineBreak of string
         | Local of string
-        | Record of obj option * string
+        | Record of BoxRange * string
         | RecordField of string
         | Method of string
         | Member of string
         | ModuleBinding of string
-        | Module of obj option * string
+        | Module of BoxRange * string
         | Namespace of string
         | NumericLiteral of string
         | Operator of string
@@ -87,7 +94,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         | Property of string
         | Space of string
         | StringLiteral of string
-        | Struct of obj option * string
+        | Struct of BoxRange * string
         | TypeParameter of string
         | Text of string
         | Punctuation of string
@@ -129,6 +136,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         val keywordFunctions : Set<string>
         val tagAlias : string -> TaggedText
         val tagClass : string -> TaggedText
+        val tagUnion : string -> TaggedText
         val tagUnionCase : string -> TaggedText
         val tagDelegate : string -> TaggedText
         val tagEnum : string -> TaggedText

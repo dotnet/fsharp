@@ -2504,17 +2504,17 @@ let fullNameOfEntityRef nmF xref =
     | Some pathText -> pathText +.+ nmF xref
 
 let tagEntityRefName (xref: EntityRef) name =
-    let rng = Some ( box xref.DefinitionRange )
+    let range = BoxRange.BoxRange( Some (box xref.DefinitionRange))
     if xref.IsNamespace then tagNamespace name
-    elif xref.IsModule then TaggedText.Module(rng, name)
-    elif xref.IsTypeAbbrev then TaggedText.Alias(rng, name)
-    elif xref.IsFSharpDelegateTycon then TaggedText.Delegate(rng, name)
-    elif xref.IsILEnumTycon || xref.IsFSharpEnumTycon then TaggedText.Enum(rng, name)
-    elif xref.IsStructOrEnumTycon then TaggedText.Struct(rng, name)
-    elif xref.IsFSharpInterfaceTycon then TaggedText.Interface(rng, name)
-    elif xref.IsUnionTycon then TaggedText.Union(rng, name)
-    elif xref.IsRecordTycon then TaggedText.Record(rng, name)
-    else TaggedText.Class(rng, name)
+    elif xref.IsModule then TaggedText.Module(range, name)
+    elif xref.IsTypeAbbrev then TaggedText.Alias(range, name)
+    elif xref.IsFSharpDelegateTycon then TaggedText.Delegate(range, name)
+    elif xref.IsILEnumTycon || xref.IsFSharpEnumTycon then TaggedText.Enum(range, name)
+    elif xref.IsStructOrEnumTycon then TaggedText.Struct(range, name)
+    elif xref.IsFSharpInterfaceTycon then TaggedText.Interface(range, name)
+    elif xref.IsUnionTycon then TaggedText.Union(range, name)
+    elif xref.IsRecordTycon then TaggedText.Record(range, name)
+    else TaggedText.Class(range, name)
 
 let fullNameOfEntityRefAsLayout nmF (xref: EntityRef) =
     let n = wordL (tagEntityRefName xref (nmF xref))

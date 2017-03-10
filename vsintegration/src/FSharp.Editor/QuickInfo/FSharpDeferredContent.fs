@@ -3,9 +3,9 @@
 open System.Windows
 open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Editor.Shared.Utilities
-open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Editor.Shared.Extensions
 open Microsoft.CodeAnalysis.Classification
+open Microsoft.FSharp.Compiler.Layout
 
 open CommonRoslynHelpers
 
@@ -20,29 +20,19 @@ type internal FSharpDeferredContent(content: NavigableRoslynText seq, typemap: C
 
     let inlines = 
       seq { 
-        for NavigableRoslynText(tag, text, xopt) in content do
-            let rangeOpt =
-                match xopt with
-                | Some xref ->
-                    match xref with
-                    | :? Microsoft.FSharp.Compiler.Range.range as range 
-                      when range.FileName <> "startup" ->
-                        Some range
-                    | _ -> None
-                | _ -> None
-            let inl = 
-                match rangeOpt with 
-                | Some range ->
-            
+        for NavigableRoslynText(tag, text, BoxRange.BoxRange(boxRange)) in content do
+            let run =
+                match boxRange with
+                | Some(:? Microsoft.FSharp.Compiler.Range.range as range)
+                  when range <> Microsoft.FSharp.Compiler.Range.rangeStartup ->
                     let h = Documents.Hyperlink(Documents.Run(text))
                     h.Click.Add <| fun _ ->
-                        Logging.Logging.logInfof "click! %A" range
                         navigateToRange (range) |> Async.StartImmediate
                     h :> Documents.Inline
-                | _ -> Documents.Run(text) :> Documents.Inline
+                | _ ->  Documents.Run(text) :> Documents.Inline
 
-            DependencyObjectExtensions.SetTextProperties( inl, props tag)
-            yield inl
+            DependencyObjectExtensions.SetTextProperties(run, props tag)
+            yield run
       }
     
     interface IDeferredQuickInfoContent with

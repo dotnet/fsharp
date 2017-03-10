@@ -10,6 +10,7 @@ open Internal.Utilities.StructuredFormat.TaggedTextOps
 
 type layout = Internal.Utilities.StructuredFormat.Layout
 type TaggedText = Internal.Utilities.StructuredFormat.TaggedText
+type BoxRange = Internal.Utilities.StructuredFormat.BoxRange
 module TaggedTextOps = Internal.Utilities.StructuredFormat.TaggedTextOps
 
 val emptyL                : Layout

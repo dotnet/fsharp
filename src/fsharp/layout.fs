@@ -12,6 +12,7 @@ open Microsoft.FSharp.Core.Printf
 
 type layout = Internal.Utilities.StructuredFormat.Layout
 type TaggedText = Internal.Utilities.StructuredFormat.TaggedText
+type BoxRange = Internal.Utilities.StructuredFormat.BoxRange
 
 let spaces n = new String(' ',n)
 
@@ -59,7 +60,7 @@ module TaggedTextOps =
     let tagActivePatternResult = Internal.Utilities.StructuredFormat.TaggedText.ActivePatternResult
     let tagAlias = Internal.Utilities.StructuredFormat.TaggedTextOps.tagAlias
     let tagClass = Internal.Utilities.StructuredFormat.TaggedTextOps.tagClass
-    let tagUnion name = Internal.Utilities.StructuredFormat.TaggedText.Union( None, name)
+    let tagUnion = Internal.Utilities.StructuredFormat.TaggedTextOps.tagUnion
     let tagUnionCase = Internal.Utilities.StructuredFormat.TaggedTextOps.tagUnionCase
     let tagDelegate = Internal.Utilities.StructuredFormat.TaggedTextOps.tagDelegate
     let tagEnum = Internal.Utilities.StructuredFormat.TaggedTextOps.tagEnum
