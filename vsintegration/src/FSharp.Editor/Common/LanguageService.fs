@@ -291,6 +291,9 @@ and
                 do! setupProjectsAfterSolutionOpen() 
             }
         setupProjectsAfterSolutionOpen() |> Async.StartImmediate
+
+        let theme = package.ComponentModel.DefaultExportProvider.GetExport<ISetThemeColors>().Value
+        theme.SetColors()
         
     /// Sync the information for the project 
     member this.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, site: IProjectSite, forceUpdate) =
