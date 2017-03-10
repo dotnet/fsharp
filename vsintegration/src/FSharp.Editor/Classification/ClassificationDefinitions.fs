@@ -55,6 +55,7 @@ module internal FSharpClassificationTypes =
 module internal ClassificationDefinitions =
 
     [<Export>]
+    [<Export(typeof<ISetThemeColors>)>]
     type internal ThemeColors
         [<ImportingConstructor>]
         (
@@ -113,6 +114,9 @@ module internal ClassificationDefinitions =
             | DarkTheme -> Nullable dark
             | UnknownTheme -> Nullable()
 
+        interface ISetThemeColors with member this.SetColors() = setColors()
+
+
     [<Export; Name(FSharpClassificationTypes.Function); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
     let FSharpFunctionClassificationType : ClassificationTypeDefinition = null
 
@@ -133,11 +137,10 @@ module internal ClassificationDefinitions =
     [<Name(FSharpClassificationTypes.Function)>]
     [<UserVisible(true)>]
     [<Order(After = PredefinedClassificationTypeNames.Keyword)>]
-    type internal FSharpFunctionTypeFormat [<ImportingConstructor>](theme: ThemeColors) as self =
+    type internal FSharpFunctionTypeFormat() as self =
         inherit ClassificationFormatDefinition()
 
         do self.DisplayName <- SR.FSharpFunctionsOrMethodsClassificationType.Value
-           self.ForegroundColor <- theme.GetColor FSharpClassificationTypes.Function
 
     [<Export(typeof<EditorFormatDefinition>)>]
     [<ClassificationType(ClassificationTypeNames = FSharpClassificationTypes.MutableVar)>]
@@ -166,12 +169,10 @@ module internal ClassificationDefinitions =
     [<Name(FSharpClassificationTypes.Property)>]
     [<UserVisible(true)>]
     [<Order(After = PredefinedClassificationTypeNames.Keyword)>]
-    type internal FSharpPropertyFormat [<ImportingConstructor>](theme: ThemeColors) as self =
+    type internal FSharpPropertyFormat() as self =
         inherit ClassificationFormatDefinition()
 
         do self.DisplayName <- SR.FSharpPropertiesClassificationType.Value
-           self.ForegroundColor <- theme.GetColor FSharpClassificationTypes.Property
-
 
     [<Export(typeof<EditorFormatDefinition>)>]
     [<ClassificationType(ClassificationTypeNames = FSharpClassificationTypes.Disposable)>]
