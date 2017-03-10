@@ -26,7 +26,7 @@ type internal FSharpDeferredContent(content: NavigableRoslynText seq, typemap: C
                 | Some xref ->
                     match xref with
                     | :? Microsoft.FSharp.Compiler.Range.range as range 
-                        when range.FileName <> "startup" ->
+                      when range.FileName <> "startup" ->
                         Some range
                     | _ -> None
                 | _ -> None
