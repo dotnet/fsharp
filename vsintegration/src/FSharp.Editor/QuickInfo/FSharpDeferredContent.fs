@@ -31,7 +31,7 @@ type internal FSharpDeferredContent(content: NavigableRoslynText seq, typemap: C
                     h :> Documents.Inline
                 | _ ->  Documents.Run(text) :> Documents.Inline
 
-            DependencyObjectExtensions.SetTextProperties(run, props tag)
+            DependencyObjectExtensions.SetTextProperties( run, props tag)
             yield run
       }
     
@@ -40,6 +40,7 @@ type internal FSharpDeferredContent(content: NavigableRoslynText seq, typemap: C
             let tb = Controls.TextBlock(TextWrapping = TextWrapping.Wrap, TextTrimming = TextTrimming.None)
             DependencyObjectExtensions.SetDefaultTextProperties(tb, formatMap)
             tb.Inlines.AddRange(inlines)
+            if tb.Inlines.Count = 0 then tb.Visibility <- Visibility.Collapsed
             tb :> FrameworkElement
 
 
