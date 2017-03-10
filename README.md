@@ -48,10 +48,13 @@ For F# Compiler on OSX and Linux (see .travis.yml for build steps)
 
 For Visual F# IDE Tools 4.1 development (Windows)
 
-- [Visual Studio 2017 RC](https://www.visualstudio.com/vs/visual-studio-2017-rc/#downloadvs)
+- [Visual Studio 2017](https://www.visualstudio.com/downloads/)
   - Under the "Windows" workloads, select ".NET desktop development".
     - Select "F# language suport" under the optional components.
   - Under the "Other Toolsets" workloads, select "Visual Studio extension development".
+  - Under the "Individual Components" tab select "Windows 10 SDK" as shown below (needed for compiling RC resource, see #2556):
+  ![image](https://cloud.githubusercontent.com/assets/1249087/23730261/5c78c850-041b-11e7-9d9d-62766351fd0f.png)
+
 
 ####Additional frameworks
 

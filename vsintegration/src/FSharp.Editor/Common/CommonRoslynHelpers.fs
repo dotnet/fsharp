@@ -12,7 +12,6 @@ open Microsoft.CodeAnalysis.Diagnostics
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Layout
 open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.VisualStudio.FSharp.LanguageService
 
@@ -123,37 +122,98 @@ module internal CommonRoslynHelpers =
         let descriptor = new DiagnosticDescriptor(id, emptyString, description, error.Subcategory, severity, true, emptyString, String.Empty, customTags)
         Diagnostic.Create(descriptor, location)
 
-    let FSharpGlyphToRoslynGlyph = function
-        // FSROSLYNTODO: This doesn't yet reflect public/private/internal into the glyph
-        // FSROSLYNTODO: We should really use FSharpSymbol information here. But GetDeclarationListInfo doesn't provide it, and switch to GetDeclarationListSymbols is a bit large at the moment
-        | GlyphMajor.Class -> Glyph.ClassPublic
-        | GlyphMajor.Constant -> Glyph.ConstantPublic
-        | GlyphMajor.Delegate -> Glyph.DelegatePublic
-        | GlyphMajor.Enum -> Glyph.EnumPublic
-        | GlyphMajor.EnumMember -> Glyph.EnumMember
-        | GlyphMajor.Event -> Glyph.EventPublic
-        | GlyphMajor.Exception -> Glyph.ClassPublic
-        | GlyphMajor.FieldBlue -> Glyph.FieldPublic
-        | GlyphMajor.Interface -> Glyph.InterfacePublic
-        | GlyphMajor.Method -> Glyph.MethodPublic
-        | GlyphMajor.Method2 -> Glyph.ExtensionMethodPublic
-        | GlyphMajor.Module -> Glyph.ModulePublic
-        | GlyphMajor.NameSpace -> Glyph.Namespace
-        | GlyphMajor.Property -> Glyph.PropertyPublic
-        | GlyphMajor.Struct -> Glyph.StructurePublic
-        | GlyphMajor.Typedef -> Glyph.ClassPublic
-        | GlyphMajor.Type -> Glyph.ClassPublic
-        | GlyphMajor.Union -> Glyph.EnumPublic
-        | GlyphMajor.Variable -> Glyph.Local
-        | GlyphMajor.ValueType -> Glyph.StructurePublic
-        | GlyphMajor.Error -> Glyph.Error
-        | _ -> Glyph.ClassPublic
+    let inline (|Public|Internal|Protected|Private|) (a: FSharpAccessibility option) =
+        match a with
+        | None -> Public
+        | Some a ->
+            if a.IsPublic then Public
+            elif a.IsInternal then Internal
+            elif a.IsPrivate then Private
+            else Protected
 
-    let inline (|Public|Internal|Protected|Private|) (a: FSharpAccessibility) =
-        if a.IsPublic then Public
-        elif a.IsInternal then Internal
-        elif a.IsPrivate then Private
-        else Protected
+    let FSharpGlyphToRoslynGlyph (glyph: FSharpGlyph, accessibility: FSharpAccessibility option) =
+        match glyph with
+        | FSharpGlyph.Class
+        | FSharpGlyph.Exception
+        | FSharpGlyph.Typedef
+        | FSharpGlyph.Type ->
+            match accessibility with
+            | Public -> Glyph.ClassPublic
+            | Internal -> Glyph.ClassInternal
+            | Protected -> Glyph.ClassProtected
+            | Private -> Glyph.ClassPrivate
+        | FSharpGlyph.Constant -> 
+            match accessibility with
+            | Public -> Glyph.ConstantPublic
+            | Internal -> Glyph.ConstantInternal
+            | Protected -> Glyph.ConstantProtected
+            | Private -> Glyph.ConstantPrivate
+        | FSharpGlyph.Delegate ->
+            match accessibility with
+            | Public -> Glyph.DelegatePublic
+            | Internal -> Glyph.DelegateInternal
+            | Protected -> Glyph.DelegateProtected
+            | Private -> Glyph.DelegatePrivate
+        | FSharpGlyph.Enum 
+        | FSharpGlyph.Union ->
+            match accessibility with
+            | Public -> Glyph.EnumPublic
+            | Internal -> Glyph.EnumInternal
+            | Protected -> Glyph.EnumProtected
+            | Private -> Glyph.EnumPrivate
+        | FSharpGlyph.EnumMember -> Glyph.EnumMember
+        | FSharpGlyph.Event ->
+            match accessibility with
+            | Public -> Glyph.EventPublic
+            | Internal -> Glyph.EventInternal
+            | Protected -> Glyph.EventProtected
+            | Private -> Glyph.EventPrivate
+        | FSharpGlyph.Field ->
+            match accessibility with
+            | Public -> Glyph.FieldPublic
+            | Internal -> Glyph.FieldInternal
+            | Protected -> Glyph.FieldProtected
+            | Private -> Glyph.FieldPrivate
+        | FSharpGlyph.Interface ->
+            match accessibility with
+            | Public -> Glyph.InterfacePublic
+            | Internal -> Glyph.InterfaceInternal
+            | Protected -> Glyph.InterfaceProtected
+            | Private -> Glyph.InterfacePrivate
+        | FSharpGlyph.Method
+        | FSharpGlyph.OverridenMethod ->
+            match accessibility with
+            | Public -> Glyph.MethodPublic
+            | Internal -> Glyph.MethodInternal
+            | Protected -> Glyph.MethodProtected
+            | Private -> Glyph.MethodPrivate
+        | FSharpGlyph.ExtensionMethod ->
+            match accessibility with
+            | Public -> Glyph.ExtensionMethodPublic
+            | Internal -> Glyph.ExtensionMethodInternal
+            | Protected -> Glyph.ExtensionMethodProtected
+            | Private -> Glyph.ExtensionMethodPrivate
+        | FSharpGlyph.Module ->
+            match accessibility with
+            | Public -> Glyph.ModulePublic
+            | Internal -> Glyph.ModuleInternal
+            | Protected -> Glyph.ModuleProtected
+            | Private -> Glyph.ModulePrivate
+        | FSharpGlyph.NameSpace -> Glyph.Namespace
+        | FSharpGlyph.Property -> 
+            match accessibility with
+            | Public -> Glyph.PropertyPublic
+            | Internal -> Glyph.PropertyInternal
+            | Protected -> Glyph.PropertyProtected
+            | Private -> Glyph.PropertyPrivate
+        | FSharpGlyph.Struct ->
+            match accessibility with
+            | Public -> Glyph.StructurePublic
+            | Internal -> Glyph.StructureInternal
+            | Protected -> Glyph.StructureProtected
+            | Private -> Glyph.StructurePrivate
+        | FSharpGlyph.Variable -> Glyph.Local
+        | FSharpGlyph.Error -> Glyph.Error
 
     let GetGlyphForSymbol (symbol: FSharpSymbol, kind: LexerSymbolKind) =
         match kind with
@@ -161,7 +221,7 @@ module internal CommonRoslynHelpers =
         | _ ->
             match symbol with
             | :? FSharpUnionCase as x ->
-                match x.Accessibility with
+                match Some x.Accessibility with
                 | Public -> Glyph.EnumPublic
                 | Internal -> Glyph.EnumInternal
                 | Protected -> Glyph.EnumProtected
@@ -169,13 +229,13 @@ module internal CommonRoslynHelpers =
             | :? FSharpActivePatternCase -> Glyph.EnumPublic
             | :? FSharpField as x ->
             if x.IsLiteral then
-                match x.Accessibility with
+                match Some x.Accessibility with
                 | Public -> Glyph.ConstantPublic
                 | Internal -> Glyph.ConstantInternal
                 | Protected -> Glyph.ConstantProtected
                 | Private -> Glyph.ConstantPrivate
             else
-                match x.Accessibility with
+                match Some x.Accessibility with
                 | Public -> Glyph.FieldPublic
                 | Internal -> Glyph.FieldInternal
                 | Protected -> Glyph.FieldProtected
@@ -183,62 +243,62 @@ module internal CommonRoslynHelpers =
             | :? FSharpParameter -> Glyph.Parameter
             | :? FSharpMemberOrFunctionOrValue as x ->
                 if x.LiteralValue.IsSome then
-                    match x.Accessibility with
+                    match Some x.Accessibility with
                     | Public -> Glyph.ConstantPublic
                     | Internal -> Glyph.ConstantInternal
                     | Protected -> Glyph.ConstantProtected
                     | Private -> Glyph.ConstantPrivate
                 elif x.IsExtensionMember then
-                    match x.Accessibility with
+                    match Some x.Accessibility with
                     | Public -> Glyph.ExtensionMethodPublic
                     | Internal -> Glyph.ExtensionMethodInternal
                     | Protected -> Glyph.ExtensionMethodProtected
                     | Private -> Glyph.ExtensionMethodPrivate
                 elif x.IsProperty || x.IsPropertyGetterMethod || x.IsPropertySetterMethod then
-                    match x.Accessibility with
+                    match Some x.Accessibility with
                     | Public -> Glyph.PropertyPublic
                     | Internal -> Glyph.PropertyInternal
                     | Protected -> Glyph.PropertyProtected
                     | Private -> Glyph.PropertyPrivate
                 elif x.IsEvent then
-                    match x.Accessibility with
+                    match Some x.Accessibility with
                     | Public -> Glyph.EventPublic
                     | Internal -> Glyph.EventInternal
                     | Protected -> Glyph.EventProtected
                     | Private -> Glyph.EventPrivate
                 else
-                    match x.Accessibility with
+                    match Some x.Accessibility with
                     | Public -> Glyph.MethodPublic
                     | Internal -> Glyph.MethodInternal
                     | Protected -> Glyph.MethodProtected
                     | Private -> Glyph.MethodPrivate
             | :? FSharpEntity as x ->
                 if x.IsValueType then
-                    match x.Accessibility with
+                    match Some x.Accessibility with
                     | Public -> Glyph.StructurePublic
                     | Internal -> Glyph.StructureInternal
                     | Protected -> Glyph.StructureProtected
                     | Private -> Glyph.StructurePrivate
                 elif x.IsFSharpModule then
-                    match x.Accessibility with
+                    match Some x.Accessibility with
                     | Public -> Glyph.ModulePublic
                     | Internal -> Glyph.ModuleInternal
                     | Protected -> Glyph.ModuleProtected
                     | Private -> Glyph.ModulePrivate
                 elif x.IsEnum || x.IsFSharpUnion then
-                    match x.Accessibility with
+                    match Some x.Accessibility with
                     | Public -> Glyph.EnumPublic
                     | Internal -> Glyph.EnumInternal
                     | Protected -> Glyph.EnumProtected
                     | Private -> Glyph.EnumPrivate
                 elif x.IsInterface then
-                    match x.Accessibility with
+                    match Some x.Accessibility with
                     | Public -> Glyph.InterfacePublic
                     | Internal -> Glyph.InterfaceInternal
                     | Protected -> Glyph.InterfaceProtected
                     | Private -> Glyph.InterfacePrivate
                 elif x.IsDelegate then
-                    match x.Accessibility with
+                    match Some x.Accessibility with
                     | Public -> Glyph.DelegatePublic
                     | Internal -> Glyph.DelegateInternal
                     | Protected -> Glyph.DelegateProtected
@@ -246,7 +306,7 @@ module internal CommonRoslynHelpers =
                 elif x.IsNamespace then
                     Glyph.Namespace
                 else
-                    match x.Accessibility with
+                    match Some x.Accessibility with
                     | Public -> Glyph.ClassPublic
                     | Internal -> Glyph.ClassInternal
                     | Protected -> Glyph.ClassProtected
