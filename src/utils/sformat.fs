@@ -193,8 +193,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 #else
     module TaggedTextOps =
 #endif
-        let private blank name = None, name
-        let tagAlias = blank >> TaggedText.Alias
+        let tagAlias text = TaggedText.Alias(None, text)
         let keywordFunctions = Set ["raise"; "reraise"; "typeof"; "typedefof"; "sizeof"; "nameof"]
         let keywordTypes = 
           [
@@ -230,19 +229,19 @@ namespace Microsoft.FSharp.Text.StructuredFormat
           ] |> Set.ofList
 
         let tagClass name = if Set.contains name keywordTypes then TaggedText.Keyword name else TaggedText.Class(None, name)
-        let tagUnionCase = blank >> TaggedText.UnionCase
-        let tagDelegate = blank >> TaggedText.Delegate
-        let tagEnum = blank >> TaggedText.Enum
-        let tagEvent  = blank >> TaggedText.Event
+        let tagUnionCase text = TaggedText.UnionCase(None, text)
+        let tagDelegate text = TaggedText.Delegate(None, text)
+        let tagEnum text = TaggedText.Enum(None, text)
+        let tagEvent text = TaggedText.Event(None, text)
         let tagField = TaggedText.Field
-        let tagInterface = blank >> TaggedText.Interface
+        let tagInterface text = TaggedText.Interface(None, text)
         let tagKeyword = TaggedText.Keyword
         let tagLineBreak = TaggedText.LineBreak
         let tagLocal = TaggedText.Local
-        let tagRecord = blank >> TaggedText.Record
+        let tagRecord text = TaggedText.Record(None, text)
         let tagRecordField = TaggedText.RecordField
         let tagMethod = TaggedText.Method
-        let tagModule = blank >> TaggedText.Module
+        let tagModule text = TaggedText.Module(None, text)
         let tagModuleBinding name = if keywordFunctions.Contains name then TaggedText.Keyword name else TaggedText.ModuleBinding name
         let tagNamespace = TaggedText.Namespace
         let tagNumericLiteral = TaggedText.NumericLiteral
@@ -251,7 +250,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         let tagProperty = TaggedText.Property
         let tagSpace = TaggedText.Space
         let tagStringLiteral = TaggedText.StringLiteral
-        let tagStruct = blank >> TaggedText.Struct
+        let tagStruct text = TaggedText.Struct(None, text)
         let tagTypeParameter = TaggedText.TypeParameter
         let tagText = TaggedText.Text
         let tagPunctuation = TaggedText.Punctuation
