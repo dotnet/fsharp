@@ -814,14 +814,17 @@ type TypeCheckInfo
                 else GetPreciseCompletionListFromExprTypingsResult.None
 
     /// Find items in the best naming environment.
-    let GetEnvironmentLookupResolutions(cursorPos, plid, filterCtors, showObsolete) : (Item list * DisplayEnv * range) * TType option = 
-        let (nenv,ad),m = GetBestEnvForPos cursorPos
-        let ty = NameResolution.TryToResolveLongIdentAsType ncenv nenv m plid
+    let GetEnvironmentLookupResolutions(nenv, ad, m, plid, filterCtors, showObsolete) : Item list * DisplayEnv * range = 
         let items = NameResolution.ResolvePartialLongIdent ncenv nenv (ConstraintSolver.IsApplicableMethApprox g amap m) m ad plid showObsolete
         let items = items |> RemoveDuplicateItems g 
         let items = items |> RemoveExplicitlySuppressed g
         let items = items |> FilterItemsForCtors filterCtors 
-        (items, nenv.DisplayEnv, m), ty
+        (items, nenv.DisplayEnv, m)
+
+    /// Find items in the best naming environment.
+    let GetEnvironmentLookupResolutionsAtPosition(cursorPos, plid, filterCtors, showObsolete) : Item list * DisplayEnv * range = 
+        let (nenv,ad),m = GetBestEnvForPos cursorPos
+        GetEnvironmentLookupResolutions(nenv, ad, m, plid, filterCtors, showObsolete)
 
     /// Find record fields in the best naming environment.
     let GetClassOrRecordFieldsEnvironmentLookupResolutions(cursorPos, plid, (_residue : string option)) : Item list * DisplayEnv * range = 
@@ -956,8 +959,9 @@ type TypeCheckInfo
                     let plid, residue = List.frontAndBack origLongIdent
                     plid, Some residue
 
-            let envItems, ty = GetEnvironmentLookupResolutions(mkPos line loc, plid, filterCtors, residueOpt.IsSome)
-            
+            let (nenv, ad), m = GetBestEnvForPos (mkPos line loc)
+            let ty = NameResolution.TryToResolveLongIdentAsType ncenv nenv m plid
+
             match nameResItems with            
             | NameResResult.TypecheckStaleAndTextChanged -> None // second-chance intellisense will try again
             | NameResResult.Cancel(denv,m) -> Some([], denv, m)
@@ -1013,6 +1017,7 @@ type TypeCheckInfo
                         None
                     | _ ->         
                        // Use an environment lookup as the last resort
+                       let envItems = GetEnvironmentLookupResolutions(nenv, ad, m, plid, filterCtors, residueOpt.IsSome)
                        match nameResItems, envItems, qualItems with            
                        
                        // First, use unfiltered name resolution items, if they're not empty
@@ -1056,22 +1061,19 @@ type TypeCheckInfo
 
         // Completion at 'inherit C(...)"
         | Some (CompletionContext.Inherit(InheritanceContext.Class, (plid, _))) ->
-            GetEnvironmentLookupResolutions(mkPos line loc, plid, filterCtors, false)
-            |> fst
+            GetEnvironmentLookupResolutionsAtPosition(mkPos line loc, plid, filterCtors, false)
             |> FilterRelevantItemsBy None GetBaseClassCandidates
             |> Option.map toCompletionItems
 
         // Completion at 'interface ..."
         | Some (CompletionContext.Inherit(InheritanceContext.Interface, (plid, _))) ->
-            GetEnvironmentLookupResolutions(mkPos line loc, plid, filterCtors, false)
-            |> fst
+            GetEnvironmentLookupResolutionsAtPosition(mkPos line loc, plid, filterCtors, false)
             |> FilterRelevantItemsBy None GetInterfaceCandidates
             |> Option.map toCompletionItems
 
         // Completion at 'implement ..."
         | Some (CompletionContext.Inherit(InheritanceContext.Unknown, (plid, _))) ->
-            GetEnvironmentLookupResolutions(mkPos line loc, plid, filterCtors, false) 
-            |> fst
+            GetEnvironmentLookupResolutionsAtPosition(mkPos line loc, plid, filterCtors, false) 
             |> FilterRelevantItemsBy None (fun t -> GetBaseClassCandidates t || GetInterfaceCandidates t)
             |> Option.map toCompletionItems
 
