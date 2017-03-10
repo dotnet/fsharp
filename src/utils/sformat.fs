@@ -916,30 +916,41 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 
         let formatChar isChar c = 
             match c with 
-            | '\'' when isChar -> "\\\'"
-            | '\"' when not isChar -> "\\\""
-            | '\n' -> "\\n"
-            | '\r' -> "\\r"
-            | '\t' -> "\\t"
-            | '\\' -> "\\\\"
-            | '\b' -> "\\b"
+            | '\'' when isChar -> true, "\\\'"
+            | '\"' when not isChar -> true, "\\\""
+            | '\n' -> true, "\\n"
+            | '\r' -> true, "\\r"
+            | '\t' -> true, "\\t"
+            | '\\' -> true, "\\\\"
+            | '\b' -> true, "\\b"
             | _ when System.Char.IsControl(c) -> 
-                 let d1 = (int c / 100) % 10 
-                 let d2 = (int c / 10) % 10 
-                 let d3 = int c % 10 
-                 "\\" + d1.ToString() + d2.ToString() + d3.ToString()
-            | _ -> c.ToString()
-            
+                let d1 = (int c / 100) % 10 
+                let d2 = (int c / 10) % 10 
+                let d3 = int c % 10 
+                true, "\\" + d1.ToString() + d2.ToString() + d3.ToString()
+            | _ -> false, c.ToString()
+
         let formatString (escape:bool) (s:string) =
             if escape then
-                let escaped = System.Text.StringBuilder(s.Length * 2 + 2)
+                let escapedBuilder = System.Text.StringBuilder(s.Length * 2 + 2)
+                let mutable onlyEscapedBackslashes = None
 
-                escaped.Append "\"" |> ignore
+                escapedBuilder.Append "\"" |> ignore
                 for c in s do
-                    escaped.Append (formatChar false c) |> ignore
-                escaped.Append "\"" |> ignore
+                    let didEscapeChar, escapedChar = formatChar false c
 
-                escaped.ToString()
+                    onlyEscapedBackslashes <-
+                        match onlyEscapedBackslashes, didEscapeChar with
+                        | _, true when c <> '\\' -> Some false
+                        | None, true -> Some true
+                        | _ -> onlyEscapedBackslashes
+
+                    escapedBuilder.Append escapedChar |> ignore
+                escapedBuilder.Append "\"" |> ignore
+
+                match onlyEscapedBackslashes with
+                | Some true -> "@\"" + s + "\""
+                | _ -> escapedBuilder.ToString()
             else
                 // maintain compatibility with older versions of F#
                 "\"" + s + "\""
@@ -1370,7 +1381,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             | :? nativeint as d -> d.ToString() + "n" |> tagNumericLiteral
             | :? unativeint  as d -> d.ToString() + "un" |> tagNumericLiteral
             | :? bool   as b -> (if b then "true" else "false") |> tagKeyword
-            | :? char   as c -> "\'" + formatChar true c + "\'" |> tagStringLiteral
+            | :? char   as c -> "\'" + (formatChar true c |> snd) + "\'" |> tagStringLiteral
             | _ -> 
                 let t = 
                     try 

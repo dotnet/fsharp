@@ -827,17 +827,16 @@ module internal PrintfImpl =
 
             let useZeroWidth = isPadWithZeros spec.Flags
             let opts = 
-                Microsoft.FSharp.Text.StructuredPrintfImpl.FormatOptions.Default
-                |> fun o ->
+                let o = Microsoft.FSharp.Text.StructuredPrintfImpl.FormatOptions.Default
+                let o =
                     if useZeroWidth then { o with PrintWidth = 0} 
                     elif spec.IsWidthSpecified then { o with PrintWidth = spec.Width}
                     else o
-                |> fun o ->
+                let o =
                     if spec.IsPrecisionSpecified then { o with PrintSize = spec.Precision}
                     else o
-                |> fun o ->
-                    if isEscapeStrings spec.Flags then { o with EscapeStrings = true }
-                    else o
+                if isEscapeStrings spec.Flags then { o with EscapeStrings = true }
+                else o
             match spec.IsStarWidth, spec.IsStarPrecision with
             | true, true ->
                 box (fun (v : 'T) (width : int) (prec : int) ->
