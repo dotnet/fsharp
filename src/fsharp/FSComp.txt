@@ -1338,7 +1338,7 @@ keyworkDescriptionAnd,"Used in mutually recursive bindings, in property declarat
 keywordDescriptionAs,"Used to give the current class object an object name. Also used to give a name to a whole pattern within a pattern match."
 keywordDescriptionAssert,"Used to verify code during debugging."
 keywordDescriptionBase,"Used as the name of the base class object."
-keywordDescriptionBegin,""In verbose syntax, indicates the start of a code block."
+keywordDescriptionBegin,"In verbose syntax, indicates the start of a code block."
 keywordDescriptionClass,"In verbose syntax, indicates the start of a class definition."
 keywordDescriptionDefault,"Indicates an implementation of an abstract method; used together with an abstract method declaration to create a virtual method."
 keywordDescriptionDelegate,"Used to declare a delegate."
