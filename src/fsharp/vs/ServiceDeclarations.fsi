@@ -124,7 +124,7 @@ type internal CompletionItem =
       Kind: CompletionItemKind
       IsOwnMember: bool
       MinorPriority: int
-      Type: TType option }
+      Type: TyconRef option }
 
 [<Sealed>]
 /// Represents a set of declarations in F# source code, with information attached ready for display by an editor.

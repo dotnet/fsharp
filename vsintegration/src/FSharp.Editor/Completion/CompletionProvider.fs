@@ -152,7 +152,6 @@ type internal FSharpCompletionProvider
                         | CompletionItemKind.Other -> 0
                     
                     let prefixLength = if declarationItem.IsOwnMember then prefixLength + 1 else prefixLength
-                    //String.replicate prefixLength "a" + name + string declarationItem.MinorPriority
                 
                     let hints = 
                         match mormalizedMruItems.TryGetValue declarationItem.FullName with

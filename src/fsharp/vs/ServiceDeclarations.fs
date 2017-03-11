@@ -117,7 +117,7 @@ type CompletionItem =
       Kind: CompletionItemKind
       IsOwnMember: bool
       MinorPriority: int
-      Type: TType option }
+      Type: TyconRef option }
 
 [<AutoOpen>]
 module internal ItemDescriptionsImpl = 
@@ -1438,10 +1438,10 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
         let g = infoReader.g
         let items = items |> ItemDescriptionsImpl.RemoveExplicitlySuppressedCompletionItems g
         
-        let areTyconRefsEqual (ty1: TType option) (tyconRef: TyconRef) =
-            match ty1 with
-            | Some (TType.TType_app _ as ty) -> tyconRefEq g tyconRef (tcrefOfAppTy g ty)
-            | _ -> false
+        let tyconRefOptEq tref1 tref2 =
+            match tref1 with
+            | Some tref1 -> tyconRefEq g tref1 tref2
+            | None -> false
 
         // Adjust items priority. Sort by name. For things with the same name, 
         //     - show types with fewer generic parameters first
@@ -1456,9 +1456,9 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                 | Item.DelegateCtor (TType_app(tcref,_)) -> { x with MinorPriority = 1000 + tcref.TyparsNoRange.Length }
                 // Put type ctors after types, sorted by #typars. RemoveDuplicateItems will remove DefaultStructCtors if a type is also reported with this name
                 | Item.CtorGroup (_, (cinfo :: _)) -> { x with MinorPriority = 1000 + 10 * (tcrefOfAppTy g cinfo.EnclosingType).TyparsNoRange.Length }
-                | Item.MethodGroup(_, minfo :: _, _) -> { x with IsOwnMember = areTyconRefsEqual x.Type minfo.DeclaringEntityRef }
-                | Item.Property(_, pinfo :: _) -> { x with IsOwnMember = areTyconRefsEqual x.Type (tcrefOfAppTy g pinfo.EnclosingType) }
-                | Item.ILField finfo -> { x with IsOwnMember = areTyconRefsEqual x.Type (tcrefOfAppTy g finfo.EnclosingType) }
+                | Item.MethodGroup(_, minfo :: _, _) -> { x with IsOwnMember = tyconRefOptEq x.Type minfo.DeclaringEntityRef }
+                | Item.Property(_, pinfo :: _) -> { x with IsOwnMember = tyconRefOptEq x.Type (tcrefOfAppTy g pinfo.EnclosingType) }
+                | Item.ILField finfo -> { x with IsOwnMember = tyconRefOptEq x.Type (tcrefOfAppTy g finfo.EnclosingType) }
                 | _ -> x)
             |> List.sortBy (fun x -> x.MinorPriority)
             |> List.fold (fun (prevRealPrior, prevNormalizedPrior, acc) x ->

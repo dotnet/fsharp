@@ -689,6 +689,17 @@ type TypeCheckInfo
             ReturnItemsOfType items g denv m filterCtors hasTextChangedSinceLastTypecheck NameResResult.Members
         | _ , _ -> NameResResult.Empty
     
+    let TryGetTypeFromNameResolution(line, colAtEndOfNames, membersByResidue, resolveOverloads) = 
+        let endOfNamesPos = mkPos line colAtEndOfNames
+        let items = GetCapturedNameResolutions endOfNamesPos resolveOverloads |> ResizeArray.toList |> List.rev
+        
+        match items, membersByResidue with 
+        | CNR(_,Item.Types(_,(ty::_)),_,_,_,_,_)::_, Some _ -> Some ty
+        | CNR(_, Item.Value(vref), occurence,_,_,_,_)::_, Some _ ->
+            if (occurence = ItemOccurence.Binding || occurence = ItemOccurence.Pattern) then None
+            else Some (StripSelfRefCell(g, vref.BaseOrThisInfo, vref.TauType))
+        | _ , _ -> None
+
     let CollectParameters (methods: MethInfo list) amap m: Item list = 
         methods
         |> List.collect (fun meth ->
@@ -892,7 +903,7 @@ type TypeCheckInfo
             p <- p - 1
         if p >= 0 then Some p else None
     
-    let CompletionItem (ty: TType option) (item: Item) =
+    let CompletionItem (ty: TyconRef option) (item: Item) =
         let kind = 
             match item with
             | Item.MethodGroup _ -> CompletionItemKind.Method 
@@ -959,15 +970,32 @@ type TypeCheckInfo
                     let plid, residue = List.frontAndBack origLongIdent
                     plid, Some residue
 
-            let (nenv, ad), m = GetBestEnvForPos (mkPos line loc)
-            let ty = NameResolution.TryToResolveLongIdentAsType ncenv nenv m plid
+            let pos = mkPos line loc
+            let (nenv, ad), m = GetBestEnvForPos pos
+
+            let getType() = 
+                let tref =
+                    match NameResolution.TryToResolveLongIdentAsType ncenv nenv m plid with
+                    | Some x -> Some x
+                    | None ->
+                        match FindFirstNonWhitespacePosition lineStr (colAtEndOfNamesAndResidue - 1) with
+                        | Some p when lineStr.[p] = '.' ->
+                            match FindFirstNonWhitespacePosition lineStr (p - 1) with
+                            | Some colAtEndOfNames ->                 
+                                let colAtEndOfNames = colAtEndOfNames + 1 // convert 0-based to 1-based
+                                let tyconRef = TryGetTypeFromNameResolution(line, colAtEndOfNames, residueOpt, resolveOverloads)
+                                tyconRef
+                            | None -> None
+                        | _ -> None
+                     
+                tref |> Option.bind (tryDestAppTy g)
 
             match nameResItems with            
             | NameResResult.TypecheckStaleAndTextChanged -> None // second-chance intellisense will try again
             | NameResResult.Cancel(denv,m) -> Some([], denv, m)
             | NameResResult.Members(FilterRelevantItems exactMatchResidueOpt (items, denv, m)) -> 
                 // lookup based on name resolution results successful
-                Some (items |> List.map (CompletionItem ty), denv, m)
+                Some (items |> List.map (CompletionItem (getType())), denv, m)
             | _ ->
                 match origLongIdentOpt with
                 | None -> None
@@ -1002,7 +1030,7 @@ type TypeCheckInfo
                             // it appears we're getting some typings recorded for non-atomic expressions like "f x"
                             when (match plid with [] -> true | _ -> false)  -> 
                         // lookup based on expression typings successful
-                        Some (items |> List.map (CompletionItem (Some ty)), denv, m)
+                        Some (items |> List.map (CompletionItem (tryDestAppTy g ty)), denv, m)
                     | GetPreciseCompletionListFromExprTypingsResult.NoneBecauseThereWereTypeErrors, _ ->
                         // There was an error, e.g. we have "<expr>." and there is an error determining the type of <expr>  
                         // In this case, we don't want any of the fallback logic, rather, we want to produce zero results.
@@ -1023,17 +1051,17 @@ type TypeCheckInfo
                        // First, use unfiltered name resolution items, if they're not empty
                        | NameResResult.Members(items, denv, m), _, _ when not (isNil items) -> 
                            // lookup based on name resolution results successful
-                           Some(items |> List.map (CompletionItem ty), denv, m)                
+                           Some(items |> List.map (CompletionItem (getType())), denv, m)                
                        
                        // If we have nonempty items from environment that were resolved from a type, then use them... 
                        // (that's better than the next case - here we'd return 'int' as a type)
                        | _, FilterRelevantItems exactMatchResidueOpt (items, denv, m), _ when not (isNil items) ->
                            // lookup based on name and environment successful
-                           Some(items |> List.map (CompletionItem ty), denv, m)
+                           Some(items |> List.map (CompletionItem (getType())), denv, m)
                        
                        // Try again with the qualItems
                        | _, _, GetPreciseCompletionListFromExprTypingsResult.Some(FilterRelevantItems exactMatchResidueOpt (items, denv, m), ty) ->
-                           Some(items |> List.map (CompletionItem (Some ty)), denv, m)
+                           Some(items |> List.map (CompletionItem (tryDestAppTy g ty)), denv, m)
                        
                        | _ -> None
 
