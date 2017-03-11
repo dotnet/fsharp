@@ -145,6 +145,7 @@ type internal RawEntity =
       IsPublic: bool
       TopRequireQualifiedAccessParent: Idents option
       AutoOpenParent: Idents option
+      Item: NameResolution.Item
       Kind: LookupType -> EntityKind }
     override x.ToString() = sprintf "%A" x  
 
@@ -237,6 +238,7 @@ module internal AssemblyContentProvider =
               IsPublic = entity.Accessibility.IsPublic
               TopRequireQualifiedAccessParent = parent.RequiresQualifiedAccess |> Option.map parent.FixParentModuleSuffix
               AutoOpenParent = parent.AutoOpen |> Option.map parent.FixParentModuleSuffix
+              Item = entity.Item
               Kind = fun lookupType ->
                 match entity, lookupType with                
                 | TypedAstPatterns.FSharpModule, _ ->
@@ -248,7 +250,7 @@ module internal AssemblyContentProvider =
                 | _, LookupType.Precise ->
                     match entity with
                     | TypedAstPatterns.Attribute -> EntityKind.Attribute 
-                    | _ -> EntityKind.Type 
+                    | _ -> EntityKind.Type
             })
 
     let private traverseMemberFunctionAndValues ns (parent: Parent) (membersFunctionsAndValues: seq<FSharpMemberOrFunctionOrValue>) =
@@ -262,6 +264,7 @@ module internal AssemblyContentProvider =
                   TopRequireQualifiedAccessParent = 
                         parent.RequiresQualifiedAccess |> Option.map parent.FixParentModuleSuffix
                   AutoOpenParent = parent.AutoOpen |> Option.map parent.FixParentModuleSuffix
+                  Item = func.Item
                   Kind = fun _ -> EntityKind.FunctionOrValue func.IsActivePattern }
 
             [ yield! func.TryGetFullDisplayName() 

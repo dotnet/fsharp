@@ -49,6 +49,7 @@ type internal RawEntity =
       IsPublic: bool
       TopRequireQualifiedAccessParent: Idents option
       AutoOpenParent: Idents option
+      Item: NameResolution.Item
       Kind: LookupType -> EntityKind }
 
 /// API CLEANUP: this type needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API

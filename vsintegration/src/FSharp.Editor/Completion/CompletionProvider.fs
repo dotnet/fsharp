@@ -27,7 +27,8 @@ type internal FSharpCompletionProvider
         workspace: Workspace,
         serviceProvider: SVsServiceProvider,
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager
+        projectInfoManager: ProjectInfoManager,
+        assemblyContentProvider: AssemblyContentProvider
     ) =
     inherit CompletionProvider()
 
@@ -101,7 +102,8 @@ type internal FSharpCompletionProvider
                 let documentId, filePath, defines = getInfo()
                 shouldProvideCompletion(documentId, filePath, defines, sourceText, triggerPosition)
 
-    static member ProvideCompletionsAsyncAux(checker: FSharpChecker, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, textVersionHash: int) = 
+    static member ProvideCompletionsAsyncAux(checker: FSharpChecker, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, 
+                                             textVersionHash: int, allEntitites: RawEntity list) = 
         asyncMaybe {
             let! parseResults, parsedInput, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true)
 
@@ -114,9 +116,10 @@ type internal FSharpCompletionProvider
             let caretLineColumn = caretLinePos.Character
             
             let qualifyingNames, partialName = QuickParse.GetPartialLongNameEx(caretLine.ToString(), caretLineColumn - 1) 
-            
+            let allItems = allEntitites |> List.map (fun x -> x.Item)
+
             let! declarations =
-                checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLineColumn, caretLine.ToString(), qualifyingNames, partialName) |> liftAsync
+                checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLineColumn, caretLine.ToString(), qualifyingNames, partialName, allItems) |> liftAsync
             
             let results = List<Completion.CompletionItem>()
             let mormalizedMruItems = getNormalizedMruHints()
@@ -173,6 +176,10 @@ type internal FSharpCompletionProvider
                 declarationItemsCache.Add(completionItem.DisplayText, declarationItem)
                 results.Add(completionItem)
             
+            for e in allEntitites do
+                 let completionItem = CommonCompletionItem.Create(Array.last e.CleanedIdents, glyph = Nullable()).AddProperty(FullNamePropName, e.FullName)
+                 results.Add(completionItem)
+
             return results
         }
 
@@ -193,7 +200,11 @@ type internal FSharpCompletionProvider
             do! Option.guard (shouldProvideCompletion(document.Id, document.FilePath, defines, sourceText, context.Position))
             let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
             let! textVersion = context.Document.GetTextVersionAsync(context.CancellationToken)
-            let! results = FSharpCompletionProvider.ProvideCompletionsAsyncAux(checkerProvider.Checker, sourceText, context.Position, options, document.FilePath, textVersion.GetHashCode())
+            let! _, _, fileCheckResults = checkerProvider.Checker.ParseAndCheckDocument(document, options, true)
+            let allEntities = assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies(fileCheckResults)
+            let! results = 
+                FSharpCompletionProvider.ProvideCompletionsAsyncAux(checkerProvider.Checker, sourceText, context.Position, options, 
+                                                                    document.FilePath, textVersion.GetHashCode(), allEntities)
             context.AddItems(results)
         } |> Async.Ignore |> CommonRoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
         
