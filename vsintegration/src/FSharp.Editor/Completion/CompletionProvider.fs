@@ -144,14 +144,14 @@ type internal FSharpCompletionProvider
                 let sortText =
                     let prefixLength =
                         match declarationItem.Kind with
-                        | CompletionItemKind.Property -> 10
-                        | CompletionItemKind.Field -> 8
-                        | CompletionItemKind.Method -> 6
-                        | CompletionItemKind.Event -> 4
-                        | CompletionItemKind.Argument -> 2
+                        | CompletionItemKind.Property -> 100
+                        | CompletionItemKind.Field -> 80
+                        | CompletionItemKind.Method -> 60
+                        | CompletionItemKind.Event -> 40
+                        | CompletionItemKind.Argument -> 20
                         | CompletionItemKind.Other -> 0
                     
-                    let prefixLength = if declarationItem.IsOwnMember then prefixLength + 1 else prefixLength
+                    let prefixLength = if declarationItem.IsOwnMember then prefixLength + 10 else prefixLength
                 
                     let hints = 
                         match mormalizedMruItems.TryGetValue declarationItem.FullName with
