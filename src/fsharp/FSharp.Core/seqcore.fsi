@@ -73,7 +73,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
             member Value : 'T
             static member Comparer : IEqualityComparer<StructBox<'T>>
 
-        val mkConcatSeq : sources:(seq<#seq<'T>>) -> seq<'T>
+        val internal mkConcatSeq : sources:(seq<#seq<'T>>) -> seq<'T>
 
         /// <summary>The F# compiler emits calls to this function to 
         /// implement the <c>while</c> operator for F# sequence expressions.</summary>
