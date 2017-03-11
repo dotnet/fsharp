@@ -142,7 +142,7 @@ type internal FSharpCompletionProvider
                     | true, hints -> maxHints - hints
                     | _ -> number + maxHints + 1
 
-                let sortText = sprintf "%06d-%s" priority name
+                let sortText = sprintf "%06d" priority
 
                 //Logging.Logging.logInfof "***** %s => %s" name sortText
 
