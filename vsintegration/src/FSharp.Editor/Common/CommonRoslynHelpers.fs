@@ -44,46 +44,49 @@ module internal CommonRoslynHelpers =
             Assert.Exception(task.Exception.GetBaseException())
             raise(task.Exception.GetBaseException())
 
-    type NavigableRoslynText = NavigableRoslynText of tag: string * text: string * range: BoxRange option with
-        static member Create(tag, text, xref) = NavigableRoslynText(tag, text, xref)
-        static member Create(tag, text) = NavigableRoslynText(tag, text, None)
+    /// Text tagged with Roslyn TextTags with optional range for navigable links in quickinfo 
+    type NavigableRoslynText = NavigableRoslynText of tag: string * text: string * range: range option
 
-    /// Converts `TaggedText` from the F# Compiler to `Microsoft.CodeAnalysis.TaggedText` format for use in tooltips
+    let unboxRange = function
+        | Some(BoxRange.BoxRange(:? range as range)) -> Some range
+        | _ -> None
+
+    /// Converts `TaggedText` from the F# Compiler to custom format for use in tooltips
     let TaggedTextToNavigable t =
         match t with
         | TaggedText.ActivePatternCase t
-        | TaggedText.ActivePatternResult t -> NavigableRoslynText.Create(TextTags.Enum, t)
-        | TaggedText.Alias(x, t) -> NavigableRoslynText.Create(TextTags.Class, t, x)
-        | TaggedText.Class(x, t) -> NavigableRoslynText.Create(TextTags.Class, t, x)
-        | TaggedText.Delegate(x, t) -> NavigableRoslynText.Create(TextTags.Delegate, t, x)
-        | TaggedText.Enum(x, t) -> NavigableRoslynText.Create(TextTags.Enum, t, x)
-        | TaggedText.Event(x, t) -> NavigableRoslynText.Create(TextTags.Event, t, x)
-        | TaggedText.Field t -> NavigableRoslynText.Create(TextTags.Field, t)
-        | TaggedText.Interface(x, t) -> NavigableRoslynText.Create(TextTags.Interface, t, x)
-        | TaggedText.Keyword t -> NavigableRoslynText.Create(TextTags.Keyword, t)
-        | TaggedText.LineBreak t -> NavigableRoslynText.Create(TextTags.LineBreak, t)
-        | TaggedText.Local t -> NavigableRoslynText.Create(TextTags.Local, t)
-        | TaggedText.Member t -> NavigableRoslynText.Create(TextTags.Property, t)
-        | TaggedText.Method t -> NavigableRoslynText.Create(TextTags.Method, t)
-        | TaggedText.Module(x, t) -> NavigableRoslynText.Create(TextTags.Module, t, x)
-        | TaggedText.ModuleBinding t -> NavigableRoslynText.Create(TextTags.Property, t)
-        | TaggedText.Namespace t -> NavigableRoslynText.Create(TextTags.Namespace, t)
-        | TaggedText.NumericLiteral t -> NavigableRoslynText.Create(TextTags.NumericLiteral, t)
-        | TaggedText.Operator t -> NavigableRoslynText.Create(TextTags.Operator, t)
-        | TaggedText.Parameter t -> NavigableRoslynText.Create(TextTags.Parameter, t)
-        | TaggedText.Property t -> NavigableRoslynText.Create(TextTags.Property, t)
-        | TaggedText.Punctuation t -> NavigableRoslynText.Create(TextTags.Punctuation, t)
-        | TaggedText.Record(x, t) -> NavigableRoslynText.Create(TextTags.Class, t, x)
-        | TaggedText.RecordField t -> NavigableRoslynText.Create(TextTags.Property, t)
-        | TaggedText.Space t -> NavigableRoslynText.Create(TextTags.Space, t)
-        | TaggedText.StringLiteral t -> NavigableRoslynText.Create(TextTags.StringLiteral, t)
-        | TaggedText.Struct(x, t) -> NavigableRoslynText.Create(TextTags.Struct, t, x)
-        | TaggedText.Text t -> NavigableRoslynText.Create(TextTags.Text, t)
-        | TaggedText.TypeParameter t -> NavigableRoslynText.Create(TextTags.TypeParameter, t)
-        | TaggedText.Union(x, t) -> NavigableRoslynText.Create(TextTags.Class, t, x)
-        | TaggedText.UnionCase(x, t) -> NavigableRoslynText.Create(TextTags.Enum, t, x)
-        | TaggedText.UnknownEntity t -> NavigableRoslynText.Create(TextTags.Property, t)
-        | TaggedText.UnknownType t -> NavigableRoslynText.Create(TextTags.Class, t)
+        | TaggedText.ActivePatternResult t -> NavigableRoslynText(TextTags.Enum, t, None)
+        | TaggedText.Alias(x, t) -> NavigableRoslynText(TextTags.Class, t, unboxRange x)
+        | TaggedText.Class(x, t) -> NavigableRoslynText(TextTags.Class, t, unboxRange x)
+        | TaggedText.Delegate(x, t) -> NavigableRoslynText(TextTags.Delegate, t, unboxRange x)
+        | TaggedText.Enum(x, t) -> NavigableRoslynText(TextTags.Enum, t, unboxRange x)
+        | TaggedText.Event(x, t) -> NavigableRoslynText(TextTags.Event, t, unboxRange x)
+        | TaggedText.Field t -> NavigableRoslynText(TextTags.Field, t, None)
+        | TaggedText.Interface(x, t) -> NavigableRoslynText(TextTags.Interface, t, unboxRange x)
+        | TaggedText.Keyword t -> NavigableRoslynText(TextTags.Keyword, t, None)
+        | TaggedText.LineBreak t -> NavigableRoslynText(TextTags.LineBreak, t, None)
+        | TaggedText.Local t -> NavigableRoslynText(TextTags.Local, t, None)
+        | TaggedText.Member t -> NavigableRoslynText(TextTags.Property, t, None)
+        | TaggedText.Method t -> NavigableRoslynText(TextTags.Method, t, None)
+        | TaggedText.Module(x, t) -> NavigableRoslynText(TextTags.Module, t, unboxRange x)
+        | TaggedText.ModuleBinding t -> NavigableRoslynText(TextTags.Property, t, None)
+        | TaggedText.Namespace t -> NavigableRoslynText(TextTags.Namespace, t, None)
+        | TaggedText.NumericLiteral t -> NavigableRoslynText(TextTags.NumericLiteral, t, None)
+        | TaggedText.Operator t -> NavigableRoslynText(TextTags.Operator, t, None)
+        | TaggedText.Parameter t -> NavigableRoslynText(TextTags.Parameter, t, None)
+        | TaggedText.Property t -> NavigableRoslynText(TextTags.Property, t, None)
+        | TaggedText.Punctuation t -> NavigableRoslynText(TextTags.Punctuation, t, None)
+        | TaggedText.Record(x, t) -> NavigableRoslynText(TextTags.Class, t, unboxRange x)
+        | TaggedText.RecordField t -> NavigableRoslynText(TextTags.Property, t, None)
+        | TaggedText.Space t -> NavigableRoslynText(TextTags.Space, t, None)
+        | TaggedText.StringLiteral t -> NavigableRoslynText(TextTags.StringLiteral, t, None)
+        | TaggedText.Struct(x, t) -> NavigableRoslynText(TextTags.Struct, t, unboxRange x)
+        | TaggedText.Text t -> NavigableRoslynText(TextTags.Text, t, None)
+        | TaggedText.TypeParameter t -> NavigableRoslynText(TextTags.TypeParameter, t, None)
+        | TaggedText.Union(x, t) -> NavigableRoslynText(TextTags.Class, t, unboxRange x)
+        | TaggedText.UnionCase(x, t) -> NavigableRoslynText(TextTags.Enum, t, unboxRange x)
+        | TaggedText.UnknownEntity t -> NavigableRoslynText(TextTags.Property, t, None)
+        | TaggedText.UnknownType t -> NavigableRoslynText(TextTags.Class, t, None)
 
     let NavigableTextToRoslyn (NavigableRoslynText(tag, text,_)) = TaggedText(tag, text)
 

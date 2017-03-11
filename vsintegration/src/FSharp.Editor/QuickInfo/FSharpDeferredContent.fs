@@ -5,11 +5,12 @@ open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Editor.Shared.Utilities
 open Microsoft.CodeAnalysis.Editor.Shared.Extensions
 open Microsoft.CodeAnalysis.Classification
-open Microsoft.FSharp.Compiler.Layout
 
+open Microsoft.FSharp.Compiler.Layout
+open Microsoft.FSharp.Compiler.Range
 open CommonRoslynHelpers
 
-type internal FSharpDeferredContent(content: NavigableRoslynText seq, typemap: ClassificationTypeMap, navigateToRange) =
+type internal FSharpDeferredContent(content: NavigableRoslynText seq, typemap: ClassificationTypeMap, canGoto, goTo) =
 
     let formatMap = typemap.ClassificationFormatMapService.GetClassificationFormatMap("tooltip")
 
@@ -20,18 +21,15 @@ type internal FSharpDeferredContent(content: NavigableRoslynText seq, typemap: C
 
     let inlines = 
         seq { 
-            for NavigableRoslynText(tag, text, boxRange) in content do
+            for NavigableRoslynText(tag, text, rangeOpt) in content do
                 let run =
-                    match boxRange with
-                    | Some(BoxRange.BoxRange(:? Microsoft.FSharp.Compiler.Range.range as range))
-                      when range <> Microsoft.FSharp.Compiler.Range.rangeStartup ->
-
+                    match rangeOpt with
+                    | Some(range) when canGoto range ->
                         let h = Documents.Hyperlink(Documents.Run(text))
-                        h.Click.Add <| fun _ ->
-                            navigateToRange (range) |> Async.StartImmediate
+                        h.Click.Add (fun _ -> goTo range |> Async.StartImmediate)
                         h :> Documents.Inline
-
-                    | _ ->  Documents.Run(text) :> Documents.Inline
+                    | _ -> 
+                        Documents.Run(text) :> Documents.Inline
 
                 DependencyObjectExtensions.SetTextProperties(run, props tag)
                 yield run
@@ -45,5 +43,6 @@ type internal FSharpDeferredContent(content: NavigableRoslynText seq, typemap: C
             if tb.Inlines.Count = 0 then tb.Visibility <- Visibility.Collapsed
             tb :> FrameworkElement
 
-
-
+type internal EmptyQuickInfoContent() =
+    interface IDeferredQuickInfoContent with
+        member __.Create() = Controls.TextBlock() :> FrameworkElement

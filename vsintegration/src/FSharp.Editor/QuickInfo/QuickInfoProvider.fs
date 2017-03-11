@@ -3,7 +3,6 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Composition
 open System.Threading
 open System.Threading.Tasks
 
@@ -17,7 +16,6 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.Language.Intellisense
-open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
 
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
@@ -35,17 +33,37 @@ type internal FSharpQuickInfoProvider
 
     let xmlMemberIndexService = serviceProvider.GetService(typeof<SVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
-    let navigateTo (workspace: Workspace) (range: range)  = async {
-        let documentNavigationService =workspace.Services.GetService<IDocumentNavigationService>()
-        let filePath = System.IO.Path.GetFullPathSafe range.FileName
-        match workspace.CurrentSolution.GetDocumentIdsWithFilePath(filePath) |> List.ofSeq with
-        | id :: _ ->
-            let! src = workspace.CurrentSolution.GetDocument(id).GetTextAsync()
-            match CommonRoslynHelpers.TryFSharpRangeToTextSpan(src, range) with
-            | Some span -> documentNavigationService.TryNavigateToSpan(workspace, id, span) |> ignore
-            | _ -> ()
-        | _ -> ()
-    }
+
+    let navigationFrom (thisDoc: Document) =
+        let workspace = thisDoc.Project.Solution.Workspace
+        let documentNavigationService = workspace.Services.GetService<IDocumentNavigationService>()
+        let solution = workspace.CurrentSolution
+
+        let documentId (range: range) =
+            let filePath = System.IO.Path.GetFullPathSafe range.FileName
+            let projectOf (id : DocumentId) = solution.GetDocument(id).Project
+
+            //The same file may be present in many projects. We choose one from current or referenced project.
+            let rec matchingDoc = function
+            | [] -> None
+            | id::_ when projectOf id = thisDoc.Project -> Some id
+            | id::tail -> 
+                if (projectOf id).GetDependentProjects() |> Seq.contains thisDoc.Project then Some id
+                else matchingDoc tail
+            solution.GetDocumentIdsWithFilePath(filePath) |> List.ofSeq |> matchingDoc
+
+        let canGoTo range =
+            range <> rangeStartup && documentId range |> Option.isSome
+
+        let goTo range = 
+            asyncMaybe { 
+                let! id = documentId range
+                let! src = solution.GetDocument(id).GetTextAsync()
+                let! span = CommonRoslynHelpers.TryFSharpRangeToTextSpan(src, range)
+                return documentNavigationService.TryNavigateToSpan(workspace, id, span)
+            } |> Async.Ignore
+
+        canGoTo, goTo
     
     static member ProvideQuickInfo(checker: FSharpChecker, documentId: DocumentId, sourceText: SourceText, filePath: string, position: int, options: FSharpProjectOptions, textVersionHash: int) =
         asyncMaybe {
@@ -80,14 +98,15 @@ type internal FSharpQuickInfoProvider
                     CommonRoslynHelpers.CollectNavigableText mainDescription, 
                     CommonRoslynHelpers.CollectNavigableText documentation, 
                     toolTipElement)
-                let empty = ClassifiableDeferredContent(Array.Empty<TaggedText>(), typeMap);
+                let empty = EmptyQuickInfoContent()
+                let canGoTo, goTo = navigationFrom document
                 let content = 
                     QuickInfoDisplayDeferredContent
                         (
                             symbolGlyph = SymbolGlyphDeferredContent(CommonRoslynHelpers.GetGlyphForSymbol(symbol, symbolKind), glyphService),
                             warningGlyph = null,
-                            mainDescription = FSharpDeferredContent(mainDescription, typeMap, navigateTo document.Project.Solution.Workspace),
-                            documentation = FSharpDeferredContent(documentation, typeMap, navigateTo document.Project.Solution.Workspace),
+                            mainDescription = FSharpDeferredContent(mainDescription, typeMap, canGoTo, goTo),
+                            documentation = FSharpDeferredContent(documentation, typeMap, canGoTo, goTo),
                             typeParameterMap = empty,
                             anonymousTypes = empty,
                             usageText = empty,
