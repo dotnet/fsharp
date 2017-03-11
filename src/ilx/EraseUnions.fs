@@ -908,7 +908,7 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
         [ for alt in cud.cudAlternatives do 
            if repr.RepresentAlternativeAsFreshInstancesOfRootClass (info,alt) then
         // TODO
-            let fields = alt.FieldDefs |> Array.toList |> List.map mkUnionCaseFieldId 
+            let fields = alt.FieldDefs |> Array.map mkUnionCaseFieldId |> Array.toList
             let baseInit = 
                 if isStruct then None else
                 match td.Extends with 

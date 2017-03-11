@@ -686,11 +686,12 @@ let queryableTypeGetMethodBySearch cenv emEnv parentT (mref:ILMethodRef) =
                 argTs,resT 
           
           (* methInfo implied Types *)
-            let haveArgTs = methInfo.GetParameters() |> Array.toList |> List.map (fun param -> param.ParameterType) 
+            let methodParameters = methInfo.GetParameters()
          
             let haveResT  = methInfo.ReturnType
           (* check for match *)
-            if argTs.Length <> haveArgTs.Length then false (* method argument length mismatch *) else
+            if argTs.Length <> methodParameters.Length then false (* method argument length mismatch *) else
+            let haveArgTs = methodParameters |> Array.map (fun param -> param.ParameterType) |> Array.toList
             let res = equalTypes resT haveResT && equalTypeLists argTs haveArgTs
             res
        
