@@ -19,21 +19,23 @@ type internal FSharpDeferredContent(content: NavigableRoslynText seq, typemap: C
         >> formatMap.GetTextProperties
 
     let inlines = 
-      seq { 
-        for NavigableRoslynText(tag, text, BoxRange.BoxRange(boxRange)) in content do
-            let run =
-                match boxRange with
-                | Some(:? Microsoft.FSharp.Compiler.Range.range as range)
-                  when range <> Microsoft.FSharp.Compiler.Range.rangeStartup ->
-                    let h = Documents.Hyperlink(Documents.Run(text))
-                    h.Click.Add <| fun _ ->
-                        navigateToRange (range) |> Async.StartImmediate
-                    h :> Documents.Inline
-                | _ ->  Documents.Run(text) :> Documents.Inline
+        seq { 
+            for NavigableRoslynText(tag, text, boxRange) in content do
+                let run =
+                    match boxRange with
+                    | Some(BoxRange.BoxRange(:? Microsoft.FSharp.Compiler.Range.range as range))
+                      when range <> Microsoft.FSharp.Compiler.Range.rangeStartup ->
 
-            DependencyObjectExtensions.SetTextProperties( run, props tag)
-            yield run
-      }
+                        let h = Documents.Hyperlink(Documents.Run(text))
+                        h.Click.Add <| fun _ ->
+                            navigateToRange (range) |> Async.StartImmediate
+                        h :> Documents.Inline
+
+                    | _ ->  Documents.Run(text) :> Documents.Inline
+
+                DependencyObjectExtensions.SetTextProperties(run, props tag)
+                yield run
+        }
     
     interface IDeferredQuickInfoContent with
         member __.Create() =

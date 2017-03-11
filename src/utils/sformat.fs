@@ -54,9 +54,9 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 
     [<NoEquality; NoComparison>]
 #if COMPILER
-    type internal BoxRange = BoxRange of obj option
+    type internal BoxRange = BoxRange of obj
 #else
-    type BoxRange = BoxRange of obj option
+    type BoxRange = BoxRange of obj
 #endif
 
 
@@ -68,24 +68,24 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 #endif
         | ActivePatternCase of string
         | ActivePatternResult of string
-        | Alias of BoxRange * string
-        | Class of BoxRange * string
-        | Union of BoxRange * string
-        | UnionCase of BoxRange * string
-        | Delegate of BoxRange * string
-        | Enum of BoxRange * string
-        | Event of BoxRange * string
+        | Alias of BoxRange option * string
+        | Class of BoxRange option * string
+        | Union of BoxRange option * string
+        | UnionCase of BoxRange option * string
+        | Delegate of BoxRange option * string
+        | Enum of BoxRange option * string
+        | Event of BoxRange option * string
         | Field of string
-        | Interface of BoxRange * string
+        | Interface of BoxRange option * string
         | Keyword of string
         | LineBreak of string
         | Local of string
-        | Record of BoxRange * string
+        | Record of BoxRange option * string
         | RecordField of string
         | Method of string
         | Member of string
         | ModuleBinding of string
-        | Module of BoxRange * string
+        | Module of BoxRange option * string
         | Namespace of string
         | NumericLiteral of string
         | Operator of string
@@ -93,7 +93,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         | Property of string
         | Space of string
         | StringLiteral of string
-        | Struct of BoxRange * string
+        | Struct of BoxRange option * string
         | TypeParameter of string
         | Text of string
         | Punctuation of string
@@ -201,8 +201,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 #else
     module TaggedTextOps =
 #endif
-        let boxRangeNone = BoxRange.BoxRange None
-        let tagAlias text = TaggedText.Alias(boxRangeNone, text)
+        let tagAlias text = TaggedText.Alias(None, text)
         let keywordFunctions = Set ["raise"; "reraise"; "typeof"; "typedefof"; "sizeof"; "nameof"]
         let keywordTypes = 
           [
@@ -237,21 +236,21 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             "unativeint"
           ] |> Set.ofList
 
-        let tagClass name = if Set.contains name keywordTypes then TaggedText.Keyword name else TaggedText.Class(boxRangeNone, name)
-        let tagUnion text = TaggedText.Union(boxRangeNone, text)
-        let tagUnionCase text = TaggedText.UnionCase(boxRangeNone, text)
-        let tagDelegate text = TaggedText.Delegate(boxRangeNone, text)
-        let tagEnum text = TaggedText.Enum(boxRangeNone, text)
-        let tagEvent text = TaggedText.Event(boxRangeNone, text)
+        let tagClass name = if Set.contains name keywordTypes then TaggedText.Keyword name else TaggedText.Class(None, name)
+        let tagUnion text = TaggedText.Union(None, text)
+        let tagUnionCase text = TaggedText.UnionCase(None, text)
+        let tagDelegate text = TaggedText.Delegate(None, text)
+        let tagEnum text = TaggedText.Enum(None, text)
+        let tagEvent text = TaggedText.Event(None, text)
         let tagField = TaggedText.Field
-        let tagInterface text = TaggedText.Interface(boxRangeNone, text)
+        let tagInterface text = TaggedText.Interface(None, text)
         let tagKeyword = TaggedText.Keyword
         let tagLineBreak = TaggedText.LineBreak
         let tagLocal = TaggedText.Local
-        let tagRecord text = TaggedText.Record(boxRangeNone, text)
+        let tagRecord text = TaggedText.Record(None, text)
         let tagRecordField = TaggedText.RecordField
         let tagMethod = TaggedText.Method
-        let tagModule text = TaggedText.Module(boxRangeNone, text)
+        let tagModule text = TaggedText.Module(None, text)
         let tagModuleBinding name = if keywordFunctions.Contains name then TaggedText.Keyword name else TaggedText.ModuleBinding name
         let tagNamespace = TaggedText.Namespace
         let tagNumericLiteral = TaggedText.NumericLiteral
@@ -260,7 +259,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         let tagProperty = TaggedText.Property
         let tagSpace = TaggedText.Space
         let tagStringLiteral = TaggedText.StringLiteral
-        let tagStruct text = TaggedText.Struct(boxRangeNone, text)
+        let tagStruct text = TaggedText.Struct(None, text)
         let tagTypeParameter = TaggedText.TypeParameter
         let tagText = TaggedText.Text
         let tagPunctuation = TaggedText.Punctuation

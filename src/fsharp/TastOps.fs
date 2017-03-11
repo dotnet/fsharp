@@ -2498,13 +2498,14 @@ let fullNameOfParentOfEntityRefAsLayout eref =
          | Some ppath -> fullNameOfParentOfPubPathAsLayout ppath
     | ERefNonLocal nlr -> fullNameOfParentOfNonLocalEntityRefAsLayout nlr
 
+
 let fullNameOfEntityRef nmF xref = 
     match fullNameOfParentOfEntityRef xref  with 
     | None -> nmF xref 
     | Some pathText -> pathText +.+ nmF xref
 
 let tagEntityRefName (xref: EntityRef) name =
-    let range = BoxRange.BoxRange( Some (box xref.DefinitionRange))
+    let range = Some (BoxRange.BoxRange(box xref.DefinitionRange))
     if xref.IsNamespace then tagNamespace name
     elif xref.IsModule then TaggedText.Module(range, name)
     elif xref.IsTypeAbbrev then TaggedText.Alias(range, name)
