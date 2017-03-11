@@ -19,6 +19,7 @@ open Microsoft.VisualStudio.Language.Intellisense
 
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
+open Microsoft.FSharp.Compiler.CompileOps
 
 [<ExportQuickInfoProvider(PredefinedQuickInfoProviderNames.Semantic, FSharpCommonConstants.FSharpLanguageName)>]
 type internal FSharpQuickInfoProvider 
@@ -46,7 +47,7 @@ type internal FSharpQuickInfoProvider
             //The same file may be present in many projects. We choose one from current or referenced project.
             let rec matchingDoc = function
             | [] -> None
-            | id::_ when projectOf id = thisDoc.Project -> Some id
+            | id::_ when projectOf id = thisDoc.Project || IsScript thisDoc.FilePath -> Some id
             | id::tail -> 
                 if (projectOf id).GetDependentProjects() |> Seq.contains thisDoc.Project then Some id
                 else matchingDoc tail
@@ -98,19 +99,13 @@ type internal FSharpQuickInfoProvider
                     CommonRoslynHelpers.CollectNavigableText mainDescription, 
                     CommonRoslynHelpers.CollectNavigableText documentation, 
                     toolTipElement)
-                let empty = EmptyQuickInfoContent()
                 let canGoTo, goTo = navigationFrom document
                 let content = 
-                    QuickInfoDisplayDeferredContent
+                    FSharpQuickInfoDisplayDeferredContent
                         (
                             symbolGlyph = SymbolGlyphDeferredContent(CommonRoslynHelpers.GetGlyphForSymbol(symbol, symbolKind), glyphService),
-                            warningGlyph = null,
                             mainDescription = FSharpDeferredContent(mainDescription, typeMap, canGoTo, goTo),
-                            documentation = FSharpDeferredContent(documentation, typeMap, canGoTo, goTo),
-                            typeParameterMap = empty,
-                            anonymousTypes = empty,
-                            usageText = empty,
-                            exceptionText = empty
+                            documentation = FSharpDeferredContent(documentation, typeMap, canGoTo, goTo)
                         )
                 return QuickInfoItem(textSpan, content)
             } 
