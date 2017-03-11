@@ -45,4 +45,4 @@ type internal FSharpDeferredContent(content: NavigableRoslynText seq, typemap: C
 
 type internal EmptyQuickInfoContent() =
     interface IDeferredQuickInfoContent with
-        member __.Create() = Controls.TextBlock() :> FrameworkElement
+        member __.Create() = Controls.TextBlock(Visibility = Visibility.Collapsed) :> FrameworkElement
