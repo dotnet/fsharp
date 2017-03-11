@@ -244,10 +244,6 @@ module internal VsOpsUtils =
             printfn "Actual = %A" completions
             Assert.Fail("Extra completions found in list")
 
-    // Verify the completion list is exactly the same as expected, including items ordering.
-    let rec AssertCompListContainsExactlyInOrder(completions : CompletionItem[], expectedCompletions) =
-        CollectionAssert.AreEqual(expectedCompletions, completions |> Array.map (fun (name, _, _, _) -> name))
-
     /// Verify the completion list does not contain any member in the list
     let rec AssertCompListDoesNotContainAny(completions : CompletionItem[], itemsNotInCompList) =
         match itemsNotInCompList with

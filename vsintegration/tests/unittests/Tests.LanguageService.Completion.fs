@@ -130,15 +130,6 @@ type UsingMSBuild() as this  =
         let completions = DotCompletionAtStartOfMarker file marker
         AssertCompListContainsAll(completions, list)
 
-    /// Verifies that completion list exactly the same as expected, including the order items appear in it.
-    member private this.VerifyDotCompListExactlyAtStartOfMarker(fileContents : string, marker : string, list :string list, ?addtlRefAssy:list<string>, ?coffeeBreak:bool) =
-        let (solution, project, file) = this.CreateSingleFileProject(fileContents, ?references = addtlRefAssy)
-
-        //to add references
-        if defaultArg coffeeBreak false then TakeCoffeeBreak(this.VS)
-        let completions = DotCompletionAtStartOfMarker file marker
-        AssertCompListContainsExactly(completions, list)
-
     // There are some quickinfo tests in this file as well, in the systematic tests for queries
     member public this.InfoInDeclarationTestQuickInfoImpl(code : string,marker,expected,atStart, ?addtlRefAssy : list<string>) =
         let (solution, project, file) = this.CreateSingleFileProject(code, ?references = addtlRefAssy)
@@ -7752,30 +7743,6 @@ let rec f l =
                 let foo x = x
                 let bar = 1""",
             marker = "(*Marker*)")
-
-    [<Test>]
-    member this.``Class members are ordered according their accessibility``() = 
-        this.VerifyDotCompListExactlyAtStartOfMarker(
-            fileContents = """
-            module Module
-                type Base() =
-                    member __.BaseMethod() = 1
-                    member __.BaseProp = 1
-                    static member BaseStaticMethod() = 1
-                    static member BaseStaticProp = 1
-                
-                type Class() = 
-                    inherit Base()
-                    member this.MineMethod() = 1
-                    member this.MineProp = 1
-                    static member MineStaticMethod() = 1
-                    static member MineStaticProp = 2
-                
-                let x = Class()
-                x(*usage*)
-                """,
-            marker = "(*usage*)",
-            list = ["MineProp"; "BaseProp"; "MineMethod"; "BaseMethod"; "Equals"; "GetHashCode"; "GetType"; "ToString"])   
 
 // Context project system
 [<TestFixture>] 
