@@ -76,8 +76,8 @@ let VerifyCompletionListExactly(fileContents: string, marker: string, expected: 
 
     if actualNames <> expected then
         Assert.Fail(sprintf "Expected:\n%s,\nbut was:\n%s\nactual with sort text:\n%s" 
-                            (String.Join(", ", expected)) 
-                            (String.Join(", ", actualNames))
+                            (String.Join("; ", expected |> List.map (sprintf "\"%s\""))) 
+                            (String.Join("; ", actualNames |> List.map (sprintf "\"%s\"")))
                             (String.Join("\n", actual |> List.map (fun x -> sprintf "%s => %s" x.DisplayText x.SortText))))
     
 [<Test>]
@@ -249,6 +249,23 @@ x.
                     "GetRange"; "GetType"; "IndexOf"; "Insert"; "InsertRange"; "LastIndexOf"; "Remove"; "RemoveAll"; "RemoveAt"; "RemoveRange"; "Reverse"; "Sort"
                     "ToArray"; "ToString"; "TrimExcess"; "TrueForAll"]
     VerifyCompletionListExactly(fileContents, "x.", expected)
+
+[<Test>]
+let ``Extension methods go after everything else, extension properties are treated as normal ones``() =
+    let fileContents = """
+open System.Collections.Generic
+
+type List<'a> with
+    member __.ExtensionProp = 1
+    member __.ExtensionMeth() = 1
+
+List().
+"""
+    let expected = ["Capacity"; "Count"; "ExtensionProp"; "Item"; "Add"; "AddRange"; "AsReadOnly"; "BinarySearch"; "Clear"; "Contains"; "ConvertAll"; "CopyTo"; "Exists"
+                    "Find"; "FindAll"; "FindIndex"; "FindLast"; "FindLastIndex"; "ForEach"; "GetEnumerator"; "GetRange"; "IndexOf"; "Insert"; "InsertRange"; "LastIndexOf"
+                    "Remove"; "RemoveAll"; "RemoveAt"; "RemoveRange"; "Reverse"; "Sort"; "ToArray"; "TrimExcess"; "TrueForAll"; "Equals"; "GetHashCode"; "GetType"; "ToString"
+                    "ExtensionMeth"]
+    VerifyCompletionListExactly(fileContents, "List().", expected)
 
 #if EXE
 

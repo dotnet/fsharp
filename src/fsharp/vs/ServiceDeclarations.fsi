@@ -70,7 +70,7 @@ module internal Tooltips =
 type internal CompletionItemKind =
     | Field
     | Property
-    | Method
+    | Method of isExtension : bool
     | Event
     | Argument
     | Other

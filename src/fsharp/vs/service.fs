@@ -906,7 +906,7 @@ type TypeCheckInfo
     let CompletionItem (ty: TyconRef option) (item: Item) =
         let kind = 
             match item with
-            | Item.MethodGroup _ -> CompletionItemKind.Method 
+            | Item.MethodGroup (_, minfo :: _, _) -> CompletionItemKind.Method minfo.IsExtensionMember
             | Item.RecdField _
             | Item.Property _ -> CompletionItemKind.Property
             | Item.Event _ -> CompletionItemKind.Event
