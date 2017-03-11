@@ -936,7 +936,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                 let mutable onlyEscapedBackslashes = None
 
                 escapedBuilder.Append "\"" |> ignore
-                for c in s do
+                for c in s.ToCharArray() do
                     let didEscapeChar, escapedChar = formatChar false c
 
                     onlyEscapedBackslashes <-
