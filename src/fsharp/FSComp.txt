@@ -1091,7 +1091,7 @@ lexIndentOffForML,"Consider using a file with extension '.ml' or '.mli' instead"
 1246,tcCallerInfoWrongType,"'%s' must be applied to an argument of type '%s', but has been applied to an argument of type '%s'"
 1247,tcCallerInfoNotOptional,"'%s' can only be applied to optional arguments"
 # reshapedmsbuild.fs
-1300,toolLocationHelperUnsupportedFrameworkVersion,"The specified .NET Framework version "%s" is not supported. Please specify a value from the enumeration Microsoft.Build.Utilities.TargetDotNetFrameworkVersion."
+1300,toolLocationHelperUnsupportedFrameworkVersion,"The specified .NET Framework version '%s' is not supported. Please specify a value from the enumeration Microsoft.Build.Utilities.TargetDotNetFrameworkVersion."
 # -----------------------------------------------------------------------------
 # ilsign errors
 # -----------------------------------------------------------------------------
