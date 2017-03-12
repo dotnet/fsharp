@@ -157,8 +157,8 @@ type internal FSharpCompletionProvider
             let triggerPosition = caretPosition - 1
             let c = sourceText.[triggerPosition]
             
-            if not (completionTriggers |> Array.contains c) then
-                false
+            if completionTriggers |> Array.contains c then
+                true
             
             // do not trigger completion if it's not single dot, i.e. range expression
             elif triggerPosition > 0 && sourceText.[triggerPosition - 1] = '.' then
