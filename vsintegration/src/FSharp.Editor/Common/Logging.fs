@@ -69,6 +69,9 @@ type [<Export>] Logger [<ImportingConstructor>]
 
 [<AutoOpen>]
 module Logging =
+    open System.Diagnostics
+    
+    let inline debug msg = Printf.kprintf Debug.WriteLine msg
 
     let private logger = lazy Logger(Logger.GlobalServiceProvider)
     let private log logType msg = logger.Value.Log(logType,msg)
