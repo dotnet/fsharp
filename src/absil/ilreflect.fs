@@ -662,26 +662,6 @@ let convFieldSpec cenv emEnv fspec =
 //----------------------------------------------------------------------------
 // convMethodRef
 //----------------------------------------------------------------------------
-let satisfiesParameter a (p: Type) =
-  match a with
-  | None -> true
-  | Some a ->
-  if 
-    // obvious case
-    p.IsAssignableFrom a 
-  then true
-  elif
-    // both are generic
-    p.IsGenericType && a.IsGenericType 
-    // non obvious due to contravariance: Action<T> where T : IFoo accepts Action<FooImpl> (for FooImpl : IFoo)
-    && p.GetGenericTypeDefinition().IsAssignableFrom(a.GetGenericTypeDefinition()) 
-  then true
-  else false
-
-let satisfiesAllParameters args ps =
-  if Array.length args <> Array.length ps then false
-  else Array.forall2 satisfiesParameter args ps
-
 let queryableTypeGetMethodBySearch cenv emEnv parentT (mref:ILMethodRef) =
     assert(not (typeIsNotQueryable(parentT)))
     let cconv = (if mref.CallingConv.IsStatic then BindingFlags.Static else BindingFlags.Instance)
@@ -695,6 +675,25 @@ let queryableTypeGetMethodBySearch cenv emEnv parentT (mref:ILMethodRef) =
     | _ ->
       (* Second, type match. Note type erased (non-generic) F# code would not type match but they have unique names *)
 
+        let satisfiesParameter (a: Type option) (p: Type) =
+            match a with
+            | None -> true
+            | Some a ->
+            if 
+                // obvious case
+                p.IsAssignableFrom a 
+            then true
+            elif
+                // both are generic
+                p.IsGenericType && a.IsGenericType 
+                // non obvious due to contravariance: Action<T> where T : IFoo accepts Action<FooImpl> (for FooImpl : IFoo)
+                && p.GetGenericTypeDefinition().IsAssignableFrom(a.GetGenericTypeDefinition()) 
+            then true
+            else false
+
+        let satisfiesAllParameters (args: Type option array) (ps: Type array) =
+            if Array.length args <> Array.length ps then false
+            else Array.forall2 satisfiesParameter args ps
        
         let select (methInfo:MethodInfo) =
             (* mref implied Types *)
