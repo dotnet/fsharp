@@ -36,6 +36,7 @@ open Microsoft.VisualStudio.ComponentModelHost
 [<Guid(FSharpCommonConstants.svsSettingsPersistenceManagerGuidString)>]
 type internal SVsSettingsPersistenceManager = class end
 
+
 // Exposes FSharpChecker as MEF export
 [<Export(typeof<FSharpCheckerProvider>); Composition.Shared>]
 type internal FSharpCheckerProvider 
@@ -79,9 +80,20 @@ type internal ProjectInfoManager
     // A table of information about projects, excluding single-file projects.  
     let projectTable = ConcurrentDictionary<ProjectId, FSharpProjectOptions>()
 
+    // stores the documentIds for signature files that have already been generated using hashed subfolder keys
+    let signatureDocIds = Dictionary<string,DocumentId>()
+
     // A table of information about single-file projects.  Currently we only need the load time of each such file, plus
     // the original options for editing
     let singleFileProjectTable = ConcurrentDictionary<ProjectId, DateTime * FSharpProjectOptions>()
+
+    member __.RegisterSignature (filePath: string) (sigDocId:DocumentId) =
+        signatureDocIds.[filePath] <- sigDocId
+
+    member __.TryGetSignatureDocId(filePath: string) =
+        match signatureDocIds.TryGetValue(filePath) with
+        | true, docId ->Some docId
+        | _ -> None
 
     member this.AddSingleFileProject(projectId, timeStampAndOptions) =
         singleFileProjectTable.TryAdd(projectId, timeStampAndOptions) |> ignore
