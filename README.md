@@ -94,6 +94,17 @@ If using Android, or iOS, and would like to contribute, please see the instructi
 
 Although the primary focus of this repo is F# for Windows and the Visual Studio F# tools, contributions here flow directly to the F# Open Edition repo.  More details can be found [here](https://github.com/Microsoft/visualfsharp/wiki/Code-Flow-to-Open-Edition).
 
+###Using F# on a buildserver or computer without VS 2017 or without the optional F# tools
+
+If you wish to use the latest F# compiler on a computer without Visual Studio 2017 installed, you can add the nuget package ``FSharp.Compiler.Tools`` to your projects. This will replace the in-box compiler with the version contained in the package.
+The actual package is built in https://github.com/fsharp/fsharp.
+
+Note that while this will remove the dependency on VS 2017, you will still need to have MSBuild and the required targets files installed, which come with any older version of VS (e.g. 2013 or 2015).
+####... With an older version of VS
+Just install the nuget package, it will then use MSBuild and the targets files from the older version. If you get an error, see below.
+####... With VS (any version) installed, but without the optional F# tools installed
+The currently distributed F# templates depend on machine-wide installed .targets files. You can manually modify your project to instead use the .targets file from the nuget package. This will allow you to build your project on a computer with VS but without the optional F# tools installed. See https://github.com/fsharp/fsharp/issues/676 for how to modify your project file.
+
 ###Get In Touch
 
 Keep up with the Visual F# Team and the development of the Visual F# Tools by following us [@VisualFSharp](https://twitter.com/VisualFSharp) or subscribing to our [team blog](http://blogs.msdn.com/b/fsharpteam/).
