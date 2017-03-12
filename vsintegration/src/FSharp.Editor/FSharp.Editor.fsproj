@@ -42,6 +42,7 @@
     <Compile Include="Common\AssemblyContentProvider.fs" />
     <Compile Include="Properties\IntelliSensePropertyPage.fs" />
     <Compile Include="Common\SignatureGenerator.fs" />
+    <Compile Include="Common\OpenDeclarationsGetter.fs" />
     <Compile Include="Classification\ClassificationDefinitions.fs" />
     <Compile Include="Classification\ColorizationService.fs" />
     <Compile Include="Formatting\BraceMatchingService.fs" />
