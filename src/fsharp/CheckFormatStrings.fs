@@ -277,8 +277,6 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) (source: string option) f
                   parseLoop ((posi, NewInferenceType ()) :: acc) (i+1, relLine, relCol+1)
 
               | 'A' ->
-                  checkNoPrecision ch 
-                  checkNoZeroFlag ch 
                   match info.numPrefixIfPos with
                   | None     // %A has BindingFlags=Public, %+A has BindingFlags=Public | NonPublic
                   | Some '+' ->
