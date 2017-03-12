@@ -664,7 +664,7 @@ let convFieldSpec cenv emEnv fspec =
 //----------------------------------------------------------------------------
 
 let queryableTypeGetMethodBySearch cenv emEnv parentT (mref:ILMethodRef) =
-    assert(not (typeIsNotQueryable(parentT)));
+    assert(not (typeIsNotQueryable(parentT)))
     let cconv = (if mref.CallingConv.IsStatic then BindingFlags.Static else BindingFlags.Instance)
     let methInfos = parentT.GetMethods(cconv ||| BindingFlags.Public ||| BindingFlags.NonPublic) |> Array.toList
       (* First, filter on name, if unique, then binding "done" *)
@@ -677,6 +677,9 @@ let queryableTypeGetMethodBySearch cenv emEnv parentT (mref:ILMethodRef) =
       (* Second, type match. Note type erased (non-generic) F# code would not type match but they have unique names *)
 
         let satisfiesParameter a (p: Type) =
+          match a with
+          | None -> true
+          | Some a ->
           if 
             // obvious case
             p.IsAssignableFrom a 
@@ -705,13 +708,13 @@ let queryableTypeGetMethodBySearch cenv emEnv parentT (mref:ILMethodRef) =
             if argTypes.Length <> methodParameters.Length then false (* method argument length mismatch *) else
 
             let haveArgTs = methodParameters |> Array.map (fun param -> param.ParameterType)
-            let mrefParameterTypes = argTypes |> Array.map (fun t -> (convTypeRefAux cenv t.TypeRef))
+            let mrefParameterTypes = argTypes |> Array.map (fun t -> if t.IsNominal then Some (convTypeRefAux cenv t.TypeRef) else None)
 
             // we should reject methods which don't satisfy parameter types by also checking
             // type parameters which can be contravariant for delegates for example
             // see https://github.com/Microsoft/visualfsharp/issues/2411
             // without this check, subsequent call to convTypes would fail because it
-            // construct generic type without checking constraints
+            // constructs generic type without checking constraints
             if not (satisfiesAllParameters mrefParameterTypes haveArgTs) then false else
             
             let argTs,resT = 
