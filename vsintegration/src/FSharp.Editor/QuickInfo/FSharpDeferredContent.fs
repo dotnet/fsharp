@@ -25,8 +25,10 @@ type internal FSharpDeferredContent(content: NavigableRoslynText seq, typemap: C
             let run =
                 match rangeOpt with
                 | Some(range) when canGoto range ->
-                    let h = Documents.Hyperlink(Documents.Run(text), ToolTip = ToolTip(Content = range.FileName))
-                    h.Click.Add (fun _ -> goTo range |> Async.StartImmediate)
+                    let h = Documents.Hyperlink(Documents.Run(text), ToolTip = range.FileName)
+                    h.Click.Add <| fun _ ->
+                        Forms.SendKeys.Send("{ESC}") //TODO: Dismiss QuickInfo properly, maybe using IQuickInfoSession.Dismiss()
+                        goTo range |> Async.StartImmediate
                     h :> Documents.Inline
                 | _ -> 
                     Documents.Run(text) :> Documents.Inline
