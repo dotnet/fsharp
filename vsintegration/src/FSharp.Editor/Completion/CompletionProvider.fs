@@ -21,6 +21,7 @@ open Microsoft.VisualStudio.Shell.Interop
 
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open System.Globalization
 
 type internal FSharpCompletionProvider
     (
@@ -78,6 +79,73 @@ type internal FSharpCompletionProvider
 
             ) 
             |> fun (_, _, acc) -> acc
+
+    static let isLetterChar (cat: UnicodeCategory) =
+        // letter-character:
+        //   A Unicode character of classes Lu, Ll, Lt, Lm, Lo, or Nl 
+        //   A Unicode-escape-sequence representing a character of classes Lu, Ll, Lt, Lm, Lo, or Nl
+
+        match cat with
+        | UnicodeCategory.UppercaseLetter
+        | UnicodeCategory.LowercaseLetter
+        | UnicodeCategory.TitlecaseLetter
+        | UnicodeCategory.ModifierLetter
+        | UnicodeCategory.OtherLetter
+        | UnicodeCategory.LetterNumber -> true
+        | _ -> false
+
+    /// Defines a set of helper methods to classify Unicode characters.
+    static let isIdentifierStartCharacter(ch: char) =
+        // identifier-start-character:
+        //   letter-character
+        //   _ (the underscore character U+005F)
+
+        if ch < 'a' then // '\u0061'
+            if ch < 'A' then // '\u0041'
+                false
+            else ch <= 'Z'   // '\u005A'
+                || ch = '_' // '\u005F'
+
+        elif ch <= 'z' then // '\u007A'
+            true
+        elif ch <= '\u007F' then // max ASCII
+            false
+        
+        else isLetterChar(CharUnicodeInfo.GetUnicodeCategory(ch))
+ 
+        /// Returns true if the Unicode character can be a part of an identifier.
+    static let isIdentifierPartCharacter(ch: char) =
+        // identifier-part-character:
+        //   letter-character
+        //   decimal-digit-character
+        //   connecting-character
+        //   combining-character
+        //   formatting-character
+
+        if ch < 'a' then // '\u0061'
+            if ch < 'A' then // '\u0041'
+                ch >= '0'  // '\u0030'
+                && ch <= '9' // '\u0039'
+            else
+                ch <= 'Z'  // '\u005A'
+                || ch = '_' // '\u005F'
+        elif ch <= 'z' then // '\u007A'
+            true
+        elif ch <= '\u007F' then // max ASCII
+            false
+
+        else
+            let cat = CharUnicodeInfo.GetUnicodeCategory(ch)
+            isLetterChar(cat)
+            ||
+            match cat with
+            | UnicodeCategory.DecimalDigitNumber
+            | UnicodeCategory.ConnectorPunctuation
+            | UnicodeCategory.NonSpacingMark
+            | UnicodeCategory.SpacingCombiningMark -> true
+            | _ when int ch > 127 ->
+                CharUnicodeInfo.GetUnicodeCategory(ch) = UnicodeCategory.Format
+            | _ -> false
     
     static member ShouldTriggerCompletionAux(sourceText: SourceText, caretPosition: int, trigger: CompletionTriggerKind, getInfo: (unit -> DocumentId * string * string list)) =
         // Skip if we are at the start of a document
@@ -99,7 +167,8 @@ type internal FSharpCompletionProvider
             // Trigger completion if we are on a valid classification type
             else
                 let documentId, filePath, defines = getInfo()
-                shouldProvideCompletion(documentId, filePath, defines, sourceText, triggerPosition)
+                shouldProvideCompletion(documentId, filePath, defines, sourceText, triggerPosition) &&
+                CommonCompletionUtilities.IsStartingNewWord(sourceText, caretPosition, (fun ch -> isIdentifierStartCharacter ch), (fun ch -> isIdentifierPartCharacter ch))
 
     static member ProvideCompletionsAsyncAux(checker: FSharpChecker, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, textVersionHash: int) = 
         asyncMaybe {
