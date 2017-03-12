@@ -151,7 +151,7 @@ type internal FSharpCompletionProvider
         // Skip if we are at the start of a document
         if caretPosition = 0 then false
         // Skip if it was triggered by an operation other than insertion
-        elif not (trigger = CompletionTriggerKind.Insertion) then  false
+        elif not (trigger = CompletionTriggerKind.Insertion) then false
         // Skip if we are not on a completion trigger
         else
             let triggerPosition = caretPosition - 1
@@ -168,7 +168,7 @@ type internal FSharpCompletionProvider
             else
                 let documentId, filePath, defines = getInfo()
                 shouldProvideCompletion(documentId, filePath, defines, sourceText, triggerPosition) &&
-                CommonCompletionUtilities.IsStartingNewWord(sourceText, caretPosition, (fun ch -> isIdentifierStartCharacter ch), (fun ch -> isIdentifierPartCharacter ch))
+                CommonCompletionUtilities.IsStartingNewWord(sourceText, triggerPosition, (fun ch -> isIdentifierStartCharacter ch), (fun ch -> isIdentifierPartCharacter ch))
 
     static member ProvideCompletionsAsyncAux(checker: FSharpChecker, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, textVersionHash: int) = 
         asyncMaybe {
