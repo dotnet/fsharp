@@ -112,6 +112,7 @@ type TestConfig =
       FSCBinPath : string
       FSCOREDLLPATH : string
       FSI : string
+      FSI_FOR_SCRIPTS : string
       fsi_flags : string
       ILDASM : string
       SN : string
@@ -177,13 +178,15 @@ let config configurationName envVars =
     let ILDASM = requireFile (CORSDK ++ "ildasm.exe")
     let SN = requireFile (CORSDK ++ "sn.exe") 
     let PEVERIFY = requireFile (CORSDK ++ "peverify.exe")
-    let FSI = requireFile (SCRIPT_ROOT ++ ".." ++ ".." ++ (System.Environment.GetEnvironmentVariable("_fsiexe").Trim([| '\"' |])))
+    let FSI_FOR_SCRIPTS = requireFile (SCRIPT_ROOT ++ ".." ++ ".." ++ (System.Environment.GetEnvironmentVariable("_fsiexe").Trim([| '\"' |])))
     let dotNetExe = SCRIPT_ROOT ++ ".." ++ ".." ++ "Tools" ++ "dotnetcli" ++ "dotnet.exe"
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+    let FSI = requireFile (FSCBinPath ++ "fsi.exe")
     let FSC = requireFile (FSCBinPath ++ "fsc.exe")
     let FSCOREDLLPATH = requireFile (FSCBinPath ++ "FSharp.Core.dll") 
 #else
+    let FSI = SCRIPT_ROOT ++ ".." ++ ".." ++ "tests" ++ "testbin" ++ configurationName ++ "coreclr" ++ "FSC" ++ "fsi.exe"
     let FSC = SCRIPT_ROOT ++ ".." ++ ".." ++ "tests" ++ "testbin" ++ configurationName ++ "coreclr" ++ "FSC" ++ "fsc.exe"
     let FSCOREDLLPATH = "" 
 #endif
@@ -208,6 +211,7 @@ let config configurationName envVars =
       BUILD_CONFIG = configurationName
       FSC = FSC
       FSI = FSI
+      FSI_FOR_SCRIPTS = FSI_FOR_SCRIPTS
       csc_flags = csc_flags
       fsc_flags = fsc_flags 
       fsi_flags = fsi_flags 
@@ -438,6 +442,7 @@ let peverify cfg = Commands.peverify (exec cfg) cfg.PEVERIFY "/nologo"
 let sn cfg outfile arg = execAppendOutIgnoreExitCode cfg cfg.Directory outfile cfg.SN arg
 let peverifyWithArgs cfg args = Commands.peverify (exec cfg) cfg.PEVERIFY args
 let fsi cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI)
+let fsi_script cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI_FOR_SCRIPTS)
 let fsiExpectFail cfg = Printf.ksprintf (Commands.fsi (execExpectFail cfg) cfg.FSI)
 let fsiAppendIgnoreExitCode cfg stdoutPath stderrPath = Printf.ksprintf (Commands.fsi (execAppendIgnoreExitCode cfg stdoutPath stderrPath) cfg.FSI)
 let fileguard cfg = (Commands.getfullpath cfg.Directory) >> (fun x -> new FileGuard(x))
