@@ -2,6 +2,7 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
+open System.IO
 open System.Composition
 open System.Collections.Generic
 open System.Collections.Immutable
@@ -19,6 +20,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open Microsoft.VisualStudio.FSharp.Editor.Logging
 
 
 [<NoComparison; NoEquality>]
@@ -95,12 +97,22 @@ type internal FSharpGoToDefinitionService
                     results.Add(FSharpNavigableItem(refDocument, refTextSpan))
                 return results.AsEnumerable()
             | FoundExternal (sourceDocument,ast,symbol) ->
-                let! sigDocId,range = metadataService.TryFindMetadataRange(sourceDocument,ast,symbol)
-                let sigDocument = document.Project.Solution.GetDocument(sigDocId)
-                let! sigSourceText = sigDocument.GetTextAsync(cancellationToken)
+                let! signatureText, sigPath,range = metadataService.TryFindMetadataRange(sourceDocument,ast,symbol)
+                let workspace = document.Project.Solution.Workspace
+                let sigSourceText = SourceText.From(signatureText,System.Text.Encoding.UTF8)
+                let sigDocument = 
+                    document.Project.AddDocument
+                        (   Path.GetFileNameWithoutExtension sigPath
+                        ,   signatureText
+                        ,   folders=[Path.GetDirectoryName sigPath]
+                        ,   filePath=sigPath 
+                        )
+                projectInfoManager.RegisterSignature sigPath sigDocument.Id
+                let applyResult = workspace.TryApplyChanges (sigDocument.Project.Solution)
+                debug "Applied changes to workspace - %b" applyResult
                 let sigTextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(sigSourceText, range)
-                results.Add(FSharpNavigableItem(sigDocument, sigTextSpan))
-                return results.AsEnumerable()
+                results.Add (FSharpNavigableItem (sigDocument, sigTextSpan))
+                return results.AsEnumerable ()
          }
          |> Async.map (Option.defaultValue Seq.empty)
          |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
