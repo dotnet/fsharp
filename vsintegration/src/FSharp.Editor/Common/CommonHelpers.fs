@@ -3,6 +3,7 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
+open System.IO
 open System.Collections.Generic
 open System.Threading
 open System.Threading.Tasks
@@ -16,6 +17,7 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open Microsoft.VisualStudio.FSharp.Editor
 
 type internal ISetThemeColors = abstract member SetColors: unit -> unit
 
@@ -401,104 +403,9 @@ type internal SymbolDeclarationLocation =
     | CurrentDocument
     | Projects of Project list * isLocalForProject: bool
 
+
 [<AutoOpen>]
-module internal Extensions =
-    open System
-    open System.IO
-    open Microsoft.FSharp.Compiler.Ast
-    open Microsoft.FSharp.Compiler.Lib
-    open Microsoft.VisualStudio.FSharp.Editor.Logging
-
-    type System.IServiceProvider with
-        member x.GetService<'T>() = x.GetService(typeof<'T>) :?> 'T
-        member x.GetService<'T, 'S>() = x.GetService(typeof<'S>) :?> 'T
-
-    type Path with
-        static member GetFullPathSafe path =
-            try Path.GetFullPath path
-            with _ -> path
-
-    type CheckResults =
-        | Ready of (FSharpParseFileResults * FSharpCheckFileResults) option
-        | StillRunning of Async<(FSharpParseFileResults * FSharpCheckFileResults) option>
-
-    let getFreshFileCheckResultsTimeoutMillis = GetEnvInteger "VFT_GetFreshFileCheckResultsTimeoutMillis" 1000
-    
-    type FSharpChecker with
-        member this.ParseDocument(document: Document, options: FSharpProjectOptions, sourceText: string) =
-            asyncMaybe {
-                let! fileParseResults = this.ParseFileInProject(document.FilePath, sourceText, options) |> liftAsync
-                return! fileParseResults.ParseTree
-            }
-
-        member this.ParseDocument(document: Document, options: FSharpProjectOptions, ?sourceText: SourceText) =
-            asyncMaybe {
-                let! sourceText =
-                    match sourceText with
-                    | Some x -> Task.FromResult x
-                    | None -> document.GetTextAsync()
-                return! this.ParseDocument(document, options, sourceText.ToString())
-            }
-
-        member this.ParseAndCheckDocument(filePath: string, textVersionHash: int, sourceText: string, options: FSharpProjectOptions, allowStaleResults: bool) : Async<(FSharpParseFileResults * Ast.ParsedInput * FSharpCheckFileResults) option> =
-            let parseAndCheckFile =
-                async {
-                    let! parseResults, checkFileAnswer = this.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText, options)
-                    return
-                        match checkFileAnswer with
-                        | FSharpCheckFileAnswer.Aborted -> 
-                            None
-                        | FSharpCheckFileAnswer.Succeeded(checkFileResults) ->
-                            Some (parseResults, checkFileResults)
-                }
-
-            let tryGetFreshResultsWithTimeout() : Async<CheckResults> =
-                async {
-                    try
-                        let! worker = Async.StartChild(parseAndCheckFile, getFreshFileCheckResultsTimeoutMillis)
-                        let! result = worker 
-                        return Ready result
-                    with :? TimeoutException ->
-                        return StillRunning parseAndCheckFile
-                }
-
-            let bindParsedInput(results: (FSharpParseFileResults * FSharpCheckFileResults) option) =
-                match results with
-                | Some(parseResults, checkResults) ->
-                    match parseResults.ParseTree with
-                    | Some parsedInput -> Some (parseResults, parsedInput, checkResults)
-                    | None -> None
-                | None -> None
-
-            if allowStaleResults then
-                async {
-                    let! freshResults = tryGetFreshResultsWithTimeout()
-                    
-                    let! results =
-                        match freshResults with
-                        | Ready x -> async.Return x
-                        | StillRunning worker ->
-                            async {
-                                match allowStaleResults, this.TryGetRecentCheckResultsForFile(filePath, options) with
-                                | true, Some (parseResults, checkFileResults, _) ->
-                                    return Some (parseResults, checkFileResults)
-                                | _ ->
-                                    return! worker
-                            }
-                    return bindParsedInput results
-                }
-            else parseAndCheckFile |> Async.map bindParsedInput
-
-        member this.ParseAndCheckDocument(document: Document, options: FSharpProjectOptions, allowStaleResults: bool, ?sourceText: SourceText) : Async<(FSharpParseFileResults * Ast.ParsedInput * FSharpCheckFileResults) option> =
-            async {
-                let! cancellationToken = Async.CancellationToken
-                let! sourceText =
-                    match sourceText with
-                    | Some x -> Task.FromResult x
-                    | None -> document.GetTextAsync()
-                let! textVersion = document.GetTextVersionAsync(cancellationToken)
-                return! this.ParseAndCheckDocument(document.FilePath, textVersion.GetHashCode(), sourceText.ToString(), options, allowStaleResults)
-            }
+module internal SymbolExtensions =
 
     type FSharpSymbol with
         member this.IsInternalToProject =
@@ -602,78 +509,6 @@ module internal Extensions =
                 ]
             allBaseTypes x
 
-    type FSharpNavigationDeclarationItem with
-        member x.RoslynGlyph : Glyph =
-            match x.Glyph with
-            | FSharpGlyph.Class
-            | FSharpGlyph.Typedef
-            | FSharpGlyph.Type
-            | FSharpGlyph.Exception ->
-                match x.Access with
-                | Some SynAccess.Private -> Glyph.ClassPrivate
-                | Some SynAccess.Internal -> Glyph.ClassInternal
-                | _ -> Glyph.ClassPublic
-            | FSharpGlyph.Constant -> 
-                match x.Access with
-                | Some SynAccess.Private -> Glyph.ConstantPrivate
-                | Some SynAccess.Internal -> Glyph.ConstantInternal
-                | _ -> Glyph.ConstantPublic
-            | FSharpGlyph.Delegate -> 
-                match x.Access with
-                | Some SynAccess.Private -> Glyph.DelegatePrivate
-                | Some SynAccess.Internal -> Glyph.DelegateInternal
-                | _ -> Glyph.DelegatePublic
-            | FSharpGlyph.Union
-            | FSharpGlyph.Enum -> 
-                match x.Access with
-                | Some SynAccess.Private -> Glyph.EnumPrivate
-                | Some SynAccess.Internal -> Glyph.EnumInternal
-                | _ -> Glyph.EnumPublic
-            | FSharpGlyph.EnumMember
-            | FSharpGlyph.Variable
-            | FSharpGlyph.Field -> 
-                match x.Access with
-                | Some SynAccess.Private -> Glyph.FieldPrivate
-                | Some SynAccess.Internal -> Glyph.FieldInternal
-                | _ -> Glyph.FieldPublic
-            | FSharpGlyph.Event -> 
-                match x.Access with
-                | Some SynAccess.Private -> Glyph.EventPrivate
-                | Some SynAccess.Internal -> Glyph.EventInternal
-                | _ -> Glyph.EventPublic
-            | FSharpGlyph.Interface -> 
-                match x.Access with
-                | Some SynAccess.Private -> Glyph.InterfacePrivate
-                | Some SynAccess.Internal -> Glyph.InterfaceInternal
-                | _ -> Glyph.InterfacePublic
-            | FSharpGlyph.Method
-            | FSharpGlyph.OverridenMethod -> 
-                match x.Access with
-                | Some SynAccess.Private -> Glyph.MethodPrivate
-                | Some SynAccess.Internal -> Glyph.MethodInternal
-                | _ -> Glyph.MethodPublic
-            | FSharpGlyph.Module -> 
-                match x.Access with
-                | Some SynAccess.Private -> Glyph.ModulePrivate
-                | Some SynAccess.Internal -> Glyph.ModuleInternal
-                | _ -> Glyph.ModulePublic
-            | FSharpGlyph.NameSpace -> Glyph.Namespace
-            | FSharpGlyph.Property -> 
-                match x.Access with
-                | Some SynAccess.Private -> Glyph.PropertyPrivate
-                | Some SynAccess.Internal -> Glyph.PropertyInternal
-                | _ -> Glyph.PropertyPublic
-            | FSharpGlyph.Struct -> 
-                match x.Access with
-                | Some SynAccess.Private -> Glyph.StructurePrivate
-                | Some SynAccess.Internal -> Glyph.StructureInternal
-                | _ -> Glyph.StructurePublic
-            | FSharpGlyph.ExtensionMethod ->
-                match x.Access with
-                | Some SynAccess.Private -> Glyph.ExtensionMethodPrivate
-                | Some SynAccess.Internal -> Glyph.ExtensionMethodInternal
-                | _ -> Glyph.ExtensionMethodPublic
-            | FSharpGlyph.Error -> Glyph.Error
 
 /// Active patterns over `FSharpSymbolUse`.
 module internal SymbolUse =
@@ -1563,3 +1398,277 @@ module internal IdentifierUtils =
     let isUnionCaseIdent (s: string) =
         isTypeNameIdent s &&    
         Char.IsUpper(s.Replace(DoubleBackTickDelimiter,"").[0])
+
+
+[<AutoOpen>]
+module internal Extensions =
+    open System
+    open System.IO
+    open Microsoft.FSharp.Compiler.Ast
+    open Microsoft.FSharp.Compiler.Lib
+    open Microsoft.VisualStudio.FSharp.Editor.Logging
+    open Microsoft.VisualStudio.FSharp.Editor
+
+    type System.IServiceProvider with
+        member x.GetService<'T>() = x.GetService(typeof<'T>) :?> 'T
+        member x.GetService<'T, 'S>() = x.GetService(typeof<'S>) :?> 'T
+
+
+
+    type CheckResults =
+        | Ready of (FSharpParseFileResults * FSharpCheckFileResults) option
+        | StillRunning of Async<(FSharpParseFileResults * FSharpCheckFileResults) option>
+
+    let getFreshFileCheckResultsTimeoutMillis = GetEnvInteger "VFT_GetFreshFileCheckResultsTimeoutMillis" 1000
+    
+    type FSharpChecker with
+        member this.ParseDocument(document: Document, options: FSharpProjectOptions, sourceText: string) =
+            asyncMaybe {
+                let! fileParseResults = this.ParseFileInProject(document.FilePath, sourceText, options) |> liftAsync
+                return! fileParseResults.ParseTree
+            }
+
+        member this.ParseDocument(document: Document, options: FSharpProjectOptions, ?sourceText: SourceText) =
+            asyncMaybe {
+                let! sourceText =
+                    match sourceText with
+                    | Some x -> Task.FromResult x
+                    | None -> document.GetTextAsync()
+                return! this.ParseDocument(document, options, sourceText.ToString())
+            }
+
+        member this.ParseAndCheckDocument(filePath: string, textVersionHash: int, sourceText: string, options: FSharpProjectOptions, allowStaleResults: bool) : Async<(FSharpParseFileResults * Ast.ParsedInput * FSharpCheckFileResults) option> =
+            let parseAndCheckFile =
+                async {
+                    let! parseResults, checkFileAnswer = this.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText, options)
+                    return
+                        match checkFileAnswer with
+                        | FSharpCheckFileAnswer.Aborted -> 
+                            None
+                        | FSharpCheckFileAnswer.Succeeded(checkFileResults) ->
+                            Some (parseResults, checkFileResults)
+                }
+
+            let tryGetFreshResultsWithTimeout() : Async<CheckResults> =
+                async {
+                    try
+                        let! worker = Async.StartChild(parseAndCheckFile, getFreshFileCheckResultsTimeoutMillis)
+                        let! result = worker 
+                        return Ready result
+                    with :? TimeoutException ->
+                        return StillRunning parseAndCheckFile
+                }
+
+            let bindParsedInput(results: (FSharpParseFileResults * FSharpCheckFileResults) option) =
+                match results with
+                | Some(parseResults, checkResults) ->
+                    match parseResults.ParseTree with
+                    | Some parsedInput -> Some (parseResults, parsedInput, checkResults)
+                    | None -> None
+                | None -> None
+
+            if allowStaleResults then
+                async {
+                    let! freshResults = tryGetFreshResultsWithTimeout()
+                    
+                    let! results =
+                        match freshResults with
+                        | Ready x -> async.Return x
+                        | StillRunning worker ->
+                            async {
+                                match allowStaleResults, this.TryGetRecentCheckResultsForFile(filePath, options) with
+                                | true, Some (parseResults, checkFileResults, _) ->
+                                    return Some (parseResults, checkFileResults)
+                                | _ ->
+                                    return! worker
+                            }
+                    return bindParsedInput results
+                }
+            else parseAndCheckFile |> Async.map bindParsedInput
+
+        member this.ParseAndCheckDocument(document: Document, options: FSharpProjectOptions, allowStaleResults: bool, ?sourceText: SourceText) : Async<(FSharpParseFileResults * Ast.ParsedInput * FSharpCheckFileResults) option> =
+            async {
+                let! cancellationToken = Async.CancellationToken
+                let! sourceText =
+                    match sourceText with
+                    | Some x -> Task.FromResult x
+                    | None -> document.GetTextAsync()
+                let! textVersion = document.GetTextVersionAsync(cancellationToken)
+                return! this.ParseAndCheckDocument(document.FilePath, textVersion.GetHashCode(), sourceText.ToString(), options, allowStaleResults)
+            }
+
+
+
+        member self.TryParseAndCheckFileInProject (projectOptions, fileName, source) = async {
+            let! (parseResults, checkAnswer) = self.ParseAndCheckFileInProject (fileName,0, source,projectOptions)
+            match checkAnswer with
+            | FSharpCheckFileAnswer.Aborted ->  return  None
+            | FSharpCheckFileAnswer.Succeeded checkResults -> return Some (parseResults,checkResults)
+        }
+
+        member self.GetAllUsesOfAllSymbolsInSourceString (projectOptions, fileName, source: string, checkForUnusedOpens)  (*FSharpSymbolUse[] Async*) = async {
+                  
+            let! parseAndCheckResults = self.TryParseAndCheckFileInProject (projectOptions, fileName, source)
+            match parseAndCheckResults with
+            | None -> return [||]
+            | Some(_parseResults,checkResults) ->
+                let! fsharpSymbolsUses = checkResults.GetAllUsesOfAllSymbolsInFile()
+                let allSymbolsUses =
+                    fsharpSymbolsUses
+                    |> Array.map (fun symbolUse -> 
+                        let fullNames = 
+                            match symbolUse.Symbol with
+                            // Make sure that unsafe manipulation isn't executed if unused opens are disabled
+                            | _ when not checkForUnusedOpens -> None
+                            | TypedAstPatterns.MemberFunctionOrValue func when func.IsExtensionMember ->
+                                if func.IsProperty then
+                                    let fullNames =
+                                        [|  if func.HasGetterMethod then
+                                                yield func.GetterMethod.EnclosingEntity.TryGetFullName()
+                                            if func.HasSetterMethod then
+                                                yield func.SetterMethod.EnclosingEntity.TryGetFullName()
+                                        |]
+                                        |> Array.choose id
+                                    match fullNames with
+                                    | [||]  -> None 
+                                    | _     -> Some fullNames
+                                else 
+                                    match func.EnclosingEntity with
+                                    // C# extension method
+                                    | TypedAstPatterns.FSharpEntity TypedAstPatterns.Class ->
+                                        let fullName = symbolUse.Symbol.FullName.Split '.'
+                                        if fullName.Length > 2 then
+                                            (* For C# extension methods FCS returns full name including the class name, like:
+                                                Namespace.StaticClass.ExtensionMethod
+                                                So, in order to properly detect that "open Namespace" actually opens ExtensionMethod,
+                                                we remove "StaticClass" part. This makes C# extension methods looks identically 
+                                                with F# extension members.
+                                            *)
+                                            let fullNameWithoutClassName =
+                                                Array.append fullName.[0..fullName.Length - 3] fullName.[fullName.Length - 1..]
+                                            Some [|String.Join (".", fullNameWithoutClassName)|]
+                                        else None
+                                    | _ -> None
+                            // Operators
+                            | TypedAstPatterns.MemberFunctionOrValue func ->
+                                match func with
+                                | TypedAstPatterns.Constructor _ ->
+                                    // full name of a constructor looks like "UnusedSymbolClassifierTests.PrivateClass.( .ctor )"
+                                    // to make well formed full name parts we cut "( .ctor )" from the tail.
+                                    let fullName = func.FullName
+                                    let ctorSuffix = ".( .ctor )"
+                                    let fullName =
+                                        if fullName.EndsWith ctorSuffix then 
+                                            fullName.[0..fullName.Length - ctorSuffix.Length - 1]
+                                        else fullName
+                                    Some [| fullName |]
+                                | _ -> 
+                                    Some [| yield func.FullName 
+                                            match func.TryGetFullCompiledOperatorNameIdents() with
+                                            | Some idents -> yield String.concat "." idents
+                                            | None -> ()
+                                        |]
+                            | TypedAstPatterns.FSharpEntity e ->
+                                match e with
+                                | e, TypedAstPatterns.Attribute, _ ->
+                                    e.TryGetFullName ()
+                                    |> Option.map (fun fullName ->
+                                        [| fullName; fullName.Substring(0, fullName.Length - "Attribute".Length) |])
+                                | e, _, _ -> 
+                                    e.TryGetFullName () |> Option.map (fun fullName -> [| fullName |])
+                            | TypedAstPatterns.RecordField _
+                            | TypedAstPatterns.UnionCase _ as symbol ->
+                                Some [| let fullName = symbol.FullName
+                                        yield fullName
+                                        let idents = fullName.Split '.'
+                                        // Union cases/Record fields can be accessible without mentioning the enclosing type. 
+                                        // So we add a FullName without having the type part.
+                                        if idents.Length > 1 then
+                                            yield String.Join (".", Array.append idents.[0..idents.Length - 3] idents.[idents.Length - 1..])
+                                    |]
+                            |  _ -> None
+                            |> Option.defaultValue [|symbolUse.Symbol.FullName|]
+                            |> Array.map (fun fullName -> fullName.Split '.')
+                  
+                        {   SymbolUse = symbolUse
+                            IsUsed = true
+                            FullNames = fullNames 
+                        })
+                return allSymbolsUses 
+            }
+
+
+   
+
+    type FSharpNavigationDeclarationItem with
+        member x.RoslynGlyph : Glyph =
+            match x.Glyph with
+            | FSharpGlyph.Class
+            | FSharpGlyph.Typedef
+            | FSharpGlyph.Type
+            | FSharpGlyph.Exception ->
+                match x.Access with
+                | Some SynAccess.Private -> Glyph.ClassPrivate
+                | Some SynAccess.Internal -> Glyph.ClassInternal
+                | _ -> Glyph.ClassPublic
+            | FSharpGlyph.Constant -> 
+                match x.Access with
+                | Some SynAccess.Private -> Glyph.ConstantPrivate
+                | Some SynAccess.Internal -> Glyph.ConstantInternal
+                | _ -> Glyph.ConstantPublic
+            | FSharpGlyph.Delegate -> 
+                match x.Access with
+                | Some SynAccess.Private -> Glyph.DelegatePrivate
+                | Some SynAccess.Internal -> Glyph.DelegateInternal
+                | _ -> Glyph.DelegatePublic
+            | FSharpGlyph.Union
+            | FSharpGlyph.Enum -> 
+                match x.Access with
+                | Some SynAccess.Private -> Glyph.EnumPrivate
+                | Some SynAccess.Internal -> Glyph.EnumInternal
+                | _ -> Glyph.EnumPublic
+            | FSharpGlyph.EnumMember
+            | FSharpGlyph.Variable
+            | FSharpGlyph.Field -> 
+                match x.Access with
+                | Some SynAccess.Private -> Glyph.FieldPrivate
+                | Some SynAccess.Internal -> Glyph.FieldInternal
+                | _ -> Glyph.FieldPublic
+            | FSharpGlyph.Event -> 
+                match x.Access with
+                | Some SynAccess.Private -> Glyph.EventPrivate
+                | Some SynAccess.Internal -> Glyph.EventInternal
+                | _ -> Glyph.EventPublic
+            | FSharpGlyph.Interface -> 
+                match x.Access with
+                | Some SynAccess.Private -> Glyph.InterfacePrivate
+                | Some SynAccess.Internal -> Glyph.InterfaceInternal
+                | _ -> Glyph.InterfacePublic
+            | FSharpGlyph.Method
+            | FSharpGlyph.OverridenMethod -> 
+                match x.Access with
+                | Some SynAccess.Private -> Glyph.MethodPrivate
+                | Some SynAccess.Internal -> Glyph.MethodInternal
+                | _ -> Glyph.MethodPublic
+            | FSharpGlyph.Module -> 
+                match x.Access with
+                | Some SynAccess.Private -> Glyph.ModulePrivate
+                | Some SynAccess.Internal -> Glyph.ModuleInternal
+                | _ -> Glyph.ModulePublic
+            | FSharpGlyph.NameSpace -> Glyph.Namespace
+            | FSharpGlyph.Property -> 
+                match x.Access with
+                | Some SynAccess.Private -> Glyph.PropertyPrivate
+                | Some SynAccess.Internal -> Glyph.PropertyInternal
+                | _ -> Glyph.PropertyPublic
+            | FSharpGlyph.Struct -> 
+                match x.Access with
+                | Some SynAccess.Private -> Glyph.StructurePrivate
+                | Some SynAccess.Internal -> Glyph.StructureInternal
+                | _ -> Glyph.StructurePublic
+            | FSharpGlyph.ExtensionMethod ->
+                match x.Access with
+                | Some SynAccess.Private -> Glyph.ExtensionMethodPrivate
+                | Some SynAccess.Internal -> Glyph.ExtensionMethodInternal
+                | _ -> Glyph.ExtensionMethodPublic
+            | FSharpGlyph.Error -> Glyph.Error
