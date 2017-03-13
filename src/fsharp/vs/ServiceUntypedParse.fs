@@ -1227,7 +1227,14 @@ module UntypedParseImpl =
                         match bindings with
                         | [] when range.StartLine = pos.Line -> Some CompletionContext.Invalid
                         | _ -> None
-                        
+
+                    member this.VisitSimplePats(pats) =
+                        pats |> List.tryPick (fun pat ->
+                            match pat with
+                            | SynSimplePat.Id(range = range)
+                            | SynSimplePat.Typed(SynSimplePat.Id(range = range),_,_) when rangeContainsPos range pos -> 
+                                Some CompletionContext.Invalid
+                            | _ -> None)
             }
 
         AstTraversal.Traverse(pos, pt, walker)

@@ -154,6 +154,8 @@ type internal FSharpCompletionProvider
         asyncMaybe {
             let! parseResults, parsedInput, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true)
 
+            //Logging.Logging.logInfof "AST:\n%+A" parsedInput
+
             let textLines = sourceText.Lines
             let caretLinePos = textLines.GetLinePosition(caretPosition)
             let entityKind = UntypedParseImpl.GetEntityKind(Pos.fromZ caretLinePos.Line caretLinePos.Character, parsedInput)
