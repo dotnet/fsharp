@@ -1409,12 +1409,6 @@ module internal Extensions =
     open Microsoft.VisualStudio.FSharp.Editor.Logging
     open Microsoft.VisualStudio.FSharp.Editor
 
-    type System.IServiceProvider with
-        member x.GetService<'T>() = x.GetService(typeof<'T>) :?> 'T
-        member x.GetService<'T, 'S>() = x.GetService(typeof<'S>) :?> 'T
-
-
-
     type CheckResults =
         | Ready of (FSharpParseFileResults * FSharpCheckFileResults) option
         | StillRunning of Async<(FSharpParseFileResults * FSharpCheckFileResults) option>

@@ -27,7 +27,7 @@ type internal NavigateToMetadataService [<ImportingConstructor>]
     
     // Use a single cache across text views
     static let xmlDocCache = Dictionary<string, IVsXMLMemberIndex>()
-    let xmlIndexService = serviceProvider.GetService<IVsXMLMemberIndexService, SVsXMLMemberIndexService>()
+    let xmlIndexService = serviceProvider.GetService<SVsXMLMemberIndexService,IVsXMLMemberIndexService>()
 
     /// If the XML comment starts with '<' not counting whitespace then treat it as a literal XML comment.
     /// Otherwise, escape it and surround it with <summary></summary>
@@ -100,40 +100,45 @@ type internal NavigateToMetadataService [<ImportingConstructor>]
                 }
 
             /// Try to reconstruct fully qualified name for the purpose of matching symbols
-            let rec tryGetFullyQualifiedName (symbol: FSharpSymbol) = 
-                Option.attempt (fun _ -> 
-                    match symbol with
-                    | TypedAstPatterns.FSharpEntity (entity, _, _) ->
-                        Some (sprintf "%s.%s" entity.AccessPath entity.DisplayName)
-                    | TypedAstPatterns.MemberFunctionOrValue mem ->
-                        tryGetFullyQualifiedName mem.EnclosingEntity
-                        |> Option.map (fun parent -> sprintf "%s.%s" parent mem.DisplayName)
-                    | TypedAstPatterns.Field(field, _) ->
-                        tryGetFullyQualifiedName field.DeclaringEntity
-                        |> Option.map (fun parent -> sprintf "%s.%s" parent field.DisplayName)
-                    | TypedAstPatterns.UnionCase uc ->
-                        match uc.ReturnType with
-                        | TypedAstPatterns.TypeWithDefinition entity ->
-                            tryGetFullyQualifiedName entity
-                            |> Option.map (fun parent -> sprintf "%s.%s" parent uc.DisplayName)
-                        | _ -> 
-                            None
-                    | TypedAstPatterns.ActivePatternCase case ->
-                        let group = case.Group
-                        group.EnclosingEntity
-                        |> Option.bind tryGetFullyQualifiedName
-                        |> Option.map (fun parent -> 
-                            let sb = StringBuilder()
-                            sb.Append("|") |> ignore
-                            for name in group.Names do
-                                sb.AppendFormat("{0}|", name) |> ignore
-                            if not group.IsTotal then
-                                sb.Append("_|") |> ignore
-                            sprintf "%s.( %O )" parent sb)
-                    | _ ->
-                        None)
-                |> Option.flatten
-                |> Option.orTry (fun _ -> Option.attempt (fun _ -> symbol.FullName))
+            let tryGetFullyQualifiedName (fsSymbol:FSharpSymbol) =
+                let rec tryGetFullyQualifiedName (symbol: FSharpSymbol) = 
+                    Option.attempt (fun _ -> 
+                        match symbol with
+                        | TypedAstPatterns.FSharpEntity (entity, _, _) ->
+                            Some (sprintf "%s.%s" entity.AccessPath entity.DisplayName)
+
+                        | TypedAstPatterns.MemberFunctionOrValue mem ->
+                            tryGetFullyQualifiedName mem.EnclosingEntity
+                            |> Option.map (fun parent -> sprintf "%s.%s" parent mem.DisplayName)
+
+                        | TypedAstPatterns.Field (field, _) ->
+                            tryGetFullyQualifiedName field.DeclaringEntity
+                            |> Option.map (fun parent -> sprintf "%s.%s" parent field.DisplayName)
+
+                        | TypedAstPatterns.UnionCase uc ->
+                            match uc.ReturnType with
+                            | TypedAstPatterns.TypeWithDefinition entity ->
+                                tryGetFullyQualifiedName entity
+                                |> Option.map (fun parent -> sprintf "%s.%s" parent uc.DisplayName)
+                            | _ -> None
+
+                        | TypedAstPatterns.ActivePatternCase case ->
+                            let group = case.Group
+                            group.EnclosingEntity
+                            |> Option.bind tryGetFullyQualifiedName
+                            |> Option.map (fun parent -> 
+                                let sb = StringBuilder().Append "|"                                
+                                for name in group.Names do
+                                    sb.AppendFormat("{0}|", name) |> ignore
+                                if not group.IsTotal then
+                                    sb.Append "_|" |> ignore
+                                sprintf "%s.( %O )" parent sb)
+                        | _ ->
+                            None)
+                    |> Option.flatten
+                    |> Option.orTry (fun _ -> Option.attempt (fun _ -> symbol.FullName))
+                try tryGetFullyQualifiedName fsSymbol
+                with _ -> None
 
             let isLocalSymbol filePath (symbol: FSharpSymbol) =
                 symbol.DeclarationLocation 
@@ -170,7 +175,7 @@ type internal NavigateToMetadataService [<ImportingConstructor>]
 
     // Now the input is an entity or a member/value.
     // We always generate the full enclosing entity signature if the symbol is a member/value
-    let tryCreateMetadataContext (sourceDoc:Document) ast (fsSymbolUse: FSharpSymbolUse) : (DocumentId * string * range) option Async = 
+    let tryCreateMetadataContext (sourceDoc:Document) ast (fsSymbolUse: FSharpSymbolUse) : (string * string * range) option Async = 
         asyncMaybe{
             let fsSymbol = fsSymbolUse.Symbol
             let fileName = SignatureGenerator.getFileNameFromSymbol fsSymbol
@@ -185,29 +190,26 @@ type internal NavigateToMetadataService [<ImportingConstructor>]
             let displayContext = fsSymbolUse.DisplayContext
 
             match projectInfoManager.TryGetSignatureDocId filePath with
-            | Some sigDocId ->
+            | Some _sigDocId ->
                 let! sourceText = sourceDoc.GetTextAsync() |> Async.AwaitTask |> liftAsync
-                let! range = tryFindExactLocation filePath (sourceText.ToString()) fsSymbolUse fsProjectOptions false
+                let signatureText = sourceText.ToString()
+                let! range = tryFindExactLocation filePath signatureText fsSymbolUse fsProjectOptions false
                 return! 
-                    Some (sigDocId,filePath,range)
+                    Some (signatureText,filePath,range)
             | None -> 
                 let openDeclarations = 
                     OpenDeclarationGetter.getEffectiveOpenDeclarationsAtLocation  fsSymbolUse.RangeAlternate.Start ast
-                let project = sourceDoc.Project
                 let! options = sourceDoc.GetOptionsAsync() |> Async.AwaitTask  |> liftAsync
                 let indentSize = options.GetOption(FormattingOptions.TabSize, FSharpCommonConstants.FSharpLanguageName)
 
                 match SignatureGenerator.formatSymbol 
-                        (getXmlDocBySignature fsSymbolUse) indentSize displayContext openDeclarations fsSymbolUse 
+                        (getXmlDocBySignature fsSymbolUse) indentSize displayContext openDeclarations fsSymbol 
                             SignatureGenerator.Filterer.NoFilters SignatureGenerator.BlankLines.Default with
                 | Some signatureText ->
                     debug "\nGenerated Signature File:\n%s\b" signatureText
-                    let sigSourceText = SourceText.From(signatureText,Encoding.UTF8)
-                    let sigDocument = project.AddDocument(fileName,sigSourceText,filePath=filePath)
-                    projectInfoManager.RegisterSignature filePath sigDocument.Id                    
                     let! range = tryFindExactLocation filePath signatureText fsSymbolUse fsProjectOptions true
                     return! 
-                        Some (sigDocument.Id,filePath,range)
+                        Some (signatureText,filePath,range)
                 | None -> 
                     debug "couldn't generate signature text for symbol - %A" fsSymbol
                     return! 
