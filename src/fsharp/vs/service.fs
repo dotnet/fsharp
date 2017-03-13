@@ -584,15 +584,17 @@ type TypeCheckInfo
                     | _ -> bestAlmostIncludedSoFar := Some (possm,env,ad))
         
         let resEnv = 
-            match !bestAlmostIncludedSoFar with 
-            | Some (_m,env,ad) -> 
-                env,ad
-            | None -> 
+            match !bestAlmostIncludedSoFar, mostDeeplyNestedEnclosingScope with 
+            | Some (_,env,ad), None -> env, ad
+            | Some (_,almostIncludedEnv,ad), Some (_,mostDeeplyNestedEnv,_) 
+                when almostIncludedEnv.eFieldLabels.Count >= mostDeeplyNestedEnv.eFieldLabels.Count -> 
+                almostIncludedEnv,ad
+            | _ -> 
                 match mostDeeplyNestedEnclosingScope with 
-                | Some (_m,env,ad) -> 
+                | Some (_,env,ad) -> 
                     env,ad
                 | None -> 
-                    (sFallback,AccessibleFromSomeFSharpCode)
+                    sFallback,AccessibleFromSomeFSharpCode
         let pm = mkRange mainInputFileName cursorPos cursorPos 
 
         resEnv,pm
@@ -1107,8 +1109,12 @@ type TypeCheckInfo
 
         // Completion at ' { XXX = ... } "
         | Some(CompletionContext.RecordField(RecordContext.New(plid, residue))) ->
-            Some(GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid, residue))
-            |> Option.map toCompletionItems
+            // { x. } can be either record construction or computation expression. Try to get all visible record fields first
+            match GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid, residue) |> toCompletionItems with
+            | [],_,_ -> 
+                // no record fields found, return completion list as if we were outside any computation expression
+                GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, line, loc, filterCtors,resolveOverloads, hasTextChangedSinceLastTypecheck, false)
+            | result -> Some(result)
 
         // Completion at ' { XXX = ... with ... } "
         | Some(CompletionContext.RecordField(RecordContext.CopyOnUpdate(r, (plid, residue)))) -> 
