@@ -136,6 +136,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Utils", "Utils", "{D086C8C6
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "LanguageServiceProfiling", "vsintegration\Utils\LanguageServiceProfiling\LanguageServiceProfiling.fsproj", "{E7FA3A71-51AF-4FCA-9C2F-7C853E515903}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.DependencyManager.Paket", "src\fsharp\FSharp.DependencyManager.Paket\FSharp.DependencyManager.Paket.fsproj", "{25555554-522D-4CF7-97E4-BA940F0B18F3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -749,6 +751,18 @@ Global
 		{E7FA3A71-51AF-4FCA-9C2F-7C853E515903}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E7FA3A71-51AF-4FCA-9C2F-7C853E515903}.Release|x86.ActiveCfg = Release|Any CPU
 		{E7FA3A71-51AF-4FCA-9C2F-7C853E515903}.Release|x86.Build.0 = Release|Any CPU
+		{25555554-522D-4CF7-97E4-BA940F0B18F3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{25555554-522D-4CF7-97E4-BA940F0B18F3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{25555554-522D-4CF7-97E4-BA940F0B18F3}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{25555554-522D-4CF7-97E4-BA940F0B18F3}.Debug|x86.Build.0 = Debug|Any CPU
+		{25555554-522D-4CF7-97E4-BA940F0B18F3}.Proto|Any CPU.ActiveCfg = Proto|Any CPU
+		{25555554-522D-4CF7-97E4-BA940F0B18F3}.Proto|Any CPU.Build.0 = Proto|Any CPU
+		{25555554-522D-4CF7-97E4-BA940F0B18F3}.Proto|x86.ActiveCfg = Proto|Any CPU
+		{25555554-522D-4CF7-97E4-BA940F0B18F3}.Proto|x86.Build.0 = Proto|Any CPU
+		{25555554-522D-4CF7-97E4-BA940F0B18F3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{25555554-522D-4CF7-97E4-BA940F0B18F3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{25555554-522D-4CF7-97E4-BA940F0B18F3}.Release|x86.ActiveCfg = Release|Any CPU
+		{25555554-522D-4CF7-97E4-BA940F0B18F3}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -811,5 +825,6 @@ Global
 		{2E60864A-E3FF-4BCC-810F-DC7C34E6B236} = {CFE3259A-2D30-4EB0-80D5-E8B5F3D01449}
 		{D086C8C6-D00D-4C3B-9AB2-A4286C9F5922} = {4C7B48D7-19AF-4AE7-9D1D-3BB289D5480D}
 		{E7FA3A71-51AF-4FCA-9C2F-7C853E515903} = {D086C8C6-D00D-4C3B-9AB2-A4286C9F5922}
+		{25555554-522D-4CF7-97E4-BA940F0B18F3} = {B8DDA694-7939-42E3-95E5-265C2217C142}
 	EndGlobalSection
 EndGlobal

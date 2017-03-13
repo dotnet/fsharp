@@ -422,6 +422,12 @@
     <Compile Include="..\IlxGen.fs">
       <Link>IlxGen.fs</Link>
     </Compile>
+    <Compile Include="..\DependencyManager.Integration.fsi">
+      <Link>Driver\DependencyManager.Integration.fsi</Link>
+    </Compile>
+    <Compile Include="..\DependencyManager.Integration.fs">
+      <Link>Driver\DependencyManager.Integration.fs</Link>
+    </Compile>
     <Compile Include="..\CompileOps.fsi">
       <Link>CompileOps.fsi</Link>
     </Compile>

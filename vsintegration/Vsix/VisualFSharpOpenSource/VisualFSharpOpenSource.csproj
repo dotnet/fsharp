@@ -311,6 +311,10 @@
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <Private>True</Private>
     </ProjectReference>
+    <ProjectReference Include="..\..\..\src\fsharp\FSharp.DependencyManager.Paket\FSharp.DependencyManager.Paket.fsproj">
+      <Project>{25555554-522d-4cf7-97e4-ba940f0b18f3}</Project>
+      <Name>FSharp.DependencyManager.Paket</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.tools.targets" />
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />

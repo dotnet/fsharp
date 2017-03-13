@@ -1,0 +1,7 @@
+FRAMEWORK: NET461
+NUGET
+  remote: https://www.nuget.org/api/v2
+    FSharp.Data (2.3.2)
+    Newtonsoft.Json (9.0.1)
+    XPlot.Plotly (1.4.2)
+      Newtonsoft.Json (9.0.1)

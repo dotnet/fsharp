@@ -493,6 +493,12 @@
     <Compile Include="..\IlxGen.fs">
       <Link>CodeGen\IlxGen.fs</Link>
     </Compile>
+    <Compile Include="..\DependencyManager.Integration.fsi">
+      <Link>Driver\DependencyManager.Integration.fsi</Link>
+    </Compile>
+    <Compile Include="..\DependencyManager.Integration.fs">
+      <Link>Driver\DependencyManager.Integration.fs</Link>
+    </Compile>
     <Compile Include="..\CompileOps.fsi">
       <Link>Driver\CompileOps.fsi</Link>
     </Compile>
@@ -526,6 +532,11 @@
     <None Include="project.json" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' != 'coreclr'">
+    <ProjectReference Include="..\FSharp.DependencyManager.Paket\FSharp.DependencyManager.Paket.fsproj">
+      <Name>FSharp.DependencyManager.Paket</Name>
+      <Project>{25555554-522d-4cf7-97e4-ba940f0b18f3}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
