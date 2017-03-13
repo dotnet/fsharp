@@ -251,7 +251,6 @@
                                                 '$(TargetFramework)' == 'xamarinmacfull'" >
       <Private>false</Private>
     </Reference>
-    <Reference Include="System.Numerics" Condition="'$(TargetFramework)' == 'net40'" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
     <None Include="project.json" />
