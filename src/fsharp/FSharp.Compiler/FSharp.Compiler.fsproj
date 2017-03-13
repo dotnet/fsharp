@@ -550,7 +550,7 @@
   </ItemGroup>
 
   <Choose>
-    <When Condition="'$(OS)' != 'Unix'">
+    <When Condition="$(MonoPackaging) != 'true'">
       <ItemGroup Condition="'$(TargetFramework)' != 'coreclr'">
         <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
           <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Framework.dll</HintPath>
