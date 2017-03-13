@@ -70,7 +70,7 @@ module internal Tooltips =
 type internal CompletionItemKind =
     | Field
     | Property
-    | Method
+    | Method of isExtension : bool
     | Event
     | Argument
     | Other
@@ -124,7 +124,7 @@ type internal CompletionItem =
       Kind: CompletionItemKind
       IsOwnMember: bool
       MinorPriority: int
-      Type: TType option }
+      Type: TyconRef option }
 
 [<Sealed>]
 /// Represents a set of declarations in F# source code, with information attached ready for display by an editor.
