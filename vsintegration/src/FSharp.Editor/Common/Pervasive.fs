@@ -2,6 +2,7 @@
 module Microsoft.VisualStudio.FSharp.Editor.Pervasive
 
 open System
+open System.IO
 open System.Diagnostics
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Text
@@ -9,6 +10,22 @@ open Microsoft.VisualStudio.Text
 
 let inline ensureSucceeded hr = ErrorHandler.ThrowOnFailure hr |> ignore
 
+let (</>) path1 path2 = Path.Combine(path1,path2)
+
+type Path with
+    static member GetFullPathSafe path =
+        try Path.GetFullPath path
+        with _ -> path
+
+    static member GetFileNameSafe path =
+        try Path.GetFileName path
+        with _ -> path
+
+
+/// Load times used to reset type checking properly on script/project load/unload. It just has to be unique for each project load/reload.
+/// Not yet sure if this works for scripts.
+let fakeDateTimeRepresentingTimeLoaded x = DateTime(abs (int64 (match x with null -> 0 | _ -> x.GetHashCode())) % 103231L)
+    
 
 type System.IServiceProvider with
     member x.GetService<'T>() = x.GetService(typeof<'T>) :?> 'T
@@ -267,7 +284,7 @@ module Option =
     let guard (x: bool) : Option<unit> =
         if x then Some() else None
 
-    let inline attempt (f: unit -> 'T) = try Some <| f() with _ -> None
+    let attempt (f: unit -> 'T) = try Some <| f() with _ -> None
 
     let inline ofNull value =
         if obj.ReferenceEquals(value, null) then None else Some value
