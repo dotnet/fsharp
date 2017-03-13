@@ -44,7 +44,7 @@ let singleTestBuildAndRunCore  cfg (copyFiles:string) p =
 
         let fsccArgs = sprintf """--OutputDir:%s --CopyDlls:%s %s""" outDir copyFiles fscArgs
 
-        fsi cfg "--exec %s %s %s"
+        fsi_script cfg "--exec %s %s %s"
                cfg.fsi_flags
                (__SOURCE_DIRECTORY__ ++ @"../scripts/fscc.fsx")
                fsccArgs
@@ -68,7 +68,7 @@ let singleTestBuildAndRunCore  cfg (copyFiles:string) p =
 
         use testOkFile = new FileGuard (getfullpath cfg "test.ok")
 
-        fsi cfg "--exec %s %s %s"
+        fsi_script cfg "--exec %s %s %s"
                cfg.fsi_flags
                (__SOURCE_DIRECTORY__ ++ @"../scripts/fsci.fsx")
                fsciArgs

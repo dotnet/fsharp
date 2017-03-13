@@ -104,7 +104,6 @@ if /i '%_autoselect_tests%' == '1' (
     )
 
     if /i '%BUILD_CORECLR%' == '1' (
-        set BUILD_NET40=1
         set TEST_CORECLR_FSHARP_SUITE=1
         set TEST_CORECLR_COREUNIT_SUITE=1
     )
@@ -228,7 +227,6 @@ if /i '%ARG%' == 'ci_part3' (
     REM what we do
     set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_PROTO=1
-    set BUILD_NET40=1
     set BUILD_CORECLR=1
 
     set TEST_CORECLR_FSHARP_SUITE=1

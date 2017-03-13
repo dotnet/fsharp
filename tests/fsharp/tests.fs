@@ -1355,8 +1355,10 @@ module CoreTests =
         peverifyWithArgs cfg "/nologo" "xmlverify.exe"
 #endif
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
 module ToolsTests = 
 
+    // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
     [<Test>]
     let bundle () = 
         let cfg = testConfig "tools/bundle"
@@ -1376,6 +1378,7 @@ module ToolsTests =
         fsc cfg "%s -a --standalone -r:test_two_fsharp_modules_module_1.dll -o:test_two_fsharp_modules_module_2_as_dll.dll -g" cfg.fsc_flags ["test_two_fsharp_modules_module_2.fs"]
    
         peverify cfg "test_two_fsharp_modules_module_2_as_dll.dll"
+#endif
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
@@ -1397,6 +1400,8 @@ module RegressionTests =
     [<Test >]
     let ``321`` () = singleTestBuildAndRun "regression/321" FSC_BASIC
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+    // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
     [<Test>]
     let ``655`` () = 
         let cfg = testConfig "regression/655"
@@ -1415,6 +1420,7 @@ module RegressionTests =
 
         testOkFile.CheckExists()
                 
+    // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
     [<Test >]
     let ``656`` () = 
         let cfg = testConfig "regression/656"
@@ -1422,6 +1428,7 @@ module RegressionTests =
         fsc cfg "%s -o:pack.exe" cfg.fsc_flags ["misc.fs mathhelper.fs filehelper.fs formshelper.fs plot.fs traj.fs playerrecord.fs trackedplayers.fs form.fs"]
 
         peverify cfg  "pack.exe"
+#endif
                 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     // Requires WinForms
@@ -1445,6 +1452,8 @@ module RegressionTests =
     [<Test >]
     let ``struct-tuple-bug-1-FSI_BASIC`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSI_BASIC
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+    // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
     [<Test>]
     let ``struct-measure-bug-1`` () = 
         let cfg = testConfig "regression/struct-measure-bug-1"
@@ -1452,7 +1461,7 @@ module RegressionTests =
         fsc cfg "%s --optimize- -o:test.exe -g" cfg.fsc_flags ["test.fs"]
 
         peverify cfg "test.exe"
-
+#endif
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
 module OptimizationTests =
 
