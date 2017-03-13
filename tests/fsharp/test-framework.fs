@@ -54,10 +54,11 @@ module Commands =
         let contents = File.ReadAllText(from)
         File.AppendAllText(dest, contents)
 
-    let fsc workDir exec (fscExe: FilePath) flags srcFiles =
+    let fsc workDir exec (dotNetExe: FilePath) (fscExe: FilePath) flags srcFiles =
         let args = (sprintf "%s %s" flags (srcFiles |> Seq.ofList |> String.concat " "))
-    #if FSC_IN_PROCESS
-    // This is not yet complete
+
+#if FSC_IN_PROCESS
+        // This is not yet complete
         let fscCompiler = FSharp.Compiler.Hosted.FscCompiler()
         let exitCode, _stdin, _stdout = FSharp.Compiler.Hosted.CompilerHelpers.fscCompile workDir (FSharp.Compiler.Hosted.CompilerHelpers.parseCommandLine args)
 
@@ -66,10 +67,15 @@ module Commands =
         | err -> 
             let msg = sprintf "Error running command '%s' with args '%s' in directory '%s'" fscExe args workDir 
             CmdResult.ErrorLevel (msg, err)
-    #else
+#else
         ignore workDir 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+        ignore dotNetExe
         exec fscExe args
-    #endif
+#else
+        exec dotNetExe (fscExe + " " + args)
+#endif
+#endif
 
     let csc exec cscExe flags srcFiles =
         exec cscExe (sprintf "%s %s"  flags (srcFiles |> Seq.ofList |> String.concat " "))
@@ -106,6 +112,7 @@ type TestConfig =
       FSCBinPath : string
       FSCOREDLLPATH : string
       FSI : string
+      FSI_FOR_SCRIPTS : string
       fsi_flags : string
       ILDASM : string
       SN : string
@@ -117,7 +124,6 @@ type TestConfig =
 
 
 module WindowsPlatform = 
-
     let Is64BitOperatingSystem envVars =
         // On Windows PROCESSOR_ARCHITECTURE has the value AMD64 on 64 bit Intel Machines
         let value =
@@ -162,25 +168,28 @@ let config configurationName envVars =
 
     let SCRIPT_ROOT = __SOURCE_DIRECTORY__ 
     let FSCBinPath = SCRIPT_ROOT ++ ".." ++ ".." ++ configurationName ++ "net40" ++ "bin"
-
     let csc_flags = "/nologo" 
     let fsc_flags = "-r:System.Core.dll --nowarn:20 --define:COMPILED" 
     let fsi_flags = "-r:System.Core.dll --nowarn:20  --define:INTERACTIVE --maxerrors:1 --abortonerror" 
-
     let CORDIR, CORSDK = WindowsPlatform.clrPaths envVars
-
     let Is64BitOperatingSystem = WindowsPlatform.Is64BitOperatingSystem envVars
-
-    let fsiroot = if Is64BitOperatingSystem then "fsiAnyCpu" else "fsi"
-
     let CSC = requireFile (CORDIR ++ "csc.exe")
     let NGEN = requireFile (CORDIR ++ "ngen.exe")
     let ILDASM = requireFile (CORSDK ++ "ildasm.exe")
     let SN = requireFile (CORSDK ++ "sn.exe") 
     let PEVERIFY = requireFile (CORSDK ++ "peverify.exe")
+    let FSI_FOR_SCRIPTS = requireFile (SCRIPT_ROOT ++ ".." ++ ".." ++ (System.Environment.GetEnvironmentVariable("_fsiexe").Trim([| '\"' |])))
+    let dotNetExe = SCRIPT_ROOT ++ ".." ++ ".." ++ "Tools" ++ "dotnetcli" ++ "dotnet.exe"
+
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+    let FSI = requireFile (FSCBinPath ++ "fsi.exe")
     let FSC = requireFile (FSCBinPath ++ "fsc.exe")
-    let FSI = requireFile (FSCBinPath ++ (fsiroot+".exe"))
     let FSCOREDLLPATH = requireFile (FSCBinPath ++ "FSharp.Core.dll") 
+#else
+    let FSI = SCRIPT_ROOT ++ ".." ++ ".." ++ "tests" ++ "testbin" ++ configurationName ++ "coreclr" ++ "FSC" ++ "fsi.exe"
+    let FSC = SCRIPT_ROOT ++ ".." ++ ".." ++ "tests" ++ "testbin" ++ configurationName ++ "coreclr" ++ "FSC" ++ "fsc.exe"
+    let FSCOREDLLPATH = "" 
+#endif
 
     let defaultPlatform = 
         match Is64BitOperatingSystem with 
@@ -188,9 +197,6 @@ let config configurationName envVars =
 //        | PlatformID.Unix,true -> "ubuntu.14.04-x64"
         | true -> "win7-x64"
         | false -> "win7-x86"
-
-
-    let dotNetExe = SCRIPT_ROOT ++ ".." ++ ".." ++ "Tools" ++ "dotnetcli" ++ "dotnet.exe"
 
     { EnvironmentVariables = envVars
       CORDIR = CORDIR |> Commands.pathAddBackslash
@@ -205,6 +211,7 @@ let config configurationName envVars =
       BUILD_CONFIG = configurationName
       FSC = FSC
       FSI = FSI
+      FSI_FOR_SCRIPTS = FSI_FOR_SCRIPTS
       csc_flags = csc_flags
       fsc_flags = fsc_flags 
       fsi_flags = fsi_flags 
@@ -423,19 +430,19 @@ let execAppendOutIgnoreExitCode cfg workDir outFile p = Command.exec workDir  cf
 let execAppendErrExpectFail cfg errPath p = Command.exec cfg.Directory cfg.EnvironmentVariables { execArgs with Output = Error(Overwrite(errPath)) } p >> checkErrorLevel1
 let execStdin cfg l p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = Inherit; Input = Some(RedirectInput(l)) } p >> checkResult
 let execStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = OutputAndError(Append(stdoutPath), Append(stderrPath)); Input = Some(RedirectInput(stdinPath)) } p >> alwaysSuccess
-let fsc cfg arg = Printf.ksprintf (Commands.fsc cfg.Directory (exec cfg) cfg.FSC) arg
-let fscIn cfg workDir arg = Printf.ksprintf (Commands.fsc workDir (execIn cfg workDir) cfg.FSC) arg
-let fscAppend cfg stdoutPath stderrPath arg = Printf.ksprintf (Commands.fsc cfg.Directory (execAppend cfg stdoutPath stderrPath) cfg.FSC) arg
-let fscAppendIgnoreExitCode cfg stdoutPath stderrPath arg = Printf.ksprintf (Commands.fsc cfg.Directory (execAppendIgnoreExitCode cfg stdoutPath stderrPath) cfg.FSC) arg
-let fscBothToOut cfg out arg = Printf.ksprintf (Commands.fsc cfg.Directory (execBothToOut cfg cfg.Directory out) cfg.FSC) arg
-let fscAppendErrExpectFail cfg errPath arg = Printf.ksprintf (Commands.fsc cfg.Directory (execAppendErrExpectFail cfg errPath) cfg.FSC) arg
-
+let fsc cfg arg = Printf.ksprintf (Commands.fsc cfg.Directory (exec cfg) cfg.DotNetExe cfg.FSC) arg
+let fscIn cfg workDir arg = Printf.ksprintf (Commands.fsc workDir (execIn cfg workDir) cfg.DotNetExe  cfg.FSC) arg
+let fscAppend cfg stdoutPath stderrPath arg = Printf.ksprintf (Commands.fsc cfg.Directory (execAppend cfg stdoutPath stderrPath) cfg.DotNetExe  cfg.FSC) arg
+let fscAppendIgnoreExitCode cfg stdoutPath stderrPath arg = Printf.ksprintf (Commands.fsc cfg.Directory (execAppendIgnoreExitCode cfg stdoutPath stderrPath) cfg.DotNetExe  cfg.FSC) arg
+let fscBothToOut cfg out arg = Printf.ksprintf (Commands.fsc cfg.Directory (execBothToOut cfg cfg.Directory out) cfg.DotNetExe  cfg.FSC) arg
+let fscAppendErrExpectFail cfg errPath arg = Printf.ksprintf (Commands.fsc cfg.Directory (execAppendErrExpectFail cfg errPath) cfg.DotNetExe  cfg.FSC) arg
 let csc cfg arg = Printf.ksprintf (Commands.csc (exec cfg) cfg.CSC) arg
 let ildasm cfg arg = Printf.ksprintf (Commands.ildasm (exec cfg) cfg.ILDASM) arg
 let peverify cfg = Commands.peverify (exec cfg) cfg.PEVERIFY "/nologo"
 let sn cfg outfile arg = execAppendOutIgnoreExitCode cfg cfg.Directory outfile cfg.SN arg
 let peverifyWithArgs cfg args = Commands.peverify (exec cfg) cfg.PEVERIFY args
 let fsi cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI)
+let fsi_script cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI_FOR_SCRIPTS)
 let fsiExpectFail cfg = Printf.ksprintf (Commands.fsi (execExpectFail cfg) cfg.FSI)
 let fsiAppendIgnoreExitCode cfg stdoutPath stderrPath = Printf.ksprintf (Commands.fsi (execAppendIgnoreExitCode cfg stdoutPath stderrPath) cfg.FSI)
 let fileguard cfg = (Commands.getfullpath cfg.Directory) >> (fun x -> new FileGuard(x))
