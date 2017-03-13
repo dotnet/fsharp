@@ -2,9 +2,9 @@
 
 open System.Reflection
 
-type FooImpl() =
-  interface IFoo
+type FezImpl() =
+  interface IFez
 type BarImpl() =
   interface IBar
-Foo.Do<FooImpl>("", (fun _ -> ()))
-Foo.Do<BarImpl>("", (fun _ -> ())) // produced internal error: https://github.com/Microsoft/visualfsharp/issues/2411
+Fez.Do<FezImpl>("", (fun _ -> ()))
+Fez.Do<BarImpl>("", (fun _ -> ())) // produced internal error: https://github.com/Microsoft/visualfsharp/issues/2411
