@@ -1175,8 +1175,9 @@ module UntypedParseImpl =
                         | _ -> None 
                         
                     member this.VisitBinding(defaultTraverse, (Binding(headPat = headPat) as synBinding)) = 
+                    
                         let visitParam = function
-                            | SynPat.Named _ -> 
+                            | SynPat.Named (range = range) when rangeContainsPos range pos -> 
                                 // parameter without type hint, no completion
                                 Some CompletionContext.Invalid 
                             | SynPat.Typed(SynPat.Named(SynPat.Wild(range), _, _, _, _), _, _) when rangeContainsPos range pos ->
@@ -1195,7 +1196,7 @@ module UntypedParseImpl =
                                         | SynPat.Tuple(pats, _) ->
                                             pats |> List.tryPick visitParam
                                         | _ -> visitParam pat
-                                    | SynPat.Wild _ -> 
+                                    | SynPat.Wild(range) when rangeContainsPos range pos -> 
                                         // let foo (x|
                                         Some CompletionContext.Invalid
                                     | _ -> visitParam pat

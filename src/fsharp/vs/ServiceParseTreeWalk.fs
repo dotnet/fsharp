@@ -547,6 +547,7 @@ module internal AstTraversal =
                         yield synExpr
                     ] |> List.map (fun x -> dive x x.Range (traverseSynExpr path)) |> pick all.Range all
             visitor.VisitMatchClause(defaultTraverse,mc)
+
         and traverseSynBinding path b =
             let defaultTraverse b =
                 let path = TraverseStep.Binding b :: path
