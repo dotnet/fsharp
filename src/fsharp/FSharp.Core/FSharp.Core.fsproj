@@ -101,6 +101,12 @@
     <Compile Include="seqcore.fs">
       <Link>Collections/seqcore.fs</Link>
     </Compile>
+    <Compile Include="iseq.fsi">
+      <Link>Collections/iseq.fsi</Link>
+    </Compile>
+    <Compile Include="iseq.fs">
+      <Link>Collections/iseq.fs</Link>
+    </Compile>
     <Compile Include="seq.fsi">
       <Link>Collections/seq.fsi</Link>
     </Compile>
