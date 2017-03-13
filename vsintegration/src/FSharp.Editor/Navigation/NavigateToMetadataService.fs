@@ -221,14 +221,6 @@ type internal NavigateToMetadataService [<ImportingConstructor>]
         return! tryCreateMetadataContext sourceDoc ast fsSymbolUse
     }
 
-                //context
-                //|> Option.map (fun (sigDocId,filePath, range) -> 
-                //    let zeroPos = mkPos 1 0
-                //    let r = range |> Option.getOrTry (fun _ -> mkRange filePath zeroPos zeroPos) 
-                //    sigDocId, r
-                //)
-        //}
 
-    static member ClearXmlDocCache() =
-        xmlDocCache.Clear()
+    static member ClearXmlDocCache () = xmlDocCache.Clear ()
           
