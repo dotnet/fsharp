@@ -288,8 +288,9 @@ namespace Microsoft.FSharp.Control
     open System
     open System.Diagnostics
     open System.Diagnostics.CodeAnalysis
-    open System.Threading
     open System.IO
+    open System.Reflection
+    open System.Threading
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
     open Microsoft.FSharp.Core.Operators
@@ -298,9 +299,6 @@ namespace Microsoft.FSharp.Control
 
 #if FX_RESHAPED_REFLECTION
     open ReflectionAdapters
-    type internal BindingFlags = ReflectionAdapters.BindingFlags
-#else
-    type BindingFlags = System.Reflection.BindingFlags
 #endif
 
 #if !FX_NO_TASK

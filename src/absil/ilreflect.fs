@@ -336,7 +336,7 @@ type cenv =
     { ilg: ILGlobals
       tryFindSysILTypeRef : string -> ILTypeRef option
       generatePdb: bool
-      resolvePath: (ILAssemblyRef -> Choice<string,System.Reflection.Assembly> option) }
+      resolveAssemblyRef: (ILAssemblyRef -> Choice<string,System.Reflection.Assembly> option) }
 
 /// Convert an Abstract IL type reference to Reflection.Emit System.Type value.
 // This ought to be an adequate substitute for this whole function, but it needs 
@@ -350,7 +350,7 @@ let convTypeRefAux (cenv:cenv) (tref:ILTypeRef) =
     match tref.Scope with
     | ILScopeRef.Assembly asmref ->
         let assembly = 
-            match cenv.resolvePath asmref with                     
+            match cenv.resolveAssemblyRef asmref with                     
             | Some (Choice1Of2 path) ->
                 FileSystem.AssemblyLoadFrom(path)              
             | Some (Choice2Of2 assembly) ->
@@ -662,9 +662,8 @@ let convFieldSpec cenv emEnv fspec =
 //----------------------------------------------------------------------------
 // convMethodRef
 //----------------------------------------------------------------------------
-
 let queryableTypeGetMethodBySearch cenv emEnv parentT (mref:ILMethodRef) =
-    assert(not (typeIsNotQueryable(parentT)));
+    assert(not (typeIsNotQueryable(parentT)))
     let cconv = (if mref.CallingConv.IsStatic then BindingFlags.Static else BindingFlags.Instance)
     let methInfos = parentT.GetMethods(cconv ||| BindingFlags.Public ||| BindingFlags.NonPublic) |> Array.toList
       (* First, filter on name, if unique, then binding "done" *)
@@ -675,23 +674,58 @@ let queryableTypeGetMethodBySearch cenv emEnv parentT (mref:ILMethodRef) =
         methInfo
     | _ ->
       (* Second, type match. Note type erased (non-generic) F# code would not type match but they have unique names *)
+
+        let satisfiesParameter (a: Type option) (p: Type) =
+            match a with
+            | None -> true
+            | Some a ->
+            if 
+                // obvious case
+                p.IsAssignableFrom a 
+            then true
+            elif
+                // both are generic
+                p.IsGenericType && a.IsGenericType 
+                // non obvious due to contravariance: Action<T> where T : IFoo accepts Action<FooImpl> (for FooImpl : IFoo)
+                && p.GetGenericTypeDefinition().IsAssignableFrom(a.GetGenericTypeDefinition()) 
+            then true
+            else false
+
+        let satisfiesAllParameters (args: Type option array) (ps: Type array) =
+            if Array.length args <> Array.length ps then false
+            else Array.forall2 satisfiesParameter args ps
+       
         let select (methInfo:MethodInfo) =
             (* mref implied Types *)
             let mtyargTIs = getGenericArgumentsOfMethod methInfo 
+            
             if mtyargTIs.Length <> mref.GenericArity then false (* method generic arity mismatch *) else
+
+          (* methInfo implied Types *)
+            let methodParameters = methInfo.GetParameters()
+            let argTypes = mref.ArgTypes |> List.toArray
+            if argTypes.Length <> methodParameters.Length then false (* method argument length mismatch *) else
+
+            let haveArgTs = methodParameters |> Array.map (fun param -> param.ParameterType)
+            let mrefParameterTypes = argTypes |> Array.map (fun t -> if t.IsNominal then Some (convTypeRefAux cenv t.TypeRef) else None)
+
+            // we should reject methods which don't satisfy parameter types by also checking
+            // type parameters which can be contravariant for delegates for example
+            // see https://github.com/Microsoft/visualfsharp/issues/2411
+            // without this check, subsequent call to convTypes would fail because it
+            // constructs generic type without checking constraints
+            if not (satisfiesAllParameters mrefParameterTypes haveArgTs) then false else
+            
             let argTs,resT = 
                 let emEnv = envPushTyvars emEnv (Array.append tyargTs mtyargTIs)
                 let argTs = convTypes cenv emEnv mref.ArgTypes
                 let resT  = convType cenv emEnv mref.ReturnType
                 argTs,resT 
           
-          (* methInfo implied Types *)
-            let haveArgTs = methInfo.GetParameters() |> Array.toList |> List.map (fun param -> param.ParameterType) 
-         
             let haveResT  = methInfo.ReturnType
           (* check for match *)
-            if argTs.Length <> haveArgTs.Length then false (* method argument length mismatch *) else
-            let res = equalTypes resT haveResT && equalTypeLists argTs haveArgTs
+            if argTs.Length <> methodParameters.Length then false (* method argument length mismatch *) else
+            let res = equalTypes resT haveResT && equalTypeLists argTs (haveArgTs |> Array.toList)
             res
        
         match List.tryFind select methInfos with
@@ -760,7 +794,7 @@ let convMethodSpec cenv emEnv (mspec:ILMethodSpec) =
     let typT     = convType cenv emEnv mspec.EnclosingType       (* (instanced) parent Type *)
     let methInfo = convMethodRef cenv emEnv typT mspec.MethodRef (* (generic)   method of (generic) parent *)
     let methInfo =
-        if mspec.GenericArgs.Length = 0 then 
+        if isNil mspec.GenericArgs then 
             methInfo // non generic 
         else 
             let minstTs  = convTypesToArray cenv emEnv mspec.GenericArgs
@@ -1404,7 +1438,7 @@ let rec buildMethodPass2 cenv tref (typB:TypeBuilder) emEnv (mdef : ILMethodDef)
     let implflags = convMethodImplFlags mdef
     let cconv = convCallConv mdef.CallingConv
     let mref = mkRefToILMethod (tref,mdef)   
-    let emEnv = if mdef.IsEntryPoint && mdef.ParameterTypes.Length = 0 then 
+    let emEnv = if mdef.IsEntryPoint && isNil mdef.ParameterTypes then 
                     (* Bug 2209:
                         Here, we collect the entry points generated by ilxgen corresponding to the top-level effects.
                         Users can (now) annotate their own functions with EntryPoint attributes.
@@ -2003,8 +2037,8 @@ let mkDynamicAssemblyAndModule (assemblyName, optimize, debugInfo, collectible) 
     let modB = asmB.DefineDynamicModuleAndLog(assemblyName,filename,debugInfo)
     asmB,modB
 
-let emitModuleFragment (ilg, emEnv, asmB : AssemblyBuilder, modB : ModuleBuilder, modul : IL.ILModuleDef, debugInfo : bool, resolvePath, tryFindSysILTypeRef) =
-    let cenv = { ilg = ilg ; generatePdb = debugInfo; resolvePath=resolvePath; tryFindSysILTypeRef=tryFindSysILTypeRef }
+let emitModuleFragment (ilg, emEnv, asmB : AssemblyBuilder, modB : ModuleBuilder, modul : IL.ILModuleDef, debugInfo : bool, resolveAssemblyRef, tryFindSysILTypeRef) =
+    let cenv = { ilg = ilg ; generatePdb = debugInfo; resolveAssemblyRef=resolveAssemblyRef; tryFindSysILTypeRef=tryFindSysILTypeRef }
 
     let emEnv = buildModuleFragment cenv emEnv asmB modB modul
     match modul.Manifest with 

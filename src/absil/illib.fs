@@ -22,7 +22,7 @@ let (>>>&) (x:int32) (n:int32) = int32 (uint32 x >>> n)
 
 let notlazy v = Lazy<_>.CreateFromValue v
 
-let inline isNil x = List.isEmpty x
+let inline isNil l = List.isEmpty l
 let inline isNonNull x = not (isNull x)
 let inline nonNull msg x = if isNull x then failwith ("null: " ^ msg) else x
 let (===) x y = LanguagePrimitives.PhysicalEquality x y
@@ -151,6 +151,85 @@ module Array =
                     look (i+1) hi
         look 0 arr.Length
       
+    /// pass an array byref to reverse it in place
+    let revInPlace (array: 'T []) =
+        if Array.isEmpty array then () else
+        let arrlen, revlen = array.Length-1, array.Length/2 - 1
+        for idx in 0 .. revlen do
+            let t1 = array.[idx] 
+            let t2 = array.[arrlen-idx]
+            array.[idx] <- t2
+            array.[arrlen-idx] <- t1
+
+    /// Async implementation of Array.map.
+    let mapAsync (mapping : 'T -> Async<'U>) (array : 'T[]) : Async<'U[]> =
+        let len = Array.length array
+        let result = Array.zeroCreate len
+
+        async { // Apply the mapping function to each array element.
+            for i in 0 .. len - 1 do
+                let! mappedValue = mapping array.[i]
+                result.[i] <- mappedValue
+
+            // Return the completed results.
+            return result
+        }
+        
+    /// Returns a new array with an element replaced with a given value.
+    let replace index value (array: _ []) =
+        if index >= array.Length then raise (IndexOutOfRangeException "index")
+        let res = Array.copy array
+        res.[index] <- value
+        res
+
+    /// Optimized arrays equality. ~100x faster than `array1 = array2` on strings.
+    /// ~2x faster for floats
+    /// ~0.8x slower for ints
+    let inline areEqual (xs: 'T []) (ys: 'T []) =
+        match xs, ys with
+        | null, null -> true
+        | [||], [||] -> true
+        | null, _ | _, null -> false
+        | _ when xs.Length <> ys.Length -> false
+        | _ ->
+            let mutable break' = false
+            let mutable i = 0
+            let mutable result = true
+            while i < xs.Length && not break' do
+                if xs.[i] <> ys.[i] then 
+                    break' <- true
+                    result <- false
+                i <- i + 1
+            result
+
+    /// Returns all heads of a given array.
+    /// For [|1;2;3|] it returns [|[|1; 2; 3|]; [|1; 2|]; [|1|]|]
+    let heads (array: 'T []) =
+        let res = Array.zeroCreate<'T[]> array.Length
+        for i = array.Length - 1 downto 0 do
+            res.[i] <- array.[0..i]
+        res
+
+    /// check if subArray is found in the wholeArray starting 
+    /// at the provided index
+    let inline isSubArray (subArray: 'T []) (wholeArray:'T []) index = 
+        if isNull subArray || isNull wholeArray then false
+        elif subArray.Length = 0 then true
+        elif subArray.Length > wholeArray.Length then false
+        elif subArray.Length = wholeArray.Length then areEqual subArray wholeArray else
+        let rec loop subidx idx =
+            if subidx = subArray.Length then true 
+            elif subArray.[subidx] = wholeArray.[idx] then loop (subidx+1) (idx+1) 
+            else false
+        loop 0 index
+        
+    /// Returns true if one array has another as its subset from index 0.
+    let startsWith (prefix: _ []) (whole: _ []) =
+        isSubArray prefix whole 0
+        
+    /// Returns true if one array has trailing elements equal to another's.
+    let endsWith (suffix: _ []) (whole: _ []) =
+        isSubArray suffix whole (whole.Length-suffix.Length)
         
 module Option = 
     let mapFold f s opt = 
@@ -163,16 +242,12 @@ module Option =
         | None -> dflt 
         | Some x -> x
 
-    let orElse dflt opt = 
-        match opt with 
-        | None -> dflt()
-        | res -> res
-
     let fold f z x = 
         match x with 
         | None -> z 
         | Some x -> f z x
 
+    let attempt (f: unit -> 'T) = try Some (f()) with _ -> None        
 
 module List = 
 
@@ -332,14 +407,13 @@ module List =
 
     // must be tail recursive 
     let mapFold (f:'a -> 'b -> 'c * 'a) (s:'a) (l:'b list) : 'c list * 'a = 
-        // microbenchmark suggested this implementation is faster than the simpler recursive one, and this function is called a lot
-        let mutable s = s
-        let mutable r = []
-        for x in l do
-            let x',s' = f s x
-            s <- s'
-            r <- x' :: r
-        List.rev r, s
+        match l with
+        | [] -> [], s
+        | [h] -> let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
+                 let h',s' = f.Invoke(s, h)
+                 [h'], s'
+        | _ -> 
+            List.mapFold f s l
 
     // Not tail recursive 
     let rec mapFoldBack f l s = 
@@ -440,15 +514,115 @@ module String =
 
     let dropSuffix s t = match (tryDropSuffix s t) with Some(res) -> res | None -> failwith "dropSuffix"
 
+    open System
+    open System.IO
+
+    let inline toCharArray (str: string) = str.ToCharArray()
+
+    let lowerCaseFirstChar (str: string) =
+        if String.IsNullOrEmpty str 
+         || Char.IsLower(str, 0) then str else 
+        let strArr = toCharArray str
+        match Array.tryHead strArr with
+        | None -> str
+        | Some c  -> 
+            strArr.[0] <- Char.ToLower c
+            String (strArr)
+
+    let extractTrailingIndex (str: string) =
+        match str with
+        | null -> null, None
+        | _ ->
+            let charr = str.ToCharArray() 
+            Array.revInPlace charr
+            let digits = Array.takeWhile Char.IsDigit charr
+            Array.revInPlace digits
+            String digits
+            |> function
+               | "" -> str, None
+               | index -> str.Substring (0, str.Length - index.Length), Some (int index)
+
+    /// Remove all trailing and leading whitespace from the string
+    /// return null if the string is null
+    let trim (value: string) = if isNull value then null else value.Trim()
+    
+    /// Splits a string into substrings based on the strings in the array separators
+    let split options (separator: string []) (value: string) = 
+        if isNull value  then null else value.Split(separator, options)
+
+    let (|StartsWith|_|) pattern value =
+        if String.IsNullOrWhiteSpace value then
+            None
+        elif value.StartsWith pattern then
+            Some()
+        else None
+
+    let (|Contains|_|) pattern value =
+        if String.IsNullOrWhiteSpace value then
+            None
+        elif value.Contains pattern then
+            Some()
+        else None
+
+    let getLines (str: string) =
+        use reader = new StringReader(str)
+        [|
+        let line = ref (reader.ReadLine())
+        while not (isNull !line) do
+            yield !line
+            line := reader.ReadLine()
+        if str.EndsWith("\n") then
+            // last trailing space not returned
+            // http://stackoverflow.com/questions/19365404/stringreader-omits-trailing-linebreak
+            yield String.Empty
+        |]
 module Dictionary = 
 
-    let inline ofList l = 
-        let dict = new System.Collections.Generic.Dictionary<_,_>(List.length l, HashIdentity.Structural)
-        l |> List.iter (fun (k,v) -> dict.Add(k,v))
-        dict
+    let inline newWithSize (size: int) = System.Collections.Generic.Dictionary<_,_>(size, HashIdentity.Structural)
         
+
 module Lazy = 
     let force (x: Lazy<'T>) = x.Force()
+
+//----------------------------------------------------------------------------
+// Singe threaded execution and mutual exclusion
+
+/// Represents a permission active at this point in execution
+type ExecutionToken = interface end
+
+/// Represents a token that indicates execution on the compilation thread, i.e. 
+///   - we have full access to the (partially mutable) TAST and TcImports data structures
+///   - compiler execution may result in type provider invocations when resolving types and members
+///   - we can access various caches in the SourceCodeServices
+///
+/// Like other execution tokens this should be passed via argument passing and not captured/stored beyond
+/// the lifetime of stack-based calls. This is not checked, it is a discipline withinn the compiler code. 
+type CompilationThreadToken() = interface ExecutionToken
+
+/// Represnts a place where we are stating that execution on the compilation thread is required.  The
+/// reason why will be documented in a comment in the code at the callsite.
+let RequireCompilationThread (_ctok: CompilationThreadToken) = ()
+
+/// Represnts a place in the compiler codebase where we are passed a CompilationThreadToken unnecessarily.
+/// This reprents code that may potentially not need to be executed on the compilation thread.
+let DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  (_ctok: CompilationThreadToken) = ()
+
+/// Represnts a place in the compiler codebase where we assume we are executing on a compilation thread
+let AssumeCompilationThreadWithoutEvidence () = Unchecked.defaultof<CompilationThreadToken>
+
+/// Represents a token that indicates execution on a any of several potential user threads calling the F# compiler services.
+type AnyCallerThreadToken() = interface ExecutionToken
+let AssumeAnyCallerThreadWithoutEvidence () = Unchecked.defaultof<AnyCallerThreadToken>
+
+/// A base type for various types of tokens that must be passed when a lock is taken.
+/// Each different static lock should declare a new subtype of this type.
+type LockToken = inherit ExecutionToken
+let AssumeLockWithoutEvidence<'LockTokenType when 'LockTokenType :> LockToken> () = Unchecked.defaultof<'LockTokenType>
+
+/// Encapsulates a lock associated with a particular token-type representing the acquisition of that lock.
+type Lock<'LockTokenType when 'LockTokenType :> LockToken>() = 
+    let lockObj = obj()
+    member __.AcquireLock f = lock lockObj (fun () -> f (AssumeLockWithoutEvidence<'LockTokenType>()))
 
 //---------------------------------------------------
 // Misc
@@ -467,6 +641,7 @@ type ResultOrException<'TResult> =
 module ResultOrException = 
 
     let success a = Result a
+
     let raze (b:exn) = Exception b
 
     // map
@@ -485,6 +660,135 @@ module ResultOrException =
         | Result x -> success x
         | Exception _err -> f()
 
+[<RequireQualifiedAccess>] 
+type ValueOrCancelled<'TResult> =
+    | Value of 'TResult
+    | Cancelled of OperationCanceledException
+
+/// Represents a cancellable computation with explicit representation of a cancelled result.
+///
+/// A cancellable computation is passed may be cancelled via a CancellationToken, which is propagated implicitly.  
+/// If cancellation occurs, it is propagated as data rather than by raising an OperationCancelledException.  
+type Cancellable<'TResult> = Cancellable of (System.Threading.CancellationToken -> ValueOrCancelled<'TResult>)
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module Cancellable = 
+
+    /// Run a cancellable computation using the given cancellation token
+    let run (ct: System.Threading.CancellationToken) (Cancellable oper) = 
+        if ct.IsCancellationRequested then 
+            ValueOrCancelled.Cancelled (OperationCanceledException()) 
+        else
+            oper ct 
+
+    /// Bind the result of a cancellable computation
+    let bind f comp1 = 
+       Cancellable (fun ct -> 
+            match run ct comp1 with 
+            | ValueOrCancelled.Value v1 -> run ct (f v1) 
+            | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
+
+    /// Map the result of a cancellable computation
+    let map f oper = 
+       Cancellable (fun ct -> 
+           match run ct oper with 
+           | ValueOrCancelled.Value res -> ValueOrCancelled.Value (f res)
+           | ValueOrCancelled.Cancelled err -> ValueOrCancelled.Cancelled err)
+                    
+    /// Return a simple value as the result of a cancellable computation
+    let ret x = Cancellable (fun _ -> ValueOrCancelled.Value x)
+
+    /// Fold a cancellable computation along a sequence of inputs
+    let fold f acc seq = 
+        Cancellable (fun ct -> 
+           (ValueOrCancelled.Value acc, seq) 
+           ||> Seq.fold (fun acc x -> 
+               match acc with 
+               | ValueOrCancelled.Value accv -> run ct (f accv x)
+               | res -> res))
+    
+    /// Iterate a cancellable computation over a collection
+    let each f seq = 
+        Cancellable (fun ct -> 
+           (ValueOrCancelled.Value [], seq) 
+           ||> Seq.fold (fun acc x -> 
+               match acc with 
+               | ValueOrCancelled.Value acc -> 
+                   match run ct (f x) with 
+                   | ValueOrCancelled.Value x2 -> ValueOrCancelled.Value (x2 :: acc)
+                   | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1
+               | canc -> canc)
+           |> function 
+               | ValueOrCancelled.Value acc -> ValueOrCancelled.Value (List.rev acc)
+               | canc -> canc)
+    
+    /// Delay a cancellable computation
+    let delay (f: unit -> Cancellable<'T>) = Cancellable (fun ct -> let (Cancellable g) = f() in g ct)
+
+    /// Run the computation in a mode where it may not be cancelled. The computation never results in a 
+    /// ValueOrCancelled.Cancelled.
+    let runWithoutCancellation comp = 
+        let res = run System.Threading.CancellationToken.None comp 
+        match res with 
+        | ValueOrCancelled.Cancelled _ -> failwith "unexpected cancellation" 
+        | ValueOrCancelled.Value r -> r
+
+    /// Bind the cancellation token associated with the computation
+    let token () = Cancellable (fun ct -> ValueOrCancelled.Value ct)
+
+    /// Represents a canceled computation
+    let canceled() = Cancellable (fun _ -> ValueOrCancelled.Cancelled (new OperationCanceledException()))
+
+    /// Catch exceptions in a computation
+    let private catch (Cancellable e) = 
+        Cancellable (fun ct -> 
+            try 
+                match e ct with 
+                | ValueOrCancelled.Value r -> ValueOrCancelled.Value (Choice1Of2 r) 
+                | ValueOrCancelled.Cancelled e -> ValueOrCancelled.Cancelled e 
+            with err -> 
+                ValueOrCancelled.Value (Choice2Of2 err))
+
+    /// Implement try/finally for a cancellable computation
+    let tryFinally e compensation =    
+        catch e |> bind (fun res ->  
+            compensation();
+            match res with Choice1Of2 r -> ret r | Choice2Of2 err -> raise err)
+
+    /// Implement try/with for a cancellable computation
+    let tryWith e handler =    
+        catch e |> bind (fun res ->  
+            match res with Choice1Of2 r -> ret r | Choice2Of2 err -> handler err)
+    
+    // /// Run the cancellable computation within an Async computation.  This isn't actaully used in the codebase, but left
+    // here in case we need it in the future 
+    //
+    // let toAsync e =    
+    //     async { 
+    //       let! ct = Async.CancellationToken
+    //       return! 
+    //          Async.FromContinuations(fun (cont, econt, ccont) -> 
+    //            // Run the computation synchronously using the given cancellation token
+    //            let res = try Choice1Of2 (run ct e) with err -> Choice2Of2 err
+    //            match res with 
+    //            | Choice1Of2 (ValueOrCancelled.Value v) -> cont v
+    //            | Choice1Of2 (ValueOrCancelled.Cancelled err) -> ccont err
+    //            | Choice2Of2 err -> econt err) 
+    //     }
+    
+type CancellableBuilder() = 
+    member x.Bind(e,k) = Cancellable.bind k e
+    member x.Return(v) = Cancellable.ret v
+    member x.ReturnFrom(v) = v
+    member x.Combine(e1,e2) = e1 |> Cancellable.bind (fun () -> e2)
+    member x.TryWith(e,handler) = Cancellable.tryWith e handler
+    member x.Using(resource,e) = Cancellable.tryFinally (e resource) (fun () -> (resource :> System.IDisposable).Dispose())
+    member x.TryFinally(e,compensation) =  Cancellable.tryFinally e compensation
+    member x.Delay(f) = Cancellable.delay f
+    member x.Zero() = Cancellable.ret ()
+
+let cancellable = CancellableBuilder()
+
 /// Computations that can cooperatively yield by returning a continuation
 ///
 ///    - Any yield of a NotYetDone should typically be "abandonable" without adverse consequences. No resource release
@@ -495,9 +799,11 @@ module ResultOrException =
 ///
 ///    - The key thing is that you can take an Eventually value and run it with 
 ///      Eventually.repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled
+///
+///    - Cancellation results in a suspended computation rather than complete abandonment
 type Eventually<'T> = 
     | Done of 'T 
-    | NotYetDone of (unit -> Eventually<'T>)
+    | NotYetDone of (CompilationThreadToken -> Eventually<'T>)
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Eventually = 
@@ -506,42 +812,44 @@ module Eventually =
     let rec box e = 
         match e with 
         | Done x -> Done (Operators.box x) 
-        | NotYetDone (work) -> NotYetDone (fun () -> box (work()))
+        | NotYetDone (work) -> NotYetDone (fun ctok -> box (work ctok))
 
-    let rec forceWhile check e  = 
+    let rec forceWhile ctok check e  = 
         match e with 
         | Done x -> Some(x)
         | NotYetDone (work) -> 
             if not(check()) 
             then None
-            else forceWhile check (work()) 
+            else forceWhile ctok check (work ctok) 
 
-    let force e = Option.get (forceWhile (fun () -> true) e)
+    let force ctok e = Option.get (forceWhile ctok (fun () -> true) e)
 
         
     /// Keep running the computation bit by bit until a time limit is reached.
     /// The runner gets called each time the computation is restarted
+    ///
+    /// If cancellation happens, the operation is left half-complete, ready to resume.
     let repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled timeShareInMilliseconds (ct: CancellationToken) runner e = 
         let sw = new System.Diagnostics.Stopwatch() 
-        let rec runTimeShare e = 
-          runner (fun () -> 
+        let rec runTimeShare ctok e = 
+          runner ctok (fun ctok -> 
             sw.Reset()
             sw.Start(); 
-            let rec loop(e) = 
-                match e with 
-                | Done _ -> e
+            let rec loop ctok ev2 = 
+                match ev2 with 
+                | Done _ -> ev2
                 | NotYetDone work ->
                     if ct.IsCancellationRequested || sw.ElapsedMilliseconds > timeShareInMilliseconds then 
                         sw.Stop();
-                        NotYetDone(fun () -> runTimeShare e) 
+                        NotYetDone(fun ctok -> runTimeShare ctok ev2) 
                     else 
-                        loop(work())
-            loop(e))
-        runTimeShare e
+                        loop ctok (work ctok)
+            loop ctok e)
+        NotYetDone (fun ctok -> runTimeShare ctok e)
     
     /// Keep running the asynchronous computation bit by bit. The runner gets called each time the computation is restarted.
-    /// Can be cancelled in the normal way.
-    let forceAsync (runner: (unit -> Eventually<'T>) -> Async<Eventually<'T>>) (e: Eventually<'T>) : Async<'T option> =
+    /// Can be cancelled as an Async in the normal way.
+    let forceAsync (runner: (CompilationThreadToken -> Eventually<'T>) -> Async<Eventually<'T>>) (e: Eventually<'T>) : Async<'T option> =
         let rec loop (e: Eventually<'T>) =
             async {
                 match e with 
@@ -555,7 +863,7 @@ module Eventually =
     let rec bind k e = 
         match e with 
         | Done x -> k x 
-        | NotYetDone work -> NotYetDone (fun () -> bind k (work()))
+        | NotYetDone work -> NotYetDone (fun ctok -> bind k (work ctok))
 
     let fold f acc seq = 
         (Done acc,seq) ||> Seq.fold  (fun acc x -> acc |> bind (fun acc -> f acc x))
@@ -564,13 +872,13 @@ module Eventually =
         match e with 
         | Done x -> Done(Result x)
         | NotYetDone work -> 
-            NotYetDone (fun () -> 
-                let res = try Result(work()) with | e -> Exception e 
+            NotYetDone (fun ctok -> 
+                let res = try Result(work ctok) with | e -> Exception e 
                 match res with 
                 | Result cont -> catch cont
                 | Exception e -> Done(Exception e))
     
-    let delay f = NotYetDone (fun () -> f())
+    let delay (f: unit -> Eventually<'T>) = NotYetDone (fun _ctok -> f())
 
     let tryFinally e compensation =    
         catch (e) 
@@ -582,6 +890,10 @@ module Eventually =
     let tryWith e handler =    
         catch e 
         |> bind (function Result v -> Done v | Exception e -> handler e)
+    
+    // All eventually computations carry a CompiationThreadToken
+    let token =    
+        NotYetDone (fun ctok -> Done ctok)
     
 type EventuallyBuilder() = 
     member x.Bind(e,k) = Eventually.bind k e

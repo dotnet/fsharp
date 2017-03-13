@@ -135,7 +135,8 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
     /// Returns `true` if given string is an operator display name, e.g. ( |>> )
     let IsOperatorName (name: string) =
         let name = if name.StartsWith "( " && name.EndsWith " )" then name.[2..name.Length - 3] else name
-        let res = name |> Seq.forall (fun c -> opCharSet.Contains c && c <> ' ')
+        // there is single operator containing a space - range operator with step: `.. ..`
+        let res = name = ".. .." || name |> Seq.forall (fun c -> opCharSet.Contains c && c <> ' ')
         res
 
     let IsMangledOpName (n:string) =
@@ -384,6 +385,19 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
             // The check for the first character here could be eliminated since it's covered
             // by the call to String.forall; it is a fast check used to avoid the call if possible.
             || (s.[0] = '~' && String.forall (fun c -> c = '~') s)
+
+    let IsPunctuation s =
+        if System.String.IsNullOrEmpty s then false else
+        match s with
+        | "," | ";" | "|" | ":" | "." | "*"
+        | "(" | ")"
+        | "[" | "]" 
+        | "{" | "}"
+        | "<" | ">" 
+        | "[|" | "|]" 
+        | "[<" | ">]"
+            -> true
+        | _ -> false
 
     let IsTernaryOperator s = 
         (DecompileOpName s = qmarkSet)

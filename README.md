@@ -5,9 +5,9 @@
 
 ## Windows build
 
-|            |Debug (Build only)|Release (Tests Part 1)|Release (Tests Part 2)|
-|:----------:|:----------------:|:------------------:|:-----------------------:|
-|**master**  |[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/debug_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/debug_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ci_part1_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/release_ci_part1_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ci_part2_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/release_ci_part2_windows_nt/)|
+|            |Debug (Build only)|Release (Tests Part 1)|Release (Tests Part 2)|Release (Tests Part 3)|
+|:----------:|:----------------:|:------------------:|:-----------------------:|:---------------------:|
+|**master**  |[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/debug_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/debug_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ci_part1_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/release_ci_part1_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ci_part2_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/release_ci_part2_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ci_part3_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/release_ci_part3_windows_nt/)|
 
 ###Contributing to the F# Language, Library, and Tools
 
@@ -48,10 +48,13 @@ For F# Compiler on OSX and Linux (see .travis.yml for build steps)
 
 For Visual F# IDE Tools 4.1 development (Windows)
 
-- [Visual Studio 2017 RC](https://www.visualstudio.com/vs/visual-studio-2017-rc/#downloadvs)
+- [Visual Studio 2017](https://www.visualstudio.com/downloads/)
   - Under the "Windows" workloads, select ".NET desktop development".
     - Select "F# language suport" under the optional components.
   - Under the "Other Toolsets" workloads, select "Visual Studio extension development".
+  - Under the "Individual Components" tab select "Windows 10 SDK" as shown below (needed for compiling RC resource, see #2556):
+  ![image](https://cloud.githubusercontent.com/assets/1249087/23730261/5c78c850-041b-11e7-9d9d-62766351fd0f.png)
+
 
 ####Additional frameworks
 
@@ -90,6 +93,17 @@ This repository enables development on Windows, Linux and OSX.  It enables autom
 If using Android, or iOS, and would like to contribute, please see the instructions provided at the [Open Edition repo](https://github.com/fsharp/fsharp/#the-open-edition-of-the-f-compiler-core-library--tools).
 
 Although the primary focus of this repo is F# for Windows and the Visual Studio F# tools, contributions here flow directly to the F# Open Edition repo.  More details can be found [here](https://github.com/Microsoft/visualfsharp/wiki/Code-Flow-to-Open-Edition).
+
+###Using F# on a buildserver or computer without VS 2017 or without the optional F# tools
+
+If you wish to use the latest F# compiler on a computer without Visual Studio 2017 installed, you can add the nuget package ``FSharp.Compiler.Tools`` to your projects. This will replace the in-box compiler with the version contained in the package.
+The actual package is built in https://github.com/fsharp/fsharp.
+
+Note that while this will remove the dependency on VS 2017, you will still need to have MSBuild and the required targets files installed, which come with any older version of VS (e.g. 2013 or 2015).
+####... With an older version of VS
+Just install the nuget package, it will then use MSBuild and the targets files from the older version. If you get an error, see below.
+####... With VS (any version) installed, but without the optional F# tools installed
+The currently distributed F# templates depend on machine-wide installed .targets files. You can manually modify your project to instead use the .targets file from the nuget package. This will allow you to build your project on a computer with VS but without the optional F# tools installed. See https://github.com/fsharp/fsharp/issues/676 for how to modify your project file.
 
 ###Get In Touch
 

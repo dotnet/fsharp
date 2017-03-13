@@ -2109,10 +2109,10 @@ let x = new MyClass2(0)
         MoveCursorToEndOfMarker(file,"String.")
         let completions = time1 AutoCompleteAtCursor file "Time of first autocomplete."
         // printf "Completions=%A\n" completions
-        Assert.IsTrue(completions.Length>0)
+        Assert.IsTrue(completions.Length > 0)
         for completion in completions do
             match completion with 
-              | _,_,_,DeclarationType.FunctionValue -> ()
+              | _,_,_,DeclarationType.Method -> ()
               | name,_,_,x -> failwith (sprintf "Unexpected item %s seen with declaration type %A" name x)
                          
     // FEATURE: Pressing ctrl+space or ctrl+j will give a list of valid completions.
@@ -4218,7 +4218,11 @@ let x = query { for bbbb in abbbbc(*D0*) do
         SaveFileToDisk file2      
         TakeCoffeeBreak(this.VS)
         
+#if FCS_RETAIN_BACKGROUND_PARSE_RESULTS
         gpatcc.AssertExactly(notAA[file2], notAA[file2;file3])
+#else
+        gpatcc.AssertExactly(notAA[file2; file3], notAA[file2;file3])
+#endif
 
     /// FEATURE: References added to the project bring corresponding new .NET and F# items into scope.
     [<Test;Category("ReproX")>]
@@ -4432,17 +4436,17 @@ let x = query { for bbbb in abbbbc(*D0*) do
               | "Function",_,_,_ -> ()
               | "Enum",_,_,DeclarationType.Enum -> ()
               | "Constant",_,_,_ -> ()
-              | "FunctionValue",_,_,DeclarationType.FunctionValue -> ()
+              | "FunctionValue",_,_,DeclarationType.Method -> ()
               | "OutOfRange",_,_,DeclarationType.Exception -> ()
               | "OutOfRangeException",_,_,DeclarationType.Class -> ()
               | "Interface",_,_,DeclarationType.Interface -> ()
               | "Struct",_,_,DeclarationType.ValueType -> ()
               | "Tuple",_,_,_ -> ()
               | "Submodule",_,_,DeclarationType.Module -> ()
-              | "Record",_,_,DeclarationType.Record -> ()
+              | "Record",_,_,DeclarationType.Class -> ()
               | "DiscriminatedUnion",_,_,DeclarationType.DiscriminatedUnion -> ()
-              | "AsmType",_,_,DeclarationType.RareType -> ()
-              | "FunctionType",_,_,DeclarationType.FunctionType -> ()
+              | "AsmType",_,_,DeclarationType.Class -> ()
+              | "FunctionType",_,_,DeclarationType.Class -> ()
               | "TupleType",_,_,DeclarationType.Class -> ()
               | "ValueType",_,_,DeclarationType.ValueType -> ()
               | "Class",_,_,DeclarationType.Class -> ()
@@ -4465,14 +4469,14 @@ let x = query { for bbbb in abbbbc(*D0*) do
               | "InterfaceAbbreviation",_,_,DeclarationType.Interface -> ()
               | "StructAbbreviation",_,_,DeclarationType.ValueType -> ()
               | "DiscriminatedUnion",_,_,_ -> ()
-              | "RecordAbbreviation",_,_,DeclarationType.Record -> ()
+              | "RecordAbbreviation",_,_,DeclarationType.Class -> ()
               | "DiscriminatedUnionAbbreviation",_,_,DeclarationType.DiscriminatedUnion -> ()
-              | "AsmTypeAbbreviation",_,_,DeclarationType.RareType -> ()
+              | "AsmTypeAbbreviation",_,_,DeclarationType.Class -> ()
               | "TupleTypeAbbreviation",_,_,_ -> ()
               | name,_,_,x -> failwith (sprintf "Unexpected union member %s seen with declaration type %A" name x)
         
     [<Test>]
-    member public this.``ListFunctions``() = 
+    member public this.ListFunctions() = 
         let code = 
                                     [ 
                                      "let y = List."
@@ -4489,7 +4493,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
               | "Equals",_,_,DeclarationType.Method -> ()
               | "Empty",_,_,DeclarationType.Property -> () 
               | "empty",_,_,_ -> () 
-              | _,_,_,DeclarationType.FunctionValue -> ()
+              | _,_,_,DeclarationType.Method -> ()
               | name,_,_,x -> failwith (sprintf "Unexpected item %s seen with declaration type %A" name x)
 
     [<Test>]
@@ -4509,7 +4513,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         
         for completion in completions do
             match completion with 
-              | "Action" as name,_,_,decl -> AssertIsDecl(name,decl,DeclarationType.FunctionType)
+              | "Action" as name,_,_,decl -> AssertIsDecl(name,decl,DeclarationType.Class)
               | "CodeDom" as name,_,_,decl -> AssertIsDecl(name,decl,DeclarationType.Namespace)
               | _ -> ()
       
@@ -7710,6 +7714,35 @@ let rec f l =
         this.VerifyDotCompListContainAllAtStartOfMarker(fileContents, "(*Marker*)", 
             ["Chars";"Length"], queryAssemblyRefs )
 
+    [<Test>]
+    member this.``Verify no completion on dot after module definition``() = 
+        this.VerifyDotCompListIsEmptyAtStartOfMarker(
+            fileContents = """
+                module BasicTest(*Marker*)
+
+                let foo x = x
+                let bar = 1""",
+            marker = "(*Marker*)")
+
+    [<Test>]
+    member this.``Verify no completion after module definition``() = 
+        this.VerifyCtrlSpaceCompListIsEmptyAtEndOfMarker(
+            fileContents = """
+                module BasicTest 
+
+                let foo x = x
+                let bar = 1""",
+            marker = "module BasicTest ")
+
+    [<Test>]
+    member this.``Verify no completion in hash derictives``() =
+        this.VerifyCtrlSpaceCompListIsEmptyAtEndOfMarker(
+            fileContents = """
+                #r (*Marker*)
+
+                let foo x = x
+                let bar = 1""",
+            marker = "(*Marker*)")
 
 // Context project system
 [<TestFixture>] 

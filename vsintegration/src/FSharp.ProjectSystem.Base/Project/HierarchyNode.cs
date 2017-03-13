@@ -797,6 +797,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 result = this.ProjectMgr.GetProjectProperty("TargetPlatformIdentifier");
             }
 
+            if (propId == (int)__VSHPROPID5.VSHPROPID_ProvisionalViewingStatus)
+            {
+                // Indicates that the node support previewing
+                result = ProvisionalViewingStatus;
+            }
+
 #if DEBUG
             if (propId != LastTracedProperty)
             {
@@ -3038,7 +3044,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         internal string GetProjectGuid()
         {
             string guid = projectMgr.GetProjectProperty(ProjectFileConstants.ProjectGuid) as string;
-            Debug.Assert(!String.IsNullOrEmpty(guid), "No project guid?");
             return guid;
         }
 
@@ -3287,5 +3292,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             throw new NotImplementedException();
         }
+
+        public virtual __VSPROVISIONALVIEWINGSTATUS ProvisionalViewingStatus => __VSPROVISIONALVIEWINGSTATUS.PVS_Disabled;
     }
 }

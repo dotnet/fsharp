@@ -2,14 +2,12 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open System
 open System.Composition
 open System.Collections.Generic
 open System.Collections.Immutable
 open System.Linq
 open System.Threading
 open System.Threading.Tasks
-open System.Runtime.CompilerServices
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Editor
@@ -46,10 +44,10 @@ type internal FSharpGoToDefinitionService
         asyncMaybe {
             let textLine = sourceText.Lines.GetLineFromPosition(position)
             let textLinePos = sourceText.Lines.GetLinePosition(position)
-            let fcsTextLineNumber = textLinePos.Line + 1 // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
-            let! symbol = CommonHelpers.getSymbolAtPosition(documentKey, sourceText, position, filePath, defines, SymbolLookupKind.Fuzzy)
+            let fcsTextLineNumber = Line.fromZ textLinePos.Line
+            let! symbol = CommonHelpers.getSymbolAtPosition(documentKey, sourceText, position, filePath, defines, SymbolLookupKind.Greedy)
             let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true)
-            let! declarations = checkFileResults.GetDeclarationLocationAlternate (fcsTextLineNumber, symbol.RightColumn, textLine.ToString(), [symbol.Text], false) |> liftAsync
+            let! declarations = checkFileResults.GetDeclarationLocationAlternate (fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland, false) |> liftAsync
             
             match declarations with
             | FSharpFindDeclResult.DeclFound(range) -> return range
@@ -97,7 +95,9 @@ type internal FSharpGoToDefinitionService
                 let workspace = document.Project.Solution.Workspace
                 let navigationService = workspace.Services.GetService<IDocumentNavigationService>()
                 ignore presenters
-                navigationService.TryNavigateToSpan(workspace, navigableItem.Document.Id, navigableItem.SourceSpan)
+                // prefer open documents in the preview tab
+                let options = workspace.Options.WithChangedOption(NavigationOptions.PreferProvisionalTab, true)
+                navigationService.TryNavigateToSpan(workspace, navigableItem.Document.Id, navigableItem.SourceSpan, options)
 
                 // FSROSLYNTODO: potentially display multiple results here
                 // If GotoDef returns one result then it should try to jump to a discovered location. If it returns multiple results then it should use 
