@@ -171,6 +171,41 @@ type internal ProjectInfoManager
         | true, (_loadTime, originalOptions) -> Some originalOptions
         | _ -> this.TryGetOptionsForProject(projectId) 
 
+
+    member self.AdjustOptionsForSignature filePath (projectOptions:FSharpProjectOptions)= 
+        let projectFileName = filePath + ".fsproj"
+        let sourceFiles = [| filePath |]
+        let outputArg = sprintf "-o:%s" (Path.ChangeExtension(projectFileName, ".dll"))
+        let flags = [|outputArg; "--noframework"; "--debug-"; "--optimize-"; "--tailcalls-" |]
+        
+        let refProjectsOutPaths = 
+            projectOptions.ReferencedProjects 
+            |> Array.map fst |> Set.ofArray
+
+        let references = 
+            projectOptions.OtherOptions
+            |> Array.choose (fun arg -> // Filter out project references, which aren't necessary for the scenario
+                if arg.StartsWith "-r:" 
+                    && not (Set.contains (arg.[3..].Trim()) refProjectsOutPaths) 
+                then Some arg 
+                else None)
+
+        { projectOptions with
+            ProjectFileName = projectFileName
+            ProjectFileNames = sourceFiles
+            OtherOptions = Array.append flags references
+            IsIncompleteTypeCheckEnvironment = false
+            UseScriptResolutionRules = false
+            LoadTime = fakeDateTimeRepresentingTimeLoaded projectFileName
+            UnresolvedReferences = None
+            ReferencedProjects = [||]
+            OriginalLoadReferences = []
+            ExtraProjectInfo = None
+        }
+
+
+
+
 // Used to expose FSharpChecker/ProjectInfo manager to diagnostic providers
 // Diagnostic providers can be executed in environment that does not use MEF so they can rely only
 // on services exposed by the workspace
