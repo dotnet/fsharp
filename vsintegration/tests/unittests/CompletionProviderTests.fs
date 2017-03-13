@@ -22,22 +22,16 @@
 module Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn.CompletionProviderTests
 
 open System
-open System.Threading
 open System.Linq
 
 open NUnit.Framework
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Completion
-open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 
-open Microsoft.VisualStudio.FSharp.Editor
-open Microsoft.VisualStudio.FSharp.LanguageService
-
 open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.Range
 
 let filePath = "C:\\test.fs"
 let internal options = { 
@@ -66,6 +60,25 @@ let VerifyCompletionList(fileContents: string, marker: string, expected: string 
 
     for item in unexpected do
         Assert.IsFalse(results.Contains(item), sprintf "Completions should not contain '%s'. Got '{%s}'" item (String.Join(", ", results)))
+
+let VerifyCompletionListExactly(fileContents: string, marker: string, expected: string list) =
+    let caretPosition = fileContents.IndexOf(marker) + marker.Length
+    
+    let actual = 
+        FSharpCompletionProvider.ProvideCompletionsAsyncAux(FSharpChecker.Instance, SourceText.From(fileContents), caretPosition, options, filePath, 0) 
+        |> Async.RunSynchronously 
+        |> Option.defaultValue (ResizeArray())
+        |> Seq.toList
+        // sort items as Roslyn do - by `SortText`
+        |> List.sortBy (fun x -> x.SortText)
+
+    let actualNames = actual |> List.map (fun x -> x.DisplayText)
+
+    if actualNames <> expected then
+        Assert.Fail(sprintf "Expected:\n%s,\nbut was:\n%s\nactual with sort text:\n%s" 
+                            (String.Join("; ", expected |> List.map (sprintf "\"%s\""))) 
+                            (String.Join("; ", actualNames |> List.map (sprintf "\"%s\"")))
+                            (String.Join("\n", actual |> List.map (fun x -> sprintf "%s => %s" x.DisplayText x.SortText))))
     
 [<Test>]
 let ShouldTriggerCompletionAtCorrectMarkers() =
@@ -161,6 +174,98 @@ type T1 =
 System.Console.WriteLine()
 """
     VerifyCompletionList(fileContents, "System.", ["Console"; "Array"; "String"], ["T1"; "M1"; "M2"])
+
+[<Test>]
+let ``Class instance members are ordered according to their kind and where they are defined (simple case, by a variable)``() =
+    let fileContents = """
+type Base() =
+    member __.BaseMethod() = 1
+    member __.BaseProp = 1
+
+type Class() = 
+    inherit Base()
+    member this.MineMethod() = 1
+    member this.MineProp = 1
+
+let x = Class()
+x.
+"""
+    let expected = ["MineProp"; "BaseProp"; "MineMethod"; "BaseMethod"; "Equals"; "GetHashCode"; "GetType"; "ToString"]
+    VerifyCompletionListExactly(fileContents, "x.", expected)
+
+[<Test>]
+let ``Class instance members are ordered according to their kind and where they are defined (simple case, by a constructor)``() =
+    let fileContents = """
+type Base() =
+    member __.BaseMethod() = 1
+    member __.BaseProp = 1
+
+type Class() = 
+    inherit Base()
+    member this.MineMethod() = 1
+    member this.MineProp = 1
+
+let x = Class().
+"""
+    let expected = ["MineProp"; "BaseProp"; "MineMethod"; "BaseMethod"; "Equals"; "GetHashCode"; "GetType"; "ToString"]
+    VerifyCompletionListExactly(fileContents, "let x = Class().", expected)
+
+
+[<Test>]
+let ``Class static members are ordered according to their kind and where they are defined``() =
+    let fileContents = """
+type Base() =
+    static member BaseStaticMethod() = 1
+    static member BaseStaticProp = 1
+
+type Class() = 
+    inherit Base()
+    static member MineStaticMethod() = 1
+    static member MineStaticProp = 2
+
+Class.
+"""
+    let expected = ["MineStaticProp"; "BaseStaticProp"; "MineStaticMethod"; "BaseStaticMethod"]
+    VerifyCompletionListExactly(fileContents, "Class.", expected)
+
+[<Test>]
+let ``Class instance members are ordered according to their kind and where they are defined (complex case)``() =
+    let fileContents = """
+type Base() =
+    inherit System.Collections.Generic.List<int>
+    member __.BaseMethod() = 1
+    member __.BaseProp = 1
+
+type Class() = 
+    inherit Base()
+    member this.MineMethod() = 1
+    member this.MineProp = 1
+
+let x = Class()
+x.
+"""
+    let expected = ["MineProp"; "BaseProp"; "Capacity"; "Count"; "Item"; "MineMethod"; "Add"; "AddRange"; "AsReadOnly"; "BaseMethod"; "BinarySearch"; "Clear"; "Contains"
+                    "ConvertAll"; "CopyTo"; "Equals"; "Exists"; "Find"; "FindAll"; "FindIndex"; "FindLast"; "FindLastIndex"; "ForEach"; "GetEnumerator"; "GetHashCode"
+                    "GetRange"; "GetType"; "IndexOf"; "Insert"; "InsertRange"; "LastIndexOf"; "Remove"; "RemoveAll"; "RemoveAt"; "RemoveRange"; "Reverse"; "Sort"
+                    "ToArray"; "ToString"; "TrimExcess"; "TrueForAll"]
+    VerifyCompletionListExactly(fileContents, "x.", expected)
+
+[<Test>]
+let ``Extension methods go after everything else, extension properties are treated as normal ones``() =
+    let fileContents = """
+open System.Collections.Generic
+
+type List<'a> with
+    member __.ExtensionProp = 1
+    member __.ExtensionMeth() = 1
+
+List().
+"""
+    let expected = ["Capacity"; "Count"; "ExtensionProp"; "Item"; "Add"; "AddRange"; "AsReadOnly"; "BinarySearch"; "Clear"; "Contains"; "ConvertAll"; "CopyTo"; "Exists"
+                    "Find"; "FindAll"; "FindIndex"; "FindLast"; "FindLastIndex"; "ForEach"; "GetEnumerator"; "GetRange"; "IndexOf"; "Insert"; "InsertRange"; "LastIndexOf"
+                    "Remove"; "RemoveAll"; "RemoveAt"; "RemoveRange"; "Reverse"; "Sort"; "ToArray"; "TrimExcess"; "TrueForAll"; "Equals"; "GetHashCode"; "GetType"; "ToString"
+                    "ExtensionMeth"]
+    VerifyCompletionListExactly(fileContents, "List().", expected)
 
 #if EXE
 
