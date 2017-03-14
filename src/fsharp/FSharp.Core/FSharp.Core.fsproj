@@ -95,6 +95,12 @@
     <Compile Include="collections.fs">
       <Link>Collections/collections.fs</Link>
     </Compile>
+    <Compile Include="seqcore.fsi">
+      <Link>Collections/seqcore.fsi</Link>
+    </Compile>
+    <Compile Include="seqcore.fs">
+      <Link>Collections/seqcore.fs</Link>
+    </Compile>
     <Compile Include="seq.fsi">
       <Link>Collections/seq.fsi</Link>
     </Compile>
