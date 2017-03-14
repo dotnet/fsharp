@@ -1183,7 +1183,7 @@ module UntypedParseImpl =
                             | SynPat.Typed(SynPat.Named(SynPat.Wild(range), _, _, _, _), _, _) when rangeContainsPos range pos ->
                                 // parameter with type hint, but we are on its name, no completion
                                 Some CompletionContext.Invalid
-                            | _ -> None
+                            | _ -> defaultTraverse synBinding
 
                         match headPat with
                         | SynPat.LongIdent(_,_,_,ctorArgs,_,_) ->
@@ -1201,9 +1201,7 @@ module UntypedParseImpl =
                                         Some CompletionContext.Invalid
                                     | _ -> visitParam pat
                                 )
-
                             | _ -> defaultTraverse synBinding
-
                         | _ -> defaultTraverse synBinding 
                     
                     member this.VisitHashDirective(range) = 
