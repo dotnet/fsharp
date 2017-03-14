@@ -6213,7 +6213,7 @@ let rec f l =
                 module MyModule2 =     
                     let foo = MyNamespace1.MyModule(*Mtypeparameter1*)
                     let f (x:int) = MyNamespace1.MyModule.DuType(*Mtypeparameter2*)    
-                    let typeFunc<MyNamespace1.MyModule(*Mtypeparameter3*)> = 10""",
+                    let typeFunc<[<MyNamespace1.MyModule(*Mtypeparameter3*)>] 'a> = 10""",
             marker = "(*Mtypeparameter1*)",
             list = ["Dog";"DuType"])
 
@@ -6234,7 +6234,7 @@ let rec f l =
                 module MyModule2 =     
                     let foo = MyNamespace1.MyModule(*Mtypeparameter1*)
                     let f (x:int) = MyNamespace1.MyModule.DuType(*Mtypeparameter2*)    
-                    let typeFunc<MyNamespace1.MyModule(*Mtypeparameter3*)> = 10""",
+                    let typeFunc<[<MyNamespace1.MyModule(*Mtypeparameter3*)>] 'a> = 10""",
             marker = "(*Mtypeparameter2*)",
             list = ["Tag"])
 
@@ -6255,7 +6255,7 @@ let rec f l =
                 module MyModule2 =     
                     let foo = MyNamespace1.MyModule(*Mtypeparameter1*)
                     let f (x:int) = MyNamespace1.MyModule.DuType(*Mtypeparameter2*)    
-                    let typeFunc<MyNamespace1.MyModule(*Mtypeparameter3*)> = 10""",
+                    let typeFunc<[<MyNamespace1.MyModule(*Mtypeparameter3*)>] 'a> = 10""",
             marker = "(*Mtypeparameter3*)",
             list = ["Dog";"DuType"])
 
