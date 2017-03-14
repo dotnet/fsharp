@@ -1,0 +1,670 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata" id="root">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace"/>
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0"/>
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string"/>
+              <xsd:attribute name="type" type="xsd:string"/>
+              <xsd:attribute name="mimetype" type="xsd:string"/>
+              <xsd:attribute ref="xml:space"/>
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string"/>
+              <xsd:attribute name="name" type="xsd:string"/>
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1"/>
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2"/>
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1"/>
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3"/>
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4"/>
+              <xsd:attribute ref="xml:space"/>
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1"/>
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required"/>
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AddToNullProjectError" xml:space="preserve">
+    <value>Proje null olduğundan &apos;{0}&apos; dosyası projeye eklenemedi.</value>
+  </data>
+  <data name="Advanced" xml:space="preserve">
+    <value>Gelişmiş</value>
+    <comment>Project Property Page Caption</comment>
+  </data>
+  <data name="ReferenceAlreadyExists" xml:space="preserve">
+    <value>&apos;{0}&apos; bileşenine başvuru eklenemiyor. Projede bu bileşen için zaten bir başvuru var.</value>
+    <comment>ReferenceAlreadyExists error message</comment>
+  </data>
+  <data name="AttributeLoad" xml:space="preserve">
+    <value>&apos;{0}&apos; özniteliği &apos;{1}&apos; proje dosyasından yüklenemedi.</value>
+  </data>
+  <data name="BuildAction" xml:space="preserve">
+    <value>Derleme Eylemi</value>
+    <comment>Project Build Property Name</comment>
+  </data>
+  <data name="BuildActionDescription" xml:space="preserve">
+    <value>Dosyanın derleme ve dağıtım işlemi ile ilişkisi</value>
+    <comment>Project Build Property Description</comment>
+  </data>
+  <data name="BuildVerbosity" xml:space="preserve">
+    <value>Ayrıntı</value>
+  </data>
+  <data name="BuildVerbosityDescription" xml:space="preserve">
+    <value>Derleme çıktısına ne kadar bilgi ekleneceğini belirtin</value>
+  </data>
+  <data name="cli1" xml:space="preserve">
+    <value>ECMA-335 CLI uyumlu çerçeve (konum belirtilmelidir)</value>
+    <comment>Target platform drop down option</comment>
+  </data>
+  <data name="Compile" xml:space="preserve">
+    <value>Derle</value>
+    <comment>Build Action - drop down option</comment>
+  </data>
+  <data name="ConfirmExtensionChange" xml:space="preserve">
+    <value>Bir dosya adı uzantısını değiştirirseniz dosya kullanılamaz hale gelebilir. Değiştirmek istediğinizden emin misiniz?</value>
+  </data>
+  <data name="CannotAddFileThatIsOpenInEditor" xml:space="preserve">
+    <value>&apos;{0}&apos; adlı bir dosya zaten var ve bir düzenleyicide açık. Lütfen eklemekte olduğunuz öğeye benzersiz bir ad verin veya öncelikle mevcut öğeyi silin.</value>
+  </data>
+  <data name="CanNotSaveFileNotOpeneInEditor" xml:space="preserve">
+    <value>Düzenleyicide açık olmadığından &apos;{0}&apos; kaydedilemiyor.</value>
+  </data>
+  <data name="Content" xml:space="preserve">
+    <value>İçerik</value>
+    <comment>Build Action - drop down option</comment>
+  </data>
+  <data name="CopyToLocal" xml:space="preserve">
+    <value>Yerel Dosyayı Kaydet</value>
+    <comment>File property</comment>
+  </data>
+  <data name="CopyToLocalDescription" xml:space="preserve">
+    <value>Başvurunun çıkış dizinine kopyalanıp kopyalanmayacağını belirtir.</value>
+  </data>
+  <data name="Detailed" xml:space="preserve">
+    <value>Ayrıntılı</value>
+  </data>
+  <data name="Diagnostic" xml:space="preserve">
+    <value>Tanılama</value>
+  </data>
+  <data name="DirectoryExistsShortMessage" xml:space="preserve">
+    <value>Dizin zaten var</value>
+  </data>
+  <data name="EditorViewError" xml:space="preserve">
+    <value>Belirtilen &apos;{0}&apos; görünümü &apos;{1}&apos; düzenleyicisi kullanılarak açılırken hata oluştu</value>
+  </data>
+  <data name="EmbeddedResource" xml:space="preserve">
+    <value>Gömülü Kaynak</value>
+    <comment>Build Action - drop down option</comment>
+  </data>
+  <data name="Error" xml:space="preserve">
+    <value>hata</value>
+  </data>
+  <data name="ErrorInvalidFileName" xml:space="preserve">
+    <value>Geçersiz dosya adı: {0}
+      
+Dosya ve klasörler şunları içeremez:
+- Boş dizeler 
+- &apos;CON&apos;, &apos;AUX&apos;, PRN&apos;, &apos;COM1&apos; veya &apos;LPT2&apos; gibi ayrılmış sistem adları
+- Yalnızca &apos;.&apos;
+- Şu karakterlerden herhangi biri: / ? : &amp;  \ * &quot; &lt; &gt; | # %</value>
+  </data>
+  <data name="ErrorInvalidProjectName" xml:space="preserve">
+    <value>Belirttiğiniz ad geçerli bir proje adı değil.</value>
+  </data>
+  <data name="ErrorMsBuildRegistration" xml:space="preserve">
+    <value>MSBuild yolu kayıt defterinde bulunamadı. Sorunu düzeltmek için lütfen yeniden yükleyin.</value>
+  </data>
+  <data name="ErrorSaving" xml:space="preserve">
+    <value>Dosya Kaydedilirken Hata Oluştu</value>
+  </data>
+  <data name="Exe" xml:space="preserve">
+    <value>Konsol Uygulaması</value>
+  </data>
+  <data name="ExpectedObjectOfType" xml:space="preserve">
+    <value>{0} türünde nesne bekleniyor.</value>
+  </data>
+  <data name="FailedToRetrieveProperties" xml:space="preserve">
+    <value>Proje dosyasından {0} MSBuild özelliği alınamadı.</value>
+    <comment>The exception message thrown when getting a property from msbuild fails.</comment>
+  </data>
+  <data name="FileAlreadyExists" xml:space="preserve">
+    <value>&apos;{0}&apos; adlı bir dosya zaten var. Üzerine yazmak istiyor musunuz?</value>
+  </data>
+  <data name="FileAlreadyExistsAndCannotBeRenamed" xml:space="preserve">
+    <value>&apos;{0}&apos; adlı bir dosya zaten var.</value>
+  </data>
+  <data name="FileAlreadyExistsCaption" xml:space="preserve">
+    <value>Hedef Dosya Var</value>
+  </data>
+  <data name="FileAlreadyInProject" xml:space="preserve">
+    <value>Projede &apos;{0}&apos; adlı bir dosya zaten var. Üzerine yazmak istiyor musunuz?</value>
+  </data>
+  <data name="FileAlreadyInProjectCaption" xml:space="preserve">
+    <value>Hedef Dosya Var</value>
+  </data>
+  <data name="FileCannotBeRenamedToAnExistingFile" xml:space="preserve">
+    <value>Bu konumdaki diskte &apos;{0}&apos; adlı bir dosya veya klasör zaten var. Lütfen başka bir ad seçin.</value>
+  </data>
+  <data name="FileCopyError" xml:space="preserve">
+    <value>Dosya Kopyalanırken Hata Oluştu</value>
+  </data>
+  <data name="FileName" xml:space="preserve">
+    <value>Dosya Adı</value>
+  </data>
+  <data name="FileNameCannotContainALeadingPeriod" xml:space="preserve">
+    <value>Dosya ve klasör adlarının başında nokta olamaz.</value>
+  </data>
+  <data name="FileNameDescription" xml:space="preserve">
+    <value>Dosya veya klasörün adı</value>
+  </data>
+  <data name="FolderName" xml:space="preserve">
+    <value>Klasör Adı</value>
+  </data>
+  <data name="FolderNameDescription" xml:space="preserve">
+    <value>Bu klasörün adı</value>
+  </data>
+  <data name="FullPath" xml:space="preserve">
+    <value>Tam Yol</value>
+  </data>
+  <data name="FullPathDescription" xml:space="preserve">
+    <value>Dosyanın konumu</value>
+  </data>
+  <data name="General" xml:space="preserve">
+    <value>Genel</value>
+  </data>
+  <data name="ItemDoesNotExistInProjectDirectory" xml:space="preserve">
+    <value>Proje dizininde &apos;{0}&apos; öğesi yok. Taşınmış, yeniden adlandırılmış veya silinmiş olabilir.</value>
+  </data>
+  <data name="LaunchUrl" xml:space="preserve">
+    <value>Başlatma URL&apos;si</value>
+  </data>
+  <data name="LaunchUrlDescription" xml:space="preserve">
+    <value>Proje başlatılırken tarayıcıda açılması gereken URL</value>
+  </data>
+  <data name="LinkedItemsAreNotSupported" xml:space="preserve">
+    <value>&apos;{0}&apos; öğesi proje dizininin dışına kaydedilemiyor. Bağlı öğeler desteklenmiyor.</value>
+  </data>
+  <data name="Library" xml:space="preserve">
+    <value>Sınıf Kitaplığı</value>
+  </data>
+  <data name="Minimal" xml:space="preserve">
+    <value>Minimal</value>
+  </data>
+  <data name="Misc" xml:space="preserve">
+    <value>Çeşitli</value>
+  </data>
+  <data name="None" xml:space="preserve">
+    <value>Hiçbiri</value>
+  </data>
+  <data name="Normal" xml:space="preserve">
+    <value>Normal</value>
+  </data>
+  <data name="PasteFailed" xml:space="preserve">
+    <value>Öğe kullanılamadığından veya bozuk olduğundan yapıştırılamıyor.</value>
+  </data>
+  <data name="Program" xml:space="preserve">
+    <value>Program</value>
+  </data>
+  <data name="Project" xml:space="preserve">
+    <value>Proje</value>
+  </data>
+  <data name="ProjectContainsCircularReferences" xml:space="preserve">
+    <value>&apos;{0}&apos; kitaplığına başvuru eklenemiyor. Bu projenin başvuru olarak eklenmesi döngüsel bağımlılığa neden olur. </value>
+  </data>
+  <data name="ProjectFile" xml:space="preserve">
+    <value>Proje Dosyası</value>
+  </data>
+  <data name="ProjectFileDescription" xml:space="preserve">
+    <value>Projenin derleme ve yapılandırma bilgileriyle diğer bilgilerini içeren dosyanın adı.</value>
+  </data>
+  <data name="ProjectFolder" xml:space="preserve">
+    <value>Proje Klasörü</value>
+  </data>
+  <data name="ProjectFolderDescription" xml:space="preserve">
+    <value>Projenin mutlak konumu.</value>
+  </data>
+  <data name="Quiet" xml:space="preserve">
+    <value>Sessiz</value>
+  </data>
+  <data name="RefName" xml:space="preserve">
+    <value>(Ad)</value>
+  </data>
+  <data name="ReferencesNodeName" xml:space="preserve">
+    <value>Başvurular</value>
+  </data>
+  <data name="RefNameDescription" xml:space="preserve">
+    <value>Başvurunun görünen adı</value>
+  </data>
+  <data name="RenameFolder" xml:space="preserve">
+    <value>Dizin yeniden adlandırılamadı. {0}</value>
+  </data>
+  <data name="RTL" xml:space="preserve">
+    <value>RTL_False</value>
+  </data>
+  <data name="SaveCaption" xml:space="preserve">
+    <value>Kaydedilsin mi?</value>
+  </data>
+  <data name="SaveModifiedDocuments" xml:space="preserve">
+    <value>Değiştirilmiş belgeleri kaydetmek istiyor musunuz?</value>
+  </data>
+  <data name="SaveOfProjectFileOutsideCurrentDirectory" xml:space="preserve">
+    <value>Proje dosyası yalnızca &apos;{0}&apos; proje konumuna kaydedilebilir.</value>
+  </data>
+  <data name="ScriptArguments" xml:space="preserve">
+    <value>Betik bağımsız değişkenleri</value>
+  </data>
+  <data name="ScriptArgumentsDescription" xml:space="preserve">
+    <value>Başlatma sırasında betiğe geçirilen bağımsız değişkenler</value>
+  </data>
+  <data name="StandardEditorViewError" xml:space="preserve">
+    <value>Belirtilen &apos;{0}&apos; görünümü standart düzenleyici kullanılarak açılırken hata oluştu.</value>
+  </data>
+  <data name="StartupFile" xml:space="preserve">
+    <value>Başlangıç dosyası</value>
+  </data>
+  <data name="StartupFileDescription" xml:space="preserve">
+    <value>Çalıştırma veya hata ayıklama sırasında başlatılan başlangıç dosyası</value>
+  </data>
+  <data name="StartWebBrowser" xml:space="preserve">
+    <value>Web tarayıcısını başlat</value>
+  </data>
+  <data name="StartWebBrowserDescription" xml:space="preserve">
+    <value>Başlatma sırasında Web tarayıcısını başlatmak için true olarak ayarlanır</value>
+  </data>
+  <data name="URL" xml:space="preserve">
+    <value>URL</value>
+  </data>
+  <data name="UseOfDeletedItemError" xml:space="preserve">
+    <value>Daha önce silinmiş veya mevcut olmayan bir öğeyi kullanmaya çalışıyorsunuz.</value>
+  </data>
+  <data name="v1" xml:space="preserve">
+    <value>Microsoft .NET Framework v1.0</value>
+  </data>
+  <data name="v11" xml:space="preserve">
+    <value>Microsoft .NET Framework v1.1</value>
+  </data>
+  <data name="v2" xml:space="preserve">
+    <value>Microsoft .NET Framework v2.0</value>
+  </data>
+  <data name="Warning" xml:space="preserve">
+    <value>uyarı</value>
+  </data>
+  <data name="WinExe" xml:space="preserve">
+    <value>Windows Uygulaması</value>
+  </data>
+  <data name="WorkingDirectory" xml:space="preserve">
+    <value>Çalışma dizini</value>
+  </data>
+  <data name="WorkingDirectoryDescription" xml:space="preserve">
+    <value>Başlatma sırasındaki çalışma dizini</value>
+  </data>
+  <data name="AddReferenceDialogTitle" xml:space="preserve">
+    <value>Başvuru Ekle</value>
+  </data>
+  <data name="InvalidAutomationObject" xml:space="preserve">
+    <value>Otomasyon nesnesi geçersiz.</value>
+  </data>
+  <data name="CancelQueryEdit" xml:space="preserve">
+    <value>Değiştirilmesi gereken &apos;{0}&apos; dosyası değiştirilemediğinden, denediğiniz komut tamamlanamıyor. Dosya kaynak denetimindeyse kullanıma almanız gerekebilir. Dosya disk üzerinde salt okunur ise özniteliklerini değiştirmeniz gerekebilir.</value>
+    <comment>MsgBox</comment>
+  </data>
+  <data name="ParameterMustBeAValidGuid" xml:space="preserve">
+    <value>Parametre geçerli bir guid olmalıdır.</value>
+    <comment>Error message in the ArgumentException for a  parameter that is not a valid guid.</comment>
+  </data>
+  <data name="InvalidLoggerType" xml:space="preserve">
+    <value>Geçersiz günlükçü türü\nBeklenen: {0}\nAlınan: {1}</value>
+    <comment>Error message thrown for when an  invalid logger type is set.</comment>
+  </data>
+  <data name="InvalidParameter" xml:space="preserve">
+    <value>InvalidParameter</value>
+    <comment>Generic error message for invalid parameters.</comment>
+  </data>
+  <data name="ParameterCannotBeNullOrEmpty" xml:space="preserve">
+    <value>ParameterCannotBeNullOEmpty</value>
+    <comment>Error message for string parameters that cannot be null or empty.</comment>
+  </data>
+  <data name="ParameterMustBeAValidItemId" xml:space="preserve">
+    <value>Parametre geçerli bir öğe tanımlayıcısı olmalıdır.</value>
+    <comment>Error message thrown when an invalid item id is retrieved.</comment>
+  </data>
+  <data name="FileProperties" xml:space="preserve">
+    <value>Dosya Özellikleri</value>
+  </data>
+  <data name="FolderProperties" xml:space="preserve">
+    <value>Klasör Özellikleri</value>
+  </data>
+  <data name="ProjectProperties" xml:space="preserve">
+    <value>Proje Özellikleri</value>
+  </data>
+  <data name="ReferenceProperties" xml:space="preserve">
+    <value>Başvuru Özellikleri</value>
+  </data>
+  <data name="FileOrFolderAlreadyExists" xml:space="preserve">
+    <value>Bu konumdaki diskte &apos;{0}&apos; adlı bir dosya veya klasör zaten var. Lütfen başka bir ad seçin.</value>
+  </data>
+  <data name="BuildCaption" xml:space="preserve">
+    <value>Derleme</value>
+  </data>
+  <data name="OutputPath" xml:space="preserve">
+    <value>Çıkış Yolu</value>
+  </data>
+  <data name="OutputPathDescription" xml:space="preserve">
+    <value>Birincil çıkışın yolu</value>
+  </data>
+  <data name="PathTooLong" xml:space="preserve">
+    <value>Tam &apos;{0}&apos; yolu, dosya sisteminin izin verdiği en fazla karakter sayısını aşıyor.</value>
+  </data>
+  <data name="CustomTool" xml:space="preserve">
+    <value>Özel Araç</value>
+  </data>
+  <data name="CustomToolDescription" xml:space="preserve">
+    <value>Tasarım zamanında bir dosyayı dönüştüren ve bu dönüşümün çıkışını başka bir dosyaya yerleştiren aracı belirtir. Örneğin, bir veri kümesi (.xsd) dosyası varsayılan bir özel araç içerir.</value>
+  </data>
+  <data name="CustomToolNamespace" xml:space="preserve">
+    <value>Özel Araç Ad Alanı</value>
+  </data>
+  <data name="CustomToolNamespaceDescription" xml:space="preserve">
+    <value>Özel araç çıkışının yerleştirildiği ad alanı.</value>
+  </data>
+  <data name="OutputBuilt" xml:space="preserve">
+    <value>Birincil Çıkış</value>
+  </data>
+  <data name="OutputContentFiles" xml:space="preserve">
+    <value>İçerik Dosyaları</value>
+  </data>
+  <data name="OutputDocumentation" xml:space="preserve">
+    <value>Belge Dosyaları</value>
+  </data>
+  <data name="OutputLocalizedResourceDlls" xml:space="preserve">
+    <value>Yerelleştirilmiş Kaynaklar</value>
+  </data>
+  <data name="OutputSourceFiles" xml:space="preserve">
+    <value>Kaynak Dosyalar</value>
+  </data>
+  <data name="OutputSymbols" xml:space="preserve">
+    <value>Hata Ayıklama Sembolleri</value>
+  </data>
+  <data name="OutputXmlSerializer" xml:space="preserve">
+    <value>XML Serileştirme Bütünleştirilmiş Kodları</value>
+  </data>
+  <data name="OutputBuiltDescription" xml:space="preserve">
+    <value>Proje tarafından oluşturulan DLL veya EXE dosyasını içerir.</value>
+  </data>
+  <data name="OutputContentFilesDescription" xml:space="preserve">
+    <value>Projedeki tüm içerik dosyalarını içerir.</value>
+  </data>
+  <data name="OutputDocumentationDescription" xml:space="preserve">
+    <value>Projenin XML Belgesi dosyalarını içerir.</value>
+  </data>
+  <data name="OutputLocalizedResourceDllsDescription" xml:space="preserve">
+    <value>Her kültüre ait kaynakların uydu bütünleştirilmiş kodlarını içerir.</value>
+  </data>
+  <data name="OutputSourceFilesDescription" xml:space="preserve">
+    <value>Projedeki tüm kaynak dosyaları içerir.</value>
+  </data>
+  <data name="OutputSymbolsDescription" xml:space="preserve">
+    <value>Projenin hata ayıklama dosyalarını içerir.</value>
+  </data>
+  <data name="OutputXmlSerializerDescription" xml:space="preserve">
+    <value>Projenin XML serileştirme bütünleştirilmiş kodlarını içerir.</value>
+  </data>
+  <data name="QueryReloadNestedProject" xml:space="preserve">
+    <value>&apos;{0}&apos; proje dosyası Visual Studio&apos;nun dışında değiştirildi. Projeyi yeniden yüklemek istiyor musunuz?</value>
+  </data>
+  <data name="NestedProjectFailedToReload" xml:space="preserve">
+    <value>İç içe proje yeniden yüklenemedi.</value>
+  </data>
+  <data name="FileOrFolderCannotBeFound" xml:space="preserve">
+    <value>&apos;{0}&apos; öğesi yeniden adlandırıldığı, silindiği veya yeni bir konuma taşındığı için disk üzerinde bulunamıyor.</value>
+  </data>
+  <data name="ErrorReferenceCouldNotBeAdded" xml:space="preserve">
+    <value>{0} öğesine başvuru eklenemedi. Lütfen dosyanın erişilebilir olduğundan ve geçerli bir bütünleştirilmiş kod ya da COM bileşeni olduğundan emin olun.</value>
+  </data>
+  <data name="DetailsImport" xml:space="preserve">
+    <value>&apos;{0}&apos; proje dosyasında &apos;{1}&apos; dosyasına yönelik &apos;İçeri Aktarma&apos; bulundu. Bu dosya, içeri aktarılması güvenli bir dosya olarak kaydedilmedi ve zararlı hedef ve görevler içerebilir. İçeri aktarılan bu dosya gerçekten güvenli bulunuyorsa {2} kayıt defteri anahtarına yazılarak kaydedilebilir.</value>
+  </data>
+  <data name="DetailsUserImport" xml:space="preserve">
+    <value>&apos;{0}&apos; kullanıcı proje dosyasında &apos;{1}&apos; dosyasına yönelik &apos;İçeri Aktarma&apos; bulundu. Kullanıcı projesi dosyalarındaki tüm içeri aktarmalar güvensiz kabul edilir.</value>
+  </data>
+  <data name="DetailsItem" xml:space="preserve">
+    <value>&apos;{0}&apos; proje dosyasında &apos;{1}&apos; adlı bir veya daha fazla öğe bulundu. Bu öğeler normal olarak proje dosyasında belirtilmemelidir. Bunlar projenin yüklenmesi sırasında hedef ve görevlerin yürütülme şeklini değiştirebilir ve bu durum zararlı etkiler doğurabilir.</value>
+  </data>
+  <data name="DetailsProperty" xml:space="preserve">
+    <value>&apos;{0}&apos; proje dosyasında &apos;{1}&apos; adlı bir özellik bulundu. Bu özellik normal olarak proje dosyasında belirtilmemelidir. Bu özelliğin değeri, projenin yüklenmesi sırasında hedef ve görevlerin yürütülme şeklini değiştirebilir ve bu durum zararlı etkiler doğurabilir.</value>
+  </data>
+  <data name="DetailsUsingTask" xml:space="preserve">
+    <value>&apos;{0}&apos; proje dosyasında &apos;{1}&apos; görevini kaydeden bir &apos;UsingTask&apos; etiketi bulundu. Proje dosyasındaki &apos;UsingTask&apos; etiketleri, içeri aktarılan .TARGETS dosyalarındakilere göre önceliklidir ve bu nedenle, başka şekilde değiştirilmemiş bir derleme işlemi sırasında rastgele kod yürütmek için kullanılabilir.</value>
+  </data>
+  <data name="DetailsTarget" xml:space="preserve">
+    <value>&apos;{0}&apos; proje dosyasında &apos;{1}&apos; adlı bir &apos;Hedef&apos; bulundu. Bu hedef içindeki görevler rastgele kod içerebilir ve proje IDE&apos;ye yüklendikten hemen sonra yürütülebilir.</value>
+  </data>
+  <data name="DetailsItemLocation" xml:space="preserve">
+    <value>&apos;{0}&apos; proje dosyasında &apos;{1}&apos; dosyasına başvuran bir öğe bulundu. Bu dosya bir sistem dizini, kök dizin veya ağ paylaşımında bulunduğu için bu dosyaya yazılması zararlı olabilir.</value>
+  </data>
+  <data name="ProjectLocationNotTrusted" xml:space="preserve">
+    <value>Proje konumu güvenilir değil:{0}{0}{1}{0}{0}Tam güven gerektiren eylemleri gerçekleştirmeyi denediğinde {0}uygulamanın çalıştırılması güvenlik özel durumlarına neden olabilir.{0}{0}Yoksayıp devam etmek için Tamam&apos;a tıklayın.</value>
+  </data>
+  <data name="BuildEventError" xml:space="preserve">
+    <value>BuildBegin olayı sırasında özel durum oluşturuldu\n{0}</value>
+  </data>
+  <data name="Settings" xml:space="preserve">
+    <value>Ayarlar</value>
+  </data>
+  <data name="v3" xml:space="preserve">
+    <value>Microsoft .NET Framework v3.0</value>
+  </data>
+  <data name="v35" xml:space="preserve">
+    <value>Microsoft .NET Framework v3.5</value>
+  </data>
+  <data name="v4" xml:space="preserve">
+    <value>Microsoft .NET Framework v4.0</value>
+  </data>
+  <data name="Publish" xml:space="preserve">
+    <value>Yayımla</value>
+  </data>
+  <data name="PublishDescription" xml:space="preserve">
+    <value>Dosyanın yayımlanacak dosyalara dahil edilip edilmeyeceği.</value>
+  </data>
+  <data name="WebPiFeed" xml:space="preserve">
+    <value>Akış</value>
+  </data>
+  <data name="WebPiFeedDescription" xml:space="preserve">
+    <value>Bu başvuruyu içeren WebPI Akışı</value>
+  </data>
+  <data name="WebPiProduct" xml:space="preserve">
+    <value>Ürün Kimliği</value>
+  </data>
+  <data name="WebPiProductDescription" xml:space="preserve">
+    <value>Bu Web başvurusunun ürün kimliği</value>
+  </data>
+  <data name="WebPiReferenceProperties" xml:space="preserve">
+    <value>WebPI Başvuru Özellikleri</value>
+  </data>
+  <data name="PathTooLongShortMessage" xml:space="preserve">
+    <value>Dosya adı veya uzantısı çok uzun.</value>
+  </data>
+  <data name="ProjectHome" xml:space="preserve">
+    <value>Proje Giriş Sayfası</value>
+  </data>
+  <data name="ProjectHomeDescription" xml:space="preserve">
+    <value>Projedeki tüm dosyaların temel konumu</value>
+  </data>
+  <data name="UnknownInParentheses" xml:space="preserve">
+    <value>(Bilinmiyor)</value>
+  </data>
+  <data name="ErrorInvalidLaunchUrl" xml:space="preserve">
+    <value>Proje geçersiz URL başlatacak şekilde yapılandırıldı: &quot;{0}&quot;
+
+Web tarayıcınız açılmayacak.</value>
+  </data>
+  <data name="UnexpectedUpgradeError" xml:space="preserve">
+    <value>Proje yükseltilmeye çalışılırken beklenmeyen bir hata oluştu: {0}
+Visual Studio&apos;yu /Log seçeneğiyle çalıştırın ve daha fazla bilgi için ActivityLog.xml dosyasına bakın.</value>
+  </data>
+  <data name="UpgradeCannotCheckOutProject" xml:space="preserve">
+    <value>Proje kaynak denetiminden kullanıma alınamadığından proje yükseltilemedi.</value>
+  </data>
+  <data name="UpgradeCannotLoadProject" xml:space="preserve">
+    <value>Proje yüklenemedi.</value>
+  </data>
+  <data name="UpgradeNotRequired" xml:space="preserve">
+    <value>Proje için yükseltme gerekli değil.</value>
+  </data>
+  <data name="UnhandledException" xml:space="preserve">
+    <value>{3} içinde işlenmemiş özel durum ({1}:{2})
+{0}</value>
+  </data>
+  <data name="AddReferenceExtensions" xml:space="preserve">
+    <value>Bileşen Dosyaları|*.winmd</value>
+  </data>
+  <data name="WebPiFeedError" xml:space="preserve">
+    <value>&quot;{0}&quot; akışı alınamıyor.
+
+{1}</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>İ&amp;ptal</value>
+  </data>
+  <data name="CancelQueryEditMultiple" xml:space="preserve">
+    <value>Değiştirilmesi gereken dosyalar değiştirilemediğinden, denediğiniz komut tamamlanamıyor. Bu dosyalar kaynak denetimindeyse kullanıma almanız gerekebilir. Dosyalar disk üzerinde salt okunur ise özniteliklerini değiştirmeniz gerekebilir.</value>
+    <comment>MsgBox</comment>
+  </data>
+  <data name="ErrorDetail" xml:space="preserve">
+    <value>Hata &amp;ayrıntıları</value>
+  </data>
+  <data name="Retry" xml:space="preserve">
+    <value>Y&amp;eniden deneyin</value>
+  </data>
+  <data name="CannotAddFileExists" xml:space="preserve">
+    <value>&apos;{0}&apos; eklenemiyor. Bu ada sahip bir dosya zaten var.</value>
+  </data>
+  <data name="CannotAddFolderAsDescendantOfSelf" xml:space="preserve">
+    <value>&apos;{0}&apos; klasörü kendisinin alt öğesi olarak eklenemez.</value>
+  </data>
+  <data name="CannotMoveFolderExists" xml:space="preserve">
+    <value>&apos;{0}&apos; klasörü taşınamıyor. Hedef dizinde aynı ada sahip bir klasör zaten var.</value>
+  </data>
+  <data name="CannotMoveIntoSameDirectory" xml:space="preserve">
+    <value>&apos;{0}&apos; taşınamıyor. Hedef klasör, kaynak klasör ile aynı.</value>
+  </data>
+  <data name="CannotMoveIntoSubfolder" xml:space="preserve">
+    <value>&apos;{0}&apos; taşınamıyor. Hedef klasör, kaynak klasörün bir alt klasörü.</value>
+  </data>
+  <data name="DirectoryExists" xml:space="preserve">
+    <value>&apos;{0}&apos; adlı bir dizin zaten var.</value>
+  </data>
+  <data name="FolderCannotBeCreatedOnDisk" xml:space="preserve">
+    <value>&apos;{0}&apos; klasörü disk üzerinde yok ve oluşturulamadı.</value>
+  </data>
+  <data name="FolderPathTooLongShortMessage" xml:space="preserve">
+    <value>Klasör adı çok uzun.</value>
+  </data>
+  <data name="OverwriteFilesInExistingFolder" xml:space="preserve">
+    <value>Bu klasörde &apos;{0}&apos; adlı bir klasör zaten var
+
+Mevcut klasördeki dosyalar kopyalamakta olduğunuz klasördeki 
+dosyalarla aynı adlara sahipse mevcut dosyaları değiştirmek istiyor musunuz?</value>
+  </data>
+  <data name="SourceUrlNotFound" xml:space="preserve">
+    <value>&apos;{0}&apos; kaynak URL&apos;si bulunamadı.</value>
+  </data>
+  <data name="SeeActivityLog" xml:space="preserve">
+    <value>Beklenmeyen bir hata oluştu.
+
+Visual Studio&apos;yu komut satırında /log parametresiyle çalıştırıp &apos;{0}&apos; dosyasını inceleyerek daha fazla bilgi alabilirsiniz.</value>
+  </data>
+</root>

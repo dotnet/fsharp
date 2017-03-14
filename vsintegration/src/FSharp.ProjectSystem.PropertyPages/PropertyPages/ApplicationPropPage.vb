@@ -23,6 +23,7 @@ Imports VslangProj90
 Imports VslangProj100
 Imports System.Runtime.Versioning
 Imports Microsoft.VisualStudio.FSharp.ProjectSystem
+Imports Microsoft.VisualStudioTools.Project
 
 Namespace Microsoft.VisualStudio.Editors.PropertyPages
 

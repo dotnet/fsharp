@@ -3,6 +3,7 @@
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\..\..\src</FSharpSourcesRoot>
+    <_ProjectSystemFilesLocation>(MSBuildProjectDirectory)\..\..\..\SharedProject</_ProjectSystemFilesLocation>
     <ProjectLanguage>CSharp</ProjectLanguage>
     <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
@@ -44,6 +45,7 @@
     </FilesToLocalize>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
+  <Import Project="$(FSharpSourcesRoot)\..\vsintegration\src\SharedProject\SharedProject.proj" />
   <PropertyGroup>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>$(FSharpSourcesRoot)\fsharp\msft.pubkey</AssemblyOriginatorKeyFile>
@@ -82,6 +84,7 @@
     <Reference Include="EnvDTE.dll" />
     <Reference Include="EnvDTE80.dll" />
     <Reference Include="VSLangProj" />
+    <Reference Include="VSLangProj2" />
     <Reference Include="VSLangProj80" />
     <Reference Include="Microsoft.VisualStudio.Editor, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Editor.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Editor.dll</HintPath>
@@ -98,6 +101,15 @@
     </Reference>
     <Reference Include="Microsoft.VisualStudio.ComponentModelHost, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Roslyn.Microsoft.VisualStudio.ComponentModelHost.0.0.2\lib\net46\Microsoft.VisualStudio.ComponentModelHost.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Language.Intellisense, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Language.Intellisense.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Language.Intellisense.dll</HintPath>
+    </Reference> 
+    <Reference Include="Microsoft.VisualStudio.Debugger.Interop.$(RoslynVSBinariesVersion), Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Debugger.Interop.$(RoslynVSBinariesVersion).$(RoslynVSPackagesVersion)\lib\Microsoft.VisualStudio.Debugger.Interop.$(RoslynVSBinariesVersion).dll</HintPath>
+    </Reference> 
+    <Reference Include="Microsoft.VisualStudio.Text.Data, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Text.Data.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Text.Data.dll</HintPath>
     </Reference>
     <Reference Include="microsoft.visualstudio.vcprojectengine" />
     <Reference Include="Microsoft.VisualStudio.OLE.Interop.dll" />
@@ -127,96 +139,11 @@
     <Compile Include="Constants.cs" />
     <Compile Include="FSharpEditorFactory.cs" />
     <Compile Include="InternalsVisibleTo.cs" />
-    <Compile Include="..\RegistrationAttributes\WAProvideLanguagePropertyAttribute.cs" />
+    <!--<Compile Include="..\RegistrationAttributes\WAProvideLanguagePropertyAttribute.cs" />
     <Compile Include="..\RegistrationAttributes\WAProvideProjectFactoryAttribute.cs" />
-    <Compile Include="..\RegistrationAttributes\WAProvideProjectFactoryTemplateMappingAttribute.cs" />
-    <Compile Include="Misc\ConnectionPointContainer.cs" />
-    <Compile Include="Misc\ExternDll.cs" />
-    <Compile Include="Misc\NativeMethods.cs" />
-    <Compile Include="Misc\UnsafeNativeMethods.cs" />
-    <Compile Include="Misc\AutomationExtenderManager.cs" />
-    <Compile Include="AssemblyReferenceNode.cs" />
-    <Compile Include="GroupingReferenceNode.cs" />
+    <Compile Include="..\RegistrationAttributes\WAProvideProjectFactoryTemplateMappingAttribute.cs" />-->
     <Compile Include="Attributes.cs" />
     <Compile Include="AssemblyInfo.cs" />
-
-    <!-- Automation Objects -->
-    <Compile Include="Automation\OAFileItem.cs" />
-    <Compile Include="Automation\OAFolderItem.cs" />
-    <Compile Include="Automation\OANullProperty.cs" />
-    <Compile Include="Automation\OAProject.cs" />
-    <Compile Include="Automation\OAProjectItem.cs" />
-    <Compile Include="Automation\OAProjectItems.cs" />
-    <Compile Include="Automation\OAProperties.cs" />
-    <Compile Include="Automation\OAProperty.cs" />
-    <Compile Include="Automation\OANavigableProjectItems.cs" />
-    <Compile Include="Automation\OAReferenceFolderItem.cs" />
-    <Compile Include="Automation\OAReferenceItem.cs" />
-
-    <!-- Objects needed to implement a Language Project -->
-    <Compile Include="Automation\VSProject\OAAssemblyReference.cs" />
-    <Compile Include="Automation\VSProject\OABuildManager.cs" />
-    <Compile Include="Automation\VSProject\OAComReference.cs" />
-    <Compile Include="Automation\VSProject\OAProjectReference.cs" />
-    <Compile Include="Automation\VSProject\OAReferenceBase.cs" />
-    <Compile Include="Automation\VSProject\OAReferences.cs" />
-    <Compile Include="Automation\VSProject\OAVSProject.cs" />
-    <Compile Include="Automation\VSProject\OAVSProjectItem.cs" />
-    <Compile Include="BuildDependency.cs" />
-    <Compile Include="BuildPropertyPage.cs" />
-    <Compile Include="ComReferenceNode.cs" />
-    <Compile Include="ConfigProvider.cs" />
-    <Compile Include="ConfigurationProperties.cs" />
-    <Compile Include="DataObject.cs" />
-    <Compile Include="DesignPropertyDescriptor.cs" />
-    <Compile Include="DocumentManager.cs" />
-    <Compile Include="EnumDependencies.cs" />
-    <Compile Include="FileChangeManager.cs" />
-    <Compile Include="FileDocumentManager.cs" />
-    <Compile Include="FileNode.cs" />
-    <Compile Include="FolderNode.cs" />
-    <Compile Include="GlobalSuppressions.cs" />
-    <Compile Include="HierarchyNode.cs" />
-    <Compile Include="ImageHandler.cs" />
-    <Compile Include="Interfaces.cs" />
-    <Compile Include="IDEBuildLogger.cs" />
-    <Compile Include="LinkedFileNode.cs" />
-    <Compile Include="LocalizableProperties.cs" />
-    <Compile Include="Microsoft.VisualStudio.Package.Project.cs" />
-    <Compile Include="NodeProperties.cs" />
-    <Compile Include="OleServiceProvider.cs" />
-    <Compile Include="Output.cs" />
-    <Compile Include="OutputGroup.cs" />
-    <Compile Include="ProjectConfig.cs" />
-    <Compile Include="ProjectDesignerDocumentManager.cs" />
-    <Compile Include="ProjectElement.cs" />
-    <Compile Include="ProjectFactory.cs" />
-    <Compile Include="ProjectFileConstants.cs" />
-    <Compile Include="ProjectNode.cs" />
-    <Compile Include="ProjectNode.CopyPaste.cs" />
-    <Compile Include="ProjectNode.Events.cs" />
-    <Compile Include="ProjectOptions.cs" />
-    <Compile Include="ProjectPackage.cs" />
-    <Compile Include="ProjectReferenceNode.cs" />
-    <Compile Include="PropertiesEditorLauncher.cs" />
-    <Compile Include="ReferenceContainerNode.cs" />
-    <Compile Include="ReferenceNode.cs" />
-    <Compile Include="SolutionListener.cs" />
-    <Compile Include="SolutionListenerForProjectEvents.cs" />
-    <Compile Include="SolutionListenerForProjectOpen.cs" />
-    <Compile Include="SolutionListenerForProjectReferenceUpdate.cs" />
-    <Compile Include="StructuresEnums.cs" />
-    <Compile Include="SuspendFileChanges.cs" />
-    <Compile Include="TextViewCreationListener.cs" />
-    <Compile Include="Tracing.cs" />
-    <Compile Include="TrackDocumentsHelper.cs" />
-    <Compile Include="TypeConverters.cs" />
-    <Compile Include="Utilities.cs" />
-    <Compile Include="VsCommands.cs" />
-    <Compile Include="VSMDCodeDomProvider.cs" />
-    <Compile Include="VSProjectConstants.cs" />
-    <Compile Include="VSShellUtilities.cs" />
-    <Compile Include="SelectionListener.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Microsoft.VisualStudio.Package.Project.resx">

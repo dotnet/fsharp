@@ -1,0 +1,670 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata" id="root">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace"/>
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0"/>
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string"/>
+              <xsd:attribute name="type" type="xsd:string"/>
+              <xsd:attribute name="mimetype" type="xsd:string"/>
+              <xsd:attribute ref="xml:space"/>
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string"/>
+              <xsd:attribute name="name" type="xsd:string"/>
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1"/>
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2"/>
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1"/>
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3"/>
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4"/>
+              <xsd:attribute ref="xml:space"/>
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1"/>
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required"/>
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AddToNullProjectError" xml:space="preserve">
+    <value>因為專案為 null，所以無法將檔案 &apos;{0}&apos; 新增至專案。</value>
+  </data>
+  <data name="Advanced" xml:space="preserve">
+    <value>進階</value>
+    <comment>Project Property Page Caption</comment>
+  </data>
+  <data name="ReferenceAlreadyExists" xml:space="preserve">
+    <value>無法新增元件 &apos;{0}&apos; 的參考。專案中已經存在元件的參考。</value>
+    <comment>ReferenceAlreadyExists error message</comment>
+  </data>
+  <data name="AttributeLoad" xml:space="preserve">
+    <value>無法從專案檔 &apos;{1}&apos; 載入屬性 &apos;{0}&apos;。</value>
+  </data>
+  <data name="BuildAction" xml:space="preserve">
+    <value>建置動作</value>
+    <comment>Project Build Property Name</comment>
+  </data>
+  <data name="BuildActionDescription" xml:space="preserve">
+    <value>檔案與建置及部署處理序產生關聯的方式</value>
+    <comment>Project Build Property Description</comment>
+  </data>
+  <data name="BuildVerbosity" xml:space="preserve">
+    <value>詳細資訊</value>
+  </data>
+  <data name="BuildVerbosityDescription" xml:space="preserve">
+    <value>指定建置輸出中要包含多少資訊</value>
+  </data>
+  <data name="cli1" xml:space="preserve">
+    <value>ECMA-335 CLI 相容架構 (必須提供位置)</value>
+    <comment>Target platform drop down option</comment>
+  </data>
+  <data name="Compile" xml:space="preserve">
+    <value>編譯</value>
+    <comment>Build Action - drop down option</comment>
+  </data>
+  <data name="ConfirmExtensionChange" xml:space="preserve">
+    <value>如果變更副檔名，檔案可能變成無法使用。確定要變更嗎?</value>
+  </data>
+  <data name="CannotAddFileThatIsOpenInEditor" xml:space="preserve">
+    <value>名稱為 &apos;{0}&apos; 的檔案已存在，並已在編輯器中開啟。請為您要新增的項目提供唯一名稱，或先刪除現有項目。</value>
+  </data>
+  <data name="CanNotSaveFileNotOpeneInEditor" xml:space="preserve">
+    <value>因為&apos;{0}&apos; 未在編輯器中開啟，所以無法加以儲存。</value>
+  </data>
+  <data name="Content" xml:space="preserve">
+    <value>內容</value>
+    <comment>Build Action - drop down option</comment>
+  </data>
+  <data name="CopyToLocal" xml:space="preserve">
+    <value>複製本機</value>
+    <comment>File property</comment>
+  </data>
+  <data name="CopyToLocalDescription" xml:space="preserve">
+    <value>指出是否會將參考複製到輸出目錄。</value>
+  </data>
+  <data name="Detailed" xml:space="preserve">
+    <value>詳細</value>
+  </data>
+  <data name="Diagnostic" xml:space="preserve">
+    <value>診斷</value>
+  </data>
+  <data name="DirectoryExistsShortMessage" xml:space="preserve">
+    <value>目錄已存在</value>
+  </data>
+  <data name="EditorViewError" xml:space="preserve">
+    <value>使用編輯器 &apos;{1}&apos; 開啟指定的檢視 &apos;{0}&apos; 時發生錯誤</value>
+  </data>
+  <data name="EmbeddedResource" xml:space="preserve">
+    <value>內嵌資源</value>
+    <comment>Build Action - drop down option</comment>
+  </data>
+  <data name="Error" xml:space="preserve">
+    <value>錯誤</value>
+  </data>
+  <data name="ErrorInvalidFileName" xml:space="preserve">
+    <value>檔名無效: {0}
+      
+檔案和資料夾不得為:
+- 空字串 
+- 系統保留名稱，包括 &apos;CON&apos;、&apos;AUX&apos;、PRN&apos;、&apos;COM1&apos; 或 &apos;LPT2&apos; 
+- 僅包含 &apos;.&apos;
+- 具有下列任一字元: / ? : &amp;  \ * &quot; &lt; &gt; | # %</value>
+  </data>
+  <data name="ErrorInvalidProjectName" xml:space="preserve">
+    <value>您提供的名稱不是有效的專案名稱。</value>
+  </data>
+  <data name="ErrorMsBuildRegistration" xml:space="preserve">
+    <value>在登錄中找不到 MSBuild 路徑。請重新安裝以修正問題。</value>
+  </data>
+  <data name="ErrorSaving" xml:space="preserve">
+    <value>儲存檔案時發生錯誤</value>
+  </data>
+  <data name="Exe" xml:space="preserve">
+    <value>主控台應用程式</value>
+  </data>
+  <data name="ExpectedObjectOfType" xml:space="preserve">
+    <value>應為類型 {0} 的物件。</value>
+  </data>
+  <data name="FailedToRetrieveProperties" xml:space="preserve">
+    <value>無法從專案檔擷取 MSBuild 屬性 {0}。</value>
+    <comment>The exception message thrown when getting a property from msbuild fails.</comment>
+  </data>
+  <data name="FileAlreadyExists" xml:space="preserve">
+    <value>已經有檔案使用相同名稱 &apos;{0}&apos;。要加以覆寫嗎?</value>
+  </data>
+  <data name="FileAlreadyExistsAndCannotBeRenamed" xml:space="preserve">
+    <value>已經有檔案使用相同名稱 &apos;{0}&apos;。</value>
+  </data>
+  <data name="FileAlreadyExistsCaption" xml:space="preserve">
+    <value>目的檔案存在</value>
+  </data>
+  <data name="FileAlreadyInProject" xml:space="preserve">
+    <value>名稱為 &apos;{0}&apos; 的檔案已經是專案的一部分。要加以覆寫嗎?</value>
+  </data>
+  <data name="FileAlreadyInProjectCaption" xml:space="preserve">
+    <value>目的檔案存在</value>
+  </data>
+  <data name="FileCannotBeRenamedToAnExistingFile" xml:space="preserve">
+    <value>位於此位置的磁碟已經存在名稱為 &apos;{0}&apos; 的檔案或資料夾。請選擇其他名稱。</value>
+  </data>
+  <data name="FileCopyError" xml:space="preserve">
+    <value>複製檔案時發生錯誤</value>
+  </data>
+  <data name="FileName" xml:space="preserve">
+    <value>檔案名稱</value>
+  </data>
+  <data name="FileNameCannotContainALeadingPeriod" xml:space="preserve">
+    <value>檔案及資料夾名稱的開頭不得為句點。</value>
+  </data>
+  <data name="FileNameDescription" xml:space="preserve">
+    <value>檔案或資料夾的名稱</value>
+  </data>
+  <data name="FolderName" xml:space="preserve">
+    <value>資料夾名稱</value>
+  </data>
+  <data name="FolderNameDescription" xml:space="preserve">
+    <value>此資料夾的名稱</value>
+  </data>
+  <data name="FullPath" xml:space="preserve">
+    <value>完整路徑</value>
+  </data>
+  <data name="FullPathDescription" xml:space="preserve">
+    <value>檔案位置</value>
+  </data>
+  <data name="General" xml:space="preserve">
+    <value>一般</value>
+  </data>
+  <data name="ItemDoesNotExistInProjectDirectory" xml:space="preserve">
+    <value>專案目錄中不存在項目 &apos;{0}&apos;。其可能已經移動、重新命名或刪除。</value>
+  </data>
+  <data name="LaunchUrl" xml:space="preserve">
+    <value>啟動 URL</value>
+  </data>
+  <data name="LaunchUrlDescription" xml:space="preserve">
+    <value>啟動專案時，應在瀏覽器中開啟的 URL</value>
+  </data>
+  <data name="LinkedItemsAreNotSupported" xml:space="preserve">
+    <value>無法將 &apos;{0}&apos; 儲存在專案目錄外。不支援連結項目。</value>
+  </data>
+  <data name="Library" xml:space="preserve">
+    <value>類別庫</value>
+  </data>
+  <data name="Minimal" xml:space="preserve">
+    <value>最小</value>
+  </data>
+  <data name="Misc" xml:space="preserve">
+    <value>其他</value>
+  </data>
+  <data name="None" xml:space="preserve">
+    <value>無</value>
+  </data>
+  <data name="Normal" xml:space="preserve">
+    <value>正常</value>
+  </data>
+  <data name="PasteFailed" xml:space="preserve">
+    <value>項目無法使用或已損毀，因此無法貼上。</value>
+  </data>
+  <data name="Program" xml:space="preserve">
+    <value>程式</value>
+  </data>
+  <data name="Project" xml:space="preserve">
+    <value>專案</value>
+  </data>
+  <data name="ProjectContainsCircularReferences" xml:space="preserve">
+    <value>無法新增程式庫 &apos;{0}&apos; 的參考。將此專案新增為參考會造成循環相依性。</value>
+  </data>
+  <data name="ProjectFile" xml:space="preserve">
+    <value>專案檔</value>
+  </data>
+  <data name="ProjectFileDescription" xml:space="preserve">
+    <value>包含組建、設定及其他專案相關資訊之檔案的名稱。</value>
+  </data>
+  <data name="ProjectFolder" xml:space="preserve">
+    <value>專案資料夾</value>
+  </data>
+  <data name="ProjectFolderDescription" xml:space="preserve">
+    <value>專案的絕對位置。</value>
+  </data>
+  <data name="Quiet" xml:space="preserve">
+    <value>無訊息</value>
+  </data>
+  <data name="RefName" xml:space="preserve">
+    <value>(名稱)</value>
+  </data>
+  <data name="ReferencesNodeName" xml:space="preserve">
+    <value>參考</value>
+  </data>
+  <data name="RefNameDescription" xml:space="preserve">
+    <value>參考的顯示名稱</value>
+  </data>
+  <data name="RenameFolder" xml:space="preserve">
+    <value>目錄重新命名失敗。{0}</value>
+  </data>
+  <data name="RTL" xml:space="preserve">
+    <value>RTL_False</value>
+  </data>
+  <data name="SaveCaption" xml:space="preserve">
+    <value>要儲存嗎?</value>
+  </data>
+  <data name="SaveModifiedDocuments" xml:space="preserve">
+    <value>要儲存已修改的文件嗎?</value>
+  </data>
+  <data name="SaveOfProjectFileOutsideCurrentDirectory" xml:space="preserve">
+    <value>專案檔只能存入專案位置 &apos;{0}&apos;。</value>
+  </data>
+  <data name="ScriptArguments" xml:space="preserve">
+    <value>指令碼引數</value>
+  </data>
+  <data name="ScriptArgumentsDescription" xml:space="preserve">
+    <value>在啟動時傳遞至指令碼的引數</value>
+  </data>
+  <data name="StandardEditorViewError" xml:space="preserve">
+    <value>使用標準編輯器開啟指定的檢視 &apos;{0}&apos; 時發生錯誤。</value>
+  </data>
+  <data name="StartupFile" xml:space="preserve">
+    <value>啟動檔案</value>
+  </data>
+  <data name="StartupFileDescription" xml:space="preserve">
+    <value>在執行或偵錯時啟動的啟動檔案</value>
+  </data>
+  <data name="StartWebBrowser" xml:space="preserve">
+    <value>啟動網頁瀏覽器</value>
+  </data>
+  <data name="StartWebBrowserDescription" xml:space="preserve">
+    <value>True 即於啟動時啟動網頁瀏覽器</value>
+  </data>
+  <data name="URL" xml:space="preserve">
+    <value>URL</value>
+  </data>
+  <data name="UseOfDeletedItemError" xml:space="preserve">
+    <value>您嘗試使用的項目已遭刪除或不存在。</value>
+  </data>
+  <data name="v1" xml:space="preserve">
+    <value>Microsoft .NET Framework v1.0</value>
+  </data>
+  <data name="v11" xml:space="preserve">
+    <value>Microsoft .NET Framework v1.1</value>
+  </data>
+  <data name="v2" xml:space="preserve">
+    <value>Microsoft .NET Framework v2.0</value>
+  </data>
+  <data name="Warning" xml:space="preserve">
+    <value>警告</value>
+  </data>
+  <data name="WinExe" xml:space="preserve">
+    <value>Windows 應用程式</value>
+  </data>
+  <data name="WorkingDirectory" xml:space="preserve">
+    <value>工作目錄</value>
+  </data>
+  <data name="WorkingDirectoryDescription" xml:space="preserve">
+    <value>啟動時的工作目錄</value>
+  </data>
+  <data name="AddReferenceDialogTitle" xml:space="preserve">
+    <value>新增參考</value>
+  </data>
+  <data name="InvalidAutomationObject" xml:space="preserve">
+    <value>Automation 物件無效。</value>
+  </data>
+  <data name="CancelQueryEdit" xml:space="preserve">
+    <value>因為無法變更必須修改的檔案 &apos;{0}&apos;，所以無法完成您嘗試執行的命令。如果檔案正受原始檔控制，建議您將其簽出; 如果檔案在磁碟上是唯讀的，建議您變更其屬性。</value>
+    <comment>MsgBox</comment>
+  </data>
+  <data name="ParameterMustBeAValidGuid" xml:space="preserve">
+    <value>參數必須為有效的 GUID。</value>
+    <comment>Error message in the ArgumentException for a  parameter that is not a valid guid.</comment>
+  </data>
+  <data name="InvalidLoggerType" xml:space="preserve">
+    <value>記錄器類型無效\n預期: {0}\n收到: {1}</value>
+    <comment>Error message thrown for when an  invalid logger type is set.</comment>
+  </data>
+  <data name="InvalidParameter" xml:space="preserve">
+    <value>InvalidParameter</value>
+    <comment>Generic error message for invalid parameters.</comment>
+  </data>
+  <data name="ParameterCannotBeNullOrEmpty" xml:space="preserve">
+    <value>ParameterCannotBeNullOEmpty</value>
+    <comment>Error message for string parameters that cannot be null or empty.</comment>
+  </data>
+  <data name="ParameterMustBeAValidItemId" xml:space="preserve">
+    <value>參數必須為有效的項目識別碼。</value>
+    <comment>Error message thrown when an invalid item id is retrieved.</comment>
+  </data>
+  <data name="FileProperties" xml:space="preserve">
+    <value>檔案屬性</value>
+  </data>
+  <data name="FolderProperties" xml:space="preserve">
+    <value>資料夾屬性</value>
+  </data>
+  <data name="ProjectProperties" xml:space="preserve">
+    <value>專案屬性</value>
+  </data>
+  <data name="ReferenceProperties" xml:space="preserve">
+    <value>參考屬性</value>
+  </data>
+  <data name="FileOrFolderAlreadyExists" xml:space="preserve">
+    <value>位於此位置的磁碟已經存在名稱為 &apos;{0}&apos; 的檔案或資料夾。請選擇其他名稱。</value>
+  </data>
+  <data name="BuildCaption" xml:space="preserve">
+    <value>組建</value>
+  </data>
+  <data name="OutputPath" xml:space="preserve">
+    <value>輸出路徑</value>
+  </data>
+  <data name="OutputPathDescription" xml:space="preserve">
+    <value>主要輸出的路徑</value>
+  </data>
+  <data name="PathTooLong" xml:space="preserve">
+    <value>&apos;{0}&apos; 的完整路徑超過檔案系統允許的字元數上限。</value>
+  </data>
+  <data name="CustomTool" xml:space="preserve">
+    <value>自訂工具</value>
+  </data>
+  <data name="CustomToolDescription" xml:space="preserve">
+    <value>指定可在設計階段轉換檔案並將該轉換的輸出放入另一檔案中的工具。例如，資料集 (.xsd) 檔案產生自預設自訂工具。</value>
+  </data>
+  <data name="CustomToolNamespace" xml:space="preserve">
+    <value>自訂工具命名空間</value>
+  </data>
+  <data name="CustomToolNamespaceDescription" xml:space="preserve">
+    <value>要放入自訂工具輸出的目標命名空間。</value>
+  </data>
+  <data name="OutputBuilt" xml:space="preserve">
+    <value>主要輸出</value>
+  </data>
+  <data name="OutputContentFiles" xml:space="preserve">
+    <value>內容檔案</value>
+  </data>
+  <data name="OutputDocumentation" xml:space="preserve">
+    <value>文件檔案</value>
+  </data>
+  <data name="OutputLocalizedResourceDlls" xml:space="preserve">
+    <value>當地語系化的資源</value>
+  </data>
+  <data name="OutputSourceFiles" xml:space="preserve">
+    <value>來源檔案</value>
+  </data>
+  <data name="OutputSymbols" xml:space="preserve">
+    <value>偵錯符號</value>
+  </data>
+  <data name="OutputXmlSerializer" xml:space="preserve">
+    <value>XML 序列化組件</value>
+  </data>
+  <data name="OutputBuiltDescription" xml:space="preserve">
+    <value>包含由專案建置的 DLL 或 EXE。</value>
+  </data>
+  <data name="OutputContentFilesDescription" xml:space="preserve">
+    <value>包含專案中所有內容檔案。</value>
+  </data>
+  <data name="OutputDocumentationDescription" xml:space="preserve">
+    <value>包含專案的 XML 文件檔案。</value>
+  </data>
+  <data name="OutputLocalizedResourceDllsDescription" xml:space="preserve">
+    <value>包含每個文化特性資源的附屬組件。</value>
+  </data>
+  <data name="OutputSourceFilesDescription" xml:space="preserve">
+    <value>包含專案中所有來源檔案。</value>
+  </data>
+  <data name="OutputSymbolsDescription" xml:space="preserve">
+    <value>包含專案的偵錯檔案。</value>
+  </data>
+  <data name="OutputXmlSerializerDescription" xml:space="preserve">
+    <value>包含專案的 XML 序列化組件。</value>
+  </data>
+  <data name="QueryReloadNestedProject" xml:space="preserve">
+    <value>專案檔 &apos;{0}&apos; 已在 Visual Studio 外部修改。要重新載入專案嗎?</value>
+  </data>
+  <data name="NestedProjectFailedToReload" xml:space="preserve">
+    <value>無法重新載入巢狀專案。</value>
+  </data>
+  <data name="FileOrFolderCannotBeFound" xml:space="preserve">
+    <value>在磁碟上找不到項目 &apos;{0}&apos;，原因可能是其已重新命名、刪除或移至新位置。</value>
+  </data>
+  <data name="ErrorReferenceCouldNotBeAdded" xml:space="preserve">
+    <value>無法新增 {0} 的參考。請確認檔案可供存取，而且是有效的組件或 COM 元件。</value>
+  </data>
+  <data name="DetailsImport" xml:space="preserve">
+    <value>在專案檔 &apos;{0}&apos; 中找到檔案 &apos;{1}&apos; 的 &apos;Import&apos;。此檔案未註冊為可匯入的安全檔案，而可能包含有害的目標及工作。如果這個匯入的檔案確實安全無虞，則可以寫入登錄機碼 {2} 加以註冊。</value>
+  </data>
+  <data name="DetailsUserImport" xml:space="preserve">
+    <value>在使用者專案檔 &apos;{0}&apos; 中找到檔案 &apos;{1}&apos; 的 &apos;Import&apos;。使用者專案檔中的所有匯入均視為不安全。</value>
+  </data>
+  <data name="DetailsItem" xml:space="preserve">
+    <value>在專案檔 &apos;{0}&apos; 中找到一或多個名稱為 &apos;{1}&apos; 的項目。在專案檔中通常不應指定這些項目。其可能會在專案載入期間變更目標及工作的執行方式，而造成不良影響。</value>
+  </data>
+  <data name="DetailsProperty" xml:space="preserve">
+    <value>在專案檔 &apos;{0}&apos; 中找到名為 &apos;{1}&apos; 的屬性。在專案檔中通常不應指定這些項目。其可能會在專案載入期間變更目標及工作的執行方式，而造成不良影響。</value>
+  </data>
+  <data name="DetailsUsingTask" xml:space="preserve">
+    <value>在專案檔 &apos;{0} &apos;中找到註冊 &apos;{1}&apos; 工作的 &apos;UsingTask&apos; 標記。專案檔中的 &apos;UsingTask&apos; 標記會越過匯入的 .TARGETS 檔案中標記的優先順序，因此可以用來在其他未經修改的建置處理序期間執行任意程式碼。</value>
+  </data>
+  <data name="DetailsTarget" xml:space="preserve">
+    <value>在專案檔 &apos;{0}&apos; 中找到名為 &apos;{1}&apos; 的 &apos;Target&apos;。此目標中的工作可能包含任意程式碼，可在專案載入 IDE 中時立即執行。</value>
+  </data>
+  <data name="DetailsItemLocation" xml:space="preserve">
+    <value>在專案檔 &apos;{0}&apos; 中找到參考檔案 &apos;{1}&apos; 的項目。由於此檔案位於系統目錄、根目錄或網路共用中，所以寫入此檔案可能有害。</value>
+  </data>
+  <data name="ProjectLocationNotTrusted" xml:space="preserve">
+    <value>專案位置不受信任:{0}{0}{1}{0}{0}當應用程式嘗試執行需要完整信任的動作時，{0}加以執行可能會造成安全性例外狀況。{0}{0}按一下 [確定] 略過並繼續。</value>
+  </data>
+  <data name="BuildEventError" xml:space="preserve">
+    <value>在 BuildBegin 事件期間擲回了例外狀況\n{0}</value>
+  </data>
+  <data name="Settings" xml:space="preserve">
+    <value>設定</value>
+  </data>
+  <data name="v3" xml:space="preserve">
+    <value>Microsoft .NET Framework v3.0</value>
+  </data>
+  <data name="v35" xml:space="preserve">
+    <value>Microsoft .NET Framework v3.5</value>
+  </data>
+  <data name="v4" xml:space="preserve">
+    <value>Microsoft .NET Framework v4.0</value>
+  </data>
+  <data name="Publish" xml:space="preserve">
+    <value>發佈</value>
+  </data>
+  <data name="PublishDescription" xml:space="preserve">
+    <value>檔案是否應包含在發佈的檔案中。</value>
+  </data>
+  <data name="WebPiFeed" xml:space="preserve">
+    <value>摘要</value>
+  </data>
+  <data name="WebPiFeedDescription" xml:space="preserve">
+    <value>包含此參考的 WebPI 摘要</value>
+  </data>
+  <data name="WebPiProduct" xml:space="preserve">
+    <value>產品識別碼</value>
+  </data>
+  <data name="WebPiProductDescription" xml:space="preserve">
+    <value>此 Web 參考的產品識別碼</value>
+  </data>
+  <data name="WebPiReferenceProperties" xml:space="preserve">
+    <value>WebPI 參考屬性</value>
+  </data>
+  <data name="PathTooLongShortMessage" xml:space="preserve">
+    <value>檔名或副檔名過長。</value>
+  </data>
+  <data name="ProjectHome" xml:space="preserve">
+    <value>專案首頁</value>
+  </data>
+  <data name="ProjectHomeDescription" xml:space="preserve">
+    <value>專案中所有檔案的基礎位置</value>
+  </data>
+  <data name="UnknownInParentheses" xml:space="preserve">
+    <value>(未知)</value>
+  </data>
+  <data name="ErrorInvalidLaunchUrl" xml:space="preserve">
+    <value>專案所設定要啟動的 URL 無效: &quot;{0}&quot;
+
+您的網頁瀏覽器不會開啟。</value>
+  </data>
+  <data name="UnexpectedUpgradeError" xml:space="preserve">
+    <value>嘗試升級專案時發生意外錯誤: {0}
+請使用 /Log 選項執行 Visual Studio，並查看 ActivityLog.xml 以取得詳細資料。</value>
+  </data>
+  <data name="UpgradeCannotCheckOutProject" xml:space="preserve">
+    <value>因為無法從原始檔控制簽出專案，所以無法加以升級。</value>
+  </data>
+  <data name="UpgradeCannotLoadProject" xml:space="preserve">
+    <value>無法載入專案。</value>
+  </data>
+  <data name="UpgradeNotRequired" xml:space="preserve">
+    <value>專案不需要升級。</value>
+  </data>
+  <data name="UnhandledException" xml:space="preserve">
+    <value>{3} ({1}:{2}) 中有未處理的例外狀況
+{0}</value>
+  </data>
+  <data name="AddReferenceExtensions" xml:space="preserve">
+    <value>元件檔案|*.winmd</value>
+  </data>
+  <data name="WebPiFeedError" xml:space="preserve">
+    <value>無法取得摘要 &quot;{0}&quot;。
+
+{1}</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>取消(&amp;C)</value>
+  </data>
+  <data name="CancelQueryEditMultiple" xml:space="preserve">
+    <value>因為無法變更必須修改的檔案，所以無法完成您嘗試執行的命令。如果檔案正受原始檔控制，建議您將其簽出; 如果檔案在磁碟上是唯讀的，建議您變更其屬性。</value>
+    <comment>MsgBox</comment>
+  </data>
+  <data name="ErrorDetail" xml:space="preserve">
+    <value>錯誤詳細資料(&amp;D)</value>
+  </data>
+  <data name="Retry" xml:space="preserve">
+    <value>再試一次(&amp;R)</value>
+  </data>
+  <data name="CannotAddFileExists" xml:space="preserve">
+    <value>無法新增 &apos;{0}&apos;。已經有檔案使用該名稱。</value>
+  </data>
+  <data name="CannotAddFolderAsDescendantOfSelf" xml:space="preserve">
+    <value>無法將資料夾 &apos;{0}&apos; 新增為其本身的子系。</value>
+  </data>
+  <data name="CannotMoveFolderExists" xml:space="preserve">
+    <value>無法移動資料夾 &apos;{0}&apos;。目的目錄中已經有資料夾使用該名稱。</value>
+  </data>
+  <data name="CannotMoveIntoSameDirectory" xml:space="preserve">
+    <value>無法移動 &apos;{0}&apos;。目的資料夾與來源資料夾相同。</value>
+  </data>
+  <data name="CannotMoveIntoSubfolder" xml:space="preserve">
+    <value>無法移動 &apos;{0}&apos;。目的資料夾是來源資料夾的子資料夾。</value>
+  </data>
+  <data name="DirectoryExists" xml:space="preserve">
+    <value>名稱為 &apos;{0}&apos; 的目錄已存在。</value>
+  </data>
+  <data name="FolderCannotBeCreatedOnDisk" xml:space="preserve">
+    <value>磁碟上沒有資料夾 &apos;{0}&apos;，因此無法建立。</value>
+  </data>
+  <data name="FolderPathTooLongShortMessage" xml:space="preserve">
+    <value>資料夾名稱過長。</value>
+  </data>
+  <data name="OverwriteFilesInExistingFolder" xml:space="preserve">
+    <value>此資料夾已包含名稱為 &apos;{0}&apos; 的資料夾
+
+如果現有資料夾中的檔案，與您要複製的資料夾中檔案名稱相同， 
+要取代現有檔案嗎?</value>
+  </data>
+  <data name="SourceUrlNotFound" xml:space="preserve">
+    <value>找不到來源 URL &apos;{0}&apos;。</value>
+  </data>
+  <data name="SeeActivityLog" xml:space="preserve">
+    <value>發生未預期的錯誤。
+
+您可以在命令列上使用 /log 參數執行 Visual Studio，然後查看檔案 &apos;{0}&apos;，以取得詳細資訊。</value>
+  </data>
+</root>
