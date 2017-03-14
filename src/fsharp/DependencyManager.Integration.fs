@@ -23,6 +23,7 @@ module ReflectionHelper =
             |> Seq.tryFind (fun a -> a.GetType().Name = attributeName)
             |> function | Some _ -> true | _ -> false
         with | _ -> false
+
     let getAttributeNamed (theType: Type) attributeName =
         try
             theType.GetCustomAttributes false
@@ -60,7 +61,7 @@ type internal IDependencyManagerProvider =
     abstract Name : string
     abstract ToolName: string
     abstract Key: string
-    abstract ResolveDependencies : targetFramework: string * scriptDir: string * scriptName: string * packageManagerTextLines: string seq -> string * string list
+    abstract ResolveDependencies : targetFramework: string * scriptDir: string * scriptName: string * packageManagerTextLines: string seq -> string option * string list
 
 type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyInfo, toolNameProperty: PropertyInfo, keyProperty: PropertyInfo, resolveDeps: MethodInfo) =
     let instance = Activator.CreateInstance(theType) :?> IDisposable
@@ -69,8 +70,7 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
     let keyProperty      = keyProperty.GetValue >> string
     static member InstanceMaker (theType: System.Type) = 
         if not (ReflectionHelper.implements<IDisposable> theType) then None
-        else
-        // maybe CE might be better
+        else        
         match ReflectionHelper.getAttributeNamed theType "FSharpDependencyManagerAttribute" with
         | None -> None
         | Some _ ->
@@ -106,16 +106,54 @@ let enumerateDependencyManagerAssembliesFromCurrentAssemblyLocation () =
     |> Seq.choose (fun path -> try Assembly.LoadFrom path |> Some with | _ -> None)
     |> Seq.filter (fun a -> ReflectionHelper.assemblyHasAttribute a "FSharpDependencyManagerAttribute")
 
+
+type ProjectDependencyManager() =
+    interface IDependencyManagerProvider with
+        member __.Name = "Project loader"
+        member __.ToolName = ""
+        member __.Key = "project"
+        member __.ResolveDependencies(_targetFramework:string, _scriptDir: string, _scriptName: string, _packageManagerTextLines: string seq) = 
+            None,[]
+
+    interface System.IDisposable with
+        member __.Dispose() = ()
+
+type RefDependencyManager() =
+    interface IDependencyManagerProvider with
+        member __.Name = "Ref library loader"
+        member __.ToolName = ""
+        member __.Key = "ref"
+        member __.ResolveDependencies(_targetFramework:string, _scriptDir: string, _scriptName: string, _packageManagerTextLines: string seq) = 
+            None,[]
+
+    interface System.IDisposable with
+        member __.Dispose() = ()
+
+type ImplDependencyManager() =
+    interface IDependencyManagerProvider with
+        member __.Name = "Impl library loader"
+        member __.ToolName = ""
+        member __.Key = "impl"
+        member __.ResolveDependencies(_targetFramework:string, _scriptDir: string, _scriptName: string, _packageManagerTextLines: string seq) = 
+            None,[]
+
+    interface System.IDisposable with
+        member __.Dispose() = ()
+
 let registeredDependencyManagers = lazy (
+    let defaultProviders =
+        [new ProjectDependencyManager() :> IDependencyManagerProvider
+         new RefDependencyManager() :> IDependencyManagerProvider
+         new ImplDependencyManager() :> IDependencyManagerProvider]
     
-    let managers =
+    let loadedProviders =
         enumerateDependencyManagerAssembliesFromCurrentAssemblyLocation()
         |> Seq.collect (fun a -> a.GetTypes())
         |> Seq.choose ReflectionDependencyManagerProvider.InstanceMaker
         |> Seq.map (fun maker -> maker ())
     
-    // TODO: handle conflicting keys
-    managers
+    defaultProviders
+    |> Seq.append loadedProviders
     |> Seq.map (fun pm -> pm.Key, pm)
     |> Map.ofSeq
 )
@@ -151,7 +189,7 @@ let resolve (packageManager:IDependencyManagerProvider) implicitIncludeDir fileN
                 fileName,
                 packageManagerTextLines)
 
-        Some(additionalIncludeFolders,loadScript,File.ReadAllText(loadScript))
+        Some(loadScript,additionalIncludeFolders)
     with e ->
         if e.InnerException <> null then
             errorR(Error(FSComp.SR.packageManagerError(e.InnerException.Message),m))

@@ -156,7 +156,7 @@ let ResolveDependenciesForLanguage(fileType,targetFramework:string,prioritizedSe
         (File.ReadAllLines(workingDirSpecFile.FullName) |> Array.toList) = packageManagerTextLines && 
         File.Exists loadScript
     then 
-        (loadScript,additionalIncludeFolders())
+        (Some loadScript,additionalIncludeFolders())
     else 
         let toolPathOpt = 
             // we try to resolve .paket/paket.exe any place up in the folder structure from current script
@@ -212,7 +212,7 @@ let ResolveDependenciesForLanguage(fileType,targetFramework:string,prioritizedSe
                 failwithf "Package resolution using '%s' failed, see directory '%s'.%s%s"
                     toolPath workingDir Environment.NewLine msg
             else
-                (loadScript,additionalIncludeFolders())
+                (Some loadScript,additionalIncludeFolders())
 
 /// Resolve packages loaded into scripts using `paket:` in `#r` directives such as `#r @"paket: nuget AmazingNugetPackage"`. 
 /// <remarks>This function will throw if the resolution is not successful or the tool wasn't found</remarks>

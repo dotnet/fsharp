@@ -1250,10 +1250,13 @@ type internal FsiDynamicCompiler
                 | Some packageManager ->
                     match DependencyManagerIntegration.resolve packageManager tcConfigB.implicitIncludeDir "stdin.fsx" m packageManagerTextLines with
                     | None -> () // error already reported
-                    | Some (additionalIncludeFolders, loadScript,_loadScriptText) -> 
+                    | Some (loadScript,additionalIncludeFolders) -> 
                         for folder in additionalIncludeFolders do 
                             tcConfigB.AddIncludePath(m,folder,"")
-                        istate := fsiDynamicCompiler.EvalSourceFiles (ctok, !istate, m, [loadScript], lexResourceManager, errorLogger)
+
+                        match loadScript with
+                        | Some loadScript -> istate := fsiDynamicCompiler.EvalSourceFiles (ctok, !istate, m, [loadScript], lexResourceManager, errorLogger)
+                        | None -> ()
 
         !istate
 

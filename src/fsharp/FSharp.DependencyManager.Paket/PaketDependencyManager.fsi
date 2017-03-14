@@ -8,4 +8,4 @@ type [<Class>] PaketDependencyManager =
     member Name : string
     member ToolName: string
     member Key: string
-    member ResolveDependencies : targetFramework: string * scriptDir: string * scriptName: string * dependencyManagerTextLines: string seq -> string * string list
+    member ResolveDependencies : targetFramework: string * scriptDir: string * scriptName: string * dependencyManagerTextLines: string seq -> string option * string list

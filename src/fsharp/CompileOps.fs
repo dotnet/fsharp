@@ -4940,16 +4940,22 @@ module ScriptPreprocessClosure =
                                 let packageManagerTextLines = packageManagerLines |> List.map fst
                                 match DependencyManagerIntegration.resolve packageManager tcConfig.Value.implicitIncludeDir scriptName m packageManagerTextLines with
                                 | None -> () // error already reported
-                                | Some (additionalIncludeFolders,loadScript,loadScriptText) ->
-                                    loadScripts.Add loadScript |> ignore
+                                | Some (loadScript,additionalIncludeFolders) ->
                                     // This may incrementally update tcConfig too with new #r references
                                     // New package text is ignored on this second phase
-                                    let tcConfigB = tcConfig.Value.CloneOfOriginalBuilder
-                                    for folder in additionalIncludeFolders do 
-                                        tcConfigB.AddIncludePath(m,folder,"")
-                                    tcConfig := TcConfig.Create(tcConfigB, validate=false)
+                                    
+                                    if not (isNil additionalIncludeFolders) then
+                                        let tcConfigB = tcConfig.Value.CloneOfOriginalBuilder
+                                        for folder in additionalIncludeFolders do 
+                                            tcConfigB.AddIncludePath(m,folder,"")
+                                        tcConfig := TcConfig.Create(tcConfigB, validate=false)
 
-                                    yield! loop (ClosureSource(loadScript,m,loadScriptText,true)) ]
+                                    match loadScript with
+                                    | Some loadScript ->
+                                        let loadScriptText = File.ReadAllText loadScript
+                                        loadScripts.Add loadScript |> ignore
+                                        yield! loop (ClosureSource(loadScript,m,loadScriptText,true))
+                                    | None -> () ]
             else []
 
         and loop (ClosureSource(filename,m,source,parseRequired)) = 
