@@ -6,7 +6,7 @@ open System
 open System.Runtime.InteropServices
 open Microsoft.VisualStudio.Shell
 
-module IntelliSenseSettings =
+module internal IntelliSenseSettings =
     let mutable ShowAfterCharIsTyped = true
 
 [<ComVisible(true)>]

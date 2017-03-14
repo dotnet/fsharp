@@ -42,6 +42,9 @@ type internal FSharpCompletionProvider
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
     static let attributeSuffixLength = "Attribute".Length
 
+    static let noCommitOnSpaceRules = CompletionItemRules.Default.WithCommitCharacterRule(CharacterSetModificationRule.Create(CharacterSetModificationKind.Remove, ' '))
+    static let getRules() = if IntelliSenseSettings.ShowAfterCharIsTyped then noCommitOnSpaceRules else CompletionItemRules.Default
+
     static let shouldProvideCompletion (documentId: DocumentId, filePath: string, defines: string list, text: SourceText, position: int) : bool =
         let textLines = text.Lines
         let triggerLine = textLines.GetLineFromPosition position
@@ -196,7 +199,7 @@ type internal FSharpCompletionProvider
                         declarationItem.Name.[0..declarationItem.Name.Length - attributeSuffixLength - 1] 
                     | _ -> declarationItem.Name
 
-                let completionItem = CommonCompletionItem.Create(name, glyph = Nullable glyph).AddProperty(FullNamePropName, declarationItem.FullName)
+                let completionItem = CommonCompletionItem.Create(name, glyph = Nullable glyph, rules = getRules()).AddProperty(FullNamePropName, declarationItem.FullName)
                         
                 let completionItem =
                     match declarationItem.Kind with
