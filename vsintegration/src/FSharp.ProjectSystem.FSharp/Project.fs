@@ -319,7 +319,8 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitalizeSited (this :> Package) commandService
                 // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
                 let _fsiPropertyPage = this.GetDialogPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>)
-
+                // private method GetDialogPage forces intellisense options to be loaded
+                let _intelliSensePropertyPage = this.GetDialogPage(typeof<IntelliSensePropertyPage>)
                 this.RegisterForIdleTime()
                 ()
 
