@@ -76,6 +76,9 @@ set TEST_VS_IDEUNIT_SUITE=0
 set INCLUDE_TEST_SPEC_NUNIT=
 set INCLUDE_TEST_TAGS=
 
+set PUBLISH_VSIX=0
+set MYGET_APIKEY=
+
 
 REM ------------------ Parse all arguments -----------------------
 
@@ -187,6 +190,7 @@ if /i '%ARG%' == 'microbuild' (
     set TEST_PORTABLE_COREUNIT_SUITE=1
     set TEST_VS_IDEUNIT_SUITE=1
     set CI=1
+    set PUBLISH_VSIX=1
 )
 
 REM These divide 'ci' into two chunks which can be done in parallel
@@ -329,6 +333,10 @@ if /i '%ARG%' == 'init' (
     set BUILD_PROTO_WITH_CORECLR_LKG=1
 )
 
+if /i [%ARG:~0,13%] == [MYGET_APIKEY:] (
+    set MYGET_APIKEY=%ARG:~13%
+)
+
 goto :EOF
 :: Note: "goto :EOF" returns from an in-batchfile "call" command
 :: in preference to returning from the entire batch file.
@@ -362,6 +370,8 @@ echo TEST_PORTABLE_COREUNIT_SUITE=%TEST_PORTABLE_COREUNIT_SUITE%
 echo TEST_VS_IDEUNIT_SUITE=%TEST_VS_IDEUNIT_SUITE%
 echo INCLUDE_TEST_SPEC_NUNIT=%INCLUDE_TEST_SPEC_NUNIT%
 echo INCLUDE_TEST_TAGS=%INCLUDE_TEST_TAGS%
+echo PUBLISH_VSIX=%PUBLISH_VSIX%
+echo MYGET_APIKEY=%MYGET_APIKEY%
 
 
 echo .
@@ -864,6 +874,17 @@ if '%TEST_VS_IDEUNIT_SUITE%' == '1' (
         echo Error: Running tests vs-ideunit failed, see logs above, search for "Errors and Failures"  -- FAILED
         echo ----------------------------------------------------------------------------------------------------
         goto :failure
+    )
+)
+
+REM ---------------- publish-vsix -----------------------
+
+if '%PUBLISH_VSIX%' == '1' (
+    if not '%MYGET_APIKEY%' == '' (
+        powershell -noprofile -executionPolicy ByPass -file "%~dp0setup\publish-assets.ps1" -binariesPath "%~dp0%BUILD_CONFIG%" -branchName "%BUILD_SOURCEBRANCH%" -apiKey "%MYGET_APIKEY%"
+        if errorlevel 1 goto :failure
+    ) else (
+        echo No MyGet API key specified, skipping package publish.
     )
 )
 
