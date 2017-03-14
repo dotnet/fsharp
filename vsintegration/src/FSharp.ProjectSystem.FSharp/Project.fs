@@ -2170,7 +2170,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 let manager = (x.GetDocumentManager() :?> FileDocumentManager)
                 Debug.Assert(manager <> null, "Could not get the FileDocumentManager")
 
-                let viewGuid = (if x.IsFormSubType then VSConstants.LOGVIEWID_Designer else VSConstants.LOGVIEWID_TextView)
+                let viewGuid = (if x.IsFormSubType then VSConstants.LOGVIEWID_Designer else VSConstants.LOGVIEWID_Primary)
                 let mutable frame : IVsWindowFrame = null
                 manager.Open(false, false, viewGuid, &frame, WindowFrameShowAction.Show) |> ignore
 
