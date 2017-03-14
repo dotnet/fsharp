@@ -148,7 +148,8 @@ type internal FSharpCompletionProvider
             else
                 let documentId, filePath, defines = getInfo()
                 shouldProvideCompletion(documentId, filePath, defines, sourceText, triggerPosition) &&
-                CommonCompletionUtilities.IsStartingNewWord(sourceText, triggerPosition, (fun ch -> isIdentifierStartCharacter ch), (fun ch -> isIdentifierPartCharacter ch))
+                (IntelliSenseSettings.ShowAfterCharIsTyped && 
+                 CommonCompletionUtilities.IsStartingNewWord(sourceText, triggerPosition, (fun ch -> isIdentifierStartCharacter ch), (fun ch -> isIdentifierPartCharacter ch)))
 
     static member ProvideCompletionsAsyncAux(checker: FSharpChecker, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, textVersionHash: int) = 
         asyncMaybe {
