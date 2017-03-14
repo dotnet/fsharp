@@ -1922,10 +1922,13 @@ type internal FsiInteractionProcessor
 
             | IHash (ParsedHashDirective(("reference" | "r"),[path],m),_) -> 
                 match DependencyManagerIntegration.tryFindDependencyManagerInPath m (path:string) with
-                | Some packageManager -> 
+                | DependencyManagerIntegration.ReferenceType.RegisteredDependencyManager packageManager -> 
                     fsiDynamicCompiler.EvalDependencyManagerTextFragment(packageManager,m,path)
                     istate,Completed None
-                | None ->
+                | DependencyManagerIntegration.ReferenceType.UnknownType -> 
+                    // error already reported
+                    istate,Completed None
+                | DependencyManagerIntegration.ReferenceType.Library path ->
                     let resolutions,istate = fsiDynamicCompiler.EvalRequireReference(ctok, istate, m, path)
                     resolutions |> List.iter (fun ar -> 
                         let format = 

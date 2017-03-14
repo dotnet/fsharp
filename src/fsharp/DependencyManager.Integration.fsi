@@ -12,8 +12,14 @@ type IDependencyManagerProvider =
     abstract Key: string
     abstract ResolveDependencies : string * string * string * string seq -> string option * string list
 
+[<RequireQualifiedAccess>]
+type ReferenceType =
+| RegisteredDependencyManager of IDependencyManagerProvider
+| Library of string
+| UnknownType
+
 val RegisteredDependencyManagers : unit -> Map<string,IDependencyManagerProvider>
-val tryFindDependencyManagerInPath : range -> string -> IDependencyManagerProvider option
+val tryFindDependencyManagerInPath : range -> string -> ReferenceType
 val tryFindDependencyManagerByKey : range -> string -> IDependencyManagerProvider option
 
 val removeDependencyManagerKey : string -> string -> string

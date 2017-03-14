@@ -63,6 +63,12 @@ type internal IDependencyManagerProvider =
     abstract Key: string
     abstract ResolveDependencies : targetFramework: string * scriptDir: string * scriptName: string * packageManagerTextLines: string seq -> string option * string list
 
+[<RequireQualifiedAccess>]
+type ReferenceType =
+| RegisteredDependencyManager of IDependencyManagerProvider
+| Library of string
+| UnknownType
+
 type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyInfo, toolNameProperty: PropertyInfo, keyProperty: PropertyInfo, resolveDeps: MethodInfo) =
     let instance = Activator.CreateInstance(theType) :?> IDisposable
     let nameProperty     = nameProperty.GetValue >> string
@@ -160,15 +166,21 @@ let registeredDependencyManagers = lazy (
 
 let RegisteredDependencyManagers() = registeredDependencyManagers.Force()
 
-let tryFindDependencyManagerInPath m (path:string) : IDependencyManagerProvider option =
+let tryFindDependencyManagerInPath m (path:string) : ReferenceType =
     try
-        match RegisteredDependencyManagers() |> Seq.tryFind (fun kv -> path.StartsWith(kv.Value.Key + ":" )) with
-        | None -> None
-        | Some kv -> Some kv.Value
+        if path.Contains ":" then
+            let managers = RegisteredDependencyManagers()
+            match managers |> Seq.tryFind (fun kv -> path.StartsWith(kv.Value.Key + ":" )) with
+            | None ->
+                errorR(Error(FSComp.SR.packageManagerUnknown(path.Split(':').[0], String.Join(", ", managers |> Seq.map (fun pm -> pm.Value.Key)) ),m))
+                ReferenceType.UnknownType
+            | Some kv -> ReferenceType.RegisteredDependencyManager kv.Value
+        else
+            ReferenceType.Library path
     with 
     | e -> 
         errorR(Error(FSComp.SR.packageManagerError(e.Message),m))
-        None
+        ReferenceType.UnknownType
 
 let removeDependencyManagerKey (packageManagerKey:string) (path:string) = path.Substring(packageManagerKey.Length + 1).Trim()
 

@@ -4677,10 +4677,12 @@ let ProcessMetaCommandsFromInput
                | [path] -> 
                    matchedm<-m
                    match DependencyManagerIntegration.tryFindDependencyManagerInPath m (path:string) with
-                   | Some packageManager -> 
+                   | DependencyManagerIntegration.ReferenceType.RegisteredDependencyManager packageManager -> 
                        packageRequireF state (packageManager,m,path)
-                   | None ->
+                   | DependencyManagerIntegration.ReferenceType.Library path ->
                        dllRequireF state (m,path)
+                   | DependencyManagerIntegration.ReferenceType.UnknownType ->
+                       state // error already reported
                | _ -> 
                    errorR(Error(FSComp.SR.buildInvalidHashrDirective(),m))
                    state
