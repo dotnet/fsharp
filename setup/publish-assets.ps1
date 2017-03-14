@@ -26,7 +26,7 @@ try {
     $branchName = $branchName -Replace "refs/heads/" # get rid of prefix
 
     switch ($branchName) {
-        "master" { }
+        "microbuild" { }
         default {
             Write-Host "Branch [$branchName] is not supported for publishing."
             exit 0 # non-fatal
