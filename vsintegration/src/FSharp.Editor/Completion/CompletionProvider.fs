@@ -42,22 +42,6 @@ type internal FSharpCompletionProvider
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
     static let attributeSuffixLength = "Attribute".Length
 
-    static let shouldProvideCompletion (documentId: DocumentId, filePath: string, defines: string list, text: SourceText, position: int) : bool =
-        let textLines = text.Lines
-        let triggerLine = textLines.GetLineFromPosition position
-        let colorizationData = CommonHelpers.getColorizationData(documentId, text, triggerLine.Span, Some filePath, defines, CancellationToken.None)
-        colorizationData.Count = 0 || // we should provide completion at the start of empty line, where there are no tokens at all
-        colorizationData.Exists (fun classifiedSpan -> 
-            classifiedSpan.TextSpan.IntersectsWith position &&
-            (
-                match classifiedSpan.ClassificationType with
-                | ClassificationTypeNames.Comment
-                | ClassificationTypeNames.StringLiteral
-                | ClassificationTypeNames.ExcludedCode
-                | ClassificationTypeNames.NumericLiteral -> false
-                | _ -> true // anything else is a valid classification type
-            ))
-
     static let mruItems = Dictionary<(* Item.FullName *) string, (* hints *) int>()
 
     static let isLetterChar (cat: UnicodeCategory) =
@@ -147,14 +131,14 @@ type internal FSharpCompletionProvider
             // Trigger completion if we are on a valid classification type
             else
                 let documentId, filePath, defines = getInfo()
-                shouldProvideCompletion(documentId, filePath, defines, sourceText, triggerPosition) &&
+                CompletionUtils.shouldProvideCompletion(documentId, filePath, defines, sourceText, triggerPosition) &&
                 CommonCompletionUtilities.IsStartingNewWord(sourceText, triggerPosition, (fun ch -> isIdentifierStartCharacter ch), (fun ch -> isIdentifierPartCharacter ch))
 
     static member ProvideCompletionsAsyncAux(checker: FSharpChecker, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, textVersionHash: int) = 
         asyncMaybe {
             let! parseResults, parsedInput, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true)
 
-            //Logging.Logging.logInfof "AST:\n%+A" parsedInput
+            Logging.Logging.logInfof "AST:\n%+A" parsedInput
 
             let textLines = sourceText.Lines
             let caretLinePos = textLines.GetLinePosition(caretPosition)
@@ -240,7 +224,7 @@ type internal FSharpCompletionProvider
             let document = context.Document
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
             let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)
-            do! Option.guard (shouldProvideCompletion(document.Id, document.FilePath, defines, sourceText, context.Position))
+            do! Option.guard (CompletionUtils.shouldProvideCompletion(document.Id, document.FilePath, defines, sourceText, context.Position))
             let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
             let! textVersion = context.Document.GetTextVersionAsync(context.CancellationToken)
             let! results = FSharpCompletionProvider.ProvideCompletionsAsyncAux(checkerProvider.Checker, sourceText, context.Position, options, document.FilePath, textVersion.GetHashCode())
