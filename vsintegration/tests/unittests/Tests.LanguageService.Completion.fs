@@ -5987,11 +5987,11 @@ let rec f l =
                     let dog = new Dog()
                 namespace MyNamespace2
                 module MyModule2 = 
-                    let typeFunc<MyNamespace1.MyModule(*Maftervariable2*)> = [1; 2; 3]
+                    let typeFunc<[<MyNamespace1.MyModule(*Maftervariable2*)>] 'a> = [1; 2; 3]
                     let f (x:MyNamespace1.MyModule(*Maftervariable4*)) = 10
                     let y = int System.IO(*Maftervariable5*)""",
             marker = "(*Maftervariable2*)",
-            list = ["DuType";"Tag"])
+            list = ["DuType";"Pet";"Dog"])
 
     [<Test>]
     member this.``VariableIdentifier.MethodsInheritFomeBase``() = 
