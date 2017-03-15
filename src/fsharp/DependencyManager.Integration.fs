@@ -104,14 +104,18 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
         member __.Dispose () = instance.Dispose()
             
 
-let assemblySearchPath = 
+let assemblySearchPaths = 
     lazy(
-        let assemblyLocation = typeof<IDependencyManagerProvider>.Assembly.Location
-        Path.GetDirectoryName assemblyLocation
+        [let assemblyLocation = typeof<IDependencyManagerProvider>.Assembly.Location
+         yield Path.GetDirectoryName assemblyLocation
+         let executingAssembly = Assembly.GetExecutingAssembly().Location
+         yield Path.GetDirectoryName executingAssembly]
+        |> List.distinct
     )
 
 let enumerateDependencyManagerAssembliesFromCurrentAssemblyLocation () =
-    Directory.EnumerateFiles(assemblySearchPath.Force(),"*DependencyManager*.dll")
+    assemblySearchPaths.Force()
+    |> Seq.collect (fun path -> Directory.EnumerateFiles(path,"*DependencyManager*.dll"))
     |> Seq.choose (fun path -> try Assembly.LoadFrom path |> Some with | _ -> None)
     |> Seq.filter (fun a -> ReflectionHelper.assemblyHasAttribute a "FSharpDependencyManagerAttribute")
 
@@ -170,7 +174,8 @@ let RegisteredDependencyManagers() = registeredDependencyManagers.Force()
 
 let createPackageManagerUnknownError packageManagerKey m =
     let registeredKeys = String.Join(", ", RegisteredDependencyManagers() |> Seq.map (fun kv -> kv.Value.Key))
-    Error(FSComp.SR.packageManagerUnknown(packageManagerKey, assemblySearchPath.Force(), registeredKeys),m)
+    let searchPaths = assemblySearchPaths.Force()
+    Error(FSComp.SR.packageManagerUnknown(packageManagerKey, String.Join(", ", searchPaths), registeredKeys),m)
 
 let tryFindDependencyManagerInPath m (path:string) : ReferenceType =
     try
