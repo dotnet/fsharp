@@ -170,7 +170,7 @@ let RegisteredDependencyManagers() = registeredDependencyManagers.Force()
 
 let createPackageManagerUnknownError packageManagerKey m =
     let registeredKeys = String.Join(", ", RegisteredDependencyManagers() |> Seq.map (fun kv -> kv.Value.Key))
-    Error(FSComp.SR.packageManagerUnknown(packageManagerKey, registeredKeys, assemblySearchPath.Force()),m)
+    Error(FSComp.SR.packageManagerUnknown(packageManagerKey, assemblySearchPath.Force(), registeredKeys),m)
 
 let tryFindDependencyManagerInPath m (path:string) : ReferenceType =
     try
