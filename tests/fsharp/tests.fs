@@ -26,7 +26,6 @@ let FSI_BASIC = FSI_FILE
 #endif
 
 module CoreTests = 
-
     // These tests are enabled for .NET Framework and .NET Core
     [<Test>]
     let ``access-FSC_BASIC``() = singleTestBuildAndRun "core/access" FSC_BASIC
@@ -226,8 +225,8 @@ module CoreTests =
     [<Test>]
     let csext () = singleTestBuildAndRun "core/csext" FSC_BASIC
 
-
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+
     [<Test>]
     let events () = 
         let cfg = testConfig "core/events"
@@ -380,7 +379,20 @@ module CoreTests =
         peverify cfg "test.exe"
 
         exec cfg ("." ++ "test.exe") ""
-                
+
+    [<Test>]
+    let ``fsi-reference`` () = 
+
+        let cfg = testConfig "core/fsi-reference"
+
+        begin
+            use testOkFile = fileguard cfg "test.ok"
+            fsc cfg @"--target:library -o:ImplementationAssembly\ReferenceAssemblyExample.dll" ["ImplementationAssembly.fs"]
+            fsc cfg @"--target:library -o:ReferenceAssembly\ReferenceAssemblyExample.dll" ["ReferenceAssembly.fs"]
+            fsiStdin cfg "test.fsx" "" []
+            testOkFile.CheckExists()
+        end
+
     [<Test>]
     let ``fsi-reload`` () = 
         let cfg = testConfig "core/fsi-reload"
@@ -417,7 +429,7 @@ module CoreTests =
         fsiStdin cfg "prepare.fsx" "--maxerrors:1" []
 
         use testOkFile = fileguard cfg "test.ok"
-        
+
         fsiStdin cfg "test.fsx" "--maxerrors:1"  []
 
         testOkFile.CheckExists()
