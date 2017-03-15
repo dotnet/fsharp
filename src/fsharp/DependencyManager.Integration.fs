@@ -109,7 +109,9 @@ let assemblySearchPaths =
         [let assemblyLocation = typeof<IDependencyManagerProvider>.Assembly.Location
          yield Path.GetDirectoryName assemblyLocation
          let executingAssembly = Assembly.GetExecutingAssembly().Location
-         yield Path.GetDirectoryName executingAssembly]
+         yield Path.GetDirectoryName executingAssembly
+         let baseDir = AppDomain.CurrentDomain.BaseDirectory
+         yield baseDir ]
         |> List.distinct
     )
 
