@@ -187,7 +187,7 @@ type internal FSharpCompletionProvider
                         | CompletionItemKind.Argument -> 4
                         | CompletionItemKind.Other -> 5
                         | CompletionItemKind.Method (isExtension = true) -> 6
-                    kindPriority, not item.IsOwnMember, item.MinorPriority, item.Name)
+                    kindPriority, not item.IsOwnMember, item.Name.ToLowerInvariant(), item.MinorPriority)
 
             let maxHints = if mruItems.Values.Count = 0 then 0 else Seq.max mruItems.Values
 
