@@ -1396,17 +1396,29 @@ type TcResolutions
 type TcSymbolUses(g, capturedNameResolutions : ResizeArray<CapturedNameResolution>, formatSpecifierLocations: range[]) = 
     
     // Make sure we only capture the information we really need to report symbol uses
+#if VS_VERSION_DEV14 // no struct tuples
+    let cnrs = [| for cnr in capturedNameResolutions  -> (cnr.Item, cnr.ItemOccurence, cnr.DisplayEnv, cnr.Range) |]
+#else
     let cnrs = [| for cnr in capturedNameResolutions  -> struct (cnr.Item, cnr.ItemOccurence, cnr.DisplayEnv, cnr.Range) |]
+#endif
     let capturedNameResolutions = () 
     do ignore capturedNameResolutions // don't capture this!
 
     member this.GetUsesOfSymbol(item) = 
+#if VS_VERSION_DEV14 // no struct tuples
+        [| for (cnrItem,occ,denv,m) in cnrs do
+#else
         [| for (struct (cnrItem,occ,denv,m)) in cnrs do
+#endif
                if protectAssemblyExploration false (fun () -> ItemsAreEffectivelyEqual g item cnrItem) then
                   yield occ, denv, m |]
 
     member this.GetAllUsesOfSymbols() = 
+#if VS_VERSION_DEV14 // no struct tuples
+        [| for (cnrItem,occ,denv,m) in cnrs do
+#else
         [| for (struct (cnrItem,occ,denv,m)) in cnrs do
+#endif
               yield (cnrItem, occ, denv, m) |]
 
     member this.GetFormatSpecifierLocations() =  formatSpecifierLocations

@@ -2135,17 +2135,17 @@ let isILDoubleTy       ty = isILValuePrimaryAssemblyTy ty tname_Double
 
 let rescopeILScopeRef scoref scoref1 = 
     match scoref,scoref1 with 
-    | _,ILScopeRef.Local -> scoref
+    | _,ILScopeRef.Local -> scoref 
     | ILScopeRef.Local,_ -> scoref1
     | _,ILScopeRef.Module _ -> scoref
     | ILScopeRef.Module _,_ -> scoref1
     | _ -> scoref1
 
-let rescopeILTypeRef scoref (x:ILTypeRef) = 
-    let scoref1 = x.Scope 
+let rescopeILTypeRef scoref (tref1:ILTypeRef) = 
+    let scoref1 = tref1.Scope 
     let scoref2 = rescopeILScopeRef scoref scoref1
-    if scoref1 === scoref2 then x 
-    else ILTypeRef.Create(scoref2,x.Enclosing,x.Name)
+    if scoref1 === scoref2 then tref1
+    else ILTypeRef.Create(scoref2,tref1.Enclosing,tref1.Name)
 
 // ORIGINAL IMPLEMENTATION (too many allocations
 //         { tspecTypeRef=rescopeILTypeRef scoref tref;
@@ -2156,10 +2156,14 @@ let rec rescopeILTypeSpec scoref (tspec1:ILTypeSpec) =
     let tref2 = rescopeILTypeRef scoref tref1
 
     // avoid reallocation in the common case 
-    if isNil tinst1 && tref1 === tref2 then tspec1 else 
-    let tinst2 = rescopeILTypes scoref tinst1
-    if tinst1 === tinst2 then tspec1 else 
-    ILTypeSpec.Create (tref2, tinst2)
+    if tref1 === tref2 then 
+        if isNil tinst1 then tspec1 else
+        let tinst2 = rescopeILTypes scoref tinst1
+        if tinst1 === tinst2 then tspec1 else 
+        ILTypeSpec.Create (tref2, tinst2)
+    else
+        let tinst2 = rescopeILTypes scoref tinst1
+        ILTypeSpec.Create (tref2, tinst2)
 
 and rescopeILType scoref typ = 
     match typ with 

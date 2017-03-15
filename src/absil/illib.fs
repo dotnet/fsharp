@@ -319,9 +319,9 @@ module List =
         assert not (typeof<'T>.IsValueType) 
         match inp with
         | [] -> inp
-        | [h1] -> 
-            let h2 = f h1
-            if h1 === h2 then inp else [h2]
+        | [h1a] -> 
+            let h2a = f h1a
+            if h1a === h2a then inp else [h2a]
         | [h1a; h1b] -> 
             let h2a = f h1a
             let h2b = f h1b
@@ -469,7 +469,9 @@ module List =
     let existsSquared f xss = xss |> List.exists (fun xs -> xs |> List.exists (fun x -> f x))
     let mapiFoldSquared f z xss =  mapFoldSquared f z (xss |> mapiSquared (fun i j x -> (i,j,x)))
 
+#if !VS_VERSION_DEV14 // no struct unions
 [<Struct>]
+#endif
 type ValueOption<'T> =
     | VSome of 'T
     | VNone
