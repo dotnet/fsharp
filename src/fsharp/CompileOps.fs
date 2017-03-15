@@ -4936,8 +4936,7 @@ module ScriptPreprocessClosure =
                         | _ ->
                             match DependencyManagerIntegration.tryFindDependencyManagerByKey m packageManagerKey with
                             | None ->
-                                let registeredKeys = String.Join(", ", DependencyManagerIntegration.RegisteredDependencyManagers() |> Seq.map (fun kv -> kv.Value.Key))
-                                errorR(Error(FSComp.SR.packageManagerUnknown(packageManagerKey, registeredKeys),m))
+                                errorR(DependencyManagerIntegration.createPackageManagerUnknownError packageManagerKey m)
                             | Some packageManager ->
                                 let packageManagerTextLines = packageManagerLines |> List.map fst
                                 match DependencyManagerIntegration.resolve packageManager tcConfig.Value.implicitIncludeDir scriptName m packageManagerTextLines with

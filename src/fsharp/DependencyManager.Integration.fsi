@@ -24,4 +24,6 @@ val tryFindDependencyManagerByKey : range -> string -> IDependencyManagerProvide
 
 val removeDependencyManagerKey : string -> string -> string
 
+val createPackageManagerUnknownError : string -> range -> exn
+
 val resolve : IDependencyManagerProvider -> string -> string -> range -> string seq -> (string option * string list) option

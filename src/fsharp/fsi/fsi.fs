@@ -1245,8 +1245,7 @@ type internal FsiDynamicCompiler
                 let packageManagerTextLines = packageManagerLines |> List.map fst
                 match DependencyManagerIntegration.tryFindDependencyManagerByKey m packageManagerKey with
                 | None ->
-                    let registeredKeys = String.Join(", ", DependencyManagerIntegration.RegisteredDependencyManagers() |> Seq.map (fun kv -> kv.Value.Key))
-                    errorR(Error(FSComp.SR.packageManagerUnknown(packageManagerKey, registeredKeys),m))
+                    errorR(DependencyManagerIntegration.createPackageManagerUnknownError packageManagerKey m)
                 | Some packageManager ->
                     match DependencyManagerIntegration.resolve packageManager tcConfigB.implicitIncludeDir "stdin.fsx" m packageManagerTextLines with
                     | None -> () // error already reported

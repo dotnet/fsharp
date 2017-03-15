@@ -15,7 +15,6 @@ open Microsoft.FSharp.Compiler.ErrorLogger
 /// hardcoded to net461 as we don't have fsi on netcore
 let targetFramework = "net461"
 
-
 module ReflectionHelper =
     let assemblyHasAttribute (theAssembly: Assembly) attributeName =
         try
@@ -105,13 +104,16 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
         member __.Dispose () = instance.Dispose()
             
 
+let assemblySearchPath = 
+    lazy(
+        let assemblyLocation = typeof<IDependencyManagerProvider>.Assembly.Location
+        Path.GetDirectoryName assemblyLocation
+    )
+
 let enumerateDependencyManagerAssembliesFromCurrentAssemblyLocation () =
-    let assemblyLocation = typeof<IDependencyManagerProvider>.Assembly.Location
-    let assemblySearchPath = Path.GetDirectoryName assemblyLocation
-    Directory.EnumerateFiles(assemblySearchPath,"*DependencyManager*.dll")
+    Directory.EnumerateFiles(assemblySearchPath.Force(),"*DependencyManager*.dll")
     |> Seq.choose (fun path -> try Assembly.LoadFrom path |> Some with | _ -> None)
     |> Seq.filter (fun a -> ReflectionHelper.assemblyHasAttribute a "FSharpDependencyManagerAttribute")
-
 
 type ProjectDependencyManager() =
     interface IDependencyManagerProvider with
@@ -166,13 +168,17 @@ let registeredDependencyManagers = lazy (
 
 let RegisteredDependencyManagers() = registeredDependencyManagers.Force()
 
+let createPackageManagerUnknownError packageManagerKey m =
+    let registeredKeys = String.Join(", ", RegisteredDependencyManagers() |> Seq.map (fun kv -> kv.Value.Key))
+    Error(FSComp.SR.packageManagerUnknown(packageManagerKey, registeredKeys, assemblySearchPath.Force()),m)
+
 let tryFindDependencyManagerInPath m (path:string) : ReferenceType =
     try
         if path.Contains ":" then
             let managers = RegisteredDependencyManagers()
             match managers |> Seq.tryFind (fun kv -> path.StartsWith(kv.Value.Key + ":" )) with
             | None ->
-                errorR(Error(FSComp.SR.packageManagerUnknown(path.Split(':').[0], String.Join(", ", managers |> Seq.map (fun pm -> pm.Value.Key)) ),m))
+                errorR(createPackageManagerUnknownError (path.Split(':').[0]) m)
                 ReferenceType.UnknownType
             | Some kv -> ReferenceType.RegisteredDependencyManager kv.Value
         else
