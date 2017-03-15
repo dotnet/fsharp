@@ -1491,7 +1491,7 @@ let extensionInfoOfTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_)
 #endif
 
 type TypeDefMetadata = 
-     | ILTypeMetadata of ILScopeRef * ILTypeDef
+     | ILTypeMetadata of TILObjectReprData
      | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata 
 #if EXTENSIONTYPING
      | ProvidedTypeMetadata of  TProvidedTypeInfo
@@ -1504,8 +1504,7 @@ let metadataOfTycon (tycon:Tycon) =
     | _ -> 
 #endif
     if tycon.IsILTycon then 
-       let scoref,_,tdef = tycon.ILTyconInfo
-       ILTypeMetadata (scoref,tdef)
+       ILTypeMetadata tycon.ILTyconInfo
     else 
        FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata 
 
@@ -1517,9 +1516,8 @@ let metadataOfTy g ty =
     | _ -> 
 #endif
     if isILAppTy g ty then 
-        let tcref,_ = destAppTy g ty
-        let scoref,_,tdef = tcref.ILTyconInfo
-        ILTypeMetadata (scoref,tdef)
+        let tcref = tcrefOfAppTy g ty
+        ILTypeMetadata tcref.ILTyconInfo
     else 
         FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata 
 
@@ -1529,7 +1527,7 @@ let isILReferenceTy g ty =
 #if EXTENSIONTYPING
     | ProvidedTypeMetadata info -> not info.IsStructOrEnum
 #endif
-    | ILTypeMetadata (_,td) -> not td.IsStructOrEnum
+    | ILTypeMetadata (TILObjectReprData(_,_,td)) -> not td.IsStructOrEnum
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> isArrayTy g ty
 
 let isILInterfaceTycon (tycon:Tycon) = 
@@ -1537,7 +1535,7 @@ let isILInterfaceTycon (tycon:Tycon) =
 #if EXTENSIONTYPING
     | ProvidedTypeMetadata info -> info.IsInterface
 #endif
-    | ILTypeMetadata (_,td) -> (td.tdKind = ILTypeDefKind.Interface)
+    | ILTypeMetadata (TILObjectReprData(_,_,td)) -> (td.tdKind = ILTypeDefKind.Interface)
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> false
 
 let rankOfArrayTy g ty = rankOfArrayTyconRef g (tcrefOfAppTy g ty)
@@ -1569,7 +1567,7 @@ let isDelegateTy g ty =
 #if EXTENSIONTYPING
     | ProvidedTypeMetadata info -> info.IsDelegate ()
 #endif
-    | ILTypeMetadata (_,td) -> (td.tdKind = ILTypeDefKind.Delegate)
+    | ILTypeMetadata (TILObjectReprData(_,_,td)) -> (td.tdKind = ILTypeDefKind.Delegate)
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
         match tryDestAppTy g ty with
         | Some tcref -> tcref.Deref.IsFSharpDelegateTycon
@@ -1580,7 +1578,7 @@ let isInterfaceTy g ty =
 #if EXTENSIONTYPING
     | ProvidedTypeMetadata info -> info.IsInterface
 #endif
-    | ILTypeMetadata (_,td) -> (td.tdKind = ILTypeDefKind.Interface)
+    | ILTypeMetadata (TILObjectReprData(_,_,td)) -> (td.tdKind = ILTypeDefKind.Interface)
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> isFSharpInterfaceTy g ty
 
 let isClassTy g ty = 
@@ -1588,7 +1586,7 @@ let isClassTy g ty =
 #if EXTENSIONTYPING
     | ProvidedTypeMetadata info -> info.IsClass
 #endif
-    | ILTypeMetadata (_,td) -> (td.tdKind = ILTypeDefKind.Class)
+    | ILTypeMetadata (TILObjectReprData(_,_,td)) -> (td.tdKind = ILTypeDefKind.Class)
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> isFSharpClassTy g ty
 
 let isStructOrEnumTyconTy g ty = 
@@ -2703,7 +2701,7 @@ let TryBindTyconRefAttribute g (m:range) (AttribInfo (atref,_) as args) (tcref:T
         | Some args -> f3 args
         | None -> None
 #endif
-    | ILTypeMetadata (_,tdef) -> 
+    | ILTypeMetadata (TILObjectReprData(_,_,tdef)) -> 
         match TryDecodeILAttribute g atref tdef.CustomAttrs with 
         | Some attr -> f1 attr
         | _ -> None
@@ -3305,7 +3303,7 @@ module DebugPrint = begin
             | TUnionRepr _        -> tycon.UnionCasesAsList |> layoutUnionCases |> aboveListL 
             | TAsmRepr _                      -> wordL(tagText "(# ... #)")
             | TMeasureableRepr ty             -> typeL ty
-            | TILObjectRepr (_,_,td) -> wordL (tagText td.Name)
+            | TILObjectRepr (TILObjectReprData(_,_,td)) -> wordL (tagText td.Name)
             | _ -> failwith "unreachable"
         let reprL = 
             match tycon.TypeReprInfo with 
@@ -4420,7 +4418,7 @@ let underlyingTypeOfEnumTy (g: TcGlobals) typ =
 #if EXTENSIONTYPING
     | ProvidedTypeMetadata info -> info.UnderlyingTypeOfEnum()
 #endif
-    | ILTypeMetadata (_,tdef) -> 
+    | ILTypeMetadata (TILObjectReprData(_,_,tdef)) -> 
 
         let info = computeILEnumInfo (tdef.Name,tdef.Fields)
         let ilTy = getTyOfILEnumInfo info
@@ -4762,7 +4760,10 @@ and remapOp tmenv op =
     | TOp.ValFieldGetAddr rfref       -> TOp.ValFieldGetAddr(remapRecdFieldRef tmenv.tyconRefRemap rfref)
     | TOp.UnionCaseFieldGet(ucref,n)  -> TOp.UnionCaseFieldGet(remapUnionCaseRef tmenv.tyconRefRemap ucref,n)
     | TOp.UnionCaseFieldSet(ucref,n)  -> TOp.UnionCaseFieldSet(remapUnionCaseRef tmenv.tyconRefRemap ucref,n)
-    | TOp.ILAsm (instrs,tys)          -> TOp.ILAsm (instrs,remapTypes tmenv tys)
+    | TOp.ILAsm (instrs,tys)          -> 
+        let tys2 = remapTypes tmenv tys
+        if tys === tys2 then op else
+        TOp.ILAsm (instrs,tys2)
     | TOp.TraitCall(traitInfo)        -> TOp.TraitCall(remapTraitAux tmenv traitInfo)
     | TOp.LValueOp (kind,lvr)         -> TOp.LValueOp (kind,remapValRef tmenv lvr)
     | TOp.ILCall (isVirtCall,isProtectedCall,valu,isNewObjCall,valUseFlags,isProperty,noTailCall,ilMethRef,enclTypeArgs,methTypeArgs,tys) -> 
@@ -5749,18 +5750,11 @@ let ExprFolder0 =
 /// Adapted from usage info folding.
 /// Collecting from exprs at moment.
 /// To collect ids etc some additional folding needed, over formals etc.
-let mkFolders (folders : _ ExprFolder) =
-    let {exprIntercept             = exprIntercept; 
-         valBindingSiteIntercept   = valBindingSiteIntercept;
-         nonRecBindingsIntercept   = nonRecBindingsIntercept;
-         recBindingsIntercept      = recBindingsIntercept;
-         dtreeIntercept            = dtreeIntercept;
-         targetIntercept           = targetIntercept;
-         tmethodIntercept          = tmethodIntercept} = folders
-    let rec exprsF z xs = List.fold exprF z xs
-    and flatExprsF z xs = List.fold exprF z xs
-    and exprF z x =
-        match exprIntercept exprF z x with // fold this node, then recurse 
+type ExprFolders<'State> (folders : _ ExprFolder) =
+    let mutable exprFClosure = Unchecked.defaultof<_> // prevent reallocation of closure
+    let rec exprsF z xs = List.fold exprFClosure z xs
+    and exprF (z: 'State) x =
+        match folders.exprIntercept exprFClosure z x with // fold this node, then recurse 
         | Some z -> z // intercepted 
         | None ->     // structurally recurse 
             match x with
@@ -5806,24 +5800,24 @@ let mkFolders (folders : _ ExprFolder) =
             | Expr.StaticOptimization (_tcs,csx,x,_) -> exprsF z [csx;x]
 
     and valBindF dtree z bind =
-        let z = nonRecBindingsIntercept z bind
+        let z = folders.nonRecBindingsIntercept z bind
         bindF dtree z bind 
 
     and valBindsF dtree z binds =
-        let z = recBindingsIntercept z binds
+        let z = folders.recBindingsIntercept z binds
         List.fold (bindF dtree) z binds 
 
     and bindF dtree z (bind:Binding) =
-        let z = valBindingSiteIntercept z (dtree,bind.Var)
+        let z = folders.valBindingSiteIntercept z (dtree,bind.Var)
         exprF z bind.Expr
 
     and dtreeF z dtree =
-        let z = dtreeIntercept z dtree
+        let z = folders.dtreeIntercept z dtree
         match dtree with
         | TDBind (bind,rest)            -> 
             let z = valBindF true z bind
             dtreeF z rest
-        | TDSuccess (args,_)            -> flatExprsF z args
+        | TDSuccess (args,_)            -> exprsF z args
         | TDSwitch (test,dcases,dflt,_) -> 
             let z = exprF z test
             let z = List.fold dcaseF z dcases
@@ -5834,14 +5828,14 @@ let mkFolders (folders : _ ExprFolder) =
         TCase (_,dtree)   -> dtreeF z dtree (* not collecting from test *)
 
     and targetF z x =
-        match targetIntercept exprF z x with 
+        match folders.targetIntercept exprFClosure z x with 
         | Some z -> z // intercepted 
         | None ->     // structurally recurse 
             let (TTarget (_,body,_)) = x
             exprF z body
               
     and tmethodF z x =
-        match tmethodIntercept exprF z x with 
+        match folders.tmethodIntercept exprFClosure z x with 
         | Some z -> z // intercepted 
         | None ->     // structurally recurse 
             let (TObjExprMethod(_,_,_,_,e,_)) = x
@@ -5869,10 +5863,12 @@ let mkFolders (folders : _ ExprFolder) =
 
     and implF z x = foldTImplFile mexprF z x
 
-    exprF, implF
+    do exprFClosure <- exprF // allocate one instance of this closure
+    member x.FoldExpr = exprF
+    member x.FoldImplFile = implF
 
-let FoldExpr     folders = let exprF,_ = mkFolders folders in exprF
-let FoldImplFile folders = let _,implF = mkFolders folders in implF
+let FoldExpr     folders state expr = ExprFolders(folders).FoldExpr state expr
+let FoldImplFile folders state implFile = ExprFolders(folders).FoldImplFile state implFile 
 
 #if DEBUG
 //-------------------------------------------------------------------------
@@ -6174,9 +6170,9 @@ let mkCallLiftValueWithName (g:TcGlobals) m ty nm e1 =
     let vref = ValRefForIntrinsic g.lift_value_with_name_info 
     // Use "Expr.ValueWithName" if it exists in FSharp.Core
     match vref.TryDeref with
-    | Some _ ->
+    | VSome _ ->
         mkApps g (typedExprForIntrinsic g m g.lift_value_with_name_info , [[ty]], [mkRefTupledNoTypes g m [e1; mkString g m nm]],  m)
-    | None ->
+    | VNone ->
         mkApps g (typedExprForIntrinsic g m g.lift_value_info , [[ty]], [e1],  m)
 
 let mkCallLiftValueWithDefn g m qty e1 = 
@@ -6185,11 +6181,11 @@ let mkCallLiftValueWithDefn g m qty e1 =
     let vref = ValRefForIntrinsic g.lift_value_with_defn_info 
     // Use "Expr.WithValue" if it exists in FSharp.Core
     match vref.TryDeref with
-    | Some _ ->
+    | VSome _ ->
         let copyOfExpr = copyExpr g ValCopyFlag.CloneAll e1
         let quoteOfCopyOfExpr = Expr.Quote(copyOfExpr, ref None, false, m, qty)
         mkApps g (typedExprForIntrinsic g m g.lift_value_with_defn_info , [[ty]], [mkRefTupledNoTypes g m [e1; quoteOfCopyOfExpr]],  m)
-    | None ->
+    | VNone ->
         Expr.Quote(e1, ref None, false, m, qty)
 
 let mkCallCheckThis g m ty e1 = 
@@ -7274,7 +7270,7 @@ let isSealedTy g ty =
 #if EXTENSIONTYPING
     | ProvidedTypeMetadata st -> st.IsSealed
 #endif
-    | ILTypeMetadata (_,td) -> td.IsSealed
+    | ILTypeMetadata (TILObjectReprData(_,_,td)) -> td.IsSealed
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
 
        if (isFSharpInterfaceTy g ty || isFSharpClassTy g ty) then 
