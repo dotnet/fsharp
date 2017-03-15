@@ -94,6 +94,9 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SeqModule2.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ObsoleteSeqFunctions.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SeqProperties.fs" Condition=" '$(TargetFramework)' != 'portable47' " />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ISeqModule.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ISeqModule2.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ISeqProperties.fs" Condition=" '$(TargetFramework)' != 'portable47' " />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\CollectionModulesConsistency.fs" Condition=" '$(TargetFramework)' != 'portable47' " />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\StringModule.fs" />
     <Compile Include="FSharp.Core\PrimTypes.fs" />
