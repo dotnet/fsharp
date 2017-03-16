@@ -21,6 +21,7 @@ open Microsoft.VisualStudio.Shell.Interop
 
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open System.Globalization
 
 type internal FSharpCompletionProvider
     (
@@ -41,6 +42,9 @@ type internal FSharpCompletionProvider
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
     static let attributeSuffixLength = "Attribute".Length
 
+    static let noCommitOnSpaceRules = CompletionItemRules.Default.WithCommitCharacterRule(CharacterSetModificationRule.Create(CharacterSetModificationKind.Remove, ' '))
+    static let getRules() = if IntelliSenseSettings.ShowAfterCharIsTyped then noCommitOnSpaceRules else CompletionItemRules.Default
+
     static let shouldProvideCompletion (documentId: DocumentId, filePath: string, defines: string list, text: SourceText, position: int) : bool =
         let textLines = text.Lines
         let triggerLine = textLines.GetLineFromPosition position
@@ -59,18 +63,85 @@ type internal FSharpCompletionProvider
 
     static let mruItems = Dictionary<(* Item.FullName *) string, (* hints *) int>()
 
+    static let isLetterChar (cat: UnicodeCategory) =
+        // letter-character:
+        //   A Unicode character of classes Lu, Ll, Lt, Lm, Lo, or Nl 
+        //   A Unicode-escape-sequence representing a character of classes Lu, Ll, Lt, Lm, Lo, or Nl
+
+        match cat with
+        | UnicodeCategory.UppercaseLetter
+        | UnicodeCategory.LowercaseLetter
+        | UnicodeCategory.TitlecaseLetter
+        | UnicodeCategory.ModifierLetter
+        | UnicodeCategory.OtherLetter
+        | UnicodeCategory.LetterNumber -> true
+        | _ -> false
+
+    /// Defines a set of helper methods to classify Unicode characters.
+    static let isIdentifierStartCharacter(ch: char) =
+        // identifier-start-character:
+        //   letter-character
+        //   _ (the underscore character U+005F)
+
+        if ch < 'a' then // '\u0061'
+            if ch < 'A' then // '\u0041'
+                false
+            else ch <= 'Z'   // '\u005A'
+                || ch = '_' // '\u005F'
+
+        elif ch <= 'z' then // '\u007A'
+            true
+        elif ch <= '\u007F' then // max ASCII
+            false
+        
+        else isLetterChar(CharUnicodeInfo.GetUnicodeCategory(ch))
+ 
+        /// Returns true if the Unicode character can be a part of an identifier.
+    static let isIdentifierPartCharacter(ch: char) =
+        // identifier-part-character:
+        //   letter-character
+        //   decimal-digit-character
+        //   connecting-character
+        //   combining-character
+        //   formatting-character
+
+        if ch < 'a' then // '\u0061'
+            if ch < 'A' then // '\u0041'
+                ch >= '0'  // '\u0030'
+                && ch <= '9' // '\u0039'
+            else
+                ch <= 'Z'  // '\u005A'
+                || ch = '_' // '\u005F'
+        elif ch <= 'z' then // '\u007A'
+            true
+        elif ch <= '\u007F' then // max ASCII
+            false
+
+        else
+            let cat = CharUnicodeInfo.GetUnicodeCategory(ch)
+            isLetterChar(cat)
+            ||
+            match cat with
+            | UnicodeCategory.DecimalDigitNumber
+            | UnicodeCategory.ConnectorPunctuation
+            | UnicodeCategory.NonSpacingMark
+            | UnicodeCategory.SpacingCombiningMark -> true
+            | _ when int ch > 127 ->
+                CharUnicodeInfo.GetUnicodeCategory(ch) = UnicodeCategory.Format
+            | _ -> false
+    
     static member ShouldTriggerCompletionAux(sourceText: SourceText, caretPosition: int, trigger: CompletionTriggerKind, getInfo: (unit -> DocumentId * string * string list)) =
         // Skip if we are at the start of a document
         if caretPosition = 0 then false
         // Skip if it was triggered by an operation other than insertion
-        elif not (trigger = CompletionTriggerKind.Insertion) then  false
+        elif not (trigger = CompletionTriggerKind.Insertion) then false
         // Skip if we are not on a completion trigger
         else
             let triggerPosition = caretPosition - 1
             let c = sourceText.[triggerPosition]
             
-            if not (completionTriggers |> Array.contains c) then
-                false
+            if completionTriggers |> Array.contains c then
+                true
             
             // do not trigger completion if it's not single dot, i.e. range expression
             elif triggerPosition > 0 && sourceText.[triggerPosition - 1] = '.' then
@@ -79,11 +150,15 @@ type internal FSharpCompletionProvider
             // Trigger completion if we are on a valid classification type
             else
                 let documentId, filePath, defines = getInfo()
-                shouldProvideCompletion(documentId, filePath, defines, sourceText, triggerPosition)
+                shouldProvideCompletion(documentId, filePath, defines, sourceText, triggerPosition) &&
+                (IntelliSenseSettings.ShowAfterCharIsTyped && 
+                 CommonCompletionUtilities.IsStartingNewWord(sourceText, triggerPosition, (fun ch -> isIdentifierStartCharacter ch), (fun ch -> isIdentifierPartCharacter ch)))
 
     static member ProvideCompletionsAsyncAux(checker: FSharpChecker, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, textVersionHash: int) = 
         asyncMaybe {
             let! parseResults, parsedInput, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true)
+
+            //Logging.Logging.logInfof "AST:\n%+A" parsedInput
 
             let textLines = sourceText.Lines
             let caretLinePos = textLines.GetLinePosition(caretPosition)
@@ -112,7 +187,7 @@ type internal FSharpCompletionProvider
                         | CompletionItemKind.Argument -> 4
                         | CompletionItemKind.Other -> 5
                         | CompletionItemKind.Method (isExtension = true) -> 6
-                    kindPriority, not item.IsOwnMember, item.MinorPriority, item.Name)
+                    kindPriority, not item.IsOwnMember, item.Name.ToLowerInvariant(), item.MinorPriority)
 
             let maxHints = if mruItems.Values.Count = 0 then 0 else Seq.max mruItems.Values
 
@@ -124,7 +199,7 @@ type internal FSharpCompletionProvider
                         declarationItem.Name.[0..declarationItem.Name.Length - attributeSuffixLength - 1] 
                     | _ -> declarationItem.Name
 
-                let completionItem = CommonCompletionItem.Create(name, glyph = Nullable glyph).AddProperty(FullNamePropName, declarationItem.FullName)
+                let completionItem = CommonCompletionItem.Create(name, glyph = Nullable glyph, rules = getRules()).AddProperty(FullNamePropName, declarationItem.FullName)
                         
                 let completionItem =
                     match declarationItem.Kind with
