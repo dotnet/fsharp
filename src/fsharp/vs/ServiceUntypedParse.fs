@@ -919,9 +919,6 @@ module UntypedParseImpl =
         | None -> None
         | Some pt ->
 
-        let ast = sprintf "%+A" pt
-        let _x = ast
-
         match GetEntityKind(pos, pt) with
         | Some EntityKind.Attribute -> Some CompletionContext.AttributeApplication
         | _ ->
