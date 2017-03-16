@@ -469,9 +469,7 @@ module List =
     let existsSquared f xss = xss |> List.exists (fun xs -> xs |> List.exists (fun x -> f x))
     let mapiFoldSquared f z xss =  mapFoldSquared f z (xss |> mapiSquared (fun i j x -> (i,j,x)))
 
-#if !VS_VERSION_DEV14 // no struct unions
 [<Struct>]
-#endif
 type ValueOption<'T> =
     | VSome of 'T
     | VNone
