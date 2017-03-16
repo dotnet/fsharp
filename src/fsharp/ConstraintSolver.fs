@@ -761,7 +761,7 @@ and SolveAnonInfoEqualsAnonInfo (csenv:ConstraintSolverEnv) m2 anonInfo1 anonInf
         | Some ccu1, Some ccu2 -> if not (ccuEq ccu1 ccu2) then ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecdCcuMismatch(ccu1.AssemblyName, ccu2.AssemblyName), csenv.m,m2)) else ResultD ()
         | None, None -> ResultD ()
         | Some ccu, None 
-        | None, Some ccu -> ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecdCcuMismatch2(ccu1.AssemblyName), csenv.m,m2)) 
+        | None, Some ccu -> ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecdCcuMismatch2(ccu.AssemblyName), csenv.m,m2)) 
         ) ++ (fun () -> 
     if not (nms1 = nms2) then ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecdFieldNameMismatch(sprintf "%A" nms1, sprintf "%A" nms2), csenv.m,m2)) else 
     ResultD ())

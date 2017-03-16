@@ -884,8 +884,11 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
         typesAEquivAux erasureFlag g aenv b1 b2
     | TType_tuple (s1,l1),TType_tuple (s2,l2) -> 
         structnessAEquiv s1 s2 && typesAEquivAux erasureFlag g aenv l1 l2
-    | TType_anon (AnonRecdTypeInfo(ccu1,s1,nms1),l1),TType_anon (AnonRecdTypeInfo(ccu2,s2,nms2),l2) -> 
-        ccuEq ccu1 ccu2 && structnessAEquiv s1 s2 && nms1 = nms2 && typesAEquivAux erasureFlag g aenv l1 l2
+    | TType_anon (AnonRecdTypeInfo(ccuOpt1,s1,nms1),l1),TType_anon (AnonRecdTypeInfo(ccuOpt2,s2,nms2),l2) -> 
+        (match ccuOpt1, ccuOpt2 with None, None -> true | Some ccu1, Some ccu2 -> ccuEq ccu1 ccu2 | _ -> false) && 
+        structnessAEquiv s1 s2 && 
+        nms1 = nms2 && 
+        typesAEquivAux erasureFlag g aenv l1 l2
     | TType_fun (dtys1,rty1),TType_fun (dtys2,rty2) -> 
         typeAEquivAux erasureFlag g aenv dtys1 dtys2 && typeAEquivAux erasureFlag g aenv rty1 rty2
     | TType_measure m1, TType_measure m2 -> 
