@@ -3541,6 +3541,9 @@ and
         | TType_forall (_tps, ty)        -> ty.GetAssemblyName()
         | TType_app (tcref, _tinst)      -> tcref.CompilationPath.ILScopeRef.AssemblyRef.QualifiedName
         | TType_tuple (_tupInfo, _tinst) -> ""
+        | TType_anon (anonInfo, _tinst) -> 
+            let (AnonRecdTypeInfo(ccu, _, _)) = anonInfo
+            ccu.QualifiedName |> Option.defaultValue ""
         | TType_fun (_d,_r)              -> ""
         | TType_measure _ms              -> ""
         | TType_var tp                   -> tp.Solution |> function Some sln -> sln.GetAssemblyName() | None -> ""

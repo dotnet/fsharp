@@ -1765,10 +1765,10 @@ memberCore:
                                let args = 
                                    if id.idText = "set" then 
                                        match args with 
-                                       | [SynPat.Paren(SynPat.Tuple (indexPats,_),indexPatRange);valuePat] when id.idText = "set" -> 
-                                           [SynPat.Tuple(indexPats@[valuePat],unionRanges indexPatRange valuePat.Range)] 
+                                       | [SynPat.Paren(SynPat.Tuple (false,indexPats,_),indexPatRange);valuePat] when id.idText = "set" -> 
+                                           [SynPat.Tuple(false,indexPats@[valuePat],unionRanges indexPatRange valuePat.Range)] 
                                        | [indexPat;valuePat] -> 
-                                           [SynPat.Tuple(args,unionRanges indexPat.Range valuePat.Range)] 
+                                           [SynPat.Tuple(false,args,unionRanges indexPat.Range valuePat.Range)] 
                                        | [valuePat] -> 
                                            [valuePat] 
                                        | _ -> 
@@ -2064,8 +2064,14 @@ braceFieldDeclList:
   | LBRACE  error rbrace
      { [] }
 
-/* The core of a record type definition */
 braceBarFieldDeclList:
+    | STRUCT braceBarFieldDeclListCore
+        { $2,true }
+    | braceBarFieldDeclListCore
+        { $1,false }
+
+/* The core of a record type definition */
+braceBarFieldDeclListCore:
   | LBRACE_BAR  recdFieldDeclList bar_rbrace
      { $2 }
 
@@ -2205,8 +2211,8 @@ typeConstraint:
         | nm -> raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier(nm)) }
 
 typarAlts:
-	| typarAlts OR appType { $3::$1 }
-	| appType { [$1] }	
+    | typarAlts OR appType { $3::$1 }
+    | appType { [$1] }	
 
 /* The core of a union type definition */
 unionTypeRepr:
@@ -2467,7 +2473,7 @@ cPrototype:
                                   SynExpr.Const(SynConst.String("extern was not given a DllImport attribute",rhs parseState 8),rhs parseState 8),
                                   mRhs)
         (fun attrs vis -> 
-            let bindingId = SynPat.LongIdent (LongIdentWithDots([nm],[]), None, Some noInferredTypars, SynConstructorArgs.Pats [SynPat.Tuple(args,argsm)], vis, nmm)
+            let bindingId = SynPat.LongIdent (LongIdentWithDots([nm],[]), None, Some noInferredTypars, SynConstructorArgs.Pats [SynPat.Tuple(false,args,argsm)], vis, nmm)
             let binding = mkSynBinding 
                               (xmlDoc, bindingId) 
                               (vis, false, false, mBindLhs, NoSequencePointAtInvisibleBinding, Some rty ,rhsExpr, mRhs, [], attrs, None)
@@ -2749,9 +2755,9 @@ headBindingPattern:
   | headBindingPattern BAR headBindingPattern  
       { SynPat.Or($1,$3,rhs2 parseState 1 3) }
   | headBindingPattern COLON_COLON  headBindingPattern 
-      { SynPat.LongIdent (LongIdentWithDots(mkSynCaseName (rhs parseState 2) opNameCons,[]), None, None, SynConstructorArgs.Pats [SynPat.Tuple ([$1;$3],rhs2 parseState 1 3)],None,lhs parseState) }
+      { SynPat.LongIdent (LongIdentWithDots(mkSynCaseName (rhs parseState 2) opNameCons,[]), None, None, SynConstructorArgs.Pats [SynPat.Tuple (false,[$1;$3],rhs2 parseState 1 3)],None,lhs parseState) }
   | tuplePatternElements  %prec pat_tuple 
-      { SynPat.Tuple(List.rev $1, lhs parseState) }
+      { SynPat.Tuple(false,List.rev $1, lhs parseState) }
   | conjPatternElements   %prec pat_conj
       { SynPat.Ands(List.rev $1, lhs parseState) }
   | constrPattern 
@@ -2812,10 +2818,6 @@ atomicPattern:
   | CHAR DOT_DOT CHAR { SynPat.DeprecatedCharRange ($1,$3,rhs2 parseState 1 3) }
   | LBRACE recordPatternElementsAux rbrace
       { let rs,m = $2 in SynPat.Record (rs,m) }
-/*
-  | LBRACE_BAR recordPatternElementsAux bar_rbrace
-      { let rs,m = $2 in SynPat.AnonRecd (rs,m) }
-*/
   | LBRACK listPatternElements RBRACK
       { SynPat.ArrayOrList(false,$2,lhs parseState) }
   | LBRACK_BAR listPatternElements  BAR_RBRACK
@@ -2849,10 +2851,10 @@ atomicPattern:
       {  reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedParen()) 
          SynPat.Wild (lhs parseState)}  
   | STRUCT LPAREN tupleParenPatternElements rparen
-      { SynPat.StructTuple(List.rev $3,lhs parseState) }
+      { SynPat.Tuple(true, List.rev $3,lhs parseState) }
   | STRUCT LPAREN tupleParenPatternElements recover
       { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnmatchedParen()); 
-        SynPat.StructTuple(List.rev $3,lhs parseState) }
+        SynPat.Tuple(true, List.rev $3,lhs parseState) }
   | STRUCT LPAREN error rparen 
       { (* silent recovery *) SynPat.Wild (lhs parseState) }
   | STRUCT LPAREN recover 
@@ -2898,7 +2900,7 @@ parenPattern:
   | parenPattern BAR parenPattern  
       { SynPat.Or($1,$3,rhs2 parseState 1 3) }
   | tupleParenPatternElements 
-      { SynPat.Tuple(List.rev $1,lhs parseState) }
+      { SynPat.Tuple(false,List.rev $1,lhs parseState) }
   | conjParenPatternElements
       { SynPat.Ands(List.rev $1,rhs2 parseState 1 3) }
   | parenPattern COLON  typeWithTypeConstraints %prec paren_pat_colon
@@ -2908,7 +2910,7 @@ parenPattern:
       { let lhsm = lhs parseState 
         SynPat.Attrib($2,$1,lhsm) } 
   | parenPattern COLON_COLON  parenPattern 
-      { SynPat.LongIdent (LongIdentWithDots(mkSynCaseName (rhs parseState 2) opNameCons,[]), None, None, SynConstructorArgs.Pats [ SynPat.Tuple ([$1;$3],rhs2 parseState 1 3) ],None,lhs parseState) }
+      { SynPat.LongIdent (LongIdentWithDots(mkSynCaseName (rhs parseState 2) opNameCons,[]), None, None, SynConstructorArgs.Pats [ SynPat.Tuple (false,[$1;$3],rhs2 parseState 1 3) ],None,lhs parseState) }
   | constrPattern { $1 }
 
 tupleParenPatternElements:
@@ -3325,7 +3327,7 @@ declExpr:
   | declExpr COLON_EQUALS           declExpr { mkSynInfix (rhs parseState 2) $1 ":=" $3 }
   | minusExpr LARROW                declExprBlock { mkSynAssign $1 $3 }
 /*   | minusExpr LARROW                recover { mkSynAssign $1 (arbExpr("assignRhs",rhs parseState 2)) } */
-  | tupleExpr  %prec expr_tuple  { let exprs,commas = $1 in SynExpr.Tuple(List.rev exprs, List.rev commas, (commas.Head, exprs) ||> unionRangeWithListBy (fun e -> e.Range) ) }
+  | tupleExpr  %prec expr_tuple  { let exprs,commas = $1 in SynExpr.Tuple(false, List.rev exprs, List.rev commas, (commas.Head, exprs) ||> unionRangeWithListBy (fun e -> e.Range) ) }
   | declExpr  JOIN_IN               declExpr { SynExpr.JoinIn($1,rhs parseState 2,$3,unionRanges $1.Range $3.Range) }
   | declExpr  BAR_BAR               declExpr { mkSynInfix (rhs parseState 2) $1 "||" $3 }
   | declExpr  INFIX_BAR_OP          declExpr { mkSynInfix (rhs parseState 2) $1 $2 $3 }
@@ -3342,7 +3344,7 @@ declExpr:
   | declExpr  GREATER               declExpr { mkSynInfix (rhs parseState 2) $1 ">" $3 }
   | declExpr  INFIX_AT_HAT_OP       declExpr { mkSynInfix (rhs parseState 2) $1 $2 $3 }
   | declExpr  PERCENT_OP            declExpr { mkSynInfix (rhs parseState 2) $1 $2 $3 }
-  | declExpr  COLON_COLON           declExpr { SynExpr.App (ExprAtomicFlag.NonAtomic, true, mkSynIdGet (rhs parseState 2) opNameCons,SynExpr.Tuple ([$1;$3],[rhs parseState 2],unionRanges $1.Range $3.Range),unionRanges $1.Range $3.Range) }
+  | declExpr  COLON_COLON           declExpr { SynExpr.App (ExprAtomicFlag.NonAtomic, true, mkSynIdGet (rhs parseState 2) opNameCons,SynExpr.Tuple (false,[$1;$3],[rhs parseState 2],unionRanges $1.Range $3.Range),unionRanges $1.Range $3.Range) }
   | declExpr  PLUS_MINUS_OP         declExpr { mkSynInfix (rhs parseState 2) $1 $2 $3 }
   | declExpr  MINUS                 declExpr { mkSynInfix (rhs parseState 2) $1 "-" $3 }
   | declExpr  STAR                  declExpr { mkSynInfix (rhs parseState 2) $1 "*" $3 }
@@ -3378,7 +3380,7 @@ declExpr:
   | declExpr  PERCENT_OP            OBLOCKEND_COMING_SOON { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression($2)) 
                                                             exprFromParseError(mkSynInfix (rhs parseState 2) $1 $2 (arbExpr("declExprInfix",(rhs parseState 3).StartRange))) }
   | declExpr  COLON_COLON           OBLOCKEND_COMING_SOON { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression("::")) 
-                                                            SynExpr.App (ExprAtomicFlag.NonAtomic, true, mkSynIdGet (rhs parseState 2) opNameCons,SynExpr.Tuple ([$1;(arbExpr("declExprInfix",(rhs parseState 3).StartRange))],[rhs parseState 2],unionRanges $1.Range (rhs parseState 3).StartRange),unionRanges $1.Range (rhs parseState 3).StartRange) }
+                                                            SynExpr.App (ExprAtomicFlag.NonAtomic, true, mkSynIdGet (rhs parseState 2) opNameCons,SynExpr.Tuple (false,[$1;(arbExpr("declExprInfix",(rhs parseState 3).StartRange))],[rhs parseState 2],unionRanges $1.Range (rhs parseState 3).StartRange),unionRanges $1.Range (rhs parseState 3).StartRange) }
   | declExpr  PLUS_MINUS_OP         OBLOCKEND_COMING_SOON { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression($2)) 
                                                             exprFromParseError(mkSynInfix (rhs parseState 2) $1 $2 (arbExpr("declExprInfix",(rhs parseState 3).StartRange))) }
   | declExpr  MINUS                 OBLOCKEND_COMING_SOON { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression("-")) 
@@ -3616,10 +3618,10 @@ atomicExpr:
         // silent recovery 
         exprFromParseError (SynExpr.ArrayOrList(false,[ ], rhs parseState 1)),false  } 
   | STRUCT LPAREN tupleExpr rparen  
-      { let exprs,commas = $3 in SynExpr.StructTuple(List.rev exprs, List.rev commas, (commas.Head, exprs) ||> unionRangeWithListBy (fun e -> e.Range) ), false }
+      { let exprs,commas = $3 in SynExpr.Tuple(true, List.rev exprs, List.rev commas, (commas.Head, exprs) ||> unionRangeWithListBy (fun e -> e.Range) ), false }
   | STRUCT LPAREN tupleExpr recover  
       { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnmatchedBracket()); 
-        let exprs,commas = $3 in SynExpr.StructTuple(List.rev exprs, List.rev commas, (commas.Head, exprs) ||> unionRangeWithListBy (fun e -> e.Range) ), false }
+        let exprs,commas = $3 in SynExpr.Tuple(true, List.rev exprs, List.rev commas, (commas.Head, exprs) ||> unionRangeWithListBy (fun e -> e.Range) ), false }
   | atomicExprAfterType 
       { $1,false }
 
@@ -4146,26 +4148,37 @@ objExprInterface:
     { InterfaceImpl($2, $3, lhs parseState) }
 
 braceBarExpr:
+
+  | STRUCT braceBarExprCore
+      { $2 true }
+  | braceBarExprCore
+      { $1 false }
+
+braceBarExprCore:
   | LBRACE_BAR braceBarExprBindings bar_rbrace
      { let flds = $2
-       SynExpr.AnonRecd(flds,rhs2 parseState 1 3) }
+       let m = rhs2 parseState 1 3
+       (fun isStruct -> SynExpr.AnonRecd(isStruct,flds,m)) }
 
   | LBRACE_BAR braceBarExprBindings recover 
      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBraceBar())  
        let flds = $2 
-       SynExpr.AnonRecd(flds,rhs2 parseState 1 2) }
+       let m = rhs2 parseState 1 2
+       (fun isStruct -> SynExpr.AnonRecd(isStruct,flds,m)) }
 
   | LBRACE_BAR error bar_rbrace
      { // silent recovery 
-       arbExpr("braceBarExpr",rhs2 parseState 1 3)  }  
+       let m = rhs2 parseState 1 3
+       (fun _ -> arbExpr("braceBarExpr",m)) }  
 
   | LBRACE_BAR recover
      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBraceBar())  
-       SynExpr.AnonRecd([],rhs parseState 1) }
+       let m = rhs parseState 1
+       (fun isStruct -> SynExpr.AnonRecd(isStruct,[],m)) }
 
   | LBRACE_BAR bar_rbrace 
      {  let m = rhs2 parseState 1 2 
-        SynExpr.AnonRecd([],m) }
+        (fun isStruct -> SynExpr.AnonRecd(isStruct,[],m)) }
 
 braceBarExprBindings:
   | recdExprBinding recdExprBindings
@@ -4257,7 +4270,7 @@ topType:
 
 topTupleType:
   | topAppType STAR topTupleTypeElements 
-     { let ty,mdata = $1 in let tys,mdatas = List.unzip $3 in (SynType.Tuple(List.map (fun ty -> (false,ty)) (ty ::tys), lhs parseState)),(mdata :: mdatas) }
+     { let ty,mdata = $1 in let tys,mdatas = List.unzip $3 in (SynType.Tuple(false,List.map (fun ty -> (false,ty)) (ty ::tys), lhs parseState)),(mdata :: mdatas) }
 
   | topAppType                 
      { let ty,mdata = $1 in ty,[mdata] }
@@ -4307,15 +4320,15 @@ typEOF:
 
 tupleType:
   | appType STAR tupleOrQuotTypeElements 
-    { SynType.Tuple((false,$1) :: $3,lhs parseState) }
+    { SynType.Tuple(false,(false,$1) :: $3,lhs parseState) }
 
   | INFIX_STAR_DIV_MOD_OP tupleOrQuotTypeElements
     { if $1 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedInfixOperator());
-      SynType.Tuple((true, SynType.StaticConstant (SynConst.Int32 1, lhs parseState)):: $2, lhs parseState) }
+      SynType.Tuple(false,(true, SynType.StaticConstant (SynConst.Int32 1, lhs parseState)):: $2, lhs parseState) }
 
   | appType INFIX_STAR_DIV_MOD_OP tupleOrQuotTypeElements
     { if $2 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedInfixOperator());
-      SynType.Tuple((true,$1) :: $3, lhs parseState) }
+      SynType.Tuple(false,(true,$1) :: $3, lhs parseState) }
 
   | appType %prec prec_tuptyp_prefix 
     { $1 }
@@ -4484,19 +4497,19 @@ atomType:
        $2 }  
 
   | braceBarFieldDeclList
-     { let flds = $1
+     { let flds,isStruct = $1
        let flds2 = 
            $1 |> List.choose (function 
              | (Field([],false,Some id,ty,false,_xmldoc,None,_m)) -> Some (id,ty) 
              | _ -> reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidAnonRecdType()); None)
-       SynType.AnonRecd (flds2, rhs parseState 1) }  
+       SynType.AnonRecd (isStruct,flds2, rhs parseState 1) }  
 
   | STRUCT LPAREN appType STAR tupleOrQuotTypeElements  rparen 
-    { SynType.StructTuple((false,$3) :: $5,lhs parseState) }
+    { SynType.Tuple(true, (false,$3) :: $5,lhs parseState) }
 
   | STRUCT LPAREN appType STAR tupleOrQuotTypeElements  recover
     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnmatchedParen()) 
-      SynType.StructTuple((false,$3) :: $5,lhs parseState) }
+      SynType.Tuple(true, (false,$3) :: $5,lhs parseState) }
 
   | STRUCT LPAREN appType STAR recover
     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnmatchedParen()) 

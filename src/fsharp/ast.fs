@@ -424,16 +424,12 @@ and
     | LongIdentApp of typeName:SynType * longDotId:LongIdentWithDots * LESSRange:range option * typeArgs:SynType list * commaRanges:range list * GREATERrange:range option * range:range
 
     /// F# syntax : type * ... * type
-    // the bool is true if / rather than * follows the type
-    | Tuple of typeNames:(bool*SynType) list * range:range
-
-    /// F# syntax : type * ... * type
-    // the bool is true if / rather than * follows the type
-    | AnonRecd of typeNames:(Ident * SynType) list * range:range
-
     /// F# syntax : struct (type * ... * type)
     // the bool is true if / rather than * follows the type
-    | StructTuple of typeNames:(bool*SynType) list * range:range
+    | Tuple of isStruct:bool * typeNames:(bool*SynType) list * range:range
+
+    /// F# syntax : {| id: type; ...; id: type |}
+    | AnonRecd of isStruct:bool * typeNames:(Ident * SynType) list * range:range
 
     /// F# syntax : type[]
     | Array of  int * elementType:SynType * range:range
@@ -475,7 +471,6 @@ and
         | SynType.App (range=m)
         | SynType.LongIdentApp (range=m)
         | SynType.Tuple (range=m)
-        | SynType.StructTuple (range=m)
         | SynType.Array (range=m)
         | SynType.AnonRecd (range=m)
         | SynType.Fun (range=m)
@@ -516,13 +511,10 @@ and
     | Typed of  expr:SynExpr * typeName:SynType * range:range
 
     /// F# syntax: e1, ..., eN
-    | Tuple of  exprs:SynExpr list * commaRanges:range list * range:range  // "range list" is for interstitial commas, these only matter for parsing/design-time tooling, the typechecker may munge/discard them
+    | Tuple of  isStruct: bool * exprs:SynExpr list * commaRanges:range list * range:range  // "range list" is for interstitial commas, these only matter for parsing/design-time tooling, the typechecker may munge/discard them
 
     /// F# syntax: {| id1=e1; ...; idN=eN |}
-    | AnonRecd of  recordFields:(Ident * SynExpr) list * range:range
-
-    /// F# syntax: struct (e1, ..., eN)
-    | StructTuple of  exprs:SynExpr list * commaRanges:range list * range:range  // "range list" is for interstitial commas, these only matter for parsing/design-time tooling, the typechecker may munge/discard them
+    | AnonRecd of  isStruct: bool * recordFields:(Ident * SynExpr) list * range:range
 
     /// F# syntax: [ e1; ...; en ], [| e1; ...; en |]
     | ArrayOrList of  isList:bool * exprs:SynExpr list * range:range
@@ -744,7 +736,6 @@ and
         | SynExpr.Typed (range=m)
         | SynExpr.Tuple (range=m)
         | SynExpr.AnonRecd (range=m)
-        | SynExpr.StructTuple (range=m)
         | SynExpr.ArrayOrList (range=m)
         | SynExpr.Record (range=m)
         | SynExpr.New (range=m)
@@ -807,7 +798,6 @@ and
         | SynExpr.Const (range=m)
         | SynExpr.Typed (range=m)
         | SynExpr.Tuple (range=m)
-        | SynExpr.StructTuple (range=m)
         | SynExpr.ArrayOrList (range=m)
         | SynExpr.AnonRecd (range=m)
         | SynExpr.Record (range=m)
@@ -871,7 +861,6 @@ and
         | SynExpr.Const (range=m)
         | SynExpr.Typed (range=m)
         | SynExpr.Tuple (range=m)
-        | SynExpr.StructTuple (range=m)
         | SynExpr.ArrayOrList (range=m)
         | SynExpr.AnonRecd (range=m)
         | SynExpr.Record (range=m)
@@ -1000,8 +989,7 @@ and
     | Or of SynPat * SynPat * range:range
     | Ands of SynPat list * range:range
     | LongIdent of longDotId:LongIdentWithDots * (* holds additional ident for tooling *) Ident option * SynValTyparDecls option (* usually None: temporary used to parse "f<'a> x = x"*) * SynConstructorArgs  * accessibility:SynAccess option * range:range
-    | Tuple of SynPat list * range:range
-    | StructTuple of SynPat list * range:range
+    | Tuple of isStruct: bool * SynPat list * range:range
     | Paren of SynPat * range:range
     | ArrayOrList of bool * SynPat list * range:range
     | Record of ((LongIdent * Ident) * SynPat) list * range:range
@@ -1032,7 +1020,6 @@ and
       | SynPat.LongIdent (range=m)
       | SynPat.ArrayOrList (range=m)
       | SynPat.Tuple (range=m)
-      | SynPat.StructTuple (range=m)
       | SynPat.Typed (range=m)
       | SynPat.Attrib (range=m)
       | SynPat.Record (range=m)
@@ -1721,8 +1708,8 @@ let rec SimplePatsOfPat synArgNameGenerator p =
         SynSimplePats.Typed(p2,ty,m),
         laterf
 //    | SynPat.Paren (p,m) -> SimplePatsOfPat synArgNameGenerator p
-    | SynPat.Tuple (ps,m)
-    | SynPat.Paren(SynPat.Tuple (ps,m),_) ->
+    | SynPat.Tuple (false,ps,m)
+    | SynPat.Paren(SynPat.Tuple (false,ps,m),_) ->
         let ps2,laterf =
           List.foldBack
             (fun (p',rhsf) (ps',rhsf') ->
@@ -1842,14 +1829,14 @@ let mkSynDotBrackSeqSliceGet  m mDot arr (argslist:list<SynIndexerArg>) =
                        | SynIndexerArg.One x -> yield x
                        | _ -> () ]
     if notsliced.Length = argslist.Length then
-        SynExpr.DotIndexedGet(arr,[SynIndexerArg.One (SynExpr.Tuple(notsliced,[],unionRanges (List.head notsliced).Range (List.last notsliced).Range))],mDot,m)
+        SynExpr.DotIndexedGet(arr,[SynIndexerArg.One (SynExpr.Tuple(false,notsliced,[],unionRanges (List.head notsliced).Range (List.last notsliced).Range))],mDot,m)
     else
         SynExpr.DotIndexedGet(arr,argslist,mDot,m)
 
 let mkSynDotParenGet lhsm dotm a b   =
     match b with
-    | SynExpr.Tuple ([_;_],_,_)   -> errorR(Deprecated(FSComp.SR.astDeprecatedIndexerNotation(),lhsm)) ; SynExpr.Const(SynConst.Unit,lhsm)
-    | SynExpr.Tuple ([_;_;_],_,_) -> errorR(Deprecated(FSComp.SR.astDeprecatedIndexerNotation(),lhsm)) ; SynExpr.Const(SynConst.Unit,lhsm)
+    | SynExpr.Tuple (false,[_;_],_,_)   -> errorR(Deprecated(FSComp.SR.astDeprecatedIndexerNotation(),lhsm)) ; SynExpr.Const(SynConst.Unit,lhsm)
+    | SynExpr.Tuple (false,[_;_;_],_,_) -> errorR(Deprecated(FSComp.SR.astDeprecatedIndexerNotation(),lhsm)) ; SynExpr.Const(SynConst.Unit,lhsm)
     | _ -> mkSynInfix dotm a parenGet b
 
 let mkSynUnit m = SynExpr.Const(SynConst.Unit,m)
@@ -2354,11 +2341,10 @@ let rec synExprContainsError inpExpr =
               walkExpr e1 || walkExpr e2
 
           | SynExpr.ArrayOrList (_,es,_)
-          | SynExpr.Tuple (es,_,_)
-          | SynExpr.StructTuple (es,_,_) ->
+          | SynExpr.Tuple (_,es,_,_) ->
               walkExprs es
 
-          | SynExpr.AnonRecd (flds,_) ->
+          | SynExpr.AnonRecd (_,flds,_) ->
               walkExprs (List.map snd flds)
 
           | SynExpr.Record (_,_,fs,_) ->
