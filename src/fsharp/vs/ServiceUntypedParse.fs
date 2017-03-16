@@ -918,6 +918,10 @@ module UntypedParseImpl =
         match parsedInputOpt with
         | None -> None
         | Some pt ->
+
+        let ast = sprintf "%+A" pt
+        let _x = ast
+
         match GetEntityKind(pos, pt) with
         | Some EntityKind.Attribute -> Some CompletionContext.AttributeApplication
         | _ ->
@@ -1170,11 +1174,38 @@ module UntypedParseImpl =
                             | None -> Some (CompletionContext.Invalid) // A $ .B -> no completion list
                         | _ -> None 
                         
-                    member this.VisitBinding(defaultTraverse, synBinding) = defaultTraverse synBinding 
+                    member this.VisitBinding(defaultTraverse, (Binding(headPat = headPat) as synBinding)) = 
+                    
+                        let visitParam = function
+                            | SynPat.Named (range = range) when rangeContainsPos range pos -> 
+                                // parameter without type hint, no completion
+                                Some CompletionContext.Invalid 
+                            | SynPat.Typed(SynPat.Named(SynPat.Wild(range), _, _, _, _), _, _) when rangeContainsPos range pos ->
+                                // parameter with type hint, but we are on its name, no completion
+                                Some CompletionContext.Invalid
+                            | _ -> defaultTraverse synBinding
+
+                        match headPat with
+                        | SynPat.LongIdent(_,_,_,ctorArgs,_,_) ->
+                            match ctorArgs with
+                            | SynConstructorArgs.Pats(pats) ->
+                                pats |> List.tryPick (fun pat ->
+                                    match pat with
+                                    | SynPat.Paren(pat, _) -> 
+                                        match pat with
+                                        | SynPat.Tuple(pats, _) ->
+                                            pats |> List.tryPick visitParam
+                                        | _ -> visitParam pat
+                                    | SynPat.Wild(range) when rangeContainsPos range pos -> 
+                                        // let foo (x|
+                                        Some CompletionContext.Invalid
+                                    | _ -> visitParam pat
+                                )
+                            | _ -> defaultTraverse synBinding
+                        | _ -> defaultTraverse synBinding 
                     
                     member this.VisitHashDirective(range) = 
                         if rangeContainsPos range pos then Some CompletionContext.Invalid 
-                        
                         else None 
                         
                     member this.VisitModuleOrNamespace(SynModuleOrNamespace(longId = idents)) =
@@ -1184,6 +1215,24 @@ module UntypedParseImpl =
                             if stringBetweenModuleNameAndPos |> Seq.forall (fun x -> x = ' ' || x = '.') then
                                 Some CompletionContext.Invalid
                             else None
-                        | _ -> None }
+                        | _ -> None 
+
+                    member this.VisitComponentInfo(ComponentInfo(range = range)) = 
+                        if rangeContainsPos range pos then Some CompletionContext.Invalid
+                        else None
+
+                    member this.VisitLetOrUse(bindings, range) =
+                        match bindings with
+                        | [] when range.StartLine = pos.Line -> Some CompletionContext.Invalid
+                        | _ -> None
+
+                    member this.VisitSimplePats(pats) =
+                        pats |> List.tryPick (fun pat ->
+                            match pat with
+                            | SynSimplePat.Id(range = range)
+                            | SynSimplePat.Typed(SynSimplePat.Id(range = range),_,_) when rangeContainsPos range pos -> 
+                                Some CompletionContext.Invalid
+                            | _ -> None)
+            }
 
         AstTraversal.Traverse(pos, pt, walker)
