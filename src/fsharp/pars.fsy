@@ -4499,7 +4499,7 @@ atomType:
   | braceBarFieldDeclList
      { let flds,isStruct = $1
        let flds2 = 
-           $1 |> List.choose (function 
+           flds |> List.choose (function 
              | (Field([],false,Some id,ty,false,_xmldoc,None,_m)) -> Some (id,ty) 
              | _ -> reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidAnonRecdType()); None)
        SynType.AnonRecd (isStruct,flds2, rhs parseState 1) }  
