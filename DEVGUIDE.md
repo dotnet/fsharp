@@ -119,7 +119,7 @@ Note: if you face this error [#2351](https://github.com/Microsoft/visualfsharp/i
 delete those folders:
 
 * %appdata%\Microsoft\VisualStudio\15.0_<some number here>FSharpDev
-* %appdata%\..\Local\Microsoft\VisualStudio\15.0_<some number hereFSharpDev
+* %appdata%\..\Local\Microsoft\VisualStudio\15.0_<some number here>FSharpDev
 
 
 ## [Optional] Install the Visual F# IDE Tools  (Windows Only)
