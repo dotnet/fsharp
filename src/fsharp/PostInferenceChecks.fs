@@ -243,7 +243,7 @@ let rec CheckTypeDeep ((visitTyp,visitTyconRefOpt,visitAppTyOpt,visitTraitSoluti
         | None -> ()
 
     | TType_ucase (_,typs)
-    | TType_anon (_,_,_,typs) 
+    | TType_anon (_,typs) 
     | TType_tuple (_,typs) -> CheckTypesDeep f g env typs
     | TType_fun (s,t) -> CheckTypeDeep f g env s; CheckTypeDeep f g env t
     | TType_var tp -> 
@@ -806,6 +806,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context =
         // Address-of operator generates byref, and context permits this. 
         CheckExprsNoByrefs cenv env args                   
 
+    | TOp.AnonRecdGet _,_,[arg1]
     | TOp.TupleFieldGet _,_,[arg1] -> 
         CheckTypeInstNoByrefs cenv env m tyargs
         CheckExprsPermitByrefs cenv env [arg1]             (* Compiled pattern matches on immutable value structs come through here. *)

@@ -218,7 +218,7 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
                       | None -> ()
                       yield! walkExprs (fs |> List.choose p23)
 
-                  | SynExpr.AnonRecord (fs,_) ->
+                  | SynExpr.AnonRecd (fs,_) ->
                       yield! walkExprs (fs |> List.map snd)
 
                   | SynExpr.ObjExpr (_,_,bs,is,_,_) -> 

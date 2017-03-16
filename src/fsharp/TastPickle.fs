@@ -1362,6 +1362,9 @@ let fill_u_Expr_hole,u_expr_fwd = u_hole()
 #if INCLUDE_METADATA_WRITER
 let fill_p_Expr_hole,p_expr_fwd = p_hole()
 
+let p_anonInfo (AnonRecdTypeInfo(ccu,info,nms)) st = 
+    p_tup3 p_ccuref p_bool (p_array p_string) (ccu, evalTupInfoIsStruct info, nms) st
+
 let p_trait_sln sln st = 
     match sln with 
     | ILMethSln(a,b,c,d) ->
@@ -1374,12 +1377,19 @@ let p_trait_sln sln st =
          p_byte 3 st; p_expr_fwd expr st
     | FSRecdFieldSln(a,b,c) ->
          p_byte 4 st; p_tup3 p_typs p_rfref p_bool (a,b,c) st
+    | FSAnonRecdFieldSln(a, b, c) ->
+         p_byte 5 st; p_tup3 p_anonInfo p_typs p_int (a,b,c) st
+
 
 let p_trait (TTrait(a,b,c,d,e,f)) st  = 
     p_tup6 p_typs p_string p_MemberFlags p_typs (p_option p_typ) (p_option p_trait_sln) (a,b,c,d,e,!f) st
 #endif
 
 // We have to store trait solutions since they can occur in optimization data
+let u_anonInfo st = 
+    let (ccu, info, nms) = u_tup3 u_ccuref u_bool (u_array u_string) st 
+    AnonRecdTypeInfo (ccu, TupInfo.Const info,nms)
+
 let u_trait_sln st = 
     let tag = u_byte st
     match tag with 
@@ -1396,6 +1406,9 @@ let u_trait_sln st =
     | 4 -> 
         let (a,b,c) = u_tup3 u_typs u_rfref u_bool st
         FSRecdFieldSln(a,b,c) 
+    | 5 -> 
+         let (a,b,c) = u_tup3 u_anonInfo u_typs u_int st
+         FSAnonRecdFieldSln(a, b, c)
     | _ -> ufailwith st "u_trait_sln" 
 
 let u_trait st = 
@@ -1567,10 +1580,12 @@ let _ = fill_p_typ (fun ty st ->
     | TType_forall (tps,r)                -> p_byte 5 st; p_tup2 p_typar_specs p_typ (tps,r) st
     | TType_measure unt                   -> p_byte 6 st; p_measure_expr unt st
     | TType_ucase (uc,tinst)              -> p_byte 7 st; p_tup2 p_ucref p_typs (uc,tinst) st
-    | TType_anon (ccu,tupInfo,nms,l) -> 
-         p_byte (if evalTupInfoIsStruct tupInfo then 9 else 10) st; 
+    // p_byte 8 taken by TType_tuple above
+    | TType_anon (AnonRecdTypeInfo(ccu,tupInfo,nms),l) -> 
+         p_byte 9 st; 
+         p_bool (evalTupInfoIsStruct tupInfo) st; 
          p_ccuref ccu st; 
-         p_list p_string nms st; 
+         p_array p_string nms st; 
          p_typs l st
   )
 #endif
@@ -1587,8 +1602,7 @@ let _ = fill_u_typ (fun st ->
     | 6 -> let unt = u_measure_expr st                     in TType_measure unt
     | 7 -> let uc = u_ucref st in let tinst = u_typs st    in TType_ucase (uc,tinst)
     | 8 -> let l = u_typs st                               in TType_tuple (tupInfoStruct, l)
-    | 9 -> let ccu = u_ccuref st in let nms = u_list u_string st in let l = u_typs st  in TType_anon (ccu,tupInfoStruct,nms,l)
-    | 10 -> let ccu = u_ccuref st in let nms = u_list u_string st in let l = u_typs st  in TType_anon (ccu,tupInfoRef,nms,l)
+    | 9 -> let b = u_bool st in let ccu = u_ccuref st in let nms = u_array u_string st in let l = u_typs st  in TType_anon (AnonRecdTypeInfo(ccu, TupInfo.Const b, nms), l)
     | _ -> ufailwith st "u_typ")
   
 
@@ -2328,11 +2342,10 @@ and p_op x st =
     | TOp.UnionCaseFieldGetAddr (a,b)     -> p_byte 28 st; p_tup2 p_ucref p_int (a,b) st
     (* 29: TOp.Tuple when evalTupInfoIsStruct tupInfo = true *)
     (* 30: TOp.TupleFieldGet  when evalTupInfoIsStruct tupInfo = true *)
-
-    | TOp.AnonRecord (ccu,info,nms)   -> p_byte 31 st; p_tup3 p_ccuref p_bool (p_list p_string) (ccu, evalTupInfoIsStruct info, nms) st
-       // Note tag byte 29 is taken for struct tuples, see above
-       // Note tag byte 30 is taken for struct tuples, see above
+    | TOp.AnonRecd info   -> p_byte 31 st; p_anonInfo info st
+    | TOp.AnonRecdGet (info, n)   -> p_byte 32 st; p_anonInfo info st; p_int n st
     | TOp.Goto _ | TOp.Label _ | TOp.Return -> failwith "unexpected backend construct in pickled TAST"
+
 #endif
 
 and u_op st = 
@@ -2399,8 +2412,11 @@ and u_op st =
     | 29 -> TOp.Tuple tupInfoStruct
     | 30 -> let a = u_int st
             TOp.TupleFieldGet (tupInfoStruct, a) 
-    | 31 -> let (ccu, info, nms) = u_tup3 u_ccuref u_bool (u_list u_string) st 
-            TOp.AnonRecord (ccu, TupInfo.Const info,nms)   
+    | 31 -> let info = u_anonInfo st 
+            TOp.AnonRecd (info)   
+    | 32 -> let info = u_anonInfo st 
+            let n = u_int st 
+            TOp.AnonRecdGet (info, n)   
     | _ -> ufailwith st "u_op" 
 
 #if INCLUDE_METADATA_WRITER

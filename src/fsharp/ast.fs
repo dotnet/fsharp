@@ -429,7 +429,7 @@ and
 
     /// F# syntax : type * ... * type
     // the bool is true if / rather than * follows the type
-    | AnonRecord of typeNames:(Ident * SynType) list * range:range
+    | AnonRecd of typeNames:(Ident * SynType) list * range:range
 
     /// F# syntax : struct (type * ... * type)
     // the bool is true if / rather than * follows the type
@@ -477,7 +477,7 @@ and
         | SynType.Tuple (range=m)
         | SynType.StructTuple (range=m)
         | SynType.Array (range=m)
-        | SynType.AnonRecord (range=m)
+        | SynType.AnonRecd (range=m)
         | SynType.Fun (range=m)
         | SynType.Var (range=m)
         | SynType.Anon (range=m)
@@ -519,7 +519,7 @@ and
     | Tuple of  exprs:SynExpr list * commaRanges:range list * range:range  // "range list" is for interstitial commas, these only matter for parsing/design-time tooling, the typechecker may munge/discard them
 
     /// F# syntax: {| id1=e1; ...; idN=eN |}
-    | AnonRecord of  recordFields:(Ident * SynExpr) list * range:range
+    | AnonRecd of  recordFields:(Ident * SynExpr) list * range:range
 
     /// F# syntax: struct (e1, ..., eN)
     | StructTuple of  exprs:SynExpr list * commaRanges:range list * range:range  // "range list" is for interstitial commas, these only matter for parsing/design-time tooling, the typechecker may munge/discard them
@@ -743,7 +743,7 @@ and
         | SynExpr.Const (range=m)
         | SynExpr.Typed (range=m)
         | SynExpr.Tuple (range=m)
-        | SynExpr.AnonRecord (range=m)
+        | SynExpr.AnonRecd (range=m)
         | SynExpr.StructTuple (range=m)
         | SynExpr.ArrayOrList (range=m)
         | SynExpr.Record (range=m)
@@ -809,7 +809,7 @@ and
         | SynExpr.Tuple (range=m)
         | SynExpr.StructTuple (range=m)
         | SynExpr.ArrayOrList (range=m)
-        | SynExpr.AnonRecord (range=m)
+        | SynExpr.AnonRecd (range=m)
         | SynExpr.Record (range=m)
         | SynExpr.New (range=m)
         | SynExpr.ObjExpr (range=m)
@@ -873,7 +873,7 @@ and
         | SynExpr.Tuple (range=m)
         | SynExpr.StructTuple (range=m)
         | SynExpr.ArrayOrList (range=m)
-        | SynExpr.AnonRecord (range=m)
+        | SynExpr.AnonRecd (range=m)
         | SynExpr.Record (range=m)
         | SynExpr.New (range=m)
         | SynExpr.ObjExpr (range=m)
@@ -2358,7 +2358,7 @@ let rec synExprContainsError inpExpr =
           | SynExpr.StructTuple (es,_,_) ->
               walkExprs es
 
-          | SynExpr.AnonRecord (flds,_) ->
+          | SynExpr.AnonRecd (flds,_) ->
               walkExprs (List.map snd flds)
 
           | SynExpr.Record (_,_,fs,_) ->

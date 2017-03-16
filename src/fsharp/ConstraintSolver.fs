@@ -213,7 +213,7 @@ let rec occursCheck g un ty =
     match stripTyEqns g ty with 
     | TType_ucase(_,l)
     | TType_app (_,l) 
-    | TType_anon(_,_,_,l)
+    | TType_anon(_,l)
     | TType_tuple (_,l) -> List.exists (occursCheck g un) l
     | TType_fun (d,r) -> occursCheck g un d || occursCheck g un r
     | TType_var r   ->  typarEq un r 
@@ -286,6 +286,7 @@ type TraitConstraintSolution =
     | TTraitBuiltIn
     | TTraitSolved of MethInfo * TypeInst
     | TTraitSolvedRecdProp of RecdFieldInfo * bool
+    | TTraitSolvedAnonRecdProp of AnonRecdTypeInfo * TypeInst * int 
 
 let BakedInTraitConstraintNames =
     [ "op_Division" ; "op_Multiply"; "op_Addition" 
@@ -550,7 +551,7 @@ let rec SimplifyMeasuresInType g resultFirst ((generalizable, generalized) as pa
     match stripTyparEqns ty with 
     | TType_ucase(_,l)
     | TType_app (_,l) 
-    | TType_anon (_,_,_,l)
+    | TType_anon (_,l)
     | TType_tuple (_,l) -> SimplifyMeasuresInTypes g param l
 
     | TType_fun (d,r) -> if resultFirst then SimplifyMeasuresInTypes g param [r;d] else SimplifyMeasuresInTypes g param [d;r]        
@@ -588,7 +589,7 @@ let rec GetMeasureVarGcdInType v ty =
     match stripTyparEqns ty with 
     | TType_ucase(_,l)
     | TType_app (_,l) 
-    | TType_anon (_,_,_,l)
+    | TType_anon (_,l)
     | TType_tuple (_,l) -> GetMeasureVarGcdInTypes v l
 
     | TType_fun (d,r) -> GcdRational (GetMeasureVarGcdInType v d) (GetMeasureVarGcdInType v r)
@@ -792,10 +793,10 @@ and SolveTypEqualsTyp (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace
     | TType_tuple (tupInfo1,l1)      ,TType_tuple (tupInfo2,l2)      -> 
         if evalTupInfoIsStruct tupInfo1 <> evalTupInfoIsStruct tupInfo2 then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m,m2)) else
         SolveTypEqualsTypEqns csenv ndeep m2 trace None l1 l2
-    | TType_anon (ccu1,tupInfo1,nms1,l1),TType_anon (ccu2,tupInfo2,nms2,l2)      -> 
+    | TType_anon (AnonRecdTypeInfo(ccu1,tupInfo1,nms1),l1),TType_anon (AnonRecdTypeInfo(ccu2,tupInfo2,nms2),l2)      -> 
         if evalTupInfoIsStruct tupInfo1 <> evalTupInfoIsStruct tupInfo2 then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m,m2)) else
-        if not (ccuEq ccu1 ccu2) then ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecordCcuMismatch(ccu1.AssemblyName, ccu2.AssemblyName), csenv.m,m2)) else
-        if not (nms1 = nms2) then ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecordFieldNameMismatch(sprintf "%A" nms1, sprintf "%A" nms2), csenv.m,m2)) else
+        if not (ccuEq ccu1 ccu2) then ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecdCcuMismatch(ccu1.AssemblyName, ccu2.AssemblyName), csenv.m,m2)) else
+        if not (nms1 = nms2) then ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecdFieldNameMismatch(sprintf "%A" nms1, sprintf "%A" nms2), csenv.m,m2)) else
         SolveTypEqualsTypEqns csenv ndeep m2 trace None l1 l2
     | TType_fun (d1,r1)   ,TType_fun (d2,r2)   -> SolveFunTypEqn csenv ndeep m2 trace None d1 d2 r1 r2
     | TType_measure ms1   ,TType_measure ms2   -> UnifyMeasures csenv trace ms1 ms2
@@ -859,10 +860,10 @@ and SolveTypSubsumesTyp (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
     | TType_tuple (tupInfo1,l1)      ,TType_tuple (tupInfo2,l2)      -> 
         if evalTupInfoIsStruct tupInfo1 <> evalTupInfoIsStruct tupInfo2 then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m,m2)) else
         SolveTypEqualsTypEqns csenv ndeep m2 trace cxsln l1 l2 (* nb. can unify since no variance *)
-    | TType_anon (ccu1,tupInfo1,nms1,l1), TType_anon (ccu2,tupInfo2,nms2,l2)      -> 
+    | TType_anon (AnonRecdTypeInfo(ccu1,tupInfo1,nms1),l1), TType_anon (AnonRecdTypeInfo(ccu2,tupInfo2,nms2),l2)      -> 
         if evalTupInfoIsStruct tupInfo1 <> evalTupInfoIsStruct tupInfo2 then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m,m2)) else
-        if not (ccuEq ccu1 ccu2) then ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecordCcuMismatch(ccu1.AssemblyName, ccu2.AssemblyName), csenv.m,m2)) else
-        if not (nms1 = nms2) then ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecordFieldNameMismatch(sprintf "%A" nms1, sprintf "%A" nms2), csenv.m,m2)) else
+        if not (ccuEq ccu1 ccu2) then ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecdCcuMismatch(ccu1.AssemblyName, ccu2.AssemblyName), csenv.m,m2)) else
+        if not (nms1 = nms2) then ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecdFieldNameMismatch(sprintf "%A" nms1, sprintf "%A" nms2), csenv.m,m2)) else
         SolveTypEqualsTypEqns csenv ndeep m2 trace cxsln l1 l2 (* nb. can unify since no variance *)
     | TType_fun (d1,r1)  ,TType_fun (d2,r2)   -> SolveFunTypEqn csenv ndeep m2 trace cxsln d1 d2 r1 r2 (* nb. can unify since no variance *)
     | TType_measure ms1, TType_measure ms2    -> UnifyMeasures csenv trace ms1 ms2
@@ -1237,9 +1238,24 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
               else
                   None
 
+          let anonRecdPropSearch = 
+              let isGetProp = nm.StartsWith "get_" 
+              let propName = nm.[4..]
+              if isGetProp && memFlags.IsInstance  then 
+                  let props = 
+                    tys |> List.choose (fun ty -> 
+                        match NameResolution.TryFindAnonRecdFieldOfType g ty propName with
+                        | Some (NameResolution.Item.AnonRecdField(anonInfo, tinst, i)) -> Some (anonInfo, tinst, i)
+                        | _ -> None)
+                  match props with 
+                  | [ prop ] -> Some prop
+                  | _ -> None
+              else
+                  None
+
           // Now check if there are no feasible solutions at all
-          match minfos, recdPropSearch with 
-          | [], None when not (tys |> List.exists (isAnyParTy g)) ->
+          match minfos, recdPropSearch, anonRecdPropSearch with 
+          | [], None, None when not (tys |> List.exists (isAnyParTy g)) ->
               if tys |> List.exists (isFunTy g) then 
                   ErrorD (ConstraintSolverError(FSComp.SR.csExpectTypeWithOperatorButGivenFunction(DecompileOpName nm),m,m2)) 
               elif tys |> List.exists (isAnyTupleTy g) then 
@@ -1281,13 +1297,20 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
               let methOverloadResult,errors = 
                   trace.CollectThenUndoOrCommit (fun (a, _) -> Option.isSome a) (fun trace -> ResolveOverloading csenv (WithTrace trace) nm ndeep (Some traitInfo) (0,0) AccessibleFromEverywhere calledMethGroup false (Some rty))
 
-              match recdPropSearch, methOverloadResult with 
-              | Some (rfinfo, isSetProp), None -> 
+              match anonRecdPropSearch, recdPropSearch, methOverloadResult with 
+              | Some (anonInfo, tinst, i), None, None -> 
+                  // OK, the constraint is solved by a record property. Assert that the return types match.
+                  let rty2 = List.item i tinst
+                  SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty rty2 ++ (fun () -> 
+                  ResultD (TTraitSolvedAnonRecdProp(anonInfo, tinst, i)))
+
+              | None, Some (rfinfo, isSetProp), None -> 
                   // OK, the constraint is solved by a record property. Assert that the return types match.
                   let rty2 = if isSetProp then g.unit_ty else rfinfo.FieldType
                   SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty rty2 ++ (fun () -> 
                   ResultD (TTraitSolvedRecdProp(rfinfo, isSetProp)))
-              | None, Some (calledMeth:CalledMeth<_>) -> 
+
+              | None, None, Some (calledMeth:CalledMeth<_>) -> 
                   // OK, the constraint is solved.
                   let minfo = calledMeth.Method
 
@@ -1334,8 +1357,13 @@ and RecordMemberConstraintSolution css m trace traitInfo res =
         TransactMemberConstraintSolution traitInfo trace BuiltInSln;
         ResultD true
 
-    | TTraitSolvedRecdProp (rfinfo, isSetProp) -> 
-        let sln = MemberConstraintSolutionOfRecdFieldInfo rfinfo isSetProp
+    | TTraitSolvedRecdProp (rfinfo, isSet) -> 
+        let sln = FSRecdFieldSln(rfinfo.TypeInst,rfinfo.RecdFieldRef,isSet)
+        TransactMemberConstraintSolution traitInfo trace sln;
+        ResultD true
+
+    | TTraitSolvedAnonRecdProp (anonInfo, tinst, i) -> 
+        let sln = FSAnonRecdFieldSln(anonInfo, tinst, i)
         TransactMemberConstraintSolution traitInfo trace sln;
         ResultD true
 
@@ -1380,8 +1408,6 @@ and MemberConstraintSolutionOfMethInfo css m minfo minst =
 
 #endif
 
-and MemberConstraintSolutionOfRecdFieldInfo rfinfo isSet =
-    FSRecdFieldSln(rfinfo.TypeInst,rfinfo.RecdFieldRef,isSet)
 
 /// Write into the reference cell stored in the TAST and add to the undo trace if necessary
 and TransactMemberConstraintSolution traitInfo (trace:OptionalTrace) sln  =
@@ -2609,7 +2635,7 @@ let CodegenWitnessThatTypSupportsTraitConstraint tcVal g amap m (traitInfo:Trait
     SolveMemberConstraint csenv true true 0 m NoTrace traitInfo ++ (fun _res -> 
         let sln = 
               match traitInfo.Solution with 
-              | None -> Choice4Of4()
+              | None -> Choice5Of5()
               | Some sln ->
                   match sln with 
                   | ILMethSln(typ,extOpt,mref,minst) ->
@@ -2621,17 +2647,19 @@ let CodegenWitnessThatTypSupportsTraitConstraint tcVal g amap m (traitInfo:Trait
                            | Some ilActualTypeRef -> 
                                let actualTyconRef = Import.ImportILTypeRef amap m ilActualTypeRef 
                                MethInfo.CreateILExtensionMeth(amap, m, typ, actualTyconRef, None, mdef)
-                       Choice1Of4 (ilMethInfo,minst)
+                       Choice1Of5 (ilMethInfo,minst)
                   | FSMethSln(typ, vref,minst) ->
-                       Choice1Of4  (FSMeth(g,typ,vref,None),minst)
+                       Choice1Of5  (FSMeth(g,typ,vref,None),minst)
                   | FSRecdFieldSln(tinst,rfref,isSetProp) ->
-                       Choice2Of4  (tinst,rfref,isSetProp)
+                       Choice2Of5  (tinst,rfref,isSetProp)
+                  | FSAnonRecdFieldSln(anonInfo, tinst, i) -> 
+                       Choice3Of5  (anonInfo, tinst, i)
                   | BuiltInSln -> 
-                       Choice4Of4 ()
+                       Choice5Of5 ()
                   | ClosedExprSln expr -> 
-                       Choice3Of4 expr
+                       Choice4Of5 expr
         match sln with
-        | Choice1Of4(minfo,methArgTys) -> 
+        | Choice1Of5(minfo,methArgTys) -> 
             let argExprs = 
                 // FIX for #421894 - typechecker assumes that coercion can be applied for the trait calls arguments but codegen doesn't emit coercion operations
                 // result - generation of non-verifyable code
@@ -2662,7 +2690,7 @@ let CodegenWitnessThatTypSupportsTraitConstraint tcVal g amap m (traitInfo:Trait
             else        
                 ResultD (Some (MakeMethInfoCall amap m minfo methArgTys argExprs ))
 
-        | Choice2Of4 (tinst,rfref,isSet) -> 
+        | Choice2Of5 (tinst,rfref,isSet) -> 
             let res = 
                 match isSet, rfref.RecdField.IsStatic, argExprs.Length with 
                 | true, true, 1 -> 
@@ -2685,8 +2713,16 @@ let CodegenWitnessThatTypSupportsTraitConstraint tcVal g amap m (traitInfo:Trait
                             Some (mkRecdFieldGet g (argExprs.[0], rfref, tinst, m))
                 | _ -> None 
             ResultD res
-        | Choice3Of4 expr -> ResultD (Some (MakeApplicationAndBetaReduce g (expr, tyOfExpr g expr, [], argExprs, m)))
-        | Choice4Of4 () -> ResultD None)
+        | Choice3Of5 (anonInfo, tinst, i) -> 
+            let res = 
+                let (AnonRecdTypeInfo(_, tupInfo, _)) = anonInfo
+                if evalTupInfoIsStruct tupInfo && isByrefTy g (tyOfExpr g argExprs.[0]) then 
+                    Some (mkAnonRecdFieldGetViaExprAddr (anonInfo, argExprs.[0], tinst, i, m))
+                else 
+                    Some (mkAnonRecdFieldGet g (anonInfo, argExprs.[0], tinst, i, m))
+            ResultD res
+        | Choice4Of5 expr -> ResultD (Some (MakeApplicationAndBetaReduce g (expr, tyOfExpr g expr, [], argExprs, m)))
+        | Choice5Of5 () -> ResultD None)
 
 
 let ChooseTyparSolutionAndSolve css denv tp =

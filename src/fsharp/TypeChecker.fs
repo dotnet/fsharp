@@ -728,9 +728,10 @@ let UnifyStructTupleType contextInfo cenv denv m ty ps =
 
 /// Optimized unification routine that avoids creating new inference 
 /// variables unnecessarily
-let UnifyAnonRecordType contextInfo cenv denv m ty ccu nms = 
-    let ptys = NewInferenceTypes nms
-    let ty2 = TType_anon (ccu, tupInfoRef, nms, ptys)
+let UnifyAnonRecdType contextInfo cenv denv m ty anonInfo = 
+    let (AnonRecdTypeInfo(_ccu, _tupInfo, nms)) = anonInfo
+    let ptys = NewInferenceTypes (Array.toList nms)
+    let ty2 = TType_anon (anonInfo, ptys)
     AddCxTypeEqualsType contextInfo denv cenv.css m ty ty2
     ptys
 
@@ -4575,9 +4576,10 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv:SyntacticUnscoped
             let args',tpenv = TcTypesAsTuple cenv newOk checkCxs occ env tpenv args m
             TType_tuple(tupInfoRef,args'),tpenv
 
-    | SynType.AnonRecord(args,m) ->   
+    | SynType.AnonRecd(args,m) ->   
         let args',tpenv = TcTypesAsTuple cenv newOk checkCxs occ env tpenv (args |> List.map snd |> List.map (fun x -> (false,x))) m
-        TType_anon(cenv.topCcu, tupInfoRef, (args |> List.map (fun (nm, _) -> nm.idText)),  args'),tpenv
+        let nms = args |> List.map (fun (nm, _) -> nm.idText) |> List.toArray
+        TType_anon(AnonRecdTypeInfo(cenv.topCcu, tupInfoStruct, nms),  args'),tpenv
 
     | SynType.StructTuple(args,m) ->   
         let args',tpenv = TcTypesAsTuple cenv newOk checkCxs occ env tpenv args m
@@ -5764,13 +5766,14 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
         let args',tpenv = TcExprs cenv env m tpenv flexes argtys args
         mkAnyTupled cenv.g m tupInfoStruct args' argtys, tpenv
 
-    | SynExpr.AnonRecord (args,m) -> 
+    | SynExpr.AnonRecd (args,m) -> 
         let ccu = cenv.topCcu 
-        let nms = (args |> List.map (fun (x,_) -> x.idText))
-        let argtys = UnifyAnonRecordType env.eContextInfo cenv env.DisplayEnv m overallTy ccu nms
+        let nms = args |> List.map (fun (x,_) -> x.idText) |> List.toArray
+        let anonInfo = AnonRecdTypeInfo(ccu, tupInfoStruct, nms)
+        let argtys = UnifyAnonRecdType env.eContextInfo cenv env.DisplayEnv m overallTy anonInfo
         let flexes = argtys |> List.map (fun _ -> true)
         let args',tpenv = TcExprs cenv env m tpenv flexes argtys (List.map snd args)
-        mkAnyAnonRecord cenv.g m cenv.topCcu tupInfoRef nms args' argtys, tpenv
+        mkAnonRecd cenv.g m anonInfo args' argtys, tpenv
 
     | SynExpr.ArrayOrList (isArray,args,m) -> 
         CallExprHasTypeSink cenv.tcSink (m,env.NameEnv,overallTy, env.DisplayEnv,env.eAccessRights)
@@ -8991,6 +8994,18 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
 
             // Instance F# Record or Class field 
             let objExpr' = mkRecdFieldGet cenv.g (objExpr,rfinfo.RecdFieldRef,rfinfo.TypeInst,mExprAndItem)
+            PropagateThenTcDelayed cenv overallTy env tpenv mExprAndItem (MakeApplicableExprWithFlex cenv env objExpr') fieldTy ExprAtomicFlag.Atomic delayed 
+        
+    | Item.AnonRecdField (anonInfo, tinst, n) ->
+        let tgty = TType_anon (anonInfo, tinst)
+        AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css mItem NoTrace tgty objExprTy 
+        let fieldTy = List.item n tinst
+        match delayed with 
+        | DelayedSet _ :: _otherDelayed ->
+            error(Error(FSComp.SR.tcInvalidAssignment(),mItem))
+        | _ ->
+            // Instance F# Anonymous Record 
+            let objExpr' = mkAnonRecdFieldGet cenv.g (anonInfo,objExpr,tinst,n,mExprAndItem)
             PropagateThenTcDelayed cenv overallTy env tpenv mExprAndItem (MakeApplicableExprWithFlex cenv env objExpr') fieldTy ExprAtomicFlag.Atomic delayed 
         
     | Item.ILField finfo -> 
@@ -15241,7 +15256,7 @@ module EstablishTypeDefinitionCores =
 
             let rec accInAbbrevType ty acc  = 
                 match stripTyparEqns ty with 
-                | TType_anon (_,_,_,l) 
+                | TType_anon (_,l) 
                 | TType_tuple (_,l) -> accInAbbrevTypes l acc
                 | TType_ucase (UCRef(tc,_),tinst) 
                 | TType_app (tc,tinst) -> 

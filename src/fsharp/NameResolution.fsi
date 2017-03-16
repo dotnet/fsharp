@@ -43,37 +43,84 @@ val (|AbbrevOrAppTy|_|) : TType -> TyconRef option
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 /// Represents an item that results from name resolution
 type Item = 
-  // These exist in the "eUnqualifiedItems" List.map in the type environment. 
-  | Value of  ValRef
-  // UnionCaseInfo and temporary flag which is used to show a "use case is deprecated" message
-  | UnionCase of UnionCaseInfo * bool 
-  | ActivePatternResult of ActivePatternInfo * TType * int  * range
-  | ActivePatternCase of ActivePatternElemRef 
-  | ExnCase of TyconRef 
-  | RecdField of RecdFieldInfo
-  | NewDef of Ident
-  | ILField of ILFieldInfo
-  | Event of EventInfo
-  | Property of string * PropInfo list
-  | MethodGroup of displayName: string * methods: MethInfo list * uninstantiatedMethodOpt: MethInfo option
-  | CtorGroup of string * MethInfo list
-  | FakeInterfaceCtor of TType
-  | DelegateCtor of TType
-  | Types of string * TType list
-  /// CustomOperation(operationName, operationHelpText, operationImplementation).
-  /// 
-  /// Used to indicate the availability or resolution of a custom query operation such as 'sortBy' or 'where' in computation expression syntax
-  | CustomOperation of string * (unit -> string option) * MethInfo option
-  | CustomBuilder of string * ValRef
-  | TypeVar of string * Typar
-  | ModuleOrNamespaces of Tast.ModuleOrNamespaceRef list
-  /// Represents the resolution of a source identifier to an implicit use of an infix operator (+solution if such available)
-  | ImplicitOp of Ident * TraitConstraintSln option ref
-  /// Represents the resolution of a source identifier to a named argument
-  | ArgName of Ident * TType * ArgumentContainer option
-  | SetterArg of Ident * Item 
-  | UnqualifiedType of TyconRef list
-  member DisplayName : string
+    /// Represents the resolution of a name to an F# value or function.
+    | Value of  ValRef
+
+    /// Represents the resolution of a name to an F# union case.
+    | UnionCase of UnionCaseInfo * bool
+
+    /// Represents the resolution of a name to an F# active pattern result.
+    | ActivePatternResult of ActivePatternInfo * TType * int  * range
+
+    /// Represents the resolution of a name to an F# active pattern case within the body of an active pattern.
+    | ActivePatternCase of ActivePatternElemRef 
+
+    /// Represents the resolution of a name to an F# exception definition.
+    | ExnCase of TyconRef 
+
+    /// Represents the resolution of a name to an F# record field.
+    | RecdField of RecdFieldInfo
+
+    /// Represents the resolution of a name to a field of an anonymous record type.
+    | AnonRecdField of AnonRecdTypeInfo * TTypes * int
+
+    // The following are never in the items table but are valid results of binding 
+    // an identifier in different circumstances. 
+
+    /// Represents the resolution of a name at the point of its own definition.
+    | NewDef of Ident
+
+    /// Represents the resolution of a name to a .NET field 
+    | ILField of ILFieldInfo
+
+    /// Represents the resolution of a name to an event
+    | Event of EventInfo
+
+    /// Represents the resolution of a name to a property
+    | Property of string * PropInfo list
+
+    /// Represents the resolution of a name to a group of methods. 
+    | MethodGroup of displayName: string * methods: MethInfo list * uninstantiatedMethodOpt: MethInfo option
+
+    /// Represents the resolution of a name to a constructor
+    | CtorGroup of string * MethInfo list
+
+    /// Represents the resolution of a name to the fake constructor simulated for an interface type.
+    | FakeInterfaceCtor of TType
+
+    /// Represents the resolution of a name to a delegate
+    | DelegateCtor of TType
+
+    /// Represents the resolution of a name to a group of types
+    | Types of string * TType list
+
+    /// CustomOperation(nm, helpText, methInfo)
+    /// 
+    /// Used to indicate the availability or resolution of a custom query operation such as 'sortBy' or 'where' in computation expression syntax
+    | CustomOperation of string * (unit -> string option) * MethInfo option
+
+    /// Represents the resolution of a name to a custom builder in the F# computation expression syntax
+    | CustomBuilder of string * ValRef
+
+    /// Represents the resolution of a name to a type variable
+    | TypeVar of string * Typar
+
+    /// Represents the resolution of a name to a module or namespace
+    | ModuleOrNamespaces of Tast.ModuleOrNamespaceRef list
+
+    /// Represents the resolution of a name to an operator
+    | ImplicitOp of Ident * TraitConstraintSln option ref
+
+    /// Represents the resolution of a name to a named argument
+    | ArgName of Ident * TType * ArgumentContainer option
+
+    /// Represents the resolution of a name to a named property setter
+    | SetterArg of Ident * Item 
+
+    /// Represents the potential resolution of an unqualified name to a type.
+    | UnqualifiedType of TyconRef list
+
+    member DisplayName : string
 
 /// Represents a record field resolution and the information if the usage is deprecated.
 type FieldResolution = FieldResolution of RecdFieldRef * bool
@@ -111,6 +158,9 @@ type BulkAdd = Yes | No
 
 /// Lookup patterns in name resolution environment
 val internal TryFindPatternByName : string -> NameResolutionEnv -> Item option
+
+/// Find a field in anonymous record type
+val internal TryFindAnonRecdFieldOfType : TcGlobals -> TType -> string -> Item option
 
 /// Add extra items to the environment for Visual Studio, e.g. static members 
 val internal AddFakeNamedValRefToNameEnv : string -> NameResolutionEnv -> ValRef -> NameResolutionEnv

@@ -2109,6 +2109,9 @@ and
     ///    isSetProp -- indicates if this is a set of a record field
     | FSRecdFieldSln of TypeInst * RecdFieldRef * bool
 
+    /// Indicates a trait is solved by an F# anonymous record field.
+    | FSAnonRecdFieldSln of AnonRecdTypeInfo * TypeInst * int
+
     /// ILMethSln(typ, extOpt, ilMethodRef, minst)
     ///
     /// Indicates a trait is solved by a .NET method.
@@ -3486,7 +3489,7 @@ and
     /// TType_anon
     ///
     /// Indicates the type is an anonymous record type whose compiled representation is located in the given assembly
-    | TType_anon of CcuThunk  * TupInfo * string list * TType list
+    | TType_anon of AnonRecdTypeInfo * TType list
 
     /// TType_tuple(elementTypes).
     ///
@@ -3520,11 +3523,12 @@ and
              | TupInfo.Const false -> ""
              | TupInfo.Const true -> "struct ")
              + String.concat "," (List.map string tinst) 
-        | TType_anon (_, tupInfo, nms, tinst) -> 
+        | TType_anon (anonInfo, tinst) -> 
+            let (AnonRecdTypeInfo(_, tupInfo, nms)) = anonInfo
             (match tupInfo with 
              | TupInfo.Const false -> ""
              | TupInfo.Const true -> "struct ")
-             + "{|" + String.concat "," (List.map2 (fun nm ty -> nm + " " + string ty + ";") nms tinst) + ")" + "|}"
+             + "{|" + String.concat "," (Seq.map2 (fun nm ty -> nm + " " + string ty + ";") nms tinst) + ")" + "|}"
         | TType_fun (d,r) -> "(" + string d + " -> " + string r + ")"
         | TType_ucase (uc,tinst) -> "union case type " + uc.CaseName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
         | TType_var tp -> tp.DisplayName
@@ -3532,7 +3536,7 @@ and
 
 and TypeInst = TType list 
 and TTypes = TType list 
-
+and AnonRecdTypeInfo = AnonRecdTypeInfo of CcuThunk  * TupInfo * string[] 
 and [<RequireQualifiedAccess>] TupInfo = 
     /// Some constant, e.g. true or false for tupInfo
     | Const of bool
@@ -4072,7 +4076,10 @@ and
     | Tuple of TupInfo 
 
     /// An operation representing the creation of an anonymous record
-    | AnonRecord of CcuThunk * TupInfo * string list 
+    | AnonRecd of AnonRecdTypeInfo
+
+    /// An operation representing the get of a property from an anonymous record
+    | AnonRecdGet of AnonRecdTypeInfo * int
 
     /// An operation representing the creation of an array value
     | Array
@@ -5076,7 +5083,7 @@ let FSharpOptimizationDataResourceName = "FSharpOptimizationData"
 let FSharpSignatureDataResourceName = "FSharpSignatureData"
 
 
-// TEMP: use mutable struct tuples
-//let TypeNameForAnonRecdTypes = "<AnonRecordTypes>"
+// DEMONSTRATOR: for now we're using mutable struct tuples
+//let TypeNameForAnonRecdTypes = "<AnonRecdTypes>"
 //let GenILTypeRefForAnonRecdType (ccu: CcuThunk, nms) = 
 //    mkILNestedTyRef(ccu.ILScopeRef,[TypeNameForAnonRecdTypes],String.concat "-" nms)

@@ -144,54 +144,78 @@ type ArgumentContainer =
 type Item = 
     /// Represents the resolution of a name to an F# value or function.
     | Value of  ValRef
+
     /// Represents the resolution of a name to an F# union case.
     | UnionCase of UnionCaseInfo * bool
+
     /// Represents the resolution of a name to an F# active pattern result.
     | ActivePatternResult of ActivePatternInfo * TType * int  * range
+
     /// Represents the resolution of a name to an F# active pattern case within the body of an active pattern.
     | ActivePatternCase of ActivePatternElemRef 
+
     /// Represents the resolution of a name to an F# exception definition.
     | ExnCase of TyconRef 
+
     /// Represents the resolution of a name to an F# record field.
     | RecdField of RecdFieldInfo
+
+    /// Represents the resolution of a name to a field of an anonymous record type.
+    | AnonRecdField of AnonRecdTypeInfo * TTypes * int
 
     // The following are never in the items table but are valid results of binding 
     // an identifier in different circumstances. 
 
     /// Represents the resolution of a name at the point of its own definition.
     | NewDef of Ident
+
     /// Represents the resolution of a name to a .NET field 
     | ILField of ILFieldInfo
+
     /// Represents the resolution of a name to an event
     | Event of EventInfo
+
     /// Represents the resolution of a name to a property
     | Property of string * PropInfo list
+
     /// Represents the resolution of a name to a group of methods. 
     | MethodGroup of displayName: string * methods: MethInfo list * uninstantiatedMethodOpt: MethInfo option
+
     /// Represents the resolution of a name to a constructor
     | CtorGroup of string * MethInfo list
+
     /// Represents the resolution of a name to the fake constructor simulated for an interface type.
     | FakeInterfaceCtor of TType
+
     /// Represents the resolution of a name to a delegate
     | DelegateCtor of TType
+
     /// Represents the resolution of a name to a group of types
     | Types of string * TType list
+
     /// CustomOperation(nm, helpText, methInfo)
     /// 
     /// Used to indicate the availability or resolution of a custom query operation such as 'sortBy' or 'where' in computation expression syntax
     | CustomOperation of string * (unit -> string option) * MethInfo option
+
     /// Represents the resolution of a name to a custom builder in the F# computation expression syntax
     | CustomBuilder of string * ValRef
+
     /// Represents the resolution of a name to a type variable
     | TypeVar of string * Typar
+
     /// Represents the resolution of a name to a module or namespace
     | ModuleOrNamespaces of Tast.ModuleOrNamespaceRef list
+
     /// Represents the resolution of a name to an operator
     | ImplicitOp of Ident * TraitConstraintSln option ref
+
     /// Represents the resolution of a name to a named argument
     | ArgName of Ident * TType * ArgumentContainer option
+
     /// Represents the resolution of a name to a named property setter
     | SetterArg of Ident * Item 
+
     /// Represents the potential resolution of an unqualified name to a type.
     | UnqualifiedType of TyconRef list
 
@@ -210,6 +234,7 @@ type Item =
         | Item.UnionCase(uinfo,_) -> DecompileOpName uinfo.UnionCase.DisplayName
         | Item.ExnCase tcref -> tcref.LogicalName
         | Item.RecdField rfinfo -> DecompileOpName rfinfo.RecdField.Name
+        | Item.AnonRecdField (AnonRecdTypeInfo(_, _, nms), _tys, i) -> nms.[i]
         | Item.NewDef id -> id.idText
         | Item.ILField finfo -> finfo.FieldName
         | Item.Event einfo -> einfo.EventName
@@ -1396,17 +1421,17 @@ type TcResolutions
 type TcSymbolUses(g, capturedNameResolutions : ResizeArray<CapturedNameResolution>, formatSpecifierLocations: range[]) = 
     
     // Make sure we only capture the information we really need to report symbol uses
-    let cnrs = [| for cnr in capturedNameResolutions  -> struct (cnr.Item, cnr.ItemOccurence, cnr.DisplayEnv, cnr.Range) |]
+    let cnrs = [| for cnr in capturedNameResolutions  -> (* struct *) (cnr.Item, cnr.ItemOccurence, cnr.DisplayEnv, cnr.Range) |]
     let capturedNameResolutions = () 
     do ignore capturedNameResolutions // don't capture this!
 
     member this.GetUsesOfSymbol(item) = 
-        [| for (struct (cnrItem,occ,denv,m)) in cnrs do
+        [| for ( (* struct *) (cnrItem,occ,denv,m)) in cnrs do
                if protectAssemblyExploration false (fun () -> ItemsAreEffectivelyEqual g item cnrItem) then
                   yield occ, denv, m |]
 
     member this.GetAllUsesOfSymbols() = 
-        [| for (struct (cnrItem,occ,denv,m)) in cnrs do
+        [| for ( (* struct *) (cnrItem,occ,denv,m)) in cnrs do
               yield (cnrItem, occ, denv, m) |]
 
     member this.GetFormatSpecifierLocations() =  formatSpecifierLocations
@@ -1562,6 +1587,7 @@ let CheckAllTyparsInferrable amap m item =
     | Item.UnionCase _ 
     | Item.ExnCase _ 
     | Item.RecdField _ 
+    | Item.AnonRecdField _ 
     | Item.NewDef _ 
     | Item.ILField _ 
     | Item.Event _ 
@@ -1916,6 +1942,16 @@ let TryFindUnionCaseOfType g typ nm =
     else 
         None
 
+/// Try to find a union case of a type, with the given name
+let TryFindAnonRecdFieldOfType g typ nm =
+    match tryDestAnonRecdTy g typ with 
+    | Some (anonInfo, tys) -> 
+        let (AnonRecdTypeInfo(_,_,nms)) = anonInfo 
+        match Array.tryFindIndex (fun x -> x = nm) nms with 
+        | Some i -> Some (Item.AnonRecdField(anonInfo, tys, i))
+        | None -> None
+    | None -> None
+
 let CoreDisplayName(pinfo:PropInfo) =   
     match pinfo with
     | FSProp(_,_,_,Some set) -> set.CoreDisplayName
@@ -1979,7 +2015,18 @@ let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo
            | Some ucase -> 
                OneResult (success(resInfo,Item.UnionCase(ucase,false),rest))
            | None -> 
-                let isLookUpExpr = lookupKind = LookupKind.Expr
+
+             let anonRecdSearch = 
+                 match lookupKind with 
+                 | LookupKind.Expr -> TryFindAnonRecdFieldOfType g typ nm
+                 | _ -> None
+
+             match anonRecdSearch with 
+             | Some item -> 
+                 OneResult (success(resInfo, item, rest))
+             | None -> 
+
+                let isLookUpExpr = (lookupKind = LookupKind.Expr)
                 match TryFindIntrinsicNamedItemOfType ncenv.InfoReader (nm,ad) findFlag m typ with
                 | Some (PropertyItem psets) when isLookUpExpr -> 
                     let pinfos = psets |> ExcludeHiddenOfPropInfos g ncenv.amap m
@@ -1992,6 +2039,7 @@ let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo
                     match DecodeFSharpEvent (pinfos@extensionPropInfos) ad g ncenv m with
                     | Some x -> success [resInfo, x, rest]
                     | None -> raze (UndefinedName (depth,FSComp.SR.undefinedNameFieldConstructorOrMember, id,NoSuggestions))
+
                 | Some(MethodItem msets) when isLookUpExpr -> 
                     let minfos = msets |> ExcludeHiddenOfMethInfos g ncenv.amap m
                     
@@ -1999,13 +2047,16 @@ let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo
                     let extensionMethInfos = ExtensionMethInfosOfTypeInScope ncenv.InfoReader nenv optFilter m typ
 
                     success [resInfo,Item.MakeMethGroup (nm,minfos@extensionMethInfos),rest]
+
                 | Some (ILFieldItem (finfo:: _))  when (match lookupKind with LookupKind.Expr | LookupKind.Pattern -> true | _ -> false) -> 
                     success [resInfo,Item.ILField finfo,rest]
 
                 | Some (EventItem (einfo :: _)) when isLookUpExpr -> 
                     success [resInfo,Item.Event einfo,rest]
+
                 | Some (RecdFieldItem (rfinfo)) when (match lookupKind with LookupKind.Expr | LookupKind.RecdField | LookupKind.Pattern -> true | _ -> false) -> 
                     success [resInfo,Item.RecdField(rfinfo),rest]
+
                 | _ ->
 
                 let pinfos = ExtensionPropInfosOfTypeInScope ncenv.InfoReader nenv (optFilter, ad) m typ

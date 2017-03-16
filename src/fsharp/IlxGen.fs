@@ -422,8 +422,8 @@ and GenTypeAux amap m (tyenv: TypeReprEnv) voidOK ptrsOK ty =
     | TType_app (tcref, tinst) -> GenNamedTyAppAux amap m tyenv ptrsOK tcref tinst
     | TType_tuple (tupInfo, args) -> GenTypeAux amap m tyenv VoidNotOK ptrsOK (mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) args)
     | TType_fun (dty, returnTy) -> EraseClosures.mkILFuncTy g.ilxPubCloEnv  (GenTypeArgAux amap m tyenv dty) (GenTypeArgAux amap m tyenv returnTy)
-    | TType_anon (_ccu, _tupInfo, _nms, tinst) -> 
-        // TEMP: use mutable struct tuples
+    | TType_anon (_anonInfo, tinst) -> 
+        // DEMONSTRATOR: for now we're using mutable struct tuples
         GenTypeAux amap m tyenv voidOK ptrsOK (TType_tuple (tupInfoStruct, tinst))
         //let tref = GenILTypeRefForAnonRecdType (ccu, nms)
         //let boxity = if (evalTupInfoIsStruct tupInfo) then ILBoxity.AsValue else ILBoxity.AsObject
@@ -1836,8 +1836,10 @@ let rec GenExpr (cenv:cenv) (cgbuf:CodeGenBuffer) eenv sp expr sequel =
           GenAllocUnionCase cenv cgbuf eenv (c,tyargs,args,m) sequel
       | TOp.Recd(isCtor,tycon),_,_ -> 
           GenAllocRecd cenv cgbuf eenv isCtor (tycon,tyargs,args,m) sequel
-      | TOp.AnonRecord(ccu,tupInfo,nms),_,_ -> 
-          GenAllocAnonRecord cenv cgbuf eenv (ccu,tupInfo,nms,tyargs,args,m) sequel
+      | TOp.AnonRecd(anonInfo),_,_ -> 
+          GenAllocAnonRecd cenv cgbuf eenv (anonInfo,tyargs,args,m) sequel
+      | TOp.AnonRecdGet (anonInfo,n),[e],_ -> 
+          GenGetAnonRecdField cenv cgbuf eenv (anonInfo,e,tyargs,n,m) sequel
       | TOp.TupleFieldGet (tupInfo,n),[e],_ -> 
           GenGetTupleField cenv cgbuf eenv (tupInfo,e,tyargs,n,m) sequel
       | TOp.ExnFieldGet(ecref,n),[e],_ -> 
@@ -2157,9 +2159,13 @@ and GenAllocRecd cenv cgbuf eenv ctorInfo (tcref,argtys,args,m) sequel =
              (mkILCtorMethSpecForTy (typ,relevantFields |> List.map (fun f -> GenType cenv.amap m tyenvinner f.FormalType) )))
         GenSequel cenv eenv.cloc cgbuf sequel
 
-and GenAllocAnonRecord cenv cgbuf eenv (_ccu,_tupInfo,_nms,tyargs,args,m) sequel =
-    // TEMP: use mutable struct tuples
+and GenAllocAnonRecd cenv cgbuf eenv (_anonInfo,tyargs,args,m) sequel =
+    // DEMONSTRATOR: for now we're using mutable struct tuples
     GenAllocTuple cenv cgbuf eenv (tupInfoStruct,args,tyargs,m) sequel
+
+and GenGetAnonRecdField cenv cgbuf eenv (_anonInfo,e,tyargs,n,m) sequel =
+    // DEMONSTRATOR: for now we're using mutable struct tuples
+    GenGetTupleField cenv cgbuf eenv (tupInfoStruct,e,tyargs,n,m) sequel
 
 and GenNewArraySimple cenv cgbuf eenv (elems,elemTy,m) sequel =
     let ilElemTy = GenType cenv.amap m eenv.tyenv elemTy

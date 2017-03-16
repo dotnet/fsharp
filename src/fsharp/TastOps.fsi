@@ -181,6 +181,8 @@ val mkReraiseLibCall : TcGlobals -> TType -> range -> Expr
 //------------------------------------------------------------------------- 
  
 val mkTupleFieldGet                : TcGlobals -> TupInfo * Expr * TypeInst * int * range -> Expr
+val mkAnonRecdFieldGet             : TcGlobals -> AnonRecdTypeInfo * Expr * TypeInst * int * range -> Expr
+val mkAnonRecdFieldGetViaExprAddr  : AnonRecdTypeInfo * Expr * TypeInst * int * range -> Expr
 val mkRecdFieldGetViaExprAddr      : Expr * RecdFieldRef   * TypeInst               * range -> Expr
 val mkRecdFieldGetAddrViaExprAddr  : Expr * RecdFieldRef   * TypeInst               * range -> Expr
 val mkStaticRecdFieldGet           :        RecdFieldRef   * TypeInst               * range -> Expr
@@ -410,6 +412,8 @@ val isForallTy         : TcGlobals -> TType -> bool
 val isAnyTupleTy       : TcGlobals -> TType -> bool
 val isRefTupleTy       : TcGlobals -> TType -> bool
 val isStructTupleTy    : TcGlobals -> TType -> bool
+val isStructAnonRecdTy    : TcGlobals -> TType -> bool
+val isAnonRecdTy    : TcGlobals -> TType -> bool
 val isUnionTy          : TcGlobals -> TType -> bool
 val isReprHiddenTy     : TcGlobals -> TType -> bool
 val isFSharpObjModelTy : TcGlobals -> TType -> bool
@@ -431,6 +435,7 @@ val tyconOfAppTy   : TcGlobals -> TType -> Tycon
 val tryDestAppTy   : TcGlobals -> TType -> TyconRef option
 val tryDestTyparTy : TcGlobals -> TType -> Typar option
 val tryDestFunTy : TcGlobals -> TType -> (TType * TType) option
+val tryDestAnonRecdTy : TcGlobals -> TType -> (AnonRecdTypeInfo * TType list) option
 val argsOfAppTy    : TcGlobals -> TType -> TypeInst
 val mkInstForAppTy  : TcGlobals -> TType -> TyparInst
 
@@ -1330,8 +1335,8 @@ val mkMethodTy : TcGlobals -> TType list list -> TType -> TType
 // Anonymous records
 //------------------------------------------------------------------------- 
 
-val mkAnyAnonRecordTy : TcGlobals -> CcuThunk -> TupInfo -> string list -> TType list -> TType
-val mkAnyAnonRecord : TcGlobals -> range -> CcuThunk -> TupInfo -> string list -> Exprs -> TType list -> Expr 
+val mkAnyAnonRecdTy : TcGlobals -> AnonRecdTypeInfo -> TType list -> TType
+val mkAnonRecd : TcGlobals -> range -> AnonRecdTypeInfo -> Exprs -> TType list -> Expr 
 
 //-------------------------------------------------------------------------
 // 
