@@ -426,13 +426,15 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             let argsR = ConvExprs cenv env args
             QP.mkRecdMk(rgtypR,tyargsR,argsR)
 
-        | TOp.AnonRecd _anonInfo, _, _  ->  
-            // DEMONSTRATOR: for now we're using mutable struct tuples
-            ConvExprCore cenv env (Expr.Op(TOp.Tuple tupInfoStruct,tyargs,args,m)) 
+        | TOp.AnonRecd anonInfo, _, _  ->  
+            let (AnonRecdTypeInfo(_ccu,tupInfo,_nms)) = anonInfo
+            // DEMONSTRATOR: for now we're using tuples
+            ConvExprCore cenv env (Expr.Op(TOp.Tuple tupInfo,tyargs,args,m)) 
 
-        | TOp.AnonRecdGet (_anonInfo, n), _, _  ->  
-            // DEMONSTRATOR: for now we're using mutable struct tuples
-            ConvExprCore cenv env (Expr.Op(TOp.TupleFieldGet (tupInfoStruct, n),tyargs,args,m)) 
+        | TOp.AnonRecdGet (anonInfo, n), _, _  ->  
+            // DEMONSTRATOR: for now we're using tuples
+            let (AnonRecdTypeInfo(_ccu,tupInfo,_nms)) = anonInfo
+            ConvExprCore cenv env (Expr.Op(TOp.TupleFieldGet (tupInfo, n),tyargs,args,m)) 
 
         | TOp.UnionCaseFieldGet (ucref,n),tyargs,[e] -> 
             let tyargsR = ConvTypes cenv env m tyargs
@@ -806,9 +808,10 @@ and ConvType cenv env m typ =
 
     | TType_fun(a,b)          -> QP.mkFunTy(ConvType cenv env m a,ConvType cenv env m b)
     | TType_tuple(tupInfo,l)  -> ConvType cenv env m (mkCompiledTupleTy cenv.g (evalTupInfoIsStruct tupInfo) l)
-    | TType_anon(_anonInfo,tinst) -> 
-        // DEMONSTRATOR: for now we're using mutable struct tuples
-        ConvType cenv env m (TType_tuple (tupInfoStruct, tinst))
+    | TType_anon(anonInfo,tinst) -> 
+        let (AnonRecdTypeInfo(_ccu,tupInfo,_nms)) = anonInfo
+        // DEMONSTRATOR: for now we're using tuples
+        ConvType cenv env m (TType_tuple (tupInfo, tinst))
         // QP.mkILNamedTy(ConvILTypeRefUnadjusted cenv m (GenILTypeRefForAnonRecdType (ccu, nms)), ConvTypes cenv env m tys)
     | TType_var(tp)           -> QP.mkVarTy(ConvTyparRef cenv env m tp)
     | TType_forall(_spec,_ty)   -> wfail(Error(FSComp.SR.crefNoInnerGenericsInQuotations(),m))

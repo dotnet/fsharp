@@ -166,11 +166,11 @@ let rec remapTypeAux (tyenv : Remap) (ty:TType) =
       | Some tcr' ->  TType_ucase (UCRef(tcr',n),remapTypesAux tyenv tinst)
       | None -> TType_ucase (UCRef(tcr,n),remapTypesAux tyenv tinst)
 
-  | TType_anon (AnonRecdTypeInfo(ccu, tupInfo, nms), l)  as ty -> 
+  | TType_anon (AnonRecdTypeInfo(ccuOpt, tupInfo, nms), l)  as ty -> 
       let tupInfo' = remapTupInfoAux tyenv tupInfo
       let l' = remapTypesAux tyenv l
       if tupInfo === tupInfo' && l === l' then ty else  
-      TType_anon (AnonRecdTypeInfo(ccu, tupInfo', nms), l')
+      TType_anon (AnonRecdTypeInfo(ccuOpt, tupInfo', nms), l')
 
   | TType_tuple (tupInfo, l)  as ty -> 
       let tupInfo' = remapTupInfoAux tyenv tupInfo
@@ -657,6 +657,10 @@ let evalTupInfoIsStruct aexpr =
     match aexpr with 
     | TupInfo.Const b -> b
 
+let evalAnonInfoIsStruct anonInfo = 
+    let (AnonRecdTypeInfo(_ccu,tupInfo,_nms)) = anonInfo
+    evalTupInfoIsStruct tupInfo
+
 /// This erases outermost occurences of inference equations, type abbreviations, non-generated provided types
 /// and measureable types (float<_>).
 /// It also optionally erases all "compilation representations", i.e. function and
@@ -674,9 +678,9 @@ let rec stripTyEqnsAndErase eraseFuncAndTuple (g:TcGlobals) ty =
             ty
     | TType_fun(a,b) when eraseFuncAndTuple -> TType_app(g.fastFunc_tcr,[ a; b]) 
     | TType_tuple(tupInfo,l) when eraseFuncAndTuple -> mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) l
-    | TType_anon(AnonRecdTypeInfo(_ccu,tupInfo,_nms),l) when eraseFuncAndTuple -> 
-        // DEMONSTRATOR: for now we're using mutable struct tuples
-        mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) l
+    | TType_anon(anonInfo,l) when eraseFuncAndTuple -> 
+        // DEMONSTRATOR: for now we're using tuples
+        mkCompiledTupleTy g (evalAnonInfoIsStruct anonInfo) l
     | ty -> ty
 
 let stripTyEqnsAndMeasureEqns g ty =
@@ -7025,9 +7029,10 @@ let rec typeEnc g (gtpsType,gtpsMethod) ty =
                 | _ -> assert(false); failwith "impossible"
             tyName + tyargsEnc g (gtpsType,gtpsMethod) tinst
 
-    | TType_anon (_anonInfo, tinst) -> 
-        // DEMONSTRATOR: for now we're using mutable struct tuples
-        typeEnc g (gtpsType,gtpsMethod) (TType_tuple (tupInfoStruct, tinst))        
+    | TType_anon (anonInfo, tinst) -> 
+        // DEMONSTRATOR: for now we're using tuples
+        let (AnonRecdTypeInfo(_ccu,tupInfo,_nms)) = anonInfo
+        typeEnc g (gtpsType,gtpsMethod) (TType_tuple (tupInfo, tinst))        
         //let tref = GenILTypeRefForAnonRecdType (ccu, nms) 
         //sprintf "%s%s" tref.FullName (tyargsEnc g (gtpsType,gtpsMethod) tinst)
 

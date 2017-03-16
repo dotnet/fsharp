@@ -1363,7 +1363,7 @@ let fill_u_Expr_hole,u_expr_fwd = u_hole()
 let fill_p_Expr_hole,p_expr_fwd = p_hole()
 
 let p_anonInfo (AnonRecdTypeInfo(ccu,info,nms)) st = 
-    p_tup3 p_ccuref p_bool (p_array p_string) (ccu, evalTupInfoIsStruct info, nms) st
+    p_tup3 (p_option p_ccuref) p_bool (p_array p_string) (ccu, evalTupInfoIsStruct info, nms) st
 
 let p_trait_sln sln st = 
     match sln with 
@@ -1387,7 +1387,7 @@ let p_trait (TTrait(a,b,c,d,e,f)) st  =
 
 // We have to store trait solutions since they can occur in optimization data
 let u_anonInfo st = 
-    let (ccu, info, nms) = u_tup3 u_ccuref u_bool (u_array u_string) st 
+    let (ccu, info, nms) = u_tup3 (u_option u_ccuref) u_bool (u_array u_string) st 
     AnonRecdTypeInfo (ccu, TupInfo.Const info,nms)
 
 let u_trait_sln st = 
@@ -1581,11 +1581,9 @@ let _ = fill_p_typ (fun ty st ->
     | TType_measure unt                   -> p_byte 6 st; p_measure_expr unt st
     | TType_ucase (uc,tinst)              -> p_byte 7 st; p_tup2 p_ucref p_typs (uc,tinst) st
     // p_byte 8 taken by TType_tuple above
-    | TType_anon (AnonRecdTypeInfo(ccu,tupInfo,nms),l) -> 
-         p_byte 9 st; 
-         p_bool (evalTupInfoIsStruct tupInfo) st; 
-         p_ccuref ccu st; 
-         p_array p_string nms st; 
+    | TType_anon (anonInfo,l) -> 
+         p_byte 9 st
+         p_anonInfo anonInfo st
          p_typs l st
   )
 #endif
@@ -1602,7 +1600,7 @@ let _ = fill_u_typ (fun st ->
     | 6 -> let unt = u_measure_expr st                     in TType_measure unt
     | 7 -> let uc = u_ucref st in let tinst = u_typs st    in TType_ucase (uc,tinst)
     | 8 -> let l = u_typs st                               in TType_tuple (tupInfoStruct, l)
-    | 9 -> let b = u_bool st in let ccu = u_ccuref st in let nms = u_array u_string st in let l = u_typs st  in TType_anon (AnonRecdTypeInfo(ccu, TupInfo.Const b, nms), l)
+    | 9 -> let anonInfo = u_anonInfo st in let l = u_typs st  in TType_anon (anonInfo, l)
     | _ -> ufailwith st "u_typ")
   
 

@@ -422,9 +422,10 @@ and GenTypeAux amap m (tyenv: TypeReprEnv) voidOK ptrsOK ty =
     | TType_app (tcref, tinst) -> GenNamedTyAppAux amap m tyenv ptrsOK tcref tinst
     | TType_tuple (tupInfo, args) -> GenTypeAux amap m tyenv VoidNotOK ptrsOK (mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) args)
     | TType_fun (dty, returnTy) -> EraseClosures.mkILFuncTy g.ilxPubCloEnv  (GenTypeArgAux amap m tyenv dty) (GenTypeArgAux amap m tyenv returnTy)
-    | TType_anon (_anonInfo, tinst) -> 
-        // DEMONSTRATOR: for now we're using mutable struct tuples
-        GenTypeAux amap m tyenv voidOK ptrsOK (TType_tuple (tupInfoStruct, tinst))
+    | TType_anon (anonInfo, tinst) -> 
+        // DEMONSTRATOR: for now we're using tuples
+        let (AnonRecdTypeInfo(_ccuOpt,tupInfo,_nms)) = anonInfo
+        GenTypeAux amap m tyenv voidOK ptrsOK (TType_tuple (tupInfo, tinst))
         //let tref = GenILTypeRefForAnonRecdType (ccu, nms)
         //let boxity = if (evalTupInfoIsStruct tupInfo) then ILBoxity.AsValue else ILBoxity.AsObject
         //GenILTyAppAux amap m tyenv (tref, boxity, None) tinst 
@@ -2159,13 +2160,15 @@ and GenAllocRecd cenv cgbuf eenv ctorInfo (tcref,argtys,args,m) sequel =
              (mkILCtorMethSpecForTy (typ,relevantFields |> List.map (fun f -> GenType cenv.amap m tyenvinner f.FormalType) )))
         GenSequel cenv eenv.cloc cgbuf sequel
 
-and GenAllocAnonRecd cenv cgbuf eenv (_anonInfo,tyargs,args,m) sequel =
-    // DEMONSTRATOR: for now we're using mutable struct tuples
-    GenAllocTuple cenv cgbuf eenv (tupInfoStruct,args,tyargs,m) sequel
+and GenAllocAnonRecd cenv cgbuf eenv (anonInfo,tyargs,args,m) sequel =
+    // DEMONSTRATOR: for now we're using tuples
+    let (AnonRecdTypeInfo(_ccuOpt,tupInfo,_nms)) = anonInfo
+    GenAllocTuple cenv cgbuf eenv (tupInfo,args,tyargs,m) sequel
 
-and GenGetAnonRecdField cenv cgbuf eenv (_anonInfo,e,tyargs,n,m) sequel =
-    // DEMONSTRATOR: for now we're using mutable struct tuples
-    GenGetTupleField cenv cgbuf eenv (tupInfoStruct,e,tyargs,n,m) sequel
+and GenGetAnonRecdField cenv cgbuf eenv (anonInfo,e,tyargs,n,m) sequel =
+    // DEMONSTRATOR: for now we're using tuples
+    let (AnonRecdTypeInfo(_ccuOpt,tupInfo,_nms)) = anonInfo
+    GenGetTupleField cenv cgbuf eenv (tupInfo,e,tyargs,n,m) sequel
 
 and GenNewArraySimple cenv cgbuf eenv (elems,elemTy,m) sequel =
     let ilElemTy = GenType cenv.amap m eenv.tyenv elemTy

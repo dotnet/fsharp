@@ -1337,6 +1337,7 @@ tcGlobalsSystemTypeNotFound,"The system type '%s' was required but no referenced
 3216,parsInvalidAnonRecdType,"Invalid anonymous record type"
 3217,parsInvalidAnonRecdExpr,"Invalid anonymous record expression"
 tcAnonRecdCcuMismatch,"Two anonymous record types are from different assemblies '%s' and '%s'"
+tcAnonRecdCcuMismatch2,"One anonymous record type is assembly-bound to '%s' (syntax '{{| new ... |}}'), the other is assembly-neutral (syntax '{{| ... |}}')"
 tcAnonRecdFieldNameMismatch,"Two anonymous record types have mismatched sets of field names '%s' and '%s'"
 keywordDescriptionAbstract,"Indicates a method that either has no implementation in the type in which it is declared or that is virtual and has a default implementation."
 keyworkDescriptionAnd,"Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters."

@@ -3553,7 +3553,8 @@ and
 
 and TypeInst = TType list 
 and TTypes = TType list 
-and AnonRecdTypeInfo = AnonRecdTypeInfo of CcuThunk  * TupInfo * string[] 
+and AnonRecdTypeInfo = 
+    | AnonRecdTypeInfo of CcuThunk option * TupInfo * string[] 
 and [<RequireQualifiedAccess>] TupInfo = 
     /// Some constant, e.g. true or false for tupInfo
     | Const of bool
@@ -5100,7 +5101,7 @@ let FSharpOptimizationDataResourceName = "FSharpOptimizationData"
 let FSharpSignatureDataResourceName = "FSharpSignatureData"
 
 
-// DEMONSTRATOR: for now we're using mutable struct tuples
+// DEMONSTRATOR: for now we're using tuples
 //let TypeNameForAnonRecdTypes = "<AnonRecdTypes>"
 //let GenILTypeRefForAnonRecdType (ccu: CcuThunk, nms) = 
 //    mkILNestedTyRef(ccu.ILScopeRef,[TypeNameForAnonRecdTypes],String.concat "-" nms)

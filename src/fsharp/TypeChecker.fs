@@ -4587,11 +4587,12 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv:SyntacticUnscoped
                 let args',tpenv = TcTypesAsTuple cenv newOk checkCxs occ env tpenv args m
                 TType_tuple(tupInfo,args'),tpenv
 
-    | SynType.AnonRecd(isStruct, args,m) ->   
+    | SynType.AnonRecd(isNew, isStruct, args,m) ->   
         let tupInfo = TupInfo.Const isStruct
+        let ccuOpt = if isNew then Some cenv.topCcu else None
         let args',tpenv = TcTypesAsTuple cenv newOk checkCxs occ env tpenv (args |> List.map snd |> List.map (fun x -> (false,x))) m
         let nms = args |> List.map (fun (nm, _) -> nm.idText) |> List.toArray
-        TType_anon(AnonRecdTypeInfo(cenv.topCcu, tupInfo, nms),  args'),tpenv
+        TType_anon(AnonRecdTypeInfo(ccuOpt, tupInfo, nms),  args'),tpenv
 
     | SynType.Fun(domainTy,resultTy,_) -> 
         let domainTy',tpenv = TcTypeAndRecover cenv newOk checkCxs occ env tpenv domainTy
@@ -5767,10 +5768,10 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
         let expr = if isStruct then mkAnyTupled cenv.g m tupInfoStruct args' argtys else mkRefTupled cenv.g m args' argtys
         expr, tpenv
 
-    | SynExpr.AnonRecd (isStruct,args,m) -> 
-        let ccu = cenv.topCcu 
+    | SynExpr.AnonRecd (isNew,isStruct,args,m) -> 
+        let ccuOpt = if isNew then Some cenv.topCcu else None
         let nms = args |> List.map (fun (x,_) -> x.idText) |> List.toArray
-        let anonInfo = AnonRecdTypeInfo(ccu, TupInfo.Const isStruct, nms)
+        let anonInfo = AnonRecdTypeInfo(ccuOpt, TupInfo.Const isStruct, nms)
         let argtys = UnifyAnonRecdType env.eContextInfo cenv env.DisplayEnv m overallTy anonInfo
         let flexes = argtys |> List.map (fun _ -> true)
         let args',tpenv = TcExprs cenv env m tpenv flexes argtys (List.map snd args)

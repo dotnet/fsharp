@@ -429,7 +429,10 @@ and
     | Tuple of isStruct:bool * typeNames:(bool*SynType) list * range:range
 
     /// F# syntax : {| id: type; ...; id: type |}
-    | AnonRecd of isStruct:bool * typeNames:(Ident * SynType) list * range:range
+    /// F# syntax : new {| id: type; ...; id: type |}
+    /// F# syntax : struct {| id: type; ...; id: type |}
+    /// F# syntax : new struct {| id: type; ...; id: type |}
+    | AnonRecd of isNew: bool * isStruct:bool * typeNames:(Ident * SynType) list * range:range
 
     /// F# syntax : type[]
     | Array of  int * elementType:SynType * range:range
@@ -514,7 +517,8 @@ and
     | Tuple of  isStruct: bool * exprs:SynExpr list * commaRanges:range list * range:range  // "range list" is for interstitial commas, these only matter for parsing/design-time tooling, the typechecker may munge/discard them
 
     /// F# syntax: {| id1=e1; ...; idN=eN |}
-    | AnonRecd of  isStruct: bool * recordFields:(Ident * SynExpr) list * range:range
+    /// F# syntax: {| new id1=e1; ...; idN=eN |}
+    | AnonRecd of  isNew: bool * isStruct: bool * recordFields:(Ident * SynExpr) list * range:range
 
     /// F# syntax: [ e1; ...; en ], [| e1; ...; en |]
     | ArrayOrList of  isList:bool * exprs:SynExpr list * range:range
@@ -2344,7 +2348,7 @@ let rec synExprContainsError inpExpr =
           | SynExpr.Tuple (_,es,_,_) ->
               walkExprs es
 
-          | SynExpr.AnonRecd (_,flds,_) ->
+          | SynExpr.AnonRecd (_,_,flds,_) ->
               walkExprs (List.map snd flds)
 
           | SynExpr.Record (_,_,fs,_) ->

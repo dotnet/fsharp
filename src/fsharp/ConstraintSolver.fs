@@ -753,6 +753,19 @@ and solveTypMeetsTyparConstraints (csenv:ConstraintSolverEnv) ndeep m2 trace ty 
     )))
 
         
+and SolveAnonInfoEqualsAnonInfo (csenv:ConstraintSolverEnv) m2 anonInfo1 anonInfo2 = 
+    let (AnonRecdTypeInfo(ccuOpt1,tupInfo1,nms1)) = anonInfo1
+    let (AnonRecdTypeInfo(ccuOpt2,tupInfo2,nms2)) = anonInfo2
+    if evalTupInfoIsStruct tupInfo1 <> evalTupInfoIsStruct tupInfo2 then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m,m2)) else
+    (match ccuOpt1,ccuOpt2 with 
+        | Some ccu1, Some ccu2 -> if not (ccuEq ccu1 ccu2) then ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecdCcuMismatch(ccu1.AssemblyName, ccu2.AssemblyName), csenv.m,m2)) else ResultD ()
+        | None, None -> ResultD ()
+        | Some ccu, None 
+        | None, Some ccu -> ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecdCcuMismatch2(ccu1.AssemblyName), csenv.m,m2)) 
+        ) ++ (fun () -> 
+    if not (nms1 = nms2) then ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecdFieldNameMismatch(sprintf "%A" nms1, sprintf "%A" nms2), csenv.m,m2)) else 
+    ResultD ())
+
 /// Add the constraint "ty1 = ty2" to the constraint problem. 
 /// Propagate all effects of adding this constraint, e.g. to solve type variables 
 and SolveTypEqualsTyp (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) (cxsln:(TraitConstraintInfo * TraitConstraintSln) option) ty1 ty2 = 
@@ -793,11 +806,9 @@ and SolveTypEqualsTyp (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace
     | TType_tuple (tupInfo1,l1)      ,TType_tuple (tupInfo2,l2)      -> 
         if evalTupInfoIsStruct tupInfo1 <> evalTupInfoIsStruct tupInfo2 then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m,m2)) else
         SolveTypEqualsTypEqns csenv ndeep m2 trace None l1 l2
-    | TType_anon (AnonRecdTypeInfo(ccu1,tupInfo1,nms1),l1),TType_anon (AnonRecdTypeInfo(ccu2,tupInfo2,nms2),l2)      -> 
-        if evalTupInfoIsStruct tupInfo1 <> evalTupInfoIsStruct tupInfo2 then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m,m2)) else
-        if not (ccuEq ccu1 ccu2) then ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecdCcuMismatch(ccu1.AssemblyName, ccu2.AssemblyName), csenv.m,m2)) else
-        if not (nms1 = nms2) then ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecdFieldNameMismatch(sprintf "%A" nms1, sprintf "%A" nms2), csenv.m,m2)) else
-        SolveTypEqualsTypEqns csenv ndeep m2 trace None l1 l2
+    | TType_anon (anonInfo1,l1),TType_anon (anonInfo2,l2)      -> 
+        SolveAnonInfoEqualsAnonInfo csenv m2 anonInfo1 anonInfo2 ++ (fun () -> 
+        SolveTypEqualsTypEqns csenv ndeep m2 trace None l1 l2)
     | TType_fun (d1,r1)   ,TType_fun (d2,r2)   -> SolveFunTypEqn csenv ndeep m2 trace None d1 d2 r1 r2
     | TType_measure ms1   ,TType_measure ms2   -> UnifyMeasures csenv trace ms1 ms2
     | TType_forall(tps1,rty1), TType_forall(tps2,rty2) -> 
@@ -860,11 +871,9 @@ and SolveTypSubsumesTyp (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
     | TType_tuple (tupInfo1,l1)      ,TType_tuple (tupInfo2,l2)      -> 
         if evalTupInfoIsStruct tupInfo1 <> evalTupInfoIsStruct tupInfo2 then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m,m2)) else
         SolveTypEqualsTypEqns csenv ndeep m2 trace cxsln l1 l2 (* nb. can unify since no variance *)
-    | TType_anon (AnonRecdTypeInfo(ccu1,tupInfo1,nms1),l1), TType_anon (AnonRecdTypeInfo(ccu2,tupInfo2,nms2),l2)      -> 
-        if evalTupInfoIsStruct tupInfo1 <> evalTupInfoIsStruct tupInfo2 then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m,m2)) else
-        if not (ccuEq ccu1 ccu2) then ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecdCcuMismatch(ccu1.AssemblyName, ccu2.AssemblyName), csenv.m,m2)) else
-        if not (nms1 = nms2) then ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecdFieldNameMismatch(sprintf "%A" nms1, sprintf "%A" nms2), csenv.m,m2)) else
-        SolveTypEqualsTypEqns csenv ndeep m2 trace cxsln l1 l2 (* nb. can unify since no variance *)
+    | TType_anon (anonInfo1,l1), TType_anon (anonInfo2,l2)      -> 
+        SolveAnonInfoEqualsAnonInfo csenv m2 anonInfo1 anonInfo2 ++ (fun () -> 
+        SolveTypEqualsTypEqns csenv ndeep m2 trace cxsln l1 l2) (* nb. can unify since no variance *)
     | TType_fun (d1,r1)  ,TType_fun (d2,r2)   -> SolveFunTypEqn csenv ndeep m2 trace cxsln d1 d2 r1 r2 (* nb. can unify since no variance *)
     | TType_measure ms1, TType_measure ms2    -> UnifyMeasures csenv trace ms1 ms2
 

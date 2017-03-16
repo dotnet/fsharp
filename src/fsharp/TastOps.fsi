@@ -235,6 +235,7 @@ val mkCompiledTuple : TcGlobals -> bool -> TTypes * Exprs * range -> TyconRef * 
 val mkGetTupleItemN : TcGlobals -> range -> int -> ILType -> bool -> Expr -> TType -> Expr
 
 val evalTupInfoIsStruct : TupInfo -> bool
+val evalAnonInfoIsStruct : AnonRecdTypeInfo -> bool
 
 //-------------------------------------------------------------------------
 // Take the address of an expression, or force it into a mutable local. Any allocated
