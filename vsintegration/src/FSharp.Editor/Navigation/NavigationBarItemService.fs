@@ -35,9 +35,7 @@ type internal FSharpNavigationBarItemService
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! parsedInput = checkerProvider.Checker.ParseDocument(document, options, sourceText)
                 let navItems = NavigationImpl.getNavigation parsedInput
-                let rangeToTextSpan range = 
-                    try Some(CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
-                    with _ -> None
+                let rangeToTextSpan range = CommonRoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range)
                 return 
                     navItems.Declarations
                     |> Array.choose (fun topLevelDecl ->
