@@ -5,9 +5,15 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.Threading
 open System.Threading.Tasks
+open System.Windows
+open System.Windows.Controls
+open System.ComponentModel.Composition
 
 open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Editor
+open Microsoft.CodeAnalysis.Editor.Shared.Utilities
+open Microsoft.CodeAnalysis.Editor.Shared.Extensions
 open Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.QuickInfo
 open Microsoft.CodeAnalysis.Navigation
 open Microsoft.CodeAnalysis.Text
@@ -15,27 +21,35 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
+open Microsoft.VisualStudio.Utilities
 open Microsoft.VisualStudio.Language.Intellisense
 
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.CompileOps
 
-[<ExportQuickInfoProvider(PredefinedQuickInfoProviderNames.Semantic, FSharpCommonConstants.FSharpLanguageName)>]
-type internal FSharpQuickInfoProvider 
-    [<System.ComponentModel.Composition.ImportingConstructor>] 
-    (
-        [<System.ComponentModel.Composition.Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider,
-        checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager,
-        typeMap: Shared.Utilities.ClassificationTypeMap,
-        glyphService: IGlyphService
-    ) =
+open CommonRoslynHelpers
 
-    let xmlMemberIndexService = serviceProvider.GetService(typeof<SVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
-    let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
+module internal FSharpQuickInfo =
+    
+    [<Literal>]
+    let SessionCapturingProviderName = "Session Capturing Quick Info Source Provider"
 
-    let navigationFrom (thisDoc: Document) =
+    let mutable currentSession = None
+
+    [<Export(typeof<IQuickInfoSourceProvider>)>]
+    [<Name(SessionCapturingProviderName)>]
+    [<Order(After = PredefinedQuickInfoProviderNames.Semantic)>]
+    [<ContentType(FSharpCommonConstants.FSharpContentTypeName)>]
+    type SourceProviderForCapturingSession() =
+        interface IQuickInfoSourceProvider with 
+            member __.TryCreateQuickInfoSource _ =
+              { new IQuickInfoSource with
+                member __.AugmentQuickInfoSession(session,_,_) = currentSession <- Some session
+                member __.Dispose() = () }
+
+    let fragment(content, typemap: ClassificationTypeMap, thisDoc: Document) =
+
         let workspace = thisDoc.Project.Solution.Workspace
         let documentNavigationService = workspace.Services.GetService<IDocumentNavigationService>()
         let solution = workspace.CurrentSolution
@@ -61,10 +75,74 @@ type internal FSharpQuickInfoProvider
                 let! id = documentId range
                 let! src = solution.GetDocument(id).GetTextAsync()
                 let! span = CommonRoslynHelpers.TryFSharpRangeToTextSpan(src, range)
-                return documentNavigationService.TryNavigateToSpan(workspace, id, span)
-            } |> Async.Ignore
+                if documentNavigationService.TryNavigateToSpan(workspace, id, span) then
+                   let! session = currentSession
+                   session.Dismiss()   
+            } |> Async.Ignore |> Async.StartImmediate 
 
-        canGoTo, goTo
+        let formatMap = typemap.ClassificationFormatMapService.GetClassificationFormatMap("tooltip")
+
+        let props = 
+            ClassificationTags.GetClassificationTypeName
+            >> typemap.GetClassificationType
+            >> formatMap.GetTextProperties
+
+        let inlines = seq { 
+            for NavigableRoslynText(tag, text, rangeOpt) in content do
+                let run =
+                    match rangeOpt with
+                    | Some(range) when canGoTo range ->
+                        let h = Documents.Hyperlink(Documents.Run(text), ToolTip = range.FileName)
+                        h.Click.Add <| fun _ -> goTo range          
+                        h :> Documents.Inline
+                    | _ -> 
+                        Documents.Run(text) :> Documents.Inline
+                DependencyObjectExtensions.SetTextProperties(run, props tag)
+                yield run
+        }
+
+        let create() =
+            let tb = TextBlock(TextWrapping = TextWrapping.Wrap, TextTrimming = TextTrimming.None)
+            DependencyObjectExtensions.SetDefaultTextProperties(tb, formatMap)
+            tb.Inlines.AddRange(inlines)
+            if tb.Inlines.Count = 0 then tb.Visibility <- Visibility.Collapsed
+            tb :> FrameworkElement
+            
+        { new IDeferredQuickInfoContent with member x.Create() = create() }
+
+    let tooltip(symbolGlyph, mainDescription, documentation) =
+
+        let empty = 
+          { new IDeferredQuickInfoContent with 
+            member x.Create() = TextBlock(Visibility = Visibility.Collapsed) :> FrameworkElement }
+
+        let roslynQuickInfo = QuickInfoDisplayDeferredContent(symbolGlyph, null, mainDescription, documentation, empty, empty, empty, empty)
+
+        let create() =
+            let qi = roslynQuickInfo.Create()
+            let style = Style(typeof<Documents.Hyperlink>)
+            style.Setters.Add(Setter(Documents.Inline.TextDecorationsProperty, null))
+            let trigger = DataTrigger(Binding = Data.Binding("IsMouseOver", Source = qi), Value = true)
+            trigger.Setters.Add(Setter(Documents.Inline.TextDecorationsProperty, TextDecorations.Underline))
+            style.Triggers.Add(trigger)
+            qi.Resources.Add(typeof<Documents.Hyperlink>, style)
+            qi
+
+        { new IDeferredQuickInfoContent with member x.Create() = create() }
+
+[<ExportQuickInfoProvider(PredefinedQuickInfoProviderNames.Semantic, FSharpCommonConstants.FSharpLanguageName)>]
+type internal FSharpQuickInfoProvider 
+    [<System.ComponentModel.Composition.ImportingConstructor>] 
+    (
+        [<System.ComponentModel.Composition.Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider,
+        checkerProvider: FSharpCheckerProvider,
+        projectInfoManager: ProjectInfoManager,
+        typeMap: Shared.Utilities.ClassificationTypeMap,
+        glyphService: IGlyphService
+    ) =
+
+    let xmlMemberIndexService = serviceProvider.GetService(typeof<SVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
+    let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
     
     static member ProvideQuickInfo(checker: FSharpChecker, documentId: DocumentId, sourceText: SourceText, filePath: string, position: int, options: FSharpProjectOptions, textVersionHash: int) =
         asyncMaybe {
@@ -99,13 +177,12 @@ type internal FSharpQuickInfoProvider
                     CommonRoslynHelpers.CollectNavigableText mainDescription, 
                     CommonRoslynHelpers.CollectNavigableText documentation, 
                     toolTipElement)
-                let canGoTo, goTo = navigationFrom document
                 let content = 
-                    FSharpQuickInfoDisplayDeferredContent
+                    FSharpQuickInfo.tooltip
                         (
-                            symbolGlyph = SymbolGlyphDeferredContent(CommonRoslynHelpers.GetGlyphForSymbol(symbol, symbolKind), glyphService),
-                            mainDescription = FSharpDeferredContent(mainDescription, typeMap, canGoTo, goTo),
-                            documentation = FSharpDeferredContent(documentation, typeMap, canGoTo, goTo)
+                            SymbolGlyphDeferredContent(CommonRoslynHelpers.GetGlyphForSymbol(symbol, symbolKind), glyphService),
+                            FSharpQuickInfo.fragment(mainDescription, typeMap, document),
+                            FSharpQuickInfo.fragment(documentation, typeMap, document)
                         )
                 return QuickInfoItem(textSpan, content)
             } 
