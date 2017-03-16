@@ -360,13 +360,6 @@ type LanguageServiceBaseTests() =
     [<OneTimeSetUp>]
     member this.Init() =
 #endif
-        match Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None) with 
-        | Some(folder) -> 
-            let fscPath = Path.Combine(folder,"fsc.exe")
-            System.Diagnostics.Debug.Assert(File.Exists(fscPath), sprintf "Path to fsc.exe (%s) does not exist. Unittests will surely fail. Is Unittest.exe.config stale?" fscPath)
-        | None -> 
-            System.Diagnostics.Debug.Assert(false, "No path to fsc.exe found. Unittests will surely fail.")
-
         let AssertNotAssemblyNameContains(a:System.Reflection.Assembly, text1:string, text2:string) = 
             let fullname = sprintf "%A" a
             if fullname.Contains(text1) && fullname.Contains(text2) then

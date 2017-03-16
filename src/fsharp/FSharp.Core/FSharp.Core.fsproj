@@ -95,6 +95,12 @@
     <Compile Include="collections.fs">
       <Link>Collections/collections.fs</Link>
     </Compile>
+    <Compile Include="seqcore.fsi">
+      <Link>Collections/seqcore.fsi</Link>
+    </Compile>
+    <Compile Include="seqcore.fs">
+      <Link>Collections/seqcore.fs</Link>
+    </Compile>
     <Compile Include="seq.fsi">
       <Link>Collections/seq.fsi</Link>
     </Compile>
@@ -251,7 +257,6 @@
                                                 '$(TargetFramework)' == 'xamarinmacfull'" >
       <Private>false</Private>
     </Reference>
-    <Reference Include="System.Numerics" Condition="'$(TargetFramework)' == 'net40'" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
     <None Include="project.json" />

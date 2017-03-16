@@ -662,9 +662,8 @@ let convFieldSpec cenv emEnv fspec =
 //----------------------------------------------------------------------------
 // convMethodRef
 //----------------------------------------------------------------------------
-
 let queryableTypeGetMethodBySearch cenv emEnv parentT (mref:ILMethodRef) =
-    assert(not (typeIsNotQueryable(parentT)));
+    assert(not (typeIsNotQueryable(parentT)))
     let cconv = (if mref.CallingConv.IsStatic then BindingFlags.Static else BindingFlags.Instance)
     let methInfos = parentT.GetMethods(cconv ||| BindingFlags.Public ||| BindingFlags.NonPublic) |> Array.toList
       (* First, filter on name, if unique, then binding "done" *)
@@ -675,23 +674,58 @@ let queryableTypeGetMethodBySearch cenv emEnv parentT (mref:ILMethodRef) =
         methInfo
     | _ ->
       (* Second, type match. Note type erased (non-generic) F# code would not type match but they have unique names *)
+
+        let satisfiesParameter (a: Type option) (p: Type) =
+            match a with
+            | None -> true
+            | Some a ->
+            if 
+                // obvious case
+                p.IsAssignableFrom a 
+            then true
+            elif
+                // both are generic
+                p.IsGenericType && a.IsGenericType 
+                // non obvious due to contravariance: Action<T> where T : IFoo accepts Action<FooImpl> (for FooImpl : IFoo)
+                && p.GetGenericTypeDefinition().IsAssignableFrom(a.GetGenericTypeDefinition()) 
+            then true
+            else false
+
+        let satisfiesAllParameters (args: Type option array) (ps: Type array) =
+            if Array.length args <> Array.length ps then false
+            else Array.forall2 satisfiesParameter args ps
+       
         let select (methInfo:MethodInfo) =
             (* mref implied Types *)
             let mtyargTIs = getGenericArgumentsOfMethod methInfo 
+            
             if mtyargTIs.Length <> mref.GenericArity then false (* method generic arity mismatch *) else
+
+          (* methInfo implied Types *)
+            let methodParameters = methInfo.GetParameters()
+            let argTypes = mref.ArgTypes |> List.toArray
+            if argTypes.Length <> methodParameters.Length then false (* method argument length mismatch *) else
+
+            let haveArgTs = methodParameters |> Array.map (fun param -> param.ParameterType)
+            let mrefParameterTypes = argTypes |> Array.map (fun t -> if t.IsNominal then Some (convTypeRefAux cenv t.TypeRef) else None)
+
+            // we should reject methods which don't satisfy parameter types by also checking
+            // type parameters which can be contravariant for delegates for example
+            // see https://github.com/Microsoft/visualfsharp/issues/2411
+            // without this check, subsequent call to convTypes would fail because it
+            // constructs generic type without checking constraints
+            if not (satisfiesAllParameters mrefParameterTypes haveArgTs) then false else
+            
             let argTs,resT = 
                 let emEnv = envPushTyvars emEnv (Array.append tyargTs mtyargTIs)
                 let argTs = convTypes cenv emEnv mref.ArgTypes
                 let resT  = convType cenv emEnv mref.ReturnType
                 argTs,resT 
           
-          (* methInfo implied Types *)
-            let haveArgTs = methInfo.GetParameters() |> Array.toList |> List.map (fun param -> param.ParameterType) 
-         
             let haveResT  = methInfo.ReturnType
           (* check for match *)
-            if argTs.Length <> haveArgTs.Length then false (* method argument length mismatch *) else
-            let res = equalTypes resT haveResT && equalTypeLists argTs haveArgTs
+            if argTs.Length <> methodParameters.Length then false (* method argument length mismatch *) else
+            let res = equalTypes resT haveResT && equalTypeLists argTs (haveArgTs |> Array.toList)
             res
        
         match List.tryFind select methInfos with
