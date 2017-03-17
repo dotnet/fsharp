@@ -294,7 +294,7 @@ type internal FSharpCompletionProvider
                 return CompletionDescription.Empty
         } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
 
-    override this.GetChangeAsync(document, item, _, cancellationToken) : Task<CompletionChange> =
+    override this.GetChangeAsync(_, item, _, cancellationToken) : Task<CompletionChange> =
         async {
             match item.Properties.TryGetValue IsExtensionMemberPropName with
             | true, _ -> ()  // do not add extension members to the MRU list
@@ -311,13 +311,10 @@ type internal FSharpCompletionProvider
                 | true, x -> x
                 | _ -> item.DisplayText
             
-            match item.Properties.TryGetValue NamespaceToOpen with
-            | true, ns ->
-                let! sourceText = document.GetTextAsync(cancellationToken)
-                let text = sourceText.WithChanges(TextChange(TextSpan(0, ns.Length), ns))
-                UIThread.Run(Action (fun () ->
-                    document.Project.Solution.Workspace.TryApplyChanges(document.Project.Solution.WithDocumentText(document.Id, text)) |> ignore))
-            | _ -> ()
+            let change = CompletionChange.Create(TextChange(item.Span, nameInCode))
 
-            return CompletionChange.Create(new TextChange(item.Span, nameInCode))
+            return
+                match item.Properties.TryGetValue NamespaceToOpen with
+                | true, ns -> change.WithTextChange(TextChange(TextSpan(0, 0), ns))
+                | _ -> change
         } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
