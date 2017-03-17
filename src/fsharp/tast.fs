@@ -913,10 +913,10 @@ type Entity =
 
     /// Get the Abstract IL scope, nesting and metadata for this 
     /// type definition, assuming it is backed by Abstract IL metadata.
-    member x.ILTyconInfo = match x.TypeReprInfo with | TILObjectRepr (a,b,c) -> (a,b,c) |  _ -> assert false; failwith "not a .NET type definition"
+    member x.ILTyconInfo = match x.TypeReprInfo with | TILObjectRepr data -> data |  _ -> assert false; failwith "not a .NET type definition"
 
     /// Get the Abstract IL metadata for this type definition, assuming it is backed by Abstract IL metadata.
-    member x.ILTyconRawMetadata = let _,_,td = x.ILTyconInfo in td
+    member x.ILTyconRawMetadata = let (TILObjectReprData(_,_,td)) = x.ILTyconInfo in td
 
     /// Indicates if this is an F# type definition whose r.h.s. is known to be a record type definition.
     member x.IsRecordTycon = match x.TypeReprInfo with | TRecdRepr _ -> true |  _ -> false
@@ -1085,7 +1085,7 @@ type Entity =
                     let boxity = if x.IsStructOrEnumTycon then AsValue else AsObject
                     let ilTypeRef = 
                         match x.TypeReprInfo with 
-                        | TILObjectRepr (ilScopeRef,ilEnclosingTypeDefs,ilTypeDef) -> IL.mkRefForNestedILTypeDef ilScopeRef (ilEnclosingTypeDefs, ilTypeDef)
+                        | TILObjectRepr (TILObjectReprData(ilScopeRef,ilEnclosingTypeDefs,ilTypeDef)) -> IL.mkRefForNestedILTypeDef ilScopeRef (ilEnclosingTypeDefs, ilTypeDef)
                         | _ -> ilTypeRefForCompilationPath x.CompilationPath x.CompiledName
                     // Pre-allocate a ILType for monomorphic types, to reduce memory usage from Abstract IL nodes
                     let ilTypeOpt = 
@@ -1210,10 +1210,8 @@ and
     /// Indicates the type is a discriminated union 
     | TUnionRepr   of TyconUnionData 
 
-    /// TILObjectRepr(scope, nesting, definition)
-    ///
     /// Indicates the type is a type from a .NET assembly without F# metadata.
-    | TILObjectRepr    of ILScopeRef * ILTypeDef list * ILTypeDef 
+    | TILObjectRepr    of TILObjectReprData
 
     /// Indicates the type is implemented as IL assembly code using the given closed Abstract IL type 
     | TAsmRepr           of ILType
@@ -1242,6 +1240,11 @@ and
     /// It would be better to separate the "not yet known" and other cases out.
     /// The information for exception definitions should be folded into here.
     | TNoRepr
+
+and 
+   [<NoComparison; NoEquality>]
+    /// TILObjectReprData(scope, nesting, definition)
+   TILObjectReprData = TILObjectReprData of ILScopeRef * ILTypeDef list * ILTypeDef 
 
 #if EXTENSIONTYPING
 and 
@@ -1679,6 +1682,7 @@ and
             |> List.tryFind (fun v -> match key.TypeForLinkage with 
                                       | None -> true
                                       | Some keyTy -> ccu.MemberSignatureEquality(keyTy,v.Type))
+            |> ValueOption.ofOption
 
       /// Get a table of values indexed by logical name
       member mtyp.AllValsByLogicalName = 
@@ -2651,7 +2655,7 @@ and NonLocalEntityRef    =
 
     /// Try to find the entity corresponding to the given path in the given CCU
     static member TryDerefEntityPath(ccu: CcuThunk, path:string[], i:int, entity:Entity) = 
-        if i >= path.Length then Some entity
+        if i >= path.Length then VSome entity
         else  
             let next = entity.ModuleOrNamespaceType.AllEntitiesByCompiledAndLogicalMangledNames.TryFind(path.[i])
             match next with 
@@ -2659,7 +2663,7 @@ and NonLocalEntityRef    =
 #if EXTENSIONTYPING
             | None -> NonLocalEntityRef.TryDerefEntityPathViaProvidedType(ccu, path, i, entity)
 #else
-            | None -> None
+            | None -> VNone
 #endif
 
 #if EXTENSIONTYPING
@@ -2677,11 +2681,11 @@ and NonLocalEntityRef    =
             // types until i = path.Length-1. Create the Tycon's as needed
             let rec tryResolveNestedTypeOf(parentEntity:Entity,resolutionEnvironment,st:Tainted<ProvidedType>,i) = 
                 match st.PApply((fun st -> st.GetNestedType path.[i]),m) with
-                | Tainted.Null -> None
+                | Tainted.Null -> VNone
                 | st -> 
                     let newEntity = Construct.NewProvidedTycon(resolutionEnvironment, st, ccu.ImportProvidedType, false, m)
                     parentEntity.ModuleOrNamespaceType.AddProvidedTypeEntity(newEntity)
-                    if i = path.Length-1 then Some(newEntity)
+                    if i = path.Length-1 then VSome(newEntity)
                     else tryResolveNestedTypeOf(newEntity,resolutionEnvironment,st,i+1)
 
             tryResolveNestedTypeOf(entity,resolutionEnvironment,st,i)
@@ -2739,18 +2743,18 @@ and NonLocalEntityRef    =
                     // newEntity is at 'j'
                     NonLocalEntityRef.TryDerefEntityPath(ccu, path, (j+1), newEntity) 
 
-                | [] -> None 
+                | [] -> VNone 
                 | _ -> failwith "Unexpected"
 
             let rec tryResolvePrefixes j = 
-                if j >= path.Length then None
+                if j >= path.Length then VNone
                 else match tryResolvePrefix j with 
-                      | None -> tryResolvePrefixes (j+1)
-                      | Some res -> Some res
+                      | VNone -> tryResolvePrefixes (j+1)
+                      | VSome res -> VSome res
 
             tryResolvePrefixes i
 
-        | _ -> None
+        | _ -> VNone
 #endif
             
     /// Try to link a non-local entity reference to an actual entity
@@ -2759,11 +2763,11 @@ and NonLocalEntityRef    =
         if canError then 
             ccu.EnsureDerefable(path)
 
-        if ccu.IsUnresolvedReference then None else
+        if ccu.IsUnresolvedReference then VNone else
 
         match NonLocalEntityRef.TryDerefEntityPath(ccu, path, 0, ccu.Contents)  with
-        | Some _ as r -> r
-        | None ->
+        | VSome _ as r -> r
+        | VNone ->
             // OK, the lookup failed. Check if we can redirect through a type forwarder on this assembly.
             // Look for a forwarder for each prefix-path
             let rec tryForwardPrefixPath i = 
@@ -2773,7 +2777,7 @@ and NonLocalEntityRef    =
                     | Some tcref -> NonLocalEntityRef.TryDerefEntityPath(ccu, path, (i+1), tcref.Deref)  
                     | None -> tryForwardPrefixPath (i+1)
                 else
-                    None
+                    VNone
             tryForwardPrefixPath 0
         
     /// Get the CCU referenced by the nonlocal reference.
@@ -2805,8 +2809,8 @@ and NonLocalEntityRef    =
     /// Dereference the nonlocal reference, and raise an error if this fails.
     member nleref.Deref = 
         match nleref.TryDeref(canError=true) with 
-        | Some res -> res
-        | None -> 
+        | VSome res -> res
+        | VNone -> 
               errorR (InternalUndefinedItemRef (FSComp.SR.tastUndefinedItemRefModuleNamespace, nleref.DisplayName, nleref.AssemblyName, "<some module on this path>")) 
               raise (KeyNotFoundException())
         
@@ -2836,9 +2840,9 @@ and
     member private tcr.Resolve(canError) = 
         let res = tcr.nlr.TryDeref(canError)
         match res with 
-        | Some r -> 
+        | VSome r -> 
              tcr.binding <- nullableSlotFull r 
-        | None -> 
+        | VNone -> 
              ()
 
     /// Dereference the TyconRef to a Tycon. Amortize the cost of doing this.
@@ -2859,11 +2863,11 @@ and
         | null -> 
             tcr.Resolve(canError=false)
             match box tcr.binding with 
-            | null -> None
-            | _ -> Some tcr.binding
+            | null -> VNone
+            | _ -> VSome tcr.binding
 
         | _ -> 
-            Some tcr.binding
+            VSome tcr.binding
 
     /// Is the destination assembly available?
     member tcr.CanDeref = tcr.TryDeref.IsSome
@@ -3186,8 +3190,8 @@ and
                 let e =  nlr.EnclosingEntity.Deref 
                 let possible = e.ModuleOrNamespaceType.TryLinkVal(nlr.EnclosingEntity.nlr.Ccu, nlr.ItemKey)
                 match possible with 
-                | None -> error (InternalUndefinedItemRef (FSComp.SR.tastUndefinedItemRefVal, e.DisplayNameWithStaticParameters, nlr.AssemblyName, sprintf "%+A" nlr.ItemKey.PartialKey))
-                | Some h -> h
+                | VNone -> error (InternalUndefinedItemRef (FSComp.SR.tastUndefinedItemRefVal, e.DisplayNameWithStaticParameters, nlr.AssemblyName, sprintf "%+A" nlr.ItemKey.PartialKey))
+                | VSome h -> h
             vr.binding <- nullableSlotFull res 
             res 
         else vr.binding
@@ -3196,14 +3200,15 @@ and
     member vr.TryDeref = 
         if obj.ReferenceEquals(vr.binding, null) then
             let resOpt = 
-                vr.nlr.EnclosingEntity.TryDeref |> Option.bind (fun e -> 
-                    e.ModuleOrNamespaceType.TryLinkVal(vr.nlr.EnclosingEntity.nlr.Ccu, vr.nlr.ItemKey))
+                match vr.nlr.EnclosingEntity.TryDeref with 
+                | VNone -> VNone
+                | VSome e -> e.ModuleOrNamespaceType.TryLinkVal(vr.nlr.EnclosingEntity.nlr.Ccu, vr.nlr.ItemKey)
             match resOpt with 
-            | None -> ()
-            | Some res -> 
+            | VNone -> ()
+            | VSome res -> 
                 vr.binding <- nullableSlotFull res 
             resOpt
-        else Some vr.binding
+        else VSome vr.binding
 
     /// The type of the value. May be a TType_forall for a generic value. 
     /// May be a type variable or type containing type variables during type inference. 
@@ -3394,7 +3399,7 @@ and UnionCaseRef =
         | None -> error(InternalError(sprintf "union case %s not found in type %s" x.CaseName x.TyconRef.LogicalName, x.TyconRef.Range))
 
     /// Try to dereference the reference 
-    member x.TryUnionCase =  x.TyconRef.TryDeref |> Option.bind (fun tcref -> tcref.GetUnionCaseByName x.CaseName)
+    member x.TryUnionCase =  x.TyconRef.TryDeref |> ValueOption.bind (fun tcref -> tcref.GetUnionCaseByName x.CaseName |> ValueOption.ofOption)
 
     /// Get the attributes associated with the union case
     member x.Attribs = x.UnionCase.Attribs
@@ -3446,7 +3451,7 @@ and RecdFieldRef =
         | None -> error(InternalError(sprintf "field %s not found in type %s" id tcref.LogicalName, tcref.Range))
 
     /// Try to dereference the reference 
-    member x.TryRecdField =  x.TyconRef.TryDeref |> Option.bind (fun tcref -> tcref.GetFieldByName x.FieldName)
+    member x.TryRecdField =  x.TyconRef.TryDeref |> ValueOption.bind (fun tcref -> tcref.GetFieldByName x.FieldName |> ValueOption.ofOption)
 
     /// Get the attributes associated with the compiled property of the record field 
     member x.PropertyAttribs = x.RecdField.PropertyAttribs
@@ -3531,7 +3536,7 @@ and
         | TType_measure _ms              -> ""
         | TType_var tp                   -> tp.Solution |> function Some sln -> sln.GetAssemblyName() | None -> ""
         | TType_ucase (_uc,_tinst)       ->
-            let scope,_nesting,_definition = _uc.Tycon.ILTyconInfo
+            let (TILObjectReprData(scope,_nesting,_definition)) = _uc.Tycon.ILTyconInfo
             scope.AssemblyRef.QualifiedName
 
 and TypeInst = TType list 
@@ -4949,7 +4954,7 @@ let NewILTycon nlpath (nm,m) tps (scoref:ILScopeRef, enc, tdef:ILTypeDef) mtyp =
     let hasSelfReferentialCtor = tdef.IsClass && (not scoref.IsAssemblyRef && scoref.AssemblyRef.Name = "mscorlib")
     let tycon = NewTycon(nlpath, nm, m, taccessPublic, taccessPublic, TyparKind.Type, tps, XmlDoc.Empty, true, false, hasSelfReferentialCtor, mtyp)
 
-    tycon.entity_tycon_repr <- TILObjectRepr (scoref,enc,tdef)
+    tycon.entity_tycon_repr <- TILObjectRepr (TILObjectReprData (scoref,enc,tdef))
     tycon.TypeContents.tcaug_closed <- true
     tycon
 

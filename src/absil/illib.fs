@@ -310,18 +310,30 @@ module List =
 
         ch [] [] l
 
+    let rec checkq l1 l2 = 
+        match l1,l2 with 
+        | h1::t1,h2::t2 -> h1 === h2 && checkq t1 t2
+        | _ -> true
+
     let mapq (f: 'T -> 'T) inp =
         assert not (typeof<'T>.IsValueType) 
         match inp with
         | [] -> inp
+        | [h1a] -> 
+            let h2a = f h1a
+            if h1a === h2a then inp else [h2a]
+        | [h1a; h1b] -> 
+            let h2a = f h1a
+            let h2b = f h1b
+            if h1a === h2a && h1b === h2b then inp else [h2a; h2b]
+        | [h1a; h1b; h1c] -> 
+            let h2a = f h1a
+            let h2b = f h1b
+            let h2c = f h1c
+            if h1a === h2a && h1b === h2b && h1c === h2c then inp else [h2a; h2b; h2c]
         | _ -> 
             let res = List.map f inp 
-            let rec check l1 l2 = 
-                match l1,l2 with 
-                | h1::t1,h2::t2 -> 
-                    System.Runtime.CompilerServices.RuntimeHelpers.Equals(h1,h2) && check t1 t2
-                | _ -> true
-            if check inp res then inp else res
+            if checkq inp res then inp else res
         
     let frontAndBack l = 
         let rec loop acc l = 
@@ -456,6 +468,19 @@ module List =
     let mapiSquared f xss = xss |> List.mapi (fun i xs -> xs |> List.mapi (fun j x -> f i j x))
     let existsSquared f xss = xss |> List.exists (fun xs -> xs |> List.exists (fun x -> f x))
     let mapiFoldSquared f z xss =  mapFoldSquared f z (xss |> mapiSquared (fun i j x -> (i,j,x)))
+
+[<Struct>]
+type ValueOption<'T> =
+    | VSome of 'T
+    | VNone
+    member x.IsSome = match x with VSome _ -> true | VNone -> false
+    member x.IsNone = match x with VSome _ -> false | VNone -> true
+    member x.Value = match x with VSome r -> r | VNone -> failwith "ValueOption.Value: value is None"
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module ValueOption =
+    let inline ofOption x = match x with Some x -> VSome x | None -> VNone
+    let inline bind f x = match x with VSome x -> f x | VNone -> VNone
 
 module String = 
     let indexNotFound() = raise (new System.Collections.Generic.KeyNotFoundException("An index for the character was not found in the string"))

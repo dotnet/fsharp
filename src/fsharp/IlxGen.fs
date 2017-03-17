@@ -716,11 +716,11 @@ let AddStorageForVal (g: TcGlobals) (v,s) eenv =
         | None -> eenv
         | Some vref -> 
             match vref.TryDeref with
-            | None -> 
+            | VNone -> 
                 //let msg = sprintf "could not dereference external value reference to something in FSharp.Core.dll during code generation, v.MangledName = '%s', v.Range = %s" v.MangledName (stringOfRange v.Range)
                 //System.Diagnostics.Debug.Assert(false, msg)
                 eenv
-            | Some gv -> 
+            | VSome gv -> 
                 { eenv with valsInScope = eenv.valsInScope.Add gv s }
     else 
         eenv
@@ -4058,7 +4058,7 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod((TSlotSig(_,delega
         try 
             if isILAppTy cenv.g delegateTy then 
                 let tcref = tcrefOfAppTy cenv.g delegateTy
-                let _,_,tdef = tcref.ILTyconInfo
+                let tdef = tcref.ILTyconRawMetadata
                 match tdef.Methods.FindByName ".ctor" with 
                 | [ctorMDef] -> 
                     match ctorMDef.Parameters with 
@@ -6497,7 +6497,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                              && cenv.g.attrib_SerializableAttribute.IsSome
                                        
            match tycon.TypeReprInfo with 
-           | TILObjectRepr (_,_,td) ->
+           | TILObjectRepr _ ->
+               let td = tycon.ILTyconRawMetadata
                {td with Access = access
                         CustomAttrs = mkILCustomAttrs ilCustomAttrs
                         GenericParams = ilGenParams }, None

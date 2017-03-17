@@ -66,7 +66,7 @@ let GetImmediateIntrinsicMethInfosOfType (optFilter,ad) g amap m typ =
                 | None -> st.PApplyArray ((fun st -> st.GetMethods()), "GetMethods", m)
             [   for mi in meths -> ProvidedMeth(amap,mi.Coerce(m),None,m) ]
 #endif
-        | ILTypeMetadata (_,tdef) -> 
+        | ILTypeMetadata (TILObjectReprData(_,_,tdef)) -> 
             let mdefs = tdef.Methods
             let mdefs = (match optFilter with None -> mdefs.AsList | Some nm -> mdefs.FindByName nm)
             mdefs |> List.map (fun mdef -> MethInfo.CreateILMeth(amap, m, typ, mdef)) 
@@ -141,7 +141,7 @@ let GetImmediateIntrinsicPropInfosOfType (optFilter,ad) g amap m typ =
             |> Seq.map(fun pi -> ProvidedProp(amap,pi,m)) 
             |> List.ofSeq
 #endif
-        | ILTypeMetadata (_,tdef) -> 
+        | ILTypeMetadata (TILObjectReprData(_,_,tdef)) -> 
             let tinfo = ILTypeInfo.FromType g typ
             let pdefs = tdef.Properties
             let pdefs = match optFilter with None -> pdefs.AsList | Some nm -> pdefs.LookupByName nm
@@ -189,7 +189,7 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
                         |   Tainted.Null -> []
                         |   fi -> [  ProvidedField(amap,fi,m) ]
 #endif
-            | ILTypeMetadata (_,tdef) -> 
+            | ILTypeMetadata (TILObjectReprData(_,_,tdef)) -> 
                 let tinfo = ILTypeInfo.FromType g typ
                 let fdefs = tdef.Fields
                 let fdefs = match optFilter with None -> fdefs.AsList | Some nm -> fdefs.LookupByName nm
@@ -214,7 +214,7 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
                         |   Tainted.Null -> []
                         |   ei -> [  ProvidedEvent(amap,ei,m) ]
 #endif
-            | ILTypeMetadata (_,tdef) -> 
+            | ILTypeMetadata (TILObjectReprData(_,_,tdef)) -> 
                 let tinfo = ILTypeInfo.FromType g typ
                 let edefs = tdef.Events
                 let edefs = match optFilter with None -> edefs.AsList | Some nm -> edefs.LookupByName nm
