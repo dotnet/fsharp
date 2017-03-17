@@ -38,6 +38,7 @@ type internal FSharpCompletionProvider
     static let [<Literal>] NameInCodePropName = "NameInCode"
     static let [<Literal>] FullNamePropName = "FullName"
     static let [<Literal>] IsExtensionMemberPropName = "IsExtensionMember"
+    static let [<Literal>] NamespaceToOpen = "NamespaceToOpen"
     
     let xmlMemberIndexService = serviceProvider.GetService(typeof<IVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
@@ -198,18 +199,18 @@ type internal FSharpCompletionProvider
 
             sortedDeclItems |> Array.iteri (fun number declItem ->
                 let glyph = CommonRoslynHelpers.FSharpGlyphToRoslynGlyph (declItem.Glyph, declItem.Accessibility)
-                let name =
+                let name, namespaceToOpen =
                     match entityKind with
                     | Some EntityKind.Attribute when declItem.IsAttribute && declItem.Name.EndsWith "Attribute"  ->
-                        declItem.Name.[0..declItem.Name.Length - attributeSuffixLength - 1] 
+                        declItem.Name.[0..declItem.Name.Length - attributeSuffixLength - 1], None
                     | _ when not declItem.IsResolvable ->
                         let ns =
                             match declItem.FullName.LastIndexOf '.' with
                             | -1 -> ""
                             | idx -> declItem.FullName.[..idx - 1]
 
-                        sprintf "%s (open %s)" declItem.Name ns
-                    | _ -> declItem.Name
+                        sprintf "%s (open %s)" declItem.Name ns, Some ns
+                    | _ -> declItem.Name, None
 
                 let filterText =
                     if declItem.IsResolvable then null
@@ -230,6 +231,11 @@ type internal FSharpCompletionProvider
                         completionItem.AddProperty(NameInCodePropName, declItem.NameInCode)
                     else completionItem
 
+                let completionItem =
+                    match namespaceToOpen with
+                    | Some ns -> completionItem.AddProperty(NamespaceToOpen, ns)
+                    | None -> completionItem
+
                 let priority = 
                     match mruItems.TryGetValue declItem.FullName with
                     | true, hints -> maxHints - hints
@@ -245,11 +251,6 @@ type internal FSharpCompletionProvider
                 declarationItemsCache.Add(completionItem.DisplayText, declItem)
                 results.Add(completionItem))
             
-            //for e in allEntitites do
-                 //let completionItem = CommonCompletionItem.Create(
-                   // (sprintf "%s (open %s)" (Array.last e.CleanedIdents) e.Namespace), glyph = Nullable()).AddProperty(FullNamePropName, e.FullName)
-                 //results.Add(completionItem)
-
             return results
         }
 
@@ -293,20 +294,30 @@ type internal FSharpCompletionProvider
                 return CompletionDescription.Empty
         } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
 
-    override this.GetChangeAsync(_, item, _, _) : Task<CompletionChange> =
-        match item.Properties.TryGetValue IsExtensionMemberPropName with
-        | true, _ -> ()  // do not add extension members to the MRU list
-        | _ ->
-            match item.Properties.TryGetValue FullNamePropName with
-            | true, fullName ->
-                match mruItems.TryGetValue fullName with
-                | true, hints -> mruItems.[fullName] <- hints + 1
-                | _ -> mruItems.[fullName] <- 1
+    override this.GetChangeAsync(document, item, _, cancellationToken) : Task<CompletionChange> =
+        async {
+            match item.Properties.TryGetValue IsExtensionMemberPropName with
+            | true, _ -> ()  // do not add extension members to the MRU list
+            | _ ->
+                match item.Properties.TryGetValue FullNamePropName with
+                | true, fullName ->
+                    match mruItems.TryGetValue fullName with
+                    | true, hints -> mruItems.[fullName] <- hints + 1
+                    | _ -> mruItems.[fullName] <- 1
+                | _ -> ()
+            
+            let nameInCode =
+                match item.Properties.TryGetValue NameInCodePropName with
+                | true, x -> x
+                | _ -> item.DisplayText
+            
+            match item.Properties.TryGetValue NamespaceToOpen with
+            | true, ns ->
+                let! sourceText = document.GetTextAsync(cancellationToken)
+                let text = sourceText.WithChanges(TextChange(TextSpan(0, ns.Length), ns))
+                UIThread.Run(Action (fun () ->
+                    document.Project.Solution.Workspace.TryApplyChanges(document.Project.Solution.WithDocumentText(document.Id, text)) |> ignore))
             | _ -> ()
-        
-        let nameInCode =
-            match item.Properties.TryGetValue NameInCodePropName with
-            | true, x -> x
-            | _ -> item.DisplayText
-        
-        Task.FromResult(CompletionChange.Create(new TextChange(item.Span, nameInCode)))
+
+            return CompletionChange.Create(new TextChange(item.Span, nameInCode))
+        } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
