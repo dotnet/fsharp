@@ -970,7 +970,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "IterateIndexed2">]
         let inline iteri2 (f:int->'T->'U->unit) (source1:ISeq<'T>) (source2:ISeq<'U>) : unit =
             source1.Fold (fun pipeIdx ->
-                upcast { new FolderWithPostProcessing<'T,unit,Values<int,IEnumerator<'U>>>((),Values<_,_>(-1,source2.GetEnumerator())) with
+                upcast { new FolderWithPostProcessing<'T,unit,Values<int,IEnumerator<'U>>>((),Values<_,_>(0,source2.GetEnumerator())) with
                     override this.ProcessNext value =
                         if this.State._2.MoveNext() then
                             f this.State._1 value this.State._2.Current
