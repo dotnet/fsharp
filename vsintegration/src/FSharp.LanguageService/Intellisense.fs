@@ -517,7 +517,7 @@ type internal FSharpIntellisenseInfo
                                 let oldTextSnapshot = oldTextSnapshotInfo :?> ITextSnapshot
                                 hasTextChangedSinceLastTypecheck (textSnapshot, oldTextSnapshot, Range.Range.toZ range)
 
-                            let! decls = typedResults.GetDeclarationListInfo(untypedParseInfoOpt, Range.Line.fromZ line, col, lineText, fst plid, snd plid, detectTextChange) 
+                            let! decls = typedResults.GetDeclarationListInfo(untypedParseInfoOpt, Range.Line.fromZ line, col, lineText, fst plid, snd plid, [], detectTextChange) 
                             return (new FSharpDeclarations(documentationBuilder, decls.Items, reason) :> Declarations) 
                     else
                         // no TypeCheckInfo in ParseResult.
