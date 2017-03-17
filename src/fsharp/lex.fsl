@@ -548,12 +548,14 @@ rule token args skip = parse
  | "[" { LBRACK }
  | "[|" { LBRACK_BAR }
  | "{|" { LBRACE_BAR }
+ | "{<" { LBRACE_LESS }
  | "<" { LESS false }
  | ">" { GREATER false }
  | "[<" { LBRACK_LESS }
  | "]" { RBRACK }
  | "|]" { BAR_RBRACK }
  | "|}" { BAR_RBRACE }
+ | ">}" { GREATER_RBRACE }
  | ">]" { GREATER_RBRACK }
  | "{" { LBRACE }
  | "|" { BAR }

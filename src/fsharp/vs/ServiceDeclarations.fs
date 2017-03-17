@@ -203,6 +203,7 @@ module internal ItemDescriptionsImpl =
         | Item.ArgName (id,_, _) -> Some id.idRange
         | Item.CustomOperation (_,_,implOpt) -> implOpt |> Option.bind (rangeOfMethInfo g preferFlag)
         | Item.ImplicitOp _ -> None
+        | Item.AnonRecdField _ -> None
         | Item.NewDef id -> Some id.idRange
         | Item.UnqualifiedType tcrefs -> tcrefs |> List.tryPick (rangeOfEntityRef preferFlag >> Some)
         | Item.DelegateCtor typ 
@@ -684,6 +685,9 @@ module internal ItemDescriptionsImpl =
         | Item.Value vref | Item.CustomBuilder (_,vref) -> fullDisplayTextOfValRef vref
         | Item.UnionCase (ucinfo,_) -> fullDisplayTextOfUnionCaseRef  ucinfo.UnionCaseRef
         | Item.ActivePatternResult(apinfo, _ty, idx, _) -> apinfo.Names.[idx]
+        | Item.AnonRecdField (anonInfo, _, n)  -> 
+            let (AnonRecdTypeInfo(_ccu, _tupInfo, nms)) = anonInfo
+            nms.[n]
         | Item.ActivePatternCase apref -> FullNameOfItem g (Item.Value apref.ActivePatternVal)  + "." + apref.Name 
         | Item.ExnCase ecref -> fullDisplayTextOfExnRef ecref 
         | Item.RecdField rfinfo -> fullDisplayTextOfRecdFieldRef  rfinfo.RecdFieldRef
@@ -1156,6 +1160,7 @@ module internal ItemDescriptionsImpl =
         | Item.Types _ 
         | Item.DelegateCtor _
         | Item.FakeInterfaceCtor _
+        | Item.AnonRecdField _
         | Item.UnqualifiedType [] -> 
             None
 

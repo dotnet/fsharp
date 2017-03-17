@@ -91,7 +91,7 @@ module private UnusedOpens =
                     | SymbolUse.Entity (ent, cleanFullNames) when not (cleanFullNames |> List.exists isQualified) ->
                         Some (cleanFullNames, Some ent)
                     | SymbolUse.Field f when not (isQualified f.FullName) -> 
-                        Some ([f.FullName], Some f.DeclaringEntity)
+                        Some ([f.FullName], f.DeclaringEntity)
                     | SymbolUse.MemberFunctionOrValue mfv when not (isQualified mfv.FullName) -> 
                         Some ([mfv.FullName], mfv.EnclosingEntitySafe)
                     | SymbolUse.Operator op when not (isQualified op.FullName) ->

@@ -373,8 +373,8 @@ and [<Class>] internal FSharpField =
     internal new : Impl.cenv * RecdFieldRef -> FSharpField
     internal new : Impl.cenv * UnionCaseRef * int -> FSharpField
 
-    /// Get the declaring entity of this field
-    member DeclaringEntity: FSharpEntity
+    /// Get the declaring entity of this field, if any. Fields from anonymous types do not have a declaring entity
+    member DeclaringEntity: FSharpEntity option
 
     /// Indicates if the field is declared 'static'
     member IsMutable: bool

@@ -2064,10 +2064,14 @@ braceFieldDeclList:
   | LBRACE  error rbrace
      { [] }
 
-braceBarFieldDeclList:
+anonRecdType:
     | STRUCT braceBarFieldDeclListCore
         { $2,true }
     | braceBarFieldDeclListCore
+        { $1,false }
+    | STRUCT braceLessFieldDeclListCore
+        { $2,true }
+    | braceLessFieldDeclListCore
         { $1,false }
 
 /* The core of a record type definition */
@@ -2081,6 +2085,18 @@ braceBarFieldDeclListCore:
 
   | LBRACE_BAR opt_new  error bar_rbrace
      { $2,[] }
+
+/* The core of a record type definition */
+braceLessFieldDeclListCore:
+  | LBRACE_LESS  recdFieldDeclList greater_rbrace
+     { true,$2 }
+
+  | LBRACE_LESS  recdFieldDeclList recover
+     { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBrace()) 
+       true,$2 }
+
+  | LBRACE_LESS error greater_rbrace
+     { true,[] }
 
 inlineAssemblyTyconRepr:
   | HASH stringOrKeywordString HASH 
@@ -3699,6 +3715,8 @@ atomicExprAfterType:
       { $1 }
   | braceBarExpr 
       { $1 }
+  | braceLessExpr 
+      { $1 }
   | NULL 
       { SynExpr.Null(lhs parseState) } 
   | FALSE  
@@ -4154,13 +4172,13 @@ braceBarExpr:
       { $1 false }
 
 braceBarExprCore:
-  | LBRACE_BAR opt_new braceBarExprBindings bar_rbrace
+  | LBRACE_BAR opt_new oneOrMoreRecdExprBindings bar_rbrace
      { let isNew = $2
        let flds = $3
        let m = rhs2 parseState 1 4
        (fun isStruct -> SynExpr.AnonRecd(isNew,isStruct,flds,m)) }
 
-  | LBRACE_BAR opt_new braceBarExprBindings recover 
+  | LBRACE_BAR opt_new oneOrMoreRecdExprBindings recover 
      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBraceBar())  
        let isNew = $2
        let flds = $3 
@@ -4184,14 +4202,51 @@ braceBarExprCore:
        let m = rhs2 parseState 1 3
        (fun isStruct -> SynExpr.AnonRecd(isNew,isStruct,[],m)) }
 
+braceLessExpr:
+  | STRUCT braceLessExprCore
+      { $2 true }
+  | braceLessExprCore
+      { $1 false }
+
+braceLessExprCore:
+  | LBRACE_LESS oneOrMoreRecdExprBindings greater_rbrace
+     { let flds = $2
+       let isNew = true
+       let m = rhs2 parseState 1 3
+       (fun isStruct -> SynExpr.AnonRecd(isNew,isStruct,flds,m)) }
+
+  | LBRACE_LESS oneOrMoreRecdExprBindings recover 
+     { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBraceBar())  
+       let isNew = true
+       let flds = $2
+       let m = rhs2 parseState 1 2
+       (fun isStruct -> SynExpr.AnonRecd(isNew,isStruct,flds,m)) }
+
+  | LBRACE_LESS error greater_rbrace
+     { // silent recovery 
+       let isNew = true
+       let m = rhs2 parseState 1 3
+       (fun _ -> arbExpr("braceBarExpr",m)) }  
+
+  | LBRACE_LESS recover
+     { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBraceBar())  
+       let isNew = true
+       let m = rhs2 parseState 1 1
+       (fun isStruct -> SynExpr.AnonRecd(isNew,isStruct,[],m)) }
+
+  | LBRACE_LESS greater_rbrace 
+     { let isNew = true
+       let m = rhs2 parseState 1 2
+       (fun isStruct -> SynExpr.AnonRecd(isNew,isStruct,[],m)) }
+
 opt_new: | { false } | NEW  { true }
 
-braceBarExprBindings:
+oneOrMoreRecdExprBindings:
   | recdExprBinding recdExprBindings
      { (($1, None) :: $2) |> List.choose (function 
          | (((LongIdentWithDots([id],_),_),Some e),_) -> Some (id,e) 
          | (((LongIdentWithDots([id],_),_),None),_) -> Some (id, arbExpr("anonField",id.idRange)) 
-         | _ -> reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidAnonRecdExpr()); None) }  
+         | _ -> reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidAnonRecdType()); None) }  
 
 
 anonLambdaExpr: 
@@ -4502,7 +4557,7 @@ atomType:
      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedParen()) 
        $2 }  
 
-  | braceBarFieldDeclList
+  | anonRecdType
      { let (isNew,flds),isStruct = $1
        let flds2 = 
            flds |> List.choose (function 
@@ -4989,6 +5044,9 @@ rbrace:
 
 bar_rbrace:
   | BAR_RBRACE { }
+
+greater_rbrace:
+  | GREATER_RBRACE { }
 
 rparen:
   | RPAREN_COMING_SOON rparen { }
