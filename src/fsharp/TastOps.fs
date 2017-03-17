@@ -317,7 +317,7 @@ and remapValRef tmenv (vref: ValRef) =
     | Some res -> 
         res
 
-let remapType  tyenv x =
+let remapType tyenv x =
     if isRemapEmpty tyenv then x else
     remapTypeAux tyenv x
 
@@ -351,9 +351,9 @@ let remapSlotSig remapAttrib tyenv (TSlotSig(nm,typ, ctps,methTypars,paraml, rty
     TSlotSig(nm,typ', ctps',methTypars',List.mapSquared (remapParam tyenvinner) paraml,Option.map (remapTypeAux tyenvinner) rty) 
 
 let mkInstRemap tpinst = 
-    { tyconRefRemap = emptyTyconRefRemap; 
-      tpinst        = tpinst; 
-      valRemap      = ValMap.Empty;
+    { tyconRefRemap = emptyTyconRefRemap
+      tpinst        = tpinst
+      valRemap      = ValMap.Empty
       removeTraitSolutions = false }
 
 // entry points for "typar -> TType" instantiation 
@@ -445,7 +445,9 @@ let ListMeasureVarOccsWithNonZeroExponents untexpr =
         match stripUnitEqnsFromMeasure unt with
         | Measure.Var tp -> 
             if List.exists (fun (tp', _) -> typarEq tp tp') acc then acc 
-            else let e = MeasureVarExponent tp untexpr in if e = ZeroRational then acc else (tp,e)::acc
+            else 
+                let e = MeasureVarExponent tp untexpr
+                if e = ZeroRational then acc else (tp,e)::acc
         | Measure.Prod(unt1,unt2) -> gather (gather acc unt1) unt2
         | Measure.Inv unt' -> gather acc unt'
         | Measure.RationalPower(unt',_) -> gather acc unt'
@@ -458,7 +460,8 @@ let ListMeasureConOccsWithNonZeroExponents g eraseAbbrevs untexpr =
         match (if eraseAbbrevs then stripUnitEqnsFromMeasure unt else stripUnitEqns unt) with
         | Measure.Con c -> 
             if List.exists (fun (c', _) -> tyconRefEq g c c') acc then acc else 
-            let e = MeasureExprConExponent g eraseAbbrevs c untexpr in if e = ZeroRational then acc else (c,e)::acc
+            let e = MeasureExprConExponent g eraseAbbrevs c untexpr
+            if e = ZeroRational then acc else (c,e)::acc
         | Measure.Prod(unt1,unt2) -> gather (gather acc unt1) unt2
         | Measure.Inv unt' -> gather acc unt'
         | Measure.RationalPower(unt',_) -> gather acc unt'
@@ -469,7 +472,7 @@ let ListMeasureConOccsWithNonZeroExponents g eraseAbbrevs untexpr =
 /// and after applying a remapping function r to tycons
 let ListMeasureConOccsAfterRemapping g r unt =
     let rec gather acc unt =  
-        match (stripUnitEqnsFromMeasure unt) with
+        match stripUnitEqnsFromMeasure unt with
         | Measure.Con c -> if List.exists (tyconRefEq g (r c)) acc then acc else r c::acc
         | Measure.Prod(unt1,unt2) -> gather (gather acc unt1) unt2
         | Measure.RationalPower(unt',_) -> gather acc unt'
@@ -480,18 +483,21 @@ let ListMeasureConOccsAfterRemapping g r unt =
 
 /// Construct a measure expression representing the n'th power of a measure
 let MeasurePower u n = 
-    if n=0 then Measure.One
-    elif n=1 then u
+    if n = 1 then u
+    elif n = 0 then Measure.One
     else Measure.RationalPower (u, intToRational n)
 
 let MeasureProdOpt m1 m2 =
-  match m1, m2 with
-  | Measure.One, _ -> m2
-  | _, Measure.One -> m1
-  | _, _ -> Measure.Prod (m1,m2)
+    match m1, m2 with
+    | Measure.One, _ -> m2
+    | _, Measure.One -> m1
+    | _, _ -> Measure.Prod (m1,m2)
 
 /// Construct a measure expression representing the product of a list of measures
-let ProdMeasures ms = match ms with [] -> Measure.One | m::ms -> List.foldBack MeasureProdOpt ms m
+let ProdMeasures ms = 
+    match ms with 
+    | [] -> Measure.One 
+    | m::ms -> List.foldBack MeasureProdOpt ms m
 
 let isDimensionless g tyarg =
     match stripTyparEqns tyarg with
@@ -500,10 +506,10 @@ let isDimensionless g tyarg =
       isNil (ListMeasureConOccsWithNonZeroExponents g true unt)
     | _ -> false
 
-
 let destUnitParMeasure g unt =
     let vs = ListMeasureVarOccsWithNonZeroExponents unt
     let cs = ListMeasureConOccsWithNonZeroExponents g true unt
+
     match vs, cs with
     | [(v,e)], [] when e = OneRational -> v
     | _, _ -> failwith "destUnitParMeasure: not a unit-of-measure parameter"
@@ -527,11 +533,11 @@ let normalizeMeasure g ms =
 let tryNormalizeMeasureInType g ty =
     match ty with
     | TType_measure (Measure.Var v) ->
-      match v.Solution with
-      | Some (TType_measure ms) ->
-        (v.typar_solution <- Some (TType_measure (normalizeMeasure g ms)); ty)
-      | _ -> ty
-      
+        match v.Solution with
+        | Some (TType_measure ms) ->
+            v.typar_solution <- Some (TType_measure (normalizeMeasure g ms))
+            ty
+        | _ -> ty
     | _ -> ty
 
 //---------------------------------------------------------------------------
@@ -556,28 +562,24 @@ let maxTuple = 8
 let goodTupleFields = maxTuple-1
 
 let isCompiledTupleTyconRef g tcref =
-    match tcref with
-    | x when 
-        (tyconRefEq g g.ref_tuple1_tcr x || 
-         tyconRefEq g g.ref_tuple2_tcr x || 
-         tyconRefEq g g.ref_tuple3_tcr x || 
-         tyconRefEq g g.ref_tuple4_tcr x || 
-         tyconRefEq g g.ref_tuple5_tcr x || 
-         tyconRefEq g g.ref_tuple6_tcr x || 
-         tyconRefEq g g.ref_tuple7_tcr x || 
-         tyconRefEq g g.ref_tuple8_tcr x ||
-         tyconRefEq g g.struct_tuple1_tcr x || 
-         tyconRefEq g g.struct_tuple2_tcr x || 
-         tyconRefEq g g.struct_tuple3_tcr x || 
-         tyconRefEq g g.struct_tuple4_tcr x || 
-         tyconRefEq g g.struct_tuple5_tcr x || 
-         tyconRefEq g g.struct_tuple6_tcr x || 
-         tyconRefEq g g.struct_tuple7_tcr x || 
-         tyconRefEq g g.struct_tuple8_tcr x) -> true
-    | _ -> false
+    tyconRefEq g g.ref_tuple1_tcr tcref || 
+    tyconRefEq g g.ref_tuple2_tcr tcref || 
+    tyconRefEq g g.ref_tuple3_tcr tcref || 
+    tyconRefEq g g.ref_tuple4_tcr tcref || 
+    tyconRefEq g g.ref_tuple5_tcr tcref || 
+    tyconRefEq g g.ref_tuple6_tcr tcref || 
+    tyconRefEq g g.ref_tuple7_tcr tcref || 
+    tyconRefEq g g.ref_tuple8_tcr tcref ||
+    tyconRefEq g g.struct_tuple1_tcr tcref || 
+    tyconRefEq g g.struct_tuple2_tcr tcref || 
+    tyconRefEq g g.struct_tuple3_tcr tcref || 
+    tyconRefEq g g.struct_tuple4_tcr tcref || 
+    tyconRefEq g g.struct_tuple5_tcr tcref || 
+    tyconRefEq g g.struct_tuple6_tcr tcref || 
+    tyconRefEq g g.struct_tuple7_tcr tcref || 
+    tyconRefEq g g.struct_tuple8_tcr tcref
 
-let mkCompiledTupleTyconRef (g:TcGlobals) isStruct tys = 
-    let n = List.length tys 
+let mkCompiledTupleTyconRef (g:TcGlobals) isStruct n = 
     if   n = 1 then (if isStruct then g.struct_tuple1_tcr else g.ref_tuple1_tcr)
     elif n = 2 then (if isStruct then g.struct_tuple2_tcr else g.ref_tuple2_tcr)
     elif n = 3 then (if isStruct then g.struct_tuple3_tcr else g.ref_tuple3_tcr)
@@ -590,7 +592,7 @@ let mkCompiledTupleTyconRef (g:TcGlobals) isStruct tys =
 
 let rec mkCompiledTupleTy g isStruct tys = 
     let n = List.length tys 
-    if n < maxTuple then TType_app (mkCompiledTupleTyconRef g isStruct tys, tys)
+    if n < maxTuple then TType_app (mkCompiledTupleTyconRef g isStruct n, tys)
     else 
         let tysA,tysB = List.splitAfter goodTupleFields tys
         TType_app ((if isStruct then g.struct_tuple8_tcr else g.ref_tuple8_tcr), tysA@[mkCompiledTupleTy g isStruct tysB])
@@ -7895,7 +7897,7 @@ let GetTypeOfIntrinsicMemberInCompiledForm g (vref:ValRef) =
 let rec mkCompiledTuple g isStruct (argtys,args,m) = 
     let n = List.length argtys 
     if n <= 0 then failwith "mkCompiledTuple"
-    elif n < maxTuple then  (mkCompiledTupleTyconRef g isStruct argtys, argtys, args, m)
+    elif n < maxTuple then (mkCompiledTupleTyconRef g isStruct n, argtys, args, m)
     else
         let argtysA,argtysB = List.splitAfter goodTupleFields argtys
         let argsA,argsB = List.splitAfter (goodTupleFields) args
@@ -7916,7 +7918,7 @@ let rec mkCompiledTuple g isStruct (argtys,args,m) =
                 let v8plus = Expr.Op (TOp.Tuple(TupInfo.Const isStruct),b,c,d)
                 ty8plus,v8plus
         let argtysAB = argtysA @ [ty8] 
-        (mkCompiledTupleTyconRef g isStruct argtysAB, argtysAB,argsA @ [v8],m)
+        (mkCompiledTupleTyconRef g isStruct (List.length argtysAB), argtysAB,argsA @ [v8],m)
 
 let mkILMethodSpecForTupleItem (_g : TcGlobals) (typ:ILType) n = 
     mkILNonGenericInstanceMethSpecInTy(typ, (if n < goodTupleFields then "get_Item"+(n+1).ToString() else "get_Rest"), [], mkILTyvarTy (uint16 n))
