@@ -19,7 +19,7 @@ open Microsoft.VisualStudio.FSharp.Editor.Logging
 
 
 [<Export>]
-type internal NavigateToMetadataService [<ImportingConstructor>] 
+type internal NavigateToSignatureMetadataService [<ImportingConstructor>] 
     (   checkerProvider: FSharpCheckerProvider
     ,   [<Import(typeof<SVsServiceProvider>)>]serviceProvider: IServiceProvider
     ,   projectInfoManager: ProjectInfoManager
@@ -83,95 +83,84 @@ type internal NavigateToMetadataService [<ImportingConstructor>]
 
     /// Find the range of the target system in the generated signature metadata file
     let tryFindExactLocation (filePath:string) (source:string) (currentSymbol:FSharpSymbolUse) (options:FSharpProjectOptions) sigCheck = asyncMaybe {
-            let checker = checkerProvider.Checker
-            let! symbolUses =
-                if not sigCheck then asyncMaybe{
-                    let! symbolUses = checker.GetAllUsesOfAllSymbolsInSourceString (options, filePath, source, false)  |> liftAsync
-                    debug "partial assmbly results for symbol - %A in '%s'"currentSymbol.Symbol.FullName filePath
-                    return symbolUses
-                } else asyncMaybe {
-                    debug "Original F# Project Options -\n\n %A" options
-                    let options = projectInfoManager.AdjustOptionsForSignature filePath options
-                    debug "\nAdjusted F# Project Options For Signature File-\n\n %A" options
-                    let! symbolUses = checker.GetAllUsesOfAllSymbolsInSourceString (options, filePath, source, false)  |> liftAsync
-                    
-                    debug "partial assmbly results for symbol - %A in '%s'" currentSymbol.Symbol.FullName filePath
-                    return symbolUses
-                }
+        let checker = checkerProvider.Checker
+        let options = if not sigCheck then options else projectInfoManager.AdjustOptionsForSignature filePath options
 
-            /// Try to reconstruct fully qualified name for the purpose of matching symbols
-            let tryGetFullyQualifiedName (fsSymbol:FSharpSymbol) =
-                let rec tryGetFullyQualifiedName (symbol: FSharpSymbol) = 
-                    Option.attempt (fun _ -> 
-                        match symbol with
-                        | TypedAstPatterns.FSharpEntity (entity, _, _) ->
-                            Some (sprintf "%s.%s" entity.AccessPath entity.DisplayName)
+        let! symbolUses = checker.GetAllUsesOfAllSymbolsInSourceString (options, filePath, source, false)  |> liftAsync
 
-                        | TypedAstPatterns.MemberFunctionOrValue mem ->
-                            tryGetFullyQualifiedName mem.EnclosingEntity
-                            |> Option.map (fun parent -> sprintf "%s.%s" parent mem.DisplayName)
+        /// Try to reconstruct fully qualified name for the purpose of matching symbols
+        let tryGetFullyQualifiedName (fsSymbol:FSharpSymbol) =
+            let rec tryGetFullyQualifiedName (symbol: FSharpSymbol) = 
+                Option.attempt (fun _ -> 
+                    match symbol with
+                    | TypedAstPatterns.FSharpEntity (entity, _, _) ->
+                        Some (sprintf "%s.%s" entity.AccessPath entity.DisplayName)
 
-                        | TypedAstPatterns.Field (field, _) ->
-                            tryGetFullyQualifiedName field.DeclaringEntity
-                            |> Option.map (fun parent -> sprintf "%s.%s" parent field.DisplayName)
+                    | TypedAstPatterns.MemberFunctionOrValue mem ->
+                        tryGetFullyQualifiedName mem.EnclosingEntity
+                        |> Option.map (fun parent -> sprintf "%s.%s" parent mem.DisplayName)
 
-                        | TypedAstPatterns.UnionCase uc ->
-                            match uc.ReturnType with
-                            | TypedAstPatterns.TypeWithDefinition entity ->
-                                tryGetFullyQualifiedName entity
-                                |> Option.map (fun parent -> sprintf "%s.%s" parent uc.DisplayName)
-                            | _ -> None
+                    | TypedAstPatterns.Field (field, _) ->
+                        tryGetFullyQualifiedName field.DeclaringEntity
+                        |> Option.map (fun parent -> sprintf "%s.%s" parent field.DisplayName)
 
-                        | TypedAstPatterns.ActivePatternCase case ->
-                            let group = case.Group
-                            group.EnclosingEntity
-                            |> Option.bind tryGetFullyQualifiedName
-                            |> Option.map (fun parent -> 
-                                let sb = StringBuilder().Append "|"                                
-                                for name in group.Names do
-                                    sb.AppendFormat("{0}|", name) |> ignore
-                                if not group.IsTotal then
-                                    sb.Append "_|" |> ignore
-                                sprintf "%s.( %O )" parent sb)
-                        | _ ->
-                            None)
-                    |> Option.flatten
-                    |> Option.orTry (fun _ -> Option.attempt (fun _ -> symbol.FullName))
-                try tryGetFullyQualifiedName fsSymbol
-                with _ -> None
+                    | TypedAstPatterns.UnionCase uc ->
+                        match uc.ReturnType with
+                        | TypedAstPatterns.TypeWithDefinition entity ->
+                            tryGetFullyQualifiedName entity
+                            |> Option.map (fun parent -> sprintf "%s.%s" parent uc.DisplayName)
+                        | _ -> None
 
-            let isLocalSymbol filePath (symbol: FSharpSymbol) =
-                symbol.DeclarationLocation 
-                |> Option.map (fun r -> String.Equals(r.FileName, filePath, StringComparison.OrdinalIgnoreCase)) 
-                |> Option.defaultValue false
+                    | TypedAstPatterns.ActivePatternCase case ->
+                        let group = case.Group
+                        group.EnclosingEntity
+                        |> Option.bind tryGetFullyQualifiedName
+                        |> Option.map (fun parent -> 
+                            let sb = StringBuilder().Append "|"                                
+                            for name in group.Names do
+                                sb.AppendFormat("{0}|", name) |> ignore
+                            if not group.IsTotal then
+                                sb.Append "_|" |> ignore
+                            sprintf "%s.( %O )" parent sb)
+                    | _ ->
+                        None)
+                |> Option.flatten
+                |> Option.orTry (fun _ -> Option.attempt (fun _ -> symbol.FullName))
+            try tryGetFullyQualifiedName fsSymbol
+            with _ -> None
 
-            let! currentSymbolFullName = tryGetFullyQualifiedName currentSymbol.Symbol
+        let isLocalSymbol filePath (symbol: FSharpSymbol) =
+            symbol.DeclarationLocation 
+            |> Option.map (fun r -> String.Equals(r.FileName, filePath, StringComparison.OrdinalIgnoreCase)) 
+            |> Option.defaultValue false
 
-            let! matchedSymbol = 
-                symbolUses 
-                |> Seq.groupBy (fun symbolUse  -> symbolUse.SymbolUse.Symbol)
-                |> Seq.collect (fun (_, uses) -> Seq.truncate 1 uses)
-                |> Seq.choose  (fun  symbolUse -> 
-                    match symbolUse.SymbolUse.Symbol with
-                    | TypedAstPatterns.FSharpEntity _
-                    | TypedAstPatterns.MemberFunctionOrValue _
-                    | TypedAstPatterns.ActivePatternCase _                   
-                    | TypedAstPatterns.UnionCase _
-                    | TypedAstPatterns.Field _ as symbol -> 
-                        match tryGetFullyQualifiedName symbol with
-                        | Some symbolFullName ->
-                            if symbolFullName = currentSymbolFullName 
-                              && isLocalSymbol filePath symbol then
-                                Some symbol
-                            else None
-                        | None -> None
-                    | _ -> None)
-                |> Seq.sortBy (fun symbol -> 
-                    symbol.DeclarationLocation |> Option.map (fun r -> r.StartLine, r.StartColumn))
-                |> Seq.tryHead
-            debug "matched symbol - %s\n Decl Location - %A\n Sig Location %A\n" matchedSymbol.FullName matchedSymbol.DeclarationLocation matchedSymbol.SignatureLocation
-            return! matchedSymbol.DeclarationLocation
-        }
+        let! currentSymbolFullName = tryGetFullyQualifiedName currentSymbol.Symbol
+
+        let! matchedSymbol = 
+            symbolUses 
+            |> Seq.groupBy (fun symbolUse  -> symbolUse.SymbolUse.Symbol)
+            |> Seq.collect (fun (_, uses) -> Seq.truncate 1 uses)
+            |> Seq.choose  (fun  symbolUse -> 
+                match symbolUse.SymbolUse.Symbol with
+                | TypedAstPatterns.FSharpEntity _
+                | TypedAstPatterns.MemberFunctionOrValue _
+                | TypedAstPatterns.ActivePatternCase _                   
+                | TypedAstPatterns.UnionCase _
+                | TypedAstPatterns.Field _ as symbol -> 
+                    match tryGetFullyQualifiedName symbol with
+                    | Some symbolFullName ->
+                        if symbolFullName = currentSymbolFullName 
+                            && isLocalSymbol filePath symbol then
+                            Some symbol
+                        else None
+                    | None -> None
+                | _ -> None)
+            |> Seq.sortBy (fun symbol -> 
+                symbol.DeclarationLocation |> Option.map (fun r -> r.StartLine, r.StartColumn))
+            |> Seq.tryHead
+        debug "matched symbol - %s\n Decl Location - %A\n Sig Location %A\n" matchedSymbol.FullName matchedSymbol.DeclarationLocation matchedSymbol.SignatureLocation
+        return! matchedSymbol.DeclarationLocation
+    }
 
     // Now the input is an entity or a member/value.
     // We always generate the full enclosing entity signature if the symbol is a member/value

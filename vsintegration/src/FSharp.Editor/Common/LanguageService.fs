@@ -274,6 +274,7 @@ type
     
 and 
     [<Guid(FSharpCommonConstants.languageServiceGuidString)>]
+    [<ProvideService (typeof<FSharpLanguageService>,ServiceName="F# Language Service")>]
     [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fs")>]
     [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsi")>]
     [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsx")>]
@@ -305,8 +306,7 @@ and
         | _ -> ()
 
     override this.Initialize() =
-        base.Initialize()
-
+        base.Initialize()        
         this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Completion.CompletionOptions.BlockForCompletionItems, FSharpCommonConstants.FSharpLanguageName, false)
         this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Shared.Options.ServiceFeatureOnOffOptions.ClosedFileDiagnostic, FSharpCommonConstants.FSharpLanguageName, Nullable false)
 
@@ -429,7 +429,6 @@ and
         base.SetupNewTextView(textView)
 
         let textViewAdapter = package.ComponentModel.GetService<IVsEditorAdaptersFactoryService>()
-               
         match textView.GetBuffer() with
         | (VSConstants.S_OK, textLines) ->
             let filename = VsTextLines.GetFilename textLines
