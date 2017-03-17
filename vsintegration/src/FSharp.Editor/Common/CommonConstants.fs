@@ -27,3 +27,9 @@ module internal FSharpCommonConstants =
     let FSharpLanguageServiceCallbackName = "F# Language Service"
     [<Literal>]
     let FSharpLanguageLongName = "FSharp"
+
+[<RequireQualifiedAccess>]
+module internal VisualStudioConstants =
+    open Microsoft.VisualStudio.Shell.Interop
+
+    let guidLogicalTextView = Guid(LogicalViewID.TextView)
