@@ -543,8 +543,7 @@ let mkByrefTy (g:TcGlobals) ty = TType_app (g.byref_tcr, [ty])
 
 let mkArrayTy (g:TcGlobals) rank ty m =
     if rank < 1 || rank > 32 then
-        // TODO : Provide a better message for zero/negative inputs here.
-        errorR(Error(FSComp.SR.tastopsMaxArrayThirtyTwo(),m));
+        errorR(Error(FSComp.SR.tastopsMaxArrayThirtyTwo(rank),m))
         TType_app (g.il_arr_tcr_map.[3], [ty])
     else
         TType_app (g.il_arr_tcr_map.[rank - 1], [ty])
