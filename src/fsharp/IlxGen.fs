@@ -2085,15 +2085,14 @@ and GenGetTupleField cenv cgbuf eenv (tupInfo,e,tys,n,m) sequel =
         let ar = tys.Length
         if ar <= 0 then failwith "getCompiledTupleItem"
         elif ar < maxTuple then
-            let tcr' = mkCompiledTupleTyconRef g tupInfo tys
+            let tcr' = mkCompiledTupleTyconRef g tupInfo ar
             let typ = GenNamedTyApp cenv.amap m eenv.tyenv tcr' tys
             mkGetTupleItemN g m n typ tupInfo e tys.[n]
-            
         else
             let tysA,tysB = List.splitAfter (goodTupleFields) tys
             let tyB = mkCompiledTupleTy g tupInfo tysB
             let tys' = tysA@[tyB]
-            let tcr' = mkCompiledTupleTyconRef g tupInfo tys'
+            let tcr' = mkCompiledTupleTyconRef g tupInfo (List.length tys')
             let typ' = GenNamedTyApp cenv.amap m eenv.tyenv tcr' tys'
             let n' = (min n goodTupleFields)
             let elast = mkGetTupleItemN g m n' typ' tupInfo e tys'.[n']
