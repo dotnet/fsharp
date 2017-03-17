@@ -1306,14 +1306,21 @@ namespace Microsoft.FSharp.Collections
                             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
                     override this.OnDispose () = () })
 
+        [<CompiledName("Concat")>]
+        let concat (sources:ISeq<#ISeq<'T>>) : ISeq<'T> =
+            Upcast.seq (Enumerable.ConcatEnumerable sources)
+
         [<CompiledName "Scan">]
         let inline scan (folder:'State->'T->'State) (initialState:'State) (source:ISeq<'T>) :ISeq<'State> =
-            source.PushTransform { new TransformFactory<'T,'State>() with
-                override __.Compose _ _ next =
-                    upcast { new Transform<'T,'V,'State>(next, initialState) with
-                        override this.ProcessNext (input:'T) : bool =
-                            this.State <- folder this.State input
-                            TailCall.avoid (next.ProcessNext this.State) } }
+            let head = ofSeq [| initialState |]
+            let tail = 
+                source.PushTransform { new TransformFactory<'T,'State>() with
+                    override __.Compose _ _ next =
+                        upcast { new Transform<'T,'V,'State>(next, initialState) with
+                            override this.ProcessNext (input:'T) : bool =
+                                this.State <- folder this.State input
+                                TailCall.avoid (next.ProcessNext this.State) } }
+            concat (ofSeq [| head ; tail |])
 
         [<CompiledName "Skip">]
         let skip (skipCount:int) (source:ISeq<'T>) : ISeq<'T> =
@@ -1545,10 +1552,6 @@ namespace Microsoft.FSharp.Collections
                                     Array.Copy (circularBuffer, idx, window, 0, windowSize - idx)
                                     Array.Copy (circularBuffer, 0, window, windowSize - idx, idx)
                                     TailCall.avoid (next.ProcessNext window) }}
-
-        [<CompiledName("Concat")>]
-        let concat (sources:ISeq<#ISeq<'T>>) : ISeq<'T> =
-            Upcast.seq (Enumerable.ConcatEnumerable sources)
 
         [<CompiledName("Append")>]
         let append (source1:ISeq<'T>) (source2: ISeq<'T>) : ISeq<'T> =
