@@ -196,29 +196,42 @@ type internal FSharpCompletionProvider
 
             let maxHints = if mruItems.Values.Count = 0 then 0 else Seq.max mruItems.Values
 
-            sortedDeclItems |> Array.iteri (fun number declarationItem ->
-                let glyph = CommonRoslynHelpers.FSharpGlyphToRoslynGlyph (declarationItem.Glyph, declarationItem.Accessibility)
+            sortedDeclItems |> Array.iteri (fun number declItem ->
+                let glyph = CommonRoslynHelpers.FSharpGlyphToRoslynGlyph (declItem.Glyph, declItem.Accessibility)
                 let name =
                     match entityKind with
-                    | Some EntityKind.Attribute when declarationItem.IsAttribute && declarationItem.Name.EndsWith "Attribute"  ->
-                        declarationItem.Name.[0..declarationItem.Name.Length - attributeSuffixLength - 1] 
-                    | _ -> declarationItem.Name
+                    | Some EntityKind.Attribute when declItem.IsAttribute && declItem.Name.EndsWith "Attribute"  ->
+                        declItem.Name.[0..declItem.Name.Length - attributeSuffixLength - 1] 
+                    | _ when not declItem.IsResolvable ->
+                        let ns =
+                            match declItem.FullName.LastIndexOf '.' with
+                            | -1 -> ""
+                            | idx -> declItem.FullName.[..idx - 1]
 
-                let completionItem = CommonCompletionItem.Create(name, glyph = Nullable glyph, rules = getRules()).AddProperty(FullNamePropName, declarationItem.FullName)
+                        sprintf "%s (open %s)" declItem.Name ns
+                    | _ -> declItem.Name
+
+                let filterText =
+                    if declItem.IsResolvable then null
+                    else declItem.Name
+
+                let completionItem = 
+                    CommonCompletionItem.Create(name, glyph = Nullable glyph, rules = getRules(), filterText = filterText)
+                                        .AddProperty(FullNamePropName, declItem.FullName)
                         
                 let completionItem =
-                    match declarationItem.Kind with
+                    match declItem.Kind with
                     | CompletionItemKind.Method (isExtension = true) ->
                           completionItem.AddProperty(IsExtensionMemberPropName, "")
                     | _ -> completionItem
                 
                 let completionItem =
-                    if declarationItem.Name <> declarationItem.NameInCode then
-                        completionItem.AddProperty(NameInCodePropName, declarationItem.NameInCode)
+                    if declItem.Name <> declItem.NameInCode then
+                        completionItem.AddProperty(NameInCodePropName, declItem.NameInCode)
                     else completionItem
 
                 let priority = 
-                    match mruItems.TryGetValue declarationItem.FullName with
+                    match mruItems.TryGetValue declItem.FullName with
                     | true, hints -> maxHints - hints
                     | _ -> number + maxHints + 1
 
@@ -229,7 +242,7 @@ type internal FSharpCompletionProvider
                 let completionItem = completionItem.WithSortText(sortText)
 
                 declarationItemsCache.Remove(completionItem.DisplayText) |> ignore // clear out stale entries if they exist
-                declarationItemsCache.Add(completionItem.DisplayText, declarationItem)
+                declarationItemsCache.Add(completionItem.DisplayText, declItem)
                 results.Add(completionItem))
             
             //for e in allEntitites do

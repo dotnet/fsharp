@@ -1328,7 +1328,8 @@ module internal ItemDescriptionsImpl =
             | Item.MethodGroup (_, minfos, _) when minfos |> List.forall (fun minfo -> minfo.IsExtensionMember) -> FSharpGlyph.ExtensionMethod
             | Item.MethodGroup _ -> FSharpGlyph.Method
             | Item.TypeVar _ 
-            | Item.Types _ -> FSharpGlyph.Class   
+            | Item.Types _ 
+            | Item.UnqualifiedType _ -> FSharpGlyph.Class   
             | Item.ModuleOrNamespaces(modref::_) -> 
                   if modref.IsNamespace then FSharpGlyph.NameSpace else FSharpGlyph.Module
             | Item.ArgName _ -> FSharpGlyph.Variable
@@ -1496,7 +1497,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
         let decls = 
             // Filter out duplicate names
             items |> List.map (fun (nm,itemsWithSameName) -> 
-                match itemsWithSameName with
+                match itemsWithSameName |> List.sortBy (fun x -> not x.IsResolvable) with
                 | [] -> failwith "Unexpected empty bag"
                 | item :: _ as items -> 
                     let glyph = ItemDescriptionsImpl.GlyphOfItem(denv, item.Item)
