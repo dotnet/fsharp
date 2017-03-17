@@ -356,7 +356,7 @@ namespace Microsoft.FSharp.Collections
 
                 abstract member Append : (ISeq<'T>) -> ISeq<'T>
 
-                default this.Append source = Upcast.seq (AppendEnumerable [this; source])
+                default this.Append source = Upcast.seq (AppendEnumerable [source; this])
 
                 interface IEnumerable with
                     member this.GetEnumerator () : IEnumerator =
