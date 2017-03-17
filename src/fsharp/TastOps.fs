@@ -614,13 +614,15 @@ let reduceTyconAbbrev (tycon:Tycon) tyargs =
 let reduceTyconRefAbbrev (tcref:TyconRef) tyargs = 
     reduceTyconAbbrev tcref.Deref tyargs
 
-let reduceTyconMeasureableOrProvided (g:TcGlobals) (tycon:Tycon) tyargs = 
+let reduceTyconMeasureableOrProvided (g:TcGlobals) (tycon:Tycon) tyargs =
     let repr = tycon.TypeReprInfo
     match repr with 
     | TMeasureableRepr ty -> 
         if isNil tyargs then ty else instType (mkTyconInst tycon tyargs) ty
 #if EXTENSIONTYPING
     | TProvidedTypeExtensionPoint info when info.IsErased -> info.BaseTypeForErased (range0, g.obj_ty)
+#else
+    ignore g  // otherwise g would be unused
 #endif
     | _ -> invalidArg "tc" "this type definition is not a refinement" 
 
