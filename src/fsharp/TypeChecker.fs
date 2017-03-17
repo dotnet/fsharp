@@ -122,7 +122,7 @@ let IsSecurityAttribute (g: TcGlobals) amap (casmap : Dictionary<Stamp,bool>) (A
     | None -> false
     | Some attr ->
         match attr.TyconRef.TryDeref with
-        | Some _ -> 
+        | VSome _ -> 
            let tcs = tcref.Stamp
            if casmap.ContainsKey(tcs) then
              casmap.[tcs]
@@ -130,7 +130,7 @@ let IsSecurityAttribute (g: TcGlobals) amap (casmap : Dictionary<Stamp,bool>) (A
              let exists = ExistsInEntireHierarchyOfType (fun t -> typeEquiv g t (mkAppTy attr.TyconRef [])) g amap m AllowMultiIntfInstantiations.Yes (mkAppTy tcref [])
              casmap.[tcs] <- exists
              exists
-        | _ -> false  
+        | VNone -> false  
 
 let IsSecurityCriticalAttribute g (Attrib(tcref,_,_,_,_,_,_)) =
     (tyconRefEq g tcref g.attrib_SecurityCriticalAttribute.TyconRef || tyconRefEq g tcref g.attrib_SecuritySafeCriticalAttribute.TyconRef)
@@ -16689,8 +16689,8 @@ let ApplyAssemblyLevelAutoOpenAttributeToTcEnv g amap (ccu: CcuThunk) scopem env
     let h,t = List.frontAndBack p 
     let modref = mkNonLocalTyconRef (mkNonLocalEntityRef ccu (Array.ofList h))  t
     match modref.TryDeref with 
-    | None ->  warn()
-    | Some _ -> OpenModulesOrNamespaces TcResultsSink.NoSink g amap scopem root env [modref]
+    | VNone ->  warn()
+    | VSome _ -> OpenModulesOrNamespaces TcResultsSink.NoSink g amap scopem root env [modref]
 
 // Add the CCU and apply the "AutoOpen" attributes
 let AddCcuToTcEnv(g,amap,scopem,env,assemblyName,ccu,autoOpens,internalsVisible) = 
