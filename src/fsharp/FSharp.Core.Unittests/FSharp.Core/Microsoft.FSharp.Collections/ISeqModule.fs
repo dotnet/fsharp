@@ -56,13 +56,12 @@ type ISeqModule() =
         let cachedSeq = 
             ISeq.initInfinite (fun i -> evaluatedItems := i :: !evaluatedItems; i)
             |> Seq.cache
-            |> ISeq.ofSeq
         
         // Verify no items have been evaluated from the ISeq yet
         Assert.AreEqual(List.length !evaluatedItems, 0)
         
         // Force evaluation of 10 elements
-        ISeq.take 10 cachedSeq
+        Seq.take 10 cachedSeq
         |> Seq.toList
         |> ignore
         
@@ -70,7 +69,7 @@ type ISeqModule() =
         Assert.AreEqual(List.length !evaluatedItems, 10)
 
         // Force evaluation of 10 elements
-        ISeq.take 10 cachedSeq
+        Seq.take 10 cachedSeq
         |> Seq.toList
         |> ignore
         
@@ -82,7 +81,7 @@ type ISeqModule() =
         (box cachedSeq :?> System.IDisposable) .Dispose()
         
         // Force evaluation of 10 elements
-        ISeq.take 10 cachedSeq
+        Seq.take 10 cachedSeq
         |> Seq.toList
         |> ignore
         
