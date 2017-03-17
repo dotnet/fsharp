@@ -84,14 +84,13 @@ module internal CommonRoslynHelpers =
     let CollectTaggedText (list: List<_>) t = list.Add(TaggedTextToRoslyn t)
 
     let StartAsyncAsTask cancellationToken computation =
-        let computation =
-            async {
-                try
-                    return! computation
-                with e ->
-                    Assert.Exception(e)
-                    return Unchecked.defaultof<_>
-            }
+        let computation = async { 
+            try 
+                return! computation
+            with e ->
+                Assert.Exception e
+                return Unchecked.defaultof<_>
+        }
         Async.StartAsTask(computation, TaskCreationOptions.None, cancellationToken)
 
     let StartAsyncUnitAsTask cancellationToken (computation:Async<unit>) = 

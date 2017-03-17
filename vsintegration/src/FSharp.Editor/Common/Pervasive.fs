@@ -193,6 +193,11 @@ let inline liftAsync (computation : Async<'T>) : Async<'T option> =
         return Some a 
     }
 
+
+type Microsoft.FSharp.Control.Async with
+    static member Raise (e : #exn) = 
+        Async.FromContinuations(fun (_,econt,_) -> econt e)
+
 module Async =
     let map (f: 'T -> 'U) (a: Async<'T>) : Async<'U> =
         async {
