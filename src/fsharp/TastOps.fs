@@ -1363,7 +1363,7 @@ let applyForallTy g ty tyargs =
 
 let reduceIteratedFunTy g ty args = 
     List.fold (fun ty _ -> 
-        if not (isFunTy g ty) then failwith "reduceIteratedFunTy";
+        if not (isFunTy g ty) then failwith "reduceIteratedFunTy"
         snd (destFunTy g ty)) ty args
 
 let applyTyArgs g functy tyargs = 
@@ -1739,7 +1739,7 @@ let unionFreeTypars s1 s2 =
     else Zset.union s1 s2
 
 let emptyFreeTyvars =  
-    { FreeTycons = emptyFreeTycons; 
+    { FreeTycons = emptyFreeTycons
       /// The summary of values used as trait solutions
       FreeTraitSolutions = emptyFreeLocals
       FreeTypars = emptyFreeTypars}
@@ -1747,8 +1747,8 @@ let emptyFreeTyvars =
 let unionFreeTyvars fvs1 fvs2 = 
     if fvs1 === emptyFreeTyvars then fvs2 else 
     if fvs2 === emptyFreeTyvars then fvs1 else
-    { FreeTycons           = unionFreeTycons fvs1.FreeTycons fvs2.FreeTycons;
-      FreeTraitSolutions   = unionFreeLocals fvs1.FreeTraitSolutions fvs2.FreeTraitSolutions;
+    { FreeTycons           = unionFreeTycons fvs1.FreeTycons fvs2.FreeTycons
+      FreeTraitSolutions   = unionFreeLocals fvs1.FreeTraitSolutions fvs2.FreeTraitSolutions
       FreeTypars           = unionFreeTypars fvs1.FreeTypars fvs2.FreeTypars }
 
 type FreeVarOptions = 
@@ -1830,19 +1830,18 @@ let CollectLocals = CollectTyparsAndLocals
 let accFreeLocalTycon opts x acc = 
     if not opts.includeLocalTycons then acc else
     if Zset.contains x acc.FreeTycons then acc else 
-    {acc with FreeTycons = Zset.add x acc.FreeTycons } 
+    { acc with FreeTycons = Zset.add x acc.FreeTycons } 
 
 let accFreeTycon opts (tcr:TyconRef) acc = 
-    if not opts.includeLocalTycons then acc else
-    match tcr.IsLocalRef with 
-    | true -> accFreeLocalTycon opts tcr.PrivateTarget acc
-    | _ -> acc
+    if not opts.includeLocalTycons then acc
+    elif tcr.IsLocalRef then accFreeLocalTycon opts tcr.PrivateTarget acc
+    else acc
 
 let rec boundTypars opts tps acc = 
     // Bound type vars form a recursively-referential set due to constraints, e.g.  A : I<B>, B : I<A> 
     // So collect up free vars in all constraints first, then bind all variables 
     let acc = List.foldBack (fun (tp:Typar) acc -> accFreeInTyparConstraints opts tp.Constraints acc) tps acc
-    List.foldBack (fun tp acc -> {acc with FreeTypars = Zset.remove tp acc.FreeTypars}) tps acc
+    List.foldBack (fun tp acc -> { acc with FreeTypars = Zset.remove tp acc.FreeTypars}) tps acc
 
 and accFreeInTyparConstraints opts cxs acc =
     List.foldBack (accFreeInTyparConstraint opts) cxs acc
@@ -1885,22 +1884,21 @@ and accFreeInTraitSln opts sln acc =
 
 and accFreeLocalValInTraitSln _opts v fvs =
     if Zset.contains v fvs.FreeTraitSolutions then fvs 
-    else 
-        let fvs = {fvs with FreeTraitSolutions=Zset.add v fvs.FreeTraitSolutions}
-        //let fvs =  accFreeInVal opts v fvs
-        fvs 
+    else { fvs with FreeTraitSolutions = Zset.add v fvs.FreeTraitSolutions}
+
 and accFreeValRefInTraitSln opts (vref:ValRef) fvs = 
-    match vref.IsLocalRef with 
-    | true -> accFreeLocalValInTraitSln opts vref.PrivateTarget fvs
-    // non-local values do not contain free variables 
-    | _ -> fvs
+    if vref.IsLocalRef then
+        accFreeLocalValInTraitSln opts vref.PrivateTarget fvs
+    else
+        // non-local values do not contain free variables 
+        fvs
 
 and accFreeTyparRef opts (tp:Typar) acc = 
     if not opts.includeTypars then acc else
-    if Zset.contains tp acc.FreeTypars then acc
+    if Zset.contains tp acc.FreeTypars then acc 
     else 
-      accFreeInTyparConstraints opts tp.Constraints
-        {acc with FreeTypars=Zset.add tp acc.FreeTypars}
+        accFreeInTyparConstraints opts tp.Constraints
+          { acc with FreeTypars = Zset.add tp acc.FreeTypars}
 
 and accFreeInType opts ty acc  = 
     match stripTyparEqns ty with 
