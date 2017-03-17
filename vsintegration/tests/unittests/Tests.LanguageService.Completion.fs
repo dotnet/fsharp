@@ -5987,11 +5987,11 @@ let rec f l =
                     let dog = new Dog()
                 namespace MyNamespace2
                 module MyModule2 = 
-                    let typeFunc<MyNamespace1.MyModule(*Maftervariable2*)> = [1; 2; 3]
+                    let typeFunc<[<MyNamespace1.MyModule(*Maftervariable2*)>] 'a> = [1; 2; 3]
                     let f (x:MyNamespace1.MyModule(*Maftervariable4*)) = 10
                     let y = int System.IO(*Maftervariable5*)""",
             marker = "(*Maftervariable2*)",
-            list = ["DuType";"Tag"])
+            list = ["DuType";"Pet";"Dog"])
 
     [<Test>]
     member this.``VariableIdentifier.MethodsInheritFomeBase``() = 
@@ -6213,7 +6213,7 @@ let rec f l =
                 module MyModule2 =     
                     let foo = MyNamespace1.MyModule(*Mtypeparameter1*)
                     let f (x:int) = MyNamespace1.MyModule.DuType(*Mtypeparameter2*)    
-                    let typeFunc<MyNamespace1.MyModule(*Mtypeparameter3*)> = 10""",
+                    let typeFunc<[<MyNamespace1.MyModule(*Mtypeparameter3*)>] 'a> = 10""",
             marker = "(*Mtypeparameter1*)",
             list = ["Dog";"DuType"])
 
@@ -6234,7 +6234,7 @@ let rec f l =
                 module MyModule2 =     
                     let foo = MyNamespace1.MyModule(*Mtypeparameter1*)
                     let f (x:int) = MyNamespace1.MyModule.DuType(*Mtypeparameter2*)    
-                    let typeFunc<MyNamespace1.MyModule(*Mtypeparameter3*)> = 10""",
+                    let typeFunc<[<MyNamespace1.MyModule(*Mtypeparameter3*)>] 'a> = 10""",
             marker = "(*Mtypeparameter2*)",
             list = ["Tag"])
 
@@ -6255,7 +6255,7 @@ let rec f l =
                 module MyModule2 =     
                     let foo = MyNamespace1.MyModule(*Mtypeparameter1*)
                     let f (x:int) = MyNamespace1.MyModule.DuType(*Mtypeparameter2*)    
-                    let typeFunc<MyNamespace1.MyModule(*Mtypeparameter3*)> = 10""",
+                    let typeFunc<[<MyNamespace1.MyModule(*Mtypeparameter3*)>] 'a> = 10""",
             marker = "(*Mtypeparameter3*)",
             list = ["Dog";"DuType"])
 
