@@ -1461,7 +1461,29 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "TryItem">]
         let tryItem index (source:ISeq<'T>) =
             if index < 0 then None else
-            source |> skip index |> tryHead
+                source.PushTransform { new TransformFactory<'T,'T>() with
+                    override __.Compose _ _ next =
+                        let mutable this = Unchecked.defaultof<Transform<'T,'U,int>>
+                        let skipper = 
+                            { new Transform<'T,'U,int>(next,(*count*)0) with
+                                // member this.count = this.State
+                                override this.ProcessNext (input:'T) : bool =
+                                    if this.State < index then
+                                        this.State <- this.State + 1
+                                        false
+                                    else
+                                        TailCall.avoid (next.ProcessNext input)
+
+                            interface ISkipable with
+                                member __.CanSkip () =
+                                    if this.State < index then
+                                        this.State <- this.State + 1
+                                        true
+                                    else
+                                        false }
+                        this <- skipper
+                        upcast this }
+                |> tryHead
 
         [<CompiledName "TryPick">]
         let inline tryPick f (source:ISeq<'T>)  =
