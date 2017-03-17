@@ -118,13 +118,15 @@ type internal FSharpDeclarationListItem =
     member IsOwnMember : bool
     member MinorPriority : int
     member FullName : string
+    member IsResolvable : bool
 
 type internal CompletionItem =
     { Item: Item
       Kind: CompletionItemKind
       IsOwnMember: bool
       MinorPriority: int
-      Type: TyconRef option }
+      Type: TyconRef option 
+      IsResolvable: bool }
 
 [<Sealed>]
 /// Represents a set of declarations in F# source code, with information attached ready for display by an editor.

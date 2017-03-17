@@ -212,7 +212,7 @@ type internal FSharpCheckFileResults =
     ///    and assume that we're going to repeat the operation later on.
     /// </param>
 
-    member GetDeclarationListInfo : ParsedFileResultsOpt:FSharpParseFileResults option * line: int * colAtEndOfPartialName: int * lineText:string * qualifyingNames: string list * partialName: string * ?hasTextChangedSinceLastTypecheck: (obj * range -> bool) -> Async<FSharpDeclarationListInfo>
+    member GetDeclarationListInfo : ParsedFileResultsOpt:FSharpParseFileResults option * line: int * colAtEndOfPartialName: int * lineText:string * qualifyingNames: string list * partialName: string * allItems: Item list * ?hasTextChangedSinceLastTypecheck: (obj * range -> bool) -> Async<FSharpDeclarationListInfo>
 
     /// <summary>Get the items for a declaration list in FSharpSymbol format</summary>
     ///
