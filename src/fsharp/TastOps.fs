@@ -1106,7 +1106,6 @@ let mkCompGenBind v e = TBind(v,e,NoSequencePointAtStickyBinding)
 
 /// Make bindings that are compiler generated (though the variables may not be - e.g. they may be lambda arguments in a beta reduction)
 let mkCompGenBinds vs es = 
-    if List.length vs <> List.length es then failwith "mkCompGenBinds: invalid argument";
     List.map2 mkCompGenBind vs es
 
 // n.b. type gives type of body 
@@ -1119,7 +1118,6 @@ let mkCompGenLet m v x body = mkLetBind m (mkCompGenBind v x) body
 let mkInvisibleBind v e = TBind(v,e,NoSequencePointAtInvisibleBinding)
 let mkInvisibleLet m v x body = mkLetBind m (mkInvisibleBind v x) body
 let mkInvisibleBinds (vs: Val list) (es: Expr list) = 
-    if vs.Length <> es.Length then failwith "mkInvisibleBinds: invalid argument";
     List.map2 mkInvisibleBind vs es
 
 let mkInvisibleLets m vs xs body = mkLetsBind m (mkInvisibleBinds vs xs) body
