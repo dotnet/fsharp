@@ -613,8 +613,10 @@ let reduceTyconAbbrev (tycon:Tycon) tyargs =
 let reduceTyconRefAbbrev (tcref:TyconRef) tyargs = 
     reduceTyconAbbrev tcref.Deref tyargs
 
-let reduceTyconMeasureableOrProvided (g:TcGlobals) (tycon:Tycon) tyargs = 
-    ignore g
+let reduceTyconMeasureableOrProvided (g:TcGlobals) (tycon:Tycon) tyargs =
+#if !EXTENSIONTYPING
+    ignore g  // otherwise g would be unused
+#endif
     let repr = tycon.TypeReprInfo
     match repr with 
     | TMeasureableRepr ty -> 
