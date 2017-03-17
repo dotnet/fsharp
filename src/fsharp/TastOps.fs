@@ -678,7 +678,7 @@ let rec stripTyEqnsAndErase eraseFuncAndTuple (g:TcGlobals) ty =
             ty
     | TType_fun(a,b) when eraseFuncAndTuple -> TType_app(g.fastFunc_tcr,[ a; b]) 
     | TType_tuple(tupInfo,l) when eraseFuncAndTuple -> mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) l
-    | TType_anon(anonInfo,l) when eraseFuncAndTuple -> 
+    | TType_anon(anonInfo,l) when eraseFuncAndTuple && anonInfo.IsErased -> 
         // DEMONSTRATOR: for now we're using tuples
         mkCompiledTupleTy g (evalAnonInfoIsStruct anonInfo) l
     | ty -> ty

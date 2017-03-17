@@ -3557,6 +3557,11 @@ and TypeInst = TType list
 and TTypes = TType list 
 and AnonRecdTypeInfo = 
     | AnonRecdTypeInfo of CcuThunk option * TupInfo * string[] 
+    member x.Assembly = (let (AnonRecdTypeInfo(a,_,_)) = x in a)
+    member x.TupInfo = (let (AnonRecdTypeInfo(_,b,_)) = x in b)
+    member x.IsErased = x.Assembly.IsNone
+    member x.Names = (let (AnonRecdTypeInfo(_,_,c)) = x in c)
+
 and [<RequireQualifiedAccess>] TupInfo = 
     /// Some constant, e.g. true or false for tupInfo
     | Const of bool

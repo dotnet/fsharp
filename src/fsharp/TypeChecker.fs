@@ -728,9 +728,8 @@ let UnifyStructTupleType contextInfo cenv denv m ty ps =
 
 /// Optimized unification routine that avoids creating new inference 
 /// variables unnecessarily
-let UnifyAnonRecdType contextInfo cenv denv m ty anonInfo = 
-    let (AnonRecdTypeInfo(_ccu, _tupInfo, nms)) = anonInfo
-    let ptys = NewInferenceTypes (Array.toList nms)
+let UnifyAnonRecdType contextInfo cenv denv m ty (anonInfo: AnonRecdTypeInfo) = 
+    let ptys = NewInferenceTypes (Array.toList anonInfo.Names)
     let ty2 = TType_anon (anonInfo, ptys)
     AddCxTypeEqualsType contextInfo denv cenv.css m ty ty2
     ptys

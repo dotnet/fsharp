@@ -2724,7 +2724,7 @@ let CodegenWitnessThatTypSupportsTraitConstraint tcVal g amap m (traitInfo:Trait
             ResultD res
         | Choice3Of5 (anonInfo, tinst, i) -> 
             let res = 
-                let (AnonRecdTypeInfo(_, tupInfo, _)) = anonInfo
+                let tupInfo = anonInfo.TupInfo
                 if evalTupInfoIsStruct tupInfo && isByrefTy g (tyOfExpr g argExprs.[0]) then 
                     Some (mkAnonRecdFieldGetViaExprAddr (anonInfo, argExprs.[0], tinst, i, m))
                 else 

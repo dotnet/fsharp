@@ -685,9 +685,7 @@ module internal ItemDescriptionsImpl =
         | Item.Value vref | Item.CustomBuilder (_,vref) -> fullDisplayTextOfValRef vref
         | Item.UnionCase (ucinfo,_) -> fullDisplayTextOfUnionCaseRef  ucinfo.UnionCaseRef
         | Item.ActivePatternResult(apinfo, _ty, idx, _) -> apinfo.Names.[idx]
-        | Item.AnonRecdField (anonInfo, _, n)  -> 
-            let (AnonRecdTypeInfo(_ccu, _tupInfo, nms)) = anonInfo
-            nms.[n]
+        | Item.AnonRecdField (anonInfo, _, n)  -> anonInfo.Names.[n]
         | Item.ActivePatternCase apref -> FullNameOfItem g (Item.Value apref.ActivePatternVal)  + "." + apref.Name 
         | Item.ExnCase ecref -> fullDisplayTextOfExnRef ecref 
         | Item.RecdField rfinfo -> fullDisplayTextOfRecdFieldRef  rfinfo.RecdFieldRef

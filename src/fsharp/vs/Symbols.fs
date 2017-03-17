@@ -766,9 +766,7 @@ and FSharpField(cenv, d: FSharpFieldData)  =
         match d.TryRecdField with 
         | Choice1Of3 r -> r.Name
         | Choice2Of3 f -> f.FieldName
-        | Choice3Of3 (anonInfo, _tinst, n) -> 
-            let (AnonRecdTypeInfo(_ccu, _tupInfo, nms)) = anonInfo
-            nms.[n]
+        | Choice3Of3 (anonInfo, _tinst, n) -> anonInfo.Names.[n]
 
     member __.IsCompilerGenerated = 
         if isUnresolved() then false else 

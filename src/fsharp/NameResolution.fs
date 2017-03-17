@@ -234,7 +234,7 @@ type Item =
         | Item.UnionCase(uinfo,_) -> DecompileOpName uinfo.UnionCase.DisplayName
         | Item.ExnCase tcref -> tcref.LogicalName
         | Item.RecdField rfinfo -> DecompileOpName rfinfo.RecdField.Name
-        | Item.AnonRecdField (AnonRecdTypeInfo(_, _, nms), _tys, i) -> nms.[i]
+        | Item.AnonRecdField (anonInfo, _tys, i) -> anonInfo.Names.[i]
         | Item.NewDef id -> id.idText
         | Item.ILField finfo -> finfo.FieldName
         | Item.Event einfo -> einfo.EventName
@@ -1946,8 +1946,7 @@ let TryFindUnionCaseOfType g typ nm =
 let TryFindAnonRecdFieldOfType g typ nm =
     match tryDestAnonRecdTy g typ with 
     | Some (anonInfo, tys) -> 
-        let (AnonRecdTypeInfo(_,_,nms)) = anonInfo 
-        match Array.tryFindIndex (fun x -> x = nm) nms with 
+        match anonInfo.Names |> Array.tryFindIndex (fun x -> x = nm) with 
         | Some i -> Some (Item.AnonRecdField(anonInfo, tys, i))
         | None -> None
     | None -> None

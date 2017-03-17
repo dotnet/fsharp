@@ -1928,11 +1928,11 @@ opt_classDefn:
 
 /* An 'inherits' definition in an object type definition */
 inheritsDefn: 
-  | INHERIT appTypeNonAtomicDeprecated optBaseSpec
+  | INHERIT atomTypeNonAtomicDeprecated optBaseSpec
      { let mDecl = unionRanges (rhs parseState 1) (($2): SynType).Range 
        SynMemberDefn.Inherit($2,$3,mDecl) }
 
-  | INHERIT appTypeNonAtomicDeprecated opt_HIGH_PRECEDENCE_APP atomicExprAfterType optBaseSpec
+  | INHERIT atomTypeNonAtomicDeprecated opt_HIGH_PRECEDENCE_APP atomicExprAfterType optBaseSpec
      { let mDecl = unionRanges (rhs parseState 1) $4.Range 
        SynMemberDefn.ImplicitInherit($2,$4,$5,mDecl) }
 
@@ -2067,8 +2067,12 @@ braceFieldDeclList:
 anonRecdType:
     | STRUCT braceBarFieldDeclListCore
         { $2,true }
+    | NEW STRUCT braceBarFieldDeclListCore
+        { (true, snd $3),true }
     | braceBarFieldDeclListCore
         { $1,false }
+    | NEW braceBarFieldDeclListCore
+        { (true, snd $2),false }
     | STRUCT braceLessFieldDeclListCore
         { $2,true }
     | braceLessFieldDeclListCore
@@ -2807,7 +2811,7 @@ constrPattern:
       { let vis,lid = $1 in SynPat.LongIdent (lid,None,$2, $4,vis,lhs parseState) }
   | atomicPatternLongIdent opt_explicitValTyparDecls2 HIGH_PRECEDENCE_BRACK_APP atomicPatsOrNamePatPairs                  
       { let vis,lid = $1 in SynPat.LongIdent (lid,None,$2, $4,vis,lhs parseState) }
-  | COLON_QMARK atomType  %prec pat_isinst 
+  | COLON_QMARK atomTypeOrAnonRecdType  %prec pat_isinst 
       { SynPat.IsInst($2,lhs parseState) }
   | atomicPattern 
       { $1 }
@@ -3552,12 +3556,16 @@ minusExpr:
       { SynExpr.AddressOf(true,$2,rhs parseState 1,unionRanges (rhs parseState 1) $2.Range) } 
   | AMP_AMP  minusExpr   
       { SynExpr.AddressOf(false,$2,rhs parseState 1, unionRanges (rhs parseState 1) $2.Range) } 
-  | NEW appTypeNonAtomicDeprecated  opt_HIGH_PRECEDENCE_APP atomicExprAfterType 
+  | NEW atomTypeNonAtomicDeprecated  opt_HIGH_PRECEDENCE_APP atomicExprAfterType 
       { SynExpr.New(false,$2,$4,unionRanges (rhs parseState 1) $4.Range) }
-  | NEW appTypeNonAtomicDeprecated opt_HIGH_PRECEDENCE_APP error   
+  | NEW atomTypeNonAtomicDeprecated opt_HIGH_PRECEDENCE_APP error   
       { SynExpr.New(false,$2,arbExpr("minusExpr",(rhs parseState 4)),unionRanges (rhs parseState 1) ($2).Range) }
   | NEW error
       { arbExpr("minusExpr2",(rhs parseState 1)) }
+  | NEW STRUCT braceBarExprCore 
+      { (match $3 true with SynExpr.AnonRecd(_,b,c,d) -> SynExpr.AnonRecd(true,b,c,d) | x -> x) }
+  | NEW braceBarExprCore
+      { (match $2 false with SynExpr.AnonRecd(_,b,c,d) -> SynExpr.AnonRecd(true,b,c,d) | x -> x) }
   | UPCAST  minusExpr 
       { SynExpr.InferredUpcast($2,unionRanges (rhs parseState 1) $2.Range) }   
   | DOWNCAST  minusExpr 
@@ -3983,7 +3991,7 @@ opt_inlineAssemblyReturnTypes:
      {  [] }
 
 recdExpr:
-  | INHERIT appTypeNonAtomicDeprecated opt_HIGH_PRECEDENCE_APP opt_atomicExprAfterType recdExprBindings opt_seps_recd
+  | INHERIT atomTypeNonAtomicDeprecated opt_HIGH_PRECEDENCE_APP opt_atomicExprAfterType recdExprBindings opt_seps_recd
      { let arg = match $4 with None -> mkSynUnit (lhs parseState) | Some e -> e 
        let l = $5
        let dummyField = mkRecdField (LongIdentWithDots([], [])) // dummy identifier, it will be discarded
@@ -4109,19 +4117,19 @@ objExpr:
        let fullRange = match $3 with [] -> (rhs parseState 1) | _ -> (rhs2 parseState 1 3)
        fullRange, (fun m -> let (a,b) = $1 in SynExpr.ObjExpr(a,b,[],$3, mNewExpr, m)) }
 
-  | NEW appTypeNonAtomicDeprecated
+  | NEW atomTypeNonAtomicDeprecated
      { let mNewExpr = rhs parseState 1 
        (rhs2 parseState 1 2), (fun m -> let (a,b) = $2,None in SynExpr.ObjExpr(a,b,[],[], mNewExpr, m)) }
 
 
 objExprBaseCall:
-  | NEW appTypeNonAtomicDeprecated  opt_HIGH_PRECEDENCE_APP atomicExprAfterType baseSpec
+  | NEW atomTypeNonAtomicDeprecated  opt_HIGH_PRECEDENCE_APP atomicExprAfterType baseSpec
      { ($2, Some($4,Some($5))) }
 
-  | NEW appTypeNonAtomicDeprecated  opt_HIGH_PRECEDENCE_APP atomicExprAfterType 
+  | NEW atomTypeNonAtomicDeprecated  opt_HIGH_PRECEDENCE_APP atomicExprAfterType 
      { ($2, Some($4,None)) }
 
-  | NEW appTypeNonAtomicDeprecated
+  | NEW atomTypeNonAtomicDeprecated
      { $2,None }
  
 
@@ -4405,13 +4413,6 @@ tupleOrQuotTypeElements:
   | appType %prec prec_tuptyptail_prefix 
     { [(false,$1)] }
 
-tupleTypeElements:
-  | appType STAR tupleTypeElements              
-    { $1 :: $3 }
-
-  | appType %prec prec_tuptyptail_prefix 
-    { [$1] }
-
 appTypeCon:
   | path %prec prec_atomtyp_path 
     { SynType.LongIdent($1) }
@@ -4485,57 +4486,37 @@ typeArgListElements:
       { [], [] }
 
 powerType:
-  | atomType
+  | atomTypeOrAnonRecdType
     { $1 }
 
-  | atomType INFIX_AT_HAT_OP atomicRationalConstant
+  | atomTypeOrAnonRecdType INFIX_AT_HAT_OP atomicRationalConstant
      { if $2 <> "^" && $2 <> "^-" then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedInfixOperator());
        if $2 = "^-" then SynType.MeasurePower($1, SynRationalConst.Negate($3), lhs parseState)
        else SynType.MeasurePower($1, $3, lhs parseState) }
 
+
 /* Like appType but gives a deprecation error when a non-atomic type is used */
-appTypeNonAtomicDeprecated:
-  | appType arrayTypeSuffix 
-      {  deprecatedWithError (FSComp.SR.parsNonAtomicType()) (lhs parseState);
-         SynType.Array($2,$1,lhs parseState) }
-
-  | appType HIGH_PRECEDENCE_BRACK_APP arrayTypeSuffix   /* only HPA for "name[]" allowed here */
-      {  deprecatedWithError (FSComp.SR.parsNonAtomicType()) (lhs parseState);
-         SynType.Array($3,$1,lhs parseState) }
-
-  | appType appTypeConPower  
-      { let mWhole = unionRanges (rhs parseState 1) $2.Range  // note: use "rhs parseState 1" to deal with parens in "(int) list"
-        deprecatedWithError (FSComp.SR.parsNonAtomicType()) mWhole;
-        SynType.App($2, None, [$1], [], None, true, mWhole) }
-
+/* Also, doesn't start with '{|'  */
+atomTypeNonAtomicDeprecated:
   | LPAREN appTypePrefixArguments rparen  appTypeConPower
       { let args, commas = $2
         mlCompatWarning (FSComp.SR.parsMultiArgumentGenericTypeFormDeprecated()) (unionRanges (rhs parseState 1) $4.Range); 
         SynType.App($4, None, args, commas, None, true, unionRanges (rhs parseState 1) $4.Range) }
 
-  | powerTypeNonAtomicDeprecated 
+  | atomType
       { $1 }
 
-  | typar      COLON_GREATER typ                     
-      {  deprecatedWithError (FSComp.SR.parsNonAtomicType()) (lhs parseState);
-         let tp,typ = $1,$3 
-         let m = lhs parseState 
-         SynType.WithGlobalConstraints(SynType.Var (tp, rhs parseState 1), [WhereTyparSubtypeOfType(tp,typ,m)],m)  }
-
-  | UNDERSCORE COLON_GREATER typ %prec COLON_GREATER 
-      {  deprecatedWithError (FSComp.SR.parsNonAtomicType()) (lhs parseState);
-         SynType.HashConstraint($3, lhs parseState) }
-
-/* Like powerType but gives a deprecation warning if a non-atomic type is used */
-powerTypeNonAtomicDeprecated:
+atomTypeOrAnonRecdType:
   | atomType
-    { $1 }
+     { $1 }
+  | anonRecdType
+     { let (isNew,flds),isStruct = $1
+       let flds2 = 
+           flds |> List.choose (function 
+             | (Field([],false,Some id,ty,false,_xmldoc,None,_m)) -> Some (id,ty) 
+             | _ -> reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidAnonRecdType()); None)
+       SynType.AnonRecd (isNew,isStruct,flds2, rhs parseState 1) }  
 
-  | atomType INFIX_AT_HAT_OP atomicRationalConstant
-     { if $2 <> "^" && $2 <> "^-" then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedInfixOperator());
-       deprecatedWithError (FSComp.SR.parsNonAtomicType()) (lhs parseState);
-       if $2 = "^-" then SynType.MeasurePower($1, SynRationalConst.Negate($3), lhs parseState)
-       else SynType.MeasurePower($1, $3, lhs parseState) }
 
 
 /* Any tokens in this grammar must be added to the lex filter rule 'peekAdjacentTypars' */
@@ -4556,14 +4537,6 @@ atomType:
   | LPAREN typ recover      
      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedParen()) 
        $2 }  
-
-  | anonRecdType
-     { let (isNew,flds),isStruct = $1
-       let flds2 = 
-           flds |> List.choose (function 
-             | (Field([],false,Some id,ty,false,_xmldoc,None,_m)) -> Some (id,ty) 
-             | _ -> reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidAnonRecdType()); None)
-       SynType.AnonRecd (isNew,isStruct,flds2, rhs parseState 1) }  
 
   | STRUCT LPAREN appType STAR tupleOrQuotTypeElements  rparen 
     { SynType.Tuple(true, (false,$3) :: $5,lhs parseState) }
