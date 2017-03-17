@@ -114,13 +114,14 @@ let singleTestBuildAndRunCore  cfg (copyFiles:string) p =
 
         log "Generated signature file..."
         fsc cfg "%s --sig:tmptest.fsi --define:TESTS_AS_APP" cfg.fsc_flags ["tmptest.fs"]
+        (if File.Exists("FSharp.Core.dll") then log "found fsharp.core.dll after build" else log "found fsharp.core.dll after build") |> ignore
 
         log "Compiling against generated signature file..."
         fsc cfg "%s -o:tmptest1.exe  --define:TESTS_AS_APP" cfg.fsc_flags ["tmptest.fsi";"tmptest.fs"]
+        (if File.Exists("FSharp.Core.dll") then log "found fsharp.core.dll after build" else log "found fsharp.core.dll after build") |> ignore
 
         log "Verifying built .exe..."
         peverify cfg "tmptest1.exe"
-
 
     | FSC_OPT_MINUS_DEBUG -> 
         use cleanup = (cleanUpFSharpCore cfg)
