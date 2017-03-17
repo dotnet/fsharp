@@ -1945,16 +1945,10 @@ let accFreeInTypars opts tps acc = List.foldBack (accFreeTyparRef opts) tps acc
 let emptyFreeTyparsLeftToRight = []
 let unionFreeTyparsLeftToRight fvs1 fvs2 = ListSet.unionFavourRight typarEq fvs1 fvs2
 
-let rec boundTyparsLeftToRight g cxFlag thruFlag filterDupesFlag acc tps = 
+let rec boundTyparsLeftToRight g cxFlag thruFlag  acc tps = 
     // Bound type vars form a recursively-referential set due to constraints, e.g.  A : I<B>, B : I<A> 
     // So collect up free vars in all constraints first, then bind all variables 
-    let acc = List.fold (fun acc (tp:Typar) -> accFreeInTyparConstraintsLeftToRight g cxFlag thruFlag acc tp.Constraints) tps acc
-    // REVIEW CODECOVERAGE: We don't currently use this codepath, since this function is only currently called in one place, preceding
-    // a call to unionFreeTyparsLeftToRight above.
-    if filterDupesFlag then
-        List.foldBack (ListSet.remove typarEq) tps acc
-    else
-        acc
+    List.fold (fun acc (tp:Typar) -> accFreeInTyparConstraintsLeftToRight g cxFlag thruFlag acc tp.Constraints) tps acc
 
 and accFreeInTyparConstraintsLeftToRight g cxFlag thruFlag acc cxs =
     List.fold (accFreeInTyparConstraintLeftToRight g cxFlag thruFlag) acc cxs 
@@ -2001,7 +1995,7 @@ and accFreeInTypeLeftToRight g cxFlag thruFlag acc ty  =
     | TType_ucase (_,tinst) -> accFreeInTypesLeftToRight g cxFlag thruFlag acc tinst 
     | TType_fun (d,r) -> accFreeInTypeLeftToRight g cxFlag thruFlag (accFreeInTypeLeftToRight g cxFlag thruFlag acc d ) r
     | TType_var r -> accFreeTyparRefLeftToRight g cxFlag thruFlag acc r 
-    | TType_forall (tps,r) -> unionFreeTyparsLeftToRight (boundTyparsLeftToRight g cxFlag thruFlag false tps (accFreeInTypeLeftToRight g cxFlag thruFlag emptyFreeTyparsLeftToRight r)) acc
+    | TType_forall (tps,r) -> unionFreeTyparsLeftToRight (boundTyparsLeftToRight g cxFlag thruFlag tps (accFreeInTypeLeftToRight g cxFlag thruFlag emptyFreeTyparsLeftToRight r)) acc
     | TType_measure unt -> List.foldBack (fun (tp,_) acc -> accFreeTyparRefLeftToRight g cxFlag thruFlag acc tp) (ListMeasureVarOccsWithNonZeroExponents unt) acc
 
 and accFreeInTupInfoLeftToRight _g _cxFlag _thruFlag acc unt = 
