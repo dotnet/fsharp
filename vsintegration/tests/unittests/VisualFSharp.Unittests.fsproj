@@ -59,6 +59,8 @@
     <Compile Include="Tests.ProjectSystem.References.fs" />
     <Compile Include="Tests.ProjectSystem.RoundTrip.fs" />
     <Compile Include="Tests.ProjectSystem.UpToDate.fs" />
+    <Compile Include="Tests.Helpers.fs" />
+    <Compile Include="Tests.OpenDeclarationsGetter.fs" />
     <Compile Include="..\..\..\tests\service\FsUnit.fs">
       <Link>FsUnit.fs</Link>
     </Compile>
@@ -120,12 +122,12 @@
       <Link>Roslyn\DocumentHighlightsServiceTests.fs</Link>
     </Compile>
     <CopyAndSubstituteText Include="VisualFSharp.Unittests.dll.config">
-		<TargetFilename>VisualFSharp.Unittests.dll.config</TargetFilename>
-		<Pattern1>{VisualStudioVersion}</Pattern1>
-		<Replacement1>$(VisualStudioVersion)</Replacement1>
-		<Pattern2>{FinalDir}</Pattern2>
-		<Replacement2>$([System.IO.Path]::GetFullPath('$(OutputPath)'))\</Replacement2>
-	</CopyAndSubstituteText>
+      <TargetFilename>VisualFSharp.Unittests.dll.config</TargetFilename>
+      <Pattern1>{VisualStudioVersion}</Pattern1>
+      <Replacement1>$(VisualStudioVersion)</Replacement1>
+      <Pattern2>{FinalDir}</Pattern2>
+      <Replacement2>$([System.IO.Path]::GetFullPath('$(OutputPath)'))\</Replacement2>
+    </CopyAndSubstituteText>
     <None Include="app.runsettings" />
   </ItemGroup>
   <ItemGroup>
@@ -154,9 +156,8 @@
     <Reference Include="Microsoft.Build.Tasks.Core, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Tasks.Core.dll</HintPath>
     </Reference>
-
     <Reference Include="Microsoft.Build.Utilities.v12.0, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-       <Private>True</Private>
+      <Private>True</Private>
     </Reference>
     <Reference Include="EnvDTE.dll" />
     <Reference Include="EnvDTE80.dll" />
@@ -170,7 +171,7 @@
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.dll" />
     <Reference Include="Microsoft.VisualStudio.Text.Logic, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Text.Logic.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Text.Logic.dll</HintPath>
-    </Reference>    
+    </Reference>
     <Reference Include="Microsoft.VisualStudio.Threading, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Threading.14.1.131\lib\net45\Microsoft.VisualStudio.Threading.dll</HintPath>
       <Private>True</Private>
