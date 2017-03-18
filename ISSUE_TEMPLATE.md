@@ -30,7 +30,7 @@ Provide any related information
 * Branch
 * .NET Runtime, CoreCLR or Mono Version
 * Editing Tools (e.g. Visual Studio Version)
-* Links to F# RFCs or entries on http://fslang.uservoice.com
+* Links to F# RFCs or entries on https://github.com/fsharp/fslang-suggestions
 * Links to performance testing scripts
 * Indications of severity
 
