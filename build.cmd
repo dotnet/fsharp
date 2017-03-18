@@ -216,7 +216,6 @@ if /i '%ARG%' == 'ci_part2' (
 
     set TEST_NET40_COREUNIT_SUITE=1
     set TEST_NET40_FSHARP_SUITE=1
-    set TEST_PORTABLE_COREUNIT_SUITE=1
     set CI=1
 )
 
