@@ -7,9 +7,10 @@ open System.IO
 open NUnit.Framework
 open Microsoft.VisualStudio.FSharp.LanguageService
 
-[<TestFixture>] 
+[<TestFixture>]
+[<Category "LanguageService">] 
 [<Category("LanguageService.MSBuild")>]
-[<Category("LanguageService.ProjectSystem")>]
+[<Category "ProjectSystem">]
 type QuickParse() = 
 
     let CheckIsland(tolerateJustAfter:bool, s : string, p : int, expected) =

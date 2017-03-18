@@ -18,7 +18,7 @@ open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
 open UnitTests.TestLib.ProjectSystem
 
-[<TestFixture>] 
+[<TestFixture>][<Category "LanguageService">] 
 module IFSharpSource = 
 
     [<Test>]
@@ -55,7 +55,7 @@ module IFSharpSource =
 
 
 
-[<TestFixture>] 
+[<TestFixture>][<Category "LanguageService">]  
 type UsingMSBuild() =
     inherit LanguageServiceBaseTests()
 

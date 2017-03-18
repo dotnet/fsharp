@@ -13,7 +13,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.LanguageService
 
-[<TestFixture>]
+[<TestFixture>][<Category "Roslyn Services">]
 type BraceMatchingServiceTests()  =
     let fileName = "C:\\test.fs"
     let options: FSharpProjectOptions = { 

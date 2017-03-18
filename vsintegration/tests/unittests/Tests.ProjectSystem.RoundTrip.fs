@@ -12,7 +12,7 @@ open UnitTests.TestLib.ProjectSystem
 open Microsoft.VisualStudio.FSharp.ProjectSystem
 
 
-[<TestFixture>]
+[<TestFixture>][<Category "ProjectSystem">]
 type RoundTrip() = 
     inherit TheTests()
     

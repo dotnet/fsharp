@@ -20,7 +20,7 @@ Make sure each method works on:
 *)
 
 
-[<TestFixture>]
+[<TestFixture>][<Category "Collections.Map">][<Category "FSharp.Core.Collections">]
 type MapModule() =
     [<Test>]
     member this.Empty() =

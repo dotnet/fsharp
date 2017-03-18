@@ -17,7 +17,7 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
 
-[<TestFixture>]
+[<TestFixture>][<Category "Roslyn Services">]
 type DocumentDiagnosticAnalyzerTests()  =
     let filePath = "C:\\test.fs"
     let startMarker = "(*start*)"

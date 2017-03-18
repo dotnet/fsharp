@@ -15,7 +15,7 @@ type SeqWindowedTestInput<'t> =
         Exception : Type option
     }
 
-[<TestFixture>]
+[<TestFixture>][<Category "Collections.Seq">][<Category "FSharp.Core.Collections">]
 type SeqModule2() =
 
     [<Test>]

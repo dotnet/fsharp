@@ -11,7 +11,9 @@ open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
 open UnitTests.TestLib.ProjectSystem
 
-[<Ignore("FSROSLYNTODO: Refactor/enable once navigation bars are fully tested")>][<TestFixture>]
+[<Ignore("FSROSLYNTODO: Refactor/enable once navigation bars are fully tested")>]
+[<TestFixture>]
+[<Category "LanguageService">]
 type UsingMSBuild() =
     inherit LanguageServiceBaseTests()
 

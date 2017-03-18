@@ -17,7 +17,7 @@ Make sure each method works on:
 * Sets with 4 more more elements
 *)
 
-[<TestFixture>]
+[<TestFixture>][<Category "Collections.Set">][<Category "FSharp.Core.Collections">]
 type SetModule() =
 
     [<Test>]

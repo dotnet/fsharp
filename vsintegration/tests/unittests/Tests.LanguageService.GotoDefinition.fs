@@ -15,6 +15,7 @@ open UnitTests.TestLib.LanguageService
 open UnitTests.TestLib.ProjectSystem
 
 [<TestFixture>]
+[<Category "LanguageService">] 
 type UsingMSBuild()  = 
     inherit LanguageServiceBaseTests()
 

@@ -18,6 +18,7 @@
 // Technique 3: 
 // 
 //    Use F# Interactive.  This only works for FSharp.Compiler.Service.dll which has a public API
+[<NUnit.Framework.Category "Roslyn Services">]
 module Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn.SignatureHelpProvider
 
 open System

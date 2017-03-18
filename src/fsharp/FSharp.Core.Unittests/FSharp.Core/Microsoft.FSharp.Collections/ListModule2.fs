@@ -25,7 +25,7 @@ type ListWindowedTestInput<'t> =
         Exception : Type option
     }
 
-[<TestFixture>]
+[<TestFixture>][<Category "Collections.List">][<Category "FSharp.Core.Collections">]
 type ListModule02() =
     [<Test>]
     member this.Length() =

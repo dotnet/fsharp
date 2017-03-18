@@ -15,7 +15,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.LanguageService
 open UnitTests.TestLib.Utils
 
-[<TestFixture>]
+[<TestFixture>][<Category "Roslyn Services">]
 type HelpContextServiceTests() =
 
     let fileName = "C:\\test.fs"
