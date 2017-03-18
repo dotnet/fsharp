@@ -172,36 +172,7 @@ type internal ProjectInfoManager
         | _ -> this.TryGetOptionsForProject(projectId) 
 
 
-    member self.AdjustOptionsForSignature filePath (projectOptions:FSharpProjectOptions)= 
-        let projectFileName = filePath + ".fsproj"
-        let sourceFiles = [| filePath |]
-        let outputArg = sprintf "-o:%s" (Path.ChangeExtension(projectFileName, ".dll"))
-        let flags = [|outputArg; "--noframework"; "--debug-"; "--optimize-"; "--tailcalls-" |]
-        
-        let refProjectsOutPaths = 
-            projectOptions.ReferencedProjects 
-            |> Array.map fst |> Set.ofArray
 
-        let references = 
-            projectOptions.OtherOptions
-            |> Array.choose (fun arg -> // Filter out project references, which aren't necessary for the scenario
-                if arg.StartsWith "-r:" 
-                    && not (Set.contains (arg.[3..].Trim()) refProjectsOutPaths) 
-                then Some arg 
-                else None)
-
-        { projectOptions with
-            ProjectFileName = projectFileName
-            ProjectFileNames = sourceFiles
-            OtherOptions = Array.append flags references
-            IsIncompleteTypeCheckEnvironment = false
-            UseScriptResolutionRules = false
-            LoadTime = fakeDateTimeRepresentingTimeLoaded projectFileName
-            UnresolvedReferences = None
-            ReferencedProjects = [||]
-            OriginalLoadReferences = []
-            ExtraProjectInfo = None
-        }
 
 
 
