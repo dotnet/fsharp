@@ -865,8 +865,7 @@ module internal ParsedInput =
         { Idents: Idents
           Kind: ScopeKind }
 
-    let tryFindInsertionContext (currentLine: int) (ast: ParsedInput) (partiallyQualifiedName: MaybeUnresolvedIdents) = 
-
+    let tryFindNearestPointAndModules (currentLine: int) (ast: ParsedInput) = 
         // We ignore all diagnostics during this operation
         //
         // Based on an initial review, no diagnostics should be generated.  However the code should be checked more closely.
@@ -974,6 +973,10 @@ module internal ParsedInput =
             |> Seq.sortBy (fun (m, _, _) -> -m.Length)
             |> Seq.toList
 
+        res, modules
+
+    let tryFindInsertionContext (currentLine: int) (ast: ParsedInput) (partiallyQualifiedName: MaybeUnresolvedIdents) = 
+        let res, modules = tryFindNearestPointAndModules currentLine ast
         // CLEANUP: does this realy need to be a partial application with pre-computation?  Can this be made more expicit?
         fun (requiresQualifiedAccessParent: Idents option, autoOpenParent: Idents option, entityNamespace: Idents option, entity: Idents) ->
 
@@ -996,3 +999,37 @@ module internal ParsedInput =
                             | TopModule -> NestedModule
                             | x -> x
                         { ScopeKind = scopeKind; Pos = Point.make (endLine + 1) startCol })
+
+
+    /// Corrects insertion line number based on kind of scope and text surrounding the insertion point.
+    let adjustInsertionPoint (getLineStr: int -> string) ctx  =
+        let line =
+            match ctx.ScopeKind with
+            | ScopeKind.TopModule ->
+                if ctx.Pos.Line > 1 then
+                    // it's an implicit module without any open declarations    
+                    let line = getLineStr (ctx.Pos.Line - 2)
+                    let isImpliciteTopLevelModule = not (line.StartsWith "module" && not (line.EndsWith "="))
+                    if isImpliciteTopLevelModule then 1 else ctx.Pos.Line
+                else 1
+            | ScopeKind.Namespace ->
+                // for namespaces the start line is start line of the first nested entity
+                if ctx.Pos.Line > 1 then
+                    [0..ctx.Pos.Line - 1]
+                    |> List.mapi (fun i line -> i, getLineStr line)
+                    |> List.tryPick (fun (i, lineStr) -> 
+                        if lineStr.StartsWith "namespace" then Some i
+                        else None)
+                    |> function
+                        // move to the next line below "namespace" and convert it to F# 1-based line number
+                        | Some line -> line + 2 
+                        | None -> ctx.Pos.Line
+                else 1  
+            | _ -> ctx.Pos.Line
+
+        { ctx.Pos with Line = line }
+    
+    let tryFindNearestPointToInsertOpenDeclaration (currentLine: int) (ast: ParsedInput) =
+        match tryFindNearestPointAndModules currentLine ast with
+        | Some (scope,_,point), _ -> Some { ScopeKind = scope.Kind; Pos = point }
+        | _ -> None

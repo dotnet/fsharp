@@ -313,17 +313,24 @@ type internal FSharpCompletionProvider
                 | true, x -> x
                 | _ -> item.DisplayText
 
-            match item.Properties.TryGetValue NamespaceToOpen with
-            | true, ns ->
-                let openNsInsertPos = 0 // todo
-                let! sourceText = document.GetTextAsync(cancellationToken)
-                let fullChangingSpan = TextSpan.FromBounds(openNsInsertPos, item.Span.End)
-                let openStatement = sprintf "open %s\n" ns
-                let changedSourceText = sourceText.WithChanges(TextChange(TextSpan(openNsInsertPos, 0), openStatement), TextChange(item.Span, nameInCode))
-                let changedSpan = TextSpan.FromBounds(openNsInsertPos, item.Span.Start + openStatement.Length + nameInCode.Length)
-                let changedText = changedSourceText.ToString(changedSpan)
-                return CompletionChange.Create(TextChange(fullChangingSpan, changedText)).WithNewPosition(Nullable (changedSpan.End))
-            | _ -> 
-                return CompletionChange.Create(TextChange(item.Span, nameInCode))
+            return!
+                asyncMaybe {
+                    let! ns = 
+                        match item.Properties.TryGetValue NamespaceToOpen with
+                        | true, ns -> Some ns
+                        | _ -> None
+                    let! sourceText = document.GetTextAsync(cancellationToken)
+                    let textWithItemCommitted = sourceText.WithChanges(TextChange(item.Span, nameInCode))
+                    let line = sourceText.Lines.GetLineFromPosition(item.Span.Start)
+                    let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                    let! parsedInput = checkerProvider.Checker.ParseDocument(document, options)
+                    let! ctx = ParsedInput.tryFindNearestPointToInsertOpenDeclaration line.LineNumber parsedInput
+                    let finalSourceText, changedSpanStartPos = OpenDeclarationHelper.insertOpenDeclaration textWithItemCommitted ctx ns
+                    let fullChangingSpan = TextSpan.FromBounds(changedSpanStartPos, item.Span.End)
+                    let changedSpan = TextSpan.FromBounds(changedSpanStartPos, item.Span.End + (finalSourceText.Length - sourceText.Length))
+                    let changedText = finalSourceText.ToString(changedSpan)
+                    return CompletionChange.Create(TextChange(fullChangingSpan, changedText)).WithNewPosition(Nullable (changedSpan.End))
+                }
+                |> Async.map (Option.defaultValue (CompletionChange.Create(TextChange(item.Span, nameInCode))))
 
         } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken

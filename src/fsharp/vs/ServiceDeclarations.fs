@@ -1497,7 +1497,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
         let decls = 
             // Filter out duplicate names
             items |> List.map (fun (nm,itemsWithSameName) -> 
-                match itemsWithSameName |> List.sortBy (fun x -> not x.IsResolvable) with
+                match itemsWithSameName |> List.sortBy (fun x -> not x.IsResolvable) with // prefer resolvable items
                 | [] -> failwith "Unexpected empty bag"
                 | item :: _ as items -> 
                     let glyph = ItemDescriptionsImpl.GlyphOfItem(denv, item.Item)
