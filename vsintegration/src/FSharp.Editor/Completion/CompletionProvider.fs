@@ -45,7 +45,7 @@ type internal FSharpCompletionProvider
     static let attributeSuffixLength = "Attribute".Length
     
     static let noCommitOnSpaceRules = 
-        CompletionItemRules.Default.WithCommitCharacterRule(CharacterSetModificationRule.Create(CharacterSetModificationKind.Remove, ' ', '.', '<', '>', '(', ')'))
+        CompletionItemRules.Default.WithCommitCharacterRule(CharacterSetModificationRule.Create(CharacterSetModificationKind.Remove, ' ', '.', '<', '>', '(', ')', '!'))
     
     static let getRules() = if IntelliSenseSettings.ShowAfterCharIsTyped then noCommitOnSpaceRules else CompletionItemRules.Default
 
@@ -174,7 +174,15 @@ type internal FSharpCompletionProvider
             let caretLineColumn = caretLinePos.Character
             
             let qualifyingNames, partialName = QuickParse.GetPartialLongNameEx(caretLine.ToString(), caretLineColumn - 1) 
-            let allItems = allEntitites |> List.map (fun x -> x.Item)
+            let allItems = 
+                allEntitites 
+                |> List.choose (fun entity ->
+                    maybe {
+                        let! ns = entity.Namespace 
+                        do! Option.guard (ns <> [||])
+                        do! Option.guard (entity.FullName.Contains ".")
+                        return entity.Item
+                    })
 
             let! declarations =
                 checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLineColumn, caretLine.ToString(), qualifyingNames, partialName, allItems) |> liftAsync
@@ -298,9 +306,8 @@ type internal FSharpCompletionProvider
 
     override this.GetChangeAsync(document, item, _, cancellationToken) : Task<CompletionChange> =
         async {
-            match item.Properties.TryGetValue IsExtensionMemberPropName with
-            | true, _ -> ()  // do not add extension members to the MRU list
-            | _ ->
+            // do not add extension members and not yet resolved symbols to the MRU list
+            if not (item.Properties.ContainsKey NamespaceToOpen) && not (item.Properties.ContainsKey IsExtensionMemberPropName) then
                 match item.Properties.TryGetValue FullNamePropName with
                 | true, fullName ->
                     match mruItems.TryGetValue fullName with
