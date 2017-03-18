@@ -22,22 +22,6 @@ open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
-open Microsoft.VisualStudio
-open Microsoft.VisualStudio.Text
-open Microsoft.VisualStudio.Utilities
-open Microsoft.VisualStudio.Editor
-open Microsoft.VisualStudio.ComponentModelHost
-open Microsoft.VisualStudio.FSharp.Editor.Logging
-open Microsoft.VisualStudio.FSharp.LanguageService
-open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem 
-open Microsoft.VisualStudio.LanguageServices.Implementation.TaskList
-open Microsoft.VisualStudio.LanguageServices.ProjectSystem
-open Microsoft.VisualStudio.Shell.Interop
-open Microsoft.VisualStudio.LanguageServices
-open Microsoft.VisualStudio.Shell
-open Microsoft.VisualStudio.TextManager.Interop
-
-
 
 [<NoComparison; NoEquality>]
 type internal GoToDefinitionResult =
@@ -67,36 +51,6 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>]
     ,   metadataService : NavigateToSignatureMetadataService
     ,   [<ImportMany>]_presenters: IEnumerable<INavigableItemsPresenter>
     ) =
-
-    let serviceProvider =  ServiceProvider.GlobalProvider                
-    let openDocumentService = serviceProvider.GetService<SVsUIShellOpenDocument, IVsUIShellOpenDocument>()
-    let componentModel = serviceProvider.GetService<SComponentModel,IComponentModel>()
-    let editorAdapterFactory = componentModel.GetService<IVsEditorAdaptersFactoryService>()
-
-
-    let constructSigDocument sigPath =
-        try 
-            let mutable vsGuid = VSConstants.LOGVIEWID.TextView_guid
-        
-            let windowFrame =
-                match VsShellUtilities.IsDocumentOpen(serviceProvider, sigPath, vsGuid) with
-                | true,_hierarchy,_itemId,windowFrame -> windowFrame
-                | false,_,_,_ ->
-                    let (_,_,_,_,windowFrame) = openDocumentService.OpenDocumentViaProject (sigPath,&vsGuid)
-                    windowFrame
-
-            let vsTextView = VsShellUtilities.GetTextView windowFrame
-            let vsTextBuffer = vsTextView.GetBuffer() |> snd :> IVsTextBuffer
-            let textBuffer = editorAdapterFactory.GetDataBuffer vsTextBuffer
-            let container = textBuffer.AsTextContainer()
-            
-            windowFrame.Show()|>ignore
-            let (_,workspace) = Workspace.TryGetWorkspace container
-            let sigDocument = 
-                workspace.GetRelatedDocumentIds container 
-                |> Seq.map(fun docId -> workspace.CurrentSolution.GetDocument docId) |> Seq.head
-            Some sigDocument
-        with _ -> None
 
     static member FindDefinition (checker: FSharpChecker, document: Document, sourceText: SourceText, filePath: string, position: int, defines: string list, options: FSharpProjectOptions, textVersionHash: int) : Async<GoToDefinitionResult option> = 
         asyncMaybe {
@@ -144,19 +98,12 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>]
                 return results.AsEnumerable ()
 
             | FoundExternal (sourceDocument, ast, symbol) ->
-                let! signatureText, sigPath,range = metadataService.TryFindMetadataRange (sourceDocument, ast, symbol)
+                let! sigDocument, range = metadataService.TryFindMetadataRange (sourceDocument, ast, symbol)
                 
-                let sigSourceText = SourceText.From (signatureText, System.Text.Encoding.UTF8)
-
-                debug "Path to generated signature file - %s"sigPath
-
-                match constructSigDocument sigPath with
-                | Some sigDocument ->
-                    debug "SigDocument - %s [Project - %s] %s" sigDocument.Name sigDocument.Project.Name sigDocument.FilePath
-                    let sigTextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan (sigSourceText, range)
-                    debug "range is - %A" range
-                    results.Add (FSharpNavigableItem (sigDocument, sigTextSpan))
-                | None -> ()
+                let! sigSourceText = sigDocument.GetTextAsync cancellationToken
+                
+                let sigTextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan (sigSourceText, range)
+                results.Add (FSharpNavigableItem (sigDocument, sigTextSpan))
 
                 return results.AsEnumerable ()
         }
@@ -180,12 +127,6 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>]
                 let navigationService = workspace.Services.GetService<IDocumentNavigationService>()
                 let options = workspace.Options.WithChangedOption (NavigationOptions.PreferProvisionalTab, true)
                 navigationService.TryNavigateToSpan (workspace, navigableItem.Document.Id, navigableItem.SourceSpan, options)
-
-
-                //match vsTextBuffer.GetStateFlags() with
-                //| VSConstants.S_OK, currentFlags -> // Try to set buffer to read-only mode
-                //    vsTextBuffer.SetStateFlags(currentFlags ||| uint32 BUFFERSTATEFLAGS.BSF_USER_READONLY) |> ignore
-                //| _ -> ()
 
                 // FSROSLYNTODO: potentially display multiple results here
                 // If GotoDef returns one result then it should try to jump to a discovered location. If it returns multiple results then it should use 
