@@ -495,7 +495,7 @@ module internal ItemDescriptionsImpl =
     // Like Seq.distinctBy but only filters out duplicates for some of the elements
     let partialDistinctBy (per:IPartialEqualityComparer<_>) seq =
         // Wrap a Wrap _ around all keys in case the key type is itself a type using null as a representation
-        let dict = new Dictionary<WrapType<'T>,obj>(per)
+        let dict = Dictionary<WrapType<'T>,obj>(per)
         seq |> List.filter (fun v -> 
             let v = Wrap(v)
             if (per.InEqualityRelation(v)) then 
@@ -630,7 +630,7 @@ module internal ItemDescriptionsImpl =
 
     /// Remove all duplicate items
     let RemoveDuplicateItems g items = 
-        items |> partialDistinctBy (ItemDisplayPartialEquality g) 
+        items |> partialDistinctBy (ItemDisplayPartialEquality g)
 
     /// Remove all duplicate items
     let RemoveDuplicateItemsWithType g (items: (Item * TType option) list) = 
@@ -1477,8 +1477,11 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
 
         if verbose then dprintf "service.ml: mkDecls: %d found groups after filtering\n" (List.length items); 
 
-        // Group by display name
-        let items = items |> List.groupBy (fun x -> x.Item.DisplayName) 
+        // Group by full name
+        let items = 
+            items 
+            |> List.groupBy (fun x -> ItemDescriptionsImpl.FullNameOfItem g x.Item) 
+            |> List.map (fun (_, items) -> items.Head.Item.DisplayName, items)
 
         // Filter out operators (and list)
         let items = 
@@ -1489,40 +1492,35 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                 | [Item.MethodGroup _ ] -> IsOperatorName name
                 | [Item.UnionCase _] -> IsOperatorName name
                 | _ -> false              
-
             let isFSharpList name = (name = "[]") // list shows up as a Type and a UnionCase, only such entity with a symbolic name, but want to filter out of intellisense
-
-            items |> List.filter (fun (name, items) -> not (isOperatorItem(name, items)) && not (isFSharpList name)) 
+            items |> List.filter (fun (displayName, items) -> not (isOperatorItem(displayName, items)) && not (isFSharpList displayName)) 
                     
-        let getFullName = ItemDescriptionsImpl.FullNameOfItem g
-            
         let decls = 
-            items |> List.collect (fun (nm,itemsWithSameName) -> 
-                match itemsWithSameName with
+            items 
+            |> List.map (fun (displayName, itemsWithSameFullName) -> 
+                match itemsWithSameFullName with
                 | [] -> failwith "Unexpected empty bag"
-                | _ -> 
+                | _ ->
                     let items =
-                        itemsWithSameName
-                        |> List.map (fun x -> getFullName x.Item, x)
-                        |> List.groupBy fst
-                        |> List.map (fun (_, items) -> 
-                            items
-                            |> List.sortBy (fun (_, x) -> x.NamespaceToOpen.IsSome)
-                            |> List.head)
+                        match itemsWithSameFullName |> List.partition (fun x -> x.NamespaceToOpen.IsNone) with
+                        | [], unresolved -> unresolved
+                        | resolved, _ -> resolved
                     
-                    items
-                    |> List.map (fun (fullName, item) ->
-                        let glyph = ItemDescriptionsImpl.GlyphOfItem(denv, item.Item)
-                        let name, nameInCode =
-                            if nm.StartsWith "( " && nm.EndsWith " )" then
-                                let cleanName = nm.[2..nm.Length - 3]
-                                cleanName, 
-                                if IsOperatorName nm then cleanName else "``" + cleanName + "``"
-                            else nm, nm
-                        
-                        FSharpDeclarationListItem(
-                            name, nameInCode, fullName, glyph, Choice1Of2 (items |> List.map snd, infoReader, m, denv, reactor, checkAlive), 
-                            ItemDescriptionsImpl.IsAttribute infoReader item.Item, getAccessibility item.Item, item.Kind, item.IsOwnMember, item.MinorPriority, item.NamespaceToOpen)))
+                    let item = items.Head
+
+                    let glyph = ItemDescriptionsImpl.GlyphOfItem(denv, item.Item)
+                    let name, nameInCode =
+                        if displayName.StartsWith "( " && displayName.EndsWith " )" then
+                            let cleanName = displayName.[2..displayName.Length - 3]
+                            cleanName, 
+                            if IsOperatorName displayName then cleanName else "``" + cleanName + "``"
+                        else displayName, displayName
+                    
+                    let fullName = ItemDescriptionsImpl.FullNameOfItem g item.Item
+
+                    FSharpDeclarationListItem(
+                        name, nameInCode, fullName, glyph, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), 
+                        ItemDescriptionsImpl.IsAttribute infoReader item.Item, getAccessibility item.Item, item.Kind, item.IsOwnMember, item.MinorPriority, item.NamespaceToOpen))
 
         new FSharpDeclarationListInfo(Array.ofList decls)
     
