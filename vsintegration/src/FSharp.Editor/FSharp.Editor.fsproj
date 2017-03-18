@@ -40,6 +40,8 @@
     <Compile Include="Common\LanguageService.fs" />
     <Compile Include="Common\SymbolHelpers.fs" />
     <Compile Include="Common\AssemblyContentProvider.fs" />
+    <Compile Include="Common\OpenDeclarationsGetter.fs" />
+    <Compile Include="Common\SignatureGenerator.fs" />
     <Compile Include="Properties\IntelliSensePropertyPage.fs" />
     <Compile Include="Classification\ClassificationDefinitions.fs" />
     <Compile Include="Classification\ColorizationService.fs" />
@@ -59,6 +61,7 @@
     <Compile Include="QuickInfo\QuickInfoProvider.fs" />
     <Compile Include="InlineRename\InlineRenameService.fs" />
     <Compile Include="DocumentHighlights\DocumentHighlightsService.fs" />
+    <Compile Include="Navigation\NavigateToSignatureMetadataService.fs" />
     <Compile Include="Navigation\GoToDefinitionService.fs" />
     <Compile Include="Navigation\NavigationBarItemService.fs" />
     <Compile Include="Navigation\NavigateToSearchService.fs" />

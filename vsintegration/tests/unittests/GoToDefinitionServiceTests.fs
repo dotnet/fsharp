@@ -40,7 +40,8 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
 
-[<TestFixture>]
+
+[<TestFixture>][<Category "Roslyn">]
 module GoToDefinitionServiceTests =
 
     [<Test>]
@@ -97,12 +98,20 @@ let _ = Module1.foo 1
 
         File.WriteAllText(filePath, fileContents)
 
+        File.WriteAllText(filePath, fileContents)
+
         let caretPosition = fileContents.IndexOf(caretMarker) + caretMarker.Length - 1 // inside the marker
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+ 
+
         let actual = 
            FSharpGoToDefinitionService.FindDefinition(FSharpChecker.Instance, documentId, SourceText.From(fileContents), filePath, caretPosition, [], options, 0) 
            |> Async.RunSynchronously
-           |> Option.map (fun range -> (range.StartLine, range.EndLine, range.StartColumn, range.EndColumn))
+           |> Option.map (fun gotoDefResult -> 
+                match gotoDefResult with
+                | GoToDefinitionResult.FoundInternal range -> (range.StartLine, range.EndLine, range.StartColumn, range.EndColumn)
+                | _ -> failwithf "This test should have found an internal location"
+           )
 
         if actual <> expected then 
             Assert.Fail(sprintf "Incorrect information returned for fileContents=<<<%s>>>, caretMarker=<<<%s>>>, expected =<<<%A>>>, actual = <<<%A>>>" fileContents caretMarker expected actual)

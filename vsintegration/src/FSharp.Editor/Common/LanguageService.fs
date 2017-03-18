@@ -36,6 +36,7 @@ open Microsoft.VisualStudio.ComponentModelHost
 [<Guid(FSharpCommonConstants.svsSettingsPersistenceManagerGuidString)>]
 type internal SVsSettingsPersistenceManager = class end
 
+
 // Exposes FSharpChecker as MEF export
 [<Export(typeof<FSharpCheckerProvider>); Composition.Shared>]
 type internal FSharpCheckerProvider 
@@ -79,9 +80,20 @@ type internal ProjectInfoManager
     // A table of information about projects, excluding single-file projects.  
     let projectTable = ConcurrentDictionary<ProjectId, FSharpProjectOptions>()
 
+    // stores the documentIds for signature files that have already been generated using hashed subfolder keys
+    let signatureDocIds = ConcurrentDictionary<string,DocumentId>()
+
     // A table of information about single-file projects.  Currently we only need the load time of each such file, plus
     // the original options for editing
     let singleFileProjectTable = ConcurrentDictionary<ProjectId, DateTime * FSharpProjectOptions>()
+
+    member __.RegisterSignature (filePath: string) (sigDocId:DocumentId) =
+        signatureDocIds.[filePath] <- sigDocId
+
+    member __.TryGetSignatureDocId(filePath: string) =
+        match signatureDocIds.TryGetValue(filePath) with
+        | true, docId ->Some docId
+        | _ -> None
 
     member this.AddSingleFileProject(projectId, timeStampAndOptions) =
         singleFileProjectTable.TryAdd(projectId, timeStampAndOptions) |> ignore
@@ -159,6 +171,12 @@ type internal ProjectInfoManager
         | true, (_loadTime, originalOptions) -> Some originalOptions
         | _ -> this.TryGetOptionsForProject(projectId) 
 
+
+
+
+
+
+
 // Used to expose FSharpChecker/ProjectInfo manager to diagnostic providers
 // Diagnostic providers can be executed in environment that does not use MEF so they can rely only
 // on services exposed by the workspace
@@ -227,6 +245,7 @@ type
     
 and 
     [<Guid(FSharpCommonConstants.languageServiceGuidString)>]
+    [<ProvideService (typeof<FSharpLanguageService>,ServiceName="F# Language Service")>]
     [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fs")>]
     [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsi")>]
     [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsx")>]
@@ -258,8 +277,7 @@ and
         | _ -> ()
 
     override this.Initialize() =
-        base.Initialize()
-
+        base.Initialize()        
         this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Completion.CompletionOptions.BlockForCompletionItems, FSharpCommonConstants.FSharpLanguageName, false)
         this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Shared.Options.ServiceFeatureOnOffOptions.ClosedFileDiagnostic, FSharpCommonConstants.FSharpLanguageName, Nullable false)
 
@@ -382,7 +400,6 @@ and
         base.SetupNewTextView(textView)
 
         let textViewAdapter = package.ComponentModel.GetService<IVsEditorAdaptersFactoryService>()
-               
         match textView.GetBuffer() with
         | (VSConstants.S_OK, textLines) ->
             let filename = VsTextLines.GetFilename textLines
