@@ -40,7 +40,8 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
 
-[<TestFixture>]
+
+[<TestFixture>][<Category "Roslyn">]
 module GoToDefinitionServiceTests =
 
     [<Test>]
@@ -97,15 +98,14 @@ let _ = Module1.foo 1
 
         File.WriteAllText(filePath, fileContents)
 
-        let caretPosition = fileContents.IndexOf(caretMarker) + caretMarker.Length - 1 // inside the marker
+        File.WriteAllText(filePath, fileContents)
 
-        let workspace  = new AdhocWorkspace ()
-        let project    = workspace.AddProject ("GotoDefn","F#")
-        let sourceText = SourceText.From (fileContents)
-        let document   = project.AddDocument (filePath,sourceText,filePath=filePath)
-        
+        let caretPosition = fileContents.IndexOf(caretMarker) + caretMarker.Length - 1 // inside the marker
+        let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+ 
+
         let actual = 
-           FSharpGoToDefinitionService.FindDefinition(FSharpChecker.Instance, document, sourceText, filePath, caretPosition, [], options, 0) 
+           FSharpGoToDefinitionService.FindDefinition(FSharpChecker.Instance, documentId, SourceText.From(fileContents), filePath, caretPosition, [], options, 0) 
            |> Async.RunSynchronously
            |> Option.map (fun gotoDefResult -> 
                 match gotoDefResult with
