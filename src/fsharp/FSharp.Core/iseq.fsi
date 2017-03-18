@@ -360,3 +360,72 @@ namespace Microsoft.FSharp.Collections
     module internal CountBy =
         val inline byVal : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * int> when 'Key : equality
         val inline byRef : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'Key * int> when 'Key : equality
+
+    [<CompiledName("Cache")>]
+    val cache: source:ISeq<'T> -> ISeq<'T>
+
+    [<CompiledName("Collect")>]
+    val collect: mapping:('T -> 'Collection) -> source:ISeq<'T> -> ISeq<'U>  when 'Collection :> ISeq<'U>
+
+    [<CompiledName("AllPairs")>]
+    val allPairs: source1:ISeq<'T1> -> source2:ISeq<'T2> -> ISeq<'T1 * 'T2>
+
+    [<CompiledName("ToList")>]
+    val toList: source:ISeq<'T> -> 'T list
+
+    [<CompiledName("Replicate")>]
+    val replicate: count:int -> initial:'T -> ISeq<'T>
+
+    [<CompiledName("IsEmpty")>]
+    val isEmpty: source:ISeq<'T> -> bool
+
+    [<CompiledName("Cast")>]
+    val cast: source:IEnumerable -> ISeq<'T>
+
+    [<CompiledName("ChunkBySize")>]
+    val chunkBySize: chunkSize:int -> source:ISeq<'T> -> ISeq<'T[]>
+
+    [<CompiledName("SplitInto")>]
+    val splitInto: count:int -> source:ISeq<'T> -> ISeq<'T[]>
+
+    [<CompiledName("Find")>]
+    val find: predicate:('T -> bool) -> source:ISeq<'T> -> 'T
+
+    [<CompiledName("FindBack")>]
+    val findBack: predicate:('T -> bool) -> source:ISeq<'T> -> 'T
+
+    [<CompiledName("FindIndex")>]
+    val findIndex: predicate:('T -> bool) -> source:ISeq<'T> -> int
+
+    [<CompiledName("FindIndexBack")>]
+    val findIndexBack: predicate:('T -> bool) -> source:ISeq<'T> -> int
+
+    [<CompiledName("Pick")>]
+    val pick: chooser:('T -> 'U option) -> source:ISeq<'T> -> 'U 
+
+    [<CompiledName("MapFold")>]
+    val mapFold<'T,'State,'Result> : mapping:('State -> 'T -> 'Result * 'State) -> state:'State -> source:ISeq<'T> -> ISeq<'Result> * 'State
+
+    [<CompiledName("MapFoldBack")>]
+    val mapFoldBack<'T,'State,'Result> : mapping:('T -> 'State -> 'Result * 'State) -> source:ISeq<'T> -> state:'State -> ISeq<'Result> * 'State
+
+    [<CompiledName("Item")>]
+    val item: index:int -> source:ISeq<'T> -> 'T
+
+    [<CompiledName("Singleton")>]
+    val singleton: value:'T -> ISeq<'T>
+
+    [<CompiledName("SortDescending")>]
+    val inline sortDescending : source:ISeq<'T> -> ISeq<'T> when 'T : comparison
+
+    [<CompiledName("SortByDescending")>]
+    val inline sortByDescending : projection:('T -> 'Key) -> source:ISeq<'T> -> ISeq<'T> when 'Key : comparison
+
+    [<CompiledName("TryFindBack")>]
+    val tryFindBack: predicate:('T -> bool) -> source:ISeq<'T> -> 'T option
+
+    [<CompiledName("TryFindIndexBack")>]
+    val tryFindIndexBack : predicate:('T -> bool) -> source:ISeq<'T> -> int option
+
+    [<CompiledName("Zip3")>]
+    val zip3: source1:ISeq<'T1> -> source2:ISeq<'T2> -> source3:ISeq<'T3> -> ISeq<'T1 * 'T2 * 'T3>

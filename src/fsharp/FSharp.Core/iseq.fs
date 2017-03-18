@@ -1748,3 +1748,236 @@ namespace Microsoft.FSharp.Collections
             match arr.Length with
             | 0 -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             | len -> foldArraySubRight f arr 0 (len - 2) arr.[len - 1]
+
+        [<Sealed>]
+        type CachedSeq<'T>(cleanup,res:seq<'T>) =
+            interface System.IDisposable with
+                member x.Dispose() = cleanup()
+            interface System.Collections.Generic.IEnumerable<'T> with
+                member x.GetEnumerator() = res.GetEnumerator()
+            interface System.Collections.IEnumerable with
+                member x.GetEnumerator() = (res :> System.Collections.IEnumerable).GetEnumerator()
+            member obj.Clear() = cleanup()
+
+        [<CompiledName("Cache")>]
+        let cache (source:ISeq<'T>) : ISeq<'T> =
+            checkNonNull "source" source
+            // Wrap a seq to ensure that it is enumerated just once and only as far as is necessary.
+            //
+            // This code is required to be thread safe.
+            // The necessary calls should be called at most once (include .MoveNext() = false).
+            // The enumerator should be disposed (and dropped) when no longer required.
+            //------
+            // The state is (prefix,enumerator) with invariants:
+            //   * the prefix followed by elts from the enumerator are the initial sequence.
+            //   * the prefix contains only as many elements as the longest enumeration so far.
+            let prefix      = ResizeArray<_>()
+            let enumeratorR = ref None : IEnumerator<'T> option option ref // nested options rather than new type...
+                               // None          = Unstarted.
+                               // Some(Some e)  = Started.
+                               // Some None     = Finished.
+            let oneStepTo i =
+              // If possible, step the enumeration to prefix length i (at most one step).
+              // Be speculative, since this could have already happened via another thread.
+              if not (i < prefix.Count) then // is a step still required?
+                  // If not yet started, start it (create enumerator).
+                  match !enumeratorR with
+                  | None -> enumeratorR := Some (Some (source.GetEnumerator()))
+                  | Some _ -> ()
+                  match (!enumeratorR).Value with
+                  | Some enumerator -> if enumerator.MoveNext() then
+                                          prefix.Add(enumerator.Current)
+                                       else
+                                          enumerator.Dispose()     // Move failed, dispose enumerator,
+                                          enumeratorR := Some None // drop it and record finished.
+                  | None -> ()
+            let result =
+                unfold (fun i ->
+                              // i being the next position to be returned
+                              // A lock is needed over the reads to prefix.Count since the list may be being resized
+                              // NOTE: we could change to a reader/writer lock here
+                              lock enumeratorR (fun () ->
+                                  if i < prefix.Count then
+                                    Some (prefix.[i],i+1)
+                                  else
+                                    oneStepTo i
+                                    if i < prefix.Count then
+                                      Some (prefix.[i],i+1)
+                                    else
+                                      None)) 0
+            let cleanup() =
+               lock enumeratorR (fun () ->
+                   prefix.Clear()
+                   begin match !enumeratorR with
+                   | Some (Some e) -> IEnumerator.dispose e
+                   | _ -> ()
+                   end
+                   enumeratorR := None)
+            (new CachedSeq<_>(cleanup, result) |> ofSeq)
+
+        [<CompiledName("Collect")>]
+        let collect f sources = map f sources |> concat
+
+        [<CompiledName("AllPairs")>]
+        let allPairs (source1:ISeq<'T1>) (source2:ISeq<'T2>) : ISeq<'T1 * 'T2> =
+            checkNonNull "source1" source1
+            checkNonNull "source2" source2
+            let cached = cache source2
+            source1 |> collect (fun x -> cached |> map (fun y -> x,y))
+
+        [<CompiledName("ToList")>]
+        let toList (source : ISeq<'T>) =
+            checkNonNull "source" source
+            Microsoft.FSharp.Primitives.Basics.List.ofSeq source
+
+        [<CompiledName("Replicate")>]
+        let replicate count x =
+            System.Linq.Enumerable.Repeat(x,count) |> ofSeq
+
+        [<CompiledName("IsEmpty")>]
+        let isEmpty (source : ISeq<'T>)  =
+            checkNonNull "source" source
+            use ie = source.GetEnumerator()
+            not (ie.MoveNext())
+
+        [<CompiledName("Cast")>]
+        let cast (source: IEnumerable) : ISeq<'T> =
+            checkNonNull "source" source
+            mkSeq (fun () -> IEnumerator.cast (source.GetEnumerator())) |> ofSeq
+
+        [<CompiledName("ChunkBySize")>]
+        let chunkBySize chunkSize (source : ISeq<'T>) : ISeq<'T[]> =
+            checkNonNull "source" source
+            if chunkSize <= 0 then invalidArgFmt "chunkSize" "{0}\nchunkSize = {1}"
+                                    [|SR.GetString SR.inputMustBePositive; chunkSize|]
+        //    seq { use e = source.GetEnumerator()
+        //          let nextChunk() =
+        //              let res = Array.zeroCreateUnchecked chunkSize
+        //              res.[0] <- e.Current
+        //              let i = ref 1
+        //              while !i < chunkSize && e.MoveNext() do
+        //                  res.[!i] <- e.Current
+        //                  i := !i + 1
+        //              if !i = chunkSize then
+        //                  res
+        //              else
+        //                  res |> Array.subUnchecked 0 !i
+        //          while e.MoveNext() do
+        //              yield nextChunk() } |> ofSeq
+            raise (NotImplementedException ("TBD"))
+
+        let mkDelayedSeq (f: unit -> IEnumerable<'T>) = mkSeq (fun () -> f().GetEnumerator()) |> ofSeq
+
+        [<CompiledName("SplitInto")>]
+        let splitInto count (source:ISeq<'T>) : ISeq<'T[]> =
+            checkNonNull "source" source
+            if count <= 0 then invalidArgFmt "count" "{0}\ncount = {1}"
+                                [|SR.GetString SR.inputMustBePositive; count|]
+            mkDelayedSeq (fun () ->
+                source |> toArray |> Array.splitInto count :> seq<_>)
+
+        let inline indexNotFound() = raise (new System.Collections.Generic.KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))
+
+        [<CompiledName("Find")>]
+        let find f source =
+            checkNonNull "source" source
+            match tryFind f source with
+            | None -> indexNotFound()
+            | Some x -> x
+
+        [<CompiledName("FindIndex")>]
+        let findIndex p (source:ISeq<_>) =
+            checkNonNull "source" source
+            use ie = source.GetEnumerator()
+            let rec loop i =
+                if ie.MoveNext() then
+                    if p ie.Current then
+                        i
+                    else loop (i+1)
+                else
+                    indexNotFound()
+            loop 0
+
+        [<CompiledName("FindBack")>]
+        let findBack f source =
+            checkNonNull "source" source
+            source |> toArray |> Array.findBack f
+
+        [<CompiledName("FindIndexBack")>]
+        let findIndexBack f source =
+            checkNonNull "source" source
+            source |> toArray |> Array.findIndexBack f
+
+        [<CompiledName("Pick")>]
+        let pick f source  =
+            checkNonNull "source" source
+            match tryPick f source with
+            | None -> indexNotFound()
+            | Some x -> x
+
+        [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1709:IdentifiersShouldBeCasedCorrectly"); CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1707:IdentifiersShouldNotContainUnderscores"); CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
+        [<CompiledName("ReadOnly")>]
+        let readonly (source:seq<_>) =
+            checkNonNull "source" source
+            mkSeq (fun () -> source.GetEnumerator()) |> ofSeq
+
+        [<CompiledName("MapFold")>]
+        let mapFold<'T,'State,'Result> (f: 'State -> 'T -> 'Result * 'State) acc source =
+            checkNonNull "source" source
+            let arr,state = source |> toArray |> Array.mapFold f acc
+            readonly arr, state
+
+        [<CompiledName("MapFoldBack")>]
+        let mapFoldBack<'T,'State,'Result> (f: 'T -> 'State -> 'Result * 'State) source acc =
+            checkNonNull "source" source
+            let array = source |> toArray
+            let arr,state = Array.mapFoldBack f array acc
+            readonly arr, state
+
+        let rec nth index (e : IEnumerator<'T>) =
+            if not (e.MoveNext()) then
+              let shortBy = index + 1
+              invalidArgFmt "index"
+                "{0}\nseq was short by {1} {2}"
+                [|SR.GetString SR.notEnoughElements; shortBy; (if shortBy = 1 then "element" else "elements")|]
+            if index = 0 then e.Current
+            else nth (index-1) e
+
+        [<CompiledName("Item")>]
+        let item i (source : ISeq<'T>) =
+            checkNonNull "source" source
+            if i < 0 then invalidArgInputMustBeNonNegative "index" i
+            use e = source.GetEnumerator()
+            nth i e
+
+        [<CompiledName("Singleton")>]
+        let singleton x = mkSeq (fun () -> IEnumerator.Singleton x) |> ofSeq
+
+        [<CompiledName("SortDescending")>]
+        let inline sortDescending source =
+            checkNonNull "source" source
+            let inline compareDescending a b = compare b a
+            sortWith compareDescending source
+
+        [<CompiledName("SortByDescending")>]
+        let inline sortByDescending keyf source =
+            checkNonNull "source" source
+            let inline compareDescending a b = compare (keyf b) (keyf a)
+            sortWith compareDescending source
+
+        [<CompiledName("TryFindBack")>]
+        let tryFindBack f (source : ISeq<'T>) =
+            checkNonNull "source" source
+            source |> toArray |> Array.tryFindBack f
+
+        [<CompiledName("TryFindIndexBack")>]
+        let tryFindIndexBack f (source : ISeq<'T>) =
+            checkNonNull "source" source
+            source |> toArray |> Array.tryFindIndexBack f
+
+        [<CompiledName("Zip3")>]
+        let zip3 source1 source2  source3 =
+            checkNonNull "source1" source1
+            checkNonNull "source2" source2
+            checkNonNull "source3" source3
+            map2 (fun x (y,z) -> x,y,z) source1 (zip source2 source3)
