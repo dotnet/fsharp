@@ -116,10 +116,10 @@ Note: if you face this error [#2351](https://github.com/Microsoft/visualfsharp/i
 
 >  error VSSDK1077: Unable to locate the extensions directory. "ExternalSettingsManager::GetScopePaths failed to initialize PkgDefManager for C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\devenv.exe".
 
-Or hard crash on launch ("Unkown Error"), delete those folders:
+Or hard crash on launch ("Unknown Error"), delete these folders:
 
 * `%appdata%\Microsoft\VisualStudio\15.0_(some number here)FSharpDev`
-* `%appdata%\..\Local\Microsoft\VisualStudio\15.0_(some number here)FSharpDev`
+* `%localappdata%\..\Local\Microsoft\VisualStudio\15.0_(some number here)FSharpDev`
 
 
 ## [Optional] Install the Visual F# IDE Tools  (Windows Only)
