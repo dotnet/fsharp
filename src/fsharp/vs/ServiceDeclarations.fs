@@ -1365,8 +1365,18 @@ type FSharpAccessibility(a:Accessibility, ?isProtected) =
 
 /// An intellisense declaration
 [<Sealed>]
-type FSharpDeclarationListItem(name: string, nameInCode: string, fullName: string, glyph: FSharpGlyph, info, isAttribute: bool, accessibility: FSharpAccessibility option,
-                               kind: CompletionItemKind, isOwnMember: bool, priority: int) =
+type FSharpDeclarationListItem
+    ( name          : string,
+      nameInCode    : string,
+      fullName      : string,
+      glyph         : FSharpGlyph,
+      info,
+      isAttribute   : bool,
+      accessibility : FSharpAccessibility option,
+      kind          : CompletionItemKind,
+      isOwnMember   : bool,
+      priority      : int
+    ) =
 
     let mutable descriptionTextHolder:FSharpToolTipText<_> option = None
     let mutable task = null
@@ -1493,23 +1503,34 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
             
         let decls = 
             // Filter out duplicate names
-            items |> List.map (fun (nm,itemsWithSameName) -> 
+            items |> List.map (fun (name,itemsWithSameName) -> 
                 match itemsWithSameName with
                 | [] -> failwith "Unexpected empty bag"
                 | item :: _ as items -> 
                     let glyph = ItemDescriptionsImpl.GlyphOfItem(denv, item.Item)
                     let name, nameInCode =
-                        if nm.StartsWith "( " && nm.EndsWith " )" then
-                            let cleanName = nm.[2..nm.Length - 3]
+                        if name.StartsWith "( " && name.EndsWith " )" then
+                            let cleanName = name.[2..name.Length - 3]
                             cleanName, 
-                            if IsOperatorName nm then cleanName else "``" + cleanName + "``"
-                        else nm, nm
+                            if IsOperatorName name then cleanName else "``" + cleanName + "``"
+                        else
+                            name, Lexhelp.Keywords.QuoteIdentifierIfNeeded name
 
                     let fullName = ItemDescriptionsImpl.FullNameOfItem g item.Item
 
                     FSharpDeclarationListItem(
-                        name, nameInCode, fullName, glyph, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), 
-                        ItemDescriptionsImpl.IsAttribute infoReader item.Item, getAccessibility item.Item, item.Kind, item.IsOwnMember, item.MinorPriority))
+                        name,
+                        nameInCode,
+                        fullName,
+                        glyph,
+                        Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive),
+                        ItemDescriptionsImpl.IsAttribute infoReader item.Item,
+                        getAccessibility item.Item,
+                        item.Kind,
+                        item.IsOwnMember,
+                        item.MinorPriority
+                        )
+            )
 
         new FSharpDeclarationListInfo(Array.ofList decls)
     
