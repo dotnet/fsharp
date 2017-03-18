@@ -716,11 +716,11 @@ let AddStorageForVal (g: TcGlobals) (v,s) eenv =
         | None -> eenv
         | Some vref -> 
             match vref.TryDeref with
-            | None -> 
+            | VNone -> 
                 //let msg = sprintf "could not dereference external value reference to something in FSharp.Core.dll during code generation, v.MangledName = '%s', v.Range = %s" v.MangledName (stringOfRange v.Range)
                 //System.Diagnostics.Debug.Assert(false, msg)
                 eenv
-            | Some gv -> 
+            | VSome gv -> 
                 { eenv with valsInScope = eenv.valsInScope.Add gv s }
     else 
         eenv
@@ -2085,15 +2085,14 @@ and GenGetTupleField cenv cgbuf eenv (tupInfo,e,tys,n,m) sequel =
         let ar = tys.Length
         if ar <= 0 then failwith "getCompiledTupleItem"
         elif ar < maxTuple then
-            let tcr' = mkCompiledTupleTyconRef g tupInfo tys
+            let tcr' = mkCompiledTupleTyconRef g tupInfo ar
             let typ = GenNamedTyApp cenv.amap m eenv.tyenv tcr' tys
             mkGetTupleItemN g m n typ tupInfo e tys.[n]
-            
         else
             let tysA,tysB = List.splitAfter (goodTupleFields) tys
             let tyB = mkCompiledTupleTy g tupInfo tysB
             let tys' = tysA@[tyB]
-            let tcr' = mkCompiledTupleTyconRef g tupInfo tys'
+            let tcr' = mkCompiledTupleTyconRef g tupInfo (List.length tys')
             let typ' = GenNamedTyApp cenv.amap m eenv.tyenv tcr' tys'
             let n' = (min n goodTupleFields)
             let elast = mkGetTupleItemN g m n' typ' tupInfo e tys'.[n']
@@ -4058,7 +4057,7 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod((TSlotSig(_,delega
         try 
             if isILAppTy cenv.g delegateTy then 
                 let tcref = tcrefOfAppTy cenv.g delegateTy
-                let _,_,tdef = tcref.ILTyconInfo
+                let tdef = tcref.ILTyconRawMetadata
                 match tdef.Methods.FindByName ".ctor" with 
                 | [ctorMDef] -> 
                     match ctorMDef.Parameters with 
@@ -6497,7 +6496,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                              && cenv.g.attrib_SerializableAttribute.IsSome
                                        
            match tycon.TypeReprInfo with 
-           | TILObjectRepr (_,_,td) ->
+           | TILObjectRepr _ ->
+               let td = tycon.ILTyconRawMetadata
                {td with Access = access
                         CustomAttrs = mkILCustomAttrs ilCustomAttrs
                         GenericParams = ilGenParams }, None

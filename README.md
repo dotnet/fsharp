@@ -17,10 +17,6 @@ F# is a mature, open source, cross-platform, functional-first programming langua
 
 Changes contributed here are packaged into the Visual F# Tools, the F# Open Edition, and other open source F# editing tools. Microsoft coordinates packaging this repository as part of the Visual F# Tools, while the F# community coordinates packaging it as the Open Edition of F# for use on Linux, OSX, Android, iOS, and other platforms, via the [fsharp/fsharp GitHub repo](https://github.com/fsharp/fsharp/).
 
-### Engineering status
-
-[F# for CoreCLR status](https://github.com/Microsoft/visualfsharp/wiki/F%23-for-CoreCLR---Status)
-
 ### License
 
 This project is subject to the Apache Licence, Version 2.0. A copy of the license can be found in [License.txt](License.txt) at the root of this repo.
