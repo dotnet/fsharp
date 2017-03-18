@@ -227,7 +227,7 @@ type internal FSharpCompletionProvider
                     | _ -> completionItem
                 
                 let completionItem =
-                    if declItem.Name <> declItem.NameInCode then
+                    if name <> declItem.NameInCode then
                         completionItem.AddProperty(NameInCodePropName, declItem.NameInCode)
                     else completionItem
 
@@ -243,7 +243,9 @@ type internal FSharpCompletionProvider
 
                 let sortText = sprintf "%06d" priority
 
+                //#if DEBUG
                 //Logging.Logging.logInfof "***** %s => %s" name sortText
+                //#endif
 
                 let completionItem = completionItem.WithSortText(sortText)
 
@@ -294,7 +296,7 @@ type internal FSharpCompletionProvider
                 return CompletionDescription.Empty
         } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
 
-    override this.GetChangeAsync(_, item, _, cancellationToken) : Task<CompletionChange> =
+    override this.GetChangeAsync(document, item, _, cancellationToken) : Task<CompletionChange> =
         async {
             match item.Properties.TryGetValue IsExtensionMemberPropName with
             | true, _ -> ()  // do not add extension members to the MRU list
@@ -310,11 +312,18 @@ type internal FSharpCompletionProvider
                 match item.Properties.TryGetValue NameInCodePropName with
                 | true, x -> x
                 | _ -> item.DisplayText
-            
-            let change = CompletionChange.Create(TextChange(item.Span, nameInCode))
 
-            return
-                match item.Properties.TryGetValue NamespaceToOpen with
-                | true, ns -> change.WithTextChange(TextChange(TextSpan(0, 0), ns))
-                | _ -> change
+            match item.Properties.TryGetValue NamespaceToOpen with
+            | true, ns ->
+                let openNsInsertPos = 0 // todo
+                let! sourceText = document.GetTextAsync(cancellationToken)
+                let fullChangingSpan = TextSpan.FromBounds(openNsInsertPos, item.Span.End)
+                let openStatement = sprintf "open %s\n" ns
+                let changedSourceText = sourceText.WithChanges(TextChange(TextSpan(openNsInsertPos, 0), openStatement), TextChange(item.Span, nameInCode))
+                let changedSpan = TextSpan.FromBounds(openNsInsertPos, item.Span.Start + openStatement.Length + nameInCode.Length)
+                let changedText = changedSourceText.ToString(changedSpan)
+                return CompletionChange.Create(TextChange(fullChangingSpan, changedText)).WithNewPosition(Nullable (changedSpan.End))
+            | _ -> 
+                return CompletionChange.Create(TextChange(item.Span, nameInCode))
+
         } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
