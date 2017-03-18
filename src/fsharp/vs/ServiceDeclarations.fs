@@ -1366,16 +1366,16 @@ type FSharpAccessibility(a:Accessibility, ?isProtected) =
 /// An intellisense declaration
 [<Sealed>]
 type FSharpDeclarationListItem
-    ( name          : string
-    , nameInCode    : string
-    , fullName      : string
-    , glyph         : FSharpGlyph
-    , info
-    , isAttribute   : bool
-    , accessibility : FSharpAccessibility option
-    , kind          : CompletionItemKind
-    , isOwnMember   : bool
-    , priority      : int
+    ( name          : string,
+      nameInCode    : string,
+      fullName      : string,
+      glyph         : FSharpGlyph,
+      info,
+      isAttribute   : bool,
+      accessibility : FSharpAccessibility option,
+      kind          : CompletionItemKind,
+      isOwnMember   : bool,
+      priority      : int
     ) =
 
     let mutable descriptionTextHolder:FSharpToolTipText<_> option = None
@@ -1519,16 +1519,16 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                     let fullName = ItemDescriptionsImpl.FullNameOfItem g item.Item
 
                     FSharpDeclarationListItem(
-                        name
-                        , nameInCode
-                        , fullName
-                        , glyph
-                        , Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive)
-                        , ItemDescriptionsImpl.IsAttribute infoReader item.Item
-                        , getAccessibility item.Item
-                        , item.Kind
-                        , item.IsOwnMember
-                        , item.MinorPriority
+                        name,
+                        nameInCode,
+                        fullName,
+                        glyph,
+                        Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive),
+                        ItemDescriptionsImpl.IsAttribute infoReader item.Item,
+                        getAccessibility item.Item,
+                        item.Kind,
+                        item.IsOwnMember,
+                        item.MinorPriority
                         )
             )
 
