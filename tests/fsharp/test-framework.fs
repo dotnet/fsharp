@@ -34,7 +34,11 @@ module Commands =
 
     let rm dir path =
         let p = path |> getfullpath dir
-        if File.Exists(p) then (log "rm %s" p) |> ignore; File.Delete(p); else (log "not found: %s p") |> ignore
+        if File.Exists(p) then 
+            (log "rm %s" p) |> ignore
+            File.Delete(p)
+        else
+            (log "not found: %s p") |> ignore
 
     let pathAddBackslash (p: FilePath) = 
         if String.IsNullOrWhiteSpace (p) then p
