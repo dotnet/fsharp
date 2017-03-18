@@ -1639,8 +1639,19 @@ module internal VsActual =
         if String.IsNullOrEmpty vsvar then failwith "VS140COMNTOOLS environment variable was not found."
 #endif
 #if VS_VERSION_DEV15
-        let vsvar = System.Environment.GetEnvironmentVariable("VS150COMNTOOLS")
-        if String.IsNullOrEmpty vsvar then failwith "VS150COMNTOOLS environment variable was not found."
+        let vsvar = 
+            let vsvar = System.Environment.GetEnvironmentVariable("VS150COMNTOOLS")
+            if String.IsNullOrEmpty vsvar then
+                let maybeDirectory = 
+                    [ @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\" ]
+                    |> Seq.tryFind System.IO.Directory.Exists
+                match maybeDirectory with
+                | Some dir ->
+                    Environment.SetEnvironmentVariable("VS150COMNTOOLS", dir)
+                    dir
+                | None -> failwith "VS150COMNTOOLS environment variable was not found."
+            else
+                vsvar
 #endif
         Path.Combine(vsvar, "..")
 
