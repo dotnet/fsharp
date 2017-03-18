@@ -1278,7 +1278,7 @@ module internal ItemDescriptionsImpl =
                 | TTyconEnum _ -> FSharpGlyph.Enum
             | TRecdRepr _ -> FSharpGlyph.Type
             | TUnionRepr _ -> FSharpGlyph.Union
-            | TILObjectRepr(_,_,td) -> 
+            | TILObjectRepr (TILObjectReprData (_,_,td)) -> 
                 match td.tdKind with 
                 | ILTypeDefKind.Class -> FSharpGlyph.Class
                 | ILTypeDefKind.ValueType -> FSharpGlyph.Struct
