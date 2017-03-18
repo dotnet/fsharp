@@ -118,9 +118,8 @@ Note: if you face this error [#2351](https://github.com/Microsoft/visualfsharp/i
 
 Or hard crash on launch ("Unknown Error"), delete these folders:
 
-* `%appdata%\Microsoft\VisualStudio\15.0_(some number here)FSharpDev`
-* `%localappdata%\..\Local\Microsoft\VisualStudio\15.0_(some number here)FSharpDev`
-
+* `%localappdata%\Microsoft\VisualStudio\15.0_(some number here)FSharpDev`
+* `%localappdata%\Microsoft\VisualStudio\15.0_(some number here)`
 
 ## [Optional] Install the Visual F# IDE Tools  (Windows Only)
 
