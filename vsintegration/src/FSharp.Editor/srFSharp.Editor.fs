@@ -1,8 +1,12 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-module SR =
+open System
+open System.ComponentModel
+open System.Diagnostics
 
+[<RequireQualifiedAccess>]
+module SR =
     let private resources = lazy (new System.Resources.ResourceManager("FSharp.Editor", System.Reflection.Assembly.GetExecutingAssembly()))
 
     let GetString(name:string) =        
@@ -27,3 +31,41 @@ module SR =
     let FSharpDisposablesClassificationType = lazy (GetString "FSharpDisposablesClassificationType")
     let RemoveUnusedOpens = lazy (GetString "RemoveUnusedOpens")
     let UnusedOpens = lazy (GetString "UnusedOpens")
+    
+    [<Literal>]
+    let IntelliSensePropertyPageMiscCategory = "IntelliSensePropertyPageMiscCategory"
+    [<Literal>]
+    let IntelliSensePropertyPageShowAfterCharIsTyped = "IntelliSensePropertyPageShowAfterCharIsTyped"
+    [<Literal>]
+    let IntelliSensePropertyPageShowAfterCharIsTypedDescr = "IntelliSensePropertyPageShowAfterCharIsTypedDescr"
+
+    //--------------------------------------------------------------------------------------
+    // Attributes used to mark up editable properties 
+    
+    [<AttributeUsage(AttributeTargets.All)>]
+    type internal SRDescriptionAttribute(description:string) =
+        inherit DescriptionAttribute(description)
+        let mutable replaced = false
+    
+        override x.Description = 
+            if not (replaced) then 
+                replaced <- true
+                x.DescriptionValue <- GetString(base.Description)
+            base.Description
+    
+    [<AttributeUsage(AttributeTargets.All)>]
+    type internal SRCategoryAttribute(category:string) =
+        inherit CategoryAttribute(category)
+        override x.GetLocalizedString(value:string) =
+            GetString(value)
+    
+    [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Property ||| AttributeTargets.Field, Inherited = false, AllowMultiple = false)>]
+    type internal SRDisplayNameAttribute(name:string) =  
+        inherit DisplayNameAttribute()
+    
+        override x.DisplayName = 
+          match GetString(name) with 
+          | null -> 
+              Debug.Assert(false, "String resource '" + name + "' is missing")
+              name
+          | result -> result

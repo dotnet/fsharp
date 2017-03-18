@@ -19,7 +19,7 @@ echo Usage:
 echo.
 echo build.cmd ^<all^|net40^|coreclr^|pcls^|vs^>
 echo           ^<proto^|protofx^>
-echo           ^<ci^|ci_part1^|ci_part2^|ci_part3^|microbuild^>
+echo           ^<ci^|ci_part1^|ci_part2^|ci_part3^|ci_part4^|microbuild^>
 echo           ^<debug^|release^>
 echo           ^<diag^|publicsign^>
 echo           ^<test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-pcl-coreunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^>
@@ -76,6 +76,9 @@ set TEST_VS_IDEUNIT_SUITE=0
 set INCLUDE_TEST_SPEC_NUNIT=
 set INCLUDE_TEST_TAGS=
 
+set PUBLISH_VSIX=0
+set MYGET_APIKEY=
+
 
 REM ------------------ Parse all arguments -----------------------
 
@@ -104,7 +107,6 @@ if /i '%_autoselect_tests%' == '1' (
     )
 
     if /i '%BUILD_CORECLR%' == '1' (
-        set BUILD_NET40=1
         set TEST_CORECLR_FSHARP_SUITE=1
         set TEST_CORECLR_COREUNIT_SUITE=1
     )
@@ -188,6 +190,7 @@ if /i '%ARG%' == 'microbuild' (
     set TEST_PORTABLE_COREUNIT_SUITE=1
     set TEST_VS_IDEUNIT_SUITE=1
     set CI=1
+    set PUBLISH_VSIX=1
 )
 
 REM These divide 'ci' into two chunks which can be done in parallel
@@ -200,8 +203,6 @@ if /i '%ARG%' == 'ci_part1' (
     set BUILD_PORTABLE=1
     set BUILD_VS=1
     set BUILD_SETUP=%FSC_BUILD_SETUP%
-    set TEST_NET40_COMPILERUNIT_SUITE=1
-    set TEST_NET40_FSHARPQA_SUITE=1
     set TEST_VS_IDEUNIT_SUITE=1
     set CI=1
 )
@@ -210,16 +211,13 @@ if /i '%ARG%' == 'ci_part2' (
     set _autoselect=0
 
     REM what we do
-    set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_PROTO=1
     set BUILD_NET40=1
-    set BUILD_PORTABLE=1
 
     set TEST_NET40_COREUNIT_SUITE=1
     set TEST_NET40_FSHARP_SUITE=1
     set TEST_PORTABLE_COREUNIT_SUITE=1
     set CI=1
-
 )
 
 if /i '%ARG%' == 'ci_part3' (
@@ -228,13 +226,25 @@ if /i '%ARG%' == 'ci_part3' (
     REM what we do
     set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_PROTO=1
-    set BUILD_NET40=1
     set BUILD_CORECLR=1
 
     set TEST_CORECLR_FSHARP_SUITE=1
     set TEST_CORECLR_COREUNIT_SUITE=1
     set CI=1
+)
 
+if /i '%ARG%' == 'ci_part4' (
+    set _autoselect=0
+
+    REM what we do
+    set BUILD_PROTO=1
+    set BUILD_NET40=1
+    set BUILD_PORTABLE=1
+
+    set TEST_NET40_COMPILERUNIT_SUITE=1
+    set TEST_NET40_FSHARPQA_SUITE=1
+    set TEST_PORTABLE_COREUNIT_SUITE=1
+    set CI=1
 )
 
 if /i '%ARG%' == 'proto' (
@@ -331,6 +341,10 @@ if /i '%ARG%' == 'init' (
     set BUILD_PROTO_WITH_CORECLR_LKG=1
 )
 
+if /i [%ARG:~0,13%] == [MYGET_APIKEY:] (
+    set MYGET_APIKEY=%ARG:~13%
+)
+
 goto :EOF
 :: Note: "goto :EOF" returns from an in-batchfile "call" command
 :: in preference to returning from the entire batch file.
@@ -364,6 +378,8 @@ echo TEST_PORTABLE_COREUNIT_SUITE=%TEST_PORTABLE_COREUNIT_SUITE%
 echo TEST_VS_IDEUNIT_SUITE=%TEST_VS_IDEUNIT_SUITE%
 echo INCLUDE_TEST_SPEC_NUNIT=%INCLUDE_TEST_SPEC_NUNIT%
 echo INCLUDE_TEST_TAGS=%INCLUDE_TEST_TAGS%
+echo PUBLISH_VSIX=%PUBLISH_VSIX%
+echo MYGET_APIKEY=%MYGET_APIKEY%
 
 
 echo .
@@ -866,6 +882,17 @@ if '%TEST_VS_IDEUNIT_SUITE%' == '1' (
         echo Error: Running tests vs-ideunit failed, see logs above, search for "Errors and Failures"  -- FAILED
         echo ----------------------------------------------------------------------------------------------------
         goto :failure
+    )
+)
+
+REM ---------------- publish-vsix -----------------------
+
+if '%PUBLISH_VSIX%' == '1' (
+    if not '%MYGET_APIKEY%' == '' (
+        powershell -noprofile -executionPolicy ByPass -file "%~dp0setup\publish-assets.ps1" -binariesPath "%~dp0%BUILD_CONFIG%" -branchName "%BUILD_SOURCEBRANCH%" -apiKey "%MYGET_APIKEY%"
+        if errorlevel 1 goto :failure
+    ) else (
+        echo No MyGet API key specified, skipping package publish.
     )
 )
 

@@ -3454,9 +3454,10 @@ type TcAssemblyResolutions(results : AssemblyResolution list, unresolved : Unres
     let resolvedPathToResolution      = results |> List.map (fun r -> r.resolvedPath,r) |> Map.ofList
 
     /// Add some resolutions to the map of resolution results.                
-    member tcResolutions.AddResolutionResults(newResults) = TcAssemblyResolutions(newResults @ results, unresolved)
+    member tcResolutions.AddResolutionResults(newResults) = TcAssemblyResolutions(results @ newResults, unresolved)
+
     /// Add some unresolved results.
-    member tcResolutions.AddUnresolvedReferences(newUnresolved) = TcAssemblyResolutions(results, newUnresolved @ unresolved)
+    member tcResolutions.AddUnresolvedReferences(newUnresolved) = TcAssemblyResolutions(results, unresolved @ newUnresolved)
 
     /// Get information about referenced DLLs
     member tcResolutions.GetAssemblyResolutions() = results

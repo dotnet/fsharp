@@ -66,7 +66,7 @@ type QuotationGenerationScope =
 
     member cenv.Close() = 
         cenv.referencedTypeDefs |> ResizeArray.toList, 
-        cenv.typeSplices |> ResizeArray.toList |> List.map (fun (ty,m) -> mkTyparTy ty, m), 
+        cenv.typeSplices |> ResizeArray.map (fun (ty,m) -> mkTyparTy ty, m) |> ResizeArray.toList, 
         cenv.exprSplices |> ResizeArray.toList
 
     static member ComputeQuotationFormat g = 
