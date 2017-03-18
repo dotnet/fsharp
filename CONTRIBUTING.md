@@ -38,15 +38,15 @@ When submitting issues, please use the following guidelines
 
 - New Bug Reports should always give accurate, clear steps for reproducing the bug, and all relevant details about versions, platform, etc.  We suggest the following template:
 
-    Title: <a short, clear title>
+    Title: &lt;a short, clear title&gt;
     
-    Description: <a description of the problem>
+    Description: &lt;a description of the problem&gt;
     
-    Repro Steps: <step by step description>
+    Repro Steps: &lt;step by step description&gt;
     
-    Expected: <what is expected>
+    Expected: &lt;what is expected&gt;
     
-    Actual: <what you really get>
+    Actual: &lt;what you really get&gt;
     
     Severity: a description on how bad it is and why - is it blocking?
     

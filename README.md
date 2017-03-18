@@ -50,7 +50,7 @@ For Visual F# IDE Tools 4.1 development (Windows)
   - Under the "Windows" workloads, select ".NET desktop development"
     - Select "F# language support" under the optional components
   - Under the "Other Toolsets" workloads, select "Visual Studio extension development"
-  - Under the "Individual components" tab select "Windows 10 SDK" as shown below (needed for compiling RC resource, see #2556):
+  - Under the "Individual components" tab select "Windows 10 SDK" as shown below (needed for compiling RC resource, see #2556): \
   ![image](https://cloud.githubusercontent.com/assets/1249087/23730261/5c78c850-041b-11e7-9d9d-62766351fd0f.png)
 
 
