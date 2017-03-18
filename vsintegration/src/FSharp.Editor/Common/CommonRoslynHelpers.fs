@@ -44,55 +44,50 @@ module internal CommonRoslynHelpers =
             Assert.Exception(task.Exception.GetBaseException())
             raise(task.Exception.GetBaseException())
 
-    /// Text tagged with Roslyn TextTags with optional range for navigable links in quickinfo 
-    type NavigableRoslynText = NavigableRoslynText of tag: string * text: string * range: range option
+    /// maps from `LayoutTag` of the F# Compiler to Roslyn `TextTags` for use in tooltips
+    let roslynTag = function
+    | LayoutTag.ActivePatternCase
+    | LayoutTag.ActivePatternResult
+    | LayoutTag.UnionCase
+    | LayoutTag.Enum -> TextTags.Enum
+    | LayoutTag.Alias
+    | LayoutTag.Class
+    | LayoutTag.Union
+    | LayoutTag.Record
+    | LayoutTag.UnknownType -> TextTags.Class
+    | LayoutTag.Delegate -> TextTags.Delegate
+    | LayoutTag.Event -> TextTags.Event
+    | LayoutTag.Field -> TextTags.Field
+    | LayoutTag.Interface -> TextTags.Interface
+    | LayoutTag.Struct -> TextTags.Struct
+    | LayoutTag.Keyword -> TextTags.Keyword
+    | LayoutTag.Local -> TextTags.Local
+    | LayoutTag.Member
+    | LayoutTag.ModuleBinding
+    | LayoutTag.RecordField
+    | LayoutTag.Property -> TextTags.Property
+    | LayoutTag.Method -> TextTags.Method
+    | LayoutTag.Namespace -> TextTags.Namespace
+    | LayoutTag.Module -> TextTags.Module
+    | LayoutTag.LineBreak -> TextTags.LineBreak
+    | LayoutTag.Space -> TextTags.Space
+    | LayoutTag.NumericLiteral -> TextTags.NumericLiteral
+    | LayoutTag.Operator -> TextTags.Operator
+    | LayoutTag.Parameter -> TextTags.Parameter
+    | LayoutTag.TypeParameter -> TextTags.TypeParameter
+    | LayoutTag.Punctuation -> TextTags.Punctuation
+    | LayoutTag.StringLiteral -> TextTags.StringLiteral
+    | LayoutTag.Text
+    | LayoutTag.UnknownEntity -> TextTags.Text
 
-    let unboxRange = function
-        | Some(BoxRange.BoxRange(:? range as range)) -> Some range
-        | _ -> None
+    let CollectTaggedText (list: List<_>) (t:TaggedText) = list.Add(TaggedText(roslynTag t.Tag, t.Text))
 
-    /// Converts `TaggedText` from the F# Compiler to custom format for use in tooltips
-    let TaggedTextToNavigable t =
-        match t with
-        | TaggedText.ActivePatternCase t
-        | TaggedText.ActivePatternResult t -> NavigableRoslynText(TextTags.Enum, t, None)
-        | TaggedText.Alias(x, t) -> NavigableRoslynText(TextTags.Class, t, unboxRange x)
-        | TaggedText.Class(x, t) -> NavigableRoslynText(TextTags.Class, t, unboxRange x)
-        | TaggedText.Delegate(x, t) -> NavigableRoslynText(TextTags.Delegate, t, unboxRange x)
-        | TaggedText.Enum(x, t) -> NavigableRoslynText(TextTags.Enum, t, unboxRange x)
-        | TaggedText.Event(x, t) -> NavigableRoslynText(TextTags.Event, t, unboxRange x)
-        | TaggedText.Field t -> NavigableRoslynText(TextTags.Field, t, None)
-        | TaggedText.Interface(x, t) -> NavigableRoslynText(TextTags.Interface, t, unboxRange x)
-        | TaggedText.Keyword t -> NavigableRoslynText(TextTags.Keyword, t, None)
-        | TaggedText.LineBreak t -> NavigableRoslynText(TextTags.LineBreak, t, None)
-        | TaggedText.Local t -> NavigableRoslynText(TextTags.Local, t, None)
-        | TaggedText.Member t -> NavigableRoslynText(TextTags.Property, t, None)
-        | TaggedText.Method t -> NavigableRoslynText(TextTags.Method, t, None)
-        | TaggedText.Module(x, t) -> NavigableRoslynText(TextTags.Module, t, unboxRange x)
-        | TaggedText.ModuleBinding t -> NavigableRoslynText(TextTags.Property, t, None)
-        | TaggedText.Namespace t -> NavigableRoslynText(TextTags.Namespace, t, None)
-        | TaggedText.NumericLiteral t -> NavigableRoslynText(TextTags.NumericLiteral, t, None)
-        | TaggedText.Operator t -> NavigableRoslynText(TextTags.Operator, t, None)
-        | TaggedText.Parameter t -> NavigableRoslynText(TextTags.Parameter, t, None)
-        | TaggedText.Property t -> NavigableRoslynText(TextTags.Property, t, None)
-        | TaggedText.Punctuation t -> NavigableRoslynText(TextTags.Punctuation, t, None)
-        | TaggedText.Record(x, t) -> NavigableRoslynText(TextTags.Class, t, unboxRange x)
-        | TaggedText.RecordField t -> NavigableRoslynText(TextTags.Property, t, None)
-        | TaggedText.Space t -> NavigableRoslynText(TextTags.Space, t, None)
-        | TaggedText.StringLiteral t -> NavigableRoslynText(TextTags.StringLiteral, t, None)
-        | TaggedText.Struct(x, t) -> NavigableRoslynText(TextTags.Struct, t, unboxRange x)
-        | TaggedText.Text t -> NavigableRoslynText(TextTags.Text, t, None)
-        | TaggedText.TypeParameter t -> NavigableRoslynText(TextTags.TypeParameter, t, None)
-        | TaggedText.Union(x, t) -> NavigableRoslynText(TextTags.Class, t, unboxRange x)
-        | TaggedText.UnionCase(x, t) -> NavigableRoslynText(TextTags.Enum, t, unboxRange x)
-        | TaggedText.UnknownEntity t -> NavigableRoslynText(TextTags.Property, t, None)
-        | TaggedText.UnknownType t -> NavigableRoslynText(TextTags.Class, t, None)
-
-    let NavigableTextToRoslyn (NavigableRoslynText(tag, text,_)) = TaggedText(tag, text)
-
-    let CollectNavigableText (list: List<_>) t = list.Add(TaggedTextToNavigable t)
-
-    let CollectTaggedText (list: List<_>) t = list.Add((TaggedTextToNavigable >> NavigableTextToRoslyn) t)
+    let CollectNavigableText (list: List<_>) (t: TaggedText) =
+        let rangeOpt = 
+            match t with
+            | :? NavigableTaggedText as n -> Some n.Range
+            | _ -> None
+        list.Add(roslynTag t.Tag, t.Text, rangeOpt)
 
     let StartAsyncAsTask cancellationToken computation =
         let computation =

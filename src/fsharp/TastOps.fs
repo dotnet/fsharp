@@ -2489,27 +2489,25 @@ let fullNameOfParentOfEntityRefAsLayout eref =
          | Some ppath -> fullNameOfParentOfPubPathAsLayout ppath
     | ERefNonLocal nlr -> fullNameOfParentOfNonLocalEntityRefAsLayout nlr
 
-
 let fullNameOfEntityRef nmF xref = 
     match fullNameOfParentOfEntityRef xref  with 
     | None -> nmF xref 
     | Some pathText -> pathText +.+ nmF xref
 
 let tagEntityRefName (xref: EntityRef) name =
-    let range = Some (BoxRange.BoxRange(box xref.DefinitionRange))
     if xref.IsNamespace then tagNamespace name
-    elif xref.IsModule then TaggedText.Module(range, name)
-    elif xref.IsTypeAbbrev then TaggedText.Alias(range, name)
-    elif xref.IsFSharpDelegateTycon then TaggedText.Delegate(range, name)
-    elif xref.IsILEnumTycon || xref.IsFSharpEnumTycon then TaggedText.Enum(range, name)
-    elif xref.IsStructOrEnumTycon then TaggedText.Struct(range, name)
-    elif xref.IsFSharpInterfaceTycon then TaggedText.Interface(range, name)
-    elif xref.IsUnionTycon then TaggedText.Union(range, name)
-    elif xref.IsRecordTycon then TaggedText.Record(range, name)
-    else TaggedText.Class(range, name)
+    elif xref.IsModule then tagModule name
+    elif xref.IsTypeAbbrev then tagAlias name
+    elif xref.IsFSharpDelegateTycon then tagDelegate name
+    elif xref.IsILEnumTycon || xref.IsFSharpEnumTycon then tagEnum name
+    elif xref.IsStructOrEnumTycon then tagStruct name
+    elif xref.IsFSharpInterfaceTycon then tagInterface name
+    elif xref.IsUnionTycon then tagUnion name
+    elif xref.IsRecordTycon then tagRecord name
+    else tagClass name
 
 let fullNameOfEntityRefAsLayout nmF (xref: EntityRef) =
-    let n = wordL (tagEntityRefName xref (nmF xref))
+    let n = NavigableTaggedText.Create(tagEntityRefName xref (nmF xref), xref.DefinitionRange) |> wordL
     match fullNameOfParentOfEntityRefAsLayout xref  with 
     | None -> n
     | Some pathText -> pathText ^^ SepL.dot ^^ n

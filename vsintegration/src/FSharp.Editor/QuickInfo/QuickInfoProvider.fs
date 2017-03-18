@@ -88,7 +88,7 @@ module internal FSharpQuickInfo =
             >> formatMap.GetTextProperties
 
         let inlines = seq { 
-            for NavigableRoslynText(tag, text, rangeOpt) in content do
+            for (tag, text, rangeOpt) in content do
                 let run =
                     match rangeOpt with
                     | Some(range) when canGoTo range ->
