@@ -28,7 +28,7 @@ type internal GoToDefinitionResult =
     | FoundInternal of range
     | FoundExternal of  
         // The document containing the symbol being searched for
-        sourceDocument:Document * ast:ParsedInput  * symbol:FSharpSymbolUse
+        ast:ParsedInput  * symbol:FSharpSymbolUse
   //| FoundLoadDirective of string  // TODO - Implement navigation across fsx loads
 
 type internal FSharpNavigableItem(document: Document, textSpan: Microsoft.CodeAnalysis.Text.TextSpan) =
@@ -52,12 +52,12 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>]
     ,   [<ImportMany>]_presenters: IEnumerable<INavigableItemsPresenter>
     ) =
 
-    static member FindDefinition (checker: FSharpChecker, document: Document, sourceText: SourceText, filePath: string, position: int, defines: string list, options: FSharpProjectOptions, textVersionHash: int) : Async<GoToDefinitionResult option> = 
+    static member FindDefinition (checker: FSharpChecker, documentId: DocumentId, sourceText: SourceText, filePath: string, position: int, defines: string list, options: FSharpProjectOptions, textVersionHash: int) : Async<GoToDefinitionResult option> = 
         asyncMaybe {
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
-            let! lexerSymbol = CommonHelpers.getSymbolAtPosition (document.Id, sourceText, position, filePath, defines, SymbolLookupKind.Greedy)
+            let! lexerSymbol = CommonHelpers.getSymbolAtPosition (documentId, sourceText, position, filePath, defines, SymbolLookupKind.Greedy)
             let! _, ast, checkFileResults = checker.ParseAndCheckDocument (filePath, textVersionHash, sourceText.ToString (), options, allowStaleResults = true)
             let! declarations = 
                     checkFileResults.GetDeclarationLocationAlternate 
@@ -68,7 +68,7 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>]
             | _ -> 
                 let! fsSymbol = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString (), lexerSymbol.FullIsland)
                 // TODO tryget range from navigate to metadata
-                return! Some (FoundExternal (document, ast, fsSymbol))  
+                return! Some (FoundExternal (ast, fsSymbol))  
         }
     
     // FSROSLYNTODO: Since we are not integrated with the Roslyn project system yet, the below call
@@ -82,7 +82,7 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>]
             let! sourceText = document.GetTextAsync cancellationToken
             let! textVersion = document.GetTextVersionAsync cancellationToken
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing (document.Name, options.OtherOptions |> Seq.toList)
-            let! gotoDefnResult = FSharpGoToDefinitionService.FindDefinition (checkerProvider.Checker, document, sourceText, document.FilePath, position, defines, options, textVersion.GetHashCode ())
+            let! gotoDefnResult = FSharpGoToDefinitionService.FindDefinition (checkerProvider.Checker, document.Id, sourceText, document.FilePath, position, defines, options, textVersion.GetHashCode ())
             
             match gotoDefnResult with 
             | FoundInternal range ->
@@ -97,8 +97,8 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>]
                     results.Add (FSharpNavigableItem (refDocument, refTextSpan))
                 return results.AsEnumerable ()
 
-            | FoundExternal (sourceDocument, ast, symbol) ->
-                let! sigDocument, range = metadataService.TryFindMetadataRange (sourceDocument, ast, symbol)
+            | FoundExternal (ast, symbol) ->
+                let! sigDocument, range = metadataService.TryFindMetadataRange (document, ast, symbol)
                 
                 let! sigSourceText = sigDocument.GetTextAsync cancellationToken
                 
