@@ -16,7 +16,8 @@ module QuickInfoStandardSettings =
     let standard40AssemblyRefs  = [ "System"; "System.Core"; "System.Numerics" ]
     let queryAssemblyRefs = [ "System.Xml.Linq"; "System.Core" ]
 
-[<TestFixture>] 
+[<TestFixture>]
+[<Category "LanguageService">] 
 type UsingMSBuild() = 
     inherit LanguageServiceBaseTests()
 
