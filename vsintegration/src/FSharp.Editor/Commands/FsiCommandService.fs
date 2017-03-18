@@ -37,13 +37,13 @@ type internal FsiCommandFilter(serviceProvider: System.IServiceProvider) =
     interface IOleCommandTarget with
         member x.Exec (pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut) =
             if pguidCmdGroup = VSConstants.VsStd11 && nCmdId = uint32 VSConstants.VSStd11CmdID.ExecuteSelectionInInteractive then
-                do Hooks.OnMLSend projectSystemPackage.Value FsiEditorSendAction.ExecuteSelection null null
+                Hooks.OnMLSend projectSystemPackage.Value FsiEditorSendAction.ExecuteSelection null null
                 VSConstants.S_OK
             elif pguidCmdGroup = VSConstants.VsStd11 && nCmdId = uint32 VSConstants.VSStd11CmdID.ExecuteLineInInteractive then
-                do Hooks.OnMLSend projectSystemPackage.Value FsiEditorSendAction.ExecuteLine null null
+                Hooks.OnMLSend projectSystemPackage.Value FsiEditorSendAction.ExecuteLine null null
                 VSConstants.S_OK
             elif pguidCmdGroup = Guids.guidInteractive && nCmdId = uint32 Guids.cmdIDDebugSelection then
-                do Hooks.OnMLSend projectSystemPackage.Value FsiEditorSendAction.DebugSelection null null
+                Hooks.OnMLSend projectSystemPackage.Value FsiEditorSendAction.DebugSelection null null
                 VSConstants.S_OK
             elif not (isNull nextTarget) then
                 nextTarget.Exec(&pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut)
