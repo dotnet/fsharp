@@ -81,7 +81,7 @@ type internal ProjectInfoManager
     let projectTable = ConcurrentDictionary<ProjectId, FSharpProjectOptions>()
 
     // stores the documentIds for signature files that have already been generated using hashed subfolder keys
-    let signatureDocIds = Dictionary<string,DocumentId>()
+    let signatureDocIds = ConcurrentDictionary<string,DocumentId>()
 
     // A table of information about single-file projects.  Currently we only need the load time of each such file, plus
     // the original options for editing
