@@ -822,7 +822,7 @@ module internal ItemDescriptionsImpl =
                 wordL (tagText (FSComp.SR.typeInfoUnionCase())) ^^
                 NicePrint.layoutTyconRef denv ucinfo.TyconRef ^^
                 sepL (tagPunctuation ".") ^^
-                wordL (tagUnionCase (DecompileOpName uc.Id.idText)) ^^
+                (DemangleOperatorNameAsLayout tagUnionCase (DecompileOpName uc.Id.idText)) ^^
                 RightL.colon ^^
                 (if List.isEmpty recd then emptyL else NicePrint.layoutUnionCases denv recd ^^ WordL.arrow) ^^
                 NicePrint.layoutTy denv rty
@@ -867,7 +867,7 @@ module internal ItemDescriptionsImpl =
             let layout = 
                 NicePrint.layoutTyconRef denv rfinfo.TyconRef ^^
                 SepL.dot ^^
-                wordL (tagRecordField (DecompileOpName rfield.Name)) ^^
+                (DemangleOperatorNameAsLayout tagRecordField (DecompileOpName rfield.Name)) ^^
                 RightL.colon ^^
                 NicePrint.layoutTy denv ty ^^
                 (
@@ -890,7 +890,7 @@ module internal ItemDescriptionsImpl =
                 wordL (tagText (FSComp.SR.typeInfoField())) ^^
                 NicePrint.layoutILTypeRef denv finfo.ILTypeRef ^^
                 SepL.dot ^^
-                wordL (tagField finfo.FieldName) ^^
+                (DemangleOperatorNameAsLayout tagField finfo.FieldName) ^^
                 (
                     match finfo.LiteralValue with
                     | None -> emptyL
@@ -908,7 +908,7 @@ module internal ItemDescriptionsImpl =
                 wordL (tagText (FSComp.SR.typeInfoEvent())) ^^
                 NicePrint.layoutTyconRef denv (tcrefOfAppTy g einfo.EnclosingType) ^^
                 SepL.dot ^^
-                wordL (tagEvent einfo.EventName) ^^
+                (DemangleOperatorNameAsLayout tagEvent einfo.EventName) ^^
                 RightL.colon ^^
                 NicePrint.layoutTy denv rty
             FSharpStructuredToolTipElement.Single(layout, xml)
@@ -1021,7 +1021,7 @@ module internal ItemDescriptionsImpl =
             let _, argTy, _ = PrettyTypes.PrettifyTypes1 g argTy
             let layout =
                 wordL (tagText (FSComp.SR.typeInfoArgument())) ^^
-                wordL (tagParameter id.idText) ^^
+                (DemangleOperatorNameAsLayout tagParameter id.idText) ^^
                 RightL.colon ^^
                 NicePrint.layoutTy denv argTy
             FSharpStructuredToolTipElement.SingleParameter(layout, xml, id.idText)

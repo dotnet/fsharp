@@ -215,9 +215,9 @@ type Item =
         | Item.Event einfo -> einfo.EventName
         | Item.Property(_, FSProp(_,_, Some v,_) :: _)
         | Item.Property(_, FSProp(_,_,_, Some v) :: _) -> v.DisplayName
-        | Item.Property(nm, _) -> PrettyNaming.DemangleOperatorName nm
+        | Item.Property(nm, _) -> nm
         | Item.MethodGroup(_, (FSMeth(_,_, v,_) :: _), _) -> v.DisplayName
-        | Item.MethodGroup(nm, _, _) -> PrettyNaming.DemangleOperatorName nm
+        | Item.MethodGroup(nm, _, _) -> nm
         | Item.CtorGroup(nm,_) -> DemangleGenericTypeName nm
         | Item.FakeInterfaceCtor (AbbrevOrAppTy tcref)
         | Item.DelegateCtor (AbbrevOrAppTy tcref) -> DemangleGenericTypeName tcref.DisplayName
@@ -230,6 +230,7 @@ type Item =
         | Item.CustomOperation (customOpName,_,_) -> customOpName
         | Item.CustomBuilder (nm,_) -> nm
         | _ ->  ""
+        |> PrettyNaming.DemangleOperatorName
 
 let valRefHash (vref: ValRef) = 
     match vref.TryDeref with 
