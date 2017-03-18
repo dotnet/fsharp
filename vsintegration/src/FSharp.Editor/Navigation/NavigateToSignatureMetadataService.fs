@@ -81,10 +81,42 @@ type internal NavigateToSignatureMetadataService [<ImportingConstructor>]
         | None -> []
 
 
+    let adjustOptionsForSignature filePath (projectOptions:FSharpProjectOptions)= 
+        let projectFileName = filePath + ".fsproj"
+        let sourceFiles = [| filePath |]
+        let outputArg = sprintf "-o:%s" (Path.ChangeExtension(projectFileName, ".dll"))
+        let flags = [|outputArg; "--noframework"; "--debug-"; "--optimize-"; "--tailcalls-" |]
+        
+        let refProjectsOutPaths = 
+            projectOptions.ReferencedProjects 
+            |> Array.map fst |> Set.ofArray
+
+        let references = 
+            projectOptions.OtherOptions
+            |> Array.choose (fun arg -> // Filter out project references, which aren't necessary for the scenario
+                if arg.StartsWith "-r:" 
+                    && not (Set.contains (arg.[3..].Trim()) refProjectsOutPaths) 
+                then Some arg 
+                else None)
+
+        { projectOptions with
+            ProjectFileName = projectFileName
+            ProjectFileNames = sourceFiles
+            OtherOptions = Array.append flags references
+            IsIncompleteTypeCheckEnvironment = false
+            UseScriptResolutionRules = false
+            LoadTime = fakeDateTimeRepresentingTimeLoaded projectFileName
+            UnresolvedReferences = None
+            ReferencedProjects = [||]
+            OriginalLoadReferences = []
+            ExtraProjectInfo = None
+        }
+
+
     /// Find the range of the target system in the generated signature metadata file
     let tryFindExactLocation (filePath:string) (source:string) (currentSymbol:FSharpSymbolUse) (options:FSharpProjectOptions) sigCheck = asyncMaybe {
         let checker = checkerProvider.Checker
-        let options = if not sigCheck then options else projectInfoManager.AdjustOptionsForSignature filePath options
+        let options = if not sigCheck then options else adjustOptionsForSignature filePath options
 
         let! symbolUses = checker.GetAllUsesOfAllSymbolsInSourceString (options, filePath, source, false)  |> liftAsync
 
@@ -195,6 +227,9 @@ type internal NavigateToSignatureMetadataService [<ImportingConstructor>]
                         (getXmlDocBySignature fsSymbolUse) indentSize displayContext openDeclarations fsSymbol 
                             SignatureGenerator.Filterer.NoFilters SignatureGenerator.BlankLines.Default with
                 | Some signatureText ->
+                    let directoryPath = Path.GetDirectoryName filePath
+                    Directory.CreateDirectory directoryPath |> ignore
+                    File.WriteAllText (filePath, signatureText)
                     debug "\nGenerated Signature File:\n%s\b" signatureText
                     let! range = tryFindExactLocation filePath signatureText fsSymbolUse fsProjectOptions true
                     return! 
