@@ -118,7 +118,7 @@ type internal FSharpDeclarationListItem =
     member IsOwnMember : bool
     member MinorPriority : int
     member FullName : string
-    member IsResolvable : bool
+    member NamespaceToOpen : string option
 
 type internal CompletionItem =
     { Item: Item
@@ -126,7 +126,7 @@ type internal CompletionItem =
       IsOwnMember: bool
       MinorPriority: int
       Type: TyconRef option 
-      IsResolvable: bool }
+      NamespaceToOpen: string option }
 
 [<Sealed>]
 /// Represents a set of declarations in F# source code, with information attached ready for display by an editor.
@@ -175,6 +175,7 @@ module internal ItemDescriptionsImpl =
     val FormatStructuredDescriptionOfItem : isDecl:bool -> InfoReader -> range -> DisplayEnv -> Item -> FSharpStructuredToolTipElement
     val GlyphOfItem : DisplayEnv * Item -> FSharpGlyph
     val IsAttribute : InfoReader -> Item -> bool
+    val IsExplicitlySuppressed : TcGlobals -> Item -> bool
 
 module EnvMisc2 =
     val maxMembers : int

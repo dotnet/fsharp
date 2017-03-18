@@ -866,8 +866,9 @@ type TypeCheckInfo
         | _ -> false   
 
     // Return only items with the specified name
-    let FilterDeclItemsByResidue residue (items: Item list) = 
-        items |> List.filter (fun item -> 
+    let FilterDeclItemsByResidue (getItem: 'a -> Item) residue (items: 'a list) = 
+        items |> List.filter (fun x -> 
+            let item = getItem x
             let n1 =  item.DisplayName 
             match item with
             | Item.Types _ | Item.CtorGroup _ -> residue + "Attribute" = n1 || residue = n1
@@ -876,14 +877,14 @@ type TypeCheckInfo
     /// Post-filter items to make sure they have precisely the right name
     /// This also checks that there are some remaining results 
     /// exactMatchResidueOpt = Some _ -- means that we are looking for exact matches
-    let FilterRelevantItemsBy (exactMatchResidueOpt : _ option) check (items, denv, m) =
+    let FilterRelevantItemsBy (getItem: 'a -> Item) (exactMatchResidueOpt : _ option) check (items: 'a list, denv, m) =
             
         // can throw if type is in located in non-resolved CCU: i.e. bigint if reference to System.Numerics is absent
         let safeCheck item = try check item with _ -> false
                                                 
         // Are we looking for items with precisely the given name?
         if not (isNil items) && exactMatchResidueOpt.IsSome then
-            let items = items |> FilterDeclItemsByResidue exactMatchResidueOpt.Value |> List.filter safeCheck 
+            let items = items |> FilterDeclItemsByResidue getItem exactMatchResidueOpt.Value |> List.filter safeCheck 
             if not (isNil items) then Some(items, denv, m) else None        
         else 
             // When (items = []) we must returns Some([],..) and not None
@@ -893,8 +894,8 @@ type TypeCheckInfo
 
     /// Post-filter items to make sure they have precisely the right name
     /// This also checks that there are some remaining results 
-    let (|FilterRelevantItems|_|) exactMatchResidueOpt orig =
-        FilterRelevantItemsBy exactMatchResidueOpt (fun _ -> true) orig
+    let (|FilterRelevantItems|_|) getItem exactMatchResidueOpt orig =
+        FilterRelevantItemsBy getItem exactMatchResidueOpt (fun _ -> true) orig
     
     /// Find the first non-whitespace postion in a line prior to the given character
     let FindFirstNonWhitespacePosition (lineStr: string) i = 
@@ -905,7 +906,7 @@ type TypeCheckInfo
             p <- p - 1
         if p >= 0 then Some p else None
     
-    let CompletionItem (ty: TyconRef option) (isResolvable: bool) (item: Item) =
+    let CompletionItem (ty: TyconRef option) (namespaceToOpen: string option) (item: Item) =
         let kind = 
             match item with
             | Item.MethodGroup (_, minfo :: _, _) -> CompletionItemKind.Method minfo.IsExtensionMember
@@ -921,12 +922,12 @@ type TypeCheckInfo
           Kind = kind
           IsOwnMember = false
           Type = ty 
-          IsResolvable = isResolvable }
+          NamespaceToOpen = namespaceToOpen }
 
-    let DefaultCompletionItem = CompletionItem None true
+    let DefaultCompletionItem = CompletionItem None None
     
     let GetDeclaredItems (parseResultsOpt: FSharpParseFileResults option, lineStr: string, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, line, loc, 
-                          filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck, isInRangeOperator, allItems: Item list) =
+                          filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck, isInRangeOperator, allEntities: RawEntity list) =
  
             // Are the last two chars (except whitespaces) = ".."
             let isLikeRangeOp = 
@@ -996,9 +997,9 @@ type TypeCheckInfo
             match nameResItems with            
             | NameResResult.TypecheckStaleAndTextChanged -> None // second-chance intellisense will try again
             | NameResResult.Cancel(denv,m) -> Some([], denv, m)
-            | NameResResult.Members(FilterRelevantItems exactMatchResidueOpt (items, denv, m)) -> 
+            | NameResResult.Members(FilterRelevantItems id exactMatchResidueOpt (items, denv, m)) -> 
                 // lookup based on name resolution results successful
-                Some (items |> List.map (CompletionItem (getType()) true), denv, m)
+                Some (items |> List.map (CompletionItem (getType()) None), denv, m)
             | _ ->
                 match origLongIdentOpt with
                 | None -> None
@@ -1026,14 +1027,14 @@ type TypeCheckInfo
                             GetPreciseCompletionListFromExprTypingsResult.None, false
                 
                     match qualItems,thereIsADotInvolved with            
-                    | GetPreciseCompletionListFromExprTypingsResult.Some(FilterRelevantItems exactMatchResidueOpt (items, denv, m), ty), _
+                    | GetPreciseCompletionListFromExprTypingsResult.Some(FilterRelevantItems id exactMatchResidueOpt (items, denv, m), ty), _
                             // Initially we only use the expression typings when looking up, e.g. (expr).Nam or (expr).Name1.Nam
                             // These come through as an empty plid and residue "". Otherwise we try an environment lookup
                             // and then return to the qualItems. This is because the expression typings are a little inaccurate, primarily because
                             // it appears we're getting some typings recorded for non-atomic expressions like "f x"
                             when (match plid with [] -> true | _ -> false)  -> 
                         // lookup based on expression typings successful
-                        Some (items |> List.map (CompletionItem (tryDestAppTy g ty) true), denv, m)
+                        Some (items |> List.map (CompletionItem (tryDestAppTy g ty) None), denv, m)
                     | GetPreciseCompletionListFromExprTypingsResult.NoneBecauseThereWereTypeErrors, _ ->
                         // There was an error, e.g. we have "<expr>." and there is an error determining the type of <expr>  
                         // In this case, we don't want any of the fallback logic, rather, we want to produce zero results.
@@ -1056,28 +1057,43 @@ type TypeCheckInfo
                            // First, use unfiltered name resolution items, if they're not empty
                            | NameResResult.Members(items, denv, m), _, _ when not (isNil items) -> 
                                // lookup based on name resolution results successful
-                               Some(items |> List.map (CompletionItem (getType()) true), denv, m)                
+                               Some(items |> List.map (CompletionItem (getType()) None), denv, m)                
                            
                            // If we have nonempty items from environment that were resolved from a type, then use them... 
                            // (that's better than the next case - here we'd return 'int' as a type)
-                           | _, FilterRelevantItems exactMatchResidueOpt (items, denv, m), _ when not (isNil items) ->
+                           | _, FilterRelevantItems id exactMatchResidueOpt (items, denv, m), _ when not (isNil items) ->
                                // lookup based on name and environment successful
-                               Some(items |> List.map (CompletionItem (getType()) true), denv, m)
+                               Some(items |> List.map (CompletionItem (getType()) None), denv, m)
                            
                            // Try again with the qualItems
-                           | _, _, GetPreciseCompletionListFromExprTypingsResult.Some(FilterRelevantItems exactMatchResidueOpt (items, denv, m), ty) ->
-                               Some(items |> List.map (CompletionItem (tryDestAppTy g ty) true), denv, m)
+                           | _, _, GetPreciseCompletionListFromExprTypingsResult.Some(FilterRelevantItems id exactMatchResidueOpt (items, denv, m), ty) ->
+                               Some(items |> List.map (CompletionItem (tryDestAppTy g ty) None), denv, m)
                            
                            | _ -> None
 
                        let globalResult =
-                           let allItems = allItems |> RemoveDuplicateItems g |> RemoveExplicitlySuppressed g |> FilterItemsForCtors filterCtors
+                           match origLongIdentOpt with
+                           | None | Some [] ->
+                               let allItems = 
+                                   allEntities 
+                                   |> List.filter (fun x -> not (ItemDescriptionsImpl.IsExplicitlySuppressed g x.Item))
+                                   |> List.filter (fun x -> 
+                                        match x.Item with
+                                        | Item.CtorGroup _ when filterCtors = ResolveTypeNamesToTypeRefs -> false 
+                                        | _ -> true)
+                                   
+                               let getItem (x: RawEntity) = x.Item
                                
-                           match allItems, denv, m with
-                           | FilterRelevantItems exactMatchResidueOpt (items, denv, m) when not (isNil items) ->
-                               // lookup based on name and environment successful
-                               Some(items |> List.map (CompletionItem (getType()) false), denv, m)
-                           | _ -> None
+                               match allItems, denv, m with
+                               | FilterRelevantItems getItem exactMatchResidueOpt (entities, denv, m) when not (isNil entities) ->
+                                   // lookup based on name and environment successful
+                                   Some(
+                                       entities 
+                                       |> List.map(fun entity ->
+                                            let ns = entity.Namespace |> Option.map (String.concat ".")
+                                            CompletionItem (getType()) ns entity.Item), denv, m)
+                               | _ -> None
+                           | _ -> None // do not return unresolved items after dot
 
                        match envResult, globalResult with
                        | Some (items, denv, m), Some (gItems,_,_) -> Some (items @ gItems, denv, m)
@@ -1092,7 +1108,7 @@ type TypeCheckInfo
     /// Get the auto-complete items at a particular location.
     let GetDeclItemsForNamesAtPosition(ctok: CompilationThreadToken, parseResultsOpt: FSharpParseFileResults option, origLongIdentOpt: string list option, 
                                        residueOpt:string option, line:int, lineStr:string, colAtEndOfNamesAndResidue, filterCtors, resolveOverloads, 
-                                       allItems: Item list, hasTextChangedSinceLastTypecheck: (obj * range -> bool)) : (CompletionItem list * DisplayEnv * range) option = 
+                                       allEntities: RawEntity list, hasTextChangedSinceLastTypecheck: (obj * range -> bool)) : (CompletionItem list * DisplayEnv * range) option = 
         RequireCompilationThread ctok // the operations in this method need the reactor thread
 
         let loc = 
@@ -1111,19 +1127,19 @@ type TypeCheckInfo
         // Completion at 'inherit C(...)"
         | Some (CompletionContext.Inherit(InheritanceContext.Class, (plid, _))) ->
             GetEnvironmentLookupResolutionsAtPosition(mkPos line loc, plid, filterCtors, false)
-            |> FilterRelevantItemsBy None GetBaseClassCandidates
+            |> FilterRelevantItemsBy id None GetBaseClassCandidates
             |> Option.map toCompletionItems
 
         // Completion at 'interface ..."
         | Some (CompletionContext.Inherit(InheritanceContext.Interface, (plid, _))) ->
             GetEnvironmentLookupResolutionsAtPosition(mkPos line loc, plid, filterCtors, false)
-            |> FilterRelevantItemsBy None GetInterfaceCandidates
+            |> FilterRelevantItemsBy id None GetInterfaceCandidates
             |> Option.map toCompletionItems
 
         // Completion at 'implement ..."
         | Some (CompletionContext.Inherit(InheritanceContext.Unknown, (plid, _))) ->
             GetEnvironmentLookupResolutionsAtPosition(mkPos line loc, plid, filterCtors, false) 
-            |> FilterRelevantItemsBy None (fun t -> GetBaseClassCandidates t || GetInterfaceCandidates t)
+            |> FilterRelevantItemsBy id None (fun t -> GetBaseClassCandidates t || GetInterfaceCandidates t)
             |> Option.map toCompletionItems
 
         // Completion at ' { XXX = ... } "
@@ -1154,7 +1170,7 @@ type TypeCheckInfo
 
             let declaredItems = 
                 GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, line, loc, filterCtors, resolveOverloads, 
-                                  hasTextChangedSinceLastTypecheck, false, allItems)
+                                  hasTextChangedSinceLastTypecheck, false, allEntities)
 
             match results with
             | NameResResult.Members(items, denv, m) -> 
@@ -1169,14 +1185,14 @@ type TypeCheckInfo
                           MinorPriority = 0
                           IsOwnMember = false
                           Type = None 
-                          IsResolvable = true })
+                          NamespaceToOpen = None })
                 match declaredItems with
                 | None -> Some (toCompletionItems (items, denv, m))
                 | Some (declItems, declaredDisplayEnv, declaredRange) -> Some (filtered @ declItems, declaredDisplayEnv, declaredRange)
             | _ -> declaredItems
 
         | Some(CompletionContext.AttributeApplication) ->
-            GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, line, loc, filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck, false, allItems)
+            GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, line, loc, filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck, false, allEntities)
             |> Option.map (fun (items, denv, m) -> 
                  items 
                  |> List.filter (fun cItem ->
@@ -1188,7 +1204,7 @@ type TypeCheckInfo
         // Other completions
         | cc ->
             let isInRangeOperator = (match cc with Some (CompletionContext.RangeOperator) -> true | _ -> false)
-            GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, line, loc, filterCtors,resolveOverloads, hasTextChangedSinceLastTypecheck, isInRangeOperator, allItems)
+            GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, line, loc, filterCtors,resolveOverloads, hasTextChangedSinceLastTypecheck, isInRangeOperator, allEntities)
 
     /// Return 'false' if this is not a completion item valid in an interface file.
     let IsValidSignatureFileItem item =
@@ -2152,10 +2168,10 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
     member info.HasFullTypeCheckInfo = details.IsSome
     
     /// Intellisense autocompletions
-    member info.GetDeclarationListInfo(parseResultsOpt, line, colAtEndOfNamesAndResidue, lineStr, qualifyingNames, partialName, allItems, ?hasTextChangedSinceLastTypecheck) = 
+    member info.GetDeclarationListInfo(parseResultsOpt, line, colAtEndOfNamesAndResidue, lineStr, qualifyingNames, partialName, allEntities, ?hasTextChangedSinceLastTypecheck) = 
         let hasTextChangedSinceLastTypecheck = defaultArg hasTextChangedSinceLastTypecheck (fun _ -> false)
         reactorOp "GetDeclarations" FSharpDeclarationListInfo.Empty (fun ctok scope -> 
-            scope.GetDeclarations(ctok, parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, allItems, hasTextChangedSinceLastTypecheck))
+            scope.GetDeclarations(ctok, parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, allEntities, hasTextChangedSinceLastTypecheck))
 
     member info.GetDeclarationListSymbols(parseResultsOpt, line, colAtEndOfNamesAndResidue, lineStr, qualifyingNames, partialName, ?hasTextChangedSinceLastTypecheck) = 
         let hasTextChangedSinceLastTypecheck = defaultArg hasTextChangedSinceLastTypecheck (fun _ -> false)

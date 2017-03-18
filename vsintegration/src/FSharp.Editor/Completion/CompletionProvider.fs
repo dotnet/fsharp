@@ -159,7 +159,7 @@ type internal FSharpCompletionProvider
                  CommonCompletionUtilities.IsStartingNewWord(sourceText, triggerPosition, (fun ch -> isIdentifierStartCharacter ch), (fun ch -> isIdentifierPartCharacter ch)))
 
     static member ProvideCompletionsAsyncAux(checker: FSharpChecker, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, 
-                                             textVersionHash: int, allEntitites: RawEntity list) = 
+                                             textVersionHash: int, allEntities: RawEntity list) = 
         asyncMaybe {
             let! parseResults, parsedInput, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true)
 
@@ -172,20 +172,19 @@ type internal FSharpCompletionProvider
             let caretLine = textLines.GetLineFromPosition(caretPosition)
             let fcsCaretLineNumber = Line.fromZ caretLinePos.Line  // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
             let caretLineColumn = caretLinePos.Character
-            
             let qualifyingNames, partialName = QuickParse.GetPartialLongNameEx(caretLine.ToString(), caretLineColumn - 1) 
-            let allItems = 
-                allEntitites 
-                |> List.choose (fun entity ->
-                    maybe {
-                        let! ns = entity.Namespace 
-                        do! Option.guard (ns <> [||])
-                        do! Option.guard (entity.FullName.Contains ".")
-                        return entity.Item
-                    })
+            
+            let allEntities = 
+                allEntities 
+                |> List.filter (fun entity ->
+                     match entity.Namespace, entity.TopRequireQualifiedAccessParent with
+                     | Some [||], _ -> false
+                     | _, Some _ -> false
+                     | Some _, _ -> entity.FullName.Contains "."
+                     | _ -> false)
 
             let! declarations =
-                checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLineColumn, caretLine.ToString(), qualifyingNames, partialName, allItems) |> liftAsync
+                checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLineColumn, caretLine.ToString(), qualifyingNames, partialName, allEntities) |> liftAsync
             
             let results = List<Completion.CompletionItem>()
             
@@ -201,28 +200,24 @@ type internal FSharpCompletionProvider
                         | CompletionItemKind.Argument -> 4
                         | CompletionItemKind.Other -> 5
                         | CompletionItemKind.Method (isExtension = true) -> 6
-                    not item.IsResolvable, kindPriority, not item.IsOwnMember, item.Name.ToLowerInvariant(), item.MinorPriority)
+                    item.NamespaceToOpen.IsNone, kindPriority, not item.IsOwnMember, item.Name.ToLowerInvariant(), item.MinorPriority)
 
             let maxHints = if mruItems.Values.Count = 0 then 0 else Seq.max mruItems.Values
 
             sortedDeclItems |> Array.iteri (fun number declItem ->
                 let glyph = CommonRoslynHelpers.FSharpGlyphToRoslynGlyph (declItem.Glyph, declItem.Accessibility)
-                let name, namespaceToOpen =
-                    match entityKind with
-                    | Some EntityKind.Attribute when declItem.IsAttribute && declItem.Name.EndsWith "Attribute"  ->
-                        declItem.Name.[0..declItem.Name.Length - attributeSuffixLength - 1], None
-                    | _ when not declItem.IsResolvable ->
-                        let ns =
-                            match declItem.FullName.LastIndexOf '.' with
-                            | -1 -> ""
-                            | idx -> declItem.FullName.[..idx - 1]
-
-                        sprintf "%s (open %s)" declItem.Name ns, Some ns
-                    | _ -> declItem.Name, None
+                let name =
+                    match entityKind, declItem.NamespaceToOpen with
+                    | Some EntityKind.Attribute, _ when declItem.IsAttribute && declItem.Name.EndsWith "Attribute"  ->
+                        declItem.Name.[0..declItem.Name.Length - attributeSuffixLength - 1]
+                    | _, Some namespaceToOpen ->
+                        sprintf "%s (open %s)" declItem.Name namespaceToOpen
+                    | _ -> declItem.Name
 
                 let filterText =
-                    if declItem.IsResolvable then null
-                    else declItem.Name
+                    match declItem.NamespaceToOpen with
+                    | Some _ -> declItem.Name
+                    | None -> null
 
                 let completionItem = 
                     CommonCompletionItem.Create(name, glyph = Nullable glyph, rules = getRules(), filterText = filterText)
@@ -240,7 +235,7 @@ type internal FSharpCompletionProvider
                     else completionItem
 
                 let completionItem =
-                    match namespaceToOpen with
+                    match declItem.NamespaceToOpen with
                     | Some ns -> completionItem.AddProperty(NamespaceToOpen, ns)
                     | None -> completionItem
 
