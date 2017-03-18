@@ -18,7 +18,7 @@ Make sure each method works on:
 * Null    array (null)
 *)
 
-[<TestFixture>]
+[<TestFixture>][<Category "Collections.Array">][<Category "FSharp.Core.Collections">]
 type Array2Module() =
     [<Test>]
     member this.Base1() =

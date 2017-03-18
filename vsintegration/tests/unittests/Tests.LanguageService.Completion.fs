@@ -24,7 +24,7 @@ module StandardSettings =
     let AC x y = AutoCompleteExpected(x,y)
     let DC x y = DotCompleteExpected(x,y)
 
-[<TestFixture>] 
+[<TestFixture>][<Category "LanguageService">]  
 type UsingMSBuild() as this  = 
     inherit LanguageServiceBaseTests()
 
