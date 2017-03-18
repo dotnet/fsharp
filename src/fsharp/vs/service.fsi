@@ -659,6 +659,7 @@ module internal DebuggerEnvironment =
 module internal PrettyNaming =
     val IsIdentifierPartCharacter     : char -> bool
     val IsLongIdentifierPartCharacter : char -> bool
+    val IsOperatorName                : string -> bool
     val GetLongNameFromString         : string -> string list
 
     val FormatAndOtherOverloadsString : int -> string

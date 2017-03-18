@@ -1504,7 +1504,11 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                     let items =
                         itemsWithSameName
                         |> List.map (fun x -> getFullName x.Item, x)
-                        |> List.distinctBy fst
+                        |> List.groupBy fst
+                        |> List.map (fun (_, items) -> 
+                            items
+                            |> List.sortBy (fun (_, x) -> x.NamespaceToOpen.IsSome)
+                            |> List.head)
                     
                     items
                     |> List.map (fun (fullName, item) ->

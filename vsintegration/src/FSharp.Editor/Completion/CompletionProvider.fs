@@ -180,7 +180,7 @@ type internal FSharpCompletionProvider
                      match entity.Namespace, entity.TopRequireQualifiedAccessParent with
                      | Some [||], _ -> false
                      | _, Some _ -> false
-                     | Some _, _ -> entity.FullName.Contains "."
+                     | Some _, _ -> entity.FullName.Contains "." && not (PrettyNaming.IsOperatorName entity.Item.DisplayName)
                      | _ -> false)
 
             let! declarations =
@@ -200,7 +200,7 @@ type internal FSharpCompletionProvider
                         | CompletionItemKind.Argument -> 4
                         | CompletionItemKind.Other -> 5
                         | CompletionItemKind.Method (isExtension = true) -> 6
-                    item.NamespaceToOpen.IsNone, kindPriority, not item.IsOwnMember, item.Name.ToLowerInvariant(), item.MinorPriority)
+                    item.NamespaceToOpen.IsSome, kindPriority, not item.IsOwnMember, item.Name.ToLowerInvariant(), item.MinorPriority)
 
             let maxHints = if mruItems.Values.Count = 0 then 0 else Seq.max mruItems.Values
 
