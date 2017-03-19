@@ -1381,18 +1381,8 @@ type FSharpAccessibility(a:Accessibility, ?isProtected) =
 
 /// An intellisense declaration
 [<Sealed>]
-type FSharpDeclarationListItem
+type FSharpDeclarationListItem(name: string, nameInCode: string, fullName: string, glyph: FSharpGlyph, info, isAttribute: bool, accessibility: FSharpAccessibility option,
                                kind: CompletionItemKind, isOwnMember: bool, priority: int, namespaceToOpen: string option) =
-      nameInCode    : string,
-      fullName      : string,
-      glyph         : FSharpGlyph,
-      info,
-      isAttribute   : bool,
-      accessibility : FSharpAccessibility option,
-      kind          : CompletionItemKind,
-      isOwnMember   : bool,
-      priority      : int
-    ) =
 
     let mutable descriptionTextHolder:FSharpToolTipText<_> option = None
     let mutable task = null
@@ -1544,24 +1534,13 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                             let cleanName = displayName.[2..displayName.Length - 3]
                             cleanName, 
                             if IsOperatorName displayName then cleanName else "``" + cleanName + "``"
-                        else displayName, displayName
-                            name, Lexhelp.Keywords.QuoteIdentifierIfNeeded name
+                        else displayName, Lexhelp.Keywords.QuoteIdentifierIfNeeded displayName
                     
                     let fullName = ItemDescriptionsImpl.FullNameOfItem g item.Item
 
                     FSharpDeclarationListItem(
-                        name, nameInCode, fullName, 
+                        name, nameInCode, fullName, glyph, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), 
                         ItemDescriptionsImpl.IsAttribute infoReader item.Item, getAccessibility item.Item, item.Kind, item.IsOwnMember, item.MinorPriority, item.NamespaceToOpen))
-                        fullName,
-                        glyph,
-                        Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive),
-                        ItemDescriptionsImpl.IsAttribute infoReader item.Item,
-                        getAccessibility item.Item,
-                        item.Kind,
-                        item.IsOwnMember,
-                        item.MinorPriority
-                        )
-            )
 
         new FSharpDeclarationListInfo(Array.ofList decls)
     
