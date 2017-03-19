@@ -1381,8 +1381,18 @@ type FSharpAccessibility(a:Accessibility, ?isProtected) =
 
 /// An intellisense declaration
 [<Sealed>]
-type FSharpDeclarationListItem(name: string, nameInCode: string, fullName: string, glyph: FSharpGlyph, info, isAttribute: bool, accessibility: FSharpAccessibility option,
+type FSharpDeclarationListItem
                                kind: CompletionItemKind, isOwnMember: bool, priority: int, namespaceToOpen: string option) =
+      nameInCode    : string,
+      fullName      : string,
+      glyph         : FSharpGlyph,
+      info,
+      isAttribute   : bool,
+      accessibility : FSharpAccessibility option,
+      kind          : CompletionItemKind,
+      isOwnMember   : bool,
+      priority      : int
+    ) =
 
     let mutable descriptionTextHolder:FSharpToolTipText<_> option = None
     let mutable task = null
@@ -1535,12 +1545,23 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                             cleanName, 
                             if IsOperatorName displayName then cleanName else "``" + cleanName + "``"
                         else displayName, displayName
+                            name, Lexhelp.Keywords.QuoteIdentifierIfNeeded name
                     
                     let fullName = ItemDescriptionsImpl.FullNameOfItem g item.Item
 
                     FSharpDeclarationListItem(
-                        name, nameInCode, fullName, glyph, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), 
+                        name, nameInCode, fullName, 
                         ItemDescriptionsImpl.IsAttribute infoReader item.Item, getAccessibility item.Item, item.Kind, item.IsOwnMember, item.MinorPriority, item.NamespaceToOpen))
+                        fullName,
+                        glyph,
+                        Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive),
+                        ItemDescriptionsImpl.IsAttribute infoReader item.Item,
+                        getAccessibility item.Item,
+                        item.Kind,
+                        item.IsOwnMember,
+                        item.MinorPriority
+                        )
+            )
 
         new FSharpDeclarationListInfo(Array.ofList decls)
     

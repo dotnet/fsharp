@@ -19,6 +19,7 @@
 //    Use F# Interactive.  This only works for FSharp.Compiler.Service.dll which has a public API
 
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+[<NUnit.Framework.Category "Roslyn Services">]
 module Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn.DocumentHighlightsServiceTests
 
 open System

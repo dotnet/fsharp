@@ -19,7 +19,7 @@ Make sure each method works on:
 * Null Seq    (null)
 *)
 
-[<TestFixture>]
+[<TestFixture>][<Category "Collections.Seq">][<Category "FSharp.Core.Collections">]
 type SeqModule() =
 
     [<Test>]

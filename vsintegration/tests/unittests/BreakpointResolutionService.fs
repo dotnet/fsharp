@@ -16,7 +16,7 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
 
-[<TestFixture>]
+[<TestFixture>][<Category "Roslyn Services">]
 type BreakpointResolutionServiceTests()  =
 
     let fileName = "C:\\test.fs"

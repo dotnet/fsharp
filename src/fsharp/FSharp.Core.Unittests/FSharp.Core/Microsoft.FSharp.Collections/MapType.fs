@@ -21,7 +21,7 @@ Make sure each method works on:
 * Multi-element maps (2 - 7 elements)
 *)
 
-[<TestFixture>]
+[<TestFixture>][<Category "Collections.Map">][<Category "FSharp.Core.Collections">]
 type MapType() =
     
     // Interfaces
