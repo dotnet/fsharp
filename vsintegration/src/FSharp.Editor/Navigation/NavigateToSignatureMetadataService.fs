@@ -16,7 +16,6 @@ open Microsoft.CodeAnalysis.Text
 open System.ComponentModel.Composition
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.CodeAnalysis.Formatting
-open Microsoft.VisualStudio.FSharp.Editor.Logging
 open Microsoft.VisualStudio.ComponentModelHost
 open Microsoft.VisualStudio.Editor
 open Microsoft.VisualStudio.TextManager.Interop
@@ -29,13 +28,28 @@ type internal NavigateToSignatureMetadataService [<ImportingConstructor>]
     ,   workspace : VisualStudioWorkspaceImpl
     ) =
     
-    // Use a single cache across text views
-    static let xmlDocCache = Dictionary<string, IVsXMLMemberIndex>()
+    let xmlDocCache = Dictionary<string, IVsXMLMemberIndex>()
     let serviceProvider =  ServiceProvider.GlobalProvider                
     let xmlIndexService = serviceProvider.GetService<SVsXMLMemberIndexService,IVsXMLMemberIndexService>()
-
     let componentModel = serviceProvider.GetService<SComponentModel,IComponentModel>()
     let editorAdapterFactory = componentModel.GetService<IVsEditorAdaptersFactoryService>()
+
+    
+    /// Stores the editor window displaying signature metadata if one has already been opened.
+    /// Ensures that only one editor window is open for signature metadata at a time.
+    let mutable currentWindow: IVsWindowFrame option = None 
+
+    // Close the signature metadata window with the solution
+    do workspace.WorkspaceChanged.Add (fun workspaceChange ->
+       match workspaceChange.Kind with 
+       | WorkspaceChangeKind.SolutionCleared
+       | WorkspaceChangeKind.SolutionReloaded
+       | WorkspaceChangeKind.SolutionRemoved ->
+            currentWindow
+            |> Option.bind Option.ofNull
+            |> Option.iter (fun window -> window.CloseFrame (uint32 __FRAMECLOSE.FRAMECLOSE_NoSave) |> ignore)
+       | _ -> ()
+       )
 
     /// If the XML comment starts with '<' not counting whitespace then treat it as a literal XML comment.
     /// Otherwise, escape it and surround it with <summary></summary>
@@ -95,15 +109,14 @@ type internal NavigateToSignatureMetadataService [<ImportingConstructor>]
         let outputArg = sprintf "-o:%s" (Path.ChangeExtension(projectFileName, ".dll"))
         let flags = [|outputArg; "--noframework"; "--debug-"; "--optimize-"; "--tailcalls-" |]
         
-        let refProjectsOutPaths = 
-            projectOptions.ReferencedProjects 
-            |> Array.map fst |> Set.ofArray
+        let refProjectsOutPaths =
+            projectOptions.ReferencedProjects |> Array.map fst |> Set.ofArray
 
         let references = 
             projectOptions.OtherOptions
             |> Array.choose (fun arg -> // Filter out project references, which aren't necessary for the scenario
-                if arg.StartsWith "-r:" 
-                    && not (Set.contains (arg.[3..].Trim()) refProjectsOutPaths) 
+                if  arg.StartsWith "-r:" 
+                 && not (Set.contains (arg.[3..].Trim()) refProjectsOutPaths) 
                 then Some arg 
                 else None)
 
@@ -121,11 +134,9 @@ type internal NavigateToSignatureMetadataService [<ImportingConstructor>]
         }
 
 
-    /// Find the range of the target system in the generated signature metadata file
-    let tryFindExactLocation (filePath:string) (source:string) (currentSymbol:FSharpSymbolUse) (options:FSharpProjectOptions) = asyncMaybe {
+    let tryFindExactLocation (filePath:string) (source:string) (currentSymbol:FSharpSymbolUse) (options:FSharpProjectOptions) = maybe {
         let checker = checkerProvider.Checker
-
-        let! symbolUses = checker.GetAllUsesOfAllSymbolsInSourceString (options, filePath, source, false)  |> liftAsync
+        let symbolUses = checker.GetAllUsesOfAllSymbolsInSourceString (options, filePath, source, false)  |> Async.RunSynchronously
 
         /// Try to reconstruct fully qualified name for the purpose of matching symbols
         let tryGetFullyQualifiedName (fsSymbol:FSharpSymbol) =
@@ -170,7 +181,7 @@ type internal NavigateToSignatureMetadataService [<ImportingConstructor>]
 
         let isLocalSymbol filePath (symbol: FSharpSymbol) =
             symbol.DeclarationLocation 
-            |> Option.map (fun r -> String.Equals(r.FileName, filePath, StringComparison.OrdinalIgnoreCase)) 
+            |> Option.map (fun r -> String.Equals (r.FileName, filePath, StringComparison.OrdinalIgnoreCase)) 
             |> Option.defaultValue false
 
         let! currentSymbolFullName = tryGetFullyQualifiedName currentSymbol.Symbol
@@ -200,89 +211,101 @@ type internal NavigateToSignatureMetadataService [<ImportingConstructor>]
         return! matchedSymbol.DeclarationLocation
     }
 
+    /// use the provided window frame to find the Roslyn Document associated with its content
+    let documentFromWindowFrame (windowFrame:IVsWindowFrame) =
+        // TODO -   
+        //  Figure out a way to set the frame as a provisional editor (preview) 
+        //  When the method below is used the frame dumps its content register  losing
+        //  its classifiers, readonly status, and stored filepath 
+        // windowFrame.SetProperty(int __VSFPROPID5.VSFPROPID_IsProvisional, true) |> ignore
+        
+        let vsTextView = VsShellUtilities.GetTextView windowFrame
+        let vsTextBuffer = vsTextView.GetBuffer() |> snd :> IVsTextBuffer
+        let (result,currentFlags) = vsTextBuffer.GetStateFlags ()
 
-    let createSigDocument (sigPath:string)(projectOptions:FSharpProjectOptions) =
-        try 
-            let windowFrame = // VSConstants.LOGVIEWID.Primary_guid opens the document as a preview tab as desired, but unfortunately causes 2 instances of the document to open
-                match VsShellUtilities.IsDocumentOpen(serviceProvider, sigPath, VSConstants.LOGVIEWID.TextView_guid) with
-                | true,_hierarchy,_itemId,windowFrame -> windowFrame
-                | false,_,_,_ -> 
-                    let (_,_,windowFrame) = VsShellUtilities.OpenDocument(serviceProvider,sigPath,VSConstants.LOGVIEWID.TextView_guid) 
-                    windowFrame
+        // Try to set buffer to read-only mode
+        if result = VSConstants.S_OK then vsTextBuffer.SetStateFlags(currentFlags ||| uint32 BUFFERSTATEFLAGS.BSF_USER_READONLY) |> ignore
+        let container = (editorAdapterFactory.GetDataBuffer vsTextBuffer).AsTextContainer()        
+        workspace.GetRelatedDocumentIds container 
+        |> Seq.map(fun docId -> workspace.CurrentSolution.GetDocument docId) |> Seq.head
 
-            let vsTextView = VsShellUtilities.GetTextView windowFrame
-            let vsTextBuffer = vsTextView.GetBuffer() |> snd :> IVsTextBuffer
 
-            // TODO - Figure out a different way to set the document to readonly, using the method below causes a lock
-            //match vsTextBuffer.GetStateFlags() with
-            //| VSConstants.S_OK, currentFlags ->
-            //    // Try to set buffer to read-only mode
-            //    vsTextBuffer.SetStateFlags(currentFlags ||| uint32 BUFFERSTATEFLAGS.BSF_USER_READONLY) |> ignore
-            //| _ -> ()
 
-            let textBuffer = editorAdapterFactory.GetDataBuffer vsTextBuffer
-            let container = textBuffer.AsTextContainer()
-            
-            let sigDocument = 
-                workspace.GetRelatedDocumentIds container 
-                |> Seq.map(fun docId -> workspace.CurrentSolution.GetDocument docId) |> Seq.head
+    /// Creates a new Roslyn Document for signature metadata and either opens an editor window to display it
+    /// or clears the currently open editor and replaces its contents
+    let createSigDocument (sigPath:string) (projectOptions:FSharpProjectOptions) =
+        currentWindow 
+        |> Option.bind Option.ofNull
+        |> Option.iter (fun window -> window.CloseFrame (uint32 __FRAMECLOSE.FRAMECLOSE_NoSave) |> ignore)
+  
+        let (_,_,windowFrame) = VsShellUtilities.OpenDocument(serviceProvider,sigPath,VSConstants.LOGVIEWID.Primary_guid)
+        currentWindow <- Some windowFrame
+        windowFrame.Show () |> ignore    
+        
+        let sigDocument = documentFromWindowFrame windowFrame
+        let sigProject = sigDocument.Project
 
-            let sigProject=sigDocument.Project
-
-            let projectOptions =
-                { projectOptions with
-                    ProjectFileName = sigProject.FilePath
-                    ExtraProjectInfo = Some (box workspace)
-                }
-            projectInfoManager.AddSingleFileProject(sigDocument.Project.Id,(DateTime.Now,projectOptions))
-
-            Some sigDocument
-        with _ -> None
+        let projectOptions =
+            { projectOptions with
+                ProjectFileName = sigProject.FilePath
+                ExtraProjectInfo = Some (box workspace)
+            }
+        projectInfoManager.AddSingleFileProject (sigDocument.Project.Id, (projectOptions.LoadTime, projectOptions))
+        sigDocument
 
 
     // Now the input is an entity or a member/value.
     // We always generate the full enclosing entity signature if the symbol is a member/value
-    let tryCreateMetadataContext (sourceDoc:Document) ast (fsSymbolUse: FSharpSymbolUse) : (Document * range) option Async = 
-        asyncMaybe{
+    let tryCreateMetadataContext (sourceDoc:Document) ast (fsSymbolUse: FSharpSymbolUse) : (Document * range) option = 
+        maybe{
             let fsSymbol = fsSymbolUse.Symbol
             let fileName = SignatureGenerator.getFileNameFromSymbol fsSymbol
             // get the project options for the source file containing the target symbol
-            let! fsProjectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject sourceDoc
+            let! fsProjectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject sourceDoc |> Async.RunSynchronously
 
             // The file system is case-insensitive so list.fsi and List.fsi can clash
             // Thus, we generate a tmp subfolder based on the hash of the filename
             let subFolder = string (uint32 (hash fileName))
-
             let filePath = Path.GetDirectoryName sourceDoc.Project.FilePath</>"obj"</>"Signatures"</>subFolder</>fileName 
-            let displayContext = fsSymbolUse.DisplayContext
+            let fsProjectOptions = adjustOptionsForSignature filePath fsProjectOptions
 
-            let openDeclarations = 
-                OpenDeclarationGetter.getEffectiveOpenDeclarationsAtLocation  fsSymbolUse.RangeAlternate.Start ast
-
-            let! options = sourceDoc.GetOptionsAsync() |> Async.AwaitTask  |> liftAsync
-            let indentSize = options.GetOption(FormattingOptions.TabSize, FSharpCommonConstants.FSharpLanguageName)
-
-            match SignatureGenerator.formatSymbol 
-                    (getXmlDocBySignature fsSymbolUse) indentSize displayContext openDeclarations fsSymbol 
-                        SignatureGenerator.Filterer.NoFilters SignatureGenerator.BlankLines.Default with
-            | Some signatureText ->
-                let directoryPath = Path.GetDirectoryName filePath
-                Directory.CreateDirectory directoryPath |> ignore
-                File.WriteAllText (filePath, signatureText)
-
-                let fsProjectOptions = adjustOptionsForSignature filePath fsProjectOptions
+            // If the target document is already open, extract its content to find the symbol location
+            match VsShellUtilities.IsDocumentOpen (serviceProvider, filePath, VSConstants.LOGVIEWID.Primary_guid) with
+            | true,_hierarchy,_itemId,windowFrame -> 
+                let sigDocument = documentFromWindowFrame windowFrame
+                let signatureText = (sigDocument.GetTextAsync() |> Async.RunTaskSynchronously).ToString()
                 let! range = tryFindExactLocation filePath signatureText fsSymbolUse fsProjectOptions
-                let! sigDocument = createSigDocument filePath fsProjectOptions
+                return! Some (sigDocument, range)
 
-                return! Some (sigDocument,range)
-            | None -> return! None
+            // Otherwise generate the signature file, save it to disk, load it into the workspace, and extract the Roslyn Document 
+            | false,_,_,_ ->
+                let displayContext = fsSymbolUse.DisplayContext
+
+                let openDeclarations = 
+                    OpenDeclarationGetter.getEffectiveOpenDeclarationsAtLocation  fsSymbolUse.RangeAlternate.Start ast
+
+                let options = sourceDoc.GetOptionsAsync () |> Async.RunTaskSynchronously
+                let indentSize = options.GetOption (FormattingOptions.TabSize, FSharpCommonConstants.FSharpLanguageName)
+
+                match SignatureGenerator.formatSymbol 
+                        (getXmlDocBySignature fsSymbolUse) indentSize displayContext openDeclarations fsSymbol 
+                            SignatureGenerator.Filterer.NoFilters SignatureGenerator.BlankLines.Default with
+                | Some signatureText ->
+                    let directoryPath = Path.GetDirectoryName filePath
+                    Directory.CreateDirectory directoryPath |> ignore
+                    File.WriteAllText(filePath, signatureText,Encoding.UTF8)
+
+                    let! range = tryFindExactLocation filePath signatureText fsSymbolUse fsProjectOptions
+                    let sigDocument = createSigDocument filePath fsProjectOptions
+
+                    return! Some (sigDocument,range)
+                | None -> return! None
         }
 
         
-    member __.TryFindMetadataRange (sourceDoc:Document, ast, fsSymbolUse) = async {
-        return! tryCreateMetadataContext sourceDoc ast fsSymbolUse
-    }
+    member __.TryFindMetadataRange (sourceDoc:Document, ast, fsSymbolUse) = 
+        tryCreateMetadataContext sourceDoc ast fsSymbolUse
 
-    static member ClearXmlDocCache () = xmlDocCache.Clear ()
+    member __.ClearXmlDocCache () = xmlDocCache.Clear ()
 
           

@@ -198,6 +198,8 @@ type Microsoft.FSharp.Control.Async with
     static member Raise (e : #exn) = 
         Async.FromContinuations(fun (_,econt,_) -> econt e)
 
+    static member RunTaskSynchronously task  = task |> Async.AwaitTask |> Async.RunSynchronously 
+
 module Async =
     let map (f: 'T -> 'U) (a: Async<'T>) : Async<'U> =
         async {

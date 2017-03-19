@@ -95,18 +95,16 @@ let _ = Module1.foo 1
             ExtraProjectInfo = None
         }
 
+
+
         File.WriteAllText(filePath, fileContents)
 
         let caretPosition = fileContents.IndexOf(caretMarker) + caretMarker.Length - 1 // inside the marker
+        let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+ 
 
-        let workspace  = new AdhocWorkspace ()
-        let project    = workspace.AddProject ("GotoDefn","F#")
-        let sourceText = SourceText.From (fileContents)
-        let document   = project.AddDocument (filePath,sourceText,filePath=filePath)
-        
         let actual = 
-           FSharpGoToDefinitionService.FindDefinition(FSharpChecker.Instance, document, sourceText, filePath, caretPosition, [], options, 0) 
-           |> Async.RunSynchronously
+           FSharpGoToDefinitionService.FindDefinition(FSharpChecker.Instance, documentId, SourceText.From(fileContents), filePath, caretPosition, [], options, 0) 
            |> Option.map (fun gotoDefResult -> 
                 match gotoDefResult with
                 | GoToDefinitionResult.FoundInternal range -> (range.StartLine, range.EndLine, range.StartColumn, range.EndColumn)
