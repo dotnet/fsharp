@@ -2,6 +2,7 @@
 module Microsoft.VisualStudio.FSharp.Editor.Pervasive
 
 open System
+open System.IO
 open System.Diagnostics
 
 [<RequireQualifiedAccess>]
@@ -19,6 +20,22 @@ module String =
             // http://stackoverflow.com/questions/19365404/stringreader-omits-trailing-linebreak
                 yield String.Empty
         |]
+
+let (</>) path1 path2 = Path.Combine(path1,path2)
+
+type Path with
+    static member GetFullPathSafe path =
+        try Path.GetFullPath path
+        with _ -> path
+
+    static member GetFileNameSafe path =
+        try Path.GetFileName path
+        with _ -> path
+
+
+/// Load times used to reset type checking properly on script/project load/unload. It just has to be unique for each project load/reload.
+/// Not yet sure if this works for scripts.
+let fakeDateTimeRepresentingTimeLoaded x = DateTime(abs (int64 (match x with null -> 0 | _ -> x.GetHashCode())) % 103231L)
 
 
 type System.IServiceProvider with
