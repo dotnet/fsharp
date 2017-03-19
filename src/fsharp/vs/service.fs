@@ -921,17 +921,37 @@ type TypeCheckInfo
             unresolvedEntity
             |> Option.map (fun x ->
                 let displayName =
-                    match x.Namespace with
-                    | Some ns ->
+                    let prefix =
+                        match x.TopRequireQualifiedAccessParent with
+                        | Some parent when not (Array.isEmpty parent) ->
+                            parent.[0..parent.Length - 2]
+                        | _ ->
+                            match x.Namespace with
+                            | Some ns -> ns
+                            | None -> [||]
+
+                    match prefix with
+                    | [||] -> Array.last x.CleanedIdents
+                    | _ ->
                         let fullCount = x.CleanedIdents.Length
-                        let displayPartCount = fullCount - ns.Length
+                        let displayPartCount = fullCount - prefix.Length
                         if displayPartCount > 0 then
-                            x.CleanedIdents |> Array.skip ns.Length |> String.concat "."
+                            x.CleanedIdents |> Array.skip prefix.Length |> String.concat "."
                         else x.CleanedIdents.[x.CleanedIdents.Length - 1]
-                    | None -> x.CleanedIdents.[x.CleanedIdents.Length - 1]
+
+                let ns =
+                    match x.TopRequireQualifiedAccessParent with
+                    | Some _ -> None
+                    | None ->
+                        match x.Namespace with
+                        | Some x -> Some x
+                        | None ->
+                            match x.CleanedIdents with
+                            | [|_|] -> None
+                            | _ -> Some x.CleanedIdents.[..x.CleanedIdents.Length - 2]
 
                 { DisplayName = displayName
-                  Namespace = x.Namespace |> Option.map (fun x -> x |> String.concat ".") })
+                  Namespace = ns |> Option.map (fun x -> x |> String.concat ".") })
 
         { Item = item
           MinorPriority = 0
