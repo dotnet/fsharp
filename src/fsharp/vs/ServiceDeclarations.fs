@@ -534,6 +534,7 @@ module internal ItemDescriptionsImpl =
               | Wrap(Item.Event _) -> true
               | Wrap(Item.Property _) -> true
               | Wrap(Item.CtorGroup _) -> true
+              | Wrap(Item.UnqualifiedType _) -> true
               | _ -> false
               
           member x.Equals(item1, item2) = 
@@ -574,8 +575,13 @@ module internal ItemDescriptionsImpl =
                   List.zip pi1s pi2s |> List.forall(fun (pi1, pi2) -> PropInfo.PropInfosUseIdenticalDefinitions pi1 pi2)
               | Wrap(Item.Event(evt1)), Wrap(Item.Event(evt2)) -> EventInfo.EventInfosUseIdenticalDefintions evt1 evt2
               | Wrap(Item.CtorGroup(_, meths1)), Wrap(Item.CtorGroup(_, meths2)) -> 
-                  Seq.zip meths1 meths2 
-                  |> Seq.forall (fun (minfo1, minfo2) -> MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2)
+                  List.zip meths1 meths2 
+                  |> List.forall (fun (minfo1, minfo2) -> MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2)
+              | Wrap(Item.UnqualifiedType(tcRefs1)), Wrap(Item.UnqualifiedType(tcRefs2)) ->
+                  List.zip tcRefs1 tcRefs2
+                  |> List.forall (fun (tcRef1, tcRef2) -> tyconRefEq g tcRef1 tcRef2)
+              | Wrap(Item.Types(_,[TType.TType_app(tcRef1,_)])), Wrap(Item.UnqualifiedType([tcRef2])) -> tyconRefEq g tcRef1 tcRef2
+              | Wrap(Item.UnqualifiedType([tcRef1])), Wrap(Item.Types(_,[TType.TType_app(tcRef2,_)])) -> tyconRefEq g tcRef1 tcRef2
               | _ -> false)
               
           member x.GetHashCode item =
@@ -602,6 +608,7 @@ module internal ItemDescriptionsImpl =
               | Wrap(Item.RecdField(RecdFieldInfo(_, RFRef(tcref, n)))) -> hash(tcref.Stamp, n)
               | Wrap(Item.Event evt) -> evt.ComputeHashCode()
               | Wrap(Item.Property(_name, pis)) -> hash (pis |> List.map (fun pi -> pi.ComputeHashCode()))
+              | Wrap(Item.UnqualifiedType(tcRef :: _)) -> hash tcRef.Stamp
               | _ -> failwith "unreachable") }
 
     let CompletionItemDisplayPartialEquality g = 
@@ -627,6 +634,13 @@ module internal ItemDescriptionsImpl =
                           member x.InEqualityRelation _ = true
                           member x.Equals(Wrap(item1), Wrap(item2)) = (fullDisplayTextOfModRef item1 = fullDisplayTextOfModRef item2)
                           member x.GetHashCode(Wrap(item)) = hash item.Stamp  }
+
+    let ItemEffectiveEquality g = 
+        let itemDisplayPartialEquality = ItemDisplayPartialEquality g
+        { new IPartialEqualityComparer<WrapType<CompletionItem>> with
+            member x.InEqualityRelation _ = true
+            member x.Equals(Wrap(item1), Wrap(item2)) = NameResolution.ItemsAreEffectivelyEqual g item1.Item item2.Item
+            member x.GetHashCode(Wrap(item)) = itemDisplayPartialEquality.GetHashCode(Wrap(item.Item)) }
 
     /// Remove all duplicate items
     let RemoveDuplicateItems g items = 
@@ -1473,14 +1487,20 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                 ) (0, 0, [])
 
         // Remove all duplicates. We've put the types first, so this removes the DelegateCtor and DefaultStructCtor's.
-        let items = items |> List.rev |> RemoveDuplicateCompletionItems g
+        let items = items |> List.rev
 
         if verbose then dprintf "service.ml: mkDecls: %d found groups after filtering\n" (List.length items); 
 
-        // Group by full name
+        // Group by full name for unresolved items and by display name for resolved ones.
         let items = 
-            items 
-            |> List.groupBy (fun x -> ItemDescriptionsImpl.FullNameOfItem g x.Item) 
+            items
+            // prefer items from file check results to ones from referenced assemblies via GetAssemblyContent ("all entities")
+            |> List.sortBy (fun x -> x.NamespaceToOpen.IsSome) 
+            |> RemoveDuplicateCompletionItems g
+            |> List.groupBy (fun x ->
+                match x.NamespaceToOpen with
+                | Some ns -> ns + x.Item.DisplayName
+                | None -> x.Item.DisplayName)
             |> List.map (fun (_, items) -> items.Head.Item.DisplayName, items)
 
         // Filter out operators (and list)
