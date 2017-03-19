@@ -112,13 +112,17 @@ type CompletionItemKind =
     | Argument
     | Other
 
+type UnresolvedSymbol =
+    { DisplayName: string
+      Namespace: string option }
+
 type CompletionItem =
     { Item: Item
       Kind: CompletionItemKind
       IsOwnMember: bool
       MinorPriority: int
       Type: TyconRef option
-      NamespaceToOpen: string option }
+      Unresolved: UnresolvedSymbol option }
 
 [<AutoOpen>]
 module internal ItemDescriptionsImpl = 
@@ -1486,22 +1490,26 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                     x.MinorPriority, normalizedPrior, { x with MinorPriority = normalizedPrior } :: acc
                 ) (0, 0, [])
 
-        // Remove all duplicates. We've put the types first, so this removes the DelegateCtor and DefaultStructCtor's.
-        let items = items |> List.rev
-
         if verbose then dprintf "service.ml: mkDecls: %d found groups after filtering\n" (List.length items); 
 
         // Group by full name for unresolved items and by display name for resolved ones.
         let items = 
             items
-            // prefer items from file check results to ones from referenced assemblies via GetAssemblyContent ("all entities")
-            |> List.sortBy (fun x -> x.NamespaceToOpen.IsSome) 
+            |> List.rev
+            // Prefer items from file check results to ones from referenced assemblies via GetAssemblyContent ("all entities")
+            |> List.sortBy (fun x -> x.Unresolved.IsSome) 
+            // Remove all duplicates. We've put the types first, so this removes the DelegateCtor and DefaultStructCtor's.
             |> RemoveDuplicateCompletionItems g
             |> List.groupBy (fun x ->
-                match x.NamespaceToOpen with
-                | Some ns -> ns + x.Item.DisplayName
+                match x.Unresolved with
+                | Some u -> (u.Namespace |> Option.defaultValue "") + "." + u.DisplayName
                 | None -> x.Item.DisplayName)
-            |> List.map (fun (_, items) -> items.Head.Item.DisplayName, items)
+            |> List.map (fun (_, items) -> 
+                let item = items.Head
+                match item.Unresolved with
+                | Some u -> u.DisplayName
+                | None -> item.Item.DisplayName
+                , items)
 
         // Filter out operators (and list)
         let items = 
@@ -1522,9 +1530,10 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                 | [] -> failwith "Unexpected empty bag"
                 | _ ->
                     let items =
-                        match itemsWithSameFullName |> List.partition (fun x -> x.NamespaceToOpen.IsNone) with
+                        match itemsWithSameFullName |> List.partition (fun x -> x.Unresolved.IsNone) with
                         | [], unresolved -> unresolved
-                        | resolved, _ -> resolved
+                        // if there are resolvable items, throw out unresolved to prevent duplicates like `Set` and `FSharp.Collections.Set`.
+                        | resolved, _ -> resolved 
                     
                     let item = items.Head
 
@@ -1534,13 +1543,23 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                             let cleanName = displayName.[2..displayName.Length - 3]
                             cleanName, 
                             if IsOperatorName displayName then cleanName else "``" + cleanName + "``"
-                        else displayName, Lexhelp.Keywords.QuoteIdentifierIfNeeded displayName
+                        else 
+                            displayName,
+                            match item.Unresolved with
+                            | Some _ -> displayName
+                            | None ->  Lexhelp.Keywords.QuoteIdentifierIfNeeded displayName
                     
                     let fullName = ItemDescriptionsImpl.FullNameOfItem g item.Item
+                    let namespaceToOpen = 
+                        item.Unresolved 
+                        |> Option.bind (fun x -> x.Namespace)
+                        |> Option.bind (fun ns ->
+                            if ns.StartsWith "Microsoft.FSharp." then None
+                            else Some ns)
 
                     FSharpDeclarationListItem(
-                        name, nameInCode, fullName, glyph, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), 
-                        ItemDescriptionsImpl.IsAttribute infoReader item.Item, getAccessibility item.Item, item.Kind, item.IsOwnMember, item.MinorPriority, item.NamespaceToOpen))
+                        name, nameInCode, fullName, glyph, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), ItemDescriptionsImpl.IsAttribute infoReader item.Item, 
+                        getAccessibility item.Item, item.Kind, item.IsOwnMember, item.MinorPriority, namespaceToOpen))
 
         new FSharpDeclarationListInfo(Array.ofList decls)
     

@@ -120,13 +120,17 @@ type internal FSharpDeclarationListItem =
     member FullName : string
     member NamespaceToOpen : string option
 
+type UnresolvedSymbol =
+    { DisplayName: string
+      Namespace: string option }
+
 type internal CompletionItem =
     { Item: Item
       Kind: CompletionItemKind
       IsOwnMember: bool
       MinorPriority: int
       Type: TyconRef option 
-      NamespaceToOpen: string option }
+      Unresolved: UnresolvedSymbol option }
 
 [<Sealed>]
 /// Represents a set of declarations in F# source code, with information attached ready for display by an editor.

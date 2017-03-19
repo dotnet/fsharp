@@ -175,13 +175,13 @@ type internal FSharpCompletionProvider
             let qualifyingNames, partialName = QuickParse.GetPartialLongNameEx(caretLine.ToString(), caretLineColumn - 1) 
             
             let allEntities = 
-                allEntities 
-                |> List.filter (fun entity ->
-                     match entity.Namespace, entity.TopRequireQualifiedAccessParent with
-                     | Some [||], _ -> false
-                     | _, Some _ -> false
-                     | Some _, _ -> entity.FullName.Contains "." && not (PrettyNaming.IsOperatorName entity.Item.DisplayName)
-                     | _ -> false)
+                allEntities |> List.filter (fun entity -> entity.FullName.Contains "." && not (PrettyNaming.IsOperatorName entity.Item.DisplayName))
+
+            //#if DEBUG
+            //let kprintfEntity = allEntities |> List.filter (fun x -> x.FullName.EndsWith "Append")
+            //Logging.Logging.logInfof "%+A" kprintfEntity
+            //let _x = kprintfEntity
+            //#endif
 
             let! declarations =
                 checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLineColumn, caretLine.ToString(), qualifyingNames, partialName, allEntities) |> liftAsync
@@ -215,9 +215,9 @@ type internal FSharpCompletionProvider
                     | _ -> declItem.Name
 
                 let filterText =
-                    match declItem.NamespaceToOpen with
-                    | Some _ -> declItem.Name
-                    | None -> null
+                    match declItem.Name.LastIndexOf '.' with
+                    | -1 -> null
+                    | idx -> declItem.Name.[idx + 1..]
 
                 let completionItem = 
                     CommonCompletionItem.Create(name, glyph = Nullable glyph, rules = getRules(), filterText = filterText)

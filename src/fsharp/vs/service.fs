@@ -906,7 +906,7 @@ type TypeCheckInfo
             p <- p - 1
         if p >= 0 then Some p else None
     
-    let CompletionItem (ty: TyconRef option) (namespaceToOpen: string option) (item: Item) =
+    let CompletionItem (ty: TyconRef option) (unresolvedEntity: RawEntity option) (item: Item) =
         let kind = 
             match item with
             | Item.MethodGroup (_, minfo :: _, _) -> CompletionItemKind.Method minfo.IsExtensionMember
@@ -917,12 +917,28 @@ type TypeCheckInfo
             | Item.Value _ -> CompletionItemKind.Field
             | _ -> CompletionItemKind.Other
 
+        let unresolved =
+            unresolvedEntity
+            |> Option.map (fun x ->
+                let displayName =
+                    match x.Namespace with
+                    | Some ns ->
+                        let fullCount = x.CleanedIdents.Length
+                        let displayPartCount = fullCount - ns.Length
+                        if displayPartCount > 0 then
+                            x.CleanedIdents |> Array.skip ns.Length |> String.concat "."
+                        else x.CleanedIdents.[x.CleanedIdents.Length - 1]
+                    | None -> x.CleanedIdents.[x.CleanedIdents.Length - 1]
+
+                { DisplayName = displayName
+                  Namespace = x.Namespace |> Option.map (fun x -> x |> String.concat ".") })
+
         { Item = item
           MinorPriority = 0
           Kind = kind
           IsOwnMember = false
           Type = ty 
-          NamespaceToOpen = namespaceToOpen }
+          Unresolved = unresolved }
 
     let DefaultCompletionItem = CompletionItem None None
     
@@ -1090,8 +1106,7 @@ type TypeCheckInfo
                                    Some(
                                        entities 
                                        |> List.map(fun entity ->
-                                            let ns = entity.Namespace |> Option.map (String.concat ".")
-                                            CompletionItem (getType()) ns entity.Item), denv, m)
+                                            CompletionItem (getType()) (Some entity) entity.Item), denv, m)
                                | _ -> None
                            | _ -> None // do not return unresolved items after dot
 
@@ -1185,7 +1200,7 @@ type TypeCheckInfo
                           MinorPriority = 0
                           IsOwnMember = false
                           Type = None 
-                          NamespaceToOpen = None })
+                          Unresolved = None })
                 match declaredItems with
                 | None -> Some (toCompletionItems (items, denv, m))
                 | Some (declItems, declaredDisplayEnv, declaredRange) -> Some (filtered @ declItems, declaredDisplayEnv, declaredRange)
