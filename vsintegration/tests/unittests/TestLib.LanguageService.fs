@@ -75,8 +75,8 @@ type internal Helper =
         TakeCoffeeBreak(file.VS) (* why needed? *)       
         MoveCursorToEndOfMarker(file,marker)
         let completions = AutoCompleteAtCursor file
-        match completions |> Array.tryFind (fun (name, _, _, _) -> name = completionName) with
-        | Some(_, _, descrFunc, _) ->
+        match completions |> Array.tryFind (fun (CompletionItem(name, _, _, _, _)) -> name = completionName) with
+        | Some(CompletionItem(_, _, _, descrFunc, _)) ->
             let descr = descrFunc()
             AssertContainsInOrder(descr,rhsContainsOrder)
         | None -> 
