@@ -328,7 +328,7 @@ type UsingMSBuild() as this =
 
         MoveCursorToEndOfMarker(fsx, "InDifferentFS.")
         let completion = AutoCompleteAtCursor fsx
-        let completion = completion |> Array.map (fun (name, _, _, _) -> name) |> set
+        let completion = completion |> Array.map (fun (CompletionItem(name, _, _, _, _)) -> name) |> set
         Assert.AreEqual(Set.count completion, 2, "Expected 2 elements in the completion list")
         Assert.IsTrue(completion.Contains "x", "Completion list should contain x because INTERACTIVE is defined")
         Assert.IsTrue(completion.Contains "B", "Completion list should contain B because DEBUG is not defined")
