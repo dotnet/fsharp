@@ -1643,7 +1643,9 @@ module internal VsActual =
             let vsvar = System.Environment.GetEnvironmentVariable("VS150COMNTOOLS")
             if String.IsNullOrEmpty vsvar then
                 let maybeDirectory = 
-                    [ @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\" ]
+                    [ @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\"
+                      @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\Common7\Tools\"
+                      @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\" ]
                     |> Seq.tryFind System.IO.Directory.Exists
                 match maybeDirectory with
                 | Some dir ->
