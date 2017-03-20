@@ -420,28 +420,11 @@ if not '%VisualStudioVersion%' == '' goto vsversionset
 if exist "%VS150COMNTOOLS%\..\..\ide\devenv.exe" set VisualStudioVersion=15.0
 if not '%VisualStudioVersion%' == '' goto vsversionset
 
-if exist "%VS140COMNTOOLS%\..\ide\devenv.exe" set VisualStudioVersion=14.0
-if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe" set VisualStudioVersion=14.0
-if exist "%ProgramFiles%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe" set VisualStudioVersion=14.0
-if not '%VisualStudioVersion%' == '' goto vsversionset
-
-if exist "%VS120COMNTOOLS%\..\ide\devenv.exe" set VisualStudioVersion=12.0
-if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" set VisualStudioVersion=12.0
-if exist "%ProgramFiles%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" set VisualStudioVersion=12.0
-
 :vsversionset
 if '%VisualStudioVersion%' == '' echo Error: Could not find an installation of Visual Studio && goto :failure
 
 if exist "%VS150COMNTOOLS%\..\..\MSBuild\15.0\Bin\MSBuild.exe" (
     set _msbuildexe="%VS150COMNTOOLS%\..\..\MSBuild\15.0\Bin\MSBuild.exe"
-    goto :havemsbuild
-)
-if exist "%ProgramFiles(x86)%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe" (
-    set _msbuildexe="%ProgramFiles(x86)%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"
-    goto :havemsbuild
-)
-if exist "%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe" (
-    set _msbuildexe="%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"
     goto :havemsbuild
 )
 echo Error: Could not find MSBuild.exe. && goto :failure
@@ -465,26 +448,19 @@ if defined APPVEYOR (
 
 REM set msbuildflags=/maxcpucount %_nrswitch% /nologo
 set msbuildflags=%_nrswitch% /nologo
-set _ngenexe="%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\ngen.exe"
-if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 
 echo ---------------- Done with prepare, starting package restore ----------------
-set _nugetexe="%~dp0.nuget\NuGet.exe"
-set _nugetconfig="%~dp0.nuget\NuGet.Config"
-
 if '%RestorePackages%' == 'true' (
-    %_ngenexe% install %_nugetexe%  /nologo 
-
-    %_nugetexe% restore packages.config -PackagesDirectory packages -ConfigFile %_nugetconfig%
+    dotnet restore packages.proj --packages packages
     @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
 
     if '%BUILD_VS%' == '1' (
-        %_nugetexe% restore vsintegration\packages.config -PackagesDirectory packages -ConfigFile %_nugetconfig%
+        dotnet restore vsintegration\packages.proj --packages packages
         @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
     )
 
     if '%BUILD_SETUP%' == '1' (
-        %_nugetexe% restore setup\packages.config -PackagesDirectory packages -ConfigFile %_nugetconfig%
+        dotnet restore setup\packages.proj --packages packages
         @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
     )
 )

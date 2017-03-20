@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net46</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.Common" Version="2.0.0-rc3-61324-01" Condition="'$(TargetFramework)' == 'net46'" />
+    <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures" Version="2.0.0-rc3-61324-01" Condition="'$(TargetFramework)' == 'net46'" />
+    <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures.Text" Version="2.0.0-rc3-61324-01" Condition="'$(TargetFramework)' == 'net46'" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Features" Version="2.0.0-rc3-61324-01" Condition="'$(TargetFramework)' == 'net46'" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="2.0.0-rc3-61324-01" Condition="'$(TargetFramework)' == 'net46'" />
+    <PackageReference Include="Microsoft.VisualStudio.LanguageServices" Version="2.0.0-rc3-61324-01" Condition="'$(TargetFramework)' == 'net46'" />
+    <PackageReference Include="Microsoft.Composition" Version="1.0.27" Condition="'$(TargetFramework)' == 'net46'" />
+    <PackageReference Include="Microsoft.VisualStudio.Package.LanguageService.14.0" Version="14.3.25407" Condition="'$(TargetFramework)' == 'net46'" />
+    <PackageReference Include="Microsoft.VisualStudio.Editor" Version="14.3.25407" Condition="'$(TargetFramework)' == 'net46'" />
+    <PackageReference Include="Microsoft.VisualStudio.Text.UI" Version="14.3.25407" Condition="'$(TargetFramework)' == 'net46'" />
+    <PackageReference Include="Microsoft.VisualStudio.Text.UI.Wpf" Version="14.3.25407" Condition="'$(TargetFramework)' == 'net46'" />
+    <PackageReference Include="Microsoft.VisualStudio.Text.Data" Version="14.3.25407" Condition="'$(TargetFramework)' == 'net46'" />
+    <PackageReference Include="Microsoft.VisualStudio.Text.Logic" Version="14.3.25407" Condition="'$(TargetFramework)' == 'net46'" />
+    <PackageReference Include="Microsoft.VisualStudio.Threading" Version="14.1.131" Condition="'$(TargetFramework)' == 'net46'" />
+    <PackageReference Include="Microsoft.VisualStudio.CoreUtility" Version="14.3.25407" Condition="'$(TargetFramework)' == 'net46'" />
+    <PackageReference Include="Microsoft.VisualStudio.Shell.Design" Version="14.3.25407" Condition="'$(TargetFramework)' == 'net46'" />
+    <PackageReference Include="Microsoft.VisualStudio.Settings.15.0" Version="15.0.25824-RC" Condition="'$(TargetFramework)' == 'net46'" />
+    <PackageReference Include="Microsoft.VisualStudio.Utilities" Version="14.3.25407" Condition="'$(TargetFramework)' == 'net46'" />
+    <PackageReference Include="Microsoft.VisualStudio.Language.StandardClassification" Version="14.3.25407" Condition="'$(TargetFramework)' == 'net46'" />
+    <PackageReference Include="Microsoft.VisualStudio.Language.Intellisense" Version="14.3.25407" Condition="'$(TargetFramework)' == 'net46'" />
+    <PackageReference Include="Microsoft.VisualStudio.Designer.Interfaces" Version="1.1.4322" />
+    <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="15.0.26124-RC3" />
+    <PackageReference Include="Roslyn.Microsoft.VisualStudio.ComponentModelHost" Version="0.0.2" Condition="'$(TargetFramework)' == 'net46'" />
+    <PackageReference Include="Microsoft.VisualFSharp.Microsoft.VisualStudio.Shell.UI.Internal" Version="14.0.25420" Condition="'$(TargetFramework)' == 'net46'" />
+    <PackageReference Include="RoslynDependencies.Microsoft.VisualStudio.Text.Internal" Version="14.3.25407" targetFramework="net45" />
+    <PackageReference Include="RoslynDependencies.Microsoft.VisualStudio.Platform.VSEditor" Version="14.3.25407" Condition="'$(TargetFramework)' == 'net46'" />
+  </ItemGroup>
+</Project>

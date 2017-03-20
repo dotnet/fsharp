@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net46</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Collections.Immutable" Version="1.2.0" />
+    <PackageReference Include="System.Reflection.Metadata" Version="1.4.1-beta-24227-04" />
+    <PackageReference Include="Microsoft.DiaSymReader.PortablePdb" Version="1.1.0"  />
+    <PackageReference Include="Microsoft.DiaSymReader" Version="1.0.8" />
+    <PackageReference Include="FsSrGen" Version="2.0.0" Condition="'$(TargetFramework)' == 'net46'" />
+    <PackageReference Include="MicroBuild.Core" Version="0.2.0" />
+    <PackageReference Include="MicroBuild.Core.Sentinel" Version="1.0.0" />
+    <PackageReference Include="MicroBuild.Plugins.SwixBuild" Version="1.1.0-g0701ee829f" />
+    <PackageReference Include="WiX.Toolset.2015" Version="3.10.0.1503" />
+    <PackageReference Include="Microsoft.VisualFSharp.Core.Redist" Version="1.0.0" />
+    <PackageReference Include="Microsoft.VisualStudio.Shell.14.0" Version="14.3.25407" Condition="'$(TargetFramework)' == 'net46'" />
+    <PackageReference Include="Microsoft.VisualFSharp.Msbuild.15.0" Version="1.0.1" />
+    <PackageReference Include="System.ValueTuple" Version="4.3.0" />
+    <PackageReference Include="Microsoft.VisualFSharp.Type.Providers.Redist" Version="1.0.0" />
+  </ItemGroup>
+</Project>
