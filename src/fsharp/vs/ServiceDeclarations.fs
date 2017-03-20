@@ -114,7 +114,7 @@ type CompletionItemKind =
 
 type UnresolvedSymbol =
     { DisplayName: string
-      Namespace: string option }
+      Namespace: string[] }
 
 type CompletionItem =
     { Item: Item
@@ -1455,7 +1455,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
     member self.Items = declarations
 
     // Make a 'Declarations' object for a set of selected items
-    static member Create(infoReader:InfoReader, m, denv, getAccessibility, items: CompletionItem list, reactor, checkAlive) = 
+    static member Create(infoReader:InfoReader, m, denv, getAccessibility, items: CompletionItem list, reactor, currentNamespaceOrModule: string[] option, checkAlive) = 
         let g = infoReader.g
         let items = items |> ItemDescriptionsImpl.RemoveExplicitlySuppressedCompletionItems g
         
@@ -1502,7 +1502,10 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
             |> RemoveDuplicateCompletionItems g
             |> List.groupBy (fun x ->
                 match x.Unresolved with
-                | Some u -> (u.Namespace |> Option.defaultValue "") + "." + u.DisplayName
+                | Some u -> 
+                    match u.Namespace with
+                    | [||] -> u.DisplayName
+                    | ns -> (ns |> String.concat ".") + "." + u.DisplayName
                 | None -> x.Item.DisplayName)
             |> List.map (fun (_, items) -> 
                 let item = items.Head
@@ -1550,12 +1553,23 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                             | None ->  Lexhelp.Keywords.QuoteIdentifierIfNeeded displayName
                     
                     let fullName = ItemDescriptionsImpl.FullNameOfItem g item.Item
+                    
                     let namespaceToOpen = 
                         item.Unresolved 
-                        |> Option.bind (fun x -> x.Namespace)
+                        |> Option.map (fun x -> x.Namespace)
                         |> Option.bind (fun ns ->
-                            if ns.StartsWith "Microsoft.FSharp." then None
+                            if ns |> Array.startsWith [|"Microsoft"; "FSharp"|] then None
                             else Some ns)
+                        |> Option.map (fun ns ->
+                            match currentNamespaceOrModule with
+                            | Some currentNs ->
+                               if ns |> Array.startsWith currentNs then
+                                 ns.[currentNs.Length..]
+                               else ns
+                            | None -> ns)
+                        |> Option.bind (function
+                            | [||] -> None
+                            | ns -> Some (ns |> String.concat "."))
 
                     FSharpDeclarationListItem(
                         name, nameInCode, fullName, glyph, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), ItemDescriptionsImpl.IsAttribute infoReader item.Item, 

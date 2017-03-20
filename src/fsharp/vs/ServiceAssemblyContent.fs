@@ -143,6 +143,7 @@ type internal RawEntity =
       CleanedIdents: Idents
       Namespace: Idents option
       IsPublic: bool
+      NearestRequireQualifiedAccessParent: Idents option
       TopRequireQualifiedAccessParent: Idents option
       AutoOpenParent: Idents option
       Item: NameResolution.Item
@@ -154,12 +155,14 @@ type AssemblyContentType = Public | Full
 
 type internal Parent = 
     { Namespace: Idents option
-      RequiresQualifiedAccess: Idents option
+      ThisRequiresQualifiedAccess: Idents option
+      TopRequiresQualifiedAccess: Idents option
       AutoOpen: Idents option
       WithModuleSuffix: Idents option }
     static member Empty = 
         { Namespace = None
-          RequiresQualifiedAccess = None
+          ThisRequiresQualifiedAccess = None
+          TopRequiresQualifiedAccess = None
           AutoOpen = None
           WithModuleSuffix = None }
     static member RewriteParentIdents (parentIdents: Idents option) (idents: Idents) =
@@ -236,7 +239,8 @@ module internal AssemblyContentProvider =
               CleanedIdents = cleanIdents
               Namespace = ns
               IsPublic = entity.Accessibility.IsPublic
-              TopRequireQualifiedAccessParent = parent.RequiresQualifiedAccess |> Option.map parent.FixParentModuleSuffix
+              NearestRequireQualifiedAccessParent = parent.ThisRequiresQualifiedAccess |> Option.map parent.FixParentModuleSuffix
+              TopRequireQualifiedAccessParent = parent.TopRequiresQualifiedAccess |> Option.map parent.FixParentModuleSuffix
               AutoOpenParent = parent.AutoOpen |> Option.map parent.FixParentModuleSuffix
               Item = entity.Item
               Kind = fun lookupType ->
@@ -261,8 +265,8 @@ module internal AssemblyContentProvider =
                   CleanedIdents = parent.FixParentModuleSuffix idents
                   Namespace = ns
                   IsPublic = func.Accessibility.IsPublic
-                  TopRequireQualifiedAccessParent = 
-                        parent.RequiresQualifiedAccess |> Option.map parent.FixParentModuleSuffix
+                  NearestRequireQualifiedAccessParent = parent.ThisRequiresQualifiedAccess |> Option.map parent.FixParentModuleSuffix
+                  TopRequireQualifiedAccessParent = parent.TopRequiresQualifiedAccess |> Option.map parent.FixParentModuleSuffix
                   AutoOpenParent = parent.AutoOpen |> Option.map parent.FixParentModuleSuffix
                   Item = func.Item
                   Kind = fun _ -> EntityKind.FunctionOrValue func.IsActivePattern }
@@ -296,13 +300,14 @@ module internal AssemblyContentProvider =
                     | Some x -> yield x
                     | None -> ()
 
+                    let thisRequiresQualifierAccess =
+                        if entity.IsFSharp && hasAttribute<RequireQualifiedAccessAttribute> entity.Attributes then 
+                            parent.FormatEntityFullName entity |> Option.map snd
+                        else None
+
                     let currentParent =
-                        { RequiresQualifiedAccess =
-                            parent.RequiresQualifiedAccess
-                            |> Option.orElse (
-                                if entity.IsFSharp && hasAttribute<RequireQualifiedAccessAttribute> entity.Attributes then 
-                                    parent.FormatEntityFullName entity |> Option.map snd
-                                else None)
+                        { ThisRequiresQualifiedAccess = thisRequiresQualifierAccess |> Option.orElse parent.ThisRequiresQualifiedAccess
+                          TopRequiresQualifiedAccess = parent.TopRequiresQualifiedAccess |> Option.orElse thisRequiresQualifierAccess
                           AutoOpen =
                             let isAutoOpen = entity.IsFSharpModule && hasAttribute<AutoOpenAttribute> entity.Attributes
                             match isAutoOpen, parent.AutoOpen with
@@ -975,6 +980,17 @@ module internal ParsedInput =
 
         res, modules
 
+    let findBestPositionToInsertOpenDeclaration (modules: (Idents * EndLine * Col) list) scope pos (entity: Idents) =
+        match modules |> List.filter (fun (m, _, _) -> entity |> Array.startsWith m ) with
+        | [] -> { ScopeKind = scope.Kind; Pos = pos }
+        | (_, endLine, startCol) :: _ ->
+            //printfn "All modules: %A, Win module: %A" modules m
+            let scopeKind =
+                match scope.Kind with
+                | TopModule -> NestedModule
+                | x -> x
+            { ScopeKind = scopeKind; Pos = Point.make (endLine + 1) startCol }
+
     let tryFindInsertionContext (currentLine: int) (ast: ParsedInput) (partiallyQualifiedName: MaybeUnresolvedIdents) = 
         let res, modules = tryFindNearestPointAndModules currentLine ast
         // CLEANUP: does this realy need to be a partial application with pre-computation?  Can this be made more expicit?
@@ -988,18 +1004,7 @@ module internal ParsedInput =
             | None -> [||]
             | Some (scope, ns, pos) -> 
                 Entity.tryCreate(ns, scope.Idents, partiallyQualifiedName, requiresQualifiedAccessParent, autoOpenParent, entityNamespace, entity)
-                |> Array.map (fun e ->
-                    e,
-                    match modules |> List.filter (fun (m, _, _) -> entity |> Array.startsWith m ) with
-                    | [] -> { ScopeKind = scope.Kind; Pos = pos }
-                    | (_, endLine, startCol) :: _ ->
-                        //printfn "All modules: %A, Win module: %A" modules m
-                        let scopeKind =
-                            match scope.Kind with
-                            | TopModule -> NestedModule
-                            | x -> x
-                        { ScopeKind = scopeKind; Pos = Point.make (endLine + 1) startCol })
-
+                |> Array.map (fun e -> e, findBestPositionToInsertOpenDeclaration modules scope pos entity)
 
     /// Corrects insertion line number based on kind of scope and text surrounding the insertion point.
     let adjustInsertionPoint (getLineStr: int -> string) ctx  =
@@ -1029,7 +1034,8 @@ module internal ParsedInput =
 
         { ctx.Pos with Line = line }
     
-    let tryFindNearestPointToInsertOpenDeclaration (currentLine: int) (ast: ParsedInput) =
+    let tryFindNearestPointToInsertOpenDeclaration (currentLine: int) (ast: ParsedInput) (entity: Idents) =
         match tryFindNearestPointAndModules currentLine ast with
-        | Some (scope,_,point), _ -> Some { ScopeKind = scope.Kind; Pos = point }
+        | Some (scope, _, point), modules -> 
+            Some (findBestPositionToInsertOpenDeclaration modules scope point entity)
         | _ -> None
