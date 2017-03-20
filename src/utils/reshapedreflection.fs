@@ -92,6 +92,7 @@ module internal ReflectionAdapters =
         member this.GetRuntimeProperties() = RuntimeReflectionExtensions.GetRuntimeProperties(this)
         member this.GetRuntimeEvents() = RuntimeReflectionExtensions.GetRuntimeEvents(this)
         member this.Attributes = this.GetTypeInfo().Attributes
+        member this.GetCustomAttributes(inherits:bool) : obj[] = downcast box(CustomAttributeExtensions.GetCustomAttributes(this.GetTypeInfo(), inherits) |> Seq.toArray)
         member this.GetCustomAttributes(attrTy, inherits) : obj[] = downcast box(CustomAttributeExtensions.GetCustomAttributes(this.GetTypeInfo(), attrTy, inherits) |> Seq.toArray)
         member this.GetNestedType (name, bindingFlags) = 
             // MSDN: http://msdn.microsoft.com/en-us/library/0dcb3ad5.aspx
@@ -340,6 +341,8 @@ module internal ReflectionAdapters =
             |> Seq.toArray
         member this.Location = 
             this.ManifestModule.FullyQualifiedName
+        member this.GetCustomAttributes(_:bool) = 
+            CustomAttributeExtensions.GetCustomAttributes(this) |> Seq.toArray
 
 #if FX_RESHAPED_REFLECTION_CORECLR
         static member LoadFrom(filename:string) =
