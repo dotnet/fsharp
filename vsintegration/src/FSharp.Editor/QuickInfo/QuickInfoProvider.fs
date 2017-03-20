@@ -158,6 +158,23 @@ type internal FSharpQuickInfoProvider [<ComponentModel.Composition.ImportingCons
     let xmlMemberIndexService = serviceProvider.GetService<SVsXMLMemberIndexService,IVsXMLMemberIndexService>()
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder (xmlMemberIndexService, serviceProvider.DTE)
 
+
+    static member ProvideQuickInfo(checker: FSharpChecker, documentId: DocumentId, sourceText: SourceText, filePath: string, position: int, options: FSharpProjectOptions, textVersionHash: int) =
+        asyncMaybe {
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true)
+            let textLine = sourceText.Lines.GetLineFromPosition(position)
+            let textLineNumber = textLine.LineNumber + 1 // Roslyn line numbers are zero-based
+            let defines = CompilerEnvironment.GetCompilationDefinesForEditing(filePath, options.OtherOptions |> Seq.toList)
+            let! symbol = CommonHelpers.getSymbolAtPosition(documentId, sourceText, position, filePath, defines, SymbolLookupKind.Precise)
+            let! res = checkFileResults.GetStructuredToolTipTextAlternate(textLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland, FSharpTokenTag.IDENT) |> liftAsync
+            match res with
+            | FSharpToolTipText [] 
+            | FSharpToolTipText [FSharpStructuredToolTipElement.None] -> return! None
+            | _ -> 
+                let! symbolUse = checkFileResults.GetSymbolUseAtLocation(textLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland)
+                return! Some(res, CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbol.Range), symbolUse.Symbol, symbol.Kind)
+        }
+
     interface IQuickInfoProvider with
         override this.GetItemAsync (document: Document, position: int, cancellationToken: CancellationToken): Task<QuickInfoItem> =
             asyncMaybe {
