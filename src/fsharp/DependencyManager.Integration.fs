@@ -187,17 +187,18 @@ let createPackageManagerUnknownError packageManagerKey m =
 
 let tryFindDependencyManagerInPath m (path:string) : ReferenceType =
     try
-        if path.Contains ":" then
+        match path.IndexOf(":") with
+        | -1 | 1 ->
+            ReferenceType.Library path
+        | _ ->
             let managers = RegisteredDependencyManagers()
             match managers |> Seq.tryFind (fun kv -> path.StartsWith(kv.Value.Key + ":" )) with
             | None ->
                 errorR(createPackageManagerUnknownError (path.Split(':').[0]) m)
                 ReferenceType.UnknownType
             | Some kv -> ReferenceType.RegisteredDependencyManager kv.Value
-        else
-            ReferenceType.Library path
-    with 
-    | e -> 
+    with
+    | e ->
         errorR(Error(FSComp.SR.packageManagerError(e.Message),m))
         ReferenceType.UnknownType
 
