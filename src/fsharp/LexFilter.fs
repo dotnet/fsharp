@@ -925,6 +925,7 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
                     | DOT_DOT
                     | NEW
                     | LBRACE_BAR
+                    | SEMICOLON
                     | BAR_RBRACE
                     | LBRACE_LESS
                     | GREATER_RBRACE

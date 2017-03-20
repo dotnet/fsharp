@@ -681,9 +681,7 @@ let rec stripTyEqnsAndErase eraseFuncAndTuple (g:TcGlobals) ty =
             ty
     | TType_fun(a,b) when eraseFuncAndTuple -> TType_app(g.fastFunc_tcr,[ a; b]) 
     | TType_tuple(tupInfo,l) when eraseFuncAndTuple -> mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) l
-    | TType_anon(anonInfo,l) when eraseFuncAndTuple && anonInfo.IsErased -> 
-        // DEMONSTRATOR: for now we're using tuples
-        mkCompiledTupleTy g (evalAnonInfoIsStruct anonInfo) l
+    | TType_anon(anonInfo,l) when eraseFuncAndTuple && anonInfo.IsErased -> mkCompiledTupleTy g (evalAnonInfoIsStruct anonInfo) l
     | ty -> ty
 
 let stripTyEqnsAndMeasureEqns g ty =
@@ -7022,11 +7020,13 @@ let rec typeEnc g (gtpsType,gtpsMethod) ty =
             tyName + tyargsEnc g (gtpsType,gtpsMethod) tinst
 
     | TType_anon (anonInfo, tinst) -> 
-        // DEMONSTRATOR: for now we're using tuples
-        let (AnonRecdTypeInfo(_ccu,tupInfo,_nms)) = anonInfo
-        typeEnc g (gtpsType,gtpsMethod) (TType_tuple (tupInfo, tinst))        
-        //let tref = GenILTypeRefForAnonRecdType (ccu, nms) 
-        //sprintf "%s%s" tref.FullName (tyargsEnc g (gtpsType,gtpsMethod) tinst)
+        if anonInfo.IsErased then 
+            // DEMONSTRATOR: for now we're using tuples
+            let (AnonRecdTypeInfo(_ccu,tupInfo,_nms)) = anonInfo
+            typeEnc g (gtpsType,gtpsMethod) (TType_tuple (tupInfo, tinst))        
+        else
+            let tref = GenILTypeRefForAnonRecdType anonInfo
+            sprintf "%s%s" tref.FullName (tyargsEnc g (gtpsType,gtpsMethod) tinst)
 
     | TType_tuple (tupInfo, typs) -> 
         if evalTupInfoIsStruct tupInfo then 

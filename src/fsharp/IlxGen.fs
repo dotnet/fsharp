@@ -423,11 +423,12 @@ and GenTypeAux amap m (tyenv: TypeReprEnv) voidOK ptrsOK ty =
     | TType_tuple (tupInfo, args) -> GenTypeAux amap m tyenv VoidNotOK ptrsOK (mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) args)
     | TType_fun (dty, returnTy) -> EraseClosures.mkILFuncTy g.ilxPubCloEnv  (GenTypeArgAux amap m tyenv dty) (GenTypeArgAux amap m tyenv returnTy)
     | TType_anon (anonInfo, tinst) -> 
-        // DEMONSTRATOR: for now we're using tuples
-        GenTypeAux amap m tyenv voidOK ptrsOK (TType_tuple (anonInfo.TupInfo, tinst))
-        //let tref = GenILTypeRefForAnonRecdType (ccu, nms)
-        //let boxity = if (evalTupInfoIsStruct tupInfo) then ILBoxity.AsValue else ILBoxity.AsObject
-        //GenILTyAppAux amap m tyenv (tref, boxity, None) tinst 
+        if anonInfo.IsErased then 
+            GenTypeAux amap m tyenv voidOK ptrsOK (TType_tuple (anonInfo.TupInfo, tinst))
+        else 
+            let tref = GenILTypeRefForAnonRecdType anonInfo
+            let boxity = if evalAnonInfoIsStruct anonInfo then ILBoxity.AsValue else ILBoxity.AsObject
+            GenILTyAppAux amap m tyenv (tref, boxity, None) tinst 
 
     | TType_ucase (ucref, args) -> 
         let cuspec,idx = GenUnionCaseSpec amap m tyenv ucref args 
@@ -523,13 +524,6 @@ and GenParamTypes amap m tyenv tys =
     tys |> List.map (GenTypeAux amap m tyenv VoidNotOK PtrTypesOK) 
 
 and GenTypeArgs amap m tyenv tyargs = GenTypeArgsAux amap m tyenv tyargs
-
-let GenericParamHasConstraint (gp: ILGenericParameterDef) = 
-     gp.Constraints.Length <> 0 ||
-     gp.Variance <> NonVariant ||
-     gp.HasReferenceTypeConstraint ||
-     gp.HasNotNullableValueTypeConstraint ||
-     gp.HasDefaultConstructorConstraint
 
 
 // Static fields generally go in a private InitializationCodeAndBackingFields section. This is to ensure all static 
@@ -1168,7 +1162,7 @@ type AssemblyBuilder(cenv:cenv) as mgbuf =
     // The definitions of top level values, as quotations. 
     let mutable reflectedDefinitions : System.Collections.Generic.Dictionary<Tast.Val,(string * int * Expr)> = System.Collections.Generic.Dictionary(HashIdentity.Reference)
     // A memoization table for generating value types for big constant arrays  
-    let vtgenerator=
+    let vtgenerator =
          new MemoizationTable<(CompileLocation * int) , ILTypeSpec>
               ((fun (cloc,size) -> 
                  let name   = CompilerGeneratedName ("T" + string(newUnique()) + "_" + string size + "Bytes") // Type names ending ...$T<unique>_37Bytes
@@ -1178,6 +1172,74 @@ type AssemblyBuilder(cenv:cenv) as mgbuf =
                  let vtdef = {vtdef with Access= ComputeTypeAccess vtref true}
                  mgbuf.AddTypeDef(vtref, vtdef, false, true, None)
                  vtspec), 
+               keyComparer=HashIdentity.Structural)
+
+    let atgenerator =
+         new MemoizationTable<(bool * ILTypeRef * string[]) , (ILMethodRef * ILMethodRef[] * ILType)>
+              ((fun (isStruct,ilTypeRef,nms) -> 
+
+                 let flds = [ for (i,nm) in Array.indexed nms -> (nm, "<" + nm + ">" + "i__Field", ILType.TypeVar (uint16 i)) ]
+
+                 let ilGenericParams = 
+                     [ for nm in nms -> 
+                         { Name = sprintf "<%s>j__TPar" nm  
+                           Constraints = []
+                           Variance=NonVariant
+                           CustomAttrs = emptyILCustomAttrs
+                           HasReferenceTypeConstraint=false
+                           HasNotNullableValueTypeConstraint=false
+                           HasDefaultConstructorConstraint= false } ]
+                 let ilTy = mkILFormalNamedTy (if isStruct then ILBoxity.AsValue else ILBoxity.AsObject) ilTypeRef ilGenericParams
+
+                 // Generate the IL fields 
+                 let ilFieldDefs = 
+                    mkILFields 
+                     [ for (_, fldName, fldTy) in flds ->  
+                           let fdef = mkILInstanceField (fldName, fldTy, None, ILMemberAccess.Private) 
+                           { fdef with CustomAttrs   = mkILCustomAttrs [ cenv.g.DebuggerBrowsableNeverAttribute ] } ]
+         
+                 // Generate property definitions for the fields compiled as properties 
+                 let ilProperties = 
+                  mkILProperties 
+                     [ for (propName, _fldName, fldTy) in flds ->  
+                               { Name            = propName
+                                 IsRTSpecialName = false
+                                 IsSpecialName   = false
+                                 SetMethod       = None
+                                 GetMethod       = Some(mkILMethRef(ilTypeRef,ILCallingConv.Instance,"get_" + propName,0,[],fldTy  ))
+                                 CallingConv     = ILCallingConv.Instance.ThisConv
+                                 Type            = fldTy      
+                                 Init            = None
+                                 Args            = []
+                                 CustomAttrs     = emptyILCustomAttrs } ] 
+         
+                 let ilMethods = 
+                     [ for (propName, fldName, fldTy) in flds ->  
+                            mkLdfldMethodDef ("get_" + propName,ILMemberAccess.Public,false,ilTy,fldName,fldTy) ]
+
+                 let ilBaseTy = (if isStruct then cenv.g.iltyp_ValueType else cenv.g.ilg.typ_Object)
+               
+                 let ilCtorDef = mkILSimpleStorageCtorWithParamNames(None, (if isStruct then None else Some ilBaseTy.TypeSpec), ilTy, flds, ILMemberAccess.Public)
+                 let ilCtorRef = mkRefToILMethod(ilTypeRef, ilCtorDef)
+                 let ilMethodRefs = [| for mdef in ilMethods -> mkRefToILMethod(ilTypeRef, mdef) |]
+
+                 let ilTypeDef = 
+                     mkILGenericClass (ilTypeRef.Name, ILTypeDefAccess.Public, ilGenericParams, ilBaseTy, [], 
+                                       mkILMethods (ilCtorDef :: ilMethods), ilFieldDefs, emptyILTypeDefs, 
+                                       ilProperties, mkILEvents [], mkILCustomAttrs [ cenv.g.CompilerGeneratedAttribute ], 
+                                       ILTypeInit.BeforeField)
+
+                 let ilTypeDef = 
+                     { ilTypeDef with 
+                         IsSealed = true
+                         IsSerializable = true
+                         MethodImpls=mkILMethodImpls []
+                         IsAbstract=false
+                         IsComInterop=false }
+
+                 if ilTypeRef.Scope.IsLocalRef then
+                     mgbuf.AddTypeDef(ilTypeRef, ilTypeDef, false, true, None)
+                 (ilCtorRef,ilMethodRefs,ilTy)), 
                keyComparer=HashIdentity.Structural)
 
     let mutable explicitEntryPointInfo : ILTypeRef option  = None
@@ -1207,6 +1269,13 @@ type AssemblyBuilder(cenv:cenv) as mgbuf =
         // To avoid this situation, these ValueTypes are generated under the private implementation rather than in the current cloc. [was bug 1532].
         let cloc = CompLocForPrivateImplementationDetails cloc
         vtgenerator.Apply((cloc,size))
+
+    member mgbuf.GenerateAnonType(anonInfo) = 
+        let (AnonRecdTypeInfo(ccuOpt, _tupInfo, nms)) = anonInfo
+        assert ccuOpt.IsSome
+        let isStruct = evalAnonInfoIsStruct anonInfo
+        let tref = GenILTypeRefForAnonRecdType anonInfo
+        atgenerator.Apply((isStruct,tref,nms))
 
     member mgbuf.AddTypeDef(tref:ILTypeRef, tdef, eliminateIfEmpty, addAtEnd, tdefDiscards) = 
         gtdefs.FindNestedTypeDefsBuilder(tref.Enclosing).AddTypeDef(tdef, eliminateIfEmpty, addAtEnd, tdefDiscards)
@@ -2159,12 +2228,31 @@ and GenAllocRecd cenv cgbuf eenv ctorInfo (tcref,argtys,args,m) sequel =
         GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenAllocAnonRecd cenv cgbuf eenv (anonInfo: AnonRecdTypeInfo, tyargs, args, m) sequel =
-    // DEMONSTRATOR: for now we're using tuples
-    GenAllocTuple cenv cgbuf eenv (anonInfo.TupInfo,args,tyargs,m) sequel
+    if anonInfo.IsErased then 
+        GenAllocTuple cenv cgbuf eenv (anonInfo.TupInfo,args,tyargs,m) sequel
+    else
+        let anonCtor, _anonMethods, anonType = cgbuf.mgbuf.GenerateAnonType(anonInfo)
+        let boxity = anonType.Boxity
+        GenExprs cenv cgbuf eenv args
+        let ilTypeArgs = GenTypeArgs cenv.amap m eenv.tyenv tyargs
+        let anonTypeWithInst = mkILTy boxity (mkILTySpec(anonType.TypeSpec.TypeRef,ilTypeArgs))
+        CG.EmitInstr cgbuf (pop args.Length) (Push [anonTypeWithInst]) (mkNormalNewobj (mkILMethSpec(anonCtor,boxity,ilTypeArgs,[])))
+        GenSequel cenv eenv.cloc cgbuf sequel
+
+
 
 and GenGetAnonRecdField cenv cgbuf eenv (anonInfo: AnonRecdTypeInfo, e, tyargs, n, m) sequel =
-    // DEMONSTRATOR: for now we're using tuples
-    GenGetTupleField cenv cgbuf eenv (anonInfo.TupInfo,e,tyargs,n,m) sequel
+    if anonInfo.IsErased then 
+        GenGetTupleField cenv cgbuf eenv (anonInfo.TupInfo,e,tyargs,n,m) sequel
+    else
+        let _anonCtor, anonMethods, anonType = cgbuf.mgbuf.GenerateAnonType(anonInfo)
+        let boxity = anonType.Boxity
+        let ilTypeArgs = GenTypeArgs cenv.amap m eenv.tyenv tyargs
+        let anonMethod = anonMethods.[n]
+        let anonFieldType = ilTypeArgs.[n]
+        GenExpr cenv cgbuf eenv SPSuppress e Continue          
+        CG.EmitInstr cgbuf (pop 1) (Push [anonFieldType]) (mkNormalCall (mkILMethSpec(anonMethod,boxity,ilTypeArgs,[])))
+        GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenNewArraySimple cenv cgbuf eenv (elems,elemTy,m) sequel =
     let ilElemTy = GenType cenv.amap m eenv.tyenv elemTy

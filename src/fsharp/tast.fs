@@ -5113,7 +5113,10 @@ let FSharpOptimizationDataResourceName = "FSharpOptimizationData"
 let FSharpSignatureDataResourceName = "FSharpSignatureData"
 
 
-// DEMONSTRATOR: for now we're using tuples
-//let TypeNameForAnonRecdTypes = "<AnonRecdTypes>"
-//let GenILTypeRefForAnonRecdType (ccu: CcuThunk, nms) = 
-//    mkILNestedTyRef(ccu.ILScopeRef,[TypeNameForAnonRecdTypes],String.concat "-" nms)
+let GenILTypeRefForAnonRecdType anonInfo = 
+    let (AnonRecdTypeInfo(ccuOpt, tupInfo, nms)) = anonInfo
+    assert ccuOpt.IsSome
+    let h3, h4  = sha1HashInts [| for nm in nms do for c in nm do yield byte c; yield byte (int32 c >>> 8) |]
+    let ilTypeName   = sprintf "<>f__AnonymousType%s%u`%d'" (match tupInfo with TupInfo.Const b -> if b then "1000" else "") (uint32 h3 + uint32 h4) nms.Length
+    mkILTyRef(ccuOpt.Value.ILScopeRef,ilTypeName)
+

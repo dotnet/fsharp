@@ -427,14 +427,26 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             QP.mkRecdMk(rgtypR,tyargsR,argsR)
 
         | TOp.AnonRecd anonInfo, _, _  ->  
-            let (AnonRecdTypeInfo(_ccu,tupInfo,_nms)) = anonInfo
-            // DEMONSTRATOR: for now we're using tuples
-            ConvExprCore cenv env (Expr.Op(TOp.Tuple tupInfo,tyargs,args,m)) 
+            if anonInfo.IsErased then 
+                let (AnonRecdTypeInfo(_ccu,tupInfo,_nms)) = anonInfo
+                ConvExprCore cenv env (Expr.Op(TOp.Tuple tupInfo,tyargs,args,m)) 
+            else
+                let tref = GenILTypeRefForAnonRecdType anonInfo
+                let rgtypR = ConvILTypeRef cenv tref
+                let tyargsR = ConvTypes cenv env m tyargs
+                let argsR = ConvExprs cenv env args
+                QP.mkRecdMk(rgtypR,tyargsR,argsR)
 
         | TOp.AnonRecdGet (anonInfo, n), _, _  ->  
-            // DEMONSTRATOR: for now we're using tuples
-            let (AnonRecdTypeInfo(_ccu,tupInfo,_nms)) = anonInfo
-            ConvExprCore cenv env (Expr.Op(TOp.TupleFieldGet (tupInfo, n),tyargs,args,m)) 
+            if anonInfo.IsErased then 
+                let (AnonRecdTypeInfo(_ccu,tupInfo,_nms)) = anonInfo
+                ConvExprCore cenv env (Expr.Op(TOp.TupleFieldGet (tupInfo, n),tyargs,args,m)) 
+            else 
+                let tref = GenILTypeRefForAnonRecdType anonInfo
+                let rgtypR = ConvILTypeRef cenv tref
+                let tyargsR = ConvTypes cenv env m tyargs
+                let argsR = ConvExprs cenv env args
+                QP.mkRecdGet((rgtypR,anonInfo.Names.[n]),tyargsR,argsR)
 
         | TOp.UnionCaseFieldGet (ucref,n),tyargs,[e] -> 
             let tyargsR = ConvTypes cenv env m tyargs
@@ -809,10 +821,13 @@ and ConvType cenv env m typ =
     | TType_fun(a,b)          -> QP.mkFunTy(ConvType cenv env m a,ConvType cenv env m b)
     | TType_tuple(tupInfo,l)  -> ConvType cenv env m (mkCompiledTupleTy cenv.g (evalTupInfoIsStruct tupInfo) l)
     | TType_anon(anonInfo,tinst) -> 
-        let (AnonRecdTypeInfo(_ccu,tupInfo,_nms)) = anonInfo
-        // DEMONSTRATOR: for now we're using tuples
-        ConvType cenv env m (TType_tuple (tupInfo, tinst))
-        // QP.mkILNamedTy(ConvILTypeRefUnadjusted cenv m (GenILTypeRefForAnonRecdType (ccu, nms)), ConvTypes cenv env m tys)
+        if anonInfo.IsErased then 
+            let (AnonRecdTypeInfo(_ccu,tupInfo,_nms)) = anonInfo
+            ConvType cenv env m (TType_tuple (tupInfo, tinst))
+        else
+            let tref = GenILTypeRefForAnonRecdType anonInfo
+            let tinstR = ConvTypes cenv env m tinst
+            QP.mkILNamedTy(ConvILTypeRefUnadjusted cenv m tref, tinstR)
     | TType_var(tp)           -> QP.mkVarTy(ConvTyparRef cenv env m tp)
     | TType_forall(_spec,_ty)   -> wfail(Error(FSComp.SR.crefNoInnerGenericsInQuotations(),m))
     | _ -> wfail(Error (FSComp.SR.crefQuotationsCantContainThisType(),m))

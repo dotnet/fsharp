@@ -1877,6 +1877,7 @@ val isILTypedReferenceTy: ILType -> bool
 val isILDoubleTy: ILType -> bool
 val isILSingleTy: ILType -> bool
 
+val sha1HashInts : byte[] -> int32 * int32
 /// Get a public key token from a public key.
 val sha1HashBytes : byte[] -> byte[] (* SHA1 hash *)
 
