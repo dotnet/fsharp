@@ -951,7 +951,7 @@ type TypeCheckInfo
                             | _ -> Some x.CleanedIdents.[..x.CleanedIdents.Length - 2]
 
                 { DisplayName = displayName
-                  Namespace = ns |> Option.map (fun x -> x |> String.concat ".") })
+                  Namespace = ns })
 
         { Item = item
           MinorPriority = 0
@@ -1307,7 +1307,12 @@ type TypeCheckInfo
                     let items = items |> FilterAutoCompletesBasedOnParseContext parseResultsOpt (mkPos line colAtEndOfNamesAndResidue)
                     let items = if isInterfaceFile then items |> List.filter (fun x -> IsValidSignatureFileItem x.Item) else items
                     let getAccessibility item = FSharpSymbol.GetAccessibility (FSharpSymbol.Create(g, thisCcu, tcImports, item))
-                    FSharpDeclarationListInfo.Create(infoReader,m,denv,getAccessibility,items,reactorOps,checkAlive))
+                    let currentNamespace =
+                        parseResultsOpt
+                        |> Option.bind (fun x -> x.ParseTree)
+                        |> Option.bind (ParsedInput.tryFindNearestPointToInsertOpenDeclaration line)
+                        |> Option.bind fst
+                    FSharpDeclarationListInfo.Create(infoReader,m,denv,getAccessibility,items,reactorOps,currentNamespace,checkAlive))
             (fun msg -> FSharpDeclarationListInfo.Error msg)
 
     /// Get the symbols for auto-complete items at a location

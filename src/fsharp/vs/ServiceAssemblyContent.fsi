@@ -123,7 +123,7 @@ module internal ParsedInput =
     val tryFindInsertionContext : currentLine: int -> ast: Ast.ParsedInput -> MaybeUnresolvedIdents -> (( (* requiresQualifiedAccessParent: *) Idents option * (* autoOpenParent: *) Idents option * (*  entityNamespace *) Idents option * (* entity: *) Idents) -> (Entity * InsertContext)[])
     
     /// API CLEANUP: this function needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
-    val tryFindNearestPointToInsertOpenDeclaration : currentLine: int -> ast: Ast.ParsedInput -> InsertContext option
+    val tryFindNearestPointToInsertOpenDeclaration : currentLine: int -> ast: Ast.ParsedInput -> (string[] option * InsertContext) option
 
     /// API CLEANUP: this function needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
     val getLongIdentAt : ast: Ast.ParsedInput -> pos: Range.pos -> Ast.LongIdent option

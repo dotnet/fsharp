@@ -177,11 +177,11 @@ type internal FSharpCompletionProvider
             let allEntities = 
                 allEntities |> List.filter (fun entity -> entity.FullName.Contains "." && not (PrettyNaming.IsOperatorName entity.Item.DisplayName))
 
-            //#if DEBUG
-            //let kprintfEntity = allEntities |> List.filter (fun x -> x.FullName.EndsWith "Append")
-            //Logging.Logging.logInfof "%+A" kprintfEntity
-            //let _x = kprintfEntity
-            //#endif
+            #if DEBUG
+            let kprintfEntity = allEntities |> List.filter (fun x -> x.FullName.EndsWith "foo")
+            Logging.Logging.logInfof "%+A" kprintfEntity
+            let _x = kprintfEntity
+            #endif
 
             let! declarations =
                 checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLineColumn, caretLine.ToString(), qualifyingNames, partialName, allEntities) |> liftAsync
@@ -284,7 +284,6 @@ type internal FSharpCompletionProvider
             context.AddItems(results)
         } |> Async.Ignore |> CommonRoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
         
-
     override this.GetDescriptionAsync(_: Document, completionItem: Completion.CompletionItem, cancellationToken: CancellationToken): Task<CompletionDescription> =
         async {
             let exists, declarationItem = declarationItemsCache.TryGetValue(completionItem.DisplayText)
@@ -326,7 +325,7 @@ type internal FSharpCompletionProvider
                     let line = sourceText.Lines.GetLineFromPosition(item.Span.Start)
                     let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                     let! parsedInput = checkerProvider.Checker.ParseDocument(document, options)
-                    let! ctx = ParsedInput.tryFindNearestPointToInsertOpenDeclaration line.LineNumber parsedInput
+                    let! _, ctx = ParsedInput.tryFindNearestPointToInsertOpenDeclaration line.LineNumber parsedInput
                     let finalSourceText, changedSpanStartPos = OpenDeclarationHelper.insertOpenDeclaration textWithItemCommitted ctx ns
                     let fullChangingSpan = TextSpan.FromBounds(changedSpanStartPos, item.Span.End)
                     let changedSpan = TextSpan.FromBounds(changedSpanStartPos, item.Span.End + (finalSourceText.Length - sourceText.Length))

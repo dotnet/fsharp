@@ -1031,5 +1031,5 @@ module internal ParsedInput =
     
     let tryFindNearestPointToInsertOpenDeclaration (currentLine: int) (ast: ParsedInput) =
         match tryFindNearestPointAndModules currentLine ast with
-        | Some (scope,_,point), _ -> Some { ScopeKind = scope.Kind; Pos = point }
+        | Some (scope, targetNamespace, point), _ -> Some (targetNamespace, { ScopeKind = scope.Kind; Pos = point })
         | _ -> None
