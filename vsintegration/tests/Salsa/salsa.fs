@@ -457,7 +457,7 @@ module internal Salsa =
     
 
     // Result of querying the completion list
-    and CompletionItem = string * string * (unit -> string) * DeclarationType
+    and CompletionItem = CompletionItem of name: string * displayText: string * nameInCode: string * (unit -> string) * DeclarationType
 
     /// Representes the information that is displayed in the navigation bar
     and NavigationBarResult = 
@@ -1327,7 +1327,7 @@ module internal Salsa =
                     let result = Array.zeroCreate count
                     for i in 0..count-1 do 
                         let glyph = enum<DeclarationType> (declarations.GetGlyph(filterText,i))
-                        result.[i] <- (declarations.GetDisplayText(filterText,i), declarations.GetName(filterText,i), (fun () -> declarations.GetDescription(filterText,i)), glyph)
+                        result.[i] <- CompletionItem (declarations.GetDisplayText(filterText,i), declarations.GetName(filterText,i), declarations.GetNameInCode(filterText,i), (fun () -> declarations.GetDescription(filterText,i)), glyph)
                     result
 
             member file.AutoCompleteAtCursor(?filterText) = file.AutoCompleteAtCursorImpl(BackgroundRequestReason.MemberSelect, ?filterText=filterText)
