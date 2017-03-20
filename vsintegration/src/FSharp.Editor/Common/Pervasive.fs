@@ -35,11 +35,6 @@ type Path with
         with _ -> path
 
 
-/// Load times used to reset type checking properly on script/project load/unload. It just has to be unique for each project load/reload.
-/// Not yet sure if this works for scripts.
-let fakeDateTimeRepresentingTimeLoaded x = DateTime(abs (int64 (match x with null -> 0 | _ -> x.GetHashCode())) % 103231L)
-
-
 /// Checks if the filePath ends with ".fsi"
 let isSignatureFile (filePath:string) = 
     Path.GetExtension filePath = ".fsi"
@@ -226,7 +221,7 @@ module Async =
 
 type Async with
     /// Better implementation of Async.AwaitTask that correctly passes the exception of a failed task to the async mechanism
-    static member AwaitTaskCorrect (task:Task) : unit Async =
+    static member AwaitTaskCorrect (task:Task) : Async<unit> =
         Async.FromContinuations (fun (successCont,exceptionCont,_cancelCont) ->
             task.ContinueWith (fun (task:Task) ->
                 if task.IsFaulted then
@@ -240,7 +235,7 @@ type Async with
             |> ignore)
 
     /// Better implementation of Async.AwaitTask that correctly passes the exception of a failed task to the async mechanism
-    static member AwaitTaskCorrect (task:'T Task) : 'T Async =
+    static member AwaitTaskCorrect (task:'T Task) : Async<'T> =
         Async.FromContinuations( fun (successCont,exceptionCont,_cancelCont) ->
             task.ContinueWith (fun (task:'T Task) ->
                 if task.IsFaulted then

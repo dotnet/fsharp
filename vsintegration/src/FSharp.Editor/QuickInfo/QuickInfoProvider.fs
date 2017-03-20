@@ -26,8 +26,7 @@ module internal FSharpQuickInfo =
 
     /// Get tooltip combined from doccom of Signature and definition
     let getCompoundTooltipInfo 
-        ( checker: FSharpChecker, position:int, document:Document
-        , projectInfoManager: ProjectInfoManager, cancellationToken) = asyncMaybe {
+        (checker: FSharpChecker, position:int, document:Document, projectInfoManager: ProjectInfoManager, cancellationToken) = asyncMaybe {
 
         let solution = document.Project.Solution
 
@@ -54,12 +53,11 @@ module internal FSharpQuickInfo =
                     (extDocId, extSourceText, extSpan.Start, declRange.FileName, extDefines, SymbolLookupKind.Greedy)
 
             let! _, _, extCheckFileResults = 
-                checker.ParseAndCheckDocument ( extDocument,extProjectOptions,allowStaleResults=true,sourceText=extSourceText)
+                checker.ParseAndCheckDocument (extDocument,extProjectOptions,allowStaleResults=true,sourceText=extSourceText)
 
             let! extTooltipText = 
                 extCheckFileResults.GetStructuredToolTipTextAlternate
-                    ( declRange.StartLine, extLexerSymbol.Ident.idRange.EndColumn
-                    , extLineText, extLexerSymbol.FullIsland, FSharpTokenTag.IDENT) |> liftAsync
+                    (declRange.StartLine, extLexerSymbol.Ident.idRange.EndColumn, extLineText, extLexerSymbol.FullIsland, FSharpTokenTag.IDENT) |> liftAsync
 
             match extTooltipText with
             | FSharpToolTipText [] 
@@ -93,7 +91,7 @@ module internal FSharpQuickInfo =
         let getTargetSymbolTooltip () = asyncMaybe {
             let! targetTooltip = 
                 checkFileResults.GetStructuredToolTipTextAlternate
-                    ( fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland, FSharpTokenTag.IDENT) |> liftAsync
+                    (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland, FSharpTokenTag.IDENT) |> liftAsync
             match targetTooltip with
             | FSharpToolTipText [] 
             | FSharpToolTipText [FSharpStructuredToolTipElement.None] -> return! None
@@ -110,7 +108,7 @@ module internal FSharpQuickInfo =
         // find the declaration location of the target symbol, with a preference for signature files
         let! findSigDeclarationResult = 
             checkFileResults.GetDeclarationLocationAlternate
-                ( idRange.StartLine, idRange.EndColumn, lineText, lexerSymbol.FullIsland, preferFlag=true)  |> liftAsync
+                (idRange.StartLine, idRange.EndColumn, lineText, lexerSymbol.FullIsland, preferFlag=true)  |> liftAsync
             
         // it is necessary to retrieve the backup tooltip info because this acquires
         // the textSpan designating where we want the tooltip to appear.
@@ -120,7 +118,7 @@ module internal FSharpQuickInfo =
         let tooltipInfoPair = asyncMaybe {
             match findSigDeclarationResult with 
             | FSharpFindDeclResult.DeclNotFound _failReason -> 
-                return (None , Some backupTooltipInfo)
+                return (None, Some backupTooltipInfo)
 
             | FSharpFindDeclResult.DeclFound declRange -> 
                 if isSignatureFile declRange.FileName then 
@@ -132,8 +130,7 @@ module internal FSharpQuickInfo =
 
                     let! findImplDefinitionResult = 
                         checkFileResults.GetDeclarationLocationAlternate
-                            ( idRange.StartLine, idRange.EndColumn, lineText
-                            , lexerSymbol.FullIsland, preferFlag=false) |> liftAsync   
+                            (idRange.StartLine, idRange.EndColumn, lineText, lexerSymbol.FullIsland, preferFlag=false) |> liftAsync   
 
                     match findImplDefinitionResult  with 
                     | FSharpFindDeclResult.DeclNotFound _failReason -> 
@@ -156,12 +153,7 @@ open FSharpQuickInfo
 [<ExportQuickInfoProvider (PredefinedQuickInfoProviderNames.Semantic, FSharpCommonConstants.FSharpLanguageName)>]
 type internal FSharpQuickInfoProvider [<ComponentModel.Composition.ImportingConstructor>] 
     (   [<ComponentModel.Composition.Import (typeof<SVsServiceProvider>)>] 
-        serviceProvider: IServiceProvider
-    ,   checkerProvider: FSharpCheckerProvider
-    ,   projectInfoManager: ProjectInfoManager
-    ,   typeMap: Shared.Utilities.ClassificationTypeMap
-    ,   glyphService: IGlyphService
-    ) =
+        serviceProvider: IServiceProvider, checkerProvider: FSharpCheckerProvider, projectInfoManager: ProjectInfoManager, typeMap: Shared.Utilities.ClassificationTypeMap, glyphService: IGlyphService) =
 
     let xmlMemberIndexService = serviceProvider.GetService<SVsXMLMemberIndexService,IVsXMLMemberIndexService>()
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder (xmlMemberIndexService, serviceProvider.DTE)
@@ -171,7 +163,7 @@ type internal FSharpQuickInfoProvider [<ComponentModel.Composition.ImportingCons
             asyncMaybe {
                 let! (sigTooltipInfo,targetTooltipInfo) = 
                     FSharpQuickInfo.getCompoundTooltipInfo
-                        ( checkerProvider.Checker, position, document, projectInfoManager, cancellationToken  )
+                        (checkerProvider.Checker, position, document, projectInfoManager, cancellationToken)
 
                 match sigTooltipInfo, targetTooltipInfo with 
                 | None, None -> return null
@@ -179,42 +171,41 @@ type internal FSharpQuickInfoProvider [<ComponentModel.Composition.ImportingCons
                 | None, Some (toolTipElement, textSpan, symbol, symbolKind) -> 
                     let mainDescription = Collections.Generic.List()
                     let documentation = Collections.Generic.List()
-                    XmlDocumentation.BuildDataTipText
-                        (   documentationBuilder
-                        ,   CommonRoslynHelpers.CollectTaggedText mainDescription
-                        ,   CommonRoslynHelpers.CollectTaggedText documentation
-                        ,   toolTipElement
-                        )
+                    XmlDocumentation.BuildDataTipText( 
+                        documentationBuilder,   CommonRoslynHelpers.CollectTaggedText mainDescription,
+                        CommonRoslynHelpers.CollectTaggedText documentation,
+                        toolTipElement
+                    )
                     let empty = ClassifiableDeferredContent (Array.Empty<TaggedText>(), typeMap)
                     let glyph = SymbolGlyphDeferredContent (CommonRoslynHelpers.GetGlyphForSymbol(symbol, symbolKind), glyphService)
                     let content = 
-                        QuickInfoDisplayDeferredContent
-                            (   symbolGlyph = glyph
-                            ,   warningGlyph = null
-                            ,   mainDescription = ClassifiableDeferredContent (mainDescription, typeMap)
-                            ,   documentation = ClassifiableDeferredContent (documentation, typeMap)
-                            ,   typeParameterMap = empty
-                            ,   anonymousTypes = empty
-                            ,   usageText = empty
-                            ,   exceptionText = empty
-                            )
+                        QuickInfoDisplayDeferredContent(
+                            symbolGlyph = glyph,
+                            warningGlyph = null,
+                            mainDescription = ClassifiableDeferredContent (mainDescription, typeMap),
+                            documentation = ClassifiableDeferredContent (documentation, typeMap),
+                            typeParameterMap = empty,
+                            anonymousTypes = empty,
+                            usageText = empty,
+                            exceptionText = empty
+                        )
                     return QuickInfoItem (textSpan, content)
 
                 |( Some (sigToolTipElement, _sigTextSpan, _sigSymbol, _sigSymbolKind)
                  , Some (targetToolTipElement, targetTextSpan, targetSymbol, targetSymbolKind) ) ->                   
                     let description, targetDocumentation, sigDocumentation = ResizeArray(), ResizeArray(), ResizeArray()
-                    XmlDocumentation.BuildDataTipText
-                        (   documentationBuilder
-                        ,   CommonRoslynHelpers.CollectTaggedText (ResizeArray())
-                        ,   CommonRoslynHelpers.CollectTaggedText sigDocumentation
-                        ,   sigToolTipElement
-                        )
-                    XmlDocumentation.BuildDataTipText
-                        (   documentationBuilder
-                        ,   CommonRoslynHelpers.CollectTaggedText description
-                        ,   CommonRoslynHelpers.CollectTaggedText targetDocumentation
-                        ,   targetToolTipElement
-                        )
+                    XmlDocumentation.BuildDataTipText(
+                        documentationBuilder,
+                        CommonRoslynHelpers.CollectTaggedText (ResizeArray()),
+                        CommonRoslynHelpers.CollectTaggedText sigDocumentation,
+                        sigToolTipElement
+                    )
+                    XmlDocumentation.BuildDataTipText(
+                        documentationBuilder,
+                        CommonRoslynHelpers.CollectTaggedText description,
+                        CommonRoslynHelpers.CollectTaggedText targetDocumentation,
+                        targetToolTipElement
+                    )
 
                     let width = 
                         (0, Seq.concat [description; targetDocumentation; sigDocumentation]) 
@@ -238,16 +229,16 @@ type internal FSharpQuickInfoProvider [<ComponentModel.Composition.ImportingCons
                     let empty = ClassifiableDeferredContent (Array.Empty<TaggedText>(), typeMap)
                     let glyph = SymbolGlyphDeferredContent (CommonRoslynHelpers.GetGlyphForSymbol (targetSymbol, targetSymbolKind), glyphService)
                     let content = 
-                        QuickInfoDisplayDeferredContent
-                            (   symbolGlyph = glyph
-                            ,   warningGlyph = null
-                            ,   mainDescription = ClassifiableDeferredContent (description , typeMap)
-                            ,   documentation = ClassifiableDeferredContent (documentation, typeMap)
-                            ,   typeParameterMap = empty
-                            ,   anonymousTypes = empty
-                            ,   usageText = empty
-                            ,   exceptionText = empty
-                            )
+                        QuickInfoDisplayDeferredContent(
+                            symbolGlyph = glyph,
+                            warningGlyph = null,
+                            mainDescription = ClassifiableDeferredContent (description , typeMap),
+                            documentation = ClassifiableDeferredContent (documentation, typeMap),
+                            typeParameterMap = empty,
+                            anonymousTypes = empty,
+                            usageText = empty,
+                            exceptionText = empty
+                        )
                     return QuickInfoItem (targetTextSpan, content)
             }   |> Async.map Option.toObj
                 |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken 
