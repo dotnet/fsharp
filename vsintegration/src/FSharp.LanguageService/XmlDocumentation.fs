@@ -26,7 +26,7 @@ type internal TextSanitizingCollector(collector, ?lineLimit: int) =
     let mutable count = 0
     let mutable startXmlDoc = false
 
-    let addTaggedTextEntry text =
+    let addTaggedTextEntry (text:TaggedText) =
         match lineLimit with
         | Some lineLimit when lineLimit = count ->
             // add ... when line limit is reached
@@ -34,7 +34,7 @@ type internal TextSanitizingCollector(collector, ?lineLimit: int) =
             count <- count + 1
         | _ ->
             isEmpty <- false
-            endsWithLineBreak <- match text with TaggedText.LineBreak _ -> true | _ -> false
+            endsWithLineBreak <- text.Tag = LayoutTag.LineBreak
             if endsWithLineBreak then count <- count + 1
             collector text
     
@@ -63,11 +63,11 @@ type internal TextSanitizingCollector(collector, ?lineLimit: int) =
                 addTaggedTextEntry Literals.lineBreak)
 
     interface ITaggedTextCollector with
-        member this.Add text = 
+        member this.Add taggedText = 
             // TODO: bail out early if line limit is already hit
-            match text with
-            | TaggedText.Text t -> reportTextLines t
-            | t -> addTaggedTextEntry t
+            match taggedText.Tag with
+            | LayoutTag.Text -> reportTextLines taggedText.Text
+            | _ -> addTaggedTextEntry taggedText
 
         member this.IsEmpty = isEmpty
         member this.EndsWithLineBreak = isEmpty || endsWithLineBreak

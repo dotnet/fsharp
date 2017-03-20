@@ -15,7 +15,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 
 
 module internal TaggedText =
-    let appendTo (sb: System.Text.StringBuilder) (t: Layout.TaggedText) = sb.Append t.Value |> ignore 
+    let appendTo (sb: System.Text.StringBuilder) (t: Layout.TaggedText) = sb.Append t.Text |> ignore 
  
 /// Represents all the information necessary to display and navigate 
 /// within a method tip (e.g. param info, overloads, ability to move thru overloads and params)

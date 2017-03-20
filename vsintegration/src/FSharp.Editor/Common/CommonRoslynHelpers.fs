@@ -44,44 +44,50 @@ module internal CommonRoslynHelpers =
             Assert.Exception(task.Exception.GetBaseException())
             raise(task.Exception.GetBaseException())
 
-    /// Converts `TaggedText` from the F# Compiler to `Microsoft.CodeAnalysis.TaggedText` format for use in tooltips
-    let TaggedTextToRoslyn t =
-        match t with
-        | TaggedText.ActivePatternCase t
-        | TaggedText.ActivePatternResult t -> TaggedText(TextTags.Enum, t)
-        | TaggedText.Alias t -> TaggedText(TextTags.Class, t)
-        | TaggedText.Class t -> TaggedText(TextTags.Class, t)
-        | TaggedText.Delegate t -> TaggedText(TextTags.Delegate, t)
-        | TaggedText.Enum t -> TaggedText(TextTags.Enum, t)
-        | TaggedText.Event t -> TaggedText(TextTags.Event, t)
-        | TaggedText.Field t -> TaggedText(TextTags.Field, t)
-        | TaggedText.Interface t -> TaggedText(TextTags.Interface, t)
-        | TaggedText.Keyword t -> TaggedText(TextTags.Keyword, t)
-        | TaggedText.LineBreak t -> TaggedText(TextTags.LineBreak, t)
-        | TaggedText.Local t -> TaggedText(TextTags.Local, t)
-        | TaggedText.Member t -> TaggedText(TextTags.Property, t)
-        | TaggedText.Method t -> TaggedText(TextTags.Method, t)
-        | TaggedText.Module t -> TaggedText(TextTags.Module, t)
-        | TaggedText.ModuleBinding t -> TaggedText(TextTags.Property, t)
-        | TaggedText.Namespace t -> TaggedText(TextTags.Namespace, t)
-        | TaggedText.NumericLiteral t -> TaggedText(TextTags.NumericLiteral, t)
-        | TaggedText.Operator t -> TaggedText(TextTags.Operator, t)
-        | TaggedText.Parameter t -> TaggedText(TextTags.Parameter, t)
-        | TaggedText.Property t -> TaggedText(TextTags.Property, t)
-        | TaggedText.Punctuation t -> TaggedText(TextTags.Punctuation, t)
-        | TaggedText.Record t -> TaggedText(TextTags.Class, t)
-        | TaggedText.RecordField t -> TaggedText(TextTags.Property, t)
-        | TaggedText.Space t -> TaggedText(TextTags.Space, t)
-        | TaggedText.StringLiteral t -> TaggedText(TextTags.StringLiteral, t)
-        | TaggedText.Struct t -> TaggedText(TextTags.Struct, t)
-        | TaggedText.Text t -> TaggedText(TextTags.Text, t)
-        | TaggedText.TypeParameter t -> TaggedText(TextTags.TypeParameter, t)
-        | TaggedText.Union t -> TaggedText(TextTags.Class, t)
-        | TaggedText.UnionCase t -> TaggedText(TextTags.Enum, t)
-        | TaggedText.UnknownEntity t -> TaggedText(TextTags.Property, t)
-        | TaggedText.UnknownType t -> TaggedText(TextTags.Class, t)
+    /// maps from `LayoutTag` of the F# Compiler to Roslyn `TextTags` for use in tooltips
+    let roslynTag = function
+    | LayoutTag.ActivePatternCase
+    | LayoutTag.ActivePatternResult
+    | LayoutTag.UnionCase
+    | LayoutTag.Enum -> TextTags.Enum
+    | LayoutTag.Alias
+    | LayoutTag.Class
+    | LayoutTag.Union
+    | LayoutTag.Record
+    | LayoutTag.UnknownType -> TextTags.Class
+    | LayoutTag.Delegate -> TextTags.Delegate
+    | LayoutTag.Event -> TextTags.Event
+    | LayoutTag.Field -> TextTags.Field
+    | LayoutTag.Interface -> TextTags.Interface
+    | LayoutTag.Struct -> TextTags.Struct
+    | LayoutTag.Keyword -> TextTags.Keyword
+    | LayoutTag.Local -> TextTags.Local
+    | LayoutTag.Member
+    | LayoutTag.ModuleBinding
+    | LayoutTag.RecordField
+    | LayoutTag.Property -> TextTags.Property
+    | LayoutTag.Method -> TextTags.Method
+    | LayoutTag.Namespace -> TextTags.Namespace
+    | LayoutTag.Module -> TextTags.Module
+    | LayoutTag.LineBreak -> TextTags.LineBreak
+    | LayoutTag.Space -> TextTags.Space
+    | LayoutTag.NumericLiteral -> TextTags.NumericLiteral
+    | LayoutTag.Operator -> TextTags.Operator
+    | LayoutTag.Parameter -> TextTags.Parameter
+    | LayoutTag.TypeParameter -> TextTags.TypeParameter
+    | LayoutTag.Punctuation -> TextTags.Punctuation
+    | LayoutTag.StringLiteral -> TextTags.StringLiteral
+    | LayoutTag.Text
+    | LayoutTag.UnknownEntity -> TextTags.Text
 
-    let CollectTaggedText (list: List<_>) t = list.Add(TaggedTextToRoslyn t)
+    let CollectTaggedText (list: List<_>) (t:TaggedText) = list.Add(TaggedText(roslynTag t.Tag, t.Text))
+
+    let CollectNavigableText (list: List<_>) (t: TaggedText) =
+        let rangeOpt = 
+            match t with
+            | :? NavigableTaggedText as n -> Some n.Range
+            | _ -> None
+        list.Add(roslynTag t.Tag, t.Text, rangeOpt)
 
     let StartAsyncAsTask cancellationToken computation =
         let computation =
