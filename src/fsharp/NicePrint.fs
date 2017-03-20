@@ -436,7 +436,17 @@ module private PrintIL =
                     if isShowBase baseName
                         then [ WordL.keywordInherit ^^ baseName ]
                         else []
-                | None   -> []
+                | None   -> 
+                    // for interface show inherited interfaces 
+                    match typeDef.tdKind with 
+                    | ILTypeDefKind.Interface ->
+                        typeDef.Implements |> List.choose (fun b -> 
+                            let baseName = layoutILType denv ilTyparSubst b
+                            if isShowBase baseName
+                                then Some (WordL.keywordInherit ^^ baseName)
+                            else None
+                        )
+                    | _ -> []
 
             let memberBlockLs (fieldDefs:ILFieldDefs, methodDefs:ILMethodDefs, propertyDefs:ILPropertyDefs, eventDefs:ILEventDefs) =
                 let ctors  =
