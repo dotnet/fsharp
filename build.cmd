@@ -389,7 +389,7 @@ echo .
 echo .
 
 echo ---------------- Done with arguments, starting preparation -----------------
-set BuildToolsPackage=Microsoft.VSSDK.BuildTools.15.0.26124-RC3
+set BuildToolsPackage=Microsoft.VSSDK.BuildTools\15.0.26124-RC3
 if '%VSSDKInstall%'=='' (
      set VSSDKInstall=%~dp0packages\%BuildToolsPackage%\tools\vssdk
 )
@@ -473,7 +473,7 @@ if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
 set _dotnetexe=%~dp0Tools\dotnetcli\dotnet.exe
 set NUGET_PACKAGES=%~dp0Packages
 
-set _fsiexe="packages\FSharp.Compiler.Tools.4.0.1.21\tools\fsi.exe"
+set _fsiexe="packages\FSharp.Compiler.Tools\4.0.1.21\tools\fsi.exe"
 if not exist %_fsiexe% echo Error: Could not find %_fsiexe% && goto :failure
 %_ngenexe% install %_fsiexe% /nologo 
 
@@ -513,8 +513,8 @@ if '%BUILD_PROTO%' == '1' (
 
   if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '0' (
 
-    echo %_ngenexe% install packages\FSharp.Compiler.Tools.4.0.1.21\tools\fsc.exe /nologo 
-         %_ngenexe% install packages\FSharp.Compiler.Tools.4.0.1.21\tools\fsc.exe /nologo 
+    echo %_ngenexe% install packages\FSharp.Compiler.Tools\4.0.1.21\tools\fsc.exe /nologo 
+         %_ngenexe% install packages\FSharp.Compiler.Tools\4.0.1.21\tools\fsc.exe /nologo 
 
     echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
          %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
@@ -542,8 +542,8 @@ if '%BUILD_NET40%' == '1' (
     call src\update.cmd %BUILD_CONFIG% -ngen
 )
 
-@echo set NUNITPATH=packages\NUnit.Console.3.0.0\tools\
-set NUNITPATH=packages\NUnit.Console.3.0.0\tools\
+@echo set NUNITPATH=packages\NUnit.Console\3.0.0\tools\
+set NUNITPATH=packages\NUnit.Console\3.0.0\tools\
 if not exist %NUNITPATH% echo Error: Could not find %NUNITPATH% && goto :failure
 
 @echo xcopy "%NUNITPATH%*.*"  "%~dp0tests\fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
@@ -602,8 +602,8 @@ if NOT "%INCLUDE_TEST_TAGS%" == "" (
 echo WHERE_ARG_NUNIT=!WHERE_ARG_NUNIT!
 
 set NUNITPATH=%~dp0tests\fsharpqa\testenv\bin\nunit\
-set NUNIT3_CONSOLE=%~dp0packages\NUnit.Console.3.0.0\tools\nunit3-console.exe
-set link_exe=%~dp0packages\VisualCppTools.14.0.24519-Pre\lib\native\bin\link.exe
+set NUNIT3_CONSOLE=%~dp0packages\NUnit.Console\3.0.0\tools\nunit3-console.exe
+set link_exe=%~dp0packages\VisualCppTools\14.0.24519-Pre\lib\native\bin\link.exe
 if not exist "%link_exe%" (
     echo Error: failed to find '%link_exe%' use nuget to restore the VisualCppTools package
     goto :failure
