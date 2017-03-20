@@ -478,36 +478,25 @@ namespace Microsoft.FSharp.Collections
                         main.Dispose ()
                         active.Dispose ()
 
-            and AppendEnumerable<'T> (sources:list<ISeq<'T>>) =
+            and ConcatEnumerable<'T, 'Collection, 'Collections when 'Collection :> seq<'T> and 'Collections :> seq<'Collection>> (sources:'Collections, preEnumerate:'Collections->'Collections) =
                 inherit EnumerableBase<'T>()
 
                 interface IEnumerable<'T> with
                     member this.GetEnumerator () : IEnumerator<'T> =
-                        Upcast.enumerator (new ConcatEnumerator<_,_> (sources |> List.rev))
+                        Upcast.enumerator (new ConcatEnumerator<_,_> (preEnumerate sources))
+
+                interface ISeq<'T> with
+                    member this.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
+                        Upcast.seq (Enumerable<'T,'V>(this, next, 1))
+
+                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
+                        Fold.executeThin f (Fold.enumerable this)
+
+            and AppendEnumerable<'T> (sources:list<ISeq<'T>>) =
+                inherit ConcatEnumerable<'T, ISeq<'T>, list<ISeq<'T>>>(sources, List.rev)
 
                 override this.Append source =
                     Upcast.seq (AppendEnumerable (source::sources))
-
-                interface ISeq<'T> with
-                    member this.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
-                        Upcast.seq (Enumerable<'T,'V>(this, next, 1))
-
-                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
-                        Fold.executeThin f (Fold.enumerable this)
-
-            and ConcatEnumerable<'T, 'Collection when 'Collection :> seq<'T>> (sources:seq<'Collection>) =
-                inherit EnumerableBase<'T>()
-
-                interface IEnumerable<'T> with
-                    member this.GetEnumerator () : IEnumerator<'T> =
-                        Upcast.enumerator (new ConcatEnumerator<_,_> (sources))
-
-                interface ISeq<'T> with
-                    member this.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
-                        Upcast.seq (Enumerable<'T,'V>(this, next, 1))
-
-                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
-                        Fold.executeThin f (Fold.enumerable this)
 
             let create enumerable current =
                 Upcast.seq (Enumerable (enumerable, current, 1))
@@ -1308,7 +1297,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Concat")>]
         let concat (sources:ISeq<#ISeq<'T>>) : ISeq<'T> =
-            Upcast.seq (Enumerable.ConcatEnumerable sources)
+            Upcast.seq (Enumerable.ConcatEnumerable (sources, id))
 
         [<CompiledName "Scan">]
         let inline scan (folder:'State->'T->'State) (initialState:'State) (source:ISeq<'T>) :ISeq<'State> =
