@@ -1739,18 +1739,8 @@ namespace Microsoft.FSharp.Collections
             | len -> foldArraySubRight f arr 0 (len - 2) arr.[len - 1]
 
         [<Sealed>]
-        type CachedSeq<'T>(cleanup,res:seq<'T>) =
-            interface System.IDisposable with
-                member x.Dispose() = cleanup()
-            interface System.Collections.Generic.IEnumerable<'T> with
-                member x.GetEnumerator() = res.GetEnumerator()
-            interface System.Collections.IEnumerable with
-                member x.GetEnumerator() = (res :> System.Collections.IEnumerable).GetEnumerator()
-            member obj.Clear() = cleanup()
-
-        [<CompiledName("Cache")>]
-        let cache (source:ISeq<'T>) : ISeq<'T> =
-            checkNonNull "source" source
+        type CachedSeq<'T>(source:ISeq<'T>) =
+            let sync = obj ()
             // Wrap a seq to ensure that it is enumerated just once and only as far as is necessary.
             //
             // This code is required to be thread safe.
@@ -1760,49 +1750,76 @@ namespace Microsoft.FSharp.Collections
             // The state is (prefix,enumerator) with invariants:
             //   * the prefix followed by elts from the enumerator are the initial sequence.
             //   * the prefix contains only as many elements as the longest enumeration so far.
-            let prefix      = ResizeArray<_>()
-            let enumeratorR = ref None : IEnumerator<'T> option option ref // nested options rather than new type...
-                               // None          = Unstarted.
-                               // Some(Some e)  = Started.
-                               // Some None     = Finished.
+
+            let prefix = ResizeArray ()
+
+            // Choice1Of3 () = Unstarted.
+            // Choice2Of3 e  = Started.
+            // Choice3Of3 () = Finished.
+            let mutable enumeratorR = Choice1Of3 () : Choice<unit, IEnumerator<'T>, unit>
+                
+            // function should only be called from within the lock
             let oneStepTo i =
-              // If possible, step the enumeration to prefix length i (at most one step).
-              // Be speculative, since this could have already happened via another thread.
-              if not (i < prefix.Count) then // is a step still required?
-                  // If not yet started, start it (create enumerator).
-                  match !enumeratorR with
-                  | None -> enumeratorR := Some (Some (source.GetEnumerator()))
-                  | Some _ -> ()
-                  match (!enumeratorR).Value with
-                  | Some enumerator -> if enumerator.MoveNext() then
-                                          prefix.Add(enumerator.Current)
-                                       else
-                                          enumerator.Dispose()     // Move failed, dispose enumerator,
-                                          enumeratorR := Some None // drop it and record finished.
-                  | None -> ()
-            let result =
-                unfold (fun i ->
-                              // i being the next position to be returned
-                              // A lock is needed over the reads to prefix.Count since the list may be being resized
-                              // NOTE: we could change to a reader/writer lock here
-                              lock enumeratorR (fun () ->
-                                  if i < prefix.Count then
-                                    Some (prefix.[i],i+1)
-                                  else
-                                    oneStepTo i
-                                    if i < prefix.Count then
-                                      Some (prefix.[i],i+1)
-                                    else
-                                      None)) 0
-            let cleanup() =
-               lock enumeratorR (fun () ->
-                   prefix.Clear()
-                   begin match !enumeratorR with
-                   | Some (Some e) -> IEnumerator.dispose e
-                   | _ -> ()
-                   end
-                   enumeratorR := None)
-            (new CachedSeq<_>(cleanup, result) |> ofSeq)
+                // If possible, step the enumeration to prefix length i (at most one step).
+                // Be speculative, since this could have already happened via another thread.
+                if not (i < prefix.Count) then // is a step still required?
+                    // If not yet started, start it (create enumerator).
+                    match enumeratorR with
+                    | Choice1Of3 _ -> enumeratorR <- Choice2Of3 (source.GetEnumerator())
+                    | _ -> ()
+
+                    match enumeratorR with
+                    | Choice2Of3 enumerator when enumerator.MoveNext() ->
+                        prefix.Add enumerator.Current
+                    | Choice2Of3 enumerator  ->
+                        enumerator.Dispose ()         // Move failed, dispose enumerator,
+                        enumeratorR <- Choice3Of3 () // drop it and record finished.
+                    | _ -> ()
+
+            let cached =
+                0 |> unfold (fun i ->
+                    // i being the next position to be returned
+                    // A lock is needed over the reads to prefix.Count since the list may be being resized
+                    // NOTE: we could change to a reader/writer lock here
+                    lock sync (fun () ->
+                        if i < prefix.Count then
+                            Some (prefix.[i], i+1)
+                        else
+                            oneStepTo i
+                            if i < prefix.Count then
+                                Some (prefix.[i], i+1)
+                            else
+                                None))
+
+            interface System.IDisposable with
+                member __.Dispose() =
+                    lock sync (fun () ->
+                       prefix.Clear()
+
+                       match enumeratorR with
+                       | Choice2Of3 e -> IEnumerator.dispose e
+                       | _ -> ()
+
+                       enumeratorR <- Choice1Of3 ())
+
+            interface System.Collections.Generic.IEnumerable<'T> with
+                member __.GetEnumerator() = cached.GetEnumerator()
+
+            interface System.Collections.IEnumerable with
+                member __.GetEnumerator() = (cached :> System.Collections.IEnumerable).GetEnumerator()
+
+            interface ISeq<'T> with
+                member __.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
+                    Upcast.seq (new Enumerable.Enumerable<'T,'U>(cached, next, 1))
+
+                member __.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
+                    Fold.executeThin f (Fold.enumerable cached)
+
+            member this.Clear() = (this :> IDisposable).Dispose ()
+
+        [<CompiledName("Cache")>]
+        let cache (source:ISeq<'T>) : ISeq<'T> =
+            Upcast.seq (new CachedSeq<_> (source))
 
         [<CompiledName("Collect")>]
         let collect f sources = map f sources |> concat
