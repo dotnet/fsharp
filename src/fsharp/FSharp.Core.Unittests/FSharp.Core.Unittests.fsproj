@@ -59,8 +59,8 @@
       <Name>FSharp.Core</Name>
     </ProjectReference>
     <Reference Include="System.ValueTuple">
-        <HintPath Condition=" '$(TargetFramework)' == 'profile47' ">..\..\..\packages\System.ValueTuple.4.3.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
-        <HintPath Condition="'$(TargetFramework)' != 'profile47' ">..\..\..\packages\System.ValueTuple.4.3.0\lib\portable-net40+sl4+win8+wp8\System.ValueTuple.dll</HintPath>
+        <HintPath Condition=" '$(TargetFramework)' == 'profile47' ">..\..\..\packages\System.ValueTuple\4.3.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+        <HintPath Condition="'$(TargetFramework)' != 'profile47' ">..\..\..\packages\System.ValueTuple\4.3.0\lib\portable-net40+sl4+win8+wp8\System.ValueTuple.dll</HintPath>
         <Private>True</Private>
     </Reference>
   </ItemGroup>

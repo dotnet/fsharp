@@ -117,8 +117,8 @@
 
   <PropertyGroup>
     <!-- Compiler tool locations.		-->
-    <FsLexToolPath>$(FSharpSourcesRoot)\..\packages\FsLexYacc.7.0.4\build</FsLexToolPath>
-    <FsYaccToolPath>$(FSharpSourcesRoot)\..\packages\FsLexYacc.7.0.4\build</FsYaccToolPath>
+    <FsLexToolPath>$(FSharpSourcesRoot)\..\packages\FsLexYacc\7.0.4\build</FsLexToolPath>
+    <FsYaccToolPath>$(FSharpSourcesRoot)\..\packages\FsLexYacc\7.0.4\build</FsYaccToolPath>
     <FsiToolExe>fsi.exe</FsiToolExe>
     <FsLexToolExe>fslex.exe</FsLexToolExe>
     <FsYaccToolExe>fsyacc.exe</FsYaccToolExe>
@@ -132,7 +132,7 @@
 
     <!-- FSharp.Compiler.Tools is currently only used to get a working FSI.EXE to execute some scripts during the build -->
     <!-- The LKG FSI.EXE requires MSBuild 15 to be installed, which is painful -->
-    <FsiToolPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.0.1.21\tools</FsiToolPath>
+    <FsiToolPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools\4.0.1.21\tools</FsiToolPath>
   </PropertyGroup>
 
   <Import Project="../Tools/Build.Common.props" Condition="'$(TargetFramework)'=='coreclr'"/>
