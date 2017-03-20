@@ -980,6 +980,17 @@ module internal ParsedInput =
 
         res, modules
 
+    let findBestPositionToInsertOpenDeclaration (modules: (Idents * EndLine * Col) list) scope pos (entity: Idents) =
+        match modules |> List.filter (fun (m, _, _) -> entity |> Array.startsWith m ) with
+        | [] -> { ScopeKind = scope.Kind; Pos = pos }
+        | (_, endLine, startCol) :: _ ->
+            //printfn "All modules: %A, Win module: %A" modules m
+            let scopeKind =
+                match scope.Kind with
+                | TopModule -> NestedModule
+                | x -> x
+            { ScopeKind = scopeKind; Pos = Point.make (endLine + 1) startCol }
+
     let tryFindInsertionContext (currentLine: int) (ast: ParsedInput) (partiallyQualifiedName: MaybeUnresolvedIdents) = 
         let res, modules = tryFindNearestPointAndModules currentLine ast
         // CLEANUP: does this realy need to be a partial application with pre-computation?  Can this be made more expicit?
@@ -993,18 +1004,7 @@ module internal ParsedInput =
             | None -> [||]
             | Some (scope, ns, pos) -> 
                 Entity.tryCreate(ns, scope.Idents, partiallyQualifiedName, requiresQualifiedAccessParent, autoOpenParent, entityNamespace, entity)
-                |> Array.map (fun e ->
-                    e,
-                    match modules |> List.filter (fun (m, _, _) -> entity |> Array.startsWith m ) with
-                    | [] -> { ScopeKind = scope.Kind; Pos = pos }
-                    | (_, endLine, startCol) :: _ ->
-                        //printfn "All modules: %A, Win module: %A" modules m
-                        let scopeKind =
-                            match scope.Kind with
-                            | TopModule -> NestedModule
-                            | x -> x
-                        { ScopeKind = scopeKind; Pos = Point.make (endLine + 1) startCol })
-
+                |> Array.map (fun e -> e, findBestPositionToInsertOpenDeclaration modules scope pos entity)
 
     /// Corrects insertion line number based on kind of scope and text surrounding the insertion point.
     let adjustInsertionPoint (getLineStr: int -> string) ctx  =
@@ -1034,7 +1034,8 @@ module internal ParsedInput =
 
         { ctx.Pos with Line = line }
     
-    let tryFindNearestPointToInsertOpenDeclaration (currentLine: int) (ast: ParsedInput) =
+    let tryFindNearestPointToInsertOpenDeclaration (currentLine: int) (ast: ParsedInput) (entity: Idents) =
         match tryFindNearestPointAndModules currentLine ast with
-        | Some (scope, targetNamespace, point), _ -> Some (targetNamespace, { ScopeKind = scope.Kind; Pos = point })
+        | Some (scope, _, point), modules -> 
+            Some (findBestPositionToInsertOpenDeclaration modules scope point entity)
         | _ -> None

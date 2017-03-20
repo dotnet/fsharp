@@ -177,11 +177,11 @@ type internal FSharpCompletionProvider
             let allEntities = 
                 allEntities |> List.filter (fun entity -> entity.FullName.Contains "." && not (PrettyNaming.IsOperatorName entity.Item.DisplayName))
 
-            #if DEBUG
-            let kprintfEntity = allEntities |> List.filter (fun x -> x.FullName.EndsWith "foo")
-            Logging.Logging.logInfof "%+A" kprintfEntity
-            let _x = kprintfEntity
-            #endif
+            //#if DEBUG
+            //let kprintfEntity = allEntities |> List.filter (fun x -> x.FullName.EndsWith "foo")
+            //Logging.Logging.logInfof "%+A" kprintfEntity
+            //let _x = kprintfEntity
+            //#endif
 
             let! declarations =
                 checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLineColumn, caretLine.ToString(), qualifyingNames, partialName, allEntities) |> liftAsync
@@ -300,10 +300,15 @@ type internal FSharpCompletionProvider
 
     override this.GetChangeAsync(document, item, _, cancellationToken) : Task<CompletionChange> =
         async {
+            let fullName =
+                match item.Properties.TryGetValue FullNamePropName with
+                | true, x -> Some x
+                | _ -> None
+
             // do not add extension members and not yet resolved symbols to the MRU list
             if not (item.Properties.ContainsKey NamespaceToOpen) && not (item.Properties.ContainsKey IsExtensionMemberPropName) then
-                match item.Properties.TryGetValue FullNamePropName with
-                | true, fullName ->
+                match fullName with
+                | Some fullName ->
                     match mruItems.TryGetValue fullName with
                     | true, hints -> mruItems.[fullName] <- hints + 1
                     | _ -> mruItems.[fullName] <- 1
@@ -325,7 +330,8 @@ type internal FSharpCompletionProvider
                     let line = sourceText.Lines.GetLineFromPosition(item.Span.Start)
                     let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                     let! parsedInput = checkerProvider.Checker.ParseDocument(document, options)
-                    let! _, ctx = ParsedInput.tryFindNearestPointToInsertOpenDeclaration line.LineNumber parsedInput
+                    let fullNameIdents = fullName |> Option.map (fun x -> x.Split '.') |> Option.defaultValue [||]
+                    let! ctx = ParsedInput.tryFindNearestPointToInsertOpenDeclaration line.LineNumber parsedInput fullNameIdents
                     let finalSourceText, changedSpanStartPos = OpenDeclarationHelper.insertOpenDeclaration textWithItemCommitted ctx ns
                     let fullChangingSpan = TextSpan.FromBounds(changedSpanStartPos, item.Span.End)
                     let changedSpan = TextSpan.FromBounds(changedSpanStartPos, item.Span.End + (finalSourceText.Length - sourceText.Length))
