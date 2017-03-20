@@ -163,6 +163,16 @@ type internal FSharpDeclarations(documentationBuilder, declarations: FSharpDecla
             else 
                 item.Name
         else String.Empty
+    
+    override decl.GetNameInCode(filterText, index) =
+        let decls = trimmedDeclarations filterText
+        if (index >= 0 && index < decls.Length) then
+            let item = decls.[index]
+            if (item.Glyph = FSharpGlyph.Error) then
+                ""
+            else 
+                item.NameInCode
+        else String.Empty
 
     override decl.GetDescription(filterText, index) =
         let decls = trimmedDeclarations filterText

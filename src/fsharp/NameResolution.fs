@@ -258,8 +258,8 @@ type Item =
 
 let valRefHash (vref: ValRef) = 
     match vref.TryDeref with 
-    | None -> 0 
-    | Some v -> LanguagePrimitives.PhysicalHash v
+    | VNone -> 0 
+    | VSome v -> LanguagePrimitives.PhysicalHash v
 
 /// Represents a record field resolution and the information if the usage is deprecated.
 type FieldResolution = FieldResolution of RecdFieldRef * bool
@@ -447,7 +447,7 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap:Import.Import
                  try 
                     let rs = 
                         match metadataOfTycon tcrefOfStaticClass.Deref, minfo with 
-                        | ILTypeMetadata (scoref,_), ILMeth(_,ILMethInfo(_,_,_,ilMethod,_),_) ->
+                        | ILTypeMetadata (TILObjectReprData(scoref,_,_)), ILMeth(_,ILMethInfo(_,_,_,ilMethod,_),_) ->
                             match ilMethod.ParameterTypes with 
                             | firstTy :: _ -> 
                                 match firstTy with 

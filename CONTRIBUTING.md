@@ -1,19 +1,19 @@
-##Contribution Guidelines
+## Contribution Guidelines
 
 The Visual F# team is proud to be a contributor to F#, and urge you to join in too. F# users and the F# community are grateful for all contributions to F#.
 
 Besides this overview, we recommend ["Becoming a contributor"](http://mrange.wordpress.com/2014/12/11/becoming-an-fsharp-contributor/), a community blog post by Mårten Rånge. 
 For those contributing to the core of the F# compiler, we recommend ["The F# Compiler Technical Overview"](http://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html)
 
-###Getting Started
+### Getting Started
 
 - Install required software
-- Clone the repo
- - `git clone https://github.com/microsoft/visualfsharp.git`
-- How to build ([DEVGUIDE](DEVGUIDE.md))
-- How to run tests ([TESTGUIDE](TESTGUIDE.md))
+- Clone the repo \
+  `git clone https://github.com/microsoft/visualfsharp.git`
+- Read how to build in [DEVGUIDE.md](DEVGUIDE.md)
+- Read how to run tests in [TESTGUIDE.md](TESTGUIDE.md)
 
-###What to Contribute?
+### What to Contribute?
 
 There are several important ways that you can contribute. We are especially grateful for early feedback on in-development features, bug reports with repro steps, bug fixes with regression test cases, cross-platform expertise and changes, documentation updates, feature tests, suggestions, comments, and ideas. 
 
@@ -26,27 +26,27 @@ We initially solicit contributions for
 - library improvements
 - F# language and library features
 
-New features are welcome, but be aware that Visual F# is a high-quality programming language with high-quality tools, and we wish to keep it that way. Before embarking on an extensive feature implementation, make a proposal in a GitHub issue or on the [F# Language UserVoice](https://fslang.uservoice.com/) so the community can review and comment on it. 
+New features are welcome, but be aware that Visual F# is a high-quality programming language with high-quality tools, and we wish to keep it that way. Before embarking on an extensive feature implementation, make a proposal in a GitHub issue or on the [F# Language Suggestions](https://github.com/fsharp/fslang-suggestions) so the community can review and comment on it. 
 
 ### Issues
 
 When submitting issues, please use the following guidelines
 
-- Suggestions for the F# Language and Core library should be added and reviewed at the [F# Language User Voice](https://fslang.uservoice.com/).
+- Suggestions for the F# Language and Core library should be added and reviewed at the [F# Language Suggestions](https://github.com/fsharp/fslang-suggestions).
 
-- Suggestions for the Visual F# Tools should be added and reviewed at the [Visual Studio F# Tools  User Voice](https://visualstudio.uservoice.com/forums/121579-visual-studio/category/30935-languages-f-tools).
+- Suggestions for the Visual F# Tools should be added and reviewed at the [Visual Studio F# Tools GitHub](https://github.com/microsoft/visualfsharp).
 
 - New Bug Reports should always give accurate, clear steps for reproducing the bug, and all relevant details about versions, platform, etc.  We suggest the following template:
 
-    Title: <a short, clear title>
+    Title: &lt;a short, clear title&gt;
     
-    Description: <a description of the problem>
+    Description: &lt;a description of the problem&gt;
     
-    Repro Steps: <step by step description>
+    Repro Steps: &lt;step by step description&gt;
     
-    Expected: <what is expected>
+    Expected: &lt;what is expected&gt;
     
-    Actual: <what you really get>
+    Actual: &lt;what you really get&gt;
     
     Severity: a description on how bad it is and why - is it blocking?
     
@@ -58,11 +58,11 @@ When submitting issues, please use the following guidelines
     
     Workaround: List any known workarounds
 
-###CLA
+### CLA
 
 Contributors are required to sign a [Contribution License Agreement](https://cla.microsoft.com/) (CLA) before any pull requests will be considered. After submitting a request via the provided form, electronically sign the CLA when you receive the email containing the link to the document. This only needs to be done once for each Microsoft OSS project you contribute to.
 
-###Quality and Testing
+### Quality and Testing
 
 Contributions to this repository will be rigorously policed for quality.
 
@@ -109,13 +109,13 @@ Bug fix PRs have the following minimum requirements
 
 Feature PRs have the following minimum requirements:
 
-- For F# Language and Library features, include a link to the [F# Language User Voice](http://fslang.uservoice.com) 
+- For F# Language and Library features, include a link to the [F# Language Suggestions](https://github.com/fsharp/fslang-suggestions) issue
 
-- For Visual F# Tools features, include a link to the [Visual F# Tools User Voice](https://visualstudio.uservoice.com/forums/121579-visual-studio/category/30935-languages-f-tools) entry for the feature.
+- For Visual F# Tools features, include a link to the [Visual F# Tools](https://github.com/microsoft/visualfsharp) issue for the feature.
 
 - For F# Library features, if you have made additions to the FSharp.Core library public surface area, update [the SurfaceArea tests](https://github.com/Microsoft/visualfsharp/tree/fsharp4/src/fsharp/FSharp.Core.Unittests).
 
-- For F# Language and Library features, you will be asked to submit a speclet for the feature to the [F# Language Design](https://github.com/fsharp/FSharpLangDesign/) GitHub repository of speclets.  In some cases you will only need to do this after your feature is accepted, but for more complex features you may be asked to do this during the review of the feature.  
+- For F# Language and Library features, you will be asked to submit a speclet for the feature to the [F# Language Design](https://github.com/fsharp/fslang-design) GitHub repository of speclets.  In some cases you will only need to do this after your feature is accepted, but for more complex features you may be asked to do this during the review of the feature.  
 
 - Language feature implementations must take into account the expectations of typical users about the performance 
   impact of using the feature.  For example, we should avoid the situation where using an optional language feature 
@@ -123,12 +123,12 @@ Feature PRs have the following minimum requirements:
 
 - Language feature implementations should not cause performance degradation in existing code.
 
-###Language Evolution
+### Language Evolution
 
 We are committed to carefully managing the evolution of the F# language.
 
-We actively solicit contributions related to the F# language design, but the process for handling these differs substantially from other kinds of contributions. Significant language and library change should be suggested and reviewed at the [F# Language User Voice](https://fslang.uservoice.com/) site.
+We actively solicit contributions related to the F# language design, but the process for handling these differs substantially from other kinds of contributions. Significant language and library change should be suggested and reviewed at the [F# Language Suggestions](https://github.com/fsharp/fslang-suggestions) repository.
 
-###Coding guidelines
+### Coding guidelines
 
 Although there is currently no strict set of coding or style guidelines, use common sense when contributing code - make an effort to use a similar style to nearby existing code. If you have a passion for helping us develop a set of coding guidelines that we can roll out and apply within this project, get involved and start a discussion issue.

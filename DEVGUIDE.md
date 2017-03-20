@@ -112,6 +112,15 @@ To build and test Visual F# IDE Tools, you must use the latest version of [Visua
 
 Use ``VisualFSharp.sln`` if you're building the Visual F# IDE Tools.
 
+Note: if you face this error [#2351](https://github.com/Microsoft/visualfsharp/issues/2351):
+
+>  error VSSDK1077: Unable to locate the extensions directory. "ExternalSettingsManager::GetScopePaths failed to initialize PkgDefManager for C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\devenv.exe".
+
+delete those folders:
+
+* %appdata%\Microsoft\VisualStudio\15.0_<some number here>FSharpDev
+* %appdata%\..\Local\Microsoft\VisualStudio\15.0_<some number here>FSharpDev
+
 
 ## [Optional] Install the Visual F# IDE Tools  (Windows Only)
 

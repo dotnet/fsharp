@@ -1742,7 +1742,8 @@ module private TastDefinitionPrinting =
                       Some (wordL (tagText "(# \"<Common IL Type Omitted>\" #)"))
                   | TMeasureableRepr ty                 ->
                       Some (layoutType denv ty)
-                  | TILObjectRepr (_,_,td) -> 
+                  | TILObjectRepr _ -> 
+                      let td = tycon.ILTyconRawMetadata
                       Some (PrintIL.layoutILTypeDef denv td)
                   | _  -> None
 

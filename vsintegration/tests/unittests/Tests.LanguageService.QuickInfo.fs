@@ -16,7 +16,8 @@ module QuickInfoStandardSettings =
     let standard40AssemblyRefs  = [ "System"; "System.Core"; "System.Numerics" ]
     let queryAssemblyRefs = [ "System.Xml.Linq"; "System.Core" ]
 
-[<TestFixture>] 
+[<TestFixture>]
+[<Category "LanguageService">] 
 type UsingMSBuild() = 
     inherit LanguageServiceBaseTests()
 
@@ -1699,8 +1700,8 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         TakeCoffeeBreak(this.VS) (* why needed? *)       
         MoveCursorToEndOfMarker(file,marker)
         let completions = CtrlSpaceCompleteAtCursor file
-        match completions |> Array.tryFind (fun (name, _, _, _) -> name = completionName) with
-        | Some(_, _, descrFunc, _) ->
+        match completions |> Array.tryFind (fun (CompletionItem(name, _, _, _, _)) -> name = completionName) with
+        | Some(CompletionItem(_, _, _, descrFunc, _)) ->
             let descr = descrFunc()
             AssertContainsInOrder(descr,rhsContainsOrder)
         | None -> 

@@ -106,7 +106,7 @@ module Impl =
             // This is an approximation - for generative type providers some type definitions can be private.
             taccessPublic
 
-        | ILTypeMetadata (_,td) -> 
+        | ILTypeMetadata (TILObjectReprData(_,_,td)) -> 
             match td.Access with 
             | ILTypeDefAccess.Public 
             | ILTypeDefAccess.Nested ILMemberAccess.Public -> taccessPublic 
@@ -320,7 +320,7 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
         isResolved() &&
         match metadataOfTycon entity.Deref with 
         | ProvidedTypeMetadata info -> info.IsClass
-        | ILTypeMetadata (_,td) -> (td.tdKind = ILTypeDefKind.Class)
+        | ILTypeMetadata (TILObjectReprData(_,_,td)) -> (td.tdKind = ILTypeDefKind.Class)
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> entity.Deref.IsFSharpClassTycon
 
     member __.IsByRef = 
@@ -339,7 +339,7 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
         isResolved() &&
         match metadataOfTycon entity.Deref with 
         | ProvidedTypeMetadata info -> info.IsDelegate ()
-        | ILTypeMetadata (_,td) -> (td.tdKind = ILTypeDefKind.Delegate)
+        | ILTypeMetadata (TILObjectReprData(_,_,td)) -> (td.tdKind = ILTypeDefKind.Delegate)
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> entity.IsFSharpDelegateTycon
 
     member __.IsEnum = 
