@@ -54,7 +54,7 @@ type internal FSharpAddOpenCodeFixProvider
             displayText)
 
     let getSuggestions (context: CodeFixContext) (candidates: (Entity * InsertContext) list) : unit =
-        Logging.Logging.logInfof "Candidates: %+A" candidates
+        //Logging.Logging.logInfof "Candidates: %+A" candidates
 
         let openNamespaceFixes =
             candidates

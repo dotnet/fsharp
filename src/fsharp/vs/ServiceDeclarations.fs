@@ -114,7 +114,7 @@ type CompletionItemKind =
 
 type UnresolvedSymbol =
     { DisplayName: string
-      Namespace: string[] option }
+      Namespace: string[] }
 
 type CompletionItem =
     { Item: Item
@@ -1504,8 +1504,8 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                 match x.Unresolved with
                 | Some u -> 
                     match u.Namespace with
-                    | Some ns -> (ns |> String.concat ".") + "." + u.DisplayName
-                    | None -> u.DisplayName
+                    | [||] -> u.DisplayName
+                    | ns -> (ns |> String.concat ".") + "." + u.DisplayName
                 | None -> x.Item.DisplayName)
             |> List.map (fun (_, items) -> 
                 let item = items.Head
@@ -1556,7 +1556,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                     
                     let namespaceToOpen = 
                         item.Unresolved 
-                        |> Option.bind (fun x -> x.Namespace)
+                        |> Option.map (fun x -> x.Namespace)
                         |> Option.bind (fun ns ->
                             if ns |> Array.startsWith [|"Microsoft"; "FSharp"|] then None
                             else Some ns)

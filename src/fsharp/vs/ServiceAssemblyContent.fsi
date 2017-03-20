@@ -47,6 +47,7 @@ type internal RawEntity =
       CleanedIdents: Idents
       Namespace: Idents option
       IsPublic: bool
+      NearestRequireQualifiedAccessParent: Idents option
       TopRequireQualifiedAccessParent: Idents option
       AutoOpenParent: Idents option
       Item: NameResolution.Item

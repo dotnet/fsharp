@@ -122,7 +122,7 @@ type internal FSharpDeclarationListItem =
 
 type UnresolvedSymbol =
     { DisplayName: string
-      Namespace: string[] option }
+      Namespace: string[] }
 
 type internal CompletionItem =
     { Item: Item

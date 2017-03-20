@@ -920,36 +920,14 @@ type TypeCheckInfo
         let unresolved =
             unresolvedEntity
             |> Option.map (fun x ->
-                let displayName =
-                    let prefix =
-                        match x.TopRequireQualifiedAccessParent with
-                        | Some parent when not (Array.isEmpty parent) ->
-                            parent.[0..parent.Length - 2]
-                        | _ ->
-                            match x.Namespace with
-                            | Some ns -> ns
-                            | None -> [||]
-
-                    match prefix with
-                    | [||] -> Array.last x.CleanedIdents
-                    | _ ->
-                        let fullCount = x.CleanedIdents.Length
-                        let displayPartCount = fullCount - prefix.Length
-                        if displayPartCount > 0 then
-                            x.CleanedIdents |> Array.skip prefix.Length |> String.concat "."
-                        else x.CleanedIdents.[x.CleanedIdents.Length - 1]
-
                 let ns =
                     match x.TopRequireQualifiedAccessParent with
-                    | Some _ -> None
-                    | None ->
-                        match x.Namespace with
-                        | Some x -> Some x
-                        | None ->
-                            match x.CleanedIdents with
-                            | [|_|] -> None
-                            | _ -> Some x.CleanedIdents.[..x.CleanedIdents.Length - 2]
+                    | Some parent when not (Array.isEmpty parent) -> 
+                        parent.[..parent.Length - 2]
+                    | _ -> x.CleanedIdents.[..x.CleanedIdents.Length - 2]
 
+                let displayName = x.CleanedIdents |> Array.skip ns.Length |> String.concat "."
+                
                 { DisplayName = displayName
                   Namespace = ns })
 
@@ -1310,8 +1288,7 @@ type TypeCheckInfo
                     let currentNamespaceOrModule =
                         parseResultsOpt
                         |> Option.bind (fun x -> x.ParseTree)
-                        |> Option.bind (ParsedInput.tryFindNearestPointToInsertOpenDeclaration line)
-                        |> Option.bind fst
+                        |> Option.map (fun parsedInput -> UntypedParseImpl.GetFullNameOfSmallestModuleOrNamespaceAtPoint(parsedInput, mkPos line 0))
                     FSharpDeclarationListInfo.Create(infoReader,m,denv,getAccessibility,items,reactorOps,currentNamespaceOrModule,checkAlive))
             (fun msg -> FSharpDeclarationListInfo.Error msg)
 

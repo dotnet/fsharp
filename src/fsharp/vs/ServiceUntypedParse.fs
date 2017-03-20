@@ -1233,3 +1233,19 @@ module UntypedParseImpl =
             }
 
         AstTraversal.Traverse(pos, pt, walker)
+
+    /// Check if we are at an "open" declaration
+    let GetFullNameOfSmallestModuleOrNamespaceAtPoint (parsedInput: ParsedInput, pos: pos) = 
+        let mutable path = []
+        let visitor = 
+            { new AstTraversal.AstVisitorBase<bool>() with
+                override this.VisitExpr(_path, _traverseSynExpr, defaultTraverse, expr) = 
+                    // don't need to keep going, namespaces and modules never appear inside Exprs
+                    None 
+                override this.VisitModuleOrNamespace(SynModuleOrNamespace(longId = longId; range = range)) =
+                    if rangeContainsPos range pos then 
+                        path <- path @ longId
+                    None // we should traverse the rest of the AST to find the smallest module 
+            }
+        AstTraversal.Traverse(pos, parsedInput, visitor) |> ignore
+        path |> List.map (fun x -> x.idText) |> List.toArray
