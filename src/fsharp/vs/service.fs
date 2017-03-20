@@ -1307,12 +1307,12 @@ type TypeCheckInfo
                     let items = items |> FilterAutoCompletesBasedOnParseContext parseResultsOpt (mkPos line colAtEndOfNamesAndResidue)
                     let items = if isInterfaceFile then items |> List.filter (fun x -> IsValidSignatureFileItem x.Item) else items
                     let getAccessibility item = FSharpSymbol.GetAccessibility (FSharpSymbol.Create(g, thisCcu, tcImports, item))
-                    let currentNamespace =
+                    let currentNamespaceOrModule =
                         parseResultsOpt
                         |> Option.bind (fun x -> x.ParseTree)
                         |> Option.bind (ParsedInput.tryFindNearestPointToInsertOpenDeclaration line)
                         |> Option.bind fst
-                    FSharpDeclarationListInfo.Create(infoReader,m,denv,getAccessibility,items,reactorOps,currentNamespace,checkAlive))
+                    FSharpDeclarationListInfo.Create(infoReader,m,denv,getAccessibility,items,reactorOps,currentNamespaceOrModule,checkAlive))
             (fun msg -> FSharpDeclarationListInfo.Error msg)
 
     /// Get the symbols for auto-complete items at a location

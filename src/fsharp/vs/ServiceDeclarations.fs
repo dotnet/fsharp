@@ -1455,7 +1455,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
     member self.Items = declarations
 
     // Make a 'Declarations' object for a set of selected items
-    static member Create(infoReader:InfoReader, m, denv, getAccessibility, items: CompletionItem list, reactor, currentNamespace: string[] option, checkAlive) = 
+    static member Create(infoReader:InfoReader, m, denv, getAccessibility, items: CompletionItem list, reactor, currentNamespaceOrModule: string[] option, checkAlive) = 
         let g = infoReader.g
         let items = items |> ItemDescriptionsImpl.RemoveExplicitlySuppressedCompletionItems g
         
@@ -1561,7 +1561,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                             if ns |> Array.startsWith [|"Microsoft"; "FSharp"|] then None
                             else Some ns)
                         |> Option.map (fun ns ->
-                            match currentNamespace with
+                            match currentNamespaceOrModule with
                             | Some currentNs ->
                                if ns |> Array.startsWith currentNs then
                                  ns.[currentNs.Length..]

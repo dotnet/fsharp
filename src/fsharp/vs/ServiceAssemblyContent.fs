@@ -502,8 +502,6 @@ module internal ParsedInput =
     open Microsoft.FSharp.Compiler
     open Microsoft.FSharp.Compiler.Ast
 
-    type private EndLine = int
-
     /// An recursive pattern that collect all sequential expressions to avoid StackOverflowException
     let rec (|Sequentials|_|) = function
         | SynExpr.Sequential(_, _, e, Sequentials es, _) ->
@@ -869,16 +867,17 @@ module internal ParsedInput =
         // We ignore all diagnostics during this operation
         //
         // Based on an initial review, no diagnostics should be generated.  However the code should be checked more closely.
-        use _ignoreAllDiagnostics = new ErrorScope()  
+        use _ignoreAllDiagnostics = new ErrorScope()
 
+        let pos = mkPos currentLine 0
         let result: (Scope * Point<FCS>) option ref = ref None
         let ns: string[] option ref = ref None
-        let modules = ResizeArray<Idents * EndLine * Col>()  
+        let modules = ResizeArray<Idents * range>()  
 
         let inline longIdentToIdents ident = ident |> Seq.map (fun x -> string x) |> Seq.toArray
         
-        let addModule (longIdent: LongIdent) endLine col =
-            modules.Add(longIdent |> List.map string |> List.toArray, endLine, col)
+        let addModule (longIdent: LongIdent) m =
+            modules.Add(longIdent |> List.map string |> List.toArray, m)
 
         let doRange kind (scope: LongIdent) line col =
             if line <= currentLine then
@@ -918,7 +917,7 @@ module internal ParsedInput =
             List.iter (walkSynModuleOrNamespace []) moduleOrNamespaceList
 
         and walkSynModuleOrNamespace (parent: LongIdent) (SynModuleOrNamespace(ident, _, isModule, decls, _, _, _, range)) =
-            if range.EndLine >= currentLine then
+            if rangeContainsPos range pos then
                 match isModule, parent, ident with
                 | false, _, _ -> ns := Some (longIdentToIdents ident)
                 // top level module with "inlined" namespace like Ns1.Ns2.TopModule
@@ -940,16 +939,16 @@ module internal ParsedInput =
                     | _ -> Namespace
 
                 doRange scopeKind fullIdent startLine range.StartColumn
-                addModule fullIdent range.EndLine range.StartColumn
+                addModule fullIdent range
                 List.iter (walkSynModuleDecl fullIdent) decls
 
         and walkSynModuleDecl (parent: LongIdent) (decl: SynModuleDecl) =
             match decl with
             | SynModuleDecl.NamespaceFragment fragment -> walkSynModuleOrNamespace parent fragment
             | SynModuleDecl.NestedModule(ComponentInfo(_, _, _, ident, _, _, _, _), _, decls, _, range) ->
-                let fullIdent = parent @ ident
-                addModule fullIdent range.EndLine range.StartColumn
-                if range.EndLine >= currentLine then
+                if rangeContainsPos range pos then
+                    let fullIdent = parent @ ident
+                    addModule fullIdent range
                     let moduleBodyIdentation = getMinColumn decls |> Option.defaultValue (range.StartColumn + 4)
                     doRange NestedModule fullIdent range.StartLine moduleBodyIdentation
                     List.iter (walkSynModuleDecl fullIdent) decls
@@ -969,7 +968,8 @@ module internal ParsedInput =
         
         let modules = 
             modules 
-            |> Seq.filter (fun (_, endLine, _) -> endLine < currentLine)
+            |> Seq.filter (fun (_, m) -> rangeContainsPos m pos)
+            |> Seq.map (fun (idents, m) -> idents, m.EndLine, m.StartColumn)
             |> Seq.sortBy (fun (m, _, _) -> -m.Length)
             |> Seq.toList
 
@@ -1031,5 +1031,7 @@ module internal ParsedInput =
     
     let tryFindNearestPointToInsertOpenDeclaration (currentLine: int) (ast: ParsedInput) =
         match tryFindNearestPointAndModules currentLine ast with
-        | Some (scope, targetNamespace, point), _ -> Some (targetNamespace, { ScopeKind = scope.Kind; Pos = point })
+        | Some (scope, _, point), modules ->
+            let mostNestedModule = modules |> List.tryLast |> Option.map (fun (idents,_,_) -> idents)
+            Some (mostNestedModule, { ScopeKind = scope.Kind; Pos = point })
         | _ -> None
