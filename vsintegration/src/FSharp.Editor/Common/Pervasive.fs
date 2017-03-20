@@ -3,6 +3,8 @@ module Microsoft.VisualStudio.FSharp.Editor.Pervasive
 
 open System
 open System.IO
+open System.Threading
+open System.Threading.Tasks
 open System.Diagnostics
 
 [<RequireQualifiedAccess>]
@@ -36,6 +38,11 @@ type Path with
 /// Load times used to reset type checking properly on script/project load/unload. It just has to be unique for each project load/reload.
 /// Not yet sure if this works for scripts.
 let fakeDateTimeRepresentingTimeLoaded x = DateTime(abs (int64 (match x with null -> 0 | _ -> x.GetHashCode())) % 103231L)
+
+
+/// Checks if the filePath ends with ".fsi"
+let isSignatureFile (filePath:string) = 
+    Path.GetExtension filePath = ".fsi"
 
 
 type System.IServiceProvider with
@@ -215,6 +222,41 @@ module Async =
                     replyCh.Reply res 
             }
         async { return! agent.PostAndAsyncReply id }
+
+
+type Async with
+    /// Better implementation of Async.AwaitTask that correctly passes the exception of a failed task to the async mechanism
+    static member AwaitTaskCorrect (task:Task) : unit Async =
+        Async.FromContinuations (fun (successCont,exceptionCont,_cancelCont) ->
+            task.ContinueWith (fun (task:Task) ->
+                if task.IsFaulted then
+                    let e = task.Exception
+                    if e.InnerExceptions.Count = 1 then 
+                        exceptionCont e.InnerExceptions.[0]
+                    else exceptionCont e
+                elif task.IsCanceled then
+                    exceptionCont(TaskCanceledException ())
+                else successCont ())
+            |> ignore)
+
+    /// Better implementation of Async.AwaitTask that correctly passes the exception of a failed task to the async mechanism
+    static member AwaitTaskCorrect (task:'T Task) : 'T Async =
+        Async.FromContinuations( fun (successCont,exceptionCont,_cancelCont) ->
+            task.ContinueWith (fun (task:'T Task) ->
+                if task.IsFaulted then
+                    let e = task.Exception
+                    if e.InnerExceptions.Count = 1 then 
+                        exceptionCont e.InnerExceptions.[0]
+                    else exceptionCont e
+                elif task.IsCanceled then
+                    exceptionCont (TaskCanceledException ())
+                else successCont task.Result)
+            |> ignore)
+    
+    /// Run a task synchronously using Async.AwaitTaskCorrect internally
+    static member RunTaskSynchronously (task:Task<_>) = Async.AwaitTaskCorrect task |> Async.RunSynchronously
+
+
 
 type AsyncBuilder with
     member __.Bind(computation: System.Threading.Tasks.Task<'a>, binder: 'a -> Async<'b>): Async<'b> =
