@@ -8,6 +8,10 @@ open System.Reflection
 open System.IO
 open Microsoft.FSharp.Compiler.ErrorLogger
 
+#if FX_RESHAPED_REFLECTION
+open Microsoft.FSharp.Core.ReflectionAdapters
+#endif
+
 // NOTE: this contains mostly members whose intents are :
 // * to keep ReferenceLoading.PaketHandler usable outside of F# (so it can be used in scriptcs & others)
 // * to minimize footprint of integration in fsi/CompileOps
@@ -108,10 +112,12 @@ let assemblySearchPaths =
     lazy(
         [let assemblyLocation = typeof<IDependencyManagerProvider>.Assembly.Location
          yield Path.GetDirectoryName assemblyLocation
-         let executingAssembly = Assembly.GetExecutingAssembly().Location
-         yield Path.GetDirectoryName executingAssembly
-         let baseDir = AppDomain.CurrentDomain.BaseDirectory
-         yield baseDir ]
+#if FX_NO_APP_DOMAINS
+         yield AppContext.BaseDirectory
+#else
+         yield AppDomain.CurrentDomain.BaseDirectory
+#endif
+        ]
         |> List.distinct
     )
 
