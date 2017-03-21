@@ -491,17 +491,9 @@ type internal ScopeKind =
     | HashDirective
     override x.ToString() = sprintf "%A" x
 
-[<Measure>] type internal FCS
-
-type internal Point<[<Measure>]'t> = { Line : int; Column : int }
-
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module internal Point =
-    let make line column : Point<'t> = { Line = line; Column = column }
-
 type internal InsertContext =
     { ScopeKind: ScopeKind
-      Pos: Point<FCS> }
+      Pos: pos }
 
 module internal ParsedInput =
     open Microsoft.FSharp.Compiler
@@ -876,7 +868,7 @@ module internal ParsedInput =
         // Based on an initial review, no diagnostics should be generated.  However the code should be checked more closely.
         use _ignoreAllDiagnostics = new ErrorScope()  
 
-        let result: (Scope * Point<FCS>) option ref = ref None
+        let result: (Scope * pos) option ref = ref None
         let ns: string[] option ref = ref None
         let modules = ResizeArray<Idents * EndLine * Col>()  
 
@@ -889,7 +881,7 @@ module internal ParsedInput =
             if line <= currentLine then
                 match !result with
                 | None -> 
-                    result := Some ({ Idents = longIdentToIdents scope; Kind = kind }, Point.make line col)
+                    result := Some ({ Idents = longIdentToIdents scope; Kind = kind }, mkPos line col)
                 | Some (oldScope, oldPos) ->
                     match kind, oldScope.Kind with
                     | (Namespace | NestedModule | TopModule), OpenDeclaration
@@ -900,7 +892,7 @@ module internal ParsedInput =
                                         | [] -> oldScope.Idents 
                                         | _ -> longIdentToIdents scope
                                     Kind = kind },
-                                  Point.make line col)
+                                  mkPos line col)
                     | _ -> ()
 
         let getMinColumn (decls: SynModuleDecls) =
@@ -970,7 +962,7 @@ module internal ParsedInput =
             !result
             |> Option.map (fun (scope, pos) ->
                 let ns = !ns |> Option.map longIdentToIdents
-                scope, ns, { pos with Line = pos.Line + 1 })
+                scope, ns, mkPos (pos.Line + 1) pos.Column)
         
         let modules = 
             modules 
@@ -989,7 +981,7 @@ module internal ParsedInput =
                 match scope.Kind with
                 | TopModule -> NestedModule
                 | x -> x
-            { ScopeKind = scopeKind; Pos = Point.make (endLine + 1) startCol }
+            { ScopeKind = scopeKind; Pos = mkPos (Line.fromZ endLine) startCol }
 
     let tryFindInsertionContext (currentLine: int) (ast: ParsedInput) (partiallyQualifiedName: MaybeUnresolvedIdents) = 
         let res, modules = tryFindNearestPointAndModules currentLine ast
@@ -1032,7 +1024,7 @@ module internal ParsedInput =
                 else 1  
             | _ -> ctx.Pos.Line
 
-        { ctx.Pos with Line = line }
+        mkPos line ctx.Pos.Column
     
     let tryFindNearestPointToInsertOpenDeclaration (currentLine: int) (ast: ParsedInput) (entity: Idents) =
         match tryFindNearestPointAndModules currentLine ast with
