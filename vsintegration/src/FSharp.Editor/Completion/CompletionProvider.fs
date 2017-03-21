@@ -159,7 +159,7 @@ type internal FSharpCompletionProvider
                  CommonCompletionUtilities.IsStartingNewWord(sourceText, triggerPosition, (fun ch -> isIdentifierStartCharacter ch), (fun ch -> isIdentifierPartCharacter ch)))
 
     static member ProvideCompletionsAsyncAux(checker: FSharpChecker, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, 
-                                             textVersionHash: int, allEntities: RawEntity list) = 
+                                             textVersionHash: int, getAllEntities: unit -> RawEntity list) = 
         asyncMaybe {
             let! parseResults, parsedInput, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true)
 
@@ -174,8 +174,8 @@ type internal FSharpCompletionProvider
             let caretLineColumn = caretLinePos.Character
             let qualifyingNames, partialName = QuickParse.GetPartialLongNameEx(caretLine.ToString(), caretLineColumn - 1) 
             
-            let allEntities = 
-                allEntities |> List.filter (fun entity -> entity.FullName.Contains "." && not (PrettyNaming.IsOperatorName entity.Item.DisplayName))
+            let getAllEntities() = 
+                getAllEntities() |> List.filter (fun entity -> entity.FullName.Contains "." && not (PrettyNaming.IsOperatorName entity.Item.DisplayName))
 
             //#if DEBUG
             //let kprintfEntity = allEntities |> List.filter (fun x -> x.FullName.EndsWith "foo")
@@ -184,7 +184,7 @@ type internal FSharpCompletionProvider
             //#endif
 
             let! declarations =
-                checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLineColumn, caretLine.ToString(), qualifyingNames, partialName, allEntities) |> liftAsync
+                checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLineColumn, caretLine.ToString(), qualifyingNames, partialName, getAllEntities) |> liftAsync
             
             let results = List<Completion.CompletionItem>()
             
@@ -288,10 +288,10 @@ type internal FSharpCompletionProvider
             let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
             let! textVersion = context.Document.GetTextVersionAsync(context.CancellationToken)
             let! _, _, fileCheckResults = checkerProvider.Checker.ParseAndCheckDocument(document, options, true)
-            let allEntities = assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies(fileCheckResults)
+            let getAllEntities() = assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies(fileCheckResults)
             let! results = 
                 FSharpCompletionProvider.ProvideCompletionsAsyncAux(checkerProvider.Checker, sourceText, context.Position, options, 
-                                                                    document.FilePath, textVersion.GetHashCode(), allEntities)
+                                                                    document.FilePath, textVersion.GetHashCode(), getAllEntities)
             context.AddItems(results)
         } |> Async.Ignore |> CommonRoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
         
