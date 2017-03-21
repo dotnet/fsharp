@@ -3547,7 +3547,7 @@ and
         | TType_tuple (_tupInfo, _tinst) -> ""
         | TType_anon (anonInfo, _tinst) -> 
             match anonInfo.Assembly with 
-            | Some ccu -> ccu.QualifiedName |> Option.defaultValue ""
+            | Some ccu -> defaultArg ccu.QualifiedName ""
             | None -> ""
         | TType_fun (_d,_r)              -> ""
         | TType_measure _ms              -> ""
