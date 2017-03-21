@@ -2535,7 +2535,7 @@ let tagEntityRefName (xref: EntityRef) name =
     else tagClass name
 
 let fullNameOfEntityRefAsLayout nmF (xref: EntityRef) =
-    let n = wordL (tagEntityRefName xref (nmF xref))
+    let n = NavigableTaggedText.Create(tagEntityRefName xref (nmF xref), xref.DefinitionRange) |> wordL
     match fullNameOfParentOfEntityRefAsLayout xref  with 
     | None -> n
     | Some pathText -> pathText ^^ SepL.dot ^^ n
