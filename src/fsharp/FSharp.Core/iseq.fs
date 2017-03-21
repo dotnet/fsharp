@@ -1856,21 +1856,25 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             if chunkSize <= 0 then invalidArgFmt "chunkSize" "{0}\nchunkSize = {1}"
                                     [|SR.GetString SR.inputMustBePositive; chunkSize|]
-        //    seq { use e = source.GetEnumerator()
-        //          let nextChunk() =
-        //              let res = Array.zeroCreateUnchecked chunkSize
-        //              res.[0] <- e.Current
-        //              let i = ref 1
-        //              while !i < chunkSize && e.MoveNext() do
-        //                  res.[!i] <- e.Current
-        //                  i := !i + 1
-        //              if !i = chunkSize then
-        //                  res
-        //              else
-        //                  res |> Array.subUnchecked 0 !i
-        //          while e.MoveNext() do
-        //              yield nextChunk() } |> ofSeq
-            raise (NotImplementedException ("TBD"))
+
+            source.PushTransform { new TransformFactory<'T,'T[]>() with
+                member __.Compose outOfBand pipeIdx next =
+                    upcast {
+                        new TransformWithPostProcessing<'T,'U,Values<'T[],int>>(next,Values<'T[],int>(Array.zeroCreateUnchecked chunkSize, 0)) with
+                            override this.ProcessNext (input:'T) : bool =
+                                this.State._1.[this.State._2] <- input
+                                this.State._2 <- this.State._2 + 1
+                                if this.State._2 <> chunkSize then false
+                                else
+                                    this.State._2 <- 0
+                                    let tmp = this.State._1
+                                    this.State._1 <- Array.zeroCreateUnchecked chunkSize
+                                    TailCall.avoid (next.ProcessNext tmp)
+                            override this.OnComplete _ =
+                                if this.State._2 > 0 then
+                                    System.Array.Resize (&this.State._1, this.State._2)
+                                    next.ProcessNext this.State._1 |> ignore
+                            override this.OnDispose () = () }}
 
         let mkDelayedSeq (f: unit -> IEnumerable<'T>) = mkSeq (fun () -> f().GetEnumerator()) |> ofSeq
 
