@@ -11,7 +11,16 @@ open Microsoft.FSharp.Core.Printf
 #nowarn "62" // This construct is for ML compatibility.
 
 type layout = Internal.Utilities.StructuredFormat.Layout
+type LayoutTag = Internal.Utilities.StructuredFormat.LayoutTag
 type TaggedText = Internal.Utilities.StructuredFormat.TaggedText
+
+type NavigableTaggedText(tag, text, range: Range.range) =
+    member val Range = range
+    interface TaggedText with
+        member x.Tag = tag
+        member x.Text = text
+    static member Create(tt: TaggedText, range) =
+        NavigableTaggedText(tt.Tag, tt.Text, range)      
 
 let spaces n = new String(' ',n)
 
@@ -33,8 +42,8 @@ let rec juxtRight = function
   | Attr (_tag,_attrs,l)           -> juxtRight l
 
 // NOTE: emptyL might be better represented as a constructor, so then (Sep"") would have true meaning
-let emptyL = Leaf (true,TaggedText.Text "",true)
-let isEmptyL = function Leaf(true,tag,true) when tag.Value = "" -> true | _ -> false
+let emptyL = Leaf (true,Internal.Utilities.StructuredFormat.TaggedTextOps.tag LayoutTag.Text "",true)
+let isEmptyL = function Leaf(true,tag,true) when tag.Text = "" -> true | _ -> false
       
 let mkNode l r joint =
    if isEmptyL l then r else
@@ -55,11 +64,11 @@ let rightL (str:TaggedText) = Leaf (true ,str,false)
 let leftL  (str:TaggedText) = Leaf (false,str,true)
 
 module TaggedTextOps =
-    let tagActivePatternCase = Internal.Utilities.StructuredFormat.TaggedText.ActivePatternCase
-    let tagActivePatternResult = Internal.Utilities.StructuredFormat.TaggedText.ActivePatternResult
+    let tagActivePatternCase = Internal.Utilities.StructuredFormat.TaggedTextOps.tag LayoutTag.ActivePatternCase
+    let tagActivePatternResult = Internal.Utilities.StructuredFormat.TaggedTextOps.tag LayoutTag.ActivePatternResult
     let tagAlias = Internal.Utilities.StructuredFormat.TaggedTextOps.tagAlias
     let tagClass = Internal.Utilities.StructuredFormat.TaggedTextOps.tagClass
-    let tagUnion = Internal.Utilities.StructuredFormat.TaggedText.Union
+    let tagUnion = Internal.Utilities.StructuredFormat.TaggedTextOps.tag LayoutTag.Union
     let tagUnionCase = Internal.Utilities.StructuredFormat.TaggedTextOps.tagUnionCase
     let tagDelegate = Internal.Utilities.StructuredFormat.TaggedTextOps.tagDelegate
     let tagEnum = Internal.Utilities.StructuredFormat.TaggedTextOps.tagEnum
@@ -72,7 +81,7 @@ module TaggedTextOps =
     let tagRecord = Internal.Utilities.StructuredFormat.TaggedTextOps.tagRecord
     let tagRecordField = Internal.Utilities.StructuredFormat.TaggedTextOps.tagRecordField
     let tagMethod = Internal.Utilities.StructuredFormat.TaggedTextOps.tagMethod
-    let tagMember = Internal.Utilities.StructuredFormat.TaggedText.Member
+    let tagMember = Internal.Utilities.StructuredFormat.TaggedTextOps.tag LayoutTag.Member
     let tagModule = Internal.Utilities.StructuredFormat.TaggedTextOps.tagModule
     let tagModuleBinding = Internal.Utilities.StructuredFormat.TaggedTextOps.tagModuleBinding
     let tagNamespace = Internal.Utilities.StructuredFormat.TaggedTextOps.tagNamespace
@@ -86,8 +95,8 @@ module TaggedTextOps =
     let tagTypeParameter = Internal.Utilities.StructuredFormat.TaggedTextOps.tagTypeParameter
     let tagText = Internal.Utilities.StructuredFormat.TaggedTextOps.tagText
     let tagPunctuation = Internal.Utilities.StructuredFormat.TaggedTextOps.tagPunctuation
-    let tagUnknownEntity = Internal.Utilities.StructuredFormat.TaggedText.UnknownEntity
-    let tagUnknownType = Internal.Utilities.StructuredFormat.TaggedText.UnknownType
+    let tagUnknownEntity = Internal.Utilities.StructuredFormat.TaggedTextOps.tag LayoutTag.UnknownEntity
+    let tagUnknownType = Internal.Utilities.StructuredFormat.TaggedTextOps.tag LayoutTag.UnknownType
 
     module Literals =
         // common tagged literals
@@ -317,8 +326,8 @@ let squashTo maxWidth layout =
                let breaks,layout,pos,offset = fit breaks (pos,l) 
                let layout = Attr (tag,attrs,layout) 
                breaks,layout,pos,offset
-           | Leaf (_jl,text,_jr) ->
-               let textWidth = text.Length 
+           | Leaf (_jl,taggedText,_jr) ->
+               let textWidth = taggedText.Text.Length 
                let rec fitLeaf breaks pos =
                  if pos + textWidth <= maxWidth then
                    breaks,layout,pos + textWidth,textWidth (* great, it fits *)
@@ -382,7 +391,7 @@ let renderL (rr: LayoutRenderer<_,_>) layout =
       | ObjLeaf _ -> failwith "ObjLeaf should never apper here"
         (* pos is tab level *)
       | Leaf (_,text,_)                 -> 
-          k(rr.AddText z text,i + text.Length)
+          k(rr.AddText z text,i + text.Text.Length)
       | Node (_,l,_,r,_,Broken indent) -> 
           addL z pos i l <|
             fun (z,_i) ->
@@ -409,7 +418,7 @@ let renderL (rr: LayoutRenderer<_,_>) layout =
 let stringR =
   { new LayoutRenderer<string,string list> with 
       member x.Start () = []
-      member x.AddText rstrs text = text.Value::rstrs
+      member x.AddText rstrs taggedText = taggedText.Text::rstrs
       member x.AddBreak rstrs n = (spaces n) :: "\n" ::  rstrs 
       member x.AddTag z (_,_,_) = z
       member x.Finish rstrs = String.Join("",Array.ofList (List.rev rstrs)) }
@@ -431,7 +440,7 @@ let taggedTextListR collector =
 let channelR (chan:TextWriter) =
   { new LayoutRenderer<NoResult,NoState> with 
       member r.Start () = NoState
-      member r.AddText z s = chan.Write s.Value; z
+      member r.AddText z s = chan.Write s.Text; z
       member r.AddBreak z n = chan.WriteLine(); chan.Write (spaces n); z
       member r.AddTag z (tag,attrs,start) =  z
       member r.Finish z = NoResult }
@@ -440,7 +449,7 @@ let channelR (chan:TextWriter) =
 let bufferR os =
   { new LayoutRenderer<NoResult,NoState> with 
       member r.Start () = NoState
-      member r.AddText z s = bprintf os "%s" s.Value; z
+      member r.AddText z s = bprintf os "%s" s.Text; z
       member r.AddBreak z n = bprintf os "\n"; bprintf os "%s" (spaces n); z
       member r.AddTag z (tag,attrs,start) = z
       member r.Finish z = NoResult }
