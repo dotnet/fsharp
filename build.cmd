@@ -1,5 +1,5 @@
-REM echo "VS150COMNTOOLS: %VS150COMNTOOLS%"
-REM dir "%VS150COMNTOOLS%\..\..\MSBuild"
-
-REM dir "C:\Program Files (x86)\"
-dir "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise"
+echo "VS150COMNTOOLS: %VS150COMNTOOLS%"
+"C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat"
+echo "VS150COMNTOOLS: %VS150COMNTOOLS%"
+REM dir "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise"
+msbuild /version
