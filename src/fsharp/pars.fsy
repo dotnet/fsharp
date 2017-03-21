@@ -3859,7 +3859,6 @@ braceExpr:
      {  let m = rhs2 parseState 1 2 
         SynExpr.Record(None,None,[],m) }
 
-
 braceExprBody:
   | recdExpr 
      {  (lhs parseState), (fun m -> let a,b,c = $1 in SynExpr.Record(a,b,c,m)) }
