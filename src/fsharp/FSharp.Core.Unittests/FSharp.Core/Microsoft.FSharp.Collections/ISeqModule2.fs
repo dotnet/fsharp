@@ -927,13 +927,13 @@ type ISeqModule2() =
             ISeq.item 0 (iseq (Array.zeroCreate<int> 0)) |> ignore
             failwith "error expected"
         with
-        | exn when exn.Message.Contains("iseq was short by 1 element") -> ()
+        | exn when exn.Message.Contains("seq was short by 1 element") -> ()
 
         try
             ISeq.item 2 (iseq (Array.zeroCreate<int> 0)) |> ignore
             failwith "error expected"
         with
-        | exn when exn.Message.Contains("iseq was short by 3 elements") -> ()
+        | exn when exn.Message.Contains("seq was short by 3 elements") -> ()
 
     [<Test>]
     member this.Of_Array() =
