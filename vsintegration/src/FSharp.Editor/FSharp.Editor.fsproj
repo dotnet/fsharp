@@ -109,6 +109,7 @@
     <Reference Include="mscorlib" />
     <Reference Include="PresentationFramework" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Xaml" />
     <Reference Include="System.Xml" />
     <Reference Include="WindowsBase" />
     <Reference Include="System" />
