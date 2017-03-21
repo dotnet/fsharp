@@ -188,19 +188,27 @@ type internal FSharpCompletionProvider
             
             let results = List<Completion.CompletionItem>()
             
+            let getKindPriority = function
+                | CompletionItemKind.Property -> 0
+                | CompletionItemKind.Field -> 1
+                | CompletionItemKind.Method (isExtension = false) -> 2
+                | CompletionItemKind.Event -> 3
+                | CompletionItemKind.Argument -> 4
+                | CompletionItemKind.Other -> 5
+                | CompletionItemKind.Method (isExtension = true) -> 6
+
             let sortedDeclItems =
                 declarations.Items
-                |> Array.sortBy (fun item ->
-                    let kindPriority =
-                        match item.Kind with
-                        | CompletionItemKind.Property -> 0
-                        | CompletionItemKind.Field -> 1
-                        | CompletionItemKind.Method (isExtension = false) -> 2
-                        | CompletionItemKind.Event -> 3
-                        | CompletionItemKind.Argument -> 4
-                        | CompletionItemKind.Other -> 5
-                        | CompletionItemKind.Method (isExtension = true) -> 6
-                    item.NamespaceToOpen.IsSome, kindPriority, not item.IsOwnMember, item.Name.ToLowerInvariant(), item.MinorPriority)
+                |> Array.sortWith (fun x y ->
+                    let mutable n = x.NamespaceToOpen.IsSome.CompareTo(y.NamespaceToOpen.IsSome)
+                    if n <> 0 then n else
+                        n <- (getKindPriority x.Kind).CompareTo(getKindPriority y.Kind) 
+                        if n <> 0 then n else
+                            n <- (not x.IsOwnMember).CompareTo(not y.IsOwnMember)
+                            if n <> 0 then n else
+                                n <- StringComparer.OrdinalIgnoreCase.Compare(x.Name, y.Name)
+                                if n <> 0 then n else
+                                    x.MinorPriority.CompareTo(y.MinorPriority))
 
             let maxHints = if mruItems.Values.Count = 0 then 0 else Seq.max mruItems.Values
 
@@ -213,7 +221,7 @@ type internal FSharpCompletionProvider
                     | _, Some namespaceToOpen ->
                         sprintf "%s (open %s)" declItem.Name namespaceToOpen
                     | _ -> declItem.Name
-
+                
                 let filterText =
                     match declItem.NamespaceToOpen, declItem.Name.Split '.' with
                     // There is no namespace to open and the item name does not contain dots, so we don't need to pass special FilterText to Roslyn.
@@ -221,7 +229,6 @@ type internal FSharpCompletionProvider
                     // Either we have a namespace to open ("DateTime (open System)") or item name contains dots ("Array.map"), or both.
                     // We are passing last part of long ident as FilterText.
                     | _, idents -> Array.last idents
-
 
                 let completionItem = 
                     CommonCompletionItem.Create(name, glyph = Nullable glyph, rules = getRules(), filterText = filterText)
