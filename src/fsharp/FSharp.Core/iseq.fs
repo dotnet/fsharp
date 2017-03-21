@@ -1847,7 +1847,11 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Cast")>]
         let cast (source: IEnumerable) : ISeq<'T> =
-            mkSeq (fun () -> IEnumerator.cast (source.GetEnumerator())) |> ofSeq
+            match source with
+            | :? ISeq<'T> as s -> s
+            | :? ISeq<obj> as s -> s |> map unbox // covariant on ref types
+            | _ -> 
+                mkSeq (fun () -> IEnumerator.cast (source.GetEnumerator())) |> ofSeq
 
         [<CompiledName("ChunkBySize")>]
         let chunkBySize chunkSize (source : ISeq<'T>) : ISeq<'T[]> =
