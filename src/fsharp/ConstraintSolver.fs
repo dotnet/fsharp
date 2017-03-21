@@ -1247,8 +1247,8 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
 
           let anonRecdPropSearch = 
               let isGetProp = nm.StartsWith "get_" 
-              let propName = nm.[4..]
               if isGetProp && memFlags.IsInstance  then 
+                  let propName = nm.[4..]
                   let props = 
                     tys |> List.choose (fun ty -> 
                         match NameResolution.TryFindAnonRecdFieldOfType g ty propName with
