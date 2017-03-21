@@ -1777,7 +1777,7 @@ namespace Microsoft.FSharp.Collections
                     | _ -> ()
 
             let cached =
-                0 |> unfold (fun i ->
+                unfold (fun i ->
                     // i being the next position to be returned
                     // A lock is needed over the reads to prefix.Count since the list may be being resized
                     // NOTE: we could change to a reader/writer lock here
@@ -1789,7 +1789,7 @@ namespace Microsoft.FSharp.Collections
                             if i < prefix.Count then
                                 Some (prefix.[i], i+1)
                             else
-                                None))
+                                None)) 0
 
             interface System.IDisposable with
                 member __.Dispose() =
