@@ -365,8 +365,7 @@ module internal Structure =
                 // subtract columns so the @@> or @> is not collapsed
                 yield! rcheck Scope.Quote Collapse.Same r <| Range.modBoth (if isRaw then 3 else 2) (if isRaw then 3 else 2) r
                 yield! parseExpr e
-            | SynExpr.Tuple (es,_,r)
-            | SynExpr.StructTuple(es,_,r) ->
+            | SynExpr.Tuple (_,es,_,r) ->
                 yield! rcheck Scope.Tuple Collapse.Same r r
                 yield! Seq.collect parseExpr es
             | SynExpr.Paren (e,_,_,_) ->
