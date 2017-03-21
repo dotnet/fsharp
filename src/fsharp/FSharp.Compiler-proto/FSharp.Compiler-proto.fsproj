@@ -443,6 +443,9 @@
     <Compile Include="..\MSBuildReferenceResolver.fs">
       <Link>MSBuildReferenceResolver.fs</Link>
     </Compile>
+    <None Include="App.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
