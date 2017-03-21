@@ -115,7 +115,7 @@ type TestConfig =
       FSCBinPath : string
       FSCOREDLLPATH : string
       FSI : string
-      FSI_FOR_SCRIPTS : string
+      FSI_FOR_SCRIPTS : string option
       fsi_flags : string
       ILDASM : string
       SN : string
@@ -181,7 +181,11 @@ let config configurationName envVars =
     let ILDASM = requireFile (CORSDK ++ "ildasm.exe")
     let SN = requireFile (CORSDK ++ "sn.exe") 
     let PEVERIFY = requireFile (CORSDK ++ "peverify.exe")
-    let FSI_FOR_SCRIPTS = requireFile (SCRIPT_ROOT ++ ".." ++ ".." ++ (System.Environment.GetEnvironmentVariable("_fsiexe").Trim([| '\"' |])))
+    
+    let FSI_FOR_SCRIPTS = 
+        match System.Environment.GetEnvironmentVariable("_fsiexe") with 
+        | null -> None
+        | fsiexe -> Some (requireFile (SCRIPT_ROOT ++ ".." ++ ".." ++ (fsiexe.Trim([| '\"' |]))))
     let dotNetExe = SCRIPT_ROOT ++ ".." ++ ".." ++ "Tools" ++ "dotnetcli" ++ "dotnet.exe"
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
@@ -445,7 +449,7 @@ let peverify cfg = Commands.peverify (exec cfg) cfg.PEVERIFY "/nologo"
 let sn cfg outfile arg = execAppendOutIgnoreExitCode cfg cfg.Directory outfile cfg.SN arg
 let peverifyWithArgs cfg args = Commands.peverify (exec cfg) cfg.PEVERIFY args
 let fsi cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI)
-let fsi_script cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI_FOR_SCRIPTS)
+let fsi_script cfg = match cfg.FSI_FOR_SCRIPTS with None -> failwith "no _fsiexe environment variable for FSI_FOR_SCRIPTS" | Some fsi -> Printf.ksprintf (Commands.fsi (exec cfg) fsi)
 let fsiExpectFail cfg = Printf.ksprintf (Commands.fsi (execExpectFail cfg) cfg.FSI)
 let fsiAppendIgnoreExitCode cfg stdoutPath stderrPath = Printf.ksprintf (Commands.fsi (execAppendIgnoreExitCode cfg stdoutPath stderrPath) cfg.FSI)
 let fileguard cfg = (Commands.getfullpath cfg.Directory) >> (fun x -> new FileGuard(x))

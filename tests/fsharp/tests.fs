@@ -29,6 +29,8 @@ module CoreTests =
     // These tests are enabled for .NET Framework and .NET Core
     [<Test>]
     let ``access-FSC_BASIC``() = singleTestBuildAndRun "core/access" FSC_BASIC
+
+
 // All tests below here are known to pass for .NET Core but not yet enabled due to CI problems
     [<Test>]
     let ``access-FSI_BASIC``() = singleTestBuildAndRun "core/access" FSI_BASIC
@@ -226,6 +228,36 @@ module CoreTests =
     let csext () = singleTestBuildAndRun "core/csext" FSC_BASIC
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+
+    // These tests are enabled for .NET Framework and .NET Core
+    [<Test>]
+    let ``anon-FSC_BASIC``() = 
+        let cfg = testConfig "core/anon"
+
+        fsc cfg "%s -a -o:lib.dll -g" cfg.fsc_flags ["lib.fs"]
+
+        copyFile (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
+        peverify cfg "lib.dll"
+
+        fsc cfg "%s -r:lib.dll -g" cfg.fsc_flags ["test.fsx"]
+
+        peverify cfg "test.exe"
+
+        begin 
+            use testOkFile = fileguard cfg "test.ok"
+
+            exec cfg ("." ++ "test.exe") ""
+
+            testOkFile.CheckExists()
+        end
+
+        begin 
+            use testOkFile = fileguard cfg "test.ok"
+
+            fsi cfg "-r:lib.dll" ["test.fsx"]
+
+            testOkFile.CheckExists()
+        end
 
     [<Test>]
     let events () = 
