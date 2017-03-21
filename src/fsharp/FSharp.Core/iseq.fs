@@ -1842,18 +1842,15 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("IsEmpty")>]
         let isEmpty (source : ISeq<'T>)  =
-            checkNonNull "source" source
             use ie = source.GetEnumerator()
             not (ie.MoveNext())
 
         [<CompiledName("Cast")>]
         let cast (source: IEnumerable) : ISeq<'T> =
-            checkNonNull "source" source
             mkSeq (fun () -> IEnumerator.cast (source.GetEnumerator())) |> ofSeq
 
         [<CompiledName("ChunkBySize")>]
         let chunkBySize chunkSize (source : ISeq<'T>) : ISeq<'T[]> =
-            checkNonNull "source" source
             if chunkSize <= 0 then invalidArgFmt "chunkSize" "{0}\nchunkSize = {1}"
                                     [|SR.GetString SR.inputMustBePositive; chunkSize|]
 
@@ -1880,7 +1877,6 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("SplitInto")>]
         let splitInto count (source:ISeq<'T>) : ISeq<'T[]> =
-            checkNonNull "source" source
             if count <= 0 then invalidArgFmt "count" "{0}\ncount = {1}"
                                 [|SR.GetString SR.inputMustBePositive; count|]
             mkDelayedSeq (fun () ->
@@ -1890,14 +1886,12 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Find")>]
         let find f source =
-            checkNonNull "source" source
             match tryFind f source with
             | None -> indexNotFound()
             | Some x -> x
 
         [<CompiledName("FindIndex")>]
         let findIndex p (source:ISeq<_>) =
-            checkNonNull "source" source
             use ie = source.GetEnumerator()
             let rec loop i =
                 if ie.MoveNext() then
@@ -1910,17 +1904,14 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("FindBack")>]
         let findBack f source =
-            checkNonNull "source" source
             source |> toArray |> Array.findBack f
 
         [<CompiledName("FindIndexBack")>]
         let findIndexBack f source =
-            checkNonNull "source" source
             source |> toArray |> Array.findIndexBack f
 
         [<CompiledName("Pick")>]
         let pick f source  =
-            checkNonNull "source" source
             match tryPick f source with
             | None -> indexNotFound()
             | Some x -> x
@@ -1928,18 +1919,15 @@ namespace Microsoft.FSharp.Collections
         [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1709:IdentifiersShouldBeCasedCorrectly"); CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1707:IdentifiersShouldNotContainUnderscores"); CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
         [<CompiledName("ReadOnly")>]
         let readonly (source:seq<_>) =
-            checkNonNull "source" source
             mkSeq (fun () -> source.GetEnumerator()) |> ofSeq
 
         [<CompiledName("MapFold")>]
         let mapFold<'T,'State,'Result> (f: 'State -> 'T -> 'Result * 'State) acc source =
-            checkNonNull "source" source
             let arr,state = source |> toArray |> Array.mapFold f acc
             readonly arr, state
 
         [<CompiledName("MapFoldBack")>]
         let mapFoldBack<'T,'State,'Result> (f: 'T -> 'State -> 'Result * 'State) source acc =
-            checkNonNull "source" source
             let array = source |> toArray
             let arr,state = Array.mapFoldBack f array acc
             readonly arr, state
@@ -1955,7 +1943,6 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Item")>]
         let item i (source : ISeq<'T>) =
-            checkNonNull "source" source
             if i < 0 then invalidArgInputMustBeNonNegative "index" i
             use e = source.GetEnumerator()
             nth i e
@@ -1965,29 +1952,22 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("SortDescending")>]
         let inline sortDescending source =
-            checkNonNull "source" source
             let inline compareDescending a b = compare b a
             sortWith compareDescending source
 
         [<CompiledName("SortByDescending")>]
         let inline sortByDescending keyf source =
-            checkNonNull "source" source
             let inline compareDescending a b = compare (keyf b) (keyf a)
             sortWith compareDescending source
 
         [<CompiledName("TryFindBack")>]
         let tryFindBack f (source : ISeq<'T>) =
-            checkNonNull "source" source
             source |> toArray |> Array.tryFindBack f
 
         [<CompiledName("TryFindIndexBack")>]
         let tryFindIndexBack f (source : ISeq<'T>) =
-            checkNonNull "source" source
             source |> toArray |> Array.tryFindIndexBack f
 
         [<CompiledName("Zip3")>]
         let zip3 source1 source2  source3 =
-            checkNonNull "source1" source1
-            checkNonNull "source2" source2
-            checkNonNull "source3" source3
             map2 (fun x (y,z) -> x,y,z) source1 (zip source2 source3)
