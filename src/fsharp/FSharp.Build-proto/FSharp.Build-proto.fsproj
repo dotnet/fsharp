@@ -54,7 +54,11 @@
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' != 'coreclr' ">
-    <PackageReference Include="Microsoft.Build.Runtime" Version="15.1.548" />
+    <Reference Include="Microsoft.Build.Framework"><HintPath>..\..\..\packages\microsoft.build.framework\15.1.548\lib\net46\Microsoft.Build.Framework.dll"</HintPath></Reference>
+    <Reference Include="Microsoft.Build.Engine"><HintPath>..\..\..\packages\microsoft.build.engine\15.1.548\lib\net46\Microsoft.Build.Engine.dll"</HintPath></Reference>
+    <Reference Include="Microsoft.Build"><HintPath>..\..\..\packages\microsoft.build\15.1.548\lib\net46\Microsoft.Build.dll"</HintPath></Reference>
+    <Reference Include="Microsoft.Build.Utilities.Core"><HintPath>..\..\..\packages\microsoft.build.utilities.core\15.1.548\lib\net46\Microsoft.Build.Utilities.Core.dll"</HintPath></Reference>
+    <Reference Include="Microsoft.Build.Tasks.Core"><HintPath>..\..\..\packages\microsoft.build.tasks.core\15.1.548\lib\net46\Microsoft.Tasks.Core.dll"</HintPath></Reference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
 </Project>
