@@ -3975,7 +3975,7 @@ opt_inlineAssemblyReturnTypes:
 recdExpr:
   | INHERIT atomTypeNonAtomicDeprecated opt_HIGH_PRECEDENCE_APP opt_atomicExprAfterType recdExprBindings opt_seps_recd
      { let arg = match $4 with None -> mkSynUnit (lhs parseState) | Some e -> e 
-       let l = $5
+       let l = List.rev $5
        let dummyField = mkRecdField (LongIdentWithDots([], [])) // dummy identifier, it will be discarded
        let l = rebindRanges (dummyField, None) l $6 
        let (_, _, inheritsSep) = List.head l
@@ -3986,7 +3986,7 @@ recdExpr:
      { match $1 with 
        | LongOrSingleIdent(false, (LongIdentWithDots(_,_) as f),None,m) ->  
             let f = mkRecdField f
-            let l = $4
+            let l = List.rev $4
             let l = rebindRanges (f, Some $3) l $5
             (None, None, l)
        | _ -> raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsFieldBinding()) }
@@ -4014,21 +4014,21 @@ recdExpr:
   | UNDERSCORE EQUALS declExprBlock recdExprBindings opt_seps_recd
     { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnderscoreInvalidFieldName())
       let f = mkUnderscoreRecdField (rhs parseState 1)
-      let l = $4
+      let l = List.rev $4
       let l = rebindRanges (f, Some $3) l $5
       (None, None, l) }
 
 /* handles case like {x with}  */
-  | appExpr WITH recdExprBinding recdExprBindings opt_seps_recd
-     {  let l = $4
+  | appExpr WITH recdBinding recdExprBindings opt_seps_recd
+     {  let l = List.rev $4
         let l = rebindRanges $3 l $5
         (None,Some ($1, (rhs parseState 2, None)), l) }
 
   | appExpr OWITH opt_seps_recd OEND
      { (None,Some ($1, (rhs parseState 2, None)), []) }
 
-  | appExpr OWITH recdExprBinding recdExprBindings opt_seps_recd OEND
-     {  let l = $4
+  | appExpr OWITH recdBinding recdExprBindings opt_seps_recd OEND
+     {  let l = List.rev $4
         let l = rebindRanges $3 l $5
         (None,Some ($1, (rhs parseState 2, None)), l) }
 
@@ -4053,16 +4053,12 @@ pathOrUnderscore :
       reportParseErrorAt m (FSComp.SR.parsUnderscoreInvalidFieldName())
       mkUnderscoreRecdField m }
 
-recdExprBindings:
-  | recdExprBindingsRev 
-     { List.rev $1 }
-
-recdExprBindingsRev: 
-  | recdExprBindingsRev seps_recd recdExprBinding
+recdExprBindings: 
+  | recdExprBindings seps_recd recdBinding
      { ($3, Some $2) :: $1 }
   |  { [] }
 
-recdExprBinding:
+recdBinding:
     | pathOrUnderscore EQUALS declExprBlock
       { ($1, Some $3) }
 
@@ -4188,8 +4184,8 @@ braceBarExprCore:
        (fun isStruct -> SynExpr.AnonRecd(false,isStruct,[],m)) }
 
 oneOrMoreRecdExprBindings:
-  | recdExprBinding recdExprBindings
-     { (($1, None) :: $2) |> List.choose (function 
+  | recdBinding recdExprBindings
+     { (($1, None) :: List.rev $2) |> List.choose (function 
          | (((LongIdentWithDots([id],_),_),Some e),_) -> Some (id,e) 
          | (((LongIdentWithDots([id],_),_),None),_) -> Some (id, arbExpr("anonField",id.idRange)) 
          | _ -> reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidAnonRecdType()); None) }  
