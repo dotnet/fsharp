@@ -82,13 +82,6 @@ module internal CommonRoslynHelpers =
 
     let CollectTaggedText (list: List<_>) (t:TaggedText) = list.Add(TaggedText(roslynTag t.Tag, t.Text))
 
-    let CollectNavigableText (list: List<_>) (t: TaggedText) =
-        let rangeOpt = 
-            match t with
-            | :? NavigableTaggedText as n -> Some n.Range
-            | _ -> None
-        list.Add(roslynTag t.Tag, t.Text, rangeOpt)
-
     let StartAsyncAsTask cancellationToken computation =
         let computation =
             async {

@@ -13,9 +13,9 @@ type LayoutTag = Internal.Utilities.StructuredFormat.LayoutTag
 type TaggedText = Internal.Utilities.StructuredFormat.TaggedText
 
 type NavigableTaggedText =
-    new : LayoutTag * string * Range.range -> NavigableTaggedText
+    new : TaggedText * Range.range * string -> NavigableTaggedText
     member Range: Range.range
-    static member Create: TaggedText * Range.range -> NavigableTaggedText
+    member FullName: string
     interface TaggedText
 
 module TaggedTextOps = Internal.Utilities.StructuredFormat.TaggedTextOps

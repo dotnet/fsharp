@@ -26,6 +26,7 @@ open Microsoft.VisualStudio.Language.Intellisense
 
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
+open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.CompileOps
 
 open CommonRoslynHelpers
@@ -48,7 +49,7 @@ module internal FSharpQuickInfo =
                 member __.AugmentQuickInfoSession(session,_,_) = currentSession <- Some session
                 member __.Dispose() = () }
 
-    let fragment(content, typemap: ClassificationTypeMap, thisDoc: Document) =
+    let fragment(content: Layout.TaggedText seq, typemap: ClassificationTypeMap, thisDoc: Document) =
 
         let workspace = thisDoc.Project.Solution.Workspace
         let documentNavigationService = workspace.Services.GetService<IDocumentNavigationService>()
@@ -75,30 +76,36 @@ module internal FSharpQuickInfo =
                 let! id = documentId range
                 let! src = solution.GetDocument(id).GetTextAsync()
                 let! span = CommonRoslynHelpers.TryFSharpRangeToTextSpan(src, range)
-                if documentNavigationService.TryNavigateToSpan(workspace, id, span) then
+                let options = workspace.Options.WithChangedOption(NavigationOptions.PreferProvisionalTab, true)
+                if documentNavigationService.TryNavigateToSpan(workspace, id, span, options) then
                    let! session = currentSession
                    session.Dismiss()   
             } |> Async.Ignore |> Async.StartImmediate 
 
         let formatMap = typemap.ClassificationFormatMapService.GetClassificationFormatMap("tooltip")
 
-        let props = 
-            ClassificationTags.GetClassificationTypeName
+        let props =
+            roslynTag
+            >> ClassificationTags.GetClassificationTypeName
             >> typemap.GetClassificationType
             >> formatMap.GetTextProperties
 
         let inlines = seq { 
-            for (tag, text, rangeOpt) in content do
-                let run =
-                    match rangeOpt with
-                    | Some(range) when canGoTo range ->
-                        let h = Documents.Hyperlink(Documents.Run(text), ToolTip = range.FileName)
-                        h.Click.Add <| fun _ -> goTo range          
+            for taggedText in content do
+                let run = Documents.Run taggedText.Text
+                let inl =
+                    match taggedText with
+                    | :? Layout.NavigableTaggedText as nav when canGoTo nav.Range ->
+                        let h = Documents.Hyperlink run
+                        h.ToolTip <- nav.FullName + "\n" + nav.Range.FileName
+                        h.Click.Add <| fun _ -> goTo nav.Range
                         h :> Documents.Inline
-                    | _ -> 
-                        Documents.Run(text) :> Documents.Inline
-                DependencyObjectExtensions.SetTextProperties(run, props tag)
-                yield run
+                    | :? Layout.NavigableTaggedText as nav ->
+                        run.ToolTip <- nav.FullName
+                        run :> Documents.Inline
+                    | _ -> run :> Documents.Inline
+                DependencyObjectExtensions.SetTextProperties(inl, props taggedText.Tag)
+                yield inl
         }
 
         let create() =
@@ -174,8 +181,8 @@ type internal FSharpQuickInfoProvider
                 let documentation = Collections.Generic.List()
                 XmlDocumentation.BuildDataTipText(
                     documentationBuilder, 
-                    CommonRoslynHelpers.CollectNavigableText mainDescription, 
-                    CommonRoslynHelpers.CollectNavigableText documentation, 
+                    mainDescription.Add, 
+                    documentation.Add, 
                     toolTipElement)
                 let content = 
                     FSharpQuickInfo.tooltip

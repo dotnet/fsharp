@@ -2506,11 +2506,15 @@ let tagEntityRefName (xref: EntityRef) name =
     elif xref.IsRecordTycon then tagRecord name
     else tagClass name
 
+let fullDisplayTextOfTyconRef  r = fullNameOfEntityRef (fun (tc:TyconRef) -> tc.DisplayNameWithStaticParametersAndUnderscoreTypars) r
+
 let fullNameOfEntityRefAsLayout nmF (xref: EntityRef) =
-    let n = NavigableTaggedText.Create(tagEntityRefName xref (nmF xref), xref.DefinitionRange) |> wordL
+    let navigableText = 
+        NavigableTaggedText(tagEntityRefName xref (nmF xref), xref.DefinitionRange, fullDisplayTextOfTyconRef xref) 
+        |> wordL
     match fullNameOfParentOfEntityRefAsLayout xref  with 
-    | None -> n
-    | Some pathText -> pathText ^^ SepL.dot ^^ n
+    | None -> navigableText
+    | Some pathText -> pathText ^^ SepL.dot ^^ navigableText
 
 let fullNameOfParentOfValRef vref = 
     match vref with 
@@ -2534,7 +2538,6 @@ let fullNameOfParentOfValRefAsLayout vref =
 let fullDisplayTextOfParentOfModRef r = fullNameOfParentOfEntityRef r 
 
 let fullDisplayTextOfModRef r = fullNameOfEntityRef (fun (x:EntityRef) -> x.DemangledModuleOrNamespaceName)  r
-let fullDisplayTextOfTyconRef  r = fullNameOfEntityRef (fun (tc:TyconRef) -> tc.DisplayNameWithStaticParametersAndUnderscoreTypars) r
 let fullDisplayTextOfTyconRefAsLayout  r = fullNameOfEntityRefAsLayout (fun (tc:TyconRef) -> tc.DisplayNameWithStaticParametersAndUnderscoreTypars) r
 let fullDisplayTextOfExnRef  r = fullNameOfEntityRef (fun (tc:TyconRef) -> tc.DisplayNameWithStaticParametersAndUnderscoreTypars) r
 let fullDisplayTextOfExnRefAsLayout  r = fullNameOfEntityRefAsLayout (fun (tc:TyconRef) -> tc.DisplayNameWithStaticParametersAndUnderscoreTypars) r

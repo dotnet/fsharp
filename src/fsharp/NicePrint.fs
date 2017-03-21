@@ -83,7 +83,11 @@ module internal PrintUtilities =
             if isAttribute then 
                 defaultArg (String.tryDropSuffix name "Attribute") name 
             else name
-        let tyconTextL = NavigableTaggedText.Create(tagEntityRefName tcref demangled, tcref.DefinitionRange) |> wordL
+        let tyconTextL =
+            let taggedText = tagEntityRefName tcref demangled
+            let fullName = fullDisplayTextOfTyconRef tcref
+            NavigableTaggedText(taggedText, tcref.DefinitionRange, fullName) 
+            |> wordL
         if denv.shortTypeNames then 
             tyconTextL
         else
