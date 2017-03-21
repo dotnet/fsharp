@@ -753,17 +753,15 @@ and solveTypMeetsTyparConstraints (csenv:ConstraintSolverEnv) ndeep m2 trace ty 
     )))
 
         
-and SolveAnonInfoEqualsAnonInfo (csenv:ConstraintSolverEnv) m2 anonInfo1 anonInfo2 = 
-    let (AnonRecdTypeInfo(ccuOpt1,tupInfo1,nms1)) = anonInfo1
-    let (AnonRecdTypeInfo(ccuOpt2,tupInfo2,nms2)) = anonInfo2
-    if evalTupInfoIsStruct tupInfo1 <> evalTupInfoIsStruct tupInfo2 then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m,m2)) else
-    (match ccuOpt1,ccuOpt2 with 
+and SolveAnonInfoEqualsAnonInfo (csenv:ConstraintSolverEnv) m2 (anonInfo1: AnonRecdTypeInfo) (anonInfo2: AnonRecdTypeInfo) = 
+    if evalTupInfoIsStruct anonInfo1.TupInfo <> evalTupInfoIsStruct anonInfo2.TupInfo then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m,m2)) else
+    (match anonInfo1.Assembly, anonInfo2.Assembly with 
         | Some ccu1, Some ccu2 -> if not (ccuEq ccu1 ccu2) then ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecdCcuMismatch(ccu1.AssemblyName, ccu2.AssemblyName), csenv.m,m2)) else ResultD ()
         | None, None -> ResultD ()
         | Some ccu, None 
         | None, Some ccu -> ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecdCcuMismatch2(ccu.AssemblyName), csenv.m,m2)) 
         ) ++ (fun () -> 
-    if not (nms1 = nms2) then ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecdFieldNameMismatch(sprintf "%A" nms1, sprintf "%A" nms2), csenv.m,m2)) else 
+    if not (anonInfo1.Names = anonInfo2.Names) then ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecdFieldNameMismatch(sprintf "%A" (Array.toList anonInfo1.Names), sprintf "%A" (Array.toList anonInfo2.Names)), csenv.m,m2)) else 
     ResultD ())
 
 /// Add the constraint "ty1 = ty2" to the constraint problem. 

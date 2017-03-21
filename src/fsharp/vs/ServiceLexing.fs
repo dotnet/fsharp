@@ -230,16 +230,16 @@ module internal TokenClassifications =
         | RPAREN | RPAREN_COMING_SOON | RPAREN_IS_HERE
           -> (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.ParamEnd ||| FSharpTokenTriggerClass.MatchBraces)
               
-        | LBRACK_LESS  | LBRACE_LESS
+        | LBRACK_LESS
           -> (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.None )
           
-        | LQUOTE _  | LBRACK  | LBRACE | LBRACK_BAR | LBRACE_LESS | LBRACE_BAR 
+        | LQUOTE _  | LBRACK  | LBRACE | LBRACK_BAR | LBRACE_BAR 
           -> (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.MatchBraces )
           
-        | GREATER_RBRACE   | GREATER_RBRACK  | GREATER_BAR_RBRACK
+        | GREATER_RBRACK  | GREATER_BAR_RBRACK
           -> (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.None )
 
-        | RQUOTE _  | RBRACK  | RBRACE | RBRACE_COMING_SOON | RBRACE_IS_HERE | BAR_RBRACK  | GREATER_RBRACE | BAR_RBRACE
+        | RQUOTE _  | RBRACK  | RBRACE | RBRACE_COMING_SOON | RBRACE_IS_HERE | BAR_RBRACK | BAR_RBRACE
           -> (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.MatchBraces )
               
         | PUBLIC | PRIVATE | INTERNAL | BASE | GLOBAL

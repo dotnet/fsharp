@@ -3529,11 +3529,10 @@ and
              | TupInfo.Const true -> "struct ")
              + String.concat "," (List.map string tinst) 
         | TType_anon (anonInfo, tinst) -> 
-            let (AnonRecdTypeInfo(_, tupInfo, nms)) = anonInfo
-            (match tupInfo with 
+            (match anonInfo.TupInfo with 
              | TupInfo.Const false -> ""
              | TupInfo.Const true -> "struct ")
-             + "{|" + String.concat "," (Seq.map2 (fun nm ty -> nm + " " + string ty + ";") nms tinst) + ")" + "|}"
+             + "{|" + String.concat "," (Seq.map2 (fun nm ty -> nm + " " + string ty + ";") anonInfo.Names tinst) + ")" + "|}"
         | TType_fun (d,r) -> "(" + string d + " -> " + string r + ")"
         | TType_ucase (uc,tinst) -> "union case type " + uc.CaseName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
         | TType_var tp -> tp.DisplayName
@@ -3547,8 +3546,7 @@ and
         | TType_app (tcref, _tinst)      -> tcref.CompilationPath.ILScopeRef.AssemblyRef.QualifiedName
         | TType_tuple (_tupInfo, _tinst) -> ""
         | TType_anon (anonInfo, _tinst) -> 
-            let (AnonRecdTypeInfo(ccuOpt, _, _)) = anonInfo
-            match ccuOpt with 
+            match anonInfo.Assembly with 
             | Some ccu -> ccu.QualifiedName |> Option.defaultValue ""
             | None -> ""
         | TType_fun (_d,_r)              -> ""
@@ -3560,13 +3558,52 @@ and
 
 and TypeInst = TType list 
 and TTypes = TType list 
-and AnonRecdTypeInfo = 
-    | AnonRecdTypeInfo of CcuThunk option * TupInfo * string[] 
-    member x.Assembly = (let (AnonRecdTypeInfo(a,_,_)) = x in a)
-    member x.TupInfo = (let (AnonRecdTypeInfo(_,b,_)) = x in b)
-    member x.IsErased = x.Assembly.IsNone
-    member x.Names = (let (AnonRecdTypeInfo(_,_,c)) = x in c)
+and [<RequireQualifiedAccess>] AnonRecdTypeInfo = 
+    // Mutability for pickling/unpickling only
+    { mutable Assembly: CcuThunk option
+      mutable TupInfo: TupInfo
+      mutable Names:  string[]
+      mutable Stamp: Stamp }
 
+    /// Indicates if this is a "Kind A" erased anonymous type or a "Kind B" generated anonymous type
+    member x.IsErased = x.Assembly.IsNone
+
+    /// Create an AnonRecdTypeInfo from the basic data
+    static member Create(ccuOpt: CcuThunk option, tupInfo, names) = 
+        // Hash all the data to form a unique stamp
+        let stamp  = 
+            sha1HashInt64 
+                [| match ccuOpt with 
+                   | None -> () 
+                   | Some ccu -> for c in ccu.AssemblyName do yield byte c; yield byte (int32 c >>> 8); 
+                   match tupInfo with 
+                   | TupInfo.Const b -> yield  (if b then 0uy else 1uy)
+                   for nm in names do 
+                       for c in nm do yield byte c; yield byte (int32 c >>> 8) |]
+        { Assembly = ccuOpt; TupInfo = tupInfo; Names = names; Stamp = stamp }
+
+    /// Get the ILTypeRef for the generated type implied by the "Kind B" anonymous type
+    member x.ILTypeRef = 
+        assert x.Assembly.IsSome
+        let ilTypeName   = sprintf "<>f__AnonymousType%s%u`%d'" (match x.TupInfo with TupInfo.Const b -> if b then "1000" else "") (uint32 x.Stamp) x.Names.Length
+        mkILTyRef(x.Assembly.Value.ILScopeRef,ilTypeName)
+
+
+    (* OSGN support *)
+    static member NewUnlinked() : AnonRecdTypeInfo = 
+        { Assembly = Unchecked.defaultof<_>
+          TupInfo = Unchecked.defaultof<_>
+          Names = Unchecked.defaultof<_>
+          Stamp = Unchecked.defaultof<_> }
+
+    member x.Link d = 
+        x.Assembly <- d.Assembly
+        x.TupInfo <- d.TupInfo
+        x.Names <- d.Names
+        x.Stamp <- d.Stamp
+
+    member x.IsLinked = (match x.Names with null -> true | _ -> false)
+    
 and [<RequireQualifiedAccess>] TupInfo = 
     /// Some constant, e.g. true or false for tupInfo
     | Const of bool
@@ -5113,10 +5150,4 @@ let FSharpOptimizationDataResourceName = "FSharpOptimizationData"
 let FSharpSignatureDataResourceName = "FSharpSignatureData"
 
 
-let GenILTypeRefForAnonRecdType anonInfo = 
-    let (AnonRecdTypeInfo(ccuOpt, tupInfo, nms)) = anonInfo
-    assert ccuOpt.IsSome
-    let h3, h4  = sha1HashInts [| for nm in nms do for c in nm do yield byte c; yield byte (int32 c >>> 8) |]
-    let ilTypeName   = sprintf "<>f__AnonymousType%s%u`%d'" (match tupInfo with TupInfo.Const b -> if b then "1000" else "") (uint32 h3 + uint32 h4) nms.Length
-    mkILTyRef(ccuOpt.Value.ILScopeRef,ilTypeName)
 

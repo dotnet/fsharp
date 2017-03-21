@@ -428,10 +428,9 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
 
         | TOp.AnonRecd anonInfo, _, _  ->  
             if anonInfo.IsErased then 
-                let (AnonRecdTypeInfo(_ccu,tupInfo,_nms)) = anonInfo
-                ConvExprCore cenv env (Expr.Op(TOp.Tuple tupInfo,tyargs,args,m)) 
+                ConvExprCore cenv env (Expr.Op(TOp.Tuple anonInfo.TupInfo,tyargs,args,m)) 
             else
-                let tref = GenILTypeRefForAnonRecdType anonInfo
+                let tref = anonInfo.ILTypeRef
                 let rgtypR = ConvILTypeRef cenv tref
                 let tyargsR = ConvTypes cenv env m tyargs
                 let argsR = ConvExprs cenv env args
@@ -439,10 +438,9 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
 
         | TOp.AnonRecdGet (anonInfo, n), _, _  ->  
             if anonInfo.IsErased then 
-                let (AnonRecdTypeInfo(_ccu,tupInfo,_nms)) = anonInfo
-                ConvExprCore cenv env (Expr.Op(TOp.TupleFieldGet (tupInfo, n),tyargs,args,m)) 
+                ConvExprCore cenv env (Expr.Op(TOp.TupleFieldGet (anonInfo.TupInfo, n),tyargs,args,m)) 
             else 
-                let tref = GenILTypeRefForAnonRecdType anonInfo
+                let tref = anonInfo.ILTypeRef
                 let rgtypR = ConvILTypeRef cenv tref
                 let tyargsR = ConvTypes cenv env m tyargs
                 let argsR = ConvExprs cenv env args
@@ -822,10 +820,9 @@ and ConvType cenv env m typ =
     | TType_tuple(tupInfo,l)  -> ConvType cenv env m (mkCompiledTupleTy cenv.g (evalTupInfoIsStruct tupInfo) l)
     | TType_anon(anonInfo,tinst) -> 
         if anonInfo.IsErased then 
-            let (AnonRecdTypeInfo(_ccu,tupInfo,_nms)) = anonInfo
-            ConvType cenv env m (TType_tuple (tupInfo, tinst))
+            ConvType cenv env m (TType_tuple (anonInfo.TupInfo, tinst))
         else
-            let tref = GenILTypeRefForAnonRecdType anonInfo
+            let tref = anonInfo.ILTypeRef
             let tinstR = ConvTypes cenv env m tinst
             QP.mkILNamedTy(ConvILTypeRefUnadjusted cenv m tref, tinstR)
     | TType_var(tp)           -> QP.mkVarTy(ConvTyparRef cenv env m tp)

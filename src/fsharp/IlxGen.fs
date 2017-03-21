@@ -426,7 +426,7 @@ and GenTypeAux amap m (tyenv: TypeReprEnv) voidOK ptrsOK ty =
         if anonInfo.IsErased then 
             GenTypeAux amap m tyenv voidOK ptrsOK (TType_tuple (anonInfo.TupInfo, tinst))
         else 
-            let tref = GenILTypeRefForAnonRecdType anonInfo
+            let tref = anonInfo.ILTypeRef
             let boxity = if evalAnonInfoIsStruct anonInfo then ILBoxity.AsValue else ILBoxity.AsObject
             GenILTyAppAux amap m tyenv (tref, boxity, None) tinst 
 
@@ -1270,12 +1270,9 @@ type AssemblyBuilder(cenv:cenv) as mgbuf =
         let cloc = CompLocForPrivateImplementationDetails cloc
         vtgenerator.Apply((cloc,size))
 
-    member mgbuf.GenerateAnonType(anonInfo) = 
-        let (AnonRecdTypeInfo(ccuOpt, _tupInfo, nms)) = anonInfo
-        assert ccuOpt.IsSome
+    member mgbuf.GenerateAnonType(anonInfo:AnonRecdTypeInfo) = 
         let isStruct = evalAnonInfoIsStruct anonInfo
-        let tref = GenILTypeRefForAnonRecdType anonInfo
-        atgenerator.Apply((isStruct,tref,nms))
+        atgenerator.Apply((isStruct,anonInfo.ILTypeRef,anonInfo.Names))
 
     member mgbuf.AddTypeDef(tref:ILTypeRef, tdef, eliminateIfEmpty, addAtEnd, tdefDiscards) = 
         gtdefs.FindNestedTypeDefsBuilder(tref.Enclosing).AddTypeDef(tdef, eliminateIfEmpty, addAtEnd, tdefDiscards)
@@ -7162,3 +7159,4 @@ type IlxAssemblyGenerator(amap: ImportMap, tcGlobals: TcGlobals, tcVal : Constra
 
     /// Create the CAS permission sets for an assembly fragment
     member __.CreatePermissionSets attribs = CreatePermissionSets tcGlobals amap ilxGenEnv attribs
+

@@ -1860,8 +1860,8 @@ and OptimizeExprOpFallback cenv env (op,tyargs,args',m) arginfos valu =
           let isStruct = evalTupInfoIsStruct tupInfo 
           if isStruct then 0,valu 
           else 1,MakeValueInfoForTuple (Array.ofList argValues)
-      | TOp.AnonRecd (AnonRecdTypeInfo(_, tupInfo,_))        -> 
-          let isStruct = evalTupInfoIsStruct tupInfo 
+      | TOp.AnonRecd anonInfo        -> 
+          let isStruct = evalAnonInfoIsStruct anonInfo 
           if isStruct then 0,valu 
           else 1,valu
       | TOp.AnonRecdGet _ 

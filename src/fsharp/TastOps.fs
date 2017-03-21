@@ -166,11 +166,11 @@ let rec remapTypeAux (tyenv : Remap) (ty:TType) =
       | Some tcr' ->  TType_ucase (UCRef(tcr',n),remapTypesAux tyenv tinst)
       | None -> TType_ucase (UCRef(tcr,n),remapTypesAux tyenv tinst)
 
-  | TType_anon (AnonRecdTypeInfo(ccuOpt, tupInfo, nms), l)  as ty -> 
-      let tupInfo' = remapTupInfoAux tyenv tupInfo
+  | TType_anon (anonInfo, l)  as ty -> 
+      let tupInfo' = remapTupInfoAux tyenv anonInfo.TupInfo
       let l' = remapTypesAux tyenv l
-      if tupInfo === tupInfo' && l === l' then ty else  
-      TType_anon (AnonRecdTypeInfo(ccuOpt, tupInfo', nms), l')
+      if anonInfo.TupInfo === tupInfo' && l === l' then ty else  
+      TType_anon (AnonRecdTypeInfo.Create(anonInfo.Assembly, tupInfo', anonInfo.Names), l')
 
   | TType_tuple (tupInfo, l)  as ty -> 
       let tupInfo' = remapTupInfoAux tyenv tupInfo
@@ -660,9 +660,8 @@ let evalTupInfoIsStruct aexpr =
     match aexpr with 
     | TupInfo.Const b -> b
 
-let evalAnonInfoIsStruct anonInfo = 
-    let (AnonRecdTypeInfo(_ccu,tupInfo,_nms)) = anonInfo
-    evalTupInfoIsStruct tupInfo
+let evalAnonInfoIsStruct (anonInfo: AnonRecdTypeInfo) = 
+    evalTupInfoIsStruct anonInfo.TupInfo
 
 /// This erases outermost occurences of inference equations, type abbreviations, non-generated provided types
 /// and measureable types (float<_>).
@@ -716,7 +715,7 @@ let isAnyTupleTy      g ty = ty |> stripTyEqns g |> (function TType_tuple _ -> t
 let isRefTupleTy      g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo,_) -> not (evalTupInfoIsStruct tupInfo) | _ -> false)
 let isStructTupleTy      g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo,_) -> evalTupInfoIsStruct tupInfo | _ -> false)
 let isAnonRecdTy      g ty = ty |> stripTyEqns g |> (function TType_anon _ -> true | _ -> false)
-let isStructAnonRecdTy      g ty = ty |> stripTyEqns g |> (function TType_anon (AnonRecdTypeInfo(_,tupInfo,_), _) -> evalTupInfoIsStruct tupInfo | _ -> false)
+let isStructAnonRecdTy      g ty = ty |> stripTyEqns g |> (function TType_anon (anonInfo, _) -> evalAnonInfoIsStruct anonInfo | _ -> false)
 let isUnionTy      g ty = ty |> stripTyEqns g |> (function TType_app(tcr,_) -> tcr.IsUnionTycon | _ -> false)
 let isReprHiddenTy   g ty = ty |> stripTyEqns g |> (function TType_app(tcr,_) -> tcr.IsHiddenReprTycon | _ -> false)
 let isFSharpObjModelTy g ty = ty |> stripTyEqns g |> (function TType_app(tcr,_) -> tcr.IsFSharpObjectModelTycon | _ -> false)
@@ -885,10 +884,10 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
         typesAEquivAux erasureFlag g aenv b1 b2
     | TType_tuple (s1,l1),TType_tuple (s2,l2) -> 
         structnessAEquiv s1 s2 && typesAEquivAux erasureFlag g aenv l1 l2
-    | TType_anon (AnonRecdTypeInfo(ccuOpt1,s1,nms1),l1),TType_anon (AnonRecdTypeInfo(ccuOpt2,s2,nms2),l2) -> 
-        (match ccuOpt1, ccuOpt2 with None, None -> true | Some ccu1, Some ccu2 -> ccuEq ccu1 ccu2 | _ -> false) && 
-        structnessAEquiv s1 s2 && 
-        nms1 = nms2 && 
+    | TType_anon (anonInfo1,l1),TType_anon (anonInfo2,l2) -> 
+        (match anonInfo1.Assembly, anonInfo2.Assembly with None, None -> true | Some ccu1, Some ccu2 -> ccuEq ccu1 ccu2 | _ -> false) && 
+        structnessAEquiv anonInfo1.TupInfo anonInfo2.TupInfo && 
+        anonInfo1.Names = anonInfo2.Names && 
         typesAEquivAux erasureFlag g aenv l1 l2
     | TType_fun (dtys1,rty1),TType_fun (dtys2,rty2) -> 
         typeAEquivAux erasureFlag g aenv dtys1 dtys2 && typeAEquivAux erasureFlag g aenv rty1 rty2
@@ -1926,7 +1925,7 @@ and accFreeTyparRef opts (tp:Typar) acc =
 and accFreeInType opts ty acc  = 
     match stripTyparEqns ty with 
     | TType_tuple (tupInfo,l) -> accFreeInTypes opts l (accFreeInTupInfo opts tupInfo acc)
-    | TType_anon (AnonRecdTypeInfo(_ccu,tupInfo,_nms),l) -> accFreeInTypes opts l (accFreeInTupInfo opts tupInfo acc)
+    | TType_anon (anonInfo,l) -> accFreeInTypes opts l (accFreeInTupInfo opts anonInfo.TupInfo acc)
     | TType_app (tc,tinst) -> 
         let acc = accFreeTycon opts tc acc
         match tinst with 
@@ -2010,7 +2009,9 @@ and accFreeTyparRefLeftToRight g cxFlag thruFlag acc (tp:Typar) =
 and accFreeInTypeLeftToRight g cxFlag thruFlag acc ty  = 
     if verbose then dprintf "--> accFreeInTypeLeftToRight \n"
     match (if thruFlag then stripTyEqns g ty else stripTyparEqns ty) with 
-    | TType_anon (AnonRecdTypeInfo(_, tupInfo, _), l)  
+    | TType_anon (anonInfo, l)  ->
+        let acc = accFreeInTupInfoLeftToRight g cxFlag thruFlag acc anonInfo.TupInfo 
+        accFreeInTypesLeftToRight g cxFlag thruFlag acc l 
     | TType_tuple (tupInfo, l) -> 
         let acc = accFreeInTupInfoLeftToRight g cxFlag thruFlag acc tupInfo 
         accFreeInTypesLeftToRight g cxFlag thruFlag acc l 
@@ -3001,7 +3002,7 @@ module DebugPrint = begin
            let prefix = tcref.IsPrefixDisplay
            let tcL = layoutTyconRef tcref
            auxTyparsL env tcL prefix tinst
-        | TType_anon (AnonRecdTypeInfo(_,_,nms),typs) -> braceBarL (sepListL (wordL (tagText ";")) (List.map2 (fun nm ty -> wordL (tagField nm) --- auxTypeAtomL env ty) (Array.toList nms) typs))
+        | TType_anon (anonInfo,typs) -> braceBarL (sepListL (wordL (tagText ";")) (List.map2 (fun nm ty -> wordL (tagField nm) --- auxTypeAtomL env ty) (Array.toList anonInfo.Names) typs))
         | TType_tuple (_tupInfo,typs) -> sepListL (wordL (tagText "*")) (List.map (auxTypeAtomL env) typs) |> wrap
         | TType_fun (f,x)           -> ((auxTypeAtomL env f ^^ wordL (tagText "->")) --- auxTypeL env x) |> wrap
         | TType_var typar           -> auxTyparWrapL env isAtomic typar 
@@ -4267,9 +4268,9 @@ and accFreeInOp opts op acc =
     | TOp.Goto _ | TOp.Label _ | TOp.Return 
     | TOp.TupleFieldGet _ -> acc
 
-    | TOp.Tuple tupInfo 
-    | TOp.AnonRecd (AnonRecdTypeInfo(_,tupInfo, _)) 
-    | TOp.AnonRecdGet (AnonRecdTypeInfo(_,tupInfo, _), _) -> accFreeTyvars opts accFreeInTupInfo tupInfo acc
+    | TOp.Tuple tupInfo  -> accFreeTyvars opts accFreeInTupInfo tupInfo acc
+    | TOp.AnonRecd anonInfo 
+    | TOp.AnonRecdGet (anonInfo, _) -> accFreeTyvars opts accFreeInTupInfo anonInfo.TupInfo acc
     
     | TOp.UnionCaseTagGet tr -> accUsedRecdOrUnionTyconRepr opts tr.Deref acc
     
@@ -5657,9 +5658,8 @@ let mkTupleFieldGet g (tupInfo,e,tinst,i,m) =
     let wrap,e' = mkExprAddrOfExpr g (evalTupInfoIsStruct tupInfo) false NeverMutates e None m
     wrap (mkTupleFieldGetViaExprAddr(tupInfo,e',tinst,i,m))
 
-let mkAnonRecdFieldGet g (anonInfo,e,tinst,i,m) = 
-    let (AnonRecdTypeInfo(_ccu, tupInfo, _nms)) = anonInfo 
-    let wrap,e' = mkExprAddrOfExpr g (evalTupInfoIsStruct tupInfo) false NeverMutates e None m
+let mkAnonRecdFieldGet g (anonInfo:AnonRecdTypeInfo,e,tinst,i,m) = 
+    let wrap,e' = mkExprAddrOfExpr g (evalAnonInfoIsStruct anonInfo) false NeverMutates e None m
     wrap (mkAnonRecdFieldGetViaExprAddr(anonInfo,e',tinst,i,m))
 
 let mkRecdFieldGet g (e,fref:RecdFieldRef,tinst,m) = 
@@ -7022,11 +7022,9 @@ let rec typeEnc g (gtpsType,gtpsMethod) ty =
     | TType_anon (anonInfo, tinst) -> 
         if anonInfo.IsErased then 
             // DEMONSTRATOR: for now we're using tuples
-            let (AnonRecdTypeInfo(_ccu,tupInfo,_nms)) = anonInfo
-            typeEnc g (gtpsType,gtpsMethod) (TType_tuple (tupInfo, tinst))        
+            typeEnc g (gtpsType,gtpsMethod) (TType_tuple (anonInfo.TupInfo, tinst))        
         else
-            let tref = GenILTypeRefForAnonRecdType anonInfo
-            sprintf "%s%s" tref.FullName (tyargsEnc g (gtpsType,gtpsMethod) tinst)
+            sprintf "%s%s" anonInfo.ILTypeRef.FullName (tyargsEnc g (gtpsType,gtpsMethod) tinst)
 
     | TType_tuple (tupInfo, typs) -> 
         if evalTupInfoIsStruct tupInfo then 

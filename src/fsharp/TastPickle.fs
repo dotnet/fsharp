@@ -115,8 +115,9 @@ type WriterState =
   { os: ByteBuffer; 
     oscope: CcuThunk;
     occus: Table<CcuReference>; 
-    otycons: NodeOutTable<EntityData,Entity>; 
+    oentities: NodeOutTable<EntityData,Entity>; 
     otypars: NodeOutTable<TyparData,Typar>; 
+    oanoninfos: NodeOutTable<AnonRecdTypeInfo,AnonRecdTypeInfo>; 
     ovals: NodeOutTable<ValData,Val>;
     ostrings: Table<string>; 
     opubpaths: Table<int[]>; 
@@ -146,8 +147,9 @@ type ReaderState =
   { is: ByteStream; 
     iilscope: ILScopeRef;
     iccus: InputTable<CcuThunk>; 
-    itycons: NodeInTable<EntityData,Tycon>;  
+    ientities: NodeInTable<EntityData,Tycon>;  
     itypars: NodeInTable<TyparData,Typar>; 
+    ianoninfos: NodeInTable<AnonRecdTypeInfo,AnonRecdTypeInfo>; 
     ivals: NodeInTable<ValData,Val>;
     istrings: InputTable<string>;
     ipubpaths: InputTable<PublicPath>; 
@@ -303,10 +305,13 @@ let u_space n st =
 
 
 let inline  u_tup2 p1 p2 (st:ReaderState) = let a = p1 st in let b = p2 st in (a,b)
+
 let inline  u_tup3 p1 p2 p3 (st:ReaderState) =
   let a = p1 st in let b = p2 st in let c = p3 st in (a,b,c)
+
 let inline u_tup4 p1 p2 p3 p4 (st:ReaderState) =
   let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in (a,b,c,d)
+
 let inline u_tup5 p1 p2 p3 p4 p5 (st:ReaderState) =
   let a = p1 st 
   let b = p2 st 
@@ -314,32 +319,41 @@ let inline u_tup5 p1 p2 p3 p4 p5 (st:ReaderState) =
   let d = p4 st 
   let e = p5 st 
   (a,b,c,d,e)
+
 let inline u_tup6 p1 p2 p3 p4 p5 p6 (st:ReaderState) =
   let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in let e = p5 st in let f = p6 st in (a,b,c,d,e,f)
+
 let inline u_tup7 p1 p2 p3 p4 p5 p6 p7 (st:ReaderState) =
   let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in let e = p5 st in let f = p6 st in let x7 = p7 st in (a,b,c,d,e,f,x7)
+
 let inline u_tup8 p1 p2 p3 p4 p5 p6 p7 p8 (st:ReaderState) =
   let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in  (a,b,c,d,e,f,x7,x8)
+
 let inline u_tup9 p1 p2 p3 p4 p5 p6 p7 p8 p9 (st:ReaderState) =
   let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in let x9 = p9 st in (a,b,c,d,e,f,x7,x8,x9)
+
 let inline u_tup10 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 (st:ReaderState) =
   let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in
   let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in
   let x9 = p9 st in let x10 = p10 st in (a,b,c,d,e,f,x7,x8,x9,x10)
+
 let inline u_tup11 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 (st:ReaderState) =
   let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in
   let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in
   let x9 = p9 st in let x10 = p10 st in let x11 = p11 st in (a,b,c,d,e,f,x7,x8,x9,x10,x11)
+
 let inline u_tup12 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 (st:ReaderState) =
   let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in
   let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in
   let x9 = p9 st in let x10 = p10 st in let x11 = p11 st in let x12 = p12 st in
   (a,b,c,d,e,f,x7,x8,x9,x10,x11,x12)
+
 let inline u_tup13 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 (st:ReaderState) =
   let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in
   let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in
   let x9 = p9 st in let x10 = p10 st in let x11 = p11 st in let x12 = p12 st in let x13 = p13 st in
   (a,b,c,d,e,f,x7,x8,x9,x10,x11,x12,x13)
+
 let inline u_tup14 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 (st:ReaderState) =
   let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in
   let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in
@@ -378,7 +392,7 @@ let inline u_tup17 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 (s
 #if INCLUDE_METADATA_WRITER
 let p_osgn_ref (_ctxt:string) (outMap : NodeOutTable<_,_>) x st = 
     let idx = outMap.Table.FindOrAdd (outMap.NodeStamp x)
-    //if ((idx = 0) && outMap.Name = "otycons") then 
+    //if ((idx = 0) && outMap.Name = "oentities") then 
     //    System.Diagnostics.Debug.Assert(false, sprintf "idx %d#%d in table %s has name '%s', was defined at '%s' and is referenced from context %s\n" idx (outMap.NodeStamp x) outMap.Name (outMap.NodeName x) (stringOfRange (outMap.GetRange x)) _ctxt)
     p_int idx st
 
@@ -453,7 +467,7 @@ let private p_lazy_impl p v st =
     let fixupPos7 = st.os.Position
     prim_p_int32 0 st;
     let idx1 = st.os.Position
-    let otyconsIdx1 = st.otycons.Size
+    let otyconsIdx1 = st.oentities.Size
     let otyparsIdx1 = st.otypars.Size
     let ovalsIdx1 = st.ovals.Size
     // Run the pickler
@@ -462,7 +476,7 @@ let private p_lazy_impl p v st =
     let idx2 = st.os.Position
     st.os.FixupInt32 fixupPos1 (idx2-idx1);
     // Determine and fixup the ranges of OSGN nodes defined within the lazy portion
-    let otyconsIdx2 = st.otycons.Size
+    let otyconsIdx2 = st.oentities.Size
     let otyparsIdx2 = st.otypars.Size
     let ovalsIdx2 = st.ovals.Size
     st.os.FixupInt32 fixupPos2 otyconsIdx1;
@@ -556,7 +570,7 @@ let u_lazy u st =
         lazy (let st = { st with is = st.is.CloneAndSeek idx1 }
               u st)
     /// Force the reading of the data as a "tripwire" for each of the OSGN thunks 
-    for i = otyconsIdx1 to otyconsIdx2-1 do wire (st.itycons.Get(i)) res done;
+    for i = otyconsIdx1 to otyconsIdx2-1 do wire (st.ientities.Get(i)) res done;
     for i = ovalsIdx1   to ovalsIdx2-1   do wire (st.ivals.Get(i))   res done;
     for i = otyparsIdx1 to otyparsIdx2-1 do wire (st.itypars.Get(i)) res done;
     res
@@ -657,61 +671,72 @@ let p_nleref x st = p_int (encode_nleref st.occus st.ostrings st.onlerefs st.osc
 let decode_simpletyp st _ccuTab _stringTab nlerefTab a = TType_app(ERefNonLocal (lookup_nleref st nlerefTab a),[])
 let lookup_simpletyp st simpletypTab x = lookup_uniq st simpletypTab x
 let u_encoded_simpletyp st = u_int  st
+let u_encoded_anoninfo st = u_int  st
 let u_simpletyp st = lookup_uniq st st.isimpletyps (u_int st)
 #if INCLUDE_METADATA_WRITER
 let encode_simpletyp ccuTab stringTab nlerefTab simpletypTab thisCcu a = encode_uniq simpletypTab (encode_nleref ccuTab stringTab nlerefTab thisCcu a)
 let p_encoded_simpletyp x st = p_int x st
+let p_encoded_anoninfo x st = p_int x st
 let p_simpletyp x st = p_int (encode_simpletyp st.occus st.ostrings st.onlerefs st.osimpletyps st.oscope x) st
 #endif
 
 type sizes = int * int * int 
 #if INCLUDE_METADATA_WRITER
 let pickleObjWithDanglingCcus file g scope p x =
-  let ccuNameTab,(sizes: sizes),stringTab,pubpathTab,nlerefTab,simpletypTab,phase1bytes =
+  let ccuNameTab,(ntycons, ntypars, nvals, nanoninfos),stringTab,pubpathTab,nlerefTab,simpletypTab,phase1bytes =
     let st1 = 
       { os = ByteBuffer.Create 100000; 
         oscope=scope;
         occus= Table<_>.Create "occus"; 
-        otycons=NodeOutTable<_,_>.Create((fun (tc:Tycon) -> tc.Stamp),(fun tc -> tc.LogicalName),(fun tc -> tc.Range),(fun osgn -> osgn),"otycons"); 
-        otypars=NodeOutTable<_,_>.Create((fun (tp:Typar) -> tp.Stamp),(fun tp -> tp.DisplayName),(fun tp -> tp.Range),(fun osgn -> osgn),"otypars"); 
-        ovals=NodeOutTable<_,_>.Create((fun (v:Val) -> v.Stamp),(fun v -> v.LogicalName),(fun v -> v.Range),(fun osgn -> osgn),"ovals");
+        oentities=NodeOutTable<_,_>.Create((fun (tc:Tycon) -> tc.Stamp),(fun tc -> tc.LogicalName),(fun tc -> tc.Range),id,"oentities"); 
+        otypars=NodeOutTable<_,_>.Create((fun (tp:Typar) -> tp.Stamp),(fun tp -> tp.DisplayName),(fun tp -> tp.Range),id,"otypars"); 
+        ovals=NodeOutTable<_,_>.Create((fun (v:Val) -> v.Stamp),(fun v -> v.LogicalName),(fun v -> v.Range),id,"ovals");
+        oanoninfos=NodeOutTable<_,_>.Create((fun (v:AnonRecdTypeInfo) -> v.Stamp),(fun v -> string v.Stamp),(fun _ -> range0),id,"oanoninfos");
         ostrings=Table<_>.Create "ostrings";
         onlerefs=Table<_>.Create "onlerefs";  
         opubpaths=Table<_>.Create "opubpaths";  
         osimpletyps=Table<_>.Create "osimpletyps";  
         oglobals=g;
-        ofile=file;
-        (* REINSTATE: odecomps=NodeOutTable.Create stamp_of_decomp name_of_decomp "odecomps"; *) }
+        ofile=file; }
     p x st1;
     let sizes = 
-      st1.otycons.Size,
+      st1.oentities.Size,
       st1.otypars.Size,
-      st1.ovals.Size 
+      st1.ovals.Size,
+      st1.oanoninfos.Size 
     st1.occus, sizes, st1.ostrings, st1.opubpaths,st1.onlerefs, st1.osimpletyps, st1.os.Close()
-  let phase2data = (ccuNameTab.AsArray,sizes,stringTab.AsArray,pubpathTab.AsArray,nlerefTab.AsArray,simpletypTab.AsArray,phase1bytes)
+
   let phase2bytes = 
     let st2 = 
      { os = ByteBuffer.Create 100000; 
        oscope=scope;
        occus= Table<_>.Create "occus (fake)"; 
-       otycons=NodeOutTable<_,_>.Create((fun (tc:Tycon) -> tc.Stamp),(fun tc -> tc.LogicalName),(fun tc -> tc.Range),(fun osgn -> osgn),"otycons"); 
-       otypars=NodeOutTable<_,_>.Create((fun (tp:Typar) -> tp.Stamp),(fun tp -> tp.DisplayName),(fun tp -> tp.Range),(fun osgn -> osgn),"otypars"); 
-       ovals=NodeOutTable<_,_>.Create((fun (v:Val) -> v.Stamp),(fun v -> v.LogicalName),(fun v -> v.Range),(fun osgn -> osgn),"ovals");
+       oentities=NodeOutTable<_,_>.Create((fun (tc:Tycon) -> tc.Stamp),(fun tc -> tc.LogicalName),(fun tc -> tc.Range),id,"oentities"); 
+       otypars=NodeOutTable<_,_>.Create((fun (tp:Typar) -> tp.Stamp),(fun tp -> tp.DisplayName),(fun tp -> tp.Range),id,"otypars"); 
+       ovals=NodeOutTable<_,_>.Create((fun (v:Val) -> v.Stamp),(fun v -> v.LogicalName),(fun v -> v.Range),id,"ovals");
+       oanoninfos=NodeOutTable<_,_>.Create((fun (v:AnonRecdTypeInfo) -> v.Stamp),(fun v -> string v.Stamp),(fun _ -> range0),id,"oanoninfos");
        ostrings=Table<_>.Create "ostrings (fake)";
        opubpaths=Table<_>.Create "opubpaths (fake)";
        onlerefs=Table<_>.Create "onlerefs (fake)";
        osimpletyps=Table<_>.Create "osimpletyps (fake)";
        oglobals=g;
        ofile=file; }
-    p_tup7
-      (p_array p_encoded_ccuref) 
-      (p_tup3 p_int p_int p_int) 
-      (p_array p_encoded_string) 
-      (p_array p_encoded_pubpath) 
-      (p_array p_encoded_nleref) 
-      (p_array p_encoded_simpletyp) 
-      p_bytes 
-      phase2data st2;
+
+    p_array p_encoded_ccuref ccuNameTab.AsArray st2
+    // Add a 4th integer indicated by a negative 1st integer
+    let z1 = if nanoninfos > 0 then  -ntycons-1 else ntycons
+    p_int z1 st2
+    p_tup2 p_int p_int (ntypars, nvals) st2
+    if nanoninfos > 0 then 
+        p_int nanoninfos st2
+    p_tup5
+        (p_array p_encoded_string) 
+        (p_array p_encoded_pubpath) 
+        (p_array p_encoded_nleref) 
+        (p_array p_encoded_simpletyp) 
+        p_bytes 
+        (stringTab.AsArray,pubpathTab.AsArray,nlerefTab.AsArray,simpletypTab.AsArray,phase1bytes)
+        st2;
     st2.os.Close()
   phase2bytes
   
@@ -729,39 +754,43 @@ let unpickleObjWithDanglingCcus file ilscope (iILModule:ILModuleDef option) u (p
        { is = ByteStream.FromBytes (phase2bytes,0,phase2bytes.Length); 
          iilscope= ilscope;
          iccus= new_itbl "iccus (fake)" [| |]; 
-         itycons= NodeInTable<_,_>.Create (Tycon.NewUnlinked, (fun osgn tg -> osgn.Link tg),(fun osgn -> osgn.IsLinked),"itycons",0); 
+         ientities= NodeInTable<_,_>.Create (Tycon.NewUnlinked, (fun osgn tg -> osgn.Link tg),(fun osgn -> osgn.IsLinked),"ientities",0); 
          itypars= NodeInTable<_,_>.Create (Typar.NewUnlinked, (fun osgn tg -> osgn.Link tg),(fun osgn -> osgn.IsLinked),"itypars",0); 
          ivals  = NodeInTable<_,_>.Create (Val.NewUnlinked , (fun osgn tg -> osgn.Link tg),(fun osgn -> osgn.IsLinked),"ivals",0);
+         ianoninfos=NodeInTable<_,_>.Create(AnonRecdTypeInfo.NewUnlinked, (fun osgn tg -> osgn.Link tg),(fun osgn -> osgn.IsLinked),"ianoninfos",0);
          istrings = new_itbl "istrings (fake)" [| |]; 
          inlerefs = new_itbl "inlerefs (fake)" [| |]; 
          ipubpaths = new_itbl "ipubpaths (fake)" [| |]; 
          isimpletyps = new_itbl "isimpletyps (fake)" [| |]; 
          ifile=file
          iILModule = iILModule }
-    let phase2data = 
-        u_tup7
-           (u_array u_encoded_ccuref) 
-           (u_tup3 u_int u_int u_int) 
-           (u_array u_encoded_string) 
-           (u_array u_encoded_pubpath) 
-           (u_array u_encoded_nleref) 
-           (u_array u_encoded_simpletyp) 
-           u_bytes st2
-    let ccuNameTab,sizes,stringTab,pubpathTab,nlerefTab,simpletypTab,phase1bytes = phase2data
+    let ccuNameTab = u_array u_encoded_ccuref st2
+    let z1 = u_int st2
+    let ntycons = if z1 < 0 then -z1-1 else z1
+    let ntypars, nvals = u_tup2 u_int u_int st2
+    let nanoninfos = if z1 < 0 then u_int st2 else 0
+    let stringTab,pubpathTab,nlerefTab,simpletypTab,phase1bytes = 
+        u_tup5
+            (u_array u_encoded_string) 
+            (u_array u_encoded_pubpath) 
+            (u_array u_encoded_nleref) 
+            (u_array u_encoded_simpletyp) 
+            u_bytes 
+            st2
     let ccuTab       = new_itbl "iccus"       (Array.map (CcuThunk.CreateDelayed) ccuNameTab)
     let stringTab    = new_itbl "istrings"    (Array.map decode_string stringTab)
     let pubpathTab   = new_itbl "ipubpaths"   (Array.map (decode_pubpath st2 stringTab) pubpathTab)
     let nlerefTab    = new_itbl "inlerefs"    (Array.map (decode_nleref st2 ccuTab stringTab) nlerefTab)
     let simpletypTab = new_itbl "isimpletyps" (Array.map (decode_simpletyp st2 ccuTab stringTab nlerefTab) simpletypTab)
-    let ((ntycons,ntypars,nvals) : sizes) = sizes
     let data = 
         let st1 = 
            { is = ByteStream.FromBytes (phase1bytes,0,phase1bytes.Length); 
              iccus=  ccuTab; 
              iilscope= ilscope;
-             itycons= NodeInTable<_,_>.Create(Tycon.NewUnlinked,(fun osgn tg -> osgn.Link tg),(fun osgn -> osgn.IsLinked),"itycons",ntycons); 
+             ientities= NodeInTable<_,_>.Create(Tycon.NewUnlinked,(fun osgn tg -> osgn.Link tg),(fun osgn -> osgn.IsLinked),"ientities",ntycons); 
              itypars= NodeInTable<_,_>.Create(Typar.NewUnlinked,(fun osgn tg -> osgn.Link tg),(fun osgn -> osgn.IsLinked),"itypars",ntypars); 
              ivals=   NodeInTable<_,_>.Create(Val.NewUnlinked  ,(fun osgn tg -> osgn.Link tg),(fun osgn -> osgn.IsLinked),"ivals",nvals);
+             ianoninfos=NodeInTable<_,_>.Create(AnonRecdTypeInfo.NewUnlinked, (fun osgn tg -> osgn.Link tg),(fun osgn -> osgn.IsLinked),"ianoninfos",nanoninfos);
              istrings = stringTab;
              ipubpaths = pubpathTab;
              inlerefs = nlerefTab;
@@ -771,7 +800,7 @@ let unpickleObjWithDanglingCcus file ilscope (iILModule:ILModuleDef option) u (p
         let res = u st1
 #if LAZY_UNPICKLE
 #else
-        check ilscope st1.itycons;
+        check ilscope st1.ientities;
         check ilscope st1.ivals;
         check ilscope st1.itypars;
 #endif
@@ -781,7 +810,7 @@ let unpickleObjWithDanglingCcus file ilscope (iILModule:ILModuleDef option) u (p
     
 
 //=========================================================================
-// PART II *)
+// PART II
 //=========================================================================
 
 //---------------------------------------------------------------------------
@@ -793,7 +822,9 @@ let p_ILPublicKey x st =
     match x with 
     | PublicKey b      -> p_byte 0 st; p_bytes b st
     | PublicKeyToken b -> p_byte 1 st; p_bytes b st
+
 let p_ILVersion x st = p_tup4 p_uint16 p_uint16 p_uint16 p_uint16 x st
+
 let p_ILModuleRef (x:ILModuleRef) st = 
     p_tup3 p_string p_bool (p_option p_bytes) (x.Name,x.HasMetadata,x.Hash) st
 
@@ -920,8 +951,11 @@ let rec u_ILType st =
     | 7 -> u_uint16 st                            |> mkILTyvarTy
     | 8 -> u_tup3 u_bool u_ILTypeRef u_ILType  st |> ILType.Modified 
     | _ -> ufailwith st "u_ILType"
+
 and u_ILTypes st = u_list u_ILType st
+
 and u_ILCallSig = u_wrap (fun (a,b,c) -> {CallingConv=a; ArgTypes=b; ReturnType=c}) (u_tup3 u_ILCallConv u_ILTypes u_ILType)
+
 and u_ILTypeSpec st = let a,b = u_tup2 u_ILTypeRef u_ILTypes st in ILTypeSpec.Create(a,b)
 
 
@@ -1232,7 +1266,7 @@ let p_local_item_ref ctxt tab st = p_osgn_ref ctxt tab st
 
 let p_tcref ctxt (x:EntityRef) st = 
     match x with 
-    | ERefLocal x -> p_byte 0 st; p_local_item_ref ctxt st.otycons x st
+    | ERefLocal x -> p_byte 0 st; p_local_item_ref ctxt st.oentities x st
     | ERefNonLocal x -> p_byte 1 st; p_nleref x st
 
 let p_ucref (UCRef(a,b)) st = p_tup2 (p_tcref "ucref") p_string (a,b) st
@@ -1246,7 +1280,7 @@ let u_local_item_ref tab st = u_osgn_ref tab st
 let u_tcref st = 
     let tag = u_byte st
     match tag with
-    | 0 -> u_local_item_ref st.itycons  st |> ERefLocal 
+    | 0 -> u_local_item_ref st.ientities  st |> ERefLocal 
     | 1 -> u_nleref                     st |> ERefNonLocal 
     | _ -> ufailwith st "u_item_ref"
     
@@ -1362,8 +1396,11 @@ let fill_u_Expr_hole,u_expr_fwd = u_hole()
 #if INCLUDE_METADATA_WRITER
 let fill_p_Expr_hole,p_expr_fwd = p_hole()
 
-let p_anonInfo (AnonRecdTypeInfo(ccu,info,nms)) st = 
-    p_tup3 (p_option p_ccuref) p_bool (p_array p_string) (ccu, evalTupInfoIsStruct info, nms) st
+let p_anonInfo_data (anonInfo: AnonRecdTypeInfo) st = 
+    p_tup3 (p_option p_ccuref) p_bool (p_array p_string) (anonInfo.Assembly, evalTupInfoIsStruct anonInfo.TupInfo, anonInfo.Names) st
+
+let p_anonInfo x st = 
+    p_osgn_decl st.oanoninfos p_anonInfo_data x st
 
 let p_trait_sln sln st = 
     match sln with 
@@ -1386,9 +1423,13 @@ let p_trait (TTrait(a,b,c,d,e,f)) st  =
 #endif
 
 // We have to store trait solutions since they can occur in optimization data
-let u_anonInfo st = 
+let u_anonInfo_data st = 
     let (ccu, info, nms) = u_tup3 (u_option u_ccuref) u_bool (u_array u_string) st 
-    AnonRecdTypeInfo (ccu, TupInfo.Const info,nms)
+    AnonRecdTypeInfo.Create (ccu, TupInfo.Const info, nms)
+
+let u_anonInfo st = 
+    u_osgn_decl st.ianoninfos u_anonInfo_data st 
+
 
 let u_trait_sln st = 
     let tag = u_byte st
@@ -1420,7 +1461,9 @@ let u_trait st =
 let p_rational q st = p_int32 (GetNumerator q) st; p_int32 (GetDenominator q) st
 
 let p_measure_con tcref st = p_byte 0 st; p_tcref "measure" tcref st
+
 let p_measure_var v st = p_byte 3 st; p_tpref v st
+
 let p_measure_one = p_byte 4
 
 // Pickle a unit-of-measure variable or constructor
@@ -1535,7 +1578,6 @@ let p_typar_spec_data (x:Typar) st =
       p_int64
       p_typar_constraints
       p_xmldoc
-
       (x.typar_id,x.typar_attribs,int64 x.typar_flags.PickledBits,x.typar_constraints,x.typar_xmldoc) st
 
 let p_typar_spec (x:Typar) st = 
@@ -1720,7 +1762,7 @@ and p_exnc_repr x st =
     | TExnFresh x      -> p_byte 2 st; p_rfield_table x st
     | TExnNone         -> p_byte 3 st
 
-and p_exnc_spec x st = p_tycon_spec x st
+and p_exnc_spec x st = p_entity_spec x st
 
 and p_access (TAccess n) st = p_list p_cpath n st
 
@@ -1780,7 +1822,7 @@ and p_tcaug p st =
        p.tcaug_abstract,
        space) st
 
-and p_tycon_spec x st = p_osgn_decl st.otycons p_entity_spec_data x st
+and p_entity_spec x st = p_osgn_decl st.oentities p_entity_spec_data x st
 
 and p_parentref x st = 
     match x with 
@@ -1873,7 +1915,7 @@ and p_modul_typ (x: ModuleOrNamespaceType) st =
     p_tup3
       p_istype
       (p_qlist p_Val)
-      (p_qlist p_tycon_spec)
+      (p_qlist p_entity_spec)
       (x.ModuleOrNamespaceKind,x.AllValsAndMembers,x.AllEntities)
       st
 
@@ -1952,7 +1994,7 @@ and u_exnc_repr st =
     | 3 -> TExnNone
     | _ -> ufailwith st "u_exnc_repr"
   
-and u_exnc_spec st = u_tycon_spec st
+and u_exnc_spec st = u_entity_spec st
 
 and u_access st = 
     match u_list u_cpath st with 
@@ -2065,8 +2107,8 @@ and u_tcaug st =
      tcaug_closed=true; 
      tcaug_abstract=g}
  
-and u_tycon_spec st = 
-    u_osgn_decl st.itycons u_entity_spec_data st 
+and u_entity_spec st = 
+    u_osgn_decl st.ientities u_entity_spec_data st 
 
 and u_parentref st = 
     let tag = u_byte st
@@ -2178,7 +2220,7 @@ and u_modul_typ st =
         u_tup3
           u_istype
           (u_qlist u_Val)
-          (u_qlist u_tycon_spec) st
+          (u_qlist u_entity_spec) st
     ModuleOrNamespaceType(x1,x3,x5)
 
 
@@ -2575,12 +2617,12 @@ let _ = fill_u_Vals (u_list u_Val)
 //---------------------------------------------------------------------------
 
 #if INCLUDE_METADATA_WRITER
-let pickleModuleOrNamespace mspec st = p_tycon_spec mspec st
+let pickleModuleOrNamespace mspec st = p_entity_spec mspec st
 let pickleCcuInfo minfo st = 
     p_tup4 pickleModuleOrNamespace p_string p_bool (p_space 3) (minfo.mspec, minfo.compileTimeWorkingDir, minfo.usesQuotations,()) st
 #endif
 
-let unpickleModuleOrNamespace st = u_tycon_spec st 
+let unpickleModuleOrNamespace st = u_entity_spec st 
   
 let unpickleCcuInfo st = 
     let a,b,c,_space = u_tup4 unpickleModuleOrNamespace u_string u_bool (u_space 3) st 

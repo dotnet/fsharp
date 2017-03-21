@@ -921,9 +921,9 @@ module private PrintTypes =
           layoutTypeAppWithInfoAndPrec denv env (layoutTyconRef denv tc) prec tc.IsPrefixDisplay args 
 
         // Layout a tuple type 
-        | TType_anon (AnonRecdTypeInfo(_ccu,tupInfo,nms),tys)  ->
-            let core = sepListL (wordL (tagPunctuation ";")) (List.map2 (fun nm ty -> wordL (tagField nm) ^^ wordL (tagPunctuation ":") ^^ layoutTypeWithInfoAndPrec denv env prec ty) (Array.toList nms) tys)
-            if evalTupInfoIsStruct tupInfo then 
+        | TType_anon (anonInfo,tys)  ->
+            let core = sepListL (wordL (tagPunctuation ";")) (List.map2 (fun nm ty -> wordL (tagField nm) ^^ wordL (tagPunctuation ":") ^^ layoutTypeWithInfoAndPrec denv env prec ty) (Array.toList anonInfo.Names) tys)
+            if evalAnonInfoIsStruct anonInfo then 
                 WordL.keywordStruct --- braceBarL core
             else 
                 braceBarL core

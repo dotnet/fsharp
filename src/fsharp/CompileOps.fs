@@ -906,10 +906,8 @@ let OutputPhasedErrorR errorStyle (os:StringBuilder) (err:PhasedDiagnostic) =
               | Parser.TOKEN_LBRACK_BAR  -> getErrorString("Parser.TOKEN.LBRACK.BAR")
               | Parser.TOKEN_LBRACK_LESS  -> getErrorString("Parser.TOKEN.LBRACK.LESS")
               | Parser.TOKEN_LBRACE   -> getErrorString("Parser.TOKEN.LBRACE")
-              | Parser.TOKEN_LBRACE_LESS-> getErrorString("Parser.TOKEN.LBRACE.LESS")
               | Parser.TOKEN_BAR_RBRACK   -> getErrorString("Parser.TOKEN.BAR.RBRACK")
               | Parser.TOKEN_BAR_RBRACE   -> getErrorString("Parser.TOKEN.BAR.RBRACE")
-              | Parser.TOKEN_GREATER_RBRACE   -> getErrorString("Parser.TOKEN.GREATER.RBRACE")
               | Parser.TOKEN_GREATER_RBRACK  -> getErrorString("Parser.TOKEN.GREATER.RBRACK")
               | Parser.TOKEN_RQUOTE_DOT _ 
               | Parser.TOKEN_RQUOTE  -> getErrorString("Parser.TOKEN.RQUOTE")
