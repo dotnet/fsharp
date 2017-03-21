@@ -215,9 +215,13 @@ type internal FSharpCompletionProvider
                     | _ -> declItem.Name
 
                 let filterText =
-                    match declItem.Name.LastIndexOf '.' with
-                    | -1 -> null
-                    | idx -> declItem.Name.[idx + 1..]
+                    match declItem.NamespaceToOpen, declItem.Name.Split '.' with
+                    // There is no namespace to open and the item name does not contain dots, so we don't need to pass special FilterText to Roslyn.
+                    | None, [|_|] -> null
+                    // Either we have a namespace to open ("DateTime (open System)") or item name contains dots ("Array.map"), or both.
+                    // We are passing last part of long ident as FilterText.
+                    | _, idents -> Array.last idents
+
 
                 let completionItem = 
                     CommonCompletionItem.Create(name, glyph = Nullable glyph, rules = getRules(), filterText = filterText)
