@@ -19,7 +19,6 @@
     <PackageReference Include="Microsoft.DiaSymReader.PortablePdb" Version="1.1.0"  />
     <PackageReference Include="Microsoft.DiaSymReader" Version="1.0.8" />
     <PackageReference Include="System.ValueTuple" Version="4.3.0" />
-    <PackageReference Include="Microsoft.VisualFSharp.Msbuild.15.0" Version="1.0.1" />
     <PackageReference Include="Microsoft.Build.Runtime" Version="15.1.548" />
     <PackageReference Include="Microsoft.Build.Engine" Version="15.1.548" />
 

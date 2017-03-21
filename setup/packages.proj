@@ -14,7 +14,6 @@
     <PackageReference Include="WiX.Toolset.2015" Version="3.10.0.1503" />
     <PackageReference Include="Microsoft.VisualFSharp.Core.Redist" Version="1.0.0" />
     <PackageReference Include="Microsoft.VisualStudio.Shell.14.0" Version="14.3.25407" Condition="'$(TargetFramework)' == 'net46'" />
-    <PackageReference Include="Microsoft.VisualFSharp.Msbuild.15.0" Version="1.0.1" />
     <PackageReference Include="System.ValueTuple" Version="4.3.0" />
     <PackageReference Include="Microsoft.VisualFSharp.Type.Providers.Redist" Version="1.0.0" />
   </ItemGroup>
