@@ -39,23 +39,39 @@ if [ "$(certmgr -list -c Trust | grep -c -F "X.509")" -le 1 ] && [ "$(certmgr -l
 fi
 
 # Restore NuGet packages (needed for compiler bootstrap and tests).
-mono .nuget/NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .nuget/NuGet.Config
+if ! mono .nuget/NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .nuget/NuGet.Config; then
+    echo "Unable to restore NuGet packages." >&2;
+    exit 1
+fi
 
-(if test x-$BUILD_CORECLR = x-1; then \
-  sudo sh -c 'echo "deb [arch=amd64] https://apt-mo.trafficmanager.net/repos/dotnet-release/ trusty main" > /etc/apt/sources.list.d/dotnetdev.list'; \
-  sudo apt-key adv --keyserver apt-mo.trafficmanager.net --recv-keys 417A0893; \
-  sudo apt-get update; \
-  sudo apt-get -y install dotnet-dev-1.0.0-preview2-003131; \
-  (cd tests/fsharp; mono ../../.nuget/NuGet.exe restore  project.json -PackagesDirectory ../../packages -ConfigFile ../../.nuget/NuGet.Config); \
-  ./init-tools.sh;   \
-  echo "------ start log";  \
-  cat ./init-tools.log; echo "------ end log"; \
-fi)
+if [ "$BUILD_CORECLR" = '1' ]; then
+    # Install coreclr first if necessary.
+    if ! command -v dotnet > /dev/null; then
+        # Only install automatically on Linux; other OSes need to have dotnet installed separately.
+        if [ "$OS" = 'Linux' ]; then
+            echo "dotnet command not installed. Will attempt to install now."
+            sudo sh -c 'echo "deb [arch=amd64] https://apt-mo.trafficmanager.net/repos/dotnet-release/ trusty main" > /etc/apt/sources.list.d/dotnetdev.list'
+            sudo apt-key adv --keyserver apt-mo.trafficmanager.net --recv-keys 417A0893
+            sudo apt-get update
+            sudo apt-get -y install dotnet-dev-1.0.0-preview2-003131
+        fi
+    fi
+    
+    ( cd tests/fsharp && mono ../../.nuget/NuGet.exe restore project.json -PackagesDirectory ../../packages -ConfigFile ../../.nuget/NuGet.Config; )
 
-(if test x-$BUILD_PROTO_WITH_CORECLR_LKG = x-1; then \
-  (cd lkg/fsc &&  dotnet restore --packages ../packages && dotnet publish project.json -o ../Tools/lkg -r ubuntu.14.04-x64); \
-  (cd lkg/fsi &&  dotnet restore --packages ../packages && dotnet publish project.json -o ../Tools/lkg -r ubuntu.14.04-x64); \
-fi)
+    ./init-tools.sh
+
+    echo "------ start log"
+    if [ -f "init-tools.log" ]; then
+        cat ./init-tools.log
+    fi
+    echo "------ end log"
+fi
+
+if [ "$BUILD_PROTO_WITH_CORECLR_LKG" = '1' ]; then
+    ( cd lkg/fsc && dotnet restore --packages ../packages && dotnet publish project.json -o ../Tools/lkg -r ubuntu.14.04-x64; )
+    ( cd lkg/fsi && dotnet restore --packages ../packages && dotnet publish project.json -o ../Tools/lkg -r ubuntu.14.04-x64; )
+fi
 
 #TODO: work out how to avoid the need for this
 chmod u+x packages/FSharp.Compiler.Tools.4.0.1.21/tools/fsi.exe 

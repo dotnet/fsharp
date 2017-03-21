@@ -103,7 +103,7 @@ module Commands =
         path
 
 
-type TestConfig = 
+type TestConfig =
     { EnvironmentVariables : Map<string, string>
       CORDIR : string
       CORSDK : string
@@ -125,30 +125,24 @@ type TestConfig =
       DotNetExe: string
       DefaultPlatform: string}
 
+type FSLibPaths = 
+    { FSCOREDLLPATH : string }
 
-module WindowsPlatform = 
-    let Is64BitOperatingSystem envVars =
-        // On Windows PROCESSOR_ARCHITECTURE has the value AMD64 on 64 bit Intel Machines
-        let value =
-            let find s = envVars |> Map.tryFind s
-            [| "PROCESSOR_ARCHITECTURE" |] |> Seq.tryPick (fun s -> find s) |> function None -> "" | Some x -> x
-        value = "AMD64"
-
-    let clrPaths envVars =
-
-        let windir = 
-            match envVars |> Map.tryFind "windir" with
-            | Some x -> x 
-            | None -> failwithf "environment variable '%s' required " "WINDIR"
-
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module TestConfig =
+    let private winClrPaths envVars =
         let mutable CORDIR =
+            let windir = 
+                match envVars |> Map.tryFind "windir" with
+                | Some x -> x 
+                | None -> failwithf "environment variable '%s' required " "WINDIR"
             match Directory.EnumerateDirectories (windir ++ "Microsoft.NET" ++ "Framework", "v4.0.?????") |> List.ofSeq |> List.rev with
             | x :: _ -> x
             | [] -> failwith "couldn't determine CORDIR"
 
         // == Use the same runtime as our architecture
         // == ASSUMPTION: This could be a good or bad thing.
-        if Is64BitOperatingSystem envVars then 
+        if Environment.Is64BitOperatingSystem then 
             CORDIR <- CORDIR.Replace("Framework", "Framework64")
 
         let CORSDK =
@@ -161,66 +155,125 @@ module WindowsPlatform =
 
         CORDIR, CORSDK
 
-type FSLibPaths = 
-    { FSCOREDLLPATH : string }
+    let requireFile nm = 
+        if Commands.fileExists __SOURCE_DIRECTORY__ nm |> Option.isSome then nm else failwith (sprintf "couldn't find required file %s" nm)
 
-let requireFile nm = 
-    if Commands.fileExists __SOURCE_DIRECTORY__ nm |> Option.isSome then nm else failwith (sprintf "couldn't find %s" nm)
+    let create configurationName envVars =
+        let SCRIPT_ROOT = __SOURCE_DIRECTORY__ 
+        let FSCBinPath = SCRIPT_ROOT ++ ".." ++ ".." ++ configurationName ++ "net40" ++ "bin"
 
-let config configurationName envVars =
+        let dotNetExe = SCRIPT_ROOT ++ ".." ++ ".." ++ "Tools" ++ "dotnetcli" ++ "dotnet.exe"
 
-    let SCRIPT_ROOT = __SOURCE_DIRECTORY__ 
-    let FSCBinPath = SCRIPT_ROOT ++ ".." ++ ".." ++ configurationName ++ "net40" ++ "bin"
-    let csc_flags = "/nologo" 
-    let fsc_flags = "-r:System.Core.dll --nowarn:20 --define:COMPILED" 
-    let fsi_flags = "-r:System.Core.dll --nowarn:20  --define:INTERACTIVE --maxerrors:1 --abortonerror" 
-    let CORDIR, CORSDK = WindowsPlatform.clrPaths envVars
-    let Is64BitOperatingSystem = WindowsPlatform.Is64BitOperatingSystem envVars
-    let CSC = requireFile (CORDIR ++ "csc.exe")
-    let NGEN = requireFile (CORDIR ++ "ngen.exe")
-    let ILDASM = requireFile (CORSDK ++ "ildasm.exe")
-    let SN = requireFile (CORSDK ++ "sn.exe") 
-    let PEVERIFY = requireFile (CORSDK ++ "peverify.exe")
-    let FSI_FOR_SCRIPTS = requireFile (SCRIPT_ROOT ++ ".." ++ ".." ++ (System.Environment.GetEnvironmentVariable("_fsiexe").Trim([| '\"' |])))
-    let dotNetExe = SCRIPT_ROOT ++ ".." ++ ".." ++ "Tools" ++ "dotnetcli" ++ "dotnet.exe"
+        let csc_flags = "/nologo" 
+        let fsc_flags = "-r:System.Core.dll --nowarn:20 --define:COMPILED" 
+        let fsi_flags = "-r:System.Core.dll --nowarn:20  --define:INTERACTIVE --maxerrors:1 --abortonerror" 
 
+        // Create TestConfig based on which OS/Platform/CLR we're running on.
+        let osVersion = Environment.OSVersion
+        match osVersion.Platform with
+        | PlatformID.Win32NT ->
+            let CORDIR, CORSDK = winClrPaths envVars
+
+            let fsiroot = if Environment.Is64BitOperatingSystem then "fsiAnyCpu" else "fsi"
+
+            let CSC = requireFile (CORDIR ++ "csc.exe")
+            let NGEN = requireFile (CORDIR ++ "ngen.exe")
+            let ILDASM = requireFile (CORSDK ++ "ildasm.exe")
+            let SN = requireFile (CORSDK ++ "sn.exe") 
+            let PEVERIFY = requireFile (CORSDK ++ "peverify.exe")
+            let FSI_FOR_SCRIPTS = requireFile (SCRIPT_ROOT ++ ".." ++ ".." ++ (System.Environment.GetEnvironmentVariable("_fsiexe").Trim([| '\"' |])))
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
-    let FSI = requireFile (FSCBinPath ++ "fsi.exe")
-    let FSC = requireFile (FSCBinPath ++ "fsc.exe")
-    let FSCOREDLLPATH = requireFile (FSCBinPath ++ "FSharp.Core.dll") 
+            let FSI = requireFile (FSCBinPath ++ "fsi.exe")
+            let FSC = requireFile (FSCBinPath ++ "fsc.exe")
+            let FSCOREDLLPATH = requireFile (FSCBinPath ++ "FSharp.Core.dll")
 #else
-    let FSI = SCRIPT_ROOT ++ ".." ++ ".." ++ "tests" ++ "testbin" ++ configurationName ++ "coreclr" ++ "FSC" ++ "fsi.exe"
-    let FSC = SCRIPT_ROOT ++ ".." ++ ".." ++ "tests" ++ "testbin" ++ configurationName ++ "coreclr" ++ "FSC" ++ "fsc.exe"
-    let FSCOREDLLPATH = "" 
+            let FSI = SCRIPT_ROOT ++ ".." ++ ".." ++ "tests" ++ "testbin" ++ configurationName ++ "coreclr" ++ "FSC" ++ "fsi.exe"
+            let FSC = SCRIPT_ROOT ++ ".." ++ ".." ++ "tests" ++ "testbin" ++ configurationName ++ "coreclr" ++ "FSC" ++ "fsc.exe"
+            let FSCOREDLLPATH = ""
 #endif
 
-    let defaultPlatform = 
-        match Is64BitOperatingSystem with 
-//        | PlatformID.MacOSX, true -> "osx.10.10-x64"
-//        | PlatformID.Unix,true -> "ubuntu.14.04-x64"
-        | true -> "win7-x64"
-        | false -> "win7-x86"
+            let defaultPlatform = 
+                match Environment.Is64BitOperatingSystem with 
+        //        | PlatformID.MacOSX, true -> "osx.10.10-x64"
+        //        | PlatformID.Unix,true -> "ubuntu.14.04-x64"
+                | true -> "win7-x64"
+                | false -> "win7-x86"
 
-    { EnvironmentVariables = envVars
-      CORDIR = CORDIR |> Commands.pathAddBackslash
-      CORSDK = CORSDK |> Commands.pathAddBackslash
-      FSCBinPath = FSCBinPath |> Commands.pathAddBackslash
-      FSCOREDLLPATH = FSCOREDLLPATH
-      ILDASM = ILDASM
-      SN = SN
-      NGEN = NGEN 
-      PEVERIFY = PEVERIFY
-      CSC = CSC 
-      BUILD_CONFIG = configurationName
-      FSC = FSC
-      FSI = FSI
-      FSI_FOR_SCRIPTS = FSI_FOR_SCRIPTS
-      csc_flags = csc_flags
-      fsc_flags = fsc_flags 
-      fsi_flags = fsi_flags 
-      Directory="" 
-      DotNetExe = dotNetExe
-      DefaultPlatform = defaultPlatform }
+            { EnvironmentVariables = envVars
+              CORDIR = CORDIR |> Commands.pathAddBackslash
+              CORSDK = CORSDK |> Commands.pathAddBackslash
+              FSCBinPath = FSCBinPath |> Commands.pathAddBackslash
+              FSCOREDLLPATH = FSCOREDLLPATH
+              ILDASM = ILDASM
+              SN = SN
+              NGEN = NGEN 
+              PEVERIFY = PEVERIFY
+              CSC = CSC 
+              BUILD_CONFIG = configurationName
+              FSC = FSC
+              FSI = FSI
+              csc_flags = csc_flags
+              fsc_flags = fsc_flags 
+              fsi_flags = fsi_flags 
+              Directory="" 
+              DotNetExe = dotNetExe
+              DefaultPlatform = defaultPlatform }
+
+        | PlatformID.Unix
+        | PlatformID.MacOSX ->
+            // TODO: detect if we're running on mono or coreclr.
+            //       For now, assume mono.
+
+            let fsiroot = if Environment.Is64BitOperatingSystem then "fsiAnyCpu" else "fsi"
+
+            // http://www.mono-project.com/docs/about-mono/languages/csharp/
+            let CSC = "dmcs"
+            //let NGEN = requireFile (CORDIR ++ "ngen.exe")
+            let NGEN = "mono --aot -O=full"
+            let ILDASM = "monodis"
+            let SN = "sn"
+            let PEVERIFY = "peverify"
+            let FSI_FOR_SCRIPTS = requireFile (SCRIPT_ROOT ++ ".." ++ ".." ++ (System.Environment.GetEnvironmentVariable("_fsiexe").Trim([| '\"' |])))
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+            let FSI = requireFile (FSCBinPath ++ "fsi.exe")
+            let FSC = requireFile (FSCBinPath ++ "fsc.exe")
+            let FSCOREDLLPATH = requireFile (FSCBinPath ++ "FSharp.Core.dll")
+#else
+            let FSI = SCRIPT_ROOT ++ ".." ++ ".." ++ "tests" ++ "testbin" ++ configurationName ++ "coreclr" ++ "FSC" ++ "fsi.exe"
+            let FSC = SCRIPT_ROOT ++ ".." ++ ".." ++ "tests" ++ "testbin" ++ configurationName ++ "coreclr" ++ "FSC" ++ "fsc.exe"
+            let FSCOREDLLPATH = ""
+#endif
+
+            let defaultPlatform =
+                match Environment.Is64BitOperatingSystem with 
+        //        | PlatformID.MacOSX, true -> "osx.10.10-x64"
+        //        | PlatformID.Unix,true -> "ubuntu.14.04-x64"
+                | true -> "win7-x64"
+                | false -> "win7-x86"
+
+            { EnvironmentVariables = envVars
+              CORDIR = ""
+              CORSDK = ""
+              FSCBinPath = FSCBinPath |> Commands.pathAddBackslash
+              FSCOREDLLPATH = FSCOREDLLPATH
+              ILDASM = ILDASM
+              SN = SN
+              NGEN = NGEN 
+              PEVERIFY = PEVERIFY
+              CSC = CSC 
+              BUILD_CONFIG = configurationName
+              FSC = FSC
+              FSI = FSI
+              FSI_FOR_SCRIPTS = FSI_FOR_SCRIPTS
+              csc_flags = csc_flags
+              fsc_flags = fsc_flags 
+              fsi_flags = fsi_flags 
+              Directory="" 
+              DotNetExe = dotNetExe
+              DefaultPlatform = defaultPlatform }
+
+        | platformId ->
+            failwith <| sprintf "Platform '%O' is not supported by this test runner." platformId
 
 let logConfig (cfg: TestConfig) =
     log "---------------------------------------------------------------"
@@ -269,7 +322,7 @@ let initializeSuite () =
     let env = envVars ()
 
     let cfg =
-        let c = config configurationName env
+        let c = TestConfig.create configurationName env
         let usedEnvVars = c.EnvironmentVariables  |> Map.add "FSC" c.FSC             
         { c with EnvironmentVariables = usedEnvVars }
 
