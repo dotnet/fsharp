@@ -6,6 +6,9 @@ open Microsoft.FSharp.Compiler.Range
 
 type Project with
 
+    member this.GetDependentProjectIds () =
+        this.Solution.GetProjectDependencyGraph().GetProjectsThatDirectlyDependOnThisProject(this.Id)
+
     /// The list all projects within the same solution that reference this project.
     member this.GetDependentProjects () =
         this.Solution.GetProjectDependencyGraph().GetProjectsThatDirectlyDependOnThisProject(this.Id)
@@ -26,6 +29,8 @@ type Solution with
     member self.GetDependentProjects (projectId:ProjectId) =
         self.GetProject(projectId).GetDependentProjects()
 
+    member self.GetDependentProjectIds (projectId:ProjectId) =
+        self.GetProject(projectId).GetDependentProjectIds()
 
     /// Try to find the document assoicated with the F# range in the solution
     /// If provided a projectId prefer a copy of the document from that project

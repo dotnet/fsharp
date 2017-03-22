@@ -27,7 +27,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.CompileOps
-
+open  Microsoft.VisualStudio.FSharp.Editor.Logging
 open CommonRoslynHelpers
 
 
@@ -62,21 +62,20 @@ type internal FSharpQuickInfoProvider
         let workspace = initialDoc.Project.Solution.Workspace
         let solution = workspace.CurrentSolution
 
+
         /// Retrieve the DocumentId from the workspace for the range's file
         let docIdOfRange (range: range) =
             let filePath = System.IO.Path.GetFullPathSafe range.FileName
 
-            // The same file may be present in many projects. We choose one from current or referenced project.
-            let candidates = solution.GetDocumentIdsWithFilePath filePath
-            match candidates.Length with 
-            | 0 -> None 
-            | 1 -> 
-                let docId = candidates.[0]
-                if docId.ProjectId = initialDoc.Id.ProjectId || IsScript initialDoc.FilePath then Some docId else None
-            | _ -> 
-                candidates |> Seq.tryFind (fun docId -> 
-                    solution.GetDependentProjects docId.ProjectId |> Seq.contains initialDoc.Project
-                )
+            //The same file may be present in many projects. We choose one from current or referenced project.
+            let rec matchingDoc = function
+            | [] -> None
+            | (docId:DocumentId)::_ when docId.ProjectId = initialDoc.Id.ProjectId || IsScript initialDoc.FilePath -> Some docId
+            | docId::tail -> 
+                if solution.GetDependentProjectIds(docId.ProjectId).Contains initialDoc.Id.ProjectId then Some docId
+                else matchingDoc tail
+            solution.GetDocumentIdsWithFilePath filePath |> List.ofSeq |> matchingDoc
+
 
         let canGoTo range =
             range <> rangeStartup && docIdOfRange range |> Option.isSome
