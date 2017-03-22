@@ -92,18 +92,18 @@ module internal FSharpQuickInfo =
 
         let inlines = seq { 
             for taggedText in content do
-                let run = Documents.Run taggedText.Text
+                let run = Documents.Run(taggedText.Text, ToolTip = taggedText.Tag ) :> Documents.Inline
                 let inl =
                     match taggedText with
                     | :? Layout.NavigableTaggedText as nav when canGoTo nav.Range ->
                         let h = Documents.Hyperlink run
-                        h.ToolTip <- nav.FullName + "\n" + nav.Range.FileName
+                        //h.ToolTip <- nav.FullName + "\n" + nav.Range.FileName
                         h.Click.Add <| fun _ -> goTo nav.Range
                         h :> Documents.Inline
-                    | :? Layout.NavigableTaggedText as nav ->
-                        run.ToolTip <- nav.FullName
-                        run :> Documents.Inline
-                    | _ -> run :> Documents.Inline
+                    //| :? Layout.NavigableTaggedText as nav ->
+                    //    run.ToolTip <- nav.FullName
+                    //    run :> Documents.Inline
+                    | _ -> run
                 DependencyObjectExtensions.SetTextProperties(inl, props taggedText.Tag)
                 yield inl
         }

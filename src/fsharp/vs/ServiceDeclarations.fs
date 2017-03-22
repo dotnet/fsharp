@@ -822,7 +822,7 @@ module internal ItemDescriptionsImpl =
                 wordL (tagText (FSComp.SR.typeInfoUnionCase())) ^^
                 NicePrint.layoutTyconRef denv ucinfo.TyconRef ^^
                 sepL (tagPunctuation ".") ^^
-                wordL (tagUnionCase (DecompileOpName uc.Id.idText)) ^^
+                wordL (tagUnionCase (DecompileOpName uc.Id.idText) |> mkNav uc.DefinitionRange) ^^
                 RightL.colon ^^
                 (if List.isEmpty recd then emptyL else NicePrint.layoutUnionCases denv recd ^^ WordL.arrow) ^^
                 NicePrint.layoutTy denv rty
@@ -833,7 +833,7 @@ module internal ItemDescriptionsImpl =
             let items = apinfo.ActiveTags
             let layout = 
                 wordL (tagText ((FSComp.SR.typeInfoActivePatternResult()))) ^^
-                wordL (tagActivePatternResult (List.item idx items)) ^^
+                wordL (tagActivePatternResult (List.item idx items) |> mkNav apinfo.Range) ^^
                 RightL.colon ^^
                 NicePrint.layoutTy denv ty
             FSharpStructuredToolTipElement.Single(layout, xml)
@@ -847,7 +847,7 @@ module internal ItemDescriptionsImpl =
             let _, ptau, _cxs = PrettyTypes.PrettifyTypes1 denv.g tau
             let layout =
                 wordL (tagText (FSComp.SR.typeInfoActiveRecognizer())) ^^
-                wordL (tagActivePatternCase apref.Name) ^^
+                wordL (tagActivePatternCase apref.Name |> mkNav v.DefinitionRange) ^^
                 RightL.colon ^^
                 NicePrint.layoutTy denv ptau ^^
                 OutputFullName isDecl pubpath_of_vref fullDisplayTextOfValRefAsLayout v
@@ -867,7 +867,7 @@ module internal ItemDescriptionsImpl =
             let layout = 
                 NicePrint.layoutTyconRef denv rfinfo.TyconRef ^^
                 SepL.dot ^^
-                wordL (tagRecordField (DecompileOpName rfield.Name)) ^^
+                wordL (tagRecordField (DecompileOpName rfield.Name) |> mkNav rfield.DefinitionRange) ^^
                 RightL.colon ^^
                 NicePrint.layoutTy denv ty ^^
                 (
@@ -989,7 +989,9 @@ module internal ItemDescriptionsImpl =
             
             let layout = 
                 wordL (tagKeyword kind) ^^
-                wordL (if definiteNamespace then tagNamespace (fullDisplayTextOfModRef modref) else (tagModule modref.DemangledModuleOrNamespaceName))
+                (if definiteNamespace then tagNamespace (fullDisplayTextOfModRef modref) else (tagModule modref.DemangledModuleOrNamespaceName)
+                 |> mkNav modref.DefinitionRange
+                 |> wordL)
             if not definiteNamespace then
                 let namesToAdd = 
                     ([],modrefs) 

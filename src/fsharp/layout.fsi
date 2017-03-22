@@ -13,10 +13,10 @@ type LayoutTag = Internal.Utilities.StructuredFormat.LayoutTag
 type TaggedText = Internal.Utilities.StructuredFormat.TaggedText
 
 type NavigableTaggedText =
-    new : TaggedText * Range.range * string -> NavigableTaggedText
+    new : TaggedText * Range.range -> NavigableTaggedText
     member Range: Range.range
-    member FullName: string
     interface TaggedText
+val mkNav : Range.range -> TaggedText -> NavigableTaggedText
 
 module TaggedTextOps = Internal.Utilities.StructuredFormat.TaggedTextOps
 
