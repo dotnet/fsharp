@@ -8,8 +8,8 @@
     <FSCoreVersion Condition="'$(TargetFramework)' == 'portable47'">3.47.41.0</FSCoreVersion>
     <FSCoreVersion Condition="'$(TargetFramework)' == 'portable78'">3.78.41.0</FSCoreVersion>
     <FSCoreVersion Condition="'$(TargetFramework)' == 'portable259'">3.259.41.0</FSCoreVersion>
-
   </PropertyGroup>
+
   <Choose>
     <When Condition="'$(Configuration)' == 'Debug' or '$(Configuration)' == 'Release' ">
       <PropertyGroup>
@@ -20,7 +20,7 @@
         <When Condition="'$(ProjectLanguage)' == 'FSharp'">
           <Choose>
             <!-- In the open source "Mono" build we always sign the binaries with the public test.snk, apart from FSharp.Core -->
-			<When Condition="('$(MonoPackaging)' == 'true') AND ('$(AssemblyName)'!='FSharp.Core') AND ('$(AssemblyName)'!='FSharp.Core.Unittests')" >
+            <When Condition="('$(MonoPackaging)' == 'true') AND ('$(AssemblyName)'!='FSharp.Core') AND ('$(AssemblyName)'!='FSharp.Core.Unittests')" >
               <PropertyGroup>
                 <OtherFlags>$(OtherFlags) --keyfile:"$(FSharpSourcesRoot)\fsharp\test.snk"</OtherFlags>
                 <DefineConstants>STRONG_NAME_FSHARP_COMPILER_WITH_TEST_KEY;$(DefineConstants)</DefineConstants>
@@ -103,10 +103,13 @@
     <OtherFlags >$(OtherFlags) --version:"$(MicroBuildAssemblyVersion)"</OtherFlags>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(UseSourceLink)' == 'true'">
+    <SourceLink>$(IntermediateOutputPath)source_link.json</SourceLink>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(StrongNames)' != 'true'">
     <DefineConstants>NO_STRONG_NAMES;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
-
 
   <PropertyGroup Condition="'$(MonoPackaging)' != 'true'">
     <DefineConstants>MSBUILD_AT_LEAST_14;$(DefineConstants)</DefineConstants>
@@ -399,7 +402,7 @@
         <FSharpTargetsPath>..\Proto\$(ProtoFlavour)\bin\Microsoft.Portable.FSharp-proto.targets</FSharpTargetsPath>
       </PropertyGroup>
     </When>
-	<Otherwise>
+    <Otherwise>
       <!-- Compiling net40 with Proto -->
       <PropertyGroup>
         <OutputPath Condition=" '$(CustomOutputPath)' != 'true' ">$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin</OutputPath>
@@ -407,8 +410,9 @@
         <FscToolExe>fsc-proto.exe</FscToolExe>
         <FSharpTargetsPath>..\Proto\$(ProtoFlavour)\bin\Microsoft.FSharp-proto.targets</FSharpTargetsPath>
       </PropertyGroup>
-	</Otherwise>
+    </Otherwise>
   </Choose>
+
   <PropertyGroup>
     <CompileDependsOn>ValidateBuildTools;$(CompileDependsOn)</CompileDependsOn>
   </PropertyGroup>
@@ -522,6 +526,7 @@
   <Target Name="GenerateSourceLink" BeforeTargets="CoreCompile" Condition="'$(UseSourceLink)' == 'true'">
     <PropertyGroup>
       <SrcRootDirectory>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory.TrimEnd("\"))))</SrcRootDirectory>
+      <SourceLinkRoot>$(SrcRootDirectory.Replace("\", "\\"))</SourceLinkRoot>
     </PropertyGroup>
     <Exec Command="git config --get remote.origin.url" ConsoleToMsBuild="true">
       <Output TaskParameter="ConsoleOutput" PropertyName="RemoteUri" />
@@ -531,7 +536,7 @@
     <Exec Command="git rev-parse HEAD" ConsoleToMsBuild="true">
       <Output TaskParameter="ConsoleOutput" PropertyName="LatestCommit" />
     </Exec>
-    <WriteLinesToFile File="$(IntermediateOutputPath)source_link.json" Overwrite="true" Lines='{"documents": { "$(SrcRootDirectory)/*" : "$(RemoteUri.Replace(".git", "").Replace("github.com", "raw.githubusercontent.com"))/$(LatestCommit)/*" }}' />
+    <WriteLinesToFile File="$(IntermediateOutputPath)source_link.json" Overwrite="true" Lines='{"documents": { "$(SourceLinkRoot)\\*" : "$(RemoteUri.Replace(".git", "").Replace("github.com", "raw.githubusercontent.com"))/$(LatestCommit)/*" }}' />
   </Target>
 
     <!-- If BuildVersionFilePath not specified then do nothing  -->
