@@ -5,7 +5,7 @@ init:
   - set VS150COMNTOOLS=C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\
 
 build_script:
-  - build.cmd release publicsign
+  - build.cmd debug
 
 test: off
 version: '{build}'

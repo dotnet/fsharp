@@ -21,6 +21,7 @@
     <PackageReference Include="System.ValueTuple" Version="4.3.0" />
     <PackageReference Include="Microsoft.Build.Runtime" Version="15.1.548" />
     <PackageReference Include="Microsoft.Build.Engine" Version="15.1.548" />
+    <PackageReference Include="Microsoft.Build.Conversion.Core" Version="15.1.548" />
 
     <!-- Testing -->
     <PackageReference Include="FsCheck" Version="2.6.2" />

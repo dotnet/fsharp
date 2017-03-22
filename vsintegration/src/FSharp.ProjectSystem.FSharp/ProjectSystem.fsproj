@@ -113,7 +113,6 @@
     </Reference>
     <Reference Include="Microsoft.VisualStudio.VSHelp.dll" />
     <Reference Include="Microsoft.Build.Framework"><HintPath>$(FSharpSourcesRoot)\..\packages\microsoft.build.framework\15.1.548\lib\net46\Microsoft.Build.Framework.dll"</HintPath></Reference>
-    <Reference Include="Microsoft.Build.Engine"><HintPath>$(FSharpSourcesRoot)\..\packages\microsoft.build.engine\15.1.548\lib\net46\Microsoft.Build.Engine.dll"</HintPath></Reference>
     <Reference Include="Microsoft.Build"><HintPath>$(FSharpSourcesRoot)\..\packages\microsoft.build\15.1.548\lib\net46\Microsoft.Build.dll"</HintPath></Reference>
     <Reference Include="Microsoft.Build.Utilities.Core"><HintPath>$(FSharpSourcesRoot)\..\packages\microsoft.build.utilities.core\15.1.548\lib\net46\Microsoft.Build.Utilities.Core.dll"</HintPath></Reference>
     <Reference Include="Microsoft.Build.Tasks.Core"><HintPath>$(FSharpSourcesRoot)\..\packages\microsoft.build.tasks.core\15.1.548\lib\net46\Microsoft.Tasks.Core.dll"</HintPath></Reference>
