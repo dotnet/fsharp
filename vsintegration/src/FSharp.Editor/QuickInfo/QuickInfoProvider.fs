@@ -57,9 +57,9 @@ type internal FSharpQuickInfoProvider
         glyphService: IGlyphService
     ) =
 
-    let fragment(content: Layout.TaggedText seq, typemap: ClassificationTypeMap, thisDoc: Document) =
+    let fragment (content: Layout.TaggedText seq, typemap: ClassificationTypeMap, initialDoc: Document) : IDeferredQuickInfoContent =
 
-        let workspace = thisDoc.Project.Solution.Workspace
+        let workspace = initialDoc.Project.Solution.Workspace
         let solution = workspace.CurrentSolution
 
         /// Retrieve the DocumentId from the workspace for the range's file
@@ -72,29 +72,51 @@ type internal FSharpQuickInfoProvider
             | 0 -> None 
             | 1 -> 
                 let docId = candidates.[0]
-                if docId.ProjectId = thisDoc.Id.ProjectId || IsScript thisDoc.FilePath then Some docId else None
+                if docId.ProjectId = initialDoc.Id.ProjectId || IsScript initialDoc.FilePath then Some docId else None
             | _ -> 
                 candidates |> Seq.tryFind (fun docId -> 
-                    solution.GetDependentProjects docId.ProjectId |> Seq.contains thisDoc.Project
+                    solution.GetDependentProjects docId.ProjectId |> Seq.contains initialDoc.Project
                 )
 
         let canGoTo range =
             range <> rangeStartup && docIdOfRange range |> Option.isSome
 
-        let goTo range = 
-            asyncMaybe { 
-                let! id = docIdOfRange range
-                let doc = solution.GetDocument id 
-                let! src = doc.GetTextAsync()
-                let! span = CommonRoslynHelpers.TryFSharpRangeToTextSpan (src, range)
-                if gotoDefinitionService.TryGoToDefinition (doc, span.Start, Async.DefaultCancellationToken) then
-                   let! session = SessionHandling.currentSession
-                   session.Dismiss()   
-            } |> Async.Ignore |> Async.StartImmediate 
+        // to ensure proper navigation decsions we need to check the type of document the navigation call
+        // is originating from and the target we're provided by default
+        //  - signature files (.fsi) should navigate to other signature files 
+        //  - implementation files (.fs) should navigate to other implementation files
+        //let adjustTarget (range:range) =
+
+        let navigateTo (range:range) = 
+            maybe { 
+                let targetPath = range.FileName 
+                let! targetId = docIdOfRange range
+                let targetDoc = solution.GetDocument targetId 
+                let targetSource = targetDoc.GetTextAsync() |> Async.RunTaskSynchronously
+                let! targetTextSpan = CommonRoslynHelpers.TryFSharpRangeToTextSpan (targetSource, range)
+
+                let navigateWith navfn args = 
+                    if navfn args then 
+                        SessionHandling.currentSession
+                        |> Option.iter(fun session -> session.Dismiss())
+
+                match isSignatureFile initialDoc.FilePath, isSignatureFile targetPath with 
+                | true, true 
+                | false, false ->
+                    navigateWith gotoDefinitionService.TryNavigateToTextSpan (targetDoc, targetTextSpan) 
+                // adjust the target from signature to implementation
+                | false, true ->
+                    navigateWith gotoDefinitionService.TryNavigateToSymbolDefinition 
+                                (targetDoc, targetSource, range, Async.DefaultCancellationToken)
+                // adjust the target from implmentation to signature
+                | true, false -> 
+                    navigateWith gotoDefinitionService.TryNavigateToSymbolDeclaration
+                                (targetDoc, targetSource, range, Async.DefaultCancellationToken)
+            } |> ignore
 
         let formatMap = typemap.ClassificationFormatMapService.GetClassificationFormatMap "tooltip"
 
-        let props =
+        let layoutTagToFormatting =
             roslynTag
             >> ClassificationTags.GetClassificationTypeName
             >> typemap.GetClassificationType
@@ -108,24 +130,24 @@ type internal FSharpQuickInfoProvider
                     | :? Layout.NavigableTaggedText as nav when canGoTo nav.Range ->
                         let h = Documents.Hyperlink run
                         //h.ToolTip <- nav.FullName + "\n" + nav.Range.FileName
-                        h.Click.Add <| fun _ -> goTo nav.Range
+                        h.Click.Add <| fun _ -> navigateTo nav.Range
                         h :> Documents.Inline
                     //| :? Layout.NavigableTaggedText as nav ->
                     //    run.ToolTip <- nav.FullName
                     //    run :> Documents.Inline
                     | _ -> run
-                DependencyObjectExtensions.SetTextProperties(inl, props taggedText.Tag)
+                DependencyObjectExtensions.SetTextProperties(inl, layoutTagToFormatting taggedText.Tag)
                 yield inl
         }
 
-        let create() =
+        let createTextLinks () =
             let tb = TextBlock(TextWrapping = TextWrapping.Wrap, TextTrimming = TextTrimming.None)
             DependencyObjectExtensions.SetDefaultTextProperties(tb, formatMap)
             tb.Inlines.AddRange(inlines)
             if tb.Inlines.Count = 0 then tb.Visibility <- Visibility.Collapsed
             tb :> FrameworkElement
             
-        { new IDeferredQuickInfoContent with member x.Create() = create() }
+        { new IDeferredQuickInfoContent with member x.Create() = createTextLinks() }
 
     let tooltip(symbolGlyph, mainDescription, documentation) =
 
