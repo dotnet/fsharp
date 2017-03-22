@@ -180,6 +180,26 @@ type internal FSharpGoToDefinitionService
             statusBar.SetText "Could Not Navigate to Definition of Symbol Under Caret" |> ignore
             true
 
+    static member FindDefinition
+        (checker: FSharpChecker, documentKey: DocumentId, sourceText: SourceText, filePath: string, position: int,
+         defines: string list, options: FSharpProjectOptions, textVersionHash: int) : Option<range> = maybe {
+            let textLine = sourceText.Lines.GetLineFromPosition position
+            let textLinePos = sourceText.Lines.GetLinePosition position
+            let fcsTextLineNumber = Line.fromZ textLinePos.Line
+            let! symbol = CommonHelpers.getSymbolAtPosition(documentKey, sourceText, position, filePath, defines, SymbolLookupKind.Greedy)
+            let! _, _, checkFileResults = 
+                checker.ParseAndCheckDocument 
+                    (filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true)  |> Async.RunSynchronously
+
+            let declarations = 
+                checkFileResults.GetDeclarationLocationAlternate 
+                    (fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland, false) |> Async.RunSynchronously
+            
+            match declarations with
+            | FSharpFindDeclResult.DeclFound range -> return range
+            | _ -> return! None
+    }
+
 
     member this.TryNavigateToTextSpan (document:Document, textSpan:TextSpan) =
         let navigableItem = FSharpNavigableItem (document, textSpan) :> INavigableItem
