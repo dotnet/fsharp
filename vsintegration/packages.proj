@@ -27,7 +27,7 @@
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="15.0.26124-RC3" />
     <PackageReference Include="Roslyn.Microsoft.VisualStudio.ComponentModelHost" Version="0.0.2" Condition="'$(TargetFramework)' == 'net46'" />
     <PackageReference Include="Microsoft.VisualFSharp.Microsoft.VisualStudio.Shell.UI.Internal" Version="14.0.25420" Condition="'$(TargetFramework)' == 'net46'" />
-    <PackageReference Include="RoslynDependencies.Microsoft.VisualStudio.Text.Internal" Version="14.3.25407" targetFramework="net45" />
+    <PackageReference Include="RoslynDependencies.Microsoft.VisualStudio.Text.Internal" Version="14.3.25407" targetFramework="net46" />
     <PackageReference Include="RoslynDependencies.Microsoft.VisualStudio.Platform.VSEditor" Version="14.3.25407" Condition="'$(TargetFramework)' == 'net46'" />
   </ItemGroup>
 </Project>

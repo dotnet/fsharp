@@ -25,10 +25,10 @@
 
     <!-- Testing -->
     <PackageReference Include="FsCheck" Version="2.6.2" />
-    <PackageReference Include="NUnit" Version="3.5.0" Condition="'$(TargetFramework)' == 'net45'" />
-    <PackageReference Include="NUnit.Console" Version="3.0.0" Condition="'$(TargetFramework)' == 'net45'" />
-    <PackageReference Include="NUnitLite" Version="3.5.0" Condition="'$(TargetFramework)' == 'net45'" />
-    <PackageReference Include="NUnit3TestAdapter" Version="3.0.8-ctp-8" Condition="'$(TargetFramework)' == 'net45'" />
+    <PackageReference Include="NUnit" Version="3.5.0" Condition="'$(TargetFramework)' == 'net46'" />
+    <PackageReference Include="NUnit.Console" Version="3.0.0" Condition="'$(TargetFramework)' == 'net46'" />
+    <PackageReference Include="NUnitLite" Version="3.5.0" Condition="'$(TargetFramework)' == 'net46'" />
+    <PackageReference Include="NUnit3TestAdapter" Version="3.0.8-ctp-8" Condition="'$(TargetFramework)' == 'net46'" />
     <PackageReference Include="BenchmarkDotNet" Version="0.9.8"/>
     <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.9.8"/>
     <!--<PackageReference Include="VisualCppTools" Version="14.0.24519-Pre"/>-->
