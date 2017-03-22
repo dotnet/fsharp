@@ -15,7 +15,6 @@ open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Editor.Shared.Utilities
 open Microsoft.CodeAnalysis.Editor.Shared.Extensions
 open Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.QuickInfo
-open Microsoft.CodeAnalysis.Navigation
 open Microsoft.CodeAnalysis.Text
 
 open Microsoft.VisualStudio.FSharp.LanguageService
@@ -31,28 +30,35 @@ open Microsoft.FSharp.Compiler.CompileOps
 
 open CommonRoslynHelpers
 
-module internal FSharpQuickInfo =
-    
-    [<Literal>]
-    let SessionCapturingProviderName = "Session Capturing Quick Info Source Provider"
 
+module internal SessionHandling =
     let mutable currentSession = None
-
+    
     [<Export(typeof<IQuickInfoSourceProvider>)>]
-    [<Name(SessionCapturingProviderName)>]
+    [<Name("Session Capturing Quick Info Source Provider")>]
     [<Order(After = PredefinedQuickInfoProviderNames.Semantic)>]
     [<ContentType(FSharpCommonConstants.FSharpContentTypeName)>]
     type SourceProviderForCapturingSession() =
-        interface IQuickInfoSourceProvider with 
-            member __.TryCreateQuickInfoSource _ =
-              { new IQuickInfoSource with
-                member __.AugmentQuickInfoSession(session,_,_) = currentSession <- Some session
-                member __.Dispose() = () }
+            interface IQuickInfoSourceProvider with 
+                member x.TryCreateQuickInfoSource _ =
+                  { new IQuickInfoSource with
+                    member __.AugmentQuickInfoSession(session,_,_) = currentSession <- Some session
+                    member __.Dispose() = () }
+    
+[<ExportQuickInfoProvider(PredefinedQuickInfoProviderNames.Semantic, FSharpCommonConstants.FSharpLanguageName)>]
+type internal FSharpQuickInfoProvider 
+    [<System.ComponentModel.Composition.ImportingConstructor>] 
+    (
+        [<System.ComponentModel.Composition.Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider,
+        checkerProvider: FSharpCheckerProvider,
+        projectInfoManager: ProjectInfoManager,
+        typeMap: Shared.Utilities.ClassificationTypeMap,
+        glyphService: IGlyphService
+    ) =
 
     let fragment(content: Layout.TaggedText seq, typemap: ClassificationTypeMap, thisDoc: Document) =
 
         let workspace = thisDoc.Project.Solution.Workspace
-        let documentNavigationService = workspace.Services.GetService<IDocumentNavigationService>()
         let solution = workspace.CurrentSolution
 
         let documentId (range: range) =
@@ -74,11 +80,12 @@ module internal FSharpQuickInfo =
         let goTo range = 
             asyncMaybe { 
                 let! id = documentId range
-                let! src = solution.GetDocument(id).GetTextAsync()
+                let doc = solution.GetDocument(id)
+                let! src = doc.GetTextAsync()
                 let! span = CommonRoslynHelpers.TryFSharpRangeToTextSpan(src, range)
-                let options = workspace.Options.WithChangedOption(NavigationOptions.PreferProvisionalTab, true)
-                if documentNavigationService.TryNavigateToSpan(workspace, id, span, options) then
-                   let! session = currentSession
+                let goToService = doc.Project.LanguageServices.GetService<IGoToDefinitionService>()
+                if not (isNull goToService) && goToService.TryGoToDefinition(doc, span.Start, Async.DefaultCancellationToken) then
+                   let! session = SessionHandling.currentSession
                    session.Dismiss()   
             } |> Async.Ignore |> Async.StartImmediate 
 
@@ -137,17 +144,6 @@ module internal FSharpQuickInfo =
 
         { new IDeferredQuickInfoContent with member x.Create() = create() }
 
-[<ExportQuickInfoProvider(PredefinedQuickInfoProviderNames.Semantic, FSharpCommonConstants.FSharpLanguageName)>]
-type internal FSharpQuickInfoProvider 
-    [<System.ComponentModel.Composition.ImportingConstructor>] 
-    (
-        [<System.ComponentModel.Composition.Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider,
-        checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager,
-        typeMap: Shared.Utilities.ClassificationTypeMap,
-        glyphService: IGlyphService
-    ) =
-
     let xmlMemberIndexService = serviceProvider.GetService(typeof<SVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
     
@@ -185,11 +181,11 @@ type internal FSharpQuickInfoProvider
                     documentation.Add, 
                     toolTipElement)
                 let content = 
-                    FSharpQuickInfo.tooltip
+                    tooltip
                         (
                             SymbolGlyphDeferredContent(CommonRoslynHelpers.GetGlyphForSymbol(symbol, symbolKind), glyphService),
-                            FSharpQuickInfo.fragment(mainDescription, typeMap, document),
-                            FSharpQuickInfo.fragment(documentation, typeMap, document)
+                            fragment(mainDescription, typeMap, document),
+                            fragment(documentation, typeMap, document)
                         )
                 return QuickInfoItem(textSpan, content)
             } 
