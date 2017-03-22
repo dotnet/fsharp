@@ -3,6 +3,8 @@ module internal Microsoft.VisualStudio.FSharp.Editor.CodeAnalysisExtensions
 
 open Microsoft.CodeAnalysis
 open Microsoft.FSharp.Compiler.Range
+open Microsoft.VisualStudio.FSharp.Editor.Logging
+
 
 type Project with
 
@@ -12,6 +14,19 @@ type Project with
     /// The list all projects within the same solution that reference this project.
     member this.GetDependentProjects () =
         this.Solution.GetProjectDependencyGraph().GetProjectsThatDirectlyDependOnThisProject(this.Id)
+        |> Seq.map this.Solution.GetProject
+
+
+    /// The list the ProjectIds of all of the projects that this project directly or transitively depneds on
+    member this.GetProjectIdsOfAllProjectsThisProjectDependsOn () =
+        let graph = this.Solution.GetProjectDependencyGraph()
+        let transitiveDependencies = graph.GetProjectsThatThisProjectTransitivelyDependsOn this.Id
+        let directDependencies = graph.GetProjectsThatThisProjectDirectlyDependsOn this.Id
+        Seq.append directDependencies transitiveDependencies
+        
+    /// The list all of the projects that this project directly or transitively depneds on
+    member this.GetAllProjectsThisProjectDependsOn () =
+        this.GetProjectIdsOfAllProjectsThisProjectDependsOn ()
         |> Seq.map this.Solution.GetProject
 
 type Solution with 
@@ -38,6 +53,7 @@ type Solution with
         /// Retrieve the DocumentId from the workspace for the range's file
         let filePath = System.IO.Path.GetFullPathSafe range.FileName
         let candidates = self.GetDocumentIdsWithFilePath filePath
+        candidates|> Seq.iter(fun c -> logInfof "%s" (self.GetProject c.ProjectId).FilePath)
         match candidates.Length with 
         | 0 -> None 
         | 1 -> Some (self.GetDocument candidates.[0])

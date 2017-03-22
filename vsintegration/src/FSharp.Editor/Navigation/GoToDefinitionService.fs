@@ -57,32 +57,32 @@ module internal FSharpGoToDefinition =
     }
 
 
-    let rangeToNavigableItem (range:range, document:Document, cancellationToken:CancellationToken) =
+    let rangeToNavigableItem (range:range, document:Document) = async {
         let fileName = try System.IO.Path.GetFullPath range.FileName with _ -> range.FileName
         let refDocumentIds = document.Project.Solution.GetDocumentIdsWithFilePath fileName
         if not refDocumentIds.IsEmpty then 
             let refDocumentId = refDocumentIds.First()
             let refDocument = document.Project.Solution.GetDocument refDocumentId
-            let refSourceText = refDocument.GetTextAsync cancellationToken |> Async.RunTaskSynchronously
+            let! refSourceText = refDocument.GetTextAsync()
             let refTextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan (refSourceText, range)
-            Some (FSharpNavigableItem (refDocument, refTextSpan))
-        else None
+            return Some (FSharpNavigableItem (refDocument, refTextSpan))
+        else return None
+    }
 
-
-    let findDefinition (document: Document, position: int, checker:FSharpChecker, projectInfoManager:ProjectInfoManager, cancellationToken: CancellationToken) : FSharpNavigableItem option =
-        maybe {
+    let findDefinition (document: Document, position: int, checker:FSharpChecker, projectInfoManager:ProjectInfoManager)  =
+        asyncMaybe {
             let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
-            let sourceText = document.GetTextAsync cancellationToken |> Async.RunTaskSynchronously
-            let textVersion = document.GetTextVersionAsync cancellationToken |> Async.RunTaskSynchronously
+            let! sourceText = document.GetTextAsync ()
+            let! textVersion = document.GetTextVersionAsync ()
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing (document.Name, options.OtherOptions |> Seq.toList)
             let! range = checkAndFindDefinition
                             (checker, document.Id, sourceText, document.FilePath, position, defines, options, textVersion.GetHashCode())
-            return! rangeToNavigableItem (range, document, cancellationToken)
+            return! rangeToNavigableItem (range, document)
         }
     
 
     let private findSymbolHelper 
-        (document:Document, range:range, sourceText:SourceText, preferSignature:bool, checker: FSharpChecker, projectInfoManager: ProjectInfoManager,cancellationToken) =
+        (document:Document, range:range, sourceText:SourceText, preferSignature:bool, checker: FSharpChecker, projectInfoManager: ProjectInfoManager) =
         asyncMaybe {
             let! projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing (document.FilePath, projectOptions.OtherOptions |> Seq.toList)
@@ -106,23 +106,25 @@ module internal FSharpGoToDefinition =
                 | FSharpFindDeclResult.DeclNotFound _failReason -> None 
                 | FSharpFindDeclResult.DeclFound declRange -> Some declRange 
             
+            logInfof "should prefer signatures - %b" preferSignature
+            logInfof "found target @ - %A" targetRange 
             let! targetDocument = document.Project.Solution.TryGetDocumentFromFSharpRange(targetRange,document.Project.Id)
-            return! rangeToNavigableItem (targetRange, targetDocument, cancellationToken)
-        }  |> Async.RunSynchronously
+            return! rangeToNavigableItem (targetRange, targetDocument)
+        }  
 
 
     // find the declaration location (signature file/.fsi) of the target symbol if possible, fall back to definition 
     let findDeclarationOfSymbolAtRange
-        (document:Document, range:range, sourceText:SourceText, checker: FSharpChecker, projectInfoManager: ProjectInfoManager,cancellationToken) =
-        findSymbolHelper (document, range, sourceText,true, checker, projectInfoManager,cancellationToken) 
+        (document:Document, range:range, sourceText:SourceText, checker: FSharpChecker, projectInfoManager: ProjectInfoManager) =
+        findSymbolHelper (document, range, sourceText,true, checker, projectInfoManager) 
 
 
 
 
     // find the definition location (implementation file/.fs) of the target symbol
     let findDefinitionOfSymbolAtRange
-        (document:Document, range:range, sourceText:SourceText, checker: FSharpChecker, projectInfoManager: ProjectInfoManager,cancellationToken) =
-        findSymbolHelper (document, range, sourceText,false, checker, projectInfoManager,cancellationToken)
+        (document:Document, range:range, sourceText:SourceText, checker: FSharpChecker, projectInfoManager: ProjectInfoManager) =
+        findSymbolHelper (document, range, sourceText,false, checker, projectInfoManager)
 
 
 
@@ -139,17 +141,18 @@ type internal FSharpGoToDefinitionService
     let serviceProvider =  ServiceProvider.GlobalProvider  
     let statusBar = serviceProvider.GetService<SVsStatusbar,IVsStatusbar>()
 
-    let createNavigationTask navFunction args (cancellationToken:CancellationToken) = 
-        let navAction () : seq<INavigableItem> =
-            try let results = List<INavigableItem>()
-                match navFunction args with
-                | None -> results.AsEnumerable()
-                | Some navItem -> results.Add navItem; results.AsEnumerable()
+    let createNavigationTask (navFunction: _ -> Async<FSharpNavigableItem  option>) args (cancellationToken:CancellationToken) = 
+        asyncMaybe {
+            try let navList = List<INavigableItem>()
+                let! navItem = navFunction args 
+                navList.Add navItem 
+                return navList.AsEnumerable()
             with e ->
                 debug "\n%s\n%s\n%s\n" e.Message (e.TargetSite.ToString()) e.StackTrace
-                Seq.empty
-        let definitionTask = new Task<_>(navAction, cancellationToken) : INavigableItem seq Task
-        definitionTask
+                return Seq.empty
+        }   
+        |> Async.map (Option.defaultValue Seq.empty)
+        |> fun comp -> Async.StartAsTask(comp,cancellationToken=cancellationToken)
 
 
     let attemptNavigation (document:Document, navigationTask:Task<seq<INavigableItem>>) =
@@ -179,6 +182,15 @@ type internal FSharpGoToDefinitionService
         else 
             statusBar.SetText "Could Not Navigate to Definition of Symbol Under Caret" |> ignore
             true
+
+    let navigate  (document:Document) (navigableItem:#INavigableItem)  =
+        let workspace = document.Project.Solution.Workspace
+        let navigationService = workspace.Services.GetService<IDocumentNavigationService>()
+        let options = workspace.Options.WithChangedOption (NavigationOptions.PreferProvisionalTab, true)
+        let result = navigationService.TryNavigateToSpan (workspace, navigableItem.Document.Id, navigableItem.SourceSpan, options)
+        if result then true else
+        statusBar.SetText "Could Not Navigate to Definition of Symbol Under Caret" |> ignore
+        false
 
     static member FindDefinition
         (checker: FSharpChecker, documentKey: DocumentId, sourceText: SourceText, filePath: string, position: int,
@@ -212,30 +224,42 @@ type internal FSharpGoToDefinitionService
         false
 
 
+    member this.NavigateToSymbolDeclarationAsync (originDocument:Document,originSourceText:SourceText,symbolRange:range) = asyncMaybe {
+        let! navigableItem = 
+            FSharpGoToDefinition.findDeclarationOfSymbolAtRange 
+                (originDocument, symbolRange, originSourceText, checkerProvider.Checker, projectInfoManager)
+        return navigate originDocument navigableItem
+    }
+    
+    member this.NavigateToSymbolDefinitionAsync (originDocument:Document,originSourceText:SourceText,symbolRange:range)= asyncMaybe {
+        let! navigableItem = 
+            FSharpGoToDefinition.findDefinitionOfSymbolAtRange 
+                (originDocument, symbolRange, originSourceText, checkerProvider.Checker, projectInfoManager) 
+        return navigate originDocument navigableItem
+    }
+    
+    member this.FindDefinitionsTask (document, position, cancellationToken) =
+        createNavigationTask FSharpGoToDefinition.findDefinition 
+                            (document, position,checkerProvider.Checker,projectInfoManager)
+                            cancellationToken
+
 
     member this.TryNavigateToSymbolDeclaration (originDocument:Document,originSourceText:SourceText,symbolRange:range,cancellationToken)=
         let declarationTask = 
             createNavigationTask FSharpGoToDefinition.findDeclarationOfSymbolAtRange 
-                                 (originDocument, symbolRange, originSourceText, checkerProvider.Checker, projectInfoManager,cancellationToken) 
+                                 (originDocument, symbolRange, originSourceText, checkerProvider.Checker, projectInfoManager) 
                                  cancellationToken
         attemptNavigation (originDocument, declarationTask)
         
-    
 
     member this.TryNavigateToSymbolDefinition (originDocument:Document,originSourceText:SourceText,symbolRange:range,cancellationToken)=
         let definitionTask = 
             createNavigationTask FSharpGoToDefinition.findDefinitionOfSymbolAtRange 
-                                 (originDocument, symbolRange, originSourceText, checkerProvider.Checker, projectInfoManager,cancellationToken) 
+                                 (originDocument, symbolRange, originSourceText, checkerProvider.Checker, projectInfoManager) 
                                  cancellationToken
         attemptNavigation (originDocument, definitionTask)
 
-
-    member this.FindDefinitionsTask (document, position, cancellationToken) =
-        createNavigationTask FSharpGoToDefinition.findDefinition 
-                            (document, position,checkerProvider.Checker,projectInfoManager, cancellationToken)
-                            cancellationToken
-
-
+    
     member this.TryGoToDefinition(document: Document, position: int, cancellationToken: CancellationToken) =
         attemptNavigation (document , this.FindDefinitionsTask (document,position,cancellationToken))
 

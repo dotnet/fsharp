@@ -27,9 +27,9 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.CompileOps
-open  Microsoft.VisualStudio.FSharp.Editor.Logging
-open CommonRoslynHelpers
 
+open CommonRoslynHelpers
+open  Microsoft.VisualStudio.FSharp.Editor.Logging
 
 module private SessionHandling =
     let mutable currentSession = None
@@ -87,31 +87,30 @@ type internal FSharpQuickInfoProvider
         //let adjustTarget (range:range) =
 
         let navigateTo (range:range) = 
-            maybe { 
+            asyncMaybe { 
                 let targetPath = range.FileName 
+                logInfof "origin document - %s \n"  initialDoc.FilePath
+                logInfof "target range to - %s \n %A"  range.FileName range
                 let! targetId = docIdOfRange range
                 let targetDoc = solution.GetDocument targetId 
-                let targetSource = targetDoc.GetTextAsync() |> Async.RunTaskSynchronously
+                let! targetSource = targetDoc.GetTextAsync() 
                 let! targetTextSpan = CommonRoslynHelpers.TryFSharpRangeToTextSpan (targetSource, range)
-
-                let navigateWith navfn args = 
-                    if navfn args then 
-                        SessionHandling.currentSession
-                        |> Option.iter(fun session -> session.Dismiss())
 
                 match isSignatureFile initialDoc.FilePath, isSignatureFile targetPath with 
                 | true, true 
                 | false, false ->
-                    navigateWith gotoDefinitionService.TryNavigateToTextSpan (targetDoc, targetTextSpan) 
+                    return (gotoDefinitionService.TryNavigateToTextSpan (targetDoc, targetTextSpan))
                 // adjust the target from signature to implementation
                 | false, true ->
-                    navigateWith gotoDefinitionService.TryNavigateToSymbolDefinition 
-                                (targetDoc, targetSource, range, Async.DefaultCancellationToken)
+                    return! gotoDefinitionService.NavigateToSymbolDefinitionAsync (targetDoc, targetSource, range)
                 // adjust the target from implmentation to signature
                 | true, false -> 
-                    navigateWith gotoDefinitionService.TryNavigateToSymbolDeclaration
-                                (targetDoc, targetSource, range, Async.DefaultCancellationToken)
-            } |> ignore
+                    return! gotoDefinitionService.NavigateToSymbolDeclarationAsync (targetDoc, targetSource, range)
+            } |> Async.map (Option.map (fun res -> 
+                if res then 
+                    SessionHandling.currentSession
+                    |> Option.iter (fun session -> session.Dismiss ())
+                )) |> Async.Ignore |> Async.StartImmediate 
 
         let formatMap = typemap.ClassificationFormatMapService.GetClassificationFormatMap "tooltip"
 
