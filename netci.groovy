@@ -71,7 +71,7 @@ SET VS150COMNTOOLS=%ProgramFiles(x86)%\\Microsoft Visual Studio\\2017\\Enterpris
 SET VSSDK150Install=%ProgramFiles(x86)%\\Microsoft Visual Studio\\2017\\Enterprise\\VSSDK\\
 SET VSSDKInstall=%ProgramFiles(x86)%\\Microsoft Visual Studio\\2017\\Enterprise\\VSSDK\\
 
-.\\build.cmd ${buildFlavor} ${build_args}"""
+.\\build.cmd ${buildFlavor} ${build_args}""")
                     }
                     else {
                         // Shell
