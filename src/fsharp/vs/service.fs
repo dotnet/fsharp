@@ -906,7 +906,7 @@ type TypeCheckInfo
             p <- p - 1
         if p >= 0 then Some p else None
     
-    let CompletionItem (ty: TyconRef option) (unresolvedEntity: RawEntity option) (item: Item) =
+    let CompletionItem (ty: TyconRef option) (unresolvedEntity: AssymblySymbol option) (item: Item) =
         let kind = 
             match item with
             | Item.MethodGroup (_, minfo :: _, _) -> CompletionItemKind.Method minfo.IsExtensionMember
@@ -941,7 +941,7 @@ type TypeCheckInfo
     let DefaultCompletionItem = CompletionItem None None
     
     let GetDeclaredItems (parseResultsOpt: FSharpParseFileResults option, lineStr: string, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, line, loc, 
-                          filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck, isInRangeOperator, allEntities: RawEntity list) =
+                          filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck, isInRangeOperator, allSymbols: AssymblySymbol list) =
  
             // Are the last two chars (except whitespaces) = ".."
             let isLikeRangeOp = 
@@ -1089,14 +1089,14 @@ type TypeCheckInfo
                            match origLongIdentOpt with
                            | None | Some [] ->
                                let allItems = 
-                                   allEntities 
-                                   |> List.filter (fun x -> not (ItemDescriptionsImpl.IsExplicitlySuppressed g x.Item))
+                                   allSymbols 
+                                   |> List.filter (fun x -> not x.Symbol.IsExplicitlySuppressed)
                                    |> List.filter (fun x -> 
-                                        match x.Item with
-                                        | Item.CtorGroup _ when filterCtors = ResolveTypeNamesToTypeRefs -> false 
+                                        match x.Symbol with
+                                        | :? FSharpMemberOrFunctionOrValue as m when m.IsConstructor && filterCtors = ResolveTypeNamesToTypeRefs -> false 
                                         | _ -> true)
                                    
-                               let getItem (x: RawEntity) = x.Item
+                               let getItem (x: AssymblySymbol) = x.Symbol.Item
                                
                                match allItems, denv, m with
                                | FilterRelevantItems getItem exactMatchResidueOpt (entities, denv, m) when not (isNil entities) ->
@@ -1104,7 +1104,7 @@ type TypeCheckInfo
                                    Some(
                                        entities 
                                        |> List.map(fun entity ->
-                                            CompletionItem (getType()) (Some entity) entity.Item), denv, m)
+                                            CompletionItem (getType()) (Some entity) entity.Symbol.Item), denv, m)
                                | _ -> None
                            | _ -> None // do not return unresolved items after dot
 
@@ -1121,7 +1121,7 @@ type TypeCheckInfo
     /// Get the auto-complete items at a particular location.
     let GetDeclItemsForNamesAtPosition(ctok: CompilationThreadToken, parseResultsOpt: FSharpParseFileResults option, origLongIdentOpt: string list option, 
                                        residueOpt:string option, line:int, lineStr:string, colAtEndOfNamesAndResidue, filterCtors, resolveOverloads, 
-                                       getAllEntities: unit -> RawEntity list, hasTextChangedSinceLastTypecheck: (obj * range -> bool)) : (CompletionItem list * DisplayEnv * range) option = 
+                                       getAllSymbols: unit -> AssymblySymbol list, hasTextChangedSinceLastTypecheck: (obj * range -> bool)) : (CompletionItem list * DisplayEnv * range) option = 
         RequireCompilationThread ctok // the operations in this method need the reactor thread
 
         let loc = 
@@ -1183,7 +1183,7 @@ type TypeCheckInfo
 
             let declaredItems = 
                 GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, line, loc, filterCtors, resolveOverloads, 
-                                  hasTextChangedSinceLastTypecheck, false, getAllEntities())
+                                  hasTextChangedSinceLastTypecheck, false, getAllSymbols())
 
             match results with
             | NameResResult.Members(items, denv, m) -> 
@@ -1205,7 +1205,7 @@ type TypeCheckInfo
             | _ -> declaredItems
 
         | Some(CompletionContext.AttributeApplication) ->
-            GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, line, loc, filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck, false, getAllEntities())
+            GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, line, loc, filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck, false, getAllSymbols())
             |> Option.map (fun (items, denv, m) -> 
                  items 
                  |> List.filter (fun cItem ->
@@ -1217,7 +1217,7 @@ type TypeCheckInfo
         // Other completions
         | cc ->
             let isInRangeOperator = (match cc with Some (CompletionContext.RangeOperator) -> true | _ -> false)
-            GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, line, loc, filterCtors,resolveOverloads, hasTextChangedSinceLastTypecheck, isInRangeOperator, getAllEntities())
+            GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, line, loc, filterCtors,resolveOverloads, hasTextChangedSinceLastTypecheck, isInRangeOperator, getAllSymbols())
 
     /// Return 'false' if this is not a completion item valid in an interface file.
     let IsValidSignatureFileItem item =
@@ -1275,11 +1275,11 @@ type TypeCheckInfo
         //items |> List.exists (ItemsAreEffectivelyEqual g item)
 
     /// Get the auto-complete items at a location
-    member x.GetDeclarations (ctok, parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, getAllEntities, hasTextChangedSinceLastTypecheck) =
+    member x.GetDeclarations (ctok, parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, getAllSymbols, hasTextChangedSinceLastTypecheck) =
         let isInterfaceFile = SourceFileImpl.IsInterfaceFile mainInputFileName
         ErrorScope.Protect Range.range0 
             (fun () -> 
-                match GetDeclItemsForNamesAtPosition(ctok, parseResultsOpt, Some qualifyingNames, Some partialName, line, lineStr, colAtEndOfNamesAndResidue, ResolveTypeNamesToCtors, ResolveOverloads.Yes, getAllEntities, hasTextChangedSinceLastTypecheck) with
+                match GetDeclItemsForNamesAtPosition(ctok, parseResultsOpt, Some qualifyingNames, Some partialName, line, lineStr, colAtEndOfNamesAndResidue, ResolveTypeNamesToCtors, ResolveOverloads.Yes, getAllSymbols, hasTextChangedSinceLastTypecheck) with
                 | None -> FSharpDeclarationListInfo.Empty  
                 | Some (items, denv, m) -> 
                     let items = items |> FilterAutoCompletesBasedOnParseContext parseResultsOpt (mkPos line colAtEndOfNamesAndResidue)

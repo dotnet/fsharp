@@ -39,7 +39,7 @@ type internal AssemblyPath = string
 
 /// Represents type, module, member, function or value in a compiled assembly.
 [<NoComparison; NoEquality>]
-type internal RawEntity = 
+type internal AssymblySymbol = 
     { /// Full entity name as it's seen in compiled code (raw FSharpEntity.FullName, FSharpValueOrFunction.FullName). 
       FullName: string
       /// Entity name parts with removed module suffixes (Ns.M1Module.M2Module.M3.entity -> Ns.M1.M2.M3.entity)
@@ -48,14 +48,13 @@ type internal RawEntity =
       CleanedIdents: Idents
       /// `FSharpEntity.Namespace`.
       Namespace: Idents option
-      IsPublic: bool
       /// The most narrative parent module that has `RequireQualifiedAccess` attribute.
       NearestRequireQualifiedAccessParent: Idents option
       /// Parent module that has the largest scope and has `RequireQualifiedAccess` attribute.
       TopRequireQualifiedAccessParent: Idents option
       /// Parent module that has `AutoOpen` attribute.
       AutoOpenParent: Idents option
-      Item: NameResolution.Item
+      Symbol: FSharpSymbol
       /// Function that returns `EntityKind` based of given `LookupKind`.
       Kind: LookupType -> EntityKind }
 
@@ -66,7 +65,7 @@ type internal AssemblyContentCacheEntry =
       /// Content type used to get assembly content.
       ContentType: AssemblyContentType 
       /// Assembly content.
-      Entities: RawEntity list }
+      Symbols: AssymblySymbol list }
 
 /// Assembly content cache.
 [<NoComparison; NoEquality>]
@@ -104,15 +103,15 @@ type internal Entity =
 /// Provides assembly content.
 module internal AssemblyContentProvider =
     /// Given a `FSharpAssemblySignature`, returns assembly content.
-    val getAssemblySignatureContent : AssemblyContentType -> FSharpAssemblySignature -> RawEntity list
+    val getAssemblySignatureContent : AssemblyContentType -> FSharpAssemblySignature -> AssymblySymbol list
 
     /// Returns (possibly cached) assembly content.
     val getAssemblyContent : 
-             withCache: ((IAssemblyContentCache -> RawEntity list) -> RawEntity list)  
+             withCache: ((IAssemblyContentCache -> AssymblySymbol list) -> AssymblySymbol list)  
           -> contentType: AssemblyContentType 
           -> fileName: string option 
           -> assemblies: FSharpAssembly list 
-          -> RawEntity list
+          -> AssymblySymbol list
 
 /// Kind of lexical scope.
 type internal ScopeKind =

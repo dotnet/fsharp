@@ -134,19 +134,14 @@ type internal LookupType =
     | Precise
 
 [<NoComparison; NoEquality>]
-type internal RawEntity = 
-    { /// Full entity name as it's seen in compiled code (raw FSharpEntity.FullName, FSharpValueOrFunction.FullName). 
-      FullName: string
-      /// Entity name parts with removed module suffixes (Ns.M1Module.M2Module.M3.entity -> Ns.M1.M2.M3.entity)
-      /// and replaced compiled names with display names (FSharpEntity.DisplayName, FSharpValueOrFucntion.DisplayName).
-      /// Note: *all* parts are cleaned, not the last one. 
+type internal AssymblySymbol = 
+    { FullName: string
       CleanedIdents: Idents
       Namespace: Idents option
-      IsPublic: bool
       NearestRequireQualifiedAccessParent: Idents option
       TopRequireQualifiedAccessParent: Idents option
       AutoOpenParent: Idents option
-      Item: NameResolution.Item
+      Symbol: FSharpSymbol
       Kind: LookupType -> EntityKind }
     override x.ToString() = sprintf "%A" x  
 
@@ -222,7 +217,7 @@ module internal TypedAstPatterns =
 type internal AssemblyContentCacheEntry =
     { FileWriteTime: DateTime 
       ContentType: AssemblyContentType 
-      Entities: RawEntity list }
+      Symbols: AssymblySymbol list }
 
 [<NoComparison; NoEquality>]
 type internal IAssemblyContentCache =
@@ -238,11 +233,10 @@ module internal AssemblyContentProvider =
             { FullName = fullName
               CleanedIdents = cleanIdents
               Namespace = ns
-              IsPublic = entity.Accessibility.IsPublic
               NearestRequireQualifiedAccessParent = parent.ThisRequiresQualifiedAccess |> Option.map parent.FixParentModuleSuffix
               TopRequireQualifiedAccessParent = parent.TopRequiresQualifiedAccess |> Option.map parent.FixParentModuleSuffix
               AutoOpenParent = parent.AutoOpen |> Option.map parent.FixParentModuleSuffix
-              Item = entity.Item
+              Symbol = entity
               Kind = fun lookupType ->
                 match entity, lookupType with                
                 | TypedAstPatterns.FSharpModule, _ ->
@@ -264,11 +258,10 @@ module internal AssemblyContentProvider =
                 { FullName = fullName
                   CleanedIdents = parent.FixParentModuleSuffix idents
                   Namespace = ns
-                  IsPublic = func.Accessibility.IsPublic
                   NearestRequireQualifiedAccessParent = parent.ThisRequiresQualifiedAccess |> Option.map parent.FixParentModuleSuffix
                   TopRequireQualifiedAccessParent = parent.TopRequiresQualifiedAccess |> Option.map parent.FixParentModuleSuffix
                   AutoOpenParent = parent.AutoOpen |> Option.map parent.FixParentModuleSuffix
-                  Item = func.Item
+                  Symbol = func
                   Kind = fun _ -> EntityKind.FunctionOrValue func.IsActivePattern }
 
             [ yield! func.TryGetFullDisplayName() 
@@ -352,12 +345,9 @@ module internal AssemblyContentProvider =
         |> Seq.toList
 
     let private getAssemblySignaturesContent contentType (assemblies: FSharpAssembly list) = 
-        assemblies 
-        |> Seq.collect (fun asm -> getAssemblySignatureContent contentType asm.Contents)
-        |> Seq.toList
+        assemblies |> List.collect (fun asm -> getAssemblySignatureContent contentType asm.Contents)
 
-    let getAssemblyContent (withCache: (IAssemblyContentCache -> _) -> _) 
-                           contentType (fileName: string option) (assemblies: FSharpAssembly list) =
+    let getAssemblyContent (withCache: (IAssemblyContentCache -> _) -> _) contentType (fileName: string option) (assemblies: FSharpAssembly list) =
 
         // We ignore all diagnostics during this operation
         //
@@ -374,17 +364,21 @@ module internal AssemblyContentProvider =
             withCache <| fun cache ->
                 match contentType, cache.TryGet fileName with 
                 | _, Some entry
-                | Public, Some entry when entry.FileWriteTime = fileWriteTime -> entry.Entities
+                | Public, Some entry when entry.FileWriteTime = fileWriteTime -> entry.Symbols
                 | _ ->
-                    let entities = getAssemblySignaturesContent contentType assemblies
-                    cache.Set fileName { FileWriteTime = fileWriteTime; ContentType = contentType; Entities = entities }
-                    entities
+                    let symbols = getAssemblySignaturesContent contentType assemblies
+                    cache.Set fileName { FileWriteTime = fileWriteTime; ContentType = contentType; Symbols = symbols }
+                    symbols
         | assemblies, None -> 
             getAssemblySignaturesContent contentType assemblies
         |> List.filter (fun entity -> 
-            match contentType, entity.IsPublic with
-            | Full, _ | Public, true -> true
-            | _ -> false)
+            match contentType, FSharpSymbol.GetAccessibility(entity.Symbol) with
+            | Full, _ -> true
+            | Public, access ->
+                match access with
+                | None -> true
+                | Some x when x.IsPublic -> true
+                | _ -> false)
 
 type internal EntityCache() =
     let dic = Dictionary<AssemblyPath, AssemblyContentCacheEntry>()

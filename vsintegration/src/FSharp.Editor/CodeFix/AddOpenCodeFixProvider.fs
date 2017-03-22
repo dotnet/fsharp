@@ -118,17 +118,17 @@ type internal FSharpAddOpenCodeFixProvider
             
             let entities =
                 assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies checkResults
-                |> List.collect (fun e -> 
-                     [ yield e.TopRequireQualifiedAccessParent, e.AutoOpenParent, e.Namespace, e.CleanedIdents
+                |> List.collect (fun s -> 
+                     [ yield s.TopRequireQualifiedAccessParent, s.AutoOpenParent, s.Namespace, s.CleanedIdents
                        if isAttribute then
-                          let lastIdent = e.CleanedIdents.[e.CleanedIdents.Length - 1]
-                          if lastIdent.EndsWith "Attribute" && e.Kind LookupType.Precise = EntityKind.Attribute then
+                          let lastIdent = s.CleanedIdents.[s.CleanedIdents.Length - 1]
+                          if lastIdent.EndsWith "Attribute" && s.Kind LookupType.Precise = EntityKind.Attribute then
                               yield 
-                                  e.TopRequireQualifiedAccessParent, 
-                                  e.AutoOpenParent,
-                                  e.Namespace,
-                                  e.CleanedIdents 
-                                  |> Array.replace (e.CleanedIdents.Length - 1) (lastIdent.Substring(0, lastIdent.Length - 9)) ])
+                                  s.TopRequireQualifiedAccessParent, 
+                                  s.AutoOpenParent,
+                                  s.Namespace,
+                                  s.CleanedIdents 
+                                  |> Array.replace (s.CleanedIdents.Length - 1) (lastIdent.Substring(0, lastIdent.Length - 9)) ])
 
             let longIdent = ParsedInput.getLongIdentAt parsedInput unresolvedIdentRange.End
 
