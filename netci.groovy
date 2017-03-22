@@ -81,7 +81,7 @@ SET VS150COMNTOOLS=%ProgramFiles(x86)%\\Microsoft Visual Studio\\2017\\Enterpris
             // TODO: set to false after tests are fully enabled
             def skipIfNoTestFiles = true
 
-            def affinity = configuration == 'Release_net40_no_vs' ? 'latest-or-auto' : (os == 'Windows_NT' ? ''latest-or-auto-dev15-0' : 'latest-or-auto')
+            def affinity = configuration == 'Release_net40_no_vs' ? 'latest-or-auto' : (os == 'Windows_NT' ? 'latest-or-auto-dev15-0' : 'latest-or-auto')
             Utilities.setMachineAffinity(newJob, os, affinity)
             Utilities.standardJobSetup(newJob, project, isPullRequest, "*/${branch}")
             Utilities.addArchival(newJob, "tests/TestResults/*.*", "", skipIfNoTestFiles, false)
