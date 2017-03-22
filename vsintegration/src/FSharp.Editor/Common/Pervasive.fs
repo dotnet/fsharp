@@ -2,11 +2,17 @@
 module Microsoft.VisualStudio.FSharp.Editor.Pervasive
 
 open System
+open System.IO
 open System.Diagnostics
+
+
+/// Checks if the filePath ends with ".fsi"
+let isSignatureFile (filePath:string) = 
+    Path.GetExtension filePath = ".fsi"
+
 
 [<RequireQualifiedAccess>]
 module String =   
-    open System.IO
 
     let getLines (str: string) =
         use reader = new StringReader(str)

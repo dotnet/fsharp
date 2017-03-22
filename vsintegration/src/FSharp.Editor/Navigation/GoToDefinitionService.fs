@@ -33,20 +33,10 @@ type internal FSharpNavigableItem(document: Document, textSpan: TextSpan) =
         member this.DisplayTaggedParts = ImmutableArray<TaggedText>.Empty
         member this.ChildItems = ImmutableArray<INavigableItem>.Empty
 
-[<Shared>]
-[<ExportLanguageService(typeof<IGoToDefinitionService>, FSharpCommonConstants.FSharpLanguageName)>]
-[<Export(typeof<FSharpGoToDefinitionService>)>]
-type internal FSharpGoToDefinitionService 
-    [<ImportingConstructor>]
-    (
-        checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager,
-        [<ImportMany>]presenters: IEnumerable<INavigableItemsPresenter>
-    ) =
-    let serviceProvider =  ServiceProvider.GlobalProvider  
-    let statusBar = serviceProvider.GetService<SVsStatusbar,IVsStatusbar>()
 
-    static member FindDefinition
+module internal FSharpGoToDefinition =
+  
+    let checkAndFindDefinition
         (checker: FSharpChecker, documentKey: DocumentId, sourceText: SourceText, filePath: string, position: int,
          defines: string list, options: FSharpProjectOptions, textVersionHash: int) : Option<range> = maybe {
             let textLine = sourceText.Lines.GetLineFromPosition position
@@ -65,47 +55,110 @@ type internal FSharpGoToDefinitionService
             | FSharpFindDeclResult.DeclFound range -> return range
             | _ -> return! None
     }
+
+
+    let rangeToNavigableItem (range:range, document:Document, cancellationToken:CancellationToken) =
+        let fileName = try System.IO.Path.GetFullPath range.FileName with _ -> range.FileName
+        let refDocumentIds = document.Project.Solution.GetDocumentIdsWithFilePath fileName
+        if not refDocumentIds.IsEmpty then 
+            let refDocumentId = refDocumentIds.First()
+            let refDocument = document.Project.Solution.GetDocument refDocumentId
+            let refSourceText = refDocument.GetTextAsync cancellationToken |> Async.RunTaskSynchronously
+            let refTextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan (refSourceText, range)
+            Some (FSharpNavigableItem (refDocument, refTextSpan))
+        else None
+
+
+    let findDefinition (document: Document, position: int, checker:FSharpChecker, projectInfoManager:ProjectInfoManager, cancellationToken: CancellationToken) : FSharpNavigableItem option =
+        maybe {
+            let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
+            let sourceText = document.GetTextAsync cancellationToken |> Async.RunTaskSynchronously
+            let textVersion = document.GetTextVersionAsync cancellationToken |> Async.RunTaskSynchronously
+            let defines = CompilerEnvironment.GetCompilationDefinesForEditing (document.Name, options.OtherOptions |> Seq.toList)
+            let! range = checkAndFindDefinition
+                            (checker, document.Id, sourceText, document.FilePath, position, defines, options, textVersion.GetHashCode())
+            return! rangeToNavigableItem (range, document, cancellationToken)
+        }
     
-    // FSROSLYNTODO: Since we are not integrated with the Roslyn project system yet, the below call
-    // document.Project.Solution.GetDocumentIdsWithFilePath() will only access files in the same project.
-    // Either Roslyn INavigableItem needs to be extended to allow arbitary full paths, or we need to
-    // fully integrate with their project system.
-    member this.FindDefinitionsTask(document: Document, position: int, cancellationToken: CancellationToken) =
-        let findDefinition () =
-            try maybe {
-                let results = List<INavigableItem>()
-                let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
-                let sourceText = document.GetTextAsync cancellationToken |> Async.RunTaskSynchronously
-                let textVersion = document.GetTextVersionAsync cancellationToken |> Async.RunTaskSynchronously
-                let defines = CompilerEnvironment.GetCompilationDefinesForEditing (document.Name, options.OtherOptions |> Seq.toList)
-                let! range = FSharpGoToDefinitionService.FindDefinition 
-                                (checkerProvider.Checker, document.Id, sourceText, document.FilePath, position, defines, options, textVersion.GetHashCode())
-                // REVIEW: 
-                let fileName = try System.IO.Path.GetFullPath range.FileName with _ -> range.FileName
-                let refDocumentIds = document.Project.Solution.GetDocumentIdsWithFilePath fileName
-                if not refDocumentIds.IsEmpty then 
-                    let refDocumentId = refDocumentIds.First()
-                    let refDocument = document.Project.Solution.GetDocument refDocumentId
-                    let refSourceText = refDocument.GetTextAsync cancellationToken |> Async.RunTaskSynchronously
-                    let refTextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan (refSourceText, range)
-                    results.Add (FSharpNavigableItem (refDocument, refTextSpan))
-                return results.AsEnumerable()
-                } |> Option.defaultValue Seq.empty
+
+    let private findSymbolHelper 
+        (document:Document, range:range, sourceText:SourceText, preferSignature:bool, checker: FSharpChecker, projectInfoManager: ProjectInfoManager,cancellationToken) =
+        asyncMaybe {
+            let! projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
+            let defines = CompilerEnvironment.GetCompilationDefinesForEditing (document.FilePath, projectOptions.OtherOptions |> Seq.toList)
+
+            let originTextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan (sourceText, range)
+            let position = originTextSpan.Start
+            let! lexerSymbol = 
+                CommonHelpers.getSymbolAtPosition 
+                    (document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy)
+
+            let lineText = (sourceText.Lines.GetLineFromPosition position).ToString() 
+
+            let! _, _, checkFileResults = 
+                checker.ParseAndCheckDocument (document,projectOptions,allowStaleResults=true,sourceText=sourceText)
+            let idRange = lexerSymbol.Ident.idRange
+            let! findSigDeclarationResult = 
+                checkFileResults.GetDeclarationLocationAlternate
+                    (idRange.StartLine, idRange.EndColumn, lineText, lexerSymbol.FullIsland, preferFlag=preferSignature)  |> liftAsync
+            let! targetRange =
+                match findSigDeclarationResult with 
+                | FSharpFindDeclResult.DeclNotFound _failReason -> None 
+                | FSharpFindDeclResult.DeclFound declRange -> Some declRange 
+            
+            let! targetDocument = document.Project.Solution.TryGetDocumentFromFSharpRange(targetRange,document.Project.Id)
+            return! rangeToNavigableItem (targetRange, targetDocument, cancellationToken)
+        }  |> Async.RunSynchronously
+
+
+    // find the declaration location (signature file/.fsi) of the target symbol if possible, fall back to definition 
+    let findDeclarationOfSymbolAtRange
+        (document:Document, range:range, sourceText:SourceText, checker: FSharpChecker, projectInfoManager: ProjectInfoManager,cancellationToken) =
+        findSymbolHelper (document, range, sourceText,true, checker, projectInfoManager,cancellationToken) 
+
+
+
+
+    // find the definition location (implementation file/.fs) of the target symbol
+    let findDefinitionOfSymbolAtRange
+        (document:Document, range:range, sourceText:SourceText, checker: FSharpChecker, projectInfoManager: ProjectInfoManager,cancellationToken) =
+        findSymbolHelper (document, range, sourceText,false, checker, projectInfoManager,cancellationToken)
+
+
+
+[<Shared>]
+[<ExportLanguageService(typeof<IGoToDefinitionService>, FSharpCommonConstants.FSharpLanguageName)>]
+[<Export(typeof<FSharpGoToDefinitionService>)>]
+type internal FSharpGoToDefinitionService 
+    [<ImportingConstructor>]
+    (
+        checkerProvider: FSharpCheckerProvider,
+        projectInfoManager: ProjectInfoManager,
+        [<ImportMany>]presenters: IEnumerable<INavigableItemsPresenter>
+    ) =
+    let serviceProvider =  ServiceProvider.GlobalProvider  
+    let statusBar = serviceProvider.GetService<SVsStatusbar,IVsStatusbar>()
+
+    let createNavigationTask navFunction args (cancellationToken:CancellationToken) = 
+        let navAction () : seq<INavigableItem> =
+            try let results = List<INavigableItem>()
+                match navFunction args with
+                | None -> results.AsEnumerable()
+                | Some navItem -> results.Add navItem; results.AsEnumerable()
             with e ->
                 debug "\n%s\n%s\n%s\n" e.Message (e.TargetSite.ToString()) e.StackTrace
                 Seq.empty
-        let definitionTask = new Task<_>(findDefinition, cancellationToken) : INavigableItem seq Task
+        let definitionTask = new Task<_>(navAction, cancellationToken) : INavigableItem seq Task
         definitionTask
 
-    member this.TryGoToDefinition(document: Document, position: int, cancellationToken: CancellationToken) =
-        let definitionTask = this.FindDefinitionsTask (document, position, cancellationToken)
-            
+
+    let attemptNavigation (document:Document, navigationTask:Task<seq<INavigableItem>>) =
         // Running the task synchronously improves the speed significantly
         // UI locks are not an issue thanks to the cancellation token
-        definitionTask.RunSynchronously ()
+        navigationTask.RunSynchronously ()
 
-        if definitionTask.Status = TaskStatus.RanToCompletion && definitionTask.Result.Any() then
-            let navigableItem = definitionTask.Result.First() // F# API provides only one INavigableItem
+        if navigationTask.Status = TaskStatus.RanToCompletion && navigationTask.Result.Any() then
+            let navigableItem = navigationTask.Result.First() // F# API provides only one INavigableItem
             let workspace = document.Project.Solution.Workspace
             let navigationService = workspace.Services.GetService<IDocumentNavigationService>()
             ignore presenters
@@ -126,10 +179,52 @@ type internal FSharpGoToDefinitionService
         else 
             statusBar.SetText "Could Not Navigate to Definition of Symbol Under Caret" |> ignore
             true
+
+
+    member this.TryNavigateToTextSpan (document:Document, textSpan:TextSpan) =
+        let navigableItem = FSharpNavigableItem (document, textSpan) :> INavigableItem
+        let workspace = document.Project.Solution.Workspace
+        let navigationService = workspace.Services.GetService<IDocumentNavigationService>()
+        let options = workspace.Options.WithChangedOption (NavigationOptions.PreferProvisionalTab, true)
+        let result = navigationService.TryNavigateToSpan (workspace, navigableItem.Document.Id, navigableItem.SourceSpan, options)
+        if result then true else
+        statusBar.SetText "Could Not Navigate to Definition of Symbol Under Caret" |> ignore
+        false
+
+
+
+    member this.TryNavigateToSymbolDeclaration (originDocument:Document,originSourceText:SourceText,symbolRange:range,cancellationToken)=
+        let declarationTask = 
+            createNavigationTask FSharpGoToDefinition.findDeclarationOfSymbolAtRange 
+                                 (originDocument, symbolRange, originSourceText, checkerProvider.Checker, projectInfoManager,cancellationToken) 
+                                 cancellationToken
+        attemptNavigation (originDocument, declarationTask)
+        
+    
+
+    member this.TryNavigateToSymbolDefinition (originDocument:Document,originSourceText:SourceText,symbolRange:range,cancellationToken)=
+        let definitionTask = 
+            createNavigationTask FSharpGoToDefinition.findDefinitionOfSymbolAtRange 
+                                 (originDocument, symbolRange, originSourceText, checkerProvider.Checker, projectInfoManager,cancellationToken) 
+                                 cancellationToken
+        attemptNavigation (originDocument, definitionTask)
+
+
+    member this.FindDefinitionsTask (document, position, cancellationToken) =
+        createNavigationTask FSharpGoToDefinition.findDefinition 
+                            (document, position,checkerProvider.Checker,projectInfoManager, cancellationToken)
+                            cancellationToken
+
+
+    member this.TryGoToDefinition(document: Document, position: int, cancellationToken: CancellationToken) =
+        attemptNavigation (document , this.FindDefinitionsTask (document,position,cancellationToken))
+
         
     interface IGoToDefinitionService with
+        
         member this.FindDefinitionsAsync(document: Document, position: int, cancellationToken: CancellationToken) =
             this.FindDefinitionsTask (document, position, cancellationToken)
         
+
         member this.TryGoToDefinition(document: Document, position: int, cancellationToken: CancellationToken) =
             this.TryGoToDefinition (document,position,cancellationToken)
