@@ -1741,6 +1741,7 @@ namespace Microsoft.FSharp.Collections
         [<Sealed>]
         type CachedSeq<'T>(source:ISeq<'T>) =
             let sync = obj ()
+
             // Wrap a seq to ensure that it is enumerated just once and only as far as is necessary.
             //
             // This code is required to be thread safe.
@@ -1753,10 +1754,8 @@ namespace Microsoft.FSharp.Collections
 
             let prefix = ResizeArray ()
 
-            // Choice1Of3 () = Unstarted.
-            // Choice2Of3 e  = Started.
-            // Choice3Of3 () = Finished.
-            let mutable enumeratorR = Choice1Of3 () : Choice<unit, IEnumerator<'T>, unit>
+            let mutable started = false
+            let mutable enumeratorR = None : option<IEnumerator<'T>>
                 
             // function should only be called from within the lock
             let oneStepTo i =
@@ -1764,16 +1763,16 @@ namespace Microsoft.FSharp.Collections
                 // Be speculative, since this could have already happened via another thread.
                 if not (i < prefix.Count) then // is a step still required?
                     // If not yet started, start it (create enumerator).
-                    match enumeratorR with
-                    | Choice1Of3 _ -> enumeratorR <- Choice2Of3 (source.GetEnumerator())
-                    | _ -> ()
+                    if not started then
+                        started <- true
+                        enumeratorR <- Some (source.GetEnumerator())
 
                     match enumeratorR with
-                    | Choice2Of3 enumerator when enumerator.MoveNext() ->
+                    | Some enumerator when enumerator.MoveNext() ->
                         prefix.Add enumerator.Current
-                    | Choice2Of3 enumerator  ->
-                        enumerator.Dispose ()         // Move failed, dispose enumerator,
-                        enumeratorR <- Choice3Of3 () // drop it and record finished.
+                    | Some enumerator ->
+                        enumerator.Dispose () // Move failed, dispose enumerator,
+                        enumeratorR <- None   // drop it and record finished.
                     | _ -> ()
 
             let cached =
@@ -1796,11 +1795,11 @@ namespace Microsoft.FSharp.Collections
                     lock sync (fun () ->
                        prefix.Clear()
 
-                       match enumeratorR with
-                       | Choice2Of3 e -> IEnumerator.dispose e
-                       | _ -> ()
+                       enumeratorR
+                       |> Option.iter IEnumerator.dispose
 
-                       enumeratorR <- Choice1Of3 ())
+                       started <- false
+                       enumeratorR <- None)
 
             interface System.Collections.Generic.IEnumerable<'T> with
                 member __.GetEnumerator() = cached.GetEnumerator()
@@ -1920,21 +1919,16 @@ namespace Microsoft.FSharp.Collections
             | None -> indexNotFound()
             | Some x -> x
 
-        [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1709:IdentifiersShouldBeCasedCorrectly"); CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1707:IdentifiersShouldNotContainUnderscores"); CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
-        [<CompiledName("ReadOnly")>]
-        let readonly (source:seq<_>) =
-            mkSeq (fun () -> source.GetEnumerator()) |> ofSeq
-
         [<CompiledName("MapFold")>]
         let mapFold<'T,'State,'Result> (f: 'State -> 'T -> 'Result * 'State) acc source =
             let arr,state = source |> toArray |> Array.mapFold f acc
-            readonly arr, state
+            ofArray arr, state
 
         [<CompiledName("MapFoldBack")>]
         let mapFoldBack<'T,'State,'Result> (f: 'T -> 'State -> 'Result * 'State) source acc =
             let array = source |> toArray
             let arr,state = Array.mapFoldBack f array acc
-            readonly arr, state
+            ofArray arr, state
 
         let rec nth index (e : IEnumerator<'T>) =
             if not (e.MoveNext()) then
@@ -1952,7 +1946,7 @@ namespace Microsoft.FSharp.Collections
             nth i e
 
         [<CompiledName("Singleton")>]
-        let singleton x = mkSeq (fun () -> IEnumerator.Singleton x) |> ofSeq
+        let singleton x = ofArray [| x |]
 
         [<CompiledName("SortDescending")>]
         let inline sortDescending source =
