@@ -53,6 +53,7 @@ type internal FSharpQuickInfoProvider
         checkerProvider: FSharpCheckerProvider,
         projectInfoManager: ProjectInfoManager,
         typeMap: Shared.Utilities.ClassificationTypeMap,
+        gotoDefinitionService:FSharpGoToDefinitionService,
         glyphService: IGlyphService
     ) =
 
@@ -61,35 +62,37 @@ type internal FSharpQuickInfoProvider
         let workspace = thisDoc.Project.Solution.Workspace
         let solution = workspace.CurrentSolution
 
-        let documentId (range: range) =
+        /// Retrieve the DocumentId from the workspace for the range's file
+        let docIdOfRange (range: range) =
             let filePath = System.IO.Path.GetFullPathSafe range.FileName
-            let projectOf (id : DocumentId) = solution.GetDocument(id).Project
 
-            //The same file may be present in many projects. We choose one from current or referenced project.
-            let rec matchingDoc = function
-            | [] -> None
-            | id::_ when projectOf id = thisDoc.Project || IsScript thisDoc.FilePath -> Some id
-            | id::tail -> 
-                if (projectOf id).GetDependentProjects() |> Seq.contains thisDoc.Project then Some id
-                else matchingDoc tail
-            solution.GetDocumentIdsWithFilePath(filePath) |> List.ofSeq |> matchingDoc
+            // The same file may be present in many projects. We choose one from current or referenced project.
+            let candidates = solution.GetDocumentIdsWithFilePath filePath
+            match candidates.Length with 
+            | 0 -> None 
+            | 1 -> 
+                let docId = candidates.[0]
+                if docId.ProjectId = thisDoc.Id.ProjectId || IsScript thisDoc.FilePath then Some docId else None
+            | _ -> 
+                candidates |> Seq.tryFind (fun docId -> 
+                    solution.GetDependentProjects docId.ProjectId |> Seq.contains thisDoc.Project
+                )
 
         let canGoTo range =
-            range <> rangeStartup && documentId range |> Option.isSome
+            range <> rangeStartup && docIdOfRange range |> Option.isSome
 
         let goTo range = 
             asyncMaybe { 
-                let! id = documentId range
-                let doc = solution.GetDocument(id)
+                let! id = docIdOfRange range
+                let doc = solution.GetDocument id 
                 let! src = doc.GetTextAsync()
-                let! span = CommonRoslynHelpers.TryFSharpRangeToTextSpan(src, range)
-                let goToService = doc.Project.LanguageServices.GetService<IGoToDefinitionService>()
-                if not (isNull goToService) && goToService.TryGoToDefinition(doc, span.Start, Async.DefaultCancellationToken) then
+                let! span = CommonRoslynHelpers.TryFSharpRangeToTextSpan (src, range)
+                if gotoDefinitionService.TryGoToDefinition (doc, span.Start, Async.DefaultCancellationToken) then
                    let! session = SessionHandling.currentSession
                    session.Dismiss()   
             } |> Async.Ignore |> Async.StartImmediate 
 
-        let formatMap = typemap.ClassificationFormatMapService.GetClassificationFormatMap("tooltip")
+        let formatMap = typemap.ClassificationFormatMapService.GetClassificationFormatMap "tooltip"
 
         let props =
             roslynTag

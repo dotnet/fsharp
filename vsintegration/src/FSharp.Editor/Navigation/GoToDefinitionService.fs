@@ -32,6 +32,7 @@ type internal FSharpNavigableItem(document: Document, textSpan: TextSpan) =
 
 [<Shared>]
 [<ExportLanguageService(typeof<IGoToDefinitionService>, FSharpCommonConstants.FSharpLanguageName)>]
+[<Export(typeof<FSharpGoToDefinitionService>)>]
 type internal FSharpGoToDefinitionService 
     [<ImportingConstructor>]
     (
@@ -80,33 +81,36 @@ type internal FSharpGoToDefinitionService
          |> Async.map (Option.defaultValue Seq.empty)
          |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
 
+    member this.TryGoToDefinition(document: Document, position: int, cancellationToken: CancellationToken) =
+        let definitionTask = this.FindDefinitionsAsyncAux(document, position, cancellationToken)
+            
+        // REVIEW: document this use of a blocking wait on the cancellation token, explaining why it is ok
+        definitionTask.Wait(cancellationToken)
+            
+        if definitionTask.Status = TaskStatus.RanToCompletion && definitionTask.Result.Any() then
+            let navigableItem = definitionTask.Result.First() // F# API provides only one INavigableItem
+            let workspace = document.Project.Solution.Workspace
+            let navigationService = workspace.Services.GetService<IDocumentNavigationService>()
+            ignore presenters
+            // prefer open documents in the preview tab
+            let options = workspace.Options.WithChangedOption(NavigationOptions.PreferProvisionalTab, true)
+            navigationService.TryNavigateToSpan(workspace, navigableItem.Document.Id, navigableItem.SourceSpan, options)
+
+            // FSROSLYNTODO: potentially display multiple results here
+            // If GotoDef returns one result then it should try to jump to a discovered location. If it returns multiple results then it should use 
+            // presenters to render items so user can choose whatever he needs. Given that per comment F# API always returns only one item then we 
+            // should always navigate to definition and get rid of presenters.
+            //
+            //let refDisplayString = refSourceText.GetSubText(refTextSpan).ToString()
+            //for presenter in presenters do
+            //    presenter.DisplayResult(navigableItem.DisplayString, definitionTask.Result)
+            //true
+
+        else false
+        
     interface IGoToDefinitionService with
         member this.FindDefinitionsAsync(document: Document, position: int, cancellationToken: CancellationToken) =
             this.FindDefinitionsAsyncAux(document, position, cancellationToken)
-
+        
         member this.TryGoToDefinition(document: Document, position: int, cancellationToken: CancellationToken) =
-            let definitionTask = this.FindDefinitionsAsyncAux(document, position, cancellationToken)
-            
-            // REVIEW: document this use of a blocking wait on the cancellation token, explaining why it is ok
-            definitionTask.Wait(cancellationToken)
-            
-            if definitionTask.Status = TaskStatus.RanToCompletion && definitionTask.Result.Any() then
-                let navigableItem = definitionTask.Result.First() // F# API provides only one INavigableItem
-                let workspace = document.Project.Solution.Workspace
-                let navigationService = workspace.Services.GetService<IDocumentNavigationService>()
-                ignore presenters
-                // prefer open documents in the preview tab
-                let options = workspace.Options.WithChangedOption(NavigationOptions.PreferProvisionalTab, true)
-                navigationService.TryNavigateToSpan(workspace, navigableItem.Document.Id, navigableItem.SourceSpan, options)
-
-                // FSROSLYNTODO: potentially display multiple results here
-                // If GotoDef returns one result then it should try to jump to a discovered location. If it returns multiple results then it should use 
-                // presenters to render items so user can choose whatever he needs. Given that per comment F# API always returns only one item then we 
-                // should always navigate to definition and get rid of presenters.
-                //
-                //let refDisplayString = refSourceText.GetSubText(refTextSpan).ToString()
-                //for presenter in presenters do
-                //    presenter.DisplayResult(navigableItem.DisplayString, definitionTask.Result)
-                //true
-
-            else false
+            this.TryGoToDefinition(document,position,cancellationToken)
