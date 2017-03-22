@@ -410,18 +410,6 @@ if "%RestorePackages%"=="" (
 
 @call src\update.cmd signonly
 
-echo ===========================================================
-echo ===========================================================
-echo %VS150COMNTOOLS%
-echo ===========================================================
-echo ===========================================================
-dir "%ProgramFiles(x86)%\Microsoft Visual Studio"
-echo ===========================================================
-echo ===========================================================
-dir "%ProgramFiles(x86)%\Microsoft Visual Studio\2017"
-echo ===========================================================
-echo ===========================================================
-
 :: Check prerequisites
 if not "%VisualStudioVersion%" == "" goto vsversionset
 if exist "%VS150COMNTOOLS%\..\ide\devenv.exe" set VisualStudioVersion=15.0
@@ -610,9 +598,9 @@ set PATH=%PATH%;%CORDIR%
 
 set REGEXE32BIT=reg.exe
 
-IF NOT DEFINED SNEXE32  IF EXIST "%WINSDKNETFXTOOLS%\sn.exe"               set SNEXE32=%WINSDKNETFXTOOLS%sn.exe
-IF NOT DEFINED SNEXE64  IF EXIST "%WINSDKNETFXTOOLS%x64\sn.exe"           set SNEXE64=%WINSDKNETFXTOOLS%x64\sn.exe
-IF NOT DEFINED ildasm   IF EXIST "%WINSDKNETFXTOOLS%\ildasm.exe"           set ildasm=%WINSDKNETFXTOOLS%ildasm.exe
+IF NOT DEFINED SNEXE32  IF EXIST "%WINSDKNETFXTOOLS%\sn.exe"                set SNEXE32=%WINSDKNETFXTOOLS%sn.exe
+IF NOT DEFINED SNEXE64  IF EXIST "%WINSDKNETFXTOOLS%x64\sn.exe"             set SNEXE64=%WINSDKNETFXTOOLS%x64\sn.exe
+IF NOT DEFINED ildasm   IF EXIST "%WINSDKNETFXTOOLS%\ildasm.exe"            set ildasm=%WINSDKNETFXTOOLS%ildasm.exe
 
 echo .
 echo  SDK environment vars
@@ -698,20 +686,16 @@ if "%TEST_NET40_FSHARPQA_SUITE%" == "1" (
     set FSC=!FSCBINPATH!\fsc.exe
     set FSCOREDLLPATH=!FSCBinPath!\FSharp.Core.dll
     set PATH=!FSCBINPATH!;!PATH!
-
-    where.exe perl > NUL 2> NUL
-    if errorlevel 1 (
-        echo Error: perl is not in the PATH, it is required for the net40-fsharpqa test suite
-        goto :failure
-    )
+    set perlexe= %~dp0packages\StrawberryPerl64.5.22.2.1\Tools\perl\bin\perl.exe
+    if not exist %perlexe% echo Error: perl was not downloaded from check the packages directory: %perlexe% && goto :failure
 
     set OUTPUTFILE=test-net40-fsharpqa-results.log
     set ERRORFILE=test-net40-fsharpqa-errors.log
     set FAILENV=test-net40-fsharpqa-errors
 
     pushd %~dp0tests\fsharpqa\source
-    echo perl %~dp0tests\fsharpqa\testenv\bin\runall.pl -resultsroot !RESULTSDIR! -results !OUTPUTFILE! -log !ERRORFILE! -fail !FAILENV! -cleanup:no !TTAGS_ARG_RUNALL! !PARALLEL_ARG!
-         perl %~dp0tests\fsharpqa\testenv\bin\runall.pl -resultsroot !RESULTSDIR! -results !OUTPUTFILE! -log !ERRORFILE! -fail !FAILENV! -cleanup:no !TTAGS_ARG_RUNALL! !PARALLEL_ARG!
+    echo %perlexe% %~dp0tests\fsharpqa\testenv\bin\runall.pl -resultsroot !RESULTSDIR! -results !OUTPUTFILE! -log !ERRORFILE! -fail !FAILENV! -cleanup:no !TTAGS_ARG_RUNALL! !PARALLEL_ARG!
+         %perlexe% %~dp0tests\fsharpqa\testenv\bin\runall.pl -resultsroot !RESULTSDIR! -results !OUTPUTFILE! -log !ERRORFILE! -fail !FAILENV! -cleanup:no !TTAGS_ARG_RUNALL! !PARALLEL_ARG!
 
     popd
     if ERRORLEVEL 1 (
