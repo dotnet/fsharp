@@ -1,6 +1,6 @@
 where msbuild
 echo "VS150COMNTOOLS: %VS150COMNTOOLS%"
-echo "ProgramFiles(x86): %ProgramFiles(x86)%
+echo "ProgramFiles(x86): %ProgramFiles(x86)%"
 if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat" (
     call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat"
 )
