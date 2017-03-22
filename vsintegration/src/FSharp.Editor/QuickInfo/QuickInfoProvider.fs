@@ -31,7 +31,7 @@ open Microsoft.FSharp.Compiler.CompileOps
 open CommonRoslynHelpers
 
 
-module internal SessionHandling =
+module private SessionHandling =
     let mutable currentSession = None
     
     [<Export(typeof<IQuickInfoSourceProvider>)>]
