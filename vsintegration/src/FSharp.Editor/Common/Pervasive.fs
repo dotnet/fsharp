@@ -199,6 +199,12 @@ module Async =
             }
         async { return! agent.PostAndAsyncReply id }
 
+
+type Async with 
+    
+    static member RunTaskSynchronously task  = task |> Async.AwaitTask |> Async.RunSynchronously 
+
+
 type AsyncBuilder with
     member __.Bind(computation: System.Threading.Tasks.Task<'a>, binder: 'a -> Async<'b>): Async<'b> =
         async {
