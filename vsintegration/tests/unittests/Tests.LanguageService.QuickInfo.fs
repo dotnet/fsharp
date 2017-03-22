@@ -217,7 +217,7 @@ type UsingMSBuild() =
             fileContents,
             marker = "MembersTP(*Marker*)",
             expected = "type HiddenBaseMembersTP =\n  inherit TPBaseTy\n  member ShowThisProp : unit",
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
     
     [<Test>]
     member public this.``QuickInfo.OverriddenMethods``() =
@@ -294,7 +294,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
     [<Category("TypeProvider")>]
     member public this.``TypeProviders.NestedTypesOrder``() = 
         let code = "type t = N1.TypeWithNestedTypes(*M*)"
-        let tpReference = PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")
+        let tpReference = PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")
         this.VerifyOrderOfNestedTypesInQuickInfo(
             source = code,
             marker = "(*M*)",
@@ -348,7 +348,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
                                 let a = typeof<N.T(*Marker*)> """
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)", "This is a synthetic type created by me!",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithAdequateComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithAdequateComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -361,7 +361,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
          "This is a synthetic type created by me!. Which is used to test the tool tip of the typeprovider type to check if it shows the right message or not.",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLongComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithLongComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -374,7 +374,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
          "type T =\n  new : unit -> T\n  event Event1 : EventHandler\n  static member M : unit -> int []\n  static member StaticProp : decimal\n\nFull name: N.T", 
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithNullComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithNullComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]    
@@ -387,7 +387,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
         
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
          "type T =\n  new : unit -> T\n  event Event1 : EventHandler\n  static member M : unit -> int []\n  static member StaticProp : decimal\n\nFull name: N.T",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithEmptyComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithEmptyComment.dll")])
          
 
     [<Test>]
@@ -401,7 +401,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
          "This is a synthetic type Localized! ኤፍ ሻርፕ",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
    
     [<Test>]
     [<Category("TypeProvider")>]
@@ -413,7 +413,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
                                 let foo = new N.T(*Marker*)() """
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)", "This is a synthetic .ctor created by me for N.T",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithAdequateComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithAdequateComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -426,7 +426,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
          "This is a synthetic .ctor created by me for N.T. Which is used to test the tool tip of the typeprovider Constructor to check if it shows the right message or not.",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLongComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithLongComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -439,7 +439,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
          "N.T() : N.T", 
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithNullComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithNullComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]    
@@ -452,7 +452,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
         
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
          "N.T() : N.T",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithEmptyComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithEmptyComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -465,7 +465,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
          "This is a synthetic .ctor Localized! ኤፍ ሻርፕ for N.T",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
         
 
     [<Test>]
@@ -480,7 +480,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "Event1(*Marker*)",
          "This is a synthetic *event* created by me for N.T",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithAdequateComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithAdequateComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -494,7 +494,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "Event1(*Marker*)", 
          "This is a synthetic *event* Localized! ኤፍ ሻርፕ for N.T",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
    
     [<Test>]
     [<Category("QuickInfo.ParamsAttribute")>]
@@ -518,7 +518,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "Event1(*Marker*)",
          "This is a synthetic *event* created by me for N.T. Which is used to test the tool tip of the typeprovider Event to check if it shows the right message or not.!",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLongComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithLongComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -532,7 +532,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "Event1(*Marker*)",
          "event N.T.Event1: IEvent<System.EventHandler,System.EventArgs>", 
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithNullComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithNullComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]    
@@ -546,7 +546,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
         
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "Event1(*Marker*)",
          "event N.T.Event1: IEvent<System.EventHandler,System.EventArgs>",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithEmptyComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithEmptyComment.dll")])
     
 
     [<Test>]
@@ -560,7 +560,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "M(*Marker*)",
          "This is a synthetic *method* created by me!!",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithAdequateComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithAdequateComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -573,7 +573,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "M(*Marker*)", 
          "This is a synthetic *method* Localized! ኤፍ ሻርፕ",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
    
     [<Test>]
     [<Category("TypeProvider")>]
@@ -586,7 +586,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "M(*Marker*)",
          "This is a synthetic *method* created by me!!. Which is used to test the tool tip of the typeprovider Method to check if it shows the right message or not.!",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLongComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithLongComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -599,7 +599,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "M(*Marker*)",
          "N.T.M() : int []", 
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithNullComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithNullComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]    
@@ -612,7 +612,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
         
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "M(*Marker*)",
          "N.T.M() : int []",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithEmptyComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithEmptyComment.dll")])
     
 
     [<Test>]
@@ -626,7 +626,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "StaticProp(*Marker*)",
          "This is a synthetic *property* created by me for N.T",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithAdequateComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithAdequateComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -639,7 +639,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "StaticProp(*Marker*)", 
          "This is a synthetic *property* Localized! ኤፍ ሻርፕ for N.T",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
    
     [<Test>]
     [<Category("TypeProvider")>]
@@ -652,7 +652,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "StaticProp(*Marker*)",
          "This is a synthetic *property* created by me for N.T. Which is used to test the tool tip of the typeprovider Property to check if it shows the right message or not.!",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLongComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithLongComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -665,7 +665,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "StaticProp(*Marker*)",
          "property N.T.StaticProp: decimal", 
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithNullComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithNullComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]    
@@ -678,7 +678,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
         
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "StaticProp(*Marker*)",
          "property N.T.StaticProp: decimal",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithEmptyComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithEmptyComment.dll")])
     
 
     [<Test>]
@@ -695,7 +695,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
             fileContents,
             marker = "foo(*Marker*)",
             expected = "type foo = N1.T",
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -712,7 +712,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
             fileContents,
             marker = "foo(*Marker*)",
             expected = "type foo",
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -729,7 +729,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
             fileContents,
             marker = "foo(*Marker*)",
             expected = "XMLComment",
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -740,7 +740,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
             fileContents,
             marker = "TTT",
             expected = "type TTT = Samples.FSharp.RegexTypeProvider.RegexTyped<...>\n\nFull name: File1.TTT",
-            addtlRefAssy = ["System"; PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = ["System"; PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -755,7 +755,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
             fileContents,
             marker = "reaCode.Val",
             expected = """property Samples.FSharp.RegexTypeProvider.RegexTyped<...>.MatchType.AreaCode: System.Text.RegularExpressions.Group""",
-            addtlRefAssy = ["System"; PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = ["System"; PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
     
     // Regression for 2948
     [<Test>]
@@ -2986,9 +2986,9 @@ query."
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker5*)", "value param")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker6*)", "value param")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker7*)", "Param1 of string",
-                                                     addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+                                                     addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker8*)", "Ignored",
-                                                     addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+                                                     addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     member private this.VerifyUsingFsTestLib fileContent queries crossProject =
         use _guard = this.UsingNewVS()
