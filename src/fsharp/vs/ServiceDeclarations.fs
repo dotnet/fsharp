@@ -639,13 +639,6 @@ module internal ItemDescriptionsImpl =
                           member x.Equals(Wrap(item1), Wrap(item2)) = (fullDisplayTextOfModRef item1 = fullDisplayTextOfModRef item2)
                           member x.GetHashCode(Wrap(item)) = hash item.Stamp  }
 
-    let ItemEffectiveEquality g = 
-        let itemDisplayPartialEquality = ItemDisplayPartialEquality g
-        { new IPartialEqualityComparer<WrapType<CompletionItem>> with
-            member x.InEqualityRelation _ = true
-            member x.Equals(Wrap(item1), Wrap(item2)) = NameResolution.ItemsAreEffectivelyEqual g item1.Item item2.Item
-            member x.GetHashCode(Wrap(item)) = itemDisplayPartialEquality.GetHashCode(Wrap(item.Item)) }
-
     /// Remove all duplicate items
     let RemoveDuplicateItems g items = 
         items |> partialDistinctBy (ItemDisplayPartialEquality g)
