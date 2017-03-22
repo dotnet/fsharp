@@ -24,6 +24,7 @@ This is for those who contributed language features, compiler improvements, or i
 - [Libo Zeng](https://github.com/liboz)
 - [Gauthier Segay](https://github.com/smoothdeveloper)
 - [Richard Minerich](https://github.com/Rickasaurus)
+- [Jared Hester](https://github.com/cloudroutine)
 
 **Performance Improvements**
 
