@@ -39,6 +39,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(MonoPackaging)' != 'true' AND '$(OS)' != 'Unix'">
+    <UseMicroBuild>true</UseMicroBuild> 
     <UseSourceLink Condition = " '$(UseSourceLink)' == '' ">true</UseSourceLink>
     <UseGatherBinaries>true</UseGatherBinaries>
     <AddVsSdkAttributesToSomeCoreComponents>true</AddVsSdkAttributesToSomeCoreComponents>
