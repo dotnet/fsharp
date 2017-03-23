@@ -380,7 +380,6 @@ echo INCLUDE_TEST_TAGS=%INCLUDE_TEST_TAGS%
 echo PUBLISH_VSIX=%PUBLISH_VSIX%
 echo MYGET_APIKEY=%MYGET_APIKEY%
 
-<<<<<<< HEAD
 REM load Visual Studio 2017 developer command prompt if VS150COMNTOOLS is not set
 
 if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat" (
@@ -396,8 +395,6 @@ if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Stud
     call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat"
 )
 
-=======
->>>>>>> origin/master
 echo .
 echo Environment
 echo 
@@ -407,13 +404,8 @@ echo .
 
 echo ---------------- Done with arguments, starting preparation -----------------
 
-<<<<<<< HEAD
-set BuildToolsPackage=Microsoft.VSSDK.BuildTools\15.0.26124-RC3
-if '%VSSDKInstall%'=='' (
-=======
 set BuildToolsPackage=Microsoft.VSSDK.BuildTools.15.0.26124-RC3
 if "%VSSDKInstall%"=="" (
->>>>>>> origin/master
      set VSSDKInstall=%~dp0packages\%BuildToolsPackage%\tools\vssdk
 )
 if "%VSSDKToolsPath%"=="" (
@@ -497,10 +489,6 @@ set NUGET_PACKAGES=%~dp0Packages
 
 set _fsiexe="packages\FSharp.Compiler.Tools\4.0.1.21\tools\fsi.exe"
 if not exist %_fsiexe% echo Error: Could not find %_fsiexe% && goto :failure
-%_ngenexe% install %_fsiexe% /nologo 
-
-if not exist %_nugetexe% echo Error: Could not find %_nugetexe% && goto :failure
-%_ngenexe% install %_nugetexe% /nologo 
 
 echo ---------------- Done with package restore, starting proto ------------------------
 
