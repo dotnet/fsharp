@@ -1946,7 +1946,7 @@ namespace Microsoft.FSharp.Collections
             nth i e
 
         [<CompiledName("Singleton")>]
-        let singleton x = ofArray [| x |]
+        let singleton x = mkSeq (fun () -> IEnumerator.Singleton x) |> ofSeq
 
         [<CompiledName("SortDescending")>]
         let inline sortDescending source =
