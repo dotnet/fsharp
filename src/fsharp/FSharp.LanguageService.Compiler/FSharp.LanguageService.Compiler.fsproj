@@ -627,10 +627,10 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' != 'coreclr' ">
-    <Reference Include="Microsoft.Build.Framework, Version=15.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"><HintPath>$(FSharpSourcesRoot)\..\packages\microsoft.visualfsharp.msbuild\1.0.1\lib\net45\Microsoft.Build.Framework.dll</HintPath><SpecificVersion>true</SpecificVersion></Reference>
-    <Reference Include="Microsoft.Build.Engine, Version=15.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"><HintPath>$(FSharpSourcesRoot)\..\packages\microsoft.visualfsharp.msbuild\1.0.1\lib\net45\Microsoft.Build.Engine.dll</HintPath><SpecificVersion>true</SpecificVersion></Reference>
-    <Reference Include="Microsoft.Build, Version=15.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"><HintPath>$(FSharpSourcesRoot)\..\packages\microsoft.visualfsharp.msbuild\1.0.1\lib\net45\Microsoft.Build.dll</HintPath><SpecificVersion>true</SpecificVersion></Reference>
-    <Reference Include="Microsoft.Build.Utilities.Core, Version=15.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"><HintPath>$(FSharpSourcesRoot)\..\packages\microsoft.visualfsharp.msbuild\1.0.1\lib\net45\Microsoft.Build.Utilities.Core.dll</HintPath><SpecificVersion>true</SpecificVersion></Reference>
-    <Reference Include="Microsoft.Build.Tasks.Core, Version=15.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"><HintPath>$(FSharpSourcesRoot)\..\packages\microsoft.visualfsharp.msbuild\1.0.1\lib\net45\Microsoft.Build.Tasks.Core.dll</HintPath><SpecificVersion>true</SpecificVersion></Reference>
+    <Reference Include="Microsoft.Build.Framework, Version=15.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"><HintPath>$(FSharpSourcesRoot)\..\packages\microsoft.visualfsharp.msbuild.15.0\1.0.1\lib\net45\Microsoft.Build.Framework.dll</HintPath><SpecificVersion>true</SpecificVersion></Reference>
+    <Reference Include="Microsoft.Build.Engine, Version=15.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"><HintPath>$(FSharpSourcesRoot)\..\packages\microsoft.visualfsharp.msbuild.15.0\1.0.1\lib\net45\Microsoft.Build.Engine.dll</HintPath><SpecificVersion>true</SpecificVersion></Reference>
+    <Reference Include="Microsoft.Build, Version=15.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"><HintPath>$(FSharpSourcesRoot)\..\packages\microsoft.visualfsharp.msbuild.15.0\1.0.1\lib\net45\Microsoft.Build.dll</HintPath><SpecificVersion>true</SpecificVersion></Reference>
+    <Reference Include="Microsoft.Build.Utilities.Core, Version=15.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"><HintPath>$(FSharpSourcesRoot)\..\packages\microsoft.visualfsharp.msbuild.15.0\1.0.1\lib\net45\Microsoft.Build.Utilities.Core.dll</HintPath><SpecificVersion>true</SpecificVersion></Reference>
+    <Reference Include="Microsoft.Build.Tasks.Core, Version=15.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"><HintPath>$(FSharpSourcesRoot)\..\packages\microsoft.visualfsharp.msbuild.15.0\1.0.1\lib\net45\Microsoft.Build.Tasks.Core.dll</HintPath><SpecificVersion>true</SpecificVersion></Reference>
   </ItemGroup>
 </Project>
