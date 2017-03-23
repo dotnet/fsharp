@@ -430,12 +430,8 @@ if not "%VisualStudioVersion%" == "" goto vsversionset
 if exist "%VS150COMNTOOLS%\..\ide\devenv.exe" set VisualStudioVersion=15.0
 if not "%VisualStudioVersion%" == "" goto vsversionset
 
-if not "%VisualStudioVersion%" == "" goto vsversionset
-if exist "%VS150COMNTOOLS%\..\..\ide\devenv.exe" set VisualStudioVersion=15.0
-if not "%VisualStudioVersion%" == "" goto vsversionset
-
-:vsversionset
 if "%VisualStudioVersion%" == "" echo Error: Could not find an installation of Visual Studio && goto :failure
+:vsversionset
 
 if exist "%VS150COMNTOOLS%\..\..\MSBuild\15.0\Bin\MSBuild.exe" (
     set _msbuildexe="%VS150COMNTOOLS%\..\..\MSBuild\15.0\Bin\MSBuild.exe"
