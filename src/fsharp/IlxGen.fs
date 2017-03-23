@@ -6980,7 +6980,7 @@ let CodegenAssembly cenv eenv mgbuf fileImpls =
       // top-level initialization code.
       begin 
           let extraBindings = mgbuf.GrabExtraBindingsToGenerate()
-          printfn "#extraBindings = %d" extraBindings.Length
+          //printfn "#extraBindings = %d" extraBindings.Length
           if extraBindings.Length > 0 then 
               let mexpr = TMDefs [ for b in extraBindings -> TMDefLet(b,range0) ]
               let _emptyTopInstrs,_emptyTopCode = 
@@ -6990,7 +6990,7 @@ let CodegenAssembly cenv eenv mgbuf fileImpls =
                      LocalScope "module" cgbuf (fun scopeMarks ->
                         let eenv = AddBindingsForModuleDef (fun cloc v -> AllocTopValWithinExpr cenv cgbuf cloc scopeMarks v) eenv.cloc eenv mexpr
                         GenModuleDef cenv cgbuf qname lazyInitInfo eenv mexpr)),range0)
-              printfn "#_emptyTopInstrs = %d" _emptyTopInstrs.Length
+              //printfn "#_emptyTopInstrs = %d" _emptyTopInstrs.Length
               ()
       end
 
