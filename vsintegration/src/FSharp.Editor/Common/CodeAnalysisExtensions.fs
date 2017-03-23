@@ -36,6 +36,11 @@ type Solution with
         self.Projects |> Seq.tryPick (fun proj ->
             proj.Documents |> Seq.tryFind (fun doc -> doc.Name = docName))
 
+        
+    member self.TryGetDocumentFromPath filePath =
+        self.GetDocumentIdsWithFilePath filePath
+        |> Seq.tryHead |> Option.map (fun docId -> self.GetDocument docId)
+
     /// Try to get a project inside the solution using the project's id
     member self.TryGetProject (projId:ProjectId) =
         if self.ContainsProject projId then Some (self.GetProject projId) else None

@@ -11,6 +11,10 @@ let isSignatureFile (filePath:string) =
     Path.GetExtension filePath = ".fsi"
 
 
+
+let (</>) path1 path2 = Path.Combine (path1, path2) 
+
+
 [<RequireQualifiedAccess>]
 module String =   
 
@@ -208,7 +212,9 @@ module Async =
 
 type Async with 
     
-    static member RunTaskSynchronously task  = task |> Async.AwaitTask |> Async.RunSynchronously 
+    static member RunTaskSynchronously task  = 
+        task |> 
+        Async.AwaitTask |> Async.RunSynchronously 
 
 
 type AsyncBuilder with
