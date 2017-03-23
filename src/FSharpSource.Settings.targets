@@ -21,9 +21,9 @@
   <PropertyGroup>
     <!-- Settings used all the time -->
     <Tailcalls>true</Tailcalls>
-    <TargetFramework Condition="'$(TargetFramework)'==''">net46</TargetFramework>
+    <TargetFramework Condition="'$(TargetFramework)'==''">net40</TargetFramework>
     <!-- Currently always use .NET Framwork proto compiler -->
-    <ProtoFlavour Condition="'$(ProtoFlavour)' == ''">net46</ProtoFlavour>
+    <ProtoFlavour Condition="'$(ProtoFlavour)' == ''">net40</ProtoFlavour>
     <ProjectLanguage Condition="'$(ProjectLanguage)' == ''">FSharp</ProjectLanguage>
     <DebugSymbols>true</DebugSymbols>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
