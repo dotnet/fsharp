@@ -47,5 +47,8 @@
 
     <!-- FSharp.Data is used in some of the scripts ued for the coreclr build -->
     <PackageReference Include="FSharp.Data" Version="2.2.5" />
+
+    <!-- Perl is used for the fsharpqa test suite -->
+    <PackageReference Include="StrawberryPerl64" Version="5.22.2.1" />
   </ItemGroup>
 </Project>
