@@ -458,18 +458,20 @@ if defined APPVEYOR (
 
 REM set msbuildflags=/maxcpucount %_nrswitch% /nologo
 set msbuildflags=%_nrswitch% /nologo
+set _ngenexe="%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\ngen.exe"
+if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 
 echo ---------------- Done with prepare, starting package restore ----------------
-if '%RestorePackages%' == 'true' (
+if "%RestorePackages%" == "true" (
     dotnet restore packages.proj --packages packages
     @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
 
-    if '%BUILD_VS%' == '1' (
+    if "%BUILD_VS%" == "1" (
         dotnet restore vsintegration\packages.proj --packages packages
         @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
     )
 
-    if '%BUILD_SETUP%' == '1' (
+    if "%BUILD_SETUP%" == "1" (
         dotnet restore setup\packages.proj --packages packages
         @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
     )
@@ -485,6 +487,7 @@ set NUGET_PACKAGES=%~dp0Packages
 
 set _fsiexe="packages\FSharp.Compiler.Tools\4.0.1.21\tools\fsi.exe"
 if not exist %_fsiexe% echo Error: Could not find %_fsiexe% && goto :failure
+%_ngenexe% install %_fsiexe% /nologo
 
 echo ---------------- Done with package restore, starting proto ------------------------
 
