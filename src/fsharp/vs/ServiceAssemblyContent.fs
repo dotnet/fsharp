@@ -134,7 +134,7 @@ type internal LookupType =
     | Precise
 
 [<NoComparison; NoEquality>]
-type internal AssymblySymbol = 
+type internal AssemblySymbol = 
     { FullName: string
       CleanedIdents: Idents
       Namespace: Idents option
@@ -217,7 +217,7 @@ module internal TypedAstPatterns =
 type internal AssemblyContentCacheEntry =
     { FileWriteTime: DateTime 
       ContentType: AssemblyContentType 
-      Symbols: AssymblySymbol list }
+      Symbols: AssemblySymbol list }
 
 [<NoComparison; NoEquality>]
 type internal IAssemblyContentCache =

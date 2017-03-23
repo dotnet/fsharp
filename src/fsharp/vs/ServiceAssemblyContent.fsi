@@ -39,7 +39,7 @@ type internal AssemblyPath = string
 
 /// Represents type, module, member, function or value in a compiled assembly.
 [<NoComparison; NoEquality>]
-type internal AssymblySymbol = 
+type internal AssemblySymbol = 
     { /// Full entity name as it's seen in compiled code (raw FSharpEntity.FullName, FSharpValueOrFunction.FullName). 
       FullName: string
       /// Entity name parts with removed module suffixes (Ns.M1Module.M2Module.M3.entity -> Ns.M1.M2.M3.entity)
@@ -65,7 +65,7 @@ type internal AssemblyContentCacheEntry =
       /// Content type used to get assembly content.
       ContentType: AssemblyContentType 
       /// Assembly content.
-      Symbols: AssymblySymbol list }
+      Symbols: AssemblySymbol list }
 
 /// Assembly content cache.
 [<NoComparison; NoEquality>]
@@ -103,15 +103,15 @@ type internal Entity =
 /// Provides assembly content.
 module internal AssemblyContentProvider =
     /// Given a `FSharpAssemblySignature`, returns assembly content.
-    val getAssemblySignatureContent : AssemblyContentType -> FSharpAssemblySignature -> AssymblySymbol list
+    val getAssemblySignatureContent : AssemblyContentType -> FSharpAssemblySignature -> AssemblySymbol list
 
     /// Returns (possibly cached) assembly content.
     val getAssemblyContent : 
-             withCache: ((IAssemblyContentCache -> AssymblySymbol list) -> AssymblySymbol list)  
+             withCache: ((IAssemblyContentCache -> AssemblySymbol list) -> AssemblySymbol list)  
           -> contentType: AssemblyContentType 
           -> fileName: string option 
           -> assemblies: FSharpAssembly list 
-          -> AssymblySymbol list
+          -> AssemblySymbol list
 
 /// Kind of lexical scope.
 type internal ScopeKind =
