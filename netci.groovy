@@ -64,8 +64,12 @@ def static getBuildJobName(def configuration, def os) {
             def newJob = job(newJobName) {
                 steps {
                     if (os == 'Windows_NT') {
-                        // Batch
-                        batchFile(buildCommand)
+                        batchFile("""
+echo *** Build Visual F# Tools ***
+
+SET VS150COMNTOOLS=%ProgramFiles(x86)%\\Microsoft Visual Studio\\2017\\Enterprise\\Common7\\Tools\\
+
+.\\build.cmd ${buildFlavor} ${build_args}""")
                     }
                     else {
                         // Shell

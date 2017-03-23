@@ -10,14 +10,14 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{A559D7E8-7EFD-473A-B618-A10B41AB523B}</ProjectGuid>
+    <ProjectGuid>{AC85EE6D-033C-45F9-B8BA-884BC22EC6D9}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <AssemblyName>XmlDocAttributeWithLocalizedComment</AssemblyName>
+    <AssemblyName>XmlDocAttributeWithLongComment</AssemblyName>
     <WarningLevel>4</WarningLevel>
     <NoWarn>0169;0067</NoWarn>
     <DefineConstants>DEBUG;TRACE;$(DefineConstants)</DefineConstants>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin\UnitTestsResources\MockTypeProviders</OutputPath>
+    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin\UnitTests\MockTypeProviders</OutputPath>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
