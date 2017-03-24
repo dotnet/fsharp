@@ -764,7 +764,10 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                                                       , f)
 
             member fshProjNode.MoveNewlyAddedFileToBottomOfGroup<'a> (f : unit -> 'a) : 'a =
-                fshProjNode.MoveNewlyAddedFileSomehow((fun relativeFileName -> MSBuildUtilities.MoveFileToBottomOfGroup(relativeFileName, fshProjNode)), f)
+                fshProjNode.MoveNewlyAddedFileSomehow((fun relativeFileName ->
+                    MSBuildUtilities.MoveFileToBottomOfGroup(relativeFileName, fshProjNode)
+                    FSharpFileNode.MoveLastToBottomOfGroup(fshProjNode)
+                    ), f)
 
             override fshProjNode.MoveFileToBottomIfNoOtherPendingMove(relativeFileName) = 
                 match addFilesNotification with
@@ -2287,7 +2290,43 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 lastNode.NextSibling <- tmp
                 root.OnItemAdded(lastNode.Parent, lastNode)
                 lastNode :?> FSharpFileNode
+            
+            static member MoveLastToBottomOfGroup(root : FSharpProjectNode) : unit =
+                match root.LastChild with
+                | :? FSharpFileNode as node ->
+                    // unlink from end
+                    node.PreviousSibling.NextSibling <- null
+                    node.OnItemDeleted()
+                    
+                    let relTargetPath = PackageUtilities.MakeRelativeIfRooted(node.Url, root.BaseURI)
+                    
+                    let rec tryFindAdoptiveParent (remainingPath : string list, currentParent : HierarchyNode, currentNode : HierarchyNode) =
+                        match remainingPath, currentNode with
+                        | [], _ ->
+                            None
+                        | _, null ->
+                            // TODO: create the folders we need if we can't find one
+                            None
+                        | search::restPath, (:? FSharpFolderNode as folderNode) when folderNode.Caption.Equals(search, StringComparison.OrdinalIgnoreCase) ->
+                            match restPath with
+                            | [] ->
+                                Some folderNode
+                            | _ ->
+                                tryFindAdoptiveParent (restPath, folderNode, folderNode.FirstChild)
+                        | _, _ ->
+                            tryFindAdoptiveParent (remainingPath, currentParent, currentNode.NextSibling)
+                    
+                    let pathParts = Path.GetDirectoryName(relTargetPath).Split [| Path.DirectorySeparatorChar |]
 
+                    match tryFindAdoptiveParent (List.ofArray pathParts, root, root.FirstChild) with
+                    | Some parent ->
+                        parent.AddChild(node)
+                    | None ->
+                        Debug.Assert(false, sprintf "Unable to find a suitable adoptive parent for '%s'" relTargetPath)
+                        root.AddChild(node)
+                | node ->
+                    Debug.Assert(false, sprintf "Last child is not an FSharpFileNode (%A)" node)
+            
             override x.ExecCommandOnNode(guidCmdGroup:Guid, cmd:uint32, nCmdexecopt:uint32, pvaIn:IntPtr, pvaOut:IntPtr ) =
                 Debug.Assert(x.ProjectMgr <> null, "The FSharpFileNode has no project manager")
 
