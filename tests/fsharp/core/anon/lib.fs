@@ -14,7 +14,10 @@ let test (s : string) b =
     if b then stderr.WriteLine " OK"
     else report_failure (s)
 
-let check s x1 x2 = test s (x1 = x2)
+let check (s:string) x1 x2 = 
+    stderr.Write(s)
+    if (x1 = x2) then stderr.WriteLine " OK"
+    else (stderr.WriteLine (sprintf "fail, expected %A, got %A" x2 x1); report_failure (s))
 
 let inline getX (x: ^TX) : ^X = 
         (^TX : (member get_X : unit -> ^X) (x))
@@ -24,11 +27,8 @@ let inline getY (x: ^TX) : ^X =
         (^TX : (member get_Y : unit -> ^X) (x))
 
 
-module FSharpFriendlyAnonymousObjectsWithoutDotNetReflectionData = 
+module KindB1 = 
 
-    // Gives object that has compile-time only metadata, can be used as an F# type across
-    // assembly boundaries.  Compiles to System.Tuple.  May
-    // potentially be C#-tuple compatible for named field metadata
     let data1 = {| X = 1 |}
 
     // Types can be written with the same syntax
@@ -49,8 +49,8 @@ module FSharpFriendlyAnonymousObjectsWithoutDotNetReflectionData =
     check "coijoiwcnkwle1"  {| a = 1 |} {| a = 1 |}
     check "coijoiwcnkwle2"  {| a = 2 |}  {| a = 2 |}
 
-    check "coijoiwcnkwle3"  (sprintf "%A"  {| X = 10 |}) "(10)"
-    check "coijoiwcnkwle4"  (sprintf "%A"  {| X = 10; Y = 1 |}) "(10, 1)"
+    check "coijoiwcnkwle3"  (sprintf "%A"  {| X = 10 |}) "{X = 10;}"
+    check "coijoiwcnkwle4"  (sprintf "%A"  {| X = 10; Y = 1 |} |> fun s -> s.Replace("\n","").Replace("\r","")) ("{X = 10; Y = 1;}".Replace("\n","").Replace("\r",""))
     check "clekoiew09" (f2 {| X = {| X = 10 |} |}) 10
     check "cewkew0oijew" (f2 {| X = {| X = 20 |} |})  20
 
@@ -113,37 +113,37 @@ module FSharpFriendlyAnonymousObjectsWithoutDotNetReflectionData =
 
 
 
-module CSharpCompatAnonymousObjects = 
+module KindB2 = 
 
     // Gives object that has full C#-compatibe anonymous metadata. Compiles to an instantiation of a generic type in the declaring assembly with appropriate .NET 
     // metadata (property names). The types are CLIMutable to be C#-compatible. The identity of the types are implicitly assembly-qualified.
-    let data1 =  new {| X = 1 |}
+    let data1 =   {| X = 1 |}
 
-    let data1b =  new {| Y = 1 |}
+    let data1b =  {| Y = 1 |}
 
-    let data1c =  new {| X = 1; Y = 2 |}
+    let data1c =  {| X = 1; Y = 2 |}
 
-    let data1d =  new {| X = 1; Y = 3 |}
+    let data1d =  {| X = 1; Y = 3 |}
 
     // Types can be written with the same syntax
-    let data2 : new {| X : int |} = data1
+    let data2 : {| X : int |} = data1
 
     // Struct representations may be specified, though C# doesn't allow them
-    let data3 =  new struct {| X = 1; Y = 2 |}
+    let data3 =  struct {| X = 1; Y = 2 |}
 
     // Types can be written with the same syntax
-    let data4 : new struct {| X : int; Y : int |} = data3
+    let data4 : struct {| X : int; Y : int |} = data3
 
     let testAccess = (data4.X, data4.Y, data1.X, data2.X, data3.X, data3.Y)
 
-    printfn "new {| X = 10 |} = %A" (new {| X = 10 |} )
-    printfn "new {| X = 10 ; Y = \"abc\" |} = %A" (new {| X = 10 ; Y = "abc"|} )
+    printfn "{| X = 10 |} = %A" ({| X = 10 |} )
+    printfn "{| X = 10 ; Y = \"abc\" |} = %A" ({| X = 10 ; Y = "abc"|} )
     
-    let testConstrainedAccess = getX (new {| X = 0 |}),  getX data1,  getX (new {| X = 2; Y = "2" |})
+    let testConstrainedAccess = getX ({| X = 0 |}),  getX data1,  getX ({| X = 2; Y = "2" |})
 
     check "cew9cwoi" testConstrainedAccess (0, 1, 2)
 
-    let testConstrainedAccess2 = getX (new struct {| X = 0 |}),  getX data3,  getX (new struct {| X = 2; Y = "2" |})
+    let testConstrainedAccess2 = getX (struct {| X = 0 |}),  getX data3,  getX (struct {| X = 2; Y = "2" |})
 
     check "cew9cwo3" testConstrainedAccess2 (0, 1, 2)
 
@@ -162,6 +162,6 @@ module SyntaxCornerCaseTests =
     // Check use as type argument
     let _ = id<{| X: int |}> {| X = 3 |}
     let _ = id<{| X: int; Y: int |}> {| X = 3; Y = 4 |}
-    let _ = id<new {| X: int; Y: int |}> (new {| X = 3; Y = 4 |})
-    let _ = id<new struct {| X: int; Y: int |}> (new struct {| X = 3; Y = 44 |})
+    let _ = id<{| X: int; Y: int |}> ({| X = 3; Y = 4 |})
+    let _ = id<struct {| X: int; Y: int |}> (struct {| X = 3; Y = 44 |})
     let _ = id<struct {| X: int; Y: int |}> (struct {| X = 3; Y = 4 |})

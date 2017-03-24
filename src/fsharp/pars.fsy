@@ -2066,13 +2066,9 @@ braceFieldDeclList:
 
 anonRecdType:
     | STRUCT braceBarFieldDeclListCore
-        { (false, $2),true }
-    | NEW STRUCT braceBarFieldDeclListCore
-        { (true, $3),true }
+        { (true, $2),true }
     | braceBarFieldDeclListCore
-        { (false, $1),false }
-    | NEW braceBarFieldDeclListCore
-        { (true, $2),false }
+        { (true, $1),false }
 
 /* The core of a record type definition */
 braceBarFieldDeclListCore:
@@ -3546,10 +3542,6 @@ minusExpr:
       { SynExpr.New(false,$2,arbExpr("minusExpr",(rhs parseState 4)),unionRanges (rhs parseState 1) ($2).Range) }
   | NEW error
       { arbExpr("minusExpr2",(rhs parseState 1)) }
-  | NEW STRUCT braceBarExprCore 
-      { (match $3 true with SynExpr.AnonRecd(_,b,c,d) -> SynExpr.AnonRecd(true,b,c,d) | x -> x) }
-  | NEW braceBarExprCore
-      { (match $2 false with SynExpr.AnonRecd(_,b,c,d) -> SynExpr.AnonRecd(true,b,c,d) | x -> x) }
   | UPCAST  minusExpr 
       { SynExpr.InferredUpcast($2,unionRanges (rhs parseState 1) $2.Range) }   
   | DOWNCAST  minusExpr 
@@ -4160,13 +4152,13 @@ braceBarExprCore:
   | LBRACE_BAR oneOrMoreRecdExprBindings bar_rbrace
      { let flds = $2
        let m = rhs2 parseState 1 3
-       (fun isStruct -> SynExpr.AnonRecd(false,isStruct,flds,m)) }
+       (fun isStruct -> SynExpr.AnonRecd(true,isStruct,flds,m)) }
 
   | LBRACE_BAR oneOrMoreRecdExprBindings recover 
      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBraceBar())  
        let flds = $2 
        let m = rhs2 parseState 1 2
-       (fun isStruct -> SynExpr.AnonRecd(false,isStruct,flds,m)) }
+       (fun isStruct -> SynExpr.AnonRecd(true,isStruct,flds,m)) }
 
   | LBRACE_BAR error bar_rbrace
      { // silent recovery 
@@ -4176,11 +4168,11 @@ braceBarExprCore:
   | LBRACE_BAR recover
      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBraceBar())  
        let m = rhs2 parseState 1 1
-       (fun isStruct -> SynExpr.AnonRecd(false,isStruct,[],m)) }
+       (fun isStruct -> SynExpr.AnonRecd(true,isStruct,[],m)) }
 
   | LBRACE_BAR bar_rbrace 
      { let m = rhs2 parseState 1 2
-       (fun isStruct -> SynExpr.AnonRecd(false,isStruct,[],m)) }
+       (fun isStruct -> SynExpr.AnonRecd(true,isStruct,[],m)) }
 
 oneOrMoreRecdExprBindings:
   | recdBinding recdExprBindings

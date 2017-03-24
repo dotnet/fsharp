@@ -4591,7 +4591,11 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv:SyntacticUnscoped
         let ccuOpt = if isNew then Some cenv.topCcu else None
         let args',tpenv = TcTypesAsTuple cenv newOk checkCxs occ env tpenv (args |> List.map snd |> List.map (fun x -> (false,x))) m
         let nms = args |> List.map (fun (nm, _) -> nm.idText) |> List.toArray
-        TType_anon(AnonRecdTypeInfo.Create(ccuOpt, tupInfo, nms),  args'),tpenv
+        let anonInfo = AnonRecdTypeInfo.Create(ccuOpt, tupInfo, nms)
+        args |> List.iteri (fun i (x,_) -> 
+            let item = Item.AnonRecdField(anonInfo, args', i)
+            CallNameResolutionSink cenv.tcSink (x.idRange,env.NameEnv,item,item,ItemOccurence.UseInType,env.DisplayEnv,env.eAccessRights))
+        TType_anon(anonInfo,  args'),tpenv
 
     | SynType.Fun(domainTy,resultTy,_) -> 
         let domainTy',tpenv = TcTypeAndRecover cenv newOk checkCxs occ env tpenv domainTy
@@ -5772,6 +5776,9 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
         let nms = args |> List.map (fun (x,_) -> x.idText) |> List.toArray
         let anonInfo = AnonRecdTypeInfo.Create(ccuOpt, TupInfo.Const isStruct, nms)
         let argtys = UnifyAnonRecdType env.eContextInfo cenv env.DisplayEnv m overallTy anonInfo
+        args |> List.iteri (fun i (x,_) -> 
+            let item = Item.AnonRecdField(anonInfo, argtys, i)
+            CallNameResolutionSink cenv.tcSink (x.idRange,env.NameEnv,item,item,ItemOccurence.Use,env.DisplayEnv,env.eAccessRights))
         let flexes = argtys |> List.map (fun _ -> true)
         let args',tpenv = TcExprs cenv env m tpenv flexes argtys (List.map snd args)
         mkAnonRecd cenv.g m anonInfo args' argtys, tpenv

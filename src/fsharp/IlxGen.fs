@@ -1180,6 +1180,8 @@ type AssemblyBuilder(cenv:cenv) as mgbuf =
             ((fun (isStruct,ilTypeRef,nms) -> 
 
                 let flds = [ for (i,nm) in Array.indexed nms -> (nm, nm + "@", ILType.TypeVar (uint16 i)) ]
+                // Note that this alternative below would give the same names as C#, but the generated
+                // comparison/equality doesn't know about these names.
                 //let flds = [ for (i,nm) in Array.indexed nms -> (nm, "<" + nm + ">" + "i__Field", ILType.TypeVar (uint16 i)) ]
 
                 let ilGenericParams = 
