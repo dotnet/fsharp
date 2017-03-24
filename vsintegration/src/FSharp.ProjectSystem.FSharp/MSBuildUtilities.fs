@@ -210,15 +210,23 @@ type internal MSBuildUtilities() =
     static member MoveFileAbove(relativeFileName : string, nodeToMoveAbove : HierarchyNode, projectNode : ProjectNode) =  
         let msbuildProject = projectNode.BuildProject
         let buildItemName = projectNode.DefaultBuildAction(relativeFileName)
-        let big = EnsureValid msbuildProject projectNode true
-        let mutable itemToMove = None
-        for bi in EnumerateItems(big) do
-            if CheckItemType(bi, buildItemName) && 0=FilenameComparer.Compare(GetUnescapedUnevaluatedInclude(bi), relativeFileName) then
-                itemToMove <- Some(bi)
+        let big = EnsureValid msbuildProject projectNode false
+        let itemToMove =
+            EnumerateItems big
+            |> Seq.tryFind (fun bi -> CheckItemType(bi, buildItemName) && 0=FilenameComparer.Compare(GetUnescapedUnevaluatedInclude(bi), relativeFileName))
         Debug.Assert(itemToMove.IsSome, "did not find item")
-        let itemToMoveAbove = nodeToMoveAbove.ItemNode.Item 
-        Debug.Assert(itemToMoveAbove <> null, "nodeToMoveAbove was unexpectedly virtual")  // add new/existing item above only works on files, not folders
-        MSBuildUtilities.MoveFileAboveHelper(itemToMove.Value, itemToMoveAbove.Xml, big, projectNode)
+        let itemToMoveAbove =
+            // place the node above the first instance of a file in this folder
+            if nodeToMoveAbove.ItemNode.IsVirtual then
+                EnumerateItems big
+                |> Seq.tryFind (fun bi ->
+                    let includeName = GetUnescapedUnevaluatedInclude bi
+                    includeName.StartsWith (nodeToMoveAbove.VirtualNodeName + Path.DirectorySeparatorChar.ToString())
+                    )
+            else
+                Some nodeToMoveAbove.ItemNode.Item.Xml
+        Debug.Assert(itemToMoveAbove.IsSome, "could not find suitable itemToMoveAbove")
+        MSBuildUtilities.MoveFileAboveHelper(itemToMove.Value, itemToMoveAbove.Value, big, projectNode)
 
     static member private MoveFileBelowHelper(item : ProjectItemElement, itemToMoveBelow : ProjectItemElement, big : ProjectItemGroupElement, _projectNode : ProjectNode) =  
         // TODO wildcards?
@@ -239,8 +247,26 @@ type internal MSBuildUtilities() =
 
     /// Move <... Include='relativeFileName'> to below nodeToMoveBelow (from solution-explorer point-of-view)
     static member MoveFileBelow(relativeFileName : string, nodeToMoveBelow : HierarchyNode, projectNode : ProjectNode) =  
-        let itemToMoveBelow = nodeToMoveBelow.ItemNode.Item 
-        MSBuildUtilities.MoveFileBelowCore(relativeFileName, itemToMoveBelow.Xml, projectNode, true)
+        let msbuildProject = projectNode.BuildProject
+        let buildItemName = projectNode.DefaultBuildAction(relativeFileName)
+        let big = EnsureValid msbuildProject projectNode false
+        let itemToMove =
+            EnumerateItems big
+            |> Seq.tryFind (fun bi -> CheckItemType(bi, buildItemName) && 0=FilenameComparer.Compare(GetUnescapedUnevaluatedInclude(bi), relativeFileName))
+        Debug.Assert(itemToMove.IsSome, "did not find item")
+        let itemToMoveBelow =
+            // place the node below the last instance of a file in this folder
+            if nodeToMoveBelow.ItemNode.IsVirtual then
+                EnumerateItems big
+                |> Seq.rev
+                |> Seq.tryFind (fun bi ->
+                    let includeName = GetUnescapedUnevaluatedInclude bi
+                    includeName.StartsWith (nodeToMoveBelow.VirtualNodeName + Path.DirectorySeparatorChar.ToString())
+                    )
+            else
+                Some nodeToMoveBelow.ItemNode.Item.Xml
+        Debug.Assert(itemToMoveBelow.IsSome, "could not find suitable itemToMoveBelow")
+        MSBuildUtilities.MoveFileBelowHelper(itemToMove.Value, itemToMoveBelow.Value, big, projectNode)
 
     /// Move <... Include='relativeFileName'> to the bottom of the list of items, except if this item has a subfolder that already exists, move it
     /// to the bottom of that subforlder, rather than the very bottom.

@@ -4856,9 +4856,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 foreach (string file in files)
                 {
-                    HierarchyNode n = this.NodeFromItemId(itemIdLoc);
-                    string relativeFolder = Path.GetDirectoryName(n.Url);
-                    string relPath = PackageUtilities.MakeRelativeIfRooted(Path.Combine(relativeFolder, Path.GetFileName(file)), this.BaseURI);
+                    string relPath = PackageUtilities.MakeRelativeIfRooted(file, this.BaseURI);
                     MoveFileToBottomIfNoOtherPendingMove(relPath);
                 }
             }
@@ -4992,7 +4990,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                                 // if we are doing 'Paste' and source file belongs to current project - generate fresh unique name
                                 context == AddItemContext.Paste && FindChild(file) != null
                                     ? GenerateCopyOfFileName(baseDir, fileName)
-                                    : Path.Combine(baseDir, fileName);
+                                    : file;
                         }
                         break;
                 }

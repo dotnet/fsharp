@@ -1960,32 +1960,101 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             inherit FolderNode(root, relativePath, projectElement)
 
             override x.QueryStatusOnNode(guidCmdGroup:Guid, cmd:uint32, pCmdText:IntPtr, result:byref<QueryStatusResult>) =
+                
+                let accessor = x.ProjectMgr.Site.GetService(typeof<SVsBuildManagerAccessor>) :?> IVsBuildManagerAccessor
+                let noBuildInProgress = not(VsBuildManagerAccessorExtensionMethods.IsInProgress(accessor))
+
                 if (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
-                   (cmd = (uint32)VSProjectConstants.MoveUpCmd.ID) then
-                        result <- result ||| QueryStatusResult.SUPPORTED
-                        if FSharpFileNode.CanMoveUp(x) then
-                            result <- result ||| QueryStatusResult.ENABLED
-                        VSConstants.S_OK
+                    (cmd = (uint32)VSProjectConstants.MoveUpCmd.ID) then
+
+                    result <- result ||| QueryStatusResult.SUPPORTED
+                    if FSharpFileNode.CanMoveUp(x) then
+                        result <- result ||| QueryStatusResult.ENABLED
+                    VSConstants.S_OK
+
                 elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
-                   (cmd = (uint32)VSProjectConstants.MoveDownCmd.ID) then
-                        result <- result ||| QueryStatusResult.SUPPORTED
-                        if FSharpFileNode.CanMoveDown(x) then
-                            result <- result ||| QueryStatusResult.ENABLED
-                        VSConstants.S_OK
+                    (cmd = (uint32)VSProjectConstants.MoveDownCmd.ID) then
+
+                    result <- result ||| QueryStatusResult.SUPPORTED
+                    if FSharpFileNode.CanMoveDown(x) then
+                        result <- result ||| QueryStatusResult.ENABLED
+                    VSConstants.S_OK
+
+                elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
+                    (cmd = (uint32)VSProjectConstants.AddExistingItemAbove.ID) then
+
+                    result <- result ||| QueryStatusResult.SUPPORTED
+                    if noBuildInProgress && root.GetSelectedNodes().Count < 2 then
+                        result <- result ||| QueryStatusResult.ENABLED
+                    VSConstants.S_OK
+
+                elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
+                    (cmd = (uint32)VSProjectConstants.AddNewItemAbove.ID) then
+
+                    result <- result ||| QueryStatusResult.SUPPORTED
+                    if noBuildInProgress && root.GetSelectedNodes().Count < 2 then
+                        result <- result ||| QueryStatusResult.ENABLED
+                    VSConstants.S_OK
+                        
+                elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
+                    (cmd = (uint32)VSProjectConstants.AddExistingItemBelow.ID) then
+
+                    result <- result ||| QueryStatusResult.SUPPORTED
+                    if noBuildInProgress && root.GetSelectedNodes().Count < 2 then
+                        result <- result ||| QueryStatusResult.ENABLED
+                    VSConstants.S_OK
+
+                elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
+                    (cmd = (uint32)VSProjectConstants.AddNewItemBelow.ID) then
+
+                    result <- result ||| QueryStatusResult.SUPPORTED
+                    if noBuildInProgress && root.GetSelectedNodes().Count < 2 then
+                        result <- result ||| QueryStatusResult.ENABLED
+                    VSConstants.S_OK
+
                 else
-                        base.QueryStatusOnNode(guidCmdGroup, cmd, pCmdText, &result)
+                    base.QueryStatusOnNode(guidCmdGroup, cmd, pCmdText, &result)
 
             override x.ExecCommandOnNode(guidCmdGroup:Guid, cmd:uint32, nCmdexecopt:uint32, pvaIn:IntPtr, pvaOut:IntPtr ) =
                 if (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
-                   (cmd = (uint32)VSProjectConstants.MoveUpCmd.ID) then 
-                       FSharpFileNode.MoveUp(x, root)
-                       VSConstants.S_OK
+                    (cmd = (uint32)VSProjectConstants.MoveUpCmd.ID) then 
+                    FSharpFileNode.MoveUp(x, root)
+                    VSConstants.S_OK
+
                 elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
-                   (cmd = (uint32)VSProjectConstants.MoveDownCmd.ID) then 
-                       FSharpFileNode.MoveDown(x, root)
-                       VSConstants.S_OK
+                    (cmd = (uint32)VSProjectConstants.MoveDownCmd.ID) then 
+                    FSharpFileNode.MoveDown(x, root)
+                    VSConstants.S_OK
+
+                elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
+                    (cmd = (uint32)VSProjectConstants.AddNewItemAbove.ID) then 
+                    let result = root.MoveNewlyAddedFileAbove (x, fun () ->
+                        x.Parent.AddItemToHierarchy(HierarchyAddType.AddNewItem))
+                    root.EnsureMSBuildAndSolutionExplorerAreInSync()
+                    result
+                        
+                elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
+                    (cmd = (uint32)VSProjectConstants.AddExistingItemAbove.ID) then 
+                    let result = root.MoveNewlyAddedFileAbove (x, fun () ->
+                        x.Parent.AddItemToHierarchy(HierarchyAddType.AddExistingItem))
+                    root.EnsureMSBuildAndSolutionExplorerAreInSync()
+                    result
+                        
+                elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
+                    (cmd = (uint32)VSProjectConstants.AddNewItemBelow.ID) then 
+                    let result = root.MoveNewlyAddedFileBelow (x, fun () ->
+                        x.Parent.AddItemToHierarchy(HierarchyAddType.AddNewItem))
+                    root.EnsureMSBuildAndSolutionExplorerAreInSync()
+                    result
+                        
+                elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
+                    (cmd = (uint32)VSProjectConstants.AddExistingItemBelow.ID) then 
+                    let result = root.MoveNewlyAddedFileBelow (x, fun () ->
+                        x.Parent.AddItemToHierarchy(HierarchyAddType.AddExistingItem))
+                    root.EnsureMSBuildAndSolutionExplorerAreInSync()
+                    result
                 else
-                        base.ExecCommandOnNode(guidCmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut)
+                    base.ExecCommandOnNode(guidCmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut)
             
     type internal FSharpBuildAction =
        | None = 0
@@ -2278,28 +2347,28 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
                    (cmd = (uint32)VSProjectConstants.AddNewItemAbove.ID) then 
                         let result = root.MoveNewlyAddedFileAbove (x, fun () ->
-                            root.AddItemToHierarchy(HierarchyAddType.AddNewItem))
+                            x.AddItemToHierarchy(HierarchyAddType.AddNewItem))
                         root.EnsureMSBuildAndSolutionExplorerAreInSync()
                         result
                         
                 elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
                    (cmd = (uint32)VSProjectConstants.AddExistingItemAbove.ID) then 
                         let result = root.MoveNewlyAddedFileAbove (x, fun () ->
-                            root.AddItemToHierarchy(HierarchyAddType.AddExistingItem))
+                            x.AddItemToHierarchy(HierarchyAddType.AddExistingItem))
                         root.EnsureMSBuildAndSolutionExplorerAreInSync()
                         result
                         
                 elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
                    (cmd = (uint32)VSProjectConstants.AddNewItemBelow.ID) then 
                         let result = root.MoveNewlyAddedFileBelow (x, fun () ->
-                            root.AddItemToHierarchy(HierarchyAddType.AddNewItem))
+                            x.AddItemToHierarchy(HierarchyAddType.AddNewItem))
                         root.EnsureMSBuildAndSolutionExplorerAreInSync()
                         result
                         
                 elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
                    (cmd = (uint32)VSProjectConstants.AddExistingItemBelow.ID) then 
                         let result = root.MoveNewlyAddedFileBelow (x, fun () ->
-                            root.AddItemToHierarchy(HierarchyAddType.AddExistingItem))
+                            x.AddItemToHierarchy(HierarchyAddType.AddExistingItem))
                         root.EnsureMSBuildAndSolutionExplorerAreInSync()
                         result
                         
