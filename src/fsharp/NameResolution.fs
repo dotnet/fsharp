@@ -1367,6 +1367,8 @@ let ItemsAreEffectivelyEqual g orig other =
     | (Item.ArgName (id,_, _), ValUse vref) | (ValUse vref, Item.ArgName (id, _, _)) -> 
         ((id.idRange = vref.DefinitionRange || id.idRange = vref.SigRange) && id.idText = vref.DisplayName)
 
+    | Item.AnonRecdField(anon1, _, i1), Item.AnonRecdField(anon2, _, i2) -> Tastops.anonInfoEquiv anon1 anon2 && i1 = i2
+
     | ILFieldUse f1, ILFieldUse f2 -> 
         ILFieldInfo.ILFieldInfosUseIdenticalDefinitions f1 f2 
 
@@ -3422,6 +3424,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
             not x.IsSpecialName &&
             x.IsStatic = statics && 
             IsILFieldInfoAccessible g amap m ad x)
+
     let pinfosIncludingUnseen = 
         AllPropInfosOfTypeInScope ncenv.InfoReader nenv (None,ad) PreferOverrides m typ
         |> List.filter (fun x -> 
@@ -3554,10 +3557,20 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
             let nm = h.LogicalName
             partitionl t (NameMultiMap.add nm h acc)
 
+    let anonFields =
+        if statics then  []
+        else
+            match tryDestAnonRecdTy g typ with 
+            | Some (anonInfo, tys) -> 
+                [ for (i,_nm) in Array.indexed anonInfo.Names do 
+                    yield Item.AnonRecdField(anonInfo, tys, i) ]
+            | _ -> []
+
     // Build the results
     ucinfos @
     List.map Item.RecdField rfinfos @
     pinfoItems @
+    anonFields @
     List.map Item.ILField finfos @
     List.map Item.Event einfos @
     List.map (ItemOfTy g) nestedTypes @
@@ -3594,6 +3607,12 @@ let rec ResolvePartialLongIdentInType (ncenv: NameResolver) nenv isApplicableMet
          |> List.filter (fun x -> x.IsStatic = statics)
          |> List.filter (IsPropInfoAccessible g amap m ad) 
          |> List.collect (fun pinfo -> (FullTypeOfPinfo pinfo) |> ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest)) @
+
+      (if statics then [] 
+       else 
+          match TryFindAnonRecdFieldOfType g typ id with 
+          | Some (Item.AnonRecdField(_anonInfo, tys, i)) -> ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest tys.[i]
+          | _ -> []) @
 
       // e.g. <val-id>.<event-id>.<more> 
       (ncenv.InfoReader.GetEventInfosOfType(Some id,ad,m,typ)
@@ -4053,11 +4072,12 @@ let private ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad stat
             if statics then
                 yield! typ |> GetNestedTypesOfType (ad, ncenv, None, TypeNameResolutionStaticArgsInfo.Indefinite, false, m) |> List.map (ItemOfTy g)
         | _ ->
-            match tryDestAnonRecdTy g typ with 
-            | Some (anonInfo, tys) -> 
-                for (i,_nm) in Array.indexed anonInfo.Names do 
-                    yield Item.AnonRecdField(anonInfo, tys, i)
-            | _ -> ()
+            if not statics then
+                match tryDestAnonRecdTy g typ with 
+                | Some (anonInfo, tys) -> 
+                    for (i,_nm) in Array.indexed anonInfo.Names do 
+                        yield Item.AnonRecdField(anonInfo, tys, i)
+                | _ -> ()
 
             let pinfosIncludingUnseen = 
                 AllPropInfosOfTypeInScope ncenv.InfoReader nenv (None,ad) PreferOverrides m typ
