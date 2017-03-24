@@ -509,10 +509,10 @@ printf "WHERE_ARG_NUNIT=%s\n" "$WHERE_ARG_NUNIT"
 
 export NUNITPATH="tests/fsharpqa/testenv/bin/nunit/"
 export NUNIT3_CONSOLE="${NUNITPATH}nunit3-console.exe"
-export link_exe="${_scriptdir}packages/VisualCppTools.14.0.24519-Pre/lib/native/bin/link.exe"
-if [ ! -f "$link_exe" ]; then
-    failwith "failed to find '$link_exe' use nuget to restore the VisualCppTools package"
-fi
+# export link_exe="${_scriptdir}packages/VisualCppTools.14.0.24519-Pre/lib/native/bin/link.exe"
+# if [ ! -f "$link_exe" ]; then
+#     failwith "failed to find '$link_exe' use nuget to restore the VisualCppTools package"
+# fi
 
 #if /I not '$single_threaded' == 'true' (set PARALLEL_ARG=-procs:$NUMBER_OF_PROCESSORS) else set PARALLEL_ARG=-procs:0
 
@@ -524,7 +524,7 @@ fi
 
 printf "FSCBINPATH=%s\n" "$FSCBINPATH"
 printf "RESULTSDIR=%s\n" "$RESULTSDIR"
-printf "link_exe=%s\n" "$link_exe"
+# printf "link_exe=%s\n" "$link_exe"
 printf "NUNIT3_CONSOLE=%s\n" "$NUNIT3_CONSOLE"
 printf "NUNITPATH=%s\n" "$NUNITPATH"
 
