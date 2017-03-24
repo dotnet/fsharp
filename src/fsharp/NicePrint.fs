@@ -85,7 +85,7 @@ module internal PrintUtilities =
             else name
         let tyconTextL =
             tagEntityRefName tcref demangled
-            |> mkNav tcref.DefinitionRange // (fullDisplayTextOfTyconRef tcref)
+            |> mkNav tcref.DefinitionRange
             |> wordL
         if denv.shortTypeNames then 
             tyconTextL

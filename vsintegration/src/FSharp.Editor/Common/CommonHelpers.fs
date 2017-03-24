@@ -530,7 +530,7 @@ module internal Extensions =
                 match declarationLocation with
                 | Some loc ->
                     let filePath = Path.GetFullPathSafe loc.FileName
-                    let isScript = String.Equals(Path.GetExtension(filePath), ".fsx", StringComparison.OrdinalIgnoreCase)
+                    let isScript = isScriptFile filePath 
                     if isScript && filePath = currentDocument.FilePath then 
                         Some SymbolDeclarationLocation.CurrentDocument
                     elif isScript then

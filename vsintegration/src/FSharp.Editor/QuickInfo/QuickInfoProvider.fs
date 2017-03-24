@@ -32,19 +32,21 @@ open CommonRoslynHelpers
 open  Microsoft.VisualStudio.FSharp.Editor.Logging
 
 module private SessionHandling =
+    
     let mutable currentSession = None
     
-    [<Export(typeof<IQuickInfoSourceProvider>)>]
-    [<Name("Session Capturing Quick Info Source Provider")>]
-    [<Order(After = PredefinedQuickInfoProviderNames.Semantic)>]
-    [<ContentType(FSharpCommonConstants.FSharpContentTypeName)>]
-    type SourceProviderForCapturingSession() =
+    [<Export (typeof<IQuickInfoSourceProvider>)>]
+    [<Name (FSharpProviderConstants.SessionCapturingProvider)>]
+    [<Order (After = PredefinedQuickInfoProviderNames.Semantic)>]
+    [<ContentType (FSharpCommonConstants.FSharpContentTypeName)>]
+    type SourceProviderForCapturingSession () =
             interface IQuickInfoSourceProvider with 
                 member x.TryCreateQuickInfoSource _ =
                   { new IQuickInfoSource with
                     member __.AugmentQuickInfoSession(session,_,_) = currentSession <- Some session
                     member __.Dispose() = () }
     
+
 [<ExportQuickInfoProvider(PredefinedQuickInfoProviderNames.Semantic, FSharpCommonConstants.FSharpLanguageName)>]
 type internal FSharpQuickInfoProvider 
     [<System.ComponentModel.Composition.ImportingConstructor>] 
@@ -62,49 +64,31 @@ type internal FSharpQuickInfoProvider
         let workspace = initialDoc.Project.Solution.Workspace
         let solution = workspace.CurrentSolution
 
-
-        /// Retrieve the DocumentId from the workspace for the range's file
-        let docIdOfRange (range: range) =
-            let filePath = System.IO.Path.GetFullPathSafe range.FileName
-
-            //The same file may be present in many projects. We choose one from current or referenced project.
-            let rec matchingDoc = function
-            | [] -> None
-            | (docId:DocumentId)::_ when docId.ProjectId = initialDoc.Id.ProjectId || IsScript initialDoc.FilePath -> Some docId
-            | docId::tail -> 
-                if solution.GetDependentProjectIds(docId.ProjectId).Contains initialDoc.Id.ProjectId then Some docId
-                else matchingDoc tail
-            solution.GetDocumentIdsWithFilePath filePath |> List.ofSeq |> matchingDoc
-
-
         let canGoTo range =
-            range <> rangeStartup && docIdOfRange range |> Option.isSome
-
-        // to ensure proper navigation decsions we need to check the type of document the navigation call
-        // is originating from and the target we're provided by default
-        //  - signature files (.fsi) should navigate to other signature files 
-        //  - implementation files (.fs) should navigate to other implementation files
-        //let adjustTarget (range:range) =
+            range <> rangeStartup && solution.TryGetDocumentIdFromFSharpRange (range,initialDoc.Project.Id) |> Option.isSome
 
         let navigateTo (range:range) = 
             asyncMaybe { 
                 let targetPath = range.FileName 
-                logInfof "origin document - %s \n"  initialDoc.FilePath
-                logInfof "target range to - %s \n %A"  range.FileName range
-                let! targetId = docIdOfRange range
-                let targetDoc = solution.GetDocument targetId 
+                let! targetDoc = solution.TryGetDocumentFromFSharpRange (range,initialDoc.Project.Id)
                 let! targetSource = targetDoc.GetTextAsync() 
                 let! targetTextSpan = CommonRoslynHelpers.TryFSharpRangeToTextSpan (targetSource, range)
+                // to ensure proper navigation decsions we need to check the type of document the navigation call
+                // is originating from and the target we're provided by default
+                //  - signature files (.fsi) should navigate to other signature files 
+                //  - implementation files (.fs) should navigate to other implementation files
+                let (|Signature|Implementation|) filepath =
+                    if isSignatureFile filepath then Signature else Implementation
 
-                match isSignatureFile initialDoc.FilePath, isSignatureFile targetPath with 
-                | true, true 
-                | false, false ->
+                match initialDoc.FilePath, targetPath with 
+                | Signature, Signature 
+                | Implementation, Implementation ->
                     return (gotoDefinitionService.TryNavigateToTextSpan (targetDoc, targetTextSpan))
                 // adjust the target from signature to implementation
-                | false, true ->
+                | Implementation, Signature  ->
                     return! gotoDefinitionService.NavigateToSymbolDefinitionAsync (targetDoc, targetSource, range)
                 // adjust the target from implmentation to signature
-                | true, false -> 
+                | Signature, Implementation -> 
                     return! gotoDefinitionService.NavigateToSymbolDeclarationAsync (targetDoc, targetSource, range)
             } |> Async.map (Option.map (fun res -> 
                 if res then 
@@ -125,14 +109,10 @@ type internal FSharpQuickInfoProvider
                 let run = Documents.Run(taggedText.Text, ToolTip = taggedText.Tag ) :> Documents.Inline
                 let inl =
                     match taggedText with
-                    | :? Layout.NavigableTaggedText as nav when canGoTo nav.Range ->
+                    | :? Layout.NavigableTaggedText as nav when canGoTo nav.Range ->                        
                         let h = Documents.Hyperlink run
-                        //h.ToolTip <- nav.FullName + "\n" + nav.Range.FileName
                         h.Click.Add <| fun _ -> navigateTo nav.Range
                         h :> Documents.Inline
-                    //| :? Layout.NavigableTaggedText as nav ->
-                    //    run.ToolTip <- nav.FullName
-                    //    run :> Documents.Inline
                     | _ -> run
                 DependencyObjectExtensions.SetTextProperties(inl, layoutTagToFormatting taggedText.Tag)
                 yield inl

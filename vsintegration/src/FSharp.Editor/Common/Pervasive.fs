@@ -10,8 +10,12 @@ open System.Diagnostics
 let isSignatureFile (filePath:string) = 
     Path.GetExtension filePath = ".fsi"
 
+/// Checks if the file paht ends with '.fsx' or '.fsscript'
+let isScriptFile (filePath:string) = 
+    let ext = Path.GetExtension filePath 
+    String.Equals (ext,".fsi",StringComparison.OrdinalIgnoreCase) || String.Equals (ext,".fsscript",StringComparison.OrdinalIgnoreCase)
 
-
+/// Path combination operator
 let (</>) path1 path2 = Path.Combine (path1, path2) 
 
 
@@ -213,8 +217,7 @@ module Async =
 type Async with 
     
     static member RunTaskSynchronously task  = 
-        task |> 
-        Async.AwaitTask |> Async.RunSynchronously 
+        task |> Async.AwaitTask |> Async.RunSynchronously 
 
 
 type AsyncBuilder with

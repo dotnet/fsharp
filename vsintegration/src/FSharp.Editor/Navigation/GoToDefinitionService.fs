@@ -122,44 +122,25 @@ module internal FSharpGoToDefinition =
                 let! _, _, checkFileResults = 
                     checker.ParseAndCheckDocument (implDoc, projectOptions, allowStaleResults=true, sourceText=implSourceText)
                 let! symbolUses = checkFileResults.GetUsesOfSymbolInFile symbol |> liftAsync
-                
                 let! implSymbol  = symbolUses |> Array.tryHead 
-                let! implRange = implSymbol.Symbol.DeclarationLocation
-                let implTextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan (implSourceText, implRange)
+                let implTextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan (implSourceText, implSymbol.RangeAlternate)
                 return FSharpNavigableItem (implDoc, implTextSpan)
             else
-                let! targetRange = async {
-                    match preferSignature, symbol.SignatureLocation, symbol.ImplementationLocation, symbol.DeclarationLocation with 
-                    | true , Some range, _         , _          -> return Some range 
-                    | true , None      , _         , Some range -> return Some range 
-                    | true , None      , Some range, None       -> return Some range 
-                    | false, _         , Some range, _          -> return Some range 
-                    | false, _         , None      , Some range -> return Some range 
-                    | false, Some range, None      , None       -> return Some range 
-                    | _    , None      , None      , None       -> 
-                        let! findSigDeclarationResult = 
-                            checkFileResults.GetDeclarationLocationAlternate
-                                (idRange.StartLine, idRange.EndColumn, lineText, lexerSymbol.FullIsland, preferFlag=preferSignature)
-                
-                        match findSigDeclarationResult with 
-                        | FSharpFindDeclResult.DeclNotFound _failReason -> return None 
-                        | FSharpFindDeclResult.DeclFound declRange -> return Some declRange
-                }
-                let! targetDocument = originDocument.Project.Solution.TryGetDocumentFromFSharpRange (targetRange, originDocument.Project.Id)
-                return! rangeToNavigableItem (targetRange, targetDocument)
+                let! targetDocument = originDocument.Project.Solution.TryGetDocumentFromFSharpRange fsSymbolUse.RangeAlternate
+                return! rangeToNavigableItem (fsSymbolUse.RangeAlternate, targetDocument)
         }  
 
 
     /// find the declaration location (signature file/.fsi) of the target symbol if possible, fall back to definition 
     let findDeclarationOfSymbolAtRange
-        (document:Document, range:range, sourceText:SourceText, checker: FSharpChecker, projectInfoManager: ProjectInfoManager) =
-        findSymbolHelper (document, range, sourceText,true, checker, projectInfoManager) 
+        (targetDocument:Document, symbolRange:range, targetSource:SourceText, checker: FSharpChecker, projectInfoManager: ProjectInfoManager) =
+        findSymbolHelper (targetDocument, symbolRange, targetSource,true, checker, projectInfoManager) 
 
 
     /// find the definition location (implementation file/.fs) of the target symbol
     let findDefinitionOfSymbolAtRange
-        (document:Document, range:range, sourceText:SourceText, checker: FSharpChecker, projectInfoManager: ProjectInfoManager) =
-        findSymbolHelper (document, range, sourceText,false, checker, projectInfoManager)
+        (targetDocument:Document, symbolRange:range, targetSourceText:SourceText, checker: FSharpChecker, projectInfoManager: ProjectInfoManager) =
+        findSymbolHelper (targetDocument, symbolRange, targetSourceText,false, checker, projectInfoManager)
 
 
 
@@ -263,22 +244,22 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>]
 
 
     /// find the declaration location (signature file/.fsi) of the target symbol if possible, fall back to definition 
-    member this.NavigateToSymbolDeclarationAsync (originDocument:Document, originSourceText:SourceText, symbolRange:range) = asyncMaybe {
+    member this.NavigateToSymbolDeclarationAsync (targetDocument:Document, targetSourceText:SourceText, symbolRange:range) = asyncMaybe {
         statusBar.SetText "Trying to locate symbol..." |> ignore
         let! navigableItem = 
             FSharpGoToDefinition.findDeclarationOfSymbolAtRange 
-                (originDocument, symbolRange, originSourceText, checkerProvider.Checker, projectInfoManager)
-        return navigate originDocument navigableItem
+                (targetDocument, symbolRange, targetSourceText, checkerProvider.Checker, projectInfoManager)
+        return navigate targetDocument navigableItem
     }
     
 
      /// find the definition location (implementation file/.fs) of the target symbol
-    member this.NavigateToSymbolDefinitionAsync (originDocument:Document, originSourceText:SourceText, symbolRange:range)= asyncMaybe {
+    member this.NavigateToSymbolDefinitionAsync (targetDocument:Document, targetSourceText:SourceText, symbolRange:range)= asyncMaybe {
         statusBar.SetText "Trying to locate symbol..." |> ignore
         let! navigableItem = 
             FSharpGoToDefinition.findDefinitionOfSymbolAtRange 
-                (originDocument, symbolRange, originSourceText, checkerProvider.Checker, projectInfoManager) 
-        return navigate originDocument navigableItem
+                (targetDocument, symbolRange, targetSourceText, checkerProvider.Checker, projectInfoManager) 
+        return navigate targetDocument navigableItem
     }
     
     /// Construct a task that will return a navigation target for the implementation definition of the symbol 

@@ -2511,7 +2511,7 @@ let fullDisplayTextOfTyconRef  r = fullNameOfEntityRef (fun (tc:TyconRef) -> tc.
 let fullNameOfEntityRefAsLayout nmF (xref: EntityRef) =
     let navigableText = 
         tagEntityRefName xref (nmF xref)
-        |> mkNav xref.DefinitionRange //(fullDisplayTextOfTyconRef xref) 
+        |> mkNav xref.DefinitionRange
         |> wordL
     match fullNameOfParentOfEntityRefAsLayout xref  with 
     | None -> navigableText
