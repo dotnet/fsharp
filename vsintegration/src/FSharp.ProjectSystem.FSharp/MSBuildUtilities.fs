@@ -25,7 +25,11 @@ type internal MSBuildUtilities() =
 
     static let GetItemType(item : ProjectItemElement) =
         item.ItemType
-        
+
+    /// Normalize path directory separator characters to the OS defacto
+    static let NormalizePath(path : string) =
+        path.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar)
+    
     // Gets the <... Include="path"> path for this item, except if the item is a link, then
     // gets the <Link>path</Link> value instead.
     // In other words, gets the location that will be displayed in the solution explorer.
@@ -35,6 +39,7 @@ type internal MSBuildUtilities() =
             item.EvaluatedInclude
         else
             strPath
+
     static let GetUnescapedUnevaluatedInclude(item : ProjectItemElement) =
         let mutable foundLink = None
         for m in item.Metadata do
@@ -45,14 +50,14 @@ type internal MSBuildUtilities() =
             match foundLink with
             | None -> item.Include
             | Some(link) -> link
-        ProjectCollection.Unescape(escaped)
+        ProjectCollection.Unescape(escaped) |> NormalizePath
 
     static let MattersForOrdering(bi : ProjectItemElement) =
         not (bi.ItemType = ProjectFileConstants.ProjectReference || bi.ItemType = ProjectFileConstants.Reference)
 
     // if 'path' is as in <... Include="path">, determine the relative path of the folder that contains this
     static let ComputeFolder(path : string, projectUrl : Url) =
-        Path.GetDirectoryName(PackageUtilities.MakeRelativeIfRooted(path, projectUrl)) + "\\"
+        Path.GetDirectoryName(PackageUtilities.MakeRelativeIfRooted(path, projectUrl)) + Path.DirectorySeparatorChar.ToString()
 
     static let FolderComparer = StringComparer.OrdinalIgnoreCase 
     static let FilenameComparer = StringComparer.OrdinalIgnoreCase 
@@ -268,26 +273,47 @@ type internal MSBuildUtilities() =
         Debug.Assert(itemToMoveBelow.IsSome, "could not find suitable itemToMoveBelow")
         MSBuildUtilities.MoveFileBelowHelper(itemToMove.Value, itemToMoveBelow.Value, big, projectNode)
 
-    /// Move <... Include='relativeFileName'> to the bottom of the list of items, except if this item has a subfolder that already exists, move it
-    /// to the bottom of that subforlder, rather than the very bottom.
+    /// Move <... Include='relativeFileName'> to the bottom of the list of items.
+    /// If this item has a subfolder that already exists, move it to the bottom of that subfolder.
+    /// If this item has an ancestral folder that already exists, move it to the bottom of the folder.
+    /// If neither of these conditions are met, move it to the very bottom.
     static member MoveFileToBottomOfGroup(relativeFileName : string, projectNode : ProjectNode) =  
-        let dir = Path.GetDirectoryName(relativeFileName) + "\\"
-        let mutable lastItemInDir = null
+        let dir = Path.GetDirectoryName(relativeFileName) + Path.DirectorySeparatorChar.ToString()
         let msbuildProject = projectNode.BuildProject
         let buildItemName = projectNode.DefaultBuildAction(relativeFileName)
         let big = EnsureValid msbuildProject projectNode false
-        let mutable itemToMove = None
-        for bi in EnumerateItems(big) do
-            if CheckItemType(bi, buildItemName) && 0=FilenameComparer.Compare(GetUnescapedUnevaluatedInclude(bi), relativeFileName) then
-                itemToMove <- Some(bi)
-            else
+
+        let itemToMove, lastItemInDir =
+            EnumerateItems big
+            |> Seq.fold (fun (itemToMove, lastItemInDir) bi ->
+                let includePath = GetUnescapedUnevaluatedInclude bi
+                let includeDir = Path.GetDirectoryName(includePath) + Path.DirectorySeparatorChar.ToString()
+
+                if CheckItemType(bi, buildItemName) && 0 = FilenameComparer.Compare(includePath, relativeFileName) then
+                    Some bi, lastItemInDir
+                
                 // under else, as we don't want to try to move under _ourself_, only under _another_ existing item in same dir
-                if GetUnescapedUnevaluatedInclude(bi).StartsWith(dir, System.StringComparison.OrdinalIgnoreCase) then
-                    lastItemInDir <- bi
+                elif dir.StartsWith(includeDir, System.StringComparison.OrdinalIgnoreCase) then
+                    match lastItemInDir with
+                    | None ->
+                        itemToMove, Some bi
+                    | Some lastItemInDir when
+                        includeDir.Length > Path.GetDirectoryName(GetUnescapedUnevaluatedInclude lastItemInDir).Length ->
+                        itemToMove, Some bi
+                    | Some _ ->
+                        itemToMove, lastItemInDir
+
+                else
+                    itemToMove, lastItemInDir
+                )
+                (None, None)
+        
         Debug.Assert(itemToMove.IsSome, "did not find item")
-        if lastItemInDir <> null then
+
+        match lastItemInDir with
+        | Some lastItemInDir ->
             MSBuildUtilities.MoveFileBelowCore(relativeFileName, lastItemInDir, projectNode, false)
-        else
+        | None ->
             big.RemoveChild(itemToMove.Value)
             big.AppendChild(itemToMove.Value)
 
