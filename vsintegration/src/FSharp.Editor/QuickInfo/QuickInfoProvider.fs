@@ -86,10 +86,10 @@ type internal FSharpQuickInfoProvider
                     return (gotoDefinitionService.TryNavigateToTextSpan (targetDoc, targetTextSpan))
                 // adjust the target from signature to implementation
                 | Implementation, Signature  ->
-                    return! gotoDefinitionService.NavigateToSymbolDefinitionAsync (targetDoc, targetSource, range)
+                    return! gotoDefinitionService.NavigateToSymbolDefinitionAsync (targetDoc, targetSource, range)|>liftAsync
                 // adjust the target from implmentation to signature
                 | Signature, Implementation -> 
-                    return! gotoDefinitionService.NavigateToSymbolDeclarationAsync (targetDoc, targetSource, range)
+                    return! gotoDefinitionService.NavigateToSymbolDeclarationAsync (targetDoc, targetSource, range)|>liftAsync
             } |> Async.map (Option.map (fun res -> 
                 if res then 
                     SessionHandling.currentSession

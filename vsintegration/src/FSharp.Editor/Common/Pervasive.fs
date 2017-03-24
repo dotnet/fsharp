@@ -192,6 +192,8 @@ let inline liftAsync (computation : Async<'T>) : Async<'T option> =
         return Some a 
     }
 
+let liftTaskAsync task = task |> Async.AwaitTask |> liftAsync
+
 module Async =
     let map (f: 'T -> 'U) (a: Async<'T>) : Async<'U> =
         async {
